@@ -4,6 +4,7 @@ import os
 import sys
 from datetime import datetime
 from glob import glob
+from shlex import quote
 
 import pandas as pd
 from joblib import Parallel, delayed
@@ -20,7 +21,9 @@ FFMPEG_DEMUXERS = "str|aa|aac|aax|ac3|acm|adf|adp|dtk|ads|ss2|adx|aea|afc|aix|al
 
 video_files = []
 for ext in FFMPEG_DEMUXERS.split("|"):
-    default_glob = glob(args.path + "/*" + ext) + glob(args.path + "*" + ext)
+    default_glob = glob(args.path + "/*" + ext, recursive=True) + glob(
+        args.path + "*" + ext, recursive=True
+    )
 
     if "." in args.path[6:] and len(default_glob) == 0:
         if ext in args.path[6:]:
@@ -36,11 +39,16 @@ def extract_metadata(file):
     try:
         ffprobe = json.loads(
             cmd(
-                f"ffprobe -loglevel quiet -print_format json=compact=1 -show_entries format '{file}'"
+                f"ffprobe -loglevel quiet -print_format json=compact=1 -show_entries format {quote(file)}"
             ).stdout
         )
     except:
         print(f"Failed reading {file}", file=sys.stderr)
+        return
+
+    if not "format" in ffprobe:
+        print(f"Failed reading format {file}", file=sys.stderr)
+        print(ffprobe)
         return
 
     stat = os.stat(file)
@@ -59,8 +67,8 @@ def extract_metadata(file):
 
 
 metadata = Parallel(n_jobs=-1)(delayed(extract_metadata)(file) for file in video_files)
+metadata = list(filter(None, metadata))
 
-print(metadata)
 
 pd.DataFrame(metadata).to_sql(
     "videos",
