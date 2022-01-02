@@ -8,3 +8,7 @@ FROM videos v
 ```
 
 but you could also use it to catalog footage (ie. if you are a DIT, extract TIMECODE), although I'm sure there are better tools
+
+```
+pipenv run python -m extract ~/d/70_Now_Watching/
+```

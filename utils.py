@@ -8,5 +8,6 @@ def cmd(command, **kwargs):
         command, stdout=PIPE, stderr=PIPE, universal_newlines=True, shell=True, **kwargs
     )
     if r.returncode != 0:
-        log.debug(f"ERROR {r.returncode}")
+        raise Exception(f"ERROR {r.returncode}")
+    print(r.stderr.strip())
     return r

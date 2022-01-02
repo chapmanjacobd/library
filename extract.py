@@ -53,10 +53,13 @@ def extract_metadata(file):
     if "tags" in ffprobe["format"]:
         del ffprobe["format"]["tags"]
 
+    if "size" in ffprobe["format"]:
+        ffprobe["format"]["size"] = int(ffprobe["format"]["size"])
+
     return dict(
         **ffprobe["format"],
         # streams=ffprobe["streams"],
-        sparseness=int(ffprobe["format"]["size"]) / blocks_allocated,
+        sparseness=ffprobe["format"]["size"] / blocks_allocated,
         time_created=datetime.fromtimestamp(stat.st_ctime),
         time_modified=datetime.fromtimestamp(stat.st_mtime),
     )
