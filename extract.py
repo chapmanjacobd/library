@@ -10,7 +10,7 @@ import pandas as pd
 from joblib import Parallel, delayed
 from rich import inspect, print
 
-from db import con
+from db import con, fetchall_dict
 from utils import cmd
 
 parser = argparse.ArgumentParser()
@@ -26,7 +26,13 @@ if "." in args.path[6:]:
     video_files.extend(glob(args.path))
 for ext in FFMPEG_DEMUXERS.split("|"):
     video_files.extend(glob(args.path + "/**/*" + ext, recursive=True))
-video_files = list(set(video_files))
+new_files = set(video_files)
+
+existing = set(
+    map(lambda x: x["filename"], fetchall_dict("select filename from videos"))
+)
+
+video_files = list(new_files - existing)
 
 print(video_files)
 
