@@ -4,7 +4,7 @@ import sys
 from IPython.core import ultratb
 
 
-sys.excepthook = ultratb.FormattedTB(mode="Context", color_scheme="Neutral", call_pdb=1)
+# sys.excepthook = ultratb.FormattedTB(mode="Context", color_scheme="Neutral", call_pdb=1)
 
 
 def cmd(command, strict=True):
