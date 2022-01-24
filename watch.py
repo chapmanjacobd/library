@@ -8,7 +8,7 @@ from utils import cmd
 import os
 
 parser = argparse.ArgumentParser()
-parser.add_argument("db", default="./videos.db")
+parser.add_argument("db")
 parser.add_argument("-keep", "--keep", action="store_true")
 args = parser.parse_args()
 con = sqlite_con(args.db)
