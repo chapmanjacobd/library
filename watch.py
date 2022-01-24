@@ -1,4 +1,5 @@
 import argparse
+from pathlib import Path
 from shlex import quote
 from rich import inspect, print
 from rich.prompt import Confirm
@@ -33,10 +34,11 @@ limit 1
 
 print(next_video)
 
-if os.path.exists(next_video) and "keep/" not in next_video:
+if os.path.exists(next_video) and "/keep/" not in next_video:
     cmd(f"mpv --quiet {quote(next_video)} --fs")
-    if args.keep and Confirm.ask("Keep?"):
-        cmd(f"mkdir -p keep && mv {quote(next_video)} keep/{quote(next_video)}")
+    if args.keep and Confirm.ask("Keep?", default=True):
+        keep_path = str(Path(next_video).parent / "keep/")
+        cmd(f"mkdir -p {keep_path} && mv {quote(next_video)} {quote(keep_path)}")
     else:
         cmd(f"trash-put {quote(next_video)}")
 
