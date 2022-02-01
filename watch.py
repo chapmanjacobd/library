@@ -36,7 +36,7 @@ print(next_video)
 
 if os.path.exists(next_video) and "/keep/" not in next_video:
     cmd(f"mpv --quiet {quote(next_video)} --fs")
-    if args.keep and Confirm.ask("Keep?", default=True):
+    if args.keep and Confirm.ask("Keep?", default=False):
         keep_path = str(Path(next_video).parent / "keep/")
         cmd(f"mkdir -p {keep_path} && mv {quote(next_video)} {quote(keep_path)}")
     else:
