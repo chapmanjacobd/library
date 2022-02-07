@@ -1,11 +1,12 @@
 import argparse
+import os
+import re
 from pathlib import Path
 from shlex import quote
 from rich import inspect, print
 from rich.prompt import Confirm
 from db import singleColumnToList, sqlite_con
 from utils import cmd
-import os
 
 parser = argparse.ArgumentParser()
 parser.add_argument("db")
@@ -37,15 +38,24 @@ limit 1
 
 
 def get_ordinal_video(filename):
-    commonprefix = []
+    similar_videos = []
     testname = filename
-    while len(commonprefix) < 2:
-        if testname == "":
-            commonprefix = [filename, filename]
+    while len(similar_videos) < 2:
+        remove_groups = re.split(r"([\W_]+)", testname)
+        remove_chars = ""
+        remove_chars_i = 1
+        while len(remove_chars) < 1:
+            remove_chars += remove_groups[-remove_chars_i]
+            remove_chars_i += 1
 
-        testname = testname.rsplit(" ", 1)[0]
-        print("Trying", testname)
-        commonprefix = singleColumnToList(
+        newtestname = testname[: -len(remove_chars)]
+        print("Trying", newtestname)
+
+        if testname == "" or newtestname == testname:
+            return filename
+
+        testname = newtestname
+        similar_videos = singleColumnToList(
             con.execute(
                 f"""
     SELECT filename
@@ -59,9 +69,13 @@ def get_ordinal_video(filename):
             ).fetchall(),
             "filename",
         )
-        print("Found", commonprefix)
+        print("Found", similar_videos)
 
-    return commonprefix[0]
+        commonprefix = os.path.commonprefix(similar_videos)
+        if len(Path(commonprefix).name) < 5:
+            return filename
+
+    return similar_videos[0]
 
 
 if args.force_order:
