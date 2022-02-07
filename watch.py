@@ -43,8 +43,8 @@ def get_ordinal_video(filename):
         if testname == "":
             commonprefix = [filename, filename]
 
-        testname = testname[:-1]
-        print("Tryings", testname)
+        testname = testname.rsplit(" ", 1)[0]
+        print("Trying", testname)
         commonprefix = singleColumnToList(
             con.execute(
                 f"""
@@ -55,8 +55,9 @@ def get_ordinal_video(filename):
     and filename like '{testname}%'
     ORDER BY filename
     limit 2
-    """
-            ).fetchall()
+    """,
+            ).fetchall(),
+            "filename",
         )
         print("Found", commonprefix)
 
