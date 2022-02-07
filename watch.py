@@ -3,19 +3,21 @@ from pathlib import Path
 from shlex import quote
 from rich import inspect, print
 from rich.prompt import Confirm
-from db import sqlite_con
+from db import singleColumnToList, sqlite_con
 from utils import cmd
 import os
 
 parser = argparse.ArgumentParser()
 parser.add_argument("db")
 parser.add_argument("-keep", "--keep", action="store_true")
+parser.add_argument("-f", "--force-order", action="store_true")
+parser.add_argument("-s", "--search")
 args = parser.parse_args()
 con = sqlite_con(args.db)
 
 next_video = dict(
     con.execute(
-        """
+        f"""
 SELECT filename, duration / size AS seconds_per_byte,
 CASE
     WHEN size < 1024 THEN size || 'B'
@@ -26,11 +28,44 @@ CASE
 END AS size
 FROM videos
 WHERE duration IS NOT NULL
-ORDER BY 2 ASC
+{"and filename like '%" +args.search+ "%'" if args.search else ''}
+ORDER BY seconds_per_byte ASC
 limit 1
 """
     ).fetchone()
 )["filename"]
+
+
+def get_ordinal_video(filename):
+    commonprefix = []
+    testname = filename
+    while len(commonprefix) < 2:
+        if testname == "":
+            commonprefix = [filename, filename]
+
+        testname = testname[:-1]
+        print("Tryings", testname)
+        commonprefix = singleColumnToList(
+            con.execute(
+                f"""
+    SELECT filename
+    FROM videos
+    WHERE duration IS NOT NULL
+    and size is not null
+    and filename like '{testname}%'
+    ORDER BY filename
+    limit 2
+    """
+            ).fetchall()
+        )
+        print("Found", commonprefix)
+
+    return commonprefix[0]
+
+
+if args.force_order:
+    next_video = get_ordinal_video(next_video)
+
 
 print(next_video)
 
