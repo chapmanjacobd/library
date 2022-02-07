@@ -11,8 +11,8 @@ from utils import cmd
 parser = argparse.ArgumentParser()
 parser.add_argument("db")
 parser.add_argument("-keep", "--keep", action="store_true")
-parser.add_argument("-f", "--force-order", action="store_true")
 parser.add_argument("-s", "--search")
+parser.add_argument("-O", "--play-in-order", action="store_true")
 args = parser.parse_args()
 con = sqlite_con(args.db)
 
@@ -78,7 +78,7 @@ def get_ordinal_video(filename):
     return similar_videos[0]
 
 
-if args.force_order:
+if args.play_in_order:
     next_video = get_ordinal_video(next_video)
 
 
