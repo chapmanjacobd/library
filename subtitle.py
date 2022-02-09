@@ -13,7 +13,7 @@ load_dotenv(dotenv_path=Path(".") / ".env")
 
 
 def is_file_from_ytdl(file):
-    idregx = re.compile(r"-([\w]{11})\..*$|(\[[\w]{11}\])\..*$", flags=re.M)
+    idregx = re.compile(r"-([\w\-_]{11})\..*$|(\[[\w\-_]{11}\])\..*$", flags=re.M)
     file = str(file).strip()
 
     return len(idregx.findall(file)) > 0
@@ -35,9 +35,10 @@ def get_subtitle(file):
     if is_file_with_subtitle(file):
         return
 
+    print(file)
     cmd(
         f"subliminal --opensubtitles {os.getenv('OPEN_SUBTITLE_CREDENTIALS')} download -l en {quote(file)}",
-        strict=False,
+        # strict=False,
     )
 
 
