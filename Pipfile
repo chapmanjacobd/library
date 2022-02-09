@@ -9,6 +9,7 @@ rich = "*"
 pandas = "*"
 ipython = "*"
 black = "*"
+python-dotenv = "*"
 
 [dev-packages]
 black = "*"
