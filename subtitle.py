@@ -20,7 +20,12 @@ def is_file_from_ytdl(file):
 
 
 def is_file_with_subtitle(file):
-    return cmd(f"ffmpeg -i {quote(file)} -c copy -map 0:s:0 -frames:s 1 -f null - -v 0 -hide_banner").returncode == 0
+    return (
+        cmd(
+            f"ffmpeg -i {quote(file)} -c copy -map 0:s:0 -frames:s 1 -f null - -v 0 -hide_banner", strict=False
+        ).returncode
+        == 0
+    )
 
 
 def get_subtitle(file):
@@ -30,7 +35,10 @@ def get_subtitle(file):
     if is_file_with_subtitle(file):
         return
 
-    cmd(f"subliminal --opensubtitles {os.getenv('OPEN_SUBTITLE_CREDENTIALS')} download -l en {quote(file)}")
+    cmd(
+        f"subliminal --opensubtitles {os.getenv('OPEN_SUBTITLE_CREDENTIALS')} download -l en {quote(file)}",
+        strict=False,
+    )
 
 
 def main():
