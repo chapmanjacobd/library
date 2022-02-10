@@ -25,14 +25,19 @@ def ytdl_id(file) -> str:
 
 def is_file_with_subtitle(file):
     SUBTITLE_FORMATS = "ass|idx|psb|rar|smi|srt|ssa|ssf|sub|usf|vtt"
+    file = Path(file)
 
     external_sub_files = []
     for ext in SUBTITLE_FORMATS.split("|"):
-        external_sub_files.append(Path(file).with_suffix("." + ext).exists())
+        external_sub_files.append(
+            file.with_suffix("." + ext).exists()
+            or file.with_suffix(".en." + ext).exists()
+            or file.parent.glob(file.stem[:-12] + "*" + ext)
+        )
 
     return any(external_sub_files) or (
         cmd(
-            f"ffmpeg -i {quote(file)} -c copy -map 0:s:0 -frames:s 1 -f null - -v 0 -hide_banner", strict=False
+            f"ffmpeg -i {quote(str(file))} -c copy -map 0:s:0 -frames:s 1 -f null - -v 0 -hide_banner", strict=False
         ).returncode
         == 0
     )
@@ -68,7 +73,7 @@ def main():
 
     video_files = get_video_files(args)
 
-    Parallel(n_jobs=6)(delayed(get_subtitle)(args, file) for file in video_files)
+    Parallel(n_jobs=6 if args.verbose == 0 else 1)(delayed(get_subtitle)(args, file) for file in video_files)
 
 
 if __name__ == "__main__":

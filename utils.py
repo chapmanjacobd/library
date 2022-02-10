@@ -55,7 +55,7 @@ def argparse_log():
     try:
         if os.getpgrp() == os.tcgetpgrp(sys.stdout.fileno()):
             sys.excepthook = ultratb.FormattedTB(
-                mode="Verbose" if args.verbose > 0 else "Context",
+                mode="Verbose" if args.verbose > 1 else "Context",
                 color_scheme="Neutral",
                 call_pdb=1,
                 debugger_cls=TerminalPdb,
