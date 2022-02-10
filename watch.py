@@ -29,16 +29,14 @@ def get_ordinal_video(con, filename):
         testname = newtestname
         similar_videos = singleColumnToList(
             con.execute(
-                """
-    SELECT filename
-    FROM videos
-    WHERE duration IS NOT NULL
-    and size is not null
-    and filename like %(testname)s
-    ORDER BY filename
-    limit 2
-    """,
-                dict(testname=testname + "%"),
+                """SELECT filename FROM videos
+            WHERE duration IS NOT NULL
+                and size is not null
+                and filename like ?
+            ORDER BY filename
+            limit 2
+            """,
+                (testname + "%",),
             ).fetchall(),
             "filename",
         )
