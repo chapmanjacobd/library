@@ -46,7 +46,8 @@ def get_subtitle(args, file):
     if args.youtube and len(yt_video_id) > 0:
         print(len(yt_video_id), yt_video_id)
         cmd(
-            f"yt-dlp --write-sub --write-auto-sub --sub-lang en --sub-format srt/sub/ssa/vtt/ass/best --skip-download https://youtu.be/{yt_video_id[0]}"
+            f"yt-dlp --write-sub --write-auto-sub --sub-lang en --sub-format srt/sub/ssa/vtt/ass/best --skip-download https://youtu.be/{yt_video_id[0]}",
+            cwd=str(Path(file).parent),
         )
 
     if not args.youtube:
