@@ -29,15 +29,16 @@ def get_ordinal_video(con, filename):
         testname = newtestname
         similar_videos = singleColumnToList(
             con.execute(
-                f"""
+                """
     SELECT filename
     FROM videos
     WHERE duration IS NOT NULL
     and size is not null
-    and filename like '{testname}%'
+    and filename like %(testname)s
     ORDER BY filename
     limit 2
     """,
+                dict(testname=testname + "%"),
             ).fetchall(),
             "filename",
         )
@@ -75,10 +76,11 @@ def main():
     END AS size
     FROM videos
     WHERE duration IS NOT NULL
-    {"and filename like '%" +args.search+ "%'" if args.search else ''}
+    {"and filename like %(search)s" if args.search else ''}
     ORDER BY {'random(),' if args.random else ''} seconds_per_byte ASC
     limit 1 OFFSET {args.skip if args.skip else 0}
-    """
+    """,
+            dict(search="%" + (args.search or "") + "%"),
         ).fetchone()
     )["filename"]
 
