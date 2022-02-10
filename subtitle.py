@@ -12,15 +12,25 @@ from utils import cmd, get_video_files
 load_dotenv(dotenv_path=Path(".") / ".env")
 
 
-def is_file_from_ytdl(file):
-    idregx = re.compile(r"-([\w\-_]{11})\..*$|(\[[\w\-_]{11}\])\..*$", flags=re.M)
+def ytdl_ids(file):
+    idregx = re.compile(r"-([\w\-_]{11})\..*$|\[([\w\-_]{11})\]\..*$", flags=re.M)
     file = str(file).strip()
 
-    return len(idregx.findall(file)) > 0
+    yt_ids = idregx.findall(file)
+    if len(yt_ids) > 0:
+        return []
+
+    return list(filter(None, [*yt_ids[0]]))[0]
 
 
 def is_file_with_subtitle(file):
-    return (
+    SUBTITLE_FORMATS = "ass|idx|psb|rar|smi|srt|ssa|ssf|sub|usf|vtt"
+
+    external_sub_files = []
+    for ext in SUBTITLE_FORMATS.split("|"):
+        external_sub_files.append(Path(file).with_suffix("." + ext).exists())
+
+    return any(external_sub_files) or (
         cmd(
             f"ffmpeg -i {quote(file)} -c copy -map 0:s:0 -frames:s 1 -f null - -v 0 -hide_banner", strict=False
         ).returncode
@@ -28,11 +38,17 @@ def is_file_with_subtitle(file):
     )
 
 
-def get_subtitle(file):
-    if is_file_from_ytdl(file):
+def get_subtitle(args, file):
+    if is_file_with_subtitle(file):
         return
 
-    if is_file_with_subtitle(file):
+    yt_video_id = ytdl_ids(file)
+    if len(yt_video_id) > 0:
+        if args.youtube:
+            print(len(yt_video_id), yt_video_id)
+            cmd(
+                f"yt-dlp --write-sub --write-auto-sub --sub-lang en --sub-format srt/sub/ssa/vtt/ass/best --skip-download https://youtu.be/{yt_video_id[0]}"
+            )
         return
 
     print(file)
@@ -45,11 +61,12 @@ def get_subtitle(file):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("paths", nargs="*")
+    parser.add_argument("-yt", "--youtube", action="store_true")
     args = parser.parse_args()
 
     video_files = get_video_files(args)
 
-    Parallel(n_jobs=6)(delayed(get_subtitle)(file) for file in video_files)
+    Parallel(n_jobs=6)(delayed(get_subtitle)(args, file) for file in video_files)
 
 
 if __name__ == "__main__":
