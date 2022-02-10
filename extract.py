@@ -49,6 +49,7 @@ def main():
     parser.add_argument("db")
     parser.add_argument("paths", nargs="*")
     parser.add_argument("-yt", "--youtube", action="store_true")
+    parser.add_argument("-v", "--verbose", action="count", default=0)
     args = parser.parse_args()
     con = sqlite_con(args.db)
 

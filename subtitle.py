@@ -61,6 +61,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("paths", nargs="*")
     parser.add_argument("-yt", "--youtube", action="store_true")
+    parser.add_argument("-v", "--verbose", action="count", default=0)
     args = parser.parse_args()
 
     video_files = get_video_files(args)

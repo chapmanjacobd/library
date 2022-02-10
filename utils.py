@@ -1,26 +1,14 @@
-from glob import glob
+import argparse
 import logging
-from subprocess import PIPE, run
+import os
 import sys
+from functools import wraps
+from glob import glob
+from subprocess import PIPE, run
 from IPython.core import ultratb
-
-
-sys.excepthook = ultratb.FormattedTB(mode="Context", color_scheme="Neutral", call_pdb=1)
-
-
-def cmd(command, strict=True):
-    log = logging.getLogger()
-    r = run(command, capture_output=True, text=True, shell=True)
-    log.debug(r.args)
-    if len(r.stdout.strip()) > 0:
-        log.info(r.stdout.strip())
-    if len(r.stderr.strip()) > 0:
-        log.error(r.stderr.strip())
-    if r.returncode != 0:
-        log.debug(f"ERROR {r.returncode}")
-        if strict:
-            raise Exception(r.returncode)
-    return r
+from IPython.terminal.debugger import TerminalPdb
+from rich import inspect, print
+from rich.logging import RichHandler
 
 
 def get_video_files(args):
@@ -32,3 +20,74 @@ def get_video_files(args):
             video_files.extend(glob(path + "/**/*" + ext, recursive=True))
 
     return video_files
+
+
+def run_once(f):
+    """Runs a function (successfully) only once.
+    The running can be reset by setting the `has_run` attribute to False
+    """
+
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if not f.has_run:
+            result = f(*args, **kwargs)
+            f.has_run = True
+            return result
+
+    f.has_run = False
+    return wrapper
+
+
+@run_once
+def argparse_log():
+    """
+    Creates a logger with interactive python debugger exception handling with verbosity based on logging level when running in the foreground
+
+    When running in GCP or GitHub fixes the small console size of rich
+    """
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument("-v", "--verbose", action="count", default=0)
+    args, _unknown = parser.parse_known_args()
+    print(args)
+
+    console = None
+
+    try:
+        if os.getpgrp() == os.tcgetpgrp(sys.stdout.fileno()):
+            sys.excepthook = ultratb.FormattedTB(
+                mode="Verbose" if args.verbose > 0 else "Context",
+                color_scheme="Neutral",
+                call_pdb=1,
+                debugger_cls=TerminalPdb,
+            )
+        else:
+            pass
+    except:
+        pass
+
+    log_levels = [logging.WARNING, logging.INFO, logging.DEBUG]
+    logging.root.handlers = []  # clear any existing handlers
+    logging.basicConfig(
+        level=log_levels[min(len(log_levels) - 1, args.verbose)],
+        format="%(message)s",
+        datefmt="[%X]",
+        handlers=[RichHandler(console=console)],
+    )
+    return logging.getLogger()
+
+
+log = argparse_log()
+
+
+def cmd(command, strict=True, cwd=None):
+    r = run(command, capture_output=True, text=True, shell=True, cwd=cwd)
+    log.debug(r.args)
+    if len(r.stdout.strip()) > 0:
+        log.info(r.stdout.strip())
+    if len(r.stderr.strip()) > 0:
+        log.error(r.stderr.strip())
+    if r.returncode != 0:
+        log.debug(f"ERROR {r.returncode}")
+        if strict:
+            raise Exception(r.returncode)
+    return r
