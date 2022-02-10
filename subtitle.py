@@ -30,15 +30,14 @@ def is_file_with_subtitle(file):
     SUBTITLE_FORMATS = "ass|idx|psb|rar|smi|srt|ssa|ssf|sub|usf|vtt"
     file = Path(file)
 
-    external_sub_files = []
+    external_sub = []
     for ext in SUBTITLE_FORMATS.split("|"):
-        external_sub_files.append(
-            file.with_suffix("." + ext).exists()
-            or file.with_suffix(".en." + ext).exists()
-            or any(file.parent.glob(file.stem[:-12] + "*." + ext))
-        )
+        glob = False
+        if len(file.stem) > 13:
+            glob = any(file.parent.glob(file.stem[:-12] + "*." + ext))
+        external_sub.append(file.with_suffix("." + ext).exists() or file.with_suffix(".en." + ext).exists() or glob)
 
-    return any(external_sub_files) or (
+    return any(external_sub) or (
         cmd(
             f"ffmpeg -i {quote(str(file))} -c copy -map 0:s:0 -frames:s 1 -f null - -v 0 -hide_banner", strict=False
         ).returncode
