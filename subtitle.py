@@ -13,6 +13,9 @@ load_dotenv(dotenv_path=Path(".") / ".env")
 
 
 def ytdl_id(file) -> str:
+    if len(file) < 15:
+        return ""
+
     idregx = re.compile(r"-([\w\-_]{11})\..*$|\[([\w\-_]{11})\]\..*$", flags=re.M)
     file = str(file).strip()
 
