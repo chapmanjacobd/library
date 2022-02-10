@@ -32,7 +32,7 @@ def is_file_with_subtitle(file):
         external_sub_files.append(
             file.with_suffix("." + ext).exists()
             or file.with_suffix(".en." + ext).exists()
-            or file.parent.glob(file.stem[:-12] + "*" + ext)
+            or any(file.parent.glob(file.stem[:-12] + "*." + ext))
         )
 
     return any(external_sub_files) or (
