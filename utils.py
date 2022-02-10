@@ -40,11 +40,6 @@ def run_once(f):
 
 @run_once
 def argparse_log():
-    """
-    Creates a logger with interactive python debugger exception handling with verbosity based on logging level when running in the foreground
-
-    When running in GCP or GitHub fixes the small console size of rich
-    """
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("-v", "--verbose", action="count", default=0)
     args, _unknown = parser.parse_known_args()
@@ -53,7 +48,7 @@ def argparse_log():
     console = None
 
     try:
-        if os.getpgrp() == os.tcgetpgrp(sys.stdout.fileno()):
+        if args.verbose > 0 and os.getpgrp() == os.tcgetpgrp(sys.stdout.fileno()):
             sys.excepthook = ultratb.FormattedTB(
                 mode="Verbose" if args.verbose > 1 else "Context",
                 color_scheme="Neutral",
