@@ -17,7 +17,7 @@ def ytdl_ids(file):
     file = str(file).strip()
 
     yt_ids = idregx.findall(file)
-    if len(yt_ids) > 0:
+    if len(yt_ids) == 0:
         return []
 
     return list(filter(None, [*yt_ids[0]]))[0]
@@ -66,7 +66,7 @@ def main():
 
     video_files = get_video_files(args)
 
-    Parallel(n_jobs=6)(delayed(get_subtitle)(args, file) for file in video_files)
+    Parallel(n_jobs=1)(delayed(get_subtitle)(args, file) for file in video_files)
 
 
 if __name__ == "__main__":

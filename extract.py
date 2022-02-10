@@ -3,7 +3,6 @@ import json
 import os
 import sys
 from datetime import datetime
-from glob import glob
 from shlex import quote
 import pandas as pd
 from joblib import Parallel, delayed
@@ -49,6 +48,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("db")
     parser.add_argument("paths", nargs="*")
+    parser.add_argument("-yt", "--youtube", action="store_true")
     args = parser.parse_args()
     con = sqlite_con(args.db)
 
@@ -73,7 +73,7 @@ def main():
         method="multi",
     )
 
-    Parallel(n_jobs=5)(delayed(get_subtitle)(file) for file in video_files) or []
+    Parallel(n_jobs=5)(delayed(get_subtitle)(args, file) for file in video_files)
 
 
 if __name__ == "__main__":
