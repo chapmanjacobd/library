@@ -43,19 +43,18 @@ def get_subtitle(args, file):
         return
 
     yt_video_id = ytdl_ids(file)
-    if len(yt_video_id) > 0:
-        if args.youtube:
-            print(len(yt_video_id), yt_video_id)
-            cmd(
-                f"yt-dlp --write-sub --write-auto-sub --sub-lang en --sub-format srt/sub/ssa/vtt/ass/best --skip-download https://youtu.be/{yt_video_id[0]}"
-            )
-        return
+    if args.youtube and len(yt_video_id) > 0:
+        print(len(yt_video_id), yt_video_id)
+        cmd(
+            f"yt-dlp --write-sub --write-auto-sub --sub-lang en --sub-format srt/sub/ssa/vtt/ass/best --skip-download https://youtu.be/{yt_video_id[0]}"
+        )
 
-    print(file)
-    cmd(
-        f"subliminal --opensubtitles {os.getenv('OPEN_SUBTITLE_CREDENTIALS')} download -l en {quote(file)}",
-        # strict=False,
-    )
+    if not args.youtube:
+        print("Downloading subtitles:", file)
+        cmd(
+            f"subliminal --opensubtitles {os.getenv('OPEN_SUBTITLE_CREDENTIALS')} download -l en {quote(file)}",
+            # strict=False,
+        )
 
 
 def main():
@@ -66,7 +65,7 @@ def main():
 
     video_files = get_video_files(args)
 
-    Parallel(n_jobs=1)(delayed(get_subtitle)(args, file) for file in video_files)
+    Parallel(n_jobs=6)(delayed(get_subtitle)(args, file) for file in video_files)
 
 
 if __name__ == "__main__":
