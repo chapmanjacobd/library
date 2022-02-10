@@ -34,7 +34,11 @@ def is_file_with_subtitle(file):
     for ext in SUBTITLE_FORMATS.split("|"):
         glob = False
         if len(file.stem) > 13:
-            glob = any(file.parent.glob(file.stem[:-12] + "*." + ext))
+            try:
+                glob = any(file.parent.glob(file.stem[:-12] + "*." + ext))
+            except:
+                print(file)
+
         external_sub.append(file.with_suffix("." + ext).exists() or file.with_suffix(".en." + ext).exists() or glob)
 
     return any(external_sub) or (
@@ -49,7 +53,12 @@ def get_subtitle(args, file):
     if is_file_with_subtitle(file):
         return
 
-    yt_video_id = ytdl_id(file)
+    try:
+        yt_video_id = ytdl_id(file)
+    except:
+        print(file)
+        return
+
     if args.youtube and len(yt_video_id) > 0:
         print(yt_video_id)
         cmd(
