@@ -12,13 +12,13 @@ from utils import cmd, get_video_files
 load_dotenv(dotenv_path=Path(".") / ".env")
 
 
-def ytdl_ids(file):
+def ytdl_id(file) -> str:
     idregx = re.compile(r"-([\w\-_]{11})\..*$|\[([\w\-_]{11})\]\..*$", flags=re.M)
     file = str(file).strip()
 
     yt_ids = idregx.findall(file)
     if len(yt_ids) == 0:
-        return []
+        return ""
 
     return list(filter(None, [*yt_ids[0]]))[0]
 
@@ -42,12 +42,12 @@ def get_subtitle(args, file):
     if is_file_with_subtitle(file):
         return
 
-    yt_video_id = ytdl_ids(file)
+    yt_video_id = ytdl_id(file)
     if args.youtube and len(yt_video_id) > 0:
-        print(len(yt_video_id), yt_video_id)
+        print(yt_video_id)
         cmd(
-            f"yt-dlp --write-sub --write-auto-sub --sub-lang en --sub-format srt/sub/ssa/vtt/ass/best --skip-download https://youtu.be/{yt_video_id[0]}",
-            cwd=str(Path(file).parent),
+            f"yt-dlp --write-sub --write-auto-sub --sub-lang en --sub-format srt/sub/ssa/vtt/ass/best --skip-download https://youtu.be/{yt_video_id}",
+            cwd=str(Path(file).resolve().parent),
         )
 
     if not args.youtube:
