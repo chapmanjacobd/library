@@ -57,6 +57,7 @@ def main():
     parser.add_argument("-s", "--search")
     parser.add_argument("-S", "--skip")
     parser.add_argument("-O", "--play-in-order", action="store_true")
+    parser.add_argument("-r", "--random", action="store_true")
     args = parser.parse_args()
     con = sqlite_con(args.db)
 
@@ -74,7 +75,7 @@ def main():
     FROM videos
     WHERE duration IS NOT NULL
     {"and filename like '%" +args.search+ "%'" if args.search else ''}
-    ORDER BY seconds_per_byte ASC
+    ORDER BY {'random(),' if args.random else ''} seconds_per_byte ASC
     limit 1 OFFSET {args.skip if args.skip else 0}
     """
         ).fetchone()
