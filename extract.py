@@ -48,6 +48,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("db")
     parser.add_argument("paths", nargs="*")
+    parser.add_argument("-ns", "--no-sub", action="store_true")
     parser.add_argument("-yt", "--youtube", action="store_true")
     parser.add_argument("-v", "--verbose", action="count", default=0)
     args = parser.parse_args()
@@ -74,7 +75,8 @@ def main():
         method="multi",
     )
 
-    Parallel(n_jobs=5)(delayed(get_subtitle)(args, file) for file in video_files)
+    if not args.no_sub:
+        Parallel(n_jobs=5)(delayed(get_subtitle)(args, file) for file in video_files)
 
 
 if __name__ == "__main__":
