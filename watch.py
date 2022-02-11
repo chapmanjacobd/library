@@ -74,11 +74,11 @@ def main():
     END AS size
     FROM videos
     WHERE duration IS NOT NULL
-    {"and filename like %(search)s" if args.search else ''}
+    {"and filename like ?" if args.search else ''}
     ORDER BY {'random(),' if args.random else ''} seconds_per_byte ASC
     limit 1 OFFSET {args.skip if args.skip else 0}
     """,
-            dict(search="%" + (args.search or "") + "%"),
+            ("%" + (args.search or "") + "%",),
         ).fetchone()
     )["filename"]
 
