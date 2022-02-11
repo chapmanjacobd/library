@@ -43,7 +43,8 @@ def is_file_with_subtitle(file):
 
     return any(external_sub) or (
         cmd(
-            f"ffmpeg -i {quote(str(file))} -c copy -map 0:s:0 -frames:s 1 -f null - -v 0 -hide_banner", strict=False
+            f"</dev/null ffmpeg -i {quote(str(file))} -c copy -map 0:s:0 -frames:s 1 -f null - -v 0 -hide_banner",
+            strict=False,
         ).returncode
         == 0
     )
