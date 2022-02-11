@@ -61,6 +61,10 @@ def main():
     args = parser.parse_args()
     con = sqlite_con(args.db)
 
+    bindings = []
+    if args.search:
+        bindings.append("%" + args.search + "%")
+
     next_video = dict(
         con.execute(
             f"""
@@ -78,7 +82,7 @@ def main():
     ORDER BY {'random(),' if args.random else ''} seconds_per_byte ASC
     limit 1 OFFSET {args.skip if args.skip else 0}
     """,
-            ("%" + (args.search or "") + "%",),
+            bindings,
         ).fetchone()
     )["filename"]
 
