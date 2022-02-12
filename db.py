@@ -1,4 +1,5 @@
 import sqlite3
+
 from rich.traceback import install
 
 install()

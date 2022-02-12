@@ -4,9 +4,11 @@ import os
 import sys
 from datetime import datetime
 from shlex import quote
+
 import pandas as pd
 from joblib import Parallel, delayed
 from rich import inspect, print
+
 from db import fetchall_dict, sqlite_con
 from subtitle import get_subtitle
 from utils import cmd, get_video_files
