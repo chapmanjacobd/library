@@ -3,8 +3,10 @@ import os
 import re
 from pathlib import Path
 from shlex import quote
+
 from rich import inspect, print
 from rich.prompt import Confirm
+
 from db import singleColumnToList, sqlite_con
 from utils import cmd
 

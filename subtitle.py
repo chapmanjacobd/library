@@ -3,10 +3,12 @@ import os
 import re
 from pathlib import Path
 from shlex import quote
+
 import pandas as pd
 from dotenv import load_dotenv
 from joblib import Parallel, delayed
 from rich import inspect, print
+
 from utils import cmd, get_video_files
 
 load_dotenv(dotenv_path=Path(".") / ".env")
