@@ -21,7 +21,7 @@ def get_ordinal_video(con, filename):
             remove_chars_i += 1
 
         newtestname = testname[: -len(remove_chars)]
-        print("Trying", newtestname)
+        print(f"Matches for '{newtestname}':")
 
         if testname == "" or newtestname == testname:
             return filename
@@ -40,7 +40,7 @@ def get_ordinal_video(con, filename):
             ).fetchall(),
             "filename",
         )
-        print("Found", similar_videos)
+        print(similar_videos)
 
         commonprefix = os.path.commonprefix(similar_videos)
         if len(Path(commonprefix).name) < 5:
