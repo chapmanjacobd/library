@@ -46,8 +46,6 @@ def argparse_log():
     args, _unknown = parser.parse_known_args()
     print(args)
 
-    console = None
-
     try:
         if args.verbose > 0 and os.getpgrp() == os.tcgetpgrp(sys.stdout.fileno()):
             sys.excepthook = ultratb.FormattedTB(
@@ -67,7 +65,7 @@ def argparse_log():
         level=log_levels[min(len(log_levels) - 1, args.verbose)],
         format="%(message)s",
         datefmt="[%X]",
-        handlers=[RichHandler(console=console)],
+        handlers=[RichHandler()],
     )
     return logging.getLogger()
 
