@@ -104,7 +104,7 @@ def main():
         else:
             cmd(f"trash-put {quote_next_video}")
 
-    con.execute("delete from videos where filename = ?", (next_video,))
+    con.execute("delete from videos where filename = ?", (str(next_video),))
     con.commit()
 
 
