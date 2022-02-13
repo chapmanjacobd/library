@@ -11,9 +11,9 @@ from db import singleColumnToList, sqlite_con
 from utils import cmd
 
 
-def get_ordinal_video(con, filename):
+def get_ordinal_video(con, args, filename: Path):
     similar_videos = []
-    testname = filename
+    testname = str(filename)
     while len(similar_videos) < 2:
         remove_groups = re.split(r"([\W_]+)", testname)
         remove_chars = ""
@@ -38,7 +38,7 @@ def get_ordinal_video(con, filename):
             ORDER BY filename
             limit 2
             """,
-                (testname + "%",),
+                ("%" + testname + "%",),
             ).fetchall(),
             "filename",
         )
@@ -47,6 +47,9 @@ def get_ordinal_video(con, filename):
         commonprefix = os.path.commonprefix(similar_videos)
         if len(Path(commonprefix).name) < 5:
             return filename
+
+        if args.last:
+            return similar_videos[0]
 
     return similar_videos[0]
 
@@ -57,6 +60,7 @@ def main():
     parser.add_argument("-keep", "--keep", action="store_true")
     parser.add_argument("-s", "--search")
     parser.add_argument("-S", "--skip")
+    parser.add_argument("-1", "--last", action="store_true")
     parser.add_argument("-O", "--play-in-order", action="store_true")
     parser.add_argument("-r", "--random", action="store_true")
     parser.add_argument("-v", "--verbose", action="count", default=0)
@@ -90,7 +94,7 @@ def main():
 
     next_video = Path(next_video).resolve()
     if args.play_in_order:
-        next_video = Path(get_ordinal_video(con, next_video.stem))
+        next_video = Path(get_ordinal_video(con, args, next_video))
 
     print(next_video)
 
