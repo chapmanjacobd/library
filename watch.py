@@ -88,18 +88,21 @@ def main():
         ).fetchone()
     )["filename"]
 
+    next_video = Path(next_video).resolve()
     if args.play_in_order:
-        next_video = get_ordinal_video(con, next_video)
+        next_video = Path(get_ordinal_video(con, next_video.stem))
 
     print(next_video)
 
-    if os.path.exists(next_video) and "/keep/" not in next_video:
-        cmd(f"mpv {quote(next_video)} --fs --force-window=yes --terminal=no")
+    if next_video.exists() and "/keep/" not in str(next_video):
+        quote_next_video = quote(str(next_video))
+        cmd(f"mpv {quote_next_video} --fs --force-window=yes --terminal=no")
+
         if args.keep and Confirm.ask("Keep?", default=False):
             keep_path = str(Path(next_video).parent / "keep/")
-            cmd(f"mkdir -p {keep_path} && mv {quote(next_video)} {quote(keep_path)}")
+            cmd(f"mkdir -p {keep_path} && mv {quote_next_video} {quote(keep_path)}")
         else:
-            cmd(f"trash-put {quote(next_video)}")
+            cmd(f"trash-put {quote_next_video}")
 
     con.execute("delete from videos where filename = ?", (next_video,))
     con.commit()
