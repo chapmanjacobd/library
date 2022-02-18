@@ -37,10 +37,15 @@ def extract_metadata(file):
     if "size" in ffprobe["format"]:
         ffprobe["format"]["size"] = int(ffprobe["format"]["size"])
 
+    if blocks_allocated == 0:
+        sparseness=0
+    else:
+        sparseness=ffprobe["format"]["size"] / blocks_allocated
+
     return dict(
         **ffprobe["format"],
         # streams=ffprobe["streams"],
-        sparseness=ffprobe["format"]["size"] / blocks_allocated,
+        sparseness=sparseness,
         time_created=datetime.fromtimestamp(stat.st_ctime),
         time_modified=datetime.fromtimestamp(stat.st_mtime),
     )
