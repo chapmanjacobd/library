@@ -62,7 +62,10 @@ def get_subtitle(args, file):
         print(file)
         return
 
-    if len(yt_video_id) > 0:
+    run_subliminal = not args.youtube_only
+    run_youtube = not args.subliminal_only
+
+    if run_youtube and len(yt_video_id) > 0:
         print(yt_video_id)
         cmd(
             f"yt-dlp --write-sub --write-auto-sub --sub-lang en --sub-format srt/sub/ssa/vtt/ass/best --skip-download https://youtu.be/{yt_video_id}",
@@ -70,7 +73,7 @@ def get_subtitle(args, file):
             strict=False,
         )
 
-    if not args.youtube_only:
+    if run_subliminal:
         print("Downloading subtitles:", file)
         cmd(
             f"subliminal --opensubtitles {os.getenv('OPEN_SUBTITLE_CREDENTIALS')} download -l en {quote(file)}",
@@ -82,6 +85,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("paths", nargs="*")
     parser.add_argument("-yt", "--youtube-only", action="store_true")
+    parser.add_argument("-sl", "--subliminal-only", action="store_true")
     parser.add_argument("-v", "--verbose", action="count", default=0)
     args = parser.parse_args()
 

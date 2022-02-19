@@ -98,9 +98,17 @@ def main():
 
     print(next_video)
 
+    def get_mpv():
+        is_WSL = cmd('grep -qEi "(Microsoft|WSL)" /proc/version &> /dev/null').returncode == 0
+        if is_WSL:
+            return "powershell.exe mpv.exe"
+
+        return "mpv"
+
     if next_video.exists() and "/keep/" not in str(next_video):
         quote_next_video = quote(str(next_video))
-        cmd(f"mpv {quote_next_video} --fs --force-window=yes --terminal=no")
+
+        cmd(f"{get_mpv()} {quote_next_video} --fs --force-window=yes --terminal=no")
 
         if args.keep and Confirm.ask("Keep?", default=False):
             keep_path = str(Path(next_video).parent / "keep/")
