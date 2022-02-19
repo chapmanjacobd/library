@@ -14,21 +14,22 @@ from subtitle import get_subtitle
 from utils import cmd, get_video_files
 
 
-def extract_metadata(file):
+def extract_metadata(f):
     try:
         ffprobe = json.loads(
-            cmd(f"ffprobe -loglevel quiet -print_format json=compact=1 -show_entries format {quote(file)}").stdout
+            cmd(f"ffprobe -loglevel quiet -print_format json=compact=1 -show_entries format {quote(f)}").stdout
         )
     except:
-        print(f"Failed reading {file}", file=sys.stderr)
+        cmd(f"trash-put {quote(f)}")
+        print(f"Failed reading {f}", file=sys.stderr)
         return
 
     if not "format" in ffprobe:
-        print(f"Failed reading format {file}", file=sys.stderr)
+        print(f"Failed reading format {f}", file=sys.stderr)
         print(ffprobe)
         return
 
-    stat = os.stat(file)
+    stat = os.stat(f)
     blocks_allocated = stat.st_blocks * 512
 
     if "tags" in ffprobe["format"]:
