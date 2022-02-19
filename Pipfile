@@ -10,6 +10,7 @@ pandas = "*"
 ipython = "*"
 black = "*"
 python-dotenv = "*"
+subliminal = "*"
 
 [dev-packages]
 black = "*"
