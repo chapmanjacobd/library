@@ -69,7 +69,7 @@ def get_subtitle(args, file):
         print(yt_video_id)
         cmd(
             f"yt-dlp --write-sub --write-auto-sub --sub-lang en --sub-format srt/sub/ssa/vtt/ass/best --skip-download https://youtu.be/{yt_video_id}",
-            cwd=str(Path(file).resolve().parent),
+            cwd=str(Path(file).parent),
             strict=False,
         )
 

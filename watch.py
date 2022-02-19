@@ -104,7 +104,7 @@ def main():
         ).fetchone()
     )["filename"]
 
-    next_video = Path(next_video).resolve()
+    next_video = Path(next_video)
     if args.play_in_order:
         next_video = Path(get_ordinal_video(con, args, next_video))
 
