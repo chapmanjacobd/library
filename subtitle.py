@@ -4,7 +4,6 @@ import re
 from pathlib import Path
 from shlex import quote
 
-import pandas as pd
 from dotenv import load_dotenv
 from joblib import Parallel, delayed
 from rich import inspect, print
@@ -14,14 +13,14 @@ from utils import cmd, get_video_files
 load_dotenv(dotenv_path=Path(".") / ".env")
 
 
-def ytdl_id(file) -> str:
+def youtube_dl_id(file) -> str:
     if len(file) < 15:
         return ""
-    # rename old ytdl format to new one: cargo install renamer; fd -tf . -x renamer '\-([\w\-_]{11})\.= [$1].' {}
-    idregx = re.compile(r"-([\w\-_]{11})\..*$|\[([\w\-_]{11})\]\..*$", flags=re.M)
+    # rename old youtube_dl format to new one: cargo install renamer; fd -tf . -x renamer '\-([\w\-_]{11})\.= [$1].' {}
+    yt_id_regex = re.compile(r"-([\w\-_]{11})\..*$|\[([\w\-_]{11})\]\..*$", flags=re.M)
     file = str(file).strip()
 
-    yt_ids = idregx.findall(file)
+    yt_ids = yt_id_regex.findall(file)
     if len(yt_ids) == 0:
         return ""
 
@@ -57,7 +56,7 @@ def get_subtitle(args, file):
         return
 
     try:
-        yt_video_id = ytdl_id(file)
+        yt_video_id = youtube_dl_id(file)
     except:
         print(file)
         return

@@ -28,10 +28,6 @@ def get_video_files(args):
 
 
 def run_once(f):
-    """Runs a function (successfully) only once.
-    The running can be reset by setting the `has_run` attribute to False
-    """
-
     @wraps(f)
     def wrapper(*args, **kwargs):
         if not f.has_run:
