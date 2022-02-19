@@ -8,7 +8,7 @@ from rich import inspect, print
 from rich.prompt import Confirm
 
 from db import singleColumnToList, sqlite_con
-from utils import cmd
+from utils import cmd, log
 
 
 def get_ordinal_video(con, args, filename: Path):
@@ -56,13 +56,14 @@ def get_ordinal_video(con, args, filename: Path):
 
 def play_mpv(video_path: Path):
     mpv_options = "--fs --force-window=yes --terminal=no"
-    quote_next_video = quote(str(video_path))
+    quoted_next_video = quote(str(video_path))
+
     is_WSL = cmd('grep -qEi "(Microsoft|WSL)" /proc/version').returncode == 0
     if is_WSL:
-        windows_path = cmd(f"wslpath -w {quote_next_video}").stdout
-        return f"mpv.exe {mpv_options} '{windows_path}'"
+        windows_path = cmd(f"wslpath -w {quoted_next_video}").stdout.strip()
+        return f'mpv.exe {mpv_options} "{windows_path}"'
 
-    return f"mpv {mpv_options} {quote_next_video}"
+    return f"mpv {mpv_options} {quoted_next_video}"
 
 
 def main():
@@ -113,12 +114,12 @@ def main():
 
         cmd(play_mpv(next_video))
 
-        quote_next_video = quote(str(next_video))
+        quoted_next_video = quote(str(next_video))
         if args.keep and Confirm.ask("Keep?", default=False):
             keep_path = str(Path(next_video).parent / "keep/")
-            cmd(f"mkdir -p {keep_path} && mv {quote_next_video} {quote(keep_path)}")
+            cmd(f"mkdir -p {keep_path} && mv {quoted_next_video} {quote(keep_path)}")
         else:
-            cmd(f"trash-put {quote_next_video}")
+            cmd(f"trash-put {quoted_next_video}")
 
     con.execute("delete from videos where filename = ?", (str(next_video),))
     con.commit()

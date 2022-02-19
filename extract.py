@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+from pathlib import Path
 import sys
 from datetime import datetime
 from shlex import quote
@@ -15,6 +16,8 @@ from utils import cmd, get_video_files
 
 
 def extract_metadata(file):
+    file = Path(file).resolve()
+
     try:
         ffprobe = json.loads(
             cmd(f"ffprobe -loglevel quiet -print_format json=compact=1 -show_entries format {quote(file)}").stdout
@@ -38,9 +41,9 @@ def extract_metadata(file):
         ffprobe["format"]["size"] = int(ffprobe["format"]["size"])
 
     if blocks_allocated == 0:
-        sparseness=0
+        sparseness = 0
     else:
-        sparseness=ffprobe["format"]["size"] / blocks_allocated
+        sparseness = ffprobe["format"]["size"] / blocks_allocated
 
     return dict(
         **ffprobe["format"],
