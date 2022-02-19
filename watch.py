@@ -54,6 +54,17 @@ def get_ordinal_video(con, args, filename: Path):
     return similar_videos[0]
 
 
+def play_mpv(video_path: Path):
+    mpv_options = "--fs --force-window=yes --terminal=no"
+    quote_next_video = quote(str(video_path))
+    is_WSL = cmd('grep -qEi "(Microsoft|WSL)" /proc/version').returncode == 0
+    if is_WSL:
+        windows_path = cmd(f"wslpath -w {quote_next_video}").stdout
+        return f"mpv.exe {mpv_options} '{windows_path}'"
+
+    return f"mpv {mpv_options} {quote_next_video}"
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("db")
@@ -98,20 +109,11 @@ def main():
 
     print(next_video)
 
-    def play_mpv():
-        mpv_options = "--fs --force-window=yes --terminal=no"
-        quote_next_video = quote(str(next_video))
-        is_WSL = cmd('grep -qEi "(Microsoft|WSL)" /proc/version').returncode == 0
-        if is_WSL:
-            windows_path = cmd(f"wslpath -w {quote_next_video}").stdout
-            return f"mpv.exe {mpv_options} '{windows_path}'"
-
-        return f"mpv {mpv_options} {quote_next_video}"
-
     if next_video.exists() and "/keep/" not in str(next_video):
 
         cmd(play_mpv(next_video))
 
+        quote_next_video = quote(str(next_video))
         if args.keep and Confirm.ask("Keep?", default=False):
             keep_path = str(Path(next_video).parent / "keep/")
             cmd(f"mkdir -p {keep_path} && mv {quote_next_video} {quote(keep_path)}")
