@@ -22,7 +22,7 @@ def get_video_files(args):
     for path in args.paths:
         for f in Path(path).resolve().rglob("*"):
             if f.is_file() and (f.suffix.lower()[1:] in FFMPEG_DEMUXERS):
-                video_files.append(f)
+                video_files.append(str(f))
 
     return video_files
 
