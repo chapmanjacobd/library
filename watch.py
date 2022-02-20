@@ -57,7 +57,7 @@ def play_mpv(video_path: Path):
     mpv_options = "--fs --force-window=yes --terminal=no"
     quoted_next_video = quote(str(video_path))
 
-    is_WSL = cmd('grep -qEi "(Microsoft|WSL)" /proc/version').returncode == 0
+    is_WSL = cmd('grep -qEi "(Microsoft|WSL)" /proc/version',strict=False).returncode == 0
     if is_WSL:
         windows_path = cmd(f"wslpath -w {quoted_next_video}").stdout.strip()
         return f'mpv.exe {mpv_options} "{windows_path}"'
