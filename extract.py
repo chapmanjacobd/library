@@ -74,7 +74,7 @@ def main():
     print(video_files)
 
     metadata = Parallel(n_jobs=-1)(delayed(extract_metadata)(file) for file in video_files) or []
-    pd.DataFrame(list(filter(None, metadata))).to_sql(
+    pd.DataFrame(list(filter(None, metadata))).apply(pd.to_numeric, errors="ignore").convert_dtypes().to_sql(
         "videos",
         con=con,
         if_exists="append",

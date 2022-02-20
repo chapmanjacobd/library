@@ -31,9 +31,8 @@ def get_ordinal_video(con, args, filename: Path):
         testname = newtestname
         similar_videos = singleColumnToList(
             con.execute(
-                """SELECT filename FROM videos
-            WHERE duration IS NOT NULL
-                and size is not null
+                f"""SELECT filename FROM videos
+            WHERE {args.sql_filter}
                 and filename like ?
             ORDER BY filename
             limit 2
@@ -72,6 +71,13 @@ def main():
     parser.add_argument("-keep", "--keep", action="store_true")
     parser.add_argument("-s", "--search")
     parser.add_argument("-S", "--skip")
+    parser.add_argument("-d", "--duration", type=int)
+    parser.add_argument("-dm", "--min-duration", type=int)
+    parser.add_argument("-dM", "--max-duration", type=int)
+    parser.add_argument("-sz", "--size", type=int)
+    parser.add_argument("-szm", "--min-size", type=int)
+    parser.add_argument("-szM", "--max-size", type=int)
+    parser.add_argument("-mv", "--move")
     parser.add_argument("-1", "--last", action="store_true")
     parser.add_argument("-O", "--play-in-order", action="store_true")
     parser.add_argument("-r", "--random", action="store_true")
@@ -82,6 +88,16 @@ def main():
     bindings = []
     if args.search:
         bindings.append("%" + args.search + "%")
+
+    args.sql_filter = f"""duration IS NOT NULL and size IS NOT NULL
+    {f'and duration >= {args.min_duration}' if args.min_duration else ''}
+    {f'and {args.max_duration} >= duration' if args.max_duration else ''}
+    {f'and {args.duration + (args.duration /10)} >= duration and duration >= {args.duration - (args.duration /10)}' if args.duration else ''}
+
+    {f'and size >= {args.min_size}' if args.min_size else ''}
+    {f'and {args.max_size} >= size' if args.max_size else ''}
+    {f'and {args.size + (args.size /10)} >= size and size >= {args.size - (args.size /10)}' if args.size else ''}
+    """
 
     next_video = dict(
         con.execute(
@@ -95,7 +111,7 @@ def main():
         WHEN size >= (1024 * 1024 * 1024 * 1024) THEN (size / (1024 * 1024 * 1024 * 1024)) || 'TB'
     END AS size
     FROM videos
-    WHERE duration IS NOT NULL
+    WHERE {args.sql_filter}
     {"and filename like ?" if args.search else ''}
     ORDER BY {'random(),' if args.random else ''} seconds_per_byte ASC
     limit 1 OFFSET {args.skip if args.skip else 0}
@@ -111,15 +127,19 @@ def main():
     print(next_video)
 
     if next_video.exists() and "/keep/" not in str(next_video):
-
-        cmd(play_mpv(next_video))
-
         quoted_next_video = quote(str(next_video))
-        if args.keep and Confirm.ask("Keep?", default=False):
-            keep_path = str(Path(next_video).parent / "keep/")
-            cmd(f"mkdir -p {keep_path} && mv {quoted_next_video} {quote(keep_path)}")
+
+        if args.move:
+            keep_path = str(Path(args.move))
+            cmd(f"mv {quoted_next_video} {quote(keep_path)}")
         else:
-            cmd(f"trash-put {quoted_next_video}")
+            cmd(play_mpv(next_video))
+
+            if args.keep and Confirm.ask("Keep?", default=False):
+                keep_path = str(Path(next_video).parent / "keep/")
+                cmd(f"mkdir -p {keep_path} && mv {quoted_next_video} {quote(keep_path)}")
+            else:
+                cmd(f"trash-put {quoted_next_video}")
 
     con.execute("delete from videos where filename = ?", (str(next_video),))
     con.commit()
