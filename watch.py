@@ -87,7 +87,7 @@ def play_mpv(args, video_path: Path):
     is_WSL = cmd('grep -qEi "(Microsoft|WSL)" /proc/version', strict=False).returncode == 0
     if is_WSL:
         windows_path = cmd(f"wslpath -w {quoted_next_video}").stdout.strip()
-        cmd(f'mpv.exe {mpv_options} "{windows_path}"')
+        cmd(f'mpv.com {mpv_options} "{windows_path}"')
 
     cmd(f"mpv {mpv_options} {quoted_next_video}")
 
