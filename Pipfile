@@ -8,7 +8,6 @@ joblib = "*"
 rich = "*"
 pandas = "*"
 ipython = "*"
-black = "*"
 python-dotenv = "*"
 subliminal = "*"
 catt = "*"
@@ -16,6 +15,7 @@ sqlite-utils = "*"
 
 [dev-packages]
 black = "*"
+pylint = "*"
 
 [requires]
 python_version = "3.10"
