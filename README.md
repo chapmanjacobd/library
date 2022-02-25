@@ -70,7 +70,7 @@ options:
 ## Originally written to answer this question:
 
 ```
-SELECT cast( sum(duration)/60/60 AS int ) video_hours
+SELECT sum(duration)/60/60 as video_hours
 FROM videos v
 ```
 
