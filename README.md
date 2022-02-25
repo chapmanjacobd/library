@@ -1,4 +1,4 @@
-# video.db
+# lb: media library
 
 Requires ffmpeg
 
