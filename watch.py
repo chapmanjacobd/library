@@ -1,4 +1,5 @@
 import argparse
+import json
 import os
 import re
 from pathlib import Path
@@ -9,6 +10,7 @@ from rich.prompt import Confirm
 
 from db import singleColumnToList, sqlite_con
 from utils import cmd, log
+import sqlite_utils
 
 
 def get_ordinal_video(con, args, filename: Path):
@@ -23,7 +25,7 @@ def get_ordinal_video(con, args, filename: Path):
             remove_chars_i += 1
 
         newtestname = testname[: -len(remove_chars)]
-        print(f"Matches for '{newtestname}':")
+        log.debug(f"Matches for '{newtestname}':")
 
         if testname == "" or newtestname == testname:
             return filename
@@ -41,7 +43,7 @@ def get_ordinal_video(con, args, filename: Path):
             ).fetchall(),
             "filename",
         )
-        print(similar_videos)
+        log.info(similar_videos)
 
         commonprefix = os.path.commonprefix(similar_videos)
         if len(Path(commonprefix).name) < 5:
@@ -53,22 +55,49 @@ def get_ordinal_video(con, args, filename: Path):
     return similar_videos[0]
 
 
-def play_mpv(video_path: Path):
+def play_mpv(args, video_path: Path):
     mpv_options = "--fs --force-window=yes --terminal=no"
     quoted_next_video = quote(str(video_path))
 
-    is_WSL = cmd('grep -qEi "(Microsoft|WSL)" /proc/version',strict=False).returncode == 0
+    if args.chromecast:
+        subs = json.loads(
+            cmd(f"ffprobe -loglevel error -select_streams s -show_entries stream -of json {quoted_next_video}").stdout
+        )["streams"]
+        if len(subs) == 0:
+            cmd(f"catt -d '{args.chromecast_device}' cast {quoted_next_video}")
+
+        db = sqlite_utils.Database(memory=True)
+        db["subs"].insert_all(subs, pk="index")
+        subtitle_index = db.execute_returning_dicts(
+            """select "index" from subs
+            order by
+                  lower(tags) like "%eng%" desc
+                , lower(tags) like "%dialog%" desc
+            limit 1"""
+        )[0]["index"]
+
+        subtitles_file = cmd("mktemp --suffix=.vtt --dry-run").stdout.strip()
+        cmd(
+            f'ffmpeg -loglevel warning -txt_format text -i {quoted_next_video} -map "0:{subtitle_index}" "{subtitles_file}"'
+        )
+        cmd(f"catt -d '{args.chromecast_device}' cast {quoted_next_video} --subtitles {subtitles_file}")
+
+        # end of chromecast
+
+    is_WSL = cmd('grep -qEi "(Microsoft|WSL)" /proc/version', strict=False).returncode == 0
     if is_WSL:
         windows_path = cmd(f"wslpath -w {quoted_next_video}").stdout.strip()
-        return f'mpv.exe {mpv_options} "{windows_path}"'
+        cmd(f'mpv.exe {mpv_options} "{windows_path}"')
 
-    return f"mpv {mpv_options} {quoted_next_video}"
+    cmd(f"mpv {mpv_options} {quoted_next_video}")
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("db")
     parser.add_argument("-keep", "--keep", action="store_true")
+    parser.add_argument("-cast", "--chromecast", action="store_true")
+    parser.add_argument("-cast-to", "--chromecast-device", default="Living Room TV")
     parser.add_argument("-s", "--search")
     parser.add_argument("-S", "--skip")
     parser.add_argument("-d", "--duration", type=int)
@@ -133,7 +162,7 @@ def main():
             keep_path = str(Path(args.move))
             cmd(f"mv {quoted_next_video} {quote(keep_path)}")
         else:
-            cmd(play_mpv(next_video))
+            play_mpv(args, next_video)
 
             if args.keep and Confirm.ask("Keep?", default=False):
                 keep_path = str(Path(next_video).parent / "keep/")

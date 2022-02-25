@@ -62,7 +62,7 @@ def get_subtitle(args, file):
         return
 
     run_subliminal = not args.youtube_only
-    run_youtube = not args.subliminal_only
+    run_youtube = args.youtube_only  # for new videos I already have yt-dlp get the subtitle
 
     if run_youtube and len(yt_video_id) > 0:
         print(yt_video_id)

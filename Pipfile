@@ -11,6 +11,8 @@ ipython = "*"
 black = "*"
 python-dotenv = "*"
 subliminal = "*"
+catt = "*"
+sqlite-utils = "*"
 
 [dev-packages]
 black = "*"
