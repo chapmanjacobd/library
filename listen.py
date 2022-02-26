@@ -48,17 +48,20 @@ end
 # cmd.exe /C mpv.com --input-ipc-server=\\\\.\\pipe\\mpv_socket -- "D:\80_Now_Listening\1-01_.opus"
 # cmd.exe "/C echo quit >\\\\.\\pipe\\mpv_socket"
 
+# Alt+Ctrl+[ set speed 1.0
+# cmd.exe "/C set speed 1.0 >\\\\.\\pipe\\mpv_socket"
+
+# Alt+Ctrl+[ set speed 1.0
+# Alt+[ multiply speed 1/1.1
+# Alt+] multiply speed 1.1
+
 
 def play_mpv(args, video_path: Path):
     mpv_options = "--force-window=yes"
     quoted_next_video = quote(str(video_path))
 
     if args.chromecast:
-        subtitles_file = cmd("mktemp --suffix=.vtt --dry-run").stdout.strip()
-        cmd(
-            f'ffmpeg -loglevel warning -txt_format text -i {quoted_next_video} -map "0:{subtitle_index}" "{subtitles_file}"'
-        )
-        cmd(f"catt -d '{args.chromecast_device}' cast {quoted_next_video} --subtitles {subtitles_file}")
+        cmd(f"catt -d '{args.chromecast_device}' cast {quoted_next_video}")
 
         # end of chromecast
 

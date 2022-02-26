@@ -18,6 +18,106 @@ from utils import cmd, get_video_files
 import fuckit
 
 
+def parse_mutagen_tags(m, tiny_tags):
+    def c(l: list):
+        if l is None or len(l) == 0:
+            return None
+
+        no_comma = sum([s.split(",") for s in l], [])
+        no_semicol = sum([s.split(";") for s in no_comma], [])
+        no_unknown = [x for x in no_semicol if x.lower() not in ["unknown", ""]]
+        return ";".join(no_unknown)
+
+    def ss(idx, l):
+        if l is None:
+            return None
+        try:
+            return l[idx]
+        except IndexError:
+            return None
+
+    return {
+        "albumgenre": c(m.tags.get("albumgenre")),
+        "albumgrouping": c(m.tags.get("albumgrouping")),
+        "mood": c(
+            list(
+                set(
+                    (m.tags.get("albummood") or [])
+                    + (m.tags.get("MusicMatch_Situation") or [])
+                    + (m.tags.get("Songs-DB_Occasion") or [])
+                )
+            )
+        ),
+        "genre": c(list(set((m.tags.get("genre") or []) + list(filter(None, [tiny_tags["genre"]]))))),
+        "year": ss(
+            0,
+            ss(
+                0,
+                list(
+                    filter(
+                        None,
+                        [
+                            m.tags.get("originalyear"),
+                            m.tags.get("TDOR"),
+                            m.tags.get("TORY"),
+                            m.tags.get("date"),
+                            m.tags.get("TDRC"),
+                            m.tags.get("TDRL"),
+                        ],
+                    )
+                ),
+            ),
+        ),
+        "bpm": ss(
+            0,
+            ss(
+                0,
+                list(
+                    filter(
+                        None,
+                        [m.tags.get("fBPM"), m.tags.get("bpm_accuracy")],
+                    )
+                ),
+            ),
+        ),
+        "key": ss(
+            0,
+            ss(
+                0,
+                list(
+                    filter(
+                        None,
+                        [
+                            m.tags.get("TIT1"),
+                            m.tags.get("key_accuracy"),
+                            m.tags.get("TKEY"),
+                        ],
+                    )
+                ),
+            ),
+        ),
+        "gain": ss(0, m.tags.get("replaygain_track_gain")),
+        "time": c(ss(0, m.tags.get("time_signature"))),
+        "decade": ss(0, m.tags.get("Songs-DB_Custom1")),
+        "categories": ss(0, m.tags.get("Songs-DB_Custom2")),
+        "city": ss(0, m.tags.get("Songs-DB_Custom3")),
+        "country": c(
+            ss(
+                0,
+                list(
+                    filter(
+                        None,
+                        [
+                            m.tags.get("Songs-DB_Custom4"),
+                            m.tags.get("MusicBrainz Album Release Country"),
+                        ],
+                    )
+                ),
+            )
+        ),
+    }
+
+
 def extract_metadata(args, f):
     try:
         ffprobe = json.loads(
@@ -63,95 +163,12 @@ def extract_metadata(args, f):
         except:
             return media
 
-        def c(l: list):
-            if l is None or len(l) == 0:
-                return None
-
-            no_comma = sum([s.split(",") for s in l], [])
-            no_semicol = sum([s.split(";") for s in no_comma], [])
-            no_unknown = [x for x in no_semicol if x.lower() not in ["unknown", ""]]
-            return ";".join(no_unknown)
-
-        def ss(idx, l):
-            if l is None:
-                return None
-            try:
-                return l[idx]
-            except IndexError:
-                return None
+        mutagen_tags_p = parse_mutagen_tags(mutagen_tags, tiny_tags)
 
         audio = {
             **media,
             **tiny_tags,
-            "albumgenre": c(mutagen_tags.tags.get("albumgenre")),
-            "albumgrouping": c(mutagen_tags.tags.get("albumgrouping")),
-            "mood": c(
-                list(
-                    set(
-                        (mutagen_tags.tags.get("albummood") or [])
-                        + (mutagen_tags.tags.get("MusicMatch_Situation") or [])
-                        + (mutagen_tags.tags.get("Songs-DB_Occasion") or [])
-                    )
-                )
-            ),
-            "genre": c(list(set((mutagen_tags.tags.get("genre") or []) + list(filter(None, [tiny_tags["genre"]]))))),
-            "year": ss(
-                0,
-                list(
-                    filter(
-                        None,
-                        [
-                            mutagen_tags.tags.get("originalyear"),
-                            mutagen_tags.tags.get("TDOR"),
-                            mutagen_tags.tags.get("TORY"),
-                            mutagen_tags.tags.get("date"),
-                            mutagen_tags.tags.get("TDRC"),
-                            mutagen_tags.tags.get("TDRL"),
-                        ],
-                    )
-                ),
-            ),
-            "bpm": ss(
-                0,
-                list(
-                    filter(
-                        None,
-                        [mutagen_tags.tags.get("fBPM"), mutagen_tags.tags.get("bpm_accuracy")],
-                    )
-                ),
-            ),
-            "key": ss(
-                0,
-                list(
-                    filter(
-                        None,
-                        [
-                            mutagen_tags.tags.get("TIT1"),
-                            mutagen_tags.tags.get("key_accuracy"),
-                            mutagen_tags.tags.get("TKEY"),
-                        ],
-                    )
-                ),
-            ),
-            "gain": ss(0, mutagen_tags.tags.get("replaygain_track_gain")),
-            "time": c(ss(0, mutagen_tags.tags.get("time_signature"))),
-            "decade": ss(0, mutagen_tags.tags.get("Songs-DB_Custom1")),
-            "categories": ss(0, mutagen_tags.tags.get("Songs-DB_Custom2")),
-            "city": ss(0, mutagen_tags.tags.get("Songs-DB_Custom3")),
-            "country": c(
-                ss(
-                    0,
-                    list(
-                        filter(
-                            None,
-                            [
-                                mutagen_tags.tags.get("Songs-DB_Custom4"),
-                                mutagen_tags.tags.get("MusicBrainz Album Release Country"),
-                            ],
-                        )
-                    ),
-                )
-            ),
+            **mutagen_tags_p,
         }
         # print(audio)
 
