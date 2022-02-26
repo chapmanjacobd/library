@@ -71,7 +71,7 @@ options:
 
 ```
 SELECT sum(duration)/60/60 as video_hours
-FROM videos v
+FROM media v
 ```
 
 but you could also use it to catalog footage (ie. if you are a DIT, extract TIMECODE), although I'm sure there are better tools.
