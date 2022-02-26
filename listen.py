@@ -12,70 +12,48 @@ from db import singleColumnToList, sqlite_con
 from utils import cmd, log
 import sqlite_utils
 
+"""
+function mpcatt
+   for file in (fd . ~/d/80_Now_Listening/ -tf | shuf -n50)
+      echo "$file" > /tmp/mpcatt_playing
 
-def get_ordinal_video(con, args, filename: Path):
-    similar_videos = []
-    testname = str(filename)
-    while len(similar_videos) < 2:
-        remove_groups = re.split(r"([\W_]+)", testname)
-        remove_chars = ""
-        remove_chars_i = 1
-        while len(remove_chars) < 1:
-            remove_chars += remove_groups[-remove_chars_i]
-            remove_chars_i += 1
+      catt cast "$file" &
 
-        newtestname = testname[: -len(remove_chars)]
-        log.debug(f"Matches for '{newtestname}':")
+      grep -qEi "(Microsoft|WSL)" /proc/version
+      if test $status -eq 0
+          sleep 1.8 && mpv.com (wslpath -w "$file") --ontop-level=desktop --ontop=no --video=no --audio-display=no --player-operation-mode=cplayer --input-ipc-server='C:\tmp\mpv_socket'
+      else
+          sleep 1.6 && mpv "$file" --no-video
+      end
 
-        if testname == "" or newtestname == testname:
-            return filename
+   end
+end
+~ # type mp
+mp is a function with definition
+# Defined in /root/.config/fish/functions/mp.fish @ line 2
+function mp
+    if count $argv >/dev/null
+        mpv --input-ipc-server=/tmp/mpv_socket --shuffle --no-video $argv
+    else
+        mpv --input-ipc-server=/tmp/mpv_socket --shuffle --no-video ~/Music/
+    end
+end
+"""
+# mpv.com --input-ipc-server="\\.\pipe\mpv_socket" -- "D:\80_Now_Listening\1-01_.opus"
+# echo cycle volume +1  >\\.\pipe\mpv_socket
+# echo cycle volume -1  >\\.\pipe\mpv_socket
+# echo cycle pause >\\.\pipe\mpv_socket
+# echo quit >\\.\pipe\mpv_socket
 
-        testname = newtestname
-        similar_videos = singleColumnToList(
-            con.execute(
-                f"""SELECT filename FROM media
-            WHERE {args.sql_filter}
-                and filename like ?
-            ORDER BY filename
-            limit 2
-            """,
-                ("%" + testname + "%",),
-            ).fetchall(),
-            "filename",
-        )
-        log.info(similar_videos)
-
-        commonprefix = os.path.commonprefix(similar_videos)
-        if len(Path(commonprefix).name) < 5:
-            return filename
-
-        if args.last:
-            return similar_videos[0]
-
-    return similar_videos[0]
+# cmd.exe /C mpv.com --input-ipc-server=\\\\.\\pipe\\mpv_socket -- "D:\80_Now_Listening\1-01_.opus"
+# cmd.exe "/C echo quit >\\\\.\\pipe\\mpv_socket"
 
 
 def play_mpv(args, video_path: Path):
-    mpv_options = "--fs --force-window=yes --terminal=no"
+    mpv_options = "--force-window=yes"
     quoted_next_video = quote(str(video_path))
 
     if args.chromecast:
-        subs = json.loads(
-            cmd(f"ffprobe -loglevel error -select_streams s -show_entries stream -of json {quoted_next_video}").stdout
-        )["streams"]
-        if len(subs) == 0:
-            cmd(f"catt -d '{args.chromecast_device}' cast {quoted_next_video}")
-
-        db = sqlite_utils.Database(memory=True)
-        db["subs"].insert_all(subs, pk="index")
-        subtitle_index = db.execute_returning_dicts(
-            """select "index" from subs
-            order by
-                  lower(tags) like "%eng%" desc
-                , lower(tags) like "%dialog%" desc
-            limit 1"""
-        )[0]["index"]
-
         subtitles_file = cmd("mktemp --suffix=.vtt --dry-run").stdout.strip()
         cmd(
             f'ffmpeg -loglevel warning -txt_format text -i {quoted_next_video} -map "0:{subtitle_index}" "{subtitles_file}"'
@@ -97,7 +75,7 @@ def main():
     parser.add_argument("db")
     parser.add_argument("-keep", "--keep", action="store_true")
     parser.add_argument("-cast", "--chromecast", action="store_true")
-    parser.add_argument("-cast-to", "--chromecast-device", default="Living Room TV")
+    parser.add_argument("-cast-to", "--chromecast-device", default="Xylo and Orchestra")
     parser.add_argument("-s", "--search")
     parser.add_argument("-S", "--skip")
     parser.add_argument("-d", "--duration", type=int)
@@ -150,9 +128,6 @@ def main():
     )["filename"]
 
     next_video = Path(next_video)
-    if args.play_in_order:
-        next_video = Path(get_ordinal_video(con, args, next_video))
-
     print(next_video)
 
     if next_video.exists() and "/keep/" not in str(next_video):

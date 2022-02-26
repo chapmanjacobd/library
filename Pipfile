@@ -12,6 +12,9 @@ python-dotenv = "*"
 subliminal = "*"
 catt = "*"
 sqlite-utils = "*"
+mutagen = "*"
+tinytag = "*"
+fuckit = "*"
 
 [dev-packages]
 black = "*"

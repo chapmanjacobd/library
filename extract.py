@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+from pathlib import Path
 import sys
 from datetime import datetime
 from shlex import quote
@@ -8,13 +9,16 @@ from shlex import quote
 import pandas as pd
 from joblib import Parallel, delayed
 from rich import inspect, print
+from tinytag import TinyTag
+import mutagen
 
 from db import fetchall_dict, sqlite_con
 from subtitle import get_subtitle
 from utils import cmd, get_video_files
+import fuckit
 
 
-def extract_metadata(f):
+def extract_metadata(args, f):
     try:
         ffprobe = json.loads(
             cmd(f"ffprobe -loglevel quiet -print_format json=compact=1 -show_entries format {quote(f)}").stdout
@@ -43,7 +47,7 @@ def extract_metadata(f):
     else:
         sparseness = ffprobe["format"]["size"] / blocks_allocated
 
-    return dict(
+    media = dict(
         **ffprobe["format"],
         # streams=ffprobe["streams"],
         sparseness=sparseness,
@@ -51,32 +55,185 @@ def extract_metadata(f):
         time_modified=datetime.fromtimestamp(stat.st_mtime),
     )
 
+    if args.audio:
+        try:
+            tiny_tags = TinyTag.get(f).as_dict()
+            mutagen_tags = mutagen.File(f)
+            assert mutagen_tags.tags
+        except:
+            return media
+
+        def c(l: list):
+            if l is None or len(l) == 0:
+                return None
+
+            no_comma = sum([s.split(",") for s in l], [])
+            no_semicol = sum([s.split(";") for s in no_comma], [])
+            no_unknown = [x for x in no_semicol if x.lower() not in ["unknown", ""]]
+            return ";".join(no_unknown)
+
+        def ss(idx, l):
+            if l is None:
+                return None
+            try:
+                return l[idx]
+            except IndexError:
+                return None
+
+        audio = {
+            **media,
+            **tiny_tags,
+            "albumgenre": c(mutagen_tags.tags.get("albumgenre")),
+            "albumgrouping": c(mutagen_tags.tags.get("albumgrouping")),
+            "mood": c(
+                list(
+                    set(
+                        (mutagen_tags.tags.get("albummood") or [])
+                        + (mutagen_tags.tags.get("MusicMatch_Situation") or [])
+                        + (mutagen_tags.tags.get("Songs-DB_Occasion") or [])
+                    )
+                )
+            ),
+            "genre": c(list(set((mutagen_tags.tags.get("genre") or []) + list(filter(None, [tiny_tags["genre"]]))))),
+            "year": ss(
+                0,
+                list(
+                    filter(
+                        None,
+                        [
+                            mutagen_tags.tags.get("originalyear"),
+                            mutagen_tags.tags.get("TDOR"),
+                            mutagen_tags.tags.get("TORY"),
+                            mutagen_tags.tags.get("date"),
+                            mutagen_tags.tags.get("TDRC"),
+                            mutagen_tags.tags.get("TDRL"),
+                        ],
+                    )
+                ),
+            ),
+            "bpm": ss(
+                0,
+                list(
+                    filter(
+                        None,
+                        [mutagen_tags.tags.get("fBPM"), mutagen_tags.tags.get("bpm_accuracy")],
+                    )
+                ),
+            ),
+            "key": ss(
+                0,
+                list(
+                    filter(
+                        None,
+                        [
+                            mutagen_tags.tags.get("TIT1"),
+                            mutagen_tags.tags.get("key_accuracy"),
+                            mutagen_tags.tags.get("TKEY"),
+                        ],
+                    )
+                ),
+            ),
+            "gain": ss(0, mutagen_tags.tags.get("replaygain_track_gain")),
+            "time": c(ss(0, mutagen_tags.tags.get("time_signature"))),
+            "decade": ss(0, mutagen_tags.tags.get("Songs-DB_Custom1")),
+            "categories": ss(0, mutagen_tags.tags.get("Songs-DB_Custom2")),
+            "city": ss(0, mutagen_tags.tags.get("Songs-DB_Custom3")),
+            "country": c(
+                ss(
+                    0,
+                    list(
+                        filter(
+                            None,
+                            [
+                                mutagen_tags.tags.get("Songs-DB_Custom4"),
+                                mutagen_tags.tags.get("MusicBrainz Album Release Country"),
+                            ],
+                        )
+                    ),
+                )
+            ),
+        }
+        # print(audio)
+
+        @fuckit
+        def get_rid_of_known_tags():
+            del mutagen_tags.tags["encoder"]
+            del mutagen_tags.tags["TMED"]
+            del mutagen_tags.tags["TSO2"]
+            del mutagen_tags.tags["artist-sort"]
+            del mutagen_tags.tags["ASIN"]
+            del mutagen_tags.tags["Acoustid Id"]
+            del mutagen_tags.tags["Artists"]
+            del mutagen_tags.tags["BARCODE"]
+            del mutagen_tags.tags["CATALOGNUMBER"]
+            del mutagen_tags.tags["MusicBrainz Album Artist Id"]
+            del mutagen_tags.tags["MusicBrainz Album Id"]
+            del mutagen_tags.tags["MusicBrainz Album Release Country"]
+            del mutagen_tags.tags["MusicBrainz Album Status"]
+            del mutagen_tags.tags["MusicBrainz Album Type"]
+            del mutagen_tags.tags["MusicBrainz Artist Id"]
+            del mutagen_tags.tags["MusicBrainz Release Group Id"]
+            del mutagen_tags.tags["MusicBrainz Release Track Id"]
+            del mutagen_tags.tags["SCRIPT"]
+            del mutagen_tags.tags["originalyear"]
+            del mutagen_tags.tags["artist"]
+            del mutagen_tags.tags["album"]
+            del mutagen_tags.tags["ALBUMARTIST"]
+            del mutagen_tags.tags["title"]
+            del mutagen_tags.tags["TORY"]
+            del mutagen_tags.tags["TDOR"]
+            del mutagen_tags.tags["publisher"]
+            del mutagen_tags.tags["TRACKNUMBER"]
+            del mutagen_tags.tags["DISCNUMBER"]
+            del mutagen_tags.tags["replaygain_track_peak"]
+            del mutagen_tags.tags["replaygain_track_gain"]
+            del mutagen_tags.tags["date"]
+
+            return mutagen_tags.tags
+
+        new_tags = get_rid_of_known_tags()
+        if new_tags is not None:
+            print(new_tags)
+
+        return audio
+
+    return media
+
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("db")
     parser.add_argument("paths", nargs="*")
-    parser.add_argument("-ns", "--no-sub", action="store_true")
+    parser.add_argument("-a", "--audio", action="store_true")
+    parser.add_argument("-s", "--subtitle", action="store_true")
     parser.add_argument("-yt", "--youtube-only", action="store_true")
     parser.add_argument("-sl", "--subliminal-only", action="store_true")
+    parser.add_argument("-f", "--force-rescan", action="store_true")
     parser.add_argument("-v", "--verbose", action="count", default=0)
     args = parser.parse_args()
+    if args.force_rescan:
+        Path(args.db).unlink(missing_ok=True)
     con = sqlite_con(args.db)
 
     video_files = get_video_files(args)
     new_files = set(video_files)
 
     try:
-        existing = set(map(lambda x: x["filename"], fetchall_dict(con, "select filename from videos")))
+        existing = set(map(lambda x: x["filename"], fetchall_dict(con, "select filename from media")))
         video_files = list(new_files - existing)
     except:
         video_files = list(new_files)
 
     print(video_files)
 
-    metadata = Parallel(n_jobs=-1)(delayed(extract_metadata)(file) for file in video_files) or []
+    metadata = (
+        Parallel(n_jobs=-1 if args.verbose == 0 else 1, backend="threading")(
+            delayed(extract_metadata)(args, file) for file in video_files
+        )
+        or []
+    )
     pd.DataFrame(list(filter(None, metadata))).apply(pd.to_numeric, errors="ignore").convert_dtypes().to_sql(
-        "videos",
+        "media",
         con=con,
         if_exists="append",
         index=False,
@@ -84,7 +241,7 @@ def main():
         method="multi",
     )
 
-    if not args.no_sub:
+    if args.subtitle:
         Parallel(n_jobs=5)(delayed(get_subtitle)(args, file) for file in video_files)
 
 
