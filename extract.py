@@ -160,6 +160,8 @@ def extract_metadata(args, f):
             tiny_tags = TinyTag.get(f).as_dict()
             mutagen_tags = mutagen.File(f)
             assert mutagen_tags.tags
+            if "extra" in tiny_tags:
+                del tiny_tags["extra"]
         except:
             return media
 
@@ -249,6 +251,7 @@ def main():
         )
         or []
     )
+    metadata.year = metadata.year.astype(str)
     pd.DataFrame(list(filter(None, metadata))).apply(pd.to_numeric, errors="ignore").convert_dtypes().to_sql(
         "media",
         con=con,

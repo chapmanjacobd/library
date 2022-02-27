@@ -77,7 +77,7 @@ def cmd(command, strict=True, cwd=None):
     r = run(command, capture_output=True, text=True, shell=True, cwd=cwd)
     log.debug(r.args)
     if len(r.stdout.strip()) > 0:
-        log.info(r.stdout.strip())
+        log.debug(r.stdout.strip())
     if len(r.stderr.strip()) > 0:
         log.error(r.stderr.strip())
     if r.returncode != 0:
