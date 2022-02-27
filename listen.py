@@ -55,7 +55,7 @@ end
 # Alt+[ multiply speed 1/1.1
 # Alt+] multiply speed 1.1
 
-
+# PULSE_SERVER=tcp:localhost
 def play_mpv(args, video_path: Path):
     mpv_options = "--force-window=yes"
     quoted_next_video = quote(str(video_path))
