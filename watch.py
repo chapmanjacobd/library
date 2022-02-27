@@ -2,6 +2,8 @@ import argparse
 import json
 import os
 import re
+import numpy as np
+import pandas as pd
 from pathlib import Path
 from shlex import quote
 
@@ -12,6 +14,8 @@ from db import singleColumnToList, sqlite_con
 from utils import cmd, log
 import sqlite_utils
 from pychromecast import discovery
+from tabulate import tabulate
+from natsort import index_natsorted
 
 
 def get_ordinal_video(con, args, filename: Path):
@@ -74,7 +78,7 @@ def play_mpv(args, video_path: Path):
     is_WSL = cmd('grep -qEi "(Microsoft|WSL)" /proc/version', strict=False).returncode == 0
     if is_WSL:
         mpv = "PULSE_SERVER=tcp:localhost mpv"
-        vlc = "PULSE_SERVER=tcp:localhost vlc"
+        vlc = "PULSE_SERVER=tcp:localhost cvlc"
 
     if args.chromecast:
         subs = json.loads(
@@ -119,6 +123,7 @@ def main():
     parser.add_argument("-cast", "--chromecast", action="store_true")
     parser.add_argument("-cast-to", "--chromecast-device", default="Living Room TV")
     parser.add_argument("-vlc", "--vlc", action="store_true")
+    parser.add_argument("-list", "--list", action="store_true")
     parser.add_argument("-s", "--search")
     parser.add_argument("-S", "--skip")
     parser.add_argument("-d", "--duration", type=int)
@@ -148,11 +153,8 @@ def main():
     {f'and {args.max_size} >= size' if args.max_size else ''}
     {f'and {args.size + (args.size /10)} >= size and size >= {args.size - (args.size /10)}' if args.size else ''}
     """
-
-    next_video = dict(
-        con.execute(
-            f"""
-    SELECT filename, duration / size AS seconds_per_byte,
+    query = f"""
+    SELECT filename, duration/60/60 as hours, duration / size AS seconds_per_byte,
     CASE
         WHEN size < 1024 THEN size || 'B'
         WHEN size >=  1024 AND size < (1024 * 1024) THEN (size / 1024) || 'KB'
@@ -163,12 +165,27 @@ def main():
     FROM media
     WHERE {args.sql_filter}
     {"and filename like ?" if args.search else ''}
-    ORDER BY {'random(),' if args.random else ''} seconds_per_byte ASC
-    limit 1 OFFSET {args.skip if args.skip else 0}
-    """,
-            bindings,
-        ).fetchone()
-    )["filename"]
+    ORDER BY {'random(),' if args.random else ''}
+            {'filename,' if args.search and args.play_in_order else ''}
+            seconds_per_byte ASC
+    {'' if args.list else 'LIMIT 1' + (f' OFFSET {args.skip}' if args.skip else '')}
+    """
+
+    if args.list:
+        videos = pd.DataFrame([dict(r) for r in con.execute(query, bindings).fetchall()])
+        videos["stem"] = videos.filename.apply(lambda x: Path(x).stem)
+        videos.sort_values("stem", key=lambda x: np.argsort(index_natsorted(videos["stem"])), inplace=True)
+        print(
+            tabulate(
+                # videos,
+                videos[["filename", "size", "hours"]],
+                tablefmt="github",
+                headers="keys",
+            )
+        )
+        exit(1)  # use nonzero code to stop shell repeat
+
+    next_video = dict(con.execute(query, bindings).fetchone())["filename"]
 
     next_video = Path(next_video)
     if args.play_in_order:
