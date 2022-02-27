@@ -15,6 +15,8 @@ sqlite-utils = "*"
 mutagen = "*"
 tinytag = "*"
 fuckit = "*"
+tabulate = "*"
+natsort = "*"
 
 [dev-packages]
 black = "*"
