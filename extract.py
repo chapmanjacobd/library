@@ -251,8 +251,9 @@ def main():
         )
         or []
     )
-    metadata.year = metadata.year.astype(str)
-    pd.DataFrame(list(filter(None, metadata))).apply(pd.to_numeric, errors="ignore").convert_dtypes().to_sql(
+    DF = pd.DataFrame(list(filter(None, metadata)))
+    DF.year = DF.year.astype(str)
+    DF.apply(pd.to_numeric, errors="ignore").convert_dtypes().to_sql(
         "media",
         con=con,
         if_exists="append",
