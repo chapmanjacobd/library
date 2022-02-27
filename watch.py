@@ -11,6 +11,7 @@ from rich.prompt import Confirm
 from db import singleColumnToList, sqlite_con
 from utils import cmd, log
 import sqlite_utils
+from pychromecast import discovery
 
 
 def get_ordinal_video(con, args, filename: Path):
@@ -55,16 +56,32 @@ def get_ordinal_video(con, args, filename: Path):
     return similar_videos[0]
 
 
+def get_ip_of_chromecast(device_name):
+    cast_infos, browser = discovery.discover_listed_chromecasts(friendly_names=[device_name])
+    browser.stop_discovery()
+    return cast_infos[0].host
+
+
 def play_mpv(args, video_path: Path):
+    mpv = "mpv"
     mpv_options = "--fs --force-window=yes --terminal=no"
-    quoted_next_video = quote(str(video_path))
+    vlc = "vlc"
+    quoted_video_path_linux = quote(str(video_path))
+    quoted_play_path = quote(str(video_path))
+    is_WSL = cmd('grep -qEi "(Microsoft|WSL)" /proc/version', strict=False).returncode == 0
+    if is_WSL:
+        quoted_play_path = f"(wslpath -w {quoted_video_path_linux})"
+        mpv = "mpv.com"
+        vlc = "'/mnt/c/Program Files/VideoLAN/VLC/vlc.exe'"
 
     if args.chromecast:
         subs = json.loads(
-            cmd(f"ffprobe -loglevel error -select_streams s -show_entries stream -of json {quoted_next_video}").stdout
+            cmd(
+                f"ffprobe -loglevel error -select_streams s -show_entries stream -of json {quoted_video_path_linux}"
+            ).stdout
         )["streams"]
         if len(subs) == 0:
-            cmd(f"catt -d '{args.chromecast_device}' cast {quoted_next_video}")
+            cmd(f"catt -d '{args.chromecast_device}' cast {quoted_video_path_linux}")
 
         db = sqlite_utils.Database(memory=True)
         db["subs"].insert_all(subs, pk="index")
@@ -75,21 +92,30 @@ def play_mpv(args, video_path: Path):
                 , lower(tags) like "%dialog%" desc
             limit 1"""
         )[0]["index"]
+        log.debug(f"Using subtitle {subtitle_index}")
 
         subtitles_file = cmd("mktemp --suffix=.vtt --dry-run").stdout.strip()
         cmd(
-            f'ffmpeg -loglevel warning -txt_format text -i {quoted_next_video} -map "0:{subtitle_index}" "{subtitles_file}"'
+            f'ffmpeg -loglevel warning -txt_format text -i {quoted_video_path_linux} -map "0:{subtitle_index}" "{subtitles_file}"'
         )
-        cmd(f"catt -d '{args.chromecast_device}' cast {quoted_next_video} --subtitles {subtitles_file}")
+        if is_WSL:
+            # vlc_able_path = shutil.move(subtitles_file, "/mnt/c/tmp/")
+            subtitles_file = f'"{cmd(f"wslpath -w {subtitles_file}").stdout.strip()}"'
+            subtitles_file = f"(wslpath -w {subtitles_file})"
 
-        # end of chromecast
+        if args.vlc:
+            cc_ip = get_ip_of_chromecast(args.chromecast_device)
+            cmd(
+                f'{vlc} --sout "#chromecast" --sout-chromecast-ip={cc_ip} --demux-filter=demux_chromecast --sub-file={subtitles_file} {quoted_play_path}'
+            )
+        else:
+            cmd(f"catt -d '{args.chromecast_device}' cast {quoted_video_path_linux} --subtitles {subtitles_file}")
 
-    is_WSL = cmd('grep -qEi "(Microsoft|WSL)" /proc/version', strict=False).returncode == 0
-    if is_WSL:
-        windows_path = cmd(f"wslpath -w {quoted_next_video}").stdout.strip()
-        cmd(f'mpv.com {mpv_options} "{windows_path}"')
+        raise
 
-    cmd(f"mpv {mpv_options} {quoted_next_video}")
+        return  # end of chromecast
+
+    cmd(f"{mpv} {mpv_options} {quoted_play_path}")
 
 
 def main():
@@ -98,6 +124,7 @@ def main():
     parser.add_argument("-keep", "--keep", action="store_true")
     parser.add_argument("-cast", "--chromecast", action="store_true")
     parser.add_argument("-cast-to", "--chromecast-device", default="Living Room TV")
+    parser.add_argument("-vlc", "--vlc", action="store_true")
     parser.add_argument("-s", "--search")
     parser.add_argument("-S", "--skip")
     parser.add_argument("-d", "--duration", type=int)
