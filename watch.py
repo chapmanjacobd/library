@@ -59,6 +59,10 @@ def get_ordinal_video(con, args, filename: Path):
 def get_ip_of_chromecast(device_name):
     cast_infos, browser = discovery.discover_listed_chromecasts(friendly_names=[device_name])
     browser.stop_discovery()
+    if len(cast_infos) == 0:
+        print("Target chromecast device not found")
+        exit(53)
+
     return cast_infos[0].host
 
 
@@ -66,22 +70,18 @@ def play_mpv(args, video_path: Path):
     mpv = "mpv"
     mpv_options = "--fs --force-window=yes --terminal=no"
     vlc = "vlc"
-    quoted_video_path_linux = quote(str(video_path))
-    quoted_play_path = quote(str(video_path))
+    quoted_video_path = quote(str(video_path))
     is_WSL = cmd('grep -qEi "(Microsoft|WSL)" /proc/version', strict=False).returncode == 0
     if is_WSL:
-        quoted_play_path = f"(wslpath -w {quoted_video_path_linux})"
-        mpv = "mpv.com"
-        vlc = "'/mnt/c/Program Files/VideoLAN/VLC/vlc.exe'"
+        mpv = "PULSE_SERVER=tcp:localhost mpv"
+        vlc = "PULSE_SERVER=tcp:localhost vlc"
 
     if args.chromecast:
         subs = json.loads(
-            cmd(
-                f"ffprobe -loglevel error -select_streams s -show_entries stream -of json {quoted_video_path_linux}"
-            ).stdout
+            cmd(f"ffprobe -loglevel error -select_streams s -show_entries stream -of json {quoted_video_path}").stdout
         )["streams"]
         if len(subs) == 0:
-            cmd(f"catt -d '{args.chromecast_device}' cast {quoted_video_path_linux}")
+            cmd(f"catt -d '{args.chromecast_device}' cast {quoted_video_path}")
 
         db = sqlite_utils.Database(memory=True)
         db["subs"].insert_all(subs, pk="index")
@@ -96,26 +96,20 @@ def play_mpv(args, video_path: Path):
 
         subtitles_file = cmd("mktemp --suffix=.vtt --dry-run").stdout.strip()
         cmd(
-            f'ffmpeg -loglevel warning -txt_format text -i {quoted_video_path_linux} -map "0:{subtitle_index}" "{subtitles_file}"'
+            f'ffmpeg -loglevel warning -txt_format text -i {quoted_video_path} -map "0:{subtitle_index}" "{subtitles_file}"'
         )
-        if is_WSL:
-            # vlc_able_path = shutil.move(subtitles_file, "/mnt/c/tmp/")
-            subtitles_file = f'"{cmd(f"wslpath -w {subtitles_file}").stdout.strip()}"'
-            subtitles_file = f"(wslpath -w {subtitles_file})"
 
         if args.vlc:
             cc_ip = get_ip_of_chromecast(args.chromecast_device)
             cmd(
-                f'{vlc} --sout "#chromecast" --sout-chromecast-ip={cc_ip} --demux-filter=demux_chromecast --sub-file={subtitles_file} {quoted_play_path}'
+                f'{vlc} --sout "#chromecast" --sout-chromecast-ip={cc_ip} --demux-filter=demux_chromecast --sub-file={subtitles_file} {quoted_video_path}'
             )
         else:
-            cmd(f"catt -d '{args.chromecast_device}' cast {quoted_video_path_linux} --subtitles {subtitles_file}")
-
-        raise
+            cmd(f"catt -d '{args.chromecast_device}' cast {quoted_video_path} --subtitles {subtitles_file}")
 
         return  # end of chromecast
 
-    cmd(f"{mpv} {mpv_options} {quoted_play_path}")
+    cmd(f"{mpv} {mpv_options} {quoted_video_path}")
 
 
 def main():
