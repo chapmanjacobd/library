@@ -76,7 +76,6 @@ def play_mpv(args, video_path: Path):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("db")
-    parser.add_argument("-keep", "--keep", action="store_true")
     parser.add_argument("-cast", "--chromecast", action="store_true")
     parser.add_argument("-cast-to", "--chromecast-device", default="Xylo and Orchestra")
     parser.add_argument("-s", "--search")
@@ -133,7 +132,7 @@ def main():
     next_video = Path(next_video)
     print(next_video)
 
-    if next_video.exists() and "/keep/" not in str(next_video):
+    if next_video.exists():
         quoted_next_video = quote(str(next_video))
 
         if args.move:
@@ -141,12 +140,6 @@ def main():
             cmd(f"mv {quoted_next_video} {quote(keep_path)}")
         else:
             play_mpv(args, next_video)
-
-            if args.keep and Confirm.ask("Keep?", default=False):
-                keep_path = str(Path(next_video).parent / "keep/")
-                cmd(f"mkdir -p {keep_path} && mv {quoted_next_video} {quote(keep_path)}")
-            else:
-                cmd(f"trash-put {quoted_next_video}")
 
     con.execute("delete from media where filename = ?", (str(next_video),))
     con.commit()
