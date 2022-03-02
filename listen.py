@@ -5,12 +5,12 @@ import re
 from pathlib import Path
 from shlex import quote
 
+import sqlite_utils
 from rich import inspect, print
 from rich.prompt import Confirm
 
 from db import singleColumnToList, sqlite_con
 from utils import cmd, log
-import sqlite_utils
 
 """
 function mpcatt
@@ -57,18 +57,19 @@ end
 
 # PULSE_SERVER=tcp:localhost
 def play_mpv(args, video_path: Path):
-    mpv_options = "--force-window=yes"
+    mpv_options = "" #--force-window=yes
     quoted_next_video = quote(str(video_path))
 
     if args.chromecast:
         cmd(f"catt -d '{args.chromecast_device}' cast {quoted_next_video}")
 
-        # end of chromecast
+        return # end of chromecast
 
-    is_WSL = cmd('grep -qEi "(Microsoft|WSL)" /proc/version', strict=False).returncode == 0
-    if is_WSL:
-        windows_path = cmd(f"wslpath -w {quoted_next_video}").stdout.strip()
-        cmd(f'mpv.exe {mpv_options} "{windows_path}"')
+    # is_WSL = cmd('grep -qEi "(Microsoft|WSL)" /proc/version', strict=False).returncode == 0
+    # if is_WSL:
+    #     windows_path = cmd(f"wslpath -w {quoted_next_video}").stdout.strip()
+    #     cmd(f'mpv.exe {mpv_options} "{windows_path}"')
+    #     return
 
     cmd(f"mpv {mpv_options} {quoted_next_video}")
 
@@ -87,7 +88,7 @@ def main():
     parser.add_argument("-szm", "--min-size", type=int)
     parser.add_argument("-szM", "--max-size", type=int)
     parser.add_argument("-mv", "--move")
-    parser.add_argument("-1", "--last", action="store_true")
+    parser.add_argument("-wl", "--with-local", action="store_true")
     parser.add_argument("-O", "--play-in-order", action="store_true")
     parser.add_argument("-r", "--random", action="store_true")
     parser.add_argument("-v", "--verbose", action="count", default=0)
