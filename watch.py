@@ -105,11 +105,15 @@ def play_mpv(args, video_path: Path):
 
         if args.vlc:
             cc_ip = get_ip_of_chromecast(args.chromecast_device)
-            cmd(
+            watched=cmd(
                 f"{vlc} --sout '#chromecast' --sout-chromecast-ip={cc_ip} --demux-filter=demux_chromecast {'--sub-file='+subtitles_file if subtitles_file else ''} {quoted_video_path}"
             )
         else:
-            cmd(f"catt -d '{args.chromecast_device}' cast {quoted_video_path} {'--subtitles '+subtitles_file if subtitles_file else ''}")
+            watched=cmd(f"catt -d '{args.chromecast_device}' cast {quoted_video_path} {'--subtitles '+subtitles_file if subtitles_file else ''}")
+
+        print(watched)
+        if 'Heartbeat timeout, resetting connection' in watched.stderr:
+            raise Exception('Media is possibly partially unwatched')
 
         return  # end of chromecast
 
@@ -119,24 +123,25 @@ def play_mpv(args, video_path: Path):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("db")
-    parser.add_argument("-keep", "--keep", action="store_true")
-    parser.add_argument("-cast", "--chromecast", action="store_true")
-    parser.add_argument("-cast-to", "--chromecast-device", default="Living Room TV")
-    parser.add_argument("-vlc", "--vlc", action="store_true")
-    parser.add_argument("-list", "--list", action="store_true")
-    parser.add_argument("-s", "--search")
-    parser.add_argument("-S", "--skip")
-    parser.add_argument("-d", "--duration", type=int)
-    parser.add_argument("-dm", "--min-duration", type=int)
-    parser.add_argument("-dM", "--max-duration", type=int)
-    parser.add_argument("-sz", "--size", type=int)
-    parser.add_argument("-szm", "--min-size", type=int)
-    parser.add_argument("-szM", "--max-size", type=int)
-    parser.add_argument("-mv", "--move")
     parser.add_argument("-1", "--last", action="store_true")
+    parser.add_argument("-cast-to", "--chromecast-device", default="Living Room TV")
+    parser.add_argument("-cast", "--chromecast", action="store_true")
+    parser.add_argument("-d", "--duration", type=int)
+    parser.add_argument("-dM", "--max-duration", type=int)
+    parser.add_argument("-dm", "--min-duration", type=int)
+    parser.add_argument("-keep", "--keep", action="store_true")
+    parser.add_argument("-list", "--list", action="store_true")
+    parser.add_argument("-mv", "--move")
     parser.add_argument("-O", "--play-in-order", action="store_true")
     parser.add_argument("-r", "--random", action="store_true")
+    parser.add_argument("-s", "--search")
+    parser.add_argument("-S", "--skip")
+    parser.add_argument("-t", "--time-limit", type=int)
     parser.add_argument("-v", "--verbose", action="count", default=0)
+    parser.add_argument("-vlc", "--vlc", action="store_true")
+    parser.add_argument("-z", "--size", type=int)
+    parser.add_argument("-zM", "--max-size", type=int)
+    parser.add_argument("-zm", "--min-size", type=int)
     args = parser.parse_args()
     con = sqlite_con(args.db)
 
@@ -190,6 +195,20 @@ def main():
     next_video = Path(next_video)
     if args.play_in_order:
         next_video = Path(get_ordinal_video(con, args, next_video))
+
+    if args.time_limit:
+        seconds=args.time_limit * 60
+        gap_time=14
+        temp_next_video = cmd(f"mktemp --suffix={next_video.suffix} --dry-run").stdout.strip()
+        temp_video = cmd(f"mktemp --suffix={next_video.suffix} --dry-run").stdout.strip()
+
+        # clip x mins of target video file into new temp video file for playback
+        cmd(f"ffmpeg -i {quote(str(next_video))} -ss 0 -t {seconds} -c copy {temp_next_video}")
+        # replace video file to prevent re-watching
+        cmd(f'mv {quote(str(next_video))} {temp_video}')
+        cmd(f"ffmpeg -i {temp_video} -ss {seconds - gap_time} -c copy {next_video} && rm {temp_video}")
+
+        next_video=Path(temp_next_video)
 
     print(next_video)
 
