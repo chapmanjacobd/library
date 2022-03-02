@@ -2,20 +2,20 @@ import argparse
 import json
 import os
 import re
-import numpy as np
-import pandas as pd
 from pathlib import Path
 from shlex import quote
 
+import numpy as np
+import pandas as pd
+import sqlite_utils
+from natsort import index_natsorted
+from pychromecast import discovery
 from rich import inspect, print
 from rich.prompt import Confirm
+from tabulate import tabulate
 
 from db import singleColumnToList, sqlite_con
 from utils import cmd, log
-import sqlite_utils
-from pychromecast import discovery
-from tabulate import tabulate
-from natsort import index_natsorted
 
 
 def get_ordinal_video(con, args, filename: Path):
@@ -84,32 +84,32 @@ def play_mpv(args, video_path: Path):
         subs = json.loads(
             cmd(f"ffprobe -loglevel error -select_streams s -show_entries stream -of json {quoted_video_path}").stdout
         )["streams"]
-        if len(subs) == 0:
-            cmd(f"catt -d '{args.chromecast_device}' cast {quoted_video_path}")
 
-        db = sqlite_utils.Database(memory=True)
-        db["subs"].insert_all(subs, pk="index")
-        subtitle_index = db.execute_returning_dicts(
-            """select "index" from subs
-            order by
-                  lower(tags) like "%eng%" desc
-                , lower(tags) like "%dialog%" desc
-            limit 1"""
-        )[0]["index"]
-        log.debug(f"Using subtitle {subtitle_index}")
+        subtitles_file=None
+        if len(subs) > 0:
+            db = sqlite_utils.Database(memory=True)
+            db["subs"].insert_all(subs, pk="index")
+            subtitle_index = db.execute_returning_dicts(
+                """select "index" from subs
+                order by
+                    lower(tags) like "%eng%" desc
+                    , lower(tags) like "%dialog%" desc
+                limit 1"""
+            )[0]["index"]
+            log.debug(f"Using subtitle {subtitle_index}")
 
-        subtitles_file = cmd("mktemp --suffix=.vtt --dry-run").stdout.strip()
-        cmd(
-            f'ffmpeg -loglevel warning -txt_format text -i {quoted_video_path} -map "0:{subtitle_index}" "{subtitles_file}"'
-        )
+            subtitles_file = cmd("mktemp --suffix=.vtt --dry-run").stdout.strip()
+            cmd(
+                f'ffmpeg -loglevel warning -txt_format text -i {quoted_video_path} -map "0:{subtitle_index}" "{subtitles_file}"'
+            )
 
         if args.vlc:
             cc_ip = get_ip_of_chromecast(args.chromecast_device)
             cmd(
-                f'{vlc} --sout "#chromecast" --sout-chromecast-ip={cc_ip} --demux-filter=demux_chromecast --sub-file={subtitles_file} {quoted_video_path}'
+                f"{vlc} --sout '#chromecast' --sout-chromecast-ip={cc_ip} --demux-filter=demux_chromecast {'--sub-file='+subtitles_file if subtitles_file else ''} {quoted_video_path}"
             )
         else:
-            cmd(f"catt -d '{args.chromecast_device}' cast {quoted_video_path} --subtitles {subtitles_file}")
+            cmd(f"catt -d '{args.chromecast_device}' cast {quoted_video_path} {'--subtitles '+subtitles_file if subtitles_file else ''}")
 
         return  # end of chromecast
 
