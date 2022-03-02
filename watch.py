@@ -206,7 +206,7 @@ def main():
         cmd(f"ffmpeg -i {quote(str(next_video))} -ss 0 -t {seconds} -c copy {temp_next_video}")
         # replace video file to prevent re-watching
         cmd(f'mv {quote(str(next_video))} {temp_video}')
-        cmd(f"ffmpeg -i {temp_video} -ss {seconds - gap_time} -c copy {next_video} && rm {temp_video}")
+        cmd(f"ffmpeg -i {temp_video} -ss {seconds - gap_time} -c copy {quote(str(next_video))} && rm {temp_video}")
 
         next_video=Path(temp_next_video)
 
