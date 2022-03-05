@@ -111,7 +111,6 @@ def play_mpv(args, video_path: Path):
         else:
             watched=cmd(f"catt -d '{args.chromecast_device}' cast {quoted_video_path} {'--subtitles '+subtitles_file if subtitles_file else ''}")
 
-        print(watched)
         if 'Heartbeat timeout, resetting connection' in watched.stderr:
             raise Exception('Media is possibly partially unwatched')
 
