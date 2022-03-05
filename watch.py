@@ -114,6 +114,9 @@ def play_mpv(args, video_path: Path):
         if 'Heartbeat timeout, resetting connection' in watched.stderr:
             raise Exception('Media is possibly partially unwatched')
 
+        if watched.stderr == '':
+            raise Exception('catt does not exit nonzero? but something might have gone wrong')
+
         return  # end of chromecast
 
     cmd(f"{mpv} {mpv_options} {quoted_video_path}")
