@@ -29,10 +29,13 @@ def play_mpv(args, video_path: Path):
 
     if args.chromecast:
         Path('/tmp/mpcatt_playing').write_text(quoted_next_video)
-        subprocess.Popen(["catt", "-d",args.chromecast_device,'cast',quoted_next_video])
-        # cmd(f"catt -d '{args.chromecast_device}' cast {quoted_next_video}")
-        sleep(1.4)
-        cmd(f"mpv {mpv_options} -- {quoted_next_video}")
+
+        if args.no_local:
+            cmd(f"catt -d '{args.chromecast_device}' cast {quoted_next_video}")
+        else:
+            subprocess.Popen(["catt", "-d",args.chromecast_device,'cast',quoted_next_video])
+            sleep(1.4)
+            cmd(f"mpv {mpv_options} -- {quoted_next_video}")
 
         return # end of chromecast
 
@@ -42,6 +45,7 @@ def play_mpv(args, video_path: Path):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("db")
+    parser.add_argument("-N", "--no-local", action="store_true")
     parser.add_argument("-cast", "--chromecast", action="store_true")
     parser.add_argument("-cast-to", "--chromecast-device", default="Xylo and Orchestra")
     parser.add_argument("-s", "--search")
