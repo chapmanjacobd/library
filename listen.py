@@ -24,21 +24,21 @@ Alt+] multiply speed 1.1
 
 
 def play_mpv(args, video_path: Path):
-    mpv_options = "--input-ipc-server=/tmp/mpv_socket --no-video"
+    mpv_options = "--input-ipc-server=/tmp/mpv_socket --no-video --replaygain=track --volume=100"
     quoted_next_video = quote(str(video_path))
 
     if args.chromecast:
-        Path('/tmp/mpcatt_playing').write_text(quoted_next_video)
+        Path("/tmp/mpcatt_playing").write_text(quoted_next_video)
 
         if args.no_local:
             cmd(f"catt -d '{args.chromecast_device}' cast {quoted_next_video}")
         else:
-            cast_process=subprocess.Popen(["catt", "-d",args.chromecast_device,'cast',quoted_next_video])
-            sleep(1.4) # imperfect lazy sync; if out of sync I use keyboard shortcuts to send `set speed` commands to mpv
+            cast_process = subprocess.Popen(["catt", "-d", args.chromecast_device, "cast", video_path])
+            sleep(1.4)  # imperfect lazy sync; I use keyboard shortcuts to send `set speed` commands to mpv for resync
             cmd(f"mpv {mpv_options} -- {quoted_next_video}")
-            cast_process.communicate() # wait for chromecast to stop (so that I can tell any chromecast to pause)
+            cast_process.communicate()  # wait for chromecast to stop (so that I can tell any chromecast to pause)
 
-        return # end of chromecast
+        return  # end of chromecast
 
     cmd(f"mpv {mpv_options} -- {quoted_next_video}")
 
