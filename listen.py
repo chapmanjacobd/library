@@ -33,9 +33,10 @@ def play_mpv(args, video_path: Path):
         if args.no_local:
             cmd(f"catt -d '{args.chromecast_device}' cast {quoted_next_video}")
         else:
-            subprocess.Popen(["catt", "-d",args.chromecast_device,'cast',quoted_next_video])
-            sleep(1.4)
+            cast_process=subprocess.Popen(["catt", "-d",args.chromecast_device,'cast',quoted_next_video])
+            sleep(1.4) # imperfect lazy sync; if out of sync I use keyboard shortcuts to send `set speed` commands to mpv
             cmd(f"mpv {mpv_options} -- {quoted_next_video}")
+            cast_process.communicate() # wait for chromecast to stop (so that I can tell any chromecast to pause)
 
         return # end of chromecast
 
