@@ -1,64 +1,31 @@
 import argparse
-import json
-import os
-import re
 from pathlib import Path
 from shlex import quote
 
-import sqlite_utils
 from rich import inspect, print
-from rich.prompt import Confirm
 
-from db import singleColumnToList, sqlite_con
+from db import sqlite_con
 from utils import cmd, log
 
 """
-function mpcatt
-   for file in (fd . ~/d/80_Now_Listening/ -tf | shuf -n50)
-      echo "$file" > /tmp/mpcatt_playing
-
-      catt cast "$file" &
-
-      grep -qEi "(Microsoft|WSL)" /proc/version
-      if test $status -eq 0
-          sleep 1.8 && mpv.com (wslpath -w "$file") --ontop-level=desktop --ontop=no --video=no --audio-display=no --player-operation-mode=cplayer --input-ipc-server='C:\tmp\mpv_socket'
-      else
-          sleep 1.6 && mpv "$file" --no-video
-      end
-
-   end
-end
-~ # type mp
-mp is a function with definition
-# Defined in /root/.config/fish/functions/mp.fish @ line 2
-function mp
-    if count $argv >/dev/null
-        mpv --input-ipc-server=/tmp/mpv_socket --shuffle --no-video $argv
-    else
-        mpv --input-ipc-server=/tmp/mpv_socket --shuffle --no-video ~/Music/
-    end
-end
+echo 'cycle pause' | socat - /tmp/mpvsocket
+echo cycle volume +1  | socat - /tmp/mpvsocket
+echo cycle volume -1  | socat - /tmp/mpvsocket
+echo cycle pause | socat - /tmp/mpvsocket
+echo quit | socat - /tmp/mpvsocket
+echo 'set speed 1.0' | socat - /tmp/mpvsocket
+Alt+Ctrl+[ set speed 1.0
+Alt+Ctrl+[ set speed 1.0
+Alt+[ multiply speed 1/1.1
+Alt+] multiply speed 1.1
 """
-# mpv.com --input-ipc-server="\\.\pipe\mpv_socket" -- "D:\80_Now_Listening\1-01_.opus"
-# echo cycle volume +1  >\\.\pipe\mpv_socket
-# echo cycle volume -1  >\\.\pipe\mpv_socket
-# echo cycle pause >\\.\pipe\mpv_socket
-# echo quit >\\.\pipe\mpv_socket
 
-# cmd.exe /C mpv.com --input-ipc-server=\\\\.\\pipe\\mpv_socket -- "D:\80_Now_Listening\1-01_.opus"
-# cmd.exe "/C echo quit >\\\\.\\pipe\\mpv_socket"
 
-# Alt+Ctrl+[ set speed 1.0
-# cmd.exe "/C set speed 1.0 >\\\\.\\pipe\\mpv_socket"
-
-# Alt+Ctrl+[ set speed 1.0
-# Alt+[ multiply speed 1/1.1
-# Alt+] multiply speed 1.1
-
-# PULSE_SERVER=tcp:localhost
 def play_mpv(args, video_path: Path):
-    mpv_options = "" #--force-window=yes
+    mpv_options = "--input-ipc-server=/tmp/mpv_socket --no-video"
     quoted_next_video = quote(str(video_path))
+
+    Path('/tmp/mpcatt_playing').write_text(quoted_next_video)
 
     if args.chromecast:
         cmd(f"catt -d '{args.chromecast_device}' cast {quoted_next_video}")
@@ -71,7 +38,7 @@ def play_mpv(args, video_path: Path):
     #     cmd(f'mpv.exe {mpv_options} "{windows_path}"')
     #     return
 
-    cmd(f"mpv {mpv_options} {quoted_next_video}")
+    cmd(f"mpv {mpv_options} -- {quoted_next_video}")
 
 
 def main():
