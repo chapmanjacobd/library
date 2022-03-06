@@ -1,6 +1,8 @@
 import argparse
+import subprocess
 from pathlib import Path
 from shlex import quote
+from time import sleep
 
 from rich import inspect, print
 
@@ -25,18 +27,14 @@ def play_mpv(args, video_path: Path):
     mpv_options = "--input-ipc-server=/tmp/mpv_socket --no-video"
     quoted_next_video = quote(str(video_path))
 
-    Path('/tmp/mpcatt_playing').write_text(quoted_next_video)
-
     if args.chromecast:
-        cmd(f"catt -d '{args.chromecast_device}' cast {quoted_next_video}")
+        Path('/tmp/mpcatt_playing').write_text(quoted_next_video)
+        subprocess.Popen(["catt", "-d",args.chromecast_device,'cast',quoted_next_video])
+        # cmd(f"catt -d '{args.chromecast_device}' cast {quoted_next_video}")
+        sleep(1.4)
+        cmd(f"mpv {mpv_options} -- {quoted_next_video}")
 
         return # end of chromecast
-
-    # is_WSL = cmd('grep -qEi "(Microsoft|WSL)" /proc/version', strict=False).returncode == 0
-    # if is_WSL:
-    #     windows_path = cmd(f"wslpath -w {quoted_next_video}").stdout.strip()
-    #     cmd(f'mpv.exe {mpv_options} "{windows_path}"')
-    #     return
 
     cmd(f"mpv {mpv_options} -- {quoted_next_video}")
 
