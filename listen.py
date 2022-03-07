@@ -9,19 +9,6 @@ from rich import inspect, print
 from db import sqlite_con
 from utils import cmd, log
 
-"""
-echo 'cycle pause' | socat - /tmp/mpvsocket
-echo cycle volume +1  | socat - /tmp/mpvsocket
-echo cycle volume -1  | socat - /tmp/mpvsocket
-echo cycle pause | socat - /tmp/mpvsocket
-echo quit | socat - /tmp/mpvsocket
-echo 'set speed 1.0' | socat - /tmp/mpvsocket
-Alt+Ctrl+[ set speed 1.0
-Alt+Ctrl+[ set speed 1.0
-Alt+[ multiply speed 1/1.1
-Alt+] multiply speed 1.1
-"""
-
 
 def play_mpv(args, video_path: Path):
     mpv_options = "--input-ipc-server=/tmp/mpv_socket --no-video --replaygain=track --volume=100"
@@ -34,7 +21,7 @@ def play_mpv(args, video_path: Path):
             cmd(f"catt -d '{args.chromecast_device}' cast {quoted_next_video}")
         else:
             cast_process = subprocess.Popen(["catt", "-d", args.chromecast_device, "cast", video_path])
-            sleep(1.4)  # imperfect lazy sync; I use keyboard shortcuts to send `set speed` commands to mpv for resync
+            sleep(1.255)  # imperfect lazy sync; I use keyboard shortcuts to send `set speed` commands to mpv for resync
             cmd(f"mpv {mpv_options} -- {quoted_next_video}")
             cast_process.communicate()  # wait for chromecast to stop (so that I can tell any chromecast to pause)
 
