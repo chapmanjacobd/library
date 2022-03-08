@@ -11,7 +11,7 @@ from utils import cmd, log
 
 
 def play_mpv(args, video_path: Path):
-    mpv_options = "--input-ipc-server=/tmp/mpv_socket --no-video --replaygain=track --volume=100 --keep-open=no"
+    mpv_options = "--input-ipc-server=/tmp/mpv_socket --no-video --replaygain=track --volume=100 --keep-open=no --no-resume-playback"
     quoted_next_video = quote(str(video_path))
 
     if args.chromecast:
@@ -21,7 +21,7 @@ def play_mpv(args, video_path: Path):
             cmd(f"catt -d '{args.chromecast_device}' cast {quoted_next_video}")
         else:
             cast_process = subprocess.Popen(["catt", "-d", args.chromecast_device, "cast", video_path])
-            sleep(1.255)  # imperfect lazy sync; I use keyboard shortcuts to send `set speed` commands to mpv for resync
+            sleep(1.355)  # imperfect lazy sync; I use keyboard shortcuts to send `set speed` commands to mpv for resync
             cmd(f"mpv {mpv_options} -- {quoted_next_video}")
             cast_process.communicate()  # wait for chromecast to stop (so that I can tell any chromecast to pause)
 
