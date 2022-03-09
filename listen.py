@@ -11,7 +11,7 @@ from utils import cmd, log
 
 
 def play_mpv(args, audio_path: Path):
-    mpv_options = "--input-ipc-server=/tmp/mpv_socket --no-audio --replaygain=track --volume=100 --keep-open=no --no-resume-playback --term-osd-bar"
+    mpv_options = "--input-ipc-server=/tmp/mpv_socket --no-video --replaygain=track --volume=100 --keep-open=no --no-resume-playback"
     quoted_next_audio = quote(str(audio_path))
 
     if args.chromecast:
