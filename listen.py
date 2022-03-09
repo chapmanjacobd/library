@@ -10,25 +10,25 @@ from db import sqlite_con
 from utils import cmd, log
 
 
-def play_mpv(args, video_path: Path):
-    mpv_options = "--input-ipc-server=/tmp/mpv_socket --no-video --replaygain=track --volume=100 --keep-open=no --no-resume-playback --term-osd-bar"
-    quoted_next_video = quote(str(video_path))
+def play_mpv(args, audio_path: Path):
+    mpv_options = "--input-ipc-server=/tmp/mpv_socket --no-audio --replaygain=track --volume=100 --keep-open=no --no-resume-playback --term-osd-bar"
+    quoted_next_audio = quote(str(audio_path))
 
     if args.chromecast:
-        Path("/tmp/mpcatt_playing").write_text(quoted_next_video)
+        Path("/tmp/mpcatt_playing").write_text(quoted_next_audio)
 
         if args.no_local:
-            cmd(f"catt -d '{args.chromecast_device}' cast {quoted_next_video}")
+            cmd(f"catt -d '{args.chromecast_device}' cast {quoted_next_audio}")
         else:
-            cast_process = subprocess.Popen(["catt", "-d", args.chromecast_device, "cast", video_path])
+            cast_process = subprocess.Popen(["catt", "-d", args.chromecast_device, "cast", audio_path])
             sleep(1.174)  # imperfect lazy sync; I use keyboard shortcuts to send `set speed` commands to mpv for resync
-            cmd(f"mpv {mpv_options} -- {quoted_next_video}")
+            cmd(f"mpv {mpv_options} -- {quoted_next_audio}")
             cast_process.communicate()  # wait for chromecast to stop (so that I can tell any chromecast to pause)
             sleep(1.5)  # give chromecast some time to breathe
 
         return  # end of chromecast
 
-    cmd(f"mpv {mpv_options} -- {quoted_next_video}")
+    cmd(f"mpv {mpv_options} -- {quoted_next_audio}")
 
 
 def main():
@@ -67,7 +67,7 @@ def main():
     {f'and {args.size + (args.size /10)} >= size and size >= {args.size - (args.size /10)}' if args.size else ''}
     """
 
-    next_video = dict(
+    next_audio = dict(
         con.execute(
             f"""
     SELECT filename, duration / size AS seconds_per_byte,
@@ -81,26 +81,27 @@ def main():
     FROM media
     WHERE {args.sql_filter}
     {"and filename like ?" if args.search else ''}
+    {"" if args.search else 'and listen_count = 0'}
     ORDER BY {'random(),' if args.random else ''} seconds_per_byte ASC
     limit 1 OFFSET {args.skip if args.skip else 0}
     """,
             bindings,
         ).fetchone()
-    )["filename"]
+    )
 
-    next_video = Path(next_video)
-    print(next_video)
+    next_audio = Path(next_audio["filename"])
+    print(next_audio)
 
-    if next_video.exists():
-        quoted_next_video = quote(str(next_video))
+    if next_audio.exists():
+        quoted_next_audio = quote(str(next_audio))
 
         if args.move:
             keep_path = str(Path(args.move))
-            cmd(f"mv {quoted_next_video} {quote(keep_path)}")
+            cmd(f"mv {quoted_next_audio} {quote(keep_path)}")
         else:
-            play_mpv(args, next_video)
+            play_mpv(args, next_audio)
 
-    con.execute("delete from media where filename = ?", (str(next_video),))
+    con.execute("update media set listen_count = listen_count +1 where filename = ?", (str(next_audio),))
     con.commit()
 
 
