@@ -21,9 +21,10 @@ def play_mpv(args, video_path: Path):
             cmd(f"catt -d '{args.chromecast_device}' cast {quoted_next_video}")
         else:
             cast_process = subprocess.Popen(["catt", "-d", args.chromecast_device, "cast", video_path])
-            sleep(2.23)  # imperfect lazy sync; I use keyboard shortcuts to send `set speed` commands to mpv for resync
+            sleep(1.174)  # imperfect lazy sync; I use keyboard shortcuts to send `set speed` commands to mpv for resync
             cmd(f"mpv {mpv_options} -- {quoted_next_video}")
             cast_process.communicate()  # wait for chromecast to stop (so that I can tell any chromecast to pause)
+            sleep(1.5)  # give chromecast some time to breathe
 
         return  # end of chromecast
 
