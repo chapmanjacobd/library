@@ -1,25 +1,28 @@
 import argparse
 import json
 import os
-from pathlib import Path
 import sys
 from datetime import datetime
+from pathlib import Path
 from shlex import quote
 
+import fuckit
+import mutagen
 import pandas as pd
 from joblib import Parallel, delayed
 from rich import inspect, print
 from tinytag import TinyTag
-import mutagen
 
 from db import fetchall_dict, sqlite_con
 from subtitle import get_subtitle
 from utils import cmd, get_video_files
-import fuckit
 
 
 def parse_mutagen_tags(m, tiny_tags):
-    def c(l: list):
+    def c(l):
+        if isinstance(l, str):
+            l = [l]
+
         if l is None or len(l) == 0:
             return None
 
@@ -156,6 +159,8 @@ def extract_metadata(args, f):
     )
 
     if args.audio:
+        media = {**media, "listen_count": 0}
+
         try:
             tiny_tags = TinyTag.get(f).as_dict()
             mutagen_tags = mutagen.File(f)
