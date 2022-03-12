@@ -24,7 +24,7 @@ def play_mpv(args, audio_path: Path):
             sleep(1.174)  # imperfect lazy sync; I use keyboard shortcuts to send `set speed` commands to mpv for resync
             cmd(f"mpv {mpv_options} -- {quoted_next_audio}")
             cast_process.communicate()  # wait for chromecast to stop (so that I can tell any chromecast to pause)
-            sleep(1.5)  # give chromecast some time to breathe
+            sleep(3.0)  # give chromecast some time to breathe
 
         return  # end of chromecast
 
