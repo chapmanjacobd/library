@@ -85,7 +85,7 @@ def play_mpv(args, video_path: Path):
             cmd(f"ffprobe -loglevel error -select_streams s -show_entries stream -of json {quoted_video_path}").stdout
         )["streams"]
 
-        subtitles_file=None
+        subtitles_file = None
         if len(subs) > 0:
             db = sqlite_utils.Database(memory=True)
             db["subs"].insert_all(subs, pk="index")
@@ -104,18 +104,19 @@ def play_mpv(args, video_path: Path):
             )
 
         if args.vlc:
-            cc_ip = get_ip_of_chromecast(args.chromecast_device)
-            watched=cmd(
-                f"{vlc} --sout '#chromecast' --sout-chromecast-ip={cc_ip} --demux-filter=demux_chromecast {'--sub-file='+subtitles_file if subtitles_file else ''} {quoted_video_path}"
+            watched = cmd(
+                f"{vlc} --sout '#chromecast' --sout-chromecast-ip={args.cc_ip} --demux-filter=demux_chromecast {'--sub-file='+subtitles_file if subtitles_file else ''} {quoted_video_path}"
             )
         else:
-            watched=cmd(f"catt -d '{args.chromecast_device}' cast {quoted_video_path} {'--subtitles '+subtitles_file if subtitles_file else ''}")
+            watched = cmd(
+                f"catt -d '{args.chromecast_device}' cast {quoted_video_path} {'--subtitles '+subtitles_file if subtitles_file else ''}"
+            )
 
-        if 'Heartbeat timeout, resetting connection' in watched.stderr:
-            raise Exception('Media is possibly partially unwatched')
+        if "Heartbeat timeout, resetting connection" in watched.stderr:
+            raise Exception("Media is possibly partially unwatched")
 
-        if watched.stderr == '':
-            raise Exception('catt does not exit nonzero? but something might have gone wrong')
+        if watched.stderr == "":
+            raise Exception("catt does not exit nonzero? but something might have gone wrong")
 
         return  # end of chromecast
 
@@ -128,6 +129,7 @@ def main():
     parser.add_argument("-1", "--last", action="store_true")
     parser.add_argument("-cast-to", "--chromecast-device", default="Living Room TV")
     parser.add_argument("-cast", "--chromecast", action="store_true")
+    parser.add_argument("-f", "--force-transcode", action="store_true")
     parser.add_argument("-d", "--duration", type=int)
     parser.add_argument("-dM", "--max-duration", type=int)
     parser.add_argument("-dm", "--min-duration", type=int)
@@ -178,6 +180,9 @@ def main():
     {'' if args.list else 'LIMIT 1' + (f' OFFSET {args.skip}' if args.skip else '')}
     """
 
+    if args.chromecast:
+        args.cc_ip = get_ip_of_chromecast(args.device_name)
+
     if args.list:
         videos = pd.DataFrame([dict(r) for r in con.execute(query, bindings).fetchall()])
         videos["stem"] = videos.filename.apply(lambda x: Path(x).stem)
@@ -198,23 +203,39 @@ def main():
     if args.play_in_order:
         next_video = Path(get_ordinal_video(con, args, next_video))
 
-    if args.time_limit:
-        seconds=args.time_limit * 60
-        gap_time=14
-        temp_next_video = cmd(f"mktemp --suffix={next_video.suffix} --dry-run").stdout.strip()
-        temp_video = cmd(f"mktemp --suffix={next_video.suffix} --dry-run").stdout.strip()
-
-        # clip x mins of target video file into new temp video file for playback
-        cmd(f"ffmpeg -i {quote(str(next_video))} -ss 0 -t {seconds} -c copy {temp_next_video}")
-        # replace video file to prevent re-watching
-        cmd(f'mv {quote(str(next_video))} {temp_video}')
-        cmd(f"ffmpeg -i {temp_video} -ss {seconds - gap_time} -c copy {quote(str(next_video))} && rm {temp_video}")
-
-        next_video=Path(temp_next_video)
-
-    print(next_video)
-
+    original_video = next_video
+    print(original_video)
     if next_video.exists() and "/keep/" not in str(next_video):
+
+        if args.time_limit:
+            seconds = args.time_limit * 60
+            gap_time = 14
+            temp_next_video = cmd(f"mktemp --suffix={next_video.suffix} --dry-run").stdout.strip()
+            temp_video = cmd(f"mktemp --suffix={next_video.suffix} --dry-run").stdout.strip()
+
+            # clip x mins of target video file into new temp video file for playback
+            cmd(f"ffmpeg -i {quote(str(next_video))} -ss 0 -t {seconds} -c copy {temp_next_video}")
+            # replace video file to prevent re-watching
+            cmd(f"mv {quote(str(next_video))} {temp_video}")
+            cmd(f"ffmpeg -i {temp_video} -ss {seconds - gap_time} -c copy {quote(str(next_video))} && rm {temp_video}")
+
+            next_video = Path(temp_next_video)
+            print(next_video)
+
+        if args.force_transcode:
+            temp_video = cmd(f"mktemp --suffix=.mkv --dry-run").stdout.strip()
+            cmd(f"mv {quote(str(next_video))} {temp_video}")
+            next_video = next_video.with_suffix(".mkv")
+            cmd(
+                (
+                    f"ffmpeg -loglevel error -stats -i {temp_video} -map 0 -scodec webvtt -vcodec h264"
+                    " -preset fast -profile:v high -level 4.1 -crf 17 -pix_fmt yuv420p"
+                    " -acodec opus -ac 2 -b:a 128k -filter:a loudnorm=i=-18:lra=17"
+                    f" {quote(str(next_video))} && rm {temp_video}"
+                )
+            )
+            print(next_video)
+
         quoted_next_video = quote(str(next_video))
 
         if args.move:
@@ -229,7 +250,7 @@ def main():
             else:
                 cmd(f"trash-put {quoted_next_video}")
 
-    con.execute("delete from media where filename = ?", (str(next_video),))
+    con.execute("delete from media where filename = ?", (str(original_video),))
     con.commit()
 
 
