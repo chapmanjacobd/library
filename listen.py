@@ -11,7 +11,8 @@ from utils import cmd, log
 
 
 def play_mpv(args, audio_path: Path):
-    mpv_options = "--input-ipc-server=/tmp/mpv_socket --no-video --replaygain=track --volume=100 --keep-open=no --no-resume-playback --term-osd-bar"
+    mpv_options = "--input-ipc-server=/tmp/mpv_socket --no-video --replaygain=track --volume=100 --keep-open=no --term-osd-bar"
+    # --no-resume-playback: I no longer use this because I now only save playback progress if the media file is longer than 7 minutes
     quoted_next_audio = quote(str(audio_path))
 
     if args.chromecast:
@@ -22,6 +23,7 @@ def play_mpv(args, audio_path: Path):
         else:
             cast_process = subprocess.Popen(["catt", "-d", args.chromecast_device, "cast", audio_path])
             sleep(1.174)  # imperfect lazy sync; I use keyboard shortcuts to send `set speed` commands to mpv for resync
+            # kde-inhibit --power
             cmd(f"mpv {mpv_options} -- {quoted_next_audio}")
             cast_process.communicate()  # wait for chromecast to stop (so that I can tell any chromecast to pause)
             sleep(3.0)  # give chromecast some time to breathe
