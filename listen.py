@@ -69,6 +69,30 @@ def main():
     {f'and {args.size + (args.size /10)} >= size and size >= {args.size - (args.size /10)}' if args.size else ''}
     """
 
+    search_string ="""and (
+        filename like ?
+        OR format_name like ?
+        OR format_long_name like ?
+        OR album like ?
+        OR albumartist like ?
+        OR artist like ?
+        OR comment like ?
+        OR composer like ?
+        OR genre like ?
+        OR title like ?
+        OR year like ?
+        OR albumgenre like ?
+        OR albumgrouping like ?
+        OR mood like ?
+        OR key like ?
+        OR gain like ?
+        OR time like ?
+        OR decade like ?
+        OR categories like ?
+        OR city like ?
+        OR country like ?
+    )"""
+
     next_audio = dict(
         con.execute(
             f"""
@@ -82,7 +106,7 @@ def main():
     END AS size
     FROM media
     WHERE {args.sql_filter}
-    {"and filename like ?" if args.search else ''}
+    {search_string if args.search else ''}
     {"" if args.search else 'and listen_count = 0'}
     ORDER BY {'random(),' if args.random else ''} seconds_per_byte ASC
     limit 1 OFFSET {args.skip if args.skip else 0}

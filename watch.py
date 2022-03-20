@@ -153,15 +153,19 @@ def main():
     if args.search:
         bindings.append("%" + args.search + "%")
 
+    size_mb = 0
+    if args.size:
+        size_mb = args.size * 1024 * 1024
     args.sql_filter = f"""duration IS NOT NULL and size IS NOT NULL
     {f'and duration >= {args.min_duration}' if args.min_duration else ''}
     {f'and {args.max_duration} >= duration' if args.max_duration else ''}
     {f'and {args.duration + (args.duration /10)} >= duration and duration >= {args.duration - (args.duration /10)}' if args.duration else ''}
 
-    {f'and size >= {args.min_size}' if args.min_size else ''}
-    {f'and {args.max_size} >= size' if args.max_size else ''}
-    {f'and {args.size + (args.size /10)} >= size and size >= {args.size - (args.size /10)}' if args.size else ''}
+    {f'and size >= {args.min_size * 1024 * 1024}' if args.min_size else ''}
+    {f'and {args.max_size * 1024 * 1024} >= size' if args.max_size else ''}
+    {f'and {size_mb + (size_mb /10)} >= size and size >= {size_mb - (size_mb /10)}' if args.size else ''}
     """
+
     query = f"""
     SELECT filename, duration/60/60 as hours, duration / size AS seconds_per_byte,
     CASE
