@@ -72,7 +72,7 @@ def get_ip_of_chromecast(device_name):
 
 def play_mpv(args, video_path: Path):
     mpv = "mpv"
-    mpv_options = "--fs --force-window=yes --terminal=no"
+    mpv_options = "--fs --force-window=yes --terminal=no --speed=1"
     vlc = "vlc"
     quoted_video_path = quote(str(video_path))
     is_WSL = cmd('grep -qEi "(Microsoft|WSL)" /proc/version', strict=False).returncode == 0
