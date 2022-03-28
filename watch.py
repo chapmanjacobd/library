@@ -15,10 +15,10 @@ from rich.prompt import Confirm
 from tabulate import tabulate
 
 from db import singleColumnToList, sqlite_con
-from utils import cmd, log
+from utils import cmd, conditional_filter, log
 
 
-def get_ordinal_video(con, args, filename: Path):
+def get_ordinal_video(con, args, filename: Path, sql_filter):
     similar_videos = []
     testname = str(filename)
     while len(similar_videos) < 2:
@@ -39,7 +39,7 @@ def get_ordinal_video(con, args, filename: Path):
         similar_videos = singleColumnToList(
             con.execute(
                 f"""SELECT filename FROM media
-            WHERE {args.sql_filter}
+            WHERE {sql_filter}
                 and filename like ?
             ORDER BY filename
             limit 2
@@ -153,18 +153,7 @@ def main():
     if args.search:
         bindings.append("%" + args.search + "%")
 
-    size_mb = 0
-    if args.size:
-        size_mb = args.size * 1024 * 1024
-    args.sql_filter = f"""duration IS NOT NULL and size IS NOT NULL
-    {f'and duration >= {args.min_duration}' if args.min_duration else ''}
-    {f'and {args.max_duration} >= duration' if args.max_duration else ''}
-    {f'and {args.duration + (args.duration /10)} >= duration and duration >= {args.duration - (args.duration /10)}' if args.duration else ''}
-
-    {f'and size >= {args.min_size * 1024 * 1024}' if args.min_size else ''}
-    {f'and {args.max_size * 1024 * 1024} >= size' if args.max_size else ''}
-    {f'and {size_mb + (size_mb /10)} >= size and size >= {size_mb - (size_mb /10)}' if args.size else ''}
-    """
+    sql_filter = conditional_filter(args)
 
     query = f"""
     SELECT filename, duration/60/60 as hours, duration / size AS seconds_per_byte,
@@ -176,7 +165,7 @@ def main():
         WHEN size >= (1024 * 1024 * 1024 * 1024) THEN (size / (1024 * 1024 * 1024 * 1024)) || 'TB'
     END AS size
     FROM media
-    WHERE {args.sql_filter}
+    WHERE {sql_filter}
     {"and filename like ?" if args.search else ''}
     ORDER BY {'random(),' if args.random else ''}
             {'filename,' if args.search and args.play_in_order else ''}
@@ -205,7 +194,7 @@ def main():
 
     next_video = Path(next_video)
     if args.play_in_order:
-        next_video = Path(get_ordinal_video(con, args, next_video))
+        next_video = Path(get_ordinal_video(con, args, next_video, sql_filter))
 
     original_video = next_video
     print(original_video)
@@ -256,6 +245,7 @@ def main():
 
     con.execute("delete from media where filename = ?", (str(original_video),))
     con.commit()
+
 
 
 if __name__ == "__main__":
