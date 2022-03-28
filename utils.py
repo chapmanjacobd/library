@@ -85,3 +85,24 @@ def cmd(command, strict=True, cwd=None):
         if strict:
             raise Exception(r.returncode)
     return r
+
+
+def conditional_filter(args):
+    B_TO_MB = 1024 * 1024
+    size_mb = 0
+    if args.size:
+        size_mb = args.size * B_TO_MB
+
+    SEC_TO_M = 60
+    duration_m = 0
+    if args.duration:
+        duration_m = args.duration * SEC_TO_M
+
+    return f"""duration IS NOT NULL and size IS NOT NULL
+    {f'and duration >= {args.min_duration * SEC_TO_M}' if args.min_duration else ''}
+    {f'and {args.max_duration * SEC_TO_M} >= duration' if args.max_duration else ''}
+    {f'and {duration_m + (duration_m /10)} >= duration and duration >= {duration_m - (duration_m /10)}' if args.duration else ''}
+    {f'and size >= {args.min_size * B_TO_MB}' if args.min_size else ''}
+    {f'and {args.max_size * B_TO_MB} >= size' if args.max_size else ''}
+    {f'and {size_mb + (size_mb /10)} >= size and size >= {size_mb - (size_mb /10)}' if args.size else ''}
+    """

@@ -7,7 +7,7 @@ from time import sleep
 from rich import inspect, print
 
 from db import sqlite_con
-from utils import cmd, log
+from utils import cmd, conditional_filter, log
 
 
 def play_mpv(args, audio_path: Path):
@@ -59,15 +59,7 @@ def main():
     if args.search:
         bindings.append("%" + args.search + "%")
 
-    args.sql_filter = f"""duration IS NOT NULL and size IS NOT NULL
-    {f'and duration >= {args.min_duration}' if args.min_duration else ''}
-    {f'and {args.max_duration} >= duration' if args.max_duration else ''}
-    {f'and {args.duration + (args.duration /10)} >= duration and duration >= {args.duration - (args.duration /10)}' if args.duration else ''}
-
-    {f'and size >= {args.min_size}' if args.min_size else ''}
-    {f'and {args.max_size} >= size' if args.max_size else ''}
-    {f'and {args.size + (args.size /10)} >= size and size >= {args.size - (args.size /10)}' if args.size else ''}
-    """
+    sql_filter = conditional_filter(args)
 
     search_string ="""and (
         filename like ?
@@ -105,7 +97,7 @@ def main():
         WHEN size >= (1024 * 1024 * 1024 * 1024) THEN (size / (1024 * 1024 * 1024 * 1024)) || 'TB'
     END AS size
     FROM media
-    WHERE {args.sql_filter}
+    WHERE {sql_filter}
     {search_string if args.search else ''}
     {"" if args.search else 'and listen_count = 0'}
     ORDER BY {'random(),' if args.random else ''} seconds_per_byte ASC
