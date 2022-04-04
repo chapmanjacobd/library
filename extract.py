@@ -127,8 +127,11 @@ def extract_metadata(args, f):
             cmd(f"ffprobe -loglevel quiet -print_format json=compact=1 -show_entries format {quote(f)}").stdout
         )
     except:
-        cmd(f"trash-put {quote(f)}")
-        print(f"Failed reading {f}", file=sys.stderr)
+        try:
+            cmd(f"trash-put {quote(f)}")
+            print(f"Failed reading {f}", file=sys.stderr)
+        except:
+            pass
         return
 
     if not "format" in ffprobe:
