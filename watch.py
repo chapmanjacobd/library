@@ -139,6 +139,7 @@ def main():
     parser.add_argument("-O", "--play-in-order", action="store_true")
     parser.add_argument("-r", "--random", action="store_true")
     parser.add_argument("-s", "--search")
+    parser.add_argument("-E", "--exclude")
     parser.add_argument("-S", "--skip")
     parser.add_argument("-t", "--time-limit", type=int)
     parser.add_argument("-v", "--verbose", action="count", default=0)
@@ -152,6 +153,8 @@ def main():
     bindings = []
     if args.search:
         bindings.append("%" + args.search + "%")
+    if args.exclude:
+        bindings.append("%" + args.exclude + "%")
 
     sql_filter = conditional_filter(args)
 
@@ -167,6 +170,7 @@ def main():
     FROM media
     WHERE {sql_filter}
     {"and filename like ?" if args.search else ''}
+    {"and filename not like ?" if args.exclude else ''}
     ORDER BY {'random(),' if args.random else ''}
             {'filename,' if args.search and args.play_in_order else ''}
             seconds_per_byte ASC
