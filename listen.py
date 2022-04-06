@@ -40,6 +40,7 @@ def main():
     parser.add_argument("-cast", "--chromecast", action="store_true")
     parser.add_argument("-cast-to", "--chromecast-device", default="Xylo and Orchestra")
     parser.add_argument("-s", "--search")
+    parser.add_argument("-E", "--exclude")
     parser.add_argument("-S", "--skip")
     parser.add_argument("-d", "--duration", type=int)
     parser.add_argument("-dm", "--min-duration", type=int)
@@ -58,6 +59,8 @@ def main():
     bindings = []
     if args.search:
         bindings.append("%" + args.search + "%")
+    if args.exclude:
+        bindings.append("%" + args.exclude + "%")
 
     sql_filter = conditional_filter(args)
 
@@ -85,6 +88,30 @@ def main():
         OR country like ?
     )"""
 
+    exclude_string ="""and (
+        filename not like ?
+        OR format_name not like ?
+        OR format_long_name not like ?
+        OR album not like ?
+        OR albumartist not like ?
+        OR artist not like ?
+        OR comment not like ?
+        OR composer not like ?
+        OR genre not like ?
+        OR title not like ?
+        OR year not like ?
+        OR albumgenre not like ?
+        OR albumgrouping not like ?
+        OR mood not like ?
+        OR key not like ?
+        OR gain not like ?
+        OR time not like ?
+        OR decade not like ?
+        OR categories not like ?
+        OR city not like ?
+        OR country not like ?
+    )"""
+
     next_audio = dict(
         con.execute(
             f"""
@@ -99,6 +126,7 @@ def main():
     FROM media
     WHERE {sql_filter}
     {search_string if args.search else ''}
+    {exclude_string if args.exclude else ''}
     {"" if args.search else 'and listen_count = 0'}
     ORDER BY {'random(),' if args.random else ''} seconds_per_byte ASC
     limit 1 OFFSET {args.skip if args.skip else 0}
