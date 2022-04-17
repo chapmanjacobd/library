@@ -36,27 +36,7 @@ def play_mpv(args, audio_path: Path):
     cmd(f"mpv {mpv_options} -- {quoted_next_audio}")
 
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("db")
-    parser.add_argument("-N", "--no-local", action="store_true")
-    parser.add_argument("-cast", "--chromecast", action="store_true")
-    parser.add_argument("-cast-to", "--chromecast-device", default="Xylo and Orchestra")
-    parser.add_argument("-s", "--search")
-    parser.add_argument("-E", "--exclude")
-    parser.add_argument("-S", "--skip")
-    parser.add_argument("-d", "--duration", type=int)
-    parser.add_argument("-dm", "--min-duration", type=int)
-    parser.add_argument("-dM", "--max-duration", type=int)
-    parser.add_argument("-sz", "--size", type=int)
-    parser.add_argument("-szm", "--min-size", type=int)
-    parser.add_argument("-szM", "--max-size", type=int)
-    parser.add_argument("-mv", "--move")
-    parser.add_argument("-wl", "--with-local", action="store_true")
-    parser.add_argument("-O", "--play-in-order", action="store_true")
-    parser.add_argument("-r", "--random", action="store_true")
-    parser.add_argument("-v", "--verbose", action="count", default=0)
-    args = parser.parse_args()
+def main(args):
     con = sqlite_con(args.db)
 
     bindings = []
@@ -155,7 +135,29 @@ def main():
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("db")
+    parser.add_argument("-N", "--no-local", action="store_true")
+    parser.add_argument("-cast", "--chromecast", action="store_true")
+    parser.add_argument("-cast-to", "--chromecast-device", default="Xylo and Orchestra")
+    parser.add_argument("-s", "--search")
+    parser.add_argument("-E", "--exclude")
+    parser.add_argument("-S", "--skip")
+    parser.add_argument("-d", "--duration", type=int)
+    parser.add_argument("-dm", "--min-duration", type=int)
+    parser.add_argument("-dM", "--max-duration", type=int)
+    parser.add_argument("-sz", "--size", type=int)
+    parser.add_argument("-szm", "--min-size", type=int)
+    parser.add_argument("-szM", "--max-size", type=int)
+    parser.add_argument("-mv", "--move")
+    parser.add_argument("-wl", "--with-local", action="store_true")
+    parser.add_argument("-O", "--play-in-order", action="store_true")
+    parser.add_argument("-r", "--random", action="store_true")
+    parser.add_argument("-v", "--verbose", action="count", default=0)
+    args = parser.parse_args()
+
     try:
-        main()
+        main(args)
     finally:
-        os.unlink("/tmp/mpcatt_playing")
+        if args.chromecast:
+            os.unlink("/tmp/mpcatt_playing")
