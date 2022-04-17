@@ -1,4 +1,5 @@
 import argparse
+import os
 import subprocess
 from pathlib import Path
 from shlex import quote
@@ -11,7 +12,9 @@ from utils import cmd, conditional_filter, log
 
 
 def play_mpv(args, audio_path: Path):
-    mpv_options = "--input-ipc-server=/tmp/mpv_socket --no-video --replaygain=track --volume=100 --keep-open=no --term-osd-bar"
+    mpv_options = (
+        "--input-ipc-server=/tmp/mpv_socket --no-video --replaygain=track --volume=100 --keep-open=no --term-osd-bar"
+    )
     # --no-resume-playback: I no longer use this because I now only save playback progress if the media file is longer than 7 minutes
     quoted_next_audio = quote(str(audio_path))
 
@@ -64,7 +67,7 @@ def main():
 
     sql_filter = conditional_filter(args)
 
-    search_string ="""and (
+    search_string = """and (
         filename like ?
         OR format_name like ?
         OR format_long_name like ?
@@ -88,7 +91,7 @@ def main():
         OR country like ?
     )"""
 
-    exclude_string ="""and (
+    exclude_string = """and (
         filename not like ?
         OR format_name not like ?
         OR format_long_name not like ?
@@ -152,4 +155,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    finally:
+        os.unlink("/tmp/mpcatt_playing")
