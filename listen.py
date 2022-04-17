@@ -15,7 +15,6 @@ def play_mpv(args, audio_path: Path):
     mpv_options = (
         "--input-ipc-server=/tmp/mpv_socket --no-video --replaygain=track --volume=100 --keep-open=no --term-osd-bar"
     )
-    # --no-resume-playback: I no longer use this because I now only save playback progress if the media file is longer than 7 minutes
     quoted_next_audio = quote(str(audio_path))
 
     if args.chromecast:
@@ -160,4 +159,4 @@ if __name__ == "__main__":
         main(args)
     finally:
         if args.chromecast:
-            os.unlink("/tmp/mpcatt_playing")
+            cmd("true > /tmp/mpcatt_playing")
