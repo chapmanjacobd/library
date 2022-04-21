@@ -128,6 +128,8 @@ def main(args):
             cmd(f"mv {quoted_next_audio} {quote(keep_path)}")
         else:
             play_mpv(args, next_audio)
+            if 'audiobook' in quoted_next_audio.lower():
+                cmd(f"trash-put {quoted_next_audio}")
 
     con.execute("update media set listen_count = listen_count +1 where filename = ?", (str(next_audio),))
     con.commit()
