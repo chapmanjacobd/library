@@ -152,7 +152,7 @@ def main():
 
     bindings = []
     if args.search:
-        bindings.append("%" + args.search + "%")
+        bindings.append("%" + args.search.replace(' ','%') + "%")
     if args.exclude:
         bindings.append("%" + args.exclude + "%")
 
