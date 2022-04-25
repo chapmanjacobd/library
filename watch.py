@@ -154,7 +154,7 @@ def main():
     if args.search:
         bindings.append("%" + args.search.replace(' ','%') + "%")
     if args.exclude:
-        bindings.append("%" + args.exclude + "%")
+        bindings.append("%" + args.exclude.replace(' ','%') + "%")
 
     sql_filter = conditional_filter(args)
 

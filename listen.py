@@ -38,65 +38,63 @@ def play_mpv(args, audio_path: Path):
 def main(args):
     con = sqlite_con(args.db)
 
-    bindings = []
+    bindings = {}
     if args.search:
-        bindings.append("%" + args.search + "%")
+        bindings["search"] = "%" + args.search.replace(" ", "%") + "%"
     if args.exclude:
-        bindings.append("%" + args.exclude + "%")
+        bindings["exclude"] = "%" + args.exclude.replace(" ", "%") + "%"
 
     sql_filter = conditional_filter(args)
 
     search_string = """and (
-        filename like ?
-        OR format_name like ?
-        OR format_long_name like ?
-        OR album like ?
-        OR albumartist like ?
-        OR artist like ?
-        OR comment like ?
-        OR composer like ?
-        OR genre like ?
-        OR title like ?
-        OR year like ?
-        OR albumgenre like ?
-        OR albumgrouping like ?
-        OR mood like ?
-        OR key like ?
-        OR gain like ?
-        OR time like ?
-        OR decade like ?
-        OR categories like ?
-        OR city like ?
-        OR country like ?
+        filename like :search
+        OR format_name like :search
+        OR format_long_name like :search
+        OR album like :search
+        OR albumartist like :search
+        OR artist like :search
+        OR comment like :search
+        OR composer like :search
+        OR genre like :search
+        OR title like :search
+        OR year like :search
+        OR albumgenre like :search
+        OR albumgrouping like :search
+        OR mood like :search
+        OR key like :search
+        OR gain like :search
+        OR time like :search
+        OR decade like :search
+        OR categories like :search
+        OR city like :search
+        OR country like :search
     )"""
 
     exclude_string = """and (
-        filename not like ?
-        OR format_name not like ?
-        OR format_long_name not like ?
-        OR album not like ?
-        OR albumartist not like ?
-        OR artist not like ?
-        OR comment not like ?
-        OR composer not like ?
-        OR genre not like ?
-        OR title not like ?
-        OR year not like ?
-        OR albumgenre not like ?
-        OR albumgrouping not like ?
-        OR mood not like ?
-        OR key not like ?
-        OR gain not like ?
-        OR time not like ?
-        OR decade not like ?
-        OR categories not like ?
-        OR city not like ?
-        OR country not like ?
+        filename not like :exclude
+        OR format_name not like :exclude
+        OR format_long_name not like :exclude
+        OR album not like :exclude
+        OR albumartist not like :exclude
+        OR artist not like :exclude
+        OR comment not like :exclude
+        OR composer not like :exclude
+        OR genre not like :exclude
+        OR title not like :exclude
+        OR year not like :exclude
+        OR albumgenre not like :exclude
+        OR albumgrouping not like :exclude
+        OR mood not like :exclude
+        OR key not like :exclude
+        OR gain not like :exclude
+        OR time not like :exclude
+        OR decade not like :exclude
+        OR categories not like :exclude
+        OR city not like :exclude
+        OR country not like :exclude
     )"""
 
-    next_audio = dict(
-        con.execute(
-            f"""
+    query = f"""
     SELECT filename, duration / size AS seconds_per_byte,
     CASE
         WHEN size < 1024 THEN size || 'B'
@@ -112,10 +110,9 @@ def main(args):
     {"" if args.search else 'and listen_count = 0'}
     ORDER BY {'random(),' if args.random else ''} seconds_per_byte ASC
     limit 1 OFFSET {args.skip if args.skip else 0}
-    """,
-            bindings,
-        ).fetchone()
-    )
+    """
+
+    next_audio = dict(con.execute(query, bindings).fetchone())
 
     next_audio = Path(next_audio["filename"])
     print(next_audio)
@@ -128,7 +125,7 @@ def main(args):
             cmd(f"mv {quoted_next_audio} {quote(keep_path)}")
         else:
             play_mpv(args, next_audio)
-            if 'audiobook' in quoted_next_audio.lower():
+            if "audiobook" in quoted_next_audio.lower():
                 cmd(f"trash-put {quoted_next_audio}")
 
     con.execute("update media set listen_count = listen_count +1 where filename = ?", (str(next_audio),))
