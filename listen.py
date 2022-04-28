@@ -157,4 +157,4 @@ if __name__ == "__main__":
         main(args)
     finally:
         if args.chromecast:
-            cmd("rm /tmp/mpcatt_playing")
+            cmd("rm /tmp/mpcatt_playing", strict=False)
