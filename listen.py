@@ -21,7 +21,8 @@ def play_mpv(args, audio_path: Path):
         Path("/tmp/mpcatt_playing").write_text(quoted_next_audio)
 
         if not args.with_local:
-            cmd(f"catt -d '{args.chromecast_device}' cast {quoted_next_audio}")
+            cmd("touch /tmp/sub.srt")
+            cmd(f"catt -d '{args.chromecast_device}' cast -s /tmp/sub.srt {quoted_next_audio}")
         else:
             cast_process = subprocess.Popen(["catt", "-d", args.chromecast_device, "cast", audio_path])
             sleep(1.174)  # imperfect lazy sync; I use keyboard shortcuts to send `set speed` commands to mpv for resync
