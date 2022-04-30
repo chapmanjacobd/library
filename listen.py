@@ -29,10 +29,8 @@ def play_mpv(args, audio_path: Path):
             cmd(f"mpv {mpv_options} -- {quoted_next_audio}")
             cast_process.communicate()  # wait for chromecast to stop (so that I can tell any chromecast to pause)
             sleep(3.0)  # give chromecast some time to breathe
-
-        return  # end of chromecast
-
-    cmd(f"mpv {mpv_options} -- {quoted_next_audio}")
+    else:
+        cmd(f"mpv {mpv_options} -- {quoted_next_audio}")
 
 
 def main(args):
