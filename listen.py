@@ -17,6 +17,8 @@ def play_mpv(args, audio_path: Path):
     )
     quoted_next_audio = quote(str(audio_path))
 
+    cmd(f"ffprobe -hide_banner -loglevel info {quoted_next_audio}")
+
     if args.chromecast:
         Path("/tmp/mpcatt_playing").write_text(quoted_next_audio)
 
