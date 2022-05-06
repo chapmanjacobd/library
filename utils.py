@@ -44,7 +44,7 @@ def argparse_log():
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("-v", "--verbose", action="count", default=0)
     args, _unknown = parser.parse_known_args()
-    print(args)
+    # print(args)
 
     try:
         if args.verbose > 0 and os.getpgrp() == os.tcgetpgrp(sys.stdout.fileno()):
@@ -92,9 +92,10 @@ def cmd(command, strict=True, cwd=None, quiet=False):
                 func(s)
 
     def print_stderr(func, r):
-        s = filter_output(r.stderr)
-        if len(s) > 0:
-            func(s)
+        if not quiet:
+            s = filter_output(r.stderr)
+            if len(s) > 0:
+                func(s)
 
     r = run(command, capture_output=True, text=True, shell=True, cwd=cwd)
     log.debug(r.args)
