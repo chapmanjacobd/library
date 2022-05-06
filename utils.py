@@ -73,17 +73,38 @@ def argparse_log():
 log = argparse_log()
 
 
-def cmd(command, strict=True, cwd=None):
+def cmd(command, strict=True, cwd=None, quiet=False):
+    lines_to_filter = [""]
+
+    def filter_output(string):
+        filtered_strings = []
+        for s in string.strip().splitlines():
+            if not any([t in s for t in lines_to_filter]):
+                filtered_strings.append(s.strip())
+
+        filtered_strings = list(filter(None, filtered_strings))
+        return "\n".join(filtered_strings)
+
+    def print_stdout(func, r):
+        if not quiet:
+            s = filter_output(r.stdout)
+            if len(s) > 0:
+                func(s)
+
+    def print_stderr(func, r):
+        s = filter_output(r.stderr)
+        if len(s) > 0:
+            func(s)
+
     r = run(command, capture_output=True, text=True, shell=True, cwd=cwd)
     log.debug(r.args)
-    if len(r.stdout.strip()) > 0:
-        log.debug(r.stdout.strip())
-    if len(r.stderr.strip()) > 0:
-        log.error(r.stderr.strip())
+    print_stdout(log.info, r)
+    print_stderr(log.error, r)
     if r.returncode != 0:
-        log.debug(f"ERROR {r.returncode}")
+        log.info(f"ERROR {r.returncode}")
         if strict:
-            raise Exception(r.returncode)
+            print_stdout(print, r)
+            raise Exception(f"[{command}] exited {r.returncode}")
     return r
 
 
