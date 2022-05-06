@@ -74,7 +74,7 @@ log = argparse_log()
 
 
 def cmd(command, strict=True, cwd=None, quiet=False):
-    lines_to_filter = [""]
+    lines_to_filter = ["  Stream #0:0: Audio: opus, 48000 Hz, stereo, fltp", "    Metadata:"]
 
     def filter_output(string):
         filtered_strings = []
