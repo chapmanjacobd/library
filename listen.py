@@ -17,7 +17,7 @@ def play_mpv(args, audio_path: Path):
     )
     quoted_next_audio = quote(str(audio_path))
 
-    cmd(f"ffprobe -hide_banner -loglevel info {quoted_next_audio}")
+    print(cmd(f"ffprobe -hide_banner -loglevel info {quoted_next_audio}", quiet=True).stderr)
 
     if args.chromecast:
         Path("/tmp/mpcatt_playing").write_text(quoted_next_audio)
@@ -116,7 +116,6 @@ def main(args):
     next_audio = dict(con.execute(query, bindings).fetchone())
 
     next_audio = Path(next_audio["filename"])
-    print(next_audio)
 
     if next_audio.exists():
         quoted_next_audio = quote(str(next_audio))
