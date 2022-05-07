@@ -1,6 +1,7 @@
 import argparse
 import logging
 import os
+import re
 import sys
 from functools import wraps
 from glob import glob
@@ -74,42 +75,39 @@ log = argparse_log()
 
 
 def cmd(command, strict=True, cwd=None, quiet=False):
-    lines_to_filter = [
-        "Stream #0:0: Audio: opus, 48000 Hz, stereo, fltp",
-        "Stream #0:0(eng): Audio: opus, 48000 Hz, stereo, fltp",
-        "Metadata:",
-    ]
+    EXP_FILTER = re.compile(
+        "|".join(
+            [
+                r".*Stream #0:0.*Audio: opus, 48000 Hz, stereo, fltp",
+                r".*Metadata:",
+            ]
+        ),
+        re.IGNORECASE,
+    )
 
     def filter_output(string):
         filtered_strings = []
         for s in string.strip().splitlines():
-            if not any([t in s for t in lines_to_filter]):
-                filtered_strings.append(s.strip())
+            if not EXP_FILTER.match(s):
+                filtered_strings.append(s)
 
-        filtered_strings = list(filter(None, filtered_strings))
-        return "\n".join(filtered_strings)
+        return "\n".join(list(filter(None, filtered_strings)))
 
-    def print_stdout(func, r):
-        if not quiet:
-            s = filter_output(r.stdout)
-            if len(s) > 0:
-                func(s)
-
-    def print_stderr(func, r):
-        if not quiet:
-            s = filter_output(r.stderr)
-            if len(s) > 0:
-                func(s)
+    def print_std(r_std):
+        s = filter_output(r_std)
+        if not quiet and len(s) > 0:
+            print(s)
+        return s
 
     r = run(command, capture_output=True, text=True, shell=True, cwd=cwd)
     log.debug(r.args)
-    print_stdout(log.info, r)
-    print_stderr(log.error, r)
+    r.stdout = print_std(r.stdout)
+    r.stderr = print_std(r.stderr)
     if r.returncode != 0:
         log.info(f"ERROR {r.returncode}")
         if strict:
-            print_stdout(print, r)
             raise Exception(f"[{command}] exited {r.returncode}")
+
     return r
 
 
