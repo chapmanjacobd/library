@@ -46,7 +46,7 @@ def get_ordinal_video(con, args, filename: Path, sql_filter):
             """,
                 ("%" + testname + "%",),
             ).fetchall(),
-            "filename",
+            "filename",  # type: ignore
         )
         log.info(similar_videos)
 
@@ -152,9 +152,9 @@ def main():
 
     bindings = []
     if args.search:
-        bindings.append("%" + args.search.replace(' ','%') + "%")
+        bindings.append("%" + args.search.replace(" ", "%") + "%")
     if args.exclude:
-        bindings.append("%" + args.exclude.replace(' ','%') + "%")
+        bindings.append("%" + args.exclude.replace(" ", "%") + "%")
 
     sql_filter = conditional_filter(args)
 
@@ -200,10 +200,10 @@ def main():
     if args.play_in_order:
         next_video = Path(get_ordinal_video(con, args, next_video, sql_filter))
 
-    original_video = next_video
-    print(original_video)
-    if next_video.exists() and "/keep/" not in str(next_video):
+    print(next_video)
 
+    original_video = next_video
+    if next_video.exists() and "/keep/" not in str(next_video):
         if args.time_limit:
             seconds = args.time_limit * 60
             gap_time = 14
@@ -249,7 +249,6 @@ def main():
 
     con.execute("delete from media where filename = ?", (str(original_video),))
     con.commit()
-
 
 
 if __name__ == "__main__":
