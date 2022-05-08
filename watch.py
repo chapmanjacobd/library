@@ -1,7 +1,5 @@
 import argparse
 import json
-import os
-import re
 from pathlib import Path
 from shlex import quote
 
@@ -9,65 +7,16 @@ import numpy as np
 import pandas as pd
 import sqlite_utils
 from natsort import index_natsorted
-from pychromecast import discovery
 from rich import inspect, print
 from rich.prompt import Confirm
 from tabulate import tabulate
 
-from db import singleColumnToList, sqlite_con
-from utils import cmd, conditional_filter, log
+from db import sqlite_con
+from utils import cmd, conditional_filter, get_ip_of_chromecast, get_ordinal_media, log
 
 
-def get_ordinal_video(con, args, filename: Path, sql_filter):
-    similar_videos = []
-    testname = str(filename)
-    while len(similar_videos) < 2:
-        remove_groups = re.split(r"([\W_]+)", testname)
-        remove_chars = ""
-        remove_chars_i = 1
-        while len(remove_chars) < 1:
-            remove_chars += remove_groups[-remove_chars_i]
-            remove_chars_i += 1
-
-        newtestname = testname[: -len(remove_chars)]
-        log.debug(f"Matches for '{newtestname}':")
-
-        if testname == "" or newtestname == testname:
-            return filename
-
-        testname = newtestname
-        similar_videos = singleColumnToList(
-            con.execute(
-                f"""SELECT filename FROM media
-            WHERE {sql_filter}
-                and filename like ?
-            ORDER BY filename
-            limit 2
-            """,
-                ("%" + testname + "%",),
-            ).fetchall(),
-            "filename",  # type: ignore
-        )
-        log.info(similar_videos)
-
-        commonprefix = os.path.commonprefix(similar_videos)
-        if len(Path(commonprefix).name) < 5:
-            return filename
-
-        if args.last:
-            return similar_videos[0]
-
-    return similar_videos[0]
-
-
-def get_ip_of_chromecast(device_name):
-    cast_infos, browser = discovery.discover_listed_chromecasts(friendly_names=[device_name])
-    browser.stop_discovery()
-    if len(cast_infos) == 0:
-        print("Target chromecast device not found")
-        exit(53)
-
-    return cast_infos[0].host
+def stop():
+    exit(1)  # use nonzero code to stop shell repeat
 
 
 def play_mpv(args, video_path: Path):
@@ -123,31 +72,7 @@ def play_mpv(args, video_path: Path):
     cmd(f"{mpv} {mpv_options} {quoted_video_path}")
 
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("db")
-    parser.add_argument("-1", "--last", action="store_true")
-    parser.add_argument("-cast-to", "--chromecast-device", default="Living Room TV")
-    parser.add_argument("-cast", "--chromecast", action="store_true")
-    parser.add_argument("-f", "--force-transcode", action="store_true")
-    parser.add_argument("-d", "--duration", type=int)
-    parser.add_argument("-dM", "--max-duration", type=int)
-    parser.add_argument("-dm", "--min-duration", type=int)
-    parser.add_argument("-keep", "--keep", action="store_true")
-    parser.add_argument("-list", "--list", action="store_true")
-    parser.add_argument("-mv", "--move")
-    parser.add_argument("-O", "--play-in-order", action="store_true")
-    parser.add_argument("-r", "--random", action="store_true")
-    parser.add_argument("-s", "--search")
-    parser.add_argument("-E", "--exclude")
-    parser.add_argument("-S", "--skip")
-    parser.add_argument("-t", "--time-limit", type=int)
-    parser.add_argument("-v", "--verbose", action="count", default=0)
-    parser.add_argument("-vlc", "--vlc", action="store_true")
-    parser.add_argument("-z", "--size", type=int)
-    parser.add_argument("-zM", "--max-size", type=int)
-    parser.add_argument("-zm", "--min-size", type=int)
-    args = parser.parse_args()
+def main(args):
     con = sqlite_con(args.db)
 
     bindings = []
@@ -174,8 +99,11 @@ def main():
     ORDER BY {'random(),' if args.random else ''}
             {'filename,' if args.search and args.play_in_order else ''}
             seconds_per_byte ASC
-    {'' if args.list else 'LIMIT 1' + (f' OFFSET {args.skip}' if args.skip else '')}
+    {'LIMIT 100' if args.list else 'LIMIT 1' + (f' OFFSET {args.skip}' if args.skip else '')}
     """
+    if args.printquery:
+        print(query)
+        stop()
 
     if args.chromecast:
         args.cc_ip = get_ip_of_chromecast(args.device_name)
@@ -184,21 +112,24 @@ def main():
         videos = pd.DataFrame([dict(r) for r in con.execute(query, bindings).fetchall()])
         videos["stem"] = videos.filename.apply(lambda x: Path(x).stem)
         videos.sort_values("stem", key=lambda x: np.argsort(index_natsorted(videos["stem"])), inplace=True)
-        print(
-            tabulate(
-                # videos,
-                videos[["filename", "size", "hours"]],
-                tablefmt="github",
-                headers="keys",
+        if args.filename:
+            print(videos[["filename"]])
+        else:
+            print(
+                tabulate(
+                    # videos,
+                    videos[["filename", "size", "hours"]],
+                    tablefmt="github",
+                    headers="keys",
+                )
             )
-        )
-        exit(1)  # use nonzero code to stop shell repeat
+        stop()
 
     next_video = dict(con.execute(query, bindings).fetchone())["filename"]
 
     next_video = Path(next_video)
     if args.play_in_order:
-        next_video = Path(get_ordinal_video(con, args, next_video, sql_filter))
+        next_video = Path(get_ordinal_media(con, args, next_video, sql_filter))
 
     print(next_video)
 
@@ -252,4 +183,31 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("db")
+    parser.add_argument("-1", "--last", action="store_true")
+    parser.add_argument("-cast-to", "--chromecast-device", default="Living Room TV")
+    parser.add_argument("-cast", "--chromecast", action="store_true")
+    parser.add_argument("-f", "--force-transcode", action="store_true")
+    parser.add_argument("-d", "--duration", type=int)
+    parser.add_argument("-dM", "--max-duration", type=int)
+    parser.add_argument("-dm", "--min-duration", type=int)
+    parser.add_argument("-keep", "--keep", action="store_true")
+    parser.add_argument("-list", "--list", action="store_true")
+    parser.add_argument("-filename", "--filename", action="store_true")
+    parser.add_argument("-printquery", "--printquery", action="store_true")
+    parser.add_argument("-mv", "--move")
+    parser.add_argument("-O", "--play-in-order", action="store_true")
+    parser.add_argument("-r", "--random", action="store_true")
+    parser.add_argument("-s", "--search")
+    parser.add_argument("-E", "--exclude")
+    parser.add_argument("-S", "--skip")
+    parser.add_argument("-t", "--time-limit", type=int)
+    parser.add_argument("-v", "--verbose", action="count", default=0)
+    parser.add_argument("-vlc", "--vlc", action="store_true")
+    parser.add_argument("-z", "--size", type=int)
+    parser.add_argument("-zM", "--max-size", type=int)
+    parser.add_argument("-zm", "--min-size", type=int)
+    args = parser.parse_args()
+
+    main(args)

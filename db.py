@@ -1,9 +1,5 @@
 import sqlite3
 
-from rich.traceback import install
-
-install()
-
 
 def sqlite_con(db="./videos.db"):
     con = sqlite3.connect(db)
@@ -15,7 +11,7 @@ def fetchall_dict(con, *args):
     return [dict(r) for r in con.execute(*args).fetchall()]
 
 
-def singleColumnToList(array_of_half_tuplets, column_name=1):
+def single_column_tolist(array_of_half_tuplets, column_name=1):
     return list(
         map(
             lambda x: x[column_name],
