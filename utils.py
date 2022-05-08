@@ -184,3 +184,18 @@ def get_ip_of_chromecast(device_name):
         exit(53)
 
     return cast_infos[0].host
+
+
+def compile_query(query, *args):
+    if len(args) == 1 and (not args[0]):
+        number_of_arguments = 0
+
+    number_of_question_marks = query.count("?")
+    number_of_arguments = len(args)
+    if number_of_arguments != number_of_question_marks:
+        return f"Number of bindings mismatched. The query uses {number_of_question_marks}, but {number_of_arguments} binded parameters."
+
+    for a in args:
+        query = query.replace("?", "'" + str(a) + "'", 1)
+
+    return query
