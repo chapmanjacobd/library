@@ -1,5 +1,4 @@
 import argparse
-import os
 import subprocess
 from pathlib import Path
 from shlex import quote
@@ -8,8 +7,7 @@ from time import sleep
 from rich import inspect, print
 
 from db import sqlite_con
-from utils import cmd, conditional_filter, log
-from watch import get_ordinal_video
+from utils import cmd, conditional_filter, get_ordinal_media, log
 
 
 def play_mpv(args, audio_path: Path):
@@ -121,7 +119,7 @@ def main(args):
     next_audio = Path(next_audio["filename"])
 
     if args.play_in_order and "audiobook" in str(next_audio):
-        next_audio = Path(get_ordinal_video(con, args, next_audio, sql_filter))
+        next_audio = Path(get_ordinal_media(con, args, next_audio, sql_filter))
 
     if next_audio.exists():
         quoted_next_audio = quote(str(next_audio))

@@ -4,14 +4,16 @@ import os
 import re
 import sys
 from functools import wraps
-from glob import glob
 from pathlib import Path
-from subprocess import PIPE, run
+from subprocess import run
 
 from IPython.core import ultratb
 from IPython.terminal.debugger import TerminalPdb
+from pychromecast import discovery
 from rich import inspect, print
 from rich.logging import RichHandler
+
+from db import single_column_tolist
 
 
 def get_video_files(args):
@@ -130,3 +132,55 @@ def conditional_filter(args):
     {f'and {args.max_size * B_TO_MB} >= size' if args.max_size else ''}
     {f'and {size_mb + (size_mb /10)} >= size and size >= {size_mb - (size_mb /10)}' if args.size else ''}
     """
+
+
+def get_ordinal_media(con, args, filename: Path, sql_filter):
+    similar_videos = []
+    testname = str(filename)
+    while len(similar_videos) < 2:
+        remove_groups = re.split(r"([\W_]+)", testname)
+        remove_chars = ""
+        remove_chars_i = 1
+        while len(remove_chars) < 1:
+            remove_chars += remove_groups[-remove_chars_i]
+            remove_chars_i += 1
+
+        newtestname = testname[: -len(remove_chars)]
+        log.debug(f"Matches for '{newtestname}':")
+
+        if testname == "" or newtestname == testname:
+            return filename
+
+        testname = newtestname
+        similar_videos = single_column_tolist(
+            con.execute(
+                f"""SELECT filename FROM media
+            WHERE {sql_filter}
+                and filename like ?
+            ORDER BY filename
+            limit 2
+            """,
+                ("%" + testname + "%",),
+            ).fetchall(),
+            "filename",  # type: ignore
+        )
+        log.info(similar_videos)
+
+        commonprefix = os.path.commonprefix(similar_videos)
+        if len(Path(commonprefix).name) < 5:
+            return filename
+
+        if args.last:
+            return similar_videos[0]
+
+    return similar_videos[0]
+
+
+def get_ip_of_chromecast(device_name):
+    cast_infos, browser = discovery.discover_listed_chromecasts(friendly_names=[device_name])
+    browser.stop_discovery()
+    if len(cast_infos) == 0:
+        print("Target chromecast device not found")
+        exit(53)
+
+    return cast_infos[0].host
