@@ -110,7 +110,9 @@ def main(args):
     {search_string if args.search else ''}
     {exclude_string if args.exclude else ''}
     {"" if args.search else 'and listen_count = 0'}
-    ORDER BY {'random(),' if args.random else ''} seconds_per_byte ASC
+    ORDER BY {'random(),' if args.random else ''}
+        {'filename,' if args.search and args.play_in_order else ''}
+        seconds_per_byte ASC
     limit 1 OFFSET {args.skip if args.skip else 0}
     """
 
