@@ -1,5 +1,6 @@
 import argparse
 import json
+import re
 from pathlib import Path
 from shlex import quote
 
@@ -12,7 +13,7 @@ from rich.prompt import Confirm
 from tabulate import tabulate
 
 from db import sqlite_con
-from utils import cmd, conditional_filter, get_ip_of_chromecast, get_ordinal_media, log
+from utils import cmd, compile_query, conditional_filter, get_ip_of_chromecast, get_ordinal_media, log
 
 
 def stop():
@@ -100,9 +101,10 @@ def main(args):
             {'filename,' if args.search and args.play_in_order else ''}
             seconds_per_byte ASC
     {'LIMIT 100' if args.list else 'LIMIT 1' + (f' OFFSET {args.skip}' if args.skip else '')}
-    """
+    ; """
+
     if args.printquery:
-        print(query)
+        print(re.sub(r"\n\s+", r"\n", compile_query(query, *bindings)))
         stop()
 
     if args.chromecast:
@@ -113,7 +115,7 @@ def main(args):
         videos["stem"] = videos.filename.apply(lambda x: Path(x).stem)
         videos.sort_values("stem", key=lambda x: np.argsort(index_natsorted(videos["stem"])), inplace=True)
         if args.filename:
-            print(videos[["filename"]])
+            print(videos[["filename"]].to_csv(index=False, header=False))
         else:
             print(
                 tabulate(
