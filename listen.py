@@ -9,6 +9,7 @@ from rich import inspect, print
 
 from db import sqlite_con
 from utils import cmd, conditional_filter, log
+from watch import get_ordinal_video
 
 
 def play_mpv(args, audio_path: Path):
@@ -116,6 +117,9 @@ def main(args):
     next_audio = dict(con.execute(query, bindings).fetchone())
 
     next_audio = Path(next_audio["filename"])
+
+    if args.play_in_order and "audiobook" in str(next_audio):
+        next_audio = Path(get_ordinal_video(con, args, next_audio, sql_filter))
 
     if next_audio.exists():
         quoted_next_audio = quote(str(next_audio))
