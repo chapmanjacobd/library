@@ -78,7 +78,7 @@ def cmd(command, strict=True, cwd=None, quiet=False):
     EXP_FILTER = re.compile(
         "|".join(
             [
-                r".*Stream #0:0.*Audio: opus, 48000 Hz, stereo, fltp",
+                r".*Stream #0:0.*Audio: opus, 48000 Hz, .*, fltp",
                 r".*Metadata:",
             ]
         ),
