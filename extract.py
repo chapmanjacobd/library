@@ -242,37 +242,55 @@ def main():
         Path(args.db).unlink(missing_ok=True)
     con = sqlite_con(args.db)
 
-    video_files = get_video_files(args)
-    new_files = set(video_files)
+    for path in args.paths:
+        path = Path(path).resolve()
 
-    try:
-        existing = set(map(lambda x: x["filename"], fetchall_dict(con, "select filename from media")))
-        video_files = list(new_files - existing)
-    except:
-        video_files = list(new_files)
+        video_files = get_video_files(path)
+        new_files = set(video_files)
 
-    print(video_files)
+        try:
+            existing = set(
+                map(
+                    lambda x: x["filename"],
+                    fetchall_dict(con, f"select filename from media where filename like '{path}%'"),
+                )
+            )
+        except:
+            video_files = list(new_files)
+        else:
+            video_files = list(new_files - existing)
 
-    metadata = (
-        Parallel(n_jobs=-1 if args.verbose == 0 else 1, backend="threading")(
-            delayed(extract_metadata)(args, file) for file in video_files
+            deleted_files = list(existing - new_files)
+            if len(deleted_files) > 0:
+                print(f"Removing {len(deleted_files)} orphaned metadata")
+                con.execute(
+                    "delete from media where filename in (" + ",".join(["?"] * len(deleted_files)) + ")",
+                    (*deleted_files,),
+                )
+                con.commit()
+
+        print(video_files)
+
+        metadata = (
+            Parallel(n_jobs=-1 if args.verbose == 0 else 1, backend="threading")(
+                delayed(extract_metadata)(args, file) for file in video_files
+            )
+            or []
         )
-        or []
-    )
-    DF = pd.DataFrame(list(filter(None, metadata)))
-    if args.audio:
-        DF.year = DF.year.astype(str)
-    DF.apply(pd.to_numeric, errors="ignore").convert_dtypes().to_sql(
-        "media",
-        con=con,
-        if_exists="append",
-        index=False,
-        chunksize=70,
-        method="multi",
-    )
+        DF = pd.DataFrame(list(filter(None, metadata)))
+        if args.audio:
+            DF.year = DF.year.astype(str)
+        DF.apply(pd.to_numeric, errors="ignore").convert_dtypes().to_sql(
+            "media",
+            con=con,
+            if_exists="append",
+            index=False,
+            chunksize=70,
+            method="multi",
+        )
 
-    if args.subtitle:
-        Parallel(n_jobs=5)(delayed(get_subtitle)(args, file) for file in video_files)
+        if args.subtitle:
+            Parallel(n_jobs=5)(delayed(get_subtitle)(args, file) for file in video_files)
 
 
 if __name__ == "__main__":
