@@ -30,6 +30,11 @@ def get_video_files(path):
     return video_files
 
 
+def chunks(lst, n):
+    for i in range(0, len(lst), n):
+        yield lst[i : i + n]
+
+
 def run_once(f):
     @wraps(f)
     def wrapper(*args, **kwargs):

@@ -15,7 +15,7 @@ from tinytag import TinyTag
 
 from db import fetchall_dict, sqlite_con
 from subtitle import get_subtitle
-from utils import cmd, get_video_files
+from utils import chunks, cmd, get_video_files
 
 
 def parse_mutagen_tags(m, tiny_tags):
@@ -264,34 +264,38 @@ def main():
             deleted_files = list(existing - new_files)
             if len(deleted_files) > 0:
                 print(f"Removing {len(deleted_files)} orphaned metadata")
-                con.execute(
-                    "delete from media where filename in (" + ",".join(["?"] * len(deleted_files)) + ")",
-                    (*deleted_files,),
+
+                df_chunked = chunks(deleted_files, 32765)  # sqlite_param_limit
+                for l in df_chunked:
+                    con.execute(
+                        "delete from media where filename in (" + ",".join(["?"] * len(l)) + ")",
+                        (*l,),
+                    )
+                    con.commit()
+
+        if len(video_files) > 0:
+            print(video_files)
+
+            metadata = (
+                Parallel(n_jobs=-1 if args.verbose == 0 else 1, backend="threading")(
+                    delayed(extract_metadata)(args, file) for file in video_files
                 )
-                con.commit()
-
-        print(video_files)
-
-        metadata = (
-            Parallel(n_jobs=-1 if args.verbose == 0 else 1, backend="threading")(
-                delayed(extract_metadata)(args, file) for file in video_files
+                or []
             )
-            or []
-        )
-        DF = pd.DataFrame(list(filter(None, metadata)))
-        if args.audio:
-            DF.year = DF.year.astype(str)
-        DF.apply(pd.to_numeric, errors="ignore").convert_dtypes().to_sql(
-            "media",
-            con=con,
-            if_exists="append",
-            index=False,
-            chunksize=70,
-            method="multi",
-        )
+            DF = pd.DataFrame(list(filter(None, metadata)))
+            if args.audio:
+                DF.year = DF.year.astype(str)
+            DF.apply(pd.to_numeric, errors="ignore").convert_dtypes().to_sql(
+                "media",
+                con=con,
+                if_exists="append",
+                index=False,
+                chunksize=70,
+                method="multi",
+            )
 
-        if args.subtitle:
-            Parallel(n_jobs=5)(delayed(get_subtitle)(args, file) for file in video_files)
+            if args.subtitle:
+                Parallel(n_jobs=5)(delayed(get_subtitle)(args, file) for file in video_files)
 
 
 if __name__ == "__main__":
