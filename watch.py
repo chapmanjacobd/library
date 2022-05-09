@@ -123,6 +123,7 @@ def main(args):
                     videos[["filename", "size", "hours"]],
                     tablefmt="github",
                     headers="keys",
+                    showindex=False,
                 )
             )
         stop()
