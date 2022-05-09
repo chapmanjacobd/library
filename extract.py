@@ -244,6 +244,7 @@ def main():
 
     for path in args.paths:
         path = Path(path).resolve()
+        print(f"{path} : Scanning...")
 
         video_files = get_video_files(path)
         new_files = set(video_files)
