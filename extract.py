@@ -15,7 +15,7 @@ from tinytag import TinyTag
 
 from db import fetchall_dict, sqlite_con
 from subtitle import get_subtitle
-from utils import chunks, cmd, get_video_files
+from utils import chunks, cmd, get_video_files, log
 
 
 def parse_mutagen_tags(m, tiny_tags):
@@ -124,7 +124,9 @@ def parse_mutagen_tags(m, tiny_tags):
 def extract_metadata(args, f):
     try:
         ffprobe = json.loads(
-            cmd(f"ffprobe -loglevel quiet -print_format json=compact=1 -show_entries format {quote(f)}").stdout
+            cmd(
+                f"ffprobe -loglevel quiet -print_format json=compact=1 -show_entries format {quote(f)}", quiet=True
+            ).stdout
         )
     except:
         try:
@@ -274,7 +276,8 @@ def main():
                     con.commit()
 
         if len(video_files) > 0:
-            print(video_files)
+            print(f"Adding {len(video_files)} new media")
+            log.info(video_files)
 
             metadata = (
                 Parallel(n_jobs=-1 if args.verbose == 0 else 1, backend="threading")(
