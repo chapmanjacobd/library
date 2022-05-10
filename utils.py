@@ -163,7 +163,7 @@ def get_ordinal_media(con, args, filename: Path, sql_filter):
             con.execute(
                 f"""SELECT filename FROM media
             WHERE filename like ?
-                -- and {sql_filter}
+                and {'1=1' if args.play_in_order_flex else sql_filter}
             ORDER BY filename
             limit 2
             """,
