@@ -129,7 +129,7 @@ def conditional_filter(args):
     if args.duration:
         duration_m = args.duration * SEC_TO_M
 
-    return f"""duration IS NOT NULL and size IS NOT NULL
+    cf = f"""duration IS NOT NULL and size IS NOT NULL
     {f'and duration >= {args.min_duration * SEC_TO_M}' if args.min_duration else ''}
     {f'and {args.max_duration * SEC_TO_M} >= duration' if args.max_duration else ''}
     {f'and {duration_m + (duration_m /10)} >= duration and duration >= {duration_m - (duration_m /10)}' if args.duration else ''}
@@ -137,6 +137,8 @@ def conditional_filter(args):
     {f'and {args.max_size * B_TO_MB} >= size' if args.max_size else ''}
     {f'and {size_mb + (size_mb /10)} >= size and size >= {size_mb - (size_mb /10)}' if args.size else ''}
     """
+
+    return " ".join(cf.splitlines())
 
 
 def get_ordinal_media(con, args, filename: Path, sql_filter):
@@ -160,8 +162,8 @@ def get_ordinal_media(con, args, filename: Path, sql_filter):
         similar_videos = single_column_tolist(
             con.execute(
                 f"""SELECT filename FROM media
-            WHERE {sql_filter}
-                and filename like ?
+            WHERE filename like ?
+                -- and {sql_filter}
             ORDER BY filename
             limit 2
             """,
@@ -172,7 +174,7 @@ def get_ordinal_media(con, args, filename: Path, sql_filter):
         log.info(similar_videos)
 
         commonprefix = os.path.commonprefix(similar_videos)
-        if len(Path(commonprefix).name) < 5:
+        if len(Path(commonprefix).name) < 3:
             return filename
 
         if args.last:
