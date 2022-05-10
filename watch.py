@@ -202,7 +202,7 @@ if __name__ == "__main__":
     parser.add_argument("-printquery", "--printquery", action="store_true")
     parser.add_argument("-mv", "--move")
     parser.add_argument("-O", "--play-in-order", action="store_true")
-    parser.add_argument("-OO", "--play-in-order-flex", action="store_true")
+    parser.add_argument("-OO", "--play-in-order-force", action="store_true")
     parser.add_argument("-r", "--random", action="store_true")
     parser.add_argument("-s", "--search")
     parser.add_argument("-E", "--exclude")

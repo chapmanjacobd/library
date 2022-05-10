@@ -154,6 +154,7 @@ if __name__ == "__main__":
     parser.add_argument("-mv", "--move")
     parser.add_argument("-wl", "--with-local", action="store_true")
     parser.add_argument("-O", "--play-in-order", action="store_true")
+    parser.add_argument("-OO", "--play-in-order-force", action="store_true")
     parser.add_argument("-r", "--random", action="store_true")
     parser.add_argument("-v", "--verbose", action="count", default=0)
     args = parser.parse_args()
