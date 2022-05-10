@@ -104,10 +104,11 @@ def main(args):
         WHEN size >= (1024 * 1024 * 1024 * 1024) THEN (size / (1024 * 1024 * 1024 * 1024)) || 'TB'
     END AS size
     FROM media
-    WHERE {sql_filter}
+    WHERE 1=1
     {search_string if args.search else ''}
     {exclude_string if args.exclude else ''}
     {"" if args.search else 'and listen_count = 0'}
+    and {sql_filter}
     ORDER BY {'random(),' if args.random else ''}
         {'filename,' if args.search and args.play_in_order else ''}
         seconds_per_byte ASC

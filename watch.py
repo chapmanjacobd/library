@@ -94,9 +94,10 @@ def main(args):
         WHEN size >= (1024 * 1024 * 1024 * 1024) THEN (size / (1024 * 1024 * 1024 * 1024)) || 'TB'
     END AS size
     FROM media
-    WHERE {sql_filter}
+    WHERE 1=1
     {"and filename like ?" if args.search else ''}
     {"and filename not like ?" if args.exclude else ''}
+    and {sql_filter}
     ORDER BY {'random(),' if args.random else ''}
             {'filename,' if args.search and args.play_in_order else ''}
             seconds_per_byte ASC
@@ -201,6 +202,7 @@ if __name__ == "__main__":
     parser.add_argument("-printquery", "--printquery", action="store_true")
     parser.add_argument("-mv", "--move")
     parser.add_argument("-O", "--play-in-order", action="store_true")
+    parser.add_argument("-OO", "--play-in-order-flex", action="store_true")
     parser.add_argument("-r", "--random", action="store_true")
     parser.add_argument("-s", "--search")
     parser.add_argument("-E", "--exclude")
