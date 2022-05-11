@@ -244,7 +244,7 @@ def main():
         Path(args.db).unlink(missing_ok=True)
 
     cmd(f"sqlite-utils optimize {args.db}")
-    columns = cmd(f"sqlite-utils tables {args.db} --columns | jq -r '.[0].columns[]' ").stdout.splitlines()
+    columns = cmd(f"sqlite-utils tables {args.db} --columns | jq -r '.[0].columns[]' ", quiet=True).stdout.splitlines()
     for column in columns:
         cmd(f"sqlite-utils create-index --if-not-exists --analyze {args.db} media {column}")
     con = sqlite_con(args.db)
