@@ -85,6 +85,9 @@ def main(args):
 
     sql_filter = conditional_filter(args)
 
+    LIMIT = "LIMIT " + str(args.limit)
+    OFFSET = f"OFFSET {args.skip}" if args.skip else ""
+
     query = f"""
     SELECT filename, duration/60/60 as hours, duration / size AS seconds_per_byte,
     CASE
@@ -102,7 +105,7 @@ def main(args):
     ORDER BY {'random(),' if args.random else ''}
             {'filename,' if args.search and args.play_in_order else ''}
             seconds_per_byte ASC
-    {'LIMIT '+ str(args.limit) if args.print else 'LIMIT 1' + (f' OFFSET {args.skip}' if args.skip else '')}
+    {LIMIT} {OFFSET}
     ; """
 
     if args.printquery:
@@ -210,7 +213,7 @@ if __name__ == "__main__":
     parser.add_argument("-dm", "--min-duration", type=int)
     parser.add_argument("-keep", "--keep", action="store_true")
     parser.add_argument("-print", "--print", action="store_true")
-    parser.add_argument("-L", "--limit", type=int, default=100)
+    parser.add_argument("-L", "--limit", type=int)
     parser.add_argument("-filename", "--filename", action="store_true")
     parser.add_argument("-printquery", "--printquery", action="store_true")
     parser.add_argument("-mv", "--move")
@@ -227,5 +230,10 @@ if __name__ == "__main__":
     parser.add_argument("-zM", "--max-size", type=int)
     parser.add_argument("-zm", "--min-size", type=int)
     args = parser.parse_args()
+
+    if args.limit is None:
+        args.limit = 1
+        if args.print:
+            args.limit = 100
 
     main(args)
