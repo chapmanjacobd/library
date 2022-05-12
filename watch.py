@@ -6,9 +6,10 @@ from shlex import quote
 
 import numpy as np
 import pandas as pd
+import polars as pl
 import sqlite_utils
 from natsort import index_natsorted
-from rich import inspect, print
+from rich import inspect
 from rich.prompt import Confirm
 from tabulate import tabulate
 
@@ -101,7 +102,7 @@ def main(args):
     ORDER BY {'random(),' if args.random else ''}
             {'filename,' if args.search and args.play_in_order else ''}
             seconds_per_byte ASC
-    {'LIMIT 100' if args.list else 'LIMIT 1' + (f' OFFSET {args.skip}' if args.skip else '')}
+    {'LIMIT '+ str(args.limit) if args.print else 'LIMIT 1' + (f' OFFSET {args.skip}' if args.skip else '')}
     ; """
 
     if args.printquery:
@@ -111,12 +112,14 @@ def main(args):
     if args.chromecast:
         args.cc_ip = get_ip_of_chromecast(args.device_name)
 
-    if args.list:
+    if args.print:
         videos = pd.DataFrame([dict(r) for r in con.execute(query, bindings).fetchall()])
         videos["stem"] = videos.filename.apply(lambda x: Path(x).stem)
         videos.sort_values("stem", key=lambda x: np.argsort(index_natsorted(videos["stem"])), inplace=True)
+
         if args.filename:
-            print(videos[["filename"]].to_csv(index=False, header=False))
+            csvf = videos[["filename"]].to_csv(index=False, header=False)
+            print(csvf.strip())
         else:
             print(
                 tabulate(
@@ -127,6 +130,19 @@ def main(args):
                     showindex=False,
                 )
             )
+
+        stop()
+
+    if args.move:
+        Path(args.move).mkdir(exist_ok=True, parents=True)
+        keep_path = str(Path(args.move).resolve())
+
+        videos = pl.DataFrame([dict(r) for r in con.execute(query, bindings).fetchall()])
+        for video in videos.select("filename").to_series():
+            quoted_next_video = quote(str(video))
+            print(quoted_next_video)
+            cmd(f"mv {quoted_next_video} {quote(keep_path)}")
+
         stop()
 
     next_video = dict(con.execute(query, bindings).fetchone())["filename"]
@@ -168,19 +184,14 @@ def main(args):
             )
             print(next_video)
 
+        play_mpv(args, next_video)
+
         quoted_next_video = quote(str(next_video))
-
-        if args.move:
-            keep_path = str(Path(args.move))
-            cmd(f"mv {quoted_next_video} {quote(keep_path)}")
+        if args.keep and Confirm.ask("Keep?", default=False):
+            keep_path = str(Path(next_video).parent / "keep/")
+            cmd(f"mkdir -p {keep_path} && mv {quoted_next_video} {quote(keep_path)}")
         else:
-            play_mpv(args, next_video)
-
-            if args.keep and Confirm.ask("Keep?", default=False):
-                keep_path = str(Path(next_video).parent / "keep/")
-                cmd(f"mkdir -p {keep_path} && mv {quoted_next_video} {quote(keep_path)}")
-            else:
-                cmd(f"trash-put {quoted_next_video}")
+            cmd(f"trash-put {quoted_next_video}")
 
     con.execute("delete from media where filename = ?", (str(original_video),))
     con.commit()
@@ -197,7 +208,8 @@ if __name__ == "__main__":
     parser.add_argument("-dM", "--max-duration", type=int)
     parser.add_argument("-dm", "--min-duration", type=int)
     parser.add_argument("-keep", "--keep", action="store_true")
-    parser.add_argument("-list", "--list", action="store_true")
+    parser.add_argument("-print", "--print", action="store_true")
+    parser.add_argument("-L", "--limit", type=int, default=100)
     parser.add_argument("-filename", "--filename", action="store_true")
     parser.add_argument("-printquery", "--printquery", action="store_true")
     parser.add_argument("-mv", "--move")
