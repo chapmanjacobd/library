@@ -139,9 +139,10 @@ def main(args):
 
         videos = pl.DataFrame([dict(r) for r in con.execute(query, bindings).fetchall()])
         for video in videos.select("filename").to_series():
-            quoted_next_video = quote(str(video))
-            print(quoted_next_video)
-            cmd(f"mv {quoted_next_video} {quote(keep_path)}")
+            if Path(video).exists() and "/keep/" not in video:
+                quoted_next_video = quote(str(video))
+                print(quoted_next_video)
+                cmd(f"mv {quoted_next_video} {quote(keep_path)}")
 
         stop()
 
