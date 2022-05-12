@@ -147,6 +147,7 @@ def main(args):
                 print(quoted_next_video)
                 cmd(f"mv {quoted_next_video} {quote(keep_path)}")
 
+            remove_video(con, video)
         stop()
 
     next_video = dict(con.execute(query, bindings).fetchone())["filename"]
@@ -197,7 +198,11 @@ def main(args):
         else:
             cmd(f"trash-put {quoted_next_video}")
 
-    con.execute("delete from media where filename = ?", (str(original_video),))
+    remove_video(con, original_video)
+
+
+def remove_video(con, filename):
+    con.execute("delete from media where filename = ?", (str(filename),))
     con.commit()
 
 
