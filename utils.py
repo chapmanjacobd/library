@@ -174,7 +174,7 @@ def get_ordinal_media(con, args, filename: Path, sql_filter):
         log.info(similar_videos)
 
         commonprefix = os.path.commonprefix(similar_videos)
-        if len(Path(commonprefix).name) < 4:
+        if len(Path(commonprefix).name) < 3:
             return filename
 
         if args.last:
