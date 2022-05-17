@@ -4,7 +4,7 @@ from pathlib import Path
 from shlex import quote
 from time import sleep
 
-from rich import inspect, print
+from rich import inspect
 
 from db import sqlite_con
 from utils import cmd, conditional_filter, get_ordinal_media, log
