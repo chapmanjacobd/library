@@ -14,7 +14,8 @@ from rich.prompt import Confirm
 from tabulate import tabulate
 
 from db import sqlite_con
-from utils import cmd, compile_query, conditional_filter, get_ip_of_chromecast, get_ordinal_media, log
+from utils import (cmd, compile_query, conditional_filter,
+                   get_ip_of_chromecast, get_ordinal_media, log)
 
 
 def stop():
@@ -133,6 +134,8 @@ def main(args):
                     showindex=False,
                 )
             )
+            summary=videos.sum(numeric_only=True)
+            print('Total hours', summary.hours)
 
         stop()
 
