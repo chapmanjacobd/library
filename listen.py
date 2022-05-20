@@ -18,7 +18,7 @@ def play_mpv(args, audio_path: Path):
 
     try:
         print(cmd(f"ffprobe -hide_banner -loglevel info {quoted_next_audio}", quiet=True).stderr)
-    finally:
+    except:
         print(quoted_next_audio)
 
     if args.chromecast:
