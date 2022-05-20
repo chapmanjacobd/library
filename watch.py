@@ -14,12 +14,17 @@ from rich.prompt import Confirm
 from tabulate import tabulate
 
 from db import sqlite_con
-from utils import (cmd, compile_query, conditional_filter,
-                   get_ip_of_chromecast, get_ordinal_media, log)
-
-
-def stop():
-    exit(1)  # use nonzero code to stop shell repeat
+from utils import (
+    cmd,
+    compile_query,
+    conditional_filter,
+    get_ip_of_chromecast,
+    get_ordinal_media,
+    log,
+    parse_args,
+    remove_media,
+    stop,
+)
 
 
 def play_mpv(args, video_path: Path):
@@ -40,7 +45,7 @@ def play_mpv(args, video_path: Path):
         subtitles_file = None
         if len(subs) > 0:
             db = sqlite_utils.Database(memory=True)
-            db["subs"].insert_all(subs, pk="index")
+            db["subs"].insert_all(subs, pk="index")  # type: ignore
             subtitle_index = db.execute_returning_dicts(
                 """select "index" from subs
                 order by
@@ -134,8 +139,8 @@ def main(args):
                     showindex=False,
                 )
             )
-            summary=videos.sum(numeric_only=True)
-            print('Total hours', summary.hours)
+            summary = videos.sum(numeric_only=True)
+            print("Total hours", summary.hours)
 
         stop()
 
@@ -150,7 +155,7 @@ def main(args):
                 print(quoted_next_video)
                 cmd(f"mv {quoted_next_video} {quote(keep_path)}")
 
-            remove_video(con, video)
+            remove_media(con, video)
         stop()
 
     next_video = dict(con.execute(query, bindings).fetchone())["filename"]
@@ -201,47 +206,10 @@ def main(args):
         else:
             cmd(f"trash-put {quoted_next_video}")
 
-    remove_video(con, original_video)
-
-
-def remove_video(con, filename):
-    con.execute("delete from media where filename = ?", (str(filename),))
-    con.commit()
+    remove_media(con, original_video)
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("db")
-    parser.add_argument("-1", "--last", action="store_true")
-    parser.add_argument("-cast-to", "--chromecast-device", default="Living Room TV")
-    parser.add_argument("-cast", "--chromecast", action="store_true")
-    parser.add_argument("-f", "--force-transcode", action="store_true")
-    parser.add_argument("-d", "--duration", type=int)
-    parser.add_argument("-dM", "--max-duration", type=int)
-    parser.add_argument("-dm", "--min-duration", type=int)
-    parser.add_argument("-keep", "--keep", action="store_true")
-    parser.add_argument("-print", "--print", action="store_true")
-    parser.add_argument("-L", "--limit", type=int)
-    parser.add_argument("-filename", "--filename", action="store_true")
-    parser.add_argument("-printquery", "--printquery", action="store_true")
-    parser.add_argument("-mv", "--move")
-    parser.add_argument("-O", "--play-in-order", action="store_true")
-    parser.add_argument("-OO", "--play-in-order-force", action="store_true")
-    parser.add_argument("-r", "--random", action="store_true")
-    parser.add_argument("-s", "--search")
-    parser.add_argument("-E", "--exclude")
-    parser.add_argument("-S", "--skip")
-    parser.add_argument("-t", "--time-limit", type=int)
-    parser.add_argument("-v", "--verbose", action="count", default=0)
-    parser.add_argument("-vlc", "--vlc", action="store_true")
-    parser.add_argument("-z", "--size", type=int)
-    parser.add_argument("-zM", "--max-size", type=int)
-    parser.add_argument("-zm", "--min-size", type=int)
-    args = parser.parse_args()
-
-    if args.limit is None:
-        args.limit = 1
-        if args.print:
-            args.limit = 100
+    args = parse_args(default_chromecast="Living Room TV")
 
     main(args)

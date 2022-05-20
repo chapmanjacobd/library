@@ -7,7 +7,7 @@ from time import sleep
 from rich import inspect
 
 from db import sqlite_con
-from utils import cmd, conditional_filter, get_ordinal_media, log
+from utils import cmd, conditional_filter, get_ordinal_media, log, parse_args
 
 
 def play_mpv(args, audio_path: Path):
@@ -16,7 +16,10 @@ def play_mpv(args, audio_path: Path):
     )
     quoted_next_audio = quote(str(audio_path))
 
-    print(cmd(f"ffprobe -hide_banner -loglevel info {quoted_next_audio}", quiet=True).stderr)
+    try:
+        print(cmd(f"ffprobe -hide_banner -loglevel info {quoted_next_audio}", quiet=True).stderr)
+    finally:
+        print(quoted_next_audio)
 
     if args.chromecast:
         Path("/tmp/mpcatt_playing").write_text(quoted_next_audio)
@@ -116,7 +119,6 @@ def main(args):
     """
 
     next_audio = dict(con.execute(query, bindings).fetchone())
-
     next_audio = Path(next_audio["filename"])
 
     if args.play_in_order and "audiobook" in str(next_audio):
@@ -138,26 +140,7 @@ def main(args):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("db")
-    parser.add_argument("-cast", "--chromecast", action="store_true")
-    parser.add_argument("-cast-to", "--chromecast-device", default="Xylo and Orchestra")
-    parser.add_argument("-s", "--search")
-    parser.add_argument("-E", "--exclude")
-    parser.add_argument("-S", "--skip")
-    parser.add_argument("-d", "--duration", type=int)
-    parser.add_argument("-dm", "--min-duration", type=int)
-    parser.add_argument("-dM", "--max-duration", type=int)
-    parser.add_argument("-sz", "--size", type=int)
-    parser.add_argument("-szm", "--min-size", type=int)
-    parser.add_argument("-szM", "--max-size", type=int)
-    parser.add_argument("-mv", "--move")
-    parser.add_argument("-wl", "--with-local", action="store_true")
-    parser.add_argument("-O", "--play-in-order", action="store_true")
-    parser.add_argument("-OO", "--play-in-order-force", action="store_true")
-    parser.add_argument("-r", "--random", action="store_true")
-    parser.add_argument("-v", "--verbose", action="count", default=0)
-    args = parser.parse_args()
+    args = parse_args()
 
     try:
         main(args)

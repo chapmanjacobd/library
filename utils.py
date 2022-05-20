@@ -16,6 +16,54 @@ from rich.logging import RichHandler
 from db import single_column_tolist
 
 
+def parse_args(default_chromecast="Xylo and Orchestra"):
+    parser = argparse.ArgumentParser()
+    parser.add_argument("db")
+    parser.add_argument("-1", "--last", action="store_true")
+    parser.add_argument("-cast-to", "--chromecast-device", default=default_chromecast)
+    parser.add_argument("-cast", "--chromecast", action="store_true")
+    parser.add_argument("-wl", "--with-local", action="store_true")
+    parser.add_argument("-f", "--force-transcode", action="store_true")
+    parser.add_argument("-d", "--duration", type=int)
+    parser.add_argument("-dM", "--max-duration", type=int)
+    parser.add_argument("-dm", "--min-duration", type=int)
+    parser.add_argument("-keep", "--keep", action="store_true")
+    parser.add_argument("-print", "--print", action="store_true")
+    parser.add_argument("-L", "--limit", type=int)
+    parser.add_argument("-filename", "--filename", action="store_true")
+    parser.add_argument("-printquery", "--printquery", action="store_true")
+    parser.add_argument("-mv", "--move")
+    parser.add_argument("-O", "--play-in-order", action="store_true")
+    parser.add_argument("-OO", "--play-in-order-force", action="store_true")
+    parser.add_argument("-r", "--random", action="store_true")
+    parser.add_argument("-s", "--search")
+    parser.add_argument("-E", "--exclude")
+    parser.add_argument("-S", "--skip")
+    parser.add_argument("-t", "--time-limit", type=int)
+    parser.add_argument("-v", "--verbose", action="count", default=0)
+    parser.add_argument("-vlc", "--vlc", action="store_true")
+    parser.add_argument("-z", "--size", type=int)
+    parser.add_argument("-zM", "--max-size", type=int)
+    parser.add_argument("-zm", "--min-size", type=int)
+    args = parser.parse_args()
+
+    if args.limit is None:
+        args.limit = 1
+        if args.print:
+            args.limit = 100
+
+    return args
+
+
+def remove_media(con, filename):
+    con.execute("delete from media where filename = ?", (str(filename),))
+    con.commit()
+
+
+def stop():
+    exit(1)  # use nonzero code to stop shell repeat
+
+
 def get_video_files(path):
     FFMPEG_DEMUXERS = "str|aa|aac|aax|ac3|acm|adf|adp|dtk|ads|ss2|adx|aea|afc|aix|al|ape|apl|mac|aptx|aptxhd|aqt|ast|obu|avi|avr|avs|avs2|avs3|bfstm|bcstm|binka|bit|bmv|brstm|cdg|cdxl|xl|c2|302|daud|str|adp|dav|dss|dts|dtshd|dv|dif|cdata|eac3|paf|fap|flm|flac|flv|fsb|fwse|g722|722|tco|rco|g723_1|g729|genh|gsm|h261|h26l|h264|264|avc|hca|hevc|h265|265|idf|ifv|cgi|ipu|sf|ircam|ivr|kux|669|abc|amf|ams|dbm|dmf|dsm|far|it|mdl|med|mid|mod|mt2|mtm|okt|psm|ptm|s3m|stm|ult|umx|xm|itgz|itr|itz|mdgz|mdr|mdz|s3gz|s3r|s3z|xmgz|xmr|xmz|669|amf|ams|dbm|digi|dmf|dsm|dtm|far|gdm|ice|imf|it|j2b|m15|mdl|med|mmcmp|mms|mo3|mod|mptm|mt2|mtm|nst|okt|plm|ppm|psm|pt36|ptm|s3m|sfx|sfx2|st26|stk|stm|stp|ult|umx|wow|xm|xpk|flv|dat|lvf|m4v|mkv|mk3d|mka|mks|webm|mca|mcc|mjpg|mjpeg|mpo|j2k|mlp|mods|moflex|mov|mp4|m4a|3gp|3g2|mj2|psp|m4b|ism|ismv|isma|f4v|mp2|mp3|m2a|mpa|mpc|mjpg|mpl2|msf|mtaf|ul|musx|mvi|mxg|v|nist|sph|nsp|nut|obu|ogg|oma|omg|aa3|pjs|pvf|yuv|cif|qcif|rgb|rt|rsd|rsd|rso|sw|sb|sami|sbc|msbc|sbg|scc|sdr2|sds|sdx|ser|sga|shn|vb|son|imx|sln|mjpg|stl|sup|svag|svs|tak|thd|tta|ans|art|asc|diz|ice|vt|ty|ty+|uw|ub|v210|yuv10|vag|vc1|rcv|viv|vpk|vqf|vql|vqe|wsd|xmv|xvag|yop|y4m|opus|oga".split(
         "|"

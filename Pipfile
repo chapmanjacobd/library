@@ -23,6 +23,8 @@ protobuf = "<4"
 [dev-packages]
 black = "*"
 pylint = "*"
+ssort = "*"
+isort = "*"
 
 [requires]
 python_version = "3.10"

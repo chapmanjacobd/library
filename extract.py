@@ -293,7 +293,7 @@ def main():
             DF = pd.DataFrame(list(filter(None, metadata)))
             if args.audio:
                 DF.year = DF.year.astype(str)
-            DF.apply(pd.to_numeric, errors="ignore").convert_dtypes().to_sql(
+            DF.apply(pd.to_numeric, errors="ignore").convert_dtypes().to_sql(  # type: ignore
                 "media",
                 con=con,
                 if_exists="append",
