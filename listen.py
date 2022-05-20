@@ -7,7 +7,7 @@ from time import sleep
 from rich import inspect
 
 from db import sqlite_con
-from utils import cmd, conditional_filter, get_ordinal_media, log, parse_args
+from utils import cmd, conditional_filter, get_ordinal_media, log, parse_args, remove_media
 
 
 def play_mpv(args, audio_path: Path):
@@ -124,7 +124,9 @@ def main(args):
     if args.play_in_order and "audiobook" in str(next_audio):
         next_audio = Path(get_ordinal_media(con, args, next_audio, sql_filter))
 
-    if next_audio.exists():
+    if not next_audio.exists():
+        remove_media(con, next_audio)
+    else:
         quoted_next_audio = quote(str(next_audio))
 
         if args.move:
