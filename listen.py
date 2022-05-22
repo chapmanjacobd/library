@@ -7,7 +7,7 @@ from time import sleep
 from rich import inspect
 
 from db import sqlite_con
-from utils import cmd, conditional_filter, get_ordinal_media, log, parse_args, remove_media
+from utils import cmd, conditional_filter, get_ordinal_media, log, parse_args, remove_media, stop
 
 
 def play_mpv(args, audio_path: Path):
@@ -112,17 +112,28 @@ def main(args):
     {exclude_string if args.exclude else ''}
     {"" if args.search else 'and listen_count = 0'}
     and {sql_filter}
-    ORDER BY {'random(),' if args.random else ''}
+    ORDER BY
+        listen_count asc nulls first,
+        {'random(),' if args.random else ''}
         {'filename,' if args.search and args.play_in_order else ''}
         seconds_per_byte ASC
     limit 1 OFFSET {args.skip if args.skip else 0}
     """
 
+    if args.printquery:
+        print(query)
+        stop()
+
     next_audio = dict(con.execute(query, bindings).fetchone())
     next_audio = Path(next_audio["filename"])
 
+    # limit to audiobook since normal music does not get deleted so only the first track would ever be played
     if args.play_in_order and "audiobook" in str(next_audio):
         next_audio = Path(get_ordinal_media(con, args, next_audio, sql_filter))
+
+    if args.print:
+        print(next_audio)
+        stop()
 
     if not next_audio.exists():
         remove_media(con, next_audio)

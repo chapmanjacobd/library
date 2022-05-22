@@ -213,13 +213,16 @@ def get_ordinal_media(con, args, filename: Path, sql_filter):
             WHERE filename like ?
                 and {'1=1' if args.play_in_order_force else sql_filter}
             ORDER BY filename
-            LIMIT 2
+            LIMIT 1000
             """,
                 ("%" + testname + "%",),
             ).fetchall(),
             "filename",  # type: ignore
         )
-        log.info(similar_videos)
+        log.debug(similar_videos)
+
+        if len(similar_videos) > 999:
+            return filename
 
         commonprefix = os.path.commonprefix(similar_videos)
         if len(Path(commonprefix).name) < 3:
