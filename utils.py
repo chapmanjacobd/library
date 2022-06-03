@@ -33,8 +33,7 @@ def parse_args(default_chromecast="Xylo and Orchestra"):
     parser.add_argument("-filename", "--filename", action="store_true")
     parser.add_argument("-printquery", "--printquery", action="store_true")
     parser.add_argument("-mv", "--move")
-    parser.add_argument("-O", "--play-in-order", action="store_true")
-    parser.add_argument("-OO", "--play-in-order-force", action="store_true")
+    parser.add_argument("-O", "--play-in-order", action="count", default=0)
     parser.add_argument("-r", "--random", action="store_true")
     parser.add_argument("-s", "--search")
     parser.add_argument("-E", "--exclude")
@@ -211,7 +210,7 @@ def get_ordinal_media(con, args, filename: Path, sql_filter):
             con.execute(
                 f"""SELECT filename FROM media
             WHERE filename like ?
-                and {'1=1' if args.play_in_order_force else sql_filter}
+                and {'1=1' if (args.play_in_order > 2) else sql_filter}
             ORDER BY filename
             LIMIT 1000
             """,

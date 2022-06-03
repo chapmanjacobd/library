@@ -109,7 +109,7 @@ def main(args):
     {"and filename not like ?" if args.exclude else ''}
     and {sql_filter}
     ORDER BY {'random(),' if args.random else ''}
-            {'filename,' if args.search and args.play_in_order else ''}
+            {'filename,' if args.search and (args.play_in_order > 1) else ''}
             seconds_per_byte ASC
     {LIMIT} {OFFSET}
     ; """
@@ -161,7 +161,7 @@ def main(args):
     next_video = dict(con.execute(query, bindings).fetchone())["filename"]
 
     next_video = Path(next_video)
-    if args.play_in_order:
+    if args.play_in_order > 1:
         next_video = Path(get_ordinal_media(con, args, next_video, sql_filter))
 
     print(next_video)
