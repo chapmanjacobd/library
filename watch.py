@@ -22,6 +22,7 @@ from utils import (
     get_ordinal_media,
     log,
     parse_args,
+    print_query,
     remove_media,
     stop,
 )
@@ -115,7 +116,9 @@ def main(args):
     ; """
 
     if args.printquery:
-        print(re.sub(r"\n\s+", r"\n", compile_query(query, *bindings)))
+        print_query(bindings, query)
+        if args.play_in_order > 0:
+            get_ordinal_media(con, args, Path('vid'), sql_filter)
         stop()
 
     if args.chromecast:
