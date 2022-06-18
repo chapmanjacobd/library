@@ -188,6 +188,10 @@ def conditional_filter(args):
     return " ".join(cf.splitlines())
 
 
+def print_query(bindings, query):
+    print(re.sub(r"\n\s+", r"\n", compile_query(query, *bindings)))
+
+
 def get_ordinal_media(con, args, filename: Path, sql_filter):
     similar_videos = []
     testname = str(filename)
@@ -206,18 +210,18 @@ def get_ordinal_media(con, args, filename: Path, sql_filter):
             return filename
 
         testname = newtestname
-        similar_videos = single_column_tolist(
-            con.execute(
-                f"""SELECT filename FROM media
+        query = f"""SELECT filename FROM media
             WHERE filename like ?
                 and {'1=1' if (args.play_in_order > 2) else sql_filter}
             ORDER BY filename
             LIMIT 1000
-            """,
-                ("%" + testname + "%",),
-            ).fetchall(),
-            "filename",  # type: ignore
-        )
+            """
+        bindings = ("%" + testname + "%",)
+        if args.printquery:
+            print_query(bindings, query)
+            stop()
+
+        similar_videos = single_column_tolist(con.execute(query, bindings).fetchall(), "filename")  # type: ignore
         log.debug(similar_videos)
 
         if len(similar_videos) > 999:
