@@ -196,7 +196,7 @@ def get_ordinal_media(con, args, filename: Path, sql_filter):
     similar_videos = []
     testname = str(filename)
     while len(similar_videos) < 2:
-        remove_groups = re.split(r"([\W_]+)", testname)
+        remove_groups = re.split(r"([\W_-]+)", testname)
         remove_chars = ""
         remove_chars_i = 1
         while len(remove_chars) < 1:
@@ -212,7 +212,7 @@ def get_ordinal_media(con, args, filename: Path, sql_filter):
         testname = newtestname
         query = f"""SELECT filename FROM media
             WHERE filename like ?
-                and {'1=1' if (args.play_in_order > 2) else sql_filter}
+                and {'1=1' if (args.play_in_order > 1) else sql_filter}
             ORDER BY filename
             LIMIT 1000
             """
@@ -260,3 +260,5 @@ def compile_query(query, *args):
         query = query.replace("?", "'" + str(a) + "'", 1)
 
     return query
+
+

@@ -1,6 +1,8 @@
 import argparse
 import json
+import os
 import re
+import textwrap
 from pathlib import Path
 from shlex import quote
 
@@ -16,7 +18,6 @@ from tabulate import tabulate
 from db import sqlite_con
 from utils import (
     cmd,
-    compile_query,
     conditional_filter,
     get_ip_of_chromecast,
     get_ordinal_media,
@@ -133,11 +134,14 @@ def main(args):
             csvf = videos[["filename"]].to_csv(index=False, header=False)
             print(csvf.strip())
         else:
+            table_content = videos
+            table_content[['filename']] = table_content[['filename']].applymap(
+                lambda x: textwrap.fill(x, os.get_terminal_size().columns - 30)
+            )
             print(
                 tabulate(
-                    # videos,
-                    videos[["filename", "size", "hours"]],
-                    tablefmt="github",
+                    table_content[["filename", "size", "hours"]],
+                    tablefmt="fancy_grid",
                     headers="keys",
                     showindex=False,
                 )
