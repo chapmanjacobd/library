@@ -112,6 +112,7 @@ def main(args):
     and {sql_filter}
     ORDER BY {'random(),' if args.random else ''}
             {'filename,' if args.search and (args.play_in_order > 1) else ''}
+            {args.sort + ',' if args.sort else ''}
             seconds_per_byte ASC
     {LIMIT} {OFFSET}
     ; """
