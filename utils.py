@@ -38,7 +38,7 @@ def parse_args(default_chromecast="Xylo and Orchestra"):
     parser.add_argument("-r", "--random", action="store_true")
     parser.add_argument("-s", "--search")
     parser.add_argument("-t", "--time-limit", type=int)
-    parser.add_argument("-u", "--sort", type=int)
+    parser.add_argument("-u", "--sort")
     parser.add_argument("-v", "--verbose", action="count", default=0)
     parser.add_argument("-vlc", "--vlc", action="store_true")
     parser.add_argument("-wl", "--with-local", action="store_true")
