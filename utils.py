@@ -61,7 +61,7 @@ def remove_media(con, filename):
 
 
 def stop():
-    exit(1)  # use nonzero code to stop shell repeat
+    exit(255)  # use nonzero code to stop shell repeat
 
 
 def get_video_files(path):
