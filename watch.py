@@ -90,12 +90,12 @@ def main(args):
     filename_exclude_sql = ''
     if args.search:
         for inc in args.search.split(","):
-            bindings.append("%" + inc.replace(" ", "%") + "%")
             filename_include_sql += " AND filename LIKE ? "
+            bindings.append("%" + inc.replace(" ", "%") + "%")
     if args.exclude:
         for exc in args.exclude.split(","):
-            bindings.append("%" + exc.replace(" ", "%") + "%")
             filename_exclude_sql += " AND filename NOT LIKE ? "
+            bindings.append("%" + exc.replace(" ", "%") + "%")
 
     sql_filter = conditional_filter(args)
 
@@ -117,7 +117,7 @@ def main(args):
     {filename_exclude_sql}
     and {sql_filter}
     ORDER BY {'random(),' if args.random else ''}
-            {'filename,' if args.search and (args.play_in_order > 1) else ''}
+            {'filename,' if args.search and ((args.play_in_order > 0) or args.print) else ''}
             {args.sort + ',' if args.sort else ''}
             seconds_per_byte ASC
     {LIMIT} {OFFSET}
@@ -134,8 +134,6 @@ def main(args):
 
     if args.print:
         videos = pd.DataFrame([dict(r) for r in con.execute(query, bindings).fetchall()])
-        videos["stem"] = videos.filename.apply(lambda x: Path(x).stem)
-        videos.sort_values("stem", key=lambda x: np.argsort(index_natsorted(videos["stem"])), inplace=True)
 
         if args.filename:
             csvf = videos[["filename"]].to_csv(index=False, header=False)
