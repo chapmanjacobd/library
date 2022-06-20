@@ -31,6 +31,7 @@ def parse_args(default_chromecast="Xylo and Orchestra"):
     parser.add_argument("-dm", "--min-duration", type=int)
     parser.add_argument("-f", "--force-transcode", action="store_true")
     parser.add_argument("-k", "--keep", action="store_true")
+    parser.add_argument("--delete", action="store_true")
     parser.add_argument("-mv", "--move")
     parser.add_argument("-name", "--filename", action="store_true")
     parser.add_argument("-p", "--print", action="store_true")

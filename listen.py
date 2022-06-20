@@ -114,6 +114,7 @@ def main(args):
     and {sql_filter}
     ORDER BY
         listen_count asc nulls first,
+        {args.sort + ',' if args.sort else ''}
         {'random(),' if args.random else ''}
         {'filename,' if args.search and (args.play_in_order > 1) else ''}
         seconds_per_byte ASC
@@ -145,8 +146,9 @@ def main(args):
             cmd(f"mv {quoted_next_audio} {quote(keep_path)}")
         else:
             play_mpv(args, next_audio)
-            if "audiobook" in quoted_next_audio.lower():
+            if args.delete or "audiobook" in quoted_next_audio.lower():
                 cmd(f"trash-put {quoted_next_audio}", strict=False)
+                remove_media(con, next_audio)
 
     con.execute("update media set listen_count = listen_count +1 where filename = ?", (str(next_audio),))
     con.commit()
