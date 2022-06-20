@@ -86,10 +86,16 @@ def main(args):
     con = sqlite_con(args.db)
 
     bindings = []
+    filename_include_sql = ''
+    filename_exclude_sql = ''
     if args.search:
-        bindings.append("%" + args.search.replace(" ", "%") + "%")
+        for inc in args.search.split(","):
+            bindings.append("%" + inc.replace(" ", "%") + "%")
+            filename_include_sql += " AND filename LIKE ? "
     if args.exclude:
-        bindings.append("%" + args.exclude.replace(" ", "%") + "%")
+        for exc in args.exclude.split(","):
+            bindings.append("%" + exc.replace(" ", "%") + "%")
+            filename_exclude_sql += " AND filename NOT LIKE ? "
 
     sql_filter = conditional_filter(args)
 
@@ -107,8 +113,8 @@ def main(args):
     END AS size
     FROM media
     WHERE 1=1
-    {"and filename like ?" if args.search else ''}
-    {"and filename not like ?" if args.exclude else ''}
+    {filename_include_sql}
+    {filename_exclude_sql}
     and {sql_filter}
     ORDER BY {'random(),' if args.random else ''}
             {'filename,' if args.search and (args.play_in_order > 1) else ''}
