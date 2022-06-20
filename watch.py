@@ -1,16 +1,12 @@
-import argparse
 import json
 import os
-import re
 import textwrap
 from pathlib import Path
 from shlex import quote
 
-import numpy as np
 import pandas as pd
 import polars as pl
 import sqlite_utils
-from natsort import index_natsorted
 from rich import inspect
 from rich.prompt import Confirm
 from tabulate import tabulate
@@ -116,9 +112,9 @@ def main(args):
     {filename_include_sql}
     {filename_exclude_sql}
     and {sql_filter}
-    ORDER BY {'random(),' if args.random else ''}
+    ORDER BY {args.sort + ',' if args.sort else ''}
+            {'random(),' if args.random else ''}
             {'filename,' if args.search and ((args.play_in_order > 0) or args.print) else ''}
-            {args.sort + ',' if args.sort else ''}
             seconds_per_byte ASC
     {LIMIT} {OFFSET}
     ; """
