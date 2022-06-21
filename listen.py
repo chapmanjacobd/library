@@ -1,4 +1,3 @@
-import argparse
 import subprocess
 from pathlib import Path
 from shlex import quote
@@ -137,6 +136,7 @@ def main(args):
         stop()
 
     if not next_audio.exists():
+        print('Removing', next_audio)
         remove_media(con, next_audio)
     else:
         quoted_next_audio = quote(str(next_audio))

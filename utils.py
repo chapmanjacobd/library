@@ -19,7 +19,6 @@ from db import single_column_tolist
 def parse_args(default_chromecast="Xylo and Orchestra"):
     parser = argparse.ArgumentParser()
     parser.add_argument("db")
-    parser.add_argument("-1", "--last", action="store_true")
     parser.add_argument("-E", "--exclude")
     parser.add_argument("-L", "--limit", type=int)
     parser.add_argument("-O", "--play-in-order", action="count", default=0)
@@ -197,8 +196,11 @@ def print_query(bindings, query):
 def get_ordinal_media(con, args, filename: Path, sql_filter):
     similar_videos = []
     testname = str(filename)
+
+    total_media = con.execute('select count(*) val from media').fetchone()[0]
     while len(similar_videos) < 2:
-        remove_groups = re.split(r"([\W_-]+)", testname)
+        remove_groups = re.split(r"([\W]+|\s+|Ep\d+|x\d+|\.\d+)", testname)
+        log.debug(remove_groups)
         remove_chars = ""
         remove_chars_i = 1
         while len(remove_chars) < 1:
@@ -208,7 +210,7 @@ def get_ordinal_media(con, args, filename: Path, sql_filter):
         newtestname = testname[: -len(remove_chars)]
         log.debug(f"Matches for '{newtestname}':")
 
-        if testname == "" or newtestname == testname:
+        if testname in ["" or newtestname]:
             return filename
 
         testname = newtestname
@@ -226,15 +228,14 @@ def get_ordinal_media(con, args, filename: Path, sql_filter):
         similar_videos = single_column_tolist(con.execute(query, bindings).fetchall(), "filename")  # type: ignore
         log.debug(similar_videos)
 
-        if len(similar_videos) > 999:
+        if len(similar_videos) > 999 or len(similar_videos) == total_media:
             return filename
 
         commonprefix = os.path.commonprefix(similar_videos)
+        log.debug(commonprefix)
         if len(Path(commonprefix).name) < 3:
+            log.debug('Using commonprefix')
             return filename
-
-        if args.last:
-            return similar_videos[0]
 
     return similar_videos[0]
 
