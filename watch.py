@@ -167,11 +167,10 @@ def main(args):
         stop()
 
     next_video = dict(con.execute(query, bindings).fetchone())["filename"]
-
-    next_video = Path(next_video)
     if args.play_in_order > 0:
-        next_video = Path(get_ordinal_media(con, args, next_video, sql_filter))
+        next_video = get_ordinal_media(con, args, Path(next_video), sql_filter)
 
+    next_video = Path(args.prefix, next_video)
     print(next_video)
 
     original_video = next_video

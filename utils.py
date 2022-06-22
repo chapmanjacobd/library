@@ -19,32 +19,43 @@ from db import single_column_tolist
 def parse_args(default_chromecast="Xylo and Orchestra"):
     parser = argparse.ArgumentParser()
     parser.add_argument("db")
-    parser.add_argument("-E", "--exclude")
-    parser.add_argument("-L", "--limit", type=int)
+
     parser.add_argument("-O", "--play-in-order", action="count", default=0)
     parser.add_argument("-S", "--skip")
-    parser.add_argument("-cast", "--chromecast", action="store_true")
-    parser.add_argument("-cast-to", "--chromecast-device", default=default_chromecast)
+    parser.add_argument("-u", "--sort")
+    parser.add_argument("-r", "--random", action="store_true")
+
     parser.add_argument("-d", "--duration", type=int)
     parser.add_argument("-dM", "--max-duration", type=int)
     parser.add_argument("-dm", "--min-duration", type=int)
-    parser.add_argument("-f", "--force-transcode", action="store_true")
-    parser.add_argument("-k", "--keep", action="store_true")
-    parser.add_argument("--delete", action="store_true")
-    parser.add_argument("-mv", "--move")
-    parser.add_argument("-name", "--filename", action="store_true")
+
+    parser.add_argument("-s", "--search")
+    parser.add_argument("-E", "--exclude")
+
+    parser.add_argument("-cast-to", "--chromecast-device", default=default_chromecast)
+    parser.add_argument("-cast", "--chromecast", action="store_true")
+    parser.add_argument("-wl", "--with-local", action="store_true")
+
+    parser.add_argument("-f", "--prefix", default='', help='sshfs root prefix')
+
+    parser.add_argument("-z", "--size", type=int)
+    parser.add_argument("--max-size", type=int)
+    parser.add_argument("--min-size", type=int)
+
     parser.add_argument("-p", "--print", action="store_true")
     parser.add_argument("-pq", "--printquery", action="store_true")
-    parser.add_argument("-r", "--random", action="store_true")
-    parser.add_argument("-s", "--search")
+    parser.add_argument("-L", "--limit", type=int)
+    parser.add_argument("-name", "--filename", action="store_true")
+
     parser.add_argument("-t", "--time-limit", type=int)
-    parser.add_argument("-u", "--sort")
-    parser.add_argument("-v", "--verbose", action="count", default=0)
     parser.add_argument("-vlc", "--vlc", action="store_true")
-    parser.add_argument("-wl", "--with-local", action="store_true")
-    parser.add_argument("-z", "--size", type=int)
-    parser.add_argument("-zM", "--max-size", type=int)
-    parser.add_argument("-zm", "--min-size", type=int)
+    parser.add_argument("--force-transcode", action="store_true")
+
+    parser.add_argument("-k", "--keep", action="store_true")
+    parser.add_argument("-mv", "--move")
+    parser.add_argument("--delete", action="store_true")
+
+    parser.add_argument("-v", "--verbose", action="count", default=0)
     args = parser.parse_args()
 
     if args.limit is None:
