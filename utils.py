@@ -20,6 +20,7 @@ def parse_args(default_chromecast="Xylo and Orchestra"):
     parser = argparse.ArgumentParser()
     parser.add_argument("db")
 
+    # TODO: maybe try https://dba.stackexchange.com/questions/43415/algorithm-for-finding-the-longest-prefix
     parser.add_argument("-O", "--play-in-order", action="count", default=0)
     parser.add_argument("-S", "--skip")
     parser.add_argument("-u", "--sort")
@@ -227,7 +228,7 @@ def get_ordinal_media(con, args, filename: Path, sql_filter):
         testname = newtestname
         query = f"""SELECT filename FROM media
             WHERE filename like ?
-                and {'1=1' if (args.play_in_order > 1) else sql_filter}
+                and {'1=1' if (args.play_in_order > 2) else sql_filter}
             ORDER BY filename
             LIMIT 1000
             """

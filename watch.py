@@ -112,7 +112,9 @@ def main(args):
     {filename_include_sql}
     {filename_exclude_sql}
     and {sql_filter}
-    ORDER BY {args.sort + ',' if args.sort else ''}
+    ORDER BY
+            {'round(seconds_per_byte,7) ASC,filename,' if args.play_in_order > 0 else ''}
+            {args.sort + ',' if args.sort else ''}
             {'random(),' if args.random else ''}
             {'filename,' if args.search and ((args.play_in_order > 0) or args.print) else ''}
             seconds_per_byte ASC
@@ -121,7 +123,7 @@ def main(args):
 
     if args.printquery:
         print_query(bindings, query)
-        if args.play_in_order > 0:
+        if args.play_in_order > 1:
             get_ordinal_media(con, args, Path('vid'), sql_filter)
         stop()
 
@@ -167,7 +169,7 @@ def main(args):
         stop()
 
     next_video = dict(con.execute(query, bindings).fetchone())["filename"]
-    if args.play_in_order > 0:
+    if args.play_in_order > 1:
         next_video = get_ordinal_media(con, args, Path(next_video), sql_filter)
 
     next_video = Path(args.prefix + next_video)
