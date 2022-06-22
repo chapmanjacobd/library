@@ -170,7 +170,7 @@ def main(args):
     if args.play_in_order > 0:
         next_video = get_ordinal_media(con, args, Path(next_video), sql_filter)
 
-    next_video = Path(args.prefix, next_video)
+    next_video = Path(args.prefix + next_video)
     print(next_video)
 
     original_video = next_video
