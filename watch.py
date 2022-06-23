@@ -98,6 +98,8 @@ def main(args):
     LIMIT = "LIMIT " + str(args.limit)
     OFFSET = f"OFFSET {args.skip}" if args.skip else ""
 
+    YEAR_MONTH = lambda var: f"cast(strftime('%Y%m',datetime({var} / 1000000000, 'unixepoch')) as int)"
+
     query = f"""
     SELECT filename, duration/60/60 as hours, duration / size AS seconds_per_byte,
     CASE
@@ -113,10 +115,12 @@ def main(args):
     {filename_exclude_sql}
     and {sql_filter}
     ORDER BY
-            {'round(seconds_per_byte,7) ASC,filename,' if args.play_in_order > 0 else ''}
+            {'round(seconds_per_byte,7) ASC,' if args.play_in_order == 1 else ''}
             {args.sort + ',' if args.sort else ''}
+            {YEAR_MONTH('time_created') +" desc," if args.new else ''}
+            {YEAR_MONTH('time_created') +',' if args.old else ''}
             {'random(),' if args.random else ''}
-            {'filename,' if args.search and ((args.play_in_order > 0) or args.print) else ''}
+            {'filename,' if args.filename or (args.search and ((args.play_in_order > 0) or args.print)) else ''}
             seconds_per_byte ASC
     {LIMIT} {OFFSET}
     ; """
