@@ -67,7 +67,7 @@ def parse_args(default_chromecast="Xylo and Orchestra"):
     if args.sort:
         args.sort = args.sort.replace('time', YEAR_MONTH('time_created'))
         args.sort = args.sort.replace('random', 'random()')
-        args.sort = args.sort.replace('priority', 'round(seconds_per_byte,7) ASC')
+        args.sort = args.sort.replace('priority', 'round(seconds_per_byte,7)')
 
     return args
 
