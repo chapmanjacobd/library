@@ -24,9 +24,6 @@ def parse_args(default_chromecast="Xylo and Orchestra"):
     parser.add_argument("-O", "--play-in-order", action="count", default=0)
     parser.add_argument("-S", "--skip")
     parser.add_argument("-u", "--sort")
-    parser.add_argument("-r", "--random", action="store_true")
-    parser.add_argument("-n", "--new", action="store_true")
-    parser.add_argument("-o", "--old", action="store_true")
 
     parser.add_argument("-d", "--duration", type=int)
     parser.add_argument("-dM", "--max-duration", type=int)
@@ -65,6 +62,12 @@ def parse_args(default_chromecast="Xylo and Orchestra"):
         args.limit = 1
         if args.print:
             args.limit = 100
+
+    YEAR_MONTH = lambda var: f"cast(strftime('%Y%m',datetime({var} / 1000000000, 'unixepoch')) as int)"
+    if args.sort:
+        args.sort = args.sort.replace('time', YEAR_MONTH('time_created'))
+        args.sort = args.sort.replace('random', 'random()')
+        args.sort = args.sort.replace('priority', 'round(seconds_per_byte,7) ASC')
 
     return args
 
