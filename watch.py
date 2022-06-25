@@ -178,13 +178,14 @@ def main(args):
     if next_video.exists() and "/keep/" not in str(next_video):
         quoted_next_video = quote(str(next_video))
 
-        if (
-            args.only_video
-            and cmd(f'ffprobe -show_streams -select_streams v -loglevel error -i {quoted_next_video} | wc -l').stdout
-            == 0
-        ):
-            remove_media(con, original_video)
-            exit()
+        if args.only_video:
+            has_video = (
+                cmd(f'ffprobe -show_streams -select_streams v -loglevel error -i {quoted_next_video} | wc -l').stdout
+                > '0'
+            )
+            if not has_video:
+                remove_media(con, original_video)
+                exit()
 
         if args.time_limit:
             seconds = args.time_limit * 60
