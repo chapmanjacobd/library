@@ -176,6 +176,16 @@ def main(args):
 
     original_video = next_video
     if next_video.exists() and "/keep/" not in str(next_video):
+        quoted_next_video = quote(str(next_video))
+
+        if (
+            args.only_video
+            and cmd(f'ffprobe -show_streams -select_streams v -loglevel error -i {quoted_next_video} | wc -l').stdout
+            == 0
+        ):
+            remove_media(con, original_video)
+            exit()
+
         if args.time_limit:
             seconds = args.time_limit * 60
             gap_time = 14
@@ -183,31 +193,30 @@ def main(args):
             temp_video = cmd(f"mktemp --suffix={next_video.suffix} --dry-run").stdout.strip()
 
             # clip x mins of target video file into new temp video file for playback
-            cmd(f"ffmpeg -i {quote(str(next_video))} -ss 0 -t {seconds} -c copy {temp_next_video}")
+            cmd(f"ffmpeg -i {quoted_next_video} -ss 0 -t {seconds} -c copy {temp_next_video}")
             # replace video file to prevent re-watching
-            cmd(f"mv {quote(str(next_video))} {temp_video}")
-            cmd(f"ffmpeg -i {temp_video} -ss {seconds - gap_time} -c copy {quote(str(next_video))} && rm {temp_video}")
+            cmd(f"mv {quoted_next_video} {temp_video}")
+            cmd(f"ffmpeg -i {temp_video} -ss {seconds - gap_time} -c copy {quoted_next_video} && rm {temp_video}")
 
             next_video = Path(temp_next_video)
             print(next_video)
 
         if args.force_transcode:
             temp_video = cmd(f"mktemp --suffix=.mkv --dry-run").stdout.strip()
-            cmd(f"mv {quote(str(next_video))} {temp_video}")
+            cmd(f"mv {quoted_next_video} {temp_video}")
             next_video = next_video.with_suffix(".mkv")
             cmd(
                 (
                     f"ffmpeg -loglevel error -stats -i {temp_video} -map 0 -scodec webvtt -vcodec h264"
                     " -preset fast -profile:v high -level 4.1 -crf 17 -pix_fmt yuv420p"
                     " -acodec opus -ac 2 -b:a 128k -filter:a loudnorm=i=-18:lra=17"
-                    f" {quote(str(next_video))} && rm {temp_video}"
+                    f" {quoted_next_video} && rm {temp_video}"
                 )
             )
             print(next_video)
 
         play_mpv(args, next_video)
 
-        quoted_next_video = quote(str(next_video))
         if args.keep and Confirm.ask("Keep?", default=False):
             keep_path = str(Path(next_video).parent / "keep/")
             cmd(f"mkdir -p {keep_path} && mv {quoted_next_video} {quote(keep_path)}")

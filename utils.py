@@ -24,6 +24,7 @@ def parse_args(default_chromecast="Xylo and Orchestra"):
     parser.add_argument("-O", "--play-in-order", action="count", default=0)
     parser.add_argument("-S", "--skip")
     parser.add_argument("-u", "--sort")
+    parser.add_argument("--only-video", action="store_true")
 
     parser.add_argument("-d", "--duration", type=int)
     parser.add_argument("-dM", "--max-duration", type=int)
