@@ -180,7 +180,10 @@ def main(args):
 
         if args.only_video:
             has_video = (
-                cmd(f'ffprobe -show_streams -select_streams v -loglevel error -i {quoted_next_video} | wc -l').stdout
+                cmd(
+                    f'ffprobe -show_streams -select_streams v -loglevel error -i {quoted_next_video} | wc -l',
+                    quiet=True,
+                ).stdout
                 > '0'
             )
             if not has_video:
