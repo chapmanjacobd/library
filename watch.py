@@ -176,6 +176,11 @@ def main(args):
     next_video = Path(args.prefix + next_video)
     print(next_video)
 
+    if "/keep/" in str(next_video):
+        keep_video(next_video)
+        remove_media(con, original_video)
+        exit()
+
     if next_video.exists():
         quoted_next_video = quote(str(next_video))
 
@@ -223,12 +228,7 @@ def main(args):
         play_mpv(args, next_video)
 
         if args.keep and Confirm.ask("Keep?", default=False):
-            kp = re.match('.*?/mnt/d/(.*?)/', str(next_video))
-            if kp:
-                keep_path = str(Path(kp[0], "keep/"))
-            else:
-                keep_path = str(next_video.parent / "keep/")
-            cmd(f"mkdir -p {keep_path} && mv {quoted_next_video} {quote(keep_path)}")
+            keep_video(next_video)
         else:
             if len(args.prefix) > 0:
                 cmd(f"/bin/rm {quoted_next_video}")
@@ -236,6 +236,15 @@ def main(args):
                 cmd(f"trash-put {quoted_next_video}")
 
     remove_media(con, original_video)
+
+
+def keep_video(video: Path):
+    kp = re.match('.*?/mnt/d/(.*?)/', str(video))
+    if kp:
+        keep_path = str(Path(kp[0], "keep/"))
+    else:
+        keep_path = str(video.parent / "keep/")
+    cmd(f"mkdir -p {keep_path} && mv {quote(str(video))} {quote(keep_path)}")
 
 
 if __name__ == "__main__":
