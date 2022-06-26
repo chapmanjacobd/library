@@ -171,10 +171,10 @@ def main(args):
     if args.play_in_order > 1:
         next_video = get_ordinal_media(con, args, Path(next_video), sql_filter)
 
+    original_video = Path(next_video)
     next_video = Path(args.prefix + next_video)
     print(next_video)
 
-    original_video = next_video
     if next_video.exists() and "/keep/" not in str(next_video):
         quoted_next_video = quote(str(next_video))
 
@@ -222,7 +222,7 @@ def main(args):
         play_mpv(args, next_video)
 
         if args.keep and Confirm.ask("Keep?", default=False):
-            keep_path = str(Path(next_video).parent / "keep/")
+            keep_path = str(next_video.parent / "keep/")
             cmd(f"mkdir -p {keep_path} && mv {quoted_next_video} {quote(keep_path)}")
         else:
             cmd(f"trash-put {quoted_next_video}")
