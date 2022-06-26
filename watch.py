@@ -225,7 +225,10 @@ def main(args):
             keep_path = str(next_video.parent / "keep/")
             cmd(f"mkdir -p {keep_path} && mv {quoted_next_video} {quote(keep_path)}")
         else:
-            cmd(f"trash-put {quoted_next_video}")
+            if len(args.prefi) > 0:
+                cmd(f"/bin/rm {quoted_next_video}")
+            else:
+                cmd(f"trash-put {quoted_next_video}")
 
     remove_media(con, original_video)
 
