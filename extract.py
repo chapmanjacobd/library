@@ -283,6 +283,9 @@ def main():
                     )
                     con.commit()
 
+            con.execute("delete from media where filename like '%/keep/%'")
+            con.commit()
+
         if len(video_files) > 0:
             print(f"Adding {len(video_files)} new media")
             log.info(video_files)

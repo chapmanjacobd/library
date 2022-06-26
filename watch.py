@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import textwrap
 from pathlib import Path
 from shlex import quote
@@ -175,7 +176,7 @@ def main(args):
     next_video = Path(args.prefix + next_video)
     print(next_video)
 
-    if next_video.exists() and "/keep/" not in str(next_video):
+    if next_video.exists():
         quoted_next_video = quote(str(next_video))
 
         if args.only_video:
@@ -222,7 +223,11 @@ def main(args):
         play_mpv(args, next_video)
 
         if args.keep and Confirm.ask("Keep?", default=False):
-            keep_path = str(next_video.parent / "keep/")
+            kp = re.match('.*?/mnt/d/(.*?)/', str(next_video))
+            if kp:
+                keep_path = str(Path(kp[0], "keep/"))
+            else:
+                keep_path = str(next_video.parent / "keep/")
             cmd(f"mkdir -p {keep_path} && mv {quoted_next_video} {quote(keep_path)}")
         else:
             if len(args.prefix) > 0:
