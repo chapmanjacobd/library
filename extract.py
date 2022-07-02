@@ -256,7 +256,7 @@ def main():
         path = Path(path).resolve()
         print(f"{path} : Scanning...")
 
-        video_files = get_video_files(path)
+        video_files = get_video_files(path, args.audio)
         new_files = set(video_files)
 
         try:
