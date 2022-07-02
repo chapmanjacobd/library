@@ -6,7 +6,6 @@ from pathlib import Path
 from shlex import quote
 
 import pandas as pd
-import polars as pl
 import sqlite_utils
 from rich import inspect
 from rich.prompt import Confirm
@@ -158,8 +157,8 @@ def main(args):
         Path(args.move).mkdir(exist_ok=True, parents=True)
         keep_path = str(Path(args.move).resolve())
 
-        videos = pl.DataFrame([dict(r) for r in con.execute(query, bindings).fetchall()])
-        for video in videos.select("filename").to_series():
+        videos = pd.DataFrame([dict(r) for r in con.execute(query, bindings).fetchall()])
+        for video in videos[["filename"]]:
             if Path(video).exists() and "/keep/" not in video:
                 quoted_next_video = quote(str(video))
                 print(quoted_next_video)

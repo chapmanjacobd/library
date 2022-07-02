@@ -17,7 +17,6 @@ tinytag = "*"
 fuckit = "*"
 tabulate = "*"
 natsort = "*"
-polars = "*"
 protobuf = "<4"
 
 [dev-packages]
