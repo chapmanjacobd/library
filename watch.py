@@ -133,11 +133,15 @@ def main(args):
         videos = pd.DataFrame([dict(r) for r in con.execute(query, bindings).fetchall()])
 
         if args.filename:
-            csvf = videos[["filename"]].to_csv(index=False, header=False)
-            if args.limit == 1 and not Path(videos[["filename"]].loc[0].iat[0]).exists():
-                remove_media(con, original_video)
-                return main(args)
-            print(csvf.strip())
+            if args.limit == 1:
+                f = videos[["filename"]].loc[0].iat[0]
+                if not Path(f).exists():
+                    remove_media(con, original_video)
+                    return main(args)
+                print(f)
+            else:
+                csvf = videos[["filename"]].to_csv(index=False, header=False)
+                print(csvf.strip())
         else:
             table_content = videos
             table_content[['filename']] = table_content[['filename']].applymap(
