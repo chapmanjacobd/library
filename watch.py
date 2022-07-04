@@ -136,7 +136,7 @@ def main(args):
             if args.limit == 1:
                 f = videos[["filename"]].loc[0].iat[0]
                 if not Path(f).exists():
-                    remove_media(con, original_video)
+                    remove_media(con, f)
                     return main(args)
                 print(f)
             else:
