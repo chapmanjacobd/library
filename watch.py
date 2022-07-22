@@ -87,11 +87,11 @@ def main(args):
     if args.search:
         for inc in args.search.split(","):
             filename_include_sql += " AND filename LIKE ? "
-            bindings.append("%" + inc.replace(" ", "%") + "%")
+            bindings.append("%" + inc.replace(" ", "%").replace("%%", " ") + "%")
     if args.exclude:
         for exc in args.exclude.split(","):
             filename_exclude_sql += " AND filename NOT LIKE ? "
-            bindings.append("%" + exc.replace(" ", "%") + "%")
+            bindings.append("%" + exc.replace(" ", "%").replace("%%", " ") + "%")
 
     sql_filter = conditional_filter(args)
 
