@@ -42,9 +42,9 @@ def main(args):
 
     bindings = {}
     if args.search:
-        bindings["search"] = "%" + args.search.replace(" ", "%") + "%"
+        bindings["search"] = "%" + args.search.replace(" ", "%").replace("%%", " ") + "%"
     if args.exclude:
-        bindings["exclude"] = "%" + args.exclude.replace(" ", "%") + "%"
+        bindings["exclude"] = "%" + args.exclude.replace(" ", "%").replace("%%", " ") + "%"
 
     sql_filter = conditional_filter(args)
 
