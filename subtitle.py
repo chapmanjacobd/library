@@ -4,13 +4,10 @@ import re
 from pathlib import Path
 from shlex import quote
 
-from dotenv import load_dotenv
 from joblib import Parallel, delayed
-from rich import inspect, print
+from rich import inspect
 
 from utils import cmd, get_video_files
-
-load_dotenv(dotenv_path=Path(".") / ".env")
 
 
 def youtube_dl_id(file) -> str:
@@ -29,8 +26,14 @@ def youtube_dl_id(file) -> str:
 
 def is_file_with_subtitle(file):
     SUBTITLE_FORMATS = "ass|idx|psb|rar|smi|srt|ssa|ssf|sub|usf|vtt"
-    file = Path(file)
 
+    internal_sub = cmd(
+        f"</dev/null ffmpeg -i {quote(file)} -c copy -map 0:s:0 -frames:s 1 -f null - -v 0 -hide_banner", strict=False
+    ).returncode
+    if internal_sub == 0:
+        return True
+
+    file = Path(file)
     external_sub = []
     for ext in SUBTITLE_FORMATS.split("|"):
         glob = False
@@ -42,13 +45,7 @@ def is_file_with_subtitle(file):
 
         external_sub.append(file.with_suffix("." + ext).exists() or file.with_suffix(".en." + ext).exists() or glob)
 
-    return any(external_sub) or (
-        cmd(
-            f"</dev/null ffmpeg -i {quote(str(file))} -c copy -map 0:s:0 -frames:s 1 -f null - -v 0 -hide_banner",
-            strict=False,
-        ).returncode
-        == 0
-    )
+    return any(external_sub)
 
 
 def get_subtitle(args, file):
@@ -67,7 +64,7 @@ def get_subtitle(args, file):
     if run_youtube and len(yt_video_id) > 0:
         print(yt_video_id)
         cmd(
-            f"yt-dlp --write-sub --write-auto-sub --sub-lang en,EN,eng,ENG,en-gb,en-us,en-GB,en-US,EN-GB,EN-US,english,English,ENGLISH,en-CA,en-IE --sub-format srt/sub/ssa/vtt/ass/best --skip-download https://youtu.be/{yt_video_id}",
+            f"yt --no-download-archive --skip-download --limit-rate 5K https://youtu.be/{yt_video_id}",
             cwd=str(Path(file).parent),
             strict=False,
         )
@@ -75,7 +72,7 @@ def get_subtitle(args, file):
     if run_subliminal:
         print("Downloading subtitles:", file)
         cmd(
-            f"subliminal --opensubtitles {os.getenv('OPEN_SUBTITLE_CREDENTIALS')} download -l en {quote(file)}",
+            f"subliminal --opensubtitles {os.environ['OPEN_SUBTITLE_CREDENTIALS']} download -l en {quote(file)}",
             # strict=False,
         )
 
