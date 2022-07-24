@@ -303,13 +303,15 @@ def main():
             log.info(video_files)
 
             df_chunked = chunks(video_files, SQLITE_PARAM_LIMIT)
-            for l in df_chunked:
+            for idx, l in enumerate(df_chunked):
+                print(f'Extracting metadata chunk {idx + 1} of {len(video_files) // SQLITE_PARAM_LIMIT}')
                 metadata = (
                     Parallel(n_jobs=-1 if args.verbose == 0 else 1, backend="threading")(
                         delayed(extract_metadata)(args, file) for file in l
                     )
                     or []
                 )
+                print('Saving chunk')
                 DF = pd.DataFrame(list(filter(None, metadata)))
                 if args.audio:
                     if DF.get(["year"]) is not None:
@@ -324,6 +326,7 @@ def main():
                 )
 
                 if args.subtitle:
+                    print('Fetching subtitles')
                     Parallel(n_jobs=5)(delayed(get_subtitle)(args, file) for file in l)
 
 
