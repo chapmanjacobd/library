@@ -10,11 +10,11 @@ import fuckit
 import mutagen
 import pandas as pd
 from joblib import Parallel, delayed
-from rich import inspect, print
+from rich import inspect
 from tinytag import TinyTag
 
 from db import fetchall_dict, sqlite_con
-from subtitle import get_subtitle
+from subtitle import get_subtitle, is_file_with_subtitle, youtube_dl_id
 from utils import chunks, cmd, get_video_files, log
 
 
@@ -121,6 +121,13 @@ def parse_mutagen_tags(m, tiny_tags):
     }
 
 
+def get_provenance(file):
+    if youtube_dl_id(file) != '':
+        return 'YouTube'
+
+    return None
+
+
 def extract_metadata(args, f):
     try:
         ffprobe = json.loads(
@@ -163,6 +170,11 @@ def extract_metadata(args, f):
         time_modified=datetime.fromtimestamp(stat.st_mtime),
     )
 
+    media = {**media, "provenance": get_provenance(f)}
+
+    if not args.audio:
+        media = {**media, "has_sub": is_file_with_subtitle(f)}
+
     if args.audio:
         media = {**media, "listen_count": 0}
 
@@ -182,7 +194,6 @@ def extract_metadata(args, f):
             **tiny_tags,
             **mutagen_tags_p,
         }
-        # print(audio)
 
         @fuckit
         def get_rid_of_known_tags():
