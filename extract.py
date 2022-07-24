@@ -255,14 +255,6 @@ def main():
     if args.force_rescan:
         Path(args.db).unlink(missing_ok=True)
 
-    if Path(args.db).exists():
-        cmd(f"sqlite-utils optimize {args.db}")
-        columns = cmd(
-            f"sqlite-utils tables {args.db} --columns | jq -r '.[0].columns[]' ", quiet=True
-        ).stdout.splitlines()
-        for column in columns:
-            cmd(f"sqlite-utils create-index --if-not-exists --analyze {args.db} media {column}")
-
     con = sqlite_con(args.db)
     for path in args.paths:
         path = Path(path).resolve()
@@ -311,6 +303,7 @@ def main():
                     )
                     or []
                 )
+
                 print('Saving chunk')
                 DF = pd.DataFrame(list(filter(None, metadata)))
                 if args.audio:
@@ -328,6 +321,15 @@ def main():
                 if args.subtitle:
                     print('Fetching subtitles')
                     Parallel(n_jobs=5)(delayed(get_subtitle)(args, file) for file in l)
+
+    print('Optimizing database')
+    if Path(args.db).exists():
+        cmd(f"sqlite-utils optimize {args.db}")
+        columns = cmd(
+            f"sqlite-utils tables {args.db} --columns | jq -r '.[0].columns[]' ", quiet=True
+        ).stdout.splitlines()
+        for column in columns:
+            cmd(f"sqlite-utils create-index --if-not-exists --analyze {args.db} media {column}")
 
 
 if __name__ == "__main__":
