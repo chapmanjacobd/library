@@ -295,9 +295,10 @@ def main():
             print(f"Adding {len(video_files)} new media")
             log.info(video_files)
 
-            df_chunked = chunks(video_files, SQLITE_PARAM_LIMIT)
+            chunked_qty = SQLITE_PARAM_LIMIT // 10
+            df_chunked = chunks(video_files, chunked_qty)
             for idx, l in enumerate(df_chunked):
-                print(f'Extracting metadata chunk {idx + 1} of {math.ceil(len(video_files) / SQLITE_PARAM_LIMIT)}')
+                print(f'Extracting metadata chunk {idx + 1} of {math.ceil(len(video_files) / chunked_qty)}')
                 metadata = (
                     Parallel(n_jobs=-1 if args.verbose == 0 else 1, backend="threading")(
                         delayed(extract_metadata)(args, file) for file in l
