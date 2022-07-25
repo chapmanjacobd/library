@@ -176,7 +176,11 @@ def extract_metadata(args, f):
     media = {**media, "provenance": get_provenance(f)}
 
     if not args.audio:
-        media = {**media, "has_sub": is_file_with_subtitle(f)}
+        try:
+            has_sub = is_file_with_subtitle(f)
+        except:
+            has_sub = False
+        media = {**media, "has_sub": has_sub}
 
     if args.audio:
         media = {**media, "listen_count": 0}

@@ -47,20 +47,20 @@ def is_file_with_subtitle(file):
         return False
 
     FORMATSUB_REGEX = re.compile(rf'.*\.({SUBTITLE_FORMATS})')
-    try:
-        for globbed in file.parent.glob(file.stem[:-12] + r'.*'):
-            match = FORMATSUB_REGEX.match(str(globbed))
-            if match:
-                return True
-    except:
-        pass
+    for globbed in file.parent.glob(file.stem[:-12] + r'.*'):
+        match = FORMATSUB_REGEX.match(str(globbed))
+        if match:
+            return True
 
     return False
 
 
 def get_subtitle(args, file):
-    if is_file_with_subtitle(file):
-        return
+    try:
+        if is_file_with_subtitle(file):
+            return
+    except:
+        pass
 
     try:
         yt_video_id = youtube_dl_id(file)
