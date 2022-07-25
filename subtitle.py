@@ -25,7 +25,7 @@ def youtube_dl_id(file) -> str:
 
 
 def is_file_with_subtitle(file):
-    SUBTITLE_FORMATS = "ass|idx|psb|rar|smi|srt|ssa|ssf|sub|usf|vtt"
+    SUBTITLE_FORMATS = "vtt|srt|ssa|ass|sub|idx|psb|smi|ssf|usf"
 
     internal_sub = cmd(
         f"</dev/null ffmpeg -i {quote(file)} -c copy -map 0:s:0 -frames:s 1 -f null - -v 0 -hide_banner", strict=False
@@ -34,18 +34,28 @@ def is_file_with_subtitle(file):
         return True
 
     file = Path(file)
-    external_sub = []
-    for ext in SUBTITLE_FORMATS.split("|"):
-        glob = False
-        if len(file.stem) > 13:
-            try:
-                glob = any(file.parent.glob(file.stem[:-12] + "*." + ext))
-            except:
-                print(file)
 
-        external_sub.append(file.with_suffix("." + ext).exists() or file.with_suffix(".en." + ext).exists() or glob)
+    if any(
+        [
+            file.with_suffix("." + ext).exists() or file.with_suffix(".en." + ext).exists()
+            for ext in SUBTITLE_FORMATS.split("|")
+        ]
+    ):
+        return True
 
-    return any(external_sub)
+    if len(file.stem) <= 13:
+        return False
+
+    FORMATSUB_REGEX = re.compile(rf'.*\.({SUBTITLE_FORMATS})')
+    try:
+        for globbed in file.parent.glob(file.stem[:-12] + r'.*'):
+            match = FORMATSUB_REGEX.match(str(globbed))
+            if match:
+                return True
+    except:
+        pass
+
+    return False
 
 
 def get_subtitle(args, file):
