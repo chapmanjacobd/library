@@ -137,14 +137,12 @@ def extract_metadata(args, f):
                 f"ffprobe -loglevel quiet -print_format json=compact=1 -show_entries format {quote(f)}", quiet=True
             ).stdout
         )
+    except (KeyboardInterrupt, SystemExit):
+        exit(130)
     except:
-        try:
-            cmd(f"trash-put {quote(f)}")
-            print(f"Failed reading {f}", file=sys.stderr)
-        except:
-            pass
+        print(f"Failed reading {f}", file=sys.stderr)
+        cmd(f"trash-put {quote(f)}", strict=False)
         return
-
     if not "format" in ffprobe:
         print(f"Failed reading format {f}", file=sys.stderr)
         print(ffprobe)
@@ -242,7 +240,7 @@ def extract_metadata(args, f):
             pass
         else:
             if len(new_tags.keys()) > 0:
-                log.info(new_tags)
+                print(new_tags)
 
         return audio
 
