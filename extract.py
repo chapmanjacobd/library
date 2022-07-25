@@ -7,7 +7,6 @@ from datetime import datetime
 from pathlib import Path
 from shlex import quote
 
-import fuckit
 import mutagen
 import pandas as pd
 from joblib import Parallel, delayed
@@ -201,45 +200,49 @@ def extract_metadata(args, f):
             **mutagen_tags_p,
         }
 
-        @fuckit
         def get_rid_of_known_tags():
-            del mutagen_tags.tags["encoder"]
-            del mutagen_tags.tags["TMED"]
-            del mutagen_tags.tags["TSO2"]
-            del mutagen_tags.tags["artist-sort"]
-            del mutagen_tags.tags["ASIN"]
-            del mutagen_tags.tags["Acoustid Id"]
-            del mutagen_tags.tags["Artists"]
-            del mutagen_tags.tags["BARCODE"]
-            del mutagen_tags.tags["CATALOGNUMBER"]
-            del mutagen_tags.tags["MusicBrainz Album Artist Id"]
-            del mutagen_tags.tags["MusicBrainz Album Id"]
-            del mutagen_tags.tags["MusicBrainz Album Release Country"]
-            del mutagen_tags.tags["MusicBrainz Album Status"]
-            del mutagen_tags.tags["MusicBrainz Album Type"]
-            del mutagen_tags.tags["MusicBrainz Artist Id"]
-            del mutagen_tags.tags["MusicBrainz Release Group Id"]
-            del mutagen_tags.tags["MusicBrainz Release Track Id"]
-            del mutagen_tags.tags["SCRIPT"]
-            del mutagen_tags.tags["originalyear"]
-            del mutagen_tags.tags["artist"]
-            del mutagen_tags.tags["album"]
-            del mutagen_tags.tags["ALBUMARTIST"]
-            del mutagen_tags.tags["title"]
-            del mutagen_tags.tags["TORY"]
-            del mutagen_tags.tags["TDOR"]
-            del mutagen_tags.tags["publisher"]
-            del mutagen_tags.tags["TRACKNUMBER"]
-            del mutagen_tags.tags["DISCNUMBER"]
-            del mutagen_tags.tags["replaygain_track_peak"]
-            del mutagen_tags.tags["replaygain_track_gain"]
-            del mutagen_tags.tags["date"]
+            tags = mutagen_tags.tags.as_dict()
+            tags.pop('encoder', None)
+            tags.pop('TMED', None)
+            tags.pop('TSO2', None)
+            tags.pop('artist-sort', None)
+            tags.pop('ASIN', None)
+            tags.pop('Acoustid Id', None)
+            tags.pop('Artists', None)
+            tags.pop('BARCODE', None)
+            tags.pop('CATALOGNUMBER', None)
+            tags.pop('MusicBrainz Album Artist Id', None)
+            tags.pop('MusicBrainz Album Id', None)
+            tags.pop('MusicBrainz Album Release Country', None)
+            tags.pop('MusicBrainz Album Status', None)
+            tags.pop('MusicBrainz Album Type', None)
+            tags.pop('MusicBrainz Artist Id', None)
+            tags.pop('MusicBrainz Release Group Id', None)
+            tags.pop('MusicBrainz Release Track Id', None)
+            tags.pop('SCRIPT', None)
+            tags.pop('originalyear', None)
+            tags.pop('artist', None)
+            tags.pop('album', None)
+            tags.pop('ALBUMARTIST', None)
+            tags.pop('title', None)
+            tags.pop('TORY', None)
+            tags.pop('TDOR', None)
+            tags.pop('publisher', None)
+            tags.pop('TRACKNUMBER', None)
+            tags.pop('DISCNUMBER', None)
+            tags.pop('replaygain_track_peak', None)
+            tags.pop('replaygain_track_gain', None)
+            tags.pop('date', None)
 
-            return mutagen_tags.tags
+            return tags
 
-        new_tags = get_rid_of_known_tags()
-        if new_tags is not None:
-            print(new_tags)
+        try:
+            new_tags = get_rid_of_known_tags()
+        except:
+            pass
+        else:
+            if len(new_tags.keys()) > 0:
+                log.info(new_tags)
 
         return audio
 
