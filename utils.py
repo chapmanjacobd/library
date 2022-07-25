@@ -2,6 +2,7 @@ import argparse
 import logging
 import os
 import re
+import signal
 import sys
 from functools import wraps
 from pathlib import Path
@@ -173,7 +174,8 @@ def cmd(command, strict=True, cwd=None, quiet=False):
             print(s)
         return s
 
-    r = run(command, capture_output=True, text=True, shell=True, cwd=cwd)
+    r = run(command, capture_output=True, text=True, shell=True, cwd=cwd, preexec_fn=os.setpgrp)
+    # TODO Windows support: creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
     log.debug(r.args)
     r.stdout = print_std(r.stdout)
     r.stderr = print_std(r.stderr)
