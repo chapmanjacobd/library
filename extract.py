@@ -295,10 +295,12 @@ def main():
             print(f"Adding {len(video_files)} new media")
             log.info(video_files)
 
-            chunked_qty = SQLITE_PARAM_LIMIT // 100
-            df_chunked = chunks(video_files, chunked_qty)
+            batch_count = SQLITE_PARAM_LIMIT // 100
+            chunks_count = math.ceil(len(video_files) / batch_count)
+            df_chunked = chunks(video_files, batch_count)
             for idx, l in enumerate(df_chunked):
-                print(f'Extracting metadata chunk {idx + 1} of {math.ceil(len(video_files) / chunked_qty)}')
+                percent = ((batch_count * idx) + len(l)) / len(video_files) * 100
+                print(f'Extracting metadata: {percent}% (chunk {idx + 1} of {chunks_count})')
                 metadata = (
                     Parallel(n_jobs=-1 if args.verbose == 0 else 1, backend="threading")(
                         delayed(extract_metadata)(args, file) for file in l
@@ -306,7 +308,7 @@ def main():
                     or []
                 )
 
-                print('Saving chunk')
+                print(f'Saving metadata for {batch_count} files')
                 DF = pd.DataFrame(list(filter(None, metadata)))
                 if args.audio:
                     if DF.get(["year"]) is not None:
