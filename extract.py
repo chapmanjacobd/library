@@ -300,7 +300,7 @@ def main():
             df_chunked = chunks(video_files, batch_count)
             for idx, l in enumerate(df_chunked):
                 percent = ((batch_count * idx) + len(l)) / len(video_files) * 100
-                print(f'Extracting metadata: {percent}% (chunk {idx + 1} of {chunks_count})')
+                print(f'Extracting metadata: {percent:3.1f}% (chunk {idx + 1} of {chunks_count})')
                 metadata = (
                     Parallel(n_jobs=-1 if args.verbose == 0 else 1, backend="threading")(
                         delayed(extract_metadata)(args, file) for file in l
