@@ -308,7 +308,6 @@ def main():
                     or []
                 )
 
-                print(f'Saving metadata for {batch_count} files')
                 DF = pd.DataFrame(list(filter(None, metadata)))
                 if args.audio:
                     if DF.get(["year"]) is not None:
