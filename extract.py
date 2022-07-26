@@ -6,6 +6,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 from shlex import quote
+from typing import Dict
 
 import mutagen
 import pandas as pd
@@ -15,17 +16,68 @@ from tinytag import TinyTag
 
 from db import fetchall_dict, sqlite_con
 from subtitle import get_subtitle, is_file_with_subtitle, youtube_dl_id
-from utils import chunks, cmd, get_video_files, log, remove_None
-from extract_tags import parse_tags
+from utils import chunks, cmd, combine, get_video_files, log, remove_None, safe_unpack
 
 SQLITE_PARAM_LIMIT = 32765
 
 
 def get_provenance(file):
-    if youtube_dl_id(file) != '':
-        return 'YouTube'
+    if youtube_dl_id(file) != "":
+        return "YouTube"
 
     return None
+
+
+def parse_tags(mutagen: Dict, tinytag: Dict):
+    tags = {
+        "mood": combine(
+            mutagen.get("albummood"),
+            mutagen.get("MusicMatch_Situation"),
+            mutagen.get("Songs-DB_Occasion"),
+            mutagen.get("albumgrouping"),
+        ),
+        "genre": combine(mutagen.get("genre"), tinytag.get("genre"), mutagen.get("albumgenre")),
+        "year": safe_unpack(
+            mutagen.get("originalyear"),
+            mutagen.get("TDOR"),
+            mutagen.get("TORY"),
+            mutagen.get("date"),
+            mutagen.get("TDRC"),
+            mutagen.get("TDRL"),
+        ),
+        "bpm": safe_unpack(mutagen.get("fBPM"), mutagen.get("bpm_accuracy")),
+        "key": safe_unpack(mutagen.get("TIT1"), mutagen.get("key_accuracy"), mutagen.get("TKEY")),
+        "gain": safe_unpack(mutagen.get("replaygain_track_gain")),
+        "time": combine(mutagen.get("time_signature")),
+        "decade": safe_unpack(mutagen.get("Songs-DB_Custom1")),
+        "categories": safe_unpack(mutagen.get("Songs-DB_Custom2")),
+        "city": safe_unpack(mutagen.get("Songs-DB_Custom3")),
+        "country": combine(
+            mutagen.get("Songs-DB_Custom4"),
+            mutagen.get("MusicBrainz Album Release Country"),
+            mutagen.get("musicbrainz album release country"),
+            mutagen.get("language"),
+        ),
+        "description": combine(
+            mutagen.get("description"),
+            mutagen.get("lyrics"),
+            tinytag.get("comment"),
+        ),
+        "album": safe_unpack(tinytag.get("album"), mutagen.get("album")),
+        "title": safe_unpack(tinytag.get("title"), mutagen.get("title")),
+        "artist": combine(
+            tinytag.get("artist"),
+            mutagen.get("artist"),
+            mutagen.get("artists"),
+            tinytag.get("albumartist"),
+            tinytag.get("composer"),
+        ),
+    }
+
+    # print(mutagen)
+    # breakpoint()
+
+    return tags
 
 
 def extract_metadata(args, f):
@@ -98,12 +150,11 @@ def extract_metadata(args, f):
         tags = parse_tags(mutagen_tags, tiny_tags)
         return {**media, **tags}
 
-
     return media
 
 
 def optimize_db(args):
-    print('Optimizing database')
+    print("Optimizing database")
     if Path(args.db).exists():
         cmd(f"sqlite-utils optimize {args.db}")
         columns = cmd(
@@ -111,29 +162,6 @@ def optimize_db(args):
         ).stdout.splitlines()
         for column in columns:
             cmd(f"sqlite-utils create-index --if-not-exists --analyze {args.db} media {column}")
-
-
-def scan_path(args, con, path):
-    path = Path(path).resolve()
-    print(f"{path} : Scanning...")
-
-    video_files = find_new_files(args, con, path)
-
-    if len(video_files) > 0:
-        print(f"Adding {len(video_files)} new media")
-        log.debug(video_files)
-
-        batch_count = SQLITE_PARAM_LIMIT // 100
-        chunks_count = math.ceil(len(video_files) / batch_count)
-        df_chunked = chunks(video_files, batch_count)
-        for idx, l in enumerate(df_chunked):
-            percent = ((batch_count * idx) + len(l)) / len(video_files) * 100
-            print(f'Extracting metadata: {percent:3.1f}% (chunk {idx + 1} of {chunks_count})')
-            extract_chunk(args, con, l)
-
-            if args.subtitle:
-                print('Fetching subtitles')
-                Parallel(n_jobs=5)(delayed(get_subtitle)(args, file) for file in l)
 
 
 def extract_chunk(args, con, l):
@@ -190,6 +218,29 @@ def find_new_files(args, con, path):
         con.commit()
 
     return video_files
+
+
+def scan_path(args, con, path):
+    path = Path(path).resolve()
+    print(f"{path} : Scanning...")
+
+    video_files = find_new_files(args, con, path)
+
+    if len(video_files) > 0:
+        print(f"Adding {len(video_files)} new media")
+        log.debug(video_files)
+
+        batch_count = SQLITE_PARAM_LIMIT // 100
+        chunks_count = math.ceil(len(video_files) / batch_count)
+        df_chunked = chunks(video_files, batch_count)
+        for idx, l in enumerate(df_chunked):
+            percent = ((batch_count * idx) + len(l)) / len(video_files) * 100
+            print(f"Extracting metadata: {percent:3.1f}% (chunk {idx + 1} of {chunks_count})")
+            extract_chunk(args, con, l)
+
+            if args.subtitle:
+                print("Fetching subtitles")
+                Parallel(n_jobs=5)(delayed(get_subtitle)(args, file) for file in l)
 
 
 def main():
