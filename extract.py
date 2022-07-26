@@ -87,12 +87,11 @@ def extract_metadata(args, f):
 
         try:
             tiny_tags = TinyTag.get(f).as_dict()
-            mutagen_tags = mutagen.File(f)
-            assert mutagen_tags.tags
+            mutagen_tags = mutagen.File(f).tags.as_dict()
             tags = parse_tags(mutagen_tags, tiny_tags)
             return {**media, **tags}
         except:
-            pass
+            print('Skipped', f)
 
     return media
 
