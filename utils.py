@@ -3,10 +3,12 @@ import logging
 import os
 import re
 import sys
+from collections.abc import Iterable
 from functools import wraps
 from pathlib import Path
 from subprocess import run
 
+# import ipdb
 from IPython.core import ultratb
 from IPython.terminal.debugger import TerminalPdb
 from pychromecast import discovery
@@ -15,14 +17,7 @@ from rich.logging import RichHandler
 
 from db import single_column_tolist
 
-tb = ultratb.FormattedTB(
-    mode="Context",
-    color_scheme="Neutral",
-    call_pdb=1,
-    debugger_cls=TerminalPdb,
-)
-
-sys.breakpointhook = tb
+# sys.breakpointhook = ipdb.set_trace
 
 
 def parse_args(default_chromecast="Xylo and Orchestra"):
@@ -132,7 +127,12 @@ def argparse_log():
 
     try:
         if args.verbose > 0 and os.getpgrp() == os.tcgetpgrp(sys.stdout.fileno()):
-            sys.excepthook = tb
+            sys.excepthook = ultratb.FormattedTB(
+                mode="Context",
+                color_scheme="Neutral",
+                call_pdb=1,
+                debugger_cls=TerminalPdb,
+            )
         else:
             pass
     except:
@@ -289,5 +289,14 @@ def compile_query(query, *args):
     return query
 
 
-def flatten(xss):
-    return [x for xs in xss for x in xs]
+def flatten(xs):
+    for x in xs:
+        if isinstance(x, Iterable) and not isinstance(x, (str, bytes)):
+            yield from flatten(x)
+        elif isinstance(x, bytes):
+            yield x.decode('utf-8')
+        else:
+            yield x
+
+def remove_None(kwargs):
+    return {k:v for k,v in kwargs.items() if v is not None}

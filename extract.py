@@ -15,7 +15,7 @@ from tinytag import TinyTag
 
 from db import fetchall_dict, sqlite_con
 from subtitle import get_subtitle, is_file_with_subtitle, youtube_dl_id
-from utils import chunks, cmd, get_video_files, log
+from utils import chunks, cmd, get_video_files, log, remove_None
 from extract_tags import parse_tags
 
 SQLITE_PARAM_LIMIT = 32765
@@ -86,12 +86,18 @@ def extract_metadata(args, f):
         media = {**media, "listen_count": 0}
 
         try:
-            tiny_tags = TinyTag.get(f).as_dict()
-            mutagen_tags = mutagen.File(f).tags.as_dict()
-            tags = parse_tags(mutagen_tags, tiny_tags)
-            return {**media, **tags}
+            tiny_tags = remove_None(TinyTag.get(f).as_dict())
         except:
-            print('Skipped', f)
+            tiny_tags = dict()
+
+        try:
+            mutagen_tags = remove_None(mutagen.File(f).tags.as_dict())
+        except:
+            mutagen_tags = dict()
+
+        tags = parse_tags(mutagen_tags, tiny_tags)
+        return {**media, **tags}
+
 
     return media
 
