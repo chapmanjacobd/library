@@ -23,6 +23,7 @@ pylint = "*"
 ssort = "*"
 isort = "*"
 line-profiler = "*"
+geopandas = "*"
 
 [requires]
 python_version = "3.10"

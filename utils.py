@@ -15,6 +15,15 @@ from rich.logging import RichHandler
 
 from db import single_column_tolist
 
+tb = ultratb.FormattedTB(
+    mode="Context",
+    color_scheme="Neutral",
+    call_pdb=1,
+    debugger_cls=TerminalPdb,
+)
+
+sys.breakpointhook = tb
+
 
 def parse_args(default_chromecast="Xylo and Orchestra"):
     parser = argparse.ArgumentParser()
@@ -123,12 +132,7 @@ def argparse_log():
 
     try:
         if args.verbose > 0 and os.getpgrp() == os.tcgetpgrp(sys.stdout.fileno()):
-            sys.excepthook = ultratb.FormattedTB(
-                mode="Verbose" if args.verbose > 1 else "Context",
-                color_scheme="Neutral",
-                call_pdb=1,
-                debugger_cls=TerminalPdb,
-            )
+            sys.excepthook = tb
         else:
             pass
     except:
@@ -283,3 +287,7 @@ def compile_query(query, *args):
         query = query.replace("?", "'" + str(a) + "'", 1)
 
     return query
+
+
+def flatten(xss):
+    return [x for xs in xss for x in xs]
