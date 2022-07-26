@@ -78,12 +78,21 @@ def play_mpv(args, video_path: Path):
     cmd(f"{mpv} {mpv_options} {quoted_video_path}")
 
 
+def keep_video(video: Path):
+    kp = re.match(".*?/mnt/d/(.*?)/", str(video))
+    if kp:
+        keep_path = str(Path(kp[0], "keep/"))
+    else:
+        keep_path = str(video.parent / "keep/")
+    cmd(f"mkdir -p {keep_path} && mv {quote(str(video))} {quote(keep_path)}")
+
+
 def main(args):
     con = sqlite_con(args.db)
 
     bindings = []
-    filename_include_sql = ''
-    filename_exclude_sql = ''
+    filename_include_sql = ""
+    filename_exclude_sql = ""
     if args.search:
         for inc in args.search.split(","):
             filename_include_sql += " AND filename LIKE ? "
@@ -123,7 +132,7 @@ def main(args):
     if args.printquery:
         print_query(bindings, query)
         if args.play_in_order > 1:
-            get_ordinal_media(con, args, Path('vid'), sql_filter)
+            get_ordinal_media(con, args, Path("vid"), sql_filter)
         stop()
 
     if args.chromecast:
@@ -144,7 +153,7 @@ def main(args):
                 print(csvf.strip())
         else:
             table_content = videos
-            table_content[['filename']] = table_content[['filename']].applymap(
+            table_content[["filename"]] = table_content[["filename"]].applymap(
                 lambda x: textwrap.fill(x, os.get_terminal_size().columns - 30)
             )
             print(
@@ -193,10 +202,10 @@ def main(args):
         if args.only_video:
             has_video = (
                 cmd(
-                    f'ffprobe -show_streams -select_streams v -loglevel error -i {quoted_next_video} | wc -l',
+                    f"ffprobe -show_streams -select_streams v -loglevel error -i {quoted_next_video} | wc -l",
                     quiet=True,
                 ).stdout
-                > '0'
+                > "0"
             )
             if not has_video:
                 remove_media(con, original_video)
@@ -242,15 +251,6 @@ def main(args):
                 cmd(f"trash-put {quoted_next_video}")
 
     remove_media(con, original_video)
-
-
-def keep_video(video: Path):
-    kp = re.match('.*?/mnt/d/(.*?)/', str(video))
-    if kp:
-        keep_path = str(Path(kp[0], "keep/"))
-    else:
-        keep_path = str(video.parent / "keep/")
-    cmd(f"mkdir -p {keep_path} && mv {quote(str(video))} {quote(keep_path)}")
 
 
 if __name__ == "__main__":

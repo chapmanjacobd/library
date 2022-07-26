@@ -46,8 +46,8 @@ def is_file_with_subtitle(file):
     if len(file.stem) <= 13:
         return False
 
-    FORMATSUB_REGEX = re.compile(rf'.*\.({SUBTITLE_FORMATS})')
-    for globbed in file.parent.glob(file.stem[:-12] + r'.*'):
+    FORMATSUB_REGEX = re.compile(rf".*\.({SUBTITLE_FORMATS})")
+    for globbed in file.parent.glob(file.stem[:-12] + r".*"):
         match = FORMATSUB_REGEX.match(str(globbed))
         if match:
             return True
