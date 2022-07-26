@@ -2,7 +2,6 @@ import argparse
 import logging
 import os
 import re
-import signal
 import sys
 from functools import wraps
 from pathlib import Path

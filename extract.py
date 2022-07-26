@@ -16,111 +16,9 @@ from tinytag import TinyTag
 from db import fetchall_dict, sqlite_con
 from subtitle import get_subtitle, is_file_with_subtitle, youtube_dl_id
 from utils import chunks, cmd, get_video_files, log
+from extract_tags import parse_tags
 
 SQLITE_PARAM_LIMIT = 32765
-
-
-def parse_mutagen_tags(m, tiny_tags):
-    def c(l):
-        if isinstance(l, str):
-            l = [l]
-
-        if l is None or len(l) == 0:
-            return None
-
-        no_comma = sum([s.split(",") for s in l], [])
-        no_semicol = sum([s.split(";") for s in no_comma], [])
-        no_unknown = [x for x in no_semicol if x.lower() not in ["unknown", ""]]
-        return ";".join(no_unknown)
-
-    def ss(idx, l):
-        if l is None:
-            return None
-        try:
-            return l[idx]
-        except IndexError:
-            return None
-
-    return {
-        "albumgenre": c(m.tags.get("albumgenre")),
-        "albumgrouping": c(m.tags.get("albumgrouping")),
-        "mood": c(
-            list(
-                set(
-                    (m.tags.get("albummood") or [])
-                    + (m.tags.get("MusicMatch_Situation") or [])
-                    + (m.tags.get("Songs-DB_Occasion") or [])
-                )
-            )
-        ),
-        "genre": c(list(set((m.tags.get("genre") or []) + list(filter(None, [tiny_tags["genre"]]))))),
-        "year": ss(
-            0,
-            ss(
-                0,
-                list(
-                    filter(
-                        None,
-                        [
-                            m.tags.get("originalyear"),
-                            m.tags.get("TDOR"),
-                            m.tags.get("TORY"),
-                            m.tags.get("date"),
-                            m.tags.get("TDRC"),
-                            m.tags.get("TDRL"),
-                        ],
-                    )
-                ),
-            ),
-        ),
-        "bpm": ss(
-            0,
-            ss(
-                0,
-                list(
-                    filter(
-                        None,
-                        [m.tags.get("fBPM"), m.tags.get("bpm_accuracy")],
-                    )
-                ),
-            ),
-        ),
-        "key": ss(
-            0,
-            ss(
-                0,
-                list(
-                    filter(
-                        None,
-                        [
-                            m.tags.get("TIT1"),
-                            m.tags.get("key_accuracy"),
-                            m.tags.get("TKEY"),
-                        ],
-                    )
-                ),
-            ),
-        ),
-        "gain": ss(0, m.tags.get("replaygain_track_gain")),
-        "time": c(ss(0, m.tags.get("time_signature"))),
-        "decade": ss(0, m.tags.get("Songs-DB_Custom1")),
-        "categories": ss(0, m.tags.get("Songs-DB_Custom2")),
-        "city": ss(0, m.tags.get("Songs-DB_Custom3")),
-        "country": c(
-            ss(
-                0,
-                list(
-                    filter(
-                        None,
-                        [
-                            m.tags.get("Songs-DB_Custom4"),
-                            m.tags.get("MusicBrainz Album Release Country"),
-                        ],
-                    )
-                ),
-            )
-        ),
-    }
 
 
 def get_provenance(file):
@@ -151,8 +49,13 @@ def extract_metadata(args, f):
     stat = os.stat(f)
     blocks_allocated = stat.st_blocks * 512
 
-    if "tags" in ffprobe["format"]:
-        del ffprobe["format"]["tags"]
+    ffprobe["format"].pop("tags", None)
+    ffprobe["format"].pop("format_long_name", None)
+    ffprobe["format"].pop("nb_programs", None)
+    ffprobe["format"].pop("probe_score", None)
+    ffprobe["format"].pop("start_time", None)
+    ffprobe["format"].pop("probe_score", None)
+    ffprobe["format"].pop("probe_score", None)
 
     if "size" in ffprobe["format"]:
         ffprobe["format"]["size"] = int(ffprobe["format"]["size"])
@@ -186,65 +89,102 @@ def extract_metadata(args, f):
             tiny_tags = TinyTag.get(f).as_dict()
             mutagen_tags = mutagen.File(f)
             assert mutagen_tags.tags
-            tiny_tags.pop('extra', None)
-        except:
-            return media
-
-        mutagen_tags_p = parse_mutagen_tags(mutagen_tags, tiny_tags)
-
-        audio = {
-            **media,
-            **tiny_tags,
-            **mutagen_tags_p,
-        }
-
-        def get_rid_of_known_tags():
-            tags = mutagen_tags.tags.as_dict()
-            tags.pop('encoder', None)
-            tags.pop('TMED', None)
-            tags.pop('TSO2', None)
-            tags.pop('artist-sort', None)
-            tags.pop('ASIN', None)
-            tags.pop('Acoustid Id', None)
-            tags.pop('Artists', None)
-            tags.pop('BARCODE', None)
-            tags.pop('CATALOGNUMBER', None)
-            tags.pop('MusicBrainz Album Artist Id', None)
-            tags.pop('MusicBrainz Album Id', None)
-            tags.pop('MusicBrainz Album Release Country', None)
-            tags.pop('MusicBrainz Album Status', None)
-            tags.pop('MusicBrainz Album Type', None)
-            tags.pop('MusicBrainz Artist Id', None)
-            tags.pop('MusicBrainz Release Group Id', None)
-            tags.pop('MusicBrainz Release Track Id', None)
-            tags.pop('SCRIPT', None)
-            tags.pop('originalyear', None)
-            tags.pop('artist', None)
-            tags.pop('album', None)
-            tags.pop('ALBUMARTIST', None)
-            tags.pop('title', None)
-            tags.pop('TORY', None)
-            tags.pop('TDOR', None)
-            tags.pop('publisher', None)
-            tags.pop('TRACKNUMBER', None)
-            tags.pop('DISCNUMBER', None)
-            tags.pop('replaygain_track_peak', None)
-            tags.pop('replaygain_track_gain', None)
-            tags.pop('date', None)
-
-            return tags
-
-        try:
-            new_tags = get_rid_of_known_tags()
+            tags = parse_tags(mutagen_tags, tiny_tags)
+            return {**media, **tags}
         except:
             pass
-        else:
-            if len(new_tags.keys()) > 0:
-                print(new_tags)
-
-        return audio
 
     return media
+
+
+def optimize_db(args):
+    print('Optimizing database')
+    if Path(args.db).exists():
+        cmd(f"sqlite-utils optimize {args.db}")
+        columns = cmd(
+            f"sqlite-utils tables {args.db} --columns | jq -r '.[0].columns[]' ", quiet=True
+        ).stdout.splitlines()
+        for column in columns:
+            cmd(f"sqlite-utils create-index --if-not-exists --analyze {args.db} media {column}")
+
+
+def scan_path(args, con, path):
+    path = Path(path).resolve()
+    print(f"{path} : Scanning...")
+
+    video_files = find_new_files(args, con, path)
+
+    if len(video_files) > 0:
+        print(f"Adding {len(video_files)} new media")
+        log.debug(video_files)
+
+        batch_count = SQLITE_PARAM_LIMIT // 100
+        chunks_count = math.ceil(len(video_files) / batch_count)
+        df_chunked = chunks(video_files, batch_count)
+        for idx, l in enumerate(df_chunked):
+            percent = ((batch_count * idx) + len(l)) / len(video_files) * 100
+            print(f'Extracting metadata: {percent:3.1f}% (chunk {idx + 1} of {chunks_count})')
+            extract_chunk(args, con, l)
+
+            if args.subtitle:
+                print('Fetching subtitles')
+                Parallel(n_jobs=5)(delayed(get_subtitle)(args, file) for file in l)
+
+
+def extract_chunk(args, con, l):
+    metadata = (
+        Parallel(n_jobs=-1 if args.verbose == 0 else 1, backend="threading")(
+            delayed(extract_metadata)(args, file) for file in l
+        )
+        or []
+    )
+
+    DF = pd.DataFrame(list(filter(None, metadata)))
+    if args.audio:
+        if DF.get(["year"]) is not None:
+            DF.year = DF.year.astype(str)
+    DF.apply(pd.to_numeric, errors="ignore").convert_dtypes().to_sql(  # type: ignore
+        "media",
+        con=con,
+        if_exists="append",
+        index=False,
+        chunksize=70,
+        method="multi",
+    )
+
+
+def find_new_files(args, con, path):
+    video_files = get_video_files(path, args.audio)
+    new_files = set(video_files)
+
+    try:
+        existing = set(
+            map(
+                lambda x: x["filename"],
+                fetchall_dict(con, f"select filename from media where filename like '{path}%'"),
+            )
+        )
+    except:
+        video_files = list(new_files)
+    else:
+        video_files = list(new_files - existing)
+
+        deleted_files = list(existing - new_files)
+        if len(deleted_files) > 0:
+            print(f"Removing {len(deleted_files)} orphaned metadata")
+
+            df_chunked = chunks(deleted_files, SQLITE_PARAM_LIMIT)
+            for l in df_chunked:
+                con.execute(
+                    "delete from media where filename in (" + ",".join(["?"] * len(l)) + ")",
+                    (*l,),
+                )
+                con.commit()
+
+        con.execute("delete from media where filename like '%/keep/%'")
+        con.commit()
+
+    return video_files
 
 
 def main():
@@ -263,81 +203,9 @@ def main():
 
     con = sqlite_con(args.db)
     for path in args.paths:
-        path = Path(path).resolve()
-        print(f"{path} : Scanning...")
+        scan_path(args, con, path)
 
-        video_files = get_video_files(path, args.audio)
-        new_files = set(video_files)
-
-        try:
-            existing = set(
-                map(
-                    lambda x: x["filename"],
-                    fetchall_dict(con, f"select filename from media where filename like '{path}%'"),
-                )
-            )
-        except:
-            video_files = list(new_files)
-        else:
-            video_files = list(new_files - existing)
-
-            deleted_files = list(existing - new_files)
-            if len(deleted_files) > 0:
-                print(f"Removing {len(deleted_files)} orphaned metadata")
-
-                df_chunked = chunks(deleted_files, SQLITE_PARAM_LIMIT)
-                for l in df_chunked:
-                    con.execute(
-                        "delete from media where filename in (" + ",".join(["?"] * len(l)) + ")",
-                        (*l,),
-                    )
-                    con.commit()
-
-            con.execute("delete from media where filename like '%/keep/%'")
-            con.commit()
-
-        if len(video_files) > 0:
-            print(f"Adding {len(video_files)} new media")
-            log.info(video_files)
-
-            batch_count = SQLITE_PARAM_LIMIT // 100
-            chunks_count = math.ceil(len(video_files) / batch_count)
-            df_chunked = chunks(video_files, batch_count)
-            for idx, l in enumerate(df_chunked):
-                percent = ((batch_count * idx) + len(l)) / len(video_files) * 100
-                print(f'Extracting metadata: {percent:3.1f}% (chunk {idx + 1} of {chunks_count})')
-                metadata = (
-                    Parallel(n_jobs=-1 if args.verbose == 0 else 1, backend="threading")(
-                        delayed(extract_metadata)(args, file) for file in l
-                    )
-                    or []
-                )
-
-                DF = pd.DataFrame(list(filter(None, metadata)))
-                if args.audio:
-                    if DF.get(["year"]) is not None:
-                        DF.year = DF.year.astype(str)
-                DF.apply(pd.to_numeric, errors="ignore").convert_dtypes().to_sql(  # type: ignore
-                    "media",
-                    con=con,
-                    if_exists="append",
-                    index=False,
-                    chunksize=70,
-                    method="multi",
-                )
-
-                if args.subtitle:
-                    print('Fetching subtitles')
-                    Parallel(n_jobs=5)(delayed(get_subtitle)(args, file) for file in l)
-
-    print('Optimizing database')
-    if Path(args.db).exists():
-        cmd(f"sqlite-utils optimize {args.db}")
-        columns = cmd(
-            f"sqlite-utils tables {args.db} --columns | jq -r '.[0].columns[]' ", quiet=True
-        ).stdout.splitlines()
-        for column in columns:
-            cmd(f"sqlite-utils create-index --if-not-exists --analyze {args.db} media {column}")
+    optimize_db(args)
 
 
 if __name__ == "__main__":
