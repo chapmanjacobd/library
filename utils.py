@@ -27,6 +27,7 @@ def parse_args(default_chromecast="Xylo and Orchestra"):
     parser.add_argument("-O", "--play-in-order", action="count", default=0)
     parser.add_argument("-S", "--skip")
     parser.add_argument("-u", "--sort")
+    parser.add_argument("-w", "--where")
     parser.add_argument("--only-video", action="store_true")
 
     parser.add_argument("-d", "--duration", type=int)
@@ -69,10 +70,14 @@ def parse_args(default_chromecast="Xylo and Orchestra"):
 
     YEAR_MONTH = lambda var: f"cast(strftime('%Y%m',datetime({var} / 1000000000, 'unixepoch')) as int)"
     if args.sort:
-        args.sort = args.sort.replace("time", YEAR_MONTH("time_created"))
+        args.sort = args.sort.replace("time_created", YEAR_MONTH("time_created"))
+        args.sort = args.sort.replace("time_modified", YEAR_MONTH("time_modified"))
         args.sort = args.sort.replace("random", "random()")
         args.sort = args.sort.replace("priority", "round(duration / size,7)")
         args.sort = args.sort.replace("sub", "has_sub")
+
+    if args.where:
+        args.where = args.where.replace("sub", "has_sub")
 
     return args
 
@@ -208,6 +213,9 @@ def conditional_filter(args):
     {f'and {args.max_size * B_TO_MB} >= size' if args.max_size else ''}
     {f'and {size_mb + (size_mb /10)} >= size and size >= {size_mb - (size_mb /10)}' if args.size else ''}
     """
+
+    if args.where:
+        cf += ' and ' + args.where
 
     return " ".join(cf.splitlines())
 
