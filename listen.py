@@ -50,19 +50,10 @@ def main(args):
 
     search_string = """and (
         filename like :search
-        OR format_name like :search
-        OR format_long_name like :search
-        OR album like :search
-        OR albumartist like :search
-        OR artist like :search
-        OR comment like :search
-        OR composer like :search
-        OR genre like :search
-        OR title like :search
-        OR year like :search
-        OR albumgenre like :search
-        OR albumgrouping like :search
         OR mood like :search
+        OR genre like :search
+        OR year like :search
+        OR bpm like :search
         OR key like :search
         OR gain like :search
         OR time like :search
@@ -70,23 +61,18 @@ def main(args):
         OR categories like :search
         OR city like :search
         OR country like :search
+        OR description like :search
+        OR album like :search
+        OR title like :search
+        OR artist like :search
     )"""
 
     exclude_string = """and (
         filename not like :exclude
-        OR format_name not like :exclude
-        OR format_long_name not like :exclude
-        OR album not like :exclude
-        OR albumartist not like :exclude
-        OR artist not like :exclude
-        OR comment not like :exclude
-        OR composer not like :exclude
-        OR genre not like :exclude
-        OR title not like :exclude
-        OR year not like :exclude
-        OR albumgenre not like :exclude
-        OR albumgrouping not like :exclude
         OR mood not like :exclude
+        OR genre not like :exclude
+        OR year not like :exclude
+        OR bpm not like :exclude
         OR key not like :exclude
         OR gain not like :exclude
         OR time not like :exclude
@@ -94,6 +80,10 @@ def main(args):
         OR categories not like :exclude
         OR city not like :exclude
         OR country not like :exclude
+        OR description not like :exclude
+        OR album not like :exclude
+        OR title not like :exclude
+        OR artist not like :exclude
     )"""
 
     query = f"""

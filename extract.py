@@ -104,6 +104,7 @@ def extract_metadata(args, f):
     ffprobe["format"].pop("tags", None)
     ffprobe["format"].pop("format_long_name", None)
     ffprobe["format"].pop("nb_programs", None)
+    ffprobe["format"].pop("nb_streams", None)
     ffprobe["format"].pop("probe_score", None)
     ffprobe["format"].pop("start_time", None)
     ffprobe["format"].pop("probe_score", None)
