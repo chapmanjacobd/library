@@ -55,7 +55,6 @@ def main(args):
         OR year like :search
         OR bpm like :search
         OR key like :search
-        OR gain like :search
         OR time like :search
         OR decade like :search
         OR categories like :search
@@ -74,7 +73,6 @@ def main(args):
         OR year not like :exclude
         OR bpm not like :exclude
         OR key not like :exclude
-        OR gain not like :exclude
         OR time not like :exclude
         OR decade not like :exclude
         OR categories not like :exclude
