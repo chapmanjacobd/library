@@ -75,7 +75,11 @@ def play_mpv(args, video_path: Path):
 
         return  # end of chromecast
 
-    if cmd(f'ffmpeg -i {quoted_video_path} -c copy -map 0:s:0 -frames:s 1 -f null - -v 0 -hide_banner').returncode != 0:
+    has_sub = (
+        cmd(f"</dev/null ffmpeg -c copy -map 0:s:0 -frames:s 1 -f null - -v 0 -i {quoted_video_path}", strict=False).returncode
+        == 0
+    )
+    if not has_sub:
         mpv_options += ' --speed=1.7'
     else:
         mpv_options += ' --speed=1'
