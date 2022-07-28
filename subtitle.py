@@ -37,7 +37,9 @@ def is_file_with_subtitle(file):
 
     if any(
         [
-            file.with_suffix("." + ext).exists() or file.with_suffix(".en." + ext).exists()
+            file.with_suffix("." + ext).exists()
+            or file.with_suffix(".en." + ext).exists()
+            or file.with_suffix(".eng." + ext).exists()
             for ext in SUBTITLE_FORMATS.split("|")
         ]
     ):
