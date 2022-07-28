@@ -27,7 +27,7 @@ from utils import (
 
 def play_mpv(args, video_path: Path):
     mpv = "mpv"
-    mpv_options = "--fs --force-window=yes --terminal=no --speed=1"
+    mpv_options = "--fs --force-window=yes --terminal=no"
     vlc = "vlc"
     quoted_video_path = quote(str(video_path))
     is_WSL = cmd('grep -qEi "(Microsoft|WSL)" /proc/version', strict=False).returncode == 0
@@ -74,6 +74,11 @@ def play_mpv(args, video_path: Path):
             raise Exception("catt does not exit nonzero? but something might have gone wrong")
 
         return  # end of chromecast
+
+    if cmd(f'ffmpeg -i {quoted_video_path} -c copy -map 0:s:0 -frames:s 1 -f null - -v 0 -hide_banner').returncode != 0:
+        mpv_options += ' --speed=1.7'
+    else:
+        mpv_options += ' --speed=1'
 
     cmd(f"{mpv} {mpv_options} {quoted_video_path}")
 
