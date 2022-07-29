@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "xklb"
-version = "0.1.1"
+version = "0.1.2"
 description = "xk media library"
 authors = ["Jacob Chapman <7908073+chapmanjacobd@users.noreply.github.com>"]
 
