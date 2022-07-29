@@ -2,6 +2,12 @@
 
 Requires ffmpeg, mpv
 
+### Install
+
+```
+pip install xklb
+```
+
 ### Step 1. Extract Metadata
 
     lb-extract tv.db ./video/folder/
