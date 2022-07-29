@@ -37,7 +37,7 @@ def play_mpv(args, audio_path: Path):
         cmd(f"mpv {mpv_options} -- {quoted_next_audio}", quiet=True)
 
 
-def main(args):
+def listen(args):
     con = sqlite_con(args.db)
 
     bindings = {}
@@ -140,12 +140,14 @@ def main(args):
     con.execute("update media set listen_count = listen_count +1 where filename = ?", (str(next_audio),))
     con.commit()
 
-
-if __name__ == "__main__":
+def main():
     args = parse_args()
 
     try:
-        main(args)
+        listen(args)
     finally:
         if args.chromecast:
             cmd("rm /tmp/mpcatt_playing", strict=False)
+
+if __name__ == "__main__":
+    main()

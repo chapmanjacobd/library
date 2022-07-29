@@ -100,7 +100,7 @@ def keep_video(video: Path):
     cmd(f"mkdir -p {keep_path} && mv {quote(str(video))} {quote(keep_path)}")
 
 
-def main(args):
+def watch(args):
     con = sqlite_con(args.db)
 
     bindings = []
@@ -264,8 +264,11 @@ def main(args):
 
     remove_media(con, original_video)
 
-
-if __name__ == "__main__":
+def main():
     args = parse_args(default_chromecast="Living Room TV")
 
-    main(args)
+    watch(args)
+
+
+if __name__ == "__main__":
+    main()
