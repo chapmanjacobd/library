@@ -15,7 +15,6 @@ from pychromecast import discovery
 from rich import inspect, print
 from rich.logging import RichHandler
 
-
 # sys.breakpointhook = ipdb.set_trace
 
 
@@ -215,7 +214,7 @@ def conditional_filter(args):
     """
 
     if args.where:
-        cf += ' and ' + args.where
+        cf += " and " + args.where
 
     return " ".join(cf.splitlines())
 
