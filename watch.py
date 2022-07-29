@@ -76,7 +76,11 @@ def play_mpv(args, video_path: Path):
         return  # end of chromecast
 
     has_sub = (
-        cmd(f"</dev/null ffmpeg -c copy -map 0:s:0 -frames:s 1 -f null - -v 0 -i {quoted_video_path}", strict=False).returncode
+        cmd(
+            f"</dev/null ffmpeg -c copy -map 0:s:0 -frames:s 1 -f null - -v 0 -i {quoted_video_path}",
+            strict=False,
+            quiet=True,
+        ).returncode
         == 0
     )
     if not has_sub:
