@@ -3,9 +3,7 @@ name = "xklb"
 version = "1.11.33"
 description = "xk media library"
 authors = ["Jacob Chapman <7908073+chapmanjacobd@users.noreply.github.com>"]
-license = {file = "LICENSE"}
 readme = "README.md"
-requires-python = ">=3.8"
 
 [tool.poetry.dependencies]
 python = "^3.10"
