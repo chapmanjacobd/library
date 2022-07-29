@@ -14,9 +14,9 @@ from joblib import Parallel, delayed
 from rich import inspect
 from tinytag import TinyTag
 
-from db import fetchall_dict, sqlite_con
-from subtitle import get_subtitle, is_file_with_subtitle, youtube_dl_id
-from utils import chunks, cmd, combine, get_video_files, log, remove_None, safe_unpack
+from .db import fetchall_dict, sqlite_con
+from .subtitle import get_subtitle, is_file_with_subtitle, youtube_dl_id
+from .utils import chunks, cmd, combine, get_video_files, log, remove_None, safe_unpack
 
 SQLITE_PARAM_LIMIT = 32765
 

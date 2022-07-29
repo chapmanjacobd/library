@@ -5,8 +5,8 @@ from time import sleep
 
 from rich import inspect
 
-from db import sqlite_con
-from utils import cmd, conditional_filter, get_ordinal_media, log, parse_args, remove_media, stop
+from .db import sqlite_con
+from .utils import cmd, conditional_filter, get_ordinal_media, log, parse_args, remove_media, stop
 
 
 def play_mpv(args, audio_path: Path):

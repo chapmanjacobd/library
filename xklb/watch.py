@@ -11,8 +11,8 @@ from rich import inspect
 from rich.prompt import Confirm
 from tabulate import tabulate
 
-from db import sqlite_con
-from utils import (
+from .db import sqlite_con
+from .utils import (
     cmd,
     conditional_filter,
     get_ip_of_chromecast,

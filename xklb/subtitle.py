@@ -7,7 +7,7 @@ from shlex import quote
 from joblib import Parallel, delayed
 from rich import inspect
 
-from utils import cmd, get_video_files
+from .utils import cmd, get_video_files
 
 
 def youtube_dl_id(file) -> str:
