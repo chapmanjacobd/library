@@ -84,9 +84,9 @@ def play_mpv(args, video_path: Path):
         == 0
     )
     if not has_sub:
-        mpv_options += ' --speed=1.7'
+        mpv_options += " --speed=1.7"
     else:
-        mpv_options += ' --speed=1'
+        mpv_options += " --speed=1"
 
     cmd(f"{mpv} {mpv_options} {quoted_video_path}")
 
