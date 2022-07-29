@@ -1,44 +1,40 @@
-lb: opinionated media library
-=================
+## lb: opinionated media library
 
 Requires ffmpeg, mpv
 
-Step 1. Extract Metadata
-------------------------
+### Step 1. Extract Metadata
 
     lb-extract tv.db ./video/folder/
 
     lb-extract --audio podcasts.db ./your/music/or/podcasts/folder/
 
-Step 2. Watch / Listen
-----------------------
+### Step 2. Watch / Listen
 
     wt tv.db
 
     lt podcasts.db
 
-Watch longest videos
+#### Watch longest videos
 
     wt tv.db --sort 'duration desc'
 
-Watch specific video series in order
+#### Watch specific video series in order
 
     wt tv.db --search 'title of series' --play-in-order
 
-There are multiple strictness levels of --play-in-order. If things aren't playing in order try adding more `O`s:
+#### There are multiple strictness levels of --play-in-order. If things aren't playing in order try adding more `O`s:
 
     wt tv.db --search 'title of series' -O    # default
     wt tv.db --search 'title of series' -OO   # slower, more complex algorithm
     wt tv.db --search 'title of series' -OOO  # most strict
 
-I usually use the following:
+#### I usually use the following:
 
     lt -cast -s '  ost'      # for listening to OSTs on my chromecast groups
     wt -u priority -w sub=0  # for exercising and watching YouTube
     wt -u duration --print -s 'video title'  # when I want to check if I've downloaded something before
 
-Watch Options
--------------
+#### Watch Options
 
     wt -h
 
@@ -77,8 +73,7 @@ Watch Options
     -zM MAX_SIZE, --max-size MAX_SIZE
     -zm MIN_SIZE, --min-size MIN_SIZE
 
-Listen Options
---------------
+#### Listen Options
 
     lt -h
 
