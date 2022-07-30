@@ -2,7 +2,7 @@
 
 Requires ffmpeg, mpv
 
-!!! You should be warned that the default after watching a video is to trash it. You can use `--keep` to prevent that. Restore via your (trash can)[https://specifications.freedesktop.org/trash-spec/trashspec-latest.html].
+!!! You should be warned that the default after watching a video is to trash it. You can use `--keep` to prevent that. Restore via your [trash can](https://specifications.freedesktop.org/trash-spec/trashspec-latest.html).
 
 ### Install
 
