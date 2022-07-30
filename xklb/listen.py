@@ -140,6 +140,7 @@ def listen(args):
     con.execute("update media set listen_count = listen_count +1 where filename = ?", (str(next_audio),))
     con.commit()
 
+
 def main():
     args = parse_args()
 
@@ -148,6 +149,7 @@ def main():
     finally:
         if args.chromecast:
             cmd("rm /tmp/mpcatt_playing", strict=False)
+
 
 if __name__ == "__main__":
     main()

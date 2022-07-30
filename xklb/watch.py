@@ -223,7 +223,7 @@ def watch(args):
                 remove_media(con, original_video)
                 exit()
 
-        if args.time_limit:
+        if args.time_limit:  # TODO: replace with timer...
             seconds = args.time_limit * 60
             gap_time = 14
             temp_next_video = cmd(f"mktemp --suffix={next_video.suffix} --dry-run").stdout.strip()
@@ -263,6 +263,7 @@ def watch(args):
                 cmd(f"trash-put {quoted_next_video}")
 
     remove_media(con, original_video)
+
 
 def main():
     args = parse_args(default_chromecast="Living Room TV")
