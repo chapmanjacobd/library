@@ -2,6 +2,8 @@
 
 Requires ffmpeg, mpv
 
+!!! You should be warned that the default after watching a video is to trash it. You can use `--keep` to prevent that. Restore via your (trash can)[https://specifications.freedesktop.org/trash-spec/trashspec-latest.html].
+
 ### Install
 
 ```
@@ -19,6 +21,32 @@ pip install xklb
     wt tv.db
 
     lt podcasts.db
+
+### Repeat!
+
+Implementing repeat / auto-play is left to the end user. I recommend something like this if you use fish shell:
+
+```fish
+function repeat
+    while $argv
+        and :
+    end
+end
+
+repeat lt audio.db
+```
+
+or
+
+```fish
+function repeatn --description 'repeatn <count> <command>'
+    for i in (seq 1 $argv[1])
+        eval $argv[2..-1]
+    end
+end
+
+repeat 5 lt audio.db
+```
 
 #### Watch longest videos
 
