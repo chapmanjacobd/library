@@ -76,7 +76,12 @@ def get_subtitle(args, file):
     if run_youtube and len(yt_video_id) > 0:
         print(yt_video_id)
         cmd(
-            f"yt --no-download-archive --skip-download --limit-rate 5K https://youtu.be/{yt_video_id}",
+            (
+                f"yt-dlp --sub-lang 'en,EN,en.*,en-*,EN.*,EN-*eng,ENG,english,English,ENGLISH'"
+                " --embed-subs --compat-options no-keep-subs --write-sub --write-auto-sub"
+                " --no-download-archive --skip-download --limit-rate 10K"
+                f" https://youtu.be/{yt_video_id}"
+            ),
             cwd=str(Path(file).parent),
             strict=False,
         )
