@@ -1,10 +1,13 @@
 import json
+import math
 import os
 import re
 import textwrap
+from datetime import timedelta
 from pathlib import Path
 from shlex import quote
 
+import humanize
 import pandas as pd
 import sqlite_utils
 from rich import inspect
@@ -121,14 +124,7 @@ def watch(args):
     OFFSET = f"OFFSET {args.skip}" if args.skip else ""
 
     query = f"""
-    SELECT filename, duration/60/60 as hours, duration / size AS seconds_per_byte,
-    CASE
-        WHEN size < 1024 THEN size || 'B'
-        WHEN size >=  1024 AND size < (1024 * 1024) THEN (size / 1024) || 'KB'
-        WHEN size >= (1024 * 1024)  AND size < (1024 * 1024 * 1024) THEN (size / (1024 * 1024)) || 'MB'
-        WHEN size >= (1024 * 1024 * 1024) AND size < (1024 * 1024 * 1024 *1024) THEN (size / (1024 * 1024 * 1024)) || 'GB'
-        WHEN size >= (1024 * 1024 * 1024 * 1024) THEN (size / (1024 * 1024 * 1024 * 1024)) || 'TB'
-    END AS size
+    SELECT filename, duration/60/60 as hours, duration / size AS seconds_per_byte, size
     FROM media
     WHERE 1=1
     {filename_include_sql}
@@ -168,6 +164,7 @@ def watch(args):
             table_content[["filename"]] = table_content[["filename"]].applymap(
                 lambda x: textwrap.fill(x, os.get_terminal_size().columns - 30)
             )
+            table_content[["size"]] = table_content[["size"]].applymap(lambda x: humanize.naturalsize(x))
             print(
                 tabulate(
                     table_content[["filename", "size", "hours"]],
@@ -177,7 +174,8 @@ def watch(args):
                 )
             )
             summary = videos.sum(numeric_only=True)
-            print("Total hours", summary.hours)
+            duration = timedelta(hours=int(summary.hours), minutes=math.ceil(summary.hours % 1 * 60))
+            print("Total duration:", humanize.precisedelta(duration, minimum_unit='minutes'))
 
         stop()
 
