@@ -85,14 +85,7 @@ def listen(args):
     )"""
 
     query = f"""
-    SELECT filename, duration / size AS seconds_per_byte,
-    CASE
-        WHEN size < 1024 THEN size || 'B'
-        WHEN size >=  1024 AND size < (1024 * 1024) THEN (size / 1024) || 'KB'
-        WHEN size >= (1024 * 1024)  AND size < (1024 * 1024 * 1024) THEN (size / (1024 * 1024)) || 'MB'
-        WHEN size >= (1024 * 1024 * 1024) AND size < (1024 * 1024 * 1024 *1024) THEN (size / (1024 * 1024 * 1024)) || 'GB'
-        WHEN size >= (1024 * 1024 * 1024 * 1024) THEN (size / (1024 * 1024 * 1024 * 1024)) || 'TB'
-    END AS size
+    SELECT filename, duration / size AS seconds_per_byte, size
     FROM media
     WHERE 1=1
     {search_string if args.search else ''}
