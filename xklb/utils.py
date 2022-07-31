@@ -49,6 +49,7 @@ def parse_args(default_chromecast="Xylo and Orchestra"):
     parser.add_argument("-p", "--print", action="store_true")
     parser.add_argument("-pq", "--printquery", action="store_true")
     parser.add_argument("-L", "--limit", type=int)
+    parser.add_argument("-agg", "--aggregate", action="store_true")
     parser.add_argument("-name", "--filename", action="store_true")
 
     parser.add_argument("-t", "--time-limit", type=int)
@@ -66,6 +67,8 @@ def parse_args(default_chromecast="Xylo and Orchestra"):
         args.limit = 1
         if args.print:
             args.limit = 100
+        if args.aggregate:
+            args.limit = 9999999999999
 
     YEAR_MONTH = lambda var: f"cast(strftime('%Y%m',datetime({var} / 1000000000, 'unixepoch')) as int)"
     if args.sort:

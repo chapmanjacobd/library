@@ -135,7 +135,16 @@ def watch(args):
             {'filename,' if args.print or args.search or args.play_in_order > 0 else ''}
             seconds_per_byte ASC
     {LIMIT} {OFFSET}
-    ; """
+    """
+
+    if args.aggregate:
+        query = f"""select
+            "Aggregate" as filename
+            , sum(hours) hours
+            , avg(seconds_per_byte) seconds_per_byte
+            , sum(size) size
+        from ({query})
+        """
 
     if args.printquery:
         print_query(bindings, query)
