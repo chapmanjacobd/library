@@ -49,7 +49,7 @@ def parse_args(default_chromecast="Xylo and Orchestra"):
     parser.add_argument("-p", "--print", action="store_true")
     parser.add_argument("-pq", "--printquery", action="store_true")
     parser.add_argument("-L", "--limit", type=int)
-    parser.add_argument("-agg", "--aggregate", action="store_true")
+    parser.add_argument("-a", "--aggregate", action="store_true")
     parser.add_argument("-name", "--filename", action="store_true")
 
     parser.add_argument("-t", "--time-limit", type=int)

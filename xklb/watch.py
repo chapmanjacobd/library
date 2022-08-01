@@ -70,6 +70,9 @@ def play_mpv(args, video_path: Path):
                 f"catt -d '{args.chromecast_device}' cast {quoted_video_path} {'--subtitles '+subtitles_file if subtitles_file else ''}"
             )
 
+        if subtitles_file:
+            Path(subtitles_file).unlink(missing_ok=True)
+
         if "Heartbeat timeout, resetting connection" in watched.stderr:
             raise Exception("Media is possibly partially unwatched")
 
