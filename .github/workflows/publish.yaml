@@ -1,8 +1,10 @@
 name: Publish to PyPI
 
 on:
-  release:
   workflow_dispatch:
+  push:
+    tags:
+      - "v*"
 
 jobs:
   build-and-publish:
@@ -27,3 +29,16 @@ jobs:
 
       - name: Build and publish
         run: poetry publish --build
+
+  tagged-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
