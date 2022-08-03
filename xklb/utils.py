@@ -20,7 +20,7 @@ from rich.logging import RichHandler
 
 def parse_args(default_chromecast):
     parser = argparse.ArgumentParser()
-    parser.add_argument("db")
+    parser.add_argument("db", nargs='?', default='videos.db')
 
     # TODO: maybe try https://dba.stackexchange.com/questions/43415/algorithm-for-finding-the-longest-prefix
     parser.add_argument("-O", "--play-in-order", action="count", default=0)
@@ -46,7 +46,7 @@ def parse_args(default_chromecast):
     parser.add_argument("--max-size", type=int)
     parser.add_argument("--min-size", type=int)
 
-    parser.add_argument("-p", "--print", default=False, const=True, nargs='?')
+    parser.add_argument("-p", "--print", default=False, const='p', nargs='?')
     parser.add_argument("-L", "--limit", type=int)
 
     parser.add_argument("-t", "--time-limit", type=int)
@@ -78,8 +78,8 @@ def parse_args(default_chromecast):
         args.limit = 1
         if args.print:
             args.limit = 100
-        if 'a' in args.print:
-            args.limit = 9999999999999
+            if 'a' in args.print:
+                args.limit = 9999999999999
 
     YEAR_MONTH = lambda var: f"cast(strftime('%Y%m',datetime({var} / 1000000000, 'unixepoch')) as int)"
     if args.sort:
@@ -289,7 +289,7 @@ def get_ordinal_media(con, args, filename: Path, sql_filter):
             LIMIT 1000
             """
         bindings = ("%" + testname + "%",)
-        if 'q' in args.print:
+        if args.print and 'q' in args.print:
             print_query(bindings, query)
             stop()
 
