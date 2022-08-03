@@ -1,3 +1,4 @@
+import os
 import subprocess
 from pathlib import Path
 from shlex import quote
@@ -27,7 +28,7 @@ def play_mpv(args, audio_path: Path):
         if not args.with_local:
             cmd(f"catt -d '{args.chromecast_device}' cast -s /tmp/sub.srt {quoted_next_audio}")
         else:
-            cast_process = subprocess.Popen(["catt", "-d", args.chromecast_device, "cast", '-s', '/tmp/sub.srt', audio_path])
+            cast_process = subprocess.Popen(["catt", "-d", args.chromecast_device, "cast", '-s', '/tmp/sub.srt', audio_path], preexec_fn=os.setpgrp)
             sleep(1.174)  # imperfect lazy sync; I use keyboard shortcuts to send `set speed` commands to mpv for resync
             # kde-inhibit --power
             cmd(f"mpv {mpv_options} -- {quoted_next_audio}")
