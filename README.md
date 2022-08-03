@@ -1,8 +1,6 @@
 ## lb: opinionated media library
 
-Requires ffmpeg, mpv
-
-!!! You should be warned that the default action after watching a video is to trash it. Restore via your [trash can](https://specifications.freedesktop.org/trash-spec/trashspec-latest.html). Use `--keep` to ask y/n.
+Requires ffmpeg
 
 ### Install
 
@@ -18,9 +16,9 @@ pip install xklb
 
 ### Step 2. Watch / Listen
 
-    wt tv.db
+    wt --delete tv.db  # delete file after viewing
 
-    lt podcasts.db
+    lt --action=ask podcasts.db  # ask to delete or not after each file
 
 ### Repeat!
 
@@ -67,74 +65,3 @@ repeat 5 lt audio.db
     lt -cast -s '  ost'      # for listening to OSTs on my chromecast groups
     wt -u priority -w sub=0  # for exercising and watching YouTube
     wt -u duration --print -s 'video title'  # when I want to check if I've downloaded something before
-
-#### Watch Options
-
-    wt -h
-
-    usage: watch.py [-h] [-1] [-cast-to CHROMECAST_DEVICE] [-cast] [-f] [-d DURATION]
-                    [-dM MAX_DURATION] [-dm MIN_DURATION] [-keep] [-list] [-filename]
-                    [-printquery] [-mv MOVE] [-O] [-r] [-s SEARCH] [-E EXCLUDE] [-S SKIP]
-                    [-t TIME_LIMIT] [-v] [-vlc] [-z SIZE] [-zM MAX_SIZE] [-zm MIN_SIZE]
-                    db
-
-    positional arguments:
-    db
-
-    options:
-    -h, --help            show this help message and exit
-    -1, --last
-    -cast-to CHROMECAST_DEVICE, --chromecast-device CHROMECAST_DEVICE
-    -cast, --chromecast
-    -f, --force-transcode
-    -d DURATION, --duration DURATION
-    -dM MAX_DURATION, --max-duration MAX_DURATION
-    -dm MIN_DURATION, --min-duration MIN_DURATION
-    -keep, --keep
-    -list, --list
-    -filename, --filename
-    -printquery, --printquery
-    -mv MOVE, --move MOVE
-    -O, --play-in-order
-    -r, --random
-    -s SEARCH, --search SEARCH
-    -E EXCLUDE, --exclude EXCLUDE
-    -S SKIP, --skip SKIP
-    -t TIME_LIMIT, --time-limit TIME_LIMIT
-    -v, --verbose
-    -vlc, --vlc
-    -z SIZE, --size SIZE
-    -zM MAX_SIZE, --max-size MAX_SIZE
-    -zm MIN_SIZE, --min-size MIN_SIZE
-
-#### Listen Options
-
-    lt -h
-
-    usage: listen.py [-h] [-cast] [-cast-to CHROMECAST_DEVICE] [-s SEARCH] [-E EXCLUDE]
-                    [-S SKIP] [-d DURATION] [-dm MIN_DURATION] [-dM MAX_DURATION]
-                    [-sz SIZE] [-szm MIN_SIZE] [-szM MAX_SIZE] [-mv MOVE] [-wl] [-O]
-                    [-r] [-v]
-                    db
-
-    positional arguments:
-    db
-
-    options:
-    -h, --help            show this help message and exit
-    -cast, --chromecast
-    -cast-to CHROMECAST_DEVICE, --chromecast-device CHROMECAST_DEVICE
-    -s SEARCH, --search SEARCH
-    -E EXCLUDE, --exclude EXCLUDE
-    -S SKIP, --skip SKIP
-    -d DURATION, --duration DURATION
-    -dm MIN_DURATION, --min-duration MIN_DURATION
-    -dM MAX_DURATION, --max-duration MAX_DURATION
-    -sz SIZE, --size SIZE
-    -szm MIN_SIZE, --min-size MIN_SIZE
-    -szM MAX_SIZE, --max-size MAX_SIZE
-    -mv MOVE, --move MOVE
-    -wl, --with-local
-    -O, --play-in-order
-    -r, --random
-    -v, --verbose

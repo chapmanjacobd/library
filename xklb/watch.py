@@ -1,3 +1,4 @@
+import csv
 import json
 import math
 import os
@@ -6,6 +7,7 @@ import textwrap
 from datetime import timedelta
 from pathlib import Path
 from shlex import quote
+from shutil import which
 
 import humanize
 import pandas as pd
@@ -30,13 +32,13 @@ from .utils import (
 
 def play_mpv(args, video_path: Path):
     mpv = "mpv"
-    mpv_options = "--fs --force-window=yes --terminal=no"
+    mpv_options = ["--fs", "--force-window=yes", "--terminal=no"]
     vlc = "vlc"
     quoted_video_path = quote(str(video_path))
-    is_WSL = cmd('grep -qEi "(Microsoft|WSL)" /proc/version', strict=False).returncode == 0
-    if is_WSL:
-        mpv = "PULSE_SERVER=tcp:localhost mpv"
-        vlc = "PULSE_SERVER=tcp:localhost cvlc"
+    # is_WSL = cmd('grep -qEi "(Microsoft|WSL)" /proc/version', strict=False).returncode == 0
+    # if is_WSL:
+    #     mpv = "PULSE_SERVER=tcp:localhost mpv"
+    #     vlc = "PULSE_SERVER=tcp:localhost cvlc"
 
     if args.chromecast:
         subs = json.loads(
@@ -81,20 +83,23 @@ def play_mpv(args, video_path: Path):
 
         return  # end of chromecast
 
-    has_sub = (
-        cmd(
-            f"</dev/null ffmpeg -c copy -map 0:s:0 -frames:s 1 -f null - -v 0 -i {quoted_video_path}",
-            strict=False,
-            quiet=True,
-        ).returncode
-        == 0
-    )
-    if not has_sub:
-        mpv_options += " --speed=1.7"
-    else:
-        mpv_options += " --speed=1"
+    if which('mpv') is not None:
+        has_sub = (
+            cmd(
+                f"</dev/null ffmpeg -c copy -map 0:s:0 -frames:s 1 -f null - -v 0 -i {quoted_video_path}",
+                strict=False,
+                quiet=True,
+            ).returncode
+            == 0
+        )
+        if not has_sub:
+            mpv_options.append("--speed=1.7")
+        else:
+            mpv_options.append("--speed=1")
 
-    cmd(f"{mpv} {mpv_options} {quoted_video_path}")
+        cmd('mpv', *mpv_options, quoted_video_path)
+    else:
+        cmd('xdg-open', quoted_video_path)
 
 
 def keep_video(video: Path):
@@ -140,7 +145,7 @@ def watch(args):
     {LIMIT} {OFFSET}
     """
 
-    if args.aggregate:
+    if 'a' in args.print:
         query = f"""select
             "Aggregate" as filename
             , sum(hours) hours
@@ -149,7 +154,7 @@ def watch(args):
         from ({query})
         """
 
-    if args.printquery:
+    if 'q' in args.print:
         print_query(bindings, query)
         if args.play_in_order > 1:
             get_ordinal_media(con, args, Path("vid"), sql_filter)
@@ -161,15 +166,15 @@ def watch(args):
     if args.print:
         videos = pd.DataFrame([dict(r) for r in con.execute(query, bindings).fetchall()])
 
-        if args.filename:
+        if 'f' in args.print:
             if args.limit == 1:
                 f = videos[["filename"]].loc[0].iat[0]
                 if not Path(f).exists():
                     remove_media(con, f)
-                    return main(args)
+                    return main()
                 print(f)
             else:
-                csvf = videos[["filename"]].to_csv(index=False, header=False)
+                csvf = videos[["filename"]].to_csv(index=False, header=False, sep = '\t', quoting=csv.QUOTE_NONE)
                 print(csvf.strip())
         else:
             table_content = videos
@@ -264,7 +269,9 @@ def watch(args):
 
         play_mpv(args, next_video)
 
-        if args.keep and Confirm.ask("Keep?", default=False):
+        if args.action == 'keep':
+            keep_video(next_video)
+        elif args.action == 'ask' and Confirm.ask("Keep?", default=False):
             keep_video(next_video)
         else:
             if len(args.prefix) > 0:
