@@ -145,7 +145,7 @@ def watch(args):
     {LIMIT} {OFFSET}
     """
 
-    if 'a' in args.print:
+    if args.print and 'a' in args.print:
         query = f"""select
             "Aggregate" as filename
             , sum(hours) hours
@@ -154,7 +154,7 @@ def watch(args):
         from ({query})
         """
 
-    if 'q' in args.print:
+    if args.print and 'q' in args.print:
         print_query(bindings, query)
         if args.play_in_order > 1:
             get_ordinal_media(con, args, Path("vid"), sql_filter)

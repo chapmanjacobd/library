@@ -29,7 +29,7 @@ def play_mpv(args, audio_path: Path):
             cmd(f"catt -d '{args.chromecast_device}' cast -s /tmp/sub.srt {quoted_next_audio}")
         else:
             cast_process = subprocess.Popen(["catt", "-d", args.chromecast_device, "cast", '-s', '/tmp/sub.srt', audio_path], preexec_fn=os.setpgrp)
-            sleep(1.174)  # imperfect lazy sync; I use keyboard shortcuts to send `set speed` commands to mpv for resync
+            sleep(0.674)  # imperfect lazy sync; I use keyboard shortcuts to send `set speed` commands to mpv for resync
             # kde-inhibit --power
             cmd(f"mpv {mpv_options} -- {quoted_next_audio}")
             cast_process.communicate()  # wait for chromecast to stop (so that I can tell any chromecast to pause)
@@ -101,7 +101,7 @@ def listen(args):
     limit 1 OFFSET {args.skip if args.skip else 0}
     """
 
-    if 'q' in args.print:
+    if args.print and 'q' in args.print:
         print(query)
         stop()
 
