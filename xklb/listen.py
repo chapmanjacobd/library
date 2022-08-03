@@ -11,7 +11,7 @@ from .utils import cmd, conditional_filter, get_ordinal_media, log, parse_args, 
 
 def play_mpv(args, audio_path: Path):
     mpv_options = (
-        "--input-ipc-server=/tmp/mpv_socket --no-video --replaygain=track --volume=100 --keep-open=no --term-osd-bar"
+        "--input-ipc-server=/tmp/mpv_socket --no-video --keep-open=no --term-osd-bar"
     )
     quoted_next_audio = quote(str(audio_path))
 
@@ -23,11 +23,11 @@ def play_mpv(args, audio_path: Path):
     if args.chromecast:
         Path("/tmp/mpcatt_playing").write_text(quoted_next_audio)
 
+        cmd("touch /tmp/sub.srt")
         if not args.with_local:
-            cmd("touch /tmp/sub.srt")
             cmd(f"catt -d '{args.chromecast_device}' cast -s /tmp/sub.srt {quoted_next_audio}")
         else:
-            cast_process = subprocess.Popen(["catt", "-d", args.chromecast_device, "cast", audio_path])
+            cast_process = subprocess.Popen(["catt", "-d", args.chromecast_device, "cast", '-s', '/tmp/sub.srt', audio_path])
             sleep(1.174)  # imperfect lazy sync; I use keyboard shortcuts to send `set speed` commands to mpv for resync
             # kde-inhibit --power
             cmd(f"mpv {mpv_options} -- {quoted_next_audio}")
@@ -100,7 +100,7 @@ def listen(args):
     limit 1 OFFSET {args.skip if args.skip else 0}
     """
 
-    if args.printquery:
+    if 'q' in args.print:
         print(query)
         stop()
 
@@ -126,7 +126,7 @@ def listen(args):
             cmd(f"mv {quoted_next_audio} {quote(keep_path)}")
         else:
             play_mpv(args, next_audio)
-            if args.delete or "audiobook" in quoted_next_audio.lower():
+            if args.action == 'delete' or "audiobook" in quoted_next_audio.lower():
                 cmd(f"trash-put {quoted_next_audio}", strict=False)
                 remove_media(con, next_audio)
 
@@ -135,7 +135,7 @@ def listen(args):
 
 
 def main():
-    args = parse_args()
+    args = parse_args(default_chromecast="Xylo and Orchestra")
 
     try:
         listen(args)

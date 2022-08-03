@@ -18,7 +18,7 @@ from rich.logging import RichHandler
 # sys.breakpointhook = ipdb.set_trace
 
 
-def parse_args(default_chromecast="Xylo and Orchestra"):
+def parse_args(default_chromecast):
     parser = argparse.ArgumentParser()
     parser.add_argument("db")
 
@@ -46,28 +46,39 @@ def parse_args(default_chromecast="Xylo and Orchestra"):
     parser.add_argument("--max-size", type=int)
     parser.add_argument("--min-size", type=int)
 
-    parser.add_argument("-p", "--print", action="store_true")
-    parser.add_argument("-pq", "--printquery", action="store_true")
+    parser.add_argument("-p", "--print", default=False, const=True, nargs='?')
     parser.add_argument("-L", "--limit", type=int)
-    parser.add_argument("-a", "--aggregate", action="store_true")
-    parser.add_argument("-name", "--filename", action="store_true")
 
     parser.add_argument("-t", "--time-limit", type=int)
     parser.add_argument("-vlc", "--vlc", action="store_true")
     parser.add_argument("--force-transcode", action="store_true")
 
-    parser.add_argument("-k", "--keep", action="store_true")
-    parser.add_argument("-mv", "--move")
+    parser.add_argument("-k", "--action", default='keep')
+    parser.add_argument("--keep", action="store_true")
     parser.add_argument("--delete", action="store_true")
 
+    parser.add_argument("-mv", "--move")
+
     parser.add_argument("-v", "--verbose", action="count", default=0)
+    parser.add_argument("-V", "--version")
     args = parser.parse_args()
+
+    if args.version:
+        from xklb import __version__
+
+        print(__version__)
+        stop()
+
+    if args.keep:
+        args.action = 'keep'
+    if args.delete:
+        args.action = 'delete'
 
     if args.limit is None:
         args.limit = 1
         if args.print:
             args.limit = 100
-        if args.aggregate:
+        if 'a' in args.print:
             args.limit = 9999999999999
 
     YEAR_MONTH = lambda var: f"cast(strftime('%Y%m',datetime({var} / 1000000000, 'unixepoch')) as int)"
@@ -158,7 +169,7 @@ def argparse_log():
 log = argparse_log()
 
 
-def cmd(command, strict=True, cwd=None, quiet=False):
+def cmd(*command, strict=True, cwd=None, quiet=False):
     EXP_FILTER = re.compile(
         "|".join(
             [
@@ -183,7 +194,7 @@ def cmd(command, strict=True, cwd=None, quiet=False):
             print(s)
         return s
 
-    r = run(command, capture_output=True, text=True, shell=True, cwd=cwd, preexec_fn=os.setpgrp)
+    r = run(*command, capture_output=True, text=True, shell=True, cwd=cwd, preexec_fn=os.setpgrp)
     # TODO Windows support: creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
     log.debug(r.args)
     r.stdout = print_std(r.stdout)
@@ -278,7 +289,7 @@ def get_ordinal_media(con, args, filename: Path, sql_filter):
             LIMIT 1000
             """
         bindings = ("%" + testname + "%",)
-        if args.printquery:
+        if 'q' in args.print:
             print_query(bindings, query)
             stop()
 
