@@ -34,9 +34,7 @@ def parse_args(default_chromecast):
     parser.add_argument("-w", "--where")
     parser.add_argument("--only-video", action="store_true")
 
-    parser.add_argument("-d", "--duration", type=int)
-    parser.add_argument("-dM", "--max-duration", type=int)
-    parser.add_argument("-dm", "--min-duration", type=int)
+    parser.add_argument("-d", "--duration", action='append', help="Duration in minutes")
 
     parser.add_argument("-s", "--search")
     parser.add_argument("-E", "--exclude")
@@ -47,9 +45,7 @@ def parse_args(default_chromecast):
 
     parser.add_argument("-f", "--prefix", default="", help="sshfs root prefix")
 
-    parser.add_argument("-z", "--size", type=int)
-    parser.add_argument("--max-size", type=int)
-    parser.add_argument("--min-size", type=int)
+    parser.add_argument("-z", "--size", action='append', help="Size in Megabytes")
 
     parser.add_argument("-p", "--print", default=False, const="p", nargs="?")
     parser.add_argument("-L", "--limit", type=int)
@@ -87,6 +83,46 @@ def parse_args(default_chromecast):
             args.limit = 100
             if "a" in args.print:
                 args.limit = 9999999999999
+
+    if args.duration:
+        SEC_TO_M = 60
+        duration_m = 0
+        duration_rules = ''
+
+        for duration_rule in args.duration:
+            if '+' in duration_rule:
+                # min duration rule
+                duration_rules += f'and duration >= {abs(int(duration_rule)) * SEC_TO_M} '
+            elif '-' in duration_rule:
+                # max duration rule
+                duration_rules += f'and {abs(int(duration_rule)) * SEC_TO_M} >= duration '
+            else:
+                # approximate duration rule
+                duration_m = int(duration_rule) * SEC_TO_M
+                duration_rules += (
+                    f'and {duration_m + (duration_m /10)} >= duration and duration >= {duration_m - (duration_m /10)} '
+                )
+
+        args.duration = duration_rules
+
+    if args.size:
+        B_TO_MB = 1024 * 1024
+        size_mb = 0
+        size_rules = ''
+
+        for size_rule in args.size:
+            if '+' in size_rule:
+                # min size rule
+                size_rules += f'and size >= {abs(int(args.size)) * B_TO_MB} '
+            elif '-' in size_rule:
+                # max size rule
+                size_rules += f'and {abs(int(args.size)) * B_TO_MB} >= size '
+            else:
+                # approximate size rule
+                size_mb = args.size * B_TO_MB
+                size_rules += f'and {size_mb + (size_mb /10)} >= size and size >= {size_mb - (size_mb /10)} '
+
+        args.size = size_rules
 
     YEAR_MONTH = lambda var: f"cast(strftime('%Y%m',datetime({var} / 1000000000, 'unixepoch')) as int)"
     if args.sort:
@@ -214,29 +250,16 @@ def cmd(*command, strict=True, cwd=None, quiet=False, **kwargs):
 
 
 def conditional_filter(args):
-    B_TO_MB = 1024 * 1024
-    size_mb = 0
-    if args.size:
-        size_mb = args.size * B_TO_MB
+    cf = []
 
-    SEC_TO_M = 60
-    duration_m = 0
     if args.duration:
-        duration_m = args.duration * SEC_TO_M
-
-    cf = f"""duration IS NOT NULL and size IS NOT NULL
-    {f'and duration >= {args.min_duration * SEC_TO_M}' if args.min_duration else ''}
-    {f'and {args.max_duration * SEC_TO_M} >= duration' if args.max_duration else ''}
-    {f'and {duration_m + (duration_m /10)} >= duration and duration >= {duration_m - (duration_m /10)}' if args.duration else ''}
-    {f'and size >= {args.min_size * B_TO_MB}' if args.min_size else ''}
-    {f'and {args.max_size * B_TO_MB} >= size' if args.max_size else ''}
-    {f'and {size_mb + (size_mb /10)} >= size and size >= {size_mb - (size_mb /10)}' if args.size else ''}
-    """
-
+        cf.append(" and duration IS NOT NULL " + args.duration)
+    if args.size:
+        cf.append(" and size IS NOT NULL " + args.size)
     if args.where:
-        cf += " and " + args.where
+        cf.append(" and " + args.where)
 
-    return " ".join(cf.splitlines())
+    return " ".join(cf)
 
 
 def compile_query(query, *args):
