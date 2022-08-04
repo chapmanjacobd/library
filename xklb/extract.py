@@ -265,6 +265,7 @@ def main():
     if args.force_rescan:
         Path(args.db).unlink(missing_ok=True)
 
+    Path(args.db).touch()
     con = sqlite_con(args.db)
     for path in args.paths:
         scan_path(args, con, path)
