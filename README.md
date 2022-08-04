@@ -5,14 +5,14 @@ Requires ffmpeg
 ### Install
 
 ```
-pip install xklb
+pip install xk
 ```
 
 ### Step 1. Extract Metadata
 
-    lb-extract tv.db ./video/folder/
+    lb extract tv.db ./video/folder/
 
-    lb-extract --audio podcasts.db ./your/music/or/podcasts/folder/
+    lb extract --audio podcasts.db ./your/music/or/podcasts/folder/
 
 ### Step 2. Watch / Listen
 
