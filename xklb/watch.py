@@ -3,6 +3,7 @@ import json
 import math
 import os
 import re
+from shlex import quote
 import shutil
 import textwrap
 from datetime import timedelta
@@ -229,8 +230,9 @@ def watch(args):
         if args.only_video:
             has_video = (
                 cmd(
-                    f"ffprobe -show_streams -select_streams v -loglevel error -i {next_video} | wc -l",
+                    f"ffprobe -show_streams -select_streams v -loglevel error -i {quote(str(next_video))} | wc -l",
                     quiet=True,
+                    shell=True,
                 ).stdout
                 > "0"
             )
