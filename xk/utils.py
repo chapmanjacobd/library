@@ -2,6 +2,7 @@ import argparse
 import logging
 import os
 import re
+import shutil
 import sys
 from collections.abc import Iterable
 from functools import wraps
@@ -12,7 +13,7 @@ from subprocess import run
 from IPython.core import ultratb
 from IPython.terminal.debugger import TerminalPdb
 from pychromecast import discovery
-from rich import inspect, print
+from rich import print
 from rich.logging import RichHandler
 
 
@@ -54,7 +55,7 @@ def parse_args(default_chromecast):
     parser.add_argument("-vlc", "--vlc", action="store_true")
     parser.add_argument("--force-transcode", action="store_true")
 
-    parser.add_argument("-k", "--action", default="keep")
+    parser.add_argument("-k", "--post_action", default="keep")
     parser.add_argument("--keep", action="store_true")
     parser.add_argument("--delete", action="store_true")
 
@@ -65,7 +66,7 @@ def parse_args(default_chromecast):
     args = parser.parse_args()
 
     if args.version:
-        from xklb import __version__
+        from xk import __version__
 
         print(__version__)
         stop()
@@ -136,6 +137,18 @@ def parse_args(default_chromecast):
         args.where = args.where.replace("sub", "has_sub")
 
     return args
+
+
+def keep_video(video: Path):
+    kp = re.match(".*?/mnt/d/(.*?)/", str(video))
+    if kp:
+        keep_path = Path(kp[0], "keep/")
+    else:
+        keep_path = video.parent / "keep/"
+
+    keep_path.mkdir(parents=True, exist_ok=True)
+    shutil.move(video, keep_path)
+
 
 
 def remove_media(con, filename):

@@ -1,4 +1,4 @@
-from xklb import __version__
+from xk import __version__
 
 
 def test_version():
