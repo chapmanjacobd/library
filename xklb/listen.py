@@ -106,8 +106,12 @@ def listen(args):
         print(query)
         stop()
 
-    next_audio = dict(con.execute(query, bindings).fetchone())
-    next_audio = Path(next_audio["filename"])
+    next_audio = con.execute(query, bindings).fetchone()
+    if next_audio is None:
+        print('No media found')
+        stop()
+
+    next_audio = Path(dict(next_audio)["filename"])
 
     # limit to audiobook since normal music does not get deleted so only the first track would ever be played
     if "audiobook" in str(next_audio):

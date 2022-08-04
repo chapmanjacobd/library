@@ -16,6 +16,8 @@ from rich import inspect
 from rich.prompt import Confirm
 from tabulate import tabulate
 
+from xklb.subtitle import is_file_with_subtitle
+
 from .db import sqlite_con
 from .utils import (
     cmd,
@@ -29,15 +31,11 @@ from .utils import (
     stop,
 )
 
-
 def play_mpv(args, video_path: Path):
-    mpv = "mpv"
-    mpv_options = ["--fs", "--force-window=yes", "--terminal=no"]
-    vlc = "vlc"
-    # is_WSL = cmd('grep -qEi "(Microsoft|WSL)" /proc/version', strict=False).returncode == 0
-    # if is_WSL:
-    #     mpv = "PULSE_SERVER=tcp:localhost mpv"
-    #     vlc = "PULSE_SERVER=tcp:localhost cvlc"
+    if which("mpv") is not None:
+        player = ["mpv", "--fs", "--force-window=yes", "--terminal=no"]
+    else:
+        player = ["xdg-open"]
 
     if args.chromecast:
         subs = json.loads(
@@ -75,7 +73,7 @@ def play_mpv(args, video_path: Path):
 
         if args.vlc:
             watched = cmd(
-                f"{vlc} --sout '#chromecast' --sout-chromecast-ip={args.cc_ip} --demux-filter=demux_chromecast {'--sub-file='+subtitles_file if subtitles_file else ''} {video_path}"
+                f"vlc --sout '#chromecast' --sout-chromecast-ip={args.cc_ip} --demux-filter=demux_chromecast {'--sub-file='+subtitles_file if subtitles_file else ''} {video_path}"
             )
         else:
             watched = cmd(
@@ -93,23 +91,12 @@ def play_mpv(args, video_path: Path):
 
         return  # end of chromecast
 
-    if which("mpv") is not None:
-        has_sub = (
-            cmd(
-                f"</dev/null ffmpeg -c copy -map 0:s:0 -frames:s 1 -f null - -v 0 -i {video_path}",
-                strict=False,
-                quiet=True,
-            ).returncode
-            == 0
-        )
-        if not has_sub:
-            mpv_options.append("--speed=1.7")
-        else:
-            mpv_options.append("--speed=1")
-
-        cmd("mpv", *mpv_options, video_path)
+    if not is_file_with_subtitle(video_path):
+        player.append("--speed=1.7")
     else:
-        cmd("xdg-open", video_path)
+        player.append("--speed=1")
+
+    cmd(*player, '--', video_path)
 
 
 def keep_video(video: Path):
@@ -220,7 +207,12 @@ def watch(args):
             remove_media(con, video)
         stop()
 
-    next_video = dict(con.execute(query, bindings).fetchone())["filename"]
+    next_video = con.execute(query, bindings).fetchone()
+    if next_video is None:
+        print('No media found')
+        stop()
+
+    next_video = dict(next_video)["filename"]
     if args.play_in_order > 1:
         next_video = get_ordinal_media(con, args, Path(next_video), sql_filter)
 
