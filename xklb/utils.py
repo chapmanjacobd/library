@@ -15,12 +15,17 @@ from pychromecast import discovery
 from rich import inspect, print
 from rich.logging import RichHandler
 
+
+def stop():
+    exit(255)  # use nonzero code to stop shell repeat
+
+
 # sys.breakpointhook = ipdb.set_trace
 
 
 def parse_args(default_chromecast):
     parser = argparse.ArgumentParser()
-    parser.add_argument("db", nargs='?', default='videos.db')
+    parser.add_argument("db", nargs="?", default="videos.db")
 
     # TODO: maybe try https://dba.stackexchange.com/questions/43415/algorithm-for-finding-the-longest-prefix
     parser.add_argument("-O", "--play-in-order", action="count", default=0)
@@ -46,14 +51,14 @@ def parse_args(default_chromecast):
     parser.add_argument("--max-size", type=int)
     parser.add_argument("--min-size", type=int)
 
-    parser.add_argument("-p", "--print", default=False, const='p', nargs='?')
+    parser.add_argument("-p", "--print", default=False, const="p", nargs="?")
     parser.add_argument("-L", "--limit", type=int)
 
     parser.add_argument("-t", "--time-limit", type=int)
     parser.add_argument("-vlc", "--vlc", action="store_true")
     parser.add_argument("--force-transcode", action="store_true")
 
-    parser.add_argument("-k", "--action", default='keep')
+    parser.add_argument("-k", "--action", default="keep")
     parser.add_argument("--keep", action="store_true")
     parser.add_argument("--delete", action="store_true")
 
@@ -69,16 +74,18 @@ def parse_args(default_chromecast):
         print(__version__)
         stop()
 
-    if args.keep:
-        args.action = 'keep'
-    if args.delete:
-        args.action = 'delete'
+    if args.keep or args.action == "keep":
+        args.action = "keep"
+        args.keep = True
+    if args.delete or args.action == "delete":
+        args.action = "delete"
+        args.delete = True
 
     if args.limit is None:
         args.limit = 1
         if args.print:
             args.limit = 100
-            if 'a' in args.print:
+            if "a" in args.print:
                 args.limit = 9999999999999
 
     YEAR_MONTH = lambda var: f"cast(strftime('%Y%m',datetime({var} / 1000000000, 'unixepoch')) as int)"
@@ -98,10 +105,6 @@ def parse_args(default_chromecast):
 def remove_media(con, filename):
     con.execute("delete from media where filename = ?", (str(filename),))
     con.commit()
-
-
-def stop():
-    exit(255)  # use nonzero code to stop shell repeat
 
 
 def get_video_files(path, audio=False):
@@ -169,7 +172,7 @@ def argparse_log():
 log = argparse_log()
 
 
-def cmd(*command, strict=True, cwd=None, quiet=False):
+def cmd(*command, strict=True, cwd=None, quiet=False, **kwargs):
     EXP_FILTER = re.compile(
         "|".join(
             [
@@ -194,7 +197,10 @@ def cmd(*command, strict=True, cwd=None, quiet=False):
             print(s)
         return s
 
-    r = run(*command, capture_output=True, text=True, shell=True, cwd=cwd, preexec_fn=os.setpgrp)
+    if len(command) == 1 and kwargs.get('shell') is True:
+        command = command[0]
+
+    r = run(command, capture_output=True, text=True, cwd=cwd, preexec_fn=os.setpgrp, **kwargs)
     # TODO Windows support: creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
     log.debug(r.args)
     r.stdout = print_std(r.stdout)
@@ -289,7 +295,7 @@ def get_ordinal_media(con, args, filename: Path, sql_filter):
             LIMIT 1000
             """
         bindings = ("%" + testname + "%",)
-        if args.print and 'q' in args.print:
+        if args.print and "q" in args.print:
             print_query(bindings, query)
             stop()
 
