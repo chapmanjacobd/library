@@ -136,7 +136,7 @@ def watch(args):
     WHERE 1=1
     {filename_include_sql}
     {filename_exclude_sql}
-    and {sql_filter}
+    {sql_filter}
     ORDER BY
             {args.sort + ',' if args.sort else ''}
             {'filename,' if args.print or args.search or args.play_in_order > 0 else ''}

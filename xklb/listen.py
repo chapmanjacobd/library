@@ -93,7 +93,7 @@ def listen(args):
     {search_string if args.search else ''}
     {exclude_string if args.exclude else ''}
     {"" if args.search else 'and listen_count = 0'}
-    and {sql_filter}
+    {sql_filter}
     ORDER BY
         listen_count asc nulls first,
         {args.sort + ',' if args.sort else ''}
