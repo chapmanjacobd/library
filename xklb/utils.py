@@ -65,7 +65,7 @@ def parse_args(default_chromecast):
     parser.add_argument("-mv", "--move")
 
     parser.add_argument("-v", "--verbose", action="count", default=0)
-    parser.add_argument("-V", "--version")
+    parser.add_argument("-V", "--version", action="store_true")
     args = parser.parse_args()
 
     if args.version:
