@@ -2,6 +2,7 @@ import argparse
 import os
 import re
 from pathlib import Path
+from shlex import quote
 
 from joblib import Parallel, delayed
 from rich import inspect
@@ -27,7 +28,7 @@ def is_file_with_subtitle(file):
     SUBTITLE_FORMATS = "vtt|srt|ssa|ass|sub|idx|psb|smi|ssf|usf"
 
     internal_sub = cmd(
-        f"</dev/null ffmpeg -i {file} -c copy -map 0:s:0 -frames:s 1 -f null - -v 0 -hide_banner",
+        f"ffmpeg -hide_banner -nostdin -i {quote(str(file))} -c copy -map 0:s:0 -frames:s 1 -f null - -v 0",
         strict=False,
         shell=True,
     ).returncode
