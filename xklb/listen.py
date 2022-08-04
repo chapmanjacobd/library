@@ -1,7 +1,7 @@
 import os
 import subprocess
 from pathlib import Path
-from shlex import quote
+from shutil import which
 from time import sleep
 
 from rich import inspect
@@ -10,32 +10,33 @@ from .db import sqlite_con
 from .utils import cmd, conditional_filter, get_ordinal_media, log, parse_args, remove_media, stop
 
 
-def play_mpv(args, audio_path: Path):
-    mpv_options = (
-        "--input-ipc-server=/tmp/mpv_socket --no-video --keep-open=no --term-osd-bar"
-    )
-    quoted_next_audio = quote(str(audio_path))
+def play_mpv(args, audio_path):
+    if which("mpv") is not None:
+        player = ["mpv", "--input-ipc-server=/tmp/mpv_socket", "--no-video", "--keep-open=no", "--term-osd-bar"]
+    else:
+        player = ["xdg-open"]
 
     try:
-        print(cmd(f"ffprobe -hide_banner -loglevel info {quoted_next_audio}", quiet=True).stderr)
+        print(cmd("ffprobe", "-hide_banner", "-loglevel", "info", audio_path, quiet=True).stderr)
     except:
-        print(quoted_next_audio)
+        print(audio_path)
 
     if args.chromecast:
-        Path("/tmp/mpcatt_playing").write_text(quoted_next_audio)
+        Path("/tmp/mpcatt_playing").write_text(audio_path)
 
         cmd("touch /tmp/sub.srt")
         if not args.with_local:
-            cmd(f"catt -d '{args.chromecast_device}' cast -s /tmp/sub.srt {quoted_next_audio}")
+            cmd("catt", "-d", args.chromecast_device, "cast", "-s", "/tmp/sub.srt", audio_path)
         else:
-            cast_process = subprocess.Popen(["catt", "-d", args.chromecast_device, "cast", '-s', '/tmp/sub.srt', audio_path], preexec_fn=os.setpgrp)
-            sleep(0.674)  # imperfect lazy sync; I use keyboard shortcuts to send `set speed` commands to mpv for resync
-            # kde-inhibit --power
-            cmd(f"mpv {mpv_options} -- {quoted_next_audio}")
-            cast_process.communicate()  # wait for chromecast to stop (so that I can tell any chromecast to pause)
+            cast_process = subprocess.Popen(
+                ["catt", "-d", args.chromecast_device, "cast", "-s", "/tmp/sub.srt", audio_path], preexec_fn=os.setpgrp
+            )
+            sleep(0.974)  # imperfect lazy sync; I use keyboard shortcuts to send `set speed` commands to mpv for resync
+            cmd(*player, "--", audio_path)
+            cast_process.communicate()  # wait for chromecast to stop (you can tell any chromecast to pause)
             sleep(3.0)  # give chromecast some time to breathe
     else:
-        cmd(f"mpv {mpv_options} -- {quoted_next_audio}", quiet=True)
+        cmd(*player, "--", audio_path, quiet=True)
 
 
 def listen(args):
@@ -101,7 +102,7 @@ def listen(args):
     limit 1 OFFSET {args.skip if args.skip else 0}
     """
 
-    if args.print and 'q' in args.print:
+    if args.print and "q" in args.print:
         print(query)
         stop()
 
@@ -120,15 +121,13 @@ def listen(args):
         print("Removing orphaned metadata", next_audio)
         remove_media(con, next_audio)
     else:
-        quoted_next_audio = quote(str(next_audio))
-
         if args.move:
             keep_path = str(Path(args.move))
-            cmd(f"mv {quoted_next_audio} {quote(keep_path)}")
+            cmd("mv", next_audio, keep_path)
         else:
             play_mpv(args, next_audio)
-            if args.action == 'delete' or "audiobook" in quoted_next_audio.lower():
-                cmd(f"trash-put {quoted_next_audio}", strict=False)
+            if args.action == "delete" or "audiobook" in str(next_audio).lower():
+                cmd("trash-put", next_audio, strict=False)
                 remove_media(con, next_audio)
 
     con.execute("update media set listen_count = listen_count +1 where filename = ?", (str(next_audio),))

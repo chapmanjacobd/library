@@ -5,7 +5,6 @@ import os
 import sys
 from datetime import datetime
 from pathlib import Path
-from shlex import quote
 from typing import Dict
 
 import mutagen
@@ -82,45 +81,53 @@ def parse_tags(mutagen: Dict, tinytag: Dict):
 
 def extract_metadata(args, f):
     try:
-        ffprobe = json.loads(
+        probe = json.loads(
             cmd(
-                f"ffprobe -loglevel quiet -print_format json=compact=1 -show_entries format {quote(f)}", quiet=True
+                "ffprobe",
+                "-loglevel",
+                "quiet",
+                "-print_format",
+                "json=compact=1",
+                "-show_entries",
+                "format",
+                f,
+                quiet=True,
             ).stdout
         )
     except (KeyboardInterrupt, SystemExit):
         exit(130)
     except:
         print(f"Failed reading {f}", file=sys.stderr)
-        cmd(f"trash-put {quote(f)}", strict=False)
+        cmd("trash-put", f, strict=False)
         return
-    if not "format" in ffprobe:
+    if not "format" in probe:
         print(f"Failed reading format {f}", file=sys.stderr)
-        print(ffprobe)
+        print(probe)
         return
 
     stat = os.stat(f)
     blocks_allocated = stat.st_blocks * 512
 
-    ffprobe["format"].pop("tags", None)
-    ffprobe["format"].pop("format_long_name", None)
-    ffprobe["format"].pop("nb_programs", None)
-    ffprobe["format"].pop("nb_streams", None)
-    ffprobe["format"].pop("probe_score", None)
-    ffprobe["format"].pop("start_time", None)
-    ffprobe["format"].pop("probe_score", None)
-    ffprobe["format"].pop("probe_score", None)
+    probe["format"].pop("tags", None)
+    probe["format"].pop("format_long_name", None)
+    probe["format"].pop("nb_programs", None)
+    probe["format"].pop("nb_streams", None)
+    probe["format"].pop("probe_score", None)
+    probe["format"].pop("start_time", None)
+    probe["format"].pop("probe_score", None)
+    probe["format"].pop("probe_score", None)
 
-    if "size" in ffprobe["format"]:
-        ffprobe["format"]["size"] = int(ffprobe["format"]["size"])
+    if "size" in probe["format"]:
+        probe["format"]["size"] = int(probe["format"]["size"])
 
     if blocks_allocated == 0:
         sparseness = 0
     else:
-        sparseness = ffprobe["format"]["size"] / blocks_allocated
+        sparseness = probe["format"]["size"] / blocks_allocated
 
     media = dict(
-        **ffprobe["format"],
-        # streams=ffprobe["streams"],
+        **probe["format"],
+        # streams=probe["streams"],
         sparseness=sparseness,
         time_created=datetime.fromtimestamp(stat.st_ctime),
         time_modified=datetime.fromtimestamp(stat.st_mtime),
@@ -157,12 +164,12 @@ def extract_metadata(args, f):
 def optimize_db(args):
     print("Optimizing database")
     if Path(args.db).exists():
-        cmd(f"sqlite-utils optimize {args.db}")
+        cmd("sqlite-utils", "optimize", args.db)
         columns = cmd(
-            f"sqlite-utils tables {args.db} --columns | jq -r '.[0].columns[]' ", quiet=True
+            "sqlite-utils", "tables", args.db, "--columns", "|", "jq", "-r", "'.[0].columns[]'", quiet=True
         ).stdout.splitlines()
         for column in columns:
-            cmd(f"sqlite-utils create-index --if-not-exists --analyze {args.db} media {column}")
+            cmd("sqlite-utils", "create-index", "--if-not-exists", "--analyze", args.db, "media", column)
 
 
 def extract_chunk(args, con, l):

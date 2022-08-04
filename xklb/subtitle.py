@@ -2,7 +2,6 @@ import argparse
 import os
 import re
 from pathlib import Path
-from shlex import quote
 
 from joblib import Parallel, delayed
 from rich import inspect
@@ -28,7 +27,9 @@ def is_file_with_subtitle(file):
     SUBTITLE_FORMATS = "vtt|srt|ssa|ass|sub|idx|psb|smi|ssf|usf"
 
     internal_sub = cmd(
-        f"</dev/null ffmpeg -i {quote(file)} -c copy -map 0:s:0 -frames:s 1 -f null - -v 0 -hide_banner", strict=False
+        f"</dev/null ffmpeg -i {file} -c copy -map 0:s:0 -frames:s 1 -f null - -v 0 -hide_banner",
+        strict=False,
+        shell=True,
     ).returncode
     if internal_sub == 0:
         return True
@@ -77,7 +78,7 @@ def get_subtitle(args, file):
         print(yt_video_id)
         cmd(
             (
-                f"yt-dlp --sub-lang 'en,EN,en.*,en-*,EN.*,EN-*eng,ENG,english,English,ENGLISH'"
+                "yt-dlp --sub-lang 'en,EN,en.*,en-*,EN.*,EN-*eng,ENG,english,English,ENGLISH'"
                 " --embed-subs --compat-options no-keep-subs --write-sub --write-auto-sub"
                 " --no-download-archive --skip-download --limit-rate 10K"
                 f" https://youtu.be/{yt_video_id}"
@@ -89,8 +90,14 @@ def get_subtitle(args, file):
     if run_subliminal:
         print("Downloading subtitles:", file)
         cmd(
-            f"subliminal --opensubtitles {os.environ['OPEN_SUBTITLE_CREDENTIALS']} download -l en {quote(file)}",
-            # strict=False,
+            'subliminal',
+            '--opensubtitles',
+            os.environ['OPEN_SUBTITLE_CREDENTIALS'],
+            'download',
+            '-l',
+            'en',
+            file,
+            # strict=False
         )
 
 
