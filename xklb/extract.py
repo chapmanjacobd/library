@@ -219,7 +219,7 @@ def optimize_db(args):
             cmd("sqlite-utils", "create-index", "--if-not-exists", "--analyze", args.db, "media", column)
 
 
-def extract_chunk(args, con, l):
+def extract_chunk(args, l):
     metadata = (
         Parallel(n_jobs=-1 if args.verbose == 0 else 1, backend="threading")(
             delayed(extract_metadata)(args, file) for file in l
@@ -233,7 +233,7 @@ def extract_chunk(args, con, l):
             DF.year = DF.year.astype(str)
     DF.apply(pd.to_numeric, errors="ignore").convert_dtypes().to_sql(  # type: ignore
         "media",
-        con=con,
+        con=args.con,
         if_exists="append",
         index=False,
         chunksize=70,
@@ -241,7 +241,7 @@ def extract_chunk(args, con, l):
     )
 
 
-def find_new_files(args, con, path):
+def find_new_files(args, path):
     video_files = get_media_files(path, args.audio)
     new_files = set(video_files)
 
@@ -249,7 +249,7 @@ def find_new_files(args, con, path):
         existing = set(
             map(
                 lambda x: x["filename"],
-                fetchall_dict(con, f"select filename from media where filename like '{path}%'"),
+                fetchall_dict(args.con, f"select filename from media where filename like '{path}%'"),
             )
         )
     except:
@@ -260,17 +260,17 @@ def find_new_files(args, con, path):
         deleted_files = list(existing - new_files)
         remove_media(args, deleted_files)
 
-        con.execute("DELETE from media where filename like '%/keep/%'")
-        con.commit()
+        args.con.execute("DELETE from media where filename like '%/keep/%'")
+        args.con.commit()
 
     return video_files
 
 
-def scan_path(args, con, path):
+def scan_path(args, path):
     path = Path(path).resolve()
     print(f"{path} : Scanning...")
 
-    video_files = find_new_files(args, con, path)
+    video_files = find_new_files(args, path)
 
     if len(video_files) > 0:
         print(f"Adding {len(video_files)} new media")
@@ -282,7 +282,7 @@ def scan_path(args, con, path):
         for idx, l in enumerate(df_chunked):
             percent = ((batch_count * idx) + len(l)) / len(video_files) * 100
             print(f"Extracting metadata: {percent:3.1f}% (chunk {idx + 1} of {chunks_count})")
-            extract_chunk(args, con, l)
+            extract_chunk(args, l)
 
             if args.subtitle:
                 print("Fetching subtitles")
@@ -291,9 +291,9 @@ def scan_path(args, con, path):
 
 def extractor(args):
     Path(args.db).touch()
-    con = sqlite_con(args.db)
+    args.con = sqlite_con(args.db)
     for path in args.paths:
-        scan_path(args, con, path)
+        scan_path(args, path)
 
     optimize_db(args)
 
