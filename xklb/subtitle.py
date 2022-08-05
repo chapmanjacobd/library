@@ -7,7 +7,7 @@ from shlex import quote
 from joblib import Parallel, delayed
 from rich import inspect
 
-from .utils import cmd, get_video_files
+from xklb.utils import cmd, get_media_files
 
 
 def youtube_dl_id(file) -> str:
@@ -91,12 +91,12 @@ def get_subtitle(args, file):
     if run_subliminal:
         print("Downloading subtitles:", file)
         cmd(
-            'subliminal',
-            '--opensubtitles',
-            os.environ['OPEN_SUBTITLE_CREDENTIALS'],
-            'download',
-            '-l',
-            'en',
+            "subliminal",
+            "--opensubtitles",
+            os.environ["OPEN_SUBTITLE_CREDENTIALS"],
+            "download",
+            "-l",
+            "en",
             file,
             # strict=False
         )
@@ -110,7 +110,7 @@ def main():
     parser.add_argument("-v", "--verbose", action="count", default=0)
     args = parser.parse_args()
 
-    video_files = get_video_files(args)
+    video_files = get_media_files(args)
 
     Parallel(n_jobs=6 if args.verbose == 0 else 1)(delayed(get_subtitle)(args, file) for file in video_files)
 
