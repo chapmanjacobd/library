@@ -207,10 +207,11 @@ def play(args, media: pd.DataFrame):
                 raise Exception("catt does not exit nonzero? but something might have gone wrong")
 
         else:  # end of chromecast
-            if not is_file_with_subtitle(media_file):
-                player.append("--speed=1.7")
-            else:
-                player.append("--speed=1")
+            if args.action == Action.watch:
+                if not is_file_with_subtitle(media_file):
+                    player.append("--speed=1.7")
+                else:
+                    player.append("--speed=1")
 
             cmd(*player, "--", media_file, quiet=True)
 
