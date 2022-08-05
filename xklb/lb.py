@@ -18,7 +18,7 @@ def lb(args=None):
     extract.set_defaults(func=xr)
 
     args, _unk = parser.parse_known_args(args)
-    sys.argv = [sys.argv[0]] + sys.argv[2:]
+    sys.argv = sys.argv[0:] + sys.argv[2:]
 
     if hasattr(args, "func"):
         args.func()
