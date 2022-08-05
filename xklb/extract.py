@@ -10,14 +10,61 @@ from typing import Dict
 import mutagen
 import pandas as pd
 from joblib import Parallel, delayed
-from rich import inspect
 from tinytag import TinyTag
 
-from .db import fetchall_dict, sqlite_con
-from .subtitle import get_subtitle, is_file_with_subtitle, youtube_dl_id
-from .utils import chunks, cmd, combine, get_video_files, log, remove_None, safe_unpack
+from xklb.db import fetchall_dict, sqlite_con
+from xklb.subtitle import get_subtitle, is_file_with_subtitle, youtube_dl_id
+from xklb.utils import (
+    SQLITE_PARAM_LIMIT,
+    chunks,
+    cmd,
+    combine,
+    get_media_files,
+    log,
+    remove_media,
+    remove_None,
+    safe_unpack,
+)
 
-SQLITE_PARAM_LIMIT = 32765
+audio_include_string = (
+    lambda x: f"""and (
+    filename like :include{x}
+    OR mood like :include{x}
+    OR genre like :include{x}
+    OR year like :include{x}
+    OR bpm like :include{x}
+    OR key like :include{x}
+    OR time like :include{x}
+    OR decade like :include{x}
+    OR categories like :include{x}
+    OR city like :include{x}
+    OR country like :include{x}
+    OR description like :include{x}
+    OR album like :include{x}
+    OR title like :include{x}
+    OR artist like :include{x}
+)"""
+)
+
+audio_exclude_string = (
+    lambda x: f"""and (
+    filename not like :exclude{x}
+    OR mood not like :exclude{x}
+    OR genre not like :exclude{x}
+    OR year not like :exclude{x}
+    OR bpm not like :exclude{x}
+    OR key not like :exclude{x}
+    OR time not like :exclude{x}
+    OR decade not like :exclude{x}
+    OR categories not like :exclude{x}
+    OR city not like :exclude{x}
+    OR country not like :exclude{x}
+    OR description not like :exclude{x}
+    OR album not like :exclude{x}
+    OR title not like :exclude{x}
+    OR artist not like :exclude{x}
+)"""
+)
 
 
 def get_provenance(file):
@@ -195,7 +242,7 @@ def extract_chunk(args, con, l):
 
 
 def find_new_files(args, con, path):
-    video_files = get_video_files(path, args.audio)
+    video_files = get_media_files(path, args.audio)
     new_files = set(video_files)
 
     try:
@@ -211,18 +258,9 @@ def find_new_files(args, con, path):
         video_files = list(new_files - existing)
 
         deleted_files = list(existing - new_files)
-        if len(deleted_files) > 0:
-            print(f"Removing {len(deleted_files)} orphaned metadata")
+        remove_media(args, deleted_files)
 
-            df_chunked = chunks(deleted_files, SQLITE_PARAM_LIMIT)
-            for l in df_chunked:
-                con.execute(
-                    "delete from media where filename in (" + ",".join(["?"] * len(l)) + ")",
-                    (*l,),
-                )
-                con.commit()
-
-        con.execute("delete from media where filename like '%/keep/%'")
+        con.execute("DELETE from media where filename like '%/keep/%'")
         con.commit()
 
     return video_files
@@ -251,6 +289,15 @@ def scan_path(args, con, path):
                 Parallel(n_jobs=5)(delayed(get_subtitle)(args, file) for file in l)
 
 
+def extractor(args):
+    Path(args.db).touch()
+    con = sqlite_con(args.db)
+    for path in args.paths:
+        scan_path(args, con, path)
+
+    optimize_db(args)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("db")
@@ -265,12 +312,7 @@ def main():
     if args.force_rescan:
         Path(args.db).unlink(missing_ok=True)
 
-    Path(args.db).touch()
-    con = sqlite_con(args.db)
-    for path in args.paths:
-        scan_path(args, con, path)
-
-    optimize_db(args)
+    extractor(args)
 
 
 if __name__ == "__main__":
