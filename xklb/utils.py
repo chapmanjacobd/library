@@ -14,7 +14,6 @@ from subprocess import run
 from IPython.core import ultratb
 from IPython.terminal.debugger import TerminalPdb
 from pychromecast import discovery
-from rich import print
 from rich.logging import RichHandler
 
 try:
@@ -78,8 +77,7 @@ def argparse_log():
     logging.basicConfig(
         level=log_levels[min(len(log_levels) - 1, args.verbose)],
         format="%(message)s",
-        datefmt="[%X]",
-        handlers=[RichHandler()],
+        handlers=[RichHandler(show_time=False, show_level=False)],
     )
     return logging.getLogger()
 
