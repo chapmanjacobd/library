@@ -43,13 +43,13 @@ def get_ip_of_chromecast(device_name):
 
 def parse_args(default_chromecast):
     parser = argparse.ArgumentParser()
-    parser.add_argument("db", nargs="?", default="videos.db")
+
+    parser.add_argument("-db", '--db')
 
     # TODO: maybe try https://dba.stackexchange.com/questions/43415/algorithm-for-finding-the-longest-prefix
     parser.add_argument("-O", "--play-in-order", action="count", default=0)
     parser.add_argument("-S", "--skip")
     parser.add_argument("-u", "--sort")
-    parser.add_argument("--only-video", action="store_true")
 
     parser.add_argument("-d", "--duration", action="append", help="Duration in minutes")
 
@@ -144,7 +144,9 @@ def parse_args(default_chromecast):
     args.where = [s.replace("sub", "has_sub") for s in args.where]
 
     if args.chromecast:
-        args.cc_ip = get_ip_of_chromecast(args.device_name)
+        args.cc_ip = get_ip_of_chromecast(args.chromecast_device)
+
+    log.info(args)
 
     return args
 

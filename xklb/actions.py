@@ -355,12 +355,17 @@ def process_actions(args):
 def wt():
     args = parse_args(default_chromecast="Living Room TV")
     args.action = Action.watch
+    if not args.db:
+        args.db = 'video.db'
+
     process_actions(args)
 
 
 def lt():
     args = parse_args(default_chromecast="Xylo and Orchestra")
     args.action = Action.listen
+    if not args.db:
+        args.db = 'audio.db'
 
     try:
         process_actions(args)

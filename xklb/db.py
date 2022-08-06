@@ -6,7 +6,7 @@ from xklb.utils import stop
 
 def sqlite_con(db):
     if not os.path.exists(db):
-        print("Database file does not exist. Create one first with lb extract.")
+        print("Database file does not exist. Create one with lb extract.")
         stop()
 
     con = sqlite3.connect(db)
