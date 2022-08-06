@@ -300,7 +300,7 @@ def extractor(args):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("db")
+    parser.add_argument("-db", '--db')
     parser.add_argument("paths", nargs="*")
     parser.add_argument("-a", "--audio", action="store_true")
     parser.add_argument("-s", "--subtitle", action="store_true")
@@ -309,6 +309,13 @@ def main():
     parser.add_argument("-f", "--force-rescan", action="store_true")
     parser.add_argument("-v", "--verbose", action="count", default=0)
     args = parser.parse_args()
+
+    if not args.db:
+        if args.audio:
+            args.db = 'audio.db'
+        else:
+            args.db = 'video.db'
+
     if args.force_rescan:
         Path(args.db).unlink(missing_ok=True)
 
