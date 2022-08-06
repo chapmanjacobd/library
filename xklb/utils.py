@@ -263,7 +263,7 @@ def get_media_files(path, audio=False):
     return video_files
 
 
-def cmd(*command, strict=True, cwd=None, quiet=False, **kwargs):
+def cmd(*command, strict=True, cwd=None, quiet=True, interactive=False, **kwargs):
     EXP_FILTER = re.compile(
         "|".join(
             [
@@ -291,7 +291,7 @@ def cmd(*command, strict=True, cwd=None, quiet=False, **kwargs):
     if len(command) == 1 and kwargs.get("shell") is True:
         command = command[0]
 
-    r = run(command, capture_output=True, text=True, cwd=cwd, preexec_fn=os.setpgrp, **kwargs)
+    r = run(command, capture_output=True, text=True, cwd=cwd, preexec_fn=None if interactive else os.setpgrp, **kwargs)
     # TODO Windows support: creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
     log.debug(r.args)
     r.stdout = print_std(r.stdout)
@@ -302,6 +302,16 @@ def cmd(*command, strict=True, cwd=None, quiet=False, **kwargs):
             raise Exception(f"[{command}] exited {r.returncode}")
 
     return r
+
+
+# def cmdi(*args, **kwargs):
+#     quiet = kwargs.pop("quiet", None) or False
+#     return cmd(*args, **kwargs, interactive=True, quiet=quiet)
+
+
+def cmdi(*cmd, **kwargs):
+    retcode = os.spawnvpe(os.P_WAIT, cmd[0], cmd, os.environ)
+    return subprocess.CompletedProcess(cmd, retcode)
 
 
 def Pclose(process):

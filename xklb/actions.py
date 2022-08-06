@@ -23,6 +23,7 @@ from xklb.subtitle import is_file_with_subtitle
 from xklb.utils import (
     Pclose,
     cmd,
+    cmdi,
     get_ordinal_media,
     log,
     mv_to_keep_folder,
@@ -38,12 +39,20 @@ class Action:
     listen = "listen"
 
 
-def has_video(next_video):
+def has_video(file_path):
     return (
         cmd(
-            f"ffprobe -show_streams -select_streams v -loglevel error -i {quote(str(next_video))} | wc -l",
-            quiet=True,
+            f"ffprobe -show_streams -select_streams v -loglevel error -i {quote(str(file_path))} | wc -l",
             shell=True,
+        ).stdout
+        > "0"
+    )
+
+
+def has_audio(file_path):
+    return (
+        cmd(
+            f"ffprobe -show_streams -select_streams a -loglevel error -i {quote(str(file_path))} | wc -l", shell=True
         ).stdout
         > "0"
     )
@@ -71,7 +80,7 @@ def delete_media(args, media_file):
     else:
         cmd("trash-put", media_file, strict=False)
 
-    remove_media(args, media_file, quiet=True)
+    remove_media(args, str(media_file), quiet=True)
 
 
 def post_act(args, media_file):
@@ -101,7 +110,7 @@ def listen_chromecast(args, media_file, player):
             ["catt", "-d", args.chromecast_device, "cast", "-s", "/tmp/sub.srt", media_file], preexec_fn=os.setpgrp
         )
         sleep(0.974)  # imperfect lazy sync; I use keyboard shortcuts to send `set speed` commands to mpv for resync
-        cmd(*player, "--", media_file)
+        cmdi(*player, "--", media_file)
         catt_log = Pclose(cast_process)  # wait for chromecast to stop (you can tell any chromecast to pause)
         sleep(3.0)  # give chromecast some time to breathe
 
@@ -182,14 +191,18 @@ def play(args, media: pd.DataFrame):
             player = ["xdg-open"]
 
         if args.action == Action.watch:
-            print(media_file)
-
             if not has_video(media_file):
                 print("[watch]: skipping non-video file", media_file)
                 continue
 
+            print(media_file)
+
         elif args.action == Action.listen:
-            print(cmd("ffprobe", "-hide_banner", "-loglevel", "info", media_file, quiet=True).stderr)
+            if not has_audio(media_file):
+                print("[listen]: skipping non-audio file", media_file)
+                continue
+
+            print(cmd("ffprobe", "-hide_banner", "-loglevel", "info", media_file).stderr)
 
         if args.transcode:
             media_file = transcode(media_file)
@@ -213,7 +226,7 @@ def play(args, media: pd.DataFrame):
                 else:
                     player.append("--speed=1")
 
-            cmd(*player, "--", media_file, quiet=True)
+            cmdi(*player, "--", media_file, quiet=True)
 
         if args.post_action:
             post_act(args, media_file)
