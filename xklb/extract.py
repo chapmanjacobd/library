@@ -127,12 +127,15 @@ def parse_tags(mutagen: Dict, tinytag: Dict):
 
 
 def extract_metadata(args, f):
-    stat = os.stat(f)
-    blocks_allocated = stat.st_blocks * 512
+    try:
+        stat = os.stat(f)
+    except:
+        return
 
     if stat.st_size == 0:
         sparseness = 0
     else:
+        blocks_allocated = stat.st_blocks * 512
         sparseness = blocks_allocated / stat.st_size
 
     media = dict(
@@ -253,7 +256,7 @@ def find_new_files(args, path):
     elif args.db_type == "v":
         scanned_files = get_media_files(path)
     elif args.db_type == "f":
-        scanned_files = [p.path for p in os.scandir(path)]
+        scanned_files = [str(p) for p in Path(path).resolve().rglob("*")]
     new_files = set(scanned_files)
 
     try:
