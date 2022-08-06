@@ -129,17 +129,7 @@ def parse_tags(mutagen: Dict, tinytag: Dict):
 def extract_metadata(args, f):
     try:
         probe = json.loads(
-            cmd(
-                "ffprobe",
-                "-loglevel",
-                "quiet",
-                "-print_format",
-                "json=compact=1",
-                "-show_entries",
-                "format",
-                f,
-                quiet=True,
-            ).stdout
+            cmd("ffprobe", "-loglevel", "quiet", "-print_format", "json=compact=1", "-show_entries", "format", f).stdout
         )
     except (KeyboardInterrupt, SystemExit):
         exit(130)
