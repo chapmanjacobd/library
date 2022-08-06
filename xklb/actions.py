@@ -184,9 +184,9 @@ def play(args, media: pd.DataFrame):
         if which("mpv") is not None:
             player = ["mpv"]
             if args.action == Action.listen:
-                player.extend(["--input-ipc-server=/tmp/mpv_socket", "--no-video", "--keep-open=no", "--term-osd-bar"])
+                player.extend(["--input-ipc-server=/tmp/mpv_socket", "--no-video", "--keep-open=no", "--really-quiet"])
             elif args.action == Action.watch:
-                player.extend(["--fs", "--force-window=yes", "--terminal=no"])
+                player.extend(["--fs", "--force-window=yes", "--really-quiet"])
         else:
             player = ["xdg-open"]
 
@@ -226,7 +226,7 @@ def play(args, media: pd.DataFrame):
                 else:
                     player.append("--speed=1")
 
-            cmdi(*player, "--", media_file, quiet=True)
+            cmdi(*player, "--", media_file)
 
         if args.post_action:
             post_act(args, media_file)

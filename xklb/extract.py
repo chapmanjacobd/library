@@ -203,7 +203,7 @@ def optimize_db(args):
     if Path(args.db).exists():
         cmd("sqlite-utils", "optimize", args.db)
         columns = cmd(
-            f"sqlite-utils tables {args.db} --columns | jq -r '.[0].columns[]'", quiet=True, shell=True
+            f"sqlite-utils tables {args.db} --columns | jq -r '.[0].columns[]'", shell=True
         ).stdout.splitlines()
         for column in columns:
             cmd("sqlite-utils", "create-index", "--if-not-exists", "--analyze", args.db, "media", column)
