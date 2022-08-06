@@ -5,6 +5,7 @@ from xklb.actions import lt, wt
 from xklb.extract import main as xr
 from xklb.utils import log
 
+
 def lb(args=None):
     parser = argparse.ArgumentParser(add_help=False)
     subparsers = parser.add_subparsers()

@@ -41,10 +41,56 @@ def get_ip_of_chromecast(device_name):
     return cast_infos[0].host
 
 
+def run_once(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if not f.has_run:
+            result = f(*args, **kwargs)
+            f.has_run = True
+            return result
+
+    f.has_run = False
+    return wrapper
+
+
+@run_once
+def argparse_log():
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument("-v", "--verbose", action="count", default=0)
+    args, _unknown = parser.parse_known_args()
+    # print(args)
+
+    try:
+        if args.verbose > 0 and os.getpgrp() == os.tcgetpgrp(sys.stdout.fileno()):
+            sys.excepthook = ultratb.FormattedTB(
+                mode="Context",
+                color_scheme="Neutral",
+                call_pdb=True,
+                debugger_cls=TerminalPdb,
+            )
+        else:
+            pass
+    except:
+        pass
+
+    log_levels = [logging.WARNING, logging.INFO, logging.DEBUG]
+    logging.root.handlers = []  # clear any existing handlers
+    logging.basicConfig(
+        level=log_levels[min(len(log_levels) - 1, args.verbose)],
+        format="%(message)s",
+        datefmt="[%X]",
+        handlers=[RichHandler()],
+    )
+    return logging.getLogger()
+
+
+log = argparse_log()
+
+
 def parse_args(default_chromecast):
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("-db", '--db')
+    parser.add_argument("db", nargs="?")
 
     # TODO: maybe try https://dba.stackexchange.com/questions/43415/algorithm-for-finding-the-longest-prefix
     parser.add_argument("-O", "--play-in-order", action="count", default=0)
@@ -185,13 +231,14 @@ def conform(list_):
     return list_
 
 
-def remove_media(args, deleted_files):
+def remove_media(args, deleted_files, quiet=False):
     deleted_files = conform(deleted_files)
     if len(deleted_files) > 0:
-        if len(deleted_files) == 1:
-            print("Removing orphaned metadata", deleted_files[0])
-        else:
-            print(f"Removing {len(deleted_files)} orphaned metadata")
+        if not quiet:
+            if len(deleted_files) == 1:
+                print("Removing orphaned metadata", deleted_files[0])
+            else:
+                print(f"Removing {len(deleted_files)} orphaned metadata")
 
         df_chunked = chunks(deleted_files, SQLITE_PARAM_LIMIT)
         for l in df_chunked:
@@ -214,52 +261,6 @@ def get_media_files(path, audio=False):
             video_files.append(str(f))
 
     return video_files
-
-
-def run_once(f):
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        if not f.has_run:
-            result = f(*args, **kwargs)
-            f.has_run = True
-            return result
-
-    f.has_run = False
-    return wrapper
-
-
-@run_once
-def argparse_log():
-    parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument("-v", "--verbose", action="count", default=0)
-    args, _unknown = parser.parse_known_args()
-    # print(args)
-
-    try:
-        if args.verbose > 0 and os.getpgrp() == os.tcgetpgrp(sys.stdout.fileno()):
-            sys.excepthook = ultratb.FormattedTB(
-                mode="Context",
-                color_scheme="Neutral",
-                call_pdb=True,
-                debugger_cls=TerminalPdb,
-            )
-        else:
-            pass
-    except:
-        pass
-
-    log_levels = [logging.WARNING, logging.INFO, logging.DEBUG]
-    logging.root.handlers = []  # clear any existing handlers
-    logging.basicConfig(
-        level=log_levels[min(len(log_levels) - 1, args.verbose)],
-        format="%(message)s",
-        datefmt="[%X]",
-        handlers=[RichHandler()],
-    )
-    return logging.getLogger()
-
-
-log = argparse_log()
 
 
 def cmd(*command, strict=True, cwd=None, quiet=False, **kwargs):
