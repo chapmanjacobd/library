@@ -5,7 +5,7 @@ Requires ffmpeg
 ### Install
 
 ```
-pip install xk
+pip install xklb
 ```
 
 ### Step 1. Extract Metadata
