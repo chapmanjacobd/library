@@ -71,7 +71,7 @@ def delete_media(args, media_file):
     else:
         cmd("trash-put", media_file, strict=False)
 
-    remove_media(args, media_file)
+    remove_media(args, media_file, quiet=True)
 
 
 def post_act(args, media_file):
@@ -169,7 +169,7 @@ def play(args, media: pd.DataFrame):
 
         media_file = Path(args.prefix + media_file)
         if not media_file.exists():
-            remove_media(args, media_file)
+            remove_media(args, str(media_file))
             continue
 
         if which("mpv") is not None:
@@ -330,7 +330,7 @@ def mover(args, media):
         if Path(media).exists() and "/keep/" not in media:
             shutil.move(media, keep_path)
 
-        remove_media(args, media)
+        remove_media(args, media, quiet=True)
     stop()
 
 
@@ -356,7 +356,7 @@ def wt():
     args = parse_args(default_chromecast="Living Room TV")
     args.action = Action.watch
     if not args.db:
-        args.db = 'video.db'
+        args.db = "video.db"
 
     process_actions(args)
 
@@ -365,7 +365,7 @@ def lt():
     args = parse_args(default_chromecast="Xylo and Orchestra")
     args.action = Action.listen
     if not args.db:
-        args.db = 'audio.db'
+        args.db = "audio.db"
 
     try:
         process_actions(args)
