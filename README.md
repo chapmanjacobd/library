@@ -65,3 +65,33 @@ repeat 5 lt audio.db
     lt -cast -s '  ost'      # for listening to OSTs on my chromecast groups
     wt -u priority -w sub=0  # for exercising and watching YouTube
     wt -u duration --print -s 'video title'  # when I want to check if I've downloaded something before
+
+## Searching filesystem
+
+You can also use `lb` for any files:
+
+    $ lb extract -fs -f ~/d/41_8bit/
+
+    $ lb fs fs.db -p a -s mario luigi
+    ╒═══════════╤══════════════╤══════════╤═════════╕
+    │ path      │   sparseness │ size     │   count │
+    ╞═══════════╪══════════════╪══════════╪═════════╡
+    │ Aggregate │            1 │ 215.0 MB │       7 │
+    ╘═══════════╧══════════════╧══════════╧═════════╛
+
+    $ lb fs fs.db -w is_dir=0 -u 'size desc' -p -s mario -s luigi -s jpg
+    ╒═══════════════════════════════════════╤══════════════╤═════════╕
+    │ path                                  │   sparseness │ size    │
+    ╞═══════════════════════════════════════╪══════════════╪═════════╡
+    │ /mnt/d/41_8bit/roms/gba/media/images/ │      1.05632 │ 58.2 kB │
+    │ Mario & Luigi - Superstar Saga (USA,  │              │         │
+    │ Australia).jpg                        │              │         │
+    ├───────────────────────────────────────┼──────────────┼─────────┤
+    │ /mnt/d/41_8bit/roms/gba/media/box3d/M │      1.01583 │ 44.4 kB │
+    │ ario & Luigi - Superstar Saga (USA,   │              │         │
+    │ Australia).jpg                        │              │         │
+    ╘═══════════════════════════════════════╧══════════════╧═════════╛
+
+If you want to specify more than one directory you will need to make the db file explicit:
+
+    $ lb extract --filesystem fs.db one/ two/

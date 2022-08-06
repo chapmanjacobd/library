@@ -256,7 +256,7 @@ def find_new_files(args, path):
     elif args.db_type == "v":
         scanned_files = get_media_files(path)
     elif args.db_type == "f":
-        scanned_files = [str(p) for p in Path(path).resolve().rglob("*")]
+        scanned_files = [str(p) for p in Path(path).resolve().rglob("*")]  # thanks to these people for making rglob fast https://bugs.python.org/issue26032
     new_files = set(scanned_files)
 
     try:

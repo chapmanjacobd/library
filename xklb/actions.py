@@ -293,8 +293,9 @@ def printer(args, query):
     if "a" in args.print:
         query = f"""select
             "Aggregate" as path
-            , sum(hours) hours
-            , avg(seconds_per_byte) seconds_per_byte
+            {', sum(hours) hours' if args.action != Action.filesystem else ''}
+            {', avg(seconds_per_byte) seconds_per_byte' if args.action != Action.filesystem else ''}
+            {', sparseness' if args.action == Action.filesystem else ''}
             , sum(size) size
             , count(*) count
         from ({query}) """
@@ -324,7 +325,7 @@ def printer(args, query):
             print(csvf.strip())
     else:
         db_resp[["path"]] = db_resp[["path"]].applymap(lambda x: textwrap.fill(x, os.get_terminal_size().columns - 30))
-        db_resp[["size"]] = db_resp[["size"]].applymap(lambda x: humanize.naturalsize(x))
+        db_resp[["size"]] = db_resp[["size"]].applymap(lambda x: None if x is None else humanize.naturalsize(x))
         print(tabulate(db_resp, tablefmt="fancy_grid", headers="keys", showindex=False))
 
         if args.action != Action.filesystem:
