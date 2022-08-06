@@ -301,7 +301,8 @@ def printer(args, query):
     else:
         query = f"""select
             path
-            , hours
+            {', hours' if args.action != Action.filesystem else ''}
+            {', sparseness' if args.action == Action.filesystem else ''}
             , size
         from ({query}) """
 
