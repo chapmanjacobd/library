@@ -85,7 +85,7 @@ def argparse_log():
 log = argparse_log()
 
 
-def parse_args(default_chromecast):
+def parse_args(default_chromecast=''):
     parser = argparse.ArgumentParser()
 
     parser.add_argument("db", nargs="?")
@@ -241,7 +241,7 @@ def remove_media(args, deleted_files, quiet=False):
         df_chunked = chunks(deleted_files, SQLITE_PARAM_LIMIT)
         for l in df_chunked:
             args.con.execute(
-                "delete from media where filename in (" + ",".join(["?"] * len(l)) + ")",
+                "delete from media where path in (" + ",".join(["?"] * len(l)) + ")",
                 (*l,),
             )
             args.con.commit()
@@ -357,9 +357,9 @@ def single_column_tolist(array_of_half_tuplets, column_name=1):
     )
 
 
-def get_ordinal_media(args, filename: Path):
+def get_ordinal_media(args, path: Path):
     similar_videos = []
-    testname = str(filename)
+    testname = str(path)
 
     total_media = args.con.execute("select count(*) val from media").fetchone()[0]
     while len(similar_videos) < 2:
@@ -375,13 +375,13 @@ def get_ordinal_media(args, filename: Path):
         log.debug(f"Matches for '{newtestname}':")
 
         if testname in ["" or newtestname]:
-            return filename
+            return path
 
         testname = newtestname
-        query = f"""SELECT filename FROM media
-            WHERE filename like ?
+        query = f"""SELECT path FROM media
+            WHERE path like ?
                 and {'1=1' if (args.play_in_order > 2) else args.sql_filter}
-            ORDER BY filename
+            ORDER BY path
             LIMIT 1000
             """
         bindings = ("%" + testname + "%",)
@@ -389,17 +389,17 @@ def get_ordinal_media(args, filename: Path):
             print_query(bindings, query)
             stop()
 
-        similar_videos = single_column_tolist(args.con.execute(query, bindings).fetchall(), "filename")  # type: ignore
+        similar_videos = single_column_tolist(args.con.execute(query, bindings).fetchall(), "path")  # type: ignore
         log.debug(similar_videos)
 
         if len(similar_videos) > 999 or len(similar_videos) == total_media:
-            return filename
+            return path
 
         commonprefix = os.path.commonprefix(similar_videos)
         log.debug(commonprefix)
         if len(Path(commonprefix).name) < 3:
             log.debug("Using commonprefix")
-            return filename
+            return path
 
     return similar_videos[0]
 

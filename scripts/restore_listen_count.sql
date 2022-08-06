@@ -7,7 +7,7 @@ UPDATE
         FROM
             audiobak.media
         WHERE
-            audio.media.filename = audiobak.media.filename
+            audio.media.path = audiobak.media.path
     )
 WHERE
     EXISTS(
@@ -16,6 +16,6 @@ WHERE
         FROM
             audiobak.media
         WHERE
-            audio.media.filename = audiobak.media.filename
+            audio.media.path = audiobak.media.path
             AND audiobak.media.listen_count > 0
     );
