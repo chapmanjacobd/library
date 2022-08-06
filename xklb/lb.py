@@ -1,7 +1,7 @@
 import argparse
 import sys
 
-from xklb.actions import lt, wt
+from xklb.actions import lt, wt, fs
 from xklb.extract import main as xr
 from xklb.utils import log
 
@@ -17,6 +17,13 @@ def lb(args=None):
 
     extract = subparsers.add_parser("extract", aliases=["xr"], add_help=False)
     extract.set_defaults(func=xr)
+
+    fs_ = subparsers.add_parser("fs", aliases=["p"], add_help=False)
+    fs_.set_defaults(func=fs)
+
+    # TODO:
+    # download = subparsers.add_parser("download", aliases=["dl"], add_help=False)
+    # download.set_defaults(func=dl)
 
     args, _unk = parser.parse_known_args(args)
     del sys.argv[1]

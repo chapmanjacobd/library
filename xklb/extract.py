@@ -28,7 +28,7 @@ from xklb.utils import (
 
 audio_include_string = (
     lambda x: f"""and (
-    filename like :include{x}
+    path like :include{x}
     OR mood like :include{x}
     OR genre like :include{x}
     OR year like :include{x}
@@ -48,7 +48,7 @@ audio_include_string = (
 
 audio_exclude_string = (
     lambda x: f"""and (
-    filename not like :exclude{x}
+    path not like :exclude{x}
     OR mood not like :exclude{x}
     OR genre not like :exclude{x}
     OR year not like :exclude{x}
@@ -127,59 +127,73 @@ def parse_tags(mutagen: Dict, tinytag: Dict):
 
 
 def extract_metadata(args, f):
-    try:
-        probe = json.loads(
-            cmd("ffprobe", "-loglevel", "quiet", "-print_format", "json=compact=1", "-show_entries", "format", f).stdout
-        )
-    except (KeyboardInterrupt, SystemExit):
-        exit(130)
-    except:
-        print(f"Failed reading {f}", file=sys.stderr)
-        cmd("trash-put", f, strict=False)
-        return
-    if not "format" in probe:
-        print(f"Failed reading format {f}", file=sys.stderr)
-        print(probe)
-        return
-
     stat = os.stat(f)
     blocks_allocated = stat.st_blocks * 512
 
-    probe["format"].pop("tags", None)
-    probe["format"].pop("format_long_name", None)
-    probe["format"].pop("nb_programs", None)
-    probe["format"].pop("nb_streams", None)
-    probe["format"].pop("probe_score", None)
-    probe["format"].pop("start_time", None)
-    probe["format"].pop("probe_score", None)
-    probe["format"].pop("probe_score", None)
-
-    if "size" in probe["format"]:
-        probe["format"]["size"] = int(probe["format"]["size"])
-
-    if blocks_allocated == 0:
+    if stat.st_size == 0:
         sparseness = 0
     else:
-        sparseness = probe["format"]["size"] / blocks_allocated
+        sparseness = blocks_allocated / stat.st_size
 
     media = dict(
-        **probe["format"],
-        # streams=probe["streams"],
+        path=f,
+        size=stat.st_size,
         sparseness=sparseness,
         time_created=datetime.fromtimestamp(stat.st_ctime),
         time_modified=datetime.fromtimestamp(stat.st_mtime),
     )
 
-    media = {**media, "provenance": get_provenance(f)}
+    if args.db_type == "f":
+        media = {**media, "is_dir": os.path.isdir(f)}
 
-    if not args.audio:
+    if args.db_type in ["a", "v"]:
+        try:
+            probe = json.loads(
+                cmd(
+                    "ffprobe", "-loglevel", "quiet", "-print_format", "json=compact=1", "-show_entries", "format", f
+                ).stdout
+            )
+        except (KeyboardInterrupt, SystemExit):
+            exit(130)
+        except:
+            print(f"Failed reading {f}", file=sys.stderr)
+            cmd("trash-put", f, strict=False)
+            return
+        if not "format" in probe:
+            print(f"Failed reading format {f}", file=sys.stderr)
+            print(probe)
+            return
+
+        assert stat.st_size == int(probe["format"]["size"])
+
+
+        probe["format"].pop("size", None)
+        probe["format"].pop("tags", None)
+        probe["format"].pop("format_long_name", None)
+        probe["format"].pop("nb_programs", None)
+        probe["format"].pop("nb_streams", None)
+        probe["format"].pop("probe_score", None)
+        probe["format"].pop("start_time", None)
+        probe["format"].pop("probe_score", None)
+        probe["format"].pop("probe_score", None)
+
+        raise ## check probe["streams"]
+
+        media = {
+            **media,
+            **probe["format"],
+            # **streams=probe["streams"],
+            "provenance": get_provenance(f),
+        }
+
+    if args.db_type == "v":
         try:
             has_sub = is_file_with_subtitle(f)
         except:
             has_sub = False
         media = {**media, "has_sub": has_sub}
 
-    if args.audio:
+    if args.db_type == "a":
         media = {**media, "listen_count": 0}
 
         try:
@@ -218,9 +232,11 @@ def extract_chunk(args, l):
     )
 
     DF = pd.DataFrame(list(filter(None, metadata)))
-    if args.audio:
-        if DF.get(["year"]) is not None:
-            DF.year = DF.year.astype(str)
+
+    # if args.db_type == 'a':  # might be dead code
+    #     if DF.get(["year"]) is not None:
+    #         DF.year = DF.year.astype(str)
+
     DF.apply(pd.to_numeric, errors="ignore").convert_dtypes().to_sql(  # type: ignore
         "media",
         con=args.con,
@@ -232,46 +248,49 @@ def extract_chunk(args, l):
 
 
 def find_new_files(args, path):
-    video_files = get_media_files(path, args.audio)
-    new_files = set(video_files)
+    if args.db_type == "a":
+        scanned_files = get_media_files(path, audio=True)
+    elif args.db_type == "v":
+        scanned_files = get_media_files(path)
+    elif args.db_type == "f":
+        scanned_files = [p.path for p in os.scandir(path)]
+    new_files = set(scanned_files)
 
     try:
         existing = set(
-            map(
-                lambda x: x["filename"],
-                fetchall_dict(args.con, f"select filename from media where filename like '{path}%'"),
-            )
+            map(lambda x: x["path"], fetchall_dict(args.con, f"select path from media where path like '{path}%'"))
         )
     except:
-        video_files = list(new_files)
+        scanned_files = list(new_files)
     else:
-        video_files = list(new_files - existing)
+        scanned_files = list(new_files - existing)
 
         deleted_files = list(existing - new_files)
         remove_media(args, deleted_files)
 
-        args.con.execute("DELETE from media where filename like '%/keep/%'")
+        if args.db_type == "v":
+            args.con.execute("DELETE from media where path like '%/keep/%'")
         args.con.commit()
 
-    return video_files
+    return scanned_files
 
 
 def scan_path(args, path):
     path = Path(path).resolve()
     print(f"{path} : Scanning...")
 
-    video_files = find_new_files(args, path)
+    new_files = find_new_files(args, path)
 
-    if len(video_files) > 0:
-        print(f"Adding {len(video_files)} new media")
-        log.debug(video_files)
+    if len(new_files) > 0:
+        print(f"Adding {len(new_files)} new media")
+        log.debug(new_files)
 
         batch_count = SQLITE_PARAM_LIMIT // 100
-        chunks_count = math.ceil(len(video_files) / batch_count)
-        df_chunked = chunks(video_files, batch_count)
+        chunks_count = math.ceil(len(new_files) / batch_count)
+        df_chunked = chunks(new_files, batch_count)
         for idx, l in enumerate(df_chunked):
-            percent = ((batch_count * idx) + len(l)) / len(video_files) * 100
-            print(f"Extracting metadata: {percent:3.1f}% (chunk {idx + 1} of {chunks_count})")
+            percent = ((batch_count * idx) + len(l)) / len(new_files) * 100
+            print(f"[{path}] Extracting metadata {percent:3.1f}% (chunk {idx + 1} of {chunks_count})")
             extract_chunk(args, l)
 
             if args.subtitle:
@@ -291,8 +310,14 @@ def extractor(args):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("db", nargs="?")
-    parser.add_argument("paths", nargs="*")
-    parser.add_argument("-a", "--audio", action="store_true")
+    parser.add_argument("paths", nargs="+")
+
+    db_type = parser.add_mutually_exclusive_group()
+    db_type.add_argument("-a", "--audio", action="store_const", dest="db_type", const="a")
+    db_type.add_argument("-fs", "--filesystem", action="store_const", dest="db_type", const="f")
+    db_type.add_argument("--video", action="store_const", dest="db_type", const="v")
+    parser.set_defaults(db_type="v")
+
     parser.add_argument("-s", "--subtitle", action="store_true")
     parser.add_argument("-yt", "--youtube-only", action="store_true")
     parser.add_argument("-sl", "--subliminal-only", action="store_true")
@@ -301,10 +326,14 @@ def main():
     args = parser.parse_args()
 
     if not args.db:
-        if args.audio:
+        if args.db_type == "a":
             args.db = "audio.db"
-        else:
+        elif args.db_type == "f":
+            args.db = "fs.db"
+        elif args.db_type == "v":
             args.db = "video.db"
+        else:
+            raise Exception("db_type unknown")
 
     if args.force_rescan:
         Path(args.db).unlink(missing_ok=True)

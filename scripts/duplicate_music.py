@@ -3,7 +3,7 @@ import geopandas as gpd
 DF = gpd.read_file("audio2.db")
 
 DF["NUQ"] = (
-    DF.filename.replace(r"\s", "", regex=True)
+    DF.path.replace(r"\s", "", regex=True)
     .replace(r"\-|\_|\]|\[", "", regex=True)
     .replace(r"\.\d\d\..*$", ".", regex=True)
     .replace(r"\..*$", "", regex=True)
