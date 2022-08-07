@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "xklb"
-version = "1.12.024"
+version = "1.12.025"
 description = "xk library"
 authors = ["Jacob Chapman <7908073+chapmanjacobd@users.noreply.github.com>"]
 readme = "README.md"
@@ -38,5 +38,5 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
 lb = 'xklb.lb:main'
-lt = 'xklb.lb:lt'
-wt = 'xklb.lb:wt'
+lt = 'xklb.lb:listen'
+wt = 'xklb.lb:watch'

@@ -638,4 +638,11 @@ export interface Playlist {
     requested_entries: null
 }
 
+
+
+
+list the undownloaded in a log (combine ytURE with retry functionality
+
+break on existing
+use sqlite data to create archive log (combine with actual archive log) in temp file to feed into yt-dlp
 """
