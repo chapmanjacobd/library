@@ -8,21 +8,31 @@ Requires ffmpeg
 pip install xklb
 ```
 
-### Step 1. Extract Metadata
+### Quick Start
+
+#### Step 1. Extract Metadata
 
     lb extract tv.db ./video/folder/
 
     lb extract --audio podcasts.db ./your/music/or/podcasts/folder/
 
-### Step 2. Watch / Listen
+#### Step 2. Watch / Listen
 
-    wt --delete tv.db  # delete file after viewing
+    wt tv.db  # the default post-action is to do nothing after viewing
 
-    lt --action=ask podcasts.db  # ask to delete or not after each file
+    wt --post-action delete tv.db  # delete file after viewing
+
+    lt --post-action=ask podcasts.db  # ask to delete or not after each file
+
 
 ### Repeat!
 
-Implementing repeat / auto-play is left to the end user. I recommend something like this if you use fish shell:
+    lt -u random         # listen to ONE random song
+    lt --repeat 5        # listen to FIVE songs
+    lt -l inf            # listen to songs indefinitely
+    lt -s infinite       # listen to songs from the band infinite
+
+If that's confusing you could always use your shell:
 
 ```fish
 function repeat
@@ -31,24 +41,15 @@ function repeat
     end
 end
 
-repeat lt audio.db
+repeat lt -s finite  # listen to finite songs infinitely
 ```
 
-or
+### Example Usage
 
-```fish
-function repeatn --description 'repeatn <count> <command>'
-    for i in (seq 1 $argv[1])
-        eval $argv[2..-1]
-    end
-end
-
-repeat 5 lt audio.db
-```
 
 #### Watch longest videos
 
-    wt tv.db --sort 'duration desc'
+    wt tv.db --sort duration desc
 
 #### Watch specific video series in order
 
@@ -66,11 +67,18 @@ repeat 5 lt audio.db
     wt -u priority -w sub=0  # for exercising and watching YouTube
     wt -u duration --print -s 'video title'  # when I want to check if I've downloaded something before
 
-## Searching filesystem
+### Advanced Features
+
+If you want to specify more than one directory you will need to make the db file explicit:
+
+    $ lb extract --filesystem fs.db one/ two/
+
+
+### Searching filesystem
 
 You can also use `lb` for any files:
 
-    $ lb extract -fs -f ~/d/41_8bit/
+    $ lb extract -fs ~/d/41_8bit/
 
     $ lb fs fs.db -p a -s mario luigi
     ╒═══════════╤══════════════╤══════════╤═════════╕
@@ -79,7 +87,7 @@ You can also use `lb` for any files:
     │ Aggregate │            1 │ 215.0 MB │       7 │
     ╘═══════════╧══════════════╧══════════╧═════════╛
 
-    $ lb fs fs.db -w is_dir=0 -u 'size desc' -p -s mario -s luigi -s jpg
+    $ lb fs -p -s mario -s luigi -s jpg -w is_dir=0 -u 'size desc'
     ╒═══════════════════════════════════════╤══════════════╤═════════╕
     │ path                                  │   sparseness │ size    │
     ╞═══════════════════════════════════════╪══════════════╪═════════╡
@@ -91,7 +99,3 @@ You can also use `lb` for any files:
     │ ario & Luigi - Superstar Saga (USA,   │              │         │
     │ Australia).jpg                        │              │         │
     ╘═══════════════════════════════════════╧══════════════╧═════════╛
-
-If you want to specify more than one directory you will need to make the db file explicit:
-
-    $ lb extract --filesystem fs.db one/ two/
