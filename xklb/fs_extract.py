@@ -18,10 +18,10 @@ from xklb.utils import (
     chunks,
     cmd,
     combine,
+    filter_None,
     get_media_files,
     log,
     remove_media,
-    remove_None,
     safe_unpack,
 )
 
@@ -178,13 +178,14 @@ def extract_metadata(args, f):
         probe["format"].pop("probe_score", None)
         probe["format"].pop("probe_score", None)
 
-        raise  ## check probe["streams"]
+        # raise  ## check probe["streams"]
 
         media = {
             **media,
             **probe["format"],
             # **streams=probe["streams"],
             "provenance": get_provenance(f),
+            "play_count": 0,
         }
 
     if args.db_type == "v":
@@ -195,15 +196,13 @@ def extract_metadata(args, f):
         media = {**media, "has_sub": has_sub}
 
     if args.db_type == "a":
-        media = {**media, "listen_count": 0}
-
         try:
-            tiny_tags = remove_None(TinyTag.get(f).as_dict())
+            tiny_tags = filter_None(TinyTag.get(f).as_dict())
         except:
             tiny_tags = dict()
 
         try:
-            mutagen_tags = remove_None(mutagen.File(f).tags.as_dict())
+            mutagen_tags = filter_None(mutagen.File(f).tags.as_dict())
         except:
             mutagen_tags = dict()
 

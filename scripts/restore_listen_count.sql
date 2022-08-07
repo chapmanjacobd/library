@@ -1,9 +1,9 @@
 attach '/home/xk/lb/audio.db' AS audio;
 attach '/home/xk/lb/audio.db.bak' AS audiobak;
 UPDATE
-    audio.media SET listen_count = (
+    audio.media SET play_count = (
         SELECT
-            listen_count
+            play_count
         FROM
             audiobak.media
         WHERE
@@ -17,5 +17,5 @@ WHERE
             audiobak.media
         WHERE
             audio.media.path = audiobak.media.path
-            AND audiobak.media.listen_count > 0
+            AND audiobak.media.play_count > 0
     );
