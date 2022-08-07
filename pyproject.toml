@@ -21,6 +21,7 @@ natsort = "^8.1.0"
 protobuf = "<4"
 trash-cli = "^0.22.4"
 humanize = "^4.2.3"
+ffmpeg-python = "^0.2.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"

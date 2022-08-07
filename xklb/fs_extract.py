@@ -1,18 +1,18 @@
 import argparse
-import json
 import math
 import os
 import sys
 from pathlib import Path
 from typing import Dict
 
+import ffmpeg
 import mutagen
 import pandas as pd
 from joblib import Parallel, delayed
 from tinytag import TinyTag
 
 from xklb.db import fetchall_dict, sqlite_con
-from xklb.subtitle import get_subtitle, is_file_with_subtitle, youtube_dl_id
+from xklb.subtitle import get_subtitle, has_external_subtitle, youtube_dl_id
 from xklb.utils import (
     SQLITE_PARAM_LIMIT,
     chunks,
@@ -150,50 +150,58 @@ def extract_metadata(args, f):
 
     if args.db_type in ["a", "v"]:
         try:
-            probe = json.loads(
-                cmd(
-                    "ffprobe", "-loglevel", "quiet", "-print_format", "json=compact=1", "-show_entries", "format", f
-                ).stdout
-            )
+            probe = ffmpeg.probe(f)
         except (KeyboardInterrupt, SystemExit):
             exit(130)
         except:
             print(f"Failed reading {f}", file=sys.stderr)
-            cmd("trash-put", f, strict=False)
+            if args.delete_unplayable:
+                cmd("trash-put", f, strict=False)
             return
+
         if not "format" in probe:
             print(f"Failed reading format {f}", file=sys.stderr)
             print(probe)
             return
 
-        assert stat.st_size == int(probe["format"]["size"])
-
         probe["format"].pop("size", None)
         probe["format"].pop("tags", None)
+        probe["format"].pop("bit_rate", None)
+        probe["format"].pop("format_name", None)
         probe["format"].pop("format_long_name", None)
         probe["format"].pop("nb_programs", None)
         probe["format"].pop("nb_streams", None)
         probe["format"].pop("probe_score", None)
         probe["format"].pop("start_time", None)
-        probe["format"].pop("probe_score", None)
-        probe["format"].pop("probe_score", None)
 
-        # raise  ## check probe["streams"]
+        codec_types = [s.get('codec_type') for s in probe["streams"]]
+        tags = [s.get('tags') for s in probe["streams"] if s.get('tags') is not None]
+        languages = combine([t.get('language') for t in tags if t.get('language') not in [None, 'und', 'unk']])
+
+        video_count = sum([1 for s in codec_types if s == 'video'])
+        audio_count = sum([1 for s in codec_types if s == 'audio'])
+        attachment_count = sum([1 for s in codec_types if s == 'attachment'])
+        subtitle_count = sum([1 for s in codec_types if s == 'subtitle'])
+
+        if subtitle_count == 0 and args.db_type == "v":
+            try:
+                has_sub = has_external_subtitle(f)
+            except:
+                has_sub = False
+            if has_sub:
+                subtitle_count = 1
 
         media = {
             **media,
             **probe["format"],
-            # **streams=probe["streams"],
+            "languages": languages,
+            "video_count": video_count,
+            "audio_count": audio_count,
+            "subtitle_count": subtitle_count,
+            "attachment_count": attachment_count,
             "provenance": get_provenance(f),
             "play_count": 0,
         }
-
-    if args.db_type == "v":
-        try:
-            has_sub = is_file_with_subtitle(f)
-        except:
-            has_sub = False
-        media = {**media, "has_sub": has_sub}
 
     if args.db_type == "a":
         try:
@@ -253,9 +261,11 @@ def find_new_files(args, path):
     elif args.db_type == "v":
         scanned_files = get_media_files(path)
     elif args.db_type == "f":
-        scanned_files = [
-            str(p) for p in Path(path).resolve().rglob("*")
-        ]  # thanks to these people for making rglob fast https://bugs.python.org/issue26032
+        # thanks to these people for making rglob fast https://bugs.python.org/issue26032
+        scanned_files = [str(p) for p in Path(path).resolve().rglob("*")]
+    else:
+        raise Exception(f'fs_extract for db_type {args.db_type} not implemented')
+
     new_files = set(scanned_files)
 
     try:
@@ -324,6 +334,7 @@ def main():
     parser.add_argument("-yt", "--youtube-only", action="store_true")
     parser.add_argument("-sl", "--subliminal-only", action="store_true")
     parser.add_argument("-f", "--force-rescan", action="store_true")
+    parser.add_argument("-d", "--delete-unplayable", action="store_true")
     parser.add_argument("-v", "--verbose", action="count", default=0)
     args = parser.parse_args()
 
@@ -335,7 +346,7 @@ def main():
         elif args.db_type == "v":
             args.db = "video.db"
         else:
-            raise Exception("db_type unknown")
+            raise Exception(f'fs_extract for db_type {args.db_type} not implemented')
 
     if args.force_rescan:
         Path(args.db).unlink(missing_ok=True)

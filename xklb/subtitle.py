@@ -5,7 +5,6 @@ from pathlib import Path
 from shlex import quote
 
 from joblib import Parallel, delayed
-from rich import inspect
 
 from xklb.utils import cmd, get_media_files
 
@@ -24,9 +23,7 @@ def youtube_dl_id(file) -> str:
     return list(filter(None, [*yt_ids[0]]))[0]
 
 
-def is_file_with_subtitle(file):
-    SUBTITLE_FORMATS = "vtt|srt|ssa|ass|sub|idx|psb|smi|ssf|usf"
-
+def has_internal_subtitle(file):
     internal_sub = cmd(
         f"ffmpeg -hide_banner -nostdin -i {quote(str(file))} -c copy -map 0:s:0 -frames:s 1 -f null - -v 0",
         strict=False,
@@ -35,6 +32,8 @@ def is_file_with_subtitle(file):
     if internal_sub == 0:
         return True
 
+def has_external_subtitle(file):
+    SUBTITLE_FORMATS = "vtt|srt|ssa|ass|sub|idx|psb|smi|ssf|usf"
     file = Path(file)
 
     if any(
@@ -61,7 +60,7 @@ def is_file_with_subtitle(file):
 
 def get_subtitle(args, file):
     try:
-        if is_file_with_subtitle(file):
+        if has_internal_subtitle(file) or has_external_subtitle(file):
             return
     except:
         pass
