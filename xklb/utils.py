@@ -323,8 +323,8 @@ def get_ordinal_media(args, path: Path):
     return similar_videos[0]
 
 
-def remove_None(kwargs):
-    return {k: v for k, v in kwargs.items() if v is not None}
+def filter_None(kwargs):
+    return {k: v for k, v in kwargs.items() if v}
 
 
 _RE_COMBINE_WHITESPACE = re.compile(r"\s+")
@@ -353,3 +353,12 @@ def safe_unpack(*list_, idx=0):
         return list_[idx]
     except IndexError:
         return None
+
+
+class argparse_dict(argparse.Action):
+    def __call__(self, parser, args, values, option_string=None):
+        try:
+            d = dict(map(lambda x: x.split("="), values))
+        except ValueError as ex:
+            raise argparse.ArgumentError(self, f'Could not parse argument "{values}" as k1=1 k2=2 format')
+        setattr(args, self.dest, d)

@@ -19,7 +19,7 @@ from rich.prompt import Confirm
 from tabulate import tabulate
 
 from xklb.db import sqlite_con
-from xklb.extract import audio_exclude_string, audio_include_string
+from xklb.fs_extract import audio_exclude_string, audio_include_string
 from xklb.subtitle import is_file_with_subtitle
 from xklb.utils import (
     CAST_NOW_PLAYING,
@@ -28,6 +28,7 @@ from xklb.utils import (
     Subcommand,
     cmd,
     cmd_interactive,
+    filter_None,
     get_ip_of_chromecast,
     get_ordinal_media,
     log,
@@ -95,7 +96,7 @@ def parse_args(default_chromecast=""):
         args.limit = None
 
     if args.sort:
-        args.sort = ' '.join(args.sort)
+        args.sort = " ".join(args.sort)
 
     if args.duration:
         SEC_TO_M = 60
@@ -150,7 +151,7 @@ def parse_args(default_chromecast=""):
     if args.chromecast:
         args.cc_ip = get_ip_of_chromecast(args.chromecast_device)
 
-    log.info({k: v for k, v in args.__dict__.items() if v})
+    log.info(filter_None(args.__dict__))
 
     return args
 
@@ -200,8 +201,8 @@ def delete_media(args, media_file):
 
 
 def post_act(args, media_file):
-    if args.action == Subcommand.listen:
-        args.con.execute("update media set listen_count = listen_count +1 where path = ?", (str(media_file),))
+    if args.action in [Subcommand.listen, Subcommand.watch]:
+        args.con.execute("update media set play_count = play_count +1 where path = ?", (str(media_file),))
         args.con.commit()
 
     if args.post_action == "keep":
@@ -415,9 +416,9 @@ def construct_query(args):
     FROM media
     WHERE 1=1
     {args.sql_filter}
-    {'and listen_count = 0' if args.action == Subcommand.listen and not args.include else ''}
+    {'and play_count = 0' if args.action == Subcommand.listen and not args.include else ''}
     ORDER BY 1=1
-        {', listen_count asc nulls first' if args.action == Subcommand.listen else ''}
+        {', play_count asc nulls first' if args.action == Subcommand.listen else ''}
         {',' + args.sort if args.sort else ''}
         {', path' if args.print or args.include or args.play_in_order > 0 else ''}
         {', seconds_per_byte ASC' if args.action != Subcommand.filesystem else ''}
