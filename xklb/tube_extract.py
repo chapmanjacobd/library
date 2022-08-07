@@ -79,11 +79,22 @@ def tube_add(args):
     args.url
 
     """
+    entries -> media
+    url -> path
+
+    playlists -> playlists
+
     list the undownloaded in a log (combine ytURE with retry functionality
+
+    mpv --script-opts=ytdl_hook-try_ytdl_first=yes
 
     break on existing
     use sqlite data to create archive log (combine with actual archive log) in temp file to feed into yt-dlp
     """
+
+    if 'download_archive' in args.yt_dlp_options:
+        pass # combines specified dlarchive with sqlite data instead of default location dlarchive
+    # f'{(video.extractor_key or video.ie_key).lower()} {video.id}'
 
 
 def fetch_playlist(ydl_opts, playlist):
@@ -162,6 +173,8 @@ if __name__ == "__main__":
         end = timer()
         print(end - start)
 
+
+
     # DF = pd.DataFrame(list(filter(None, metadata)))
 
     # DF.apply(pd.to_numeric, errors="ignore").convert_dtypes().to_sql(  # type: ignore
@@ -174,9 +187,18 @@ if __name__ == "__main__":
     # )
 
 # play_count
-# wadsworth
 
 """
+
+    const countWatched = `alasql('select value count(distinct id) from watched')`
+    const countTotal = `alasql('select value count(distinct id) from entries')`
+
+how much watched statistics
+is_deleted
+
+
+
+
 Alpine.store('playlists', [])
 Alpine.store('entries', [])
 
@@ -185,204 +207,29 @@ Alpine.store('entries', [])
       ${playlistWhere}
       group by playlists.original_url
 
-
-
-    const data = await fetch(`${API_domain}?playlist=` + playlist)
-      .then(response => response.json())
-      .then((data: Playlist) => {
-        return data
-      }).catch((err) => {
-        app.log(`Could not load ${playlist}`);
-        cleanup()
-        throw err
-      })
-
-    // data.duration = data.entries!.reduce((p, x) => p + x.duration, 0)
-
     app.log(`Got ${data.entries!.length} videos from playlist "${data.title}"`)
-
-    if ((alasql('select value count(*) from entries')) > 0)
-      alasql('DELETE from entries where original_url = ?', data.entries![0].original_url)
-
-    alasql('INSERT INTO entries SELECT * FROM ?', [data.entries]);
 
     alasql(`SELECT ie_key, id INTO watched from entries
           where title in (select _ from ?)`, [["[Deleted video]", "[Private video]"]]
     )
-
-    delete data.entries
     alasql('DELETE from playlists where webpage_url = ?', data.webpage_url)
-    alasql('INSERT INTO playlists SELECT * FROM ?', [[data]])
 
-    app.cleanUpDuplicates('watched')
-
-    try {
       alasql('create index entries_id_idx on entries (id)')
       alasql('create index entries_iekey_id_idx on entries (ie_key,id)')
       alasql('create index entries_title_idx on entries (title)')
 
-    } catch (error) {
-      console.log(error);
-    }
-
-    cleanup()
-  },
-  timeshift: function (videos: Entree[]): Entree[] {
-    if (videos[0].start) return videos;
-
-    const is_wadsworth = Alpine.store('sett').wadsworth
-    const is_shuffle = Alpine.store('sett').shuffleMode > 0
-
-    return videos.map(v => {
-      let start = 0
-      let end = v.duration
-
-      if (is_wadsworth) start = Math.round(end * 0.3)
-      if (is_shuffle) end = start + Number(Alpine.store('sett').shuffleMode)
-
-      const newDuration = end - start
-      return { ...v, duration: newDuration, start, end }
-    })
-  },
-  playVideo: function (v: Entree) {
-    app.markVideoWatched(v)
-    Alpine.store('sett').selectedVideo = app.timeshift([v])[0]
-    Alpine.nextTick(() => { app.refreshView() })
-  },
-  automaticPlay: function () {
-    const timer = (s: number) => new Promise(res => setTimeout(res, s * 1000))
-
-    async function run() {
-      const videos = app.timeshift(Alpine.store('entries'))
-
-      for (let v of videos) {
-        const oldCount = videos.length
-        if (Alpine.store('sett').autoplay) {
-
-          if (v.duration && v.duration > 1) {
-            app.playVideo(v)
-            await timer(v.duration)
-          }
-
-          const newCount = Alpine.store('entries').length
-          if (newCount > oldCount) {
-            run()
-            break;
-          }
-
-        }
-      }
-    }
-
-    app.log('Starting autoplay')
-    run();
-  },
-  stopAutomaticPlay: function () {
-    app.log('Stopping autoplay')
-    Alpine.store('sett').autoplay = false
-  },
-  playRandom: function () {
-    if (Alpine.store('sett').autoplay)
-      app.stopAutomaticPlay();
-    const v = shuffle(Alpine.store('entries'))
-    app.playVideo(v)
-  },
-  exportCSVPlaylists: function () {
-    alasql("SELECT * INTO CSV('playlists.csv',{headers:true}) FROM ?", [Alpine.store('playlists')])
-    app.log('Playlist CSV Exported')
-  },
-  exportCSVEntries: function () {
-    alasql("SELECT * INTO CSV('videos.csv',{headers:true}) FROM ?", [Alpine.store('entries')])
-    app.log('Videos CSV Exported')
-  },
   isVideoWatched: function (v: Entree) {
     return alasql('select value FROM watched where ie_key=? and id=?', [v.ie_key, v.id])?.length > 0
   },
-  markVideoWatched: function (v: Entree) {
-    // if (app.isVideoWatched(v)) return;
-    app.log(`Marked as watched ${v.title} [${v.id}] of ${v.original_url}`)
-    alasql('INSERT INTO watched SELECT * FROM ?', [[{ ie_key: v.ie_key, id: v.id }]])
-  },
-  markVideoUnwatched: function (v: Entree) {
-    alasql('DELETE FROM watched where ie_key=? and id=?', [v.ie_key, v.id])
-    app.log(`Marked ${v.ie_key} video ${v.id} as unwatched`)
-  },
-  cleanUpDuplicates: function (table: string) {
-    const d = alasql(`select distinct * from ${table}`)
-    alasql(`delete from ${table}`)
-    alasql(`insert into ${table} (ie_key, id) select ie_key, id from ?`, [d])
-  },
+
+  ie_key
+
   deletePlaylist: function (pl: Playlist) {
     alasql('delete from playlists where original_url = ?', [pl.original_url]);
     alasql('delete from entries where original_url = ?', [pl.original_url]);
-    app.refreshView()
     app.log(`Deleted playlist ${pl.original_url}`)
-  },
-  renderVideo: function (v: Entree) {
-    function wrapPlayer(player: string) {
-      return `<div style="height:50vh">${player}</div>`
-    }
-    let rhtml = ''
-    if (v.ie_key == 'Youtube') rhtml = wrapPlayer(youtube(v))
-    if (v.ie_key == 'Vimeo') rhtml = wrapPlayer(vimeo(v))
 
-    if (rhtml !== '') app.markVideoWatched(v)
 
-    return rhtml
-  },
-  renderPlaylists: function () {
-    const countWatched = `alasql('select value count(distinct id) from watched')`
-    const countTotal = `alasql('select value count(distinct id) from entries')`
-
-    const tableHead = `<thead>
-  <tr>
-    <td colspan="2">
-        <div>
-          <span>Playlists</span>
-        </div>
-    </td>
-    <td colspan="2">
-      <p style="float:right;"
-        x-text="'All playlists: '
-                  + app.secondsToFriendlyTime($store.entries.reduce((p,x) => p + (x.duration ?? 0), 0)) + ' ' + ($store.sett.hideWatched ? 'remaining' : 'total')">
-      </p>
-    </td>
-  </tr>
-  <tr>
-    <td>Title</td>
-    <td title="Playlist Author">Channel</td>
-    <td>Delete</td>
-    <td>Duration</td>
-  </tr>
-</thead>`
-
-    const plVideosCount = `$store.entries.filter(x=> x.original_url == pl.original_url).length`
-    const playlistRow = `<tr>
-  <td><a :href="pl.webpage_url" x-text="pl.title"></a></td>
-  <td><a :href="pl.channel_url" x-text="pl.uploader"></a></td>
-  <td>
-    <span @click="app.deletePlaylist(pl)" style="cursor: pointer;" class="material-icons-outlined">delete</span>
-  </td>
-  <td>
-    <p x-text="
-          app.secondsToFriendlyTime(pl.duration) + ' ' + ($store.sett.hideWatched ? 'remaining' : 'total')
-      "></p>
-  </td>
-</tr>`
-
-    const tableFoot = html`<template x-if="$store.playlists > 0">
-  <tfoot>
-    <tr>
-      <td colspan="100">
-        <div style="display: flex; justify-content: space-between; margin: 0 .5rem;"></div>
-      </td>
-    </tr>
-
-  </tfoot>
-</template>`
-    return `<table>
-  ${tableHead}
-  <tbody>
     <template x-for="(pl, pindex) in $store.playlists" :key="pindex">
       ${playlistRow}
     </template>
@@ -459,59 +306,8 @@ Alpine.store('entries', [])
   ${tableFoot}
 </table>`
   },
-  createDB: function (dbname: string) {
-    dbname = dbname + 'DB'
 
-    alasql(`CREATE localStorage DATABASE IF NOT EXISTS ${dbname}`)
-    alasql(`ATTACH localStorage DATABASE ${dbname}`)
-    alasql(`USE DATABASE ${dbname}`)
-    alasql('SET AUTOCOMMIT ON')
 
-    alasql('CREATE TABLE IF NOT EXISTS entries');
-    alasql('CREATE TABLE IF NOT EXISTS playlists');
-    alasql('CREATE TABLE IF NOT EXISTS watched');
-  },
-  switchDB: function (dbname: string) {
-    const oldDB = alasql.databases.dbo.databaseid
-    alasql(`DETACH DATABASE ${oldDB}`)
-    alasql(`ATTACH localStorage DATABASE ${dbname}`)
-    app.refreshView()
-  },
-  importDB: async function (event: Event) {
-    const newdbname = event.target.files[0].name.split('.')[0].replace('(', '_').replace(')', '')
-
-    if (Object.keys(alasql.databases).includes(newdbname))
-      throw new Error("New DB has the same name as existing. Delete existing DB first or rename the file");
-
-    app.createDB(newdbname)
-    let data = await fileToJSON(event)
-    alasql.tables = data;
-    app.refreshView()
-  },
-  exportDB: function (dbname: string = alasql.databases.dbo.databaseid) {
-    downloadObjectAsJson(alasql.tables, dbname)
-  },
-  deleteDB: function (dbname: string = alasql.databases.dbo.databaseid) {
-    alasql('drop table entries')
-    alasql('drop table playlists')
-    alasql(`DETACH database ${dbname}`)
-    alasql(`drop localStorage database ${dbname}`)
-    location.reload()
-  },
-  randimal,
-  onomonopia,
-};
-
-app.createDB('Runtime')
-
-if (devMode) {
-  // app.fetchPlaylist('https://www.youtube.com/playlist?list=PLQhhRxYCuOXX4Ru03gUXURslatUNxk7Pm')
-}
-
-Alpine.start()
-app.refreshView()
-
-if (!devMode && Math.random() < 0.05) fullstory();
 
 
 Entree {

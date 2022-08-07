@@ -6,7 +6,7 @@ from xklb.fs_extract import main as extract
 from xklb.tube_actions import tube_listen, tube_watch
 from xklb.tube_extract import tube_add
 from xklb.utils import Subcommand, log
-
+from xklb.subtitle import main as subtitle
 
 def lb(args=None):
     parser = argparse.ArgumentParser(add_help=False)
@@ -31,6 +31,9 @@ def lb(args=None):
 
     tl = subparsers.add_parser(Subcommand.tubelisten, aliases=["tl"], add_help=False)
     tl.set_defaults(func=tube_listen)
+
+    sub = subparsers.add_parser("subtitle", aliases=["sub"], add_help=False)
+    sub.set_defaults(func=subtitle)
 
     args, _unk = parser.parse_known_args(args)
     del sys.argv[1]

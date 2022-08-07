@@ -1,6 +1,5 @@
 import argparse
 import csv
-import json
 import math
 import os
 import shutil
@@ -8,10 +7,10 @@ import subprocess
 import textwrap
 from datetime import datetime, timedelta
 from pathlib import Path
-from shlex import quote
 from shutil import which
 from time import sleep
 
+import ffmpeg
 import humanize
 import pandas as pd
 import sqlite_utils
@@ -20,7 +19,6 @@ from tabulate import tabulate
 
 from xklb.db import sqlite_con
 from xklb.fs_extract import audio_exclude_string, audio_include_string
-from xklb.subtitle import is_file_with_subtitle
 from xklb.utils import (
     CAST_NOW_PLAYING,
     FAKE_SUBTITLE,
@@ -68,6 +66,9 @@ def parse_args(default_chromecast=""):
     parser.add_argument("--skip", "-S", help="Offset")
 
     parser.add_argument("--time-limit", "-t", type=int)
+    parser.add_argument("--start", "-vs", help='Set the time to skip from the start of the media or use the magic word "wadsworth"')
+    parser.add_argument("--end", "-ve", help='Set the time to skip from the end of the media or use the magic word "dawsworth"')
+
     parser.add_argument("--player", "-player", nargs="*")
     parser.add_argument("--mpv-socket", default="/tmp/mpv_socket")
 
@@ -156,25 +157,6 @@ def parse_args(default_chromecast=""):
     return args
 
 
-def has_video(file_path):
-    return (
-        cmd(
-            f"ffprobe -show_streams -select_streams v -loglevel error -i {quote(str(file_path))} | wc -l",
-            shell=True,
-        ).stdout
-        > "0"
-    )
-
-
-def has_audio(file_path):
-    return (
-        cmd(
-            f"ffprobe -show_streams -select_streams a -loglevel error -i {quote(str(file_path))} | wc -l", shell=True
-        ).stdout
-        > "0"
-    )
-
-
 def transcode(next_video):
     temp_video = cmd("mktemp", "--suffix=.mkv", "--dry-run").stdout.strip()
     shutil.move(next_video, temp_video)
@@ -220,20 +202,7 @@ def post_act(args, media_file):
 
 
 def externalize_subtitle(media_file):
-    subs = json.loads(
-        cmd(
-            "ffprobe",
-            "-loglevel",
-            "error",
-            "-select_streams",
-            "s",
-            "-show_entries",
-            "stream",
-            "-of",
-            "json",
-            media_file,
-        ).stdout
-    )["streams"]
+    subs = ffmpeg.probe(media_file)["streams"]
 
     subtitles_file = None
     if len(subs) > 0:
@@ -324,21 +293,26 @@ def play(args, media: pd.DataFrame):
                 )
             elif args.action == Subcommand.watch:
                 player.extend(["--fs", "--force-window=yes", "--really-quiet"])
+
+            if args.start:
+                if args.start == 'wadsworth':
+                    player.extend(["--start", m.duration * 0.3])
+                else:
+                    player.extend(["--start", args.start])
+            if args.end:
+                if args.end == 'dawsworth':
+                    player.extend(["--end", m.duration * 0.65])
+                elif '+' in args.end:
+                    player.extend(["--end", (m.duration * 0.3) + int(args.end)])
+                else:
+                    player.extend(["--end", args.end])
+
         else:
             player = ["xdg-open"]
 
         if args.action == Subcommand.watch:
-            if not has_video(media_file):
-                print("[watch]: skipping non-video file", media_file)
-                continue
-
             print(media_file)
-
         elif args.action == Subcommand.listen:
-            if not has_audio(media_file):
-                print("[listen]: skipping non-audio file", media_file)
-                continue
-
             print(cmd("ffprobe", "-hide_banner", "-loglevel", "info", media_file).stderr)
 
         if args.transcode:
@@ -360,7 +334,7 @@ def play(args, media: pd.DataFrame):
 
         else:
             if args.action == Subcommand.watch:
-                if is_file_with_subtitle(media_file):
+                if m['subtitle_count'] > 0:
                     player.extend(args.player_args_when_sub)
                 else:
                     player.extend(args.player_args_when_no_sub)
@@ -408,7 +382,7 @@ def construct_query(args):
     query = f"""
     SELECT path
         {', duration/60/60 as hours' if args.action != Subcommand.filesystem else ''}
-        {', duration / size AS seconds_per_byte' if args.action != Subcommand.filesystem else ''}
+        {', subtitle_count' if args.action == Subcommand.watch else ''}
         , size
         {', sparseness' if args.action == Subcommand.filesystem else ''}
         {', is_dir' if args.action == Subcommand.filesystem else ''}
@@ -417,11 +391,13 @@ def construct_query(args):
     WHERE 1=1
     {args.sql_filter}
     {'and play_count = 0' if args.action == Subcommand.listen and not args.include else ''}
+    {'and audio_count > 0' if args.action == Subcommand.listen else ''}
+    {'and video_count > 0' if args.action == Subcommand.watch else ''}
     ORDER BY 1=1
         {', play_count asc nulls first' if args.action == Subcommand.listen else ''}
         {',' + args.sort if args.sort else ''}
         {', path' if args.print or args.include or args.play_in_order > 0 else ''}
-        {', seconds_per_byte ASC' if args.action != Subcommand.filesystem else ''}
+        {', duration / size ASC' if args.action != Subcommand.filesystem else ''}
     {LIMIT} {OFFSET}
     """
 
@@ -433,7 +409,6 @@ def printer(args, query):
         query = f"""select
             "Aggregate" as path
             {', sum(hours) hours' if args.action != Subcommand.filesystem else ''}
-            {', avg(seconds_per_byte) seconds_per_byte' if args.action != Subcommand.filesystem else ''}
             {', sparseness' if args.action == Subcommand.filesystem else ''}
             , sum(size) size
             , count(*) count
