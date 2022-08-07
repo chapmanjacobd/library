@@ -3,7 +3,6 @@ import json
 import math
 import os
 import sys
-from datetime import datetime
 from pathlib import Path
 from typing import Dict
 
@@ -142,8 +141,8 @@ def extract_metadata(args, f):
         path=f,
         size=stat.st_size,
         sparseness=sparseness,
-        time_created=datetime.fromtimestamp(stat.st_ctime),
-        time_modified=datetime.fromtimestamp(stat.st_mtime),
+        time_created=stat.st_ctime,
+        time_modified=stat.st_mtime,
     )
 
     if args.db_type == "f":
@@ -169,7 +168,6 @@ def extract_metadata(args, f):
 
         assert stat.st_size == int(probe["format"]["size"])
 
-
         probe["format"].pop("size", None)
         probe["format"].pop("tags", None)
         probe["format"].pop("format_long_name", None)
@@ -180,7 +178,7 @@ def extract_metadata(args, f):
         probe["format"].pop("probe_score", None)
         probe["format"].pop("probe_score", None)
 
-        raise ## check probe["streams"]
+        raise  ## check probe["streams"]
 
         media = {
             **media,
@@ -256,7 +254,9 @@ def find_new_files(args, path):
     elif args.db_type == "v":
         scanned_files = get_media_files(path)
     elif args.db_type == "f":
-        scanned_files = [str(p) for p in Path(path).resolve().rglob("*")]  # thanks to these people for making rglob fast https://bugs.python.org/issue26032
+        scanned_files = [
+            str(p) for p in Path(path).resolve().rglob("*")
+        ]  # thanks to these people for making rglob fast https://bugs.python.org/issue26032
     new_files = set(scanned_files)
 
     try:

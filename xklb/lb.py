@@ -1,29 +1,35 @@
 import argparse
 import sys
 
-from xklb.actions import lt, wt, fs
-from xklb.extract import main as xr
-from xklb.utils import log
+from xklb.extract import main as extract
+from xklb.fs_actions import filesystem, listen, watch
+from xklb.tube_actions import tube_add, tube_listen, tube_watch
+from xklb.utils import Subcommand, log
 
 
 def lb(args=None):
     parser = argparse.ArgumentParser(add_help=False)
     subparsers = parser.add_subparsers()
-    listen = subparsers.add_parser("listen", aliases=["lt"], add_help=False)
-    listen.set_defaults(func=lt)
+    lt = subparsers.add_parser(Subcommand.listen, aliases=["lt"], add_help=False)
+    lt.set_defaults(func=listen)
 
-    watch = subparsers.add_parser("watch", aliases=["wt"], add_help=False)
-    watch.set_defaults(func=wt)
+    wt = subparsers.add_parser(Subcommand.watch, aliases=["wt"], add_help=False)
+    wt.set_defaults(func=watch)
 
-    extract = subparsers.add_parser("extract", aliases=["xr"], add_help=False)
-    extract.set_defaults(func=xr)
+    xr = subparsers.add_parser("extract", aliases=["xr"], add_help=False)
+    xr.set_defaults(func=extract)
 
-    fs_ = subparsers.add_parser("fs", aliases=["p"], add_help=False)
-    fs_.set_defaults(func=fs)
+    fs = subparsers.add_parser(Subcommand.filesystem, aliases=["p"], add_help=False)
+    fs.set_defaults(func=filesystem)
 
-    # TODO:
-    # download = subparsers.add_parser("download", aliases=["dl"], add_help=False)
-    # download.set_defaults(func=dl)
+    ta = subparsers.add_parser("tube_add", aliases=["ta"], add_help=False)
+    ta.set_defaults(func=tube_add)
+
+    tw = subparsers.add_parser(Subcommand.tubewatch, aliases=["tw"], add_help=False)
+    tw.set_defaults(func=tube_watch)
+
+    tl = subparsers.add_parser(Subcommand.tubelisten, aliases=["tl"], add_help=False)
+    tl.set_defaults(func=tube_listen)
 
     args, _unk = parser.parse_known_args(args)
     del sys.argv[1]
