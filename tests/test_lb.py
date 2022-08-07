@@ -1,7 +1,7 @@
 import sys
 from unittest.mock import patch
 
-from xklb.actions import lt, wt
+from xklb.fs_actions import lt, wt
 from xklb.lb import lb
 
 
