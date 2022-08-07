@@ -39,17 +39,16 @@ from xklb.utils import (
 
 
 def parse_args(default_chromecast=""):
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     parser.add_argument("db", nargs="?")
 
     # TODO: maybe try https://dba.stackexchange.com/questions/43415/algorithm-for-finding-the-longest-prefix
     parser.add_argument("--play-in-order", "-O", action="count", default=0)
-    parser.add_argument("--skip", "-S")
-    parser.add_argument("--sort", "-u")
 
     parser.add_argument("--duration", "-d", action="append", help="Duration in minutes")
 
+    parser.add_argument("--sort", "-u", nargs="+")
     parser.add_argument("--where", "-w", nargs="+", action="extend", default=[])
     parser.add_argument("--include", "-s", "--search", nargs="+", action="extend", default=[])
     parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[])
@@ -65,6 +64,7 @@ def parse_args(default_chromecast=""):
     parser.add_argument("--print", "-p", default=False, const="p", nargs="?")
     parser.add_argument("--print-column", "-col", nargs="*")
     parser.add_argument("--limit", "-L", "-l", "-repeat", "--repeat", default=1)
+    parser.add_argument("--skip", "-S", help="Offset")
 
     parser.add_argument("--time-limit", "-t", type=int)
     parser.add_argument("--player", "-player", nargs="*")
@@ -93,6 +93,9 @@ def parse_args(default_chromecast=""):
         args.limit = None
     elif args.limit in ["inf", "all"]:
         args.limit = None
+
+    if args.sort:
+        args.sort = ' '.join(args.sort)
 
     if args.duration:
         SEC_TO_M = 60
