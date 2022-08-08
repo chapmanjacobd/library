@@ -96,14 +96,14 @@ def argparse_log():
 log = argparse_log()
 
 
-def mv_to_keep_folder(args, video: Path):
-    kp = re.match(args.shallow_organize + "(.*?)/", str(video))
+def mv_to_keep_folder(args, video):
+    kp = re.match(args.shallow_organize + "(.*?)/", video)
     if kp:
         keep_path = Path(kp[0], "keep/")
-    elif video.parent.match("*/keep/*"):
+    elif Path(video).parent.match("*/keep/*"):
         return
     else:
-        keep_path = video.parent / "keep/"
+        keep_path = Path(video).parent / "keep/"
 
     keep_path.mkdir(exist_ok=True)
     shutil.move(video, keep_path)
@@ -276,7 +276,7 @@ def single_column_tolist(array_to_unpack, column_name=1):
     )
 
 
-def get_ordinal_media(args, path: Path):
+def get_ordinal_media(args, path):
     similar_videos = []
     candidate = str(path)
 
@@ -298,8 +298,9 @@ def get_ordinal_media(args, path: Path):
 
         candidate = new_candidate
         query = f"""SELECT path FROM media
-            WHERE path like ?
-                and {'1=1' if (args.play_in_order > 2) else args.sql_filter}
+            WHERE 1=1
+                and path like ?
+                {'' if (args.play_in_order > 2) else args.sql_filter}
             ORDER BY path
             LIMIT 1000
             """

@@ -1,14 +1,21 @@
 import argparse
+import csv
+import math
+import os
 import shutil
 import tempfile
-from datetime import datetime
+import textwrap
+from datetime import datetime, timedelta
 from pathlib import Path
 from timeit import default_timer as timer
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Tuple
 
+import humanize
+import numpy as np
 import pandas as pd
 import yt_dlp
-from rich import print
+from rich import inspect, print
+from tabulate import tabulate
 
 from xklb.db import sqlite_con
 from xklb.tube_actions import default_ydl_opts
@@ -18,6 +25,7 @@ from xklb.utils import (
     filter_None,
     log,
     safe_unpack,
+    stop,
 )
 
 
@@ -43,10 +51,10 @@ def create_download_archive(args):
     return download_archive_temp
 
 
-def parse_args(update=False):
+def parse_args(action):
     parser = argparse.ArgumentParser()
     parser.add_argument("db", nargs="?", default="tube.db")
-    parser.add_argument("playlists", nargs="?" if update else "+")
+
     parser.add_argument(
         "--yt-dlp-config",
         "-yt-dlp-config",
@@ -56,28 +64,33 @@ def parse_args(update=False):
         metavar="KEY=VALUE",
         help="Add key/value pairs to override or extend default yt-dlp configuration",
     )
-    parser.add_argument(
-        "-update",
-        "--update",
-        action="store_true",
-        help="lightweight add playlist: Use with --yt-dlp-config download-archive=archive.txt to inform tubeadd",
-    )
     parser.add_argument("-safe", "--safe", action="store_true", help="Skip generic URLs")
-    parser.add_argument("-f", "--overwrite-db", action="store_true", help="Delete db file before scanning")
+    if action == "add":
+        parser.add_argument("playlists", nargs="+")
+        parser.add_argument("-f", "--overwrite-db", action="store_true", help="Delete db file before scanning")
+        parser.add_argument(
+            "--lightweight",
+            "-lw",
+            action="store_true",
+            help="lightweight add playlist: Use with --yt-dlp-config download-archive=archive.txt to inform tubeadd",
+        )
+    if action == "update":
+        parser.add_argument("playlists", nargs="?")
+
     parser.add_argument("-v", "--verbose", action="count", default=0)
     args = parser.parse_args()
     log.info(filter_None(args.__dict__))
 
-    if args.overwrite_db:
-        Path(args.db).unlink(missing_ok=True)
-
-    Path(args.db).touch()
+    if action == "add":
+        if args.overwrite_db:
+            Path(args.db).unlink(missing_ok=True)
+        Path(args.db).touch()
     args.con = sqlite_con(args.db)
 
     ydl_opts = {**default_ydl_opts, **args.yt_dlp_config}
     log.info(filter_None(ydl_opts))
 
-    if update or args.update:
+    if action == "update" or args.lightweight:
         download_archive_temp = create_download_archive(args)
         ydl_opts = {
             **ydl_opts,
@@ -86,7 +99,8 @@ def parse_args(update=False):
             "break_per_url": True,
         }
 
-    return args, ydl_opts
+    args.ydl_opts = ydl_opts
+    return args
 
 
 def supported(url):  # thank you @dbr
@@ -97,8 +111,8 @@ def supported(url):  # thank you @dbr
     return False
 
 
-def fetch_playlist(ydl_opts, playlist) -> Union[Tuple[Dict | None, List[Dict]],Tuple[None, None]]:
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+def fetch_playlist(args, playlist) -> Tuple[(None | Dict), (None | List[Dict])]:
+    with yt_dlp.YoutubeDL(args.ydl_opts) as ydl:
         pl = ydl.extract_info(playlist, download=False)
 
         if not pl:
@@ -119,7 +133,7 @@ def fetch_playlist(ydl_opts, playlist) -> Union[Tuple[Dict | None, List[Dict]],T
                 "playable_in_embed",
                 "is_live",
                 "was_live",
-                'modified_date',
+                "modified_date",
                 "release_timestamp",
                 "comment_count",
                 "chapters",
@@ -149,7 +163,7 @@ def fetch_playlist(ydl_opts, playlist) -> Union[Tuple[Dict | None, List[Dict]],T
                 "asr",
             ]
 
-            if v.get('title') in ["[Deleted video]", "[Private video]"]:
+            if v.get("title") in ["[Deleted video]", "[Private video]"]:
                 return None
 
             for k in list(v):
@@ -165,6 +179,7 @@ def fetch_playlist(ydl_opts, playlist) -> Union[Tuple[Dict | None, List[Dict]],T
                 v.pop("url", None),
                 v.pop("webpage_url", None),
                 v.pop("original_url", None),
+                pl.get("webpage_url"),
                 pl.get("original_url"),
             )
             cv["size"] = v.pop("filesize_approx", None)
@@ -174,8 +189,8 @@ def fetch_playlist(ydl_opts, playlist) -> Union[Tuple[Dict | None, List[Dict]],T
             cv["language"] = v.pop("language", None)
             cv["tags"] = combine(v.pop("description", None), v.pop("categories", None), v.pop("tags", None))
             cv["id"] = v.pop("id")
-            cv["ie_key"] = safe_unpack(v.pop("extractor_key", None), v.pop("extractor"))
-            cv["playlist_path"] = safe_unpack(pl.get("original_url"), pl.get("webpage_url"))
+            cv["ie_key"] = safe_unpack(v.pop("ie_key", None), v.pop("extractor_key", None), v.pop("extractor", None))
+            cv["title"] = safe_unpack(v.pop("title", None), pl.get("title"))
             cv["view_count"] = v.pop("view_count", None)
             cv["width"] = v.pop("width", None)
             cv["height"] = v.pop("height", None)
@@ -183,50 +198,47 @@ def fetch_playlist(ydl_opts, playlist) -> Union[Tuple[Dict | None, List[Dict]],T
             cv["average_rating"] = v.pop("average_rating", None)
             cv["live_status"] = v.pop("live_status", None)
             cv["age_limit"] = v.pop("age_limit", None)
-            cv["title"] = safe_unpack(v.pop("title", None), pl.get("title"))
-            cv["uploader"] = safe_unpack(
+            cv["playlist_path"] = safe_unpack(pl.get("webpage_url"), pl.get("original_url"))
+            cv["uploader_url"] = safe_unpack(
                 v.pop("uploader_url", None),
-                v.pop("uploader", None),
-                v.pop("uploader_id", None),
-                pl.get("uploader"),
-            )
-            cv["channel"] = safe_unpack(
                 v.pop("channel_url", None),
+                v.pop("uploader", None),
                 v.pop("channel", None),
+                v.pop("uploader_id", None),
                 v.pop("channel_id", None),
-                pl.get("channel"),
+                pl.get("uploader", None),
+                pl.get("channel", None),
             )
 
             if v != {}:
                 log.info("Extra data %s", v)
-                breakpoint()
+                # breakpoint()
 
             return cv
 
         entries = pl.pop("entries", None)
-        if pl.get("entries") is None:
+        if entries is None:
             entry = consolidate(pl)
-            if entry:
-                return None, [entry]
-            return None, None
+            log.info("No entries %s", entry)
+            if not entry:
+                return None, None
+            return None, [entry]
 
-        entries = [consolidate(v) for v in entries]
-        print(f"Got {len(entries)} entries from playlist '{pl['title']}'")
+        entries = list(filter(None, [consolidate(v) for v in entries if v]))
+        print(f"Downloaded {len(entries)} entries from playlist '{pl['title']}'")
 
-        breakpoint()
-
-        return pl, entries
+        return filter_None(consolidate(pl)), entries
 
 
 def tube_add():
-    args, ydl_opts = parse_args()
+    args = parse_args("add")
 
     for playlist in args.playlists:
         if args.safe and not supported(playlist):
             continue
 
         start = timer()
-        pl, entries = fetch_playlist(ydl_opts, playlist)
+        pl, entries = fetch_playlist(args, playlist)
         end = timer()
         log.info(f"{end - start:.1f} seconds to fetch playlist")
         if not entries:
@@ -241,8 +253,8 @@ def tube_add():
                 if_exists="append",
                 index=False,
             )
-        DF = pd.DataFrame(list(filter(None, entries)))
-        DF.apply(pd.to_numeric, errors="ignore").convert_dtypes().to_sql(  # type: ignore
+        entriesDF = pd.DataFrame(entries)
+        entriesDF.apply(pd.to_numeric, errors="ignore").convert_dtypes().to_sql(  # type: ignore
             "media",
             con=args.con,
             if_exists="append",
@@ -252,12 +264,104 @@ def tube_add():
         )
 
 
+def human_time(hours):
+    if hours is None or np.isnan(hours):
+        return None
+    return humanize.precisedelta(timedelta(hours=int(hours), minutes=math.ceil(hours % 1 * 60)), minimum_unit="minutes")
+
+
+def tube_list():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("db", nargs="?", default="tube.db")
+    parser.add_argument(
+        "--print",
+        "-p",
+        nargs="*",
+        default="p",
+        choices=["p", "f", "a"],
+        help="""tubelist a -- means print an aggregate report
+tubelist f -- means print only filenames -- useful for piping to other utilities like xargs or GNU Parallel""",
+    )
+    parser.add_argument(
+        "--delete",
+        "--remove",
+        "--erase",
+        "-rm",
+        "-d",
+        nargs="+",
+        help="""lb tubelist -rm https://vimeo.com/canal180 -- removes the playlist/channel and all linked videos""",
+    )
+    parser.add_argument("-v", "--verbose", action="count", default=0)
+    args = parser.parse_args()
+    log.info(filter_None(args.__dict__))
+
+    args.con = sqlite_con(args.db)
+
+    if args.delete:
+        args.con.execute(
+            "delete from media where playlist_path in (" + ",".join(["?"] * len(args.delete)) + ")", (*args.delete,)
+        )
+        args.con.execute(
+            "delete from playlists where path in (" + ",".join(["?"] * len(args.delete)) + ")", (*args.delete,)
+        )
+        args.con.commit()
+        stop()
+
+    query = "select distinct ie_key, title, path from playlists"
+    if "a" in args.print:
+        query = f"""select
+            playlists.ie_key
+            , playlists.title
+            , coalesce(playlists.path, "Playlist-less videos") path
+            , sum(media.duration/60.0/60.0) hours
+            , sum(media.size) size
+            , count(*) count
+        from media
+        left join playlists on playlists.path = media.playlist_path
+        group by coalesce(playlists.path, "Playlist-less videos")"""
+
+    db_resp = pd.DataFrame([dict(r) for r in args.con.execute(query).fetchall()])
+
+    if "f" in args.print:
+        unix_loves_lines = db_resp[["path"]].to_csv(index=False, header=False, sep="\t", quoting=csv.QUOTE_NONE)
+        print(unix_loves_lines.strip())
+    else:
+        tbl = db_resp.copy()
+        tbl[["path"]] = tbl[["path"]].applymap(
+            lambda x: textwrap.fill(x, max(10, os.get_terminal_size().columns - (15 * len(tbl.columns))))
+        )
+        if "uploader_url" in tbl.columns:
+            tbl[["uploader_url"]] = tbl[["uploader_url"]].applymap(
+                lambda x: None
+                if x is None
+                else textwrap.fill(x, max(10, os.get_terminal_size().columns - (40 * len(tbl.columns))))
+            )
+
+        if "size" in tbl.columns:
+            tbl[["size"]] = tbl[["size"]].applymap(lambda x: None if x is None else humanize.naturalsize(x))
+        if "hours" in tbl.columns:
+            tbl[["hours"]] = tbl[["hours"]].applymap(lambda x: None if x is None else human_time(x))
+
+        print(tabulate(tbl, tablefmt="fancy_grid", headers="keys", showindex=False))  # type: ignore
+
+        if "hours" in db_resp.columns:
+            summary = db_resp.sum(numeric_only=True)
+            hours = summary.get("hours") or 0.0
+            print("Total duration:", human_time(hours))
+
+    stop()
+
+
 def tube_update():
-    args, ydl_opts = parse_args(update=True)
+    args = parse_args("update")
 
     if args.playlists:
+        breakpoint()
         pass
     else:  # update all
-        pass
+        query = "select distinct * from playlists"
+        media = pd.DataFrame([dict(r) for r in args.con.execute(query).fetchall()])
 
-    Path(ydl_opts["download_archive"]).unlink()
+        breakpoint()
+
+    Path(args.ydl_opts["download_archive"]).unlink()
