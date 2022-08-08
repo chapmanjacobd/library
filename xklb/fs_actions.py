@@ -540,7 +540,7 @@ def printer(args, query):
 
     db_resp = pd.DataFrame([dict(r) for r in args.con.execute(query).fetchall()])
 
-    if "*" in args.print_column and args.verbose > 1:
+    if args.verbose > 1 and args.print_column and "*" in args.print_column:
         import rich
 
         breakpoint()
