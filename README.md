@@ -118,6 +118,10 @@ There are multiple strictness levels of --play-in-order. If things aren't playin
     wt tv.db --search 'title of series' -OO   # slower, more complex algorithm
     wt tv.db --search 'title of series' -OOO  # most strict
 
+### See how many corrupt videos you have
+
+    lb wt -w 'duration is null' -p a
+
 ### Listen to OSTs on chromecast groups
 
     lt -cast -cast-to 'Office pair' -s '  ost'
