@@ -89,10 +89,10 @@ Organize via separate databases.
 
 ### Repeat
 
-    lt -u random         # listen to ONE random song
-    lt --limit 5         # listen to FIVE songs
-    lt -l inf            # listen to songs indefinitely
-    lt -s infinite       # listen to songs from the band infinite
+    lt                  # listen to 120 random songs (DEFAULT_PLAY_QUEUE)
+    lt --limit 5        # listen to FIVE songs
+    lt -l inf -u random # listen to random songs indefinitely
+    lt -s infinite      # listen to songs from the band infinite
 
 If that is confusing (or if you are trying to load 4 billion files) you could always use your shell:
 
@@ -132,7 +132,7 @@ There are multiple strictness levels of --play-in-order. If things aren't playin
 
 ### View how much time you have listened to music
 
-    lb lt -p a -w 'play_count>0'
+    lb lt -w play_count'>'0 -p a
 
 ### See how much video you have
 
@@ -172,12 +172,10 @@ You can also use `lb` for any files:
 
 ### TODO
 
-- all: Documentation
-- all: is_deleted column
-- all: split_by_silence without modifying files
+- fs: split_by_silence without modifying files
 - all: Tests
+- tube: None instead of nan
 - tube: prevent adding duplicates
 - tube: sqlite-utils
 - tube: Download subtitle to embed in db tags for search
-- tube: Playlists subcommand: view virtual aggregated pattens
-- playlists: join indexes, delete, update
+- tube: Documentation

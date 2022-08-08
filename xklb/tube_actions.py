@@ -1,5 +1,7 @@
+from pathlib import Path
+
 from xklb.fs_actions import parse_args, process_actions
-from xklb.utils import Subcommand
+from xklb.utils import CAST_NOW_PLAYING, Subcommand
 
 # TODO: add cookiesfrombrowser: ('firefox', ) as a default
 # cookiesfrombrowser: ('vivaldi', ) # should not crash if not installed ?
@@ -63,19 +65,18 @@ default_ydl_opts = {
 
 
 def tube_watch():
-    args = parse_args("tube.db")
+    args = parse_args("tube.db", default_chromecast="Living Room TV")
     args.action = Subcommand.tubewatch
 
     process_actions(args)
 
-    """
-    mpv --script-opts=ytdl_hook-try_ytdl_first=yes
-    catt
-    """
-
 
 def tube_listen():
-    args = parse_args("tube.db")
+    args = parse_args("tube.db", default_chromecast="Xylo and Orchestra")
     args.action = Subcommand.tubelisten
 
-    process_actions(args)
+    try:
+        process_actions(args)
+    finally:
+        if args.chromecast:
+            Path(CAST_NOW_PLAYING).unlink(missing_ok=True)

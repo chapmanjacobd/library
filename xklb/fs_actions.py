@@ -2,6 +2,7 @@ import argparse
 import csv
 import math
 import os
+import shlex
 import shutil
 import subprocess
 import textwrap
@@ -35,6 +36,9 @@ from xklb.utils import (
     remove_media,
     stop,
 )
+from catt.api import CattDevice
+
+DEFAULT_PLAY_QUEUE = 120
 
 
 def parse_args(default_db, default_chromecast=""):
@@ -53,14 +57,14 @@ def parse_args(default_db, default_chromecast=""):
         "-O",
         action="count",
         default=0,
-        help="Try to get things to play in order (similarly named episodes)",
+        help="Try to get things to play in order -- similarly named episodes",
     )
     parser.add_argument(
         "--duration",
         "-d",
         action="append",
         help="""Media duration in minutes:
--d 6 means 6 mins ±10% (between 5 and 7 mins)
+-d 6 means 6 mins ±10 percent -- between 5 and 7 mins
 -d-6 means less than 6 mins
 -d+6 means more than 6 mins
 
@@ -74,63 +78,112 @@ if you want exact times you can use --where duration=6*60
         "-u",
         nargs="+",
         default=["priority"],
-        help="""Sort media by column
+        help="""Sort media with SQL expressions
 -u duration means shortest media first
 -u duration desc means longest media first
 
-You can also use any sqlite operators for example:
--u subtitle_count > 0,
-means sort by
+You can use any sqlite ORDER BY expressions, for example:
+-u subtitle_count > 0
+means play everything that has a subtitle first
 """,
     )
-    parser.add_argument("--where", "-w", nargs="+", action="extend", default=[])
-    parser.add_argument("--include", "-s", "--search", nargs="+", action="extend", default=[])
+    parser.add_argument(
+        "--where",
+        "-w",
+        nargs="+",
+        action="extend",
+        default=[],
+        help="""Constrain media with SQL expressions
+You can use any sqlite WHERE expressions, for example:
+-w attachment_count > 0  means only media with attachments
+-w language = 'eng'  means only media which has some English language tag -- this could be audio or subtitle""",
+    )
+    parser.add_argument(
+        "--include",
+        "-s",
+        "--search",
+        nargs="+",
+        action="extend",
+        default=[],
+        help="""Constrain media with via search
+-s toy story will match '/folder/toy/something/story.mp3'
+-s 'toy  story' will match more strictly '/folder/toy story.mp3'
+Double spaces means one space
+""",
+    )
     parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[])
 
-    parser.add_argument("--chromecast-device", "-cast-to", default=default_chromecast)
-    parser.add_argument("--chromecast", "-cast", action="store_true")
-    parser.add_argument("--with-local", "-wl", action="store_true")
+    parser.add_argument(
+        "--chromecast-device",
+        "-cast-to",
+        default=default_chromecast,
+        help="The name of your chromecast device or group. Use exact uppercase/lowercase",
+    )
+    parser.add_argument(
+        "--chromecast", "-cast", action="store_true", help="Turn chromecast on. Use like this: lt -cast or tl -cast"
+    )
+    parser.add_argument(
+        "--with-local",
+        "-wl",
+        action="store_true",
+        help="Play with local speakers and chromecast at the same time [experimental]",
+    )
 
     parser.add_argument("--prefix", default="", help="change root prefix; useful for sshfs")
 
-    parser.add_argument("--size", "-z", action="append", help="Size in Megabytes")
+    parser.add_argument("--size", "-z", action="append", help="Constrain media with via size in Megabytes")
 
-    parser.add_argument("--print", "-p", default=False, const="p", nargs="?")
-    parser.add_argument("--print-column", "-col", nargs="*")
-    parser.add_argument("--limit", "-L", "-l", "-repeat", "--repeat", default=1)
-    parser.add_argument("--skip", "-S", help="Offset")
+    parser.add_argument(
+        "--print",
+        "-p",
+        default=False,
+        const="p",
+        nargs="?",
+        help="""Print instead of play
+-p   means print in a table
+-p a means print an aggregate report
+-p f means print only filenames -- useful for piping to other utilities like xargs or GNU Parallel""",
+    )
+    parser.add_argument("--print-column", "-col", nargs="*", help="Include a non-standard column when printing")
+    parser.add_argument(
+        "--limit", "-L", "-l", "-queue", "--queue", default=DEFAULT_PLAY_QUEUE, help="Set play queue size"
+    )
+    parser.add_argument("--skip", "-S", help="Offset from the top of an ordered query; wt -S10 to skip ten videos")
 
-    parser.add_argument("--time-limit", "-t", type=int)
     parser.add_argument(
         "--start", "-vs", help='Set the time to skip from the start of the media or use the magic word "wadsworth"'
     )
     parser.add_argument(
         "--end", "-ve", help='Set the time to skip from the end of the media or use the magic word "dawsworth"'
     )
-
-    parser.add_argument("--player", "-player", nargs="*")
+    parser.add_argument("--player", "-player", help='Override the default player mpv; wt --player "vlc --vlc-opts"')
     parser.add_argument("--mpv-socket", default="/tmp/mpv_socket")
 
-    parser.add_argument("--player-args-when-sub", "-player-sub", nargs="*", default=["--speed=1"])
-    parser.add_argument("--player-args-when-no-sub", "-player-no-sub", nargs="*", default=["--speed=1.7"])
+    parser.add_argument(
+        "--player-args-when-sub",
+        "-player-sub",
+        nargs="*",
+        default=["--speed=1"],
+        help="Only give args for videos with subtitles",
+    )
+    parser.add_argument(
+        "--player-args-when-no-sub",
+        "-player-no-sub",
+        nargs="*",
+        default=["--speed=1.7"],
+        help="Only give args for videos without subtitles",
+    )
     parser.add_argument("--transcode", action="store_true")
 
-    parser.add_argument("--post-action", "--action", "-k", default="keep")
+    parser.add_argument("--post-action", "--action", "-k", default="keep", help="Choose what to do after playing")
     parser.add_argument("--shallow-organize", default="/mnt/d/")
 
-    parser.add_argument("--move", "-mv")
+    parser.add_argument("--move", "-mv", help="lt -l 1 -mv dest/folder/; move a file into dest/folder/")
 
     parser.add_argument("--verbose", "-v", action="count", default=0)
-    parser.add_argument("--version", "-V", action="store_true")
     args = parser.parse_args()
 
-    if args.version:
-        from xklb import __version__
-
-        print(__version__)
-        stop()
-
-    if args.limit == 1 and args.print:
+    if args.limit == DEFAULT_PLAY_QUEUE and args.print:
         args.limit = None
     elif args.limit in ["inf", "all"]:
         args.limit = None
@@ -189,7 +242,11 @@ means sort by
     args.where = [s.replace("sub", "has_sub") for s in args.where]
 
     if args.chromecast:
+        args.cc = CattDevice(args.chromecast_device, lazy=True)
         args.cc_ip = get_ip_of_chromecast(args.chromecast_device)
+
+    if args.player:
+        args.player = shlex.split(args.player)
 
     log.info(filter_None(args.__dict__))
 
@@ -223,7 +280,7 @@ def delete_media(args, media_file):
 
 def post_act(args, media_file):
     if args.action in [Subcommand.listen, Subcommand.watch, Subcommand.tubelisten, Subcommand.tubewatch]:
-        args.con.execute("update media set play_count = play_count +1 where path = ?", (str(media_file),))
+        args.con.execute("update media set play_count = play_count +1 where path = ?", (media_file,))
         args.con.commit()
 
     if args.post_action == "keep":
@@ -267,8 +324,8 @@ def externalize_subtitle(media_file):
     return subtitles_file
 
 
-def watch_chromecast(args, media_file):
-    subtitles_file = externalize_subtitle(media_file)
+def watch_chromecast(args, m):
+    subtitles_file = externalize_subtitle(m['path'])
 
     if "vlc" in args.player:
         catt_log = cmd(
@@ -279,36 +336,42 @@ def watch_chromecast(args, media_file):
             "--demux-filter=demux_chromecast",
             "--sub-file=" + subtitles_file if subtitles_file else "",
             *args.player[1:],
-            media_file,
+            m['path'],
         )
     else:
-        catt_log = cmd(
-            "catt",
-            "-d",
-            args.chromecast_device,
-            "cast",
-            "-s",
-            subtitles_file if subtitles_file else FAKE_SUBTITLE,
-            media_file,
-        )
+        if args.action in [Subcommand.watch, Subcommand.listen]:
+            catt_log = cmd(
+                "catt",
+                "-d",
+                args.chromecast_device,
+                "cast",
+                "-s",
+                subtitles_file if subtitles_file else FAKE_SUBTITLE,
+                m['path'],
+            )
+        else:
+            catt_log = args.cc.play_url(m['path'], resolve=True, block=True)
 
     if subtitles_file:
         Path(subtitles_file).unlink(missing_ok=True)
     return catt_log
 
 
-def listen_chromecast(args, media_file: Path, player):
-    Path(CAST_NOW_PLAYING).write_text(str(media_file))
+def listen_chromecast(args, m, player):
+    Path(CAST_NOW_PLAYING).write_text(m['path'])
     Path(FAKE_SUBTITLE).touch()
     if not args.with_local:
-        catt_log = cmd("catt", "-d", args.chromecast_device, "cast", "-s", FAKE_SUBTITLE, media_file)
+        if args.action in [Subcommand.watch, Subcommand.listen]:
+            catt_log = cmd("catt", "-d", args.chromecast_device, "cast", "-s", FAKE_SUBTITLE, m['path'])
+        else:
+            catt_log = args.cc.play_url(m['path'], resolve=True, block=True)
     else:
         cast_process = subprocess.Popen(
-            ["catt", "-d", args.chromecast_device, "cast", "-s", FAKE_SUBTITLE, media_file], preexec_fn=os.setpgrp
+            ["catt", "-d", args.chromecast_device, "cast", "-s", FAKE_SUBTITLE, m['path']], preexec_fn=os.setpgrp
         )
         sleep(0.974)  # imperfect lazy sync; I use keyboard shortcuts to send `set speed` commands to mpv for resync
         # if pyChromecast provides a way to sync accurately that would be very interesting to know; I have not researched it
-        cmd_interactive(*player, "--", media_file)
+        cmd_interactive(*player, "--", m['path'])
         catt_log = Pclose(cast_process)  # wait for chromecast to stop (you can tell any chromecast to pause)
         sleep(3.0)  # give chromecast some time to breathe
 
@@ -319,14 +382,19 @@ def play(args, media: pd.DataFrame):
     for m in media.to_records(index=False):
         media_file = m["path"]
 
-        if args.play_in_order > 1 or (args.action == Subcommand.listen and "audiobook" in str(media_file).lower()):
-            media_file = get_ordinal_media(args, Path(media_file))
+        if (
+            args.play_in_order > 1
+            or (args.action == Subcommand.listen and "audiobook" in media_file.lower())
+            or (args.action == Subcommand.tubelisten and m["title"] and "audiobook" in m["title"].lower())
+        ):
+            media_file = get_ordinal_media(args, media_file)
 
-        if not media_file.startswith('http'):
-            media_file = Path(args.prefix + media_file)
-            if not media_file.exists():
-                remove_media(args, str(media_file))
+        if not media_file.startswith("http"):
+            media_path = Path(args.prefix + media_file).resolve()
+            if not media_path.exists():
+                remove_media(args, media_file)
                 continue
+            media_file = str(media_path)
 
         if args.player:
             player = args.player
@@ -338,6 +406,9 @@ def play(args, media: pd.DataFrame):
                 )
             elif args.action in [Subcommand.watch, Subcommand.tubewatch]:
                 player.extend(["--fs", "--force-window=yes", "--really-quiet"])
+
+            if args.action in [Subcommand.tubelisten, Subcommand.tubewatch]:
+                player.extend(["--script-opts=ytdl_hook-try_ytdl_first=yes"])
 
             if args.start:
                 if args.start == "wadsworth":
@@ -365,17 +436,18 @@ def play(args, media: pd.DataFrame):
 
         if args.chromecast:
             if args.action in [Subcommand.watch, Subcommand.tubewatch]:
-                catt_log = watch_chromecast(args, media_file)
+                catt_log = watch_chromecast(args, m)
             elif args.action in [Subcommand.listen, Subcommand.tubelisten]:
-                catt_log = listen_chromecast(args, media_file, player)
+                catt_log = listen_chromecast(args, m, player)
             else:
                 raise NotImplementedError
 
-            if "Heartbeat timeout, resetting connection" in catt_log.stderr:
-                raise Exception("Media is possibly partially unwatched")
+            if catt_log:
+                if "Heartbeat timeout, resetting connection" in catt_log.stderr:
+                    raise Exception("Media is possibly partially unwatched")
 
-            if catt_log.stderr == "":
-                raise Exception("catt does not exit nonzero? but something might have gone wrong")
+                if catt_log.stderr == "":
+                    raise Exception("catt does not exit nonzero? but something might have gone wrong")
 
         else:
             if args.action == Subcommand.watch:
@@ -427,11 +499,13 @@ def construct_query(args):
 
     query = f"""
     SELECT path
-        {', duration/60/60 as hours' if args.action != Subcommand.filesystem else ''}
+        {', duration/60.0/60.0 as hours' if args.action != Subcommand.filesystem else ''}
         {', subtitle_count' if args.action == Subcommand.watch else ''}
         , size
         {', sparseness' if args.action == Subcommand.filesystem else ''}
         {', is_dir' if args.action == Subcommand.filesystem else ''}
+        {', title' if args.action in [Subcommand.tubelisten, Subcommand.tubewatch] else ''}
+        {', duration' if args.action in [Subcommand.tubelisten, Subcommand.tubewatch] else ''}
         {', ' + ', '.join(args.print_column) if args.print_column else ''}
     FROM media
     WHERE 1=1
@@ -456,6 +530,8 @@ def printer(args, query):
             {', sparseness' if args.action == Subcommand.filesystem else ''}
             , sum(size) size
             , count(*) count
+            {', ' + ', '.join([f'sum({c}) sum_{c}' for c in args.print_column]) if args.print_column else ''}
+            {', ' + ', '.join([f'avg({c}) avg_{c}' for c in args.print_column]) if args.print_column else ''}
         from ({query}) """
 
     if args.print and "q" in args.print:
@@ -463,6 +539,13 @@ def printer(args, query):
         stop()
 
     db_resp = pd.DataFrame([dict(r) for r in args.con.execute(query).fetchall()])
+
+    if "*" in args.print_column and args.verbose > 1:
+        import rich
+
+        breakpoint()
+        for t in db_resp.to_dict(orient="records"):
+            rich.print(t)
 
     if "f" in args.print:
         if args.limit == 1:
@@ -480,10 +563,11 @@ def printer(args, query):
         )
         if "size" in db_resp.columns:
             db_resp[["size"]] = db_resp[["size"]].applymap(lambda x: None if x is None else humanize.naturalsize(x))
-        if "time_modified" in db_resp.columns:
-            db_resp[["time_modified"]] = db_resp[["time_modified"]].applymap(
-                lambda x: None if x is None else humanize.naturaldate(datetime.fromtimestamp(x))
-            )
+        for t in ["time_modified", "time_created"]:
+            if t in db_resp.columns:
+                db_resp[[t]] = db_resp[[t]].applymap(
+                    lambda x: None if x is None else humanize.naturaldate(datetime.fromtimestamp(x))
+                )
 
         print(tabulate(db_resp, tablefmt="fancy_grid", headers="keys", showindex=False))  # type: ignore
 
