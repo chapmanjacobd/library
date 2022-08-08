@@ -21,7 +21,7 @@ def lb(args=None):
     lt.set_defaults(func=listen)
     wt = subparsers.add_parser(Subcommand.watch, aliases=["wt"], add_help=False)
     wt.set_defaults(func=watch)
-    fs = subparsers.add_parser(Subcommand.filesystem, aliases=["p"], add_help=False)
+    fs = subparsers.add_parser(Subcommand.filesystem, aliases=["fs"], add_help=False)
     fs.set_defaults(func=filesystem)
 
     ta = subparsers.add_parser("tubeadd", aliases=["ta"], add_help=False)

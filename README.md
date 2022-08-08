@@ -24,7 +24,7 @@ For the initial scan it takes about six hours to scan sixty terabytes. If you wa
 
     wt tv.db                       # the default post-action is to do nothing after playing
     wt tv.db --post-action delete  # delete file after playing
-    lt boring.db --post-action=ask # ask to delete after playing
+    lt finalists.db --post-action=ask # ask to delete after playing
 
 ## Quick Start -- virtual
 
@@ -54,7 +54,7 @@ Tubeupdate will go through all added playlists and fetch metadata of any new vid
 
     lb tubeupdate
 
-You can also include your own yt-dlp download archive to skip downloaded videos and stop before scanning the full playlist.
+You can also include your own yt-dlp download archive to skip downloaded videos and speed up playlist scanning.
 
     lb tubeupdate --yt-dlp-config download_archive=rel/loc/archive.txt
 
@@ -64,13 +64,20 @@ You can also include your own yt-dlp download archive to skip downloaded videos 
 
 If you like this I also have a [web version](https://unli.xyz/eject/)--but this Python version has more features and it can handle a lot more data.
 
-## Organize using separate databases
+## Things to know
+
+If you want to specify more than one directory you will need to mention the db file explicitly.
+
+    lb extract --filesystem one/
+    lb extract --filesystem fs.db one/ two/
+
+Organize via separate databases.
 
     lb extract --audio both.db ./audiobooks/ ./podcasts/
     lb extract --audio audiobooks.db ./audiobooks/
     lb extract --audio podcasts.db ./podcasts/ ./another/more/secret/podcasts_folder/
 
-## Example Usage
+## Usage
 
 ### Repeat
 
@@ -79,7 +86,7 @@ If you like this I also have a [web version](https://unli.xyz/eject/)--but this 
     lt -l inf            # listen to songs indefinitely
     lt -s infinite       # listen to songs from the band infinite
 
-If that's confusing (or if you are trying to load 4 billion files) you could always use your shell:
+If that is confusing (or if you are trying to load 4 billion files) you could always use your shell:
 
     function repeat
         while $argv
@@ -103,21 +110,33 @@ There are multiple strictness levels of --play-in-order. If things aren't playin
     wt tv.db --search 'title of series' -OO   # slower, more complex algorithm
     wt tv.db --search 'title of series' -OOO  # most strict
 
-### Suggested Usage
+### Listen to OSTs on chromecast groups
 
-    lt -cast -cast-to 'Office pair' -s '  ost'      # listen to OSTs on chromecast groups
-    wt -u priority -w sub=0  # for exercising and watching YouTube
-    wt -u duration --print -s 'video title'  # check if you've downloaded something before
+    lt -cast -cast-to 'Office pair' -s '  ost'
 
-## Advanced Features
+### Exercise and watch TV that doesn't have subtitles
 
-### Extract
+    wt -u priority -w sub=0
 
-If you want to specify more than one directory you will need to make the db file explicit:
+### Check if you've downloaded something before
 
-    lb extract --filesystem fs.db one/ two/
+    wt -u duration --print -s 'video title'
 
-## Searching filesystem
+### View how much time you have listened to music
+
+    lb lt -p a -w 'play_count>0'
+
+### See how much video you have
+
+    lb wt video.db -p a
+    ╒═══════════╤═════════╤═════════╤═════════╕
+    │ path      │   hours │ size    │   count │
+    ╞═══════════╪═════════╪═════════╪═════════╡
+    │ Aggregate │  145769 │ 37.6 TB │  439939 │
+    ╘═══════════╧═════════╧═════════╧═════════╛
+    Total duration: 16 years, 7 months, 19 days, 17 hours and 25 minutes
+
+### Search the filesystem
 
 You can also use `lb` for any files:
 
@@ -147,9 +166,10 @@ You can also use `lb` for any files:
 
 - all: Documentation
 - all: is_deleted column
-- all: how much watched statistics
 - all: split_by_silence without modifying files
 - all: Tests
 - tube: prevent adding duplicates
+- tube: sqlite-utils
 - tube: Download subtitle to embed in db tags for search
 - tube: Playlists subcommand: view virtual aggregated pattens
+- playlists: join indexes, delete, update
