@@ -18,8 +18,8 @@ For thirty terabytes of video the initial scan takes about four hours to complet
 
 ### 2. Watch / Listen from local files
 
-    wt tv.db                       # the default post-action is to do nothing after playing
-    wt tv.db --post-action delete  # delete file after playing
+    wt tv.db                          # the default post-action is to do nothing after playing
+    wt tv.db --post-action delete     # delete file after playing
     lt finalists.db --post-action=ask # ask to delete after playing
 
 ## Quick Start -- virtual
