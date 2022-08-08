@@ -12,13 +12,9 @@ Requires `ffmpeg`
 
 ### 1. Extract Metadata
 
-For the initial scan it takes about six hours to scan sixty terabytes. If you want to update the database run the same command again--any new files will be scanned and it is much, much quicker.
+For thirty terabytes of video the initial scan takes about four hours to complete. After that, rescans of the same path (or any subpaths) are much quicker--only new files will be read by `ffprobe`.
 
     lb extract tv.db ./video/folder/
-    OR
-    lb extract ./tv/  # when not specified, db will be created as `video.db`
-    OR
-    lb extract --audio ./music/  # db will be created as `audio.db`
 
 ### 2. Watch / Listen from local files
 
@@ -66,7 +62,19 @@ If you like this I also have a [web version](https://unli.xyz/eject/)--but this 
 
 ## Things to know
 
-If you want to specify more than one directory you will need to mention the db file explicitly.
+When the database file path is not specified, `video.db` will be created / used.
+
+    lb extract ./tv/
+
+The same for audio: `audio.db` will be created / used.
+
+    lb extract --audio ./music/
+
+Likewise, `fs.db` from:
+
+    lb extract --filesystem /any/path/
+
+If you want to specify more than one directory you need to mention the db file explicitly.
 
     lb extract --filesystem one/
     lb extract --filesystem fs.db one/ two/
