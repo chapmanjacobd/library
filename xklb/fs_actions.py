@@ -37,17 +37,52 @@ from xklb.utils import (
 )
 
 
-def parse_args(default_chromecast=""):
+def parse_args(default_db, default_chromecast=""):
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument("db", nargs="?")
+    parser.add_argument(
+        "db",
+        nargs="?",
+        default=default_db,
+        help="Database file. If not specified a generic name will be used: audio.db, video.db, fs.db, etc",
+    )
 
     # TODO: maybe try https://dba.stackexchange.com/questions/43415/algorithm-for-finding-the-longest-prefix
-    parser.add_argument("--play-in-order", "-O", action="count", default=0)
+    parser.add_argument(
+        "--play-in-order",
+        "-O",
+        action="count",
+        default=0,
+        help="Try to get things to play in order (similarly named episodes)",
+    )
+    parser.add_argument(
+        "--duration",
+        "-d",
+        action="append",
+        help="""Media duration in minutes:
+-d 6 means 6 mins ±10% (between 5 and 7 mins)
+-d-6 means less than 6 mins
+-d+6 means more than 6 mins
 
-    parser.add_argument("--duration", "-d", action="append", help="Duration in minutes")
+-d+5 -d-7 should be similar to -d 6
 
-    parser.add_argument("--sort", "-u", nargs="+")
+if you want exact times you can use --where duration=6*60
+""",
+    )
+    parser.add_argument(
+        "--sort",
+        "-u",
+        nargs="+",
+        default="priority",
+        help="""Sort media by column
+-u duration means shortest media first
+-u duration desc means longest media first
+
+You can also use any sqlite operators for example:
+-u subtitle_count > 0,
+means sort by
+""",
+    )
     parser.add_argument("--where", "-w", nargs="+", action="extend", default=[])
     parser.add_argument("--include", "-s", "--search", nargs="+", action="extend", default=[])
     parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[])
@@ -66,8 +101,12 @@ def parse_args(default_chromecast=""):
     parser.add_argument("--skip", "-S", help="Offset")
 
     parser.add_argument("--time-limit", "-t", type=int)
-    parser.add_argument("--start", "-vs", help='Set the time to skip from the start of the media or use the magic word "wadsworth"')
-    parser.add_argument("--end", "-ve", help='Set the time to skip from the end of the media or use the magic word "dawsworth"')
+    parser.add_argument(
+        "--start", "-vs", help='Set the time to skip from the start of the media or use the magic word "wadsworth"'
+    )
+    parser.add_argument(
+        "--end", "-ve", help='Set the time to skip from the end of the media or use the magic word "dawsworth"'
+    )
 
     parser.add_argument("--player", "-player", nargs="*")
     parser.add_argument("--mpv-socket", default="/tmp/mpv_socket")
@@ -144,7 +183,7 @@ def parse_args(default_chromecast=""):
         args.sort = args.sort.replace("time_created", YEAR_MONTH("time_created"))
         args.sort = args.sort.replace("time_modified", YEAR_MONTH("time_modified"))
         args.sort = args.sort.replace("random", "random()")
-        args.sort = args.sort.replace("priority", "round(duration / size,7)")
+        args.sort = args.sort.replace("priority", "play_count, round(duration / size,7)")
         args.sort = args.sort.replace("sub", "has_sub")
 
     args.where = [s.replace("sub", "has_sub") for s in args.where]
@@ -190,7 +229,12 @@ def post_act(args, media_file):
     if args.post_action == "keep":
         pass
     elif args.post_action == "ask":
-        if Confirm.ask("Keep?", default=False):
+        if not Confirm.ask("Keep?", default=False):
+            delete_media(args, media_file)
+    elif args.post_action == "askkeep":
+        if not Confirm.ask("Keep?", default=False):
+            delete_media(args, media_file)
+        else:
             mv_to_keep_folder(args, media_file)
     elif args.post_action == "delete":
         delete_media(args, media_file)
@@ -295,14 +339,14 @@ def play(args, media: pd.DataFrame):
                 player.extend(["--fs", "--force-window=yes", "--really-quiet"])
 
             if args.start:
-                if args.start == 'wadsworth':
+                if args.start == "wadsworth":
                     player.extend(["--start", m.duration * 0.3])
                 else:
                     player.extend(["--start", args.start])
             if args.end:
-                if args.end == 'dawsworth':
+                if args.end == "dawsworth":
                     player.extend(["--end", m.duration * 0.65])
-                elif '+' in args.end:
+                elif "+" in args.end:
                     player.extend(["--end", (m.duration * 0.3) + int(args.end)])
                 else:
                     player.extend(["--end", args.end])
@@ -334,7 +378,7 @@ def play(args, media: pd.DataFrame):
 
         else:
             if args.action == Subcommand.watch:
-                if m['subtitle_count'] > 0:
+                if m["subtitle_count"] > 0:
                     player.extend(args.player_args_when_sub)
                 else:
                     player.extend(args.player_args_when_no_sub)
@@ -390,11 +434,9 @@ def construct_query(args):
     FROM media
     WHERE 1=1
     {args.sql_filter}
-    {'and play_count = 0' if args.action == Subcommand.listen and not args.include else ''}
     {'and audio_count > 0' if args.action == Subcommand.listen else ''}
     {'and video_count > 0' if args.action == Subcommand.watch else ''}
     ORDER BY 1=1
-        {', play_count asc nulls first' if args.action == Subcommand.listen else ''}
         {',' + args.sort if args.sort else ''}
         {', path' if args.print or args.include or args.play_in_order > 0 else ''}
         {', duration / size ASC' if args.action != Subcommand.filesystem else ''}
@@ -432,7 +474,7 @@ def printer(args, query):
             print(unix_loves_lines.strip())
     else:
         db_resp[["path"]] = db_resp[["path"]].applymap(
-            lambda x: textwrap.fill(x, os.get_terminal_size().columns - (18 * len(db_resp.columns)))
+            lambda x: textwrap.fill(x, max(10, os.get_terminal_size().columns - (18 * len(db_resp.columns))))
         )
         if "size" in db_resp.columns:
             db_resp[["size"]] = db_resp[["size"]].applymap(lambda x: None if x is None else humanize.naturalsize(x))
@@ -483,19 +525,15 @@ def process_actions(args):
 
 
 def watch():
-    args = parse_args(default_chromecast="Living Room TV")
+    args = parse_args("video.db", default_chromecast="Living Room TV")
     args.action = Subcommand.watch
-    if not args.db:
-        args.db = "video.db"
 
     process_actions(args)
 
 
 def listen():
-    args = parse_args(default_chromecast="Xylo and Orchestra")
+    args = parse_args("audio.db", default_chromecast="Xylo and Orchestra")
     args.action = Subcommand.listen
-    if not args.db:
-        args.db = "audio.db"
 
     try:
         process_actions(args)
@@ -505,9 +543,7 @@ def listen():
 
 
 def filesystem():
-    args = parse_args()
+    args = parse_args("fs.db")
     args.action = Subcommand.filesystem
-    if not args.db:
-        args.db = "fs.db"
 
     process_actions(args)

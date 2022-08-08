@@ -32,6 +32,7 @@ def has_internal_subtitle(file):
     if internal_sub == 0:
         return True
 
+
 def has_external_subtitle(file):
     SUBTITLE_FORMATS = "vtt|srt|ssa|ass|sub|idx|psb|smi|ssf|usf"
     file = Path(file)
