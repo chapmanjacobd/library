@@ -174,14 +174,14 @@ def extract_metadata(args, f):
         probe["format"].pop("probe_score", None)
         probe["format"].pop("start_time", None)
 
-        codec_types = [s.get('codec_type') for s in probe["streams"]]
-        tags = [s.get('tags') for s in probe["streams"] if s.get('tags') is not None]
-        languages = combine([t.get('language') for t in tags if t.get('language') not in [None, 'und', 'unk']])
+        codec_types = [s.get("codec_type") for s in probe["streams"]]
+        tags = [s.get("tags") for s in probe["streams"] if s.get("tags") is not None]
+        languages = combine([t.get("language") for t in tags if t.get("language") not in [None, "und", "unk"]])
 
-        video_count = sum([1 for s in codec_types if s == 'video'])
-        audio_count = sum([1 for s in codec_types if s == 'audio'])
-        attachment_count = sum([1 for s in codec_types if s == 'attachment'])
-        subtitle_count = sum([1 for s in codec_types if s == 'subtitle'])
+        video_count = sum([1 for s in codec_types if s == "video"])
+        audio_count = sum([1 for s in codec_types if s == "audio"])
+        attachment_count = sum([1 for s in codec_types if s == "attachment"])
+        subtitle_count = sum([1 for s in codec_types if s == "subtitle"])
 
         if subtitle_count == 0 and args.db_type == "v":
             try:
@@ -264,7 +264,7 @@ def find_new_files(args, path):
         # thanks to these people for making rglob fast https://bugs.python.org/issue26032
         scanned_files = [str(p) for p in Path(path).resolve().rglob("*")]
     else:
-        raise Exception(f'fs_extract for db_type {args.db_type} not implemented')
+        raise Exception(f"fs_extract for db_type {args.db_type} not implemented")
 
     new_files = set(scanned_files)
 
@@ -346,7 +346,7 @@ def main():
         elif args.db_type == "v":
             args.db = "video.db"
         else:
-            raise Exception(f'fs_extract for db_type {args.db_type} not implemented')
+            raise Exception(f"fs_extract for db_type {args.db_type} not implemented")
 
     if args.force_rescan:
         Path(args.db).unlink(missing_ok=True)

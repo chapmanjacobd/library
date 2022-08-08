@@ -3,18 +3,14 @@ from xklb.utils import Subcommand
 
 
 def tube_watch():
-    args = parse_args()
+    args = parse_args("tube.db")
     args.action = Subcommand.tubewatch
-    if not args.db:
-        args.db = "tube_video.db"
 
     process_actions(args)
 
 
 def tube_listen():
-    args = parse_args()
+    args = parse_args("tube.db")
     args.action = Subcommand.tubelisten
-    if not args.db:
-        args.db = "tube_audio.db"
 
     process_actions(args)
