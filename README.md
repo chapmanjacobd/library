@@ -12,13 +12,13 @@ Requires `ffmpeg`
 
 ### 1. Extract Metadata
 
+For the initial scan it takes about six hours to scan sixty terabytes. If you want to update the database run the same command again--any new files will be scanned and it is much, much quicker.
+
     lb extract tv.db ./video/folder/
     OR
     lb extract ./tv/  # when not specified, db will be created as `video.db`
     OR
     lb extract --audio ./music/  # db will be created as `audio.db`
-
-For the initial scan it takes about six hours to scan sixty terabytes. If you need to update the database -- run the same command again. Only the new files will be scanned and it is much, much quicker.
 
 ### 2. Watch / Listen from local files
 
@@ -28,43 +28,41 @@ For the initial scan it takes about six hours to scan sixty terabytes. If you ne
 
 ## Quick Start -- virtual
 
-If you like this I also have a [web version](https://unli.xyz/eject/)--but this Python version has more features and it can handle a lot more data.
-
 ### 1. Download Metadata
-
-    lb tubeadd educational.db https://www.youtube.com/c/BranchEducation/videos
 
 Download playlist and channel metadata. Break free of the YouTube algo~
 
-    lb tubeadd maker.db https://www.youtube.com/c/CuriousMarc/videos https://www.youtube.com/c/element14presents/videos/ https://www.youtube.com/c/DIYPerks/videos
+    lb tubeadd educational.db https://www.youtube.com/c/BranchEducation/videos
 
 You can add more than one at a time.
 
-    lb tubeadd maker.db https://vimeo.com/terburg
+    lb tubeadd maker.db https://www.youtube.com/c/CuriousMarc/videos https://www.youtube.com/c/element14presents/videos/ https://www.youtube.com/c/DIYPerks/videos
 
 And you can always add more later--even from different websites.
 
-    lb tubeadd maker.db --yt-dlp-config playlistend=1000
+    lb tubeadd maker.db https://vimeo.com/terburg
 
 To prevent mistakes the default configuration is to download metadata for only the newest 20,000 videos per playlist/channel.
 
-    lb tubeadd maker.db !TEDx
+    lb tubeadd maker.db --yt-dlp-config playlistend=1000
 
 Be aware that there are some YouTube Channels which have many items--for example the TEDx channel has about 180,000 videos. Some channels even have upwards of two million videos. More than you could likely watch in one sitting. On a high-speed connection (>500 Mbps), it can take up to five hours just to download the metadata for 180,000 videos. My advice: start with the 20,000.
 
 #### 1a. Get new videos for saved playlists
 
-    lb tubeupdate
-
 Tubeupdate will go through all added playlists and fetch metadata of any new videos not previously seen.
 
-    lb tubeupdate --yt-dlp-config download_archive=rel/loc/archive.txt
+    lb tubeupdate
 
 You can also include your own yt-dlp download archive to skip downloaded videos and stop before scanning the full playlist.
+
+    lb tubeupdate --yt-dlp-config download_archive=rel/loc/archive.txt
 
 ### 2. Watch / Listen from websites
 
     lb tubewatch maker.db
+
+If you like this I also have a [web version](https://unli.xyz/eject/)--but this Python version has more features and it can handle a lot more data.
 
 ## Organize using separate databases
 
@@ -99,11 +97,11 @@ If that's confusing (or if you are trying to load 4 billion files) you could alw
 
     wt tv.db --search 'title of series' --play-in-order
 
+There are multiple strictness levels of --play-in-order. If things aren't playing in order try adding more `O`s
+
     wt tv.db --search 'title of series' -O    # default
     wt tv.db --search 'title of series' -OO   # slower, more complex algorithm
     wt tv.db --search 'title of series' -OOO  # most strict
-
-There are multiple strictness levels of --play-in-order. If things aren't playing in order try adding more `O`s
 
 ### Suggested Usage
 
@@ -151,7 +149,7 @@ You can also use `lb` for any files:
 - all: is_deleted column
 - all: how much watched statistics
 - all: split_by_silence without modifying files
-- Tests
+- all: Tests
 - tube: prevent adding duplicates
 - tube: Download subtitle to embed in db tags for search
 - tube: Playlists subcommand: view virtual aggregated pattens

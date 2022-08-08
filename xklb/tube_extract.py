@@ -4,7 +4,7 @@ import tempfile
 from datetime import datetime
 from pathlib import Path
 from timeit import default_timer as timer
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Union
 
 import pandas as pd
 import yt_dlp
@@ -97,7 +97,7 @@ def supported(url):  # thank you @dbr
     return False
 
 
-def fetch_playlist(ydl_opts, playlist) -> Tuple[Dict | None, List[Dict]] | Tuple[None, None]:
+def fetch_playlist(ydl_opts, playlist) -> Union[Tuple[Dict | None, List[Dict]],Tuple[None, None]]:
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         pl = ydl.extract_info(playlist, download=False)
 
@@ -148,6 +148,9 @@ def fetch_playlist(ydl_opts, playlist) -> Tuple[Dict | None, List[Dict]] | Tuple
                 "abr",
                 "asr",
             ]
+
+            if v.get('title') in ["[Deleted video]", "[Private video]"]:
+                return None
 
             for k in list(v):
                 if k.startswith("_") or k in ignore_keys:
@@ -202,7 +205,10 @@ def fetch_playlist(ydl_opts, playlist) -> Tuple[Dict | None, List[Dict]] | Tuple
 
         entries = pl.pop("entries", None)
         if pl.get("entries") is None:
-            return None, [consolidate(pl)]
+            entry = consolidate(pl)
+            if entry:
+                return None, [entry]
+            return None, None
 
         entries = [consolidate(v) for v in entries]
         print(f"Got {len(entries)} entries from playlist '{pl['title']}'")

@@ -384,6 +384,7 @@ def play(args, media: pd.DataFrame):
                 else:
                     player.extend(args.player_args_when_no_sub)
 
+            if args.action in [Subcommand.watch, Subcommand.tubewatch]:
                 cmd(*player, "--", media_file)
             elif args.action in [Subcommand.listen, Subcommand.tubelisten]:
                 cmd_interactive(*player, "--", media_file)
