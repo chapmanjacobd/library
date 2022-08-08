@@ -73,7 +73,7 @@ if you want exact times you can use --where duration=6*60
         "--sort",
         "-u",
         nargs="+",
-        default="priority",
+        default=["priority"],
         help="""Sort media by column
 -u duration means shortest media first
 -u duration desc means longest media first
@@ -222,7 +222,7 @@ def delete_media(args, media_file):
 
 
 def post_act(args, media_file):
-    if args.action in [Subcommand.listen, Subcommand.watch]:
+    if args.action in [Subcommand.listen, Subcommand.watch, Subcommand.tubelisten, Subcommand.tubewatch]:
         args.con.execute("update media set play_count = play_count +1 where path = ?", (str(media_file),))
         args.con.commit()
 
@@ -322,20 +322,21 @@ def play(args, media: pd.DataFrame):
         if args.play_in_order > 1 or (args.action == Subcommand.listen and "audiobook" in str(media_file).lower()):
             media_file = get_ordinal_media(args, Path(media_file))
 
-        media_file = Path(args.prefix + media_file)
-        if not media_file.exists():
-            remove_media(args, str(media_file))
-            continue
+        if not media_file.startswith('http'):
+            media_file = Path(args.prefix + media_file)
+            if not media_file.exists():
+                remove_media(args, str(media_file))
+                continue
 
         if args.player:
             player = args.player
         elif which("mpv") is not None:
             player = ["mpv"]
-            if args.action == Subcommand.listen:
+            if args.action in [Subcommand.listen, Subcommand.tubelisten]:
                 player.extend(
                     [f"--input-ipc-server={args.mpv_socket}", "--no-video", "--keep-open=no", "--really-quiet"]
                 )
-            elif args.action == Subcommand.watch:
+            elif args.action in [Subcommand.watch, Subcommand.tubewatch]:
                 player.extend(["--fs", "--force-window=yes", "--really-quiet"])
 
             if args.start:
@@ -354,7 +355,7 @@ def play(args, media: pd.DataFrame):
         else:
             player = ["xdg-open"]
 
-        if args.action == Subcommand.watch:
+        if args.action in [Subcommand.watch, Subcommand.tubewatch]:
             print(media_file)
         elif args.action == Subcommand.listen:
             print(cmd("ffprobe", "-hide_banner", "-loglevel", "info", media_file).stderr)
@@ -363,9 +364,9 @@ def play(args, media: pd.DataFrame):
             media_file = transcode(media_file)
 
         if args.chromecast:
-            if args.action == Subcommand.watch:
+            if args.action in [Subcommand.watch, Subcommand.tubewatch]:
                 catt_log = watch_chromecast(args, media_file)
-            elif args.action == Subcommand.listen:
+            elif args.action in [Subcommand.listen, Subcommand.tubelisten]:
                 catt_log = listen_chromecast(args, media_file, player)
             else:
                 raise NotImplementedError
@@ -384,7 +385,7 @@ def play(args, media: pd.DataFrame):
                     player.extend(args.player_args_when_no_sub)
 
                 cmd(*player, "--", media_file)
-            elif args.action == Subcommand.listen:
+            elif args.action in [Subcommand.listen, Subcommand.tubelisten]:
                 cmd_interactive(*player, "--", media_file)
 
         if args.post_action:
