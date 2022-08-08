@@ -12,7 +12,11 @@ from joblib import Parallel, delayed
 from tinytag import TinyTag
 
 from xklb.db import fetchall_dict, sqlite_con
-from xklb.subtitle import get_subtitle, has_external_subtitle, youtube_dl_id
+from xklb.subtitle import (
+    get_subtitle,
+    has_external_subtitle,
+    youtube_dl_id,
+)
 from xklb.utils import (
     SQLITE_PARAM_LIMIT,
     chunks,
@@ -333,7 +337,7 @@ def main():
     parser.add_argument("-s", "--subtitle", action="store_true")
     parser.add_argument("-yt", "--youtube-only", action="store_true")
     parser.add_argument("-sl", "--subliminal-only", action="store_true")
-    parser.add_argument("-f", "--force-rescan", action="store_true")
+    parser.add_argument("-f", "--overwrite-db", action="store_true", help="Delete db file before scanning")
     parser.add_argument("-d", "--delete-unplayable", action="store_true")
     parser.add_argument("-v", "--verbose", action="count", default=0)
     args = parser.parse_args()
@@ -348,7 +352,7 @@ def main():
         else:
             raise Exception(f"fs_extract for db_type {args.db_type} not implemented")
 
-    if args.force_rescan:
+    if args.overwrite_db:
         Path(args.db).unlink(missing_ok=True)
 
     extractor(args)

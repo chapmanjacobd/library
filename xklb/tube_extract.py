@@ -1,136 +1,24 @@
 import argparse
 import shutil
 import tempfile
+from datetime import datetime
 from pathlib import Path
 from timeit import default_timer as timer
-from typing import Dict
+from typing import Dict, List, Tuple
 
 import pandas as pd
 import yt_dlp
+from rich import print
 
 from xklb.db import sqlite_con
-from xklb.utils import argparse_dict, filter_None, log
-
-# TODO: add cookiesfrombrowser: ('firefox', ) as a default
-# cookiesfrombrowser: ('vivaldi', ) # should not crash if not installed ?
-
-default_ydl_opts = {
-    # "writesubtitles": True,
-    # "writeautomaticsub": True,
-    # "subtitleslangs": "en.*,EN.*",
-    # "playliststart": 20000, # an optimization needs to be made in yt-dlp to support some form of background backfilling/pagination. 2000-4000 takes 40 seconds instead of 20.
-    "skip_download": True,
-    "break_on_existing": True,
-    "break_per_url": True,
-    "check_formats": False,
-    "no_check_certificate": True,
-    "no_warnings": True,
-    "ignore_no_formats_error": True,
-    "ignoreerrors": "only_download",
-    "skip_playlist_after_errors": 20,
-    "quiet": True,
-    "dynamic_mpd": False,
-    "youtube_include_dash_manifest": False,
-    "youtube_include_hls_manifest": False,
-    "extract_flat": True,
-    "clean_infojson": False,
-    "playlistend": 20000,
-    "rejecttitle": "|".join(
-        [
-            "Trailer",
-            "Sneak Peek",
-            "Preview",
-            "Teaser",
-            "Promo",
-            "Crypto",
-            "Montage",
-            "Bitcoin",
-            "Apology",
-            " Clip",
-            "Clip ",
-            "Best of",
-            "Compilation",
-            "Top 10",
-            "Top 9",
-            "Top 8",
-            "Top 7",
-            "Top 6",
-            "Top 5",
-            "Top 4",
-            "Top 3",
-            "Top 2",
-            "Top Ten",
-            "Top Nine",
-            "Top Eight",
-            "Top Seven",
-            "Top Six",
-            "Top Five",
-            "Top Four",
-            "Top Three",
-            "Top Two",
-        ]
-    ),
-}
-
-
-def supported(url):  # thank you @dbr
-    ies = yt_dlp.extractor.gen_extractors()
-    for ie in ies:
-        if ie.suitable(url) and ie.IE_NAME != "generic":
-            return True  # Site has dedicated extractor
-    return False
-
-
-def fetch_playlist(ydl_opts, playlist) -> Dict | None:
-    # if not supported(playlist):
-    #     return None
-
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        playlist_dict = ydl.extract_info(playlist, download=False)
-
-        if not playlist_dict:
-            return
-
-        raise
-
-        playlist_dict.pop("availability", None)
-        playlist_dict.pop("formats", None)
-        playlist_dict.pop("requested_formats", None)
-        playlist_dict.pop("thumbnails", None)
-
-        playlist_dict["playlist_count"] = playlist_dict.get("playlist_count") or len(playlist_dict)
-
-        if playlist_dict.get("entries"):
-            for v in playlist_dict["entries"]:
-                v.pop("thumbnails", None)
-                # v.pop("_type", None)
-                # v.pop("availability", None)
-                # v.pop("description", None)
-                # v.pop("live_status", None)
-                # v.pop("release_timestamp", None)
-                # v.pop("view_count", None)
-                # v.pop("upload_date", None)
-
-                v["channel"] = v.get("channel") or v.get("channel_id") or playlist_dict.get("channel")
-                v["path"] = v.get("original_url") or playlist_dict.get("original_url")
-                v["playlist_count"] = v.get("playlist_count") or playlist_dict.get("playlist_count")
-                v["playlist_title"] = playlist_dict.get("title")
-                v["title"] = v.get("title") or playlist_dict.get("title")
-                v["uploader"] = v.get("uploader") or playlist_dict.get("uploader")
-
-        if playlist_dict.get("entries") is None:
-            video_dict = dict(
-                channel=playlist_dict.get("channel"),
-                id=playlist_dict.get("id"),
-                ie_key=playlist_dict.get("extractor_key"),
-                path=playlist_dict.get("original_url"),
-                playlist_count=1,
-                title=playlist_dict.get("title"),
-                uploader=playlist_dict.get("uploader"),
-            )
-            playlist_dict = {**video_dict, "entries": [video_dict]}
-
-        return playlist_dict
+from xklb.tube_actions import default_ydl_opts
+from xklb.utils import (
+    argparse_dict,
+    combine,
+    filter_None,
+    log,
+    safe_unpack,
+)
 
 
 def create_download_archive(args):
@@ -140,7 +28,7 @@ def create_download_archive(args):
     query = "select distinct ie_key, id from entries"
     media = pd.DataFrame([dict(r) for r in args.con.execute(query).fetchall()])
 
-    raise  # maybe use broadcasting
+    breakpoint()  # maybe use broadcasting
 
     ax_txt = "\n".join(list(map(lambda m: f"{m['ie_key'].lower()} {m['id']}", media.to_records())))
     Path(download_archive_temp).write_text(ax_txt)
@@ -151,6 +39,7 @@ def create_download_archive(args):
                 with open(f, "rb") as fd:
                     shutil.copyfileobj(fd, wfd)
                     wfd.write(b"\n")
+
     return download_archive_temp
 
 
@@ -158,50 +47,194 @@ def parse_args(update=False):
     parser = argparse.ArgumentParser()
     parser.add_argument("db", nargs="?", default="tube.db")
     parser.add_argument("playlists", nargs="?" if update else "+")
-
     parser.add_argument(
         "--yt-dlp-config",
         "-yt-dlp-config",
         nargs="*",
         action=argparse_dict,
+        default={},
         metavar="KEY=VALUE",
         help="Add key/value pairs to override or extend default yt-dlp configuration",
     )
+    parser.add_argument(
+        "-update",
+        "--update",
+        action="store_true",
+        help="lightweight add playlist: Use with --yt-dlp-config download-archive=archive.txt to inform tubeadd",
+    )
+    parser.add_argument("-safe", "--safe", action="store_true", help="Skip generic URLs")
+    parser.add_argument("-f", "--overwrite-db", action="store_true", help="Delete db file before scanning")
+    parser.add_argument("-v", "--verbose", action="count", default=0)
     args = parser.parse_args()
     log.info(filter_None(args.__dict__))
 
+    if args.overwrite_db:
+        Path(args.db).unlink(missing_ok=True)
+
+    Path(args.db).touch()
     args.con = sqlite_con(args.db)
 
-    ydl_opts = {**default_ydl_opts, **args.yt_dlp_opts}
+    ydl_opts = {**default_ydl_opts, **args.yt_dlp_config}
     log.info(filter_None(ydl_opts))
 
-    if update:
+    if update or args.update:
         download_archive_temp = create_download_archive(args)
-        ydl_opts = {**ydl_opts, "download_archive": download_archive_temp}
+        ydl_opts = {
+            **ydl_opts,
+            "download_archive": download_archive_temp,
+            "break_on_existing": True,
+            "break_per_url": True,
+        }
 
     return args, ydl_opts
 
 
-def tube_add(args):
+def supported(url):  # thank you @dbr
+    ies = yt_dlp.extractor.gen_extractors()
+    for ie in ies:
+        if ie.suitable(url) and ie.IE_NAME != "generic":
+            return True  # Site has dedicated extractor
+    return False
+
+
+def fetch_playlist(ydl_opts, playlist) -> Tuple[Dict | None, List[Dict]] | Tuple[None, None]:
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        pl = ydl.extract_info(playlist, download=False)
+
+        if not pl:
+            return None, None
+
+        pl.pop("availability", None)
+        pl.pop("formats", None)
+        pl.pop("requested_formats", None)
+        pl.pop("requested_entries", None)
+        pl.pop("thumbnails", None)
+        pl.pop("playlist_count", None)
+
+        def consolidate(v):
+            ignore_keys = [
+                "thumbnail",
+                "thumbnails",
+                "availability",
+                "playable_in_embed",
+                "is_live",
+                "was_live",
+                'modified_date',
+                "release_timestamp",
+                "comment_count",
+                "chapters",
+                "like_count",
+                "channel_follower_count",
+                "webpage_url_basename",
+                "webpage_url_domain",
+                "playlist",
+                "playlist_index",
+                "display_id",
+                "fulltitle",
+                "duration_string",
+                "requested_subtitles",
+                "format",
+                "format_id",
+                "ext",
+                "protocol",
+                "format_note",
+                "tbr",
+                "resolution",
+                "dynamic_range",
+                "vcodec",
+                "vbr",
+                "stretched_ratio",
+                "acodec",
+                "abr",
+                "asr",
+            ]
+
+            for k in list(v):
+                if k.startswith("_") or k in ignore_keys:
+                    v.pop(k, None)
+
+            upload_date = v.pop("upload_date", None)
+            if upload_date:
+                upload_date = int(datetime.strptime(upload_date, "%Y%m%d").timestamp())
+
+            cv = dict()
+            cv["path"] = safe_unpack(
+                v.pop("url", None),
+                v.pop("webpage_url", None),
+                v.pop("original_url", None),
+                pl.get("original_url"),
+            )
+            cv["size"] = v.pop("filesize_approx", None)
+            cv["time_created"] = upload_date
+            cv["duration"] = v.pop("duration", None)
+            cv["play_count"] = 0
+            cv["language"] = v.pop("language", None)
+            cv["tags"] = combine(v.pop("description", None), v.pop("categories", None), v.pop("tags", None))
+            cv["id"] = v.pop("id")
+            cv["ie_key"] = safe_unpack(v.pop("extractor_key", None), v.pop("extractor"))
+            cv["playlist_path"] = safe_unpack(pl.get("original_url"), pl.get("webpage_url"))
+            cv["view_count"] = v.pop("view_count", None)
+            cv["width"] = v.pop("width", None)
+            cv["height"] = v.pop("height", None)
+            cv["fps"] = v.pop("fps", None)
+            cv["average_rating"] = v.pop("average_rating", None)
+            cv["live_status"] = v.pop("live_status", None)
+            cv["age_limit"] = v.pop("age_limit", None)
+            cv["title"] = safe_unpack(v.pop("title", None), pl.get("title"))
+            cv["uploader"] = safe_unpack(
+                v.pop("uploader_url", None),
+                v.pop("uploader", None),
+                v.pop("uploader_id", None),
+                pl.get("uploader"),
+            )
+            cv["channel"] = safe_unpack(
+                v.pop("channel_url", None),
+                v.pop("channel", None),
+                v.pop("channel_id", None),
+                pl.get("channel"),
+            )
+
+            if v != {}:
+                log.info("Extra data %s", v)
+                breakpoint()
+
+            return cv
+
+        entries = pl.pop("entries", None)
+        if pl.get("entries") is None:
+            return None, [consolidate(pl)]
+
+        entries = [consolidate(v) for v in entries]
+        print(f"Got {len(entries)} entries from playlist '{pl['title']}'")
+
+        breakpoint()
+
+        return pl, entries
+
+
+def tube_add():
     args, ydl_opts = parse_args()
 
     for playlist in args.playlists:
+        if args.safe and not supported(playlist):
+            continue
+
         start = timer()
-        pl = fetch_playlist(ydl_opts, playlist)
+        pl, entries = fetch_playlist(ydl_opts, playlist)
         end = timer()
-        log.warning(end - start)
-        if not pl:
+        log.info(f"{end - start:.1f} seconds to fetch playlist")
+        if not entries:
             print("Could not process", playlist)
             continue
 
-        entries = pl.pop("entries")
-        plDF = pd.DataFrame([pl])
-        plDF.apply(pd.to_numeric, errors="ignore").convert_dtypes().to_sql(  # type: ignore
-            "playlists",
-            con=args.con,
-            if_exists="append",
-            index=False,
-        )
+        if pl:
+            plDF = pd.DataFrame([pl])
+            plDF.apply(pd.to_numeric, errors="ignore").convert_dtypes().to_sql(  # type: ignore
+                "playlists",
+                con=args.con,
+                if_exists="append",
+                index=False,
+            )
         DF = pd.DataFrame(list(filter(None, entries)))
         DF.apply(pd.to_numeric, errors="ignore").convert_dtypes().to_sql(  # type: ignore
             "media",
@@ -212,23 +245,8 @@ def tube_add(args):
             method="multi",
         )
 
-        """
-        entries -> media
-        url -> path
 
-        playlists -> playlists
-
-        list the undownloaded in a log (combine ytURE with retry functionality
-
-        mpv --script-opts=ytdl_hook-try_ytdl_first=yes
-        catt
-
-        break on existing
-        use sqlite data to create archive log (combine with actual archive log) in temp file to feed into yt-dlp
-        """
-
-
-def tube_update(args):
+def tube_update():
     args, ydl_opts = parse_args(update=True)
 
     if args.playlists:
