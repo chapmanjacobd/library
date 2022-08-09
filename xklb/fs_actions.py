@@ -527,7 +527,7 @@ def construct_query(args):
     return query, bindings
 
 
-def printer(args, query):
+def printer(args, query, bindings):
     if "a" in args.print:
         query = f"""select
             "Aggregate" as path
@@ -543,7 +543,7 @@ def printer(args, query):
         print(query)
         stop()
 
-    db_resp = pd.DataFrame([dict(r) for r in args.con.execute(query).fetchall()])
+    db_resp = pd.DataFrame([dict(r) for r in args.con.execute(query, bindings).fetchall()])
 
     if args.verbose > 1 and args.print_column and "*" in args.print_column:
         import rich
@@ -557,7 +557,7 @@ def printer(args, query):
             f = db_resp[["path"]].loc[0].iat[0]
             if not Path(f).exists():
                 remove_media(args, f)
-                return printer(args, query)
+                return printer(args, query, bindings)
             print(f)
         else:
             print(db_resp[["path"]].to_string(index=False, header=False))
@@ -601,7 +601,7 @@ def process_actions(args):
     query, bindings = construct_query(args)
 
     if args.print:
-        printer(args, query=print_query(query, bindings))
+        printer(args, query, bindings)
 
     media = pd.DataFrame([dict(r) for r in args.con.execute(query, bindings).fetchall()])
     if len(media) == 0:
