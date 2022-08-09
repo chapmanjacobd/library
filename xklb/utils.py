@@ -255,7 +255,9 @@ def compile_query(query, *args):
     number_of_question_marks = query.count("?")
     number_of_arguments = len(args)
     if number_of_arguments != number_of_question_marks:
-        return f"Number of bindings mismatched. The query uses {number_of_question_marks}, but {number_of_arguments} parameters bound."
+        raise Exception(
+            f"Number of bindings mismatched. The query uses {number_of_question_marks}, but {number_of_arguments} parameters bound."
+        )
 
     for a in args:
         query = query.replace("?", "'" + str(a) + "'", 1)
