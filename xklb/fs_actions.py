@@ -15,6 +15,7 @@ import ffmpeg
 import humanize
 import pandas as pd
 import sqlite_utils
+from catt.api import CattDevice
 from rich.prompt import Confirm
 from tabulate import tabulate
 
@@ -36,9 +37,20 @@ from xklb.utils import (
     remove_media,
     stop,
 )
-from catt.api import CattDevice
 
 DEFAULT_PLAY_QUEUE = 120
+
+
+def override_sort(string):
+    YEAR_MONTH = lambda var: f"cast(strftime('%Y%m',datetime({var} / 1000000000, 'unixepoch')) as int)"
+
+    return (
+        string.replace("created", YEAR_MONTH("time_created"))
+        .replace("modified", YEAR_MONTH("time_modified"))
+        .replace("random", "random()")
+        .replace("priority", "play_count, round(duration / size,7)")
+        .replace("sub", "subtitle_count > 0")
+    )
 
 
 def parse_args(default_db, default_chromecast=""):
@@ -180,6 +192,7 @@ Double spaces means one space
 
     parser.add_argument("--move", "-mv", help="lt -l 1 -mv dest/folder/; move a file into dest/folder/")
 
+    parser.add_argument("--ignore-errors", "--ignoreerrors", action="store_true")
     parser.add_argument("--verbose", "-v", action="count", default=0)
     args = parser.parse_args()
 
@@ -244,18 +257,6 @@ Double spaces means one space
     log.info(filter_None(args.__dict__))
 
     return args
-
-
-def override_sort(string):
-    YEAR_MONTH = lambda var: f"cast(strftime('%Y%m',datetime({var} / 1000000000, 'unixepoch')) as int)"
-
-    return (
-        string.replace("created", YEAR_MONTH("time_created"))
-        .replace("modified", YEAR_MONTH("time_modified"))
-        .replace("random", "random()")
-        .replace("priority", "play_count, round(duration / size,7)")
-        .replace("sub", "subtitle_count > 0")
-    )
 
 
 def transcode(next_video):
@@ -330,7 +331,7 @@ def externalize_subtitle(media_file):
 
 
 def watch_chromecast(args, m):
-    subtitles_file = externalize_subtitle(m['path'])
+    subtitles_file = externalize_subtitle(m["path"])
 
     if "vlc" in args.player:
         catt_log = cmd(
@@ -341,7 +342,7 @@ def watch_chromecast(args, m):
             "--demux-filter=demux_chromecast",
             "--sub-file=" + subtitles_file if subtitles_file else "",
             *args.player[1:],
-            m['path'],
+            m["path"],
         )
     else:
         if args.action in [Subcommand.watch, Subcommand.listen]:
@@ -352,10 +353,10 @@ def watch_chromecast(args, m):
                 "cast",
                 "-s",
                 subtitles_file if subtitles_file else FAKE_SUBTITLE,
-                m['path'],
+                m["path"],
             )
         else:
-            catt_log = args.cc.play_url(m['path'], resolve=True, block=True)
+            catt_log = args.cc.play_url(m["path"], resolve=True, block=True)
 
     if subtitles_file:
         Path(subtitles_file).unlink(missing_ok=True)
@@ -363,20 +364,20 @@ def watch_chromecast(args, m):
 
 
 def listen_chromecast(args, m, player):
-    Path(CAST_NOW_PLAYING).write_text(m['path'])
+    Path(CAST_NOW_PLAYING).write_text(m["path"])
     Path(FAKE_SUBTITLE).touch()
     if not args.with_local:
         if args.action in [Subcommand.watch, Subcommand.listen]:
-            catt_log = cmd("catt", "-d", args.chromecast_device, "cast", "-s", FAKE_SUBTITLE, m['path'])
+            catt_log = cmd("catt", "-d", args.chromecast_device, "cast", "-s", FAKE_SUBTITLE, m["path"])
         else:
-            catt_log = args.cc.play_url(m['path'], resolve=True, block=True)
+            catt_log = args.cc.play_url(m["path"], resolve=True, block=True)
     else:
         cast_process = subprocess.Popen(
-            ["catt", "-d", args.chromecast_device, "cast", "-s", FAKE_SUBTITLE, m['path']], preexec_fn=os.setpgrp
+            ["catt", "-d", args.chromecast_device, "cast", "-s", FAKE_SUBTITLE, m["path"]], preexec_fn=os.setpgrp
         )
         sleep(0.974)  # imperfect lazy sync; I use keyboard shortcuts to send `set speed` commands to mpv for resync
         # if pyChromecast provides a way to sync accurately that would be very interesting to know; I have not researched it
-        cmd_interactive(*player, "--", m['path'])
+        cmd_interactive(*player, "--", m["path"])
         catt_log = Pclose(cast_process)  # wait for chromecast to stop (you can tell any chromecast to pause)
         sleep(3.0)  # give chromecast some time to breathe
 
@@ -462,7 +463,7 @@ def play(args, media: pd.DataFrame):
                     player.extend(args.player_args_when_no_sub)
 
             if args.action in [Subcommand.watch, Subcommand.tubewatch]:
-                cmd(*player, "--", media_file)
+                cmd(*player, "--", media_file, strict=not args.ignore_errors)
             elif args.action in [Subcommand.listen, Subcommand.tubelisten]:
                 cmd_interactive(*player, "--", media_file)
 
