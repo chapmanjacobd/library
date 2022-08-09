@@ -166,10 +166,11 @@ You can also use `lb` for any files:
 
 ### TODO
 
-- fs: split_by_silence without modifying files
 - all: Tests
+- tube: tubeupdate
 - tube: None instead of nan
 - tube: prevent adding duplicates
 - tube: sqlite-utils
 - tube: Download subtitle to embed in db tags for search
 - tube: Documentation
+- fs: split_by_silence without modifying files
