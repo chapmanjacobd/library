@@ -146,6 +146,7 @@ def consolidate(pl, v):
         "acodec",
         "abr",
         "asr",
+        "epoch",
     ]
 
     if v.get("title") in ["[Deleted video]", "[Private video]"]:
