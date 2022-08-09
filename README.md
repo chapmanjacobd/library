@@ -44,7 +44,7 @@ To prevent mistakes the default configuration is to download metadata for only t
 
 Be aware that there are some YouTube Channels which have many items--for example the TEDx channel has about 180,000 videos. Some channels even have upwards of two million videos. More than you could likely watch in one sitting. On a high-speed connection (>500 Mbps), it can take up to five hours just to download the metadata for 180,000 videos. My advice: start with the 20,000.
 
-<!-- #### 1a. Get new videos for saved playlists
+#### 1a. Get new videos for saved playlists
 
 Tubeupdate will go through all added playlists and fetch metadata of any new videos not previously seen.
 
@@ -52,7 +52,7 @@ Tubeupdate will go through all added playlists and fetch metadata of any new vid
 
 You can also include your own yt-dlp download archive to skip downloaded videos and speed up playlist scanning.
 
-    lb tubeupdate --yt-dlp-config download_archive=rel/loc/archive.txt -->
+    lb tubeupdate --yt-dlp-config download_archive=rel/loc/archive.txt
 
 ### 2. Watch / Listen from websites
 
@@ -167,7 +167,6 @@ You can also use `lb` for any files:
 ### TODO
 
 - all: Tests
-- tube: tubeupdate
 - tube: None instead of nan
 - tube: prevent adding duplicates
 - tube: sqlite-utils

@@ -1,5 +1,4 @@
 import argparse
-import csv
 import math
 import os
 import shlex
@@ -561,8 +560,7 @@ def printer(args, query):
                 return printer(args, query)
             print(f)
         else:
-            unix_loves_lines = db_resp[["path"]].to_csv(index=False, header=False, sep="\t", quoting=csv.QUOTE_NONE)
-            print(unix_loves_lines.strip())
+            print(db_resp[["path"]].to_string(index=False, header=False))
     else:
         db_resp[["path"]] = db_resp[["path"]].applymap(
             lambda x: textwrap.fill(x, max(10, os.get_terminal_size().columns - (18 * len(db_resp.columns))))

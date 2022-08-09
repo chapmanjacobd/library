@@ -267,7 +267,7 @@ def print_query(query, bindings):
     return re.sub(r"\n\s+", r"\n", compile_query(query, *bindings))
 
 
-def single_column_tolist(array_to_unpack, column_name=1):
+def single_column_tolist(array_to_unpack, column_name: str | int = 1):
     return list(
         map(
             lambda x: x[column_name],
@@ -359,7 +359,7 @@ def safe_unpack(*list_, idx=0):
 class argparse_dict(argparse.Action):
     def __call__(self, parser, args, values, option_string=None):
         try:
-            d = dict(map(lambda x: x.split("="), values))
+            d = dict(map(lambda x: x.split("="), values.split(" ")))
         except ValueError as ex:
             raise argparse.ArgumentError(self, f'Could not parse argument "{values}" as k1=1 k2=2 format')
         setattr(args, self.dest, d)
