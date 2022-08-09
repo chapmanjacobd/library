@@ -231,15 +231,8 @@ Double spaces means one space
 
         args.size = size_rules
 
-    YEAR_MONTH = lambda var: f"cast(strftime('%Y%m',datetime({var} / 1000000000, 'unixepoch')) as int)"
     if args.sort:
-        args.sort = args.sort.replace("time_created", YEAR_MONTH("time_created"))
-        args.sort = args.sort.replace("time_modified", YEAR_MONTH("time_modified"))
-        args.sort = args.sort.replace("random", "random()")
-        args.sort = args.sort.replace("priority", "play_count, round(duration / size,7)")
-        args.sort = args.sort.replace("sub", "has_sub")
-
-    args.where = [s.replace("sub", "has_sub") for s in args.where]
+        args.sort = override_sort(args.sort)
 
     if args.chromecast:
         args.cc = CattDevice(args.chromecast_device, lazy=True)
@@ -251,6 +244,18 @@ Double spaces means one space
     log.info(filter_None(args.__dict__))
 
     return args
+
+
+def override_sort(string):
+    YEAR_MONTH = lambda var: f"cast(strftime('%Y%m',datetime({var} / 1000000000, 'unixepoch')) as int)"
+
+    return (
+        string.replace("created", YEAR_MONTH("time_created"))
+        .replace("modified", YEAR_MONTH("time_modified"))
+        .replace("random", "random()")
+        .replace("priority", "play_count, round(duration / size,7)")
+        .replace("sub", "subtitle_count > 0")
+    )
 
 
 def transcode(next_video):
