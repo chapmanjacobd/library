@@ -94,16 +94,6 @@ Organize via separate databases.
     lt -l inf -u random # listen to random songs indefinitely
     lt -s infinite      # listen to songs from the band infinite
 
-If that is confusing (or if you are trying to load 4 billion files) you could always use your shell:
-
-    function repeat
-        while $argv
-            and :
-        end
-    end
-
-    repeat lt -s finite  # listen to finite songs infinitely
-
 ### Watch longest videos
 
     wt tv.db --sort duration desc
