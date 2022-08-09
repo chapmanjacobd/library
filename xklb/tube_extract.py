@@ -14,7 +14,6 @@ import humanize
 import numpy as np
 import pandas as pd
 import yt_dlp
-from rich import inspect, print
 from tabulate import tabulate
 
 from xklb.db import sqlite_con
@@ -220,13 +219,16 @@ def fetch_playlist(args, playlist) -> Tuple[(None | Dict), (None | List[Dict])]:
         entries = pl.pop("entries", None)
         if entries is None:
             entry = consolidate(pl, pl)
-            log.info("No entries %s", entry)
+
             if not entry:
+                log.warning("No video found %s", pl)
                 return None, None
+
+            log.warning("Importing playlist-less media %s", entry)
             return None, [entry]
 
         entries = list(filter(None, [consolidate(pl, v) for v in entries if v]))
-        print(f"Downloaded {len(entries)} entries from playlist '{pl['title']}'")
+        log.warning(f"Downloaded {len(entries)} entries from playlist '{pl['title']}'")
 
         pl = consolidate(pl, pl)
         pl = dict(
@@ -286,7 +288,7 @@ def tube_add():
         end = timer()
         log.info(f"{end - start:.1f} seconds to fetch playlist")
         if not entries:
-            print("Could not process", playlist)
+            log.warning("Could not process %s", playlist)
             continue
 
         if pl:
@@ -396,7 +398,7 @@ def tube_update():
         end = timer()
         log.info(f"{end - start:.1f} seconds to update playlist")
         if not entries:
-            print("Could not update", playlist)
+            log.warning("Could not update %s", playlist)
             continue
 
         save_entries(args, entries)
