@@ -44,11 +44,10 @@ def override_sort(string):
     YEAR_MONTH = lambda var: f"cast(strftime('%Y%m',datetime({var} / 1000000000, 'unixepoch')) as int)"
 
     return (
-        string.replace("created", YEAR_MONTH("time_created"))
-        .replace("modified", YEAR_MONTH("time_modified"))
+        string.replace("month_created", YEAR_MONTH("time_created"))
+        .replace("month_modified", YEAR_MONTH("time_modified"))
         .replace("random", "random()")
         .replace("priority", "play_count, round(duration / size,7)")
-        .replace("sub", "subtitle_count > 0")
     )
 
 
