@@ -28,7 +28,7 @@ wrapt = ">=1.11,<2"
 
 [[package]]
 name = "asttokens"
-version = "2.0.5"
+version = "2.0.7"
 description = "Annotate AST trees with source code positions"
 category = "main"
 optional = false
@@ -38,7 +38,15 @@ python-versions = "*"
 six = "*"
 
 [package.extras]
-test = ["astroid", "pytest"]
+test = ["astroid (<=2.5.3)", "pytest"]
+
+[[package]]
+name = "async-timeout"
+version = "4.0.2"
+description = "Timeout context manager for asyncio programs"
+category = "main"
+optional = false
+python-versions = ">=3.6"
 
 [[package]]
 name = "atomicwrites"
@@ -392,7 +400,7 @@ test = ["pytest", "pytest-mock", "pytest-benchmark", "pytest-cov", "pylint", "py
 
 [[package]]
 name = "humanize"
-version = "4.2.3"
+version = "4.3.0"
 description = "Python humanize utilities"
 category = "main"
 optional = false
@@ -545,7 +553,7 @@ python-versions = ">=3.6"
 
 [[package]]
 name = "more-itertools"
-version = "8.13.0"
+version = "8.14.0"
 description = "More routines for operating on iterables, beyond itertools"
 category = "dev"
 optional = false
@@ -974,7 +982,7 @@ python-versions = ">=3.6"
 
 [[package]]
 name = "sqlite-fts4"
-version = "1.0.2"
+version = "1.0.3"
 description = "Python functions for working with SQLite FTS4 search"
 category = "main"
 optional = false
@@ -1110,7 +1118,7 @@ python-versions = ">=3.7"
 
 [[package]]
 name = "tomlkit"
-version = "0.11.1"
+version = "0.11.3"
 description = "Style preserving TOML library"
 category = "dev"
 optional = false
@@ -1177,11 +1185,11 @@ python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,>=2.7"
 
 [[package]]
 name = "yt-dlp"
-version = "2022.7.18"
+version = "2022.8.8"
 description = "A youtube-dl fork with additional features and patches"
 category = "main"
 optional = false
-python-versions = ">=3.6"
+python-versions = ">=3.7"
 
 [package.dependencies]
 brotli = {version = "*", markers = "platform_python_implementation == \"CPython\""}
@@ -1193,13 +1201,14 @@ websockets = "*"
 
 [[package]]
 name = "zeroconf"
-version = "0.38.7"
+version = "0.39.0"
 description = "Pure Python Multicast DNS Service Discovery Library (Bonjour/Avahi compatible)"
 category = "main"
 optional = false
 python-versions = ">=3.7"
 
 [package.dependencies]
+async-timeout = ">=4.0.1"
 ifaddr = ">=0.1.7"
 
 [metadata]
@@ -1221,8 +1230,12 @@ astroid = [
     {file = "astroid-2.11.7.tar.gz", hash = "sha256:bb24615c77f4837c707669d16907331374ae8a964650a66999da3f5ca68dc946"},
 ]
 asttokens = [
-    {file = "asttokens-2.0.5-py2.py3-none-any.whl", hash = "sha256:0844691e88552595a6f4a4281a9f7f79b8dd45ca4ccea82e5e05b4bbdb76705c"},
-    {file = "asttokens-2.0.5.tar.gz", hash = "sha256:9a54c114f02c7a9480d56550932546a3f1fe71d8a02f1bc7ccd0ee3ee35cf4d5"},
+    {file = "asttokens-2.0.7-py2.py3-none-any.whl", hash = "sha256:f5589ef8518f73dd82c15e1c19f795d8a62c133485e557c04443d4a1a730cf9f"},
+    {file = "asttokens-2.0.7.tar.gz", hash = "sha256:8444353e4e2a99661c8dfb85ec9c02eedded08f0006234bff7db44a06840acc2"},
+]
+async-timeout = [
+    {file = "async-timeout-4.0.2.tar.gz", hash = "sha256:2163e1640ddb52b7a8c80d0a67a08587e5d245cc9c553a74a847056bc2976b15"},
+    {file = "async_timeout-4.0.2-py3-none-any.whl", hash = "sha256:8ca1e4fcf50d07413d66d1a5e416e42cfdf5851c981d679a09851a6853383b3c"},
 ]
 atomicwrites = [
     {file = "atomicwrites-1.4.1.tar.gz", hash = "sha256:81b2c9071a49367a7f770170e5eec8cb66567cfbbc8c73d20ce5ca4a8d71cf11"},
@@ -1522,8 +1535,8 @@ guessit = [
     {file = "guessit-3.4.3.tar.gz", hash = "sha256:731e96e6a1f3b065d05accc8c19f35d4485d880b77ab8dc4b262cc353df294f7"},
 ]
 humanize = [
-    {file = "humanize-4.2.3-py3-none-any.whl", hash = "sha256:bed628920d45cd5018abb095710f0c03a8336d6ac0790e7647c6a328f3880b81"},
-    {file = "humanize-4.2.3.tar.gz", hash = "sha256:2bc1fdd831cd00557d3010abdd84d3e41b4a96703a3eaf6c24ee290b26b75a44"},
+    {file = "humanize-4.3.0-py3-none-any.whl", hash = "sha256:5dd159c9910cd57b94072e4d7decae097f0eb84c4645153706929a7f127cb2ef"},
+    {file = "humanize-4.3.0.tar.gz", hash = "sha256:0dfac79fe8c1c0c734c14177b07b857bad9ae30dd50daa0a14e2c3d8054ee0c4"},
 ]
 idna = [
     {file = "idna-3.3-py3-none-any.whl", hash = "sha256:84d9dd047ffa80596e0f246e2eab0b391788b0503584e8945f2368256d2735ff"},
@@ -1648,8 +1661,8 @@ mccabe = [
     {file = "mccabe-0.7.0.tar.gz", hash = "sha256:348e0240c33b60bbdf4e523192ef919f28cb2c3d7d5c7794f74009290f236325"},
 ]
 more-itertools = [
-    {file = "more-itertools-8.13.0.tar.gz", hash = "sha256:a42901a0a5b169d925f6f217cd5a190e32ef54360905b9c39ee7db5313bfec0f"},
-    {file = "more_itertools-8.13.0-py3-none-any.whl", hash = "sha256:c5122bffc5f104d37c1626b8615b511f3427aa5389b94d61e5ef8236bfbc3ddb"},
+    {file = "more-itertools-8.14.0.tar.gz", hash = "sha256:c09443cd3d5438b8dafccd867a6bc1cb0894389e90cb53d227456b0b0bccb750"},
+    {file = "more_itertools-8.14.0-py3-none-any.whl", hash = "sha256:1bc4f91ee5b1b31ac7ceacc17c09befe6a40a503907baf9c839c229b5095cfd2"},
 ]
 munch = [
     {file = "munch-2.5.0-py2.py3-none-any.whl", hash = "sha256:6f44af89a2ce4ed04ff8de41f70b226b984db10a91dcc7b9ac2efc1c77022fdd"},
@@ -1975,8 +1988,8 @@ soupsieve = [
     {file = "soupsieve-2.3.2.post1.tar.gz", hash = "sha256:fc53893b3da2c33de295667a0e19f078c14bf86544af307354de5fcf12a3f30d"},
 ]
 sqlite-fts4 = [
-    {file = "sqlite-fts4-1.0.2.tar.gz", hash = "sha256:739a2faf696182e977d903a3376545de984cd0449a5c5d2cfc74ae5c018e415d"},
-    {file = "sqlite_fts4-1.0.2-py3-none-any.whl", hash = "sha256:5d791c224fd9b835248e43aca31e9956da10884b8ed23904b1b39446d518b9ef"},
+    {file = "sqlite-fts4-1.0.3.tar.gz", hash = "sha256:78b05eeaf6680e9dbed8986bde011e9c086a06cb0c931b3cf7da94c214e8930c"},
+    {file = "sqlite_fts4-1.0.3-py3-none-any.whl", hash = "sha256:0359edd8dea6fd73c848989e1e2b1f31a50fe5f9d7272299ff0e8dbaa62d035f"},
 ]
 sqlite-utils = [
     {file = "sqlite-utils-3.28.tar.gz", hash = "sha256:790b01f4be16c32756b9b5eae07b6b7c905b6613ca538d646877c50b05b0a53a"},
@@ -2015,8 +2028,8 @@ tomli = [
     {file = "tomli-2.0.1.tar.gz", hash = "sha256:de526c12914f0c550d15924c62d72abc48d6fe7364aa87328337a31007fe8a4f"},
 ]
 tomlkit = [
-    {file = "tomlkit-0.11.1-py3-none-any.whl", hash = "sha256:1c5bebdf19d5051e2e1de6cf70adfc5948d47221f097fcff7a3ffc91e953eaf5"},
-    {file = "tomlkit-0.11.1.tar.gz", hash = "sha256:61901f81ff4017951119cd0d1ed9b7af31c821d6845c8c477587bbdcd5e5854e"},
+    {file = "tomlkit-0.11.3-py3-none-any.whl", hash = "sha256:800628e7705ff7c7cc4395c29836c7073e55b9ec820e1fc696080f9c5591a789"},
+    {file = "tomlkit-0.11.3.tar.gz", hash = "sha256:0ace4c975e0f3e6f71be8a2d61fe568777f1634bc80abff642cd3323ce709a0d"},
 ]
 traitlets = [
     {file = "traitlets-5.3.0-py3-none-any.whl", hash = "sha256:65fa18961659635933100db8ca120ef6220555286949774b9cfc106f941d1c7a"},
@@ -2150,10 +2163,10 @@ wrapt = [
     {file = "wrapt-1.14.1.tar.gz", hash = "sha256:380a85cf89e0e69b7cfbe2ea9f765f004ff419f34194018a6827ac0e3edfed4d"},
 ]
 yt-dlp = [
-    {file = "yt-dlp-2022.7.18.tar.gz", hash = "sha256:0e7b81fc6ac8d1b7d3fffa79f9044ca4163784422582c9a3593305da2a69ec02"},
-    {file = "yt_dlp-2022.7.18-py2.py3-none-any.whl", hash = "sha256:d7d1f81d230756f094b4d9ee59b37b2c13b2e63ff5fb72cda53625edb072cdae"},
+    {file = "yt-dlp-2022.8.8.tar.gz", hash = "sha256:15cab6126e12af11134213806e6a5cf97d1c6221e148aa2618ddd42939a30a8d"},
+    {file = "yt_dlp-2022.8.8-py2.py3-none-any.whl", hash = "sha256:3ce32a1d3e444365fc7d733dbc057808346abb2d137101f06e5cccdc69f42651"},
 ]
 zeroconf = [
-    {file = "zeroconf-0.38.7-py3-none-any.whl", hash = "sha256:925168c84dbaa6f3c0d990d26c34417020276748960f462b113cfbd9bb449866"},
-    {file = "zeroconf-0.38.7.tar.gz", hash = "sha256:eaee2293e5f4e6d249f6155f9d3cca1668cb22b2545995ea72c6a03b4b7706d4"},
+    {file = "zeroconf-0.39.0-py3-none-any.whl", hash = "sha256:02989d759d48389e6a9132edcc6827d34f6367c043f63f708a220f9d89dc2604"},
+    {file = "zeroconf-0.39.0.tar.gz", hash = "sha256:7c0d8257b940ee43e637fb560c2f9bd79da0638f37af162eb4f506f7274ef8e4"},
 ]
