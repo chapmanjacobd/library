@@ -52,6 +52,17 @@ def create_download_archive(args):
 def parse_args(action):
     parser = argparse.ArgumentParser()
     parser.add_argument("db", nargs="?", default="tube.db")
+    if action == "add":
+        parser.add_argument("playlists", nargs="+")
+        parser.add_argument("-f", "--overwrite-db", action="store_true", help="Delete db file before scanning")
+        parser.add_argument(
+            "--lightweight",
+            "-lw",
+            action="store_true",
+            help="lightweight add playlist: Use with --yt-dlp-config download-archive=archive.txt to inform tubeadd",
+        )
+    elif action == "update":
+        parser.add_argument("playlists", nargs="*")
 
     parser.add_argument(
         "--yt-dlp-config",
@@ -63,17 +74,6 @@ def parse_args(action):
         help="Add key/value pairs to override or extend default yt-dlp configuration",
     )
     parser.add_argument("-safe", "--safe", action="store_true", help="Skip generic URLs")
-    if action == "add":
-        parser.add_argument("playlists", nargs="+")
-        parser.add_argument("-f", "--overwrite-db", action="store_true", help="Delete db file before scanning")
-        parser.add_argument(
-            "--lightweight",
-            "-lw",
-            action="store_true",
-            help="lightweight add playlist: Use with --yt-dlp-config download-archive=archive.txt to inform tubeadd",
-        )
-    if action == "update":
-        parser.add_argument("playlists", nargs="*")
 
     parser.add_argument("-v", "--verbose", action="count", default=0)
     args = parser.parse_args()
@@ -146,6 +146,27 @@ def consolidate(pl, v):
         "abr",
         "asr",
         "epoch",
+        "license",
+        "timestamp",
+        "track",
+        "subtitles",
+        "comments",
+        "id",
+        "author",
+        "text",
+        "parent",
+        "root",
+        "filesize",
+        "source_preference",
+        "video_ext",
+        "audio_ext",
+        "http_headers",
+        "User-Agent",
+        "Accept",
+        "Accept-Language",
+        "Sec-Fetch-Mode",
+        "navigate",
+        "Cookie",
     ]
 
     if v.get("title") in ["[Deleted video]", "[Private video]"]:
@@ -203,7 +224,14 @@ def consolidate(pl, v):
 
 
 def fetch_playlist(args, playlist) -> Tuple[(None | Dict), (None | List[Dict])]:
+    class AddToArchivePP(yt_dlp.postprocessor.PostProcessor):
+        def run(self, info):
+            breakpoint()
+
+            return [], info
+
     with yt_dlp.YoutubeDL(args.ydl_opts) as ydl:
+        ydl.add_post_processor(AddToArchivePP(), when='pre_process')
         pl = ydl.extract_info(playlist, download=False)
 
         if not pl:
@@ -364,8 +392,9 @@ def tube_list():
         nargs="*",
         default="p",
         choices=["p", "f", "a"],
-        help="""tubelist a -- means print an aggregate report
-tubelist f -- means print only filenames -- useful for piping to other utilities like xargs or GNU Parallel""",
+        help="""tubelist -p a -- means print playlists in a table
+tubelist -p a -- means print an aggregate report
+tubelist -p f -- means print only playlist urls -- useful for piping to other utilities like xargs or GNU Parallel""",
     )
     parser.add_argument(
         "--delete",

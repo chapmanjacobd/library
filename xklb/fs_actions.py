@@ -188,8 +188,6 @@ Double spaces means one space
     parser.add_argument("--post-action", "--action", "-k", default="keep", help="Choose what to do after playing")
     parser.add_argument("--shallow-organize", default="/mnt/d/")
 
-    parser.add_argument("--move", "-mv", help="lt -l 1 -mv dest/folder/; move a file into dest/folder/")
-
     parser.add_argument("--ignore-errors", "--ignoreerrors", action="store_true")
     parser.add_argument("--verbose", "-v", action="count", default=0)
     args = parser.parse_args()
@@ -583,18 +581,6 @@ def printer(args, query, bindings):
     stop()
 
 
-def mover(args, media):
-    Path(args.move).mkdir(exist_ok=True, parents=True)
-    keep_path = str(Path(args.move).resolve())
-
-    for media in media[["path"]]:
-        if Path(media).exists() and "/keep/" not in media:
-            shutil.move(media, keep_path)
-
-        remove_media(args, media, quiet=True)
-    stop()
-
-
 def process_actions(args):
     args.con = sqlite_con(args.db)
     query, bindings = construct_query(args)
@@ -606,9 +592,6 @@ def process_actions(args):
     if len(media) == 0:
         print("No media found")
         stop()
-
-    if args.move:
-        mover(args, media)
 
     play(args, media)
 
