@@ -257,20 +257,21 @@ def save_new_playlist(args, pl):
 
 
 def process_playlist(args, playlist) -> (List[Dict] | None):
+    class AddToArchivePP(yt_dlp.postprocessor.PostProcessor):
+        def run(self, info, num=0):
+            _info = deepcopy(info)
+            entry = consolidate(dict(webpage_url=playlist), info)
+            breakpoint()
+
+            save_entries(args, [entry])
+            num += 1
+            print(f"Added {num} videos", end="\r")
+            return [], _info
+
     with yt_dlp.YoutubeDL(args.ydl_opts) as ydl:
-        if "break_on_existing" in args.ydl_opts:
-            class AddToArchivePP(yt_dlp.postprocessor.PostProcessor):
-                def run(self, info, num=0):
-                    _info = deepcopy(info)
-                    entry = consolidate(dict(webpage_url=playlist), info)
-                    breakpoint()
+        ydl.add_progress_hook(AddToArchivePP())
+        ydl.add_post_processor(AddToArchivePP(), when="pre_process")
 
-                    save_entries(args, [entry])
-                    num += 1
-                    print(f"Added {num} videos", end="\r")
-                    return [], _info
-
-            ydl.add_post_processor(AddToArchivePP(), when="pre_process")
         try:
             pl = ydl.extract_info(playlist, download=False)
         except yt_dlp.DownloadCancelled:
