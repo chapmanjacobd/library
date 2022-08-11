@@ -1,7 +1,7 @@
 import os
 import sqlite3
 
-from xklb.utils import stop, log
+from xklb.utils import log, stop
 
 
 def sqlite_con(db):

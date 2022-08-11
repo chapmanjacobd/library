@@ -88,7 +88,7 @@ def argparse_log():
     logging.basicConfig(
         level=log_levels[min(len(log_levels) - 1, args.verbose)],
         format="%(message)s",
-        handlers=[RichHandler(show_time=False, show_level=False)],
+        handlers=[RichHandler(show_time=False, show_level=False, show_path=False)],
     )
     return logging.getLogger()
 

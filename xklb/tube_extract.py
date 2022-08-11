@@ -4,6 +4,7 @@ import os
 import shutil
 import tempfile
 import textwrap
+from copy import deepcopy
 from datetime import datetime, timedelta
 from pathlib import Path
 from sqlite3 import OperationalError
@@ -109,6 +110,19 @@ def supported(url):  # thank you @dbr
     return False
 
 
+def save_entries(args, entries):
+    if entries:
+        entriesDF = pd.DataFrame(entries)
+        entriesDF.apply(pd.to_numeric, errors="ignore").convert_dtypes().to_sql(  # type: ignore
+            "media",
+            con=args.con,
+            if_exists="append",
+            index=False,
+            chunksize=70,
+            method="multi",
+        )
+
+
 def consolidate(pl, v):
     ignore_keys = [
         "thumbnail",
@@ -151,7 +165,6 @@ def consolidate(pl, v):
         "track",
         "subtitles",
         "comments",
-        "id",
         "author",
         "text",
         "parent",
@@ -223,19 +236,47 @@ def consolidate(pl, v):
     return cv
 
 
-def fetch_playlist(args, playlist) -> Tuple[(None | Dict), (None | List[Dict])]:
-    class AddToArchivePP(yt_dlp.postprocessor.PostProcessor):
-        def run(self, info):
-            breakpoint()
+def save_new_playlist(args, pl):
+    pl = consolidate(pl, pl)
+    if pl:
+        # remove extra fields from playlist record
+        pl = dict(
+            path=pl["path"],
+            id=pl["id"],
+            ie_key=pl["ie_key"],
+            title=pl["title"],
+            uploader_url=pl["uploader_url"],
+        )
+        plDF = pd.DataFrame([pl])
+        plDF.apply(pd.to_numeric, errors="ignore").convert_dtypes().to_sql(  # type: ignore
+            "playlists",
+            con=args.con,
+            if_exists="append",
+            index=False,
+        )
 
-            return [], info
 
+def process_playlist(args, playlist) -> (List[Dict] | None):
     with yt_dlp.YoutubeDL(args.ydl_opts) as ydl:
-        ydl.add_post_processor(AddToArchivePP(), when='pre_process')
-        pl = ydl.extract_info(playlist, download=False)
+        if "break_on_existing" in args.ydl_opts:
+            class AddToArchivePP(yt_dlp.postprocessor.PostProcessor):
+                def run(self, info, num=0):
+                    _info = deepcopy(info)
+                    entry = consolidate(dict(webpage_url=playlist), info)
+                    breakpoint()
 
+                    save_entries(args, [entry])
+                    num += 1
+                    print(f"Added {num} videos", end="\r")
+                    return [], _info
+
+            ydl.add_post_processor(AddToArchivePP(), when="pre_process")
+        try:
+            pl = ydl.extract_info(playlist, download=False)
+        except yt_dlp.DownloadCancelled:
+            return None
         if not pl:
-            return None, None
+            return None
 
         pl.pop("availability", None)
         pl.pop("formats", None)
@@ -249,25 +290,16 @@ def fetch_playlist(args, playlist) -> Tuple[(None | Dict), (None | List[Dict])]:
             entry = consolidate(pl, pl)
 
             if not entry:
-                log.warning("No video found %s", pl)
-                return None, None
+                log.warning("No videos found %s", pl)
+                return None
 
             log.warning("Importing playlist-less media %s", entry)
-            return None, [entry]
+            return [entry]
 
         entries = list(filter(None, [consolidate(pl, v) for v in entries if v]))
         log.warning(f"Downloaded {len(entries)} entries from playlist '{pl['title']}'")
-
-        pl = consolidate(pl, pl)
-        pl = dict(
-            path=pl["path"],
-            id=pl["id"],
-            ie_key=pl["ie_key"],
-            title=pl["title"],
-            uploader_url=pl["uploader_url"],
-        )
-
-        return pl, entries
+        save_entries(args, entries)
+        save_new_playlist(args, pl)
 
 
 def get_playlists(args):
@@ -278,50 +310,35 @@ def get_playlists(args):
     return known_playlists
 
 
-def save_new_playlist(args, pl):
-    plDF = pd.DataFrame([pl])
-    plDF.apply(pd.to_numeric, errors="ignore").convert_dtypes().to_sql(  # type: ignore
-        "playlists",
-        con=args.con,
-        if_exists="append",
-        index=False,
-    )
-
-
-def save_entries(args, entries):
-    entriesDF = pd.DataFrame(entries)
-    entriesDF.apply(pd.to_numeric, errors="ignore").convert_dtypes().to_sql(  # type: ignore
-        "media",
-        con=args.con,
-        if_exists="append",
-        index=False,
-        chunksize=70,
-        method="multi",
-    )
-
-
 def tube_add():
     args = parse_args("add")
     known_playlists = get_playlists(args)
 
     for playlist in args.playlists:
-        if args.safe and not supported(playlist):
+        if playlist in known_playlists:
+            log.warning("Skipping known playlist: %s", playlist)
             continue
 
-        if playlist in known_playlists:
+        if args.safe and not supported(playlist):
+            log.warning("[safe_mode] unsupported playlist: %s", playlist)
             continue
 
         start = timer()
-        pl, entries = fetch_playlist(args, playlist)
+        process_playlist(args, playlist)
         end = timer()
-        log.info(f"{end - start:.1f} seconds to fetch playlist")
-        if not entries:
-            log.warning("Could not process %s", playlist)
-            continue
+        log.info(f"{end - start:.1f} seconds to add new playlist and fetch videos")
 
-        if pl:
-            save_new_playlist(args, pl)
-        save_entries(args, entries)
+
+def tube_update():
+    args = parse_args("update")
+
+    for playlist in args.playlists or get_playlists(args):
+        start = timer()
+        process_playlist(args, playlist)
+        end = timer()
+        log.info(f"{end - start:.1f} seconds to update playlist")
+
+    Path(args.ydl_opts["download_archive"]).unlink()
 
 
 def human_time(hours):
@@ -400,6 +417,7 @@ tubelist -p f -- means print only playlist urls -- useful for piping to other ut
         "--delete",
         "--remove",
         "--erase",
+        "--rm",
         "-rm",
         "-d",
         nargs="+",
@@ -416,20 +434,3 @@ tubelist -p f -- means print only playlist urls -- useful for piping to other ut
         stop()
 
     printer(args)
-
-
-def tube_update():
-    args = parse_args("update")
-
-    for playlist in args.playlists or get_playlists(args):
-        start = timer()
-        _pl, entries = fetch_playlist(args, playlist)
-        end = timer()
-        log.info(f"{end - start:.1f} seconds to update playlist")
-        if not entries:
-            log.warning("Could not update %s", playlist)
-            continue
-
-        save_entries(args, entries)
-
-    Path(args.ydl_opts["download_archive"]).unlink()
