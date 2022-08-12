@@ -234,7 +234,7 @@ def extract_metadata(args, f):
             "fps": fps,
             "language": language,
             "provenance": get_provenance(f),
-            "duration": 0 if not duration else int(duration),
+            "duration": 0 if not duration else int(float(duration)),
         }
 
     if args.db_type == "a":
