@@ -145,8 +145,8 @@ def extract_metadata(args, f):
         path=f,
         size=stat.st_size,
         sparseness=sparseness,
-        time_created=stat.st_ctime,
-        time_modified=stat.st_mtime,
+        time_created=int(stat.st_ctime),
+        time_modified=int(stat.st_mtime),
     )
 
     if args.db_type == "f":
@@ -179,6 +179,11 @@ def extract_metadata(args, f):
         format.pop("probe_score", None)
         format.pop("start_time", None)
         format.pop("filename", None)
+        duration = format.pop("duration", None)
+
+        if format != {}:
+            log.info("Extra data %s", format)
+            # breakpoint()
 
         streams = probe["streams"]
 
@@ -187,7 +192,7 @@ def extract_metadata(args, f):
             bot = int(bot)
             if bot == 0:
                 return None
-            return int(top) / bot
+            return int(int(top) / bot)
 
         fps = safe_unpack(
             [
@@ -229,7 +234,7 @@ def extract_metadata(args, f):
             "fps": fps,
             "language": language,
             "provenance": get_provenance(f),
-            **format,
+            "duration": 0 if not duration else int(duration),
         }
 
     if args.db_type == "a":

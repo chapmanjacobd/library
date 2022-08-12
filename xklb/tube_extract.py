@@ -170,7 +170,8 @@ def consolidate(playlist_path, v):
     cv["path"] = safe_unpack(v.pop("webpage_url", None), v.pop("url", None), v.pop("original_url", None))
     cv["size"] = v.pop("filesize_approx", None)
     cv["time_created"] = upload_date
-    cv["duration"] = v.pop("duration", None)
+    duration = v.pop("duration", None)
+    cv["duration"] = 0 if not duration else int(duration)
     cv["play_count"] = 0
     cv["language"] = v.pop("language", None)
     cv["tags"] = combine(v.pop("description", None), v.pop("categories", None), v.pop("tags", None))
@@ -180,7 +181,8 @@ def consolidate(playlist_path, v):
     cv["view_count"] = v.pop("view_count", None)
     cv["width"] = v.pop("width", None)
     cv["height"] = v.pop("height", None)
-    cv["fps"] = v.pop("fps", None)
+    fps = v.pop("fps", None)
+    cv["fps"] = 0 if not fps else int(fps)
     cv["average_rating"] = v.pop("average_rating", None)
     cv["live_status"] = v.pop("live_status", None)
     cv["age_limit"] = v.pop("age_limit", None)
