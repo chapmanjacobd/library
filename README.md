@@ -30,7 +30,7 @@ Download playlist and channel metadata. Break free of the YouTube algo~
 
     lb tubeadd educational.db https://www.youtube.com/c/BranchEducation/videos
 
-[![asciicast](https://raw.githubusercontent.com/chapmanjacobd/lb/558bfc98d896921b31ff2915b9873e3b4f4ed168/examples/tubeadd.svg "lb tubeadd example")](https://asciinema.org/a/BzplqNj9sCERH3A80GVvwsTTT)
+[![termtosvg](./examples/tubeadd.svg "lb tubeadd example")](https://asciinema.org/a/BzplqNj9sCERH3A80GVvwsTTT)
 
 You can add more than one at a time.
 
