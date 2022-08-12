@@ -2,6 +2,7 @@ import argparse
 import math
 import os
 import shutil
+import sys
 import tempfile
 import textwrap
 from copy import deepcopy
@@ -166,7 +167,7 @@ def consolidate(playlist_path, v):
         upload_date = int(datetime.strptime(upload_date, "%Y%m%d").timestamp())
 
     cv = dict()
-    cv["path"] = safe_unpack(v.pop("url", None), v.pop("webpage_url", None), v.pop("original_url", None))
+    cv["path"] = safe_unpack(v.pop("webpage_url", None), v.pop("url", None), v.pop("original_url", None))
     cv["size"] = v.pop("filesize_approx", None)
     cv["time_created"] = upload_date
     cv["duration"] = v.pop("duration", None)
@@ -254,6 +255,7 @@ def process_playlist(args, playlist_path) -> (List[Dict] | None):
             self._add_playlist(deepcopy(info), entry)
 
             self.current_video_count += 1
+            sys.stdout.write("\033[K\r")
             print(f"{playlist_path}: added {self.current_video_count} videos", end="\r", flush=True)
             return [], info
 
@@ -272,7 +274,7 @@ def process_playlist(args, playlist_path) -> (List[Dict] | None):
                 uploader=safe_unpack(pl.get("playlist_uploader_id"), pl.get("playlist_uploader")),
                 id=pl.get("playlist_id"),
             )
-            if entry["path"] == pl["path"]:
+            if entry["path"] == pl["path"] or not pl.get('id'):
                 log.warning("Importing playlist-less media %s", pl["path"])
             elif playlist_known(args, playlist_path):
                 pass
