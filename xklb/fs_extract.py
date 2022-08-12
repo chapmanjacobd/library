@@ -339,14 +339,18 @@ def scan_path(args, path):
                 print("Fetching subtitles")
                 Parallel(n_jobs=5)(delayed(get_subtitle)(args, file) for file in l)
 
+    return len(new_files)
+
 
 def extractor(args):
     Path(args.db).touch()
     args.con = sqlite_con(args.db)
+    new_files = 0
     for path in args.paths:
-        scan_path(args, path)
+        new_files += scan_path(args, path)
 
-    optimize_db(args)
+    if new_files > 0:
+        optimize_db(args)
 
 
 def main():
