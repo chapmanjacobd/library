@@ -32,7 +32,6 @@ from xklb.utils import (
     get_ordinal_media,
     log,
     mv_to_keep_folder,
-    print_query,
     remove_media,
     stop,
 )
@@ -384,10 +383,15 @@ def play(args, media: pd.DataFrame):
     for m in media.to_records(index=False):
         media_file = m["path"]
 
-        if (
-            args.play_in_order > 1
-            or (args.action == Subcommand.listen and "audiobook" in media_file.lower())
-            or (args.action == Subcommand.tubelisten and m["title"] and "audiobook" in m["title"].lower())
+        if any(
+            [
+                args.play_in_order > 1 and args.action not in [Subcommand.listen, Subcommand.tubelisten],
+                args.play_in_order >= 1 and args.action == Subcommand.listen and "audiobook" in media_file.lower(),
+                args.play_in_order >= 1
+                and args.action == Subcommand.tubelisten
+                and m["title"]
+                and "audiobook" in m["title"].lower(),
+            ]
         ):
             media_file = get_ordinal_media(args, media_file)
 

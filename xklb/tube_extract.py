@@ -30,26 +30,6 @@ from xklb.utils import (
 )
 
 
-def create_download_archive(args):
-    user_download_archive = args.yt_dlp_config.pop("download_archive", None)
-    download_archive_temp = tempfile.mktemp()
-
-    query = "select distinct ie_key, id from media"
-    media = pd.DataFrame([dict(r) for r in args.con.execute(query).fetchall()])
-
-    ax_txt = media.apply(lambda m: f"{m['ie_key'].lower()} {m['id']}", axis=1).to_string(index=False, header=False)
-    Path(download_archive_temp).write_text(ax_txt)
-
-    if user_download_archive:
-        with open(download_archive_temp, "ab") as wfd:
-            for f in [user_download_archive]:
-                with open(f, "rb") as fd:
-                    shutil.copyfileobj(fd, wfd)
-                    wfd.write(b"\n")
-
-    return download_archive_temp
-
-
 def parse_args(action):
     parser = argparse.ArgumentParser()
     parser.add_argument("db", nargs="?", default="tube.db")
@@ -78,9 +58,10 @@ def parse_args(action):
 
     parser.add_argument("-v", "--verbose", action="count", default=0)
     args = parser.parse_args()
+    args.action = action
     log.info(filter_None(args.__dict__))
 
-    if action == "add":
+    if args.action == "add":
         if args.overwrite_db:
             Path(args.db).unlink(missing_ok=True)
         Path(args.db).touch()
@@ -88,15 +69,6 @@ def parse_args(action):
 
     ydl_opts = {**default_ydl_opts, **args.yt_dlp_config}
     log.info(filter_None(ydl_opts))
-
-    if action == "update" or args.lightweight:
-        download_archive_temp = create_download_archive(args)
-        ydl_opts = {
-            **ydl_opts,
-            "download_archive": download_archive_temp,
-            "break_on_existing": True,
-            "break_per_url": True,
-        }
 
     args.ydl_opts = ydl_opts
     return args
@@ -110,20 +82,7 @@ def supported(url):  # thank you @dbr
     return False
 
 
-def save_entries(args, entries):
-    if entries:
-        entriesDF = pd.DataFrame(entries)
-        entriesDF.apply(pd.to_numeric, errors="ignore").convert_dtypes().to_sql(  # type: ignore
-            "media",
-            con=args.con,
-            if_exists="append",
-            index=False,
-            chunksize=70,
-            method="multi",
-        )
-
-
-def consolidate(pl, v):
+def consolidate(playlist_path, v):
     ignore_keys = [
         "thumbnail",
         "thumbnails",
@@ -180,6 +139,19 @@ def consolidate(pl, v):
         "Sec-Fetch-Mode",
         "navigate",
         "Cookie",
+        "playlist_count",
+        "n_entries",
+        "playlist_autonumber",
+        "availability",
+        "formats",
+        "requested_formats",
+        "requested_entries",
+        "thumbnails",
+        "playlist_count",
+        'playlist_id',
+        'playlist_title',
+        'playlist_uploader',
+        'playlist_uploader_id',
     ]
 
     if v.get("title") in ["[Deleted video]", "[Private video]"]:
@@ -194,13 +166,7 @@ def consolidate(pl, v):
         upload_date = int(datetime.strptime(upload_date, "%Y%m%d").timestamp())
 
     cv = dict()
-    cv["path"] = safe_unpack(
-        v.pop("url", None),
-        v.pop("webpage_url", None),
-        v.pop("original_url", None),
-        pl.get("webpage_url"),
-        pl.get("original_url"),
-    )
+    cv["path"] = safe_unpack(v.pop("url", None), v.pop("webpage_url", None), v.pop("original_url", None))
     cv["size"] = v.pop("filesize_approx", None)
     cv["time_created"] = upload_date
     cv["duration"] = v.pop("duration", None)
@@ -209,7 +175,7 @@ def consolidate(pl, v):
     cv["tags"] = combine(v.pop("description", None), v.pop("categories", None), v.pop("tags", None))
     cv["id"] = v.pop("id")
     cv["ie_key"] = safe_unpack(v.pop("ie_key", None), v.pop("extractor_key", None), v.pop("extractor", None))
-    cv["title"] = safe_unpack(v.pop("title", None), pl.get("title"))
+    cv["title"] = safe_unpack(v.pop("title", None), v.get("playlist_title"))
     cv["view_count"] = v.pop("view_count", None)
     cv["width"] = v.pop("width", None)
     cv["height"] = v.pop("height", None)
@@ -217,16 +183,14 @@ def consolidate(pl, v):
     cv["average_rating"] = v.pop("average_rating", None)
     cv["live_status"] = v.pop("live_status", None)
     cv["age_limit"] = v.pop("age_limit", None)
-    cv["playlist_path"] = safe_unpack(pl.get("webpage_url"), pl.get("original_url"))
-    cv["uploader_url"] = safe_unpack(
+    cv["playlist_path"] = playlist_path
+    cv["uploader"] = safe_unpack(
         v.pop("uploader_url", None),
         v.pop("channel_url", None),
         v.pop("uploader", None),
         v.pop("channel", None),
         v.pop("uploader_id", None),
         v.pop("channel_id", None),
-        pl.get("uploader", None),
-        pl.get("channel", None),
     )
 
     if v != {}:
@@ -236,71 +200,96 @@ def consolidate(pl, v):
     return cv
 
 
-def save_new_playlist(args, pl):
-    pl = consolidate(pl, pl)
-    if pl:
-        # remove extra fields from playlist record
-        pl = dict(
-            path=pl["path"],
-            id=pl["id"],
-            ie_key=pl["ie_key"],
-            title=pl["title"],
-            uploader_url=pl["uploader_url"],
-        )
-        plDF = pd.DataFrame([pl])
-        plDF.apply(pd.to_numeric, errors="ignore").convert_dtypes().to_sql(  # type: ignore
-            "playlists",
+def playlist_known(args, playlist_path):
+    try:
+        known = args.con.execute("select 1 from playlists where path=?", [playlist_path]).fetchone()
+    except Exception:
+        return False
+    if known is None:
+        return False
+    return known[0]
+
+
+def video_known(args, playlist_path, path):
+    try:
+        known = args.con.execute(
+            "select 1 from media where playlist_path=? and path=?", [playlist_path, path]
+        ).fetchone()
+    except Exception:
+        return False
+    if known is None:
+        return False
+    return known[0]
+
+
+def save_entries(args, entries):
+    if entries:
+        entriesDF = pd.DataFrame(entries)
+        entriesDF.apply(pd.to_numeric, errors="ignore").convert_dtypes().to_sql(  # type: ignore
+            "media",
             con=args.con,
             if_exists="append",
             index=False,
+            chunksize=70,
+            method="multi",
         )
 
 
-def process_playlist(args, playlist) -> (List[Dict] | None):
-    class AddToArchivePP(yt_dlp.postprocessor.PostProcessor):
-        def run(self, info, num=0):
-            _info = deepcopy(info)
-            entry = consolidate(dict(webpage_url=playlist), info)
-            breakpoint()
+def log_problem(args, playlist_path):
+    if args.action == "add":
+        log.warning("Could not add playlist %s", playlist_path)
+    else:
+        log.warning("Start of known playlist reached %s", playlist_path)
 
+
+def process_playlist(args, playlist_path) -> (List[Dict] | None):
+    class ExistingPlaylistVideoReached(yt_dlp.DownloadCancelled):
+        pass
+
+    class AddToArchivePP(yt_dlp.postprocessor.PostProcessor):
+        current_video_count = 0
+
+        def run(self, info):
+            entry = self._add_media(deepcopy(info))
+            self._add_playlist(deepcopy(info), entry)
+
+            self.current_video_count += 1
+            print(f"{playlist_path}: added {self.current_video_count} videos", end="\r", flush=True)
+            return [], info
+
+        def _add_media(self, entry):
+            entry = consolidate(playlist_path, entry)
+            if video_known(args, playlist_path, entry["path"]):
+                raise ExistingPlaylistVideoReached
             save_entries(args, [entry])
-            num += 1
-            print(f"Added {num} videos", end="\r")
-            return [], _info
+            return entry
+
+        def _add_playlist(self, pl, entry):
+            pl = dict(
+                ie_key=pl["ie_key"],
+                title=pl.pop("playlist_title", None),
+                path=playlist_path,
+                uploader=safe_unpack(pl.pop("playlist_uploader_id", None), pl.pop("playlist_uploader", None)),
+                id=pl.pop("playlist_id", None),
+            )
+            if any([entry["path"] == pl["path"], not pl.get("id")]):
+                log.warning("Importing playlist-less media %s", pl)
+            elif playlist_known(args, playlist_path):
+                pass
+            else:
+                plDF = pd.DataFrame([pl])
+                plDF.convert_dtypes().to_sql("playlists", con=args.con, if_exists="append", index=False)
 
     with yt_dlp.YoutubeDL(args.ydl_opts) as ydl:
-        ydl.add_progress_hook(AddToArchivePP())
         ydl.add_post_processor(AddToArchivePP(), when="pre_process")
 
         try:
-            pl = ydl.extract_info(playlist, download=False)
-        except yt_dlp.DownloadCancelled:
-            return None
-        if not pl:
-            return None
-
-        pl.pop("availability", None)
-        pl.pop("formats", None)
-        pl.pop("requested_formats", None)
-        pl.pop("requested_entries", None)
-        pl.pop("thumbnails", None)
-        pl.pop("playlist_count", None)
-
-        entries = pl.pop("entries", None)
-        if entries is None:
-            entry = consolidate(pl, pl)
-
-            if not entry:
-                log.warning("No videos found %s", pl)
-                return None
-
-            log.warning("Importing playlist-less media %s", entry)
-            return [entry]
-
-        entries = list(filter(None, [consolidate(pl, v) for v in entries if v]))
-        log.warning(f"Downloaded {len(entries)} entries from playlist '{pl['title']}'")
-        save_entries(args, entries)
-        save_new_playlist(args, pl)
+            pl = ydl.extract_info(playlist_path, download=False, process=True)
+        except ExistingPlaylistVideoReached:
+            log_problem(args, playlist_path)
+        else:
+            if not pl:
+                log_problem(args, playlist_path)
 
 
 def get_playlists(args):
@@ -332,14 +321,18 @@ def tube_add():
 
 def tube_update():
     args = parse_args("update")
+    known_playlists = get_playlists(args)
 
     for playlist in args.playlists or get_playlists(args):
+
+        if playlist not in known_playlists:
+            log.warning("Skipping unknown playlist: %s", playlist)
+            continue
+
         start = timer()
         process_playlist(args, playlist)
         end = timer()
         log.info(f"{end - start:.1f} seconds to update playlist")
-
-    Path(args.ydl_opts["download_archive"]).unlink()
 
 
 def human_time(hours):

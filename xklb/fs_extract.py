@@ -154,7 +154,7 @@ def extract_metadata(args, f):
 
     if args.db_type in ["a", "v"]:
         try:
-            probe = ffmpeg.probe(f)
+            probe = ffmpeg.probe(f, show_chapters=None)
         except (KeyboardInterrupt, SystemExit):
             exit(130)
         except:
@@ -168,24 +168,45 @@ def extract_metadata(args, f):
             print(probe)
             return
 
-        probe["format"].pop("size", None)
-        probe["format"].pop("tags", None)
-        probe["format"].pop("bit_rate", None)
-        probe["format"].pop("format_name", None)
-        probe["format"].pop("format_long_name", None)
-        probe["format"].pop("nb_programs", None)
-        probe["format"].pop("nb_streams", None)
-        probe["format"].pop("probe_score", None)
-        probe["format"].pop("start_time", None)
+        format = probe["format"]
+        format.pop("size", None)
+        format.pop("tags", None)
+        format.pop("bit_rate", None)
+        format.pop("format_name", None)
+        format.pop("format_long_name", None)
+        format.pop("nb_programs", None)
+        format.pop("nb_streams", None)
+        format.pop("probe_score", None)
+        format.pop("start_time", None)
+        format.pop("filename", None)
 
-        codec_types = [s.get("codec_type") for s in probe["streams"]]
-        tags = [s.get("tags") for s in probe["streams"] if s.get("tags") is not None]
-        languages = combine([t.get("language") for t in tags if t.get("language") not in [None, "und", "unk"]])
+        streams = probe["streams"]
+
+        def parse_framerate(string):
+            top, bot = string.split("/")
+            bot = int(bot)
+            if bot == 0:
+                return None
+            return int(top) / bot
+
+        fps = safe_unpack(
+            [
+                parse_framerate(s.get("r_frame_rate"))
+                for s in streams
+                if s.get("r_frame_rate") is not None and "/0" not in s.get("r_frame_rate")
+            ]
+        )
+        width = safe_unpack([s.get("width") for s in streams if s.get("tags") is not None])
+        height = safe_unpack([s.get("height") for s in streams if s.get("tags") is not None])
+        codec_types = [s.get("codec_type") for s in streams]
+        tags = [s.get("tags") for s in streams if s.get("tags") is not None]
+        language = combine([t.get("language") for t in tags if t.get("language") not in [None, "und", "unk"]])
 
         video_count = sum([1 for s in codec_types if s == "video"])
         audio_count = sum([1 for s in codec_types if s == "audio"])
         attachment_count = sum([1 for s in codec_types if s == "attachment"])
         subtitle_count = sum([1 for s in codec_types if s == "subtitle"])
+        chapter_count = len(probe["chapters"])
 
         if subtitle_count == 0 and args.db_type == "v":
             try:
@@ -197,14 +218,18 @@ def extract_metadata(args, f):
 
         media = {
             **media,
-            **probe["format"],
-            "languages": languages,
+            "play_count": 0,
             "video_count": video_count,
             "audio_count": audio_count,
             "subtitle_count": subtitle_count,
+            "chapter_count": chapter_count,
             "attachment_count": attachment_count,
+            "width": width,
+            "height": height,
+            "fps": fps,
+            "language": language,
             "provenance": get_provenance(f),
-            "play_count": 0,
+            **format,
         }
 
     if args.db_type == "a":
@@ -245,10 +270,6 @@ def extract_chunk(args, l):
 
     DF = pd.DataFrame(list(filter(None, metadata)))
 
-    # if args.db_type == 'a':  # might be dead code
-    #     if DF.get(["year"]) is not None:
-    #         DF.year = DF.year.astype(str)
-
     DF.apply(pd.to_numeric, errors="ignore").convert_dtypes().to_sql(  # type: ignore
         "media",
         con=args.con,
@@ -286,7 +307,7 @@ def find_new_files(args, path):
 
         if args.db_type == "v":
             args.con.execute("DELETE from media where path like '%/keep/%'")
-        args.con.commit()
+            args.con.commit()
 
     return scanned_files
 

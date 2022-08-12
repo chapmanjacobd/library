@@ -10,7 +10,7 @@ default_ydl_opts = {
     # "writesubtitles": True,
     # "writeautomaticsub": True,
     # "subtitleslangs": "en.*,EN.*",
-    # "playliststart": 2000, # an optimization needs to be made in yt-dlp to support some form of background backfilling/pagination. 2000-4000 takes 40 seconds instead of 20.
+    "lazy_playlist": True,
     "skip_download": True,
     "force_write_download_archive": True,
     "check_formats": False,
