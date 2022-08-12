@@ -30,6 +30,8 @@ Download playlist and channel metadata. Break free of the YouTube algo~
 
     lb tubeadd educational.db https://www.youtube.com/c/BranchEducation/videos
 
+[![asciicast](https://asciinema.org/a/BzplqNj9sCERH3A80GVvwsTTT.png)](https://asciinema.org/a/BzplqNj9sCERH3A80GVvwsTTT)
+
 You can add more than one at a time.
 
     lb tubeadd maker.db https://www.youtube.com/c/CuriousMarc/videos https://www.youtube.com/c/element14presents/videos/ https://www.youtube.com/c/DIYPerks/videos
