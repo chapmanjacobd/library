@@ -266,14 +266,14 @@ def process_playlist(args, playlist_path) -> (List[Dict] | None):
 
         def _add_playlist(self, pl, entry):
             pl = dict(
-                ie_key=pl["ie_key"],
-                title=pl.pop("playlist_title", None),
+                ie_key=safe_unpack(pl.get("ie_key"), pl.get("extractor_key"), pl.get("extractor")),
+                title=pl.get("playlist_title"),
                 path=playlist_path,
-                uploader=safe_unpack(pl.pop("playlist_uploader_id", None), pl.pop("playlist_uploader", None)),
-                id=pl.pop("playlist_id", None),
+                uploader=safe_unpack(pl.get("playlist_uploader_id"), pl.get("playlist_uploader")),
+                id=pl.get("playlist_id"),
             )
-            if any([entry["path"] == pl["path"], not pl.get("id")]):
-                log.warning("Importing playlist-less media %s", pl)
+            if entry["path"] == pl["path"]:
+                log.warning("Importing playlist-less media %s", pl["path"])
             elif playlist_known(args, playlist_path):
                 pass
             else:
