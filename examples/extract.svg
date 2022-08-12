@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" id="terminal" baseProfile="full" viewBox="0 0 800 172" width="800" version="1.1">
+    <defs>
+        <termtosvg:template_settings xmlns:termtosvg="https://github.com/nbedos/termtosvg">
+            <termtosvg:screen_geometry columns="100" rows="10"/>
+            <termtosvg:animation type="css"/>
+        </termtosvg:template_settings>
+        <style type="text/css" id="generated-style"><![CDATA[#screen {
+                font-family: 'DejaVu Sans Mono', monospace;
+                font-style: normal;
+                font-size: 14px;
+            }
+
+        text {
+            dominant-baseline: text-before-edge;
+            white-space: pre;
+        }
+    
+            :root {
+                --animation-duration: 14284ms;
+            }
+
+            @keyframes roll {
+                0.000%{transform:translateY(0px)}
+4.572%{transform:translateY(-204px)}
+7.995%{transform:translateY(-408px)}
+11.677%{transform:translateY(-612px)}
+16.907%{transform:translateY(-816px)}
+31.385%{transform:translateY(-1020px)}
+66.389%{transform:translateY(-1224px)}
+69.203%{transform:translateY(-1428px)}
+74.636%{transform:translateY(-1632px)}
+80.027%{transform:translateY(-1836px)}
+92.999%{transform:translateY(-2040px)}
+100.000%{transform:translateY(-2040px)}
+            }
+
+            #screen_view {
+                animation-duration: 14284ms;
+                animation-iteration-count:infinite;
+                animation-name:roll;
+                animation-timing-function: steps(1,end);
+                animation-fill-mode: forwards;
+            }
+        ]]></style>
+        <style type="text/css" id="user-style">
+            /* The colors defined below are the default 16 colors used for rendering text of the terminal. Adjust
+               them as needed.
+               Solarized light color theme (http://ethanschoonover.com/solarized) */
+            .foreground {fill: #586e75;}
+            .background {fill: #fdf6e3;}
+            .color0 {fill: #fdf6e3;}
+            .color1 {fill: #dc322f;}
+            .color2 {fill: #859900;}
+            .color3 {fill: #b58900;}
+            .color4 {fill: #268bd2;}
+            .color5 {fill: #6c71c4;}
+            .color6 {fill: #2aa198;}
+            .color7 {fill: #586e75;}
+            .color8 {fill: #839496;}
+            .color9 {fill: #cb4b16;}
+            .color10 {fill: #eee8d5;}
+            .color11 {fill: #93a1a1;}
+            .color12 {fill: #657b83;}
+            .color13 {fill: #073642;}
+            .color14 {fill: #d33682;}
+            .color15 {fill: #002b36;}
+        </style>
+    </defs>
+    <svg id="screen" width="800" height="170" viewBox="0 0 800 170" preserveAspectRatio="xMidYMin slice"><rect class="background" height="100%" width="100%" x="0" y="0"/><defs><g id="g1"><text x="0" textLength="32" class="foreground">4.52</text></g><g id="g2"><text x="0" textLength="40" class="foreground">&#9618;&#9619;&#9608;&#9619; </text><text x="40" textLength="8" class="color2">~</text><text x="48" textLength="32" class="foreground"> &#129483; </text><text x="80" textLength="8" class="background"> </text><text x="88" textLength="712" class="foreground">                                                                                         </text></g><g id="g3"><text x="0" textLength="40" class="foreground">&#9619;&#9618;&#9618;&#9619; </text><text x="40" textLength="8" class="color2">~</text><text x="48" textLength="32" class="foreground"> &#129528; </text><text x="80" textLength="8" class="background"> </text><text x="88" textLength="712" class="foreground">                                                                                         </text></g><g id="g4"><text x="0" textLength="800" class="foreground">                                                                                                    </text></g><g id="g5"><text x="0" textLength="40" class="foreground">&#9619;&#9618;&#9618;&#9619; </text><text x="40" textLength="8" class="color2">~</text><text x="48" textLength="32" class="foreground"> &#129528; </text><text x="80" textLength="16" fill="#005fd7">lb</text><text x="96" textLength="8" class="foreground"> </text><text x="104" textLength="56" fill="#00afff">extract</text><text x="160" textLength="8" class="foreground"> </text><text x="168" textLength="40" fill="#00afff">tv.db</text><text x="208" textLength="8" class="foreground"> </text><text x="216" textLength="8" text-decoration="underline" fill="#00a6b2">~</text><text x="224" textLength="152" text-decoration="underline" fill="#00afff">/d/70_Now_Watching/</text><text x="376" textLength="8" class="background"> </text><text x="384" textLength="416" class="foreground">                                                    </text></g><g id="g6"><text x="0" textLength="40" class="foreground">&#9619;&#9618;&#9618;&#9619; </text><text x="40" textLength="8" class="color2">~</text><text x="48" textLength="32" class="foreground"> &#129528; </text><text x="80" textLength="16" fill="#005fd7">lb</text><text x="96" textLength="8" class="foreground"> </text><text x="104" textLength="56" fill="#00afff">extract</text><text x="160" textLength="8" class="foreground"> </text><text x="168" textLength="40" fill="#00afff">tv.db</text><text x="208" textLength="8" class="foreground"> </text><text x="216" textLength="8" text-decoration="underline" fill="#00a6b2">~</text><text x="224" textLength="152" text-decoration="underline" fill="#00afff">/d/70_Now_Watching/</text><text x="376" textLength="424" class="foreground">                                                     </text></g><g id="g7"><text x="0" textLength="8" class="background"> </text><text x="8" textLength="792" class="foreground">                                                                                                   </text></g><g id="g8"><text x="0" textLength="800" class="foreground">/mnt/d/70_Now_Watching : Scanning...                                                                </text></g><g id="g9"><text x="0" textLength="160" class="foreground">Adding 111 new media</text></g><g id="g10"><text x="0" textLength="528" class="foreground">[/mnt/d/70_Now_Watching] Extracting metadata 100.0% (chunk 1 of 1)</text></g><g id="g11"><text x="0" textLength="8" class="background"> </text></g><g id="g12"><text x="0" textLength="152" class="foreground">Optimizing database</text></g><g id="g13"><text x="0" textLength="80" class="foreground">945 12.2s </text><text x="80" textLength="8" class="color2">~</text><text x="88" textLength="32" class="foreground"> &#127838; </text><text x="120" textLength="8" class="background"> </text><text x="128" textLength="672" class="foreground">                                                                                    </text></g><g id="g14"><text x="0" textLength="80" class="foreground">945 12.2s </text><text x="80" textLength="8" class="color2">~</text><text x="88" textLength="32" class="foreground"> &#127838; </text><text x="120" textLength="16" fill="#005fd7">lb</text><text x="136" textLength="8" class="foreground"> </text><text x="144" textLength="56" fill="#00afff">extract</text><text x="200" textLength="8" class="foreground"> </text><text x="208" textLength="40" text-decoration="underline" fill="#00afff">tv.db</text><text x="248" textLength="8" class="foreground"> </text><text x="256" textLength="8" text-decoration="underline" fill="#00a6b2">~</text><text x="264" textLength="152" text-decoration="underline" fill="#00afff">/d/70_Now_Watching/</text><text x="416" textLength="8" class="background"> </text><text x="424" textLength="376" class="foreground">                                               </text></g><g id="g15"><text x="0" textLength="80" class="foreground">945 12.2s </text><text x="80" textLength="8" class="color2">~</text><text x="88" textLength="32" class="foreground"> &#127838; </text><text x="120" textLength="16" fill="#005fd7">lb</text><text x="136" textLength="8" class="foreground"> </text><text x="144" textLength="56" fill="#00afff">extract</text><text x="200" textLength="8" class="foreground"> </text><text x="208" textLength="40" text-decoration="underline" fill="#00afff">tv.db</text><text x="248" textLength="8" class="foreground"> </text><text x="256" textLength="8" text-decoration="underline" fill="#00a6b2">~</text><text x="264" textLength="152" text-decoration="underline" fill="#00afff">/d/70_Now_Watching/</text><text x="416" textLength="384" class="foreground">                                                </text></g><g id="g16"><text x="0" textLength="288" class="foreground">/mnt/d/70_Now_Watching : Scanning...</text></g><g id="g17"><text x="0" textLength="72" class="foreground">945 0.9s </text><text x="72" textLength="8" class="color2">~</text><text x="80" textLength="32" class="foreground"> &#129528; </text><text x="112" textLength="8" class="background"> </text><text x="120" textLength="680" class="foreground">                                                                                     </text></g><g id="g18"><text x="0" textLength="72" class="foreground">945 0.9s </text><text x="72" textLength="8" class="color2">~</text><text x="80" textLength="720" class="foreground"> &#129528;                                                                                       </text></g></defs><g id="screen_view"><g><use xlink:href="#g1" y="0"/><rect x="80" y="17" width="8" height="17" class="foreground"/><use xlink:href="#g2" y="17"/></g><g><rect x="80" y="204" width="8" height="17" class="foreground"/><use xlink:href="#g3" y="204"/><use xlink:href="#g4" y="221"/></g><g><rect x="376" y="408" width="8" height="17" class="foreground"/><use xlink:href="#g5" y="408"/><use xlink:href="#g4" y="425"/></g><g><use xlink:href="#g6" y="612"/><rect x="0" y="629" width="8" height="17" class="foreground"/><use xlink:href="#g7" y="629"/></g><g><use xlink:href="#g6" y="816"/><use xlink:href="#g8" y="833"/><use xlink:href="#g9" y="850"/><use xlink:href="#g10" y="867"/><rect x="0" y="884" width="8" height="17" class="foreground"/><use xlink:href="#g11" y="884"/></g><g><use xlink:href="#g6" y="1020"/><use xlink:href="#g8" y="1037"/><use xlink:href="#g9" y="1054"/><use xlink:href="#g10" y="1071"/><use xlink:href="#g12" y="1088"/><rect x="0" y="1105" width="8" height="17" class="foreground"/><use xlink:href="#g11" y="1105"/></g><g><use xlink:href="#g6" y="1224"/><use xlink:href="#g8" y="1241"/><use xlink:href="#g9" y="1258"/><use xlink:href="#g10" y="1275"/><use xlink:href="#g12" y="1292"/><rect x="120" y="1309" width="8" height="17" class="foreground"/><use xlink:href="#g13" y="1309"/></g><g><use xlink:href="#g6" y="1428"/><use xlink:href="#g8" y="1445"/><use xlink:href="#g9" y="1462"/><use xlink:href="#g10" y="1479"/><use xlink:href="#g12" y="1496"/><rect x="416" y="1513" width="8" height="17" class="foreground"/><use xlink:href="#g14" y="1513"/></g><g><use xlink:href="#g6" y="1632"/><use xlink:href="#g8" y="1649"/><use xlink:href="#g9" y="1666"/><use xlink:href="#g10" y="1683"/><use xlink:href="#g12" y="1700"/><use xlink:href="#g15" y="1717"/><rect x="0" y="1734" width="8" height="17" class="foreground"/><use xlink:href="#g11" y="1734"/></g><g><use xlink:href="#g6" y="1836"/><use xlink:href="#g8" y="1853"/><use xlink:href="#g9" y="1870"/><use xlink:href="#g10" y="1887"/><use xlink:href="#g12" y="1904"/><use xlink:href="#g15" y="1921"/><use xlink:href="#g16" y="1938"/><rect x="112" y="1955" width="8" height="17" class="foreground"/><use xlink:href="#g17" y="1955"/></g><g><use xlink:href="#g6" y="2040"/><use xlink:href="#g8" y="2057"/><use xlink:href="#g9" y="2074"/><use xlink:href="#g10" y="2091"/><use xlink:href="#g12" y="2108"/><use xlink:href="#g15" y="2125"/><use xlink:href="#g16" y="2142"/><use xlink:href="#g18" y="2159"/><rect x="0" y="2176" width="8" height="17" class="foreground"/><use xlink:href="#g11" y="2176"/></g></g></svg>
+</svg>
