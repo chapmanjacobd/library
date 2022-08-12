@@ -50,10 +50,6 @@ Tubeupdate will go through all added playlists and fetch metadata of any new vid
 
     lb tubeupdate
 
-You can also include your own yt-dlp download archive to skip downloaded videos and speed up playlist scanning.
-
-    lb tubeupdate --yt-dlp-config download_archive=rel/loc/archive.txt
-
 ### 2. Watch / Listen from websites
 
     lb tubewatch maker.db
