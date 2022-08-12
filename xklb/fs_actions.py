@@ -545,6 +545,7 @@ def printer(args, query, bindings):
         stop()
 
     db_resp = pd.DataFrame([dict(r) for r in args.con.execute(query, bindings).fetchall()])
+    db_resp.dropna(axis="columns", how="all", inplace=True)
 
     if args.verbose > 1 and args.print_column and "*" in args.print_column:
         import rich
