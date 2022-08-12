@@ -4,8 +4,8 @@ import sys
 from xklb.fs_actions import filesystem, listen, watch
 from xklb.fs_extract import main as extract
 from xklb.subtitle import main as subtitle
-from xklb.tube_actions import tube_listen, tube_watch
-from xklb.tube_extract import tube_add, tube_list, tube_update
+from xklb.tube_actions import tube_list, tube_listen, tube_watch
+from xklb.tube_extract import tube_add, tube_update
 from xklb.utils import Subcommand, log, stop
 
 
