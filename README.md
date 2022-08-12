@@ -16,6 +16,8 @@ For thirty terabytes of video the initial scan takes about four hours to complet
 
     lb extract tv.db ./video/folder/
 
+![termtosvg](./examples/extract.svg)
+
 ### 2. Watch / Listen from local files
 
     wt tv.db                          # the default post-action is to do nothing after playing
@@ -35,6 +37,8 @@ Download playlist and channel metadata. Break free of the YouTube algo~
 You can add more than one at a time.
 
     lb tubeadd maker.db https://www.youtube.com/c/CuriousMarc/videos https://www.youtube.com/c/element14presents/videos/ https://www.youtube.com/c/DIYPerks/videos
+
+![termtosvg](./examples/tubeadd_multi.svg)
 
 And you can always add more later--even from different websites.
 
