@@ -156,6 +156,11 @@ def extract_metadata(args, f):
 
         fps = safe_unpack(
             [
+                parse_framerate(s.get("avg_frame_rate"))
+                for s in streams
+                if s.get("avg_frame_rate") is not None and "/0" not in s.get("avg_frame_rate")
+            ]
+            + [
                 parse_framerate(s.get("r_frame_rate"))
                 for s in streams
                 if s.get("r_frame_rate") is not None and "/0" not in s.get("r_frame_rate")
