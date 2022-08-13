@@ -148,6 +148,7 @@ def delete_playlists(args, playlists):
 def tube_list():
     parser = argparse.ArgumentParser()
     parser.add_argument("db", nargs="?", default="tube.db")
+    parser.add_argument('--db', '-db')
     parser.add_argument(
         "--print",
         "-p",
@@ -171,7 +172,12 @@ tubelist -p f -- means print only playlist urls -- useful for piping to other ut
     args = parser.parse_args()
     log.info(filter_None(args.__dict__))
 
-    args.con = sqlite_con(args.db)
+    args = parser.parse_args()
+
+    if args.db:
+        args.database = args.db
+
+    args.con = sqlite_con(args.database)
 
     if args.delete:
         delete_playlists(args, args.delete)

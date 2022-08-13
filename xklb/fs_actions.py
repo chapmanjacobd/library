@@ -57,7 +57,7 @@ def parse_args(default_db, default_chromecast=""):
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     parser.add_argument(
-        "db",
+        "database",
         nargs="?",
         default=default_db,
         help="Database file. If not specified a generic name will be used: audio.db, video.db, fs.db, etc",
@@ -200,9 +200,13 @@ Double spaces means one space
     parser.add_argument("--post-action", "--action", "-k", default="keep", help="Choose what to do after playing")
     parser.add_argument("--shallow-organize", default="/mnt/d/")
 
+    parser.add_argument('--db', '-db')
     parser.add_argument("--ignore-errors", "--ignoreerrors", action="store_true")
     parser.add_argument("--verbose", "-v", action="count", default=0)
     args = parser.parse_args()
+
+    if args.db:
+        args.database = args.db
 
     if args.limit == DEFAULT_PLAY_QUEUE and args.print:
         args.limit = None
@@ -622,7 +626,7 @@ def printer(args, query, bindings):
 
 
 def process_actions(args):
-    args.con = sqlite_con(args.db)
+    args.con = sqlite_con(args.database)
     query, bindings = construct_query(args)
 
     if args.print:
