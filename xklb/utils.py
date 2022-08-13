@@ -1,17 +1,21 @@
 import argparse
 import logging
+import math
 import os
 import platform
 import re
 import shutil
 import subprocess
 import sys
+import textwrap
 from collections.abc import Iterable
+from datetime import timedelta
 from functools import wraps
 from pathlib import Path
-from subprocess import run
 from tempfile import gettempdir
 
+import humanize
+import numpy as np
 from IPython.core import ultratb
 from IPython.terminal.debugger import TerminalPdb
 from pychromecast import discovery
@@ -37,8 +41,62 @@ class Subcommand:
     tubelisten = "tubelisten"
 
 
-def stop():
-    exit(255)  # use nonzero code to stop shell repeat
+audio_include_string = (
+    lambda x: f"""and (
+    path like :include{x}
+    OR mood like :include{x}
+    OR genre like :include{x}
+    OR year like :include{x}
+    OR bpm like :include{x}
+    OR key like :include{x}
+    OR time like :include{x}
+    OR decade like :include{x}
+    OR categories like :include{x}
+    OR city like :include{x}
+    OR country like :include{x}
+    OR description like :include{x}
+    OR album like :include{x}
+    OR title like :include{x}
+    OR artist like :include{x}
+)"""
+)
+
+audio_exclude_string = (
+    lambda x: f"""and (
+    path not like :exclude{x}
+    OR mood not like :exclude{x}
+    OR genre not like :exclude{x}
+    OR year not like :exclude{x}
+    OR bpm not like :exclude{x}
+    OR key not like :exclude{x}
+    OR time not like :exclude{x}
+    OR decade not like :exclude{x}
+    OR categories not like :exclude{x}
+    OR city not like :exclude{x}
+    OR country not like :exclude{x}
+    OR description not like :exclude{x}
+    OR album not like :exclude{x}
+    OR title not like :exclude{x}
+    OR artist not like :exclude{x}
+)"""
+)
+
+
+tube_include_string = (
+    lambda x: f"""and (
+    path like :include{x}
+    OR tags like :include{x}
+    OR title like :include{x}
+)"""
+)
+
+tube_exclude_string = (
+    lambda x: f"""and (
+    path not like :exclude{x}
+    OR tags not like :exclude{x}
+    OR title not like :exclude{x}
+)"""
+)
 
 
 def get_ip_of_chromecast(device_name):
@@ -213,7 +271,9 @@ def cmd(*command, strict=True, cwd=None, quiet=True, interactive=False, **kwargs
     if len(command) == 1 and kwargs.get("shell") is True:
         command = command[0]
 
-    r = run(command, capture_output=True, text=True, cwd=cwd, preexec_fn=None if interactive else os.setpgrp, **kwargs)
+    r = subprocess.run(
+        command, capture_output=True, text=True, cwd=cwd, preexec_fn=None if interactive else os.setpgrp, **kwargs
+    )
     # TODO Windows support: creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
     log.debug(r.args)
     r.stdout = print_std(r.stdout)
@@ -309,7 +369,7 @@ def get_ordinal_media(args, path):
         bindings = ("%" + candidate + "%",)
         if args.print and "q" in args.print:
             print_query(bindings, query)
-            stop()
+            exit()
 
         similar_videos = single_column_tolist(args.con.execute(query, bindings).fetchall(), "path")  # type: ignore
         log.debug(similar_videos)
@@ -365,3 +425,19 @@ class argparse_dict(argparse.Action):
         except ValueError as ex:
             raise argparse.ArgumentError(self, f'Could not parse argument "{values}" as k1=1 k2=2 format')
         setattr(args, self.dest, d)
+
+
+def resize_col(tbl, col, size=10):
+    if col in tbl.columns:
+        tbl[[col]] = tbl[[col]].applymap(
+            lambda x: None
+            if x is None
+            else textwrap.fill(x, max(10, int(size * (os.get_terminal_size().columns / 80))))
+        )
+    return tbl
+
+
+def human_time(seconds):
+    if seconds is None or np.isnan(seconds):
+        return None
+    return humanize.precisedelta(timedelta(seconds=seconds), minimum_unit="minutes")

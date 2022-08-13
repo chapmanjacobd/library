@@ -4,7 +4,6 @@ import os
 import shlex
 import shutil
 import subprocess
-import textwrap
 from datetime import datetime, timedelta
 from pathlib import Path
 from shutil import which
@@ -19,21 +18,25 @@ from rich.prompt import Confirm
 from tabulate import tabulate
 
 from xklb.db import sqlite_con
-from xklb.fs_extract import audio_exclude_string, audio_include_string
 from xklb.utils import (
     CAST_NOW_PLAYING,
     FAKE_SUBTITLE,
     Pclose,
     Subcommand,
+    audio_exclude_string,
+    audio_include_string,
     cmd,
     cmd_interactive,
     filter_None,
     get_ip_of_chromecast,
     get_ordinal_media,
+    human_time,
     log,
     mv_to_keep_folder,
     remove_media,
-    stop,
+    resize_col,
+    tube_exclude_string,
+    tube_include_string,
 )
 
 DEFAULT_PLAY_QUEUE = 120
@@ -121,6 +124,16 @@ Double spaces means one space
 """,
     )
     parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[])
+
+    parser.add_argument(
+        "--delete",
+        "--remove",
+        "--erase",
+        "--rm",
+        "-rm",
+        action="store_true",
+        help="lb tw -s 'something to delete' -rm",
+    )
 
     parser.add_argument(
         "--chromecast-device",
@@ -473,7 +486,7 @@ def play(args, media: pd.DataFrame):
 
 def construct_query(args):
     cf = []
-    bindings = []
+    bindings = {}
 
     if args.duration:
         cf.append(" and duration IS NOT NULL " + args.duration)
@@ -483,14 +496,21 @@ def construct_query(args):
     cf.extend([" and " + w for w in args.where])
 
     if args.action == Subcommand.listen:
-        bindings = {}
         for idx, inc in enumerate(args.include):
             cf.append(audio_include_string(idx))
             bindings[f"include{idx}"] = "%" + inc.replace(" ", "%").replace("%%", " ") + "%"
         for idx, exc in enumerate(args.exclude):
             cf.append(audio_exclude_string(idx))
             bindings[f"exclude{idx}"] = "%" + exc.replace(" ", "%").replace("%%", " ") + "%"
+    elif args.action in [Subcommand.tubewatch, Subcommand.tubelisten]:
+        for idx, inc in enumerate(args.include):
+            cf.append(tube_include_string(idx))
+            bindings[f"include{idx}"] = "%" + inc.replace(" ", "%").replace("%%", " ") + "%"
+        for idx, exc in enumerate(args.exclude):
+            cf.append(tube_exclude_string(idx))
+            bindings[f"exclude{idx}"] = "%" + exc.replace(" ", "%").replace("%%", " ") + "%"
     else:
+        bindings = []
         for inc in args.include:
             cf.append(" AND path LIKE ? ")
             bindings.append("%" + inc.replace(" ", "%").replace("%%", " ") + "%")
@@ -505,13 +525,12 @@ def construct_query(args):
 
     query = f"""
     SELECT path
-        {', duration/60.0/60.0 as hours' if args.action != Subcommand.filesystem else ''}
+        {', duration' if args.action != Subcommand.filesystem else ''}
         {', subtitle_count' if args.action == Subcommand.watch else ''}
         , size
         {', sparseness' if args.action == Subcommand.filesystem else ''}
         {', is_dir' if args.action == Subcommand.filesystem else ''}
         {', title' if args.action in [Subcommand.tubelisten, Subcommand.tubewatch] else ''}
-        {', duration' if args.action in [Subcommand.tubelisten, Subcommand.tubewatch] else ''}
         {', ' + ', '.join(args.print_column) if args.print_column else ''}
     FROM media
     WHERE 1=1
@@ -532,7 +551,7 @@ def printer(args, query, bindings):
     if "a" in args.print:
         query = f"""select
             "Aggregate" as path
-            {', sum(hours) hours' if args.action != Subcommand.filesystem else ''}
+            {', sum(duration) duration' if args.action != Subcommand.filesystem else ''}
             {', sparseness' if args.action == Subcommand.filesystem else ''}
             , sum(size) size
             , count(*) count
@@ -542,7 +561,7 @@ def printer(args, query, bindings):
 
     if args.print and "q" in args.print:
         print(query)
-        stop()
+        exit()
 
     db_resp = pd.DataFrame([dict(r) for r in args.con.execute(query, bindings).fetchall()])
     db_resp.dropna(axis="columns", how="all", inplace=True)
@@ -554,6 +573,15 @@ def printer(args, query, bindings):
         for t in db_resp.to_dict(orient="records"):
             rich.print(t)
 
+    if db_resp.empty or len(db_resp) == 0:
+        print("No media found")
+        exit(2)
+
+    if args.delete:
+        remove_media(args, db_resp[["path"]].values.tolist(), quiet=True)
+        print(f"Deleted {len(db_resp)} media records")
+        exit()
+
     if "f" in args.print:
         if args.limit == 1:
             f = db_resp[["path"]].loc[0].iat[0]
@@ -564,26 +592,33 @@ def printer(args, query, bindings):
         else:
             print(db_resp[["path"]].to_string(index=False, header=False))
     else:
-        db_resp[["path"]] = db_resp[["path"]].applymap(
-            lambda x: textwrap.fill(x, max(10, os.get_terminal_size().columns - (18 * len(db_resp.columns))))
-        )
-        if "size" in db_resp.columns:
-            db_resp[["size"]] = db_resp[["size"]].applymap(lambda x: None if x is None else humanize.naturalsize(x))
+        tbl = db_resp.copy()
+        resize_col(tbl, "path", 22)
+        resize_col(tbl, "title", 18)
+
+        if "size" in tbl.columns:
+            tbl[["size"]] = tbl[["size"]].applymap(lambda x: None if x is None else humanize.naturalsize(x))
+
+        if "duration" in tbl.columns:
+            tbl[["duration"]] = tbl[["duration"]].applymap(human_time)
+        resize_col(tbl, "duration", 6)
+
         for t in ["time_modified", "time_created"]:
-            if t in db_resp.columns:
-                db_resp[[t]] = db_resp[[t]].applymap(
+            if t in tbl.columns:
+                tbl[[t]] = tbl[[t]].applymap(
                     lambda x: None if x is None else humanize.naturaldate(datetime.fromtimestamp(x))
                 )
 
-        print(tabulate(db_resp, tablefmt="fancy_grid", headers="keys", showindex=False))  # type: ignore
+        print(tabulate(tbl, tablefmt="fancy_grid", headers="keys", showindex=False))  # type: ignore
 
         if args.action != Subcommand.filesystem:
+            print(f'{len(db_resp)} items')
             summary = db_resp.sum(numeric_only=True)
-            hours = summary.get("hours") or 0.0
-            duration = timedelta(hours=int(hours), minutes=math.ceil(hours % 1 * 60))  # type: ignore
+            duration = summary.get("duration") or 0
+            duration = timedelta(seconds=duration)  # type: ignore
             print("Total duration:", humanize.precisedelta(duration, minimum_unit="minutes"))
 
-    stop()
+    exit()
 
 
 def process_actions(args):
@@ -596,7 +631,7 @@ def process_actions(args):
     media = pd.DataFrame([dict(r) for r in args.con.execute(query, bindings).fetchall()])
     if len(media) == 0:
         print("No media found")
-        stop()
+        exit(2)
 
     play(args, media)
 

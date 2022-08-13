@@ -6,7 +6,7 @@ from xklb.fs_extract import main as extract
 from xklb.subtitle import main as subtitle
 from xklb.tube_actions import tube_list, tube_listen, tube_watch
 from xklb.tube_extract import tube_add, tube_update
-from xklb.utils import Subcommand, log, stop
+from xklb.utils import Subcommand, log
 
 
 def lb(args=None):
@@ -42,7 +42,7 @@ def lb(args=None):
         from xklb import __version__
 
         print(__version__)
-        stop()
+        exit()
 
     del sys.argv[1]
     log.info(sys.argv)

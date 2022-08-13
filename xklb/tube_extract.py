@@ -19,7 +19,6 @@ from xklb.utils import (
     log,
     safe_unpack,
     single_column_tolist,
-    stop,
 )
 
 
