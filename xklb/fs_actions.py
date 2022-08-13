@@ -157,6 +157,7 @@ Double spaces means one space
         type=int,
         help="Duration to play (in seconds) while changing the channel [experimental]",
     )
+    parser.add_argument("--portrait", "-portrait", action="store_true")
 
     parser.add_argument("--prefix", default="", help="change root prefix; useful for sshfs")
 
@@ -571,6 +572,7 @@ def construct_query(args):
     {'and audio_count > 0' if args.action == Subcommand.listen else ''}
     {'and video_count > 0' if args.action == Subcommand.watch else ''}
     {'and path not like "%/keep/%"' if args.post_action == 'askkeep' else ''}
+    {'and width < height' if args.portrait else ''}
     ORDER BY 1=1
         {',' + args.sort if args.sort else ''}
         {', path' if args.print or args.include or args.play_in_order > 0 else ''}
