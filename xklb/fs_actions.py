@@ -541,6 +541,7 @@ def construct_query(args):
     {args.sql_filter}
     {'and audio_count > 0' if args.action == Subcommand.listen else ''}
     {'and video_count > 0' if args.action == Subcommand.watch else ''}
+    {'and path not like "%/keep/%"' if args.post_action == 'askkeep' else ''}
     ORDER BY 1=1
         {',' + args.sort if args.sort else ''}
         {', path' if args.print or args.include or args.play_in_order > 0 else ''}
