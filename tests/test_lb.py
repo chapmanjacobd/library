@@ -1,7 +1,8 @@
 import sys
 from unittest.mock import patch
 
-from xklb.fs_actions import lt, wt
+from xklb.fs_actions import listen as lt
+from xklb.fs_actions import watch as wt
 from xklb.lb import lb
 
 
@@ -21,7 +22,6 @@ def test_lt_args():
     sys.argv = ["listen", "-s", "test"]
     lt()
 
-    # print aggregate
     sys.argv = ["lt", "-p", "a"]
     lt()
 

@@ -129,7 +129,7 @@ def printer(args):
         print(tabulate(tbl, tablefmt="fancy_grid", headers="keys", showindex=False))  # type: ignore
 
         if "duration" in db_resp.columns:
-            print(f'{len(db_resp)} items')
+            print(f"{len(db_resp)} items")
             summary = db_resp.sum(numeric_only=True)
             duration = summary.get("duration") or 0
             print("Total duration:", human_time(duration))
@@ -148,7 +148,7 @@ def delete_playlists(args, playlists):
 def tube_list():
     parser = argparse.ArgumentParser()
     parser.add_argument("db", nargs="?", default="tube.db")
-    parser.add_argument('--db', '-db')
+    parser.add_argument("--db", "-db")
     parser.add_argument(
         "--print",
         "-p",

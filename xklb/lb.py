@@ -10,6 +10,9 @@ from xklb.utils import Subcommand, log
 
 
 def lb(args=None):
+    if args:
+        sys.argv = args
+
     parser = argparse.ArgumentParser(add_help=False)
     subparsers = parser.add_subparsers()
     xr = subparsers.add_parser("extract", aliases=["xr"], add_help=False)
