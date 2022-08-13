@@ -221,13 +221,13 @@ def extract_metadata(args, f):
 
 def optimize_db(args):
     print("Optimizing database")
-    if Path(args.db).exists():
-        cmd("sqlite-utils", "optimize", args.db)
+    if Path(args.database).exists():
+        cmd("sqlite-utils", "optimize", args.database)
         columns = cmd(
-            f"sqlite-utils tables {args.db} --columns | jq -r '.[0].columns[]'", shell=True
+            f"sqlite-utils tables {args.database} --columns | jq -r '.[0].columns[]'", shell=True
         ).stdout.splitlines()
         for column in columns:
-            cmd("sqlite-utils", "create-index", "--if-not-exists", "--analyze", args.db, "media", column)
+            cmd("sqlite-utils", "create-index", "--if-not-exists", "--analyze", args.database, "media", column)
 
 
 def extract_chunk(args, l):
@@ -308,8 +308,8 @@ def scan_path(args, path):
 
 
 def extractor(args):
-    Path(args.db).touch()
-    args.con = sqlite_con(args.db)
+    Path(args.database).touch()
+    args.con = sqlite_con(args.database)
     new_files = 0
     for path in args.paths:
         new_files += scan_path(args, path)
@@ -320,8 +320,9 @@ def extractor(args):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("db", nargs="?")
+    parser.add_argument("database", nargs="?")
     parser.add_argument("paths", nargs="+")
+    parser.add_argument("--db", '-db')
 
     db_type = parser.add_mutually_exclusive_group()
     db_type.add_argument("-a", "--audio", action="store_const", dest="db_type", const="a")
@@ -337,18 +338,21 @@ def main():
     parser.add_argument("-v", "--verbose", action="count", default=0)
     args = parser.parse_args()
 
-    if not args.db:
+    if args.db:
+        args.database = args.db
+
+    if not args.database:
         if args.db_type == "a":
-            args.db = "audio.db"
+            args.database = "audio.db"
         elif args.db_type == "f":
-            args.db = "fs.db"
+            args.database = "fs.db"
         elif args.db_type == "v":
-            args.db = "video.db"
+            args.database = "video.db"
         else:
             raise Exception(f"fs_extract for db_type {args.db_type} not implemented")
 
     if args.overwrite_db:
-        Path(args.db).unlink(missing_ok=True)
+        Path(args.database).unlink(missing_ok=True)
 
     extractor(args)
 
