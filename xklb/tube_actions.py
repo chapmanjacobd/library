@@ -1,8 +1,4 @@
 import argparse
-import math
-import os
-import textwrap
-from datetime import timedelta
 from pathlib import Path
 
 import humanize
@@ -12,7 +8,14 @@ from tabulate import tabulate
 
 from xklb.db import sqlite_con
 from xklb.fs_actions import parse_args, process_actions
-from xklb.utils import CAST_NOW_PLAYING, Subcommand, filter_None, log, stop
+from xklb.utils import (
+    CAST_NOW_PLAYING,
+    Subcommand,
+    filter_None,
+    human_time,
+    log,
+    resize_col,
+)
 
 # TODO: add cookiesfrombrowser: ('firefox', ) as a default
 # cookiesfrombrowser: ('vivaldi', ) # should not crash if not installed ?
@@ -93,12 +96,6 @@ def tube_listen():
             Path(CAST_NOW_PLAYING).unlink(missing_ok=True)
 
 
-def human_time(hours):
-    if hours is None or np.isnan(hours):
-        return None
-    return humanize.precisedelta(timedelta(hours=int(hours), minutes=math.ceil(hours % 1 * 60)), minimum_unit="minutes")
-
-
 def printer(args):
     query = "select distinct ie_key, title, path from playlists"
     if "a" in args.print:
@@ -106,7 +103,7 @@ def printer(args):
             playlists.ie_key
             , playlists.title
             , coalesce(playlists.path, "Playlist-less videos") path
-            , sum(media.duration/60.0/60.0) hours
+            , sum(media.duration) duration
             , sum(media.size) size
             , count(*) count
         from media
@@ -120,29 +117,24 @@ def printer(args):
         print(db_resp[["path"]].to_string(index=False, header=False))
     else:
         tbl = db_resp.copy()
-        tbl[["path"]] = tbl[["path"]].applymap(
-            lambda x: textwrap.fill(x, max(10, os.get_terminal_size().columns - (15 * len(tbl.columns))))
-        )
-        if "uploader_url" in tbl.columns:
-            tbl[["uploader_url"]] = tbl[["uploader_url"]].applymap(
-                lambda x: None
-                if x is None
-                else textwrap.fill(x, max(10, os.get_terminal_size().columns - (40 * len(tbl.columns))))
-            )
+
+        tbl = resize_col(tbl, "path", 40)
+        tbl = resize_col(tbl, "uploader_url")
 
         if "size" in tbl.columns:
             tbl[["size"]] = tbl[["size"]].applymap(lambda x: None if x is None else humanize.naturalsize(x))
-        if "hours" in tbl.columns:
-            tbl[["hours"]] = tbl[["hours"]].applymap(lambda x: None if x is None else human_time(x))
+        if "duration" in tbl.columns:
+            tbl[["duration"]] = tbl[["duration"]].applymap(lambda x: None if x is None else human_time(x))
 
         print(tabulate(tbl, tablefmt="fancy_grid", headers="keys", showindex=False))  # type: ignore
 
-        if "hours" in db_resp.columns:
+        if "duration" in db_resp.columns:
+            print(f'{len(db_resp)} items')
             summary = db_resp.sum(numeric_only=True)
-            hours = summary.get("hours") or 0.0
-            print("Total duration:", human_time(hours))
+            duration = summary.get("duration") or 0
+            print("Total duration:", human_time(duration))
 
-    stop()
+    exit()
 
 
 def delete_playlists(args, playlists):
@@ -172,7 +164,6 @@ tubelist -p f -- means print only playlist urls -- useful for piping to other ut
         "--erase",
         "--rm",
         "-rm",
-        "-d",
         nargs="+",
         help="""lb tubelist -rm https://vimeo.com/canal180 -- removes the playlist/channel and all linked videos""",
     )
@@ -184,6 +175,6 @@ tubelist -p f -- means print only playlist urls -- useful for piping to other ut
 
     if args.delete:
         delete_playlists(args, args.delete)
-        stop()
+        exit()
 
     printer(args)

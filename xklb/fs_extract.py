@@ -29,46 +29,6 @@ from xklb.utils import (
     safe_unpack,
 )
 
-audio_include_string = (
-    lambda x: f"""and (
-    path like :include{x}
-    OR mood like :include{x}
-    OR genre like :include{x}
-    OR year like :include{x}
-    OR bpm like :include{x}
-    OR key like :include{x}
-    OR time like :include{x}
-    OR decade like :include{x}
-    OR categories like :include{x}
-    OR city like :include{x}
-    OR country like :include{x}
-    OR description like :include{x}
-    OR album like :include{x}
-    OR title like :include{x}
-    OR artist like :include{x}
-)"""
-)
-
-audio_exclude_string = (
-    lambda x: f"""and (
-    path not like :exclude{x}
-    OR mood not like :exclude{x}
-    OR genre not like :exclude{x}
-    OR year not like :exclude{x}
-    OR bpm not like :exclude{x}
-    OR key not like :exclude{x}
-    OR time not like :exclude{x}
-    OR decade not like :exclude{x}
-    OR categories not like :exclude{x}
-    OR city not like :exclude{x}
-    OR country not like :exclude{x}
-    OR description not like :exclude{x}
-    OR album not like :exclude{x}
-    OR title not like :exclude{x}
-    OR artist not like :exclude{x}
-)"""
-)
-
 
 def get_provenance(file):
     if youtube_dl_id(file) != "":
