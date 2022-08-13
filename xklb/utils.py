@@ -440,4 +440,4 @@ def resize_col(tbl, col, size=10):
 def human_time(seconds):
     if seconds is None or np.isnan(seconds):
         return None
-    return humanize.precisedelta(timedelta(seconds=seconds), minimum_unit="minutes")
+    return humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="minutes")
