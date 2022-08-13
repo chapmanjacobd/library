@@ -25,7 +25,7 @@ from xklb.utils import (
 def parse_args(action):
     parser = argparse.ArgumentParser()
     parser.add_argument("db", nargs="?", default="tube.db")
-    parser.add_argument('--db', '-db')
+    parser.add_argument("--db", "-db")
     if action == "add":
         parser.add_argument("playlists", nargs="+")
         parser.add_argument("-f", "--overwrite-db", action="store_true", help="Delete db file before scanning")
@@ -68,6 +68,7 @@ def parse_args(action):
 
     args.ydl_opts = ydl_opts
     return args
+
 
 def supported(url):  # thank you @dbr
     ies = yt_dlp.extractor.gen_extractors()

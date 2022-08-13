@@ -322,7 +322,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("database", nargs="?")
     parser.add_argument("paths", nargs="+")
-    parser.add_argument("--db", '-db')
+    parser.add_argument("--db", "-db")
 
     db_type = parser.add_mutually_exclusive_group()
     db_type.add_argument("-a", "--audio", action="store_const", dest="db_type", const="a")

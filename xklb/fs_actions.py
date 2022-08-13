@@ -6,6 +6,7 @@ import shutil
 import subprocess
 from datetime import datetime, timedelta
 from pathlib import Path
+from random import randrange
 from shutil import which
 from time import sleep
 
@@ -150,6 +151,12 @@ Double spaces means one space
         action="store_true",
         help="Play with local speakers and chromecast at the same time [experimental]",
     )
+    parser.add_argument(
+        "--interdimensional-cable",
+        "-4dtv",
+        type=int,
+        help="Duration to play (in seconds) while changing the channel [experimental]",
+    )
 
     parser.add_argument("--prefix", default="", help="change root prefix; useful for sshfs")
 
@@ -200,7 +207,7 @@ Double spaces means one space
     parser.add_argument("--post-action", "--action", "-k", default="keep", help="Choose what to do after playing")
     parser.add_argument("--shallow-organize", default="/mnt/d/")
 
-    parser.add_argument('--db', '-db')
+    parser.add_argument("--db", "-db")
     parser.add_argument("--ignore-errors", "--ignoreerrors", action="store_true")
     parser.add_argument("--verbose", "-v", action="count", default=0)
     args = parser.parse_args()
@@ -397,7 +404,7 @@ def listen_chromecast(args, m, player):
 
 
 def play(args, media: pd.DataFrame):
-    for m in media.to_records(index=False):
+    for m in media.to_records():
         media_file = m["path"]
 
         if any(
@@ -433,18 +440,13 @@ def play(args, media: pd.DataFrame):
             if args.action in [Subcommand.tubelisten, Subcommand.tubewatch]:
                 player.extend(["--script-opts=ytdl_hook-try_ytdl_first=yes"])
 
-            if args.start:
-                if args.start == "wadsworth":
-                    player.extend(["--start", m.duration * 0.3])
-                else:
-                    player.extend(["--start", args.start])
-            if args.end:
-                if args.end == "dawsworth":
-                    player.extend(["--end", m.duration * 0.65])
-                elif "+" in args.end:
-                    player.extend(["--end", (m.duration * 0.3) + int(args.end)])
-                else:
-                    player.extend(["--end", args.end])
+            start, end = calculate_duration(args, media, m)
+            if end == 0:
+                continue
+            if start != 0:
+                player.extend([f"--start={int(start)}", "--no-save-position-on-quit"])
+            if end != m.duration:
+                player.extend([f"--end={int(end)}"])
 
         else:
             player = ["xdg-open"]
@@ -484,8 +486,35 @@ def play(args, media: pd.DataFrame):
             elif args.action in [Subcommand.listen, Subcommand.tubelisten]:
                 cmd_interactive(*player, "--", media_file)
 
-        if args.post_action:
+        if args.post_action and not args.interdimensional_cable:
             post_act(args, media_file)
+
+def calculate_duration(args, media, m):
+    start = 0
+    end = m.duration
+
+    if args.start:
+        if args.start == "wadsworth":
+            start = m.duration * 0.3
+        else:
+            start = args.start
+    if args.end:
+        if args.end == "dawsworth":
+            end = m.duration * 0.65
+        elif "+" in args.end:
+            end = (m.duration * 0.3) + args.end
+        else:
+            end = args.end
+
+    if args.interdimensional_cable:
+        try:
+            bias_to_acts = m.index + 1 / len(media)
+            start = randrange(int(start * bias_to_acts), int(end - args.interdimensional_cable + 1))
+            end = start + args.interdimensional_cable
+        except:
+            pass
+
+    return start, end
 
 
 def construct_query(args):
@@ -618,7 +647,7 @@ def printer(args, query, bindings):
 
         if args.action != Subcommand.filesystem:
             if len(db_resp) > 1:
-                print(f'{len(db_resp)} items')
+                print(f"{len(db_resp)} items")
             summary = db_resp.sum(numeric_only=True)
             duration = summary.get("duration") or 0
             duration = human_time(duration)
