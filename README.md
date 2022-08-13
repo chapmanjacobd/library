@@ -120,7 +120,7 @@ There are multiple strictness levels of --play-in-order. If things aren't playin
 
 ### Exercise and watch TV that doesn't have subtitles
 
-    wt -u priority -w sub=0
+    wt -u priority -w subtitle_count=0
 
 ### Check if you've downloaded something before
 
