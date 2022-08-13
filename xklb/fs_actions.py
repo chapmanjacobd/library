@@ -617,11 +617,12 @@ def printer(args, query, bindings):
         print(tabulate(tbl, tablefmt="fancy_grid", headers="keys", showindex=False))  # type: ignore
 
         if args.action != Subcommand.filesystem:
-            print(f'{len(db_resp)} items')
+            if len(db_resp) > 1:
+                print(f'{len(db_resp)} items')
             summary = db_resp.sum(numeric_only=True)
             duration = summary.get("duration") or 0
-            duration = timedelta(seconds=duration)  # type: ignore
-            print("Total duration:", humanize.precisedelta(duration, minimum_unit="minutes"))
+            duration = human_time(duration)
+            print("Total duration:", duration)
 
     exit()
 
