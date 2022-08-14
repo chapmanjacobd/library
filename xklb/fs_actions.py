@@ -386,7 +386,7 @@ def watch_chromecast(args, m):
     return catt_log
 
 
-def listen_chromecast(args, m, player):
+def listen_chromecast(args, m):
     Path(CAST_NOW_PLAYING).write_text(m["path"])
     Path(FAKE_SUBTITLE).touch()
     if not args.with_local:
@@ -400,14 +400,14 @@ def listen_chromecast(args, m, player):
         )
         sleep(0.974)  # imperfect lazy sync; I use keyboard shortcuts to send `set speed` commands to mpv for resync
         # if pyChromecast provides a way to sync accurately that would be very interesting to know; I have not researched it
-        cmd_interactive(*player, "--", m["path"])
+        cmd_interactive(*args.player, "--", m["path"])
         catt_log = Pclose(cast_process)  # wait for chromecast to stop (you can tell any chromecast to pause)
         sleep(3.0)  # give chromecast some time to breathe
 
     return catt_log
 
 
-def calculate_duration(args, media, m):
+def calculate_duration(args, m):
     start = 0
     end = m.duration
 
@@ -424,43 +424,91 @@ def calculate_duration(args, media, m):
         else:
             end = args.end
 
-    if args.interdimensional_cable:
-        try:
-            bias_to_acts = m.index + 1 / len(media)
-            start = randrange(int(start * bias_to_acts), int(end - args.interdimensional_cable + 1))
-            end = start + args.interdimensional_cable
-        except:
-            pass
-
     return start, end
 
 
-def connect_sock(args):
-    args.sock = socket.socket(socket.AF_UNIX)
-    args.sock.connect(args.mpv_socket)
-
-
-def socket_play(args, f):
-    try:
-        connect_sock(args)
-    except socket.error as e:
-        if e.errno == errno.ECONNREFUSED:
-            args.sock = None
-            pass  # abandoned socket
-        elif e.errno == errno.ENOENT:
-            args.sock = None
-            pass  # doesn't exist
-        else:
-            raise e
-
+def socket_play(args, m):
     if args.sock is None:
         subprocess.Popen(["mpv", "--idle", "--input-ipc-server=" + args.mpv_socket])
-        connect_sock(args)
+        while not os.path.exists(args.mpv_socket):
+            sleep(0.2)
+        args.sock = socket.socket(socket.AF_UNIX)
+        args.sock.connect(args.mpv_socket)
 
-    # escape: \ \n "
-    f = f.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
-    f = '"' + f + '"'
-    args.sock.send(("raw loadfile " + f + " \n").encode("utf-8"))
+    start, end = calculate_duration(args, m)
+
+    try:
+        bias_to_acts = m.index + 1 / args.limit
+        start = randrange(int(start * bias_to_acts), int(end - args.interdimensional_cable + 1))
+        end = start + args.interdimensional_cable
+    except:
+        pass
+    if end == 0:
+        return
+
+    play_opts = f"start={start},save-position-on-quit=no"
+    if args.action in [Subcommand.listen, Subcommand.tubelisten]:
+        play_opts += ",video=no,really-quiet=yes"
+    elif args.action in [Subcommand.watch, Subcommand.tubewatch]:
+        play_opts += ",fullscreen=yes,force-window=yes,really-quiet=yes"
+
+    if args.action in [Subcommand.tubelisten, Subcommand.tubewatch]:
+        play_opts += ",script-opts=ytdl_hook-try_ytdl_first=yes"
+
+    f = m.path.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
+    args.sock.send((f'raw loadfile "{f}" replace "{play_opts}" \n').encode("utf-8"))
+    sleep(args.interdimensional_cable)
+
+
+def local_player(args, m, media_file):
+    if args.player:
+        player = args.player
+    elif which("mpv") is None:
+        player = ["xdg-open"]
+    else:
+        player = [which("mpv")]
+        if args.action in [Subcommand.listen, Subcommand.tubelisten]:
+            player.extend([f"--input-ipc-server={args.mpv_socket}", "--no-video", "--keep-open=no", "--really-quiet"])
+        elif args.action in [Subcommand.watch, Subcommand.tubewatch]:
+            player.extend(["--fs", "--force-window=yes", "--really-quiet"])
+
+        if args.action in [Subcommand.tubelisten, Subcommand.tubewatch]:
+            player.extend(["--script-opts=ytdl_hook-try_ytdl_first=yes"])
+
+        start, end = calculate_duration(args, m)
+        if end == 0:
+            return
+        if start != 0:
+            player.extend([f"--start={int(start)}", "--no-save-position-on-quit"])
+        if end != m.duration:
+            player.extend([f"--end={int(end)}"])
+
+    if args.action == Subcommand.watch:
+        if m["subtitle_count"] > 0:
+            player.extend(args.player_args_when_sub)
+        else:
+            player.extend(args.player_args_when_no_sub)
+
+    if args.action in [Subcommand.watch, Subcommand.tubewatch]:
+        cmd(*player, "--", media_file, strict=not args.ignore_errors)
+    elif args.action in [Subcommand.listen, Subcommand.tubelisten]:
+        cmd_interactive(*player, "--", media_file)
+
+
+def chromecast_play(args, m):
+    if args.action in [Subcommand.watch, Subcommand.tubewatch]:
+        catt_log = watch_chromecast(args, m)
+    elif args.action in [Subcommand.listen, Subcommand.tubelisten]:
+        catt_log = listen_chromecast(args, m)
+    else:
+        raise NotImplementedError
+
+    if catt_log:
+        if "Heartbeat timeout, resetting connection" in catt_log.stderr:
+            raise Exception("Media is possibly partially unwatched")
+
+        if catt_log.stderr == "":
+            raise Exception("catt does not exit nonzero? but something might have gone wrong")
 
 
 def play(args, media: pd.DataFrame):
@@ -489,64 +537,19 @@ def play(args, media: pd.DataFrame):
             if args.transcode:
                 media_file = transcode(media_file)
 
-        if args.player:
-            player = args.player
-        elif which("mpv") is None:
-            player = ["xdg-open"]
-        else:
-            player = [which("mpv")]
-            if args.action in [Subcommand.listen, Subcommand.tubelisten]:
-                player.extend(
-                    [f"--input-ipc-server={args.mpv_socket}", "--no-video", "--keep-open=no", "--really-quiet"]
-                )
-            elif args.action in [Subcommand.watch, Subcommand.tubewatch]:
-                player.extend(["--fs", "--force-window=yes", "--really-quiet"])
-
-            if args.action in [Subcommand.tubelisten, Subcommand.tubewatch]:
-                player.extend(["--script-opts=ytdl_hook-try_ytdl_first=yes"])
-
-            start, end = calculate_duration(args, media, m)
-            if end == 0:
-                continue
-            if start != 0:
-                player.extend([f"--start={int(start)}", "--no-save-position-on-quit"])
-            if end != m.duration:
-                player.extend([f"--end={int(end)}"])
-
         if args.action in [Subcommand.watch, Subcommand.tubewatch]:
             print(media_file)
         elif args.action == Subcommand.listen:
             print(cmd("ffprobe", "-hide_banner", "-loglevel", "info", media_file).stderr)
 
         if args.chromecast:
-            if args.action in [Subcommand.watch, Subcommand.tubewatch]:
-                catt_log = watch_chromecast(args, m)
-            elif args.action in [Subcommand.listen, Subcommand.tubelisten]:
-                catt_log = listen_chromecast(args, m, player)
-            else:
-                raise NotImplementedError
-
-            if catt_log:
-                if "Heartbeat timeout, resetting connection" in catt_log.stderr:
-                    raise Exception("Media is possibly partially unwatched")
-
-                if catt_log.stderr == "":
-                    raise Exception("catt does not exit nonzero? but something might have gone wrong")
+            chromecast_play(args, m)
 
         elif args.interdimensional_cable:
-            socket_play(args, media_file)
+            socket_play(args, m)
 
         else:
-            if args.action == Subcommand.watch:
-                if m["subtitle_count"] > 0:
-                    player.extend(args.player_args_when_sub)
-                else:
-                    player.extend(args.player_args_when_no_sub)
-
-            if args.action in [Subcommand.watch, Subcommand.tubewatch]:
-                cmd(*player, "--", media_file, strict=not args.ignore_errors)
-            elif args.action in [Subcommand.listen, Subcommand.tubelisten]:
-                cmd_interactive(*player, "--", media_file)
+            local_player(args, m, media_file)
 
         if args.post_action and not args.interdimensional_cable:
             post_act(args, media_file)
@@ -707,7 +710,8 @@ def process_actions(args):
     try:
         play(args, media)
     finally:
-        cmd("pkill", "-f", "mpv --idle --input-ipc-server=/tmp/mpv_socket")
+        cmd("pkill", "-f", f"mpv --idle --input-ipc-server={args.mpv_socket}", strict=False)
+        Path(args.mpv_socket).unlink(missing_ok=True)
 
 
 def watch():

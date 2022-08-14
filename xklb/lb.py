@@ -47,7 +47,9 @@ def lb(args=None):
         print(__version__)
         exit()
 
-    del sys.argv[1]
+    if len(sys.argv) > 1:
+        del sys.argv[1]
+
     log.info(sys.argv)
     if hasattr(args, "func"):
         args.func()
