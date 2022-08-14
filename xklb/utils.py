@@ -13,6 +13,7 @@ from datetime import timedelta
 from functools import wraps
 from pathlib import Path
 from tempfile import gettempdir
+from typing import Union
 
 import humanize
 import numpy as np
@@ -329,7 +330,7 @@ def print_query(query, bindings):
     return re.sub(r"\n\s+", r"\n", compile_query(query, *bindings))
 
 
-def single_column_tolist(array_to_unpack, column_name: str | int = 1):
+def single_column_tolist(array_to_unpack, column_name: Union[str, int] = 1):
     return list(
         map(
             lambda x: x[column_name],

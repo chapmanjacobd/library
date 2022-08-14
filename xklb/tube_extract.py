@@ -5,7 +5,7 @@ from datetime import datetime
 from pathlib import Path
 from sqlite3 import OperationalError
 from timeit import default_timer as timer
-from typing import Dict, List
+from typing import Dict, List, Union
 
 import pandas as pd
 import yt_dlp
@@ -240,7 +240,7 @@ def log_problem(args, playlist_path):
         log.warning("Start of known playlist reached %s", playlist_path)
 
 
-def process_playlist(args, playlist_path) -> (List[Dict] | None):
+def process_playlist(args, playlist_path) -> Union[List[Dict], None]:
     class ExistingPlaylistVideoReached(yt_dlp.DownloadCancelled):
         pass
 

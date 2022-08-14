@@ -11,6 +11,8 @@ from xklb.lb import lb
 
 db = "--db", "tests/data/test.db"
 
+xr([*db, "tests/data/"])
+
 
 def test_lb_help(capsys):
     lb_help_text = "usage:,extract,xr,subtitle,sub,listen,lt,watch,wt,filesystem,fs,tubelist,playlist,playlists,tubeadd,ta,tubeupdate,tu,tubewatch,tw,entries,tubelisten,tl".split(
@@ -65,8 +67,6 @@ def test_wt_print(capsys):
 class TestLB(unittest.TestCase):
     @mock.patch("xklb.fs_actions.play")
     def test_lb_fs(self, play_mocked):
-        xr([*db, "tests/data/"])
-
         for subcommand in ["watch", "wt"]:
             lb([subcommand, *db])
             out = play_mocked.call_args[0][1].to_dict(orient="records")
