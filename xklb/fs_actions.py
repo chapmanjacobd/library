@@ -10,6 +10,9 @@ from random import randrange
 from shutil import which
 from time import sleep
 
+import errno
+import socket
+
 import ffmpeg
 import humanize
 import pandas as pd
@@ -186,7 +189,7 @@ Double spaces means one space
     parser.add_argument(
         "--end", "-ve", help='Set the time to skip from the end of the media or use the magic word "dawsworth"'
     )
-    parser.add_argument("--player", "-player", help='Override the default player mpv; wt --player "vlc --vlc-opts"')
+    parser.add_argument("--player", "-player", help='Override the default player; wt --player "vlc --vlc-opts"')
     parser.add_argument("--mpv-socket", default="/tmp/mpv_socket")
 
     parser.add_argument(
@@ -276,13 +279,14 @@ Double spaces means one space
 
     log.info(filter_None(args.__dict__))
 
+    args.sock = None
     return args
 
 
 def transcode(next_video):
     temp_video = cmd("mktemp", "--suffix=.mkv", "--dry-run").stdout.strip()
     shutil.move(next_video, temp_video)
-    next_video = next_video.with_suffix(".mkv")
+    next_video = str(Path(next_video).with_suffix(".mkv"))
     cmd(
         (
             f"ffmpeg -loglevel error -stats -i {temp_video} -map 0 -scodec webvtt -vcodec h264"
@@ -455,10 +459,15 @@ def play(args, media: pd.DataFrame):
                 continue
             media_file = str(media_path)
 
+            if args.transcode:
+                media_file = transcode(media_file)
+
         if args.player:
             player = args.player
-        elif which("mpv") is not None:
-            player = ["mpv"]
+        elif which("mpv") is None:
+            player = ["xdg-open"]
+        else:
+            player = [which("mpv")]
             if args.action in [Subcommand.listen, Subcommand.tubelisten]:
                 player.extend(
                     [f"--input-ipc-server={args.mpv_socket}", "--no-video", "--keep-open=no", "--really-quiet"]
@@ -477,16 +486,10 @@ def play(args, media: pd.DataFrame):
             if end != m.duration:
                 player.extend([f"--end={int(end)}"])
 
-        else:
-            player = ["xdg-open"]
-
         if args.action in [Subcommand.watch, Subcommand.tubewatch]:
             print(media_file)
         elif args.action == Subcommand.listen:
             print(cmd("ffprobe", "-hide_banner", "-loglevel", "info", media_file).stderr)
-
-        if args.transcode:
-            media_file = transcode(media_file)
 
         if args.chromecast:
             if args.action in [Subcommand.watch, Subcommand.tubewatch]:
@@ -503,6 +506,9 @@ def play(args, media: pd.DataFrame):
                 if catt_log.stderr == "":
                     raise Exception("catt does not exit nonzero? but something might have gone wrong")
 
+        elif args.interdimensional_cable:
+            socket_play(args, media_file)
+
         else:
             if args.action == Subcommand.watch:
                 if m["subtitle_count"] > 0:
@@ -518,6 +524,31 @@ def play(args, media: pd.DataFrame):
         if args.post_action and not args.interdimensional_cable:
             post_act(args, media_file)
 
+def socket_play(args, f):
+    try:
+        connect_sock(args)
+    except socket.error as e:
+        if e.errno == errno.ECONNREFUSED:
+            args.sock = None
+            pass  # abandoned socket
+        elif e.errno == errno.ENOENT:
+            args.sock = None
+            pass # doesn't exist
+        else:
+            raise e
+
+    if args.sock is None:
+        subprocess.Popen(['mpv', "--idle", "--input-ipc-server=" + args.mpv_socket])
+        connect_sock(args)
+
+    # escape: \ \n "
+    f = f.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n")
+    f = "\"" + f + "\""
+    args.sock.send(("raw loadfile " + f + " \n").encode("utf-8"))
+
+def connect_sock(args):
+    args.sock = socket.socket(socket.AF_UNIX)
+    args.sock.connect(args.mpv_socket)
 
 def construct_query(args):
     cf = []
@@ -558,8 +589,7 @@ def construct_query(args):
     LIMIT = "LIMIT " + str(args.limit) if args.limit else ""
     OFFSET = f"OFFSET {args.skip}" if args.skip else ""
 
-    query = f"""
-    SELECT path
+    query = f"""SELECT path
         {', duration' if args.action != Subcommand.filesystem else ''}
         {', subtitle_count' if args.action == Subcommand.watch else ''}
         , size
