@@ -404,6 +404,34 @@ def listen_chromecast(args, m, player):
     return catt_log
 
 
+def calculate_duration(args, media, m):
+    start = 0
+    end = m.duration
+
+    if args.start:
+        if args.start == "wadsworth":
+            start = m.duration * 0.3
+        else:
+            start = args.start
+    if args.end:
+        if args.end == "dawsworth":
+            end = m.duration * 0.65
+        elif "+" in args.end:
+            end = (m.duration * 0.3) + args.end
+        else:
+            end = args.end
+
+    if args.interdimensional_cable:
+        try:
+            bias_to_acts = m.index + 1 / len(media)
+            start = randrange(int(start * bias_to_acts), int(end - args.interdimensional_cable + 1))
+            end = start + args.interdimensional_cable
+        except:
+            pass
+
+    return start, end
+
+
 def play(args, media: pd.DataFrame):
     for m in media.to_records():
         media_file = m["path"]
@@ -489,33 +517,6 @@ def play(args, media: pd.DataFrame):
 
         if args.post_action and not args.interdimensional_cable:
             post_act(args, media_file)
-
-def calculate_duration(args, media, m):
-    start = 0
-    end = m.duration
-
-    if args.start:
-        if args.start == "wadsworth":
-            start = m.duration * 0.3
-        else:
-            start = args.start
-    if args.end:
-        if args.end == "dawsworth":
-            end = m.duration * 0.65
-        elif "+" in args.end:
-            end = (m.duration * 0.3) + args.end
-        else:
-            end = args.end
-
-    if args.interdimensional_cable:
-        try:
-            bias_to_acts = m.index + 1 / len(media)
-            start = randrange(int(start * bias_to_acts), int(end - args.interdimensional_cable + 1))
-            end = start + args.interdimensional_cable
-        except:
-            pass
-
-    return start, end
 
 
 def construct_query(args):
