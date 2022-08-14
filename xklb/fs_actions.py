@@ -627,7 +627,8 @@ def printer(args, query, bindings):
                 return printer(args, query, bindings)
             print(f)
         else:
-            print(db_resp[["path"]].to_string(index=False, header=False))
+            for line in db_resp[["path"]].to_string(index=False, header=False).splitlines():
+                print(line.strip())
     else:
         tbl = db_resp.copy()
         resize_col(tbl, "path", 22)
