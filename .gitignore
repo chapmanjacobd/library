@@ -10,6 +10,7 @@ __pycache__/
 .magnets
 .yt*
 .jobs*
+tests/data/test.db
 
 # C extensions
 *.so

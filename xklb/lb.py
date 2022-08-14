@@ -11,7 +11,7 @@ from xklb.utils import Subcommand, log
 
 def lb(args=None):
     if args:
-        sys.argv = args
+        sys.argv[2:] = args
 
     parser = argparse.ArgumentParser(add_help=False)
     subparsers = parser.add_subparsers()

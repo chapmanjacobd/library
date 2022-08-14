@@ -5,7 +5,7 @@ from xklb.utils import log
 
 
 def sqlite_con(db):
-    if not os.path.exists(db):
+    if not os.path.exists(db) and ":memory:" not in db:
         log.error(f"Database file '{db}' does not exist. Create one with lb extract.")
         exit(1)
 
