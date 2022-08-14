@@ -1,17 +1,16 @@
 import argparse
+import errno
 import math
 import os
 import shlex
 import shutil
+import socket
 import subprocess
 from datetime import datetime, timedelta
 from pathlib import Path
 from random import randrange
 from shutil import which
 from time import sleep
-
-import errno
-import socket
 
 import ffmpeg
 import humanize
@@ -436,6 +435,34 @@ def calculate_duration(args, media, m):
     return start, end
 
 
+def connect_sock(args):
+    args.sock = socket.socket(socket.AF_UNIX)
+    args.sock.connect(args.mpv_socket)
+
+
+def socket_play(args, f):
+    try:
+        connect_sock(args)
+    except socket.error as e:
+        if e.errno == errno.ECONNREFUSED:
+            args.sock = None
+            pass  # abandoned socket
+        elif e.errno == errno.ENOENT:
+            args.sock = None
+            pass  # doesn't exist
+        else:
+            raise e
+
+    if args.sock is None:
+        subprocess.Popen(["mpv", "--idle", "--input-ipc-server=" + args.mpv_socket])
+        connect_sock(args)
+
+    # escape: \ \n "
+    f = f.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
+    f = '"' + f + '"'
+    args.sock.send(("raw loadfile " + f + " \n").encode("utf-8"))
+
+
 def play(args, media: pd.DataFrame):
     for m in media.to_records():
         media_file = m["path"]
@@ -524,31 +551,6 @@ def play(args, media: pd.DataFrame):
         if args.post_action and not args.interdimensional_cable:
             post_act(args, media_file)
 
-def socket_play(args, f):
-    try:
-        connect_sock(args)
-    except socket.error as e:
-        if e.errno == errno.ECONNREFUSED:
-            args.sock = None
-            pass  # abandoned socket
-        elif e.errno == errno.ENOENT:
-            args.sock = None
-            pass # doesn't exist
-        else:
-            raise e
-
-    if args.sock is None:
-        subprocess.Popen(['mpv', "--idle", "--input-ipc-server=" + args.mpv_socket])
-        connect_sock(args)
-
-    # escape: \ \n "
-    f = f.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n")
-    f = "\"" + f + "\""
-    args.sock.send(("raw loadfile " + f + " \n").encode("utf-8"))
-
-def connect_sock(args):
-    args.sock = socket.socket(socket.AF_UNIX)
-    args.sock.connect(args.mpv_socket)
 
 def construct_query(args):
     cf = []
@@ -702,7 +704,10 @@ def process_actions(args):
         print("No media found")
         exit(2)
 
-    play(args, media)
+    try:
+        play(args, media)
+    finally:
+        cmd("pkill", "-f", "mpv --idle --input-ipc-server=/tmp/mpv_socket")
 
 
 def watch():
