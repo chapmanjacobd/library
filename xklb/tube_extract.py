@@ -258,9 +258,10 @@ def process_playlist(args, playlist_path) -> Union[List[Dict], None]:
 
         def _add_media(self, entry):
             entry = consolidate(playlist_path, entry)
-            if video_known(args, playlist_path, entry["path"]):
-                raise ExistingPlaylistVideoReached
-            save_entries(args, [entry])
+            if entry:
+                if video_known(args, playlist_path, entry["path"]):
+                    raise ExistingPlaylistVideoReached
+                save_entries(args, [entry])
             return entry
 
         def _add_playlist(self, pl, entry):
