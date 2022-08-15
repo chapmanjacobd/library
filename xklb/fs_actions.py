@@ -301,8 +301,10 @@ def transcode(next_video):
 def delete_media(args, media_file):
     if len(args.prefix) > 0:
         media_file.unlink()
-    else:
+    elif which('trash-put') is not None:
         cmd("trash-put", media_file, strict=False)
+    else:
+        media_file.unlink()
 
     remove_media(args, str(media_file), quiet=True)
 

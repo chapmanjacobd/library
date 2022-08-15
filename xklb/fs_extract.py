@@ -1,6 +1,7 @@
 import argparse
 import math
 import os
+from shutil import which
 import sys
 from pathlib import Path
 from typing import Dict
@@ -120,7 +121,10 @@ def extract_metadata(args, f):
         except:
             print(f"Failed reading {f}", file=sys.stderr)
             if args.delete_unplayable:
-                cmd("trash-put", f, strict=False)
+                if which('trash-put') is not None:
+                    cmd("trash-put", f, strict=False)
+                else:
+                    Path(f).unlink()
             return
 
         if not "format" in probe:
