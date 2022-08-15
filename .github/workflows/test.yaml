@@ -3,7 +3,7 @@ name: PyTest
 on:
   push:
     tags-ignore:
-      - "*"
+      - "v*"
 
 jobs:
   test:
