@@ -33,6 +33,7 @@ from xklb.utils import (
     filter_None,
     get_ip_of_chromecast,
     get_ordinal_media,
+    os_bg_kwargs,
     human_time,
     log,
     mv_to_keep_folder,
@@ -398,7 +399,7 @@ def listen_chromecast(args, m):
             catt_log = args.cc.play_url(m["path"], resolve=True, block=True)
     else:
         cast_process = subprocess.Popen(
-            ["catt", "-d", args.chromecast_device, "cast", "-s", FAKE_SUBTITLE, m["path"]], preexec_fn=os.setpgrp
+            ["catt", "-d", args.chromecast_device, "cast", "-s", FAKE_SUBTITLE, m["path"]], **os_bg_kwargs()
         )
         sleep(0.974)  # imperfect lazy sync; I use keyboard shortcuts to send `set speed` commands to mpv for resync
         # if pyChromecast provides a way to sync accurately that would be very interesting to know; I have not researched it
