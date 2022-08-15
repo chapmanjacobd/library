@@ -13,6 +13,7 @@ from datetime import timedelta
 from functools import wraps
 from pathlib import Path
 from tempfile import gettempdir
+from types import SimpleNamespace
 from typing import Union
 
 import humanize
@@ -428,12 +429,17 @@ class argparse_dict(argparse.Action):
         setattr(args, self.dest, d)
 
 
+TERMINAL_SIZE = SimpleNamespace(columns=80, lines=60)
+try:
+    os.get_terminal_size()
+except:
+    pass
+
+
 def resize_col(tbl, col, size=10):
     if col in tbl.columns:
         tbl[[col]] = tbl[[col]].applymap(
-            lambda x: None
-            if x is None
-            else textwrap.fill(x, max(10, int(size * (os.get_terminal_size().columns / 80))))
+            lambda x: None if x is None else textwrap.fill(x, max(10, int(size * (TERMINAL_SIZE.columns / 80))))
         )
     return tbl
 
