@@ -233,7 +233,8 @@ Double spaces means one space
     if args.sort:
         args.sort = " ".join(args.sort)
 
-    args.print_column = list(flatten([s.split(",") for s in args.print_column]))
+    if args.print_column:
+        args.print_column = list(flatten([s.split(",") for s in args.print_column]))
 
     if args.duration:
         SEC_TO_M = 60
