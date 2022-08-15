@@ -6,6 +6,10 @@ on:
       - main
     tags-ignore:
       - "v*"
+    paths:
+      - 'xklb/**'
+      - 'tests/**'
+      - 'poetry.lock'
 
 jobs:
   test:
