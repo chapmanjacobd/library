@@ -168,12 +168,10 @@ You can also use `lb` for any files:
 
 ### TODO
 
-- all: Tests
-- tube: postprocessor_hook
-- tube: None instead of nan
-- tube: prevent adding duplicates
+- all: more test coverage
+- all: Documentation in wiki
+- tube: why nan instead of null ?
 - tube: sqlite-utils
 - tube: Download subtitle to embed in db tags for search
-- tube: Documentation
 - fs: split_by_silence without modifying files
-- fs: is_deleted
+- fs: is_deleted? mixed feelings
