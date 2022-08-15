@@ -70,7 +70,7 @@ class TestLB(unittest.TestCase):
             lb([subcommand, *v_db])
             out = play_mocked.call_args[0][1].to_dict(orient="records")
             assert len(out) == 1
-            assert "tests/data/test.mp4" in out[0]["path"]
+            assert "test.mp4" in out[0]["path"]
             assert out[0]["duration"] == 12
             assert out[0]["subtitle_count"] == 0
             assert out[0]["size"] == 135178
@@ -79,7 +79,7 @@ class TestLB(unittest.TestCase):
         wt()
         out = play_mocked.call_args[0][1].to_dict(orient="records")
         assert len(out) == 1
-        assert "tests/data/test.mp4" in out[0]["path"]
+        assert "test.mp4" in out[0]["path"]
         assert out[0]["duration"] == 12
         assert out[0]["subtitle_count"] == 0
         assert out[0]["size"] == 135178
@@ -87,7 +87,7 @@ class TestLB(unittest.TestCase):
         lb(["listen", *a_db])
         out = play_mocked.call_args[0][1].to_dict(orient="records")
         assert len(out) == 2
-        assert "tests/data/test.opus" in out[0]["path"] + out[1]["path"]
+        assert "test.opus" in out[0]["path"] + out[1]["path"]
 
     # @mock.patch("xklb.fs_actions.play")
     # def test_wt_sort(self, play_mocked):

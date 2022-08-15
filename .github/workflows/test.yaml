@@ -2,6 +2,8 @@ name: PyTest
 
 on:
   push:
+    tags-ignore:
+      - "*"
 
 jobs:
   test:
