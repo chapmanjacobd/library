@@ -33,6 +33,7 @@ else:
 SQLITE_PARAM_LIMIT = 32765
 FAKE_SUBTITLE = os.path.join(gettempdir(), "sub.srt")  # https://github.com/skorokithakis/catt/issues/393
 CAST_NOW_PLAYING = os.path.join(gettempdir(), "catt_playing")
+DEFAULT_MPV_SOCKET = os.path.join(gettempdir(), "mpv_socket")
 
 
 class Subcommand:
@@ -243,6 +244,16 @@ def get_media_files(path, audio=False):
     return video_files
 
 
+def os_bg_kwargs():
+    if hasattr(os, "setpgrp"):
+        os_kwargs = dict(start_new_session=True)
+    else:
+        CREATE_NEW_PROCESS_GROUP = 0x00000200
+        DETACHED_PROCESS = 0x00000008
+        os_kwargs = dict(creationflags=DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP)
+    return os_kwargs
+
+
 def cmd(*command, strict=True, cwd=None, quiet=True, interactive=False, **kwargs):
     EXP_FILTER = re.compile(
         "|".join(
@@ -285,15 +296,6 @@ def cmd(*command, strict=True, cwd=None, quiet=True, interactive=False, **kwargs
             raise Exception(f"[{command}] exited {r.returncode}")
 
     return r
-
-def os_bg_kwargs():
-    if hasattr(os, 'setpgrp'):
-        os_kwargs = dict(start_new_session=True)
-    else:
-        CREATE_NEW_PROCESS_GROUP = 0x00000200
-        DETACHED_PROCESS = 0x00000008
-        os_kwargs = dict(creationflags=DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP)
-    return os_kwargs
 
 
 def cmd_interactive(*cmd, **kwargs):
