@@ -176,7 +176,9 @@ You can also use `lb` for any files:
     │ Australia).jpg                        │              │         │
     ╘═══════════════════════════════════════╧══════════════╧═════════╛
 
-### Compatible with lowcharts
+### You can pipe stuff
+
+[lowcharts](https://github.com/juan-leon/lowcharts)
 
     $ wt-dev -p f -col time_created | lowcharts timehist -w 80
     Matches: 445183.
@@ -201,6 +203,11 @@ You can also use `lb` for any files:
     [2022-07-27 11:36:13] [ 50938] ∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎
     [2022-08-02 16:19:45] [ 70973] ∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎
     [2022-08-08 21:03:17] [  2598] ∎
+
+![video width](https://user-images.githubusercontent.com/7908073/184737808-b96fbe65-a1d9-43c2-b6b4-4bdfab592190.png)
+
+![fps](https://user-images.githubusercontent.com/7908073/184738438-ee566a4b-2da0-4e6d-a4b3-9bfca036aa2a.png)
+
 
 ### TODO
 
