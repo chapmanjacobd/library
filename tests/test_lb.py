@@ -50,18 +50,15 @@ def test_wt_help(capsys):
 
 
 def test_wt_print(capsys):
-    with pytest.raises(SystemExit):
-        lb(["wt", *v_db, "-p", "a"])
+    lb(["wt", *v_db, "-p", "a"])
     captured = capsys.readouterr().out.replace("\n", "")
     assert "Aggregate" in captured
 
-    with pytest.raises(SystemExit):
-        lb(["wt", *v_db, "-pa"])
+    lb(["wt", *v_db, "-pa"])
     captured = capsys.readouterr().out.replace("\n", "")
     assert "Aggregate" in captured
 
-    with pytest.raises(SystemExit):
-        lb(["wt", *v_db, "-p"])
+    lb(["wt", *v_db, "-p"])
     captured = capsys.readouterr().out.replace("\n", "")
     assert "Aggregate" not in captured
 
