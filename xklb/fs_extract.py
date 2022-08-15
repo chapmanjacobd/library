@@ -1,6 +1,7 @@
 import argparse
 import math
 import os
+from sqlite3 import OperationalError
 import sys
 from pathlib import Path
 from shutil import which
@@ -28,6 +29,7 @@ from xklb.utils import (
     log,
     remove_media,
     safe_unpack,
+    single_column_tolist,
 )
 
 
@@ -228,13 +230,21 @@ def extract_metadata(args, f):
     return media
 
 
+def get_columns(args):
+    try:
+        query = "SELECT name FROM PRAGMA_TABLE_INFO('media') where type in ('TEXT', 'INTEGER');"
+        cols = single_column_tolist(args.con.execute(query).fetchall(), "name")
+    except OperationalError:
+        cols = []
+    return cols
+
+
 def optimize_db(args):
     print("Optimizing database")
     if Path(args.database).exists():
         cmd("sqlite-utils", "optimize", args.database)
-        columns = cmd(
-            f"sqlite-utils tables {args.database} --columns | jq -r '.[0].columns[]'", shell=True
-        ).stdout.splitlines()
+        columns = get_columns(args)
+
         for column in columns:
             cmd("sqlite-utils", "create-index", "--if-not-exists", "--analyze", args.database, "media", column)
 
