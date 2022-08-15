@@ -33,6 +33,7 @@ from xklb.utils import (
     cmd,
     cmd_interactive,
     filter_None,
+    flatten,
     get_ip_of_chromecast,
     get_ordinal_media,
     human_time,
@@ -49,6 +50,7 @@ idle_mpv = lambda args: ["mpv", "--idle", f"--input-ipc-server={args.mpv_socket}
 
 DEFAULT_PLAY_QUEUE = 120
 
+pd.set_option('display.float_format', lambda x: '%.5f' % x)
 
 def override_sort(string):
     YEAR_MONTH = lambda var: f"cast(strftime('%Y%m',datetime({var} / 1000000000, 'unixepoch')) as int)"
@@ -230,6 +232,8 @@ Double spaces means one space
 
     if args.sort:
         args.sort = " ".join(args.sort)
+
+    args.print_column = list(flatten([s.split(",") for s in args.print_column]))
 
     if args.duration:
         SEC_TO_M = 60
@@ -605,6 +609,7 @@ def construct_query(args):
         {', duration' if args.action != Subcommand.filesystem else ''}
         {', subtitle_count' if args.action == Subcommand.watch else ''}
         , size
+        {', ' + ', '.join(args.print_column) if args.print_column else ''}
         {', sparseness' if args.action == Subcommand.filesystem else ''}
         {', is_dir' if args.action == Subcommand.filesystem else ''}
         {', title' if args.action in [Subcommand.tubelisten, Subcommand.tubewatch] else ''}
@@ -667,7 +672,10 @@ def printer(args, query, bindings):
                 return printer(args, query, bindings)
             print(f)
         else:
-            for line in db_resp[["path"]].to_string(index=False, header=False).splitlines():
+            if not args.print_column:
+                args.print_column = ["path"]
+
+            for line in db_resp[[*args.print_column]].to_string(index=False, header=False).splitlines():
                 print(line.strip())
     else:
         tbl = db_resp.copy()
