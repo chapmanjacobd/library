@@ -439,11 +439,11 @@ class argparse_dict(argparse.Action):
         setattr(args, self.dest, d)
 
 
-TERMINAL_SIZE = SimpleNamespace(columns=80, lines=60)
+
 try:
-    os.get_terminal_size()
+    TERMINAL_SIZE = os.get_terminal_size()
 except:
-    pass
+    TERMINAL_SIZE = SimpleNamespace(columns=80, lines=60)
 
 
 def resize_col(tbl, col, size=10):
