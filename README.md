@@ -181,6 +181,7 @@ You can also use `lb` for any files:
 - all: more test coverage
 - all: Documentation in wiki
 - all: investigate fts using sqlite-utils
+- all: automatic drop low value indexes? (reduce db size)
 - tube: why nan instead of null ?
 - tube: sqlite-utils create-index
 - tube: Download subtitle to embed in db tags for search
