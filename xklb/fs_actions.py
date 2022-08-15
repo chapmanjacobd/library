@@ -15,6 +15,7 @@ from time import sleep
 import ffmpeg
 import humanize
 import pandas as pd
+import psutil
 import sqlite_utils
 from catt.api import CattDevice
 from rich.prompt import Confirm
@@ -23,6 +24,7 @@ from tabulate import tabulate
 from xklb.db import sqlite_con
 from xklb.utils import (
     CAST_NOW_PLAYING,
+    DEFAULT_MPV_SOCKET,
     FAKE_SUBTITLE,
     Pclose,
     Subcommand,
@@ -33,15 +35,17 @@ from xklb.utils import (
     filter_None,
     get_ip_of_chromecast,
     get_ordinal_media,
-    os_bg_kwargs,
     human_time,
     log,
     mv_to_keep_folder,
+    os_bg_kwargs,
     remove_media,
     resize_col,
     tube_exclude_string,
     tube_include_string,
 )
+
+idle_mpv = lambda args: ["mpv", "--idle", f"--input-ipc-server={args.mpv_socket}"]
 
 DEFAULT_PLAY_QUEUE = 120
 
@@ -190,7 +194,7 @@ Double spaces means one space
         "--end", "-ve", help='Set the time to skip from the end of the media or use the magic word "dawsworth"'
     )
     parser.add_argument("--player", "-player", help='Override the default player; wt --player "vlc --vlc-opts"')
-    parser.add_argument("--mpv-socket", default="/tmp/mpv_socket")
+    parser.add_argument("--mpv-socket", default=DEFAULT_MPV_SOCKET)
 
     parser.add_argument(
         "--player-args-when-sub",
@@ -694,6 +698,17 @@ def printer(args, query, bindings):
             print("Total duration:", duration)
 
 
+def pkill(*command, strict=True):
+    found = 0
+    for process in psutil.process_iter():
+        if process.cmdline() == command:
+            process.terminate()
+            found = 1
+            break
+    if strict and found == 0:
+        raise Exception("Process not found")
+
+
 def process_actions(args):
     args.con = sqlite_con(args.database)
     query, bindings = construct_query(args)
@@ -706,10 +721,14 @@ def process_actions(args):
         print("No media found")
         exit(2)
 
+    if args.interdimensional_cable:
+        subprocess.Popen(idle_mpv(args))
+
     try:
         play(args, media)
     finally:
-        cmd("pkill", "-f", f"mpv --idle --input-ipc-server={args.mpv_socket}", strict=False)
+        if args.interdimensional_cable:
+            pkill(idle_mpv(args), strict=False)
         Path(args.mpv_socket).unlink(missing_ok=True)
         if args.chromecast:
             Path(CAST_NOW_PLAYING).unlink(missing_ok=True)

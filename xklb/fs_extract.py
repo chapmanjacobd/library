@@ -1,10 +1,10 @@
 import argparse
 import math
 import os
-from sqlite3 import OperationalError
 import sys
 from pathlib import Path
 from shutil import which
+from sqlite3 import OperationalError
 from typing import Dict
 
 import ffmpeg
