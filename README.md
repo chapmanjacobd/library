@@ -122,6 +122,16 @@ There are multiple strictness levels of --play-in-order. If things aren't playin
 
     wt -u priority -w subtitle_count=0
 
+### Print a list of files below a 1280px resolution
+
+    wt -w 'width<1280' -p f
+
+### Play files under a certain throughput
+
+I don't save bitrate information (if enough people request then I'll add it) but for now you can use file size and duration as a proxy
+
+    wt -w 'size/duration<50000'
+
 ### Check if you've downloaded something before
 
     wt -u duration --print -s 'video title'
