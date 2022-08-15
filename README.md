@@ -180,8 +180,9 @@ You can also use `lb` for any files:
 
 - all: more test coverage
 - all: Documentation in wiki
+- all: investigate fts using sqlite-utils
 - tube: why nan instead of null ?
-- tube: sqlite-utils
+- tube: sqlite-utils create-index
 - tube: Download subtitle to embed in db tags for search
 - fs: split_by_silence without modifying files
 - fs: is_deleted? mixed feelings
