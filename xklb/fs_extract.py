@@ -90,25 +90,30 @@ def parse_tags(mutagen: Dict, tinytag: Dict):
     return tags
 
 
+def calculate_sparseness(stat):
+    if stat.st_size == 0:
+        sparseness = 0
+    else:
+        blocks_allocated = stat.st_blocks * 512
+        sparseness = blocks_allocated / stat.st_size
+    return sparseness
+
+
 def extract_metadata(args, f):
     try:
         stat = os.stat(f)
     except:
         return
 
-    if stat.st_size == 0:
-        sparseness = 0
-    else:
-        blocks_allocated = stat.st_blocks * 512
-        sparseness = blocks_allocated / stat.st_size
-
     media = dict(
         path=f,
         size=stat.st_size,
-        sparseness=sparseness,
         time_created=int(stat.st_ctime),
         time_modified=int(stat.st_mtime),
     )
+
+    if hasattr(stat, "st_blocks"):
+        media = {**media, "sparseness": calculate_sparseness(stat)}
 
     if args.db_type == "f":
         media = {**media, "is_dir": os.path.isdir(f)}
