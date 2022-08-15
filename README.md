@@ -1,6 +1,6 @@
 # lb: xk media library
 
-A wise philosopher once told me, "[The future is [...] autotainment](https://www.youtube.com/watch?v=F9sZFrsjPp0)".
+A wise philosopher once told me, "[The future is autotainment](https://www.youtube.com/watch?v=F9sZFrsjPp0)".
 
 Requires `ffmpeg`
 
