@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "xklb"
-version = "1.12.051"
+version = "1.12.052"
 description = "xk library"
 authors = ["Jacob Chapman <7908073+chapmanjacobd@users.noreply.github.com>"]
 readme = "README.md"
@@ -19,7 +19,6 @@ tinytag = "*"
 tabulate = "*"
 natsort = "*"
 protobuf = "<4"
-trash-cli = "*"
 humanize = "*"
 ffmpeg-python = "*"
 
