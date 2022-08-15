@@ -44,8 +44,7 @@ def lb(args=None):
     if args.version:
         from xklb import __version__
 
-        print(__version__)
-        exit()
+        return print(__version__)
 
     if len(sys.argv) > 1:
         del sys.argv[1]

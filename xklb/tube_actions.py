@@ -81,19 +81,13 @@ default_ydl_opts = {
 def tube_watch():
     args = parse_args("tube.db", default_chromecast="Living Room TV")
     args.action = Subcommand.tubewatch
-
     process_actions(args)
 
 
 def tube_listen():
     args = parse_args("tube.db", default_chromecast="Xylo and Orchestra")
     args.action = Subcommand.tubelisten
-
-    try:
-        process_actions(args)
-    finally:
-        if args.chromecast:
-            Path(CAST_NOW_PLAYING).unlink(missing_ok=True)
+    process_actions(args)
 
 
 def printer(args):
@@ -133,8 +127,6 @@ def printer(args):
             summary = db_resp.sum(numeric_only=True)
             duration = summary.get("duration") or 0
             print("Total duration:", human_time(duration))
-
-    exit()
 
 
 def delete_playlists(args, playlists):
@@ -180,7 +172,6 @@ tubelist -p f -- means print only playlist urls -- useful for piping to other ut
     args.con = sqlite_con(args.database)
 
     if args.delete:
-        delete_playlists(args, args.delete)
-        exit()
+        return delete_playlists(args, args.delete)
 
     printer(args)
