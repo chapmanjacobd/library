@@ -301,7 +301,7 @@ def transcode(next_video):
 def delete_media(args, media_file):
     if len(args.prefix) > 0:
         media_file.unlink()
-    elif which('trash-put') is not None:
+    elif which("trash-put") is not None:
         cmd("trash-put", media_file, strict=False)
     else:
         media_file.unlink()
@@ -634,8 +634,7 @@ def printer(args, query, bindings):
         from ({query}) """
 
     if args.print and "q" in args.print:
-        print(query)
-        exit()
+        return print(query)
 
     db_resp = pd.DataFrame([dict(r) for r in args.con.execute(query, bindings).fetchall()])
     db_resp.dropna(axis="columns", how="all", inplace=True)
@@ -652,9 +651,8 @@ def printer(args, query, bindings):
         exit(2)
 
     if args.delete:
-        remove_media(args, db_resp[["path"]].values.tolist(), quiet=True)
-        print(f"Deleted {len(db_resp)} media records")
-        exit()
+        print(f"Deleting {len(db_resp)} metadata records")
+        return remove_media(args, db_resp[["path"]].values.tolist(), quiet=True)
 
     if "f" in args.print:
         if args.limit == 1:
@@ -694,15 +692,13 @@ def printer(args, query, bindings):
             duration = human_time(duration)
             print("Total duration:", duration)
 
-    exit()
-
 
 def process_actions(args):
     args.con = sqlite_con(args.database)
     query, bindings = construct_query(args)
 
     if args.print:
-        printer(args, query, bindings)
+        return printer(args, query, bindings)
 
     media = pd.DataFrame([dict(r) for r in args.con.execute(query, bindings).fetchall()])
     if len(media) == 0:
@@ -714,28 +710,23 @@ def process_actions(args):
     finally:
         cmd("pkill", "-f", f"mpv --idle --input-ipc-server={args.mpv_socket}", strict=False)
         Path(args.mpv_socket).unlink(missing_ok=True)
+        if args.chromecast:
+            Path(CAST_NOW_PLAYING).unlink(missing_ok=True)
 
 
 def watch():
     args = parse_args("video.db", default_chromecast="Living Room TV")
     args.action = Subcommand.watch
-
     process_actions(args)
 
 
 def listen():
     args = parse_args("audio.db", default_chromecast="Xylo and Orchestra")
     args.action = Subcommand.listen
-
-    try:
-        process_actions(args)
-    finally:
-        if args.chromecast:
-            Path(CAST_NOW_PLAYING).unlink(missing_ok=True)
+    process_actions(args)
 
 
 def filesystem():
     args = parse_args("fs.db")
     args.action = Subcommand.filesystem
-
     process_actions(args)

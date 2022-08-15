@@ -1,9 +1,9 @@
 import argparse
 import math
 import os
-from shutil import which
 import sys
 from pathlib import Path
+from shutil import which
 from typing import Dict
 
 import ffmpeg
@@ -121,7 +121,7 @@ def extract_metadata(args, f):
         except:
             print(f"Failed reading {f}", file=sys.stderr)
             if args.delete_unplayable:
-                if which('trash-put') is not None:
+                if which("trash-put") is not None:
                     cmd("trash-put", f, strict=False)
                 else:
                     Path(f).unlink()
@@ -360,6 +360,7 @@ def main(args=None):
 
     if args.overwrite_db:
         Path(args.database).unlink(missing_ok=True)
+        Path(args.database).touch()
 
     extractor(args)
 
