@@ -439,7 +439,6 @@ class argparse_dict(argparse.Action):
         setattr(args, self.dest, d)
 
 
-
 try:
     TERMINAL_SIZE = os.get_terminal_size()
 except:
