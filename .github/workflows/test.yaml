@@ -10,6 +10,7 @@ on:
       - 'xklb/**'
       - 'tests/**'
       - 'poetry.lock'
+      - '.github/workflows/test.yaml'
 
 jobs:
   test:
