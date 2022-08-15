@@ -273,10 +273,9 @@ def cmd(*command, strict=True, cwd=None, quiet=True, interactive=False, **kwargs
     if len(command) == 1 and kwargs.get("shell") is True:
         command = command[0]
 
-    r = subprocess.run(
-        command, capture_output=True, text=True, cwd=cwd, preexec_fn=None if interactive else os.setpgrp, **kwargs
-    )
-    # TODO Windows support: creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
+    os_kwargs = {} if interactive else os_bg_kwargs()
+    r = subprocess.run(command, capture_output=True, text=True, cwd=cwd, **os_kwargs, **kwargs)
+
     log.debug(r.args)
     r.stdout = print_std(r.stdout)
     r.stderr = print_std(r.stderr)
@@ -286,6 +285,15 @@ def cmd(*command, strict=True, cwd=None, quiet=True, interactive=False, **kwargs
             raise Exception(f"[{command}] exited {r.returncode}")
 
     return r
+
+def os_bg_kwargs():
+    if hasattr(os, 'setpgrp'):
+        os_kwargs = dict(start_new_session=True)
+    else:
+        CREATE_NEW_PROCESS_GROUP = 0x00000200
+        DETACHED_PROCESS = 0x00000008
+        os_kwargs = dict(creationflags=DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP)
+    return os_kwargs
 
 
 def cmd_interactive(*cmd, **kwargs):
