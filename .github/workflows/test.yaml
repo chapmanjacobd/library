@@ -2,6 +2,8 @@ name: PyTest
 
 on:
   push:
+    branches:
+      - main
     tags-ignore:
       - "v*"
 
