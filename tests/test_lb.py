@@ -90,7 +90,7 @@ class TestLB(unittest.TestCase):
         lb(["listen", *a_db])
         out = play_mocked.call_args[0][1].to_dict(orient="records")
         assert len(out) == 2
-        assert "tests/data/test.opus" in out[0]["path"]
+        assert "tests/data/test.opus" in out[0]["path"] + out[1]["path"]
         assert out[0]["duration"] == 8
         assert out[0]["size"] == 135550
 
