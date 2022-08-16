@@ -1,17 +1,11 @@
 name: PyTest and Publish
 
 on:
-  workflow_dispatch:
   push:
-    branches:
-      - main
-    tags:
-      - 'v*'
-    paths:
-      - 'xklb/**'
-      - 'tests/**'
-      - 'poetry.lock'
-      - '.github/workflows/push.yaml'
+    tags: ['v[0-9].[0-9]+.[0-9]+']
+    paths-ignore:
+      - 'README.md'
+      - 'examples/**'
 
 jobs:
   test:
@@ -44,7 +38,7 @@ jobs:
       - run: pytest
 
   publish:
-    if: startsWith(github.ref_name, 'v')
+    if: github.ref == 'refs/heads/main'
     needs: test
     runs-on: ubuntu-latest
 
@@ -69,7 +63,7 @@ jobs:
         run: poetry publish --build
 
   release:
-    if: startsWith(github.ref_name, 'v')
+    if: github.ref == 'refs/heads/main'
     needs: [test, publish]
     runs-on: ubuntu-latest
 
