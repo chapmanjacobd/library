@@ -23,7 +23,11 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - run: echo ${{ github }}
+      - run: echo ${{ github.ref }}
+      - run: echo ${{ github.ref_name }}
+      - run: echo ${{ github.ref_type }}
+      - run: echo ${{ github.head_ref }}
+      - run: echo ${{ github.event.ref }}
 
 
   publish:
