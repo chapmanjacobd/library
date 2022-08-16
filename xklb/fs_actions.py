@@ -38,6 +38,7 @@ from xklb.utils import (
     get_ordinal_media,
     human_time,
     log,
+    mark_media_watched,
     mv_to_keep_folder,
     os_bg_kwargs,
     remove_media,
@@ -50,7 +51,8 @@ idle_mpv = lambda args: ["mpv", "--idle", f"--input-ipc-server={args.mpv_socket}
 
 DEFAULT_PLAY_QUEUE = 120
 
-pd.set_option('display.float_format', lambda x: '%.5f' % x)
+pd.set_option("display.float_format", lambda x: "%.5f" % x)
+
 
 def override_sort(string):
     YEAR_MONTH = lambda var: f"cast(strftime('%Y%m',datetime({var} / 1000000000, 'unixepoch')) as int)"
@@ -143,6 +145,14 @@ Double spaces means one space
         "-rm",
         action="store_true",
         help="lb tw -s 'something to delete' -rm",
+    )
+    parser.add_argument(
+        "--mark-watched",
+        "--watched",
+        "--mark_played",
+        "--played",
+        action="store_true",
+        help="lb wt -s 'something to mark seen' --mark-watched",
     )
 
     parser.add_argument(
@@ -308,21 +318,20 @@ def transcode(next_video):
     return next_video
 
 
-def delete_media(args, media_file):
+def delete_media(args, media_file: str):
     if len(args.prefix) > 0:
-        media_file.unlink()
+        Path(media_file).unlink()
     elif which("trash-put") is not None:
         cmd("trash-put", media_file, strict=False)
     else:
-        media_file.unlink()
+        Path(media_file).unlink()
 
-    remove_media(args, str(media_file), quiet=True)
+    remove_media(args, media_file, quiet=True)
 
 
-def post_act(args, media_file):
+def post_act(args, media_file: str):
     if args.action in [Subcommand.listen, Subcommand.watch, Subcommand.tubelisten, Subcommand.tubewatch]:
-        args.con.execute("update media set play_count = play_count +1 where path = ?", (media_file,))
-        args.con.commit()
+        mark_media_watched(args, media_file)
 
     if args.post_action == "keep":
         pass
@@ -664,6 +673,10 @@ def printer(args, query, bindings):
     if args.delete:
         print(f"Deleting {len(db_resp)} metadata records")
         return remove_media(args, db_resp[["path"]].values.tolist(), quiet=True)
+
+    if args.mark_watched:
+        print(f"{len(db_resp)} metadata records marked watched")
+        return mark_media_watched(args, db_resp[["path"]].values.tolist())
 
     if "f" in args.print:
         if args.limit == 1:
