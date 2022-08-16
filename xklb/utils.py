@@ -175,7 +175,7 @@ def chunks(lst, n):
         yield lst[i : i + n]
 
 
-def flatten(xs):
+def flatten(xs: Iterable):
     for x in xs:
         if isinstance(x, Iterable) and not isinstance(x, (str, bytes)):
             yield from flatten(x)
@@ -185,7 +185,7 @@ def flatten(xs):
             yield x
 
 
-def conform(list_):
+def conform(list_: Union[str, Iterable]):
     if not isinstance(list_, list):
         list_ = [list_]
     list_ = flatten(list_)
@@ -193,7 +193,7 @@ def conform(list_):
     return list_
 
 
-def remove_media(args, deleted_files, quiet=False):
+def remove_media(args, deleted_files: Union[str, list], quiet=False):
     deleted_files = conform(deleted_files)
     if len(deleted_files) > 0:
         if not quiet:
@@ -206,6 +206,18 @@ def remove_media(args, deleted_files, quiet=False):
         for l in df_chunked:
             args.con.execute(
                 "delete from media where path in (" + ",".join(["?"] * len(l)) + ")",
+                (*l,),
+            )
+            args.con.commit()
+
+
+def mark_media_watched(args, files):
+    files = conform(files)
+    if len(files) > 0:
+        df_chunked = chunks(files, SQLITE_PARAM_LIMIT)
+        for l in df_chunked:
+            args.con.execute(
+                "update media set play_count = play_count +1 where path in (" + ",".join(["?"] * len(l)) + ")",
                 (*l,),
             )
             args.con.commit()
