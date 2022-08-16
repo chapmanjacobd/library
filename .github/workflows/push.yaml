@@ -42,7 +42,7 @@ jobs:
       - run: pytest
 
   publish:
-    if: startsWith(github.event.ref, 'v')
+    if: startsWith(github.event.ref, 'refs/tags/v')
     needs: test
     runs-on: ubuntu-latest
 
@@ -67,7 +67,7 @@ jobs:
         run: poetry publish --build
 
   release:
-    if: startsWith(github.event.ref, 'v')
+    if: startsWith(github.event.ref, 'refs/tags/v')
     needs: [test, publish]
     runs-on: ubuntu-latest
 
