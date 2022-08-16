@@ -38,7 +38,6 @@ jobs:
       - run: pytest
 
   publish:
-    if: github.ref == 'refs/heads/main'
     needs: test
     runs-on: ubuntu-latest
 
@@ -63,7 +62,6 @@ jobs:
         run: poetry publish --build
 
   release:
-    if: github.ref == 'refs/heads/main'
     needs: [test, publish]
     runs-on: ubuntu-latest
 
