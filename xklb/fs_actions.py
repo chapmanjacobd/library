@@ -1,12 +1,11 @@
 import argparse
-import errno
-import math
 import os
+from platform import system
 import shlex
 import shutil
 import socket
 import subprocess
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from random import randrange
 from shutil import which
@@ -484,9 +483,7 @@ def socket_play(args, m):
 def local_player(args, m, media_file):
     if args.player:
         player = args.player
-    elif which("mpv") is None:
-        player = ["xdg-open"]
-    else:
+    elif which("mpv"):
         player = [which("mpv")]
         if args.action in [Subcommand.listen, Subcommand.tubelisten]:
             player.extend([f"--input-ipc-server={args.mpv_socket}", "--no-video", "--keep-open=no", "--really-quiet"])
@@ -503,6 +500,24 @@ def local_player(args, m, media_file):
             player.extend([f"--start={int(start)}", "--no-save-position-on-quit"])
         if end != m.duration:
             player.extend([f"--end={int(end)}"])
+    elif system() == 'Linux':
+        mimetype = cmd('xdg-mime', 'query', 'filetype', media_file).stdout
+        default_application = cmd('xdg-mime', 'query', 'default', mimetype).stdout
+        player_path = which(default_application.replace('.desktop',''))
+        if player_path:
+            player = [player_path]
+        else:
+            player = ["xdg-open"]
+            sleep(m.duration)
+    elif system() == "Windows":
+        if which("cygstart"):
+            player = ["cygstart"]
+        else:
+            player = ["start", ""]
+        sleep(m.duration)
+    else:
+        player = ["open"]
+        sleep(m.duration)
 
     if args.action == Subcommand.watch:
         if m["subtitle_count"] > 0:

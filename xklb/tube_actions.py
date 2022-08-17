@@ -1,15 +1,12 @@
 import argparse
-from pathlib import Path
 
 import humanize
-import numpy as np
 import pandas as pd
 from tabulate import tabulate
 
 from xklb.db import sqlite_con
 from xklb.fs_actions import parse_args, process_actions
 from xklb.utils import (
-    CAST_NOW_PLAYING,
     Subcommand,
     filter_None,
     human_time,
