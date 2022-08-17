@@ -511,9 +511,13 @@ def local_player(args, m, media_file):
             player.extend(args.player_args_when_no_sub)
 
     if args.action in [Subcommand.watch, Subcommand.tubewatch]:
-        cmd(*player, "--", media_file, strict=not args.ignore_errors)
-    elif args.action in [Subcommand.listen, Subcommand.tubelisten]:
-        cmd_interactive(*player, "--", media_file)
+        r = cmd(*player, "--", media_file, strict=False)
+    else: # args.action in [Subcommand.listen, Subcommand.tubelisten]
+        r = cmd_interactive(*player, "--", media_file, strict=False)
+    if r.returncode != 0:
+        print('Player exited with code', r.returncode)
+        if not args.ignore_errors:
+            exit(4)
 
 
 def chromecast_play(args, m):
