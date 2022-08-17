@@ -5,6 +5,7 @@ import platform
 import re
 import shutil
 import subprocess
+import signal
 import sys
 import textwrap
 from collections.abc import Iterable
@@ -33,6 +34,14 @@ SQLITE_PARAM_LIMIT = 32765
 FAKE_SUBTITLE = os.path.join(gettempdir(), "sub.srt")  # https://github.com/skorokithakis/catt/issues/393
 CAST_NOW_PLAYING = os.path.join(gettempdir(), "catt_playing")
 DEFAULT_MPV_SOCKET = os.path.join(gettempdir(), "mpv_socket")
+
+
+
+def signal_handler(signal, frame):
+    print('\nExiting... (Ctrl+C)\n')
+    sys.exit(255)
+
+signal.signal(signal.SIGINT, signal_handler)
 
 
 class Subcommand:
