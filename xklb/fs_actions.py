@@ -525,7 +525,9 @@ def local_player(args, m, media_file):
         else:
             player.extend(args.player_args_when_no_sub)
 
-    if args.action in [Subcommand.watch, Subcommand.tubewatch]:
+    if system() == "Windows":
+        r = cmd(*player, media_file, strict=False)
+    elif args.action in [Subcommand.watch, Subcommand.tubewatch]:
         r = cmd(*player, "--", media_file, strict=False)
     else: # args.action in [Subcommand.listen, Subcommand.tubelisten]
         r = cmd_interactive(*player, "--", media_file, strict=False)
@@ -690,12 +692,14 @@ def printer(args, query, bindings):
         exit(2)
 
     if args.delete:
-        print(f"Deleting {len(db_resp)} metadata records")
-        return remove_media(args, db_resp[["path"]].values.tolist(), quiet=True)
+        remove_media(args, db_resp[["path"]].values.tolist(), quiet=True)
+        if not "f" in args.print:
+            return print(f"Deleted {len(db_resp)} metadata records")
 
     if args.mark_watched:
-        print(f"{len(db_resp)} metadata records marked watched")
-        return mark_media_watched(args, db_resp[["path"]].values.tolist())
+        mark_media_watched(args, db_resp[["path"]].values.tolist())
+        if not "f" in args.print:
+            return print(f"{len(db_resp)} metadata records marked watched")
 
     if "f" in args.print:
         if args.limit == 1:
