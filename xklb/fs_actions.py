@@ -148,7 +148,7 @@ Double spaces means one space
     parser.add_argument(
         "--mark-watched",
         "--watched",
-        "--mark_played",
+        "--mark-played",
         "--played",
         action="store_true",
         help="lb wt -s 'something to mark seen' --mark-watched",
