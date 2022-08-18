@@ -39,7 +39,7 @@ DEFAULT_MPV_SOCKET = os.path.join(gettempdir(), "mpv_socket")
 
 def signal_handler(signal, frame):
     print('\nExiting... (Ctrl+C)\n')
-    sys.exit(255)
+    sys.exit(130)
 
 signal.signal(signal.SIGINT, signal_handler)
 
