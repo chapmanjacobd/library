@@ -208,9 +208,9 @@ You can also use `lb` for any files:
 
 ![fps](https://user-images.githubusercontent.com/7908073/184738438-ee566a4b-2da0-4e6d-a4b3-9bfca036aa2a.png)
 
-
 ### TODO
 
+- tabs: move tabs_monthly to lb database to reduce duplication via play_count
 - all: more test coverage
 - all: Documentation in wiki
 - all: investigate fts using sqlite-utils
