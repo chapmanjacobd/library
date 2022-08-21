@@ -28,7 +28,6 @@ def parse_args(action):
     parser.add_argument("--db", "-db")
     if action == "add":
         parser.add_argument("playlists", nargs="+")
-        parser.add_argument("-f", "--overwrite-db", action="store_true", help="Delete db file before scanning")
         parser.add_argument(
             "--lightweight",
             "-lw",
@@ -57,10 +56,7 @@ def parse_args(action):
     if args.db:
         args.database = args.db
 
-    if args.action == "add":
-        if args.overwrite_db:
-            Path(args.database).unlink(missing_ok=True)
-        Path(args.database).touch()
+    Path(args.database).touch()
     args.con = sqlite_con(args.database)
 
     ydl_opts = {**default_ydl_opts, **args.yt_dlp_config}

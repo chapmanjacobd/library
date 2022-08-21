@@ -1,11 +1,12 @@
 import argparse
+import enum
 import logging
 import os
 import platform
 import re
 import shutil
-import subprocess
 import signal
+import subprocess
 import sys
 import textwrap
 from collections.abc import Iterable
@@ -36,20 +37,21 @@ CAST_NOW_PLAYING = os.path.join(gettempdir(), "catt_playing")
 DEFAULT_MPV_SOCKET = os.path.join(gettempdir(), "mpv_socket")
 
 
-
 def signal_handler(signal, frame):
-    print('\nExiting... (Ctrl+C)\n')
+    print("\nExiting... (Ctrl+C)\n")
     sys.exit(130)
+
 
 signal.signal(signal.SIGINT, signal_handler)
 
 
-class Subcommand:
+class SC:
     watch = "watch"
     listen = "listen"
     filesystem = "filesystem"
     tubewatch = "tubewatch"
     tubelisten = "tubelisten"
+    tabs = "tabs"
 
 
 audio_include_string = (
@@ -149,7 +151,7 @@ def argparse_log():
             )
         else:
             pass
-    except:
+    except Exception:
         pass
 
     log_levels = [logging.WARNING, logging.INFO, logging.DEBUG]
@@ -217,6 +219,7 @@ def remove_media(args, deleted_files: Union[str, list], quiet=False):
                 (*l,),
             )
             args.con.commit()
+    # TODO: return number of changed rows
 
 
 def mark_media_watched(args, files):
@@ -229,6 +232,7 @@ def mark_media_watched(args, files):
                 (*l,),
             )
             args.con.commit()
+    # TODO: return number of changed rows
 
 
 def get_media_files(path, audio=False):
@@ -333,7 +337,7 @@ def Pclose(process):
         else:
             process.wait()
         raise
-    except:
+    except Exception:
         process.kill()
         raise
     return_code = process.poll()
@@ -459,9 +463,33 @@ class argparse_dict(argparse.Action):
         setattr(args, self.dest, d)
 
 
+class argparse_enum(argparse.Action):
+    def __init__(self, **kwargs):
+        # Pop off the type value
+        enum_type = kwargs.pop("type", None)
+
+        # Ensure an Enum subclass is provided
+        if enum_type is None:
+            raise ValueError("type must be assigned an Enum when using EnumAction")
+        if not issubclass(enum_type, enum.Enum):
+            raise TypeError("type must be an Enum when using EnumAction")
+
+        # Generate choices from the Enum
+        kwargs.setdefault("choices", tuple(e.value for e in enum_type))
+
+        super(argparse_enum, self).__init__(**kwargs)
+
+        self._enum = enum_type
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        # Convert value back into an Enum
+        value = self._enum(values)
+        setattr(namespace, self.dest, value)
+
+
 try:
     TERMINAL_SIZE = os.get_terminal_size()
-except:
+except Exception:
     TERMINAL_SIZE = SimpleNamespace(columns=80, lines=60)
 
 

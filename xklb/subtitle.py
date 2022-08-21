@@ -63,12 +63,12 @@ def get_subtitle(args, file):
     try:
         if has_internal_subtitle(file) or has_external_subtitle(file):
             return
-    except:
+    except Exception:
         pass
 
     try:
         yt_video_id = youtube_dl_id(file)
-    except:
+    except Exception:
         print(file)
         return
 

@@ -104,7 +104,7 @@ def calculate_sparseness(stat):
 def extract_metadata(args, f):
     try:
         stat = os.stat(f)
-    except:
+    except Exception:
         return
 
     media = dict(
@@ -125,7 +125,7 @@ def extract_metadata(args, f):
             probe = ffmpeg.probe(f, show_chapters=None)
         except (KeyboardInterrupt, SystemExit):
             exit(130)
-        except:
+        except Exception:
             print(f"Failed reading {f}", file=sys.stderr)
             if args.delete_unplayable:
                 if which("trash-put") is not None:
@@ -192,7 +192,7 @@ def extract_metadata(args, f):
         if subtitle_count == 0 and args.db_type == "v":
             try:
                 has_sub = has_external_subtitle(f)
-            except:
+            except Exception:
                 has_sub = False
             if has_sub:
                 subtitle_count = 1
@@ -216,12 +216,12 @@ def extract_metadata(args, f):
     if args.db_type == "a":
         try:
             tiny_tags = filter_None(TinyTag.get(f).as_dict())
-        except:
+        except Exception:
             tiny_tags = dict()
 
         try:
             mutagen_tags = filter_None(mutagen.File(f).tags.as_dict())
-        except:
+        except Exception:
             mutagen_tags = dict()
 
         tags = parse_tags(mutagen_tags, tiny_tags)
@@ -284,9 +284,9 @@ def find_new_files(args, path):
 
     try:
         existing = set(
-            map(lambda x: x["path"], fetchall_dict(args.con, f"select path from media where path like '{path}%'"))
+            single_column_tolist(fetchall_dict(args.con, f"select path from media where path like '{path}%'"), "path")
         )
-    except:
+    except Exception:
         scanned_files = list(new_files)
     else:
         scanned_files = list(new_files - existing)
@@ -355,7 +355,6 @@ def main(args=None):
     parser.add_argument("-s", "--subtitle", action="store_true")
     parser.add_argument("-yt", "--youtube-only", action="store_true")
     parser.add_argument("-sl", "--subliminal-only", action="store_true")
-    parser.add_argument("-f", "--overwrite-db", action="store_true", help="Delete db file before scanning")
     parser.add_argument("-d", "--delete-unplayable", action="store_true")
     parser.add_argument("-v", "--verbose", action="count", default=0)
     args = parser.parse_args()
@@ -372,10 +371,6 @@ def main(args=None):
             args.database = "video.db"
         else:
             raise Exception(f"fs_extract for db_type {args.db_type} not implemented")
-
-    if args.overwrite_db:
-        Path(args.database).unlink(missing_ok=True)
-        Path(args.database).touch()
 
     extractor(args)
 

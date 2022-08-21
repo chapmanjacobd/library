@@ -6,13 +6,7 @@ from tabulate import tabulate
 
 from xklb.db import sqlite_con
 from xklb.fs_actions import parse_args, process_actions
-from xklb.utils import (
-    Subcommand,
-    filter_None,
-    human_time,
-    log,
-    resize_col,
-)
+from xklb.utils import SC, filter_None, human_time, log, resize_col
 
 # TODO: add cookiesfrombrowser: ('firefox', ) as a default
 # cookiesfrombrowser: ('vivaldi', ) # should not crash if not installed ?
@@ -76,14 +70,12 @@ default_ydl_opts = {
 
 
 def tube_watch():
-    args = parse_args("tube.db", default_chromecast="Living Room TV")
-    args.action = Subcommand.tubewatch
+    args = parse_args(SC.tubewatch, "tube.db", default_chromecast="Living Room TV")
     process_actions(args)
 
 
 def tube_listen():
-    args = parse_args("tube.db", default_chromecast="Xylo and Orchestra")
-    args.action = Subcommand.tubelisten
+    args = parse_args(SC.tubelisten, "tube.db", default_chromecast="Xylo and Orchestra")
     process_actions(args)
 
 
