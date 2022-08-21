@@ -56,7 +56,7 @@ def mark_media_watched(args, files):
             args.con.execute(
                 """update media
                 set play_count = play_count +1
-                  , time_played = UNIXEPOCH()
+                  , time_played = cast(STRFTIME('%s') as int)
                 where path in ("""
                 + ",".join(["?"] * len(l))
                 + ")",
