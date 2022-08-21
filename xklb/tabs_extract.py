@@ -89,6 +89,7 @@ def get_new_paths(args):
             print(f"Updating frequency for {len(existing)} existing paths")
             remove_media(args, list(existing), quiet=True)
 
+    args.paths = list(filter(bool, [path.strip() for path in args.paths]))
     return args.paths
 
 
