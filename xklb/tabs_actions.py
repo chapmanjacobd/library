@@ -47,17 +47,17 @@ def construct_tabs_query(args):
     query = f"""SELECT path
         , frequency
         , CASE
-            WHEN frequency = 'daily' THEN UNIXEPOCH(datetime( UNIXEPOCH(), 'unixepoch', '+1 Day' ))
-            WHEN frequency = 'weekly' THEN UNIXEPOCH(datetime( UNIXEPOCH(), 'unixepoch', '+1 Week' ))
-            WHEN frequency = 'monthly' THEN UNIXEPOCH(datetime( UNIXEPOCH(), 'unixepoch', '+1 Month' ))
-            WHEN frequency = 'quarterly' THEN UNIXEPOCH(datetime( UNIXEPOCH(), 'unixepoch', '+3 Months' ))
-            WHEN frequency = 'yearly' THEN UNIXEPOCH(datetime( UNIXEPOCH(), 'unixepoch', '+1 Year' ))
+            WHEN frequency = 'daily' THEN UNIXEPOCH(datetime( time_played, 'unixepoch', '+1 Day' ))
+            WHEN frequency = 'weekly' THEN UNIXEPOCH(datetime( time_played, 'unixepoch', '+1 Week' ))
+            WHEN frequency = 'monthly' THEN UNIXEPOCH(datetime( time_played, 'unixepoch', '+1 Month' ))
+            WHEN frequency = 'quarterly' THEN UNIXEPOCH(datetime( time_played, 'unixepoch', '+3 Months' ))
+            WHEN frequency = 'yearly' THEN UNIXEPOCH(datetime( time_played, 'unixepoch', '+1 Year' ))
         END time_valid
         {', ' + ', '.join(args.cols) if args.cols else ''}
     FROM media
     WHERE 1=1
         {args.sql_filter}
-        {"and (time_played is null or date(time_valid, 'unixepoch') >= date(time_played, 'unixepoch'))" if not args.print else ''}
+        {"and (time_played is null or date(time_valid, 'unixepoch') < date(unixepoch(), 'unixepoch'))" if not args.print else ''}
     ORDER BY 1=1
         {',' + args.sort if args.sort else ''}
         , play_count
