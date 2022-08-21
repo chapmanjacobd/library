@@ -232,10 +232,10 @@ def get_media_files(path, audio=False):
         audio_only = "|opus|oga|ogg|mp3|m2a|m4a|flac|wav|wma|aac|aa3|ac3|ape"
         FFMPEG_DEMUXERS += audio_only
 
+    FFMPEG_ENDINGS = FFMPEG_DEMUXERS.split("|")
     video_files = []
-
     for f in Path(path).resolve().rglob("*"):
-        if f.is_file() and (f.suffix.lower()[1:] in FFMPEG_DEMUXERS.split("|")):
+        if f.is_file() and (f.suffix.lower()[1:] in FFMPEG_ENDINGS):
             video_files.append(str(f))
 
     return video_files
