@@ -33,6 +33,7 @@ from xklb.utils import (
     cmd_interactive,
     filter_None,
     flatten,
+    generic_player,
     get_ip_of_chromecast,
     get_ordinal_media,
     human_time,
@@ -173,7 +174,7 @@ Double spaces means one space
 -p a means print an aggregate report
 -p f means print only filenames -- useful for piping to other utilities like xargs or GNU Parallel""",
     )
-    parser.add_argument("--print-column", "-col", nargs="*", help="Include a non-standard column when printing")
+    parser.add_argument("--cols", "-cols", "-col", nargs="*", help="Include a non-standard column when printing")
     parser.add_argument(
         "--limit", "-L", "-l", "-queue", "--queue", default=DEFAULT_PLAY_QUEUE, help="Set play queue size"
     )
@@ -225,13 +226,13 @@ Double spaces means one space
         args.sort = " ".join(args.sort)
     else:
         if args.action in [SC.listen, SC.watch, SC.tubelisten, SC.tubewatch]:
-            args.sort = ['priority']
+            args.sort = ["priority"]
 
     if args.sort:
         args.sort = override_sort(args.sort)
 
-    if args.print_column:
-        args.print_column = list(flatten([s.split(",") for s in args.print_column]))
+    if args.cols:
+        args.cols = list(flatten([s.split(",") for s in args.cols]))
 
     if args.duration:
         SEC_TO_M = 60
@@ -466,6 +467,9 @@ def socket_play(args, m):
 
 
 def local_player(args, m, media_file):
+    args.player_need_sleep = False
+    player = generic_player(args)
+
     if args.player:
         player = args.player
     elif which("mpv"):
@@ -491,18 +495,6 @@ def local_player(args, m, media_file):
         player_path = which(default_application.replace(".desktop", ""))
         if player_path:
             player = [player_path]
-        else:
-            player = ["xdg-open"]
-            sleep(m.duration)
-    elif system() == "Windows":
-        if which("cygstart"):
-            player = ["cygstart"]
-        else:
-            player = ["start", ""]
-        sleep(m.duration)
-    else:
-        player = ["open"]
-        sleep(m.duration)
 
     if args.action == SC.watch:
         if m["subtitle_count"] > 0:
@@ -513,13 +505,21 @@ def local_player(args, m, media_file):
     if system() == "Windows":
         r = cmd(*player, media_file, strict=False)
     elif args.action in [SC.watch, SC.tubewatch]:
-        r = cmd(*player, "--", media_file, strict=False)
+        r = cmd(*player, media_file, strict=False)
     else:  # args.action in [SC.listen, SC.tubelisten]
-        r = cmd_interactive(*player, "--", media_file, strict=False)
+        r = cmd_interactive(*player, media_file, strict=False)
     if r.returncode != 0:
         print("Player exited with code", r.returncode)
         if not args.ignore_errors:
             exit(4)
+
+    if args.player_need_sleep:
+        if hasattr(m, 'duration'):
+            delay = m.duration
+        else:
+            delay = args.delay
+        sleep(delay)
+
 
 
 def chromecast_play(args, m):
@@ -626,10 +626,10 @@ def construct_query(args):
         {', size' if args.action != SC.tabs else ''}
         {', subtitle_count' if args.action == SC.watch else ''}
         {', sparseness' if args.action == SC.filesystem else ''}
-        {', ' + ', '.join(args.print_column) if args.print_column else ''}
+        {', ' + ', '.join(args.cols) if args.cols else ''}
         {', is_dir' if args.action == SC.filesystem else ''}
         {', title' if args.action in [SC.tubelisten, SC.tubewatch] else ''}
-        {', ' + ', '.join(args.print_column) if args.print_column else ''}
+        {', ' + ', '.join(args.cols) if args.cols else ''}
     FROM media
     WHERE 1=1
     {args.sql_filter}
@@ -655,8 +655,8 @@ def printer(args, query, bindings):
             {', sparseness' if args.action == SC.filesystem else ''}
             {', sum(size) size' if args.action != SC.tabs else ''}
             , count(*) count
-            {', ' + ', '.join([f'sum({c}) sum_{c}' for c in args.print_column]) if args.print_column else ''}
-            {', ' + ', '.join([f'avg({c}) avg_{c}' for c in args.print_column]) if args.print_column else ''}
+            {', ' + ', '.join([f'sum({c}) sum_{c}' for c in args.cols]) if args.cols else ''}
+            {', ' + ', '.join([f'avg({c}) avg_{c}' for c in args.cols]) if args.cols else ''}
         from ({query}) """
 
     if args.print and "q" in args.print:
@@ -665,7 +665,7 @@ def printer(args, query, bindings):
     db_resp = pd.DataFrame([dict(r) for r in args.con.execute(query, bindings).fetchall()])
     db_resp.dropna(axis="columns", how="all", inplace=True)
 
-    if args.verbose > 1 and args.print_column and "*" in args.print_column:
+    if args.verbose > 1 and args.cols and "*" in args.cols:
         import rich
 
         breakpoint()
@@ -694,10 +694,10 @@ def printer(args, query, bindings):
                 return printer(args, query, bindings)
             print(f)
         else:
-            if not args.print_column:
-                args.print_column = ["path"]
+            if not args.cols:
+                args.cols = ["path"]
 
-            for line in db_resp[[*args.print_column]].to_string(index=False, header=False).splitlines():
+            for line in db_resp[[*args.cols]].to_string(index=False, header=False).splitlines():
                 print(line.strip())
     else:
         tbl = db_resp.copy()
