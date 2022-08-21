@@ -91,7 +91,7 @@ Also I recommend turning Ctrl+Backspace into a super-backspace for repeating sim
 
 lb tabs is meant to run **once per day**. Here is how you would configure it with cron:
 
-    45 9 * * * DISPLAY=:0 lb tabs
+    45 9 * * * DISPLAY=:0 lb tabs ~/my/tabs.db
 
 You can also invoke tabs manually:
 
