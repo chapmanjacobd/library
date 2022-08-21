@@ -46,7 +46,9 @@ def parse_args():
     parser.add_argument("db", nargs="?", default="tabs.db")
     parser.add_argument("--db", "-db")
     parser.add_argument("paths", nargs="+")
-    parser.add_argument("--frequency", "-f", default=Frequency.Monthly, type=Frequency, action=argparse_enum)
+    parser.add_argument(
+        "--frequency", "--freqency", "-f", default=Frequency.Monthly, type=Frequency, action=argparse_enum
+    )
     parser.add_argument("--category", "-c")
     parser.add_argument("--sanitize", "-s", action="store_true")
 
@@ -98,8 +100,8 @@ def extract_url_metadata(args, path):
         hostname=hostname,
         frequency=args.frequency.value,
         category=args.category,
-        time_created=datetime.utcnow().timestamp(),
-        time_modified=None,
+        time_created=int(datetime.utcnow().timestamp()),
+        time_played=None,
         play_count=0,
     )
 

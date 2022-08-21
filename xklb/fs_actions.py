@@ -44,7 +44,7 @@ pd.set_option("display.float_format", lambda x: "%.5f" % x)
 
 
 def override_sort(string):
-    YEAR_MONTH = lambda var: f"cast(strftime('%Y%m',datetime({var} / 1000000000, 'unixepoch')) as int)"
+    YEAR_MONTH = lambda var: f"cast(strftime('%Y%m', datetime({var}, 'unixepoch')) as int)"
 
     return (
         string.replace("month_created", YEAR_MONTH("time_created"))
@@ -164,9 +164,7 @@ Double spaces means one space
 -p f means print only filenames -- useful for piping to other utilities like xargs or GNU Parallel""",
     )
     parser.add_argument("--cols", "-cols", "-col", nargs="*", help="Include a non-standard column when printing")
-    parser.add_argument(
-        "--limit", "-L", "-l", "-queue", "--queue", default=DEFAULT_PLAY_QUEUE, help="Set play queue size"
-    )
+    parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", help="Set play queue size")
     parser.add_argument("--skip", "-S", help="Offset from the top of an ordered query; wt -S10 to skip ten videos")
 
     parser.add_argument(
@@ -206,18 +204,15 @@ Double spaces means one space
     if args.db:
         args.database = args.db
 
-    if args.limit == DEFAULT_PLAY_QUEUE and args.print:
-        args.limit = None
+    if not args.limit and all([not args.print, args.action in [SC.listen, SC.watch, SC.tubelisten, SC.tubewatch]]):
+        args.limit = DEFAULT_PLAY_QUEUE
     elif args.limit in ["inf", "all"]:
         args.limit = None
 
+    if not args.sort and args.action in [SC.listen, SC.watch, SC.tubelisten, SC.tubewatch]:
+        args.sort = ["priority"]
     if args.sort:
         args.sort = " ".join(args.sort)
-    else:
-        if args.action in [SC.listen, SC.watch, SC.tubelisten, SC.tubewatch]:
-            args.sort = ["priority"]
-
-    if args.sort:
         args.sort = override_sort(args.sort)
 
     if args.cols:
@@ -293,7 +288,7 @@ def transcode(next_video):
 
 
 def post_act(args, media_file: str):
-    if args.action in [SC.listen, SC.watch, SC.tubelisten, SC.tubewatch, SC.tabs]:
+    if args.action in [SC.listen, SC.watch, SC.tubelisten, SC.tubewatch]:
         mark_media_watched(args, media_file)
 
     if args.post_action == "keep":
@@ -438,7 +433,7 @@ audio_exclude_string = (
 )
 
 
-def construct_query(args):
+def construct_fs_query(args):
     cf = []
     bindings = {}
 
@@ -471,8 +466,8 @@ def construct_query(args):
     OFFSET = f"OFFSET {args.skip}" if args.skip else ""
 
     query = f"""SELECT path
+        , size
         {', duration' if args.action in [SC.listen, SC.watch] else ''}
-        {', size' if args.action != SC.tabs else ''}
         {', subtitle_count' if args.action == SC.watch else ''}
         {', sparseness' if args.action == SC.filesystem else ''}
         {', is_dir' if args.action == SC.filesystem else ''}
@@ -494,7 +489,7 @@ def construct_query(args):
     return query, bindings
 
 
-def process_actions(args, construct_query=construct_query):
+def process_actions(args, construct_query=construct_fs_query):
     args.con = sqlite_con(args.database)
     query, bindings = construct_query(args)
 

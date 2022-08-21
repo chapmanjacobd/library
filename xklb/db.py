@@ -6,7 +6,7 @@ from xklb.utils import log
 
 def sqlite_con(db):
     if not os.path.exists(db) and ":memory:" not in db:
-        log.error(f"Database file '{db}' does not exist. Create one with lb extract.")
+        log.error(f"Database file '{db}' does not exist. Create one with lb extract / lb tubeadd / lb tabsadd.")
         exit(1)
 
     con = sqlite3.connect(db)

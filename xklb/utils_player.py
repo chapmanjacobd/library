@@ -54,7 +54,12 @@ def mark_media_watched(args, files):
         df_chunked = chunks(files, SQLITE_PARAM_LIMIT)
         for l in df_chunked:
             args.con.execute(
-                "update media set play_count = play_count +1 where path in (" + ",".join(["?"] * len(l)) + ")",
+                """update media
+                set play_count = play_count +1
+                  , time_played = UNIXEPOCH()
+                where path in ("""
+                + ",".join(["?"] * len(l))
+                + ")",
                 (*l,),
             )
             args.con.commit()
@@ -302,9 +307,7 @@ def local_player(args, m, media_file):
         else:
             player.extend(args.player_args_when_no_sub)
 
-    if system() == "Windows":
-        r = cmd(*player, media_file, strict=False)
-    elif args.action in [SC.watch, SC.tubewatch]:
+    if system() == "Windows" or args.action in [SC.watch, SC.tubewatch]:
         r = cmd(*player, media_file, strict=False)
     else:  # args.action in [SC.listen, SC.tubelisten]
         r = cmd_interactive(*player, media_file, strict=False)
@@ -317,7 +320,7 @@ def local_player(args, m, media_file):
         if hasattr(m, "duration"):
             delay = m.duration
         else:
-            delay = args.delay
+            delay = 10
         sleep(delay)
 
 
@@ -385,7 +388,7 @@ def printer(args, query, bindings):
             tbl[["duration"]] = tbl[["duration"]].applymap(human_time)
             resize_col(tbl, "duration", 6)
 
-        for t in ["time_modified", "time_created"]:
+        for t in ["time_modified", "time_created", "time_played", "time_valid"]:
             if t in tbl.columns:
                 tbl[[t]] = tbl[[t]].applymap(
                     lambda x: None if x is None else humanize.naturaldate(datetime.fromtimestamp(x))

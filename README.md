@@ -75,7 +75,7 @@ The use-case of tabs are websites that you know are going to change: subreddits,
 
 ### 1. Add your websites
 
-    lb tabsadd --freqency monthly --category fun https://old.reddit.com/r/Showerthoughts/top/?sort=top&t=month https://old.reddit.com/r/RedditDayOf/top/?sort=top&t=month
+    lb tabsadd --frequency monthly --category fun https://old.reddit.com/r/Showerthoughts/top/?sort=top&t=month https://old.reddit.com/r/RedditDayOf/top/?sort=top&t=month
 
 Depending on your shell you may need to quote the URLs.
 
@@ -89,7 +89,7 @@ Also I recommend turning Ctrl+Backspace into a super-backspace for repeating sim
 
 ### 2. Add tb to cron
 
-lb tabs is meant to run once a day. Here is how you would configure it to run once per day via cron:
+lb tabs is meant to run **once per day**. Here is how you would configure it with cron:
 
     45 9 * * * DISPLAY=:0 lb tabs
 
@@ -210,6 +210,16 @@ You can also use `lb` for any files:
     │ ario & Luigi - Superstar Saga (USA,   │              │         │
     │ Australia).jpg                        │              │         │
     ╘═══════════════════════════════════════╧══════════════╧═════════╛
+
+### Frequency
+
+    -f daily
+    -f weekly (spaced evenly throughout the week if less than 7 tabs in the category)
+    -f monthly (spaced evenly throughout the month if less than 30 tabs in the category)
+    -f quarterly (spaced evenly throughout 3 months if less than 90 tabs in the category)
+    -f yearly (spaced evenly throughout the year if less than 365 tabs in the category)
+
+ie. if 14 tabs, two URLs are opened per day of the week
 
 ### You can pipe stuff
 
