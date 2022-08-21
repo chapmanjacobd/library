@@ -56,7 +56,7 @@ def construct_tabs_query(args):
     FROM media
     WHERE 1=1
         {args.sql_filter}
-        {"and (time_played is null or date(time_valid, 'unixepoch') < date()" if not args.print else ''}
+        {"and (time_played is null or date(time_valid, 'unixepoch') < date())" if not args.print else ''}
     ORDER BY 1=1
         {',' + args.sort if args.sort else ''}
         , play_count
