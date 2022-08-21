@@ -69,7 +69,7 @@ If you like this I also have a [web version](https://unli.xyz/eject/)--but this 
 tabs provides a way to organize your visits to URLs that you want to visit every once in a while.
 
 If you want to track _changes_ to websites over time there are better tools out there, like
-`huginn`, `changedetection.io`, or `urlwatch`.
+`huginn`, `urlwatch`, or `changedetection.io`.
 
 The use-case of tabs are websites that you know are going to change: subreddits, games, or tools that you want to use for a few minutes by a certain frequency (day/week/month/year).
 
