@@ -97,8 +97,6 @@ You can also invoke tabs manually:
 
     lb tabs -L 1  # open one tab
 
-nb. if you run out of tabs it is possible that running lb tabs does nothing. Wait for one freqency cycle to pass or add more tabs.
-
 ## Things to know
 
 When the database file path is not specified, `video.db` will be created / used.
@@ -165,7 +163,7 @@ There are multiple strictness levels of --play-in-order. If things aren't playin
 
 ### Play files under a certain throughput
 
-I don't save bitrate information (if enough people request then I'll add it) but for now you can use file size and duration as a proxy
+Bitrate information is not explicitly saved but you can use file size and duration as a proxy:
 
     wt -w 'size/duration<50000'
 

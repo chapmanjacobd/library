@@ -34,63 +34,6 @@ from xklb.utils import (
     single_column_tolist,
 )
 
-audio_include_string = (
-    lambda x: f"""and (
-    path like :include{x}
-    OR mood like :include{x}
-    OR genre like :include{x}
-    OR year like :include{x}
-    OR bpm like :include{x}
-    OR key like :include{x}
-    OR time like :include{x}
-    OR decade like :include{x}
-    OR categories like :include{x}
-    OR city like :include{x}
-    OR country like :include{x}
-    OR description like :include{x}
-    OR album like :include{x}
-    OR title like :include{x}
-    OR artist like :include{x}
-)"""
-)
-
-audio_exclude_string = (
-    lambda x: f"""and (
-    path not like :exclude{x}
-    OR mood not like :exclude{x}
-    OR genre not like :exclude{x}
-    OR year not like :exclude{x}
-    OR bpm not like :exclude{x}
-    OR key not like :exclude{x}
-    OR time not like :exclude{x}
-    OR decade not like :exclude{x}
-    OR categories not like :exclude{x}
-    OR city not like :exclude{x}
-    OR country not like :exclude{x}
-    OR description not like :exclude{x}
-    OR album not like :exclude{x}
-    OR title not like :exclude{x}
-    OR artist not like :exclude{x}
-)"""
-)
-
-
-tube_include_string = (
-    lambda x: f"""and (
-    path like :include{x}
-    OR tags like :include{x}
-    OR title like :include{x}
-)"""
-)
-
-tube_exclude_string = (
-    lambda x: f"""and (
-    path not like :exclude{x}
-    OR tags not like :exclude{x}
-    OR title not like :exclude{x}
-)"""
-)
-
 
 def mv_to_keep_folder(args, video):
     kp = re.match(args.shallow_organize + "(.*?)/", video)
@@ -146,6 +89,14 @@ def delete_media(args, media_file: str):
         Path(media_file).unlink()
 
     remove_media(args, media_file, quiet=True)
+
+
+def delete_playlists(args, playlists):
+    args.con.execute(
+        "delete from media where playlist_path in (" + ",".join(["?"] * len(playlists)) + ")", (*playlists,)
+    )
+    args.con.execute("delete from playlists where path in (" + ",".join(["?"] * len(playlists)) + ")", (*playlists,))
+    args.con.commit()
 
 
 def get_ordinal_media(args, path):
@@ -368,71 +319,6 @@ def local_player(args, m, media_file):
         else:
             delay = args.delay
         sleep(delay)
-
-
-def construct_query(args):
-    cf = []
-    bindings = {}
-
-    if args.duration:
-        cf.append(" and duration IS NOT NULL " + args.duration)
-    if args.size:
-        cf.append(" and size IS NOT NULL " + args.size)
-
-    cf.extend([" and " + w for w in args.where])
-
-    if args.action == SC.listen:
-        for idx, inc in enumerate(args.include):
-            cf.append(audio_include_string(idx))
-            bindings[f"include{idx}"] = "%" + inc.replace(" ", "%").replace("%%", " ") + "%"
-        for idx, exc in enumerate(args.exclude):
-            cf.append(audio_exclude_string(idx))
-            bindings[f"exclude{idx}"] = "%" + exc.replace(" ", "%").replace("%%", " ") + "%"
-    elif args.action in [SC.tubewatch, SC.tubelisten]:
-        for idx, inc in enumerate(args.include):
-            cf.append(tube_include_string(idx))
-            bindings[f"include{idx}"] = "%" + inc.replace(" ", "%").replace("%%", " ") + "%"
-        for idx, exc in enumerate(args.exclude):
-            cf.append(tube_exclude_string(idx))
-            bindings[f"exclude{idx}"] = "%" + exc.replace(" ", "%").replace("%%", " ") + "%"
-    else:
-        bindings = []
-        for inc in args.include:
-            cf.append(" AND path LIKE ? ")
-            bindings.append("%" + inc.replace(" ", "%").replace("%%", " ") + "%")
-        for exc in args.exclude:
-            cf.append(" AND path NOT LIKE ? ")
-            bindings.append("%" + exc.replace(" ", "%").replace("%%", " ") + "%")
-
-    args.sql_filter = " ".join(cf)
-
-    LIMIT = "LIMIT " + str(args.limit) if args.limit else ""
-    OFFSET = f"OFFSET {args.skip}" if args.skip else ""
-
-    query = f"""SELECT path
-        {', duration' if args.action in [SC.listen, SC.watch, SC.tubelisten, SC.tubewatch] else ''}
-        {', size' if args.action != SC.tabs else ''}
-        {', subtitle_count' if args.action == SC.watch else ''}
-        {', sparseness' if args.action == SC.filesystem else ''}
-        {', ' + ', '.join(args.cols) if args.cols else ''}
-        {', is_dir' if args.action == SC.filesystem else ''}
-        {', title' if args.action in [SC.tubelisten, SC.tubewatch] else ''}
-        {', ' + ', '.join(args.cols) if args.cols else ''}
-    FROM media
-    WHERE 1=1
-    {args.sql_filter}
-    {'and audio_count > 0' if args.action == SC.listen else ''}
-    {'and video_count > 0' if args.action == SC.watch else ''}
-    {'and path not like "%/keep/%"' if args.post_action == 'askkeep' else ''}
-    {'and width < height' if args.portrait else ''}
-    ORDER BY 1=1
-        {',' + args.sort if args.sort else ''}
-        {', path' if args.print or args.include or args.play_in_order > 0 else ''}
-        {', duration / size ASC' if args.action in [SC.listen, SC.watch, SC.tubelisten, SC.tubewatch] else ''}
-    {LIMIT} {OFFSET}
-    """
-
-    return query, bindings
 
 
 def printer(args, query, bindings):
