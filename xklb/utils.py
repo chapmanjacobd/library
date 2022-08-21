@@ -512,3 +512,17 @@ def human_time(seconds):
         return minutes
     else:
         return humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="minutes")
+
+
+def generic_player(args):
+    if platform.system() == "Linux":
+        player = ["xdg-open"]
+    elif platform.system() == "Windows":
+        if shutil.which("cygstart"):
+            player = ["cygstart"]
+        else:
+            player = ["start", ""]
+    else:
+        player = ["open"]
+    args.player_need_sleep = True
+    return player

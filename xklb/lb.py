@@ -5,7 +5,7 @@ from xklb.fs_actions import filesystem, listen, watch
 from xklb.fs_extract import main as extract
 from xklb.subtitle import main as subtitle
 from xklb.tabs_actions import tabs
-from xklb.tabs_extract import tabs_add, tabs_import
+from xklb.tabs_extract import tabs_add
 from xklb.tube_actions import tube_list, tube_listen, tube_watch
 from xklb.tube_extract import tube_add, tube_update
 from xklb.utils import SC, log
@@ -43,8 +43,6 @@ def lb(args=None):
 
     subp_tabsadd = subparsers.add_parser("tabsadd", add_help=False)
     subp_tabsadd.set_defaults(func=tabs_add)
-    subp_tabsimport = subparsers.add_parser("tabsimport", add_help=False)
-    subp_tabsimport.set_defaults(func=tabs_import)
     subp_tabs = subparsers.add_parser("tabs", aliases=["tabswatch", "tb"], add_help=False)
     subp_tabs.set_defaults(func=tabs)
 

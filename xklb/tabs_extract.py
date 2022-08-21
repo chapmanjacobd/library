@@ -1,5 +1,6 @@
 import argparse
 import enum
+import re
 import sys
 from copy import deepcopy
 from datetime import datetime
@@ -29,6 +30,18 @@ class Frequency(enum.Enum):
     Monthly = "monthly"
     Quarterly = "quarterly"
     Yearly = "yearly"
+
+
+def reddit_frequency(frequency: Frequency):
+    mapper = {
+        Frequency.Daily: "day",
+        Frequency.Weekly: "week",
+        Frequency.Monthly: "month",
+        Frequency.Quarterly: "year",
+        Frequency.Yearly: "year",
+    }
+
+    return mapper.get(frequency, "month")
 
 
 def parse_args():
@@ -79,32 +92,28 @@ def get_new_paths(args):
     return list(given_paths)
 
 
-def reddit_frequency(frequency: Frequency):
-    mapper = {
-        Frequency.Daily: "day",
-        Frequency.Weekly: "week",
-        Frequency.Monthly: "month",
-        Frequency.Quarterly: "year",
-        Frequency.Yearly: "year",
-    }
+def sanitize_url(args, path):
+    matches = re.match(r".*reddit.com/r/(.*?)/.*", path)
+    if matches:
+        subreddit = matches.groups()[0]
+        return "https://old.reddit.com/r/" + subreddit + "/top/?sort=top&t=" + reddit_frequency(args.frequency)
 
-    return mapper.get(frequency, "month")
+    return path
 
 
 def extract_url_metadata(args, path):
     hostname = urlparse(path).hostname or ""
     if args.sanitize:
-        if "reddit" in hostname:
-            path = urljoin(path, "?sort=top&t=" + reddit_frequency(args.frequency))
+        path = sanitize_url(args, path)
 
     return dict(
         path=path,
         hostname=hostname,
         frequency=args.frequency.value,
         category=args.category,
-        time_created=datetime.utcnow(),
+        time_created=datetime.utcnow().timestamp(),
         time_modified=None,
-        play_count=0
+        play_count=0,
     )
 
 
@@ -120,41 +129,3 @@ def tabs_add():
         chunksize=70,
         method="multi",
     )
-
-
-"""
-open browser
-print
-
-by frequency (math.min(args.limit, freq_limit))
-by number -L
-
-import pandas as pd
-quarter = pd.Timestamp(dt.date(2016, 2, 29)).quarter
-
-(x.month-1)//3 +1 quarter
-
-people can read ahead and if they read everything then running tb won't do anything until the minimum time of the set frequency
-
-example frequency that could be used:
-
-    -q daily
-    -q weekly (spaced evenly throughout the week if less than 7 links in the category)
-    -q monthly (spaced evenly throughout the month if less than 30 links in the category)
-    -q quarterly (spaced evenly throughout the month if less than 90 links in the category)
-    -q yearly (spaced evenly throughout the year if less than 365 links in the category)
-
-if 14 tabs, two URLs are opened per day of the week.
-
-1 cron daily
-
-categoryless mode: ignore categories when determining sequencing--only frequency is used
-
-cron is responsible for running python. `lb tabs` is merely a way to organize tabs into different categories--but you could easily do this with files as well.
-"""
-
-
-def tabs_import():
-    args = parse_args()
-
-    args.tabs

@@ -64,7 +64,7 @@ Tubeupdate will go through all added playlists and fetch metadata of any new vid
 
 If you like this I also have a [web version](https://unli.xyz/eject/)--but this Python version has more features and it can handle a lot more data.
 
-## Quick Start -- tabs (track generic websites)
+## Quick Start -- tabs (visit websites on a schedule)
 
 tabs provides a way to organize your visits to URLs that you want to visit every once in a while.
 
