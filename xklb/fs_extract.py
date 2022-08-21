@@ -14,11 +14,7 @@ from joblib import Parallel, delayed
 from tinytag import TinyTag
 
 from xklb.db import fetchall_dict, sqlite_con
-from xklb.subtitle import (
-    get_subtitle,
-    has_external_subtitle,
-    youtube_dl_id,
-)
+from xklb.subtitle import get_subtitle, has_external_subtitle, youtube_dl_id
 from xklb.utils import (
     SQLITE_PARAM_LIMIT,
     chunks,
@@ -27,10 +23,10 @@ from xklb.utils import (
     filter_None,
     get_media_files,
     log,
-    remove_media,
     safe_unpack,
     single_column_tolist,
 )
+from xklb.utils_player import remove_media
 
 
 def get_provenance(file):

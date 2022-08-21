@@ -1,27 +1,15 @@
 import argparse
 import enum
 import re
-import sys
-from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
-from sqlite3 import OperationalError
-from timeit import default_timer as timer
-from typing import Dict, List, Union
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urlparse
 
 import pandas as pd
 
 from xklb.db import fetchall_dict, sqlite_con
-from xklb.utils import (
-    argparse_enum,
-    combine,
-    filter_None,
-    log,
-    remove_media,
-    safe_unpack,
-    single_column_tolist,
-)
+from xklb.utils import argparse_enum, filter_None, log, single_column_tolist
+from xklb.utils_player import remove_media
 
 
 class Frequency(enum.Enum):
@@ -42,6 +30,15 @@ def reddit_frequency(frequency: Frequency):
     }
 
     return mapper.get(frequency, "month")
+
+
+def sanitize_url(args, path):
+    matches = re.match(r".*reddit.com/r/(.*?)/.*", path)
+    if matches:
+        subreddit = matches.groups()[0]
+        return "https://old.reddit.com/r/" + subreddit + "/top/?sort=top&t=" + reddit_frequency(args.frequency)
+
+    return path
 
 
 def parse_args():
@@ -67,44 +64,34 @@ def parse_args():
 
 
 def get_new_paths(args):
-    given_paths = set(args.paths)
+    if args.sanitize:
+        args.paths = [sanitize_url(args, path) for path in args.paths]
+
+    if args.category is None:
+        qb = (
+            "select path from media where path in (" + ",".join(["?"] * len(args.paths)) + ")",
+            (*args.paths,),
+        )
+    else:
+        qb = (
+            "select path from media where category = ? and path in (" + ",".join(["?"] * len(args.paths)) + ")",
+            (args.category, *args.paths),
+        )
 
     try:
-        existing = set(
-            single_column_tolist(
-                fetchall_dict(
-                    args.con,
-                    "select path from media where category = ? and path in (" + ",".join(["?"] * len(args.paths)) + ")",
-                    (
-                        args.category,
-                        *args.paths,
-                    ),
-                ),
-                "path",
-            )
-        )
+        existing = set(single_column_tolist(fetchall_dict(args.con, *qb), "path"))
     except Exception:
         pass
     else:
-        print(f"Updating frequency for {len(existing)} existing paths")
-        remove_media(args, list(existing), quiet=True)
+        if len(existing) > 0:
+            print(f"Updating frequency for {len(existing)} existing paths")
+            remove_media(args, list(existing), quiet=True)
 
-    return list(given_paths)
-
-
-def sanitize_url(args, path):
-    matches = re.match(r".*reddit.com/r/(.*?)/.*", path)
-    if matches:
-        subreddit = matches.groups()[0]
-        return "https://old.reddit.com/r/" + subreddit + "/top/?sort=top&t=" + reddit_frequency(args.frequency)
-
-    return path
+    return args.paths
 
 
 def extract_url_metadata(args, path):
     hostname = urlparse(path).hostname or ""
-    if args.sanitize:
-        path = sanitize_url(args, path)
 
     return dict(
         path=path,
