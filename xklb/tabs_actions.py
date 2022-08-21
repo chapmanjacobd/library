@@ -1,12 +1,12 @@
+import argparse
 from time import sleep
 
 import pandas as pd
 
 from xklb.db import sqlite_con
-from xklb.fs_actions import parse_args
 from xklb.tabs_extract import Frequency
-from xklb.utils import SC, cmd
-from xklb.utils_player import generic_player, mark_media_watched, printer
+from xklb.utils import SC, cmd, filter_None, flatten, log
+from xklb.utils_player import generic_player, mark_media_watched, override_sort, printer
 
 tabs_include_string = (
     lambda x: f"""and (
@@ -118,6 +118,89 @@ def process_tabs_actions(args, construct_query):
     media = frequency_filter(args, media)
 
     play(args, media)
+
+
+def parse_args(action, default_db, default_chromecast=""):
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument(
+        "database",
+        nargs="?",
+        default=default_db,
+        help="Database file. If not specified a generic name will be used: audio.db, video.db, fs.db, etc",
+    )
+
+    parser.add_argument(
+        "--sort",
+        "-u",
+        nargs="+",
+        help="""Sort media with SQL expressions
+-u duration means shortest media first
+-u duration desc means longest media first
+
+You can use any sqlite ORDER BY expressions, for example:
+-u subtitle_count > 0
+means play everything that has a subtitle first
+""",
+    )
+    parser.add_argument(
+        "--where",
+        "-w",
+        nargs="+",
+        action="extend",
+        default=[],
+        help="""Constrain media with SQL expressions
+You can use any sqlite WHERE expressions, for example:
+-w attachment_count > 0  means only media with attachments
+-w language = 'eng'  means only media which has some English language tag -- this could be audio or subtitle""",
+    )
+    parser.add_argument(
+        "--include",
+        "-s",
+        "--search",
+        nargs="+",
+        action="extend",
+        default=[],
+        help="""Constrain media with via search
+-s toy story will match '/folder/toy/something/story.mp3'
+-s 'toy  story' will match more strictly '/folder/toy story.mp3'
+Double spaces means one space
+""",
+    )
+    parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[], help="--include but opposite")
+
+    parser.add_argument(
+        "--print",
+        "-p",
+        default=False,
+        const="p",
+        nargs="?",
+        help="""Print instead of play
+-p   means print in a table
+-p a means print an aggregate report
+-p f means print only filenames -- useful for piping to other utilities like xargs or GNU Parallel""",
+    )
+    parser.add_argument("--cols", "-cols", "-col", nargs="*", help="Include a non-standard column when printing")
+    parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", help="Set play queue size")
+    parser.add_argument("--skip", "-S", help="Offset from the top of an ordered query; wt -S10 to skip ten videos")
+
+    parser.add_argument("--db", "-db")
+    parser.add_argument("--verbose", "-v", action="count", default=0)
+    args = parser.parse_args()
+    args.action = action
+
+    if args.db:
+        args.database = args.db
+
+    if args.sort:
+        args.sort = " ".join(args.sort)
+        args.sort = override_sort(args.sort)
+
+    if args.cols:
+        args.cols = list(flatten([s.split(",") for s in args.cols]))
+
+    log.info(filter_None(args.__dict__))
+
+    return args
 
 
 def tabs():
