@@ -1,6 +1,13 @@
-from xklb.fs_actions import parse_args, process_actions
-from xklb.utils import SC
-from xklb.utils_player import generic_player
+import math
+from time import sleep
+
+import pandas as pd
+
+from xklb.db import sqlite_con
+from xklb.fs_actions import parse_args
+from xklb.tabs_extract import Frequency
+from xklb.utils import SC, cmd
+from xklb.utils_player import generic_player, mark_media_watched, printer
 
 tabs_include_string = (
     lambda x: f"""and (
@@ -38,98 +45,82 @@ def construct_tabs_query(args):
     OFFSET = f"OFFSET {args.skip}" if args.skip else ""
 
     query = f"""SELECT path
+        , frequency
+        , CASE
+            WHEN frequency = 'daily' THEN UNIXEPOCH(datetime( UNIXEPOCH(), 'unixepoch', '+1 Day' ))
+            WHEN frequency = 'weekly' THEN UNIXEPOCH(datetime( UNIXEPOCH(), 'unixepoch', '+1 Week' ))
+            WHEN frequency = 'monthly' THEN UNIXEPOCH(datetime( UNIXEPOCH(), 'unixepoch', '+1 Month' ))
+            WHEN frequency = 'quarterly' THEN UNIXEPOCH(datetime( UNIXEPOCH(), 'unixepoch', '+3 Months' ))
+            WHEN frequency = 'yearly' THEN UNIXEPOCH(datetime( UNIXEPOCH(), 'unixepoch', '+1 Year' ))
+        END time_valid
         {', ' + ', '.join(args.cols) if args.cols else ''}
     FROM media
     WHERE 1=1
-    {args.sql_filter}
+        {args.sql_filter}
+        {"and (time_played is null or date(time_valid, 'unixepoch') >= date(time_played, 'unixepoch'))" if not args.print else ''}
     ORDER BY 1=1
         {',' + args.sort if args.sort else ''}
+        , play_count
+        , frequency = 'daily' desc
+        , frequency = 'weekly' desc
+        , frequency = 'monthly' desc
+        , frequency = 'quarterly' desc
+        , frequency = 'yearly' desc
         {', path' if args.print else ''}
+        , ROW_NUMBER() OVER ( PARTITION BY category ) -- prefer to spread categories over time
+        , random()
     {LIMIT} {OFFSET}
     """
 
     return query, bindings
 
 
+def play(args, media: pd.DataFrame):
+    for m in media.to_records():
+        media_file = m["path"]
+
+        cmd(*generic_player(args), media_file, strict=False)
+        mark_media_watched(args, media_file)
+
+        if len(media) > 10:
+            sleep(0.3)
+
+
+def frenquency_filter(args, media: pd.DataFrame):
+    mapper = {
+        Frequency.Daily: 1,
+        Frequency.Weekly: 7,
+        Frequency.Monthly: 30,
+        Frequency.Quarterly: 91,
+        Frequency.Yearly: 365,
+    }
+    counts = args.con.execute("select frequency, count(*) from media group by 1").fetchall()
+    for freq, freq_count in counts:
+        num_days = mapper.get(freq, 365)
+        num_tabs = max(1, freq_count // num_days)
+        media[media.frequency == freq] = media[media.frequency == freq].head(num_tabs)
+        media.dropna(inplace=True)
+
+    return media
+
+
+def process_tabs_actions(args, construct_query):
+    args.con = sqlite_con(args.database)
+    query, bindings = construct_query(args)
+
+    if args.print:
+        return printer(args, query, bindings)
+
+    media = pd.DataFrame([dict(r) for r in args.con.execute(query, bindings).fetchall()])
+    if len(media) == 0:
+        print("No media found")
+        exit(2)
+
+    media = frenquency_filter(args, media)
+
+    play(args, media)
+
+
 def tabs():
     args = parse_args(SC.tabs, "tabs.db")
-    args.player = generic_player(args)
-    args.delay = 0.1
-    process_actions(args, construct_tabs_query)
-
-
-"""
-function tabs-monthly
-    set day_of_week (date "+%w" + 1)
-    set day_of_month (date "+%d")
-    set day_of_year (date "+%j")
-
-    set temp_file (mktemp)
-    cat ~/mc/monthly.cron ~/mc/30_Computing-reddit.monthly.cron >$temp_file
-    set file_len (cat $temp_file | count)
-    while test $day_of_month -lt $file_len
-        echo $day_of_month
-        set url (sed "$day_of_month""q;d" $temp_file)
-        open $url
-
-        set day_of_month (math "$day_of_month + 30")
-    end
-
-
-    set file ~/mc/30_Computing-reddit.yearly.cron
-    set file_len (wc -l < $file)
-
-    if test $day_of_year -gt $file_len
-        open (shuf -n1 "$file")
-    end
-
-    while test $day_of_year -lt $file_len
-        echo $day_of_year
-        set url (sed "$day_of_year""q;d" $file)
-        open $url
-
-        set day_of_year (math "$day_of_year + 365")
-    end
-
-end
-
-
-
-by frequency (math.min(args.limit, freq_limit))
-by number -L
-
-see if we can get by without time_modified
-
-import pandas as pd
-quarter = pd.Timestamp(dt.date(2016, 2, 29)).quarter
-
-(x.month-1)//3 +1 quarter
-
-people can read ahead and if they read everything then running tb won't do anything until the minimum time of the set frequency
-
-example frequency that could be used:
-
-    -q daily
-    -q weekly (spaced evenly throughout the week if less than 7 links in the category)
-    -q monthly (spaced evenly throughout the month if less than 30 links in the category)
-    -q quarterly (spaced evenly throughout the month if less than 90 links in the category)
-    -q yearly (spaced evenly throughout the year if less than 365 links in the category)
-
-if 14 tabs, two URLs are opened per day of the week.
-
-1 cron daily
-
-categoryless mode: ignore categories when determining sequencing--only frequency is used
-
-cron is responsible for running python. `lb tabs` is merely a way to organize tabs into different categories--but you could easily do this with files as well.
-
-
-order by play_count
-, ROW_NUMBER() OVER ( PARTITION BY category ) -- prefer to spread categories over time
-, random()
-
-divmod(15, 7)
-
-
-
-"""
+    process_tabs_actions(args, construct_tabs_query)

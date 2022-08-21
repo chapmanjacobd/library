@@ -196,6 +196,7 @@ def extract_metadata(args, f):
         media = {
             **media,
             "play_count": 0,
+            "time_played": None,
             "video_count": video_count,
             "audio_count": audio_count,
             "subtitle_count": subtitle_count,
