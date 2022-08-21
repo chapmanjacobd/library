@@ -71,7 +71,7 @@ tabs provides a way to organize your visits to URLs that you want to visit every
 If you want to track _changes_ to websites over time there are better tools out there, like
 `huginn`, `urlwatch`, or `changedetection.io`.
 
-The use-case of tabs are websites that you know are going to change: subreddits, games, or tools that you want to use for a few minutes by a certain frequency (day/week/month/year).
+The use-case of tabs are websites that you know are going to change: subreddits, games, or tools that you want to use for a few minutes every certain frequency (eg. daily/weekly/monthly/quarterly/yearly).
 
 ### 1. Add your websites
 
