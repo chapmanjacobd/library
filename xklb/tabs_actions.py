@@ -47,7 +47,7 @@ def construct_tabs_query(args):
         , frequency
         , CASE
             WHEN frequency = 'daily' THEN cast(STRFTIME('%s', datetime( time_played, 'unixepoch', '+1 Day' )) as int)
-            WHEN frequency = 'weekly' THEN cast(STRFTIME('%s', datetime( time_played, 'unixepoch', '+1 Week' )) as int)
+            WHEN frequency = 'weekly' THEN cast(STRFTIME('%s', datetime( time_played, 'unixepoch', '+7 Days' )) as int)
             WHEN frequency = 'monthly' THEN cast(STRFTIME('%s', datetime( time_played, 'unixepoch', '+1 Month' )) as int)
             WHEN frequency = 'quarterly' THEN cast(STRFTIME('%s', datetime( time_played, 'unixepoch', '+3 Months' )) as int)
             WHEN frequency = 'yearly' THEN cast(STRFTIME('%s', datetime( time_played, 'unixepoch', '+1 Year' )) as int)
@@ -56,7 +56,7 @@ def construct_tabs_query(args):
     FROM media
     WHERE 1=1
         {args.sql_filter}
-        {"and (time_played is null or date(time_valid, 'unixepoch') < date())" if not args.print else ''}
+        {"and date(time_valid, 'unixepoch') < date()" if not args.print else ''}
     ORDER BY 1=1
         {',' + args.sort if args.sort else ''}
         , play_count
@@ -85,7 +85,7 @@ def play(args, media: pd.DataFrame):
             sleep(0.3)
 
 
-def frenquency_filter(args, media: pd.DataFrame):
+def frequency_filter(args, media: pd.DataFrame):
     mapper = {
         Frequency.Daily: 1,
         Frequency.Weekly: 7,
@@ -115,7 +115,7 @@ def process_tabs_actions(args, construct_query):
         print("No media found")
         exit(2)
 
-    media = frenquency_filter(args, media)
+    media = frequency_filter(args, media)
 
     play(args, media)
 
