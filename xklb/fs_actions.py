@@ -3,7 +3,6 @@ import shlex
 import shutil
 import subprocess
 from pathlib import Path
-from shutil import which
 
 import ffmpeg
 import pandas as pd
