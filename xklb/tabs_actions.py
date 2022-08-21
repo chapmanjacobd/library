@@ -1,4 +1,3 @@
-import math
 from time import sleep
 
 import pandas as pd
