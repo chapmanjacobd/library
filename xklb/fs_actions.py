@@ -1,12 +1,12 @@
 import argparse
 import os
-from platform import system
 import shlex
 import shutil
 import socket
 import subprocess
 from datetime import datetime
 from pathlib import Path
+from platform import system
 from random import randrange
 from shutil import which
 from time import sleep
@@ -25,8 +25,8 @@ from xklb.utils import (
     CAST_NOW_PLAYING,
     DEFAULT_MPV_SOCKET,
     FAKE_SUBTITLE,
+    SC,
     Pclose,
-    Subcommand,
     audio_exclude_string,
     audio_include_string,
     cmd,
@@ -64,7 +64,7 @@ def override_sort(string):
     )
 
 
-def parse_args(default_db, default_chromecast=""):
+def parse_args(action, default_db, default_chromecast=""):
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     parser.add_argument(
@@ -100,7 +100,6 @@ if you want exact times you can use --where duration=6*60
         "--sort",
         "-u",
         nargs="+",
-        default=["priority"],
         help="""Sort media with SQL expressions
 -u duration means shortest media first
 -u duration desc means longest media first
@@ -135,24 +134,6 @@ Double spaces means one space
 """,
     )
     parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[])
-
-    parser.add_argument(
-        "--delete",
-        "--remove",
-        "--erase",
-        "--rm",
-        "-rm",
-        action="store_true",
-        help="lb tw -s 'something to delete' -rm",
-    )
-    parser.add_argument(
-        "--mark-watched",
-        "--watched",
-        "--mark-played",
-        "--played",
-        action="store_true",
-        help="lb wt -s 'something to mark seen' --mark-watched",
-    )
 
     parser.add_argument(
         "--chromecast-device",
@@ -230,6 +211,7 @@ Double spaces means one space
     parser.add_argument("--ignore-errors", "--ignoreerrors", action="store_true")
     parser.add_argument("--verbose", "-v", action="count", default=0)
     args = parser.parse_args()
+    args.action = action
 
     if args.db:
         args.database = args.db
@@ -241,6 +223,12 @@ Double spaces means one space
 
     if args.sort:
         args.sort = " ".join(args.sort)
+    else:
+        if args.action in [SC.listen, SC.watch, SC.tubelisten, SC.tubewatch]:
+            args.sort = ['priority']
+
+    if args.sort:
+        args.sort = override_sort(args.sort)
 
     if args.print_column:
         args.print_column = list(flatten([s.split(",") for s in args.print_column]))
@@ -285,9 +273,6 @@ Double spaces means one space
 
         args.size = size_rules
 
-    if args.sort:
-        args.sort = override_sort(args.sort)
-
     if args.chromecast:
         args.cc = CattDevice(args.chromecast_device, lazy=True)
         args.cc_ip = get_ip_of_chromecast(args.chromecast_device)
@@ -329,7 +314,7 @@ def delete_media(args, media_file: str):
 
 
 def post_act(args, media_file: str):
-    if args.action in [Subcommand.listen, Subcommand.watch, Subcommand.tubelisten, Subcommand.tubewatch]:
+    if args.action in [SC.listen, SC.watch, SC.tubelisten, SC.tubewatch]:
         mark_media_watched(args, media_file)
 
     if args.post_action == "keep":
@@ -388,7 +373,7 @@ def watch_chromecast(args, m):
             m["path"],
         )
     else:
-        if args.action in [Subcommand.watch, Subcommand.listen]:
+        if args.action in [SC.watch, SC.listen]:
             catt_log = cmd(
                 "catt",
                 "-d",
@@ -410,7 +395,7 @@ def listen_chromecast(args, m):
     Path(CAST_NOW_PLAYING).write_text(m["path"])
     Path(FAKE_SUBTITLE).touch()
     if not args.with_local:
-        if args.action in [Subcommand.watch, Subcommand.listen]:
+        if args.action in [SC.watch, SC.listen]:
             catt_log = cmd("catt", "-d", args.chromecast_device, "cast", "-s", FAKE_SUBTITLE, m["path"])
         else:
             catt_log = args.cc.play_url(m["path"], resolve=True, block=True)
@@ -461,18 +446,18 @@ def socket_play(args, m):
         bias_to_acts = m.index + 1 / args.limit
         start = randrange(int(start * bias_to_acts), int(end - args.interdimensional_cable + 1))
         end = start + args.interdimensional_cable
-    except:
+    except Exception:
         pass
     if end == 0:
         return
 
     play_opts = f"start={start},save-position-on-quit=no"
-    if args.action in [Subcommand.listen, Subcommand.tubelisten]:
+    if args.action in [SC.listen, SC.tubelisten]:
         play_opts += ",video=no,really-quiet=yes"
-    elif args.action in [Subcommand.watch, Subcommand.tubewatch]:
+    elif args.action in [SC.watch, SC.tubewatch]:
         play_opts += ",fullscreen=yes,force-window=yes,really-quiet=yes"
 
-    if args.action in [Subcommand.tubelisten, Subcommand.tubewatch]:
+    if args.action in [SC.tubelisten, SC.tubewatch]:
         play_opts += ",script-opts=ytdl_hook-try_ytdl_first=yes"
 
     f = m.path.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
@@ -485,12 +470,12 @@ def local_player(args, m, media_file):
         player = args.player
     elif which("mpv"):
         player = [which("mpv")]
-        if args.action in [Subcommand.listen, Subcommand.tubelisten]:
+        if args.action in [SC.listen, SC.tubelisten]:
             player.extend([f"--input-ipc-server={args.mpv_socket}", "--no-video", "--keep-open=no", "--really-quiet"])
-        elif args.action in [Subcommand.watch, Subcommand.tubewatch]:
+        elif args.action in [SC.watch, SC.tubewatch]:
             player.extend(["--fs", "--force-window=yes", "--really-quiet"])
 
-        if args.action in [Subcommand.tubelisten, Subcommand.tubewatch]:
+        if args.action in [SC.tubelisten, SC.tubewatch]:
             player.extend(["--script-opts=ytdl_hook-try_ytdl_first=yes"])
 
         start, end = calculate_duration(args, m)
@@ -500,10 +485,10 @@ def local_player(args, m, media_file):
             player.extend([f"--start={int(start)}", "--no-save-position-on-quit"])
         if end != m.duration:
             player.extend([f"--end={int(end)}"])
-    elif system() == 'Linux':
-        mimetype = cmd('xdg-mime', 'query', 'filetype', media_file).stdout
-        default_application = cmd('xdg-mime', 'query', 'default', mimetype).stdout
-        player_path = which(default_application.replace('.desktop',''))
+    elif system() == "Linux":
+        mimetype = cmd("xdg-mime", "query", "filetype", media_file).stdout
+        default_application = cmd("xdg-mime", "query", "default", mimetype).stdout
+        player_path = which(default_application.replace(".desktop", ""))
         if player_path:
             player = [player_path]
         else:
@@ -519,7 +504,7 @@ def local_player(args, m, media_file):
         player = ["open"]
         sleep(m.duration)
 
-    if args.action == Subcommand.watch:
+    if args.action == SC.watch:
         if m["subtitle_count"] > 0:
             player.extend(args.player_args_when_sub)
         else:
@@ -527,20 +512,20 @@ def local_player(args, m, media_file):
 
     if system() == "Windows":
         r = cmd(*player, media_file, strict=False)
-    elif args.action in [Subcommand.watch, Subcommand.tubewatch]:
+    elif args.action in [SC.watch, SC.tubewatch]:
         r = cmd(*player, "--", media_file, strict=False)
-    else: # args.action in [Subcommand.listen, Subcommand.tubelisten]
+    else:  # args.action in [SC.listen, SC.tubelisten]
         r = cmd_interactive(*player, "--", media_file, strict=False)
     if r.returncode != 0:
-        print('Player exited with code', r.returncode)
+        print("Player exited with code", r.returncode)
         if not args.ignore_errors:
             exit(4)
 
 
 def chromecast_play(args, m):
-    if args.action in [Subcommand.watch, Subcommand.tubewatch]:
+    if args.action in [SC.watch, SC.tubewatch]:
         catt_log = watch_chromecast(args, m)
-    elif args.action in [Subcommand.listen, Subcommand.tubelisten]:
+    elif args.action in [SC.listen, SC.tubelisten]:
         catt_log = listen_chromecast(args, m)
     else:
         raise NotImplementedError
@@ -559,10 +544,10 @@ def play(args, media: pd.DataFrame):
 
         if any(
             [
-                args.play_in_order > 1 and args.action not in [Subcommand.listen, Subcommand.tubelisten],
-                args.play_in_order >= 1 and args.action == Subcommand.listen and "audiobook" in media_file.lower(),
+                args.play_in_order > 1 and args.action not in [SC.listen, SC.tubelisten],
+                args.play_in_order >= 1 and args.action == SC.listen and "audiobook" in media_file.lower(),
                 args.play_in_order >= 1
-                and args.action == Subcommand.tubelisten
+                and args.action == SC.tubelisten
                 and m["title"]
                 and "audiobook" in m["title"].lower(),
             ]
@@ -579,9 +564,9 @@ def play(args, media: pd.DataFrame):
             if args.transcode:
                 media_file = transcode(media_file)
 
-        if args.action in [Subcommand.watch, Subcommand.tubewatch]:
+        if args.action in [SC.watch, SC.tubewatch]:
             print(media_file)
-        elif args.action == Subcommand.listen:
+        elif args.action == SC.listen:
             print(cmd("ffprobe", "-hide_banner", "-loglevel", "info", media_file).stderr)
 
         if args.chromecast:
@@ -608,14 +593,14 @@ def construct_query(args):
 
     cf.extend([" and " + w for w in args.where])
 
-    if args.action == Subcommand.listen:
+    if args.action == SC.listen:
         for idx, inc in enumerate(args.include):
             cf.append(audio_include_string(idx))
             bindings[f"include{idx}"] = "%" + inc.replace(" ", "%").replace("%%", " ") + "%"
         for idx, exc in enumerate(args.exclude):
             cf.append(audio_exclude_string(idx))
             bindings[f"exclude{idx}"] = "%" + exc.replace(" ", "%").replace("%%", " ") + "%"
-    elif args.action in [Subcommand.tubewatch, Subcommand.tubelisten]:
+    elif args.action in [SC.tubewatch, SC.tubelisten]:
         for idx, inc in enumerate(args.include):
             cf.append(tube_include_string(idx))
             bindings[f"include{idx}"] = "%" + inc.replace(" ", "%").replace("%%", " ") + "%"
@@ -637,25 +622,25 @@ def construct_query(args):
     OFFSET = f"OFFSET {args.skip}" if args.skip else ""
 
     query = f"""SELECT path
-        {', duration' if args.action != Subcommand.filesystem else ''}
-        {', subtitle_count' if args.action == Subcommand.watch else ''}
-        , size
+        {', duration' if args.action in [SC.listen, SC.watch, SC.tubelisten, SC.tubewatch] else ''}
+        {', size' if args.action != SC.tabs else ''}
+        {', subtitle_count' if args.action == SC.watch else ''}
+        {', sparseness' if args.action == SC.filesystem else ''}
         {', ' + ', '.join(args.print_column) if args.print_column else ''}
-        {', sparseness' if args.action == Subcommand.filesystem else ''}
-        {', is_dir' if args.action == Subcommand.filesystem else ''}
-        {', title' if args.action in [Subcommand.tubelisten, Subcommand.tubewatch] else ''}
+        {', is_dir' if args.action == SC.filesystem else ''}
+        {', title' if args.action in [SC.tubelisten, SC.tubewatch] else ''}
         {', ' + ', '.join(args.print_column) if args.print_column else ''}
     FROM media
     WHERE 1=1
     {args.sql_filter}
-    {'and audio_count > 0' if args.action == Subcommand.listen else ''}
-    {'and video_count > 0' if args.action == Subcommand.watch else ''}
+    {'and audio_count > 0' if args.action == SC.listen else ''}
+    {'and video_count > 0' if args.action == SC.watch else ''}
     {'and path not like "%/keep/%"' if args.post_action == 'askkeep' else ''}
     {'and width < height' if args.portrait else ''}
     ORDER BY 1=1
         {',' + args.sort if args.sort else ''}
         {', path' if args.print or args.include or args.play_in_order > 0 else ''}
-        {', duration / size ASC' if args.action != Subcommand.filesystem else ''}
+        {', duration / size ASC' if args.action in [SC.listen, SC.watch, SC.tubelisten, SC.tubewatch] else ''}
     {LIMIT} {OFFSET}
     """
 
@@ -666,9 +651,9 @@ def printer(args, query, bindings):
     if "a" in args.print:
         query = f"""select
             "Aggregate" as path
-            {', sum(duration) duration' if args.action != Subcommand.filesystem else ''}
-            {', sparseness' if args.action == Subcommand.filesystem else ''}
-            , sum(size) size
+            {', sum(duration) duration' if args.action in [SC.listen, SC.watch, SC.tubelisten, SC.tubewatch] else ''}
+            {', sparseness' if args.action == SC.filesystem else ''}
+            {', sum(size) size' if args.action != SC.tabs else ''}
             , count(*) count
             {', ' + ', '.join([f'sum({c}) sum_{c}' for c in args.print_column]) if args.print_column else ''}
             {', ' + ', '.join([f'avg({c}) avg_{c}' for c in args.print_column]) if args.print_column else ''}
@@ -691,12 +676,12 @@ def printer(args, query, bindings):
         print("No media found")
         exit(2)
 
-    if args.delete:
+    if "d" in args.print:
         remove_media(args, db_resp[["path"]].values.tolist(), quiet=True)
         if not "f" in args.print:
-            return print(f"Deleted {len(db_resp)} metadata records")
+            return print(f"Removed {len(db_resp)} metadata records")
 
-    if args.mark_watched:
+    if "w" in args.print:
         mark_media_watched(args, db_resp[["path"]].values.tolist())
         if not "f" in args.print:
             return print(f"{len(db_resp)} metadata records marked watched")
@@ -724,7 +709,7 @@ def printer(args, query, bindings):
 
         if "duration" in tbl.columns:
             tbl[["duration"]] = tbl[["duration"]].applymap(human_time)
-        resize_col(tbl, "duration", 6)
+            resize_col(tbl, "duration", 6)
 
         for t in ["time_modified", "time_created"]:
             if t in tbl.columns:
@@ -734,7 +719,7 @@ def printer(args, query, bindings):
 
         print(tabulate(tbl, tablefmt="fancy_grid", headers="keys", showindex=False))  # type: ignore
 
-        if args.action != Subcommand.filesystem:
+        if args.action in [SC.listen, SC.watch, SC.tubelisten, SC.tubewatch]:
             if len(db_resp) > 1:
                 print(f"{len(db_resp)} items")
             summary = db_resp.sum(numeric_only=True)
@@ -780,18 +765,15 @@ def process_actions(args):
 
 
 def watch():
-    args = parse_args("video.db", default_chromecast="Living Room TV")
-    args.action = Subcommand.watch
+    args = parse_args(SC.watch, "video.db", default_chromecast="Living Room TV")
     process_actions(args)
 
 
 def listen():
-    args = parse_args("audio.db", default_chromecast="Xylo and Orchestra")
-    args.action = Subcommand.listen
+    args = parse_args(SC.listen, "audio.db", default_chromecast="Xylo and Orchestra")
     process_actions(args)
 
 
 def filesystem():
-    args = parse_args("fs.db")
-    args.action = Subcommand.filesystem
+    args = parse_args(SC.filesystem, "fs.db")
     process_actions(args)

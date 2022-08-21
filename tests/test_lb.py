@@ -66,8 +66,8 @@ def test_wt_print(capsys):
 class TestLB(unittest.TestCase):
     @mock.patch("xklb.fs_actions.play")
     def test_lb_fs(self, play_mocked):
-        for subcommand in ["watch", "wt"]:
-            lb([subcommand, *v_db])
+        for SC in ["watch", "wt"]:
+            lb([SC, *v_db])
             out = play_mocked.call_args[0][1].to_dict(orient="records")
             assert len(out) == 1
             assert "test.mp4" in out[0]["path"]

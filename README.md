@@ -2,6 +2,8 @@
 
 A wise philosopher once told me, "[The future is autotainment](https://www.youtube.com/watch?v=F9sZFrsjPp0)".
 
+Manage large media libraries. Think Plex but minimalist and CLI-only. Primary usage is local filesystem but also supports some virtual constructs like tracking video playlists (eg. YouTube subscriptions) and browser tabs.
+
 Requires `ffmpeg`
 
 ## Install
@@ -24,7 +26,7 @@ For thirty terabytes of video the initial scan takes about four hours to complet
     wt tv.db --post-action delete     # delete file after playing
     lt finalists.db --post-action=ask # ask to delete after playing
 
-## Quick Start -- virtual
+## Quick Start -- tube (track online video playlists)
 
 ### 1. Download Metadata
 
@@ -61,6 +63,41 @@ Tubeupdate will go through all added playlists and fetch metadata of any new vid
     lb tubewatch maker.db
 
 If you like this I also have a [web version](https://unli.xyz/eject/)--but this Python version has more features and it can handle a lot more data.
+
+## Quick Start -- tabs (track generic websites)
+
+tabs provides a way to organize your visits to URLs that you want to visit every once in a while.
+
+If you want to track _changes_ to websites over time there are better tools out there, like
+`huginn`, `changedetection.io`, or `urlwatch`.
+
+The use-case of tabs are websites that you know are going to change: subreddits, games, or tools that you want to use for a few minutes by a certain frequency (day/week/month/year).
+
+### 1. Add your websites
+
+    lb tabsadd --freqency monthly --category fun https://old.reddit.com/r/Showerthoughts/top/?sort=top&t=month https://old.reddit.com/r/RedditDayOf/top/?sort=top&t=month
+
+Depending on your shell you may need to quote the URLs.
+
+If you use Fish shell know that you can enable features to make pasting easier:
+
+    set -U fish_features stderr-nocaret qmark-noglob regex-easyesc ampersand-nobg-in-token
+
+Also I recommend turning Ctrl+Backspace into a super-backspace for repeating similar commands with different long URLs:
+
+    echo 'bind \b backward-kill-bigword' >> ~/.config/fish/config.fish
+
+### 2. Add tb to cron
+
+lb tabs is meant to run once a day. Here is how you would configure it to run once per day via cron:
+
+    45 9 * * * DISPLAY=:0 lb tabs
+
+You can also invoke tabs manually:
+
+    lb tabs -L 1  # open one tab
+
+nb. if you run out of tabs it is possible that running lb tabs does nothing. Wait for one freqency cycle to pass or add more tabs.
 
 ## Things to know
 
@@ -210,7 +247,6 @@ You can also use `lb` for any files:
 
 ### TODO
 
-- tabs: move tabs_monthly to lb database to reduce duplication via play_count
 - all: more test coverage
 - all: Documentation in wiki
 - all: investigate fts using sqlite-utils
@@ -220,3 +256,4 @@ You can also use `lb` for any files:
 - tube: Download subtitle to embed in db tags for search
 - fs: split_by_silence without modifying files
 - fs: is_deleted? mixed feelings
+- fs: remove filesystem option?
