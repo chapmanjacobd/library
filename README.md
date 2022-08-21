@@ -87,7 +87,7 @@ Also I recommend turning Ctrl+Backspace into a super-backspace for repeating sim
 
     echo 'bind \b backward-kill-bigword' >> ~/.config/fish/config.fish
 
-### 2. Add tb to cron
+### 2. Add lb tabs to cron
 
 lb tabs is meant to run **once per day**. Here is how you would configure it with cron:
 
