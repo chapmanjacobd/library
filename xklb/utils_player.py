@@ -406,3 +406,14 @@ def printer(args, query, bindings):
             duration = summary.get("duration") or 0
             duration = human_time(duration)
             print("Total duration:", duration)
+
+
+def override_sort(string):
+    YEAR_MONTH = lambda var: f"cast(strftime('%Y%m', datetime({var}, 'unixepoch')) as int)"
+
+    return (
+        string.replace("month_created", YEAR_MONTH("time_created"))
+        .replace("month_modified", YEAR_MONTH("time_modified"))
+        .replace("random", "random()")
+        .replace("priority", "play_count, round(duration / size,7)")
+    )

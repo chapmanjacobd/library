@@ -14,6 +14,7 @@ from xklb.db import sqlite_con
 from xklb.utils import (
     CAST_NOW_PLAYING,
     DEFAULT_MPV_SOCKET,
+    DEFAULT_PLAY_QUEUE,
     SC,
     cmd,
     filter_None,
@@ -29,6 +30,7 @@ from xklb.utils_player import (
     local_player,
     mark_media_watched,
     mv_to_keep_folder,
+    override_sort,
     printer,
     remove_media,
     socket_play,
@@ -36,21 +38,6 @@ from xklb.utils_player import (
 )
 
 idle_mpv = lambda args: ["mpv", "--idle", f"--input-ipc-server={args.mpv_socket}"]
-
-DEFAULT_PLAY_QUEUE = 120
-
-pd.set_option("display.float_format", lambda x: "%.5f" % x)
-
-
-def override_sort(string):
-    YEAR_MONTH = lambda var: f"cast(strftime('%Y%m', datetime({var}, 'unixepoch')) as int)"
-
-    return (
-        string.replace("month_created", YEAR_MONTH("time_created"))
-        .replace("month_modified", YEAR_MONTH("time_modified"))
-        .replace("random", "random()")
-        .replace("priority", "play_count, round(duration / size,7)")
-    )
 
 
 def parse_args(action, default_db, default_chromecast=""):

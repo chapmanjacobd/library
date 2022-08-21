@@ -18,6 +18,7 @@ from typing import Union
 
 import humanize
 import numpy as np
+import pandas as pd
 import psutil
 from IPython.core import ultratb
 from IPython.terminal.debugger import TerminalPdb
@@ -35,6 +36,9 @@ SQLITE_PARAM_LIMIT = 32765
 FAKE_SUBTITLE = os.path.join(gettempdir(), "sub.srt")  # https://github.com/skorokithakis/catt/issues/393
 CAST_NOW_PLAYING = os.path.join(gettempdir(), "catt_playing")
 DEFAULT_MPV_SOCKET = os.path.join(gettempdir(), "mpv_socket")
+DEFAULT_PLAY_QUEUE = 120
+
+pd.set_option("display.float_format", lambda x: "%.5f" % x)
 
 
 def signal_handler(signal, frame):
