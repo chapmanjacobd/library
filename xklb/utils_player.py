@@ -272,12 +272,14 @@ def socket_play(args, m):
 
 
 def local_player(args, m, media_file):
-    args.player_need_sleep = False
     player = generic_player(args)
 
     if args.player:
         player = args.player
+        args.player_need_sleep = False
+
     elif which("mpv"):
+        args.player_need_sleep = False
         player = [which("mpv")]
         if args.action in [SC.listen, SC.tubelisten]:
             player.extend([f"--input-ipc-server={args.mpv_socket}", "--no-video", "--keep-open=no", "--really-quiet"])
@@ -299,6 +301,7 @@ def local_player(args, m, media_file):
         default_application = cmd("xdg-mime", "query", "default", mimetype).stdout
         player_path = which(default_application.replace(".desktop", ""))
         if player_path:
+            args.player_need_sleep = False
             player = [player_path]
 
     if args.action == SC.watch:
