@@ -7,6 +7,7 @@ from tabulate import tabulate
 from xklb.db import sqlite_con
 from xklb.fs_actions import parse_args, process_actions
 from xklb.utils import SC, filter_None, human_time, log, resize_col
+from xklb.utils_player import delete_playlists
 
 # TODO: add cookiesfrombrowser: ('firefox', ) as a default
 # cookiesfrombrowser: ('vivaldi', ) # should not crash if not installed ?
@@ -69,14 +70,73 @@ default_ydl_opts = {
 }
 
 
+tube_include_string = (
+    lambda x: f"""and (
+    path like :include{x}
+    OR tags like :include{x}
+    OR title like :include{x}
+)"""
+)
+
+tube_exclude_string = (
+    lambda x: f"""and (
+    path not like :exclude{x}
+    AND tags not like :exclude{x}
+    AND title not like :exclude{x}
+)"""
+)
+
+
+def construct_tube_query(args):
+    cf = []
+    bindings = {}
+
+    if args.duration:
+        cf.append(" and duration IS NOT NULL " + args.duration)
+    if args.size:
+        cf.append(" and size IS NOT NULL " + args.size)
+
+    cf.extend([" and " + w for w in args.where])
+
+    for idx, inc in enumerate(args.include):
+        cf.append(tube_include_string(idx))
+        bindings[f"include{idx}"] = "%" + inc.replace(" ", "%").replace("%%", " ") + "%"
+    for idx, exc in enumerate(args.exclude):
+        cf.append(tube_exclude_string(idx))
+        bindings[f"exclude{idx}"] = "%" + exc.replace(" ", "%").replace("%%", " ") + "%"
+
+    args.sql_filter = " ".join(cf)
+
+    LIMIT = "LIMIT " + str(args.limit) if args.limit else ""
+    OFFSET = f"OFFSET {args.skip}" if args.skip else ""
+
+    query = f"""SELECT path
+        , title
+        , duration
+        , size
+        {', ' + ', '.join(args.cols) if args.cols else ''}
+    FROM media
+    WHERE 1=1
+    {args.sql_filter}
+    {'and width < height' if args.portrait else ''}
+    ORDER BY 1=1
+        {',' + args.sort if args.sort else ''}
+        {', path' if args.print or args.include or args.play_in_order > 0 else ''}
+        , duration / size ASC
+    {LIMIT} {OFFSET}
+    """
+
+    return query, bindings
+
+
 def tube_watch():
     args = parse_args(SC.tubewatch, "tube.db", default_chromecast="Living Room TV")
-    process_actions(args)
+    process_actions(args, construct_tube_query)
 
 
 def tube_listen():
     args = parse_args(SC.tubelisten, "tube.db", default_chromecast="Xylo and Orchestra")
-    process_actions(args)
+    process_actions(args, construct_tube_query)
 
 
 def printer(args):
@@ -116,14 +176,6 @@ def printer(args):
             summary = db_resp.sum(numeric_only=True)
             duration = summary.get("duration") or 0
             print("Total duration:", human_time(duration))
-
-
-def delete_playlists(args, playlists):
-    args.con.execute(
-        "delete from media where playlist_path in (" + ",".join(["?"] * len(playlists)) + ")", (*playlists,)
-    )
-    args.con.execute("delete from playlists where path in (" + ",".join(["?"] * len(playlists)) + ")", (*playlists,))
-    args.con.commit()
 
 
 def tube_list():

@@ -24,7 +24,6 @@ from xklb.utils import (
     pkill,
 )
 from xklb.utils_player import (
-    construct_query,
     delete_media,
     get_ordinal_media,
     listen_chromecast,
@@ -294,7 +293,7 @@ def transcode(next_video):
 
 
 def post_act(args, media_file: str):
-    if args.action in [SC.listen, SC.watch, SC.tubelisten, SC.tubewatch]:
+    if args.action in [SC.listen, SC.watch, SC.tubelisten, SC.tubewatch, SC.tabs]:
         mark_media_watched(args, media_file)
 
     if args.post_action == "keep":
@@ -398,7 +397,104 @@ def play(args, media: pd.DataFrame):
             post_act(args, media_file)
 
 
-def process_actions(args):
+audio_include_string = (
+    lambda x: f"""and (
+    path like :include{x}
+    OR mood like :include{x}
+    OR genre like :include{x}
+    OR year like :include{x}
+    OR bpm like :include{x}
+    OR key like :include{x}
+    OR time like :include{x}
+    OR decade like :include{x}
+    OR categories like :include{x}
+    OR city like :include{x}
+    OR country like :include{x}
+    OR description like :include{x}
+    OR album like :include{x}
+    OR title like :include{x}
+    OR artist like :include{x}
+)"""
+)
+
+audio_exclude_string = (
+    lambda x: f"""and (
+    path not like :exclude{x}
+    AND mood not like :exclude{x}
+    AND genre not like :exclude{x}
+    AND year not like :exclude{x}
+    AND bpm not like :exclude{x}
+    AND key not like :exclude{x}
+    AND time not like :exclude{x}
+    AND decade not like :exclude{x}
+    AND categories not like :exclude{x}
+    AND city not like :exclude{x}
+    AND country not like :exclude{x}
+    AND description not like :exclude{x}
+    AND album not like :exclude{x}
+    AND title not like :exclude{x}
+    AND artist not like :exclude{x}
+)"""
+)
+
+
+def construct_query(args):
+    cf = []
+    bindings = {}
+
+    if args.duration:
+        cf.append(" and duration IS NOT NULL " + args.duration)
+    if args.size:
+        cf.append(" and size IS NOT NULL " + args.size)
+
+    cf.extend([" and " + w for w in args.where])
+
+    if args.action == SC.listen:
+        for idx, inc in enumerate(args.include):
+            cf.append(audio_include_string(idx))
+            bindings[f"include{idx}"] = "%" + inc.replace(" ", "%").replace("%%", " ") + "%"
+        for idx, exc in enumerate(args.exclude):
+            cf.append(audio_exclude_string(idx))
+            bindings[f"exclude{idx}"] = "%" + exc.replace(" ", "%").replace("%%", " ") + "%"
+    else:
+        bindings = []
+        for inc in args.include:
+            cf.append(" AND path LIKE ? ")
+            bindings.append("%" + inc.replace(" ", "%").replace("%%", " ") + "%")
+        for exc in args.exclude:
+            cf.append(" AND path NOT LIKE ? ")
+            bindings.append("%" + exc.replace(" ", "%").replace("%%", " ") + "%")
+
+    args.sql_filter = " ".join(cf)
+
+    LIMIT = "LIMIT " + str(args.limit) if args.limit else ""
+    OFFSET = f"OFFSET {args.skip}" if args.skip else ""
+
+    query = f"""SELECT path
+        {', duration' if args.action in [SC.listen, SC.watch] else ''}
+        {', size' if args.action != SC.tabs else ''}
+        {', subtitle_count' if args.action == SC.watch else ''}
+        {', sparseness' if args.action == SC.filesystem else ''}
+        {', is_dir' if args.action == SC.filesystem else ''}
+        {', ' + ', '.join(args.cols) if args.cols else ''}
+    FROM media
+    WHERE 1=1
+    {args.sql_filter}
+    {'and audio_count > 0' if args.action == SC.listen else ''}
+    {'and video_count > 0' if args.action == SC.watch else ''}
+    {'and path not like "%/keep/%"' if args.post_action == 'askkeep' else ''}
+    {'and width < height' if args.portrait else ''}
+    ORDER BY 1=1
+        {',' + args.sort if args.sort else ''}
+        {', path' if args.print or args.include or args.play_in_order > 0 else ''}
+        {', duration / size ASC' if args.action in [SC.listen, SC.watch] else ''}
+    {LIMIT} {OFFSET}
+    """
+
+    return query, bindings
+
+
+def process_actions(args, construct_query=construct_query):
     args.con = sqlite_con(args.database)
     query, bindings = construct_query(args)
 
