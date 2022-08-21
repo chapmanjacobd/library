@@ -4,7 +4,6 @@ import logging
 import os
 import platform
 import re
-import shutil
 import signal
 import subprocess
 import sys
@@ -19,6 +18,7 @@ from typing import Union
 
 import humanize
 import numpy as np
+import psutil
 from IPython.core import ultratb
 from IPython.terminal.debugger import TerminalPdb
 from pychromecast import discovery
@@ -54,64 +54,6 @@ class SC:
     tabs = "tabs"
 
 
-audio_include_string = (
-    lambda x: f"""and (
-    path like :include{x}
-    OR mood like :include{x}
-    OR genre like :include{x}
-    OR year like :include{x}
-    OR bpm like :include{x}
-    OR key like :include{x}
-    OR time like :include{x}
-    OR decade like :include{x}
-    OR categories like :include{x}
-    OR city like :include{x}
-    OR country like :include{x}
-    OR description like :include{x}
-    OR album like :include{x}
-    OR title like :include{x}
-    OR artist like :include{x}
-)"""
-)
-
-audio_exclude_string = (
-    lambda x: f"""and (
-    path not like :exclude{x}
-    OR mood not like :exclude{x}
-    OR genre not like :exclude{x}
-    OR year not like :exclude{x}
-    OR bpm not like :exclude{x}
-    OR key not like :exclude{x}
-    OR time not like :exclude{x}
-    OR decade not like :exclude{x}
-    OR categories not like :exclude{x}
-    OR city not like :exclude{x}
-    OR country not like :exclude{x}
-    OR description not like :exclude{x}
-    OR album not like :exclude{x}
-    OR title not like :exclude{x}
-    OR artist not like :exclude{x}
-)"""
-)
-
-
-tube_include_string = (
-    lambda x: f"""and (
-    path like :include{x}
-    OR tags like :include{x}
-    OR title like :include{x}
-)"""
-)
-
-tube_exclude_string = (
-    lambda x: f"""and (
-    path not like :exclude{x}
-    OR tags not like :exclude{x}
-    OR title not like :exclude{x}
-)"""
-)
-
-
 def get_ip_of_chromecast(device_name):
     cast_infos, browser = discovery.discover_listed_chromecasts(friendly_names=[device_name])
     browser.stop_discovery()
@@ -120,6 +62,16 @@ def get_ip_of_chromecast(device_name):
         exit(53)
 
     return cast_infos[0].host
+
+
+def os_bg_kwargs():
+    if hasattr(os, "setpgrp"):
+        os_kwargs = dict(start_new_session=True)
+    else:
+        CREATE_NEW_PROCESS_GROUP = 0x00000200
+        DETACHED_PROCESS = 0x00000008
+        os_kwargs = dict(creationflags=DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP)
+    return os_kwargs
 
 
 def run_once(f):
@@ -165,117 +117,6 @@ def argparse_log():
 
 
 log = argparse_log()
-
-
-def mv_to_keep_folder(args, video):
-    kp = re.match(args.shallow_organize + "(.*?)/", video)
-    if kp:
-        keep_path = Path(kp[0], "keep/")
-    elif Path(video).parent.match("*/keep/*"):
-        return
-    else:
-        keep_path = Path(video).parent / "keep/"
-
-    keep_path.mkdir(exist_ok=True)
-    shutil.move(video, keep_path)
-
-
-def chunks(lst, n):
-    for i in range(0, len(lst), n):
-        yield lst[i : i + n]
-
-
-def flatten(xs: Iterable):
-    for x in xs:
-        if isinstance(x, Iterable) and not isinstance(x, (str, bytes)):
-            yield from flatten(x)
-        elif isinstance(x, bytes):
-            yield x.decode("utf-8")
-        else:
-            yield x
-
-
-def conform(list_: Union[str, Iterable]):
-    if not isinstance(list_, list):
-        list_ = [list_]
-    list_ = flatten(list_)
-    list_ = list(filter(None, list_))
-    return list_
-
-
-def remove_media(args, deleted_files: Union[str, list], quiet=False):
-    deleted_files = conform(deleted_files)
-    if len(deleted_files) > 0:
-        if not quiet:
-            if len(deleted_files) == 1:
-                print("Removing orphaned metadata", deleted_files[0])
-            else:
-                print(f"Removing {len(deleted_files)} orphaned metadata")
-
-        df_chunked = chunks(deleted_files, SQLITE_PARAM_LIMIT)
-        for l in df_chunked:
-            args.con.execute(
-                "delete from media where path in (" + ",".join(["?"] * len(l)) + ")",
-                (*l,),
-            )
-            args.con.commit()
-    # TODO: return number of changed rows
-
-
-def mark_media_watched(args, files):
-    files = conform(files)
-    if len(files) > 0:
-        df_chunked = chunks(files, SQLITE_PARAM_LIMIT)
-        for l in df_chunked:
-            args.con.execute(
-                "update media set play_count = play_count +1 where path in (" + ",".join(["?"] * len(l)) + ")",
-                (*l,),
-            )
-            args.con.commit()
-    # TODO: return number of changed rows
-
-
-def get_media_files(path, audio=False):
-    FFMPEG_DEMUXERS = (
-        "str|aa|aax|acm|adf|adp|dtk|ads|ss2|adx|aea|afc|aix|al|apl"
-        "|mac|aptx|aptxhd|aqt|ast|obu|avi|avr|avs|avs2|avs3|bfstm|bcstm|binka"
-        "|bit|bmv|brstm|cdg|cdxl|xl|c2|302|daud|str|adp|dav|dss|dts|dtshd|dv"
-        "|dif|cdata|eac3|paf|fap|flm|flv|fsb|fwse|g722|722|tco|rco"
-        "|g723_1|g729|genh|gsm|h261|h26l|h264|264|avc|hca|hevc|h265|265|idf"
-        "|ifv|cgi|ipu|sf|ircam|ivr|kux|669|abc|amf|ams|dbm|dmf|dsm|far|it|mdl"
-        "|med|mid|mod|mt2|mtm|okt|psm|ptm|s3m|stm|ult|umx|xm|itgz|itr|itz"
-        "|mdgz|mdr|mdz|s3gz|s3r|s3z|xmgz|xmr|xmz|669|amf|ams|dbm|digi|dmf"
-        "|dsm|dtm|far|gdm|ice|imf|it|j2b|m15|mdl|med|mmcmp|mms|mo3|mod|mptm"
-        "|mt2|mtm|nst|okt|plm|ppm|psm|pt36|ptm|s3m|sfx|sfx2|st26|stk|stm"
-        "|stp|ult|umx|wow|xm|xpk|flv|dat|lvf|m4v|mkv|mk3d|mka|mks|webm|mca|mcc"
-        "|mjpg|mjpeg|mpo|j2k|mlp|mods|moflex|mov|mp4|3gp|3g2|mj2|psp|m4b"
-        "|ism|ismv|isma|f4v|mp2|mpa|mpc|mjpg|mpl2|msf|mtaf|ul|musx|mvi|mxg"
-        "|v|nist|sph|nsp|nut|obu|oma|omg|pjs|pvf|yuv|cif|qcif|rgb|rt|rsd"
-        "|rsd|rso|sw|sb|sami|sbc|msbc|sbg|scc|sdr2|sds|sdx|ser|sga|shn|vb|son|imx"
-        "|sln|mjpg|stl|sup|svag|svs|tak|thd|tta|ans|art|asc|diz|ice|vt|ty|ty+|uw|ub"
-        "|v210|yuv10|vag|vc1|rcv|viv|vpk|vqf|vql|vqe|wsd|xmv|xvag|yop|y4m"
-    )
-    if audio:
-        audio_only = "|opus|oga|ogg|mp3|m2a|m4a|flac|wav|wma|aac|aa3|ac3|ape"
-        FFMPEG_DEMUXERS += audio_only
-
-    video_files = []
-
-    for f in Path(path).resolve().rglob("*"):
-        if f.is_file() and (f.suffix.lower()[1:] in FFMPEG_DEMUXERS.split("|")):
-            video_files.append(str(f))
-
-    return video_files
-
-
-def os_bg_kwargs():
-    if hasattr(os, "setpgrp"):
-        os_kwargs = dict(start_new_session=True)
-    else:
-        CREATE_NEW_PROCESS_GROUP = 0x00000200
-        DETACHED_PROCESS = 0x00000008
-        os_kwargs = dict(creationflags=DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP)
-    return os_kwargs
 
 
 def cmd(*command, strict=True, cwd=None, quiet=True, interactive=False, **kwargs):
@@ -344,6 +185,62 @@ def Pclose(process):
     return subprocess.CompletedProcess(process.args, return_code, stdout, stderr)
 
 
+def chunks(lst, n):
+    for i in range(0, len(lst), n):
+        yield lst[i : i + n]
+
+
+def flatten(xs: Iterable):
+    for x in xs:
+        if isinstance(x, Iterable) and not isinstance(x, (str, bytes)):
+            yield from flatten(x)
+        elif isinstance(x, bytes):
+            yield x.decode("utf-8")
+        else:
+            yield x
+
+
+def conform(list_: Union[str, Iterable]):
+    if not isinstance(list_, list):
+        list_ = [list_]
+    list_ = flatten(list_)
+    list_ = list(filter(None, list_))
+    return list_
+
+
+def get_media_files(path, audio=False):
+    FFMPEG_DEMUXERS = (
+        "str|aa|aax|acm|adf|adp|dtk|ads|ss2|adx|aea|afc|aix|al|apl"
+        "|mac|aptx|aptxhd|aqt|ast|obu|avi|avr|avs|avs2|avs3|bfstm|bcstm|binka"
+        "|bit|bmv|brstm|cdg|cdxl|xl|c2|302|daud|str|adp|dav|dss|dts|dtshd|dv"
+        "|dif|cdata|eac3|paf|fap|flm|flv|fsb|fwse|g722|722|tco|rco"
+        "|g723_1|g729|genh|gsm|h261|h26l|h264|264|avc|hca|hevc|h265|265|idf"
+        "|ifv|cgi|ipu|sf|ircam|ivr|kux|669|abc|amf|ams|dbm|dmf|dsm|far|it|mdl"
+        "|med|mid|mod|mt2|mtm|okt|psm|ptm|s3m|stm|ult|umx|xm|itgz|itr|itz"
+        "|mdgz|mdr|mdz|s3gz|s3r|s3z|xmgz|xmr|xmz|669|amf|ams|dbm|digi|dmf"
+        "|dsm|dtm|far|gdm|ice|imf|it|j2b|m15|mdl|med|mmcmp|mms|mo3|mod|mptm"
+        "|mt2|mtm|nst|okt|plm|ppm|psm|pt36|ptm|s3m|sfx|sfx2|st26|stk|stm"
+        "|stp|ult|umx|wow|xm|xpk|flv|dat|lvf|m4v|mkv|mk3d|mka|mks|webm|mca|mcc"
+        "|mjpg|mjpeg|mpo|j2k|mlp|mods|moflex|mov|mp4|3gp|3g2|mj2|psp|m4b"
+        "|ism|ismv|isma|f4v|mp2|mpa|mpc|mjpg|mpl2|msf|mtaf|ul|musx|mvi|mxg"
+        "|v|nist|sph|nsp|nut|obu|oma|omg|pjs|pvf|yuv|cif|qcif|rgb|rt|rsd"
+        "|rsd|rso|sw|sb|sami|sbc|msbc|sbg|scc|sdr2|sds|sdx|ser|sga|shn|vb|son|imx"
+        "|sln|mjpg|stl|sup|svag|svs|tak|thd|tta|ans|art|asc|diz|ice|vt|ty|ty+|uw|ub"
+        "|v210|yuv10|vag|vc1|rcv|viv|vpk|vqf|vql|vqe|wsd|xmv|xvag|yop|y4m"
+    )
+    if audio:
+        audio_only = "|opus|oga|ogg|mp3|m2a|m4a|flac|wav|wma|aac|aa3|ac3|ape"
+        FFMPEG_DEMUXERS += audio_only
+
+    video_files = []
+
+    for f in Path(path).resolve().rglob("*"):
+        if f.is_file() and (f.suffix.lower()[1:] in FFMPEG_DEMUXERS.split("|")):
+            video_files.append(str(f))
+
+    return video_files
+
+
 def compile_query(query, *args):
     if len(args) == 1 and (not args[0]):
         number_of_arguments = 0
@@ -372,54 +269,6 @@ def single_column_tolist(array_to_unpack, column_name: Union[str, int] = 1):
             array_to_unpack,
         )
     )
-
-
-def get_ordinal_media(args, path):
-    similar_videos = []
-    candidate = str(path)
-
-    total_media = args.con.execute("select count(*) val from media").fetchone()[0]
-    while len(similar_videos) < 2:
-        remove_groups = re.split(r"([\W]+|\s+|Ep\d+|x\d+|\.\d+)", candidate)
-        log.debug(remove_groups)
-        remove_chars = ""
-        remove_chars_i = 1
-        while len(remove_chars) < 1:
-            remove_chars += remove_groups[-remove_chars_i]
-            remove_chars_i += 1
-
-        new_candidate = candidate[: -len(remove_chars)]
-        log.debug(f"Matches for '{new_candidate}':")
-
-        if candidate in ["" or new_candidate]:
-            return path
-
-        candidate = new_candidate
-        query = f"""SELECT path FROM media
-            WHERE 1=1
-                and path like ?
-                {'' if (args.play_in_order > 2) else args.sql_filter}
-            ORDER BY path
-            LIMIT 1000
-            """
-        bindings = ("%" + candidate + "%",)
-        if args.print and "q" in args.print:
-            print_query(bindings, query)
-            exit()
-
-        similar_videos = single_column_tolist(args.con.execute(query, bindings).fetchall(), "path")  # type: ignore
-        log.debug(similar_videos)
-
-        if len(similar_videos) > 999 or len(similar_videos) == total_media:
-            return path
-
-        commonprefix = os.path.commonprefix(similar_videos)
-        log.debug(commonprefix)
-        if len(Path(commonprefix).name) < 3:
-            log.debug("Using commonprefix")
-            return path
-
-    return similar_videos[0]
 
 
 def filter_None(kwargs):
@@ -454,6 +303,44 @@ def safe_unpack(*list_, idx=0):
         return None
 
 
+try:
+    TERMINAL_SIZE = os.get_terminal_size()
+except Exception:
+    TERMINAL_SIZE = SimpleNamespace(columns=80, lines=60)
+
+
+def resize_col(tbl, col, size=10):
+    if col in tbl.columns:
+        tbl[[col]] = tbl[[col]].applymap(
+            lambda x: None if x is None else textwrap.fill(x, max(10, int(size * (TERMINAL_SIZE.columns / 80))))
+        )
+    return tbl
+
+
+def human_time(seconds):
+    if seconds is None or np.isnan(seconds):
+        return None
+    hours = humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="hours", format="%0.0f")
+    if len(hours.split(",")) > 2:
+        return hours
+    minutes = humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="minutes", format="%0.0f")
+    if len(minutes.split(",")) > 1:
+        return minutes
+    else:
+        return humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="minutes")
+
+
+def pkill(*command, strict=True):
+    found = 0
+    for process in psutil.process_iter():
+        if process.cmdline() == command:
+            process.terminate()
+            found = 1
+            break
+    if strict and found == 0:
+        raise Exception("Process not found")
+
+
 class argparse_dict(argparse.Action):
     def __call__(self, parser, args, values, option_string=None):
         try:
@@ -485,44 +372,3 @@ class argparse_enum(argparse.Action):
         # Convert value back into an Enum
         value = self._enum(values)
         setattr(namespace, self.dest, value)
-
-
-try:
-    TERMINAL_SIZE = os.get_terminal_size()
-except Exception:
-    TERMINAL_SIZE = SimpleNamespace(columns=80, lines=60)
-
-
-def resize_col(tbl, col, size=10):
-    if col in tbl.columns:
-        tbl[[col]] = tbl[[col]].applymap(
-            lambda x: None if x is None else textwrap.fill(x, max(10, int(size * (TERMINAL_SIZE.columns / 80))))
-        )
-    return tbl
-
-
-def human_time(seconds):
-    if seconds is None or np.isnan(seconds):
-        return None
-    hours = humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="hours", format="%0.0f")
-    if len(hours.split(",")) > 2:
-        return hours
-    minutes = humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="minutes", format="%0.0f")
-    if len(minutes.split(",")) > 1:
-        return minutes
-    else:
-        return humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="minutes")
-
-
-def generic_player(args):
-    if platform.system() == "Linux":
-        player = ["xdg-open"]
-    elif platform.system() == "Windows":
-        if shutil.which("cygstart"):
-            player = ["cygstart"]
-        else:
-            player = ["start", ""]
-    else:
-        player = ["open"]
-    args.player_need_sleep = True
-    return player

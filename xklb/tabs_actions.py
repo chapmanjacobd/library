@@ -1,10 +1,11 @@
 from xklb.fs_actions import parse_args, process_actions
-from xklb.utils import SC, generic_player
+from xklb.utils import SC
+from xklb.utils_player import generic_player
 
 
 def tabs():
     args = parse_args(SC.tabs, "tabs.db")
-    args.player=generic_player(args)
+    args.player = generic_player(args)
     args.delay = 0.1
     process_actions(args)
 
