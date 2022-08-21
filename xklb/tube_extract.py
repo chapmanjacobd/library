@@ -157,7 +157,7 @@ def consolidate(playlist_path, v):
     duration = v.pop("duration", None)
     cv["duration"] = 0 if not duration else int(duration)
     cv["play_count"] = 0
-    cv["time_played"] = None
+    cv["time_played"] = 0
     cv["language"] = v.pop("language", None)
     cv["tags"] = combine(v.pop("description", None), v.pop("categories", None), v.pop("tags", None))
     cv["id"] = v.pop("id")
