@@ -87,6 +87,10 @@ Also I recommend turning Ctrl+Backspace into a super-backspace for repeating sim
 
     echo 'bind \b backward-kill-bigword' >> ~/.config/fish/config.fish
 
+If you have an existing line-deliminated file you can import it like this:
+
+    lb tabsadd -f monthly -c reddit ~/lb/tabs.db (cat ~/mc/reddit.monthly.cron)
+
 ### 2. Add lb tabs to cron
 
 lb tabs is meant to run **once per day**. Here is how you would configure it with cron:
