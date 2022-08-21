@@ -12,14 +12,7 @@ import yt_dlp
 
 from xklb.db import sqlite_con
 from xklb.tube_actions import default_ydl_opts
-from xklb.utils import (
-    argparse_dict,
-    combine,
-    filter_None,
-    log,
-    safe_unpack,
-    single_column_tolist,
-)
+from xklb.utils import argparse_dict, combine, filter_None, log, safe_unpack, single_column_tolist
 
 
 def parse_args(action):

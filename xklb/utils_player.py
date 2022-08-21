@@ -105,6 +105,19 @@ def mv_to_keep_folder(args, video):
     shutil.move(video, keep_path)
 
 
+def mark_media_watched(args, files):
+    files = conform(files)
+    if len(files) > 0:
+        df_chunked = chunks(files, SQLITE_PARAM_LIMIT)
+        for l in df_chunked:
+            args.con.execute(
+                "update media set play_count = play_count +1 where path in (" + ",".join(["?"] * len(l)) + ")",
+                (*l,),
+            )
+            args.con.commit()
+    # TODO: return number of changed rows
+
+
 def remove_media(args, deleted_files: Union[str, list], quiet=False):
     deleted_files = conform(deleted_files)
     if len(deleted_files) > 0:
@@ -118,19 +131,6 @@ def remove_media(args, deleted_files: Union[str, list], quiet=False):
         for l in df_chunked:
             args.con.execute(
                 "delete from media where path in (" + ",".join(["?"] * len(l)) + ")",
-                (*l,),
-            )
-            args.con.commit()
-    # TODO: return number of changed rows
-
-
-def mark_media_watched(args, files):
-    files = conform(files)
-    if len(files) > 0:
-        df_chunked = chunks(files, SQLITE_PARAM_LIMIT)
-        for l in df_chunked:
-            args.con.execute(
-                "update media set play_count = play_count +1 where path in (" + ",".join(["?"] * len(l)) + ")",
                 (*l,),
             )
             args.con.commit()
