@@ -2,7 +2,7 @@ import argparse
 import sys
 
 from xklb.fs_actions import filesystem, listen, watch
-from xklb.fs_extract import main as extract
+from xklb.fs_extract import main as fs_add
 from xklb.subtitle import main as subtitle
 from xklb.tabs_actions import tabs
 from xklb.tabs_extract import tabs_add
@@ -17,8 +17,8 @@ def lb(args=None):
 
     parser = argparse.ArgumentParser(add_help=False)
     subparsers = parser.add_subparsers()
-    subp_extract = subparsers.add_parser("extract", aliases=["xr"], add_help=False)
-    subp_extract.set_defaults(func=extract)
+    subp_extract = subparsers.add_parser("fsadd", aliases=["xr", "extract"], add_help=False)
+    subp_extract.set_defaults(func=fs_add)
     subp_subtitle = subparsers.add_parser("subtitle", aliases=["sub"], add_help=False)
     subp_subtitle.set_defaults(func=subtitle)
 
@@ -28,6 +28,11 @@ def lb(args=None):
     subp_watch.set_defaults(func=watch)
     subp_filesystem = subparsers.add_parser(SC.filesystem, aliases=["fs"], add_help=False)
     subp_filesystem.set_defaults(func=filesystem)
+
+    subp_tabsadd = subparsers.add_parser("tabsadd", add_help=False)
+    subp_tabsadd.set_defaults(func=tabs_add)
+    subp_tabs = subparsers.add_parser("tabs", aliases=["tabswatch", "tb"], add_help=False)
+    subp_tabs.set_defaults(func=tabs)
 
     subp_tubelist = subparsers.add_parser("tubelist", aliases=["playlist", "playlists"], add_help=False)
     subp_tubelist.set_defaults(func=tube_list)
@@ -40,11 +45,6 @@ def lb(args=None):
     subp_tubewatch.set_defaults(func=tube_watch)
     subp_tubelisten = subparsers.add_parser(SC.tubelisten, aliases=["tl"], add_help=False)
     subp_tubelisten.set_defaults(func=tube_listen)
-
-    subp_tabsadd = subparsers.add_parser("tabsadd", add_help=False)
-    subp_tabsadd.set_defaults(func=tabs_add)
-    subp_tabs = subparsers.add_parser("tabs", aliases=["tabswatch", "tb"], add_help=False)
-    subp_tabs.set_defaults(func=tabs)
 
     parser.add_argument("--version", "-V", action="store_true")
     args, _unk = parser.parse_known_args(args)

@@ -7,12 +7,16 @@ import pytest
 from xklb.fs_actions import watch as wt
 from xklb.fs_extract import main as xr
 from xklb.lb import lb
+from xklb.tabs_extract import tabs_add
 
 v_db = "--db", "tests/data/video.db"
-a_db = "--db", "tests/data/audio.db"
-
 xr([*v_db, "tests/data/"])
+
+a_db = "--db", "tests/data/audio.db"
 xr([*a_db, "--audio", "tests/data/"])
+
+tabs_db = "--db", "tests/data/tabs.db"
+tabs_add([*tabs_db, "https://unli.xyz/proliferation/verbs.html"])
 
 
 def test_lb_help(capsys):
@@ -62,7 +66,7 @@ def test_wt_print(capsys):
     assert "Aggregate" not in captured
 
 
-class TestLB(unittest.TestCase):
+class TestFs(unittest.TestCase):
     @mock.patch("xklb.fs_actions.play")
     def test_lb_fs(self, play_mocked):
         for SC in ["watch", "wt"]:
@@ -88,16 +92,39 @@ class TestLB(unittest.TestCase):
         assert len(out) == 2
         assert "test.opus" in out[0]["path"] + out[1]["path"]
 
-    # @mock.patch("xklb.fs_actions.play")
-    # def test_wt_sort(self, play_mocked):
+    @mock.patch("xklb.fs_actions.play")
+    def test_wt_search(self, play_mocked):
+        sys.argv = ["wt", *v_db, "-s", "te t", "test test", "-E", "2", "-s", "test"]
+        wt()
+        out = play_mocked.call_args[0][1].to_dict(orient="records")
+        assert out == [
+            {"duration": 12, "path": "/home/xk/github/xk/lb/tests/data/test.mp4", "size": 135178, "subtitle_count": 0}
+        ]
 
-    # @mock.patch("xklb.fs_actions.play")
-    # def test_wt_size(self, play_mocked):
+    @mock.patch("xklb.fs_actions.play")
+    def test_wt_sort(self, play_mocked):
+        sys.argv = ["wt", *v_db, "-u", "duration"]
+        wt()
+        out = play_mocked.call_args[0][1].to_dict(orient="records")
+        assert out == [
+            {"duration": 12, "path": "/home/xk/github/xk/lb/tests/data/test.mp4", "size": 135178, "subtitle_count": 0}
+        ]
 
-    # @mock.patch("xklb.fs_actions.play")
-    # def test_wt_duration(self, play_mocked):
+    @mock.patch("xklb.fs_actions.play")
+    def test_wt_size(self, play_mocked):
+        sys.argv = ["wt", *v_db, "--size", "-1"]
+        wt()
+        out = play_mocked.call_args[0][1].to_dict(orient="records")
+        assert out == [
+            {"duration": 12, "path": "/home/xk/github/xk/lb/tests/data/test.mp4", "size": 135178, "subtitle_count": 0}
+        ]
 
-    # @mock.patch("xklb.fs_actions.play")
-    # def test_wt_search(self, play_mocked):
-    #     sys.argv = ["wt", "-s", "test,test1 test2", "test3", "-E", "test4", "-s", "test5"]
-    #     wt()
+
+class TestTabs(unittest.TestCase):
+    @mock.patch("xklb.tabs_actions.play")
+    def test_lb_tabs(self, play_mocked):
+        lb(["tabs", *tabs_db])
+        out = play_mocked.call_args[0][1].to_dict(orient="records")
+        assert out == [
+            {"frequency": "monthly", "path": "https://unli.xyz/proliferation/verbs.html", "time_valid": 2678400}
+        ]
