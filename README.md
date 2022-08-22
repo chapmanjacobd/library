@@ -93,9 +93,13 @@ If you have an existing line-deliminated file you can import it like this:
 
 ### 2. Add lb tabs to cron
 
-lb tabs is meant to run **once per day**. Here is how you would configure it with cron:
+lb tabs is meant to run **once per day**. Here is how you would configure it with `crontab`:
 
-    45 9 * * * DISPLAY=:0 lb tabs ~/my/tabs.db
+    45 9 * * * DISPLAY=:0 lb tabs /home/my/tabs.db
+
+If things aren't working you can use `at` to simulate a similar environment as `cron`
+
+    echo 'DISPLAY=:0 lb tabs /full/path/to/tabs.db' | at NOW
 
 You can also invoke tabs manually:
 
