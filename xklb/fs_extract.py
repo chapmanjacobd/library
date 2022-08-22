@@ -334,10 +334,7 @@ def extractor(args):
         optimize_db(args)
 
 
-def main(args=None):
-    if args:
-        sys.argv[1:] = args
-
+def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("database", nargs="?")
     parser.add_argument("paths", nargs="+")
@@ -368,6 +365,14 @@ def main(args=None):
             args.database = "video.db"
         else:
             raise Exception(f"fs_extract for db_type {args.db_type} not implemented")
+    return args
+
+
+def main(args=None):
+    if args:
+        sys.argv[1:] = args
+
+    args = parse_args()
 
     extractor(args)
 

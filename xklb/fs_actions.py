@@ -233,13 +233,13 @@ Double spaces means one space
         for size_rule in args.size:
             if "+" in size_rule:
                 # min size rule
-                size_rules += f"and size >= {abs(int(args.size)) * B_TO_MB} "
+                size_rules += f"and size >= {abs(int(size_rule)) * B_TO_MB} "
             elif "-" in size_rule:
                 # max size rule
-                size_rules += f"and {abs(int(args.size)) * B_TO_MB} >= size "
+                size_rules += f"and {abs(int(size_rule)) * B_TO_MB} >= size "
             else:
                 # approximate size rule
-                size_mb = args.size * B_TO_MB
+                size_mb = float(size_rule) * B_TO_MB
                 size_rules += f"and {size_mb + (size_mb /10)} >= size and size >= {size_mb - (size_mb /10)} "
 
         args.size = size_rules

@@ -1,6 +1,7 @@
 import argparse
 import enum
 import re
+import sys
 from datetime import datetime
 from pathlib import Path
 from urllib.parse import urlparse
@@ -43,9 +44,9 @@ def sanitize_url(args, path):
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("db", nargs="?", default="tabs.db")
-    parser.add_argument("--db", "-db")
+    parser.add_argument("database", nargs="?", default="tabs.db")
     parser.add_argument("paths", nargs="+")
+    parser.add_argument("--db", "-db")
     parser.add_argument(
         "--frequency", "--freqency", "-f", default=Frequency.Monthly, type=Frequency, action=argparse_enum
     )
@@ -107,7 +108,9 @@ def extract_url_metadata(args, path):
     )
 
 
-def tabs_add():
+def tabs_add(args=None):
+    if args:
+        sys.argv[1:] = args
     args = parse_args()
 
     tabsDF = pd.DataFrame([extract_url_metadata(args, path) for path in get_new_paths(args)])
