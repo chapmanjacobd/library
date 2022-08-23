@@ -17,7 +17,7 @@ from xklb.utils import argparse_dict, combine, filter_None, log, safe_unpack, si
 
 
 def parse_args(action):
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(prog="lb tube" + action)
     parser.add_argument("database", nargs="?", default="tube.db")
     parser.add_argument("--db", "-db")
     if action == "add":

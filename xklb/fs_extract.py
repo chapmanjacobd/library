@@ -293,7 +293,7 @@ def find_new_files(args, path):
 
         deleted_files = list(existing - new_files)
         deleted_count = mark_media_deleted(args, deleted_files)
-        print('Marking', deleted_count, 'orphaned metadata records as deleted')
+        print("Marking", deleted_count, "orphaned metadata records as deleted")
 
     return scanned_files
 
@@ -335,7 +335,7 @@ def extractor(args):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(prog="lb extract")
     parser.add_argument("database", nargs="?")
     parser.add_argument("paths", nargs="+")
     parser.add_argument("--db", "-db")
