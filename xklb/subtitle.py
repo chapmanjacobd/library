@@ -103,7 +103,7 @@ def get_subtitle(args, file):
 
 
 def main():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(prog="lb subtitle")
     parser.add_argument("paths", nargs="*")
     parser.add_argument("-yt", "--youtube-only", action="store_true")
     parser.add_argument("-sl", "--subliminal-only", action="store_true")

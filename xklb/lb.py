@@ -15,7 +15,7 @@ def lb(args=None):
     if args:
         sys.argv[2:] = args
 
-    parser = argparse.ArgumentParser(add_help=False)
+    parser = argparse.ArgumentParser(prog="lb", add_help=False)
     subparsers = parser.add_subparsers()
     subp_extract = subparsers.add_parser("fsadd", aliases=["xr", "extract"], add_help=False)
     subp_extract.set_defaults(func=fs_add)

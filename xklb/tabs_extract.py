@@ -43,7 +43,7 @@ def sanitize_url(args, path):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(prog="lb tabsadd")
     parser.add_argument("database", nargs="?", default="tabs.db")
     parser.add_argument("paths", nargs="+")
     parser.add_argument("--db", "-db")

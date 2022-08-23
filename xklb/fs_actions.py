@@ -42,7 +42,7 @@ idle_mpv = lambda args: ["mpv", "--idle", f"--input-ipc-server={args.mpv_socket}
 
 
 def parse_args(action, default_db, default_chromecast=""):
-    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(prog="lb " + action, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     parser.add_argument(
         "database",

@@ -121,7 +121,7 @@ def process_tabs_actions(args, construct_query):
 
 
 def parse_args(action, default_db, default_chromecast=""):
-    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(prog="lb tabs", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
         "database",
         nargs="?",
