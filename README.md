@@ -231,7 +231,7 @@ ie. if 14 tabs, two URLs are opened per day of the week
 
 ### You can pipe stuff
 
-[lowcharts](https://github.com/juan-leon/lowcharts)
+#### [lowcharts](https://github.com/juan-leon/lowcharts)
 
     $ wt-dev -p f -col time_created | lowcharts timehist -w 80
     Matches: 445183.
@@ -260,6 +260,20 @@ ie. if 14 tabs, two URLs are opened per day of the week
 ![video width](https://user-images.githubusercontent.com/7908073/184737808-b96fbe65-a1d9-43c2-b6b4-4bdfab592190.png)
 
 ![fps](https://user-images.githubusercontent.com/7908073/184738438-ee566a4b-2da0-4e6d-a4b3-9bfca036aa2a.png)
+
+#### rsync
+
+    function mrmusic
+        rsync -a --remove-source-files --files-from=(
+            lt ~/lb/audio.db -s /mnt/d/80_Now_Listening/ -p f \
+            --moved /mnt/d/80_Now_Listening/ /mnt/d/ | psub
+        ) /mnt/d/80_Now_Listening/ /mnt/d/
+
+        rsync -a --remove-source-files --files-from=(
+            lt ~/lb/audio.db -w play_count=0 -u random -L 1200 -p f \
+            --moved /mnt/d/ /mnt/d/80_Now_Listening/ | psub
+        ) /mnt/d/ /mnt/d/80_Now_Listening/
+    end
 
 ### TODOs (PRs welcome)
 
