@@ -263,6 +263,8 @@ ie. if 14 tabs, two URLs are opened per day of the week
 
 #### rsync
 
+I do this instead of copy-on-write duplication because I want deletions to stick (when I press the next button in the car I delete the song from my curated universe).
+
     function mrmusic
         rsync -a --remove-source-files --files-from=(
             lt ~/lb/audio.db -s /mnt/d/80_Now_Listening/ -p f \
