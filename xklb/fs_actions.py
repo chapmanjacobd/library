@@ -152,7 +152,7 @@ Double spaces means one space
     )
     parser.add_argument(
         "--moved",
-        nargs="2",
+        nargs=2,
         help="""For use with `-p f` to specify files moved with rsync or a similar tool. For example:
 rsync -a --info=progress2 --no-inc-recursive --remove-source-files --files-from=<(
     lt ~/lb/audio.db -w 'play_count = 0' -u random -L 1200 -p f \
