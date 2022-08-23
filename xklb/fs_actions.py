@@ -498,7 +498,7 @@ def construct_fs_query(args):
     {args.sql_filter}
     {'and audio_count > 0' if args.action == SC.listen else ''}
     {'and video_count > 0' if args.action == SC.watch else ''}
-    {f'and path not like "%/{args.keep_dir}%"' if args.post_action == 'askkeep' else ''}
+    {f'and path not like "%{args.keep_dir}%"' if args.post_action == 'askkeep' else ''}
     {'and width < height' if args.portrait else ''}
     {'and is_deleted=0' if args.action in [SC.listen, SC.watch] and 'is_deleted' not in args.sql_filter else ''}
     ORDER BY 1=1
