@@ -11,13 +11,14 @@ import pandas as pd
 import yt_dlp
 
 from xklb.db import sqlite_con
+from xklb.fs_extract import optimize_db
 from xklb.tube_actions import default_ydl_opts
 from xklb.utils import argparse_dict, combine, filter_None, log, safe_unpack, single_column_tolist
 
 
 def parse_args(action):
     parser = argparse.ArgumentParser()
-    parser.add_argument("db", nargs="?", default="tube.db")
+    parser.add_argument("database", nargs="?", default="tube.db")
     parser.add_argument("--db", "-db")
     if action == "add":
         parser.add_argument("playlists", nargs="+")
@@ -29,6 +30,7 @@ def parse_args(action):
         )
     elif action == "update":
         parser.add_argument("playlists", nargs="*")
+        parser.add_argument("--optimize", action="store_true", help="Optimize Database")
 
     parser.add_argument(
         "--yt-dlp-config",
@@ -323,3 +325,6 @@ def tube_update():
         process_playlist(args, playlist)
         end = timer()
         log.info(f"{end - start:.1f} seconds to update playlist")
+
+    if args.optimize:
+        optimize_db(args)

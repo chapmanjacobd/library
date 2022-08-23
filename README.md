@@ -261,15 +261,14 @@ ie. if 14 tabs, two URLs are opened per day of the week
 
 ![fps](https://user-images.githubusercontent.com/7908073/184738438-ee566a4b-2da0-4e6d-a4b3-9bfca036aa2a.png)
 
-### TODO
+### TODOs (PRs welcome)
 
-- all: more test coverage
-- all: Documentation in wiki
-- all: investigate fts using sqlite-utils
-- all: automatic drop low value indexes? (reduce db size)
 - tube: why nan instead of null ?
-- tube: sqlite-utils create-index
+- all: automatic drop low value indexes? (reduce db size)
+- all: Documentation in wiki
+- all: more test coverage
+- all: investigate fts using sqlite-utils
+- all: follow yt-dlp print arg syntax
+- all: follow fd-find size arg syntax
 - tube: Download subtitle to embed in db tags for search
 - fs: split_by_silence without modifying files
-- fs: is_deleted? mixed feelings
-- fs: remove filesystem option?
