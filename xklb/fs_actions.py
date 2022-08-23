@@ -500,7 +500,7 @@ def construct_fs_query(args):
     {'and video_count > 0' if args.action == SC.watch else ''}
     {f'and path not like "%/{args.keep_dir}%"' if args.post_action == 'askkeep' else ''}
     {'and width < height' if args.portrait else ''}
-    {'and is_deleted=0' if args.action in [SC.listen, SC.watch] else ''}
+    {'and is_deleted=0' if args.action in [SC.listen, SC.watch] and 'is_deleted' not in args.sql_filter else ''}
     ORDER BY 1=1
         {',' + args.sort if args.sort else ''}
         {', path' if args.print or args.include or args.play_in_order > 0 else ''}

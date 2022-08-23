@@ -292,7 +292,8 @@ def find_new_files(args, path):
         scanned_files = list(new_files - existing)
 
         deleted_files = list(existing - new_files)
-        mark_media_deleted(args, deleted_files)
+        deleted_count = mark_media_deleted(args, deleted_files)
+        print('Marking', deleted_count, 'orphaned metadata records as deleted')
 
     return scanned_files
 

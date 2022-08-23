@@ -82,7 +82,7 @@ def mark_media_deleted(args, files):
         for l in df_chunked:
             cursor = args.con.execute(
                 """update media
-                set is_deleted = 1
+                set is_deleted=1
                 where path in ("""
                 + ",".join(["?"] * len(l))
                 + ")",
@@ -94,7 +94,7 @@ def mark_media_deleted(args, files):
     return modified_row_count
 
 
-def move_media(args, moved_files: Union[str, list], base_from, base_to):
+def moved_media(args, moved_files: Union[str, list], base_from, base_to):
     moved_files = conform(moved_files)
     modified_row_count = 0
     if len(moved_files) > 0:
@@ -414,9 +414,9 @@ def printer(args, query, bindings):
             return print(f"Removed {len(db_resp)} metadata records")
 
     if "w" in args.print:
-        mark_media_watched(args, db_resp[["path"]].values.tolist())
+        marked = mark_media_watched(args, db_resp[["path"]].values.tolist())
         if not "f" in args.print:
-            return print(f"{len(db_resp)} metadata records marked watched")
+            return print(f"{marked} metadata records marked watched")
 
     if "f" in args.print:
         if args.limit == 1:
@@ -435,7 +435,7 @@ def printer(args, query, bindings):
                 else:
                     print(line.strip())
             if args.moved:
-                move_media(args, db_resp[["path"]].values.tolist(), *args.moved)
+                moved_media(args, db_resp[["path"]].values.tolist(), *args.moved)
     else:
         tbl = db_resp.copy()
         resize_col(tbl, "path", 22)
