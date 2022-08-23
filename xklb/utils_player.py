@@ -49,7 +49,7 @@ def mv_to_keep_folder(args, media_file: str):
 
     keep_path.mkdir(exist_ok=True)
     new_path = shutil.move(media_file, keep_path)
-    args.con.execute("UPDATE media set path = ? where path = ?", new_path, media_file)
+    args.con.execute("UPDATE media set path = ? where path = ?", [new_path, media_file])
     args.con.commit()
 
 
