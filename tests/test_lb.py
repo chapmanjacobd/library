@@ -97,27 +97,21 @@ class TestFs(unittest.TestCase):
         sys.argv = ["wt", *v_db, "-s", "te t", "test test", "-E", "2", "-s", "test"]
         wt()
         out = play_mocked.call_args[0][1].to_dict(orient="records")
-        assert out == [
-            {"duration": 12, "path": "/home/xk/github/xk/lb/tests/data/test.mp4", "size": 135178, "subtitle_count": 0}
-        ]
+        assert len(out) == 1
 
     @mock.patch("xklb.fs_actions.play")
     def test_wt_sort(self, play_mocked):
         sys.argv = ["wt", *v_db, "-u", "duration"]
         wt()
         out = play_mocked.call_args[0][1].to_dict(orient="records")
-        assert out == [
-            {"duration": 12, "path": "/home/xk/github/xk/lb/tests/data/test.mp4", "size": 135178, "subtitle_count": 0}
-        ]
+        assert len(out) == 1
 
     @mock.patch("xklb.fs_actions.play")
     def test_wt_size(self, play_mocked):
-        sys.argv = ["wt", *v_db, "--size", "-1"]
+        sys.argv = ["wt", *v_db, "--size", "-1"]  # less than 1MB
         wt()
         out = play_mocked.call_args[0][1].to_dict(orient="records")
-        assert out == [
-            {"duration": 12, "path": "/home/xk/github/xk/lb/tests/data/test.mp4", "size": 135178, "subtitle_count": 0}
-        ]
+        assert len(out) == 1
 
 
 class TestTabs(unittest.TestCase):

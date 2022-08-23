@@ -28,6 +28,7 @@ from xklb.utils_player import (
     get_ordinal_media,
     listen_chromecast,
     local_player,
+    mark_media_deleted,
     mark_media_watched,
     mv_to_keep_folder,
     override_sort,
@@ -149,6 +150,18 @@ Double spaces means one space
 -p a means print an aggregate report
 -p f means print only filenames -- useful for piping to other utilities like xargs or GNU Parallel""",
     )
+    parser.add_argument(
+        "--moved",
+        nargs="2",
+        help="""For use with `-p f` to specify files moved with rsync or a similar tool. For example:
+rsync -a --info=progress2 --no-inc-recursive --remove-source-files --files-from=<(
+    lt ~/lb/audio.db -w 'play_count = 0' -u random -L 1200 -p f \
+    --moved /mnt/d/ /mnt/d/80_Now_Listening/
+) /mnt/d/ /mnt/d/80_Now_Listening/
+
+Notice how `--moved` mirrors the src/dest prefix syntax in rsync?""",
+    )
+
     parser.add_argument("--cols", "-cols", "-col", nargs="*", help="Include a non-standard column when printing")
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", help="Set play queue size")
     parser.add_argument("--skip", "-S", help="Offset from the top of an ordered query; wt -S10 to skip ten videos")
@@ -179,6 +192,12 @@ Double spaces means one space
     parser.add_argument("--transcode", action="store_true")
 
     parser.add_argument("--post-action", "--action", "-k", default="keep", help="Choose what to do after playing")
+    parser.add_argument(
+        "--keep-dir",
+        "--keepdir",
+        default="keep",
+        help="Used with post-action askkeep. Files will move here after playing",
+    )
     parser.add_argument("--shallow-organize", default="/mnt/d/")
 
     parser.add_argument("--db", "-db")
@@ -274,26 +293,42 @@ def transcode(next_video):
 
 
 def post_act(args, media_file: str):
-    if args.action in [SC.listen, SC.watch, SC.tubelisten, SC.tubewatch]:
-        mark_media_watched(args, media_file)
-
+    mark_media_watched(args, media_file)
     if args.post_action == "keep":
-        pass
-    elif args.post_action == "ask":
-        if not Confirm.ask("Keep?", default=False):
-            delete_media(args, media_file)
-    elif args.post_action == "askkeep":
-        if not Confirm.ask("Keep?", default=False):
-            delete_media(args, media_file)
+        return
+
+    if args.action in [SC.tubelisten, SC.tubewatch]:
+        if args.post_action == "remove":
+            remove_media(args, media_file)
+        elif args.post_action == "ask":
+            if not Confirm.ask("Keep?", default=False):
+                remove_media(args, media_file)  # only remove metadata
         else:
-            mv_to_keep_folder(args, media_file)
-    elif args.post_action == "delete":
-        delete_media(args, media_file)
-    elif args.post_action == "delete-if-audiobook":
-        if "audiobook" in str(media_file).lower():
+            raise Exception("Unrecognized post_action", args.post_action)
+
+    if args.action in [SC.listen, SC.watch]:
+        if args.post_action == "remove":
+            remove_media(args, media_file)
+
+        elif args.post_action == "delete":
             delete_media(args, media_file)
-    else:
-        raise Exception("Unknown post_action", args.post_action)
+
+        elif args.post_action == "delete-if-audiobook":
+            if "audiobook" in media_file.lower():
+                delete_media(args, media_file)
+
+        elif args.post_action == "ask":
+            if not Confirm.ask("Keep?", default=False):
+                delete_media(args, media_file)
+
+        elif args.post_action == "askkeep":
+            if not Confirm.ask("Keep?", default=False):
+                delete_media(args, media_file)
+            else:
+                mv_to_keep_folder(args, media_file)
+
+        else:
+            raise Exception("Unrecognized post_action", args.post_action)
 
 
 def externalize_subtitle(media_file):
@@ -350,10 +385,10 @@ def play(args, media: pd.DataFrame):
         ):
             media_file = get_ordinal_media(args, media_file)
 
-        if not media_file.startswith("http"):
+        if args.action in [SC.watch, SC.listen]:
             media_path = Path(args.prefix + media_file).resolve()
             if not media_path.exists():
-                remove_media(args, media_file)
+                mark_media_deleted(args, media_file)
                 continue
             media_file = str(media_path)
 
@@ -374,7 +409,7 @@ def play(args, media: pd.DataFrame):
         else:
             local_player(args, m, media_file)
 
-        if args.post_action and not args.interdimensional_cable:
+        if args.action in [SC.listen, SC.watch, SC.tubelisten, SC.tubewatch] and not args.interdimensional_cable:
             post_act(args, media_file)
 
 
@@ -463,8 +498,9 @@ def construct_fs_query(args):
     {args.sql_filter}
     {'and audio_count > 0' if args.action == SC.listen else ''}
     {'and video_count > 0' if args.action == SC.watch else ''}
-    {'and path not like "%/keep/%"' if args.post_action == 'askkeep' else ''}
+    {f'and path not like "%/{args.keep_dir}%"' if args.post_action == 'askkeep' else ''}
     {'and width < height' if args.portrait else ''}
+    {'and is_deleted=0' if args.action in [SC.listen, SC.watch] else ''}
     ORDER BY 1=1
         {',' + args.sort if args.sort else ''}
         {', path' if args.print or args.include or args.play_in_order > 0 else ''}

@@ -180,7 +180,7 @@ def printer(args):
 
 def tube_list():
     parser = argparse.ArgumentParser()
-    parser.add_argument("db", nargs="?", default="tube.db")
+    parser.add_argument("database", nargs="?", default="tube.db")
     parser.add_argument("--db", "-db")
     parser.add_argument(
         "--print",

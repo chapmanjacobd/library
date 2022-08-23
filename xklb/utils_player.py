@@ -8,6 +8,7 @@ from datetime import datetime
 from pathlib import Path
 from platform import system
 from random import randrange
+from shlex import quote
 from shutil import which
 from time import sleep
 from typing import Union
@@ -35,26 +36,31 @@ from xklb.utils import (
 )
 
 
-def mv_to_keep_folder(args, video):
-    kp = re.match(args.shallow_organize + "(.*?)/", video)
-    if kp:
-        keep_path = Path(kp[0], "keep/")
-    elif Path(video).parent.match("*/keep/*"):
-        return
-    else:
-        keep_path = Path(video).parent / "keep/"
+def mv_to_keep_folder(args, media_file: str):
+    keep_path = Path(args.keep_dir)
+    if not keep_path.is_absolute():
+        kp = re.match(args.shallow_organize + "(.*?)/", media_file)
+        if kp:
+            keep_path = Path(kp[0], f"{args.keep_dir}/")
+        elif Path(media_file).parent.match(f"*/{args.keep_dir}/*"):
+            return
+        else:
+            keep_path = Path(media_file).parent / f"{args.keep_dir}/"
 
     keep_path.mkdir(exist_ok=True)
-    shutil.move(video, keep_path)
+    new_path = shutil.move(media_file, keep_path)
+    args.con.execute("UPDATE media set path = ? where path = ?", new_path, media_file)
+    args.con.commit()
 
 
 def mark_media_watched(args, files):
     files = conform(files)
+    modified_row_count = 0
     if len(files) > 0:
         df_chunked = chunks(files, SQLITE_PARAM_LIMIT)
         for l in df_chunked:
-            args.con.execute(
-                """update media
+            cursor = args.con.execute(
+                """UPDATE media
                 set play_count = play_count +1
                   , time_played = cast(STRFTIME('%s') as int)
                 where path in ("""
@@ -62,12 +68,55 @@ def mark_media_watched(args, files):
                 + ")",
                 (*l,),
             )
+            modified_row_count += cursor.rowcount
             args.con.commit()
-    # TODO: return number of changed rows
+
+    return modified_row_count
+
+
+def mark_media_deleted(args, files):
+    files = conform(files)
+    modified_row_count = 0
+    if len(files) > 0:
+        df_chunked = chunks(files, SQLITE_PARAM_LIMIT)
+        for l in df_chunked:
+            cursor = args.con.execute(
+                """update media
+                set is_deleted = 1
+                where path in ("""
+                + ",".join(["?"] * len(l))
+                + ")",
+                (*l,),
+            )
+            modified_row_count += cursor.rowcount
+            args.con.commit()
+
+    return modified_row_count
+
+
+def move_media(args, moved_files: Union[str, list], base_from, base_to):
+    moved_files = conform(moved_files)
+    modified_row_count = 0
+    if len(moved_files) > 0:
+        df_chunked = chunks(moved_files, SQLITE_PARAM_LIMIT)
+        for l in df_chunked:
+            cursor = args.con.execute(
+                f"""UPDATE media
+                SET path=REPLACE(path, '{quote(base_from)}', '{quote(base_to)}')
+                where path in ("""
+                + ",".join(["?"] * len(l))
+                + ")",
+                (*l,),
+            )
+            modified_row_count += cursor.rowcount
+            args.con.commit()
+
+    return modified_row_count
 
 
 def remove_media(args, deleted_files: Union[str, list], quiet=False):
     deleted_files = conform(deleted_files)
+    modified_row_count = 0
     if len(deleted_files) > 0:
         if not quiet:
             if len(deleted_files) == 1:
@@ -77,12 +126,14 @@ def remove_media(args, deleted_files: Union[str, list], quiet=False):
 
         df_chunked = chunks(deleted_files, SQLITE_PARAM_LIMIT)
         for l in df_chunked:
-            args.con.execute(
+            cursor = args.con.execute(
                 "delete from media where path in (" + ",".join(["?"] * len(l)) + ")",
                 (*l,),
             )
+            modified_row_count += cursor.rowcount
             args.con.commit()
-    # TODO: return number of changed rows
+
+    return modified_row_count
 
 
 def delete_media(args, media_file: str):
@@ -93,7 +144,7 @@ def delete_media(args, media_file: str):
     else:
         Path(media_file).unlink()
 
-    remove_media(args, media_file, quiet=True)
+    mark_media_deleted(args, media_file)
 
 
 def delete_playlists(args, playlists):
@@ -128,6 +179,7 @@ def get_ordinal_media(args, path):
         query = f"""SELECT path FROM media
             WHERE 1=1
                 and path like ?
+                {'and is_deleted=0' if args.action in [SC.listen, SC.watch] else ''}
                 {'' if (args.play_in_order > 2) else args.sql_filter}
             ORDER BY path
             LIMIT 1000
@@ -370,7 +422,7 @@ def printer(args, query, bindings):
         if args.limit == 1:
             f = db_resp[["path"]].loc[0].iat[0]
             if not Path(f).exists():
-                remove_media(args, f)
+                mark_media_deleted(args, f)
                 return printer(args, query, bindings)
             print(f)
         else:
@@ -378,7 +430,12 @@ def printer(args, query, bindings):
                 args.cols = ["path"]
 
             for line in db_resp[[*args.cols]].to_string(index=False, header=False).splitlines():
-                print(line.strip())
+                if args.moved:
+                    print(line.strip().replace(args.moved[0], "", 1))
+                else:
+                    print(line.strip())
+            if args.moved:
+                move_media(args, db_resp[["path"]].values.tolist(), *args.moved)
     else:
         tbl = db_resp.copy()
         resize_col(tbl, "path", 22)

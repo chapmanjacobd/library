@@ -26,7 +26,7 @@ from xklb.utils import (
     safe_unpack,
     single_column_tolist,
 )
-from xklb.utils_player import remove_media
+from xklb.utils_player import mark_media_deleted
 
 
 def get_provenance(file):
@@ -195,6 +195,7 @@ def extract_metadata(args, f):
 
         media = {
             **media,
+            "is_deleted": 0,
             "play_count": 0,
             "time_played": 0,
             "video_count": video_count,
@@ -281,7 +282,9 @@ def find_new_files(args, path):
 
     try:
         existing = set(
-            single_column_tolist(fetchall_dict(args.con, f"select path from media where path like '{path}%'"), "path")
+            single_column_tolist(
+                fetchall_dict(args.con, f"select path from media where is_deleted=0 and path like '{path}%'"), "path"
+            )
         )
     except Exception:
         scanned_files = list(new_files)
@@ -289,11 +292,7 @@ def find_new_files(args, path):
         scanned_files = list(new_files - existing)
 
         deleted_files = list(existing - new_files)
-        remove_media(args, deleted_files)
-
-        if args.db_type == "v":
-            args.con.execute("DELETE from media where path like '%/keep/%'")
-            args.con.commit()
+        mark_media_deleted(args, deleted_files)
 
     return scanned_files
 
