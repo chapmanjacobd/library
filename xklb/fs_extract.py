@@ -353,18 +353,20 @@ def parse_args():
     )
     parser.add_argument("database", nargs="?")
     parser.add_argument("paths", nargs="+")
-    parser.add_argument("--db", "-db")
+    parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
 
     db_type = parser.add_mutually_exclusive_group()
-    db_type.add_argument("--audio", action="store_const", dest="db_type", const="a")
-    db_type.add_argument("--filesystem", action="store_const", dest="db_type", const="f")
-    db_type.add_argument("--video", action="store_const", dest="db_type", const="v")
+    db_type.add_argument("--audio", action="store_const", dest="db_type", const="a", help="Create audio database")
+    db_type.add_argument(
+        "--filesystem", action="store_const", dest="db_type", const="f", help="Create filesystem database"
+    )
+    db_type.add_argument("--video", action="store_const", dest="db_type", const="v", help="Create video database")
     parser.set_defaults(db_type="v")
 
-    parser.add_argument("--subtitle", action="store_true")
-    parser.add_argument("--youtube-only", action="store_true")
-    parser.add_argument("--subliminal-only", action="store_true")
-    parser.add_argument("--delete-unplayable", action="store_true")
+    parser.add_argument("--subtitle", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--youtube-only", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--subliminal-only", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--delete-unplayable", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--verbose", "-v", action="count", default=0)
     args = parser.parse_args()
 

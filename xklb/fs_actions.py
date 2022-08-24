@@ -36,9 +36,18 @@ def parse_args(action, default_db, default_chromecast=""):
         prog="lb " + action,
         usage=f"""lb {action} [database] [optional args]
 
+    Control playback:
+
+        To stop playback press Ctrl-C in either the terminal or mpv
+
+        Create global shortcuts in your desktop environment by sending commands to mpv_socket:
+
+        echo 'playlist-next force' | socat - /tmp/mpv_socket
+
     If not specified, {action} will try to read {default_db} in the working directory:
 
         lb {action}
+        lb {action} ./my/other/database/is-a/db.db
 
     Override the default player (mpv):
 
@@ -310,8 +319,20 @@ def parse_args(action, default_db, default_chromecast=""):
     elif args.limit in ["inf", "all"]:
         args.limit = None
 
-    if not args.sort and args.action in [SC.listen, SC.watch, SC.tubelisten, SC.tubewatch]:
-        args.sort = ["priority"]
+    if not args.sort:
+        if args.action in [SC.listen, SC.watch]:
+            args.sort = ["priority"]
+            if args.print and args.include:
+                args.sort = ["duration"]
+
+        elif args.action in [SC.tubelisten, SC.tubewatch]:
+            args.sort = ["play_count, random"]
+            if args.print and args.include:
+                args.sort = ["playlist_path, duration"]
+
+        elif args.action in [SC.filesystem]:
+            args.sort = ["sparseness, size"]
+
     if args.sort:
         args.sort = " ".join(args.sort)
         args.sort = override_sort(args.sort)
@@ -491,10 +512,10 @@ def play(args, media: pd.DataFrame):
             if args.transcode:
                 media_file = transcode(media_file)
 
-        if args.action in [SC.watch, SC.tubewatch]:
-            print(media_file)
-        elif args.action == SC.listen:
+        if args.action == SC.listen:
             print(cmd("ffprobe", "-hide_banner", "-loglevel", "info", media_file).stderr)
+        else:
+            print(media_file)
 
         if args.chromecast:
             chromecast_play(args, m)

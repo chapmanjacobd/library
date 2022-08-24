@@ -341,13 +341,15 @@ def local_player(args, m, media_file):
         if args.action in [SC.tubelisten, SC.tubewatch]:
             player.extend(["--script-opts=ytdl_hook-try_ytdl_first=yes"])
 
-        start, end = calculate_duration(args, m)
-        if end == 0:
-            return
-        if start != 0:
-            player.extend([f"--start={int(start)}", "--no-save-position-on-quit"])
-        if end != m.duration:
-            player.extend([f"--end={int(end)}"])
+        if args.action in [SC.watch, SC.listen]:
+            start, end = calculate_duration(args, m)
+            if end == 0:
+                return
+            if start != 0:
+                player.extend([f"--start={int(start)}", "--no-save-position-on-quit"])
+            if end != m.duration:
+                player.extend([f"--end={int(end)}"])
+
     elif system() == "Linux":
         mimetype = cmd("xdg-mime", "query", "filetype", media_file).stdout
         default_application = cmd("xdg-mime", "query", "default", mimetype).stdout
@@ -375,7 +377,7 @@ def local_player(args, m, media_file):
         if hasattr(m, "duration"):
             delay = m.duration
         else:
-            delay = 10
+            delay = 10  # TODO: idk
         sleep(delay)
 
 
@@ -458,7 +460,7 @@ def printer(args, query, bindings):
 
         if args.action in [SC.listen, SC.watch, SC.tubelisten, SC.tubewatch]:
             if len(db_resp) > 1:
-                print(f"{len(db_resp)} items")
+                print(f"{len(db_resp)} media")
             summary = db_resp.sum(numeric_only=True)
             duration = summary.get("duration") or 0
             duration = human_time(duration)
