@@ -22,12 +22,6 @@ def parse_args(action):
     parser.add_argument("--db", "-db")
     if action == "add":
         parser.add_argument("playlists", nargs="+")
-        parser.add_argument(
-            "--lightweight",
-            "-lw",
-            action="store_true",
-            help="lightweight add playlist: Use with --yt-dlp-config download-archive=archive.txt to inform tubeadd",
-        )
     elif action == "update":
         parser.add_argument("playlists", nargs="*")
         parser.add_argument("--optimize", action="store_true", help="Optimize Database")
@@ -41,9 +35,9 @@ def parse_args(action):
         metavar="KEY=VALUE",
         help="Add key/value pairs to override or extend default yt-dlp configuration",
     )
-    parser.add_argument("-safe", "--safe", action="store_true", help="Skip generic URLs")
+    parser.add_argument("--safe", "-safe", action="store_true", help="Skip generic URLs")
 
-    parser.add_argument("-v", "--verbose", action="count", default=0)
+    parser.add_argument("--verbose", "-v", action="count", default=0)
     args = parser.parse_args()
     args.action = action
     log.info(filter_None(args.__dict__))
@@ -284,9 +278,21 @@ def process_playlist(args, playlist_path) -> Union[List[Dict], None]:
                 log_problem(args, playlist_path)
 
 
-def get_playlists(args):
+def get_playlists(args, include_playlistless_media=True):
     try:
-        known_playlists = single_column_tolist(args.con.execute("select path from playlists").fetchall(), "path")
+        if include_playlistless_media:
+            known_playlists = single_column_tolist(args.con.execute("select path from playlists").fetchall(), "path")
+        else:
+            known_playlists = single_column_tolist(
+                args.con.execute(
+                    """
+                    select playlist_path from media
+                    group by playlist_path
+                    having count(playlist_path) > 1
+                    """
+                ).fetchall(),
+                "playlist_path",
+            )
     except OperationalError:
         known_playlists = []
     return known_playlists
@@ -315,7 +321,7 @@ def tube_update():
     args = parse_args("update")
     known_playlists = get_playlists(args)
 
-    for playlist in args.playlists or get_playlists(args):
+    for playlist in args.playlists or get_playlists(args, include_playlistless_media=False):
 
         if playlist not in known_playlists:
             log.warning("Skipping unknown playlist: %s", playlist)
