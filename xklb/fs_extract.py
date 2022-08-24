@@ -336,22 +336,36 @@ def extractor(args):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(prog="lb extract")
+    parser = argparse.ArgumentParser(
+        prog="lb fsadd",
+        usage="""lb fsadd [--audio | --video | --filesystem] [database] paths ...
+
+    The default database type is video:
+        lb fsadd ./tv/
+        lb fsadd --video ./tv/  # equivalent
+
+    This will create audio.db in the current directory:
+        lb fsadd --audio ./music/
+
+    The database location must be specified to reference more than one path:
+        lb fsadd --audio podcasts.db ./podcasts/ ./another/folder/
+""",
+    )
     parser.add_argument("database", nargs="?")
     parser.add_argument("paths", nargs="+")
     parser.add_argument("--db", "-db")
 
     db_type = parser.add_mutually_exclusive_group()
-    db_type.add_argument("-a", "--audio", action="store_const", dest="db_type", const="a")
-    db_type.add_argument("-fs", "--filesystem", action="store_const", dest="db_type", const="f")
+    db_type.add_argument("--audio", action="store_const", dest="db_type", const="a")
+    db_type.add_argument("--filesystem", action="store_const", dest="db_type", const="f")
     db_type.add_argument("--video", action="store_const", dest="db_type", const="v")
     parser.set_defaults(db_type="v")
 
-    parser.add_argument("-s", "--subtitle", action="store_true")
-    parser.add_argument("-yt", "--youtube-only", action="store_true")
-    parser.add_argument("-sl", "--subliminal-only", action="store_true")
-    parser.add_argument("-d", "--delete-unplayable", action="store_true")
-    parser.add_argument("-v", "--verbose", action="count", default=0)
+    parser.add_argument("--subtitle", action="store_true")
+    parser.add_argument("--youtube-only", action="store_true")
+    parser.add_argument("--subliminal-only", action="store_true")
+    parser.add_argument("--delete-unplayable", action="store_true")
+    parser.add_argument("--verbose", "-v", action="count", default=0)
     args = parser.parse_args()
 
     if args.db:

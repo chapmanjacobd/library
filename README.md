@@ -10,13 +10,34 @@ Requires `ffmpeg`
 
     pip install xklb
 
-## Quick Start -- filesystem
+    $ lb
+    xk media library
+
+    local media subcommands:
+      fsadd [extract, xr]                Create a local media database; Add folders
+      subtitle                           Find subtitles for local media
+      listen [lt]                        Listen to local media
+      watch [wt]                         Watch local media
+      filesystem [fs]                    Browse files
+
+    online media subcommands:
+      tubeadd [ta]                       Create a tube database; Add playlists
+      tubelist [playlist, playlists]     List added playlists
+      tubeupdate [tu]                    Get new videos for your saved playlists
+      tubewatch [tw, tube, entries]      Watch the tube
+      tubelisten [tl]                    Listen to the tube
+
+    browser tabs subcommands:
+      tabsadd                            Create a tabs database; Add URLs
+      tabs [tb]                          Open your tabs for the day
+
+## Quick Start -- local media
 
 ### 1. Extract Metadata
 
 For thirty terabytes of video the initial scan takes about four hours to complete. After that, rescans of the same path (or any subpaths) are much quicker--only new files will be read by `ffprobe`.
 
-    lb extract tv.db ./video/folder/
+    lb fsadd tv.db ./video/folder/
 
 ![termtosvg](./examples/extract.svg)
 
@@ -26,7 +47,7 @@ For thirty terabytes of video the initial scan takes about four hours to complet
     wt tv.db --post-action delete     # delete file after playing
     lt finalists.db --post-action=ask # ask to delete after playing
 
-## Quick Start -- tube (track online video playlists)
+## Quick Start -- online media
 
 ### 1. Download Metadata
 
@@ -105,129 +126,242 @@ You can also invoke tabs manually:
 
     lb tabs -L 1  # open one tab
 
-## Things to know
+## Things to know.db
 
 When the database file path is not specified, `video.db` will be created / used.
 
-    lb extract ./tv/
+    lb fsadd ./tv/
 
 The same for audio: `audio.db` will be created / used.
 
-    lb extract --audio ./music/
+    lb fsadd --audio ./music/
 
 Likewise, `fs.db` from:
 
-    lb extract --filesystem /any/path/
+    lb fsadd --filesystem /any/path/
 
 If you want to specify more than one directory you need to mention the db file explicitly.
 
-    lb extract --filesystem one/
-    lb extract --filesystem fs.db one/ two/
+    lb fsadd --filesystem one/
+    lb fsadd --filesystem fs.db one/ two/
 
 Organize via separate databases.
 
-    lb extract --audio both.db ./audiobooks/ ./podcasts/
-    lb extract --audio audiobooks.db ./audiobooks/
-    lb extract --audio podcasts.db ./podcasts/ ./another/more/secret/podcasts_folder/
+    lb fsadd --audio both.db ./audiobooks/ ./podcasts/
+    lb fsadd --audio audiobooks.db ./audiobooks/
+    lb fsadd --audio podcasts.db ./podcasts/ ./another/more/secret/podcasts_folder/
 
 ## Usage
 
-### Repeat
+    $ lb wt -h
+    usage: lb watch [database] [optional args]
 
-    lt                  # listen to 120 random songs (DEFAULT_PLAY_QUEUE)
-    lt --limit 5        # listen to FIVE songs
-    lt -l inf -u random # listen to random songs indefinitely
-    lt -s infinite      # listen to songs from the band infinite
+        If not specified, watch will try to read video.db in the working directory:
 
-### Watch longest videos
+            lb watch
 
-    wt tv.db --sort duration desc
+        Override the default player (mpv):
 
-### Watch specific video series in order
+            lb does a lot of things to try to automatically use your preferred media player
+            but if it doesn't guess right you can make it explicit:
 
-    wt tv.db --search 'title of series' --play-in-order
+            lb watch --player "vlc --vlc-opts"
 
-There are multiple strictness levels of --play-in-order. If things aren't playing in order try adding more `O`s
+        Cast to chromecast groups:
 
-    wt tv.db --search 'title of series' -O    # default
-    wt tv.db --search 'title of series' -OO   # slower, more complex algorithm
-    wt tv.db --search 'title of series' -OOO  # most strict
+            lb watch --cast --cast-to "Office pair"
+            lb watch -ct "Office pair"  # equivalent
 
-### See how many corrupt videos you have
+            If you don't know the exact name of your chromecast group run `catt scan`
 
-    lb wt -w 'duration is null' -p a
+        Print instead of play:
 
-### Listen to OSTs on chromecast groups
+            Generally speaking, you should always be able to add `-p` to check what the play queue will look like before playing--even while using many other option simultaneously.
+            The only exceptions that I can think of are `-OO` and `-OOO`. In those cases the results might lie.
 
-    lt -cast -cast-to 'Office pair' -s '  ost'
+            lb watch --print --limit 10  # print the next 10 files
+            lb watch -p -L 10  # print the next 10 files
+            lb watch -p  # be cautious about running -p on an unfiltered set because this will print _all_ the media
 
-### Exercise and watch TV that doesn't have subtitles
+            Printing modes
 
-    wt -u priority -w subtitle_count=0
+            lb watch -p    # print in a table
+            lb watch -p p  # equivalent
+            lb watch -p a  # print an aggregate report
+            lb watch -p f  # print fields -- useful for piping paths to utilities like xargs or GNU Parallel
 
-### Print a list of files below a 1280px resolution
+            Check if you've downloaded something before
 
-    wt -w 'width<1280' -p f
+            lb watch -u duration -p -s 'title'
 
-### Play files under a certain throughput
+            Print an aggregate report of deleted media
 
-Bitrate information is not explicitly saved but you can use file size and duration as a proxy:
+            lb watch -w is_deleted=1 -p a
+            ╒═══════════╤══════════════╤═════════╤═════════╕
+            │ path      │ duration     │ size    │   count │
+            ╞═══════════╪══════════════╪═════════╪═════════╡
+            │ Aggregate │ 14 days, 23  │ 50.6 GB │   29058 │
+            │           │ hours and 42 │         │         │
+            │           │ minutes      │         │         │
+            ╘═══════════╧══════════════╧═════════╧═════════╛
+            Total duration: 14 days, 23 hours and 42 minutes
 
-    wt -w 'size/duration<50000'
+            Print an aggregate report of media that has no duration information (likely corrupt media)
 
-### Check if you've downloaded something before
+            lb watch -w 'duration is null' -p a
 
-    wt -u duration --print -s 'video title'
+            Print a list of videos which have below 1280px resolution
 
-### View how much time you have listened to music
+            lb wt -w 'width<1280' -p f
 
-    lb lt -w play_count'>'0 -p a
+            View how much time you have listened to music
 
-### See how much video you have
+            lb lt -w play_count'>'0 -p a
 
-    lb wt video.db -p a
-    ╒═══════════╤═════════╤═════════╤═════════╕
-    │ path      │   hours │ size    │   count │
-    ╞═══════════╪═════════╪═════════╪═════════╡
-    │ Aggregate │  145769 │ 37.6 TB │  439939 │
-    ╘═══════════╧═════════╧═════════╧═════════╛
-    Total duration: 16 years, 7 months, 19 days, 17 hours and 25 minutes
+            See how much video you have
 
-### Search the filesystem
+            lb wt video.db -p a
+            ╒═══════════╤═════════╤═════════╤═════════╕
+            │ path      │   hours │ size    │   count │
+            ╞═══════════╪═════════╪═════════╪═════════╡
+            │ Aggregate │  145769 │ 37.6 TB │  439939 │
+            ╘═══════════╧═════════╧═════════╧═════════╛
+            Total duration: 16 years, 7 months, 19 days, 17 hours and 25 minutes
 
-You can also use `lb` for any files:
+            View all the columns
 
-    $ lb extract -fs ~/d/41_8bit/
+            lb watch -p -L 1 --cols '*'
 
-    $ lb fs fs.db -p a -s mario luigi
-    ╒═══════════╤══════════════╤══════════╤═════════╕
-    │ path      │   sparseness │ size     │   count │
-    ╞═══════════╪══════════════╪══════════╪═════════╡
-    │ Aggregate │            1 │ 215.0 MB │       7 │
-    ╘═══════════╧══════════════╧══════════╧═════════╛
+            Open ipython with all of your media
 
-    $ lb fs -p -s mario -s luigi -s jpg -w is_dir=0 -u 'size desc'
-    ╒═══════════════════════════════════════╤══════════════╤═════════╕
-    │ path                                  │   sparseness │ size    │
-    ╞═══════════════════════════════════════╪══════════════╪═════════╡
-    │ /mnt/d/41_8bit/roms/gba/media/images/ │      1.05632 │ 58.2 kB │
-    │ Mario & Luigi - Superstar Saga (USA,  │              │         │
-    │ Australia).jpg                        │              │         │
-    ├───────────────────────────────────────┼──────────────┼─────────┤
-    │ /mnt/d/41_8bit/roms/gba/media/box3d/M │      1.01583 │ 44.4 kB │
-    │ ario & Luigi - Superstar Saga (USA,   │              │         │
-    │ Australia).jpg                        │              │         │
-    ╘═══════════════════════════════════════╧══════════════╧═════════╛
+            lb watch -vv -p --cols '*'
+            ipdb> len(db_resp)
+            462219
 
-### Frequency
+        Set the play queue size:
 
-    -f daily
-    -f weekly (spaced evenly throughout the week if less than 7 tabs in the category)
-    -f monthly (spaced evenly throughout the month if less than 30 tabs in the category)
-    -f quarterly (spaced evenly throughout 3 months if less than 90 tabs in the category)
-    -f yearly (spaced evenly throughout the year if less than 365 tabs in the category)
+            By default the play queue is 120. Long enough that you probably haven't noticed but short enough that the program is snappy.
 
-ie. if 14 tabs, two URLs are opened per day of the week
+            If you want everything in your play queue you can use the aid of infinity.
+
+            Pick your poison (these all do effectively the same thing):
+            lb watch -L inf
+            lb watch -l inf
+            lb watch --queue inf
+            lb watch -L 99999999999999999999999
+
+            You might also want to restrict the play queue when you only want 1000 random files for example:
+
+            lb watch -u random -L 1000
+
+        Offset the play queue:
+
+            You can also offset the queue. For example if you want to skip one or ten media:
+
+            lb watch -S 10  # offset ten from the top of an ordered query
+
+        Repeat
+
+            lt                  # listen to 120 random songs (DEFAULT_PLAY_QUEUE)
+            lt --limit 5        # listen to FIVE songs
+            lt -l inf -u random # listen to random songs indefinitely
+            lt -s infinite      # listen to songs from the band infinite
+
+        Constrain media by search:
+
+            Audio files have many tags to readily search through so metadata like artist, album, and even mood are included in search.
+            Video files have less consistent metadata and so only paths are included in search.
+
+            lb watch --include happy  # only matches will be included
+            lb watch -s happy         # equivalent
+
+            lb watch --exclude sad   # matches will be excluded
+            lb watch -E sad          # equivalent
+
+            Double spaces are parsed as one space
+
+            -s '  ost'        # will match OST and not ghost
+            -s toy story      # will match '/folder/toy/something/story.mp3'
+            -s 'toy  story'    # will match more strictly '/folder/toy story.mp3'
+
+        Constrain media by arbitrary SQL expressions:
+
+            lb watch --where audio_count = 2  # media which have two audio tracks
+            lb watch -w "language = 'eng'"    # media which have an English language tag (this could be audio or subtitle)
+            lb watch -w subtitle_count=0      # media that doesn't have subtitles
+
+        Constrain media to duration (in minutes):
+
+            lb watch --duration 20
+
+            lb watch -d 6  # 6 mins ±10 percent (ie. between 5 and 7 mins)
+            lb watch -d-6  # less than 6 mins
+            lb watch -d+6  # more than 6 mins
+
+            Can be specified multiple times:
+
+            lb watch -d+5 -d-7  # should be similar to -d 6
+
+            If you want exact time use `where`
+
+            lb watch --where 'duration=6*60'
+
+        Constrain media to file size (in megabytes):
+
+            lb watch --size 20
+
+            lb watch -z 6  # 6 MB ±10 percent (ie. between 5 and 7 MB)
+            lb watch -z-6  # less than 6 MB
+            lb watch -z+6  # more than 6 MB
+
+        Constrain media by throughput:
+
+            Bitrate information is not explicitly saved but you can use file size and duration as a proxy:
+
+            wt -w 'size/duration<50000'
+
+        Constrain media to portrait orientation video:
+
+            lb watch --portrait
+            lb watch -w 'width<height' # equivalent
+
+        Specify media play order:
+
+            lb watch --sort duration   # play shortest media first
+            lb watch -u duration desc  # play longest media first
+
+            You can use multiple SQL ORDER BY expressions
+
+            lb watch -u subtitle_count > 0 desc # play media that has at least one subtitle first
+
+        Play media in order (similarly named episodes):
+
+            lb watch --play-in-order
+
+            There are multiple strictness levels of --play-in-order.
+            If things aren't playing in order try adding more `O`s:
+
+            lb watch -O    # normal
+            lb watch -OO   # slower, more complex algorithm
+            lb watch -OOO  # strict
+
+        Post-actions -- choose what to do after playing:
+
+            lb watch --post-action delete  # delete file after playing
+            lb watch -k ask  # ask after each whether to keep or delete
+            lb watch -k askkeep  # ask after each whether to move to a keep folder or delete
+
+            The default location of the keep folder is ./keep/ relative to each individual media file
+            You can change this by explicitly setting an absolute `keep-dir` path:
+
+            lb watch -k askkeep --keep-dir /home/my/music/keep/
+
+        Experimental options:
+
+            Duration to play (in seconds) while changing the channel
+
+            lb watch --interdimensional-cable 40
+            lb watch -4dtv 40
 
 ### You can pipe stuff
 
@@ -279,12 +413,14 @@ I do this instead of copy-on-write duplication because I want deletions to stick
 
 ### TODOs (PRs welcome)
 
+- ArgumentParser usage: tabs, tube
+- all: Documentation in wiki
 - tube: why nan instead of null ?
 - all: automatic drop low value indexes? (reduce db size)
-- all: Documentation in wiki
 - all: more test coverage
 - all: investigate fts using sqlite-utils
 - all: follow yt-dlp print arg syntax
 - all: follow fd-find size arg syntax
 - tube: Download subtitle to embed in db tags for search
+- tube: make sure playlistless media doesn't get saved to the playlists table
 - fs: split_by_silence without modifying files

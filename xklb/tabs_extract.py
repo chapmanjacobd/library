@@ -44,6 +44,18 @@ def sanitize_url(args, path):
 
 def parse_args():
     parser = argparse.ArgumentParser(prog="lb tabsadd")
+    '''
+    ### Tabs Frequency
+
+        -f daily
+        -f weekly (spaced evenly throughout the week if less than 7 tabs in the category)
+        -f monthly (spaced evenly throughout the month if less than 30 tabs in the category)
+        -f quarterly (spaced evenly throughout 3 months if less than 90 tabs in the category)
+        -f yearly (spaced evenly throughout the year if less than 365 tabs in the category)
+
+    ie. if 14 tabs, two URLs are opened per day of the week
+    '''
+
     parser.add_argument("database", nargs="?", default="tabs.db")
     parser.add_argument("paths", nargs="+")
     parser.add_argument("--db", "-db")

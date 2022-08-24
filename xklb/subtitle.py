@@ -105,9 +105,9 @@ def get_subtitle(args, file):
 def main():
     parser = argparse.ArgumentParser(prog="lb subtitle")
     parser.add_argument("paths", nargs="*")
-    parser.add_argument("-yt", "--youtube-only", action="store_true")
-    parser.add_argument("-sl", "--subliminal-only", action="store_true")
-    parser.add_argument("-v", "--verbose", action="count", default=0)
+    parser.add_argument("--youtube-only", action="store_true")
+    parser.add_argument("--subliminal-only", action="store_true")
+    parser.add_argument("--verbose", "-v", action="count", default=0)
     args = parser.parse_args()
 
     video_files = get_media_files(args)

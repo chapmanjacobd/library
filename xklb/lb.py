@@ -11,11 +11,42 @@ from xklb.tube_extract import tube_add, tube_update
 from xklb.utils import SC, log
 
 
+def print_help(parser):
+    print(parser.description)
+    print(
+        """
+local media subcommands:
+  fsadd [extract, xr]                Create a local media database; Add folders
+  subtitle [sub]                     Find subtitles for local media
+  listen [lt]                        Listen to local media
+  watch [wt]                         Watch local media
+  filesystem [fs]                    Browse files
+
+online media subcommands:
+  tubeadd [ta]                       Create a tube database; Add playlists
+  tubeupdate [tu]                    Update your saved playlists
+  tubelist [playlist, playlists]     List added playlists
+  tubewatch [tw, tube, entries]      Watch the tube
+  tubelisten [tl]                    Listen to the tube
+
+browser tab subcommands:
+  tabsadd                            Create a tabs database; Add URLs
+  tabs [tabswatch, tb]               Open your tabs for the day
+"""
+    )
+    print(parser.epilog)
+
+
 def lb(args=None):
     if args:
         sys.argv[2:] = args
 
-    parser = argparse.ArgumentParser(prog="lb", add_help=False)
+    parser = argparse.ArgumentParser(
+        prog="lb",
+        description="xk media library",
+        epilog="Report bugs here: https://github.com/chapmanjacobd/lb/issues/new/choose",
+        add_help=False,
+    )
     subparsers = parser.add_subparsers()
     subp_extract = subparsers.add_parser("fsadd", aliases=["xr", "extract"], add_help=False)
     subp_extract.set_defaults(func=fs_add)
@@ -53,19 +84,20 @@ def lb(args=None):
 
         return print(__version__)
 
+    log.info(sys.argv)
+    original_argv = sys.argv
     if len(sys.argv) > 1:
         del sys.argv[1]
 
-    log.info(sys.argv)
     if hasattr(args, "func"):
         args.func()
     else:
         try:
-            print("SC", sys.argv[1], "not found")
+            print("Subcommand", original_argv[1], "not found")
         except Exception:
-            print("Invalid args. I see:", sys.argv)
+            print("Invalid args. I see:", original_argv)
 
-        parser.print_help()
+        print_help(parser)
 
 
 def main():
