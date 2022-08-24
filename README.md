@@ -9,6 +9,8 @@ Requires `ffmpeg`
 ## Install
 
     pip install xklb
+    
+
 
     $ lb
     xk media library
