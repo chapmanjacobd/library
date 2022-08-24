@@ -170,21 +170,22 @@ Organize via separate databases.
 
         Print instead of play:
 
-            Generally speaking, you should always be able to add `-p` to check what the play queue will look like before playing--even while using many other option simultaneously.
-            The only exceptions that I can think of are `-OO` and `-OOO`. In those cases the results might lie.
+            Generally speaking, you should always be able to add `-p` to check what the play queue
+            will look like before playing--even while using many other option simultaneously.
+            The results might lie when using `-OO` or `-OOO`.
 
             lb watch --print --limit 10  # print the next 10 files
             lb watch -p -L 10  # print the next 10 files
-            lb watch -p  # be cautious about running -p on an unfiltered set because this will print _all_ the media
+            lb watch -p  # this will print _all_ the media. be cautious about `-p` on an unfiltered set
 
             Printing modes
 
             lb watch -p    # print in a table
             lb watch -p p  # equivalent
             lb watch -p a  # print an aggregate report
-            lb watch -p f  # print fields -- useful for piping paths to utilities like xargs or GNU Parallel
+            lb watch -p f  # print fields -- useful for piping to utilities like xargs or GNU Parallel
 
-            Check if you've downloaded something before
+            Check if you have downloaded something before
 
             lb watch -u duration -p -s 'title'
 
@@ -234,7 +235,8 @@ Organize via separate databases.
 
         Set the play queue size:
 
-            By default the play queue is 120. Long enough that you probably haven't noticed but short enough that the program is snappy.
+            By default the play queue is 120--long enough that you likely have not noticed
+            but short enough that the program is snappy.
 
             If you want everything in your play queue you can use the aid of infinity.
 
@@ -244,7 +246,8 @@ Organize via separate databases.
             lb watch --queue inf
             lb watch -L 99999999999999999999999
 
-            You might also want to restrict the play queue when you only want 1000 random files for example:
+            You may also want to restrict the play queue.
+            For example, when you only want 1000 random files:
 
             lb watch -u random -L 1000
 
@@ -263,7 +266,8 @@ Organize via separate databases.
 
         Constrain media by search:
 
-            Audio files have many tags to readily search through so metadata like artist, album, and even mood are included in search.
+            Audio files have many tags to readily search through so metadata like artist,
+            album, and even mood are included in search.
             Video files have less consistent metadata and so only paths are included in search.
 
             lb watch --include happy  # only matches will be included
@@ -281,7 +285,8 @@ Organize via separate databases.
         Constrain media by arbitrary SQL expressions:
 
             lb watch --where audio_count = 2  # media which have two audio tracks
-            lb watch -w "language = 'eng'"    # media which have an English language tag (this could be audio or subtitle)
+            lb watch -w "language = 'eng'"    # media which have an English language tag
+                                                (this could be audio _or_ subtitle)
             lb watch -w subtitle_count=0      # media that doesn't have subtitles
 
         Constrain media to duration (in minutes):
@@ -310,7 +315,8 @@ Organize via separate databases.
 
         Constrain media by throughput:
 
-            Bitrate information is not explicitly saved but you can use file size and duration as a proxy:
+            Bitrate information is not explicitly saved.
+            You can use file size and duration as a proxy for throughput:
 
             wt -w 'size/duration<50000'
 
@@ -345,8 +351,8 @@ Organize via separate databases.
             lb watch -k ask  # ask after each whether to keep or delete
             lb watch -k askkeep  # ask after each whether to move to a keep folder or delete
 
-            The default location of the keep folder is ./keep/ relative to each individual media file
-            You can change this by explicitly setting an absolute `keep-dir` path:
+            The default location is ./keep/ (relative to each individual media file)
+            You can change this by explicitly setting an *absolute* `keep-dir` path:
 
             lb watch -k askkeep --keep-dir /home/my/music/keep/
 
