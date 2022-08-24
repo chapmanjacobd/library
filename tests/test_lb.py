@@ -36,7 +36,7 @@ def test_lb_help(capsys):
 
 
 def test_wt_help(capsys):
-    wt_help_text = "usage:,WHERE,SORT,--duration".split(",")
+    wt_help_text = "usage:,where,sort,--duration".split(",")
 
     sys.argv = ["wt", "-h"]
     with pytest.raises(SystemExit):
