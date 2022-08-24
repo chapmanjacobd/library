@@ -172,35 +172,53 @@ def printer(args):
         print(tabulate(tbl, tablefmt="fancy_grid", headers="keys", showindex=False))  # type: ignore
 
         if "duration" in db_resp.columns:
-            print(f"{len(db_resp)} items")
+            print(f"{len(db_resp)} playlists" if len(db_resp) > 1 else "1 playlist")
             summary = db_resp.sum(numeric_only=True)
             duration = summary.get("duration") or 0
             print("Total duration:", human_time(duration))
 
 
 def tube_list():
-    parser = argparse.ArgumentParser(prog="lb tubelist")
+    parser = argparse.ArgumentParser(
+        prog="lb tubelist",
+        usage="""lb tubelist [database] [--print {p,f,a}] [--delete ...]
+
+    List of Playlists
+
+        lb tubelist
+        ╒══════════╤════════════════════╤══════════════════════════════════════════════════════════════════════════╕
+        │ ie_key   │ title              │ path                                                                     │
+        ╞══════════╪════════════════════╪══════════════════════════════════════════════════════════════════════════╡
+        │ Youtube  │ Highlights of Life │ https://www.youtube.com/playlist?list=PL7gXS9DcOm5-O0Fc1z79M72BsrHByda3n │
+        ╘══════════╧════════════════════╧══════════════════════════════════════════════════════════════════════════╛
+
+    Aggregate Report of Videos in each Playlist
+
+        lb tubelist -p a
+        ╒══════════╤════════════════════╤══════════════════════════════════════════════════════════════════════════╤═══════════════╤═════════╕
+        │ ie_key   │ title              │ path                                                                     │ duration      │   count │
+        ╞══════════╪════════════════════╪══════════════════════════════════════════════════════════════════════════╪═══════════════╪═════════╡
+        │ Youtube  │ Highlights of Life │ https://www.youtube.com/playlist?list=PL7gXS9DcOm5-O0Fc1z79M72BsrHByda3n │ 53.28 minutes │      15 │
+        ╘══════════╧════════════════════╧══════════════════════════════════════════════════════════════════════════╧═══════════════╧═════════╛
+        1 playlist
+        Total duration: 53.28 minutes
+
+    Print only playlist urls:
+
+        Useful for piping to other utilities like xargs or GNU Parallel.
+
+        lb tubelist -p f
+        https://www.youtube.com/playlist?list=PL7gXS9DcOm5-O0Fc1z79M72BsrHByda3n
+
+    Remove a playlist/channel and all linked videos:
+
+        lb tubelist --remove https://vimeo.com/canal180
+""",
+    )
     parser.add_argument("database", nargs="?", default="tube.db")
-    parser.add_argument("--db", "-db")
-    parser.add_argument(
-        "--print",
-        "-p",
-        nargs="*",
-        default="p",
-        choices=["p", "f", "a"],
-        help="""tubelist -p a -- means print playlists in a table
-tubelist -p a -- means print an aggregate report
-tubelist -p f -- means print only playlist urls -- useful for piping to other utilities like xargs or GNU Parallel""",
-    )
-    parser.add_argument(
-        "--delete",
-        "--remove",
-        "--erase",
-        "--rm",
-        "-rm",
-        nargs="+",
-        help="""lb tubelist -rm https://vimeo.com/canal180 -- removes the playlist/channel and all linked videos""",
-    )
+    parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
+    parser.add_argument("--print", "-p", nargs="*", default="p", choices=["p", "f", "a"], help=argparse.SUPPRESS)
+    parser.add_argument("--delete", "--remove", "--erase", "--rm", "-rm", nargs="+", help=argparse.SUPPRESS)
     parser.add_argument("-v", "--verbose", action="count", default=0)
     args = parser.parse_args()
     log.info(filter_None(args.__dict__))

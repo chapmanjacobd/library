@@ -43,27 +43,42 @@ def sanitize_url(args, path):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(prog="lb tabsadd")
-    """
-    ### Tabs Frequency
+    parser = argparse.ArgumentParser(
+        prog="lb tabsadd",
+        usage=r"""lb tabsadd --frequency {daily,weekly,monthly,quarterly,yearly} --category CATEGORY [--sanitize] [database] paths ...
 
-        -f daily
-        -f weekly (spaced evenly throughout the week if less than 7 tabs in the category)
-        -f monthly (spaced evenly throughout the month if less than 30 tabs in the category)
-        -f quarterly (spaced evenly throughout 3 months if less than 90 tabs in the category)
-        -f yearly (spaced evenly throughout the year if less than 365 tabs in the category)
+    Adding one URL:
 
-    ie. if 14 tabs, two URLs are opened per day of the week
-    """
+        lb tabsadd -f monthly -c travel --sanitize ~/lb/tabs.db https://old.reddit.com/r/Colombia/top/?sort=top&t=month
 
+        Depending on your shell you may need to escape the URL (add quotes)
+
+        If you use Fish shell know that you can enable features to make pasting easier:
+            set -U fish_features stderr-nocaret qmark-noglob regex-easyesc ampersand-nobg-in-token
+
+        Also I recommend turning Ctrl+Backspace into a super-backspace for repeating similar commands with long args:
+            echo 'bind \b backward-kill-bigword' >> ~/.config/fish/config.fish
+
+    Importing from a line-delimitated file:
+
+        lb tabsadd -f yearly -c reddit --sanitize ~/lb/tabs.db (cat ~/mc/yearly-subreddit.cron)
+
+""",
+    )
     parser.add_argument("database", nargs="?", default="tabs.db")
     parser.add_argument("paths", nargs="+")
-    parser.add_argument("--db", "-db")
+    parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
     parser.add_argument(
-        "--frequency", "--freqency", "-f", default=Frequency.Monthly, type=Frequency, action=argparse_enum
+        "--frequency",
+        "--freqency",
+        "-f",
+        default=Frequency.Monthly,
+        type=Frequency,
+        action=argparse_enum,
+        help=argparse.SUPPRESS,
     )
-    parser.add_argument("--category", "-c")
-    parser.add_argument("--sanitize", "-s", action="store_true")
+    parser.add_argument("--category", "-c", help=argparse.SUPPRESS)
+    parser.add_argument("--sanitize", "-s", action="store_true", help="Sanitize some common URL parameters")
 
     parser.add_argument("-v", "--verbose", action="count", default=0)
     args = parser.parse_args()

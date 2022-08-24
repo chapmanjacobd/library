@@ -120,8 +120,50 @@ def process_tabs_actions(args, construct_query):
     play(args, media)
 
 
-def parse_args(action, default_db, default_chromecast=""):
-    parser = argparse.ArgumentParser(prog="lb tabs", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+def parse_args(action, default_db):
+    parser = argparse.ArgumentParser(
+        prog="lb tabs",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        usage="""lb tabs [database] [optional args]
+
+    lb tabs is meant to run **once per day**. Here is how you would configure it with `crontab`:
+
+        45 9 * * * DISPLAY=:0 lb tabs /home/my/tabs.db
+
+    If things aren't working you can use `at` to simulate a similar environment as `cron`
+
+        echo 'fish -c "export DISPLAY=:0 && lb tabs /full/path/to/tabs.db"' | at NOW
+
+    You can also invoke tabs manually:
+
+        lb tabs -L 1  # open one tab
+
+    Print URLs
+
+        lb-dev tabs -w "frequency='yearly'" -p
+        ╒════════════════════════════════════════════════════════════════╤═════════════╤══════════════╕
+        │ path                                                           │ frequency   │ time_valid   │
+        ╞════════════════════════════════════════════════════════════════╪═════════════╪══════════════╡
+        │ https://old.reddit.com/r/Autonomia/top/?sort=top&t=year        │ yearly      │ Dec 31 1970  │
+        ├────────────────────────────────────────────────────────────────┼─────────────┼──────────────┤
+        │ https://old.reddit.com/r/Cyberpunk/top/?sort=top&t=year        │ yearly      │ Dec 31 1970  │
+        ├────────────────────────────────────────────────────────────────┼─────────────┼──────────────┤
+        │ https://old.reddit.com/r/ExperiencedDevs/top/?sort=top&t=year  │ yearly      │ Dec 31 1970  │
+
+        ...
+
+        ╘════════════════════════════════════════════════════════════════╧═════════════╧══════════════╛
+
+    View how many yearly tabs you have:
+
+        lb-dev tabs -w "frequency='yearly'" -p a
+        ╒═══════════╤═════════╕
+        │ path      │   count │
+        ╞═══════════╪═════════╡
+        │ Aggregate │     134 │
+        ╘═══════════╧═════════╛
+""",
+    )
     parser.add_argument(
         "database",
         nargs="?",
@@ -132,26 +174,14 @@ def parse_args(action, default_db, default_chromecast=""):
     parser.add_argument(
         "--sort",
         "-u",
-        nargs="+",
-        help="""Sort media with SQL expressions
--u duration means shortest media first
--u duration desc means longest media first
-
-You can use any sqlite ORDER BY expressions, for example:
--u subtitle_count > 0
-means play everything that has a subtitle first
-""",
+        nargs="+"
     )
     parser.add_argument(
         "--where",
         "-w",
         nargs="+",
         action="extend",
-        default=[],
-        help="""Constrain media with SQL expressions
-You can use any sqlite WHERE expressions, for example:
--w attachment_count > 0  means only media with attachments
--w language = 'eng'  means only media which has some English language tag -- this could be audio or subtitle""",
+        default=[]
     )
     parser.add_argument(
         "--include",
@@ -159,29 +189,20 @@ You can use any sqlite WHERE expressions, for example:
         "--search",
         nargs="+",
         action="extend",
-        default=[],
-        help="""Constrain media with via search
--s toy story will match '/folder/toy/something/story.mp3'
--s 'toy  story' will match more strictly '/folder/toy story.mp3'
-Double spaces means one space
-""",
+        default=[]
     )
-    parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[], help="--include but opposite")
+    parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[])
 
     parser.add_argument(
         "--print",
         "-p",
         default=False,
         const="p",
-        nargs="?",
-        help="""Print instead of play
--p   means print in a table
--p a means print an aggregate report
--p f means print only filenames -- useful for piping to other utilities like xargs or GNU Parallel""",
+        nargs="?"
     )
     parser.add_argument("--cols", "-cols", "-col", nargs="*", help="Include a non-standard column when printing")
-    parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", help="Set play queue size")
-    parser.add_argument("--skip", "-S", help="Offset from the top of an ordered query; wt -S10 to skip ten videos")
+    parser.add_argument("--limit", "-L", "-l", "-queue", "--queue")
+    parser.add_argument("--skip", "-S")
 
     parser.add_argument("--db", "-db")
     parser.add_argument("--verbose", "-v", action="count", default=0)

@@ -2,7 +2,7 @@
 
 A wise philosopher once told me, "[The future is autotainment](https://www.youtube.com/watch?v=F9sZFrsjPp0)".
 
-Manage large media libraries. Think Plex but minimalist and CLI-only. Primary usage is local filesystem but also supports some virtual constructs like tracking video playlists (eg. YouTube subscriptions) and browser tabs.
+Manage large media libraries. Similar to Plex but more minimalist. Primary usage is local filesystem but also supports some virtual constructs like tracking video playlists (eg. YouTube subscriptions) and browser tabs.
 
 Requires `ffmpeg`
 
@@ -31,7 +31,17 @@ Requires `ffmpeg`
       tabsadd                            Create a tabs database; Add URLs
       tabs [tb]                          Open your tabs for the day
 
-## Quick Start -- local media
+## Quick Start -- watch online media on your PC
+
+    wget https://github.com/chapmanjacobd/lb/raw/main/examples/mealtime.tw.db
+    lb tubewatch mealtime.tw.db
+
+## Quick Start -- listen to online media on a chromecast group
+
+    wget https://github.com/chapmanjacobd/lb/raw/main/examples/music.tl.db
+    lb tubelisten music.tl.db -ct "House speakers"
+
+## Start -- local media
 
 ### 1. Extract Metadata
 
@@ -49,7 +59,7 @@ For thirty terabytes of video the initial scan takes about four hours to complet
 
 To stop playing just press Ctrl+C in either the terminal or mpv
 
-## Quick Start -- online media
+## Start -- online media
 
 ### 1. Download Metadata
 
@@ -87,7 +97,7 @@ Tubeupdate will go through all added playlists and fetch metadata of any new vid
 
 To stop playing just press Ctrl+C in either the terminal or mpv
 
-## Quick Start -- tabs (visit websites on a schedule)
+## tabs (visit websites on a schedule)
 
 tabs provides a way to organize your visits to URLs that you want to visit every once in a while.
 
@@ -100,29 +110,11 @@ The use-case of tabs are websites that you know are going to change: subreddits,
 
     lb tabsadd --frequency monthly --category fun https://old.reddit.com/r/Showerthoughts/top/?sort=top&t=month https://old.reddit.com/r/RedditDayOf/top/?sort=top&t=month
 
-Depending on your shell you may need to quote the URLs.
-
-If you use Fish shell know that you can enable features to make pasting easier:
-
-    set -U fish_features stderr-nocaret qmark-noglob regex-easyesc ampersand-nobg-in-token
-
-Also I recommend turning Ctrl+Backspace into a super-backspace for repeating similar commands with different long URLs:
-
-    echo 'bind \b backward-kill-bigword' >> ~/.config/fish/config.fish
-
-If you have an existing line-deliminated file you can import it like this:
-
-    lb tabsadd -f monthly -c reddit ~/lb/tabs.db (cat ~/mc/reddit.monthly.cron)
-
 ### 2. Add lb tabs to cron
 
 lb tabs is meant to run **once per day**. Here is how you would configure it with `crontab`:
 
-    45 9 * * * export DISPLAY=:0 && lb tabs /home/my/tabs.db
-
-If things aren't working you can use `at` to simulate a similar environment as `cron`
-
-    echo 'DISPLAY=:0 lb tabs /full/path/to/tabs.db' | at NOW
+    45 9 * * * DISPLAY=:0 lb tabs /home/my/tabs.db
 
 You can also invoke tabs manually:
 
@@ -415,8 +407,6 @@ I do this instead of copy-on-write duplication because I want deletions to stick
 
 ### TODOs (PRs welcome)
 
-- ArgumentParser usage: tabs, tube
-- all: Documentation in wiki
 - tube: why nan instead of null ?
 - all: automatic drop low value indexes? (reduce db size)
 - all: more test coverage

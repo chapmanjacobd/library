@@ -16,10 +16,10 @@ from xklb.tube_actions import default_ydl_opts
 from xklb.utils import argparse_dict, combine, filter_None, log, safe_unpack, single_column_tolist
 
 
-def parse_args(action):
-    parser = argparse.ArgumentParser(prog="lb tube" + action)
+def parse_args(action, usage):
+    parser = argparse.ArgumentParser(prog="lb tube" + action, usage=usage)
     parser.add_argument("database", nargs="?", default="tube.db")
-    parser.add_argument("--db", "-db")
+    parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
     if action == "add":
         parser.add_argument("playlists", nargs="+")
     elif action == "update":
@@ -299,7 +299,14 @@ def get_playlists(args, include_playlistless_media=True):
 
 
 def tube_add():
-    args = parse_args("add")
+    args = parse_args(
+        "add",
+        usage="""lb tubeadd [database] playlists ...
+
+lb tubeadd educational.db https://www.youtube.com/c/BranchEducation/videos
+
+""",
+    )
     known_playlists = get_playlists(args)
 
     for playlist in args.playlists:
@@ -318,7 +325,17 @@ def tube_add():
 
 
 def tube_update():
-    args = parse_args("update")
+    args = parse_args(
+        "update",
+        usage="""lb tubeupdate [--optimize] [database] playlists ...
+
+lb tubeupdate educational.db
+
+Run with --optimize to add indexes (might speed up searching but the size will increase):
+
+lb tubeupdate --optimize examples/music.tl.db ''
+""",
+    )
     known_playlists = get_playlists(args)
 
     for playlist in args.playlists or get_playlists(args, include_playlistless_media=False):
