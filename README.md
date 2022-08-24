@@ -47,6 +47,8 @@ For thirty terabytes of video the initial scan takes about four hours to complet
     wt tv.db --post-action delete     # delete file after playing
     lt finalists.db --post-action=ask # ask to delete after playing
 
+To stop playing just press Ctrl+C in either the terminal or mpv
+
 ## Quick Start -- online media
 
 ### 1. Download Metadata
@@ -83,7 +85,7 @@ Tubeupdate will go through all added playlists and fetch metadata of any new vid
 
     lb tubewatch maker.db
 
-If you like this I also have a [web version](https://unli.xyz/eject/)--but this Python version has more features and it can handle a lot more data.
+To stop playing just press Ctrl+C in either the terminal or mpv
 
 ## Quick Start -- tabs (visit websites on a schedule)
 
