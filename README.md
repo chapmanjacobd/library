@@ -69,17 +69,11 @@ Download playlist and channel metadata. Break free of the YouTube algo~
 
 [![termtosvg](./examples/tubeadd.svg "lb tubeadd example")](https://asciinema.org/a/BzplqNj9sCERH3A80GVvwsTTT)
 
-You can add more than one at a time.
-
-    lb tubeadd maker.db https://www.youtube.com/c/CuriousMarc/videos https://www.youtube.com/c/element14presents/videos/ https://www.youtube.com/c/DIYPerks/videos
-
-![termtosvg](./examples/tubeadd_multi.svg)
-
 And you can always add more later--even from different websites.
 
     lb tubeadd maker.db https://vimeo.com/terburg
 
-To prevent mistakes the default configuration is to download metadata for only the newest 20,000 videos per playlist/channel.
+To prevent mistakes the default configuration is to download metadata for only the most recent 20,000 videos per playlist/channel.
 
     lb tubeadd maker.db --yt-dlp-config playlistend=1000
 
