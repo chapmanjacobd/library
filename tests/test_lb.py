@@ -20,9 +20,7 @@ tabs_add([*tabs_db, "https://unli.xyz/proliferation/verbs.html"])
 
 
 def test_lb_help(capsys):
-    lb_help_text = "usage:,extract,xr,listen,lt,watch,wt,filesystem,fs,tubelist,playlist,playlists,tubeadd,ta,tubeupdate,tu,tubewatch,tw,tubelisten,tl".split(
-        ","
-    )
+    lb_help_text = "local media subcommands:,online media subcommands:".split(",")
     sys.argv = ["lb"]
     lb()
     captured = capsys.readouterr().out
