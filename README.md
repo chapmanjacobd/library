@@ -77,7 +77,7 @@ To prevent mistakes the default configuration is to download metadata for only t
 
     lb tubeadd maker.db --yt-dlp-config playlistend=1000
 
-Be aware that there are some YouTube Channels which have many items--for example the TEDx channel has about 180,000 videos. Some channels even have upwards of two million videos. More than you could likely watch in one sitting. On a high-speed connection (>500 Mbps), it can take up to five hours just to download the metadata for 180,000 videos. My advice: start with the 20,000.
+Be aware that there are some YouTube Channels which have many items--for example the TEDx channel has about 180,000 videos. Some channels even have upwards of two million videos. More than you could likely watch in one sitting. On a high-speed connection (>500 Mbps), it can take up to five hours just to download the metadata for 180,000 videos.
 
 #### 1a. Get new videos for saved playlists
 
