@@ -303,7 +303,9 @@ def tube_add():
         "add",
         usage="""lb tubeadd [database] playlists ...
 
-lb tubeadd educational.db https://www.youtube.com/c/BranchEducation/videos
+    Create a tube database / add playlists or videos to an existing database
+
+        lb tubeadd educational.db https://www.youtube.com/c/BranchEducation/videos
 
 """,
     )
@@ -327,13 +329,19 @@ lb tubeadd educational.db https://www.youtube.com/c/BranchEducation/videos
 def tube_update():
     args = parse_args(
         "update",
-        usage="""lb tubeupdate [--optimize] [database] playlists ...
+        usage="""usage: lb tubeupdate [--optimize] [database] [playlists ...]
 
-lb tubeupdate educational.db
+    Fetch the latest videos from every playlist in your database
 
-Run with --optimize to add indexes (might speed up searching but the size will increase):
+        lb tubeupdate educational.db
 
-lb tubeupdate --optimize examples/music.tl.db ''
+    Or limit to specific ones...
+
+        lb tubeupdate educational.db https://www.youtube.com/channel/UCBsEUcR-ezAuxB2WlfeENvA/videos ...
+
+    Run with --optimize to add indexes (might speed up searching but the size will increase):
+
+        lb tubeupdate --optimize examples/music.tl.db ''
 """,
     )
     known_playlists = get_playlists(args)
