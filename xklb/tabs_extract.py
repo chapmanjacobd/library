@@ -1,6 +1,4 @@
 import argparse
-import enum
-import re
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -11,45 +9,17 @@ import pandas as pd
 from xklb.db import fetchall_dict, sqlite_con
 from xklb.utils import argparse_enum, filter_None, log, single_column_tolist
 from xklb.utils_player import remove_media
-
-
-class Frequency(enum.Enum):
-    Daily = "daily"
-    Weekly = "weekly"
-    Monthly = "monthly"
-    Quarterly = "quarterly"
-    Yearly = "yearly"
-
-
-def reddit_frequency(frequency: Frequency):
-    mapper = {
-        Frequency.Daily: "day",
-        Frequency.Weekly: "week",
-        Frequency.Monthly: "month",
-        Frequency.Quarterly: "year",
-        Frequency.Yearly: "year",
-    }
-
-    return mapper.get(frequency, "month")
-
-
-def sanitize_url(args, path):
-    matches = re.match(r".*reddit.com/r/(.*?)/.*", path)
-    if matches:
-        subreddit = matches.groups()[0]
-        return "https://old.reddit.com/r/" + subreddit + "/top/?sort=top&t=" + reddit_frequency(args.frequency)
-
-    return path
+from xklb.utils_urls import Frequency, sanitize_url
 
 
 def parse_args():
     parser = argparse.ArgumentParser(
         prog="lb tabsadd",
-        usage=r"""lb tabsadd --frequency {daily,weekly,monthly,quarterly,yearly} --category CATEGORY [--sanitize] [database] paths ...
+        usage=r"""lb tabsadd --frequency {daily,weekly,monthly,quarterly,yearly} --category CATEGORY [--no-sanitize] [database] paths ...
 
     Adding one URL:
 
-        lb tabsadd -f monthly -c travel --sanitize ~/lb/tabs.db https://old.reddit.com/r/Colombia/top/?sort=top&t=month
+        lb tabsadd -f monthly -c travel ~/lb/tabs.db https://old.reddit.com/r/Colombia/top/?sort=top&t=month
 
         Depending on your shell you may need to escape the URL (add quotes)
 
@@ -61,7 +31,7 @@ def parse_args():
 
     Importing from a line-delimitated file:
 
-        lb tabsadd -f yearly -c reddit --sanitize ~/lb/tabs.db (cat ~/mc/yearly-subreddit.cron)
+        lb tabsadd -f yearly -c reddit ~/lb/tabs.db (cat ~/mc/yearly-subreddit.cron)
 
 """,
     )
@@ -78,7 +48,7 @@ def parse_args():
         help=argparse.SUPPRESS,
     )
     parser.add_argument("--category", "-c", help=argparse.SUPPRESS)
-    parser.add_argument("--sanitize", "-s", action="store_true", help="Sanitize some common URL parameters")
+    parser.add_argument("--no-sanitize", "-s", action="store_false", help="Don't sanitize some common URL parameters")
 
     parser.add_argument("-v", "--verbose", action="count", default=0)
     args = parser.parse_args()
@@ -94,7 +64,7 @@ def parse_args():
 
 
 def get_new_paths(args):
-    if args.sanitize:
+    if not args.no_sanitize:
         args.paths = [sanitize_url(args, path) for path in args.paths]
 
     if args.category is None:

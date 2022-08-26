@@ -171,35 +171,12 @@ def parse_args(action, default_db):
         help="Database file. If not specified a generic name will be used: audio.db, video.db, fs.db, etc",
     )
 
-    parser.add_argument(
-        "--sort",
-        "-u",
-        nargs="+"
-    )
-    parser.add_argument(
-        "--where",
-        "-w",
-        nargs="+",
-        action="extend",
-        default=[]
-    )
-    parser.add_argument(
-        "--include",
-        "-s",
-        "--search",
-        nargs="+",
-        action="extend",
-        default=[]
-    )
+    parser.add_argument("--sort", "-u", nargs="+")
+    parser.add_argument("--where", "-w", nargs="+", action="extend", default=[])
+    parser.add_argument("--include", "-s", "--search", nargs="+", action="extend", default=[])
     parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[])
 
-    parser.add_argument(
-        "--print",
-        "-p",
-        default=False,
-        const="p",
-        nargs="?"
-    )
+    parser.add_argument("--print", "-p", default=False, const="p", nargs="?")
     parser.add_argument("--cols", "-cols", "-col", nargs="*", help="Include a non-standard column when printing")
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue")
     parser.add_argument("--skip", "-S")
