@@ -66,7 +66,12 @@ def construct_tabs_query(args):
         , frequency = 'quarterly' desc
         , frequency = 'yearly' desc
         {', path' if args.print else ''}
-        , ROW_NUMBER() OVER ( PARTITION BY category ) -- prefer to spread categories over time
+        , ROW_NUMBER() OVER ( PARTITION BY
+            play_count
+            , frequency
+            , hostname
+            , category
+        ) -- prefer to spread hostname, category over time
         , random()
     {LIMIT} {OFFSET}
     """
