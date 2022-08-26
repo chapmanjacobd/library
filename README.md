@@ -412,11 +412,12 @@ I do this instead of copy-on-write duplication because I want deletions to stick
         tubeadd --extra
         tubeupdate --extra
 - tube: Download subtitle to embed in db tags for search
-- tube: sanitize m.youtube => www.youtube
 - all: automatic drop low value indexes? (reduce db size)
+- all: verify things work on Windows
 - all: more test coverage
 - all: investigate fts using sqlite-utils
 - all: follow yt-dlp print arg syntax
 - all: follow fd-find size arg syntax
 - tube: make sure playlistless media doesn't get saved to the playlists table
+- all: automatic schema migration
 - fs: split_by_silence without modifying files

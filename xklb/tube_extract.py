@@ -14,6 +14,7 @@ from xklb.db import sqlite_con
 from xklb.fs_extract import optimize_db
 from xklb.tube_actions import default_ydl_opts
 from xklb.utils import argparse_dict, combine, filter_None, log, safe_unpack, single_column_tolist
+from xklb.utils_urls import sanitize_url
 
 
 def parse_args(action, usage):
@@ -36,6 +37,7 @@ def parse_args(action, usage):
         help="Add key/value pairs to override or extend default yt-dlp configuration",
     )
     parser.add_argument("--safe", "-safe", action="store_true", help="Skip generic URLs")
+    parser.add_argument("--no-sanitize", "-s", action="store_false", help="Don't sanitize some common URL parameters")
 
     parser.add_argument("--verbose", "-v", action="count", default=0)
     args = parser.parse_args()
@@ -50,6 +52,9 @@ def parse_args(action, usage):
 
     ydl_opts = {**default_ydl_opts, **args.yt_dlp_config}
     log.info(filter_None(ydl_opts))
+
+    if args.playlists and not args.no_sanitize:
+        args.playlists = [sanitize_url(args, path) for path in args.playlists]
 
     args.ydl_opts = ydl_opts
     return args
