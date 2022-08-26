@@ -412,6 +412,7 @@ I do this instead of copy-on-write duplication because I want deletions to stick
         tubeadd --extra
         tubeupdate --extra
 - tube: Download subtitle to embed in db tags for search
+- tube: sanitize m.youtube => www.youtube
 - all: automatic drop low value indexes? (reduce db size)
 - all: more test coverage
 - all: investigate fts using sqlite-utils
