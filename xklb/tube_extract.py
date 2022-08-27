@@ -2,18 +2,31 @@ import argparse
 import sys
 from copy import deepcopy
 from datetime import datetime
+from io import StringIO
 from pathlib import Path
 from sqlite3 import OperationalError
 from timeit import default_timer as timer
 from typing import Dict, List, Union
 
 import pandas as pd
+import requests
+import webvtt
 import yt_dlp
 
 from xklb.db import sqlite_con
 from xklb.fs_extract import optimize_db
 from xklb.tube_actions import default_ydl_opts
-from xklb.utils import argparse_dict, combine, filter_None, log, safe_unpack, single_column_tolist
+from xklb.utils import (
+    argparse_dict,
+    combine,
+    filter_None,
+    flatten,
+    log,
+    remove_text_inside_brackets,
+    remove_whitespaace,
+    safe_unpack,
+    single_column_tolist,
+)
 from xklb.utils_urls import sanitize_url
 
 
@@ -38,6 +51,8 @@ def parse_args(action, usage):
     )
     parser.add_argument("--safe", "-safe", action="store_true", help="Skip generic URLs")
     parser.add_argument("--no-sanitize", "-s", action="store_false", help="Don't sanitize some common URL parameters")
+
+    parser.add_argument("--extra", "-extra", action="store_true", help="Get full metadata (takes a lot longer)")
 
     parser.add_argument("--verbose", "-v", action="count", default=0)
     args = parser.parse_args()
@@ -68,6 +83,29 @@ def supported(url):  # thank you @dbr
     return False
 
 
+def get_subtitle_text(req_sub_dict):
+    urls = [d["url"] for d in list(req_sub_dict.values())]
+
+    subtitles = " ".join(
+        set(
+            filter(
+                bool,
+                flatten(
+                    [
+                        [
+                            remove_text_inside_brackets(caption.text.replace("\n", " "))
+                            for caption in webvtt.read_buffer(StringIO(requests.get(url).text))
+                        ]
+                        for url in urls
+                    ]
+                ),
+            )
+        )
+    )
+
+    return remove_whitespaace(subtitles)
+
+
 def consolidate(playlist_path, v):
     ignore_keys = [
         "thumbnail",
@@ -89,7 +127,6 @@ def consolidate(playlist_path, v):
         "display_id",
         "fulltitle",
         "duration_string",
-        "requested_subtitles",
         "format",
         "format_id",
         "ext",
@@ -108,7 +145,6 @@ def consolidate(playlist_path, v):
         "license",
         "timestamp",
         "track",
-        "subtitles",
         "comments",
         "author",
         "text",
@@ -138,6 +174,13 @@ def consolidate(playlist_path, v):
         "playlist_title",
         "playlist_uploader",
         "playlist_uploader_id",
+        "audio_channels",
+        "subtitles",
+        "automatic_captions",
+        "quality",
+        "has_drm",
+        "language_preference",
+        "preference",'location'
     ]
 
     if v.get("title") in ["[Deleted video]", "[Private video]"]:
@@ -147,9 +190,13 @@ def consolidate(playlist_path, v):
         if k.startswith("_") or k in ignore_keys:
             v.pop(k, None)
 
-    upload_date = v.pop("upload_date", None)
+    upload_date = v.pop("upload_date", None) or v.pop('release_date', None)
     if upload_date:
         upload_date = int(datetime.strptime(upload_date, "%Y%m%d").timestamp())
+
+    subtitles = v.pop("requested_subtitles", None)
+    if subtitles:
+        subtitles = get_subtitle_text(subtitles)
 
     cv = dict()
     cv["path"] = safe_unpack(v.pop("webpage_url", None), v.pop("url", None), v.pop("original_url", None))
@@ -160,7 +207,7 @@ def consolidate(playlist_path, v):
     cv["play_count"] = 0
     cv["time_played"] = 0
     cv["language"] = v.pop("language", None)
-    cv["tags"] = combine(v.pop("description", None), v.pop("categories", None), v.pop("tags", None))
+    cv["tags"] = combine(subtitles, v.pop("description", None), v.pop("categories", None), v.pop("tags", None))
     cv["id"] = v.pop("id")
     cv["ie_key"] = safe_unpack(v.pop("ie_key", None), v.pop("extractor_key", None), v.pop("extractor", None))
     cv["title"] = safe_unpack(v.pop("title", None), v.get("playlist_title"))
@@ -283,10 +330,57 @@ def process_playlist(args, playlist_path) -> Union[List[Dict], None]:
                 log_problem(args, playlist_path)
 
 
+def get_extra_metadata(args, playlist_path) -> Union[List[Dict], None]:
+    with yt_dlp.YoutubeDL(
+        {
+            **args.ydl_opts,
+            "writesubtitles": True,
+            "writeautomaticsub": True,
+            "subtitleslangs": ["en.*", "EN.*"],
+            "extract_flat": False,
+            "lazy_playlist": False,
+            "skip_download": True,
+            "check_formats": False,
+            "ignoreerrors": True,
+        }
+    ) as ydl:
+        videos = args.con.execute(
+            """
+                select path, ie_key, play_count, time_played from media
+                where
+                    width is null
+                    and path not like '%playlist%'
+                    and playlist_path = ?
+                order by random()
+                """,
+            [playlist_path],
+        ).fetchall()
+
+        current_video_count = 0
+        for path, ie_key, play_count, time_played in videos:
+            entry = ydl.extract_info(path, ie_key=ie_key, download=False)
+            if entry is None:
+                continue
+            entry = consolidate(playlist_path, entry)
+            entry["play_count"] = play_count
+            entry["time_played"] = time_played
+
+            args.con.execute("DELETE FROM media where path = ? and ie_key = ?", [path, ie_key])
+            save_entries(args, [entry])
+
+            current_video_count += 1
+            sys.stdout.write("\033[K\r")
+            print(
+                f"{playlist_path}: {current_video_count} of {len(videos)} extra metadata fetched", end="\r", flush=True
+            )
+
+
 def get_playlists(args, include_playlistless_media=True):
     try:
         if include_playlistless_media:
-            known_playlists = single_column_tolist(args.con.execute("select path from playlists").fetchall(), "path")
+            known_playlists = single_column_tolist(
+                args.con.execute("select path from playlists order by random()").fetchall(), "path"
+            )
         else:
             known_playlists = single_column_tolist(
                 args.con.execute(
@@ -294,6 +388,7 @@ def get_playlists(args, include_playlistless_media=True):
                     select playlist_path from media
                     group by playlist_path
                     having count(playlist_path) > 1
+                    order by random()
                     """
                 ).fetchall(),
                 "playlist_path",
@@ -312,6 +407,12 @@ def tube_add():
 
         lb tubeadd educational.db https://www.youtube.com/c/BranchEducation/videos
 
+    Fetch extra metadata:
+
+        By default tubeadd will quickly add media.
+        You can always fetch more metadata later via tubeupdate.
+
+        lb tubeupdate tw.db --extra
 """,
     )
     known_playlists = get_playlists(args)
@@ -330,6 +431,10 @@ def tube_add():
         end = timer()
         log.info(f"{end - start:.1f} seconds to add new playlist and fetch videos")
 
+        if args.extra:
+            log.warning("Getting extra metadata")
+            get_extra_metadata(args, playlist)
+
 
 def tube_update():
     args = parse_args(
@@ -347,6 +452,13 @@ def tube_update():
     Run with --optimize to add indexes (might speed up searching but the size will increase):
 
         lb tubeupdate --optimize examples/music.tl.db ''
+
+    Fetch extra metadata:
+
+        By default tubeupdate will quickly add media.
+        You can run with --extra to fetch more details: (best resolution width, height, subtitle tags, etc)
+
+        lb tubeupdate educational.db --extra https://www.youtube.com/channel/UCBsEUcR-ezAuxB2WlfeENvA/videos
 """,
     )
     known_playlists = get_playlists(args)
@@ -361,6 +473,10 @@ def tube_update():
         process_playlist(args, playlist)
         end = timer()
         log.info(f"{end - start:.1f} seconds to update playlist")
+
+        if args.extra:
+            log.warning("Getting extra metadata")
+            get_extra_metadata(args, playlist)
 
     if args.optimize:
         optimize_db(args)

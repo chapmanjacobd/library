@@ -13,12 +13,9 @@ from xklb.utils_player import delete_playlists
 # cookiesfrombrowser: ('vivaldi', ) # should not crash if not installed ?
 
 default_ydl_opts = {
-    # "writesubtitles": True,
-    # "writeautomaticsub": True,
-    # "subtitleslangs": "en.*,EN.*",
+    "extract_flat": True,
     "lazy_playlist": True,
     "skip_download": True,
-    "force_write_download_archive": True,
     "check_formats": False,
     "no_check_certificate": True,
     "no_warnings": True,
@@ -29,7 +26,6 @@ default_ydl_opts = {
     "dynamic_mpd": False,
     "youtube_include_dash_manifest": False,
     "youtube_include_hls_manifest": False,
-    "extract_flat": True,
     "clean_infojson": False,
     "playlistend": 20000,
     "rejecttitle": "|".join(
