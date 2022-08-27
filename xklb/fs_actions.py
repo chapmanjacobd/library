@@ -266,7 +266,7 @@ def parse_args(action, default_db, default_chromecast=""):
     # TODO: maybe try https://dba.stackexchange.com/questions/43415/algorithm-for-finding-the-longest-prefix
     parser.add_argument("--play-in-order", "-O", action="count", default=0, help=argparse.SUPPRESS)
     parser.add_argument("--sort", "-u", nargs="+", help=argparse.SUPPRESS)
-    parser.add_argument("--random", '-r', action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--random", "-r", action="store_true", help=argparse.SUPPRESS)
 
     parser.add_argument("--where", "-w", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--include", "-s", "--search", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
@@ -336,7 +336,7 @@ def parse_args(action, default_db, default_chromecast=""):
             args.sort = ["sparseness, size"]
 
     if args.random:
-        args.sort = ['random']
+        args.sort = ["random"]
 
     if args.sort:
         args.sort = " ".join(args.sort)

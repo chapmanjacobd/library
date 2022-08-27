@@ -46,3 +46,18 @@ lt = 'xklb.lb:listen'
 wt = 'xklb.lb:watch'
 tw = 'xklb.lb:tube_watch'
 tl = 'xklb.lb:tube_listen'
+
+[tool.black]
+line-length = 120
+target-version = ['py38', 'py39', 'py310']
+
+[tool.isort]
+atomic = true
+profile = "black"
+line_length = 120
+lexicographical = true
+group_by_package = true
+
+[tool.pytest.ini_options]
+testpaths = 'tests'
+addopts = "--pdbcls=IPython.terminal.debugger:TerminalPdb --ignore=tests/data --capture=tee-sys"

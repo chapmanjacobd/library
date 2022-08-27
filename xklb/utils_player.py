@@ -184,7 +184,7 @@ def get_ordinal_media(args, path):
             ORDER BY path
             LIMIT 1000
             """
-        bindings = ["%" + candidate + "%",]
+        bindings = ["%" + candidate + "%"]
         if not args.play_in_order > 2:
             bindings.extend(args.sql_filter_bindings)
         if args.print and "q" in args.print:

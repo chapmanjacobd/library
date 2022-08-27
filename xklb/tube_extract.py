@@ -180,7 +180,8 @@ def consolidate(playlist_path, v):
         "quality",
         "has_drm",
         "language_preference",
-        "preference",'location'
+        "preference",
+        "location",
     ]
 
     if v.get("title") in ["[Deleted video]", "[Private video]"]:
@@ -190,7 +191,7 @@ def consolidate(playlist_path, v):
         if k.startswith("_") or k in ignore_keys:
             v.pop(k, None)
 
-    upload_date = v.pop("upload_date", None) or v.pop('release_date', None)
+    upload_date = v.pop("upload_date", None) or v.pop("release_date", None)
     if upload_date:
         upload_date = int(datetime.strptime(upload_date, "%Y%m%d").timestamp())
 
