@@ -604,6 +604,7 @@ def construct_fs_query(args):
             bindings.append("%" + exc.replace(" ", "%").replace("%%", " ") + "%")
 
     args.sql_filter = " ".join(cf)
+    args.sql_filter_bindings = bindings
 
     LIMIT = "LIMIT " + str(args.limit) if args.limit else ""
     OFFSET = f"OFFSET {args.skip}" if args.skip else ""
