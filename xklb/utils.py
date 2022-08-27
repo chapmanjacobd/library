@@ -1,5 +1,4 @@
 import argparse, enum, logging, os, platform, re, signal, subprocess, sys, textwrap
-from collections import OrderedDict
 from collections.abc import Iterable
 from datetime import timedelta
 from functools import wraps
@@ -305,7 +304,7 @@ def combine(*list_):
     no_double_space = [_RE_COMBINE_WHITESPACE.sub(" ", s).strip() for s in no_semicolon]
     no_unknown = [x for x in no_double_space if x.lower() not in ["unknown", "none", "und", ""]]
 
-    no_duplicates = list(OrderedDict.fromkeys(no_unknown))
+    no_duplicates = list(dict.fromkeys(no_unknown))
     return ";".join(no_duplicates)
 
 
