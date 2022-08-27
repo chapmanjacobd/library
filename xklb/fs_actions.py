@@ -265,8 +265,9 @@ def parse_args(action, default_db, default_chromecast=""):
 
     # TODO: maybe try https://dba.stackexchange.com/questions/43415/algorithm-for-finding-the-longest-prefix
     parser.add_argument("--play-in-order", "-O", action="count", default=0, help=argparse.SUPPRESS)
-    parser.add_argument("--duration", "-d", action="append", help=argparse.SUPPRESS)
     parser.add_argument("--sort", "-u", nargs="+", help=argparse.SUPPRESS)
+    parser.add_argument("--random", '-r', action="store_true", help=argparse.SUPPRESS)
+
     parser.add_argument("--where", "-w", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--include", "-s", "--search", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
@@ -279,6 +280,7 @@ def parse_args(action, default_db, default_chromecast=""):
 
     parser.add_argument("--prefix", default="", help=argparse.SUPPRESS)
 
+    parser.add_argument("--duration", "-d", action="append", help=argparse.SUPPRESS)
     parser.add_argument("--size", "-z", action="append", help=argparse.SUPPRESS)
 
     parser.add_argument("--print", "-p", default=False, const="p", nargs="?", help=argparse.SUPPRESS)
@@ -332,6 +334,9 @@ def parse_args(action, default_db, default_chromecast=""):
 
         elif args.action in [SC.filesystem]:
             args.sort = ["sparseness, size"]
+
+    if args.random:
+        args.sort = ['random']
 
     if args.sort:
         args.sort = " ".join(args.sort)
