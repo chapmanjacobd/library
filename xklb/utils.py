@@ -1,13 +1,4 @@
-import argparse
-import enum
-import logging
-import os
-import platform
-import re
-import signal
-import subprocess
-import sys
-import textwrap
+import argparse, enum, logging, os, platform, re, signal, subprocess, sys, textwrap
 from collections.abc import Iterable
 from datetime import timedelta
 from functools import wraps

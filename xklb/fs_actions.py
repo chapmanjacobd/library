@@ -1,7 +1,4 @@
-import argparse
-import shlex
-import shutil
-import subprocess
+import argparse, shlex, shutil, subprocess
 from pathlib import Path
 
 import ffmpeg

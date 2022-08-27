@@ -1,5 +1,4 @@
-import argparse
-import sys
+import argparse, sys
 from datetime import datetime
 from pathlib import Path
 from urllib.parse import urlparse

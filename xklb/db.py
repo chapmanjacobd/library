@@ -1,5 +1,4 @@
-import os
-import sqlite3
+import os, sqlite3
 
 from xklb.utils import log
 
