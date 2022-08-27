@@ -7,7 +7,7 @@ from time import sleep
 from timeit import default_timer as timer
 from typing import Dict, List, Union
 from urllib.error import HTTPError
-
+from collections import OrderedDict
 import pandas as pd
 import webvtt
 import yt_dlp
@@ -102,12 +102,7 @@ def get_subtitle_text(ydl: yt_dlp.YoutubeDL, req_sub_dict):
             Path(temp_file).unlink(missing_ok=True)
 
     subtitles = " ".join(
-        set(
-            filter(
-                bool,
-                flatten([dl_sub(url) for url in urls]),
-            )
-        )
+        list(OrderedDict.fromkeys(flatten([dl_sub(url) for url in urls])))
     )
 
     return remove_whitespaace(subtitles)
