@@ -180,11 +180,13 @@ def get_ordinal_media(args, path):
             WHERE 1=1
                 and path like ?
                 {'and is_deleted=0' if args.action in [SC.listen, SC.watch] else ''}
-                {'' if (args.play_in_order > 2) else args.sql_filter}
+                {'' if (args.play_in_order > 2) else (args.sql_filter or '')}
             ORDER BY path
             LIMIT 1000
             """
-        bindings = ("%" + candidate + "%",)
+        bindings = ["%" + candidate + "%",]
+        if not args.play_in_order > 2:
+            bindings.extend(args.sql_filter_bindings)
         if args.print and "q" in args.print:
             print_query(bindings, query)
             exit()
