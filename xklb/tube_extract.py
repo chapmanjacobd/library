@@ -364,7 +364,11 @@ def get_extra_metadata(args, playlist_path) -> Union[List[Dict], None]:
             entry = ydl.extract_info(path, ie_key=ie_key, download=False)
             if entry is None:
                 continue
+
             entry = consolidate(ydl, playlist_path, entry)
+            if entry is None:
+                continue
+
             entry["play_count"] = play_count
             entry["time_played"] = time_played
 
