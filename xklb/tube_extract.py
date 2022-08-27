@@ -1,15 +1,14 @@
-import argparse, sys
+import argparse, sys, tempfile
 from copy import deepcopy
 from datetime import datetime
-from io import StringIO
 from pathlib import Path
 from sqlite3 import OperationalError
 from time import sleep
 from timeit import default_timer as timer
 from typing import Dict, List, Union
+from urllib.error import HTTPError
 
 import pandas as pd
-import requests
 import webvtt
 import yt_dlp
 
@@ -82,22 +81,31 @@ def supported(url):  # thank you @dbr
     return False
 
 
-def get_subtitle_text(req_sub_dict):
+def get_subtitle_text(ydl: yt_dlp.YoutubeDL, req_sub_dict):
     urls = [d["url"] for d in list(req_sub_dict.values())]
+
+    def dl_sub(url):
+        temp_file = tempfile.mktemp(".vtt")
+
+        try:
+            ydl.dl(temp_file, {"url": url}, subtitle=True)
+        except HTTPError:
+            log.info("Unable to download subtitles; skipping")
+            sleep(5)
+            return None
+        try:
+            return [remove_text_inside_brackets(caption.text.replace("\n", " ")) for caption in webvtt.read(temp_file)]
+        except webvtt.MalformedFileError:
+            sleep(2)
+            return None
+        finally:
+            Path(temp_file).unlink(missing_ok=True)
 
     subtitles = " ".join(
         set(
             filter(
                 bool,
-                flatten(
-                    [
-                        [
-                            remove_text_inside_brackets(caption.text.replace("\n", " "))
-                            for caption in webvtt.read_buffer(StringIO(requests.get(url).text))
-                        ]
-                        for url in urls
-                    ]
-                ),
+                flatten([dl_sub(url) for url in urls]),
             )
         )
     )
@@ -105,7 +113,7 @@ def get_subtitle_text(req_sub_dict):
     return remove_whitespaace(subtitles)
 
 
-def consolidate(playlist_path, v):
+def consolidate(ydl: yt_dlp.YoutubeDL, playlist_path, v):
     ignore_keys = [
         "thumbnail",
         "thumbnails",
@@ -197,12 +205,7 @@ def consolidate(playlist_path, v):
 
     subtitles = v.pop("requested_subtitles", None)
     if subtitles:
-        try:
-            subtitles = get_subtitle_text(subtitles)
-        except webvtt.MalformedFileError:
-            log.info("Unable to download subtitles; skipping")
-            sleep(5)
-            return None
+        subtitles = get_subtitle_text(ydl, subtitles)
 
     cv = dict()
     cv["path"] = safe_unpack(v.pop("webpage_url", None), v.pop("url", None), v.pop("original_url", None))
@@ -301,7 +304,7 @@ def process_playlist(args, playlist_path) -> Union[List[Dict], None]:
             return [], info
 
         def _add_media(self, entry):
-            entry = consolidate(playlist_path, entry)
+            entry = consolidate(super, playlist_path, entry)  # type: ignore
             if entry:
                 if video_known(args, playlist_path, entry["path"]):
                     raise ExistingPlaylistVideoReached
@@ -367,7 +370,7 @@ def get_extra_metadata(args, playlist_path) -> Union[List[Dict], None]:
             entry = ydl.extract_info(path, ie_key=ie_key, download=False)
             if entry is None:
                 continue
-            entry = consolidate(playlist_path, entry)
+            entry = consolidate(ydl, playlist_path, entry)
             entry["play_count"] = play_count
             entry["time_played"] = time_played
 
