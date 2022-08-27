@@ -10,7 +10,7 @@ import pandas as pd
 from joblib import Parallel, delayed
 from tinytag import TinyTag
 
-from xklb.db import fetchall_dict, sqlite_con
+from xklb.db import fetchall_dict, optimize_db, sqlite_con
 from xklb.subtitle import get_subtitle, has_external_subtitle, youtube_dl_id
 from xklb.utils import (
     SQLITE_PARAM_LIMIT,
@@ -225,25 +225,6 @@ def extract_metadata(args, f):
     return media
 
 
-def get_columns(args):
-    try:
-        query = "SELECT name FROM PRAGMA_TABLE_INFO('media') where type in ('TEXT', 'INTEGER');"
-        cols = single_column_tolist(args.con.execute(query).fetchall(), "name")
-    except OperationalError:
-        cols = []
-    return cols
-
-
-def optimize_db(args):
-    print("Optimizing database")
-    if Path(args.database).exists():
-        cmd("sqlite-utils", "optimize", args.database)
-        columns = get_columns(args)
-
-        for column in columns:
-            cmd("sqlite-utils", "create-index", "--if-not-exists", "--analyze", args.database, "media", column)
-
-
 def extract_chunk(args, l):
     metadata = (
         Parallel(n_jobs=-1 if args.verbose == 0 else 1, backend="threading")(
@@ -344,6 +325,9 @@ def parse_args():
     This will create audio.db in the current directory:
         lb fsadd --audio ./music/
 
+    Run with --optimize to add indexes to every int and text column:
+        lb fsadd --optimize --audio ./music/
+
     The database location must be specified to reference more than one path:
         lb fsadd --audio podcasts.db ./podcasts/ ./another/folder/
 """,
@@ -364,6 +348,7 @@ def parse_args():
     parser.add_argument("--youtube-only", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--subliminal-only", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--delete-unplayable", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--optimize", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--verbose", "-v", action="count", default=0)
     args = parser.parse_args()
 

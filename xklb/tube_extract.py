@@ -4,6 +4,7 @@ from datetime import datetime
 from io import StringIO
 from pathlib import Path
 from sqlite3 import OperationalError
+from time import sleep
 from timeit import default_timer as timer
 from typing import Dict, List, Union
 
@@ -12,8 +13,7 @@ import requests
 import webvtt
 import yt_dlp
 
-from xklb.db import sqlite_con
-from xklb.fs_extract import optimize_db
+from xklb.db import optimize_db, sqlite_con
 from xklb.tube_actions import default_ydl_opts
 from xklb.utils import (
     argparse_dict,
@@ -190,7 +190,8 @@ def consolidate(playlist_path, v):
         if k.startswith("_") or k in ignore_keys:
             v.pop(k, None)
 
-    upload_date = v.pop("upload_date", None) or v.pop("release_date", None)
+    release_date = v.pop("release_date", None)
+    upload_date = v.pop("upload_date", None) or release_date
     if upload_date:
         upload_date = int(datetime.strptime(upload_date, "%Y%m%d").timestamp())
 
@@ -199,9 +200,9 @@ def consolidate(playlist_path, v):
         try:
             subtitles = get_subtitle_text(subtitles)
         except webvtt.MalformedFileError:
-            log.info('Unable to download subtitles; skipping')
+            log.info("Unable to download subtitles; skipping")
             sleep(5)
-            return
+            return None
 
     cv = dict()
     cv["path"] = safe_unpack(v.pop("webpage_url", None), v.pop("url", None), v.pop("original_url", None))
@@ -483,5 +484,4 @@ def tube_update():
             log.warning("Getting extra metadata")
             get_extra_metadata(args, playlist)
 
-    if args.optimize:
-        optimize_db(args)
+    optimize_db(args)
