@@ -196,7 +196,12 @@ def consolidate(playlist_path, v):
 
     subtitles = v.pop("requested_subtitles", None)
     if subtitles:
-        subtitles = get_subtitle_text(subtitles)
+        try:
+            subtitles = get_subtitle_text(subtitles)
+        except webvtt.MalformedFileError:
+            log.info('Unable to download subtitles; skipping')
+            sleep(5)
+            return
 
     cv = dict()
     cv["path"] = safe_unpack(v.pop("webpage_url", None), v.pop("url", None), v.pop("original_url", None))
