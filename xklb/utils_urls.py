@@ -1,5 +1,4 @@
-import enum
-import re
+import enum, re
 
 
 class Frequency(enum.Enum):

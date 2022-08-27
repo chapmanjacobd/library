@@ -1,5 +1,4 @@
-import sys
-import unittest
+import sys, unittest
 from unittest import mock
 
 import pytest

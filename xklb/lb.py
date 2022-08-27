@@ -1,5 +1,4 @@
-import argparse
-import sys
+import argparse, sys
 
 from xklb.fs_actions import filesystem, listen, watch
 from xklb.fs_extract import main as fs_add

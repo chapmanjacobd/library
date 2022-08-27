@@ -1,6 +1,4 @@
-import argparse
-import os
-import re
+import argparse, os, re
 from pathlib import Path
 from shlex import quote
 

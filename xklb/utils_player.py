@@ -1,9 +1,4 @@
-import os
-import platform
-import re
-import shutil
-import socket
-import subprocess
+import os, platform, re, shutil, socket, subprocess
 from datetime import datetime
 from pathlib import Path
 from platform import system

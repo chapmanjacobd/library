@@ -1,7 +1,4 @@
-import argparse
-import math
-import os
-import sys
+import argparse, math, os, sys
 from pathlib import Path
 from shutil import which
 from sqlite3 import OperationalError

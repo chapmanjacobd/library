@@ -55,8 +55,10 @@ target-version = ['py38', 'py39', 'py310']
 atomic = true
 profile = "black"
 line_length = 120
-lexicographical = true
 group_by_package = true
+float_to_top = true
+py_version = 39
+combine_straight_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ['tests']
