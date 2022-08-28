@@ -22,7 +22,10 @@ def extract(video_file, stream_index):
     try:
         ffmpeg.input(video_file).output(temp_srt, map=stream_id).run(quiet=True)
     except Error as e:
-        log.info(f"Could not extract subtitle {stream_id} from video file. Likely incorrect subtitle character encoding set. %s", video_file)
+        log.info(
+            f"Could not extract subtitle {stream_id} from video file. Likely incorrect subtitle character encoding set. %s",
+            video_file,
+        )
         log.debug(e.stderr.decode())
         return None
 

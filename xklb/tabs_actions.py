@@ -108,9 +108,9 @@ def frequency_filter(args, media: pd.DataFrame):
     return media
 
 
-def process_tabs_actions(args, construct_query):
+def process_tabs_actions(args, construct_tabs_query):
     args.con = sqlite_con(args.database)
-    query, bindings = construct_query(args)
+    query, bindings = construct_tabs_query(args)
 
     if args.print:
         return printer(args, query, bindings)
