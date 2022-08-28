@@ -92,16 +92,18 @@ def play(args, media: pd.DataFrame):
 
 def frequency_filter(args, media: pd.DataFrame):
     mapper = {
-        Frequency.Daily: 1,
-        Frequency.Weekly: 7,
-        Frequency.Monthly: 30,
-        Frequency.Quarterly: 91,
-        Frequency.Yearly: 365,
+        Frequency.Daily.value: 1,
+        Frequency.Weekly.value: 7,
+        Frequency.Monthly.value: 30,
+        Frequency.Quarterly.value: 91,
+        Frequency.Yearly.value: 365,
     }
     counts = args.con.execute("select frequency, count(*) from media group by 1").fetchall()
     for freq, freq_count in counts:
         num_days = mapper.get(freq, 365)
         num_tabs = max(1, freq_count // num_days)
+        log.debug(f"freq_count {freq_count} // num_days {num_days} = num_tabs {num_tabs}")
+
         media[media.frequency == freq] = media[media.frequency == freq].head(num_tabs)
         media.dropna(inplace=True)
 
