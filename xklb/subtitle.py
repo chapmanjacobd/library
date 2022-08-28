@@ -3,7 +3,7 @@ from pathlib import Path
 from shlex import quote
 from typing import List
 
-import ffmpeg, webvtt
+import ffmpeg, pysubs2, webvtt
 from joblib import Parallel, delayed
 
 from xklb.utils import cmd, flatten, get_media_files, remove_text_inside_brackets, remove_whitespaace
@@ -35,14 +35,17 @@ def extract_subtitle(video_file, stream_index):
 
 def subs_to_text(paths: List[str]):
     def read_sub(path):
-        if Path(path).suffix != ".vtt":
-            temp_vtt = tempfile.mktemp("vtt")
-            ffmpeg.input(path).output(temp_vtt).run(quiet=True)
-            path = temp_vtt
+        if Path(path).suffix != ".srt":
+            temp_srt = tempfile.mktemp(".srt")
+            ffmpeg.input(path).output(temp_srt).run(quiet=True)
+            path = temp_srt
 
         try:
-            return [remove_text_inside_brackets(caption.text.replace("\n", " ")) for caption in webvtt.read(path)]
-        except webvtt.MalformedFileError:
+            return [
+                remove_text_inside_brackets(caption.text.replace(r"\N", " ").replace(r"\n", " ").replace("\n", " "))
+                for caption in pysubs2.load(path, format_="srt")
+            ]
+        except NotImplementedError:
             return []
 
     subtitles = " ".join(list(dict.fromkeys(flatten([read_sub(path) for path in paths]))))
