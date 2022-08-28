@@ -10,7 +10,7 @@ from joblib import Parallel, delayed
 from xklb.paths import get_media_files, youtube_dl_id
 from xklb.utils import cmd, flatten, log, remove_text_inside_brackets, remove_whitespaace
 
-SUBTITLE_FORMATS = "vtt|srt|ssa|ass|sub|idx|psb|smi|ssf|usf"
+SUBTITLE_FORMATS = "vtt|srt|ssa|ass|jss|aqt|mpl2|mpsub|pjs|rt|sami|smi|stl|xml|txt|psb|ssf|usf"
 IMAGE_SUBTITLE_CODECS = ["dvbsub", "dvdsub", "pgssub", "xsub", "dvb_subtitle", "dvd_subtitle", "hdmv_pgs_subtitle"]
 
 
@@ -27,9 +27,14 @@ def subs_to_text(video_path, paths: List[str]):
             temp_srt = tempfile.mktemp(".srt")
             try:
                 ffmpeg.input(path).output(temp_srt).run(quiet=True)
-                path = temp_srt
-            except Error:
+            except Error as e:
+                log.warning(e.args)
+                log.warning(e.stdout)
+                log.warning(e.stderr)
+                log.error(e.__traceback__)
                 return []
+            else:
+                path = temp_srt
 
         try:
             return [
