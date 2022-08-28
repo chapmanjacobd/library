@@ -25,7 +25,7 @@ protobuf = "<4"
 humanize = "*"
 ffmpeg-python = "*"
 psutil = "^5.9.1"
-webvtt-py = "^0.4.6"
+pysubs2 = "^1.4.3"
 
 [tool.poetry.dev-dependencies]
 pytest = "*"

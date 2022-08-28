@@ -73,7 +73,7 @@ def supported(url):  # thank you @dbr
 
 def get_subtitle_text(ydl: yt_dlp.YoutubeDL, req_sub_dict):
     def dl_sub(url):
-        temp_file = tempfile.mktemp(".vtt")
+        temp_file = tempfile.mktemp(".srt")
 
         try:
             ydl.dl(temp_file, {"url": url}, subtitle=True)
@@ -323,6 +323,7 @@ def get_extra_metadata(args, playlist_path) -> Union[List[Dict], None]:
     with yt_dlp.YoutubeDL(
         {
             **args.ydl_opts,
+            "subtitlesformat": "srt/best",
             "writesubtitles": True,
             "writeautomaticsub": True,
             "subtitleslangs": ["en.*", "EN.*"],
