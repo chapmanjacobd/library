@@ -10,12 +10,13 @@ from urllib.error import HTTPError
 
 import pandas as pd
 import yt_dlp
+from xklb import utils
 
 from xklb.db import optimize_db, sqlite_con
 from xklb.subtitle import subs_to_text
 from xklb.tube_actions import default_ydl_opts
-from xklb.utils import argparse_dict, combine, filter_None, log, safe_unpack, single_column_tolist
-from xklb.utils_paths import sanitize_url
+from xklb.utils import combine, log, safe_unpack
+from xklb.paths import sanitize_url
 
 
 def parse_args(action, usage):
@@ -32,7 +33,7 @@ def parse_args(action, usage):
         "--yt-dlp-config",
         "-yt-dlp-config",
         nargs=1,
-        action=argparse_dict,
+        action=utils.argparse_dict,
         default={},
         metavar="KEY=VALUE",
         help="Add key/value pairs to override or extend default yt-dlp configuration",
@@ -45,7 +46,6 @@ def parse_args(action, usage):
     parser.add_argument("--verbose", "-v", action="count", default=0)
     args = parser.parse_args()
     args.action = action
-    log.info(filter_None(args.__dict__))
 
     if args.db:
         args.database = args.db
@@ -54,12 +54,15 @@ def parse_args(action, usage):
     args.con = sqlite_con(args.database)
 
     ydl_opts = {**default_ydl_opts, **args.yt_dlp_config}
-    log.info(filter_None(ydl_opts))
+    log.info(utils.filter_None(ydl_opts))
 
     if args.playlists and not args.no_sanitize:
         args.playlists = [sanitize_url(args, path) for path in args.playlists]
 
     args.ydl_opts = ydl_opts
+
+    log.info(utils.filter_None(args.__dict__))
+
     return args
 
 
@@ -372,11 +375,11 @@ def get_extra_metadata(args, playlist_path) -> Union[List[Dict], None]:
 def get_playlists(args, include_playlistless_media=True):
     try:
         if include_playlistless_media:
-            known_playlists = single_column_tolist(
+            known_playlists = utils.single_column_tolist(
                 args.con.execute("select path from playlists order by random()").fetchall(), "path"
             )
         else:
-            known_playlists = single_column_tolist(
+            known_playlists = utils.single_column_tolist(
                 args.con.execute(
                     """
                     select playlist_path from media

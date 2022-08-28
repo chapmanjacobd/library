@@ -7,7 +7,7 @@ import ffmpeg, pysubs2
 from joblib import Parallel, delayed
 
 from xklb.utils import cmd, flatten, remove_text_inside_brackets, remove_whitespaace
-from xklb.utils_paths import get_media_files, youtube_dl_id
+from xklb.paths import get_media_files, youtube_dl_id
 
 SUBTITLE_FORMATS = "vtt|srt|ssa|ass|sub|idx|psb|smi|ssf|usf"
 IMAGE_SUBTITLE_CODECS = ["dvbsub", "dvdsub", "pgssub", "xsub", "dvb_subtitle", "dvd_subtitle", "hdmv_pgs_subtitle"]
