@@ -3,30 +3,17 @@ from pathlib import Path
 from shlex import quote
 from typing import List
 
-import ffmpeg, pysubs2, webvtt
+import ffmpeg, pysubs2
 from joblib import Parallel, delayed
 
-from xklb.utils import cmd, flatten, get_media_files, remove_text_inside_brackets, remove_whitespaace
+from xklb.utils import cmd, flatten, remove_text_inside_brackets, remove_whitespaace
+from xklb.utils_paths import get_media_files, youtube_dl_id
 
 SUBTITLE_FORMATS = "vtt|srt|ssa|ass|sub|idx|psb|smi|ssf|usf"
 IMAGE_SUBTITLE_CODECS = ["dvbsub", "dvdsub", "pgssub", "xsub", "dvb_subtitle", "dvd_subtitle", "hdmv_pgs_subtitle"]
 
 
-def youtube_dl_id(file) -> str:
-    if len(file) < 15:
-        return ""
-    # rename old youtube_dl format to new one: cargo install renamer; fd -tf . -x renamer '\-([\w\-_]{11})\.= [$1].' {}
-    yt_id_regex = re.compile(r"-([\w\-_]{11})\..*$|\[([\w\-_]{11})\]\..*$", flags=re.M)
-    file = str(file).strip()
-
-    yt_ids = yt_id_regex.findall(file)
-    if len(yt_ids) == 0:
-        return ""
-
-    return list(filter(None, [*yt_ids[0]]))[0]
-
-
-def extract_subtitle(video_file, stream_index):
+def extract(video_file, stream_index):
     temp_vtt = tempfile.mktemp(".vtt")
 
     ffmpeg.input(video_file).output(temp_vtt, map="0:" + str(stream_index)).run(quiet=True)
@@ -62,7 +49,7 @@ def has_internal_subtitle(file):
         return True
 
 
-def get_external_subtitles(file):
+def get_external(file):
     p = Path(file)
     for suffix in p.suffixes:
         subtitles = [
@@ -102,7 +89,7 @@ def has_external_subtitle(file):
     return False
 
 
-def get_subtitle(args, file):
+def get(args, file):
     try:
         if has_internal_subtitle(file) or has_external_subtitle(file):
             return
@@ -155,7 +142,7 @@ def main():
 
     video_files = get_media_files(args)
 
-    Parallel(n_jobs=6 if args.verbose == 0 else 1)(delayed(get_subtitle)(args, file) for file in video_files)
+    Parallel(n_jobs=6 if args.verbose == 0 else 1)(delayed(get)(args, file) for file in video_files)
 
 
 if __name__ == "__main__":

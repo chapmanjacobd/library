@@ -7,7 +7,7 @@ import sqlite_utils
 from catt.api import CattDevice
 from rich.prompt import Confirm
 
-from xklb import utils
+from xklb import utils, utils_paths
 from xklb.db import sqlite_con
 from xklb.utils import SC, cmd, log
 from xklb.utils_player import (
@@ -290,7 +290,7 @@ def parse_args(action, default_db, default_chromecast=""):
     parser.add_argument("--start", "-vs", help=argparse.SUPPRESS)
     parser.add_argument("--end", "-ve", help=argparse.SUPPRESS)
     parser.add_argument("--player", "-player", help=argparse.SUPPRESS)
-    parser.add_argument("--mpv-socket", default=utils.DEFAULT_MPV_SOCKET, help=argparse.SUPPRESS)
+    parser.add_argument("--mpv-socket", default=utils_paths.DEFAULT_MPV_SOCKET, help=argparse.SUPPRESS)
 
     parser.add_argument(
         "--player-args-when-sub", "-player-sub", nargs="*", default=["--speed=1"], help=argparse.SUPPRESS
@@ -653,7 +653,7 @@ def process_actions(args, construct_query=construct_fs_query):
             utils.pkill(idle_mpv(args), strict=False)
         Path(args.mpv_socket).unlink(missing_ok=True)
         if args.chromecast:
-            Path(utils.CAST_NOW_PLAYING).unlink(missing_ok=True)
+            Path(utils_paths.CAST_NOW_PLAYING).unlink(missing_ok=True)
 
 
 def watch():

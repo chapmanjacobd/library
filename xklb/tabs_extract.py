@@ -7,8 +7,8 @@ import pandas as pd
 
 from xklb.db import fetchall_dict, sqlite_con
 from xklb.utils import argparse_enum, filter_None, log, single_column_tolist
+from xklb.utils_paths import Frequency, sanitize_url
 from xklb.utils_player import remove_media
-from xklb.utils_urls import Frequency, sanitize_url
 
 
 def parse_args():

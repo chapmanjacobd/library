@@ -12,16 +12,12 @@ import humanize
 import pandas as pd
 from tabulate import tabulate
 
+from xklb import utils, utils_paths
 from xklb.utils import (
-    CAST_NOW_PLAYING,
-    FAKE_SUBTITLE,
     SC,
     SQLITE_PARAM_LIMIT,
-    Pclose,
-    chunks,
     cmd,
     cmd_interactive,
-    conform,
     human_time,
     log,
     os_bg_kwargs,
@@ -49,10 +45,10 @@ def mv_to_keep_folder(args, media_file: str):
 
 
 def mark_media_watched(args, files):
-    files = conform(files)
+    files = utils.conform(files)
     modified_row_count = 0
     if len(files) > 0:
-        df_chunked = chunks(files, SQLITE_PARAM_LIMIT)
+        df_chunked = utils.chunks(files, SQLITE_PARAM_LIMIT)
         for l in df_chunked:
             cursor = args.con.execute(
                 """UPDATE media
@@ -70,10 +66,10 @@ def mark_media_watched(args, files):
 
 
 def mark_media_deleted(args, files):
-    files = conform(files)
+    files = utils.conform(files)
     modified_row_count = 0
     if len(files) > 0:
-        df_chunked = chunks(files, SQLITE_PARAM_LIMIT)
+        df_chunked = utils.chunks(files, SQLITE_PARAM_LIMIT)
         for l in df_chunked:
             cursor = args.con.execute(
                 """update media
@@ -90,10 +86,10 @@ def mark_media_deleted(args, files):
 
 
 def moved_media(args, moved_files: Union[str, list], base_from, base_to):
-    moved_files = conform(moved_files)
+    moved_files = utils.conform(moved_files)
     modified_row_count = 0
     if len(moved_files) > 0:
-        df_chunked = chunks(moved_files, SQLITE_PARAM_LIMIT)
+        df_chunked = utils.chunks(moved_files, SQLITE_PARAM_LIMIT)
         for l in df_chunked:
             cursor = args.con.execute(
                 f"""UPDATE media
@@ -110,7 +106,7 @@ def moved_media(args, moved_files: Union[str, list], base_from, base_to):
 
 
 def remove_media(args, deleted_files: Union[str, list], quiet=False):
-    deleted_files = conform(deleted_files)
+    deleted_files = utils.conform(deleted_files)
     modified_row_count = 0
     if len(deleted_files) > 0:
         if not quiet:
@@ -119,7 +115,7 @@ def remove_media(args, deleted_files: Union[str, list], quiet=False):
             else:
                 print(f"Removing {len(deleted_files)} orphaned metadata")
 
-        df_chunked = chunks(deleted_files, SQLITE_PARAM_LIMIT)
+        df_chunked = utils.chunks(deleted_files, SQLITE_PARAM_LIMIT)
         for l in df_chunked:
             cursor = args.con.execute(
                 "delete from media where path in (" + ",".join(["?"] * len(l)) + ")",
@@ -255,7 +251,7 @@ def watch_chromecast(args, m, subtitles_file=None):
                 args.chromecast_device,
                 "cast",
                 "-s",
-                subtitles_file if subtitles_file else FAKE_SUBTITLE,
+                subtitles_file if subtitles_file else utils_paths.FAKE_SUBTITLE,
                 m["path"],
             )
         else:
@@ -267,20 +263,20 @@ def watch_chromecast(args, m, subtitles_file=None):
 
 
 def listen_chromecast(args, m):
-    Path(CAST_NOW_PLAYING).write_text(m["path"])
-    Path(FAKE_SUBTITLE).touch()
+    Path(utils_paths.CAST_NOW_PLAYING).write_text(m["path"])
+    Path(utils_paths.FAKE_SUBTITLE).touch()
     if args.with_local:
         cast_process = subprocess.Popen(
-            ["catt", "-d", args.chromecast_device, "cast", "-s", FAKE_SUBTITLE, m["path"]], **os_bg_kwargs()
+            ["catt", "-d", args.chromecast_device, "cast", "-s", utils_paths.FAKE_SUBTITLE, m["path"]], **os_bg_kwargs()
         )
         sleep(0.974)  # imperfect lazy sync; I use keyboard shortcuts to send `set speed` commands to mpv for resync
         # if pyChromecast provides a way to sync accurately that would be very interesting to know; I have not researched it
         cmd_interactive(*args.player, "--", m["path"])
-        catt_log = Pclose(cast_process)  # wait for chromecast to stop (you can tell any chromecast to pause)
+        catt_log = utils.Pclose(cast_process)  # wait for chromecast to stop (you can tell any chromecast to pause)
         sleep(3.0)  # give chromecast some time to breathe
     else:
         if args.action in [SC.watch, SC.listen]:
-            catt_log = cmd("catt", "-d", args.chromecast_device, "cast", "-s", FAKE_SUBTITLE, m["path"])
+            catt_log = cmd("catt", "-d", args.chromecast_device, "cast", "-s", utils_paths.FAKE_SUBTITLE, m["path"])
         else:  # args.action in [SC.tubewatch, SC.tubelisten]:
             catt_log = args.cc.play_url(m["path"], resolve=True, block=True)
 
