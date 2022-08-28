@@ -4,12 +4,12 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 import pandas as pd
-from xklb import utils
 
+from xklb import utils
 from xklb.db import fetchall_dict, sqlite_con
-from xklb.utils import argparse_enum, log, single_column_tolist
 from xklb.paths import Frequency, sanitize_url
 from xklb.player import remove_media
+from xklb.utils import argparse_enum, log, single_column_tolist
 
 
 def parse_args():

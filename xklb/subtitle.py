@@ -4,10 +4,11 @@ from shlex import quote
 from typing import List
 
 import ffmpeg, pysubs2
+from ffmpeg import Error
 from joblib import Parallel, delayed
 
-from xklb.utils import cmd, flatten, remove_text_inside_brackets, remove_whitespaace
 from xklb.paths import get_media_files, youtube_dl_id
+from xklb.utils import cmd, flatten, log, remove_text_inside_brackets, remove_whitespaace
 
 SUBTITLE_FORMATS = "vtt|srt|ssa|ass|sub|idx|psb|smi|ssf|usf"
 IMAGE_SUBTITLE_CODECS = ["dvbsub", "dvdsub", "pgssub", "xsub", "dvb_subtitle", "dvd_subtitle", "hdmv_pgs_subtitle"]
@@ -20,19 +21,23 @@ def extract(video_file, stream_index):
     return temp_vtt
 
 
-def subs_to_text(paths: List[str]):
+def subs_to_text(video_path, paths: List[str]):
     def read_sub(path):
         if Path(path).suffix != ".srt":
             temp_srt = tempfile.mktemp(".srt")
-            ffmpeg.input(path).output(temp_srt).run(quiet=True)
-            path = temp_srt
+            try:
+                ffmpeg.input(path).output(temp_srt).run(quiet=True)
+                path = temp_srt
+            except Error:
+                return []
 
         try:
             return [
                 remove_text_inside_brackets(caption.text.replace(r"\N", " ").replace(r"\n", " ").replace("\n", " "))
                 for caption in pysubs2.load(path, format_="srt")
             ]
-        except NotImplementedError:
+        except UnicodeDecodeError:
+            log.warning(f"[{video_path}] Could not decode subtitle {path}")
             return []
 
     subtitles = " ".join(list(dict.fromkeys(flatten([read_sub(path) for path in paths]))))

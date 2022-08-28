@@ -10,13 +10,13 @@ from urllib.error import HTTPError
 
 import pandas as pd
 import yt_dlp
-from xklb import utils
 
+from xklb import utils
 from xklb.db import optimize_db, sqlite_con
+from xklb.paths import sanitize_url
 from xklb.subtitle import subs_to_text
 from xklb.tube_actions import default_ydl_opts
 from xklb.utils import combine, log, safe_unpack
-from xklb.paths import sanitize_url
 
 
 def parse_args(action, usage):
@@ -74,7 +74,7 @@ def supported(url):  # thank you @dbr
     return False
 
 
-def get_subtitle_text(ydl: yt_dlp.YoutubeDL, req_sub_dict):
+def get_subtitle_text(ydl: yt_dlp.YoutubeDL, video_path, req_sub_dict):
     def dl_sub(url):
         temp_file = tempfile.mktemp(".srt")
 
@@ -90,7 +90,7 @@ def get_subtitle_text(ydl: yt_dlp.YoutubeDL, req_sub_dict):
     urls = [d["url"] for d in list(req_sub_dict.values())]
     paths: List[str] = list(filter(bool, [dl_sub(url) for url in urls]))  # type: ignore
 
-    subs_text = subs_to_text(paths)
+    subs_text = subs_to_text(video_path, paths)
     [Path(p).unlink(missing_ok=True) for p in paths]
 
     return subs_text
@@ -188,7 +188,7 @@ def consolidate(ydl: yt_dlp.YoutubeDL, playlist_path, v):
 
     subtitles = v.pop("requested_subtitles", None)
     if subtitles:
-        subtitles = get_subtitle_text(ydl, subtitles)
+        subtitles = get_subtitle_text(ydl, playlist_path, subtitles)
 
     cv = dict()
     cv["path"] = safe_unpack(v.pop("webpage_url", None), v.pop("url", None), v.pop("original_url", None))

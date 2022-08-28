@@ -9,7 +9,6 @@ from rich.prompt import Confirm
 
 from xklb import paths, utils
 from xklb.db import sqlite_con
-from xklb.utils import SC, cmd, log
 from xklb.player import (
     delete_media,
     get_ordinal_media,
@@ -24,6 +23,7 @@ from xklb.player import (
     socket_play,
     watch_chromecast,
 )
+from xklb.utils import SC, cmd, log
 
 idle_mpv = lambda args: ["mpv", "--idle", f"--input-ipc-server={args.mpv_socket}"]
 
