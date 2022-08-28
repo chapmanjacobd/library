@@ -130,6 +130,24 @@ def argparse_log():
 log = argparse_log()
 
 
+def flatten(xs: Iterable):
+    for x in xs:
+        if isinstance(x, Iterable) and not isinstance(x, (str, bytes)):
+            yield from flatten(x)
+        elif isinstance(x, bytes):
+            yield x.decode("utf-8")
+        else:
+            yield x
+
+
+def conform(list_: Union[str, Iterable]):
+    if not isinstance(list_, list):
+        list_ = [list_]
+    list_ = flatten(list_)
+    list_ = list(filter(bool, list_))
+    return list_
+
+
 def cmd(*command, strict=True, cwd=None, quiet=True, interactive=False, **kwargs):
     EXP_FILTER = re.compile(
         "|".join(
@@ -149,7 +167,7 @@ def cmd(*command, strict=True, cwd=None, quiet=True, interactive=False, **kwargs
             if not EXP_FILTER.match(s):
                 filtered_strings.append(s)
 
-        return "\n".join(list(filter(None, filtered_strings)))
+        return "\n".join(conform(filtered_strings))
 
     def print_std(r_std):
         s = filter_output(r_std)
@@ -201,24 +219,6 @@ def chunks(lst, n):
         yield lst[i : i + n]
 
 
-def flatten(xs: Iterable):
-    for x in xs:
-        if isinstance(x, Iterable) and not isinstance(x, (str, bytes)):
-            yield from flatten(x)
-        elif isinstance(x, bytes):
-            yield x.decode("utf-8")
-        else:
-            yield x
-
-
-def conform(list_: Union[str, Iterable]):
-    if not isinstance(list_, list):
-        list_ = [list_]
-    list_ = flatten(list_)
-    list_ = list(filter(None, list_))
-    return list_
-
-
 def compile_query(query, *args):
     if len(args) == 1 and (not args[0]):
         number_of_arguments = 0
@@ -249,7 +249,7 @@ def single_column_tolist(array_to_unpack, column_name: Union[str, int] = 1):
     )
 
 
-def filter_None(kwargs):
+def dict_filter_bool(kwargs):
     return {k: v for k, v in kwargs.items() if v}
 
 

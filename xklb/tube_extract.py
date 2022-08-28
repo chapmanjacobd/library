@@ -54,14 +54,14 @@ def parse_args(action, usage):
     args.con = sqlite_con(args.database)
 
     ydl_opts = {**default_ydl_opts, **args.yt_dlp_config}
-    log.info(utils.filter_None(ydl_opts))
+    log.info(utils.dict_filter_bool(ydl_opts))
 
     if args.playlists and not args.no_sanitize:
         args.playlists = [sanitize_url(args, path) for path in args.playlists]
 
     args.ydl_opts = ydl_opts
 
-    log.info(utils.filter_None(args.__dict__))
+    log.info(utils.dict_filter_bool(args.__dict__))
 
     return args
 
@@ -88,7 +88,7 @@ def get_subtitle_text(ydl: yt_dlp.YoutubeDL, video_path, req_sub_dict):
             return temp_file
 
     urls = [d["url"] for d in list(req_sub_dict.values())]
-    paths: List[str] = list(filter(bool, [dl_sub(url) for url in urls]))  # type: ignore
+    paths = utils.conform([dl_sub(url) for url in urls])
 
     subs_text = subs_to_text(video_path, paths)
     [Path(p).unlink(missing_ok=True) for p in paths]
