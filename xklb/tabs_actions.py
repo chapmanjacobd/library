@@ -4,9 +4,9 @@ from time import sleep
 import pandas as pd
 
 from xklb.db import sqlite_con
+from xklb.player import generic_player, mark_media_watched, override_sort, printer
 from xklb.tabs_extract import Frequency
 from xklb.utils import SC, cmd, filter_None, flatten, log
-from xklb.player import generic_player, mark_media_watched, override_sort, printer
 
 tabs_include_string = (
     lambda x: f"""and (

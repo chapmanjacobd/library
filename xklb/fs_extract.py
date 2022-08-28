@@ -11,9 +11,9 @@ from tinytag import TinyTag
 
 from xklb import subtitle, utils
 from xklb.db import fetchall_dict, optimize_db, sqlite_con
-from xklb.utils import SQLITE_PARAM_LIMIT, cmd, combine, log, safe_unpack
 from xklb.paths import get_media_files, youtube_dl_id
 from xklb.player import mark_media_deleted
+from xklb.utils import SQLITE_PARAM_LIMIT, cmd, combine, log, safe_unpack
 
 
 def get_provenance(file):
@@ -85,6 +85,8 @@ def calculate_sparseness(stat):
 
 
 def extract_metadata(args, f):
+    log.debug(f)
+
     try:
         stat = os.stat(f)
     except Exception:
@@ -160,8 +162,8 @@ def extract_metadata(args, f):
                 if s.get("r_frame_rate") is not None and "/0" not in s.get("r_frame_rate")
             ]
         )
-        width = safe_unpack([s.get("width") for s in streams if s.get("tags") is not None])
-        height = safe_unpack([s.get("height") for s in streams if s.get("tags") is not None])
+        width = safe_unpack([s.get("width") for s in streams])
+        height = safe_unpack([s.get("height") for s in streams])
         codec_types = [s.get("codec_type") for s in streams]
         stream_tags = [s.get("tags") for s in streams if s.get("tags") is not None]
         language = combine([t.get("language") for t in stream_tags if t.get("language") not in [None, "und", "unk"]])
@@ -194,7 +196,7 @@ def extract_metadata(args, f):
                 if s.get("codec_type") == "subtitle" and s.get("codec_name") not in subtitle.IMAGE_SUBTITLE_CODECS
             ]
             external_subtitles = subtitle.get_external(f)
-            subs_text = subtitle.subs_to_text(internal_subtitles + external_subtitles)
+            subs_text = subtitle.subs_to_text(f, internal_subtitles + external_subtitles)
 
             video_tags = {
                 "subtitle_count": len(internal_subtitles + external_subtitles),

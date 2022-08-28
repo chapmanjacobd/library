@@ -23,7 +23,6 @@ from xklb.utils import (
     os_bg_kwargs,
     print_query,
     resize_col,
-    single_column_tolist,
 )
 
 
@@ -182,7 +181,7 @@ def get_ordinal_media(args, path):
             print_query(bindings, query)
             exit()
 
-        similar_videos = single_column_tolist(args.con.execute(query, bindings).fetchall(), "path")  # type: ignore
+        similar_videos = utils.single_column_tolist(args.con.execute(query, bindings).fetchall(), "path")  # type: ignore
         log.debug(similar_videos)
 
         if len(similar_videos) > 999 or len(similar_videos) == total_media:
