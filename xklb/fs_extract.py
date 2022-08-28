@@ -11,7 +11,14 @@ from joblib import Parallel, delayed
 from tinytag import TinyTag
 
 from xklb.db import fetchall_dict, optimize_db, sqlite_con
-from xklb.subtitle import get_subtitle, has_external_subtitle, youtube_dl_id
+from xklb.subtitle import (
+    IMAGE_SUBTITLE_CODECS,
+    extract_subtitle,
+    get_external_subtitles,
+    get_subtitle,
+    subs_to_text,
+    youtube_dl_id,
+)
 from xklb.utils import (
     SQLITE_PARAM_LIMIT,
     chunks,
@@ -173,22 +180,12 @@ def extract_metadata(args, f):
         width = safe_unpack([s.get("width") for s in streams if s.get("tags") is not None])
         height = safe_unpack([s.get("height") for s in streams if s.get("tags") is not None])
         codec_types = [s.get("codec_type") for s in streams]
-        tags = [s.get("tags") for s in streams if s.get("tags") is not None]
-        language = combine([t.get("language") for t in tags if t.get("language") not in [None, "und", "unk"]])
+        stream_tags = [s.get("tags") for s in streams if s.get("tags") is not None]
+        language = combine([t.get("language") for t in stream_tags if t.get("language") not in [None, "und", "unk"]])
 
         video_count = sum([1 for s in codec_types if s == "video"])
         audio_count = sum([1 for s in codec_types if s == "audio"])
-        attachment_count = sum([1 for s in codec_types if s == "attachment"])
-        subtitle_count = sum([1 for s in codec_types if s == "subtitle"])
         chapter_count = len(probe["chapters"])
-
-        if subtitle_count == 0 and args.db_type == "v":
-            try:
-                has_sub = has_external_subtitle(f)
-            except Exception:
-                has_sub = False
-            if has_sub:
-                subtitle_count = 1
 
         media = {
             **media,
@@ -197,30 +194,46 @@ def extract_metadata(args, f):
             "time_played": 0,
             "video_count": video_count,
             "audio_count": audio_count,
-            "subtitle_count": subtitle_count,
             "chapter_count": chapter_count,
-            "attachment_count": attachment_count,
             "width": width,
             "height": height,
             "fps": fps,
+            "duration": 0 if not duration else int(float(duration)),
             "language": language,
             "provenance": get_provenance(f),
-            "duration": 0 if not duration else int(float(duration)),
         }
 
-    if args.db_type == "a":
-        try:
-            tiny_tags = filter_None(TinyTag.get(f).as_dict())
-        except Exception:
-            tiny_tags = dict()
+        if args.db_type == "v":
+            attachment_count = sum([1 for s in codec_types if s == "attachment"])
+            internal_subtitles = [
+                extract_subtitle(f, s["index"])
+                for s in streams
+                if s.get("codec_type") == "subtitle" and s.get("codec_name") not in IMAGE_SUBTITLE_CODECS
+            ]
+            external_subtitles = get_external_subtitles(f)
+            subs_text = subs_to_text(internal_subtitles + external_subtitles)
 
-        try:
-            mutagen_tags = filter_None(mutagen.File(f).tags.as_dict())
-        except Exception:
-            mutagen_tags = dict()
+            tags = combine(subs_text)
+            video_tags = {
+                "subtitle_count": len(internal_subtitles + external_subtitles),
+                "attachment_count": attachment_count,
+                "tags": tags,
+            }
+            return {**media, **video_tags}
 
-        tags = parse_tags(mutagen_tags, tiny_tags)
-        return {**media, **tags}
+        if args.db_type == "a":
+            try:
+                tiny_tags = filter_None(TinyTag.get(f).as_dict())
+            except Exception:
+                tiny_tags = dict()
+
+            try:
+                mutagen_tags = filter_None(mutagen.File(f).tags.as_dict())
+            except Exception:
+                mutagen_tags = dict()
+
+            stream_tags = parse_tags(mutagen_tags, tiny_tags)
+            return {**media, **stream_tags}
 
     return media
 

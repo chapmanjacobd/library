@@ -72,8 +72,8 @@ class TestFs(unittest.TestCase):
             assert len(out) == 1
             assert "test.mp4" in out[0]["path"]
             assert out[0]["duration"] == 12
-            assert out[0]["subtitle_count"] == 0
-            assert out[0]["size"] == 135178
+            assert out[0]["subtitle_count"] == 3
+            assert out[0]["size"] == 136057
 
         sys.argv[1:] = v_db
         wt()
@@ -81,8 +81,8 @@ class TestFs(unittest.TestCase):
         assert len(out) == 1
         assert "test.mp4" in out[0]["path"]
         assert out[0]["duration"] == 12
-        assert out[0]["subtitle_count"] == 0
-        assert out[0]["size"] == 135178
+        assert out[0]["subtitle_count"] == 3
+        assert out[0]["size"] == 136057
 
         lb(["listen", *a_db])
         out = play_mocked.call_args[0][1].to_dict(orient="records")
