@@ -26,10 +26,8 @@ def convert_to_srt(path):
     try:
         ffmpeg.input(path).output(temp_srt).run(quiet=True)
     except Error as e:
-        log.warning(e.args)
-        log.warning(e.stdout)
-        log.warning(e.stderr)
-        log.error(e.__traceback__)
+        log.info(e.args)
+        log.info(e.stderr.decode())
         raise UnicodeDecodeError("utf-8", b"Dr. John A. Zoidberg", 1, 2, "Bleh!")
     else:
         return temp_srt
