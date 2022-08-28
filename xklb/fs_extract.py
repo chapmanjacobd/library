@@ -1,7 +1,6 @@
 import argparse, math, os, sys
 from pathlib import Path
 from shutil import which
-from sqlite3 import OperationalError
 from typing import Dict
 
 import ffmpeg
@@ -10,26 +9,10 @@ import pandas as pd
 from joblib import Parallel, delayed
 from tinytag import TinyTag
 
+from xklb import subtitle
 from xklb.db import fetchall_dict, optimize_db, sqlite_con
-from xklb.subtitle import (
-    IMAGE_SUBTITLE_CODECS,
-    extract_subtitle,
-    get_external_subtitles,
-    get_subtitle,
-    subs_to_text,
-    youtube_dl_id,
-)
-from xklb.utils import (
-    SQLITE_PARAM_LIMIT,
-    chunks,
-    cmd,
-    combine,
-    filter_None,
-    get_media_files,
-    log,
-    safe_unpack,
-    single_column_tolist,
-)
+from xklb.utils import SQLITE_PARAM_LIMIT, chunks, cmd, combine, filter_None, log, safe_unpack, single_column_tolist
+from xklb.utils_paths import get_media_files, youtube_dl_id
 from xklb.utils_player import mark_media_deleted
 
 
@@ -206,18 +189,17 @@ def extract_metadata(args, f):
         if args.db_type == "v":
             attachment_count = sum([1 for s in codec_types if s == "attachment"])
             internal_subtitles = [
-                extract_subtitle(f, s["index"])
+                subtitle.extract(f, s["index"])
                 for s in streams
-                if s.get("codec_type") == "subtitle" and s.get("codec_name") not in IMAGE_SUBTITLE_CODECS
+                if s.get("codec_type") == "subtitle" and s.get("codec_name") not in subtitle.IMAGE_SUBTITLE_CODECS
             ]
-            external_subtitles = get_external_subtitles(f)
-            subs_text = subs_to_text(internal_subtitles + external_subtitles)
+            external_subtitles = subtitle.get_external(f)
+            subs_text = subtitle.subs_to_text(internal_subtitles + external_subtitles)
 
-            tags = combine(subs_text)
             video_tags = {
                 "subtitle_count": len(internal_subtitles + external_subtitles),
                 "attachment_count": attachment_count,
-                "tags": tags,
+                "tags": combine(subs_text),
             }
             return {**media, **video_tags}
 
@@ -310,7 +292,7 @@ def scan_path(args, path):
 
             if args.subtitle:
                 print("Fetching subtitles")
-                Parallel(n_jobs=5)(delayed(get_subtitle)(args, file) for file in l)
+                Parallel(n_jobs=5)(delayed(subtitle.get)(args, file) for file in l)
 
     return len(new_files)
 

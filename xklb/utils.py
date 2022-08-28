@@ -2,8 +2,6 @@ import argparse, enum, logging, os, platform, re, signal, subprocess, sys, textw
 from collections.abc import Iterable
 from datetime import timedelta
 from functools import wraps
-from pathlib import Path
-from tempfile import gettempdir
 from types import SimpleNamespace
 from typing import Union
 
@@ -24,9 +22,6 @@ else:
     sys.breakpointhook = ipdb.set_trace
 
 SQLITE_PARAM_LIMIT = 32765
-FAKE_SUBTITLE = os.path.join(gettempdir(), "sub.srt")  # https://github.com/skorokithakis/catt/issues/393
-CAST_NOW_PLAYING = os.path.join(gettempdir(), "catt_playing")
-DEFAULT_MPV_SOCKET = os.path.join(gettempdir(), "mpv_socket")
 DEFAULT_PLAY_QUEUE = 120
 
 pd.set_option("display.float_format", lambda x: "%.5f" % x)
@@ -222,39 +217,6 @@ def conform(list_: Union[str, Iterable]):
     list_ = flatten(list_)
     list_ = list(filter(None, list_))
     return list_
-
-
-def get_media_files(path, audio=False):
-    FFMPEG_DEMUXERS = (
-        "str|aa|aax|acm|adf|adp|dtk|ads|ss2|adx|aea|afc|aix|al|apl"
-        "|mac|aptx|aptxhd|aqt|ast|obu|avi|avr|avs|avs2|avs3|bfstm|bcstm|binka"
-        "|bit|bmv|brstm|cdg|cdxl|xl|c2|302|daud|str|adp|dav|dss|dts|dtshd|dv"
-        "|dif|cdata|eac3|paf|fap|flm|flv|fsb|fwse|g722|722|tco|rco"
-        "|g723_1|g729|genh|gsm|h261|h26l|h264|264|avc|hca|hevc|h265|265|idf"
-        "|ifv|cgi|ipu|sf|ircam|ivr|kux|669|abc|amf|ams|dbm|dmf|dsm|far|it|mdl"
-        "|med|mid|mod|mt2|mtm|okt|psm|ptm|s3m|stm|ult|umx|xm|itgz|itr|itz"
-        "|mdgz|mdr|mdz|s3gz|s3r|s3z|xmgz|xmr|xmz|669|amf|ams|dbm|digi|dmf"
-        "|dsm|dtm|far|gdm|ice|imf|it|j2b|m15|mdl|med|mmcmp|mms|mo3|mod|mptm"
-        "|mt2|mtm|nst|okt|plm|ppm|psm|pt36|ptm|s3m|sfx|sfx2|st26|stk|stm"
-        "|stp|ult|umx|wow|xm|xpk|flv|dat|lvf|m4v|mkv|mk3d|mka|mks|webm|mca|mcc"
-        "|mjpg|mjpeg|mpo|j2k|mlp|mods|moflex|mov|mp4|3gp|3g2|mj2|psp|m4b"
-        "|ism|ismv|isma|f4v|mp2|mpa|mpc|mjpg|mpl2|msf|mtaf|ul|musx|mvi|mxg"
-        "|v|nist|sph|nsp|nut|obu|oma|omg|pjs|pvf|yuv|cif|qcif|rgb|rt|rsd"
-        "|rsd|rso|sw|sb|sami|sbc|msbc|sbg|scc|sdr2|sds|sdx|ser|sga|shn|vb|son|imx"
-        "|sln|mjpg|stl|sup|svag|svs|tak|thd|tta|ans|art|asc|diz|ice|vt|ty|ty+|uw|ub"
-        "|v210|yuv10|vag|vc1|rcv|viv|vpk|vqf|vql|vqe|wsd|xmv|xvag|yop|y4m"
-    )
-    if audio:
-        audio_only = "|opus|oga|ogg|mp3|m2a|m4a|flac|wav|wma|aac|aa3|ac3|ape"
-        FFMPEG_DEMUXERS += audio_only
-
-    FFMPEG_ENDINGS = FFMPEG_DEMUXERS.split("|")
-    video_files = []
-    for f in Path(path).resolve().rglob("*"):
-        if f.is_file() and (f.suffix.lower()[1:] in FFMPEG_ENDINGS):
-            video_files.append(str(f))
-
-    return video_files
 
 
 def compile_query(query, *args):

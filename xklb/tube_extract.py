@@ -15,7 +15,7 @@ from xklb.db import optimize_db, sqlite_con
 from xklb.subtitle import subs_to_text
 from xklb.tube_actions import default_ydl_opts
 from xklb.utils import argparse_dict, combine, filter_None, log, safe_unpack, single_column_tolist
-from xklb.utils_urls import sanitize_url
+from xklb.utils_paths import sanitize_url
 
 
 def parse_args(action, usage):
