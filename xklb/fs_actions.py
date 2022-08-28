@@ -573,9 +573,20 @@ audio_exclude_string = (
 )
 
 
+def construct_bindings(args, cf, include_func, exclude_func):
+    bindings = {}
+    for idx, inc in enumerate(args.include):
+        cf.append(include_func(idx))
+        bindings[f"include{idx}"] = "%" + inc.replace(" ", "%").replace("%%", " ") + "%"
+    for idx, exc in enumerate(args.exclude):
+        cf.append(exclude_func(idx))
+        bindings[f"exclude{idx}"] = "%" + exc.replace(" ", "%").replace("%%", " ") + "%"
+
+    return bindings
+
+
 def construct_fs_query(args):
     cf = []
-    bindings = {}
 
     if args.duration:
         cf.append(" and duration IS NOT NULL " + args.duration)
@@ -585,12 +596,14 @@ def construct_fs_query(args):
     cf.extend([" and " + w for w in args.where])
 
     if args.action == SC.listen:
-        for idx, inc in enumerate(args.include):
-            cf.append(audio_include_string(idx))
-            bindings[f"include{idx}"] = "%" + inc.replace(" ", "%").replace("%%", " ") + "%"
-        for idx, exc in enumerate(args.exclude):
-            cf.append(audio_exclude_string(idx))
-            bindings[f"exclude{idx}"] = "%" + exc.replace(" ", "%").replace("%%", " ") + "%"
+        bindings = construct_bindings(args, cf, audio_include_string, audio_exclude_string)
+    elif args.action == SC.watch:
+        bindings = construct_bindings(
+            args,
+            cf,
+            lambda x: f"and ( path like :include{x} OR tags like :include{x} )",
+            lambda x: f"and path not like :exclude{x} AND tags not like :exclude{x}",
+        )
     else:
         bindings = []
         for inc in args.include:
