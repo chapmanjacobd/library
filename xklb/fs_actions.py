@@ -389,7 +389,7 @@ def parse_args(action, default_db, default_chromecast=""):
     if args.player:
         args.player = shlex.split(args.player)
 
-    log.info(utils.filter_None(args.__dict__))
+    log.info(utils.dict_filter_bool(args.__dict__))
 
     args.sock = None
     return args

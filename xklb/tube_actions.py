@@ -7,7 +7,7 @@ from tabulate import tabulate
 from xklb.db import sqlite_con
 from xklb.fs_actions import parse_args, process_actions
 from xklb.player import delete_playlists
-from xklb.utils import SC, filter_None, human_time, log, resize_col
+from xklb.utils import SC, dict_filter_bool, human_time, log, resize_col
 
 # TODO: add cookiesfrombrowser: ('firefox', ) as a default
 # cookiesfrombrowser: ('vivaldi', ) # should not crash if not installed ?
@@ -217,7 +217,7 @@ def tube_list():
     parser.add_argument("--delete", "--remove", "--erase", "--rm", "-rm", nargs="+", help=argparse.SUPPRESS)
     parser.add_argument("-v", "--verbose", action="count", default=0)
     args = parser.parse_args()
-    log.info(filter_None(args.__dict__))
+    log.info(dict_filter_bool(args.__dict__))
 
     args = parser.parse_args()
 

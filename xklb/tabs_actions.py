@@ -6,7 +6,7 @@ import pandas as pd
 from xklb.db import sqlite_con
 from xklb.player import generic_player, mark_media_watched, override_sort, printer
 from xklb.tabs_extract import Frequency
-from xklb.utils import SC, cmd, filter_None, flatten, log
+from xklb.utils import SC, cmd, dict_filter_bool, flatten, log
 
 tabs_include_string = (
     lambda x: f"""and (
@@ -201,7 +201,7 @@ def parse_args(action, default_db):
     if args.cols:
         args.cols = list(flatten([s.split(",") for s in args.cols]))
 
-    log.info(filter_None(args.__dict__))
+    log.info(dict_filter_bool(args.__dict__))
 
     return args
 

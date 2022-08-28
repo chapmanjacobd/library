@@ -15,10 +15,18 @@ IMAGE_SUBTITLE_CODECS = ["dvbsub", "dvdsub", "pgssub", "xsub", "dvb_subtitle", "
 
 
 def extract(video_file, stream_index):
-    temp_vtt = tempfile.mktemp(".vtt")
+    temp_srt = tempfile.mktemp(".srt")
 
-    ffmpeg.input(video_file).output(temp_vtt, map="0:" + str(stream_index)).run(quiet=True)
-    return temp_vtt
+    stream_id = "0:" + str(stream_index)
+
+    try:
+        ffmpeg.input(video_file).output(temp_srt, map=stream_id).run(quiet=True)
+    except Error as e:
+        log.info(f"Could not extract subtitle {stream_id} from video file. Likely incorrect subtitle character encoding set. %s", video_file)
+        log.debug(e.stderr.decode())
+        return None
+
+    return temp_srt
 
 
 def convert_to_srt(path):
@@ -26,7 +34,7 @@ def convert_to_srt(path):
     try:
         ffmpeg.input(path).output(temp_srt).run(quiet=True)
     except Error as e:
-        log.info(e.args)
+        log.info("Could not convert subtitle")
         log.info(e.stderr.decode())
         raise UnicodeDecodeError("utf-8", b"Dr. John A. Zoidberg", 1, 2, "Bleh!")
     else:

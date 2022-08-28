@@ -59,7 +59,7 @@ def parse_args():
     Path(args.database).touch()
     args.con = sqlite_con(args.database)
 
-    log.info(utils.filter_None(args.__dict__))
+    log.info(utils.dict_filter_bool(args.__dict__))
 
     return args
 
@@ -88,7 +88,7 @@ def get_new_paths(args):
             print(f"Updating frequency for {len(existing)} existing paths")
             remove_media(args, list(existing), quiet=True)
 
-    args.paths = list(filter(bool, [path.strip() for path in args.paths]))
+    args.paths = utils.conform([path.strip() for path in args.paths])
     return args.paths
 
 

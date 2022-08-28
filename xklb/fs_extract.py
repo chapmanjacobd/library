@@ -190,11 +190,14 @@ def extract_metadata(args, f):
 
         if args.db_type == "v":
             attachment_count = sum([1 for s in codec_types if s == "attachment"])
-            internal_subtitles = [
-                subtitle.extract(f, s["index"])
-                for s in streams
-                if s.get("codec_type") == "subtitle" and s.get("codec_name") not in subtitle.IMAGE_SUBTITLE_CODECS
-            ]
+            internal_subtitles = utils.conform(
+                [
+                    subtitle.extract(f, s["index"])
+                    for s in streams
+                    if s.get("codec_type") == "subtitle" and s.get("codec_name") not in subtitle.IMAGE_SUBTITLE_CODECS
+                ],
+            )
+
             external_subtitles = subtitle.get_external(f)
             subs_text = subtitle.subs_to_text(f, internal_subtitles + external_subtitles)
 
@@ -207,12 +210,12 @@ def extract_metadata(args, f):
 
         if args.db_type == "a":
             try:
-                tiny_tags = utils.filter_None(TinyTag.get(f).as_dict())
+                tiny_tags = utils.dict_filter_bool(TinyTag.get(f).as_dict())
             except Exception:
                 tiny_tags = dict()
 
             try:
-                mutagen_tags = utils.filter_None(mutagen.File(f).tags.as_dict())
+                mutagen_tags = utils.dict_filter_bool(mutagen.File(f).tags.as_dict())
             except Exception:
                 mutagen_tags = dict()
 
@@ -362,7 +365,7 @@ def parse_args():
         else:
             raise Exception(f"fs_extract for db_type {args.db_type} not implemented")
 
-    log.info(utils.filter_None(args.__dict__))
+    log.info(utils.dict_filter_bool(args.__dict__))
 
     return args
 
