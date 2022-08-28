@@ -7,23 +7,14 @@ from time import sleep
 from timeit import default_timer as timer
 from typing import Dict, List, Union
 from urllib.error import HTTPError
+
 import pandas as pd
-import webvtt
 import yt_dlp
 
 from xklb.db import optimize_db, sqlite_con
+from xklb.subtitle import subs_to_text
 from xklb.tube_actions import default_ydl_opts
-from xklb.utils import (
-    argparse_dict,
-    combine,
-    filter_None,
-    flatten,
-    log,
-    remove_text_inside_brackets,
-    remove_whitespaace,
-    safe_unpack,
-    single_column_tolist,
-)
+from xklb.utils import argparse_dict, combine, filter_None, log, safe_unpack, single_column_tolist
 from xklb.utils_urls import sanitize_url
 
 
@@ -81,8 +72,6 @@ def supported(url):  # thank you @dbr
 
 
 def get_subtitle_text(ydl: yt_dlp.YoutubeDL, req_sub_dict):
-    urls = [d["url"] for d in list(req_sub_dict.values())]
-
     def dl_sub(url):
         temp_file = tempfile.mktemp(".vtt")
 
@@ -92,19 +81,16 @@ def get_subtitle_text(ydl: yt_dlp.YoutubeDL, req_sub_dict):
             log.info("Unable to download subtitles; skipping")
             sleep(5)
             return None
-        try:
-            return [remove_text_inside_brackets(caption.text.replace("\n", " ")) for caption in webvtt.read(temp_file)]
-        except webvtt.MalformedFileError:
-            sleep(2)
-            return None
-        finally:
-            Path(temp_file).unlink(missing_ok=True)
+        else:
+            return temp_file
 
-    subtitles = " ".join(
-        list(dict.fromkeys(flatten([dl_sub(url) for url in urls])))
-    )
+    urls = [d["url"] for d in list(req_sub_dict.values())]
+    paths: List[str] = list(filter(bool, [dl_sub(url) for url in urls]))  # type: ignore
 
-    return remove_whitespaace(subtitles)
+    subs_text = subs_to_text(paths)
+    [Path(p).unlink(missing_ok=True) for p in paths]
+
+    return subs_text
 
 
 def consolidate(ydl: yt_dlp.YoutubeDL, playlist_path, v):
@@ -210,7 +196,7 @@ def consolidate(ydl: yt_dlp.YoutubeDL, playlist_path, v):
     cv["play_count"] = 0
     cv["time_played"] = 0
     cv["language"] = v.pop("language", None)
-    cv["tags"] = combine(subtitles, v.pop("description", None), v.pop("categories", None), v.pop("tags", None))
+    cv["tags"] = combine(v.pop("description", None), v.pop("categories", None), v.pop("tags", None), subtitles)
     cv["id"] = v.pop("id")
     cv["ie_key"] = safe_unpack(v.pop("ie_key", None), v.pop("extractor_key", None), v.pop("extractor", None))
     cv["title"] = safe_unpack(v.pop("title", None), v.get("playlist_title"))

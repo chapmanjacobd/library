@@ -1,10 +1,15 @@
-import argparse, os, re
+import argparse, os, re, tempfile
 from pathlib import Path
 from shlex import quote
+from typing import List
 
+import ffmpeg, webvtt
 from joblib import Parallel, delayed
 
-from xklb.utils import cmd, get_media_files
+from xklb.utils import cmd, flatten, get_media_files, remove_text_inside_brackets, remove_whitespaace
+
+SUBTITLE_FORMATS = "vtt|srt|ssa|ass|sub|idx|psb|smi|ssf|usf"
+IMAGE_SUBTITLE_CODECS = ["dvbsub", "dvdsub", "pgssub", "xsub", "dvb_subtitle", "dvd_subtitle", "hdmv_pgs_subtitle"]
 
 
 def youtube_dl_id(file) -> str:
@@ -21,6 +26,29 @@ def youtube_dl_id(file) -> str:
     return list(filter(None, [*yt_ids[0]]))[0]
 
 
+def extract_subtitle(video_file, stream_index):
+    temp_vtt = tempfile.mktemp(".vtt")
+
+    ffmpeg.input(video_file).output(temp_vtt, map="0:" + str(stream_index)).run(quiet=True)
+    return temp_vtt
+
+
+def subs_to_text(paths: List[str]):
+    def read_sub(path):
+        if Path(path).suffix != ".vtt":
+            temp_vtt = tempfile.mktemp("vtt")
+            ffmpeg.input(path).output(temp_vtt).run(quiet=True)
+            path = temp_vtt
+
+        try:
+            return [remove_text_inside_brackets(caption.text.replace("\n", " ")) for caption in webvtt.read(path)]
+        except webvtt.MalformedFileError:
+            return []
+
+    subtitles = " ".join(list(dict.fromkeys(flatten([read_sub(path) for path in paths]))))
+    return remove_whitespaace(subtitles)
+
+
 def has_internal_subtitle(file):
     internal_sub = cmd(
         f"ffmpeg -hide_banner -nostdin -i {quote(str(file))} -c copy -map 0:s:0 -frames:s 1 -f null - -v 0",
@@ -31,8 +59,22 @@ def has_internal_subtitle(file):
         return True
 
 
+def get_external_subtitles(file):
+    p = Path(file)
+    for suffix in p.suffixes:
+        subtitles = [
+            str(p)
+            for p in p.parent.glob(p.stem.removesuffix(suffix) + "*")
+            if p.suffix[1:] in SUBTITLE_FORMATS.split("|")
+        ]
+
+        if len(subtitles) > 0:
+            return subtitles
+
+    return []
+
+
 def has_external_subtitle(file):
-    SUBTITLE_FORMATS = "vtt|srt|ssa|ass|sub|idx|psb|smi|ssf|usf"
     file = Path(file)
 
     if any(
