@@ -274,12 +274,12 @@ def find_new_files(args, path):
 
 def scan_path(args, path):
     path = Path(path).resolve()
-    print(f"{path} : Scanning...")
+    print(f"[{path}] Building file list...")
 
     new_files = find_new_files(args, path)
 
     if len(new_files) > 0:
-        print(f"Adding {len(new_files)} new media")
+        print(f"[{path}] Adding {len(new_files)} new media")
         log.debug(new_files)
 
         batch_count = SQLITE_PARAM_LIMIT // 100
