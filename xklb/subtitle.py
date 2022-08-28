@@ -21,31 +21,46 @@ def extract(video_file, stream_index):
     return temp_vtt
 
 
-def subs_to_text(video_path, paths: List[str]):
-    def read_sub(path):
-        if Path(path).suffix != ".srt":
-            temp_srt = tempfile.mktemp(".srt")
-            try:
-                ffmpeg.input(path).output(temp_srt).run(quiet=True)
-            except Error as e:
-                log.warning(e.args)
-                log.warning(e.stdout)
-                log.warning(e.stderr)
-                log.error(e.__traceback__)
-                return []
-            else:
-                path = temp_srt
+def convert_to_srt(path):
+    temp_srt = tempfile.mktemp(".srt")
+    try:
+        ffmpeg.input(path).output(temp_srt).run(quiet=True)
+    except Error as e:
+        log.warning(e.args)
+        log.warning(e.stdout)
+        log.warning(e.stderr)
+        log.error(e.__traceback__)
+        raise UnicodeDecodeError("utf-8", b"Dr. John A. Zoidberg", 1, 2, "Bleh!")
+    else:
+        return temp_srt
 
+
+def read_sub_unsafe(path):
+    return [
+        remove_text_inside_brackets(caption.text.replace(r"\N", " ").replace(r"\n", " ").replace("\n", " "))
+        for caption in pysubs2.load(path, format_="srt")
+    ]
+
+
+def read_sub(path):
+    if Path(path).suffix != ".srt":
+        path = convert_to_srt(path)
+
+    try:
+        return read_sub_unsafe(path)
+    except UnicodeDecodeError:
+        return read_sub_unsafe(convert_to_srt(path))
+
+
+def subs_to_text(video_path, paths: List[str]):
+    def sub_to_text(path):
         try:
-            return [
-                remove_text_inside_brackets(caption.text.replace(r"\N", " ").replace(r"\n", " ").replace("\n", " "))
-                for caption in pysubs2.load(path, format_="srt")
-            ]
+            return read_sub(path)
         except UnicodeDecodeError:
             log.warning(f"[{video_path}] Could not decode subtitle {path}")
             return []
 
-    subtitles = " ".join(list(dict.fromkeys(flatten([read_sub(path) for path in paths]))))
+    subtitles = " ".join(list(dict.fromkeys(flatten([sub_to_text(path) for path in paths]))))
     return remove_whitespaace(subtitles)
 
 
@@ -61,11 +76,11 @@ def has_internal_subtitle(file):
 
 def get_external(file):
     p = Path(file)
-    for suffix in p.suffixes:
+    for suffix in reversed(p.suffixes):
         subtitles = [
-            str(p)
-            for p in p.parent.glob(p.stem.removesuffix(suffix) + "*")
-            if p.suffix[1:] in SUBTITLE_FORMATS.split("|")
+            str(sub_p)
+            for sub_p in p.parent.glob(p.stem[: -len(suffix)] + "*")
+            if sub_p.suffix[1:] in SUBTITLE_FORMATS.split("|")
         ]
 
         if len(subtitles) > 0:
