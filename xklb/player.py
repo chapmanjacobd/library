@@ -12,7 +12,7 @@ import humanize
 import pandas as pd
 from tabulate import tabulate
 
-from xklb import utils, utils_paths
+from xklb import paths, utils
 from xklb.utils import (
     SC,
     SQLITE_PARAM_LIMIT,
@@ -251,7 +251,7 @@ def watch_chromecast(args, m, subtitles_file=None):
                 args.chromecast_device,
                 "cast",
                 "-s",
-                subtitles_file if subtitles_file else utils_paths.FAKE_SUBTITLE,
+                subtitles_file if subtitles_file else paths.FAKE_SUBTITLE,
                 m["path"],
             )
         else:
@@ -263,11 +263,11 @@ def watch_chromecast(args, m, subtitles_file=None):
 
 
 def listen_chromecast(args, m):
-    Path(utils_paths.CAST_NOW_PLAYING).write_text(m["path"])
-    Path(utils_paths.FAKE_SUBTITLE).touch()
+    Path(paths.CAST_NOW_PLAYING).write_text(m["path"])
+    Path(paths.FAKE_SUBTITLE).touch()
     if args.with_local:
         cast_process = subprocess.Popen(
-            ["catt", "-d", args.chromecast_device, "cast", "-s", utils_paths.FAKE_SUBTITLE, m["path"]], **os_bg_kwargs()
+            ["catt", "-d", args.chromecast_device, "cast", "-s", paths.FAKE_SUBTITLE, m["path"]], **os_bg_kwargs()
         )
         sleep(0.974)  # imperfect lazy sync; I use keyboard shortcuts to send `set speed` commands to mpv for resync
         # if pyChromecast provides a way to sync accurately that would be very interesting to know; I have not researched it
@@ -276,7 +276,7 @@ def listen_chromecast(args, m):
         sleep(3.0)  # give chromecast some time to breathe
     else:
         if args.action in [SC.watch, SC.listen]:
-            catt_log = cmd("catt", "-d", args.chromecast_device, "cast", "-s", utils_paths.FAKE_SUBTITLE, m["path"])
+            catt_log = cmd("catt", "-d", args.chromecast_device, "cast", "-s", paths.FAKE_SUBTITLE, m["path"])
         else:  # args.action in [SC.tubewatch, SC.tubelisten]:
             catt_log = args.cc.play_url(m["path"], resolve=True, block=True)
 

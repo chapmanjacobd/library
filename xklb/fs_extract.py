@@ -9,11 +9,11 @@ import pandas as pd
 from joblib import Parallel, delayed
 from tinytag import TinyTag
 
-from xklb import subtitle
+from xklb import subtitle, utils
 from xklb.db import fetchall_dict, optimize_db, sqlite_con
-from xklb.utils import SQLITE_PARAM_LIMIT, chunks, cmd, combine, filter_None, log, safe_unpack, single_column_tolist
-from xklb.utils_paths import get_media_files, youtube_dl_id
-from xklb.utils_player import mark_media_deleted
+from xklb.utils import SQLITE_PARAM_LIMIT, cmd, combine, log, safe_unpack
+from xklb.paths import get_media_files, youtube_dl_id
+from xklb.player import mark_media_deleted
 
 
 def get_provenance(file):
@@ -205,12 +205,12 @@ def extract_metadata(args, f):
 
         if args.db_type == "a":
             try:
-                tiny_tags = filter_None(TinyTag.get(f).as_dict())
+                tiny_tags = utils.filter_None(TinyTag.get(f).as_dict())
             except Exception:
                 tiny_tags = dict()
 
             try:
-                mutagen_tags = filter_None(mutagen.File(f).tags.as_dict())
+                mutagen_tags = utils.filter_None(mutagen.File(f).tags.as_dict())
             except Exception:
                 mutagen_tags = dict()
 
@@ -255,7 +255,7 @@ def find_new_files(args, path):
 
     try:
         existing = set(
-            single_column_tolist(
+            utils.single_column_tolist(
                 fetchall_dict(args.con, f"select path from media where is_deleted=0 and path like '{path}%'"), "path"
             )
         )
@@ -284,7 +284,7 @@ def scan_path(args, path):
 
         batch_count = SQLITE_PARAM_LIMIT // 100
         chunks_count = math.ceil(len(new_files) / batch_count)
-        df_chunked = chunks(new_files, batch_count)
+        df_chunked = utils.chunks(new_files, batch_count)
         for idx, l in enumerate(df_chunked):
             percent = ((batch_count * idx) + len(l)) / len(new_files) * 100
             print(f"[{path}] Extracting metadata {percent:3.1f}% (chunk {idx + 1} of {chunks_count})")
@@ -359,6 +359,9 @@ def parse_args():
             args.database = "video.db"
         else:
             raise Exception(f"fs_extract for db_type {args.db_type} not implemented")
+
+    log.info(utils.filter_None(args.__dict__))
+
     return args
 
 

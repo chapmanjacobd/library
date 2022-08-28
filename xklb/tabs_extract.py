@@ -4,11 +4,12 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 import pandas as pd
+from xklb import utils
 
 from xklb.db import fetchall_dict, sqlite_con
-from xklb.utils import argparse_enum, filter_None, log, single_column_tolist
-from xklb.utils_paths import Frequency, sanitize_url
-from xklb.utils_player import remove_media
+from xklb.utils import argparse_enum, log, single_column_tolist
+from xklb.paths import Frequency, sanitize_url
+from xklb.player import remove_media
 
 
 def parse_args():
@@ -51,13 +52,14 @@ def parse_args():
 
     parser.add_argument("-v", "--verbose", action="count", default=0)
     args = parser.parse_args()
-    log.info(filter_None(args.__dict__))
 
     if args.db:
         args.database = args.db
 
     Path(args.database).touch()
     args.con = sqlite_con(args.database)
+
+    log.info(utils.filter_None(args.__dict__))
 
     return args
 
