@@ -1,4 +1,4 @@
-import argparse, math, os, sys
+import argparse, math, os, sys, tempfile
 from pathlib import Path
 from shutil import which
 from typing import Dict
@@ -232,6 +232,8 @@ def extract_chunk(args, l):
         )
         or []
     )
+
+    [p.unlink() for p in Path(tempfile.gettempdir()).glob("*.srt")]
 
     DF = pd.DataFrame(list(filter(None, metadata)))
 
