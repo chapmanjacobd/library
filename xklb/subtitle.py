@@ -52,7 +52,7 @@ def read_sub_unsafe(path):
 
 
 def read_sub(path):
-    if Path(path).suffix != ".srt":
+    if Path(path).suffix.lower() != ".srt":
         path = convert_to_srt(path)
 
     try:
@@ -89,7 +89,7 @@ def get_external(file):
     subtitles = [
         str(sub_p)
         for sub_p in p.parent.glob(p.stem[: -len(p.suffix)] + "*")
-        if sub_p.suffix[1:] in SUBTITLE_FORMATS.split("|")
+        if sub_p.suffix[1:].lower() in SUBTITLE_FORMATS.split("|")
     ]
 
     if len(subtitles) > 0:
@@ -98,34 +98,9 @@ def get_external(file):
     return []
 
 
-def has_external_subtitle(file):
-    file = Path(file)
-
-    if any(
-        [
-            file.with_suffix("." + ext).exists()
-            or file.with_suffix(".en." + ext).exists()
-            or file.with_suffix(".eng." + ext).exists()
-            for ext in SUBTITLE_FORMATS.split("|")
-        ]
-    ):
-        return True
-
-    if len(file.stem) <= 13:
-        return False
-
-    FORMATSUB_REGEX = re.compile(rf".*\.({SUBTITLE_FORMATS})")
-    for globbed in file.parent.glob(file.stem[:-12] + r".*"):
-        match = FORMATSUB_REGEX.match(str(globbed))
-        if match:
-            return True
-
-    return False
-
-
 def get(args, file):
     try:
-        if has_internal_subtitle(file) or has_external_subtitle(file):
+        if has_internal_subtitle(file) or len(get_external(file)) > 0:
             return
     except Exception:
         pass

@@ -82,7 +82,7 @@ def get_media_files(path, audio=False):
     FFMPEG_ENDINGS = FFMPEG_DEMUXERS.split("|")
     video_files = []
     for f in Path(path).resolve().rglob("*"):
-        if f.is_file() and (f.suffix.lower()[1:] in FFMPEG_ENDINGS):
+        if f.is_file() and (f.suffix[1:].lower() in FFMPEG_ENDINGS):
             video_files.append(str(f))
 
     return video_files
