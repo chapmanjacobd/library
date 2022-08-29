@@ -321,13 +321,17 @@ def parse_args(action, default_db, default_chromecast=""):
     if not args.sort:
         if args.action in [SC.listen, SC.watch]:
             args.sort = ["priority"]
-            if args.print and args.include:
-                args.sort = ["duration"]
+            if args.include:
+                args.sort = ["duration desc"]
+                if args.print:
+                    args.sort = ["duration"]
 
         elif args.action in [SC.tubelisten, SC.tubewatch]:
             args.sort = ["play_count, random"]
-            if args.print and args.include:
-                args.sort = ["playlist_path, duration"]
+            if args.include:
+                args.sort = ["playlist_path, duration desc"]
+                if args.print:
+                    args.sort = ["playlist_path, duration"]
 
         elif args.action in [SC.filesystem]:
             args.sort = ["sparseness, size"]
@@ -644,7 +648,7 @@ def construct_fs_query(args):
     ORDER BY 1=1
         {',' + args.sort if args.sort else ''}
         {', path' if args.print or args.include or args.play_in_order > 0 else ''}
-        {', duration / size ASC' if args.action in [SC.listen, SC.watch] else ''}
+        , random()
     {LIMIT} {OFFSET}
     """
 
