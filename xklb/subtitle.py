@@ -85,15 +85,15 @@ def has_internal_subtitle(file):
 
 def get_external(file):
     p = Path(file)
-    for suffix in reversed(p.suffixes):
-        subtitles = [
-            str(sub_p)
-            for sub_p in p.parent.glob(p.stem[: -len(suffix)] + "*")
-            if sub_p.suffix[1:] in SUBTITLE_FORMATS.split("|")
-        ]
 
-        if len(subtitles) > 0:
-            return subtitles
+    subtitles = [
+        str(sub_p)
+        for sub_p in p.parent.glob(p.stem[: -len(p.suffix)] + "*")
+        if sub_p.suffix[1:] in SUBTITLE_FORMATS.split("|")
+    ]
+
+    if len(subtitles) > 0:
+        return subtitles
 
     return []
 
