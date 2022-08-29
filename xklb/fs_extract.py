@@ -111,7 +111,7 @@ def extract_metadata(args, f):
         except (KeyboardInterrupt, SystemExit):
             exit(130)
         except Exception:
-            print(f"Failed reading {f}", file=sys.stderr)
+            print(f"[{f}] Failed reading header", file=sys.stderr)
             if args.delete_unplayable:
                 if which("trash-put") is not None:
                     cmd("trash-put", f, strict=False)
@@ -120,7 +120,7 @@ def extract_metadata(args, f):
             return
 
         if not "format" in probe:
-            print(f"Failed reading format {f}", file=sys.stderr)
+            print(f"[{f}] Failed reading format", file=sys.stderr)
             print(probe)
             return
 
@@ -274,7 +274,7 @@ def find_new_files(args, path):
         deleted_files = list(existing - new_files)
         deleted_count = mark_media_deleted(args, deleted_files)
         if deleted_count > 0:
-            print("Marking", deleted_count, "orphaned metadata records as deleted")
+            print(f"[{path}] Marking", deleted_count, "orphaned metadata records as deleted")
 
     return scanned_files
 
@@ -298,7 +298,7 @@ def scan_path(args, path):
             extract_chunk(args, l)
 
             if args.subtitle:
-                print("Fetching subtitles")
+                print(f"[{path}] Fetching subtitles")
                 Parallel(n_jobs=5)(delayed(subtitle.get)(args, file) for file in l)
 
     return len(new_files)

@@ -107,8 +107,9 @@ def get(args, file):
 
     try:
         yt_video_id = youtube_dl_id(file)
-    except Exception:
+    except Exception as e:
         print(file)
+        print(e)
         return
 
     run_subliminal = not args.youtube_only
@@ -128,7 +129,7 @@ def get(args, file):
         )
 
     if run_subliminal:
-        print("Downloading subtitles:", file)
+        print(f"[{file}] Downloading subtitles")
         cmd(
             "subliminal",
             "--opensubtitles",
