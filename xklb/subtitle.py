@@ -7,7 +7,7 @@ import ffmpeg, pysubs2
 from ffmpeg import Error
 from joblib import Parallel, delayed
 
-from xklb.paths import get_media_files, youtube_dl_id
+from xklb.paths import SUB_TEMP_DIR, get_media_files, youtube_dl_id
 from xklb.utils import cmd, flatten, log, remove_text_inside_brackets, remove_whitespaace
 
 SUBTITLE_FORMATS = "vtt|srt|ssa|ass|jss|aqt|mpl2|mpsub|pjs|rt|sami|smi|stl|xml|txt|psb|ssf|usf"
@@ -15,7 +15,7 @@ IMAGE_SUBTITLE_CODECS = ["dvbsub", "dvdsub", "pgssub", "xsub", "dvb_subtitle", "
 
 
 def extract(video_file, stream_index):
-    temp_srt = tempfile.mktemp(".srt")
+    temp_srt = tempfile.mktemp(".srt", dir=SUB_TEMP_DIR)
 
     stream_id = "0:" + str(stream_index)
 
@@ -33,7 +33,7 @@ def extract(video_file, stream_index):
 
 
 def convert_to_srt(path):
-    temp_srt = tempfile.mktemp(".srt")
+    temp_srt = tempfile.mktemp(".srt", dir=SUB_TEMP_DIR)
     try:
         ffmpeg.input(path).output(temp_srt).run(quiet=True)
     except Error as e:

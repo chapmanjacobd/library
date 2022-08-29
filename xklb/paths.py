@@ -1,12 +1,13 @@
 import enum, os, re
 from pathlib import Path
-from tempfile import gettempdir
+from tempfile import  gettempdir, mkdtemp
 
 from xklb import utils
 
 FAKE_SUBTITLE = os.path.join(gettempdir(), "sub.srt")  # https://github.com/skorokithakis/catt/issues/393
 CAST_NOW_PLAYING = os.path.join(gettempdir(), "catt_playing")
 DEFAULT_MPV_SOCKET = os.path.join(gettempdir(), "mpv_socket")
+SUB_TEMP_DIR = mkdtemp()
 
 
 class Frequency(enum.Enum):
