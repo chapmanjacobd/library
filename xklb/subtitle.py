@@ -88,7 +88,7 @@ def get_external(file):
 
     subtitles = [
         str(sub_p)
-        for sub_p in p.parent.glob(p.stem[: -len(p.suffix)] + "*")
+        for sub_p in p.parent.glob(p.stem + "*")
         if sub_p.suffix[1:].lower() in SUBTITLE_FORMATS.split("|")
     ]
 
