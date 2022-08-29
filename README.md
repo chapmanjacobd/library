@@ -413,7 +413,6 @@ I do this instead of copy-on-write duplication because I want deletions to stick
 - tube: make sure playlistless media doesn't save to the playlists table
 - all: verify things work on Windows
 - all: more test coverage
-- fs: extract subtitles maybe use pyfilesystem memory instead of /tmp
 - all: follow yt-dlp print arg syntax
 - all: follow fd-find size arg syntax
 - all: automatic schema migration
