@@ -466,5 +466,5 @@ def override_sort(string):
         string.replace("month_created", YEAR_MONTH("time_created"))
         .replace("month_modified", YEAR_MONTH("time_modified"))
         .replace("random", "random()")
-        .replace("priority", "play_count, round(duration / size,7)")
+        .replace("priority", "play_count, ntile(1000) over (order by size/duration) desc")
     )
