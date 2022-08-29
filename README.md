@@ -91,7 +91,7 @@ Tubeupdate will go through all added playlists and fetch metadata of any new vid
 
 To stop playing just press Ctrl+C in either the terminal or mpv
 
-## tabs (visit websites on a schedule)
+## Start -- tabs (visit websites on a schedule)
 
 tabs provides a way to organize your visits to URLs that you want to visit every once in a while.
 
