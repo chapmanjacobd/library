@@ -283,7 +283,7 @@ def process_playlist(args, playlist_path) -> Union[List[Dict], None]:
 
             self.current_video_count += 1
             sys.stdout.write("\033[K\r")
-            print(f"{playlist_path}: added {self.current_video_count} videos", end="\r", flush=True)
+            print(f"[{playlist_path}] Added {self.current_video_count} videos", end="\r", flush=True)
             return [], info
 
         def _add_media(self, entry):
@@ -368,7 +368,7 @@ def get_extra_metadata(args, playlist_path) -> Union[List[Dict], None]:
             current_video_count += 1
             sys.stdout.write("\033[K\r")
             print(
-                f"{playlist_path}: {current_video_count} of {len(videos)} extra metadata fetched", end="\r", flush=True
+                f"[{playlist_path}] {current_video_count} of {len(videos)} extra metadata fetched", end="\r", flush=True
             )
 
 

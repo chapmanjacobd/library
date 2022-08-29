@@ -110,7 +110,7 @@ def remove_media(args, deleted_files: Union[str, list], quiet=False):
     if len(deleted_files) > 0:
         if not quiet:
             if len(deleted_files) == 1:
-                print("Removing orphaned metadata", deleted_files[0])
+                print(f"[{deleted_files[0]}] Removing orphaned metadata")
             else:
                 print(f"Removing {len(deleted_files)} orphaned metadata")
 
@@ -410,7 +410,7 @@ def printer(args, query, bindings):
     if "w" in args.print:
         marked = mark_media_watched(args, db_resp[["path"]].values.tolist())
         if not "f" in args.print:
-            return print(f"{marked} metadata records marked watched")
+            return print(f"Marked {marked} metadata records as watched")
 
     if "f" in args.print:
         if args.limit == 1:
@@ -452,7 +452,7 @@ def printer(args, query, bindings):
 
         if args.action in [SC.listen, SC.watch, SC.tubelisten, SC.tubewatch]:
             if len(db_resp) > 1:
-                print(f"{len(db_resp)} media")
+                print(f"{len(db_resp)} media" + (f" (limited to {args.limit})" if args.limit else ''))
             summary = db_resp.sum(numeric_only=True)
             duration = summary.get("duration") or 0
             duration = human_time(duration)

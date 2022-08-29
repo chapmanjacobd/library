@@ -27,6 +27,9 @@ def optimize_db(args):
             cols = []
         return cols
 
+    if Path(args.database).stat().st_size > 900000000: # 900 MB
+        args.optimize = True
+
     if args.optimize:
         print("Optimizing database")
         if Path(args.database).exists():
