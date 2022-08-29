@@ -11,7 +11,7 @@ from tinytag import TinyTag
 
 from xklb import subtitle, utils
 from xklb.db import fetchall_dict, optimize_db, sqlite_con
-from xklb.paths import get_media_files, youtube_dl_id
+from xklb.paths import SUB_TEMP_DIR, get_media_files, youtube_dl_id
 from xklb.player import mark_media_deleted
 from xklb.utils import SQLITE_PARAM_LIMIT, cmd, combine, log, safe_unpack
 
@@ -233,7 +233,7 @@ def extract_chunk(args, l):
         or []
     )
 
-    [p.unlink() for p in Path(tempfile.gettempdir()).glob("*.srt")]
+    [p.unlink() for p in Path(SUB_TEMP_DIR).glob("*.srt")]
 
     DF = pd.DataFrame(list(filter(None, metadata)))
 

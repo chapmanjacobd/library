@@ -13,7 +13,7 @@ import yt_dlp
 
 from xklb import utils
 from xklb.db import optimize_db, sqlite_con
-from xklb.paths import sanitize_url
+from xklb.paths import SUB_TEMP_DIR, sanitize_url
 from xklb.subtitle import subs_to_text
 from xklb.tube_actions import default_ydl_opts
 from xklb.utils import combine, log, safe_unpack
@@ -76,7 +76,7 @@ def supported(url):  # thank you @dbr
 
 def get_subtitle_text(ydl: yt_dlp.YoutubeDL, video_path, req_sub_dict):
     def dl_sub(url):
-        temp_file = tempfile.mktemp(".srt")
+        temp_file = tempfile.mktemp(".srt", dir=SUB_TEMP_DIR)
 
         try:
             ydl.dl(temp_file, {"url": url}, subtitle=True)
