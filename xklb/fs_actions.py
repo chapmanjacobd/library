@@ -623,7 +623,7 @@ def construct_fs_query(args):
 
     table = "media"
     if args.include:
-        bindings["query"] = " AND ".join(args.include)
+        bindings["query"] = " AND ".join([s if " NOT " in s else '"'+s+'"' for s in args.include])
         if args.exclude:
             bindings["query"] += " NOT " + " NOT ".join(args.exclude)
         table = "(" + args.db["media"].search_sql() + ")"
