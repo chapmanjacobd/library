@@ -261,9 +261,7 @@ def find_new_files(args, path):
 
     try:
         existing = set(
-            utils.single_column_tolist(
-                db.fetchall_dict(args.db, f"select path from media where is_deleted=0 and path like '{path}%'"), "path"
-            )
+            [d["path"] for d in args.db.query(f"select path from media where is_deleted=0 and path like '{path}%'")]
         )
     except Exception:
         scanned_files = list(new_files)

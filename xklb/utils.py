@@ -236,15 +236,6 @@ def compile_query(query, *args):
     return query
 
 
-def single_column_tolist(array_to_unpack, column_name: Union[str, int] = 1):
-    return list(
-        map(
-            lambda x: x[column_name],
-            array_to_unpack,
-        )
-    )
-
-
 def dict_filter_bool(kwargs):
     return {k: v for k, v in kwargs.items() if v}
 

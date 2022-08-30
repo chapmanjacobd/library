@@ -8,7 +8,7 @@ import pandas as pd
 from xklb import db, utils
 from xklb.paths import Frequency, sanitize_url
 from xklb.player import remove_media
-from xklb.utils import argparse_enum, log, single_column_tolist
+from xklb.utils import argparse_enum, log
 
 
 def parse_args():
@@ -79,7 +79,7 @@ def get_new_paths(args):
         )
 
     try:
-        existing = set(single_column_tolist(db.fetchall_dict(args.db, *qb), "path"))
+        existing = set([d["path"] for d in args.db.query(*qb)])
     except Exception:
         pass
     else:

@@ -19,10 +19,6 @@ def connect(args):
     return sqlite_utils.Database(args.database, tracer=tracer if args.verbose > 1 else None)  # type: ignore
 
 
-def fetchall_dict(con, *args):
-    return [dict(r) for r in con.execute(*args).fetchall()]
-
-
 def optimize(args):
     print("Optimizing database")
     db: sqlite_utils.Database = args.db
@@ -48,7 +44,7 @@ def optimize(args):
 
 
 def fts_quote(l):
-    fts_words = [' NOT ', ' AND ', ' OR ', '^', '*', '+', '-', ':', 'NEAR(']
+    fts_words = [" NOT ", " AND ", " OR ", "^", "*", "+", "-", ":", "NEAR("]
     return [s if any([r in s for r in fts_words]) else '"' + s + '"' for s in l]
 
 
