@@ -48,7 +48,8 @@ def optimize(args):
 
 
 def fts_quote(l):
-    return [s if " NOT " in s else '"' + s + '"' for s in l]
+    fts_words = [' NOT ', ' AND ', ' OR ', '^', '*', '+', '-', ':', 'NEAR(']
+    return [s if any([r in s for r in fts_words]) else '"' + s + '"' for s in l]
 
 
 def fts_search(args, bindings):
