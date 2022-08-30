@@ -1,6 +1,6 @@
 import enum, os, re
 from pathlib import Path
-from tempfile import  gettempdir, mkdtemp
+from tempfile import gettempdir, mkdtemp
 
 from xklb import utils
 

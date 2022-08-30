@@ -12,7 +12,7 @@ import pandas as pd
 import yt_dlp
 
 from xklb import utils
-from xklb.db import optimize_db, sqlite_con
+from xklb.db import connect_db, optimize_db
 from xklb.paths import SUB_TEMP_DIR, sanitize_url
 from xklb.subtitle import subs_to_text
 from xklb.tube_actions import default_ydl_opts
@@ -51,7 +51,7 @@ def parse_args(action, usage):
         args.database = args.db
 
     Path(args.database).touch()
-    args.con = sqlite_con(args.database)
+    args.db = connect_db(args)
 
     ydl_opts = {**default_ydl_opts, **args.yt_dlp_config}
     log.info(utils.dict_filter_bool(ydl_opts))
@@ -230,7 +230,7 @@ def consolidate(ydl: yt_dlp.YoutubeDL, playlist_path, v):
 
 def playlist_known(args, playlist_path):
     try:
-        known = args.con.execute("select 1 from playlists where path=?", [playlist_path]).fetchone()
+        known = args.db.execute("select 1 from playlists where path=?", [playlist_path]).fetchone()
     except Exception:
         return False
     if known is None:
@@ -240,7 +240,7 @@ def playlist_known(args, playlist_path):
 
 def video_known(args, playlist_path, path):
     try:
-        known = args.con.execute(
+        known = args.db.execute(
             "select 1 from media where playlist_path=? and path=?", [playlist_path, path]
         ).fetchone()
     except Exception:
@@ -255,7 +255,7 @@ def save_entries(args, entries):
         entriesDF = pd.DataFrame(entries)
         entriesDF.apply(pd.to_numeric, errors="ignore").convert_dtypes().to_sql(  # type: ignore
             "media",
-            con=args.con,
+            con=args.db.conn,
             if_exists="append",
             index=False,
             chunksize=70,
@@ -308,7 +308,7 @@ def process_playlist(args, playlist_path) -> Union[List[Dict], None]:
                 pass
             else:
                 plDF = pd.DataFrame([pl])
-                plDF.convert_dtypes().to_sql("playlists", con=args.con, if_exists="append", index=False)
+                plDF.convert_dtypes().to_sql("playlists", con=args.db.conn, if_exists="append", index=False)
 
     with yt_dlp.YoutubeDL(args.ydl_opts) as ydl:
         ydl.add_post_processor(AddToArchivePP(), when="pre_process")
@@ -337,7 +337,7 @@ def get_extra_metadata(args, playlist_path) -> Union[List[Dict], None]:
             "ignoreerrors": True,
         }
     ) as ydl:
-        videos = args.con.execute(
+        videos = args.db.execute(
             """
                 select path, ie_key, play_count, time_played from media
                 where
@@ -362,7 +362,7 @@ def get_extra_metadata(args, playlist_path) -> Union[List[Dict], None]:
             entry["play_count"] = play_count
             entry["time_played"] = time_played
 
-            args.con.execute("DELETE FROM media where path = ? and ie_key = ?", [path, ie_key])
+            args.db.execute("DELETE FROM media where path = ? and ie_key = ?", [path, ie_key])
             save_entries(args, [entry])
 
             current_video_count += 1
@@ -376,11 +376,11 @@ def get_playlists(args, include_playlistless_media=True):
     try:
         if include_playlistless_media:
             known_playlists = utils.single_column_tolist(
-                args.con.execute("select path from playlists order by random()").fetchall(), "path"
+                args.db.execute("select path from playlists order by random()").fetchall(), "path"
             )
         else:
             known_playlists = utils.single_column_tolist(
-                args.con.execute(
+                args.db.execute(
                     """
                     select playlist_path from media
                     group by playlist_path

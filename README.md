@@ -408,12 +408,11 @@ I do this instead of copy-on-write duplication because I want deletions to stick
 ### TODOs (PRs welcome)
 
 - tube: why nan instead of null ?
-- all: audit low value indexes, create blocklist
-- all: investigate fts using sqlite-utils
+- all: extracts switch to https://sqlite-utils.datasette.io/en/latest/python-api.html#adding-columns-automatically-on-insert-update
 - tube: make sure playlistless media doesn't save to the playlists table
 - all: verify things work on Windows
 - all: more test coverage
 - all: follow yt-dlp print arg syntax
 - all: follow fd-find size arg syntax
-- all: automatic schema migration
+- all: remove pandas dependency?
 - fs: split_by_silence without modifying files

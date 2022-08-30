@@ -3,7 +3,7 @@ from time import sleep
 
 import pandas as pd
 
-from xklb.db import sqlite_con
+from xklb.db import connect_db
 from xklb.player import generic_player, mark_media_watched, override_sort, printer
 from xklb.tabs_extract import Frequency
 from xklb.utils import SC, cmd, dict_filter_bool, flatten, log
@@ -98,7 +98,7 @@ def frequency_filter(args, media: pd.DataFrame):
         Frequency.Quarterly.value: 91,
         Frequency.Yearly.value: 365,
     }
-    counts = args.con.execute("select frequency, count(*) from media group by 1").fetchall()
+    counts = args.db.execute("select frequency, count(*) from media group by 1").fetchall()
     for freq, freq_count in counts:
         num_days = mapper.get(freq, 365)
         num_tabs = max(1, freq_count // num_days)
@@ -111,13 +111,13 @@ def frequency_filter(args, media: pd.DataFrame):
 
 
 def process_tabs_actions(args, construct_tabs_query):
-    args.con = sqlite_con(args.database)
+    args.db = connect_db(args)
     query, bindings = construct_tabs_query(args)
 
     if args.print:
         return printer(args, query, bindings)
 
-    media = pd.DataFrame([dict(r) for r in args.con.execute(query, bindings).fetchall()])
+    media = pd.DataFrame(args.db.query(query, bindings))
     if len(media) == 0:
         print("No media found")
         exit(2)
