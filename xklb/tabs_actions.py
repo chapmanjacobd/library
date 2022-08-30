@@ -1,5 +1,6 @@
 import argparse
 from time import sleep
+from typing import Dict
 
 import pandas as pd
 
@@ -79,15 +80,11 @@ def construct_tabs_query(args):
     return query, bindings
 
 
-def play(args, media: pd.DataFrame):
-    for m in media.to_records():
-        media_file = m["path"]
+def play(args, m: Dict):
+    media_file = m["path"]
 
-        cmd(*generic_player(args), media_file, strict=False)
-        mark_media_watched(args, media_file)
-
-        if len(media) > 10:
-            sleep(0.3)
+    cmd(*generic_player(args), media_file, strict=False)
+    mark_media_watched(args, media_file)
 
 
 def frequency_filter(args, media: pd.DataFrame):
@@ -124,7 +121,10 @@ def process_tabs_actions(args, construct_tabs_query):
 
     media = frequency_filter(args, media)
 
-    play(args, media)
+    for m in media.to_records():
+        play(args, m)
+    if len(media) > 10:
+        sleep(0.3)
 
 
 def parse_args(action, default_db):
