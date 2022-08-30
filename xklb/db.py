@@ -9,7 +9,7 @@ def tracer(sql, params):
     print("SQL: {} - params: {}".format(sql, params))
 
 
-def connect_db(args):
+def connect(args):
     if not os.path.exists(args.database) and ":memory:" not in args.database:
         log.error(
             f"Database file '{args.database}' does not exist. Create one with lb extract / lb tubeadd / lb tabsadd."
@@ -23,7 +23,7 @@ def fetchall_dict(con, *args):
     return [dict(r) for r in con.execute(*args).fetchall()]
 
 
-def optimize_db(args):
+def optimize(args):
     print("Optimizing database")
     db: sqlite_utils.Database = args.db
     columns = db["media"].columns_dict
@@ -45,3 +45,15 @@ def optimize_db(args):
     with db.conn:
         db["media"].optimize()  # type: ignore
     db.vacuum()
+
+
+def fts_quote(l):
+    return [s if " NOT " in s else '"' + s + '"' for s in l]
+
+
+def fts_search(args, bindings):
+    bindings["query"] = " AND ".join(fts_quote(args.include))
+    if args.exclude:
+        bindings["query"] += " NOT " + " NOT ".join(fts_quote(args.exclude))
+    table = "(" + args.db["media"].search_sql() + ")"
+    return table

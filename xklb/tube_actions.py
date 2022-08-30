@@ -4,7 +4,7 @@ import humanize
 import pandas as pd
 from tabulate import tabulate
 
-from xklb.db import connect_db
+from xklb import db
 from xklb.fs_actions import construct_search_bindings, parse_args, process_playqueue
 from xklb.player import delete_playlists
 from xklb.utils import SC, dict_filter_bool, human_time, log, resize_col
@@ -96,10 +96,7 @@ def construct_tube_query(args):
 
     table = "media"
     if args.include:
-        bindings["query"] = " AND ".join(args.include)
-        if args.exclude:
-            bindings["query"] += " NOT " + " NOT ".join(args.exclude)
-        table = "(" + args.db["media"].search_sql() + ")"
+        table = db.fts_search(args, bindings)
     elif args.exclude:
         construct_search_bindings(args, bindings, cf, tube_include_string, tube_exclude_string)
 
@@ -226,7 +223,7 @@ def tube_list():
     if args.db:
         args.database = args.db
 
-    args.db = connect_db(args)
+    args.db = db.connect(args)
 
     if args.delete:
         return delete_playlists(args, args.delete)

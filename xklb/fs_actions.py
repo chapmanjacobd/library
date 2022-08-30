@@ -6,8 +6,7 @@ import ffmpeg, sqlite_utils
 from catt.api import CattDevice
 from rich.prompt import Confirm
 
-from xklb import paths, utils
-from xklb.db import connect_db
+from xklb import db, paths, utils
 from xklb.player import (
     delete_media,
     get_ordinal_media,
@@ -623,10 +622,7 @@ def construct_fs_query(args):
 
     table = "media"
     if args.include:
-        bindings["query"] = " AND ".join([s if " NOT " in s else '"'+s+'"' for s in args.include])
-        if args.exclude:
-            bindings["query"] += " NOT " + " NOT ".join(args.exclude)
-        table = "(" + args.db["media"].search_sql() + ")"
+        table = db.fts_search(args, bindings)
     elif args.exclude:
         substring_search(args, cf, bindings)
 
@@ -662,7 +658,7 @@ def construct_fs_query(args):
 
 
 def process_playqueue(args, construct_query=construct_fs_query):
-    args.db = connect_db(args)
+    args.db = db.connect(args)
     query, bindings = construct_query(args)
 
     if args.print:
