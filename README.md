@@ -417,3 +417,4 @@ I do this instead of copy-on-write duplication because I want deletions to stick
 - all: follow fd-find size arg syntax
 - all: remove pandas dependency?
 - fs: split_by_silence without modifying files
+fts rank

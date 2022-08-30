@@ -11,8 +11,7 @@ from urllib.error import HTTPError
 import pandas as pd
 import yt_dlp
 
-from xklb import utils
-from xklb.db import connect_db, optimize_db
+from xklb import db, utils
 from xklb.paths import SUB_TEMP_DIR, sanitize_url
 from xklb.subtitle import subs_to_text
 from xklb.tube_actions import default_ydl_opts
@@ -51,7 +50,7 @@ def parse_args(action, usage):
         args.database = args.db
 
     Path(args.database).touch()
-    args.db = connect_db(args)
+    args.db = db.connect(args)
 
     ydl_opts = {**default_ydl_opts, **args.yt_dlp_config}
     log.info(utils.dict_filter_bool(ydl_opts))
@@ -475,4 +474,4 @@ def tube_update():
             log.warning("Getting extra metadata")
             get_extra_metadata(args, playlist)
 
-    optimize_db(args)
+    db.optimize(args)

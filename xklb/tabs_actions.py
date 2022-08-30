@@ -4,7 +4,7 @@ from typing import Dict
 
 import pandas as pd
 
-from xklb.db import connect_db
+from xklb import db
 from xklb.player import generic_player, mark_media_watched, override_sort, printer
 from xklb.tabs_extract import Frequency
 from xklb.utils import SC, cmd, dict_filter_bool, flatten, log
@@ -108,13 +108,13 @@ def frequency_filter(args, media: pd.DataFrame):
 
 
 def process_tabs_actions(args, construct_tabs_query):
-    args.db = connect_db(args)
+    args.db = db.connect(args)
     query, bindings = construct_tabs_query(args)
 
     if args.print:
         return printer(args, query, bindings)
 
-    media = pd.DataFrame(args.db.query(query, bindings))
+    media = pd.DataFrame(args.db.query(query, bindings))  # type: ignore
     if len(media) == 0:
         print("No media found")
         exit(2)

@@ -9,8 +9,7 @@ import pandas as pd
 from joblib import Parallel, delayed
 from tinytag import TinyTag
 
-from xklb import subtitle, utils
-from xklb.db import connect_db, fetchall_dict, optimize_db
+from xklb import db, subtitle, utils
 from xklb.paths import SUB_TEMP_DIR, get_media_files, youtube_dl_id
 from xklb.player import mark_media_deleted
 from xklb.utils import SQLITE_PARAM_LIMIT, cmd, combine, log, safe_unpack
@@ -263,7 +262,7 @@ def find_new_files(args, path):
     try:
         existing = set(
             utils.single_column_tolist(
-                fetchall_dict(args.db, f"select path from media where is_deleted=0 and path like '{path}%'"), "path"
+                db.fetchall_dict(args.db, f"select path from media where is_deleted=0 and path like '{path}%'"), "path"
             )
         )
     except Exception:
@@ -306,13 +305,13 @@ def scan_path(args, path):
 
 def extractor(args):
     Path(args.database).touch()
-    args.db = connect_db(args)
+    args.db = db.connect(args)
     new_files = 0
     for path in args.paths:
         new_files += scan_path(args, path)
 
     if new_files > 0 or args.optimize:
-        optimize_db(args)
+        db.optimize(args)
 
 
 def parse_args():

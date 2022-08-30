@@ -5,8 +5,7 @@ from urllib.parse import urlparse
 
 import pandas as pd
 
-from xklb import utils
-from xklb.db import connect_db, fetchall_dict
+from xklb import db, utils
 from xklb.paths import Frequency, sanitize_url
 from xklb.player import remove_media
 from xklb.utils import argparse_enum, log, single_column_tolist
@@ -57,7 +56,7 @@ def parse_args():
         args.database = args.db
 
     Path(args.database).touch()
-    args.db = connect_db(args)
+    args.db = db.connect(args)
 
     log.info(utils.dict_filter_bool(args.__dict__))
 
@@ -80,7 +79,7 @@ def get_new_paths(args):
         )
 
     try:
-        existing = set(single_column_tolist(fetchall_dict(args.db, *qb), "path"))
+        existing = set(single_column_tolist(db.fetchall_dict(args.db, *qb), "path"))
     except Exception:
         pass
     else:
