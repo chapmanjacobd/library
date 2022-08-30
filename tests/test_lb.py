@@ -68,54 +68,51 @@ class TestFs(unittest.TestCase):
     def test_lb_fs(self, play_mocked):
         for SC in ["watch", "wt"]:
             lb([SC, *v_db])
-            out = play_mocked.call_args[0][1].to_dict(orient="records")
-            assert len(out) == 1
-            assert "test.mp4" in out[0]["path"]
-            assert out[0]["duration"] == 12
-            assert out[0]["subtitle_count"] == 3
-            assert out[0]["size"] == 136057
+            out = play_mocked.call_args[0][1]
+            assert "test.mp4" in out["path"]
+            assert out["duration"] == 12
+            assert out["subtitle_count"] == 3
+            assert out["size"] == 136057
 
         sys.argv[1:] = v_db
         wt()
-        out = play_mocked.call_args[0][1].to_dict(orient="records")
-        assert len(out) == 1
-        assert "test.mp4" in out[0]["path"]
-        assert out[0]["duration"] == 12
-        assert out[0]["subtitle_count"] == 3
-        assert out[0]["size"] == 136057
+        out = play_mocked.call_args[0][1]
+        assert "test.mp4" in out["path"]
+        assert out["duration"] == 12
+        assert out["subtitle_count"] == 3
+        assert out["size"] == 136057
 
         lb(["listen", *a_db])
-        out = play_mocked.call_args[0][1].to_dict(orient="records")
-        assert len(out) == 2
-        assert "test.opus" in out[0]["path"] + out[1]["path"]
+        out = play_mocked.call_args[0][1]
+        assert "test" in out["path"]
 
     @mock.patch("xklb.fs_actions.play")
     def test_wt_search(self, play_mocked):
         sys.argv = ["wt", *v_db, "-s", "te t", "test test", "-E", "2", "-s", "test"]
         wt()
-        out = play_mocked.call_args[0][1].to_dict(orient="records")
-        assert len(out) == 1
+        out = play_mocked.call_args[0][1]
+        assert out is not None
 
     @mock.patch("xklb.fs_actions.play")
     def test_wt_sort(self, play_mocked):
         sys.argv = ["wt", *v_db, "-u", "duration"]
         wt()
-        out = play_mocked.call_args[0][1].to_dict(orient="records")
-        assert len(out) == 1
+        out = play_mocked.call_args[0][1]
+        assert out is not None
 
     @mock.patch("xklb.fs_actions.play")
     def test_wt_size(self, play_mocked):
         sys.argv = ["wt", *v_db, "--size", "-1"]  # less than 1MB
         wt()
-        out = play_mocked.call_args[0][1].to_dict(orient="records")
-        assert len(out) == 1
+        out = play_mocked.call_args[0][1]
+        assert out is not None
 
 
 class TestTabs(unittest.TestCase):
     @mock.patch("xklb.tabs_actions.play")
     def test_lb_tabs(self, play_mocked):
         lb(["tabs", *tabs_db])
-        out = play_mocked.call_args[0][1].to_dict(orient="records")
+        out = play_mocked.call_args[0][1]
         assert out == [
             {"frequency": "monthly", "path": "https://unli.xyz/proliferation/verbs.html", "time_valid": 2678400}
         ]

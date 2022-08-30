@@ -39,8 +39,8 @@ def mv_to_keep_folder(args, media_file: str):
 
     keep_path.mkdir(exist_ok=True)
     new_path = shutil.move(media_file, keep_path)
-    args.db.execute("UPDATE media set path = ? where path = ?", [new_path, media_file])
-    # args.db.commit() ??? TODO: I don't see commit() in sqlite_utils
+    with args.db:
+        args.db.execute("UPDATE media set path = ? where path = ?", [new_path, media_file])
 
 
 def mark_media_watched(args, files):
@@ -49,17 +49,17 @@ def mark_media_watched(args, files):
     if len(files) > 0:
         df_chunked = utils.chunks(files, SQLITE_PARAM_LIMIT)
         for l in df_chunked:
-            cursor = args.db.execute(
-                """UPDATE media
-                set play_count = play_count +1
-                  , time_played = cast(STRFTIME('%s') as int)
-                where path in ("""
-                + ",".join(["?"] * len(l))
-                + ")",
-                (*l,),
-            )
-            modified_row_count += cursor.rowcount
-            # args.db.commit() # TODO: check if committing
+            with args.db:
+                cursor = args.db.execute(
+                    """UPDATE media
+                    set play_count = play_count +1
+                    , time_played = cast(STRFTIME('%s') as int)
+                    where path in ("""
+                    + ",".join(["?"] * len(l))
+                    + ")",
+                    (*l,),
+                )
+                modified_row_count += cursor.rowcount
 
     return modified_row_count
 
@@ -70,16 +70,16 @@ def mark_media_deleted(args, files):
     if len(files) > 0:
         df_chunked = utils.chunks(files, SQLITE_PARAM_LIMIT)
         for l in df_chunked:
-            cursor = args.db.execute(
-                """update media
-                set is_deleted=1
-                where path in ("""
-                + ",".join(["?"] * len(l))
-                + ")",
-                (*l,),
-            )
-            modified_row_count += cursor.rowcount
-            # args.db.commit() TODO:
+            with args.db:
+                cursor = args.db.execute(
+                    """update media
+                    set is_deleted=1
+                    where path in ("""
+                    + ",".join(["?"] * len(l))
+                    + ")",
+                    (*l,),
+                )
+                modified_row_count += cursor.rowcount
 
     return modified_row_count
 
@@ -90,16 +90,17 @@ def moved_media(args, moved_files: Union[str, list], base_from, base_to):
     if len(moved_files) > 0:
         df_chunked = utils.chunks(moved_files, SQLITE_PARAM_LIMIT)
         for l in df_chunked:
-            cursor = args.db.execute(
-                f"""UPDATE media
-                SET path=REPLACE(path, '{quote(base_from)}', '{quote(base_to)}')
-                where path in ("""
-                + ",".join(["?"] * len(l))
-                + ")",
-                (*l,),
-            )
-            modified_row_count += cursor.rowcount
-            # args.db.commit() TODO:
+            with args.db:
+                cursor = args.db.execute(
+                    f"""UPDATE media
+                    SET path=REPLACE(path, '{quote(base_from)}', '{quote(base_to)}')
+                    where path in ("""
+                    + ",".join(["?"] * len(l))
+                    + ")",
+                    (*l,),
+                )
+                modified_row_count += cursor.rowcount
+
 
     return modified_row_count
 
@@ -116,12 +117,12 @@ def remove_media(args, deleted_files: Union[str, list], quiet=False):
 
         df_chunked = utils.chunks(deleted_files, SQLITE_PARAM_LIMIT)
         for l in df_chunked:
-            cursor = args.db.execute(
-                "delete from media where path in (" + ",".join(["?"] * len(l)) + ")",
-                (*l,),
-            )
-            modified_row_count += cursor.rowcount
-            # args.db.commit() TODO:
+            with args.db:
+                cursor = args.db.execute(
+                    "delete from media where path in (" + ",".join(["?"] * len(l)) + ")",
+                    (*l,),
+                )
+                modified_row_count += cursor.rowcount
 
     return modified_row_count
 
@@ -138,11 +139,11 @@ def delete_media(args, media_file: str):
 
 
 def delete_playlists(args, playlists):
-    args.db.execute(
-        "delete from media where playlist_path in (" + ",".join(["?"] * len(playlists)) + ")", (*playlists,)
-    )
-    args.db.execute("delete from playlists where path in (" + ",".join(["?"] * len(playlists)) + ")", (*playlists,))
-    # args.db.commit() TODO:
+    with args.db:
+        args.db.execute(
+            "delete from media where playlist_path in (" + ",".join(["?"] * len(playlists)) + ")", (*playlists,)
+        )
+        args.db.execute("delete from playlists where path in (" + ",".join(["?"] * len(playlists)) + ")", (*playlists,))
 
 
 def get_ordinal_media(args, path):
