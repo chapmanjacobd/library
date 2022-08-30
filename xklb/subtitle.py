@@ -1,4 +1,4 @@
-import argparse, os, re, tempfile
+import argparse, os, tempfile
 from pathlib import Path
 from shlex import quote
 from typing import List

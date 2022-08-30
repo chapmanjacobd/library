@@ -1,4 +1,4 @@
-import argparse, math, os, sys, tempfile
+import argparse, math, os, sys
 from pathlib import Path
 from shutil import which
 from typing import Dict

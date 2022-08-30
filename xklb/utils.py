@@ -236,10 +236,6 @@ def compile_query(query, *args):
     return query
 
 
-def print_query(query, bindings):
-    return re.sub(r"\n\s+", r"\n", compile_query(query, *bindings))
-
-
 def single_column_tolist(array_to_unpack, column_name: Union[str, int] = 1):
     return list(
         map(
