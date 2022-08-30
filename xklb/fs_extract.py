@@ -10,7 +10,7 @@ from joblib import Parallel, delayed
 from tinytag import TinyTag
 
 from xklb import subtitle, utils
-from xklb.db import fetchall_dict, optimize_db, sqlite_con
+from xklb.db import connect_db, fetchall_dict, optimize_db
 from xklb.paths import SUB_TEMP_DIR, get_media_files, youtube_dl_id
 from xklb.player import mark_media_deleted
 from xklb.utils import SQLITE_PARAM_LIMIT, cmd, combine, log, safe_unpack
@@ -239,7 +239,7 @@ def extract_chunk(args, l):
 
     DF.apply(pd.to_numeric, errors="ignore").convert_dtypes().to_sql(  # type: ignore
         "media",
-        con=args.con,
+        con=args.db.conn,
         if_exists="append",
         index=False,
         chunksize=70,
@@ -263,7 +263,7 @@ def find_new_files(args, path):
     try:
         existing = set(
             utils.single_column_tolist(
-                fetchall_dict(args.con, f"select path from media where is_deleted=0 and path like '{path}%'"), "path"
+                fetchall_dict(args.db, f"select path from media where is_deleted=0 and path like '{path}%'"), "path"
             )
         )
     except Exception:
@@ -306,12 +306,12 @@ def scan_path(args, path):
 
 def extractor(args):
     Path(args.database).touch()
-    args.con = sqlite_con(args.database)
+    args.db = connect_db(args)
     new_files = 0
     for path in args.paths:
         new_files += scan_path(args, path)
 
-    if new_files > 0:
+    if new_files > 0 or args.optimize:
         optimize_db(args)
 
 

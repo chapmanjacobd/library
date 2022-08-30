@@ -4,8 +4,8 @@ import humanize
 import pandas as pd
 from tabulate import tabulate
 
-from xklb.db import sqlite_con
-from xklb.fs_actions import parse_args, process_actions
+from xklb.db import connect_db
+from xklb.fs_actions import parse_args, process_playqueue
 from xklb.player import delete_playlists
 from xklb.utils import SC, dict_filter_bool, human_time, log, resize_col
 
@@ -127,12 +127,12 @@ def construct_tube_query(args):
 
 def tube_watch():
     args = parse_args(SC.tubewatch, "tube.db", default_chromecast="Living Room TV")
-    process_actions(args, construct_tube_query)
+    process_playqueue(args, construct_tube_query)
 
 
 def tube_listen():
     args = parse_args(SC.tubelisten, "tube.db", default_chromecast="Xylo and Orchestra")
-    process_actions(args, construct_tube_query)
+    process_playqueue(args, construct_tube_query)
 
 
 def printer(args):
@@ -149,7 +149,7 @@ def printer(args):
         left join playlists on playlists.path = media.playlist_path
         group by coalesce(playlists.path, "Playlist-less videos")"""
 
-    db_resp = pd.DataFrame([dict(r) for r in args.con.execute(query).fetchall()])
+    db_resp = pd.DataFrame(args.db.query(query))
     db_resp.dropna(axis="columns", how="all", inplace=True)
 
     if "f" in args.print:
@@ -224,7 +224,7 @@ def tube_list():
     if args.db:
         args.database = args.db
 
-    args.con = sqlite_con(args.database)
+    args.db = connect_db(args)
 
     if args.delete:
         return delete_playlists(args, args.delete)

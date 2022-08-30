@@ -1,5 +1,6 @@
 import argparse, shlex, shutil, subprocess
 from pathlib import Path
+from typing import Dict, Iterable, List
 
 import ffmpeg
 import pandas as pd
@@ -8,7 +9,7 @@ from catt.api import CattDevice
 from rich.prompt import Confirm
 
 from xklb import paths, utils
-from xklb.db import sqlite_con
+from xklb.db import connect_db
 from xklb.player import (
     delete_media,
     get_ordinal_media,
@@ -492,48 +493,47 @@ def chromecast_play(args, m):
             raise Exception("catt does not exit nonzero? but something might have gone wrong")
 
 
-def play(args, media: pd.DataFrame):
-    for m in media.to_records():
-        media_file = m["path"]
+def play(args, m: Dict):
+    media_file = m["path"]
 
-        if any(
-            [
-                args.play_in_order > 1 and args.action not in [SC.listen, SC.tubelisten],
-                args.play_in_order >= 1 and args.action == SC.listen and "audiobook" in media_file.lower(),
-                args.play_in_order >= 1
-                and args.action == SC.tubelisten
-                and m["title"]
-                and "audiobook" in m["title"].lower(),
-            ]
-        ):
-            media_file = get_ordinal_media(args, media_file)
+    if any(
+        [
+            args.play_in_order > 1 and args.action not in [SC.listen, SC.tubelisten],
+            args.play_in_order >= 1 and args.action == SC.listen and "audiobook" in media_file.lower(),
+            args.play_in_order >= 1
+            and args.action == SC.tubelisten
+            and m["title"]
+            and "audiobook" in m["title"].lower(),
+        ]
+    ):
+        media_file = get_ordinal_media(args, media_file)
 
-        if args.action in [SC.watch, SC.listen]:
-            media_path = Path(args.prefix + media_file).resolve()
-            if not media_path.exists():
-                mark_media_deleted(args, media_file)
-                continue
-            media_file = str(media_path)
+    if args.action in [SC.watch, SC.listen]:
+        media_path = Path(args.prefix + media_file).resolve()
+        if not media_path.exists():
+            mark_media_deleted(args, media_file)
+            return
+        media_file = str(media_path)
 
-            if args.transcode:
-                media_file = transcode(media_file)
+        if args.transcode:
+            media_file = transcode(media_file)
 
-        if args.action == SC.listen:
-            print(cmd("ffprobe", "-hide_banner", "-loglevel", "info", media_file).stderr)
-        else:
-            print(media_file)
+    if args.action == SC.listen:
+        print(cmd("ffprobe", "-hide_banner", "-loglevel", "info", media_file).stderr)
+    else:
+        print(media_file)
 
-        if args.chromecast:
-            chromecast_play(args, m)
+    if args.chromecast:
+        chromecast_play(args, m)
 
-        elif args.interdimensional_cable:
-            socket_play(args, m)
+    elif args.interdimensional_cable:
+        socket_play(args, m)
 
-        else:
-            local_player(args, m, media_file)
+    else:
+        local_player(args, m, media_file)
 
-        if args.action in [SC.listen, SC.watch, SC.tubelisten, SC.tubewatch] and not args.interdimensional_cable:
-            post_act(args, media_file)
+    if args.action in [SC.listen, SC.watch, SC.tubelisten, SC.tubewatch] and not args.interdimensional_cable:
+        post_act(args, media_file)
 
 
 audio_include_string = (
@@ -590,6 +590,9 @@ video_exclude_string = (
 )"""
 )
 
+other_include_string = lambda x: f"and path like :include{x}"
+other_exclude_string = lambda x: f"and path not like :exclude{x}"
+
 
 def construct_search_bindings(args, bindings, cf, include_func, exclude_func):
     for idx, inc in enumerate(args.include):
@@ -616,19 +619,20 @@ def construct_fs_query(args):
     elif args.action == SC.watch:
         construct_search_bindings(args, bindings, cf, video_include_string, video_exclude_string)
     else:
-        bindings = []
-        for inc in args.include:
-            cf.append(" AND path LIKE ? ")
-            bindings.append("%" + inc.replace(" ", "%").replace("%%", " ") + "%")
-        for exc in args.exclude:
-            cf.append(" AND path NOT LIKE ? ")
-            bindings.append("%" + exc.replace(" ", "%").replace("%%", " ") + "%")
+        construct_search_bindings(args, bindings, cf, other_include_string, other_exclude_string)
 
     args.sql_filter = " ".join(cf)
     args.sql_filter_bindings = bindings
 
     LIMIT = "LIMIT " + str(args.limit) if args.limit else ""
     OFFSET = f"OFFSET {args.skip}" if args.skip else ""
+
+    table = "media"
+    if args.include:
+        bindings["query"] = " AND ".join(args.include)
+        if args.exclude:
+            bindings["query"] += " NOT " + " NOT ".join(args.exclude)
+        table = "(" + args.db["media"].search_sql() + ")"
 
     query = f"""SELECT path
         , size
@@ -637,7 +641,7 @@ def construct_fs_query(args):
         {', sparseness' if args.action == SC.filesystem else ''}
         {', is_dir' if args.action == SC.filesystem else ''}
         {', ' + ', '.join(args.cols) if args.cols else ''}
-    FROM media
+    FROM {table}
     WHERE 1=1
     {args.sql_filter}
     {'and audio_count > 0' if args.action == SC.listen else ''}
@@ -655,14 +659,15 @@ def construct_fs_query(args):
     return query, bindings
 
 
-def process_actions(args, construct_query=construct_fs_query):
-    args.con = sqlite_con(args.database)
-    query, bindings = construct_query(args)
+def process_playqueue(args):
+    args.db = connect_db(args)
+    query, bindings = construct_fs_query(args)
 
     if args.print:
         return printer(args, query, bindings)
 
-    media = pd.DataFrame([dict(r) for r in args.con.execute(query, bindings).fetchall()])
+    media = list(args.db.query(query, bindings))
+
     if len(media) == 0:
         print("No media found")
         exit(2)
@@ -671,7 +676,8 @@ def process_actions(args, construct_query=construct_fs_query):
         subprocess.Popen(idle_mpv(args))
 
     try:
-        play(args, media)
+        for m in media:
+            play(args, m)
     finally:
         if args.interdimensional_cable:
             utils.pkill(idle_mpv(args), strict=False)
@@ -682,14 +688,14 @@ def process_actions(args, construct_query=construct_fs_query):
 
 def watch():
     args = parse_args(SC.watch, "video.db", default_chromecast="Living Room TV")
-    process_actions(args)
+    process_playqueue(args)
 
 
 def listen():
     args = parse_args(SC.listen, "audio.db", default_chromecast="Xylo and Orchestra")
-    process_actions(args)
+    process_playqueue(args)
 
 
 def filesystem():
     args = parse_args(SC.filesystem, "fs.db")
-    process_actions(args)
+    process_playqueue(args)

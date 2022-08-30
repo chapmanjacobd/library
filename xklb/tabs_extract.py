@@ -6,7 +6,7 @@ from urllib.parse import urlparse
 import pandas as pd
 
 from xklb import utils
-from xklb.db import fetchall_dict, sqlite_con
+from xklb.db import connect_db, fetchall_dict
 from xklb.paths import Frequency, sanitize_url
 from xklb.player import remove_media
 from xklb.utils import argparse_enum, log, single_column_tolist
@@ -57,7 +57,7 @@ def parse_args():
         args.database = args.db
 
     Path(args.database).touch()
-    args.con = sqlite_con(args.database)
+    args.db = connect_db(args)
 
     log.info(utils.dict_filter_bool(args.__dict__))
 
@@ -80,7 +80,7 @@ def get_new_paths(args):
         )
 
     try:
-        existing = set(single_column_tolist(fetchall_dict(args.con, *qb), "path"))
+        existing = set(single_column_tolist(fetchall_dict(args.db, *qb), "path"))
     except Exception:
         pass
     else:
@@ -114,7 +114,7 @@ def tabs_add(args=None):
     tabsDF = pd.DataFrame([extract_url_metadata(args, path) for path in get_new_paths(args)])
     tabsDF.apply(pd.to_numeric, errors="ignore").convert_dtypes().to_sql(  # type: ignore
         "media",
-        con=args.con,
+        con=args.db.conn,
         if_exists="append",
         index=False,
         chunksize=70,

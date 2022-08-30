@@ -9,7 +9,7 @@ from xklb.lb import lb
 from xklb.tabs_extract import tabs_add
 
 v_db = "--db", "tests/data/video.db"
-xr([*v_db, "tests/data/"])
+xr([*v_db, "--optimize", "tests/data/"])
 
 a_db = "--db", "tests/data/audio.db"
 xr([*a_db, "--audio", "tests/data/"])

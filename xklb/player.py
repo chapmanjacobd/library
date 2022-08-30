@@ -39,8 +39,8 @@ def mv_to_keep_folder(args, media_file: str):
 
     keep_path.mkdir(exist_ok=True)
     new_path = shutil.move(media_file, keep_path)
-    args.con.execute("UPDATE media set path = ? where path = ?", [new_path, media_file])
-    args.con.commit()
+    args.db.execute("UPDATE media set path = ? where path = ?", [new_path, media_file])
+    # args.db.commit() ??? TODO: I don't see commit() in sqlite_utils
 
 
 def mark_media_watched(args, files):
@@ -49,7 +49,7 @@ def mark_media_watched(args, files):
     if len(files) > 0:
         df_chunked = utils.chunks(files, SQLITE_PARAM_LIMIT)
         for l in df_chunked:
-            cursor = args.con.execute(
+            cursor = args.db.execute(
                 """UPDATE media
                 set play_count = play_count +1
                   , time_played = cast(STRFTIME('%s') as int)
@@ -59,7 +59,7 @@ def mark_media_watched(args, files):
                 (*l,),
             )
             modified_row_count += cursor.rowcount
-            args.con.commit()
+            # args.db.commit() # TODO: check if committing
 
     return modified_row_count
 
@@ -70,7 +70,7 @@ def mark_media_deleted(args, files):
     if len(files) > 0:
         df_chunked = utils.chunks(files, SQLITE_PARAM_LIMIT)
         for l in df_chunked:
-            cursor = args.con.execute(
+            cursor = args.db.execute(
                 """update media
                 set is_deleted=1
                 where path in ("""
@@ -79,7 +79,7 @@ def mark_media_deleted(args, files):
                 (*l,),
             )
             modified_row_count += cursor.rowcount
-            args.con.commit()
+            # args.db.commit() TODO:
 
     return modified_row_count
 
@@ -90,7 +90,7 @@ def moved_media(args, moved_files: Union[str, list], base_from, base_to):
     if len(moved_files) > 0:
         df_chunked = utils.chunks(moved_files, SQLITE_PARAM_LIMIT)
         for l in df_chunked:
-            cursor = args.con.execute(
+            cursor = args.db.execute(
                 f"""UPDATE media
                 SET path=REPLACE(path, '{quote(base_from)}', '{quote(base_to)}')
                 where path in ("""
@@ -99,7 +99,7 @@ def moved_media(args, moved_files: Union[str, list], base_from, base_to):
                 (*l,),
             )
             modified_row_count += cursor.rowcount
-            args.con.commit()
+            # args.db.commit() TODO:
 
     return modified_row_count
 
@@ -116,12 +116,12 @@ def remove_media(args, deleted_files: Union[str, list], quiet=False):
 
         df_chunked = utils.chunks(deleted_files, SQLITE_PARAM_LIMIT)
         for l in df_chunked:
-            cursor = args.con.execute(
+            cursor = args.db.execute(
                 "delete from media where path in (" + ",".join(["?"] * len(l)) + ")",
                 (*l,),
             )
             modified_row_count += cursor.rowcount
-            args.con.commit()
+            # args.db.commit() TODO:
 
     return modified_row_count
 
@@ -138,18 +138,18 @@ def delete_media(args, media_file: str):
 
 
 def delete_playlists(args, playlists):
-    args.con.execute(
+    args.db.execute(
         "delete from media where playlist_path in (" + ",".join(["?"] * len(playlists)) + ")", (*playlists,)
     )
-    args.con.execute("delete from playlists where path in (" + ",".join(["?"] * len(playlists)) + ")", (*playlists,))
-    args.con.commit()
+    args.db.execute("delete from playlists where path in (" + ",".join(["?"] * len(playlists)) + ")", (*playlists,))
+    # args.db.commit() TODO:
 
 
 def get_ordinal_media(args, path):
     similar_videos = []
     candidate = str(path)
 
-    total_media = args.con.execute("select count(*) val from media").fetchone()[0]
+    total_media = args.db.execute("select count(*) val from media").fetchone()[0]
     while len(similar_videos) < 2:
         remove_groups = re.split(r"([\W]+|\s+|Ep\d+|x\d+|\.\d+)", candidate)
         log.debug(remove_groups)
@@ -181,7 +181,7 @@ def get_ordinal_media(args, path):
             print_query(bindings, query)
             exit()
 
-        similar_videos = utils.single_column_tolist(args.con.execute(query, bindings).fetchall(), "path")  # type: ignore
+        similar_videos = utils.single_column_tolist(args.db.execute(query, bindings).fetchall(), "path")  # type: ignore
         log.debug(similar_videos)
 
         if len(similar_videos) > 999 or len(similar_videos) == total_media:
@@ -212,18 +212,18 @@ def generic_player(args):
 
 def calculate_duration(args, m):
     start = 0
-    end = m.duration
+    end = m["duration"]
 
     if args.start:
         if args.start == "wadsworth":
-            start = m.duration * 0.3
+            start = m["duration"] * 0.3
         else:
             start = args.start
     if args.end:
         if args.end == "dawsworth":
-            end = m.duration * 0.65
+            end = m["duration"] * 0.65
         elif "+" in args.end:
-            end = (m.duration * 0.3) + args.end
+            end = (m["duration"] * 0.3) + args.end
         else:
             end = args.end
 
@@ -293,8 +293,7 @@ def socket_play(args, m):
     start, end = calculate_duration(args, m)
 
     try:
-        bias_to_acts = m.index + 1 / args.limit
-        start = randrange(int(start * bias_to_acts), int(end - args.interdimensional_cable + 1))
+        start = randrange(int(start), int(end - args.interdimensional_cable + 1))
         end = start + args.interdimensional_cable
     except Exception:
         pass
@@ -310,7 +309,7 @@ def socket_play(args, m):
     if args.action in [SC.tubelisten, SC.tubewatch]:
         play_opts += ",script-opts=ytdl_hook-try_ytdl_first=yes"
 
-    f = m.path.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
+    f = m["path"].replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
     args.sock.send((f'raw loadfile "{f}" replace "{play_opts}" \n').encode("utf-8"))
     sleep(args.interdimensional_cable)
 
@@ -339,7 +338,7 @@ def local_player(args, m, media_file):
                 return
             if start != 0:
                 player.extend([f"--start={int(start)}", "--no-save-position-on-quit"])
-            if end != m.duration:
+            if end != m["duration"]:
                 player.extend([f"--end={int(end)}"])
 
     elif system() == "Linux":
@@ -367,7 +366,7 @@ def local_player(args, m, media_file):
 
     if args.player_need_sleep:
         if hasattr(m, "duration"):
-            delay = m.duration
+            delay = m["duration"]
         else:
             delay = 10  # TODO: idk
         sleep(delay)
@@ -388,7 +387,7 @@ def printer(args, query, bindings):
     if args.print and "q" in args.print:
         return print(query)
 
-    db_resp = pd.DataFrame([dict(r) for r in args.con.execute(query, bindings).fetchall()])
+    db_resp = pd.DataFrame(args.db.query(query, bindings))
     db_resp.dropna(axis="columns", how="all", inplace=True)
 
     if args.verbose > 1 and args.cols and "*" in args.cols:
@@ -452,7 +451,7 @@ def printer(args, query, bindings):
 
         if args.action in [SC.listen, SC.watch, SC.tubelisten, SC.tubewatch]:
             if len(db_resp) > 1:
-                print(f"{len(db_resp)} media" + (f" (limited to {args.limit})" if args.limit else ''))
+                print(f"{len(db_resp)} media" + (f" (limited to {args.limit})" if args.limit else ""))
             summary = db_resp.sum(numeric_only=True)
             duration = summary.get("duration") or 0
             duration = human_time(duration)
