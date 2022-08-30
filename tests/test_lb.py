@@ -88,7 +88,7 @@ class TestFs(unittest.TestCase):
 
     @mock.patch("xklb.fs_actions.play")
     def test_wt_search(self, play_mocked):
-        sys.argv = ["wt", *v_db, "-s", "te t", "test test", "-E", "2", "-s", "test"]
+        sys.argv = ["wt", *v_db, "-s", "tests", "test github", "-E", "2", "-s", "test", "-E", "3"]
         wt()
         out = play_mocked.call_args[0][1]
         assert out is not None
@@ -112,7 +112,5 @@ class TestTabs(unittest.TestCase):
     @mock.patch("xklb.tabs_actions.play")
     def test_lb_tabs(self, play_mocked):
         lb(["tabs", *tabs_db])
-        out = play_mocked.call_args[0][1]
-        assert out == [
-            {"frequency": "monthly", "path": "https://unli.xyz/proliferation/verbs.html", "time_valid": 2678400}
-        ]
+        out = play_mocked.call_args[0][1].tolist()
+        assert out == (0, "https://unli.xyz/proliferation/verbs.html", "monthly", 2678400)

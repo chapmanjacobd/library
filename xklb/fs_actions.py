@@ -614,25 +614,25 @@ def construct_fs_query(args):
 
     cf.extend([" and " + w for w in args.where])
 
-    if args.action == SC.listen:
-        construct_search_bindings(args, bindings, cf, audio_include_string, audio_exclude_string)
-    elif args.action == SC.watch:
-        construct_search_bindings(args, bindings, cf, video_include_string, video_exclude_string)
-    else:
-        construct_search_bindings(args, bindings, cf, other_include_string, other_exclude_string)
-
-    args.sql_filter = " ".join(cf)
-    args.sql_filter_bindings = bindings
-
-    LIMIT = "LIMIT " + str(args.limit) if args.limit else ""
-    OFFSET = f"OFFSET {args.skip}" if args.skip else ""
-
     table = "media"
     if args.include:
         bindings["query"] = " AND ".join(args.include)
         if args.exclude:
             bindings["query"] += " NOT " + " NOT ".join(args.exclude)
         table = "(" + args.db["media"].search_sql() + ")"
+    elif args.exclude:
+        if args.action == SC.listen:
+            construct_search_bindings(args, bindings, cf, audio_include_string, audio_exclude_string)
+        elif args.action == SC.watch:
+            construct_search_bindings(args, bindings, cf, video_include_string, video_exclude_string)
+        else:
+            construct_search_bindings(args, bindings, cf, other_include_string, other_exclude_string)
+
+    args.sql_filter = " ".join(cf)
+    args.sql_filter_bindings = bindings
+
+    LIMIT = "LIMIT " + str(args.limit) if args.limit else ""
+    OFFSET = f"OFFSET {args.skip}" if args.skip else ""
 
     query = f"""SELECT path
         , size

@@ -49,8 +49,8 @@ def mark_media_watched(args, files):
     if len(files) > 0:
         df_chunked = utils.chunks(files, SQLITE_PARAM_LIMIT)
         for l in df_chunked:
-            with args.db:
-                cursor = args.db.execute(
+            with args.db.conn:
+                cursor = args.db.conn.execute(
                     """UPDATE media
                     set play_count = play_count +1
                     , time_played = cast(STRFTIME('%s') as int)
@@ -70,8 +70,8 @@ def mark_media_deleted(args, files):
     if len(files) > 0:
         df_chunked = utils.chunks(files, SQLITE_PARAM_LIMIT)
         for l in df_chunked:
-            with args.db:
-                cursor = args.db.execute(
+            with args.db.conn:
+                cursor = args.db.conn.execute(
                     """update media
                     set is_deleted=1
                     where path in ("""
@@ -90,8 +90,8 @@ def moved_media(args, moved_files: Union[str, list], base_from, base_to):
     if len(moved_files) > 0:
         df_chunked = utils.chunks(moved_files, SQLITE_PARAM_LIMIT)
         for l in df_chunked:
-            with args.db:
-                cursor = args.db.execute(
+            with args.db.conn:
+                cursor = args.db.conn.execute(
                     f"""UPDATE media
                     SET path=REPLACE(path, '{quote(base_from)}', '{quote(base_to)}')
                     where path in ("""
@@ -100,7 +100,6 @@ def moved_media(args, moved_files: Union[str, list], base_from, base_to):
                     (*l,),
                 )
                 modified_row_count += cursor.rowcount
-
 
     return modified_row_count
 
@@ -117,8 +116,8 @@ def remove_media(args, deleted_files: Union[str, list], quiet=False):
 
         df_chunked = utils.chunks(deleted_files, SQLITE_PARAM_LIMIT)
         for l in df_chunked:
-            with args.db:
-                cursor = args.db.execute(
+            with args.db.conn:
+                cursor = args.db.conn.execute(
                     "delete from media where path in (" + ",".join(["?"] * len(l)) + ")",
                     (*l,),
                 )
@@ -178,9 +177,6 @@ def get_ordinal_media(args, path):
         bindings = ["%" + candidate + "%"]
         if not args.play_in_order > 2:
             bindings.extend(args.sql_filter_bindings)
-        if args.print and "q" in args.print:
-            print_query(bindings, query)
-            exit()
 
         similar_videos = utils.single_column_tolist(args.db.execute(query, bindings).fetchall(), "path")  # type: ignore
         log.debug(similar_videos)
@@ -384,9 +380,6 @@ def printer(args, query, bindings):
             {', ' + ', '.join([f'sum({c}) sum_{c}' for c in args.cols]) if args.cols else ''}
             {', ' + ', '.join([f'avg({c}) avg_{c}' for c in args.cols]) if args.cols else ''}
         from ({query}) """
-
-    if args.print and "q" in args.print:
-        return print(query)
 
     db_resp = pd.DataFrame(args.db.query(query, bindings))
     db_resp.dropna(axis="columns", how="all", inplace=True)
