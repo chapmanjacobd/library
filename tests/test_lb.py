@@ -88,7 +88,7 @@ class TestFs(unittest.TestCase):
 
     @mock.patch("xklb.fs_actions.play")
     def test_wt_search(self, play_mocked):
-        sys.argv = ["wt", *v_db, "-s", "tests", "test github", "-E", "2", "-s", "test", "-E", "3"]
+        sys.argv = ["wt", *v_db, "-s", "tests", "test data", "-E", "2", "-s", "test", "-E", "3"]
         wt()
         out = play_mocked.call_args[0][1]
         assert out is not None
