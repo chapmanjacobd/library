@@ -1,10 +1,8 @@
 import argparse, shlex, shutil, subprocess
 from pathlib import Path
-from typing import Dict, Iterable, List
+from typing import Dict
 
-import ffmpeg
-import pandas as pd
-import sqlite_utils
+import ffmpeg, sqlite_utils
 from catt.api import CattDevice
 from rich.prompt import Confirm
 
@@ -663,9 +661,9 @@ def construct_fs_query(args):
     return query, bindings
 
 
-def process_playqueue(args):
+def process_playqueue(args, construct_query=construct_fs_query):
     args.db = connect_db(args)
-    query, bindings = construct_fs_query(args)
+    query, bindings = construct_query(args)
 
     if args.print:
         return printer(args, query, bindings)

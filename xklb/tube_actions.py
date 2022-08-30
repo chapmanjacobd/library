@@ -5,7 +5,7 @@ import pandas as pd
 from tabulate import tabulate
 
 from xklb.db import connect_db
-from xklb.fs_actions import parse_args, process_playqueue
+from xklb.fs_actions import construct_search_bindings, parse_args, process_playqueue
 from xklb.player import delete_playlists
 from xklb.utils import SC, dict_filter_bool, human_time, log, resize_col
 
@@ -94,12 +94,14 @@ def construct_tube_query(args):
 
     cf.extend([" and " + w for w in args.where])
 
-    for idx, inc in enumerate(args.include):
-        cf.append(tube_include_string(idx))
-        bindings[f"include{idx}"] = "%" + inc.replace(" ", "%").replace("%%", " ") + "%"
-    for idx, exc in enumerate(args.exclude):
-        cf.append(tube_exclude_string(idx))
-        bindings[f"exclude{idx}"] = "%" + exc.replace(" ", "%").replace("%%", " ") + "%"
+    table = "media"
+    if args.include:
+        bindings["query"] = " AND ".join(args.include)
+        if args.exclude:
+            bindings["query"] += " NOT " + " NOT ".join(args.exclude)
+        table = "(" + args.db["media"].search_sql() + ")"
+    elif args.exclude:
+        construct_search_bindings(args, bindings, cf, tube_include_string, tube_exclude_string)
 
     args.sql_filter = " ".join(cf)
 
@@ -111,7 +113,7 @@ def construct_tube_query(args):
         , duration
         , size
         {', ' + ', '.join(args.cols) if args.cols else ''}
-    FROM media
+    FROM {table}
     WHERE 1=1
     {args.sql_filter}
     {'and width < height' if args.portrait else ''}

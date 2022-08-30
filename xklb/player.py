@@ -13,17 +13,7 @@ import pandas as pd
 from tabulate import tabulate
 
 from xklb import paths, utils
-from xklb.utils import (
-    SC,
-    SQLITE_PARAM_LIMIT,
-    cmd,
-    cmd_interactive,
-    human_time,
-    log,
-    os_bg_kwargs,
-    print_query,
-    resize_col,
-)
+from xklb.utils import SC, SQLITE_PARAM_LIMIT, cmd, cmd_interactive, human_time, log, os_bg_kwargs, resize_col
 
 
 def mv_to_keep_folder(args, media_file: str):

@@ -409,6 +409,7 @@ I do this instead of copy-on-write duplication because I want deletions to stick
 
 - tube: why nan instead of null ?
 - all: extracts switch to https://sqlite-utils.datasette.io/en/latest/python-api.html#adding-columns-automatically-on-insert-update
+- tube: basic tests
 - tube: make sure playlistless media doesn't save to the playlists table
 - all: verify things work on Windows
 - all: more test coverage
