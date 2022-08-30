@@ -374,21 +374,20 @@ def get_extra_metadata(args, playlist_path) -> Union[List[Dict], None]:
 def get_playlists(args, include_playlistless_media=True):
     try:
         if include_playlistless_media:
-            known_playlists = utils.single_column_tolist(
-                args.db.execute("select path from playlists order by random()").fetchall(), "path"
-            )
+            known_playlists = [d["path"] for d in args.db.query("select path from playlists order by random()")]
+
         else:
-            known_playlists = utils.single_column_tolist(
-                args.db.execute(
+            known_playlists = [
+                d["playlist_path"]
+                for d in args.db.query(
                     """
                     select playlist_path from media
                     group by playlist_path
                     having count(playlist_path) > 1
                     order by random()
                     """
-                ).fetchall(),
-                "playlist_path",
-            )
+                )
+            ]
     except OperationalError:
         known_playlists = []
     return known_playlists

@@ -168,7 +168,7 @@ def get_ordinal_media(args, path):
         if not args.play_in_order > 2:
             bindings.extend(args.sql_filter_bindings)
 
-        similar_videos = utils.single_column_tolist(args.db.execute(query, bindings).fetchall(), "path")  # type: ignore
+        similar_videos = [d["path"] for d in args.db.query(query, bindings)]
         log.debug(similar_videos)
 
         if len(similar_videos) > 999 or len(similar_videos) == total_media:
@@ -375,11 +375,7 @@ def printer(args, query, bindings):
     db_resp.dropna(axis="columns", how="all", inplace=True)
 
     if args.verbose > 1 and args.cols and "*" in args.cols:
-        import rich
-
         breakpoint()
-        for t in db_resp.to_dict(orient="records"):
-            rich.print(t)
 
     if db_resp.empty or len(db_resp) == 0:
         print("No media found")
