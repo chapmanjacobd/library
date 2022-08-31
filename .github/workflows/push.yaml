@@ -53,10 +53,14 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install poetry pytest pytest-cov
           poetry config virtualenvs.create false
+          coverage run -m pytest
+          coverage xml -o coverage.xml
 
-      - run: poetry install
-      - run: pytest --cov=./ --cov-report=xml
-      - uses: codecov/codecov-action@v3
+      - uses: paambaati/codeclimate-action@v3
+        env:
+          CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
+        with:
+          coverageCommand: coverage report
 
   publish:
     needs: test
