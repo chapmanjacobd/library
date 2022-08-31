@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "xklb"
-version = "1.15.009"
+version = "1.15.010"
 description = "xk library"
 authors = ["Jacob Chapman <7908073+chapmanjacobd@users.noreply.github.com>"]
 readme = "README.md"
@@ -16,7 +16,7 @@ pandas = "*"
 ipython = "*"
 subliminal = "*"
 catt = "*"
-sqlite-utils = { git = "https://github.com/simonw/sqlite-utils.git" }
+sqlite-utils = "*"
 mutagen = "*"
 tinytag = "*"
 tabulate = "*"
