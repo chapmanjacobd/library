@@ -1,4 +1,4 @@
-import argparse, shlex, shutil, subprocess
+import argparse, shlex, shutil
 from pathlib import Path
 from typing import Dict
 
@@ -22,8 +22,6 @@ from xklb.player import (
     watch_chromecast,
 )
 from xklb.utils import SC, cmd, log
-
-idle_mpv = lambda args: ["mpv", "--idle", f"--input-ipc-server={args.mpv_socket}"]
 
 
 def parse_args(action, default_db, default_chromecast=""):
@@ -670,15 +668,12 @@ def process_playqueue(args, construct_query=construct_fs_query):
         print("No media found")
         exit(2)
 
-    if args.interdimensional_cable:
-        subprocess.Popen(idle_mpv(args))
-
     try:
         for m in media:
             play(args, m)
     finally:
         if args.interdimensional_cable:
-            utils.pkill(idle_mpv(args), strict=False)
+            args.sock.send((f"raw quit \n").encode("utf-8"))
         Path(args.mpv_socket).unlink(missing_ok=True)
         if args.chromecast:
             Path(paths.CAST_NOW_PLAYING).unlink(missing_ok=True)

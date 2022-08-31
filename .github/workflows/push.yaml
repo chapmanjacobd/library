@@ -37,6 +37,27 @@ jobs:
       - run: poetry build
       - run: pytest
 
+  test-coverage:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: "3.10"
+
+      - uses: FedericoCarboni/setup-ffmpeg@v1
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install poetry pytest pytest-cov
+          poetry config virtualenvs.create false
+
+      - run: poetry install
+      - run: pytest --cov=./ --cov-report=xml
+      - uses: codecov/codecov-action@v3
+
   publish:
     needs: test
     runs-on: ubuntu-latest

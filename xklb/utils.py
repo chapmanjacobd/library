@@ -8,7 +8,6 @@ from typing import Union
 import humanize
 import numpy as np
 import pandas as pd
-import psutil
 from IPython.core import ultratb
 from IPython.terminal.debugger import TerminalPdb
 from pychromecast import discovery
@@ -293,17 +292,6 @@ def human_time(seconds):
         return minutes
     else:
         return humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="minutes")
-
-
-def pkill(*command, strict=True):
-    found = 0
-    for process in psutil.process_iter():
-        if process.cmdline() == command:
-            process.terminate()
-            found = 1
-            break
-    if strict and found == 0:
-        raise Exception("Process not found")
 
 
 class argparse_dict(argparse.Action):
