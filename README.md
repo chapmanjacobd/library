@@ -407,7 +407,6 @@ I do this instead of copy-on-write duplication because I want deletions to stick
 
 ### TODOs (PRs welcome)
 
-- tube: why nan instead of null ?
 - all: extracts switch to https://sqlite-utils.datasette.io/en/latest/python-api.html#adding-columns-automatically-on-insert-update
 - tube: basic tests
 - tube: make sure playlistless media doesn't save to the playlists table
@@ -417,4 +416,3 @@ I do this instead of copy-on-write duplication because I want deletions to stick
 - all: follow fd-find size arg syntax
 - all: remove pandas dependency?
 - fs: split_by_silence without modifying files
-fts rank
