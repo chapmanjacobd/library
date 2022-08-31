@@ -411,7 +411,7 @@ I do this instead of copy-on-write duplication because I want deletions to stick
 - tube: basic tests
 - tube: make sure playlistless media doesn't save to the playlists table
 - all: verify things work on Windows
-- all: more test coverage
+- all: more test coverage -- https://hypothesis.readthedocs.io/en/latest/quickstart.html
 - all: follow yt-dlp print arg syntax
 - all: follow fd-find size arg syntax
 - all: remove pandas dependency?
