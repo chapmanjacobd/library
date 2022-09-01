@@ -10,6 +10,8 @@ Recommended: `mpv`, `fish`, `firefox`
 
 ## Install
 
+Linux recommended but [Windows setup instructions](./Windows.md) available.
+
     pip install xklb
 
     $ lb
@@ -32,8 +34,6 @@ Recommended: `mpv`, `fish`, `firefox`
     browser tabs subcommands:
       tabsadd                            Create a tabs database; Add URLs
       tabs [tb]                          Open your tabs for the day
-
-Linux recommended but [Windows setup instructions](./Windows.md) available.
 
 ## Quick Start -- watch online media on your PC
 
