@@ -1105,7 +1105,7 @@ python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,>=2.7"
 
 [[package]]
 name = "yt-dlp"
-version = "2022.8.19"
+version = "2022.9.1"
 description = "A youtube-dl fork with additional features and patches"
 category = "main"
 optional = false
@@ -1986,8 +1986,8 @@ wrapt = [
     {file = "wrapt-1.14.1.tar.gz", hash = "sha256:380a85cf89e0e69b7cfbe2ea9f765f004ff419f34194018a6827ac0e3edfed4d"},
 ]
 yt-dlp = [
-    {file = "yt-dlp-2022.8.19.tar.gz", hash = "sha256:cc290ac8a1fec626841765fed12f7a1ebdfe01791ae5c5f3794edfce35d81843"},
-    {file = "yt_dlp-2022.8.19-py2.py3-none-any.whl", hash = "sha256:a01d3c7187683ec17db33ecd3b506436c7e94c5693002f059f76d32fb437083e"},
+    {file = "yt-dlp-2022.9.1.tar.gz", hash = "sha256:bc74ee255790043e458197aaf25c6c104fefc9fcda4458f652619447ab4ae0d7"},
+    {file = "yt_dlp-2022.9.1-py2.py3-none-any.whl", hash = "sha256:af3721ecb286a95272008add3b9bebde4f370fb3bdd1bb6402727af9e2e3aa2b"},
 ]
 zeroconf = [
     {file = "zeroconf-0.39.0-py3-none-any.whl", hash = "sha256:02989d759d48389e6a9132edcc6827d34f6367c043f63f708a220f9d89dc2604"},
