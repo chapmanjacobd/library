@@ -14,8 +14,8 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
 
     pip install xklb
 
-    $ lb
-    xk media library
+    $ library
+    xk media library [lb]
 
     local media subcommands:
       fsadd [extract, xr]                Create a local media database; Add folders
@@ -38,7 +38,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
 ## Quick Start -- watch online media on your PC
 
     wget https://github.com/chapmanjacobd/lb/raw/main/examples/mealtime.tw.db
-    lb tubewatch mealtime.tw.db
+    library tubewatch mealtime.tw.db
 
 ## Quick Start -- listen to online media on a chromecast group
 
@@ -57,9 +57,9 @@ For thirty terabytes of video the initial scan takes about four hours to complet
 
 ### 2. Watch / Listen from local files
 
-    wt tv.db                          # the default post-action is to do nothing after playing
-    wt tv.db --post-action delete     # delete file after playing
-    lt finalists.db --post-action=ask # ask to delete after playing
+    lb wt tv.db                          # the default post-action is to do nothing after playing
+    lb wt tv.db --post-action delete     # delete file after playing
+    lb lt finalists.db --post-action=ask # ask to delete after playing
 
 To stop playing just press Ctrl+C in either the terminal or mpv
 
@@ -122,30 +122,30 @@ You can also invoke tabs manually:
 
 When the database file path is not specified, `video.db` will be created / used.
 
-    lb fsadd ./tv/
+    library fsadd ./tv/
 
 The same for audio: `audio.db` will be created / used.
 
-    lb fsadd --audio ./music/
+    library fsadd --audio ./music/
 
 Likewise, `fs.db` from:
 
-    lb fsadd --filesystem /any/path/
+    library fsadd --filesystem /any/path/
 
 If you want to specify more than one directory you need to mention the db file explicitly.
 
-    lb fsadd --filesystem one/
-    lb fsadd --filesystem fs.db one/ two/
+    library fsadd --filesystem one/
+    library fsadd --filesystem fs.db one/ two/
 
 Organize via separate databases.
 
-    lb fsadd --audio both.db ./audiobooks/ ./podcasts/
-    lb fsadd --audio audiobooks.db ./audiobooks/
-    lb fsadd --audio podcasts.db ./podcasts/ ./another/more/secret/podcasts_folder/
+    library fsadd --audio both.db ./audiobooks/ ./podcasts/
+    library fsadd --audio audiobooks.db ./audiobooks/
+    library fsadd --audio podcasts.db ./podcasts/ ./another/more/secret/podcasts_folder/
 
 ## Usage
 
-    $ lb wt -h
+    $ library watch -h
     usage: lb watch [database] [optional args]
 
         If not specified, watch will try to read video.db in the working directory:
@@ -205,7 +205,7 @@ Organize via separate databases.
 
             Print a list of videos which have below 1280px resolution
 
-            lb wt -w 'width<1280' -p f
+            lb watch -w 'width<1280' -p f
 
             View how much time you have listened to music
 
@@ -213,7 +213,7 @@ Organize via separate databases.
 
             See how much video you have
 
-            lb wt video.db -p a
+            lb watch video.db -p a
             ╒═══════════╤═════════╤═════════╤═════════╕
             │ path      │   hours │ size    │   count │
             ╞═══════════╪═════════╪═════════╪═════════╡
@@ -257,10 +257,10 @@ Organize via separate databases.
 
         Repeat
 
-            lt                  # listen to 120 random songs (DEFAULT_PLAY_QUEUE)
-            lt --limit 5        # listen to FIVE songs
-            lt -l inf -u random # listen to random songs indefinitely
-            lt -s infinite      # listen to songs from the band infinite
+            lb listen                  # listen to 120 random songs (DEFAULT_PLAY_QUEUE)
+            lb listen --limit 5        # listen to FIVE songs
+            lb listen -l inf -u random # listen to random songs indefinitely
+            lb listen -s infinite      # listen to songs from the band infinite
 
         Constrain media by search:
 
@@ -316,7 +316,7 @@ Organize via separate databases.
             Bitrate information is not explicitly saved.
             You can use file size and duration as a proxy for throughput:
 
-            wt -w 'size/duration<50000'
+            lb wt -w 'size/duration<50000'
 
         Constrain media to portrait orientation video:
 
@@ -399,12 +399,12 @@ I do this instead of copy-on-write duplication because I want deletions to stick
 
     function mrmusic
         rsync -a --remove-source-files --files-from=(
-            lt ~/lb/audio.db -s /mnt/d/80_Now_Listening/ -p f \
+            lb lt ~/lb/audio.db -s /mnt/d/80_Now_Listening/ -p f \
             --moved /mnt/d/80_Now_Listening/ /mnt/d/ | psub
         ) /mnt/d/80_Now_Listening/ /mnt/d/
 
         rsync -a --remove-source-files --files-from=(
-            lt ~/lb/audio.db -w play_count=0 -u random -L 1200 -p f \
+            lb lt ~/lb/audio.db -w play_count=0 -u random -L 1200 -p f \
             --moved /mnt/d/ /mnt/d/80_Now_Listening/ | psub
         ) /mnt/d/ /mnt/d/80_Now_Listening/
     end
@@ -420,5 +420,4 @@ I do this instead of copy-on-write duplication because I want deletions to stick
 - all: follow fd-find size arg syntax
 - all: remove pandas dependency?
 - fs: split_by_silence without modifying files
-
-support subs/ folder
+- fs: support subs/ folder

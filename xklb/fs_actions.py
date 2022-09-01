@@ -146,10 +146,10 @@ def parse_args(action, default_db, default_chromecast=""):
 
     Repeat
 
-        lt                  # listen to 120 random songs (DEFAULT_PLAY_QUEUE)
-        lt --limit 5        # listen to FIVE songs
-        lt -l inf -u random # listen to random songs indefinitely
-        lt -s infinite      # listen to songs from the band infinite
+        lb {action}                  # listen to 120 random songs (DEFAULT_PLAY_QUEUE)
+        lb {action} --limit 5        # listen to FIVE songs
+        lb {action} -l inf -u random # listen to random songs indefinitely
+        lb {action} -s infinite      # listen to songs from the band infinite
 
     Constrain media by search:
 
@@ -202,7 +202,7 @@ def parse_args(action, default_db, default_chromecast=""):
 
         Bitrate information is not explicitly saved but you can use file size and duration as a proxy:
 
-        wt -w 'size/duration<50000'
+        lb {action} -w 'size/duration<50000'
 
     Constrain media to portrait orientation video:
 

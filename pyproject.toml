@@ -42,10 +42,6 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry.scripts]
 library = 'xklb.lb:main'
 lb = 'xklb.lb:main'
-lt = 'xklb.lb:listen'
-wt = 'xklb.lb:watch'
-tw = 'xklb.lb:tube_watch'
-tl = 'xklb.lb:tube_listen'
 
 [tool.black]
 line-length = 120
