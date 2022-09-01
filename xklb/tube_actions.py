@@ -112,6 +112,7 @@ def construct_tube_query(args):
         {', ' + ', '.join(args.cols) if args.cols else ''}
     FROM {table}
     WHERE 1=1
+    {'and rowid in (select rowid from media order by random() limit 60000)' if table == 'media' else ''}
     {args.sql_filter}
     {'and width < height' if args.portrait else ''}
     ORDER BY 1=1
