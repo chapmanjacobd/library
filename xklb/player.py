@@ -303,14 +303,15 @@ def socket_play(args, m):
 
 def local_player(args, m, media_file):
     player = generic_player(args)
+    mpv = which("mpv.com") or which("mpv")
 
     if args.player:
         player = args.player
         args.player_need_sleep = False
 
-    elif which("mpv"):
+    elif mpv:
         args.player_need_sleep = False
-        player = [which("mpv")]
+        player = [mpv]
         if args.action in [SC.listen, SC.tubelisten]:
             player.extend([f"--input-ipc-server={args.mpv_socket}", "--no-video", "--keep-open=no", "--really-quiet"])
         elif args.action in [SC.watch, SC.tubewatch]:
@@ -339,6 +340,9 @@ def local_player(args, m, media_file):
     if args.action == SC.watch:
         if m["subtitle_count"] > 0:
             player.extend(args.player_args_when_sub)
+        elif Path(media_file).stat().st_size > 500 * 1000000: # 500 MB
+            # player.extend(args.player_args_when_no_sub_big_file) # TODO: if people complain fix this
+            pass
         else:
             player.extend(args.player_args_when_no_sub)
 

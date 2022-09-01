@@ -4,7 +4,9 @@ A wise philosopher once told me, "[The future is autotainment](https://www.youtu
 
 Manage large media libraries. Similar to Plex but more minimalist. Primary usage is local filesystem but also supports some virtual constructs like tracking video playlists (eg. YouTube subscriptions) and browser tabs.
 
-Requires `ffmpeg`
+Required: `ffmpeg`
+
+Recommended: `mpv`, `fish`, `firefox`
 
 ## Install
 
@@ -30,6 +32,8 @@ Requires `ffmpeg`
     browser tabs subcommands:
       tabsadd                            Create a tabs database; Add URLs
       tabs [tb]                          Open your tabs for the day
+
+Linux recommended but [Windows setup instructions](./Windows.md) available.
 
 ## Quick Start -- watch online media on your PC
 
@@ -416,3 +420,5 @@ I do this instead of copy-on-write duplication because I want deletions to stick
 - all: follow fd-find size arg syntax
 - all: remove pandas dependency?
 - fs: split_by_silence without modifying files
+
+support subs/ folder
