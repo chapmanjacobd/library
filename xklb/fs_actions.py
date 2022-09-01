@@ -292,7 +292,7 @@ def parse_args(action, default_db, default_chromecast=""):
         "--player-args-when-sub", "-player-sub", nargs="*", default=["--speed=1"], help=argparse.SUPPRESS
     )
     parser.add_argument(
-        "--player-args-when-no-sub", "-player-no-sub", nargs="*", default=["--speed=1.7"], help=argparse.SUPPRESS
+        "--player-args-when-no-sub", "-player-no-sub", nargs="*", default=["--speed=1.46"], help=argparse.SUPPRESS
     )
     parser.add_argument("--transcode", action="store_true", help=argparse.SUPPRESS)
 
