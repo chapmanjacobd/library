@@ -40,6 +40,7 @@ requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
+library = 'xklb.lb:main'
 lb = 'xklb.lb:main'
 lt = 'xklb.lb:listen'
 wt = 'xklb.lb:watch'
