@@ -2,6 +2,8 @@
 
 Help is never guaranteed but you will have more success in getting help if you have firstly followed this guide:
 
+## Prep
+
 This is the only way I know of getting it working. If you would rather use something like `cygwin`, `WSL`, or `WSL2` you are on your own.
 
 1. Install `choco` using powershell
@@ -32,7 +34,9 @@ This is the only way I know of getting it working. If you would rather use somet
     set -Ux MSYSTEM MINGW64
     ```
 
-7. Install xklb and enjoy!
+## Install
+
+Install xklb and enjoy!
 
     ```fish
     pip install xklb
