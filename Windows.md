@@ -38,7 +38,7 @@ This is the only way I know of getting it working. If you would rather use somet
 
 Install xklb and enjoy!
 
-    ```fish
-    pip install xklb
-    lb
-    ```
+```fish
+pip install xklb
+lb
+```
