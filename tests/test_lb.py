@@ -113,4 +113,4 @@ class TestTabs(unittest.TestCase):
     def test_lb_tabs(self, play_mocked):
         lb(["tabs", *tabs_db])
         out = play_mocked.call_args[0][1].tolist()
-        assert out == (0, "https://unli.xyz/proliferation/verbs.html", "monthly", 2678400)
+        assert out == (0, "https://unli.xyz/proliferation/verbs.html", "monthly", 2667600)
