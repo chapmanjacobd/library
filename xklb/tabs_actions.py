@@ -59,7 +59,7 @@ def construct_tabs_query(args):
         {args.sql_filter}
         {"and date(time_valid, 'unixepoch') < date()" if not args.print else ''}
     ORDER BY 1=1
-        {',' + args.sort if args.sort else ''}
+        {', ' + args.sort if args.sort else ''}
         , play_count
         , frequency = 'daily' desc
         , frequency = 'weekly' desc
