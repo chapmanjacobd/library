@@ -29,8 +29,8 @@ def mv_to_keep_folder(args, media_file: str):
 
     keep_path.mkdir(exist_ok=True)
     new_path = shutil.move(media_file, keep_path)
-    with args.db:
-        args.db.execute("UPDATE media set path = ? where path = ?", [new_path, media_file])
+    with args.db.conn:
+        args.db.conn.execute("UPDATE media set path = ? where path = ?", [new_path, media_file])
 
 
 def mark_media_watched(args, files):
@@ -128,11 +128,11 @@ def delete_media(args, media_file: str):
 
 
 def delete_playlists(args, playlists):
-    with args.db:
-        args.db.execute(
+    with args.db.conn:
+        args.db.conn.execute(
             "delete from media where playlist_path in (" + ",".join(["?"] * len(playlists)) + ")", (*playlists,)
         )
-        args.db.execute("delete from playlists where path in (" + ",".join(["?"] * len(playlists)) + ")", (*playlists,))
+        args.db.conn.execute("delete from playlists where path in (" + ",".join(["?"] * len(playlists)) + ")", (*playlists,))
 
 
 def get_ordinal_media(args, path):
