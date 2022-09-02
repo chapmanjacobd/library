@@ -639,7 +639,7 @@ def construct_fs_query(args):
         {', ' + ', '.join(args.cols) if args.cols else ''}
     FROM {table}
     WHERE 1=1
-    {'and rowid in (select rowid from media order by random() limit 60000)' if table == 'media' else ''}
+    {'and rowid in (select rowid from media order by random() limit 60000)' if table == 'media' and not args.print else ''}
     {args.sql_filter}
     {'and audio_count > 0' if args.action == SC.listen else ''}
     {'and video_count > 0' if args.action == SC.watch else ''}
