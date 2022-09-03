@@ -95,9 +95,12 @@ def construct_tube_query(args):
     cf.extend([" and " + w for w in args.where])
 
     table = "media"
-    if args.include:
-        table = db.fts_search(args, bindings)
-    elif args.exclude:
+    if args.db["media"].detect_fts():
+        if args.include:
+            table = db.fts_search(args, bindings)
+        elif args.exclude:
+            construct_search_bindings(args, bindings, cf, tube_include_string, tube_exclude_string)
+    else:
         construct_search_bindings(args, bindings, cf, tube_include_string, tube_exclude_string)
 
     if table == "media" and not args.print:
