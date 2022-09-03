@@ -1,12 +1,15 @@
 [tool.poetry]
 name = "xklb"
-version = "1.15.023"
+version = "1.15.024"
 description = "xk library"
 authors = ["Jacob Chapman <7908073+chapmanjacobd@users.noreply.github.com>"]
 readme = "README.md"
 documentation = "https://github.com/chapmanjacobd/lb/wiki/Usage"
 homepage = "https://github.com/chapmanjacobd/lb/"
 license = "BSD-3-Clause"
+packages = [
+    { include = "scripts/" }
+]
 
 [tool.poetry.dependencies]
 python = "^3.8"
