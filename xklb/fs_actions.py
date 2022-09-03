@@ -595,15 +595,6 @@ def construct_search_bindings(args, bindings, cf, include_func, exclude_func):
         bindings[f"exclude{idx}"] = "%" + exc.replace(" ", "%").replace("%%", " ") + "%"
 
 
-def substring_search(args, cf, bindings):
-    if args.action == SC.listen:
-        construct_search_bindings(args, bindings, cf, audio_include_string, audio_exclude_string)
-    elif args.action == SC.watch:
-        construct_search_bindings(args, bindings, cf, video_include_string, video_exclude_string)
-    else:
-        construct_search_bindings(args, bindings, cf, other_include_string, other_exclude_string)
-
-
 def construct_fs_query(args):
     cf = []
     bindings = {}
@@ -616,10 +607,15 @@ def construct_fs_query(args):
     cf.extend([" and " + w for w in args.where])
 
     table = "media"
-    if args.include:
-        table = db.fts_search(args, bindings)
-    elif args.exclude:
-        substring_search(args, cf, bindings)
+    if args.action == SC.watch:
+        if args.include:
+            table = db.fts_search(args, bindings)
+        elif args.exclude:
+            construct_search_bindings(args, bindings, cf, video_include_string, video_exclude_string)
+    elif args.action == SC.listen:
+        construct_search_bindings(args, bindings, cf, audio_include_string, audio_exclude_string)
+    elif args.action == SC.filesystem:
+        construct_search_bindings(args, bindings, cf, other_include_string, other_exclude_string)
 
     if table == "media" and not args.print:
         limit = 60_000
