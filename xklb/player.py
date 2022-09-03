@@ -448,7 +448,8 @@ def printer(args, query, bindings):
             summary = db_resp.sum(numeric_only=True)
             duration = summary.get("duration") or 0
             duration = human_time(duration)
-            print("Total duration:", duration)
+            if not 'a' in args.print:
+                print("Total duration:", duration)
 
 
 def override_sort(string):
