@@ -42,6 +42,7 @@ def get_table(args):
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("database")
+    parser.add_argument("--limit", "-L", "-l", "-queue", "--queue")
     parser.add_argument("--verbose", "-v", action="count", default=0)
     args = parser.parse_args()
     args.db = db.connect(args)
@@ -52,10 +53,14 @@ def large_folders():
     args = parse_args()
     tbl = get_table(args)
 
+    if args.limit:
+        tbl = tbl.tail(args.limit)
+
     tbl[["size"]] = tbl[["size"]].applymap(lambda x: None if x is None else humanize.naturalsize(x))
     tbl = utils.resize_col(tbl, "path", 60)
     print(tabulate(tbl, tablefmt="fancy_grid", headers="keys", showindex=False))  # type: ignore
-    print(f"{len(tbl)} folders found")
+    if not args.limit:
+        print(f"{len(tbl)} folders found")
 
 if __name__ == "__main__":
     large_folders()
