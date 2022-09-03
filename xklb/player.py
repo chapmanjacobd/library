@@ -132,7 +132,9 @@ def delete_playlists(args, playlists):
         args.db.conn.execute(
             "delete from media where playlist_path in (" + ",".join(["?"] * len(playlists)) + ")", (*playlists,)
         )
-        args.db.conn.execute("delete from playlists where path in (" + ",".join(["?"] * len(playlists)) + ")", (*playlists,))
+        args.db.conn.execute(
+            "delete from playlists where path in (" + ",".join(["?"] * len(playlists)) + ")", (*playlists,)
+        )
 
 
 def get_ordinal_media(args, path):

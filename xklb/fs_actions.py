@@ -21,7 +21,7 @@ from xklb.player import (
     socket_play,
     watch_chromecast,
 )
-from xklb.utils import SC, cmd, log
+from xklb.utils import DEFAULT_PLAY_QUEUE, SC, cmd, log
 
 
 def parse_args(action, default_db, default_chromecast=""):
@@ -332,9 +332,6 @@ def parse_args(action, default_db, default_chromecast=""):
         elif args.action in [SC.filesystem]:
             args.sort = ["sparseness, size"]
 
-    if args.random:
-        args.sort = ["random"]
-
     if args.sort:
         args.sort = " ".join(args.sort)
         args.sort = override_sort(args.sort)
@@ -624,6 +621,12 @@ def construct_fs_query(args):
     elif args.exclude:
         substring_search(args, cf, bindings)
 
+    if table == "media" and not args.print:
+        limit = 60_000
+        if args.random:
+            limit = DEFAULT_PLAY_QUEUE * 2
+        cf.append(f"and rowid in (select rowid from media order by random() limit {limit})")
+
     args.sql_filter = " ".join(cf)
     args.sql_filter_bindings = bindings
 
@@ -639,7 +642,6 @@ def construct_fs_query(args):
         {', ' + ', '.join(args.cols) if args.cols else ''}
     FROM {table}
     WHERE 1=1
-    {'and rowid in (select rowid from media order by random() limit 60000)' if table == 'media' and not args.print else ''}
     {args.sql_filter}
     {'and audio_count > 0' if args.action == SC.listen else ''}
     {'and video_count > 0' if args.action == SC.watch else ''}
