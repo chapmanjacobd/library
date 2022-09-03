@@ -1,5 +1,6 @@
 import argparse, sys
 
+import scripts
 from xklb.fs_actions import filesystem, listen, watch
 from xklb.fs_extract import main as fs_add
 from xklb.subtitle import main as subtitle
@@ -20,6 +21,7 @@ local media subcommands:
   listen [lt]                        Listen to local media
   watch [wt]                         Watch local media
   filesystem [fs]                    Browse files
+  bigdirs [largefolders]             View folders which take up much room
 
 online media subcommands:
   tubeadd [ta]                       Create a tube database; Add playlists
@@ -58,6 +60,9 @@ def lb(args=None):
     subp_watch.set_defaults(func=watch)
     subp_filesystem = subparsers.add_parser(SC.filesystem, aliases=["fs"], add_help=False)
     subp_filesystem.set_defaults(func=filesystem)
+
+    subp_scripts_lf = subparsers.add_parser("bigdirs", aliases=["largefolders", "large_folders"], add_help=False)
+    subp_scripts_lf.set_defaults(func=scripts.large_folders)
 
     subp_tabsadd = subparsers.add_parser("tabsadd", add_help=False)
     subp_tabsadd.set_defaults(func=tabs_add)
