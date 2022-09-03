@@ -44,7 +44,7 @@ def optimize(args):
 
 
 def fts_quote(l):
-    fts_words = [" NOT ", " AND ", " OR ", "^", "*", "+", "-", ":", "NEAR("]
+    fts_words = [" NOT ", " AND ", " OR ", "*", ":", "NEAR("]
     return [s if any([r in s for r in fts_words]) else '"' + s + '"' for s in l]
 
 
