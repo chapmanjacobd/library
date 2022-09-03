@@ -12,7 +12,7 @@ def tracer(sql, params):
 def connect(args):
     if not os.path.exists(args.database) and ":memory:" not in args.database:
         log.error(
-            f"Database file '{args.database}' does not exist. Create one with lb extract / lb tubeadd / lb tabsadd."
+            f"Database file '{args.database}' does not exist. Create one with lb fsadd / lb tubeadd / lb tabsadd."
         )
         exit(1)
 
