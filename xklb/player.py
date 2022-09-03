@@ -54,11 +54,16 @@ def mark_media_watched(args, files):
     return modified_row_count
 
 
-def mark_media_deleted(args, files):
-    files = utils.conform(files)
+def mark_media_deleted(args, paths):
+    paths = utils.conform(paths)
+
+    mount_point = args.prefix or args.shallow_organize
+    if platform.system() == "Linux" and any([mount_point in p for p in paths]) and not Path(mount_point).is_mount():
+        raise Exception(f"mount_point {mount_point} not mounted yet")
+
     modified_row_count = 0
-    if len(files) > 0:
-        df_chunked = utils.chunks(files, SQLITE_PARAM_LIMIT)
+    if len(paths) > 0:
+        df_chunked = utils.chunks(paths, SQLITE_PARAM_LIMIT)
         for l in df_chunked:
             with args.db.conn:
                 cursor = args.db.conn.execute(
