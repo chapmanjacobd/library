@@ -195,7 +195,7 @@ def get_ordinal_media(args, path):
 def generic_player(args):
     if platform.system() == "Linux":
         player = ["xdg-open"]
-    elif platform.system() == "Windows":
+    elif any([p in platform.system() for p in ["Windows", '_NT-', 'MSYS']]):
         if shutil.which("cygstart"):
             player = ["cygstart"]
         else:
