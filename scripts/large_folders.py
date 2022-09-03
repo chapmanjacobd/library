@@ -12,7 +12,12 @@ parser.add_argument("--verbose", "-v", action="count", default=0)
 args = parser.parse_args()
 args.db = db.connect(args)
 
-db_resp = pd.DataFrame(args.db.query("select path, size from media order by path"))  # type: ignore
+db_resp = pd.DataFrame(args.db.query("""
+    select path, size
+    from media
+    where is_deleted = 0
+    order by path
+"""))  # type: ignore
 
 d = {}
 for m in db_resp.to_dict(orient="records"):
