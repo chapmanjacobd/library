@@ -58,8 +58,10 @@ def mark_media_deleted(args, paths):
     paths = utils.conform(paths)
 
     mount_point = args.prefix or args.shallow_organize
-    if platform.system() == "Linux" and any([mount_point in p for p in paths]) and not Path(mount_point).is_mount():
-        raise Exception(f"mount_point {mount_point} not mounted yet")
+    if platform.system() == "Linux" and any([mount_point in p for p in paths]):
+        p = Path(mount_point)
+        if p.exists() and not p.is_mount():
+            raise Exception(f"mount_point {mount_point} not mounted yet")
 
     modified_row_count = 0
     if len(paths) > 0:
