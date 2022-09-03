@@ -6,39 +6,56 @@ from tabulate import tabulate
 
 from xklb import db, utils
 
-parser = argparse.ArgumentParser()
-parser.add_argument("database")
-parser.add_argument("--verbose", "-v", action="count", default=0)
-args = parser.parse_args()
-args.db = db.connect(args)
 
-db_resp = pd.DataFrame(args.db.query("""
-    select path, size
-    from media
-    where is_deleted = 0
-    order by path
-"""))  # type: ignore
+def get_table(args):
+    db_resp = pd.DataFrame(
+        args.db.query(
+            """
+        select path, size
+        from media
+        where is_deleted = 0
+        order by path
+        """
+        )
+    )
 
-d = {}
-for m in db_resp.to_dict(orient="records"):
-    p = m["path"].split("/")
-    while len(p) > 2:
-        p.pop()
-        parent = "/".join(p) + "/"
+    d = {}
+    for m in db_resp.to_dict(orient="records"):
+        p = m["path"].split("/")
+        while len(p) > 2:
+            p.pop()
+            parent = "/".join(p) + "/"
 
-        if d.get(parent):
-            d[parent]["size"] += m["size"]
-            d[parent]["count"] += 1
-        else:
-            d[parent] = dict(size=m["size"], count=1)
+            if d.get(parent):
+                d[parent]["size"] += m["size"]
+                d[parent]["count"] += 1
+            else:
+                d[parent] = dict(size=m["size"], count=1)
 
-for path, pdict in list(d.items()):
-    if pdict["count"] < 35 or pdict["count"] > 3500:
-        d.pop(path)
+    for path, pdict in list(d.items()):
+        if pdict["count"] < 35 or pdict["count"] > 3500:
+            d.pop(path)
 
-tbl = pd.DataFrame([{**v, "path": k} for k, v in d.items()]).sort_values(by=["size"])
+    return pd.DataFrame([{**v, "path": k} for k, v in d.items()]).sort_values(by=["size"])
 
-tbl[["size"]] = tbl[["size"]].applymap(lambda x: None if x is None else humanize.naturalsize(x))
-tbl = utils.resize_col(tbl, "path", 60)
 
-print(tabulate(tbl, tablefmt="fancy_grid", headers="keys", showindex=False))  # type: ignore
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("database")
+    parser.add_argument("--verbose", "-v", action="count", default=0)
+    args = parser.parse_args()
+    args.db = db.connect(args)
+    return args
+
+
+def large_folders():
+    args = parse_args()
+    tbl = get_table(args)
+
+    tbl[["size"]] = tbl[["size"]].applymap(lambda x: None if x is None else humanize.naturalsize(x))
+    tbl = utils.resize_col(tbl, "path", 60)
+    print(tabulate(tbl, tablefmt="fancy_grid", headers="keys", showindex=False))  # type: ignore
+
+
+if __name__ == "__main__":
+    large_folders()
