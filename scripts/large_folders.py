@@ -55,7 +55,7 @@ def large_folders():
     tbl[["size"]] = tbl[["size"]].applymap(lambda x: None if x is None else humanize.naturalsize(x))
     tbl = utils.resize_col(tbl, "path", 60)
     print(tabulate(tbl, tablefmt="fancy_grid", headers="keys", showindex=False))  # type: ignore
-
+    print(f"{len(tbl)} folders found")
 
 if __name__ == "__main__":
     large_folders()
