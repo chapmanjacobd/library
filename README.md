@@ -23,6 +23,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
       listen [lt]                        Listen to local media
       watch [wt]                         Watch local media
       filesystem [fs]                    Browse files
+      bigdirs [largefolders]             View folders which take up much room
 
     online media subcommands:
       tubeadd [ta]                       Create a tube database; Add playlists
