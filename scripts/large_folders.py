@@ -54,7 +54,7 @@ def large_folders():
     tbl = get_table(args)
 
     if args.limit:
-        tbl = tbl.tail(args.limit)
+        tbl = tbl.tail(int(args.limit))
 
     tbl[["size"]] = tbl[["size"]].applymap(lambda x: None if x is None else humanize.naturalsize(x))
     tbl = utils.resize_col(tbl, "path", 60)
