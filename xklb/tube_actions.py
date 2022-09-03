@@ -7,7 +7,7 @@ from tabulate import tabulate
 from xklb import db
 from xklb.fs_actions import construct_search_bindings, parse_args, process_playqueue
 from xklb.player import delete_playlists
-from xklb.utils import SC, dict_filter_bool, human_time, log, resize_col
+from xklb.utils import DEFAULT_PLAY_QUEUE, SC, dict_filter_bool, human_time, log, resize_col
 
 # TODO: add cookiesfrombrowser: ('firefox', ) as a default
 # cookiesfrombrowser: ('vivaldi', ) # should not crash if not installed ?
@@ -100,6 +100,12 @@ def construct_tube_query(args):
     elif args.exclude:
         construct_search_bindings(args, bindings, cf, tube_include_string, tube_exclude_string)
 
+    if table == "media" and not args.print:
+        limit = 60_000
+        if args.random:
+            limit = DEFAULT_PLAY_QUEUE * 2
+        cf.append(f"and rowid in (select rowid from media order by random() limit {limit})")
+
     args.sql_filter = " ".join(cf)
 
     LIMIT = "LIMIT " + str(args.limit) if args.limit else ""
@@ -112,7 +118,6 @@ def construct_tube_query(args):
         {', ' + ', '.join(args.cols) if args.cols else ''}
     FROM {table}
     WHERE 1=1
-    {'and rowid in (select rowid from media order by random() limit 60000)' if table == 'media' and not args.print else ''}
     {args.sql_filter}
     {'and width < height' if args.portrait else ''}
     ORDER BY 1=1
