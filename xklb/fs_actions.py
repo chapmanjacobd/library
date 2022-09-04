@@ -498,7 +498,8 @@ def play(args, m: Dict):
     if args.action in [SC.watch, SC.listen]:
         media_path = Path(args.prefix + media_file).resolve()
         if not media_path.exists():
-            mark_media_deleted(args, media_file)
+            if paths.is_mounted(paths, args.shallow_organize):
+                mark_media_deleted(args, media_file)
             return
         media_file = str(media_path)
 

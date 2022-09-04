@@ -257,27 +257,31 @@ def find_new_files(args, path):
     else:
         raise Exception(f"fs_extract for db_type {args.db_type} not implemented")
 
-    new_files = set(scanned_files)
+    scanned_set = set(scanned_files)
 
     try:
-        existing = set(
+        existing_set = set(
             [d["path"] for d in args.db.query(f"select path from media where is_deleted=0 and path like '{path}%'")]
         )
     except Exception:
-        scanned_files = list(new_files)
+        new_files = list(scanned_set)
     else:
-        scanned_files = list(new_files - existing)
+        new_files = list(scanned_set - existing_set)
 
-        deleted_files = list(existing - new_files)
+        deleted_files = list(existing_set - scanned_set)
+        if len(new_files) == 0 and len(deleted_files) >= len(existing_set):
+            return []  # if path not mounted or all files deleted
         deleted_count = mark_media_deleted(args, deleted_files)
         if deleted_count > 0:
             print(f"[{path}] Marking", deleted_count, "orphaned metadata records as deleted")
 
-    return scanned_files
+    return new_files
 
 
 def scan_path(args, path):
     path = Path(path).resolve()
+    if not path.exists():
+        return 0
     print(f"[{path}] Building file list...")
 
     new_files = find_new_files(args, path)
