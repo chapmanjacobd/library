@@ -62,5 +62,6 @@ def large_folders():
     if not args.limit:
         print(f"{len(tbl)} folders found")
 
+
 if __name__ == "__main__":
     large_folders()
