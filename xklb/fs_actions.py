@@ -23,61 +23,48 @@ from xklb.player import (
 )
 from xklb.utils import DEFAULT_PLAY_QUEUE, SC, cmd, log
 
+DEFAULT_PLAYER_ARGS_SUB = ["--speed=1"]
+DEFAULT_PLAYER_ARGS_NO_SUB = ["--speed=1.46"]
 
-def parse_args(action, default_db, default_chromecast=""):
-    parser = argparse.ArgumentParser(
-        prog="lb " + action,
-        usage=f"""lb {action} [database] [optional args]
+
+def gen_usage(action, default_db):
+    return f"""lb {action} [database] [optional args]
 
     Control playback:
-
         To stop playback press Ctrl-C in either the terminal or mpv
 
         Create global shortcuts in your desktop environment by sending commands to mpv_socket:
-
         echo 'playlist-next force' | socat - /tmp/mpv_socket
 
     If not specified, {action} will try to read {default_db} in the working directory:
-
         lb {action}
         lb {action} ./my/other/database/is-a/db.db
 
     Override the default player (mpv):
-
         lb does a lot of things to try to automatically use your preferred media player
         but if it doesn't guess right you can make it explicit:
-
         lb {action} --player "vlc --vlc-opts"
 
     Cast to chromecast groups:
-
         lb {action} --cast --cast-to "Office pair"
         lb {action} -ct "Office pair"  # equivalent
-
         If you don't know the exact name of your chromecast group run `catt scan`
 
     Print instead of play:
-
-        Generally speaking, you should always be able to add `-p` to check what the play queue will look like before playing--even while using many other option simultaneously.
-        The only exceptions that I can think of are `-OO` and `-OOO`. In those cases the results might lie.
-
         lb {action} --print --limit 10  # print the next 10 files
         lb {action} -p -L 10  # print the next 10 files
-        lb {action} -p  # be cautious about running -p on an unfiltered set because this will print _all_ the media
+        lb {action} -p  # this will print _all_ the media. be cautious about `-p` on an unfiltered set
 
         Printing modes
-
         lb {action} -p    # print in a table
         lb {action} -p p  # equivalent
         lb {action} -p a  # print an aggregate report
         lb {action} -p f  # print fields -- useful for piping paths to utilities like xargs or GNU Parallel
 
-        Check if you've downloaded something before
-
+        Check if you have downloaded something before
         lb {action} -u duration -p -s 'title'
 
         Print an aggregate report of deleted media
-
         lb {action} -w is_deleted=1 -p a
         ╒═══════════╤══════════════╤═════════╤═════════╕
         │ path      │ duration     │ size    │   count │
@@ -88,21 +75,16 @@ def parse_args(action, default_db, default_chromecast=""):
         ╘═══════════╧══════════════╧═════════╧═════════╛
         Total duration: 14 days, 23 hours and 42 minutes
 
-
         Print an aggregate report of media that has no duration information (likely corrupt media)
-
         lb {action} -w 'duration is null' -p a
 
         Print a list of videos which have below 1280px resolution
-
         lb wt -w 'width<1280' -p f
 
         View how much time you have {action}ed
-
         lb {action} -w play_count'>'0 -p a
 
         See how much video you have
-
         lb wt video.db -p a
         ╒═══════════╤═════════╤═════════╤═════════╕
         │ path      │   hours │ size    │   count │
@@ -111,146 +93,123 @@ def parse_args(action, default_db, default_chromecast=""):
         ╘═══════════╧═════════╧═════════╧═════════╛
         Total duration: 16 years, 7 months, 19 days, 17 hours and 25 minutes
 
-
         View all the columns
-
         lb {action} -p -L 1 --cols '*'
 
         Open ipython with all of your media
-
         lb {action} -vv -p --cols '*'
         ipdb> len(db_resp)
         462219
 
     Set the play queue size:
-
-        By default the play queue is 120. Long enough that you probably haven't noticed but short enough that the program is snappy.
+        By default the play queue is 120--long enough that you likely have not noticed
+        but short enough that the program is snappy.
 
         If you want everything in your play queue you can use the aid of infinity.
-
         Pick your poison (these all do effectively the same thing):
         lb {action} -L inf
         lb {action} -l inf
         lb {action} --queue inf
         lb {action} -L 99999999999999999999999
 
-        You might also want to restrict the play queue when you only want 1000 random files for example:
-
+        You may also want to restrict the play queue.
+        For example, when you only want 1000 random files:
         lb {action} -u random -L 1000
 
     Offset the play queue:
-
         You can also offset the queue. For example if you want to skip one or ten media:
-
         lb {action} -S 10  # offset ten from the top of an ordered query
 
     Repeat
-
         lb {action}                  # listen to 120 random songs (DEFAULT_PLAY_QUEUE)
         lb {action} --limit 5        # listen to FIVE songs
         lb {action} -l inf -u random # listen to random songs indefinitely
         lb {action} -s infinite      # listen to songs from the band infinite
 
     Constrain media by search:
-
-        Audio files have many tags to readily search through so metadata like artist, album, and even mood are included in search.
+        Audio files have many tags to readily search through so metadata like artist,
+        album, and even mood are included in search.
         Video files have less consistent metadata and so only paths are included in search.
-
         lb {action} --include happy  # only matches will be included
         lb {action} -s happy         # equivalent
-
         lb {action} --exclude sad   # matches will be excluded
         lb {action} -E sad          # equivalent
 
         Search only the path column
-
         lb {action} -O -s 'path : mad max'
 
         Double spaces are parsed as one space
-
         -s '  ost'        # will match OST and not ghost
         -s toy story      # will match '/folder/toy/something/story.mp3'
         -s 'toy  story'    # will match more strictly '/folder/toy story.mp3'
 
     Constrain media by arbitrary SQL expressions:
-
         lb {action} --where audio_count = 2  # media which have two audio tracks
-        lb {action} -w "language = 'eng'"    # media which have an English language tag (this could be audio or subtitle)
+        lb {action} -w "language = 'eng'"    # media which have an English language tag
+                                               (this could be audio _or_ subtitle)
         lb {action} -w subtitle_count=0      # media that doesn't have subtitles
 
     Constrain media to duration (in minutes):
-
         lb {action} --duration 20
-
         lb {action} -d 6  # 6 mins ±10 percent (ie. between 5 and 7 mins)
         lb {action} -d-6  # less than 6 mins
         lb {action} -d+6  # more than 6 mins
 
-        Can be specified multiple times:
-
+        Duration can be specified multiple times:
         lb {action} -d+5 -d-7  # should be similar to -d 6
 
         If you want exact time use `where`
-
         lb {action} --where 'duration=6*60'
 
     Constrain media to file size (in megabytes):
-
         lb {action} --size 20
-
         lb {action} -z 6  # 6 MB ±10 percent (ie. between 5 and 7 MB)
         lb {action} -z-6  # less than 6 MB
         lb {action} -z+6  # more than 6 MB
 
     Constrain media by throughput:
-
-        Bitrate information is not explicitly saved but you can use file size and duration as a proxy:
-
+        Bitrate information is not explicitly saved.
+        You can use file size and duration as a proxy for throughput:
         lb {action} -w 'size/duration<50000'
 
     Constrain media to portrait orientation video:
-
         lb {action} --portrait
         lb {action} -w 'width<height' # equivalent
 
     Specify media play order:
-
         lb {action} --sort duration   # play shortest media first
         lb {action} -u duration desc  # play longest media first
-
         You can use multiple SQL ORDER BY expressions
-
         lb {action} -u subtitle_count > 0 desc # play media that has at least one subtitle first
 
     Play media in order (similarly named episodes):
-
         lb {action} --play-in-order
-
         There are multiple strictness levels of --play-in-order.
         If things aren't playing in order try adding more `O`s:
-
         lb {action} -O    # normal
         lb {action} -OO   # slower, more complex algorithm
         lb {action} -OOO  # strict
 
     Post-actions -- choose what to do after playing:
-
         lb {action} --post-action delete  # delete file after playing
         lb {action} -k ask  # ask after each whether to keep or delete
+
         lb {action} -k askkeep  # ask after each whether to move to a keep folder or delete
-
-        The default location of the keep folder is ./keep/ relative to each individual media file
-        You can change this by explicitly setting an absolute `keep-dir` path:
-
+        The default location of the keep folder is ./keep/ (relative to the played media file)
+        You can change this by explicitly setting an *absolute* `keep-dir` path:
         lb {action} -k askkeep --keep-dir /home/my/music/keep/
 
     Experimental options:
-
         Duration to play (in seconds) while changing the channel
-
         lb {action} --interdimensional-cable 40
         lb {action} -4dtv 40
-""",
+"""
+
+
+def parse_args(action, default_db, default_chromecast=""):
+    parser = argparse.ArgumentParser(
+        prog="lb " + action,
+        usage=gen_usage(action, default_db),
     )
 
     parser.add_argument(
@@ -294,10 +253,10 @@ def parse_args(action, default_db, default_chromecast=""):
     parser.add_argument("--watch-later-directory", default=paths.DEFAULT_MPV_WATCH_LATER, help=argparse.SUPPRESS)
 
     parser.add_argument(
-        "--player-args-when-sub", "-player-sub", nargs="*", default=["--speed=1"], help=argparse.SUPPRESS
+        "--player-args-sub", "-player-sub", nargs="*", default=DEFAULT_PLAYER_ARGS_SUB, help=argparse.SUPPRESS
     )
     parser.add_argument(
-        "--player-args-when-no-sub", "-player-no-sub", nargs="*", default=["--speed=1.46"], help=argparse.SUPPRESS
+        "--player-args-no-sub", "-player-no-sub", nargs="*", default=DEFAULT_PLAYER_ARGS_NO_SUB, help=argparse.SUPPRESS
     )
     parser.add_argument("--transcode", action="store_true", help=argparse.SUPPRESS)
 
