@@ -488,16 +488,7 @@ def chromecast_play(args, m):
 def play(args, m: Dict):
     media_file = m["path"]
 
-    if any(
-        [
-            args.play_in_order > 1 and args.action not in [SC.listen, SC.tubelisten],
-            args.play_in_order >= 1 and args.action == SC.listen and "audiobook" in media_file.lower(),
-            args.play_in_order >= 1
-            and args.action == SC.tubelisten
-            and m["title"]
-            and "audiobook" in m["title"].lower(),
-        ]
-    ):
+    if is_play_in_order_lvl2(args, m, media_file):
         media_file = get_ordinal_media(args, media_file)
 
     if args.action in [SC.watch, SC.listen]:
@@ -526,6 +517,14 @@ def play(args, m: Dict):
 
     if args.action in [SC.listen, SC.watch, SC.tubelisten, SC.tubewatch] and not args.interdimensional_cable:
         post_act(args, media_file)
+
+def is_play_in_order_lvl2(args, m, media_file):
+    return any(
+        [
+            args.play_in_order > 1 and args.action not in [SC.listen, SC.tubelisten],
+            args.play_in_order >= 1 and args.action == SC.listen and "audiobook" in media_file.lower()
+        ]
+    )
 
 
 audio_include_string = (
@@ -615,16 +614,16 @@ def construct_fs_query(args):
 
     cf.extend([" and " + w for w in args.where])
 
-    table = "media"
+    args.table = "media"
     if args.db["media"].detect_fts():
         if args.include:
-            table = db.fts_search(args, bindings)
+            args.table = db.fts_search(args, bindings)
         elif args.exclude:
             search_substring(args, cf, bindings)
     else:
         search_substring(args, cf, bindings)
 
-    if table == "media" and not args.print:
+    if args.table == "media" and not args.print:
         limit = 60_000
         if args.random:
             if args.include:
@@ -646,7 +645,7 @@ def construct_fs_query(args):
         {', sparseness' if args.action == SC.filesystem else ''}
         {', is_dir' if args.action == SC.filesystem else ''}
         {', ' + ', '.join(args.cols) if args.cols else ''}
-    FROM {table}
+    FROM {args.table}
     WHERE 1=1
     {args.sql_filter}
     {'and audio_count > 0' if args.action == SC.listen else ''}

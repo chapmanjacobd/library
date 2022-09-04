@@ -94,16 +94,16 @@ def construct_tube_query(args):
 
     cf.extend([" and " + w for w in args.where])
 
-    table = "media"
+    args.table = "media"
     if args.db["media"].detect_fts():
         if args.include:
-            table = db.fts_search(args, bindings)
+            args.table = db.fts_search(args, bindings)
         elif args.exclude:
             construct_search_bindings(args, bindings, cf, tube_include_string, tube_exclude_string)
     else:
         construct_search_bindings(args, bindings, cf, tube_include_string, tube_exclude_string)
 
-    if table == "media" and not args.print:
+    if args.table == "media" and not args.print:
         limit = 60_000
         if args.random:
             limit = DEFAULT_PLAY_QUEUE * 2
@@ -119,7 +119,7 @@ def construct_tube_query(args):
         , duration
         , size
         {', ' + ', '.join(args.cols) if args.cols else ''}
-    FROM {table}
+    FROM {args.table}
     WHERE 1=1
     {args.sql_filter}
     {'and width < height' if args.portrait else ''}
