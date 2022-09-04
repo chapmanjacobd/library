@@ -1,5 +1,4 @@
-import enum, os, re
-import platform
+import enum, os, platform, re
 from pathlib import Path
 from tempfile import gettempdir, mkdtemp
 
@@ -8,6 +7,7 @@ from xklb import utils
 FAKE_SUBTITLE = os.path.join(gettempdir(), "sub.srt")  # https://github.com/skorokithakis/catt/issues/393
 CAST_NOW_PLAYING = os.path.join(gettempdir(), "catt_playing")
 DEFAULT_MPV_SOCKET = os.path.join(gettempdir(), "mpv_socket")
+DEFAULT_MPV_WATCH_LATER = os.path.expanduser("~/.config/mpv/watch_later/")
 SUB_TEMP_DIR = mkdtemp()
 
 

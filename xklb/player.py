@@ -167,7 +167,7 @@ def get_ordinal_media(args, path):
             ORDER BY path
             LIMIT 1000
             """
-        bindings = { "candidate" : "%" + candidate + "%" }
+        bindings = {"candidate": "%" + candidate + "%"}
         if not args.play_in_order > 2:
             bindings = {**bindings, **args.sql_filter_bindings}
 
@@ -189,7 +189,7 @@ def get_ordinal_media(args, path):
 def generic_player(args):
     if platform.system() == "Linux":
         player = ["xdg-open"]
-    elif any([p in platform.system() for p in ["Windows", '_NT-', 'MSYS']]):
+    elif any([p in platform.system() for p in ["Windows", "_NT-", "MSYS"]]):
         if shutil.which("cygstart"):
             player = ["cygstart"]
         else:
@@ -442,7 +442,7 @@ def printer(args, query, bindings):
             summary = db_resp.sum(numeric_only=True)
             duration = summary.get("duration") or 0
             duration = human_time(duration)
-            if not 'a' in args.print:
+            if not "a" in args.print:
                 print("Total duration:", duration)
 
 

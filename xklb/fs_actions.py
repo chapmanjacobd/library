@@ -1,4 +1,4 @@
-import argparse, shlex, shutil
+import argparse, hashlib, shlex, shutil
 from pathlib import Path
 from typing import Dict
 
@@ -291,6 +291,7 @@ def parse_args(action, default_db, default_chromecast=""):
     parser.add_argument("--end", "-ve", help=argparse.SUPPRESS)
     parser.add_argument("--player", "-player", help=argparse.SUPPRESS)
     parser.add_argument("--mpv-socket", default=paths.DEFAULT_MPV_SOCKET, help=argparse.SUPPRESS)
+    parser.add_argument("--watch-later-directory", default=paths.DEFAULT_MPV_WATCH_LATER, help=argparse.SUPPRESS)
 
     parser.add_argument(
         "--player-args-when-sub", "-player-sub", nargs="*", default=["--speed=1"], help=argparse.SUPPRESS
@@ -489,6 +490,15 @@ def chromecast_play(args, m):
             raise Exception("catt does not exit nonzero? but something might have gone wrong")
 
 
+def is_play_in_order_lvl2(args, m, media_file):
+    return any(
+        [
+            args.play_in_order > 1 and args.action not in [SC.listen, SC.tubelisten],
+            args.play_in_order >= 1 and args.action == SC.listen and "audiobook" in media_file.lower(),
+        ]
+    )
+
+
 def play(args, m: Dict):
     media_file = m["path"]
 
@@ -522,14 +532,6 @@ def play(args, m: Dict):
 
     if args.action in [SC.listen, SC.watch, SC.tubelisten, SC.tubewatch] and not args.interdimensional_cable:
         post_act(args, media_file)
-
-def is_play_in_order_lvl2(args, m, media_file):
-    return any(
-        [
-            args.play_in_order > 1 and args.action not in [SC.listen, SC.tubelisten],
-            args.play_in_order >= 1 and args.action == SC.listen and "audiobook" in media_file.lower()
-        ]
-    )
 
 
 audio_include_string = (
@@ -668,6 +670,17 @@ def construct_fs_query(args):
     return query, bindings
 
 
+def mpv_enrich(args, media):
+    for m in media:
+        md5 = hashlib.md5(m["path"].encode("utf-8")).hexdigest().upper()
+        if Path(args.watch_later_directory, md5).exists():
+            m["time_started"] = int(Path(args.watch_later_directory, md5).stat().st_mtime)
+        else:
+            m["time_started"] = None
+
+    return sorted(media, key=lambda m: m["time_started"] is not None, reverse=True)
+
+
 def process_playqueue(args, construct_query=construct_fs_query):
     args.db = db.connect(args)
     query, bindings = construct_query(args)
@@ -680,6 +693,9 @@ def process_playqueue(args, construct_query=construct_fs_query):
     if len(media) == 0:
         print("No media found")
         exit(2)
+
+    if shutil.which("mpv"):
+        media = mpv_enrich(args, media)
 
     try:
         for m in media:
