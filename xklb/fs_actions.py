@@ -97,9 +97,9 @@ def parse_args(action, default_db, default_chromecast=""):
 
         lb wt -w 'width<1280' -p f
 
-        View how much time you have listened to music
+        View how much time you have {action}ed
 
-        lb lt -w play_count'>'0 -p a
+        lb {action} -w play_count'>'0 -p a
 
         See how much video you have
 
@@ -161,6 +161,10 @@ def parse_args(action, default_db, default_chromecast=""):
 
         lb {action} --exclude sad   # matches will be excluded
         lb {action} -E sad          # equivalent
+
+        Search only the path column
+
+        lb {action} -O -s 'path : mad max'
 
         Double spaces are parsed as one space
 
