@@ -1,0 +1,228 @@
+from xklb.fs_actions import gen_usage
+
+print(
+    f"""# lb: xk media library
+
+A wise philosopher once told me, "[The future is autotainment](https://www.youtube.com/watch?v=F9sZFrsjPp0)".
+
+Manage large media libraries. Similar to Plex but more minimalist.
+Primary usage is local filesystem but also supports some virtual constructs like
+tracking video playlists (eg. YouTube subscriptions) or daily browser tabs.
+
+Required: `ffmpeg`
+
+Recommended: `mpv`, `fish`, `firefox`
+
+## Install
+
+Linux recommended but [Windows setup instructions](./Windows.md) available.
+
+    pip install xklb
+
+    $ library
+    xk media library [lb]
+
+    local media subcommands:
+      fsadd [extract, xr]                Create a local media database; Add folders
+      subtitle                           Find subtitles for local media
+      listen [lt]                        Listen to local media
+      watch [wt]                         Watch local media
+      filesystem [fs]                    Browse files
+      bigdirs [largefolders]             View folders which take up much room
+
+    online media subcommands:
+      tubeadd [ta]                       Create a tube database; Add playlists
+      tubelist [playlist, playlists]     List added playlists
+      tubeupdate [tu]                    Get new videos for your saved playlists
+      tubewatch [tw, tube, entries]      Watch the tube
+      tubelisten [tl]                    Listen to the tube
+
+    browser tabs subcommands:
+      tabsadd                            Create a tabs database; Add URLs
+      tabs [tb]                          Open your tabs for the day
+
+## Quick Start -- watch online media on your PC
+
+    wget https://github.com/chapmanjacobd/lb/raw/main/examples/mealtime.tw.db
+    library tubewatch mealtime.tw.db
+
+## Quick Start -- listen to online media on a chromecast group
+
+    wget https://github.com/chapmanjacobd/lb/raw/main/examples/music.tl.db
+    lb tubelisten music.tl.db -ct "House speakers"
+
+## Start -- local media
+
+### 1. Extract Metadata
+
+For thirty terabytes of video the initial scan takes about four hours to complete.
+After that, subsequent scans of the path (or any subpaths) are much quicker--only
+new files will be read by `ffprobe`.
+
+    lb fsadd tv.db ./video/folder/
+
+![termtosvg](./examples/extract.svg)
+
+### 2. Watch / Listen from local files
+
+    lb wt tv.db                          # the default post-action is to do nothing
+    lb wt tv.db --post-action delete     # delete file after playing
+    lb lt finalists.db --post-action=ask # ask whether to delete after playing
+
+To stop playing press Ctrl+C in either the terminal or mpv
+
+## Start -- online media
+
+### 1. Download Metadata
+
+Download playlist and channel metadata. Break free of the YouTube algo~
+
+    lb tubeadd educational.db https://www.youtube.com/c/BranchEducation/videos
+
+[![termtosvg](./examples/tubeadd.svg "lb tubeadd example")](https://asciinema.org/a/BzplqNj9sCERH3A80GVvwsTTT)
+
+And you can always add more later--even from different websites.
+
+    lb tubeadd maker.db https://vimeo.com/terburg
+
+To prevent mistakes the default configuration is to download metadata for only
+the most recent 20,000 videos per playlist/channel.
+
+    lb tubeadd maker.db --yt-dlp-config playlistend=1000
+
+Be aware that there are some YouTube Channels which have many items--for example
+the TEDx channel has about 180,000 videos. Some channels even have upwards of
+two million videos. More than you could likely watch in one sitting.
+On a high-speed connection (>500 Mbps), it can take up to five hours to download
+the metadata for 180,000 videos.
+
+#### 1a. Get new videos for saved playlists
+
+Tubeupdate will go through the list of added playlists and fetch metadata for
+any videos not previously seen.
+
+    lb tubeupdate
+
+### 2. Watch / Listen from websites
+
+    lb tubewatch maker.db
+
+To stop playing press Ctrl+C in either the terminal or mpv
+
+## Start -- tabs (visit websites on a schedule)
+
+tabs is a way to organize your visits to URLs that you want to visit every once in a while.
+
+If you want to track _changes_ to websites over time there are better tools out there, like
+`huginn`, `urlwatch`, or `changedetection.io`.
+
+The use-case of tabs are websites that you know are going to change: subreddits, games,
+or tools that you want to use for a few minutes daily, weekly, monthly, quarterly, or yearly.
+
+### 1. Add your websites
+
+    lb tabsadd --frequency monthly --category fun https://old.reddit.com/r/Showerthoughts/top/?sort=top&t=month https://old.reddit.com/r/RedditDayOf/top/?sort=top&t=month
+
+### 2. Add lb tabs to cron
+
+lb tabs is meant to run **once per day**. Here is how you would configure it with `crontab`:
+
+    45 9 * * * DISPLAY=:0 lb tabs /home/my/tabs.db
+
+You can also invoke tabs manually:
+
+    lb tabs -L 1  # open one tab
+
+## Things to know.db
+
+When the database file path is not specified, `video.db` will be created / used.
+
+    library fsadd ./tv/
+
+The same for audio: `audio.db` will be created / used.
+
+    library fsadd --audio ./music/
+
+Likewise, `fs.db` from:
+
+    library fsadd --filesystem /any/path/
+
+If you want to specify more than one directory you need to mention the db file explicitly.
+
+    library fsadd --filesystem one/
+    library fsadd --filesystem fs.db one/ two/
+
+Organize via separate databases.
+
+    library fsadd --audio both.db ./audiobooks/ ./podcasts/
+    library fsadd --audio audiobooks.db ./audiobooks/
+    library fsadd --audio podcasts.db ./podcasts/ ./another/more/secret/podcasts_folder/
+
+## Usage
+
+    $ library watch -h
+    usage: {gen_usage('watch', 'video.db')}
+
+### You can pipe stuff
+
+#### [lowcharts](https://github.com/juan-leon/lowcharts)
+
+    $ wt-dev -p f -col time_created | lowcharts timehist -w 80
+    Matches: 445183.
+    Each ∎ represents a count of 1896
+    [2022-04-13 03:16:05] [151689] ∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎
+    [2022-04-19 07:59:37] [ 16093] ∎∎∎∎∎∎∎∎
+    [2022-04-25 12:43:09] [ 12019] ∎∎∎∎∎∎
+    [2022-05-01 17:26:41] [ 48817] ∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎
+    [2022-05-07 22:10:14] [ 36259] ∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎
+    [2022-05-14 02:53:46] [  3942] ∎∎
+    [2022-05-20 07:37:18] [  2371] ∎
+    [2022-05-26 12:20:50] [   517]
+    [2022-06-01 17:04:23] [  4845] ∎∎
+    [2022-06-07 21:47:55] [  2340] ∎
+    [2022-06-14 02:31:27] [   563]
+    [2022-06-20 07:14:59] [ 13836] ∎∎∎∎∎∎∎
+    [2022-06-26 11:58:32] [  1905] ∎
+    [2022-07-02 16:42:04] [  1269]
+    [2022-07-08 21:25:36] [  3062] ∎
+    [2022-07-15 02:09:08] [  9192] ∎∎∎∎
+    [2022-07-21 06:52:41] [ 11955] ∎∎∎∎∎∎
+    [2022-07-27 11:36:13] [ 50938] ∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎
+    [2022-08-02 16:19:45] [ 70973] ∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎
+    [2022-08-08 21:03:17] [  2598] ∎
+
+![video width](https://user-images.githubusercontent.com/7908073/184737808-b96fbe65-a1d9-43c2-b6b4-4bdfab592190.png)
+
+![fps](https://user-images.githubusercontent.com/7908073/184738438-ee566a4b-2da0-4e6d-a4b3-9bfca036aa2a.png)
+
+#### rsync
+
+I use rsync to move files instead of copy-on-write duplication because I want deletions to stick.
+When I press the next button in the car I delete the song from my curated universe.
+
+    function mrmusic
+        rsync -a --remove-source-files --files-from=(
+            lb lt ~/lb/audio.db -s /mnt/d/80_Now_Listening/ -p f \
+            --moved /mnt/d/80_Now_Listening/ /mnt/d/ | psub
+        ) /mnt/d/80_Now_Listening/ /mnt/d/
+
+        rsync -a --remove-source-files --files-from=(
+            lb lt ~/lb/audio.db -w play_count=0 -u random -L 1200 -p f \
+            --moved /mnt/d/ /mnt/d/80_Now_Listening/ | psub
+        ) /mnt/d/ /mnt/d/80_Now_Listening/
+    end
+
+### TODOs (PRs welcome)
+
+- all: extracts switch to https://sqlite-utils.datasette.io/en/latest/python-api.html#adding-columns-automatically-on-insert-update
+- tube: basic tests
+- tube: make sure playlistless media doesn't save to the playlists table
+- all: verify things work on Windows
+- all: more test coverage -- https://hypothesis.readthedocs.io/en/latest/quickstart.html
+- all: follow yt-dlp print arg syntax
+- all: follow fd-find size arg syntax
+- all: remove pandas dependency?
+- fs: split_by_silence without modifying files
+- fs: support subs/ folder
+"""
+)

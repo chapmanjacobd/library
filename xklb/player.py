@@ -332,6 +332,14 @@ def local_player(args, m, media_file):
             if end != m["duration"]:
                 player.extend([f"--end={int(end)}"])
 
+        if args.action == SC.watch:
+            if m["subtitle_count"] > 0:
+                player.extend(args.player_args_when_sub)
+            elif m["time_started"] is not None or Path(media_file).stat().st_size > 500 * 1000000:  # 500 MB
+                pass
+            else:
+                player.extend(args.player_args_when_no_sub)
+
     elif system() == "Linux":
         mimetype = cmd("xdg-mime", "query", "filetype", media_file).stdout
         default_application = cmd("xdg-mime", "query", "default", mimetype).stdout
@@ -339,14 +347,6 @@ def local_player(args, m, media_file):
         if player_path:
             args.player_need_sleep = False
             player = [player_path]
-
-    if args.action == SC.watch:
-        if m["subtitle_count"] > 0:
-            player.extend(args.player_args_when_sub)
-        elif m["time_started"] is not None or Path(media_file).stat().st_size > 500 * 1000000:  # 500 MB
-            pass
-        else:
-            player.extend(args.player_args_when_no_sub)
 
     if system() == "Windows" or args.action in [SC.watch, SC.tubewatch]:
         r = cmd(*player, media_file, strict=False)
