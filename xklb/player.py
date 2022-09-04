@@ -334,11 +334,11 @@ def local_player(args, m, media_file):
 
         if args.action == SC.watch:
             if m["subtitle_count"] > 0:
-                player.extend(args.player_args_when_sub)
+                player.extend(args.player_args_sub)
             elif m["time_started"] is not None or Path(media_file).stat().st_size > 500 * 1000000:  # 500 MB
                 pass
             else:
-                player.extend(args.player_args_when_no_sub)
+                player.extend(args.player_args_no_sub)
 
     elif system() == "Linux":
         mimetype = cmd("xdg-mime", "query", "filetype", media_file).stdout
