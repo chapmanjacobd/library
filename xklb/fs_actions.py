@@ -694,7 +694,7 @@ def process_playqueue(args, construct_query=construct_fs_query):
         print("No media found")
         exit(2)
 
-    if shutil.which("mpv"):
+    if shutil.which("mpv") and Path(args.watch_later_directory).exists():
         media = mpv_enrich(args, media)
 
     try:
