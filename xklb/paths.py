@@ -1,4 +1,5 @@
 import enum, os, re
+import platform
 from pathlib import Path
 from tempfile import gettempdir, mkdtemp
 
@@ -87,3 +88,12 @@ def get_media_files(path, audio=False):
             video_files.append(str(f))
 
     return video_files
+
+
+def is_mounted(paths, mount_point):
+    if platform.system() == "Linux" and any([mount_point in p for p in paths]):
+        p = Path(mount_point)
+        if p.exists() and not p.is_mount():
+            raise Exception(f"mount_point {mount_point} not mounted yet")
+
+    return True
