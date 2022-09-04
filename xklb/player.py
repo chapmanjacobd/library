@@ -165,17 +165,17 @@ def get_ordinal_media(args, path):
             return path
 
         candidate = new_candidate
-        query = f"""SELECT path FROM media
+        query = f"""SELECT path FROM {args.table}
             WHERE 1=1
-                and path like ?
+                and path like :candidate
                 {'and is_deleted=0' if args.action in [SC.listen, SC.watch] else ''}
                 {'' if (args.play_in_order > 2) else (args.sql_filter or '')}
             ORDER BY path
             LIMIT 1000
             """
-        bindings = ["%" + candidate + "%"]
+        bindings = { "candidate" : "%" + candidate + "%" }
         if not args.play_in_order > 2:
-            bindings.extend(args.sql_filter_bindings)
+            bindings = {**bindings, **args.sql_filter_bindings}
 
         similar_videos = [d["path"] for d in args.db.query(query, bindings)]
         log.debug(similar_videos)
