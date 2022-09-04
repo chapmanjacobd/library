@@ -343,8 +343,7 @@ def local_player(args, m, media_file):
     if args.action == SC.watch:
         if m["subtitle_count"] > 0:
             player.extend(args.player_args_when_sub)
-        elif Path(media_file).stat().st_size > 500 * 1000000:  # 500 MB
-            # player.extend(args.player_args_when_no_sub_big_file) # TODO: if people complain fix this
+        elif m["time_started"] is not None or Path(media_file).stat().st_size > 500 * 1000000:  # 500 MB
             pass
         else:
             player.extend(args.player_args_when_no_sub)
