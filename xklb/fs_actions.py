@@ -362,7 +362,7 @@ def transcode(next_video):
     next_video = str(Path(next_video).with_suffix(".mkv"))
     cmd(
         (
-            f"ffmpeg -loglevel error -stats -i {temp_video} -map 0 -scodec webvtt -vcodec h264"
+            f"ffmpeg -nostdin -loglevel error -stats -i {temp_video} -map 0 -scodec webvtt -vcodec h264"
             " -preset fast -profile:v high -level 4.1 -crf 17 -pix_fmt yuv420p"
             " -acodec opus -ac 2 -b:a 128k -filter:a loudnorm=i=-18:lra=17"
             f" {next_video} && rm {temp_video}"
@@ -428,7 +428,7 @@ def externalize_subtitle(media_file):
         log.debug(f"Using subtitle {subtitle_index}")
 
         subtitles_file = cmd("mktemp --suffix=.vtt --dry-run").stdout.strip()
-        cmd(f'ffmpeg -loglevel warning -txt_format text -i {media_file} -map "0:{subtitle_index}" "{subtitles_file}"')
+        cmd(f'ffmpeg -nostdin -loglevel warning -txt_format text -i {media_file} -map "0:{subtitle_index}" "{subtitles_file}"')
 
     return subtitles_file
 
