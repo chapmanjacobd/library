@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "xklb"
-version = "1.16.000"
+version = "1.16.001"
 description = "xk library"
 authors = ["Jacob Chapman <7908073+chapmanjacobd@users.noreply.github.com>"]
 readme = "README.md"
