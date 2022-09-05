@@ -1083,7 +1083,7 @@ websockets = "*"
 
 [[package]]
 name = "zeroconf"
-version = "0.39.0"
+version = "0.39.1"
 description = "Pure Python Multicast DNS Service Discovery Library (Bonjour/Avahi compatible)"
 category = "main"
 optional = false
@@ -1896,8 +1896,8 @@ yt-dlp = [
     {file = "yt_dlp-2022.9.1-py2.py3-none-any.whl", hash = "sha256:af3721ecb286a95272008add3b9bebde4f370fb3bdd1bb6402727af9e2e3aa2b"},
 ]
 zeroconf = [
-    {file = "zeroconf-0.39.0-py3-none-any.whl", hash = "sha256:02989d759d48389e6a9132edcc6827d34f6367c043f63f708a220f9d89dc2604"},
-    {file = "zeroconf-0.39.0.tar.gz", hash = "sha256:7c0d8257b940ee43e637fb560c2f9bd79da0638f37af162eb4f506f7274ef8e4"},
+    {file = "zeroconf-0.39.1-py3-none-any.whl", hash = "sha256:430806d36002b72a45176e2e2d29856195e9286ec620dbdecd124431812a87ef"},
+    {file = "zeroconf-0.39.1.tar.gz", hash = "sha256:b83cff68a0c8dcd2705b5e792796239accba2bfddb09bc8d05badc642f64e7f6"},
 ]
 zipp = [
     {file = "zipp-3.8.1-py3-none-any.whl", hash = "sha256:47c40d7fe183a6f21403a199b3e4192cca5774656965b0a4988ad2f8feb5f009"},

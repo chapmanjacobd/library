@@ -1,13 +1,12 @@
 import argparse, operator
 from copy import deepcopy
 
-import humanize
 from tabulate import tabulate
 
 from xklb import db, utils
 from xklb.fs_actions import construct_search_bindings, parse_args, process_playqueue
 from xklb.player import delete_playlists
-from xklb.utils import DEFAULT_PLAY_QUEUE, SC, col_resize, dict_filter_bool, human_time, log
+from xklb.utils import DEFAULT_PLAY_QUEUE, SC, dict_filter_bool, human_time, log
 
 # TODO: add cookiesfrombrowser: ('firefox', ) as a default
 # cookiesfrombrowser: ('vivaldi', ) # should not crash if not installed ?
@@ -20,7 +19,6 @@ default_ydl_opts = {
     "no_check_certificate": True,
     "no_warnings": True,
     "ignore_no_formats_error": True,
-    "ignoreerrors": "only_download",
     "skip_playlist_after_errors": 20,
     "quiet": True,
     "dynamic_mpd": False,
