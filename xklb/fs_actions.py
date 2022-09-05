@@ -428,7 +428,9 @@ def externalize_subtitle(media_file):
         log.debug(f"Using subtitle {subtitle_index}")
 
         subtitles_file = cmd("mktemp --suffix=.vtt --dry-run").stdout.strip()
-        cmd(f'ffmpeg -nostdin -loglevel warning -txt_format text -i {media_file} -map "0:{subtitle_index}" "{subtitles_file}"')
+        cmd(
+            f'ffmpeg -nostdin -loglevel warning -txt_format text -i {media_file} -map "0:{subtitle_index}" "{subtitles_file}"'
+        )
 
     return subtitles_file
 
