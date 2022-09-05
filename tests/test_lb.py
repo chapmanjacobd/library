@@ -112,5 +112,9 @@ class TestTabs(unittest.TestCase):
     @mock.patch("xklb.tabs_actions.play")
     def test_lb_tabs(self, play_mocked):
         lb(["tabs", *tabs_db])
-        out = play_mocked.call_args[0][1].tolist()
-        assert out == (0, "https://unli.xyz/proliferation/verbs.html", "monthly", 2667600)
+        out = play_mocked.call_args[0][1]
+        assert out == {
+            "path": "https://unli.xyz/proliferation/verbs.html",
+            "frequency": "monthly",
+            "time_valid": 2667600,
+        }

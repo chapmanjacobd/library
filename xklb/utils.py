@@ -1,13 +1,12 @@
 import argparse, enum, logging, os, platform, re, signal, subprocess, sys, textwrap
 from collections.abc import Iterable
-from datetime import timedelta
+from datetime import datetime, timedelta
 from functools import wraps
 from types import SimpleNamespace
-from typing import Union
+from typing import Dict, List, Union
 
 import humanize
 import numpy as np
-import pandas as pd
 from IPython.core import ultratb
 from IPython.terminal.debugger import TerminalPdb
 from pychromecast import discovery
@@ -22,8 +21,6 @@ else:
 
 SQLITE_PARAM_LIMIT = 32765
 DEFAULT_PLAY_QUEUE = 120
-
-pd.set_option("display.float_format", lambda x: "%.5f" % x)
 
 
 def signal_handler(signal, frame):
@@ -147,6 +144,21 @@ def conform(list_: Union[str, Iterable]):
     return list_
 
 
+def dict_filter_bool(kwargs):
+    return {k: v for k, v in kwargs.items() if v}
+
+
+def list_dict_filter_bool(db_resp):
+    for idx, d in enumerate(db_resp):
+        d = dict_filter_bool(d)
+        if len(d) == 0:
+            db_resp[idx] = None
+        else:
+            db_resp[idx] = d
+    db_resp = conform(db_resp)
+    return db_resp
+
+
 def cmd(*command, strict=True, cwd=None, quiet=True, interactive=False, **kwargs):
     EXP_FILTER = re.compile(
         "|".join(
@@ -235,10 +247,6 @@ def compile_query(query, *args):
     return query
 
 
-def dict_filter_bool(kwargs):
-    return {k: v for k, v in kwargs.items() if v}
-
-
 _RE_COMBINE_WHITESPACE = re.compile(r"\s+")
 
 
@@ -273,11 +281,27 @@ except Exception:
     TERMINAL_SIZE = SimpleNamespace(columns=80, lines=60)
 
 
-def resize_col(tbl, col, size=10):
-    if col in tbl.columns:
-        tbl[[col]] = tbl[[col]].applymap(
-            lambda x: None if x is None else textwrap.fill(x, max(10, int(size * (TERMINAL_SIZE.columns / 80))))
-        )
+def col_resize(tbl: List[Dict], col: str, size=10):
+    for idx, _d in enumerate(tbl):
+        if tbl[idx].get(col) is not None:
+            tbl[idx][col] = textwrap.fill(tbl[idx][col], max(10, int(size * (TERMINAL_SIZE.columns / 80))))
+
+    return tbl
+
+
+def col_naturaldate(tbl: List[Dict], col: str):
+    for idx, _d in enumerate(tbl):
+        if tbl[idx].get(col) is not None:
+            tbl[idx][col] = humanize.naturaldate(datetime.fromtimestamp(tbl[idx][col]))
+
+    return tbl
+
+
+def col_naturalsize(tbl: List[Dict], col: str):
+    for idx, _d in enumerate(tbl):
+        if tbl[idx].get(col) is not None:
+            tbl[idx][col] = humanize.naturalsize(tbl[idx][col])
+
     return tbl
 
 
@@ -292,6 +316,15 @@ def human_time(seconds):
         return minutes
     else:
         return humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="minutes")
+
+
+def col_duration(tbl: List[Dict], col: str):
+    for idx, _d in enumerate(tbl):
+        if tbl[idx].get(col) is not None:
+            tbl[idx][col] = human_time(tbl[idx][col])
+
+    col_resize(tbl, "duration", 6)
+    return tbl
 
 
 class argparse_dict(argparse.Action):

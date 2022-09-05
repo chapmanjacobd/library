@@ -1,5 +1,6 @@
-import os, platform, re, shutil, socket, subprocess
-from datetime import datetime
+import csv, operator, os, platform, re, shutil, socket, subprocess
+from copy import deepcopy
+from io import StringIO
 from pathlib import Path
 from platform import system
 from random import randrange
@@ -9,11 +10,10 @@ from time import sleep
 from typing import Union
 
 import humanize
-import pandas as pd
 from tabulate import tabulate
 
 from xklb import paths, utils
-from xklb.utils import SC, SQLITE_PARAM_LIMIT, cmd, cmd_interactive, human_time, log, os_bg_kwargs, resize_col
+from xklb.utils import SC, SQLITE_PARAM_LIMIT, cmd, cmd_interactive, col_resize, human_time, log, os_bg_kwargs
 
 
 def mv_to_keep_folder(args, media_file: str):
@@ -335,7 +335,7 @@ def local_player(args, m, media_file):
         if args.action == SC.watch:
             if m["subtitle_count"] > 0:
                 player.extend(args.player_args_sub)
-            elif m.get("time_started") is not None or Path(media_file).stat().st_size > 500 * 1000000:  # 500 MB
+            elif m.get("time_partial_first") is not None or m["size"] > 500 * 1000000:  # 500 MB
                 pass
             else:
                 player.extend(args.player_args_no_sub)
@@ -377,29 +377,28 @@ def printer(args, query, bindings):
             {', ' + ', '.join([f'avg({c}) avg_{c}' for c in args.cols]) if args.cols else ''}
         from ({query}) """
 
-    db_resp = pd.DataFrame(args.db.query(query, bindings))
-    db_resp.dropna(axis="columns", how="all", inplace=True)
+    db_resp = list(args.db.query(query, bindings))
 
     if args.verbose > 1 and args.cols and "*" in args.cols:
         breakpoint()
 
-    if db_resp.empty or len(db_resp) == 0:
+    if len(db_resp) == 0:
         print("No media found")
         exit(2)
 
     if "d" in args.print:
-        remove_media(args, db_resp[["path"]].values.tolist(), quiet=True)
+        remove_media(args, list(map(operator.itemgetter("path"), db_resp)), quiet=True)
         if not "f" in args.print:
             return print(f"Removed {len(db_resp)} metadata records")
 
     if "w" in args.print:
-        marked = mark_media_watched(args, db_resp[["path"]].values.tolist())
+        marked = mark_media_watched(args, list(map(operator.itemgetter("path"), db_resp)))
         if not "f" in args.print:
             return print(f"Marked {marked} metadata records as watched")
 
     if "f" in args.print:
         if args.limit == 1:
-            f = db_resp[["path"]].loc[0].iat[0]
+            f = db_resp[0]["path"]
             if not Path(f).exists():
                 mark_media_deleted(args, f)
                 return printer(args, query, bindings)
@@ -408,38 +407,37 @@ def printer(args, query, bindings):
             if not args.cols:
                 args.cols = ["path"]
 
-            for line in db_resp[[*args.cols]].to_string(index=False, header=False).splitlines():
+            selected_cols = [{k: d.get(k, None) for k in args.cols} for d in db_resp]
+            virtual_csv = StringIO()
+            wr = csv.writer(virtual_csv, quoting=csv.QUOTE_NONE)
+            wr = csv.DictWriter(virtual_csv, fieldnames=args.cols)
+            wr.writerows(selected_cols)
+
+            for line in virtual_csv.readlines():
                 if args.moved:
                     print(line.strip().replace(args.moved[0], "", 1))
                 else:
                     print(line.strip())
             if args.moved:
-                moved_media(args, db_resp[["path"]].values.tolist(), *args.moved)
+                moved_media(args, list(map(operator.itemgetter("path"), db_resp)), *args.moved)
     else:
-        tbl = db_resp.copy()
-        resize_col(tbl, "path", 22)
-        resize_col(tbl, "title", 18)
+        tbl = deepcopy(db_resp)
+        utils.col_resize(tbl, "path", 22)
+        utils.col_resize(tbl, "title", 18)
 
-        if "size" in tbl.columns:
-            tbl[["size"]] = tbl[["size"]].applymap(lambda x: None if x is None else humanize.naturalsize(x))
-
-        if "duration" in tbl.columns:
-            tbl[["duration"]] = tbl[["duration"]].applymap(human_time)
-            resize_col(tbl, "duration", 6)
+        utils.col_naturalsize(tbl, "size")
+        utils.col_duration(tbl, "duration")
 
         for t in ["time_modified", "time_created", "time_played", "time_valid"]:
-            if t in tbl.columns:
-                tbl[[t]] = tbl[[t]].applymap(
-                    lambda x: None if x is None else humanize.naturaldate(datetime.fromtimestamp(x))
-                )
+            utils.col_naturaldate(tbl, t)
 
         print(tabulate(tbl, tablefmt="fancy_grid", headers="keys", showindex=False))  # type: ignore
 
         if args.action in [SC.listen, SC.watch, SC.tubelisten, SC.tubewatch]:
             if len(db_resp) > 1:
                 print(f"{len(db_resp)} media" + (f" (limited to {args.limit})" if args.limit else ""))
-            summary = db_resp.sum(numeric_only=True)
-            duration = summary.get("duration") or 0
+
+            duration = sum(map(operator.itemgetter("duration"), db_resp))
             duration = human_time(duration)
             if not "a" in args.print:
                 print("Total duration:", duration)

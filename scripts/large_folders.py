@@ -1,14 +1,13 @@
 import argparse
 
 import humanize
-import pandas as pd
 from tabulate import tabulate
 
 from xklb import db, utils
 
 
 def get_table(args):
-    db_resp = pd.DataFrame(
+    db_resp = list(
         args.db.query(
             """
         select path, size
@@ -20,7 +19,7 @@ def get_table(args):
     )
 
     d = {}
-    for m in db_resp.to_dict(orient="records"):
+    for m in db_resp:
         p = m["path"].split("/")
         while len(p) > 2:
             p.pop()
@@ -36,7 +35,9 @@ def get_table(args):
         if pdict["count"] < 35 or pdict["count"] > 3500:
             d.pop(path)
 
-    return pd.DataFrame([{**v, "path": k} for k, v in d.items()]).sort_values(by=["size"])
+    d = [{**v, "path": k} for k, v in d.items()]
+
+    return sorted(d, key=lambda x: x["size"])
 
 
 def parse_args():
@@ -54,10 +55,10 @@ def large_folders():
     tbl = get_table(args)
 
     if args.limit:
-        tbl = tbl.tail(int(args.limit))
+        tbl = tbl[-int(args.limit) :]
 
-    tbl[["size"]] = tbl[["size"]].applymap(lambda x: None if x is None else humanize.naturalsize(x))
-    tbl = utils.resize_col(tbl, "path", 60)
+    tbl = utils.col_resize(tbl, "path", 60)
+    tbl = utils.col_naturalsize(tbl, "size")
     print(tabulate(tbl, tablefmt="fancy_grid", headers="keys", showindex=False))  # type: ignore
     if not args.limit:
         print(f"{len(tbl)} folders found")
