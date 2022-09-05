@@ -52,6 +52,9 @@ def parse_args(action, usage):
     args.db = db.connect(args)
 
     ydl_opts = {**default_ydl_opts, **args.yt_dlp_config}
+    if args.verbose == 0:
+        ydl_opts.update(ignoreerrors="only_download")
+
     log.info(utils.dict_filter_bool(ydl_opts))
 
     if args.playlists and not args.no_sanitize:
@@ -268,12 +271,14 @@ def process_playlist(args, playlist_path) -> Union[List[Dict], None]:
         current_video_count = 0
 
         def run(self, info):
-            entry = self._add_media(deepcopy(info))
-            self._add_playlist(deepcopy(info), entry)
+            if info:
+                entry = self._add_media(deepcopy(info))
+                if entry:
+                    self._add_playlist(deepcopy(info), entry)
 
-            self.current_video_count += 1
-            sys.stdout.write("\033[K\r")
-            print(f"[{playlist_path}] Added {self.current_video_count} videos", end="\r", flush=True)
+                    self.current_video_count += 1
+                    sys.stdout.write("\033[K\r")
+                    print(f"[{playlist_path}] Added {self.current_video_count} videos", end="\r", flush=True)
             return [], info
 
         def _add_media(self, entry):
