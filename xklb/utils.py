@@ -1,4 +1,4 @@
-import argparse, enum, logging, os, platform, re, signal, subprocess, sys, textwrap
+import argparse, enum, logging, math, os, platform, re, signal, subprocess, sys, textwrap
 from collections.abc import Iterable
 from datetime import datetime, timedelta
 from functools import wraps
@@ -6,7 +6,6 @@ from types import SimpleNamespace
 from typing import Dict, List, Union
 
 import humanize
-import numpy as np
 from IPython.core import ultratb
 from IPython.terminal.debugger import TerminalPdb
 from pychromecast import discovery
@@ -306,7 +305,7 @@ def col_naturalsize(tbl: List[Dict], col: str):
 
 
 def human_time(seconds):
-    if seconds is None or np.isnan(seconds):
+    if seconds is None or math.isnan(seconds):
         return None
     hours = humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="hours", format="%0.0f")
     if len(hours.split(",")) > 2:
