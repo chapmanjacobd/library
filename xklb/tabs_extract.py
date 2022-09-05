@@ -3,8 +3,6 @@ from datetime import datetime
 from pathlib import Path
 from urllib.parse import urlparse
 
-import pandas as pd
-
 from xklb import db, utils
 from xklb.paths import Frequency, sanitize_url
 from xklb.player import remove_media
@@ -110,12 +108,7 @@ def tabs_add(args=None):
         sys.argv[1:] = args
     args = parse_args()
 
-    tabsDF = pd.DataFrame([extract_url_metadata(args, path) for path in get_new_paths(args)])
-    tabsDF.apply(pd.to_numeric, errors="ignore").convert_dtypes().to_sql(  # type: ignore
-        "media",
-        con=args.db.conn,
-        if_exists="append",
-        index=False,
-        chunksize=70,
-        method="multi",
-    )
+    args.db = db.connect(args)
+    tabs = [extract_url_metadata(args, path) for path in get_new_paths(args)]
+
+    args.db["media"].insert_all(tabs, alter=True)  # type: ignore

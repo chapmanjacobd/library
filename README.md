@@ -384,14 +384,11 @@ When I press the next button in the car I delete the song from my curated univer
 
 ### TODOs (PRs welcome)
 
-- all: extracts switch to https://sqlite-utils.datasette.io/en/latest/python-api.html#adding-columns-automatically-on-insert-update
 - tube: basic tests
 - tube: make sure playlistless media doesn't save to the playlists table
 - all: verify things work on Windows
 - all: more test coverage -- https://hypothesis.readthedocs.io/en/latest/quickstart.html
 - all: follow yt-dlp print arg syntax
 - all: follow fd-find size arg syntax
-- all: remove pandas dependency?
 - fs: split_by_silence without modifying files
-- fs: support subs/ folder
 

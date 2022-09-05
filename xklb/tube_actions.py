@@ -1,13 +1,13 @@
-import argparse
+import argparse, operator
+from copy import deepcopy
 
 import humanize
-import pandas as pd
 from tabulate import tabulate
 
-from xklb import db
+from xklb import db, utils
 from xklb.fs_actions import construct_search_bindings, parse_args, process_playqueue
 from xklb.player import delete_playlists
-from xklb.utils import DEFAULT_PLAY_QUEUE, SC, dict_filter_bool, human_time, log, resize_col
+from xklb.utils import DEFAULT_PLAY_QUEUE, SC, col_resize, dict_filter_bool, human_time, log
 
 # TODO: add cookiesfrombrowser: ('firefox', ) as a default
 # cookiesfrombrowser: ('vivaldi', ) # should not crash if not installed ?
@@ -157,29 +157,27 @@ def printer(args):
         left join playlists on playlists.path = media.playlist_path
         group by coalesce(playlists.path, "Playlist-less videos")"""
 
-    db_resp = pd.DataFrame(args.db.query(query))
-    db_resp.dropna(axis="columns", how="all", inplace=True)
+    db_resp = list(args.db.query(query))
 
     if "f" in args.print:
-        print(db_resp[["path"]].to_string(index=False, header=False))
+        print("\n".join(list(map(operator.itemgetter("path"), db_resp))))
     else:
-        tbl = db_resp.copy()
+        tbl = deepcopy(db_resp)
 
-        tbl = resize_col(tbl, "path", 40)
-        tbl = resize_col(tbl, "uploader_url")
+        tbl = utils.col_resize(tbl, "path", 40)
+        tbl = utils.col_resize(tbl, "uploader_url")
 
-        if "size" in tbl.columns:
-            tbl[["size"]] = tbl[["size"]].applymap(lambda x: None if x is None else humanize.naturalsize(x))
-        if "duration" in tbl.columns:
-            tbl[["duration"]] = tbl[["duration"]].applymap(lambda x: None if x is None else human_time(x))
+        utils.col_naturalsize(tbl, "size")
+        utils.col_duration(tbl, "duration")
 
         print(tabulate(tbl, tablefmt="fancy_grid", headers="keys", showindex=False))  # type: ignore
 
-        if "duration" in db_resp.columns:
-            print(f"{len(db_resp)} playlists" if len(db_resp) > 1 else "1 playlist")
-            summary = db_resp.sum(numeric_only=True)
-            duration = summary.get("duration") or 0
-            print("Total duration:", human_time(duration))
+        print(f"{len(db_resp)} playlists" if len(db_resp) > 1 else "1 playlist")
+        duration = sum(map(operator.itemgetter("duration"), db_resp))
+        if duration > 0:
+            duration = human_time(duration)
+            if not "a" in args.print:
+                print("Total duration:", duration)
 
 
 def tube_list():

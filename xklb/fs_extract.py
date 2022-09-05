@@ -3,9 +3,7 @@ from pathlib import Path
 from shutil import which
 from typing import Dict
 
-import ffmpeg
-import mutagen
-import pandas as pd
+import ffmpeg, mutagen
 from joblib import Parallel, delayed
 from tinytag import TinyTag
 
@@ -214,7 +212,7 @@ def extract_metadata(args, f):
                 tiny_tags = dict()
 
             try:
-                mutagen_tags = utils.dict_filter_bool(mutagen.File(f).tags.as_dict())
+                mutagen_tags = utils.dict_filter_bool(mutagen.File(f).tags.as_dict())  # type: ignore
             except Exception:
                 mutagen_tags = dict()
 
@@ -234,16 +232,7 @@ def extract_chunk(args, l):
 
     [p.unlink() for p in Path(SUB_TEMP_DIR).glob("*.srt")]
 
-    DF = pd.DataFrame(list(filter(None, metadata)))
-
-    DF.apply(pd.to_numeric, errors="ignore").convert_dtypes().to_sql(  # type: ignore
-        "media",
-        con=args.db.conn,
-        if_exists="append",
-        index=False,
-        chunksize=70,
-        method="multi",
-    )
+    args.db["media"].insert_all(list(filter(None, metadata)), pk="path", alter=True)  # type: ignore
 
 
 def find_new_files(args, path):

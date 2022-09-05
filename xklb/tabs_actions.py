@@ -1,8 +1,6 @@
 import argparse
 from time import sleep
-from typing import Dict
-
-import pandas as pd
+from typing import Dict, List
 
 from xklb import db
 from xklb.player import generic_player, mark_media_watched, override_sort, printer
@@ -87,7 +85,7 @@ def play(args, m: Dict):
     mark_media_watched(args, media_file)
 
 
-def frequency_filter(args, media: pd.DataFrame):
+def frequency_filter(args, media: List[Dict]):
     mapper = {
         Frequency.Daily.value: 1,
         Frequency.Weekly.value: 7,
@@ -96,15 +94,20 @@ def frequency_filter(args, media: pd.DataFrame):
         Frequency.Yearly.value: 365,
     }
     counts = args.db.execute("select frequency, count(*) from media group by 1").fetchall()
+    filtered_media = []
     for freq, freq_count in counts:
         num_days = mapper.get(freq, 365)
         num_tabs = max(1, freq_count // num_days)
         log.debug(f"freq_count {freq_count} // num_days {num_days} = num_tabs {num_tabs}")
 
-        media[media.frequency == freq] = media[media.frequency == freq].head(num_tabs)
-        media.dropna(inplace=True)
+        t = []
+        for m in media:
+            if m["frequency"] == freq:
+                t.append(m)
 
-    return media
+        filtered_media.extend(t[:num_tabs])
+
+    return filtered_media
 
 
 def process_tabs_actions(args, construct_tabs_query):
@@ -114,14 +117,14 @@ def process_tabs_actions(args, construct_tabs_query):
     if args.print:
         return printer(args, query, bindings)
 
-    media = pd.DataFrame(args.db.query(query, bindings))  # type: ignore
+    media = list(args.db.query(query, bindings))  # type: ignore
     if len(media) == 0:
         print("No media found")
         exit(2)
 
     media = frequency_filter(args, media)
 
-    for m in media.to_records():
+    for m in media:
         play(args, m)
     if len(media) > 10:
         sleep(0.3)

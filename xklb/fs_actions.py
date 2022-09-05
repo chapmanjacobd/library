@@ -633,11 +633,10 @@ def mpv_enrich(args, media):
     for m in media:
         md5 = hashlib.md5(m["path"].encode("utf-8")).hexdigest().upper()
         if Path(args.watch_later_directory, md5).exists():
-            m["time_started"] = int(Path(args.watch_later_directory, md5).stat().st_mtime)
-        else:
-            m["time_started"] = None
+            m["time_partial_first"] = int(Path(args.watch_later_directory, md5).stat().st_ctime)
+            m["time_partial_last"] = int(Path(args.watch_later_directory, md5).stat().st_mtime)
 
-    return sorted(media, key=lambda m: m["time_started"] is not None, reverse=True)
+    return sorted(media, key=lambda m: m.get("time_partial_first") or 0, reverse=True)
 
 
 def process_playqueue(args, construct_query=construct_fs_query):

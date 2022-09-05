@@ -41,6 +41,7 @@ def optimize(args):
     with db.conn:
         db["media"].optimize()  # type: ignore
     db.vacuum()
+    db.analyze()
 
 
 def fts_quote(l):

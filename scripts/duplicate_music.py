@@ -1,4 +1,7 @@
-import geopandas as gpd
+from xklb import db
+
+r"""
+args.db = db.connect(args.database)
 
 DF = gpd.read_file("audio2.db")
 
@@ -13,3 +16,4 @@ DF["NUQ"] = (
 DF["dupe"] = DF["NUQ"].duplicated(keep=False)
 
 DF.to_file("audio4.db", driver="SQLite")
+"""

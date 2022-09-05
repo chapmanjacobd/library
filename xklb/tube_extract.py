@@ -8,7 +8,6 @@ from timeit import default_timer as timer
 from typing import Dict, List, Union
 from urllib.error import HTTPError
 
-import pandas as pd
 import yt_dlp
 
 from xklb import db, utils
@@ -251,15 +250,7 @@ def video_known(args, playlist_path, path):
 
 def save_entries(args, entries):
     if entries:
-        entriesDF = pd.DataFrame(entries)
-        entriesDF.apply(pd.to_numeric, errors="ignore").convert_dtypes().to_sql(  # type: ignore
-            "media",
-            con=args.db.conn,
-            if_exists="append",
-            index=False,
-            chunksize=70,
-            method="multi",
-        )
+        args.db["media"].insert_all(entries, pk="path", alter=True)  # type: ignore
 
 
 def log_problem(args, playlist_path):
@@ -306,8 +297,7 @@ def process_playlist(args, playlist_path) -> Union[List[Dict], None]:
             elif playlist_known(args, playlist_path):
                 pass
             else:
-                plDF = pd.DataFrame([pl])
-                plDF.convert_dtypes().to_sql("playlists", con=args.db.conn, if_exists="append", index=False)
+                args.db["playlists"].insert(pl, pk="path", alter=True)  # type: ignore
 
     with yt_dlp.YoutubeDL(args.ydl_opts) as ydl:
         ydl.add_post_processor(AddToArchivePP(), when="pre_process")
