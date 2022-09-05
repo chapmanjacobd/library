@@ -172,6 +172,33 @@ def parse_args(action, default_db):
         ╞═══════════╪═════════╡
         │ Aggregate │     134 │
         ╘═══════════╧═════════╛
+
+    Delete URLs
+
+        lb tb -p -s cyber
+        ╒═══════════════════════════════════════╤═════════════╤══════════════╕
+        │ path                                  │ frequency   │ time_valid   │
+        ╞═══════════════════════════════════════╪═════════════╪══════════════╡
+        │ https://old.reddit.com/r/cyberDeck/to │ yearly      │ Dec 31 1970  │
+        │ p/?sort=top&t=year                    │             │              │
+        ├───────────────────────────────────────┼─────────────┼──────────────┤
+        │ https://old.reddit.com/r/Cyberpunk/to │ yearly      │ Aug 29 2023  │
+        │ p/?sort=top&t=year                    │             │              │
+        ├───────────────────────────────────────┼─────────────┼──────────────┤
+        │ https://www.reddit.com/r/cyberDeck/   │ yearly      │ Sep 05 2023  │
+        ╘═══════════════════════════════════════╧═════════════╧══════════════╛
+        lb tb -p -w "path='https://www.reddit.com/r/cyberDeck/'" --delete
+        Removed 1 metadata records
+        lb tb -p -s cyber
+        ╒═══════════════════════════════════════╤═════════════╤══════════════╕
+        │ path                                  │ frequency   │ time_valid   │
+        ╞═══════════════════════════════════════╪═════════════╪══════════════╡
+        │ https://old.reddit.com/r/cyberDeck/to │ yearly      │ Dec 31 1970  │
+        │ p/?sort=top&t=year                    │             │              │
+        ├───────────────────────────────────────┼─────────────┼──────────────┤
+        │ https://old.reddit.com/r/Cyberpunk/to │ yearly      │ Aug 29 2023  │
+        │ p/?sort=top&t=year                    │             │              │
+        ╘═══════════════════════════════════════╧═════════════╧══════════════╛
 """,
     )
     parser.add_argument(
@@ -187,6 +214,7 @@ def parse_args(action, default_db):
     parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[])
 
     parser.add_argument("--print", "-p", default=False, const="p", nargs="?")
+    parser.add_argument("--delete", "--remove", "--erase", "--rm", "-rm", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--cols", "-cols", "-col", nargs="*", help="Include a non-standard column when printing")
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue")
     parser.add_argument("--skip", "-S")
@@ -205,6 +233,9 @@ def parse_args(action, default_db):
 
     if args.cols:
         args.cols = list(flatten([s.split(",") for s in args.cols]))
+
+    if args.delete:
+        args.print += "d"
 
     log.info(dict_filter_bool(args.__dict__))
 

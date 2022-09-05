@@ -9,7 +9,7 @@ from xklb.player import remove_media
 from xklb.utils import argparse_enum, log
 
 
-def parse_args():
+def parse_args_tabsadd():
     parser = argparse.ArgumentParser(
         prog="lb tabsadd",
         usage=r"""lb tabsadd --frequency {daily,weekly,monthly,quarterly,yearly} --category CATEGORY [--no-sanitize] [database] paths ...
@@ -45,7 +45,7 @@ def parse_args():
         help=argparse.SUPPRESS,
     )
     parser.add_argument("--category", "-c", help=argparse.SUPPRESS)
-    parser.add_argument("--no-sanitize", "-s", action="store_false", help="Don't sanitize some common URL parameters")
+    parser.add_argument("--no-sanitize", "-s", action="store_true", help="Don't sanitize some common URL parameters")
 
     parser.add_argument("-v", "--verbose", action="count", default=0)
     args = parser.parse_args()
@@ -106,7 +106,7 @@ def extract_url_metadata(args, path):
 def tabs_add(args=None):
     if args:
         sys.argv[1:] = args
-    args = parse_args()
+    args = parse_args_tabsadd()
 
     args.db = db.connect(args)
     tabs = [extract_url_metadata(args, path) for path in get_new_paths(args)]
