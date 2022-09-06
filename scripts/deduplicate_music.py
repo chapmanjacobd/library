@@ -89,7 +89,7 @@ def deduplicate_music():
             path = d["duplicate_path"]
             if not args.only_soft_delete:
                 Path(path).unlink(missing_ok=True)
-            remove_media(args, path)
+            remove_media(args, path, quiet=True)
             deleted.append(path)
 
         print(len(deleted), "deleted")
