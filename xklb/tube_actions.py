@@ -171,7 +171,7 @@ def printer(args):
         print(tabulate(tbl, tablefmt="fancy_grid", headers="keys", showindex=False))  # type: ignore
 
         print(f"{len(db_resp)} playlists" if len(db_resp) > 1 else "1 playlist")
-        duration = sum(map(operator.itemgetter("duration"), db_resp))
+        duration = sum(map(lambda m: m.get("duration") or 0, db_resp))
         if duration > 0:
             duration = human_time(duration)
             if not "a" in args.print:

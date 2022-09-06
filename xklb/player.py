@@ -437,7 +437,7 @@ def printer(args, query, bindings):
             if len(db_resp) > 1:
                 print(f"{len(db_resp)} media" + (f" (limited to {args.limit})" if args.limit else ""))
 
-            duration = sum(map(operator.itemgetter("duration"), db_resp))
+            duration = sum(map(lambda m: m.get("duration") or 0, db_resp))
             duration = human_time(duration)
             if not "a" in args.print:
                 print("Total duration:", duration)
