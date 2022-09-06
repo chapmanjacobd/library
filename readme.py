@@ -1,4 +1,5 @@
-from xklb.fs_actions import gen_usage
+from xklb.fs_actions import fs_actions_usage
+from xklb.lb import lb_usage
 
 print(
     f"""# lb: xk media library
@@ -20,26 +21,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
     pip install xklb
 
     $ library
-    xk media library [lb]
-
-    local media subcommands:
-      fsadd [extract, xr]                Create a local media database; Add folders
-      subtitle                           Find subtitles for local media
-      listen [lt]                        Listen to local media
-      watch [wt]                         Watch local media
-      filesystem [fs]                    Browse files
-      bigdirs [largefolders]             View folders which take up much room
-
-    online media subcommands:
-      tubeadd [ta]                       Create a tube database; Add playlists
-      tubelist [playlist, playlists]     List added playlists
-      tubeupdate [tu]                    Get new videos for your saved playlists
-      tubewatch [tw, tube, entries]      Watch the tube
-      tubelisten [tl]                    Listen to the tube
-
-    browser tabs subcommands:
-      tabsadd                            Create a tabs database; Add URLs
-      tabs [tb]                          Open your tabs for the day
+    {lb_usage()}
 
 ## Quick Start -- watch online media on your PC
 
@@ -161,7 +143,7 @@ Organize via separate databases.
 ## Usage
 
     $ library watch -h
-    usage: {gen_usage('watch', 'video.db')}
+    usage: {fs_actions_usage('watch', 'video.db')}
 
 ### You can pipe stuff
 
@@ -211,6 +193,13 @@ When I press the next button in the car I delete the song from my curated univer
             --moved /mnt/d/ /mnt/d/80_Now_Listening/ | psub
         ) /mnt/d/ /mnt/d/80_Now_Listening/
     end
+
+#### Datasette
+
+Explore `library` databases in your browser
+
+    pip install datasette
+    datasette tv.db
 
 ### TODOs (PRs welcome)
 

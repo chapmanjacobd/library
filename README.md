@@ -21,22 +21,24 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
 
     local media subcommands:
       fsadd [extract, xr]                Create a local media database; Add folders
-      subtitle                           Find subtitles for local media
+      subtitle [sub]                     Find subtitles for local media
       listen [lt]                        Listen to local media
       watch [wt]                         Watch local media
       filesystem [fs]                    Browse files
       bigdirs [largefolders]             View folders which take up much room
+      dedupe                             Deduplicate audio files
 
     online media subcommands:
       tubeadd [ta]                       Create a tube database; Add playlists
+      tubeupdate [tu]                    Update your saved playlists
       tubelist [playlist, playlists]     List added playlists
-      tubeupdate [tu]                    Get new videos for your saved playlists
       tubewatch [tw, tube, entries]      Watch the tube
       tubelisten [tl]                    Listen to the tube
 
-    browser tabs subcommands:
+    browser tab subcommands:
       tabsadd                            Create a tabs database; Add URLs
-      tabs [tb]                          Open your tabs for the day
+      tabs [tabswatch, tb]               Open your tabs for the day
+    
 
 ## Quick Start -- watch online media on your PC
 
@@ -381,6 +383,13 @@ When I press the next button in the car I delete the song from my curated univer
             lb lt ~/lb/audio.db -w play_count=0 -u random -L 1200 -p f             --moved /mnt/d/ /mnt/d/80_Now_Listening/ | psub
         ) /mnt/d/ /mnt/d/80_Now_Listening/
     end
+
+#### Datasette
+
+Explore `library` databases in your browser
+
+    pip install datasette
+    datasette tv.db
 
 ### TODOs (PRs welcome)
 
