@@ -77,6 +77,9 @@ def deduplicate_music():
 
     print(f"{duplicates_count} duplicates found (showing {args.limit})")
     print(f"Approx. space savings: {humanize.naturalsize(duplicates_size // 2)}")
+    print(
+        "Warning! This script assumes that the database is up to date. If you have deleted any files manually, run a rescan (via fsadd) for each folder in your database first!"
+    )
 
     if len(duplicates) > 0 and prompt.Confirm.ask("Delete duplicates?", default=False):
         print("Deleting...")

@@ -27,7 +27,7 @@ DEFAULT_PLAYER_ARGS_SUB = ["--speed=1"]
 DEFAULT_PLAYER_ARGS_NO_SUB = ["--speed=1.46"]
 
 
-def gen_usage(action, default_db):
+def fs_actions_usage(action, default_db):
     return f"""lb {action} [database] [optional args]
 
     Control playback:
@@ -209,7 +209,7 @@ def gen_usage(action, default_db):
 def parse_args(action, default_db, default_chromecast=""):
     parser = argparse.ArgumentParser(
         prog="lb " + action,
-        usage=gen_usage(action, default_db),
+        usage=fs_actions_usage(action, default_db),
     )
 
     parser.add_argument(
