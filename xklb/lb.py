@@ -22,6 +22,7 @@ local media subcommands:
   watch [wt]                         Watch local media
   filesystem [fs]                    Browse files
   bigdirs [largefolders]             View folders which take up much room
+  dedupe                             Deduplicate audio files
 
 online media subcommands:
   tubeadd [ta]                       Create a tube database; Add playlists
@@ -61,8 +62,11 @@ def lb(args=None):
     subp_filesystem = subparsers.add_parser(SC.filesystem, aliases=["fs"], add_help=False)
     subp_filesystem.set_defaults(func=filesystem)
 
-    subp_scripts_lf = subparsers.add_parser("bigdirs", aliases=["largefolders", "large_folders"], add_help=False)
-    subp_scripts_lf.set_defaults(func=scripts.large_folders)
+    subp_bigdirs = subparsers.add_parser("bigdirs", aliases=["largefolders", "large_folders"], add_help=False)
+    subp_bigdirs.set_defaults(func=scripts.large_folders)
+
+    subp_dedupe = subparsers.add_parser("dedupe", add_help=False)
+    subp_dedupe.set_defaults(func=scripts.deduplicate_music)
 
     subp_tabsadd = subparsers.add_parser("tabsadd", add_help=False)
     subp_tabsadd.set_defaults(func=tabs_add)

@@ -1,1 +1,2 @@
+from scripts.deduplicate_music import deduplicate_music
 from scripts.large_folders import large_folders
