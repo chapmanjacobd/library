@@ -72,6 +72,7 @@ def deduplicate_music():
     tbl = tbl[: int(args.limit)]  # TODO: export to CSV
     tbl = utils.col_resize(tbl, "keep_path", 30)
     tbl = utils.col_resize(tbl, "duplicate_path", 30)
+    tbl = utils.col_naturalsize(tbl, "duplicate_size")
     print(tabulate(tbl, tablefmt="fancy_grid", headers="keys", showindex=False))  # type: ignore
 
     print(f"{duplicates_count} duplicates found (showing {args.limit})")
