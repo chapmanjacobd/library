@@ -20,24 +20,24 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
     xk media library [lb]
 
     local media subcommands:
-      fsadd [extract, xr]                Create a local media database; Add folders
-      subtitle [sub]                     Find subtitles for local media
-      listen [lt]                        Listen to local media
-      watch [wt]                         Watch local media
-      filesystem [fs]                    Browse files
-      bigdirs [largefolders]             View folders which take up much room
-      dedupe                             Deduplicate audio files
+      fsadd [extract, xr]          Create a local media database; Add folders
+      subtitle [sub]               Find subtitles for local media
+      listen [lt]                  Listen to local media
+      watch [wt]                   Watch local media
+      filesystem [fs]              Browse files
+      bigdirs [largefolders]       View folders which take up much room
+      dedupe                       Deduplicate audio files
 
     online media subcommands:
-      tubeadd [ta]                       Create a tube database; Add playlists
-      tubeupdate [tu]                    Update your saved playlists
-      tubelist [playlist, playlists]     List added playlists
-      tubewatch [tw, tube, entries]      Watch the tube
-      tubelisten [tl]                    Listen to the tube
+      tubeadd [ta, xt]             Create a tube database; Add playlists
+      tubeupdate [tu]              Get new videos from saved playlists
+      tubelist [playlists]         List added playlists
+      tubewatch [tw, entries]      Watch the tube
+      tubelisten [tl]              Listen to the tube
 
     browser tab subcommands:
-      tabsadd                            Create a tabs database; Add URLs
-      tabs [tabswatch, tb]               Open your tabs for the day
+      tabsadd                      Create a tabs database; Add URLs
+      tabs [tabswatch, tb]         Open your tabs for the day
     
 
 ## Quick Start -- watch online media on your PC
