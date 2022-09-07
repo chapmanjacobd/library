@@ -413,7 +413,7 @@ def printer(args, query, bindings):
             wr = csv.DictWriter(virtual_csv, fieldnames=args.cols)
             wr.writerows(selected_cols)
 
-            for line in virtual_csv.readlines():
+            for line in virtual_csv.getvalue().splitlines():
                 if args.moved:
                     print(line.strip().replace(args.moved[0], "", 1))
                 else:
