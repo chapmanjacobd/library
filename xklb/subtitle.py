@@ -20,7 +20,7 @@ def extract(video_file, stream_index):
     stream_id = "0:" + str(stream_index)
 
     try:
-        ffmpeg.input(video_file).output(temp_srt, map=stream_id).run(quiet=True)
+        ffmpeg.input(video_file).output(temp_srt, map=stream_id).global_args('-nostdin').run(quiet=True)
     except Error as e:
         log.info(
             f"Could not extract subtitle {stream_id} from video file. Likely incorrect subtitle character encoding set. %s",
@@ -35,7 +35,7 @@ def extract(video_file, stream_index):
 def convert_to_srt(path):
     temp_srt = tempfile.mktemp(".srt", dir=SUB_TEMP_DIR)
     try:
-        ffmpeg.input(path).output(temp_srt).run(quiet=True)
+        ffmpeg.input(path).output(temp_srt).global_args('-nostdin').run(quiet=True)
     except Error as e:
         log.info("Could not convert subtitle")
         log.info(e.stderr.decode())

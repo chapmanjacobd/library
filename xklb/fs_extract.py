@@ -232,7 +232,7 @@ def extract_chunk(args, l):
 
     [p.unlink() for p in Path(SUB_TEMP_DIR).glob("*.srt")]
 
-    args.db["media"].insert_all(list(filter(None, metadata)), pk="path", alter=True)  # type: ignore
+    args.db["media"].insert_all(list(filter(None, metadata)), pk="path", alter=True, replace=True)  # type: ignore
 
 
 def find_new_files(args, path):

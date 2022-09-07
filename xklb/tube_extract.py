@@ -253,7 +253,7 @@ def video_known(args, playlist_path, path):
 
 def save_entries(args, entries):
     if entries:
-        args.db["media"].insert_all(entries, pk="path", alter=True)  # type: ignore
+        args.db["media"].insert_all(entries, pk="path", alter=True, replace=True)  # type: ignore
 
 
 def log_problem(args, playlist_path):
@@ -302,7 +302,7 @@ def process_playlist(args, playlist_path) -> Union[List[Dict], None]:
             elif playlist_known(args, playlist_path):
                 pass
             else:
-                args.db["playlists"].insert(pl, pk="path", alter=True)  # type: ignore
+                args.db["playlists"].insert(pl, pk="path", alter=True, replace=True)  # type: ignore
 
     with yt_dlp.YoutubeDL(args.ydl_opts) as ydl:
         ydl.add_post_processor(AddToArchivePP(), when="pre_process")
