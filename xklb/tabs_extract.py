@@ -111,4 +111,4 @@ def tabs_add(args=None):
     args.db = db.connect(args)
     tabs = [extract_url_metadata(args, path) for path in get_new_paths(args)]
 
-    args.db["media"].insert_all(tabs, alter=True)  # type: ignore
+    args.db["media"].insert_all(tabs, pk="path", alter=True, replace=True)  # type: ignore
