@@ -1,4 +1,4 @@
-import argparse, hashlib, shlex, shutil
+import argparse, hashlib, operator, shlex, shutil
 from pathlib import Path
 from typing import Dict
 
@@ -469,7 +469,7 @@ def play(args, m: Dict):
     if args.action in [SC.watch, SC.listen]:
         media_path = Path(args.prefix + media_file).resolve()
         if not media_path.exists():
-            if paths.is_mounted(paths, args.shallow_organize):
+            if args.is_mounted:
                 mark_media_deleted(args, media_file)
             return
         media_file = str(media_path)
@@ -656,6 +656,8 @@ def process_playqueue(args, construct_query=construct_fs_query):
 
     if shutil.which("mpv") and Path(args.watch_later_directory).exists():
         media = mpv_enrich(args, media)
+
+    args.is_mounted = paths.is_mounted(list(map(operator.itemgetter("path"), media)), args.shallow_organize)
 
     try:
         for m in media:
