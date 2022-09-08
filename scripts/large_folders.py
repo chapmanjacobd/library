@@ -1,18 +1,20 @@
 import argparse
 
-import humanize
 from tabulate import tabulate
 
 from xklb import db, utils
 
 
 def get_table(args):
+    cols = args.db["media"].columns
+
     db_resp = list(
         args.db.query(
-            """
+            f"""
         select path, size
         from media
-        where is_deleted = 0
+        where 1=1
+        {'and is_deleted = 0' if 'is_deleted' in cols else ''}
         order by path
         """
         )
