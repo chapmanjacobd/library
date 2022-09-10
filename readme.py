@@ -204,7 +204,7 @@ Explore `library` databases in your browser
 ### TODOs (PRs welcome)
 
 - player: nextSongDelete
-- me: use shallow-organize for everything
+- fs: ebook and documents
 - tube: make sure playlistless media doesn't save to the playlists table
 - tube: basic tests
 - all: more test coverage -- https://hypothesis.readthedocs.io/en/latest/quickstart.html
