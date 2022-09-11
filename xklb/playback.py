@@ -17,8 +17,8 @@ def parse_args(action):
 
     parser.add_argument("--verbose", "-v", action="count", default=0)
     args = parser.parse_args()
-
-    args.mpv = MPV(start_mpv=False, ipc_socket=args.mpv_socket)
+    if os.path.exists(args.mpv_socket):
+        args.mpv = MPV(start_mpv=False, ipc_socket=args.mpv_socket)
 
     log.info(utils.dict_filter_bool(args.__dict__))
 
@@ -83,10 +83,14 @@ def playback_next():
 
     playing = _now_playing(args)
 
-    if args.delete:
-        # TODO: figure out if catt or mpv is stale
-        for media in playing.values():
-            Path(media).unlink()
+    # TODO: figure out if catt or mpv is stale
+    if playing["catt"]:
+        Path(paths.CAST_NOW_PLAYING).unlink(missing_ok=True)
+        catt_stop(args)
+        if args.delete:
+            Path(playing["catt"]).unlink(missing_ok=True)
 
-    catt_stop(args)
-    args.mpv.command("playlist_next", "force")
+    if playing["mpv"]:
+        args.mpv.command("playlist_next", "force")
+        if args.delete:
+            Path(playing["mpv"]).unlink(missing_ok=True)
