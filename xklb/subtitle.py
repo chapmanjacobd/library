@@ -141,7 +141,7 @@ def get(args, file):
 
 
 def main():
-    parser = argparse.ArgumentParser(prog="lb subtitle")
+    parser = argparse.ArgumentParser(prog="library subtitle")
     parser.add_argument("paths", nargs="*")
     parser.add_argument("--youtube-only", action="store_true")
     parser.add_argument("--subliminal-only", action="store_true")

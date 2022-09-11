@@ -11,12 +11,12 @@ from xklb.utils import argparse_enum, log
 
 def parse_args_tabsadd():
     parser = argparse.ArgumentParser(
-        prog="lb tabsadd",
-        usage=r"""lb tabsadd --frequency {daily,weekly,monthly,quarterly,yearly} --category CATEGORY [--no-sanitize] [database] paths ...
+        prog="library tabsadd",
+        usage=r"""library tabsadd --frequency {daily,weekly,monthly,quarterly,yearly} --category CATEGORY [--no-sanitize] [database] paths ...
 
     Adding one URL:
 
-        lb tabsadd -f monthly -c travel ~/lb/tabs.db https://old.reddit.com/r/Colombia/top/?sort=top&t=month
+        library tabsadd -f monthly -c travel ~/lb/tabs.db https://old.reddit.com/r/Colombia/top/?sort=top&t=month
 
         Depending on your shell you may need to escape the URL (add quotes)
 
@@ -28,7 +28,7 @@ def parse_args_tabsadd():
 
     Importing from a line-delimitated file:
 
-        lb tabsadd -f yearly -c reddit ~/lb/tabs.db (cat ~/mc/yearly-subreddit.cron)
+        library tabsadd -f yearly -c reddit ~/lb/tabs.db (cat ~/mc/yearly-subreddit.cron)
 
 """,
     )

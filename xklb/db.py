@@ -11,9 +11,7 @@ def tracer(sql, params):
 
 def connect(args):
     if not os.path.exists(args.database) and ":memory:" not in args.database:
-        log.error(
-            f"Database file '{args.database}' does not exist. Create one with lb fsadd / lb tubeadd / lb tabsadd."
-        )
+        log.error(f"Database file '{args.database}' does not exist. Create one with lb fsadd, tubeadd, or tabsadd.")
         exit(1)
 
     return sqlite_utils.Database(args.database, tracer=tracer if args.verbose > 1 else None)  # type: ignore

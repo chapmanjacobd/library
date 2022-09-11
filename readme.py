@@ -31,7 +31,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
 ## Quick Start -- listen to online media on a chromecast group
 
     wget https://github.com/chapmanjacobd/lb/raw/main/examples/music.tl.db
-    lb tubelisten music.tl.db -ct "House speakers"
+    library tubelisten music.tl.db -ct "House speakers"
 
 ## Start -- local media
 
@@ -41,15 +41,15 @@ For thirty terabytes of video the initial scan takes about four hours to complet
 After that, subsequent scans of the path (or any subpaths) are much quicker--only
 new files will be read by `ffprobe`.
 
-    lb fsadd tv.db ./video/folder/
+    library fsadd tv.db ./video/folder/
 
 ![termtosvg](./examples/extract.svg)
 
 ### 2. Watch / Listen from local files
 
-    lb wt tv.db                          # the default post-action is to do nothing
-    lb wt tv.db --post-action delete     # delete file after playing
-    lb lt finalists.db --post-action=ask # ask whether to delete after playing
+    library wt tv.db                          # the default post-action is to do nothing
+    library wt tv.db --post-action delete     # delete file after playing
+    library lt finalists.db --post-action=ask # ask whether to delete after playing
 
 To stop playing press Ctrl+C in either the terminal or mpv
 
@@ -59,18 +59,18 @@ To stop playing press Ctrl+C in either the terminal or mpv
 
 Download playlist and channel metadata. Break free of the YouTube algo~
 
-    lb tubeadd educational.db https://www.youtube.com/c/BranchEducation/videos
+    library tubeadd educational.db https://www.youtube.com/c/BranchEducation/videos
 
-[![termtosvg](./examples/tubeadd.svg "lb tubeadd example")](https://asciinema.org/a/BzplqNj9sCERH3A80GVvwsTTT)
+[![termtosvg](./examples/tubeadd.svg "library tubeadd example")](https://asciinema.org/a/BzplqNj9sCERH3A80GVvwsTTT)
 
 And you can always add more later--even from different websites.
 
-    lb tubeadd maker.db https://vimeo.com/terburg
+    library tubeadd maker.db https://vimeo.com/terburg
 
 To prevent mistakes the default configuration is to download metadata for only
 the most recent 20,000 videos per playlist/channel.
 
-    lb tubeadd maker.db --yt-dlp-config playlistend=1000
+    library tubeadd maker.db --yt-dlp-config playlistend=1000
 
 Be aware that there are some YouTube Channels which have many items--for example
 the TEDx channel has about 180,000 videos. Some channels even have upwards of
@@ -83,11 +83,11 @@ the metadata for 180,000 videos.
 Tubeupdate will go through the list of added playlists and fetch metadata for
 any videos not previously seen.
 
-    lb tubeupdate
+    library tubeupdate
 
 ### 2. Watch / Listen from websites
 
-    lb tubewatch maker.db
+    library tubewatch maker.db
 
 To stop playing press Ctrl+C in either the terminal or mpv
 
@@ -103,17 +103,40 @@ or tools that you want to use for a few minutes daily, weekly, monthly, quarterl
 
 ### 1. Add your websites
 
-    lb tabsadd --frequency monthly --category fun https://old.reddit.com/r/Showerthoughts/top/?sort=top&t=month https://old.reddit.com/r/RedditDayOf/top/?sort=top&t=month
+    library tabsadd --frequency monthly --category fun https://old.reddit.com/r/Showerthoughts/top/?sort=top&t=month https://old.reddit.com/r/RedditDayOf/top/?sort=top&t=month
 
-### 2. Add lb tabs to cron
+### 2. Add library tabs to cron
 
-lb tabs is meant to run **once per day**. Here is how you would configure it with `crontab`:
+library tabs is meant to run **once per day**. Here is how you would configure it with `crontab`:
 
-    45 9 * * * DISPLAY=:0 lb tabs /home/my/tabs.db
+    45 9 * * * DISPLAY=:0 library tabs /home/my/tabs.db
+
+Or with `systemd`:
+
+    ~/.config/systemd/user/tabs.service
+    [Unit]
+    Description=xklb daily browser tabs
+
+    [Service]
+    Environment="DISPLAY=:0"
+    ExecStart="library" "tabs" "/home/xk/lb/tabs.db"
+    RemainAfterExit=no
+
+    ~/.config/systemd/user/tabs.timer
+    [Unit]
+    Description=xklb daily browser tabs
+
+    [Timer]
+    Persistent=yes
+    OnCalendar=*-*-* 9:58
+    RemainAfterElapse=yes
+
+    systemctl --user daemon-reload
+    systemctl --user enable --now tabs.service
 
 You can also invoke tabs manually:
 
-    lb tabs -L 1  # open one tab
+    library tabs -L 1  # open one tab
 
 ## Things to know.db
 
@@ -184,12 +207,12 @@ When I press the next button in the car I delete the song from my curated univer
 
     function mrmusic
         rsync -a --remove-source-files --files-from=(
-            lb lt ~/lb/audio.db -s /mnt/d/80_Now_Listening/ -p f \
+            library lt ~/lb/audio.db -s /mnt/d/80_Now_Listening/ -p f \
             --moved /mnt/d/80_Now_Listening/ /mnt/d/ | psub
         ) /mnt/d/80_Now_Listening/ /mnt/d/
 
         rsync -a --remove-source-files --files-from=(
-            lb lt ~/lb/audio.db -w play_count=0 -u random -L 1200 -p f \
+            library lt ~/lb/audio.db -w play_count=0 -u random -L 1200 -p f \
             --moved /mnt/d/ /mnt/d/80_Now_Listening/ | psub
         ) /mnt/d/ /mnt/d/80_Now_Listening/
     end
@@ -203,7 +226,8 @@ Explore `library` databases in your browser
 
 ### TODOs (PRs welcome)
 
-- player: nextSongDelete
+- test linux: now, next, stop
+- test windows: now, next, stop
 - fs: ebook and documents
 - tube: make sure playlistless media doesn't save to the playlists table
 - tube: basic tests

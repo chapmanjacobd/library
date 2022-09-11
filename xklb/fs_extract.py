@@ -307,21 +307,21 @@ def extractor(args):
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        prog="lb fsadd",
-        usage="""lb fsadd [--audio | --video | --filesystem] [database] paths ...
+        prog="library fsadd",
+        usage="""library fsadd [--audio | --video | --filesystem] [database] paths ...
 
     The default database type is video:
-        lb fsadd ./tv/
-        lb fsadd --video ./tv/  # equivalent
+        library fsadd ./tv/
+        library fsadd --video ./tv/  # equivalent
 
     This will create audio.db in the current directory:
-        lb fsadd --audio ./music/
+        library fsadd --audio ./music/
 
     Run with --optimize to add indexes to every int and text column:
-        lb fsadd --optimize --audio ./music/
+        library fsadd --optimize --audio ./music/
 
     The database location must be specified to reference more than one path:
-        lb fsadd --audio podcasts.db ./podcasts/ ./another/folder/
+        library fsadd --audio podcasts.db ./podcasts/ ./another/folder/
 """,
     )
     parser.add_argument("database", nargs="?")

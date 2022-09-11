@@ -132,21 +132,21 @@ def process_tabs_actions(args, construct_tabs_query):
 
 def parse_args(action, default_db):
     parser = argparse.ArgumentParser(
-        prog="lb tabs",
+        prog="library tabs",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        usage="""lb tabs [database] [optional args]
+        usage="""library tabs [database] [optional args]
 
-    lb tabs is meant to run **once per day**. Here is how you would configure it with `crontab`:
+    Tabs is meant to run **once per day**. Here is how you would configure it with `crontab`:
 
-        45 9 * * * DISPLAY=:0 lb tabs /home/my/tabs.db
+        45 9 * * * DISPLAY=:0 library tabs /home/my/tabs.db
 
     If things aren't working you can use `at` to simulate a similar environment as `cron`
 
-        echo 'fish -c "export DISPLAY=:0 && lb tabs /full/path/to/tabs.db"' | at NOW
+        echo 'fish -c "export DISPLAY=:0 && library tabs /full/path/to/tabs.db"' | at NOW
 
     You can also invoke tabs manually:
 
-        lb tabs -L 1  # open one tab
+        library tabs -L 1  # open one tab
 
     Print URLs
 
@@ -166,7 +166,7 @@ def parse_args(action, default_db):
 
     View how many yearly tabs you have:
 
-        lb-dev tabs -w "frequency='yearly'" -p a
+        library tabs -w "frequency='yearly'" -p a
         ╒═══════════╤═════════╕
         │ path      │   count │
         ╞═══════════╪═════════╡
@@ -175,7 +175,7 @@ def parse_args(action, default_db):
 
     Delete URLs
 
-        lb tb -p -s cyber
+        library tb -p -s cyber
         ╒═══════════════════════════════════════╤═════════════╤══════════════╕
         │ path                                  │ frequency   │ time_valid   │
         ╞═══════════════════════════════════════╪═════════════╪══════════════╡
@@ -187,9 +187,9 @@ def parse_args(action, default_db):
         ├───────────────────────────────────────┼─────────────┼──────────────┤
         │ https://www.reddit.com/r/cyberDeck/   │ yearly      │ Sep 05 2023  │
         ╘═══════════════════════════════════════╧═════════════╧══════════════╛
-        lb tb -p -w "path='https://www.reddit.com/r/cyberDeck/'" --delete
+        library tb -p -w "path='https://www.reddit.com/r/cyberDeck/'" --delete
         Removed 1 metadata records
-        lb tb -p -s cyber
+        library tb -p -s cyber
         ╒═══════════════════════════════════════╤═════════════╤══════════════╕
         │ path                                  │ frequency   │ time_valid   │
         ╞═══════════════════════════════════════╪═════════════╪══════════════╡
