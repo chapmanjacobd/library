@@ -11,13 +11,12 @@ def parse_args(action):
     parser = argparse.ArgumentParser(prog=f"library {action}")
     parser.add_argument("--mpv-socket", default=paths.DEFAULT_MPV_SOCKET)
     parser.add_argument("--chromecast-device", "--cast-to", "-t")
+
     if action == "next":
         parser.add_argument("--delete", action="store_true")
+
     parser.add_argument("--verbose", "-v", action="count", default=0)
     args = parser.parse_args()
-
-    if args.db:
-        args.database = args.db
 
     args.mpv = MPV(start_mpv=False, ipc_socket=args.mpv_socket)
 
@@ -39,7 +38,14 @@ def _now_playing(args):
 
 def playback_now():
     args = parse_args("now")
-    print(_now_playing(args))
+    playing = _now_playing(args)
+
+    if playing["mpv"]:
+        print("[mpv]:", playing["mpv"])
+    if playing["catt"]:
+        print("[catt]:", playing["catt"])
+
+    args.mpv.terminate()
 
 
 def catt_stop(args):
@@ -59,11 +65,17 @@ def kill_process(name):
 def playback_stop():
     args = parse_args("stop")
 
-    [kill_process(s) for s in ["python.*xklb", "bin/lb", "bin/library", "mpv"]]
-    Path(paths.CAST_NOW_PLAYING).unlink(missing_ok=True)
+    playing = _now_playing(args)
+    if playing["mpv"]:
+        args.mpv.command("loadfile", "/dev/null")  # make mpv exit with code 3
+    else:
+        [kill_process(s) for s in ["python.*xklb", "bin/lb", "bin/library", "mpv"]]
 
-    catt_stop(args)
-    args.mpv.command("quit")
+    if playing["catt"]:
+        catt_stop(args)
+
+    Path(paths.CAST_NOW_PLAYING).unlink(missing_ok=True)
+    Path(args.mpv_socket).unlink(missing_ok=True)
 
 
 def playback_next():
