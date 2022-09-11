@@ -33,6 +33,7 @@ def _now_playing(args):
     log.info(media)
     if None not in media.values():
         log.warning("Both `catt` and `mpv` playback files found!")
+
     return media
 
 
@@ -41,11 +42,20 @@ def playback_now():
     playing = _now_playing(args)
 
     if playing["mpv"]:
-        print("[mpv]:", playing["mpv"])
+        print(
+            "[mpv]:",
+            cmd("ffprobe", "-hide_banner", "-loglevel", "info", playing["mpv"]).stderr
+            if not playing["mpv"].startswith("http")
+            else playing["mpv"],
+        )
+        args.mpv.terminate()
     if playing["catt"]:
-        print("[catt]:", playing["catt"])
-
-    args.mpv.terminate()
+        print(
+            "[catt]:",
+            cmd("ffprobe", "-hide_banner", "-loglevel", "info", playing["catt"]).stderr
+            if not playing["catt"].startswith("http")
+            else playing["catt"],
+        )
 
 
 def catt_stop(args):
