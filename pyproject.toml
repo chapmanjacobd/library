@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "xklb"
-version = "1.16.009"
+version = "1.16.010"
 description = "xk library"
 authors = ["Jacob Chapman <7908073+chapmanjacobd@users.noreply.github.com>"]
 readme = "README.md"
@@ -28,6 +28,7 @@ protobuf = "<4"
 humanize = "*"
 ffmpeg-python = "*"
 pysubs2 = "^1.4.3"
+python-mpv-jsonipc = "^1.1.13"
 
 [tool.poetry.dev-dependencies]
 pytest = "*"

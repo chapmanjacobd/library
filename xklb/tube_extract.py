@@ -18,7 +18,7 @@ from xklb.utils import combine, log, safe_unpack
 
 
 def parse_args(action, usage):
-    parser = argparse.ArgumentParser(prog="lb tube" + action, usage=usage)
+    parser = argparse.ArgumentParser(prog="library tube" + action, usage=usage)
     parser.add_argument("database", nargs="?", default="tube.db")
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
     if action == "add":
@@ -391,18 +391,18 @@ def get_playlists(args, include_playlistless_media=True):
 def tube_add():
     args = parse_args(
         "add",
-        usage="""lb tubeadd [database] playlists ...
+        usage="""library tubeadd [database] playlists ...
 
     Create a tube database / add playlists or videos to an existing database
 
-        lb tubeadd educational.db https://www.youtube.com/c/BranchEducation/videos
+        library tubeadd educational.db https://www.youtube.com/c/BranchEducation/videos
 
     Fetch extra metadata:
 
         By default tubeadd will quickly add media.
         You can always fetch more metadata later via tubeupdate.
 
-        lb tubeupdate tw.db --extra
+        library tubeupdate tw.db --extra
 """,
     )
     known_playlists = get_playlists(args)
@@ -429,26 +429,26 @@ def tube_add():
 def tube_update():
     args = parse_args(
         "update",
-        usage="""usage: lb tubeupdate [--optimize] [database] [playlists ...]
+        usage="""usage: library tubeupdate [--optimize] [database] [playlists ...]
 
     Fetch the latest videos from every playlist in your database
 
-        lb tubeupdate educational.db
+        library tubeupdate educational.db
 
     Or limit to specific ones...
 
-        lb tubeupdate educational.db https://www.youtube.com/channel/UCBsEUcR-ezAuxB2WlfeENvA/videos ...
+        library tubeupdate educational.db https://www.youtube.com/channel/UCBsEUcR-ezAuxB2WlfeENvA/videos ...
 
     Run with --optimize to add indexes (might speed up searching but the size will increase):
 
-        lb tubeupdate --optimize examples/music.tl.db ''
+        library tubeupdate --optimize examples/music.tl.db ''
 
     Fetch extra metadata:
 
         By default tubeupdate will quickly add media.
         You can run with --extra to fetch more details: (best resolution width, height, subtitle tags, etc)
 
-        lb tubeupdate educational.db --extra https://www.youtube.com/channel/UCBsEUcR-ezAuxB2WlfeENvA/videos
+        library tubeupdate educational.db --extra https://www.youtube.com/channel/UCBsEUcR-ezAuxB2WlfeENvA/videos
 """,
     )
     known_playlists = get_playlists(args)

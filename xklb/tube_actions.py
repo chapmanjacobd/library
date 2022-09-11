@@ -180,12 +180,12 @@ def printer(args):
 
 def tube_list():
     parser = argparse.ArgumentParser(
-        prog="lb tubelist",
-        usage="""lb tubelist [database] [--print {p,f,a}] [--delete ...]
+        prog="library tubelist",
+        usage="""library tubelist [database] [--print {p,f,a}] [--delete ...]
 
     List of Playlists
 
-        lb tubelist
+        library tubelist
         ╒══════════╤════════════════════╤══════════════════════════════════════════════════════════════════════════╕
         │ ie_key   │ title              │ path                                                                     │
         ╞══════════╪════════════════════╪══════════════════════════════════════════════════════════════════════════╡
@@ -194,7 +194,7 @@ def tube_list():
 
     Aggregate Report of Videos in each Playlist
 
-        lb tubelist -p a
+        library tubelist -p a
         ╒══════════╤════════════════════╤══════════════════════════════════════════════════════════════════════════╤═══════════════╤═════════╕
         │ ie_key   │ title              │ path                                                                     │ duration      │   count │
         ╞══════════╪════════════════════╪══════════════════════════════════════════════════════════════════════════╪═══════════════╪═════════╡
@@ -207,12 +207,12 @@ def tube_list():
 
         Useful for piping to other utilities like xargs or GNU Parallel.
 
-        lb tubelist -p f
+        library tubelist -p f
         https://www.youtube.com/playlist?list=PL7gXS9DcOm5-O0Fc1z79M72BsrHByda3n
 
     Remove a playlist/channel and all linked videos:
 
-        lb tubelist --remove https://vimeo.com/canal180
+        library tubelist --remove https://vimeo.com/canal180
 """,
     )
     parser.add_argument("database", nargs="?", default="tube.db")
