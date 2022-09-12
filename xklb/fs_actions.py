@@ -279,6 +279,8 @@ def parse_args(action, default_db, default_chromecast=""):
 
     if not args.limit and all([not args.print, args.action in [SC.listen, SC.watch, SC.tubelisten, SC.tubewatch]]):
         args.limit = utils.DEFAULT_PLAY_QUEUE
+    if not args.limit and all([not args.print, args.action in [SC.read]]):
+        args.limit = 5
     elif args.limit in ["inf", "all"]:
         args.limit = None
 
@@ -613,6 +615,7 @@ def construct_fs_query(args):
     query = f"""SELECT path
         , size
         {', duration' if args.action in [SC.listen, SC.watch] else ''}
+        {', cast(length(tags) / 5.0 / 220 * 60 as INT) + 10 duration' if args.action == SC.read else ''}
         {', subtitle_count' if args.action == SC.watch else ''}
         {', sparseness' if args.action == SC.filesystem else ''}
         {', is_dir' if args.action == SC.filesystem else ''}
