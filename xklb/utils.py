@@ -1,7 +1,8 @@
-import argparse, enum, logging, math, os, platform, re, signal, subprocess, sys, textwrap
+import argparse, enum, hashlib, logging, math, os, platform, re, signal, subprocess, sys, textwrap
 from collections.abc import Iterable
 from datetime import datetime, timedelta
 from functools import wraps
+from pathlib import Path
 from types import SimpleNamespace
 from typing import Dict, List, Union
 
@@ -69,6 +70,35 @@ def get_ip_of_chromecast(device_name):
         exit(53)
 
     return cast_infos[0].host
+
+
+def mpv_enrich(args, media):
+    for m in media:
+        md5 = hashlib.md5(m["path"].encode("utf-8")).hexdigest().upper()
+        if Path(args.watch_later_directory, md5).exists():
+            m["time_partial_first"] = int(Path(args.watch_later_directory, md5).stat().st_ctime)
+            m["time_partial_last"] = int(Path(args.watch_later_directory, md5).stat().st_mtime)
+        else:
+            m["time_partial_first"] = 0
+            m["time_partial_last"] = 0
+
+    return sorted(media, key=lambda m: m.get("time_partial_first") or 0, reverse=True)
+
+
+def mpv_enrich2(args, media):
+    md5s = {hashlib.md5(m["path"].encode("utf-8")).hexdigest().upper(): m for m in media}
+    paths = list(Path(args.watch_later_directory).glob("*"))
+    filtered_list = [
+        {
+            **md5s.get(p.stem),  # type: ignore
+            "time_partial_first": int(p.stat().st_ctime),
+            "time_partial_last": int(p.stat().st_mtime),
+        }
+        for p in paths
+        if md5s.get(p.stem)
+    ]
+
+    return sorted(filtered_list, key=lambda m: m.get("time_partial_first") or 0, reverse=False)
 
 
 def os_bg_kwargs():
