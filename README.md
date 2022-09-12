@@ -24,6 +24,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
       subtitle [sub]               Find subtitles for local media
       listen [lt]                  Listen to local media
       watch [wt]                   Watch local media
+      read [books, docs]           Read books
       filesystem [fs]              Browse files
       bigdirs [largefolders]       View folders which take up much room
       dedupe                       Deduplicate audio files
