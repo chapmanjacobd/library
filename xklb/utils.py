@@ -14,7 +14,7 @@ from rich.logging import RichHandler
 
 try:
     import ipdb
-except ImportError:
+except ModuleNotFoundError:
     pass
 else:
     sys.breakpointhook = ipdb.set_trace
@@ -38,6 +38,7 @@ class SC:
     tubewatch = "tubewatch"
     tubelisten = "tubelisten"
     tabs = "tabs"
+    text = "text"
 
 
 def remove_whitespaace(string):

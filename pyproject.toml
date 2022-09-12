@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "xklb"
-version = "1.16.015"
+version = "1.16.016"
 description = "xk library"
 authors = ["Jacob Chapman <7908073+chapmanjacobd@users.noreply.github.com>"]
 readme = "README.md"
@@ -38,6 +38,9 @@ ssort = "*"
 isort = "*"
 line-profiler = "*"
 ipdb = "*"
+
+[tool.poetry.extras]
+text = ["textract"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

@@ -677,3 +677,8 @@ def listen():
 def filesystem():
     args = parse_args(SC.filesystem, "fs.db")
     process_playqueue(args)
+
+
+def text():
+    args = parse_args(SC.text, "text.db")
+    process_playqueue(args)
