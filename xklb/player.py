@@ -378,7 +378,7 @@ def printer(args, query, bindings):
 
     db_resp = list(args.db.query(query, bindings))
 
-    if "h" in args.print and Path(args.watch_later_directory).exists():
+    if "v" in args.print and Path(args.watch_later_directory).exists():
         db_resp = utils.mpv_enrich2(args, db_resp)
 
     if args.verbose > 1 and args.cols and "*" in args.cols:
