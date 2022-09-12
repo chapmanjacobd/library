@@ -78,10 +78,11 @@ def playback_stop():
     playing = _now_playing(args)
     if playing["mpv"]:
         args.mpv.command("loadfile", "/dev/null")  # make mpv exit with code 3
-    else:
-        [kill_process(s) for s in ["python.*xklb", "bin/lb", "bin/library", "mpv"]]
+    # else:
+    #     [kill_process(s) for s in ["python.*xklb", "bin/lb", "bin/library", "mpv"]]
 
     if playing["catt"]:
+        kill_process('catt')
         catt_stop(args)
 
     Path(paths.CAST_NOW_PLAYING).unlink(missing_ok=True)
