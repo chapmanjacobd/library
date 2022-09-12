@@ -377,7 +377,8 @@ def printer(args, query, bindings):
     if "a" in args.print:
         query = f"""select
             "Aggregate" as path
-            {', sum(duration) duration' if args.action in [SC.listen, SC.watch, SC.tubelisten, SC.tubewatch] else ''}
+            {', sum(duration) duration' if args.action in [SC.listen, SC.watch, SC.tubelisten, SC.tubewatch, SC.read] else ''}
+            {', avg(duration) avg_duration' if args.action in [SC.listen, SC.watch, SC.tubelisten, SC.tubewatch, SC.read] else ''}
             {', sparseness' if args.action == SC.filesystem else ''}
             {', sum(size) size' if args.action != SC.tabs else ''}
             , count(*) count
@@ -439,7 +440,6 @@ def printer(args, query, bindings):
 
         utils.col_naturalsize(tbl, "size")
         utils.col_duration(tbl, "duration")
-        utils.col_duration(tbl, "sum_duration")
         utils.col_duration(tbl, "avg_duration")
 
         for t in [
