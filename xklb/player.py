@@ -9,11 +9,10 @@ from shutil import which
 from time import sleep
 from typing import Union
 
-import humanize
 from tabulate import tabulate
 
 from xklb import paths, utils
-from xklb.utils import SC, SQLITE_PARAM_LIMIT, cmd, cmd_interactive, col_resize, human_time, log, os_bg_kwargs
+from xklb.utils import SC, SQLITE_PARAM_LIMIT, cmd, cmd_interactive, human_time, log, os_bg_kwargs
 
 
 def mv_to_keep_folder(args, media_file: str):
@@ -379,6 +378,9 @@ def printer(args, query, bindings):
 
     db_resp = list(args.db.query(query, bindings))
 
+    if "h" in args.print and Path(args.watch_later_directory).exists():
+        db_resp = utils.mpv_enrich2(args, db_resp)
+
     if args.verbose > 1 and args.cols and "*" in args.cols:
         breakpoint()
 
@@ -429,7 +431,14 @@ def printer(args, query, bindings):
         utils.col_naturalsize(tbl, "size")
         utils.col_duration(tbl, "duration")
 
-        for t in ["time_modified", "time_created", "time_played", "time_valid"]:
+        for t in [
+            "time_modified",
+            "time_created",
+            "time_played",
+            "time_valid",
+            "time_partial_first",
+            "time_partial_last",
+        ]:
             utils.col_naturaldate(tbl, t)
 
         print(tabulate(tbl, tablefmt="fancy_grid", headers="keys", showindex=False))  # type: ignore
@@ -451,5 +460,5 @@ def override_sort(string):
         string.replace("month_created", YEAR_MONTH("time_created"))
         .replace("month_modified", YEAR_MONTH("time_modified"))
         .replace("random", "random()")
-        .replace("priority", "play_count, ntile(1000) over (order by size/duration) desc")
+        .replace("priority", " play_count, ntile(1000) over (order by size/duration) desc")
     )

@@ -37,25 +37,22 @@ def _now_playing(args):
     return media
 
 
+def print_now_playing(playing, source):
+    if playing[source].startswith("http"):
+        print(f"[{source}]:", cmd("ffprobe", "-hide_banner", "-loglevel", "info", playing[source]).stderr)
+    else:
+        print(f"[{source}]:", playing[source])
+
+
 def playback_now():
     args = parse_args("now")
     playing = _now_playing(args)
 
     if playing["mpv"]:
-        print(
-            "[mpv]:",
-            cmd("ffprobe", "-hide_banner", "-loglevel", "info", playing["mpv"]).stderr
-            if not playing["mpv"].startswith("http")
-            else playing["mpv"],
-        )
+        print_now_playing(playing, "mpv")
         args.mpv.terminate()
     if playing["catt"]:
-        print(
-            "[catt]:",
-            cmd("ffprobe", "-hide_banner", "-loglevel", "info", playing["catt"]).stderr
-            if not playing["catt"].startswith("http")
-            else playing["catt"],
-        )
+        print_now_playing(playing, "catt")
 
 
 def catt_stop(args):
@@ -82,7 +79,7 @@ def playback_stop():
     #     [kill_process(s) for s in ["python.*xklb", "bin/lb", "bin/library", "mpv"]]
 
     if playing["catt"]:
-        kill_process('catt')
+        kill_process("catt")
         catt_stop(args)
 
     Path(paths.CAST_NOW_PLAYING).unlink(missing_ok=True)

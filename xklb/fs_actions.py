@@ -1,4 +1,4 @@
-import argparse, hashlib, operator, shlex, shutil
+import argparse, operator, shlex, shutil
 from pathlib import Path
 from typing import Dict
 
@@ -631,16 +631,6 @@ def construct_fs_query(args):
     return query, bindings
 
 
-def mpv_enrich(args, media):
-    for m in media:
-        md5 = hashlib.md5(m["path"].encode("utf-8")).hexdigest().upper()
-        if Path(args.watch_later_directory, md5).exists():
-            m["time_partial_first"] = int(Path(args.watch_later_directory, md5).stat().st_ctime)
-            m["time_partial_last"] = int(Path(args.watch_later_directory, md5).stat().st_mtime)
-
-    return sorted(media, key=lambda m: m.get("time_partial_first") or 0, reverse=True)
-
-
 def process_playqueue(args, construct_query=construct_fs_query):
     args.db = db.connect(args)
     query, bindings = construct_query(args)
@@ -654,8 +644,8 @@ def process_playqueue(args, construct_query=construct_fs_query):
         print("No media found")
         exit(2)
 
-    if shutil.which("mpv") and Path(args.watch_later_directory).exists():
-        media = mpv_enrich(args, media)
+    if Path(args.watch_later_directory).exists():
+        media = utils.mpv_enrich(args, media)
 
     args.is_mounted = paths.is_mounted(list(map(operator.itemgetter("path"), media)), args.shallow_organize)
 
