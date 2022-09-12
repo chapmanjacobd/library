@@ -38,7 +38,7 @@ class SC:
     tubewatch = "tubewatch"
     tubelisten = "tubelisten"
     tabs = "tabs"
-    text = "text"
+    read = "read"
 
 
 def remove_whitespaace(string):

@@ -311,6 +311,11 @@ def local_player(args, m, media_file):
         player = args.player
         args.player_need_sleep = False
 
+    elif args.action in [SC.read]:
+        player_path = find_xdg_application(media_file)
+        log.info(player_path)
+        pass
+
     elif mpv:
         args.player_need_sleep = False
         player = [mpv]
@@ -340,9 +345,7 @@ def local_player(args, m, media_file):
                 player.extend(args.player_args_no_sub)
 
     elif system() == "Linux":
-        mimetype = cmd("xdg-mime", "query", "filetype", media_file).stdout
-        default_application = cmd("xdg-mime", "query", "default", mimetype).stdout
-        player_path = which(default_application.replace(".desktop", ""))
+        player_path = find_xdg_application(media_file)
         if player_path:
             args.player_need_sleep = False
             player = [player_path]
@@ -362,6 +365,12 @@ def local_player(args, m, media_file):
         else:
             delay = 10  # TODO: idk
         sleep(delay)
+
+def find_xdg_application(media_file):
+    mimetype = cmd("xdg-mime", "query", "filetype", media_file).stdout
+    default_application = cmd("xdg-mime", "query", "default", mimetype).stdout
+    player_path = which(default_application.replace(".desktop", ""))
+    return player_path
 
 
 def printer(args, query, bindings):

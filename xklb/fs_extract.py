@@ -110,11 +110,11 @@ def extract_metadata(args, f):
         if _textract is None:
             raise ModuleNotFoundError("textract is required for text database creation: pip install textract")
         try:
-            text = _textract.process(f)
-            text = re.split(r";|,|\.|\*|\n|\t", text.decode())
+            tags = _textract.process(f)
+            tags = re.split(r";|,|\.|\*|\n|\t", tags.decode())
         except Exception:
-            text = []
-        return {**media, "is_deleted": 0, "play_count": 0, "time_played": 0, "tags": combine(text)}
+            tags = []
+        return {**media, "is_deleted": 0, "play_count": 0, "time_played": 0, "tags": combine(tags)}
 
     if args.db_type in ["a", "v"]:
         try:

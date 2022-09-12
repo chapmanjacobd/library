@@ -679,6 +679,6 @@ def filesystem():
     process_playqueue(args)
 
 
-def text():
-    args = parse_args(SC.text, "text.db")
+def read():
+    args = parse_args(SC.read, "text.db")
     process_playqueue(args)
