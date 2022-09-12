@@ -439,6 +439,8 @@ def printer(args, query, bindings):
 
         utils.col_naturalsize(tbl, "size")
         utils.col_duration(tbl, "duration")
+        utils.col_duration(tbl, "sum_duration")
+        utils.col_duration(tbl, "avg_duration")
 
         for t in [
             "time_modified",

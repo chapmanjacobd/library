@@ -619,7 +619,7 @@ def construct_fs_query(args):
         {', subtitle_count' if args.action == SC.watch else ''}
         {', sparseness' if args.action == SC.filesystem else ''}
         {', is_dir' if args.action == SC.filesystem else ''}
-        {', ' + ', '.join(args.cols) if args.cols else ''}
+        {', ' + ', '.join(args.cols) if args.cols and args.cols != ['duration'] else ''}
     FROM {args.table}
     WHERE 1=1
     {args.sql_filter}
