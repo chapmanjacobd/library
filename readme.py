@@ -226,7 +226,6 @@ Explore `library` databases in your browser
 
 ### TODOs (PRs welcome)
 
-- test linux: now, next, stop
 - test windows: now, next, stop
 - fs: ebook and documents
 - tube: make sure playlistless media doesn't save to the playlists table
