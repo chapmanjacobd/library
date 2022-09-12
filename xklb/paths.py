@@ -57,8 +57,26 @@ def youtube_dl_id(file) -> str:
     return utils.conform([*yt_ids[0]])[0]
 
 
+def get_text_files(path, OCR=False, speech_recognition=False):
+    TEXTRACT_EXTENSIONS = "csv|tab|tsv|doc|docx|eml|epub|json|htm|html|msg|odt|pdf|pptx|ps|rtf|txt|log|xlsx|xls"
+    if OCR:
+        ocr_only = "|gif|jpg|jpeg|png|tif|tff|tiff"
+        TEXTRACT_EXTENSIONS += ocr_only
+    if speech_recognition:
+        speech_recognition_only = "|mp3|ogg|wav"
+        TEXTRACT_EXTENSIONS += speech_recognition_only
+
+    TEXTRACT_EXTENSIONS = TEXTRACT_EXTENSIONS.split("|")
+    text_files = []
+    for f in Path(path).resolve().rglob("*"):
+        if f.is_file() and (f.suffix[1:].lower() in TEXTRACT_EXTENSIONS):
+            text_files.append(str(f))
+
+    return text_files
+
+
 def get_media_files(path, audio=False):
-    FFMPEG_DEMUXERS = (
+    FFMPEG_EXTENSIONS = (
         "str|aa|aax|acm|adf|adp|dtk|ads|ss2|adx|aea|afc|aix|al|apl"
         "|mac|aptx|aptxhd|aqt|ast|obu|avi|avr|avs|avs2|avs3|bfstm|bcstm|binka"
         "|bit|bmv|brstm|cdg|cdxl|xl|c2|302|daud|str|adp|dav|dss|dts|dtshd|dv"
@@ -79,15 +97,15 @@ def get_media_files(path, audio=False):
     )
     if audio:
         audio_only = "|opus|oga|ogg|mp3|m2a|m4a|flac|wav|wma|aac|aa3|ac3|ape"
-        FFMPEG_DEMUXERS += audio_only
+        FFMPEG_EXTENSIONS += audio_only
 
-    FFMPEG_ENDINGS = FFMPEG_DEMUXERS.split("|")
-    video_files = []
+    FFMPEG_EXTENSIONS = FFMPEG_EXTENSIONS.split("|")
+    media_files = []
     for f in Path(path).resolve().rglob("*"):
-        if f.is_file() and (f.suffix[1:].lower() in FFMPEG_ENDINGS):
-            video_files.append(str(f))
+        if f.is_file() and (f.suffix[1:].lower() in FFMPEG_EXTENSIONS):
+            media_files.append(str(f))
 
-    return video_files
+    return media_files
 
 
 def is_mounted(paths, mount_point):

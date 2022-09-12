@@ -1,7 +1,7 @@
 import argparse, sys
 
 import scripts
-from xklb.fs_actions import filesystem, listen, watch
+from xklb.fs_actions import filesystem, listen, text, watch
 from xklb.fs_extract import main as fs_add
 from xklb.playback import playback_next, playback_now, playback_stop
 from xklb.subtitle import main as subtitle
@@ -69,6 +69,8 @@ def lb(args=None):
     subp_watch.set_defaults(func=watch)
     subp_filesystem = subparsers.add_parser(SC.filesystem, aliases=["fs"], add_help=False)
     subp_filesystem.set_defaults(func=filesystem)
+    subp_text = subparsers.add_parser(SC.text, aliases=["txt", "books", "docs"], add_help=False)
+    subp_text.set_defaults(func=text)
 
     subp_bigdirs = subparsers.add_parser("bigdirs", aliases=["largefolders", "large_folders"], add_help=False)
     subp_bigdirs.set_defaults(func=scripts.large_folders)

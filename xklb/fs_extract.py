@@ -1,4 +1,4 @@
-import argparse, math, os, sys
+import argparse, math, os, re, sys
 from pathlib import Path
 from shutil import which
 from typing import Dict
@@ -7,14 +7,18 @@ import ffmpeg, mutagen
 from joblib import Parallel, delayed
 from tinytag import TinyTag
 
-from xklb import db, subtitle, utils
-from xklb.paths import SUB_TEMP_DIR, get_media_files, youtube_dl_id
+from xklb import db, paths, subtitle, utils
 from xklb.player import mark_media_deleted
 from xklb.utils import SQLITE_PARAM_LIMIT, cmd, combine, log, safe_unpack
 
+try:
+    import textract as _textract
+except ModuleNotFoundError:
+    _textract = None
+
 
 def get_provenance(file):
-    if youtube_dl_id(file) != "":
+    if paths.youtube_dl_id(file) != "":
         return "YouTube"
 
     return None
@@ -101,6 +105,16 @@ def extract_metadata(args, f):
 
     if args.db_type == "f":
         media = {**media, "is_dir": os.path.isdir(f)}
+
+    if args.db_type == "t":
+        if _textract is None:
+            raise ModuleNotFoundError("textract is required for text database creation: pip install textract")
+        try:
+            text = _textract.process(f)
+            text = re.split(r";|,|\.|\*|\n|\t", text.decode())
+        except Exception:
+            text = []
+        return {**media, "is_deleted": 0, "play_count": 0, "time_played": 0, "tags": combine(text)}
 
     if args.db_type in ["a", "v"]:
         try:
@@ -223,23 +237,25 @@ def extract_metadata(args, f):
 
 
 def extract_chunk(args, l):
-    metadata = (
-        Parallel(n_jobs=-1 if args.verbose == 0 else 1, backend="threading")(
-            delayed(extract_metadata)(args, file) for file in l
-        )
-        or []
-    )
+    n_jobs = -1
+    if args.db_type == "t":
+        n_jobs = 50
+    if args.verbose > 0:
+        n_jobs = 1
+    metadata = Parallel(n_jobs=n_jobs, backend="threading")(delayed(extract_metadata)(args, file) for file in l) or []
 
-    [p.unlink() for p in Path(SUB_TEMP_DIR).glob("*.srt")]
+    [p.unlink() for p in Path(paths.SUB_TEMP_DIR).glob("*.srt")]
 
     args.db["media"].insert_all(list(filter(None, metadata)), pk="path", alter=True, replace=True)  # type: ignore
 
 
 def find_new_files(args, path):
     if args.db_type == "a":
-        scanned_files = get_media_files(path, audio=True)
+        scanned_files = paths.get_media_files(path, audio=True)
     elif args.db_type == "v":
-        scanned_files = get_media_files(path)
+        scanned_files = paths.get_media_files(path)
+    elif args.db_type == "t":
+        scanned_files = paths.get_text_files(path, OCR=args.ocr, speech_recognition=args.speech_recognition)
     elif args.db_type == "f":
         # thanks to these people for making rglob fast https://bugs.python.org/issue26032
         scanned_files = [str(p) for p in Path(path).resolve().rglob("*")]
@@ -308,7 +324,7 @@ def extractor(args):
 def parse_args():
     parser = argparse.ArgumentParser(
         prog="library fsadd",
-        usage="""library fsadd [--audio | --video | --filesystem] [database] paths ...
+        usage="""library fsadd [--audio | --video |  --text | --filesystem] [database] paths ...
 
     The default database type is video:
         library fsadd ./tv/
@@ -316,6 +332,12 @@ def parse_args():
 
     This will create audio.db in the current directory:
         library fsadd --audio ./music/
+
+    This will create text.db in the current directory:
+        library fsadd --text ./documents_and_books/
+
+    Create text database and scan with OCR and speech-recognition:
+        library fsadd --text --ocr --speech-recognition ./receipts_and_messages/
 
     Run with --optimize to add indexes to every int and text column:
         library fsadd --optimize --audio ./music/
@@ -334,8 +356,11 @@ def parse_args():
         "--filesystem", action="store_const", dest="db_type", const="f", help="Create filesystem database"
     )
     db_type.add_argument("--video", action="store_const", dest="db_type", const="v", help="Create video database")
+    db_type.add_argument("--text", action="store_const", dest="db_type", const="t", help="Create text database")
     parser.set_defaults(db_type="v")
 
+    parser.add_argument("--ocr", "--OCR", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--speech-recognition", "--speech", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--subtitle", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--youtube-only", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--subliminal-only", action="store_true", help=argparse.SUPPRESS)
@@ -354,6 +379,8 @@ def parse_args():
             args.database = "fs.db"
         elif args.db_type == "v":
             args.database = "video.db"
+        elif args.db_type == "t":
+            args.database = "text.db"
         else:
             raise Exception(f"fs_extract for db_type {args.db_type} not implemented")
 
