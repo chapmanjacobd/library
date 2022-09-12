@@ -225,7 +225,7 @@ Organize via separate databases.
         library watch -u duration -p -s 'title'
 
         Print an aggregate report of deleted media
-        library watch -w is_deleted=1 -p a
+        library watch -w is_deleted=1 -p=a
         ╒═══════════╤══════════════╤═════════╤═════════╕
         │ path      │ duration     │ size    │   count │
         ╞═══════════╪══════════════╪═════════╪═════════╡
@@ -236,16 +236,19 @@ Organize via separate databases.
         Total duration: 14 days, 23 hours and 42 minutes
 
         Print an aggregate report of media that has no duration information (likely corrupt media)
-        library watch -w 'duration is null' -p a
+        library watch -w 'duration is null' -p=a
 
-        Print a list of videos which have below 1280px resolution
-        library wt -w 'width<1280' -p f
+        Print a list of filenames which have below 1280px resolution
+        library wt -w 'width<1280' -p=f
+
+        Print media you have partially viewed with mpv
+        library watch -p=v
 
         View how much time you have watched
-        library watch -w play_count'>'0 -p a
+        library watch -w play_count'>'0 -p=a
 
         See how much video you have
-        library wt video.db -p a
+        library wt video.db -p=a
         ╒═══════════╤═════════╤═════════╤═════════╕
         │ path      │   hours │ size    │   count │
         ╞═══════════╪═════════╪═════════╪═════════╡
@@ -292,21 +295,22 @@ Organize via separate databases.
         Video files have less consistent metadata and so only paths are included in search.
         library watch --include happy  # only matches will be included
         library watch -s happy         # equivalent
-        library watch --exclude sad   # matches will be excluded
-        library watch -E sad          # equivalent
+        library watch --exclude sad    # matches will be excluded
+        library watch -E sad           # equivalent
 
         Search only the path column
         library watch -O -s 'path : mad max'
+        library watch -O -s 'path : "mad max"' # add "quotes" to be more strict
 
         Double spaces are parsed as one space
         -s '  ost'        # will match OST and not ghost
         -s toy story      # will match '/folder/toy/something/story.mp3'
-        -s 'toy  story'    # will match more strictly '/folder/toy story.mp3'
+        -s 'toy  story'   # will match more strictly '/folder/toy story.mp3'
 
     Constrain media by arbitrary SQL expressions:
         library watch --where audio_count = 2  # media which have two audio tracks
         library watch -w "language = 'eng'"    # media which have an English language tag
-                                               (this could be audio _or_ subtitle)
+                                                    (this could be audio _or_ subtitle)
         library watch -w subtitle_count=0      # media that doesn't have subtitles
 
     Constrain media to duration (in minutes):
