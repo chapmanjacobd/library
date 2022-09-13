@@ -227,7 +227,6 @@ Explore `library` databases in your browser
 ### TODOs (PRs welcome)
 
 - test windows: now, next, stop
-- fs: photos
 - tube: remember passed in yt-dlp arguments per playlist for tube-update
 - tube: make sure playlistless media doesn't save to the playlists table
 - tube: basic tests

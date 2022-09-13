@@ -1,7 +1,7 @@
 import argparse, sys
 
 import scripts
-from xklb.fs_actions import filesystem, listen, read, watch
+from xklb.fs_actions import filesystem, listen, read, view, watch
 from xklb.fs_extract import main as fs_add
 from xklb.playback import playback_next, playback_now, playback_stop
 from xklb.subtitle import main as subtitle
@@ -21,8 +21,9 @@ def lb_usage():
       listen [lt]                  Listen to local media
       watch [wt]                   Watch local media
       read [books, docs]           Read books
+      view [see, look]             View images
       filesystem [fs]              Browse files
-      bigdirs [largefolders]       View folders which take up much room
+      bigdirs [largefolders]       Discover folders which take up much room
       dedupe                       Deduplicate audio files
 
     online media subcommands:
@@ -72,6 +73,8 @@ def lb(args=None):
     subp_filesystem.set_defaults(func=filesystem)
     subp_read = subparsers.add_parser(SC.read, aliases=["text", "books", "docs"], add_help=False)
     subp_read.set_defaults(func=read)
+    subp_view = subparsers.add_parser(SC.view, aliases=["image", "see", "look"], add_help=False)
+    subp_view.set_defaults(func=view)
 
     subp_bigdirs = subparsers.add_parser("bigdirs", aliases=["largefolders", "large_folders"], add_help=False)
     subp_bigdirs.set_defaults(func=scripts.large_folders)
