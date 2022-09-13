@@ -25,8 +25,9 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
       listen [lt]                  Listen to local media
       watch [wt]                   Watch local media
       read [books, docs]           Read books
+      view [see, look]             View images
       filesystem [fs]              Browse files
-      bigdirs [largefolders]       View folders which take up much room
+      bigdirs [largefolders]       Discover folders which take up much room
       dedupe                       Deduplicate audio files
 
     online media subcommands:
@@ -427,7 +428,6 @@ Explore `library` databases in your browser
 ### TODOs (PRs welcome)
 
 - test windows: now, next, stop
-- fs: photos
 - tube: remember passed in yt-dlp arguments per playlist for tube-update
 - tube: make sure playlistless media doesn't save to the playlists table
 - tube: basic tests

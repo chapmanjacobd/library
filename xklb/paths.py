@@ -108,6 +108,28 @@ def get_media_files(path, audio=False):
     return media_files
 
 
+def get_image_files(path):
+    IMAGE_EXTENSIONS = (
+        "pdf|ai|ait|png|jng|mng|arq|arw|cr2|cs1|dcp|dng|eps|epsf|ps|erf|exv|fff"
+        "|gpr|hdp|wdp|jxr|iiq|insp|jpeg|jpg|jpe|mef|mie|mos|mpo|mrw|nef|nrw|orf"
+        "|ori|pef|psd|psb|psdt|raf|raw|rw2|rwl|sr2|srw|thm|tiff|tif|x3f|flif|gif"
+        "|icc|icm|avif|heic|heif|hif|jp2|jpf|jpm|jpx|j2c|j2k|jpc|3fr|btf|dcr|k25"
+        "|kdc|miff|mif|rwz|srf|xcf|bpg|doc|dot|fla|fpx|max|ppt|pps|pot|vsd|xls"
+        "|xlt|pict|pct|360|3g2|3gp2|3gp|3gpp|aax|dvb|f4a|f4b|f4p|f4v|lrv|m4b"
+        "|m4p|m4v|mov|qt|mqv|qtif|qti|qif|cr3|crm|jxl|crw|ciff|ind|indd|indt"
+        "|nksc|vrd|xmp|la|ofr|pac|riff|rif|wav|webp|wv|asf|divx|djvu|djv|dvr-ms"
+        "|flv|insv|inx|swf|wma|wmv|exif|eip|psp|pspimage"
+    )
+
+    IMAGE_EXTENSIONS = IMAGE_EXTENSIONS.split("|")
+    image_files = []
+    for f in Path(path).resolve().rglob("*"):
+        if f.is_file() and (f.suffix[1:].lower() in IMAGE_EXTENSIONS):
+            image_files.append(str(f))
+
+    return image_files
+
+
 def is_mounted(paths, mount_point):
     if platform.system() == "Linux" and any([mount_point in p for p in paths]):
         p = Path(mount_point)

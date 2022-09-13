@@ -277,10 +277,12 @@ def parse_args(action, default_db, default_chromecast=""):
     if args.db:
         args.database = args.db
 
-    if not args.limit and all([not args.print, args.action in [SC.listen, SC.watch, SC.tubelisten, SC.tubewatch]]):
+    if not args.limit and all(
+        [not args.print, args.action in [SC.listen, SC.watch, SC.tubelisten, SC.tubewatch, SC.read]]
+    ):
         args.limit = utils.DEFAULT_PLAY_QUEUE
-    if not args.limit and all([not args.print, args.action in [SC.read]]):
-        args.limit = 5
+    if not args.limit and all([not args.print, args.action in [SC.view]]):
+        args.limit = utils.DEFAULT_PLAY_QUEUE * 4
     elif args.limit in ["inf", "all"]:
         args.limit = None
 
@@ -684,4 +686,9 @@ def filesystem():
 
 def read():
     args = parse_args(SC.read, "text.db")
+    process_playqueue(args)
+
+
+def view():
+    args = parse_args(SC.view, "image.db")
     process_playqueue(args)

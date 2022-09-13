@@ -1,79 +1,11 @@
-import argparse, math, os, re, sys
+import argparse, math, os, sys
 from pathlib import Path
-from shutil import which
-from typing import Dict
 
-import ffmpeg, mutagen
 from joblib import Parallel, delayed
-from tinytag import TinyTag
 
-from xklb import db, paths, subtitle, utils
+from xklb import av, books, db, paths, subtitle, utils
 from xklb.player import mark_media_deleted
-from xklb.utils import SQLITE_PARAM_LIMIT, cmd, combine, log, safe_unpack
-
-try:
-    import textract as _textract
-except ModuleNotFoundError:
-    _textract = None
-
-
-def get_provenance(file):
-    if paths.youtube_dl_id(file) != "":
-        return "YouTube"
-
-    return None
-
-
-def parse_tags(mutagen: Dict, tinytag: Dict):
-    tags = {
-        "mood": combine(
-            mutagen.get("albummood"),
-            mutagen.get("MusicMatch_Situation"),
-            mutagen.get("Songs-DB_Occasion"),
-            mutagen.get("albumgrouping"),
-        ),
-        "genre": combine(mutagen.get("genre"), tinytag.get("genre"), mutagen.get("albumgenre")),
-        "year": combine(
-            mutagen.get("originalyear"),
-            mutagen.get("TDOR"),
-            mutagen.get("TORY"),
-            mutagen.get("date"),
-            mutagen.get("TDRC"),
-            mutagen.get("TDRL"),
-            tinytag.get("year"),
-        ),
-        "bpm": safe_unpack(mutagen.get("fBPM"), mutagen.get("bpm_accuracy")),
-        "key": safe_unpack(mutagen.get("TIT1"), mutagen.get("key_accuracy"), mutagen.get("TKEY")),
-        "time": combine(mutagen.get("time_signature")),
-        "decade": safe_unpack(mutagen.get("Songs-DB_Custom1")),
-        "categories": safe_unpack(mutagen.get("Songs-DB_Custom2")),
-        "city": safe_unpack(mutagen.get("Songs-DB_Custom3")),
-        "country": combine(
-            mutagen.get("Songs-DB_Custom4"),
-            mutagen.get("MusicBrainz Album Release Country"),
-            mutagen.get("musicbrainz album release country"),
-            mutagen.get("language"),
-        ),
-        "description": combine(
-            mutagen.get("description"),
-            mutagen.get("lyrics"),
-            tinytag.get("comment"),
-        ),
-        "album": safe_unpack(tinytag.get("album"), mutagen.get("album")),
-        "title": safe_unpack(tinytag.get("title"), mutagen.get("title")),
-        "artist": combine(
-            tinytag.get("artist"),
-            mutagen.get("artist"),
-            mutagen.get("artists"),
-            tinytag.get("albumartist"),
-            tinytag.get("composer"),
-        ),
-    }
-
-    # print(mutagen)
-    # breakpoint()
-
-    return tags
+from xklb.utils import SQLITE_PARAM_LIMIT, log
 
 
 def calculate_sparseness(stat):
@@ -107,146 +39,28 @@ def extract_metadata(args, f):
         media = {**media, "is_dir": os.path.isdir(f)}
 
     if args.db_type == "t":
-        if _textract is None:
-            raise ModuleNotFoundError("textract is required for text database creation: pip install textract")
-        try:
-            tags = _textract.process(f)
-            tags = re.split(r";|,|\.|\*|\n|\t", tags.decode())
-        except Exception:
-            tags = []
-        return {**media, "is_deleted": 0, "play_count": 0, "time_played": 0, "tags": combine(tags)}
+        return books.munge_book_tags(media, f)
 
     if args.db_type in ["a", "v"]:
-        try:
-            probe = ffmpeg.probe(f, show_chapters=None)
-        except (KeyboardInterrupt, SystemExit):
-            exit(130)
-        except Exception:
-            print(f"[{f}] Failed reading header", file=sys.stderr)
-            if args.delete_unplayable:
-                if which("trash-put") is not None:
-                    cmd("trash-put", f, strict=False)
-                else:
-                    Path(f).unlink()
-            return
-
-        if not "format" in probe:
-            print(f"[{f}] Failed reading format", file=sys.stderr)
-            print(probe)
-            return
-
-        format = probe["format"]
-        format.pop("size", None)
-        format.pop("tags", None)
-        format.pop("bit_rate", None)
-        format.pop("format_name", None)
-        format.pop("format_long_name", None)
-        format.pop("nb_programs", None)
-        format.pop("nb_streams", None)
-        format.pop("probe_score", None)
-        format.pop("start_time", None)
-        format.pop("filename", None)
-        duration = format.pop("duration", None)
-
-        if format != {}:
-            log.info("Extra data %s", format)
-            # breakpoint()
-
-        streams = probe["streams"]
-
-        def parse_framerate(string):
-            top, bot = string.split("/")
-            bot = int(bot)
-            if bot == 0:
-                return None
-            return int(int(top) / bot)
-
-        fps = safe_unpack(
-            [
-                parse_framerate(s.get("avg_frame_rate"))
-                for s in streams
-                if s.get("avg_frame_rate") is not None and "/0" not in s.get("avg_frame_rate")
-            ]
-            + [
-                parse_framerate(s.get("r_frame_rate"))
-                for s in streams
-                if s.get("r_frame_rate") is not None and "/0" not in s.get("r_frame_rate")
-            ]
-        )
-        width = safe_unpack([s.get("width") for s in streams])
-        height = safe_unpack([s.get("height") for s in streams])
-        codec_types = [s.get("codec_type") for s in streams]
-        stream_tags = [s.get("tags") for s in streams if s.get("tags") is not None]
-        language = combine([t.get("language") for t in stream_tags if t.get("language") not in [None, "und", "unk"]])
-
-        video_count = sum([1 for s in codec_types if s == "video"])
-        audio_count = sum([1 for s in codec_types if s == "audio"])
-        chapter_count = len(probe["chapters"])
-
-        media = {
-            **media,
-            "is_deleted": 0,
-            "play_count": 0,
-            "time_played": 0,
-            "video_count": video_count,
-            "audio_count": audio_count,
-            "chapter_count": chapter_count,
-            "width": width,
-            "height": height,
-            "fps": fps,
-            "duration": 0 if not duration else int(float(duration)),
-            "language": language,
-            "provenance": get_provenance(f),
-        }
-
-        if args.db_type == "v":
-            attachment_count = sum([1 for s in codec_types if s == "attachment"])
-            internal_subtitles = utils.conform(
-                [
-                    subtitle.extract(f, s["index"])
-                    for s in streams
-                    if s.get("codec_type") == "subtitle" and s.get("codec_name") not in subtitle.IMAGE_SUBTITLE_CODECS
-                ],
-            )
-
-            external_subtitles = subtitle.get_external(f)
-            subs_text = subtitle.subs_to_text(f, internal_subtitles + external_subtitles)
-
-            video_tags = {
-                "subtitle_count": len(internal_subtitles + external_subtitles),
-                "attachment_count": attachment_count,
-                "tags": combine(subs_text),
-            }
-            return {**media, **video_tags}
-
-        if args.db_type == "a":
-            try:
-                tiny_tags = utils.dict_filter_bool(TinyTag.get(f).as_dict())
-            except Exception:
-                tiny_tags = dict()
-
-            try:
-                mutagen_tags = utils.dict_filter_bool(mutagen.File(f).tags.as_dict())  # type: ignore
-            except Exception:
-                mutagen_tags = dict()
-
-            stream_tags = parse_tags(mutagen_tags, tiny_tags)
-            return {**media, **stream_tags}
+        return av.munge_av_tags(args, media, f)
 
     return media
 
 
 def extract_chunk(args, l):
     n_jobs = -1
-    if args.db_type == "t":
-        n_jobs = 50
+    if args.db_type in ["t", "p"]:
+        n_jobs = (os.cpu_count() or 4) * 5
     if args.verbose > 0:
         n_jobs = 1
     metadata = Parallel(n_jobs=n_jobs, backend="threading")(delayed(extract_metadata)(args, file) for file in l) or []
 
+    if args.db_type == "i":
+        metadata = books.extract_image_metadata_chunk(metadata, l)
+
     [p.unlink() for p in Path(paths.SUB_TEMP_DIR).glob("*.srt")]
 
-    args.db["media"].insert_all(list(filter(None, metadata)), pk="path", alter=True, replace=True)  # type: ignore
+    args.db["media"].insert_all(list(filter(None, metadata)), pk="path", alter=True, replace=True)
 
 
 def find_new_files(args, path):
@@ -256,6 +70,8 @@ def find_new_files(args, path):
         scanned_files = paths.get_media_files(path)
     elif args.db_type == "t":
         scanned_files = paths.get_text_files(path, OCR=args.ocr, speech_recognition=args.speech_recognition)
+    elif args.db_type == "i":
+        scanned_files = paths.get_image_files(path)
     elif args.db_type == "f":
         # thanks to these people for making rglob fast https://bugs.python.org/issue26032
         scanned_files = [str(p) for p in Path(path).resolve().rglob("*")]
@@ -324,7 +140,7 @@ def extractor(args):
 def parse_args():
     parser = argparse.ArgumentParser(
         prog="library fsadd",
-        usage="""library fsadd [--audio | --video |  --text | --filesystem] [database] paths ...
+        usage="""library fsadd [--audio | --video | --image |  --text | --filesystem] [database] paths ...
 
     The default database type is video:
         library fsadd ./tv/
@@ -332,6 +148,9 @@ def parse_args():
 
     This will create audio.db in the current directory:
         library fsadd --audio ./music/
+
+    This will create image.db in the current directory:
+        library fsadd --image ./photos/
 
     This will create text.db in the current directory:
         library fsadd --text ./documents_and_books/
@@ -357,6 +176,7 @@ def parse_args():
     )
     db_type.add_argument("--video", action="store_const", dest="db_type", const="v", help="Create video database")
     db_type.add_argument("--text", action="store_const", dest="db_type", const="t", help="Create text database")
+    db_type.add_argument("--image", action="store_const", dest="db_type", const="i", help="Create image database")
     parser.set_defaults(db_type="v")
 
     parser.add_argument("--ocr", "--OCR", action="store_true", help=argparse.SUPPRESS)
@@ -381,6 +201,8 @@ def parse_args():
             args.database = "video.db"
         elif args.db_type == "t":
             args.database = "text.db"
+        elif args.db_type == "i":
+            args.database = "image.db"
         else:
             raise Exception(f"fs_extract for db_type {args.db_type} not implemented")
 

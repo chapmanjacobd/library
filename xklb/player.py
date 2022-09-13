@@ -303,6 +303,13 @@ def socket_play(args, m):
     sleep(args.interdimensional_cable)
 
 
+def find_xdg_application(media_file):
+    mimetype = cmd("xdg-mime", "query", "filetype", media_file).stdout
+    default_application = cmd("xdg-mime", "query", "default", mimetype).stdout
+    player_path = which(default_application.replace(".desktop", ""))
+    return player_path
+
+
 def local_player(args, m, media_file):
     player = generic_player(args)
     mpv = which("mpv.com") or which("mpv")
@@ -365,12 +372,6 @@ def local_player(args, m, media_file):
         else:
             delay = 10  # TODO: idk
         sleep(delay)
-
-def find_xdg_application(media_file):
-    mimetype = cmd("xdg-mime", "query", "filetype", media_file).stdout
-    default_application = cmd("xdg-mime", "query", "default", mimetype).stdout
-    player_path = which(default_application.replace(".desktop", ""))
-    return player_path
 
 
 def printer(args, query, bindings):

@@ -39,6 +39,7 @@ class SC:
     tubelisten = "tubelisten"
     tabs = "tabs"
     read = "read"
+    view = "view"
 
 
 def remove_whitespaace(string):
@@ -285,7 +286,7 @@ def combine(*list_):
     if len(list_) == 0:
         return None
 
-    no_comma = sum([s.split(",") for s in list_], [])
+    no_comma = sum([str(s).split(",") for s in list_], [])
     no_semicolon = sum([s.split(";") for s in no_comma], [])
     no_double_space = [_RE_COMBINE_WHITESPACE.sub(" ", s).strip() for s in no_semicolon]
     no_unknown = [x for x in no_double_space if x.lower() not in ["unknown", "none", "und", ""]]
