@@ -615,7 +615,7 @@ def construct_fs_query(args):
     query = f"""SELECT path
         , size
         {', duration' if args.action in [SC.listen, SC.watch] else ''}
-        {', cast(length(tags) / 5.0 / 220 * 60 as INT) + 10 duration' if args.action == SC.read else ''}
+        {', cast(length(tags) / 4.2 / 220 * 60 as INT) + 10 duration' if args.action == SC.read else ''}
         {', subtitle_count' if args.action == SC.watch else ''}
         {', sparseness' if args.action == SC.filesystem else ''}
         {', is_dir' if args.action == SC.filesystem else ''}
