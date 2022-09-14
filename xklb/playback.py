@@ -18,7 +18,10 @@ def parse_args(action):
     parser.add_argument("--verbose", "-v", action="count", default=0)
     args = parser.parse_args()
     if os.path.exists(args.mpv_socket):
-        args.mpv = MPV(start_mpv=False, ipc_socket=args.mpv_socket)
+        try:
+            args.mpv = MPV(start_mpv=False, ipc_socket=args.mpv_socket)
+        except ConnectionRefusedError:
+            Path(args.mpv_socket).unlink(missing_ok=True)
 
     log.info(utils.dict_filter_bool(args.__dict__))
 
