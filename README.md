@@ -139,21 +139,25 @@ Or with `systemd`:
 
     ~/.config/systemd/user/tabs.service
     [Unit]
-    Description=xklb daily browser tabs
+    Description=/usr/bin/fish -c lb tabs /home/xk/lb/tabs.db
+    Requires=mnt-d.mount
 
     [Service]
-    Environment="DISPLAY=:0"
-    ExecStart="library" "tabs" "/home/xk/lb/tabs.db"
+    Type=simple
     RemainAfterExit=no
+    Environment="DISPLAY=:0"
+    ExecStart="/usr/bin/fish" "-c" "lb tabs /home/xk/lb/tabs.db"
 
     ~/.config/systemd/user/tabs.timer
     [Unit]
-    Description=xklb daily browser tabs
+    Description=/usr/bin/fish -c lb tabs /home/xk/lb/tabs.db
 
     [Timer]
     Persistent=yes
     OnCalendar=*-*-* 9:58
-    RemainAfterElapse=yes
+
+    [Install]
+    WantedBy=timers.target
 
     systemctl --user daemon-reload
     systemctl --user enable --now tabs.service
