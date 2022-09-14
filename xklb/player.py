@@ -119,10 +119,8 @@ def remove_media(args, deleted_files: Union[str, list], quiet=False):
 def delete_media(args, media_file: str):
     if len(args.prefix) > 0:
         Path(media_file).unlink()
-    elif which("trash-put") is not None:
-        cmd("trash-put", media_file, strict=False)
     else:
-        Path(media_file).unlink()
+        utils.trash(media_file)
 
     mark_media_deleted(args, media_file)
 
@@ -246,7 +244,7 @@ def watch_chromecast(args, m, subtitles_file=None):
             catt_log = args.cc.play_url(m["path"], resolve=True, block=True)
 
     if subtitles_file:
-        Path(subtitles_file).unlink(missing_ok=True)
+        utils.trash(subtitles_file)
     return catt_log
 
 

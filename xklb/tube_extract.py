@@ -92,7 +92,7 @@ def get_subtitle_text(ydl: yt_dlp.YoutubeDL, video_path, req_sub_dict):
     paths = utils.conform([dl_sub(url) for url in urls])
 
     subs_text = subs_to_text(video_path, paths)
-    [Path(p).unlink(missing_ok=True) for p in paths]
+    [utils.trash(p) for p in paths]
 
     return subs_text
 

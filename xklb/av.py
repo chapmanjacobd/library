@@ -6,7 +6,7 @@ from typing import Dict
 import ffmpeg, mutagen
 from tinytag import TinyTag
 
-from xklb import subtitle, utils, paths
+from xklb import paths, subtitle, utils
 from xklb.utils import cmd, combine, log, safe_unpack
 
 
@@ -15,6 +15,7 @@ def get_provenance(file):
         return "YouTube"
 
     return None
+
 
 def get_subtitle_tags(f, streams, codec_types):
     attachment_count = sum([1 for s in codec_types if s == "attachment"])
@@ -110,13 +111,11 @@ def munge_av_tags(args, media, f):
         probe = ffmpeg.probe(f, show_chapters=None)
     except (KeyboardInterrupt, SystemExit):
         exit(130)
-    except Exception:
+    except Exception as e:
         print(f"[{f}] Failed reading header", file=sys.stderr)
+        log.debug(e)
         if args.delete_unplayable:
-            if which("trash-put") is not None:
-                cmd("trash-put", f, strict=False)
-            else:
-                Path(f).unlink()
+            utils.trash(f)
         return
 
     if not "format" in probe:
