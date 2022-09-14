@@ -115,7 +115,7 @@ Or with `systemd`:
 
     ~/.config/systemd/user/tabs.service
     [Unit]
-    Description=/usr/bin/fish -c lb tabs /home/xk/lb/tabs.db
+    Description=xklb daily browser tabs
     Requires=mnt-d.mount
 
     [Service]
@@ -126,7 +126,7 @@ Or with `systemd`:
 
     ~/.config/systemd/user/tabs.timer
     [Unit]
-    Description=/usr/bin/fish -c lb tabs /home/xk/lb/tabs.db
+    Description=xklb daily browser tabs timer
 
     [Timer]
     Persistent=yes
