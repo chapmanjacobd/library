@@ -1,4 +1,4 @@
-import re
+import re, sys
 
 from xklb.utils import combine, log, safe_unpack
 
@@ -21,8 +21,9 @@ def munge_book_tags(media, f):
     try:
         tags = _textract.process(f)
         tags = REGEX_SENTENCE_ENDS.split(tags.decode())
-    except Exception:
-        print(f)
+    except Exception as e:
+        print(f"[{f}] Failed reading file", file=sys.stderr)
+        log.debug(e)
         tags = []
     return {**media, "is_deleted": 0, "play_count": 0, "time_played": 0, "tags": combine(tags)}
 

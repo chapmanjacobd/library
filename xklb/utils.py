@@ -3,6 +3,7 @@ from collections.abc import Iterable
 from datetime import datetime, timedelta
 from functools import wraps
 from pathlib import Path
+from shutil import which
 from types import SimpleNamespace
 from typing import Dict, List, Union
 
@@ -40,67 +41,6 @@ class SC:
     tabs = "tabs"
     read = "read"
     view = "view"
-
-
-def remove_whitespaace(string):
-    return " ".join(string.split())
-
-
-def remove_text_inside_brackets(text, brackets="()[]"):  # thanks @jfs
-    count = [0] * (len(brackets) // 2)  # count open/close brackets
-    saved_chars = []
-    for character in text:
-        for i, b in enumerate(brackets):
-            if character == b:  # found bracket
-                kind, is_close = divmod(i, 2)
-                count[kind] += (-1) ** is_close  # `+1`: open, `-1`: close
-                if count[kind] < 0:  # unbalanced bracket
-                    count[kind] = 0  # keep it
-                else:  # found bracket to remove
-                    break
-        else:  # character is not a [balanced] bracket
-            if not any(count):  # outside brackets
-                saved_chars.append(character)
-    return "".join(saved_chars)
-
-
-def get_ip_of_chromecast(device_name):
-    cast_infos, browser = discovery.discover_listed_chromecasts(friendly_names=[device_name])
-    browser.stop_discovery()
-    if len(cast_infos) == 0:
-        print("Target chromecast device not found")
-        exit(53)
-
-    return cast_infos[0].host
-
-
-def mpv_enrich(args, media):
-    for m in media:
-        md5 = hashlib.md5(m["path"].encode("utf-8")).hexdigest().upper()
-        if Path(args.watch_later_directory, md5).exists():
-            m["time_partial_first"] = int(Path(args.watch_later_directory, md5).stat().st_ctime)
-            m["time_partial_last"] = int(Path(args.watch_later_directory, md5).stat().st_mtime)
-        else:
-            m["time_partial_first"] = 0
-            m["time_partial_last"] = 0
-
-    return sorted(media, key=lambda m: m.get("time_partial_first") or 0, reverse=True)
-
-
-def mpv_enrich2(args, media):
-    md5s = {hashlib.md5(m["path"].encode("utf-8")).hexdigest().upper(): m for m in media}
-    paths = list(Path(args.watch_later_directory).glob("*"))
-    filtered_list = [
-        {
-            **md5s.get(p.stem),  # type: ignore
-            "time_partial_first": int(p.stat().st_ctime),
-            "time_partial_last": int(p.stat().st_mtime),
-        }
-        for p in paths
-        if md5s.get(p.stem)
-    ]
-
-    return sorted(filtered_list, key=lambda m: m.get("time_partial_first") or 0, reverse=False)
 
 
 def os_bg_kwargs():
@@ -175,21 +115,6 @@ def conform(list_: Union[str, Iterable]):
     return list_
 
 
-def dict_filter_bool(kwargs):
-    return {k: v for k, v in kwargs.items() if v}
-
-
-def list_dict_filter_bool(db_resp):
-    for idx, d in enumerate(db_resp):
-        d = dict_filter_bool(d)
-        if len(d) == 0:
-            db_resp[idx] = None
-        else:
-            db_resp[idx] = d
-    db_resp = conform(db_resp)
-    return db_resp
-
-
 def cmd(*command, strict=True, cwd=None, quiet=True, interactive=False, **kwargs):
     EXP_FILTER = re.compile(
         "|".join(
@@ -232,6 +157,90 @@ def cmd(*command, strict=True, cwd=None, quiet=True, interactive=False, **kwargs
             raise Exception(f"[{command}] exited {r.returncode}")
 
     return r
+
+
+def trash(f: Union[Path, str]):
+    trash_put = which("trash-put") or which("trash")
+    if trash_put is not None:
+        cmd(trash_put, f, strict=False)
+    else:
+        Path(f).unlink(missing_ok=True)
+
+
+def remove_whitespaace(string):
+    return " ".join(string.split())
+
+
+def remove_text_inside_brackets(text, brackets="()[]"):  # thanks @jfs
+    count = [0] * (len(brackets) // 2)  # count open/close brackets
+    saved_chars = []
+    for character in text:
+        for i, b in enumerate(brackets):
+            if character == b:  # found bracket
+                kind, is_close = divmod(i, 2)
+                count[kind] += (-1) ** is_close  # `+1`: open, `-1`: close
+                if count[kind] < 0:  # unbalanced bracket
+                    count[kind] = 0  # keep it
+                else:  # found bracket to remove
+                    break
+        else:  # character is not a [balanced] bracket
+            if not any(count):  # outside brackets
+                saved_chars.append(character)
+    return "".join(saved_chars)
+
+
+def get_ip_of_chromecast(device_name):
+    cast_infos, browser = discovery.discover_listed_chromecasts(friendly_names=[device_name])
+    browser.stop_discovery()
+    if len(cast_infos) == 0:
+        print("Target chromecast device not found")
+        exit(53)
+
+    return cast_infos[0].host
+
+
+def mpv_enrich(args, media):
+    for m in media:
+        md5 = hashlib.md5(m["path"].encode("utf-8")).hexdigest().upper()
+        if Path(args.watch_later_directory, md5).exists():
+            m["time_partial_first"] = int(Path(args.watch_later_directory, md5).stat().st_ctime)
+            m["time_partial_last"] = int(Path(args.watch_later_directory, md5).stat().st_mtime)
+        else:
+            m["time_partial_first"] = 0
+            m["time_partial_last"] = 0
+
+    return sorted(media, key=lambda m: m.get("time_partial_first") or 0, reverse=True)
+
+
+def mpv_enrich2(args, media):
+    md5s = {hashlib.md5(m["path"].encode("utf-8")).hexdigest().upper(): m for m in media}
+    paths = list(Path(args.watch_later_directory).glob("*"))
+    filtered_list = [
+        {
+            **md5s.get(p.stem),  # type: ignore
+            "time_partial_first": int(p.stat().st_ctime),
+            "time_partial_last": int(p.stat().st_mtime),
+        }
+        for p in paths
+        if md5s.get(p.stem)
+    ]
+
+    return sorted(filtered_list, key=lambda m: m.get("time_partial_first") or 0, reverse=False)
+
+
+def dict_filter_bool(kwargs):
+    return {k: v for k, v in kwargs.items() if v}
+
+
+def list_dict_filter_bool(db_resp):
+    for idx, d in enumerate(db_resp):
+        d = dict_filter_bool(d)
+        if len(d) == 0:
+            db_resp[idx] = None
+        else:
+            db_resp[idx] = d
+    db_resp = conform(db_resp)
+    return db_resp
 
 
 def cmd_interactive(*cmd, **kwargs):

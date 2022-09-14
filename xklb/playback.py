@@ -96,9 +96,9 @@ def playback_next():
         Path(paths.CAST_NOW_PLAYING).unlink(missing_ok=True)
         catt_stop(args)
         if args.delete:
-            Path(playing["catt"]).unlink(missing_ok=True)
+            utils.trash(playing["catt"])
 
     if playing["mpv"]:
         args.mpv.command("playlist_next", "force")
         if args.delete:
-            Path(playing["mpv"]).unlink(missing_ok=True)
+            utils.trash(playing["mpv"])
