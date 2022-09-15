@@ -15,6 +15,97 @@ from xklb import paths, utils
 from xklb.utils import SC, SQLITE_PARAM_LIMIT, cmd, cmd_interactive, human_time, log, os_bg_kwargs
 
 
+def generic_player(args):
+    if platform.system() == "Linux":
+        player = ["xdg-open"]
+    elif any([p in platform.system() for p in ["Windows", "_NT-", "MSYS"]]):
+        if shutil.which("cygstart"):
+            player = ["cygstart"]
+        else:
+            player = ["start", ""]
+    else:
+        player = ["open"]
+    args.player_need_sleep = True
+    return player
+
+
+def calculate_duration(args, m):
+    start = 0
+    end = m["duration"]
+
+    if args.start:
+        if args.start == "wadsworth":
+            start = m["duration"] * 0.3
+        else:
+            start = args.start
+    if args.end:
+        if args.end == "dawsworth":
+            end = m["duration"] * 0.65
+        elif "+" in args.end:
+            end = (m["duration"] * 0.3) + args.end
+        else:
+            end = args.end
+
+    return start, end
+
+
+def find_xdg_application(media_file):
+    mimetype = cmd("xdg-mime", "query", "filetype", media_file).stdout
+    default_application = cmd("xdg-mime", "query", "default", mimetype).stdout
+    player_path = which(default_application.replace(".desktop", ""))
+    return player_path
+
+
+def parse(args, m, media_file):
+    player = generic_player(args)
+    mpv = which("mpv.com") or which("mpv")
+
+    if args.player:
+        player = args.player
+        args.player_need_sleep = False
+
+    elif args.action in [SC.read]:
+        player_path = find_xdg_application(media_file)
+        log.info(player_path)
+        pass
+
+    elif mpv:
+        args.player_need_sleep = False
+        player = [mpv]
+        if args.action in [SC.listen, SC.tubelisten]:
+            player.extend([f"--input-ipc-server={args.mpv_socket}", "--no-video", "--keep-open=no", "--really-quiet"])
+        elif args.action in [SC.watch, SC.tubewatch]:
+            player.extend(["--fs", "--force-window=yes", "--really-quiet"])
+
+        if args.action in [SC.tubelisten, SC.tubewatch]:
+            player.extend(["--script-opts=ytdl_hook-try_ytdl_first=yes"])
+
+        if args.action in [SC.watch, SC.listen]:
+            start, end = calculate_duration(args, m)
+            if end == 0:
+                return
+            if start != 0:
+                player.extend([f"--start={int(start)}", "--no-save-position-on-quit"])
+            if end != m["duration"]:
+                player.extend([f"--end={int(end)}"])
+
+        if args.action == SC.watch:
+            if m["subtitle_count"] > 0:
+                player.extend(args.player_args_sub)
+            elif m.get("time_partial_first") is not None or m["size"] > 500 * 1000000:  # 500 MB
+                pass
+            else:
+                player.extend(args.player_args_no_sub)
+
+    elif system() == "Linux":
+        player_path = find_xdg_application(media_file)
+        if player_path:
+            args.player_need_sleep = False
+            player = [player_path]
+
+    return player
+
+
 def mv_to_keep_folder(args, media_file: str):
     keep_path = Path(args.keep_dir)
     if not keep_path.is_absolute():
@@ -135,6 +226,17 @@ def delete_playlists(args, playlists):
         )
 
 
+def override_sort(string):
+    YEAR_MONTH = lambda var: f"cast(strftime('%Y%m', datetime({var}, 'unixepoch')) as int)"
+
+    return (
+        string.replace("month_created", YEAR_MONTH("time_created"))
+        .replace("month_modified", YEAR_MONTH("time_modified"))
+        .replace("random", "random()")
+        .replace("priority", " play_count, ntile(1000) over (order by size/duration) desc")
+    )
+
+
 def get_ordinal_media(args, path):
     similar_videos = []
     candidate = str(path)
@@ -181,40 +283,6 @@ def get_ordinal_media(args, path):
             return path
 
     return similar_videos[0]
-
-
-def generic_player(args):
-    if platform.system() == "Linux":
-        player = ["xdg-open"]
-    elif any([p in platform.system() for p in ["Windows", "_NT-", "MSYS"]]):
-        if shutil.which("cygstart"):
-            player = ["cygstart"]
-        else:
-            player = ["start", ""]
-    else:
-        player = ["open"]
-    args.player_need_sleep = True
-    return player
-
-
-def calculate_duration(args, m):
-    start = 0
-    end = m["duration"]
-
-    if args.start:
-        if args.start == "wadsworth":
-            start = m["duration"] * 0.3
-        else:
-            start = args.start
-    if args.end:
-        if args.end == "dawsworth":
-            end = m["duration"] * 0.65
-        elif "+" in args.end:
-            end = (m["duration"] * 0.3) + args.end
-        else:
-            end = args.end
-
-    return start, end
 
 
 def watch_chromecast(args, m, subtitles_file=None):
@@ -301,64 +369,11 @@ def socket_play(args, m):
     sleep(args.interdimensional_cable)
 
 
-def find_xdg_application(media_file):
-    mimetype = cmd("xdg-mime", "query", "filetype", media_file).stdout
-    default_application = cmd("xdg-mime", "query", "default", mimetype).stdout
-    player_path = which(default_application.replace(".desktop", ""))
-    return player_path
-
-
 def local_player(args, m, media_file):
-    player = generic_player(args)
-    mpv = which("mpv.com") or which("mpv")
-
-    if args.player:
-        player = args.player
-        args.player_need_sleep = False
-
-    elif args.action in [SC.read]:
-        player_path = find_xdg_application(media_file)
-        log.info(player_path)
-        pass
-
-    elif mpv:
-        args.player_need_sleep = False
-        player = [mpv]
-        if args.action in [SC.listen, SC.tubelisten]:
-            player.extend([f"--input-ipc-server={args.mpv_socket}", "--no-video", "--keep-open=no", "--really-quiet"])
-        elif args.action in [SC.watch, SC.tubewatch]:
-            player.extend(["--fs", "--force-window=yes", "--really-quiet"])
-
-        if args.action in [SC.tubelisten, SC.tubewatch]:
-            player.extend(["--script-opts=ytdl_hook-try_ytdl_first=yes"])
-
-        if args.action in [SC.watch, SC.listen]:
-            start, end = calculate_duration(args, m)
-            if end == 0:
-                return
-            if start != 0:
-                player.extend([f"--start={int(start)}", "--no-save-position-on-quit"])
-            if end != m["duration"]:
-                player.extend([f"--end={int(end)}"])
-
-        if args.action == SC.watch:
-            if m["subtitle_count"] > 0:
-                player.extend(args.player_args_sub)
-            elif m.get("time_partial_first") is not None or m["size"] > 500 * 1000000:  # 500 MB
-                pass
-            else:
-                player.extend(args.player_args_no_sub)
-
-    elif system() == "Linux":
-        player_path = find_xdg_application(media_file)
-        if player_path:
-            args.player_need_sleep = False
-            player = [player_path]
-
     if system() == "Windows" or args.action in [SC.watch, SC.tubewatch]:
-        r = cmd(*player, media_file, strict=False)
+        r = cmd(*args.player, media_file, strict=False)
     else:  # args.action in [SC.listen, SC.tubelisten]
-        r = cmd_interactive(*player, media_file, strict=False)
+        r = cmd_interactive(*args.player, media_file, strict=False)
     if r.returncode != 0:
         print("Player exited with code", r.returncode)
         if not args.ignore_errors:
@@ -461,14 +476,3 @@ def printer(args, query, bindings):
             duration = human_time(duration)
             if not "a" in args.print:
                 print("Total duration:", duration)
-
-
-def override_sort(string):
-    YEAR_MONTH = lambda var: f"cast(strftime('%Y%m', datetime({var}, 'unixepoch')) as int)"
-
-    return (
-        string.replace("month_created", YEAR_MONTH("time_created"))
-        .replace("month_modified", YEAR_MONTH("time_modified"))
-        .replace("random", "random()")
-        .replace("priority", " play_count, ntile(1000) over (order by size/duration) desc")
-    )

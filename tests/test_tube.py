@@ -76,6 +76,6 @@ class TestTube(unittest.TestCase):
         tube_update([*tube_db, "--yt-dlp-config", "TEST2=4 TEST3=3"])
         out = play_mocked.call_args[0][2]
         assert out is not None
-        assert play_mocked.call_args[0][2]['TEST1'] == '1'
-        assert play_mocked.call_args[0][2]['TEST2'] == '4'
-        assert play_mocked.call_args[0][2]['TEST3'] == '3'
+        assert play_mocked.call_args[0][2]["TEST1"] == "1"
+        assert play_mocked.call_args[0][2]["TEST2"] == "4"
+        assert play_mocked.call_args[0][2]["TEST3"] == "3"
