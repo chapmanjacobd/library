@@ -430,13 +430,5 @@ Explore `library` databases in your browser
     datasette tv.db
 
 ### TODOs (PRs welcome)
-
-- test windows: now, next, stop
-- tube: remember passed in yt-dlp arguments per playlist for tube-update
-- tube: make sure playlistless media doesn't save to the playlists table
-- tube: basic tests
-- all: more test coverage -- https://hypothesis.readthedocs.io/en/latest/quickstart.html
-- all: follow yt-dlp print arg syntax
-- all: follow fd-find size arg syntax
-- fs: split_by_silence without modifying files
+- more test coverage -- https://hypothesis.readthedocs.io/en/latest/quickstart.html
 

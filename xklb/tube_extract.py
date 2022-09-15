@@ -1,4 +1,4 @@
-import argparse, sys, tempfile
+import argparse, json, sys, tempfile
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
@@ -51,7 +51,16 @@ def parse_args(action, usage):
     Path(args.database).touch()
     args.db = db.connect(args)
 
-    ydl_opts = {**default_ydl_opts, **args.yt_dlp_config}
+    log.info(utils.dict_filter_bool(args.__dict__))
+
+    return args
+
+
+def parse_ydl_opts(args, saved_opts=None):
+    if saved_opts is None:
+        saved_opts = {}
+
+    ydl_opts = {**default_ydl_opts, **saved_opts, **args.yt_dlp_config}
     if args.verbose == 0:
         ydl_opts.update(ignoreerrors="only_download")
 
@@ -60,11 +69,7 @@ def parse_args(action, usage):
     if args.playlists and not args.no_sanitize:
         args.playlists = [sanitize_url(args, path) for path in args.playlists]
 
-    args.ydl_opts = ydl_opts
-
-    log.info(utils.dict_filter_bool(args.__dict__))
-
-    return args
+    return ydl_opts
 
 
 def supported(url):  # thank you @dbr
@@ -193,7 +198,8 @@ def consolidate(ydl: yt_dlp.YoutubeDL, playlist_path, v):
 
     cv = dict()
     cv["path"] = safe_unpack(v.pop("webpage_url", None), v.pop("url", None), v.pop("original_url", None))
-    cv["size"] = v.pop("filesize_approx", None)
+    size_bytes = v.pop("filesize_approx", None)
+    cv["size"] = 0 if not size_bytes else int(size_bytes)
     cv["time_created"] = upload_date
     duration = v.pop("duration", None)
     cv["duration"] = 0 if not duration else int(duration)
@@ -263,7 +269,7 @@ def log_problem(args, playlist_path):
         log.warning("Start of known playlist reached %s", playlist_path)
 
 
-def process_playlist(args, playlist_path) -> Union[List[Dict], None]:
+def process_playlist(args, playlist_path, ydl_opts) -> Union[List[Dict], None]:
     class ExistingPlaylistVideoReached(yt_dlp.DownloadCancelled):
         pass
 
@@ -296,6 +302,7 @@ def process_playlist(args, playlist_path) -> Union[List[Dict], None]:
                 path=playlist_path,
                 uploader=safe_unpack(pl.get("playlist_uploader_id"), pl.get("playlist_uploader")),
                 id=pl.get("playlist_id"),
+                yt_dlp_config=args.yt_dlp_config,
             )
             if entry["path"] == pl["path"] or not pl.get("id"):
                 log.warning("Importing playlist-less media %s", pl["path"])
@@ -304,7 +311,7 @@ def process_playlist(args, playlist_path) -> Union[List[Dict], None]:
             else:
                 args.db["playlists"].insert(pl, pk="path", alter=True, replace=True)  # type: ignore
 
-    with yt_dlp.YoutubeDL(args.ydl_opts) as ydl:
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.add_post_processor(AddToArchivePP(), when="pre_process")
 
         try:
@@ -316,10 +323,10 @@ def process_playlist(args, playlist_path) -> Union[List[Dict], None]:
                 log_problem(args, playlist_path)
 
 
-def get_extra_metadata(args, playlist_path) -> Union[List[Dict], None]:
+def get_extra_metadata(args, playlist_path, ydl_opts) -> Union[List[Dict], None]:
     with yt_dlp.YoutubeDL(
         {
-            **args.ydl_opts,
+            **ydl_opts,
             "subtitlesformat": "srt/best",
             "writesubtitles": True,
             "writeautomaticsub": True,
@@ -333,13 +340,13 @@ def get_extra_metadata(args, playlist_path) -> Union[List[Dict], None]:
     ) as ydl:
         videos = args.db.execute(
             """
-                select path, ie_key, play_count, time_played from media
-                where
-                    width is null
-                    and path not like '%playlist%'
-                    and playlist_path = ?
-                order by random()
-                """,
+            select path, ie_key, play_count, time_played from media
+            where
+                width is null
+                and path not like '%playlist%'
+                and playlist_path = ?
+            order by random()
+            """,
             [playlist_path],
         ).fetchall()
 
@@ -356,7 +363,6 @@ def get_extra_metadata(args, playlist_path) -> Union[List[Dict], None]:
             entry["play_count"] = play_count
             entry["time_played"] = time_played
 
-            args.db.execute("DELETE FROM media where path = ? and ie_key = ?", [path, ie_key])
             save_entries(args, [entry])
 
             current_video_count += 1
@@ -366,29 +372,18 @@ def get_extra_metadata(args, playlist_path) -> Union[List[Dict], None]:
             )
 
 
-def get_playlists(args, include_playlistless_media=True):
+def get_playlists(args):
     try:
-        if include_playlistless_media:
-            known_playlists = [d["path"] for d in args.db.query("select path from playlists order by random()")]
-
-        else:
-            known_playlists = [
-                d["playlist_path"]
-                for d in args.db.query(
-                    """
-                    select playlist_path from media
-                    group by playlist_path
-                    having count(playlist_path) > 1
-                    order by random()
-                    """
-                )
-            ]
+        known_playlists = list(args.db.query("select path, yt_dlp_config from playlists order by random()"))
     except OperationalError:
         known_playlists = []
     return known_playlists
 
 
-def tube_add():
+def tube_add(args=None):
+    if args:
+        sys.argv[1:] = args
+
     args = parse_args(
         "add",
         usage="""library tubeadd [database] playlists ...
@@ -405,28 +400,31 @@ def tube_add():
         library tubeupdate tw.db --extra
 """,
     )
-    known_playlists = get_playlists(args)
+    known_playlists = [p["path"] for p in get_playlists(args)]
 
-    for playlist in args.playlists:
-        if playlist in known_playlists:
-            log.warning("Skipping known playlist: %s", playlist)
+    for path in args.playlists:
+        if path in known_playlists:
+            log.warning("Skipping known playlist: %s", path)
             continue
 
-        if args.safe and not supported(playlist):
-            log.warning("[safe_mode] unsupported playlist: %s", playlist)
+        if args.safe and not supported(path):
+            log.warning("[safe_mode] unsupported playlist: %s", path)
             continue
 
         start = timer()
-        process_playlist(args, playlist)
+        process_playlist(args, path, parse_ydl_opts(args))
         end = timer()
         log.info(f"{end - start:.1f} seconds to add new playlist and fetch videos")
 
         if args.extra:
             log.warning("Getting extra metadata")
-            get_extra_metadata(args, playlist)
+            get_extra_metadata(args, path, parse_ydl_opts(args))
 
 
-def tube_update():
+def tube_update(args=None):
+    if args:
+        sys.argv[1:] = args
+
     args = parse_args(
         "update",
         usage="""usage: library tubeupdate [--optimize] [database] [playlists ...]
@@ -451,21 +449,24 @@ def tube_update():
         library tubeupdate educational.db --extra https://www.youtube.com/channel/UCBsEUcR-ezAuxB2WlfeENvA/videos
 """,
     )
-    known_playlists = get_playlists(args)
+    playlists = get_playlists(args)
+    known_playlists = [p["path"] for p in playlists]
+    playlists = [{"path": p, "yt_dlp_config": args.yt_dlp_config} for p in args.playlists] or [
+        {**d, "yt_dlp_config": json.loads(d["yt_dlp_config"])} for d in playlists
+    ]
 
-    for playlist in args.playlists or get_playlists(args, include_playlistless_media=False):
-
-        if playlist not in known_playlists:
-            log.warning("Skipping unknown playlist: %s", playlist)
+    for d in playlists:
+        if d['path'] not in known_playlists:
+            log.warning("Skipping unknown playlist: %s (add new playlist with tubeadd)", d['path'])
             continue
 
         start = timer()
-        process_playlist(args, playlist)
+        process_playlist(args, d['path'], parse_ydl_opts(args, saved_opts=d['yt_dlp_config']))
         end = timer()
         log.info(f"{end - start:.1f} seconds to update playlist")
 
         if args.extra:
             log.warning("Getting extra metadata")
-            get_extra_metadata(args, playlist)
+            get_extra_metadata(args, d['path'], parse_ydl_opts(args, saved_opts=d['yt_dlp_config']))
 
     db.optimize(args)
