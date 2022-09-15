@@ -6,19 +6,16 @@ import ffmpeg, sqlite_utils
 from catt.api import CattDevice
 from rich.prompt import Confirm
 
-from xklb import db, paths, utils
+from xklb import db, paths, player, utils
 from xklb.player import (
     delete_media,
     get_ordinal_media,
     listen_chromecast,
-    local_player,
     mark_media_deleted,
     mark_media_watched,
     mv_to_keep_folder,
     override_sort,
-    printer,
     remove_media,
-    socket_play,
     watch_chromecast,
 )
 from xklb.utils import DEFAULT_PLAY_QUEUE, SC, cmd, log
@@ -452,11 +449,11 @@ def chromecast_play(args, m):
         raise NotImplementedError
 
     if catt_log:
-        if "Heartbeat timeout, resetting connection" in catt_log.stderr:
+        if catt_log.stderr is None or catt_log.stderr == "":
+            if not args.with_local:
+                raise Exception("catt does not exit nonzero? but something might have gone wrong")
+        elif "Heartbeat timeout, resetting connection" in catt_log.stderr:
             raise Exception("Media is possibly partially unwatched")
-
-        if catt_log.stderr == "":
-            raise Exception("catt does not exit nonzero? but something might have gone wrong")
 
 
 def is_play_in_order_lvl2(args, m, media_file):
@@ -490,14 +487,14 @@ def play(args, m: Dict):
     else:
         print(media_file)
 
+    args.player = player.parse(args, m, media_file)
+
     if args.chromecast:
         chromecast_play(args, m)
-
     elif args.interdimensional_cable:
-        socket_play(args, m)
-
+        player.socket_play(args, m)
     else:
-        local_player(args, m, media_file)
+        player.local_player(args, m, media_file)
 
     if args.action in [SC.listen, SC.watch, SC.tubelisten, SC.tubewatch] and not args.interdimensional_cable:
         post_act(args, media_file)
@@ -645,7 +642,7 @@ def process_playqueue(args, construct_query=construct_fs_query):
     query, bindings = construct_query(args)
 
     if args.print:
-        return printer(args, query, bindings)
+        return player.printer(args, query, bindings)
 
     media = list(args.db.query(query, bindings))
 

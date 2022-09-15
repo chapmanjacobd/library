@@ -456,17 +456,17 @@ def tube_update(args=None):
     ]
 
     for d in playlists:
-        if d['path'] not in known_playlists:
-            log.warning("Skipping unknown playlist: %s (add new playlist with tubeadd)", d['path'])
+        if d["path"] not in known_playlists:
+            log.warning("Skipping unknown playlist: %s (add new playlist with tubeadd)", d["path"])
             continue
 
         start = timer()
-        process_playlist(args, d['path'], parse_ydl_opts(args, saved_opts=d['yt_dlp_config']))
+        process_playlist(args, d["path"], parse_ydl_opts(args, saved_opts=d["yt_dlp_config"]))
         end = timer()
         log.info(f"{end - start:.1f} seconds to update playlist")
 
         if args.extra:
             log.warning("Getting extra metadata")
-            get_extra_metadata(args, d['path'], parse_ydl_opts(args, saved_opts=d['yt_dlp_config']))
+            get_extra_metadata(args, d["path"], parse_ydl_opts(args, saved_opts=d["yt_dlp_config"]))
 
     db.optimize(args)
