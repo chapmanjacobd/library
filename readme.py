@@ -229,6 +229,12 @@ Explore `library` databases in your browser
     datasette tv.db
 
 ### TODOs (PRs welcome)
+- dl: add downloading functionality: is_downloaded, download_folder
+- dl: lineage? integrate fs, tube, and dl?
+- dl: audio/video/photo download profiles
+- dl: yt-dlp, gallery-dl, bdfr
+- dl: bandcamp no id
+- dl: wclone?
 - more test coverage -- https://hypothesis.readthedocs.io/en/latest/quickstart.html
 """
 )
