@@ -166,7 +166,7 @@ yt-dlp = ">=2022.6.22.1"
 
 [[package]]
 name = "certifi"
-version = "2022.6.15.2"
+version = "2022.9.14"
 description = "Python package for providing Mozilla's CA Bundle."
 category = "main"
 optional = false
@@ -1288,8 +1288,8 @@ catt = [
     {file = "catt-0.12.9.tar.gz", hash = "sha256:5aab8745872e2ed57602ce3d045da08741fdf08c319d6280cf8da07ae216872d"},
 ]
 certifi = [
-    {file = "certifi-2022.6.15.2-py3-none-any.whl", hash = "sha256:0aa1a42fbd57645fabeb6290a7687c21755b0344ecaeaa05f4e9f6207ae2e9a8"},
-    {file = "certifi-2022.6.15.2.tar.gz", hash = "sha256:aa08c101214127b9b0472ca6338315113c9487d45376fd3e669201b477c71003"},
+    {file = "certifi-2022.9.14-py3-none-any.whl", hash = "sha256:e232343de1ab72c2aa521b625c80f699e356830fd0e2c620b465b304b17b0516"},
+    {file = "certifi-2022.9.14.tar.gz", hash = "sha256:36973885b9542e6bd01dea287b2b4b3b21236307c56324fcc3f1160f2d655ed5"},
 ]
 cffi = [
     {file = "cffi-1.15.1-cp27-cp27m-macosx_10_9_x86_64.whl", hash = "sha256:a66d3508133af6e8548451b25058d5812812ec3798c886bf38ed24a98216fab2"},
