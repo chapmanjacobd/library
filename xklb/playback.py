@@ -81,7 +81,7 @@ def playback_stop():
     # else:
     #     [kill_process(s) for s in ["python.*xklb", "bin/lb", "bin/library", "mpv"]]
 
-    if playing["catt"]:
+    if playing["catt"] or not any(playing.values()):
         kill_process("catt")
         catt_stop(args)
 
