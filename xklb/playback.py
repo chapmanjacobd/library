@@ -95,7 +95,7 @@ def playback_next():
     playing = _now_playing(args)
 
     # TODO: figure out if catt or mpv is stale
-    if playing["catt"]:
+    if playing["catt"] or not any(playing.values()):
         Path(paths.CAST_NOW_PLAYING).unlink(missing_ok=True)
         catt_stop(args)
         if args.delete:
