@@ -116,7 +116,6 @@ Or with `systemd`:
     ~/.config/systemd/user/tabs.service
     [Unit]
     Description=xklb daily browser tabs
-    Requires=mnt-d.mount
 
     [Service]
     Type=simple
