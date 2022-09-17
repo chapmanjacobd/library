@@ -3,7 +3,7 @@ import argparse, sys
 import scripts
 from xklb.fs_actions import filesystem, listen, read, view, watch
 from xklb.fs_extract import main as fs_add
-from xklb.playback import playback_next, playback_now, playback_stop
+from xklb.playback import playback_next, playback_now, playback_pause, playback_stop
 from xklb.subtitle import main as subtitle
 from xklb.tabs_actions import tabs
 from xklb.tabs_extract import tabs_add
@@ -37,6 +37,7 @@ def lb_usage():
       now                          Print what is currently playing
       next                         Play next file
       stop                         Stop all playback
+      pause                        Pause all playback
 
     browser tab subcommands:
       tabsadd                      Create a tabs database; Add URLs
@@ -100,6 +101,8 @@ def lb(args=None):
     subp_playback_next.set_defaults(func=playback_next)
     subp_playback_stop = subparsers.add_parser("stop", add_help=False)
     subp_playback_stop.set_defaults(func=playback_stop)
+    subp_playback_pause = subparsers.add_parser("pause", add_help=False)
+    subp_playback_pause.set_defaults(func=playback_pause)
 
     subp_tabsadd = subparsers.add_parser("tabsadd", add_help=False)
     subp_tabsadd.set_defaults(func=tabs_add)
