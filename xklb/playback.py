@@ -65,6 +65,13 @@ def catt_stop(args):
     cmd("catt", *catt_device, "stop")
 
 
+def catt_pause(args):
+    catt_device = []
+    if args.chromecast_device:
+        catt_device = ["-d", args.chromecast_device]
+    cmd("catt", *catt_device, "play_toggle")
+
+
 def kill_process(name):
     if any([p in platform.system() for p in ["Windows", "_NT-", "MSYS"]]):
         cmd("taskkill", "/f", "/im", name)
@@ -78,8 +85,6 @@ def playback_stop():
     playing = _now_playing(args)
     if playing["mpv"]:
         args.mpv.command("loadfile", "/dev/null")  # make mpv exit with code 3
-    # else:
-    #     [kill_process(s) for s in ["python.*xklb", "bin/lb", "bin/library", "mpv"]]
 
     if playing["catt"] or not any(playing.values()):
         kill_process("catt")
@@ -89,12 +94,25 @@ def playback_stop():
     Path(args.mpv_socket).unlink(missing_ok=True)
 
 
+def playback_pause():
+    args = parse_args("next")
+    playing = _now_playing(args)
+
+    if playing["catt"]:
+        catt_pause(args)
+
+    if playing["mpv"]:
+        args.mpv.command("cycle", "pause")
+        args.mpv.terminate()
+
+
 def playback_next():
     args = parse_args("next")
 
     playing = _now_playing(args)
 
     # TODO: figure out if catt or mpv is stale
+    # [kill_process(s) for s in ["python.*xklb", "bin/lb", "bin/library", "mpv"]]
     if playing["catt"] or not any(playing.values()):
         Path(paths.CAST_NOW_PLAYING).unlink(missing_ok=True)
         catt_stop(args)

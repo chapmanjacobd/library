@@ -428,7 +428,7 @@ def printer(args, query, bindings):
             if not Path(f).exists():
                 mark_media_deleted(args, f)
                 return printer(args, query, bindings)
-            print(f)
+            print(quote(f))
         else:
             if not args.cols:
                 args.cols = ["path"]
