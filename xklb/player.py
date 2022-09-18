@@ -84,10 +84,13 @@ def parse(args, m=None, media_file=None) -> list[str]:
         if args.action in [SC.listen, SC.tubelisten]:
             player.extend([f"--input-ipc-server={args.mpv_socket}", "--no-video", "--keep-open=no", "--really-quiet"])
         elif args.action in [SC.watch, SC.tubewatch]:
-            player.extend(["--fs", "--force-window=yes", "--really-quiet"])
+            player.extend(["--force-window=yes", "--really-quiet"])
 
         if args.action in [SC.tubelisten, SC.tubewatch]:
             player.extend(["--script-opts=ytdl_hook-try_ytdl_first=yes"])
+
+        if not args.multiple_playback:
+            player.extend(["--fs"])
 
         if m and args.action in [SC.watch, SC.listen]:
             start, end = calculate_duration(args, m)
@@ -375,7 +378,7 @@ def geom_walk(v=1, h=1):
     geoms = []
     for v_idx in range(v):
         for h_idx in range(h):
-            geoms.append(geom(va, ha, va * v_idx * 2, ha * h_idx))
+            geoms.append(geom(va, ha, va * v_idx * v, ha * h_idx * h))
 
     return geoms
 
@@ -495,44 +498,38 @@ def get_multiple_player_template(args):
 def multiple_player(args, media):
     def open_player(template_args):
         m = media.pop()
-        return subprocess.Popen([*args.player, *template_args, "--", m["path"]], **os_bg_kwargs())
+        mp_args = ["--window-scale=1", "--no-border", "--no-keepaspect-window"]
+        return subprocess.Popen([*args.player, *mp_args, *template_args, "--", m["path"]], **os_bg_kwargs())
 
     args.player = parse(args)
 
     template = get_multiple_player_template(args)
     pids = []
 
-    while media:
-        for t_idx, t in enumerate(template):
-            try:
-                player_process = pids[t_idx]
-            except IndexError:
-                pids.append(open_player(t))
-            else:
-                # check if still running
-                if player_process.poll() is not None:
-                    r = utils.Pclose(player_process)
-                    r.check_returncode()
-                    pids[t_idx] = open_player(t)
+    try:
+        while media:
+            for t_idx, t in enumerate(template):
+                try:
+                    player_process = pids[t_idx]
+                except IndexError:
+                    log.debug("%s IndexError", t_idx)
+                    pids.append(open_player(t))
+                else:
+                    log.debug("%s Check if still running", t_idx)
+                    if player_process.poll() is not None:
+                        r = utils.Pclose(player_process)
+                        if r.returncode != 0:
+                            print("Player exited with code", r.returncode)
+                            if not args.ignore_errors:
+                                exit(r.returncode)
 
-        sleep(0.5)  # stagger like Sir Michael Philip Jagger
+                        pids[t_idx] = open_player(t)
 
-    """
-
-    --no-fixed-vo, --fixed-vo
-        --no-fixed-vo enforces closing and reopening the video window for multiple files (one (un)initialization for each file).
-
-    --force-window-position
-        Forcefully move mpv's video output window to default location whenever there is a change in video parameters, video stream or file. This used to be the default behavior. Currently only affects X11 VOs.
-    --no-keepaspect, --keepaspect
-        --no-keepaspect will always stretch the video to window size, and will disable the window manager hints that force the window aspect ratio. (Ignored in fullscreen mode.)
-    --no-keepaspect-window, --keepaspect-window
-        --keepaspect-window (the default) will lock the window size to the video aspect. --no-keepaspect-window disables this behavior, and will instead add black bars if window aspect and video aspect mismatch. Whether this actually works depends on the VO backend. (Ignored in fullscreen mode.)
-
-    --no-border
-    --window-scale=1
-    --force-window=yes
-    """
+            log.debug("-- A dragon slumbers over its hoard of %s media --", len(media))
+            sleep(0.5)  # stagger like Sir Michael Philip Jagger
+    finally:
+        for pid in pids:
+            pid.kill()
 
 
 def local_player(args, m, media_file):
@@ -543,7 +540,7 @@ def local_player(args, m, media_file):
     if r.returncode != 0:
         print("Player exited with code", r.returncode)
         if not args.ignore_errors:
-            exit(4)
+            exit(r.returncode)
 
     if args.player_need_sleep:
         if hasattr(m, "duration"):
