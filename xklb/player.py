@@ -9,10 +9,11 @@ from shutil import which
 from time import sleep
 from typing import Union
 
+from screeninfo import get_monitors
 from tabulate import tabulate
 
 from xklb import paths, utils
-from xklb.utils import SC, SQLITE_PARAM_LIMIT, cmd, cmd_interactive, human_time, log, os_bg_kwargs
+from xklb.utils import DEFAULT_MULTIPLE_PLAYBACK, SC, SQLITE_PARAM_LIMIT, cmd, cmd_interactive, human_time, log, os_bg_kwargs
 
 
 def generic_player(args):
@@ -56,7 +57,7 @@ def find_xdg_application(media_file):
     return player_path
 
 
-def parse(args, m, media_file):
+def parse(args, m=None, media_file=None):
     player = generic_player(args)
     mpv = which("mpv.com") or which("mpv")
 
@@ -64,7 +65,7 @@ def parse(args, m, media_file):
         player = args.player
         args.player_need_sleep = False
 
-    elif args.action in [SC.read]:
+    elif args.action in [SC.read] and media_file:
         player_path = find_xdg_application(media_file)
         log.info(player_path)
         pass
@@ -80,7 +81,7 @@ def parse(args, m, media_file):
         if args.action in [SC.tubelisten, SC.tubewatch]:
             player.extend(["--script-opts=ytdl_hook-try_ytdl_first=yes"])
 
-        if args.action in [SC.watch, SC.listen]:
+        if m and args.action in [SC.watch, SC.listen]:
             start, end = calculate_duration(args, m)
             if end == 0:
                 return
@@ -89,7 +90,7 @@ def parse(args, m, media_file):
             if end != m["duration"]:
                 player.extend([f"--end={int(end)}"])
 
-        if args.action == SC.watch:
+        if m and args.action == SC.watch:
             if m["subtitle_count"] > 0:
                 player.extend(args.player_args_sub)
             elif m.get("time_partial_first") is not None or m["size"] > 500 * 1000000:  # 500 MB
@@ -238,6 +239,8 @@ def override_sort(string):
 
 
 def get_ordinal_media(args, path):
+    # TODO: maybe try https://dba.stackexchange.com/questions/43415/algorithm-for-finding-the-longest-prefix
+
     similar_videos = []
     candidate = str(path)
 
@@ -367,6 +370,168 @@ def socket_play(args, m):
     f = m["path"].replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
     args.sock.send((f'raw loadfile "{f}" replace "{play_opts}" \n').encode("utf-8"))
     sleep(args.interdimensional_cable)
+
+
+def is_odd(x):
+    if x & 1:
+        return True
+    else:
+        return False
+
+
+def geom(x_size, y_size, x, y):
+    return f"--geometry={x_size}%x{y_size}%+{x}%+{y}%"
+
+
+def geom_walk(v=1, h=1):
+    va = 100 // v
+    ha = 100 // h
+
+    geoms = []
+    for v_idx in range(v):
+        for h_idx in range(h):
+            geoms.append(geom(va, ha, va * v_idx, ha * h_idx))
+
+    return geoms
+
+
+def vstack(display, qty):
+    mapper = {
+        1: [f"--fs --fs-screen-name='{display.name}'"],
+        2: geom_walk(v=2, h=1),
+        4: geom_walk(v=2, h=2),
+        6: geom_walk(v=2, h=3),
+        8: geom_walk(v=2, h=4),
+        9: geom_walk(v=3, h=3),
+        10: geom_walk(v=2, h=5),
+        12: geom_walk(v=3, h=4),
+        14: geom_walk(v=2, h=7),
+        15: geom_walk(v=3, h=5),
+        16: geom_walk(v=4, h=4),
+        18: geom_walk(v=3, h=6),
+        20: geom_walk(v=4, h=5),
+        21: geom_walk(v=3, h=7),
+        22: geom_walk(v=2, h=11),
+        24: geom_walk(v=4, h=6),
+        26: geom_walk(v=2, h=13),
+        28: geom_walk(v=4, h=7),
+        30: geom_walk(v=5, h=6),
+        32: geom_walk(v=4, h=8),
+        33: geom_walk(v=3, h=11),
+    }
+    if qty in mapper.keys():
+        holes = mapper[qty]
+    elif is_odd(qty):
+        holes = geom_walk(v=qty)
+    else:
+        v, h = divmod(qty, 2)
+        holes = geom_walk(v=v, h=v + h)
+
+    return [f"--screen-name='{display.name}' {hole}" for hole in holes]
+
+
+def hstack(display, qty):
+    mapper = {
+        1: [f"--fs --fs-screen-name='{display.name}'"],
+        2: geom_walk(v=1, h=2),
+        4: geom_walk(v=2, h=2),
+        6: geom_walk(v=3, h=2),
+        8: geom_walk(v=4, h=2),
+        9: geom_walk(v=3, h=3),
+        10: geom_walk(v=5, h=2),
+        12: geom_walk(v=4, h=3),
+        14: geom_walk(v=7, h=2),
+        15: geom_walk(v=5, h=3),
+        16: geom_walk(v=4, h=4),
+        18: geom_walk(v=6, h=3),
+        20: geom_walk(v=5, h=4),
+        21: geom_walk(v=7, h=3),
+        22: geom_walk(v=11, h=2),
+        24: geom_walk(v=6, h=4),
+        26: geom_walk(v=13, h=2),
+        28: geom_walk(v=7, h=4),
+        30: geom_walk(v=6, h=5),
+        32: geom_walk(v=8, h=4),
+        33: geom_walk(v=11, h=3),
+    }
+    if qty in mapper.keys():
+        holes = mapper[qty]
+    elif is_odd(qty):
+        holes = geom_walk(v=qty)
+    else:
+        h, v = divmod(qty, 2)
+        holes = geom_walk(h=h, v=h + v)
+
+    return [f"--screen-name='{display.name}' {hole}" for hole in holes]
+
+
+def get_display_by_name(displays, screen_name):
+    for d in displays:
+        if d.name == screen_name:
+            return [d]
+
+    display_names = '", "'.join([d.name for d in displays])
+    raise Exception(f'Display "{screen_name}" not found. I see: "{display_names}"')
+
+
+def get_multiple_player_template(args):
+    displays = get_monitors()
+    if args.screen_name:
+        displays = get_display_by_name(displays, args.screen_name)
+
+    if args.multiple_playback == DEFAULT_MULTIPLE_PLAYBACK and len(displays) == 1:
+        args.multiple_playback = 2
+    elif args.multiple_playback == DEFAULT_MULTIPLE_PLAYBACK and len(displays) > 1:
+        args.multiple_playback = len(displays)
+    elif args.multiple_playback < len(displays):
+        # play videos on supporting screens but not active one
+        displays = [d for d in displays if not d.is_primary]
+        displays = displays[: len(args.multiple_playback)]
+
+    min_media_per_screen, remainder = divmod(args.multiple_playback, len(displays))
+
+    displays.sort(key=lambda d: d.width * d.height)
+    players = []
+    for d_idx, display in enumerate(displays):
+        qty = min_media_per_screen
+        if remainder > 0 and (d_idx + 1) == len(displays):
+            qty += remainder
+
+        if display.width > display.height:  # wide
+            players.extend(vstack(display, qty))
+        else:  # tall or square: prefer horizontal split
+            players.extend(hstack(display, qty))
+
+    log.debug(players)
+    players = utils.flatten(players)
+    log.debug(players)
+
+    exit()
+
+    return players
+
+
+def multiple_player(args, media):
+    players = get_multiple_player_template(args)
+
+    template = players
+    args.screen_name
+    """
+
+    --no-fixed-vo, --fixed-vo
+        --no-fixed-vo enforces closing and reopening the video window for multiple files (one (un)initialization for each file).
+
+    --force-window-position
+        Forcefully move mpv's video output window to default location whenever there is a change in video parameters, video stream or file. This used to be the default behavior. Currently only affects X11 VOs.
+    --no-keepaspect, --keepaspect
+        --no-keepaspect will always stretch the video to window size, and will disable the window manager hints that force the window aspect ratio. (Ignored in fullscreen mode.)
+    --no-keepaspect-window, --keepaspect-window
+        --keepaspect-window (the default) will lock the window size to the video aspect. --no-keepaspect-window disables this behavior, and will instead add black bars if window aspect and video aspect mismatch. Whether this actually works depends on the VO backend. (Ignored in fullscreen mode.)
+
+    --no-border
+    --window-scale=1
+    --force-window=yes
+    """
 
 
 def local_player(args, m, media_file):

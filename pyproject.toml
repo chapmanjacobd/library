@@ -29,6 +29,7 @@ humanize = "*"
 ffmpeg-python = "*"
 pysubs2 = "^1.4.3"
 python-mpv-jsonipc = "^1.1.13"
+screeninfo = "^0.8.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "*"

@@ -22,6 +22,7 @@ else:
 
 SQLITE_PARAM_LIMIT = 32765
 DEFAULT_PLAY_QUEUE = 120
+DEFAULT_MULTIPLE_PLAYBACK = -1
 
 
 def signal_handler(signal, frame):

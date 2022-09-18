@@ -18,7 +18,7 @@ from xklb.player import (
     remove_media,
     watch_chromecast,
 )
-from xklb.utils import DEFAULT_PLAY_QUEUE, SC, cmd, log
+from xklb.utils import DEFAULT_MULTIPLE_PLAYBACK, DEFAULT_PLAY_QUEUE, SC, cmd, log
 
 DEFAULT_PLAYER_ARGS_SUB = ["--speed=1"]
 DEFAULT_PLAYER_ARGS_NO_SUB = ["--speed=1.46"]
@@ -204,23 +204,24 @@ def fs_actions_usage(action, default_db):
         Duration to play (in seconds) while changing the channel
         library {action} --interdimensional-cable 40
         library {action} -4dtv 40
+
+        Playback multiple files at once
+        library {action} --multiple-playback   # one per display; or two if only one display detected
+        library {action} --multiple-playback 4 # play four media at once, divide by available screens
+        library {action} -m 4 --screen-name eDP # play four media at once on specific screen
 """
 
 
 def parse_args(action, default_db, default_chromecast=""):
-    parser = argparse.ArgumentParser(
-        prog="library " + action,
-        usage=fs_actions_usage(action, default_db),
-    )
+    parser = argparse.ArgumentParser(prog="library " + action, usage=fs_actions_usage(action, default_db))
 
     parser.add_argument(
         "database",
         nargs="?",
         default=default_db,
-        help="Database file. If not specified a generic name will be used: audio.db, video.db, fs.db, etc",
+        help=f"Database file. If not specified a generic name will be used: {default_db}",
     )
 
-    # TODO: maybe try https://dba.stackexchange.com/questions/43415/algorithm-for-finding-the-longest-prefix
     parser.add_argument("--play-in-order", "-O", action="count", default=0, help=argparse.SUPPRESS)
     parser.add_argument("--sort", "-u", nargs="+", help=argparse.SUPPRESS)
     parser.add_argument("--random", "-r", action="store_true", help=argparse.SUPPRESS)
@@ -233,6 +234,11 @@ def parse_args(action, default_db, default_chromecast=""):
     parser.add_argument("--chromecast", "--cast", "-c", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--with-local", "-wl", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--interdimensional-cable", "-4dtv", type=int, help=argparse.SUPPRESS)
+    parser.add_argument(
+        "--multiple-playback", "-m", default=False, nargs="?", const=DEFAULT_MULTIPLE_PLAYBACK, type=int, help=argparse.SUPPRESS
+    )
+    parser.add_argument("--screen-name", help=argparse.SUPPRESS)
+
     parser.add_argument("--portrait", "-portrait", action="store_true", help=argparse.SUPPRESS)
 
     parser.add_argument("--prefix", default="", help=argparse.SUPPRESS)
@@ -476,7 +482,7 @@ def play(args, m: Dict):
         if not media_path.exists():
             if args.is_mounted:
                 mark_media_deleted(args, media_file)
-            log.info('[%s]: Does not exist. Skipping...', media_file)
+            log.info("[%s]: Does not exist. Skipping...", media_file)
             return
         media_file = str(media_path)
 
@@ -656,15 +662,18 @@ def process_playqueue(args, construct_query=construct_fs_query):
 
     args.is_mounted = paths.is_mounted(list(map(operator.itemgetter("path"), media)), args.shallow_organize)
 
-    try:
-        for m in media:
-            play(args, m)
-    finally:
-        if args.interdimensional_cable:
-            args.sock.send((f"raw quit \n").encode("utf-8"))
-        Path(args.mpv_socket).unlink(missing_ok=True)
-        if args.chromecast:
-            Path(paths.CAST_NOW_PLAYING).unlink(missing_ok=True)
+    if args.multiple_playback:
+        player.multiple_player(args, media)
+    else:
+        try:
+            for m in media:
+                play(args, m)
+        finally:
+            if args.interdimensional_cable:
+                args.sock.send((f"raw quit \n").encode("utf-8"))
+            Path(args.mpv_socket).unlink(missing_ok=True)
+            if args.chromecast:
+                Path(paths.CAST_NOW_PLAYING).unlink(missing_ok=True)
 
 
 def watch():

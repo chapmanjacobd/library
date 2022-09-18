@@ -215,7 +215,7 @@ def extract_image_metadata_chunk(metadata, l):
             m = munge_image_tags(m, e)
         except Exception as e:
             # raise e
-            log.error('[%s]: %s', m["path"], e)
+            log.error("[%s]: %s", m["path"], e)
             pass
 
         exif_enriched.append(m)

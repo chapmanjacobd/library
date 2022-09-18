@@ -57,7 +57,7 @@ def extract_chunk(args, l):
     if args.verbose > 0:
         n_jobs = 1
 
-    mp_args = argparse.Namespace(delete_unplayable=args.delete_unplayable,db_type=args.db_type)
+    mp_args = argparse.Namespace(delete_unplayable=args.delete_unplayable, db_type=args.db_type)
     metadata = Parallel(n_jobs=n_jobs)(delayed(extract_metadata)(mp_args, file) for file in l) or []
 
     if args.db_type == "i":
