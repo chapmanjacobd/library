@@ -228,6 +228,10 @@ Explore `library` databases in your browser
     datasette tv.db
 
 ### TODOs (PRs welcome)
+- --loop for passing loop inf to mpv
+- --zoom crop (aka fill), 100%, fit-to-screen
+- --multiple-playback get stdin for post-actions; print path
+
 - dl: add downloading functionality: is_downloaded, download_folder
 - dl: lineage? integrate fs, tube, and dl?
 - dl: audio/video/photo download profiles

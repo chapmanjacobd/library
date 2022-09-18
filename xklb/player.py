@@ -7,7 +7,7 @@ from random import randrange
 from shlex import join, quote
 from shutil import which
 from time import sleep
-from typing import Union
+from typing import List, Union
 
 from screeninfo import get_monitors
 from tabulate import tabulate
@@ -66,7 +66,7 @@ def find_xdg_application(media_file):
     return player_path
 
 
-def parse(args, m=None, media_file=None) -> list[str]:
+def parse(args, m=None, media_file=None) -> List[str]:
     player = generic_player(args)
     mpv = which("mpv.com") or which("mpv")
 
