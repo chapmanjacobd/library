@@ -41,6 +41,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
       now                          Print what is currently playing
       next                         Play next file
       stop                         Stop all playback
+      pause                        Pause all playback
 
     browser tab subcommands:
       tabsadd                      Create a tabs database; Add URLs
@@ -140,7 +141,6 @@ Or with `systemd`:
     ~/.config/systemd/user/tabs.service
     [Unit]
     Description=xklb daily browser tabs
-    Requires=mnt-d.mount
 
     [Service]
     Type=simple
@@ -436,5 +436,6 @@ Explore `library` databases in your browser
 - dl: yt-dlp, gallery-dl, bdfr
 - dl: bandcamp no id
 - dl: wclone?
+- stats: lb stats, lb show/print
 - more test coverage -- https://hypothesis.readthedocs.io/en/latest/quickstart.html
 
