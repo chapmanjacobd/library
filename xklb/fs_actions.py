@@ -603,7 +603,7 @@ def construct_fs_query(args):
             if args.include:
                 args.sort = "random(), " + args.sort
             else:
-                limit = DEFAULT_PLAY_QUEUE * 8
+                limit = DEFAULT_PLAY_QUEUE * 16
         cf.append(f"and rowid in (select rowid from media order by random() limit {limit})")
 
     args.sql_filter = " ".join(cf)
