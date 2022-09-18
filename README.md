@@ -374,6 +374,11 @@ Organize via separate databases.
         library watch --interdimensional-cable 40
         library watch -4dtv 40
 
+        Playback multiple files at once
+        library watch --multiple-playback   # one per display; or two if only one display detected
+        library watch --multiple-playback 4 # play four media at once, divide by available screens
+        library watch -m 4 --screen-name eDP # play four media at once on specific screen
+
 
 ### You can pipe stuff
 
