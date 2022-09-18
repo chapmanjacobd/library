@@ -10,13 +10,10 @@ from xklb import db, paths, player, utils
 from xklb.player import (
     delete_media,
     get_ordinal_media,
-    listen_chromecast,
     mark_media_deleted,
     mark_media_watched,
     mv_to_keep_folder,
     override_sort,
-    remove_media,
-    watch_chromecast,
 )
 from xklb.utils import DEFAULT_MULTIPLE_PLAYBACK, DEFAULT_PLAY_QUEUE, SC, cmd, log
 
@@ -235,7 +232,13 @@ def parse_args(action, default_db, default_chromecast=""):
     parser.add_argument("--with-local", "-wl", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--interdimensional-cable", "-4dtv", type=int, help=argparse.SUPPRESS)
     parser.add_argument(
-        "--multiple-playback", "-m", default=False, nargs="?", const=DEFAULT_MULTIPLE_PLAYBACK, type=int, help=argparse.SUPPRESS
+        "--multiple-playback",
+        "-m",
+        default=False,
+        nargs="?",
+        const=DEFAULT_MULTIPLE_PLAYBACK,
+        type=int,
+        help=argparse.SUPPRESS,
     )
     parser.add_argument("--screen-name", help=argparse.SUPPRESS)
 
@@ -390,16 +393,16 @@ def post_act(args, media_file: str):
 
     if args.action in [SC.tubelisten, SC.tubewatch]:
         if args.post_action == "remove":
-            remove_media(args, media_file)
+            mark_media_deleted(args, media_file)
         elif args.post_action == "ask":
             if not Confirm.ask("Keep?", default=False):
-                remove_media(args, media_file)  # only remove metadata
+                mark_media_deleted(args, media_file)
         else:
             raise Exception("Unrecognized post_action", args.post_action)
 
     if args.action in [SC.listen, SC.watch]:
-        if args.post_action == "remove":
-            remove_media(args, media_file)
+        if args.post_action == "softdelete":
+            mark_media_deleted(args, media_file)
 
         elif args.post_action == "delete":
             delete_media(args, media_file)
@@ -448,9 +451,9 @@ def externalize_subtitle(media_file):
 
 def chromecast_play(args, m):
     if args.action in [SC.watch, SC.tubewatch]:
-        catt_log = watch_chromecast(args, m, subtitles_file=externalize_subtitle(m["path"]))
+        catt_log = player.watch_chromecast(args, m, subtitles_file=externalize_subtitle(m["path"]))
     elif args.action in [SC.listen, SC.tubelisten]:
-        catt_log = listen_chromecast(args, m)
+        catt_log = player.listen_chromecast(args, m)
     else:
         raise NotImplementedError
 
