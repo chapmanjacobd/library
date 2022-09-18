@@ -4,7 +4,7 @@ from io import StringIO
 from pathlib import Path
 from platform import system
 from random import randrange
-from shlex import quote
+from shlex import join, quote
 from shutil import which
 from time import sleep
 from typing import Union
@@ -378,14 +378,16 @@ def geom_walk(v=1, h=1):
     geoms = []
     for v_idx in range(v):
         for h_idx in range(h):
-            geoms.append(geom(va, ha, va * v_idx * v, ha * h_idx * h))
+            x = (100 // max(1, v-1)) * v_idx
+            y = (100 // max(1, h-1)) * h_idx
+            geoms.append(geom(va, ha, x, y))
 
     return geoms
 
 
 def vstack(display, qty):
     mapper = {
-        1: ["--fs", f"--fs-screen-name='{display.name}'"],
+        1: [["--fs", f'--fs-screen-name="{display.name}"']],
         2: geom_walk(v=2, h=1),
         4: geom_walk(v=2, h=2),
         6: geom_walk(v=2, h=3),
@@ -415,12 +417,12 @@ def vstack(display, qty):
         v, h = divmod(qty, 2)
         holes = geom_walk(v=v, h=v + h)
 
-    return [[f"--screen-name='{display.name}'", *hole] for hole in holes]
+    return [[f'--screen-name="{display.name}"', *hole] for hole in holes]
 
 
 def hstack(display, qty):
     mapper = {
-        1: ["--fs", f"--fs-screen-name='{display.name}'"],
+        1: [["--fs", f'--fs-screen-name="{display.name}"']],
         2: geom_walk(v=1, h=2),
         4: geom_walk(v=2, h=2),
         6: geom_walk(v=3, h=2),
@@ -450,7 +452,7 @@ def hstack(display, qty):
         h, v = divmod(qty, 2)
         holes = geom_walk(h=h, v=h + v)
 
-    return [[f"--screen-name='{display.name}'", *hole] for hole in holes]
+    return [[f'--screen-name="{display.name}"', *hole] for hole in holes]
 
 
 def get_display_by_name(displays, screen_name):
@@ -520,6 +522,9 @@ def multiple_player(args, media):
                         r = utils.Pclose(player_process)
                         if r.returncode != 0:
                             print("Player exited with code", r.returncode)
+                            print(join(r.args))
+                            print(r.stderr)
+                            print(r.stdout)
                             if not args.ignore_errors:
                                 exit(r.returncode)
 
