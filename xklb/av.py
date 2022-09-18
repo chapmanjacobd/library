@@ -173,9 +173,6 @@ def munge_av_tags(args, media, f):
 
     media = {
         **media,
-        "is_deleted": 0,
-        "play_count": 0,
-        "time_played": 0,
         "video_count": video_count,
         "audio_count": audio_count,
         "chapter_count": chapter_count,

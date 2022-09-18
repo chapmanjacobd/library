@@ -30,6 +30,9 @@ def extract_metadata(args, f):
         size=stat.st_size,
         time_created=int(stat.st_ctime),
         time_modified=int(stat.st_mtime),
+        is_deleted=0,
+        play_count=0,
+        time_played=0,
     )
 
     if hasattr(stat, "st_blocks"):
