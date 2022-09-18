@@ -404,11 +404,11 @@ def tube_add(args=None):
 
     for path in args.playlists:
         if path in known_playlists:
-            log.warning("Skipping known playlist: %s", path)
+            log.warning("[%s]: Skipping known playlist", path)
             continue
 
         if args.safe and not supported(path):
-            log.warning("[safe_mode] unsupported playlist: %s", path)
+            log.warning("[%s]: Unsupported playlist (safe_mode)", path)
             continue
 
         start = timer()
@@ -417,7 +417,7 @@ def tube_add(args=None):
         log.info(f"{end - start:.1f} seconds to add new playlist and fetch videos")
 
         if args.extra:
-            log.warning("Getting extra metadata")
+            log.warning("[%s]: Getting extra metadata", path)
             get_extra_metadata(args, path, parse_ydl_opts(args))
 
 
@@ -457,7 +457,7 @@ def tube_update(args=None):
 
     for d in playlists:
         if d["path"] not in known_playlists:
-            log.warning("Skipping unknown playlist: %s (add new playlist with tubeadd)", d["path"])
+            log.warning("[%s]: Skipping unknown playlist. Add new playlists with tubeadd", d["path"])
             continue
 
         start = timer()
@@ -466,7 +466,7 @@ def tube_update(args=None):
         log.info(f"{end - start:.1f} seconds to update playlist")
 
         if args.extra:
-            log.warning("Getting extra metadata")
+            log.warning("[%s]: Getting extra metadata", d["path"])
             get_extra_metadata(args, d["path"], parse_ydl_opts(args, saved_opts=d["yt_dlp_config"]))
 
     db.optimize(args)

@@ -476,6 +476,7 @@ def play(args, m: Dict):
         if not media_path.exists():
             if args.is_mounted:
                 mark_media_deleted(args, media_file)
+            log.info('[%s]: Does not exist. Skipping...', media_file)
             return
         media_file = str(media_path)
 
@@ -602,7 +603,7 @@ def construct_fs_query(args):
             if args.include:
                 args.sort = "random(), " + args.sort
             else:
-                limit = DEFAULT_PLAY_QUEUE * 2
+                limit = DEFAULT_PLAY_QUEUE * 8
         cf.append(f"and rowid in (select rowid from media order by random() limit {limit})")
 
     args.sql_filter = " ".join(cf)
