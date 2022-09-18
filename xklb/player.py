@@ -13,7 +13,16 @@ from screeninfo import get_monitors
 from tabulate import tabulate
 
 from xklb import paths, utils
-from xklb.utils import DEFAULT_MULTIPLE_PLAYBACK, SC, SQLITE_PARAM_LIMIT, cmd, cmd_interactive, human_time, log, os_bg_kwargs
+from xklb.utils import (
+    DEFAULT_MULTIPLE_PLAYBACK,
+    SC,
+    SQLITE_PARAM_LIMIT,
+    cmd,
+    cmd_interactive,
+    human_time,
+    log,
+    os_bg_kwargs,
+)
 
 
 def generic_player(args):
@@ -57,7 +66,7 @@ def find_xdg_application(media_file):
     return player_path
 
 
-def parse(args, m=None, media_file=None):
+def parse(args, m=None, media_file=None) -> list[str]:
     player = generic_player(args)
     mpv = which("mpv.com") or which("mpv")
 
@@ -68,7 +77,6 @@ def parse(args, m=None, media_file=None):
     elif args.action in [SC.read] and media_file:
         player_path = find_xdg_application(media_file)
         log.info(player_path)
-        pass
 
     elif mpv:
         args.player_need_sleep = False
@@ -83,12 +91,11 @@ def parse(args, m=None, media_file=None):
 
         if m and args.action in [SC.watch, SC.listen]:
             start, end = calculate_duration(args, m)
-            if end == 0:
-                return
-            if start != 0:
-                player.extend([f"--start={int(start)}", "--no-save-position-on-quit"])
-            if end != m["duration"]:
-                player.extend([f"--end={int(end)}"])
+            if end != 0:
+                if start != 0:
+                    player.extend([f"--start={int(start)}", "--no-save-position-on-quit"])
+                if end != m["duration"]:
+                    player.extend([f"--end={int(end)}"])
 
         if m and args.action == SC.watch:
             if m["subtitle_count"] > 0:
@@ -122,6 +129,26 @@ def mv_to_keep_folder(args, media_file: str):
     new_path = shutil.move(media_file, keep_path)
     with args.db.conn:
         args.db.conn.execute("UPDATE media set path = ? where path = ?", [new_path, media_file])
+
+
+def moved_media(args, moved_files: Union[str, list], base_from, base_to):
+    moved_files = utils.conform(moved_files)
+    modified_row_count = 0
+    if len(moved_files) > 0:
+        df_chunked = utils.chunks(moved_files, SQLITE_PARAM_LIMIT)
+        for l in df_chunked:
+            with args.db.conn:
+                cursor = args.db.conn.execute(
+                    f"""UPDATE media
+                    SET path=REPLACE(path, '{quote(base_from)}', '{quote(base_to)}')
+                    where path in ("""
+                    + ",".join(["?"] * len(l))
+                    + ")",
+                    (*l,),
+                )
+                modified_row_count += cursor.rowcount
+
+    return modified_row_count
 
 
 def mark_media_watched(args, files):
@@ -159,48 +186,6 @@ def mark_media_deleted(args, paths):
                     where path in ("""
                     + ",".join(["?"] * len(l))
                     + ")",
-                    (*l,),
-                )
-                modified_row_count += cursor.rowcount
-
-    return modified_row_count
-
-
-def moved_media(args, moved_files: Union[str, list], base_from, base_to):
-    moved_files = utils.conform(moved_files)
-    modified_row_count = 0
-    if len(moved_files) > 0:
-        df_chunked = utils.chunks(moved_files, SQLITE_PARAM_LIMIT)
-        for l in df_chunked:
-            with args.db.conn:
-                cursor = args.db.conn.execute(
-                    f"""UPDATE media
-                    SET path=REPLACE(path, '{quote(base_from)}', '{quote(base_to)}')
-                    where path in ("""
-                    + ",".join(["?"] * len(l))
-                    + ")",
-                    (*l,),
-                )
-                modified_row_count += cursor.rowcount
-
-    return modified_row_count
-
-
-def remove_media(args, deleted_files: Union[str, list], quiet=False):
-    deleted_files = utils.conform(deleted_files)
-    modified_row_count = 0
-    if len(deleted_files) > 0:
-        if not quiet:
-            if len(deleted_files) == 1:
-                print(f"[{deleted_files[0]}] Removing orphaned metadata")
-            else:
-                print(f"Removing {len(deleted_files)} orphaned metadata")
-
-        df_chunked = utils.chunks(deleted_files, SQLITE_PARAM_LIMIT)
-        for l in df_chunked:
-            with args.db.conn:
-                cursor = args.db.conn.execute(
-                    "delete from media where path in (" + ",".join(["?"] * len(l)) + ")",
                     (*l,),
                 )
                 modified_row_count += cursor.rowcount
@@ -380,7 +365,7 @@ def is_odd(x):
 
 
 def geom(x_size, y_size, x, y):
-    return f"--geometry={x_size}%x{y_size}%+{x}%+{y}%"
+    return [f"--geometry={x_size}%x{y_size}%+{x}%+{y}%"]
 
 
 def geom_walk(v=1, h=1):
@@ -390,14 +375,14 @@ def geom_walk(v=1, h=1):
     geoms = []
     for v_idx in range(v):
         for h_idx in range(h):
-            geoms.append(geom(va, ha, va * v_idx, ha * h_idx))
+            geoms.append(geom(va, ha, va * v_idx * 2, ha * h_idx))
 
     return geoms
 
 
 def vstack(display, qty):
     mapper = {
-        1: [f"--fs --fs-screen-name='{display.name}'"],
+        1: ["--fs", f"--fs-screen-name='{display.name}'"],
         2: geom_walk(v=2, h=1),
         4: geom_walk(v=2, h=2),
         6: geom_walk(v=2, h=3),
@@ -427,12 +412,12 @@ def vstack(display, qty):
         v, h = divmod(qty, 2)
         holes = geom_walk(v=v, h=v + h)
 
-    return [f"--screen-name='{display.name}' {hole}" for hole in holes]
+    return [[f"--screen-name='{display.name}'", *hole] for hole in holes]
 
 
 def hstack(display, qty):
     mapper = {
-        1: [f"--fs --fs-screen-name='{display.name}'"],
+        1: ["--fs", f"--fs-screen-name='{display.name}'"],
         2: geom_walk(v=1, h=2),
         4: geom_walk(v=2, h=2),
         6: geom_walk(v=3, h=2),
@@ -462,7 +447,7 @@ def hstack(display, qty):
         h, v = divmod(qty, 2)
         holes = geom_walk(h=h, v=h + v)
 
-    return [f"--screen-name='{display.name}' {hole}" for hole in holes]
+    return [[f"--screen-name='{display.name}'", *hole] for hole in holes]
 
 
 def get_display_by_name(displays, screen_name):
@@ -503,19 +488,35 @@ def get_multiple_player_template(args):
             players.extend(hstack(display, qty))
 
     log.debug(players)
-    players = utils.flatten(players)
-    log.debug(players)
-
-    exit()
 
     return players
 
 
 def multiple_player(args, media):
-    players = get_multiple_player_template(args)
+    def open_player(template_args):
+        m = media.pop()
+        return subprocess.Popen([*args.player, *template_args, "--", m["path"]], **os_bg_kwargs())
 
-    template = players
-    args.screen_name
+    args.player = parse(args)
+
+    template = get_multiple_player_template(args)
+    pids = []
+
+    while media:
+        for t_idx, t in enumerate(template):
+            try:
+                player_process = pids[t_idx]
+            except IndexError:
+                pids.append(open_player(t))
+            else:
+                # check if still running
+                if player_process.poll() is not None:
+                    r = utils.Pclose(player_process)
+                    r.check_returncode()
+                    pids[t_idx] = open_player(t)
+
+        sleep(0.5)  # stagger like Sir Michael Philip Jagger
+
     """
 
     --no-fixed-vo, --fixed-vo
@@ -578,7 +579,7 @@ def printer(args, query, bindings):
         exit(2)
 
     if "d" in args.print:
-        remove_media(args, list(map(operator.itemgetter("path"), db_resp)), quiet=True)
+        mark_media_deleted(args, list(map(operator.itemgetter("path"), db_resp)))
         if not "f" in args.print:
             return print(f"Removed {len(db_resp)} metadata records")
 

@@ -1,13 +1,11 @@
 import argparse, operator
 from copy import deepcopy
-from pathlib import Path
 
 import humanize
 from rich import print, prompt
 from tabulate import tabulate
 
-from xklb import db, utils
-from xklb.player import remove_media
+from xklb import db, player, utils
 
 
 def get_duplicates(args):
@@ -92,7 +90,7 @@ def deduplicate_music():
             path = d["duplicate_path"]
             if not args.only_soft_delete:
                 utils.trash(path)
-            remove_media(args, path, quiet=True)
+            player.mark_media_deleted(args, path)
             deleted.append(path)
 
         print(len(deleted), "deleted")
