@@ -49,11 +49,13 @@ def extract_metadata(args, f):
 
 def extract_chunk(args, l):
     n_jobs = -1
-    if args.db_type in ["t", "p"]:
-        n_jobs = (os.cpu_count() or 4) * 5
+    if args.db_type in ["t", "p", "f"]:
+        n_jobs = (os.cpu_count() or 4) * 2
     if args.verbose > 0:
         n_jobs = 1
-    metadata = Parallel(n_jobs=n_jobs, backend="threading")(delayed(extract_metadata)(args, file) for file in l) or []
+
+    mp_args = argparse.Namespace(delete_unplayable=args.delete_unplayable,db_type=args.db_type)
+    metadata = Parallel(n_jobs=n_jobs)(delayed(extract_metadata)(mp_args, file) for file in l) or []
 
     if args.db_type == "i":
         metadata = books.extract_image_metadata_chunk(metadata, l)
