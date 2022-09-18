@@ -25,7 +25,7 @@ def munge_book_tags(media, f):
         print(f"[{f}] Failed reading file", file=sys.stderr)
         log.debug(e)
         tags = []
-    return {**media, "is_deleted": 0, "play_count": 0, "time_played": 0, "tags": combine(tags)}
+    return {**media, "tags": combine(tags)}
 
 
 def munge_image_tags(m, e):
@@ -43,8 +43,6 @@ def munge_image_tags(m, e):
 
     m = {
         **m,
-        "is_deleted": 0,
-        "play_count": 0,
         "orientation": safe_unpack(
             [e.pop(k) for k in list(e.keys()) if "Orientation" in k],
         ),
@@ -216,7 +214,8 @@ def extract_image_metadata_chunk(metadata, l):
         try:
             m = munge_image_tags(m, e)
         except Exception as e:
-            raise e
+            # raise e
+            log.error('[%s]: %s', m["path"], e)
             pass
 
         exif_enriched.append(m)
