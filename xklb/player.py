@@ -425,87 +425,22 @@ def geom_walk(v=1, h=1):
     return geoms
 
 
-def vstack(display, qty):
-    mapper = {
-        1: [["--fs", f'--fs-screen-name="{display.name}"']],
-        2: geom_walk(v=2, h=1),
-        4: geom_walk(v=2, h=2),
-        6: geom_walk(v=2, h=3),
-        8: geom_walk(v=2, h=4),
-        9: geom_walk(v=3, h=3),
-        10: geom_walk(v=2, h=5),
-        12: geom_walk(v=3, h=4),
-        14: geom_walk(v=2, h=7),
-        15: geom_walk(v=3, h=5),
-        16: geom_walk(v=4, h=4),
-        18: geom_walk(v=3, h=6),
-        20: geom_walk(v=4, h=5),
-        21: geom_walk(v=3, h=7),
-        22: geom_walk(v=2, h=11),
-        24: geom_walk(v=4, h=6),
-        26: geom_walk(v=2, h=13),
-        28: geom_walk(v=4, h=7),
-        30: geom_walk(v=5, h=6),
-        32: geom_walk(v=4, h=8),
-        36: geom_walk(v=6, h=6),
-        49: geom_walk(v=7, h=7),
-        64: geom_walk(v=8, h=8),
-        81: geom_walk(v=9, h=9),
-        100: geom_walk(v=10, h=10),
-    }
-    if qty in mapper.keys():
-        holes = mapper[qty]
+def grid_stack(display, qty, swap=False):
+    if qty == 1:
+        return [f'--screen-name="{display.name}"', "--fs", f'--fs-screen-name="{display.name}"']
     else:
         dv = list(utils.divisor_gen(qty))
         if not dv:
-            holes = geom_walk(v=qty)
+            vh = (qty, 1)
         else:
             v = dv[len(dv) // 2]
             h = qty // v
-            holes = geom_walk(v=v, h=h)
+            vh = (v, h)
 
-    return [[f'--screen-name="{display.name}"', *hole] for hole in holes]
-
-
-def hstack(display, qty):
-    mapper = {
-        1: [["--fs", f'--fs-screen-name="{display.name}"']],
-        2: geom_walk(v=1, h=2),
-        4: geom_walk(v=2, h=2),
-        6: geom_walk(v=3, h=2),
-        8: geom_walk(v=4, h=2),
-        9: geom_walk(v=3, h=3),
-        10: geom_walk(v=5, h=2),
-        12: geom_walk(v=4, h=3),
-        14: geom_walk(v=7, h=2),
-        15: geom_walk(v=5, h=3),
-        16: geom_walk(v=4, h=4),
-        18: geom_walk(v=6, h=3),
-        20: geom_walk(v=5, h=4),
-        21: geom_walk(v=7, h=3),
-        22: geom_walk(v=11, h=2),
-        24: geom_walk(v=6, h=4),
-        26: geom_walk(v=13, h=2),
-        28: geom_walk(v=7, h=4),
-        30: geom_walk(v=6, h=5),
-        32: geom_walk(v=8, h=4),
-        36: geom_walk(v=6, h=6),
-        49: geom_walk(v=7, h=7),
-        64: geom_walk(v=8, h=8),
-        81: geom_walk(v=9, h=9),
-        100: geom_walk(v=10, h=10),
-    }
-    if qty in mapper.keys():
-        holes = mapper[qty]
-    else:
-        dv = list(utils.divisor_gen(qty))
-        if not dv:
-            holes = geom_walk(h=qty)
-        else:
-            h = dv[len(dv) // 2]
-            v = qty // h
-            holes = geom_walk(v=v, h=h)
-
+    v, h = vh
+    if swap:
+        h, v = v, h
+    holes = geom_walk(v=v, h=h)
     return [[f'--screen-name="{display.name}"', *hole] for hole in holes]
 
 
@@ -518,15 +453,15 @@ def get_display_by_name(displays, screen_name):
     raise Exception(f'Display "{screen_name}" not found. I see: "{display_names}"')
 
 
-def which_stack(args, display):
+def is_hstack(args, display):
     if args.hstack or args.portrait:
-        return hstack
+        return True
     elif args.vstack:
-        return vstack
-    elif display.width > display.height:
-        return vstack
+        return False
+    elif display.width > display.height:  # wide
+        return False
     else:  # tall or square: prefer horizontal split
-        return hstack
+        return True
 
 
 def get_multiple_player_template(args):
@@ -552,8 +487,7 @@ def get_multiple_player_template(args):
         if remainder > 0 and (d_idx + 1) == len(displays):
             qty += remainder
 
-        fn_stack = which_stack(args, display)
-        players.extend(fn_stack(display, qty))
+        players.extend(grid_stack(display, qty, swap=is_hstack(args, display)))
 
     log.debug(players)
 
