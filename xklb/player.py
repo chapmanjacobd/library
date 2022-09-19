@@ -511,6 +511,17 @@ def get_display_by_name(displays, screen_name):
     raise Exception(f'Display "{screen_name}" not found. I see: "{display_names}"')
 
 
+def which_stack(args, display):
+    if args.hstack or args.portrait:
+        return hstack
+    elif args.vstack:
+        return vstack
+    elif display.width > display.height:
+        return vstack
+    else:  # tall or square: prefer horizontal split
+        return hstack
+
+
 def get_multiple_player_template(args):
     displays = get_monitors()
     if args.screen_name:
@@ -534,10 +545,8 @@ def get_multiple_player_template(args):
         if remainder > 0 and (d_idx + 1) == len(displays):
             qty += remainder
 
-        if display.width > display.height:  # wide
-            players.extend(vstack(display, qty))
-        else:  # tall or square: prefer horizontal split
-            players.extend(hstack(display, qty))
+        fn_stack = which_stack(args, display)
+        players.extend(fn_stack(display, qty))
 
     log.debug(players)
 

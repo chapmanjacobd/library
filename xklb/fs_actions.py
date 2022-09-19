@@ -199,6 +199,7 @@ def fs_actions_usage(action, default_db):
         library {action} --multiple-playback 4  # play four media at once, divide by available screens
         library {action} -m 4 --screen-name eDP # play four media at once on specific screen
         library {action} -m 4 --loop --crop     # play four cropped videos on a loop
+        library {action} -m 4 --hstack          # use hstack style
 """
 
 
@@ -238,6 +239,8 @@ def parse_args(action, default_db, default_chromecast=""):
     parser.add_argument("--crop", "--zoom", "--stretch", "--fit", "--fill", action="store_true", help=argparse.SUPPRESS)
 
     parser.add_argument("--portrait", "-portrait", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--hstack", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--vstack", action="store_true", help=argparse.SUPPRESS)
 
     parser.add_argument("--prefix", default="", help=argparse.SUPPRESS)
 
