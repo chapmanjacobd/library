@@ -3,7 +3,7 @@ from pathlib import Path
 from shlex import quote
 from typing import List
 
-import ffmpeg, pysubs2
+import ffmpeg, pysubs2, sqlite_utils
 from ffmpeg import Error
 from joblib import Parallel, delayed
 
@@ -81,6 +81,30 @@ def has_internal_subtitle(file):
     ).returncode
     if internal_sub == 0:
         return True
+
+
+def externalize_subtitle(media_file):
+    subs = ffmpeg.probe(media_file)["streams"]
+
+    subtitles_file = None
+    if len(subs) > 0:
+        db = sqlite_utils.Database(memory=True)
+        db["subs"].insert_all(subs, pk="index")  # type: ignore
+        subtitle_index = db.execute_returning_dicts(
+            """select "index" from subs
+                order by
+                    lower(tags) like "%eng%" desc
+                    , lower(tags) like "%dialog%" desc
+                limit 1"""
+        )[0]["index"]
+        log.debug(f"Using subtitle {subtitle_index}")
+
+        subtitles_file = cmd("mktemp --suffix=.vtt --dry-run").stdout.strip()
+        cmd(
+            f'ffmpeg -nostdin -loglevel warning -txt_format text -i {media_file} -map "0:{subtitle_index}" "{subtitles_file}"'
+        )
+
+    return subtitles_file
 
 
 def get_external(file):
