@@ -2,19 +2,11 @@ import argparse, operator, shlex, shutil
 from pathlib import Path
 from typing import Dict
 
-import ffmpeg, sqlite_utils
 from catt.api import CattDevice
-from rich.prompt import Confirm
 
 from xklb import db, paths, player, utils
-from xklb.player import (
-    delete_media,
-    get_ordinal_media,
-    mark_media_deleted,
-    mark_media_watched,
-    mv_to_keep_folder,
-    override_sort,
-)
+from xklb.player import get_ordinal_media, mark_media_deleted, override_sort
+from xklb.subtitle import externalize_subtitle
 from xklb.utils import DEFAULT_MULTIPLE_PLAYBACK, DEFAULT_PLAY_QUEUE, SC, cmd, log
 
 DEFAULT_PLAYER_ARGS_SUB = ["--speed=1"]
@@ -203,9 +195,10 @@ def fs_actions_usage(action, default_db):
         library {action} -4dtv 40
 
         Playback multiple files at once
-        library {action} --multiple-playback   # one per display; or two if only one display detected
-        library {action} --multiple-playback 4 # play four media at once, divide by available screens
+        library {action} --multiple-playback    # one per display; or two if only one display detected
+        library {action} --multiple-playback 4  # play four media at once, divide by available screens
         library {action} -m 4 --screen-name eDP # play four media at once on specific screen
+        library {action} -m 4 --loop --crop     # play four cropped videos on a loop
 """
 
 
@@ -241,6 +234,8 @@ def parse_args(action, default_db, default_chromecast=""):
         help=argparse.SUPPRESS,
     )
     parser.add_argument("--screen-name", help=argparse.SUPPRESS)
+    parser.add_argument("--loop", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--crop", "--zoom", "--stretch", "--fit", "--fill", action="store_true", help=argparse.SUPPRESS)
 
     parser.add_argument("--portrait", "-portrait", action="store_true", help=argparse.SUPPRESS)
 
@@ -386,69 +381,6 @@ def transcode(next_video):
     return next_video
 
 
-def post_act(args, media_file: str):
-    mark_media_watched(args, media_file)
-    if args.post_action == "keep":
-        return
-
-    if args.action in [SC.tubelisten, SC.tubewatch]:
-        if args.post_action == "remove":
-            mark_media_deleted(args, media_file)
-        elif args.post_action == "ask":
-            if not Confirm.ask("Keep?", default=False):
-                mark_media_deleted(args, media_file)
-        else:
-            raise Exception("Unrecognized post_action", args.post_action)
-
-    if args.action in [SC.listen, SC.watch]:
-        if args.post_action == "softdelete":
-            mark_media_deleted(args, media_file)
-
-        elif args.post_action == "delete":
-            delete_media(args, media_file)
-
-        elif args.post_action == "delete-if-audiobook":
-            if "audiobook" in media_file.lower():
-                delete_media(args, media_file)
-
-        elif args.post_action == "ask":
-            if not Confirm.ask("Keep?", default=False):
-                delete_media(args, media_file)
-
-        elif args.post_action == "askkeep":
-            if not Confirm.ask("Keep?", default=False):
-                delete_media(args, media_file)
-            else:
-                mv_to_keep_folder(args, media_file)
-
-        else:
-            raise Exception("Unrecognized post_action", args.post_action)
-
-
-def externalize_subtitle(media_file):
-    subs = ffmpeg.probe(media_file)["streams"]
-
-    subtitles_file = None
-    if len(subs) > 0:
-        db = sqlite_utils.Database(memory=True)
-        db["subs"].insert_all(subs, pk="index")  # type: ignore
-        subtitle_index = db.execute_returning_dicts(
-            """select "index" from subs
-                order by
-                    lower(tags) like "%eng%" desc
-                    , lower(tags) like "%dialog%" desc
-                limit 1"""
-        )[0]["index"]
-        log.debug(f"Using subtitle {subtitle_index}")
-
-        subtitles_file = cmd("mktemp --suffix=.vtt --dry-run").stdout.strip()
-        cmd(
-            f'ffmpeg -nostdin -loglevel warning -txt_format text -i {media_file} -map "0:{subtitle_index}" "{subtitles_file}"'
-        )
-
-    return subtitles_file
-
-
 def chromecast_play(args, m):
     if args.action in [SC.watch, SC.tubewatch]:
         catt_log = player.watch_chromecast(args, m, subtitles_file=externalize_subtitle(m["path"]))
@@ -507,7 +439,7 @@ def play(args, m: Dict):
         player.local_player(args, m, media_file)
 
     if args.action in [SC.listen, SC.watch, SC.tubelisten, SC.tubewatch] and not args.interdimensional_cable:
-        post_act(args, media_file)
+        player.post_act(args, media_file)
 
 
 audio_include_string = (

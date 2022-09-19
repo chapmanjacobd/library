@@ -375,9 +375,10 @@ Organize via separate databases.
         library watch -4dtv 40
 
         Playback multiple files at once
-        library watch --multiple-playback   # one per display; or two if only one display detected
-        library watch --multiple-playback 4 # play four media at once, divide by available screens
+        library watch --multiple-playback    # one per display; or two if only one display detected
+        library watch --multiple-playback 4  # play four media at once, divide by available screens
         library watch -m 4 --screen-name eDP # play four media at once on specific screen
+        library watch -m 4 --loop --crop     # play four cropped videos on a loop
 
 
 ### You can pipe stuff
@@ -435,10 +436,6 @@ Explore `library` databases in your browser
     datasette tv.db
 
 ### TODOs (PRs welcome)
-- --loop for passing loop inf to mpv
-- --zoom crop (aka fill), 100%, fit-to-screen
-- --multiple-playback get stdin for post-actions; print path
-
 - dl: add downloading functionality: is_downloaded, download_folder
 - dl: lineage? integrate fs, tube, and dl?
 - dl: audio/video/photo download profiles

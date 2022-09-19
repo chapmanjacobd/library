@@ -9,6 +9,8 @@ from shutil import which
 from time import sleep
 from typing import List, Union
 
+import ffmpeg, sqlite_utils
+from rich.prompt import Confirm
 from screeninfo import get_monitors
 from tabulate import tabulate
 
@@ -91,6 +93,12 @@ def parse(args, m=None, media_file=None) -> List[str]:
 
         if not args.multiple_playback:
             player.extend(["--fs"])
+
+        if args.loop:
+            player.extend(["--loop-file=inf"])
+
+        if args.crop:
+            player.extend(["--panscan=1.0"])
 
         if m and args.action in [SC.watch, SC.listen]:
             start, end = calculate_duration(args, m)
@@ -213,6 +221,45 @@ def delete_playlists(args, playlists):
         args.db.conn.execute(
             "delete from playlists where path in (" + ",".join(["?"] * len(playlists)) + ")", (*playlists,)
         )
+
+
+def post_act(args, media_file: str):
+    mark_media_watched(args, media_file)
+    if args.post_action == "keep":
+        return
+
+    if args.action in [SC.tubelisten, SC.tubewatch]:
+        if args.post_action == "remove":
+            mark_media_deleted(args, media_file)
+        elif args.post_action == "ask":
+            if not Confirm.ask("Keep?", default=False):
+                mark_media_deleted(args, media_file)
+        else:
+            raise Exception("Unrecognized post_action", args.post_action)
+
+    if args.action in [SC.listen, SC.watch]:
+        if args.post_action == "softdelete":
+            mark_media_deleted(args, media_file)
+
+        elif args.post_action == "delete":
+            delete_media(args, media_file)
+
+        elif args.post_action == "delete-if-audiobook":
+            if "audiobook" in media_file.lower():
+                delete_media(args, media_file)
+
+        elif args.post_action == "ask":
+            if not Confirm.ask("Keep?", default=False):
+                delete_media(args, media_file)
+
+        elif args.post_action == "askkeep":
+            if not Confirm.ask("Keep?", default=False):
+                delete_media(args, media_file)
+            else:
+                mv_to_keep_folder(args, media_file)
+
+        else:
+            raise Exception("Unrecognized post_action", args.post_action)
 
 
 def override_sort(string):
@@ -378,8 +425,8 @@ def geom_walk(v=1, h=1):
     geoms = []
     for v_idx in range(v):
         for h_idx in range(h):
-            x = (100 // max(1, v-1)) * v_idx
-            y = (100 // max(1, h-1)) * h_idx
+            x = (100 // max(1, v - 1)) * v_idx
+            y = (100 // max(1, h - 1)) * h_idx
             geoms.append(geom(va, ha, x, y))
 
     return geoms
@@ -447,7 +494,7 @@ def hstack(display, qty):
     if qty in mapper.keys():
         holes = mapper[qty]
     elif is_odd(qty):
-        holes = geom_walk(v=qty)
+        holes = geom_walk(h=qty)
     else:
         h, v = divmod(qty, 2)
         holes = geom_walk(h=h, v=h + v)
@@ -498,43 +545,46 @@ def get_multiple_player_template(args):
 
 
 def multiple_player(args, media):
-    def open_player(template_args):
-        m = media.pop()
+    def open_player(template_args, m):
+        print(m["path"])
         mp_args = ["--window-scale=1", "--no-border", "--no-keepaspect-window"]
         return subprocess.Popen([*args.player, *mp_args, *template_args, "--", m["path"]], **os_bg_kwargs())
 
     args.player = parse(args)
 
     template = get_multiple_player_template(args)
-    pids = []
+    players = []
 
     try:
         while media:
             for t_idx, t in enumerate(template):
                 try:
-                    player_process = pids[t_idx]
+                    m = players[t_idx]
                 except IndexError:
                     log.debug("%s IndexError", t_idx)
-                    pids.append(open_player(t))
+                    m = media.pop()
+                    players.append({**m, "process": open_player(t, m)})
                 else:
                     log.debug("%s Check if still running", t_idx)
-                    if player_process.poll() is not None:
-                        r = utils.Pclose(player_process)
+                    if m["process"].poll() is not None:
+                        r = utils.Pclose(m["process"])
                         if r.returncode != 0:
                             print("Player exited with code", r.returncode)
-                            print(join(r.args))
-                            print(r.stderr)
-                            print(r.stdout)
+                            log.debug(join(r.args))
                             if not args.ignore_errors:
                                 exit(r.returncode)
 
-                        pids[t_idx] = open_player(t)
+                        if args.action in [SC.listen, SC.watch, SC.tubelisten, SC.tubewatch]:
+                            post_act(args, m["path"])
+
+                        m = media.pop()
+                        players[t_idx] = {**m, "process": open_player(t, m)}
 
             log.debug("-- A dragon slumbers over its hoard of %s media --", len(media))
             sleep(0.5)  # stagger like Sir Michael Philip Jagger
     finally:
-        for pid in pids:
-            pid.kill()
+        for m in players:
+            m["process"].kill()
 
 
 def local_player(args, m, media_file):
