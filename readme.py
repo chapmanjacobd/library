@@ -228,9 +228,15 @@ Explore `library` databases in your browser
     datasette tv.db
 
 ### TODOs (PRs welcome)
-- dl: add downloading functionality: is_downloaded, download_folder
-- dl: lineage? integrate fs, tube, and dl?
-- dl: audio/video/photo download profiles
+- dl: playlists: download_folder, audio/video/photo download profile
+    - where is_downloaded = 0
+
+- dl: dl can operate on tube databases
+    - path: downloaded fs path
+    - webpath: URL
+    - is_downloaded = 1
+    - scan downloaded file, add metadata to media table
+
 - dl: yt-dlp, gallery-dl, bdfr
 - dl: bandcamp no id
 - dl: wclone?
