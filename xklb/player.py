@@ -407,13 +407,6 @@ def socket_play(args, m):
     sleep(args.interdimensional_cable)
 
 
-def is_odd(x):
-    if x & 1:
-        return True
-    else:
-        return False
-
-
 def geom(x_size, y_size, x, y):
     return [f"--geometry={x_size}%x{y_size}%+{x}%+{y}%"]
 
@@ -454,15 +447,16 @@ def vstack(display, qty):
         28: geom_walk(v=4, h=7),
         30: geom_walk(v=5, h=6),
         32: geom_walk(v=4, h=8),
-        33: geom_walk(v=3, h=11),
+        64: geom_walk(v=8, h=8),
     }
     if qty in mapper.keys():
         holes = mapper[qty]
-    elif is_odd(qty):
-        holes = geom_walk(v=qty)
     else:
         v, h = divmod(qty, 2)
-        holes = geom_walk(v=v, h=v + h)
+        if h:
+            holes = geom_walk(v=qty)
+        else:
+            holes = geom_walk(v=qty // v, h=h)
 
     return [[f'--screen-name="{display.name}"', *hole] for hole in holes]
 
@@ -489,15 +483,16 @@ def hstack(display, qty):
         28: geom_walk(v=7, h=4),
         30: geom_walk(v=6, h=5),
         32: geom_walk(v=8, h=4),
-        33: geom_walk(v=11, h=3),
+        64: geom_walk(v=8, h=8),
     }
     if qty in mapper.keys():
         holes = mapper[qty]
-    elif is_odd(qty):
-        holes = geom_walk(h=qty)
     else:
         h, v = divmod(qty, 2)
-        holes = geom_walk(h=h, v=h + v)
+        if v:
+            holes = geom_walk(h=qty)
+        else:
+            holes = geom_walk(h=qty // h, v=v)
 
     return [[f'--screen-name="{display.name}"', *hole] for hole in holes]
 
@@ -590,7 +585,7 @@ def multiple_player(args, media):
                         players[t_idx] = {**m, "process": open_player(t, m)}
 
             log.debug("-- A dragon slumbers over its hoard of %s media --", len(media))
-            sleep(0.5)  # stagger like Sir Michael Philip Jagger
+            sleep(0.2)
     finally:
         for m in players:
             m["process"].kill()

@@ -241,6 +241,7 @@ Explore `library` databases in your browser
 - dl: bandcamp no id
 - dl: wclone?
 - stats: lb stats, lb show/print
+- multiple-playback stdin is sticky
 - more test coverage -- https://hypothesis.readthedocs.io/en/latest/quickstart.html
 """
 )
