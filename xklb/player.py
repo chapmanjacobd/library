@@ -1,4 +1,4 @@
-import csv, operator, os, platform, re, shutil, socket, subprocess
+import csv, math, operator, os, platform, re, shutil, socket, subprocess
 from copy import deepcopy
 from io import StringIO
 from pathlib import Path
@@ -447,16 +447,22 @@ def vstack(display, qty):
         28: geom_walk(v=4, h=7),
         30: geom_walk(v=5, h=6),
         32: geom_walk(v=4, h=8),
+        36: geom_walk(v=6, h=6),
+        49: geom_walk(v=7, h=7),
         64: geom_walk(v=8, h=8),
+        81: geom_walk(v=9, h=9),
+        100: geom_walk(v=10, h=10),
     }
     if qty in mapper.keys():
         holes = mapper[qty]
     else:
-        v, h = divmod(qty, 2)
-        if h:
+        dv = list(utils.divisor_gen(qty))
+        if not dv:
             holes = geom_walk(v=qty)
         else:
-            holes = geom_walk(v=qty // v, h=h)
+            v = dv[len(dv) // 2]
+            h = qty // v
+            holes = geom_walk(v=v, h=h)
 
     return [[f'--screen-name="{display.name}"', *hole] for hole in holes]
 
@@ -483,16 +489,22 @@ def hstack(display, qty):
         28: geom_walk(v=7, h=4),
         30: geom_walk(v=6, h=5),
         32: geom_walk(v=8, h=4),
+        36: geom_walk(v=6, h=6),
+        49: geom_walk(v=7, h=7),
         64: geom_walk(v=8, h=8),
+        81: geom_walk(v=9, h=9),
+        100: geom_walk(v=10, h=10),
     }
     if qty in mapper.keys():
         holes = mapper[qty]
     else:
-        h, v = divmod(qty, 2)
-        if v:
+        dv = list(utils.divisor_gen(qty))
+        if not dv:
             holes = geom_walk(h=qty)
         else:
-            holes = geom_walk(h=qty // h, v=v)
+            h = dv[len(dv) // 2]
+            v = qty // h
+            holes = geom_walk(v=v, h=h)
 
     return [[f'--screen-name="{display.name}"', *hole] for hole in holes]
 
