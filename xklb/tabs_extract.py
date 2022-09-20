@@ -1,6 +1,7 @@
 import argparse, sys
 from datetime import datetime
 from pathlib import Path
+from typing import List
 from urllib.parse import urlparse
 
 from xklb import db, player, utils
@@ -8,7 +9,7 @@ from xklb.paths import Frequency, sanitize_url
 from xklb.utils import argparse_enum, log
 
 
-def parse_args_tabsadd():
+def parse_args_tabsadd() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="library tabsadd",
         usage=r"""library tabsadd --frequency {daily,weekly,monthly,quarterly,yearly} --category CATEGORY [--no-sanitize] [database] paths ...
@@ -60,7 +61,7 @@ def parse_args_tabsadd():
     return args
 
 
-def get_new_paths(args):
+def get_new_paths(args) -> List[str]:
     if not args.no_sanitize:
         args.paths = [sanitize_url(args, path) for path in args.paths]
 
@@ -88,7 +89,7 @@ def get_new_paths(args):
     return args.paths
 
 
-def extract_url_metadata(args, path):
+def extract_url_metadata(args, path: str) -> dict:
     hostname = urlparse(path).hostname or ""
 
     return dict(
@@ -103,7 +104,7 @@ def extract_url_metadata(args, path):
     )
 
 
-def tabs_add(args=None):
+def tabs_add(args=None) -> None:
     if args:
         sys.argv[1:] = args
     args = parse_args_tabsadd()

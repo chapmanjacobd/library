@@ -1,4 +1,7 @@
 import re, sys
+from typing import List, Union
+
+import timeout_decorator
 
 from xklb.utils import combine, log, safe_unpack
 
@@ -15,20 +18,26 @@ except ModuleNotFoundError:
 REGEX_SENTENCE_ENDS = re.compile(r";|,|\.|\*|\n|\t")
 
 
-def munge_book_tags(media, f):
+def munge_book_tags(media, f) -> Union[dict, None]:
     if _textract is None:
-        raise ModuleNotFoundError("textract is required for text database creation: pip install textract")
+        raise ModuleNotFoundError(
+            "textract is required for text database creation: pip install textract; sudo dnf install libxml2-devel libxslt-devel antiword unrtf poppler-utils tesseract sox-plugins-nonfree sox libjpeg-devel swig"
+        )
     try:
         tags = _textract.process(f)
         tags = REGEX_SENTENCE_ENDS.split(tags.decode())
     except Exception as e:
+        log.warning(e)
         print(f"[{f}] Failed reading file", file=sys.stderr)
-        log.debug(e)
         tags = []
     return {**media, "tags": combine(tags)}
 
 
-def munge_image_tags(m, e):
+munge_book_tags_fast = timeout_decorator.timeout(100)(munge_book_tags)
+munge_book_tags_slow = timeout_decorator.timeout(500)(munge_book_tags)
+
+
+def munge_image_tags(m: dict, e: dict) -> dict:
     chroma_subsample = int((e.pop("File:YCbCrSubSampling", None) or "0").replace(" ", ""))
     if chroma_subsample == 0:
         chroma_subsample = None
@@ -198,14 +207,14 @@ def munge_image_tags(m, e):
     return m
 
 
-def extract_image_metadata_chunk(metadata, l):
+def extract_image_metadata_chunk(metadata: List[dict], chunk_paths: List[str]) -> List[dict]:
     if _exiftool is None:
         raise ModuleNotFoundError(
             "exiftool and PyExifTool are required for image database creation: sudo dnf install perl-Image-ExifTool && pip install PyExifTool"
         )
 
     with _exiftool.ExifToolHelper() as et:
-        exif = et.get_metadata(l)
+        exif = et.get_metadata(chunk_paths)
 
     exif_enriched = []
     for m, e in zip(metadata, exif):

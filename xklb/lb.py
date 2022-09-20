@@ -12,7 +12,7 @@ from xklb.tube_extract import tube_add, tube_update
 from xklb.utils import SC, log
 
 
-def lb_usage():
+def lb_usage() -> str:
     return """xk media library [lb]
 
     local media subcommands:
@@ -45,12 +45,12 @@ def lb_usage():
     """
 
 
-def print_help(parser):
+def print_help(parser) -> None:
     print(lb_usage())
     print(parser.epilog)
 
 
-def lb(args=None):
+def lb(args=None) -> None:
     if args:
         sys.argv[2:] = args
 
@@ -132,7 +132,7 @@ def lb(args=None):
         print_help(parser)
 
 
-def main():
+def main() -> None:
     lb()
 
 

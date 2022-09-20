@@ -1,5 +1,6 @@
 import argparse, operator
 from copy import deepcopy
+from typing import List
 
 import humanize
 from rich import print, prompt
@@ -8,7 +9,7 @@ from tabulate import tabulate
 from xklb import db, player, utils
 
 
-def get_duplicates(args):
+def get_duplicates(args) -> List[dict]:
     query = f"""
     SELECT
         m1.path keep_path
@@ -49,7 +50,7 @@ def get_duplicates(args):
     return db_resp
 
 
-def parse_args():
+def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("database")
     parser.add_argument("--only-soft-delete", action="store_true")
@@ -60,7 +61,7 @@ def parse_args():
     return args
 
 
-def deduplicate_music():
+def deduplicate_music() -> None:
     args = parse_args()
     duplicates = get_duplicates(args)
     duplicates_count = len(duplicates)
@@ -76,7 +77,7 @@ def deduplicate_music():
     print(f"{duplicates_count} duplicates found (showing {args.limit})")
     print(f"Approx. space savings: {humanize.naturalsize(duplicates_size // 2)}")
     print(
-        "Warning! This script assumes that the database is up to date. If you have deleted any files manually, run a rescan (via fsadd) for each folder in your database first!"
+        "Warning! This script assumes that the database is up to date. If you have deleted any files manually, run a re-scan (via fsadd) for each folder in your database first!"
     )
 
     if len(duplicates) > 0 and prompt.Confirm.ask("Delete duplicates?", default=False):

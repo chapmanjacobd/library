@@ -1,13 +1,11 @@
 import sys
-from pathlib import Path
-from shutil import which
-from typing import Dict
+from typing import Dict, Union
 
 import ffmpeg, mutagen
 from tinytag import TinyTag
 
 from xklb import paths, subtitle, utils
-from xklb.utils import cmd, combine, log, safe_unpack
+from xklb.utils import combine, log, safe_unpack
 
 
 def get_provenance(file):
@@ -17,21 +15,27 @@ def get_provenance(file):
     return None
 
 
-def get_subtitle_tags(f, streams, codec_types):
+def get_subtitle_tags(args, f, streams, codec_types) -> dict:
     attachment_count = sum([1 for s in codec_types if s == "attachment"])
-    internal_subtitles = utils.conform(
-        [
-            subtitle.extract(f, s["index"])
-            for s in streams
-            if s.get("codec_type") == "subtitle" and s.get("codec_name") not in subtitle.IMAGE_SUBTITLE_CODECS
-        ],
-    )
+    internal_subtitles_count = sum([1 for s in codec_types if s == "subtitle"])
 
-    external_subtitles = subtitle.get_external(f)
-    subs_text = subtitle.subs_to_text(f, internal_subtitles + external_subtitles)
+    if args.scan_subtitles:
+        internal_subtitles_text = utils.conform(
+            [
+                subtitle.extract(f, s["index"])
+                for s in streams
+                if s.get("codec_type") == "subtitle" and s.get("codec_name") not in subtitle.IMAGE_SUBTITLE_CODECS
+            ],
+        )
+
+        external_subtitles = subtitle.get_external(f)
+        subs_text = subtitle.subs_to_text(f, internal_subtitles_text + external_subtitles)
+    else:
+        external_subtitles = []
+        subs_text = []
 
     video_tags = {
-        "subtitle_count": len(internal_subtitles + external_subtitles),
+        "subtitle_count": internal_subtitles_count + len(external_subtitles),
         "attachment_count": attachment_count,
         "tags": combine(subs_text),
     }
@@ -39,7 +43,7 @@ def get_subtitle_tags(f, streams, codec_types):
     return video_tags
 
 
-def parse_tags(mutagen: Dict, tinytag: Dict):
+def parse_tags(mutagen: Dict, tinytag: Dict) -> dict:
     tags = {
         "mood": combine(
             mutagen.get("albummood"),
@@ -91,7 +95,7 @@ def parse_tags(mutagen: Dict, tinytag: Dict):
     return tags
 
 
-def get_audio_tags(f):
+def get_audio_tags(f) -> dict:
     try:
         tiny_tags = utils.dict_filter_bool(TinyTag.get(f).as_dict())
     except Exception:
@@ -106,7 +110,7 @@ def get_audio_tags(f):
     return stream_tags
 
 
-def munge_av_tags(args, media, f):
+def munge_av_tags(args, media, f) -> Union[dict, None]:
     try:
         probe = ffmpeg.probe(f, show_chapters=None)
     except (KeyboardInterrupt, SystemExit):
@@ -142,7 +146,7 @@ def munge_av_tags(args, media, f):
 
     streams = probe["streams"]
 
-    def parse_framerate(string):
+    def parse_framerate(string) -> Union[int, None]:
         top, bot = string.split("/")
         bot = int(bot)
         if bot == 0:
@@ -185,7 +189,7 @@ def munge_av_tags(args, media, f):
     }
 
     if args.db_type == "v":
-        video_tags = get_subtitle_tags(f, streams, codec_types)
+        video_tags = get_subtitle_tags(args, f, streams, codec_types)
         media = {**media, **video_tags}
 
     if args.db_type == "a":

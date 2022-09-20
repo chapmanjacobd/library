@@ -1,15 +1,16 @@
 import os
+from typing import List
 
 import sqlite_utils
 
 from xklb.utils import log
 
 
-def tracer(sql, params):
+def tracer(sql, params) -> None:
     print("SQL: {} - params: {}".format(sql, params))
 
 
-def connect(args):
+def connect(args) -> sqlite_utils.Database:
     if not os.path.exists(args.database) and ":memory:" not in args.database:
         log.error(f"Database file '{args.database}' does not exist. Create one with lb fsadd, tubeadd, or tabsadd.")
         exit(1)
@@ -17,7 +18,7 @@ def connect(args):
     return sqlite_utils.Database(args.database, tracer=tracer if args.verbose > 1 else None)  # type: ignore
 
 
-def optimize(args):
+def optimize(args) -> None:
     print("Optimizing database")
     db: sqlite_utils.Database = args.db
     columns = db["media"].columns_dict
@@ -42,12 +43,12 @@ def optimize(args):
     db.analyze()
 
 
-def fts_quote(l):
+def fts_quote(query: List[str]) -> List[str]:
     fts_words = [" NOT ", " AND ", " OR ", "*", ":", "NEAR("]
-    return [s if any([r in s for r in fts_words]) else '"' + s + '"' for s in l]
+    return [s if any([r in s for r in fts_words]) else '"' + s + '"' for s in query]
 
 
-def fts_search(args, bindings):
+def fts_search(args, bindings) -> str:
     bindings["query"] = " AND ".join(fts_quote(args.include))
     if args.exclude:
         bindings["query"] += " NOT " + " NOT ".join(fts_quote(args.exclude))

@@ -1,4 +1,4 @@
-import csv, math, operator, os, platform, re, shutil, socket, subprocess
+import csv, operator, os, platform, re, shutil, socket, subprocess
 from copy import deepcopy
 from io import StringIO
 from pathlib import Path
@@ -7,11 +7,10 @@ from random import randrange
 from shlex import join, quote
 from shutil import which
 from time import sleep
-from typing import List, Union
+from typing import List, Tuple, Union
 
-import ffmpeg, sqlite_utils
+import screeninfo
 from rich.prompt import Confirm
-from screeninfo import get_monitors
 from tabulate import tabulate
 
 from xklb import paths, utils
@@ -27,7 +26,7 @@ from xklb.utils import (
 )
 
 
-def generic_player(args):
+def generic_player(args) -> List[str]:
     if platform.system() == "Linux":
         player = ["xdg-open"]
     elif any([p in platform.system() for p in ["Windows", "_NT-", "MSYS"]]):
@@ -41,7 +40,7 @@ def generic_player(args):
     return player
 
 
-def calculate_duration(args, m):
+def calculate_duration(args, m) -> Tuple[int, int]:
     start = 0
     end = m["duration"]
 
@@ -61,7 +60,7 @@ def calculate_duration(args, m):
     return start, end
 
 
-def find_xdg_application(media_file):
+def find_xdg_application(media_file) -> Union[str, None]:
     mimetype = cmd("xdg-mime", "query", "filetype", media_file).stdout
     default_application = cmd("xdg-mime", "query", "default", mimetype).stdout
     player_path = which(default_application.replace(".desktop", ""))
@@ -125,7 +124,7 @@ def parse(args, m=None, media_file=None) -> List[str]:
     return player
 
 
-def mv_to_keep_folder(args, media_file: str):
+def mv_to_keep_folder(args, media_file: str) -> None:
     keep_path = Path(args.keep_dir)
     if not keep_path.is_absolute():
         kp = re.match(args.shallow_organize + "(.*?)/", media_file)
@@ -142,7 +141,7 @@ def mv_to_keep_folder(args, media_file: str):
         args.db.conn.execute("UPDATE media set path = ? where path = ?", [new_path, media_file])
 
 
-def moved_media(args, moved_files: Union[str, list], base_from, base_to):
+def moved_media(args, moved_files: Union[str, list], base_from, base_to) -> int:
     moved_files = utils.conform(moved_files)
     modified_row_count = 0
     if len(moved_files) > 0:
@@ -162,7 +161,7 @@ def moved_media(args, moved_files: Union[str, list], base_from, base_to):
     return modified_row_count
 
 
-def mark_media_watched(args, files):
+def mark_media_watched(args, files) -> int:
     files = utils.conform(files)
     modified_row_count = 0
     if len(files) > 0:
@@ -183,7 +182,7 @@ def mark_media_watched(args, files):
     return modified_row_count
 
 
-def mark_media_deleted(args, paths):
+def mark_media_deleted(args, paths) -> int:
     paths = utils.conform(paths)
 
     modified_row_count = 0
@@ -204,16 +203,16 @@ def mark_media_deleted(args, paths):
     return modified_row_count
 
 
-def delete_media(args, media_file: str):
+def delete_media(args, media_file: str) -> int:
     if len(args.prefix) > 0:
         Path(media_file).unlink()
     else:
         utils.trash(media_file)
 
-    mark_media_deleted(args, media_file)
+    return mark_media_deleted(args, media_file)
 
 
-def delete_playlists(args, playlists):
+def delete_playlists(args, playlists) -> None:
     with args.db.conn:
         args.db.conn.execute(
             "delete from media where playlist_path in (" + ",".join(["?"] * len(playlists)) + ")", (*playlists,)
@@ -223,7 +222,7 @@ def delete_playlists(args, playlists):
         )
 
 
-def post_act(args, media_file: str):
+def post_act(args, media_file: str) -> None:
     mark_media_watched(args, media_file)
     if args.post_action == "keep":
         return
@@ -262,22 +261,22 @@ def post_act(args, media_file: str):
             raise Exception("Unrecognized post_action", args.post_action)
 
 
-def override_sort(string):
+def override_sort(sort_expression: str) -> str:
     YEAR_MONTH = lambda var: f"cast(strftime('%Y%m', datetime({var}, 'unixepoch')) as int)"
 
     return (
-        string.replace("month_created", YEAR_MONTH("time_created"))
+        sort_expression.replace("month_created", YEAR_MONTH("time_created"))
         .replace("month_modified", YEAR_MONTH("time_modified"))
         .replace("random", "random()")
         .replace("priority", " play_count, ntile(1000) over (order by size/duration) desc")
     )
 
 
-def get_ordinal_media(args, path):
+def get_ordinal_media(args, path: str) -> str:
     # TODO: maybe try https://dba.stackexchange.com/questions/43415/algorithm-for-finding-the-longest-prefix
 
     similar_videos = []
-    candidate = str(path)
+    candidate = deepcopy(path)
 
     total_media = args.db.execute("select count(*) val from media").fetchone()[0]
     while len(similar_videos) < 2:
@@ -323,7 +322,7 @@ def get_ordinal_media(args, path):
     return similar_videos[0]
 
 
-def watch_chromecast(args, m, subtitles_file=None):
+def watch_chromecast(args, m: dict, subtitles_file=None) -> Union[subprocess.CompletedProcess, None]:
     if "vlc" in args.player:
         catt_log = cmd(
             "vlc",
@@ -354,7 +353,7 @@ def watch_chromecast(args, m, subtitles_file=None):
     return catt_log
 
 
-def listen_chromecast(args, m):
+def listen_chromecast(args, m: dict) -> Union[subprocess.CompletedProcess, None]:
     Path(paths.CAST_NOW_PLAYING).write_text(m["path"])
     Path(paths.FAKE_SUBTITLE).touch()
     if args.with_local:
@@ -375,7 +374,7 @@ def listen_chromecast(args, m):
     return catt_log
 
 
-def socket_play(args, m):
+def socket_play(args, m: dict) -> None:
     if args.sock is None:
         subprocess.Popen(["mpv", "--idle", "--input-ipc-server=" + args.mpv_socket])
         while not os.path.exists(args.mpv_socket):
@@ -407,11 +406,11 @@ def socket_play(args, m):
     sleep(args.interdimensional_cable)
 
 
-def geom(x_size, y_size, x, y):
+def geom(x_size, y_size, x, y) -> List[str]:
     return [f"--geometry={x_size}%x{y_size}%+{x}%+{y}%"]
 
 
-def geom_walk(v=1, h=1):
+def geom_walk(v=1, h=1) -> List[List[str]]:
     va = 100 // v
     ha = 100 // h
 
@@ -425,9 +424,9 @@ def geom_walk(v=1, h=1):
     return geoms
 
 
-def grid_stack(display, qty, swap=False):
+def grid_stack(display, qty, swap=False) -> List[List[str]]:
     if qty == 1:
-        return [f'--screen-name="{display.name}"', "--fs", f'--fs-screen-name="{display.name}"']
+        return [[f'--screen-name="{display.name}"', "--fs", f'--fs-screen-name="{display.name}"']]
     else:
         dv = list(utils.divisor_gen(qty))
         if not dv:
@@ -444,7 +443,7 @@ def grid_stack(display, qty, swap=False):
     return [[f'--screen-name="{display.name}"', *hole] for hole in holes]
 
 
-def get_display_by_name(displays, screen_name):
+def get_display_by_name(displays, screen_name) -> List[screeninfo.Monitor]:
     for d in displays:
         if d.name == screen_name:
             return [d]
@@ -453,7 +452,7 @@ def get_display_by_name(displays, screen_name):
     raise Exception(f'Display "{screen_name}" not found. I see: "{display_names}"')
 
 
-def is_hstack(args, display):
+def is_hstack(args, display) -> bool:
     if args.hstack or args.portrait:
         return True
     elif args.vstack:
@@ -464,8 +463,8 @@ def is_hstack(args, display):
         return True
 
 
-def get_multiple_player_template(args):
-    displays = get_monitors()
+def get_multiple_player_template(args) -> List[str]:
+    displays = screeninfo.get_monitors()
     if args.screen_name:
         displays = get_display_by_name(displays, args.screen_name)
 
@@ -494,7 +493,7 @@ def get_multiple_player_template(args):
     return players
 
 
-def multiple_player(args, media):
+def multiple_player(args, media) -> None:
     def open_player(template_args, m):
         print(m["path"])
         mp_args = ["--window-scale=1", "--no-border", "--no-keepaspect-window"]
@@ -537,7 +536,7 @@ def multiple_player(args, media):
             m["process"].kill()
 
 
-def local_player(args, m, media_file):
+def local_player(args, m, media_file) -> None:
     if system() == "Windows" or args.action in [SC.watch, SC.tubewatch]:
         r = cmd(*args.player, media_file, strict=False)
     else:  # args.action in [SC.listen, SC.tubelisten]
@@ -555,7 +554,7 @@ def local_player(args, m, media_file):
         sleep(delay)
 
 
-def printer(args, query, bindings):
+def printer(args, query, bindings) -> None:
     if "a" in args.print:
         query = f"""select
             "Aggregate" as path

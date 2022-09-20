@@ -8,7 +8,7 @@ from xklb.fs_extract import main as xr
 from xklb.lb import lb
 
 v_db = "--db", "tests/data/video.db"
-xr([*v_db, "--optimize", "tests/data/"])
+xr([*v_db, "--optimize", "--scan-subtitles", "tests/data/"])
 
 a_db = "--db", "tests/data/audio.db"
 xr([*a_db, "--audio", "tests/data/"])
@@ -84,7 +84,23 @@ class TestFs(unittest.TestCase):
 
     @mock.patch("xklb.fs_actions.play")
     def test_wt_search(self, play_mocked):
-        sys.argv = ["wt", *v_db, "-s", "tests", "test AND data", "-E", "2", "-s", "test", "-E", "3"]
+        sys.argv = [
+            "wt",
+            *v_db,
+            "-s",
+            "tests",
+            "test AND data",
+            "-s",
+            "boom",
+            "-s",
+            "beep",
+            "-E",
+            "2",
+            "-s",
+            "test",
+            "-E",
+            "3",
+        ]
         wt()
         out = play_mocked.call_args[0][1]
         assert out is not None

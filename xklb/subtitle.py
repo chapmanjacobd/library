@@ -1,7 +1,7 @@
 import argparse, os, tempfile
 from pathlib import Path
 from shlex import quote
-from typing import List
+from typing import List, Tuple, Union
 
 import ffmpeg, pysubs2, sqlite_utils
 from ffmpeg import Error
@@ -14,7 +14,7 @@ SUBTITLE_FORMATS = "vtt|srt|ssa|ass|jss|aqt|mpl2|mpsub|pjs|rt|sami|smi|stl|xml|t
 IMAGE_SUBTITLE_CODECS = ["dvbsub", "dvdsub", "pgssub", "xsub", "dvb_subtitle", "dvd_subtitle", "hdmv_pgs_subtitle"]
 
 
-def extract(video_file, stream_index):
+def extract(video_file, stream_index) -> Union[str, None]:
     temp_srt = tempfile.mktemp(".srt", dir=SUB_TEMP_DIR)
 
     stream_id = "0:" + str(stream_index)
@@ -32,7 +32,7 @@ def extract(video_file, stream_index):
     return temp_srt
 
 
-def convert_to_srt(path):
+def convert_to_srt(path) -> str:
     temp_srt = tempfile.mktemp(".srt", dir=SUB_TEMP_DIR)
     try:
         ffmpeg.input(path).output(temp_srt).global_args("-nostdin").run(quiet=True)
@@ -44,14 +44,14 @@ def convert_to_srt(path):
         return temp_srt
 
 
-def read_sub_unsafe(path):
+def read_sub_unsafe(path) -> List[str]:
     return [
         remove_text_inside_brackets(caption.text.replace(r"\N", " ").replace(r"\n", " ").replace("\n", " "))
         for caption in pysubs2.load(path, format_="srt")
     ]
 
 
-def read_sub(path):
+def read_sub(path) -> List[str]:
     if Path(path).suffix.lower() != ".srt":
         path = convert_to_srt(path)
 
@@ -61,7 +61,7 @@ def read_sub(path):
         return read_sub_unsafe(convert_to_srt(path))
 
 
-def subs_to_text(video_path, paths: List[str]):
+def subs_to_text(video_path, paths: List[str]) -> str:
     def sub_to_text(path):
         try:
             return read_sub(path)
@@ -83,7 +83,7 @@ def has_internal_subtitle(file):
         return True
 
 
-def externalize_subtitle(media_file):
+def externalize_subtitle(media_file) -> Union[str, None]:
     subs = ffmpeg.probe(media_file)["streams"]
 
     subtitles_file = None
@@ -107,7 +107,7 @@ def externalize_subtitle(media_file):
     return subtitles_file
 
 
-def get_external(file):
+def get_external(file) -> List[str]:
     p = Path(file)
 
     subtitles = [
@@ -120,7 +120,7 @@ def get_external(file):
     return []
 
 
-def get(args, file):
+def get(args, file) -> None:
     try:
         if has_internal_subtitle(file) or len(get_external(file)) > 0:
             return
@@ -164,7 +164,7 @@ def get(args, file):
         )
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(prog="library subtitle")
     parser.add_argument("paths", nargs="*")
     parser.add_argument("--youtube-only", action="store_true")
