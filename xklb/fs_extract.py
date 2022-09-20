@@ -1,14 +1,18 @@
 import argparse, math, os, sys
+from copy import deepcopy
 from pathlib import Path
+from timeit import default_timer as timer
+from typing import Dict, List, Union
 
 from joblib import Parallel, delayed
+from timeout_decorator import TimeoutError
 
 from xklb import av, books, db, paths, subtitle, utils
 from xklb.player import mark_media_deleted
 from xklb.utils import SQLITE_PARAM_LIMIT, log
 
 
-def calculate_sparseness(stat):
+def calculate_sparseness(stat) -> int:
     if stat.st_size == 0:
         sparseness = 0
     else:
@@ -17,12 +21,13 @@ def calculate_sparseness(stat):
     return sparseness
 
 
-def extract_metadata(args, f):
+def extract_metadata(mp_args, f) -> Union[Dict[str, int], None]:
     log.debug(f)
 
     try:
         stat = os.stat(f)
     except Exception:
+        log.error(f"[{f}] Could not read file stats (possible filesystem corruption; check dmesg)")
         return
 
     media = dict(
@@ -38,37 +43,49 @@ def extract_metadata(args, f):
     if hasattr(stat, "st_blocks"):
         media = {**media, "sparseness": calculate_sparseness(stat)}
 
-    if args.db_type == "f":
+    if mp_args.db_type == "f":
         media = {**media, "is_dir": os.path.isdir(f)}
 
-    if args.db_type == "t":
-        return books.munge_book_tags(media, f)
+    if mp_args.db_type in ["a", "v"]:
+        return av.munge_av_tags(mp_args, media, f)
 
-    if args.db_type in ["a", "v"]:
-        return av.munge_av_tags(args, media, f)
+    if mp_args.db_type == "t":
+        try:
+            start = timer()
+            if any([mp_args.ocr, mp_args.speech_recognition]):
+                media = books.munge_book_tags_slow(media, f)
+            else:
+                media = books.munge_book_tags_fast(media, f)
+        except TimeoutError:
+            log.warning(f"[{f}]: Timed out trying to read file")
+            return media
+        else:
+            log.debug(f"[{f}]: {timer()-start}")
+            return media
 
     return media
 
 
-def extract_chunk(args, l):
+def extract_chunk(args, chunk_paths) -> None:
     n_jobs = -1
     if args.db_type in ["t", "p", "f"]:
-        n_jobs = (os.cpu_count() or 4) * 2
-    if args.verbose > 0:
+        n_jobs = int((os.cpu_count() or 4) * 1.5)
+    if args.verbose > 1:
         n_jobs = 1
 
-    mp_args = argparse.Namespace(delete_unplayable=args.delete_unplayable, db_type=args.db_type)
-    metadata = Parallel(n_jobs=n_jobs)(delayed(extract_metadata)(mp_args, file) for file in l) or []
+    mp_args = argparse.Namespace(**{k: v for k, v in args.__dict__.items() if k not in {"db"}})
+    metadata = Parallel(n_jobs=n_jobs)(delayed(extract_metadata)(mp_args, p) for p in chunk_paths) or []
 
     if args.db_type == "i":
-        metadata = books.extract_image_metadata_chunk(metadata, l)
+        metadata = books.extract_image_metadata_chunk(metadata, chunk_paths)
 
-    [p.unlink() for p in Path(paths.SUB_TEMP_DIR).glob("*.srt")]
+    if args.scan_subtitles:
+        [p.unlink() for p in Path(paths.SUB_TEMP_DIR).glob("*.srt")]
 
     args.db["media"].insert_all(list(filter(None, metadata)), pk="path", alter=True, replace=True)
 
 
-def find_new_files(args, path):
+def find_new_files(args, path) -> List[str]:
     if args.db_type == "a":
         scanned_files = paths.get_media_files(path, audio=True)
     elif args.db_type == "v":
@@ -104,9 +121,10 @@ def find_new_files(args, path):
     return new_files
 
 
-def scan_path(args, path):
+def scan_path(args, path) -> int:
     path = Path(path).resolve()
     if not path.exists():
+        print(f"[{path}] Path does not exist")
         return 0
     print(f"[{path}] Building file list...")
 
@@ -116,7 +134,10 @@ def scan_path(args, path):
         print(f"[{path}] Adding {len(new_files)} new media")
         log.debug(new_files)
 
-        batch_count = SQLITE_PARAM_LIMIT // 100
+        if args.db_type in ["t"]:
+            batch_count = SQLITE_PARAM_LIMIT // 600
+        else:
+            batch_count = SQLITE_PARAM_LIMIT // 100
         chunks_count = math.ceil(len(new_files) / batch_count)
         df_chunked = utils.chunks(new_files, batch_count)
         for idx, l in enumerate(df_chunked):
@@ -131,7 +152,7 @@ def scan_path(args, path):
     return len(new_files)
 
 
-def extractor(args):
+def extractor(args) -> None:
     Path(args.database).touch()
     args.db = db.connect(args)
     new_files = 0
@@ -142,7 +163,7 @@ def extractor(args):
         db.optimize(args)
 
 
-def parse_args():
+def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="library fsadd",
         usage="""library fsadd [--audio | --video | --image |  --text | --filesystem] [database] paths ...
@@ -162,6 +183,9 @@ def parse_args():
 
     Create text database and scan with OCR and speech-recognition:
         library fsadd --text --ocr --speech-recognition ./receipts_and_messages/
+
+    Create video database and read internal/external subtitle files for use in search:
+        library fsadd --scan-subtitles ./tv/
 
     Run with --optimize to add indexes to every int and text column:
         library fsadd --optimize --audio ./music/
@@ -186,6 +210,7 @@ def parse_args():
 
     parser.add_argument("--ocr", "--OCR", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--speech-recognition", "--speech", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--scan-subtitles", "--scan-subtitle", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--subtitle", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--youtube-only", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--subliminal-only", action="store_true", help=argparse.SUPPRESS)
@@ -216,7 +241,7 @@ def parse_args():
     return args
 
 
-def main(args=None):
+def main(args=None) -> None:
     if args:
         sys.argv[1:] = args
 

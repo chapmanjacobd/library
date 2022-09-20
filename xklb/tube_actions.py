@@ -1,5 +1,6 @@
 import argparse, operator
 from copy import deepcopy
+from typing import Tuple
 
 from tabulate import tabulate
 
@@ -81,7 +82,7 @@ tube_exclude_string = (
 )
 
 
-def construct_tube_query(args):
+def construct_tube_query(args) -> Tuple[str, dict]:
     cf = []
     bindings = {}
 
@@ -131,17 +132,17 @@ def construct_tube_query(args):
     return query, bindings
 
 
-def tube_watch():
+def tube_watch() -> None:
     args = parse_args(SC.tubewatch, "tube.db", default_chromecast="Living Room TV")
     process_playqueue(args, construct_tube_query)
 
 
-def tube_listen():
+def tube_listen() -> None:
     args = parse_args(SC.tubelisten, "tube.db", default_chromecast="Xylo and Orchestra")
     process_playqueue(args, construct_tube_query)
 
 
-def printer(args):
+def printer(args) -> None:
     query = "select distinct ie_key, title, path from playlists"
     if "a" in args.print:
         query = f"""select
@@ -178,7 +179,7 @@ def printer(args):
                 print("Total duration:", duration)
 
 
-def tube_list():
+def tube_list() -> None:
     parser = argparse.ArgumentParser(
         prog="library tubelist",
         usage="""library tubelist [database] [--print {p,f,a}] [--delete ...]

@@ -5,7 +5,7 @@ from functools import wraps
 from pathlib import Path
 from shutil import which
 from types import SimpleNamespace
-from typing import Dict, List, Union
+from typing import Any, Dict, Generator, List, Union
 
 import humanize
 from IPython.core import ultratb
@@ -25,12 +25,12 @@ DEFAULT_PLAY_QUEUE = 120
 DEFAULT_MULTIPLE_PLAYBACK = -1
 
 
-def signal_handler(signal, frame):
+def exit_nicely(signal, frame):
     print("\nExiting... (Ctrl+C)\n")
     sys.exit(130)
 
 
-signal.signal(signal.SIGINT, signal_handler)
+signal.signal(signal.SIGINT, exit_nicely)
 
 
 class SC:
@@ -44,7 +44,7 @@ class SC:
     view = "view"
 
 
-def os_bg_kwargs():
+def os_bg_kwargs() -> dict:
     if hasattr(os, "setpgrp"):
         os_kwargs = dict(start_new_session=True)
     else:
@@ -98,7 +98,7 @@ def argparse_log():
 log = argparse_log()
 
 
-def flatten(xs: Iterable):
+def flatten(xs: Iterable) -> Generator:
     for x in xs:
         if isinstance(x, Iterable) and not isinstance(x, (str, bytes)):
             yield from flatten(x)
@@ -108,7 +108,7 @@ def flatten(xs: Iterable):
             yield x
 
 
-def conform(list_: Union[str, Iterable]):
+def conform(list_: Union[str, Iterable]) -> List:
     if not isinstance(list_, list):
         list_ = [list_]
     list_ = flatten(list_)
@@ -116,7 +116,7 @@ def conform(list_: Union[str, Iterable]):
     return list_
 
 
-def cmd(*command, strict=True, cwd=None, quiet=True, interactive=False, **kwargs):
+def cmd(*command, strict=True, cwd=None, quiet=True, interactive=False, **kwargs) -> subprocess.CompletedProcess:
     EXP_FILTER = re.compile(
         "|".join(
             [
@@ -160,7 +160,7 @@ def cmd(*command, strict=True, cwd=None, quiet=True, interactive=False, **kwargs
     return r
 
 
-def trash(f: Union[Path, str]):
+def trash(f: Union[Path, str]) -> None:
     trash_put = which("trash-put") or which("trash")
     if trash_put is not None:
         cmd(trash_put, f, strict=False)
@@ -168,11 +168,11 @@ def trash(f: Union[Path, str]):
         Path(f).unlink(missing_ok=True)
 
 
-def remove_whitespaace(string):
+def remove_whitespaace(string) -> str:
     return " ".join(string.split())
 
 
-def remove_text_inside_brackets(text, brackets="()[]"):  # thanks @jfs
+def remove_text_inside_brackets(text: str, brackets="()[]") -> str:  # thanks @jfs
     count = [0] * (len(brackets) // 2)  # count open/close brackets
     saved_chars = []
     for character in text:
@@ -200,7 +200,7 @@ def get_ip_of_chromecast(device_name):
     return cast_infos[0].host
 
 
-def mpv_enrich(args, media):
+def mpv_enrich(args, media) -> List[dict]:
     for m in media:
         md5 = hashlib.md5(m["path"].encode("utf-8")).hexdigest().upper()
         if Path(args.watch_later_directory, md5).exists():
@@ -213,7 +213,7 @@ def mpv_enrich(args, media):
     return sorted(media, key=lambda m: m.get("time_partial_first") or 0, reverse=True)
 
 
-def mpv_enrich2(args, media):
+def mpv_enrich2(args, media) -> List[dict]:
     md5s = {hashlib.md5(m["path"].encode("utf-8")).hexdigest().upper(): m for m in media}
     paths = list(Path(args.watch_later_directory).glob("*"))
     filtered_list = [
@@ -229,27 +229,27 @@ def mpv_enrich2(args, media):
     return sorted(filtered_list, key=lambda m: m.get("time_partial_first") or 0, reverse=False)
 
 
-def dict_filter_bool(kwargs):
+def dict_filter_bool(kwargs) -> dict:
     return {k: v for k, v in kwargs.items() if v}
 
 
-def list_dict_filter_bool(db_resp):
+def list_dict_filter_bool(db_resp: List[dict]) -> List[dict]:
     for idx, d in enumerate(db_resp):
         d = dict_filter_bool(d)
         if len(d) == 0:
-            db_resp[idx] = None
+            del db_resp[idx]
         else:
             db_resp[idx] = d
     db_resp = conform(db_resp)
     return db_resp
 
 
-def cmd_interactive(*cmd, **kwargs):
+def cmd_interactive(*cmd, **kwargs) -> subprocess.CompletedProcess:
     return_code = os.spawnvpe(os.P_WAIT, cmd[0], cmd, os.environ)
     return subprocess.CompletedProcess(cmd, return_code)
 
 
-def Pclose(process):
+def Pclose(process) -> subprocess.CompletedProcess:
     try:
         stdout, stderr = process.communicate(input)
     except subprocess.TimeoutExpired as exc:
@@ -266,29 +266,12 @@ def Pclose(process):
     return subprocess.CompletedProcess(process.args, return_code, stdout, stderr)
 
 
-def chunks(lst, n):
+def chunks(lst, n) -> Generator:
     for i in range(0, len(lst), n):
         yield lst[i : i + n]
 
 
-def compile_query(query, *args):
-    if len(args) == 1 and (not args[0]):
-        number_of_arguments = 0
-
-    number_of_question_marks = query.count("?")
-    number_of_arguments = len(args)
-    if number_of_arguments != number_of_question_marks:
-        raise Exception(
-            f"Number of bindings mismatched. The query uses {number_of_question_marks}, but {number_of_arguments} parameters bound."
-        )
-
-    for a in args:
-        query = query.replace("?", "'" + str(a) + "'", 1)
-
-    return query
-
-
-def divisor_gen(n):
+def divisor_gen(n: float) -> Generator:
     large_divisors = []
     for i in range(2, int(math.sqrt(n) + 1)):
         if n % i == 0:
@@ -302,7 +285,7 @@ def divisor_gen(n):
 _RE_COMBINE_WHITESPACE = re.compile(r"\s+")
 
 
-def combine(*list_):
+def combine(*list_) -> Union[str, None]:
     list_ = conform(list_)
     if len(list_) == 0:
         return None
@@ -316,7 +299,7 @@ def combine(*list_):
     return ";".join(no_duplicates)
 
 
-def safe_unpack(*list_, idx=0):
+def safe_unpack(*list_, idx=0) -> Union[Any, None]:
     list_ = conform(list_)
     if len(list_) == 0:
         return None
@@ -333,7 +316,7 @@ except Exception:
     TERMINAL_SIZE = SimpleNamespace(columns=80, lines=60)
 
 
-def col_resize(tbl: List[Dict], col: str, size=10):
+def col_resize(tbl: List[Dict], col: str, size=10) -> List[Dict]:
     for idx, _d in enumerate(tbl):
         if tbl[idx].get(col) is not None:
             tbl[idx][col] = textwrap.fill(tbl[idx][col], max(10, int(size * (TERMINAL_SIZE.columns / 80))))
@@ -341,7 +324,7 @@ def col_resize(tbl: List[Dict], col: str, size=10):
     return tbl
 
 
-def col_naturaldate(tbl: List[Dict], col: str):
+def col_naturaldate(tbl: List[Dict], col: str) -> List[Dict]:
     for idx, _d in enumerate(tbl):
         if tbl[idx].get(col) is not None:
             tbl[idx][col] = humanize.naturaldate(datetime.fromtimestamp(tbl[idx][col]))
@@ -349,7 +332,7 @@ def col_naturaldate(tbl: List[Dict], col: str):
     return tbl
 
 
-def col_naturalsize(tbl: List[Dict], col: str):
+def col_naturalsize(tbl: List[Dict], col: str) -> List[Dict]:
     for idx, _d in enumerate(tbl):
         if tbl[idx].get(col) is not None:
             tbl[idx][col] = humanize.naturalsize(tbl[idx][col])
@@ -357,7 +340,7 @@ def col_naturalsize(tbl: List[Dict], col: str):
     return tbl
 
 
-def human_time(seconds):
+def human_time(seconds) -> Union[str, None]:
     if seconds is None or math.isnan(seconds):
         return None
     hours = humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="hours", format="%0.0f")
@@ -370,7 +353,7 @@ def human_time(seconds):
         return humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="minutes")
 
 
-def col_duration(tbl: List[Dict], col: str):
+def col_duration(tbl: List[Dict], col: str) -> List[Dict]:
     for idx, _d in enumerate(tbl):
         if tbl[idx].get(col) is not None:
             tbl[idx][col] = human_time(tbl[idx][col])

@@ -1,6 +1,6 @@
 import argparse
 from time import sleep
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 from xklb import db
 from xklb.player import generic_player, mark_media_watched, override_sort, printer
@@ -24,7 +24,7 @@ tabs_exclude_string = (
 )
 
 
-def construct_tabs_query(args):
+def construct_tabs_query(args) -> Tuple[str, dict]:
     cf = []
     bindings = {}
 
@@ -78,14 +78,14 @@ def construct_tabs_query(args):
     return query, bindings
 
 
-def play(args, m: Dict):
+def play(args, m: Dict) -> None:
     media_file = m["path"]
 
     cmd(*generic_player(args), media_file, strict=False)
     mark_media_watched(args, media_file)
 
 
-def frequency_filter(args, media: List[Dict]):
+def frequency_filter(args, media: List[Dict]) -> List[dict]:
     mapper = {
         Frequency.Daily.value: 1,
         Frequency.Weekly.value: 7,
@@ -110,7 +110,7 @@ def frequency_filter(args, media: List[Dict]):
     return filtered_media
 
 
-def process_tabs_actions(args, construct_tabs_query):
+def process_tabs_actions(args, construct_tabs_query) -> None:
     args.db = db.connect(args)
     query, bindings = construct_tabs_query(args)
 
@@ -130,7 +130,7 @@ def process_tabs_actions(args, construct_tabs_query):
         sleep(0.3)
 
 
-def parse_args(action, default_db):
+def parse_args(action, default_db) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="library tabs",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -242,6 +242,6 @@ def parse_args(action, default_db):
     return args
 
 
-def tabs():
+def tabs() -> None:
     args = parse_args(SC.tabs, "tabs.db")
     process_tabs_actions(args, construct_tabs_query)

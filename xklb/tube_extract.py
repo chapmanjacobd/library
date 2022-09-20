@@ -5,7 +5,7 @@ from pathlib import Path
 from sqlite3 import OperationalError
 from time import sleep
 from timeit import default_timer as timer
-from typing import Dict, List, Union
+from typing import Dict, List, Tuple, Union
 from urllib.error import HTTPError
 
 import yt_dlp
@@ -17,7 +17,7 @@ from xklb.tube_actions import default_ydl_opts
 from xklb.utils import combine, log, safe_unpack
 
 
-def parse_args(action, usage):
+def parse_args(action, usage) -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library tube" + action, usage=usage)
     parser.add_argument("database", nargs="?", default="tube.db")
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
@@ -56,7 +56,7 @@ def parse_args(action, usage):
     return args
 
 
-def parse_ydl_opts(args, saved_opts=None):
+def parse_ydl_opts(args, saved_opts=None) -> dict:
     if saved_opts is None:
         saved_opts = {}
 
@@ -72,7 +72,7 @@ def parse_ydl_opts(args, saved_opts=None):
     return ydl_opts
 
 
-def supported(url):  # thank you @dbr
+def is_supported(url) -> bool:  # thank you @dbr
     ies = yt_dlp.extractor.gen_extractors()
     for ie in ies:
         if ie.suitable(url) and ie.IE_NAME != "generic":
@@ -80,7 +80,7 @@ def supported(url):  # thank you @dbr
     return False
 
 
-def get_subtitle_text(ydl: yt_dlp.YoutubeDL, video_path, req_sub_dict):
+def get_subtitle_text(ydl: yt_dlp.YoutubeDL, video_path, req_sub_dict) -> str:
     def dl_sub(url):
         temp_file = tempfile.mktemp(".srt", dir=SUB_TEMP_DIR)
 
@@ -102,7 +102,7 @@ def get_subtitle_text(ydl: yt_dlp.YoutubeDL, video_path, req_sub_dict):
     return subs_text
 
 
-def consolidate(ydl: yt_dlp.YoutubeDL, playlist_path, v):
+def consolidate(ydl: yt_dlp.YoutubeDL, playlist_path, v) -> Union[dict, None]:
     ignore_keys = [
         "thumbnail",
         "thumbnails",
@@ -235,7 +235,7 @@ def consolidate(ydl: yt_dlp.YoutubeDL, playlist_path, v):
     return cv
 
 
-def playlist_known(args, playlist_path):
+def is_playlist_known(args, playlist_path) -> bool:
     try:
         known = args.db.execute("select 1 from playlists where path=?", [playlist_path]).fetchone()
     except Exception:
@@ -245,7 +245,7 @@ def playlist_known(args, playlist_path):
     return known[0]
 
 
-def video_known(args, playlist_path, path):
+def is_video_known(args, playlist_path, path) -> bool:
     try:
         known = args.db.execute(
             "select 1 from media where playlist_path=? and path=?", [playlist_path, path]
@@ -257,12 +257,12 @@ def video_known(args, playlist_path, path):
     return known[0]
 
 
-def save_entries(args, entries):
+def save_entries(args, entries) -> None:
     if entries:
         args.db["media"].insert_all(entries, pk="path", alter=True, replace=True)  # type: ignore
 
 
-def log_problem(args, playlist_path):
+def log_problem(args, playlist_path) -> None:
     if args.action == "add":
         log.warning("Could not add playlist %s", playlist_path)
     else:
@@ -276,7 +276,7 @@ def process_playlist(args, playlist_path, ydl_opts) -> Union[List[Dict], None]:
     class AddToArchivePP(yt_dlp.postprocessor.PostProcessor):
         current_video_count = 0
 
-        def run(self, info):
+        def run(self, info) -> Tuple[list, dict]:
             if info:
                 entry = self._add_media(deepcopy(info))
                 if entry:
@@ -287,15 +287,15 @@ def process_playlist(args, playlist_path, ydl_opts) -> Union[List[Dict], None]:
                     print(f"[{playlist_path}] Added {self.current_video_count} videos", end="\r", flush=True)
             return [], info
 
-        def _add_media(self, entry):
+        def _add_media(self, entry) -> Union[dict, None]:
             entry = consolidate(super, playlist_path, entry)  # type: ignore
             if entry:
-                if video_known(args, playlist_path, entry["path"]):
+                if is_video_known(args, playlist_path, entry["path"]):
                     raise ExistingPlaylistVideoReached
                 save_entries(args, [entry])
             return entry
 
-        def _add_playlist(self, pl, entry):
+        def _add_playlist(self, pl, entry) -> None:
             pl = dict(
                 ie_key=safe_unpack(pl.get("ie_key"), pl.get("extractor_key"), pl.get("extractor")),
                 title=pl.get("playlist_title"),
@@ -306,7 +306,7 @@ def process_playlist(args, playlist_path, ydl_opts) -> Union[List[Dict], None]:
             )
             if entry["path"] == pl["path"] or not pl.get("id"):
                 log.warning("Importing playlist-less media %s", pl["path"])
-            elif playlist_known(args, playlist_path):
+            elif is_playlist_known(args, playlist_path):
                 pass
             else:
                 args.db["playlists"].insert(pl, pk="path", alter=True, replace=True)  # type: ignore
@@ -372,7 +372,7 @@ def get_extra_metadata(args, playlist_path, ydl_opts) -> Union[List[Dict], None]
             )
 
 
-def get_playlists(args):
+def get_playlists(args) -> List[dict]:
     try:
         known_playlists = list(args.db.query("select path, yt_dlp_config from playlists order by random()"))
     except OperationalError:
@@ -380,7 +380,7 @@ def get_playlists(args):
     return known_playlists
 
 
-def tube_add(args=None):
+def tube_add(args=None) -> None:
     if args:
         sys.argv[1:] = args
 
@@ -407,21 +407,18 @@ def tube_add(args=None):
             log.warning("[%s]: Skipping known playlist", path)
             continue
 
-        if args.safe and not supported(path):
+        if args.safe and not is_supported(path):
             log.warning("[%s]: Unsupported playlist (safe_mode)", path)
             continue
 
-        start = timer()
         process_playlist(args, path, parse_ydl_opts(args))
-        end = timer()
-        log.info(f"{end - start:.1f} seconds to add new playlist and fetch videos")
 
         if args.extra:
             log.warning("[%s]: Getting extra metadata", path)
             get_extra_metadata(args, path, parse_ydl_opts(args))
 
 
-def tube_update(args=None):
+def tube_update(args=None) -> None:
     if args:
         sys.argv[1:] = args
 
@@ -460,10 +457,7 @@ def tube_update(args=None):
             log.warning("[%s]: Skipping unknown playlist. Add new playlists with tubeadd", d["path"])
             continue
 
-        start = timer()
         process_playlist(args, d["path"], parse_ydl_opts(args, saved_opts=d["yt_dlp_config"]))
-        end = timer()
-        log.info(f"{end - start:.1f} seconds to update playlist")
 
         if args.extra:
             log.warning("[%s]: Getting extra metadata", d["path"])

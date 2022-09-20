@@ -1,6 +1,7 @@
 import enum, os, platform, re
 from pathlib import Path
 from tempfile import gettempdir, mkdtemp
+from typing import List
 
 from xklb import utils
 
@@ -19,7 +20,7 @@ class Frequency(enum.Enum):
     Yearly = "yearly"
 
 
-def reddit_frequency(frequency: Frequency):
+def reddit_frequency(frequency: Frequency) -> str:
     mapper = {
         Frequency.Daily: "day",
         Frequency.Weekly: "week",
@@ -31,7 +32,7 @@ def reddit_frequency(frequency: Frequency):
     return mapper.get(frequency, "month")
 
 
-def sanitize_url(args, path):
+def sanitize_url(args, path: str) -> str:
     matches = re.match(r".*reddit.com/r/(.*?)/.*", path)
     if matches:
         subreddit = matches.groups()[0]
@@ -57,7 +58,7 @@ def youtube_dl_id(file) -> str:
     return utils.conform([*yt_ids[0]])[0]
 
 
-def get_text_files(path, OCR=False, speech_recognition=False):
+def get_text_files(path, OCR=False, speech_recognition=False) -> List[str]:
     TEXTRACT_EXTENSIONS = "csv|tab|tsv|doc|docx|eml|epub|json|htm|html|msg|odt|pdf|pptx|ps|rtf|txt|log|xlsx|xls"
     if OCR:
         ocr_only = "|gif|jpg|jpeg|png|tif|tff|tiff"
@@ -75,7 +76,7 @@ def get_text_files(path, OCR=False, speech_recognition=False):
     return text_files
 
 
-def get_media_files(path, audio=False):
+def get_media_files(path, audio=False) -> List[str]:
     FFMPEG_EXTENSIONS = (
         "str|aa|aax|acm|adf|adp|dtk|ads|ss2|adx|aea|afc|aix|al|apl"
         "|mac|aptx|aptxhd|aqt|ast|obu|avi|avr|avs|avs2|avs3|bfstm|bcstm|binka"
@@ -108,7 +109,7 @@ def get_media_files(path, audio=False):
     return media_files
 
 
-def get_image_files(path):
+def get_image_files(path) -> List[str]:
     IMAGE_EXTENSIONS = (
         "pdf|ai|ait|png|jng|mng|arq|arw|cr2|cs1|dcp|dng|eps|epsf|ps|erf|exv|fff"
         "|gpr|hdp|wdp|jxr|iiq|insp|jpeg|jpg|jpe|mef|mie|mos|mpo|mrw|nef|nrw|orf"
@@ -130,7 +131,7 @@ def get_image_files(path):
     return image_files
 
 
-def is_mounted(paths, mount_point):
+def is_mounted(paths, mount_point) -> bool:
     if platform.system() == "Linux" and any([mount_point in p for p in paths]):
         p = Path(mount_point)
         if p.exists() and not p.is_mount():

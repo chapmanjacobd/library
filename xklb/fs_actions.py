@@ -1,6 +1,7 @@
 import argparse, operator, shlex, shutil
 from pathlib import Path
-from typing import Dict
+from random import random
+from typing import Dict, Tuple
 
 from catt.api import CattDevice
 
@@ -13,7 +14,7 @@ DEFAULT_PLAYER_ARGS_SUB = ["--speed=1"]
 DEFAULT_PLAYER_ARGS_NO_SUB = ["--speed=1.46"]
 
 
-def fs_actions_usage(action, default_db):
+def fs_actions_usage(action, default_db) -> str:
     return f"""library {action} [database] [optional args]
 
     Control playback:
@@ -203,7 +204,7 @@ def fs_actions_usage(action, default_db):
 """
 
 
-def parse_args(action, default_db, default_chromecast=""):
+def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library " + action, usage=fs_actions_usage(action, default_db))
 
     parser.add_argument(
@@ -256,10 +257,10 @@ def parse_args(action, default_db, default_chromecast=""):
 
     parser.add_argument("--start", "-vs", help=argparse.SUPPRESS)
     parser.add_argument("--end", "-ve", help=argparse.SUPPRESS)
-    parser.add_argument("--player", "-player", help=argparse.SUPPRESS)
     parser.add_argument("--mpv-socket", default=paths.DEFAULT_MPV_SOCKET, help=argparse.SUPPRESS)
     parser.add_argument("--watch-later-directory", default=paths.DEFAULT_MPV_WATCH_LATER, help=argparse.SUPPRESS)
 
+    parser.add_argument("--player", "-player", help=argparse.SUPPRESS)
     parser.add_argument(
         "--player-args-sub", "-player-sub", nargs="*", default=DEFAULT_PLAYER_ARGS_SUB, help=argparse.SUPPRESS
     )
@@ -384,7 +385,7 @@ def transcode(next_video):
     return next_video
 
 
-def chromecast_play(args, m):
+def chromecast_play(args, m) -> None:
     if args.action in [SC.watch, SC.tubewatch]:
         catt_log = player.watch_chromecast(args, m, subtitles_file=externalize_subtitle(m["path"]))
     elif args.action in [SC.listen, SC.tubelisten]:
@@ -400,7 +401,7 @@ def chromecast_play(args, m):
             raise Exception("Media is possibly partially unwatched")
 
 
-def is_play_in_order_lvl2(args, m, media_file):
+def is_play_in_order_lvl2(args, media_file) -> bool:
     return any(
         [
             args.play_in_order > 1 and args.action not in [SC.listen, SC.tubelisten],
@@ -409,10 +410,10 @@ def is_play_in_order_lvl2(args, m, media_file):
     )
 
 
-def play(args, m: Dict):
+def play(args, m: Dict) -> None:
     media_file = m["path"]
 
-    if is_play_in_order_lvl2(args, m, media_file):
+    if is_play_in_order_lvl2(args, media_file):
         media_file = get_ordinal_media(args, media_file)
 
     if args.action in [SC.watch, SC.listen]:
@@ -503,7 +504,7 @@ other_include_string = lambda x: f"and path like :include{x}"
 other_exclude_string = lambda x: f"and path not like :exclude{x}"
 
 
-def construct_search_bindings(args, bindings, cf, include_func, exclude_func):
+def construct_search_bindings(args, bindings, cf, include_func, exclude_func) -> None:
     for idx, inc in enumerate(args.include):
         cf.append(include_func(idx))
         bindings[f"include{idx}"] = "%" + inc.replace(" ", "%").replace("%%", " ") + "%"
@@ -512,7 +513,7 @@ def construct_search_bindings(args, bindings, cf, include_func, exclude_func):
         bindings[f"exclude{idx}"] = "%" + exc.replace(" ", "%").replace("%%", " ") + "%"
 
 
-def search_substring(args, cf, bindings):
+def search_substring(args, cf, bindings) -> None:
     if args.action == SC.watch:
         construct_search_bindings(args, bindings, cf, video_include_string, video_exclude_string)
     elif args.action == SC.listen:
@@ -521,7 +522,7 @@ def search_substring(args, cf, bindings):
         construct_search_bindings(args, bindings, cf, other_include_string, other_exclude_string)
 
 
-def construct_fs_query(args):
+def construct_fs_query(args) -> Tuple[str, dict]:
     cf = []
     bindings = {}
 
@@ -556,6 +557,11 @@ def construct_fs_query(args):
     LIMIT = "LIMIT " + str(args.limit) if args.limit else ""
     OFFSET = f"OFFSET {args.skip}" if args.skip else ""
 
+    # switching between videos with and without subs is annoying
+    subtitle_count = ">0"
+    if random() < 0.659:  # bias slightly toward videos without subtitles
+        subtitle_count = "=0"
+
     query = f"""SELECT path
         , size
         {', duration' if args.action in [SC.listen, SC.watch] else ''}
@@ -566,13 +572,14 @@ def construct_fs_query(args):
         {', ' + ', '.join(args.cols) if args.cols and args.cols != ['duration'] else ''}
     FROM {args.table}
     WHERE 1=1
-    {args.sql_filter}
-    {'and audio_count > 0' if args.action == SC.listen else ''}
-    {'and video_count > 0' if args.action == SC.watch else ''}
-    {f'and path not like "%{args.keep_dir}%"' if args.post_action == 'askkeep' else ''}
-    {'and width < height' if args.portrait else ''}
-    {'and is_deleted=0' if args.action in [SC.listen, SC.watch] and 'is_deleted' not in args.sql_filter else ''}
+        {args.sql_filter}
+        {f'and path not like "%{args.keep_dir}%"' if args.post_action == 'askkeep' else ''}
+        {'and is_deleted=0' if args.action in [SC.listen, SC.watch] and 'is_deleted' not in args.sql_filter else ''}
     ORDER BY 1=1
+        {', audio_count > 0 desc' if args.action == SC.listen else ''}
+        {', video_count > 0 desc' if args.action == SC.watch else ''}
+        {', width < height desc' if args.portrait else ''}
+        {f', subtitle_count {subtitle_count} desc' if args.action == SC.watch else ''}
         {',' + args.sort if args.sort else ''}
         {', path' if args.print or args.include or args.play_in_order > 0 else ''}
         , random()
@@ -582,12 +589,13 @@ def construct_fs_query(args):
     return query, bindings
 
 
-def process_playqueue(args, construct_query=construct_fs_query):
+def process_playqueue(args, construct_query=construct_fs_query) -> None:
     args.db = db.connect(args)
     query, bindings = construct_query(args)
 
     if args.print:
-        return player.printer(args, query, bindings)
+        player.printer(args, query, bindings)
+        return None
 
     media = list(args.db.query(query, bindings))
 
@@ -614,26 +622,26 @@ def process_playqueue(args, construct_query=construct_fs_query):
                 Path(paths.CAST_NOW_PLAYING).unlink(missing_ok=True)
 
 
-def watch():
+def watch() -> None:
     args = parse_args(SC.watch, "video.db", default_chromecast="Living Room TV")
     process_playqueue(args)
 
 
-def listen():
+def listen() -> None:
     args = parse_args(SC.listen, "audio.db", default_chromecast="Xylo and Orchestra")
     process_playqueue(args)
 
 
-def filesystem():
+def filesystem() -> None:
     args = parse_args(SC.filesystem, "fs.db")
     process_playqueue(args)
 
 
-def read():
+def read() -> None:
     args = parse_args(SC.read, "text.db")
     process_playqueue(args)
 
 
-def view():
+def view() -> None:
     args = parse_args(SC.view, "image.db")
     process_playqueue(args)

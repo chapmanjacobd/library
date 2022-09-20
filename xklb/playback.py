@@ -7,7 +7,7 @@ from xklb import paths, utils
 from xklb.utils import cmd, log
 
 
-def parse_args(action):
+def parse_args(action) -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog=f"library {action}")
     parser.add_argument("--mpv-socket", default=paths.DEFAULT_MPV_SOCKET)
     parser.add_argument("--chromecast-device", "--cast-to", "-t")
@@ -28,7 +28,7 @@ def parse_args(action):
     return args
 
 
-def _now_playing(args):
+def _now_playing(args) -> dict:
     media = {
         "catt": Path(paths.CAST_NOW_PLAYING).read_text() if os.path.exists(paths.CAST_NOW_PLAYING) else None,
         "mpv": args.mpv.command("get_property", "path") if os.path.exists(args.mpv_socket) else None,
@@ -40,14 +40,14 @@ def _now_playing(args):
     return media
 
 
-def print_now_playing(playing, source):
+def print_now_playing(playing, source) -> None:
     if playing[source].startswith("http"):
         print(f"[{source}]:", cmd("ffprobe", "-hide_banner", "-loglevel", "info", playing[source]).stderr)
     else:
         print(f"[{source}]:", playing[source])
 
 
-def playback_now():
+def playback_now() -> None:
     args = parse_args("now")
     playing = _now_playing(args)
 
@@ -58,28 +58,28 @@ def playback_now():
         print_now_playing(playing, "catt")
 
 
-def catt_stop(args):
+def catt_stop(args) -> None:
     catt_device = []
     if args.chromecast_device:
         catt_device = ["-d", args.chromecast_device]
     cmd("catt", *catt_device, "stop")
 
 
-def catt_pause(args):
+def catt_pause(args) -> None:
     catt_device = []
     if args.chromecast_device:
         catt_device = ["-d", args.chromecast_device]
     cmd("catt", *catt_device, "play_toggle")
 
 
-def kill_process(name):
+def kill_process(name) -> None:
     if any([p in platform.system() for p in ["Windows", "_NT-", "MSYS"]]):
         cmd("taskkill", "/f", "/im", name)
     else:
         cmd("pkill", "-f", name)
 
 
-def playback_stop():
+def playback_stop() -> None:
     args = parse_args("stop")
 
     playing = _now_playing(args)
@@ -94,7 +94,7 @@ def playback_stop():
     Path(args.mpv_socket).unlink(missing_ok=True)
 
 
-def playback_pause():
+def playback_pause() -> None:
     args = parse_args("next")
     playing = _now_playing(args)
 
@@ -106,7 +106,7 @@ def playback_pause():
         args.mpv.terminate()
 
 
-def playback_next():
+def playback_next() -> None:
     args = parse_args("next")
 
     playing = _now_playing(args)

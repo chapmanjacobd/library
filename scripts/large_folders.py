@@ -1,11 +1,12 @@
 import argparse
+from typing import List
 
 from tabulate import tabulate
 
 from xklb import db, utils
 
 
-def get_table(args):
+def get_table(args) -> List[dict]:
     cols = args.db["media"].columns
 
     db_resp = list(
@@ -42,7 +43,7 @@ def get_table(args):
     return sorted(d, key=lambda x: x["size"])
 
 
-def parse_args():
+def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("database")
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue")
@@ -52,7 +53,7 @@ def parse_args():
     return args
 
 
-def large_folders():
+def large_folders() -> None:
     args = parse_args()
     tbl = get_table(args)
 
