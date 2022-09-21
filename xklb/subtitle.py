@@ -1,7 +1,7 @@
 import argparse, os, tempfile
 from pathlib import Path
 from shlex import quote
-from typing import List, Tuple, Union
+from typing import List, Union
 
 import ffmpeg, pysubs2, sqlite_utils
 from ffmpeg import Error

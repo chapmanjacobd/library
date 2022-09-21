@@ -34,6 +34,7 @@ def optimize(args) -> None:
     if db["media"].detect_fts() is None:  # type: ignore
         db["media"].enable_fts([c for c in fts_columns if c in columns], create_triggers=True)
 
+    db.enable_wal()
     #
     # sqlite-utils optimize
     #

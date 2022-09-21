@@ -1,6 +1,7 @@
 import argparse, sys
 
 import scripts
+from xklb.dl_extract import dl_add, dl_download
 from xklb.fs_actions import filesystem, listen, read, view, watch
 from xklb.fs_extract import main as fs_add
 from xklb.playback import playback_next, playback_now, playback_pause, playback_stop
@@ -42,6 +43,10 @@ def lb_usage() -> str:
     browser tab subcommands:
       tabsadd                      Create a tabs database; Add URLs
       tabs [tabswatch, tb]         Open your tabs for the day
+
+    download subcommands:
+      dladd [da]                   Create a download database; Add URLs
+      download [dl]                Download media
     """
 
 
@@ -108,6 +113,11 @@ def lb(args=None) -> None:
     subp_tabsadd.set_defaults(func=tabs_add)
     subp_tabs = subparsers.add_parser("tabs", aliases=["tabswatch", "tb"], add_help=False)
     subp_tabs.set_defaults(func=tabs)
+
+    subp_dladd = subparsers.add_parser("dladd", aliases=["da"], add_help=False)
+    subp_dladd.set_defaults(func=dl_add)
+    subp_download = subparsers.add_parser("download", aliases=["dl"], add_help=False)
+    subp_download.set_defaults(func=dl_download)
 
     parser.add_argument("--version", "-V", action="store_true")
     args, _unk = parser.parse_known_args(args)

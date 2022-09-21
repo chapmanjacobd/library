@@ -1,11 +1,10 @@
 import argparse, math, os, sys
-from copy import deepcopy
+from multiprocessing import TimeoutError
 from pathlib import Path
 from timeit import default_timer as timer
 from typing import Dict, List, Union
 
 from joblib import Parallel, delayed
-from timeout_decorator import TimeoutError
 
 from xklb import av, books, db, paths, subtitle, utils
 from xklb.player import mark_media_deleted
@@ -69,7 +68,7 @@ def extract_metadata(mp_args, f) -> Union[Dict[str, int], None]:
 def extract_chunk(args, chunk_paths) -> None:
     n_jobs = -1
     if args.db_type in ["t", "p", "f"]:
-        n_jobs = int((os.cpu_count() or 4) * 1.5)
+        n_jobs = utils.CPU_COUNT
     if args.verbose > 1:
         n_jobs = 1
 
@@ -135,7 +134,7 @@ def scan_path(args, path) -> int:
         log.debug(new_files)
 
         if args.db_type in ["t"]:
-            batch_count = SQLITE_PARAM_LIMIT // 600
+            batch_count = utils.CPU_COUNT
         else:
             batch_count = SQLITE_PARAM_LIMIT // 100
         chunks_count = math.ceil(len(new_files) / batch_count)
