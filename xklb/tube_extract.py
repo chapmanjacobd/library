@@ -4,7 +4,6 @@ from datetime import datetime
 from pathlib import Path
 from sqlite3 import OperationalError
 from time import sleep
-from timeit import default_timer as timer
 from typing import Dict, List, Tuple, Union
 from urllib.error import HTTPError
 
@@ -37,10 +36,12 @@ def parse_args(action, usage) -> argparse.Namespace:
         help="Add key/value pairs to override or extend default yt-dlp configuration",
     )
     parser.add_argument("--safe", "-safe", action="store_true", help="Skip generic URLs")
-    parser.add_argument("--no-sanitize", "-s", action="store_false", help="Don't sanitize some common URL parameters")
+    parser.add_argument("--no-sanitize", "-s", action="store_true", help="Don't sanitize some common URL parameters")
 
     parser.add_argument("--extra", "-extra", action="store_true", help="Get full metadata (takes a lot longer)")
 
+    parser.add_argument("--extra-media-data", default={})
+    parser.add_argument("--extra-playlist-data", default={})
     parser.add_argument("--verbose", "-v", action="count", default=0)
     args = parser.parse_args()
     args.action = action
@@ -263,10 +264,10 @@ def save_entries(args, entries) -> None:
 
 
 def log_problem(args, playlist_path) -> None:
-    if args.action == "add":
-        log.warning("Could not add playlist %s", playlist_path)
-    else:
+    if is_playlist_known(args, playlist_path):
         log.warning("Start of known playlist reached %s", playlist_path)
+    else:
+        log.warning("Could not add playlist %s", playlist_path)
 
 
 def process_playlist(args, playlist_path, ydl_opts) -> Union[List[Dict], None]:
@@ -292,7 +293,7 @@ def process_playlist(args, playlist_path, ydl_opts) -> Union[List[Dict], None]:
             if entry:
                 if is_video_known(args, playlist_path, entry["path"]):
                     raise ExistingPlaylistVideoReached
-                save_entries(args, [entry])
+                save_entries(args, [{**entry, **args.extra_media_data}])
             return entry
 
         def _add_playlist(self, pl, entry) -> None:
@@ -306,10 +307,8 @@ def process_playlist(args, playlist_path, ydl_opts) -> Union[List[Dict], None]:
             )
             if entry["path"] == pl["path"] or not pl.get("id"):
                 log.warning("Importing playlist-less media %s", pl["path"])
-            elif is_playlist_known(args, playlist_path):
-                pass
             else:
-                args.db["playlists"].insert(pl, pk="path", alter=True, replace=True)  # type: ignore
+                args.db["playlists"].insert({**pl, **args.extra_playlist_data}, pk="path", alter=True, replace=True)  # type: ignore
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.add_post_processor(AddToArchivePP(), when="pre_process")
@@ -336,6 +335,12 @@ def get_extra_metadata(args, playlist_path, ydl_opts) -> Union[List[Dict], None]
             "skip_download": True,
             "check_formats": False,
             "ignoreerrors": True,
+            "postprocessors": [
+                {
+                    "key": "FFmpegMetadata",
+                    "add_metadata": True,
+                }
+            ],
         }
     ) as ydl:
         videos = args.db.execute(
@@ -380,6 +385,12 @@ def get_playlists(args) -> List[dict]:
     return known_playlists
 
 
+def get_saved_yt_dlp_config(playlists, path):
+    for d in playlists:
+        if d["path"] == path:
+            return json.loads(d["yt_dlp_config"])
+
+
 def tube_add(args=None) -> None:
     if args:
         sys.argv[1:] = args
@@ -400,18 +411,17 @@ def tube_add(args=None) -> None:
         library tubeupdate tw.db --extra
 """,
     )
-    known_playlists = [p["path"] for p in get_playlists(args)]
-
+    playlists = get_playlists(args)
     for path in args.playlists:
-        if path in known_playlists:
-            log.warning("[%s]: Skipping known playlist", path)
-            continue
+        saved_yt_dlp_config = get_saved_yt_dlp_config(playlists, path)
+        if saved_yt_dlp_config:
+            log.info("[%s]: Updating known playlist", path)
 
         if args.safe and not is_supported(path):
             log.warning("[%s]: Unsupported playlist (safe_mode)", path)
             continue
 
-        process_playlist(args, path, parse_ydl_opts(args))
+        process_playlist(args, path, parse_ydl_opts(args, saved_yt_dlp_config))
 
         if args.extra:
             log.warning("[%s]: Getting extra metadata", path)
@@ -448,15 +458,16 @@ def tube_update(args=None) -> None:
     )
     playlists = get_playlists(args)
     known_playlists = [p["path"] for p in playlists]
-    playlists = [{"path": p, "yt_dlp_config": args.yt_dlp_config} for p in args.playlists] or [
-        {**d, "yt_dlp_config": json.loads(d["yt_dlp_config"])} for d in playlists
+    for p in args.playlists:
+        if p not in known_playlists:
+            log.warning("[%s]: Skipping unknown playlist. Add new playlists with tubeadd", p)
+
+    playlists = [
+        {**d, "yt_dlp_config": json.loads(d["yt_dlp_config"])}
+        for d in playlists
+        if not args.playlists or d["path"] in args.playlists
     ]
-
     for d in playlists:
-        if d["path"] not in known_playlists:
-            log.warning("[%s]: Skipping unknown playlist. Add new playlists with tubeadd", d["path"])
-            continue
-
         process_playlist(args, d["path"], parse_ydl_opts(args, saved_opts=d["yt_dlp_config"]))
 
         if args.extra:

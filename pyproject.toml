@@ -30,7 +30,6 @@ ffmpeg-python = "*"
 pysubs2 = "^1.4.3"
 python-mpv-jsonipc = "^1.1.13"
 screeninfo = "^0.8.1"
-timeout-decorator = "^0.5.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "*"

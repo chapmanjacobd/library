@@ -1,8 +1,7 @@
 import re, sys
 from typing import List, Union
 
-import timeout_decorator
-
+from xklb import utils
 from xklb.utils import combine, log, safe_unpack
 
 try:
@@ -33,8 +32,8 @@ def munge_book_tags(media, f) -> Union[dict, None]:
     return {**media, "tags": combine(tags)}
 
 
-munge_book_tags_fast = timeout_decorator.timeout(100)(munge_book_tags)
-munge_book_tags_slow = timeout_decorator.timeout(500)(munge_book_tags)
+munge_book_tags_fast = utils.with_timeout(70)(munge_book_tags)
+munge_book_tags_slow = utils.with_timeout(350)(munge_book_tags)
 
 
 def munge_image_tags(m: dict, e: dict) -> dict:

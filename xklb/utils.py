@@ -1,4 +1,4 @@
-import argparse, enum, hashlib, logging, math, os, platform, re, signal, subprocess, sys, textwrap
+import argparse, enum, functools, hashlib, logging, math, multiprocessing, os, platform, re, signal, subprocess, sys, textwrap
 from collections.abc import Iterable
 from datetime import datetime, timedelta
 from functools import wraps
@@ -23,7 +23,7 @@ else:
 SQLITE_PARAM_LIMIT = 32765
 DEFAULT_PLAY_QUEUE = 120
 DEFAULT_MULTIPLE_PLAYBACK = -1
-
+CPU_COUNT = int(os.cpu_count() or 4)
 
 def exit_nicely(signal, frame):
     print("\nExiting... (Ctrl+C)\n")
@@ -42,6 +42,20 @@ class SC:
     tabs = "tabs"
     read = "read"
     view = "view"
+
+
+def with_timeout(timeout):
+    def decorator(decorated):
+        @functools.wraps(decorated)
+        def inner(*args, **kwargs):
+            pool = multiprocessing.Pool(1)
+            async_result = pool.apply_async(decorated, args, kwargs)
+            try:
+                return async_result.get(timeout)
+            finally:
+                pool.close()
+        return inner
+    return decorator
 
 
 def os_bg_kwargs() -> dict:
