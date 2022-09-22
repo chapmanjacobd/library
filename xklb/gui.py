@@ -12,75 +12,6 @@ class UserQuit(BaseException):
 
 
 class MrSuperDialogue:
-    def __init__(self, path, qty):
-        self.root = Tk()
-        self.root.title("Library dialogue")
-
-        def callback_error(self, *args):
-            raise Exception(*args)
-
-        Tk.report_callback_exception = callback_error
-
-        style = Style(self.root)
-        style.theme_use("clam")
-
-        photo = PhotoImage(file="assets/kotobago.png")
-        self.root.wm_iconphoto(False, photo)
-        self.root.wm_attributes("-topmost", 1)
-
-        for keyseq in [
-            "<Escape>",
-            "<Control-c>",
-            "<Control-q>",
-        ]:
-            self.root.bind(keyseq, lambda ev: self.quit())
-
-        # menu left
-        self.menu_left = Frame(self.root, width=150)
-        self.menu_left_upper = Frame(self.menu_left, width=150, height=150)
-        self.menu_left_lower = Frame(self.menu_left, width=150)
-
-        keep_btn = Button(self.menu_left_upper, text="Keep", command=self.keep, cursor="heart")
-        keep_btn.bind("<Return>", lambda ev: self.keep())
-        keep_btn.grid()
-
-        del_btn = Button(self.menu_left_lower, text="Delete", command=self.delete, cursor="spraycan")
-        del_btn.bind("<Return>", lambda ev: self.delete())
-        del_btn.focus()
-        del_btn.grid()
-
-        self.menu_left_upper.pack(side="top", fill="both", expand=True)
-        self.menu_left_lower.pack(side="top", fill="both", expand=True)
-
-        # title
-        self.some_title_frame = Frame(self.root)
-        self.some_title = Label(self.some_title_frame, text='Keep or Delete?')
-        self.some_title.pack()
-
-        self.message = Label(self.root, text=f"Keep {path}?", wraplength=180, justify="center")
-        self.message.grid(row=1, column=1)
-
-        # status bar
-        self.status_frame = Frame(self.root)
-        self.status = Label(self.status_frame, text=f"{qty} media to go")
-        self.status.pack(fill="both", expand=True)
-
-        self.menu_left.grid(row=0, column=0, rowspan=2, sticky="nsew")
-        self.some_title_frame.grid(row=0, column=1, sticky="ew")
-        self.message.grid(row=1, column=1, sticky="nsew")
-        self.status_frame.grid(row=2, column=0, columnspan=2, sticky="ew")
-
-        self.root.grid_rowconfigure(1, weight=1)
-        self.root.grid_columnconfigure(1, weight=1)
-
-        for keyseq in ["<Delete>", "d", "n", "1"]:
-            self.root.bind(keyseq, lambda ev: self.delete())
-        for keyseq in ["k", "y", "2"]:
-            self.root.bind(keyseq, lambda ev: self.keep())
-
-        self.move_window()
-        self.root.mainloop()
-
     def quit(self):
         raise UserQuit
 
@@ -117,6 +48,71 @@ class MrSuperDialogue:
         self.root.geometry("{}x{}+{}+{}".format(window_width, window_height, x_cordinate, y_cordinate))
         self.root.wm_attributes("-alpha", 1)
 
+    def __init__(self, path, qty):
+        self.root = Tk()
+        self.root.title("Library dialogue")
+
+        def callback_error(self, *args):
+            raise Exception(*args)
+
+        Tk.report_callback_exception = callback_error
+
+        style = Style(self.root)
+        style.theme_use("clam")
+
+        photo = PhotoImage(file="assets/kotobago.png")
+        self.root.wm_iconphoto(False, photo)
+        self.root.wm_attributes("-topmost", 1)
+
+        for keyseq in ["<Escape>", "<Control-c>", "<Control-q>"]:
+            self.root.bind(keyseq, lambda ev: self.quit())
+
+        # menu left
+        self.menu_left = Frame(self.root, width=150)
+        self.menu_left_upper = Frame(self.menu_left, width=150, height=150)
+        self.menu_left_lower = Frame(self.menu_left, width=150)
+
+        keep_btn = Button(self.menu_left_upper, text="Keep", command=self.keep, cursor="heart")
+        keep_btn.bind("<Return>", lambda ev: self.keep())
+        keep_btn.grid()
+
+        del_btn = Button(self.menu_left_lower, text="Delete", command=self.delete, cursor="spraycan")
+        del_btn.bind("<Return>", lambda ev: self.delete())
+        del_btn.focus()
+        del_btn.grid()
+
+        self.menu_left_upper.pack(side="top", fill="both", expand=True)
+        self.menu_left_lower.pack(side="top", fill="both", expand=True)
+
+        # title
+        self.some_title_frame = Frame(self.root)
+        self.some_title = Label(self.some_title_frame, text="Keep or Delete?")
+        self.some_title.pack()
+
+        self.message = Label(self.root, text=f"Keep {path}?", wraplength=180, justify="center")
+        self.message.grid(row=1, column=1)
+
+        # status bar
+        self.status_frame = Frame(self.root)
+        self.status = Label(self.status_frame, text=f"{qty} media to go")
+        self.status.pack(fill="both", expand=True)
+
+        self.menu_left.grid(row=0, column=0, rowspan=2, sticky="nsew")
+        self.some_title_frame.grid(row=0, column=1, sticky="ew")
+        self.message.grid(row=1, column=1, sticky="nsew")
+        self.status_frame.grid(row=2, column=0, columnspan=2, sticky="ew")
+
+        self.root.grid_rowconfigure(1, weight=1)
+        self.root.grid_columnconfigure(1, weight=1)
+
+        for keyseq in ["<Delete>", "d", "n", "1"]:
+            self.root.bind(keyseq, lambda ev: self.delete())
+        for keyseq in ["k", "y", "2"]:
+            self.root.bind(keyseq, lambda ev: self.keep())
+
+        self.move_window()
+        self.root.mainloop()
+
     @staticmethod
     def get_coord_offset_from_monitor(monitor_name) -> Tuple[int, int]:
         # TODO: assuming screeninfo returns monitors in the same order that Tk is expecting it should
@@ -143,4 +139,4 @@ def askkeep(path, qty):
 
 
 if __name__ == "__main__":
-    print(askkeep(r"\\supercali\fragil/istic/expiali//docious.exe",3))
+    print(askkeep(r"\\supercali\fragil/istic/expiali//docious.exe", 3))

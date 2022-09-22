@@ -529,9 +529,9 @@ def multiple_player(args, media) -> None:
                             if args.post_action in ["ask", "askkeep"]:
                                 r = gui.askkeep(m["path"], len(media))
                                 if r == "DELETE":
-                                    post_act(args, m["path"], action = 'delete')
+                                    post_act(args, m["path"], action="delete")
                                 elif r == "KEEP" and args.post_action == "ask":
-                                    post_act(args, m["path"], action = 'keep')
+                                    post_act(args, m["path"], action="keep")
                                 elif r == "KEEP" and args.post_action == "askkeep":
                                     mv_to_keep_folder(args, m["path"])
                                 else:
