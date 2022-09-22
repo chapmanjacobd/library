@@ -25,6 +25,7 @@ DEFAULT_PLAY_QUEUE = 120
 DEFAULT_MULTIPLE_PLAYBACK = -1
 CPU_COUNT = int(os.cpu_count() or 4)
 
+
 def exit_nicely(signal, frame):
     print("\nExiting... (Ctrl+C)\n")
     sys.exit(130)
@@ -54,7 +55,9 @@ def with_timeout(timeout):
                 return async_result.get(timeout)
             finally:
                 pool.close()
+
         return inner
+
     return decorator
 
 

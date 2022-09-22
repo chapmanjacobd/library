@@ -576,8 +576,8 @@ def construct_fs_query(args) -> Tuple[str, dict]:
         {f'and path not like "%{args.keep_dir}%"' if args.post_action == 'askkeep' else ''}
         {'and is_deleted=0' if args.action in [SC.listen, SC.watch] and 'is_deleted' not in args.sql_filter else ''}
     ORDER BY 1=1
-        {', audio_count > 0 desc' if args.action == SC.listen else ''}
         {', video_count > 0 desc' if args.action == SC.watch else ''}
+        {', audio_count > 0 desc' if args.action == SC.listen else ''}
         {', width < height desc' if args.portrait else ''}
         {f', subtitle_count {subtitle_count} desc' if args.action == SC.watch else ''}
         {',' + args.sort if args.sort else ''}

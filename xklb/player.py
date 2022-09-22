@@ -13,7 +13,7 @@ import screeninfo
 from rich.prompt import Confirm
 from tabulate import tabulate
 
-from xklb import paths, utils
+from xklb import gui, paths, utils
 from xklb.utils import (
     DEFAULT_MULTIPLE_PLAYBACK,
     SC,
@@ -222,43 +222,45 @@ def delete_playlists(args, playlists) -> None:
         )
 
 
-def post_act(args, media_file: str) -> None:
+def post_act(args, media_file: str, action=None) -> None:
+    action = action or args.post_action
+
     mark_media_watched(args, media_file)
-    if args.post_action == "keep":
+    if action == "keep":
         return
 
     if args.action in [SC.tubelisten, SC.tubewatch]:
-        if args.post_action == "remove":
+        if action == "remove":
             mark_media_deleted(args, media_file)
-        elif args.post_action == "ask":
+        elif action == "ask":
             if not Confirm.ask("Keep?", default=False):
                 mark_media_deleted(args, media_file)
         else:
-            raise Exception("Unrecognized post_action", args.post_action)
+            raise Exception("Unrecognized action", action)
 
     if args.action in [SC.listen, SC.watch]:
-        if args.post_action == "softdelete":
+        if action == "softdelete":
             mark_media_deleted(args, media_file)
 
-        elif args.post_action == "delete":
+        elif action == "delete":
             delete_media(args, media_file)
 
-        elif args.post_action == "delete-if-audiobook":
+        elif action == "delete-if-audiobook":
             if "audiobook" in media_file.lower():
                 delete_media(args, media_file)
 
-        elif args.post_action == "ask":
+        elif action == "ask":
             if not Confirm.ask("Keep?", default=False):
                 delete_media(args, media_file)
 
-        elif args.post_action == "askkeep":
+        elif action == "askkeep":
             if not Confirm.ask("Keep?", default=False):
                 delete_media(args, media_file)
             else:
                 mv_to_keep_folder(args, media_file)
 
         else:
-            raise Exception("Unrecognized post_action", args.post_action)
+            raise Exception("Unrecognized action", action)
 
 
 def override_sort(sort_expression: str) -> str:
@@ -524,7 +526,18 @@ def multiple_player(args, media) -> None:
                                 exit(r.returncode)
 
                         if args.action in [SC.listen, SC.watch, SC.tubelisten, SC.tubewatch]:
-                            post_act(args, m["path"])
+                            if args.post_action in ["ask", "askkeep"]:
+                                r = gui.askkeep(m["path"], len(media))
+                                if r == "DELETE":
+                                    post_act(args, m["path"], action = 'delete')
+                                elif r == "KEEP" and args.post_action == "ask":
+                                    post_act(args, m["path"], action = 'keep')
+                                elif r == "KEEP" and args.post_action == "askkeep":
+                                    mv_to_keep_folder(args, m["path"])
+                                else:
+                                    raise Exception("I did not quite catch that... what did you say?")
+                            else:
+                                post_act(args, m["path"])
 
                         m = media.pop()
                         players[t_idx] = {**m, "process": open_player(t, m)}
