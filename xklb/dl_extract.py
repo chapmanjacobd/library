@@ -150,6 +150,7 @@ def dl_add(args=None):
             job = gdl.job.DataJob(path)
             job.run()
             urls = job.data
+            raise
             # TODO: save gallery-dl data to the database
             # gdl.config.set(("extractor",), "base-directory", "/tmp/")
             # gdl.job.DownloadJob(path)
