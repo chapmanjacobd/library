@@ -278,20 +278,22 @@ def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
     parser.add_argument("--verbose", "-v", action="count", default=0)
     args = parser.parse_args()
     args.action = action
+    args.defaults = []
 
     if args.db:
         args.database = args.db
 
-    if not args.limit and all(
-        [not args.print, args.action in [SC.listen, SC.watch, SC.tubelisten, SC.tubewatch, SC.read]]
-    ):
-        args.limit = utils.DEFAULT_PLAY_QUEUE
-    if not args.limit and all([not args.print, args.action in [SC.view]]):
-        args.limit = utils.DEFAULT_PLAY_QUEUE * 4
+    if not args.limit:
+        args.defaults.append('limit')
+        if all([not args.print, args.action in [SC.listen, SC.watch, SC.tubelisten, SC.tubewatch, SC.read]]):
+            args.limit = utils.DEFAULT_PLAY_QUEUE
+        elif all([not args.print, args.action in [SC.view]]):
+            args.limit = utils.DEFAULT_PLAY_QUEUE * 4
     elif args.limit in ["inf", "all"]:
         args.limit = None
 
     if not args.sort:
+        args.defaults.append('sort')
         if args.action in [SC.listen, SC.watch]:
             args.sort = ["priority"]
             if args.include:
@@ -603,7 +605,7 @@ def process_playqueue(args, construct_query=construct_fs_query) -> None:
         print("No media found")
         exit(2)
 
-    if Path(args.watch_later_directory).exists():
+    if all([Path(args.watch_later_directory).exists(), args.play_in_order != 2, 'sort' in args.defaults]):
         media = utils.mpv_enrich(args, media)
 
     args.is_mounted = paths.is_mounted(list(map(operator.itemgetter("path"), media)), args.shallow_organize)
