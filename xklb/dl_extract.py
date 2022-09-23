@@ -165,6 +165,27 @@ def dl_add(args=None):
         db.optimize(args)
 
 
+def parse_gallerydl_exit(ret_val: int) -> str:
+    errors = []
+    if ret_val & 1:
+        errors.append("Unspecified Error")
+    if ret_val & 2:
+        errors.append("Cmdline Arguments")
+    if ret_val & 4:
+        errors.append("HTTP Error")
+    if ret_val & 8:
+        errors.append("Not Found / 404")
+    if ret_val & 16:
+        errors.append("Auth / Login")
+    if ret_val & 32:
+        errors.append("Format / Filter")
+    if ret_val & 64:
+        errors.append("No Extractor")
+    if ret_val & 128:
+        errors.append("OS Error")
+    return "; ".join(errors)
+
+
 """
 - dladd
     auto-detect reddit, use bdfr
