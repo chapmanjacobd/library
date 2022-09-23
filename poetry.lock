@@ -321,6 +321,20 @@ optional = false
 python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*"
 
 [[package]]
+name = "gallery-dl"
+version = "1.23.1"
+description = "Command-line program to download image galleries and collections from several image hosting sites"
+category = "main"
+optional = false
+python-versions = ">=3.4"
+
+[package.dependencies]
+requests = ">=2.11.0"
+
+[package.extras]
+video = ["youtube-dl"]
+
+[[package]]
 name = "guessit"
 version = "3.4.3"
 description = "GuessIt - a library for guessing information from video filenames."
@@ -1158,7 +1172,7 @@ full = []
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "e90d8caccfcf8ec023043f560af91337e39eb7ce41d793b6160fe3e0f95de5e1"
+content-hash = "0aa1f9d8bb76658ea1a7d581161b6aaae0c9e09484895c6ccea219efc844c5b4"
 
 [metadata.files]
 appdirs = [
@@ -1487,6 +1501,10 @@ ffmpeg-python = [
 ]
 future = [
     {file = "future-0.18.2.tar.gz", hash = "sha256:b1bead90b70cf6ec3f0710ae53a525360fa360d306a86583adc6bf83a4db537d"},
+]
+gallery-dl = [
+    {file = "gallery_dl-1.23.1-py3-none-any.whl", hash = "sha256:be01e8310a688c7816a695be9f907e4d3c53cf8402e801f494dba5bdf42d8f2a"},
+    {file = "gallery_dl-1.23.1.tar.gz", hash = "sha256:2443c60b00bcd67008a618a7c03eaabeb922a5a1d3b37fe4ae802b82a86dfdf4"},
 ]
 guessit = [
     {file = "guessit-3.4.3-py3-none-any.whl", hash = "sha256:f7f790c9e55a7bcc8ff887d3146e089c65a23eff72edfb6684ac5fedb47488a5"},

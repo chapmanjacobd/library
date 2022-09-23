@@ -308,7 +308,7 @@ def get_ordinal_media(args, path: str) -> str:
         bindings = {"candidate": "%" + candidate + "%"}
         if args.play_in_order == 2:
             if args.include or args.exclude:
-                bindings = {**bindings, "query": args.sql_filter_bindings['query']}
+                bindings = {**bindings, "query": args.sql_filter_bindings["query"]}
         else:
             bindings = {**bindings, **args.sql_filter_bindings}
 
@@ -566,6 +566,7 @@ def local_player(args, m, media_file) -> subprocess.CompletedProcess:
         sleep(delay)
 
     return r
+
 
 def printer(args, query, bindings) -> None:
     if "a" in args.print:
