@@ -552,15 +552,11 @@ def multiple_player(args, media) -> None:
             m["process"].kill()
 
 
-def local_player(args, m, media_file) -> None:
+def local_player(args, m, media_file) -> subprocess.CompletedProcess:
     if system() == "Windows" or args.action in [SC.watch, SC.tubewatch]:
         r = cmd(*args.player, media_file, strict=False)
     else:  # args.action in [SC.listen, SC.tubelisten]
         r = cmd_interactive(*args.player, media_file, strict=False)
-    if r.returncode != 0:
-        print("Player exited with code", r.returncode)
-        if not args.ignore_errors:
-            exit(r.returncode)
 
     if args.player_need_sleep:
         if hasattr(m, "duration"):
@@ -569,6 +565,7 @@ def local_player(args, m, media_file) -> None:
             delay = 10  # TODO: idk
         sleep(delay)
 
+    return r
 
 def printer(args, query, bindings) -> None:
     if "a" in args.print:

@@ -274,7 +274,7 @@ def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
     parser.add_argument("--shallow-organize", default="/mnt/d/", help=argparse.SUPPRESS)
 
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
-    parser.add_argument("--ignore-errors", "--ignoreerrors", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--ignore-errors", "--ignoreerrors", "-i", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--verbose", "-v", action="count", default=0)
     args = parser.parse_args()
     args.action = action
@@ -438,15 +438,30 @@ def play(args, m: Dict) -> None:
     args.player = player.parse(args, m, media_file)
 
     if args.chromecast:
-        chromecast_play(args, m)
+        try:
+            chromecast_play(args, m)
+        except Exception as e:
+            if args.ignore_errors:
+                return
+            else:
+                raise e
+        else:
+            player.post_act(args, media_file)
+
     elif args.interdimensional_cable:
         player.socket_play(args, m)
+
     else:
-        player.local_player(args, m, media_file)
+        r = player.local_player(args, m, media_file)
+        if r.returncode != 0:
+            print("Player exited with code", r.returncode)
+            if args.ignore_errors:
+                return
+            else:
+                exit(r.returncode)
 
-    if args.action in [SC.listen, SC.watch, SC.tubelisten, SC.tubewatch] and not args.interdimensional_cable:
-        player.post_act(args, media_file)
-
+        if args.action in [SC.listen, SC.watch, SC.tubelisten, SC.tubewatch]:
+            player.post_act(args, media_file)
 
 audio_include_string = (
     lambda x: f"""and (

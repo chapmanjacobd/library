@@ -46,6 +46,10 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
     browser tab subcommands:
       tabsadd                      Create a tabs database; Add URLs
       tabs [tabswatch, tb]         Open your tabs for the day
+
+    download subcommands:
+      dladd [da]                   Create a download database; Add URLs
+      download [dl]                Download media
     
 
 ## Quick Start -- watch online media on your PC
