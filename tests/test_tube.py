@@ -10,7 +10,7 @@ tube_add(
     [
         *tube_db,
         "--extra",
-        "--yt-dlp-config",
+        "--dl-config",
         "TEST1=1 TEST2=2",
         "https://youtube.com/playlist?list=PLVoczRgDnXDLWV1UJ_tO70VT_ON0tuEdm",
     ]
@@ -73,9 +73,9 @@ class TestTube(unittest.TestCase):
 
     @mock.patch("xklb.tube_extract.process_playlist")
     def test_tubeupdate(self, play_mocked):
-        tube_update([*tube_db, "--yt-dlp-config", "TEST2=4 TEST3=3"])
+        tube_update([*tube_db, "--dl-config", "TEST2=4 TEST3=3"])
         out = play_mocked.call_args[0][2]
         assert out is not None
-        assert play_mocked.call_args[0][2]["TEST1"] == "1"
-        assert play_mocked.call_args[0][2]["TEST2"] == "4"
-        assert play_mocked.call_args[0][2]["TEST3"] == "3"
+        assert out["TEST1"] == "1"
+        assert out["TEST2"] == "4"
+        assert out["TEST3"] == "3"

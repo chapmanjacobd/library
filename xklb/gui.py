@@ -65,7 +65,7 @@ class MrSuperDialogue:
         self.root.wm_attributes("-topmost", 1)
 
         for keyseq in ["<Escape>", "<Control-c>", "<Control-q>"]:
-            self.root.bind(keyseq, lambda ev: self.quit())
+            self.root.bind(keyseq, lambda _ev: self.quit())
 
         # menu left
         self.menu_left = Frame(self.root, width=150)
@@ -73,11 +73,11 @@ class MrSuperDialogue:
         self.menu_left_lower = Frame(self.menu_left, width=150)
 
         keep_btn = Button(self.menu_left_upper, text="Keep", command=self.keep, cursor="heart")
-        keep_btn.bind("<Return>", lambda ev: self.keep())
+        keep_btn.bind("<Return>", lambda _ev: self.keep())
         keep_btn.grid()
 
         del_btn = Button(self.menu_left_lower, text="Delete", command=self.delete, cursor="spraycan")
-        del_btn.bind("<Return>", lambda ev: self.delete())
+        del_btn.bind("<Return>", lambda _ev: self.delete())
         del_btn.focus()
         del_btn.grid()
 
@@ -106,9 +106,9 @@ class MrSuperDialogue:
         self.root.grid_columnconfigure(1, weight=1)
 
         for keyseq in ["<Delete>", "d", "n", "1"]:
-            self.root.bind(keyseq, lambda ev: self.delete())
+            self.root.bind(keyseq, lambda _ev: self.delete())
         for keyseq in ["k", "y", "2"]:
-            self.root.bind(keyseq, lambda ev: self.keep())
+            self.root.bind(keyseq, lambda _ev: self.keep())
 
         self.move_window()
         self.root.mainloop()

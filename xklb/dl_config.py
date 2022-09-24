@@ -1,12 +1,17 @@
-reddit_links_ignore = "|".join(
-    r"""youtube.com/user/
+import re
+
+reddit_links_ignore = re.compile(
+    "|".join(
+        r"""youtube.com/user/
 youtube.com/c/
 youtube.com/channel/
 youtube.com/results""".splitlines()
+    )
 )
 
-yt_recoverable_errors = "|".join(
-    r"""due to geo restriction
+yt_recoverable_errors = re.compile(
+    "|".join(
+        r"""due to geo restriction
 geo-restricted
 geolocation
 your country
@@ -31,11 +36,13 @@ giving up after.*retries
 Failed to download MPD manifest:\$
 not currently available\$
 copyright claim""".splitlines()
+    )
 )
 
 
-yt_meaningless_errors = "|".join(
-    r"""hidden
+yt_meaningless_errors = re.compile(
+    "|".join(
+        r"""hidden
 timed out
 Timeout
 Timed
@@ -93,11 +100,13 @@ the JSON object must be str, bytes or bytearray, not dict
 The read operation timed out
 Unable to recognize playlist.
 Premieres in""".splitlines()
+    )
 )
 
 
-yt_unrecoverable_errors = "|".join(
-    r"""repetitive or misleading metadata
+yt_unrecoverable_errors = re.compile(
+    "|".join(
+        r"""repetitive or misleading metadata
 It is not available
 has already been recorded in the archive
 ideo.*is private
@@ -174,4 +183,5 @@ HTTP Error 404
 HTTPError 404
 HTTP Error 410
 HTTPError 410""".splitlines()
+    )
 )

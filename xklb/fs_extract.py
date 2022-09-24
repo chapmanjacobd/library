@@ -103,7 +103,17 @@ def find_new_files(args, path) -> List[str]:
 
     try:
         existing_set = set(
-            [d["path"] for d in args.db.query(f"select path from media where is_deleted=0 and path like '{path}%'")]
+            [
+                d["path"]
+                for d in args.db.query(
+                    f"""select path from media
+                where 1=1
+                    and is_deleted=0
+                    and path like '{path}%'
+                    {'AND is_downloaded=1' if 'is_downloaded' in args.db['media'].columns else ''}
+                """
+                )
+            ]
         )
     except Exception:
         new_files = list(scanned_set)
