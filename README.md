@@ -29,6 +29,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
       filesystem [fs]              Browse files
       bigdirs [largefolders]       Discover folders which take up much room
       dedupe                       Deduplicate audio files
+      christen                     Clean up files by giving them a new name
 
     online media subcommands:
       tubeadd [ta, xt]             Create a tube database; Add playlists
@@ -36,6 +37,10 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
       tubelist [playlists]         List added playlists
       tubewatch [tw, entries]      Watch the tube
       tubelisten [tl]              Listen to the tube
+
+    download subcommands:
+      dladd [da]                   Create a download database; Add URLs
+      download [dl]                Download media
 
     playback subcommands:
       now                          Print what is currently playing
@@ -46,10 +51,6 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
     browser tab subcommands:
       tabsadd                      Create a tabs database; Add URLs
       tabs [tabswatch, tb]         Open your tabs for the day
-
-    download subcommands:
-      dladd [da]                   Create a download database; Add URLs
-      download [dl]                Download media
     
 
 ## Quick Start -- watch online media on your PC
@@ -99,7 +100,7 @@ And you can always add more later--even from different websites.
 To prevent mistakes the default configuration is to download metadata for only
 the most recent 20,000 videos per playlist/channel.
 
-    library tubeadd maker.db --yt-dlp-config playlistend=1000
+    library tubeadd maker.db --dl-config playlistend=1000
 
 Be aware that there are some YouTube Channels which have many items--for example
 the TEDx channel has about 180,000 videos. Some channels even have upwards of
@@ -425,11 +426,13 @@ When I press the next button in the car I delete the song from my curated univer
 
     function mrmusic
         rsync -a --remove-source-files --files-from=(
-            library lt ~/lb/audio.db -s /mnt/d/80_Now_Listening/ -p f             --moved /mnt/d/80_Now_Listening/ /mnt/d/ | psub
+            library lt ~/lb/audio.db -s /mnt/d/80_Now_Listening/ -p f \
+            --moved /mnt/d/80_Now_Listening/ /mnt/d/ | psub
         ) /mnt/d/80_Now_Listening/ /mnt/d/
 
         rsync -a --remove-source-files --files-from=(
-            library lt ~/lb/audio.db -w play_count=0 -u random -L 1200 -p f             --moved /mnt/d/ /mnt/d/80_Now_Listening/ | psub
+            library lt ~/lb/audio.db -w play_count=0 -u random -L 1200 -p f \
+            --moved /mnt/d/ /mnt/d/80_Now_Listening/ | psub
         ) /mnt/d/ /mnt/d/80_Now_Listening/
     end
 
@@ -441,19 +444,8 @@ Explore `library` databases in your browser
     datasette tv.db
 
 ### TODOs (PRs welcome)
-- dl: playlists: download_folder, audio/video/photo download profile
-    - where is_downloaded = 0
 
-- dl: dl can operate on tube databases
-    - path: downloaded fs path
-    - webpath: URL
-    - is_downloaded = 1
-    - scan downloaded file, add metadata to media table
-
-- dl: yt-dlp, gallery-dl, bdfr
-- dl: bandcamp no id
-- dl: wclone?
+- multiple-playback: mpv switch to absolute positioning (instead of percent)
 - stats: lb stats, lb show/print
-- multiple-playback stdin is sticky
 - more test coverage -- https://hypothesis.readthedocs.io/en/latest/quickstart.html
 

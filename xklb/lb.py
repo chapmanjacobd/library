@@ -26,6 +26,7 @@ def lb_usage() -> str:
       filesystem [fs]              Browse files
       bigdirs [largefolders]       Discover folders which take up much room
       dedupe                       Deduplicate audio files
+      christen                     Clean up files by giving them a new name
 
     online media subcommands:
       tubeadd [ta, xt]             Create a tube database; Add playlists
@@ -33,6 +34,10 @@ def lb_usage() -> str:
       tubelist [playlists]         List added playlists
       tubewatch [tw, entries]      Watch the tube
       tubelisten [tl]              Listen to the tube
+
+    download subcommands:
+      dladd [da]                   Create a download database; Add URLs
+      download [dl]                Download media
 
     playback subcommands:
       now                          Print what is currently playing
@@ -43,10 +48,6 @@ def lb_usage() -> str:
     browser tab subcommands:
       tabsadd                      Create a tabs database; Add URLs
       tabs [tabswatch, tb]         Open your tabs for the day
-
-    download subcommands:
-      dladd [da]                   Create a download database; Add URLs
-      download [dl]                Download media
     """
 
 
@@ -87,6 +88,9 @@ def lb(args=None) -> None:
 
     subp_dedupe = subparsers.add_parser("dedupe", add_help=False)
     subp_dedupe.set_defaults(func=scripts.deduplicate_music)
+
+    subp_christen = subparsers.add_parser("christen", add_help=False)
+    subp_christen.set_defaults(func=scripts.rename_invalid_files)
 
     subp_tubelist = subparsers.add_parser("tubelist", aliases=["playlist", "playlists"], add_help=False)
     subp_tubelist.set_defaults(func=tube_list)

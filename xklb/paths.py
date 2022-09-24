@@ -10,6 +10,7 @@ CAST_NOW_PLAYING = os.path.join(gettempdir(), "catt_playing")
 DEFAULT_MPV_SOCKET = os.path.join(gettempdir(), "mpv_socket")
 DEFAULT_MPV_WATCH_LATER = os.path.expanduser("~/.config/mpv/watch_later/")
 SUB_TEMP_DIR = mkdtemp()
+BLOCK_THE_CHANNEL = "__BLOCKLIST_ENTRY_"
 
 
 class Frequency(enum.Enum):
