@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "xklb"
-version = "1.16.030"
+version = "1.16.029"
 description = "xk library"
 authors = ["Jacob Chapman <7908073+chapmanjacobd@users.noreply.github.com>"]
 readme = "README.md"
@@ -32,7 +32,8 @@ subliminal = "*"
 tabulate = "*"
 tinytag = "*"
 yt-dlp = "*"
-praw = "^7.6.0"
+praw = "*"
+ftfy = "*"
 
 [tool.poetry.dev-dependencies]
 black = "*"
