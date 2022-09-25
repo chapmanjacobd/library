@@ -1,12 +1,13 @@
-import argparse, sys
+import argparse, sqlite3, sys
 from pathlib import Path
 from random import shuffle
 from typing import List
 
 import gallery_dl as gdl
 import yt_dlp
+from rich.prompt import Confirm
 
-from xklb import db, paths, tube_actions, tube_extract, utils
+from xklb import db, paths, player, tube_actions, tube_extract, utils
 from xklb.dl_config import yt_meaningless_errors, yt_recoverable_errors, yt_unrecoverable_errors
 from xklb.utils import log
 
@@ -184,7 +185,7 @@ def dl_update(args=None) -> None:
     )
     parser.add_argument("database", nargs="?", default="dl.db")
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
-    parser.add_argument("category", nargs="*")
+    parser.add_argument("category", nargs="?")
     parser.add_argument("playlists", nargs="*")
 
     profile = parser.add_mutually_exclusive_group()
@@ -296,7 +297,7 @@ def yt(args, m, audio_only=False) -> None:
             ydl_log["error"].append(msg)
 
     out_dir = lambda p: str(Path(args.prefix, m["category"], p))
-    Path(out_dir("")).parent.mkdir(parents=True, exist_ok=True)
+    Path(out_dir("tunnel_snakes_rule")).parent.mkdir(parents=True, exist_ok=True)
     ydl_opts = tube_actions.ydl_opts(
         args,
         func_opts={
@@ -399,7 +400,7 @@ def dl_download(args=None) -> None:
     parser.add_argument("database", nargs="?", default="dl.db")
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
     parser.add_argument("prefix")
-    parser.add_argument("playlists", nargs="?")
+    parser.add_argument("playlists", nargs="*")
 
     profile = parser.add_mutually_exclusive_group()
     profile.add_argument("--audio", action="store_const", dest="profile", const="a", help="Use audio dl profile")
@@ -457,10 +458,8 @@ def dl_download(args=None) -> None:
 
         for m in media:
             # check again in case it was already completed by another process
-            if (
-                list(args.db.query("select is_downloaded from media where path=?", [m["path"]]))[0]["is_downloaded"]
-                == 1
-            ):
+            is_downloaded = list(args.db.query("select is_downloaded from media where path=?", [m["path"]]))
+            if is_downloaded[0]["is_downloaded"] == 1:
                 log.debug("[%s]: Already downloaded. Skipping!", m["path"])
                 continue
 
@@ -481,19 +480,35 @@ def dl_block(args=None) -> None:
         prog="library block",
         usage=r"""library block database [playlists ...]
 
-    Blocklist specific URLs (eg. YouTube channels, etc)
+    Blocklist specific URLs (eg. YouTube channels, etc). With YT URLs this will block
+    videos from the playlist uploader
 
         library block dl.db https://annoyingwebsite/etc/
 
-    For example, with YT URLs this will block videos from the uploader (across all playlists)
+    Use with the all-deleted-playlists flag to delete any previously downloaded files from the playlist uploader
+
+        library block dl.db --all-deleted-playlists https://annoyingwebsite/etc/
+
     """,
     )
     parser.add_argument("database", nargs="?", default="dl.db")
-    parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
-    parser.add_argument("playlists", nargs="*")
+    parser.add_argument("playlists", nargs="+")
 
     parser.add_argument("--no-sanitize", "-s", action="store_true", help="Don't sanitize some common URL parameters")
+    parser.add_argument("--all-deleted-playlists", "-a", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--ignore-errors", "--ignoreerrors", "-i", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
+
+    parser.add_argument(
+        "--dl-config",
+        "-dl-config",
+        nargs=1,
+        action=utils.argparse_dict,
+        default={},
+        metavar="KEY=VALUE",
+        help="Add key/value pairs to override or extend default downloader configuration",
+    )
+
     parser.add_argument("--verbose", "-v", action="count", default=0)
     args = parser.parse_args()
 
@@ -502,26 +517,51 @@ def dl_block(args=None) -> None:
     Path(args.database).touch()
     args.db = db.connect(args)
 
+    if not any([args.playlists, args.all_deleted_playlists]):
+        raise Exception('Specific URLs or --all-deleted-playlists must be supplied')
+
     log.info(utils.dict_filter_bool(args.__dict__))
     args.extra_playlist_data = dict(is_deleted=1, category=paths.BLOCK_THE_CHANNEL)
     args.extra_media_data = dict(is_deleted=1)
     for p in args.playlists:
         tube_extract.process_playlist(args, p, tube_actions.ydl_opts(args, func_opts={"playlistend": 30}))
 
-    args.db.execute(
-        f"""UPDATE playlists
-        SET is_deleted=1
-        ,   category='{paths.BLOCK_THE_CHANNEL}'
-        WHERE path IN ("""
-        + ",".join(["?"] * len(args.playlists))
-        + ")",
-        (*args.playlists,),
-    )
+    if args.playlists:
+        with args.db.conn:
+            args.db.execute(
+                f"""UPDATE playlists
+                SET is_deleted=1
+                ,   category='{paths.BLOCK_THE_CHANNEL}'
+                WHERE path IN ("""
+                + ",".join(["?"] * len(args.playlists))
+                + ")",
+                (*args.playlists,),
+            )
 
-    args.db.execute(
-        f"""UPDATE media
-        SET is_deleted=1
-        WHERE playlist_path IN (
-            select path from playlists where is_deleted=1
-        ) """
-    )
+    paths_to_delete = [
+        d["path"]
+        for d in args.db.query(
+            f"""SELECT path FROM media
+        WHERE is_downloaded=1
+        AND playlist_path IN ("""
+            + ",".join(["?"] * len(args.playlists))
+            + ")",
+            (*args.playlists,),
+        )
+    ]
+
+    if args.all_deleted_playlists:
+        paths_to_delete = [
+            d["path"]
+            for d in args.db.query(
+                f"""SELECT path FROM media
+            WHERE is_downloaded=1
+            AND playlist_path IN (
+                select path from playlists where is_deleted=1
+            ) """
+            )
+        ]
+
+    print(paths_to_delete)
+    if not utils.PYTEST_RUNNING and Confirm.ask("Delete?"):
+        player.delete_media(args, paths_to_delete)

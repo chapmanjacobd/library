@@ -76,6 +76,6 @@ class TestTube(unittest.TestCase):
         tube_update([*tube_db, "--dl-config", "TEST2=4 TEST3=3"])
         out = play_mocked.call_args[0][2]
         assert out is not None
-        assert out["TEST1"] == "1"
-        assert out["TEST2"] == "4"
-        assert out["TEST3"] == "3"
+        assert out["TEST1"] == 1
+        assert out["TEST2"] == 4
+        assert out["TEST3"] == 3

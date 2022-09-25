@@ -203,13 +203,15 @@ def mark_media_deleted(args, paths) -> int:
     return modified_row_count
 
 
-def delete_media(args, media_file: str) -> int:
-    if len(args.prefix) > 0:
-        Path(media_file).unlink()
-    else:
-        utils.trash(media_file)
+def delete_media(args, paths) -> int:
+    paths = utils.conform(paths)
+    for p in paths:
+        if len(args.prefix) > 0:
+            Path(p).unlink(missing_ok=True)
+        else:
+            utils.trash(p)
 
-    return mark_media_deleted(args, media_file)
+    return mark_media_deleted(args, paths)
 
 
 def delete_playlists(args, playlists) -> None:

@@ -41,6 +41,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
     download subcommands:
       dladd [da]                   Create a download database; Add URLs
       download [dl]                Download media
+      block                        Prevent downloading from specific channels
 
     playback subcommands:
       now                          Print what is currently playing
@@ -361,9 +362,9 @@ Organize via separate databases.
         library watch --play-in-order
         There are multiple strictness levels of --play-in-order.
         If things aren't playing in order try adding more `O`s:
-        library watch -O    # normal
-        library watch -OO   # slower, more complex algorithm
-        library watch -OOO  # strict
+        library watch -O    # fast
+        library watch -OO   # slow, more complex algorithm
+        library watch -OOO  # slow, ignores most filters
 
     Post-actions -- choose what to do after playing:
         library watch --post-action delete  # delete file after playing

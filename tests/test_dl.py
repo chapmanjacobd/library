@@ -21,6 +21,8 @@ tube_add([*tube_db, PLAYLIST_URL])
 
 class TestTube(unittest.TestCase):
     def init_db(self):
+        for p in Path("tests/data/").glob("dl.db*"):
+            p.unlink()
         dl_add([*dl_db, "Self", PLAYLIST_URL])
 
     def test_yt(self):
@@ -30,7 +32,6 @@ class TestTube(unittest.TestCase):
         args = Namespace(database=dl_db[1], dl_config={}, prefix=STORAGE_PREFIX, ignore_errors=False, verbose=0)
         args.db = connect(args)
         yt(args, dict(path=PLAYLIST_VIDEO_URL, dl_config={}, category="Self"))
-        Path(dl_db[1]).unlink()
 
     def test_yta(self):
         dl_db = "--db", "tests/data/dl.db"
@@ -41,7 +42,6 @@ class TestTube(unittest.TestCase):
         )
         args.db = connect(args)
         yt(args, dict(path=PLAYLIST_VIDEO_URL, dl_config={}, category="Self"), audio_only=True)
-        Path(dl_db[1]).unlink()
 
     @mock.patch("xklb.dl_extract.yt")
     @mock.patch("xklb.tube_extract.process_playlist")
@@ -61,7 +61,6 @@ class TestTube(unittest.TestCase):
         dl_download([*dl_db, STORAGE_PREFIX])
         out = yt.call_args[0]
         assert out[1]["path"] == PLAYLIST_VIDEO_URL
-        Path(dl_db[1]).unlink()
 
     @mock.patch("xklb.tube_extract.update_playlists")
     def test_dlupdate(self, update_playlists):
@@ -70,7 +69,6 @@ class TestTube(unittest.TestCase):
         dl_update([*dl_db])
         out = update_playlists.call_args[0]
         assert out[1][0]["path"] == PLAYLIST_URL
-        Path(dl_db[1]).unlink()
 
     @mock.patch("xklb.tube_extract.update_playlists")
     def test_dlupdate_subset_category(self, update_playlists):
@@ -79,14 +77,21 @@ class TestTube(unittest.TestCase):
         dl_update([*dl_db, "Self"])
         out = update_playlists.call_args[0]
         assert out[1][0]["path"] == PLAYLIST_URL
-        Path(dl_db[1]).unlink()
 
-    def test_block(self):
-        self.init_db()
+    def test_block_new(self):
+        block_db = "--db", "tests/data/block.db"
+        dl_block([*block_db, PLAYLIST_URL])
 
-        dl_block([*dl_db, PLAYLIST_URL])
-        db = connect(Namespace(database=dl_db[1], verbose=0))
+        db = connect(Namespace(database=block_db[1], verbose=2))
         playlists = list(db["playlists"].rows)
         assert playlists[0]["is_deleted"] == 1
         assert playlists[0]["category"] == paths.BLOCK_THE_CHANNEL
-        Path(dl_db[1]).unlink()
+
+    def test_block_existing(self):
+        self.init_db()
+
+        dl_block([*dl_db, PLAYLIST_URL])
+        db = connect(Namespace(database=dl_db[1], verbose=2))
+        playlists = list(db["playlists"].rows)
+        assert playlists[0]["is_deleted"] == 1
+        assert playlists[0]["category"] == paths.BLOCK_THE_CHANNEL
