@@ -1,4 +1,4 @@
-import argparse, json, sys, tempfile
+import argparse, json, sqlite3, sys, tempfile
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
@@ -18,7 +18,6 @@ from xklb.utils import combine, log, safe_unpack
 def parse_args(action, usage) -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library tube" + action, usage=usage)
     parser.add_argument("database", nargs="?", default="tube.db")
-    parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
     if action == "add":
         parser.add_argument("playlists", nargs="+")
     elif action == "update":
@@ -41,6 +40,7 @@ def parse_args(action, usage) -> argparse.Namespace:
 
     parser.add_argument("--extra-media-data", default={})
     parser.add_argument("--extra-playlist-data", default={})
+    parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
     parser.add_argument("--ignore-errors", "--ignoreerrors", "-i", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--verbose", "-v", action="count", default=0)
     args = parser.parse_args()
@@ -194,6 +194,7 @@ def consolidate(playlist_path: str, v: dict, ydl: Optional[yt_dlp.YoutubeDL] = N
     duration = v.pop("duration", None)
     cv["duration"] = 0 if not duration else int(duration)
     cv["is_deleted"] = 0
+    cv["is_downloaded"] = 0
     cv["play_count"] = 0
     cv["time_played"] = 0
     cv["language"] = v.pop("language", None)
@@ -283,7 +284,7 @@ def process_playlist(args, playlist_path, ydl_opts) -> Union[List[Dict], None]:
         def _add_media(self, entry) -> Union[dict, None]:
             entry = consolidate(playlist_path, entry, ydl=super)  # type: ignore
             if entry:
-                if self.current_video_count >= 2 and is_video_known(args, playlist_path, entry["path"]):
+                if self.current_video_count >= 1 and is_video_known(args, playlist_path, entry["path"]):
                     raise ExistingPlaylistVideoReached
                 save_entries(args, [{**entry, **args.extra_media_data}])
             return entry
@@ -297,11 +298,25 @@ def process_playlist(args, playlist_path, ydl_opts) -> Union[List[Dict], None]:
                 id=pl.get("playlist_id"),
                 dl_config=args.dl_config,
                 is_deleted=0,
+                category=None,
+                profile=None,
             )
             if entry["path"] == pl["path"] or not pl.get("id"):
                 log.warning("Importing playlist-less media %s", pl["path"])
             else:
-                args.db["playlists"].insert({**pl, **args.extra_playlist_data}, pk="path", alter=True, replace=True)  # type: ignore
+                existing_data = self._get_existing_playlist()
+                args.db["playlists"].insert(
+                    {**pl, **existing_data, **args.extra_playlist_data}, pk="path", alter=True, replace=True
+                )
+
+        def _get_existing_playlist(self) -> dict:
+            try:
+                r = list(args.db.query(f"select * from playlists where path=?", [playlist_path]))
+            except sqlite3.OperationalError:
+                return {}
+            if len(r) == 1:
+                return r[0]
+            return {}
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.add_post_processor(AddToArchivePP(), when="pre_process")

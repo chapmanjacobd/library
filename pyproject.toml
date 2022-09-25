@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "xklb"
-version = "1.16.033"
+version = "1.16.034"
 description = "xk library"
 authors = ["Jacob Chapman <7908073+chapmanjacobd@users.noreply.github.com>"]
 readme = "README.md"
@@ -71,4 +71,4 @@ combine_straight_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ['tests']
-addopts = "--pdbcls=IPython.terminal.debugger:TerminalPdb --ignore=tests/data --capture=tee-sys --log-cli-level=INFO"
+addopts = "--pdbcls=IPython.terminal.debugger:TerminalPdb --ignore=tests/data --capture=tee-sys --log-cli-level=ERROR"
