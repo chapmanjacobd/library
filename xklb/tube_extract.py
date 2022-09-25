@@ -4,15 +4,14 @@ from datetime import datetime
 from pathlib import Path
 from sqlite3 import OperationalError
 from time import sleep
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 from urllib.error import HTTPError
 
 import yt_dlp
 
-from xklb import db, utils
-from xklb.paths import SUB_TEMP_DIR, sanitize_url
+from xklb import db, tube_actions, utils
+from xklb.paths import SUB_TEMP_DIR
 from xklb.subtitle import subs_to_text
-from xklb.tube_actions import default_ydl_opts
 from xklb.utils import combine, log, safe_unpack
 
 
@@ -42,6 +41,7 @@ def parse_args(action, usage) -> argparse.Namespace:
 
     parser.add_argument("--extra-media-data", default={})
     parser.add_argument("--extra-playlist-data", default={})
+    parser.add_argument("--ignore-errors", "--ignoreerrors", "-i", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--verbose", "-v", action="count", default=0)
     args = parser.parse_args()
     args.action = action
@@ -55,22 +55,6 @@ def parse_args(action, usage) -> argparse.Namespace:
     log.info(utils.dict_filter_bool(args.__dict__))
 
     return args
-
-
-def parse_ydl_opts(args, saved_opts=None) -> dict:
-    if saved_opts is None:
-        saved_opts = {}
-
-    ydl_opts = {**default_ydl_opts, **saved_opts, **args.dl_config}
-    if args.verbose == 0:
-        ydl_opts.update(ignoreerrors="only_download")
-
-    log.info(utils.dict_filter_bool(ydl_opts))
-
-    if args.playlists and not args.no_sanitize:
-        args.playlists = [sanitize_url(args, path) for path in args.playlists]
-
-    return ydl_opts
 
 
 def is_supported(url) -> bool:  # thank you @dbr
@@ -103,7 +87,7 @@ def get_subtitle_text(ydl: yt_dlp.YoutubeDL, video_path, req_sub_dict) -> str:
     return subs_text
 
 
-def consolidate(ydl: yt_dlp.YoutubeDL, playlist_path, v) -> Union[dict, None]:
+def consolidate(playlist_path: str, v: dict, ydl: Optional[yt_dlp.YoutubeDL] = None) -> Union[dict, None]:
     ignore_keys = [
         "thumbnail",
         "thumbnails",
@@ -165,6 +149,7 @@ def consolidate(ydl: yt_dlp.YoutubeDL, playlist_path, v) -> Union[dict, None]:
         "formats",
         "requested_formats",
         "requested_entries",
+        'requested_downloads',
         "thumbnails",
         "playlist_count",
         "playlist_id",
@@ -194,7 +179,10 @@ def consolidate(ydl: yt_dlp.YoutubeDL, playlist_path, v) -> Union[dict, None]:
 
     subtitles = v.pop("requested_subtitles", None)
     if subtitles:
-        subtitles = get_subtitle_text(ydl, playlist_path, subtitles)
+        if ydl:
+            subtitles = get_subtitle_text(ydl, playlist_path, subtitles)
+        else:
+            subtitles = None
 
     cv = dict()
     cv["path"] = safe_unpack(v.pop("webpage_url", None), v.pop("url", None), v.pop("original_url", None))
@@ -291,14 +279,14 @@ def process_playlist(args, playlist_path, ydl_opts) -> Union[List[Dict], None]:
             return [], info
 
         def _add_media(self, entry) -> Union[dict, None]:
-            entry = consolidate(super, playlist_path, entry)  # type: ignore
+            entry = consolidate(playlist_path, entry, ydl=super)  # type: ignore
             if entry:
-                if is_video_known(args, playlist_path, entry["path"]):
+                if self.current_video_count > 1 and is_video_known(args, playlist_path, entry["path"]):
                     raise ExistingPlaylistVideoReached
                 save_entries(args, [{**entry, **args.extra_media_data}])
             return entry
 
-        def _add_playlist(self, pl, entry) -> None:
+        def _add_playlist(self, pl: dict, entry: dict) -> None:
             pl = dict(
                 ie_key=safe_unpack(pl.get("ie_key"), pl.get("extractor_key"), pl.get("extractor")),
                 title=pl.get("playlist_title"),
@@ -325,20 +313,23 @@ def process_playlist(args, playlist_path, ydl_opts) -> Union[List[Dict], None]:
                 log_problem(args, playlist_path)
 
 
-def get_extra_metadata(args, playlist_path, ydl_opts) -> Union[List[Dict], None]:
+def get_extra_metadata(args, playlist_path, playlist_dl_opts) -> Union[List[Dict], None]:
     with yt_dlp.YoutubeDL(
-        {
-            **ydl_opts,
-            "subtitlesformat": "srt/best",
-            "writesubtitles": True,
-            "writeautomaticsub": True,
-            "subtitleslangs": ["en.*", "EN.*"],
-            "extract_flat": False,
-            "lazy_playlist": False,
-            "skip_download": True,
-            "check_formats": False,
-            "ignoreerrors": True,
-        }
+        tube_actions.ydl_opts(
+            args,
+            func_opts={
+                "subtitlesformat": "srt/best",
+                "writesubtitles": True,
+                "writeautomaticsub": True,
+                "subtitleslangs": ["en.*", "EN.*"],
+                "extract_flat": False,
+                "lazy_playlist": False,
+                "skip_download": True,
+                "check_formats": False,
+                "ignoreerrors": True,
+            },
+            playlist_opts=playlist_dl_opts,
+        )
     ) as ydl:
         videos = args.db.execute(
             """
@@ -358,7 +349,7 @@ def get_extra_metadata(args, playlist_path, ydl_opts) -> Union[List[Dict], None]
             if entry is None:
                 continue
 
-            entry = consolidate(ydl, playlist_path, entry)
+            entry = consolidate(playlist_path, entry, ydl)
             if entry is None:
                 continue
 
@@ -394,7 +385,7 @@ def get_playlists(args, cols="path, dl_config", constrain=False) -> List[dict]:
     return known_playlists
 
 
-def get_saved_dl_config(playlists, path):
+def get_playlist_dl_config(playlists, path):
     for d in playlists:
         if d["path"] == path:
             return json.loads(d["dl_config"])
@@ -422,19 +413,19 @@ def tube_add(args=None) -> None:
     )
     playlists = get_playlists(args)
     for path in args.playlists:
-        saved_dl_config = get_saved_dl_config(playlists, path)
-        if saved_dl_config:
+        playlist_dl_config = get_playlist_dl_config(playlists, path)
+        if playlist_dl_config:
             log.info("[%s]: Updating known playlist", path)
 
         if args.safe and not is_supported(path):
             log.warning("[%s]: Unsupported playlist (safe_mode)", path)
             continue
 
-        process_playlist(args, path, parse_ydl_opts(args, saved_dl_config))
+        process_playlist(args, path, playlist_dl_config)
 
         if args.extra:
             log.warning("[%s]: Getting extra metadata", path)
-            get_extra_metadata(args, path, parse_ydl_opts(args))
+            get_extra_metadata(args, path, playlist_dl_config)
 
 
 def update_playlists(args, playlists):
@@ -444,11 +435,11 @@ def update_playlists(args, playlists):
         if not args.playlists or d["path"] in args.playlists
     ]
     for d in playlists:
-        process_playlist(args, d["path"], parse_ydl_opts(args, saved_opts=d["dl_config"]))
+        process_playlist(args, d["path"], tube_actions.ydl_opts(args, playlist_opts=d["dl_config"]))
 
         if args.extra:
             log.warning("[%s]: Getting extra metadata", d["path"])
-            get_extra_metadata(args, d["path"], parse_ydl_opts(args, saved_opts=d["dl_config"]))
+            get_extra_metadata(args, d["path"], tube_actions.ydl_opts(args, playlist_opts=d["dl_config"]))
 
 
 def show_unknown_playlist_warning(args, playlists, sc_name="tubeadd"):

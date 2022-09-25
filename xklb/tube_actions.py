@@ -1,68 +1,97 @@
-import argparse, operator
+import argparse, operator, sys
 from copy import deepcopy
 from typing import Tuple
 
 from tabulate import tabulate
 
-from xklb import db, utils
+from xklb import db, paths, utils
 from xklb.fs_actions import construct_search_bindings, parse_args, process_playqueue
 from xklb.player import delete_playlists
 from xklb.utils import DEFAULT_PLAY_QUEUE, SC, dict_filter_bool, human_time, log
 
 # TODO: add cookiesfrombrowser: ('firefox', ) as a default
-# cookiesfrombrowser: ('vivaldi', ) # should not crash if not installed ?
+# crash if not installed ?
 
-default_ydl_opts = {
-    "extract_flat": True,
-    "lazy_playlist": True,
-    "skip_download": True,
-    "check_formats": False,
-    "no_check_certificate": True,
-    "no_warnings": True,
-    "ignore_no_formats_error": True,
-    "skip_playlist_after_errors": 20,
-    "quiet": True,
-    "dynamic_mpd": False,
-    "youtube_include_dash_manifest": False,
-    "youtube_include_hls_manifest": False,
-    "clean_infojson": False,
-    "playlistend": 20000,
-    "rejecttitle": "|".join(
-        [
-            "Trailer",
-            "Sneak Peek",
-            "Preview",
-            "Teaser",
-            "Promo",
-            "Crypto",
-            "Montage",
-            "Bitcoin",
-            "Apology",
-            " Clip",
-            "Clip ",
-            "Best of",
-            "Compilation",
-            "Top 10",
-            "Top 9",
-            "Top 8",
-            "Top 7",
-            "Top 6",
-            "Top 5",
-            "Top 4",
-            "Top 3",
-            "Top 2",
-            "Top Ten",
-            "Top Nine",
-            "Top Eight",
-            "Top Seven",
-            "Top Six",
-            "Top Five",
-            "Top Four",
-            "Top Three",
-            "Top Two",
-        ]
-    ),
-}
+
+def ydl_opts(args, func_opts=None, playlist_opts=None) -> dict:
+    if playlist_opts is None:
+        playlist_opts = {}
+    if func_opts is None:
+        func_opts = {}
+
+    default_opts = {
+        "ignoreerrors": False,
+        "no_warnings": False,
+        "quiet": False,
+        "skip_download": True,
+        "lazy_playlist": True,
+        "extract_flat": True,
+        "dynamic_mpd": False,
+        "youtube_include_dash_manifest": False,
+        "youtube_include_hls_manifest": False,
+        "no_check_certificate": True,
+        "check_formats": False,
+        "ignore_no_formats_error": True,
+        "skip_playlist_after_errors": 20,
+        "clean_infojson": False,
+        "playlistend": 20000,
+        "rejecttitle": "|".join(
+            [
+                "Trailer",
+                "Sneak Peek",
+                "Preview",
+                "Teaser",
+                "Promo",
+                "Crypto ",
+                "Montage",
+                "Bitcoin",
+                "Apology",
+                " Clip",
+                "Clip ",
+                "Best of",
+                "Compilation",
+                "Top 10",
+                "Top 9",
+                "Top 8",
+                "Top 7",
+                "Top 6",
+                "Top 5",
+                "Top 4",
+                "Top 3",
+                "Top 2",
+                "Top Ten",
+                "Top Nine",
+                "Top Eight",
+                "Top Seven",
+                "Top Six",
+                "Top Five",
+                "Top Four",
+                "Top Three",
+                "Top Two",
+            ]
+        ),
+    }
+
+    ydl_opts = {
+        **default_opts,
+        **func_opts,
+        **playlist_opts,
+        **args.dl_config,
+    }
+
+    if args.verbose == 0 and "pytest" not in sys.modules:
+        ydl_opts.update(ignoreerrors="only_download")
+    if args.verbose >= 2:
+        ydl_opts.update(ignoreerrors=False)
+    if args.ignore_errors:
+        ydl_opts.update(ignoreerrors=True)
+
+    log.info(utils.dict_filter_bool(ydl_opts))
+
+    if hasattr(args, "playlists") and args.playlists and not args.no_sanitize:
+        args.playlists = [paths.sanitize_url(args, path) for path in args.playlists]
+
+    return ydl_opts
 
 
 tube_include_string = (

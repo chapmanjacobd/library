@@ -1,14 +1,12 @@
-import argparse, io, sys
-from contextlib import redirect_stdout
+import argparse, sys
 from pathlib import Path
 from random import shuffle
-from sqlite3 import OperationalError
 from typing import List
 
 import gallery_dl as gdl
 import yt_dlp
 
-from xklb import db, paths, tube_extract, utils
+from xklb import db, paths, tube_actions, tube_extract, utils
 from xklb.dl_config import yt_meaningless_errors, yt_recoverable_errors, yt_unrecoverable_errors
 from xklb.utils import log
 
@@ -46,19 +44,7 @@ class Profile:
     image = "image"
 
 
-def upgrade_tube_schema(args):
-    if "media" in args.db.table_names():
-        if "webpath" not in [c.name for c in args.db["media"].columns]:
-            args.db["media"].add_column("webpath", str)  # type: ignore
-        if "is_downloaded" not in [c.name for c in args.db["media"].columns]:
-            args.db["media"].add_column("is_downloaded", int, not_null_default=0)  # type: ignore
-        if "category" not in [c.name for c in args.db["playlists"].columns]:
-            args.db["playlists"].add_column("category", str, not_null_default=args.category)  # type: ignore
-        if "profile" not in [c.name for c in args.db["playlists"].columns]:
-            args.db["playlists"].add_column("profile", str, not_null_default=args.profile)  # type: ignore
-
-
-def dl_add(args=None):
+def dl_add(args=None) -> None:
     if args:
         sys.argv[1:] = args
 
@@ -111,8 +97,9 @@ def dl_add(args=None):
 
     parser.add_argument("--extra", "-extra", action="store_true", help="Get full metadata (takes a lot longer)")
 
-    parser.add_argument("--extra-media-data", default={})
-    parser.add_argument("--extra-playlist-data", default={})
+    parser.add_argument("--extra-media-data", default={}, nargs=1, action=utils.argparse_dict, metavar="KEY=VALUE")
+    parser.add_argument("--extra-playlist-data", default={}, nargs=1, action=utils.argparse_dict, metavar="KEY=VALUE")
+    parser.add_argument("--ignore-errors", "--ignoreerrors", "-i", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--verbose", "-v", action="count", default=0)
     args = parser.parse_args()
 
@@ -120,7 +107,6 @@ def dl_add(args=None):
         args.database = args.db
     Path(args.database).touch()
     args.db = db.connect(args)
-    upgrade_tube_schema(args)
 
     log.info(utils.dict_filter_bool(args.__dict__))
 
@@ -128,7 +114,7 @@ def dl_add(args=None):
 
     playlists = tube_extract.get_playlists(args)
     for path in args.playlists:
-        saved_dl_config = tube_extract.get_saved_dl_config(playlists, path)
+        saved_dl_config = tube_extract.get_playlist_dl_config(playlists, path)
         if saved_dl_config:
             log.info("[%s]: Updating known playlist", path)
 
@@ -137,19 +123,22 @@ def dl_add(args=None):
             continue
 
         if args.profile is None:
-            if tube_extract.is_supported:
+            if tube_extract.is_supported(path):
                 args.profile = "video"
             elif gdl.extractor.find(path):
                 args.profile = "photo"
-        else:
-            raise Exception(
-                f"Download profile '{args.profile}' could not be detected. Please specify using `--audio`, `--video`, or `--image`"
+            else:
+                raise Exception(
+                    f"Download profile '{args.profile}' could not be detected. Specify using `--audio`, `--video`, or `--image`"
+                )
+
+        args.extra_media_data = {"is_downloaded": 0, **args.extra_media_data}
+        args.extra_playlist_data = {"category": args.category, "profile": args.profile, **args.extra_playlist_data}
+        if args.profile in [Profile.audio, Profile.video]:
+            tube_extract.process_playlist(
+                args, path, ydl_opts=tube_actions.ydl_opts(args, playlist_opts=saved_dl_config)
             )
 
-        args.extra_media_data = {"is_downloaded": 0}
-        args.extra_playlist_data = {"category": args.category, "profile": args.profile}
-        if args.profile in [Profile.audio, Profile.video]:
-            tube_extract.process_playlist(args, path, ydl_opts=tube_extract.parse_ydl_opts(args, saved_dl_config))
         elif args.profile == Profile.image:
             job = gdl.job.DataJob(path)
             job.run()
@@ -161,10 +150,14 @@ def dl_add(args=None):
         else:
             raise Exception(f"Download profile {args.profile} not implemented")
 
+        with args.db.conn:
+            args.db.execute('UPDATE playlists SET category=? WHERE category is NULL',[args.category])
+            args.db.execute('UPDATE playlists SET profile=? WHERE profile is NULL',[args.profile])
+
         db.optimize(args)
 
 
-def dl_update(args=None):
+def dl_update(args=None) -> None:
     if args:
         sys.argv[1:] = args
 
@@ -213,6 +206,7 @@ def dl_update(args=None):
 
     parser.add_argument("--extra-media-data", default={})
     parser.add_argument("--extra-playlist-data", default={})
+    parser.add_argument("--ignore-errors", "--ignoreerrors", "-i", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--verbose", "-v", action="count", default=0)
     args = parser.parse_args()
 
@@ -220,7 +214,6 @@ def dl_update(args=None):
         args.database = args.db
     Path(args.database).touch()
     args.db = db.connect(args)
-    upgrade_tube_schema(args)
 
     log.info(utils.dict_filter_bool(args.__dict__))
 
@@ -257,49 +250,74 @@ def parse_gallerydl_exit(ret_val: int) -> str:
     return "; ".join(errors)
 
 
-def mark_media_downloaded(args, webpath, out_path) -> None:
-    assert out_path != ""
+def update_media(args, info, webpath) -> None:
+    assert info["local_path"] != ""
+    r = list(args.db.query("select * from media where path=?", [webpath]))
+    assert len(r) == 1
+    stub = r[0]
 
-    with args.db.conn:
-        cursor = args.db.conn.execute(
-            """update media
-            set is_downloaded=1
-                , path=?
-                , webpath=?
-            where path=?
-            """,
-            (out_path, webpath, webpath),
-        )
+    entry = tube_extract.consolidate(stub["playlist_path"], info) or {}
+
+    args.db["media"].insert(
+        {
+            **stub,
+            **entry,
+            'play_count': stub['play_count'],
+            'time_played': stub['time_played'],
+            "path": info["local_path"],
+            "webpath": webpath,
+            "is_downloaded": 1,
+        },
+        pk="path",
+        alter=True,
+        replace=True,
+    )  # type: ignore
+
+    args.db['media'].delete(webpath)
 
 
-@utils.with_timeout(32 * 60)
-def yt(args, m, audio_only=False):
-    out_path = ""
+def yt(args, m, audio_only=False) -> None:
+    ydl_log = {"warning": [], "error": []}
 
-    def get_output_path(d):
-        nonlocal out_path
-        status, info_dict = d
-        if status == "finished":
-            raise
+    class BadToTheBoneLogger:
+        def debug(self, msg):
+            if msg.startswith("[debug] "):
+                pass
+            else:
+                self.info(msg)
 
-        out_path = info_dict["filename"]
+        def info(self, msg):
+            pass
 
-    ydl_opts = {
-        **tube_extract.parse_ydl_opts(args, saved_opts=m["dl_config"]),
-        "quiet": True,
-        "subtitlesformat": "srt/best",
-        "writesubtitles": True,
-        "writeautomaticsub": True,
-        "subtitleslangs": ["en.*", "EN.*"],
-        "extract_flat": False,
-        "lazy_playlist": False,
-        "ignoreerrors": "only_download",
-        "playlistend": 400,  # limit playlists of playlists for safety
-        "postprocessors": [{"key": "FFmpegMetadata", "add_metadata": True}],
-        "paths": {"home": Path(args.prefix, m["category"])},
-        "progress_hooks": get_output_path,
-        "outtmpl": str(Path(args.prefix, m["category"], "%(title)s.%(ext)s")),
-    }
+        def warning(self, msg):
+            ydl_log["warning"].append(msg)
+
+        def error(self, msg):
+            ydl_log["error"].append(msg)
+
+    out_dir = lambda p: str(Path(args.prefix, m["category"], p))
+    Path(out_dir("")).parent.mkdir(parents=True, exist_ok=True)
+    ydl_opts = tube_actions.ydl_opts(
+        args,
+        func_opts={
+            "logger": BadToTheBoneLogger(),
+            "skip_download": False if not utils.PYTEST_RUNNING else True,
+            "subtitlesformat": "srt/best",
+            "writesubtitles": True,
+            "writeautomaticsub": True,
+            "subtitleslangs": ["en.*", "EN.*"],
+            "extract_flat": False,
+            "lazy_playlist": False,
+            "playlistend": 400,  # limit playlists of playlists for safety
+            "postprocessors": [{"key": "FFmpegMetadata", "add_metadata": True}],
+            "outtmpl": {
+                "default": out_dir("%(title)s [%(id)s].%(ext)s"),
+                "chapter": out_dir("%(title)s - %(section_number)03d %(section_title)s [%(id)s].%(ext)s"),
+            },
+        },
+        playlist_opts=m["dl_config"],
+    )
+
     if audio_only:
         ydl_opts[
             "format"
@@ -307,50 +325,49 @@ def yt(args, m, audio_only=False):
         ydl_opts["postprocessors"].append({"key": "FFmpegExtractAudio", "preferredcodec": args.ext})
 
     match_filters = ["live_status=?not_live"]
-    if ydl_opts.get("match_filter"):
-        match_filters.append(ydl_opts.get("match_filter") or "")
-    ydl_opts["match_filter"] = " & ".join(match_filters)
+    match_filter_user_config = ydl_opts.get("match_filter")
+    if match_filter_user_config is not None:
+        match_filters.append(match_filter_user_config)
+    ydl_opts["match_filter"] = yt_dlp.utils.match_filter_func(" & ".join(match_filters).split(" | "))
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        with io.StringIO() as buf, redirect_stdout(buf):
-            ydl_ret_val = ydl.download(m["path"])
-            ydl_errors = buf.getvalue()
-            log.debug(ydl_ret_val)
-            log.debug(ydl_errors)
-            raise
-        raise
+        info = ydl.extract_info(m["path"], download=True)
+        if info is None:
+            log.warning("[%s]: yt-dlp returned no info", m["path"])
+            return
 
-        # info = ydl.extract_info(url, download=True)
-        # # Copy info dict and change video extension to audio extension
-        # info_with_audio_extension = dict(info)
-        # info_with_audio_extension['ext'] = args.ext
-        # # Return filename with the correct extension
-        # ydl.prepare_filename(info_with_audio_extension)
+        if audio_only:
+            info["local_path"] = ydl.prepare_filename({**info, "ext": args.ext})
+        else:
+            info["local_path"] = ydl.prepare_filename(info)
 
+        ydl_errors = ydl_log["error"] + ydl_log["warning"]
+        print(ydl_errors)
         ydl_errors = "\n".join([s for s in ydl_errors if not yt_meaningless_errors.match(s)])
 
-        if ydl_ret_val == 0 and ydl_errors == "":
-            # no news is good news
-            mark_media_downloaded(args, m["path"], out_path)
+        if len(ydl_log["error"]) == 0:
+            log.info("[%s]: No news is good news", m["path"])
+            update_media(args, info, m["path"])
         elif yt_recoverable_errors.match(ydl_errors):
-            return  # try again later
+            log.info("[%s]: Recoverable error matched. try again later", m["path"])
+            return
         elif yt_unrecoverable_errors.match(ydl_errors):
-            # nothing can be done
-            mark_media_downloaded(args, m["path"], out_path)
+            log.info("[%s]: Unrecoverable error matched. oi troi oi! nothing can be done", m["path"])
+            update_media(args, info, m["path"])
         else:
-            log.warning("Unknown error [%s] %s", ydl_ret_val, ydl_errors)
+            log.warning("[%s]: Unknown error. %s", m["path"], ydl_errors)
 
 
 """
 - TODO: scan downloaded file, add size, subtitle_count to media table
 - dladd
-- channel blocklist
+    test dladd playlists of playlists, auto expand
     auto-detect reddit, use bdfr
     option for immediate download? (bandcamp, short-term valid URLs)
 """
 
 
-def dl_download(args=None):
+def dl_download(args=None) -> None:
     if args:
         sys.argv[1:] = args
 
@@ -399,6 +416,7 @@ def dl_download(args=None):
         metavar="KEY=VALUE",
         help="Add key/value pairs to override or extend default dl configuration",
     )
+    parser.add_argument("--ignore-errors", "--ignoreerrors", "-i", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--verbose", "-v", action="count", default=0)
     args = parser.parse_args()
 
@@ -406,7 +424,6 @@ def dl_download(args=None):
         args.database = args.db
     Path(args.database).touch()
     args.db = db.connect(args)
-    upgrade_tube_schema(args)
 
     if args.ext == "DEFAULT":
         if args.profile == Profile.audio:
@@ -415,7 +432,6 @@ def dl_download(args=None):
             args.ext = None
 
     log.info(utils.dict_filter_bool(args.__dict__))
-
     profiles = [Profile.audio, Profile.video, Profile.image]
     shuffle(profiles)
 
@@ -440,6 +456,14 @@ def dl_download(args=None):
         )
 
         for m in media:
+            # check again in case it was already completed by another process
+            if (
+                list(args.db.query("select is_downloaded from media where path=?", [m["path"]]))[0]["is_downloaded"]
+                == 1
+            ):
+                log.debug('[%s]: Already downloaded. Skipping!', m['path'])
+                continue
+
             if profile == Profile.video:
                 yt(args, m)
             elif profile == Profile.audio:
@@ -449,7 +473,7 @@ def dl_download(args=None):
                 raise NotImplementedError
 
 
-def dl_block(args=None):
+def dl_block(args=None) -> None:
     if args:
         sys.argv[1:] = args
 
@@ -468,6 +492,7 @@ def dl_block(args=None):
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
     parser.add_argument("playlists", nargs="*")
 
+    parser.add_argument("--ignore-errors", "--ignoreerrors", "-i", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--verbose", "-v", action="count", default=0)
     args = parser.parse_args()
 
@@ -475,9 +500,27 @@ def dl_block(args=None):
         args.database = args.db
     Path(args.database).touch()
     args.db = db.connect(args)
-    upgrade_tube_schema(args)
 
     log.info(utils.dict_filter_bool(args.__dict__))
     args.extra_playlist_data = dict(is_deleted=1, title=paths.BLOCK_THE_CHANNEL)
+    args.extra_media_data = dict(is_deleted=1)
     for p in args.playlists:
-        tube_extract.process_playlist(args, p, tube_extract.parse_ydl_opts(args))
+        tube_extract.process_playlist(args, p, tube_actions.ydl_opts(args, func_opts={"playlistend": 30}))
+
+    args.db.execute(
+        f"""UPDATE playlists
+        SET is_deleted=1
+        ,   title='{paths.BLOCK_THE_CHANNEL}'
+        WHERE path IN ("""
+        + ",".join(["?"] * len(args.playlists))
+        + ")",
+        (*args.playlists,),
+    )
+
+    args.db.execute(
+        f"""UPDATE media
+        SET is_deleted=1
+        WHERE playlist_path IN (
+            select path from playlists where is_deleted=1
+        ) """
+    )
