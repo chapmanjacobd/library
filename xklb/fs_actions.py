@@ -177,9 +177,9 @@ def fs_actions_usage(action, default_db) -> str:
         library {action} --play-in-order
         There are multiple strictness levels of --play-in-order.
         If things aren't playing in order try adding more `O`s:
-        library {action} -O    # normal
-        library {action} -OO   # slower, more complex algorithm
-        library {action} -OOO  # strict
+        library {action} -O    # fast
+        library {action} -OO   # slow, more complex algorithm
+        library {action} -OOO  # slow, ignores most filters
 
     Post-actions -- choose what to do after playing:
         library {action} --post-action delete  # delete file after playing
@@ -294,25 +294,29 @@ def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
 
     if not args.sort:
         args.defaults.append("sort")
+
         if args.action in [SC.listen, SC.watch]:
             args.sort = ["priority"]
             if args.include:
-                args.sort = ["duration desc"]
+                args.sort = ["duration desc", "size desc"]
                 if args.print:
-                    args.sort = ["duration"]
+                    args.sort = ["duration", "size"]
 
         elif args.action in [SC.tubelisten, SC.tubewatch]:
-            args.sort = ["play_count, random"]
+            args.sort = ["play_count", "random"]
             if args.include:
-                args.sort = ["playlist_path, duration desc"]
+                args.sort = ["playlist_path", "duration desc"]
                 if args.print:
-                    args.sort = ["playlist_path, duration"]
+                    args.sort = ["playlist_path", "duration"]
 
         elif args.action in [SC.filesystem]:
-            args.sort = ["sparseness, size"]
+            args.sort = ["sparseness", "size"]
 
     if args.sort:
-        args.sort = " ".join(args.sort)
+        if args.play_in_order > 0:
+            args.sort.append("path")
+
+        args.sort = ",".join(args.sort).replace(",,", ",")
         args.sort = override_sort(args.sort)
 
     if args.cols:
@@ -406,7 +410,7 @@ def chromecast_play(args, m) -> None:
 def is_play_in_order_lvl2(args, media_file) -> bool:
     return any(
         [
-            args.play_in_order > 1 and args.action not in [SC.listen, SC.tubelisten],
+            args.play_in_order >= 2 and args.action not in [SC.listen, SC.tubelisten],
             args.play_in_order >= 1 and args.action == SC.listen and "audiobook" in media_file.lower(),
         ]
     )
@@ -597,9 +601,8 @@ def construct_fs_query(args) -> Tuple[str, dict]:
         {', video_count > 0 desc' if args.action == SC.watch else ''}
         {', audio_count > 0 desc' if args.action == SC.listen else ''}
         {', width < height desc' if args.portrait else ''}
-        {f', subtitle_count {subtitle_count} desc' if args.action == SC.watch else ''}
+        {f', subtitle_count {subtitle_count} desc' if args.action == SC.watch and not args.print else ''}
         {',' + args.sort if args.sort else ''}
-        {', path' if args.print or args.include or args.play_in_order > 0 else ''}
         , random()
     {LIMIT} {OFFSET}
     """

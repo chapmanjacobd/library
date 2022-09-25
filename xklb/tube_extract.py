@@ -149,7 +149,7 @@ def consolidate(playlist_path: str, v: dict, ydl: Optional[yt_dlp.YoutubeDL] = N
         "formats",
         "requested_formats",
         "requested_entries",
-        'requested_downloads',
+        "requested_downloads",
         "thumbnails",
         "playlist_count",
         "playlist_id",
@@ -163,6 +163,8 @@ def consolidate(playlist_path: str, v: dict, ydl: Optional[yt_dlp.YoutubeDL] = N
         "language_preference",
         "preference",
         "location",
+        "downloader_options",
+        "container",
     ]
 
     if v.get("title") in ["[Deleted video]", "[Private video]"]:
@@ -281,7 +283,7 @@ def process_playlist(args, playlist_path, ydl_opts) -> Union[List[Dict], None]:
         def _add_media(self, entry) -> Union[dict, None]:
             entry = consolidate(playlist_path, entry, ydl=super)  # type: ignore
             if entry:
-                if self.current_video_count > 1 and is_video_known(args, playlist_path, entry["path"]):
+                if self.current_video_count >= 2 and is_video_known(args, playlist_path, entry["path"]):
                     raise ExistingPlaylistVideoReached
                 save_entries(args, [{**entry, **args.extra_media_data}])
             return entry

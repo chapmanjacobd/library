@@ -1,7 +1,7 @@
 import argparse, sys
 
 import scripts
-from xklb.dl_extract import dl_add, dl_download
+from xklb.dl_extract import dl_add, dl_block, dl_download
 from xklb.fs_actions import filesystem, listen, read, view, watch
 from xklb.fs_extract import main as fs_add
 from xklb.playback import playback_next, playback_now, playback_pause, playback_stop
@@ -38,6 +38,7 @@ def lb_usage() -> str:
     download subcommands:
       dladd [da]                   Create a download database; Add URLs
       download [dl]                Download media
+      block                        Prevent downloading from specific channels
 
     playback subcommands:
       now                          Print what is currently playing
@@ -122,6 +123,8 @@ def lb(args=None) -> None:
     subp_dladd.set_defaults(func=dl_add)
     subp_download = subparsers.add_parser("download", aliases=["dl"], add_help=False)
     subp_download.set_defaults(func=dl_download)
+    subp_block = subparsers.add_parser("block", add_help=False)
+    subp_block.set_defaults(func=dl_block)
 
     parser.add_argument("--version", "-V", action="store_true")
     args, _unk = parser.parse_known_args(args)
@@ -132,7 +135,7 @@ def lb(args=None) -> None:
 
     log.info(sys.argv)
     original_argv = sys.argv
-    if len(sys.argv) > 1:
+    if len(sys.argv) >= 2:
         del sys.argv[1]
 
     if hasattr(args, "func"):

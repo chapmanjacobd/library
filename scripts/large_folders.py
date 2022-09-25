@@ -25,7 +25,7 @@ def get_table(args) -> List[dict]:
     d = {}
     for m in db_resp:
         p = m["path"].split("/")
-        while len(p) > 2:
+        while len(p) >= 3:
             p.pop()
             parent = "/".join(p) + "/"
 

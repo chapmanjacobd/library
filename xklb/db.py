@@ -15,7 +15,7 @@ def connect(args) -> sqlite_utils.Database:
         log.error(f"Database file '{args.database}' does not exist. Create one with lb fsadd, tubeadd, or tabsadd.")
         exit(1)
 
-    return sqlite_utils.Database(args.database, tracer=tracer if args.verbose > 1 else None)  # type: ignore
+    return sqlite_utils.Database(args.database, tracer=tracer if args.verbose >= 2 else None)  # type: ignore
 
 
 def optimize(args) -> None:

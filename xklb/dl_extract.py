@@ -151,8 +151,8 @@ def dl_add(args=None) -> None:
             raise Exception(f"Download profile {args.profile} not implemented")
 
         with args.db.conn:
-            args.db.execute('UPDATE playlists SET category=? WHERE category is NULL',[args.category])
-            args.db.execute('UPDATE playlists SET profile=? WHERE profile is NULL',[args.profile])
+            args.db.execute("UPDATE playlists SET category=? WHERE category is NULL", [args.category])
+            args.db.execute("UPDATE playlists SET profile=? WHERE profile is NULL", [args.profile])
 
         db.optimize(args)
 
@@ -262,8 +262,8 @@ def update_media(args, info, webpath) -> None:
         {
             **stub,
             **entry,
-            'play_count': stub['play_count'],
-            'time_played': stub['time_played'],
+            "play_count": stub["play_count"],
+            "time_played": stub["time_played"],
             "path": info["local_path"],
             "webpath": webpath,
             "is_downloaded": 1,
@@ -273,7 +273,7 @@ def update_media(args, info, webpath) -> None:
         replace=True,
     )  # type: ignore
 
-    args.db['media'].delete(webpath)
+    args.db["media"].delete(webpath)
 
 
 def yt(args, m, audio_only=False) -> None:
@@ -448,7 +448,7 @@ def dl_download(args=None) -> None:
                 and playlist_path in (select path from playlists where profile=?)
                 and media.is_deleted=0
                 and playlists.is_deleted=0
-                and media.uploader not in (select uploader from playlists where title='{paths.BLOCK_THE_CHANNEL}')
+                and media.uploader not in (select uploader from playlists where category='{paths.BLOCK_THE_CHANNEL}')
             order by
                 random()
             """,
@@ -461,7 +461,7 @@ def dl_download(args=None) -> None:
                 list(args.db.query("select is_downloaded from media where path=?", [m["path"]]))[0]["is_downloaded"]
                 == 1
             ):
-                log.debug('[%s]: Already downloaded. Skipping!', m['path'])
+                log.debug("[%s]: Already downloaded. Skipping!", m["path"])
                 continue
 
             if profile == Profile.video:
@@ -492,6 +492,7 @@ def dl_block(args=None) -> None:
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
     parser.add_argument("playlists", nargs="*")
 
+    parser.add_argument("--no-sanitize", "-s", action="store_true", help="Don't sanitize some common URL parameters")
     parser.add_argument("--ignore-errors", "--ignoreerrors", "-i", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--verbose", "-v", action="count", default=0)
     args = parser.parse_args()
@@ -502,7 +503,7 @@ def dl_block(args=None) -> None:
     args.db = db.connect(args)
 
     log.info(utils.dict_filter_bool(args.__dict__))
-    args.extra_playlist_data = dict(is_deleted=1, title=paths.BLOCK_THE_CHANNEL)
+    args.extra_playlist_data = dict(is_deleted=1, category=paths.BLOCK_THE_CHANNEL)
     args.extra_media_data = dict(is_deleted=1)
     for p in args.playlists:
         tube_extract.process_playlist(args, p, tube_actions.ydl_opts(args, func_opts={"playlistend": 30}))
@@ -510,7 +511,7 @@ def dl_block(args=None) -> None:
     args.db.execute(
         f"""UPDATE playlists
         SET is_deleted=1
-        ,   title='{paths.BLOCK_THE_CHANNEL}'
+        ,   category='{paths.BLOCK_THE_CHANNEL}'
         WHERE path IN ("""
         + ",".join(["?"] * len(args.playlists))
         + ")",
