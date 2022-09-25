@@ -18,6 +18,9 @@ def ydl_opts(args, func_opts=None, playlist_opts=None) -> dict:
         playlist_opts = {}
     if func_opts is None:
         func_opts = {}
+    cli_opts = {}
+    if hasattr(args, "dl_config"):
+        cli_opts = args.dl_config
 
     default_opts = {
         "ignoreerrors": False,
@@ -76,7 +79,7 @@ def ydl_opts(args, func_opts=None, playlist_opts=None) -> dict:
         **default_opts,
         **func_opts,
         **playlist_opts,
-        **args.dl_config,
+        **cli_opts,
     }
 
     if args.verbose == 0 and "pytest" not in sys.modules:
@@ -200,7 +203,7 @@ def printer(args) -> None:
 
         print(tabulate(tbl, tablefmt="fancy_grid", headers="keys", showindex=False))  # type: ignore
 
-        print(f"{len(db_resp)} playlists" if len(db_resp) > 1 else "1 playlist")
+        print(f"{len(db_resp)} playlists" if len(db_resp) >= 2 else "1 playlist")
         duration = sum(map(lambda m: m.get("duration") or 0, db_resp))
         if duration > 0:
             duration = human_time(duration)

@@ -69,7 +69,7 @@ def extract_chunk(args, chunk_paths) -> None:
     n_jobs = -1
     if args.db_type in ["t", "p", "f"]:
         n_jobs = utils.CPU_COUNT
-    if args.verbose > 1:
+    if args.verbose >= 2:
         n_jobs = 1
 
     mp_args = argparse.Namespace(**{k: v for k, v in args.__dict__.items() if k not in {"db"}})

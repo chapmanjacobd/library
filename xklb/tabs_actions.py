@@ -126,8 +126,8 @@ def process_tabs_actions(args, construct_tabs_query) -> None:
 
     for m in media:
         play(args, m)
-    if len(media) > 10:
-        sleep(0.3)
+        if len(media) >= 9:
+            sleep(0.3)
 
 
 def parse_args(action, default_db) -> argparse.Namespace:

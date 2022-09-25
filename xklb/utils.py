@@ -351,10 +351,10 @@ def human_time(seconds) -> Union[str, None]:
     if seconds is None or math.isnan(seconds):
         return None
     hours = humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="hours", format="%0.0f")
-    if len(hours.split(",")) > 2:
+    if len(hours.split(",")) >= 3:
         return hours
     minutes = humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="minutes", format="%0.0f")
-    if len(minutes.split(",")) > 1:
+    if len(minutes.split(",")) >= 2:
         return minutes
     else:
         return humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="minutes")

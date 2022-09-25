@@ -301,7 +301,7 @@ def get_ordinal_media(args, path: str) -> str:
             WHERE 1=1
                 and path like :candidate
                 {'and is_deleted=0' if args.action in [SC.listen, SC.watch] else ''}
-                {'' if (args.play_in_order > 2) else (args.sql_filter or '')}
+                {'' if (args.play_in_order >= 3) else (args.sql_filter or '')}
             ORDER BY path
             LIMIT 1000
             """
@@ -475,7 +475,7 @@ def get_multiple_player_template(args) -> List[str]:
 
     if args.multiple_playback == DEFAULT_MULTIPLE_PLAYBACK and len(displays) == 1:
         args.multiple_playback = 2
-    elif args.multiple_playback == DEFAULT_MULTIPLE_PLAYBACK and len(displays) > 1:
+    elif args.multiple_playback == DEFAULT_MULTIPLE_PLAYBACK and len(displays) >= 2:
         args.multiple_playback = len(displays)
     elif args.multiple_playback < len(displays):
         # play videos on supporting screens but not active one
@@ -586,7 +586,7 @@ def printer(args, query, bindings) -> None:
     if "v" in args.print and Path(args.watch_later_directory).exists():
         db_resp = utils.mpv_enrich2(args, db_resp)
 
-    if args.verbose > 1 and args.cols and "*" in args.cols:
+    if args.verbose >= 2 and args.cols and "*" in args.cols:
         breakpoint()
 
     if len(db_resp) == 0:
@@ -650,7 +650,7 @@ def printer(args, query, bindings) -> None:
         print(tabulate(tbl, tablefmt="fancy_grid", headers="keys", showindex=False))  # type: ignore
 
         if args.action in [SC.listen, SC.watch, SC.tubelisten, SC.tubewatch]:
-            if len(db_resp) > 1:
+            if len(db_resp) >= 2:
                 print(f"{len(db_resp)} media" + (f" (limited to {args.limit})" if args.limit else ""))
 
             duration = sum(map(lambda m: m.get("duration") or 0, db_resp))
