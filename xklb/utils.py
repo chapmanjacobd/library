@@ -24,9 +24,10 @@ SQLITE_PARAM_LIMIT = 32765
 DEFAULT_PLAY_QUEUE = 120
 DEFAULT_MULTIPLE_PLAYBACK = -1
 CPU_COUNT = int(os.cpu_count() or 4)
+PYTEST_RUNNING = "pytest" in sys.modules
 
 
-def exit_nicely(signal, frame):
+def exit_nicely(_signal, _frame):
     print("\nExiting... (Ctrl+C)\n")
     sys.exit(130)
 
@@ -250,17 +251,6 @@ def dict_filter_bool(kwargs) -> dict:
     return {k: v for k, v in kwargs.items() if v}
 
 
-def list_dict_filter_bool(db_resp: List[dict]) -> List[dict]:
-    for idx, d in enumerate(db_resp):
-        d = dict_filter_bool(d)
-        if len(d) == 0:
-            del db_resp[idx]
-        else:
-            db_resp[idx] = d
-    db_resp = conform(db_resp)
-    return db_resp
-
-
 def cmd_interactive(*cmd, **kwargs) -> subprocess.CompletedProcess:
     return_code = os.spawnvpe(os.P_WAIT, cmd[0], cmd, os.environ)
     return subprocess.CompletedProcess(cmd, return_code)
@@ -382,7 +372,8 @@ def col_duration(tbl: List[Dict], col: str) -> List[Dict]:
 class argparse_dict(argparse.Action):
     def __call__(self, parser, args, values, option_string=None):
         try:
-            d = dict(map(lambda x: x.split("="), flatten([v.split(" ") for v in values])))
+            e = ",".join(list(flatten([v.split(" ") for v in values])))
+            d = eval(f"dict({e})")
         except ValueError as ex:
             raise argparse.ArgumentError(self, f'Could not parse argument "{values}" as k1=1 k2=2 format')
         setattr(args, self.dest, d)

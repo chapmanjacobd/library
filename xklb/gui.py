@@ -48,14 +48,14 @@ class MrSuperDialogue:
         self.root.wm_attributes("-alpha", 1)
 
     def __init__(self, path, qty):
+        def raise_error(self, *args):
+            raise
+
+        Tk.report_callback_exception = raise_error
+
         self.root = Tk()
         self.root.title("Library dialogue")
         self.root.wm_attributes("-alpha", 0)
-
-        def callback_error(self, *args):
-            raise Exception(*args)
-
-        Tk.report_callback_exception = callback_error
 
         style = Style(self.root)
         style.theme_use("clam")
@@ -114,7 +114,7 @@ class MrSuperDialogue:
         self.root.mainloop()
 
     @staticmethod
-    def _get_coord_offset_from_monitor(monitor_name) -> Tuple[int, int]:
+    def _get_coord_offset_from_monitor(monitor: screeninfo.Monitor) -> Tuple[int, int]:
         # TODO: assuming screeninfo returns monitors in the same order that Tk is expecting it should
         # be possible to figure out where the monitor sits in the framebuffer then add up the preceding
         # monitors to find the pixel offset within the framebuffer for the window to show up in

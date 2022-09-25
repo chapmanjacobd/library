@@ -15,7 +15,8 @@ def get_table(args) -> List[dict]:
         select path, size
         from media
         where 1=1
-        {'and is_deleted = 0' if 'is_deleted' in cols else ''}
+            {'and is_deleted = 0' if 'is_deleted' in cols else ''}
+            {'and is_downloaded = 0' if 'is_downloaded' in cols else ''}
         order by path
         """
         )
@@ -35,7 +36,7 @@ def get_table(args) -> List[dict]:
                 d[parent] = dict(size=m["size"], count=1)
 
     for path, pdict in list(d.items()):
-        if pdict["count"] < 35 or pdict["count"] > 3500:
+        if pdict["count"] < args.lower or pdict["count"] > args.upper:
             d.pop(path)
 
     d = [{**v, "path": k} for k, v in d.items()]
@@ -47,6 +48,8 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("database")
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue")
+    parser.add_argument("--lower", default=35, type=int)
+    parser.add_argument("--upper", default=3500, type=int)
     parser.add_argument("--verbose", "-v", action="count", default=0)
     args = parser.parse_args()
     args.db = db.connect(args)

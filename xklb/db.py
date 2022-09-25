@@ -24,15 +24,16 @@ def optimize(args) -> None:
     columns = db["media"].columns_dict
 
     ignore_columns = ["id"]
-    fts_columns = ["path", "title", "tags", "mood", "genre", "description", "artist", "album"]
-    int_columns = [k for k, v in columns.items() if v == int and k not in fts_columns + ignore_columns]
-    str_columns = [k for k, v in columns.items() if v == str and k not in fts_columns + ignore_columns]
+    fts_able_columns = ["path", "title", "tags", "mood", "genre", "description", "artist", "album"]
+    fts_columns = [c for c in fts_able_columns if c in columns]
+    int_columns = [k for k, v in columns.items() if v == int and k not in fts_able_columns + ignore_columns]
+    str_columns = [k for k, v in columns.items() if v == str and k not in fts_able_columns + ignore_columns]
 
     for column in int_columns + str_columns:
         db["media"].create_index([column], if_not_exists=True, analyze=True)  # type: ignore
 
-    if db["media"].detect_fts() is None:  # type: ignore
-        db["media"].enable_fts([c for c in fts_columns if c in columns], create_triggers=True)
+    if db["media"].detect_fts() is None and any(fts_columns):  # type: ignore
+        db["media"].enable_fts(fts_columns, create_triggers=True)
 
     db.enable_wal()
     #
