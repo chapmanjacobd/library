@@ -29,7 +29,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
       filesystem [fs]              Browse files
       bigdirs [largefolders]       Discover folders which take up much room
       dedupe                       Deduplicate audio files
-      christen                     Clean up files by giving them a new name
+      christen                     Cleanse files by giving them a new name
 
     online media subcommands:
       tubeadd [ta, xt]             Create a tube database; Add playlists
@@ -38,7 +38,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
       tubewatch [tw, entries]      Watch the tube
       tubelisten [tl]              Listen to the tube
 
-    download subcommands:
+    download subcommands (largely untested, under construction):
       dladd [da]                   Create a download database; Add URLs
       download [dl]                Download media
       block                        Prevent downloading from specific channels
