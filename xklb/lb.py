@@ -26,7 +26,7 @@ def lb_usage() -> str:
       filesystem [fs]              Browse files
       bigdirs [largefolders]       Discover folders which take up much room
       dedupe                       Deduplicate audio files
-      christen                     Clean up files by giving them a new name
+      christen                     Cleanse files by giving them a new name
 
     online media subcommands:
       tubeadd [ta, xt]             Create a tube database; Add playlists

@@ -78,15 +78,6 @@ class TestTube(unittest.TestCase):
         out = update_playlists.call_args[0]
         assert out[1][0]["path"] == PLAYLIST_URL
 
-    def test_block_new(self):
-        block_db = "--db", "tests/data/block.db"
-        dl_block([*block_db, PLAYLIST_URL])
-
-        db = connect(Namespace(database=block_db[1], verbose=2))
-        playlists = list(db["playlists"].rows)
-        assert playlists[0]["is_deleted"] == 1
-        assert playlists[0]["category"] == paths.BLOCK_THE_CHANNEL
-
     def test_block_existing(self):
         self.init_db()
 
