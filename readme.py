@@ -74,7 +74,7 @@ the most recent 20,000 videos per playlist/channel.
 
 Be aware that there are some YouTube Channels which have many items--for example
 the TEDx channel has about 180,000 videos. Some channels even have upwards of
-two million videos. More than you could likely watch in one sitting.
+two million videos. More than you could likely watch in one sitting--maybe even one lifetime.
 On a high-speed connection (>500 Mbps), it can take up to five hours to download
 the metadata for 180,000 videos.
 
@@ -103,7 +103,9 @@ or tools that you want to use for a few minutes daily, weekly, monthly, quarterl
 
 ### 1. Add your websites
 
-    library tabsadd --frequency monthly --category fun https://old.reddit.com/r/Showerthoughts/top/?sort=top&t=month https://old.reddit.com/r/RedditDayOf/top/?sort=top&t=month
+    library tabsadd --frequency monthly --category fun \
+        https://old.reddit.com/r/Showerthoughts/top/?sort=top&t=month \
+        https://old.reddit.com/r/RedditDayOf/top/?sort=top&t=month
 
 ### 2. Add library tabs to cron
 
