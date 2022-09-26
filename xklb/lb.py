@@ -35,7 +35,7 @@ def lb_usage() -> str:
       tubewatch [tw, entries]      Watch the tube
       tubelisten [tl]              Listen to the tube
 
-    download subcommands:
+    download subcommands (largely untested, under construction):
       dladd [da]                   Create a download database; Add URLs
       download [dl]                Download media
       block                        Prevent downloading from specific channels
