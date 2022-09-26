@@ -562,6 +562,7 @@ def dl_block(args=None) -> None:
             )
         ]
 
-    print(paths_to_delete)
-    if not utils.PYTEST_RUNNING and Confirm.ask("Delete?"):
-        player.delete_media(args, paths_to_delete)
+    if len(paths_to_delete) > 0:
+        print(paths_to_delete)
+        if not utils.PYTEST_RUNNING and Confirm.ask("Delete?"):
+            player.delete_media(args, paths_to_delete)
