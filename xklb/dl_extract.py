@@ -1,5 +1,4 @@
 import argparse, os, sqlite3, sys
-import json
 from pathlib import Path
 from typing import List
 
@@ -131,12 +130,7 @@ def dl_add(args=None) -> None:
 
     gdl.config.load()  # load default config files
 
-    playlists = tube_backend.get_playlists(args)
     for path in args.playlists:
-        saved_dl_config = tube_backend.get_playlist_dl_config(playlists, path)
-        if saved_dl_config:
-            log.info("[%s]: Updating known playlist", path)
-
         if args.safe and not tube_backend.is_supported(path):
             log.warning("[%s]: Unsupported playlist (safe_mode)", path)
             continue
@@ -157,9 +151,7 @@ def dl_add(args=None) -> None:
             tube_backend.process_playlist(
                 args,
                 path,
-                ydl_opts=tube_backend.ydl_opts(
-                    args, playlist_opts=saved_dl_config, func_opts={"ignoreerrors": "only_download"}
-                ),
+                ydl_opts=tube_backend.ydl_opts(args, func_opts={"ignoreerrors": "only_download"}),
             )
 
         elif args.profile == DLProfile.image:
@@ -394,7 +386,7 @@ def yt(args, m, audio_only=False) -> None:
                 "chapter": out_dir("%(title)s - %(section_number)03d %(section_title)s [%(id)s].%(ext)s"),
             },
         },
-        playlist_opts=json.loads(m["dl_config"]),
+        playlist_opts=m["dl_config"],
     )
 
     if args.ext == "DEFAULT":

@@ -32,7 +32,7 @@ class TestTube(unittest.TestCase):
             database=dl_db[1], dl_config={}, prefix=STORAGE_PREFIX, ext=None, ignore_errors=False, verbose=0
         )
         args.db = connect(args)
-        yt(args, dict(path=PLAYLIST_VIDEO_URL, dl_config={}, category="Self"))
+        yt(args, dict(path=PLAYLIST_VIDEO_URL, dl_config="{}", category="Self"))
 
     def test_yta(self):
         dl_db = "--db", "tests/data/dl.db"
@@ -42,7 +42,7 @@ class TestTube(unittest.TestCase):
             database=dl_db[1], dl_config={}, prefix=STORAGE_PREFIX, ext="opus", ignore_errors=False, verbose=0
         )
         args.db = connect(args)
-        yt(args, dict(path=PLAYLIST_VIDEO_URL, dl_config={}, category="Self"), audio_only=True)
+        yt(args, dict(path=PLAYLIST_VIDEO_URL, dl_config="{}", category="Self"), audio_only=True)
 
     @mock.patch("xklb.dl_extract.yt")
     @mock.patch("xklb.tube_backend.process_playlist")
