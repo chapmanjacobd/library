@@ -29,13 +29,13 @@ def parse_args(action, usage):
 
     subp_profile = parser.add_mutually_exclusive_group()
     subp_profile.add_argument(
-        "--audio", action="store_const", dest="profile", const=DLProfile.audio, help="Use audio dl profile"
+        "--audio", action="store_const", dest="profile", const=DLProfile.audio, help="Use audio downloader"
     )
     subp_profile.add_argument(
-        "--video", action="store_const", dest="profile", const=DLProfile.video, help="Use video dl profile"
+        "--video", action="store_const", dest="profile", const=DLProfile.video, help="Use video downloader"
     )
     subp_profile.add_argument(
-        "--image", action="store_const", dest="profile", const=DLProfile.image, help="Use image dl profile"
+        "--image", action="store_const", dest="profile", const=DLProfile.image, help="Use image downloader"
     )
 
     parser.add_argument(
@@ -45,7 +45,7 @@ def parse_args(action, usage):
         action=utils.argparse_dict,
         default={},
         metavar="KEY=VALUE",
-        help="Add key/value pairs to override or extend default dl configuration",
+        help="Add key/value pairs to override or extend downloader configuration",
     )
     parser.add_argument("--extra-media-data", default={}, nargs=1, action=utils.argparse_dict, metavar="KEY=VALUE")
     parser.add_argument("--extra-playlist-data", default={}, nargs=1, action=utils.argparse_dict, metavar="KEY=VALUE")
@@ -105,7 +105,7 @@ def dl_add(args=None) -> None:
 
         library dladd Educational dl.db https://www.youdl.com/c/BranchEducation/videos
 
-    To download audio you must make the download profile explicit with `--audio`
+    To download audio you must make the download profile (downloader) explicit with `--audio`
 
         library dladd --audio Educational dl.db https://www.youdl.com/c/BranchEducation/videos
 
