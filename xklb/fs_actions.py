@@ -71,7 +71,7 @@ def search_substring(args, cf, bindings) -> None:
         play_actions.construct_search_bindings(args, bindings, cf, other_include_string, other_exclude_string)
 
 
-def construct_fs_query(args) -> Tuple[str, dict]:
+def construct_query(args) -> Tuple[str, dict]:
     cf = []
     bindings = {}
 
@@ -139,24 +139,24 @@ def construct_fs_query(args) -> Tuple[str, dict]:
 
 def watch() -> None:
     args = play_actions.parse_args(SC.watch, "video.db", default_chromecast="Living Room TV")
-    play_actions.process_playqueue(args, construct_fs_query)
+    play_actions.process_playqueue(args, construct_query)
 
 
 def listen() -> None:
     args = play_actions.parse_args(SC.listen, "audio.db", default_chromecast="Xylo and Orchestra")
-    play_actions.process_playqueue(args, construct_fs_query)
+    play_actions.process_playqueue(args, construct_query)
 
 
 def filesystem() -> None:
     args = play_actions.parse_args(SC.filesystem, "fs.db")
-    play_actions.process_playqueue(args, construct_fs_query)
+    play_actions.process_playqueue(args, construct_query)
 
 
 def read() -> None:
     args = play_actions.parse_args(SC.read, "text.db")
-    play_actions.process_playqueue(args, construct_fs_query)
+    play_actions.process_playqueue(args, construct_query)
 
 
 def view() -> None:
     args = play_actions.parse_args(SC.view, "image.db")
-    play_actions.process_playqueue(args, construct_fs_query)
+    play_actions.process_playqueue(args, construct_query)

@@ -200,6 +200,47 @@ def usage(action, default_db) -> str:
 """
 
 
+def parse_size(args):
+    B_TO_MB = 1024 * 1024
+    size_mb = 0
+    size_rules = ""
+
+    for size_rule in args.size:
+        if "+" in size_rule:
+            # min size rule
+            size_rules += f"and size >= {abs(int(size_rule)) * B_TO_MB} "
+        elif "-" in size_rule:
+            # max size rule
+            size_rules += f"and {abs(int(size_rule)) * B_TO_MB} >= size "
+        else:
+            # approximate size rule
+            size_mb = float(size_rule) * B_TO_MB
+            size_rules += f"and {size_mb + (size_mb /10)} >= size and size >= {size_mb - (size_mb /10)} "
+    return size_rules
+
+
+def parse_duration(args):
+    SEC_TO_M = 60
+    duration_m = 0
+    duration_rules = ""
+
+    for duration_rule in args.duration:
+        if "+" in duration_rule:
+            # min duration rule
+            duration_rules += f"and duration >= {abs(int(duration_rule)) * SEC_TO_M} "
+        elif "-" in duration_rule:
+            # max duration rule
+            duration_rules += f"and {abs(int(duration_rule)) * SEC_TO_M} >= duration "
+        else:
+            # approximate duration rule
+            duration_m = int(duration_rule) * SEC_TO_M
+            duration_rules += (
+                f"and {duration_m + (duration_m /10)} >= duration and duration >= {duration_m - (duration_m /10)} "
+            )
+
+    return duration_rules
+
+
 def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
     DEFAULT_PLAYER_ARGS_SUB = ["--speed=1"]
     DEFAULT_PLAYER_ARGS_NO_SUB = ["--speed=1.46"]
@@ -319,44 +360,10 @@ def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
         args.cols = list(utils.flatten([s.split(",") for s in args.cols]))
 
     if args.duration:
-        SEC_TO_M = 60
-        duration_m = 0
-        duration_rules = ""
-
-        for duration_rule in args.duration:
-            if "+" in duration_rule:
-                # min duration rule
-                duration_rules += f"and duration >= {abs(int(duration_rule)) * SEC_TO_M} "
-            elif "-" in duration_rule:
-                # max duration rule
-                duration_rules += f"and {abs(int(duration_rule)) * SEC_TO_M} >= duration "
-            else:
-                # approximate duration rule
-                duration_m = int(duration_rule) * SEC_TO_M
-                duration_rules += (
-                    f"and {duration_m + (duration_m /10)} >= duration and duration >= {duration_m - (duration_m /10)} "
-                )
-
-        args.duration = duration_rules
+        args.duration = parse_duration(args)
 
     if args.size:
-        B_TO_MB = 1024 * 1024
-        size_mb = 0
-        size_rules = ""
-
-        for size_rule in args.size:
-            if "+" in size_rule:
-                # min size rule
-                size_rules += f"and size >= {abs(int(size_rule)) * B_TO_MB} "
-            elif "-" in size_rule:
-                # max size rule
-                size_rules += f"and {abs(int(size_rule)) * B_TO_MB} >= size "
-            else:
-                # approximate size rule
-                size_mb = float(size_rule) * B_TO_MB
-                size_rules += f"and {size_mb + (size_mb /10)} >= size and size >= {size_mb - (size_mb /10)} "
-
-        args.size = size_rules
+        args.size = parse_size(args)
 
     if args.chromecast:
         args.cc = CattDevice(args.chromecast_device, lazy=True)
