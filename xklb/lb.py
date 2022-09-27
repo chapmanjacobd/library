@@ -13,7 +13,7 @@ from xklb.tube_extract import tube_add, tube_update
 from xklb.utils import SC, log
 
 
-def lb_usage() -> str:
+def usage() -> str:
     return """xk media library [lb]
 
     local media subcommands:
@@ -54,7 +54,7 @@ def lb_usage() -> str:
 
 
 def print_help(parser) -> None:
-    print(lb_usage())
+    print(usage())
     print(parser.epilog)
 
 

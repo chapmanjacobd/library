@@ -9,7 +9,7 @@ from xklb.paths import Frequency, sanitize_url
 from xklb.utils import argparse_enum, log
 
 
-def parse_args_tabsadd() -> argparse.Namespace:
+def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="library tabsadd",
         usage=r"""library tabsadd --frequency {daily,weekly,monthly,quarterly,yearly} --category CATEGORY [--no-sanitize] [database] paths ...
@@ -107,9 +107,7 @@ def extract_url_metadata(args, path: str) -> dict:
 def tabs_add(args=None) -> None:
     if args:
         sys.argv[1:] = args
-    args = parse_args_tabsadd()
+    args = parse_args()
 
-    args.db = db.connect(args)
     tabs = [extract_url_metadata(args, path) for path in get_new_paths(args)]
-
     args.db["media"].insert_all(tabs, pk="path", alter=True, replace=True)  # type: ignore

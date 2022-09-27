@@ -170,8 +170,6 @@ def scan_path(args, path) -> int:
 
 
 def extractor(args) -> None:
-    Path(args.database).touch()
-    args.db = db.connect(args)
     new_files = 0
     for path in args.paths:
         new_files += scan_path(args, path)
@@ -260,6 +258,10 @@ def parse_args() -> argparse.Namespace:
         else:
             raise Exception(f"fs_extract for db_type {args.db_type} not implemented")
 
+    if args.db:
+        args.database = args.db
+    Path(args.database).touch()
+    args.db = db.connect(args)
     log.info(utils.dict_filter_bool(args.__dict__))
 
     return args

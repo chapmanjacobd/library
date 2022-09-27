@@ -32,7 +32,7 @@ def test_tw_print(capsys):
 
 
 class TestTube(unittest.TestCase):
-    @mock.patch("xklb.fs_actions.play")
+    @mock.patch("xklb.play_actions.play")
     def test_lb_fs(self, play_mocked):
         for SC in ["tubewatch", "tw"]:
             lb([SC, *tube_db])
@@ -50,28 +50,28 @@ class TestTube(unittest.TestCase):
         assert out["title"] == "Most Epic Video About Nothing"
         assert out["size"] == 4797012
 
-    @mock.patch("xklb.fs_actions.play")
+    @mock.patch("xklb.play_actions.play")
     def test_tw_search(self, play_mocked):
         sys.argv = ["tw", *tube_db, "-s", "nothing"]
         tube_watch()
         out = play_mocked.call_args[0][1]
         assert out is not None
 
-    @mock.patch("xklb.fs_actions.play")
+    @mock.patch("xklb.play_actions.play")
     def test_tw_sort(self, play_mocked):
         sys.argv = ["tw", *tube_db, "-u", "duration"]
         tube_watch()
         out = play_mocked.call_args[0][1]
         assert out is not None
 
-    @mock.patch("xklb.fs_actions.play")
+    @mock.patch("xklb.play_actions.play")
     def test_tw_size(self, play_mocked):
         sys.argv = ["tw", *tube_db, "--size", "+1"]  # more than 1MB
         tube_watch()
         out = play_mocked.call_args[0][1]
         assert out is not None
 
-    @mock.patch("xklb.tube_extract.process_playlist")
+    @mock.patch("xklb.tube_backend.process_playlist")
     def test_tubeupdate(self, play_mocked):
         tube_update([*tube_db, "--dl-config", "TEST2=4 TEST3=3"])
         out = play_mocked.call_args[0][2]

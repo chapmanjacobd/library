@@ -2,10 +2,10 @@ import argparse
 from time import sleep
 from typing import Dict, List, Tuple
 
-from xklb import db
+from xklb import db, utils
 from xklb.player import generic_player, mark_media_watched, override_sort, printer
 from xklb.tabs_extract import Frequency
-from xklb.utils import SC, cmd, dict_filter_bool, flatten, log
+from xklb.utils import SC, cmd, flatten, log
 
 tabs_include_string = (
     lambda x: f"""and (
@@ -111,7 +111,6 @@ def frequency_filter(args, media: List[Dict]) -> List[dict]:
 
 
 def process_tabs_actions(args, construct_tabs_query) -> None:
-    args.db = db.connect(args)
     query, bindings = construct_tabs_query(args)
 
     if args.print:
@@ -237,7 +236,10 @@ def parse_args(action, default_db) -> argparse.Namespace:
     if args.delete:
         args.print += "d"
 
-    log.info(dict_filter_bool(args.__dict__))
+    if args.db:
+        args.database = args.db
+    args.db = db.connect(args)
+    log.info(utils.dict_filter_bool(args.__dict__))
 
     return args
 
