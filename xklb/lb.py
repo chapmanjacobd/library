@@ -122,7 +122,7 @@ def lb(args=None) -> None:
 
     subp_dladd = subparsers.add_parser("dladd", aliases=["da"], add_help=False)
     subp_dladd.set_defaults(func=dl_add)
-    subp_dlupdate = subparsers.add_parser("dlupdate", aliases=["dl"], add_help=False)
+    subp_dlupdate = subparsers.add_parser("dlupdate", aliases=["du"], add_help=False)
     subp_dlupdate.set_defaults(func=dl_update)
     subp_download = subparsers.add_parser("download", aliases=["dl"], add_help=False)
     subp_download.set_defaults(func=dl_download)
