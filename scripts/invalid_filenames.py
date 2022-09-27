@@ -2,7 +2,7 @@ import argparse, shutil, sqlite3
 
 import ftfy
 
-from xklb import db
+from xklb import db, utils
 from xklb.utils import log
 
 """
@@ -22,6 +22,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--verbose", "-v", action="count", default=0)
     args = parser.parse_args()
     args.db = db.connect(args)
+    log.info(utils.dict_filter_bool(args.__dict__))
     return args
 
 

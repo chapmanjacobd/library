@@ -147,7 +147,7 @@ library tabs is meant to run **once per day**. Here is how you would configure i
 
 Or with `systemd`:
 
-    ~/.config/systemd/user/tabs.service
+    tee ~/.config/systemd/user/tabs.service
     [Unit]
     Description=xklb daily browser tabs
 
@@ -157,7 +157,7 @@ Or with `systemd`:
     Environment="DISPLAY=:0"
     ExecStart="/usr/bin/fish" "-c" "lb tabs /home/xk/lb/tabs.db"
 
-    ~/.config/systemd/user/tabs.timer
+    tee ~/.config/systemd/user/tabs.timer
     [Unit]
     Description=xklb daily browser tabs timer
 

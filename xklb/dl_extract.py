@@ -6,7 +6,7 @@ import gallery_dl as gdl
 import yt_dlp
 from rich.prompt import Confirm
 
-from xklb import db, paths, player, tube_actions, tube_extract, utils
+from xklb import db, paths, player, tube_backend, utils
 from xklb.dl_config import yt_meaningless_errors, yt_recoverable_errors, yt_unrecoverable_errors
 from xklb.utils import log
 
@@ -73,12 +73,18 @@ def parse_args(action, usage):
         parser.add_argument("playlists", nargs="+", help=argparse.SUPPRESS)
     elif action == DSC.block:
         parser.add_argument("playlists", nargs="+", help=argparse.SUPPRESS)
-    elif action == DSC.dlupdate:
-        parser.add_argument("playlists", nargs="*", help=argparse.SUPPRESS)
     elif action == DSC.download:
         parser.add_argument("playlists", nargs="*", help=argparse.SUPPRESS)
 
     args = parser.parse_args()
+
+    if args.db:
+        args.database = args.db
+    if action in [DSC.dladd, DSC.block]:
+        Path(args.database).touch()
+    args.db = db.connect(args)
+    log.info(utils.dict_filter_bool(args.__dict__))
+
     return args
 
 
@@ -121,22 +127,21 @@ def dl_add(args=None) -> None:
         Media will be downloaded to 'D:\My Documents\Cool\'
     """,
     )
-    paths.check_mount(args)
 
     gdl.config.load()  # load default config files
 
-    playlists = tube_extract.get_playlists(args)
+    playlists = tube_backend.get_playlists(args)
     for path in args.playlists:
-        saved_dl_config = tube_extract.get_playlist_dl_config(playlists, path)
+        saved_dl_config = tube_backend.get_playlist_dl_config(playlists, path)
         if saved_dl_config:
             log.info("[%s]: Updating known playlist", path)
 
-        if args.safe and not tube_extract.is_supported(path):
+        if args.safe and not tube_backend.is_supported(path):
             log.warning("[%s]: Unsupported playlist (safe_mode)", path)
             continue
 
         if args.profile is None:
-            if tube_extract.is_supported(path):
+            if tube_backend.is_supported(path):
                 args.profile = DLProfile.video
             elif gdl.extractor.find(path):
                 args.profile = DLProfile.image
@@ -148,10 +153,10 @@ def dl_add(args=None) -> None:
         args.extra_media_data = {"is_downloaded": 0, **args.extra_media_data}
         args.extra_playlist_data = {"category": args.category, "profile": args.profile, **args.extra_playlist_data}
         if args.profile in [DLProfile.audio, DLProfile.video]:
-            tube_extract.process_playlist(
+            tube_backend.process_playlist(
                 args,
                 path,
-                ydl_opts=tube_actions.ydl_opts(
+                ydl_opts=tube_backend.ydl_opts(
                     args, playlist_opts=saved_dl_config, func_opts={"ignoreerrors": "only_download"}
                 ),
             )
@@ -186,7 +191,7 @@ def dl_update(args=None) -> None:
 
     args = parse_args(
         DSC.dlupdate,
-        usage=r"""library dlupdate [--audio | --video | --image] -c CATEGORY [database] playlists ...
+        usage=r"""library dlupdate [--audio | --video | --image] [-c CATEGORY] [database]
 
     Similar to tubeupdate, get new content of existing saved playlists
 
@@ -206,23 +211,15 @@ def dl_update(args=None) -> None:
     """,
     )
 
-    if args.db:
-        args.database = args.db
-    Path(args.database).touch()
-    args.db = db.connect(args)
-
-    log.info(utils.dict_filter_bool(args.__dict__))
-
     gdl.config.load()  # load default config files
 
     # TODO: Profile.image
     # TODO: reddit
-    playlists = tube_extract.get_playlists(args, cols="path, profile, dl_config", constrain=True)
+    playlists = tube_backend.get_playlists(args, cols="path, profile, dl_config", constrain=True)
     video_playlists = [d for d in playlists if d["profile"] == DLProfile.video]
     audio_playlists = [d for d in playlists if d["profile"] == DLProfile.audio]
     tube_playlists = audio_playlists + video_playlists
-    tube_extract.show_unknown_playlist_warning(args, tube_playlists, DSC.dladd)
-    tube_extract.update_playlists(args, tube_playlists)
+    tube_backend.update_playlists(args, tube_playlists)
 
 
 def dl_block(args=None) -> None:
@@ -244,11 +241,6 @@ def dl_block(args=None) -> None:
     """,
     )
 
-    if args.db:
-        args.database = args.db
-    Path(args.database).touch()
-    args.db = db.connect(args)
-
     if not any([args.playlists, args.all_deleted_playlists]):
         raise Exception("Specific URLs or --all-deleted-playlists must be supplied")
 
@@ -256,7 +248,7 @@ def dl_block(args=None) -> None:
     args.extra_playlist_data = dict(is_deleted=1, category=paths.BLOCK_THE_CHANNEL)
     args.extra_media_data = dict(is_deleted=1)
     for p in args.playlists:
-        tube_extract.process_playlist(args, p, tube_actions.ydl_opts(args, func_opts={"playlistend": 30}))
+        tube_backend.process_playlist(args, p, tube_backend.ydl_opts(args, func_opts={"playlistend": 30}))
 
     if args.playlists:
         with args.db.conn:
@@ -342,7 +334,7 @@ def update_media(args, info, webpath) -> None:
     assert len(r) == 1
     stub = r[0]
 
-    entry = tube_extract.consolidate(stub["playlist_path"], info) or {}
+    entry = tube_backend.consolidate(stub["playlist_path"], info) or {}
 
     args.db["media"].insert(
         {
@@ -383,7 +375,7 @@ def yt(args, m, audio_only=False) -> None:
 
     out_dir = lambda p: str(Path(args.prefix, m["category"], p))
     Path(out_dir("tunnel_snakes_rule")).parent.mkdir(parents=True, exist_ok=True)
-    ydl_opts = tube_actions.ydl_opts(
+    ydl_opts = tube_backend.ydl_opts(
         args,
         func_opts={
             "logger": BadToTheBoneLogger(),
@@ -487,8 +479,6 @@ def dl_download(args=None) -> None:
         library playlists dl.db -p a
     """,
     )
-    paths.check_mount(args, mount_point=args.prefix)
-
     media = process_downloadqueue(args)
     for m in media:
         # check again in case it was already completed by another process

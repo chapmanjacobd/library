@@ -1,5 +1,4 @@
-from xklb.fs_actions import fs_actions_usage
-from xklb.lb import lb_usage
+from xklb import lb, play_actions
 
 print(
     f"""# lb: xk media library
@@ -21,7 +20,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
     pip install xklb
 
     $ library
-    {lb_usage()}
+    {lb.usage()}
 
 ## Quick Start -- watch online media on your PC
 
@@ -115,7 +114,7 @@ library tabs is meant to run **once per day**. Here is how you would configure i
 
 Or with `systemd`:
 
-    ~/.config/systemd/user/tabs.service
+    tee ~/.config/systemd/user/tabs.service
     [Unit]
     Description=xklb daily browser tabs
 
@@ -125,7 +124,7 @@ Or with `systemd`:
     Environment="DISPLAY=:0"
     ExecStart="/usr/bin/fish" "-c" "lb tabs /home/xk/lb/tabs.db"
 
-    ~/.config/systemd/user/tabs.timer
+    tee ~/.config/systemd/user/tabs.timer
     [Unit]
     Description=xklb daily browser tabs timer
 
@@ -171,7 +170,7 @@ Organize via separate databases.
 ## Usage
 
     $ library watch -h
-    usage: {fs_actions_usage('watch', 'video.db')}
+    usage: {play_actions.usage('watch', 'video.db')}
 
 ### You can pipe stuff
 

@@ -45,7 +45,7 @@ class TestTube(unittest.TestCase):
         yt(args, dict(path=PLAYLIST_VIDEO_URL, dl_config={}, category="Self"), audio_only=True)
 
     @mock.patch("xklb.dl_extract.yt")
-    @mock.patch("xklb.tube_extract.process_playlist")
+    @mock.patch("xklb.tube_backend.process_playlist")
     def test_tube_dl_conversion(self, process_playlist, yt):
         dl_add([*tube_db, "-c=Self", PLAYLIST_URL])
         out = process_playlist.call_args[0][1]
@@ -63,7 +63,7 @@ class TestTube(unittest.TestCase):
         out = yt.call_args[0]
         assert out[1]["path"] == PLAYLIST_VIDEO_URL
 
-    @mock.patch("xklb.tube_extract.update_playlists")
+    @mock.patch("xklb.tube_backend.update_playlists")
     def test_dlupdate(self, update_playlists):
         self.init_db()
 
@@ -71,7 +71,7 @@ class TestTube(unittest.TestCase):
         out = update_playlists.call_args[0]
         assert out[1][0]["path"] == PLAYLIST_URL
 
-    @mock.patch("xklb.tube_extract.update_playlists")
+    @mock.patch("xklb.tube_backend.update_playlists")
     def test_dlupdate_subset_category(self, update_playlists):
         self.init_db()
 
