@@ -1,4 +1,5 @@
 import argparse, os, sqlite3, sys
+import json
 from pathlib import Path
 from typing import List
 
@@ -393,7 +394,7 @@ def yt(args, m, audio_only=False) -> None:
                 "chapter": out_dir("%(title)s - %(section_number)03d %(section_title)s [%(id)s].%(ext)s"),
             },
         },
-        playlist_opts=m["dl_config"],
+        playlist_opts=json.loads(m["dl_config"]),
     )
 
     if args.ext == "DEFAULT":
