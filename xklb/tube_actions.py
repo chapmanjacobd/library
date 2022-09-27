@@ -25,7 +25,7 @@ def ydl_opts(args, func_opts=None, playlist_opts=None) -> dict:
     default_opts = {
         "ignoreerrors": False,
         "no_warnings": False,
-        "quiet": False,
+        "quiet": True,
         "skip_download": True,
         "lazy_playlist": True,
         "extract_flat": True,
@@ -85,11 +85,11 @@ def ydl_opts(args, func_opts=None, playlist_opts=None) -> dict:
     if args.verbose == 0 and "pytest" not in sys.modules:
         ydl_opts.update(ignoreerrors="only_download")
     if args.verbose >= 2:
-        ydl_opts.update(ignoreerrors=False)
+        ydl_opts.update(ignoreerrors=False, quiet=False)
     if args.ignore_errors:
         ydl_opts.update(ignoreerrors=True)
 
-    log.info(utils.dict_filter_bool(ydl_opts))
+    log.debug(utils.dict_filter_bool(ydl_opts))
 
     if hasattr(args, "playlists") and args.playlists and not args.no_sanitize:
         args.playlists = [paths.sanitize_url(args, path) for path in args.playlists]
@@ -178,15 +178,19 @@ def printer(args) -> None:
     query = "select distinct ie_key, title, path from playlists"
     if "a" in args.print:
         query = f"""select
-            playlists.ie_key
+            playlists.is_deleted
+            , playlists.ie_key
             , playlists.title
+            , playlists.category
+            , playlists.profile download_profile
             , coalesce(playlists.path, "Playlist-less videos") path
             , sum(media.duration) duration
             , sum(media.size) size
             , count(*) count
         from media
         left join playlists on playlists.path = media.playlist_path
-        group by coalesce(playlists.path, "Playlist-less videos")"""
+        group by coalesce(playlists.path, "Playlist-less videos")
+        order by playlists.is_deleted desc, category, profile, playlists.path"""
 
     db_resp = list(args.db.query(query))
 

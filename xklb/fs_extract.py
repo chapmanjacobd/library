@@ -11,6 +11,14 @@ from xklb.player import mark_media_deleted
 from xklb.utils import SQLITE_PARAM_LIMIT, log
 
 
+class DBType:
+    audio = "audio"
+    video = "video"
+    filesystem = "filesystem"
+    text = "text"
+    image = "image"
+
+
 def calculate_sparseness(stat) -> int:
     if stat.st_size == 0:
         sparseness = 0
@@ -42,13 +50,13 @@ def extract_metadata(mp_args, f) -> Union[Dict[str, int], None]:
     if hasattr(stat, "st_blocks"):
         media = {**media, "sparseness": calculate_sparseness(stat)}
 
-    if mp_args.db_type == "f":
+    if mp_args.db_type == DBType.filesystem:
         media = {**media, "is_dir": os.path.isdir(f)}
 
-    if mp_args.db_type in ["a", "v"]:
+    if mp_args.db_type in [DBType.audio, DBType.video]:
         return av.munge_av_tags(mp_args, media, f)
 
-    if mp_args.db_type == "t":
+    if mp_args.db_type == DBType.text:
         try:
             start = timer()
             if any([mp_args.ocr, mp_args.speech_recognition]):
@@ -67,7 +75,7 @@ def extract_metadata(mp_args, f) -> Union[Dict[str, int], None]:
 
 def extract_chunk(args, chunk_paths) -> None:
     n_jobs = -1
-    if args.db_type in ["t", "p", "f"]:
+    if args.db_type in [DBType.text, DBType.image, DBType.filesystem]:
         n_jobs = utils.CPU_COUNT
     if args.verbose >= 2:
         n_jobs = 1
@@ -75,7 +83,7 @@ def extract_chunk(args, chunk_paths) -> None:
     mp_args = argparse.Namespace(**{k: v for k, v in args.__dict__.items() if k not in {"db"}})
     metadata = Parallel(n_jobs=n_jobs)(delayed(extract_metadata)(mp_args, p) for p in chunk_paths) or []
 
-    if args.db_type == "i":
+    if args.db_type == DBType.image:
         metadata = books.extract_image_metadata_chunk(metadata, chunk_paths)
 
     if args.scan_subtitles:
@@ -85,15 +93,15 @@ def extract_chunk(args, chunk_paths) -> None:
 
 
 def find_new_files(args, path) -> List[str]:
-    if args.db_type == "a":
+    if args.db_type == DBType.audio:
         scanned_files = paths.get_media_files(path, audio=True)
-    elif args.db_type == "v":
+    elif args.db_type == DBType.video:
         scanned_files = paths.get_media_files(path)
-    elif args.db_type == "t":
+    elif args.db_type == DBType.text:
         scanned_files = paths.get_text_files(path, OCR=args.ocr, speech_recognition=args.speech_recognition)
-    elif args.db_type == "i":
+    elif args.db_type == DBType.image:
         scanned_files = paths.get_image_files(path)
-    elif args.db_type == "f":
+    elif args.db_type == DBType.filesystem:
         # thanks to these people for making rglob fast https://bugs.python.org/issue26032
         scanned_files = [str(p) for p in Path(path).resolve().rglob("*")]
     else:
@@ -143,7 +151,7 @@ def scan_path(args, path) -> int:
         print(f"[{path}] Adding {len(new_files)} new media")
         log.debug(new_files)
 
-        if args.db_type in ["t"]:
+        if args.db_type in [DBType.text]:
             batch_count = utils.CPU_COUNT
         else:
             batch_count = SQLITE_PARAM_LIMIT // 100
@@ -203,19 +211,22 @@ def parse_args() -> argparse.Namespace:
         library fsadd --audio podcasts.db ./podcasts/ ./another/folder/
 """,
     )
-    parser.add_argument("database", nargs="?")
-    parser.add_argument("paths", nargs="+")
-    parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
 
     db_type = parser.add_mutually_exclusive_group()
-    db_type.add_argument("--audio", action="store_const", dest="db_type", const="a", help="Create audio database")
     db_type.add_argument(
-        "--filesystem", action="store_const", dest="db_type", const="f", help="Create filesystem database"
+        "--audio", action="store_const", dest="db_type", const=DBType.audio, help="Create audio database"
     )
-    db_type.add_argument("--video", action="store_const", dest="db_type", const="v", help="Create video database")
-    db_type.add_argument("--text", action="store_const", dest="db_type", const="t", help="Create text database")
-    db_type.add_argument("--image", action="store_const", dest="db_type", const="i", help="Create image database")
-    parser.set_defaults(db_type="v")
+    db_type.add_argument(
+        "--filesystem", action="store_const", dest="db_type", const=DBType.filesystem, help="Create filesystem database"
+    )
+    db_type.add_argument(
+        "--video", action="store_const", dest="db_type", const=DBType.video, help="Create video database"
+    )
+    db_type.add_argument("--text", action="store_const", dest="db_type", const=DBType.text, help="Create text database")
+    db_type.add_argument(
+        "--image", action="store_const", dest="db_type", const=DBType.image, help="Create image database"
+    )
+    parser.set_defaults(db_type=DBType.video)
 
     parser.add_argument("--ocr", "--OCR", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--speech-recognition", "--speech", action="store_true", help=argparse.SUPPRESS)
@@ -226,21 +237,25 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--delete-unplayable", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--optimize", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--verbose", "-v", action="count", default=0)
+    parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
+
+    parser.add_argument("database", nargs="?")
+    parser.add_argument("paths", nargs="+")
     args = parser.parse_args()
 
     if args.db:
         args.database = args.db
 
     if not args.database:
-        if args.db_type == "a":
+        if args.db_type == DBType.audio:
             args.database = "audio.db"
-        elif args.db_type == "f":
+        elif args.db_type == DBType.filesystem:
             args.database = "fs.db"
-        elif args.db_type == "v":
+        elif args.db_type == DBType.video:
             args.database = "video.db"
-        elif args.db_type == "t":
+        elif args.db_type == DBType.text:
             args.database = "text.db"
-        elif args.db_type == "i":
+        elif args.db_type == DBType.image:
             args.database = "image.db"
         else:
             raise Exception(f"fs_extract for db_type {args.db_type} not implemented")

@@ -1,4 +1,4 @@
-import argparse, operator, shlex, shutil
+import argparse, shlex, shutil
 from pathlib import Path
 from random import random
 from typing import Dict, Tuple
@@ -207,13 +207,6 @@ def fs_actions_usage(action, default_db) -> str:
 def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library " + action, usage=fs_actions_usage(action, default_db))
 
-    parser.add_argument(
-        "database",
-        nargs="?",
-        default=default_db,
-        help=f"Database file. If not specified a generic name will be used: {default_db}",
-    )
-
     parser.add_argument("--play-in-order", "-O", action="count", default=0, help=argparse.SUPPRESS)
     parser.add_argument("--sort", "-u", nargs="+", help=argparse.SUPPRESS)
     parser.add_argument("--random", "-r", action="store_true", help=argparse.SUPPRESS)
@@ -276,6 +269,13 @@ def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
     parser.add_argument("--ignore-errors", "--ignoreerrors", "-i", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--verbose", "-v", action="count", default=0)
+
+    parser.add_argument(
+        "database",
+        nargs="?",
+        default=default_db,
+        help=f"Database file. If not specified a generic name will be used: {default_db}",
+    )
     args = parser.parse_args()
     args.action = action
     args.defaults = []
@@ -425,8 +425,7 @@ def play(args, m: Dict) -> None:
     if args.action in [SC.watch, SC.listen]:
         media_path = Path(args.prefix + media_file).resolve()
         if not media_path.exists():
-            if args.is_mounted:
-                mark_media_deleted(args, media_file)
+            mark_media_deleted(args, media_file)
             log.info("[%s]: Does not exist. Skipping...", media_file)
             return
         media_file = str(media_path)
@@ -611,7 +610,7 @@ def construct_fs_query(args) -> Tuple[str, dict]:
 
 
 def process_playqueue(args, construct_query=construct_fs_query) -> None:
-    args.db = db.connect(args)
+    paths.check_mount(args, mount_point=args.shallow_organize)
     query, bindings = construct_query(args)
 
     if args.print:
@@ -626,8 +625,6 @@ def process_playqueue(args, construct_query=construct_fs_query) -> None:
 
     if all([Path(args.watch_later_directory).exists(), args.play_in_order != 2, "sort" in args.defaults]):
         media = utils.mpv_enrich(args, media)
-
-    args.is_mounted = paths.is_mounted(list(map(operator.itemgetter("path"), media)), args.shallow_organize)
 
     if args.multiple_playback:
         player.multiple_player(args, media)

@@ -1,9 +1,11 @@
 import enum, os, platform, re
 from pathlib import Path
 from tempfile import gettempdir, mkdtemp
+from time import sleep
 from typing import List
 
-from xklb import utils
+from xklb import db, utils
+from xklb.utils import log
 
 FAKE_SUBTITLE = os.path.join(gettempdir(), "sub.srt")  # https://github.com/skorokithakis/catt/issues/393
 CAST_NOW_PLAYING = os.path.join(gettempdir(), "catt_playing")
@@ -132,10 +134,30 @@ def get_image_files(path) -> List[str]:
     return image_files
 
 
-def is_mounted(paths, mount_point) -> bool:
-    if platform.system() == "Linux" and any([mount_point in p for p in paths]):
-        p = Path(mount_point)
-        if p.exists() and not p.is_mount():
-            raise Exception(f"mount_point {mount_point} not mounted yet")
+def _guess_mounted(path) -> bool:
+    if platform.system() != "Linux":
+        return True
 
-    return True
+    if Path(path).is_mount():
+        return True
+    for p in Path(path).parents:
+        if p == Path("/"):
+            return False
+        elif p.is_mount():
+            return True
+
+    return False
+
+
+def check_mount(args, mount_point=None):
+    if mount_point:
+        while not _guess_mounted(mount_point):
+            log.warning("Waiting for path to mount")
+            sleep(1)
+
+    if args.db:
+        args.database = args.db
+    Path(args.database).touch()
+    args.db = db.connect(args)
+
+    log.info(utils.dict_filter_bool(args.__dict__))

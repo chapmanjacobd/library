@@ -1,4 +1,4 @@
-import shutil, unittest
+import unittest
 from argparse import Namespace
 from pathlib import Path
 from unittest import mock
@@ -6,7 +6,6 @@ from unittest import mock
 from xklb import paths
 from xklb.db import connect
 from xklb.dl_extract import dl_add, dl_block, dl_download, dl_update, yt
-from xklb.lb import lb
 from xklb.tube_extract import tube_add
 
 PLAYLIST_URL = "https://youtube.com/playlist?list=PLVoczRgDnXDLWV1UJ_tO70VT_ON0tuEdm"
@@ -23,22 +22,24 @@ class TestTube(unittest.TestCase):
     def init_db(self):
         for p in Path("tests/data/").glob("dl.db*"):
             p.unlink()
-        dl_add([*dl_db, "Self", PLAYLIST_URL])
+        dl_add([*dl_db, "-c=Self", PLAYLIST_URL])
 
     def test_yt(self):
         dl_db = "--db", "tests/data/dl.db"
-        dl_add([*dl_db, "Self", PLAYLIST_URL])
+        dl_add([*dl_db, "-c=Self", PLAYLIST_URL])
 
-        args = Namespace(database=dl_db[1], dl_config={}, prefix=STORAGE_PREFIX, ignore_errors=False, verbose=0)
+        args = Namespace(
+            database=dl_db[1], dl_config={}, prefix=STORAGE_PREFIX, ext=None, ignore_errors=False, verbose=0
+        )
         args.db = connect(args)
         yt(args, dict(path=PLAYLIST_VIDEO_URL, dl_config={}, category="Self"))
 
     def test_yta(self):
         dl_db = "--db", "tests/data/dl.db"
-        dl_add([*dl_db, "Self", PLAYLIST_URL])
+        dl_add([*dl_db, "-c=Self", PLAYLIST_URL])
 
         args = Namespace(
-            database=dl_db[1], dl_config={}, prefix=STORAGE_PREFIX, ignore_errors=False, ext="opus", verbose=0
+            database=dl_db[1], dl_config={}, prefix=STORAGE_PREFIX, ext="opus", ignore_errors=False, verbose=0
         )
         args.db = connect(args)
         yt(args, dict(path=PLAYLIST_VIDEO_URL, dl_config={}, category="Self"), audio_only=True)
@@ -46,7 +47,7 @@ class TestTube(unittest.TestCase):
     @mock.patch("xklb.dl_extract.yt")
     @mock.patch("xklb.tube_extract.process_playlist")
     def test_tube_dl_conversion(self, process_playlist, yt):
-        dl_add([*tube_db, "Self", PLAYLIST_URL])
+        dl_add([*tube_db, "-c=Self", PLAYLIST_URL])
         out = process_playlist.call_args[0][1]
         assert out == PLAYLIST_URL
 
@@ -74,7 +75,7 @@ class TestTube(unittest.TestCase):
     def test_dlupdate_subset_category(self, update_playlists):
         self.init_db()
 
-        dl_update([*dl_db, "Self"])
+        dl_update([*dl_db, "-c=Self"])
         out = update_playlists.call_args[0]
         assert out[1][0]["path"] == PLAYLIST_URL
 
