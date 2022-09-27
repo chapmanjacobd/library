@@ -11,17 +11,17 @@ from xklb.utils import DEFAULT_PLAY_QUEUE, SC, human_time, log
 
 tube_include_string = (
     lambda x: f"""and (
-    path like :include{x}
+    media.path like :include{x}
     OR tags like :include{x}
-    OR title like :include{x}
+    OR media.title like :include{x}
 )"""
 )
 
 tube_exclude_string = (
     lambda x: f"""and (
-    path not like :exclude{x}
+    media.path not like :exclude{x}
     AND tags not like :exclude{x}
-    AND title not like :exclude{x}
+    AND media.title not like :exclude{x}
 )"""
 )
 

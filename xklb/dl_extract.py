@@ -1,12 +1,16 @@
-import argparse, os, sqlite3, sys
+import argparse, csv, operator, os, sqlite3, sys
+from copy import deepcopy
+from io import StringIO
 from pathlib import Path
-from typing import List
+from shlex import quote
+from typing import List, Tuple
 
 import gallery_dl as gdl
 import yt_dlp
 from rich.prompt import Confirm
+from tabulate import tabulate
 
-from xklb import db, paths, player, tube_backend, utils
+from xklb import db, paths, play_actions, player, tube_actions, tube_backend, utils
 from xklb.dl_config import yt_meaningless_errors, yt_recoverable_errors, yt_unrecoverable_errors
 from xklb.utils import log
 
@@ -67,6 +71,14 @@ def parse_args(action, usage):
         parser.add_argument("--prefix", default=os.getcwd(), help=argparse.SUPPRESS)
         parser.add_argument("--ext", default="DEFAULT")
         parser.add_argument("--print", "-p", default=False, const="p", nargs="?", help=argparse.SUPPRESS)
+        parser.add_argument("--sort", "-u", nargs="+", help=argparse.SUPPRESS)
+        parser.add_argument("--where", "-w", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
+        parser.add_argument(
+            "--include", "-s", "--search", nargs="+", action="extend", default=[], help=argparse.SUPPRESS
+        )
+        parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
+        parser.add_argument("--duration", "-d", action="append", help=argparse.SUPPRESS)
+        parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", help=argparse.SUPPRESS)
 
     parser.add_argument("database", nargs="?", default="dl.db", help=argparse.SUPPRESS)
     if action == DSC.dladd:
@@ -77,6 +89,10 @@ def parse_args(action, usage):
         parser.add_argument("playlists", nargs="*", help=argparse.SUPPRESS)
 
     args = parser.parse_args()
+    if args.limit in ["inf", "all"]:
+        args.limit = None
+    if args.duration:
+        args.duration = play_actions.parse_duration(args)
 
     if args.db:
         args.database = args.db
@@ -285,32 +301,124 @@ def dl_block(args=None) -> None:
             player.delete_media(args, paths_to_delete)
 
 
-def construct_query(args):
-    return (
-        f"""select
+def construct_query(args) -> Tuple[str, dict]:
+    cf = []
+    bindings = {}
+
+    if args.duration:
+        cf.append(" and duration IS NOT NULL " + args.duration)
+
+    cf.extend([" and " + w for w in args.where])
+
+    play_actions.construct_search_bindings(
+        args, bindings, cf, tube_actions.tube_include_string, tube_actions.tube_exclude_string
+    )
+
+    args.sql_filter = " ".join(cf)
+    args.sql_filter_bindings = bindings
+
+    LIMIT = "LIMIT " + str(args.limit) if args.limit else ""
+
+    query = f"""select
             media.path
+            , media.title
+            , media.duration
+            , media.time_created
             , playlists.dl_config
             , playlists.category
             , playlists.profile
-        from media
-        join playlists on playlists.path = media.playlist_path
-        where 1=1
+        FROM media
+        JOIN playlists on playlists.path = media.playlist_path
+        WHERE 1=1
             and is_downloaded=0
             and media.is_deleted=0
             and playlists.is_deleted=0
             and media.uploader not in (select uploader from playlists where category='{paths.BLOCK_THE_CHANNEL}')
-        order by
-            random()
-        """,
-        [],
-    )
+            {args.sql_filter}
+        ORDER BY 1=1
+            {',' + args.sort if args.sort else ''}
+            , play_count
+            , random()
+    {LIMIT}
+    """
+
+    return query, bindings
+
+
+def printer(args, query, bindings) -> None:
+    if "a" in args.print:
+        query = f"""select
+            "Aggregate" as path
+            , sum(duration) duration
+            , avg(duration) avg_duration
+            , count(*) count
+        from ({query}) """
+
+    db_resp = list(args.db.query(query, bindings))
+    if len(db_resp) == 0:
+        print("No media found")
+        exit(2)
+
+    if "d" in args.print:
+        player.mark_media_deleted(args, list(map(operator.itemgetter("path"), db_resp)))
+        if not "f" in args.print:
+            return print(f"Removed {len(db_resp)} metadata records")
+
+    if "w" in args.print:
+        marked = player.mark_media_watched(args, list(map(operator.itemgetter("path"), db_resp)))
+        if not "f" in args.print:
+            return print(f"Marked {marked} metadata records as watched")
+
+    if "f" in args.print:
+        if args.limit == 1:
+            f = db_resp[0]["path"]
+            if not Path(f).exists():
+                player.mark_media_deleted(args, f)
+                return printer(args, query, bindings)
+            print(quote(f))
+        else:
+            if not args.cols:
+                args.cols = ["path"]
+
+            selected_cols = [{k: d.get(k, None) for k in args.cols} for d in db_resp]
+            virtual_csv = StringIO()
+            wr = csv.writer(virtual_csv, quoting=csv.QUOTE_NONE)
+            wr = csv.DictWriter(virtual_csv, fieldnames=args.cols)
+            wr.writerows(selected_cols)
+
+            virtual_csv.seek(0)
+            for line in virtual_csv.readlines():
+                if args.moved:
+                    print(line.strip().replace(args.moved[0], "", 1))
+                else:
+                    print(line.strip())
+    else:
+        tbl = deepcopy(db_resp)
+        utils.col_resize(tbl, "path", 22)
+        utils.col_resize(tbl, "title", 18)
+
+        utils.col_naturalsize(tbl, "size")
+        utils.col_duration(tbl, "duration")
+        utils.col_duration(tbl, "avg_duration")
+
+        for t in [
+            "time_modified",
+            "time_created",
+            "time_played",
+            "time_valid",
+            "time_partial_first",
+            "time_partial_last",
+        ]:
+            utils.col_naturaldate(tbl, t)
+
+        print(tabulate(tbl, tablefmt="fancy_grid", headers="keys", showindex=False))  # type: ignore
 
 
 def process_downloadqueue(args) -> List[dict]:
     query, bindings = construct_query(args)
 
     if args.print:
-        player.printer(args, query, bindings)
+        printer(args, query, bindings)
         return []
 
     media = list(args.db.query(*construct_query(args)))
@@ -408,7 +516,11 @@ def yt(args, m, audio_only=False) -> None:
     ydl_opts["match_filter"] = yt_dlp.utils.match_filter_func(" & ".join(match_filters).split(" | "))
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(m["path"], download=True)
+        try:
+            info = ydl.extract_info(m["path"], download=True)
+        except yt_dlp.DownloadError as e:
+            log.warning("[%s]: yt-dlp %s", m["path"], e)
+            return
         if info is None:
             log.warning("[%s]: yt-dlp returned no info", m["path"])
             return
