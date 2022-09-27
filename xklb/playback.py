@@ -17,6 +17,7 @@ def parse_args(action) -> argparse.Namespace:
 
     parser.add_argument("--verbose", "-v", action="count", default=0)
     args = parser.parse_args()
+
     if os.path.exists(args.mpv_socket):
         try:
             args.mpv = MPV(start_mpv=False, ipc_socket=args.mpv_socket)

@@ -1,7 +1,7 @@
 import argparse, sys
 
 import scripts
-from xklb.dl_extract import dl_add, dl_block, dl_download
+from xklb.dl_extract import dl_add, dl_block, dl_download, dl_update
 from xklb.fs_actions import filesystem, listen, read, view, watch
 from xklb.fs_extract import main as fs_add
 from xklb.playback import playback_next, playback_now, playback_pause, playback_stop
@@ -30,13 +30,14 @@ def lb_usage() -> str:
 
     online media subcommands:
       tubeadd [ta, xt]             Create a tube database; Add playlists
-      tubeupdate [tu]              Get new videos from saved playlists
+      tubeupdate [tu]              Add new videos from saved playlists
       tubelist [playlists]         List added playlists
       tubewatch [tw, entries]      Watch the tube
       tubelisten [tl]              Listen to the tube
 
     download subcommands (largely untested, under construction):
       dladd [da]                   Create a download database; Add URLs
+      dlupdate [du]                Add new videos from saved playlists
       download [dl]                Download media
       block                        Prevent downloading from specific channels
 
@@ -121,6 +122,8 @@ def lb(args=None) -> None:
 
     subp_dladd = subparsers.add_parser("dladd", aliases=["da"], add_help=False)
     subp_dladd.set_defaults(func=dl_add)
+    subp_dlupdate = subparsers.add_parser("dlupdate", aliases=["dl"], add_help=False)
+    subp_dlupdate.set_defaults(func=dl_update)
     subp_download = subparsers.add_parser("download", aliases=["dl"], add_help=False)
     subp_download.set_defaults(func=dl_download)
     subp_block = subparsers.add_parser("block", add_help=False)
