@@ -135,7 +135,7 @@ def get_image_files(path) -> List[str]:
 
 
 def _guess_mounted(path) -> bool:
-    if platform.system() != "Linux":
+    if platform.system() != "Linux" or utils.PYTEST_RUNNING:
         return True
 
     if Path(path).is_mount():
