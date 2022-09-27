@@ -481,4 +481,3 @@ def update_playlists(args, playlists):
         if args.extra:
             log.warning("[%s]: Getting extra metadata", d["path"])
             get_extra_metadata(args, d["path"], ydl_opts(args, playlist_opts=d["dl_config"]))
-
