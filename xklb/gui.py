@@ -12,6 +12,41 @@ class UserQuit(BaseException):
 
 
 class MrSuperDialogue:
+    def quit(self):
+        raise UserQuit
+
+    def keep(self):
+        self.action = "KEEP"
+        self.root.destroy()
+
+    def delete(self):
+        self.action = "DELETE"
+        self.root.destroy()
+
+    def move_window(self, window_width=200, window_height=180):
+        self.root.geometry("{}x{}+{}+{}".format(window_width, window_height, 0, 0))
+        self.root.update_idletasks()
+
+        log.info(
+            {
+                "winfo_root_x": self.root.winfo_x(),
+                "winfo_root_y": self.root.winfo_y(),
+                "winfo_screen": self.root.winfo_screen(),
+                "wm_maxsize": self.root.wm_maxsize(),
+            }
+        )
+
+        # TODO: Get the screen which contains the Tk Frame
+        # current_screen = self.get_monitor_from_coord(self.winfo_x(), self.winfo_y())
+        # current_screen.name
+
+        s_width = self.root.winfo_screenwidth()
+        s_height = self.root.winfo_screenheight()
+        x_cordinate = int((s_width / 2) - (window_width / 2))
+        y_cordinate = int((s_height / 2) - (window_height / 2))
+        self.root.geometry("{}x{}+{}+{}".format(window_width, window_height, x_cordinate, y_cordinate))
+        self.root.wm_attributes("-alpha", 1)
+
     def __init__(self, path, qty):
         def raise_error(self, *args):
             raise
@@ -77,41 +112,6 @@ class MrSuperDialogue:
 
         self.move_window()
         self.root.mainloop()
-
-    def quit(self):
-        raise UserQuit
-
-    def keep(self):
-        self.action = "KEEP"
-        self.root.destroy()
-
-    def delete(self):
-        self.action = "DELETE"
-        self.root.destroy()
-
-    def move_window(self, window_width=200, window_height=180):
-        self.root.geometry("{}x{}+{}+{}".format(window_width, window_height, 0, 0))
-        self.root.update_idletasks()
-
-        log.info(
-            {
-                "winfo_root_x": self.root.winfo_x(),
-                "winfo_root_y": self.root.winfo_y(),
-                "winfo_screen": self.root.winfo_screen(),
-                "wm_maxsize": self.root.wm_maxsize(),
-            }
-        )
-
-        # TODO: Get the screen which contains the Tk Frame
-        # current_screen = self.get_monitor_from_coord(self.winfo_x(), self.winfo_y())
-        # current_screen.name
-
-        s_width = self.root.winfo_screenwidth()
-        s_height = self.root.winfo_screenheight()
-        x_cordinate = int((s_width / 2) - (window_width / 2))
-        y_cordinate = int((s_height / 2) - (window_height / 2))
-        self.root.geometry("{}x{}+{}+{}".format(window_width, window_height, x_cordinate, y_cordinate))
-        self.root.wm_attributes("-alpha", 1)
 
     @staticmethod
     def _get_coord_offset_from_monitor(monitor: screeninfo.Monitor) -> Tuple[int, int]:

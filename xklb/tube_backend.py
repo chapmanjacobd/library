@@ -17,9 +17,9 @@ from xklb.utils import combine, log, safe_unpack
 # crash if not installed ?
 
 
-def ydl_opts(args, func_opts=None, playlist_opts=None) -> dict:
-    if playlist_opts is None:
-        playlist_opts = {}
+def ydl_opts(args, func_opts=None, playlist_opts: Optional[str] = None) -> dict:
+    if playlist_opts is None or playlist_opts == "":
+        playlist_opts = "{}"
     if func_opts is None:
         func_opts = {}
     cli_opts = {}
@@ -82,7 +82,7 @@ def ydl_opts(args, func_opts=None, playlist_opts=None) -> dict:
     ydl_opts = {
         **default_opts,
         **func_opts,
-        **playlist_opts,
+        **json.loads(playlist_opts),
         **cli_opts,
     }
 
@@ -107,12 +107,6 @@ def is_supported(url) -> bool:  # thank you @dbr
         if ie.suitable(url) and ie.IE_NAME != "generic":
             return True  # Site has dedicated extractor
     return False
-
-
-def get_playlist_dl_config(playlists, path):
-    for d in playlists:
-        if d["path"] == path:
-            return json.loads(d["dl_config"])
 
 
 def get_playlists(args, cols="path, dl_config", constrain=False) -> List[dict]:
@@ -417,7 +411,7 @@ def process_playlist(args, playlist_path, ydl_opts) -> Union[List[Dict], None]:
                 )
 
 
-def get_extra_metadata(args, playlist_path, playlist_dl_opts) -> Union[List[Dict], None]:
+def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Union[List[Dict], None]:
     with yt_dlp.YoutubeDL(
         ydl_opts(
             args,
@@ -470,7 +464,6 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts) -> Union[List[Dict
 
 
 def update_playlists(args, playlists):
-    playlists = [{**d, "dl_config": json.loads(d["dl_config"])} for d in playlists]
     for d in playlists:
         process_playlist(
             args,
@@ -480,4 +473,4 @@ def update_playlists(args, playlists):
 
         if args.extra:
             log.warning("[%s]: Getting extra metadata", d["path"])
-            get_extra_metadata(args, d["path"], ydl_opts(args, playlist_opts=d["dl_config"]))
+            get_extra_metadata(args, d["path"], playlist_dl_opts=d["dl_config"])

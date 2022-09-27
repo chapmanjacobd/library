@@ -64,21 +64,16 @@ def tube_add(args=None) -> None:
         library tubeupdate tw.db --extra
 """,
     )
-    playlists = tube_backend.get_playlists(args)
     for path in args.playlists:
-        playlist_dl_config = tube_backend.get_playlist_dl_config(playlists, path)
-        if playlist_dl_config:
-            log.info("[%s]: Updating known playlist", path)
-
         if args.safe and not tube_backend.is_supported(path):
             log.warning("[%s]: Unsupported playlist (safe_mode)", path)
             continue
 
-        tube_backend.process_playlist(args, path, tube_backend.ydl_opts(args, playlist_opts=playlist_dl_config))
+        tube_backend.process_playlist(args, path, tube_backend.ydl_opts(args))
 
         if args.extra:
             log.warning("[%s]: Getting extra metadata", path)
-            tube_backend.get_extra_metadata(args, path, playlist_dl_config)
+            tube_backend.get_extra_metadata(args, path)
 
 
 def tube_update(args=None) -> None:
