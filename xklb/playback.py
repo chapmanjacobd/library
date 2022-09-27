@@ -75,9 +75,9 @@ def catt_pause(args) -> None:
 
 def kill_process(name) -> None:
     if any([p in platform.system() for p in ["Windows", "_NT-", "MSYS"]]):
-        cmd("taskkill", "/f", "/im", name)
+        cmd("taskkill", "/f", "/im", name, strict=False)
     else:
-        cmd("pkill", "-f", name)
+        cmd("pkill", "-f", name, strict=False)
 
 
 def playback_stop() -> None:
