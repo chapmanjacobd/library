@@ -33,13 +33,13 @@ def parse_args(action, usage):
 
     subp_profile = parser.add_mutually_exclusive_group()
     subp_profile.add_argument(
-        "--audio", action="store_const", dest="profile", const=DLProfile.audio, help="Use audio downloader"
+        "--audio", "-a", action="store_const", dest="profile", const=DLProfile.audio, help="Use audio downloader"
     )
     subp_profile.add_argument(
-        "--video", action="store_const", dest="profile", const=DLProfile.video, help="Use video downloader"
+        "--video", "-v", action="store_const", dest="profile", const=DLProfile.video, help="Use video downloader"
     )
     subp_profile.add_argument(
-        "--image", action="store_const", dest="profile", const=DLProfile.image, help="Use image downloader"
+        "--image", "-i", action="store_const", dest="profile", const=DLProfile.image, help="Use image downloader"
     )
 
     parser.add_argument(
@@ -64,7 +64,7 @@ def parse_args(action, usage):
             "--no-sanitize", "-s", action="store_true", help="Don't sanitize some common URL parameters"
         )
     if action == DSC.block:
-        parser.add_argument("--all-deleted-playlists", "-a", action="store_true", help=argparse.SUPPRESS)
+        parser.add_argument("--all-deleted-playlists", "--all", action="store_true", help=argparse.SUPPRESS)
     if action in [DSC.dladd, DSC.dlupdate]:
         parser.add_argument("--category", "-c", help=argparse.SUPPRESS)
     if action == DSC.download:
@@ -89,16 +89,21 @@ def parse_args(action, usage):
         parser.add_argument("playlists", nargs="*", help=argparse.SUPPRESS)
 
     args = parser.parse_args()
-    if args.limit in ["inf", "all"]:
-        args.limit = None
-    if args.duration:
-        args.duration = play_actions.parse_duration(args)
+    if action == DSC.download:
+        if args.limit in ["inf", "all"]:
+            args.limit = None
+        if args.duration:
+            args.duration = play_actions.parse_duration(args)
 
     if args.db:
         args.database = args.db
     if action in [DSC.dladd, DSC.block]:
         Path(args.database).touch()
     args.db = db.connect(args)
+
+    if hasattr(args, "no_sanitize") and hasattr(args, "playlists") and not args.no_sanitize:
+        args.playlists = [paths.sanitize_url(args, p) for p in args.playlists]
+
     log.info(utils.dict_filter_bool(args.__dict__))
 
     return args
@@ -549,6 +554,7 @@ def yt(args, m, audio_only=False) -> None:
 
 def dl_download(args=None) -> None:
     # TODO: scan downloaded file, add size, subtitle_count to media table
+    # keep playlist_index and use for ordering
     if args:
         sys.argv[1:] = args
 
