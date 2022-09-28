@@ -33,13 +33,13 @@ def parse_args(action, usage):
 
     subp_profile = parser.add_mutually_exclusive_group()
     subp_profile.add_argument(
-        "--audio", "-a", action="store_const", dest="profile", const=DLProfile.audio, help="Use audio downloader"
+        "--audio", "-A", action="store_const", dest="profile", const=DLProfile.audio, help="Use audio downloader"
     )
     subp_profile.add_argument(
-        "--video", "-v", action="store_const", dest="profile", const=DLProfile.video, help="Use video downloader"
+        "--video", "-V", action="store_const", dest="profile", const=DLProfile.video, help="Use video downloader"
     )
     subp_profile.add_argument(
-        "--image", "-i", action="store_const", dest="profile", const=DLProfile.image, help="Use image downloader"
+        "--image", "-I", action="store_const", dest="profile", const=DLProfile.image, help="Use image downloader"
     )
 
     parser.add_argument(
