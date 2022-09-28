@@ -19,7 +19,7 @@ def connect(args) -> sqlite_utils.Database:
 
 
 def optimize(args) -> None:
-    print("Optimizing database")
+    print("\nOptimizing database")
     db: sqlite_utils.Database = args.db
     columns = db["media"].columns_dict
 
