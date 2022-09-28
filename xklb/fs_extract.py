@@ -212,24 +212,24 @@ def parse_args() -> argparse.Namespace:
 
     db_type = parser.add_mutually_exclusive_group()
     db_type.add_argument(
-        "--audio", "-a", action="store_const", dest="db_type", const=DBType.audio, help="Create audio database"
+        "--audio", "-A", action="store_const", dest="db_type", const=DBType.audio, help="Create audio database"
     )
     db_type.add_argument(
         "--filesystem",
-        "-f",
+        "-F",
         action="store_const",
         dest="db_type",
         const=DBType.filesystem,
         help="Create filesystem database",
     )
     db_type.add_argument(
-        "--video", action="store_const", dest="db_type", const=DBType.video, help="Create video database"
+        "--video", "-V", action="store_const", dest="db_type", const=DBType.video, help="Create video database"
     )
     db_type.add_argument(
-        "--text", "-t", action="store_const", dest="db_type", const=DBType.text, help="Create text database"
+        "--text", "-T", action="store_const", dest="db_type", const=DBType.text, help="Create text database"
     )
     db_type.add_argument(
-        "--image", "-i", action="store_const", dest="db_type", const=DBType.image, help="Create image database"
+        "--image", "-I", action="store_const", dest="db_type", const=DBType.image, help="Create image database"
     )
     parser.set_defaults(db_type=DBType.video)
 
