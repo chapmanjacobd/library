@@ -31,11 +31,11 @@ def usage() -> str:
     online media subcommands:
       tubeadd [ta, xt]             Create a tube database; Add playlists
       tubeupdate [tu]              Add new videos from saved playlists
-      tubelist [playlists]         List added playlists
+      tubelist [pl, playlists]     List added playlists
       tubewatch [tw, entries]      Watch the tube
       tubelisten [tl]              Listen to the tube
 
-    download subcommands (largely untested, under construction):
+    download subcommands (under construction):
       dladd [da]                   Create a download database; Add URLs
       dlupdate [du]                Add new videos from saved playlists
       download [dl]                Download media
@@ -94,7 +94,7 @@ def lb(args=None) -> None:
     subp_christen = subparsers.add_parser("christen", add_help=False)
     subp_christen.set_defaults(func=scripts.rename_invalid_files)
 
-    subp_tubelist = subparsers.add_parser("tubelist", aliases=["playlist", "playlists"], add_help=False)
+    subp_tubelist = subparsers.add_parser("tubelist", aliases=["playlist", "playlists", "pl"], add_help=False)
     subp_tubelist.set_defaults(func=tube_list)
     subp_tubeadd = subparsers.add_parser("tubeadd", aliases=["ta", "xt"], add_help=False)
     subp_tubeadd.set_defaults(func=tube_add)

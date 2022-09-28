@@ -34,11 +34,11 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
     online media subcommands:
       tubeadd [ta, xt]             Create a tube database; Add playlists
       tubeupdate [tu]              Add new videos from saved playlists
-      tubelist [playlists]         List added playlists
+      tubelist [pl, playlists]     List added playlists
       tubewatch [tw, entries]      Watch the tube
       tubelisten [tl]              Listen to the tube
 
-    download subcommands (largely untested, under construction):
+    download subcommands (under construction):
       dladd [da]                   Create a download database; Add URLs
       dlupdate [du]                Add new videos from saved playlists
       download [dl]                Download media
