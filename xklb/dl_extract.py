@@ -436,20 +436,20 @@ def process_downloadqueue(args) -> List[dict]:
 
 
 def update_media(args, info, webpath) -> None:
-    assert info["local_path"] != ""
+    local_path = info["local_path"]
+    assert local_path != ""
     r = list(args.db.query("select * from media where path=?", [webpath]))
     assert len(r) == 1
     stub = r[0]
 
     entry = tube_backend.consolidate(stub["playlist_path"], info) or {}
-
     args.db["media"].insert(
         {
             **stub,
             **entry,
             "play_count": stub["play_count"],
             "time_played": stub["time_played"],
-            "path": info["local_path"],
+            "path": local_path,
             "webpath": webpath,
             "is_downloaded": 1,
         },
@@ -486,7 +486,6 @@ def yt(args, m, audio_only=False) -> None:
         args,
         func_opts={
             "cookiesfrombrowser": ("firefox",),
-            "download_archive": "~/.local/share/yt_archive.txt",
             "subtitleslangs": ["en.*", "EN.*"],
             "extractor_args": {"youtube": {"skip": ["authcheck"]}},
             "logger": BadToTheBoneLogger(),
@@ -509,6 +508,10 @@ def yt(args, m, audio_only=False) -> None:
         },
         playlist_opts=m["dl_config"],
     )
+
+    download_archive = Path("~/.local/share/yt_archive.txt").resolve()
+    if download_archive.exists():
+        ydl_opts["download_archive"] = str(download_archive)
 
     if args.small:
         ydl_opts["format"] = "bestvideo[height<=576]+bestaudio/best[height<=576]/best"
@@ -552,7 +555,7 @@ def yt(args, m, audio_only=False) -> None:
         ydl_errors = "\n".join([s for s in ydl_errors if not yt_meaningless_errors.match(s)])
 
         if len(ydl_log["error"]) == 0:
-            log.info("[%s]: No news is good news", m["path"])
+            log.debug("[%s]: No news is good news", m["path"])
             update_media(args, info, m["path"])
         elif yt_recoverable_errors.match(ydl_errors):
             log.info("[%s]: Recoverable error matched. %s", m["path"], ydl_errors)
