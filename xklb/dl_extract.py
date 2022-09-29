@@ -80,6 +80,12 @@ def parse_args(action, usage):
         parser.add_argument("--duration", "-d", action="append", help=argparse.SUPPRESS)
         parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", help=argparse.SUPPRESS)
         parser.add_argument("--small", action="store_true", help="Prefer 480p-like")
+        parser.add_argument(
+            "--retry-delay",
+            "-r",
+            default="14 days",
+            help="Must be specified in SQLITE Modifiers format: N hours, days, months, or years",
+        )
 
     parser.add_argument("database", nargs="?", default="dl.db", help=argparse.SUPPRESS)
     if action == DSC.dladd:
@@ -321,8 +327,8 @@ def construct_query(args) -> Tuple[str, dict]:
 
     if not args.print:
         cf.append(
-            """and cast(STRFTIME('%s',
-                datetime( time_download, 'unixepoch', '-14 Days', '+3 hours' )
+            f"""and cast(STRFTIME('%s',
+                datetime( time_download, 'unixepoch', '-{args.retry_delay}')
             ) as int) < STRFTIME('%s', datetime()) """
         )
 
