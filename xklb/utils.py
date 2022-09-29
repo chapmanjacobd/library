@@ -25,6 +25,7 @@ DEFAULT_PLAY_QUEUE = 120
 DEFAULT_MULTIPLE_PLAYBACK = -1
 CPU_COUNT = int(os.cpu_count() or 4)
 PYTEST_RUNNING = "pytest" in sys.modules
+REGEX_ANSI_ESCAPE = re.compile(r"(?:\x1B[@-_]|[\x80-\x9F])[0-?]*[ -/]*[@-~]")
 
 
 def exit_nicely(_signal, _frame):
@@ -342,7 +343,10 @@ def col_naturaldate(tbl: List[Dict], col: str) -> List[Dict]:
 def col_naturalsize(tbl: List[Dict], col: str) -> List[Dict]:
     for idx, _d in enumerate(tbl):
         if tbl[idx].get(col) is not None:
-            tbl[idx][col] = humanize.naturalsize(tbl[idx][col])
+            if tbl[idx][col] == 0:
+                tbl[idx][col] = None
+            else:
+                tbl[idx][col] = humanize.naturalsize(tbl[idx][col])
 
     return tbl
 

@@ -97,14 +97,29 @@ def printer(args) -> None:
             , playlists.title
             , playlists.category
             , playlists.profile download_profile
-            , coalesce(playlists.path, "Playlist-less videos") path
+            , coalesce(playlists.path, "Playlist-less media") path
             , sum(media.duration) duration
             , sum(media.size) size
             , count(*) count
         from media
         left join playlists on playlists.path = media.playlist_path
-        group by coalesce(playlists.path, "Playlist-less videos")
+        group by coalesce(playlists.path, "Playlist-less media")
         order by playlists.is_deleted desc, category, profile, playlists.path"""
+
+    if "g" in args.print:
+        query = f"""select
+            playlists.ie_key
+            , playlists.category
+            , playlists.profile download_profile
+            , is_downloaded
+            , sum(media.duration) duration
+            , sum(media.size) size
+            , count(*) count
+        from media
+        left join playlists on playlists.path = media.playlist_path
+        where category != '__BLOCKLIST_ENTRY_'
+        group by is_downloaded, playlists.ie_key, playlists.category, playlists.profile
+        order by is_downloaded desc, sum(is_downloaded), category, profile"""
 
     db_resp = list(args.db.query(query))
 
@@ -121,7 +136,8 @@ def printer(args) -> None:
 
         print(tabulate(tbl, tablefmt="fancy_grid", headers="keys", showindex=False))  # type: ignore
 
-        print(f"{len(db_resp)} playlists" if len(db_resp) >= 2 else "1 playlist")
+        if "g" not in args.print:
+            print(f"{len(db_resp)} playlists" if len(db_resp) >= 2 else "1 playlist")
         duration = sum(map(lambda m: m.get("duration") or 0, db_resp))
         if duration > 0:
             duration = human_time(duration)
@@ -168,7 +184,7 @@ def tube_list() -> None:
     )
     parser.add_argument("database", nargs="?", default="tube.db")
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
-    parser.add_argument("--print", "-p", nargs="*", default="p", choices=["p", "f", "a"], help=argparse.SUPPRESS)
+    parser.add_argument("--print", "-p", nargs="*", default="p", choices=["p", "f", "a", "g"], help=argparse.SUPPRESS)
     parser.add_argument("--delete", "--remove", "--erase", "--rm", "-rm", nargs="+", help=argparse.SUPPRESS)
     parser.add_argument("-v", "--verbose", action="count", default=0)
     args = parser.parse_args()

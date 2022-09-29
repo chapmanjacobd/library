@@ -206,7 +206,7 @@ Organize via separate databases.
 
 #### mnamer
 
-To rename poorly named files I recommend (mnamer)[https://github.com/jkwill87/mnamer]
+To rename poorly named files I recommend [mnamer](https://github.com/jkwill87/mnamer)
 
     pip install mnamer
     mnamer --movie-directory ~/d/70_Now_Watching/ --episode-directory ~/d/70_Now_Watching/ \
