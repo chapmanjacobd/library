@@ -436,7 +436,7 @@ def process_downloadqueue(args) -> List[dict]:
 
 
 def update_media(
-    args, webpath, info: Optional[dict], db_type: Optional[fs_extract.DBType] = None, error=None, URE=False
+    args, webpath, info: Optional[dict] = None, db_type: Optional[fs_extract.DBType] = None, error=None, URE=False
 ) -> None:
     r = list(args.db.query("select * from media where path=?", [webpath]))
     assert len(r) == 1
@@ -457,7 +457,7 @@ def update_media(
         return
 
     assert info["local_path"] != ""
-    if db_type:
+    if Path(info["local_path"]).exists():
         fs_args = argparse.Namespace(
             db_type=db_type,
             scan_subtitles=False,
