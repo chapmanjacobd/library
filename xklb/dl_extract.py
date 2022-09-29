@@ -544,9 +544,9 @@ def yt(args, m) -> None:
             "extractor_retries": 13,
             "retries": 13,
             "outtmpl": {
-                "default": out_dir("%(uploader)s/%(title).200B_[%(id).60B].%(ext)s"),
+                "default": out_dir("%(uploader|uploader_id)s/%(title).200B_[%(id).60B].%(ext)s"),
                 "chapter": out_dir(
-                    "%(uploader)s/%(title).200B - %(section_number)03d %(section_title)s [%(id).60B].%(ext)s"
+                    "%(uploader|uploader_id)s/%(title).200B_%(section_number)03d_%(section_title)s_[%(id).60B].%(ext)s"
                 ),
             },
         },
