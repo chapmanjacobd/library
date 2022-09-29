@@ -328,7 +328,7 @@ def construct_query(args) -> Tuple[str, dict]:
     if not args.print:
         cf.append(
             f"""and cast(STRFTIME('%s',
-                datetime( time_download, 'unixepoch', '-{args.retry_delay}')
+                datetime( time_download, 'unixepoch', '+{args.retry_delay}')
             ) as int) < STRFTIME('%s', datetime()) """
         )
 
@@ -544,7 +544,7 @@ def yt(args, m) -> None:
             "extractor_retries": 13,
             "retries": 13,
             "outtmpl": {
-                "default": out_dir("%(uploader)s/%(title).200B [%(id).60B].%(ext)s"),
+                "default": out_dir("%(uploader)s/%(title).200B_[%(id).60B].%(ext)s"),
                 "chapter": out_dir(
                     "%(uploader)s/%(title).200B - %(section_number)03d %(section_title)s [%(id).60B].%(ext)s"
                 ),
