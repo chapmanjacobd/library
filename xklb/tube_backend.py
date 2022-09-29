@@ -306,6 +306,12 @@ def consolidate(playlist_path: str, v: dict, ydl: Optional[yt_dlp.YoutubeDL] = N
         "location",
         "downloader_options",
         "container",
+        "local_path",
+        "album",
+        "artist",
+        "release_year",
+        "creator",
+        "alt_title",
     ]
 
     if v.get("title") in ["[Deleted video]", "[Private video]"]:
@@ -409,8 +415,9 @@ def process_playlist(args, playlist_path, ydl_opts) -> Union[List[Dict], None]:
                     _add_playlist(args, playlist_path, deepcopy(info), entry)
 
                     self.current_video_count += 1
-                    sys.stdout.write("\033[K\r")
-                    print(f"[{playlist_path}] Added {self.current_video_count} videos", end="\r", flush=True)
+                    if self.current_video_count > 1:
+                        sys.stdout.write("\033[K\r")
+                        print(f"[{playlist_path}] Added {self.current_video_count} videos", end="\r", flush=True)
             return [], info
 
         def _add_media(self, entry) -> Union[dict, None]:
