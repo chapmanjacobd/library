@@ -1,4 +1,4 @@
-import argparse, csv, operator, os, sqlite3, sys
+import argparse, csv, datetime, operator, os, sqlite3, sys
 from copy import deepcopy
 from io import StringIO
 from pathlib import Path
@@ -113,9 +113,8 @@ def parse_args(action, usage):
 def dl_add(args=None) -> None:
     """
     TODO:
-        test dladd playlists of playlists, auto expand
         auto-detect reddit, use bdfr
-        option for immediate download? (bandcamp, short-term valid URLs)
+        option for immediate download?
     """
 
     if args:
@@ -320,6 +319,13 @@ def construct_query(args) -> Tuple[str, dict]:
         args, bindings, cf, tube_actions.tube_include_string, tube_actions.tube_exclude_string
     )
 
+    if not args.print:
+        cf.append(
+            """and cast(STRFTIME('%s',
+                datetime( time_download, 'unixepoch', '-14 Days', '+3 hours' )
+            ) as int) < STRFTIME('%s', datetime()) """
+        )
+
     args.sql_filter = " ".join(cf)
     args.sql_filter_bindings = bindings
 
@@ -441,11 +447,13 @@ def update_media(
     r = list(args.db.query("select * from media where path=?", [webpath]))
     assert len(r) == 1
     stub = r[0]
+    now = int(datetime.datetime.now().timestamp())
 
     if not info:
         args.db["media"].insert(
             {
                 **stub,
+                "time_download": now,
                 "is_downloaded": 0,
                 "is_deleted": 1 if URE else 0,
                 "error": error,
@@ -477,6 +485,7 @@ def update_media(
             **fs_tags,
             "play_count": stub["play_count"],
             "time_played": stub["time_played"],
+            "time_download": now,
             "webpath": webpath,
             "is_downloaded": 1 if db_type else 0,
             "is_deleted": 1 if URE else 0,
@@ -601,8 +610,6 @@ def yt(args, m) -> None:
 
 
 def dl_download(args=None) -> None:
-    # TODO: scan downloaded file, add size, subtitle_count to media table
-    # keep playlist_index and use for ordering
     if args:
         sys.argv[1:] = args
 
@@ -663,9 +670,12 @@ def dl_download(args=None) -> None:
     for m in media:
         # check again in case it was already completed by another process
         is_downloaded = list(args.db.query("select is_downloaded from media where path=?", [m["path"]]))
-        if is_downloaded[0]["is_downloaded"] == 1:
+        if len(is_downloaded) == 0:
             log.info("[%s]: Already downloaded. Skipping!", m["path"])
             continue
+
+        if m.get("profile") is None:
+            m["profile"] = DLProfile.video
 
         if m["profile"] in [DLProfile.audio, DLProfile.video]:
             yt(args, m)

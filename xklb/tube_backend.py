@@ -343,6 +343,7 @@ def consolidate(playlist_path: str, v: dict, ydl: Optional[yt_dlp.YoutubeDL] = N
     cv["duration"] = 0 if not duration else int(duration)
     cv["is_deleted"] = 0
     cv["is_downloaded"] = 0
+    cv["time_download"] = 0
     cv["play_count"] = 0
     cv["time_played"] = 0
     cv["language"] = v.pop("language", None)

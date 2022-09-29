@@ -112,6 +112,7 @@ def printer(args) -> None:
             , playlists.category
             , playlists.profile download_profile
             , is_downloaded
+            , avg(time_download) avg_time_since_download
             , sum(media.duration) duration
             , sum(media.size) size
             , count(*) count
@@ -131,6 +132,7 @@ def printer(args) -> None:
         tbl = utils.col_resize(tbl, "path", 40)
         tbl = utils.col_resize(tbl, "uploader_url")
 
+        utils.col_naturaldate(tbl, "avg_time_since_download")
         utils.col_naturalsize(tbl, "size")
         utils.col_duration(tbl, "duration")
 
