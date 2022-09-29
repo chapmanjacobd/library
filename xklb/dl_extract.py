@@ -79,6 +79,7 @@ def parse_args(action, usage):
         parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
         parser.add_argument("--duration", "-d", action="append", help=argparse.SUPPRESS)
         parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", help=argparse.SUPPRESS)
+        parser.add_argument("--small", "-s", action="store_true", help="Prefer 480p-like")
 
     parser.add_argument("database", nargs="?", default="dl.db", help=argparse.SUPPRESS)
     if action == DSC.dladd:
@@ -484,23 +485,31 @@ def yt(args, m, audio_only=False) -> None:
     ydl_opts = tube_backend.ydl_opts(
         args,
         func_opts={
+            "cookiesfrombrowser": ('firefox', ),
+            "download_archive": '~/.local/share/yt_archive.txt',
+            "subtitleslangs": ["en.*", "EN.*"],
+            'extractor_args': {'youtube': {'skip': ['authcheck']}},
             "logger": BadToTheBoneLogger(),
-            "skip_download": False if not utils.PYTEST_RUNNING else True,
-            "subtitlesformat": "srt/best",
             "writesubtitles": True,
             "writeautomaticsub": True,
-            "subtitleslangs": ["en.*", "EN.*"],
+            "skip_download": True if utils.PYTEST_RUNNING else False,
+            "subtitlesformat": "srt/best",
             "extract_flat": False,
             "lazy_playlist": False,
-            "playlistend": 400,  # limit playlists of playlists for safety
-            "postprocessors": [{"key": "FFmpegMetadata", "add_metadata": True}],
+            "postprocessors": [{"key": "FFmpegMetadataPP"}, {"key": "FFmpegEmbedSubtitlePP"}],
+            "restrictfilenames": True,
+            "extractor_retries": 13,
+            "retries": 13,
             "outtmpl": {
-                "default": out_dir("%(title)s [%(id)s].%(ext)s"),
-                "chapter": out_dir("%(title)s - %(section_number)03d %(section_title)s [%(id)s].%(ext)s"),
+                "default": out_dir("%(uploader)s/%(title).200B [%(id).60B].%(ext)s"),
+                "chapter": out_dir("%(uploader)s/%(title).200B - %(section_number)03d %(section_title)s [%(id).60B].%(ext)s"),
             },
         },
         playlist_opts=m["dl_config"],
     )
+
+    if args.small:
+        ydl_opts['format'] = 'bestvideo[height<=576]+bestaudio/best[height<=576]/best'
 
     if args.ext == "DEFAULT":
         if audio_only:
@@ -512,9 +521,11 @@ def yt(args, m, audio_only=False) -> None:
         ydl_opts[
             "format"
         ] = "bestaudio[ext=opus]/bestaudio[ext=webm]/bestaudio[ext=ogg]/bestaudio[ext=oga]/bestaudio/best"
-        ydl_opts["postprocessors"].append({"key": "FFmpegExtractAudio", "preferredcodec": args.ext})
+        ydl_opts["postprocessors"].append({"key": "FFmpegExtractAudioPP", "preferredcodec": args.ext})
 
     match_filters = ["live_status=?not_live"]
+    if args.small:
+        match_filters.append('duration >? 59 & duration <? 14399')
     match_filter_user_config = ydl_opts.get("match_filter")
     if match_filter_user_config is not None:
         match_filters.append(match_filter_user_config)
@@ -536,17 +547,16 @@ def yt(args, m, audio_only=False) -> None:
             info["local_path"] = ydl.prepare_filename(info)
 
         ydl_errors = ydl_log["error"] + ydl_log["warning"]
-        print(ydl_errors)
         ydl_errors = "\n".join([s for s in ydl_errors if not yt_meaningless_errors.match(s)])
 
         if len(ydl_log["error"]) == 0:
             log.info("[%s]: No news is good news", m["path"])
             update_media(args, info, m["path"])
         elif yt_recoverable_errors.match(ydl_errors):
-            log.info("[%s]: Recoverable error matched. try again later", m["path"])
+            log.info("[%s]: Recoverable error matched. %s", m["path"], ydl_errors)
             return
         elif yt_unrecoverable_errors.match(ydl_errors):
-            log.info("[%s]: Unrecoverable error matched. oi troi oi! nothing can be done", m["path"])
+            log.info("[%s]: Unrecoverable error matched. %s", m["path"], ydl_errors)
             update_media(args, info, m["path"])
         else:
             log.warning("[%s]: Unknown error. %s", m["path"], ydl_errors)
