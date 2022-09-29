@@ -3,14 +3,14 @@ from copy import deepcopy
 from io import StringIO
 from pathlib import Path
 from shlex import quote
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 import gallery_dl as gdl
 import yt_dlp
 from rich.prompt import Confirm
 from tabulate import tabulate
 
-from xklb import db, paths, play_actions, player, tube_actions, tube_backend, utils
+from xklb import db, fs_extract, paths, play_actions, player, tube_actions, tube_backend, utils
 from xklb.dl_config import yt_meaningless_errors, yt_recoverable_errors, yt_unrecoverable_errors
 from xklb.utils import log
 
@@ -435,33 +435,63 @@ def process_downloadqueue(args) -> List[dict]:
     return media
 
 
-def update_media(args, info, webpath) -> None:
-    local_path = info["local_path"]
-    assert local_path != ""
+def update_media(
+    args, webpath, info: Optional[dict], db_type: Optional[fs_extract.DBType] = None, error=None, URE=False
+) -> None:
     r = list(args.db.query("select * from media where path=?", [webpath]))
     assert len(r) == 1
     stub = r[0]
+
+    if not info:
+        args.db["media"].insert(
+            {
+                **stub,
+                "is_downloaded": 0,
+                "is_deleted": 1 if URE else 0,
+                "error": error,
+            },
+            pk="path",
+            alter=True,
+            replace=True,
+        )  # type: ignore
+        return
+
+    assert info["local_path"] != ""
+    if db_type:
+        fs_args = argparse.Namespace(
+            db_type=db_type,
+            scan_subtitles=False,
+            delete_unplayable=False,
+            ocr=False,
+            speech_recognition=False,
+        )
+        fs_tags = fs_extract.extract_metadata(fs_args, info["local_path"]) or {}
+    else:
+        fs_tags = {}
 
     entry = tube_backend.consolidate(stub["playlist_path"], info) or {}
     args.db["media"].insert(
         {
             **stub,
             **entry,
+            **fs_tags,
             "play_count": stub["play_count"],
             "time_played": stub["time_played"],
-            "path": local_path,
             "webpath": webpath,
-            "is_downloaded": 1,
+            "is_downloaded": 1 if db_type else 0,
+            "is_deleted": 1 if URE else 0,
+            "error": error,
         },
         pk="path",
         alter=True,
         replace=True,
     )  # type: ignore
 
-    args.db["media"].delete(webpath)
+    if len(fs_tags) > 0:
+        args.db["media"].delete(webpath)
 
 
-def yt(args, m, audio_only=False) -> None:
+def yt(args, m) -> None:
     ydl_log = {"warning": [], "error": []}
 
     class BadToTheBoneLogger:
@@ -485,7 +515,6 @@ def yt(args, m, audio_only=False) -> None:
     ydl_opts = tube_backend.ydl_opts(
         args,
         func_opts={
-            "cookiesfrombrowser": ("firefox",),
             "subtitleslangs": ["en.*", "EN.*"],
             "extractor_args": {"youtube": {"skip": ["authcheck"]}},
             "logger": BadToTheBoneLogger(),
@@ -512,17 +541,18 @@ def yt(args, m, audio_only=False) -> None:
     download_archive = Path("~/.local/share/yt_archive.txt").resolve()
     if download_archive.exists():
         ydl_opts["download_archive"] = str(download_archive)
+        ydl_opts["cookiesfrombrowser"] = (("firefox",),)
 
     if args.small:
         ydl_opts["format"] = "bestvideo[height<=576]+bestaudio/best[height<=576]/best"
 
     if args.ext == "DEFAULT":
-        if audio_only:
+        if m["profile"] == DLProfile.audio:
             args.ext = "opus"
         else:
             args.ext = None
 
-    if audio_only:
+    if m["profile"] == DLProfile.audio:
         ydl_opts[
             "format"
         ] = "bestaudio[ext=opus]/bestaudio[ext=webm]/bestaudio[ext=ogg]/bestaudio[ext=oga]/bestaudio/best"
@@ -540,13 +570,16 @@ def yt(args, m, audio_only=False) -> None:
         try:
             info = ydl.extract_info(m["path"], download=True)
         except yt_dlp.DownloadError as e:
-            log.warning("[%s]: yt-dlp %s", m["path"], e)
+            error = utils.REGEX_ANSI_ESCAPE.sub("", str(e))
+            log.warning("[%s]: yt-dlp %s", m["path"], error)
+            update_media(args, m["path"], error=error)
             return
         if info is None:
             log.warning("[%s]: yt-dlp returned no info", m["path"])
+            update_media(args, m["path"], error="yt-dlp returned no info")
             return
 
-        if audio_only:
+        if m["profile"] == DLProfile.audio:
             info["local_path"] = ydl.prepare_filename({**info, "ext": args.ext})
         else:
             info["local_path"] = ydl.prepare_filename(info)
@@ -556,13 +589,13 @@ def yt(args, m, audio_only=False) -> None:
 
         if len(ydl_log["error"]) == 0:
             log.debug("[%s]: No news is good news", m["path"])
-            update_media(args, info, m["path"])
+            update_media(args, m["path"], info, m["profile"])
         elif yt_recoverable_errors.match(ydl_errors):
             log.info("[%s]: Recoverable error matched. %s", m["path"], ydl_errors)
-            return
+            update_media(args, m["path"], info, error=ydl_errors)
         elif yt_unrecoverable_errors.match(ydl_errors):
             log.info("[%s]: Unrecoverable error matched. %s", m["path"], ydl_errors)
-            update_media(args, info, m["path"])
+            update_media(args, m["path"], info, error=ydl_errors, URE=True)
         else:
             log.warning("[%s]: Unknown error. %s", m["path"], ydl_errors)
 
@@ -603,6 +636,27 @@ def dl_download(args=None) -> None:
     Print list of saved playlists
 
         library playlists dl.db -p a
+
+    Print download queue groups
+
+        library playlists dl.db -p g
+        ╒══════════╤════════════════════╤════════════════════╤═════════════════╤═══════════════╤══════════╤═════════╕
+        │ ie_key   │ category           │ download_profile   │   is_downloaded │ duration      │ size     │   count │
+        ╞══════════╪════════════════════╪════════════════════╪═════════════════╪═══════════════╪══════════╪═════════╡
+        │ Youtube  │ 71_Mealtime_Videos │ video              │               1 │ 3 hours and   │ 961.6 MB │      42 │
+        │          │                    │                    │                 │ 13.80 minutes │          │         │
+        ├──────────┼────────────────────┼────────────────────┼─────────────────┼───────────────┼──────────┼─────────┤
+        │ Youtube  │ 81_New_Music       │ audio              │               1 │ 2 days, 14    │ 21.3 MB  │     766 │
+        │          │                    │                    │                 │ hours and 31  │          │         │
+        │          │                    │                    │                 │ minutes       │          │         │
+        ├──────────┼────────────────────┼────────────────────┼─────────────────┼───────────────┼──────────┼─────────┤
+        │ Youtube  │ 71_Mealtime_Videos │ video              │               0 │ 5 hours and   │          │      83 │
+        │          │                    │                    │                 │ 51.83 minutes │          │         │
+        ├──────────┼────────────────────┼────────────────────┼─────────────────┼───────────────┼──────────┼─────────┤
+        │ Youtube  │ 81_New_Music       │ audio              │               0 │ 14 days, 2    │          │    3753 │
+        │          │                    │                    │                 │ hours and 31  │          │         │
+        │          │                    │                    │                 │ minutes       │          │         │
+        ╘══════════╧════════════════════╧════════════════════╧═════════════════╧═══════════════╧══════════╧═════════╛
     """,
     )
     media = process_downloadqueue(args)
@@ -613,10 +667,8 @@ def dl_download(args=None) -> None:
             log.info("[%s]: Already downloaded. Skipping!", m["path"])
             continue
 
-        if m["profile"] == DLProfile.video:
+        if m["profile"] in [DLProfile.audio, DLProfile.video]:
             yt(args, m)
-        elif m["profile"] == DLProfile.audio:
-            yt(args, m, audio_only=True)
         # elif m['profile'] == DLProfile.image:
         else:
             raise NotImplementedError
