@@ -184,7 +184,7 @@ def tube_list() -> None:
     )
     parser.add_argument("database", nargs="?", default="tube.db")
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
-    parser.add_argument("--print", "-p", nargs="*", default="p", choices=["p", "f", "a", "g"], help=argparse.SUPPRESS)
+    parser.add_argument("--print", "-p", nargs="*", default="p", choices=["a", "f", "g", "p"], help=argparse.SUPPRESS)
     parser.add_argument("--delete", "--remove", "--erase", "--rm", "-rm", nargs="+", help=argparse.SUPPRESS)
     parser.add_argument("-v", "--verbose", action="count", default=0)
     args = parser.parse_args()
