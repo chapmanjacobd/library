@@ -29,7 +29,13 @@ class TestTube(unittest.TestCase):
         dl_add([*dl_db, "-c=Self", PLAYLIST_URL])
 
         args = Namespace(
-            database=dl_db[1], dl_config={}, prefix=STORAGE_PREFIX, ext=None, ignore_errors=False, verbose=0
+            database=dl_db[1],
+            dl_config={},
+            prefix=STORAGE_PREFIX,
+            ext=None,
+            ignore_errors=False,
+            small=False,
+            verbose=0,
         )
         args.db = connect(args)
         yt(args, dict(path=PLAYLIST_VIDEO_URL, dl_config="{}", category="Self"))
@@ -39,7 +45,13 @@ class TestTube(unittest.TestCase):
         dl_add([*dl_db, "-c=Self", PLAYLIST_URL])
 
         args = Namespace(
-            database=dl_db[1], dl_config={}, prefix=STORAGE_PREFIX, ext="opus", ignore_errors=False, verbose=0
+            database=dl_db[1],
+            dl_config={},
+            prefix=STORAGE_PREFIX,
+            ext="opus",
+            ignore_errors=False,
+            small=False,
+            verbose=0,
         )
         args.db = connect(args)
         yt(args, dict(path=PLAYLIST_VIDEO_URL, dl_config="{}", category="Self"), audio_only=True)

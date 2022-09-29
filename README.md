@@ -135,8 +135,8 @@ or tools that you want to use for a few minutes daily, weekly, monthly, quarterl
 
 ### 1. Add your websites
 
-    library tabsadd --frequency monthly --category fun \
-        https://old.reddit.com/r/Showerthoughts/top/?sort=top&t=month \
+    library tabsadd --frequency monthly --category fun \\
+        https://old.reddit.com/r/Showerthoughts/top/?sort=top&t=month \\
         https://old.reddit.com/r/RedditDayOf/top/?sort=top&t=month
 
 ### 2. Add library tabs to cron
@@ -423,10 +423,18 @@ Organize via separate databases.
 
 ![fps](https://user-images.githubusercontent.com/7908073/184738438-ee566a4b-2da0-4e6d-a4b3-9bfca036aa2a.png)
 
+#### mnamer
+
+To rename poorly named files I recommend (mnamer)[https://github.com/jkwill87/mnamer]
+
+    pip install mnamer
+    mnamer --movie-directory ~/d/70_Now_Watching/ --episode-directory ~/d/70_Now_Watching/ \
+        --no-overwrite -b (library watch -p fd -s 'path : McCloud')
+    library fsadd ~/d/70_Now_Watching/
+
 #### rsync
 
 I use rsync to move files instead of copy-on-write duplication because I want deletions to stick.
-When I press the next button in the car I delete the song from my curated universe.
 
     function mrmusic
         rsync -a --remove-source-files --files-from=(
