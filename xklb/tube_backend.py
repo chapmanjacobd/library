@@ -366,12 +366,17 @@ def process_playlist(args, playlist_path, ydl_opts) -> Union[List[Dict], None]:
 
     class AddToArchivePP(yt_dlp.postprocessor.PostProcessor):
         current_video_count = 0
+        playlists_of_playlists = []
 
         def run(self, info) -> Tuple[list, dict]:
             if info:
                 url = safe_unpack(info.get("webpage_url"), info.get("url"), info.get("original_url"))
                 if url != playlist_path and info.get('webpage_url_basename') == 'playlist':
+                    if url in self.playlists_of_playlists:
+                        raise ExistingPlaylistVideoReached  # prevent infinite bug
+
                     process_playlist(args, url, ydl_opts)
+                    self.playlists_of_playlists.append(url)
                     return [], info
 
                 entry = self._add_media(deepcopy(info))
