@@ -340,9 +340,9 @@ def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
                     args.sort = ["duration", "size"]
 
         elif args.action in [SC.tubelisten, SC.tubewatch]:
-            args.sort = ["play_count", "random"]
+            args.sort = ["is_downloaded desc", "play_count"]
             if args.include:
-                args.sort = ["playlist_path", "duration desc"]
+                args.sort = ["is_downloaded desc", "playlist_path", "title"]
                 if args.print:
                     args.sort = ["playlist_path", "duration"]
 
