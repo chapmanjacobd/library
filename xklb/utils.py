@@ -335,7 +335,7 @@ def col_resize(tbl: List[Dict], col: str, size=10) -> List[Dict]:
 def col_naturaldate(tbl: List[Dict], col: str) -> List[Dict]:
     for idx, _d in enumerate(tbl):
         if tbl[idx].get(col) is not None:
-            tbl[idx][col] = humanize.naturalday(datetime.fromtimestamp(int(tbl[idx][col]), tz=timezone.utc))
+            tbl[idx][col] = humanize.naturaldate(datetime.fromtimestamp(int(tbl[idx][col]), tz=timezone.utc))
 
     return tbl
 
