@@ -29,7 +29,8 @@ def ydl_opts(args, func_opts=None, playlist_opts: Optional[str] = None) -> dict:
     default_opts = {
         "ignoreerrors": False,
         "no_warnings": False,
-        "quiet": True,
+        # "quiet": True,
+        "noprogress": True,
         "skip_download": True,
         "lazy_playlist": True,
         "extract_flat": True,
@@ -368,6 +369,10 @@ def process_playlist(args, playlist_path, ydl_opts) -> Union[List[Dict], None]:
 
         def run(self, info) -> Tuple[list, dict]:
             if info:
+                if info.get('webpage_url_basename') == 'playlist':
+                    url = safe_unpack(info.get("webpage_url", None), info.get("url", None), info.get("original_url", None))
+                    process_playlist(args, url, ydl_opts)
+                    return [], info
                 entry = self._add_media(deepcopy(info))
                 if entry:
                     _add_playlist(args, playlist_path, deepcopy(info), entry)

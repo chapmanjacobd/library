@@ -128,7 +128,7 @@ def construct_query(args) -> Tuple[str, dict]:
         {', video_count > 0 desc' if args.action == SC.watch else ''}
         {', audio_count > 0 desc' if args.action == SC.listen else ''}
         {', width < height desc' if args.portrait else ''}
-        {f', subtitle_count {subtitle_count} desc' if args.action == SC.watch and not args.print else ''}
+        {f', subtitle_count {subtitle_count} desc' if args.action == SC.watch and not any([args.print, 'subtitle_count' in args.where]) else ''}
         {',' + args.sort if args.sort else ''}
         , random()
     {LIMIT} {OFFSET}

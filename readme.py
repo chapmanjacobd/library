@@ -1,7 +1,7 @@
 from xklb import lb, play_actions
 
 print(
-    f"""# lb: xk media library
+    rf"""# lb: xk media library
 
 A wise philosopher once told me, "[The future is autotainment](https://www.youtube.com/watch?v=F9sZFrsjPp0)".
 
@@ -204,19 +204,27 @@ Organize via separate databases.
 
 ![fps](https://user-images.githubusercontent.com/7908073/184738438-ee566a4b-2da0-4e6d-a4b3-9bfca036aa2a.png)
 
+#### mnamer
+
+To rename poorly named files I recommend (mnamer)[https://github.com/jkwill87/mnamer]
+
+    pip install mnamer
+    mnamer --movie-directory ~/d/70_Now_Watching/ --episode-directory ~/d/70_Now_Watching/ \
+        --no-overwrite -b (library watch -p fd -s 'path : McCloud')
+    library fsadd ~/d/70_Now_Watching/
+
 #### rsync
 
 I use rsync to move files instead of copy-on-write duplication because I want deletions to stick.
-When I press the next button in the car I delete the song from my curated universe.
 
     function mrmusic
         rsync -a --remove-source-files --files-from=(
-            library lt ~/lb/audio.db -s /mnt/d/80_Now_Listening/ -p f \\
+            library lt ~/lb/audio.db -s /mnt/d/80_Now_Listening/ -p f \
             --moved /mnt/d/80_Now_Listening/ /mnt/d/ | psub
         ) /mnt/d/80_Now_Listening/ /mnt/d/
 
         rsync -a --remove-source-files --files-from=(
-            library lt ~/lb/audio.db -w play_count=0 -u random -L 1200 -p f \\
+            library lt ~/lb/audio.db -w play_count=0 -u random -L 1200 -p f \
             --moved /mnt/d/ /mnt/d/80_Now_Listening/ | psub
         ) /mnt/d/ /mnt/d/80_Now_Listening/
     end
