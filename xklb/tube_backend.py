@@ -13,9 +13,6 @@ from xklb.paths import SUB_TEMP_DIR
 from xklb.subtitle import subs_to_text
 from xklb.utils import combine, log, safe_unpack
 
-# TODO: add cookiesfrombrowser: ('firefox', ) as a default
-# crash if not installed ?
-
 
 def ydl_opts(args, func_opts=None, playlist_opts: Optional[str] = None) -> dict:
     if playlist_opts is None or playlist_opts == "":
@@ -40,42 +37,68 @@ def ydl_opts(args, func_opts=None, playlist_opts: Optional[str] = None) -> dict:
         "no_check_certificate": True,
         "check_formats": False,
         "ignore_no_formats_error": True,
-        "skip_playlist_after_errors": 20,
+        "skip_playlist_after_errors": 21,
         "clean_infojson": False,
         "playlistend": 20000,
         "rejecttitle": "|".join(
             [
-                "Trailer",
-                "Sneak Peek",
-                "Preview",
-                "Teaser",
-                "Promo",
-                "Crypto ",
-                "Montage",
-                "Bitcoin",
-                "Apology",
+                " AWARD",
                 " Clip",
-                "Clip ",
+                " GPU ",
+                " Scene",
+                " Terror",
+                "360",
+                "Advert",
+                "Announcement",
+                "Apology",
                 "Best of",
+                "Bitcoin",
+                "campaign",
+                "Ceremony",
+                "Clip ",
                 "Compilation",
+                "Crypto ",
+                "Event",
+                "Final Look",
+                "First Look",
+                "Graphics Card",
+                "Horror",
+                "In Theaters",
+                "Live ",
+                "Makeup",
+                "Meetup",
+                "Montage",
+                "Now Playing",
+                "Outtakes",
+                "Panel",
+                "Preview",
+                "Promo",
+                "Red Carpet Premiere",
+                "Sneak Peek",
+                "Stream",
+                "Teaser",
                 "Top 10",
-                "Top 9",
-                "Top 8",
-                "Top 7",
-                "Top 6",
-                "Top 5",
-                "Top 4",
-                "Top 3",
                 "Top 2",
-                "Top Ten",
-                "Top Nine",
+                "Top 3",
+                "Top 4",
+                "Top 5",
+                "Top 6",
+                "Top 7",
+                "Top 8",
+                "Top 9",
                 "Top Eight",
-                "Top Seven",
-                "Top Six",
                 "Top Five",
                 "Top Four",
+                "Top Nine",
+                "Top Seven",
+                "Top Six",
+                "Top Ten",
                 "Top Three",
                 "Top Two",
+                "Trailer",
+                "TV Spot",
+                "Twitch",
+                "World Premiere",
             ]
         ),
     }
@@ -360,23 +383,25 @@ def log_problem(args, playlist_path) -> None:
         log.warning("Could not add playlist %s", playlist_path)
 
 
+playlists_of_playlists = []
+
+
 def process_playlist(args, playlist_path, ydl_opts) -> Union[List[Dict], None]:
     class ExistingPlaylistVideoReached(yt_dlp.DownloadCancelled):
         pass
 
     class AddToArchivePP(yt_dlp.postprocessor.PostProcessor):
         current_video_count = 0
-        playlists_of_playlists = []
 
         def run(self, info) -> Tuple[list, dict]:
             if info:
                 url = safe_unpack(info.get("webpage_url"), info.get("url"), info.get("original_url"))
-                if url != playlist_path and info.get('webpage_url_basename') == 'playlist':
-                    if url in self.playlists_of_playlists:
+                if url != playlist_path and info.get("webpage_url_basename") == "playlist":
+                    if url in playlists_of_playlists:
                         raise ExistingPlaylistVideoReached  # prevent infinite bug
 
                     process_playlist(args, url, ydl_opts)
-                    self.playlists_of_playlists.append(url)
+                    playlists_of_playlists.append(url)
                     return [], info
 
                 entry = self._add_media(deepcopy(info))
