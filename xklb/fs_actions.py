@@ -124,6 +124,7 @@ def construct_query(args) -> Tuple[str, dict]:
         {args.sql_filter}
         {f'and path not like "%{args.keep_dir}%"' if args.post_action == 'askkeep' else ''}
         {'and is_deleted=0' if args.action in [SC.listen, SC.watch] and 'is_deleted' not in args.sql_filter else ''}
+        {'and is_downloaded=1' if args.action in [SC.listen, SC.watch] and 'is_downloaded' not in args.sql_filter else ''}
     ORDER BY 1=1
         {', video_count > 0 desc' if args.action == SC.watch else ''}
         {', audio_count > 0 desc' if args.action == SC.listen else ''}

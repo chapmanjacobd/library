@@ -69,9 +69,11 @@ def construct_tube_query(args) -> Tuple[str, dict]:
     {args.sql_filter}
     {'and width < height' if args.portrait else ''}
     ORDER BY 1=1
-        {',' + args.sort if args.sort else ''}
+        , video_count > 0 desc
+        , audio_count > 0 desc
+        {',' + args.sort}
         {', path' if args.print or args.include or args.play_in_order > 0 else ''}
-        , duration / size ASC
+        , random()
     {LIMIT} {OFFSET}
     """
 
