@@ -42,14 +42,14 @@ class MrSuperDialogue:
 
         s_width = self.root.winfo_screenwidth()
         s_height = self.root.winfo_screenheight()
-        x_cordinate = int((s_width / 2) - (window_width / 2))
-        y_cordinate = int((s_height / 2) - (window_height / 2))
-        self.root.geometry("{}x{}+{}+{}".format(window_width, window_height, x_cordinate, y_cordinate))
+        x_coordinate = int((s_width / 2) - (window_width / 2))
+        y_coordinate = int((s_height / 2) - (window_height / 2))
+        self.root.geometry("{}x{}+{}+{}".format(window_width, window_height, x_coordinate, y_coordinate))
         self.root.wm_attributes("-alpha", 1)
 
     def __init__(self, path, qty):
         def raise_error(self, *args):
-            raise
+            raise  # pylint: disable=misplaced-bare-raise
 
         Tk.report_callback_exception = raise_error
 
@@ -64,7 +64,7 @@ class MrSuperDialogue:
         self.root.wm_iconphoto(False, photo)
         self.root.wm_attributes("-topmost", 1)
 
-        for keyseq in ["<Escape>", "<Control-c>", "<Control-q>"]:
+        for keyseq in ("<Escape>", "<Control-c>", "<Control-q>"):
             self.root.bind(keyseq, lambda _ev: self.quit())
 
         # menu left
@@ -105,9 +105,9 @@ class MrSuperDialogue:
         self.root.grid_rowconfigure(1, weight=1)
         self.root.grid_columnconfigure(1, weight=1)
 
-        for keyseq in ["<Delete>", "d", "n", "1"]:
+        for keyseq in ("<Delete>", "d", "n", "1"):
             self.root.bind(keyseq, lambda _ev: self.delete())
-        for keyseq in ["k", "y", "2"]:
+        for keyseq in ("k", "y", "2"):
             self.root.bind(keyseq, lambda _ev: self.keep())
 
         self.move_window()
@@ -124,11 +124,11 @@ class MrSuperDialogue:
         raise NotImplementedError
 
     @staticmethod
-    def get_monitor_from_coord(x, y):
+    def get_monitor_from_coord(X, Y):
         monitors = screeninfo.get_monitors()
 
         for m in reversed(monitors):
-            if m.x <= x <= m.width + m.x and m.y <= y <= m.height + m.y:
+            if m.x <= X <= m.width + m.x and m.y <= Y <= m.height + m.y:
                 return m
         return monitors[0]
 

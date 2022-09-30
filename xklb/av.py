@@ -4,15 +4,8 @@ from typing import Dict, Union
 import ffmpeg, mutagen
 from tinytag import TinyTag
 
-from xklb import fs_extract, paths, subtitle, utils
+from xklb import fs_extract, subtitle, utils
 from xklb.utils import combine, log, safe_unpack
-
-
-def get_provenance(file):
-    if paths.youtube_dl_id(file) != "":
-        return "YouTube"
-
-    return None
 
 
 def get_subtitle_tags(args, f, streams, codec_types) -> dict:
@@ -43,49 +36,49 @@ def get_subtitle_tags(args, f, streams, codec_types) -> dict:
     return video_tags
 
 
-def parse_tags(mutagen: Dict, tinytag: Dict) -> dict:
+def parse_tags(mu: Dict, ti: Dict) -> dict:
     tags = {
         "mood": combine(
-            mutagen.get("albummood"),
-            mutagen.get("MusicMatch_Situation"),
-            mutagen.get("Songs-DB_Occasion"),
-            mutagen.get("albumgrouping"),
+            mu.get("albummood"),
+            mu.get("MusicMatch_Situation"),
+            mu.get("Songs-DB_Occasion"),
+            mu.get("albumgrouping"),
         ),
-        "genre": combine(mutagen.get("genre"), tinytag.get("genre"), mutagen.get("albumgenre")),
+        "genre": combine(mu.get("genre"), ti.get("genre"), mu.get("albumgenre")),
         "year": combine(
-            mutagen.get("originalyear"),
-            mutagen.get("TDOR"),
-            mutagen.get("TORY"),
-            mutagen.get("date"),
-            mutagen.get("TDRC"),
-            mutagen.get("TDRL"),
-            tinytag.get("year"),
+            mu.get("originalyear"),
+            mu.get("TDOR"),
+            mu.get("TORY"),
+            mu.get("date"),
+            mu.get("TDRC"),
+            mu.get("TDRL"),
+            ti.get("year"),
         ),
-        "bpm": safe_unpack(mutagen.get("fBPM"), mutagen.get("bpm_accuracy")),
-        "key": safe_unpack(mutagen.get("TIT1"), mutagen.get("key_accuracy"), mutagen.get("TKEY")),
-        "time": combine(mutagen.get("time_signature")),
-        "decade": safe_unpack(mutagen.get("Songs-DB_Custom1")),
-        "categories": safe_unpack(mutagen.get("Songs-DB_Custom2")),
-        "city": safe_unpack(mutagen.get("Songs-DB_Custom3")),
+        "bpm": safe_unpack(mu.get("fBPM"), mu.get("bpm_accuracy")),
+        "key": safe_unpack(mu.get("TIT1"), mu.get("key_accuracy"), mu.get("TKEY")),
+        "time": combine(mu.get("time_signature")),
+        "decade": safe_unpack(mu.get("Songs-DB_Custom1")),
+        "categories": safe_unpack(mu.get("Songs-DB_Custom2")),
+        "city": safe_unpack(mu.get("Songs-DB_Custom3")),
         "country": combine(
-            mutagen.get("Songs-DB_Custom4"),
-            mutagen.get("MusicBrainz Album Release Country"),
-            mutagen.get("musicbrainz album release country"),
-            mutagen.get("language"),
+            mu.get("Songs-DB_Custom4"),
+            mu.get("MusicBrainz Album Release Country"),
+            mu.get("musicbrainz album release country"),
+            mu.get("language"),
         ),
         "description": combine(
-            mutagen.get("description"),
-            mutagen.get("lyrics"),
-            tinytag.get("comment"),
+            mu.get("description"),
+            mu.get("lyrics"),
+            ti.get("comment"),
         ),
-        "album": safe_unpack(tinytag.get("album"), mutagen.get("album")),
-        "title": safe_unpack(tinytag.get("title"), mutagen.get("title")),
+        "album": safe_unpack(ti.get("album"), mu.get("album")),
+        "title": safe_unpack(ti.get("title"), mu.get("title")),
         "artist": combine(
-            tinytag.get("artist"),
-            mutagen.get("artist"),
-            mutagen.get("artists"),
-            tinytag.get("albumartist"),
-            tinytag.get("composer"),
+            ti.get("artist"),
+            mu.get("artist"),
+            mu.get("artists"),
+            ti.get("albumartist"),
+            ti.get("composer"),
         ),
     }
 
@@ -99,12 +92,12 @@ def get_audio_tags(f) -> dict:
     try:
         tiny_tags = utils.dict_filter_bool(TinyTag.get(f).as_dict())
     except Exception:
-        tiny_tags = dict()
+        tiny_tags = {}
 
     try:
         mutagen_tags = utils.dict_filter_bool(mutagen.File(f).tags.as_dict())  # type: ignore
     except Exception:
-        mutagen_tags = dict()
+        mutagen_tags = {}
 
     stream_tags = parse_tags(mutagen_tags, tiny_tags)
     return stream_tags
@@ -127,21 +120,21 @@ def munge_av_tags(args, media, f) -> Union[dict, None]:
         print(probe)
         return
 
-    format = probe["format"]
-    format.pop("size", None)
-    format.pop("tags", None)
-    format.pop("bit_rate", None)
-    format.pop("format_name", None)
-    format.pop("format_long_name", None)
-    format.pop("nb_programs", None)
-    format.pop("nb_streams", None)
-    format.pop("probe_score", None)
-    format.pop("start_time", None)
-    format.pop("filename", None)
-    duration = format.pop("duration", None)
+    format_ = probe["format"]
+    format_.pop("size", None)
+    format_.pop("tags", None)
+    format_.pop("bit_rate", None)
+    format_.pop("format_name", None)
+    format_.pop("format_long_name", None)
+    format_.pop("nb_programs", None)
+    format_.pop("nb_streams", None)
+    format_.pop("probe_score", None)
+    format_.pop("start_time", None)
+    format_.pop("filename", None)
+    duration = format_.pop("duration", None)
 
-    if format != {}:
-        log.info("Extra data %s", format)
+    if format_ != {}:
+        log.info("Extra data %s", format_)
         # breakpoint()
 
     streams = probe["streams"]
@@ -169,7 +162,7 @@ def munge_av_tags(args, media, f) -> Union[dict, None]:
     height = safe_unpack([s.get("height") for s in streams])
     codec_types = [s.get("codec_type") for s in streams]
     stream_tags = [s.get("tags") for s in streams if s.get("tags") is not None]
-    language = combine([t.get("language") for t in stream_tags if t.get("language") not in [None, "und", "unk"]])
+    language = combine([t.get("language") for t in stream_tags if t.get("language") not in (None, "und", "unk")])
 
     video_count = sum([1 for s in codec_types if s == "video"])
     audio_count = sum([1 for s in codec_types if s == "audio"])
@@ -185,7 +178,6 @@ def munge_av_tags(args, media, f) -> Union[dict, None]:
         "fps": fps,
         "duration": 0 if not duration else int(float(duration)),
         "language": language,
-        "provenance": get_provenance(f),
     }
 
     if args.db_type == fs_extract.DBType.video:

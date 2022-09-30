@@ -5,7 +5,6 @@ from xklb.dl_extract import dl_add, dl_block, dl_download, dl_update
 from xklb.fs_actions import filesystem, listen, read, view, watch
 from xklb.fs_extract import main as fs_add
 from xklb.playback import playback_next, playback_now, playback_pause, playback_stop
-from xklb.subtitle import main as subtitle
 from xklb.tabs_actions import tabs
 from xklb.tabs_extract import tabs_add
 from xklb.tube_actions import tube_list, tube_listen, tube_watch
@@ -18,7 +17,6 @@ def usage() -> str:
 
     local media subcommands:
       fsadd [extract, xr]          Create a local media database; Add folders
-      subtitle [sub]               Find subtitles for local media
       listen [lt]                  Listen to local media
       watch [wt]                   Watch local media
       read [books, docs]           Read books
@@ -71,8 +69,6 @@ def lb(args=None) -> None:
     subparsers = parser.add_subparsers()
     subp_extract = subparsers.add_parser("fsadd", aliases=["xr", "extract"], add_help=False)
     subp_extract.set_defaults(func=fs_add)
-    subp_subtitle = subparsers.add_parser("subtitle", aliases=["sub"], add_help=False)
-    subp_subtitle.set_defaults(func=subtitle)
 
     subp_listen = subparsers.add_parser(SC.listen, aliases=["lt"], add_help=False)
     subp_listen.set_defaults(func=listen)

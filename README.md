@@ -21,7 +21,6 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
 
     local media subcommands:
       fsadd [extract, xr]          Create a local media database; Add folders
-      subtitle [sub]               Find subtitles for local media
       listen [lt]                  Listen to local media
       watch [wt]                   Watch local media
       read [books, docs]           Read books
@@ -240,7 +239,7 @@ Organize via separate databases.
         library watch -u duration -p -s 'title'
 
         Print an aggregate report of deleted media
-        library watch -w is_deleted=1 -p=a
+        library watch -w time_deleted!=0 -p=a
         ╒═══════════╤══════════════╤═════════╤═════════╕
         │ path      │ duration     │ size    │   count │
         ╞═══════════╪══════════════╪═════════╪═════════╡
@@ -457,7 +456,15 @@ Explore `library` databases in your browser
 
 ### TODOs (PRs welcome)
 
-- multiple-playback: mpv switch to absolute positioning (instead of percent)
+- print g: separate into Local Media and Online Media tables
 - stats: lb stats, lb show/print
+- galleryadd, galleryupdate
+- fsadd, add "playlist" path (scan path)
+- dladd --> tubeadd
+- tubewatch --> watch
+- tubelisten --> listen
+- fsupdate: run fsadd for each path playlist
+- redditadd, redditupdate
+- multiple-playback: mpv switch to absolute positioning (instead of percent)
 - more test coverage -- https://hypothesis.readthedocs.io/en/latest/quickstart.html
 

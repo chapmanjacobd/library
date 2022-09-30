@@ -4,7 +4,7 @@ from typing import Dict
 
 from catt.api import CattDevice
 
-from xklb import db, paths, player, utils
+from xklb import consts, db, player, utils
 from xklb.player import get_ordinal_media, mark_media_deleted, override_sort
 from xklb.subtitle import externalize_subtitle
 from xklb.utils import DEFAULT_MULTIPLE_PLAYBACK, SC, cmd, log
@@ -48,7 +48,7 @@ def usage(action, default_db) -> str:
         library {action} -u duration -p -s 'title'
 
         Print an aggregate report of deleted media
-        library {action} -w is_deleted=1 -p=a
+        library {action} -w time_deleted!=0 -p=a
         ╒═══════════╤══════════════╤═════════╤═════════╕
         │ path      │ duration     │ size    │   count │
         ╞═══════════╪══════════════╪═════════╪═════════╡
@@ -290,8 +290,8 @@ def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
 
     parser.add_argument("--start", "-vs", help=argparse.SUPPRESS)
     parser.add_argument("--end", "-ve", help=argparse.SUPPRESS)
-    parser.add_argument("--mpv-socket", default=paths.DEFAULT_MPV_SOCKET, help=argparse.SUPPRESS)
-    parser.add_argument("--watch-later-directory", default=paths.DEFAULT_MPV_WATCH_LATER, help=argparse.SUPPRESS)
+    parser.add_argument("--mpv-socket", default=consts.DEFAULT_MPV_SOCKET, help=argparse.SUPPRESS)
+    parser.add_argument("--watch-later-directory", default=consts.DEFAULT_MPV_WATCH_LATER, help=argparse.SUPPRESS)
 
     parser.add_argument("--player", "-player", help=argparse.SUPPRESS)
     parser.add_argument(
@@ -322,31 +322,31 @@ def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
 
     if not args.limit:
         args.defaults.append("limit")
-        if all([not args.print, args.action in [SC.listen, SC.watch, SC.tubelisten, SC.tubewatch, SC.read]]):
+        if all([not args.print, args.action in (SC.listen, SC.watch, SC.tubelisten, SC.tubewatch, SC.read)]):
             args.limit = utils.DEFAULT_PLAY_QUEUE
-        elif all([not args.print, args.action in [SC.view]]):
+        elif all([not args.print, args.action in (SC.view)]):
             args.limit = utils.DEFAULT_PLAY_QUEUE * 4
-    elif args.limit in ["inf", "all"]:
+    elif args.limit in ("inf", "all"):
         args.limit = None
 
     if not args.sort:
         args.defaults.append("sort")
 
-        if args.action in [SC.listen, SC.watch]:
+        if args.action in (SC.listen, SC.watch):
             args.sort = ["priority"]
             if args.include:
                 args.sort = ["duration desc", "size desc"]
                 if args.print:
                     args.sort = ["duration", "size"]
 
-        elif args.action in [SC.tubelisten, SC.tubewatch]:
-            args.sort = ["is_downloaded desc", "play_count"]
+        elif args.action in (SC.tubelisten, SC.tubewatch):
+            args.sort = ["time_downloaded > 0 desc", "play_count"]
             if args.include:
-                args.sort = ["is_downloaded desc", "playlist_path", "title"]
+                args.sort = ["time_downloaded > 0 desc", "playlist_path", "title"]
                 if args.print:
                     args.sort = ["playlist_path", "duration"]
 
-        elif args.action in [SC.filesystem]:
+        elif args.action in (SC.filesystem):
             args.sort = ["sparseness", "size"]
 
     if args.sort:
@@ -382,9 +382,9 @@ def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
 
 
 def chromecast_play(args, m) -> None:
-    if args.action in [SC.watch, SC.tubewatch]:
+    if args.action in (SC.watch, SC.tubewatch):
         catt_log = player.watch_chromecast(args, m, subtitles_file=externalize_subtitle(m["path"]))
-    elif args.action in [SC.listen, SC.tubelisten]:
+    elif args.action in (SC.listen, SC.tubelisten):
         catt_log = player.listen_chromecast(args, m)
     else:
         raise NotImplementedError
@@ -400,7 +400,7 @@ def chromecast_play(args, m) -> None:
 def is_play_in_order_lvl2(args, media_file) -> bool:
     return any(
         [
-            args.play_in_order >= 2 and args.action not in [SC.listen, SC.tubelisten],
+            args.play_in_order >= 2 and args.action not in (SC.listen, SC.tubelisten),
             args.play_in_order >= 1 and args.action == SC.listen and "audiobook" in media_file.lower(),
         ]
     )
@@ -428,7 +428,7 @@ def play(args, m: Dict) -> None:
     if is_play_in_order_lvl2(args, media_file):
         media_file = get_ordinal_media(args, media_file)
 
-    if args.action in [SC.watch, SC.listen]:
+    if args.action in (SC.watch, SC.listen):
         media_path = Path(args.prefix + media_file).resolve()
         if not media_path.exists():
             mark_media_deleted(args, media_file)
@@ -469,7 +469,7 @@ def play(args, m: Dict) -> None:
             else:
                 exit(r.returncode)
 
-        if args.action in [SC.listen, SC.watch, SC.tubelisten, SC.tubewatch]:
+        if args.action in (SC.listen, SC.watch, SC.tubelisten, SC.tubewatch):
             player.post_act(args, media_file)
 
 
@@ -482,7 +482,7 @@ def process_playqueue(args, construct_query) -> None:
 
     media = list(args.db.query(query, bindings))
 
-    if len(media) == 0:
+    if not media:
         print("No media found")
         exit(2)
 
@@ -500,7 +500,7 @@ def process_playqueue(args, construct_query) -> None:
                 args.sock.send((f"raw quit \n").encode("utf-8"))
             Path(args.mpv_socket).unlink(missing_ok=True)
             if args.chromecast:
-                Path(paths.CAST_NOW_PLAYING).unlink(missing_ok=True)
+                Path(consts.CAST_NOW_PLAYING).unlink(missing_ok=True)
 
 
 def construct_search_bindings(args, bindings, cf, include_func, exclude_func) -> None:

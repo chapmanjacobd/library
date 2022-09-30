@@ -3,8 +3,6 @@ from pathlib import Path
 from tempfile import gettempdir, mkdtemp
 from typing import List
 
-from xklb import utils
-
 FAKE_SUBTITLE = os.path.join(gettempdir(), "sub.srt")  # https://github.com/skorokithakis/catt/issues/393
 CAST_NOW_PLAYING = os.path.join(gettempdir(), "catt_playing")
 DEFAULT_MPV_SOCKET = os.path.join(gettempdir(), "mpv_socket")
@@ -43,20 +41,6 @@ def sanitize_url(args, path: str) -> str:
         return path.replace("m.youtube", "www.youtube")
 
     return path
-
-
-def youtube_dl_id(file) -> str:
-    if len(file) < 15:
-        return ""
-    # rename old youtube_dl format to new one: cargo install renamer; fd -tf . -x renamer '\-([\w\-_]{11})\.= [$1].' {}
-    yt_id_regex = re.compile(r"-([\w\-_]{11})\..*$|\[([\w\-_]{11})\]\..*$", flags=re.M)
-    file = str(file).strip()
-
-    yt_ids = yt_id_regex.findall(file)
-    if len(yt_ids) == 0:
-        return ""
-
-    return utils.conform([*yt_ids[0]])[0]
 
 
 def get_text_files(path, OCR=False, speech_recognition=False) -> List[str]:

@@ -1,12 +1,12 @@
 import argparse, math, os, sys
-from multiprocessing import TimeoutError
+from multiprocessing import TimeoutError as mp_TimeoutError
 from pathlib import Path
 from timeit import default_timer as timer
 from typing import Dict, List, Union
 
 from joblib import Parallel, delayed
 
-from xklb import av, books, db, paths, subtitle, utils
+from xklb import av, books, consts, db, utils
 from xklb.player import mark_media_deleted
 from xklb.utils import SQLITE_PARAM_LIMIT, log
 
@@ -39,12 +39,13 @@ def extract_metadata(mp_args, f) -> Union[Dict[str, int], None]:
 
     media = dict(
         path=f,
+        play_count=0,
+        time_played=0,
         size=stat.st_size,
         time_created=int(stat.st_ctime),
         time_modified=int(stat.st_mtime),
-        is_deleted=0,
-        play_count=0,
-        time_played=0,
+        time_downloaded=utils.NOW,
+        time_deleted=0,
     )
 
     if hasattr(stat, "st_blocks"):
@@ -53,7 +54,7 @@ def extract_metadata(mp_args, f) -> Union[Dict[str, int], None]:
     if mp_args.db_type == DBType.filesystem:
         media = {**media, "is_dir": os.path.isdir(f)}
 
-    if mp_args.db_type in [DBType.audio, DBType.video]:
+    if mp_args.db_type in (DBType.audio, DBType.video):
         return av.munge_av_tags(mp_args, media, f)
 
     if mp_args.db_type == DBType.text:
@@ -63,7 +64,7 @@ def extract_metadata(mp_args, f) -> Union[Dict[str, int], None]:
                 media = books.munge_book_tags_slow(media, f)
             else:
                 media = books.munge_book_tags_fast(media, f)
-        except TimeoutError:
+        except mp_TimeoutError:
             log.warning(f"[{f}]: Timed out trying to read file")
             return media
         else:
@@ -75,7 +76,7 @@ def extract_metadata(mp_args, f) -> Union[Dict[str, int], None]:
 
 def extract_chunk(args, chunk_paths) -> None:
     n_jobs = -1
-    if args.db_type in [DBType.text, DBType.image, DBType.filesystem]:
+    if args.db_type in (DBType.text, DBType.image, DBType.filesystem):
         n_jobs = utils.CPU_COUNT
     if args.verbose >= 2:
         n_jobs = 1
@@ -87,20 +88,21 @@ def extract_chunk(args, chunk_paths) -> None:
         metadata = books.extract_image_metadata_chunk(metadata, chunk_paths)
 
     if args.scan_subtitles:
-        [p.unlink() for p in Path(paths.SUB_TEMP_DIR).glob("*.srt")]
+        for p in Path(consts.SUB_TEMP_DIR).glob("*.srt"):
+            p.unlink()
 
     args.db["media"].insert_all(list(filter(None, metadata)), pk="path", alter=True, replace=True)
 
 
 def find_new_files(args, path) -> List[str]:
     if args.db_type == DBType.audio:
-        scanned_files = paths.get_media_files(path, audio=True)
+        scanned_files = consts.get_media_files(path, audio=True)
     elif args.db_type == DBType.video:
-        scanned_files = paths.get_media_files(path)
+        scanned_files = consts.get_media_files(path)
     elif args.db_type == DBType.text:
-        scanned_files = paths.get_text_files(path, OCR=args.ocr, speech_recognition=args.speech_recognition)
+        scanned_files = consts.get_text_files(path, OCR=args.ocr, speech_recognition=args.speech_recognition)
     elif args.db_type == DBType.image:
-        scanned_files = paths.get_image_files(path)
+        scanned_files = consts.get_image_files(path)
     elif args.db_type == DBType.filesystem:
         # thanks to these people for making rglob fast https://bugs.python.org/issue26032
         scanned_files = [str(p) for p in Path(path).resolve().rglob("*")]
@@ -116,9 +118,9 @@ def find_new_files(args, path) -> List[str]:
                 for d in args.db.query(
                     f"""select path from media
                 where 1=1
-                    and is_deleted=0
+                    and time_deleted=0
                     and path like '{path}%'
-                    {'AND is_downloaded=1' if 'is_downloaded' in args.db['media'].columns else ''}
+                    {'AND time_downloaded > 0' if 'time_downloaded' in args.db['media'].columns else ''}
                 """
                 )
             ]
@@ -129,7 +131,7 @@ def find_new_files(args, path) -> List[str]:
         new_files = list(scanned_set - existing_set)
 
         deleted_files = list(existing_set - scanned_set)
-        if len(new_files) == 0 and len(deleted_files) >= len(existing_set):
+        if not new_files and len(deleted_files) >= len(existing_set):
             return []  # if path not mounted or all files deleted
         deleted_count = mark_media_deleted(args, deleted_files)
         if deleted_count > 0:
@@ -147,11 +149,11 @@ def scan_path(args, path) -> int:
 
     new_files = find_new_files(args, path)
 
-    if len(new_files) > 0:
+    if new_files:
         print(f"[{path}] Adding {len(new_files)} new media")
         log.debug(new_files)
 
-        if args.db_type in [DBType.text]:
+        if args.db_type in (DBType.text):
             batch_count = utils.CPU_COUNT
         else:
             batch_count = SQLITE_PARAM_LIMIT // 100
@@ -161,10 +163,6 @@ def scan_path(args, path) -> int:
             percent = ((batch_count * idx) + len(l)) / len(new_files) * 100
             print(f"[{path}] Extracting metadata {percent:3.1f}% (chunk {idx + 1} of {chunks_count})")
             extract_chunk(args, l)
-
-            if args.subtitle:
-                print(f"[{path}] Fetching subtitles")
-                Parallel(n_jobs=5)(delayed(subtitle.get)(args, file) for file in l)
 
     return len(new_files)
 

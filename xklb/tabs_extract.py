@@ -5,7 +5,7 @@ from typing import List
 from urllib.parse import urlparse
 
 from xklb import db, player, utils
-from xklb.paths import Frequency, sanitize_url
+from xklb.consts import Frequency, sanitize_url
 from xklb.utils import argparse_enum, log
 
 
@@ -81,7 +81,7 @@ def get_new_paths(args) -> List[str]:
     except Exception:
         pass
     else:
-        if len(existing) > 0:
+        if existing:
             print(f"Updating frequency for {len(existing)} existing paths")
             player.mark_media_deleted(args, list(existing))
 
@@ -100,7 +100,7 @@ def extract_url_metadata(args, path: str) -> dict:
         time_created=int(datetime.now().timestamp()),
         time_played=0,
         play_count=0,
-        is_deleted=0,
+        time_deleted=0,
     )
 
 

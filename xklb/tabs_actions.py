@@ -55,7 +55,7 @@ def construct_tabs_query(args) -> Tuple[str, dict]:
     FROM media
     WHERE 1=1
         {args.sql_filter}
-        {"and time_valid < STRFTIME('%s', datetime())" if not args.print else ''}
+        {"and time_valid < cast(STRFTIME('%s', datetime()) as int)" if not args.print else ''}
     ORDER BY 1=1
         {', ' + args.sort if args.sort else ''}
         {', time_played, time_valid, path' if args.print else ''}
@@ -110,14 +110,14 @@ def frequency_filter(args, media: List[Dict]) -> List[dict]:
     return filtered_media
 
 
-def process_tabs_actions(args, construct_tabs_query) -> None:
+def process_tabs_actions(args) -> None:
     query, bindings = construct_tabs_query(args)
 
     if args.print:
         return printer(args, query, bindings)
 
     media = list(args.db.query(query, bindings))  # type: ignore
-    if len(media) == 0:
+    if not media:
         print("No media found")
         exit(2)
 
@@ -246,4 +246,4 @@ def parse_args(action, default_db) -> argparse.Namespace:
 
 def tabs() -> None:
     args = parse_args(SC.tabs, "tabs.db")
-    process_tabs_actions(args, construct_tabs_query)
+    process_tabs_actions(args)
