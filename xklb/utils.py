@@ -1,4 +1,5 @@
 import argparse, enum, functools, hashlib, logging, math, multiprocessing, os, platform, re, signal, subprocess, sys, textwrap
+from ast import literal_eval
 from collections.abc import Iterable
 from datetime import datetime, timedelta, timezone
 from functools import wraps
@@ -26,6 +27,7 @@ DEFAULT_MULTIPLE_PLAYBACK = -1
 CPU_COUNT = int(os.cpu_count() or 4)
 PYTEST_RUNNING = "pytest" in sys.modules
 REGEX_ANSI_ESCAPE = re.compile(r"(?:\x1B[@-_]|[\x80-\x9F])[0-?]*[ -/]*[@-~]")
+NOW = int(datetime.now().timestamp())
 
 
 def exit_nicely(_signal, _frame):
@@ -158,7 +160,7 @@ def cmd(*command, strict=True, cwd=None, quiet=True, interactive=False, **kwargs
 
     def print_std(r_std):
         s = filter_output(r_std)
-        if not quiet and len(s) > 0:
+        if not quiet and s:
             print(s)
         return s
 
@@ -212,7 +214,7 @@ def remove_text_inside_brackets(text: str, brackets="()[]") -> str:  # thanks @j
 def get_ip_of_chromecast(device_name):
     cast_infos, browser = discovery.discover_listed_chromecasts(friendly_names=[device_name])
     browser.stop_discovery()
-    if len(cast_infos) == 0:
+    if not cast_infos:
         print("Target chromecast device not found")
         exit(53)
 
@@ -252,9 +254,9 @@ def dict_filter_bool(kwargs) -> dict:
     return {k: v for k, v in kwargs.items() if v}
 
 
-def cmd_interactive(*cmd, **kwargs) -> subprocess.CompletedProcess:
-    return_code = os.spawnvpe(os.P_WAIT, cmd[0], cmd, os.environ)
-    return subprocess.CompletedProcess(cmd, return_code)
+def cmd_interactive(*command) -> subprocess.CompletedProcess:
+    return_code = os.spawnvpe(os.P_WAIT, command[0], command, os.environ)
+    return subprocess.CompletedProcess(command, return_code)
 
 
 def Pclose(process) -> subprocess.CompletedProcess:
@@ -295,13 +297,13 @@ _RE_COMBINE_WHITESPACE = re.compile(r"\s+")
 
 def combine(*list_) -> Union[str, None]:
     list_ = conform(list_)
-    if len(list_) == 0:
+    if not list_:
         return None
 
     no_comma = sum([str(s).split(",") for s in list_], [])
     no_semicolon = sum([s.split(";") for s in no_comma], [])
     no_double_space = [_RE_COMBINE_WHITESPACE.sub(" ", s).strip() for s in no_semicolon]
-    no_unknown = [x for x in no_double_space if x.lower() not in ["unknown", "none", "und", ""]]
+    no_unknown = [x for x in no_double_space if x.lower() not in ("unknown", "none", "und", "")]
 
     no_duplicates = list(dict.fromkeys(no_unknown))
     return ";".join(no_duplicates)
@@ -309,7 +311,7 @@ def combine(*list_) -> Union[str, None]:
 
 def safe_unpack(*list_, idx=0) -> Union[Any, None]:
     list_ = conform(list_)
-    if len(list_) == 0:
+    if not list_:
         return None
 
     try:
@@ -360,8 +362,8 @@ def human_time(seconds) -> Union[str, None]:
     minutes = humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="minutes", format="%0.0f")
     if len(minutes.split(",")) >= 2:
         return minutes
-    else:
-        return humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="minutes")
+
+    return humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="minutes")
 
 
 def col_duration(tbl: List[Dict], col: str) -> List[Dict]:
@@ -376,10 +378,17 @@ def col_duration(tbl: List[Dict], col: str) -> List[Dict]:
 class argparse_dict(argparse.Action):
     def __call__(self, parser, args, values, option_string=None):
         try:
-            e = ",".join(list(flatten([v.split(" ") for v in values])))
-            d = eval(f"dict({e})")
+            d = {}
+            k_eq_v = list(flatten([val.split(" ") for val in values]))
+            for s in k_eq_v:
+                k, v = s.split("=")
+                if any([sym in v for sym in ("[", "{")]):
+                    d[k] = literal_eval(v)
+                else:
+                    d[k] = v
+
         except ValueError as ex:
-            raise argparse.ArgumentError(self, f'Could not parse argument "{values}" as k1=1 k2=2 format')
+            raise argparse.ArgumentError(self, f'Could not parse argument "{values}" as k1=1 k2=2 format {ex}')
         setattr(args, self.dest, d)
 
 

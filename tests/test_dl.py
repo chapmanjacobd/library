@@ -3,7 +3,7 @@ from argparse import Namespace
 from pathlib import Path
 from unittest import mock
 
-from xklb import paths
+from xklb import consts
 from xklb.db import connect
 from xklb.dl_extract import dl_add, dl_block, dl_download, dl_update, yt
 from xklb.tube_extract import tube_add
@@ -25,7 +25,6 @@ class TestTube(unittest.TestCase):
         dl_add([*dl_db, "-c=Self", PLAYLIST_URL])
 
     def test_yt(self):
-        dl_db = "--db", "tests/data/dl.db"
         dl_add([*dl_db, "-c=Self", PLAYLIST_URL])
 
         args = Namespace(
@@ -42,21 +41,21 @@ class TestTube(unittest.TestCase):
 
     @mock.patch("xklb.dl_extract.yt")
     @mock.patch("xklb.tube_backend.process_playlist")
-    def test_tube_dl_conversion(self, process_playlist, yt):
+    def test_tube_dl_conversion(self, process_playlist, mocked_yt):
         dl_add([*tube_db, "-c=Self", PLAYLIST_URL])
         out = process_playlist.call_args[0][1]
         assert out == PLAYLIST_URL
 
         dl_download([*tube_db, STORAGE_PREFIX])
-        out = yt.call_args[0]
+        out = mocked_yt.call_args[0]
         assert out[1]["path"] == PLAYLIST_VIDEO_URL
 
     @mock.patch("xklb.dl_extract.yt")
-    def test_download(self, yt):
+    def test_download(self, mocked_yt):
         self.init_db()
 
         dl_download([*dl_db, STORAGE_PREFIX])
-        out = yt.call_args[0]
+        out = mocked_yt.call_args[0]
         assert out[1]["path"] == PLAYLIST_VIDEO_URL
 
     @mock.patch("xklb.tube_backend.update_playlists")
@@ -81,5 +80,5 @@ class TestTube(unittest.TestCase):
         dl_block([*dl_db, PLAYLIST_URL])
         db = connect(Namespace(database=dl_db[1], verbose=2))
         playlists = list(db["playlists"].rows)
-        assert playlists[0]["is_deleted"] == 1
-        assert playlists[0]["category"] == paths.BLOCK_THE_CHANNEL
+        assert playlists[0]["time_deleted"] != 0
+        assert playlists[0]["category"] == consts.BLOCK_THE_CHANNEL

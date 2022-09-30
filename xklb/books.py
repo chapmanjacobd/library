@@ -36,14 +36,22 @@ munge_book_tags_fast = utils.with_timeout(70)(munge_book_tags)
 munge_book_tags_slow = utils.with_timeout(350)(munge_book_tags)
 
 
+def pop_substring_keys(e, key_substring):
+    values = []
+    for k in e.keys():
+        if key_substring in k:
+            values.append(e.pop(k))
+    return values
+
+
 def munge_image_tags(m: dict, e: dict) -> dict:
     chroma_subsample = int((e.pop("File:YCbCrSubSampling", None) or "0").replace(" ", ""))
     if chroma_subsample == 0:
         chroma_subsample = None
 
-    unit_x = safe_unpack([e.pop(k) for k in list(e.keys()) if "XResolution" in k])
-    unit_y = safe_unpack([e.pop(k) for k in list(e.keys()) if "YResolution" in k])
-    unit = safe_unpack([e.pop(k) for k in list(e.keys()) if "ResolutionUnit" in k])
+    unit_x = safe_unpack(pop_substring_keys(e, "XResolution"))
+    unit_y = safe_unpack(pop_substring_keys(e, "YResolution"))
+    unit = safe_unpack(pop_substring_keys(e, "ResolutionUnit"))
     if unit == 0:
         unit = None
         unit_x = None if unit_x == 1 else unit_x
@@ -52,7 +60,7 @@ def munge_image_tags(m: dict, e: dict) -> dict:
     m = {
         **m,
         "orientation": safe_unpack(
-            [e.pop(k) for k in list(e.keys()) if "Orientation" in k],
+            pop_substring_keys(e, "Orientation"),
         ),
         "width": safe_unpack(
             e.pop("File:ImageWidth", None),
@@ -60,7 +68,7 @@ def munge_image_tags(m: dict, e: dict) -> dict:
             e.pop("EXIF:ImageWidth", None),
             e.pop("EXIF:ExifImageWidth", None),
             e.pop("PNG:ImageWidth", None),
-            *[e.pop(k) for k in list(e.keys()) if "ImageWidth" in k],
+            *pop_substring_keys(e, "ImageWidth"),
         ),
         "height": safe_unpack(
             e.pop("File:ImageHeight", None),
@@ -68,37 +76,37 @@ def munge_image_tags(m: dict, e: dict) -> dict:
             e.pop("EXIF:ImageHeight", None),
             e.pop("EXIF:ExifImageHeight", None),
             e.pop("PNG:ImageHeight", None),
-            *[e.pop(k) for k in list(e.keys()) if "ImageHeight" in k],
+            *pop_substring_keys(e, "ImageHeight"),
         ),
         "chroma_subsample": chroma_subsample,
-        "color_depth": safe_unpack(*[e.pop(k) for k in list(e.keys()) if "ColorResolutionDepth" in k]),
-        "color_background": safe_unpack(*[e.pop(k) for k in list(e.keys()) if "BackgroundColor" in k]),
-        "color_transparent": safe_unpack(*[e.pop(k) for k in list(e.keys()) if "TransparentColor" in k]),
-        "longitude": safe_unpack(*[e.pop(k) for k in list(e.keys()) if "GPSLongitude" in k]),
-        "latitude": safe_unpack(*[e.pop(k) for k in list(e.keys()) if "GPSLatitude" in k]),
+        "color_depth": safe_unpack(*pop_substring_keys(e, "ColorResolutionDepth")),
+        "color_background": safe_unpack(*pop_substring_keys(e, "BackgroundColor")),
+        "color_transparent": safe_unpack(*pop_substring_keys(e, "TransparentColor")),
+        "longitude": safe_unpack(*pop_substring_keys(e, "GPSLongitude")),
+        "latitude": safe_unpack(*pop_substring_keys(e, "GPSLatitude")),
         "unit": unit,
         "unit_x": unit_x,
         "unit_y": unit_y,
-        "exiftool_warning": combine(*[e.pop(k) for k in list(e.keys()) if "ExifTool:Warning" in k]),
+        "exiftool_warning": combine(*pop_substring_keys(e, "ExifTool:Warning")),
         "tags": combine(
-            *[e.pop(k) for k in list(e.keys()) if "Headline" in k],
-            *[e.pop(k) for k in list(e.keys()) if "Title" in k],
-            *[e.pop(k) for k in list(e.keys()) if "ImageDescription" in k],
-            *[e.pop(k) for k in list(e.keys()) if "Caption" in k],
-            *[e.pop(k) for k in list(e.keys()) if "Artist" in k],
-            *[e.pop(k) for k in list(e.keys()) if "By-line" in k],
-            *[e.pop(k) for k in list(e.keys()) if "Credit" in k],
-            *[e.pop(k) for k in list(e.keys()) if "DocumentNotes" in k],
-            *[e.pop(k) for k in list(e.keys()) if "URL_List" in k],
-            *[e.pop(k) for k in list(e.keys()) if "Keywords" in k],
-            *[e.pop(k) for k in list(e.keys()) if "Make" in k],
-            *[e.pop(k) for k in list(e.keys()) if "Model" in k],
-            *[e.pop(k) for k in list(e.keys()) if "Creator" in k],
-            *[e.pop(k) for k in list(e.keys()) if "Software" in k],
+            *pop_substring_keys(e, "Headline"),
+            *pop_substring_keys(e, "Title"),
+            *pop_substring_keys(e, "ImageDescription"),
+            *pop_substring_keys(e, "Caption"),
+            *pop_substring_keys(e, "Artist"),
+            *pop_substring_keys(e, "By-line"),
+            *pop_substring_keys(e, "Credit"),
+            *pop_substring_keys(e, "DocumentNotes"),
+            *pop_substring_keys(e, "URL_List"),
+            *pop_substring_keys(e, "Keywords"),
+            *pop_substring_keys(e, "Make"),
+            *pop_substring_keys(e, "Model"),
+            *pop_substring_keys(e, "Creator"),
+            *pop_substring_keys(e, "Software"),
         ),
     }
 
-    for s in [
+    for s in (
         "PDF",
         "ObjectName",
         "YCbCrPositioning",
@@ -184,10 +192,10 @@ def munge_image_tags(m: dict, e: dict) -> dict:
         "Duration",
         "Animation",
         "FrameCount",
-    ]:
-        [e.pop(k) for k in list(e.keys()) if s in k]
+    ):
+        pop_substring_keys(e, s)
 
-    for k in [
+    for k in (
         "File:FileName",
         "File:Directory",
         "File:FileSize",
@@ -197,7 +205,7 @@ def munge_image_tags(m: dict, e: dict) -> dict:
         "File:FileType",
         "IPTC:SpecialInstructions",
         "File:Exif",
-    ]:
+    ):
         e.pop(k, None)
 
     if e != {}:
@@ -222,9 +230,8 @@ def extract_image_metadata_chunk(metadata: List[dict], chunk_paths: List[str]) -
         try:
             m = munge_image_tags(m, e)
         except Exception as e:
-            # raise e
             log.error("[%s]: %s", m["path"], e)
-            pass
+            # continue ?
 
         exif_enriched.append(m)
 

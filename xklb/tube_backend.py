@@ -8,13 +8,13 @@ from urllib.error import HTTPError
 
 import yt_dlp
 
-from xklb import paths, utils
-from xklb.paths import SUB_TEMP_DIR
+from xklb import consts, utils
+from xklb.consts import SUB_TEMP_DIR
 from xklb.subtitle import subs_to_text
 from xklb.utils import combine, log, safe_unpack
 
 
-def ydl_opts(args, func_opts=None, playlist_opts: Optional[str] = None) -> dict:
+def tube_opts(args, func_opts=None, playlist_opts: Optional[str] = None) -> dict:
     if playlist_opts is None or playlist_opts == "":
         playlist_opts = "{}"
     if func_opts is None:
@@ -103,7 +103,7 @@ def ydl_opts(args, func_opts=None, playlist_opts: Optional[str] = None) -> dict:
         ),
     }
 
-    ydl_opts = {
+    all_opts = {
         **default_opts,
         **func_opts,
         **json.loads(playlist_opts),
@@ -111,18 +111,18 @@ def ydl_opts(args, func_opts=None, playlist_opts: Optional[str] = None) -> dict:
     }
 
     if args.verbose == 0 and not utils.PYTEST_RUNNING:
-        ydl_opts.update(ignoreerrors="only_download")
+        all_opts.update(ignoreerrors="only_download")
     if args.verbose >= 2:
-        ydl_opts.update(ignoreerrors=False, quiet=False)
+        all_opts.update(ignoreerrors=False, quiet=False)
     if args.ignore_errors:
-        ydl_opts.update(ignoreerrors=True)
+        all_opts.update(ignoreerrors=True)
 
-    log.debug(utils.dict_filter_bool(ydl_opts))
+    log.debug(utils.dict_filter_bool(all_opts))
 
     if hasattr(args, "playlists") and args.playlists and not args.no_sanitize:
-        args.playlists = [paths.sanitize_url(args, path) for path in args.playlists]
+        args.playlists = [consts.sanitize_url(args, path) for path in args.playlists]
 
-    return ydl_opts
+    return all_opts
 
 
 def is_supported(url) -> bool:  # thank you @dbr
@@ -136,8 +136,8 @@ def is_supported(url) -> bool:  # thank you @dbr
 def get_playlists(args, cols="path, dl_config", constrain=False) -> List[dict]:
     columns = args.db["playlists"].columns
     sql_filters = []
-    if "is_deleted" in columns:
-        sql_filters.append("AND is_deleted=0")
+    if "time_deleted" in columns:
+        sql_filters.append("AND time_deleted=0")
     if constrain:
         if args.category:
             sql_filters.append(f"AND category='{args.category}'")
@@ -185,27 +185,6 @@ def _get_existing_row(args, table, path) -> dict:
     return {}
 
 
-def _add_playlist(args, playlist_path, pl: dict, entry: dict) -> None:
-    pl = dict(
-        ie_key=safe_unpack(pl.get("ie_key"), pl.get("extractor_key"), pl.get("extractor")),
-        title=pl.get("playlist_title"),
-        path=playlist_path,
-        uploader=safe_unpack(pl.get("playlist_uploader_id"), pl.get("playlist_uploader")),
-        id=pl.get("playlist_id"),
-        dl_config=args.dl_config,
-        is_deleted=0,
-        category=None,
-        profile=None,
-    )
-    if entry["path"] == pl["path"] or not pl.get("id"):
-        log.warning("Importing playlist-less media %s", pl["path"])
-    else:
-        existing_data = _get_existing_row(args, "playlists", playlist_path)
-        args.db["playlists"].insert(
-            {**pl, **existing_data, **args.extra_playlist_data}, pk="path", alter=True, replace=True
-        )
-
-
 def get_subtitle_text(ydl: yt_dlp.YoutubeDL, video_path, req_sub_dict) -> str:
     def dl_sub(url):
         temp_file = tempfile.mktemp(".srt", dir=SUB_TEMP_DIR)
@@ -216,14 +195,15 @@ def get_subtitle_text(ydl: yt_dlp.YoutubeDL, video_path, req_sub_dict) -> str:
             log.info("Unable to download subtitles; skipping")
             sleep(5)
             return None
-        else:
-            return temp_file
+
+        return temp_file
 
     urls = [d["url"] for d in list(req_sub_dict.values())]
     paths = utils.conform([dl_sub(url) for url in urls])
 
     subs_text = subs_to_text(video_path, paths)
-    [utils.trash(p) for p in paths]
+    for p in paths:
+        utils.trash(p)
 
     return subs_text
 
@@ -314,7 +294,7 @@ def consolidate(playlist_path: str, v: dict, ydl: Optional[yt_dlp.YoutubeDL] = N
         "alt_title",
     ]
 
-    if v.get("title") in ["[Deleted video]", "[Private video]"]:
+    if v.get("title") in ("[Deleted video]", "[Private video]"):
         return None
 
     for k in list(v):
@@ -333,7 +313,7 @@ def consolidate(playlist_path: str, v: dict, ydl: Optional[yt_dlp.YoutubeDL] = N
         else:
             subtitles = None
 
-    cv = dict()
+    cv = {}
     cv["path"] = safe_unpack(v.pop("webpage_url", None), v.pop("url", None), v.pop("original_url", None))
     size_bytes = v.pop("filesize_approx", None)
     cv["size"] = 0 if not size_bytes else int(size_bytes)
@@ -341,9 +321,8 @@ def consolidate(playlist_path: str, v: dict, ydl: Optional[yt_dlp.YoutubeDL] = N
     cv["time_created"] = int(datetime.now().timestamp())
     duration = v.pop("duration", None)
     cv["duration"] = 0 if not duration else int(duration)
-    cv["is_deleted"] = 0
-    cv["is_downloaded"] = 0
-    cv["time_download"] = 0
+    cv["time_deleted"] = 0
+    cv["time_downloaded"] = 0
     cv["play_count"] = 0
     cv["time_played"] = 0
     cv["language"] = v.pop("language", None)
@@ -390,44 +369,64 @@ def log_problem(args, playlist_path) -> None:
         log.warning("Could not add playlist %s", playlist_path)
 
 
+def _add_playlist(args, playlist_path, pl: dict, media_path: Optional[str] = None) -> None:
+    pl = dict(
+        ie_key=safe_unpack(pl.get("ie_key"), pl.get("extractor_key"), pl.get("extractor")),
+        title=pl.get("playlist_title"),
+        path=playlist_path,
+        uploader=safe_unpack(pl.get("playlist_uploader_id"), pl.get("playlist_uploader")),
+        id=pl.get("playlist_id"),
+        dl_config=args.dl_config,
+        time_deleted=0,
+        category=None,
+        profile=None,
+    )
+    if not pl.get("id") or media_path == pl["path"]:
+        log.warning("Importing playlist-less media %s", pl["path"])
+    else:
+        existing_data = _get_existing_row(args, "playlists", playlist_path)
+        args.db["playlists"].insert(
+            {**pl, **existing_data, **args.extra_playlist_data}, pk="path", alter=True, replace=True
+        )
+
+
 playlists_of_playlists = []
+added_media_count = 0
 
 
-def process_playlist(args, playlist_path, ydl_opts) -> Union[List[Dict], None]:
+def process_playlist(args, playlist_path, ydl_opts, playlist_root=True) -> Union[List[Dict], None]:
     class ExistingPlaylistVideoReached(yt_dlp.DownloadCancelled):
         pass
 
     class AddToArchivePP(yt_dlp.postprocessor.PostProcessor):
-        current_video_count = 0
+        def run(self, info) -> Tuple[list, dict]:  # pylint: disable=arguments-renamed
+            global added_media_count
 
-        def run(self, info) -> Tuple[list, dict]:
             if info:
                 url = safe_unpack(info.get("webpage_url"), info.get("url"), info.get("original_url"))
                 if url != playlist_path and info.get("webpage_url_basename") == "playlist":
                     if url in playlists_of_playlists:
                         raise ExistingPlaylistVideoReached  # prevent infinite bug
 
-                    process_playlist(args, url, ydl_opts)
+                    process_playlist(args, url, ydl_opts, playlist_root=False)
                     playlists_of_playlists.append(url)
+                    if playlist_root:
+                        _add_playlist(args, playlist_path, deepcopy(info))
                     return [], info
 
-                entry = self._add_media(deepcopy(info))
+                entry = consolidate(playlist_path, deepcopy(info), ydl=super)  # type: ignore
                 if entry:
-                    _add_playlist(args, playlist_path, deepcopy(info), entry)
+                    if is_video_known(args, playlist_path, entry["path"]):
+                        raise ExistingPlaylistVideoReached
+                    save_entries(args, [{**entry, **args.extra_media_data}])
+                    _add_playlist(args, playlist_path, deepcopy(info), entry["path"])
 
-                    self.current_video_count += 1
-                    if self.current_video_count > 1:
+                    added_media_count += 1
+                    if added_media_count > 1:
                         sys.stdout.write("\033[K\r")
-                        print(f"[{playlist_path}] Added {self.current_video_count} videos", end="\r", flush=True)
-            return [], info
+                        print(f"[{playlist_path}] Added {added_media_count} media", end="\r", flush=True)
 
-        def _add_media(self, entry) -> Union[dict, None]:
-            entry = consolidate(playlist_path, entry, ydl=super)  # type: ignore
-            if entry:
-                if self.current_video_count >= 1 and is_video_known(args, playlist_path, entry["path"]):
-                    raise ExistingPlaylistVideoReached
-                save_entries(args, [{**entry, **args.extra_media_data}])
-            return entry
+            return [], info
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.add_post_processor(AddToArchivePP(), when="pre_process")
@@ -437,6 +436,7 @@ def process_playlist(args, playlist_path, ydl_opts) -> Union[List[Dict], None]:
         except ExistingPlaylistVideoReached:
             log_problem(args, playlist_path)
         else:
+            sys.stdout.write("\n")
             if not pl:
                 log.warning("Logging undownloadable media")
                 existing_data = _get_existing_row(args, "undownloadable", playlist_path)
@@ -457,7 +457,7 @@ def process_playlist(args, playlist_path, ydl_opts) -> Union[List[Dict], None]:
 
 def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Union[List[Dict], None]:
     with yt_dlp.YoutubeDL(
-        ydl_opts(
+        tube_opts(
             args,
             func_opts={
                 "subtitlesformat": "srt/best",
@@ -512,7 +512,7 @@ def update_playlists(args, playlists):
         process_playlist(
             args,
             d["path"],
-            ydl_opts(args, playlist_opts=d["dl_config"], func_opts={"ignoreerrors": "only_download"}),
+            tube_opts(args, playlist_opts=d["dl_config"], func_opts={"ignoreerrors": "only_download"}),
         )
 
         if args.extra:

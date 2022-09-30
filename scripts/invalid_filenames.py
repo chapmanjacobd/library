@@ -5,16 +5,6 @@ import ftfy
 from xklb import db, utils
 from xklb.utils import log
 
-"""
-hmm not sure what has caused this... hopefully this script can help
-
-  File "/usr/lib64/python3.10/subprocess.py", line 2045, in _communicate
-    stderr = self._translate_newlines(stderr,
-  File "/usr/lib64/python3.10/subprocess.py", line 1029, in _translate_newlines
-    data = data.decode(encoding, errors)
-UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc2 in position 183: invalid continuation byte
-"""
-
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
@@ -29,10 +19,10 @@ def parse_args() -> argparse.Namespace:
 def get_paths(args):
     columns = args.db["media"].columns
     sql_filters = []
-    if "is_deleted" in columns:
-        sql_filters.append("AND is_deleted=0")
-    if "is_downloaded" in columns:
-        sql_filters.append("AND is_downloaded=1")
+    if "time_deleted" in columns:
+        sql_filters.append("AND time_deleted=0")
+    if "time_downloaded" in columns:
+        sql_filters.append("AND time_downloaded > 0")
 
     db_resp = [
         d["path"] for d in args.db.query(f"select path from media where 1=1 {' '.join(sql_filters)} order by path")

@@ -10,7 +10,7 @@ import yt_dlp
 from rich.prompt import Confirm
 from tabulate import tabulate
 
-from xklb import db, fs_extract, paths, play_actions, player, tube_actions, tube_backend, utils
+from xklb import consts, db, fs_extract, play_actions, player, tube_actions, tube_backend, utils
 from xklb.dl_config import yt_meaningless_errors, yt_recoverable_errors, yt_unrecoverable_errors
 from xklb.utils import log
 
@@ -57,7 +57,7 @@ def parse_args(action, usage):
     parser.add_argument("--verbose", "-v", action="count", default=0)
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
 
-    if action in [DSC.dladd, DSC.dlupdate, DSC.block]:
+    if action in (DSC.dladd, DSC.dlupdate, DSC.block):
         parser.add_argument("--extra", "-extra", action="store_true", help="Get full metadata (takes a lot longer)")
         parser.add_argument("--safe", "-safe", action="store_true", help="Skip generic URLs")
         parser.add_argument(
@@ -65,7 +65,7 @@ def parse_args(action, usage):
         )
     if action == DSC.block:
         parser.add_argument("--all-deleted-playlists", "--all", action="store_true", help=argparse.SUPPRESS)
-    if action in [DSC.dladd, DSC.dlupdate]:
+    if action in (DSC.dladd, DSC.dlupdate):
         parser.add_argument("--category", "-c", help=argparse.SUPPRESS)
     if action == DSC.download:
         parser.add_argument("--prefix", default=os.getcwd(), help=argparse.SUPPRESS)
@@ -97,19 +97,19 @@ def parse_args(action, usage):
 
     args = parser.parse_args()
     if action == DSC.download:
-        if args.limit in ["inf", "all"]:
+        if args.limit in ("inf", "all"):
             args.limit = None
         if args.duration:
             args.duration = play_actions.parse_duration(args)
 
     if args.db:
         args.database = args.db
-    if action in [DSC.dladd, DSC.block]:
+    if action in (DSC.dladd, DSC.block):
         Path(args.database).touch()
     args.db = db.connect(args)
 
     if hasattr(args, "no_sanitize") and hasattr(args, "playlists") and not args.no_sanitize:
-        args.playlists = [paths.sanitize_url(args, p) for p in args.playlists]
+        args.playlists = [consts.sanitize_url(args, p) for p in args.playlists]
 
     log.info(utils.dict_filter_bool(args.__dict__))
 
@@ -172,13 +172,12 @@ def dl_add(args=None) -> None:
                     f"Download profile '{args.profile}' could not be detected. Specify using `--audio`, `--video`, or `--image`"
                 )
 
-        args.extra_media_data = {"is_downloaded": 0, **args.extra_media_data}
         args.extra_playlist_data = {"category": args.category, "profile": args.profile, **args.extra_playlist_data}
-        if args.profile in [DLProfile.audio, DLProfile.video]:
+        if args.profile in (DLProfile.audio, DLProfile.video):
             tube_backend.process_playlist(
                 args,
                 path,
-                ydl_opts=tube_backend.ydl_opts(args, func_opts={"ignoreerrors": "only_download"}),
+                ydl_opts=tube_backend.tube_opts(args, func_opts={"ignoreerrors": "only_download"}),
             )
 
         elif args.profile == DLProfile.image:
@@ -191,18 +190,6 @@ def dl_add(args=None) -> None:
             # gdl.job.DownloadJob(path)
         else:
             raise Exception(f"Download profile {args.profile} not implemented")
-
-        try:
-            with args.db.conn:
-                if args.category:
-                    args.db.execute("UPDATE playlists SET category=? WHERE category is NULL", [args.category])
-                if args.profile:
-                    args.db.execute("UPDATE playlists SET profile=? WHERE profile is NULL", [args.profile])
-        except sqlite3.OperationalError as e:
-            log.warning("Could not update playlists table: %s", e)
-            pass
-
-    db.optimize(args)
 
 
 def dl_update(args=None) -> None:
@@ -265,17 +252,17 @@ def dl_block(args=None) -> None:
         raise Exception("Specific URLs or --all-deleted-playlists must be supplied")
 
     log.info(utils.dict_filter_bool(args.__dict__))
-    args.extra_playlist_data = dict(is_deleted=1, category=paths.BLOCK_THE_CHANNEL)
-    args.extra_media_data = dict(is_deleted=1)
+    args.extra_playlist_data = dict(time_deleted=utils.NOW, category=consts.BLOCK_THE_CHANNEL)
+    args.extra_media_data = dict(time_deleted=utils.NOW)
     for p in args.playlists:
-        tube_backend.process_playlist(args, p, tube_backend.ydl_opts(args, func_opts={"playlistend": 30}))
+        tube_backend.process_playlist(args, p, tube_backend.tube_opts(args, func_opts={"playlistend": 30}))
 
     if args.playlists:
         with args.db.conn:
             args.db.execute(
                 f"""UPDATE playlists
-                SET is_deleted=1
-                ,   category='{paths.BLOCK_THE_CHANNEL}'
+                SET time_deleted={utils.NOW}
+                ,   category='{consts.BLOCK_THE_CHANNEL}'
                 WHERE path IN ("""
                 + ",".join(["?"] * len(args.playlists))
                 + ")",
@@ -286,7 +273,7 @@ def dl_block(args=None) -> None:
         d["path"]
         for d in args.db.query(
             f"""SELECT path FROM media
-        WHERE is_downloaded=1
+        WHERE time_downloaded > 0
         AND playlist_path IN ("""
             + ",".join(["?"] * len(args.playlists))
             + ")",
@@ -299,14 +286,14 @@ def dl_block(args=None) -> None:
             d["path"]
             for d in args.db.query(
                 f"""SELECT path FROM media
-            WHERE is_downloaded=1
+            WHERE time_downloaded > 0
             AND playlist_path IN (
-                select path from playlists where is_deleted=1
+                select path from playlists where time_deleted > 0
             ) """
             )
         ]
 
-    if len(paths_to_delete) > 0:
+    if paths_to_delete:
         print(paths_to_delete)
         if not utils.PYTEST_RUNNING and Confirm.ask("Delete?"):
             player.delete_media(args, paths_to_delete)
@@ -328,7 +315,7 @@ def construct_query(args) -> Tuple[str, dict]:
     if not args.print:
         cf.append(
             f"""and cast(STRFTIME('%s',
-                datetime( time_download, 'unixepoch', '+{args.retry_delay}')
+                datetime( time_downloaded, 'unixepoch', '+{args.retry_delay}')
             ) as int) < STRFTIME('%s', datetime()) """
         )
 
@@ -348,13 +335,13 @@ def construct_query(args) -> Tuple[str, dict]:
         FROM media
         JOIN playlists on playlists.path = media.playlist_path
         WHERE 1=1
-            and is_downloaded=0
-            and media.is_deleted=0
-            and playlists.is_deleted=0
-            and media.uploader not in (select uploader from playlists where category='{paths.BLOCK_THE_CHANNEL}')
+            and time_downloaded=0
+            and media.time_deleted=0
+            and playlists.time_deleted=0
+            and media.uploader not in (select uploader from playlists where category='{consts.BLOCK_THE_CHANNEL}')
             {args.sql_filter}
         ORDER BY 1=1
-            {',' + args.sort if args.sort else ''}
+            {', ' + args.sort if args.sort else ''}
             , play_count
             , random()
     {LIMIT}
@@ -373,7 +360,7 @@ def printer(args, query, bindings) -> None:
         from ({query}) """
 
     db_resp = list(args.db.query(query, bindings))
-    if len(db_resp) == 0:
+    if not db_resp:
         print("No media found")
         exit(2)
 
@@ -419,14 +406,14 @@ def printer(args, query, bindings) -> None:
         utils.col_duration(tbl, "duration")
         utils.col_duration(tbl, "avg_duration")
 
-        for t in [
+        for t in (
             "time_modified",
             "time_created",
             "time_played",
             "time_valid",
             "time_partial_first",
             "time_partial_last",
-        ]:
+        ):
             utils.col_naturaldate(tbl, t)
 
         print(tabulate(tbl, tablefmt="fancy_grid", headers="keys", showindex=False))  # type: ignore
@@ -440,7 +427,7 @@ def process_downloadqueue(args) -> List[dict]:
         return []
 
     media = list(args.db.query(*construct_query(args)))
-    if len(media) == 0:
+    if not media:
         print("No media found")
         exit(2)
 
@@ -453,15 +440,14 @@ def update_media(
     r = list(args.db.query("select * from media where path=?", [webpath]))
     assert len(r) == 1
     stub = r[0]
-    now = int(datetime.datetime.now().timestamp())
 
     if not info:
         args.db["media"].insert(
             {
                 **stub,
-                "time_download": now,
-                "is_downloaded": 0,
-                "is_deleted": 1 if URE else 0,
+                "time_downloaded": utils.NOW,
+                "time_downloaded": 0,
+                "time_deleted": utils.NOW if URE else 0,
                 "error": error,
             },
             pk="path",
@@ -474,7 +460,7 @@ def update_media(
     if Path(info["local_path"]).exists():
         fs_args = argparse.Namespace(
             db_type=db_type,
-            scan_subtitles=False,
+            scan_subtitles=True if db_type == fs_extract.DBType.video else False,
             delete_unplayable=False,
             ocr=False,
             speech_recognition=False,
@@ -491,10 +477,10 @@ def update_media(
             **fs_tags,
             "play_count": stub["play_count"],
             "time_played": stub["time_played"],
-            "time_download": now,
+            "time_downloaded": utils.NOW,
             "webpath": webpath,
-            "is_downloaded": 1 if db_type else 0,
-            "is_deleted": 1 if URE else 0,
+            "time_downloaded": utils.NOW if db_type else 0,
+            "time_deleted": utils.NOW if URE else 0,
             "error": error,
         },
         pk="path",
@@ -502,7 +488,7 @@ def update_media(
         replace=True,
     )  # type: ignore
 
-    if len(fs_tags) > 0:
+    if fs_tags:
         args.db["media"].delete(webpath)
 
 
@@ -527,7 +513,7 @@ def yt(args, m) -> None:
 
     out_dir = lambda p: str(Path(args.prefix, m["category"], p))
     Path(out_dir("tunnel_snakes_rule")).parent.mkdir(parents=True, exist_ok=True)
-    ydl_opts = tube_backend.ydl_opts(
+    ydl_opts = tube_backend.tube_opts(
         args,
         func_opts={
             "subtitleslangs": ["en.*", "EN.*"],
@@ -602,7 +588,7 @@ def yt(args, m) -> None:
         ydl_errors = ydl_log["error"] + ydl_log["warning"]
         ydl_errors = "\n".join([s for s in ydl_errors if not yt_meaningless_errors.match(s)])
 
-        if len(ydl_log["error"]) == 0:
+        if not ydl_log["error"]:
             log.debug("[%s]: No news is good news", m["path"])
             update_media(args, m["path"], info, m["profile"])
         elif yt_recoverable_errors.match(ydl_errors):
@@ -653,41 +639,27 @@ def dl_download(args=None) -> None:
     Print download queue groups
 
         library playlists dl.db -p g
-        ╒══════════╤════════════════════╤════════════════════╤═════════════════╤═══════════════╤══════════╤═════════╕
-        │ ie_key   │ category           │ download_profile   │   is_downloaded │ duration      │ size     │   count │
-        ╞══════════╪════════════════════╪════════════════════╪═════════════════╪═══════════════╪══════════╪═════════╡
-        │ Youtube  │ 71_Mealtime_Videos │ video              │               1 │ 3 hours and   │ 961.6 MB │      42 │
-        │          │                    │                    │                 │ 13.80 minutes │          │         │
-        ├──────────┼────────────────────┼────────────────────┼─────────────────┼───────────────┼──────────┼─────────┤
-        │ Youtube  │ 81_New_Music       │ audio              │               1 │ 2 days, 14    │ 21.3 MB  │     766 │
-        │          │                    │                    │                 │ hours and 31  │          │         │
-        │          │                    │                    │                 │ minutes       │          │         │
-        ├──────────┼────────────────────┼────────────────────┼─────────────────┼───────────────┼──────────┼─────────┤
-        │ Youtube  │ 71_Mealtime_Videos │ video              │               0 │ 5 hours and   │          │      83 │
-        │          │                    │                    │                 │ 51.83 minutes │          │         │
-        ├──────────┼────────────────────┼────────────────────┼─────────────────┼───────────────┼──────────┼─────────┤
-        │ Youtube  │ 81_New_Music       │ audio              │               0 │ 14 days, 2    │          │    3753 │
-        │          │                    │                    │                 │ hours and 31  │          │         │
-        │          │                    │                    │                 │ minutes       │          │         │
-        ╘══════════╧════════════════════╧════════════════════╧═════════════════╧═══════════════╧══════════╧═════════╛
+        TODO: update image
     """,
     )
     media = process_downloadqueue(args)
     for m in media:
         # check again in case it was already completed by another process
-        is_downloaded = list(args.db.query("select is_downloaded from media where path=?", [m["path"]]))
-        if len(is_downloaded) == 0:
+        path = list(args.db.query("select path from media where path=?", [m["path"]]))
+        if not path:
             log.info("[%s]: Already downloaded. Skipping!", m["path"])
             continue
 
         if m.get("profile") is None:
             m["profile"] = DLProfile.video
 
-        if m["profile"] in [DLProfile.audio, DLProfile.video]:
+        if m["profile"] in (DLProfile.audio, DLProfile.video):
             yt(args, m)
         # elif m['profile'] == DLProfile.image:
         else:
             raise NotImplementedError
+
+    db.optimize(args)
 
 
 def parse_gallerydl_exit(ret_val: int) -> str:

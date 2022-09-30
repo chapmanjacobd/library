@@ -3,13 +3,13 @@ from pathlib import Path
 
 from python_mpv_jsonipc import MPV
 
-from xklb import paths, utils
+from xklb import consts, utils
 from xklb.utils import cmd, log
 
 
 def parse_args(action) -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog=f"library {action}")
-    parser.add_argument("--mpv-socket", default=paths.DEFAULT_MPV_SOCKET)
+    parser.add_argument("--mpv-socket", default=consts.DEFAULT_MPV_SOCKET)
     parser.add_argument("--chromecast-device", "--cast-to", "-t")
 
     if action == "next":
@@ -31,7 +31,7 @@ def parse_args(action) -> argparse.Namespace:
 
 def _now_playing(args) -> dict:
     media = {
-        "catt": Path(paths.CAST_NOW_PLAYING).read_text() if os.path.exists(paths.CAST_NOW_PLAYING) else None,
+        "catt": Path(consts.CAST_NOW_PLAYING).read_text() if os.path.exists(consts.CAST_NOW_PLAYING) else None,
         "mpv": args.mpv.command("get_property", "path") if os.path.exists(args.mpv_socket) else None,
     }
     log.info(media)
@@ -74,7 +74,7 @@ def catt_pause(args) -> None:
 
 
 def kill_process(name) -> None:
-    if any([p in platform.system() for p in ["Windows", "_NT-", "MSYS"]]):
+    if any([p in platform.system() for p in ("Windows", "_NT-", "MSYS")]):
         cmd("taskkill", "/f", "/im", name, strict=False)
     else:
         cmd("pkill", "-f", name, strict=False)
@@ -91,7 +91,7 @@ def playback_stop() -> None:
         kill_process("catt")
         catt_stop(args)
 
-    Path(paths.CAST_NOW_PLAYING).unlink(missing_ok=True)
+    Path(consts.CAST_NOW_PLAYING).unlink(missing_ok=True)
     Path(args.mpv_socket).unlink(missing_ok=True)
 
 
@@ -113,9 +113,9 @@ def playback_next() -> None:
     playing = _now_playing(args)
 
     # TODO: figure out if catt or mpv is stale
-    # [kill_process(s) for s in ["python.*xklb", "bin/lb", "bin/library", "mpv"]]
+    # [kill_process(s) for s in ("python.*xklb", "bin/lb", "bin/library", "mpv")]
     if playing["catt"] or not any(playing.values()):
-        Path(paths.CAST_NOW_PLAYING).unlink(missing_ok=True)
+        Path(consts.CAST_NOW_PLAYING).unlink(missing_ok=True)
         catt_stop(args)
         if args.delete:
             utils.trash(playing["catt"])

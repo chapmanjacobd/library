@@ -69,7 +69,7 @@ def tube_add(args=None) -> None:
             log.warning("[%s]: Unsupported playlist (safe_mode)", path)
             continue
 
-        tube_backend.process_playlist(args, path, tube_backend.ydl_opts(args))
+        tube_backend.process_playlist(args, path, tube_backend.tube_opts(args))
 
         if args.extra:
             log.warning("[%s]: Getting extra metadata", path)

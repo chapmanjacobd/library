@@ -238,8 +238,16 @@ Explore `library` databases in your browser
 
 ### TODOs (PRs welcome)
 
-- multiple-playback: mpv switch to absolute positioning (instead of percent)
+- print g: separate into Local Media and Online Media tables
 - stats: lb stats, lb show/print
+- galleryadd, galleryupdate
+- fsadd, add "playlist" path (scan path)
+- dladd --> tubeadd
+- tubewatch --> watch
+- tubelisten --> listen
+- fsupdate: run fsadd for each path playlist
+- redditadd, redditupdate
+- multiple-playback: mpv switch to absolute positioning (instead of percent)
 - more test coverage -- https://hypothesis.readthedocs.io/en/latest/quickstart.html
 """
 )

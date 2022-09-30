@@ -16,8 +16,8 @@ def get_table(args) -> List[dict]:
         select path, size
         from media
         where 1=1
-            {'and is_deleted = 0' if 'is_deleted' in cols else ''}
-            {'and is_downloaded = 0' if 'is_downloaded' in cols else ''}
+            {'and time_deleted = 0' if 'time_deleted' in cols else ''}
+            {'and time_downloaded = 0' if 'time_downloaded' in cols else ''}
         order by path
         """
         )

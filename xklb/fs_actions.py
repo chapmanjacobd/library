@@ -113,7 +113,7 @@ def construct_query(args) -> Tuple[str, dict]:
 
     query = f"""SELECT path
         , size
-        {', duration' if args.action in [SC.listen, SC.watch] else ''}
+        {', duration' if args.action in (SC.listen, SC.watch) else ''}
         {', cast(length(tags) / 4.2 / 220 * 60 as INT) + 10 duration' if args.action == SC.read else ''}
         {', subtitle_count' if args.action == SC.watch else ''}
         {', sparseness' if args.action == SC.filesystem else ''}
@@ -123,14 +123,14 @@ def construct_query(args) -> Tuple[str, dict]:
     WHERE 1=1
         {args.sql_filter}
         {f'and path not like "%{args.keep_dir}%"' if args.post_action == 'askkeep' else ''}
-        {'and is_deleted=0' if args.action in [SC.listen, SC.watch] and 'is_deleted' not in args.sql_filter else ''}
-        {'and is_downloaded=1' if args.action in [SC.listen, SC.watch] and 'is_downloaded' not in args.sql_filter else ''}
+        {'and time_deleted=0' if args.action in (SC.listen, SC.watch) and 'time_deleted' not in args.sql_filter else ''}
+        {'and time_downloaded > 0' if args.action in (SC.listen, SC.watch) and 'time_downloaded' not in args.sql_filter else ''}
     ORDER BY 1=1
         {', video_count > 0 desc' if args.action == SC.watch else ''}
         {', audio_count > 0 desc' if args.action == SC.listen else ''}
         {', width < height desc' if args.portrait else ''}
         {f', subtitle_count {subtitle_count} desc' if args.action == SC.watch and not any([args.print, 'subtitle_count' in args.where]) else ''}
-        {',' + args.sort if args.sort else ''}
+        {', ' + args.sort if args.sort else ''}
         , random()
     {LIMIT} {OFFSET}
     """

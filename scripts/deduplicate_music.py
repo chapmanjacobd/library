@@ -29,7 +29,7 @@ def get_duplicates(args) -> List[dict]:
         and m1.artist = m2.artist
         and m1.album = m2.album
     WHERE 1=1
-        and m1.is_deleted = 0 and m2.is_deleted = 0
+        and m1.time_deleted = 0 and m2.time_deleted = 0
         and m1.audio_count > 0 and m2.audio_count > 0
         and abs(m1.sparseness - 1) < 0.1
         and m1.title != ''
@@ -82,7 +82,7 @@ def deduplicate_music() -> None:
         "Warning! This script assumes that the database is up to date. If you have deleted any files manually, run a re-scan (via fsadd) for each folder in your database first!"
     )
 
-    if len(duplicates) > 0 and prompt.Confirm.ask("Delete duplicates?", default=False):
+    if duplicates and prompt.Confirm.ask("Delete duplicates?", default=False):  # type: ignore
         print("Deleting...")
 
         deleted = []

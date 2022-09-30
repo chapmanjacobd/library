@@ -34,7 +34,7 @@ def test_tw_print(capsys):
 class TestTube(unittest.TestCase):
     @mock.patch("xklb.play_actions.play")
     def test_lb_fs(self, play_mocked):
-        for SC in ["tubewatch", "tw"]:
+        for SC in ("tubewatch", "tw"):
             lb([SC, *tube_db])
             out = play_mocked.call_args[0][1]
             assert "https://www.youtube.com/watch?v=QoXubRvB6tQ" in out["path"]
@@ -76,6 +76,6 @@ class TestTube(unittest.TestCase):
         tube_update([*tube_db, "--dl-config", "TEST2=4 TEST3=3"])
         out = play_mocked.call_args[0][2]
         assert out is not None
-        assert out["TEST1"] == 1
-        assert out["TEST2"] == 4
-        assert out["TEST3"] == 3
+        assert out["TEST1"] == "1"
+        assert out["TEST2"] == "4"
+        assert out["TEST3"] == "3"

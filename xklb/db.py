@@ -15,13 +15,17 @@ def connect(args) -> sqlite_utils.Database:
         log.error(f"Database file '{args.database}' does not exist. Create one with lb fsadd, tubeadd, or tabsadd.")
         exit(1)
 
-    return sqlite_utils.Database(args.database, tracer=tracer if args.verbose >= 2 else None)  # type: ignore
+    db = sqlite_utils.Database(args.database, tracer=tracer if args.verbose >= 2 else None)  # type: ignore
+    db.execute("PRAGMA main.cache_size = 4000")
+    return db
 
 
 def optimize(args) -> None:
     print("\nOptimizing database")
     db: sqlite_utils.Database = args.db
     columns = db["media"].columns_dict
+
+    db.enable_wal()
 
     ignore_columns = ["id"]
     fts_able_columns = ["path", "title", "tags", "mood", "genre", "description", "artist", "album"]
@@ -35,7 +39,6 @@ def optimize(args) -> None:
     if db["media"].detect_fts() is None and any(fts_columns):  # type: ignore
         db["media"].enable_fts(fts_columns, create_triggers=True)
 
-    db.enable_wal()
     #
     # sqlite-utils optimize
     #

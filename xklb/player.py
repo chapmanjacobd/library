@@ -13,7 +13,7 @@ import screeninfo
 from rich.prompt import Confirm
 from tabulate import tabulate
 
-from xklb import gui, paths, utils
+from xklb import consts, gui, utils
 from xklb.utils import (
     DEFAULT_MULTIPLE_PLAYBACK,
     SC,
@@ -29,7 +29,7 @@ from xklb.utils import (
 def generic_player(args) -> List[str]:
     if platform.system() == "Linux":
         player = ["xdg-open"]
-    elif any([p in platform.system() for p in ["Windows", "_NT-", "MSYS"]]):
+    elif any([p in platform.system() for p in ("Windows", "_NT-", "MSYS")]):
         if shutil.which("cygstart"):
             player = ["cygstart"]
         else:
@@ -75,19 +75,19 @@ def parse(args, m=None, media_file=None) -> List[str]:
         player = args.player
         args.player_need_sleep = False
 
-    elif args.action in [SC.read] and media_file:
+    elif args.action in (SC.read) and media_file:
         player_path = find_xdg_application(media_file)
         log.info(player_path)
 
     elif mpv:
         args.player_need_sleep = False
         player = [mpv]
-        if args.action in [SC.listen, SC.tubelisten]:
+        if args.action in (SC.listen, SC.tubelisten):
             player.extend([f"--input-ipc-server={args.mpv_socket}", "--no-video", "--keep-open=no", "--really-quiet"])
-        elif args.action in [SC.watch, SC.tubewatch]:
+        elif args.action in (SC.watch, SC.tubewatch):
             player.extend(["--force-window=yes", "--really-quiet"])
 
-        if args.action in [SC.tubelisten, SC.tubewatch]:
+        if args.action in (SC.tubelisten, SC.tubewatch):
             player.extend(["--script-opts=ytdl_hook-try_ytdl_first=yes"])
 
         if not args.multiple_playback:
@@ -99,13 +99,13 @@ def parse(args, m=None, media_file=None) -> List[str]:
         if args.crop:
             player.extend(["--panscan=1.0"])
 
-        if m and args.action in [SC.watch, SC.listen]:
+        if m and args.action in (SC.watch, SC.listen):
             start, end = calculate_duration(args, m)
             if end != 0:
                 if start != 0:
-                    player.extend([f"--start={int(start)}", "--no-save-position-on-quit"])
+                    player.extend([f"--start={start}", "--no-save-position-on-quit"])
                 if end != m["duration"]:
-                    player.extend([f"--end={int(end)}"])
+                    player.extend([f"--end={end}"])
 
         if m and args.action == SC.watch:
             if m["subtitle_count"] > 0:
@@ -144,7 +144,7 @@ def mv_to_keep_folder(args, media_file: str) -> None:
 def moved_media(args, moved_files: Union[str, list], base_from, base_to) -> int:
     moved_files = utils.conform(moved_files)
     modified_row_count = 0
-    if len(moved_files) > 0:
+    if moved_files:
         df_chunked = utils.chunks(moved_files, SQLITE_PARAM_LIMIT)
         for l in df_chunked:
             with args.db.conn:
@@ -164,7 +164,7 @@ def moved_media(args, moved_files: Union[str, list], base_from, base_to) -> int:
 def mark_media_watched(args, files) -> int:
     files = utils.conform(files)
     modified_row_count = 0
-    if len(files) > 0:
+    if files:
         df_chunked = utils.chunks(files, SQLITE_PARAM_LIMIT)
         for l in df_chunked:
             with args.db.conn:
@@ -186,13 +186,13 @@ def mark_media_deleted(args, paths) -> int:
     paths = utils.conform(paths)
 
     modified_row_count = 0
-    if len(paths) > 0:
+    if paths:
         df_chunked = utils.chunks(paths, SQLITE_PARAM_LIMIT)
         for l in df_chunked:
             with args.db.conn:
                 cursor = args.db.conn.execute(
-                    """update media
-                    set is_deleted=1
+                    f"""update media
+                    set time_deleted={utils.NOW}
                     where path in ("""
                     + ",".join(["?"] * len(l))
                     + ")",
@@ -206,7 +206,7 @@ def mark_media_deleted(args, paths) -> int:
 def delete_media(args, paths) -> int:
     paths = utils.conform(paths)
     for p in paths:
-        if len(args.prefix) > 0:
+        if args.prefix:
             Path(p).unlink(missing_ok=True)
         else:
             utils.trash(p)
@@ -231,7 +231,7 @@ def post_act(args, media_file: str, action=None) -> None:
     if action == "keep":
         return
 
-    if args.action in [SC.tubelisten, SC.tubewatch]:
+    if args.action in (SC.tubelisten, SC.tubewatch):
         if action == "remove":
             mark_media_deleted(args, media_file)
         elif action == "ask":
@@ -240,7 +240,7 @@ def post_act(args, media_file: str, action=None) -> None:
         else:
             raise Exception("Unrecognized action", action)
 
-    if args.action in [SC.listen, SC.watch]:
+    if args.action in (SC.listen, SC.watch):
         if action == "softdelete":
             mark_media_deleted(args, media_file)
 
@@ -295,14 +295,14 @@ def get_ordinal_media(args, path: str) -> str:
         new_candidate = candidate[: -len(remove_chars)]
         log.debug(f"Matches for '{new_candidate}':")
 
-        if candidate in ["" or new_candidate]:
+        if candidate in ("" or new_candidate):
             return path
 
         candidate = new_candidate
         query = f"""SELECT path FROM {args.table}
             WHERE 1=1
                 and path like :candidate
-                {'and is_deleted=0' if args.action in [SC.listen, SC.watch] else ''}
+                {'and time_deleted=0' if args.action in (SC.listen, SC.watch) else ''}
                 {'' if (args.play_in_order >= 3) else (args.sql_filter or '')}
             ORDER BY path
             LIMIT 1000
@@ -342,14 +342,14 @@ def watch_chromecast(args, m: dict, subtitles_file=None) -> Union[subprocess.Com
             m["path"],
         )
     else:
-        if args.action in [SC.watch, SC.listen]:
+        if args.action in (SC.watch, SC.listen):
             catt_log = cmd(
                 "catt",
                 "-d",
                 args.chromecast_device,
                 "cast",
                 "-s",
-                subtitles_file if subtitles_file else paths.FAKE_SUBTITLE,
+                subtitles_file if subtitles_file else consts.FAKE_SUBTITLE,
                 m["path"],
             )
         else:
@@ -361,11 +361,11 @@ def watch_chromecast(args, m: dict, subtitles_file=None) -> Union[subprocess.Com
 
 
 def listen_chromecast(args, m: dict) -> Union[subprocess.CompletedProcess, None]:
-    Path(paths.CAST_NOW_PLAYING).write_text(m["path"])
-    Path(paths.FAKE_SUBTITLE).touch()
+    Path(consts.CAST_NOW_PLAYING).write_text(m["path"])
+    Path(consts.FAKE_SUBTITLE).touch()
     if args.with_local:
         cast_process = subprocess.Popen(
-            ["catt", "-d", args.chromecast_device, "cast", "-s", paths.FAKE_SUBTITLE, m["path"]], **os_bg_kwargs()
+            ["catt", "-d", args.chromecast_device, "cast", "-s", consts.FAKE_SUBTITLE, m["path"]], **os_bg_kwargs()
         )
         sleep(0.974)  # imperfect lazy sync; I use keyboard shortcuts to send `set speed` commands to mpv for resync
         # if pyChromecast provides a way to sync accurately that would be very interesting to know; I have not researched it
@@ -373,9 +373,9 @@ def listen_chromecast(args, m: dict) -> Union[subprocess.CompletedProcess, None]
         catt_log = utils.Pclose(cast_process)  # wait for chromecast to stop (you can tell any chromecast to pause)
         sleep(3.0)  # give chromecast some time to breathe
     else:
-        if args.action in [SC.watch, SC.listen]:
-            catt_log = cmd("catt", "-d", args.chromecast_device, "cast", "-s", paths.FAKE_SUBTITLE, m["path"])
-        else:  # args.action in [SC.tubewatch, SC.tubelisten]:
+        if args.action in (SC.watch, SC.listen):
+            catt_log = cmd("catt", "-d", args.chromecast_device, "cast", "-s", consts.FAKE_SUBTITLE, m["path"])
+        else:  # args.action in (SC.tubewatch, SC.tubelisten):
             catt_log = args.cc.play_url(m["path"], resolve=True, block=True)
 
     return catt_log
@@ -400,12 +400,12 @@ def socket_play(args, m: dict) -> None:
         return
 
     play_opts = f"start={start},save-position-on-quit=no"
-    if args.action in [SC.listen, SC.tubelisten]:
+    if args.action in (SC.listen, SC.tubelisten):
         play_opts += ",video=no,really-quiet=yes"
-    elif args.action in [SC.watch, SC.tubewatch]:
+    elif args.action in (SC.watch, SC.tubewatch):
         play_opts += ",fullscreen=yes,force-window=yes,really-quiet=yes"
 
-    if args.action in [SC.tubelisten, SC.tubewatch]:
+    if args.action in (SC.tubelisten, SC.tubewatch):
         play_opts += ",script-opts=ytdl_hook-try_ytdl_first=yes"
 
     f = m["path"].replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
@@ -500,26 +500,45 @@ def get_multiple_player_template(args) -> List[str]:
     return players
 
 
-def multiple_player(args, media) -> None:
-    def open_player(template_args, m):
-        print(m["path"])
-        mp_args = ["--window-scale=1", "--no-border", "--no-keepaspect-window"]
-        return subprocess.Popen([*args.player, *mp_args, *template_args, "--", m["path"]], **os_bg_kwargs())
+def _create_player(args, window_geometry, media):
+    m = media.pop()
+    print(m["path"])
+    mp_args = ["--window-scale=1", "--no-border", "--no-keepaspect-window"]
+    return {
+        **m,
+        "process": subprocess.Popen([*args.player, *mp_args, *window_geometry, "--", m["path"]], **os_bg_kwargs()),
+    }
 
+
+def gui_post_act(args, media, m):
+    if args.post_action in ("ask", "askkeep"):
+        r = gui.askkeep(m["path"], len(media))
+        if r == "DELETE":
+            post_act(args, m["path"], action="delete")
+        elif r == "KEEP" and args.post_action == "ask":
+            post_act(args, m["path"], action="keep")
+        elif r == "KEEP" and args.post_action == "askkeep":
+            mv_to_keep_folder(args, m["path"])
+        else:
+            raise Exception("I did not quite catch that... what did you say?")
+    else:
+        post_act(args, m["path"])
+
+
+def multiple_player(args, media) -> None:
     args.player = parse(args)
 
     template = get_multiple_player_template(args)
     players = []
 
-    try:
+    try:  # pylint: disable=too-many-nested-blocks
         while media:
-            for t_idx, t in enumerate(template):
+            for t_idx, player_hole in enumerate(template):
                 try:
                     m = players[t_idx]
                 except IndexError:
                     log.debug("%s IndexError", t_idx)
-                    m = media.pop()
-                    players.append({**m, "process": open_player(t, m)})
+                    players.append(_create_player(args, player_hole, media))
                 else:
                     log.debug("%s Check if still running", t_idx)
                     if m["process"].poll() is not None:
@@ -530,35 +549,23 @@ def multiple_player(args, media) -> None:
                             if not args.ignore_errors:
                                 exit(r.returncode)
 
-                        if args.action in [SC.listen, SC.watch, SC.tubelisten, SC.tubewatch]:
-                            if args.post_action in ["ask", "askkeep"]:
-                                r = gui.askkeep(m["path"], len(media))
-                                if r == "DELETE":
-                                    post_act(args, m["path"], action="delete")
-                                elif r == "KEEP" and args.post_action == "ask":
-                                    post_act(args, m["path"], action="keep")
-                                elif r == "KEEP" and args.post_action == "askkeep":
-                                    mv_to_keep_folder(args, m["path"])
-                                else:
-                                    raise Exception("I did not quite catch that... what did you say?")
-                            else:
-                                post_act(args, m["path"])
+                        if args.action in (SC.listen, SC.watch, SC.tubelisten, SC.tubewatch):
+                            gui_post_act(args, media, m)
 
-                        m = media.pop()
-                        players[t_idx] = {**m, "process": open_player(t, m)}
+                        players[t_idx] = _create_player(args, player_hole, media)
 
             log.debug("-- A dragon slumbers over its hoard of %s media --", len(media))
-            sleep(0.2)
+            sleep(0.2)  # I don't know if this is necessary but may as well~~
     finally:
         for m in players:
             m["process"].kill()
 
 
 def local_player(args, m, media_file) -> subprocess.CompletedProcess:
-    if system() == "Windows" or args.action in [SC.watch, SC.tubewatch]:
+    if system() == "Windows" or args.action in (SC.watch, SC.tubewatch):
         r = cmd(*args.player, media_file, strict=False)
-    else:  # args.action in [SC.listen, SC.tubelisten]
-        r = cmd_interactive(*args.player, media_file, strict=False)
+    else:  # args.action in (SC.listen, SC.tubelisten)
+        r = cmd_interactive(*args.player, media_file)
 
     if args.player_need_sleep:
         if hasattr(m, "duration"):
@@ -574,8 +581,8 @@ def printer(args, query, bindings) -> None:
     if "a" in args.print:
         query = f"""select
             "Aggregate" as path
-            {', sum(duration) duration' if args.action in [SC.listen, SC.watch, SC.tubelisten, SC.tubewatch, SC.read] else ''}
-            {', avg(duration) avg_duration' if args.action in [SC.listen, SC.watch, SC.tubelisten, SC.tubewatch, SC.read] else ''}
+            {', sum(duration) duration' if args.action in (SC.listen, SC.watch, SC.tubelisten, SC.tubewatch, SC.read) else ''}
+            {', avg(duration) avg_duration' if args.action in (SC.listen, SC.watch, SC.tubelisten, SC.tubewatch, SC.read) else ''}
             {', sparseness' if args.action == SC.filesystem else ''}
             {', sum(size) size' if args.action != SC.tabs else ''}
             , count(*) count
@@ -591,7 +598,7 @@ def printer(args, query, bindings) -> None:
     if args.verbose >= 2 and args.cols and "*" in args.cols:
         breakpoint()
 
-    if len(db_resp) == 0:
+    if not db_resp:
         print("No media found")
         exit(2)
 
@@ -639,19 +646,19 @@ def printer(args, query, bindings) -> None:
         utils.col_duration(tbl, "duration")
         utils.col_duration(tbl, "avg_duration")
 
-        for t in [
+        for t in (
             "time_modified",
             "time_created",
             "time_played",
             "time_valid",
             "time_partial_first",
             "time_partial_last",
-        ]:
+        ):
             utils.col_naturaldate(tbl, t)
 
         print(tabulate(tbl, tablefmt="fancy_grid", headers="keys", showindex=False))  # type: ignore
 
-        if args.action in [SC.listen, SC.watch, SC.tubelisten, SC.tubewatch]:
+        if args.action in (SC.listen, SC.watch, SC.tubelisten, SC.tubewatch):
             if len(db_resp) >= 2:
                 print(f"{len(db_resp)} media" + (f" (limited to {args.limit})" if args.limit else ""))
 

@@ -28,6 +28,23 @@ tube_exclude_string = (
 )
 
 
+tubelist_include_string = (
+    lambda x: f"""and (
+    path like :include{x}
+    OR title like :include{x}
+    OR ie_key like :include{x}
+)"""
+)
+
+tubelist_exclude_string = (
+    lambda x: f"""and (
+    path not like :exclude{x}
+    AND title not like :exclude{x}
+    AND ie_key not like :exclude{x}
+)"""
+)
+
+
 def construct_tube_query(args) -> Tuple[str, dict]:
     cf = []
     bindings = {}
@@ -69,9 +86,7 @@ def construct_tube_query(args) -> Tuple[str, dict]:
     {args.sql_filter}
     {'and width < height' if args.portrait else ''}
     ORDER BY 1=1
-        , video_count > 0 desc
-        , audio_count > 0 desc
-        {',' + args.sort}
+        {', ' + args.sort}
         {', path' if args.print or args.include or args.play_in_order > 0 else ''}
         , random()
     {LIMIT} {OFFSET}
@@ -90,11 +105,45 @@ def tube_listen() -> None:
     process_playqueue(args, construct_tube_query)
 
 
-def printer(args) -> None:
-    query = "select distinct ie_key, title, path from playlists"
+def construct_tubelist_query(args) -> Tuple[str, dict]:
+    cf = []
+    bindings = {}
+
+    cf.extend([" and " + w for w in args.where])
+
+    args.table = "playlists"
+    if args.db["playlists"].detect_fts():
+        if args.include:
+            args.table = db.fts_search(args, bindings)
+        elif args.exclude:
+            construct_search_bindings(args, bindings, cf, tubelist_include_string, tubelist_exclude_string)
+    else:
+        construct_search_bindings(args, bindings, cf, tubelist_include_string, tubelist_exclude_string)
+
+    args.sql_filter = " ".join(cf)
+
+    LIMIT = "LIMIT " + str(args.limit) if args.limit else ""
+
+    query = f"""SELECT
+        distinct ie_key
+        , title
+        , path
+    FROM {args.table}
+    WHERE 1=1
+    {args.sql_filter}
+    ORDER BY 1=1
+        {', ' + args.sort}
+        , random()
+    {LIMIT}
+    """
+
+    return query, bindings
+
+
+def printer(args, query, bindings) -> None:
     if "a" in args.print:
         query = f"""select
-            playlists.is_deleted
+            playlists.time_deleted
             , playlists.ie_key
             , playlists.title
             , playlists.category
@@ -104,27 +153,27 @@ def printer(args) -> None:
             , sum(media.size) size
             , count(*) count
         from media
-        left join playlists on playlists.path = media.playlist_path
+        left join ({query}) playlists on playlists.path = media.playlist_path
         group by coalesce(playlists.path, "Playlist-less media")
-        order by playlists.is_deleted desc, category, profile, playlists.path"""
+        order by playlists.time_deleted > 0 desc, category, profile, playlists.path"""
 
     if "g" in args.print:
         query = f"""select
             playlists.ie_key
             , playlists.category
             , playlists.profile download_profile
-            , is_downloaded
-            , avg(time_download) avg_time_since_download
+            , time_downloaded
+            , avg(time_downloaded) avg_time_since_download
             , sum(media.duration) duration
             , sum(media.size) size
             , count(*) count
         from media
-        left join playlists on playlists.path = media.playlist_path
+        left join ({query}) playlists on playlists.path = media.playlist_path
         where category != '__BLOCKLIST_ENTRY_'
-        group by is_downloaded, playlists.ie_key, playlists.category, playlists.profile
-        order by is_downloaded desc, sum(is_downloaded), category, profile"""
+        group by time_downloaded > 0, playlists.ie_key, playlists.category, playlists.profile
+        order by time_downloaded > 0 desc, sum(time_downloaded > 0), category, profile"""
 
-    db_resp = list(args.db.query(query))
+    db_resp = list(args.db.query(query, bindings))
 
     if "f" in args.print:
         print("\n".join(list(map(operator.itemgetter("path"), db_resp))))
@@ -189,6 +238,12 @@ def tube_list() -> None:
     parser.add_argument("database", nargs="?", default="tube.db")
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
     parser.add_argument("--print", "-p", nargs="*", default="p", choices=["a", "f", "g", "p"], help=argparse.SUPPRESS)
+    parser.add_argument("--sort", "-u", nargs="+", default="path", help=argparse.SUPPRESS)
+    parser.add_argument("--where", "-w", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
+    parser.add_argument("--include", "-s", "--search", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
+    parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
+    parser.add_argument("--duration", "-d", action="append", help=argparse.SUPPRESS)
+    parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", help=argparse.SUPPRESS)
     parser.add_argument("--delete", "--remove", "--erase", "--rm", "-rm", nargs="+", help=argparse.SUPPRESS)
     parser.add_argument("-v", "--verbose", action="count", default=0)
     args = parser.parse_args()
@@ -201,4 +256,4 @@ def tube_list() -> None:
     if args.delete:
         return delete_playlists(args, args.delete)
 
-    printer(args)
+    printer(args, *construct_tubelist_query(args))
