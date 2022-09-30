@@ -117,12 +117,6 @@ def parse_args(action, usage):
 
 
 def dl_add(args=None) -> None:
-    """
-    TODO:
-        auto-detect reddit, use bdfr
-        option for immediate download?
-    """
-
     if args:
         sys.argv[1:] = args
 
@@ -330,7 +324,7 @@ def construct_query(args) -> Tuple[str, dict]:
             , media.duration
             , media.time_created
             , playlists.dl_config
-            , playlists.category
+            , coalesce(playlists.category, playlists.ie_key) category
             , playlists.profile
         FROM media
         JOIN playlists on playlists.path = media.playlist_path
@@ -660,24 +654,3 @@ def dl_download(args=None) -> None:
             raise NotImplementedError
 
     db.optimize(args)
-
-
-def parse_gallerydl_exit(ret_val: int) -> str:
-    errors = []
-    if ret_val & 1:
-        errors.append("Unspecified Error")
-    if ret_val & 2:
-        errors.append("Cmdline Arguments")
-    if ret_val & 4:
-        errors.append("HTTP Error")
-    if ret_val & 8:
-        errors.append("Not Found / 404")
-    if ret_val & 16:
-        errors.append("Auth / Login")
-    if ret_val & 32:
-        errors.append("Format / Filter")
-    if ret_val & 64:
-        errors.append("No Extractor")
-    if ret_val & 128:
-        errors.append("OS Error")
-    return "; ".join(errors)
