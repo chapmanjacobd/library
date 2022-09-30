@@ -317,16 +317,22 @@ def consolidate(playlist_path: str, v: dict, ydl: Optional[yt_dlp.YoutubeDL] = N
     cv["path"] = safe_unpack(v.pop("webpage_url", None), v.pop("url", None), v.pop("original_url", None))
     size_bytes = v.pop("filesize_approx", None)
     cv["size"] = 0 if not size_bytes else int(size_bytes)
-    cv["time_uploaded"] = upload_date
-    cv["time_created"] = int(datetime.now().timestamp())
     duration = v.pop("duration", None)
     cv["duration"] = 0 if not duration else int(duration)
+    cv["time_uploaded"] = upload_date
+    cv["time_created"] = int(datetime.now().timestamp())
     cv["time_deleted"] = 0
     cv["time_downloaded"] = 0
     cv["play_count"] = 0
     cv["time_played"] = 0
-    cv["language"] = v.pop("language", None)
-    cv["tags"] = combine(v.pop("description", None), v.pop("categories", None), v.pop("tags", None), subtitles)
+    language = v.pop("language", None)
+    cv["tags"] = combine(
+        "language:" + language if language else None,
+        v.pop("description", None),
+        v.pop("categories", None),
+        v.pop("tags", None),
+        subtitles,
+    )
     cv["id"] = v.pop("id")
     cv["ie_key"] = safe_unpack(v.pop("ie_key", None), v.pop("extractor_key", None), v.pop("extractor", None))
     cv["title"] = safe_unpack(v.pop("title", None), v.get("playlist_title"))

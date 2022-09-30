@@ -167,6 +167,27 @@ Organize via separate databases.
     library fsadd --audio audiobooks.db ./audiobooks/
     library fsadd --audio podcasts.db ./podcasts/ ./another/more/secret/podcasts_folder/
 
+A word on updating.
+
+When updating you should know that the schema will often change. You may see
+an error like "`sqlite3.OperationalError: no such column: time_deleted`". This is
+perfectly normal. It only means I'm lazy and don't want to deal with schema migrations.
+
+Part of the solution will be for you to run `fsadd`, `tubeadd`, `galleryadd` or
+`redditadd`; whichever one is applicable for your kind of database, or rather,
+the kind of operation you are attempting to do. `fsupdate` et al should also fix
+any schema issues.
+
+This is experimental software and a hobby project.
+
+Backwards compatibility is limited to the same minor version. It's likely you will
+eventually encounter some data issues eventually. The easiest solution is to NOT
+update. If things are going well, there is no reason to update. The second easiest
+solution is to do a full re-scan, or a partial re-scan and some database surgery.
+
+    pip install --upgrade xklb # if you are planning a party do not update
+    library fsupdate
+
 ## Usage
 
     $ library watch -h
@@ -238,9 +259,9 @@ Explore `library` databases in your browser
 
 ### TODOs (PRs welcome)
 
+- galleryadd, galleryupdate
 - print g: separate into Local Media and Online Media tables
 - stats: lb stats, lb show/print
-- galleryadd, galleryupdate
 - fsadd, add "playlist" path (scan path)
 - dladd --> tubeadd
 - tubewatch --> watch
