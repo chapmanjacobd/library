@@ -109,6 +109,7 @@ def find_new_files(args, path) -> List[str]:
     else:
         raise Exception(f"fs_extract for db_type {args.db_type} not implemented")
 
+    columns = args.db['media'].columns
     scanned_set = set(scanned_files)
 
     try:
@@ -120,18 +121,19 @@ def find_new_files(args, path) -> List[str]:
                 where 1=1
                     and time_deleted=0
                     and path like '{path}%'
-                    {'AND time_downloaded > 0' if 'time_downloaded' in args.db['media'].columns else ''}
+                    {'AND time_downloaded > 0' if 'time_downloaded' in columns else ''}
                 """
                 )
             ]
         )
-    except Exception:
+    except Exception as e:
+        log.debug(e)
         new_files = list(scanned_set)
     else:
         new_files = list(scanned_set - existing_set)
 
         deleted_files = list(existing_set - scanned_set)
-        if not new_files and len(deleted_files) >= len(existing_set):
+        if not new_files and len(deleted_files) >= len(existing_set) and not args.force:
             return []  # if path not mounted or all files deleted
         deleted_count = mark_media_deleted(args, deleted_files)
         if deleted_count > 0:
@@ -144,7 +146,8 @@ def scan_path(args, path) -> int:
     path = Path(path).resolve()
     if not path.exists():
         print(f"[{path}] Path does not exist")
-        return 0
+        if not args.force:
+            return 0
     print(f"[{path}] Building file list...")
 
     new_files = find_new_files(args, path)
@@ -234,10 +237,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--ocr", "--OCR", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--speech-recognition", "--speech", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--scan-subtitles", "--scan-subtitle", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--subtitle", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--youtube-only", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--subliminal-only", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--delete-unplayable", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--force", "-f", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--optimize", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--verbose", "-v", action="count", default=0)
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
