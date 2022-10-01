@@ -97,7 +97,7 @@ def lb(args=None) -> None:
 
     subp_download = subparsers.add_parser("download", aliases=["dl"], add_help=False)
     subp_download.set_defaults(func=dl_download)
-    subp_block = subparsers.add_parser("block", add_help=False)
+    subp_block = subparsers.add_parser("block", aliases=["bl"], add_help=False)
     subp_block.set_defaults(func=dl_block)
 
     subp_playlist = subparsers.add_parser(
