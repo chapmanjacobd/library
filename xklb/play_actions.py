@@ -65,7 +65,7 @@ def construct_query(args) -> Tuple[str, dict]:
     if args.action == SC.read:
         duration = "cast(length(tags) / 4.2 / 220 * 60 as INT) + 10 duration"
 
-    cols = args.cols or ["path", "title", duration, "size", "subtitle_count", "is_dir"]
+    cols = args.cols or ["path", "title", duration, "size", "sparseness", "subtitle_count", "is_dir"]
     SELECT = "\n,".join([c for c in cols if c in columns])
     LIMIT = "LIMIT " + str(args.limit) if args.limit else ""
     OFFSET = f"OFFSET {args.skip}" if args.skip else ""
