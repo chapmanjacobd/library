@@ -33,7 +33,7 @@ def usage() -> str:
 
     download subcommands:
       download [dl]                Download media
-      block [bl]                   Prevent downloading specific URLs
+      block                        Prevent downloading specific URLs
 
     statistics subcommands:
       playlists [pl, folders]      List added playlists
