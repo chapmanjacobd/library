@@ -270,10 +270,11 @@ def override_sort(sort_expression: str) -> str:
 def get_ordinal_media(args, path: str) -> str:
     # TODO: maybe try https://dba.stackexchange.com/questions/43415/algorithm-for-finding-the-longest-prefix
 
-    similar_videos = []
-    candidate = deepcopy(path)
+    columns = [c.name for c in args.db["media"].columns]
 
     total_media = args.db.execute("select count(*) val from media").fetchone()[0]
+    candidate = deepcopy(path)
+    similar_videos = []
     while len(similar_videos) < 2:
         remove_groups = re.split(r"([\W]+|\s+|Ep\d+|x\d+|\.\d+)", candidate)
         log.debug(remove_groups)
@@ -293,7 +294,7 @@ def get_ordinal_media(args, path: str) -> str:
         query = f"""SELECT path FROM {args.table}
             WHERE 1=1
                 and path like :candidate
-                {'and time_deleted=0' if args.action in (SC.listen, SC.watch) else ''}
+                {'and time_deleted=0' if 'time_deleted' in columns else ''}
                 {'' if (args.play_in_order >= 3) else (args.sql_filter or '')}
             ORDER BY path
             LIMIT 1000
@@ -569,13 +570,14 @@ def local_player(args, m, media_file) -> subprocess.CompletedProcess:
 
 
 def printer(args, query, bindings) -> None:
+    columns = [c.name for c in args.db["media"].columns]
     if "a" in args.print:
         query = f"""select
             "Aggregate" as path
-            {', sum(duration) duration' if args.action in (SC.listen, SC.watch, SC.read) else ''}
-            {', avg(duration) avg_duration' if args.action in (SC.listen, SC.watch, SC.read) else ''}
-            {', sparseness' if args.action == SC.filesystem else ''}
-            {', sum(size) size' if args.action != SC.tabs else ''}
+            {', sum(duration) duration' if 'duration' in columns else ''}
+            {', avg(duration) avg_duration' if 'duration' in columns else ''}
+            {', sparseness' if 'sparseness' in columns else ''}
+            {', sum(size) size' if 'size' in columns else ''}
             , count(*) count
             {', ' + ', '.join([f'sum({c}) sum_{c}' for c in args.cols]) if args.cols else ''}
             {', ' + ', '.join([f'avg({c}) avg_{c}' for c in args.cols]) if args.cols else ''}
@@ -641,7 +643,7 @@ def printer(args, query, bindings) -> None:
 
         print(tabulate(tbl, tablefmt="fancy_grid", headers="keys", showindex=False))
 
-        if args.action in (SC.listen, SC.watch):
+        if "duration" in columns:
             if len(media) >= 2:
                 print(f"{len(media)} media" + (f" (limited to {args.limit})" if args.limit else ""))
 

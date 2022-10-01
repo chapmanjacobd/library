@@ -133,7 +133,7 @@ def is_supported(url) -> bool:  # thank you @dbr
 
 
 def get_playlists(args, cols="path, dl_config", constrain=False) -> List[dict]:
-    columns = args.db["playlists"].columns
+    columns = [c.name for c in args.db["playlists"].columns]
     sql_filters = []
     if "time_deleted" in columns:
         sql_filters.append("AND time_deleted=0")
