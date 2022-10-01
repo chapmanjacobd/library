@@ -2,8 +2,8 @@ import sys
 
 import pytest
 
-from xklb.fs_actions import watch as wt
 from xklb.lb import lb
+from xklb.play_actions import watch as wt
 
 
 def test_lb_help(capsys):

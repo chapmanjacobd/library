@@ -7,16 +7,9 @@ from typing import Dict, List, Union
 from joblib import Parallel, delayed
 
 from xklb import av, books, consts, db, utils
+from xklb.consts import DBType
 from xklb.player import mark_media_deleted
-from xklb.utils import SQLITE_PARAM_LIMIT, log
-
-
-class DBType:
-    audio = "audio"
-    video = "video"
-    filesystem = "filesystem"
-    text = "text"
-    image = "image"
+from xklb.utils import log
 
 
 def calculate_sparseness(stat) -> int:
@@ -44,7 +37,7 @@ def extract_metadata(mp_args, f) -> Union[Dict[str, int], None]:
         size=stat.st_size,
         time_created=int(stat.st_ctime),
         time_modified=int(stat.st_mtime),
-        time_downloaded=utils.NOW,
+        time_downloaded=consts.NOW,
         time_deleted=0,
     )
 
@@ -77,7 +70,7 @@ def extract_metadata(mp_args, f) -> Union[Dict[str, int], None]:
 def extract_chunk(args, chunk_paths) -> None:
     n_jobs = -1
     if args.db_type in (DBType.text, DBType.image, DBType.filesystem):
-        n_jobs = utils.CPU_COUNT
+        n_jobs = consts.CPU_COUNT
     if args.verbose >= 2:
         n_jobs = 1
 
@@ -91,7 +84,8 @@ def extract_chunk(args, chunk_paths) -> None:
         for p in Path(consts.SUB_TEMP_DIR).glob("*.srt"):
             p.unlink()
 
-    args.db["media"].insert_all(list(filter(None, metadata)), pk="path", alter=True, replace=True)
+    media = list(filter(None, metadata))
+    args.db["media"].insert_all(media, pk="path", alter=True, replace=True)
 
 
 def find_new_files(args, path) -> List[str]:
@@ -109,7 +103,7 @@ def find_new_files(args, path) -> List[str]:
     else:
         raise Exception(f"fs_extract for db_type {args.db_type} not implemented")
 
-    columns = args.db['media'].columns
+    columns = [c.name for c in args.db["media"].columns]
     scanned_set = set(scanned_files)
 
     try:
@@ -157,9 +151,9 @@ def scan_path(args, path) -> int:
         log.debug(new_files)
 
         if args.db_type in (DBType.text):
-            batch_count = utils.CPU_COUNT
+            batch_count = consts.CPU_COUNT
         else:
-            batch_count = SQLITE_PARAM_LIMIT // 100
+            batch_count = consts.SQLITE_PARAM_LIMIT // 100
         chunks_count = math.ceil(len(new_files) / batch_count)
         df_chunked = utils.chunks(new_files, batch_count)
         for idx, l in enumerate(df_chunked):

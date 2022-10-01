@@ -17,18 +17,18 @@ def parse_args() -> argparse.Namespace:
 
 
 def get_paths(args):
-    columns = args.db["media"].columns
+    columns = [c.name for c in args.db["media"].columns]
     sql_filters = []
     if "time_deleted" in columns:
         sql_filters.append("AND time_deleted=0")
     if "time_downloaded" in columns:
         sql_filters.append("AND time_downloaded > 0")
 
-    db_resp = [
+    media = [
         d["path"] for d in args.db.query(f"select path from media where 1=1 {' '.join(sql_filters)} order by path")
     ]
 
-    return db_resp
+    return media
 
 
 def rename_invalid_files() -> None:

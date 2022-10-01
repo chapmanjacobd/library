@@ -21,8 +21,8 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
 
     local media subcommands:
       fsadd [extract, xr]          Create a local media database; Add folders
-      listen [lt]                  Listen to local media
-      watch [wt]                   Watch local media
+      listen [lt]                  Listen to local and online media
+      watch [wt]                   Watch local and online media
       read [books, docs]           Read books
       view [see, look]             View images
       filesystem [fs]              Browse files
@@ -33,15 +33,14 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
     online media subcommands:
       tubeadd [ta, xt]             Create a tube database; Add playlists
       tubeupdate [tu]              Add new videos from saved playlists
-      tubelist [pl, playlists]     List added playlists
-      tubewatch [tw, entries]      Watch the tube
-      tubelisten [tl]              Listen to the tube
 
-    download subcommands (under construction):
-      dladd [da]                   Create a download database; Add URLs
-      dlupdate [du]                Add new videos from saved playlists
+    download subcommands:
       download [dl]                Download media
-      block                        Prevent downloading from specific channels
+      block [bl]                   Prevent downloading specific URLs
+
+    statistics subcommands:
+      playlists [pl, folders]      List added playlists
+      dlstatus [ds]                Show download status
 
     playback subcommands:
       now                          Print what is currently playing
@@ -57,12 +56,12 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
 ## Quick Start -- watch online media on your PC
 
     wget https://github.com/chapmanjacobd/lb/raw/main/examples/mealtime.tw.db
-    library tubewatch mealtime.tw.db
+    library watch mealtime.tw.db
 
 ## Quick Start -- listen to online media on a chromecast group
 
     wget https://github.com/chapmanjacobd/lb/raw/main/examples/music.tl.db
-    library tubelisten music.tl.db -ct "House speakers"
+    library listen music.tl.db -ct "House speakers"
 
 ## Start -- local media
 
@@ -118,7 +117,7 @@ any videos not previously seen.
 
 ### 2. Watch / Listen from websites
 
-    library tubewatch maker.db
+    library watch maker.db
 
 To stop playing press Ctrl+C in either the terminal or mpv
 
@@ -296,7 +295,7 @@ solution is to do a full re-scan, or a partial re-scan and some database surgery
 
         Open ipython with all of your media
         library watch -vv -p --cols '*'
-        ipdb> len(db_resp)
+        ipdb> len(media)
         462219
 
     Set the play queue size:
@@ -477,14 +476,12 @@ Explore `library` databases in your browser
 
 ### TODOs (PRs welcome)
 
-- galleryadd, galleryupdate
-- print g: separate into Local Media and Online Media tables
 - stats: lb stats, lb show/print
 - fsadd, add "playlist" path (scan path)
-- dladd --> tubeadd
-- tubewatch --> watch
-- tubelisten --> listen
 - fsupdate: run fsadd for each path playlist
+- dladd --> tubeadd
+- print g: separate into Local Media and Online Media tables
+- galleryadd, galleryupdate
 - redditadd, redditupdate
 - multiple-playback: mpv switch to absolute positioning (instead of percent)
 - more test coverage -- https://hypothesis.readthedocs.io/en/latest/quickstart.html

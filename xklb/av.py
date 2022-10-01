@@ -4,7 +4,8 @@ from typing import Dict, Union
 import ffmpeg, mutagen
 from tinytag import TinyTag
 
-from xklb import fs_extract, subtitle, utils
+from xklb import subtitle, utils
+from xklb.consts import DBType
 from xklb.utils import combine, log, safe_unpack
 
 
@@ -180,11 +181,11 @@ def munge_av_tags(args, media, f) -> Union[dict, None]:
         "language": language,
     }
 
-    if args.db_type == fs_extract.DBType.video:
+    if args.db_type == DBType.video:
         video_tags = get_subtitle_tags(args, f, streams, codec_types)
         media = {**media, **video_tags}
 
-    if args.db_type == fs_extract.DBType.audio:
+    if args.db_type == DBType.audio:
         stream_tags = get_audio_tags(f)
         media = {**media, **stream_tags}
     return media

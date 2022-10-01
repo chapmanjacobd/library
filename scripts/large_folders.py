@@ -8,23 +8,23 @@ from xklb.utils import log
 
 
 def get_table(args) -> List[dict]:
-    cols = args.db["media"].columns
+    columns = [c.name for c in args.db["media"].columns]
 
-    db_resp = list(
+    media = list(
         args.db.query(
             f"""
         select path, size
         from media
         where 1=1
-            {'and time_deleted = 0' if 'time_deleted' in cols else ''}
-            {'and time_downloaded = 0' if 'time_downloaded' in cols else ''}
+            {'and time_deleted = 0' if 'time_deleted' in columns else ''}
+            {'and time_downloaded = 0' if 'time_downloaded' in columns else ''}
         order by path
         """
         )
     )
 
     d = {}
-    for m in db_resp:
+    for m in media:
         p = m["path"].split("/")
         while len(p) >= 3:
             p.pop()
@@ -67,7 +67,7 @@ def large_folders() -> None:
 
     tbl = utils.col_resize(tbl, "path", 60)
     tbl = utils.col_naturalsize(tbl, "size")
-    print(tabulate(tbl, tablefmt="fancy_grid", headers="keys", showindex=False))  # type: ignore
+    print(tabulate(tbl, tablefmt="fancy_grid", headers="keys", showindex=False))
     if not args.limit:
         print(f"{len(tbl)} folders found")
 

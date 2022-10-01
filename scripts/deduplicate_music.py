@@ -46,9 +46,9 @@ def get_duplicates(args) -> List[dict]:
         , m1.path desc
     """
 
-    db_resp = list(args.db.query(query))
+    media = list(args.db.query(query))
 
-    return db_resp
+    return media
 
 
 def parse_args() -> argparse.Namespace:
@@ -74,7 +74,7 @@ def deduplicate_music() -> None:
     tbl = utils.col_resize(tbl, "keep_path", 30)
     tbl = utils.col_resize(tbl, "duplicate_path", 30)
     tbl = utils.col_naturalsize(tbl, "duplicate_size")
-    print(tabulate(tbl, tablefmt="fancy_grid", headers="keys", showindex=False))  # type: ignore
+    print(tabulate(tbl, tablefmt="fancy_grid", headers="keys", showindex=False))
 
     print(f"{duplicates_count} duplicates found (showing {args.limit})")
     print(f"Approx. space savings: {humanize.naturalsize(duplicates_size // 2)}")

@@ -3,9 +3,9 @@ from unittest import mock
 
 import pytest
 
-from xklb.fs_actions import watch as wt
 from xklb.fs_extract import main as xr
 from xklb.lb import lb
+from xklb.play_actions import watch as wt
 
 v_db = "--db", "tests/data/video.db"
 xr([*v_db, "--optimize", "--scan-subtitles", "tests/data/"])
