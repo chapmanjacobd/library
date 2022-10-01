@@ -291,11 +291,11 @@ def process_playlist(args, playlist_path, ydl_opts, playlist_root=True) -> Union
                 if url != playlist_path and info.get("webpage_url_basename") == "playlist":
                     if url in playlists_of_playlists:
                         raise ExistingPlaylistVideoReached  # prevent infinite bug
+                    if playlist_root:
+                        _add_playlist(args, playlist_path, deepcopy(info))
 
                     process_playlist(args, url, ydl_opts, playlist_root=False)
                     playlists_of_playlists.append(url)
-                    if playlist_root:
-                        _add_playlist(args, playlist_path, deepcopy(info))
                     return [], info
 
                 entry = consolidate(deepcopy(info))
@@ -303,10 +303,10 @@ def process_playlist(args, playlist_path, ydl_opts, playlist_root=True) -> Union
                     entry["playlist_path"] = playlist_path
                     if is_video_known(args, playlist_path, entry["path"]):
                         raise ExistingPlaylistVideoReached
-                    entry = {**entry, **args.extra_media_data}
-                    args.db["media"].upsert(entry, pk="path", alter=True)
 
                     _add_playlist(args, playlist_path, deepcopy(info), entry["path"])
+                    entry = {**entry, **args.extra_media_data}
+                    args.db["media"].upsert(entry, pk="path", alter=True)
 
                     added_media_count += 1
                     if added_media_count > 1:
@@ -399,11 +399,11 @@ def update_playlists(args, playlists):
             get_extra_metadata(args, d["path"], playlist_dl_opts=d["dl_config"])
 
 
-def save_tube_entry(
-    args, webpath, info: Optional[dict] = None, db_type: Optional[DBType] = None, error=None, URE=False
-) -> None:
+def save_tube_entry(args, m, info: Optional[dict] = None, error=None, URE=False) -> None:
+    webpath = m["path"]
     if not info:  # not downloaded
         entry = {
+            "path": webpath,
             "time_downloaded": 0,
             "time_deleted": consts.NOW if URE else 0,
             "error": error,
@@ -414,8 +414,8 @@ def save_tube_entry(
     assert info["local_path"] != ""
     if Path(info["local_path"]).exists():
         fs_args = argparse.Namespace(
-            db_type=db_type,
-            scan_subtitles=True if db_type == DBType.video else False,
+            profile=m["profile"],
+            scan_subtitles=True if m["profile"] == DBType.video else False,
             delete_unplayable=False,
             ocr=False,
             speech_recognition=False,
@@ -432,7 +432,7 @@ def save_tube_entry(
         **tube_entry,
         **fs_tags,
         "webpath": webpath,
-        "time_downloaded": consts.NOW if db_type else 0,
+        "time_downloaded": consts.NOW if m["profile"] else 0,
         "time_deleted": consts.NOW if URE else 0,
         "error": error,
     }
@@ -523,11 +523,11 @@ def yt(args, m) -> None:
         except yt_dlp.DownloadError as e:
             error = consts.REGEX_ANSI_ESCAPE.sub("", str(e))
             log.warning("[%s]: yt-dlp %s", m["path"], error)
-            save_tube_entry(args, m["path"], error=error)
+            save_tube_entry(args, m, error=error)
             return
         if info is None:
             log.warning("[%s]: yt-dlp returned no info", m["path"])
-            save_tube_entry(args, m["path"], error="yt-dlp returned no info")
+            save_tube_entry(args, m, error="yt-dlp returned no info")
             return
 
         if m["profile"] == DBType.audio:
@@ -540,12 +540,12 @@ def yt(args, m) -> None:
 
         if not ydl_log["error"]:
             log.debug("[%s]: No news is good news", m["path"])
-            save_tube_entry(args, m["path"], info, m["profile"])
+            save_tube_entry(args, m, info)
         elif yt_recoverable_errors.match(ydl_errors):
             log.info("[%s]: Recoverable error matched. %s", m["path"], ydl_errors)
-            save_tube_entry(args, m["path"], info, error=ydl_errors)
+            save_tube_entry(args, m, info, error=ydl_errors)
         elif yt_unrecoverable_errors.match(ydl_errors):
             log.info("[%s]: Unrecoverable error matched. %s", m["path"], ydl_errors)
-            save_tube_entry(args, m["path"], info, error=ydl_errors, URE=True)
+            save_tube_entry(args, m, info, error=ydl_errors, URE=True)
         else:
             log.warning("[%s]: Unknown error. %s", m["path"], ydl_errors)

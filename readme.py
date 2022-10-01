@@ -259,7 +259,6 @@ Explore `library` databases in your browser
 
 ### TODOs (PRs welcome)
 
-- stats: lb stats, lb show/print
 - fsadd, add "playlist" path (scan path)
 - fsupdate: run fsadd for each path playlist
 - dladd --> tubeadd

@@ -18,17 +18,25 @@ tube_add(
 
 
 def test_tw_print(capsys):
-    lb(["tw", *tube_db, "-p", "a"])
-    captured = capsys.readouterr().out.replace("\n", "")
-    assert "Aggregate" in captured
+    for lb_command in [
+        ["tw", *tube_db, "-p"],
+        ["dl", *tube_db, "-p"],
+        ["pl", *tube_db],
+        ["ds", *tube_db],
+    ]:
+        lb(lb_command)
+        captured = capsys.readouterr().out.replace("\n", "")
+        assert "Aggregate" not in captured
 
-    lb(["tw", *tube_db, "-pa"])
-    captured = capsys.readouterr().out.replace("\n", "")
-    assert "Aggregate" in captured
-
-    lb(["tw", *tube_db, "-p"])
-    captured = capsys.readouterr().out.replace("\n", "")
-    assert "Aggregate" not in captured
+    for lb_command in [
+        ["tw", *tube_db, "-p", "a"],
+        ["tw", *tube_db, "-pa"],
+        ["pl", *tube_db, "-a"],
+        ["dl", *tube_db, "-p", "a"],
+    ]:
+        lb(lb_command)
+        captured = capsys.readouterr().out.replace("\n", "")
+        assert "Aggregate" or "ie_key" in captured
 
 
 class TestTube(unittest.TestCase):
