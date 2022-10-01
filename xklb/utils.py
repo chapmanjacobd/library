@@ -21,14 +21,6 @@ except ModuleNotFoundError:
 else:
     sys.breakpointhook = ipdb.set_trace
 
-SQLITE_PARAM_LIMIT = 32765
-DEFAULT_PLAY_QUEUE = 120
-DEFAULT_MULTIPLE_PLAYBACK = -1
-CPU_COUNT = int(os.cpu_count() or 4)
-PYTEST_RUNNING = "pytest" in sys.modules
-REGEX_ANSI_ESCAPE = re.compile(r"(?:\x1B[@-_]|[\x80-\x9F])[0-?]*[ -/]*[@-~]")
-NOW = int(datetime.now().timestamp())
-
 
 def exit_nicely(_signal, _frame):
     print("\nExiting... (Ctrl+C)\n")
@@ -38,15 +30,9 @@ def exit_nicely(_signal, _frame):
 signal.signal(signal.SIGINT, exit_nicely)
 
 
-class SC:
-    watch = "watch"
-    listen = "listen"
-    filesystem = "filesystem"
-    tubewatch = "tubewatch"
-    tubelisten = "tubelisten"
-    tabs = "tabs"
-    read = "read"
-    view = "view"
+def no_media_found():
+    print("No media found")
+    exit(2)
 
 
 def with_timeout(timeout):
@@ -239,7 +225,7 @@ def mpv_enrich2(args, media) -> List[dict]:
     paths = list(Path(args.watch_later_directory).glob("*"))
     filtered_list = [
         {
-            **md5s.get(p.stem),  # type: ignore
+            **(md5s.get(p.stem) or {}),
             "time_partial_first": int(p.stat().st_ctime),
             "time_partial_last": int(p.stat().st_mtime),
         }

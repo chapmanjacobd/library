@@ -59,3 +59,32 @@ def fts_search(args, bindings) -> str:
         bindings["query"] += " NOT " + " NOT ".join(fts_quote(args.exclude))
     table = "(" + args.db["media"].search_sql() + ")"  #  include_rank=True
     return table
+
+
+def gen_include_excludes(cols_available):
+    searchable_columns = [
+        "path",
+        "title",
+        "mood",
+        "genre",
+        "year",
+        "bpm",
+        "key",
+        "time",
+        "decade",
+        "categories",
+        "city",
+        "country",
+        "description",
+        "album",
+        "artist",
+        "tags",
+        "playlist_path",
+    ]
+
+    valid_cols = [f"media.{c}" for c in searchable_columns if c in cols_available]
+
+    include_string = "and (" + " like :include{} OR ".join(valid_cols) + " like :include{} )"
+    exclude_string = "and (" + " not like :exclude{} AND ".join(valid_cols) + " not like :exclude{} )"
+
+    return include_string, exclude_string

@@ -3,9 +3,10 @@ from time import sleep
 from typing import Dict, List, Tuple
 
 from xklb import db, utils
+from xklb.consts import SC
 from xklb.player import generic_player, mark_media_watched, override_sort, printer
 from xklb.tabs_extract import Frequency
-from xklb.utils import SC, cmd, flatten, log
+from xklb.utils import cmd, flatten, log
 
 tabs_include_string = (
     lambda x: f"""and (
@@ -116,10 +117,9 @@ def process_tabs_actions(args) -> None:
     if args.print:
         return printer(args, query, bindings)
 
-    media = list(args.db.query(query, bindings))  # type: ignore
+    media = list(args.db.query(query, bindings))
     if not media:
-        print("No media found")
-        exit(2)
+        utils.no_media_found()
 
     media = frequency_filter(args, media)
 

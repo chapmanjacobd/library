@@ -1,16 +1,15 @@
-import json, sqlite3, sys, tempfile
+import argparse, json, sys
 from copy import deepcopy
 from datetime import datetime
+from pathlib import Path
 from sqlite3 import OperationalError
-from time import sleep
 from typing import Dict, List, Optional, Tuple, Union
-from urllib.error import HTTPError
 
 import yt_dlp
 
-from xklb import consts, utils
-from xklb.consts import SUB_TEMP_DIR
-from xklb.subtitle import subs_to_text
+from xklb import consts, fs_extract, utils
+from xklb.consts import DBType
+from xklb.dl_config import yt_meaningless_errors, yt_recoverable_errors, yt_unrecoverable_errors
 from xklb.utils import combine, log, safe_unpack
 
 
@@ -110,7 +109,7 @@ def tube_opts(args, func_opts=None, playlist_opts: Optional[str] = None) -> dict
         **cli_opts,
     }
 
-    if args.verbose == 0 and not utils.PYTEST_RUNNING:
+    if args.verbose == 0 and not consts.PYTEST_RUNNING:
         all_opts.update(ignoreerrors="only_download")
     if args.verbose >= 2:
         all_opts.update(ignoreerrors=False, quiet=False)
@@ -119,7 +118,7 @@ def tube_opts(args, func_opts=None, playlist_opts: Optional[str] = None) -> dict
 
     log.debug(utils.dict_filter_bool(all_opts))
 
-    if hasattr(args, "playlists") and args.playlists and not args.no_sanitize:
+    if hasattr(args, "playlists") and args.playlists and hasattr(args, "no_sanitize") and not args.no_sanitize:
         args.playlists = [consts.sanitize_url(args, path) for path in args.playlists]
 
     return all_opts
@@ -175,143 +174,18 @@ def is_video_known(args, playlist_path, path) -> bool:
     return known[0]
 
 
-def _get_existing_row(args, table, path) -> dict:
-    try:
-        r = list(args.db.query(f"select * from {table} where path=?", [path]))
-    except sqlite3.OperationalError:
-        return {}
-    if len(r) == 1:
-        return r[0]
-    return {}
-
-
-def get_subtitle_text(ydl: yt_dlp.YoutubeDL, video_path, req_sub_dict) -> str:
-    def dl_sub(url):
-        temp_file = tempfile.mktemp(".srt", dir=SUB_TEMP_DIR)
-
-        try:
-            ydl.dl(temp_file, {"url": url}, subtitle=True)
-        except HTTPError:
-            log.info("Unable to download subtitles; skipping")
-            sleep(5)
-            return None
-
-        return temp_file
-
-    urls = [d["url"] for d in list(req_sub_dict.values())]
-    paths = utils.conform([dl_sub(url) for url in urls])
-
-    subs_text = subs_to_text(video_path, paths)
-    for p in paths:
-        utils.trash(p)
-
-    return subs_text
-
-
-def consolidate(playlist_path: str, v: dict, ydl: Optional[yt_dlp.YoutubeDL] = None) -> Union[dict, None]:
-    ignore_keys = [
-        "thumbnail",
-        "thumbnails",
-        "availability",
-        "playable_in_embed",
-        "is_live",
-        "was_live",
-        "modified_date",
-        "release_timestamp",
-        "comment_count",
-        "chapters",
-        "like_count",
-        "channel_follower_count",
-        "webpage_url_basename",
-        "webpage_url_domain",
-        "playlist",
-        "playlist_index",
-        "display_id",
-        "fulltitle",
-        "duration_string",
-        "format",
-        "format_id",
-        "ext",
-        "protocol",
-        "format_note",
-        "tbr",
-        "resolution",
-        "dynamic_range",
-        "vcodec",
-        "vbr",
-        "stretched_ratio",
-        "acodec",
-        "abr",
-        "asr",
-        "epoch",
-        "license",
-        "timestamp",
-        "track",
-        "comments",
-        "author",
-        "text",
-        "parent",
-        "root",
-        "filesize",
-        "source_preference",
-        "video_ext",
-        "audio_ext",
-        "http_headers",
-        "User-Agent",
-        "Accept",
-        "Accept-Language",
-        "Sec-Fetch-Mode",
-        "navigate",
-        "Cookie",
-        "playlist_count",
-        "n_entries",
-        "playlist_autonumber",
-        "availability",
-        "formats",
-        "requested_formats",
-        "requested_entries",
-        "requested_downloads",
-        "thumbnails",
-        "playlist_count",
-        "playlist_id",
-        "playlist_title",
-        "playlist_uploader",
-        "audio_channels",
-        "subtitles",
-        "automatic_captions",
-        "quality",
-        "has_drm",
-        "language_preference",
-        "preference",
-        "location",
-        "downloader_options",
-        "container",
-        "local_path",
-        "album",
-        "artist",
-        "release_year",
-        "creator",
-        "alt_title",
-    ]
-
+def consolidate(v: dict) -> Union[dict, None]:
     if v.get("title") in ("[Deleted video]", "[Private video]"):
         return None
 
     for k in list(v):
-        if k.startswith("_") or k in ignore_keys:
+        if k.startswith("_") or k in consts.TUBE_IGNORE_KEYS:
             v.pop(k, None)
 
     release_date = v.pop("release_date", None)
     upload_date = v.pop("upload_date", None) or release_date
     if upload_date:
         upload_date = int(datetime.strptime(upload_date, "%Y%m%d").timestamp())
-
-    subtitles = v.pop("requested_subtitles", None)
-    if subtitles:
-        if ydl:
-            subtitles = get_subtitle_text(ydl, playlist_path, subtitles)
-        else:
-            subtitles = None
 
     cv = {}
     cv["path"] = safe_unpack(v.pop("webpage_url", None), v.pop("url", None), v.pop("original_url", None))
@@ -331,7 +205,6 @@ def consolidate(playlist_path: str, v: dict, ydl: Optional[yt_dlp.YoutubeDL] = N
         v.pop("description", None),
         v.pop("categories", None),
         v.pop("tags", None),
-        subtitles,
     )
     cv["id"] = v.pop("id")
     cv["ie_key"] = safe_unpack(v.pop("ie_key", None), v.pop("extractor_key", None), v.pop("extractor", None))
@@ -344,7 +217,6 @@ def consolidate(playlist_path: str, v: dict, ydl: Optional[yt_dlp.YoutubeDL] = N
     cv["average_rating"] = v.pop("average_rating", None)
     cv["live_status"] = v.pop("live_status", None)
     cv["age_limit"] = v.pop("age_limit", None)
-    cv["playlist_path"] = playlist_path
     cv["uploader"] = safe_unpack(
         v.pop("playlist_uploader_id", None),
         v.pop("channel_id", None),
@@ -363,11 +235,6 @@ def consolidate(playlist_path: str, v: dict, ydl: Optional[yt_dlp.YoutubeDL] = N
     return cv
 
 
-def save_entries(args, entries) -> None:
-    if entries:
-        args.db["media"].insert_all(entries, pk="path", alter=True, replace=True)  # type: ignore
-
-
 def log_problem(args, playlist_path) -> None:
     if is_playlist_known(args, playlist_path):
         log.warning("Start of known playlist reached %s", playlist_path)
@@ -376,24 +243,35 @@ def log_problem(args, playlist_path) -> None:
 
 
 def _add_playlist(args, playlist_path, pl: dict, media_path: Optional[str] = None) -> None:
-    pl = dict(
-        ie_key=safe_unpack(pl.get("ie_key"), pl.get("extractor_key"), pl.get("extractor")),
-        title=pl.get("playlist_title"),
-        path=playlist_path,
-        uploader=safe_unpack(pl.get("playlist_uploader_id"), pl.get("playlist_uploader")),
-        id=pl.get("playlist_id"),
-        dl_config=args.dl_config,
-        time_deleted=0,
-        category=None,
-        profile=None,
-    )
-    if not pl.get("id") or media_path == pl["path"]:
-        log.warning("Importing playlist-less media %s", pl["path"])
+    playlist = {
+        "ie_key": safe_unpack(pl.get("ie_key"), pl.get("extractor_key"), pl.get("extractor")),
+        "title": pl.get("playlist_title"),
+        "path": playlist_path,
+        "uploader": safe_unpack(pl.get("playlist_uploader_id"), pl.get("playlist_uploader")),
+        "id": pl.get("playlist_id"),
+        "dl_config": args.dl_config,
+        "time_deleted": 0,
+        "category": args.category,
+        "profile": args.profile,
+        **args.extra_playlist_data,
+    }
+
+    if not playlist.get("id") or media_path == playlist["path"]:
+        log.warning("Importing playlist-less media %s", playlist["path"])
     else:
-        existing_data = _get_existing_row(args, "playlists", playlist_path)
-        args.db["playlists"].insert(
-            {**pl, **existing_data, **args.extra_playlist_data}, pk="path", alter=True, replace=True
-        )
+        args.db["playlists"].upsert(playlist, pk="path", alter=True)
+
+
+def save_undownloadable(args, playlist_path):
+    entry = {
+        "path": playlist_path,
+        "category": args.category,
+        "profile": args.profile,
+        "dl_config": args.dl_config,
+        "error": "No data from ydl.extract_info",
+        **args.extra_playlist_data,
+    }
+    args.db["media"].upsert(entry, pk="path", alter=True)
 
 
 playlists_of_playlists = []
@@ -420,11 +298,14 @@ def process_playlist(args, playlist_path, ydl_opts, playlist_root=True) -> Union
                         _add_playlist(args, playlist_path, deepcopy(info))
                     return [], info
 
-                entry = consolidate(playlist_path, deepcopy(info), ydl=super)  # type: ignore
+                entry = consolidate(deepcopy(info))
                 if entry:
+                    entry["playlist_path"] = playlist_path
                     if is_video_known(args, playlist_path, entry["path"]):
                         raise ExistingPlaylistVideoReached
-                    save_entries(args, [{**entry, **args.extra_media_data}])
+                    entry = {**entry, **args.extra_media_data}
+                    args.db["media"].upsert(entry, pk="path", alter=True)
+
                     _add_playlist(args, playlist_path, deepcopy(info), entry["path"])
 
                     added_media_count += 1
@@ -445,20 +326,7 @@ def process_playlist(args, playlist_path, ydl_opts, playlist_root=True) -> Union
             sys.stdout.write("\n")
             if not pl:
                 log.warning("Logging undownloadable media")
-                existing_data = _get_existing_row(args, "undownloadable", playlist_path)
-                args.db["undownloadable"].insert(
-                    {
-                        "path": playlist_path,
-                        "category": None,
-                        "profile": None,
-                        "dl_config": args.dl_config,
-                        **existing_data,
-                        **args.extra_playlist_data,
-                    },
-                    pk="path",
-                    alter=True,
-                    replace=True,
-                )
+                save_undownloadable(args, playlist_path)
 
 
 def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Union[List[Dict], None]:
@@ -481,12 +349,17 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Union[List
     ) as ydl:
         videos = args.db.execute(
             """
-            select path, ie_key, play_count, time_played from media
-            where
+            SELECT
+                path
+            , ie_key
+            , play_count
+            , time_played
+            FROM media
+            WHERE
                 width is null
                 and path not like '%playlist%'
                 and playlist_path = ?
-            order by random()
+            ORDER by random()
             """,
             [playlist_path],
         ).fetchall()
@@ -497,14 +370,14 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Union[List
             if entry is None:
                 continue
 
-            entry = consolidate(playlist_path, entry, ydl)
+            entry = consolidate(entry)
             if entry is None:
                 continue
 
+            entry["playlist_path"] = playlist_path
             entry["play_count"] = play_count
             entry["time_played"] = time_played
-
-            save_entries(args, [entry])
+            args.db["media"].upsert(entry, pk="path", alter=True)
 
             current_video_count += 1
             sys.stdout.write("\033[K\r")
@@ -524,3 +397,155 @@ def update_playlists(args, playlists):
         if args.extra:
             log.warning("[%s]: Getting extra metadata", d["path"])
             get_extra_metadata(args, d["path"], playlist_dl_opts=d["dl_config"])
+
+
+def save_tube_entry(
+    args, webpath, info: Optional[dict] = None, db_type: Optional[DBType] = None, error=None, URE=False
+) -> None:
+    if not info:  # not downloaded
+        entry = {
+            "time_downloaded": 0,
+            "time_deleted": consts.NOW if URE else 0,
+            "error": error,
+        }
+        args.db["media"].upsert(entry, pk="path", alter=True)  # type: ignore
+        return
+
+    assert info["local_path"] != ""
+    if Path(info["local_path"]).exists():
+        fs_args = argparse.Namespace(
+            db_type=db_type,
+            scan_subtitles=True if db_type == DBType.video else False,
+            delete_unplayable=False,
+            ocr=False,
+            speech_recognition=False,
+        )
+        fs_tags = fs_extract.extract_metadata(fs_args, info["local_path"]) or {}
+    else:
+        fs_tags = {}
+
+    tube_entry = consolidate(info) or {}
+    tube_entry.pop("play_count", None)
+    tube_entry.pop("time_played", None)
+
+    entry = {
+        **tube_entry,
+        **fs_tags,
+        "webpath": webpath,
+        "time_downloaded": consts.NOW if db_type else 0,
+        "time_deleted": consts.NOW if URE else 0,
+        "error": error,
+    }
+    args.db["media"].upsert(entry, pk="path", alter=True)  # type: ignore
+
+    if fs_tags:
+        args.db["media"].delete(webpath)
+
+
+def yt(args, m) -> None:
+    ydl_log = {"warning": [], "error": []}
+
+    class BadToTheBoneLogger:
+        def debug(self, msg):
+            if msg.startswith("[debug] "):
+                pass
+            else:
+                self.info(msg)
+
+        def info(self, msg):
+            pass
+
+        def warning(self, msg):
+            ydl_log["warning"].append(msg)
+
+        def error(self, msg):
+            ydl_log["error"].append(msg)
+
+    out_dir = lambda p: str(Path(args.prefix, m["category"], p))
+    Path(out_dir("tunnel_snakes_rule")).parent.mkdir(parents=True, exist_ok=True)
+    ydl_opts = tube_opts(
+        args,
+        func_opts={
+            "subtitleslangs": ["en.*", "EN.*"],
+            "extractor_args": {"youtube": {"skip": ["authcheck"]}},
+            "logger": BadToTheBoneLogger(),
+            "writesubtitles": True,
+            "writeautomaticsub": True,
+            "skip_download": True if consts.PYTEST_RUNNING else False,
+            "subtitlesformat": "srt/best",
+            "extract_flat": False,
+            "lazy_playlist": False,
+            "postprocessors": [{"key": "FFmpegMetadata"}, {"key": "FFmpegEmbedSubtitle"}],
+            "restrictfilenames": True,
+            "extractor_retries": 13,
+            "retries": 13,
+            "outtmpl": {
+                "default": out_dir("%(uploader|uploader_id)s/%(title).200B_[%(id).60B].%(ext)s"),
+                "chapter": out_dir(
+                    "%(uploader|uploader_id)s/%(title).200B_%(section_number)03d_%(section_title)s_[%(id).60B].%(ext)s"
+                ),
+            },
+        },
+        playlist_opts=m["dl_config"],
+    )
+
+    download_archive = Path("~/.local/share/yt_archive.txt").resolve()
+    if download_archive.exists():
+        ydl_opts["download_archive"] = str(download_archive)
+        ydl_opts["cookiesfrombrowser"] = (("firefox",),)
+
+    if args.small:
+        ydl_opts["format"] = "bestvideo[height<=576]+bestaudio/best[height<=576]/best"
+
+    if args.ext == "DEFAULT":
+        if m["profile"] == DBType.audio:
+            args.ext = "opus"
+        else:
+            args.ext = None
+
+    if m["profile"] == DBType.audio:
+        ydl_opts[
+            "format"
+        ] = "bestaudio[ext=opus]/bestaudio[ext=webm]/bestaudio[ext=ogg]/bestaudio[ext=oga]/bestaudio/best"
+        ydl_opts["postprocessors"].append({"key": "FFmpegExtractAudio", "preferredcodec": args.ext})
+
+    match_filters = ["live_status=?not_live"]
+    if args.small:
+        match_filters.append("duration >? 59 & duration <? 14399")
+    match_filter_user_config = ydl_opts.get("match_filter")
+    if match_filter_user_config is not None:
+        match_filters.append(match_filter_user_config)
+    ydl_opts["match_filter"] = yt_dlp.utils.match_filter_func(" & ".join(match_filters).split(" | "))
+
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        try:
+            info = ydl.extract_info(m["path"], download=True)
+        except yt_dlp.DownloadError as e:
+            error = consts.REGEX_ANSI_ESCAPE.sub("", str(e))
+            log.warning("[%s]: yt-dlp %s", m["path"], error)
+            save_tube_entry(args, m["path"], error=error)
+            return
+        if info is None:
+            log.warning("[%s]: yt-dlp returned no info", m["path"])
+            save_tube_entry(args, m["path"], error="yt-dlp returned no info")
+            return
+
+        if m["profile"] == DBType.audio:
+            info["local_path"] = ydl.prepare_filename({**info, "ext": args.ext})
+        else:
+            info["local_path"] = ydl.prepare_filename(info)
+
+        ydl_errors = ydl_log["error"] + ydl_log["warning"]
+        ydl_errors = "\n".join([s for s in ydl_errors if not yt_meaningless_errors.match(s)])
+
+        if not ydl_log["error"]:
+            log.debug("[%s]: No news is good news", m["path"])
+            save_tube_entry(args, m["path"], info, m["profile"])
+        elif yt_recoverable_errors.match(ydl_errors):
+            log.info("[%s]: Recoverable error matched. %s", m["path"], ydl_errors)
+            save_tube_entry(args, m["path"], info, error=ydl_errors)
+        elif yt_unrecoverable_errors.match(ydl_errors):
+            log.info("[%s]: Unrecoverable error matched. %s", m["path"], ydl_errors)
+            save_tube_entry(args, m["path"], info, error=ydl_errors, URE=True)
+        else:
+            log.warning("[%s]: Unknown error. %s", m["path"], ydl_errors)

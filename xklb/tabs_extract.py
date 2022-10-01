@@ -32,9 +32,6 @@ def parse_args() -> argparse.Namespace:
 
 """,
     )
-    parser.add_argument("database", nargs="?", default="tabs.db")
-    parser.add_argument("paths", nargs="+")
-    parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
     parser.add_argument(
         "--frequency",
         "--freqency",
@@ -46,8 +43,11 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--category", "-c", help=argparse.SUPPRESS)
     parser.add_argument("--no-sanitize", "-s", action="store_true", help="Don't sanitize some common URL parameters")
-
     parser.add_argument("-v", "--verbose", action="count", default=0)
+    parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
+
+    parser.add_argument("database", nargs="?", default="tabs.db")
+    parser.add_argument("paths", nargs="+")
     args = parser.parse_args()
 
     if args.db:
@@ -110,4 +110,4 @@ def tabs_add(args=None) -> None:
     args = parse_args()
 
     tabs = [extract_url_metadata(args, path) for path in get_new_paths(args)]
-    args.db["media"].insert_all(tabs, pk="path", alter=True, replace=True)  # type: ignore
+    args.db["media"].insert_all(tabs, pk="path", alter=True, replace=True)

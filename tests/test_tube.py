@@ -2,7 +2,7 @@ import sys, unittest
 from unittest import mock
 
 from xklb.lb import lb
-from xklb.tube_actions import tube_watch
+from xklb.play_actions import watch
 from xklb.tube_extract import tube_add, tube_update
 
 tube_db = "--db", "tests/data/tube.db"
@@ -43,7 +43,7 @@ class TestTube(unittest.TestCase):
             assert out["size"] == 4797012
 
         sys.argv[1:] = tube_db
-        tube_watch()
+        watch()
         out = play_mocked.call_args[0][1]
         assert "https://www.youtube.com/watch?v=QoXubRvB6tQ" in out["path"]
         assert out["duration"] == 28
@@ -53,21 +53,21 @@ class TestTube(unittest.TestCase):
     @mock.patch("xklb.play_actions.play")
     def test_tw_search(self, play_mocked):
         sys.argv = ["tw", *tube_db, "-s", "nothing"]
-        tube_watch()
+        watch()
         out = play_mocked.call_args[0][1]
         assert out is not None
 
     @mock.patch("xklb.play_actions.play")
     def test_tw_sort(self, play_mocked):
         sys.argv = ["tw", *tube_db, "-u", "duration"]
-        tube_watch()
+        watch()
         out = play_mocked.call_args[0][1]
         assert out is not None
 
     @mock.patch("xklb.play_actions.play")
     def test_tw_size(self, play_mocked):
         sys.argv = ["tw", *tube_db, "--size", "+1"]  # more than 1MB
-        tube_watch()
+        watch()
         out = play_mocked.call_args[0][1]
         assert out is not None
 

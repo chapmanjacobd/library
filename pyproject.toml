@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "xklb"
-version = "1.17.002"
+version = "1.17.003"
 description = "xk library"
 authors = ["Jacob Chapman <7908073+chapmanjacobd@users.noreply.github.com>"]
 readme = "README.md"
@@ -155,10 +155,10 @@ evaluation = "10.0 - ((float(5 * error + warning + refactor + convention) / stat
 score = true
 
 [tool.pylint.similarities]
-ignore-comments = true
-ignore-docstrings = true
-ignore-signatures = true
-ignore-imports = true
+# ignore-comments = true
+# ignore-docstrings = true
+# ignore-signatures = true
+# ignore-imports = true
 min-similarity-lines = 3
 
 [tool.pylint.spelling]
@@ -168,8 +168,8 @@ spelling-ignore-comment-directives = "fmt: on,fmt: off,noqa:,noqa,nosec,isort:sk
 [tool.pylint.typecheck]
 contextmanager-decorators = ["contextlib.contextmanager"]
 generated-members = "googleapiclient.discovery.build"
-ignore-none = true
-ignore-on-opaque-inference = true
+# ignore-none = true
+# ignore-on-opaque-inference = true
 ignored-checks-for-mixins = ["no-member", "not-async-context-manager", "not-context-manager", "attribute-defined-outside-init"]
 ignored-classes = ["optparse.Values", "thread._local", "_thread._local"]
 missing-member-hint = true
@@ -178,7 +178,7 @@ missing-member-max-choices = 1
 mixin-class-rgx = ".*[Mm]ixin"
 
 [tool.pylint.variables]
-allow-global-unused-variables = true
+# allow-global-unused-variables = true
 callbacks = ["cb_", "_cb"]
 dummy-variables-rgx = "_+$|(_[a-zA-Z0-9_]*[a-zA-Z0-9]+?$)|dummy|^ignored_|^unused_"
 ignored-argument-names = "_.*"

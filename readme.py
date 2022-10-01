@@ -25,12 +25,12 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
 ## Quick Start -- watch online media on your PC
 
     wget https://github.com/chapmanjacobd/lb/raw/main/examples/mealtime.tw.db
-    library tubewatch mealtime.tw.db
+    library watch mealtime.tw.db
 
 ## Quick Start -- listen to online media on a chromecast group
 
     wget https://github.com/chapmanjacobd/lb/raw/main/examples/music.tl.db
-    library tubelisten music.tl.db -ct "House speakers"
+    library listen music.tl.db -ct "House speakers"
 
 ## Start -- local media
 
@@ -86,7 +86,7 @@ any videos not previously seen.
 
 ### 2. Watch / Listen from websites
 
-    library tubewatch maker.db
+    library watch maker.db
 
 To stop playing press Ctrl+C in either the terminal or mpv
 
@@ -259,14 +259,12 @@ Explore `library` databases in your browser
 
 ### TODOs (PRs welcome)
 
-- galleryadd, galleryupdate
-- print g: separate into Local Media and Online Media tables
 - stats: lb stats, lb show/print
 - fsadd, add "playlist" path (scan path)
-- dladd --> tubeadd
-- tubewatch --> watch
-- tubelisten --> listen
 - fsupdate: run fsadd for each path playlist
+- dladd --> tubeadd
+- print g: separate into Local Media and Online Media tables
+- galleryadd, galleryupdate
 - redditadd, redditupdate
 - multiple-playback: mpv switch to absolute positioning (instead of percent)
 - more test coverage -- https://hypothesis.readthedocs.io/en/latest/quickstart.html

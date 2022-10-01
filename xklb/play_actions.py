@@ -1,13 +1,94 @@
 import argparse, shlex, shutil
 from pathlib import Path
-from typing import Dict
+from random import random
+from typing import Dict, Tuple
 
 from catt.api import CattDevice
 
 from xklb import consts, db, player, utils
+from xklb.consts import SC
 from xklb.player import get_ordinal_media, mark_media_deleted, override_sort
 from xklb.subtitle import externalize_subtitle
-from xklb.utils import DEFAULT_MULTIPLE_PLAYBACK, SC, cmd, log
+from xklb.utils import cmd, log
+
+
+def construct_search_bindings(args, bindings, cf, columns) -> None:
+    includes, excludes = db.gen_include_excludes(columns)
+
+    for idx, inc in enumerate(args.include):
+        cf.append(includes.format(idx))
+        bindings[f"include{idx}"] = "%" + inc.replace(" ", "%").replace("%%", " ") + "%"
+    for idx, exc in enumerate(args.exclude):
+        cf.append(excludes.format(idx))
+        bindings[f"exclude{idx}"] = "%" + exc.replace(" ", "%").replace("%%", " ") + "%"
+
+
+def construct_query(args) -> Tuple[str, dict]:
+    columns = [c.name for c in args.db["media"].columns]
+    cf = []
+    bindings = {}
+
+    if args.duration:
+        cf.append(" and duration IS NOT NULL " + args.duration)
+    if args.size:
+        cf.append(" and size IS NOT NULL " + args.size)
+
+    cf.extend([" and " + w for w in args.where])
+
+    args.table = "media"
+    if args.db["media"].detect_fts():
+        if args.include:
+            args.table = db.fts_search(args, bindings)
+        elif args.exclude:
+            construct_search_bindings(args, bindings, cf, columns)
+    else:
+        construct_search_bindings(args, bindings, cf, columns)
+
+    if args.table == "media" and not args.print:
+        limit = 60_000
+        if args.random:
+            if args.include:
+                args.sort = "random(), " + args.sort
+            else:
+                limit = consts.DEFAULT_PLAY_QUEUE * 16
+        cf.append(f"and rowid in (select rowid from media order by random() limit {limit})")
+
+    args.sql_filter = " ".join(cf)
+    args.sql_filter_bindings = bindings
+
+    # switching between videos with and without subs is annoying
+    subtitle_count = ">0"
+    if random() < 0.659:  # bias slightly toward videos without subtitles
+        subtitle_count = "=0"
+
+    duration = "duration"
+    if args.action == SC.read:
+        duration = "cast(length(tags) / 4.2 / 220 * 60 as INT) + 10 duration"
+
+    cols = args.cols or ["path", "title", duration, "size", "subtitle_count", "is_dir"]
+    SELECT = "\n,".join([c for c in cols if c in columns])
+    LIMIT = "LIMIT " + str(args.limit) if args.limit else ""
+    OFFSET = f"OFFSET {args.skip}" if args.skip else ""
+    query = f"""SELECT
+        {SELECT}
+    FROM {args.table}
+    WHERE 1=1
+        {args.sql_filter}
+        {f'and path not like "%{args.keep_dir}%"' if args.post_action == 'askkeep' else ''}
+        {'and time_deleted=0' if 'time_deleted' in columns and 'time_deleted' not in args.sql_filter else ''}
+    ORDER BY 1=1
+        {', time_downloaded > 0 desc' if 'time_downloaded' in columns and 'time_downloaded' not in args.sql_filter else ''}
+        {', video_count > 0 desc' if 'video_count' in columns and args.action == SC.watch else ''}
+        {', audio_count > 0 desc' if 'audio_count' in columns else ''}
+        {', width < height desc' if args.portrait and 'width' in columns else ''}
+        {f', subtitle_count {subtitle_count} desc' if args.action == SC.watch and not any([args.print,consts.PYTEST_RUNNING, 'subtitle_count' in args.where]) else ''}
+        {', ' + args.sort if args.sort else ''}
+        {', path' if args.print or args.include or args.play_in_order > 0 else ''}
+        , random()
+    {LIMIT} {OFFSET}
+    """
+
+    return query, bindings
 
 
 def usage(action, default_db) -> str:
@@ -84,7 +165,7 @@ def usage(action, default_db) -> str:
 
         Open ipython with all of your media
         library {action} -vv -p --cols '*'
-        ipdb> len(db_resp)
+        ipdb> len(media)
         462219
 
     Set the play queue size:
@@ -264,7 +345,7 @@ def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
         "-m",
         default=False,
         nargs="?",
-        const=DEFAULT_MULTIPLE_PLAYBACK,
+        const=consts.DEFAULT_MULTIPLE_PLAYBACK,
         type=int,
         help=argparse.SUPPRESS,
     )
@@ -322,10 +403,10 @@ def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
 
     if not args.limit:
         args.defaults.append("limit")
-        if all([not args.print, args.action in (SC.listen, SC.watch, SC.tubelisten, SC.tubewatch, SC.read)]):
-            args.limit = utils.DEFAULT_PLAY_QUEUE
+        if all([not args.print, args.action in (SC.listen, SC.watch, SC.read)]):
+            args.limit = consts.DEFAULT_PLAY_QUEUE
         elif all([not args.print, args.action in (SC.view)]):
-            args.limit = utils.DEFAULT_PLAY_QUEUE * 4
+            args.limit = consts.DEFAULT_PLAY_QUEUE * 4
     elif args.limit in ("inf", "all"):
         args.limit = None
 
@@ -338,13 +419,6 @@ def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
                 args.sort = ["duration desc", "size desc"]
                 if args.print:
                     args.sort = ["duration", "size"]
-
-        elif args.action in (SC.tubelisten, SC.tubewatch):
-            args.sort = ["time_downloaded > 0 desc", "play_count"]
-            if args.include:
-                args.sort = ["time_downloaded > 0 desc", "playlist_path", "title"]
-                if args.print:
-                    args.sort = ["playlist_path", "duration"]
 
         elif args.action in (SC.filesystem):
             args.sort = ["sparseness", "size"]
@@ -382,9 +456,9 @@ def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
 
 
 def chromecast_play(args, m) -> None:
-    if args.action in (SC.watch, SC.tubewatch):
+    if args.action in (SC.watch):
         catt_log = player.watch_chromecast(args, m, subtitles_file=externalize_subtitle(m["path"]))
-    elif args.action in (SC.listen, SC.tubelisten):
+    elif args.action in (SC.listen):
         catt_log = player.listen_chromecast(args, m)
     else:
         raise NotImplementedError
@@ -400,7 +474,7 @@ def chromecast_play(args, m) -> None:
 def is_play_in_order_lvl2(args, media_file) -> bool:
     return any(
         [
-            args.play_in_order >= 2 and args.action not in (SC.listen, SC.tubelisten),
+            args.play_in_order >= 2 and args.action != SC.listen,
             args.play_in_order >= 1 and args.action == SC.listen and "audiobook" in media_file.lower(),
         ]
     )
@@ -469,11 +543,11 @@ def play(args, m: Dict) -> None:
             else:
                 exit(r.returncode)
 
-        if args.action in (SC.listen, SC.watch, SC.tubelisten, SC.tubewatch):
+        if args.action in (SC.listen, SC.watch):
             player.post_act(args, media_file)
 
 
-def process_playqueue(args, construct_query) -> None:
+def process_playqueue(args) -> None:
     query, bindings = construct_query(args)
 
     if args.print:
@@ -483,8 +557,7 @@ def process_playqueue(args, construct_query) -> None:
     media = list(args.db.query(query, bindings))
 
     if not media:
-        print("No media found")
-        exit(2)
+        utils.no_media_found()
 
     if all([Path(args.watch_later_directory).exists(), args.play_in_order != 2, "sort" in args.defaults]):
         media = utils.mpv_enrich(args, media)
@@ -503,10 +576,26 @@ def process_playqueue(args, construct_query) -> None:
                 Path(consts.CAST_NOW_PLAYING).unlink(missing_ok=True)
 
 
-def construct_search_bindings(args, bindings, cf, include_func, exclude_func) -> None:
-    for idx, inc in enumerate(args.include):
-        cf.append(include_func(idx))
-        bindings[f"include{idx}"] = "%" + inc.replace(" ", "%").replace("%%", " ") + "%"
-    for idx, exc in enumerate(args.exclude):
-        cf.append(exclude_func(idx))
-        bindings[f"exclude{idx}"] = "%" + exc.replace(" ", "%").replace("%%", " ") + "%"
+def watch() -> None:
+    args = parse_args(SC.watch, "video.db", default_chromecast="Living Room TV")
+    process_playqueue(args)
+
+
+def listen() -> None:
+    args = parse_args(SC.listen, "audio.db", default_chromecast="Xylo and Orchestra")
+    process_playqueue(args)
+
+
+def filesystem() -> None:
+    args = parse_args(SC.filesystem, "fs.db")
+    process_playqueue(args)
+
+
+def read() -> None:
+    args = parse_args(SC.read, "text.db")
+    process_playqueue(args)
+
+
+def view() -> None:
+    args = parse_args(SC.view, "image.db")
+    process_playqueue(args)

@@ -1,4 +1,5 @@
-import enum, os, re
+import enum, os, re, sys
+from datetime import datetime
 from pathlib import Path
 from tempfile import gettempdir, mkdtemp
 from typing import List
@@ -9,6 +10,49 @@ DEFAULT_MPV_SOCKET = os.path.join(gettempdir(), "mpv_socket")
 DEFAULT_MPV_WATCH_LATER = os.path.expanduser("~/.config/mpv/watch_later/")
 SUB_TEMP_DIR = mkdtemp()
 BLOCK_THE_CHANNEL = "__BLOCKLIST_ENTRY_"
+
+SQLITE_PARAM_LIMIT = 32765
+DEFAULT_PLAY_QUEUE = 120
+DEFAULT_MULTIPLE_PLAYBACK = -1
+CPU_COUNT = int(os.cpu_count() or 4)
+PYTEST_RUNNING = "pytest" in sys.modules
+REGEX_ANSI_ESCAPE = re.compile(r"(?:\x1B[@-_]|[\x80-\x9F])[0-?]*[ -/]*[@-~]")
+NOW = int(datetime.now().timestamp())
+
+
+TIME_COLUMNS = (
+    "time_downloaded",
+    "time_deleted",
+    "time_modified",
+    "time_created",
+    "time_played",
+    "time_valid",
+    "time_partial_first",
+    "time_partial_last",
+)
+
+
+class DBType:
+    audio = "audio"
+    video = "video"
+    filesystem = "filesystem"
+    text = "text"
+    image = "image"
+
+
+class SC:
+    watch = "watch"
+    listen = "listen"
+    filesystem = "filesystem"
+    tubeadd = "tubeadd"
+    tubeupdate = "tubeupdate"
+    tabs = "tabs"
+    read = "read"
+    view = "view"
+    download = "download"
+    block = "block"
+    galyadd = "galyadd"
+    galyupdate = "galyupdate"
 
 
 class Frequency(enum.Enum):
@@ -114,3 +158,89 @@ def get_image_files(path) -> List[str]:
             image_files.append(str(f))
 
     return image_files
+
+
+TUBE_IGNORE_KEYS = (
+    "thumbnail",
+    "thumbnails",
+    "availability",
+    "playable_in_embed",
+    "is_live",
+    "was_live",
+    "modified_date",
+    "release_timestamp",
+    "comment_count",
+    "chapters",
+    "like_count",
+    "channel_follower_count",
+    "webpage_url_basename",
+    "webpage_url_domain",
+    "playlist",
+    "playlist_index",
+    "display_id",
+    "fulltitle",
+    "duration_string",
+    "format",
+    "format_id",
+    "ext",
+    "protocol",
+    "format_note",
+    "tbr",
+    "resolution",
+    "dynamic_range",
+    "vcodec",
+    "vbr",
+    "stretched_ratio",
+    "acodec",
+    "abr",
+    "asr",
+    "epoch",
+    "license",
+    "timestamp",
+    "track",
+    "comments",
+    "author",
+    "text",
+    "parent",
+    "root",
+    "filesize",
+    "source_preference",
+    "video_ext",
+    "audio_ext",
+    "http_headers",
+    "User-Agent",
+    "Accept",
+    "Accept-Language",
+    "Sec-Fetch-Mode",
+    "navigate",
+    "Cookie",
+    "playlist_count",
+    "n_entries",
+    "playlist_autonumber",
+    "availability",
+    "formats",
+    "requested_formats",
+    "requested_entries",
+    "requested_downloads",
+    "thumbnails",
+    "playlist_count",
+    "playlist_id",
+    "playlist_title",
+    "playlist_uploader",
+    "audio_channels",
+    "subtitles",
+    "automatic_captions",
+    "quality",
+    "has_drm",
+    "language_preference",
+    "preference",
+    "location",
+    "downloader_options",
+    "container",
+    "local_path",
+    "album",
+    "artist",
+    "release_year",
+    "creator",
+    "alt_title",
+)
