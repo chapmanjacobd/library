@@ -4,7 +4,7 @@ from typing import Tuple
 
 from tabulate import tabulate
 
-from xklb import db, utils
+from xklb import consts, db, utils
 from xklb.play_actions import construct_search_bindings
 from xklb.player import delete_playlists
 from xklb.utils import human_time, log
@@ -49,9 +49,7 @@ def construct_tubelist_query(args) -> Tuple[str, dict]:
     LIMIT = "LIMIT " + str(args.limit) if args.limit else ""
 
     query = f"""SELECT
-        distinct ie_key
-        , title
-        , path
+        *
     FROM {args.table}
     WHERE 1=1
     {args.sql_filter}
@@ -93,7 +91,7 @@ def printer(args, query, bindings) -> None:
             , count(*) count
         from media
         left join ({query}) playlists on playlists.path = media.playlist_path
-        where category != '__BLOCKLIST_ENTRY_'
+        where category != '{consts.BLOCK_THE_CHANNEL}'
         group by time_downloaded > 0, playlists.ie_key, playlists.category, playlists.profile
         order by time_downloaded > 0 desc, sum(time_downloaded > 0), category, profile"""
 
