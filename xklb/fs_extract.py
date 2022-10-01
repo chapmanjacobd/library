@@ -30,27 +30,27 @@ def extract_metadata(mp_args, f) -> Union[Dict[str, int], None]:
         log.error(f"[{f}] Could not read file stats (possible filesystem corruption; check dmesg)")
         return
 
-    media = dict(
-        path=f,
-        play_count=0,
-        time_played=0,
-        size=stat.st_size,
-        time_created=int(stat.st_ctime),
-        time_modified=int(stat.st_mtime),
-        time_downloaded=consts.NOW,
-        time_deleted=0,
-    )
+    media = {
+        "path": f,
+        "play_count": 0,
+        "time_played": 0,
+        "size": stat.st_size,
+        "time_created": int(stat.st_ctime),
+        "time_modified": int(stat.st_mtime),
+        "time_downloaded": consts.NOW,
+        "time_deleted": 0,
+    }
 
     if hasattr(stat, "st_blocks"):
         media = {**media, "sparseness": calculate_sparseness(stat)}
 
-    if mp_args.db_type == DBType.filesystem:
+    if mp_args.profile == DBType.filesystem:
         media = {**media, "is_dir": os.path.isdir(f)}
 
-    if mp_args.db_type in (DBType.audio, DBType.video):
+    if mp_args.profile in (DBType.audio, DBType.video):
         return av.munge_av_tags(mp_args, media, f)
 
-    if mp_args.db_type == DBType.text:
+    if mp_args.profile == DBType.text:
         try:
             start = timer()
             if any([mp_args.ocr, mp_args.speech_recognition]):
@@ -69,7 +69,7 @@ def extract_metadata(mp_args, f) -> Union[Dict[str, int], None]:
 
 def extract_chunk(args, chunk_paths) -> None:
     n_jobs = -1
-    if args.db_type in (DBType.text, DBType.image, DBType.filesystem):
+    if args.profile in (DBType.text, DBType.image, DBType.filesystem):
         n_jobs = consts.CPU_COUNT
     if args.verbose >= 2:
         n_jobs = 1
@@ -77,7 +77,7 @@ def extract_chunk(args, chunk_paths) -> None:
     mp_args = argparse.Namespace(**{k: v for k, v in args.__dict__.items() if k not in {"db"}})
     metadata = Parallel(n_jobs=n_jobs)(delayed(extract_metadata)(mp_args, p) for p in chunk_paths) or []
 
-    if args.db_type == DBType.image:
+    if args.profile == DBType.image:
         metadata = books.extract_image_metadata_chunk(metadata, chunk_paths)
 
     if args.scan_subtitles:
@@ -88,20 +88,20 @@ def extract_chunk(args, chunk_paths) -> None:
     args.db["media"].insert_all(media, pk="path", alter=True, replace=True)
 
 
-def find_new_files(args, path) -> List[str]:
-    if args.db_type == DBType.audio:
+def find_new_files(args, path: Path) -> List[str]:
+    if args.profile == DBType.audio:
         scanned_files = consts.get_media_files(path, audio=True)
-    elif args.db_type == DBType.video:
+    elif args.profile == DBType.video:
         scanned_files = consts.get_media_files(path)
-    elif args.db_type == DBType.text:
+    elif args.profile == DBType.text:
         scanned_files = consts.get_text_files(path, OCR=args.ocr, speech_recognition=args.speech_recognition)
-    elif args.db_type == DBType.image:
+    elif args.profile == DBType.image:
         scanned_files = consts.get_image_files(path)
-    elif args.db_type == DBType.filesystem:
+    elif args.profile == DBType.filesystem:
         # thanks to these people for making rglob fast https://bugs.python.org/issue26032
-        scanned_files = [str(p) for p in Path(path).resolve().rglob("*")]
+        scanned_files = [str(p) for p in path.rglob("*")]
     else:
-        raise Exception(f"fs_extract for db_type {args.db_type} not implemented")
+        raise Exception(f"fs_extract for profile {args.profile} not implemented")
 
     columns = [c.name for c in args.db["media"].columns]
     scanned_set = set(scanned_files)
@@ -136,8 +136,25 @@ def find_new_files(args, path) -> List[str]:
     return new_files
 
 
-def scan_path(args, path) -> int:
-    path = Path(path).resolve()
+def _add_folder(args, folder_path: Path) -> None:
+    category = args.category or folder_path.parts[-1]
+
+    playlist = {
+        "ie_key": "Local",
+        "path": str(folder_path),
+        "dl_config": utils.dict_filter_bool(
+            {k: v for k, v in args.__dict__.items() if k in ["ocr", "speech_recognition", "scan_subtitles"]}
+        ),
+        "time_deleted": 0,
+        "category": category,
+        "profile": args.profile,
+        **args.extra_playlist_data,
+    }
+    args.db["playlists"].upsert(playlist, pk="path", alter=True)
+
+
+def scan_path(args, path_str: str) -> int:
+    path = Path(path_str).resolve()
     if not path.exists():
         print(f"[{path}] Path does not exist")
         if not args.force:
@@ -150,7 +167,7 @@ def scan_path(args, path) -> int:
         print(f"[{path}] Adding {len(new_files)} new media")
         log.debug(new_files)
 
-        if args.db_type in (DBType.text):
+        if args.profile in (DBType.text):
             batch_count = consts.CPU_COUNT
         else:
             batch_count = consts.SQLITE_PARAM_LIMIT // 100
@@ -160,6 +177,8 @@ def scan_path(args, path) -> int:
             percent = ((batch_count * idx) + len(l)) / len(new_files) * 100
             print(f"[{path}] Extracting metadata {percent:3.1f}% (chunk {idx + 1} of {chunks_count})")
             extract_chunk(args, l)
+
+    _add_folder(args, path)
 
     return len(new_files)
 
@@ -176,7 +195,7 @@ def extractor(args) -> None:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="library fsadd",
-        usage="""library fsadd [--audio | --video | --image |  --text | --filesystem] [database] paths ...
+        usage="""library fsadd [--audio | --video | --image |  --text | --filesystem] -c CATEGORY [database] paths ...
 
     The default database type is video:
         library fsadd ./tv/
@@ -205,32 +224,36 @@ def parse_args() -> argparse.Namespace:
 """,
     )
 
-    db_type = parser.add_mutually_exclusive_group()
-    db_type.add_argument(
-        "--audio", "-A", action="store_const", dest="db_type", const=DBType.audio, help="Create audio database"
+    profile = parser.add_mutually_exclusive_group()
+    profile.add_argument(
+        "--audio", "-A", action="store_const", dest="profile", const=DBType.audio, help="Create audio database"
     )
-    db_type.add_argument(
+    profile.add_argument(
         "--filesystem",
         "-F",
         action="store_const",
-        dest="db_type",
+        dest="profile",
         const=DBType.filesystem,
         help="Create filesystem database",
     )
-    db_type.add_argument(
-        "--video", "-V", action="store_const", dest="db_type", const=DBType.video, help="Create video database"
+    profile.add_argument(
+        "--video", "-V", action="store_const", dest="profile", const=DBType.video, help="Create video database"
     )
-    db_type.add_argument(
-        "--text", "-T", action="store_const", dest="db_type", const=DBType.text, help="Create text database"
+    profile.add_argument(
+        "--text", "-T", action="store_const", dest="profile", const=DBType.text, help="Create text database"
     )
-    db_type.add_argument(
-        "--image", "-I", action="store_const", dest="db_type", const=DBType.image, help="Create image database"
+    profile.add_argument(
+        "--image", "-I", action="store_const", dest="profile", const=DBType.image, help="Create image database"
     )
-    parser.set_defaults(db_type=DBType.video)
+    parser.set_defaults(profile=DBType.video)
+    parser.add_argument("--category", "-c", help=argparse.SUPPRESS)
 
     parser.add_argument("--ocr", "--OCR", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--speech-recognition", "--speech", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--scan-subtitles", "--scan-subtitle", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--extra-media-data", default={})
+    parser.add_argument("--extra-playlist-data", default={})
+
     parser.add_argument("--delete-unplayable", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--force", "-f", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--optimize", action="store_true", help=argparse.SUPPRESS)
@@ -245,18 +268,18 @@ def parse_args() -> argparse.Namespace:
         args.database = args.db
 
     if not args.database:
-        if args.db_type == DBType.audio:
+        if args.profile == DBType.audio:
             args.database = "audio.db"
-        elif args.db_type == DBType.filesystem:
+        elif args.profile == DBType.filesystem:
             args.database = "fs.db"
-        elif args.db_type == DBType.video:
+        elif args.profile == DBType.video:
             args.database = "video.db"
-        elif args.db_type == DBType.text:
+        elif args.profile == DBType.text:
             args.database = "text.db"
-        elif args.db_type == DBType.image:
+        elif args.profile == DBType.image:
             args.database = "image.db"
         else:
-            raise Exception(f"fs_extract for db_type {args.db_type} not implemented")
+            raise Exception(f"fs_extract for profile {args.profile} not implemented")
 
     if args.db:
         args.database = args.db

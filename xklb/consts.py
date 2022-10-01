@@ -2,6 +2,7 @@ import enum, os, re, sys
 from datetime import datetime
 from pathlib import Path
 from tempfile import gettempdir, mkdtemp
+from types import SimpleNamespace
 from typing import List
 
 FAKE_SUBTITLE = os.path.join(gettempdir(), "sub.srt")  # https://github.com/skorokithakis/catt/issues/393
@@ -18,6 +19,11 @@ CPU_COUNT = int(os.cpu_count() or 4)
 PYTEST_RUNNING = "pytest" in sys.modules
 REGEX_ANSI_ESCAPE = re.compile(r"(?:\x1B[@-_]|[\x80-\x9F])[0-?]*[ -/]*[@-~]")
 NOW = int(datetime.now().timestamp())
+
+try:
+    TERMINAL_SIZE = os.get_terminal_size()
+except Exception:
+    TERMINAL_SIZE = SimpleNamespace(columns=80, lines=60)
 
 
 TIME_COLUMNS = (
@@ -87,7 +93,7 @@ def sanitize_url(args, path: str) -> str:
     return path
 
 
-def get_text_files(path, OCR=False, speech_recognition=False) -> List[str]:
+def get_text_files(path: Path, OCR=False, speech_recognition=False) -> List[str]:
     TEXTRACT_EXTENSIONS = "csv|tab|tsv|doc|docx|eml|epub|json|htm|html|msg|odt|pdf|pptx|ps|rtf|txt|log|xlsx|xls"
     if OCR:
         ocr_only = "|gif|jpg|jpeg|png|tif|tff|tiff"
@@ -98,14 +104,14 @@ def get_text_files(path, OCR=False, speech_recognition=False) -> List[str]:
 
     TEXTRACT_EXTENSIONS = TEXTRACT_EXTENSIONS.split("|")
     text_files = []
-    for f in Path(path).resolve().rglob("*"):
+    for f in path.rglob("*"):
         if f.is_file() and (f.suffix[1:].lower() in TEXTRACT_EXTENSIONS):
             text_files.append(str(f))
 
     return text_files
 
 
-def get_media_files(path, audio=False) -> List[str]:
+def get_media_files(path: Path, audio=False) -> List[str]:
     FFMPEG_EXTENSIONS = (
         "str|aa|aax|acm|adf|adp|dtk|ads|ss2|adx|aea|afc|aix|al|apl"
         "|mac|aptx|aptxhd|aqt|ast|obu|avi|avr|avs|avs2|avs3|bfstm|bcstm|binka"
@@ -131,14 +137,14 @@ def get_media_files(path, audio=False) -> List[str]:
 
     FFMPEG_EXTENSIONS = FFMPEG_EXTENSIONS.split("|")
     media_files = []
-    for f in Path(path).resolve().rglob("*"):
+    for f in path.rglob("*"):
         if f.is_file() and (f.suffix[1:].lower() in FFMPEG_EXTENSIONS):
             media_files.append(str(f))
 
     return media_files
 
 
-def get_image_files(path) -> List[str]:
+def get_image_files(path: Path) -> List[str]:
     IMAGE_EXTENSIONS = (
         "pdf|ai|ait|png|jng|mng|arq|arw|cr2|cs1|dcp|dng|eps|epsf|ps|erf|exv|fff"
         "|gpr|hdp|wdp|jxr|iiq|insp|jpeg|jpg|jpe|mef|mie|mos|mpo|mrw|nef|nrw|orf"
@@ -153,7 +159,7 @@ def get_image_files(path) -> List[str]:
 
     IMAGE_EXTENSIONS = IMAGE_EXTENSIONS.split("|")
     image_files = []
-    for f in Path(path).resolve().rglob("*"):
+    for f in path.rglob("*"):
         if f.is_file() and (f.suffix[1:].lower() in IMAGE_EXTENSIONS):
             image_files.append(str(f))
 

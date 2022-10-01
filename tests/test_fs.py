@@ -46,17 +46,22 @@ def test_wt_help(capsys):
 
 
 def test_wt_print(capsys):
-    lb(["wt", *v_db, "-p", "a"])
-    captured = capsys.readouterr().out.replace("\n", "")
-    assert "Aggregate" in captured
+    for lb_command in [
+        ["wt", *v_db, "-p"],
+        ["pl", *v_db],
+    ]:
+        lb(lb_command)
+        captured = capsys.readouterr().out.replace("\n", "")
+        assert "Aggregate" not in captured
 
-    lb(["wt", *v_db, "-pa"])
-    captured = capsys.readouterr().out.replace("\n", "")
-    assert "Aggregate" in captured
-
-    lb(["wt", *v_db, "-p"])
-    captured = capsys.readouterr().out.replace("\n", "")
-    assert "Aggregate" not in captured
+    for lb_command in [
+        ["wt", *v_db, "-p", "a"],
+        ["wt", *v_db, "-pa"],
+        ["pl", *v_db, "-a"],
+    ]:
+        lb(lb_command)
+        captured = capsys.readouterr().out.replace("\n", "")
+        assert "Aggregate" or "ie_key" in captured
 
 
 class TestFs(unittest.TestCase):

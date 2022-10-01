@@ -4,7 +4,7 @@ from typing import List, Tuple
 
 from rich.prompt import Confirm
 
-from xklb import consts, db, play_actions, player, tube_backend, utils
+from xklb import consts, db, play_actions, player, stats, tube_backend, utils
 from xklb.consts import SC, DBType
 from xklb.utils import log
 
@@ -39,6 +39,7 @@ def parse_args(action, usage):
     parser.add_argument("--prefix", default=os.getcwd(), help=argparse.SUPPRESS)
     parser.add_argument("--ext", default="DEFAULT")
     parser.add_argument("--print", "-p", default=False, const="p", nargs="?", help=argparse.SUPPRESS)
+    parser.add_argument("--cols", "-cols", "-col", nargs="*", help=argparse.SUPPRESS)
     parser.add_argument("--sort", "-u", nargs="+", help=argparse.SUPPRESS)
     parser.add_argument("--where", "-w", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--include", "-s", "--search", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
@@ -102,20 +103,21 @@ def construct_query(args) -> Tuple[str, dict]:
     LIMIT = "LIMIT " + str(args.limit) if args.limit else ""
 
     query = f"""select
-            playlist_path
-            , media.path
+            media.path
+            {', playlist_path' if 'playlist_path' in columns else ''}
             , media.title
             , media.duration
             , media.time_created
-            , playlists.dl_config
-            , coalesce(playlists.category, playlists.ie_key) category
-            , playlists.profile
+            , media.size
+            , p.dl_config
+            , coalesce(p.category, p.ie_key) category
+            , p.profile
         FROM media
-        JOIN playlists on playlists.path = media.playlist_path
+        JOIN playlists p on {stats.get_playlists_join(columns)}
         WHERE 1=1
             and time_downloaded=0
             and media.time_deleted=0
-            and playlists.time_deleted=0
+            and p.time_deleted=0
             and media.uploader not in (select uploader from playlists where category='{consts.BLOCK_THE_CHANNEL}')
             {args.sql_filter}
         ORDER BY 1=1
@@ -179,7 +181,7 @@ def dl_download(args=None) -> None:
 
     Print download queue groups
 
-        library playlists dl.db -p g
+        library dlstatus dl.db
         TODO: update image
     """,
     )

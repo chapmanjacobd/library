@@ -14,6 +14,8 @@ from IPython.terminal.debugger import TerminalPdb
 from pychromecast import discovery
 from rich.logging import RichHandler
 
+from xklb import consts
+
 try:
     import ipdb
 except ModuleNotFoundError:
@@ -240,6 +242,10 @@ def dict_filter_bool(kwargs) -> dict:
     return {k: v for k, v in kwargs.items() if v}
 
 
+def list_dict_filter_bool(media: List[dict]) -> List[dict]:
+    return [dict_filter_bool(d) for d in media if len(dict_filter_bool(d)) > 0]
+
+
 def cmd_interactive(*command) -> subprocess.CompletedProcess:
     return_code = os.spawnvpe(os.P_WAIT, command[0], command, os.environ)
     return subprocess.CompletedProcess(command, return_code)
@@ -306,16 +312,10 @@ def safe_unpack(*list_, idx=0) -> Union[Any, None]:
         return None
 
 
-try:
-    TERMINAL_SIZE = os.get_terminal_size()
-except Exception:
-    TERMINAL_SIZE = SimpleNamespace(columns=80, lines=60)
-
-
 def col_resize(tbl: List[Dict], col: str, size=10) -> List[Dict]:
     for idx, _d in enumerate(tbl):
         if tbl[idx].get(col) is not None:
-            tbl[idx][col] = textwrap.fill(tbl[idx][col], max(10, int(size * (TERMINAL_SIZE.columns / 80))))
+            tbl[idx][col] = textwrap.fill(tbl[idx][col], max(10, int(size * (consts.TERMINAL_SIZE.columns / 80))))
 
     return tbl
 

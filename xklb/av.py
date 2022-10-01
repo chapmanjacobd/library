@@ -181,11 +181,11 @@ def munge_av_tags(args, media, f) -> Union[dict, None]:
         "language": language,
     }
 
-    if args.db_type == DBType.video:
+    if args.profile == DBType.video:
         video_tags = get_subtitle_tags(args, f, streams, codec_types)
         media = {**media, **video_tags}
 
-    if args.db_type == DBType.audio:
+    if args.profile == DBType.audio:
         stream_tags = get_audio_tags(f)
         media = {**media, **stream_tags}
     return media
