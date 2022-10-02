@@ -195,6 +195,7 @@ def consolidate(v: dict) -> Union[dict, None]:
     cv["duration"] = 0 if not duration else int(duration)
     cv["time_uploaded"] = upload_date
     cv["time_created"] = int(datetime.now().timestamp())
+    cv["time_modified"] = 0
     cv["time_deleted"] = 0
     cv["time_downloaded"] = 0
     cv["play_count"] = 0
@@ -405,6 +406,7 @@ def save_tube_entry(args, m, info: Optional[dict] = None, error=None, URE=False)
         entry = {
             "path": webpath,
             "time_downloaded": 0,
+            "time_modified": consts.NOW,
             "time_deleted": consts.NOW if URE else 0,
             "error": error,
         }
@@ -432,7 +434,8 @@ def save_tube_entry(args, m, info: Optional[dict] = None, error=None, URE=False)
         **tube_entry,
         **fs_tags,
         "webpath": webpath,
-        "time_downloaded": consts.NOW if m["profile"] else 0,
+        "time_modified": consts.NOW,
+        "time_downloaded": 0 if error else consts.NOW,
         "time_deleted": consts.NOW if URE else 0,
         "error": error,
     }

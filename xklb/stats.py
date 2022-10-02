@@ -31,8 +31,16 @@ def parse_args(prog, usage):
     return args
 
 
-def construct_tubelist_query(args) -> Tuple[str, dict]:
-    columns = [c.name for c in args.db["media"].columns]
+def get_playlists_join(args):
+    media_columns = [c.name for c in args.db["media"].columns]
+    join = "(p.ie_key = 'Local' and media.path like p.path || '%' ) "
+    if "playlist_path" in media_columns:
+        join += "or (p.ie_key != 'Local' and p.path = media.playlist_path)"
+    return join
+
+
+def construct_query(args) -> Tuple[str, dict]:
+    pl_columns = [c.name for c in args.db["playlists"].columns]
     cf = []
     bindings = {}
 
@@ -43,9 +51,9 @@ def construct_tubelist_query(args) -> Tuple[str, dict]:
         if args.include:
             args.table = db.fts_search(args, bindings)
         elif args.exclude:
-            construct_search_bindings(args, bindings, cf, columns)
+            construct_search_bindings(args, bindings, cf, pl_columns)
     else:
-        construct_search_bindings(args, bindings, cf, columns)
+        construct_search_bindings(args, bindings, cf, pl_columns)
 
     args.sql_filter = " ".join(cf)
 
@@ -55,7 +63,9 @@ def construct_tubelist_query(args) -> Tuple[str, dict]:
         *
     FROM {args.table}
     WHERE 1=1
-    {args.sql_filter}
+        and time_deleted=0
+        {args.sql_filter}
+        and (category is null or category != '{consts.BLOCK_THE_CHANNEL}')
     ORDER BY 1=1
         {', ' + args.sort}
         , random()
@@ -65,35 +75,12 @@ def construct_tubelist_query(args) -> Tuple[str, dict]:
     return query, bindings
 
 
-def get_playlists_join(media_columns):
-    join = "(p.ie_key = 'Local' and media.path like p.path || '%' ) "
-    if "playlist_path" in media_columns:
-        join += "or (p.ie_key != 'Local' and p.path = media.playlist_path)"
-    return join
-
-
 def printer(args, query, bindings) -> None:
-    columns = [c.name for c in args.db["playlists"].columns]
-
-    if args.aggregate:
-        query = f"""select
-            p.time_deleted
-            , p.ie_key
-            {', p.title' if 'title' in columns else ''}
-            , p.category
-            , p.profile
-            , coalesce(p.path, "Playlist-less media") path
-            , sum(media.duration) duration
-            , sum(media.size) size
-            , count(*) count
-        from media
-        left join ({query}) p on {get_playlists_join(columns)}
-        group by coalesce(p.path, "Playlist-less media")
-        order by p.time_deleted > 0 desc, category, profile, p.path"""
-
     media = list(args.db.query(query, bindings))
-
     media = utils.list_dict_filter_bool(media)
+    if not media:
+        utils.no_media_found()
+
     tbl = deepcopy(media)
     utils.col_naturaldate(tbl, "avg_time_since_download")
     utils.col_naturalsize(tbl, "size")
@@ -120,12 +107,12 @@ def printer(args, query, bindings) -> None:
 
 def playlists() -> None:
     args = parse_args(
-        prog="library tubelist",
-        usage="""library tubelist [database] [--print {p,f,a}] [--delete ...]
+        prog="library playlists",
+        usage="""library playlists [database] [--aggregate] [--fields] [--json] [--delete ...]
 
     List of Playlists
 
-        library tubelist
+        library playlists
         ╒══════════╤════════════════════╤══════════════════════════════════════════════════════════════════════════╕
         │ ie_key   │ title              │ path                                                                     │
         ╞══════════╪════════════════════╪══════════════════════════════════════════════════════════════════════════╡
@@ -134,7 +121,7 @@ def playlists() -> None:
 
     Aggregate Report of Videos in each Playlist
 
-        library tubelist -p a
+        library playlists -p a
         ╒══════════╤════════════════════╤══════════════════════════════════════════════════════════════════════════╤═══════════════╤═════════╕
         │ ie_key   │ title              │ path                                                                     │ duration      │   count │
         ╞══════════╪════════════════════╪══════════════════════════════════════════════════════════════════════════╪═══════════════╪═════════╡
@@ -145,11 +132,11 @@ def playlists() -> None:
 
     Print only playlist urls:
         Useful for piping to other utilities like xargs or GNU Parallel.
-        library tubelist -p f
+        library playlists -p f
         https://www.youtube.com/playlist?list=PL7gXS9DcOm5-O0Fc1z79M72BsrHByda3n
 
     Remove a playlist/channel and all linked videos:
-        library tubelist --remove https://vimeo.com/canal180
+        library playlists --remove https://vimeo.com/canal180
 
     """,
     )
@@ -162,7 +149,30 @@ def playlists() -> None:
     if args.delete:
         return delete_playlists(args, args.delete)
 
-    printer(args, *construct_tubelist_query(args))
+    pl_columns = [c.name for c in args.db["playlists"].columns]
+    query, bindings = construct_query(args)
+
+    query = f"""
+        select *
+        from ({query})
+    """
+
+    if args.aggregate:
+        query = f"""select
+            p.ie_key
+            {', p.title' if 'title' in pl_columns else ''}
+            , p.category
+            , p.profile
+            , coalesce(p.path, "Playlist-less media") path
+            , sum(media.duration) duration
+            , sum(media.size) size
+            , count(*) count
+        from media
+        left join ({query}) p on {get_playlists_join(args)}
+        group by coalesce(p.path, "Playlist-less media")
+        order by category, profile, p.path"""
+
+    printer(args, query, bindings)
 
 
 def dlstatus() -> None:
@@ -185,21 +195,22 @@ def dlstatus() -> None:
     if args.delete:
         return delete_playlists(args, args.delete)
 
-    columns = [c.name for c in args.db["playlists"].columns]
-    query, bindings = construct_tubelist_query(args)
+    query, bindings = construct_query(args)
     query = f"""select
-        p.ie_key
-        , p.category
-        , p.profile
-        , time_downloaded
-        , avg(time_downloaded) avg_time_since_download
+        p.*
         , sum(media.duration) duration
         , sum(media.size) size
         , count(*) count
     from media
-    left join ({query}) p on {get_playlists_join(columns)}
-    where category != '{consts.BLOCK_THE_CHANNEL}'
-    group by time_downloaded > 0, p.ie_key, p.category, p.profile
-    order by time_downloaded > 0 desc, sum(time_downloaded > 0), category, profile"""
+    left join ({query}) p on {get_playlists_join(args)}
+    where 1=1
+        and time_downloaded=0
+        and media.time_deleted=0
+    group by p.ie_key, p.category, p.profile
+    order by category, profile"""
+
+    # select coalesce(error, 'Not downloaded') errors, count(*) count from media where time_downloaded=0 group by error;
+    #  select 'Never downloaded', count(*) count from media where time_downloaded=0;
+    #
 
     printer(args, query, bindings)

@@ -476,12 +476,10 @@ Explore `library` databases in your browser
 
 ### TODOs (PRs welcome)
 
-- fsadd, add "playlist" path (scan path)
 - fsupdate: run fsadd for each path playlist
-- dladd --> tubeadd
-- print g: separate into Local Media and Online Media tables
 - galleryadd, galleryupdate
 - redditadd, redditupdate
+- TODOs
 - multiple-playback: mpv switch to absolute positioning (instead of percent)
 - more test coverage -- https://hypothesis.readthedocs.io/en/latest/quickstart.html
 

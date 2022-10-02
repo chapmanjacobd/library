@@ -78,7 +78,7 @@ def parse_args(action, usage):
 
 
 def construct_query(args) -> Tuple[str, dict]:
-    columns = [c.name for c in args.db["media"].columns]
+    m_columns = [c.name for c in args.db["media"].columns]
 
     cf = []
     bindings = {}
@@ -88,12 +88,12 @@ def construct_query(args) -> Tuple[str, dict]:
 
     cf.extend([" and " + w for w in args.where])
 
-    play_actions.construct_search_bindings(args, bindings, cf, columns)
+    play_actions.construct_search_bindings(args, bindings, cf, m_columns)
 
     if not args.print:
         cf.append(
             f"""and cast(STRFTIME('%s',
-                datetime( time_downloaded, 'unixepoch', '+{args.retry_delay}')
+                datetime( time_modified, 'unixepoch', '+{args.retry_delay}')
             ) as int) < STRFTIME('%s', datetime()) """
         )
 
@@ -104,7 +104,7 @@ def construct_query(args) -> Tuple[str, dict]:
 
     query = f"""select
             media.path
-            {', playlist_path' if 'playlist_path' in columns else ''}
+            {', playlist_path' if 'playlist_path' in m_columns else ''}
             , media.title
             , media.duration
             , media.time_created
@@ -113,13 +113,13 @@ def construct_query(args) -> Tuple[str, dict]:
             , coalesce(p.category, p.ie_key) category
             , p.profile
         FROM media
-        JOIN playlists p on {stats.get_playlists_join(columns)}
+        JOIN playlists p on {stats.get_playlists_join(args)}
         WHERE 1=1
             and time_downloaded=0
             and media.time_deleted=0
             and p.time_deleted=0
-            and media.uploader not in (select uploader from playlists where category='{consts.BLOCK_THE_CHANNEL}')
             {args.sql_filter}
+            and media.uploader not in (select uploader from playlists where category='{consts.BLOCK_THE_CHANNEL}')
         ORDER BY 1=1
             {', ' + args.sort if args.sort else ''}
             , play_count
