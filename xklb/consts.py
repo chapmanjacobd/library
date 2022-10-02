@@ -249,4 +249,5 @@ TUBE_IGNORE_KEYS = (
     "release_year",
     "creator",
     "alt_title",
+    "requested_subtitles",
 )
