@@ -39,6 +39,7 @@ def extract_metadata(mp_args, f) -> Union[Dict[str, int], None]:
         "time_modified": int(stat.st_mtime),
         "time_downloaded": consts.NOW,
         "time_deleted": 0,
+        "ie_key": "Local",
     }
 
     if hasattr(stat, "st_blocks"):
