@@ -159,7 +159,7 @@ def is_playlist_known(args, playlist_path) -> bool:
         return False
     if known is None:
         return False
-    return known[0]
+    return True
 
 
 def is_video_known(args, playlist_path, path) -> bool:
@@ -171,7 +171,7 @@ def is_video_known(args, playlist_path, path) -> bool:
         return False
     if known is None:
         return False
-    return known[0]
+    return True
 
 
 def consolidate(v: dict) -> Union[dict, None]:
@@ -422,11 +422,11 @@ def save_tube_entry(args, m, info: Optional[dict] = None, error=None, URE=False)
             ocr=False,
             speech_recognition=False,
         )
-        fs_tags = fs_extract.extract_metadata(fs_args, info["local_path"]) or {}
+        fs_tags = utils.dict_filter_bool(fs_extract.extract_metadata(fs_args, info["local_path"])) or {}
     else:
         fs_tags = {}
 
-    tube_entry = consolidate(info) or {}
+    tube_entry = utils.dict_filter_bool(consolidate(info)) or {}
     tube_entry.pop("play_count", None)
     tube_entry.pop("time_played", None)
 

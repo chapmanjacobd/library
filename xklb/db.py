@@ -16,7 +16,7 @@ def connect(args) -> sqlite_utils.Database:
         exit(1)
 
     db = sqlite_utils.Database(args.database, tracer=tracer if args.verbose >= 2 else None)  # type: ignore
-    db.execute("PRAGMA main.cache_size = 4000")
+    db.execute("PRAGMA main.cache_size = 8000")
     return db
 
 

@@ -209,8 +209,7 @@ def dlstatus() -> None:
     group by p.ie_key, p.category, p.profile
     order by category, profile"""
 
-    # select coalesce(error, 'Not downloaded') errors, count(*) count from media where time_downloaded=0 group by error;
-    #  select 'Never downloaded', count(*) count from media where time_downloaded=0;
-    #
+    # select coalesce(error, 'Unknown error') errors, count(*) count from media where path like 'http%' and time_modified>0 group by error;
+    # select 'Never downloaded', count(*) count from media where time_modified=0;
 
     printer(args, query, bindings)
