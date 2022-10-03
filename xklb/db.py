@@ -33,11 +33,13 @@ def optimize(args) -> None:
     int_columns = [k for k, v in columns.items() if v == int and k not in fts_able_columns + ignore_columns]
     str_columns = [k for k, v in columns.items() if v == str and k not in fts_able_columns + ignore_columns]
 
-    for column in int_columns + str_columns:
+    for column in int_columns + str_columns + ['path']:
         db["media"].create_index([column], if_not_exists=True, analyze=True)  # type: ignore
 
     if db["media"].detect_fts() is None and any(fts_columns):  # type: ignore
         db["media"].enable_fts(fts_columns, create_triggers=True)
+
+    db["media"].transform(column_order=[*int_columns, 'path', 'webpath', 'id', 'ie_key', 'playlist_path', 'category', 'profile'])  # type: ignore
 
     #
     # sqlite-utils optimize

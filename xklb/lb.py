@@ -1,6 +1,7 @@
 import argparse, sys
 
 import scripts
+from xklb import db
 from xklb.consts import SC
 from xklb.dl_extract import dl_block, dl_download
 from xklb.fs_extract import main as fs_add
@@ -56,6 +57,7 @@ def print_help(parser) -> None:
     print(parser.epilog)
 
 
+
 def lb(args=None) -> None:
     if args:
         sys.argv[2:] = args
@@ -91,6 +93,8 @@ def lb(args=None) -> None:
     subp_christen.set_defaults(func=scripts.rename_invalid_files)
     subp_dedupe_local = subparsers.add_parser("merge-online-local", add_help=False)
     subp_dedupe_local.set_defaults(func=scripts.merge_online_local)
+    subp_optimize = subparsers.add_parser("optimize", add_help=False)
+    subp_optimize.set_defaults(func=scripts.optimize_db)
 
     subp_tubeadd = subparsers.add_parser("tubeadd", aliases=["dladd", "ta", "da", "xt"], add_help=False)
     subp_tubeadd.set_defaults(func=tube_add)
