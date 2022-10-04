@@ -477,10 +477,8 @@ Explore `library` databases in your browser
 ### TODOs (PRs welcome)
 
 - fsupdate: run fsadd for each path playlist
-- script to join / merge  'http' rows to local data using id
 - galleryadd, galleryupdate
 - redditadd, redditupdate
-- TODOs
 - multiple-playback: mpv switch to absolute positioning (instead of percent)
 - more test coverage -- https://hypothesis.readthedocs.io/en/latest/quickstart.html
 
