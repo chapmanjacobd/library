@@ -290,10 +290,10 @@ def process_playlist(args, playlist_path, ydl_opts, playlist_root=True) -> Optio
             if info:
                 url = safe_unpack(info.get("webpage_url"), info.get("url"), info.get("original_url"))
                 if url != playlist_path and info.get("webpage_url_basename") == "playlist":
-                    if url in playlists_of_playlists:
-                        raise ExistingPlaylistVideoReached  # prevent infinite bug
                     if playlist_root:
                         _add_playlist(args, playlist_path, deepcopy(info))
+                    if url in playlists_of_playlists:
+                        raise ExistingPlaylistVideoReached  # prevent infinite bug
 
                     process_playlist(args, url, ydl_opts, playlist_root=False)
                     playlists_of_playlists.append(url)
@@ -302,10 +302,11 @@ def process_playlist(args, playlist_path, ydl_opts, playlist_root=True) -> Optio
                 entry = consolidate(deepcopy(info))
                 if entry:
                     entry["playlist_path"] = playlist_path
+                    _add_playlist(args, playlist_path, deepcopy(info), entry["path"])
+
                     if is_video_known(args, playlist_path, entry["path"]):
                         raise ExistingPlaylistVideoReached
 
-                    _add_playlist(args, playlist_path, deepcopy(info), entry["path"])
                     entry = {**entry, **args.extra_media_data}
                     args.db["media"].upsert(entry, pk="path", alter=True)
 
