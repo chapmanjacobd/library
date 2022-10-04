@@ -280,6 +280,9 @@ added_media_count = 0
 
 
 def process_playlist(args, playlist_path, ydl_opts, playlist_root=True) -> Optional[List[Dict]]:
+    for k, v in args.extra_playlist_data.items():
+        setattr(args, k, v)
+
     class ExistingPlaylistVideoReached(yt_dlp.DownloadCancelled):
         pass
 
@@ -292,6 +295,7 @@ def process_playlist(args, playlist_path, ydl_opts, playlist_root=True) -> Optio
                 if url != playlist_path and info.get("webpage_url_basename") == "playlist":
                     if playlist_root:
                         _add_playlist(args, playlist_path, deepcopy(info))
+
                     if url in playlists_of_playlists:
                         raise ExistingPlaylistVideoReached  # prevent infinite bug
 

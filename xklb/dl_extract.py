@@ -233,7 +233,8 @@ def dl_block(args=None) -> None:
         raise Exception("Specific URLs or --all-deleted-playlists must be supplied")
 
     log.info(utils.dict_filter_bool(args.__dict__))
-    args.extra_playlist_data = dict(time_deleted=consts.NOW, category=consts.BLOCK_THE_CHANNEL)
+    args.category = consts.BLOCK_THE_CHANNEL
+    args.extra_playlist_data = dict(time_deleted=consts.NOW)
     args.extra_media_data = dict(time_deleted=consts.NOW)
     for p in args.playlists:
         tube_backend.process_playlist(args, p, tube_backend.tube_opts(args, func_opts={"playlistend": 30}))
