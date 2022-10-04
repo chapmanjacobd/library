@@ -170,7 +170,7 @@ def playlists() -> None:
         from media
         left join ({query}) p on {get_playlists_join(args)}
         group by coalesce(p.path, "Playlist-less media")
-        order by category, profile, p.path"""
+        order by category nulls last, profile, p.path"""
 
     printer(args, query, bindings)
 
@@ -182,8 +182,26 @@ def dlstatus() -> None:
 
     Print download queue groups
 
-        library dlstatus dl.db
-        TODO: update image
+        library dlstatus video.db
+        ╒═════════════╤════════════════════╤═══════════╤═════════╤════════════════╕
+        │ ie_key      │ category           │ profile   │   count │ duration       │
+        ╞═════════════╪════════════════════╪═══════════╪═════════╪════════════════╡
+        │ Dailymotion │ 71_Mealtime_Videos │ video     │     277 │                │
+        ├─────────────┼────────────────────┼───────────┼─────────┼────────────────┤
+        │ Vimeo       │ 71_Mealtime_Videos │ video     │     442 │                │
+        ├─────────────┼────────────────────┼───────────┼─────────┼────────────────┤
+        │ Youtube     │ 71_Mealtime_Videos │ video     │   30185 │ 1 year, 3      │
+        │             │                    │           │         │ months, 7 days │
+        │             │                    │           │         │ and 15 hours   │
+        ├─────────────┼────────────────────┼───────────┼─────────┼────────────────┤
+        │ Dailymotion │ 75_MovieQueue      │ video     │      84 │                │
+        ├─────────────┼────────────────────┼───────────┼─────────┼────────────────┤
+        │ Vimeo       │ 75_MovieQueue      │ video     │      75 │                │
+        ├─────────────┼────────────────────┼───────────┼─────────┼────────────────┤
+        │ Youtube     │ 75_MovieQueue      │ video     │   20079 │ 8 months, 25   │
+        │             │                    │           │         │ days, 19 hours │
+        │             │                    │           │         │ and 18 minutes │
+        ╘═════════════╧════════════════════╧═══════════╧═════════╧════════════════╛
 """,
     )
 
@@ -195,21 +213,22 @@ def dlstatus() -> None:
     if args.delete:
         return delete_playlists(args, args.delete)
 
+    m_columns = [c.name for c in args.db["media"].columns]
     query, bindings = construct_query(args)
     query = f"""select
-        p.*
+        media.ie_key
+        , coalesce(p.category, "Playlist-less media") category
+        , p.profile
+        , count(*) FILTER(WHERE time_modified=0) never_downloaded
         , sum(media.duration) duration
-        , sum(media.size) size
-        , count(*) count
+        {', count(*) FILTER(WHERE time_modified>0 AND error IS NOT NULL) errors' if 'error' in m_columns else ''}
+        --{', group_concat(distinct media.error) error_descriptions' if 'error' in m_columns else ''}
     from media
     left join ({query}) p on {get_playlists_join(args)}
     where 1=1
-        and time_downloaded=0
+        and media.time_downloaded=0
         and media.time_deleted=0
     group by p.ie_key, p.category, p.profile
-    order by category, profile"""
-
-    # select coalesce(error, 'Unknown error') errors, count(*) count from media where path like 'http%' and time_modified>0 group by error;
-    # select 'Never downloaded', count(*) count from media where time_modified=0;
+    order by p.category nulls last, p.profile"""
 
     printer(args, query, bindings)

@@ -1,5 +1,4 @@
 import argparse, os, sys
-from pathlib import Path
 from typing import List, Tuple
 
 from rich.prompt import Confirm
@@ -90,18 +89,16 @@ def construct_query(args) -> Tuple[str, dict]:
 
     play_actions.construct_search_bindings(args, bindings, cf, m_columns)
 
-    if not args.print:
-        cf.append(
-            f"""and cast(STRFTIME('%s',
-                datetime( time_modified, 'unixepoch', '+{args.retry_delay}')
-            ) as int) < STRFTIME('%s', datetime()) """
-        )
+    cf.append(
+        f"""and cast(STRFTIME('%s',
+            datetime( time_modified, 'unixepoch', '+{args.retry_delay}')
+        ) as int) < STRFTIME('%s', datetime()) """
+    )
 
     args.sql_filter = " ".join(cf)
     args.sql_filter_bindings = bindings
 
     LIMIT = "LIMIT " + str(args.limit) if args.limit else ""
-
     query = f"""select
             media.path
             {', playlist_path' if 'playlist_path' in m_columns else ''}
@@ -109,6 +106,7 @@ def construct_query(args) -> Tuple[str, dict]:
             , media.duration
             , media.time_created
             , media.size
+            , coalesce(media.id, '') id
             , p.dl_config
             , coalesce(p.category, p.ie_key) category
             , p.profile
@@ -150,7 +148,7 @@ def dl_download(args=None) -> None:
 
     args = parse_args(
         SC.download,
-        usage=r"""library download database [--prefix /mnt/d/] [playlists ...]
+        usage=r"""library download database [--prefix /mnt/d/]
 
     Tube and download databases are designed to be cross-compatible, but you will need to
     run dladd once first with a valid URL for the extra dl columns to be added.
@@ -181,8 +179,14 @@ def dl_download(args=None) -> None:
 
     Print download queue groups
 
-        library dlstatus dl.db
-        TODO: update image
+        library dlstatus audio.db
+        ╒════════════════╤═════════╤═══════════════════════════════════════════╤══════════╤══════════════╤═══════════╕
+        │ duration       │   count │ errors                                    │ ie_key   │ category     │ profile   │
+        ╞════════════════╪═════════╪═══════════════════════════════════════════╪══════════╪══════════════╪═══════════╡
+        │ 7 months, 5    │   36817 │ ERROR: [youtube]: No video formats found! │ Youtube  │ 81_New_Music │ audio     │
+        │ days, 1 hour   │         │                                           │          │              │           │
+        │ and 48 minutes │         │                                           │          │              │           │
+        ╘════════════════╧═════════╧═══════════════════════════════════════════╧══════════╧══════════════╧═══════════╛
     """,
     )
     media = process_downloadqueue(args)
@@ -202,7 +206,8 @@ def dl_download(args=None) -> None:
         else:
             raise NotImplementedError
 
-    db.optimize(args)
+    if not args.print:
+        db.optimize(args)
 
 
 def dl_block(args=None) -> None:

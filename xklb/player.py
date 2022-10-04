@@ -7,7 +7,7 @@ from random import randrange
 from shlex import join, quote
 from shutil import which
 from time import sleep
-from typing import List, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 import screeninfo
 from rich.prompt import Confirm
@@ -52,7 +52,7 @@ def calculate_duration(args, m) -> Tuple[int, int]:
     return start, end
 
 
-def find_xdg_application(media_file) -> Union[str, None]:
+def find_xdg_application(media_file) -> Optional[str]:
     mimetype = cmd("xdg-mime", "query", "filetype", media_file).stdout
     default_application = cmd("xdg-mime", "query", "default", mimetype).stdout
     player_path = which(default_application.replace(".desktop", ""))
@@ -321,7 +321,7 @@ def get_ordinal_media(args, path: str) -> str:
     return similar_videos[0]
 
 
-def watch_chromecast(args, m: dict, subtitles_file=None) -> Union[subprocess.CompletedProcess, None]:
+def watch_chromecast(args, m: dict, subtitles_file=None) -> Optional[subprocess.CompletedProcess]:
     if "vlc" in args.player:
         catt_log = cmd(
             "vlc",
@@ -352,7 +352,7 @@ def watch_chromecast(args, m: dict, subtitles_file=None) -> Union[subprocess.Com
     return catt_log
 
 
-def listen_chromecast(args, m: dict) -> Union[subprocess.CompletedProcess, None]:
+def listen_chromecast(args, m: dict) -> Optional[subprocess.CompletedProcess]:
     Path(consts.CAST_NOW_PLAYING).write_text(m["path"])
     Path(consts.FAKE_SUBTITLE).touch()
     if args.with_local:

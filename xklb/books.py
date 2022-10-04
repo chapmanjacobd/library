@@ -1,5 +1,5 @@
 import re, sys
-from typing import List, Union
+from typing import List, Optional
 
 from xklb import utils
 from xklb.utils import combine, log, safe_unpack
@@ -17,7 +17,7 @@ except ModuleNotFoundError:
 REGEX_SENTENCE_ENDS = re.compile(r";|,|\.|\*|\n|\t")
 
 
-def munge_book_tags(media, f) -> Union[dict, None]:
+def munge_book_tags(media, f) -> Optional[dict]:
     if _textract is None:
         raise ModuleNotFoundError(
             "textract is required for text database creation: pip install textract; sudo dnf install libxml2-devel libxslt-devel antiword unrtf poppler-utils tesseract sox-plugins-nonfree sox libjpeg-devel swig"

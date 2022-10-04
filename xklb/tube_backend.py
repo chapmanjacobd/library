@@ -3,7 +3,7 @@ from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 from sqlite3 import OperationalError
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple
 
 import yt_dlp
 
@@ -174,7 +174,7 @@ def is_video_known(args, playlist_path, path) -> bool:
     return True
 
 
-def consolidate(v: dict) -> Union[dict, None]:
+def consolidate(v: dict) -> Optional[dict]:
     if v.get("title") in ("[Deleted video]", "[Private video]"):
         return None
 
@@ -233,7 +233,7 @@ def consolidate(v: dict) -> Union[dict, None]:
         log.info("Extra data %s", v)
         # breakpoint()
 
-    return cv
+    return utils.dict_filter_bool(cv)
 
 
 def log_problem(args, playlist_path) -> None:
@@ -266,20 +266,20 @@ def _add_playlist(args, playlist_path, pl: dict, media_path: Optional[str] = Non
 def save_undownloadable(args, playlist_path):
     entry = {
         "path": playlist_path,
+        "title": "No data from ydl.extract_info",
         "category": args.category,
         "profile": args.profile,
         "dl_config": args.dl_config,
-        "error": "No data from ydl.extract_info",
         **args.extra_playlist_data,
     }
-    args.db["media"].upsert(entry, pk="path", alter=True)
+    args.db["playlists"].upsert(entry, pk="path", alter=True)
 
 
 playlists_of_playlists = []
 added_media_count = 0
 
 
-def process_playlist(args, playlist_path, ydl_opts, playlist_root=True) -> Union[List[Dict], None]:
+def process_playlist(args, playlist_path, ydl_opts, playlist_root=True) -> Optional[List[Dict]]:
     class ExistingPlaylistVideoReached(yt_dlp.DownloadCancelled):
         pass
 
@@ -330,7 +330,9 @@ def process_playlist(args, playlist_path, ydl_opts, playlist_root=True) -> Union
                 save_undownloadable(args, playlist_path)
 
 
-def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Union[List[Dict], None]:
+def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Optional[List[Dict]]:
+    m_columns = [c.name for c in args.db["media"].columns]
+
     with yt_dlp.YoutubeDL(
         tube_opts(
             args,
@@ -349,15 +351,15 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Union[List
         )
     ) as ydl:
         videos = args.db.execute(
-            """
+            f"""
             SELECT
                 path
             , ie_key
             , play_count
             , time_played
             FROM media
-            WHERE
-                width is null
+            WHERE 1=1
+                {'and width is null' if 'width' in m_columns else ''}
                 and path not like '%playlist%'
                 and playlist_path = ?
             ORDER by random()
@@ -402,6 +404,7 @@ def update_playlists(args, playlists):
 
 def save_tube_entry(args, m, info: Optional[dict] = None, error=None, URE=False) -> None:
     webpath = m["path"]
+    error = None if not error else error.replace(m["id"], "").replace(" :", ":")
     if not info:  # not downloaded
         entry = {
             "path": webpath,
@@ -426,7 +429,7 @@ def save_tube_entry(args, m, info: Optional[dict] = None, error=None, URE=False)
     else:
         fs_tags = {}
 
-    tube_entry = utils.dict_filter_bool(consolidate(info)) or {}
+    tube_entry = consolidate(info) or {}
     tube_entry.pop("play_count", None)
     tube_entry.pop("time_played", None)
 
@@ -469,6 +472,7 @@ def yt(args, m) -> None:
     ydl_opts = tube_opts(
         args,
         func_opts={
+            "ignoreerrors": False,
             "subtitleslangs": ["en.*", "EN.*"],
             "extractor_args": {"youtube": {"skip": ["authcheck"]}},
             "logger": BadToTheBoneLogger(),
@@ -552,3 +556,4 @@ def yt(args, m) -> None:
             save_tube_entry(args, m, info, error=ydl_errors, URE=True)
         else:
             log.warning("[%s]: Unknown error. %s", m["path"], ydl_errors)
+            save_tube_entry(args, m, info, error=ydl_errors)

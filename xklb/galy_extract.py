@@ -2,9 +2,8 @@ import argparse, sys
 from pathlib import Path
 
 import gallery_dl as gdl
-from rich.prompt import Confirm
 
-from xklb import consts, db, player, utils
+from xklb import consts, db, utils
 from xklb.consts import SC, DBType
 from xklb.utils import log
 

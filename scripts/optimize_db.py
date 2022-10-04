@@ -1,7 +1,8 @@
 import argparse
-from xklb import db
-from xklb import utils
+
+from xklb import db, utils
 from xklb.utils import log
+
 
 def optimize_db():
     parser = argparse.ArgumentParser()
