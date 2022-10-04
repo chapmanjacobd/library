@@ -1,7 +1,6 @@
 import argparse, sys
 
 import scripts
-from xklb import db
 from xklb.consts import SC
 from xklb.dl_extract import dl_block, dl_download
 from xklb.fs_extract import main as fs_add
@@ -55,7 +54,6 @@ def usage() -> str:
 def print_help(parser) -> None:
     print(usage())
     print(parser.epilog)
-
 
 
 def lb(args=None) -> None:

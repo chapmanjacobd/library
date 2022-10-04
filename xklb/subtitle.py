@@ -1,6 +1,6 @@
 import tempfile
 from pathlib import Path
-from typing import List, Union
+from typing import List, Optional, Union
 
 import ffmpeg, pysubs2, sqlite_utils
 from ffmpeg import Error
@@ -12,7 +12,7 @@ SUBTITLE_FORMATS = "vtt|srt|ssa|ass|jss|aqt|mpl2|mpsub|pjs|rt|sami|smi|stl|xml|t
 IMAGE_SUBTITLE_CODECS = ["dvbsub", "dvdsub", "pgssub", "xsub", "dvb_subtitle", "dvd_subtitle", "hdmv_pgs_subtitle"]
 
 
-def extract(video_file, stream_index) -> Union[str, None]:
+def extract(video_file, stream_index) -> Optional[str]:
     temp_srt = tempfile.mktemp(".srt", dir=SUB_TEMP_DIR)
 
     stream_id = "0:" + str(stream_index)

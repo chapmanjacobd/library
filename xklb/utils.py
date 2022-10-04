@@ -5,8 +5,7 @@ from datetime import datetime, timedelta, timezone
 from functools import wraps
 from pathlib import Path
 from shutil import which
-from types import SimpleNamespace
-from typing import Any, Dict, Generator, List, Union
+from typing import Any, Dict, Generator, List, Optional, Union
 
 import humanize
 from IPython.core import ultratb
@@ -238,12 +237,15 @@ def mpv_enrich2(args, media) -> List[dict]:
     return sorted(filtered_list, key=lambda m: m.get("time_partial_first") or 0, reverse=False)
 
 
-def dict_filter_bool(kwargs) -> dict:
-    return {k: v for k, v in kwargs.items() if v}
+def dict_filter_bool(kwargs) -> Optional[dict]:
+    filtered_dict = {k: v for k, v in kwargs.items() if v is not None and v != "" and v is not False}
+    if len(filtered_dict) == 0:
+        return None
+    return filtered_dict
 
 
 def list_dict_filter_bool(media: List[dict]) -> List[dict]:
-    return [dict_filter_bool(d) for d in media if len(dict_filter_bool(d)) > 0]
+    return [d for d in [dict_filter_bool(d) for d in media] if d]
 
 
 def cmd_interactive(*command) -> subprocess.CompletedProcess:
@@ -287,7 +289,7 @@ def divisor_gen(n: float) -> Generator:
 _RE_COMBINE_WHITESPACE = re.compile(r"\s+")
 
 
-def combine(*list_) -> Union[str, None]:
+def combine(*list_) -> Optional[str]:
     list_ = conform(list_)
     if not list_:
         return None
@@ -301,7 +303,7 @@ def combine(*list_) -> Union[str, None]:
     return ";".join(no_duplicates)
 
 
-def safe_unpack(*list_, idx=0) -> Union[Any, None]:
+def safe_unpack(*list_, idx=0) -> Optional[Any]:
     list_ = conform(list_)
     if not list_:
         return None
@@ -339,8 +341,8 @@ def col_naturalsize(tbl: List[Dict], col: str) -> List[Dict]:
     return tbl
 
 
-def human_time(seconds) -> Union[str, None]:
-    if seconds is None or math.isnan(seconds):
+def human_time(seconds) -> Optional[str]:
+    if seconds is None or math.isnan(seconds) or seconds == 0:
         return None
     hours = humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="hours", format="%0.0f")
     if len(hours.split(",")) >= 3:

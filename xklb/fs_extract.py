@@ -2,7 +2,7 @@ import argparse, math, os, sys
 from multiprocessing import TimeoutError as mp_TimeoutError
 from pathlib import Path
 from timeit import default_timer as timer
-from typing import Dict, List, Union
+from typing import Dict, List, Optional
 
 from joblib import Parallel, delayed
 
@@ -21,7 +21,7 @@ def calculate_sparseness(stat) -> int:
     return sparseness
 
 
-def extract_metadata(mp_args, f) -> Union[Dict[str, int], None]:
+def extract_metadata(mp_args, f) -> Optional[Dict[str, int]]:
     log.debug(f)
 
     try:

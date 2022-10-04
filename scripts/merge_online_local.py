@@ -3,10 +3,11 @@ from copy import deepcopy
 from typing import List
 
 from rich import prompt
+from tabulate import tabulate
 
 from xklb import consts, db, utils
 from xklb.utils import log
-from tabulate import tabulate
+
 
 def get_duplicates(args) -> List[dict]:
     query = f"""
@@ -70,7 +71,7 @@ def get_dict(args, path) -> dict:
 
 def merge_online_local() -> None:
     args = parse_args()
-    args.db['media'].rebuild_fts()
+    args.db["media"].rebuild_fts()
     duplicates = get_duplicates(args)
     duplicates_count = len(duplicates)
 
@@ -95,13 +96,13 @@ def merge_online_local() -> None:
             tube_entry = get_dict(args, webpath)
             fs_tags = get_dict(args, fspath)
 
-            if tube_entry['id'] not in fs_tags['path']:
+            if tube_entry["id"] not in fs_tags["path"]:
                 continue
 
-            if fs_tags['time_modified'] is None or fs_tags['time_modified'] == 0:
-                fs_tags['time_modified'] = consts.NOW
-            if fs_tags['time_downloaded'] is None or fs_tags['time_downloaded'] == 0:
-                fs_tags['time_downloaded'] = consts.NOW
+            if fs_tags["time_modified"] is None or fs_tags["time_modified"] == 0:
+                fs_tags["time_modified"] = consts.NOW
+            if fs_tags["time_downloaded"] is None or fs_tags["time_downloaded"] == 0:
+                fs_tags["time_downloaded"] = consts.NOW
 
             entry = {**tube_entry, **fs_tags, "webpath": webpath}
             args.db["media"].insert(entry, pk="path", alter=True, replace=True)  # type: ignore

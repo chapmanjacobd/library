@@ -1,5 +1,5 @@
 import sys
-from typing import Dict, Union
+from typing import Dict, Optional
 
 import ffmpeg, mutagen
 from tinytag import TinyTag
@@ -91,12 +91,12 @@ def parse_tags(mu: Dict, ti: Dict) -> dict:
 
 def get_audio_tags(f) -> dict:
     try:
-        tiny_tags = utils.dict_filter_bool(TinyTag.get(f).as_dict())
+        tiny_tags = utils.dict_filter_bool(TinyTag.get(f).as_dict()) or {}
     except Exception:
         tiny_tags = {}
 
     try:
-        mutagen_tags = utils.dict_filter_bool(mutagen.File(f).tags.as_dict())  # type: ignore
+        mutagen_tags = utils.dict_filter_bool(mutagen.File(f).tags.as_dict()) or {}  # type: ignore
     except Exception:
         mutagen_tags = {}
 
@@ -104,7 +104,7 @@ def get_audio_tags(f) -> dict:
     return stream_tags
 
 
-def munge_av_tags(args, media, f) -> Union[dict, None]:
+def munge_av_tags(args, media, f) -> Optional[dict]:
     try:
         probe = ffmpeg.probe(f, show_chapters=None)
     except (KeyboardInterrupt, SystemExit):
@@ -140,7 +140,7 @@ def munge_av_tags(args, media, f) -> Union[dict, None]:
 
     streams = probe["streams"]
 
-    def parse_framerate(string) -> Union[int, None]:
+    def parse_framerate(string) -> Optional[int]:
         top, bot = string.split("/")
         bot = int(bot)
         if bot == 0:
