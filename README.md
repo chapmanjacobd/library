@@ -37,6 +37,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
     download subcommands:
       download [dl]                Download media
       block [bl]                   Prevent downloading specific URLs
+      merge-online-local           Merge local and online metadata
 
     statistics subcommands:
       playlists [pl, folders]      List added playlists
