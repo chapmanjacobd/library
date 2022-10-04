@@ -237,8 +237,12 @@ def mpv_enrich2(args, media) -> List[dict]:
     return sorted(filtered_list, key=lambda m: m.get("time_partial_first") or 0, reverse=False)
 
 
-def dict_filter_bool(kwargs) -> Optional[dict]:
-    filtered_dict = {k: v for k, v in kwargs.items() if v is not None and v != "" and v is not False}
+def dict_filter_bool(kwargs, keep_0=True) -> Optional[dict]:
+    if keep_0:
+        filtered_dict = {k: v for k, v in kwargs.items() if v is not None and v != "" and v is not False}
+    else:
+        filtered_dict = {k: v for k, v in kwargs.items() if v}
+
     if len(filtered_dict) == 0:
         return None
     return filtered_dict

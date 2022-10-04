@@ -1,6 +1,6 @@
 import argparse
 from copy import deepcopy
-from typing import List
+from typing import List, Optional
 
 from rich import prompt
 from tabulate import tabulate
@@ -54,7 +54,12 @@ def get_duplicates(args) -> List[dict]:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(usage="""library merge-online-local database
+
+    If you have previously downloaded YouTube or other online media, you can dedupe
+    your database and combine the online and local media records as long as your
+    files have the youtube-dl / yt-dlp id in the filename.
+    """)
     parser.add_argument("database")
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", default=100)
     parser.add_argument("--verbose", "-v", action="count", default=0)
@@ -64,9 +69,9 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def get_dict(args, path) -> dict:
+def get_dict(args, path) -> Optional[dict]:
     known = list(args.db.query("select * from media where path=?", [path]))[0]
-    return utils.dict_filter_bool(known)
+    return utils.dict_filter_bool(known, keep_0=False)
 
 
 def merge_online_local() -> None:
@@ -96,7 +101,7 @@ def merge_online_local() -> None:
             tube_entry = get_dict(args, webpath)
             fs_tags = get_dict(args, fspath)
 
-            if tube_entry["id"] not in fs_tags["path"]:
+            if not tube_entry or not fs_tags or tube_entry["id"] not in fs_tags["path"]:
                 continue
 
             if fs_tags["time_modified"] is None or fs_tags["time_modified"] == 0:
