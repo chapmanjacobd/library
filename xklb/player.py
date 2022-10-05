@@ -418,6 +418,7 @@ def geom_walk(v=1, h=1) -> List[List[str]]:
         for h_idx in range(h):
             x = (100 // max(1, v - 1)) * v_idx
             y = (100 // max(1, h - 1)) * h_idx
+            log.debug('geom_walk %s', dict(va=va, ha=ha, v_idx=v_idx, h_idx=h_idx,x=x,y=y))
             geoms.append(geom(va, ha, x, y))
 
     return geoms
@@ -430,10 +431,12 @@ def grid_stack(display, qty, swap=False) -> List[List[str]]:
         dv = list(utils.divisor_gen(qty))
         if not dv:
             vh = (qty, 1)
+            log.debug('not dv %s', dict(dv=dv, vh=vh))
         else:
             v = dv[len(dv) // 2]
             h = qty // v
             vh = (v, h)
+            log.debug('dv %s',dict(dv=dv, vh=vh))
 
     v, h = vh
     if swap:
