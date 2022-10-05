@@ -107,7 +107,7 @@ class MrSuperDialogue:
 
         for keyseq in ("<Delete>", "d", "n", "1"):
             self.root.bind(keyseq, lambda _ev: self.delete())
-        for keyseq in ("k", "y", "2"):
+        for keyseq in ("k", "y", "2", "\\"):
             self.root.bind(keyseq, lambda _ev: self.keep())
 
         self.move_window()
