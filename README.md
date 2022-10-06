@@ -20,38 +20,39 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
     xk media library [lb]
 
     local media subcommands:
-      fsadd [extract, xr]          Create a local media database; Add folders
-      listen [lt]                  Listen to local and online media
-      watch [wt]                   Watch local and online media
-      read [books, docs]           Read books
-      view [see, look]             View images
-      filesystem [fs]              Browse files
-      bigdirs [largefolders]       Discover folders which take up much room
-      dedupe                       Deduplicate audio files
-      christen                     Cleanse files by giving them a new name
+        fsadd                        Create a local media database; Add folders
+        listen                       Listen to local and online media
+        watch                        Watch local and online media
+        read                         Read books
+        view                         View images
+        filesystem                   Browse files
+        bigdirs                      Discover folders which take much room
+        dedupe                       Deduplicate audio files
+        christen                     Cleanse files by giving them a new name
 
     online media subcommands:
-      tubeadd [ta, xt]             Create a tube database; Add playlists
-      tubeupdate [tu]              Add new videos from saved playlists
+        tubeadd                      Create a tube database; Add playlists
+        tubeupdate                   Add new videos from saved playlists
+        redditadd                    Create a reddit database; Add subreddits
 
     download subcommands:
-      download [dl]                Download media
-      block [bl]                   Prevent downloading specific URLs
-      merge-online-local           Merge local and online metadata
+        download                     Download media
+        block                        Prevent downloading specific URLs
+        merge-online-local           Merge local and online metadata
 
     statistics subcommands:
-      playlists [pl, folders]      List added playlists
-      dlstatus [ds]                Show download status
+        playlists                    List added playlists
+        dlstatus                     Show download status
 
     playback subcommands:
-      now                          Print what is currently playing
-      next                         Play next file
-      stop                         Stop all playback
-      pause                        Pause all playback
+        now                          Print what is currently playing
+        next                         Play next file
+        stop                         Stop all playback
+        pause                        Pause all playback
 
     browser tab subcommands:
-      tabsadd                      Create a tabs database; Add URLs
-      tabs [tabswatch, tb]         Open your tabs for the day
+        tabsadd                      Create a tabs database; Add URLs
+        tabs                         Open your tabs for the day
     
 
 ## Quick Start -- watch online media on your PC

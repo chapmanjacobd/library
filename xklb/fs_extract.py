@@ -104,7 +104,7 @@ def find_new_files(args, path: Path) -> List[str]:
     else:
         raise Exception(f"fs_extract for profile {args.profile} not implemented")
 
-    columns = [c.name for c in args.db["media"].columns]
+    columns = args.db["media"].columns_dict
     scanned_set = set(scanned_files)
 
     try:
@@ -143,9 +143,7 @@ def _add_folder(args, folder_path: Path) -> None:
     playlist = {
         "ie_key": "Local",
         "path": str(folder_path),
-        "dl_config": utils.dict_filter_bool(
-            {k: v for k, v in args.__dict__.items() if k in ["ocr", "speech_recognition", "scan_subtitles"]}
-        ),
+        "dl_config": utils.get_config_opts(args, ["ocr", "speech_recognition", "scan_subtitles"]),
         "time_deleted": 0,
         "category": category,
         "profile": args.profile,

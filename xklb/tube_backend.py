@@ -29,6 +29,7 @@ def tube_opts(args, func_opts=None, playlist_opts: Optional[str] = None) -> dict
         "noprogress": True,
         "skip_download": True,
         "lazy_playlist": True,
+        "noplaylist": False,
         "extract_flat": True,
         "dynamic_mpd": False,
         "youtube_include_dash_manifest": False,
@@ -133,7 +134,7 @@ def is_supported(url) -> bool:  # thank you @dbr
 
 
 def get_playlists(args, cols="path, dl_config", constrain=False) -> List[dict]:
-    columns = [c.name for c in args.db["playlists"].columns]
+    columns = args.db["playlists"].columns_dict
     sql_filters = []
     if "time_deleted" in columns:
         sql_filters.append("AND time_deleted=0")
@@ -336,7 +337,7 @@ def process_playlist(args, playlist_path, ydl_opts, playlist_root=True) -> Optio
 
 
 def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Optional[List[Dict]]:
-    m_columns = [c.name for c in args.db["media"].columns]
+    m_columns = args.db["media"].columns_dict
 
     with yt_dlp.YoutubeDL(
         tube_opts(

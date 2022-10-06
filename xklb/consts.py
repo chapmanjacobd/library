@@ -18,6 +18,17 @@ DEFAULT_MULTIPLE_PLAYBACK = -1
 CPU_COUNT = int(os.cpu_count() or 4)
 PYTEST_RUNNING = "pytest" in sys.modules
 REGEX_ANSI_ESCAPE = re.compile(r"(?:\x1B[@-_]|[\x80-\x9F])[0-?]*[ -/]*[@-~]")
+REGEX_SUBREDDIT = re.compile("|".join([r".*reddit\.com/r/(.*?)/.*", r".*redd\.it/r/(.*?)/.*"]))
+REGEX_REDDITOR = re.compile(
+    "|".join(
+        [
+            r".*reddit\.com/u/(.*?)/.*",
+            r".*redd\.it/u/(.*?)/.*",
+            r".*reddit\.com/user/(.*?)/.*",
+            r".*redd\.it/user/(.*?)/.*",
+        ]
+    )
+)
 NOW = int(datetime.now().timestamp())
 
 try:
@@ -82,7 +93,7 @@ def reddit_frequency(frequency: Frequency) -> str:
 
 
 def sanitize_url(args, path: str) -> str:
-    matches = re.match(r".*reddit.com/r/(.*?)/.*", path)
+    matches = REGEX_SUBREDDIT.match(path)
     if matches:
         subreddit = matches.groups()[0]
         return "https://old.reddit.com/r/" + subreddit + "/top/?sort=top&t=" + reddit_frequency(args.frequency)
@@ -249,5 +260,6 @@ TUBE_IGNORE_KEYS = (
     "release_year",
     "creator",
     "alt_title",
+    "format_index",
     "requested_subtitles",
 )

@@ -77,7 +77,7 @@ def parse_args(action, usage):
 
 
 def construct_query(args) -> Tuple[str, dict]:
-    m_columns = [c.name for c in args.db["media"].columns]
+    m_columns = args.db["media"].columns_dict
 
     cf = []
     bindings = {}

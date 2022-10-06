@@ -32,15 +32,15 @@ def parse_args(prog, usage):
 
 
 def get_playlists_join(args):
-    media_columns = [c.name for c in args.db["media"].columns]
-    join = "(p.ie_key = 'Local' and media.path like p.path || '%' ) "
+    media_columns = args.db["media"].columns_dict
+    join = "(p.ie_key = media.ie_key = 'Local' and media.path like p.path || '%' ) "
     if "playlist_path" in media_columns:
-        join += "or (p.ie_key != 'Local' and p.path = media.playlist_path)"
+        join += "or (p.ie_key = media.ie_key and media.ie_key != 'Local' and p.path = media.playlist_path)"
     return join
 
 
 def construct_query(args) -> Tuple[str, dict]:
-    pl_columns = [c.name for c in args.db["playlists"].columns]
+    pl_columns = args.db["playlists"].columns_dict
     cf = []
     bindings = {}
 
@@ -149,7 +149,7 @@ def playlists() -> None:
     if args.delete:
         return delete_playlists(args, args.delete)
 
-    pl_columns = [c.name for c in args.db["playlists"].columns]
+    pl_columns = args.db["playlists"].columns_dict
     query, bindings = construct_query(args)
 
     query = f"""
@@ -213,7 +213,7 @@ def dlstatus() -> None:
     if args.delete:
         return delete_playlists(args, args.delete)
 
-    m_columns = [c.name for c in args.db["media"].columns]
+    m_columns = args.db["media"].columns_dict
     query, bindings = construct_query(args)
     query = f"""select
         media.ie_key

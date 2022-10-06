@@ -270,7 +270,7 @@ def override_sort(sort_expression: str) -> str:
 def get_ordinal_media(args, path: str) -> str:
     # TODO: maybe try https://dba.stackexchange.com/questions/43415/algorithm-for-finding-the-longest-prefix
 
-    columns = [c.name for c in args.db["media"].columns]
+    columns = args.db["media"].columns_dict
 
     total_media = args.db.execute("select count(*) val from media").fetchone()[0]
     candidate = deepcopy(path)
@@ -418,7 +418,7 @@ def geom_walk(v=1, h=1) -> List[List[str]]:
         for h_idx in range(h):
             x = (100 // max(1, v - 1)) * v_idx
             y = (100 // max(1, h - 1)) * h_idx
-            log.debug('geom_walk %s', dict(va=va, ha=ha, v_idx=v_idx, h_idx=h_idx,x=x,y=y))
+            log.debug("geom_walk %s", dict(va=va, ha=ha, v_idx=v_idx, h_idx=h_idx, x=x, y=y))
             geoms.append(geom(va, ha, x, y))
 
     return geoms
@@ -431,12 +431,12 @@ def grid_stack(display, qty, swap=False) -> List[List[str]]:
         dv = list(utils.divisor_gen(qty))
         if not dv:
             vh = (qty, 1)
-            log.debug('not dv %s', dict(dv=dv, vh=vh))
+            log.debug("not dv %s", dict(dv=dv, vh=vh))
         else:
             v = dv[len(dv) // 2]
             h = qty // v
             vh = (v, h)
-            log.debug('dv %s',dict(dv=dv, vh=vh))
+            log.debug("dv %s", dict(dv=dv, vh=vh))
 
     v, h = vh
     if swap:
@@ -573,7 +573,7 @@ def local_player(args, m, media_file) -> subprocess.CompletedProcess:
 
 
 def printer(args, query, bindings) -> None:
-    columns = [c.name for c in args.db["media"].columns]
+    columns = args.db["media"].columns_dict
     if "a" in args.print:
         query = f"""select
             "Aggregate" as path

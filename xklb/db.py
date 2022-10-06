@@ -1,9 +1,20 @@
-import os
-from typing import List
+import os, sqlite3
+from typing import Any, List, Optional
 
 import sqlite_utils
 
 from xklb.utils import log
+
+
+class DB(sqlite_utils.Database):
+    def pop(self: sqlite_utils.Database, query: str) -> Optional[Any]:
+        try:
+            curs = self.execute(query)
+        except sqlite3.OperationalError as exc:
+            if "no such table" in str(exc):
+                return None
+            raise
+        return curs.fetchone()[0]
 
 
 def tracer(sql, params) -> None:
@@ -15,7 +26,7 @@ def connect(args) -> sqlite_utils.Database:
         log.error(f"Database file '{args.database}' does not exist. Create one with lb fsadd, tubeadd, or tabsadd.")
         exit(1)
 
-    db = sqlite_utils.Database(args.database, tracer=tracer if args.verbose >= 2 else None)  # type: ignore
+    db = DB(args.database, tracer=tracer if args.verbose >= 2 else None)  # type: ignore
     db.execute("PRAGMA main.cache_size = 8000")
     return db
 
@@ -23,29 +34,48 @@ def connect(args) -> sqlite_utils.Database:
 def optimize(args) -> None:
     print("\nOptimizing database")
     db: sqlite_utils.Database = args.db
-    columns = db["media"].columns_dict
-
+    tables = db.table_names()
     db.enable_wal()
 
-    ignore_columns = ["id"]
-    fts_able_columns = ["path", "title", "tags", "mood", "genre", "description", "artist", "album"]
-    fts_columns = [c for c in fts_able_columns if c in columns]
-    int_columns = [k for k, v in columns.items() if v == int and k not in fts_able_columns + ignore_columns]
-    str_columns = [k for k, v in columns.items() if v == str and k not in fts_able_columns + ignore_columns]
+    config = {
+        "media": {
+            "fts_able_columns": ["path", "title", "tags", "mood", "genre", "description", "artist", "album"],
+            "column_order": ["path", "webpath", "id", "ie_key", "playlist_path"],
+            "ignore_columns": ["id"],
+        },
+        "reddit_posts": {
+            "fts_able_columns": ["title", "selftext"],
+        },
+        "reddit_comments": {
+            "fts_able_columns": ["body"],
+        },
+    }
 
-    for column in int_columns + str_columns + ["path"]:
-        db["media"].create_index([column], if_not_exists=True, analyze=True)  # type: ignore
+    for table in ["media", "playlists", "subreddits", "reddit_posts", "reddit_comments"]:
+        if table in tables:
+            table_columns = db[table].columns_dict
+            table_config = config.get(table) or {}
+            ignore_columns = table_config.get("ignore_columns") or []
+            fts_able_columns = table_config.get("fts_able_columns") or []
 
-    if db["media"].detect_fts() is None and any(fts_columns):  # type: ignore
-        db["media"].enable_fts(fts_columns, create_triggers=True)
+            fts_columns = [c for c in fts_able_columns if c in table_columns]
+            int_columns = [
+                k for k, v in table_columns.items() if v == int and k not in fts_able_columns + ignore_columns
+            ]
+            str_columns = [
+                k for k, v in table_columns.items() if v == str and k not in fts_able_columns + ignore_columns
+            ]
 
-    db["media"].transform(column_order=[*int_columns, "path", "webpath", "id", "ie_key", "playlist_path"])  # type: ignore
+            for column in int_columns + str_columns + ["path"]:
+                db[table].create_index([column], if_not_exists=True, analyze=True)  # type: ignore
 
-    #
-    # sqlite-utils optimize
-    #
-    with db.conn:
-        db["media"].optimize()  # type: ignore
+            if db[table].detect_fts() is None and any(fts_columns):  # type: ignore
+                db[table].enable_fts(fts_columns, create_triggers=True)
+
+            db[table].transform(column_order=[*int_columns, *(table_config.get("column_order") or [])])  # type: ignore
+            with db.conn:
+                db[table].optimize()  # type: ignore
+
     db.vacuum()
     db.analyze()
 
