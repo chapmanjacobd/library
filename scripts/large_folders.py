@@ -8,7 +8,7 @@ from xklb.utils import log
 
 
 def get_table(args) -> List[dict]:
-    columns = [c.name for c in args.db["media"].columns]
+    columns = args.db["media"].columns_dict
 
     media = list(
         args.db.query(

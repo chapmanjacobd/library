@@ -406,3 +406,7 @@ class argparse_enum(argparse.Action):
         # Convert value back into an Enum
         value = self._enum(values)
         setattr(namespace, self.dest, value)
+
+
+def get_config_opts(args, config_opts):
+    return dict_filter_bool({k: v for k, v in args.__dict__.items() if k in config_opts})

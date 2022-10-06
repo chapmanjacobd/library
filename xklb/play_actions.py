@@ -24,7 +24,7 @@ def construct_search_bindings(args, bindings, cf, columns) -> None:
 
 
 def construct_query(args) -> Tuple[str, dict]:
-    columns = [c.name for c in args.db["media"].columns]
+    columns = args.db["media"].columns_dict
     cf = []
     bindings = {}
 

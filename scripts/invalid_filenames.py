@@ -17,7 +17,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def get_paths(args):
-    columns = [c.name for c in args.db["media"].columns]
+    columns = args.db["media"].columns_dict
     sql_filters = []
     if "time_deleted" in columns:
         sql_filters.append("AND time_deleted=0")

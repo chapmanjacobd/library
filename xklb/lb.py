@@ -6,6 +6,7 @@ from xklb.dl_extract import dl_block, dl_download
 from xklb.fs_extract import main as fs_add
 from xklb.play_actions import filesystem, listen, read, view, watch
 from xklb.playback import playback_next, playback_now, playback_pause, playback_stop
+from xklb.praw_extract import reddit_add
 from xklb.stats import dlstatus, playlists
 from xklb.tabs_actions import tabs
 from xklb.tabs_extract import tabs_add
@@ -17,38 +18,39 @@ def usage() -> str:
     return """xk media library [lb]
 
     local media subcommands:
-      fsadd [extract, xr]          Create a local media database; Add folders
-      listen [lt]                  Listen to local and online media
-      watch [wt]                   Watch local and online media
-      read [books, docs]           Read books
-      view [see, look]             View images
-      filesystem [fs]              Browse files
-      bigdirs [largefolders]       Discover folders which take up much room
-      dedupe                       Deduplicate audio files
-      christen                     Cleanse files by giving them a new name
+        fsadd                        Create a local media database; Add folders
+        listen                       Listen to local and online media
+        watch                        Watch local and online media
+        read                         Read books
+        view                         View images
+        filesystem                   Browse files
+        bigdirs                      Discover folders which take much room
+        dedupe                       Deduplicate audio files
+        christen                     Cleanse files by giving them a new name
 
     online media subcommands:
-      tubeadd [ta, xt]             Create a tube database; Add playlists
-      tubeupdate [tu]              Add new videos from saved playlists
+        tubeadd                      Create a tube database; Add playlists
+        tubeupdate                   Add new videos from saved playlists
+        redditadd                    Create a reddit database; Add subreddits
 
     download subcommands:
-      download [dl]                Download media
-      block [bl]                   Prevent downloading specific URLs
-      merge-online-local           Merge local and online metadata
+        download                     Download media
+        block                        Prevent downloading specific URLs
+        merge-online-local           Merge local and online metadata
 
     statistics subcommands:
-      playlists [pl, folders]      List added playlists
-      dlstatus [ds]                Show download status
+        playlists                    List added playlists
+        dlstatus                     Show download status
 
     playback subcommands:
-      now                          Print what is currently playing
-      next                         Play next file
-      stop                         Stop all playback
-      pause                        Pause all playback
+        now                          Print what is currently playing
+        next                         Play next file
+        stop                         Stop all playback
+        pause                        Pause all playback
 
     browser tab subcommands:
-      tabsadd                      Create a tabs database; Add URLs
-      tabs [tabswatch, tb]         Open your tabs for the day
+        tabsadd                      Create a tabs database; Add URLs
+        tabs                         Open your tabs for the day
     """
 
 
@@ -68,7 +70,7 @@ def lb(args=None) -> None:
         add_help=False,
     )
     subparsers = parser.add_subparsers()
-    subp_extract = subparsers.add_parser("fsadd", aliases=["xr", "extract"], add_help=False)
+    subp_extract = subparsers.add_parser("fsadd", aliases=["x", "extract"], add_help=False)
     subp_extract.set_defaults(func=fs_add)
 
     subp_listen = subparsers.add_parser(SC.listen, aliases=["lt", "tubelisten", "tl"], add_help=False)
@@ -99,6 +101,9 @@ def lb(args=None) -> None:
     subp_tubeadd.set_defaults(func=tube_add)
     subp_tubeupdate = subparsers.add_parser("tubeupdate", aliases=["dlupdate", "tu", "du"], add_help=False)
     subp_tubeupdate.set_defaults(func=tube_update)
+
+    subp_redditadd = subparsers.add_parser("redditadd", aliases=["ra", "xr"], add_help=False)
+    subp_redditadd.set_defaults(func=reddit_add)
 
     subp_download = subparsers.add_parser("download", aliases=["dl"], add_help=False)
     subp_download.set_defaults(func=dl_download)
