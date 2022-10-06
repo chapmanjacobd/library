@@ -245,21 +245,23 @@ def reddit_add() -> None:
                 alter=True,
             )
 
+    skip_errors = (prawcore.exceptions.NotFound, prawcore.exceptions.Forbidden, prawcore.exceptions.Redirect)
+
     subreddits = args.path_groups.pop("subreddits", [])
     for subreddit in subreddits:
         try:
             subreddit_new(args, subreddit)
             subreddit_top(args, subreddit)
-        except prawcore.exceptions.NotFound:
-            log.error("[%s] skipping subreddit: not found")
+        except skip_errors as e:
+            log.error("[%s] skipping subreddit: %s", subreddit, e)
             continue
 
     redditors = args.path_groups.pop("redditors", [])
     for user in redditors:
         try:
             user_new(args, user)
-        except prawcore.exceptions.NotFound:
-            log.error("[%s] skipping user: not found")
+        except skip_errors as e:
+            log.error("[%s] skipping user: %s", user, e)
             continue
 
 
