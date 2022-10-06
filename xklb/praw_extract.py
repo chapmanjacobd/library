@@ -6,7 +6,7 @@ from itertools import takewhile
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-import praw
+import praw, prawcore
 
 from xklb import consts, db, utils
 from xklb.utils import log
@@ -170,12 +170,12 @@ def parse_paths(args) -> Dict[str, List[str]]:
             path_groups.setdefault("subreddits", []).append(subreddit)
         elif user_matches:
             user = user_matches.groups()[0]
-            path_groups.setdefault("users", []).append(user)
+            path_groups.setdefault("redditors", []).append(user)
         else:
             if args.subreddits:
                 path_groups.setdefault("subreddits", []).append(path)
-            elif args.users:
-                path_groups.setdefault("users", []).append(path)
+            elif args.redditors:
+                path_groups.setdefault("redditors", []).append(path)
             else:
                 log.error(f"[{path}]: Skipping unknown URL")
 
@@ -190,7 +190,7 @@ def parse_args(prog, usage) -> argparse.Namespace:
 
     parser.add_argument("--comments", action="store_true")
     parser.add_argument("--subreddits", action="store_true")
-    parser.add_argument("--users", action="store_true")
+    parser.add_argument("--redditors", action="store_true")
 
     parser.add_argument("--verbose", "-v", action="count", default=0)
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
@@ -221,9 +221,9 @@ def reddit_add() -> None:
 
         library redditadd --subreddits --db 96_Weird_History.db (cat ~/mc/96_Weird_History-reddit.txt)
 
-    Likewise for users:
+    Likewise for redditors:
 
-        library redditadd --users --db idk.db (cat ~/mc/shadow_banned.txt)
+        library redditadd --redditors --db idk.db (cat ~/mc/shadow_banned.txt)
     """,
     )
 
@@ -247,12 +247,20 @@ def reddit_add() -> None:
 
     subreddits = args.path_groups.pop("subreddits", [])
     for subreddit in subreddits:
-        subreddit_new(args, subreddit)
-        subreddit_top(args, subreddit)
+        try:
+            subreddit_new(args, subreddit)
+            subreddit_top(args, subreddit)
+        except prawcore.exceptions.NotFound:
+            log.error("[%s] skipping subreddit: not found")
+            continue
 
-    users = args.path_groups.pop("users", [])
-    for user in users:
-        user_new(args, user)
+    redditors = args.path_groups.pop("redditors", [])
+    for user in redditors:
+        try:
+            user_new(args, user)
+        except prawcore.exceptions.NotFound:
+            log.error("[%s] skipping user: not found")
+            continue
 
 
 if __name__ == "__main__":
