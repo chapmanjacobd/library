@@ -245,15 +245,16 @@ def log_problem(args, playlist_path) -> None:
 
 
 def _add_playlist(args, playlist_path, pl: dict, media_path: Optional[str] = None) -> None:
+    extractor = safe_unpack(pl.get("ie_key"), pl.get("extractor_key"), pl.get("extractor"))
     playlist = {
-        "ie_key": safe_unpack(pl.get("ie_key"), pl.get("extractor_key"), pl.get("extractor")),
+        "ie_key": extractor,
         "title": pl.get("playlist_title"),
         "path": playlist_path,
         "uploader": safe_unpack(pl.get("playlist_uploader_id"), pl.get("playlist_uploader")),
         "id": pl.get("playlist_id"),
         "dl_config": args.dl_config,
         "time_deleted": 0,
-        "category": args.category,
+        "category": args.category or extractor,
         "profile": args.profile,
         **args.extra_playlist_data,
     }
@@ -268,7 +269,7 @@ def save_undownloadable(args, playlist_path):
     entry = {
         "path": playlist_path,
         "title": "No data from ydl.extract_info",
-        "category": args.category,
+        "category": args.category or 'Uncategorized',
         "profile": args.profile,
         "dl_config": args.dl_config,
         **args.extra_playlist_data,
