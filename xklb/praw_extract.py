@@ -100,22 +100,18 @@ def saveable(item: Any) -> Dict[str, typing.Any]:
 def redditor_new(args, username: str) -> None:
     user: praw.reddit.Redditor = args.reddit.redditor(username)
 
-    latest_post_utc = args.db.pop(f"select max(created_utc) from reddit_posts where author = '{username}'")
+    latest_post_utc = args.db.pop(f"select max(time_created) from reddit_posts where author = '{username}'")
     get_since = dt.datetime.fromtimestamp(latest_post_utc or consts.NOW) - dt.timedelta(days=args.lookback)
     get_since = int(get_since.timestamp())
     log.info("Getting posts by %s since timestamp %s", username, get_since)
     _takewhile = partial(created_since, target_sec_utc=get_since)
 
-    args.db["reddit_posts"].upsert_all(
-        utils.list_dict_filter_bool(
-            list(saveable(s) for s in takewhile(_takewhile, user.submissions.new(limit=args.limit)))
-        ),
-        pk="id",
-        alter=True,
-    )
+    for s in takewhile(_takewhile, user.submissions.new(limit=args.limit)):
+        s.time_created = s.created_utc
+        args.db["reddit_posts"].upsert_all(utils.dict_filter_bool(saveable(s)), pk="id", alter=True)
 
     if args.comments:
-        latest_post_utc = args.db.pop(f"select max(created_utc) from reddit_comments where author = '{username}'")
+        latest_post_utc = args.db.pop(f"select max(time_created) from reddit_comments where author = '{username}'")
         get_since = dt.datetime.fromtimestamp(latest_post_utc or consts.NOW) - dt.timedelta(days=args.lookback)
         get_since = int(get_since.timestamp())
         log.info("Getting comments by %s since timestamp %s", username, get_since)
@@ -178,7 +174,7 @@ def slim_post_data(d: dict) -> dict:
 def subreddit_new(args, subreddit_name: str) -> None:
     subreddit: praw.reddit.Subreddit = args.reddit.subreddit(subreddit_name)
 
-    latest_post_utc = args.db.pop(f"select max(created_utc) from reddit_posts where subreddit = '{subreddit}'")
+    latest_post_utc = args.db.pop(f"select max(time_created) from reddit_posts where subreddit = '{subreddit}'")
     get_since = dt.datetime.fromtimestamp(latest_post_utc or consts.NOW) - dt.timedelta(days=args.lookback)
     get_since = int(get_since.timestamp())
     log.info("Getting posts in %s since timestamp %s", subreddit, get_since)
@@ -193,6 +189,7 @@ def subreddit_new(args, subreddit_name: str) -> None:
             enrich_subreddit_record(args, subreddit_name, post_dict)
 
         if args.comments:
+            post_dict["time_created"] = post_dict["created_utc"]
             args.db["reddit_posts"].upsert(post_dict, pk="id", alter=True)
             post.comments.replace_more()
             args.db["reddit_comments"].upsert_all(
@@ -219,6 +216,7 @@ def subreddit_top(args, subreddit_name: str) -> None:
                 continue
 
             if args.comments:
+                post_dict["time_created"] = post_dict["created_utc"]
                 args.db["reddit_posts"].upsert(post_dict, pk="id", alter=True)
                 post.comments.replace_more()
                 args.db["reddit_comments"].upsert_all(
