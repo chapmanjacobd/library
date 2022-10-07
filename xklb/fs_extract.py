@@ -86,7 +86,7 @@ def extract_chunk(args, chunk_paths) -> None:
             p.unlink()
 
     media = list(filter(None, metadata))
-    args.db["media"].insert_all(media, pk="path", alter=True, replace=True)
+    args.db["media"].insert_all(utils.list_dict_filter_bool(media), pk="path", alter=True, replace=True)
 
 
 def find_new_files(args, path: Path) -> List[str]:
@@ -149,7 +149,7 @@ def _add_folder(args, folder_path: Path) -> None:
         "profile": args.profile,
         **args.extra_playlist_data,
     }
-    args.db["playlists"].upsert(playlist, pk="path", alter=True)
+    args.db["playlists"].upsert(utils.dict_filter_bool(playlist), pk="path", alter=True)
 
 
 def scan_path(args, path_str: str) -> int:

@@ -66,8 +66,11 @@ def optimize(args) -> None:
                 k for k, v in table_columns.items() if v == str and k not in fts_able_columns + ignore_columns
             ]
 
-            for column in int_columns + str_columns + ["path"]:
+            for column in int_columns + str_columns:
                 db[table].create_index([column], if_not_exists=True, analyze=True)  # type: ignore
+
+            if table in ["media", "playlists"]:
+                db[table].create_index(["path"], if_not_exists=True, analyze=True)  # type: ignore
 
             if db[table].detect_fts() is None and any(fts_columns):  # type: ignore
                 db[table].enable_fts(fts_columns, create_triggers=True)

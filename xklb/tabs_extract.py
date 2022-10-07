@@ -110,4 +110,4 @@ def tabs_add(args=None) -> None:
     args = parse_args()
 
     tabs = [extract_url_metadata(args, path) for path in get_new_paths(args)]
-    args.db["media"].insert_all(tabs, pk="path", alter=True, replace=True)
+    args.db["media"].insert_all(utils.list_dict_filter_bool(tabs), pk="path", alter=True, replace=True)

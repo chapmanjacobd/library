@@ -479,8 +479,11 @@ Explore `library` databases in your browser
 ### TODOs (PRs welcome)
 
 - fsupdate: run fsadd for each path playlist
+- redditadd: add profile and category to subreddits/users database
+- create/update views: especially dl queue, etc so that it is easier for people
+    db.create_view("items", ITEM_VIEW_DEF, replace=True)
+- redditupdate
 - galleryadd, galleryupdate
-- redditadd, redditupdate
 - multiple-playback: mpv switch to absolute positioning (instead of percent)
 - more test coverage -- https://hypothesis.readthedocs.io/en/latest/quickstart.html
 

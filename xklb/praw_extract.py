@@ -97,8 +97,8 @@ def saveable(item: Any) -> Dict[str, typing.Any]:
     return _parent_ids_interpreted(result)
 
 
-def user_new(args, username: str) -> None:
-    user = args.reddit.redditor(username)
+def redditor_new(args, username: str) -> None:
+    user: praw.reddit.Redditor = args.reddit.redditor(username)
 
     latest_post_utc = args.db.pop(f"select max(created_utc) from reddit_posts where author = '{username}'")
     get_since = dt.datetime.fromtimestamp(latest_post_utc or consts.NOW) - dt.timedelta(days=args.lookback)
@@ -107,7 +107,11 @@ def user_new(args, username: str) -> None:
     _takewhile = partial(created_since, target_sec_utc=get_since)
 
     args.db["reddit_posts"].upsert_all(
-        (saveable(s) for s in takewhile(_takewhile, user.submissions.new(limit=args.limit))), pk="id", alter=True
+        utils.list_dict_filter_bool(
+            list(saveable(s) for s in takewhile(_takewhile, user.submissions.new(limit=args.limit)))
+        ),
+        pk="id",
+        alter=True,
     )
 
     if args.comments:
@@ -118,12 +122,61 @@ def user_new(args, username: str) -> None:
         _takewhile = partial(created_since, target_sec_utc=get_since)
 
         args.db["reddit_comments"].upsert_all(
-            (saveable(s) for s in takewhile(_takewhile, user.comments.new(limit=args.limit))), pk="id", alter=True
+            utils.list_dict_filter_bool(
+                list(saveable(s) for s in takewhile(_takewhile, user.comments.new(limit=args.limit)))
+            ),
+            pk="id",
+            alter=True,
         )
 
 
+def enrich_subreddit_record(args, subreddit_name, post_dict):
+    return args.db["subreddits"].upsert(
+        utils.dict_filter_bool(
+            {
+                "id": subreddit_name,
+                "subreddit_subscribers": post_dict.pop("subreddit_subscribers", None),
+                "subreddit_type": post_dict.pop("subreddit_type", None),
+            }
+        ),
+        pk="id",
+        alter=True,
+    )
+
+
+def slim_post_data(d: dict) -> dict:
+    skip_domains = ["linktr.ee", "twitter.com", "t.me", "patreon", "onlyfans", "fans.ly", "file-upload", "file-link"]
+    overridden_url = (
+        d.get("url_overridden_by_dest") if any([domain in d["url"].lower() for domain in skip_domains]) else d["url"]
+    )
+    return {
+        "id": d["id"],
+        "archived": d.get("archived"),
+        "author": d.get("author"),
+        "author_flair_text": d.get("author_flair_text"),
+        "author_is_blocked": d.get("author_is_blocked"),
+        "time_created": d.get("created_utc"),
+        "time_modified": d.get("edited"),
+        "is_original_content": d.get("is_original_content"),
+        "is_reddit_media_domain": d.get("is_reddit_media_domain"),
+        "is_self": d.get("is_self"),
+        "is_video": d.get("is_video"),
+        "link_flair_text": d.get("link_flair_text"),
+        "num_comments": d.get("num_comments"),
+        "num_crossposts": d.get("num_crossposts"),
+        "over_18": d.get("over_18"),
+        "score": d.get("score"),
+        "upvote_ratio": d.get("upvote_ratio"),
+        "selftext_html": d.get("selftext_html"),
+        "subreddit": d.get("subreddit"),
+        "title": d.get("title"),
+        "total_awards_received": d.get("total_awards_received"),
+        "url": overridden_url or d.get("url"),
+    }
+
+
 def subreddit_new(args, subreddit_name: str) -> None:
-    subreddit = args.reddit.subreddit(subreddit_name)
+    subreddit: praw.reddit.Subreddit = args.reddit.subreddit(subreddit_name)
 
     latest_post_utc = args.db.pop(f"select max(created_utc) from reddit_posts where subreddit = '{subreddit}'")
     get_since = dt.datetime.fromtimestamp(latest_post_utc or consts.NOW) - dt.timedelta(days=args.lookback)
@@ -131,17 +184,27 @@ def subreddit_new(args, subreddit_name: str) -> None:
     log.info("Getting posts in %s since timestamp %s", subreddit, get_since)
 
     _takewhile = partial(created_since, target_sec_utc=get_since)
-    for post in takewhile(_takewhile, subreddit.new(limit=args.limit)):
-        log.debug("Post id %s", post.id)
-        args.db["reddit_posts"].upsert(saveable(post), pk="id", alter=True)
+    for idx, post in enumerate(takewhile(_takewhile, subreddit.new(limit=args.limit))):
+        post_dict = utils.dict_filter_bool(saveable(post))
+        if post_dict is None:
+            continue
+
+        if idx == 0:
+            enrich_subreddit_record(args, subreddit_name, post_dict)
 
         if args.comments:
+            args.db["reddit_posts"].upsert(post_dict, pk="id", alter=True)
             post.comments.replace_more()
-            args.db["reddit_comments"].upsert_all((saveable(c) for c in post.comments.list()), pk="id", alter=True)
+            args.db["reddit_comments"].upsert_all(
+                utils.list_dict_filter_bool(list(saveable(c) for c in post.comments.list())), pk="id", alter=True
+            )
+        else:
+            post_dict = slim_post_data(post_dict)
+            args.db["reddit_posts"].upsert(post_dict, pk="id", alter=True)
 
 
 def subreddit_top(args, subreddit_name: str) -> None:
-    subreddit = args.reddit.subreddit(subreddit_name)
+    subreddit: praw.reddit.Subreddit = args.reddit.subreddit(subreddit_name)
 
     time_filters = ["all", "year", "month", "week", "day", "hour"]
     if args.lookback in [1, 2]:
@@ -151,12 +214,19 @@ def subreddit_top(args, subreddit_name: str) -> None:
     for time_filter in time_filters:
         log.info("Getting top posts in %s for time_filter '%s'", subreddit, time_filter)
         for post in subreddit.top(time_filter, limit=args.limit):
-            log.debug("Post id %s", post.id)
-            args.db["reddit_posts"].upsert(saveable(post), pk="id", alter=True)
+            post_dict = utils.dict_filter_bool(saveable(post))
+            if post_dict is None:
+                continue
 
             if args.comments:
+                args.db["reddit_posts"].upsert(post_dict, pk="id", alter=True)
                 post.comments.replace_more()
-                args.db["reddit_comments"].upsert_all((saveable(c) for c in post.comments.list()), pk="id", alter=True)
+                args.db["reddit_comments"].upsert_all(
+                    utils.list_dict_filter_bool(list(saveable(c) for c in post.comments.list())), pk="id", alter=True
+                )
+            else:
+                post_dict = slim_post_data(post_dict)
+                args.db["reddit_posts"].upsert(post_dict, pk="id", alter=True)
 
 
 def parse_paths(args) -> Dict[str, List[str]]:
@@ -237,10 +307,12 @@ def reddit_add() -> None:
     for k, v_list in args.path_groups.items():
         for v in v_list:
             args.db[k].upsert(
-                {
-                    "id": v,
-                    "config": utils.get_config_opts(args, ["limit", "lookback", "praw_site", "comments"]),
-                },
+                utils.dict_filter_bool(
+                    {
+                        "id": v,
+                        "config": utils.get_config_opts(args, ["limit", "lookback", "praw_site", "comments"]),
+                    }
+                ),
                 pk="id",
                 alter=True,
             )
@@ -259,7 +331,7 @@ def reddit_add() -> None:
     redditors = args.path_groups.pop("redditors", [])
     for user in redditors:
         try:
-            user_new(args, user)
+            redditor_new(args, user)
         except skip_errors as e:
             log.error("[%s] skipping user: %s", user, e)
             continue
