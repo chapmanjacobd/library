@@ -261,7 +261,7 @@ def _add_playlist(args, playlist_path, pl: dict, media_path: Optional[str] = Non
     if not playlist.get("id") or media_path == playlist["path"]:
         log.warning("Importing playlist-less media %s", playlist["path"])
     else:
-        args.db["playlists"].upsert(playlist, pk="path", alter=True)
+        args.db["playlists"].upsert(utils.dict_filter_bool(playlist), pk="path", alter=True)
 
 
 def save_undownloadable(args, playlist_path):
@@ -273,7 +273,7 @@ def save_undownloadable(args, playlist_path):
         "dl_config": args.dl_config,
         **args.extra_playlist_data,
     }
-    args.db["playlists"].upsert(entry, pk="path", alter=True)
+    args.db["playlists"].upsert(utils.dict_filter_bool(entry), pk="path", alter=True)
 
 
 playlists_of_playlists = []
@@ -313,7 +313,7 @@ def process_playlist(args, playlist_path, ydl_opts, playlist_root=True) -> Optio
                         raise ExistingPlaylistVideoReached
 
                     entry = {**entry, **args.extra_media_data}
-                    args.db["media"].upsert(entry, pk="path", alter=True)
+                    args.db["media"].upsert(utils.dict_filter_bool(entry), pk="path", alter=True)
 
                     added_media_count += 1
                     if added_media_count > 1:
@@ -386,7 +386,7 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Optional[L
             entry["playlist_path"] = playlist_path
             entry["play_count"] = play_count
             entry["time_played"] = time_played
-            args.db["media"].upsert(entry, pk="path", alter=True)
+            args.db["media"].upsert(utils.dict_filter_bool(entry), pk="path", alter=True)
 
             current_video_count += 1
             sys.stdout.write("\033[K\r")
@@ -419,7 +419,7 @@ def save_tube_entry(args, m, info: Optional[dict] = None, error=None, URE=False)
             "time_deleted": consts.NOW if URE else 0,
             "error": error,
         }
-        args.db["media"].upsert(entry, pk="path", alter=True)  # type: ignore
+        args.db["media"].upsert(utils.dict_filter_bool(entry), pk="path", alter=True)  # type: ignore
         return
 
     assert info["local_path"] != ""
@@ -448,7 +448,7 @@ def save_tube_entry(args, m, info: Optional[dict] = None, error=None, URE=False)
         "time_deleted": consts.NOW if URE else 0,
         "error": error,
     }
-    args.db["media"].upsert(entry, pk="path", alter=True)  # type: ignore
+    args.db["media"].upsert(utils.dict_filter_bool(entry), pk="path", alter=True)  # type: ignore
 
     if fs_tags:
         args.db["media"].delete(webpath)

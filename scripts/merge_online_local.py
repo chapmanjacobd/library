@@ -112,7 +112,7 @@ def merge_online_local() -> None:
                 fs_tags["time_downloaded"] = consts.NOW
 
             entry = {**tube_entry, **fs_tags, "webpath": webpath}
-            args.db["media"].insert(entry, pk="path", alter=True, replace=True)  # type: ignore
+            args.db["media"].insert(utils.dict_filter_bool(entry), pk="path", alter=True, replace=True)  # type: ignore
             args.db["media"].delete(webpath)
             merged.append(webpath)
 
