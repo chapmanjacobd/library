@@ -527,13 +527,14 @@ def multiple_player(args, media) -> None:
     players = []
 
     try:  # pylint: disable=too-many-nested-blocks
-        while media:
+        while media or players:
             for t_idx, player_hole in enumerate(template):
                 try:
                     m = players[t_idx]
                 except IndexError:
                     log.debug("%s IndexError", t_idx)
-                    players.append(_create_player(args, player_hole, media))
+                    if media:
+                        players.append(_create_player(args, player_hole, media))
                 else:
                     log.debug("%s Check if still running", t_idx)
                     if m["process"].poll() is not None:
@@ -547,7 +548,10 @@ def multiple_player(args, media) -> None:
                         if args.action in (SC.listen, SC.watch):
                             gui_post_act(args, media, m)
 
-                        players[t_idx] = _create_player(args, player_hole, media)
+                        if media:
+                            players[t_idx] = _create_player(args, player_hole, media)
+                        else:
+                            del players[t_idx]
 
             log.debug("-- A dragon slumbers over its hoard of %s media --", len(media))
             sleep(0.2)  # I don't know if this is necessary but may as well~~
