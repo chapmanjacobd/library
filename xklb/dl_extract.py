@@ -71,6 +71,7 @@ def parse_args(action, usage):
         args.database = args.db
     args.db = db.connect(args)
 
+    args.playlists = utils.conform(args.playlists)
     log.info(utils.dict_filter_bool(args.__dict__))
 
     return args
@@ -116,6 +117,8 @@ def construct_query(args) -> Tuple[str, dict]:
             and time_downloaded=0
             and media.time_deleted=0
             and p.time_deleted=0
+            {'AND (score IS NULL OR score > 7)' if 'score' in m_columns else ''}
+            {'AND (upvote_ratio IS NULL OR upvote_ratio > 0.73)' if 'upvote_ratio' in m_columns else ''}
             {args.sql_filter}
             and media.uploader not in (select uploader from playlists where category='{consts.BLOCK_THE_CHANNEL}')
         ORDER BY 1=1

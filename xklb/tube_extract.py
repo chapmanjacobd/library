@@ -56,7 +56,8 @@ def parse_args(action, usage) -> argparse.Namespace:
 
     if hasattr(args, "no_sanitize") and hasattr(args, "playlists") and not args.no_sanitize:
         args.playlists = [consts.sanitize_url(args, p) for p in args.playlists]
-
+    if hasattr(args, "playlists"):
+        args.playlists = utils.conform(args.playlists)
     log.info(utils.dict_filter_bool(args.__dict__))
 
     return args

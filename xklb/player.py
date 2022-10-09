@@ -13,9 +13,14 @@ import screeninfo
 from rich.prompt import Confirm
 from tabulate import tabulate
 
-from xklb import consts, gui, utils
+from xklb import consts, utils
 from xklb.consts import SC
-from xklb.utils import cmd, cmd_interactive, human_time, log, os_bg_kwargs
+from xklb.utils import cmd, cmd_interactive, human_time, log
+
+try:
+    from xklb import gui
+except ModuleNotFoundError:
+    gui = None
 
 
 def generic_player(args) -> List[str]:
@@ -357,7 +362,8 @@ def listen_chromecast(args, m: dict) -> Optional[subprocess.CompletedProcess]:
     Path(consts.FAKE_SUBTITLE).touch()
     if args.with_local:
         cast_process = subprocess.Popen(
-            ["catt", "-d", args.chromecast_device, "cast", "-s", consts.FAKE_SUBTITLE, m["path"]], **os_bg_kwargs()
+            ["catt", "-d", args.chromecast_device, "cast", "-s", consts.FAKE_SUBTITLE, m["path"]],
+            **utils.os_bg_kwargs(),
         )
         sleep(0.974)  # imperfect lazy sync; I use keyboard shortcuts to send `set speed` commands to mpv for resync
         # if pyChromecast provides a way to sync accurately that would be very interesting to know; I have not researched it
@@ -497,12 +503,14 @@ def _create_player(args, window_geometry, media):
     mp_args = ["--window-scale=1", "--no-border", "--no-keepaspect-window"]
     return {
         **m,
-        "process": subprocess.Popen([*args.player, *mp_args, *window_geometry, "--", m["path"]], **os_bg_kwargs()),
+        "process": subprocess.Popen(
+            [*args.player, *mp_args, *window_geometry, "--", m["path"]], **utils.os_bg_kwargs()
+        ),
     }
 
 
 def gui_post_act(args, media, m, geom_data=None):
-    if args.post_action in ("ask", "askkeep"):
+    if gui and args.post_action in ("ask", "askkeep"):
         r = gui.askkeep(m["path"], len(media), geom_data)
         if r == "DELETE":
             post_act(args, m["path"], action="delete")
@@ -526,7 +534,7 @@ def multiple_player(args, media) -> None:
     template = get_multiple_player_template(args)
     players = []
 
-    try:  # pylint: disable=too-many-nested-blocks
+    try:
         while media or players:
             for t_idx, tmpl in enumerate(template):
                 if len(tmpl) == 3:
@@ -550,7 +558,7 @@ def multiple_player(args, media) -> None:
                             print("Player exited with code", r.returncode)
                             log.debug(join(r.args))
                             if not args.ignore_errors:
-                                exit(r.returncode)
+                                raise SystemExit(r.returncode)
 
                         if args.action in (SC.listen, SC.watch):
                             gui_post_act(args, media, m, geom_data)
