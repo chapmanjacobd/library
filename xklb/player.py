@@ -405,28 +405,24 @@ def socket_play(args, m: dict) -> None:
     sleep(args.interdimensional_cable)
 
 
-def geom(x_size, y_size, x, y) -> List[str]:
-    return [f"--geometry={x_size}%x{y_size}%+{x}%+{y}%"]
-
-
-def geom_walk(v=1, h=1) -> List[List[str]]:
-    va = 100 // v
-    ha = 100 // h
+def geom_walk(display, v=1, h=1) -> List[List[str]]:
+    va = display.width // v
+    ha = display.height // h
 
     geoms = []
     for v_idx in range(v):
         for h_idx in range(h):
-            x = (100 // max(1, v - 1)) * v_idx
-            y = (100 // max(1, h - 1)) * h_idx
+            x = int(va * v_idx)
+            y = int(ha * h_idx)
             log.debug("geom_walk %s", dict(va=va, ha=ha, v_idx=v_idx, h_idx=h_idx, x=x, y=y))
-            geoms.append(geom(va, ha, x, y))
+            geoms.append([va, ha, x, y])
 
     return geoms
 
 
 def grid_stack(display, qty, swap=False) -> List[List[str]]:
     if qty == 1:
-        return [[f'--screen-name="{display.name}"', "--fs", f'--fs-screen-name="{display.name}"']]
+        return [["--fs", f'--screen-name="{display.name}"', f'--fs-screen-name="{display.name}"']]
     else:
         dv = list(utils.divisor_gen(qty))
         if not dv:
@@ -441,8 +437,8 @@ def grid_stack(display, qty, swap=False) -> List[List[str]]:
     v, h = vh
     if swap:
         h, v = v, h
-    holes = geom_walk(v=v, h=h)
-    return [[f'--screen-name="{display.name}"', *hole] for hole in holes]
+    holes = geom_walk(display, v=v, h=h)
+    return [[hole, f'--screen-name="{display.name}"'] for hole in holes]
 
 
 def get_display_by_name(displays, screen_name) -> List[screeninfo.Monitor]:
@@ -481,11 +477,11 @@ def get_multiple_player_template(args) -> List[str]:
 
     min_media_per_screen, remainder = divmod(args.multiple_playback, len(displays))
 
-    displays.sort(key=lambda d: d.width * d.height)
+    displays.sort(key=lambda d: d.width * d.height, reverse=True)
     players = []
     for d_idx, display in enumerate(displays):
         qty = min_media_per_screen
-        if remainder > 0 and (d_idx + 1) == len(displays):
+        if remainder > 0 and d_idx == 0:
             qty += remainder
 
         players.extend(grid_stack(display, qty, swap=is_hstack(args, display)))
@@ -505,9 +501,9 @@ def _create_player(args, window_geometry, media):
     }
 
 
-def gui_post_act(args, media, m):
+def gui_post_act(args, media, m, geom_data=None):
     if args.post_action in ("ask", "askkeep"):
-        r = gui.askkeep(m["path"], len(media))
+        r = gui.askkeep(m["path"], len(media), geom_data)
         if r == "DELETE":
             post_act(args, m["path"], action="delete")
         elif r == "KEEP" and args.post_action == "ask":
@@ -520,6 +516,10 @@ def gui_post_act(args, media, m):
         post_act(args, m["path"])
 
 
+def geom(x_size, y_size, x, y) -> str:
+    return f"--geometry={x_size}x{y_size}+{x}+{y}"
+
+
 def multiple_player(args, media) -> None:
     args.player = parse(args)
 
@@ -528,7 +528,14 @@ def multiple_player(args, media) -> None:
 
     try:  # pylint: disable=too-many-nested-blocks
         while media or players:
-            for t_idx, player_hole in enumerate(template):
+            for t_idx, tmpl in enumerate(template):
+                if len(tmpl) == 3:
+                    player_hole = tmpl
+                    geom_data = None
+                else:
+                    geom_data, screen_name = tmpl
+                    player_hole = [geom(*geom_data), screen_name]
+
                 try:
                     m = players[t_idx]
                 except IndexError:
@@ -546,7 +553,7 @@ def multiple_player(args, media) -> None:
                                 exit(r.returncode)
 
                         if args.action in (SC.listen, SC.watch):
-                            gui_post_act(args, media, m)
+                            gui_post_act(args, media, m, geom_data)
 
                         if media:
                             players[t_idx] = _create_player(args, player_hole, media)

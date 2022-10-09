@@ -269,7 +269,7 @@ def save_undownloadable(args, playlist_path):
     entry = {
         "path": playlist_path,
         "title": "No data from ydl.extract_info",
-        "category": args.category or 'Uncategorized',
+        "category": args.category or "Uncategorized",
         "profile": args.profile,
         "dl_config": args.dl_config,
         **args.extra_playlist_data,

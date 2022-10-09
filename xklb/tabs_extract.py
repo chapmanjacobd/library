@@ -96,7 +96,7 @@ def extract_url_metadata(args, path: str) -> dict:
         path=path,
         hostname=hostname,
         frequency=args.frequency.value,
-        category=args.category or 'Uncategorized',
+        category=args.category or "Uncategorized",
         time_created=int(datetime.now().timestamp()),
         time_played=0,
         play_count=0,
