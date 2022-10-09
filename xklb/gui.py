@@ -89,8 +89,14 @@ class MrSuperDialogue:
         self.action = "DELETE"
         self.root.destroy()
 
-    def move_window(self, window_width=200, window_height=180, x=None, y=None):
-        self.root.geometry("{}x{}+{}+{}".format(window_width, window_height, x or 0, y or 0))
+    def move_window(self, window_width=None, window_height=None, x=None, y=None):
+        s_width = window_width or self.root.winfo_screenwidth()
+        s_height = window_height or self.root.winfo_screenheight()
+
+        window_width, window_height = 380, 150  # override
+        x_coordinate = x or 0
+        y_coordinate = y or 0
+        self.root.geometry("{}x{}+{}+{}".format(window_width, window_height, x_coordinate, y_coordinate))
         self.root.update_idletasks()
 
         log.info(
@@ -106,12 +112,9 @@ class MrSuperDialogue:
         # current_screen = self.get_monitor_from_coord(self.winfo_x(), self.winfo_y())
         # current_screen.name
 
-        if (x, y) == (None, None):
-            s_width = self.root.winfo_screenwidth()
-            s_height = self.root.winfo_screenheight()
-            x_coordinate = int((s_width / 2) - (window_width / 2))
-            y_coordinate = int((s_height / 2) - (window_height / 2))
-            self.root.geometry("{}x{}+{}+{}".format(window_width, window_height, x_coordinate, y_coordinate))
+        x_coordinate = x_coordinate + int((s_width / 2) - (window_width / 2))
+        y_coordinate = y_coordinate + int((s_height / 2) - (window_height / 2))
+        self.root.geometry("{}x{}+{}+{}".format(window_width, window_height, x_coordinate, y_coordinate))
         self.root.wm_attributes("-alpha", 1)
 
     @staticmethod
