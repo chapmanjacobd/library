@@ -108,7 +108,7 @@ def munge_av_tags(args, media, f) -> Optional[dict]:
     try:
         probe = ffmpeg.probe(f, show_chapters=None)
     except (KeyboardInterrupt, SystemExit):
-        exit(130)
+        raise SystemExit(130)
     except Exception as e:
         print(f"[{f}] Failed reading header", file=sys.stderr)
         log.debug(e)

@@ -433,6 +433,8 @@ def save_tube_entry(args, m, info: Optional[dict] = None, error=None, URE=False)
             speech_recognition=False,
         )
         fs_tags = utils.dict_filter_bool(fs_extract.extract_metadata(fs_args, info["local_path"]), keep_0=False) or {}
+        for p in Path(consts.SUB_TEMP_DIR).glob("*.srt"):
+            p.unlink()
     else:
         fs_tags = {}
 

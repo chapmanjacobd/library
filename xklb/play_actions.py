@@ -24,7 +24,7 @@ def construct_search_bindings(args, bindings, cf, columns) -> None:
 
 
 def construct_query(args) -> Tuple[str, dict]:
-    columns = args.db["media"].columns_dict
+    m_columns = args.db["media"].columns_dict
     cf = []
     bindings = {}
 
@@ -40,9 +40,9 @@ def construct_query(args) -> Tuple[str, dict]:
         if args.include:
             args.table = db.fts_search(args, bindings)
         elif args.exclude:
-            construct_search_bindings(args, bindings, cf, columns)
+            construct_search_bindings(args, bindings, cf, m_columns)
     else:
-        construct_search_bindings(args, bindings, cf, columns)
+        construct_search_bindings(args, bindings, cf, m_columns)
 
     if args.table == "media" and not args.print:
         limit = 60_000
@@ -66,7 +66,7 @@ def construct_query(args) -> Tuple[str, dict]:
         duration = "cast(length(tags) / 4.2 / 220 * 60 as INT) + 10 duration"
 
     cols = args.cols or ["path", "title", duration, "size", "sparseness", "subtitle_count", "is_dir"]
-    SELECT = "\n,".join([c for c in cols if c in columns])
+    SELECT = "\n,".join([c for c in cols if c in m_columns])
     LIMIT = "LIMIT " + str(args.limit) if args.limit else ""
     OFFSET = f"OFFSET {args.skip}" if args.skip else ""
     query = f"""SELECT
@@ -75,12 +75,14 @@ def construct_query(args) -> Tuple[str, dict]:
     WHERE 1=1
         {args.sql_filter}
         {f'and path not like "%{args.keep_dir}%"' if args.post_action == 'askkeep' else ''}
-        {'and time_deleted=0' if 'time_deleted' in columns and 'time_deleted' not in args.sql_filter else ''}
+        {'and time_deleted=0' if 'time_deleted' in m_columns and 'time_deleted' not in args.sql_filter else ''}
+        {'AND (score IS NULL OR score > 7)' if 'score' in m_columns else ''}
+        {'AND (upvote_ratio IS NULL OR upvote_ratio > 0.73)' if 'upvote_ratio' in m_columns else ''}
     ORDER BY 1=1
-        {', time_downloaded > 0 desc' if 'time_downloaded' in columns and 'time_downloaded' not in args.sql_filter else ''}
-        {', video_count > 0 desc' if 'video_count' in columns and args.action == SC.watch else ''}
-        {', audio_count > 0 desc' if 'audio_count' in columns else ''}
-        {', width < height desc' if args.portrait and 'width' in columns else ''}
+        {', time_downloaded > 0 desc' if 'time_downloaded' in m_columns and 'time_downloaded' not in args.sql_filter else ''}
+        {', video_count > 0 desc' if 'video_count' in m_columns and args.action == SC.watch else ''}
+        {', audio_count > 0 desc' if 'audio_count' in m_columns else ''}
+        {', width < height desc' if args.portrait and 'width' in m_columns else ''}
         {f', subtitle_count {subtitle_count} desc' if args.action == SC.watch and not any([args.print,consts.PYTEST_RUNNING, 'subtitle_count' in args.where]) else ''}
         {', ' + args.sort if args.sort else ''}
         {', path' if args.print or args.include or args.play_in_order > 0 else ''}

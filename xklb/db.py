@@ -1,5 +1,5 @@
 import os, sqlite3
-from typing import Any, List, Optional
+from typing import Any, Iterable, List, Optional, Union
 
 import sqlite_utils
 
@@ -7,26 +7,39 @@ from xklb.utils import log
 
 
 class DB(sqlite_utils.Database):
-    def pop(self: sqlite_utils.Database, query: str) -> Optional[Any]:
+    def pop(self, sql: str, params: Optional[Union[Iterable, dict]] = None, ignore_errors=None) -> Optional[Any]:
+        if ignore_errors is None:
+            ignore_errors = ["no such table"]
         try:
-            curs = self.execute(query)
+            curs = self.execute(sql, params)
         except sqlite3.OperationalError as exc:
-            if "no such table" in str(exc):
+            if any([e in str(exc) for e in ignore_errors]):
                 return None
             raise
         return curs.fetchone()[0]
+
+    def pop_dict(self, sql: str, params: Optional[Union[Iterable, dict]] = None, ignore_errors=None) -> Optional[Any]:
+        if ignore_errors is None:
+            ignore_errors = ["no such table"]
+        try:
+            dg = self.query(sql, params)
+        except sqlite3.OperationalError as exc:
+            if any([e in str(exc) for e in ignore_errors]):
+                return None
+            raise
+        return next(dg)
 
 
 def tracer(sql, params) -> None:
     print("SQL: {} - params: {}".format(sql, params))
 
 
-def connect(args) -> sqlite_utils.Database:
+def connect(args, conn=None, **kwargs) -> sqlite_utils.Database:
     if not os.path.exists(args.database) and ":memory:" not in args.database:
         log.error(f"Database file '{args.database}' does not exist. Create one with lb fsadd, tubeadd, or tabsadd.")
-        exit(1)
+        raise SystemExit(1)
 
-    db = DB(args.database, tracer=tracer if args.verbose >= 2 else None)  # type: ignore
+    db = DB(conn or args.database, tracer=tracer if args.verbose >= 2 else None, **kwargs)  # type: ignore
     db.execute("PRAGMA main.cache_size = 8000")
     return db
 
@@ -44,14 +57,14 @@ def optimize(args) -> None:
             "ignore_columns": ["id"],
         },
         "reddit_posts": {
-            "fts_able_columns": ["title", "selftext"],
+            "fts_able_columns": ["title", "selftext_html"],
         },
         "reddit_comments": {
             "fts_able_columns": ["body"],
         },
     }
 
-    for table in ["media", "playlists", "subreddits", "reddit_posts", "reddit_comments"]:
+    for table in ["media", "playlists", "reddit_posts", "reddit_comments"]:
         if table in tables:
             table_columns = db[table].columns_dict
             table_config = config.get(table) or {}
@@ -68,9 +81,6 @@ def optimize(args) -> None:
 
             for column in int_columns + str_columns:
                 db[table].create_index([column], if_not_exists=True, analyze=True)  # type: ignore
-
-            if table in ["media", "playlists"]:
-                db[table].create_index(["path"], if_not_exists=True, analyze=True)  # type: ignore
 
             if db[table].detect_fts() is None and any(fts_columns):  # type: ignore
                 db[table].enable_fts(fts_columns, create_triggers=True)

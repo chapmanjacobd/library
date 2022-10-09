@@ -34,6 +34,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
         tubeadd                      Create a tube database; Add playlists
         tubeupdate                   Add new videos from saved playlists
         redditadd                    Create a reddit database; Add subreddits
+        hnadd                        Create a hackernews database
 
     download subcommands:
         download                     Download media
@@ -478,12 +479,21 @@ Explore `library` databases in your browser
 
 ### TODOs (PRs welcome)
 
-- fsupdate: run fsadd for each path playlist
-- redditadd: add profile and category to subreddits/users database
 - create/update views: especially dl queue, etc so that it is easier for people
     db.create_view("items", ITEM_VIEW_DEF, replace=True)
-- redditupdate
+- redditupdate, override --lookback
+
+    change --optimize to --no-optimize
+    select
+    UPDATE
+    category
+    TODO:
+    printer
+    time_downloaded
+- debug move_random
+- dlstatus --flush to mark all errored downloads as deleted
+- fsupdate: run fsadd for each path playlist
+- --lightweight-extractor boolean arg to tubeadd to skip yt-dlp
 - galleryadd, galleryupdate
-- multiple-playback: mpv switch to absolute positioning (instead of percent)
 - more test coverage -- https://hypothesis.readthedocs.io/en/latest/quickstart.html
 

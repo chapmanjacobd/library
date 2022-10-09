@@ -1,9 +1,11 @@
 import argparse, sys
 
 import scripts
+from xklb import utils
 from xklb.consts import SC
 from xklb.dl_extract import dl_block, dl_download
 from xklb.fs_extract import main as fs_add
+from xklb.hn_extract import hacker_news_add
 from xklb.play_actions import filesystem, listen, read, view, watch
 from xklb.playback import playback_next, playback_now, playback_pause, playback_stop
 from xklb.praw_extract import reddit_add
@@ -32,6 +34,7 @@ def usage() -> str:
         tubeadd                      Create a tube database; Add playlists
         tubeupdate                   Add new videos from saved playlists
         redditadd                    Create a reddit database; Add subreddits
+        hnadd                        Create a hackernews database
 
     download subcommands:
         download                     Download media
@@ -59,6 +62,23 @@ def print_help(parser) -> None:
     print(parser.epilog)
 
 
+subcommands = ["fs"]
+
+
+def consecutive_prefixes(s):
+    prefixes = list(s[:j] for j in range(2, len(s)) if s[:j] and s[:j] not in subcommands)
+    subcommands.extend(prefixes)
+    return prefixes
+
+
+def add_parser(subparsers, name, a=None):
+    if a is None:
+        a = []
+    subcommands.extend([name] + a)
+    aliases = a + consecutive_prefixes(name) + utils.conform([consecutive_prefixes(a) for a in a])
+    return subparsers.add_parser(name, aliases=aliases, add_help=False)
+
+
 def lb(args=None) -> None:
     if args:
         sys.argv[2:] = args
@@ -70,65 +90,65 @@ def lb(args=None) -> None:
         add_help=False,
     )
     subparsers = parser.add_subparsers()
-    subp_extract = subparsers.add_parser("fsadd", aliases=["x", "extract"], add_help=False)
+    subp_extract = add_parser(subparsers, "fsadd", ["x", "extract"])
     subp_extract.set_defaults(func=fs_add)
 
-    subp_listen = subparsers.add_parser(SC.listen, aliases=["lt", "tubelisten", "tl"], add_help=False)
-    subp_listen.set_defaults(func=listen)
-    subp_watch = subparsers.add_parser(SC.watch, aliases=["wt", "tubewatch", "tw", "entries"], add_help=False)
+    subp_watch = add_parser(subparsers, SC.watch, ["wt", "tubewatch", "tw", "entries"])
     subp_watch.set_defaults(func=watch)
+    subp_listen = add_parser(subparsers, SC.listen, ["lt", "tubelisten", "tl"])
+    subp_listen.set_defaults(func=listen)
 
-    subp_read = subparsers.add_parser(SC.read, aliases=["text", "books", "docs"], add_help=False)
+    subp_read = add_parser(subparsers, SC.read, ["text", "books", "docs"])
     subp_read.set_defaults(func=read)
-    subp_view = subparsers.add_parser(SC.view, aliases=["image", "see", "look"], add_help=False)
+    subp_view = add_parser(subparsers, SC.view, ["image", "see", "look"])
     subp_view.set_defaults(func=view)
 
-    subp_filesystem = subparsers.add_parser(SC.filesystem, aliases=["fs"], add_help=False)
+    subp_filesystem = add_parser(subparsers, SC.filesystem, ["fs"])
     subp_filesystem.set_defaults(func=filesystem)
 
-    subp_bigdirs = subparsers.add_parser("bigdirs", aliases=["largefolders", "large_folders"], add_help=False)
+    subp_bigdirs = add_parser(subparsers, "bigdirs", ["largefolders", "large_folders"])
     subp_bigdirs.set_defaults(func=scripts.large_folders)
-    subp_dedupe = subparsers.add_parser("dedupe", add_help=False)
+    subp_dedupe = add_parser(subparsers, "dedupe")
     subp_dedupe.set_defaults(func=scripts.deduplicate_music)
-    subp_christen = subparsers.add_parser("christen", add_help=False)
+    subp_christen = add_parser(subparsers, "christen")
     subp_christen.set_defaults(func=scripts.rename_invalid_files)
-    subp_dedupe_local = subparsers.add_parser("merge-online-local", add_help=False)
+    subp_dedupe_local = add_parser(subparsers, "merge-online-local")
     subp_dedupe_local.set_defaults(func=scripts.merge_online_local)
-    subp_optimize = subparsers.add_parser("optimize", add_help=False)
+    subp_optimize = add_parser(subparsers, "optimize")
     subp_optimize.set_defaults(func=scripts.optimize_db)
 
-    subp_tubeadd = subparsers.add_parser("tubeadd", aliases=["dladd", "ta", "da", "xt"], add_help=False)
+    subp_tubeadd = add_parser(subparsers, "tubeadd", ["dladd", "ta", "da", "xt"])
     subp_tubeadd.set_defaults(func=tube_add)
-    subp_tubeupdate = subparsers.add_parser("tubeupdate", aliases=["dlupdate", "tu", "du"], add_help=False)
+    subp_tubeupdate = add_parser(subparsers, "tubeupdate", ["dlupdate", "tu", "du"])
     subp_tubeupdate.set_defaults(func=tube_update)
 
-    subp_redditadd = subparsers.add_parser("redditadd", aliases=["ra", "xr"], add_help=False)
+    subp_redditadd = add_parser(subparsers, "redditadd", ["ra", "xr"])
     subp_redditadd.set_defaults(func=reddit_add)
+    subp_hnadd = add_parser(subparsers, "hnadd")
+    subp_hnadd.set_defaults(func=hacker_news_add)
 
-    subp_download = subparsers.add_parser("download", aliases=["dl"], add_help=False)
+    subp_download = add_parser(subparsers, "download", ["dl"])
     subp_download.set_defaults(func=dl_download)
-    subp_block = subparsers.add_parser("block", aliases=["bl"], add_help=False)
+    subp_block = add_parser(subparsers, "block")
     subp_block.set_defaults(func=dl_block)
 
-    subp_playlist = subparsers.add_parser(
-        "playlists", aliases=["playlist", "tubelist", "pl", "folders"], add_help=False
-    )
+    subp_playlist = add_parser(subparsers, "playlists", ["pl", "tubelist", "folders"])
     subp_playlist.set_defaults(func=playlists)
-    subp_dlstatus = subparsers.add_parser("dlstatus", aliases=["ds"], add_help=False)
+    subp_dlstatus = add_parser(subparsers, "dlstatus", ["ds"])
     subp_dlstatus.set_defaults(func=dlstatus)
 
-    subp_playback_now = subparsers.add_parser("now", add_help=False)
+    subp_playback_now = add_parser(subparsers, "now")
     subp_playback_now.set_defaults(func=playback_now)
-    subp_playback_next = subparsers.add_parser("next", add_help=False)
+    subp_playback_next = add_parser(subparsers, "next")
     subp_playback_next.set_defaults(func=playback_next)
-    subp_playback_stop = subparsers.add_parser("stop", add_help=False)
+    subp_playback_stop = add_parser(subparsers, "stop")
     subp_playback_stop.set_defaults(func=playback_stop)
-    subp_playback_pause = subparsers.add_parser("pause", add_help=False)
+    subp_playback_pause = add_parser(subparsers, "pause")
     subp_playback_pause.set_defaults(func=playback_pause)
 
-    subp_tabsadd = subparsers.add_parser("tabsadd", add_help=False)
+    subp_tabsadd = add_parser(subparsers, "tabsadd")
     subp_tabsadd.set_defaults(func=tabs_add)
-    subp_tabs = subparsers.add_parser("tabs", aliases=["tabswatch", "tb"], add_help=False)
+    subp_tabs = add_parser(subparsers, "tabs", ["tb"])
     subp_tabs.set_defaults(func=tabs)
 
     parser.add_argument("--version", "-V", action="store_true")

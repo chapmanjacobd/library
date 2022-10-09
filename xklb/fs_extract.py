@@ -143,7 +143,7 @@ def _add_folder(args, folder_path: Path) -> None:
     playlist = {
         "ie_key": "Local",
         "path": str(folder_path),
-        "dl_config": utils.get_config_opts(args, ["ocr", "speech_recognition", "scan_subtitles"]),
+        "config": utils.get_config_opts(args, ["ocr", "speech_recognition", "scan_subtitles"]),
         "time_deleted": 0,
         "category": category,
         "profile": args.profile,
@@ -284,6 +284,7 @@ def parse_args() -> argparse.Namespace:
         args.database = args.db
     Path(args.database).touch()
     args.db = db.connect(args)
+    args.paths = utils.conform(args.paths)
     log.info(utils.dict_filter_bool(args.__dict__))
 
     return args

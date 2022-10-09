@@ -25,7 +25,7 @@ else:
 
 def exit_nicely(_signal, _frame):
     print("\nExiting... (Ctrl+C)\n")
-    sys.exit(130)
+    raise SystemExit(130)
 
 
 signal.signal(signal.SIGINT, exit_nicely)
@@ -33,7 +33,7 @@ signal.signal(signal.SIGINT, exit_nicely)
 
 def no_media_found():
     print("No media found")
-    exit(2)
+    raise SystemExit(2)
 
 
 def with_timeout(timeout):
@@ -203,7 +203,7 @@ def get_ip_of_chromecast(device_name):
     browser.stop_discovery()
     if not cast_infos:
         print("Target chromecast device not found")
-        exit(53)
+        raise SystemExit(53)
 
     return cast_infos[0].host
 
