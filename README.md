@@ -479,8 +479,6 @@ Explore `library` databases in your browser
 
 ### TODOs (PRs welcome)
 
-- execute always use db.conn
-- figure out why fts not updating correctly; no triggers
 - create/update views: especially dl queue, etc so that it is easier for people
     db.create_view("items", ITEM_VIEW_DEF, replace=True)
 - redditupdate, override --lookback

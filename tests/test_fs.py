@@ -9,7 +9,7 @@ from xklb.lb import lb
 from xklb.play_actions import watch as wt
 
 v_db = "--db", "tests/data/video.db"
-xr([*v_db, "--optimize", "--scan-subtitles", "tests/data/"])
+xr([*v_db, "--scan-subtitles", "tests/data/"])
 
 a_db = "--db", "tests/data/audio.db"
 xr([*a_db, "--audio", "tests/data/"])

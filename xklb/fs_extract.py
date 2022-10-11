@@ -187,7 +187,7 @@ def extractor(args) -> None:
     for path in args.paths:
         new_files += scan_path(args, path)
 
-    if new_files > 0 or args.optimize:
+    if not args.db["media"].detect_fts() or new_files > 100000:
         db.optimize(args)
 
 
@@ -214,9 +214,6 @@ def parse_args() -> argparse.Namespace:
 
     Create video database and read internal/external subtitle files for use in search:
         library fsadd --scan-subtitles ./tv/
-
-    Run with --optimize to add indexes to every int and text column:
-        library fsadd --optimize --audio ./music/
 
     The database location must be specified to reference more than one path:
         library fsadd --audio podcasts.db ./podcasts/ ./another/folder/
@@ -255,7 +252,6 @@ def parse_args() -> argparse.Namespace:
 
     parser.add_argument("--delete-unplayable", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--force", "-f", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--optimize", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--verbose", "-v", action="count", default=0)
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
 

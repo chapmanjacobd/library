@@ -30,7 +30,6 @@ def parse_args(action, usage) -> argparse.Namespace:
     parser.add_argument("--ignore-errors", "--ignoreerrors", "-i", action="store_true", help=argparse.SUPPRESS)
 
     if action in (SC.galyadd, SC.galyupdate):
-        parser.add_argument("--optimize", action="store_true", help="Optimize Database")
         parser.add_argument("--category", "-c", help=argparse.SUPPRESS)
 
     parser.add_argument("--verbose", "-v", action="count", default=0)

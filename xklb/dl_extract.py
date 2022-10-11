@@ -214,9 +214,6 @@ def dl_download(args=None) -> None:
         else:
             raise NotImplementedError
 
-    if not args.print:
-        db.optimize(args)
-
 
 def dl_block(args=None) -> None:
     if args:
@@ -249,7 +246,7 @@ def dl_block(args=None) -> None:
 
     if args.playlists:
         with args.db.conn:
-            args.db.execute(
+            args.db.conn.execute(
                 f"""UPDATE playlists
                 SET time_deleted={consts.NOW}
                 ,   category='{consts.BLOCK_THE_CHANNEL}'

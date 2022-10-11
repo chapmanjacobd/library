@@ -42,7 +42,8 @@ def rename_invalid_files() -> None:
             log.info(p)
             log.info(fixed)
             try:
-                args.db.execute("UPDATE media SET path=? where path=?", [fixed, p])
+                with args.db.conn:
+                    args.db.conn.execute("UPDATE media SET path=? where path=?", [fixed, p])
             except sqlite3.IntegrityError:
                 log.warning("File already exists with that nice name")
             else:
