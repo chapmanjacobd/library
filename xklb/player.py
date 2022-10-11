@@ -58,8 +58,12 @@ def calculate_duration(args, m) -> Tuple[int, int]:
 
 
 def find_xdg_application(media_file) -> Optional[str]:
-    mimetype = cmd("xdg-mime", "query", "filetype", media_file).stdout
-    default_application = cmd("xdg-mime", "query", "default", mimetype).stdout
+    if media_file.startswith("http"):
+        default_application = cmd("xdg-mime", "query", "default", "text/html").stdout
+    else:
+        mimetype = cmd("xdg-mime", "query", "filetype", media_file).stdout
+        default_application = cmd("xdg-mime", "query", "default", mimetype).stdout
+
     player_path = which(default_application.replace(".desktop", ""))
     return player_path
 
@@ -74,7 +78,9 @@ def parse(args, m=None, media_file=None) -> List[str]:
 
     elif args.action in (SC.read) and media_file:
         player_path = find_xdg_application(media_file)
-        log.info(player_path)
+        if player_path:
+            args.player_need_sleep = False
+            player = [player_path]
 
     elif mpv:
         args.player_need_sleep = False
@@ -536,12 +542,12 @@ def multiple_player(args, media) -> None:
 
     try:
         while media or players:
-            for t_idx, tmpl in enumerate(template):
-                if len(tmpl) == 3:
-                    player_hole = tmpl
+            for t_idx, t in enumerate(template):
+                if len(t) == 3:
+                    player_hole = t
                     geom_data = None
                 else:
-                    geom_data, screen_name = tmpl
+                    geom_data, screen_name = t
                     player_hole = [geom(*geom_data), screen_name]
 
                 try:
