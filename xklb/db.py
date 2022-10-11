@@ -81,14 +81,16 @@ def optimize(args) -> None:
 
             optimized_column_order = [*int_columns, *(table_config.get("column_order") or [])]
             current_order = zip(table_columns, optimized_column_order)
+            was_transformed = False
             if not all([x == y for x, y in current_order]):
                 db[table].transform(column_order=optimized_column_order)  # type: ignore
+                was_transformed = True
 
             for column in int_columns + str_columns:
                 db[table].create_index([column], if_not_exists=True, analyze=True)  # type: ignore
 
-            if db[table].detect_fts() is None and any(fts_columns):  # type: ignore
-                db[table].enable_fts(fts_columns, create_triggers=True)
+            if any(fts_columns) and (db[table].detect_fts() is None or was_transformed):  # type: ignore
+                db[table].enable_fts(fts_columns, create_triggers=True, replace=True)
 
             with db.conn:
                 db[table].optimize()  # type: ignore

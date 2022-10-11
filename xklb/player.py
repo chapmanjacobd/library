@@ -173,9 +173,9 @@ def mark_media_watched(args, files) -> int:
             with args.db.conn:
                 cursor = args.db.conn.execute(
                     """UPDATE media
-                    set play_count = play_count +1
+                    SET play_count = play_count + 1
                     , time_played = cast(STRFTIME('%s') as int)
-                    where path in ("""
+                    WHERE path in ("""
                     + ",".join(["?"] * len(l))
                     + ")",
                     (*l,),
@@ -307,7 +307,7 @@ def get_ordinal_media(args, path: str) -> str:
                 and path like :candidate
                 {'and time_deleted=0' if 'time_deleted' in columns else ''}
                 {'' if (args.play_in_order >= 3) else (args.sql_filter or '')}
-            ORDER BY path
+            ORDER BY play_count, path
             LIMIT 1000
             """
         bindings = {"candidate": "%" + candidate + "%"}

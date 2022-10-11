@@ -567,7 +567,7 @@ def process_playqueue(args) -> None:
     if not media:
         utils.no_media_found()
 
-    if all([Path(args.watch_later_directory).exists(), args.play_in_order != 2, "sort" in args.defaults]):
+    if all([Path(args.watch_later_directory).exists(), args.play_in_order <= 1, "sort" in args.defaults]):
         media = utils.mpv_enrich(args, media)
 
     if args.multiple_playback:
