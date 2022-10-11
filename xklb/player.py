@@ -105,7 +105,7 @@ def parse(args, m=None, media_file=None) -> List[str]:
                     player.extend([f"--end={end}"])
 
         if m and args.action == SC.watch:
-            if m["subtitle_count"] > 0:
+            if m.get("subtitle_count") and m["subtitle_count"] > 0:
                 player.extend(args.player_args_sub)
             elif m.get("time_partial_first") is not None or m["size"] > 500 * 1000000:  # 500 MB
                 pass
@@ -411,7 +411,7 @@ def socket_play(args, m: dict) -> None:
     sleep(args.interdimensional_cable)
 
 
-def geom_walk(display, v=1, h=1) -> List[List[str]]:
+def geom_walk(display, v=1, h=1) -> List[List[int]]:
     va = display.width // v
     ha = display.height // h
 
@@ -426,9 +426,9 @@ def geom_walk(display, v=1, h=1) -> List[List[str]]:
     return geoms
 
 
-def grid_stack(display, qty, swap=False) -> List[List[str]]:
+def grid_stack(display, qty, swap=False):
     if qty == 1:
-        return [["--fs", f'--screen-name="{display.name}"', f'--fs-screen-name="{display.name}"']]
+        return [("--fs", f'--screen-name="{display.name}"', f'--fs-screen-name="{display.name}"')]
     else:
         dv = list(utils.divisor_gen(qty))
         if not dv:
@@ -444,7 +444,7 @@ def grid_stack(display, qty, swap=False) -> List[List[str]]:
     if swap:
         h, v = v, h
     holes = geom_walk(display, v=v, h=h)
-    return [[hole, f'--screen-name="{display.name}"'] for hole in holes]
+    return [(hole, f'--screen-name="{display.name}"') for hole in holes]
 
 
 def get_display_by_name(displays, screen_name) -> List[screeninfo.Monitor]:

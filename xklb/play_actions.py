@@ -5,7 +5,7 @@ from typing import Dict, Tuple
 
 from catt.api import CattDevice
 
-from xklb import consts, db, player, utils
+from xklb import consts, db, player, tube_backend, utils
 from xklb.consts import SC
 from xklb.player import get_ordinal_media, mark_media_deleted, override_sort
 from xklb.subtitle import externalize_subtitle
@@ -74,6 +74,7 @@ def construct_query(args) -> Tuple[str, dict]:
     FROM {args.table}
     WHERE 1=1
         {args.sql_filter}
+        {f'and path like "http%"' if args.safe else ''}
         {f'and path not like "%{args.keep_dir}%"' if args.post_action == 'askkeep' else ''}
         {'and time_deleted=0' if 'time_deleted' in m_columns and 'time_deleted' not in args.sql_filter else ''}
         {'AND (score IS NULL OR score > 7)' if 'score' in m_columns else ''}
@@ -391,6 +392,7 @@ def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
 
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
     parser.add_argument("--ignore-errors", "--ignoreerrors", "-i", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--safe", "-safe", action="store_true", help="Skip generic URLs")
     parser.add_argument("--verbose", "-v", action="count", default=0)
 
     parser.add_argument(
@@ -501,14 +503,18 @@ def transcode(next_video):
 def play(args, m: Dict) -> None:
     media_file = m["path"]
 
+    if args.safe and not tube_backend.is_supported(m["path"]):
+        log.warning("[%s]: Unsupported URL (safe_mode)", m["path"])
+        return
+
     if is_play_in_order_lvl2(args, media_file):
         media_file = get_ordinal_media(args, media_file)
 
-    if args.action in (SC.watch, SC.listen):
+    if args.action in (SC.watch, SC.listen) and not media_file.startswith("http"):
         media_path = Path(args.prefix + media_file).resolve()
         if not media_path.exists():
             mark_media_deleted(args, media_file)
-            log.info("[%s]: Does not exist. Skipping...", media_file)
+            log.warning("[%s]: Does not exist. Skipping...", media_file)
             return
         media_file = str(media_path)
 
@@ -543,7 +549,7 @@ def play(args, m: Dict) -> None:
             if args.ignore_errors:
                 return
             else:
-                exit(r.returncode)
+                raise SystemExit(r.returncode)
 
         if args.action in (SC.listen, SC.watch):
             player.post_act(args, media_file)

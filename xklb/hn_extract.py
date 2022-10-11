@@ -60,8 +60,7 @@ def parse_args(prog, usage) -> argparse.Namespace:
 
 
 def db_worker(args, input_queue):
-    conn = sqlite3.connect(args.database, isolation_level=None)
-    db_conn = db.connect(args, conn)
+    db_conn = db.connect(args, args.database)
     while True:
         r = input_queue.get()
         if r is None:

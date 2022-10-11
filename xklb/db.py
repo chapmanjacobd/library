@@ -16,7 +16,10 @@ class DB(sqlite_utils.Database):
             if any([e in str(exc) for e in ignore_errors]):
                 return None
             raise
-        return curs.fetchone()[0]
+        data = curs.fetchone()
+        if data is None or len(data) == 0:
+            return None
+        return data[0]
 
     def pop_dict(self, sql: str, params: Optional[Union[Iterable, dict]] = None, ignore_errors=None) -> Optional[Any]:
         if ignore_errors is None:
@@ -27,7 +30,7 @@ class DB(sqlite_utils.Database):
             if any([e in str(exc) for e in ignore_errors]):
                 return None
             raise
-        return next(dg)
+        return next(dg, None)
 
 
 def tracer(sql, params) -> None:

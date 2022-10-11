@@ -100,22 +100,6 @@ def saveable(item: Any) -> Dict[str, typing.Any]:
     return _parent_ids_interpreted(result)
 
 
-def redditor_save_comments(args, user, user_name):
-    latest_post_utc = args.db.pop(f"select max(time_created) from reddit_comments where author = ?", [user_name])
-    get_since = dt.datetime.fromtimestamp(latest_post_utc or consts.NOW) - dt.timedelta(days=args.lookback)
-    get_since = int(get_since.timestamp())
-    log.info("Getting comments by %s since timestamp %s", user_name, get_since)
-    _takewhile = partial(created_since, target_sec_utc=get_since)
-
-    args.db["reddit_comments"].upsert_all(
-        utils.list_dict_filter_bool(
-            list(saveable(s) for s in takewhile(_takewhile, user.comments.new(limit=args.limit)))
-        ),
-        pk="id",
-        alter=True,
-    )
-
-
 def slim_post_data(d: dict, playlist_path) -> dict:
     skip_domains = ["linktr.ee", "twitter.com", "t.me", "patreon", "onlyfans", "fans.ly", "file-upload", "file-link"]
     overridden_url = (
@@ -123,13 +107,12 @@ def slim_post_data(d: dict, playlist_path) -> dict:
     )
     return {
         "path": overridden_url or d.get("url"),
-        "id": d["id"],
-        "archived": d.get("archived"),
         "author": d.get("author"),
         "author_flair_text": d.get("author_flair_text"),
-        "author_is_blocked": d.get("author_is_blocked"),
         "time_created": d.get("created_utc"),
-        "time_modified": d.get("edited"),
+        "time_modified": int(d.get("edited") or 0),
+        "is_over_18": d.get("over_18"),
+        "is_archived": d.get("archived"),
         "is_original_content": d.get("is_original_content"),
         "is_reddit_media_domain": d.get("is_reddit_media_domain"),
         "is_self": d.get("is_self"),
@@ -137,104 +120,95 @@ def slim_post_data(d: dict, playlist_path) -> dict:
         "link_flair_text": d.get("link_flair_text"),
         "num_comments": d.get("num_comments"),
         "num_crossposts": d.get("num_crossposts"),
-        "over_18": d.get("over_18"),
         "score": d.get("score"),
         "upvote_ratio": d.get("upvote_ratio"),
         "selftext_html": d.get("selftext_html"),
-        "subreddit": d.get("subreddit"),
         "title": d.get("title"),
         "total_awards_received": d.get("total_awards_received"),
         "playlist_path": playlist_path,
     }
 
 
+def save_post(args, subreddit_path, post_dict):
+    author_is_blocked = post_dict["author_is_blocked"]
+    selftext_html = post_dict["selftext_html"]
+    slim_dict = utils.dict_filter_bool(slim_post_data(post_dict, subreddit_path))
+
+    if slim_dict:
+        already_downloaded_path = args.db.pop(
+            "SELECT path FROM media WHERE webpath =?",
+            [slim_dict["path"]],
+            ignore_errors=["no such column", "no such table"],
+        )
+        if already_downloaded_path:
+            slim_dict["path"] = already_downloaded_path
+
+        if author_is_blocked == 1:
+            pass
+        elif selftext_html:
+            args.db["reddit_posts"].upsert(slim_dict, pk="path", alter=True)
+        else:
+            args.db["media"].upsert(slim_dict, pk="path", alter=True)
+
+
+def since_last_created(args, playlist_path):
+    latest_post_utc = args.db.pop(
+        f"""
+        select max(time_created)
+        from (
+            select time_created, playlist_path from reddit_posts
+            UNION ALL
+            select time_created, playlist_path from media
+        )
+        where playlist_path = ?
+    """,
+        [playlist_path],
+    )
+    if latest_post_utc is None:
+        log.debug("Using NOW")
+        latest_post_utc = consts.NOW
+    get_since = dt.datetime.fromtimestamp(latest_post_utc) - dt.timedelta(days=args.lookback)
+    get_since = int(get_since.timestamp())
+    log.info("Getting posts since timestamp %s", get_since)
+    _takewhile = partial(created_since, target_sec_utc=get_since)
+    return _takewhile
+
+
 def redditor_new(args, redditor_dict) -> None:
     user_path, user_name = redditor_dict.values()
     user: praw.reddit.Redditor = args.reddit.redditor(user_name)
 
-    latest_post_utc = args.db.pop(f"select max(time_created) from reddit_posts where author = ?", [user_name])
-    get_since = dt.datetime.fromtimestamp(latest_post_utc or consts.NOW) - dt.timedelta(days=args.lookback)
-    get_since = int(get_since.timestamp())
-    log.info("Getting posts by %s since timestamp %s", user_name, get_since)
-    _takewhile = partial(created_since, target_sec_utc=get_since)
+    _takewhile = since_last_created(args, user_path)
+    log.info("Getting new posts")
 
-    if args.comments:
-        for s in takewhile(_takewhile, user.submissions.new(limit=args.limit)):
-            s.time_created = s.created_utc
-            args.db["reddit_posts"].upsert(utils.dict_filter_bool(saveable(s)), pk="path", alter=True)
-
-        redditor_save_comments(args, user, user_name)
-    else:
-        for s in takewhile(_takewhile, user.submissions.new(limit=args.limit)):
-            s.time_created = s.created_utc
-            post_dict = utils.dict_filter_bool(saveable(s))
-            if post_dict:
-                post_dict = slim_post_data(post_dict, user_path)
-                args.db["reddit_posts"].upsert(post_dict, pk="path", alter=True)
-
-
-def enrich_subreddit_record(args, subreddit_name, post_dict):
-    path = args.db.pop('select path from playlists where id = ? and ie_key = "reddit_praw_subreddit"', [subreddit_name])
-
-    return args.db["playlists"].upsert(
-        utils.dict_filter_bool(
-            {
-                "path": path,
-                "subscribers": post_dict.pop("subreddit_subscribers", None),
-                "visibility": post_dict.pop("subreddit_type", None),
-            }
-        ),
-        pk="path",
-        alter=True,
-    )
-
-
-def subreddit_save_comments(args, post, post_dict):
-    post_dict["time_created"] = post_dict["created_utc"]
-    args.db["reddit_posts"].upsert(post_dict, pk="path", alter=True)
-    post.comments.replace_more()
-    args.db["reddit_comments"].upsert_all(
-        utils.list_dict_filter_bool(list(saveable(c) for c in post.comments.list())), pk="id", alter=True
-    )
+    for s in takewhile(_takewhile, user.submissions.new(limit=args.limit)):
+        s.time_created = s.created_utc
+        save_post(args, user_path, saveable(s))
 
 
 def subreddit_new(args, subreddit_dict) -> None:
     subreddit_path, subreddit_name = subreddit_dict.values()
     subreddit: praw.reddit.Subreddit = args.reddit.subreddit(subreddit_name)
 
-    latest_post_utc = args.db.pop(f"select max(time_created) from reddit_posts where subreddit = ?", [subreddit_name])
-    get_since = dt.datetime.fromtimestamp(latest_post_utc or consts.NOW) - dt.timedelta(days=args.lookback)
-    get_since = int(get_since.timestamp())
-    log.info("Getting posts in %s since timestamp %s", subreddit_name, get_since)
-
-    _takewhile = partial(created_since, target_sec_utc=get_since)
+    _takewhile = since_last_created(args, subreddit_path)
+    log.info("Getting new posts")
     for idx, post in enumerate(takewhile(_takewhile, subreddit.new(limit=args.limit))):
-        post_dict = utils.dict_filter_bool(saveable(post))
-        if post_dict is None:
-            continue
+        post_dict = saveable(post)
 
         if idx == 0:
-            enrich_subreddit_record(args, subreddit_name, post_dict)
-
-        if args.comments:
-            subreddit_save_comments(args, post, post_dict)
-        else:
-            post_dict = slim_post_data(post_dict, subreddit_path)
-
-            already_downloaded_path = args.db.pop(
-                "SELECT path FROM media WHERE webpath =?",
-                [post_dict["path"]],
-                ignore_errors=["no such column", "no such table"],
+            args.db["playlists"].upsert(
+                utils.dict_filter_bool(
+                    {
+                        "path": subreddit_path,
+                        "subscribers": post_dict.pop("subreddit_subscribers", None),
+                        "visibility": post_dict.pop("subreddit_type", None),
+                    }
+                ),
+                pk="path",
+                alter=True,
             )
-            if already_downloaded_path:
-                post_dict["path"] = already_downloaded_path
 
-            if post_dict["author_is_blocked"] == 1:
-                continue
-            elif post_dict["selftext_html"]:
-                args.db["reddit_posts"].upsert(post_dict, pk="id", alter=True)
-            else:
-                args.db["media"].upsert(post_dict, pk="path", alter=True)
+        save_post(args, subreddit_path, post_dict)
 
 
 def subreddit_top(args, subreddit_dict) -> None:
@@ -247,32 +221,11 @@ def subreddit_top(args, subreddit_dict) -> None:
         time_filters.reverse()
     time_filters = time_filters[: args.lookback]
 
+    _takewhile = since_last_created(args, subreddit_path)
     for time_filter in time_filters:
         log.info("Getting top posts in %s for time_filter '%s'", subreddit, time_filter)
-        for post in subreddit.top(time_filter, limit=args.limit):
-            post_dict = utils.dict_filter_bool(saveable(post))
-            if post_dict is None:
-                continue
-
-            if args.comments:
-                subreddit_save_comments(args, post, post_dict)
-            else:
-                post_dict = slim_post_data(post_dict, subreddit_path)
-
-                already_downloaded_path = args.db.pop(
-                    "SELECT path FROM media WHERE webpath =?",
-                    [post_dict["path"]],
-                    ignore_errors=["no such column", "no such table"],
-                )
-                if already_downloaded_path:
-                    post_dict["path"] = already_downloaded_path
-
-                if post_dict["author_is_blocked"] == 1:
-                    continue
-                elif post_dict["selftext_html"]:
-                    args.db["reddit_posts"].upsert(post_dict, pk="id", alter=True)
-                else:
-                    args.db["media"].upsert(post_dict, pk="path", alter=True)
+        for post in takewhile(_takewhile, subreddit.top(time_filter, limit=args.limit)):
+            save_post(args, subreddit_path, saveable(post))
 
 
 def parse_args(prog, usage) -> argparse.Namespace:
@@ -281,7 +234,6 @@ def parse_args(prog, usage) -> argparse.Namespace:
     parser.add_argument("--lookback", default=4, type=int, help="Number of days to look back")
     parser.add_argument("--praw-site", default="bot1")
 
-    parser.add_argument("--comments", action="store_true")
     parser.add_argument("--subreddits", action="store_true")
     parser.add_argument("--redditors", action="store_true")
 
@@ -372,7 +324,7 @@ def reddit_add() -> None:
                 {
                     "path": path,
                     "id": match,
-                    "config": utils.get_config_opts(args, ["limit", "lookback", "praw_site", "comments"]),
+                    "config": utils.get_config_opts(args, ["limit", "lookback", "praw_site"]),
                     "category": args.category,
                     "profile": args.profile,
                     "ie_key": ie_key,
