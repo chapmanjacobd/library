@@ -79,15 +79,15 @@ def optimize(args) -> None:
 
     config = {
         "media": {
-            "fts_able_columns": ["path", "title", "tags", "mood", "genre", "description", "artist", "album"],
+            "search_columns": ["path", "title", "tags", "mood", "genre", "description", "artist", "album"],
             "column_order": ["path", "webpath", "id", "ie_key", "playlist_path"],
             "ignore_columns": ["id"],
         },
         "reddit_posts": {
-            "fts_able_columns": ["title", "selftext_html"],
+            "search_columns": ["title", "selftext_html"],
         },
         "reddit_comments": {
-            "fts_able_columns": ["body"],
+            "search_columns": ["body"],
         },
     }
 
@@ -96,21 +96,17 @@ def optimize(args) -> None:
             table_columns = db[table].columns_dict
             table_config = config.get(table) or {}
             ignore_columns = table_config.get("ignore_columns") or []
-            fts_able_columns = table_config.get("fts_able_columns") or []
+            search_columns = table_config.get("search_columns") or []
 
-            fts_columns = [c for c in fts_able_columns if c in table_columns]
-            int_columns = [
-                k for k, v in table_columns.items() if v == int and k not in fts_able_columns + ignore_columns
-            ]
-            str_columns = [
-                k for k, v in table_columns.items() if v == str and k not in fts_able_columns + ignore_columns
-            ]
+            fts_columns = [c for c in search_columns if c in table_columns]
+            int_columns = [k for k, v in table_columns.items() if v == int and k not in search_columns + ignore_columns]
+            str_columns = [k for k, v in table_columns.items() if v == str and k not in search_columns + ignore_columns]
 
             for column in int_columns + str_columns:
                 db[table].create_index([column], if_not_exists=True, analyze=True)  # type: ignore
 
             if db[table].detect_fts() is None and any(fts_columns):  # type: ignore
-                db[table].enable_fts(fts_columns, create_triggers=True)
+                db[table].enable_fts(fts_columns)
                 create_triggers(db, table, fts_columns)  # remove once new sqlite_utils published
 
             db[table].transform(column_order=[*int_columns, *(table_config.get("column_order") or [])])  # type: ignore
