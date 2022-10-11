@@ -47,6 +47,30 @@ def connect(args, conn=None, **kwargs) -> sqlite_utils.Database:
     return db
 
 
+def create_triggers(db, table, fts_columns):
+    old_cols = ", ".join("old.[{}]".format(c) for c in fts_columns)
+    new_cols = ", ".join("new.[{}]".format(c) for c in fts_columns)
+    triggers = """
+                CREATE TRIGGER [{table}_ai] AFTER INSERT ON [{table}] BEGIN
+                INSERT INTO [{table}_fts] (rowid, {columns}) VALUES (new.rowid, {new_cols});
+                END;
+                CREATE TRIGGER [{table}_ad] AFTER DELETE ON [{table}] BEGIN
+                INSERT INTO [{table}_fts] ([{table}_fts], rowid, {columns}) VALUES('delete', old.rowid, {old_cols});
+                END;
+                CREATE TRIGGER [{table}_au] AFTER UPDATE ON [{table}] BEGIN
+                INSERT INTO [{table}_fts] ([{table}_fts], rowid, {columns}) VALUES('delete', old.rowid, {old_cols});
+                INSERT INTO [{table}_fts] (rowid, {columns}) VALUES (new.rowid, {new_cols});
+                END;
+            """.strip().format(
+        table=table,
+        columns=", ".join("[{}]".format(c) for c in fts_columns),
+        old_cols=old_cols,
+        new_cols=new_cols,
+    )
+    with db.conn:
+        db.conn.executescript(triggers)
+
+
 def optimize(args) -> None:
     print("\nOptimizing database")
     db: sqlite_utils.Database = args.db
@@ -87,6 +111,7 @@ def optimize(args) -> None:
 
             if db[table].detect_fts() is None and any(fts_columns):  # type: ignore
                 db[table].enable_fts(fts_columns, create_triggers=True)
+                create_triggers(db, table, fts_columns)  # remove once new sqlite_utils published
 
             db[table].transform(column_order=[*int_columns, *(table_config.get("column_order") or [])])  # type: ignore
             with db.conn:
