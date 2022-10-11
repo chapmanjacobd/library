@@ -1,4 +1,5 @@
 import sys, unittest
+from types import SimpleNamespace
 from unittest import mock
 
 import pytest
@@ -65,7 +66,7 @@ def test_wt_print(capsys):
 
 
 class TestFs(unittest.TestCase):
-    @mock.patch("xklb.play_actions.play")
+    @mock.patch("xklb.player.local_player", return_value=SimpleNamespace(returncode=0))
     def test_lb_fs(self, play_mocked):
         for SC in ("watch", "wt"):
             lb([SC, *v_db])
@@ -87,7 +88,7 @@ class TestFs(unittest.TestCase):
         out = play_mocked.call_args[0][1]
         assert "test" in out["path"]
 
-    @mock.patch("xklb.play_actions.play")
+    @mock.patch("xklb.player.local_player", return_value=SimpleNamespace(returncode=0))
     def test_wt_search(self, play_mocked):
         sys.argv = [
             "wt",
@@ -110,14 +111,14 @@ class TestFs(unittest.TestCase):
         out = play_mocked.call_args[0][1]
         assert out is not None
 
-    @mock.patch("xklb.play_actions.play")
+    @mock.patch("xklb.player.local_player", return_value=SimpleNamespace(returncode=0))
     def test_wt_sort(self, play_mocked):
         sys.argv = ["wt", *v_db, "-u", "duration"]
         wt()
         out = play_mocked.call_args[0][1]
         assert out is not None
 
-    @mock.patch("xklb.play_actions.play")
+    @mock.patch("xklb.player.local_player", return_value=SimpleNamespace(returncode=0))
     def test_wt_size(self, play_mocked):
         sys.argv = ["wt", *v_db, "--size", "-1"]  # less than 1MB
         wt()

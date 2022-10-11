@@ -34,6 +34,7 @@ def parse_args(action, usage):
     parser.add_argument("--extra-media-data", default={}, nargs=1, action=utils.argparse_dict, metavar="KEY=VALUE")
     parser.add_argument("--extra-playlist-data", default={}, nargs=1, action=utils.argparse_dict, metavar="KEY=VALUE")
     parser.add_argument("--ignore-errors", "--ignoreerrors", "-i", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--safe", "-safe", action="store_true", help="Skip generic URLs")
 
     parser.add_argument("--prefix", default=os.getcwd(), help=argparse.SUPPRESS)
     parser.add_argument("--ext", default="DEFAULT")
@@ -194,6 +195,10 @@ def dl_download(args=None) -> None:
     )
     media = process_downloadqueue(args)
     for m in media:
+        if args.safe and not tube_backend.is_supported(m["path"]):
+            log.warning("[%s]: Unsupported URL (safe_mode)", m["path"])
+            continue
+
         # check again in case it was already completed by another process
         path = list(args.db.query("select path from media where path=?", [m["path"]]))
         if not path:
