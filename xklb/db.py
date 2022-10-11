@@ -43,7 +43,8 @@ def connect(args, conn=None, **kwargs) -> sqlite_utils.Database:
         raise SystemExit(1)
 
     db = DB(conn or args.database, tracer=tracer if args.verbose >= 2 else None, **kwargs)  # type: ignore
-    db.execute("PRAGMA main.cache_size = 8000")
+    with db.conn:
+        db.conn.execute("PRAGMA main.cache_size = 8000")
     return db
 
 
@@ -78,7 +79,10 @@ def optimize(args) -> None:
             int_columns = [k for k, v in table_columns.items() if v == int and k not in search_columns + ignore_columns]
             str_columns = [k for k, v in table_columns.items() if v == str and k not in search_columns + ignore_columns]
 
-            db[table].transform(column_order=[*int_columns, *(table_config.get("column_order") or [])])  # type: ignore
+            optimized_column_order = [*int_columns, *(table_config.get("column_order") or [])]
+            current_order = zip(table_columns, optimized_column_order)
+            if not all([x == y for x, y in current_order]):
+                db[table].transform(column_order=optimized_column_order)  # type: ignore
 
             for column in int_columns + str_columns:
                 db[table].create_index([column], if_not_exists=True, analyze=True)  # type: ignore
