@@ -106,7 +106,7 @@ def optimize(args) -> None:
                 db[table].create_index([column], if_not_exists=True, analyze=True)  # type: ignore
 
             if db[table].detect_fts() is None and any(fts_columns):  # type: ignore
-                db[table].enable_fts(fts_columns)
+                db[table].enable_fts(fts_columns, create_triggers=False)
                 create_triggers(db, table, fts_columns)  # remove once new sqlite_utils published
 
             db[table].transform(column_order=[*int_columns, *(table_config.get("column_order") or [])])  # type: ignore
