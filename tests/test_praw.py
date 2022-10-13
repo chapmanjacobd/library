@@ -9,8 +9,6 @@ from xklb.play_actions import watch
 from xklb.praw_extract import reddit_add, reddit_update
 
 reddit_db = "--db", "tests/data/reddit.db"
-reddit_add([*reddit_db, "--limit", "10", "https://old.reddit.com/user/BuonaparteII/"])
-reddit_add([*reddit_db, "--limit", "1", "https://old.reddit.com/r/pytest/"])
 
 
 def test_tw_print(capsys):
@@ -26,6 +24,9 @@ def test_tw_print(capsys):
 
 
 class TestReddit(unittest.TestCase):
+    reddit_add([*reddit_db, "--limit", "10", "https://old.reddit.com/user/BuonaparteII/"])
+    reddit_add([*reddit_db, "--limit", "1", "https://old.reddit.com/r/pytest/"])
+
     @mock.patch("xklb.player.local_player", return_value=SimpleNamespace(returncode=0))
     def test_lb_fs(self, play_mocked):
         sys.argv[1:] = reddit_db
