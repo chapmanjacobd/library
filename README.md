@@ -21,6 +21,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
 
     local media subcommands:
         fsadd                        Create a local media database; Add folders
+        fsupdate                     Refresh database: add new files, mark deleted
         listen                       Listen to local and online media
         watch                        Watch local and online media
         read                         Read books
@@ -32,8 +33,9 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
 
     online media subcommands:
         tubeadd                      Create a tube database; Add playlists
-        tubeupdate                   Add new videos from saved playlists
+        tubeupdate                   Fetch new videos from saved playlists
         redditadd                    Create a reddit database; Add subreddits
+        redditupdate                 Fetch new posts from saved subreddits
         hnadd                        Create a hackernews database
 
     download subcommands:
@@ -54,6 +56,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
     browser tab subcommands:
         tabsadd                      Create a tabs database; Add URLs
         tabs                         Open your tabs for the day
+        surf                         Load n-number of browser tabs
     
 
 ## Quick Start -- watch online media on your PC
@@ -479,13 +482,11 @@ Explore `library` databases in your browser
 
 ### TODOs (PRs welcome)
 
-- create/update views: especially dl queue, etc so that it is easier for people
+- create/update views: especially dl queue, etc so that it is easier for people to access data externally
     db.create_view("items", ITEM_VIEW_DEF, replace=True)
-- redditupdate, override --lookback
 - debug move_random
+- SELECT * FROM playlists p WHERE PATH NOT IN (SELECT DISTINCT playlist_path FROM media WHERE playlist_path NOT NULL )
+- SELECT * FROM media WHERE PATH LIKE '%d/Youtube%'
 - dlstatus --flush to mark all errored downloads as deleted
-- fsupdate: run fsadd for each path playlist, sort by path length and path
-- --lightweight-extractor boolean arg to tubeadd to skip yt-dlp
-- galleryadd, galleryupdate
-- more test coverage -- https://hypothesis.readthedocs.io/en/latest/quickstart.html
+- more test coverage
 

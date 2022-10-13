@@ -31,14 +31,6 @@ def parse_args(prog, usage):
     return args
 
 
-def get_playlists_join(args):
-    media_columns = args.db["media"].columns_dict
-    join = "(p.ie_key = media.ie_key = 'Local' and media.path like p.path || '%' ) "
-    if "playlist_path" in media_columns:
-        join += "or (p.ie_key = media.ie_key and media.ie_key != 'Local' and p.path = media.playlist_path)"
-    return join
-
-
 def construct_query(args) -> Tuple[str, dict]:
     pl_columns = args.db["playlists"].columns_dict
     cf = []
@@ -150,6 +142,7 @@ def playlists() -> None:
         return delete_playlists(args, args.delete)
 
     pl_columns = args.db["playlists"].columns_dict
+    m_columns = args.db["media"].columns_dict
     query, bindings = construct_query(args)
 
     query = f"""
@@ -164,11 +157,11 @@ def playlists() -> None:
             , p.category
             , p.profile
             , coalesce(p.path, "Playlist-less media") path
-            , sum(media.duration) duration
-            , sum(media.size) size
+            {', sum(media.duration) duration' if 'duration' in m_columns else ''}
+            {', sum(media.size) size' if 'size' in m_columns else ''}
             , count(*) count
         from media
-        left join ({query}) p on {get_playlists_join(args)}
+        left join ({query}) p on {db.get_playlists_join(args)}
         group by coalesce(p.path, "Playlist-less media")
         order by category nulls last, profile, p.path"""
 
@@ -216,15 +209,15 @@ def dlstatus() -> None:
     m_columns = args.db["media"].columns_dict
     query, bindings = construct_query(args)
     query = f"""select
-        media.ie_key
+        p.profile
+        {', media.ie_key' if 'ie_key' in m_columns else ''}
         , coalesce(p.category, "Playlist-less media") category
-        , p.profile
         , count(*) FILTER(WHERE time_modified=0) never_downloaded
-        , sum(media.duration) duration
+        {', sum(media.duration) duration' if 'duration' in m_columns else ''}
         {', count(*) FILTER(WHERE time_modified>0 AND error IS NOT NULL) errors' if 'error' in m_columns else ''}
         --{', group_concat(distinct media.error) error_descriptions' if 'error' in m_columns else ''}
     from media
-    left join ({query}) p on {get_playlists_join(args)}
+    left join ({query}) p on {db.get_playlists_join(args)}
     where 1=1
         and media.time_downloaded=0
         and media.time_deleted=0

@@ -141,5 +141,5 @@ def tube_update(args=None) -> None:
         library tubeupdate educational.db --extra https://www.youtube.com/channel/UCBsEUcR-ezAuxB2WlfeENvA/videos
 """,
     )
-    playlists = tube_backend.get_playlists(args, constrain=True)
+    playlists = db.get_playlists(args, constrain=True)
     tube_backend.update_playlists(args, playlists)

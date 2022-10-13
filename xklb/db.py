@@ -12,11 +12,11 @@ class DB(sqlite_utils.Database):
             ignore_errors = ["no such table"]
         try:
             curs = self.execute(sql, params)
+            data = curs.fetchone()
         except sqlite3.OperationalError as exc:
             if any([e in str(exc) for e in ignore_errors]):
                 return None
             raise
-        data = curs.fetchone()
         if data is None or len(data) == 0:
             return None
         return data[0]
@@ -26,11 +26,12 @@ class DB(sqlite_utils.Database):
             ignore_errors = ["no such table"]
         try:
             dg = self.query(sql, params)
+            d = next(dg, None)
         except sqlite3.OperationalError as exc:
             if any([e in str(exc) for e in ignore_errors]):
                 return None
-            raise
-        return next(dg, None)
+            raise exc
+        return d
 
 
 def tracer(sql, params) -> None:
@@ -139,3 +140,36 @@ def gen_include_excludes(cols_available):
     exclude_string = "and (" + " not like :exclude{} AND ".join(valid_cols) + " not like :exclude{} )"
 
     return include_string, exclude_string
+
+
+def get_playlists(args, cols="path, dl_config", constrain=False, sql_filters=None) -> List[dict]:
+    columns = args.db["playlists"].columns_dict
+    if sql_filters is None:
+        sql_filters = []
+    if "time_deleted" in columns:
+        sql_filters.append("AND time_deleted=0")
+    if constrain:
+        if args.category:
+            sql_filters.append(f"AND category='{args.category}'")
+        if args.profile:
+            sql_filters.append(f"AND profile='{args.profile}'")
+
+    try:
+        known_playlists = list(
+            args.db.query(f"select {cols} from playlists where 1=1 {' '.join(sql_filters)} order by random()")
+        )
+    except sqlite3.OperationalError:
+        known_playlists = []
+    return known_playlists
+
+
+def get_playlists_join(args):
+    media_columns = args.db["media"].columns_dict
+    if "ie_key" in media_columns:
+        join = "(p.ie_key = media.ie_key = 'Local' and media.path like p.path || '%' ) "
+        if "playlist_path" in media_columns:
+            join += "or (p.ie_key = media.ie_key and media.ie_key != 'Local' and p.path = media.playlist_path)"
+    else:
+        join = "p.path = media.playlist_path"
+
+    return join

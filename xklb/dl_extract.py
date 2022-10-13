@@ -80,6 +80,7 @@ def parse_args(action, usage):
 
 def construct_query(args) -> Tuple[str, dict]:
     m_columns = args.db["media"].columns_dict
+    pl_columns = args.db["playlists"].columns_dict
 
     cf = []
     bindings = {}
@@ -93,9 +94,14 @@ def construct_query(args) -> Tuple[str, dict]:
 
     cf.append(
         f"""and cast(STRFTIME('%s',
-            datetime( time_modified, 'unixepoch', '+{args.retry_delay}')
+          datetime( time_modified, 'unixepoch', '+{args.retry_delay}')
         ) as int) < STRFTIME('%s', datetime()) """
     )
+
+    if "uploader" in m_columns:
+        cf.append(
+            f"and media.uploader not in (select uploader from playlists where category='{consts.BLOCK_THE_CHANNEL}')"
+        )
 
     args.sql_filter = " ".join(cf)
     args.sql_filter_bindings = bindings
@@ -105,23 +111,22 @@ def construct_query(args) -> Tuple[str, dict]:
             media.path
             {', playlist_path' if 'playlist_path' in m_columns else ''}
             , media.title
-            , media.duration
+            {', media.duration' if 'duration' in m_columns else ''}
             , media.time_created
-            , media.size
-            , coalesce(media.id, '') id
-            , p.dl_config
+            {', media.size' if 'size' in m_columns else ''}
+            {', media.id' if 'id' in m_columns else ''}
+            {', p.dl_config' if 'dl_config' in pl_columns else ''}
             , coalesce(p.category, p.ie_key) category
             , p.profile
         FROM media
-        JOIN playlists p on {stats.get_playlists_join(args)}
+        JOIN playlists p on {db.get_playlists_join(args)}
         WHERE 1=1
-            and time_downloaded=0
+            and (media.time_downloaded=0 OR media.time_modified > media.time_downloaded)
             and media.time_deleted=0
             and p.time_deleted=0
             {'AND (score IS NULL OR score > 7)' if 'score' in m_columns else ''}
             {'AND (upvote_ratio IS NULL OR upvote_ratio > 0.73)' if 'upvote_ratio' in m_columns else ''}
             {args.sql_filter}
-            and media.uploader not in (select uploader from playlists where category='{consts.BLOCK_THE_CHANNEL}')
         ORDER BY 1=1
             {', ' + args.sort if args.sort else ''}
             , play_count
