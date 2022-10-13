@@ -35,7 +35,7 @@ jobs:
 
       - run: poetry install
       - run: poetry build
-      - run: pytest -k 'not TestReddit'
+      - run: pytest
 
   publish:
     needs: test
