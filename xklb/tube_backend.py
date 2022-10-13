@@ -235,7 +235,6 @@ def _add_playlist(args, playlist_path, pl: dict, media_path: Optional[str] = Non
         "dl_config": args.dl_config,
         "time_deleted": 0,
         "category": args.category or extractor,
-        "profile": args.profile,
         **args.extra_playlist_data,
     }
 
@@ -250,7 +249,6 @@ def save_undownloadable(args, playlist_path):
         "path": playlist_path,
         "title": "No data from ydl.extract_info",
         "category": args.category or "Uncategorized",
-        "profile": args.profile,
         "dl_config": args.dl_config,
         **args.extra_playlist_data,
     }
@@ -406,8 +404,8 @@ def save_tube_entry(args, m, info: Optional[dict] = None, error=None, URE=False)
     assert info["local_path"] != ""
     if Path(info["local_path"]).exists():
         fs_args = argparse.Namespace(
-            profile=m["profile"],
-            scan_subtitles=True if m["profile"] == DBType.video else False,
+            profile=args.profile,
+            scan_subtitles=True if args.profile == DBType.video else False,
             delete_unplayable=False,
             ocr=False,
             speech_recognition=False,
@@ -497,12 +495,12 @@ def yt(args, m) -> None:
         ydl_opts["format"] = "bestvideo[height<=576]+bestaudio/best[height<=576]/best"
 
     if args.ext == "DEFAULT":
-        if m["profile"] == DBType.audio:
+        if args.profile == DBType.audio:
             args.ext = "opus"
         else:
             args.ext = None
 
-    if m["profile"] == DBType.audio:
+    if args.profile == DBType.audio:
         ydl_opts[
             "format"
         ] = "bestaudio[ext=opus]/bestaudio[ext=webm]/bestaudio[ext=ogg]/bestaudio[ext=oga]/bestaudio/best"
@@ -529,7 +527,7 @@ def yt(args, m) -> None:
             save_tube_entry(args, m, error="yt-dlp returned no info")
             return
 
-        if m["profile"] == DBType.audio:
+        if args.profile == DBType.audio:
             info["local_path"] = ydl.prepare_filename({**info, "ext": args.ext})
         else:
             info["local_path"] = ydl.prepare_filename(info)

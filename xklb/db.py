@@ -151,8 +151,6 @@ def get_playlists(args, cols="path, dl_config", constrain=False, sql_filters=Non
     if constrain:
         if args.category:
             sql_filters.append(f"AND category='{args.category}'")
-        if args.profile:
-            sql_filters.append(f"AND profile='{args.profile}'")
 
     try:
         known_playlists = list(

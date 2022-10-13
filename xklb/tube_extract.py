@@ -9,15 +9,6 @@ from xklb.utils import log
 def parse_args(action, usage) -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library " + action, usage=usage)
 
-    profile = parser.add_mutually_exclusive_group()
-    profile.add_argument(
-        "--audio", "-A", action="store_const", dest="profile", const=DBType.audio, help="Use audio downloader"
-    )
-    profile.add_argument(
-        "--video", "-V", action="store_const", dest="profile", const=DBType.video, help="Use video downloader"
-    )
-    parser.set_defaults(profile=DBType.video)
-
     parser.add_argument(
         "--dl-config",
         "-dl-config",
@@ -74,10 +65,6 @@ def tube_add(args=None) -> None:
 
         library tubeadd -c Educational dl.db https://www.youdl.com/c/BranchEducation/videos
 
-    To download audio you must make the download profile (downloader) explicit with `--audio`
-
-        library tubeadd --audio -c Educational dl.db https://www.youdl.com/c/BranchEducation/videos
-
     If you include more than one URL, you must specify the database
 
         library tubeadd 71_Mealtime_Videos dl.db (cat ~/.jobs/todo/71_Mealtime_Videos)
@@ -125,9 +112,9 @@ def tube_update(args=None) -> None:
 
         library tubeupdate educational.db
 
-    Or limit to specific profiles or categories...
+    Or limit to specific categories...
 
-        library tubeupdate --audio -c "Bob Ross" educational.db
+        library tubeupdate -c "Bob Ross" educational.db
 
     Run with --optimize to add indexes (might speed up searching but the size will increase):
 
