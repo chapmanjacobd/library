@@ -1,7 +1,7 @@
 import sys, unittest
 from argparse import Namespace
 from types import SimpleNamespace
-from unittest import mock
+from unittest import mock, skip
 
 from xklb.db import connect
 from xklb.lb import lb
@@ -11,21 +11,11 @@ from xklb.praw_extract import reddit_add, reddit_update
 reddit_db = "--db", "tests/data/reddit.db"
 
 
-def test_tw_print(capsys):
-    for lb_command in [
-        ["wt", *reddit_db, "-p"],
-        ["dl", *reddit_db, "-p"],
-        ["pl", *reddit_db],
-        ["ds", *reddit_db],
-    ]:
-        lb(lb_command)
-        captured = capsys.readouterr().out.replace("\n", "")
-        assert "Aggregate" not in captured
-
-
+@skip("Requires reddit auth")
 class TestReddit(unittest.TestCase):
-    reddit_add([*reddit_db, "--limit", "10", "https://old.reddit.com/user/BuonaparteII/"])
-    reddit_add([*reddit_db, "--limit", "1", "https://old.reddit.com/r/pytest/"])
+    def setup(self):
+        reddit_add([*reddit_db, "--limit", "10", "https://old.reddit.com/user/BuonaparteII/"])
+        reddit_add([*reddit_db, "--limit", "1", "https://old.reddit.com/r/pytest/"])
 
     @mock.patch("xklb.player.local_player", return_value=SimpleNamespace(returncode=0))
     def test_lb_fs(self, play_mocked):
@@ -43,3 +33,9 @@ class TestReddit(unittest.TestCase):
 
         media = list(db["media"].rows)
         assert len(media) > 0
+
+    def test_print(self):
+        lb(["wt", *reddit_db, "-p"])
+        lb(["dl", *reddit_db, "-p"])
+        lb(["pl", *reddit_db])
+        lb(["ds", *reddit_db])
