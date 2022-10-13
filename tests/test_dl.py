@@ -30,6 +30,7 @@ class TestTube(unittest.TestCase):
 
         args = Namespace(
             database=dl_db[1],
+            profile="video",
             dl_config={},
             prefix=STORAGE_PREFIX,
             ext=None,
@@ -38,7 +39,7 @@ class TestTube(unittest.TestCase):
             verbose=0,
         )
         args.db = connect(args)
-        yt(args, dict(path=PLAYLIST_VIDEO_URL, dl_config="{}", category="Self", profile="video"))
+        yt(args, dict(path=PLAYLIST_VIDEO_URL, dl_config="{}", category="Self"))
 
     @mock.patch("xklb.tube_backend.yt")
     @mock.patch("xklb.tube_backend.process_playlist")
@@ -47,7 +48,7 @@ class TestTube(unittest.TestCase):
         out = process_playlist.call_args[0][1]
         assert out == PLAYLIST_URL
 
-        dl_download([*tube_db, STORAGE_PREFIX])
+        dl_download([*tube_db, '--prefix', STORAGE_PREFIX, '--video'])
         out = mocked_yt.call_args[0]
         assert out[1]["path"] == PLAYLIST_VIDEO_URL
 
@@ -55,7 +56,7 @@ class TestTube(unittest.TestCase):
     def test_download(self, mocked_yt):
         self.init_db()
 
-        dl_download([*dl_db, STORAGE_PREFIX])
+        dl_download([*dl_db,'--prefix', STORAGE_PREFIX, '--audio'])
         out = mocked_yt.call_args[0]
         assert out[1]["path"] == PLAYLIST_VIDEO_URL
 

@@ -68,9 +68,9 @@ def parse_args(action, usage):
         if args.duration:
             args.duration = play_actions.parse_duration(args)
 
-    if not args.profile:
-        print('Download profile must be specified. Use one of: --video --audio')
-        raise SystemExit(1)
+        if not args.profile and not args.print:
+            print('Download profile must be specified. Use one of: --video --audio')
+            raise SystemExit(1)
 
     if args.db:
         args.database = args.db
