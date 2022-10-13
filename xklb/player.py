@@ -39,7 +39,7 @@ def generic_player(args) -> List[str]:
 
 def calculate_duration(args, m) -> Tuple[int, int]:
     start = 0
-    end = m["duration"]
+    end = m.get("duration", 0)
 
     if args.start:
         if args.start == "wadsworth":
@@ -274,7 +274,6 @@ def override_sort(sort_expression: str) -> str:
         sort_expression.replace("month_created", YEAR_MONTH("time_created"))
         .replace("month_modified", YEAR_MONTH("time_modified"))
         .replace("random", "random()")
-        .replace("priority", " play_count, ntile(1000) over (order by size/duration) desc")
     )
 
 

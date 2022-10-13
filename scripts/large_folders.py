@@ -17,7 +17,7 @@ def get_table(args) -> List[dict]:
         from media
         where 1=1
             {'and time_deleted = 0' if 'time_deleted' in columns else ''}
-            {'and time_downloaded = 0' if 'time_downloaded' in columns else ''}
+            {'and time_downloaded > 0' if 'time_downloaded' in columns else ''}
         order by path
         """
         )

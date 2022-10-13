@@ -7,7 +7,7 @@ from typing import Dict, List, Optional
 from joblib import Parallel, delayed
 
 from xklb import av, books, consts, db, utils
-from xklb.consts import DBType
+from xklb.consts import SC, DBType
 from xklb.player import mark_media_deleted
 from xklb.utils import log
 
@@ -143,7 +143,7 @@ def _add_folder(args, folder_path: Path) -> None:
     playlist = {
         "ie_key": "Local",
         "path": str(folder_path),
-        "config": utils.get_config_opts(args, ["ocr", "speech_recognition", "scan_subtitles"]),
+        "config": utils.filter_namespace(args, ["ocr", "speech_recognition", "scan_subtitles"]),
         "time_deleted": 0,
         "category": category,
         "profile": args.profile,
@@ -182,43 +182,8 @@ def scan_path(args, path_str: str) -> int:
     return len(new_files)
 
 
-def extractor(args) -> None:
-    new_files = 0
-    for path in args.paths:
-        new_files += scan_path(args, path)
-
-    if not args.db["media"].detect_fts() or new_files > 100000:
-        db.optimize(args)
-
-
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        prog="library fsadd",
-        usage="""library fsadd [--audio | --video | --image |  --text | --filesystem] -c CATEGORY [database] paths ...
-
-    The default database type is video:
-        library fsadd ./tv/
-        library fsadd --video ./tv/  # equivalent
-
-    This will create audio.db in the current directory:
-        library fsadd --audio ./music/
-
-    This will create image.db in the current directory:
-        library fsadd --image ./photos/
-
-    This will create text.db in the current directory:
-        library fsadd --text ./documents_and_books/
-
-    Create text database and scan with OCR and speech-recognition:
-        library fsadd --text --ocr --speech-recognition ./receipts_and_messages/
-
-    Create video database and read internal/external subtitle files for use in search:
-        library fsadd --scan-subtitles ./tv/
-
-    The database location must be specified to reference more than one path:
-        library fsadd --audio podcasts.db ./podcasts/ ./another/folder/
-""",
-    )
+def parse_args(action, usage) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(prog="library " + action, usage=usage)
 
     profile = parser.add_mutually_exclusive_group()
     profile.add_argument(
@@ -256,7 +221,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
 
     parser.add_argument("database", nargs="?")
-    parser.add_argument("paths", nargs="+")
+    if action == SC.fsadd:
+        parser.add_argument("paths", nargs="+")
     args = parser.parse_args()
 
     if args.db:
@@ -280,20 +246,84 @@ def parse_args() -> argparse.Namespace:
         args.database = args.db
     Path(args.database).touch()
     args.db = db.connect(args)
-    args.paths = utils.conform(args.paths)
+    if hasattr(args, "paths"):
+        args.paths = utils.conform(args.paths)
     log.info(utils.dict_filter_bool(args.__dict__))
 
     return args
 
 
-def main(args=None) -> None:
+def extractor(args, paths) -> None:
+    new_files = 0
+    for path in paths:
+        new_files += scan_path(args, path)
+
+    if not args.db["media"].detect_fts() or new_files > 100000:
+        db.optimize(args)
+
+
+def fs_add(args=None) -> None:
     if args:
         sys.argv[1:] = args
 
-    args = parse_args()
+    args = parse_args(
+        SC.fsadd,
+        """library fsadd [--audio | --video | --image |  --text | --filesystem] -c CATEGORY [database] paths ...
 
-    extractor(args)
+    The default database type is video:
+        library fsadd ./tv/
+        library fsadd --video ./tv/  # equivalent
+
+    This will create audio.db in the current directory:
+        library fsadd --audio ./music/
+
+    This will create image.db in the current directory:
+        library fsadd --image ./photos/
+
+    This will create text.db in the current directory:
+        library fsadd --text ./documents_and_books/
+
+    Create text database and scan with OCR and speech-recognition:
+        library fsadd --text --ocr --speech-recognition ./receipts_and_messages/
+
+    Create video database and read internal/external subtitle files for use in search:
+        library fsadd --scan-subtitles ./tv/
+
+    The database location must be specified to reference more than one path:
+        library fsadd --audio podcasts.db ./podcasts/ ./another/folder/
+    """,
+    )
+
+    extractor(args, args.paths)
 
 
-if __name__ == "__main__":
-    main()
+def fs_update(args=None) -> None:
+    if args:
+        sys.argv[1:] = args
+
+    args = parse_args(
+        SC.fsupdate,
+        """library fsupdate database
+
+    Update each path previously saved:
+
+        library fsupdate database
+    """,
+    )
+
+    playlists = list(
+        args.db.query(
+            """
+            SELECT *
+            FROM playlists
+            WHERE ie_key = 'Local'
+            ORDER BY
+                length(path)-length(REPLACE(path, '/', '')) desc
+                , path
+            """
+        )
+    )
+
+    for playlist in playlists:
+        args_env = args if playlist["config"] is None else argparse.Namespace(**{**playlist["config"], **args.__dict__})
+        extractor(args_env, [playlist["path"]])

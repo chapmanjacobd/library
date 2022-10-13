@@ -133,26 +133,6 @@ def is_supported(url) -> bool:  # thank you @dbr
     return False
 
 
-def get_playlists(args, cols="path, dl_config", constrain=False) -> List[dict]:
-    columns = args.db["playlists"].columns_dict
-    sql_filters = []
-    if "time_deleted" in columns:
-        sql_filters.append("AND time_deleted=0")
-    if constrain:
-        if args.category:
-            sql_filters.append(f"AND category='{args.category}'")
-        if args.profile:
-            sql_filters.append(f"AND profile='{args.profile}'")
-
-    try:
-        known_playlists = list(
-            args.db.query(f"select {cols} from playlists where 1=1 {' '.join(sql_filters)} order by random()")
-        )
-    except OperationalError:
-        known_playlists = []
-    return known_playlists
-
-
 def is_playlist_known(args, playlist_path) -> bool:
     try:
         known = args.db.execute("select 1 from playlists where path=?", [playlist_path]).fetchone()

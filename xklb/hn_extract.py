@@ -47,7 +47,7 @@ def parse_args(prog, usage) -> argparse.Namespace:
     parser.add_argument("--verbose", "-v", action="count", default=0)
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
 
-    parser.add_argument("database", nargs="*", default="hn.db")
+    parser.add_argument("database", nargs="?", default="hn.db")
     args = parser.parse_args()
 
     if args.db:
@@ -60,7 +60,8 @@ def parse_args(prog, usage) -> argparse.Namespace:
 
 
 def db_worker(args, input_queue):
-    db_conn = db.connect(args, args.database)
+    conn = sqlite3.connect(args.database, isolation_level=None)
+    db_conn = db.connect(args, conn)
     while True:
         r = input_queue.get()
         if r is None:
@@ -70,8 +71,8 @@ def db_worker(args, input_queue):
         db_conn["hn_" + hn_type].insert(data, pk="id", alter=True)  # type: ignore
 
 
-async def get_hn_item(session, db_queue, sem, id):
-    url = f"https://hacker-news.firebaseio.com/v0/item/{id}.json"
+async def get_hn_item(session, db_queue, sem, hn_id):
+    url = f"https://hacker-news.firebaseio.com/v0/item/{hn_id}.json"
     try:
         async with session.get(url) as response:
             data = await response.json()

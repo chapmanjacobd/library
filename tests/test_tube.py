@@ -1,9 +1,7 @@
 import sys, unittest
-from argparse import Namespace
 from types import SimpleNamespace
 from unittest import mock
 
-from xklb.db import connect
 from xklb.lb import lb
 from xklb.play_actions import watch
 from xklb.tube_extract import tube_add, tube_update

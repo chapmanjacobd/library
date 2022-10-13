@@ -408,5 +408,5 @@ class argparse_enum(argparse.Action):
         setattr(namespace, self.dest, value)
 
 
-def get_config_opts(args, config_opts):
+def filter_namespace(args, config_opts):
     return dict_filter_bool({k: v for k, v in args.__dict__.items() if k in config_opts})

@@ -58,6 +58,8 @@ class DBType:
 
 
 class SC:
+    fsadd = "fsadd"
+    fsupdate = "fsupdate"
     watch = "watch"
     listen = "listen"
     filesystem = "filesystem"

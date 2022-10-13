@@ -259,14 +259,12 @@ Explore `library` databases in your browser
 
 ### TODOs (PRs welcome)
 
-- create/update views: especially dl queue, etc so that it is easier for people
+- create/update views: especially dl queue, etc so that it is easier for people to access data externally
     db.create_view("items", ITEM_VIEW_DEF, replace=True)
-- redditupdate, override --lookback
 - debug move_random
+- SELECT * FROM playlists p WHERE PATH NOT IN (SELECT DISTINCT playlist_path FROM media WHERE playlist_path NOT NULL )
+- SELECT * FROM media WHERE PATH LIKE '%d/Youtube%'
 - dlstatus --flush to mark all errored downloads as deleted
-- fsupdate: run fsadd for each path playlist, sort by path length and path
-- --lightweight-extractor boolean arg to tubeadd to skip yt-dlp
-- galleryadd, galleryupdate
-- more test coverage -- https://hypothesis.readthedocs.io/en/latest/quickstart.html
+- more test coverage
 """
 )

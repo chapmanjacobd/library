@@ -1,5 +1,7 @@
 import argparse
 import datetime as dt
+import json
+import sys
 import typing
 from functools import partial
 from itertools import takewhile
@@ -65,6 +67,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+
+skip_errors = (prawcore.exceptions.NotFound, prawcore.exceptions.Forbidden, prawcore.exceptions.Redirect)
 
 
 def created_since(row: Any, target_sec_utc: Optional[int]) -> bool:
@@ -143,6 +147,21 @@ def save_post(args, subreddit_path, post_dict):
         if already_downloaded_path:
             slim_dict["path"] = already_downloaded_path
 
+        existing_meta = args.db.pop_dict(
+            "SELECT * FROM media WHERE path =?",
+            [slim_dict["path"]],
+            ignore_errors=["no such column", "no such table"],
+        )
+
+        slim_dict = {
+            **slim_dict,
+            "play_count": 0,
+            "time_played": 0,
+            "time_downloaded": 0,
+            "time_deleted": 0,
+            **(existing_meta or {}),
+        }
+
         if author_is_blocked == 1:
             pass
         elif selftext_html:
@@ -164,12 +183,14 @@ def since_last_created(args, playlist_path):
     """,
         [playlist_path],
     )
-    if latest_post_utc is None:
-        log.debug("Using NOW")
-        latest_post_utc = consts.NOW
-    get_since = dt.datetime.fromtimestamp(latest_post_utc) - dt.timedelta(days=args.lookback)
-    get_since = int(get_since.timestamp())
-    log.info("Getting posts since timestamp %s", get_since)
+    if latest_post_utc:
+        get_since = dt.datetime.fromtimestamp(latest_post_utc) - dt.timedelta(days=args.lookback)
+        get_since = int(get_since.timestamp())
+        log.info("Getting posts since timestamp %s", get_since)
+    else:
+        get_since = 0
+        log.info("Getting posts since the dawn of time...")
+
     _takewhile = partial(created_since, target_sec_utc=get_since)
     return _takewhile
 
@@ -228,9 +249,9 @@ def subreddit_top(args, subreddit_dict) -> None:
             save_post(args, subreddit_path, saveable(post))
 
 
-def parse_args(prog, usage) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(prog, usage)
-    parser.add_argument("--limit", default=1000)
+def parse_args(action, usage) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(prog="library " + action, usage=usage)
+    parser.add_argument("--limit", default=1000, type=int)
     parser.add_argument("--lookback", default=4, type=int, help="Number of days to look back")
     parser.add_argument("--praw-site", default="bot1")
 
@@ -255,22 +276,54 @@ def parse_args(prog, usage) -> argparse.Namespace:
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
 
     parser.add_argument("database", nargs="?", default="reddit.db")
-    parser.add_argument("paths", nargs="+")
+    if action == "redditadd":
+        parser.add_argument("paths", nargs="+")
     args = parser.parse_args()
+
+    if action == "redditadd":
+        args.paths = utils.conform(args.paths)
 
     if args.db:
         args.database = args.db
     Path(args.database).touch()
     args.db = db.connect(args)
-    args.paths = utils.conform(args.paths)
+
+    try:
+        args.reddit = praw.Reddit(args.praw_site, config_interpolation="basic")
+    except Exception as e:
+        print(PRAW_SETUP_INSTRUCTIONS)
+        raise SystemExit(e)
+
     log.info(utils.dict_filter_bool(args.__dict__))
 
     return args
 
 
-def reddit_add() -> None:
+def process_redditors(args, redditors):
+    for redditor in redditors:
+        try:
+            redditor_new(args, redditor)
+        except skip_errors as e:
+            log.error("[%s] skipping redditor: %s", redditor["name"], e)
+            continue
+
+
+def process_subreddits(args, subreddits):
+    for subreddit in subreddits:
+        try:
+            subreddit_new(args, subreddit)
+            subreddit_top(args, subreddit)
+        except skip_errors as e:
+            log.error("[%s] skipping subreddit: %s", subreddit["name"], e)
+            continue
+
+
+def reddit_add(args=None) -> None:
+    if args:
+        sys.argv[1:] = args
+
     args = parse_args(
-        prog="library redditadd",
+        "redditadd",
         usage="""library redditadd [--lookback N_DAYS] [--praw-site bot1] [database] paths ...
 
     Fetch data for redditors and reddits:
@@ -286,12 +339,6 @@ def reddit_add() -> None:
         library redditadd --redditors --db idk.db (cat ~/mc/shadow_banned.txt)
     """,
     )
-
-    try:
-        args.reddit = praw.Reddit(args.praw_site, config_interpolation="basic")
-    except Exception as e:
-        print(PRAW_SETUP_INSTRUCTIONS)
-        raise SystemExit(e)
 
     subreddits = []
     redditors = []
@@ -311,10 +358,12 @@ def reddit_add() -> None:
         else:
             if args.subreddits:
                 ie_key = "reddit_praw_subreddit"
-                subreddits.append({"path": "https://old.reddit.com/r/" + path, "name": path})
+                path = f"https://old.reddit.com/r/{match}/"
+                subreddits.append({"path": path, "name": match})
             elif args.redditors:
                 ie_key = "reddit_praw_redditor"
-                redditors.append({"path": "https://old.reddit.com/user/" + path, "name": path})
+                path = f"https://old.reddit.com/user/{match}/"
+                redditors.append({"path": path, "name": match})
             else:
                 log.error(f"[{path}]: Skipping unknown URL")
                 continue
@@ -324,8 +373,8 @@ def reddit_add() -> None:
                 {
                     "path": path,
                     "id": match,
-                    "config": utils.get_config_opts(args, ["limit", "lookback", "praw_site"]),
-                    "category": args.category,
+                    "config": utils.filter_namespace(args, ["limit", "lookback", "praw_site"]),
+                    "category": args.category or ie_key,
                     "profile": args.profile,
                     "ie_key": ie_key,
                     "time_deleted": 0,
@@ -335,23 +384,35 @@ def reddit_add() -> None:
             alter=True,
         )
 
-    skip_errors = (prawcore.exceptions.NotFound, prawcore.exceptions.Forbidden, prawcore.exceptions.Redirect)
-
-    for subreddit in subreddits:
-        try:
-            subreddit_new(args, subreddit)
-            subreddit_top(args, subreddit)
-        except skip_errors as e:
-            log.error("[%s] skipping subreddit: %s", subreddit["name"], e)
-            continue
-
-    for redditor in redditors:
-        try:
-            redditor_new(args, redditor)
-        except skip_errors as e:
-            log.error("[%s] skipping redditor: %s", redditor["name"], e)
-            continue
+    process_subreddits(args, subreddits)
+    process_redditors(args, redditors)
 
 
-if __name__ == "__main__":
-    reddit_add()
+def reddit_update(args=None) -> None:
+    if args:
+        sys.argv[1:] = args
+
+    args = parse_args(
+        "redditupdate",
+        usage="""library redditupdate [--audio | --video] [-c CATEGORY] [--lookback N_DAYS] [--praw-site bot1] [database]
+
+    Fetch the latest posts for every subreddit/redditor saved in your database
+
+        library redditupdate edu_subreddits.db
+    """,
+    )
+    playlists = db.get_playlists(
+        args,
+        "ie_key, path, id, config",
+        sql_filters=['AND ie_key in ("reddit_praw_subreddit","reddit_praw_redditor")'],
+        constrain=True,
+    )
+
+    for playlist in playlists:
+        config = json.loads(playlist["config"])
+        args_env = args if not config else argparse.Namespace(**{**config, **args.__dict__})
+
+        if playlist["ie_key"] == "reddit_praw_subreddit":
+            process_subreddits(args_env, [{"path": playlist["path"], "name": playlist["id"]}])
+        elif playlist["ie_key"] == "reddit_praw_subreddit":
+            process_redditors(args_env, [{"path": playlist["path"], "name": playlist["id"]}])

@@ -4,11 +4,11 @@ import scripts
 from xklb import utils
 from xklb.consts import SC
 from xklb.dl_extract import dl_block, dl_download
-from xklb.fs_extract import main as fs_add
+from xklb.fs_extract import fs_add, fs_update
 from xklb.hn_extract import hacker_news_add
 from xklb.play_actions import filesystem, listen, read, view, watch
 from xklb.playback import playback_next, playback_now, playback_pause, playback_stop
-from xklb.praw_extract import reddit_add
+from xklb.praw_extract import reddit_add, reddit_update
 from xklb.stats import dlstatus, playlists
 from xklb.tabs_actions import tabs
 from xklb.tabs_extract import tabs_add
@@ -21,6 +21,7 @@ def usage() -> str:
 
     local media subcommands:
         fsadd                        Create a local media database; Add folders
+        fsupdate                     Refresh database: add new files, mark deleted
         listen                       Listen to local and online media
         watch                        Watch local and online media
         read                         Read books
@@ -32,8 +33,9 @@ def usage() -> str:
 
     online media subcommands:
         tubeadd                      Create a tube database; Add playlists
-        tubeupdate                   Add new videos from saved playlists
+        tubeupdate                   Fetch new videos from saved playlists
         redditadd                    Create a reddit database; Add subreddits
+        redditupdate                 Fetch new posts from saved subreddits
         hnadd                        Create a hackernews database
 
     download subcommands:
@@ -54,6 +56,7 @@ def usage() -> str:
     browser tab subcommands:
         tabsadd                      Create a tabs database; Add URLs
         tabs                         Open your tabs for the day
+        surf                         Load n-number of browser tabs
     """
 
 
@@ -90,8 +93,10 @@ def lb(args=None) -> None:
         add_help=False,
     )
     subparsers = parser.add_subparsers()
-    subp_extract = add_parser(subparsers, "fsadd", ["x", "extract"])
-    subp_extract.set_defaults(func=fs_add)
+    subp_fsadd = add_parser(subparsers, "fsadd", ["x", "extract"])
+    subp_fsadd.set_defaults(func=fs_add)
+    subp_fsupdate = add_parser(subparsers, "fsupdate", ["xu"])
+    subp_fsupdate.set_defaults(func=fs_update)
 
     subp_watch = add_parser(subparsers, SC.watch, ["wt", "tubewatch", "tw", "entries"])
     subp_watch.set_defaults(func=watch)
@@ -124,6 +129,8 @@ def lb(args=None) -> None:
 
     subp_redditadd = add_parser(subparsers, "redditadd", ["ra", "xr"])
     subp_redditadd.set_defaults(func=reddit_add)
+    subp_redditupdate = add_parser(subparsers, "redditupdate", ["ru", "xru"])
+    subp_redditupdate.set_defaults(func=reddit_update)
     subp_hnadd = add_parser(subparsers, "hnadd")
     subp_hnadd.set_defaults(func=hacker_news_add)
 
@@ -150,6 +157,8 @@ def lb(args=None) -> None:
     subp_tabsadd.set_defaults(func=tabs_add)
     subp_tabs = add_parser(subparsers, "tabs", ["tb"])
     subp_tabs.set_defaults(func=tabs)
+    subp_surf = add_parser(subparsers, "surf", ["browse", "load"])
+    subp_surf.set_defaults(func=scripts.streaming_tab_loader)
 
     parser.add_argument("--version", "-V", action="store_true")
     args, _unk = parser.parse_known_args(args)

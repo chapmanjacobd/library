@@ -405,6 +405,10 @@ def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
     args.action = action
     args.defaults = []
 
+    if args.db:
+        args.database = args.db
+    args.db = db.connect(args)
+
     if not args.limit:
         args.defaults.append("limit")
         if all([not args.print, args.action in (SC.listen, SC.watch, SC.read)]):
@@ -414,25 +418,29 @@ def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
     elif args.limit in ("inf", "all"):
         args.limit = None
 
-    if not args.sort:
-        args.defaults.append("sort")
-
-        if args.action in (SC.listen, SC.watch):
-            args.sort = ["priority"]
-            if args.include:
-                args.sort = ["duration desc", "size desc"]
-                if args.print:
-                    args.sort = ["duration", "size"]
-
-        elif args.action in (SC.filesystem):
-            args.sort = ["sparseness", "size"]
-
     if args.sort:
-        if args.play_in_order > 0:
-            args.sort.append("path")
+        args.sort = " ".join(args.sort).split(",")
+    elif not args.sort:
+        args.defaults.append("sort")
+        columns = args.db["media"].columns_dict
 
-        args.sort = ",".join(args.sort).replace(",,", ",")
-        args.sort = override_sort(args.sort)
+        args.sort = []
+        if args.action in (SC.filesystem):
+            args.sort.extend(["sparseness", "size"])
+        elif args.action in (SC.listen, SC.watch):
+            if "play_count" in columns:
+                args.sort.append("play_count")
+            if "size" in columns and "duration" in columns:
+                args.sort.append("ntile(1000) over (order by size/duration) desc")
+                if args.include:
+                    args.sort = ["duration desc", "size desc"]
+                    if args.print:
+                        args.sort = ["duration", "size"]
+
+    if args.play_in_order > 0:
+        args.sort.append("path")
+    args.sort = ",".join(args.sort).replace(",,", ",")
+    args.sort = override_sort(args.sort)
 
     if args.cols:
         args.cols = list(utils.flatten([s.split(",") for s in args.cols]))
@@ -450,9 +458,6 @@ def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
     if args.player:
         args.player = shlex.split(args.player)
 
-    if args.db:
-        args.database = args.db
-    args.db = db.connect(args)
     log.info(utils.dict_filter_bool(args.__dict__))
 
     args.sock = None

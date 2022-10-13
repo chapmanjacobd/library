@@ -4,15 +4,15 @@ from unittest import mock
 
 import pytest
 
-from xklb.fs_extract import main as xr
+from xklb.fs_extract import fs_add
 from xklb.lb import lb
 from xklb.play_actions import watch as wt
 
 v_db = "--db", "tests/data/video.db"
-xr([*v_db, "--scan-subtitles", "tests/data/"])
+fs_add([*v_db, "--scan-subtitles", "tests/data/"])
 
 a_db = "--db", "tests/data/audio.db"
-xr([*a_db, "--audio", "tests/data/"])
+fs_add([*a_db, "--audio", "tests/data/"])
 
 
 def test_lb_help(capsys):
