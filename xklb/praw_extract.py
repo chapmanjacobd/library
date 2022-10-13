@@ -258,18 +258,6 @@ def parse_args(action, usage) -> argparse.Namespace:
     parser.add_argument("--subreddits", action="store_true")
     parser.add_argument("--redditors", action="store_true")
 
-    subp_profile = parser.add_mutually_exclusive_group()
-    subp_profile.add_argument(
-        "--audio", "-A", action="store_const", dest="profile", const=DBType.audio, help="Use audio downloader"
-    )
-    subp_profile.add_argument(
-        "--video", "-V", action="store_const", dest="profile", const=DBType.video, help="Use video downloader"
-    )
-    subp_profile.add_argument(
-        "--image", "-I", action="store_const", dest="profile", const=DBType.image, help="Use image downloader"
-    )
-    subp_profile.set_defaults(profile=DBType.video)
-
     parser.add_argument("--category", "-c", help=argparse.SUPPRESS)
 
     parser.add_argument("--verbose", "-v", action="count", default=0)
@@ -375,7 +363,6 @@ def reddit_add(args=None) -> None:
                     "id": match,
                     "config": utils.filter_namespace(args, ["limit", "lookback", "praw_site"]),
                     "category": args.category or ie_key,
-                    "profile": args.profile,
                     "ie_key": ie_key,
                     "time_deleted": 0,
                 }

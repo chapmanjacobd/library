@@ -146,7 +146,6 @@ def _add_folder(args, folder_path: Path) -> None:
         "config": utils.filter_namespace(args, ["ocr", "speech_recognition", "scan_subtitles"]),
         "time_deleted": 0,
         "category": category,
-        "profile": args.profile,
         **args.extra_playlist_data,
     }
     args.db["playlists"].upsert(utils.dict_filter_bool(playlist), pk="path", alter=True)

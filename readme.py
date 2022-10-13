@@ -259,6 +259,9 @@ Explore `library` databases in your browser
 
 ### TODOs (PRs welcome)
 
+- cycle through _cine_http
+- psaw --> posts, create list of subreddits: when created
+- hackernews --> posts
 - create/update views: especially dl queue, etc so that it is easier for people to access data externally
     db.create_view("items", ITEM_VIEW_DEF, replace=True)
 - debug move_random

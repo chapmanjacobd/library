@@ -155,7 +155,6 @@ def playlists() -> None:
             p.ie_key
             {', p.title' if 'title' in pl_columns else ''}
             , p.category
-            , p.profile
             , coalesce(p.path, "Playlist-less media") path
             {', sum(media.duration) duration' if 'duration' in m_columns else ''}
             {', sum(media.size) size' if 'size' in m_columns else ''}
@@ -163,7 +162,7 @@ def playlists() -> None:
         from media
         left join ({query}) p on {db.get_playlists_join(args)}
         group by coalesce(p.path, "Playlist-less media")
-        order by category nulls last, profile, p.path"""
+        order by category nulls last, p.path"""
 
     printer(args, query, bindings)
 
@@ -176,27 +175,34 @@ def dlstatus() -> None:
     Print download queue groups
 
         library dlstatus video.db
-        ╒═════════════╤════════════════════╤═══════════╤═════════╤════════════════╕
-        │ ie_key      │ category           │ profile   │   count │ duration       │
-        ╞═════════════╪════════════════════╪═══════════╪═════════╪════════════════╡
-        │ Dailymotion │ 71_Mealtime_Videos │ video     │     277 │                │
-        ├─────────────┼────────────────────┼───────────┼─────────┼────────────────┤
-        │ Vimeo       │ 71_Mealtime_Videos │ video     │     442 │                │
-        ├─────────────┼────────────────────┼───────────┼─────────┼────────────────┤
-        │ Youtube     │ 71_Mealtime_Videos │ video     │   30185 │ 1 year, 3      │
-        │             │                    │           │         │ months, 7 days │
-        │             │                    │           │         │ and 15 hours   │
-        ├─────────────┼────────────────────┼───────────┼─────────┼────────────────┤
-        │ Dailymotion │ 75_MovieQueue      │ video     │      84 │                │
-        ├─────────────┼────────────────────┼───────────┼─────────┼────────────────┤
-        │ Vimeo       │ 75_MovieQueue      │ video     │      75 │                │
-        ├─────────────┼────────────────────┼───────────┼─────────┼────────────────┤
-        │ Youtube     │ 75_MovieQueue      │ video     │   20079 │ 8 months, 25   │
-        │             │                    │           │         │ days, 19 hours │
-        │             │                    │           │         │ and 18 minutes │
-        ╘═════════════╧════════════════════╧═══════════╧═════════╧════════════════╛
-""",
-    )
+        ╒═════════════════════╤═════════════╤══════════════════╤════════════════════╤══════════╕
+        │ category            │ ie_key      │ duration         │   never_downloaded │   errors │
+        ╞═════════════════════╪═════════════╪══════════════════╪════════════════════╪══════════╡
+        │ 71_Mealtime_Videos  │ Youtube     │ 3 hours and 2.07 │                 76 │        0 │
+        │                     │             │ minutes          │                    │          │
+        ├─────────────────────┼─────────────┼──────────────────┼────────────────────┼──────────┤
+        │ 75_MovieQueue       │ Dailymotion │                  │                 53 │        0 │
+        ├─────────────────────┼─────────────┼──────────────────┼────────────────────┼──────────┤
+        │ 75_MovieQueue       │ Youtube     │ 1 day, 18 hours  │                 30 │        0 │
+        │                     │             │ and 6 minutes    │                    │          │
+        ├─────────────────────┼─────────────┼──────────────────┼────────────────────┼──────────┤
+        │ Dailymotion         │ Dailymotion │                  │                186 │      198 │
+        ├─────────────────────┼─────────────┼──────────────────┼────────────────────┼──────────┤
+        │ Uncategorized       │ Youtube     │ 1 hour and 52.18 │                  1 │        0 │
+        │                     │             │ minutes          │                    │          │
+        ├─────────────────────┼─────────────┼──────────────────┼────────────────────┼──────────┤
+        │ Vimeo               │ Vimeo       │                  │                253 │       49 │
+        ├─────────────────────┼─────────────┼──────────────────┼────────────────────┼──────────┤
+        │ Youtube             │ Youtube     │ 2 years, 4       │              51676 │      197 │
+        │                     │             │ months, 15 days  │                    │          │
+        │                     │             │ and 6 hours      │                    │          │
+        ├─────────────────────┼─────────────┼──────────────────┼────────────────────┼──────────┤
+        │ Playlist-less media │ Youtube     │ 4 months, 23     │               2686 │        7 │
+        │                     │             │ days, 19 hours   │                    │          │
+        │                     │             │ and 33 minutes   │                    │          │
+        ╘═════════════════════╧═════════════╧══════════════════╧════════════════════╧══════════╛
+    """,
+        )
 
     if args.db:
         args.database = args.db
@@ -209,11 +215,10 @@ def dlstatus() -> None:
     m_columns = args.db["media"].columns_dict
     query, bindings = construct_query(args)
     query = f"""select
-        p.profile
+        coalesce(p.category, "Playlist-less media") category
         {', media.ie_key' if 'ie_key' in m_columns else ''}
-        , coalesce(p.category, "Playlist-less media") category
-        , count(*) FILTER(WHERE time_modified=0) never_downloaded
         {', sum(media.duration) duration' if 'duration' in m_columns else ''}
+        , count(*) FILTER(WHERE time_modified=0) never_downloaded
         {', count(*) FILTER(WHERE time_modified>0 AND error IS NOT NULL) errors' if 'error' in m_columns else ''}
         --{', group_concat(distinct media.error) error_descriptions' if 'error' in m_columns else ''}
     from media
@@ -221,7 +226,7 @@ def dlstatus() -> None:
     where 1=1
         and media.time_downloaded=0
         and media.time_deleted=0
-    group by p.ie_key, p.category, p.profile
-    order by p.category nulls last, p.profile"""
+    group by p.ie_key, p.category
+    order by p.category nulls last"""
 
     printer(args, query, bindings)

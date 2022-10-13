@@ -24,10 +24,10 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
         fsupdate                     Refresh database: add new files, mark deleted
         listen                       Listen to local and online media
         watch                        Watch local and online media
+        bigdirs                      Discover folders which take much room
         read                         Read books
         view                         View images
         filesystem                   Browse files
-        bigdirs                      Discover folders which take much room
         dedupe                       Deduplicate audio files
         christen                     Cleanse files by giving them a new name
 
@@ -57,6 +57,10 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
         tabsadd                      Create a tabs database; Add URLs
         tabs                         Open your tabs for the day
         surf                         Load n-number of browser tabs
+
+    mining subcommands:
+        reddit-selftext              Save stored selftext external links to media table
+        nfb-films                    Director links stdin -> stdout film links
     
 
 ## Quick Start -- watch online media on your PC
@@ -482,6 +486,9 @@ Explore `library` databases in your browser
 
 ### TODOs (PRs welcome)
 
+- cycle through _cine_http
+- psaw --> posts, create list of subreddits: when created
+- hackernews --> posts
 - create/update views: especially dl queue, etc so that it is easier for people to access data externally
     db.create_view("items", ITEM_VIEW_DEF, replace=True)
 - debug move_random

@@ -24,10 +24,10 @@ def usage() -> str:
         fsupdate                     Refresh database: add new files, mark deleted
         listen                       Listen to local and online media
         watch                        Watch local and online media
+        bigdirs                      Discover folders which take much room
         read                         Read books
         view                         View images
         filesystem                   Browse files
-        bigdirs                      Discover folders which take much room
         dedupe                       Deduplicate audio files
         christen                     Cleanse files by giving them a new name
 
@@ -57,6 +57,10 @@ def usage() -> str:
         tabsadd                      Create a tabs database; Add URLs
         tabs                         Open your tabs for the day
         surf                         Load n-number of browser tabs
+
+    mining subcommands:
+        reddit-selftext              Save stored selftext external links to media table
+        nfb-films                    Director links stdin -> stdout film links
     """
 
 
@@ -159,6 +163,11 @@ def lb(args=None) -> None:
     subp_tabs.set_defaults(func=tabs)
     subp_surf = add_parser(subparsers, "surf", ["browse", "load"])
     subp_surf.set_defaults(func=scripts.streaming_tab_loader)
+
+    subp_reddit_selftext = add_parser(subparsers, "reddit-selftext", ["rst"])
+    subp_reddit_selftext.set_defaults(func=scripts.parse_reddit_selftext)
+    subp_nfb_directors = add_parser(subparsers, "nfb-films")
+    subp_nfb_directors.set_defaults(func=scripts.nfb_films)
 
     parser.add_argument("--version", "-V", action="store_true")
     args, _unk = parser.parse_known_args(args)

@@ -22,6 +22,8 @@ def parse_args() -> argparse.Namespace:
     You will likely want to use this setting in `about:config`
 
         browser.tabs.loadDivertedInBackground = True
+
+    If you prefer GUI, check out https://unli.xyz/tabsender/
     """,
     )
     parser.add_argument("database", nargs="?")

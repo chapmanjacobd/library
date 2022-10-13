@@ -68,6 +68,10 @@ def parse_args(action, usage):
         if args.duration:
             args.duration = play_actions.parse_duration(args)
 
+    if not args.profile:
+        print('Download profile must be specified. Use one of: --video --audio')
+        raise SystemExit(1)
+
     if args.db:
         args.database = args.db
     args.db = db.connect(args)
@@ -117,7 +121,6 @@ def construct_query(args) -> Tuple[str, dict]:
             {', media.id' if 'id' in m_columns else ''}
             {', p.dl_config' if 'dl_config' in pl_columns else ''}
             , coalesce(p.category, p.ie_key) category
-            , p.profile
         FROM media
         JOIN playlists p on {db.get_playlists_join(args)}
         WHERE 1=1
@@ -157,11 +160,7 @@ def dl_download(args=None) -> None:
 
     args = parse_args(
         SC.download,
-        usage=r"""library download database [--prefix /mnt/d/]
-
-    Tube and download databases are designed to be cross-compatible, but you will need to
-    run dladd once first with a valid URL for the extra dl columns to be added.
-    The supplied download profile and category of that first run will be copied to the existing rows.
+        usage=r"""library download database [--prefix /mnt/d/] --video | --audio
 
     Download stuff in a random order.
 
@@ -189,13 +188,16 @@ def dl_download(args=None) -> None:
     Print download queue groups
 
         library dlstatus audio.db
-        ╒════════════════╤═════════╤═══════════════════════════════════════════╤══════════╤══════════════╤═══════════╕
-        │ duration       │   count │ errors                                    │ ie_key   │ category     │ profile   │
-        ╞════════════════╪═════════╪═══════════════════════════════════════════╪══════════╪══════════════╪═══════════╡
-        │ 7 months, 5    │   36817 │ ERROR: [youtube]: No video formats found! │ Youtube  │ 81_New_Music │ audio     │
-        │ days, 1 hour   │         │                                           │          │              │           │
-        │ and 48 minutes │         │                                           │          │              │           │
-        ╘════════════════╧═════════╧═══════════════════════════════════════════╧══════════╧══════════════╧═══════════╛
+        ╒═════════════════════╤════════════╤══════════════════╤════════════════════╤══════════╕
+        │ category            │ ie_key     │ duration         │   never_downloaded │   errors │
+        ╞═════════════════════╪════════════╪══════════════════╪════════════════════╪══════════╡
+        │ 81_New_Music        │ Soundcloud │                  │                 10 │        0 │
+        ├─────────────────────┼────────────┼──────────────────┼────────────────────┼──────────┤
+        │ 81_New_Music        │ Youtube    │ 10 days, 4 hours │                  1 │     2555 │
+        │                     │            │ and 20 minutes   │                    │          │
+        ├─────────────────────┼────────────┼──────────────────┼────────────────────┼──────────┤
+        │ Playlist-less media │ Youtube    │ 7.68 minutes     │                 99 │        1 │
+        ╘═════════════════════╧════════════╧══════════════════╧════════════════════╧══════════╛
     """,
     )
     media = process_downloadqueue(args)
@@ -210,10 +212,7 @@ def dl_download(args=None) -> None:
             log.info("[%s]: Already downloaded. Skipping!", m["path"])
             continue
 
-        if m.get("profile") is None:
-            m["profile"] = DBType.video
-
-        if m["profile"] in (DBType.audio, DBType.video):
+        if args.profile in (DBType.audio, DBType.video):
             tube_backend.yt(args, m)
         else:
             raise NotImplementedError

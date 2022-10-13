@@ -11,8 +11,6 @@ from xklb.utils import log
 def parse_args(action, usage) -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library " + action, usage=usage)
 
-    parser.set_defaults(profile=DBType.image)
-
     parser.add_argument(
         "--dl-config",
         "-dl-config",
@@ -67,10 +65,6 @@ def galy_add(args=None) -> None:
     Create a dl database / add links to an existing database
 
         library galyadd -c Educational dl.db https://www.youdl.com/c/BranchEducation/videos
-
-    To download audio you must make the download profile (downloader) explicit with `--audio`
-
-        library galyadd --audio -c Educational dl.db https://www.youdl.com/c/BranchEducation/videos
 
     If you include more than one URL, you must specify the database
 
