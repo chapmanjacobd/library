@@ -438,6 +438,9 @@ def save_tube_entry(args, m, info: Optional[dict] = None, error=None, URE=False)
 
 
 def yt(args, m) -> None:
+    if not m["path"].startswith("http"):
+        return
+
     ydl_log = {"warning": [], "error": []}
 
     class BadToTheBoneLogger:

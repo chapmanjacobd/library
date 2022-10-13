@@ -215,7 +215,6 @@ def dl_download(args=None) -> None:
 
         if m["profile"] in (DBType.audio, DBType.video):
             tube_backend.yt(args, m)
-        # elif m['profile'] == DBType.image:
         else:
             raise NotImplementedError
 

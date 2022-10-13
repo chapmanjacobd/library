@@ -526,7 +526,7 @@ def play(args, m: Dict) -> None:
         if args.transcode:
             media_file = transcode(media_file)
 
-    if args.action == SC.listen:
+    if args.action == SC.listen and not media_file.startswith("http"):
         print(cmd("ffprobe", "-hide_banner", "-loglevel", "info", media_file).stderr)
     else:
         print(media_file)
