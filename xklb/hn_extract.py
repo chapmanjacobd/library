@@ -1,10 +1,15 @@
 import argparse, asyncio, queue, sqlite3, threading
 from pathlib import Path
 
-import aiohttp, requests
+import requests
 
 from xklb import db, utils
 from xklb.utils import log
+
+try:
+    import aiohttp
+except ModuleNotFoundError:
+    aiohttp = None
 
 """
 My understanding of aiohttp is stolen
@@ -121,6 +126,11 @@ def hacker_news_add() -> None:
         library hnadd --oldest --resume hn.db
     """,
     )
+    if aiohttp is None:
+        raise ModuleNotFoundError(
+            "aiohttp is required for hn_extract. Install with pip install aiohttp or pip install xklb[full]"
+        )
+
     args.db.enable_wal()
 
     args.latest_id = get("https://hacker-news.firebaseio.com/v0/maxitem.json")

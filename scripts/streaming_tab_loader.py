@@ -1,11 +1,14 @@
 import argparse, sys
 from time import sleep
 
-from brotab.api import SingleMediatorAPI
-from brotab.main import create_clients
-
 from xklb import db, utils
 from xklb.utils import log
+
+try:
+    from brotab.api import SingleMediatorAPI
+    from brotab.main import create_clients
+except ModuleNotFoundError:
+    SingleMediatorAPI = None
 
 
 def parse_args() -> argparse.Namespace:
@@ -15,7 +18,7 @@ def parse_args() -> argparse.Namespace:
 
     Streaming tab loader: press ctrl+c to stop.
 
-    Currently only stdin is supported:
+    Open tabs from a line-delimited file:
 
         cat tabs.txt | library surf -n 5
 
@@ -34,6 +37,7 @@ def parse_args() -> argparse.Namespace:
 
     if args.database:
         args.db = db.connect(args)
+        log.error("Currently only stdin is supported")
         raise NotImplementedError
 
     log.info(utils.dict_filter_bool(args.__dict__))
@@ -52,6 +56,11 @@ def open_tabs(args, urls):
 
 def streaming_tab_loader() -> None:
     args = parse_args()
+
+    if SingleMediatorAPI is None:
+        raise ModuleNotFoundError(
+            "brotab is required for surfing. Install with pip install brotab or pip install xklb[full]"
+        )
 
     tabs_opened = 0
     initial_count = len(list_tabs(args))

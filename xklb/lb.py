@@ -56,11 +56,11 @@ def usage() -> str:
     browser tab subcommands:
         tabsadd                      Create a tabs database; Add URLs
         tabs                         Open your tabs for the day
-        surf                         Load n-number of browser tabs
+        surf                 stdin   Load browser tabs in a streaming way
 
     mining subcommands:
         reddit-selftext              Save stored selftext external links to media table
-        nfb-films                    Director links stdin -> stdout film links
+        nfb-films            stdin   Director links -> film links
     """
 
 
