@@ -17,50 +17,54 @@ from xklb.utils import log
 
 
 def usage() -> str:
-    return """xk media library [lb]
+    return """xk media library subcommands
 
-    local media subcommands:
-        fsadd                        Create a local media database; Add folders
-        fsupdate                     Refresh database: add new files, mark deleted
-        listen                       Listen to local and online media
-        watch                        Watch local and online media
-        bigdirs                      Discover folders which take much room
-        read                         Read books
-        view                         View images
-        filesystem                   Browse files
-        dedupe                       Deduplicate audio files
-        christen                     Cleanse files by giving them a new name
+    local media:
+      lb fsadd                        Create a local media database; Add folders
+      lb fsupdate                     Refresh database: add new files, mark deleted
 
-    online media subcommands:
-        tubeadd                      Create a tube database; Add playlists
-        tubeupdate                   Fetch new videos from saved playlists
-        redditadd                    Create a reddit database; Add subreddits
-        redditupdate                 Fetch new posts from saved subreddits
-        hnadd                        Create a hackernews database
+      lb listen                       Listen to local and online media
+      lb watch                        Watch local and online media
 
-    download subcommands:
-        download                     Download media
-        block                        Prevent downloading specific URLs
-        merge-online-local           Merge local and online metadata
+      lb bigdirs                      Discover folders which take much room
+      lb dedupe                       Deduplicate audio files
+      lb christen                     Cleanse files by giving them a new name
 
-    statistics subcommands:
-        playlists                    List added playlists
-        dlstatus                     Show download status
+      lb read                         Read books
+      lb view                         View images
 
-    playback subcommands:
-        now                          Print what is currently playing
-        next                         Play next file
-        stop                         Stop all playback
-        pause                        Pause all playback
+    online media:
+      lb tubeadd                      Create a tube database; Add playlists
+      lb tubeupdate                   Fetch new videos from saved playlists
 
-    browser tab subcommands:
-        tabsadd                      Create a tabs database; Add URLs
-        tabs                         Open your tabs for the day
-        surf                 stdin   Load browser tabs in a streaming way
+      lb redditadd                    Create a reddit database; Add subreddits
+      lb redditupdate                 Fetch new posts from saved subreddits
 
-    mining subcommands:
-        reddit-selftext              Save stored selftext external links to media table
-        nfb-films            stdin   Director links -> film links
+      lb hnadd                        Create a hackernews database
+
+    downloads:
+      lb download                     Download media
+      lb block                        Prevent downloading specific URLs
+      lb merge-online-local           Merge local and online metadata
+
+    playback:
+      lb now                          Print what is currently playing
+      lb next                         Play next file
+      lb stop                         Stop all playback
+      lb pause                        Pause all playback
+
+    statistics:
+      lb playlists                    List added playlists
+      lb dlstatus                     Show download status
+
+    browser tabs:
+      lb tabsadd                      Create a tabs database; Add URLs
+      lb tabs                         Open your tabs for the day
+      lb surf                 stdin   Load browser tabs in a streaming way
+
+    mining:
+      lb reddit-selftext              Save stored selftext external links to media table
+      lb nfb-films            stdin   Director links -> film links
     """
 
 
