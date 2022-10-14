@@ -8,6 +8,10 @@ This is the only way I know of getting it working. If you would rather use somet
 
 1. Install `choco` using powershell
 
+    ```powershell
+    Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+    ```
+
 2. Then install [msys2](https://www.msys2.org/)
 
     ```powershell
