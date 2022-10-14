@@ -12,10 +12,10 @@ This is the only way I know of getting it working. If you would rather use somet
     Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
     ```
 
-2. Then install [msys2](https://www.msys2.org/)
+2. Then install [msys2](https://www.msys2.org/) and ConEmu
 
     ```powershell
-    choco install msys2
+    choco install msys2 conemu
     ```
 
 3. Update `msys2`
@@ -30,7 +30,9 @@ This is the only way I know of getting it working. If you would rather use somet
     pacman -S mingw-w64-x86_64-mpv mingw-w64-x86_64-youtube-dl make automake python-pip python-wheel fish
     ```
 
-5. Install ConEmu and **configure it to use fish shell** in msys2
+5. **Configure ConEmu to use fish shell** in msys2
+
+https://superuser.com/questions/1024301/conemu-how-to-call-msys2-as-tab
 
 6. Set the [MSYSTEM](https://www.msys2.org/docs/environments/) environment variable and close and restart your shell
 
