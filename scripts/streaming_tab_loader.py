@@ -4,6 +4,7 @@ from time import sleep
 from xklb import db, utils
 from xklb.utils import log
 
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="library surf",

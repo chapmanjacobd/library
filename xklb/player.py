@@ -286,6 +286,9 @@ def get_ordinal_media(args, path: str) -> str:
     candidate = deepcopy(path)
     similar_videos = []
     while len(similar_videos) < 2:
+        if candidate == '':
+            return path
+
         remove_groups = re.split(r"([\W]+|\s+|Ep\d+|x\d+|\.\d+)", candidate)
         log.debug(remove_groups)
         remove_chars = ""

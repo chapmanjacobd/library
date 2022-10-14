@@ -379,17 +379,17 @@ def update_playlists(args, playlists):
         process_playlist(
             args,
             d["path"],
-            tube_opts(args, playlist_opts=d["dl_config"], func_opts={"ignoreerrors": "only_download"}),
+            tube_opts(args, playlist_opts=d.get("dl_config", '{}'), func_opts={"ignoreerrors": "only_download"}),
         )
 
         if args.extra:
             log.warning("[%s]: Getting extra metadata", d["path"])
-            get_extra_metadata(args, d["path"], playlist_dl_opts=d["dl_config"])
+            get_extra_metadata(args, d["path"], playlist_dl_opts=d.get("dl_config", '{}'))
 
 
 def save_tube_entry(args, m, info: Optional[dict] = None, error=None, URE=False) -> None:
     webpath = m["path"]
-    error = None if not error else error.replace(m["id"], "").replace(" :", ":")
+    error = None if not error else error.replace(m.get("id",''), "").replace(" :", ":")
     if not info:  # not downloaded
         entry = {
             "path": webpath,
@@ -477,13 +477,13 @@ def yt(args, m) -> None:
             "extractor_retries": 13,
             "retries": 13,
             "outtmpl": {
-                "default": out_dir("%(uploader|uploader_id)s/%(title).200B_[%(id).60B].%(ext)s"),
+                "default": out_dir("%(uploader,uploader_id)s/%(title).200B_[%(id).60B].%(ext)s"),
                 "chapter": out_dir(
-                    "%(uploader|uploader_id)s/%(title).200B_%(section_number)03d_%(section_title)s_[%(id).60B].%(ext)s"
+                    "%(uploader,uploader_id)s/%(title).200B_%(section_number)03d_%(section_title)s_[%(id).60B].%(ext)s"
                 ),
             },
         },
-        playlist_opts=m["dl_config"],
+        playlist_opts=m.get("dl_config", '{}'),
     )
 
     download_archive = Path("~/.local/share/yt_archive.txt").resolve()
