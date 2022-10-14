@@ -102,8 +102,8 @@ or tools that you want to use for a few minutes daily, weekly, monthly, quarterl
 
 ### 1. Add your websites
 
-    library tabsadd --frequency monthly --category fun \\
-        https://old.reddit.com/r/Showerthoughts/top/?sort=top&t=month \\
+    library tabsadd --frequency monthly --category fun \
+        https://old.reddit.com/r/Showerthoughts/top/?sort=top&t=month \
         https://old.reddit.com/r/RedditDayOf/top/?sort=top&t=month
 
 ### 2. Add library tabs to cron
