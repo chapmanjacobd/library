@@ -32,7 +32,7 @@ This is the only way I know of getting it working. If you would rather use somet
 
 5. **Configure ConEmu to use fish shell** in msys2
 
-https://superuser.com/questions/1024301/conemu-how-to-call-msys2-as-tab
+    https://superuser.com/questions/1024301/conemu-how-to-call-msys2-as-tab
 
 6. Set the [MSYSTEM](https://www.msys2.org/docs/environments/) environment variable and close and restart your shell
 
