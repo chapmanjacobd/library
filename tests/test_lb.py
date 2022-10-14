@@ -7,7 +7,7 @@ from xklb.play_actions import watch as wt
 
 
 def test_lb_help(capsys):
-    lb_help_text = "local media subcommands:,online media subcommands:".split(",")
+    lb_help_text = "local media:,online media:".split(",")
     sys.argv = ["lb"]
     lb()
     captured = capsys.readouterr().out
