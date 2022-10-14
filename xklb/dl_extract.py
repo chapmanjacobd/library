@@ -3,7 +3,7 @@ from typing import List, Tuple
 
 from rich.prompt import Confirm
 
-from xklb import consts, db, play_actions, player, stats, tube_backend, utils
+from xklb import consts, db, play_actions, player, tube_backend, utils
 from xklb.consts import SC, DBType
 from xklb.utils import log
 
