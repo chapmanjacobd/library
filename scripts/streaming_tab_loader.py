@@ -4,13 +4,6 @@ from time import sleep
 from xklb import db, utils
 from xklb.utils import log
 
-try:
-    from brotab.api import SingleMediatorAPI
-    from brotab.main import create_clients
-except ModuleNotFoundError:
-    SingleMediatorAPI = None
-
-
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="library surf",
@@ -45,8 +38,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def list_tabs(args):
-    api = SingleMediatorAPI(create_clients(args.target_hosts))
-    return api.list_tabs([])
+    return args.bt_api.list_tabs([])
 
 
 def open_tabs(args, urls):
@@ -57,10 +49,15 @@ def open_tabs(args, urls):
 def streaming_tab_loader() -> None:
     args = parse_args()
 
-    if SingleMediatorAPI is None:
+    try:
+        from brotab.api import SingleMediatorAPI
+        from brotab.main import create_clients
+    except ModuleNotFoundError:
         raise ModuleNotFoundError(
             "brotab is required for surfing. Install with pip install brotab or pip install xklb[full]"
         )
+    else:
+        args.bt_api = SingleMediatorAPI(create_clients(args.target_hosts))  # type: ignore
 
     tabs_opened = 0
     initial_count = len(list_tabs(args))
