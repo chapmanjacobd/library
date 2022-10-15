@@ -52,7 +52,7 @@ def pushshift_extract(args=None) -> None:
             continue
 
         post_dict = json.loads(l)
-        praw_extract.save_post(args, post_dict, None)
+        praw_extract.save_post(args, post_dict, post_dict['subreddit'], upsert=False)
 
     if not args.db["media"].detect_fts():
         db.optimize(args)
