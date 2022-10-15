@@ -39,9 +39,6 @@ def usage() -> str:
 
       lb redditadd             Create a reddit database; Add subreddits
       lb redditupdate          Fetch new posts from saved subreddits
-      lb pushshift             Convert Pushshift jsonl.zstd to reddit.db format
-
-      lb hnadd                 Create a hackernews database
 
     downloads:
       lb download              Download media
@@ -64,7 +61,9 @@ def usage() -> str:
       lb surf                  Load browser tabs in a streaming way (stdin)
 
     mining:
+      lb pushshift             Convert Pushshift jsonl.zstd to reddit.db format
       lb reddit-selftext       Save stored selftext external links to media table
+      lb hnadd                 Create a hackernews database
       lb nfb-films             Director links -> film links (stdin)
     """
 
