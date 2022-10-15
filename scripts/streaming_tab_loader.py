@@ -1,7 +1,7 @@
 import argparse, sys
 from time import sleep
 
-from xklb import db, utils
+from xklb import db, player, utils
 from xklb.utils import log
 
 
@@ -44,7 +44,7 @@ def list_tabs(args):
 
 def open_tabs(args, urls):
     for url in urls:
-        utils.cmd("firefox", url)
+        utils.cmd(player.get_browser(), url)
 
 
 def streaming_tab_loader() -> None:

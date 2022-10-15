@@ -39,7 +39,7 @@ def get_page_links(path, text):
 
 def parse_reddit_selftext() -> None:
     args = parse_args()
-    m_columns = args.db['media'].columns_dict
+    m_columns = args.db["media"].columns_dict
 
     reddit_posts = list(
         args.db.query(
@@ -53,13 +53,13 @@ def parse_reddit_selftext() -> None:
     )
 
     for d in reddit_posts:
-        internal_links, external_links = get_page_links(d['path'], d['selftext_html'])
+        internal_links, external_links = get_page_links(d["path"], d["selftext_html"])
         if internal_links:
             for i_link in internal_links:
                 log.info(i_link)
 
         for e_link in external_links:
-            args.db['media'].insert({**d, "path": e_link, "webpage": d['path']}, alter=True)
+            args.db["media"].insert({**d, "path": e_link, "webpage": d["path"]}, alter=True)
 
 
 if __name__ == "__main__":
