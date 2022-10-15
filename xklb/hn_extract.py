@@ -149,7 +149,7 @@ def hacker_news_add() -> None:
                     {'UNION ALL SELECT id FROM hn_job' if 'hn_job' in tables else ''}
                     {'UNION ALL SELECT id FROM hn_poll' if 'hn_poll' in tables else ''}
                     {'UNION ALL SELECT id FROM hn_pollopt' if 'hn_pollopt' in tables else ''}
-                    {'UNION ALL SELECT ' + args.latest_id}
+                    {'UNION ALL SELECT ' + str(args.latest_id)}
                 )
             )
             SELECT * FROM t
