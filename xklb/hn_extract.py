@@ -170,7 +170,7 @@ def hacker_news_add() -> None:
     db_queue.put(None)
     db_thread.join()
 
-    if (args.latest_id - args.oldest_id) > 100000:
+    if (args.latest_id - args.oldest_id) > 1000000:
         db.optimize(args)
 
 
