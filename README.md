@@ -39,6 +39,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
 
       lb redditadd             Create a reddit database; Add subreddits
       lb redditupdate          Fetch new posts from saved subreddits
+      lb pushshift             Convert Pushshift jsonl.zstd to reddit.db format
 
       lb hnadd                 Create a hackernews database
 

@@ -39,6 +39,7 @@ def usage() -> str:
 
       lb redditadd             Create a reddit database; Add subreddits
       lb redditupdate          Fetch new posts from saved subreddits
+      lb pushshift             Convert Pushshift jsonl.zstd to reddit.db format
 
       lb hnadd                 Create a hackernews database
 
@@ -139,6 +140,9 @@ def lb(args=None) -> None:
     subp_redditadd.set_defaults(func=reddit_add)
     subp_redditupdate = add_parser(subparsers, "redditupdate", ["ru", "xru"])
     subp_redditupdate.set_defaults(func=reddit_update)
+    subp_pushshift = add_parser(subparsers, "pushshift", ['ps'])
+    subp_pushshift.set_defaults(func=scripts.pushshift_extract)
+
     subp_hnadd = add_parser(subparsers, "hnadd")
     subp_hnadd.set_defaults(func=hacker_news_add)
 
