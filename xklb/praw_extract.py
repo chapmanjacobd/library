@@ -2,7 +2,6 @@ import argparse
 import datetime as dt
 import json
 import sys
-import typing
 from functools import partial
 from itertools import takewhile
 from pathlib import Path
@@ -11,7 +10,6 @@ from typing import Any, Dict, Optional
 import praw, prawcore
 
 from xklb import consts, db, utils
-from xklb.consts import DBType
 from xklb.utils import log
 
 PRAW_SETUP_INSTRUCTIONS = r"""
@@ -86,7 +84,7 @@ def legalize(val: Any) -> Any:
     return val
 
 
-def _parent_ids_interpreted(dct: typing.Dict[str, typing.Any]) -> Dict[str, typing.Any]:
+def _parent_ids_interpreted(dct: Dict[str, Any]) -> Dict[str, Any]:
     if not dct.get("parent_id"):
         return dct
 
@@ -99,12 +97,13 @@ def _parent_ids_interpreted(dct: typing.Dict[str, typing.Any]) -> Dict[str, typi
     return dct
 
 
-def saveable(item: Any) -> Dict[str, typing.Any]:
+def saveable(item: Any) -> Dict[str, Any]:
     result = {k: legalize(v) for k, v in item.__dict__.items() if not k.startswith("_")}
     return _parent_ids_interpreted(result)
 
 
-def slim_post_data(d: dict, playlist_path) -> dict:
+
+def slim_post_data(d: dict, playlist_path=None) -> dict:
     skip_domains = ["linktr.ee", "twitter.com", "t.me", "patreon", "onlyfans", "fans.ly", "file-upload", "file-link"]
     overridden_url = (
         d.get("url_overridden_by_dest") if any([domain in d["url"].lower() for domain in skip_domains]) else d["url"]
@@ -118,7 +117,6 @@ def slim_post_data(d: dict, playlist_path) -> dict:
         "is_over_18": d.get("over_18"),
         "is_archived": d.get("archived"),
         "is_original_content": d.get("is_original_content"),
-        "is_reddit_media_domain": d.get("is_reddit_media_domain"),
         "is_self": d.get("is_self"),
         "is_video": d.get("is_video"),
         "link_flair_text": d.get("link_flair_text"),
@@ -133,9 +131,10 @@ def slim_post_data(d: dict, playlist_path) -> dict:
     }
 
 
-def save_post(args, subreddit_path, post_dict):
-    author_is_blocked = post_dict["author_is_blocked"]
-    selftext_html = post_dict["selftext_html"]
+
+def save_post(args, post_dict, subreddit_path):
+    author_is_blocked = post_dict.get("author_is_blocked")
+    selftext_html = post_dict.get("selftext_html")
     slim_dict = utils.dict_filter_bool(slim_post_data(post_dict, subreddit_path))
 
     if slim_dict:
@@ -204,7 +203,7 @@ def redditor_new(args, redditor_dict) -> None:
 
     for s in takewhile(_takewhile, user.submissions.new(limit=args.limit)):
         s.time_created = s.created_utc
-        save_post(args, user_path, saveable(s))
+        save_post(args, saveable(s), user_path)
 
 
 def subreddit_new(args, subreddit_dict) -> None:
@@ -229,7 +228,7 @@ def subreddit_new(args, subreddit_dict) -> None:
                 alter=True,
             )
 
-        save_post(args, subreddit_path, post_dict)
+        save_post(args, post_dict, subreddit_path)
 
 
 def subreddit_top(args, subreddit_dict) -> None:
@@ -246,7 +245,7 @@ def subreddit_top(args, subreddit_dict) -> None:
     for time_filter in time_filters:
         log.info("Getting top posts in %s for time_filter '%s'", subreddit, time_filter)
         for post in takewhile(_takewhile, subreddit.top(time_filter, limit=args.limit)):
-            save_post(args, subreddit_path, saveable(post))
+            save_post(args, saveable(post), subreddit_path)
 
 
 def parse_args(action, usage) -> argparse.Namespace:

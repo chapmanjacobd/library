@@ -3,6 +3,7 @@ from scripts.invalid_filenames import rename_invalid_files
 from scripts.large_folders import large_folders
 from scripts.merge_online_local import merge_online_local
 from scripts.mining.nfb_ca import nfb_films
+from scripts.mining.pushshift import pushshift_extract
 from scripts.mining.reddit_self import parse_reddit_selftext
 from scripts.optimize_db import optimize_db
 from scripts.streaming_tab_loader import streaming_tab_loader

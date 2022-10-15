@@ -149,6 +149,7 @@ def hacker_news_add() -> None:
                     {'UNION ALL SELECT id FROM hn_job' if 'hn_job' in tables else ''}
                     {'UNION ALL SELECT id FROM hn_poll' if 'hn_poll' in tables else ''}
                     {'UNION ALL SELECT id FROM hn_pollopt' if 'hn_pollopt' in tables else ''}
+                    {'UNION ALL SELECT ' + args.latest_id}
                 )
             )
             SELECT * FROM t
@@ -158,6 +159,8 @@ def hacker_news_add() -> None:
         )
         args.latest_id = r["latest_id"]
         args.oldest_id = r["oldest_id"]
+        if args.latest_id == args.oldest_id:
+            raise SystemExit(128)
 
     db_queue = queue.Queue()
     db_thread = threading.Thread(target=db_worker, args=(args, db_queue))
@@ -167,7 +170,8 @@ def hacker_news_add() -> None:
     db_queue.put(None)
     db_thread.join()
 
-    db.optimize(args)
+    if (args.latest_id - args.oldest_id) > 100000:
+        db.optimize(args)
 
 
 if __name__ == "__main__":

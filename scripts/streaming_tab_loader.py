@@ -8,7 +8,7 @@ from xklb.utils import log
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="library surf",
-        usage="""library surf [--count COUNT] [--target-hosts TARGET_HOSTS] [--prefix-window-id PREFIX_WINDOW_ID] [database ...]
+        usage="""library surf [--count COUNT] [--target-hosts TARGET_HOSTS] < stdin
 
     Streaming tab loader: press ctrl+c to stop.
 
