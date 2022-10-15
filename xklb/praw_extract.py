@@ -169,7 +169,7 @@ def save_post(args, post_dict, subreddit_path, upsert=True):
             if selftext_html:
                 args.db["reddit_posts"].insert(slim_dict, alter=True)
             else:
-                args.db["media"].upsert(slim_dict, alter=True)
+                args.db["media"].insert(slim_dict, alter=True)
 
 
 def since_last_created(args, playlist_path):
