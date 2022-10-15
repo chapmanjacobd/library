@@ -57,15 +57,18 @@ def calculate_duration(args, m) -> Tuple[int, int]:
     return start, end
 
 
+def get_browser():
+    default_application = cmd("xdg-mime", "query", "default", "text/html").stdout
+    return which(default_application.replace(".desktop", ""))
+
+
 def find_xdg_application(media_file) -> Optional[str]:
     if media_file.startswith("http"):
-        default_application = cmd("xdg-mime", "query", "default", "text/html").stdout
-    else:
-        mimetype = cmd("xdg-mime", "query", "filetype", media_file).stdout
-        default_application = cmd("xdg-mime", "query", "default", mimetype).stdout
+        return get_browser()
 
-    player_path = which(default_application.replace(".desktop", ""))
-    return player_path
+    mimetype = cmd("xdg-mime", "query", "filetype", media_file).stdout
+    default_application = cmd("xdg-mime", "query", "default", mimetype).stdout
+    return which(default_application.replace(".desktop", ""))
 
 
 def parse(args, m=None, media_file=None) -> List[str]:
@@ -286,7 +289,7 @@ def get_ordinal_media(args, path: str) -> str:
     candidate = deepcopy(path)
     similar_videos = []
     while len(similar_videos) < 2:
-        if candidate == '':
+        if candidate == "":
             return path
 
         remove_groups = re.split(r"([\W]+|\s+|Ep\d+|x\d+|\.\d+)", candidate)

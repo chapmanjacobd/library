@@ -336,7 +336,7 @@ python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*"
 
 [[package]]
 name = "gallery-dl"
-version = "1.23.2"
+version = "1.23.3"
 description = "Command-line program to download image galleries and collections from several image hosting sites"
 category = "main"
 optional = false
@@ -1576,8 +1576,8 @@ future = [
     {file = "future-0.18.2.tar.gz", hash = "sha256:b1bead90b70cf6ec3f0710ae53a525360fa360d306a86583adc6bf83a4db537d"},
 ]
 gallery-dl = [
-    {file = "gallery_dl-1.23.2-py3-none-any.whl", hash = "sha256:cbe91e636e81f1c2bc2ec2141e33c64cfea55beeb1714ac3574a3b1870c53059"},
-    {file = "gallery_dl-1.23.2.tar.gz", hash = "sha256:fe3933c05041c247f29b1983e9b5e3d19025378455f94111836911b43c8857de"},
+    {file = "gallery_dl-1.23.3-py3-none-any.whl", hash = "sha256:eb4e29af408e9a3f7f1db187c9361146cf7c8921b29831277a2ae92fff39267c"},
+    {file = "gallery_dl-1.23.3.tar.gz", hash = "sha256:0a864dd1c2d74ae8d94521855f776c346baf82ea5ae2dd55ac4a16f99bb8d72c"},
 ]
 guessit = [
     {file = "guessit-3.4.3-py3-none-any.whl", hash = "sha256:f7f790c9e55a7bcc8ff887d3146e089c65a23eff72edfb6684ac5fedb47488a5"},

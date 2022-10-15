@@ -139,7 +139,7 @@ def lb(args=None) -> None:
     subp_redditadd.set_defaults(func=reddit_add)
     subp_redditupdate = add_parser(subparsers, "redditupdate", ["ru", "xru"])
     subp_redditupdate.set_defaults(func=reddit_update)
-    subp_pushshift = add_parser(subparsers, "pushshift", ['ps'])
+    subp_pushshift = add_parser(subparsers, "pushshift", ["ps"])
     subp_pushshift.set_defaults(func=scripts.pushshift_extract)
 
     subp_hnadd = add_parser(subparsers, "hnadd")

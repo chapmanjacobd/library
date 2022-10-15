@@ -51,7 +51,7 @@ def construct_query(args) -> Tuple[str, dict]:
                 args.sort = "random(), " + args.sort
             else:
                 limit = consts.DEFAULT_PLAY_QUEUE * 16
-        if 'limit' not in args.defaults:
+        if "limit" not in args.defaults:
             cf.append(f"and rowid in (select rowid from media order by random() limit {limit})")
 
     args.sql_filter = " ".join(cf)

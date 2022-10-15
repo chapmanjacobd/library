@@ -67,6 +67,24 @@ def optimize(args) -> None:
         "reddit_comments": {
             "search_columns": ["body"],
         },
+        "hn_comment": {
+            "search_columns": ["text", "author"],
+        },
+        "hn_pollopt": {
+            "search_columns": ["text", "author"],
+        },
+        "hn_poll": {
+            "search_columns": ["title", "text", "author"],
+        },
+        "hn_poll": {
+            "search_columns": ["title", "text", "author"],
+        },
+        "hn_job": {
+            "search_columns": ["title", "text", "author", "path"],
+        },
+        "hn_story": {
+            "search_columns": ["title", "text", "author", "path"],
+        },
     }
 
     for table in ["media", "playlists", "reddit_posts", "reddit_comments"]:

@@ -48,7 +48,7 @@ class TestTube(unittest.TestCase):
         out = process_playlist.call_args[0][1]
         assert out == PLAYLIST_URL
 
-        dl_download([*tube_db, '--prefix', STORAGE_PREFIX, '--video'])
+        dl_download([*tube_db, "--prefix", STORAGE_PREFIX, "--video"])
         out = mocked_yt.call_args[0]
         assert out[1]["path"] == PLAYLIST_VIDEO_URL
 
@@ -56,7 +56,7 @@ class TestTube(unittest.TestCase):
     def test_download(self, mocked_yt):
         self.init_db()
 
-        dl_download([*dl_db,'--prefix', STORAGE_PREFIX, '--audio'])
+        dl_download([*dl_db, "--prefix", STORAGE_PREFIX, "--audio"])
         out = mocked_yt.call_args[0]
         assert out[1]["path"] == PLAYLIST_VIDEO_URL
 

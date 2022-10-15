@@ -21,6 +21,7 @@ def parse_args(action, usage) -> argparse.Namespace:
 
     return args
 
+
 def pushshift_extract(args=None) -> None:
     if args:
         sys.argv[1:] = args
@@ -46,13 +47,17 @@ def pushshift_extract(args=None) -> None:
     """,
     )
 
+    count = 0
     for l in sys.stdin:
         l = l.rstrip("\n")
         if l in ["", '""', "\n"]:
             continue
 
-        post_dict = json.loads(l)
-        praw_extract.save_post(args, post_dict, post_dict['subreddit'], upsert=False)
+        count += 1
+        sys.stdout.write("\033[K\r")
+        print("Processing", count, end="\r", flush=True)
 
-    if not args.db["media"].detect_fts():
-        db.optimize(args)
+        post_dict = json.loads(l)
+        praw_extract.save_post(args, post_dict, post_dict["subreddit"], upsert=False)
+
+    print("\n")

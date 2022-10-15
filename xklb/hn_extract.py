@@ -133,45 +133,48 @@ def hacker_news_add() -> None:
 
     args.db.enable_wal()
 
-    args.latest_id = get("https://hacker-news.firebaseio.com/v0/maxitem.json")
-    args.oldest_id = 1
-    if args.resume:
-        tables = args.db.table_names()
-        r = args.db.pop_dict(
+    max_item_id = get("https://hacker-news.firebaseio.com/v0/maxitem.json")
+    tables = args.db.table_names()
+    r = list(
+        args.db.query(
             f"""
-            WITH t AS (
-                SELECT id AS latest_id,
-                    LAG (id, 1) OVER (ORDER BY id) AS oldest_id,
-                    id - (LAG (id, 1) OVER (ORDER BY id)) AS diff
-                FROM (
-                    SELECT id FROM hn_story
-                    {'UNION ALL SELECT id FROM hn_comment' if 'hn_comment' in tables else ''}
-                    {'UNION ALL SELECT id FROM hn_job' if 'hn_job' in tables else ''}
-                    {'UNION ALL SELECT id FROM hn_poll' if 'hn_poll' in tables else ''}
-                    {'UNION ALL SELECT id FROM hn_pollopt' if 'hn_pollopt' in tables else ''}
-                    {'UNION ALL SELECT ' + str(args.latest_id)}
-                )
+        WITH t AS (
+            SELECT id AS latest_id,
+                LAG (id, 1) OVER (ORDER BY id) AS oldest_id,
+                id - (LAG (id, 1) OVER (ORDER BY id)) AS diff
+            FROM (
+                {'SELECT id FROM hn_story' if 'hn_story' in tables else 'SELECT 1'}
+                {'UNION ALL SELECT id FROM hn_comment' if 'hn_comment' in tables else ''}
+                {'UNION ALL SELECT id FROM hn_job' if 'hn_job' in tables else ''}
+                {'UNION ALL SELECT id FROM hn_poll' if 'hn_poll' in tables else ''}
+                {'UNION ALL SELECT id FROM hn_pollopt' if 'hn_pollopt' in tables else ''}
+                {'UNION ALL SELECT ' + str(max_item_id)}
             )
-            SELECT * FROM t
-            WHERE diff > 1
-            ORDER BY diff DESC
-            """
+            --WHERE id > 33212696
         )
-        args.latest_id = r["latest_id"]
-        args.oldest_id = r["oldest_id"]
-        if args.latest_id == args.oldest_id:
-            raise SystemExit(128)
+        SELECT * FROM t
+        WHERE diff > 1
+        ORDER BY diff DESC
+        """
+        )
+    )
+    if len(r) == 0:
+        raise SystemExit(128)
 
-    db_queue = queue.Queue()
-    db_thread = threading.Thread(target=db_worker, args=(args, db_queue))
-    db_thread.start()
+    for gap in r:
+        args.latest_id = gap["latest_id"]
+        args.oldest_id = gap["oldest_id"]
 
-    asyncio.get_event_loop().run_until_complete(run(args, db_queue))
-    db_queue.put(None)
-    db_thread.join()
+        db_queue = queue.Queue()
+        db_thread = threading.Thread(target=db_worker, args=(args, db_queue))
+        db_thread.start()
 
-    if (args.latest_id - args.oldest_id) > 1000000:
-        db.optimize(args)
+        asyncio.get_event_loop().run_until_complete(run(args, db_queue))
+        db_queue.put(None)
+        db_thread.join()
+
+        if gap["diff"] > 1000000:
+            db.optimize(args)
 
 
 if __name__ == "__main__":
