@@ -13,6 +13,7 @@ __pycache__/
 *.jpg
 *.png
 *.csv
+*.sql
 *.parquet
 *.zst
 .magnets
