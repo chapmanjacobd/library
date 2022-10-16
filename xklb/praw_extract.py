@@ -130,46 +130,39 @@ def slim_post_data(d: dict, playlist_path=None) -> dict:
     }
 
 
-def save_post(args, post_dict, subreddit_path, upsert=True):
+def save_post(args, post_dict, subreddit_path):
     selftext_html = post_dict.pop("selftext_html", None)
     slim_dict = utils.dict_filter_bool(slim_post_data(post_dict, subreddit_path))
 
     if slim_dict:
-        if upsert:
-            already_downloaded_path = args.db.pop(
-                "SELECT path FROM media WHERE webpath =?",
-                [slim_dict["path"]],
-                ignore_errors=["no such column", "no such table"],
-            )
-            if already_downloaded_path:
-                slim_dict["path"] = already_downloaded_path
+        already_downloaded_path = args.db.pop(
+            "SELECT path FROM media WHERE webpath =?",
+            [slim_dict["path"]],
+            ignore_errors=["no such column", "no such table"],
+        )
+        if already_downloaded_path:
+            slim_dict["path"] = already_downloaded_path
 
-            existing_meta = args.db.pop_dict(
-                "SELECT play_count, time_played, time_downloaded, time_deleted FROM media WHERE path =?",
-                [slim_dict["path"]],
-                ignore_errors=["no such column", "no such table"],
-            )
-            slim_dict = {
-                **slim_dict,
-                "play_count": 0,
-                "time_played": 0,
-                "time_downloaded": 0,
-                "time_deleted": 0,
-                **(existing_meta or {}),
-            }
+        existing_meta = args.db.pop_dict(
+            "SELECT play_count, time_played, time_downloaded, time_deleted FROM media WHERE path =?",
+            [slim_dict["path"]],
+            ignore_errors=["no such column", "no such table"],
+        )
+        slim_dict = {
+            **slim_dict,
+            "play_count": 0,
+            "time_played": 0,
+            "time_downloaded": 0,
+            "time_deleted": 0,
+            **(existing_meta or {}),
+        }
 
-            if post_dict.get("author_is_blocked") == 1:
-                pass
-            elif selftext_html:
-                args.db["reddit_posts"].upsert(slim_dict, pk=["path", "playlist_path"], alter=True)
-            else:
-                args.db["media"].upsert(slim_dict, pk=["path", "playlist_path"], alter=True)
-
+        if post_dict.get("author_is_blocked") == 1:
+            pass
+        elif selftext_html:
+            args.db["reddit_posts"].upsert(slim_dict, pk=["path", "playlist_path"], alter=True)
         else:
-            if selftext_html:
-                args.db["reddit_posts"].insert(slim_dict, alter=True)
-            else:
-                args.db["media"].insert(slim_dict, alter=True)
+            args.db["media"].upsert(slim_dict, pk=["path", "playlist_path"], alter=True)
 
 
 def since_last_created(args, playlist_path):
