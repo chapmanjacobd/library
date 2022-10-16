@@ -24,7 +24,7 @@ def parse_args() -> argparse.Namespace:
     """,
     )
     parser.add_argument("database", nargs="?")
-    parser.add_argument("--count", "-n", default=4, type=int)
+    parser.add_argument("--count", "-n", default=2, type=int)
     parser.add_argument("--target-hosts", "--target", default=None, help="Target hosts IP:Port")
     parser.add_argument("--verbose", "-v", action="count", default=0)
     args = parser.parse_args()
