@@ -1,9 +1,10 @@
-import argparse, json, sys
+import argparse, sys
 from pathlib import Path
 
 import orjson
 
-from xklb import db, praw_extract, utils
+from xklb import db, utils
+from xklb.praw_extract import slim_post_data
 from xklb.utils import log
 
 
@@ -22,6 +23,15 @@ def parse_args(action, usage) -> argparse.Namespace:
     log.info(utils.dict_filter_bool(args.__dict__))
 
     return args
+
+
+def save_data(args, reddit_posts, media):
+    if len(reddit_posts) > 0:
+        args.db["reddit_posts"].insert_all(reddit_posts, alter=True)
+        reddit_posts.clear()
+    if len(media) > 0:
+        args.db["media"].insert_all(media, alter=True)
+        media.clear()
 
 
 def pushshift_extract(args=None) -> None:
@@ -50,46 +60,34 @@ def pushshift_extract(args=None) -> None:
     )
 
     count = 0
+    reddit_posts = []
+    media = []
     for l in sys.stdin:
         l = l.rstrip("\n")
         if l in ["", '""', "\n"]:
             continue
 
+        try:
+            post_dict = orjson.loads(l)
+        except:
+            print('Skipping unreadable line', l)
+            continue
+
+        selftext_html = post_dict.pop("selftext_html", None)
+        slim_dict = utils.dict_filter_bool(slim_post_data(post_dict, post_dict["subreddit"]))
+
+        if slim_dict:
+            if selftext_html:
+                reddit_posts.append(slim_dict)
+            else:
+                media.append(slim_dict)
+
         count += 1
-        sys.stdout.write("\033[K\r")
-        if count > 1000:
+        remainder = count % 1_000_000
+        if remainder == 0:
+            sys.stdout.write("\033[K\r")
             print("Processing", count, end="\r", flush=True)
+            save_data(args, reddit_posts, media)
 
-        post_dict = orjson.loads(l)
-        # praw_extract.save_post(args, post_dict, post_dict["subreddit"], upsert=False)
-
+    save_data(args, reddit_posts, media)
     print("\n")
-
-
-"""
-set sql (echo "
-SELECT
-    url as path
-    , author
-    , author_flair_text
-    , created_utc as time_created
-    , edited as time_modified
-    , over_18 as is_over_18
-    , archived as is_archived
-    , is_original_content
-    , is_self
-    , is_video
-    , link_flair_text
-    , num_comments
-    , num_crossposts
-    , score
-    , upvote_ratio
-    , selftext
-    , title
-    , total_awards_received
-    , subreddit as playlist_path
-FROM stdin.json" | tr '\n' ' ')
-for f in *.zst
-    echo "unzstd --memory=2048MB --stdout '$f' | octosql '$sql' -o csv > '$f.csv'"
-end | parallel -j4
-"""
