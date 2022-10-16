@@ -85,9 +85,12 @@ def optimize(args) -> None:
         "hn_story": {
             "search_columns": ["title", "text", "author", "path"],
         },
+        "playlists": {
+            "column_order": ["path", "ie_key"],
+        },
     }
 
-    for table in ["media", "playlists", "reddit_posts", "reddit_comments"]:
+    for table in config.keys():
         if table in tables:
             table_columns = db[table].columns_dict
             table_config = config.get(table) or {}

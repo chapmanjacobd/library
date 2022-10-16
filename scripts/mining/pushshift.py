@@ -1,6 +1,8 @@
 import argparse, json, sys
 from pathlib import Path
 
+import orjson
+
 from xklb import db, praw_extract, utils
 from xklb.utils import log
 
@@ -55,9 +57,39 @@ def pushshift_extract(args=None) -> None:
 
         count += 1
         sys.stdout.write("\033[K\r")
-        print("Processing", count, end="\r", flush=True)
+        if count > 1000:
+            print("Processing", count, end="\r", flush=True)
 
-        post_dict = json.loads(l)
-        praw_extract.save_post(args, post_dict, post_dict["subreddit"], upsert=False)
+        post_dict = orjson.loads(l)
+        # praw_extract.save_post(args, post_dict, post_dict["subreddit"], upsert=False)
 
     print("\n")
+
+
+"""
+set sql (echo "
+SELECT
+    url as path
+    , author
+    , author_flair_text
+    , created_utc as time_created
+    , edited as time_modified
+    , over_18 as is_over_18
+    , archived as is_archived
+    , is_original_content
+    , is_self
+    , is_video
+    , link_flair_text
+    , num_comments
+    , num_crossposts
+    , score
+    , upvote_ratio
+    , selftext
+    , title
+    , total_awards_received
+    , subreddit as playlist_path
+FROM stdin.json" | tr '\n' ' ')
+for f in *.zst
+    echo "unzstd --memory=2048MB --stdout '$f' | octosql '$sql' -o csv > '$f.csv'"
+end | parallel -j4
+"""
