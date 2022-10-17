@@ -59,6 +59,8 @@ def pushshift_extract(args=None) -> None:
     """,
     )
 
+    args.db.enable_wal()
+
     count = 0
     reddit_posts = []
     media = []
@@ -70,14 +72,14 @@ def pushshift_extract(args=None) -> None:
         try:
             post_dict = orjson.loads(l)
         except:
-            print('Skipping unreadable line', l)
+            print("Skipping unreadable line", l)
             continue
 
-        selftext_html = post_dict.pop("selftext_html", None)
-        slim_dict = utils.dict_filter_bool(slim_post_data(post_dict, post_dict["subreddit"]))
+        is_self = "selftext" in post_dict
+        slim_dict = utils.dict_filter_bool(slim_post_data(post_dict, post_dict.get("subreddit")))
 
         if slim_dict:
-            if selftext_html:
+            if is_self:
                 reddit_posts.append(slim_dict)
             else:
                 media.append(slim_dict)

@@ -2,6 +2,7 @@ import argparse, html
 from urllib.parse import urlparse
 
 from bs4 import BeautifulSoup
+from markdown import markdown
 
 from xklb import db, utils
 from xklb.utils import log
@@ -44,7 +45,7 @@ def parse_reddit_selftext() -> None:
     reddit_posts = list(
         args.db.query(
             f"""
-            select path, selftext_html
+            select path, selftext
             from reddit_posts
             where 1=1
                 {'AND path not in (select distinct webpage from media where webpage is not null)' if 'webpage' in m_columns else ''}
@@ -53,7 +54,8 @@ def parse_reddit_selftext() -> None:
     )
 
     for d in reddit_posts:
-        internal_links, external_links = get_page_links(d["path"], d["selftext_html"])
+        html_data = markdown(d["selftext"])
+        internal_links, external_links = get_page_links(d["path"], html_data)
         if internal_links:
             for i_link in internal_links:
                 log.info(i_link)

@@ -123,7 +123,7 @@ def slim_post_data(d: dict, playlist_path=None) -> dict:
         "num_crossposts": d.get("num_crossposts"),
         "score": d.get("score"),
         "upvote_ratio": d.get("upvote_ratio"),
-        "selftext_html": d.get("selftext_html"),
+        "selftext": d.get("selftext"),
         "title": d.get("title"),
         "total_awards_received": d.get("total_awards_received"),
         "playlist_path": playlist_path,
@@ -131,7 +131,7 @@ def slim_post_data(d: dict, playlist_path=None) -> dict:
 
 
 def save_post(args, post_dict, subreddit_path):
-    selftext_html = post_dict.pop("selftext_html", None)
+    is_self = "selftext" in post_dict
     slim_dict = utils.dict_filter_bool(slim_post_data(post_dict, subreddit_path))
 
     if slim_dict:
@@ -159,7 +159,7 @@ def save_post(args, post_dict, subreddit_path):
 
         if post_dict.get("author_is_blocked") == 1:
             pass
-        elif selftext_html:
+        elif is_self:
             args.db["reddit_posts"].upsert(slim_dict, pk=["path", "playlist_path"], alter=True)
         else:
             args.db["media"].upsert(slim_dict, pk=["path", "playlist_path"], alter=True)
@@ -177,6 +177,7 @@ def since_last_created(args, playlist_path):
         where playlist_path = ?
     """,
         [playlist_path],
+        ignore_errors=["no such column", "no such table"],
     )
     if latest_post_utc:
         get_since = dt.datetime.fromtimestamp(latest_post_utc) - dt.timedelta(days=args.lookback)
