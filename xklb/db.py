@@ -62,7 +62,7 @@ def optimize(args) -> None:
             "ignore_columns": ["id"],
         },
         "reddit_posts": {
-            "search_columns": ["title", "selftext_html"],
+            "search_columns": ["title", "selftext"],
         },
         "reddit_comments": {
             "search_columns": ["body"],

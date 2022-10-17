@@ -280,6 +280,19 @@ def override_sort(sort_expression: str) -> str:
     )
 
 
+def last_chars(candidate):
+    remove_groups = re.split(r"([\W]+|\s+|Ep\d+|x\d+|\.\d+)", candidate)
+    log.debug(remove_groups)
+
+    remove_chars = ""
+    number_of_groups = 1
+    while len(remove_chars) < 1:
+        remove_chars += remove_groups[-number_of_groups]
+        number_of_groups += 1
+
+    return remove_chars
+
+
 def get_ordinal_media(args, path: str) -> str:
     # TODO: maybe try https://dba.stackexchange.com/questions/43415/algorithm-for-finding-the-longest-prefix
 
@@ -292,13 +305,7 @@ def get_ordinal_media(args, path: str) -> str:
         if candidate == "":
             return path
 
-        remove_groups = re.split(r"([\W]+|\s+|Ep\d+|x\d+|\.\d+)", candidate)
-        log.debug(remove_groups)
-        remove_chars = ""
-        remove_chars_i = 1
-        while len(remove_chars) < 1:
-            remove_chars += remove_groups[-remove_chars_i]
-            remove_chars_i += 1
+        remove_chars = last_chars(candidate)
 
         new_candidate = candidate[: -len(remove_chars)]
         log.debug(f"Matches for '{new_candidate}':")
