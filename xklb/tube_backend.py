@@ -457,8 +457,7 @@ def yt(args, m) -> None:
         def error(self, msg):
             ydl_log["error"].append(msg)
 
-    out_dir = lambda p: str(Path(args.prefix, m["category"], p))
-    Path(out_dir("tunnel_snakes_rule")).parent.mkdir(parents=True, exist_ok=True)
+    out_dir = lambda p: str(Path(args.prefix, m["category"] or "%(extractor_key,extractor)s", p))
     ydl_opts = tube_opts(
         args,
         func_opts={

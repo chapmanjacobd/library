@@ -104,26 +104,37 @@ def saveable(item: Any) -> Dict[str, Any]:
 
 def slim_post_data(d: dict, playlist_path=None) -> dict:
     skip_domains = ["linktr.ee", "twitter.com", "t.me", "patreon", "onlyfans", "fans.ly", "file-upload", "file-link"]
-    overridden_url = (
-        d.get("url_overridden_by_dest") if any([domain in d["url"].lower() for domain in skip_domains]) else d["url"]
-    )
+    url = d.get("url")
+    if url:
+        url = url.lower()
+    if not url or any([domain in url for domain in skip_domains]):
+        d["url"] = d.get("url_overridden_by_dest")
+
+    selftext = d.get("selftext")
+    if selftext and selftext in (
+        "[deleted]",
+        "[removed]",
+        "[ Removed by reddit in response to a copyright notice. ]",
+        "[ Removed by reddit on account of violating the [content policy](/help/contentpolicy). ]",
+    ):
+        selftext = None
+
     return {
-        "path": overridden_url or d.get("url"),
+        "path": url,
         "author": d.get("author"),
         "author_flair_text": d.get("author_flair_text"),
         "time_created": d.get("created_utc"),
         "time_modified": int(d.get("edited") or 0),
         "is_over_18": d.get("over_18"),
-        "is_archived": d.get("archived"),
+        "is_crosspostable": d.get("is_crosspostable"),
         "is_original_content": d.get("is_original_content"),
-        "is_self": d.get("is_self"),
         "is_video": d.get("is_video"),
         "link_flair_text": d.get("link_flair_text"),
         "num_comments": d.get("num_comments"),
         "num_crossposts": d.get("num_crossposts"),
         "score": d.get("score"),
         "upvote_ratio": d.get("upvote_ratio"),
-        "selftext": d.get("selftext"),
+        "selftext": selftext,
         "title": d.get("title"),
         "total_awards_received": d.get("total_awards_received"),
         "playlist_path": playlist_path,
@@ -131,7 +142,6 @@ def slim_post_data(d: dict, playlist_path=None) -> dict:
 
 
 def save_post(args, post_dict, subreddit_path):
-    is_self = "selftext" in post_dict
     slim_dict = utils.dict_filter_bool(slim_post_data(post_dict, subreddit_path))
 
     if slim_dict:
@@ -159,7 +169,7 @@ def save_post(args, post_dict, subreddit_path):
 
         if post_dict.get("author_is_blocked") == 1:
             pass
-        elif is_self:
+        elif "selftext" in slim_dict:
             args.db["reddit_posts"].upsert(slim_dict, pk=["path", "playlist_path"], alter=True)
         else:
             args.db["media"].upsert(slim_dict, pk=["path", "playlist_path"], alter=True)

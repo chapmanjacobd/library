@@ -42,7 +42,7 @@ def list_tabs(args):
     return args.bt_api.list_tabs([])
 
 
-def open_tabs(args, urls):
+def open_tabs(_args, urls):
     for url in urls:
         utils.cmd(player.get_browser(), url)
 

@@ -48,14 +48,14 @@ def pushshift_extract(args=None) -> None:
 
     Load data from files via unzstd
 
-        unzstd --memory=2048MB --stdout RS_2005-07.zst | lb pushshift pushshift.db
+        unzstd --memory=2048MB --stdout RS_2005-07.zst | library pushshift pushshift.db
 
-    Or multiple:
+    Or multiple (output is about 1.5TB SQLITE fts-searchable):
 
-        for f in files.pushshift.io/reddit/submissions/*.zst
-            echo "$f"
-            unzstd --memory=2048MB --stdout "$f" | lb pushshift pushshift.db
-        end
+        for f in psaw/files.pushshift.io/reddit/submissions/*.zst
+            echo "unzstd --memory=2048MB --stdout $f | library pushshift (basename $f).db"
+            library optimize (basename $f).db
+        end | parallel -j5
     """,
     )
 
@@ -71,18 +71,18 @@ def pushshift_extract(args=None) -> None:
 
         try:
             post_dict = orjson.loads(l)
-        except:
+        except Exception:
             print("Skipping unreadable line", l)
             continue
 
-        is_self = "selftext" in post_dict
         slim_dict = utils.dict_filter_bool(slim_post_data(post_dict, post_dict.get("subreddit")))
-
         if slim_dict:
-            if is_self:
+            if "selftext" in slim_dict:
                 reddit_posts.append(slim_dict)
-            else:
+            elif "path" in slim_dict:
                 media.append(slim_dict)
+            else:
+                continue
 
         count += 1
         remainder = count % 1_000_000

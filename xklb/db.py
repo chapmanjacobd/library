@@ -52,7 +52,6 @@ def connect(args, conn=None, **kwargs) -> sqlite_utils.Database:
 def optimize(args) -> None:
     print("\nOptimizing database")
     db: sqlite_utils.Database = args.db
-    tables = db.table_names()
     db.enable_wal()
 
     config = {
@@ -76,9 +75,6 @@ def optimize(args) -> None:
         "hn_poll": {
             "search_columns": ["title", "text", "author"],
         },
-        "hn_poll": {
-            "search_columns": ["title", "text", "author"],
-        },
         "hn_job": {
             "search_columns": ["title", "text", "author", "path"],
         },
@@ -90,8 +86,8 @@ def optimize(args) -> None:
         },
     }
 
-    for table in config.keys():
-        if table in tables:
+    for table in config:
+        if table in db.table_names():
             table_columns = db[table].columns_dict
             table_config = config.get(table) or {}
             ignore_columns = table_config.get("ignore_columns") or []
