@@ -61,10 +61,10 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
       lb surf                  Load browser tabs in a streaming way (stdin)
 
     mining:
-      lb pushshift             Convert Pushshift jsonl.zstd to reddit.db format
       lb reddit-selftext       Save stored selftext external links to media table
-      lb hnadd                 Create a hackernews database
+      lb pushshift             Convert Pushshift jsonl.zstd to reddit.db format (stdin)
       lb nfb-films             Director links -> film links (stdin)
+      lb hnadd                 Create a hackernews database (this takes a few days)
     
 
 ## Quick Start -- watch online media on your PC
