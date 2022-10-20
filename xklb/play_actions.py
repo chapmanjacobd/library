@@ -67,7 +67,7 @@ def construct_query(args) -> Tuple[str, dict]:
         duration = "cast(length(tags) / 4.2 / 220 * 60 as INT) + 10 duration"
 
     cols = args.cols or ["path", "title", duration, "size", "sparseness", "subtitle_count", "is_dir"]
-    SELECT = "\n,".join([c for c in cols if c in m_columns])
+    SELECT = "\n,".join([c for c in cols if c in m_columns or c == "*"])
     LIMIT = "LIMIT " + str(args.limit) if args.limit else ""
     OFFSET = f"OFFSET {args.skip}" if args.skip else ""
     query = f"""SELECT
@@ -430,9 +430,9 @@ def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
             args.sort.extend(["sparseness", "size"])
         elif args.action in (SC.listen, SC.watch):
             if "play_count" in columns:
-                args.sort.append("play_count")
+                args.sort.extend(["play_count"])
             if "size" in columns and "duration" in columns:
-                args.sort.append("ntile(1000) over (order by size/duration) desc")
+                args.sort.extend(["ntile(1000) over (order by size) desc", "duration"])
                 if args.include:
                     args.sort = ["duration desc", "size desc"]
                     if args.print:
