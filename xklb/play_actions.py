@@ -432,7 +432,7 @@ def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
             if "play_count" in columns:
                 args.sort.extend(["play_count"])
             if "size" in columns and "duration" in columns:
-                args.sort.extend(['priority'])
+                args.sort.extend(["priority"])
                 if args.include:
                     args.sort = ["duration desc", "size desc"]
                     if args.print:

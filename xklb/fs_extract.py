@@ -145,6 +145,7 @@ def _add_folder(args, folder_path: Path) -> None:
         "path": str(folder_path),
         "config": utils.filter_namespace(args, ["ocr", "speech_recognition", "scan_subtitles"]),
         "time_deleted": 0,
+        "profile": args.profile,
         "category": category,
         **args.extra_playlist_data,
     }
@@ -324,5 +325,6 @@ def fs_update(args=None) -> None:
     )
 
     for playlist in playlists:
-        args_env = args if playlist["config"] is None else argparse.Namespace(**{**playlist["config"], **args.__dict__})
+        args_env = argparse.Namespace(**{**(playlist.get("config") or {}), **args.__dict__, 'profile': playlist["profile"]})
+
         extractor(args_env, [playlist["path"]])
