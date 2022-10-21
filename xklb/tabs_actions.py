@@ -227,8 +227,8 @@ def parse_args(action, default_db) -> argparse.Namespace:
         args.database = args.db
 
     if args.sort:
+        args.sort = [override_sort(s) for s in args.sort]
         args.sort = " ".join(args.sort)
-        args.sort = override_sort(args.sort)
 
     if args.cols:
         args.cols = list(flatten([s.split(",") for s in args.cols]))
