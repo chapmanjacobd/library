@@ -432,7 +432,7 @@ def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
             if "play_count" in columns:
                 args.sort.extend(["play_count"])
             if "size" in columns and "duration" in columns:
-                args.sort.extend(["ntile(1000) over (order by size) desc", "duration"])
+                args.sort.extend(['priority'])
                 if args.include:
                     args.sort = ["duration desc", "size desc"]
                     if args.print:
@@ -440,8 +440,8 @@ def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
 
     if args.play_in_order > 0:
         args.sort.append("path")
+    args.sort = [override_sort(s) for s in args.sort]
     args.sort = ",".join(args.sort).replace(",,", ",")
-    args.sort = override_sort(args.sort)
 
     if args.cols:
         args.cols = list(utils.flatten([s.split(",") for s in args.cols]))
