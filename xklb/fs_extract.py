@@ -325,6 +325,8 @@ def fs_update(args=None) -> None:
     )
 
     for playlist in playlists:
-        args_env = argparse.Namespace(**{**(playlist.get("config") or {}), **args.__dict__, 'profile': playlist["profile"]})
+        args_env = argparse.Namespace(
+            **{**(playlist.get("config") or {}), **args.__dict__, "profile": playlist["profile"]}
+        )
 
         extractor(args_env, [playlist["path"]])
