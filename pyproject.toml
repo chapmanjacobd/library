@@ -36,7 +36,6 @@ subliminal = "*"
 tabulate = "*"
 tinytag = "*"
 yt-dlp = "*"
-orjson = "*"
 Markdown = "*"
 
 [tool.poetry.dev-dependencies]
@@ -49,7 +48,7 @@ pytest = "*"
 ssort = "*"
 
 [tool.poetry.extras]
-full = ["textract", "PyExifTool", "aiohttp", "brotab"]
+full = ["textract", "PyExifTool", "aiohttp", "brotab", "orjson"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
