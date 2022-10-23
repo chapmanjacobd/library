@@ -30,6 +30,13 @@ This is the only way I know of getting it working. If you would rather use somet
     pacman -S mingw-w64-x86_64-mpv mingw-w64-x86_64-youtube-dl make automake python-pip python-wheel fish
     ```
 
+    Optional: xklb[full] deps:
+
+    ```bash
+    choco install exiftool
+    pacman -S mingw-w64-x86_64-rust
+    ```
+
 5. **Configure ConEmu to use fish shell** in msys2
 
     https://superuser.com/questions/1024301/conemu-how-to-call-msys2-as-tab
