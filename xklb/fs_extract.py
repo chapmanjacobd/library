@@ -249,6 +249,10 @@ def parse_args(action, usage) -> argparse.Namespace:
     if hasattr(args, "paths"):
         args.paths = utils.conform(args.paths)
     log.info(utils.dict_filter_bool(args.__dict__))
+    
+    if args.profile in (DBType.audio, DBType.video) and not which('ffprobe'):
+        print("ffmpeg is not installed. Install with your package manager.")
+        raise SystemExit(3)
 
     return args
 
