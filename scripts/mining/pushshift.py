@@ -1,12 +1,14 @@
 import argparse, sys
 from pathlib import Path
 
-import orjson
-
 from xklb import db, utils
 from xklb.praw_extract import slim_post_data
 from xklb.utils import log
 
+try:
+    import orjson
+except ModuleNotFoundError:
+    import json as orjson
 
 def parse_args(action, usage) -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library " + action, usage=usage)
