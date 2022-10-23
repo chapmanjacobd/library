@@ -11,12 +11,12 @@ from xklb.tube_extract import tube_add, tube_update
 
 PLAYLIST_URL = "https://youtube.com/playlist?list=PLVoczRgDnXDLWV1UJ_tO70VT_ON0tuEdm"
 PLAYLIST_VIDEO_URL = "https://www.youtube.com/watch?v=QoXubRvB6tQ"
-STORAGE_PREFIX = "tests/data/"
+STORAGE_PREFIX = str(Path("tests/data/").resolve())
 
-dl_db = "--db", "tests/data/dl.db"
+dl_db = "--db", str(Path("tests/data/dl.db").resolve())
 tube_add([*dl_db, "-c=Self", PLAYLIST_URL])
 
-tube_db = "--db", "tests/data/tube_dl.db"
+tube_db = "--db", str(Path("tests/data/tube_dl.db").resolve())
 tube_add([*tube_db, PLAYLIST_URL])
 
 
