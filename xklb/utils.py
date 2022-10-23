@@ -10,7 +10,6 @@ from typing import Any, Dict, Generator, List, Optional, Union
 import humanize
 from IPython.core import ultratb
 from IPython.terminal.debugger import TerminalPdb
-from pychromecast import discovery
 from rich.logging import RichHandler
 
 from xklb import consts
@@ -199,6 +198,8 @@ def remove_text_inside_brackets(text: str, brackets="()[]") -> str:  # thanks @j
 
 
 def get_ip_of_chromecast(device_name):
+    from pychromecast import discovery
+
     cast_infos, browser = discovery.discover_listed_chromecasts(friendly_names=[device_name])
     browser.stop_discovery()
     if not cast_infos:

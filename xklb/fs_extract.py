@@ -1,6 +1,7 @@
 import argparse, math, os, sys
 from multiprocessing import TimeoutError as mp_TimeoutError
 from pathlib import Path
+from shutil import which
 from timeit import default_timer as timer
 from typing import Dict, List, Optional
 
@@ -249,8 +250,8 @@ def parse_args(action, usage) -> argparse.Namespace:
     if hasattr(args, "paths"):
         args.paths = utils.conform(args.paths)
     log.info(utils.dict_filter_bool(args.__dict__))
-    
-    if args.profile in (DBType.audio, DBType.video) and not which('ffprobe'):
+
+    if args.profile in (DBType.audio, DBType.video) and not which("ffprobe"):
         print("ffmpeg is not installed. Install with your package manager.")
         raise SystemExit(3)
 

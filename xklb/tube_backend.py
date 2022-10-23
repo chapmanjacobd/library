@@ -2,7 +2,6 @@ import argparse, json, sys
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
-from sqlite3 import OperationalError
 from typing import Dict, List, Optional, Tuple
 
 import yt_dlp

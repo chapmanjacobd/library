@@ -6,11 +6,6 @@ import requests
 from xklb import db, utils
 from xklb.utils import log
 
-try:
-    import aiohttp
-except ModuleNotFoundError:
-    aiohttp = None
-
 """
 My understanding of aiohttp is stolen
 from ashish01's excellent https://github.com/ashish01/hn-data-dumps/blob/main/hn_async2.py
@@ -95,6 +90,8 @@ async def get_hn_item(session, db_queue, sem, hn_id):
 
 
 async def run(args, db_queue):
+    import aiohttp
+
     N = 80
     sem = asyncio.Semaphore(N)
 
@@ -126,10 +123,11 @@ def hacker_news_add() -> None:
         library hnadd --oldest --resume hn.db
     """,
     )
-    if aiohttp is None:
-        raise ModuleNotFoundError(
-            "aiohttp is required for hn_extract. Install with pip install aiohttp or pip install xklb[full]"
-        )
+    try:
+        import aiohttp
+    except ModuleNotFoundError as e:
+        print("aiohttp is required for hn_extract. Install with pip install aiohttp or pip install xklb[full]")
+        raise e
 
     args.db.enable_wal()
 
