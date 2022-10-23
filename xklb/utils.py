@@ -172,8 +172,9 @@ def file_temp_copy(src):
     with open(src, "r+b") as fo_src:
         shutil.copyfileobj(fo_src, fo_dest)
     fo_dest.seek(0)
+    fname = fo_dest.name
     fo_dest.close()
-    return fo_dest
+    return fname
 
 
 def trash(f: Union[Path, str]) -> None:
