@@ -1,12 +1,12 @@
 import os, sqlite3
 from typing import Any, Iterable, List, Optional, Union
 
-import sqlite_utils
+from sqlite_utils import Database
 
 from xklb.utils import log
 
 
-class DB(sqlite_utils.Database):
+class DB(Database):
     def pop(self, sql: str, params: Optional[Union[Iterable, dict]] = None, ignore_errors=None) -> Optional[Any]:
         if ignore_errors is None:
             ignore_errors = ["no such table"]
@@ -38,7 +38,7 @@ def tracer(sql, params) -> None:
     print("SQL: {} - params: {}".format(sql, params))
 
 
-def connect(args, conn=None, **kwargs) -> sqlite_utils.Database:
+def connect(args, conn=None, **kwargs) -> Database:
     if not os.path.exists(args.database) and ":memory:" not in args.database:
         log.error(f"Database file '{args.database}' does not exist. Create one with lb fsadd, tubeadd, or tabsadd.")
         raise SystemExit(1)
@@ -51,7 +51,7 @@ def connect(args, conn=None, **kwargs) -> sqlite_utils.Database:
 
 def optimize(args) -> None:
     print("\nOptimizing database")
-    db: sqlite_utils.Database = args.db
+    db: Database = args.db
     db.enable_wal()
 
     config = {

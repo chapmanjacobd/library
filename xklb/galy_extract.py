@@ -4,7 +4,7 @@ from pathlib import Path
 import gallery_dl as gdl
 
 from xklb import consts, db, utils
-from xklb.consts import SC, DBType
+from xklb.consts import SC
 from xklb.utils import log
 
 

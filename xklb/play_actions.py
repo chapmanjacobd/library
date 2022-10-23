@@ -3,8 +3,6 @@ from pathlib import Path
 from random import random
 from typing import Dict, Tuple
 
-from catt.api import CattDevice
-
 from xklb import consts, db, player, tube_backend, utils
 from xklb.consts import SC
 from xklb.player import get_ordinal_media, mark_media_deleted, override_sort
@@ -453,6 +451,8 @@ def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
         args.size = parse_size(args)
 
     if args.chromecast:
+        from catt.api import CattDevice
+
         args.cc = CattDevice(args.chromecast_device, lazy=True)
         args.cc_ip = utils.get_ip_of_chromecast(args.chromecast_device)
 
