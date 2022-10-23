@@ -1,7 +1,7 @@
 import argparse, sys
 
 import scripts
-from xklb import utils
+from xklb import __version__, utils
 from xklb.consts import SC
 from xklb.dl_extract import dl_block, dl_download
 from xklb.fs_extract import fs_add, fs_update
@@ -17,7 +17,7 @@ from xklb.utils import log
 
 
 def usage() -> str:
-    return """xk media library subcommands
+    return f"""xk media library subcommands (v{__version__})
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -179,8 +179,6 @@ def lb(args=None) -> None:
     parser.add_argument("--version", "-V", action="store_true")
     args, _unk = parser.parse_known_args(args)
     if args.version:
-        from xklb import __version__
-
         return print(__version__)
 
     log.info(sys.argv)

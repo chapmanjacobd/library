@@ -10,6 +10,7 @@ try:
 except ModuleNotFoundError:
     import json as orjson
 
+
 def parse_args(action, usage) -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library " + action, usage=usage)
     parser.add_argument("--verbose", "-v", action="count", default=0)
