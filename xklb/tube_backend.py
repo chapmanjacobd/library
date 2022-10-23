@@ -219,7 +219,7 @@ def consolidate(v: dict) -> Optional[dict]:
 
 def log_problem(args, playlist_path) -> None:
     if is_playlist_known(args, playlist_path):
-        log.warning("Start of known playlist reached %s", playlist_path)
+        log.warning("\nStart of known playlist reached %s", playlist_path)
     else:
         log.warning("Could not add playlist %s", playlist_path)
 
