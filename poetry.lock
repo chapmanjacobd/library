@@ -1312,7 +1312,7 @@ full = []
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "48ccc1cad6d5fe28963594fc17fa5fb373eeb553d59a678257443d4e265c17bb"
+content-hash = "93789f24f258af73db50ef48e7f526029add65c84a8e18637d6a8416049ea1fe"
 
 [metadata.files]
 appdirs = [
