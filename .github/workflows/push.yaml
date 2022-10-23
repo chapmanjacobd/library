@@ -13,17 +13,16 @@ jobs:
       fail-fast: false
       max-parallel: 8
       matrix:
-        os: ["ubuntu-latest"] # , "windows-latest"
-        python: ["3.8", "3.9", "3.10"]
+        nv: [ {os: windows-latest, py: 3.8}, {os: macos-latest, py: 3.9}, {os: ubuntu-latest, py: 3.10} ]
 
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.nv.os }}
 
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Python ${{ matrix.python }}
+      - name: Set up Python ${{ matrix.nv.py }}
         uses: actions/setup-python@v2
         with:
-          python-version: ${{ matrix.python }}
+          python-version: ${{ matrix.nv.py }}
 
       - uses: FedericoCarboni/setup-ffmpeg@v1
 
