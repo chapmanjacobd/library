@@ -168,10 +168,11 @@ def cmd(*command, strict=True, cwd=None, quiet=True, interactive=False, **kwargs
 
 
 def file_temp_copy(src):
-    fo_dest = tempfile.NamedTemporaryFile()
+    fo_dest = tempfile.NamedTemporaryFile(delete=False)
     with open(src, "r+b") as fo_src:
         shutil.copyfileobj(fo_src, fo_dest)
     fo_dest.seek(0)
+    fo_dest.close()
     return fo_dest
 
 
