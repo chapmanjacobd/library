@@ -6,23 +6,13 @@ Install `choco` using powershell
 Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
 ```
 
-## Powershell (recommended)
-
-Install dependencies
+Install dependencies with choco
 
 ```powershell
 choco install mpv ffmpeg
 ```
 
-Optional: xklb[full] deps:
-
-```powershell
-choco install exiftool rust
-```
-
-## Install
-
-Install xklb and enjoy!
+Then install xklb and enjoy!
 
 ```fish
 pip install xklb
@@ -35,9 +25,11 @@ local media subcommands:
   watch [wt]                         Watch local media
 ```
 
+Optional: xklb[full] deps: `choco install exiftool rust`
 
-## Alternative Environment: msys2
-
+<details>
+  <summary><h3>Alternative environment: msys2</h3></summary>
+  
 `cygwin`, `WSL`, or `WSL2` is not recommended.
 
 1. Install [msys2](https://www.msys2.org/) and ConEmu
@@ -74,3 +66,6 @@ local media subcommands:
     ```fish
     set -Ux MSYSTEM MINGW64
     ```
+  
+</details>
+
