@@ -1,4 +1,4 @@
-import argparse, enum, functools, hashlib, logging, math, multiprocessing, os, platform, re, signal, subprocess, sys, textwrap
+import argparse, enum, functools, hashlib, logging, math, multiprocessing, os, platform, re, shutil, signal, subprocess, sys, tempfile, textwrap
 from ast import literal_eval
 from collections.abc import Iterable
 from datetime import datetime, timedelta, timezone
@@ -165,6 +165,14 @@ def cmd(*command, strict=True, cwd=None, quiet=True, interactive=False, **kwargs
             raise Exception(f"[{command}] exited {r.returncode}")
 
     return r
+
+
+def file_temp_copy(src):
+    fo_dest = tempfile.NamedTemporaryFile()
+    with open(src, "r+b") as fo_src:
+        shutil.copyfileobj(fo_src, fo_dest)
+    fo_dest.seek(0)
+    return fo_dest
 
 
 def trash(f: Union[Path, str]) -> None:
