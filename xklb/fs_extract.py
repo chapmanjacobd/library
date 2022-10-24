@@ -296,6 +296,15 @@ def fs_add(args=None) -> None:
 
     The database location must be specified to reference more than one path:
         library fsadd --audio podcasts.db ./podcasts/ ./another/folder/
+
+    Remove path roots with --force
+        library fsadd audio.db /mnt/d/Youtube/
+        [/mnt/d/Youtube] Path does not exist
+
+        library fsadd --force audio.db /mnt/d/Youtube/
+        [/mnt/d/Youtube] Path does not exist
+        [/mnt/d/Youtube] Building file list...
+        [/mnt/d/Youtube] Marking 28932 orphaned metadata records as deleted
     """,
     )
 
