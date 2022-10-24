@@ -626,7 +626,7 @@ def printer(args, query, bindings) -> None:
 
     media = list(args.db.query(query, bindings))
 
-    if args.partial and Path(args.watch_later_directory).exists():
+    if hasattr(args, "partial") and args.partial and Path(args.watch_later_directory).exists():
         media = utils.mpv_enrich2(args, media)
 
     if args.verbose >= 2 and args.cols and "*" in args.cols:

@@ -252,11 +252,16 @@ def mpv_enrich2(args, media) -> List[dict]:
     if args.print:
         reverse_chronology = not reverse_chronology
 
-    return sorted(
+    media = sorted(
         filtered_list,
         key=lambda m: m.get("time_partial_last") or m.get("time_partial_first") or 0,
         reverse=reverse_chronology,
     )
+
+    if args.skip:
+        media = media[int(args.skip) :]
+
+    return media
 
 
 def dict_filter_bool(kwargs, keep_0=True) -> Optional[dict]:
