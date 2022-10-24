@@ -17,7 +17,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
     pip install xklb
 
     $ library
-    xk media library subcommands (v1.19.011)
+    xk media library subcommands (v1.19.012)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -236,6 +236,11 @@ Organize via separate databases.
         library watch --cast --cast-to "Office pair"
         library watch -ct "Office pair"  # equivalent
         If you don't know the exact name of your chromecast group run `catt scan`
+
+    Play recent partially-watched videos (requires mpv history):
+        library watch --partial       # play newest first
+        library watch --partial old   # play oldest first
+        library watch -P o            # equivalent
 
     Print instead of play:
         library watch --print --limit 10  # print the next 10 files

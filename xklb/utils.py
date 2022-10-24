@@ -245,7 +245,18 @@ def mpv_enrich2(args, media) -> List[dict]:
         if md5s.get(p.stem)
     ]
 
-    return sorted(filtered_list, key=lambda m: m.get("time_partial_first") or 0, reverse=False)
+    reverse_chronology = True
+    if "o" in args.partial:
+        reverse_chronology = False
+
+    if args.print:
+        reverse_chronology = not reverse_chronology
+
+    return sorted(
+        filtered_list,
+        key=lambda m: m.get("time_partial_last") or m.get("time_partial_first") or 0,
+        reverse=reverse_chronology,
+    )
 
 
 def dict_filter_bool(kwargs, keep_0=True) -> Optional[dict]:

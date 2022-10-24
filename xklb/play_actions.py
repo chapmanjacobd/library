@@ -42,7 +42,7 @@ def construct_query(args) -> Tuple[str, dict]:
     else:
         construct_search_bindings(args, bindings, cf, m_columns)
 
-    if args.table == "media" and not args.print:
+    if args.table == "media" and not any([args.partial, args.print]):
         limit = 60_000
         if args.random:
             if args.include:
@@ -115,6 +115,11 @@ def usage(action, default_db) -> str:
         library {action} --cast --cast-to "Office pair"
         library {action} -ct "Office pair"  # equivalent
         If you don't know the exact name of your chromecast group run `catt scan`
+
+    Play recent partially-watched videos (requires mpv history):
+        library {action} --partial       # play newest first
+        library {action} --partial old   # play oldest first
+        library {action} -P o            # equivalent
 
     Print instead of play:
         library {action} --print --limit 10  # print the next 10 files
@@ -341,6 +346,8 @@ def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
     parser.add_argument("--chromecast-device", "--cast-to", "-t", default=default_chromecast, help=argparse.SUPPRESS)
     parser.add_argument("--chromecast", "--cast", "-c", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--with-local", "-wl", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--loop", action="store_true", help=argparse.SUPPRESS)
+
     parser.add_argument("--interdimensional-cable", "-4dtv", type=int, help=argparse.SUPPRESS)
     parser.add_argument(
         "--multiple-playback",
@@ -352,12 +359,11 @@ def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
         help=argparse.SUPPRESS,
     )
     parser.add_argument("--screen-name", help=argparse.SUPPRESS)
-    parser.add_argument("--loop", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--crop", "--zoom", "--stretch", "--fit", "--fill", action="store_true", help=argparse.SUPPRESS)
-
-    parser.add_argument("--portrait", "-portrait", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--hstack", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--vstack", action="store_true", help=argparse.SUPPRESS)
+
+    parser.add_argument("--portrait", "-portrait", action="store_true", help=argparse.SUPPRESS)
 
     parser.add_argument("--prefix", default="", help=argparse.SUPPRESS)
 
@@ -370,6 +376,9 @@ def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
     parser.add_argument("--cols", "-cols", "-col", nargs="*", help=argparse.SUPPRESS)
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", help=argparse.SUPPRESS)
     parser.add_argument("--skip", "-S", help=argparse.SUPPRESS)
+    parser.add_argument(
+        "--partial", "-P", "--recent", "-R", default=False, const="n", nargs="?", help=argparse.SUPPRESS
+    )
 
     parser.add_argument("--start", "-vs", help=argparse.SUPPRESS)
     parser.add_argument("--end", "-ve", help=argparse.SUPPRESS)
@@ -410,9 +419,9 @@ def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
 
     if not args.limit:
         args.defaults.append("limit")
-        if all([not args.print, args.action in (SC.listen, SC.watch, SC.read)]):
+        if all([not args.print, not args.partial, args.action in (SC.listen, SC.watch, SC.read)]):
             args.limit = consts.DEFAULT_PLAY_QUEUE
-        elif all([not args.print, args.action in (SC.view)]):
+        elif all([not args.print, not args.partial, args.action in (SC.view)]):
             args.limit = consts.DEFAULT_PLAY_QUEUE * 4
     elif args.limit in ("inf", "all"):
         args.limit = None
@@ -570,10 +579,20 @@ def process_playqueue(args) -> None:
 
     media = list(args.db.query(query, bindings))
 
+    if args.partial and Path(args.watch_later_directory).exists():
+        media = utils.mpv_enrich2(args, media)
+
     if not media:
         utils.no_media_found()
 
-    if all([Path(args.watch_later_directory).exists(), args.play_in_order <= 1, "sort" in args.defaults]):
+    if all(
+        [
+            Path(args.watch_later_directory).exists(),
+            args.play_in_order <= 1,
+            "sort" in args.defaults,
+            not args.partial,
+        ]
+    ):
         media = utils.mpv_enrich(args, media)
 
     if args.multiple_playback:

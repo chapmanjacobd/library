@@ -626,7 +626,7 @@ def printer(args, query, bindings) -> None:
 
     media = list(args.db.query(query, bindings))
 
-    if "v" in args.print and Path(args.watch_later_directory).exists():
+    if args.partial and Path(args.watch_later_directory).exists():
         media = utils.mpv_enrich2(args, media)
 
     if args.verbose >= 2 and args.cols and "*" in args.cols:
@@ -673,7 +673,7 @@ def printer(args, query, bindings) -> None:
     else:
         tbl = deepcopy(media)
         utils.col_resize(tbl, "path", 22)
-        utils.col_resize(tbl, "title", 18)
+        utils.col_resize(tbl, "title", 11)
 
         utils.col_naturalsize(tbl, "size")
         utils.col_duration(tbl, "duration")
