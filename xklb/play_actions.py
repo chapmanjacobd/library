@@ -67,7 +67,7 @@ def construct_query(args) -> Tuple[str, dict]:
     cols = args.cols or ["path", "title", duration, "size", "sparseness", "subtitle_count", "is_dir"]
     SELECT = "\n,".join([c for c in cols if c in m_columns or c == "*"])
     LIMIT = "LIMIT " + str(args.limit) if args.limit else ""
-    OFFSET = f"OFFSET {args.skip}" if args.skip else ""
+    OFFSET = f"OFFSET {args.skip}" if args.skip and args.limit else ""
     query = f"""SELECT
         {SELECT}
     FROM {args.table}
