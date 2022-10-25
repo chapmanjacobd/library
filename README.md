@@ -17,7 +17,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
     pip install xklb
 
     $ library
-    xk media library subcommands (v1.19.014)
+    xk media library subcommands (v1.19.015)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -63,7 +63,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
     mining:
       lb reddit-selftext       Stored selftext external links -> db media table
       lb pushshift             Convert Pushshift jsonl.zstd -> reddit.db format (stdin)
-      lb nfb-films             Director links -> film links (stdin)
+      lb nfb-films             NFB Director links -> film links (stdin)
       lb nouns                 Unstructured text -> compound nouns (stdin)
       lb hnadd                 Create a hackernews database (this takes a few days)
     
