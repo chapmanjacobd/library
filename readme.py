@@ -1,7 +1,7 @@
 from xklb import lb, play_actions
 
 print(
-    rf"""# lb: xk media library
+    rf"""# xk media: library
 
 A wise philosopher once told me, "[The future is autotainment](https://www.youtube.com/watch?v=F9sZFrsjPp0)".
 
