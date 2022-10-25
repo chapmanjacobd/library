@@ -61,9 +61,10 @@ def usage() -> str:
       lb surf                  Load browser tabs in a streaming way (stdin)
 
     mining:
-      lb reddit-selftext       Save stored selftext external links to media table
-      lb pushshift             Convert Pushshift jsonl.zstd to reddit.db format (stdin)
+      lb reddit-selftext       Stored selftext external links -> db media table
+      lb pushshift             Convert Pushshift jsonl.zstd -> reddit.db format (stdin)
       lb nfb-films             Director links -> film links (stdin)
+      lb nouns                 Unstructured text -> compound nouns (stdin)
       lb hnadd                 Create a hackernews database (this takes a few days)
     """
 
@@ -170,6 +171,9 @@ def lb(args=None) -> None:
     subp_tabs.set_defaults(func=tabs)
     subp_surf = add_parser(subparsers, "surf", ["browse", "load"])
     subp_surf.set_defaults(func=scripts.streaming_tab_loader)
+
+    subp_nouns = add_parser(subparsers, "nouns")
+    subp_nouns.set_defaults(func=scripts.nouns)
 
     subp_reddit_selftext = add_parser(subparsers, "reddit-selftext", ["rst"])
     subp_reddit_selftext.set_defaults(func=scripts.parse_reddit_selftext)
