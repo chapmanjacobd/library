@@ -63,7 +63,7 @@ def usage() -> str:
     mining:
       lb reddit-selftext       Stored selftext external links -> db media table
       lb pushshift             Convert Pushshift jsonl.zstd -> reddit.db format (stdin)
-      lb nfb-films             Director links -> film links (stdin)
+      lb nfb-films             NFB Director links -> film links (stdin)
       lb nouns                 Unstructured text -> compound nouns (stdin)
       lb hnadd                 Create a hackernews database (this takes a few days)
     """
