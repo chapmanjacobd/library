@@ -1,4 +1,4 @@
-# lb: xk media library
+# xk media: library
 
 A wise philosopher once told me, "[The future is autotainment](https://www.youtube.com/watch?v=F9sZFrsjPp0)".
 
