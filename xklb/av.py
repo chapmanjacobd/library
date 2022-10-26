@@ -147,6 +147,7 @@ def munge_av_tags(args, media, f) -> Optional[dict]:
                     tags.get("DESCRIPTION"),
                     tags.get("SYNOPSIS"),
                     tags.get("ARTIST"),
+                    tags.get("COMMENT"),
                     tags.get("comment"),
                 ),
                 "time_created": upload_date,

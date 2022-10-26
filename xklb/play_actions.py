@@ -37,6 +37,7 @@ def construct_query(args) -> Tuple[str, dict]:
     if args.db["media"].detect_fts():
         if args.include:
             args.table = db.fts_search(args, bindings)
+            m_columns = {**m_columns, "rank": int}
         elif args.exclude:
             construct_search_bindings(args, bindings, cf, m_columns)
     else:
@@ -64,7 +65,7 @@ def construct_query(args) -> Tuple[str, dict]:
     if args.action == SC.read:
         duration = "cast(length(tags) / 4.2 / 220 * 60 as INT) + 10 duration"
 
-    cols = args.cols or ["path", "title", duration, "size", "sparseness", "subtitle_count", "is_dir"]
+    cols = args.cols or ["path", "title", duration, "size", "sparseness", "subtitle_count", "is_dir", "rank"]
     SELECT = "\n,".join([c for c in cols if c in m_columns or c == "*"])
     LIMIT = "LIMIT " + str(args.limit) if args.limit else ""
     OFFSET = f"OFFSET {args.skip}" if args.skip and args.limit else ""

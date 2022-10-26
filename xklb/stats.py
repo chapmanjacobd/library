@@ -50,7 +50,6 @@ def construct_query(args) -> Tuple[str, dict]:
     args.sql_filter = " ".join(cf)
 
     LIMIT = "LIMIT " + str(args.limit) if args.limit else ""
-
     query = f"""SELECT
         *
     FROM {args.table}
