@@ -1,4 +1,5 @@
 import sys
+from datetime import datetime
 from typing import Dict, Optional
 
 import ffmpeg, mutagen
@@ -123,7 +124,6 @@ def munge_av_tags(args, media, f) -> Optional[dict]:
 
     format_ = probe["format"]
     format_.pop("size", None)
-    format_.pop("tags", None)
     format_.pop("bit_rate", None)
     format_.pop("format_name", None)
     format_.pop("format_long_name", None)
@@ -132,11 +132,29 @@ def munge_av_tags(args, media, f) -> Optional[dict]:
     format_.pop("probe_score", None)
     format_.pop("start_time", None)
     format_.pop("filename", None)
+
     duration = format_.pop("duration", None)
+    tags = format_.pop("tags", None)
+    if tags:
+        upload_date = tags.get("DATE")
+        if upload_date:
+            upload_date = int(datetime.strptime(upload_date, "%Y%m%d").timestamp())
+        tags = utils.dict_filter_bool(
+            {
+                "title": tags.get("title"),
+                "webpath": tags.get("PURL"),
+                "description": combine(
+                    tags.get("DESCRIPTION"),
+                    tags.get("SYNOPSIS"),
+                    tags.get("ARTIST"),
+                    tags.get("comment"),
+                ),
+                "time_created": upload_date,
+            }
+        )
 
     if format_ != {}:
         log.info("Extra data %s", format_)
-        # breakpoint()
 
     streams = probe["streams"]
 
@@ -179,6 +197,7 @@ def munge_av_tags(args, media, f) -> Optional[dict]:
         "fps": fps,
         "duration": 0 if not duration else int(float(duration)),
         "language": language,
+        **(tags or {}),
     }
 
     if args.profile == DBType.video:
