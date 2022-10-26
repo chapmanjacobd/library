@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "xklb"
-version = "1.19.016"
+version = "1.19.017"
 description = "xk library"
 authors = ["Jacob Chapman <7908073+chapmanjacobd@users.noreply.github.com>"]
 readme = "README.md"
@@ -16,6 +16,8 @@ include = ["assets/*"]
 
 [tool.poetry.dependencies]
 python = "^3.8"
+protobuf = "<4"
+sqlite-utils = ">=3.30"
 catt = "*"
 ffmpeg-python = "*"
 ftfy = "*"
@@ -23,32 +25,30 @@ gallery-dl = "*"
 humanize = "*"
 ipython = "*"
 joblib = "*"
+Markdown = "*"
 mutagen = "*"
 natsort = "*"
 praw = "*"
-protobuf = "<4"
 pysubs2 = "*"
 python-mpv-jsonipc = "*"
+regex = "*"
 rich = "*"
 screeninfo = "*"
-sqlite-utils = "*"
 subliminal = "*"
 tabulate = "*"
 tinytag = "*"
 yt-dlp = "*"
-Markdown = "*"
-regex = "*"
 
 [tool.poetry.extras]
 full = ["textract", "PyExifTool", "aiohttp", "brotab", "orjson"]
 
 [tool.poetry.group.dev.dependencies]
-scalene = "*"
 black = "*"
 ipdb = "*"
 isort = "*"
 pylint = "*"
 pytest = "*"
+scalene = "*"
 ssort = "*"
 
 [build-system]
