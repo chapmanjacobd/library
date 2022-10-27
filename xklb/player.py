@@ -611,14 +611,14 @@ def local_player(args, m, media_file) -> subprocess.CompletedProcess:
 
 
 def printer(args, query, bindings) -> None:
-    columns = args.db["media"].columns_dict
+    # columns = args.db["media"].columns_dict
     if "a" in args.print:
         query = f"""select
             "Aggregate" as path
-            {', sum(duration) duration' if 'duration' in columns else ''}
-            {', avg(duration) avg_duration' if 'duration' in columns else ''}
-            {', sparseness' if 'sparseness' in columns else ''}
-            {', sum(size) size' if 'size' in columns else ''}
+            {', sum(duration) duration' if 'duration' in query else ''}
+            {', avg(duration) avg_duration' if 'duration' in query else ''}
+            {', sparseness' if 'sparseness' in query else ''}
+            {', sum(size) size' if 'size' in query else ''}
             , count(*) count
             {', ' + ', '.join([f'sum({c}) sum_{c}' for c in args.cols]) if args.cols else ''}
             {', ' + ', '.join([f'avg({c}) avg_{c}' for c in args.cols]) if args.cols else ''}
@@ -684,7 +684,7 @@ def printer(args, query, bindings) -> None:
 
         print(tabulate(tbl, tablefmt="fancy_grid", headers="keys", showindex=False))
 
-        if "duration" in columns:
+        if "duration" in query:
             if len(media) >= 2:
                 print(f"{len(media)} media" + (f" (limited to {args.limit})" if args.limit else ""))
 
