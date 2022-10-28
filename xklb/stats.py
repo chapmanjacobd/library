@@ -161,7 +161,7 @@ def playlists() -> None:
         from media
         left join ({query}) p on {db.get_playlists_join(args)}
         group by coalesce(p.path, "Playlist-less media")
-        order by category nulls last, p.path"""
+        order by p.category nulls last, p.path"""
 
     printer(args, query, bindings)
 
