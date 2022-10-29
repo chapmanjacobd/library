@@ -21,8 +21,8 @@ class MLStripper(HTMLParser):
         self.convert_charrefs = True
         self.text = StringIO()
 
-    def handle_data(self, d):
-        self.text.write(d)
+    def handle_data(self, data):
+        self.text.write(data)
 
     def get_data(self):
         return self.text.getvalue()

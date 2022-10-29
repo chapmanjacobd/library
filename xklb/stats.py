@@ -156,21 +156,22 @@ def playlists() -> None:
     m_columns = args.db["media"].columns_dict
     query, bindings = construct_query(args)
 
-    query = f"""
-    select
-        p.ie_key
-        {', p.title' if 'title' in pl_columns else ''}
-        {', p.time_deleted' if 'time_deleted' in pl_columns else ''}
-        {', count(*) FILTER(WHERE play_count>0) play_count' if 'play_count' in m_columns else ''}
-        , coalesce(p.path, "Playlist-less media") path
-        {', sum(media.duration) duration' if 'duration' in m_columns else ''}
-        {', sum(media.size) size' if 'size' in m_columns else ''}
-        , count(*) count
-    from media
-    left join ({query}) p on (p.ie_key = media.ie_key and media.ie_key != 'Local' and p.path = media.playlist_path)
-    group by coalesce(p.path, "Playlist-less media")
-    order by count, p.category nulls last, p.path
-    """
+    if "playlist_path" in m_columns:
+        query = f"""
+        select
+            p.ie_key
+            {', p.title' if 'title' in pl_columns else ''}
+            {', p.time_deleted' if 'time_deleted' in pl_columns else ''}
+            {', count(*) FILTER(WHERE play_count>0) play_count' if 'play_count' in m_columns else ''}
+            , coalesce(p.path, "Playlist-less media") path
+            {', sum(media.duration) duration' if 'duration' in m_columns else ''}
+            {', sum(media.size) size' if 'size' in m_columns else ''}
+            , count(*) count
+        from media
+        left join ({query}) p on (p.ie_key = media.ie_key and media.ie_key != 'Local' and p.path = media.playlist_path)
+        group by coalesce(p.path, "Playlist-less media")
+        order by count, p.category nulls last, p.path
+        """
 
     if args.aggregate:
         query = f"""
