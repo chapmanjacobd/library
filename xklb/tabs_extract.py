@@ -5,8 +5,8 @@ from typing import List
 from urllib.parse import urlparse
 
 from xklb import db, player, utils
-from xklb.consts import Frequency, sanitize_url
-from xklb.utils import argparse_enum, log
+from xklb.consts import Frequency
+from xklb.utils import argparse_enum, log, sanitize_url
 
 
 def parse_args() -> argparse.Namespace:

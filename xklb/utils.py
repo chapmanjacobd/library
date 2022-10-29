@@ -123,6 +123,21 @@ def conform(list_: Union[str, Iterable]) -> List:
     return list_
 
 
+def sanitize_url(args, path: str) -> str:
+    matches = consts.REGEX_SUBREDDIT.match(path)
+    if matches:
+        subreddit = conform(matches.groups())[0]
+        frequency = consts.Frequency.Monthly
+        if hasattr(args, "frequency"):
+            frequency = args.frequency
+        return "https://old.reddit.com/r/" + subreddit + "/top/?sort=top&t=" + consts.reddit_frequency(frequency)
+
+    if "/m." in path:
+        return path.replace("/m.", "/www.")
+
+    return path
+
+
 def cmd(*command, strict=True, cwd=None, quiet=True, interactive=False, **kwargs) -> subprocess.CompletedProcess:
     EXP_FILTER = re.compile(
         "|".join(
