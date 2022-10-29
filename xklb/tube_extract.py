@@ -46,7 +46,7 @@ def parse_args(action, usage) -> argparse.Namespace:
     args.db = db.connect(args)
 
     if hasattr(args, "no_sanitize") and hasattr(args, "playlists") and not args.no_sanitize:
-        args.playlists = [consts.sanitize_url(args, p) for p in args.playlists]
+        args.playlists = [utils.sanitize_url(args, p) for p in args.playlists]
     if hasattr(args, "playlists"):
         args.playlists = utils.conform(args.playlists)
     log.info(utils.dict_filter_bool(args.__dict__))
@@ -91,7 +91,7 @@ def tube_add(args=None) -> None:
 
     for path in args.playlists:
         if args.safe and not tube_backend.is_supported(path):
-            log.warning("[%s]: Unsupported playlist (safe_mode)", path)
+            log.info("[%s]: Unsupported playlist (safe_mode)", path)
             continue
 
         tube_backend.process_playlist(args, path, tube_backend.tube_opts(args))

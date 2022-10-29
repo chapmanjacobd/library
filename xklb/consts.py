@@ -94,21 +94,6 @@ def reddit_frequency(frequency: Frequency) -> str:
     return mapper[frequency]
 
 
-def sanitize_url(args, path: str) -> str:
-    matches = REGEX_SUBREDDIT.match(path)
-    if matches:
-        subreddit = matches.groups()[0]
-        frequency = Frequency.Monthly
-        if hasattr(args, 'frequency'):
-            frequency = args.frequency
-        return "https://old.reddit.com/r/" + subreddit + "/top/?sort=top&t=" + reddit_frequency(frequency)
-
-    if "/m." in path:
-        return path.replace("/m.", "/www.")
-
-    return path
-
-
 def get_text_files(path: Path, OCR=False, speech_recognition=False) -> List[str]:
     TEXTRACT_EXTENSIONS = "csv|tab|tsv|doc|docx|eml|epub|json|htm|html|msg|odt|pdf|pptx|ps|rtf|txt|log|xlsx|xls"
     if OCR:

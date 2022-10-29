@@ -119,7 +119,7 @@ def tube_opts(args, func_opts=None, playlist_opts: Optional[str] = None) -> dict
     log.debug(utils.dict_filter_bool(all_opts))
 
     if hasattr(args, "playlists") and args.playlists and hasattr(args, "no_sanitize") and not args.no_sanitize:
-        args.playlists = [consts.sanitize_url(args, path) for path in args.playlists]
+        args.playlists = [utils.sanitize_url(args, path) for path in args.playlists]
 
     return all_opts
 
@@ -309,7 +309,7 @@ def process_playlist(args, playlist_path, ydl_opts, playlist_root=True) -> Optio
             log_problem(args, playlist_path)
         else:
             sys.stdout.write("\n")
-            if not pl:
+            if not pl and not args.safe:
                 log.warning("Logging undownloadable media")
                 save_undownloadable(args, playlist_path)
 
