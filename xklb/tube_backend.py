@@ -484,10 +484,10 @@ def yt(args, m) -> None:
         playlist_opts=m.get("dl_config", "{}"),
     )
 
-    download_archive = Path("~/.local/share/yt_archive.txt").resolve()
+    download_archive = Path("~/.local/share/yt_archive.txt").expanduser().resolve()
     if download_archive.exists():
         ydl_opts["download_archive"] = str(download_archive)
-        ydl_opts["cookiesfrombrowser"] = (("firefox",),)
+        ydl_opts["cookiesfrombrowser"] = ("firefox",)
 
     if args.small:
         ydl_opts["format"] = "bestvideo[height<=576]+bestaudio/best[height<=576]/best"

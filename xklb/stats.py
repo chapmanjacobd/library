@@ -4,7 +4,7 @@ from typing import Tuple
 
 from tabulate import tabulate
 
-from xklb import consts, db, utils
+from xklb import consts, db, dl_extract, utils
 from xklb.play_actions import construct_search_bindings
 from xklb.player import delete_playlists
 from xklb.utils import human_time, log
@@ -15,13 +15,20 @@ def parse_args(prog, usage):
     parser.add_argument("--fields", "-f", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--aggregate", "-a", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--json", "-j", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--sort", "-u", nargs="+", default="path", help=argparse.SUPPRESS)
+    parser.add_argument("--sort", "-u", nargs="+", help=argparse.SUPPRESS)
     parser.add_argument("--where", "-w", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--include", "-s", "--search", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--duration", "-d", action="append", help=argparse.SUPPRESS)
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", help=argparse.SUPPRESS)
     parser.add_argument("--delete", "--remove", "--erase", "--rm", "-rm", nargs="+", help=argparse.SUPPRESS)
+    if "dlstatus" in prog:
+        parser.add_argument(
+            "--retry-delay",
+            "-r",
+            default="14 days",
+            help="Must be specified in SQLITE Modifiers format: N hours, days, months, or years",
+        )
 
     parser.add_argument("-v", "--verbose", action="count", default=0)
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
@@ -58,7 +65,8 @@ def construct_query(args) -> Tuple[str, dict]:
         {args.sql_filter}
         and (category is null or category != '{consts.BLOCK_THE_CHANNEL}')
     ORDER BY 1=1
-        {', ' + args.sort}
+        {', ' + args.sort if args.sort else ''}
+        , path
         , random()
     {LIMIT}
     """
@@ -211,21 +219,19 @@ def dlstatus() -> None:
     if args.delete:
         return delete_playlists(args, args.delete)
 
-    m_columns = args.db["media"].columns_dict
-    query, bindings = construct_query(args)
+    query, bindings = dl_extract.construct_query(args)
     query = f"""select
-        coalesce(p.category, "Playlist-less media") category
-        {', media.ie_key' if 'ie_key' in m_columns else ''}
-        {', sum(media.duration) duration' if 'duration' in m_columns else ''}
-        , count(*) FILTER(WHERE time_modified=0) never_downloaded
-        {', count(*) FILTER(WHERE time_modified>0 AND error IS NOT NULL) errors' if 'error' in m_columns else ''}
-        --{', group_concat(distinct media.error) error_descriptions' if 'error' in m_columns else ''}
-    from media
-    left join ({query}) p on {db.get_playlists_join(args)}
+        coalesce(category, "Playlist-less media") category
+        {', media.ie_key' if 'ie_key' in query else ''}
+        {', sum(media.duration) duration' if 'duration' in query else ''}
+        {', count(*) FILTER(WHERE time_modified=0) never_downloaded' if 'time_modified' in query else ''}
+        {', count(*) FILTER(WHERE time_modified>0 AND error IS NOT NULL) errors' if 'error' in query else ''}
+        {', group_concat(distinct media.error) error_descriptions' if 'error' in query and args.verbose >= 1 else ''}
+    from ({query}) media
     where 1=1
         and media.time_downloaded=0
         and media.time_deleted=0
-    group by p.ie_key, p.category
-    order by p.category nulls last"""
+    group by ie_key, category
+    order by category nulls last"""
 
     printer(args, query, bindings)

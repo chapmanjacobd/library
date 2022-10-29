@@ -118,6 +118,11 @@ def construct_query(args) -> Tuple[str, dict]:
             {', media.duration' if 'duration' in m_columns else ''}
             , media.time_created
             {', media.size' if 'size' in m_columns else ''}
+            {', media.ie_key' if 'ie_key' in m_columns else ''}
+            {', media.time_modified' if 'time_modified' in m_columns else ''}
+            {', media.time_downloaded' if 'time_downloaded' in m_columns else ''}
+            {', media.time_deleted' if 'time_deleted' in m_columns else ''}
+            {', media.error' if 'error' in m_columns else ''}
             {', media.id' if 'id' in m_columns else ''}
             {', p.dl_config' if 'dl_config' in pl_columns else ''}
             , coalesce(p.category, p.ie_key) category
