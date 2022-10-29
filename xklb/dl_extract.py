@@ -122,9 +122,9 @@ def construct_query(args) -> Tuple[str, dict]:
             {', p.dl_config' if 'dl_config' in pl_columns else ''}
             , coalesce(p.category, p.ie_key) category
         FROM media
-        LEFT JOIN playlists p on {db.get_playlists_join(args)}
+        LEFT JOIN playlists p on (p.ie_key != 'Local' and p.ie_key = media.ie_key and p.path = media.playlist_path)
         WHERE 1=1
-            and (media.time_downloaded=0 OR media.time_modified > media.time_downloaded)
+            and media.time_downloaded=0
             and media.time_deleted=0
             and (p.time_deleted is null or p.time_deleted=0)
             {'AND (score IS NULL OR score > 7)' if 'score' in m_columns else ''}
