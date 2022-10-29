@@ -70,12 +70,12 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
 
 ## Quick Start -- watch online media on your PC
 
-    wget https://github.com/chapmanjacobd/lb/raw/main/examples/mealtime.tw.db
+    wget https://github.com/chapmanjacobd/library/raw/main/examples/mealtime.tw.db
     library watch mealtime.tw.db
 
 ## Quick Start -- listen to online media on a chromecast group
 
-    wget https://github.com/chapmanjacobd/lb/raw/main/examples/music.tl.db
+    wget https://github.com/chapmanjacobd/library/raw/main/examples/music.tl.db
     library listen music.tl.db -ct "House speakers"
 
 ## Start -- local media

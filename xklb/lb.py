@@ -98,7 +98,7 @@ def lb(args=None) -> None:
     parser = argparse.ArgumentParser(
         prog="lb",
         description="xk media library",
-        epilog="Report bugs here: https://github.com/chapmanjacobd/lb/issues/new/choose",
+        epilog="Report bugs here: https://github.com/chapmanjacobd/library/issues/new/choose",
         add_help=False,
     )
     subparsers = parser.add_subparsers()
