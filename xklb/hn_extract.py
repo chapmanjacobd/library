@@ -42,7 +42,6 @@ def get(url):
 def parse_args(prog, usage) -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog, usage)
     parser.add_argument("--oldest", action="store_true")
-    parser.add_argument("--resume", action="store_true")
 
     parser.add_argument("--verbose", "-v", action="count", default=0)
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
@@ -68,6 +67,7 @@ def db_worker(args, input_queue):
             break
 
         hn_type, data = r
+        log.info("Saving %s %s", hn_type, data["id"])
         db_conn["hn_" + hn_type].insert(data, pk="id", alter=True)  # type: ignore
 
 
@@ -101,7 +101,7 @@ async def run(args, db_queue):
             hn_ids = reversed(hn_ids)
 
         for hn_id in hn_ids:
-            log.info("Getting %s", hn_id)
+            log.debug("Getting item %s", hn_id)
             await sem.acquire()
             asyncio.create_task(get_hn_item(session, db_queue, sem, hn_id))
 
@@ -112,15 +112,20 @@ async def run(args, db_queue):
 def hacker_news_add() -> None:
     args = parse_args(
         prog="library hnadd",
-        usage="""library hnadd [--oldest] [--resume] database
+        usage="""library hnadd [--oldest] database
 
     Fetch latest stories first:
 
-        library hnadd hn.db
+        library hnadd hn.db -v
+        Fetching 154873 items (33212696 to 33367569)
+        Saving comment 33367568
+        Saving comment 33367543
+        Saving comment 33367564
+        ...
 
-    Fetch oldest stories first and download any gaps:
+    Fetch oldest stories first:
 
-        library hnadd --oldest --resume hn.db
+        library hnadd --oldest hn.db
     """,
     )
     try:
@@ -141,7 +146,7 @@ def hacker_news_add() -> None:
                 LAG (id, 1) OVER (ORDER BY id) AS oldest_id,
                 id - (LAG (id, 1) OVER (ORDER BY id)) AS diff
             FROM (
-                {'SELECT id FROM hn_story' if 'hn_story' in tables else 'SELECT 1'}
+                {'SELECT id FROM hn_story' if 'hn_story' in tables else 'SELECT 1 as id'}
                 {'UNION ALL SELECT id FROM hn_comment' if 'hn_comment' in tables else ''}
                 {'UNION ALL SELECT id FROM hn_job' if 'hn_job' in tables else ''}
                 {'UNION ALL SELECT id FROM hn_poll' if 'hn_poll' in tables else ''}
@@ -162,6 +167,8 @@ def hacker_news_add() -> None:
     for gap in r:
         args.latest_id = gap["latest_id"]
         args.oldest_id = gap["oldest_id"]
+
+        log.info("Fetching %s items (%s to %s)", args.latest_id - args.oldest_id, args.oldest_id, args.latest_id)
 
         db_queue = queue.Queue()
         db_thread = threading.Thread(target=db_worker, args=(args, db_queue))
