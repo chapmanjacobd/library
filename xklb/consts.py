@@ -91,14 +91,17 @@ def reddit_frequency(frequency: Frequency) -> str:
         Frequency.Yearly: "year",
     }
 
-    return mapper.get(frequency, "month")
+    return mapper[frequency]
 
 
 def sanitize_url(args, path: str) -> str:
     matches = REGEX_SUBREDDIT.match(path)
     if matches:
         subreddit = matches.groups()[0]
-        return "https://old.reddit.com/r/" + subreddit + "/top/?sort=top&t=" + reddit_frequency(args.frequency)
+        frequency = Frequency.Monthly
+        if hasattr(args, 'frequency'):
+            frequency = args.frequency
+        return "https://old.reddit.com/r/" + subreddit + "/top/?sort=top&t=" + reddit_frequency(frequency)
 
     if "/m." in path:
         return path.replace("/m.", "/www.")
