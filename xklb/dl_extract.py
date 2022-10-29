@@ -206,8 +206,9 @@ def dl_download(args=None) -> None:
     """,
     )
 
-    with args.db.conn:
-        args.db.conn.execute("DELETE from media WHERE webpath is NULL and path in (select webpath from media)")
+    if "media" in args.db.table_names() and "webpath" in args.db["media"].columns_dict:
+        with args.db.conn:
+            args.db.conn.execute("DELETE from media WHERE webpath is NULL and path in (select webpath from media)")
 
     media = process_downloadqueue(args)
     for m in media:
