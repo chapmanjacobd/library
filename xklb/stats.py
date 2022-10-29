@@ -84,6 +84,7 @@ def printer(args, query, bindings) -> None:
     utils.col_naturaldate(tbl, "avg_time_since_download")
     utils.col_naturalsize(tbl, "size")
     utils.col_duration(tbl, "duration")
+    utils.col_duration(tbl, "avg_playlist_duration")
 
     if args.fields:
         print("\n".join(list(map(operator.itemgetter("path"), media))))
@@ -91,8 +92,11 @@ def printer(args, query, bindings) -> None:
     elif args.json or consts.TERMINAL_SIZE.columns < 80:
         print(json.dumps(tbl, indent=3))
     else:
-        tbl = utils.col_resize(tbl, "path", 40)
+        tbl = utils.col_resize(tbl, "path", 30)
+        tbl = utils.col_resize(tbl, "title", 20)
         tbl = utils.col_resize(tbl, "uploader_url")
+
+        tbl = utils.list_dict_filter_bool(tbl, keep_0=False)
 
         print(tabulate(tbl, tablefmt="fancy_grid", headers="keys", showindex=False))
 
@@ -153,23 +157,34 @@ def playlists() -> None:
     query, bindings = construct_query(args)
 
     query = f"""
-        select *
-        from ({query})
+    select
+        p.ie_key
+        {', p.title' if 'title' in pl_columns else ''}
+        {', p.time_deleted' if 'time_deleted' in pl_columns else ''}
+        {', count(*) FILTER(WHERE play_count>0) play_count' if 'play_count' in m_columns else ''}
+        , coalesce(p.path, "Playlist-less media") path
+        {', sum(media.duration) duration' if 'duration' in m_columns else ''}
+        {', sum(media.size) size' if 'size' in m_columns else ''}
+        , count(*) count
+    from media
+    left join ({query}) p on (p.ie_key = media.ie_key and media.ie_key != 'Local' and p.path = media.playlist_path)
+    group by coalesce(p.path, "Playlist-less media")
+    order by count, p.category nulls last, p.path
     """
 
     if args.aggregate:
-        query = f"""select
-            p.ie_key
-            {', p.title' if 'title' in pl_columns else ''}
-            , p.category
-            , coalesce(p.path, "Playlist-less media") path
-            {', sum(media.duration) duration' if 'duration' in m_columns else ''}
-            {', sum(media.size) size' if 'size' in m_columns else ''}
-            , count(*) count
-        from media
-        left join ({query}) p on {db.get_playlists_join(args)}
-        group by coalesce(p.path, "Playlist-less media")
-        order by p.category nulls last, p.path"""
+        query = f"""
+        select
+            'Aggregate of playlists' path
+            {', count(*) FILTER(WHERE time_deleted>0) deleted_count' if 'time_deleted' in query else ''}
+            {', sum(play_count) play_count' if 'play_count' in query else ''}
+            {', sum(duration) duration' if 'duration' in query else ''}
+            {', avg(duration) avg_playlist_duration' if 'duration' in query else ''}
+            {', sum(size) size' if 'size' in query else ''}
+            , count(*) playlists_count
+            {', sum(count) videos_count' if 'count' in query else ''}
+        from ({query})
+        """
 
     printer(args, query, bindings)
 
