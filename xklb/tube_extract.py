@@ -21,6 +21,7 @@ def parse_args(action, usage) -> argparse.Namespace:
     parser.add_argument("--safe", "-safe", action="store_true", help="Skip generic URLs")
     parser.add_argument("--no-sanitize", "-s", action="store_true", help="Don't sanitize some common URL parameters")
     parser.add_argument("--extra", "-extra", action="store_true", help="Get full metadata (takes a lot longer)")
+    parser.add_argument("--playlist-files", action="store_true", help="Read playlists from text files")
     parser.add_argument("--extra-media-data", default={})
     parser.add_argument("--extra-playlist-data", default={})
     parser.add_argument("--ignore-errors", "--ignoreerrors", "-i", action="store_true", help=argparse.SUPPRESS)
@@ -85,6 +86,9 @@ def tube_add(args=None) -> None:
         library tubeupdate tw.db --extra
     """,
     )
+    if args.playlist_files:
+        args.playlists = utils.flatten([Path(p).read_text().splitlines() for p in args.playlists])
+
     for path in args.playlists:
         if args.safe and not tube_backend.is_supported(path):
             log.warning("[%s]: Unsupported playlist (safe_mode)", path)
