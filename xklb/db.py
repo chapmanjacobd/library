@@ -176,15 +176,3 @@ def get_playlists(args, cols="path, dl_config", constrain=False, sql_filters=Non
     except sqlite3.OperationalError:
         known_playlists = []
     return known_playlists
-
-
-def get_playlists_join(args):
-    media_columns = args.db["media"].columns_dict
-    if "ie_key" in media_columns:
-        join = "(p.ie_key = media.ie_key = 'Local' and media.path like p.path || '%' ) "
-        if "playlist_path" in media_columns:
-            join += "or (p.ie_key = media.ie_key and media.ie_key != 'Local' and p.path = media.playlist_path)"
-    else:
-        join = "p.path = media.playlist_path"
-
-    return join

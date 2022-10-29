@@ -290,8 +290,8 @@ def dict_filter_bool(kwargs, keep_0=True) -> Optional[dict]:
     return filtered_dict
 
 
-def list_dict_filter_bool(media: List[dict]) -> List[dict]:
-    return [d for d in [dict_filter_bool(d) for d in media] if d]
+def list_dict_filter_bool(media: List[dict], keep_0=True) -> List[dict]:
+    return [d for d in [dict_filter_bool(d, keep_0) for d in media] if d]
 
 
 def cmd_interactive(*command) -> subprocess.CompletedProcess:
