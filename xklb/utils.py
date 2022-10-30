@@ -452,3 +452,9 @@ class argparse_enum(argparse.Action):
 
 def filter_namespace(args, config_opts):
     return dict_filter_bool({k: v for k, v in args.__dict__.items() if k in config_opts})
+
+
+def ensure_playlists_exists(args):
+    if "playlists" not in args.db.table_names():
+        with args.db.conn:
+            args.db.conn.execute("create table playlists (path text, category text, ie_key text, time_deleted int)")

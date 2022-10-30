@@ -252,4 +252,6 @@ TUBE_IGNORE_KEYS = (
     "alt_title",
     "format_index",
     "requested_subtitles",
+    "entries",
+    "dislike_count",
 )

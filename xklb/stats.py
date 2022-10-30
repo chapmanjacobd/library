@@ -39,6 +39,7 @@ def parse_args(prog, usage):
 
 
 def construct_query(args) -> Tuple[str, dict]:
+    utils.ensure_playlists_exists(args)
     pl_columns = args.db["playlists"].columns_dict
     cf = []
     bindings = {}

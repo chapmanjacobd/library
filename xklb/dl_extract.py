@@ -83,6 +83,8 @@ def parse_args(action, usage):
 
 
 def construct_query(args) -> Tuple[str, dict]:
+    utils.ensure_playlists_exists(args)
+
     m_columns = args.db["media"].columns_dict
     pl_columns = args.db["playlists"].columns_dict
 

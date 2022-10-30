@@ -17,7 +17,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
     pip install xklb
 
     $ library
-    xk media library subcommands (v1.19.029)
+    xk media library subcommands (v1.19.030)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
