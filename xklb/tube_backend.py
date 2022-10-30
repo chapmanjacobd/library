@@ -388,7 +388,11 @@ def update_playlists(args, playlists):
 
 def save_tube_entry(args, m, info: Optional[dict] = None, error=None, URE=False) -> None:
     webpath = m["path"]
-    error = None if not error else error.replace(m.get("id", ""), "").replace(" :", ":")
+
+    v_id = m.get("id")
+    if v_id:
+        error = None if not error else error.replace(v_id, "").replace(" :", ":")
+
     if not info:  # not downloaded
         entry = {
             "path": webpath,

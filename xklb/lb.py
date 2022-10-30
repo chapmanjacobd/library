@@ -185,7 +185,7 @@ def lb(args=None) -> None:
     if args.version:
         return print(__version__)
 
-    log.info(__version__)
+    log.info("library v%s", __version__)
     log.info(sys.argv)
     original_argv = sys.argv
     if len(sys.argv) >= 2:
