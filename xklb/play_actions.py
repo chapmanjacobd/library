@@ -43,15 +43,16 @@ def construct_query(args) -> Tuple[str, dict]:
     else:
         construct_search_bindings(args, bindings, cf, m_columns)
 
-    if args.table == "media" and not any([args.partial, args.print]):
+    if args.table == "media" and not any([args.partial, args.print, args.include, args.where]):
         limit = 60_000
         if args.random:
-            if args.include:
-                args.sort = "random(), " + args.sort
-            else:
-                limit = consts.DEFAULT_PLAY_QUEUE * 16
+            limit = consts.DEFAULT_PLAY_QUEUE * 16
+
         if "limit" in args.defaults:
             cf.append(f"and rowid in (select rowid from media order by random() limit {limit})")
+    else:
+        if args.random:
+            args.sort = "random(), " + args.sort
 
     args.sql_filter = " ".join(cf)
     args.sql_filter_bindings = bindings
