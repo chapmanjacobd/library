@@ -46,9 +46,9 @@ new files will be read by `ffprobe`.
 
 ### 2. Watch / Listen from local files
 
-    library wt tv.db                          # the default post-action is to do nothing
-    library wt tv.db --post-action delete     # delete file after playing
-    library lt finalists.db --post-action=ask # ask whether to delete after playing
+    library watch tv.db                           # the default post-action is to do nothing
+    library watch tv.db --post-action delete      # delete file after playing
+    library listen finalists.db --post-action=ask # ask whether to delete after playing
 
 To stop playing press Ctrl+C in either the terminal or mpv
 

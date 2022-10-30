@@ -92,9 +92,9 @@ new files will be read by `ffprobe`.
 
 ### 2. Watch / Listen from local files
 
-    library wt tv.db                          # the default post-action is to do nothing
-    library wt tv.db --post-action delete     # delete file after playing
-    library lt finalists.db --post-action=ask # ask whether to delete after playing
+    library watch tv.db                           # the default post-action is to do nothing
+    library watch tv.db --post-action delete      # delete file after playing
+    library listen finalists.db --post-action=ask # ask whether to delete after playing
 
 To stop playing press Ctrl+C in either the terminal or mpv
 
@@ -272,7 +272,7 @@ Organize via separate databases.
         library watch -w 'duration is null' -p=a
 
         Print a list of filenames which have below 1280px resolution
-        library wt -w 'width<1280' -p=f
+        library watch -w 'width<1280' -p=f
 
         Print media you have partially viewed with mpv
         library watch -p=v
@@ -281,7 +281,7 @@ Organize via separate databases.
         library watch -w play_count'>'0 -p=a
 
         See how much video you have
-        library wt video.db -p=a
+        library watch video.db -p=a
         ╒═══════════╤═════════╤═════════╤═════════╕
         │ path      │   hours │ size    │   count │
         ╞═══════════╪═════════╪═════════╪═════════╡
