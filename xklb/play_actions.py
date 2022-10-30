@@ -152,7 +152,7 @@ def usage(action, default_db) -> str:
         library {action} -w 'duration is null' -p=a
 
         Print a list of filenames which have below 1280px resolution
-        library wt -w 'width<1280' -p=f
+        library {action} -w 'width<1280' -p=f
 
         Print media you have partially viewed with mpv
         library {action} -p=v
@@ -161,7 +161,7 @@ def usage(action, default_db) -> str:
         library {action} -w play_count'>'0 -p=a
 
         See how much video you have
-        library wt video.db -p=a
+        library {action} video.db -p=a
         ╒═══════════╤═════════╤═════════╤═════════╕
         │ path      │   hours │ size    │   count │
         ╞═══════════╪═════════╪═════════╪═════════╡
@@ -401,7 +401,7 @@ def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
     parser.add_argument("--shallow-organize", default="/mnt/d/", help=argparse.SUPPRESS)
 
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
-    parser.add_argument("--ignore-errors", "--ignoreerrors", "-i", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--ignore-errors", "--ignoreerrors", "-i", action="store_true")
     parser.add_argument("--safe", "-safe", action="store_true", help="Skip generic URLs")
     parser.add_argument("--verbose", "-v", action="count", default=0)
 
