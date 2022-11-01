@@ -17,7 +17,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
     pip install xklb
 
     $ library
-    xk media library subcommands (v1.19.033)
+    xk media library subcommands (v1.19.034)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -25,13 +25,13 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
 
       lb listen                Listen to local and online media
       lb watch                 Watch local and online media
+      lb read                  Read books
+      lb view                  View images
 
       lb bigdirs               Discover folders which take much room
       lb dedupe                Deduplicate audio files
-      lb christen              Cleanse files by giving them a new name
 
-      lb read                  Read books
-      lb view                  View images
+      lb christen              Cleanse files by giving them a new name
 
     online media:
       lb tubeadd               Create a tube database; Add playlists

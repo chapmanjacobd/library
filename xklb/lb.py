@@ -25,13 +25,13 @@ def usage() -> str:
 
       lb listen                Listen to local and online media
       lb watch                 Watch local and online media
+      lb read                  Read books
+      lb view                  View images
 
       lb bigdirs               Discover folders which take much room
       lb dedupe                Deduplicate audio files
-      lb christen              Cleanse files by giving them a new name
 
-      lb read                  Read books
-      lb view                  View images
+      lb christen              Cleanse files by giving them a new name
 
     online media:
       lb tubeadd               Create a tube database; Add playlists
@@ -92,7 +92,7 @@ def add_parser(subparsers, name, a=None):
     return subparsers.add_parser(name, aliases=aliases, add_help=False)
 
 
-def lb(args=None) -> None:
+def library(args=None) -> None:
     if args:
         sys.argv[2:] = args
 
@@ -126,9 +126,7 @@ def lb(args=None) -> None:
     subp_dedupe = add_parser(subparsers, "dedupe")
     subp_dedupe.set_defaults(func=scripts.deduplicate_music)
     subp_christen = add_parser(subparsers, "christen")
-    subp_christen.set_defaults(func=scripts.rename_invalid_paths_media_db)
-    subp_christen_paths = add_parser(subparsers, "christen-paths")
-    subp_christen_paths.set_defaults(func=scripts.rename_invalid_paths)
+    subp_christen.set_defaults(func=scripts.rename_invalid_paths)
     subp_merge_db = add_parser(subparsers, "merge-dbs")
     subp_merge_db.set_defaults(func=scripts.merge_dbs)
     subp_dedupe_local = add_parser(subparsers, "merge-online-local")
@@ -207,9 +205,5 @@ def lb(args=None) -> None:
         print_help(parser)
 
 
-def main() -> None:
-    lb()
-
-
 if __name__ == "__main__":
-    main()
+    library()
