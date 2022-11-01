@@ -17,7 +17,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
     pip install xklb
 
     $ library
-    xk media library subcommands (v1.19.030)
+    xk media library subcommands (v1.19.031)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -43,6 +43,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
     downloads:
       lb download              Download media
       lb block                 Prevent downloading specific URLs
+      lb merge-dbs             Merge multiple SQLITE files
       lb merge-online-local    Merge local and online metadata
 
     playback:

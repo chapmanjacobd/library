@@ -7,7 +7,7 @@ from typing import Dict, List, Optional
 
 from joblib import Parallel, delayed
 
-from xklb import av, books, consts, db, utils
+from xklb import av, books, consts, db, player, utils
 from xklb.consts import SC, DBType
 from xklb.player import mark_media_deleted
 from xklb.utils import log
@@ -155,14 +155,15 @@ def _add_folder(args, folder_path: Path) -> None:
 
 def scan_path(args, path_str: str) -> int:
     path = Path(path_str).resolve()
+
     if not path.exists():
         print(f"[{path}] Path does not exist")
-        if not args.force:
-            return 0
+        if args.force:
+            player.delete_playlists(args, [path_str])
+        return 0
+
     print(f"[{path}] Building file list...")
-
     new_files = find_new_files(args, path)
-
     if new_files:
         print(f"[{path}] Adding {len(new_files)} new media")
         log.debug(new_files)
