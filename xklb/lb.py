@@ -43,6 +43,7 @@ def usage() -> str:
     downloads:
       lb download              Download media
       lb block                 Prevent downloading specific URLs
+      lb merge-dbs             Merge multiple SQLITE files
       lb merge-online-local    Merge local and online metadata
 
     playback:
@@ -125,7 +126,11 @@ def lb(args=None) -> None:
     subp_dedupe = add_parser(subparsers, "dedupe")
     subp_dedupe.set_defaults(func=scripts.deduplicate_music)
     subp_christen = add_parser(subparsers, "christen")
-    subp_christen.set_defaults(func=scripts.rename_invalid_files)
+    subp_christen.set_defaults(func=scripts.rename_invalid_paths_media_db)
+    subp_christen_paths = add_parser(subparsers, "christen-paths")
+    subp_christen_paths.set_defaults(func=scripts.rename_invalid_paths)
+    subp_merge_db = add_parser(subparsers, "merge-dbs")
+    subp_merge_db.set_defaults(func=scripts.merge_dbs)
     subp_dedupe_local = add_parser(subparsers, "merge-online-local")
     subp_dedupe_local.set_defaults(func=scripts.merge_online_local)
     subp_optimize = add_parser(subparsers, "optimize")

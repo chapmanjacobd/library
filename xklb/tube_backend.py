@@ -460,11 +460,15 @@ def yt(args, m) -> None:
         def error(self, msg):
             ydl_log["error"].append(msg)
 
+    ignoreerrors = False
+    if m["time_modified"] > 0:
+        ignoreerrors = True
+
     out_dir = lambda p: str(Path(args.prefix, m["category"] or "%(extractor_key,extractor)s", p))
     ydl_opts = tube_opts(
         args,
         func_opts={
-            "ignoreerrors": False,
+            "ignoreerrors": ignoreerrors,
             "subtitleslangs": ["en.*", "EN.*"],
             "extractor_args": {"youtube": {"skip": ["authcheck"]}},
             "logger": BadToTheBoneLogger(),

@@ -1,4 +1,5 @@
 import argparse, shutil, sqlite3
+from pathlib import Path
 
 import ftfy
 
@@ -31,7 +32,7 @@ def get_paths(args):
     return media
 
 
-def rename_invalid_files() -> None:
+def rename_invalid_paths_media_db() -> None:
     args = parse_args()
     paths = get_paths(args)
 
@@ -48,6 +49,7 @@ def rename_invalid_files() -> None:
                 log.warning("File already exists with that nice name")
             else:
                 try:
+                    Path(fixed).parent.mkdir(parents=True, exist_ok=True)
                     shutil.move(p, fixed)
                 except FileNotFoundError:
                     log.warning("FileNotFound. You should re-scan via fsadd %s", p)
@@ -63,4 +65,4 @@ def rename_invalid_files() -> None:
 
 
 if __name__ == "__main__":
-    rename_invalid_files()
+    rename_invalid_paths_media_db()

@@ -254,4 +254,5 @@ TUBE_IGNORE_KEYS = (
     "requested_subtitles",
     "entries",
     "dislike_count",
+    "manifest_url",
 )
