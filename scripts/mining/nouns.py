@@ -4,7 +4,7 @@ from io import StringIO
 
 import regex
 
-from . import data
+from . import words
 
 """
 extract compound nouns and phrases from unstructured mixed HTML plain text
@@ -50,7 +50,7 @@ def printer(parts):
             continue
 
         part_lookup = part.lower()
-        if part_lookup in data.stop_words or part_lookup in data.prepositions or is_num(part):
+        if part_lookup in words.stop_words or part_lookup in words.prepositions or is_num(part):
             continue
 
         print(part)

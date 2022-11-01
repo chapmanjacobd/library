@@ -5,7 +5,7 @@ from unittest import mock
 import pytest
 
 from xklb.fs_extract import fs_add
-from xklb.lb import lb
+from xklb.lb import library as lb
 from xklb.play_actions import watch as wt
 
 v_db = "--db", "tests/data/video.db"

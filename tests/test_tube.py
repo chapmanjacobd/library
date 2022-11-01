@@ -2,7 +2,7 @@ import sys, unittest
 from types import SimpleNamespace
 from unittest import mock
 
-from xklb.lb import lb
+from xklb.lb import library as lb
 from xklb.play_actions import watch
 from xklb.tube_extract import tube_add, tube_update
 
