@@ -5,8 +5,6 @@ from shutil import which
 from timeit import default_timer as timer
 from typing import Dict, List, Optional
 
-from joblib import Parallel, delayed
-
 from xklb import av, books, consts, db, player, utils
 from xklb.consts import SC, DBType
 from xklb.player import mark_media_deleted
@@ -70,6 +68,8 @@ def extract_metadata(mp_args, f) -> Optional[Dict[str, int]]:
 
 
 def extract_chunk(args, chunk_paths) -> None:
+    from joblib import Parallel, delayed
+
     n_jobs = -1
     if args.profile in (DBType.text, DBType.image, DBType.filesystem):
         n_jobs = consts.CPU_COUNT

@@ -17,45 +17,51 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
+def rename_path(p):
+    fixed = utils.remove_whitespaace(
+        ftfy.fix_text(p, explain=False)
+        .replace("*", "")
+        .replace("&", "")
+        .replace("%", "")
+        .replace("$", "")
+        .replace("#", "")
+        .replace("@", "")
+        .replace("!", "")
+        .replace("^", "")
+        .replace("'", "")
+        .replace('"', "")
+        .replace("(", " ")
+        .replace(")", "")
+        .replace("-.", ".")
+        .replace(" :", ":")
+        .replace(" - ", " ")
+        .replace("- ", " ")
+        .replace(" -", " ")
+        .replace(" _ ", "_")
+        .replace(" _", "_")
+        .replace("_ ", "_")
+    )
+    if p != fixed:
+        try:
+            Path(fixed).parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(p, fixed)
+        except FileNotFoundError:
+            log.warning("FileNotFound. %s", p)
+        except shutil.Error as e:
+            log.warning("%s. %s", e, p)
+        else:
+            log.info(fixed)
+
+
 def rename_invalid_paths() -> None:
     args = parse_args()
 
     for path in args.paths:
         log.info(path)
-        for p in sorted([str(p) for p in Path(path).rglob("*")], key=len, reverse=True):
-            fixed = utils.remove_whitespaace(
-                ftfy.fix_text(p, explain=False)
-                .replace("*", "")
-                .replace("&", "")
-                .replace("%", "")
-                .replace("$", "")
-                .replace("#", "")
-                .replace("@", "")
-                .replace("!", "")
-                .replace("^", "")
-                .replace("'", "")
-                .replace('"', "")
-                .replace("(", " ")
-                .replace(")", "")
-                .replace("-.", ".")
-                .replace(" :", ":")
-                .replace(" - ", " ")
-                .replace("- ", " ")
-                .replace(" -", " ")
-                .replace(" _ ", "_")
-                .replace(" _", "_")
-                .replace("_ ", "_")
-            )
-            if p != fixed:
-                try:
-                    Path(fixed).parent.mkdir(parents=True, exist_ok=True)
-                    shutil.move(p, fixed)
-                except FileNotFoundError:
-                    log.warning("FileNotFound. %s", p)
-                except shutil.Error as e:
-                    log.warning("%s. %s", e, p)
-                else:
-                    log.info(fixed)
+        subpaths = sorted([str(p) for p in Path(path).rglob("*")], key=len, reverse=True)
+        for p in subpaths:
+            rename_path(p)
+        # Parallel()(delayed(rename_path)(p) for p in subpaths)  # mostly IO bound
 
     print(
         r"""
