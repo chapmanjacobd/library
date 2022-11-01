@@ -461,7 +461,7 @@ def yt(args, m) -> None:
             ydl_log["error"].append(msg)
 
     ignoreerrors = False
-    if m["time_modified"] > 0:
+    if m.get("time_modified") > 0:
         ignoreerrors = True
 
     out_dir = lambda p: str(Path(args.prefix, m["category"] or "%(extractor_key,extractor)s", p))
