@@ -23,7 +23,14 @@ def rename_invalid_paths() -> None:
     for path in args.paths:
         log.info(path)
         for p in sorted([str(p) for p in Path(path).rglob("*")], key=len, reverse=True):
-            fixed = ftfy.fix_text(p, uncurl_quotes=False).replace("\r\n", "\n").replace("\r", "\n").replace("\n", "")
+            fixed = (
+                ftfy.fix_text(p, uncurl_quotes=False)
+                .replace("\r\n", "\n")
+                .replace("\r", "\n")
+                .replace("\n", "")
+                .replace("'", "’")
+                .replace('"', "")
+            )
             if p != fixed:
                 try:
                     Path(fixed).parent.mkdir(parents=True, exist_ok=True)
@@ -32,6 +39,14 @@ def rename_invalid_paths() -> None:
                     log.warning("FileNotFound. %s", p)
                 else:
                     log.info(fixed)
+
+    print(
+        r"""
+    You may want to run bfs to remove nested empty folders:
+
+        yes | bfs -nohidden -type d -exec bfs -f {} -not -type d -exit 1 \; -prune -ok bfs -f {} -type d -delete \;
+        """
+    )
 
 
 if __name__ == "__main__":
