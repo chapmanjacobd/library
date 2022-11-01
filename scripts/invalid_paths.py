@@ -37,13 +37,14 @@ def rename_invalid_paths() -> None:
                 .replace('"', "")
                 .replace("(", " ")
                 .replace(")", "")
-                .replace(" - ", "--")
-                .replace("- ", "--")
-                .replace(" -", "--")
                 .replace("-.", ".")
-                .replace("_.", ".")
                 .replace(" :", ":")
+                .replace(" - ", " ")
+                .replace("- ", " ")
+                .replace(" -", " ")
+                .replace(" _ ", "_")
                 .replace(" _", "_")
+                .replace("_ ", "_")
             )
             if p != fixed:
                 try:
