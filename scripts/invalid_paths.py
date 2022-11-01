@@ -23,13 +23,27 @@ def rename_invalid_paths() -> None:
     for path in args.paths:
         log.info(path)
         for p in sorted([str(p) for p in Path(path).rglob("*")], key=len, reverse=True):
-            fixed = (
-                ftfy.fix_text(p, uncurl_quotes=False)
-                .replace("\r\n", "\n")
-                .replace("\r", "\n")
-                .replace("\n", "")
-                .replace("'", "’")
+            fixed = utils.remove_whitespaace(
+                ftfy.fix_text(p, explain=False)
+                .replace("*", "")
+                .replace("&", "")
+                .replace("%", "")
+                .replace("$", "")
+                .replace("#", "")
+                .replace("@", "")
+                .replace("!", "")
+                .replace("^", "")
+                .replace("'", "")
                 .replace('"', "")
+                .replace("(", " ")
+                .replace(")", "")
+                .replace(" - ", "--")
+                .replace("- ", "--")
+                .replace(" -", "--")
+                .replace("-.", ".")
+                .replace("_.", ".")
+                .replace(" :", ":")
+                .replace(" _", "_")
             )
             if p != fixed:
                 try:
@@ -37,6 +51,8 @@ def rename_invalid_paths() -> None:
                     shutil.move(p, fixed)
                 except FileNotFoundError:
                     log.warning("FileNotFound. %s", p)
+                except shutil.Error as e:
+                    log.warning("%s. %s", e, p)
                 else:
                     log.info(fixed)
 

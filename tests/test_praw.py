@@ -4,7 +4,7 @@ from types import SimpleNamespace
 from unittest import mock, skip
 
 from xklb.db import connect
-from xklb.lb import lb
+from xklb.lb import library as lb
 from xklb.play_actions import watch
 from xklb.praw_extract import reddit_add, reddit_update
 

@@ -2,7 +2,7 @@ import sys
 
 import pytest
 
-from xklb.lb import lb
+from xklb.lb import library as lb
 from xklb.play_actions import watch as wt
 
 

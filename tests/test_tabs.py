@@ -1,7 +1,7 @@
 import unittest
 from unittest import mock
 
-from xklb.lb import lb
+from xklb.lb import library as lb
 from xklb.tabs_extract import tabs_add
 
 tabs_db = "--db", "tests/data/tabs.db"
