@@ -154,7 +154,7 @@ def library(args=None) -> None:
     subp_block = add_parser(subparsers, "block")
     subp_block.set_defaults(func=dl_block)
 
-    subp_playlist = add_parser(subparsers, "playlists", ["pl", "tubelist", "folders"])
+    subp_playlist = add_parser(subparsers, "playlists", ["pl", "folders"])
     subp_playlist.set_defaults(func=playlists)
     subp_dlstatus = add_parser(subparsers, "dlstatus", ["ds"])
     subp_dlstatus.set_defaults(func=dlstatus)
