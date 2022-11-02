@@ -160,16 +160,16 @@ def playlists() -> None:
     if "playlist_path" in m_columns:
         query = f"""
         select
-            p.ie_key
+            coalesce(p.path, "Playlist-less media") path
+            {', p.ie_key' if 'ie_key' in pl_columns else ''}
             {', p.title' if 'title' in pl_columns else ''}
             {', p.time_deleted' if 'time_deleted' in pl_columns else ''}
             {', count(*) FILTER(WHERE play_count>0) play_count' if 'play_count' in m_columns else ''}
-            , coalesce(p.path, "Playlist-less media") path
             {', sum(media.duration) duration' if 'duration' in m_columns else ''}
             {', sum(media.size) size' if 'size' in m_columns else ''}
             , count(*) count
         from media
-        left join ({query}) p on (p.ie_key = media.ie_key and media.ie_key != 'Local' and p.path = media.playlist_path)
+        left join ({query}) p on (p.path = media.playlist_path {"and p.ie_key = media.ie_key and media.ie_key != 'Local'" if 'ie_key' in m_columns else ''})
         group by coalesce(p.path, "Playlist-less media")
         order by count, p.category nulls last, p.path
         """
@@ -239,16 +239,16 @@ def dlstatus() -> None:
     query, bindings = dl_extract.construct_query(args)
     query = f"""select
         coalesce(category, "Playlist-less media") category
-        {', media.ie_key' if 'ie_key' in query else ''}
-        {', sum(media.duration) duration' if 'duration' in query else ''}
+        {', ie_key' if 'media.ie_key' in query else ''}
+        {', sum(duration) duration' if 'duration' in query else ''}
         {', count(*) FILTER(WHERE time_modified=0) never_downloaded' if 'time_modified' in query else ''}
         {', count(*) FILTER(WHERE time_modified>0 AND error IS NOT NULL) errors' if 'error' in query else ''}
-        {', group_concat(distinct media.error) error_descriptions' if 'error' in query and args.verbose >= 1 else ''}
-    from ({query}) media
+        {', group_concat(distinct error) error_descriptions' if 'error' in query and args.verbose >= 1 else ''}
+    from ({query})
     where 1=1
-        and media.time_downloaded=0
-        and media.time_deleted=0
-    group by ie_key, category
+        and time_downloaded=0
+        and time_deleted=0
+    group by category{', ie_key' if 'media.ie_key' in query else ''}
     order by category nulls last"""
 
     printer(args, query, bindings)
