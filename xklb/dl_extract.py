@@ -129,7 +129,7 @@ def construct_query(args) -> Tuple[str, dict]:
             {', p.dl_config' if 'dl_config' in pl_columns else ''}
             , coalesce(p.category, p.ie_key) category
         FROM media
-        LEFT JOIN playlists p on (p.ie_key != 'Local' and p.ie_key = media.ie_key and p.path = media.playlist_path)
+        LEFT JOIN playlists p on (p.path = media.playlist_path {"and p.ie_key != 'Local' and p.ie_key = media.ie_key" if 'ie_key' in m_columns else ''})
         WHERE 1=1
             and media.time_downloaded=0
             and media.time_deleted=0

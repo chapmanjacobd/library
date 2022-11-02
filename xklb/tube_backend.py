@@ -393,7 +393,7 @@ def save_tube_entry(args, m, info: Optional[dict] = None, error=None, URE=False)
     if v_id:
         error = None if not error else error.replace(v_id, "").replace(" :", ":")
 
-    if not info:  # not downloaded
+    if not info:  # not downloaded or already downloaded
         entry = {
             "path": webpath,
             "time_downloaded": 0,
@@ -442,7 +442,7 @@ def yt(args, m) -> None:
     if not m["path"].startswith("http"):
         return
 
-    ydl_log = {"warning": [], "error": []}
+    ydl_log = {"warning": [], "error": [], "info": []}
 
     class BadToTheBoneLogger:
         def debug(self, msg):
@@ -452,7 +452,7 @@ def yt(args, m) -> None:
                 self.info(msg)
 
         def info(self, msg):
-            pass
+            ydl_log["info"].append(msg)
 
         def warning(self, msg):
             ydl_log["warning"].append(msg)
@@ -528,26 +528,26 @@ def yt(args, m) -> None:
             log.warning("[%s]: yt-dlp %s", m["path"], error)
             save_tube_entry(args, m, error=error)
             return
-        if info is None:
-            log.warning("[%s]: yt-dlp returned no info", m["path"])
-            save_tube_entry(args, m, error="yt-dlp returned no info")
-            return
 
-        if args.profile == DBType.audio:
-            info["local_path"] = ydl.prepare_filename({**info, "ext": args.ext})
+        if info is None:
+            log.debug("[%s]: yt-dlp returned no info", m["path"])
         else:
-            info["local_path"] = ydl.prepare_filename(info)
+            if args.profile == DBType.audio:
+                info["local_path"] = ydl.prepare_filename({**info, "ext": args.ext})
+            else:
+                info["local_path"] = ydl.prepare_filename(info)
 
         ydl_errors = ydl_log["error"] + ydl_log["warning"]
-        ydl_errors = "\n".join([s for s in ydl_errors if not yt_meaningless_errors.match(s)])
+        ydl_errors = "\n".join([l for l in ydl_errors if not yt_meaningless_errors.match(l)])
+        ydl_full_log = ydl_log["error"] + ydl_log["warning"] + ydl_log["info"]
 
-        if not ydl_log["error"]:
+        if not ydl_log["error"] and info:
             log.debug("[%s]: No news is good news", m["path"])
             save_tube_entry(args, m, info)
-        elif yt_recoverable_errors.match(ydl_errors):
+        elif any([yt_recoverable_errors.match(l) for l in ydl_full_log]):
             log.info("[%s]: Recoverable error matched. %s", m["path"], ydl_errors)
             save_tube_entry(args, m, info, error=ydl_errors)
-        elif yt_unrecoverable_errors.match(ydl_errors):
+        elif any([yt_unrecoverable_errors.match(l) for l in ydl_full_log]):
             log.info("[%s]: Unrecoverable error matched. %s", m["path"], ydl_errors)
             save_tube_entry(args, m, info, error=ydl_errors, URE=True)
         else:

@@ -7,22 +7,7 @@ from xklb import db, utils
 from xklb.utils import log
 
 
-def get_table(args) -> List[dict]:
-    columns = args.db["media"].columns_dict
-
-    media = list(
-        args.db.query(
-            f"""
-        select path, size
-        from media
-        where 1=1
-            {'and time_deleted = 0' if 'time_deleted' in columns else ''}
-            {'and time_downloaded > 0' if 'time_downloaded' in columns else ''}
-        order by path
-        """
-        )
-    )
-
+def group_by_folder(args, media):
     d = {}
     for m in media:
         p = m["path"].split("/")
@@ -40,17 +25,35 @@ def get_table(args) -> List[dict]:
         if pdict["count"] < args.lower or pdict["count"] > args.upper:
             d.pop(path)
 
-    d = [{**v, "path": k} for k, v in d.items()]
+    return [{**v, "path": k} for k, v in d.items()]
 
-    return sorted(d, key=lambda x: x["size"])
+
+def get_table(args) -> List[dict]:
+    columns = args.db["media"].columns_dict
+
+    media = list(
+        args.db.query(
+            f"""
+        select path, size
+        from media
+        where 1=1
+            {'and time_deleted = 0' if 'time_deleted' in columns else ''}
+            {'and time_downloaded > 0' if 'time_downloaded' in columns else ''}
+        order by path
+        """
+        )
+    )
+
+    folders = group_by_folder(args, media)
+    return sorted(folders, key=lambda x: x["size"])
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("database")
-    parser.add_argument("--limit", "-L", "-l", "-queue", "--queue")
-    parser.add_argument("--lower", default=35, type=int)
-    parser.add_argument("--upper", default=3500, type=int)
+    parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", default="4000")
+    parser.add_argument("--lower", default=4, type=int, help="Number of files per folder lower limit")
+    parser.add_argument("--upper", default=4000, type=int, help="Number of files per folder upper limit")
     parser.add_argument("--verbose", "-v", action="count", default=0)
     args = parser.parse_args()
     args.db = db.connect(args)

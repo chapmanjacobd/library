@@ -170,6 +170,8 @@ def scan_path(args, path_str: str) -> int:
 
         if args.profile in (DBType.text):
             batch_count = consts.CPU_COUNT
+        elif args.profile in (DBType.image):
+            batch_count = consts.SQLITE_PARAM_LIMIT // 20
         else:
             batch_count = consts.SQLITE_PARAM_LIMIT // 100
         chunks_count = math.ceil(len(new_files) / batch_count)
