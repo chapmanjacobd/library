@@ -38,7 +38,7 @@ munge_book_tags_slow = utils.with_timeout(350)(munge_book_tags)
 
 def pop_substring_keys(e, key_substring):
     values = []
-    for k in e.keys():
+    for k in list(e.keys()):
         if key_substring in k:
             values.append(e.pop(k))
     return values

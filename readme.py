@@ -27,6 +27,11 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
     wget https://github.com/chapmanjacobd/library/raw/main/examples/mealtime.tw.db
     library watch mealtime.tw.db
 
+### Or hook into HackerNews videos
+
+    wget https://github.com/chapmanjacobd/hn_mining/raw/main/hackernews_only_direct.tw.db
+    library watch hackernews_only_direct.tw.db --random --ignore-errors
+
 ## Quick Start -- listen to online media on a chromecast group
 
     wget https://github.com/chapmanjacobd/library/raw/main/examples/music.tl.db

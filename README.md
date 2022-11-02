@@ -17,7 +17,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
     pip install xklb
 
     $ library
-    xk media library subcommands (v1.19.037)
+    xk media library subcommands (v1.19.038)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -73,6 +73,11 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
 
     wget https://github.com/chapmanjacobd/library/raw/main/examples/mealtime.tw.db
     library watch mealtime.tw.db
+
+### Or hook into HackerNews videos
+
+    wget https://github.com/chapmanjacobd/hn_mining/raw/main/hackernews_only_direct.tw.db
+    library watch hackernews_only_direct.tw.db --random --ignore-errors
 
 ## Quick Start -- listen to online media on a chromecast group
 
