@@ -75,8 +75,8 @@ def parse(args, m=None, media_file=None) -> List[str]:
     player = generic_player(args)
     mpv = which("mpv.com") or which("mpv")
 
-    if args.player:
-        player = args.player
+    if args.override_player:
+        player = args.override_player
         args.player_need_sleep = False
 
     elif args.action in (SC.read) and media_file:
@@ -105,7 +105,7 @@ def parse(args, m=None, media_file=None) -> List[str]:
         if args.crop:
             player.extend(["--panscan=1.0"])
 
-        if m and args.action in (SC.watch, SC.listen):
+        if args.action in (SC.watch, SC.listen) and m:
             start, end = calculate_duration(args, m)
             if end != 0:
                 if start != 0:
@@ -113,10 +113,14 @@ def parse(args, m=None, media_file=None) -> List[str]:
                 if end != m["duration"]:
                     player.extend([f"--end={end}"])
 
-        if m and args.action == SC.watch:
-            if m.get("subtitle_count") and m["subtitle_count"] > 0:
+        if args.action == SC.watch and m and m.get("subtitle_count") is not None:
+            if m["subtitle_count"] > 0:
                 player.extend(args.player_args_sub)
-            elif m.get("time_partial_first") is not None or m["size"] > 500 * 1000000:  # 500 MB
+            elif m["size"] > 500 * 1000000:  # 500 MB
+                log.debug("Skipping subs player_args: size")
+                pass
+            elif m.get("time_partial_first"):
+                log.debug("Skipping subs player_args: partially watched")
                 pass
             else:
                 player.extend(args.player_args_no_sub)
@@ -127,6 +131,7 @@ def parse(args, m=None, media_file=None) -> List[str]:
             args.player_need_sleep = False
             player = [player_path]
 
+    log.debug("player: %s", player)
     return player
 
 
