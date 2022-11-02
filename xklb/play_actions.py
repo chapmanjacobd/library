@@ -387,7 +387,7 @@ def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
     parser.add_argument("--mpv-socket", default=consts.DEFAULT_MPV_SOCKET, help=argparse.SUPPRESS)
     parser.add_argument("--watch-later-directory", default=consts.DEFAULT_MPV_WATCH_LATER, help=argparse.SUPPRESS)
 
-    parser.add_argument("--player", "-player", help=argparse.SUPPRESS)
+    parser.add_argument("--override-player", "--player", "-player", help=argparse.SUPPRESS)
     parser.add_argument(
         "--player-args-sub", "-player-sub", nargs="*", default=DEFAULT_PLAYER_ARGS_SUB, help=argparse.SUPPRESS
     )
@@ -467,8 +467,8 @@ def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
         args.cc = CattDevice(args.chromecast_device, lazy=True)
         args.cc_ip = utils.get_ip_of_chromecast(args.chromecast_device)
 
-    if args.player:
-        args.player = shlex.split(args.player)
+    if args.override_player:
+        args.override_player = shlex.split(args.override_player)
 
     log.info(utils.dict_filter_bool(args.__dict__))
 
