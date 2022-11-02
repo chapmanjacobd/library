@@ -369,7 +369,7 @@ video = ["youtube-dl"]
 
 [[package]]
 name = "guessit"
-version = "3.4.3"
+version = "3.5.0"
 description = "GuessIt - a library for guessing information from video filenames."
 category = "main"
 optional = false
@@ -1668,8 +1668,8 @@ gallery-dl = [
     {file = "gallery_dl-1.23.5.tar.gz", hash = "sha256:3619ee5bbaeae4382b9e4c3f9d43bfa4583f4a1d83fddf6014221bfa0432e501"},
 ]
 guessit = [
-    {file = "guessit-3.4.3-py3-none-any.whl", hash = "sha256:f7f790c9e55a7bcc8ff887d3146e089c65a23eff72edfb6684ac5fedb47488a5"},
-    {file = "guessit-3.4.3.tar.gz", hash = "sha256:731e96e6a1f3b065d05accc8c19f35d4485d880b77ab8dc4b262cc353df294f7"},
+    {file = "guessit-3.5.0-py3-none-any.whl", hash = "sha256:616040afb9430941659da47f8d5d2b9db1e2e587db8627d57e711ea4888f9561"},
+    {file = "guessit-3.5.0.tar.gz", hash = "sha256:7a269e3a57cc073e61b56259893eab3c5c02d1ad8acbc8ae2e78c5e839f110bc"},
 ]
 humanize = [
     {file = "humanize-4.4.0-py3-none-any.whl", hash = "sha256:8830ebf2d65d0395c1bd4c79189ad71e023f277c2c7ae00f263124432e6f2ffa"},
