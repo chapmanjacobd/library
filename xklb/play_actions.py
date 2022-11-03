@@ -257,7 +257,7 @@ def usage(action, default_db) -> str:
         library {action} --sort duration   # play shortest media first
         library {action} -u duration desc  # play longest media first
         You can use multiple SQL ORDER BY expressions
-        library {action} -u subtitle_count > 0 desc # play media that has at least one subtitle first
+        library {action} -u 'subtitle_count > 0 desc' # play media that has at least one subtitle first
 
     Play media in order (similarly named episodes):
         library {action} --play-in-order

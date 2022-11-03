@@ -245,13 +245,10 @@ Explore `library` databases in your browser
 
 - cycle through _cine_http
 - psaw --> posts, create list of subreddits: when created
-- hackernews --> posts
 - create/update views: especially dl queue, etc so that it is easier for people to access data externally
     db.create_view("items", ITEM_VIEW_DEF, replace=True)
 - debug move_random
 - SELECT * FROM playlists p WHERE PATH NOT IN (SELECT DISTINCT playlist_path FROM media WHERE playlist_path NOT NULL )
-- SELECT * FROM media WHERE PATH LIKE '%d/Youtube%'
-- dlstatus --flush to mark all errored downloads as deleted
 - more test coverage
 """
 )

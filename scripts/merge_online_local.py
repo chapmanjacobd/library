@@ -19,7 +19,7 @@ def get_duplicates(args) -> List[dict]:
         WHERE 1=1
             and id is not null
             and id != ""
-            and path like 'http%'
+            and ie_key != 'Local'
             and time_deleted = 0
     )
     SELECT
@@ -38,7 +38,10 @@ def get_duplicates(args) -> List[dict]:
             and title is null
     ) m2
     JOIN media_fts on m2.rowid = media_fts.rowid
-    WHERE media_fts.path MATCH '"'||m1.id||'"'
+    WHERE m2.ie_key = 'Local'
+        AND m1.ie_key NOT IN ('NBCStations', 'TedTalk', 'ThisAmericanLife', 'InfoQ', 'NFB', 'KickStarter')
+        AND media_fts.path MATCH '"'||m1.id||'"'
+        AND m2.PATH LIKE '%['||m1.id||']%'
     ORDER BY 1=1
         , length(m2.path)-length(REPLACE(m2.path, '/', '')) desc
         , length(m2.path)-length(REPLACE(m2.path, '.', ''))
