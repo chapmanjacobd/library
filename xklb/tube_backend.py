@@ -525,9 +525,11 @@ def yt(args, m) -> None:
             info = ydl.extract_info(m["path"], download=True)
         except yt_dlp.DownloadError as e:
             error = consts.REGEX_ANSI_ESCAPE.sub("", str(e))
-            log.warning("[%s]: yt-dlp %s", m["path"], error)
-            save_tube_entry(args, m, error=error)
-            return
+            ydl_log["error"].append(error)
+            info = None
+            log.debug("[%s]: yt-dlp %s", m["path"], error)
+            # save_tube_entry(args, m, error=error)
+            # return
 
         if info is None:
             log.debug("[%s]: yt-dlp returned no info", m["path"])
@@ -545,10 +547,11 @@ def yt(args, m) -> None:
             log.debug("[%s]: No news is good news", m["path"])
             save_tube_entry(args, m, info)
         elif any([yt_recoverable_errors.match(l) for l in ydl_full_log]):
-            log.info("[%s]: Recoverable error matched. %s", m["path"], ydl_errors)
+            log.info("[%s]: Recoverable error matched (will try again later). %s", m["path"], ydl_errors)
             save_tube_entry(args, m, info, error=ydl_errors)
         elif any([yt_unrecoverable_errors.match(l) for l in ydl_full_log]):
-            log.info("[%s]: Unrecoverable error matched. %s", m["path"], ydl_errors)
+            matched_error = [m.string for m in utils.conform([yt_unrecoverable_errors.match(l) for l in ydl_full_log])]
+            log.info("[%s]: Unrecoverable error matched. %s", m["path"], ydl_errors or utils.combine(matched_error))
             save_tube_entry(args, m, info, error=ydl_errors, URE=True)
         else:
             log.warning("[%s]: Unknown error. %s", m["path"], ydl_errors)

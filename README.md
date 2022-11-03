@@ -17,7 +17,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
     pip install xklb
 
     $ library
-    xk media library subcommands (v1.19.040)
+    xk media library subcommands (v1.19.041)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -383,7 +383,7 @@ Organize via separate databases.
         library watch --sort duration   # play shortest media first
         library watch -u duration desc  # play longest media first
         You can use multiple SQL ORDER BY expressions
-        library watch -u subtitle_count > 0 desc # play media that has at least one subtitle first
+        library watch -u 'subtitle_count > 0 desc' # play media that has at least one subtitle first
 
     Play media in order (similarly named episodes):
         library watch --play-in-order
@@ -483,12 +483,9 @@ Explore `library` databases in your browser
 
 - cycle through _cine_http
 - psaw --> posts, create list of subreddits: when created
-- hackernews --> posts
 - create/update views: especially dl queue, etc so that it is easier for people to access data externally
     db.create_view("items", ITEM_VIEW_DEF, replace=True)
 - debug move_random
 - SELECT * FROM playlists p WHERE PATH NOT IN (SELECT DISTINCT playlist_path FROM media WHERE playlist_path NOT NULL )
-- SELECT * FROM media WHERE PATH LIKE '%d/Youtube%'
-- dlstatus --flush to mark all errored downloads as deleted
 - more test coverage
 

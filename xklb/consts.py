@@ -255,4 +255,6 @@ TUBE_IGNORE_KEYS = (
     "entries",
     "dislike_count",
     "manifest_url",
+    "manifest_stream_number",
+    "start_time",
 )
