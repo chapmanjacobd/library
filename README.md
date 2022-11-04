@@ -17,7 +17,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
     pip install xklb
 
     $ library
-    xk media library subcommands (v1.19.042)
+    xk media library subcommands (v1.19.043)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -244,6 +244,14 @@ Organize via separate databases.
         library watch -ct "Office pair"  # equivalent
         If you don't know the exact name of your chromecast group run `catt scan`
 
+    Play media in order (similarly named episodes):
+        library watch --play-in-order
+        There are multiple strictness levels of --play-in-order.
+        If things aren't playing in order try adding more `O`s:
+        library watch -O    # fast
+        library watch -OO   # slow, more complex algorithm
+        library watch -OOO  # slow, ignores most filters
+
     Play recent partially-watched videos (requires mpv history):
         library watch --partial       # play newest first
         library watch --partial old   # play oldest first
@@ -370,6 +378,14 @@ Organize via separate databases.
         library watch -z-6  # less than 6 MB
         library watch -z+6  # more than 6 MB
 
+    Constrain media by time_created:
+        library watch --created-within '2 days'
+        library watch --created-before '2 days'
+
+    Constrain media by time_modified:
+        library watch --changed-within '2 days'
+        library watch --changed-before '2 days'
+
     Constrain media by throughput:
         Bitrate information is not explicitly saved.
         You can use file size and duration as a proxy for throughput:
@@ -384,14 +400,6 @@ Organize via separate databases.
         library watch -u duration desc  # play longest media first
         You can use multiple SQL ORDER BY expressions
         library watch -u 'subtitle_count > 0 desc' # play media that has at least one subtitle first
-
-    Play media in order (similarly named episodes):
-        library watch --play-in-order
-        There are multiple strictness levels of --play-in-order.
-        If things aren't playing in order try adding more `O`s:
-        library watch -O    # fast
-        library watch -OO   # slow, more complex algorithm
-        library watch -OOO  # slow, ignores most filters
 
     Post-actions -- choose what to do after playing:
         library watch --post-action delete  # delete file after playing
@@ -483,8 +491,6 @@ Explore `library` databases in your browser
 
 - cycle through _cine_http
 - psaw --> posts, create list of subreddits: when created
-- recently added flag
-    WHERE time_created > cast(STRFTIME('%s', datetime( 'now', '-2 days', '-3 hours' )) as int)
 - create/update views: especially dl queue, etc so that it is easier for people to access data externally
     db.create_view("items", ITEM_VIEW_DEF, replace=True)
 - debug move_random

@@ -33,6 +33,23 @@ def construct_query(args) -> Tuple[str, dict]:
 
     cf.extend([" and " + w for w in args.where])
 
+    if args.created_within:
+        cf.append(
+            f"and time_created > cast(STRFTIME('%s', datetime( 'now', '-{args.created_within}', '-3 hours' )) as int)"
+        )
+    if args.created_before:
+        cf.append(
+            f"and time_created < cast(STRFTIME('%s', datetime( 'now', '-{args.created_before}', '-3 hours' )) as int)"
+        )
+    if args.changed_within:
+        cf.append(
+            f"and time_modified > cast(STRFTIME('%s', datetime( 'now', '-{args.changed_within}', '-3 hours' )) as int)"
+        )
+    if args.changed_before:
+        cf.append(
+            f"and time_modified < cast(STRFTIME('%s', datetime( 'now', '-{args.changed_before}', '-3 hours' )) as int)"
+        )
+
     args.table = "media"
     if args.db["media"].detect_fts():
         if args.include:
@@ -117,6 +134,14 @@ def usage(action, default_db) -> str:
         library {action} --cast --cast-to "Office pair"
         library {action} -ct "Office pair"  # equivalent
         If you don't know the exact name of your chromecast group run `catt scan`
+
+    Play media in order (similarly named episodes):
+        library {action} --play-in-order
+        There are multiple strictness levels of --play-in-order.
+        If things aren't playing in order try adding more `O`s:
+        library {action} -O    # fast
+        library {action} -OO   # slow, more complex algorithm
+        library {action} -OOO  # slow, ignores most filters
 
     Play recent partially-watched videos (requires mpv history):
         library {action} --partial       # play newest first
@@ -244,6 +269,14 @@ def usage(action, default_db) -> str:
         library {action} -z-6  # less than 6 MB
         library {action} -z+6  # more than 6 MB
 
+    Constrain media by time_created:
+        library {action} --created-within '2 days'
+        library {action} --created-before '2 days'
+
+    Constrain media by time_modified:
+        library {action} --changed-within '2 days'
+        library {action} --changed-before '2 days'
+
     Constrain media by throughput:
         Bitrate information is not explicitly saved.
         You can use file size and duration as a proxy for throughput:
@@ -258,14 +291,6 @@ def usage(action, default_db) -> str:
         library {action} -u duration desc  # play longest media first
         You can use multiple SQL ORDER BY expressions
         library {action} -u 'subtitle_count > 0 desc' # play media that has at least one subtitle first
-
-    Play media in order (similarly named episodes):
-        library {action} --play-in-order
-        There are multiple strictness levels of --play-in-order.
-        If things aren't playing in order try adding more `O`s:
-        library {action} -O    # fast
-        library {action} -OO   # slow, more complex algorithm
-        library {action} -OOO  # slow, ignores most filters
 
     Post-actions -- choose what to do after playing:
         library {action} --post-action delete  # delete file after playing
@@ -344,6 +369,11 @@ def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
     parser.add_argument("--where", "-w", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--include", "-s", "--search", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
+
+    parser.add_argument("--created-within", help=argparse.SUPPRESS)
+    parser.add_argument("--created-before", help=argparse.SUPPRESS)
+    parser.add_argument("--changed-within", "--modified-within", help=argparse.SUPPRESS)
+    parser.add_argument("--changed-before", "--modified-before", help=argparse.SUPPRESS)
 
     parser.add_argument("--chromecast-device", "--cast-to", "-t", default=default_chromecast, help=argparse.SUPPRESS)
     parser.add_argument("--chromecast", "--cast", "-c", action="store_true", help=argparse.SUPPRESS)
