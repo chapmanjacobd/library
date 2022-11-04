@@ -300,7 +300,7 @@ python-versions = "*"
 
 [[package]]
 name = "exceptiongroup"
-version = "1.0.0"
+version = "1.0.1"
 description = "Backport of PEP 654 (exception groups)"
 category = "dev"
 optional = false
@@ -995,7 +995,7 @@ jupyter = ["ipywidgets (>=7.5.1,<8.0.0)"]
 
 [[package]]
 name = "scalene"
-version = "1.5.13"
+version = "1.5.14"
 description = "Scalene: A high-resolution, low-overhead CPU, GPU, and memory profiler for Python"
 category = "dev"
 optional = false
@@ -1020,7 +1020,7 @@ pyobjc-framework-Cocoa = {version = "*", markers = "sys_platform == \"darwin\""}
 
 [[package]]
 name = "setuptools"
-version = "65.5.0"
+version = "65.5.1"
 description = "Easily download, build, install, upgrade, and uninstall Python packages"
 category = "dev"
 optional = false
@@ -1028,7 +1028,7 @@ python-versions = ">=3.7"
 
 [package.extras]
 docs = ["furo", "jaraco.packaging (>=9)", "jaraco.tidelift (>=1.4)", "pygments-github-lexers (==0.0.5)", "rst.linker (>=1.9)", "sphinx (>=3.5)", "sphinx-favicon", "sphinx-hoverxref (<2)", "sphinx-inline-tabs", "sphinx-notfound-page (==0.8.3)", "sphinx-reredirects", "sphinxcontrib-towncrier"]
-testing = ["build[virtualenv]", "filelock (>=3.4.0)", "flake8 (<5)", "flake8-2020", "ini2toml[lite] (>=0.9)", "jaraco.envs (>=2.2)", "jaraco.path (>=3.2.0)", "mock", "pip (>=19.1)", "pip-run (>=8.8)", "pytest (>=6)", "pytest-black (>=0.3.7)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=1.3)", "pytest-flake8", "pytest-mypy (>=0.9.1)", "pytest-perf", "pytest-xdist", "tomli-w (>=1.0.0)", "virtualenv (>=13.0.0)", "wheel"]
+testing = ["build[virtualenv]", "filelock (>=3.4.0)", "flake8 (<5)", "flake8-2020", "ini2toml[lite] (>=0.9)", "jaraco.envs (>=2.2)", "jaraco.path (>=3.2.0)", "pip (>=19.1)", "pip-run (>=8.8)", "pytest (>=6)", "pytest-black (>=0.3.7)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=1.3)", "pytest-flake8", "pytest-mypy (>=0.9.1)", "pytest-perf", "pytest-timeout", "pytest-xdist", "tomli-w (>=1.0.0)", "virtualenv (>=13.0.0)", "wheel"]
 testing-integration = ["build[virtualenv]", "filelock (>=3.4.0)", "jaraco.envs (>=2.2)", "jaraco.path (>=3.2.0)", "pytest", "pytest-enabler", "pytest-xdist", "tomli", "virtualenv (>=13.0.0)", "wheel"]
 
 [[package]]
@@ -1250,7 +1250,7 @@ python-versions = "*"
 
 [[package]]
 name = "websocket-client"
-version = "1.4.1"
+version = "1.4.2"
 description = "WebSocket client for Python with low level API options"
 category = "main"
 optional = false
@@ -1645,8 +1645,8 @@ enzyme = [
     {file = "enzyme-0.4.1.tar.gz", hash = "sha256:f2167fa97c24d1103a94d4bf4eb20f00ca76c38a37499821049253b2059c62bb"},
 ]
 exceptiongroup = [
-    {file = "exceptiongroup-1.0.0-py3-none-any.whl", hash = "sha256:2ac84b496be68464a2da60da518af3785fff8b7ec0d090a581604bc870bdee41"},
-    {file = "exceptiongroup-1.0.0.tar.gz", hash = "sha256:affbabf13fb6e98988c38d9c5650e701569fe3c1de3233cfb61c5f33774690ad"},
+    {file = "exceptiongroup-1.0.1-py3-none-any.whl", hash = "sha256:4d6c0aa6dd825810941c792f53d7b8d71da26f5e5f84f20f9508e8f2d33b140a"},
+    {file = "exceptiongroup-1.0.1.tar.gz", hash = "sha256:73866f7f842ede6cb1daa42c4af078e2035e5f7607f0e2c762cc51bb31bbe7b2"},
 ]
 executing = [
     {file = "executing-1.2.0-py2.py3-none-any.whl", hash = "sha256:0314a69e37426e3608aada02473b4161d4caf5a4b244d1d0c48072b8fee7bacc"},
@@ -2041,26 +2041,25 @@ rich = [
     {file = "rich-12.6.0.tar.gz", hash = "sha256:ba3a3775974105c221d31141f2c116f4fd65c5ceb0698657a11e9f295ec93fd0"},
 ]
 scalene = [
-    {file = "scalene-1.5.13-cp310-cp310-macosx_10_15_universal2.whl", hash = "sha256:e69f7ee1749423f4dcfc8414219d10676f26691a28a90b7fbebd31141e20ed3a"},
-    {file = "scalene-1.5.13-cp310-cp310-manylinux_2_24_x86_64.whl", hash = "sha256:2118b41159d7306d410bb1ed73c80bffe4b718bcc4bf4a723e2cf0badb31bf6a"},
-    {file = "scalene-1.5.13-cp310-cp310-win_amd64.whl", hash = "sha256:321a94aff17523702157f9632d115fed62215ed64c607c528b97bab063f63b2f"},
-    {file = "scalene-1.5.13-cp37-cp37m-macosx_10_15_universal2.whl", hash = "sha256:25938a6c7e8fa14898e69354515fb41e072aa06d83be4060e2dbd0192d87c2af"},
-    {file = "scalene-1.5.13-cp37-cp37m-manylinux_2_24_x86_64.whl", hash = "sha256:e3dad1b5ce6d1329c9e2b595d55d50540ae8f1e8670e47509db593d1cb1b1809"},
-    {file = "scalene-1.5.13-cp38-cp38-macosx_10_15_universal2.whl", hash = "sha256:8959143c587807f2a341876efb40b770b95e3df94d5470ea0f2c5615a7ff186d"},
-    {file = "scalene-1.5.13-cp38-cp38-manylinux_2_24_x86_64.whl", hash = "sha256:37a340c73d93b08c502ad3e553f434fd91bb4913955979b9386935ded137782b"},
-    {file = "scalene-1.5.13-cp38-cp38-win_amd64.whl", hash = "sha256:8c51819f858f852106ad3b5da17d08575344dd45fa35a4311342dc6bcfb202ca"},
-    {file = "scalene-1.5.13-cp39-cp39-macosx_10_15_universal2.whl", hash = "sha256:b99252336e6351c24b5410145f4729b3f9012d9833160f1ac5221ee19f6d2eff"},
-    {file = "scalene-1.5.13-cp39-cp39-manylinux_2_24_x86_64.whl", hash = "sha256:fd4ec03141df635b6cc5cca9f801015e2fe6c71530727024febe28d4c749f502"},
-    {file = "scalene-1.5.13-cp39-cp39-win_amd64.whl", hash = "sha256:0ff439b5fdd696303c4d1e7293d5689c9e579da4aa48940149db3f979578fdba"},
-    {file = "scalene-1.5.13.tar.gz", hash = "sha256:0077d517249cfa6ad0953d85c9656bdaca57b863159bbb78969987d9bdbb539c"},
+    {file = "scalene-1.5.14-cp310-cp310-macosx_10_15_universal2.whl", hash = "sha256:c9c122158a53d04231cab3dd45af2ba368aca2c8f5e14bf5e203355856005b70"},
+    {file = "scalene-1.5.14-cp310-cp310-manylinux_2_24_x86_64.whl", hash = "sha256:8b84f9b21ee2bfba64998da1581abd7021a6456e9719c5890e1708d390bb0995"},
+    {file = "scalene-1.5.14-cp310-cp310-win_amd64.whl", hash = "sha256:2e12c80d9a9e6601648ce8e9db7f9fe632003997196630c68851d4e8b72710f9"},
+    {file = "scalene-1.5.14-cp37-cp37m-macosx_10_15_universal2.whl", hash = "sha256:1801a1031e1303ec58a3e315fdb89fb559f02bbf79345e07c7369dc94daa2ac4"},
+    {file = "scalene-1.5.14-cp37-cp37m-manylinux_2_24_x86_64.whl", hash = "sha256:30242d4955998aee1a82c0d9a73ccdd2aa15d447cdc91bc6ec3b52abf87fe54e"},
+    {file = "scalene-1.5.14-cp38-cp38-macosx_10_15_universal2.whl", hash = "sha256:adf5c573c5025acfb84f709b11bb0a4d31ebdb7309c3904c36bc654115a11147"},
+    {file = "scalene-1.5.14-cp38-cp38-manylinux_2_24_x86_64.whl", hash = "sha256:8da7fdd4a816d9c0a701e4036e8274fd9c3cb7baa8488cd3978cfb83c29bb053"},
+    {file = "scalene-1.5.14-cp38-cp38-win_amd64.whl", hash = "sha256:4736133b90a1168becd09f743119c232df43b5c9081dbe5ce6da6fcec203b89c"},
+    {file = "scalene-1.5.14-cp39-cp39-manylinux_2_24_x86_64.whl", hash = "sha256:a3d0fb20b5a4bb66fae8c46b5436567aea4bb0f0867a10b3338db00a516da574"},
+    {file = "scalene-1.5.14-cp39-cp39-win_amd64.whl", hash = "sha256:c6b02b3fd20111373e5af7f858e8c9e2294612cc9ef759cd83163195ef52b974"},
+    {file = "scalene-1.5.14.tar.gz", hash = "sha256:51ce9a83e46f1879fd9782feb459b3279133c00ff45b2b34e93c45ca3f4b3783"},
 ]
 screeninfo = [
     {file = "screeninfo-0.8.1-py3-none-any.whl", hash = "sha256:e97d6b173856edcfa3bd282f81deb528188aff14b11ec3e195584e7641be733c"},
     {file = "screeninfo-0.8.1.tar.gz", hash = "sha256:9983076bcc7e34402a1a9e4d7dabf3729411fd2abb3f3b4be7eba73519cd2ed1"},
 ]
 setuptools = [
-    {file = "setuptools-65.5.0-py3-none-any.whl", hash = "sha256:f62ea9da9ed6289bfe868cd6845968a2c854d1427f8548d52cae02a42b4f0356"},
-    {file = "setuptools-65.5.0.tar.gz", hash = "sha256:512e5536220e38146176efb833d4a62aa726b7bbff82cfbc8ba9eaa3996e0b17"},
+    {file = "setuptools-65.5.1-py3-none-any.whl", hash = "sha256:d0b9a8433464d5800cbe05094acf5c6d52a91bfac9b52bcfc4d41382be5d5d31"},
+    {file = "setuptools-65.5.1.tar.gz", hash = "sha256:e197a19aa8ec9722928f2206f8de752def0e4c9fc6953527360d1c36d94ddb2f"},
 ]
 six = [
     {file = "six-1.16.0-py2.py3-none-any.whl", hash = "sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254"},
@@ -2134,8 +2133,8 @@ wcwidth = [
     {file = "wcwidth-0.2.5.tar.gz", hash = "sha256:c4d647b99872929fdb7bdcaa4fbe7f01413ed3d98077df798530e5b04f116c83"},
 ]
 websocket-client = [
-    {file = "websocket-client-1.4.1.tar.gz", hash = "sha256:f9611eb65c8241a67fb373bef040b3cf8ad377a9f6546a12b620b6511e8ea9ef"},
-    {file = "websocket_client-1.4.1-py3-none-any.whl", hash = "sha256:398909eb7e261f44b8f4bd474785b6ec5f5b499d4953342fe9755e01ef624090"},
+    {file = "websocket-client-1.4.2.tar.gz", hash = "sha256:d6e8f90ca8e2dd4e8027c4561adeb9456b54044312dba655e7cae652ceb9ae59"},
+    {file = "websocket_client-1.4.2-py3-none-any.whl", hash = "sha256:d6b06432f184438d99ac1f456eaf22fe1ade524c3dd16e661142dc54e9cba574"},
 ]
 websockets = [
     {file = "websockets-10.4-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:d58804e996d7d2307173d56c297cf7bc132c52df27a3efaac5e8d43e36c21c48"},

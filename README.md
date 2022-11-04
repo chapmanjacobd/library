@@ -17,7 +17,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
     pip install xklb
 
     $ library
-    xk media library subcommands (v1.19.041)
+    xk media library subcommands (v1.19.042)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -483,6 +483,8 @@ Explore `library` databases in your browser
 
 - cycle through _cine_http
 - psaw --> posts, create list of subreddits: when created
+- recently added flag
+    WHERE time_created > cast(STRFTIME('%s', datetime( 'now', '-2 days', '-3 hours' )) as int)
 - create/update views: especially dl queue, etc so that it is easier for people to access data externally
     db.create_view("items", ITEM_VIEW_DEF, replace=True)
 - debug move_random
