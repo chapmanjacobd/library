@@ -379,12 +379,12 @@ Organize via separate databases.
         library watch -z+6  # more than 6 MB
 
     Constrain media by time_created:
-        library watch --created-within '2 days'
-        library watch --created-before '2 days'
+        library watch --created-within '3 days'
+        library watch --created-before '3 years'
 
     Constrain media by time_modified:
-        library watch --changed-within '2 days'
-        library watch --changed-before '2 days'
+        library watch --changed-within '3 days'
+        library watch --changed-before '3 years'
 
     Constrain media by throughput:
         Bitrate information is not explicitly saved.

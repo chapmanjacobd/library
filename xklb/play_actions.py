@@ -270,12 +270,12 @@ def usage(action, default_db) -> str:
         library {action} -z+6  # more than 6 MB
 
     Constrain media by time_created:
-        library {action} --created-within '2 days'
-        library {action} --created-before '2 days'
+        library {action} --created-within '3 days'
+        library {action} --created-before '3 years'
 
     Constrain media by time_modified:
-        library {action} --changed-within '2 days'
-        library {action} --changed-before '2 days'
+        library {action} --changed-within '3 days'
+        library {action} --changed-before '3 years'
 
     Constrain media by throughput:
         Bitrate information is not explicitly saved.
