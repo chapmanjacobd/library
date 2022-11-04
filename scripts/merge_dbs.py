@@ -9,7 +9,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("database")
     parser.add_argument("dbs", nargs="*")
-    parser.add_argument("--upsert", action="store_true")
+    parser.add_argument("--upsert")
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
     parser.add_argument("--verbose", "-v", action="count", default=0)
     args = parser.parse_args()
@@ -27,15 +27,15 @@ def merge_db(args, source_db):
     source_db = str(Path(source_db).resolve())
 
     s_db = db.connect(argparse.Namespace(database=source_db, verbose=args.verbose))
-    for table in s_db.table_names():
+    for table in [s for s in s_db.table_names() if not "_fts" in s and not s.startswith("sqlite_")]:
         log.info("[%s]: %s", source_db, table)
         data = s_db[table].rows
-        if args.upsert:
-            args.db[table].upsert_all(data, alter=True)
-        else:
-            args.db[table].insert_all(data, alter=True, replace=True)
 
-    args.db.conn.commit()
+        with args.db.conn:
+            if args.upsert:
+                args.db[table].upsert_all(data, pk=args.upsert.split(","), alter=True)
+            else:
+                args.db[table].insert_all(data, alter=True, replace=True)
 
 
 def merge_dbs():
