@@ -96,7 +96,7 @@ def construct_query(args) -> Tuple[str, dict]:
 
     cf.extend([" and " + w for w in args.where])
 
-    play_actions.construct_search_bindings(args, bindings, cf, m_columns)
+    play_actions.construct_search_bindings(args, cf, bindings, m_columns)
 
     cf.append(
         f"""and cast(STRFTIME('%s',

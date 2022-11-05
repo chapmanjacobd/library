@@ -92,10 +92,7 @@ def add_parser(subparsers, name, a=None):
     return subparsers.add_parser(name, aliases=aliases, add_help=False)
 
 
-def library(args=None) -> None:
-    if args:
-        sys.argv[2:] = args
-
+def create_subcommands_parser():
     parser = argparse.ArgumentParser(
         prog="lb",
         description="xk media library",
@@ -184,6 +181,14 @@ def library(args=None) -> None:
     subp_nfb_directors.set_defaults(func=scripts.nfb_films)
 
     parser.add_argument("--version", "-V", action="store_true")
+    return parser
+
+
+def library(args=None) -> None:
+    if args:
+        sys.argv[2:] = args
+
+    parser = create_subcommands_parser()
     args, _unk = parser.parse_known_args(args)
     if args.version:
         return print(__version__)
