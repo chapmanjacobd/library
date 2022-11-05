@@ -51,9 +51,9 @@ def construct_query(args) -> Tuple[str, dict]:
         if args.include:
             args.table = db.fts_search(args, bindings)
         elif args.exclude:
-            construct_search_bindings(args, bindings, cf, pl_columns)
+            construct_search_bindings(args, cf, bindings, pl_columns)
     else:
-        construct_search_bindings(args, bindings, cf, pl_columns)
+        construct_search_bindings(args, cf, bindings, pl_columns)
 
     args.sql_filter = " ".join(cf)
 

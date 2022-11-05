@@ -10,7 +10,7 @@ from xklb.subtitle import externalize_subtitle
 from xklb.utils import cmd, log
 
 
-def construct_search_bindings(args, bindings, cf, columns) -> None:
+def construct_search_bindings(args, cf, bindings, columns) -> None:
     includes, excludes = db.gen_include_excludes(columns)
 
     for idx, inc in enumerate(args.include):
@@ -56,11 +56,11 @@ def construct_query(args) -> Tuple[str, dict]:
             args.table = db.fts_search(args, bindings)
             m_columns = {**m_columns, "rank": int}
         elif args.exclude:
-            construct_search_bindings(args, bindings, cf, m_columns)
+            construct_search_bindings(args, cf, bindings, m_columns)
     else:
-        construct_search_bindings(args, bindings, cf, m_columns)
+        construct_search_bindings(args, cf, bindings, m_columns)
 
-    if args.table == "media" and not any([args.partial, args.print, args.include, args.where]):
+    if args.table == "media" and not any([args.partial, args.print, cf, args.where]):
         limit = 60_000
         if args.random:
             limit = consts.DEFAULT_PLAY_QUEUE * 16

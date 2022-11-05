@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 import yt_dlp
+from sqlite_utils.db import NotFoundError
 
 from xklb import consts, fs_extract, utils
 from xklb.consts import DBType
@@ -435,7 +436,10 @@ def save_tube_entry(args, m, info: Optional[dict] = None, error=None, URE=False)
     args.db["media"].upsert(utils.dict_filter_bool(entry), pk="path", alter=True)  # type: ignore
 
     if fs_tags:
-        args.db["media"].delete(webpath)
+        try:
+            args.db["media"].delete(webpath)
+        except NotFoundError:
+            pass
 
 
 def yt(args, m) -> None:
