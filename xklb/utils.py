@@ -167,7 +167,7 @@ def cmd(*command, strict=True, cwd=None, quiet=True, **kwargs) -> subprocess.Com
             print(s)
         return s
 
-    r = subprocess.run(command, capture_output= True, text=True, cwd=cwd, **os_bg_kwargs(), **kwargs)
+    r = subprocess.run(command, capture_output=True, text=True, cwd=cwd, **os_bg_kwargs(), **kwargs)
 
     log.debug(r.args)
     r.stdout = print_std(r.stdout)
@@ -188,11 +188,12 @@ def cmd_detach(*command, **kwargs) -> subprocess.CompletedProcess:
     stdin = os.open(os.devnull, os.O_RDONLY)
 
     command = conform(command)
-    if command[0] in ['fish', 'bash']:
+    if command[0] in ["fish", "bash"]:
         import shlex
+
         command = command[0:2] + [shlex.join(command[2:])]
-    subprocess.Popen(command, stdin=stdin, stdout=stdout, stderr=stderr,  close_fds=True, **os_bg_kwargs(), **kwargs)
-    return subprocess.CompletedProcess(command, 0, 'Detached command is async')
+    subprocess.Popen(command, stdin=stdin, stdout=stdout, stderr=stderr, close_fds=True, **os_bg_kwargs(), **kwargs)
+    return subprocess.CompletedProcess(command, 0, "Detached command is async")
 
 
 def cmd_interactive(*command) -> subprocess.CompletedProcess:
