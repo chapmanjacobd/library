@@ -428,6 +428,7 @@ def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
 
     parser.add_argument("--post-action", "--action", "-k", default="keep", help=argparse.SUPPRESS)
     parser.add_argument("--keep-dir", "--keepdir", default="keep", help=argparse.SUPPRESS)
+    parser.add_argument("--keep-cmd", "--keepcmd", help=argparse.SUPPRESS)
     parser.add_argument("--shallow-organize", default="/mnt/d/", help=argparse.SUPPRESS)
 
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)

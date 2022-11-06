@@ -63,6 +63,7 @@ def optimize(args) -> None:
         },
         "reddit_posts": {
             "search_columns": ["title", "selftext"],
+            "column_order": ["playlist_path", "path"],
         },
         "reddit_comments": {
             "search_columns": ["body"],
