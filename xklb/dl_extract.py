@@ -207,8 +207,9 @@ def dl_download(args=None) -> None:
         ╘═════════════════════╧════════════╧══════════════════╧════════════════════╧══════════╛
     """,
     )
+    m_columns = args.db["media"].columns_dict
 
-    if "media" in args.db.table_names() and "webpath" in args.db["media"].columns_dict:
+    if "media" in args.db.table_names() and "webpath" in m_columns:
         with args.db.conn:
             args.db.conn.execute("DELETE from media WHERE webpath is NULL and path in (select webpath from media)")
 
@@ -219,7 +220,12 @@ def dl_download(args=None) -> None:
             continue
 
         # check again in case it was already completed by another process
-        path = list(args.db.query("select path from media where path=?", [m["path"]]))
+        path = list(
+            args.db.query(
+                f"select path from media where path=? {'AND time_modified = ' + str(m.get('time_modified') or 0) if 'time_modified' in m_columns else ''}",
+                [m["path"]],
+            )
+        )
         if not path:
             log.info("[%s]: Already downloaded. Skipping!", m["path"])
             continue
