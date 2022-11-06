@@ -182,6 +182,44 @@ def cmd(*command, strict=True, cwd=None, quiet=True, interactive=False, **kwargs
     return r
 
 
+def cmd_detach(*command, **kwargs) -> subprocess.CompletedProcess:
+    # https://stackoverflow.com/questions/62521658/python-subprocess-detach-a-process
+    stdout = os.open(os.devnull, os.O_WRONLY)
+    stderr = os.open(os.devnull, os.O_WRONLY)
+    stdin = os.open(os.devnull, os.O_RDONLY)
+
+    pid = os.fork()
+    if pid > 0:
+        os.waitpid(pid, 0)
+        return subprocess.CompletedProcess(command, 0, 'Detached command is async')
+    else:
+        os.setsid()
+        subprocess.Popen(command, stdout=stdout, stderr=stderr, stdin=stdin, close_fds=True, **kwargs)
+        os._exit(0)
+
+
+def cmd_interactive(*command) -> subprocess.CompletedProcess:
+    return_code = os.spawnvpe(os.P_WAIT, command[0], command, os.environ)
+    return subprocess.CompletedProcess(command, return_code)
+
+
+def Pclose(process) -> subprocess.CompletedProcess:
+    try:
+        stdout, stderr = process.communicate(input)
+    except subprocess.TimeoutExpired as exc:
+        process.kill()
+        if platform.system() == "Windows":
+            exc.stdout, exc.stderr = process.communicate()
+        else:
+            process.wait()
+        raise
+    except Exception:
+        process.kill()
+        raise
+    return_code = process.poll()
+    return subprocess.CompletedProcess(process.args, return_code, stdout, stderr)
+
+
 def file_temp_copy(src):
     fo_dest = tempfile.NamedTemporaryFile(delete=False)
     with open(src, "r+b") as fo_src:
@@ -292,28 +330,6 @@ def dict_filter_bool(kwargs, keep_0=True) -> Optional[dict]:
 
 def list_dict_filter_bool(media: List[dict], keep_0=True) -> List[dict]:
     return [d for d in [dict_filter_bool(d, keep_0) for d in media] if d]
-
-
-def cmd_interactive(*command) -> subprocess.CompletedProcess:
-    return_code = os.spawnvpe(os.P_WAIT, command[0], command, os.environ)
-    return subprocess.CompletedProcess(command, return_code)
-
-
-def Pclose(process) -> subprocess.CompletedProcess:
-    try:
-        stdout, stderr = process.communicate(input)
-    except subprocess.TimeoutExpired as exc:
-        process.kill()
-        if platform.system() == "Windows":
-            exc.stdout, exc.stderr = process.communicate()
-        else:
-            process.wait()
-        raise
-    except Exception:
-        process.kill()
-        raise
-    return_code = process.poll()
-    return subprocess.CompletedProcess(process.args, return_code, stdout, stderr)
 
 
 def chunks(lst, n) -> Generator:
