@@ -52,13 +52,15 @@ def with_timeout(timeout):
 
 
 def os_bg_kwargs() -> dict:
+    # prevent ctrl-c from affecting subprocesses first
+
     if hasattr(os, "setpgrp"):
-        os_kwargs = dict(start_new_session=True)
+        return dict(start_new_session=True)
     else:
-        CREATE_NEW_PROCESS_GROUP = 0x00000200
-        DETACHED_PROCESS = 0x00000008
-        os_kwargs = dict(creationflags=DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP)
-    return os_kwargs
+        # CREATE_NEW_PROCESS_GROUP = 0x00000200
+        # DETACHED_PROCESS = 0x00000008
+        # os_kwargs = dict(creationflags=DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP)
+        return {}
 
 
 def run_once(f):
@@ -138,7 +140,7 @@ def sanitize_url(args, path: str) -> str:
     return path
 
 
-def cmd(*command, strict=True, cwd=None, quiet=True, interactive=False, **kwargs) -> subprocess.CompletedProcess:
+def cmd(*command, strict=True, cwd=None, quiet=True, **kwargs) -> subprocess.CompletedProcess:
     EXP_FILTER = re.compile(
         "|".join(
             [
@@ -165,11 +167,7 @@ def cmd(*command, strict=True, cwd=None, quiet=True, interactive=False, **kwargs
             print(s)
         return s
 
-    if len(command) == 1 and kwargs.get("shell") is True:
-        command = command[0]
-
-    os_kwargs = {} if interactive else os_bg_kwargs()
-    r = subprocess.run(command, capture_output=True, text=True, cwd=cwd, **os_kwargs, **kwargs)
+    r = subprocess.run(command, capture_output= True, text=True, cwd=cwd, **os_bg_kwargs(), **kwargs)
 
     log.debug(r.args)
     r.stdout = print_std(r.stdout)
@@ -189,14 +187,12 @@ def cmd_detach(*command, **kwargs) -> subprocess.CompletedProcess:
     stderr = os.open(os.devnull, os.O_WRONLY)
     stdin = os.open(os.devnull, os.O_RDONLY)
 
-    pid = os.fork()
-    if pid > 0:
-        os.waitpid(pid, 0)
-        return subprocess.CompletedProcess(command, 0, 'Detached command is async')
-    else:
-        os.setsid()
-        subprocess.Popen(command, stdout=stdout, stderr=stderr, stdin=stdin, close_fds=True, **kwargs)
-        os._exit(0)
+    command = conform(command)
+    if command[0] in ['fish', 'bash']:
+        import shlex
+        command = command[0:2] + [shlex.join(command[2:])]
+    subprocess.Popen(command, stdin=stdin, stdout=stdout, stderr=stderr,  close_fds=True, **os_bg_kwargs(), **kwargs)
+    return subprocess.CompletedProcess(command, 0, 'Detached command is async')
 
 
 def cmd_interactive(*command) -> subprocess.CompletedProcess:
