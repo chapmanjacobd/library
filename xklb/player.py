@@ -150,6 +150,7 @@ def mv_to_keep_folder(args, media_file: str) -> None:
     new_path = shutil.move(media_file, keep_path)
     if args.keep_cmd:
         import shlex
+
         utils.cmd_detach(shlex.split(args.keep_cmd), new_path)
     with args.db.conn:
         args.db.conn.execute("UPDATE media set path = ? where path = ?", [new_path, media_file])
