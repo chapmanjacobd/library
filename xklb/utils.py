@@ -184,6 +184,7 @@ def cmd(*command, strict=True, cwd=None, quiet=True, interactive=False, **kwargs
 
 def cmd_detach(*command, **kwargs) -> subprocess.CompletedProcess:
     # https://stackoverflow.com/questions/62521658/python-subprocess-detach-a-process
+    # if using with ffmpeg remember to run with `-nostdin`
     stdout = os.open(os.devnull, os.O_WRONLY)
     stderr = os.open(os.devnull, os.O_WRONLY)
     stdin = os.open(os.devnull, os.O_RDONLY)
