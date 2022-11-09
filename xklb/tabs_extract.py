@@ -77,7 +77,7 @@ def get_new_paths(args) -> List[str]:
         )
 
     try:
-        existing = set([d["path"] for d in args.db.query(*qb)])
+        existing = {d["path"] for d in args.db.query(*qb)}
     except Exception:
         pass
     else:
