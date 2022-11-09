@@ -30,7 +30,7 @@ class MrSuperDialogue:
         window_width, window_height = 380, 150  # override
         x_coordinate = x or 0
         y_coordinate = y or 0
-        self.root.geometry("{}x{}+{}+{}".format(window_width, window_height, x_coordinate, y_coordinate))
+        self.root.geometry(f"{window_width}x{window_height}+{x_coordinate}+{y_coordinate}")
         self.root.update_idletasks()
 
         log.info(
@@ -48,7 +48,7 @@ class MrSuperDialogue:
 
         x_coordinate = x_coordinate + int((s_width / 2) - (window_width / 2))
         y_coordinate = y_coordinate + int((s_height / 2) - (window_height / 2))
-        self.root.geometry("{}x{}+{}+{}".format(window_width, window_height, x_coordinate, y_coordinate))
+        self.root.geometry(f"{window_width}x{window_height}+{x_coordinate}+{y_coordinate}")
         self.root.wm_attributes("-alpha", 1)
 
     def __init__(self, path, qty, geom_data=None):

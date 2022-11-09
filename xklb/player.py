@@ -435,7 +435,7 @@ def socket_play(args, m: dict) -> None:
         play_opts += ",script-opts=ytdl_hook-try_ytdl_first=yes"
 
     f = m["path"].replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
-    args.sock.send((f'raw loadfile "{f}" replace "{play_opts}" \n').encode("utf-8"))
+    args.sock.send((f'raw loadfile "{f}" replace "{play_opts}" \n').encode())
     sleep(args.interdimensional_cable)
 
 

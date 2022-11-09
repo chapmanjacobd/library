@@ -58,7 +58,7 @@ def rename_invalid_paths() -> None:
 
     for path in args.paths:
         log.info(path)
-        subpaths = sorted([str(p) for p in Path(path).rglob("*")], key=len, reverse=True)
+        subpaths = sorted((str(p) for p in Path(path).rglob("*")), key=len, reverse=True)
         for p in subpaths:
             rename_path(p)
         # Parallel()(delayed(rename_path)(p) for p in subpaths)  # mostly IO bound

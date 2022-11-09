@@ -354,8 +354,8 @@ def combine(*list_) -> Optional[str]:
     if not list_:
         return None
 
-    no_comma = sum([str(s).split(",") for s in list_], [])
-    no_semicolon = sum([s.split(";") for s in no_comma], [])
+    no_comma = sum((str(s).split(",") for s in list_), [])
+    no_semicolon = sum((s.split(";") for s in no_comma), [])
     no_double_space = [_RE_COMBINE_WHITESPACE.sub(" ", s).strip() for s in no_semicolon]
     no_unknown = [x for x in no_double_space if x.lower() not in ("unknown", "none", "und", "")]
 
@@ -454,7 +454,7 @@ class argparse_enum(argparse.Action):
         # Generate choices from the Enum
         kwargs.setdefault("choices", tuple(e.value for e in enum_type))
 
-        super(argparse_enum, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         self._enum = enum_type
 

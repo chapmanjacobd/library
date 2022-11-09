@@ -172,9 +172,7 @@ yt_unrecoverable_errors = re.compile(
 .*Track not found\$
 .*Not found.\$
 .*Can't find object media for
-.*o video formats found
-.*o video in
-.*o video on
+.*No video formats found
 .*certificate is not valid
 .*CERTIFICATE_VERIFY_FAILED
 .*HTTP Error 403: Forbidden\$

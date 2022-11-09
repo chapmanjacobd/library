@@ -5,7 +5,7 @@ from xklb.utils import log
 
 
 def tracer(sql, params) -> None:
-    print("SQL: {} - params: {}".format(sql, params))
+    print(f"SQL: {sql} - params: {params}")
 
 
 def connect(args, conn=None, **kwargs):
@@ -90,6 +90,7 @@ def optimize(args) -> None:
 
     for table in config:
         if table in db.table_names():
+            log.info('Processing table: %s', table)
             table_columns = db[table].columns_dict
             table_config = config.get(table) or {}
             ignore_columns = table_config.get("ignore_columns") or []
@@ -100,22 +101,28 @@ def optimize(args) -> None:
             str_columns = [k for k, v in table_columns.items() if v == str and k not in search_columns + ignore_columns]
 
             optimized_column_order = [*int_columns, *(table_config.get("column_order") or [])]
-            current_order = zip(table_columns, optimized_column_order)
+            compare_order = zip(table_columns, optimized_column_order)
             was_transformed = False
-            if not all([x == y for x, y in current_order]):
+            if not all([x == y for x, y in compare_order]):
+                log.info('Transforming column order: %s', optimized_column_order)
                 db[table].transform(column_order=optimized_column_order)  # type: ignore
                 was_transformed = True
 
             for column in int_columns + str_columns:
+                log.info('Creating index: %s', column)
                 db[table].create_index([column], if_not_exists=True, analyze=True)  # type: ignore
 
             if any(fts_columns) and (db[table].detect_fts() is None or was_transformed):  # type: ignore
+                log.info('Creating fts index: %s', fts_columns)
                 db[table].enable_fts(fts_columns, create_triggers=True, replace=True)
 
             with db.conn:
+                log.info('Optimizing table: %s', table)
                 db[table].optimize()  # type: ignore
 
+    log.info('Running VACUUM')
     db.vacuum()
+    log.info('Running ANALYZE')
     db.analyze()
 
 

@@ -11,8 +11,8 @@ from xklb.utils import combine, log, safe_unpack
 
 
 def get_subtitle_tags(args, f, streams, codec_types) -> dict:
-    attachment_count = sum([1 for s in codec_types if s == "attachment"])
-    internal_subtitles_count = sum([1 for s in codec_types if s == "subtitle"])
+    attachment_count = sum(1 for s in codec_types if s == "attachment")
+    internal_subtitles_count = sum(1 for s in codec_types if s == "subtitle")
 
     if args.scan_subtitles:
         internal_subtitles_text = utils.conform(
@@ -184,8 +184,8 @@ def munge_av_tags(args, media, f) -> Optional[dict]:
     stream_tags = [s.get("tags") for s in streams if s.get("tags") is not None]
     language = combine([t.get("language") for t in stream_tags if t.get("language") not in (None, "und", "unk")])
 
-    video_count = sum([1 for s in codec_types if s == "video"])
-    audio_count = sum([1 for s in codec_types if s == "audio"])
+    video_count = sum(1 for s in codec_types if s == "video")
+    audio_count = sum(1 for s in codec_types if s == "audio")
     chapter_count = len(probe["chapters"])
 
     media = {
