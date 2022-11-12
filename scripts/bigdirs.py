@@ -27,7 +27,13 @@ def group_by_folder(args, media):
                 }
 
     for path, pdict in list(d.items()):
-        if pdict["count"] < args.lower or pdict["count"] > args.upper:
+        if any(
+            [
+                pdict["count"] < args.lower,
+                pdict["count"] > args.upper,
+                pdict['count'] == pdict['count_deleted'],
+            ]
+        ):
             d.pop(path)
 
     return [{**v, "path": k} for k, v in d.items()]
