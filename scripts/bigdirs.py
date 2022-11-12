@@ -31,7 +31,7 @@ def group_by_folder(args, media):
             [
                 pdict["count"] < args.lower,
                 pdict["count"] > args.upper,
-                pdict['count'] == pdict['count_deleted'],
+                pdict["count"] == pdict["count_deleted"],
             ]
         ):
             d.pop(path)

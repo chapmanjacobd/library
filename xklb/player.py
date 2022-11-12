@@ -234,6 +234,7 @@ def delete_playlists(args, playlists) -> None:
         args.db.conn.execute(
             "delete from playlists where path in (" + ",".join(["?"] * len(playlists)) + ")", (*playlists,)
         )
+    with args.db.conn:
         args.db.conn.execute(
             "delete from media where playlist_path in (" + ",".join(["?"] * len(playlists)) + ")", (*playlists,)
         )

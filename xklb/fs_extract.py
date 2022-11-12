@@ -157,7 +157,7 @@ def scan_path(args, path_str: str) -> int:
     if not path.exists():
         print(f"[{path}] Path does not exist")
         if args.force:
-            player.delete_playlists(args, [path_str])
+            player.delete_playlists(args, [str(path)])
         return 0
 
     print(f"[{path}] Building file list...")
