@@ -16,10 +16,15 @@ def group_by_folder(args, media):
             parent = "/".join(p) + "/"
 
             if d.get(parent):
-                d[parent]["size"] += m["size"]
-                d[parent]["count"] += 1
+                d[parent]["size"] += m["size"] if m.get("is_deleted") or 0 == 0 else 0
+                d[parent]["count"] += 1 if m.get("is_deleted") or 0 == 0 else 0
+                d[parent]["count_deleted"] += m.get("is_deleted")
             else:
-                d[parent] = dict(size=m["size"], count=1)
+                d[parent] = {
+                    "size": m["size"] if m.get("is_deleted") or 0 == 0 else 0,
+                    "count": 1 if m.get("is_deleted") or 0 == 0 else 0,
+                    "count_deleted": m.get("is_deleted"),
+                }
 
     for path, pdict in list(d.items()):
         if pdict["count"] < args.lower or pdict["count"] > args.upper:
@@ -34,10 +39,12 @@ def get_table(args) -> List[dict]:
     media = list(
         args.db.query(
             f"""
-        select path, size
+        select
+            path
+            , size
+            {', time_deleted > 0 is_deleted' if 'time_deleted' in columns else ''}
         from media
         where 1=1
-            {'and time_deleted = 0' if 'time_deleted' in columns else ''}
             {'and time_downloaded > 0' if 'time_downloaded' in columns else ''}
         order by path
         """
@@ -45,12 +52,13 @@ def get_table(args) -> List[dict]:
     )
 
     folders = group_by_folder(args, media)
-    return sorted(folders, key=lambda x: x["size"])
+    return sorted(folders, key=lambda x: x["count_deleted"] if args.sort_by_deleted else x["size"])
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("database")
+    parser.add_argument("--sort-by-deleted", action="store_true")
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", default="4000")
     parser.add_argument("--lower", default=4, type=int, help="Number of files per folder lower limit")
     parser.add_argument("--upper", default=4000, type=int, help="Number of files per folder upper limit")
@@ -61,13 +69,14 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def large_folders() -> None:
+def bigdirs() -> None:
     args = parse_args()
     tbl = get_table(args)
 
     if args.limit:
         tbl = tbl[-int(args.limit) :]
 
+    tbl = utils.list_dict_filter_bool(tbl, keep_0=False)
     tbl = utils.col_resize(tbl, "path", 60)
     tbl = utils.col_naturalsize(tbl, "size")
     print(tabulate(tbl, tablefmt="fancy_grid", headers="keys", showindex=False))
@@ -76,4 +85,4 @@ def large_folders() -> None:
 
 
 if __name__ == "__main__":
-    large_folders()
+    bigdirs()
