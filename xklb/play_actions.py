@@ -537,10 +537,10 @@ def transcode(next_video):
     shutil.move(next_video, temp_video)
     next_video = str(Path(next_video).with_suffix(".mkv"))
     cmd(
-            f"ffmpeg -nostdin -loglevel error -stats -i {temp_video} -map 0 -scodec webvtt -vcodec h264"
-            " -preset fast -profile:v high -level 4.1 -crf 17 -pix_fmt yuv420p"
-            " -acodec opus -ac 2 -b:a 128k -filter:a loudnorm=i=-18:lra=17"
-            f" {next_video} && rm {temp_video}"
+        f"ffmpeg -nostdin -loglevel error -stats -i {temp_video} -map 0 -scodec webvtt -vcodec h264"
+        " -preset fast -profile:v high -level 4.1 -crf 17 -pix_fmt yuv420p"
+        " -acodec opus -ac 2 -b:a 128k -filter:a loudnorm=i=-18:lra=17"
+        f" {next_video} && rm {temp_video}"
     )
     print(next_video)
     return next_video

@@ -110,15 +110,15 @@ def find_new_files(args, path: Path) -> List[str]:
 
     try:
         existing_set = {
-                d["path"]
-                for d in args.db.query(
-                    f"""select path from media
+            d["path"]
+            for d in args.db.query(
+                f"""select path from media
                 where 1=1
                     and time_deleted=0
                     and path like '{path}%'
                     {'AND time_downloaded > 0' if 'time_downloaded' in columns else ''}
                 """
-                )
+            )
         }
     except Exception as e:
         log.debug(e)

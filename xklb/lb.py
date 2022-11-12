@@ -119,7 +119,7 @@ def create_subcommands_parser():
     subp_filesystem.set_defaults(func=filesystem)
 
     subp_bigdirs = add_parser(subparsers, "bigdirs", ["largefolders", "large_folders"])
-    subp_bigdirs.set_defaults(func=scripts.large_folders)
+    subp_bigdirs.set_defaults(func=scripts.bigdirs)
     subp_dedupe = add_parser(subparsers, "dedupe")
     subp_dedupe.set_defaults(func=scripts.deduplicate_music)
     subp_christen = add_parser(subparsers, "christen")
