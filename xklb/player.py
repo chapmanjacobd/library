@@ -234,10 +234,19 @@ def delete_playlists(args, playlists) -> None:
         args.db.conn.execute(
             "delete from playlists where path in (" + ",".join(["?"] * len(playlists)) + ")", (*playlists,)
         )
-    with args.db.conn:
-        args.db.conn.execute(
-            "delete from media where playlist_path in (" + ",".join(["?"] * len(playlists)) + ")", (*playlists,)
-        )
+
+    online_media = [p for p in playlists if p.startswith('http')]
+    if online_media:
+        with args.db.conn:
+            args.db.conn.execute(
+                "delete from media where playlist_path in (" + ",".join(["?"] * len(online_media)) + ")",
+                (*online_media,),
+            )
+
+    local_media = [p for p in playlists if not p.startswith('http')]
+    for folder in local_media:
+        with args.db.conn:
+            args.db.conn.execute("delete from media where path like ?", (folder + '%',))
 
 
 def post_act(args, media_file: str, action=None) -> None:
