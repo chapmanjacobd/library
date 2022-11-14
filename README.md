@@ -17,7 +17,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
     pip install xklb
 
     $ library
-    xk media library subcommands (v1.19.047)
+    xk media library subcommands (v1.19.048)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -67,7 +67,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
       lb nfb-films             NFB Director links -> film links (stdin)
       lb nouns                 Unstructured text -> compound nouns (stdin)
       lb hnadd                 Create a hackernews database (this takes a few days)
-
+    
 
 ## Quick Start -- watch online media on your PC
 
@@ -302,9 +302,6 @@ Organize via separate databases.
         │ Aggregate │  145769 │ 37.6 TB │  439939 │
         ╘═══════════╧═════════╧═════════╧═════════╛
         Total duration: 16 years, 7 months, 19 days, 17 hours and 25 minutes
-
-        See how much video you've watched and deleted in the past month
-        library watch video.db -pa --played-within '30 days' -w 'time_deleted>0'
 
         View all the columns
         library watch -p -L 1 --cols '*'
