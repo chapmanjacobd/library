@@ -105,12 +105,12 @@ def optimize(args) -> None:
             was_transformed = False
             if not all([x == y for x, y in compare_order]):
                 log.info("Transforming column order: %s", optimized_column_order)
-                # db[table].transform(column_order=optimized_column_order)  # type: ignore
+                db[table].transform(column_order=optimized_column_order)  # type: ignore
                 was_transformed = True
 
             for column in int_columns + str_columns:
                 log.info("Creating index: %s", column)
-                # db[table].create_index([column], if_not_exists=True, analyze=True)  # type: ignore
+                db[table].create_index([column], if_not_exists=True, analyze=True)  # type: ignore
 
             if any(fts_columns) and (db[table].detect_fts() is None or was_transformed):  # type: ignore
                 log.info("Creating fts index: %s", fts_columns)
