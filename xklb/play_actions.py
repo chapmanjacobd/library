@@ -49,6 +49,14 @@ def construct_query(args) -> Tuple[str, dict]:
         cf.append(
             f"and time_modified < cast(STRFTIME('%s', datetime( 'now', '-{args.changed_before}', '-3 hours' )) as int)"
         )
+    if args.played_within:
+        cf.append(
+            f"and time_played > cast(STRFTIME('%s', datetime( 'now', '-{args.played_within}', '-3 hours' )) as int)"
+        )
+    if args.played_before:
+        cf.append(
+            f"and time_played < cast(STRFTIME('%s', datetime( 'now', '-{args.played_before}', '-3 hours' )) as int)"
+        )
 
     args.table = "media"
     if args.db["media"].detect_fts():
@@ -374,6 +382,8 @@ def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
     parser.add_argument("--created-before", help=argparse.SUPPRESS)
     parser.add_argument("--changed-within", "--modified-within", help=argparse.SUPPRESS)
     parser.add_argument("--changed-before", "--modified-before", help=argparse.SUPPRESS)
+    parser.add_argument("--played-within", help=argparse.SUPPRESS)
+    parser.add_argument("--played-before", help=argparse.SUPPRESS)
 
     parser.add_argument("--chromecast-device", "--cast-to", "-t", default=default_chromecast, help=argparse.SUPPRESS)
     parser.add_argument("--chromecast", "--cast", "-c", action="store_true", help=argparse.SUPPRESS)

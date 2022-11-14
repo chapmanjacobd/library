@@ -231,7 +231,10 @@ def file_temp_copy(src):
 def trash(f: Union[Path, str]) -> None:
     trash_put = which("trash-put") or which("trash")
     if trash_put is not None:
-        cmd(trash_put, f, strict=False)
+        try:
+            cmd_detach(trash_put, f)
+        except Exception:
+            cmd(trash_put, f, strict=False)
     else:
         Path(f).unlink(missing_ok=True)
 
