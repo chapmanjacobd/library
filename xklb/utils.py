@@ -338,7 +338,7 @@ def chunks(lst, n) -> Generator:
         yield lst[i : i + n]
 
 
-def divisor_gen(n: float) -> Generator:
+def divisor_gen(n: int) -> Generator:
     large_divisors = []
     for i in range(2, int(math.sqrt(n) + 1)):
         if n % i == 0:
