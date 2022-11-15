@@ -257,8 +257,11 @@ def post_act(args, media_file: str, action=None) -> None:
         return
 
     if media_file.startswith("http"):
-        if action == "remove":
+        if action in ["softdelete", "remove", "delete"]:
             mark_media_deleted(args, media_file)
+        elif action == "delete-if-audiobook":
+            # TODO: pass media title to this function
+            pass
         elif action == "ask":
             if not Confirm.ask("Keep?", default=False):
                 mark_media_deleted(args, media_file)

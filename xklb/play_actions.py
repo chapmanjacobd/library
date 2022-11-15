@@ -356,7 +356,7 @@ def parse_duration(args):
             duration_rules += f"and {abs(int(duration_rule)) * SEC_TO_M} >= duration "
         else:
             # approximate duration rule
-            duration_m = int(duration_rule) * SEC_TO_M
+            duration_m = float(duration_rule) * SEC_TO_M
             duration_rules += (
                 f"and {duration_m + (duration_m /10)} >= duration and duration >= {duration_m - (duration_m /10)} "
             )
