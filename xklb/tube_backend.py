@@ -219,7 +219,7 @@ def consolidate(v: dict) -> Optional[dict]:
 
 def log_problem(args, playlist_path) -> None:
     if is_playlist_known(args, playlist_path):
-        log.warning("\nStart of known playlist reached %s", playlist_path)
+        log.warning("Start of known playlist reached %s", playlist_path)
     else:
         log.warning("Could not add playlist %s", playlist_path)
 
@@ -304,12 +304,16 @@ def process_playlist(args, playlist_path, ydl_opts, playlist_root=True) -> Optio
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.add_post_processor(AddToArchivePP(), when="pre_process")
 
+        count_before_extract = added_media_count
         try:
             pl = ydl.extract_info(playlist_path, download=False, process=True)
         except ExistingPlaylistVideoReached:
+            if added_media_count > count_before_extract:
+                sys.stdout.write("\n")
             log_problem(args, playlist_path)
         else:
-            sys.stdout.write("\n")
+            if added_media_count > count_before_extract:
+                sys.stdout.write("\n")
             if not pl and not args.safe:
                 log.warning("Logging undownloadable media")
                 save_undownloadable(args, playlist_path)
@@ -555,8 +559,8 @@ def yt(args, m) -> None:
             save_tube_entry(args, m, info, error=ydl_errors)
         elif any([yt_unrecoverable_errors.match(l) for l in ydl_full_log]):
             matched_error = [m.string for m in utils.conform([yt_unrecoverable_errors.match(l) for l in ydl_full_log])]
-            log.info("[%s]: Unrecoverable error matched. %s", m["path"], ydl_errors or utils.combine(matched_error))
+            log.warning("[%s]: Unrecoverable error matched. %s", m["path"], ydl_errors or utils.combine(matched_error))
             save_tube_entry(args, m, info, error=ydl_errors, URE=True)
         else:
-            log.warning("[%s]: Unknown error. %s", m["path"], ydl_errors)
+            log.error("[%s]: Unknown error. %s", m["path"], ydl_errors)
             save_tube_entry(args, m, info, error=ydl_errors)
