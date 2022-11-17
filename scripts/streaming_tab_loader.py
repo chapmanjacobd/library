@@ -1,4 +1,4 @@
-import argparse, sys
+import argparse, logging, sys
 from time import sleep
 
 from xklb import db, player, utils
@@ -58,6 +58,7 @@ def streaming_tab_loader() -> None:
             "brotab is required for surfing. Install with pip install brotab or pip install xklb[full]"
         )
     else:
+        logging.getLogger("brotab").setLevel(log.level)
         args.bt_api = SingleMediatorAPI(create_clients(args.target_hosts))  # type: ignore
 
     tabs_opened = 0
@@ -66,6 +67,7 @@ def streaming_tab_loader() -> None:
         while True:
             current_count = len(list_tabs(args))
             if current_count < initial_count + args.count:
+                log.debug("[%s < %s]: Opening tab", current_count, initial_count + args.count)
                 fill_count = args.count - (current_count - initial_count)
                 urls = [sys.stdin.readline().rstrip() for _ in range(fill_count)]
                 try:
