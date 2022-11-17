@@ -288,8 +288,9 @@ def mpv_enrich(args, media) -> List[dict]:
 
 def mpv_enrich2(args, media) -> List[dict]:
     md5s = {hashlib.md5(m["path"].encode("utf-8")).hexdigest().upper(): m for m in media}
-    paths = list(Path(args.watch_later_directory).glob("*"))
-    filtered_list = [
+    paths = set(Path(args.watch_later_directory).glob("*"))
+
+    previously_watched = [
         {
             **(md5s.get(p.stem) or {}),
             "time_partial_first": int(p.stat().st_ctime),
@@ -298,6 +299,9 @@ def mpv_enrich2(args, media) -> List[dict]:
         for p in paths
         if md5s.get(p.stem)
     ]
+    if "s" in args.partial:
+        previously_watched_paths = [m["path"] for m in previously_watched]
+        return [m for m in media if m["path"] not in previously_watched_paths]
 
     reverse_chronology = True
     if "o" in args.partial:
@@ -307,7 +311,7 @@ def mpv_enrich2(args, media) -> List[dict]:
         reverse_chronology = not reverse_chronology
 
     media = sorted(
-        filtered_list,
+        previously_watched,
         key=lambda m: m.get("time_partial_last") or m.get("time_partial_first") or 0,
         reverse=reverse_chronology,
     )
