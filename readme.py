@@ -243,8 +243,10 @@ Explore `library` databases in your browser
 
 ### TODOs (PRs welcome)
 
-- cat ~/mc/_cine_http | lb surf
+- todo  recursive todo management, fortune cookie style
 - reddit_mining
+- nano budget
+- cat ~/mc/_cine_http | lb surf
 - create/update views: especially dl queue, etc so that it is easier for people to access data externally
     db.create_view("items", ITEM_VIEW_DEF, replace=True)
 - debug move_random
