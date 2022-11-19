@@ -276,7 +276,7 @@ def process_playlist(args, playlist_path, ydl_opts, playlist_root=True) -> Optio
                     if playlist_root:
                         _add_playlist(args, playlist_path, deepcopy(info))
 
-                    if url in playlists_of_playlists:
+                    if url in playlists_of_playlists and not playlist_root:
                         raise ExistingPlaylistVideoReached  # prevent infinite bug
 
                     process_playlist(args, url, ydl_opts, playlist_root=False)
@@ -288,7 +288,7 @@ def process_playlist(args, playlist_path, ydl_opts, playlist_root=True) -> Optio
                     entry["playlist_path"] = playlist_path
                     _add_playlist(args, playlist_path, deepcopy(info), entry["path"])
 
-                    if is_video_known(args, playlist_path, entry["path"]):
+                    if is_video_known(args, playlist_path, entry["path"]) and not args.ignore_errors:
                         raise ExistingPlaylistVideoReached
 
                     entry = {**entry, **args.extra_media_data}
