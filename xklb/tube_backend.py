@@ -276,8 +276,12 @@ def process_playlist(args, playlist_path, ydl_opts, playlist_root=True) -> Optio
                     if playlist_root:
                         _add_playlist(args, playlist_path, deepcopy(info))
 
-                    if url in playlists_of_playlists and not playlist_root:
-                        raise ExistingPlaylistVideoReached  # prevent infinite bug
+                    if args.ignore_errors:
+                        if url in playlists_of_playlists and not playlist_root:
+                            raise ExistingPlaylistVideoReached  # prevent infinite bug
+                    else:
+                        if url in playlists_of_playlists:
+                            raise ExistingPlaylistVideoReached  # prevent infinite bug
 
                     process_playlist(args, url, ydl_opts, playlist_root=False)
                     playlists_of_playlists.append(url)
