@@ -182,7 +182,7 @@ def cmd(*command, strict=True, cwd=None, quiet=True, **kwargs) -> subprocess.Com
 
 def cmd_detach(*command, **kwargs) -> subprocess.CompletedProcess:
     # https://stackoverflow.com/questions/62521658/python-subprocess-detach-a-process
-    # After lb closes, the detached process becomes a child of the init process aka daemonized (not connected to the terminal so they won't show up in the shell command `jobs`)
+    # After lb closes, the detached process becomes daemonized (ie. not connected to the terminal so they won't show up in the shell command `jobs`)
     # If you shut down your computer often, you may want to open: `watch progress -wc ffmpeg` in another terminal so that you don't forget many things are in the background
     # If using with ffmpeg remember to include ffmpeg's flag `-nostdin` in the command when calling this function
     stdout = os.open(os.devnull, os.O_WRONLY)
