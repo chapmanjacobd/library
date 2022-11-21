@@ -68,7 +68,9 @@ def construct_query(args) -> Tuple[str, dict]:
     else:
         construct_search_bindings(args, cf, bindings, m_columns)
 
-    if args.table == "media" and not any([args.partial, args.print, cf, args.where]):
+    if args.table == "media" and not any(
+        [cf, args.where, args.print, args.partial, args.limit != consts.DEFAULT_PLAY_QUEUE]
+    ):
         limit = 60_000
         if args.random:
             limit = consts.DEFAULT_PLAY_QUEUE * 16
