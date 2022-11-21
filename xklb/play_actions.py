@@ -112,7 +112,7 @@ def construct_query(args) -> Tuple[str, dict]:
         {', video_count > 0 desc' if 'video_count' in m_columns and args.action == SC.watch else ''}
         {', audio_count > 0 desc' if 'audio_count' in m_columns else ''}
         {', width < height desc' if 'width' in m_columns and args.portrait else ''}
-        {f', subtitle_count {subtitle_count} desc' if 'subtitle_count' in m_columns and args.action == SC.watch and not any([args.print, consts.PYTEST_RUNNING, 'subtitle_count' in args.where]) else ''}
+        {f', subtitle_count {subtitle_count} desc' if 'subtitle_count' in m_columns and args.action == SC.watch and not any([args.print, consts.PYTEST_RUNNING, 'subtitle_count' in args.where, args.limit != consts.DEFAULT_PLAY_QUEUE]) else ''}
         {', ' + args.sort if args.sort else ''}
         {', path' if args.print or args.include or args.play_in_order > 0 else ''}
         , random()
