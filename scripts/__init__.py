@@ -1,5 +1,5 @@
 from scripts.bigdirs import bigdirs
-from scripts.dedupe import deduplicate_music
+from scripts.dedupe import deduplicate_db
 from scripts.invalid_paths import rename_invalid_paths
 from scripts.merge_dbs import merge_dbs
 from scripts.merge_online_local import merge_online_local
