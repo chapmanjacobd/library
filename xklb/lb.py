@@ -29,7 +29,7 @@ def usage() -> str:
       lb view                  View images
 
       lb bigdirs               Discover folders which take much room
-      lb dedupe                Deduplicate audio files
+      lb dedupe                Deduplicate local db files
 
       lb christen              Cleanse files by giving them a new name
 
@@ -121,7 +121,7 @@ def create_subcommands_parser():
     subp_bigdirs = add_parser(subparsers, "bigdirs", ["largefolders", "large_folders"])
     subp_bigdirs.set_defaults(func=scripts.bigdirs)
     subp_dedupe = add_parser(subparsers, "dedupe")
-    subp_dedupe.set_defaults(func=scripts.deduplicate_music)
+    subp_dedupe.set_defaults(func=scripts.deduplicate_db)
     subp_christen = add_parser(subparsers, "christen")
     subp_christen.set_defaults(func=scripts.rename_invalid_paths)
     subp_merge_db = add_parser(subparsers, "merge-dbs")

@@ -1,4 +1,4 @@
-import argparse, enum, functools, hashlib, logging, math, multiprocessing, os, platform, re, shutil, signal, subprocess, sys, tempfile, textwrap
+import argparse, enum, functools, hashlib, logging, math, multiprocessing, os, platform, re, shlex, shutil, signal, subprocess, sys, tempfile, textwrap
 from ast import literal_eval
 from collections.abc import Iterable
 from datetime import datetime, timedelta, timezone
@@ -23,7 +23,7 @@ else:
 
 
 def exit_nicely(_signal, _frame):
-    print("\nExiting... (Ctrl+C)\n")
+    print("\nExiting... (Ctrl+C)")
     raise SystemExit(130)
 
 
@@ -173,7 +173,7 @@ def cmd(*command, strict=True, cwd=None, quiet=True, **kwargs) -> subprocess.Com
     r.stdout = print_std(r.stdout)
     r.stderr = print_std(r.stderr)
     if r.returncode != 0:
-        log.info(f"ERROR {r.returncode}")
+        log.info("[%s]: ERROR %s", shlex.join(command), r.returncode)
         if strict:
             raise Exception(f"[{command}] exited {r.returncode}")
 
@@ -230,9 +230,12 @@ def file_temp_copy(src):
     return fname
 
 
-def trash(f: Union[Path, str]) -> None:
+def trash(f: Union[Path, str], detach=True) -> None:
     trash_put = which("trash-put") or which("trash")
     if trash_put is not None:
+        if not detach:
+            cmd(trash_put, f, strict=False)
+            return
         try:
             cmd_detach(trash_put, f)
         except Exception:
