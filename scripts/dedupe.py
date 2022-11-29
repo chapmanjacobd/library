@@ -38,14 +38,14 @@ def get_music_duplicates(args) -> List[dict]:
         and m1.artist != ''
         and m1.album != ''
     ORDER BY 1=1
-        , length(m1.path)-length(REPLACE(m1.path, '/', '')) desc
+        , length(m1.path)-length(REPLACE(m1.path, '/', '')) DESC
         , length(m1.path)-length(REPLACE(m1.path, '.', ''))
         , length(m1.path)
-        , m1.size desc
-        , m1.time_modified desc
-        , m1.time_created desc
-        , m1.duration desc
-        , m1.path desc
+        , m1.size DESC
+        , m1.time_modified DESC
+        , m1.time_created DESC
+        , m1.duration DESC
+        , m1.path DESC
     """
 
     media = list(args.db.query(query))
@@ -65,24 +65,27 @@ def get_id_duplicates(args) -> List[dict]:
     FROM
         media m1
     JOIN media m2 on 1=1
-        and m2.path != m1.path
+        and m1.id = m2.id
         and m1.duration >= m2.duration - 4
         and m1.duration <= m2.duration + 4
-        and m1.id = m2.id and m1.ie_key = m2.ie_key
+        and m1.ie_key in (m2.ie_key, 'Local')
+        and m2.path != m1.path
     WHERE 1=1
         and m1.time_deleted = 0 and m2.time_deleted = 0
-        and m1.audio_count > 0 and m2.audio_count > 0
         and abs(m1.sparseness - 1) < 0.1
         and m1.id != '' and m1.ie_key != ''
     ORDER BY 1=1
-        , length(m1.path)-length(REPLACE(m1.path, '/', '')) desc
+        , m1.video_count > 0 DESC
+        , m1.subtitle_count > 0 DESC
+        , m1.audio_count DESC
+        , length(m1.path)-length(REPLACE(m1.path, '/', '')) DESC
         , length(m1.path)-length(REPLACE(m1.path, '.', ''))
         , length(m1.path)
-        , m1.size desc
-        , m1.time_modified desc
-        , m1.time_created desc
-        , m1.duration desc
-        , m1.path desc
+        , m1.size DESC
+        , m1.time_modified DESC
+        , m1.time_created DESC
+        , m1.duration DESC
+        , m1.path DESC
     """
 
     media = list(args.db.query(query))
@@ -91,7 +94,6 @@ def get_id_duplicates(args) -> List[dict]:
 
 
 def get_title_duplicates(args) -> List[dict]:
-    # TODO: this option takes ~10x time. maybe use fts index as pre-filter?
     query = f"""
     SELECT
         m1.path keep_path
@@ -108,19 +110,21 @@ def get_title_duplicates(args) -> List[dict]:
         and m1.duration <= m2.duration + 4
     WHERE 1=1
         and m1.time_deleted = 0 and m2.time_deleted = 0
-        and m1.audio_count > 0 and m2.audio_count > 0
         and abs(m1.sparseness - 1) < 0.1
         and m1.title != '' and m1.uploader != ''
         and m1.title = m2.title and m1.uploader = m2.uploader
     ORDER BY 1=1
-        , length(m1.path)-length(REPLACE(m1.path, '/', '')) desc
+        , m1.video_count > 0 DESC
+        , m1.subtitle_count > 0 DESC
+        , m1.audio_count DESC
+        , length(m1.path)-length(REPLACE(m1.path, '/', '')) DESC
         , length(m1.path)-length(REPLACE(m1.path, '.', ''))
         , length(m1.path)
-        , m1.size desc
-        , m1.time_modified desc
-        , m1.time_created desc
-        , m1.duration desc
-        , m1.path desc
+        , m1.size DESC
+        , m1.time_modified DESC
+        , m1.time_created DESC
+        , m1.duration DESC
+        , m1.path DESC
     """
 
     media = list(args.db.query(query))
@@ -216,7 +220,7 @@ def deduplicate_db() -> None:
 
     duplicates_count = len(duplicates)
     print(f"{duplicates_count} duplicates found (showing first {args.limit})")
-    duplicates_size = sum(map(operator.itemgetter("duplicate_size"), duplicates))
+    duplicates_size = sum(filter(None, map(operator.itemgetter("duplicate_size"), duplicates)))
     print(f"Approx. space savings: {humanize.naturalsize(duplicates_size // 2)}")
 
     if args.verbose >= 2:
@@ -226,7 +230,7 @@ def deduplicate_db() -> None:
         print("Deleting...")
         for d in duplicates:
             path = d["duplicate_path"]
-            if not args.only_soft_delete:
+            if not path.startswith("http") and not args.only_soft_delete:
                 utils.trash(path, detach=False)
             player.mark_media_deleted(args, path)
 

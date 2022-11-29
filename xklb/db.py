@@ -114,7 +114,14 @@ def optimize(args) -> None:
 
             if any(fts_columns) and (db[table].detect_fts() is None or was_transformed):  # type: ignore
                 log.info("Creating fts index: %s", fts_columns)
-                db[table].enable_fts(fts_columns, create_triggers=True, replace=True)
+                db[table].enable_fts(
+                    fts_columns,
+                    create_triggers=True,
+                    replace=True,
+                    tokenize="trigram"
+                    if sqlite3.sqlite_version_info >= (3, 34, 0)
+                    else None,  # https://www.sqlite.org/releaselog/3_34_0.html
+                )
             else:
                 with db.conn:
                     log.info("Optimizing fts index: %s", table)
