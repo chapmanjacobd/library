@@ -32,7 +32,7 @@ wrapt = [
 
 [[package]]
 name = "asttokens"
-version = "2.1.0"
+version = "2.2.0"
 description = "Annotate AST trees with source code positions"
 category = "main"
 optional = false
@@ -42,7 +42,7 @@ python-versions = "*"
 six = "*"
 
 [package.extras]
-test = ["astroid (<=2.5.3)", "pytest"]
+test = ["astroid", "pytest"]
 
 [[package]]
 name = "async-timeout"
@@ -828,14 +828,14 @@ plugins = ["importlib-metadata"]
 
 [[package]]
 name = "pylint"
-version = "2.15.6"
+version = "2.15.7"
 description = "python code static checker"
 category = "dev"
 optional = false
 python-versions = ">=3.7.2"
 
 [package.dependencies]
-astroid = ">=2.12.12,<=2.14.0-dev0"
+astroid = ">=2.12.13,<=2.14.0-dev0"
 colorama = {version = ">=0.4.5", markers = "sys_platform == \"win32\""}
 dill = ">=0.2"
 isort = ">=4.2.5,<6"
@@ -1218,8 +1218,8 @@ python-versions = ">=3.6"
 
 [[package]]
 name = "traitlets"
-version = "5.5.0"
-description = ""
+version = "5.6.0"
+description = "Traitlets Python configuration system"
 category = "main"
 optional = false
 python-versions = ">=3.7"
@@ -1375,8 +1375,8 @@ astroid = [
     {file = "astroid-2.12.13.tar.gz", hash = "sha256:1493fe8bd3dfd73dc35bd53c9d5b6e49ead98497c47b2307662556a5692d29d7"},
 ]
 asttokens = [
-    {file = "asttokens-2.1.0-py2.py3-none-any.whl", hash = "sha256:1b28ed85e254b724439afc783d4bee767f780b936c3fe8b3275332f42cf5f561"},
-    {file = "asttokens-2.1.0.tar.gz", hash = "sha256:4aa76401a151c8cc572d906aad7aea2a841780834a19d780f4321c0fe1b54635"},
+    {file = "asttokens-2.2.0-py2.py3-none-any.whl", hash = "sha256:c56caef774a929923696f09ceea0eadcb95c94b30e8ee4f9fc4f5867096caaeb"},
+    {file = "asttokens-2.2.0.tar.gz", hash = "sha256:e27b1f115daebfafd4d1826fc75f9a72f0b74bd3ae4ee4d9380406d74d35e52c"},
 ]
 async-timeout = [
     {file = "async-timeout-4.0.2.tar.gz", hash = "sha256:2163e1640ddb52b7a8c80d0a67a08587e5d245cc9c553a74a847056bc2976b15"},
@@ -1958,8 +1958,8 @@ pygments = [
     {file = "Pygments-2.13.0.tar.gz", hash = "sha256:56a8508ae95f98e2b9bdf93a6be5ae3f7d8af858b43e02c5a2ff083726be40c1"},
 ]
 pylint = [
-    {file = "pylint-2.15.6-py3-none-any.whl", hash = "sha256:15060cc22ed6830a4049cf40bc24977744df2e554d38da1b2657591de5bcd052"},
-    {file = "pylint-2.15.6.tar.gz", hash = "sha256:25b13ddcf5af7d112cf96935e21806c1da60e676f952efb650130f2a4483421c"},
+    {file = "pylint-2.15.7-py3-none-any.whl", hash = "sha256:1d561d1d3e8be9dd880edc685162fbdaa0409c88b9b7400873c0cf345602e326"},
+    {file = "pylint-2.15.7.tar.gz", hash = "sha256:91e4776dbcb4b4d921a3e4b6fec669551107ba11f29d9199154a01622e460a57"},
 ]
 pynvml = [
     {file = "pynvml-11.4.1-py3-none-any.whl", hash = "sha256:d27be542cd9d06558de18e2deffc8022ccd7355bc7382255d477038e7e424c6c"},
@@ -2190,8 +2190,8 @@ tomlkit = [
     {file = "tomlkit-0.11.6.tar.gz", hash = "sha256:71b952e5721688937fb02cf9d354dbcf0785066149d2855e44531ebdd2b65d73"},
 ]
 traitlets = [
-    {file = "traitlets-5.5.0-py3-none-any.whl", hash = "sha256:1201b2c9f76097195989cdf7f65db9897593b0dfd69e4ac96016661bb6f0d30f"},
-    {file = "traitlets-5.5.0.tar.gz", hash = "sha256:b122f9ff2f2f6c1709dab289a05555be011c87828e911c0cf4074b85cb780a79"},
+    {file = "traitlets-5.6.0-py3-none-any.whl", hash = "sha256:1410755385d778aed847d68deb99b3ba30fbbf489e17a1e8cbb753060d5cce73"},
+    {file = "traitlets-5.6.0.tar.gz", hash = "sha256:10b6ed1c9cedee83e795db70a8b9c2db157bb3778ec4587a349ecb7ef3b1033b"},
 ]
 typing-extensions = [
     {file = "typing_extensions-4.4.0-py3-none-any.whl", hash = "sha256:16fa4864408f655d35ec496218b85f79b3437c829e93320c7c9215ccfd92489e"},
