@@ -34,37 +34,21 @@ def construct_query(args) -> Tuple[str, dict]:
     cf.extend([" and " + w for w in args.where])
 
     if args.created_within:
-        cf.append(
-            f"and time_created > cast(STRFTIME('%s', datetime( 'now', '-{args.created_within}', '-3 hours' )) as int)"
-        )
+        cf.append(f"and time_created > cast(STRFTIME('%s', datetime( 'now', '-{args.created_within}')) as int)")
     if args.created_before:
-        cf.append(
-            f"and time_created < cast(STRFTIME('%s', datetime( 'now', '-{args.created_before}', '-3 hours' )) as int)"
-        )
+        cf.append(f"and time_created < cast(STRFTIME('%s', datetime( 'now', '-{args.created_before}')) as int)")
     if args.changed_within:
-        cf.append(
-            f"and time_modified > cast(STRFTIME('%s', datetime( 'now', '-{args.changed_within}', '-3 hours' )) as int)"
-        )
+        cf.append(f"and time_modified > cast(STRFTIME('%s', datetime( 'now', '-{args.changed_within}')) as int)")
     if args.changed_before:
-        cf.append(
-            f"and time_modified < cast(STRFTIME('%s', datetime( 'now', '-{args.changed_before}', '-3 hours' )) as int)"
-        )
+        cf.append(f"and time_modified < cast(STRFTIME('%s', datetime( 'now', '-{args.changed_before}')) as int)")
     if args.played_within:
-        cf.append(
-            f"and time_played > cast(STRFTIME('%s', datetime( 'now', '-{args.played_within}', '-3 hours' )) as int)"
-        )
+        cf.append(f"and time_played > cast(STRFTIME('%s', datetime( 'now', '-{args.played_within}')) as int)")
     if args.played_before:
-        cf.append(
-            f"and time_played < cast(STRFTIME('%s', datetime( 'now', '-{args.played_before}', '-3 hours' )) as int)"
-        )
+        cf.append(f"and time_played < cast(STRFTIME('%s', datetime( 'now', '-{args.played_before}')) as int)")
     if args.deleted_within:
-        cf.append(
-            f"and time_deleted > cast(STRFTIME('%s', datetime( 'now', '-{args.deleted_within}', '-3 hours' )) as int)"
-        )
+        cf.append(f"and time_deleted > cast(STRFTIME('%s', datetime( 'now', '-{args.deleted_within}')) as int)")
     if args.deleted_before:
-        cf.append(
-            f"and time_deleted < cast(STRFTIME('%s', datetime( 'now', '-{args.deleted_before}', '-3 hours' )) as int)"
-        )
+        cf.append(f"and time_deleted < cast(STRFTIME('%s', datetime( 'now', '-{args.deleted_before}')) as int)")
 
     args.table = "media"
     if args.db["media"].detect_fts():
