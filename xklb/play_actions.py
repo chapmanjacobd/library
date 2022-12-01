@@ -57,6 +57,14 @@ def construct_query(args) -> Tuple[str, dict]:
         cf.append(
             f"and time_played < cast(STRFTIME('%s', datetime( 'now', '-{args.played_before}', '-3 hours' )) as int)"
         )
+    if args.deleted_within:
+        cf.append(
+            f"and time_deleted > cast(STRFTIME('%s', datetime( 'now', '-{args.deleted_within}', '-3 hours' )) as int)"
+        )
+    if args.deleted_before:
+        cf.append(
+            f"and time_deleted < cast(STRFTIME('%s', datetime( 'now', '-{args.deleted_before}', '-3 hours' )) as int)"
+        )
 
     args.table = "media"
     if args.db["media"].detect_fts():
@@ -283,6 +291,10 @@ def usage(action, default_db) -> str:
         library {action} --created-within '3 days'
         library {action} --created-before '3 years'
 
+    Constrain media by time_deleted:
+        library {action} --deleted-within '3 days'
+        library {action} --deleted-before '3 years'
+
     Constrain media by time_modified:
         library {action} --changed-within '3 days'
         library {action} --changed-before '3 years'
@@ -386,6 +398,8 @@ def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
     parser.add_argument("--changed-before", "--modified-before", help=argparse.SUPPRESS)
     parser.add_argument("--played-within", help=argparse.SUPPRESS)
     parser.add_argument("--played-before", help=argparse.SUPPRESS)
+    parser.add_argument("--deleted-within", help=argparse.SUPPRESS)
+    parser.add_argument("--deleted-before", help=argparse.SUPPRESS)
 
     parser.add_argument("--chromecast-device", "--cast-to", "-t", default=default_chromecast, help=argparse.SUPPRESS)
     parser.add_argument("--chromecast", "--cast", "-c", action="store_true", help=argparse.SUPPRESS)

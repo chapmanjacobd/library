@@ -1,4 +1,4 @@
-import argparse, operator
+import argparse, operator, tempfile
 from copy import deepcopy
 from pathlib import Path
 from typing import List
@@ -211,8 +211,12 @@ def deduplicate_db() -> None:
         deletion_candidates.append(d)
     duplicates = deletion_candidates
 
+    if not duplicates:
+        print("No duplicates found")
+        return
+
     tbl = deepcopy(duplicates)
-    tbl = tbl[: int(args.limit)]  # TODO: export to CSV
+    tbl = tbl[: int(args.limit)]
     tbl = utils.col_resize(tbl, "keep_path", 30)
     tbl = utils.col_resize(tbl, "duplicate_path", 30)
     tbl = utils.col_naturalsize(tbl, "duplicate_size")
@@ -220,11 +224,18 @@ def deduplicate_db() -> None:
 
     duplicates_count = len(duplicates)
     print(f"{duplicates_count} duplicates found (showing first {args.limit})")
+
+    try:
+        import pandas as pd
+
+        csv_path = tempfile.mktemp(".csv")
+        pd.DataFrame(duplicates).to_csv(csv_path, index=False)
+        print("Full list saved to:", csv_path)
+    except ModuleNotFoundError:
+        pass
+
     duplicates_size = sum(filter(None, map(operator.itemgetter("duplicate_size"), duplicates)))
     print(f"Approx. space savings: {humanize.naturalsize(duplicates_size // 2)}")
-
-    if args.verbose >= 2:
-        breakpoint()
 
     if duplicates and (args.force or prompt.Confirm.ask("Delete duplicates?", default=False)):  # type: ignore
         print("Deleting...")
