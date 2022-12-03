@@ -16,5 +16,5 @@ class TestTabs(unittest.TestCase):
         assert out == {
             "path": "https://unli.xyz/proliferation/verbs.html",
             "frequency": "monthly",
-            "time_valid": 2667600,
+            "time_valid": 2678400,
         }
