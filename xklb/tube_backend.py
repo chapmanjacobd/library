@@ -144,9 +144,11 @@ def is_playlist_known(args, playlist_path) -> bool:
 
 
 def is_video_known(args, playlist_path, path) -> bool:
+    m_columns = args.db["media"].columns_dict
     try:
         known = args.db.execute(
-            "select 1 from media where playlist_path=? and (path=? or webpath=?)", [playlist_path, path, path]
+            f"select 1 from media where playlist_path=? and (path=? or {'web' if 'webpath' in m_columns else ''}path=?)",
+            [playlist_path, path, path],
         ).fetchone()
     except Exception:
         return False

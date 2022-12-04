@@ -222,7 +222,7 @@ def dl_download(args=None) -> None:
         # check again in case it was already completed by another process
         path = list(
             args.db.query(
-                f"select path from media where (path=? or webpath=?) {'AND time_modified = ' + str(m.get('time_modified') or 0) if 'time_modified' in m_columns else ''}",
+                f"select path from media where (path=? or {'web' if 'webpath' in m_columns else ''}path=?) {'AND time_modified = ' + str(m.get('time_modified') or 0) if 'time_modified' in m_columns else ''}",
                 [m["path"], m["path"]],
             )
         )
