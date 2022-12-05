@@ -32,7 +32,7 @@ wrapt = [
 
 [[package]]
 name = "asttokens"
-version = "2.2.0"
+version = "2.2.1"
 description = "Annotate AST trees with source code positions"
 category = "main"
 optional = false
@@ -355,7 +355,7 @@ python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*"
 
 [[package]]
 name = "gallery-dl"
-version = "1.24.0"
+version = "1.24.1"
 description = "Command-line program to download image galleries and collections from several image hosting sites"
 category = "main"
 optional = false
@@ -828,7 +828,7 @@ plugins = ["importlib-metadata"]
 
 [[package]]
 name = "pylint"
-version = "2.15.7"
+version = "2.15.8"
 description = "python code static checker"
 category = "dev"
 optional = false
@@ -1375,8 +1375,8 @@ astroid = [
     {file = "astroid-2.12.13.tar.gz", hash = "sha256:1493fe8bd3dfd73dc35bd53c9d5b6e49ead98497c47b2307662556a5692d29d7"},
 ]
 asttokens = [
-    {file = "asttokens-2.2.0-py2.py3-none-any.whl", hash = "sha256:c56caef774a929923696f09ceea0eadcb95c94b30e8ee4f9fc4f5867096caaeb"},
-    {file = "asttokens-2.2.0.tar.gz", hash = "sha256:e27b1f115daebfafd4d1826fc75f9a72f0b74bd3ae4ee4d9380406d74d35e52c"},
+    {file = "asttokens-2.2.1-py2.py3-none-any.whl", hash = "sha256:6b0ac9e93fb0335014d382b8fa9b3afa7df546984258005da0b9e7095b3deb1c"},
+    {file = "asttokens-2.2.1.tar.gz", hash = "sha256:4622110b2a6f30b77e1473affaa97e711bc2f07d3f10848420ff1898edbe94f3"},
 ]
 async-timeout = [
     {file = "async-timeout-4.0.2.tar.gz", hash = "sha256:2163e1640ddb52b7a8c80d0a67a08587e5d245cc9c553a74a847056bc2976b15"},
@@ -1438,6 +1438,16 @@ brotli = [
     {file = "Brotli-1.0.9-cp310-cp310-musllinux_1_1_x86_64.whl", hash = "sha256:b83bb06a0192cccf1eb8d0a28672a1b79c74c3a8a5f2619625aeb6f28b3a82bb"},
     {file = "Brotli-1.0.9-cp310-cp310-win32.whl", hash = "sha256:26d168aac4aaec9a4394221240e8a5436b5634adc3cd1cdf637f6645cecbf181"},
     {file = "Brotli-1.0.9-cp310-cp310-win_amd64.whl", hash = "sha256:622a231b08899c864eb87e85f81c75e7b9ce05b001e59bbfbf43d4a71f5f32b2"},
+    {file = "Brotli-1.0.9-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:cc0283a406774f465fb45ec7efb66857c09ffefbe49ec20b7882eff6d3c86d3a"},
+    {file = "Brotli-1.0.9-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:11d3283d89af7033236fa4e73ec2cbe743d4f6a81d41bd234f24bf63dde979df"},
+    {file = "Brotli-1.0.9-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:3c1306004d49b84bd0c4f90457c6f57ad109f5cc6067a9664e12b7b79a9948ad"},
+    {file = "Brotli-1.0.9-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b1375b5d17d6145c798661b67e4ae9d5496920d9265e2f00f1c2c0b5ae91fbde"},
+    {file = "Brotli-1.0.9-cp311-cp311-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:cab1b5964b39607a66adbba01f1c12df2e55ac36c81ec6ed44f2fca44178bf1a"},
+    {file = "Brotli-1.0.9-cp311-cp311-musllinux_1_1_aarch64.whl", hash = "sha256:8ed6a5b3d23ecc00ea02e1ed8e0ff9a08f4fc87a1f58a2530e71c0f48adf882f"},
+    {file = "Brotli-1.0.9-cp311-cp311-musllinux_1_1_i686.whl", hash = "sha256:cb02ed34557afde2d2da68194d12f5719ee96cfb2eacc886352cb73e3808fc5d"},
+    {file = "Brotli-1.0.9-cp311-cp311-musllinux_1_1_x86_64.whl", hash = "sha256:b3523f51818e8f16599613edddb1ff924eeb4b53ab7e7197f85cbc321cdca32f"},
+    {file = "Brotli-1.0.9-cp311-cp311-win32.whl", hash = "sha256:ba72d37e2a924717990f4d7482e8ac88e2ef43fb95491eb6e0d124d77d2a150d"},
+    {file = "Brotli-1.0.9-cp311-cp311-win_amd64.whl", hash = "sha256:3ffaadcaeafe9d30a7e4e1e97ad727e4f5610b9fa2f7551998471e3736738679"},
     {file = "Brotli-1.0.9-cp35-cp35m-macosx_10_6_intel.whl", hash = "sha256:c83aa123d56f2e060644427a882a36b3c12db93727ad7a7b9efd7d7f3e9cc2c4"},
     {file = "Brotli-1.0.9-cp35-cp35m-manylinux1_i686.whl", hash = "sha256:6b2ae9f5f67f89aade1fab0f7fd8f2832501311c363a21579d02defa844d9296"},
     {file = "Brotli-1.0.9-cp35-cp35m-manylinux1_x86_64.whl", hash = "sha256:68715970f16b6e92c574c30747c95cf8cf62804569647386ff032195dc89a430"},
@@ -1482,7 +1492,17 @@ brotli = [
     {file = "Brotli-1.0.9-cp39-cp39-win32.whl", hash = "sha256:cfc391f4429ee0a9370aa93d812a52e1fee0f37a81861f4fdd1f4fb28e8547c3"},
     {file = "Brotli-1.0.9-cp39-cp39-win_amd64.whl", hash = "sha256:854c33dad5ba0fbd6ab69185fec8dab89e13cda6b7d191ba111987df74f38761"},
     {file = "Brotli-1.0.9-pp37-pypy37_pp73-macosx_10_9_x86_64.whl", hash = "sha256:9749a124280a0ada4187a6cfd1ffd35c350fb3af79c706589d98e088c5044267"},
+    {file = "Brotli-1.0.9-pp37-pypy37_pp73-manylinux_2_5_i686.manylinux1_i686.manylinux_2_12_i686.manylinux2010_i686.whl", hash = "sha256:73fd30d4ce0ea48010564ccee1a26bfe39323fde05cb34b5863455629db61dc7"},
+    {file = "Brotli-1.0.9-pp37-pypy37_pp73-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:02177603aaca36e1fd21b091cb742bb3b305a569e2402f1ca38af471777fb019"},
     {file = "Brotli-1.0.9-pp37-pypy37_pp73-win_amd64.whl", hash = "sha256:76ffebb907bec09ff511bb3acc077695e2c32bc2142819491579a695f77ffd4d"},
+    {file = "Brotli-1.0.9-pp38-pypy38_pp73-macosx_10_9_x86_64.whl", hash = "sha256:b43775532a5904bc938f9c15b77c613cb6ad6fb30990f3b0afaea82797a402d8"},
+    {file = "Brotli-1.0.9-pp38-pypy38_pp73-manylinux_2_5_i686.manylinux1_i686.manylinux_2_12_i686.manylinux2010_i686.whl", hash = "sha256:5bf37a08493232fbb0f8229f1824b366c2fc1d02d64e7e918af40acd15f3e337"},
+    {file = "Brotli-1.0.9-pp38-pypy38_pp73-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:330e3f10cd01da535c70d09c4283ba2df5fb78e915bea0a28becad6e2ac010be"},
+    {file = "Brotli-1.0.9-pp38-pypy38_pp73-win_amd64.whl", hash = "sha256:e1abbeef02962596548382e393f56e4c94acd286bd0c5afba756cffc33670e8a"},
+    {file = "Brotli-1.0.9-pp39-pypy39_pp73-macosx_10_9_x86_64.whl", hash = "sha256:3148362937217b7072cf80a2dcc007f09bb5ecb96dae4617316638194113d5be"},
+    {file = "Brotli-1.0.9-pp39-pypy39_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:336b40348269f9b91268378de5ff44dc6fbaa2268194f85177b53463d313842a"},
+    {file = "Brotli-1.0.9-pp39-pypy39_pp73-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:3b8b09a16a1950b9ef495a0f8b9d0a87599a9d1f179e2d4ac014b2ec831f87e7"},
+    {file = "Brotli-1.0.9-pp39-pypy39_pp73-win_amd64.whl", hash = "sha256:c8e521a0ce7cf690ca84b8cc2272ddaf9d8a50294fd086da67e517439614c755"},
     {file = "Brotli-1.0.9.zip", hash = "sha256:4d1b810aa0ed773f81dceda2cc7b403d01057458730e309856356d4ef4188438"},
 ]
 brotlicffi = [
@@ -1700,8 +1720,8 @@ future = [
     {file = "future-0.18.2.tar.gz", hash = "sha256:b1bead90b70cf6ec3f0710ae53a525360fa360d306a86583adc6bf83a4db537d"},
 ]
 gallery-dl = [
-    {file = "gallery_dl-1.24.0-py3-none-any.whl", hash = "sha256:4ebdeef91119f159b58bbded1573cd9f0c2be5b76bcf3c81c3af4ace23d2543a"},
-    {file = "gallery_dl-1.24.0.tar.gz", hash = "sha256:2c66633e4897db9d88460446d5fc554b821d9ca0374605633a164bc5849c209a"},
+    {file = "gallery_dl-1.24.1-py3-none-any.whl", hash = "sha256:3afc5b6b36c10bb54fcfc118259b04a03806e5382ad0c0e3d70c7b23b5a0e29a"},
+    {file = "gallery_dl-1.24.1.tar.gz", hash = "sha256:a639b8d74693e3e2e3dcf0409626e682534f1a59818244681c083b26b203a74b"},
 ]
 guessit = [
     {file = "guessit-3.5.0-py3-none-any.whl", hash = "sha256:616040afb9430941659da47f8d5d2b9db1e2e587db8627d57e711ea4888f9561"},
@@ -1958,8 +1978,8 @@ pygments = [
     {file = "Pygments-2.13.0.tar.gz", hash = "sha256:56a8508ae95f98e2b9bdf93a6be5ae3f7d8af858b43e02c5a2ff083726be40c1"},
 ]
 pylint = [
-    {file = "pylint-2.15.7-py3-none-any.whl", hash = "sha256:1d561d1d3e8be9dd880edc685162fbdaa0409c88b9b7400873c0cf345602e326"},
-    {file = "pylint-2.15.7.tar.gz", hash = "sha256:91e4776dbcb4b4d921a3e4b6fec669551107ba11f29d9199154a01622e460a57"},
+    {file = "pylint-2.15.8-py3-none-any.whl", hash = "sha256:ea82cd6a1e11062dc86d555d07c021b0fb65afe39becbe6fe692efd6c4a67443"},
+    {file = "pylint-2.15.8.tar.gz", hash = "sha256:ec4a87c33da054ab86a6c79afa6771dc8765cb5631620053e727fcf3ef8cbed7"},
 ]
 pynvml = [
     {file = "pynvml-11.4.1-py3-none-any.whl", hash = "sha256:d27be542cd9d06558de18e2deffc8022ccd7355bc7382255d477038e7e424c6c"},
