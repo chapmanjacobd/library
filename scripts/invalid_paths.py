@@ -43,6 +43,8 @@ def rename_path(args, p):
         .replace("_ ", "_")
         .replace("./", "/")
         .replace(".\\", "\\")
+        .replace("/ ", "/")
+        .replace("\\ ", "\\")
     )
     if p != fixed:
         if args.dry_run:
