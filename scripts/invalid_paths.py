@@ -10,6 +10,7 @@ from xklb.utils import log
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("paths", nargs="*")
+    parser.add_argument("--dry-run", "-n", action="store_true")
     parser.add_argument("--verbose", "-v", action="count", default=0)
     args = parser.parse_args()
 
@@ -17,7 +18,7 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def rename_path(p):
+def rename_path(args, p):
     fixed = utils.remove_whitespaace(
         ftfy.fix_text(p, explain=False)
         .replace("*", "")
@@ -41,28 +42,33 @@ def rename_path(p):
         .replace(" _", "_")
         .replace("_ ", "_")
         .replace("./", "/")
-        .replace(".\\", r"\\")
+        .replace(".\\", "\\")
     )
     if p != fixed:
-        try:
-            Path(fixed).parent.mkdir(parents=True, exist_ok=True)
-            shutil.move(p, fixed)
-        except FileNotFoundError:
-            log.warning("FileNotFound. %s", p)
-        except shutil.Error as e:
-            log.warning("%s. %s", e, p)
+        if args.dry_run:
+            log.warning(p)
+            log.warning(fixed)
+            print("")
         else:
-            log.info(fixed)
+            try:
+                Path(fixed).parent.mkdir(parents=True, exist_ok=True)
+                shutil.move(p, fixed)
+            except FileNotFoundError:
+                log.warning("FileNotFound. %s", p)
+            except shutil.Error as e:
+                log.warning("%s. %s", e, p)
+            else:
+                log.info(fixed)
 
 
 def rename_invalid_paths() -> None:
     args = parse_args()
 
     for path in args.paths:
-        log.info(path)
+        log.info("[%s]: Processing subfolders...", path)
         subpaths = sorted((str(p) for p in Path(path).rglob("*")), key=len, reverse=True)
         for p in subpaths:
-            rename_path(p)
+            rename_path(args, p)
         # Parallel()(delayed(rename_path)(p) for p in subpaths)  # mostly IO bound
 
     print(
