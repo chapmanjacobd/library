@@ -122,3 +122,4 @@ def test_clean_path():
     assert utils.clean_path("/3_seconds_ago./Mike.webm") == p("/3_seconds_ago/Mike.webm")
     assert utils.clean_path("/3_seconds_ago___/ Mike.webm") == p("/3_seconds_ago_/Mike.webm")
     assert utils.clean_path("/__init__.py") == p("/__init__.py")
+    assert utils.clean_path("/test.") == p("/test")
