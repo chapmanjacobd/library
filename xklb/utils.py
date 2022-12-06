@@ -310,6 +310,7 @@ def clean_path(p):
     p = replace_folder_ending(p, [" ", "-", "_", "."])
     p = replace_basename_prefixes(p, [" ", "-"])
     p = remove_whitespaace(p)
+    p = re.sub(r"\.+$", "", p)
     return p + ext
 
 
