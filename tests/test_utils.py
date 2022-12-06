@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from xklb import utils
 
 
@@ -112,8 +114,11 @@ def test_replace_consecutive():
 
 
 def test_clean_path():
-    assert utils.clean_path("/3_seconds_ago.../Mike.webm") == "/3_seconds_ago…/Mike.webm"
-    assert utils.clean_path("/3_seconds_ago../Mike.webm") == "/3_seconds_ago/Mike.webm"
-    assert utils.clean_path("/3_seconds_ago./Mike.webm") == "/3_seconds_ago/Mike.webm"
-    assert utils.clean_path("/3_seconds_ago___/ Mike.webm") == "/3_seconds_ago_/Mike.webm"
-    assert utils.clean_path("/__init__.py") == "/__init__.py"
+    def p(string):
+        return str(Path(string))
+
+    assert utils.clean_path("/3_seconds_ago.../Mike.webm") == p("/3_seconds_ago…/Mike.webm")
+    assert utils.clean_path("/3_seconds_ago../Mike.webm") == p("/3_seconds_ago/Mike.webm")
+    assert utils.clean_path("/3_seconds_ago./Mike.webm") == p("/3_seconds_ago/Mike.webm")
+    assert utils.clean_path("/3_seconds_ago___/ Mike.webm") == p("/3_seconds_ago_/Mike.webm")
+    assert utils.clean_path("/__init__.py") == p("/__init__.py")
