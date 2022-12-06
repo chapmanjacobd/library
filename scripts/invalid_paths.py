@@ -1,8 +1,6 @@
 import argparse, shutil
 from pathlib import Path
 
-import ftfy
-
 from xklb import utils
 from xklb.utils import log
 
@@ -19,33 +17,8 @@ def parse_args() -> argparse.Namespace:
 
 
 def rename_path(args, p):
-    fixed = utils.remove_whitespaace(
-        ftfy.fix_text(p, explain=False)
-        .replace("*", "")
-        .replace("&", "")
-        .replace("%", "")
-        .replace("$", "")
-        .replace("#", "")
-        .replace("@", "")
-        .replace("!", "")
-        .replace("^", "")
-        .replace("'", "")
-        .replace('"', "")
-        .replace("(", " ")
-        .replace(")", "")
-        .replace("-.", ".")
-        .replace(" :", ":")
-        .replace(" - ", " ")
-        .replace("- ", " ")
-        .replace(" -", " ")
-        .replace(" _ ", "_")
-        .replace(" _", "_")
-        .replace("_ ", "_")
-        .replace("./", "/")
-        .replace(".\\", "\\")
-        .replace("/ ", "/")
-        .replace("\\ ", "\\")
-    )
+    fixed = utils.clean_path(p)
+
     if p != fixed:
         if args.dry_run:
             log.warning(p)

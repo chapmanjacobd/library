@@ -6,7 +6,7 @@ import ffmpeg, pysubs2, sqlite_utils
 from ffmpeg import Error
 
 from xklb.consts import SUB_TEMP_DIR
-from xklb.utils import cmd, flatten, log, remove_text_inside_brackets, remove_whitespaace
+from xklb.utils import cmd, flatten, log, remove_text_inside_brackets, remove_whitespaace, replace_consecutive
 
 SUBTITLE_FORMATS = "vtt|srt|ssa|ass|jss|aqt|mpl2|mpsub|pjs|rt|sami|smi|stl|xml|txt|psb|ssf|usf"
 IMAGE_SUBTITLE_CODECS = ["dvbsub", "dvdsub", "pgssub", "xsub", "dvb_subtitle", "dvd_subtitle", "hdmv_pgs_subtitle"]

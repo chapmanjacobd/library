@@ -7,7 +7,7 @@ from pathlib import Path
 from shutil import which
 from typing import Any, Dict, Generator, List, Optional, Union
 
-import humanize
+import ftfy, humanize
 from IPython.core import ultratb
 from IPython.terminal.debugger import TerminalPdb
 from rich.logging import RichHandler
@@ -244,8 +244,73 @@ def trash(f: Union[Path, str], detach=True) -> None:
         Path(f).unlink(missing_ok=True)
 
 
-def remove_whitespaace(string) -> str:
+def remove_whitespaace(string):
     return " ".join(string.split())
+
+
+def replace_consecutive(string, char=" "):
+    return re.sub("\\" + char + "+", char, string)
+
+
+def replace_consecutives(string, chars):
+    for char in chars:
+        string = replace_consecutive(string, char)
+    for char in reversed(chars):
+        string = replace_consecutive(string, char)
+    return string
+
+
+def replace_basename_prefixes(string, prefixes):
+    for prefix in prefixes:
+        string = string.replace("/" + prefix, "/").replace("\\" + prefix, "\\")
+    for prefix in reversed(prefixes):
+        string = string.replace("/" + prefix, "/").replace("\\" + prefix, "\\")
+    return string
+
+
+def replace_folder_ending(string, prefixes):
+    for prefix in prefixes:
+        string = string.replace(prefix + "/", "/").replace(prefix + "\\", "\\")
+    for prefix in reversed(prefixes):
+        string = string.replace(prefix + "/", "/").replace(prefix + "\\", "\\")
+    return string
+
+
+def clean_path(p):
+    p = ftfy.fix_text(p, explain=False)
+    path = Path(p)
+    ext = path.suffix
+    p = str(path.parent / path.stem)
+    p = (
+        p.replace("...", "…")
+        .replace("*", "")
+        .replace("&", "")
+        .replace("%", "")
+        .replace("$", "")
+        .replace("#", "")
+        .replace("@", "")
+        .replace("!", "")
+        .replace("^", "")
+        .replace("'", "")
+        .replace('"', "")
+        .replace(")", "")
+    )
+    p = replace_consecutives(p, chars=["-", "."])
+    p = (
+        p.replace("(", " ")
+        .replace("-.", ".")
+        .replace(" :", ":")
+        .replace(" - ", " ")
+        .replace("- ", " ")
+        .replace(" -", " ")
+        .replace(" _ ", "_")
+        .replace(" _", "_")
+        .replace("_ ", "_")
+    )
+    p = replace_folder_ending(p, [" ", "-", "_", "."])
+    p = replace_basename_prefixes(p, [" ", "-"])
+    p = remove_whitespaace(p)
+    return p + ext
 
 
 def remove_text_inside_brackets(text: str, brackets="()[]") -> str:  # thanks @jfs
