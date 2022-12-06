@@ -102,3 +102,18 @@ def test_human_time():
 def test_col_duration():
     assert utils.col_duration([{"t": 0, "t1": 1}], "t") == [{"t": None, "t1": 1}]
     assert utils.col_duration([{"t": 946684800, "t1": 1}], "t") == [{"t": "30 years and 7 days", "t1": 1}]
+
+
+def test_replace_consecutive():
+    assert utils.replace_consecutive("........", char=".") == "."
+    assert utils.replace_consecutive("..", char=".") == "."
+    assert utils.replace_consecutive("  ") == " "
+    assert utils.replace_consecutive("  ", char=" ") == " "
+
+
+def test_clean_path():
+    assert utils.clean_path("/3_seconds_ago.../Mike.webm") == "/3_seconds_ago…/Mike.webm"
+    assert utils.clean_path("/3_seconds_ago../Mike.webm") == "/3_seconds_ago/Mike.webm"
+    assert utils.clean_path("/3_seconds_ago./Mike.webm") == "/3_seconds_ago/Mike.webm"
+    assert utils.clean_path("/3_seconds_ago___/ Mike.webm") == "/3_seconds_ago_/Mike.webm"
+    assert utils.clean_path("/__init__.py") == "/__init__.py"
