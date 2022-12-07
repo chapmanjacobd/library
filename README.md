@@ -17,7 +17,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
     pip install xklb
 
     $ library
-    xk media library subcommands (v1.19.066)
+    xk media library subcommands (v1.19.067)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -378,17 +378,9 @@ Organize via separate databases.
         library watch -z-6  # less than 6 MB
         library watch -z+6  # more than 6 MB
 
-    Constrain media by time_created:
+    Constrain media by time_created / time_played / time_deleted / time_modified:
         library watch --created-within '3 days'
         library watch --created-before '3 years'
-
-    Constrain media by time_deleted:
-        library watch --deleted-within '3 days'
-        library watch --deleted-before '3 years'
-
-    Constrain media by time_modified:
-        library watch --changed-within '3 days'
-        library watch --changed-before '3 years'
 
     Constrain media by throughput:
         Bitrate information is not explicitly saved.

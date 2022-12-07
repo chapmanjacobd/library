@@ -33,22 +33,27 @@ def construct_query(args) -> Tuple[str, dict]:
 
     cf.extend([" and " + w for w in args.where])
 
+    def ii(string):
+        if string.isdigit():
+            return string + " minutes"
+        return string.replace("mins", "minutes").replace("secs", "seconds")
+
     if args.created_within:
-        cf.append(f"and time_created > cast(STRFTIME('%s', datetime( 'now', '-{args.created_within}')) as int)")
+        cf.append(f"and time_created > cast(STRFTIME('%s', datetime( 'now', '-{ii(args.created_within)}')) as int)")
     if args.created_before:
-        cf.append(f"and time_created < cast(STRFTIME('%s', datetime( 'now', '-{args.created_before}')) as int)")
+        cf.append(f"and time_created < cast(STRFTIME('%s', datetime( 'now', '-{ii(args.created_before)}')) as int)")
     if args.changed_within:
-        cf.append(f"and time_modified > cast(STRFTIME('%s', datetime( 'now', '-{args.changed_within}')) as int)")
+        cf.append(f"and time_modified > cast(STRFTIME('%s', datetime( 'now', '-{ii(args.changed_within)}')) as int)")
     if args.changed_before:
-        cf.append(f"and time_modified < cast(STRFTIME('%s', datetime( 'now', '-{args.changed_before}')) as int)")
+        cf.append(f"and time_modified < cast(STRFTIME('%s', datetime( 'now', '-{ii(args.changed_before)}')) as int)")
     if args.played_within:
-        cf.append(f"and time_played > cast(STRFTIME('%s', datetime( 'now', '-{args.played_within}')) as int)")
+        cf.append(f"and time_played > cast(STRFTIME('%s', datetime( 'now', '-{ii(args.played_within)}')) as int)")
     if args.played_before:
-        cf.append(f"and time_played < cast(STRFTIME('%s', datetime( 'now', '-{args.played_before}')) as int)")
+        cf.append(f"and time_played < cast(STRFTIME('%s', datetime( 'now', '-{ii(args.played_before)}')) as int)")
     if args.deleted_within:
-        cf.append(f"and time_deleted > cast(STRFTIME('%s', datetime( 'now', '-{args.deleted_within}')) as int)")
+        cf.append(f"and time_deleted > cast(STRFTIME('%s', datetime( 'now', '-{ii(args.deleted_within)}')) as int)")
     if args.deleted_before:
-        cf.append(f"and time_deleted < cast(STRFTIME('%s', datetime( 'now', '-{args.deleted_before}')) as int)")
+        cf.append(f"and time_deleted < cast(STRFTIME('%s', datetime( 'now', '-{ii(args.deleted_before)}')) as int)")
 
     args.table = "media"
     if args.db["media"].detect_fts():
@@ -271,17 +276,9 @@ def usage(action, default_db) -> str:
         library {action} -z-6  # less than 6 MB
         library {action} -z+6  # more than 6 MB
 
-    Constrain media by time_created:
+    Constrain media by time_created / time_played / time_deleted / time_modified:
         library {action} --created-within '3 days'
         library {action} --created-before '3 years'
-
-    Constrain media by time_deleted:
-        library {action} --deleted-within '3 days'
-        library {action} --deleted-before '3 years'
-
-    Constrain media by time_modified:
-        library {action} --changed-within '3 days'
-        library {action} --changed-before '3 years'
 
     Constrain media by throughput:
         Bitrate information is not explicitly saved.
