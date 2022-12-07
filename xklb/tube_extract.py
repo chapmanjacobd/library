@@ -24,7 +24,7 @@ def parse_args(action, usage) -> argparse.Namespace:
     parser.add_argument("--playlist-files", action="store_true", help="Read playlists from text files")
     parser.add_argument("--extra-media-data", default={})
     parser.add_argument("--extra-playlist-data", default={})
-    parser.add_argument("--ignore-errors", "--ignoreerrors", "-i", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--ignore-errors", "--ignoreerrors", "-i", "-f", action="store_true", help=argparse.SUPPRESS)
 
     if action in (SC.tubeadd, SC.tubeupdate):
         parser.add_argument("--category", "-c", help=argparse.SUPPRESS)
