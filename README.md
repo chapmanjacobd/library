@@ -391,6 +391,11 @@ Organize via separate databases.
         library watch --portrait
         library watch -w 'width<height' # equivalent
 
+    Constrain media to online-media:
+        Not to be confused with only local-media which is not "offline" (ie. one HDD disconnected)
+        library watch --online-media-only
+        library watch --online-media-only -i  # and ignore playback errors (ie. YouTube video deleted)
+
     Specify media play order:
         library watch --sort duration   # play shortest media first
         library watch -u duration desc  # play longest media first
@@ -485,8 +490,9 @@ Explore `library` databases in your browser
 
 ### TODOs (PRs welcome)
 
+- make sure casting runs on mobile
 - cat ~/mc/_cine_http | lb surf
-- reddit_mining
+- reddit_mining: subreddits and make a tube db per top 100,000 subreddits
 - todo  recursive todo management, fortune cookie style
 - nano budget
 - create/update views: especially dl queue, etc so that it is easier for people to access data externally

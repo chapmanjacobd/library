@@ -104,6 +104,7 @@ def construct_query(args) -> Tuple[str, dict]:
         {'and time_deleted=0' if 'time_deleted' in m_columns and 'time_deleted' not in args.sql_filter else ''}
         {'AND (score IS NULL OR score > 7)' if 'score' in m_columns else ''}
         {'AND (upvote_ratio IS NULL OR upvote_ratio > 0.73)' if 'upvote_ratio' in m_columns else ''}
+        {'AND time_downloaded = 0' if args.online_media_only else ''}
     ORDER BY 1=1
         {', time_downloaded > 0 desc' if 'time_downloaded' in m_columns and 'time_downloaded' not in args.sql_filter else ''}
         {', video_count > 0 desc' if 'video_count' in m_columns and args.action == SC.watch else ''}
@@ -289,6 +290,11 @@ def usage(action, default_db) -> str:
         library {action} --portrait
         library {action} -w 'width<height' # equivalent
 
+    Constrain media to online-media:
+        Not to be confused with only local-media which is not "offline" (ie. one HDD disconnected)
+        library {action} --online-media-only
+        library {action} --online-media-only -i  # and ignore playback errors (ie. YouTube video deleted)
+
     Specify media play order:
         library {action} --sort duration   # play shortest media first
         library {action} -u duration desc  # play longest media first
@@ -438,9 +444,11 @@ def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
     parser.add_argument("--keep-cmd", "--keepcmd", help=argparse.SUPPRESS)
     parser.add_argument("--shallow-organize", default="/mnt/d/", help=argparse.SUPPRESS)
 
+    parser.add_argument("--online-media-only", "--online-only", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--safe", "-safe", action="store_true", help="Skip generic URLs")
+
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
     parser.add_argument("--ignore-errors", "--ignoreerrors", "-i", action="store_true")
-    parser.add_argument("--safe", "-safe", action="store_true", help="Skip generic URLs")
     parser.add_argument("--verbose", "-v", action="count", default=0)
 
     parser.add_argument(
