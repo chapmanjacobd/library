@@ -400,9 +400,9 @@ def mpv_enrich2(args, media) -> List[dict]:
         if not progress:
             return 0
         if not duration:
-            return 1 / progress
+            return 1 / progress  # idk...
 
-        return progress / duration
+        return progress / duration * 100
 
     def sorting_hat():
         if "f" in args.partial:  # first-viewed
