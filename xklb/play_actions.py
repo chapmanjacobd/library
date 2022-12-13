@@ -622,7 +622,7 @@ def play(args, m: Dict) -> None:
             player.post_act(args, media_file)
 
     elif args.interdimensional_cable:
-        player.socket_play(args, m)
+        return player.socket_play(args, m)
 
     else:
         r = player.local_player(args, m, media_file)
@@ -633,8 +633,8 @@ def play(args, m: Dict) -> None:
             else:
                 raise SystemExit(r.returncode)
 
-        if args.action in (SC.listen, SC.watch):
-            player.post_act(args, media_file)
+    if args.action in (SC.listen, SC.watch):
+        player.post_act(args, media_file)
 
 
 def process_playqueue(args) -> None:
