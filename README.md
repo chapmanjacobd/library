@@ -17,7 +17,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
     pip install xklb
 
     $ library
-    xk media library subcommands (v1.19.067)
+    xk media library subcommands (v1.19.068)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -390,6 +390,9 @@ Organize via separate databases.
     Constrain media to portrait orientation video:
         library watch --portrait
         library watch -w 'width<height' # equivalent
+
+    Constrain media to duration of videos which match any size constraints:
+        library watch --duration-from-size +700 -u 'duration desc, size desc'
 
     Constrain media to online-media:
         Not to be confused with only local-media which is not "offline" (ie. one HDD disconnected)

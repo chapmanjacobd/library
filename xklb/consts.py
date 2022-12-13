@@ -70,8 +70,6 @@ class SC:
     view = "view"
     download = "download"
     block = "block"
-    galyadd = "galyadd"
-    galyupdate = "galyupdate"
 
 
 class Frequency(enum.Enum):

@@ -30,6 +30,12 @@ def construct_query(args) -> Tuple[str, dict]:
         cf.append(" and duration IS NOT NULL " + args.duration)
     if args.size:
         cf.append(" and size IS NOT NULL " + args.size)
+    if args.duration_from_size:
+        cf.append(
+            " and size IS NOT NULL and duration in (select distinct duration from m where 1=1 "
+            + args.duration_from_size
+            + ")"
+        )
 
     cf.extend([" and " + w for w in args.where])
 
@@ -66,7 +72,7 @@ def construct_query(args) -> Tuple[str, dict]:
         construct_search_bindings(args, cf, bindings, m_columns)
 
     if args.table == "media" and not any(
-        [cf, args.where, args.print, args.partial, args.limit != consts.DEFAULT_PLAY_QUEUE]
+        [cf, args.where, args.print, args.partial, args.limit != consts.DEFAULT_PLAY_QUEUE, args.duration_from_size]
     ):
         limit = 60_000
         if args.random:
@@ -94,17 +100,21 @@ def construct_query(args) -> Tuple[str, dict]:
     SELECT = "\n,".join([c for c in cols if c in m_columns or c == "*"])
     LIMIT = "LIMIT " + str(args.limit) if args.limit else ""
     OFFSET = f"OFFSET {args.skip}" if args.skip and args.limit else ""
-    query = f"""SELECT
-        {SELECT}
-    FROM {args.table}
+    query = f"""WITH m as (
+    SELECT * FROM {args.table}
     WHERE 1=1
-        {args.sql_filter}
         {f'and path like "http%"' if args.safe else ''}
         {f'and path not like "%{args.keep_dir}%"' if args.post_action == 'askkeep' else ''}
         {'and time_deleted=0' if 'time_deleted' in m_columns and 'time_deleted' not in args.sql_filter else ''}
         {'AND (score IS NULL OR score > 7)' if 'score' in m_columns else ''}
         {'AND (upvote_ratio IS NULL OR upvote_ratio > 0.73)' if 'upvote_ratio' in m_columns else ''}
         {'AND time_downloaded = 0' if args.online_media_only else ''}
+    )
+    SELECT
+        {SELECT}
+    FROM m
+    WHERE 1=1
+        {args.sql_filter}
     ORDER BY 1=1
         {', time_downloaded > 0 desc' if 'time_downloaded' in m_columns and 'time_downloaded' not in args.sql_filter else ''}
         {', video_count > 0 desc' if 'video_count' in m_columns and args.action == SC.watch else ''}
@@ -290,6 +300,9 @@ def usage(action, default_db) -> str:
         library {action} --portrait
         library {action} -w 'width<height' # equivalent
 
+    Constrain media to duration of videos which match any size constraints:
+        library {action} --duration-from-size +700 -u 'duration desc, size desc'
+
     Constrain media to online-media:
         Not to be confused with only local-media which is not "offline" (ie. one HDD disconnected)
         library {action} --online-media-only
@@ -324,12 +337,12 @@ def usage(action, default_db) -> str:
 """
 
 
-def parse_size(args):
+def parse_size(size):
     B_TO_MB = 1024 * 1024
     size_mb = 0
     size_rules = ""
 
-    for size_rule in args.size:
+    for size_rule in size:
         if "+" in size_rule:
             # min size rule
             size_rules += f"and size >= {abs(int(size_rule)) * B_TO_MB} "
@@ -414,6 +427,7 @@ def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
 
     parser.add_argument("--duration", "-d", action="append", help=argparse.SUPPRESS)
     parser.add_argument("--size", "-z", action="append", help=argparse.SUPPRESS)
+    parser.add_argument("--duration-from-size", action="append", help=argparse.SUPPRESS)
 
     parser.add_argument("--print", "-p", default=False, const="p", nargs="?", help=argparse.SUPPRESS)
     parser.add_argument("--moved", nargs=2, help=argparse.SUPPRESS)
@@ -505,7 +519,10 @@ def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
         args.duration = parse_duration(args)
 
     if args.size:
-        args.size = parse_size(args)
+        args.size = parse_size(args.size)
+
+    if args.duration_from_size:
+        args.duration_from_size = parse_size(args.duration_from_size)
 
     if args.chromecast:
         from catt.api import CattDevice
