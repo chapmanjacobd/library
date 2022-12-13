@@ -79,7 +79,7 @@ def construct_query(args) -> Tuple[str, dict]:
             limit = consts.DEFAULT_PLAY_QUEUE * 16
 
         if "limit" in args.defaults:
-            cf.append(f"and rowid in (select rowid from media order by random() limit {limit})")
+            cf.append(f"and m.rowid in (select rowid from media order by random() limit {limit})")
     else:
         if args.random:
             args.sort = "random(), " + args.sort
@@ -101,7 +101,7 @@ def construct_query(args) -> Tuple[str, dict]:
     LIMIT = "LIMIT " + str(args.limit) if args.limit else ""
     OFFSET = f"OFFSET {args.skip}" if args.skip and args.limit else ""
     query = f"""WITH m as (
-    SELECT * FROM {args.table}
+    SELECT rowid, * FROM {args.table}
     WHERE 1=1
         {f'and path like "http%"' if args.safe else ''}
         {f'and path not like "%{args.keep_dir}%"' if args.post_action == 'askkeep' else ''}
