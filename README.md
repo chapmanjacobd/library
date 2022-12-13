@@ -17,7 +17,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
     pip install xklb
 
     $ library
-    xk media library subcommands (v1.19.069)
+    xk media library subcommands (v1.19.070)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -256,6 +256,10 @@ Organize via separate databases.
         library watch --partial       # play newest first
         library watch --partial old   # play oldest first
         library watch -P o            # equivalent
+        library watch -P fo           # use file creation time instead of modified time
+
+        library watch -P p            # sort by progress / duration
+        library watch -P s            # skip partially watched (only show unseen)
 
     Print instead of play:
         library watch --print --limit 10  # print the next 10 files
