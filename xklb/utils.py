@@ -357,33 +357,64 @@ def mpv_enrich(args, media) -> List[dict]:
     return sorted(media, key=lambda m: m.get("time_partial_first") or 0, reverse=True)
 
 
+def mpv_watchlater_value(path, key):
+    data = Path(path).read_text().splitlines()
+    return [s.split("=")[1] for s in data if s.startswith(key)]
+
+
 def mpv_enrich2(args, media) -> List[dict]:
     md5s = {hashlib.md5(m["path"].encode("utf-8")).hexdigest().upper(): m for m in media}
     paths = set(Path(args.watch_later_directory).glob("*"))
+
+    def mpv_watchlater_progress(path):
+        value = mpv_watchlater_value(path, "start")
+        try:
+            return int(float(value[0]))
+        except Exception:
+            return None
 
     previously_watched = [
         {
             **(md5s.get(p.stem) or {}),
             "time_partial_first": int(p.stat().st_ctime),
             "time_partial_last": int(p.stat().st_mtime),
+            "progress": mpv_watchlater_progress(p),
         }
         for p in paths
         if md5s.get(p.stem)
     ]
-    if "s" in args.partial:
+    if "s" in args.partial:  # only unseen
         previously_watched_paths = [m["path"] for m in previously_watched]
         return [m for m in media if m["path"] not in previously_watched_paths]
 
     reverse_chronology = True
-    if "o" in args.partial:
+    if "o" in args.partial:  # oldest first
         reverse_chronology = False
 
     if args.print:
         reverse_chronology = not reverse_chronology
 
+    def mpv_progress(m):
+        progress = m.get("progress")
+        duration = m.get("duration")
+        if not progress:
+            return 0
+        if not duration:
+            return 1 / progress
+
+        return progress / duration
+
+    def sorting_hat():
+        if "f" in args.partial:  # first-viewed
+            return lambda m: m.get("time_partial_first") or 0
+        elif "p" in args.partial:  # sort by remaining duration
+            return mpv_progress
+
+        return lambda m: m.get("time_partial_last") or m.get("time_partial_first") or 0
+
     media = sorted(
         previously_watched,
-        key=lambda m: m.get("time_partial_last") or m.get("time_partial_first") or 0,
+        key=sorting_hat(),
         reverse=reverse_chronology,
     )
 

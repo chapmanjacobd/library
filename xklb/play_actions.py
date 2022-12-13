@@ -165,6 +165,10 @@ def usage(action, default_db) -> str:
         library {action} --partial       # play newest first
         library {action} --partial old   # play oldest first
         library {action} -P o            # equivalent
+        library {action} -P fo           # use file creation time instead of modified time
+
+        library {action} -P p            # sort by progress / duration
+        library {action} -P s            # skip partially watched (only show unseen)
 
     Print instead of play:
         library {action} --print --limit 10  # print the next 10 files
