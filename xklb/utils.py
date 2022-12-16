@@ -387,13 +387,6 @@ def mpv_enrich2(args, media) -> List[dict]:
         previously_watched_paths = [m["path"] for m in previously_watched]
         return [m for m in media if m["path"] not in previously_watched_paths]
 
-    reverse_chronology = True
-    if "o" in args.partial:  # oldest first
-        reverse_chronology = False
-
-    if args.print:
-        reverse_chronology = not reverse_chronology
-
     def mpv_progress(m):
         progress = m.get("progress")
         duration = m.get("duration")
@@ -412,9 +405,17 @@ def mpv_enrich2(args, media) -> List[dict]:
 
         return lambda m: m.get("time_partial_last") or m.get("time_partial_first") or 0
 
+    reverse_chronology = True
+    if "o" in args.partial:  # oldest first
+        reverse_chronology = False
+
+    key = sorting_hat()
+    if args.print:
+        reverse_chronology = not reverse_chronology
+
     media = sorted(
         previously_watched,
-        key=sorting_hat(),
+        key=key,
         reverse=reverse_chronology,
     )
 
