@@ -243,15 +243,8 @@ Explore `library` databases in your browser
 
 ### TODOs (PRs welcome)
 
-- make sure casting runs on mobile
-- cat ~/mc/_cine_http | lb surf
-- reddit_mining: subreddits and make a tube db per top 100,000 subreddits
-- todo  recursive todo management, fortune cookie style
-- nano budget
 - create/update views: especially dl queue, etc so that it is easier for people to access data externally
     db.create_view("items", ITEM_VIEW_DEF, replace=True)
-- debug move_random
 - SELECT * FROM playlists p WHERE PATH NOT IN (SELECT DISTINCT playlist_path FROM media WHERE playlist_path NOT NULL )
-- more test coverage
 """
 )
