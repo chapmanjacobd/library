@@ -167,10 +167,10 @@ def gen_include_excludes(cols_available):
         "playlist_path",
     ]
 
-    valid_cols = [f"media.{c}" for c in searchable_columns if c in cols_available]
+    valid_cols = [f"m.{c}" for c in searchable_columns if c in cols_available]
 
-    include_string = "and (" + " like :include{} OR ".join(valid_cols) + " like :include{} )"
-    exclude_string = "and (" + " not like :exclude{} AND ".join(valid_cols) + " not like :exclude{} )"
+    include_string = "and (" + " like :include{0} OR ".join(valid_cols) + " like :include{0} )"
+    exclude_string = "and (" + " not like :exclude{0} AND ".join(valid_cols) + " not like :exclude{0} )"
 
     return include_string, exclude_string
 
