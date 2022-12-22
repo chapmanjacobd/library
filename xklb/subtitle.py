@@ -87,12 +87,24 @@ def externalize_subtitle(media_file) -> Union[str, None]:
         )[0]["index"]
         log.debug(f"Using subtitle {subtitle_index}")
 
-        subtitles_file = cmd("mktemp --suffix=.vtt --dry-run").stdout.strip()
+        subtitles_file = cmd("mktemp", "--suffix=.vtt", "--dry-run").stdout.strip()
         cmd(
-            f'ffmpeg -nostdin -loglevel warning -txt_format text -i {media_file} -map "0:{subtitle_index}" "{subtitles_file}"'
+            "ffmpeg",
+            "-nostdin",
+            "-loglevel",
+            "warning",
+            "-txt_format",
+            "text",
+            "-i",
+            media_file,
+            "-map",
+            f"0:{subtitle_index}",
+            subtitles_file,
+            strict=False,
         )
 
-    return subtitles_file
+        if Path(subtitles_file).exists():
+            return subtitles_file
 
 
 def get_external(file) -> List[str]:
