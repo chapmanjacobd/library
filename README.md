@@ -17,7 +17,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
     pip install xklb
 
     $ library
-    xk media library subcommands (v1.19.075)
+    xk media library subcommands (v1.20.001)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -247,10 +247,9 @@ Organize via separate databases.
     Play media in order (similarly named episodes):
         library watch --play-in-order
         There are multiple strictness levels of --play-in-order.
-        If things aren't playing in order try adding more `O`s:
-        library watch -O    # fast
-        library watch -OO   # slow, more complex algorithm
-        library watch -OOO  # slow, ignores most filters
+        Prior to v1.20 there were three but now there are two:
+        library watch -O   # slow, more complex algorithm
+        library watch -OO  # slow, ignores most filters
 
     Play recent partially-watched videos (requires mpv history):
         library watch --partial       # play newest first

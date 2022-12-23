@@ -122,7 +122,7 @@ def construct_query(args) -> Tuple[str, dict]:
         {', width < height desc' if 'width' in m_columns and args.portrait else ''}
         {f', subtitle_count {subtitle_count} desc' if 'subtitle_count' in m_columns and args.action == SC.watch and not any([args.print, consts.PYTEST_RUNNING, 'subtitle_count' in args.where, args.limit != consts.DEFAULT_PLAY_QUEUE]) else ''}
         {', ' + args.sort if args.sort else ''}
-        {', path' if args.print or args.include or args.play_in_order > 0 else ''}
+        , path
         , random()
     {LIMIT} {OFFSET}
     """
@@ -156,10 +156,9 @@ def usage(action, default_db) -> str:
     Play media in order (similarly named episodes):
         library {action} --play-in-order
         There are multiple strictness levels of --play-in-order.
-        If things aren't playing in order try adding more `O`s:
-        library {action} -O    # fast
-        library {action} -OO   # slow, more complex algorithm
-        library {action} -OOO  # slow, ignores most filters
+        Prior to v1.20 there were three but now there are two:
+        library {action} -O   # slow, more complex algorithm
+        library {action} -OO  # slow, ignores most filters
 
     Play recent partially-watched videos (requires mpv history):
         library {action} --partial       # play newest first
@@ -511,8 +510,6 @@ def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
                     if args.print:
                         args.sort = ["duration", "size"]
 
-    if args.play_in_order > 0:
-        args.sort.append("path")
     args.sort = [override_sort(s) for s in args.sort]
     args.sort = ",".join(args.sort).replace(",,", ",")
 
@@ -562,8 +559,8 @@ def chromecast_play(args, m) -> None:
 def is_play_in_order_lvl2(args, media_file) -> bool:
     return any(
         [
-            args.play_in_order >= 2 and args.action != SC.listen,
-            args.play_in_order >= 1 and args.action == SC.listen and "audiobook" in media_file.lower(),
+            args.play_in_order >= 1 and args.action != SC.listen,
+            args.play_in_order >= 0 and args.action == SC.listen and "audiobook" in media_file.lower(),
         ]
     )
 
@@ -655,7 +652,7 @@ def process_playqueue(args) -> None:
     if all(
         [
             Path(args.watch_later_directory).exists(),
-            args.play_in_order <= 1,
+            args.play_in_order == 0,
             "sort" in args.defaults,
             not args.partial,
         ]

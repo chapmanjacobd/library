@@ -341,12 +341,12 @@ def get_ordinal_media(args, path: str) -> str:
             WHERE 1=1
                 and path like :candidate
                 {'and time_deleted=0' if 'time_deleted' in columns else ''}
-                {'' if (args.play_in_order >= 3) else (args.sql_filter or '')}
+                {'' if args.play_in_order >= 2 else (args.sql_filter or '')}
             ORDER BY play_count, path
             LIMIT 1000
             """
         bindings = {"candidate": candidate + "%"}
-        if args.play_in_order == 2:
+        if args.play_in_order == 1:
             if args.include or args.exclude:
                 bindings = {**bindings, "query": args.sql_filter_bindings["query"]}
         else:
