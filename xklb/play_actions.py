@@ -155,8 +155,7 @@ def usage(action, default_db) -> str:
 
     Play media in order (similarly named episodes):
         library {action} --play-in-order
-        There are multiple strictness levels of --play-in-order.
-        Prior to v1.20 there were three but now there are two:
+        There are multiple strictness levels of --play-in-order:
         library {action} -O   # slow, more complex algorithm
         library {action} -OO  # above, plus ignores most filters
         library {action} -OOO # above, plus ignores include/exclude filter during ordinal search
