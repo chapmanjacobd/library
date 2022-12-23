@@ -17,7 +17,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
     pip install xklb
 
     $ library
-    xk media library subcommands (v1.20.003)
+    xk media library subcommands (v1.20.004)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -397,10 +397,11 @@ Organize via separate databases.
     Constrain media to duration of videos which match any size constraints:
         library watch --duration-from-size +700 -u 'duration desc, size desc'
 
-    Constrain media to online-media:
+    Constrain media to online-media or local-media:
         Not to be confused with only local-media which is not "offline" (ie. one HDD disconnected)
         library watch --online-media-only
         library watch --online-media-only -i  # and ignore playback errors (ie. YouTube video deleted)
+        library watch --local-media-only
 
     Specify media play order:
         library watch --sort duration   # play shortest media first

@@ -109,6 +109,7 @@ def construct_query(args) -> Tuple[str, dict]:
         {'AND (score IS NULL OR score > 7)' if 'score' in m_columns else ''}
         {'AND (upvote_ratio IS NULL OR upvote_ratio > 0.73)' if 'upvote_ratio' in m_columns else ''}
         {'AND time_downloaded = 0' if args.online_media_only else ''}
+        {'AND time_downloaded > 0 AND path not like "http%"' if args.local_media_only else ''}
     )
     SELECT
         {SELECT}
@@ -307,10 +308,11 @@ def usage(action, default_db) -> str:
     Constrain media to duration of videos which match any size constraints:
         library {action} --duration-from-size +700 -u 'duration desc, size desc'
 
-    Constrain media to online-media:
+    Constrain media to online-media or local-media:
         Not to be confused with only local-media which is not "offline" (ie. one HDD disconnected)
         library {action} --online-media-only
         library {action} --online-media-only -i  # and ignore playback errors (ie. YouTube video deleted)
+        library {action} --local-media-only
 
     Specify media play order:
         library {action} --sort duration   # play shortest media first
@@ -361,23 +363,21 @@ def parse_size(size):
 
 
 def parse_duration(args):
-    SEC_TO_M = 60
+    SEC_FROM_M = 60
     duration_m = 0
     duration_rules = ""
 
     for duration_rule in args.duration:
         if "+" in duration_rule:
             # min duration rule
-            duration_rules += f"and duration >= {abs(int(duration_rule)) * SEC_TO_M} "
+            duration_rules += f"and duration >= {int(abs(float(duration_rule)) * SEC_FROM_M)} "
         elif "-" in duration_rule:
             # max duration rule
-            duration_rules += f"and {abs(int(duration_rule)) * SEC_TO_M} >= duration "
+            duration_rules += f"and {int(abs(float(duration_rule)) * SEC_FROM_M)} >= duration "
         else:
             # approximate duration rule
-            duration_m = float(duration_rule) * SEC_TO_M
-            duration_rules += (
-                f"and {duration_m + (duration_m /10)} >= duration and duration >= {duration_m - (duration_m /10)} "
-            )
+            duration_m = float(duration_rule) * SEC_FROM_M
+            duration_rules += f"and {int(duration_m + (duration_m /10))} >= duration and duration >= {int(duration_m - (duration_m /10))} "
 
     return duration_rules
 
@@ -463,6 +463,7 @@ def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
     parser.add_argument("--shallow-organize", default="/mnt/d/", help=argparse.SUPPRESS)
 
     parser.add_argument("--online-media-only", "--online-only", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--local-media-only", "--local-only", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--safe", "-safe", action="store_true", help="Skip generic URLs")
 
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
