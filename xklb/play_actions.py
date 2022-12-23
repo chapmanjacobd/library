@@ -158,7 +158,8 @@ def usage(action, default_db) -> str:
         There are multiple strictness levels of --play-in-order.
         Prior to v1.20 there were three but now there are two:
         library {action} -O   # slow, more complex algorithm
-        library {action} -OO  # slow, ignores most filters
+        library {action} -OO  # above, plus ignores most filters
+        library {action} -OOO # above, plus ignores include/exclude filter during ordinal search
 
     Play recent partially-watched videos (requires mpv history):
         library {action} --partial       # play newest first

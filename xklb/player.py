@@ -337,7 +337,7 @@ def get_ordinal_media(args, path: str) -> str:
             return path
 
         candidate = new_candidate
-        query = f"""SELECT path FROM {args.table}
+        query = f"""SELECT path FROM {'media' if args.play_in_order >= 3 else args.table}
             WHERE 1=1
                 and path like :candidate
                 {'and time_deleted=0' if 'time_deleted' in columns else ''}
