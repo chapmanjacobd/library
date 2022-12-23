@@ -104,7 +104,7 @@ def construct_query(args) -> Tuple[str, dict]:
     SELECT rowid, * FROM {args.table}
     WHERE 1=1
         {f'and path like "http%"' if args.safe else ''}
-        {f'and path not like "%{args.keep_dir}%"' if args.post_action == 'askkeep' else ''}
+        {f'and path not like "{Path(args.keep_dir).resolve()}%"' if args.post_action == 'askkeep' else ''}
         {'and time_deleted=0' if 'time_deleted' in m_columns and 'time_deleted' not in args.sql_filter else ''}
         {'AND (score IS NULL OR score > 7)' if 'score' in m_columns else ''}
         {'AND (upvote_ratio IS NULL OR upvote_ratio > 0.73)' if 'upvote_ratio' in m_columns else ''}
@@ -119,6 +119,7 @@ def construct_query(args) -> Tuple[str, dict]:
         {', time_downloaded > 0 desc' if 'time_downloaded' in m_columns and 'time_downloaded' not in args.sql_filter else ''}
         {', video_count > 0 desc' if 'video_count' in m_columns and args.action == SC.watch else ''}
         {', audio_count > 0 desc' if 'audio_count' in m_columns else ''}
+        , path like "http%"
         {', width < height desc' if 'width' in m_columns and args.portrait else ''}
         {f', subtitle_count {subtitle_count} desc' if 'subtitle_count' in m_columns and args.action == SC.watch and not any([args.print, consts.PYTEST_RUNNING, 'subtitle_count' in args.where, args.limit != consts.DEFAULT_PLAY_QUEUE]) else ''}
         {', ' + args.sort if args.sort else ''}
