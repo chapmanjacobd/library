@@ -116,9 +116,9 @@ def construct_query(args) -> Tuple[str, dict]:
     WHERE 1=1
         {args.sql_filter}
     ORDER BY 1=1
-        {', time_downloaded > 0 desc' if 'time_downloaded' in m_columns and 'time_downloaded' not in args.sql_filter else ''}
         {', video_count > 0 desc' if 'video_count' in m_columns and args.action == SC.watch else ''}
         {', audio_count > 0 desc' if 'audio_count' in m_columns else ''}
+        {', time_downloaded > 0 desc' if 'time_downloaded' in m_columns and 'time_downloaded' not in args.sql_filter else ''}
         , path like "http%"
         {', width < height desc' if 'width' in m_columns and args.portrait else ''}
         {f', subtitle_count {subtitle_count} desc' if 'subtitle_count' in m_columns and args.action == SC.watch and not any([args.print, consts.PYTEST_RUNNING, 'subtitle_count' in args.where, args.limit != consts.DEFAULT_PLAY_QUEUE]) else ''}
