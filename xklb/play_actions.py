@@ -466,7 +466,7 @@ def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
     parser.add_argument("--local-media-only", "--local-only", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--safe", "-safe", action="store_true", help="Skip generic URLs")
 
-    parser.add_argument("--timeout", "-T", type=int, help=argparse.SUPPRESS)
+    parser.add_argument("--timeout", "-T", help=argparse.SUPPRESS)
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
     parser.add_argument("--ignore-errors", "--ignoreerrors", "-i", action="store_true")
     parser.add_argument("--verbose", "-v", action="count", default=0)

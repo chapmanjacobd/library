@@ -30,39 +30,6 @@ def exit_nicely(_signal, _frame):
 signal.signal(signal.SIGINT, exit_nicely)
 
 
-def timeout(minutes):
-    if minutes and minutes > 0:
-        seconds = minutes * 60
-
-        def exit_timeout(_signal, _frame):
-            print(f"\nReached timeout... ({seconds}s)")
-            raise SystemExit(124)
-
-        signal.signal(signal.SIGALRM, exit_timeout)
-        signal.alarm(seconds)
-
-
-def no_media_found():
-    print("No media found")
-    raise SystemExit(2)
-
-
-def with_timeout(timeout):
-    def decorator(decorated):
-        @functools.wraps(decorated)
-        def inner(*args, **kwargs):
-            pool = multiprocessing.Pool(1)
-            async_result = pool.apply_async(decorated, args, kwargs)
-            try:
-                return async_result.get(timeout)
-            finally:
-                pool.close()
-
-        return inner
-
-    return decorator
-
-
 def os_bg_kwargs() -> dict:
     # prevent ctrl-c from affecting subprocesses first
 
@@ -137,21 +104,6 @@ def conform(list_: Union[str, Iterable]) -> List:
     return list_
 
 
-def sanitize_url(args, path: str) -> str:
-    matches = consts.REGEX_SUBREDDIT.match(path)
-    if matches:
-        subreddit = conform(matches.groups())[0]
-        frequency = consts.Frequency.Monthly
-        if hasattr(args, "frequency"):
-            frequency = args.frequency
-        return "https://old.reddit.com/r/" + subreddit + "/top/?sort=top&t=" + consts.reddit_frequency(frequency)
-
-    if "/m." in path:
-        return path.replace("/m.", "/www.")
-
-    return path
-
-
 def cmd(*command, strict=True, cwd=None, quiet=True, **kwargs) -> subprocess.CompletedProcess:
     EXP_FILTER = re.compile(
         "|".join(
@@ -190,6 +142,55 @@ def cmd(*command, strict=True, cwd=None, quiet=True, **kwargs) -> subprocess.Com
             raise Exception(f"[{command}] exited {r.returncode}")
 
     return r
+
+
+def timeout(minutes):
+    if minutes and float(minutes) > 0:
+        seconds = int(float(minutes) * 60)
+
+        def exit_timeout(_signal, _frame):
+            print(f"\nReached timeout... ({seconds}s)")
+            cmd("pkill", "mpv")
+            raise SystemExit(124)
+
+        signal.signal(signal.SIGALRM, exit_timeout)
+        signal.alarm(seconds)
+
+
+def no_media_found():
+    print("No media found")
+    raise SystemExit(2)
+
+
+def with_timeout(timeout):
+    def decorator(decorated):
+        @functools.wraps(decorated)
+        def inner(*args, **kwargs):
+            pool = multiprocessing.Pool(1)
+            async_result = pool.apply_async(decorated, args, kwargs)
+            try:
+                return async_result.get(timeout)
+            finally:
+                pool.close()
+
+        return inner
+
+    return decorator
+
+
+def sanitize_url(args, path: str) -> str:
+    matches = consts.REGEX_SUBREDDIT.match(path)
+    if matches:
+        subreddit = conform(matches.groups())[0]
+        frequency = consts.Frequency.Monthly
+        if hasattr(args, "frequency"):
+            frequency = args.frequency
+        return "https://old.reddit.com/r/" + subreddit + "/top/?sort=top&t=" + consts.reddit_frequency(frequency)
+
+    if "/m." in path:
+        return path.replace("/m.", "/www.")
+
+    return path
 
 
 def cmd_detach(*command, **kwargs) -> subprocess.CompletedProcess:
