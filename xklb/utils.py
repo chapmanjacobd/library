@@ -30,6 +30,18 @@ def exit_nicely(_signal, _frame):
 signal.signal(signal.SIGINT, exit_nicely)
 
 
+def timeout(minutes):
+    if minutes and minutes > 0:
+        seconds = minutes * 60
+
+        def exit_timeout(_signal, _frame):
+            print(f"\nReached timeout... ({seconds}s)")
+            raise SystemExit(124)
+
+        signal.signal(signal.SIGALRM, exit_timeout)
+        signal.alarm(seconds)
+
+
 def no_media_found():
     print("No media found")
     raise SystemExit(2)
