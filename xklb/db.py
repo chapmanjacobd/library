@@ -1,10 +1,13 @@
 import os, sqlite3
+from textwrap import dedent
 from typing import Any, Iterable, List, Optional, Union
 
+from xklb import utils
 from xklb.utils import log
 
 
 def tracer(sql, params) -> None:
+    sql = utils.replace_consecutives(dedent(sql), "\n")
     print(f"SQL: {sql} - params: {params}")
 
 
