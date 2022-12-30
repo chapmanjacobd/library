@@ -575,6 +575,7 @@ def multiple_player(args, media) -> None:
     template = get_multiple_player_template(args)
     players = []
 
+    media = reversed(media)  # because I use media.pop()
     try:
         while media or players:
             for t_idx, t in enumerate(template):
