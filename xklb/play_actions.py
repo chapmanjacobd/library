@@ -474,12 +474,8 @@ def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
     parser.add_argument("--watch-later-directory", default=consts.DEFAULT_MPV_WATCH_LATER, help=argparse.SUPPRESS)
 
     parser.add_argument("--override-player", "--player", "-player", help=argparse.SUPPRESS)
-    parser.add_argument(
-        "--player-args-sub", "-player-sub", nargs="*", default=DEFAULT_PLAYER_ARGS_SUB, help=argparse.SUPPRESS
-    )
-    parser.add_argument(
-        "--player-args-no-sub", "-player-no-sub", nargs="*", default=DEFAULT_PLAYER_ARGS_NO_SUB, help=argparse.SUPPRESS
-    )
+    parser.add_argument("--player-args-sub", "-player-sub", nargs="*", default=DEFAULT_PLAYER_ARGS_SUB)
+    parser.add_argument("--player-args-no-sub", "-player-no-sub", nargs="*", default=DEFAULT_PLAYER_ARGS_NO_SUB)
     parser.add_argument("--transcode", action="store_true", help=argparse.SUPPRESS)
 
     parser.add_argument("--post-action", "--action", "-k", default="keep", help=argparse.SUPPRESS)
