@@ -70,6 +70,7 @@ class SC:
     view = "view"
     download = "download"
     block = "block"
+    stats = "stats"
 
 
 class Frequency(enum.Enum):

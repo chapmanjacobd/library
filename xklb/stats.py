@@ -4,8 +4,7 @@ from typing import Tuple
 
 from tabulate import tabulate
 
-from xklb import consts, db, dl_extract, utils
-from xklb.play_actions import construct_search_bindings
+from xklb import consts, db, dl_extract, play_actions, utils
 from xklb.player import delete_playlists
 from xklb.utils import human_time, log
 
@@ -35,6 +34,12 @@ def parse_args(prog, usage):
 
     parser.add_argument("database", nargs="?", default="video.db")
     args = parser.parse_args()
+    if args.db:
+        args.database = args.db
+    args.db = db.connect(args)
+    log.info(utils.dict_filter_bool(args.__dict__))
+
+    play_actions.parse_args_sort(args, consts.SC.stats)
     return args
 
 
@@ -51,9 +56,9 @@ def construct_query(args) -> Tuple[str, dict]:
         if args.include:
             args.table = db.fts_search(args, bindings)
         elif args.exclude:
-            construct_search_bindings(args, cf, bindings, pl_columns)
+            play_actions.construct_search_bindings(args, cf, bindings, pl_columns)
     else:
-        construct_search_bindings(args, cf, bindings, pl_columns)
+        play_actions.construct_search_bindings(args, cf, bindings, pl_columns)
 
     args.sql_filter = " ".join(cf)
 
@@ -145,11 +150,6 @@ def playlists() -> None:
     """,
     )
 
-    if args.db:
-        args.database = args.db
-    args.db = db.connect(args)
-    log.info(utils.dict_filter_bool(args.__dict__))
-
     if args.delete:
         return delete_playlists(args, args.delete)
 
@@ -227,11 +227,6 @@ def dlstatus() -> None:
         ╘═════════════════════╧═════════════╧══════════════════╧════════════════════╧══════════╛
     """,
     )
-
-    if args.db:
-        args.database = args.db
-    args.db = db.connect(args)
-    log.info(utils.dict_filter_bool(args.__dict__))
 
     if args.delete:
         return delete_playlists(args, args.delete)
