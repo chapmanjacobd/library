@@ -64,6 +64,7 @@ def parse_args(action, usage):
     parser.add_argument("playlists", nargs="*", help=argparse.SUPPRESS)
 
     args = parser.parse_args()
+
     if action == SC.download:
         if args.duration:
             args.duration = play_actions.parse_duration(args)
@@ -77,6 +78,9 @@ def parse_args(action, usage):
     args.db = db.connect(args)
 
     args.playlists = utils.conform(args.playlists)
+
+    play_actions.parse_args_sort(args, action)
+
     log.info(utils.dict_filter_bool(args.__dict__))
 
     return args

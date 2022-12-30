@@ -382,6 +382,31 @@ def parse_duration(args):
     return duration_rules
 
 
+def parse_args_sort(args, action):
+    if args.sort:
+        args.sort = " ".join(args.sort).split(",")
+    elif not args.sort:
+        if hasattr(args, "defaults"):
+            args.defaults.append("sort")
+        columns = args.db["media"].columns_dict
+
+        args.sort = []
+        if action in (SC.filesystem):
+            args.sort.extend(["sparseness", "size"])
+        elif action in (SC.listen, SC.watch):
+            if "play_count" in columns:
+                args.sort.extend(["play_count"])
+            if "size" in columns and "duration" in columns:
+                args.sort.extend(["priority"])
+                if args.include:
+                    args.sort = ["duration desc", "size desc"]
+                    if args.print:
+                        args.sort = ["duration", "size"]
+
+    args.sort = [override_sort(s) for s in args.sort]
+    args.sort = "\n        , ".join(args.sort).replace(",,", ",")
+
+
 def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
     DEFAULT_PLAYER_ARGS_SUB = ["--speed=1"]
     DEFAULT_PLAYER_ARGS_NO_SUB = ["--speed=1.46"]
@@ -494,27 +519,7 @@ def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
     elif args.limit in ("inf", "all"):
         args.limit = None
 
-    if args.sort:
-        args.sort = " ".join(args.sort).split(",")
-    elif not args.sort:
-        args.defaults.append("sort")
-        columns = args.db["media"].columns_dict
-
-        args.sort = []
-        if args.action in (SC.filesystem):
-            args.sort.extend(["sparseness", "size"])
-        elif args.action in (SC.listen, SC.watch):
-            if "play_count" in columns:
-                args.sort.extend(["play_count"])
-            if "size" in columns and "duration" in columns:
-                args.sort.extend(["priority"])
-                if args.include:
-                    args.sort = ["duration desc", "size desc"]
-                    if args.print:
-                        args.sort = ["duration", "size"]
-
-    args.sort = [override_sort(s) for s in args.sort]
-    args.sort = ",".join(args.sort).replace(",,", ",")
+    parse_args_sort(args, action)
 
     if args.cols:
         args.cols = list(utils.flatten([s.split(",") for s in args.cols]))
