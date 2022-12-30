@@ -162,14 +162,14 @@ def no_media_found():
     raise SystemExit(2)
 
 
-def with_timeout(timeout):
+def with_timeout(seconds):
     def decorator(decorated):
         @functools.wraps(decorated)
         def inner(*args, **kwargs):
             pool = multiprocessing.Pool(1)
             async_result = pool.apply_async(decorated, args, kwargs)
             try:
-                return async_result.get(timeout)
+                return async_result.get(seconds)
             finally:
                 pool.close()
 
@@ -204,8 +204,6 @@ def cmd_detach(*command, **kwargs) -> subprocess.CompletedProcess:
 
     command = conform(command)
     if command[0] in ["fish", "bash"]:
-        import shlex
-
         command = command[0:2] + [shlex.join(command[2:])]
     subprocess.Popen(command, stdin=stdin, stdout=stdout, stderr=stderr, close_fds=True, **os_bg_kwargs(), **kwargs)
     return subprocess.CompletedProcess(command, 0, "Detached command is async")
