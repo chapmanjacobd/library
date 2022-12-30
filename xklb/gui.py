@@ -93,7 +93,7 @@ class MrSuperDialogue:
         s_width = window_width or self.root.winfo_screenwidth()
         s_height = window_height or self.root.winfo_screenheight()
 
-        window_width, window_height = 380, 150  # override
+        # window_width, window_height = 380, 150  # override
         x_coordinate = x or 0
         y_coordinate = y or 0
         self.root.geometry(f"{window_width}x{window_height}+{x_coordinate}+{y_coordinate}")
