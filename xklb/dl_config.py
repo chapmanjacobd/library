@@ -104,6 +104,16 @@ yt_meaningless_errors = re.compile(
 )
 
 
+prefix_unrecoverable_errors = re.compile(
+    "|".join(
+        r""".*unable to write data: [Errno 28].*
+.*No space left on device.*
+.*unable to create directory [Errno 13].*
+.*Permission denied.*""".splitlines()
+    )
+)
+
+
 yt_unrecoverable_errors = re.compile(
     "|".join(
         r""".*repetitive or misleading metadata
