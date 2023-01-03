@@ -9,7 +9,12 @@ from sqlite_utils.db import NotFoundError
 
 from xklb import consts, fs_extract, utils
 from xklb.consts import DBType
-from xklb.dl_config import yt_meaningless_errors, yt_recoverable_errors, yt_unrecoverable_errors
+from xklb.dl_config import (
+    prefix_unrecoverable_errors,
+    yt_meaningless_errors,
+    yt_recoverable_errors,
+    yt_unrecoverable_errors,
+)
 from xklb.utils import combine, log, safe_unpack
 
 
@@ -567,6 +572,9 @@ def yt(args, m) -> None:
             matched_error = [m.string for m in utils.conform([yt_unrecoverable_errors.match(l) for l in ydl_full_log])]
             log.warning("[%s]: Unrecoverable error matched. %s", m["path"], ydl_errors or utils.combine(matched_error))
             save_tube_entry(args, m, info, error=ydl_errors, URE=True)
+        elif any([prefix_unrecoverable_errors.match(l) for l in ydl_full_log]):
+            log.warning("[%s]: Prefix error. %s", m["path"], ydl_errors)
+            raise SystemExit(28)
         else:
             log.error("[%s]: Unknown error. %s", m["path"], ydl_errors)
             save_tube_entry(args, m, info, error=ydl_errors)
