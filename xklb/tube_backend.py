@@ -173,7 +173,10 @@ def consolidate(v: dict) -> Optional[dict]:
     release_date = v.pop("release_date", None)
     upload_date = v.pop("upload_date", None) or release_date
     if upload_date:
-        upload_date = int(datetime.strptime(upload_date, "%Y%m%d").timestamp())
+        try:
+            upload_date = int(datetime.strptime(upload_date, "%Y%m%d").timestamp())
+        except:
+            upload_date = None
 
     cv = {}
     cv["path"] = safe_unpack(v.pop("webpage_url", None), v.pop("url", None), v.pop("original_url", None))

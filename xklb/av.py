@@ -138,7 +138,11 @@ def munge_av_tags(args, media, f) -> Optional[dict]:
     if tags:
         upload_date = tags.get("DATE")
         if upload_date:
-            upload_date = int(datetime.strptime(upload_date, "%Y%m%d").timestamp())
+            try:
+                upload_date = int(datetime.strptime(upload_date, "%Y%m%d").timestamp())
+            except:
+                upload_date = None
+
         tags = utils.dict_filter_bool(
             {
                 "title": tags.get("title"),
