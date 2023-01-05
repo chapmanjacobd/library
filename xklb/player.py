@@ -283,6 +283,7 @@ def post_act(args, media_file: str, action=None) -> None:
                 delete_media(args, media_file)
 
         elif action == "askkeep":
+            utils.clear_input()
             if not Confirm.ask("Keep?", default=False):
                 delete_media(args, media_file)
             else:

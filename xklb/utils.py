@@ -596,3 +596,16 @@ def ensure_playlists_exists(args):
     if "playlists" not in args.db.table_names():
         with args.db.conn:
             args.db.conn.execute("create table playlists (path text, category text, ie_key text, time_deleted int)")
+
+
+def clear_input():
+    if platform.system() == "Linux":
+        from termios import TCIFLUSH, tcflush
+
+        tcflush(sys.stdin, TCIFLUSH)
+    elif platform.system() == "Windows":
+        import msvcrt
+
+        # Try to flush the buffer
+        while msvcrt.kbhit():
+            msvcrt.getch()
