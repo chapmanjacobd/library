@@ -62,7 +62,7 @@ def usage() -> str:
       lb surf                  Load browser tabs in a streaming way (stdin)
 
     mining:
-      lb reddit-selftext       Stored selftext external links -> db media table
+      lb reddit-selftext       db selftext external links -> db media table
       lb pushshift             Convert Pushshift jsonl.zstd -> reddit.db format (stdin)
       lb nfb-films             NFB Director links -> film links (stdin)
       lb nouns                 Unstructured text -> compound nouns (stdin)
