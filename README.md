@@ -435,7 +435,7 @@ Organize via separate databases.
 
 #### [lowcharts](https://github.com/juan-leon/lowcharts)
 
-    $ wt-dev -p f -col time_created | lowcharts timehist -w 80
+    $ lb watch -p f -col time_created | lowcharts timehist -w 80
     Matches: 445183.
     Each ∎ represents a count of 1896
     [2022-04-13 03:16:05] [151689] ∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎
@@ -458,6 +458,8 @@ Organize via separate databases.
     [2022-07-27 11:36:13] [ 50938] ∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎
     [2022-08-02 16:19:45] [ 70973] ∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎
     [2022-08-08 21:03:17] [  2598] ∎
+
+    $ lb watch -p f -col time_deleted -w time_deleted'>'0 | lowcharts timehist -w 80  # for some cols like time_deleted you'll need to specify a where clause so they aren't filtered out
 
 ![video width](https://user-images.githubusercontent.com/7908073/184737808-b96fbe65-a1d9-43c2-b6b4-4bdfab592190.png)
 
