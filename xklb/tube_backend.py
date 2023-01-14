@@ -573,7 +573,7 @@ def yt(args, m) -> None:
             save_tube_entry(args, m, info, error=ydl_errors)
         elif any([yt_unrecoverable_errors.match(l) for l in ydl_full_log]):
             matched_error = [m.string for m in utils.conform([yt_unrecoverable_errors.match(l) for l in ydl_full_log])]
-            log.warning("[%s]: Unrecoverable error matched. %s", m["path"], ydl_errors or utils.combine(matched_error))
+            log.debug("[%s]: Unrecoverable error matched. %s", m["path"], ydl_errors or utils.combine(matched_error))
             save_tube_entry(args, m, info, error=ydl_errors, URE=True)
         elif any([prefix_unrecoverable_errors.match(l) for l in ydl_full_log]):
             log.warning("[%s]: Prefix error. %s", m["path"], ydl_errors)
