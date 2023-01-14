@@ -91,7 +91,7 @@ def tube_add(args=None) -> None:
 
     for path in args.playlists:
         if args.safe and not tube_backend.is_supported(path):
-            log.info("[%s]: Unsupported playlist (safe_mode)", path)
+            log.info("[%s]: Skipping unsupported playlist (safe_mode)", path)
             continue
 
         tube_backend.process_playlist(args, path, tube_backend.tube_opts(args))

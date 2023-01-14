@@ -220,7 +220,7 @@ def dl_download(args=None) -> None:
     media = process_downloadqueue(args)
     for m in media:
         if args.safe and not tube_backend.is_supported(m["path"]):
-            log.warning("[%s]: Unsupported URL (safe_mode)", m["path"])
+            log.info("[%s]: Skipping unsupported URL (safe_mode)", m["path"])
             continue
 
         # check again in case it was already completed by another process
