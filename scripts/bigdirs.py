@@ -15,15 +15,17 @@ def group_by_folder(args, media):
             p.pop()
             parent = "/".join(p) + "/"
 
+            file_exists = (m.get("was_deleted") or 0) == 0
+
             if d.get(parent):
-                d[parent]["size"] += m["size"] if m.get("is_deleted") or 0 == 0 else 0
-                d[parent]["count"] += 1 if m.get("is_deleted") or 0 == 0 else 0
-                d[parent]["count_deleted"] += m.get("is_deleted")
+                d[parent]["size"] += m["size"] if file_exists else 0
+                d[parent]["count"] += 1 if file_exists else 0
+                d[parent]["count_deleted"] += m.get("was_deleted")
             else:
                 d[parent] = {
-                    "size": m["size"] if m.get("is_deleted") or 0 == 0 else 0,
-                    "count": 1 if m.get("is_deleted") or 0 == 0 else 0,
-                    "count_deleted": m.get("is_deleted"),
+                    "size": m["size"] if file_exists else 0,
+                    "count": 1 if file_exists else 0,
+                    "count_deleted": m.get("was_deleted"),
                 }
 
     for path, pdict in list(d.items()):
@@ -48,7 +50,7 @@ def get_table(args) -> List[dict]:
         select
             path
             , size
-            {', time_deleted > 0 is_deleted' if 'time_deleted' in columns else ''}
+            {', time_deleted > 0 was_deleted' if 'time_deleted' in columns else ''}
         from media
         where 1=1
             {'and time_downloaded > 0' if 'time_downloaded' in columns else ''}
