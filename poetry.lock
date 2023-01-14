@@ -1619,14 +1619,14 @@ files = [
 
 [[package]]
 name = "pytest"
-version = "7.2.0"
+version = "7.2.1"
 description = "pytest: simple powerful testing with Python"
 category = "dev"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "pytest-7.2.0-py3-none-any.whl", hash = "sha256:892f933d339f068883b6fd5a459f03d85bfcb355e4981e146d2c7616c21fef71"},
-    {file = "pytest-7.2.0.tar.gz", hash = "sha256:c4014eb40e10f11f355ad4e3c2fb2c6c6d1919c73f3b5a433de4708202cade59"},
+    {file = "pytest-7.2.1-py3-none-any.whl", hash = "sha256:c7c6ca206e93355074ae32f7403e8ea12163b1163c976fee7d4d84027c162be5"},
+    {file = "pytest-7.2.1.tar.gz", hash = "sha256:d45e0952f3727241918b8fd0f376f5ff6b301cc0777c6f9a556935c92d8a7d42"},
 ]
 
 [package.dependencies]
@@ -1670,14 +1670,14 @@ files = [
 
 [[package]]
 name = "pytz"
-version = "2022.7"
+version = "2022.7.1"
 description = "World timezone definitions, modern and historical"
 category = "main"
 optional = false
 python-versions = "*"
 files = [
-    {file = "pytz-2022.7-py2.py3-none-any.whl", hash = "sha256:93007def75ae22f7cd991c84e02d434876818661f8df9ad5df9e950ff4e52cfd"},
-    {file = "pytz-2022.7.tar.gz", hash = "sha256:7ccfae7b4b2c067464a6733c6261673fdb8fd1be905460396b97a073e9fa683a"},
+    {file = "pytz-2022.7.1-py2.py3-none-any.whl", hash = "sha256:78f4f37d8198e0627c5f1143240bb0206b8691d8d7ac6d78fee88b78733f8c4a"},
+    {file = "pytz-2022.7.1.tar.gz", hash = "sha256:01a0681c4b9684a28304615eba55d1ab31ae00bf68ec157ec3708a8182dbbcd0"},
 ]
 
 [[package]]
@@ -1831,14 +1831,14 @@ use-chardet-on-py3 = ["chardet (>=3.0.2,<6)"]
 
 [[package]]
 name = "rich"
-version = "13.0.1"
+version = "13.1.0"
 description = "Render rich text, tables, progress bars, syntax highlighting, markdown and more to the terminal"
 category = "main"
 optional = false
 python-versions = ">=3.7.0"
 files = [
-    {file = "rich-13.0.1-py3-none-any.whl", hash = "sha256:41fe1d05f433b0f4724cda8345219213d2bfa472ef56b2f64f415b5b94d51b04"},
-    {file = "rich-13.0.1.tar.gz", hash = "sha256:25f83363f636995627a99f6e4abc52ed0970ebbd544960cc63cbb43aaac3d6f0"},
+    {file = "rich-13.1.0-py3-none-any.whl", hash = "sha256:f846bff22a43e8508aebf3f0f2410ce1c6f4cde429098bd58d91fde038c57299"},
+    {file = "rich-13.1.0.tar.gz", hash = "sha256:81c73a30b144bbcdedc13f4ea0b6ffd7fdc3b0d3cc259a9402309c8e4aee1964"},
 ]
 
 [package.dependencies]

@@ -402,7 +402,7 @@ def watch_chromecast(args, m: dict, subtitles_file=None) -> Optional[subprocess.
 def listen_chromecast(args, m: dict) -> Optional[subprocess.CompletedProcess]:
     Path(consts.CAST_NOW_PLAYING).write_text(m["path"])
     Path(consts.FAKE_SUBTITLE).touch()
-    if args.with_local:
+    if args.cast_with_local:
         cast_process = subprocess.Popen(
             ["catt", "-d", args.chromecast_device, "cast", "-s", consts.FAKE_SUBTITLE, m["path"]],
             **utils.os_bg_kwargs(),
