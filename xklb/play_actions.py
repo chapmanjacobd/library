@@ -592,7 +592,7 @@ def play(args, m: Dict) -> None:
     media_file = m["path"]
 
     if args.safe and not tube_backend.is_supported(m["path"]):
-        log.warning("[%s]: Unsupported URL (safe_mode)", m["path"])
+        log.info("[%s]: Skipping unsupported URL (safe_mode)", m["path"])
         return
 
     if is_play_in_order_lvl2(args, media_file):
