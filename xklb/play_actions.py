@@ -559,7 +559,7 @@ def chromecast_play(args, m) -> None:
 
     if catt_log:
         if catt_log.stderr is None or catt_log.stderr == "":
-            if not args.with_local:
+            if not args.cast_with_local:
                 raise Exception("catt does not exit nonzero? but something might have gone wrong")
         elif "Heartbeat timeout, resetting connection" in catt_log.stderr:
             raise Exception("Media is possibly partially unwatched")
