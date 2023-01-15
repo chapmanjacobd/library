@@ -19,23 +19,112 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
 
     pip install xklb
 
+## Examples
+
     $ library
     {lb.usage()}
 
-## Quick Start -- watch online media on your PC
+### Watch online media on your PC
 
     wget https://github.com/chapmanjacobd/library/raw/main/examples/mealtime.tw.db
     library watch mealtime.tw.db
 
-### Or hook into HackerNews videos
+### Listen to online media on a chromecast group
+
+    wget https://github.com/chapmanjacobd/library/raw/main/examples/music.tl.db
+    library listen music.tl.db -ct "House speakers"
+
+### Hook into HackerNews
 
     wget https://github.com/chapmanjacobd/hn_mining/raw/main/hackernews_only_direct.tw.db
     library watch hackernews_only_direct.tw.db --random --ignore-errors
 
-## Quick Start -- listen to online media on a chromecast group
+### Wake up to your own music (via termux)
 
-    wget https://github.com/chapmanjacobd/library/raw/main/examples/music.tl.db
-    library listen music.tl.db -ct "House speakers"
+    30 9 * * * lb listen ./audio.db
+
+### Wake up to your own music _only when you are not home_ (computer on local-only IP)
+
+    30 9 * * * timeout 0.4 nc -z 192.168.1.12 22 || lb listen --random
+
+### Wake up to your own music on your Chromecast speaker group _only when you are home_
+
+    30 9 * * * ssh 192.168.1.12 lb listen --random --play-in-order --cast --cast-to "Bedroom pair"
+
+### Pipe to [lowcharts](https://github.com/juan-leon/lowcharts)
+
+<details><summary>$ lb watch -p f -col time_created | lowcharts timehist -w 80</summary>
+
+    Matches: 445183.
+    Each ∎ represents a count of 1896
+    [2022-04-13 03:16:05] [151689] ∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎
+    [2022-04-19 07:59:37] [ 16093] ∎∎∎∎∎∎∎∎
+    [2022-04-25 12:43:09] [ 12019] ∎∎∎∎∎∎
+    [2022-05-01 17:26:41] [ 48817] ∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎
+    [2022-05-07 22:10:14] [ 36259] ∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎
+    [2022-05-14 02:53:46] [  3942] ∎∎
+    [2022-05-20 07:37:18] [  2371] ∎
+    [2022-05-26 12:20:50] [   517]
+    [2022-06-01 17:04:23] [  4845] ∎∎
+    [2022-06-07 21:47:55] [  2340] ∎
+    [2022-06-14 02:31:27] [   563]
+    [2022-06-20 07:14:59] [ 13836] ∎∎∎∎∎∎∎
+    [2022-06-26 11:58:32] [  1905] ∎
+    [2022-07-02 16:42:04] [  1269]
+    [2022-07-08 21:25:36] [  3062] ∎
+    [2022-07-15 02:09:08] [  9192] ∎∎∎∎
+    [2022-07-21 06:52:41] [ 11955] ∎∎∎∎∎∎
+    [2022-07-27 11:36:13] [ 50938] ∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎
+    [2022-08-02 16:19:45] [ 70973] ∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎
+    [2022-08-08 21:03:17] [  2598] ∎
+
+BTW, for some cols like time_deleted you'll need to specify a where clause so they aren't filtered out:
+
+    $ lb watch -p f -col time_deleted -w time_deleted'>'0 | lowcharts timehist -w 80
+
+![video width](https://user-images.githubusercontent.com/7908073/184737808-b96fbe65-a1d9-43c2-b6b4-4bdfab592190.png)
+
+![fps](https://user-images.githubusercontent.com/7908073/184738438-ee566a4b-2da0-4e6d-a4b3-9bfca036aa2a.png)
+
+</details>
+
+### Pipe to [mnamer](https://github.com/jkwill87/mnamer)
+
+<details><summary>Rename poorly named files</summary>
+
+    pip install mnamer
+    mnamer --movie-directory ~/d/70_Now_Watching/ --episode-directory ~/d/70_Now_Watching/ \
+        --no-overwrite -b (library watch -p fd -s 'path : McCloud')
+    library fsadd ~/d/70_Now_Watching/
+
+</details>
+
+### Pipe to rsync
+
+<details><summary>Copy or move files to your phone via syncthing</summary>
+
+I use rsync to move files instead of copy-on-write duplication because I want deletions to stick.
+
+    function mrmusic
+        rsync -a --remove-source-files --files-from=(
+            library lt ~/lb/audio.db -s /mnt/d/80_Now_Listening/ -p f \
+            --moved /mnt/d/80_Now_Listening/ /mnt/d/ | psub
+        ) /mnt/d/80_Now_Listening/ /mnt/d/
+
+        rsync -a --remove-source-files --files-from=(
+            library lt ~/lb/audio.db -w play_count=0 -u random -L 1200 -p f \
+            --moved /mnt/d/ /mnt/d/80_Now_Listening/ | psub
+        ) /mnt/d/ /mnt/d/80_Now_Listening/
+    end
+
+</details>
+
+### Datasette
+
+Explore `library` databases in your browser
+
+    pip install datasette
+    datasette tv.db
 
 ## Start -- local media
 
@@ -176,72 +265,6 @@ Organize via separate databases.
 
     $ library watch -h
     usage: {play_actions.usage('watch', 'video.db')}
-
-### You can pipe stuff
-
-#### [lowcharts](https://github.com/juan-leon/lowcharts)
-
-    $ lb watch -p f -col time_created | lowcharts timehist -w 80
-    Matches: 445183.
-    Each ∎ represents a count of 1896
-    [2022-04-13 03:16:05] [151689] ∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎
-    [2022-04-19 07:59:37] [ 16093] ∎∎∎∎∎∎∎∎
-    [2022-04-25 12:43:09] [ 12019] ∎∎∎∎∎∎
-    [2022-05-01 17:26:41] [ 48817] ∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎
-    [2022-05-07 22:10:14] [ 36259] ∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎
-    [2022-05-14 02:53:46] [  3942] ∎∎
-    [2022-05-20 07:37:18] [  2371] ∎
-    [2022-05-26 12:20:50] [   517]
-    [2022-06-01 17:04:23] [  4845] ∎∎
-    [2022-06-07 21:47:55] [  2340] ∎
-    [2022-06-14 02:31:27] [   563]
-    [2022-06-20 07:14:59] [ 13836] ∎∎∎∎∎∎∎
-    [2022-06-26 11:58:32] [  1905] ∎
-    [2022-07-02 16:42:04] [  1269]
-    [2022-07-08 21:25:36] [  3062] ∎
-    [2022-07-15 02:09:08] [  9192] ∎∎∎∎
-    [2022-07-21 06:52:41] [ 11955] ∎∎∎∎∎∎
-    [2022-07-27 11:36:13] [ 50938] ∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎
-    [2022-08-02 16:19:45] [ 70973] ∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎
-    [2022-08-08 21:03:17] [  2598] ∎
-
-    $ lb watch -p f -col time_deleted -w time_deleted'>'0 | lowcharts timehist -w 80  # for some cols like time_deleted you'll need to specify a where clause so they aren't filtered out
-
-![video width](https://user-images.githubusercontent.com/7908073/184737808-b96fbe65-a1d9-43c2-b6b4-4bdfab592190.png)
-
-![fps](https://user-images.githubusercontent.com/7908073/184738438-ee566a4b-2da0-4e6d-a4b3-9bfca036aa2a.png)
-
-#### mnamer
-
-To rename poorly named files I recommend [mnamer](https://github.com/jkwill87/mnamer)
-
-    pip install mnamer
-    mnamer --movie-directory ~/d/70_Now_Watching/ --episode-directory ~/d/70_Now_Watching/ \
-        --no-overwrite -b (library watch -p fd -s 'path : McCloud')
-    library fsadd ~/d/70_Now_Watching/
-
-#### rsync
-
-I use rsync to move files instead of copy-on-write duplication because I want deletions to stick.
-
-    function mrmusic
-        rsync -a --remove-source-files --files-from=(
-            library lt ~/lb/audio.db -s /mnt/d/80_Now_Listening/ -p f \
-            --moved /mnt/d/80_Now_Listening/ /mnt/d/ | psub
-        ) /mnt/d/80_Now_Listening/ /mnt/d/
-
-        rsync -a --remove-source-files --files-from=(
-            library lt ~/lb/audio.db -w play_count=0 -u random -L 1200 -p f \
-            --moved /mnt/d/ /mnt/d/80_Now_Listening/ | psub
-        ) /mnt/d/ /mnt/d/80_Now_Listening/
-    end
-
-#### Datasette
-
-Explore `library` databases in your browser
-
-    pip install datasette
-    datasette tv.db
 
 ### TODOs (PRs welcome)
 
