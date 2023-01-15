@@ -177,7 +177,7 @@ Explore `library` databases in your browser
     pip install datasette
     datasette tv.db
 
-## Start -- local media
+## Getting started with local media
 
 ### 1. Extract Metadata
 
@@ -197,7 +197,7 @@ new files will be read by `ffprobe`.
 
 To stop playing press Ctrl+C in either the terminal or mpv
 
-## Start -- online media
+## Getting started with online media
 
 ### 1. Download Metadata
 
