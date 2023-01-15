@@ -188,7 +188,7 @@ any videos not previously seen.
 
 To stop playing press Ctrl+C in either the terminal or mpv
 
-## Start -- tabs (visit websites on a schedule)
+## Getting started with tabs: visit websites on a schedule
 
 tabs is a way to organize your visits to URLs that you want to visit every once in a while.
 
