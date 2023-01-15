@@ -159,6 +159,7 @@ yt_unrecoverable_errors = re.compile(
 .*\[youtube:truncated_url\]
 .*: This video is not available.\$
 .*Video unavailable. This video is not available\$
+.*This article does not contain a video
 .*Resource temporarily unavailable
 .*This video is unavailable
 .*No video could be found in this
