@@ -102,6 +102,17 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
 
     30 9 * * * ssh 192.168.1.12 lb listen --random --play-in-order --cast --cast-to "Bedroom pair"
 
+### Pipe to [mnamer](https://github.com/jkwill87/mnamer)
+
+<details><summary>Rename poorly named files</summary>
+
+    pip install mnamer
+    mnamer --movie-directory ~/d/70_Now_Watching/ --episode-directory ~/d/70_Now_Watching/ \
+        --no-overwrite -b (library watch -p fd -s 'path : McCloud')
+    library fsadd ~/d/70_Now_Watching/
+
+</details>
+
 ### Pipe to [lowcharts](https://github.com/juan-leon/lowcharts)
 
 <details><summary>$ lb watch -p f -col time_created | lowcharts timehist -w 80</summary>
@@ -136,17 +147,6 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 ![video width](https://user-images.githubusercontent.com/7908073/184737808-b96fbe65-a1d9-43c2-b6b4-4bdfab592190.png)
 
 ![fps](https://user-images.githubusercontent.com/7908073/184738438-ee566a4b-2da0-4e6d-a4b3-9bfca036aa2a.png)
-
-</details>
-
-### Pipe to [mnamer](https://github.com/jkwill87/mnamer)
-
-<details><summary>Rename poorly named files</summary>
-
-    pip install mnamer
-    mnamer --movie-directory ~/d/70_Now_Watching/ --episode-directory ~/d/70_Now_Watching/ \
-        --no-overwrite -b (library watch -p fd -s 'path : McCloud')
-    library fsadd ~/d/70_Now_Watching/
 
 </details>
 
@@ -524,9 +524,4 @@ Organize via separate databases.
         library watch -m 4 --hstack          # use hstack style
 
 
-### TODOs (PRs welcome)
-
-- create/update views: especially dl queue, etc so that it is easier for people to access data externally
-    db.create_view("items", ITEM_VIEW_DEF, replace=True)
-- SELECT * FROM playlists p WHERE PATH NOT IN (SELECT DISTINCT playlist_path FROM media WHERE playlist_path NOT NULL )
 
