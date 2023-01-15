@@ -18,6 +18,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
 
 ## Examples
 
+<details><summary>List all subcommands</summary>
     $ library
     xk media library subcommands (v1.21.005)
 
@@ -70,6 +71,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
       lb nouns                 Unstructured text -> compound nouns (stdin)
       lb hnadd                 Create a hackernews database (this takes a few days)
     
+</details>
 
 ### Watch online media on your PC
 

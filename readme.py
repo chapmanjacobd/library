@@ -21,8 +21,10 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
 
 ## Examples
 
+<details><summary>List all subcommands</summary>
     $ library
     {lb.usage()}
+</details>
 
 ### Watch online media on your PC
 
