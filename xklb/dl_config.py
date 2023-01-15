@@ -18,6 +18,7 @@ yt_recoverable_errors = re.compile(
 .*No such file or directory
 .*fragment 1 not found
 .*HTTP Error 429
+.*HTTP Error 400
 .*Too Many Requests
 .*Premieres in
 .*read operation timed out
@@ -160,8 +161,11 @@ yt_unrecoverable_errors = re.compile(
 .*Video unavailable. This video is not available\$
 .*Resource temporarily unavailable
 .*This video is unavailable
+.*No video could be found in this
 .*Unsupported URL
+.*The requested site is known to use DRM protection.
 .*URL could be a direct video link
+.*No media found
 .*not a valid URL
 .*not a video\$
 .*The page doesn't contain any tracks
@@ -174,6 +178,7 @@ yt_unrecoverable_errors = re.compile(
 .*The channel does not have a .* tab\$
 .*policy on spam, deceptive practices, and scams\$
 .*This video does not exist, or has been deleted.
+.*The playlist does not exist.
 .*Community Guidelines
 .*Terms of Service
 .*This channel does not exist
