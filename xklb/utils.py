@@ -292,36 +292,42 @@ def clean_path(p):
     path = Path(p)
     ext = path.suffix
     p = str(path.parent / path.stem)
-    p = (
-        p.replace("...", "…")
-        .replace("*", "")
-        .replace("&", "")
-        .replace("%", "")
-        .replace("$", "")
-        .replace("#", "")
-        .replace("@", "")
-        .replace("!", "")
-        .replace("^", "")
-        .replace("'", "")
-        .replace('"', "")
-        .replace(")", "")
-    )
-    p = replace_consecutives(p, chars=["-", "."])
-    p = (
-        p.replace("(", " ")
-        .replace("-.", ".")
-        .replace(" :", ":")
-        .replace(" - ", " ")
-        .replace("- ", " ")
-        .replace(" -", " ")
-        .replace(" _ ", "_")
-        .replace(" _", "_")
-        .replace("_ ", "_")
-    )
-    p = replace_folder_ending(p, [" ", "-", "_", "."])
-    p = replace_basename_prefixes(p, [" ", "-"])
-    p = remove_whitespaace(p)
-    p = re.sub(r"\.+$", "", p)
+
+    while True:
+        p1 = p
+        p = (
+            p.replace("...", "…")
+            .replace("*", "")
+            .replace("&", "")
+            .replace("%", "")
+            .replace("$", "")
+            .replace("#", "")
+            .replace("@", "")
+            .replace("!", "")
+            .replace("^", "")
+            .replace("'", "")
+            .replace('"', "")
+            .replace(")", "")
+        )
+        p = replace_consecutives(p, chars=["-", "."])
+        p = (
+            p.replace("(", " ")
+            .replace("-.", ".")
+            .replace(" :", ":")
+            .replace(" - ", " ")
+            .replace("- ", " ")
+            .replace(" -", " ")
+            .replace(" _ ", "_")
+            .replace(" _", "_")
+            .replace("_ ", "_")
+        )
+        p = replace_folder_ending(p, [" ", "-", "_", "."])
+        p = replace_basename_prefixes(p, [" ", "-"])
+        p = remove_whitespaace(p)
+        p = re.sub(r"\.+$", "", p)
+        if p1 == p:
+            break
+
     return p + ext
 
 
