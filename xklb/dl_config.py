@@ -16,6 +16,7 @@ yt_recoverable_errors = re.compile(
 .*geolocation
 .*your country
 .*No such file or directory
+.*The downloaded file is empty
 .*fragment 1 not found
 .*HTTP Error 429
 .*HTTP Error 400
@@ -171,6 +172,7 @@ yt_unrecoverable_errors = re.compile(
 .*not a video\$
 .*The page doesn't contain any tracks
 .*removed by the uploader
+.*blocked due to author's rights infingement
 .*blocked it on copyright grounds\$
 .*uploader has closed their.*account
 .*account has been terminated because we received multiple
