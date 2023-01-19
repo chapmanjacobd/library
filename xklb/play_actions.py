@@ -508,10 +508,11 @@ def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
 
     if not args.limit:
         args.defaults.append("limit")
-        if all([not args.print, not args.partial, args.action in (SC.listen, SC.watch, SC.read)]):
-            args.limit = consts.DEFAULT_PLAY_QUEUE
-        elif all([not args.print, not args.partial, args.action in (SC.view)]):
-            args.limit = consts.DEFAULT_PLAY_QUEUE * 4
+        if all([not (args.print and len(args.print.replace("p", "")) > 0), not args.partial]):
+            if args.action in (SC.listen, SC.watch, SC.read):
+                args.limit = consts.DEFAULT_PLAY_QUEUE
+            elif args.action in (SC.view):
+                args.limit = consts.DEFAULT_PLAY_QUEUE * 4
     elif args.limit in ("inf", "all"):
         args.limit = None
 

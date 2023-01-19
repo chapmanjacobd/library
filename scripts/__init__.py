@@ -7,5 +7,6 @@ from scripts.mining.nfb_ca import nfb_films
 from scripts.mining.nouns import nouns
 from scripts.mining.pushshift import pushshift_extract
 from scripts.mining.reddit_self import parse_reddit_selftext
+from scripts.move_list import move_list
 from scripts.optimize_db import optimize_db
 from scripts.streaming_tab_loader import streaming_tab_loader
