@@ -17,6 +17,7 @@ yt_recoverable_errors = re.compile(
 .*your country
 .*No such file or directory
 .*The downloaded file is empty
+.*Invalid data found
 .*fragment 1 not found
 .*HTTP Error 429
 .*HTTP Error 400
