@@ -1,4 +1,4 @@
-import argparse, enum, functools, hashlib, logging, math, multiprocessing, os, platform, re, readline, shlex, shutil, signal, subprocess, sys, tempfile, textwrap
+import argparse, enum, functools, hashlib, logging, math, multiprocessing, os, platform, re, shlex, shutil, signal, subprocess, sys, tempfile, textwrap
 from ast import literal_eval
 from collections.abc import Iterable
 from datetime import datetime, timedelta, timezone
@@ -619,6 +619,11 @@ def clear_input():
 
 
 def set_readline_completion(list_):
+    try:
+        import readline
+    except ModuleNotFoundError:
+        return "Windows not supported lolz"
+
     def create_completer(list_):
         def list_completer(_text, state):
             line = readline.get_line_buffer()

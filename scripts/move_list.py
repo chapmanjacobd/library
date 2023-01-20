@@ -1,11 +1,13 @@
-import argparse, shutil
+import argparse, shutil, tempfile
 from copy import deepcopy
+from pathlib import Path
 from typing import List
 
 import humanize
+from rich import prompt
 from tabulate import tabulate
 
-from xklb import db, utils
+from xklb import db, player, utils
 from xklb.utils import log
 
 
@@ -45,7 +47,7 @@ def get_table(args) -> List[dict]:
             , size
         from media
         where 1=1
-            and time_downloaded > 0
+            and time_deleted = 0
         order by path
         """
         )
@@ -57,7 +59,7 @@ def get_table(args) -> List[dict]:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", default="40")
+    parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", default="25")
     parser.add_argument("--lower", default=4, type=int, help="Number of files per folder lower limit")
     parser.add_argument("--upper", default=4000, type=int, help="Number of files per folder upper limit")
     parser.add_argument("--verbose", "-v", action="count", default=0)
@@ -82,7 +84,9 @@ def print_some(args, tbl):
     print(tabulate(vew, tablefmt="fancy_grid", headers="keys", showindex=False))
 
     if args.limit:
-        return tbl[: -int(args.limit)]
+        return tbl[-int(args.limit) :], tbl[: -int(args.limit)]
+    else:
+        return tbl, tbl
 
 
 def move_list() -> None:
@@ -94,7 +98,7 @@ def move_list() -> None:
     data = get_table(args)
 
     tbl = deepcopy(data)
-    tbl = print_some(args, tbl)
+    cur, rest = print_some(args, tbl)
 
     data = {d["path"]: d for d in data}
 
@@ -103,43 +107,71 @@ def move_list() -> None:
     selected_paths = set()
     while True:
         try:
-            input_path = input('Paste a path (type "more" for more options and "done" when finished): ').strip()
+            input_path = input(
+                """Enter "*" to select all, "more" to see more files, "done" when finished
+Paste a path: """
+            ).strip()
         except EOFError:
             break
-
         if input_path.lower() in ["done", "q"]:
             break
-        if input_path.lower() == "more":
-            tbl = print_some(args, tbl)
 
-        try:
-            data[input_path]
-        except KeyError:
+        if input_path.lower() == "more":
+            cur, rest = print_some(args, rest)
             continue
 
-        if input_path in selected_paths:
-            selected_paths.discard(input_path)
+        if input_path == "*":
+            if cur:
+                selected_paths.update([d["path"] for d in cur])
+            else:
+                selected_paths.update(data.keys())
+
+            cur, rest = print_some(args, rest)
         else:
-            selected_paths.add(input_path)
+            try:
+                data[input_path]
+            except KeyError:
+                continue
+
+            if input_path in selected_paths:
+                selected_paths.discard(input_path)
+            else:
+                selected_paths.add(input_path)
 
         # remove child paths so that the size of data is not counted twice
-        paths = sorted(selected_paths)
-        for i in range(len(paths) - 1):
-            if paths[i + 1].startswith(paths[i]):
-                selected_paths.discard(paths[i + 1])
+        temp_set = selected_paths.copy()
+        for path1 in temp_set:
+            for path2 in temp_set:
+                if path1 != path2 and path1.startswith(path2):
+                    selected_paths.discard(path1)
 
         selected_paths_size = sum([data[p]["size"] for p in selected_paths])
         print(
             len(selected_paths),
             "selected paths:",
             humanize.naturalsize(selected_paths_size),
-            "; future mount size:",
+            "; future free space:",
             humanize.naturalsize(selected_paths_size + free),
         )
 
-    if len(selected_paths) > 0:
-        print("\n\nSelected paths:\n")
-        print("\n".join(selected_paths))
+    temp_file = Path(tempfile.mktemp())
+    with temp_file.open("w") as f:
+        f.writelines("\n".join(selected_paths))
+
+    print(
+        f"""
+
+Folder list saved to {temp_file}
+
+    You may want to use the following command to move files to an EMPTY folder target:
+
+        rsync -a --info=progress2 --no-inc-recursive --remove-source-files --files-from={temp_file} -r --relative -vv --dry-run / jim:/free/real/estate/
+
+    """
+    )
+
+    if selected_paths and prompt.Confirm.ask(f"Mark as deleted in {args.database}?", default=True):  # type: ignore
+        player.mark_media_deleted_like(args, list(selected_paths))
 
 
 if __name__ == "__main__":
