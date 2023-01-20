@@ -218,6 +218,24 @@ def mark_media_deleted(args, paths) -> int:
     return modified_row_count
 
 
+def mark_media_deleted_like(args, paths) -> int:
+    paths = utils.conform(paths)
+
+    modified_row_count = 0
+    if paths:
+        for p in paths:
+            with args.db.conn:
+                cursor = args.db.conn.execute(
+                    f"""update media
+                    set time_deleted={consts.NOW}
+                    where path like ?""",
+                    [p + "%"],
+                )
+                modified_row_count += cursor.rowcount
+
+    return modified_row_count
+
+
 def delete_media(args, paths) -> int:
     paths = utils.conform(paths)
     for p in paths:
