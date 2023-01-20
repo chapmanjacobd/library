@@ -12,6 +12,9 @@ from xklb.utils import log
 def group_by_folder(args, media):
     d = {}
     for m in media:
+        if m["path"].startswith("http"):
+            continue
+
         p = m["path"].split("/")
         while len(p) >= 3:
             p.pop()
@@ -78,7 +81,8 @@ def print_some(args, tbl):
     vew = utils.col_naturalsize(vew, "size")
     print(tabulate(vew, tablefmt="fancy_grid", headers="keys", showindex=False))
 
-    return tbl[: -int(args.limit)]
+    if args.limit:
+        return tbl[: -int(args.limit)]
 
 
 def move_list() -> None:
@@ -94,10 +98,12 @@ def move_list() -> None:
 
     data = {d["path"]: d for d in data}
 
+    utils.set_readline_completion(list(data.keys()))
+
     selected_paths = set()
     while True:
         try:
-            input_path = input('Paste a path (type "more" for more options and "done" when finished): ')
+            input_path = input('Paste a path (type "more" for more options and "done" when finished): ').strip()
         except EOFError:
             break
 

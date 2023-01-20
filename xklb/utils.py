@@ -1,9 +1,10 @@
-import argparse, enum, functools, hashlib, logging, math, multiprocessing, os, platform, re, shlex, shutil, signal, subprocess, sys, tempfile, textwrap
+import argparse, enum, functools, hashlib, logging, math, multiprocessing, os, platform, re, readline, shlex, shutil, signal, subprocess, sys, tempfile, textwrap
 from ast import literal_eval
 from collections.abc import Iterable
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 from pathlib import Path
+from random import shuffle
 from shutil import which
 from typing import Any, Dict, Generator, List, Optional, Union
 
@@ -615,3 +616,27 @@ def clear_input():
         # Try to flush the buffer
         while msvcrt.kbhit():
             msvcrt.getch()
+
+
+def set_readline_completion(list_):
+    def create_completer(list_):
+        def list_completer(_text, state):
+            line = readline.get_line_buffer()
+
+            if not line:
+                min_depth = min([s.count(os.sep) for s in list_]) + 1
+                result_list = [c + " " for c in list_ if c.count(os.sep) <= min_depth]
+                shuffle(result_list)
+                return result_list[:25][state]
+            else:
+                match_list = [s for s in list_ if s.startswith(line)]
+                min_depth = min([s.count(os.sep) for s in match_list]) + 1
+                result_list = [c + " " for c in match_list if c.count(os.sep) <= min_depth]
+                shuffle(result_list)
+                return result_list[:15][state]
+
+        return list_completer
+
+    readline.set_completer(create_completer(list_))
+    readline.set_completer_delims("\t")
+    readline.parse_and_bind("tab: complete")

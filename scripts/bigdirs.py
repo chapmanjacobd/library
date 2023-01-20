@@ -60,7 +60,7 @@ def get_table(args) -> List[dict]:
     )
 
     folders = group_by_folder(args, media)
-    return sorted(folders, key=lambda x: x["count_deleted"] if args.sort_by_deleted else x["size"])
+    return sorted(folders, key=lambda x: x["count_deleted"] if args.sort_by_deleted else x["size"] / x["count"])
 
 
 def parse_args() -> argparse.Namespace:
