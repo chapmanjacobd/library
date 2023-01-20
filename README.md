@@ -103,6 +103,78 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
 
     30 9 * * * ssh 192.168.1.12 lb listen --random --play-in-order --cast --cast-to "Bedroom pair"
 
+### Find large folders to curate or candidates for freeing up space by moving to another mount point
+
+<details><summary>lb mv-list</summary>
+
+The program takes a mount point and a xklb database file. If you don't have a database file you can create one like this:
+
+    $ lb fsadd --filesystem d.db ~/d/
+
+But this should definitely also work with xklb audio and video databases:
+
+    $ lb mv-list /mnt/d/ video.db
+
+The program will print a table with a sorted list of folders which are good candidates for moving. Candidates are determined by how many files are in the folder (so you don't spend hours waiting for folders with millions of tiny files to copy over). The default is 4 to 4000--but it can be adjusted via the --lower and --upper flags.
+
+    ...
+    ├──────────┼─────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+    │ 4.0 GB   │       7 │ /mnt/d/71_Mealtime_Videos/unsorted/Miguel_4K/                                                                 │
+    ├──────────┼─────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+    │ 5.7 GB   │      10 │ /mnt/d/71_Mealtime_Videos/unsorted/Bollywood_Premium/                                                         │
+    ├──────────┼─────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+    │ 2.3 GB   │       4 │ /mnt/d/71_Mealtime_Videos/chief_wiggum/                                                                       │
+    ╘══════════╧═════════╧═══════════════════════════════════════════════════════════════════════════════════════════════════════════════╛
+    6702 other folders not shown
+
+    ██╗███╗░░██╗░██████╗████████╗██████╗░██╗░░░██╗░█████╗░████████╗██╗░█████╗░███╗░░██╗░██████╗
+    ██║████╗░██║██╔════╝╚══██╔══╝██╔══██╗██║░░░██║██╔══██╗╚══██╔══╝██║██╔══██╗████╗░██║██╔════╝
+    ██║██╔██╗██║╚█████╗░░░░██║░░░██████╔╝██║░░░██║██║░░╚═╝░░░██║░░░██║██║░░██║██╔██╗██║╚█████╗░
+    ██║██║╚████║░╚═══██╗░░░██║░░░██╔══██╗██║░░░██║██║░░██╗░░░██║░░░██║██║░░██║██║╚████║░╚═══██╗
+    ██║██║░╚███║██████╔╝░░░██║░░░██║░░██║╚██████╔╝╚█████╔╝░░░██║░░░██║╚█████╔╝██║░╚███║██████╔╝
+    ╚═╝╚═╝░░╚══╝╚═════╝░░░░╚═╝░░░╚═╝░░╚═╝░╚═════╝░░╚════╝░░░░╚═╝░░░╚═╝░╚════╝░╚═╝░░╚══╝╚═════╝░
+
+    Type "done" when finished
+    Type "more" to see more files
+    Paste a folder (and press enter) to toggle selection
+    Type "*" to select all files in the most recently printed table
+
+Then it will give you a prompt:
+
+    Paste a path:
+
+Wherein you can copy and paste paths you want to move from the table and the program will keep track for you.
+
+    Paste a path: /mnt/d/75_MovieQueue/720p/s11/
+    26 selected paths: 162.1 GB ; future free space: 486.9 GB
+
+You can also press the up arrow or paste it again to remove it from the list:
+
+    Paste a path: /mnt/d/75_MovieQueue/720p/s11/
+    25 selected paths: 159.9 GB ; future free space: 484.7 GB
+
+After you are done selecting folders you can press ctrl-d and it will save the list to a tmp file:
+
+    Paste a path: done
+
+        Folder list saved to /tmp/tmpa7x_75l8. You may want to use the following command to move files to an EMPTY folder target:
+
+            rsync -a --info=progress2 --no-inc-recursive --remove-source-files --files-from=/tmp/tmpa7x_75l8 -r --relative -vv --dry-run / jim:/free/real/estate/
+
+</details>
+
+<details><summary>lb bigdirs</summary>
+
+Also, if you are just looking for folders which are candidates for curation (ie. I need space but don't want to buy a hard drive). The bigdirs subcommand was written for that purpose:
+
+    $ lb bigdirs fs/d.db
+
+There is also an flag to prioritize folders which have many files which have been deleted (for example you delete songs you don't like--now you can see who wrote those songs and delete all their other songs...)
+
+    $ lb bigdirs --sort-by-deleted audio.db
+
+</details>
+
 ### Pipe to [mnamer](https://github.com/jkwill87/mnamer)
 
 <details><summary>Rename poorly named files</summary>
