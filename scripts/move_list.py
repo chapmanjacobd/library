@@ -82,6 +82,7 @@ def print_some(args, tbl):
     vew = utils.col_resize(vew, "path", 60)
     vew = utils.col_naturalsize(vew, "size")
     print(tabulate(vew, tablefmt="fancy_grid", headers="keys", showindex=False))
+    print(len(tbl) - len(vew), "other folders not shown")
 
     if args.limit:
         return tbl[-int(args.limit) :], tbl[: -int(args.limit)]
@@ -104,13 +105,26 @@ def move_list() -> None:
 
     utils.set_readline_completion(list(data.keys()))
 
+    print(
+        """
+██╗███╗░░██╗░██████╗████████╗██████╗░██╗░░░██╗░█████╗░████████╗██╗░█████╗░███╗░░██╗░██████╗
+██║████╗░██║██╔════╝╚══██╔══╝██╔══██╗██║░░░██║██╔══██╗╚══██╔══╝██║██╔══██╗████╗░██║██╔════╝
+██║██╔██╗██║╚█████╗░░░░██║░░░██████╔╝██║░░░██║██║░░╚═╝░░░██║░░░██║██║░░██║██╔██╗██║╚█████╗░
+██║██║╚████║░╚═══██╗░░░██║░░░██╔══██╗██║░░░██║██║░░██╗░░░██║░░░██║██║░░██║██║╚████║░╚═══██╗
+██║██║░╚███║██████╔╝░░░██║░░░██║░░██║╚██████╔╝╚█████╔╝░░░██║░░░██║╚█████╔╝██║░╚███║██████╔╝
+╚═╝╚═╝░░╚══╝╚═════╝░░░░╚═╝░░░╚═╝░░╚═╝░╚═════╝░░╚════╝░░░░╚═╝░░░╚═╝░╚════╝░╚═╝░░╚══╝╚═════╝░
+
+Type "done" when finished
+Type "more" to see more files
+Paste a folder (and press enter) to toggle selection
+Type "*" to select all files in the most recently printed table
+"""
+    )
+
     selected_paths = set()
     while True:
         try:
-            input_path = input(
-                """Enter "*" to select all, "more" to see more files, "done" when finished
-Paste a path: """
-            ).strip()
+            input_path = input("Paste a path: ").strip()
         except EOFError:
             break
         if input_path.lower() in ["done", "q"]:
@@ -154,24 +168,22 @@ Paste a path: """
             humanize.naturalsize(selected_paths_size + free),
         )
 
-    temp_file = Path(tempfile.mktemp())
-    with temp_file.open("w") as f:
-        f.writelines("\n".join(selected_paths))
+    if selected_paths:
+        temp_file = Path(tempfile.mktemp())
+        with temp_file.open("w") as f:
+            f.writelines("\n".join(selected_paths))
 
-    print(
-        f"""
+        print(
+            f"""
 
-Folder list saved to {temp_file}
-
-    You may want to use the following command to move files to an EMPTY folder target:
+    Folder list saved to {temp_file}. You may want to use the following command to move files to an EMPTY folder target:
 
         rsync -a --info=progress2 --no-inc-recursive --remove-source-files --files-from={temp_file} -r --relative -vv --dry-run / jim:/free/real/estate/
+        """
+        )
 
-    """
-    )
-
-    if selected_paths and prompt.Confirm.ask(f"Mark as deleted in {args.database}?", default=True):  # type: ignore
-        player.mark_media_deleted_like(args, list(selected_paths))
+        if prompt.Confirm.ask(f"Mark as deleted in {args.database}?", default=True):  # type: ignore
+            player.mark_media_deleted_like(args, list(selected_paths))
 
 
 if __name__ == "__main__":
