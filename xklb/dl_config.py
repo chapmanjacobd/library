@@ -21,6 +21,7 @@ yt_recoverable_errors = re.compile(
 .*fragment 1 not found
 .*HTTP Error 429
 .*HTTP Error 400
+.*HTTP Error 503: Service Unavailable
 .*Too Many Requests
 .*Premieres in
 .*read operation timed out
@@ -35,7 +36,6 @@ yt_recoverable_errors = re.compile(
 .*Failed to parse JSON Expecting
 .*expected string or bytes-like object
 .*Connection refused
-.*giving up after.*retries
 .*Failed to download MPD manifest:\$
 .*not currently available\$
 .*copyright claim""".splitlines()
@@ -106,17 +106,6 @@ yt_meaningless_errors = re.compile(
     )
 )
 
-
-prefix_unrecoverable_errors = re.compile(
-    "|".join(
-        r""".*unable to write data: [Errno 28].*
-.*No space left on device.*
-.*unable to create directory [Errno 13].*
-.*Permission denied.*""".splitlines()
-    )
-)
-
-
 yt_unrecoverable_errors = re.compile(
     "|".join(
         r""".*repetitive or misleading metadata
@@ -137,6 +126,7 @@ yt_unrecoverable_errors = re.compile(
 .*Video has been flagged for verification
 .*This video has been disabled\$
 .*The uploader has not made this video available.\$
+.*channel/playlist does not exist
 .*This video is DRM protected
 .*This video is protected by a password
 .*This video requires payment to watch.\$
@@ -200,5 +190,15 @@ yt_unrecoverable_errors = re.compile(
 .*HTTPError 404
 .*HTTP Error 410
 .*HTTPError 410""".splitlines()
+    )
+)
+
+
+prefix_unrecoverable_errors = re.compile(
+    "|".join(
+        r""".*unable to write data: [Errno 28].*
+.*No space left on device.*
+.*unable to create directory [Errno 13].*
+.*Permission denied.*""".splitlines()
     )
 )
