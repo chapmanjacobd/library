@@ -14,6 +14,8 @@ def tracer(sql, params) -> None:
 def connect(args, conn=None, **kwargs):
     from sqlite_utils import Database
 
+    sqlite3.enable_callback_tracebacks(True)
+
     class DB(Database):
         def pop(self, sql: str, params: Optional[Union[Iterable, dict]] = None, ignore_errors=None) -> Optional[Any]:
             if ignore_errors is None:
