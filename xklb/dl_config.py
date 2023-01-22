@@ -22,6 +22,7 @@ yt_recoverable_errors = re.compile(
 .*HTTP Error 429
 .*HTTP Error 400
 .*HTTP Error 503: Service Unavailable
+.*Did not get any data blocks
 .*Too Many Requests
 .*Premieres in
 .*read operation timed out
@@ -76,6 +77,7 @@ yt_meaningless_errors = re.compile(
 .*Downloading .* manifest\$
 .*Determining source extension\$
 .*Downloading jwt token\$
+.*Skipping embedding .* subtitle because the file is missing
 .*Finished downloading playlist
 .*The last 30x error message was:
 .*NoneType

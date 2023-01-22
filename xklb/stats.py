@@ -4,7 +4,7 @@ from typing import Tuple
 
 from tabulate import tabulate
 
-from xklb import consts, db, dl_extract, play_actions, utils
+from xklb import consts, db, dl_extract, play_actions, tube_backend, utils
 from xklb.player import delete_playlists
 from xklb.utils import human_time, log
 
@@ -20,6 +20,7 @@ def parse_args(prog, usage):
     parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--duration", "-d", action="append", help=argparse.SUPPRESS)
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", help=argparse.SUPPRESS)
+    parser.add_argument("--safe", "-safe", action="store_true", help="Skip generic URLs")
     parser.add_argument("--delete", "--remove", "--erase", "--rm", "-rm", nargs="+", help=argparse.SUPPRESS)
     if "dlstatus" in prog:
         parser.add_argument(
@@ -231,12 +232,22 @@ def dlstatus() -> None:
     if args.delete:
         return delete_playlists(args, args.delete)
 
+    args.db.register_function(tube_backend.is_supported, deterministic=True)
+
     query, bindings = dl_extract.construct_query(args)
+
+    count_paths = ""
+    if "time_modified" in query:
+        if args.safe:
+            count_paths = ", count(*) FILTER(WHERE time_modified=0 and is_supported(path)) never_downloaded"
+        else:
+            count_paths = ", count(*) FILTER(WHERE time_modified=0) never_downloaded"
+
     query = f"""select
         coalesce(category, "Playlist-less media") category
         {', ie_key' if 'media.ie_key' in query else ''}
         {', sum(duration) duration' if 'duration' in query else ''}
-        {', count(*) FILTER(WHERE time_modified=0) never_downloaded' if 'time_modified' in query else ''}
+        {count_paths}
         {', count(*) FILTER(WHERE time_modified>0 AND error IS NOT NULL) errors' if 'error' in query else ''}
         {', group_concat(distinct error) error_descriptions' if 'error' in query and args.verbose >= 1 else ''}
     from ({query})
