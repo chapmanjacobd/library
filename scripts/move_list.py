@@ -178,7 +178,7 @@ Type "*" to select all files in the most recently printed table
 
     Folder list saved to {temp_file}. You may want to use the following command to move files to an EMPTY folder target:
 
-        rsync -a --info=progress2 --no-inc-recursive --remove-source-files --files-from={temp_file} -r --relative -vv --dry-run / jim:/free/real/estate/
+        rsync -a --info=progress2 --no-inc-recursive --remove-source-files --files-from={temp_file} -r -vv --dry-run / jim:/free/real/estate/
         """
         )
 
