@@ -169,6 +169,10 @@ Also, if you are just looking for folders which are candidates for curation (ie.
 
     $ lb bigdirs fs/d.db
 
+You may filter by folder depth (similar to QDirStat or WizTree)
+
+    $ lb bigdirs --depth=3 audio.db
+
 There is also an flag to prioritize folders which have many files which have been deleted (for example you delete songs you don't like--now you can see who wrote those songs and delete all their other songs...)
 
     $ lb bigdirs --sort-by-deleted audio.db
