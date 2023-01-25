@@ -25,8 +25,13 @@ def extract_metadata(mp_args, f) -> Optional[Dict[str, int]]:
 
     try:
         stat = os.stat(f)
-    except Exception:
-        log.error(f"[{f}] Could not read file stats (possible filesystem corruption; check dmesg)")
+    except FileNotFoundError:
+        return
+    except IOError:
+        log.error(f"[{f}] IOError: possible filesystem corruption; check dmesg")
+        return
+    except Exception as e:
+        log.error(f"[{f}] %s", e)
         return
 
     media = {
