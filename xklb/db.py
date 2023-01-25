@@ -52,13 +52,14 @@ def connect(args, conn=None, **kwargs):
     db = DB(conn or args.database, tracer=tracer if args.verbose >= 2 else None, **kwargs)  # type: ignore
     with db.conn:
         db.conn.execute("PRAGMA main.cache_size = 8000")
+
+    db.enable_wal()
     return db
 
 
 def optimize(args) -> None:
     print("\nOptimizing database")
     db = args.db
-    db.enable_wal()
 
     config = {
         "media": {

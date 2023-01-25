@@ -3,11 +3,11 @@ from xklb import lb, play_actions
 print(
     rf"""# xk media library
 
-A wise philosopher once told me, "[The future is autotainment](https://www.youtube.com/watch?v=F9sZFrsjPp0)".
+A wise philosopher once told me: "[the future is autotainment](https://www.youtube.com/watch?v=F9sZFrsjPp0)".
 
 Manage large media libraries. Similar to Plex but more minimalist.
 Primary usage is local filesystem but also supports some virtual constructs like
-tracking video playlists (eg. YouTube subscriptions) or daily browser tabs.
+tracking online video playlists (eg. YouTube subscriptions) or daily browser tabs.
 
 Required: `ffmpeg`
 
