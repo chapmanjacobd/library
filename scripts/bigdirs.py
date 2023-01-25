@@ -7,11 +7,11 @@ from xklb import db, utils
 from xklb.utils import log
 
 
-def group_by_folder(args, media):
+def group_files_by_folder(args, media):
     d = {}
     for m in media:
         p = m["path"].split("/")
-        while len(p) >= 3:
+        while len(p) >= 2:
             p.pop()
             parent = "/".join(p) + "/"
 
@@ -29,13 +29,39 @@ def group_by_folder(args, media):
                 }
 
     for path, pdict in list(d.items()):
-        if any(
-            [
-                pdict["count"] < args.lower,
-                pdict["count"] > args.upper,
-                pdict["count"] == pdict["count_deleted"],
-            ]
-        ):
+        if pdict["count"] == pdict["count_deleted"]:
+            d.pop(path)
+        elif not args.depth:
+            if pdict["count"] < (args.lower or 4):
+                d.pop(path)
+            elif pdict["count"] > (args.upper or 4000):
+                d.pop(path)
+
+    return [{**v, "path": k} for k, v in d.items()]
+
+
+def group_folders(args, folders):
+    d = {}
+    for f in folders:
+        p = f["path"].split("/")
+        p.pop()
+
+        depth = 1 + args.depth
+        parent = "/".join(p[:depth]) + "/"
+        if len(p) < depth:
+            continue
+
+        if d.get(parent):
+            d[parent]["size"] += f["size"]
+            d[parent]["count"] += f["count"]
+            d[parent]["count_deleted"] += f["count_deleted"]
+        else:
+            d[parent] = f
+
+    for path, pdict in list(d.items()):
+        if args.lower and pdict["count"] < args.lower:
+            d.pop(path)
+        elif args.upper and pdict["count"] > args.upper:
             d.pop(path)
 
     return [{**v, "path": k} for k, v in d.items()]
@@ -59,7 +85,9 @@ def get_table(args) -> List[dict]:
         )
     )
 
-    folders = group_by_folder(args, media)
+    folders = group_files_by_folder(args, media)
+    if args.depth:
+        folders = group_folders(args, folders)
     return sorted(folders, key=lambda x: x["count_deleted"] if args.sort_by_deleted else x["size"] / x["count"])
 
 
@@ -67,8 +95,9 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--sort-by-deleted", action="store_true")
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", default="4000")
-    parser.add_argument("--lower", default=4, type=int, help="Number of files per folder lower limit")
-    parser.add_argument("--upper", default=4000, type=int, help="Number of files per folder upper limit")
+    parser.add_argument("--depth", "-d", default=0, type=int, help="Depth of folders")
+    parser.add_argument("--lower", type=int, help="Number of files per folder lower limit")
+    parser.add_argument("--upper", type=int, help="Number of files per folder upper limit")
     parser.add_argument("--verbose", "-v", action="count", default=0)
 
     parser.add_argument("database")
