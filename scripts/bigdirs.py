@@ -29,7 +29,7 @@ def group_files_by_folder(args, media):
                 }
 
     for path, pdict in list(d.items()):
-        if pdict["count"] == pdict["count_deleted"]:
+        if pdict["count"] == 0:
             d.pop(path)
         elif not args.depth:
             if pdict["count"] < (args.lower or 4):
