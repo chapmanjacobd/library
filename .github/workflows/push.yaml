@@ -31,9 +31,11 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install poetry pytest
 
-      - run: poetry install
-      - run: poetry build
-      - run: pytest
+      - run: |
+          python3 -m venv .venv
+          source .venv/bin/activate
+          poetry install
+          pytest
 
   publish:
     needs: test
