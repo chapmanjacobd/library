@@ -541,10 +541,10 @@ def col_resize(tbl: List[Dict], col: str, size=10) -> List[Dict]:
     return tbl
 
 
-def col_naturaldate(tbl: List[Dict], col: str) -> List[Dict]:
+def col_naturaldate(tbl: List[Dict], col: str, tz=None) -> List[Dict]:
     for idx, _d in enumerate(tbl):
         if tbl[idx].get(col) is not None:
-            tbl[idx][col] = humanize.naturaldate(datetime.fromtimestamp(int(tbl[idx][col])))
+            tbl[idx][col] = humanize.naturaldate(datetime.fromtimestamp(int(tbl[idx][col]), tz=tz))
 
     return tbl
 

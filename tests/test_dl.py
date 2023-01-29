@@ -33,6 +33,7 @@ class TestTube(unittest.TestCase):
             ignore_errors=False,
             small=False,
             verbose=0,
+            download_archive="test",
         )
         args.db = connect(args)
         yt(args, dict(path=PLAYLIST_VIDEO_URL, dl_config="{}", category="Self"))
