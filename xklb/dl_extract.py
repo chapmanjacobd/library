@@ -31,6 +31,7 @@ def parse_args(action, usage):
         metavar="KEY=VALUE",
         help="Add key/value pairs to override or extend downloader configuration",
     )
+    parser.add_argument("--download-archive", default="~/.local/share/yt_archive.txt")
     parser.add_argument("--extra-media-data", default={}, nargs=1, action=utils.argparse_dict, metavar="KEY=VALUE")
     parser.add_argument("--extra-playlist-data", default={}, nargs=1, action=utils.argparse_dict, metavar="KEY=VALUE")
     parser.add_argument("--ignore-errors", "--ignoreerrors", "-i", action="store_true", help=argparse.SUPPRESS)

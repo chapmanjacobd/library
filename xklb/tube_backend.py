@@ -525,7 +525,7 @@ def yt(args, m) -> None:
         playlist_opts=m.get("dl_config", "{}"),
     )
 
-    download_archive = Path("~/.local/share/yt_archive.txt").expanduser().resolve()
+    download_archive = Path(args.download_archive).expanduser().resolve()
     if download_archive.exists():
         ydl_opts["download_archive"] = str(download_archive)
         ydl_opts["cookiesfrombrowser"] = ("firefox",)

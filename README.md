@@ -21,7 +21,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v1.21.016)
+    xk media library subcommands (v1.21.017)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -47,6 +47,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
 
     downloads:
       lb download              Download media
+      lb redownload            Redownload missing media
       lb block                 Prevent downloading specific URLs
       lb merge-dbs             Merge multiple SQLITE files
       lb merge-online-local    Merge local and online metadata
