@@ -1,3 +1,4 @@
+from datetime import timezone
 from pathlib import Path
 
 from xklb import utils
@@ -87,8 +88,8 @@ def test_divisor_gen():
 
 
 def test_col_naturaldate():
-    assert utils.col_naturaldate([{"t": 0, "t1": 1}], "t") == [{"t": "Jan 01 1970", "t1": 1}]
-    assert utils.col_naturaldate([{"t": 946684800, "t1": 1}], "t") == [{"t": "Jan 01 2000", "t1": 1}]
+    assert utils.col_naturaldate([{"t": 0, "t1": 1}], "t", tz=timezone.utc) == [{"t": "Jan 01 1970", "t1": 1}]
+    assert utils.col_naturaldate([{"t": 946684800, "t1": 1}], "t", tz=timezone.utc) == [{"t": "Jan 01 2000", "t1": 1}]
 
 
 def test_col_naturalsize():

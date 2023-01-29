@@ -18,6 +18,7 @@ def parse_args(action, usage) -> argparse.Namespace:
         metavar="KEY=VALUE",
         help="Add key/value pairs to override or extend default downloader configuration",
     )
+    parser.add_argument("--download-archive", default="~/.local/share/yt_archive.txt")
     parser.add_argument("--safe", "-safe", action="store_true", help="Skip generic URLs")
     parser.add_argument("--no-sanitize", "-s", action="store_true", help="Don't sanitize some common URL parameters")
     parser.add_argument("--extra", "-extra", action="store_true", help="Get full metadata (takes a lot longer)")
