@@ -132,7 +132,11 @@ def cmd(*command, strict=True, cwd=None, quiet=True, **kwargs) -> subprocess.Com
             print(s)
         return s
 
-    r = subprocess.run(command, capture_output=True, text=True, cwd=cwd, **os_bg_kwargs(), **kwargs)
+    try:
+        r = subprocess.run(command, capture_output=True, text=True, cwd=cwd, **os_bg_kwargs(), **kwargs)
+    except UnicodeDecodeError as e:
+        print(command)
+        raise e
 
     log.debug(r.args)
     r.stdout = print_std(r.stdout)
@@ -461,6 +465,30 @@ def list_dict_filter_bool(media: List[dict], keep_0=True) -> List[dict]:
     return [d for d in [dict_filter_bool(d, keep_0) for d in media] if d]
 
 
+def dict_filter_keys(kwargs, keys) -> Optional[dict]:
+    filtered_dict = {k: v for k, v in kwargs.items() if k not in keys}
+    if len(filtered_dict) == 0:
+        return None
+    return filtered_dict
+
+
+def list_dict_filter_keys(media: List[dict], keys) -> List[dict]:
+    return [d for d in [dict_filter_keys(d, keys) for d in media] if d]
+
+
+def list_dict_filter_unique(data: List[dict]) -> List[dict]:
+    if len(data) == 0:
+        return []
+
+    unique_values = {}
+    for key in set.intersection(*(set(d.keys()) for d in data)):
+        values = set(d[key] for d in data if key in d)
+        if len(values) > 1:
+            unique_values[key] = values
+    filtered_data = [{k: v for k, v in d.items() if k in unique_values} for d in data]
+    return filtered_data
+
+
 def chunks(lst, n) -> Generator:
     for i in range(0, len(lst), n):
         yield lst[i : i + n]
@@ -516,7 +544,7 @@ def col_resize(tbl: List[Dict], col: str, size=10) -> List[Dict]:
 def col_naturaldate(tbl: List[Dict], col: str) -> List[Dict]:
     for idx, _d in enumerate(tbl):
         if tbl[idx].get(col) is not None:
-            tbl[idx][col] = humanize.naturaldate(datetime.fromtimestamp(int(tbl[idx][col]), tz=timezone.utc))
+            tbl[idx][col] = humanize.naturaldate(datetime.fromtimestamp(int(tbl[idx][col])))
 
     return tbl
 
@@ -645,3 +673,13 @@ def set_readline_completion(list_):
     readline.set_completer(create_completer(list_))
     readline.set_completer_delims("\t")
     readline.parse_and_bind("tab: complete")
+
+
+def filter_file(path, sieve):
+    with open(path, "r") as fr:
+        lines = fr.readlines()
+        with tempfile.NamedTemporaryFile(mode="w", delete=False) as temp:
+            temp.writelines(l for l in lines if l.rstrip() not in sieve)
+            temp.flush()
+            os.fsync(temp.fileno())
+    os.replace(temp.name, path)

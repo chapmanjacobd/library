@@ -43,6 +43,7 @@ def usage() -> str:
 
     downloads:
       lb download              Download media
+      lb redownload            Redownload missing media
       lb block                 Prevent downloading specific URLs
       lb merge-dbs             Merge multiple SQLITE files
       lb merge-online-local    Merge local and online metadata
@@ -153,6 +154,8 @@ def create_subcommands_parser():
     subp_download.set_defaults(func=dl_download)
     subp_block = add_parser(subparsers, "block")
     subp_block.set_defaults(func=dl_block)
+    subp_redownload = add_parser(subparsers, "redownload", ["redl"])
+    subp_redownload.set_defaults(func=scripts.redownload)
 
     subp_playlist = add_parser(subparsers, "playlists", ["pl", "folders"])
     subp_playlist.set_defaults(func=playlists)
