@@ -32,10 +32,9 @@ jobs:
           python -m pip install poetry pytest
 
       - run: |
-          python3 -m venv .venv
-          source .venv/bin/activate
           poetry install
-          pytest
+          poetry build
+          poetry run pytest
 
   publish:
     needs: test
