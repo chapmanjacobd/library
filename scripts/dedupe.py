@@ -12,6 +12,47 @@ from xklb.consts import DBType
 from xklb.utils import log
 
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser()
+
+    profile = parser.add_mutually_exclusive_group()
+    profile.add_argument(
+        "--audio",
+        action="store_const",
+        dest="profile",
+        const=DBType.audio,
+        help="Dedupe database by artist + album + title",
+    )
+    profile.add_argument(
+        "--id", action="store_const", dest="profile", const="id", help="Dedupe database by id + ie_key"
+    )
+    profile.add_argument(
+        "--title", action="store_const", dest="profile", const="title", help="Dedupe database by title + uploader"
+    )
+    profile.add_argument(
+        "--filesystem",
+        action="store_const",
+        dest="profile",
+        const=DBType.filesystem,
+        help="Dedupe filesystem database",
+    )
+    profile.add_argument("--text", action="store_const", dest="profile", const=DBType.text, help="Dedupe text database")
+    profile.add_argument(
+        "--image", action="store_const", dest="profile", const=DBType.image, help="Dedupe image database"
+    )
+
+    parser.add_argument("--only-soft-delete", action="store_true")
+    parser.add_argument("--force", "-f", action="store_true")
+    parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", default=100)
+    parser.add_argument("--verbose", "-v", action="count", default=0)
+
+    parser.add_argument("database")
+    args = parser.parse_args()
+    args.db = db.connect(args)
+    log.info(utils.dict_filter_bool(args.__dict__))
+    return args
+
+
 def get_music_duplicates(args) -> List[dict]:
     query = f"""
     SELECT
@@ -130,47 +171,6 @@ def get_title_duplicates(args) -> List[dict]:
     media = list(args.db.query(query))
 
     return media
-
-
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser()
-
-    profile = parser.add_mutually_exclusive_group()
-    profile.add_argument(
-        "--audio",
-        action="store_const",
-        dest="profile",
-        const=DBType.audio,
-        help="Dedupe database by artist + album + title",
-    )
-    profile.add_argument(
-        "--id", action="store_const", dest="profile", const="id", help="Dedupe database by id + ie_key"
-    )
-    profile.add_argument(
-        "--title", action="store_const", dest="profile", const="title", help="Dedupe database by title + uploader"
-    )
-    profile.add_argument(
-        "--filesystem",
-        action="store_const",
-        dest="profile",
-        const=DBType.filesystem,
-        help="Dedupe filesystem database",
-    )
-    profile.add_argument("--text", action="store_const", dest="profile", const=DBType.text, help="Dedupe text database")
-    profile.add_argument(
-        "--image", action="store_const", dest="profile", const=DBType.image, help="Dedupe image database"
-    )
-
-    parser.add_argument("--only-soft-delete", action="store_true")
-    parser.add_argument("--force", "-f", action="store_true")
-    parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", default=100)
-    parser.add_argument("--verbose", "-v", action="count", default=0)
-
-    parser.add_argument("database")
-    args = parser.parse_args()
-    args.db = db.connect(args)
-    log.info(utils.dict_filter_bool(args.__dict__))
-    return args
 
 
 def deduplicate_db() -> None:

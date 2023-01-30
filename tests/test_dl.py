@@ -1,6 +1,5 @@
 import unittest
 from argparse import Namespace
-from pathlib import Path
 from unittest import mock
 
 from xklb import consts, utils

@@ -11,6 +11,21 @@ from xklb import db, player, utils
 from xklb.utils import log
 
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", default="25")
+    parser.add_argument("--lower", default=4, type=int, help="Number of files per folder lower limit")
+    parser.add_argument("--upper", default=4000, type=int, help="Number of files per folder upper limit")
+    parser.add_argument("--verbose", "-v", action="count", default=0)
+
+    parser.add_argument("mount_point")
+    parser.add_argument("database")
+    args = parser.parse_args()
+    args.db = db.connect(args)
+    log.info(utils.dict_filter_bool(args.__dict__))
+    return args
+
+
 def group_by_folder(args, media):
     d = {}
     for m in media:
@@ -55,21 +70,6 @@ def get_table(args) -> List[dict]:
 
     folders = group_by_folder(args, media)
     return sorted(folders, key=lambda x: x["size"] / x["count"])
-
-
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", default="25")
-    parser.add_argument("--lower", default=4, type=int, help="Number of files per folder lower limit")
-    parser.add_argument("--upper", default=4000, type=int, help="Number of files per folder upper limit")
-    parser.add_argument("--verbose", "-v", action="count", default=0)
-
-    parser.add_argument("mount_point")
-    parser.add_argument("database")
-    args = parser.parse_args()
-    args.db = db.connect(args)
-    log.info(utils.dict_filter_bool(args.__dict__))
-    return args
 
 
 def print_some(args, tbl):

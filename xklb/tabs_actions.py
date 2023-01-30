@@ -8,6 +8,122 @@ from xklb.player import generic_player, mark_media_watched, override_sort, print
 from xklb.tabs_extract import Frequency
 from xklb.utils import cmd, flatten, log
 
+
+def parse_args(action, default_db) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        prog="library tabs",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        usage="""library tabs [database] [optional args]
+
+    Tabs is meant to run **once per day**. Here is how you would configure it with `crontab`:
+
+        45 9 * * * DISPLAY=:0 library tabs /home/my/tabs.db
+
+    If things aren't working you can use `at` to simulate a similar environment as `cron`
+
+        echo 'fish -c "export DISPLAY=:0 && library tabs /full/path/to/tabs.db"' | at NOW
+
+    You can also invoke tabs manually:
+
+        library tabs -L 1  # open one tab
+
+    Print URLs
+
+        lb-dev tabs -w "frequency='yearly'" -p
+        ╒════════════════════════════════════════════════════════════════╤═════════════╤══════════════╕
+        │ path                                                           │ frequency   │ time_valid   │
+        ╞════════════════════════════════════════════════════════════════╪═════════════╪══════════════╡
+        │ https://old.reddit.com/r/Autonomia/top/?sort=top&t=year        │ yearly      │ Dec 31 1970  │
+        ├────────────────────────────────────────────────────────────────┼─────────────┼──────────────┤
+        │ https://old.reddit.com/r/Cyberpunk/top/?sort=top&t=year        │ yearly      │ Dec 31 1970  │
+        ├────────────────────────────────────────────────────────────────┼─────────────┼──────────────┤
+        │ https://old.reddit.com/r/ExperiencedDevs/top/?sort=top&t=year  │ yearly      │ Dec 31 1970  │
+
+        ...
+
+        ╘════════════════════════════════════════════════════════════════╧═════════════╧══════════════╛
+
+    View how many yearly tabs you have:
+
+        library tabs -w "frequency='yearly'" -p a
+        ╒═══════════╤═════════╕
+        │ path      │   count │
+        ╞═══════════╪═════════╡
+        │ Aggregate │     134 │
+        ╘═══════════╧═════════╛
+
+    Delete URLs
+
+        library tb -p -s cyber
+        ╒═══════════════════════════════════════╤═════════════╤══════════════╕
+        │ path                                  │ frequency   │ time_valid   │
+        ╞═══════════════════════════════════════╪═════════════╪══════════════╡
+        │ https://old.reddit.com/r/cyberDeck/to │ yearly      │ Dec 31 1970  │
+        │ p/?sort=top&t=year                    │             │              │
+        ├───────────────────────────────────────┼─────────────┼──────────────┤
+        │ https://old.reddit.com/r/Cyberpunk/to │ yearly      │ Aug 29 2023  │
+        │ p/?sort=top&t=year                    │             │              │
+        ├───────────────────────────────────────┼─────────────┼──────────────┤
+        │ https://www.reddit.com/r/cyberDeck/   │ yearly      │ Sep 05 2023  │
+        ╘═══════════════════════════════════════╧═════════════╧══════════════╛
+        library tb -p -w "path='https://www.reddit.com/r/cyberDeck/'" --delete
+        Removed 1 metadata records
+        library tb -p -s cyber
+        ╒═══════════════════════════════════════╤═════════════╤══════════════╕
+        │ path                                  │ frequency   │ time_valid   │
+        ╞═══════════════════════════════════════╪═════════════╪══════════════╡
+        │ https://old.reddit.com/r/cyberDeck/to │ yearly      │ Dec 31 1970  │
+        │ p/?sort=top&t=year                    │             │              │
+        ├───────────────────────────────────────┼─────────────┼──────────────┤
+        │ https://old.reddit.com/r/Cyberpunk/to │ yearly      │ Aug 29 2023  │
+        │ p/?sort=top&t=year                    │             │              │
+        ╘═══════════════════════════════════════╧═════════════╧══════════════╛
+""",
+    )
+
+    parser.add_argument("--sort", "-u", nargs="+")
+    parser.add_argument("--where", "-w", nargs="+", action="extend", default=[])
+    parser.add_argument("--include", "-s", "--search", nargs="+", action="extend", default=[])
+    parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[])
+    parser.add_argument("--print", "-p", default=False, const="p", nargs="?")
+    parser.add_argument("--delete", "--remove", "--erase", "--rm", "-rm", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--cols", "-cols", "-col", nargs="*", help="Include a non-standard column when printing")
+    parser.add_argument("--limit", "-L", "-l", "-queue", "--queue")
+    parser.add_argument("--skip", "-S")
+
+    parser.add_argument("--verbose", "-v", action="count", default=0)
+    parser.add_argument("--db", "-db")
+
+    parser.add_argument(
+        "database",
+        nargs="?",
+        default=default_db,
+        help="Database file. If not specified a generic name will be used: audio.db, video.db, fs.db, etc",
+    )
+    args = parser.parse_args()
+    args.action = action
+
+    if args.db:
+        args.database = args.db
+
+    if args.sort:
+        args.sort = [override_sort(s) for s in args.sort]
+        args.sort = " ".join(args.sort)
+
+    if args.cols:
+        args.cols = list(flatten([s.split(",") for s in args.cols]))
+
+    if args.delete:
+        args.print += "d"
+
+    if args.db:
+        args.database = args.db
+    args.db = db.connect(args)
+    log.info(utils.dict_filter_bool(args.__dict__))
+
+    return args
+
+
 tabs_include_string = (
     lambda x: f"""and (
     path like :include{x}
@@ -127,121 +243,6 @@ def process_tabs_actions(args) -> None:
         play(args, m)
         if len(media) >= 9:
             sleep(0.3)
-
-
-def parse_args(action, default_db) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        prog="library tabs",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        usage="""library tabs [database] [optional args]
-
-    Tabs is meant to run **once per day**. Here is how you would configure it with `crontab`:
-
-        45 9 * * * DISPLAY=:0 library tabs /home/my/tabs.db
-
-    If things aren't working you can use `at` to simulate a similar environment as `cron`
-
-        echo 'fish -c "export DISPLAY=:0 && library tabs /full/path/to/tabs.db"' | at NOW
-
-    You can also invoke tabs manually:
-
-        library tabs -L 1  # open one tab
-
-    Print URLs
-
-        lb-dev tabs -w "frequency='yearly'" -p
-        ╒════════════════════════════════════════════════════════════════╤═════════════╤══════════════╕
-        │ path                                                           │ frequency   │ time_valid   │
-        ╞════════════════════════════════════════════════════════════════╪═════════════╪══════════════╡
-        │ https://old.reddit.com/r/Autonomia/top/?sort=top&t=year        │ yearly      │ Dec 31 1970  │
-        ├────────────────────────────────────────────────────────────────┼─────────────┼──────────────┤
-        │ https://old.reddit.com/r/Cyberpunk/top/?sort=top&t=year        │ yearly      │ Dec 31 1970  │
-        ├────────────────────────────────────────────────────────────────┼─────────────┼──────────────┤
-        │ https://old.reddit.com/r/ExperiencedDevs/top/?sort=top&t=year  │ yearly      │ Dec 31 1970  │
-
-        ...
-
-        ╘════════════════════════════════════════════════════════════════╧═════════════╧══════════════╛
-
-    View how many yearly tabs you have:
-
-        library tabs -w "frequency='yearly'" -p a
-        ╒═══════════╤═════════╕
-        │ path      │   count │
-        ╞═══════════╪═════════╡
-        │ Aggregate │     134 │
-        ╘═══════════╧═════════╛
-
-    Delete URLs
-
-        library tb -p -s cyber
-        ╒═══════════════════════════════════════╤═════════════╤══════════════╕
-        │ path                                  │ frequency   │ time_valid   │
-        ╞═══════════════════════════════════════╪═════════════╪══════════════╡
-        │ https://old.reddit.com/r/cyberDeck/to │ yearly      │ Dec 31 1970  │
-        │ p/?sort=top&t=year                    │             │              │
-        ├───────────────────────────────────────┼─────────────┼──────────────┤
-        │ https://old.reddit.com/r/Cyberpunk/to │ yearly      │ Aug 29 2023  │
-        │ p/?sort=top&t=year                    │             │              │
-        ├───────────────────────────────────────┼─────────────┼──────────────┤
-        │ https://www.reddit.com/r/cyberDeck/   │ yearly      │ Sep 05 2023  │
-        ╘═══════════════════════════════════════╧═════════════╧══════════════╛
-        library tb -p -w "path='https://www.reddit.com/r/cyberDeck/'" --delete
-        Removed 1 metadata records
-        library tb -p -s cyber
-        ╒═══════════════════════════════════════╤═════════════╤══════════════╕
-        │ path                                  │ frequency   │ time_valid   │
-        ╞═══════════════════════════════════════╪═════════════╪══════════════╡
-        │ https://old.reddit.com/r/cyberDeck/to │ yearly      │ Dec 31 1970  │
-        │ p/?sort=top&t=year                    │             │              │
-        ├───────────────────────────────────────┼─────────────┼──────────────┤
-        │ https://old.reddit.com/r/Cyberpunk/to │ yearly      │ Aug 29 2023  │
-        │ p/?sort=top&t=year                    │             │              │
-        ╘═══════════════════════════════════════╧═════════════╧══════════════╛
-""",
-    )
-
-    parser.add_argument("--sort", "-u", nargs="+")
-    parser.add_argument("--where", "-w", nargs="+", action="extend", default=[])
-    parser.add_argument("--include", "-s", "--search", nargs="+", action="extend", default=[])
-    parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[])
-    parser.add_argument("--print", "-p", default=False, const="p", nargs="?")
-    parser.add_argument("--delete", "--remove", "--erase", "--rm", "-rm", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--cols", "-cols", "-col", nargs="*", help="Include a non-standard column when printing")
-    parser.add_argument("--limit", "-L", "-l", "-queue", "--queue")
-    parser.add_argument("--skip", "-S")
-
-    parser.add_argument("--verbose", "-v", action="count", default=0)
-    parser.add_argument("--db", "-db")
-
-    parser.add_argument(
-        "database",
-        nargs="?",
-        default=default_db,
-        help="Database file. If not specified a generic name will be used: audio.db, video.db, fs.db, etc",
-    )
-    args = parser.parse_args()
-    args.action = action
-
-    if args.db:
-        args.database = args.db
-
-    if args.sort:
-        args.sort = [override_sort(s) for s in args.sort]
-        args.sort = " ".join(args.sort)
-
-    if args.cols:
-        args.cols = list(flatten([s.split(",") for s in args.cols]))
-
-    if args.delete:
-        args.print += "d"
-
-    if args.db:
-        args.database = args.db
-    args.db = db.connect(args)
-    log.info(utils.dict_filter_bool(args.__dict__))
-
-    return args
 
 
 def tabs() -> None:

@@ -10,128 +10,6 @@ from xklb.subtitle import externalize_subtitle
 from xklb.utils import cmd, log
 
 
-def construct_search_bindings(args, cf, bindings, columns) -> None:
-    includes, excludes = db.gen_include_excludes(columns)
-
-    for idx, inc in enumerate(args.include):
-        cf.append(includes.format(idx))
-        bindings[f"include{idx}"] = "%" + inc.replace(" ", "%").replace("%%", " ") + "%"
-    for idx, exc in enumerate(args.exclude):
-        cf.append(excludes.format(idx))
-        bindings[f"exclude{idx}"] = "%" + exc.replace(" ", "%").replace("%%", " ") + "%"
-
-
-def construct_query(args) -> Tuple[str, dict]:
-    m_columns = args.db["media"].columns_dict
-    cf = []
-    bindings = {}
-
-    if args.duration:
-        cf.append(" and duration IS NOT NULL " + args.duration)
-    if args.size:
-        cf.append(" and size IS NOT NULL " + args.size)
-    if args.duration_from_size:
-        cf.append(
-            " and size IS NOT NULL and duration in (select distinct duration from m where 1=1 "
-            + args.duration_from_size
-            + ")"
-        )
-
-    cf.extend([" and " + w for w in args.where])
-
-    def ii(string):
-        if string.isdigit():
-            return string + " minutes"
-        return string.replace("mins", "minutes").replace("secs", "seconds")
-
-    if args.created_within:
-        cf.append(f"and time_created > cast(STRFTIME('%s', datetime( 'now', '-{ii(args.created_within)}')) as int)")
-    if args.created_before:
-        cf.append(f"and time_created < cast(STRFTIME('%s', datetime( 'now', '-{ii(args.created_before)}')) as int)")
-    if args.changed_within:
-        cf.append(f"and time_modified > cast(STRFTIME('%s', datetime( 'now', '-{ii(args.changed_within)}')) as int)")
-    if args.changed_before:
-        cf.append(f"and time_modified < cast(STRFTIME('%s', datetime( 'now', '-{ii(args.changed_before)}')) as int)")
-    if args.played_within:
-        cf.append(f"and time_played > cast(STRFTIME('%s', datetime( 'now', '-{ii(args.played_within)}')) as int)")
-    if args.played_before:
-        cf.append(f"and time_played < cast(STRFTIME('%s', datetime( 'now', '-{ii(args.played_before)}')) as int)")
-    if args.deleted_within:
-        cf.append(f"and time_deleted > cast(STRFTIME('%s', datetime( 'now', '-{ii(args.deleted_within)}')) as int)")
-    if args.deleted_before:
-        cf.append(f"and time_deleted < cast(STRFTIME('%s', datetime( 'now', '-{ii(args.deleted_before)}')) as int)")
-
-    args.table = "media"
-    if args.db["media"].detect_fts():
-        if args.include:
-            args.table = db.fts_search(args, bindings)
-            m_columns = {**m_columns, "rank": int}
-        elif args.exclude:
-            construct_search_bindings(args, cf, bindings, m_columns)
-    else:
-        construct_search_bindings(args, cf, bindings, m_columns)
-
-    if args.table == "media" and not any(
-        [cf, args.where, args.print, args.partial, args.limit != consts.DEFAULT_PLAY_QUEUE, args.duration_from_size]
-    ):
-        limit = 60_000
-        if args.random:
-            limit = consts.DEFAULT_PLAY_QUEUE * 16
-
-        if "limit" in args.defaults:
-            cf.append(f"and m.rowid in (select rowid from media order by random() limit {limit})")
-    else:
-        if args.random:
-            args.sort = "random(), " + args.sort
-
-    args.sql_filter = " ".join(cf)
-    args.sql_filter_bindings = bindings
-
-    # switching between videos with and without subs is annoying
-    subtitle_count = ">0"
-    if random() < 0.659:  # bias slightly toward videos without subtitles
-        subtitle_count = "=0"
-
-    duration = "duration"
-    if args.action == SC.read:
-        duration = "cast(length(tags) / 4.2 / 220 * 60 as INT) + 10 duration"
-
-    cols = args.cols or ["path", "title", duration, "size", "subtitle_count", "is_dir", "rank"]
-    SELECT = "\n        , ".join([c for c in cols if c in m_columns or c == "*"])
-    LIMIT = "LIMIT " + str(args.limit) if args.limit else ""
-    OFFSET = f"OFFSET {args.skip}" if args.skip and args.limit else ""
-    query = f"""WITH m as (
-    SELECT rowid, * FROM {args.table}
-    WHERE 1=1
-        {f'and path like "http%"' if args.safe else ''}
-        {f'and path not like "{Path(args.keep_dir).resolve()}%"' if args.post_action == 'askkeep' else ''}
-        {'and time_deleted=0' if 'time_deleted' in m_columns and 'time_deleted' not in args.sql_filter else ''}
-        {'AND (score IS NULL OR score > 7)' if 'score' in m_columns else ''}
-        {'AND (upvote_ratio IS NULL OR upvote_ratio > 0.73)' if 'upvote_ratio' in m_columns else ''}
-        {'AND time_downloaded = 0' if args.online_media_only else ''}
-        {'AND time_downloaded > 0 AND path not like "http%"' if args.local_media_only else ''}
-    )
-    SELECT
-        {SELECT}
-    FROM m
-    WHERE 1=1
-        {args.sql_filter}
-    ORDER BY 1=1
-        {', video_count > 0 desc' if 'video_count' in m_columns and args.action == SC.watch else ''}
-        {', audio_count > 0 desc' if 'audio_count' in m_columns else ''}
-        {', time_downloaded > 0 desc' if 'time_downloaded' in m_columns and 'time_downloaded' not in args.sql_filter else ''}
-        , path like "http%"
-        {', width < height desc' if 'width' in m_columns and args.portrait else ''}
-        {f', subtitle_count {subtitle_count} desc' if 'subtitle_count' in m_columns and args.action == SC.watch and not any([args.print, consts.PYTEST_RUNNING, 'subtitle_count' in args.where, args.limit != consts.DEFAULT_PLAY_QUEUE]) else ''}
-        {', ' + args.sort if args.sort else ''}
-        , path
-        , random()
-    {LIMIT} {OFFSET}
-    """
-
-    return query, bindings
-
-
 def usage(action, default_db) -> str:
     return f"""library {action} [database] [optional args]
 
@@ -548,6 +426,128 @@ def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
 
     args.sock = None
     return args
+
+
+def construct_search_bindings(args, cf, bindings, columns) -> None:
+    includes, excludes = db.gen_include_excludes(columns)
+
+    for idx, inc in enumerate(args.include):
+        cf.append(includes.format(idx))
+        bindings[f"include{idx}"] = "%" + inc.replace(" ", "%").replace("%%", " ") + "%"
+    for idx, exc in enumerate(args.exclude):
+        cf.append(excludes.format(idx))
+        bindings[f"exclude{idx}"] = "%" + exc.replace(" ", "%").replace("%%", " ") + "%"
+
+
+def construct_query(args) -> Tuple[str, dict]:
+    m_columns = args.db["media"].columns_dict
+    cf = []
+    bindings = {}
+
+    if args.duration:
+        cf.append(" and duration IS NOT NULL " + args.duration)
+    if args.size:
+        cf.append(" and size IS NOT NULL " + args.size)
+    if args.duration_from_size:
+        cf.append(
+            " and size IS NOT NULL and duration in (select distinct duration from m where 1=1 "
+            + args.duration_from_size
+            + ")"
+        )
+
+    cf.extend([" and " + w for w in args.where])
+
+    def ii(string):
+        if string.isdigit():
+            return string + " minutes"
+        return string.replace("mins", "minutes").replace("secs", "seconds")
+
+    if args.created_within:
+        cf.append(f"and time_created > cast(STRFTIME('%s', datetime( 'now', '-{ii(args.created_within)}')) as int)")
+    if args.created_before:
+        cf.append(f"and time_created < cast(STRFTIME('%s', datetime( 'now', '-{ii(args.created_before)}')) as int)")
+    if args.changed_within:
+        cf.append(f"and time_modified > cast(STRFTIME('%s', datetime( 'now', '-{ii(args.changed_within)}')) as int)")
+    if args.changed_before:
+        cf.append(f"and time_modified < cast(STRFTIME('%s', datetime( 'now', '-{ii(args.changed_before)}')) as int)")
+    if args.played_within:
+        cf.append(f"and time_played > cast(STRFTIME('%s', datetime( 'now', '-{ii(args.played_within)}')) as int)")
+    if args.played_before:
+        cf.append(f"and time_played < cast(STRFTIME('%s', datetime( 'now', '-{ii(args.played_before)}')) as int)")
+    if args.deleted_within:
+        cf.append(f"and time_deleted > cast(STRFTIME('%s', datetime( 'now', '-{ii(args.deleted_within)}')) as int)")
+    if args.deleted_before:
+        cf.append(f"and time_deleted < cast(STRFTIME('%s', datetime( 'now', '-{ii(args.deleted_before)}')) as int)")
+
+    args.table = "media"
+    if args.db["media"].detect_fts():
+        if args.include:
+            args.table = db.fts_search(args, bindings)
+            m_columns = {**m_columns, "rank": int}
+        elif args.exclude:
+            construct_search_bindings(args, cf, bindings, m_columns)
+    else:
+        construct_search_bindings(args, cf, bindings, m_columns)
+
+    if args.table == "media" and not any(
+        [cf, args.where, args.print, args.partial, args.limit != consts.DEFAULT_PLAY_QUEUE, args.duration_from_size]
+    ):
+        limit = 60_000
+        if args.random:
+            limit = consts.DEFAULT_PLAY_QUEUE * 16
+
+        if "limit" in args.defaults:
+            cf.append(f"and m.rowid in (select rowid from media order by random() limit {limit})")
+    else:
+        if args.random:
+            args.sort = "random(), " + args.sort
+
+    args.sql_filter = " ".join(cf)
+    args.sql_filter_bindings = bindings
+
+    # switching between videos with and without subs is annoying
+    subtitle_count = ">0"
+    if random() < 0.659:  # bias slightly toward videos without subtitles
+        subtitle_count = "=0"
+
+    duration = "duration"
+    if args.action == SC.read:
+        duration = "cast(length(tags) / 4.2 / 220 * 60 as INT) + 10 duration"
+
+    cols = args.cols or ["path", "title", duration, "size", "subtitle_count", "is_dir", "rank"]
+    SELECT = "\n        , ".join([c for c in cols if c in m_columns or c == "*"])
+    LIMIT = "LIMIT " + str(args.limit) if args.limit else ""
+    OFFSET = f"OFFSET {args.skip}" if args.skip and args.limit else ""
+    query = f"""WITH m as (
+    SELECT rowid, * FROM {args.table}
+    WHERE 1=1
+        {f'and path like "http%"' if args.safe else ''}
+        {f'and path not like "{Path(args.keep_dir).resolve()}%"' if args.post_action == 'askkeep' else ''}
+        {'and time_deleted=0' if 'time_deleted' in m_columns and 'time_deleted' not in args.sql_filter else ''}
+        {'AND (score IS NULL OR score > 7)' if 'score' in m_columns else ''}
+        {'AND (upvote_ratio IS NULL OR upvote_ratio > 0.73)' if 'upvote_ratio' in m_columns else ''}
+        {'AND time_downloaded = 0' if args.online_media_only else ''}
+        {'AND time_downloaded > 0 AND path not like "http%"' if args.local_media_only else ''}
+    )
+    SELECT
+        {SELECT}
+    FROM m
+    WHERE 1=1
+        {args.sql_filter}
+    ORDER BY 1=1
+        {', video_count > 0 desc' if 'video_count' in m_columns and args.action == SC.watch else ''}
+        {', audio_count > 0 desc' if 'audio_count' in m_columns else ''}
+        {', time_downloaded > 0 desc' if 'time_downloaded' in m_columns and 'time_downloaded' not in args.sql_filter else ''}
+        , path like "http%"
+        {', width < height desc' if 'width' in m_columns and args.portrait else ''}
+        {f', subtitle_count {subtitle_count} desc' if 'subtitle_count' in m_columns and args.action == SC.watch and not any([args.print, consts.PYTEST_RUNNING, 'subtitle_count' in args.where, args.limit != consts.DEFAULT_PLAY_QUEUE]) else ''}
+        {', ' + args.sort if args.sort else ''}
+        , path
+        , random()
+    {LIMIT} {OFFSET}
+    """
+
+    return query, bindings
 
 
 def chromecast_play(args, m) -> None:

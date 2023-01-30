@@ -7,6 +7,22 @@ from xklb import db, utils
 from xklb.utils import log
 
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--sort-by-deleted", action="store_true")
+    parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", default="4000")
+    parser.add_argument("--depth", "-d", default=0, type=int, help="Depth of folders")
+    parser.add_argument("--lower", type=int, help="Number of files per folder lower limit")
+    parser.add_argument("--upper", type=int, help="Number of files per folder upper limit")
+    parser.add_argument("--verbose", "-v", action="count", default=0)
+
+    parser.add_argument("database")
+    args = parser.parse_args()
+    args.db = db.connect(args)
+    log.info(utils.dict_filter_bool(args.__dict__))
+    return args
+
+
 def group_files_by_folder(args, media):
     d = {}
     for m in media:
@@ -89,22 +105,6 @@ def get_table(args) -> List[dict]:
     if args.depth:
         folders = group_folders(args, folders)
     return sorted(folders, key=lambda x: x["count_deleted"] if args.sort_by_deleted else x["size"] / x["count"])
-
-
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--sort-by-deleted", action="store_true")
-    parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", default="4000")
-    parser.add_argument("--depth", "-d", default=0, type=int, help="Depth of folders")
-    parser.add_argument("--lower", type=int, help="Number of files per folder lower limit")
-    parser.add_argument("--upper", type=int, help="Number of files per folder upper limit")
-    parser.add_argument("--verbose", "-v", action="count", default=0)
-
-    parser.add_argument("database")
-    args = parser.parse_args()
-    args.db = db.connect(args)
-    log.info(utils.dict_filter_bool(args.__dict__))
-    return args
 
 
 def bigdirs() -> None:

@@ -1,7 +1,7 @@
 import argparse, sys
 from pathlib import Path
 
-from xklb import consts, db, tube_backend, utils
+from xklb import db, tube_backend, utils
 from xklb.consts import SC
 from xklb.utils import log
 
