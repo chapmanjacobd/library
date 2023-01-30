@@ -36,6 +36,44 @@ More details: https://praw.readthedocs.io/en/stable/getting_started/configuratio
 """
 
 
+def parse_args(action, usage) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(prog="library " + action, usage=usage)
+    parser.add_argument("--limit", default=1000, type=int)
+    parser.add_argument("--lookback", default=4, type=int, help="Number of days to look back")
+    parser.add_argument("--praw-site", default="bot1")
+
+    parser.add_argument("--subreddits", action="store_true")
+    parser.add_argument("--redditors", action="store_true")
+
+    parser.add_argument("--category", "-c", help=argparse.SUPPRESS)
+
+    parser.add_argument("--verbose", "-v", action="count", default=0)
+    parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
+
+    parser.add_argument("database", nargs="?", default="reddit.db")
+    if action == "redditadd":
+        parser.add_argument("paths", nargs="+")
+    args = parser.parse_args()
+
+    if action == "redditadd":
+        args.paths = utils.conform(args.paths)
+
+    if args.db:
+        args.database = args.db
+    Path(args.database).touch()
+    args.db = db.connect(args)
+
+    try:
+        args.reddit = praw.Reddit(args.praw_site, config_interpolation="basic")
+    except Exception as e:
+        print(PRAW_SETUP_INSTRUCTIONS)
+        raise SystemExit(e)
+
+    log.info(utils.dict_filter_bool(args.__dict__))
+
+    return args
+
+
 """
 Catherine Devlin's reddit-to-sqlite project was very helpful in understanding
 how to work with praw. Any lines of code which can be attributed to that person
@@ -253,44 +291,6 @@ def subreddit_top(args, subreddit_dict) -> None:
         log.info("Getting top posts in %s for time_filter '%s'", subreddit, time_filter)
         for post in takewhile(_takewhile, subreddit.top(time_filter, limit=args.limit)):
             save_post(args, saveable(post), subreddit_path)
-
-
-def parse_args(action, usage) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(prog="library " + action, usage=usage)
-    parser.add_argument("--limit", default=1000, type=int)
-    parser.add_argument("--lookback", default=4, type=int, help="Number of days to look back")
-    parser.add_argument("--praw-site", default="bot1")
-
-    parser.add_argument("--subreddits", action="store_true")
-    parser.add_argument("--redditors", action="store_true")
-
-    parser.add_argument("--category", "-c", help=argparse.SUPPRESS)
-
-    parser.add_argument("--verbose", "-v", action="count", default=0)
-    parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
-
-    parser.add_argument("database", nargs="?", default="reddit.db")
-    if action == "redditadd":
-        parser.add_argument("paths", nargs="+")
-    args = parser.parse_args()
-
-    if action == "redditadd":
-        args.paths = utils.conform(args.paths)
-
-    if args.db:
-        args.database = args.db
-    Path(args.database).touch()
-    args.db = db.connect(args)
-
-    try:
-        args.reddit = praw.Reddit(args.praw_site, config_interpolation="basic")
-    except Exception as e:
-        print(PRAW_SETUP_INSTRUCTIONS)
-        raise SystemExit(e)
-
-    log.info(utils.dict_filter_bool(args.__dict__))
-
-    return args
 
 
 def process_redditors(args, redditors):

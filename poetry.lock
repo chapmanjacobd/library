@@ -1055,14 +1055,14 @@ test = ["PyYAML", "pylint", "pytest", "pytest-benchmark", "pytest-cov", "pytest-
 
 [[package]]
 name = "humanize"
-version = "4.4.0"
+version = "4.5.0"
 description = "Python humanize utilities"
 category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "humanize-4.4.0-py3-none-any.whl", hash = "sha256:8830ebf2d65d0395c1bd4c79189ad71e023f277c2c7ae00f263124432e6f2ffa"},
-    {file = "humanize-4.4.0.tar.gz", hash = "sha256:efb2584565cc86b7ea87a977a15066de34cdedaf341b11c851cfcfd2b964779c"},
+    {file = "humanize-4.5.0-py3-none-any.whl", hash = "sha256:127e333677183070b82e90e0faef9440f9a16dab92143e52f4523afb08ca9290"},
+    {file = "humanize-4.5.0.tar.gz", hash = "sha256:d6ed00ed4dc59a66df71012e3d69cf655d7d21b02112d435871998969e8aedc8"},
 ]
 
 [package.extras]
@@ -3581,4 +3581,4 @@ full = ["textract", "PyExifTool", "aiohttp", "brotab", "orjson", "pandas"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "1e11d2b4da1f827faace5a40a5946450c43f3f2cd96f4fcaa8456fa47fc45ad9"
+content-hash = "f6aab8ed439c95ede5a6888900d0242c1635c706d2d49d6181fcb3180bbb5a33"

@@ -10,56 +10,6 @@ from xklb import consts, db, utils
 from xklb.utils import log
 
 
-def list_deletions(args) -> List[dict]:
-    query = """
-        SELECT
-            strftime('%Y-%m-%dT%H:%M:%S', time_deleted, 'unixepoch', 'localtime') as time_deleted
-            , COUNT(*) as count
-        FROM media
-        WHERE time_deleted > 0
-            AND time_downloaded > 0
-        GROUP BY time_deleted
-        HAVING count > 0
-        ORDER BY time_deleted DESC
-        LIMIT ?
-    """
-    media = list(args.db.query(query, [args.limit]))
-    media = list(reversed(media))
-    return media
-
-
-def get_non_tube_media(args, paths) -> List[dict]:
-    media = list(
-        args.db.query(
-            "select * from media where path in (" + ",".join(["?"] * len(paths)) + ")",
-            (*paths,),
-        )
-    )
-    return media
-
-
-def get_deleted_media(args) -> List[dict]:
-    if all([args.deleted_at, args.deleted_to]):
-        # use timestamps between inclusive, converting from localtime to UTC
-        query = f"""
-            SELECT *
-            FROM media
-            WHERE time_deleted >= strftime('%s', ?, 'utc') AND time_deleted <= strftime('%s', ?, 'utc')
-            AND time_downloaded > 0
-        """
-        media = list(args.db.query(query, (args.deleted_at, args.deleted_to)))
-    else:
-        # use exact timestamp, converting from localtime to UTC
-        query = f"""
-            SELECT *
-            FROM media
-            WHERE time_deleted = strftime('%s', ?, 'utc')
-            AND time_downloaded > 0
-        """
-        media = list(args.db.query(query, (args.deleted_at,)))
-    return media
-
-
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         usage="""library redownload database
@@ -111,6 +61,56 @@ def parse_args() -> argparse.Namespace:
     args.db = db.connect(args)
     log.info(utils.dict_filter_bool(args.__dict__))
     return args
+
+
+def list_deletions(args) -> List[dict]:
+    query = """
+        SELECT
+            strftime('%Y-%m-%dT%H:%M:%S', time_deleted, 'unixepoch', 'localtime') as time_deleted
+            , COUNT(*) as count
+        FROM media
+        WHERE time_deleted > 0
+            AND time_downloaded > 0
+        GROUP BY time_deleted
+        HAVING count > 0
+        ORDER BY time_deleted DESC
+        LIMIT ?
+    """
+    media = list(args.db.query(query, [args.limit]))
+    media = list(reversed(media))
+    return media
+
+
+def get_non_tube_media(args, paths) -> List[dict]:
+    media = list(
+        args.db.query(
+            "select * from media where path in (" + ",".join(["?"] * len(paths)) + ")",
+            (*paths,),
+        )
+    )
+    return media
+
+
+def get_deleted_media(args) -> List[dict]:
+    if all([args.deleted_at, args.deleted_to]):
+        # use timestamps between inclusive, converting from localtime to UTC
+        query = f"""
+            SELECT *
+            FROM media
+            WHERE time_deleted >= strftime('%s', ?, 'utc') AND time_deleted <= strftime('%s', ?, 'utc')
+            AND time_downloaded > 0
+        """
+        media = list(args.db.query(query, (args.deleted_at, args.deleted_to)))
+    else:
+        # use exact timestamp, converting from localtime to UTC
+        query = f"""
+            SELECT *
+            FROM media
+            WHERE time_deleted = strftime('%s', ?, 'utc')
+            AND time_downloaded > 0
+        """
+        media = list(args.db.query(query, (args.deleted_at,)))
+    return media
 
 
 def mark_media_undownloaded(args, paths):

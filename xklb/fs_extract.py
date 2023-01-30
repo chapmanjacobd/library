@@ -11,6 +11,81 @@ from xklb.player import mark_media_deleted
 from xklb.utils import log
 
 
+def parse_args(action, usage) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(prog="library " + action, usage=usage)
+
+    profile = parser.add_mutually_exclusive_group()
+    profile.add_argument(
+        "--audio", "-A", action="store_const", dest="profile", const=DBType.audio, help="Create audio database"
+    )
+    profile.add_argument(
+        "--filesystem",
+        "-F",
+        action="store_const",
+        dest="profile",
+        const=DBType.filesystem,
+        help="Create filesystem database",
+    )
+    profile.add_argument(
+        "--video", "-V", action="store_const", dest="profile", const=DBType.video, help="Create video database"
+    )
+    profile.add_argument(
+        "--text", "-T", action="store_const", dest="profile", const=DBType.text, help="Create text database"
+    )
+    profile.add_argument(
+        "--image", "-I", action="store_const", dest="profile", const=DBType.image, help="Create image database"
+    )
+    parser.set_defaults(profile=DBType.video)
+    parser.add_argument("--category", "-c", help=argparse.SUPPRESS)
+
+    parser.add_argument("--ocr", "--OCR", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--speech-recognition", "--speech", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--scan-subtitles", "--scan-subtitle", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--extra-media-data", default={})
+    parser.add_argument("--extra-playlist-data", default={})
+
+    parser.add_argument("--delete-unplayable", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--force", "-f", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--verbose", "-v", action="count", default=0)
+    parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
+
+    parser.add_argument("database", nargs="?")
+    if action == SC.fsadd:
+        parser.add_argument("paths", nargs="+")
+    args = parser.parse_args()
+
+    if args.db:
+        args.database = args.db
+
+    if not args.database:
+        if args.profile == DBType.audio:
+            args.database = "audio.db"
+        elif args.profile == DBType.filesystem:
+            args.database = "fs.db"
+        elif args.profile == DBType.video:
+            args.database = "video.db"
+        elif args.profile == DBType.text:
+            args.database = "text.db"
+        elif args.profile == DBType.image:
+            args.database = "image.db"
+        else:
+            raise Exception(f"fs_extract for profile {args.profile} not implemented")
+
+    if args.db:
+        args.database = args.db
+    Path(args.database).touch()
+    args.db = db.connect(args)
+    if hasattr(args, "paths"):
+        args.paths = utils.conform(args.paths)
+    log.info(utils.dict_filter_bool(args.__dict__))
+
+    if args.profile in (DBType.audio, DBType.video) and not which("ffprobe"):
+        print("ffmpeg is not installed. Install with your package manager.")
+        raise SystemExit(3)
+
+    return args
+
+
 def calculate_sparseness(stat) -> int:
     if stat.st_size == 0:
         sparseness = 0
@@ -187,81 +262,6 @@ def scan_path(args, path_str: str) -> int:
     _add_folder(args, path)
 
     return len(new_files)
-
-
-def parse_args(action, usage) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(prog="library " + action, usage=usage)
-
-    profile = parser.add_mutually_exclusive_group()
-    profile.add_argument(
-        "--audio", "-A", action="store_const", dest="profile", const=DBType.audio, help="Create audio database"
-    )
-    profile.add_argument(
-        "--filesystem",
-        "-F",
-        action="store_const",
-        dest="profile",
-        const=DBType.filesystem,
-        help="Create filesystem database",
-    )
-    profile.add_argument(
-        "--video", "-V", action="store_const", dest="profile", const=DBType.video, help="Create video database"
-    )
-    profile.add_argument(
-        "--text", "-T", action="store_const", dest="profile", const=DBType.text, help="Create text database"
-    )
-    profile.add_argument(
-        "--image", "-I", action="store_const", dest="profile", const=DBType.image, help="Create image database"
-    )
-    parser.set_defaults(profile=DBType.video)
-    parser.add_argument("--category", "-c", help=argparse.SUPPRESS)
-
-    parser.add_argument("--ocr", "--OCR", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--speech-recognition", "--speech", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--scan-subtitles", "--scan-subtitle", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--extra-media-data", default={})
-    parser.add_argument("--extra-playlist-data", default={})
-
-    parser.add_argument("--delete-unplayable", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--force", "-f", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--verbose", "-v", action="count", default=0)
-    parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
-
-    parser.add_argument("database", nargs="?")
-    if action == SC.fsadd:
-        parser.add_argument("paths", nargs="+")
-    args = parser.parse_args()
-
-    if args.db:
-        args.database = args.db
-
-    if not args.database:
-        if args.profile == DBType.audio:
-            args.database = "audio.db"
-        elif args.profile == DBType.filesystem:
-            args.database = "fs.db"
-        elif args.profile == DBType.video:
-            args.database = "video.db"
-        elif args.profile == DBType.text:
-            args.database = "text.db"
-        elif args.profile == DBType.image:
-            args.database = "image.db"
-        else:
-            raise Exception(f"fs_extract for profile {args.profile} not implemented")
-
-    if args.db:
-        args.database = args.db
-    Path(args.database).touch()
-    args.db = db.connect(args)
-    if hasattr(args, "paths"):
-        args.paths = utils.conform(args.paths)
-    log.info(utils.dict_filter_bool(args.__dict__))
-
-    if args.profile in (DBType.audio, DBType.video) and not which("ffprobe"):
-        print("ffmpeg is not installed. Install with your package manager.")
-        raise SystemExit(3)
-
-    return args
 
 
 def extractor(args, paths) -> None:

@@ -34,11 +34,6 @@ SOFTWARE.
 """
 
 
-def get(url):
-    r = requests.get(url)
-    return r.json()
-
-
 def parse_args(prog, usage) -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog, usage)
     parser.add_argument("--oldest", action="store_true")
@@ -56,6 +51,11 @@ def parse_args(prog, usage) -> argparse.Namespace:
     log.info(utils.dict_filter_bool(args.__dict__))
 
     return args
+
+
+def get(url):
+    r = requests.get(url)
+    return r.json()
 
 
 def db_worker(args, input_queue):

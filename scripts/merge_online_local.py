@@ -9,6 +9,24 @@ from xklb import consts, db, utils
 from xklb.utils import log
 
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        usage="""library merge-online-local database
+
+    If you have previously downloaded YouTube or other online media, you can dedupe
+    your database and combine the online and local media records as long as your
+    files have the youtube-dl / yt-dlp id in the filename.
+    """
+    )
+    parser.add_argument("database")
+    parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", default=100)
+    parser.add_argument("--verbose", "-v", action="count", default=0)
+    args = parser.parse_args()
+    args.db = db.connect(args)
+    log.info(utils.dict_filter_bool(args.__dict__))
+    return args
+
+
 def get_duplicates(args) -> List[dict]:
     query = f"""
     WITH m1 as (
@@ -54,24 +72,6 @@ def get_duplicates(args) -> List[dict]:
 
     media = list(args.db.query(query))
     return media
-
-
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        usage="""library merge-online-local database
-
-    If you have previously downloaded YouTube or other online media, you can dedupe
-    your database and combine the online and local media records as long as your
-    files have the youtube-dl / yt-dlp id in the filename.
-    """
-    )
-    parser.add_argument("database")
-    parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", default=100)
-    parser.add_argument("--verbose", "-v", action="count", default=0)
-    args = parser.parse_args()
-    args.db = db.connect(args)
-    log.info(utils.dict_filter_bool(args.__dict__))
-    return args
 
 
 def get_dict(args, path) -> Optional[dict]:
