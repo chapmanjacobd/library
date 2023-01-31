@@ -490,14 +490,14 @@ requests = "*"
 
 [[package]]
 name = "catt"
-version = "0.12.9"
+version = "0.12.10"
 description = "Cast All The Things allows you to send videos from many, many online sources to your Chromecast."
 category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "catt-0.12.9-py3-none-any.whl", hash = "sha256:f96b269b9a74ed44b07c77a22995e307ca22bfbf15c82468010acb6949dbe6c1"},
-    {file = "catt-0.12.9.tar.gz", hash = "sha256:5aab8745872e2ed57602ce3d045da08741fdf08c319d6280cf8da07ae216872d"},
+    {file = "catt-0.12.10-py3-none-any.whl", hash = "sha256:0f51120b307671d671fcd2cbc3686c1df584e7a78d1589dc1b6468d25a6cd7b1"},
+    {file = "catt-0.12.10.tar.gz", hash = "sha256:a462f126ad2630ef7f57ea66ca3808eee7620b25de74d76a9204c8a87e874c1f"},
 ]
 
 [package.dependencies]
@@ -3054,14 +3054,14 @@ files = [
 
 [[package]]
 name = "traitlets"
-version = "5.8.1"
+version = "5.9.0"
 description = "Traitlets Python configuration system"
 category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "traitlets-5.8.1-py3-none-any.whl", hash = "sha256:a1ca5df6414f8b5760f7c5f256e326ee21b581742114545b462b35ffe3f04861"},
-    {file = "traitlets-5.8.1.tar.gz", hash = "sha256:32500888f5ff7bbf3b9267ea31748fa657aaf34d56d85e60f91dda7dc7f5785b"},
+    {file = "traitlets-5.9.0-py3-none-any.whl", hash = "sha256:9e6ec080259b9a5940c797d58b613b5e31441c2257b87c2e795c5228ae80d2d8"},
+    {file = "traitlets-5.9.0.tar.gz", hash = "sha256:f6cde21a9c68cf756af02035f72d5a723bf607e862e7be33ece505abf4a3bad9"},
 ]
 
 [package.extras]

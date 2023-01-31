@@ -133,9 +133,17 @@ def cmd(*command, strict=True, cwd=None, quiet=True, **kwargs) -> subprocess.Com
         return s
 
     try:
-        r = subprocess.run(command, capture_output=True, text=True, cwd=cwd, **os_bg_kwargs(), **kwargs)
+        r = subprocess.run(
+            command,
+            capture_output=True,
+            text=True,
+            cwd=cwd,
+            errors=sys.getfilesystemencodeerrors(),
+            **os_bg_kwargs(),
+            **kwargs,
+        )
     except UnicodeDecodeError as e:
-        print(command)
+        print(repr(command))
         raise e
 
     log.debug(r.args)
