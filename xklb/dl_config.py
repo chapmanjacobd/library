@@ -32,6 +32,7 @@ yt_recoverable_errors = re.compile(
 .*Main webpage is locked behind the login page
 .*You need to log in to access this content
 .*This video is only available for registered users
+.*episode is not currently available
 .*Could not send HEAD request
 .*Unable to download JSON metadata
 .*Failed to parse JSON Expecting
@@ -57,6 +58,7 @@ yt_meaningless_errors = re.compile(
 .*Timed
 .*Connection reset
 .*ConnectionReset
+.*Unable to extract
 .*Unauthorized
 .*Forbidden
 .*Traceback
@@ -66,6 +68,7 @@ yt_meaningless_errors = re.compile(
 .*Extract.* cookies
 .*File .*, line .*, in
 .*Requested format is not available.
+.*This channel does not have
 .*fragment_filename_sanitized
 .*no suitable InfoExtractor for URL
 .*No such file or directory
@@ -100,6 +103,7 @@ yt_meaningless_errors = re.compile(
 .*Compressed file ended before the end-of-stream marker was reached
 .*Falling back on generic
 .*Some formats are possibly damaged
+.*WARNING: unable to obtain file audio codec with ffprobe
 .*matching opening tag for closing p tag not found
 .*the JSON object must be str, bytes or bytearray, not dict
 .*The read operation timed out
@@ -115,6 +119,8 @@ yt_unrecoverable_errors = re.compile(
 .*has already been recorded in the archive
 .*ideo.*is private
 .*Private video
+.*No status found with that ID
+.*program functionality for this site has been marked as broken, and will probably not work
 .*This playlist is private
 .*Unable to recognize tab page
 .*'bytes' object has no attribute 'encode'
@@ -145,6 +151,7 @@ yt_unrecoverable_errors = re.compile(
 .*: Video unavailable\$
 .* does not exist.\$
 .* has been removed\$
+.*Video no longer exists
 .*Premieres in.*hours\$
 .*This clip is no longer available\$
 .*No media found\$
@@ -198,9 +205,10 @@ yt_unrecoverable_errors = re.compile(
 
 prefix_unrecoverable_errors = re.compile(
     "|".join(
-        r""".*unable to write data: [Errno 28].*
-.*No space left on device.*
-.*unable to create directory [Errno 13].*
-.*Permission denied.*""".splitlines()
+        r""".*unable to write data:
+.*No space left on device
+.*Transport endpoint is not connected
+.*unable to create directory
+.*Permission denied""".splitlines()
     )
 )
