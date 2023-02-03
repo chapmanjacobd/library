@@ -11,7 +11,7 @@ from xklb.utils import log
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        usage="""library scatter [--limit LIMIT] [--policy POLICY] [--sort SORT] [--srcmounts SRCMOUNTS] [database] [relative_paths ...]
+        usage="""library scatter [--limit LIMIT] [--policy POLICY] [--sort SORT] --srcmounts SRCMOUNTS database relative_paths ...
 
     Balance your disks
 
@@ -50,15 +50,15 @@ def parse_args() -> argparse.Namespace:
         │ /mnt/d7 │         1182 │ 52.0 GB      │ 30.9 MB       │ Jan 27         │ Apr 07 2022     │ Jan 31         │
         ╘═════════╧══════════════╧══════════════╧═══════════════╧════════════════╧═════════════════╧════════════════╛
         ### Move 1182 files to /mnt/d7 with this command: ###
-        rsync -aE --xattrs --info=progress2 --no-inc-recursive --remove-source-files --files-from=/tmp/tmpmr1628ij / /mnt/d7
+        rsync -aE --xattrs --info=progress2 --remove-source-files --files-from=/tmp/tmpmr1628ij / /mnt/d7
         ### Move 1198 files to /mnt/d6 with this command: ###
-        rsync -aE --xattrs --info=progress2 --no-inc-recursive --remove-source-files --files-from=/tmp/tmp9yd75f6j / /mnt/d6
+        rsync -aE --xattrs --info=progress2 --remove-source-files --files-from=/tmp/tmp9yd75f6j / /mnt/d6
         ### Move 1146 files to /mnt/d5 with this command: ###
-        rsync -aE --xattrs --info=progress2 --no-inc-recursive --remove-source-files --files-from=/tmp/tmpfrj141jj / /mnt/d5
+        rsync -aE --xattrs --info=progress2 --remove-source-files --files-from=/tmp/tmpfrj141jj / /mnt/d5
         ### Move 1185 files to /mnt/d3 with this command: ###
-        rsync -aE --xattrs --info=progress2 --no-inc-recursive --remove-source-files --files-from=/tmp/tmpqh2euc8n / /mnt/d3
+        rsync -aE --xattrs --info=progress2 --remove-source-files --files-from=/tmp/tmpqh2euc8n / /mnt/d3
         ### Move 1134 files to /mnt/d4 with this command: ###
-        rsync -aE --xattrs --info=progress2 --no-inc-recursive --remove-source-files --files-from=/tmp/tmphzb0gj92 / /mnt/d4
+        rsync -aE --xattrs --info=progress2 --remove-source-files --files-from=/tmp/tmphzb0gj92 / /mnt/d4
 
     Scatter the most recent 100 files
 
@@ -66,23 +66,23 @@ def parse_args() -> argparse.Namespace:
 
     Show disk usage (why not?)
 
-        $ library scatter -m /mnt/d1:/mnt/d2:/mnt/d3:/mnt/d4/:/mnt/d5:/mnt/d6:/mnt/d7 ~/lb/fs/scatter.db blah/ --usage
+        $ library scatter -m /mnt/d1:/mnt/d2:/mnt/d3:/mnt/d4/:/mnt/d5:/mnt/d6:/mnt/d7 ~/lb/fs/scatter.db / --usage
         Relative disk utilization:
-            /mnt/d1: ################# 22.2%
-            /mnt/d2: ################# 22.2%
-            /mnt/d3: #### 5.5%
-            /mnt/d4: ########################## 33.4%
-            /mnt/d5: ############# 16.6%
-            /mnt/d6:  0.0%
-            /mnt/d7:  0.0%
+            /mnt/d1: ################# 22.2 percent
+            /mnt/d2: ################# 22.2 percent
+            /mnt/d3: #### 5.5 percent
+            /mnt/d4: ########################## 33.4 percent
+            /mnt/d5: ############# 16.6 percent
+            /mnt/d6:  0.0 percent
+            /mnt/d7:  0.0 percent
         Relative free space:
-            /mnt/d1:  0.1%
-            /mnt/d2:  0.1%
-            /mnt/d3:  0.1%
-            /mnt/d4:  0.1%
-            /mnt/d5: ########## 13.6%
-            /mnt/d6: ############################## 37.6%
-            /mnt/d7: ###################################### 48.4%
+            /mnt/d1:  0.1 percent
+            /mnt/d2:  0.1 percent
+            /mnt/d3:  0.1 percent
+            /mnt/d4:  0.1 percent
+            /mnt/d5: ########## 13.6 percent
+            /mnt/d6: ############################## 37.6 percent
+            /mnt/d7: ###################################### 48.4 percent
 
     """
     )
@@ -289,7 +289,7 @@ def scatter() -> None:
 
         print(
             f"""### Move {len(dest_disk_files)} files to {disk_stat['mount']}: ###
-rsync -aE --xattrs --info=progress2 --no-inc-recursive --remove-source-files --files-from={temp_file} / {disk_stat['mount']}"""
+rsync -aE --xattrs --info=progress2 --remove-source-files --files-from={temp_file} / {disk_stat['mount']}"""
         )
 
 
