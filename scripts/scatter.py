@@ -87,7 +87,7 @@ def parse_args() -> argparse.Namespace:
     """
     )
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue")
-    parser.add_argument("--policy", "-p", default="rand")
+    parser.add_argument("--policy", "-p", default="pfrd")
     parser.add_argument("--group", "-g", default="size")
     parser.add_argument("--sort", "-s", default="random()", help="Sort files before moving")
     parser.add_argument("--usage", "-u", action="store_true", help="Show disk usage")
