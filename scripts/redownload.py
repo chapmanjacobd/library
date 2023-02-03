@@ -82,12 +82,19 @@ def list_deletions(args) -> List[dict]:
 
 
 def get_non_tube_media(args, paths) -> List[dict]:
-    media = list(
-        args.db.query(
-            "select * from media where path in (" + ",".join(["?"] * len(paths)) + ")",
-            (*paths,),
-        )
-    )
+    media = []
+    paths = utils.conform(paths)
+    if paths:
+        for p in utils.chunks(paths, consts.SQLITE_PARAM_LIMIT):
+            with args.db.conn:
+                media.extend(
+                    list(
+                        args.db.query(
+                            "select * from media where path in (" + ",".join(["?"] * len(p)) + ")",
+                            (*p,),
+                        )
+                    )
+                )
     return media
 
 
@@ -113,24 +120,23 @@ def get_deleted_media(args) -> List[dict]:
     return media
 
 
-def mark_media_undownloaded(args, paths):
-    paths = utils.conform(paths)
+def mark_media_undownloaded(args, deleted_media):
     m_columns = args.db["media"].columns_dict
 
-    modified_row_count = 0
-    if paths:
-        df_chunked = utils.chunks(paths, consts.SQLITE_PARAM_LIMIT)
-        for l in df_chunked:
-            with args.db.conn:
-                query = "UPDATE media SET time_deleted=0, time_modified=0, time_downloaded=0"
-                if "error" in m_columns:
-                    query += ", error=NULL "
-                if "webpath" in m_columns:
-                    query += f", path=(CASE WHEN webpath LIKE 'http%' THEN webpath ELSE path END)"
-                query += f" WHERE path IN ({','.join(['?'] * len(l))})"
-                cursor = args.db.conn.execute(query, (*l,))
-                modified_row_count += cursor.rowcount
-    return modified_row_count
+    media = deepcopy(deleted_media)
+    for d in media:
+        d["time_deleted"] = 0
+        d["time_modified"] = 0
+        d["time_downloaded"] = 0
+        d.pop("error", None)
+
+        if "webpath" in m_columns and (d.get("webpath") or "").startswith("http"):
+            args.db["media"].delete(d["path"])  # type: ignore
+
+            d["path"] = d["webpath"]
+            args.db["media"].upsert(d, pk="path", alter=True)  # type: ignore
+        else:
+            args.db["media"].upsert(d, pk="path", alter=True)  # type: ignore
 
 
 def print_deletions(args, deletions):
@@ -175,7 +181,7 @@ def redownload() -> None:
             if download_archive.exists():
                 utils.filter_file(str(download_archive), redownload_ids)
 
-        mark_media_undownloaded(args, paths)
+        mark_media_undownloaded(args, deleted_media)
         non_tube_media = get_non_tube_media(args, paths)
 
         print("Marked", len(deleted_media) - len(non_tube_media), "records as downloadable. Redownload via lb download")
@@ -191,7 +197,7 @@ def redownload() -> None:
                     json.dump(non_tube_media, jf)
             print(
                 len(non_tube_media),
-                "records not recognized as tube media. Exported to a temp file. You will need to manually redownload:",
+                "records not recognized as tube media, which you will need to redownload manually. Exported to this temp file:",
                 out_path,
             )
 

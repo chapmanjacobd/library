@@ -690,4 +690,5 @@ def filter_file(path, sieve):
             temp.writelines(l for l in lines if l.rstrip() not in sieve)
             temp.flush()
             os.fsync(temp.fileno())
-    os.replace(temp.name, path)
+    shutil.copy(temp.name, path)
+    os.remove(temp.name)

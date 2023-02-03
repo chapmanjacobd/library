@@ -126,6 +126,8 @@ def create_subcommands_parser():
     subp_move_list.set_defaults(func=scripts.move_list)
     subp_dedupe = add_parser(subparsers, "dedupe")
     subp_dedupe.set_defaults(func=scripts.deduplicate_db)
+    subp_scatter = add_parser(subparsers, "scatter")
+    subp_scatter.set_defaults(func=scripts.scatter)
     subp_christen = add_parser(subparsers, "christen")
     subp_christen.set_defaults(func=scripts.rename_invalid_paths)
     subp_merge_db = add_parser(subparsers, "merge-dbs")
