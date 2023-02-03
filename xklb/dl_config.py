@@ -118,6 +118,7 @@ yt_unrecoverable_errors = re.compile(
 .*It is not available
 .*has already been recorded in the archive
 .*ideo.*is private
+.*The URL must be suitable for the extractor
 .*Private video
 .*No status found with that ID
 .*program functionality for this site has been marked as broken, and will probably not work
