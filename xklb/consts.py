@@ -38,6 +38,7 @@ except Exception:
 
 
 TIME_COLUMNS = (
+    "time_scanned",
     "time_downloaded",
     "time_deleted",
     "time_modified",
