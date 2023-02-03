@@ -8,14 +8,11 @@ from tabulate import tabulate
 from xklb import consts, db, utils
 from xklb.utils import log
 
+scatter_usage = """library scatter [--limit LIMIT] [--policy POLICY] [--sort SORT] --srcmounts SRCMOUNTS database relative_paths ...
 
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        usage="""library scatter [--limit LIMIT] [--policy POLICY] [--sort SORT] --srcmounts SRCMOUNTS database relative_paths ...
+    Balance disk size use
 
-    Balance your disks
-
-        $ library scatter -m /mnt/d1:/mnt/d2:/mnt/d3:/mnt/d4/:/mnt/d5:/mnt/d6:/mnt/d7 ~/lb/fs/scatter.db --sort size subfolder/of/mergerfs/mnt
+        $ library scatter -m /mnt/d1:/mnt/d2:/mnt/d3:/mnt/d4/:/mnt/d5:/mnt/d6:/mnt/d7 ~/lb/fs/scatter.db subfolder/of/mergerfs/mnt
         Current path distribution:
         ╒═════════╤══════════════╤══════════════╤═══════════════╤════════════════╤═════════════════╤════════════════╕
         │ mount   │   file_count │ total_size   │ median_size   │ time_created   │ time_modified   │ time_scanned   │
@@ -60,9 +57,13 @@ def parse_args() -> argparse.Namespace:
         ### Move 1134 files to /mnt/d4 with this command: ###
         rsync -aE --xattrs --info=progress2 --remove-source-files --files-from=/tmp/tmphzb0gj92 / /mnt/d4
 
+    Balance inode use
+
+        $ library scatter -m /mnt/d1:/mnt/d2 --group count ~/lb/fs/scatter.db subfolder
+
     Scatter the most recent 100 files
 
-        $ library scatter -m /mnt/d1:/mnt/d2:/mnt/d3:/mnt/d4/:/mnt/d5:/mnt/d6:/mnt/d7 -l 100 -s 'time_modified desc' ~/lb/fs/scatter.db /
+        $ library scatter -m /mnt/d1:/mnt/d2 -l 100 -s 'time_modified desc' ~/lb/fs/scatter.db /
 
     Show disk usage (why not?)
 
@@ -83,9 +84,11 @@ def parse_args() -> argparse.Namespace:
             /mnt/d5: ########## 13.6 percent
             /mnt/d6: ############################## 37.6 percent
             /mnt/d7: ###################################### 48.4 percent
+"""
 
-    """
-    )
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(usage=scatter_usage)
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue")
     parser.add_argument("--policy", "-p", default="pfrd")
     parser.add_argument("--group", "-g", default="size")
