@@ -43,9 +43,9 @@ def _now_playing(args) -> dict:
 
 def print_now_playing(playing, source) -> None:
     if playing[source].startswith("http"):
-        print(f"[{source}]:", cmd("ffprobe", "-hide_banner", "-loglevel", "info", playing[source]).stderr)
+        print(source, "\t", cmd("ffprobe", "-hide_banner", "-loglevel", "info", playing[source]).stderr)
     else:
-        print(f"[{source}]:", playing[source])
+        print(source, "\t", playing[source])
 
 
 def playback_now() -> None:

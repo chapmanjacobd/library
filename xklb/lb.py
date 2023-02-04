@@ -57,6 +57,7 @@ def usage() -> str:
     statistics:
       lb playlists             List added playlists
       lb dlstatus              Show download status
+      lb usage                 Print mount usage
 
     browser tabs:
       lb tabsadd               Create a tabs database; Add URLs
@@ -77,7 +78,7 @@ def print_help(parser) -> None:
     print(parser.epilog)
 
 
-subcommands = ["fs"]
+subcommands = ["fs", "du"]
 
 
 def consecutive_prefixes(s):
@@ -139,7 +140,7 @@ def create_subcommands_parser():
 
     subp_tubeadd = add_parser(subparsers, "tubeadd", ["dladd", "ta", "da", "xt"])
     subp_tubeadd.set_defaults(func=tube_add)
-    subp_tubeupdate = add_parser(subparsers, "tubeupdate", ["dlupdate", "tu", "du"])
+    subp_tubeupdate = add_parser(subparsers, "tubeupdate", ["dlupdate", "tu"])
     subp_tubeupdate.set_defaults(func=tube_update)
 
     subp_redditadd = add_parser(subparsers, "redditadd", ["ra", "xr"])
@@ -163,6 +164,8 @@ def create_subcommands_parser():
     subp_playlist.set_defaults(func=playlists)
     subp_dlstatus = add_parser(subparsers, "dlstatus", ["ds"])
     subp_dlstatus.set_defaults(func=dlstatus)
+    subp_usage = add_parser(subparsers, "usage", ["du"])
+    subp_usage.set_defaults(func=utils.mount_stats)
 
     subp_playback_now = add_parser(subparsers, "now")
     subp_playback_now.set_defaults(func=playback_now)

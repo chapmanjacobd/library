@@ -21,7 +21,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v1.21.028)
+    xk media library subcommands (v1.22.001)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -61,6 +61,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
     statistics:
       lb playlists             List added playlists
       lb dlstatus              Show download status
+      lb usage                 Print mount usage
 
     browser tabs:
       lb tabsadd               Create a tabs database; Add URLs
@@ -242,26 +243,6 @@ There is also an flag to prioritize folders which have many files which have bee
     Scatter the most recent 100 files
 
         $ library scatter -m /mnt/d1:/mnt/d2 -l 100 -s 'time_modified desc' ~/lb/fs/scatter.db /
-
-    Show disk usage (why not?)
-
-        $ library scatter -m /mnt/d1:/mnt/d2:/mnt/d3:/mnt/d4/:/mnt/d5:/mnt/d6:/mnt/d7 ~/lb/fs/scatter.db / --usage
-        Relative disk utilization:
-            /mnt/d1: ################# 22.2 percent
-            /mnt/d2: ################# 22.2 percent
-            /mnt/d3: #### 5.5 percent
-            /mnt/d4: ########################## 33.4 percent
-            /mnt/d5: ############# 16.6 percent
-            /mnt/d6:  0.0 percent
-            /mnt/d7:  0.0 percent
-        Relative free space:
-            /mnt/d1:  0.1 percent
-            /mnt/d2:  0.1 percent
-            /mnt/d3:  0.1 percent
-            /mnt/d4:  0.1 percent
-            /mnt/d5: ########## 13.6 percent
-            /mnt/d6: ############################## 37.6 percent
-            /mnt/d7: ###################################### 48.4 percent
 
 
     positional arguments:

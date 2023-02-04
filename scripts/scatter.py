@@ -64,26 +64,6 @@ scatter_usage = """library scatter [--limit LIMIT] [--policy POLICY] [--sort SOR
     Scatter the most recent 100 files
 
         $ library scatter -m /mnt/d1:/mnt/d2 -l 100 -s 'time_modified desc' ~/lb/fs/scatter.db /
-
-    Show disk usage (why not?)
-
-        $ library scatter -m /mnt/d1:/mnt/d2:/mnt/d3:/mnt/d4/:/mnt/d5:/mnt/d6:/mnt/d7 ~/lb/fs/scatter.db / --usage
-        Relative disk utilization:
-            /mnt/d1: ################# 22.2 percent
-            /mnt/d2: ################# 22.2 percent
-            /mnt/d3: #### 5.5 percent
-            /mnt/d4: ########################## 33.4 percent
-            /mnt/d5: ############# 16.6 percent
-            /mnt/d6:  0.0 percent
-            /mnt/d7:  0.0 percent
-        Relative free space:
-            /mnt/d1:  0.1 percent
-            /mnt/d2:  0.1 percent
-            /mnt/d3:  0.1 percent
-            /mnt/d4:  0.1 percent
-            /mnt/d5: ########## 13.6 percent
-            /mnt/d6: ############################## 37.6 percent
-            /mnt/d7: ###################################### 48.4 percent
 """
 
 
@@ -93,7 +73,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--policy", "-p", default="pfrd")
     parser.add_argument("--group", "-g", default="size")
     parser.add_argument("--sort", "-s", default="random()", help="Sort files before moving")
-    parser.add_argument("--usage", "-u", action="store_true", help="Show disk usage")
     parser.add_argument("--verbose", "-v", action="count", default=0)
     parser.add_argument("--srcmounts", "-m", required=True, help="/mnt/d1:/mnt/d2")
 
@@ -143,24 +122,6 @@ def get_table(args) -> List[dict]:
     return media
 
 
-def get_disk_stats(src_mounts):
-    mount_space = []
-    total_used = 0
-    total_free = 0
-    grand_total = 0
-    for src_mount in src_mounts:
-        total, used, free = shutil.disk_usage(src_mount)
-        total_used += used
-        total_free += free
-        grand_total += total
-        mount_space.append((src_mount, used, free, total))
-
-    return [
-        {"mount": mount, "used": used / total_used, "free": free / total_free, "total": total / grand_total}
-        for mount, used, free, total in mount_space
-    ]
-
-
 def get_path_stats(args, data):
     result = []
     for srcmount in args.srcmounts:
@@ -178,16 +139,6 @@ def get_path_stats(args, data):
                 },
             )
     return result
-
-
-def print_disk_stats(space):
-    print("Relative disk utilization:")
-    for d in space:
-        print(f"{d['mount']}: {'#' * int(d['used'] * 80)} {d['used']:.1%}")
-
-    print("\nRelative free space:")
-    for d in space:
-        print(f"{d['mount']}: {'#' * int(d['free'] * 80)} {d['free']:.1%}")
 
 
 def print_path_stats(tbl):
@@ -254,11 +205,7 @@ def rebin_files(args, disk_stats, all_files):
 def scatter() -> None:
     args = parse_args()
 
-    disk_stats = get_disk_stats(args.srcmounts)
-    if args.usage:
-        print_disk_stats(disk_stats)
-        raise SystemExit(0)
-
+    disk_stats = utils.get_mount_stats(args.srcmounts)
     files = get_table(args)
 
     path_stats = get_path_stats(args, files)
