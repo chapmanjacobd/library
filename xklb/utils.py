@@ -300,11 +300,12 @@ def replace_folder_ending(string, prefixes):
     return string
 
 
-def clean_path(p):
+def clean_path(b):
+    p = b.decode("utf-8", "backslashreplace")
     p = ftfy.fix_text(p, explain=False)
     path = Path(p)
     ext = path.suffix
-    p = str(path.parent / path.stem)
+    p = str(path.parent / path.stem[:1024])
 
     while True:
         p1 = p

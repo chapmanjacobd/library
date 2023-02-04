@@ -1,4 +1,5 @@
 import argparse, shutil
+from os import fsdecode
 from pathlib import Path
 
 from xklb import utils
@@ -8,6 +9,7 @@ from xklb.utils import log
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("paths", nargs="*")
+    parser.add_argument("--overwrite", "-f", action="store_true")
     parser.add_argument("--dry-run", "-n", action="store_true")
     parser.add_argument("--verbose", "-v", action="count", default=0)
     args = parser.parse_args()
@@ -16,22 +18,29 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def rename_path(args, p):
-    fixed = utils.clean_path(p)
+def rename_path(args, b):
+    fixed = utils.clean_path(b)
 
-    if p != fixed:
+    if b != fixed.encode():
+        printable_p = b.decode("utf-8", "backslashreplace")
         if args.dry_run:
-            log.warning(p)
+            log.warning(printable_p)
             log.warning(fixed)
             print("")
         else:
             try:
                 Path(fixed).parent.mkdir(parents=True, exist_ok=True)
-                shutil.move(p, fixed)
+
+                if Path(fixed).exists() and not args.overwrite:
+                    raise FileExistsError
+                shutil.copy(b, fixed)
+                Path(fsdecode(b)).unlink()
             except FileNotFoundError:
-                log.warning("FileNotFound. %s", p)
+                log.warning("FileNotFound. %s", printable_p)
+            except FileExistsError:
+                log.warning("Destination file already exists. %s", fixed)
             except shutil.Error as e:
-                log.warning("%s. %s", e, p)
+                log.warning("%s. %s", e, printable_p)
             else:
                 log.info(fixed)
 
@@ -41,7 +50,7 @@ def rename_invalid_paths() -> None:
 
     for path in args.paths:
         log.info("[%s]: Processing subfolders...", path)
-        subpaths = sorted((str(p) for p in Path(path).rglob("*")), key=len, reverse=True)
+        subpaths = sorted((bytes(p) for p in Path(path).rglob("*")), key=len, reverse=True)
         for p in subpaths:
             rename_path(args, p)
         # Parallel()(delayed(rename_path)(p) for p in subpaths)  # mostly IO bound
