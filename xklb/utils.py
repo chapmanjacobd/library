@@ -692,3 +692,39 @@ def filter_file(path, sieve):
             os.fsync(temp.fileno())
     shutil.copy(temp.name, path)
     os.remove(temp.name)
+
+
+def get_mount_stats(src_mounts):
+    mount_space = []
+    total_used = 0
+    total_free = 0
+    grand_total = 0
+    for src_mount in src_mounts:
+        total, used, free = shutil.disk_usage(src_mount)
+        total_used += used
+        total_free += free
+        grand_total += total
+        mount_space.append((src_mount, used, free, total))
+
+    return [
+        {"mount": mount, "used": used / total_used, "free": free / total_free, "total": total / grand_total}
+        for mount, used, free, total in mount_space
+    ]
+
+
+def print_mount_stats(space):
+    print("Relative disk utilization:")
+    for d in space:
+        print(f"{d['mount']}: {'#' * int(d['used'] * 80)} {d['used']:.1%}")
+
+    print("\nRelative free space:")
+    for d in space:
+        print(f"{d['mount']}: {'#' * int(d['free'] * 80)} {d['free']:.1%}")
+
+
+def mount_stats():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-v", "--verbose", action="count", default=0)
+    parser.add_argument("mounts", nargs="+")
+    args = parser.parse_args()
+    print_mount_stats(get_mount_stats(args.mounts))
