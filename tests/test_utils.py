@@ -118,9 +118,10 @@ def test_clean_path():
     def p(string):
         return str(Path(string))
 
-    assert utils.clean_path("/3_seconds_ago.../Mike.webm") == p("/3_seconds_ago…/Mike.webm")
-    assert utils.clean_path("/3_seconds_ago../Mike.webm") == p("/3_seconds_ago/Mike.webm")
-    assert utils.clean_path("/3_seconds_ago./Mike.webm") == p("/3_seconds_ago/Mike.webm")
-    assert utils.clean_path("/3_seconds_ago___/ Mike.webm") == p("/3_seconds_ago/Mike.webm")
-    assert utils.clean_path("/__init__.py") == p("/__init__.py")
-    assert utils.clean_path("/test.") == p("/test")
+    assert utils.clean_path(b"/3_seconds_ago.../Mike.webm") == p("/3_seconds_ago…/Mike.webm")
+    assert utils.clean_path(b"/3_seconds_ago../Mike.webm") == p("/3_seconds_ago/Mike.webm")
+    assert utils.clean_path(b"/3_seconds_ago./Mike.webm") == p("/3_seconds_ago/Mike.webm")
+    assert utils.clean_path(b"/3_seconds_ago___/ Mike.webm") == p("/3_seconds_ago/Mike.webm")
+    assert utils.clean_path(b"/__init__.py") == p("/__init__.py")
+    assert utils.clean_path(b"/test.") == p("/test")
+    assert utils.clean_path(b"\xff\xfeH") == p("\\xff\\xfeH")
