@@ -300,7 +300,7 @@ def replace_folder_ending(string, prefixes):
     return string
 
 
-def clean_path(b):
+def clean_path(b, remove_spaces=False):
     p = b.decode("utf-8", "backslashreplace")
     p = ftfy.fix_text(p, explain=False)
     path = Path(p)
@@ -338,6 +338,8 @@ def clean_path(b):
         p = replace_folder_ending(p, [" ", "-", "_", "."])
         p = replace_basename_prefixes(p, [" ", "-"])
         p = remove_whitespaace(p)
+        if remove_spaces:
+            p.replace(" ", ".")
         p = re.sub(r"\.+$", "", p)
         if p1 == p:
             break

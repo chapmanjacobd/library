@@ -9,8 +9,9 @@ from xklb.utils import log
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("paths", nargs="*")
+    parser.add_argument("--replace-space-with-period", action="store_true")
     parser.add_argument("--overwrite", "-f", action="store_true")
-    parser.add_argument("--dry-run", "-n", action="store_true")
+    parser.add_argument("--run", "-r", action="store_true")
     parser.add_argument("--verbose", "-v", action="count", default=0)
     args = parser.parse_args()
 
@@ -19,15 +20,11 @@ def parse_args() -> argparse.Namespace:
 
 
 def rename_path(args, b):
-    fixed = utils.clean_path(b)
+    fixed = utils.clean_path(b, args.replace_space_with_period)
 
     if b != fixed.encode():
         printable_p = b.decode("utf-8", "backslashreplace")
-        if args.dry_run:
-            log.warning(printable_p)
-            log.warning(fixed)
-            print("")
-        else:
+        if args.run:
             try:
                 Path(fixed).parent.mkdir(parents=True, exist_ok=True)
 
@@ -43,6 +40,10 @@ def rename_path(args, b):
                 log.warning("%s. %s", e, printable_p)
             else:
                 log.info(fixed)
+        else:
+            log.warning(printable_p)
+            log.warning(fixed)
+            print("")
 
 
 def rename_invalid_paths() -> None:
