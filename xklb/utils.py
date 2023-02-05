@@ -298,49 +298,38 @@ def remove_consecutives(string, chars):
 
 
 @repeat_until_same
-def remove_path_prefixes(string, prefixes):
+def remove_prefixes(string, prefixes):
     for prefix in prefixes:
-        string = string.replace(os.sep + prefix, os.sep)
+        if string.startswith(prefix):
+            string = string.replace(prefix, "", 1)
     return string
 
 
 @repeat_until_same
-def remove_path_suffixes(string, suffixes):
+def remove_suffixes(string, suffixes):
     for suffix in suffixes:
-        string = string.replace(suffix + os.sep, os.sep)
+        if string.endswith(suffix):
+            string = string[: -len(suffix)]
     return string
-
-
-@repeat_until_same
-def remove_stem_suffixes(string, suffixes):
-    for suffix in suffixes:
-        if not string.endswith(suffix + os.sep):
-            string = re.sub(rf"\{suffix}+$", "", string)
-    return string
-
-
-@repeat_until_same
-def preserve_hierarchy(p):
-    return p.replace(os.sep + os.sep, os.sep + "_" + os.sep)
 
 
 @repeat_until_same
 def clean_string(p):
     p = (
-        p.replace("...", "…")
-        .replace("*", "")
+        p.replace("*", "")
         .replace("&", "")
         .replace("%", "")
         .replace("$", "")
         .replace("#", "")
-        .replace("@", "")
-        .replace("!", "")
+        .replace(" @", "")
+        .replace("?.", ".")
+        .replace("!.", ".")
         .replace("^", "")
         .replace("'", "")
         .replace('"', "")
         .replace(")", "")
     )
-    p = remove_consecutives(p, chars=["-", "."])
+    p = remove_consecutives(p, chars=["."])
     p = (
         p.replace("(", " ")
         .replace("-.", ".")
@@ -362,25 +351,21 @@ def clean_path(b, dot_space=False):
     path = Path(p)
     ext = path.suffix
 
-    parent = str(path.parent) + os.sep
-    if parent == os.sep * 2:
-        parent = os.sep
-    parent = clean_string(parent)
+    parent = [clean_string(part) for part in path.parent.parts]
     stem = clean_string(path.stem)
-
     # print('cleaned',parent, stem)
-    parent = remove_path_prefixes(parent, [" ", "-"])
+
+    parent = [remove_prefixes(part, [" ", "-"]) for part in parent]
     # print('parent_prefixes', parent, stem)
-    parent = remove_path_suffixes(parent, [" ", "-", "_", "."])
+    parent = [remove_suffixes(part, [" ", "-", "_", "."]) for part in parent]
     # print('parent_suffixes', parent, stem)
 
-    stem = remove_path_prefixes(stem, [" ", "-", "."])
-    stem = remove_stem_suffixes(stem, [" ", "-", "."])
-
+    stem = remove_prefixes(stem, [" ", "-"])
+    stem = remove_suffixes(stem, [" ", "-", "."])
     # print('stem', parent, stem)
-    parent = preserve_hierarchy(parent)
-    # print('preserve_hierarchy', parent, stem)
-    p = str(Path(parent) / stem[:1024])
+
+    parent = ["_" if part == "" else part for part in parent]
+    p = str(Path(*parent) / stem[:1024])
 
     if dot_space:
         p = p.replace(" ", ".")
