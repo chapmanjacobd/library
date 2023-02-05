@@ -772,7 +772,7 @@ def human_to_bytes(input_str):
 
     if unit:
         unit = unit[0]
-        unit = "".join(unit.lower().split("i"))
+        unit = "".join(unit.split("i"))
 
         if not unit.endswith("b"):  # handle cases like 'k'
             unit += "b"
@@ -783,26 +783,64 @@ def human_to_bytes(input_str):
     return int(float(value) * unit_multiplier)
 
 
-def parse_size(sizes):
+def parse_human_to_sql(human_to_x, var, sizes):
     size_rules = ""
 
     for size in sizes:
         if ">" in size:
             size = size.lstrip(">")
-            size_rules += f"and size > {human_to_bytes(size)} "
+            size_rules += f"and {var} > {human_to_x(size)} "
         elif "<" in size:
             size = size.lstrip("<")
-            size_rules += f"and size < {human_to_bytes(size)} "
+            size_rules += f"and {var} < {human_to_x(size)} "
         elif "+" in size:
             size = size.lstrip("+")
-            size_rules += f"and size >= {human_to_bytes(size)} "
+            size_rules += f"and {var} >= {human_to_x(size)} "
         elif "-" in size:
             size = size.lstrip("-")
-            size_rules += f"and {human_to_bytes(size)} >= size "
+            size_rules += f"and {human_to_x(size)} >= {var} "
         else:
             # approximate size rule +-10%
-            size_bytes = human_to_bytes(size)
+            size_bytes = human_to_x(size)
             size_rules += (
-                f"and {int(size_bytes + (size_bytes /10))} >= size and size >= {int(size_bytes - (size_bytes /10))} "
+                f"and {int(size_bytes + (size_bytes /10))} >= {var} and {var} >= {int(size_bytes - (size_bytes /10))} "
             )
     return size_rules
+
+
+def human_to_seconds(input_str):
+    time_units = {
+        "s": 1,
+        "sec": 1,
+        "second": 1,
+        "m": 60,
+        "min": 60,
+        "minute": 60,
+        "h": 3600,
+        "hr": 3600,
+        "hour": 3600,
+        "d": 86400,
+        "day": 86400,
+        "w": 604800,
+        "week": 604800,
+        "mo": 2592000,
+        "mon": 2592000,
+        "month": 2592000,
+        "y": 31536000,
+        "yr": 31536000,
+        "year": 31536000,
+    }
+
+    input_str = input_str.strip().lower()
+
+    value = re.findall(r"\d+\.?\d*", input_str)[0]
+    unit = re.findall(r"[a-z]+", input_str, re.IGNORECASE)
+
+    if unit:
+        unit = unit[0]
+        if unit != "s":
+            unit = unit.rstrip("s")
+    else:
+        unit = "m"
+
+    return int(float(value) * time_units[unit])

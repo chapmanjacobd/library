@@ -221,26 +221,6 @@ def usage(action, default_db) -> str:
 """
 
 
-def parse_duration(args):
-    SEC_FROM_M = 60
-    duration_m = 0
-    duration_rules = ""
-
-    for duration_rule in args.duration:
-        if "+" in duration_rule:
-            # min duration rule
-            duration_rules += f"and duration >= {int(abs(float(duration_rule)) * SEC_FROM_M)} "
-        elif "-" in duration_rule:
-            # max duration rule
-            duration_rules += f"and {int(abs(float(duration_rule)) * SEC_FROM_M)} >= duration "
-        else:
-            # approximate duration rule
-            duration_m = float(duration_rule) * SEC_FROM_M
-            duration_rules += f"and {int(duration_m + (duration_m /10))} >= duration and duration >= {int(duration_m - (duration_m /10))} "
-
-    return duration_rules
-
-
 def parse_args_sort(args, action):
     if args.sort:
         args.sort = " ".join(args.sort).split(",")
@@ -381,13 +361,13 @@ def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
         args.cols = list(utils.flatten([s.split(",") for s in args.cols]))
 
     if args.duration:
-        args.duration = parse_duration(args)
+        args.duration = utils.parse_human_to_sql(utils.human_to_seconds, "duration", args.duration)
 
     if args.size:
-        args.size = utils.parse_size(args.size)
+        args.size = utils.parse_human_to_sql(utils.human_to_bytes, "size", args.size)
 
     if args.duration_from_size:
-        args.duration_from_size = utils.parse_size(args.duration_from_size)
+        args.duration_from_size = utils.parse_human_to_sql(utils.human_to_bytes, "size", args.duration_from_size)
 
     if args.chromecast:
         from catt.api import CattDevice
