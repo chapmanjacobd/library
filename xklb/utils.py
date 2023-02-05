@@ -760,3 +760,49 @@ def mount_stats():
     parser.add_argument("mounts", nargs="+")
     args = parser.parse_args()
     print_mount_stats(get_mount_stats(args.mounts))
+
+
+def human_to_bytes(input_str):
+    byte_map = {"b": 1, "kb": 1024, "mb": 1024**2, "gb": 1024**3, "tb": 1024**4, "pb": 1024**5}
+
+    input_str = input_str.strip().lower()
+
+    value = re.findall(r"\d+\.?\d*", input_str)[0]
+    unit = re.findall(r"[a-z]+", input_str, re.IGNORECASE)
+
+    if unit:
+        unit = unit[0]
+        unit = "".join(unit.lower().split("i"))
+
+        if not unit.endswith("b"):  # handle cases like 'k'
+            unit += "b"
+    else:
+        unit = "mb"
+
+    unit_multiplier = byte_map.get(unit, 1024**2)  # default to MB
+    return int(float(value) * unit_multiplier)
+
+
+def parse_size(sizes):
+    size_rules = ""
+
+    for size in sizes:
+        if ">" in size:
+            size = size.lstrip(">")
+            size_rules += f"and size > {human_to_bytes(size)} "
+        elif "<" in size:
+            size = size.lstrip("<")
+            size_rules += f"and size < {human_to_bytes(size)} "
+        elif "+" in size:
+            size = size.lstrip("+")
+            size_rules += f"and size >= {human_to_bytes(size)} "
+        elif "-" in size:
+            size = size.lstrip("-")
+            size_rules += f"and {human_to_bytes(size)} >= size "
+        else:
+            # approximate size rule +-10%
+            size_bytes = human_to_bytes(size)
+            size_rules += (
+                f"and {int(size_bytes + (size_bytes /10))} >= size and size >= {int(size_bytes - (size_bytes /10))} "
+            )
+    return size_rules
