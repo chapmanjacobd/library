@@ -488,6 +488,9 @@ def mpv_enrich2(args, media) -> List[dict]:
 
 
 def dict_filter_bool(kwargs, keep_0=True) -> Optional[dict]:
+    if kwargs is None:
+        return None
+
     if keep_0:
         filtered_dict = {k: v for k, v in kwargs.items() if v is not None and v != "" and v is not False}
     else:

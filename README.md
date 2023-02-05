@@ -21,7 +21,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v1.22.007)
+    xk media library subcommands (v1.22.008)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -236,9 +236,9 @@ There is also an flag to prioritize folders which have many files which have bee
         ### Move 1134 files to /mnt/d4 with this command: ###
         rsync -aE --xattrs --info=progress2 --remove-source-files --files-from=/tmp/tmphzb0gj92 / /mnt/d4
 
-    Balance inodes
+    Balance inodes for specific subfolder
 
-        $ library scatter -m /mnt/d1:/mnt/d2 --group count ~/lb/fs/scatter.db subfolder
+        $ library scatter -m /mnt/d1:/mnt/d2 ~/lb/fs/scatter.db subfolder --group count --sort 'size desc'
 
     Scatter the most recent 100 files
 

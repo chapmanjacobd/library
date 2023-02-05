@@ -53,6 +53,8 @@ def test_safe_unpack():
     assert utils.safe_unpack([1, 2, 3, 4]) == 1
     assert utils.safe_unpack(None, "", 0, 1, 2, 3, 4) == 1
     assert utils.safe_unpack([None, 1]) == 1
+    assert utils.safe_unpack([None]) == None
+    assert utils.safe_unpack(None) == None
 
 
 def test_dict_filter_bool():
@@ -62,6 +64,7 @@ def test_dict_filter_bool():
     assert utils.dict_filter_bool({"t": None, "t1": 1}) == {"t1": 1}
     assert utils.dict_filter_bool({"t": None}) is None
     assert utils.dict_filter_bool({"t": ""}) is None
+    assert utils.dict_filter_bool(None) is None
 
 
 def test_list_dict_filter_bool():
