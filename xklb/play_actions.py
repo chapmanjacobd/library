@@ -7,7 +7,7 @@ from xklb import consts, db, player, tube_backend, utils
 from xklb.consts import SC
 from xklb.player import get_ordinal_media, mark_media_deleted, override_sort
 from xklb.subtitle import externalize_subtitle
-from xklb.utils import cmd, log
+from xklb.utils import cmd, human_to_bytes, log
 
 
 def usage(action, default_db) -> str:
@@ -221,25 +221,6 @@ def usage(action, default_db) -> str:
 """
 
 
-def parse_size(size):
-    B_TO_MB = 1024 * 1024
-    size_mb = 0
-    size_rules = ""
-
-    for size_rule in size:
-        if "+" in size_rule:
-            # min size rule
-            size_rules += f"and size >= {abs(int(size_rule)) * B_TO_MB} "
-        elif "-" in size_rule:
-            # max size rule
-            size_rules += f"and {abs(int(size_rule)) * B_TO_MB} >= size "
-        else:
-            # approximate size rule
-            size_mb = float(size_rule) * B_TO_MB
-            size_rules += f"and {size_mb + (size_mb /10)} >= size and size >= {size_mb - (size_mb /10)} "
-    return size_rules
-
-
 def parse_duration(args):
     SEC_FROM_M = 60
     duration_m = 0
@@ -333,7 +314,7 @@ def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
     parser.add_argument("--prefix", default="", help=argparse.SUPPRESS)
 
     parser.add_argument("--duration", "-d", action="append", help=argparse.SUPPRESS)
-    parser.add_argument("--size", "-z", action="append", help=argparse.SUPPRESS)
+    parser.add_argument("--size", "-S", action="append", help=argparse.SUPPRESS)
     parser.add_argument("--duration-from-size", action="append", help=argparse.SUPPRESS)
 
     parser.add_argument("--print", "-p", default=False, const="p", nargs="?", help=argparse.SUPPRESS)
@@ -341,7 +322,7 @@ def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
 
     parser.add_argument("--cols", "-cols", "-col", nargs="*", help=argparse.SUPPRESS)
     parser.add_argument("--limit", "-L", "-queue", "--queue", help=argparse.SUPPRESS)
-    parser.add_argument("--skip", "-S", help=argparse.SUPPRESS)
+    parser.add_argument("--skip", "--offset", help=argparse.SUPPRESS)
     parser.add_argument(
         "--partial", "-P", "--recent", "-R", default=False, const="n", nargs="?", help=argparse.SUPPRESS
     )
@@ -403,10 +384,10 @@ def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
         args.duration = parse_duration(args)
 
     if args.size:
-        args.size = parse_size(args.size)
+        args.size = utils.parse_size(args.size)
 
     if args.duration_from_size:
-        args.duration_from_size = parse_size(args.duration_from_size)
+        args.duration_from_size = utils.parse_size(args.duration_from_size)
 
     if args.chromecast:
         from catt.api import CattDevice

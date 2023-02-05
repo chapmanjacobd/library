@@ -101,6 +101,56 @@ def test_col_naturalsize():
     assert utils.col_naturalsize([{"t": 946684800, "t1": 1}], "t") == [{"t": "946.7 MB", "t1": 1}]
 
 
+def test_human_to_bytes():
+    assert [
+        utils.human_to_bytes("30"),
+        utils.human_to_bytes("30b"),
+        utils.human_to_bytes("30kb"),
+        utils.human_to_bytes("30mb"),
+        utils.human_to_bytes("30gb"),
+        utils.human_to_bytes("30tb"),
+        utils.human_to_bytes("30TiB"),
+        utils.human_to_bytes("30TB"),
+        utils.human_to_bytes("3.5mb"),
+        utils.human_to_bytes("3.5 mb"),
+        utils.human_to_bytes("3.5 mib"),
+    ] == [
+        31457280,
+        30,
+        30720,
+        31457280,
+        32212254720,
+        32985348833280,
+        32985348833280,
+        32985348833280,
+        3670016,
+        3670016,
+        3670016,
+    ]
+
+
+def test_parse_size():
+    result = utils.parse_size(["<10MB"])
+    expected_result = "and size < 10485760 "
+    assert result == expected_result
+
+    result = utils.parse_size([">100KB", "<10MB"])
+    expected_result = "and size > 102400 and size < 10485760 "
+    assert result == expected_result
+
+    result = utils.parse_size(["+100KB"])
+    expected_result = "and size >= 102400 "
+    assert result == expected_result
+
+    result = utils.parse_size(["-10MB"])
+    expected_result = "and 10485760 >= size "
+    assert result == expected_result
+
+    result = utils.parse_size(["100KB"])
+    expected_result = "and 112640 >= size and size >= 92160 "
+    assert result == expected_result
+
+
 def test_human_time():
     assert utils.human_time(0) is None
     assert utils.human_time(946684800) == "30 years and 7 days"

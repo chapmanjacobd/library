@@ -14,11 +14,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--depth", "-d", default=0, type=int, help="Depth of folders")
     parser.add_argument("--lower", type=int, help="Number of files per folder lower limit")
     parser.add_argument("--upper", type=int, help="Number of files per folder upper limit")
+    parser.add_argument(
+        "--size", "-S", action="append", help="Only include files of specific sizes (uses the same syntax as fd-find)"
+    )
     parser.add_argument("--verbose", "-v", action="count", default=0)
 
     parser.add_argument("database")
     args = parser.parse_args()
     args.db = db.connect(args)
+
+    if args.size:
+        args.size = utils.parse_size(args.size)
+
     log.info(utils.dict_filter_bool(args.__dict__))
     return args
 
@@ -96,6 +103,7 @@ def get_table(args) -> List[dict]:
         from media
         where 1=1
             {'and time_downloaded > 0' if 'time_downloaded' in columns else ''}
+            {args.size if args.size else ''}
         order by path
         """
         )
