@@ -38,6 +38,7 @@ def parse_args(action, usage) -> argparse.Namespace:
     parser.set_defaults(profile=DBType.video)
     parser.add_argument("--category", "-c", help=argparse.SUPPRESS)
 
+    parser.add_argument("--io-multiplier", default="1")
     parser.add_argument("--ocr", "--OCR", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--speech-recognition", "--speech", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--scan-subtitles", "--scan-subtitle", action="store_true", help=argparse.SUPPRESS)
@@ -77,6 +78,7 @@ def parse_args(action, usage) -> argparse.Namespace:
     args.db = db.connect(args)
     if hasattr(args, "paths"):
         args.paths = utils.conform(args.paths)
+    args.io_multiplier = float(args.io_multiplier)
     log.info(utils.dict_filter_bool(args.__dict__))
 
     if args.profile in (DBType.audio, DBType.video) and not which("ffprobe"):
@@ -151,8 +153,8 @@ def extract_chunk(args, chunk_paths) -> None:
     from joblib import Parallel, delayed
 
     n_jobs = -1
-    if args.profile in (DBType.text, DBType.image, DBType.filesystem):
-        n_jobs = consts.CPU_COUNT
+    if args.io_multiplier > 1:
+        n_jobs = int(consts.CPU_COUNT * args.io_multiplier)  # useful for text, image, filesystem db types
     if args.verbose >= 2:
         n_jobs = 1
 
