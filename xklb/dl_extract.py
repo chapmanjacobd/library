@@ -68,7 +68,7 @@ def parse_args(action, usage):
 
     if action == SC.download:
         if args.duration:
-            args.duration = play_actions.parse_duration(args)
+            args.duration = utils.parse_human_to_sql(utils.human_to_seconds, "duration", args.duration)
 
         if not args.profile and not args.print:
             print("Download profile must be specified. Use one of: --video --audio")

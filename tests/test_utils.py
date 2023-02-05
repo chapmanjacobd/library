@@ -53,8 +53,8 @@ def test_safe_unpack():
     assert utils.safe_unpack([1, 2, 3, 4]) == 1
     assert utils.safe_unpack(None, "", 0, 1, 2, 3, 4) == 1
     assert utils.safe_unpack([None, 1]) == 1
-    assert utils.safe_unpack([None]) == None
-    assert utils.safe_unpack(None) == None
+    assert utils.safe_unpack([None]) is None
+    assert utils.safe_unpack(None) is None
 
 
 def test_dict_filter_bool():
@@ -129,25 +129,64 @@ def test_human_to_bytes():
     ]
 
 
+def test_human_to_seconds():
+    assert utils.human_to_seconds("30") == 1800
+    assert utils.human_to_seconds("30s") == 30
+    assert utils.human_to_seconds("30m") == 1800
+    assert utils.human_to_seconds("30mins") == 1800
+    assert utils.human_to_seconds("30h") == 3600 * 30
+    assert utils.human_to_seconds("30 hour") == 3600 * 30
+    assert utils.human_to_seconds("30hours") == 3600 * 30
+    assert utils.human_to_seconds("1 week") == 86400 * 7
+    assert utils.human_to_seconds("30d") == 86400 * 30
+    assert utils.human_to_seconds("30 days") == 86400 * 30
+    assert utils.human_to_seconds("3.5mo") == 9072000
+    assert utils.human_to_seconds("3.5months") == 9072000
+    assert utils.human_to_seconds("3.5 years") == 110376000
+    assert utils.human_to_seconds("3.5y") == 110376000
+
+
 def test_parse_size():
-    result = utils.parse_size(["<10MB"])
+    result = utils.parse_human_to_sql(utils.human_to_bytes, "size", ["<10MB"])
     expected_result = "and size < 10485760 "
     assert result == expected_result
 
-    result = utils.parse_size([">100KB", "<10MB"])
+    result = utils.parse_human_to_sql(utils.human_to_bytes, "size", [">100KB", "<10MB"])
     expected_result = "and size > 102400 and size < 10485760 "
     assert result == expected_result
 
-    result = utils.parse_size(["+100KB"])
+    result = utils.parse_human_to_sql(utils.human_to_bytes, "size", ["+100KB"])
     expected_result = "and size >= 102400 "
     assert result == expected_result
 
-    result = utils.parse_size(["-10MB"])
+    result = utils.parse_human_to_sql(utils.human_to_bytes, "size", ["-10MB"])
     expected_result = "and 10485760 >= size "
     assert result == expected_result
 
-    result = utils.parse_size(["100KB"])
+    result = utils.parse_human_to_sql(utils.human_to_bytes, "size", ["100KB"])
     expected_result = "and 112640 >= size and size >= 92160 "
+    assert result == expected_result
+
+
+def test_parse_duration():
+    result = utils.parse_human_to_sql(utils.human_to_seconds, "duration", ["<30s"])
+    expected_result = "and duration < 30 "
+    assert result == expected_result
+
+    result = utils.parse_human_to_sql(utils.human_to_seconds, "duration", [">1min", "<30s"])
+    expected_result = "and duration > 60 and duration < 30 "
+    assert result == expected_result
+
+    result = utils.parse_human_to_sql(utils.human_to_seconds, "duration", ["+1min"])
+    expected_result = "and duration >= 60 "
+    assert result == expected_result
+
+    result = utils.parse_human_to_sql(utils.human_to_seconds, "duration", ["-30s"])
+    expected_result = "and 30 >= duration "
+    assert result == expected_result
+
+    result = utils.parse_human_to_sql(utils.human_to_seconds, "duration", ["1min"])
+    expected_result = "and 66 >= duration and duration >= 54 "
     assert result == expected_result
 
 
