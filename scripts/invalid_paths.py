@@ -37,8 +37,8 @@ def rename_path(args, b):
 
                 if Path(fixed).exists() and not args.overwrite:
                     raise FileExistsError
-                shutil.copy(b, fixed)
-                p.unlink()
+
+                p.rename(fixed)
             except FileNotFoundError:
                 log.warning("FileNotFound. %s", printable_p)
             except FileExistsError:
