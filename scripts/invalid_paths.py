@@ -25,13 +25,20 @@ def rename_path(args, b):
     if b != fixed.encode():
         printable_p = b.decode("utf-8", "backslashreplace")
         if args.run:
+            p = Path(fsdecode(b))
+            if not p.is_file():
+                log.info("Skipping non-file. %s", printable_p)
+                return
+            if p.is_symlink():
+                log.info("Skipping symlink. %s", printable_p)
+                return
             try:
                 Path(fixed).parent.mkdir(parents=True, exist_ok=True)
 
                 if Path(fixed).exists() and not args.overwrite:
                     raise FileExistsError
                 shutil.copy(b, fixed)
-                Path(fsdecode(b)).unlink()
+                p.unlink()
             except FileNotFoundError:
                 log.warning("FileNotFound. %s", printable_p)
             except FileExistsError:

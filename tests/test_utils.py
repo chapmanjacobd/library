@@ -108,13 +108,6 @@ def test_col_duration():
     assert utils.col_duration([{"t": 946684800, "t1": 1}], "t") == [{"t": "30 years and 7 days", "t1": 1}]
 
 
-def test_preserve_hierarchy():
-    assert utils.preserve_hierarchy(os.sep * 1) == os.sep
-    assert utils.preserve_hierarchy(os.sep * 2) == "_".join([os.sep for _ in range(2)])
-    assert utils.preserve_hierarchy(os.sep * 3) == "_".join([os.sep for _ in range(3)])
-    assert utils.preserve_hierarchy(os.sep * 4) == "_".join([os.sep for _ in range(4)])
-
-
 def test_remove_consecutive():
     assert utils.remove_consecutive(os.sep) == os.sep
     assert utils.remove_consecutive("........", char=".") == "."
@@ -128,41 +121,26 @@ def test_remove_consecutives():
     assert utils.remove_consecutives(" ..   ", chars=[" ", "."]) == " . "
 
 
-def test_remove_path_prefixes():
-    assert utils.remove_path_prefixes(os.sep, [os.sep]) == os.sep
-    assert utils.remove_path_prefixes("/tmp/_/", prefixes=["_"]) == "/tmp//"
-    assert utils.remove_path_prefixes("/tmp/____/", prefixes=["_"]) == "/tmp//"
-    assert utils.remove_path_prefixes("/tmp/_/__/_/", prefixes=["_"]) == "/tmp////"
-    assert utils.remove_path_prefixes("/tmp/_ /_ / _/", prefixes=["_", " "]) == "/tmp////"
-    assert utils.remove_path_prefixes("/_////", prefixes=["_"]) == "/////"
+def test_remove_prefixes():
+    assert utils.remove_prefixes("-t", prefixes=["-"]) == "t"
 
 
-def test_remove_path_suffixes():
-    assert utils.remove_path_suffixes(os.sep, [os.sep]) == os.sep
-    assert utils.remove_path_suffixes("/tmp/_/", suffixes=["_"]) == "/tmp//"
-    assert utils.remove_path_suffixes("/tmp/____/", suffixes=["_"]) == "/tmp//"
-    assert utils.remove_path_suffixes("/tmp/_/__/_/", suffixes=["_"]) == "/tmp////"
-    assert utils.remove_path_suffixes("/tmp/_ /_ / _/", suffixes=["_", " "]) == "/tmp////"
-    assert utils.remove_path_prefixes("/_////", prefixes=["_"]) == "/////"
-
-
-def test_remove_stem_suffixes():
-    assert utils.remove_stem_suffixes("_", suffixes=["_"]) == ""
-    assert utils.remove_stem_suffixes("to__", suffixes=["_"]) == "to"
-    assert utils.remove_stem_suffixes("__", suffixes=[" "]) == "__"
-    assert utils.remove_stem_suffixes("_ ", suffixes=["_", " "]) == ""
-    assert utils.remove_stem_suffixes(" _", suffixes=["_", " "]) == ""
-    assert utils.remove_stem_suffixes("_ _", suffixes=["_", " "]) == ""
+def test_remove_suffixes():
+    assert utils.remove_suffixes("_", suffixes=["_"]) == ""
+    assert utils.remove_suffixes("to__", suffixes=["_"]) == "to"
+    assert utils.remove_suffixes("__", suffixes=[" "]) == "__"
+    assert utils.remove_suffixes("_ ", suffixes=["_", " "]) == ""
+    assert utils.remove_suffixes(" _", suffixes=["_", " "]) == ""
+    assert utils.remove_suffixes("_ _", suffixes=["_", " "]) == ""
 
 
 def test_clean_string():
     assert utils.clean_string(os.sep) == os.sep
-    assert utils.clean_string("/3_seconds_ago.../") == "/3_seconds_ago…/"
     assert utils.clean_string("/  /t") == "/ /t"
     assert utils.clean_string("_  _") == "__"
     assert utils.clean_string("_") == "_"
     assert utils.clean_string("~_[7].opus") == "~_[7].opus"
-    assert utils.clean_string("/!?/") == "/?/"
+    assert utils.clean_string("/!./") == "/./"
     assert utils.clean_string("/_/~_[7].opus") == "/_/~_[7].opus"
 
 
@@ -170,7 +148,8 @@ def test_clean_path():
     def p(string):
         return str(Path(string))
 
-    assert utils.clean_path(b"/3_seconds_ago.../Mike.webm") == p("/3_seconds_ago…/Mike.webm")
+    assert utils.clean_path(b"/_test/-t") == p("/_test/t")
+    assert utils.clean_path(b"/3_seconds_ago.../Mike.webm") == p("/3_seconds_ago/Mike.webm")
     assert utils.clean_path(b"/3_seconds_ago../Mike.webm") == p("/3_seconds_ago/Mike.webm")
     assert utils.clean_path(b"/3_seconds_ago./Mike.webm") == p("/3_seconds_ago/Mike.webm")
     assert utils.clean_path(b"/3_seconds_ago___/ Mike.webm") == p("/3_seconds_ago/Mike.webm")
@@ -179,7 +158,6 @@ def test_clean_path():
     assert utils.clean_path(b"/.test") == p("/.test")
     assert utils.clean_path(b"/.test/t") == p("/.test/t")
     assert utils.clean_path(b"/_test/t") == p("/_test/t")
-    assert utils.clean_path(b"/_test/-t") == p("/_test/t")
     assert utils.clean_path(b"/_test/t-") == p("/_test/t")
     assert utils.clean_path(b"/test/\xff\xfeH") == p("/test/\\xff\\xfeH")
     assert utils.clean_path(b"/test/thing something.txt") == p("/test/thing something.txt")
