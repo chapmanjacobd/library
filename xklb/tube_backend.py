@@ -186,7 +186,7 @@ def consolidate(v: dict) -> Optional[dict]:
     if upload_date:
         try:
             upload_date = int(datetime.strptime(upload_date, "%Y%m%d").timestamp())
-        except:
+        except Exception:
             upload_date = None
 
     cv = {}

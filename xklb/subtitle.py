@@ -6,7 +6,7 @@ import ffmpeg, pysubs2, sqlite_utils
 from ffmpeg import Error
 
 from xklb.consts import SUB_TEMP_DIR
-from xklb.utils import cmd, flatten, log, remove_text_inside_brackets, remove_whitespaace, replace_consecutive
+from xklb.utils import cmd, flatten, log, remove_consecutive, remove_consecutive_whitespace, remove_text_inside_brackets
 
 SUBTITLE_FORMATS = "vtt|srt|ssa|ass|jss|aqt|mpl2|mpsub|pjs|rt|sami|smi|stl|xml|txt|psb|ssf|usf"
 IMAGE_SUBTITLE_CODECS = ["dvbsub", "dvdsub", "pgssub", "xsub", "dvb_subtitle", "dvd_subtitle", "hdmv_pgs_subtitle"]
@@ -68,7 +68,7 @@ def subs_to_text(video_path, paths: List[str]) -> str:
             return []
 
     subtitles = " ".join(list(dict.fromkeys(flatten([sub_to_text(path) for path in paths]))))
-    return remove_whitespaace(subtitles)
+    return remove_consecutive_whitespace(subtitles)
 
 
 def externalize_subtitle(media_file) -> Union[str, None]:
