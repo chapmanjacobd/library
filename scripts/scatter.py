@@ -3,6 +3,7 @@ from pathlib import Path
 from statistics import median
 from typing import List
 
+from humanize import naturalsize
 from tabulate import tabulate
 
 from xklb import consts, db, utils
@@ -57,9 +58,9 @@ scatter_usage = """library scatter [--limit LIMIT] [--policy POLICY] [--sort SOR
         ### Move 1134 files to /mnt/d4 with this command: ###
         rsync -aE --xattrs --info=progress2 --remove-source-files --files-from=/tmp/tmphzb0gj92 / /mnt/d4
 
-    Balance inodes
+    Balance inodes for specific subfolder
 
-        $ library scatter -m /mnt/d1:/mnt/d2 --group count ~/lb/fs/scatter.db subfolder
+        $ library scatter -m /mnt/d1:/mnt/d2 ~/lb/fs/scatter.db subfolder --group count --sort 'size desc'
 
     Scatter the most recent 100 files
 
@@ -181,6 +182,15 @@ def rebin_files(args, disk_stats, all_files):
             full_disks.append(disk_stat["mount"])
         to_rebin.extend(disk_rebin)
 
+    if len(disk_stats) == len(full_disks):
+        log.warning(
+            "No valid targets. It is likely that your drives are balanced pretty well! Or maybe you need to run fsupdate?"
+        )
+        log.warning(
+            'For this run, "full" source disks will be treated as valid targets. Otherwise there is nothing to do.'
+        )
+        full_disks = []
+
     rebinned = []
     for file in to_rebin:
         valid_targets = [d for d in disk_stats if d["mount"] not in [*full_disks, file["mount"]]]
@@ -215,8 +225,8 @@ def scatter() -> None:
     untouched, rebinned = rebin_files(args, disk_stats, files)
 
     print("\nSimulated path distribution:")
-    print(len(rebinned), "files should be moved")
-    print(len(untouched), "files should not be moved")
+    print("Should", len(rebinned), "files be moved", "(" + naturalsize(sum(d["size"] for d in rebinned)) + ")")
+    print(len(untouched), "files will not be moved", "(" + naturalsize(sum(d["size"] for d in untouched)) + ")")
     path_stats = get_path_stats(args, rebinned + untouched)
     print_path_stats(path_stats)
 
