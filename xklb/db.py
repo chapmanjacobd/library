@@ -7,7 +7,7 @@ from xklb.utils import log
 
 
 def tracer(sql, params) -> None:
-    sql = utils.replace_consecutives(dedent(sql), "\n")
+    sql = utils.remove_consecutives(dedent(sql), "\n")
     print(f"SQL: {sql} - params: {params}")
 
 

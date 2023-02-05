@@ -118,10 +118,8 @@ def parse(args, m=None, media_file=None) -> List[str]:
                 player.extend(args.player_args_sub)
             elif m["size"] > 500 * 1000000:  # 500 MB
                 log.debug("Skipping subs player_args: size")
-                pass
             elif m.get("time_partial_first"):
                 log.debug("Skipping subs player_args: partially watched")
-                pass
             else:
                 player.extend(args.player_args_no_sub)
 
@@ -278,7 +276,7 @@ def post_act(args, media_file: str, action=None) -> None:
         if action in ["softdelete", "remove", "delete"]:
             mark_media_deleted(args, media_file)
         elif action == "delete-if-audiobook":
-            # TODO: pass media title to this function
+            # TODO: pass title to this function
             pass
         elif action == "ask":
             if not Confirm.ask("Keep?", default=False):

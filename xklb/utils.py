@@ -268,81 +268,122 @@ def trash(f: Union[Path, str], detach=True) -> None:
         Path(f).unlink(missing_ok=True)
 
 
-def remove_whitespaace(string):
-    return " ".join(string.split())
+def repeat_until_same(fn):
+    def wrapper(*args, **kwargs):
+        p = args[0]
+        while True:
+            p1 = p
+            p = fn(p, *args[1:], **kwargs)
+            # print(fn.__name__, p)
+            if p1 == p:
+                break
+        return p
+
+    return wrapper
 
 
-def replace_consecutive(string, char=" "):
+def remove_consecutive_whitespace(string):
+    return " ".join(string.split())  # spaces, tabs, and newlines
+
+
+def remove_consecutive(string, char=" "):
     return re.sub("\\" + char + "+", char, string)
 
 
-def replace_consecutives(string, chars):
+@repeat_until_same
+def remove_consecutives(string, chars):
     for char in chars:
-        string = replace_consecutive(string, char)
-    for char in reversed(chars):
-        string = replace_consecutive(string, char)
+        string = remove_consecutive(string, char)
     return string
 
 
-def replace_basename_prefixes(string, prefixes):
+@repeat_until_same
+def remove_path_prefixes(string, prefixes):
     for prefix in prefixes:
-        string = string.replace("/" + prefix, "/").replace("\\" + prefix, "\\")
-    for prefix in reversed(prefixes):
-        string = string.replace("/" + prefix, "/").replace("\\" + prefix, "\\")
+        string = string.replace(os.sep + prefix, os.sep)
     return string
 
 
-def replace_folder_ending(string, prefixes):
-    for prefix in prefixes:
-        string = string.replace(prefix + "/", "/").replace(prefix + "\\", "\\")
-    for prefix in reversed(prefixes):
-        string = string.replace(prefix + "/", "/").replace(prefix + "\\", "\\")
+@repeat_until_same
+def remove_path_suffixes(string, suffixes):
+    for suffix in suffixes:
+        string = string.replace(suffix + os.sep, os.sep)
     return string
 
 
-def clean_path(b, remove_spaces=False):
+@repeat_until_same
+def remove_stem_suffixes(string, suffixes):
+    for suffix in suffixes:
+        if not string.endswith(suffix + os.sep):
+            string = re.sub(rf"\{suffix}+$", "", string)
+    return string
+
+
+@repeat_until_same
+def preserve_hierarchy(p):
+    return p.replace(os.sep + os.sep, os.sep + "_" + os.sep)
+
+
+@repeat_until_same
+def clean_string(p):
+    p = (
+        p.replace("...", "…")
+        .replace("*", "")
+        .replace("&", "")
+        .replace("%", "")
+        .replace("$", "")
+        .replace("#", "")
+        .replace("@", "")
+        .replace("!", "")
+        .replace("^", "")
+        .replace("'", "")
+        .replace('"', "")
+        .replace(")", "")
+    )
+    p = remove_consecutives(p, chars=["-", "."])
+    p = (
+        p.replace("(", " ")
+        .replace("-.", ".")
+        .replace(" :", ":")
+        .replace(" - ", " ")
+        .replace("- ", " ")
+        .replace(" -", " ")
+        .replace(" _ ", "_")
+        .replace(" _", "_")
+        .replace("_ ", "_")
+    )
+    p = remove_consecutive_whitespace(p)
+    return p
+
+
+def clean_path(b, dot_space=False):
     p = b.decode("utf-8", "backslashreplace")
     p = ftfy.fix_text(p, explain=False)
     path = Path(p)
     ext = path.suffix
-    p = str(path.parent / path.stem[:1024])
 
-    while True:
-        p1 = p
-        p = (
-            p.replace("...", "…")
-            .replace("*", "")
-            .replace("&", "")
-            .replace("%", "")
-            .replace("$", "")
-            .replace("#", "")
-            .replace("@", "")
-            .replace("!", "")
-            .replace("^", "")
-            .replace("'", "")
-            .replace('"', "")
-            .replace(")", "")
-        )
-        p = replace_consecutives(p, chars=["-", "."])
-        p = (
-            p.replace("(", " ")
-            .replace("-.", ".")
-            .replace(" :", ":")
-            .replace(" - ", " ")
-            .replace("- ", " ")
-            .replace(" -", " ")
-            .replace(" _ ", "_")
-            .replace(" _", "_")
-            .replace("_ ", "_")
-        )
-        p = replace_folder_ending(p, [" ", "-", "_", "."])
-        p = replace_basename_prefixes(p, [" ", "-"])
-        p = remove_whitespaace(p)
-        if remove_spaces:
-            p.replace(" ", ".")
-        p = re.sub(r"\.+$", "", p)
-        if p1 == p:
-            break
+    parent = str(path.parent) + os.sep
+    if parent == os.sep * 2:
+        parent = os.sep
+    parent = clean_string(parent)
+    stem = clean_string(path.stem)
+
+    # print('cleaned',parent, stem)
+    parent = remove_path_prefixes(parent, [" ", "-"])
+    # print('parent_prefixes', parent, stem)
+    parent = remove_path_suffixes(parent, [" ", "-", "_", "."])
+    # print('parent_suffixes', parent, stem)
+
+    stem = remove_path_prefixes(stem, [" ", "-", "."])
+    stem = remove_stem_suffixes(stem, [" ", "-", "."])
+
+    # print('stem', parent, stem)
+    parent = preserve_hierarchy(parent)
+    # print('preserve_hierarchy', parent, stem)
+    p = str(Path(parent) / stem[:1024])
+
+    if dot_space:
+        p = p.replace(" ", ".")
 
     return p + ext
 

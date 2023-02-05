@@ -9,7 +9,7 @@ from xklb.utils import log
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("paths", nargs="*")
-    parser.add_argument("--replace-space-with-period", action="store_true")
+    parser.add_argument("--dot-space", action="store_true")
     parser.add_argument("--overwrite", "-f", action="store_true")
     parser.add_argument("--run", "-r", action="store_true")
     parser.add_argument("--verbose", "-v", action="count", default=0)
@@ -20,7 +20,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def rename_path(args, b):
-    fixed = utils.clean_path(b, args.replace_space_with_period)
+    fixed = utils.clean_path(b, args.dot_space)
 
     if b != fixed.encode():
         printable_p = b.decode("utf-8", "backslashreplace")

@@ -140,7 +140,7 @@ def munge_av_tags(args, media, f) -> Optional[dict]:
         if upload_date:
             try:
                 upload_date = int(datetime.strptime(upload_date, "%Y%m%d").timestamp())
-            except:
+            except Exception:
                 upload_date = None
 
         tags = utils.dict_filter_bool(
