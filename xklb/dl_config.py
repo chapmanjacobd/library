@@ -120,6 +120,8 @@ yt_unrecoverable_errors = re.compile(
 .*ideo.*is private
 .*The URL must be suitable for the extractor
 .*Private video
+.*not a video
+.*because this account owner limits who can view
 .*No status found with that ID
 .*program functionality for this site has been marked as broken, and will probably not work
 .*This playlist is private

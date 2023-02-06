@@ -24,7 +24,7 @@ def parse_args() -> argparse.Namespace:
     args.db = db.connect(args)
 
     if args.size:
-        args.size = utils.parse_size(args.size)
+        args.size = utils.parse_human_to_sql(utils.human_to_bytes, "size", args.size)
 
     log.info(utils.dict_filter_bool(args.__dict__))
     return args

@@ -6,7 +6,7 @@ from xklb.lb import library as lb
 from xklb.play_actions import watch
 from xklb.tube_extract import tube_add, tube_update
 
-tube_db = "--db", "tests/data/tube.db"
+tube_db = ["tests/data/tube.db"]
 tube_add(
     [
         *tube_db,
@@ -51,7 +51,7 @@ class TestTube(unittest.TestCase):
             assert out["title"] == "Most Epic Video About Nothing"
             assert out["size"] == 4797012
 
-        sys.argv[1:] = tube_db
+        sys.argv = ["wt"] + tube_db
         watch()
         out = play_mocked.call_args[0][1]
         assert "https://www.youtube.com/watch?v=QoXubRvB6tQ" in out["path"]

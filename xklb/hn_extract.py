@@ -41,7 +41,7 @@ def parse_args(prog, usage) -> argparse.Namespace:
     parser.add_argument("--verbose", "-v", action="count", default=0)
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
 
-    parser.add_argument("database", nargs="?", default="hn.db")
+    parser.add_argument("database")
     args = parser.parse_args()
 
     if args.db:
@@ -178,8 +178,7 @@ def hacker_news_add() -> None:
         db_queue.put(None)
         db_thread.join()
 
-        if gap["diff"] > 1000000:
-            db.optimize(args)
+        log.info("Imported %s rows", gap["diff"])
 
 
 if __name__ == "__main__":

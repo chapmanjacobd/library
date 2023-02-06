@@ -33,7 +33,7 @@ def parse_args(action, usage) -> argparse.Namespace:
     parser.add_argument("--verbose", "-v", action="count", default=0)
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
 
-    parser.add_argument("database", nargs="?", default="video.db")
+    parser.add_argument("database")
     if action == SC.tubeadd:
         parser.add_argument("playlists", nargs="+", help=argparse.SUPPRESS)
 
@@ -57,7 +57,7 @@ def parse_args(action, usage) -> argparse.Namespace:
 
 def tube_add(args=None) -> None:
     if args:
-        sys.argv[1:] = args
+        sys.argv = ["tubeadd"] + args
 
     args = parse_args(
         SC.tubeadd,
@@ -107,7 +107,7 @@ def tube_add(args=None) -> None:
 
 def tube_update(args=None) -> None:
     if args:
-        sys.argv[1:] = args
+        sys.argv = ["tubeupdate"] + args
 
     args = parse_args(
         SC.tubeupdate,

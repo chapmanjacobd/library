@@ -344,23 +344,6 @@ You can also invoke tabs manually:
 
 ## Things to know.db
 
-When the database file path is not specified, `video.db` will be created / used.
-
-    library fsadd ./tv/
-
-The same for audio: `audio.db` will be created / used.
-
-    library fsadd --audio ./music/
-
-Likewise, `fs.db` from:
-
-    library fsadd --filesystem /any/path/
-
-If you want to specify more than one directory you need to mention the db file explicitly.
-
-    library fsadd --filesystem one/
-    library fsadd --filesystem fs.db one/ two/
-
 Organize via separate databases.
 
     library fsadd --audio both.db ./audiobooks/ ./podcasts/
@@ -370,7 +353,7 @@ Organize via separate databases.
 ## Usage
 
     $ library watch -h
-    usage: {play_actions.usage('watch', 'video.db')}
+    usage: {play_actions.usage('watch')}
 
 """
 )

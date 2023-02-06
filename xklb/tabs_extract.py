@@ -46,7 +46,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("-v", "--verbose", action="count", default=0)
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
 
-    parser.add_argument("database", nargs="?", default="tabs.db")
+    parser.add_argument("database")
     parser.add_argument("paths", nargs="+")
     args = parser.parse_args()
 
@@ -106,7 +106,7 @@ def extract_url_metadata(args, path: str) -> dict:
 
 def tabs_add(args=None) -> None:
     if args:
-        sys.argv[1:] = args
+        sys.argv = ["lb"] + args
     args = parse_args()
 
     tabs = [extract_url_metadata(args, path) for path in get_new_paths(args)]

@@ -13,9 +13,10 @@ except ModuleNotFoundError:
 
 def parse_args(action, usage) -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library " + action, usage=usage)
-    parser.add_argument("--verbose", "-v", action="count", default=0)
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
-    parser.add_argument("database", nargs="?", default="pushshift.db")
+    parser.add_argument("--verbose", "-v", action="count", default=0)
+
+    parser.add_argument("database")
     args = parser.parse_args()
 
     if args.db:
@@ -39,7 +40,7 @@ def save_data(args, reddit_posts, media):
 
 def pushshift_extract(args=None) -> None:
     if args:
-        sys.argv[1:] = args
+        sys.argv = ["lb"] + args
 
     args = parse_args(
         "pushshift",

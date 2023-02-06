@@ -8,10 +8,10 @@ from xklb.fs_extract import fs_add
 from xklb.lb import library as lb
 from xklb.play_actions import watch as wt
 
-v_db = "--db", "tests/data/video.db"
+v_db = ["tests/data/video.db"]
 fs_add([*v_db, "--scan-subtitles", "tests/data/"])
 
-a_db = "--db", "tests/data/audio.db"
+a_db = ["tests/data/audio.db"]
 fs_add([*a_db, "--audio", "tests/data/"])
 
 
@@ -62,7 +62,7 @@ class TestFs(unittest.TestCase):
             assert out["subtitle_count"] == 3
             assert out["size"] == 136057
 
-        sys.argv[1:] = v_db
+        sys.argv = ["wt"] + v_db
         wt()
         out = play_mocked.call_args[0][1]
         assert "test.mp4" in out["path"]

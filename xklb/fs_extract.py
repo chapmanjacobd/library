@@ -50,7 +50,7 @@ def parse_args(action, usage) -> argparse.Namespace:
     parser.add_argument("--verbose", "-v", action="count", default=0)
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
 
-    parser.add_argument("database", nargs="?")
+    parser.add_argument("database")
     if action == SC.fsadd:
         parser.add_argument("paths", nargs="+")
     args = parser.parse_args()
@@ -271,39 +271,39 @@ def extractor(args, paths) -> None:
     for path in paths:
         new_files += scan_path(args, path)
 
-    if not args.db["media"].detect_fts() or new_files > 100000:
-        db.optimize(args)
+    log.info("Imported %s paths", new_files)
+
+    if args.profile in [DBType.audio, DBType.video, DBType.text]:
+        if not args.db["media"].detect_fts() or new_files > 100000:
+            db.optimize(args)
 
 
 def fs_add(args=None) -> None:
     if args:
-        sys.argv[1:] = args
+        sys.argv = ["lb"] + args
 
     args = parse_args(
         SC.fsadd,
         """library fsadd [--audio | --video | --image |  --text | --filesystem] -c CATEGORY [database] paths ...
 
     The default database type is video:
-        library fsadd ./tv/
-        library fsadd --video ./tv/  # equivalent
+        library fsadd tv.db ./tv/
+        library fsadd --video tv.db ./tv/  # equivalent
 
-    This will create audio.db in the current directory:
-        library fsadd --audio ./music/
+    You can also create audio databases. Both audio and video use ffmpeg to read metadata:
+        library fsadd --audio audio.db ./music/
 
-    This will create image.db in the current directory:
-        library fsadd --image ./photos/
+    Image uses ExifTool:
+        library fsadd --image image.db ./photos/
 
-    This will create text.db in the current directory:
-        library fsadd --text ./documents_and_books/
+    Text will try to read files and save the contents into a searchable database:
+        library fsadd --text text.db ./documents_and_books/
 
-    Create text database and scan with OCR and speech-recognition:
-        library fsadd --text --ocr --speech-recognition ./receipts_and_messages/
+    Create a text database and scan with OCR and speech-recognition:
+        library fsadd --text --ocr --speech-recognition ocr.db ./receipts_and_messages/
 
-    Create video database and read internal/external subtitle files for use in search:
-        library fsadd --scan-subtitles ./tv/
-
-    The database location must be specified to reference more than one path:
-        library fsadd --audio podcasts.db ./podcasts/ ./another/folder/
+    Create a video database and read internal/external subtitle files into a searchable database:
+        library fsadd --scan-subtitles tv.search.db ./tv/ ./movies/
 
     Remove path roots with --force
         library fsadd audio.db /mnt/d/Youtube/
@@ -321,7 +321,7 @@ def fs_add(args=None) -> None:
 
 def fs_update(args=None) -> None:
     if args:
-        sys.argv[1:] = args
+        sys.argv = ["lb"] + args
 
     args = parse_args(
         SC.fsupdate,
