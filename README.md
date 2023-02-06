@@ -487,10 +487,15 @@ Organize via separate databases.
         library watch --partial       # play newest first
         library watch --partial old   # play oldest first
         library watch -P o            # equivalent
-        library watch -P fo           # use file creation time instead of modified time
-
         library watch -P p            # sort by progress / duration
         library watch -P s            # skip partially watched (only show unseen)
+
+        You can think of the default setting as "last-viewed".
+        If you want to sort by "first-viewed" (ie. when you first opened the video)
+        library watch -P f            # use watch_later file creation time instead of modified time
+
+        You can combine most of these options, though some will be overridden by others.
+        library watch -P fo           # this means "show the oldest videos based on what time I first opened them"
 
     Print instead of play:
         library watch --print --limit 10  # print the next 10 files
