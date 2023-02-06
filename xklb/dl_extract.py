@@ -63,8 +63,7 @@ def parse_args(action, usage):
 
     parser.add_argument("database", help=argparse.SUPPRESS)
     parser.add_argument("playlists", nargs="*", help=argparse.SUPPRESS)
-
-    args = parser.parse_args()
+    args = parser.parse_intermixed_args()
 
     if action == SC.download:
         if args.duration:

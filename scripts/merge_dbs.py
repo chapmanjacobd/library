@@ -12,7 +12,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--upsert")
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
     parser.add_argument("--verbose", "-v", action="count", default=0)
-    args = parser.parse_args()
+    args = parser.parse_intermixed_args()
 
     if args.db:
         args.database = args.db
