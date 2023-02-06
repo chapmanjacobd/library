@@ -154,6 +154,7 @@ yt_unrecoverable_errors = re.compile(
 .*: Video unavailable\$
 .* does not exist.\$
 .* has been removed\$
+.*: Not found.
 .*Video no longer exists
 .*Premieres in.*hours\$
 .*This clip is no longer available\$

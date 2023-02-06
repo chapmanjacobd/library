@@ -121,7 +121,7 @@ def usage(action) -> str:
 
     Offset the play queue:
         You can also offset the queue. For example if you want to skip one or ten media:
-        library {action} -S 10  # offset ten from the top of an ordered query
+        library {action} --skip 10        # offset ten from the top of an ordered query
 
     Repeat
         library {action}                  # listen to 120 random songs (DEFAULT_PLAY_QUEUE)
@@ -143,9 +143,12 @@ def usage(action) -> str:
         library {action} -O -s 'path : "mad max"' # add "quotes" to be more strict
 
         Double spaces are parsed as one space
-        -s '  ost'        # will match OST and not ghost
-        -s toy story      # will match '/folder/toy/something/story.mp3'
-        -s 'toy  story'   # will match more strictly '/folder/toy story.mp3'
+        library {action} -s '  ost'        # will match OST and not ghost
+        library {action} -s toy story      # will match '/folder/toy/something/story.mp3'
+        library {action} -s 'toy  story'   # will match more strictly '/folder/toy story.mp3'
+
+        You can search without -s but it must directly follow the database due to how argparse works
+        library {action} my.db searching for something
 
     Constrain media by arbitrary SQL expressions:
         library {action} --where audio_count = 2  # media which have two audio tracks
@@ -167,9 +170,9 @@ def usage(action) -> str:
 
     Constrain media to file size (in megabytes):
         library {action} --size 20
-        library {action} -z 6  # 6 MB ±10 percent (ie. between 5 and 7 MB)
-        library {action} -z-6  # less than 6 MB
-        library {action} -z+6  # more than 6 MB
+        library {action} -S 6  # 6 MB ±10 percent (ie. between 5 and 7 MB)
+        library {action} -S-6  # less than 6 MB
+        library {action} -S+6  # more than 6 MB
 
     Constrain media by time_created / time_played / time_deleted / time_modified:
         library {action} --created-within '3 days'
@@ -258,7 +261,7 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     parser.add_argument("--random", "-r", action="store_true", help=argparse.SUPPRESS)
 
     parser.add_argument("--where", "-w", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
-    parser.add_argument("--include", "-s", "--search", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
+    parser.add_argument("--include", "-s", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
 
     parser.add_argument("--created-within", help=argparse.SUPPRESS)
@@ -335,7 +338,7 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     parser.add_argument("--verbose", "-v", action="count", default=0)
 
     parser.add_argument("database")
-    parser.add_argument("search", nargs="*", action="extend", default=[], help=argparse.SUPPRESS)
+    parser.add_argument("search", nargs="*")
     args = parser.parse_args()
     args.action = action
     args.defaults = []
