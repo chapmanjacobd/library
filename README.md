@@ -21,7 +21,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v1.23.001)
+    xk media library subcommands (v1.23.002)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -568,7 +568,7 @@ Organize via separate databases.
 
     Offset the play queue:
         You can also offset the queue. For example if you want to skip one or ten media:
-        library watch -S 10  # offset ten from the top of an ordered query
+        library watch --skip 10        # offset ten from the top of an ordered query
 
     Repeat
         library watch                  # listen to 120 random songs (DEFAULT_PLAY_QUEUE)
@@ -590,9 +590,12 @@ Organize via separate databases.
         library watch -O -s 'path : "mad max"' # add "quotes" to be more strict
 
         Double spaces are parsed as one space
-        -s '  ost'        # will match OST and not ghost
-        -s toy story      # will match '/folder/toy/something/story.mp3'
-        -s 'toy  story'   # will match more strictly '/folder/toy story.mp3'
+        library watch -s '  ost'        # will match OST and not ghost
+        library watch -s toy story      # will match '/folder/toy/something/story.mp3'
+        library watch -s 'toy  story'   # will match more strictly '/folder/toy story.mp3'
+
+        You can search without -s but it must directly follow the database due to how argparse works
+        library watch my.db searching for something
 
     Constrain media by arbitrary SQL expressions:
         library watch --where audio_count = 2  # media which have two audio tracks
@@ -614,9 +617,9 @@ Organize via separate databases.
 
     Constrain media to file size (in megabytes):
         library watch --size 20
-        library watch -z 6  # 6 MB ±10 percent (ie. between 5 and 7 MB)
-        library watch -z-6  # less than 6 MB
-        library watch -z+6  # more than 6 MB
+        library watch -S 6  # 6 MB ±10 percent (ie. between 5 and 7 MB)
+        library watch -S-6  # less than 6 MB
+        library watch -S+6  # more than 6 MB
 
     Constrain media by time_created / time_played / time_deleted / time_modified:
         library watch --created-within '3 days'
