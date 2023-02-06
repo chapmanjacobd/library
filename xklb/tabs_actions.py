@@ -95,8 +95,8 @@ def parse_args(action) -> argparse.Namespace:
     parser.add_argument("--verbose", "-v", action="count", default=0)
 
     parser.add_argument("database")
-    parser.add_argument("search", nargs="*", action="extend", default=[], help=argparse.SUPPRESS)
-    args = parser.parse_args()
+    parser.add_argument("search", nargs="*")
+    args = parser.parse_intermixed_args()
     args.action = action
     args.include += args.search
 

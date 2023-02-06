@@ -339,7 +339,7 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
 
     parser.add_argument("database")
     parser.add_argument("search", nargs="*")
-    args = parser.parse_args()
+    args = parser.parse_intermixed_args()
     args.action = action
     args.defaults = []
     args.include += args.search
