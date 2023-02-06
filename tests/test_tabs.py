@@ -4,7 +4,7 @@ from unittest import mock
 from xklb.lb import library as lb
 from xklb.tabs_extract import tabs_add
 
-tabs_db = "--db", "tests/data/tabs.db"
+tabs_db = ["tests/data/tabs.db"]
 tabs_add([*tabs_db, "https://unli.xyz/proliferation/verbs.html"])
 
 

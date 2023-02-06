@@ -7,10 +7,10 @@ from xklb import consts, db, player, tube_backend, utils
 from xklb.consts import SC
 from xklb.player import get_ordinal_media, mark_media_deleted, override_sort
 from xklb.subtitle import externalize_subtitle
-from xklb.utils import cmd, human_to_bytes, log
+from xklb.utils import cmd, log
 
 
-def usage(action, default_db) -> str:
+def usage(action) -> str:
     return f"""library {action} [database] [optional args]
 
     Control playback:
@@ -18,10 +18,6 @@ def usage(action, default_db) -> str:
 
         Create global shortcuts in your desktop environment by sending commands to mpv_socket:
         echo 'playlist-next force' | socat - /tmp/mpv_socket
-
-    If not specified, {action} will try to read {default_db} in the working directory:
-        library {action}
-        library {action} ./my/other/database/is-a/db.db
 
     Override the default player (mpv):
         library does a lot of things to try to automatically use your preferred media player
@@ -246,11 +242,11 @@ def parse_args_sort(args, action):
     args.sort = "\n        , ".join(args.sort).replace(",,", ",")
 
 
-def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
+def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     DEFAULT_PLAYER_ARGS_SUB = ["--speed=1"]
     DEFAULT_PLAYER_ARGS_NO_SUB = ["--speed=1.46"]
 
-    parser = argparse.ArgumentParser(prog="library " + action, usage=usage(action, default_db))
+    parser = argparse.ArgumentParser(prog="library " + action, usage=usage(action))
 
     parser.add_argument("--play-in-order", "-O", action="count", default=0, help=argparse.SUPPRESS)
     parser.add_argument("--sort", "-u", nargs="+", help=argparse.SUPPRESS)
@@ -269,7 +265,9 @@ def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
     parser.add_argument("--deleted-within", help=argparse.SUPPRESS)
     parser.add_argument("--deleted-before", help=argparse.SUPPRESS)
 
-    parser.add_argument("--chromecast-device", "--cast-to", "-t", default=default_chromecast, help=argparse.SUPPRESS)
+    parser.add_argument(
+        "--chromecast-device", "--cast-to", "-t", default=default_chromecast or "", help=argparse.SUPPRESS
+    )
     parser.add_argument("--chromecast", "--cast", "-c", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--cast-with-local", "-wl", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--loop", action="store_true", help=argparse.SUPPRESS)
@@ -331,15 +329,12 @@ def parse_args(action, default_db, default_chromecast="") -> argparse.Namespace:
     parser.add_argument("--ignore-errors", "--ignoreerrors", "-i", action="store_true")
     parser.add_argument("--verbose", "-v", action="count", default=0)
 
-    parser.add_argument(
-        "database",
-        nargs="?",
-        default=default_db,
-        help=f"Database file. If not specified a generic name will be used: {default_db}",
-    )
+    parser.add_argument("database")
+    parser.add_argument("search", nargs="*", action="extend", default=[], help=argparse.SUPPRESS)
     args = parser.parse_args()
     args.action = action
     args.defaults = []
+    args.include += args.search
 
     if args.db:
         args.database = args.db
@@ -645,25 +640,25 @@ def process_playqueue(args) -> None:
 
 
 def watch() -> None:
-    args = parse_args(SC.watch, "video.db", default_chromecast="Living Room TV")
+    args = parse_args(SC.watch, default_chromecast="Living Room TV")
     process_playqueue(args)
 
 
 def listen() -> None:
-    args = parse_args(SC.listen, "audio.db", default_chromecast="Xylo and Orchestra")
+    args = parse_args(SC.listen, default_chromecast="Xylo and Orchestra")
     process_playqueue(args)
 
 
 def filesystem() -> None:
-    args = parse_args(SC.filesystem, "fs.db")
+    args = parse_args(SC.filesystem)
     process_playqueue(args)
 
 
 def read() -> None:
-    args = parse_args(SC.read, "text.db")
+    args = parse_args(SC.read)
     process_playqueue(args)
 
 
 def view() -> None:
-    args = parse_args(SC.view, "image.db")
+    args = parse_args(SC.view)
     process_playqueue(args)

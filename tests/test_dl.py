@@ -1,5 +1,6 @@
 import unittest
 from argparse import Namespace
+from time import sleep
 from unittest import mock
 
 from xklb import consts, utils
@@ -12,10 +13,10 @@ PLAYLIST_URL = "https://youtube.com/playlist?list=PLVoczRgDnXDLWV1UJ_tO70VT_ON0t
 PLAYLIST_VIDEO_URL = "https://www.youtube.com/watch?v=QoXubRvB6tQ"
 STORAGE_PREFIX = "tests/data/"
 
-dl_db = "--db", "tests/data/dl.db"
+dl_db = ["tests/data/dl.db"]
 tube_add([*dl_db, "-c=Self", PLAYLIST_URL])
 
-tube_db = "--db", "tests/data/tube_dl.db"
+tube_db = ["tests/data/tube_dl.db"]
 tube_add([*tube_db, PLAYLIST_URL])
 
 
@@ -24,7 +25,7 @@ class TestTube(unittest.TestCase):
         tube_add([*dl_db, "-c=Self", PLAYLIST_URL])
 
         args = Namespace(
-            database=dl_db[1],
+            database=dl_db[0],
             profile="video",
             dl_config={},
             prefix=STORAGE_PREFIX,
@@ -50,27 +51,27 @@ class TestTube(unittest.TestCase):
 
     @mock.patch("xklb.tube_backend.yt")
     def test_download(self, mocked_yt):
-        db_path = utils.file_temp_copy(dl_db[1])
-        dl_download(["--db", db_path, "--prefix", STORAGE_PREFIX, "--audio"])
+        db_path = utils.file_temp_copy(dl_db[0])
+        dl_download([db_path, "--prefix", STORAGE_PREFIX, "--audio"])
         out = mocked_yt.call_args[0]
         assert out[1]["path"] == PLAYLIST_VIDEO_URL
 
     @mock.patch("xklb.tube_backend.update_playlists")
     def test_dlupdate(self, update_playlists):
-        db_path = utils.file_temp_copy(dl_db[1])
-        tube_update(["--db", db_path])
+        db_path = utils.file_temp_copy(dl_db[0])
+        tube_update([db_path])
         out = update_playlists.call_args[0]
         assert out[1][0]["path"] == PLAYLIST_URL
 
     @mock.patch("xklb.tube_backend.update_playlists")
     def test_dlupdate_subset_category(self, update_playlists):
-        db_path = utils.file_temp_copy(dl_db[1])
-        tube_update(["--db", db_path, "-c=Self"])
+        db_path = utils.file_temp_copy(dl_db[0])
+        tube_update([db_path, "-c=Self"])
         out = update_playlists.call_args[0]
         assert out[1][0]["path"] == PLAYLIST_URL
 
     def test_block_existing(self):
-        db_path = utils.file_temp_copy(dl_db[1])
+        db_path = utils.file_temp_copy(dl_db[0])
         dl_block([db_path, PLAYLIST_URL])
         db = connect(Namespace(database=db_path, verbose=2))
         playlists = list(db["playlists"].rows)

@@ -184,10 +184,10 @@ def rebin_files(args, disk_stats, all_files):
 
     if len(disk_stats) == len(full_disks):
         log.warning(
-            "No valid targets. It is likely that your drives are balanced pretty well! Or maybe you need to run fsupdate?"
+            "No valid targets. You have selected an ideal state which is significantly different from the current path distribution."
         )
         log.warning(
-            'For this run, "full" source disks will be treated as valid targets. Otherwise there is nothing to do.'
+            'For this run, "full" source disks will be treated as valid targets. Otherwise, there is nothing to do.'
         )
         full_disks = []
 
@@ -225,10 +225,10 @@ def scatter() -> None:
     untouched, rebinned = rebin_files(args, disk_stats, files)
 
     print("\nSimulated path distribution:")
-    print("Should", len(rebinned), "files be moved", "(" + naturalsize(sum(d["size"] for d in rebinned)) + ")")
-    print(len(untouched), "files will not be moved", "(" + naturalsize(sum(d["size"] for d in untouched)) + ")")
     path_stats = get_path_stats(args, rebinned + untouched)
     print_path_stats(path_stats)
+    print(len(rebinned), "files would be moved", "(" + naturalsize(sum(d["size"] for d in rebinned)) + ")")
+    print(len(untouched), "files would not be moved", "(" + naturalsize(sum(d["size"] for d in untouched)) + ")")
 
     print("\n######### Commands to run #########")
     for disk_stat in sorted(disk_stats, key=lambda d: d["free"], reverse=True):

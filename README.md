@@ -21,7 +21,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v1.22.010)
+    xk media library subcommands (v1.23.001)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -449,23 +449,6 @@ You can also invoke tabs manually:
 
 ## Things to know.db
 
-When the database file path is not specified, `video.db` will be created / used.
-
-    library fsadd ./tv/
-
-The same for audio: `audio.db` will be created / used.
-
-    library fsadd --audio ./music/
-
-Likewise, `fs.db` from:
-
-    library fsadd --filesystem /any/path/
-
-If you want to specify more than one directory you need to mention the db file explicitly.
-
-    library fsadd --filesystem one/
-    library fsadd --filesystem fs.db one/ two/
-
 Organize via separate databases.
 
     library fsadd --audio both.db ./audiobooks/ ./podcasts/
@@ -482,10 +465,6 @@ Organize via separate databases.
 
         Create global shortcuts in your desktop environment by sending commands to mpv_socket:
         echo 'playlist-next force' | socat - /tmp/mpv_socket
-
-    If not specified, watch will try to read video.db in the working directory:
-        library watch
-        library watch ./my/other/database/is-a/db.db
 
     Override the default player (mpv):
         library does a lot of things to try to automatically use your preferred media player

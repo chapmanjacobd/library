@@ -50,7 +50,7 @@ def parse_args(action, usage) -> argparse.Namespace:
     parser.add_argument("--verbose", "-v", action="count", default=0)
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
 
-    parser.add_argument("database", nargs="?", default="reddit.db")
+    parser.add_argument("database")
     if action == "redditadd":
         parser.add_argument("paths", nargs="+")
     args = parser.parse_args()
@@ -314,7 +314,7 @@ def process_subreddits(args, subreddits):
 
 def reddit_add(args=None) -> None:
     if args:
-        sys.argv[1:] = args
+        sys.argv = ["lb"] + args
 
     args = parse_args(
         "redditadd",
@@ -385,7 +385,7 @@ def reddit_add(args=None) -> None:
 
 def reddit_update(args=None) -> None:
     if args:
-        sys.argv[1:] = args
+        sys.argv = ["lb"] + args
 
     args = parse_args(
         "redditupdate",

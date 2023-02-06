@@ -9,7 +9,7 @@ from xklb.tabs_extract import Frequency
 from xklb.utils import cmd, flatten, log
 
 
-def parse_args(action, default_db) -> argparse.Namespace:
+def parse_args(action) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="library tabs",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -89,19 +89,16 @@ def parse_args(action, default_db) -> argparse.Namespace:
     parser.add_argument("--delete", "--remove", "--erase", "--rm", "-rm", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--cols", "-cols", "-col", nargs="*", help="Include a non-standard column when printing")
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue")
-    parser.add_argument("--skip", "-S")
+    parser.add_argument("--skip")
 
-    parser.add_argument("--verbose", "-v", action="count", default=0)
     parser.add_argument("--db", "-db")
+    parser.add_argument("--verbose", "-v", action="count", default=0)
 
-    parser.add_argument(
-        "database",
-        nargs="?",
-        default=default_db,
-        help="Database file. If not specified a generic name will be used: audio.db, video.db, fs.db, etc",
-    )
+    parser.add_argument("database")
+    parser.add_argument("search", nargs="*", action="extend", default=[], help=argparse.SUPPRESS)
     args = parser.parse_args()
     args.action = action
+    args.include += args.search
 
     if args.db:
         args.database = args.db
@@ -246,5 +243,5 @@ def process_tabs_actions(args) -> None:
 
 
 def tabs() -> None:
-    args = parse_args(SC.tabs, "tabs.db")
+    args = parse_args(SC.tabs)
     process_tabs_actions(args)

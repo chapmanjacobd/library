@@ -58,10 +58,10 @@ def parse_args(action, usage):
     if action == SC.block:
         parser.add_argument("--all-deleted-playlists", "--all", action="store_true", help=argparse.SUPPRESS)
 
-    parser.add_argument("--verbose", "-v", action="count", default=0)
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
+    parser.add_argument("--verbose", "-v", action="count", default=0)
 
-    parser.add_argument("database", nargs="?", help=argparse.SUPPRESS)
+    parser.add_argument("database", help=argparse.SUPPRESS)
     parser.add_argument("playlists", nargs="*", help=argparse.SUPPRESS)
 
     args = parser.parse_args()
@@ -168,7 +168,7 @@ def process_downloadqueue(args) -> List[dict]:
 
 def dl_download(args=None) -> None:
     if args:
-        sys.argv[1:] = args
+        sys.argv = ["lb"] + args
 
     args = parse_args(
         SC.download,
@@ -243,7 +243,7 @@ def dl_download(args=None) -> None:
 
 def dl_block(args=None) -> None:
     if args:
-        sys.argv[1:] = args
+        sys.argv = ["lb"] + args
 
     args = parse_args(
         SC.block,

@@ -33,7 +33,7 @@ def parse_args(prog, usage):
     parser.add_argument("-v", "--verbose", action="count", default=0)
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
 
-    parser.add_argument("database", nargs="?", default="video.db")
+    parser.add_argument("database")
     args = parser.parse_args()
     if args.db:
         args.database = args.db

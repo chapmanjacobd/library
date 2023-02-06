@@ -197,7 +197,7 @@ def create_subcommands_parser():
 
 def library(args=None) -> None:
     if args:
-        sys.argv[2:] = args
+        sys.argv = ["lb"] + args
 
     parser = create_subcommands_parser()
     args, _unk = parser.parse_known_args(args)
