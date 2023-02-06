@@ -149,17 +149,11 @@ def extract_metadata(mp_args, f) -> Optional[Dict[str, int]]:
     return media
 
 
-def extract_chunk(args, chunk_paths) -> None:
-    from joblib import Parallel, delayed
-
-    n_jobs = -1
-    if args.io_multiplier > 1:
-        n_jobs = int(consts.CPU_COUNT * args.io_multiplier)  # useful for text, image, filesystem db types
-    if args.verbose >= 2:
-        n_jobs = 1
+def extract_chunk(args, parallel, chunk_paths) -> None:
+    from joblib import delayed
 
     mp_args = argparse.Namespace(**{k: v for k, v in args.__dict__.items() if k not in {"db"}})
-    metadata = Parallel(n_jobs=n_jobs)(delayed(extract_metadata)(mp_args, p) for p in chunk_paths) or []
+    metadata = parallel((delayed(extract_metadata)(mp_args, p) for p in chunk_paths) or [])
 
     if args.profile == DBType.image:
         metadata = books.extract_image_metadata_chunk(metadata, chunk_paths)
@@ -234,8 +228,17 @@ def _add_folder(args, folder_path: Path) -> None:
 
 
 def scan_path(args, path_str: str) -> int:
-    path = Path(path_str).resolve()
+    from joblib import Parallel
 
+    n_jobs = -1
+    if args.io_multiplier > 1:
+        n_jobs = int(consts.CPU_COUNT * args.io_multiplier)  # useful for text, image, filesystem db types
+    if args.verbose >= 2:
+        n_jobs = 1
+
+    threadsafe = [DBType.audio, DBType.video, DBType.filesystem]  # TODO: check text / image
+
+    path = Path(path_str).resolve()
     if not path.exists():
         print(f"[{path}] Path does not exist")
         if args.force:
@@ -256,10 +259,11 @@ def scan_path(args, path_str: str) -> int:
             batch_count = consts.SQLITE_PARAM_LIMIT // 100
         chunks_count = math.ceil(len(new_files) / batch_count)
         df_chunked = utils.chunks(new_files, batch_count)
-        for idx, l in enumerate(df_chunked):
-            percent = ((batch_count * idx) + len(l)) / len(new_files) * 100
-            print(f"[{path}] Extracting metadata {percent:3.1f}% (chunk {idx + 1} of {chunks_count})")
-            extract_chunk(args, l)
+        with Parallel(n_jobs, prefer="threads" if args.profile in threadsafe else None) as parallel:
+            for idx, l in enumerate(df_chunked):
+                percent = ((batch_count * idx) + len(l)) / len(new_files) * 100
+                print(f"[{path}] Extracting metadata {percent:3.1f}% (chunk {idx + 1} of {chunks_count})")
+                extract_chunk(args, parallel, l)
 
     _add_folder(args, path)
 
