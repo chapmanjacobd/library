@@ -40,10 +40,15 @@ def usage(action) -> str:
         library {action} --partial       # play newest first
         library {action} --partial old   # play oldest first
         library {action} -P o            # equivalent
-        library {action} -P fo           # use file creation time instead of modified time
-
         library {action} -P p            # sort by progress / duration
         library {action} -P s            # skip partially watched (only show unseen)
+
+        You can think of the default setting as "last-viewed".
+        If you want to sort by "first-viewed" (ie. when you first opened the video)
+        library {action} -P f            # use watch_later file creation time instead of modified time
+
+        You can combine most of these options, though some will be overridden by others.
+        library {action} -P fo           # this means "show the oldest videos based on what time I first opened them"
 
     Print instead of play:
         library {action} --print --limit 10  # print the next 10 files
