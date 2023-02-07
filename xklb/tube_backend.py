@@ -209,7 +209,9 @@ def consolidate(v: dict) -> Optional[dict]:
         v.pop("categories", None),
         v.pop("tags", None),
     )
-    cv["id"] = v.pop("id")
+    cv["id"] = v.pop("id", None)
+    if cv["id"] is None:
+        log.warning("No id found in %s", v)
     cv["ie_key"] = safe_unpack(v.pop("ie_key", None), v.pop("extractor_key", None), v.pop("extractor", None))
     cv["title"] = safe_unpack(v.pop("title", None), v.get("playlist_title"))
     cv["view_count"] = v.pop("view_count", None)
