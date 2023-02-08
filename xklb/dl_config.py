@@ -72,6 +72,7 @@ yt_meaningless_errors = re.compile(
 .*fragment_filename_sanitized
 .*no suitable InfoExtractor for URL
 .*No such file or directory
+.*Name or service not known
 .*: Downloading webpage\$
 .*: Extracting information\$
 .*: Requesting header\$

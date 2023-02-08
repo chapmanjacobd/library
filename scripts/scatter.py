@@ -1,4 +1,4 @@
-import argparse, random, shutil, tempfile
+import argparse, random, tempfile
 from pathlib import Path
 from statistics import median
 from typing import List
@@ -58,35 +58,50 @@ scatter_usage = """library scatter [--limit LIMIT] [--policy POLICY] [--sort SOR
         ### Move 1134 files to /mnt/d4 with this command: ###
         rsync -aE --xattrs --info=progress2 --remove-source-files --files-from=/tmp/tmphzb0gj92 / /mnt/d4
 
-    Balance inodes for specific subfolder
+    Balance device inodes for specific subfolder
 
         $ library scatter -m /mnt/d1:/mnt/d2 ~/lb/fs/scatter.db subfolder --group count --sort 'size desc'
 
     Scatter the most recent 100 files
 
         $ library scatter -m /mnt/d1:/mnt/d2 -l 100 -s 'time_modified desc' ~/lb/fs/scatter.db /
+
+    Scatter without mountpoints (limited functionality; only good for balancing fs inodes)
+
+        $ library scatter scatter.db /test/{0,1,2,3,4,5,6,7,8,9}
 """
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(usage=scatter_usage)
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue")
-    parser.add_argument("--policy", "-p", default="pfrd")
-    parser.add_argument("--group", "-g", default="size")
+    parser.add_argument("--policy", "-p")
+    parser.add_argument("--group", "-g")
     parser.add_argument("--sort", "-s", default="random()", help="Sort files before moving")
     parser.add_argument("--verbose", "-v", action="count", default=0)
-    parser.add_argument("--srcmounts", "-m", required=True, help="/mnt/d1:/mnt/d2")
+    parser.add_argument("--srcmounts", "-m", help="/mnt/d1:/mnt/d2")
 
     parser.add_argument("database")
     parser.add_argument(
         "relative_paths",
         nargs="+",
-        help="Paths to scatter, relative to the root of your mergerfs mount; any path substring is valid",
+        help="Paths to scatter, relative to the root of your mergerfs mount if using -m, any path substring is valid",
     )
     args = parser.parse_args()
     args.db = db.connect(args)
 
-    args.srcmounts = [m.rstrip("\\/") for m in args.srcmounts.split(":")]
+    if args.srcmounts:
+        args.srcmounts = [m.rstrip("\\/") for m in args.srcmounts.split(":")]
+        if args.group is None:
+            args.group = "size"
+        if args.policy is None:
+            args.policy = "pfrd"
+    else:
+        if args.group is None:
+            args.group = "count"
+        if args.policy is None:
+            args.policy = "rand"
+
     args.relative_paths = [p.lstrip(".") for p in args.relative_paths]
 
     log.info(utils.dict_filter_bool(args.__dict__))
@@ -212,11 +227,43 @@ def rebin_files(args, disk_stats, all_files):
     return untouched, rebinned
 
 
+def get_rel_stats(parents, files):
+    mount_space = []
+    total_used = 1
+    for parent in parents:
+        used = sum([file["size"] for file in files if file["path"].startswith(parent)])
+        total_used += used
+        mount_space.append([parent, used])
+
+    return [
+        {"mount": mount, "used": used / total_used, "free": used / total_used, "total": used / total_used}
+        for mount, used in mount_space
+    ]
+
+
 def scatter() -> None:
     args = parse_args()
 
-    disk_stats = utils.get_mount_stats(args.srcmounts)
     files = get_table(args)
+
+    if args.srcmounts:
+        disk_stats = utils.get_mount_stats(args.srcmounts)
+    else:
+        log.warning(
+            "srcmounts was not provided (-m) so provided paths will only be compared with each other. This might not be what you want!!"
+        )
+        log.warning("In this setting paths should be absolute!--and the only valid policies are: `rand`, `used`.")
+        args.srcmounts = [str(Path(p).resolve()) for p in args.relative_paths]
+        disk_stats = get_rel_stats(args.srcmounts, files)
+
+    if len(disk_stats) < 2:
+        log.error(
+            (
+                "\nThis tool does not make sense to use for only one path."
+                " Define more paths or use the -m flag to define mountpoints which share the same subfolder (eg. mergerfs)"
+            )
+        )
+        raise SystemExit(2)
 
     path_stats = get_path_stats(args, files)
     print("\nCurrent path distribution:")
