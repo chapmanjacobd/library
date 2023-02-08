@@ -728,9 +728,9 @@ def filter_file(path, sieve):
 
 def get_mount_stats(src_mounts):
     mount_space = []
-    total_used = 0
-    total_free = 0
-    grand_total = 0
+    total_used = 1
+    total_free = 1
+    grand_total = 1
     for src_mount in src_mounts:
         total, used, free = shutil.disk_usage(src_mount)
         total_used += used
