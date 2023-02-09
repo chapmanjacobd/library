@@ -79,7 +79,8 @@ def parse_args(action, usage):
 
     args.playlists = utils.conform(args.playlists)
 
-    play_actions.parse_args_sort(args, action)
+    args.action = action
+    play_actions.parse_args_sort(args)
 
     log.info(utils.dict_filter_bool(args.__dict__))
 
