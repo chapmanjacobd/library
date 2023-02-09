@@ -40,7 +40,8 @@ def parse_args(prog, usage):
     args.db = db.connect(args)
     log.info(utils.dict_filter_bool(args.__dict__))
 
-    play_actions.parse_args_sort(args, consts.SC.stats)
+    args.action = consts.SC.stats
+    play_actions.parse_args_sort(args)
     return args
 
 

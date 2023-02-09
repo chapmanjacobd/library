@@ -1,4 +1,4 @@
-import argparse, shlex, shutil
+import argparse, shlex, shutil, sys
 from pathlib import Path
 from random import random
 from typing import Dict, Tuple
@@ -225,29 +225,67 @@ def usage(action) -> str:
 """
 
 
-def parse_args_sort(args, action):
+def parse_args_sort(args):
     if args.sort:
         args.sort = " ".join(args.sort).split(",")
     elif not args.sort:
         if hasattr(args, "defaults"):
             args.defaults.append("sort")
-        columns = args.db["media"].columns_dict
 
-        args.sort = []
-        if action in (SC.filesystem):
-            args.sort.extend(["sparseness", "size"])
-        elif action in (SC.listen, SC.watch):
-            if "play_count" in columns:
-                args.sort.extend(["play_count"])
-            if "size" in columns and "duration" in columns:
-                args.sort.extend(["priority"])
-                if args.include:
-                    args.sort = ["duration desc", "size desc"]
-                    if args.print:
-                        args.sort = ["duration", "size"]
+    m_columns = args.db["media"].columns_dict
 
-    args.sort = [override_sort(s) for s in args.sort]
-    args.sort = "\n        , ".join(args.sort).replace(",,", ",")
+    # switching between videos with and without subs is annoying
+    subtitle_count = ">0"
+    if random() < 0.659:  # bias slightly toward videos without subtitles
+        subtitle_count = "=0"
+
+    args.sort = ",".join(args.sort)
+
+    sorts = [
+        ("video_count" in m_columns and args.action == SC.watch, "video_count > 0 desc", "video_count > 0 "),
+        ("audio_count" in m_columns, "audio_count > 0 desc", "audio_count > 0"),
+        (
+            "time_downloaded" in m_columns and "time_downloaded" not in " ".join(sys.argv),
+            "time_downloaded > 0 desc",
+            "time_downloaded > 0",
+        ),
+        (True, 'path like "http%"', 'path like "http%" desc'),
+        ("width" in m_columns and args.portrait, "width < height desc", "width < height"),
+        (
+            "subtitle_count" in m_columns
+            and args.action == SC.watch
+            and not any(
+                [
+                    args.print,
+                    consts.PYTEST_RUNNING,
+                    "subtitle_count" in args.where,
+                    args.limit != consts.DEFAULT_PLAY_QUEUE,
+                ]
+            ),
+            f"subtitle_count {subtitle_count} desc",
+            f"subtitle_count {subtitle_count}",
+        ),
+        (args.sort, args.sort, None),
+        (args.action in (SC.listen, SC.watch) and args.include, "duration desc", "duration"),
+        (args.action in (SC.listen, SC.watch) and args.include, "size desc", "size"),
+        (args.action in (SC.listen, SC.watch) and "play_count" in m_columns, "play_count", "play_count desc"),
+        (
+            args.action in (SC.listen, SC.watch) and "size" in m_columns and "duration" in m_columns,
+            "ntile(1000) over (order by size) desc, duration",
+            "ntile(1000) over (order by size), duration desc",
+        ),
+        (args.action == SC.filesystem, "sparseness", "sparseness desc"),
+        (args.action == SC.filesystem, "size", "size desc"),
+        (True, "path", "path desc"),
+        (args.sort, None, args.sort),
+        (True, "random", "random"),
+    ]
+
+    sort = [c[2] if args.print else c[1] for c in sorts if c[0]]
+    sort = list(filter(bool, sort))
+    sort = [override_sort(s) for s in sort]
+    sort = "\n        , ".join(sort)
+    args.sort = sort.replace(",,", ",")
 
 
 def parse_args(action, default_chromecast=None) -> argparse.Namespace:
@@ -358,7 +396,7 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     elif args.limit in ("inf", "all"):
         args.limit = None
 
-    parse_args_sort(args, action)
+    parse_args_sort(args)
 
     if args.cols:
         args.cols = list(utils.flatten([s.split(",") for s in args.cols]))
@@ -469,11 +507,6 @@ def construct_query(args) -> Tuple[str, dict]:
     args.sql_filter = " ".join(cf)
     args.sql_filter_bindings = bindings
 
-    # switching between videos with and without subs is annoying
-    subtitle_count = ">0"
-    if random() < 0.659:  # bias slightly toward videos without subtitles
-        subtitle_count = "=0"
-
     duration = "duration"
     if args.action == SC.read:
         duration = "cast(length(tags) / 4.2 / 220 * 60 as INT) + 10 duration"
@@ -487,7 +520,7 @@ def construct_query(args) -> Tuple[str, dict]:
     WHERE 1=1
         {f'and path like "http%"' if args.safe else ''}
         {f'and path not like "{Path(args.keep_dir).resolve()}%"' if args.post_action == 'askkeep' else ''}
-        {'and time_deleted=0' if 'time_deleted' in m_columns and 'time_deleted' not in args.sql_filter else ''}
+        {'and time_deleted=0' if 'time_deleted' in m_columns and 'time_deleted' not in ' '.join(sys.argv) else ''}
         {'AND (score IS NULL OR score > 7)' if 'score' in m_columns else ''}
         {'AND (upvote_ratio IS NULL OR upvote_ratio > 0.73)' if 'upvote_ratio' in m_columns else ''}
         {'AND time_downloaded = 0' if args.online_media_only else ''}
@@ -499,15 +532,7 @@ def construct_query(args) -> Tuple[str, dict]:
     WHERE 1=1
         {args.sql_filter}
     ORDER BY 1=1
-        {', video_count > 0 desc' if 'video_count' in m_columns and args.action == SC.watch else ''}
-        {', audio_count > 0 desc' if 'audio_count' in m_columns else ''}
-        {', time_downloaded > 0 desc' if 'time_downloaded' in m_columns and 'time_downloaded' not in args.sql_filter else ''}
-        , path like "http%"
-        {', width < height desc' if 'width' in m_columns and args.portrait else ''}
-        {f', subtitle_count {subtitle_count} desc' if 'subtitle_count' in m_columns and args.action == SC.watch and not any([args.print, consts.PYTEST_RUNNING, 'subtitle_count' in args.where, args.limit != consts.DEFAULT_PLAY_QUEUE]) else ''}
-        {', ' + args.sort if args.sort else ''}
-        , path
-        , random()
+        , {args.sort}
     {LIMIT} {OFFSET}
     """
 
