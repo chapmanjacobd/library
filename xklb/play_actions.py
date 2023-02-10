@@ -227,7 +227,7 @@ def usage(action) -> str:
 
 def parse_args_sort(args):
     if args.sort:
-        args.sort = " ".join(args.sort).split(",")
+        args.sort = " ".join(args.sort)
     elif not args.sort:
         if hasattr(args, "defaults"):
             args.defaults.append("sort")
@@ -239,8 +239,6 @@ def parse_args_sort(args):
     if random() < 0.659:  # bias slightly toward videos without subtitles
         subtitle_count = "=0"
 
-    args.sort = ",".join(args.sort)
-
     sorts = [
         ("video_count" in m_columns and args.action == SC.watch, "video_count > 0 desc", "video_count > 0 "),
         ("audio_count" in m_columns, "audio_count > 0 desc", "audio_count > 0"),
@@ -249,8 +247,8 @@ def parse_args_sort(args):
             "time_downloaded > 0 desc",
             "time_downloaded > 0",
         ),
-        (True, 'path like "http%"', 'path like "http%" desc'),
-        ("width" in m_columns and args.portrait, "width < height desc", "width < height"),
+        (True, 'm.path like "http%"', 'm.path like "http%" desc'),
+        ("width" in m_columns and hasattr(args, 'portrait') and args.portrait, "width < height desc", "width < height"),
         (
             "subtitle_count" in m_columns
             and args.action == SC.watch
@@ -276,7 +274,7 @@ def parse_args_sort(args):
         ),
         (args.action == SC.filesystem, "sparseness", "sparseness desc"),
         (args.action == SC.filesystem, "size", "size desc"),
-        (True, "path", "path desc"),
+        (True, "m.path", "m.path desc"),
         (args.sort, None, args.sort),
         (True, "random", "random"),
     ]

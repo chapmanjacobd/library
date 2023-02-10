@@ -111,7 +111,7 @@ def construct_query(args) -> Tuple[str, dict]:
 
     if "uploader" in m_columns:
         cf.append(
-            f"and media.uploader not in (select uploader from playlists where category='{consts.BLOCK_THE_CHANNEL}')"
+            f"and m.uploader not in (select uploader from playlists where category='{consts.BLOCK_THE_CHANNEL}')"
         )
 
     args.sql_filter = " ".join(cf)
@@ -119,25 +119,25 @@ def construct_query(args) -> Tuple[str, dict]:
 
     LIMIT = "LIMIT " + str(args.limit) if args.limit else ""
     query = f"""select
-            media.path
+            m.path
             {', playlist_path' if 'playlist_path' in m_columns else ''}
-            , media.title
-            {', media.duration' if 'duration' in m_columns else ''}
-            , media.time_created
-            {', media.size' if 'size' in m_columns else ''}
-            {', media.ie_key' if 'ie_key' in m_columns else ''}
-            {', media.time_modified' if 'time_modified' in m_columns else ''}
-            {', media.time_downloaded' if 'time_downloaded' in m_columns else ''}
-            {', media.time_deleted' if 'time_deleted' in m_columns else ''}
-            {', media.error' if 'error' in m_columns else ''}
-            {', media.id' if 'id' in m_columns else ''}
+            , m.title
+            {', m.duration' if 'duration' in m_columns else ''}
+            , m.time_created
+            {', m.size' if 'size' in m_columns else ''}
+            {', m.ie_key' if 'ie_key' in m_columns else ''}
+            {', m.time_modified' if 'time_modified' in m_columns else ''}
+            {', m.time_downloaded' if 'time_downloaded' in m_columns else ''}
+            {', m.time_deleted' if 'time_deleted' in m_columns else ''}
+            {', m.error' if 'error' in m_columns else ''}
+            {', m.id' if 'id' in m_columns else ''}
             {', p.dl_config' if 'dl_config' in pl_columns else ''}
             , coalesce(p.category, p.ie_key) category
-        FROM media
-        LEFT JOIN playlists p on (p.path = media.playlist_path {"and p.ie_key != 'Local' and p.ie_key = media.ie_key" if 'ie_key' in m_columns else ''})
+        FROM media m
+        LEFT JOIN playlists p on (p.path = m.playlist_path {"and p.ie_key != 'Local' and p.ie_key = m.ie_key" if 'ie_key' in m_columns else ''})
         WHERE 1=1
-            and media.time_downloaded=0
-            and media.time_deleted=0
+            and m.time_downloaded=0
+            and m.time_deleted=0
             and (p.time_deleted is null or p.time_deleted=0)
             {'AND (score IS NULL OR score > 7)' if 'score' in m_columns else ''}
             {'AND (upvote_ratio IS NULL OR upvote_ratio > 0.73)' if 'upvote_ratio' in m_columns else ''}
