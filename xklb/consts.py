@@ -175,6 +175,7 @@ TUBE_IGNORE_KEYS = (
     "is_live",
     "was_live",
     "modified_date",
+    "aspect_ratio",
     "release_timestamp",
     "comment_count",
     "chapters",
