@@ -248,7 +248,7 @@ def parse_args_sort(args):
             "time_downloaded > 0",
         ),
         (True, 'm.path like "http%"', 'm.path like "http%" desc'),
-        ("width" in m_columns and hasattr(args, 'portrait') and args.portrait, "width < height desc", "width < height"),
+        ("width" in m_columns and hasattr(args, "portrait") and args.portrait, "width < height desc", "width < height"),
         (
             "subtitle_count" in m_columns
             and args.action == SC.watch
