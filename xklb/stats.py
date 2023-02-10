@@ -22,6 +22,7 @@ def parse_args(prog, usage):
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", help=argparse.SUPPRESS)
     parser.add_argument("--safe", "-safe", action="store_true", help="Skip generic URLs")
     parser.add_argument("--delete", "--remove", "--erase", "--rm", "-rm", nargs="+", help=argparse.SUPPRESS)
+    parser.add_argument("--print", "-p", default=False, const="p", nargs="?", help=argparse.SUPPRESS)
     if "dlstatus" in prog:
         parser.add_argument(
             "--retry-delay",
@@ -41,7 +42,6 @@ def parse_args(prog, usage):
     log.info(utils.dict_filter_bool(args.__dict__))
 
     args.action = consts.SC.stats
-    play_actions.parse_args_sort(args)
     return args
 
 
@@ -167,11 +167,11 @@ def playlists() -> None:
             {', p.title' if 'title' in pl_columns else ''}
             {', p.time_deleted' if 'time_deleted' in pl_columns else ''}
             {', count(*) FILTER(WHERE play_count>0) play_count' if 'play_count' in m_columns else ''}
-            {', sum(media.duration) duration' if 'duration' in m_columns else ''}
-            {', sum(media.size) size' if 'size' in m_columns else ''}
+            {', sum(m.duration) duration' if 'duration' in m_columns else ''}
+            {', sum(m.size) size' if 'size' in m_columns else ''}
             , count(*) count
-        from media
-        left join ({query}) p on (p.path = media.playlist_path {"and p.ie_key = media.ie_key and media.ie_key != 'Local'" if 'ie_key' in m_columns else ''})
+        from media m
+        left join ({query}) p on (p.path = m.playlist_path {"and p.ie_key = m.ie_key and m.ie_key != 'Local'" if 'ie_key' in m_columns else ''})
         group by coalesce(p.path, "Playlist-less media")
         order by count, p.category nulls last, p.path
         """
@@ -229,6 +229,7 @@ def dlstatus() -> None:
         ╘═════════════════════╧═════════════╧══════════════════╧════════════════════╧══════════╛
     """,
     )
+    play_actions.parse_args_sort(args)
 
     if args.delete:
         return delete_playlists(args, args.delete)
@@ -246,16 +247,16 @@ def dlstatus() -> None:
 
     query = f"""select
         coalesce(category, "Playlist-less media") category
-        {', ie_key' if 'media.ie_key' in query else ''}
+        {', ie_key' if 'm.ie_key' in query else ''}
         {', sum(duration) duration' if 'duration' in query else ''}
         {count_paths}
         {', count(*) FILTER(WHERE time_modified>0 AND error IS NOT NULL) errors' if 'error' in query else ''}
         {', group_concat(distinct error) error_descriptions' if 'error' in query and args.verbose >= 1 else ''}
-    from ({query})
+    from ({query}) m
     where 1=1
         and time_downloaded=0
         and time_deleted=0
-    group by category{', ie_key' if 'media.ie_key' in query else ''}
+    group by category{', ie_key' if 'm.ie_key' in query else ''}
     order by category nulls last"""
 
     printer(args, query, bindings)
