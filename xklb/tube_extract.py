@@ -23,6 +23,7 @@ def parse_args(action, usage) -> argparse.Namespace:
     parser.add_argument("--no-sanitize", "-s", action="store_true", help="Don't sanitize some common URL parameters")
     parser.add_argument("--extra", "-extra", action="store_true", help="Get full metadata (takes a lot longer)")
     parser.add_argument("--playlist-files", action="store_true", help="Read playlists from text files")
+    parser.add_argument("--playlist-db", action="store_true", help="Fetch metadata for paths in a table")
     parser.add_argument("--extra-media-data", default={})
     parser.add_argument("--extra-playlist-data", default={})
     parser.add_argument("--ignore-errors", "--ignoreerrors", "-i", "-f", action="store_true", help=argparse.SUPPRESS)
@@ -67,6 +68,10 @@ def tube_add(args=None) -> None:
 
         library tubeadd -c Educational dl.db https://www.youdl.com/c/BranchEducation/videos
 
+    Add metadata for links in a database table
+
+        library tubeadd reddit.db --playlist-db media
+
     If you include more than one URL, you must specify the database
 
         library tubeadd 71_Mealtime_Videos dl.db (cat ~/.jobs/todo/71_Mealtime_Videos)
@@ -88,7 +93,29 @@ def tube_add(args=None) -> None:
     """,
     )
     if args.playlist_files:
-        args.playlists = utils.flatten([Path(p).read_text().splitlines() for p in args.playlists])
+        args.playlists = list(utils.flatten([Path(p).read_text().splitlines() for p in args.playlists]))
+    elif args.playlist_db:
+        args.playlists = list(
+            utils.flatten(
+                [
+                    d["path"]
+                    for d in args.db.query(
+                        f"""
+                    select path from {table}
+                    where (time_deleted=0 or time_deleted is null)
+                    and (time_modified=0 or time_modified is null)
+                    and (time_downloaded=0 or time_downloaded is null)
+                    {'and width is null' if 'width' in args.db[table].columns_dict else ''}
+                    {'and title is null' if 'title' in args.db[table].columns_dict else ''}
+                    {'and duration is null' if 'duration' in args.db[table].columns_dict else ''}
+                    {'and size is null' if 'size' in args.db[table].columns_dict else ''}
+                    ORDER by random()
+                    """
+                    )
+                ]
+                for table in args.playlists
+            )
+        )
 
     for path in args.playlists:
         if args.safe and not tube_backend.is_supported(path):
