@@ -35,9 +35,6 @@ def _now_playing(args) -> dict:
         "mpv": args.mpv.command("get_property", "path") if os.path.exists(args.mpv_socket) else None,
     }
     log.info(media)
-    if None not in media.values():
-        log.warning("Both `catt` and `mpv` playback files found!")
-
     return media
 
 
@@ -55,6 +52,7 @@ def playback_now() -> None:
     if playing["mpv"]:
         print_now_playing(playing, "mpv")
         args.mpv.terminate()
+
     if playing["catt"]:
         print_now_playing(playing, "catt")
 
