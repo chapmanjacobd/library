@@ -134,8 +134,8 @@ def construct_query(args) -> Tuple[str, dict]:
         FROM media m
         LEFT JOIN playlists p on (p.path = m.playlist_path {"and p.ie_key != 'Local' and p.ie_key = m.ie_key" if 'ie_key' in m_columns else ''})
         WHERE 1=1
-            and m.time_downloaded=0
-            and m.time_deleted=0
+            and (m.time_downloaded is null or m.time_downloaded=0)
+            and (m.time_deleted is null or m.time_deleted=0)
             and (p.time_deleted is null or p.time_deleted=0)
             {'AND (score IS NULL OR score > 7)' if 'score' in m_columns else ''}
             {'AND (upvote_ratio IS NULL OR upvote_ratio > 0.73)' if 'upvote_ratio' in m_columns else ''}
@@ -222,14 +222,20 @@ def dl_download(args=None) -> None:
             log.info("[%s]: Skipping unsupported URL (safe_mode)", m["path"])
             continue
 
-        # check again in case it was already completed by another process
-        path = list(
+        # check again in case it was already attempted by another process
+        previous_time_attempted = m.get("time_modified") or 0
+        download_already_attempted = list(
             args.db.query(
-                f"select path from media where (path=? or {'web' if 'webpath' in m_columns else ''}path=?) {'AND time_modified = ' + str(m.get('time_modified') or 0) if 'time_modified' in m_columns else ''}",
+                f"""
+                SELECT path from media
+                WHERE 1=1
+                AND (path=? or {'web' if 'webpath' in m_columns else ''}path=?)
+                {f'AND time_modified > {str(previous_time_attempted)}' if 'time_modified' in m_columns else ''}
+                """,
                 [m["path"], m["path"]],
             )
         )
-        if not path:
+        if download_already_attempted:
             log.info("[%s]: Already downloaded. Skipping!", m["path"])
             continue
 
