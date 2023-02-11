@@ -343,7 +343,7 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     parser.add_argument("--moved", nargs=2, help=argparse.SUPPRESS)
 
     parser.add_argument("--cols", "-cols", "-col", nargs="*", help=argparse.SUPPRESS)
-    parser.add_argument("--limit", "-L", "-queue", "--queue", help=argparse.SUPPRESS)
+    parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", help=argparse.SUPPRESS)
     parser.add_argument("--skip", "--offset", help=argparse.SUPPRESS)
     parser.add_argument(
         "--partial", "-P", "--recent", "-R", default=False, const="n", nargs="?", help=argparse.SUPPRESS
@@ -364,8 +364,8 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     parser.add_argument("--keep-cmd", "--keepcmd", help=argparse.SUPPRESS)
     parser.add_argument("--shallow-organize", default="/mnt/d/", help=argparse.SUPPRESS)
 
-    parser.add_argument("--online-media-only", "--online-only", "-o", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--local-media-only", "--local-only", "-l", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--online-media-only", "--online-only", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--local-media-only", "--local-only", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--safe", "-safe", action="store_true", help="Skip generic URLs")
 
     parser.add_argument("--timeout", "-T", help=argparse.SUPPRESS)
