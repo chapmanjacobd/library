@@ -186,7 +186,7 @@ def get_playlists(args, cols="path, dl_config", constrain=False, sql_filters=Non
     if sql_filters is None:
         sql_filters = []
     if "time_deleted" in columns:
-        sql_filters.append("AND time_deleted=0")
+        sql_filters.append("AND (time_deleted = 0 or time_deleted is NULL)")
     if constrain:
         if args.category:
             sql_filters.append(f"AND category='{args.category}'")

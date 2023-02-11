@@ -518,10 +518,10 @@ def construct_query(args) -> Tuple[str, dict]:
     WHERE 1=1
         {f'and path like "http%"' if args.safe else ''}
         {f'and path not like "{Path(args.keep_dir).resolve()}%"' if args.post_action == 'askkeep' else ''}
-        {'and time_deleted=0' if 'time_deleted' in m_columns and 'time_deleted' not in ' '.join(sys.argv) else ''}
+        {'and (time_deleted = 0 or time_deleted is NULL)' if 'time_deleted' in m_columns and 'time_deleted' not in ' '.join(sys.argv) else ''}
         {'AND (score IS NULL OR score > 7)' if 'score' in m_columns else ''}
         {'AND (upvote_ratio IS NULL OR upvote_ratio > 0.73)' if 'upvote_ratio' in m_columns else ''}
-        {'AND time_downloaded = 0' if args.online_media_only else ''}
+        {'AND COALESCE(time_downloaded,0) = 0' if args.online_media_only else ''}
         {'AND time_downloaded > 0 AND path not like "http%"' if args.local_media_only else ''}
     )
     SELECT

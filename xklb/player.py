@@ -357,7 +357,7 @@ def get_ordinal_media(args, path: str) -> str:
         query = f"""SELECT path FROM {'media' if args.play_in_order >= 3 else args.table}
             WHERE 1=1
                 and path like :candidate
-                {'and time_deleted=0' if 'time_deleted' in columns else ''}
+                {'and (time_deleted = 0 or time_deleted is NULL)' if 'time_deleted' in columns else ''}
                 {'' if args.play_in_order >= 2 else (args.sql_filter or '')}
             ORDER BY play_count, path
             LIMIT 1000
