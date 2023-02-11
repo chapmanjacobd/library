@@ -21,7 +21,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v1.23.010)
+    xk media library subcommands (v1.23.011)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -678,7 +678,7 @@ I use rsync to move files instead of copy-on-write duplication because I want de
 
 ```fish
 for reddit_db in ~/lb/reddit/*.db
-    set subreddits (sqlite-utils $reddit_db 'select path from playlists' --tsv --no-headers | sed 's|https://old.reddit.com/r/\(.*\)/|\1|' | sed 's|https://old.reddit.com/user/\(.*\)/|u_\1|' | tr -d "\r")
+    set subreddits (sqlite-utils $reddit_db 'select path from playlists' --tsv --no-headers | grep old.reddit.com | sed 's|https://old.reddit.com/r/\(.*\)/|\1|' | sed 's|https://old.reddit.com/user/\(.*\)/|u_\1|' | tr -d "\r")
 
     ~/github/xk/reddit_mining/links/
     for subreddit in $subreddits
