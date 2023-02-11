@@ -190,7 +190,7 @@ def find_new_files(args, path: Path) -> List[str]:
             for d in args.db.query(
                 f"""select path from media
                 where 1=1
-                    and time_deleted=0
+                    and time_deleted = 0
                     and path like '{path}%'
                     {'AND time_downloaded > 0' if 'time_downloaded' in columns else ''}
                 """

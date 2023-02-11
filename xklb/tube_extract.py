@@ -102,9 +102,10 @@ def tube_add(args=None) -> None:
                     for d in args.db.query(
                         f"""
                     select path from {table}
-                    where (time_deleted=0 or time_deleted is null)
-                    and (time_modified=0 or time_modified is null)
-                    and (time_downloaded=0 or time_downloaded is null)
+                    where 1=1
+                    and COALESCE(time_deleted,0) = 0
+                    and COALESCE(time_modified,0) = 0
+                    and COALESCE(time_downloaded,0) = 0
                     {'and width is null' if 'width' in args.db[table].columns_dict else ''}
                     {'and title is null' if 'title' in args.db[table].columns_dict else ''}
                     {'and duration is null' if 'duration' in args.db[table].columns_dict else ''}

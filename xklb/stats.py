@@ -69,7 +69,7 @@ def construct_query(args) -> Tuple[str, dict]:
         *
     FROM {args.table}
     WHERE 1=1
-        and time_deleted=0
+        and (time_deleted = 0 or time_deleted is NULL)
         {args.sql_filter}
         and (category is null or category != '{consts.BLOCK_THE_CHANNEL}')
     ORDER BY 1=1
@@ -241,21 +241,21 @@ def dlstatus() -> None:
     count_paths = ""
     if "time_modified" in query:
         if args.safe:
-            count_paths = ", count(*) FILTER(WHERE time_modified=0 and is_supported(path)) never_downloaded"
+            count_paths = ", count(*) FILTER(WHERE COALESCE(time_modified,0) and is_supported(path)) never_downloaded"
         else:
-            count_paths = ", count(*) FILTER(WHERE time_modified=0) never_downloaded"
+            count_paths = ", count(*) FILTER(WHERE COALESCE(time_modified,0) = 0) never_downloaded"
 
     query = f"""select
         coalesce(category, "Playlist-less media") category
         {', ie_key' if 'm.ie_key' in query else ''}
         {', sum(duration) duration' if 'duration' in query else ''}
         {count_paths}
-        {', count(*) FILTER(WHERE time_modified>0 AND error IS NOT NULL) errors' if 'error' in query else ''}
+        {', count(*) FILTER(WHERE COALESCE(time_modified,0) > 0 AND error IS NOT NULL) errors' if 'error' in query else ''}
         {', group_concat(distinct error) error_descriptions' if 'error' in query and args.verbose >= 1 else ''}
     from ({query}) m
     where 1=1
-        and time_downloaded=0
-        and time_deleted=0
+        and COALESCE(time_downloaded,0) = 0
+        and COALESCE(time_deleted,0) = 0
     group by category{', ie_key' if 'm.ie_key' in query else ''}
     order by category nulls last"""
 

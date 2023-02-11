@@ -105,7 +105,7 @@ def construct_query(args) -> Tuple[str, dict]:
 
     cf.append(
         f"""and cast(STRFTIME('%s',
-          datetime( time_modified, 'unixepoch', '+{args.retry_delay}')
+          datetime( COALESCE(time_modified,0), 'unixepoch', '+{args.retry_delay}')
         ) as int) < STRFTIME('%s', datetime()) """
     )
 
@@ -134,9 +134,9 @@ def construct_query(args) -> Tuple[str, dict]:
         FROM media m
         LEFT JOIN playlists p on (p.path = m.playlist_path {"and p.ie_key != 'Local' and p.ie_key = m.ie_key" if 'ie_key' in m_columns else ''})
         WHERE 1=1
-            and (m.time_downloaded is null or m.time_downloaded=0)
-            and (m.time_deleted is null or m.time_deleted=0)
-            and (p.time_deleted is null or p.time_deleted=0)
+            and COALESCE(m.time_downloaded,0) = 0
+            and COALESCE(m.time_deleted,0) = 0
+            and COALESCE(p.time_deleted,0) = 0
             {'AND (score IS NULL OR score > 7)' if 'score' in m_columns else ''}
             {'AND (upvote_ratio IS NULL OR upvote_ratio > 0.73)' if 'upvote_ratio' in m_columns else ''}
             {args.sql_filter}
@@ -230,7 +230,7 @@ def dl_download(args=None) -> None:
                 SELECT path from media
                 WHERE 1=1
                 AND (path=? or {'web' if 'webpath' in m_columns else ''}path=?)
-                {f'AND time_modified > {str(previous_time_attempted)}' if 'time_modified' in m_columns else ''}
+                {f'AND COALESCE(time_modified,0) > {str(previous_time_attempted)}' if 'time_modified' in m_columns else ''}
                 """,
                 [m["path"], m["path"]],
             )
