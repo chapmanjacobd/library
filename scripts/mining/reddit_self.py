@@ -61,7 +61,7 @@ def parse_reddit_selftext() -> None:
                 log.info(i_link)
 
         for e_link in external_links:
-            args.db["media"].insert({**d, "path": e_link, "webpage": d["path"]}, alter=True)
+            args.db["media"].upsert({**d, "path": e_link, "webpage": d["path"]}, pk="path", alter=True)
 
 
 if __name__ == "__main__":

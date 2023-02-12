@@ -28,6 +28,7 @@ yt_recoverable_errors = re.compile(
 .*read operation timed out
 .*Internal Server Error
 .*Internal error encountered
+.*Downloaded .* bytes, expected .* bytes
 .*Playlists that require authentication may not extract correctly without a successful webpage download
 .*Main webpage is locked behind the login page
 .*You need to log in to access this content
@@ -85,6 +86,8 @@ yt_meaningless_errors = re.compile(
 .*Finished downloading playlist
 .*The last 30x error message was:
 .*NoneType
+.*unable to download video data
+.*HTTP Error 405
 .*Creating a generic title instead
 .*The channel is not currently live
 .*clips are not currently supported.
@@ -124,6 +127,7 @@ yt_unrecoverable_errors = re.compile(
 .*The URL must be suitable for the extractor
 .*Private video
 .*not a video
+.*The given url does not contain a video
 .*because this account owner limits who can view
 .*No status found with that ID
 .*program functionality for this site has been marked as broken, and will probably not work
@@ -179,6 +183,7 @@ yt_unrecoverable_errors = re.compile(
 .*not a video\$
 .*The page doesn't contain any tracks
 .*removed by the uploader
+.*Access to this video has been restricted by its creator
 .*blocked due to author's rights infingement
 .*blocked it on copyright grounds\$
 .*uploader has closed their.*account

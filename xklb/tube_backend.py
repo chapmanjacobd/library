@@ -592,5 +592,6 @@ def yt(args, m) -> None:
             log.warning("[%s]: Prefix error. %s", m["path"], ydl_errors)
             raise SystemExit(28)
         else:
-            log.error("[%s]: Unknown error. %s", m["path"], ydl_errors)
+            if ydl_errors != "":
+                log.error("[%s]: Unknown error. %s", m["path"], ydl_errors)
             save_tube_entry(args, m, info, error=ydl_errors)
