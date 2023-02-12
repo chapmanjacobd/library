@@ -69,7 +69,7 @@ def construct_query(args) -> Tuple[str, dict]:
         *
     FROM {args.table}
     WHERE 1=1
-        and (time_deleted = 0 or time_deleted is NULL)
+        and COALESCE(time_deleted,0) = 0
         {args.sql_filter}
         and (category is null or category != '{consts.BLOCK_THE_CHANNEL}')
     ORDER BY 1=1
