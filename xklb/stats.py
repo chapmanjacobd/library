@@ -104,7 +104,7 @@ def printer(args, query, bindings) -> None:
         tbl = utils.col_resize(tbl, "title", 20)
         tbl = utils.col_resize(tbl, "uploader_url")
 
-        tbl = utils.list_dict_filter_bool(tbl, keep_0=False)
+        tbl = utils.list_dict_filter_bool(tbl)
 
         print(tabulate(tbl, tablefmt="fancy_grid", headers="keys", showindex=False))
 
@@ -234,13 +234,12 @@ def dlstatus() -> None:
     if args.delete:
         return delete_playlists(args, args.delete)
 
-    args.db.register_function(tube_backend.is_supported, deterministic=True)
-
     query, bindings = dl_extract.construct_query(args)
 
     count_paths = ""
     if "time_modified" in query:
         if args.safe:
+            args.db.register_function(tube_backend.is_supported, deterministic=True)
             count_paths = ", count(*) FILTER(WHERE COALESCE(time_modified,0) and is_supported(path)) never_downloaded"
         else:
             count_paths = ", count(*) FILTER(WHERE COALESCE(time_modified,0) = 0) never_downloaded"
