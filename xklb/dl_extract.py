@@ -137,6 +137,7 @@ def construct_query(args) -> Tuple[str, dict]:
             and COALESCE(m.time_downloaded,0) = 0
             and COALESCE(m.time_deleted,0) = 0
             and COALESCE(p.time_deleted,0) = 0
+            and m.path like "http%"
             {'AND (score IS NULL OR score > 7)' if 'score' in m_columns else ''}
             {'AND (upvote_ratio IS NULL OR upvote_ratio > 0.73)' if 'upvote_ratio' in m_columns else ''}
             {args.sql_filter}

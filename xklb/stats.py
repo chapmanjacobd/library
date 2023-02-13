@@ -240,7 +240,9 @@ def dlstatus() -> None:
     if "time_modified" in query:
         if args.safe:
             args.db.register_function(tube_backend.is_supported, deterministic=True)
-            count_paths = ", count(*) FILTER(WHERE COALESCE(time_modified,0) and is_supported(path)) never_downloaded"
+            count_paths = (
+                ", count(*) FILTER(WHERE COALESCE(time_modified,0) = 0 and is_supported(path)) never_downloaded"
+            )
         else:
             count_paths = ", count(*) FILTER(WHERE COALESCE(time_modified,0) = 0) never_downloaded"
 

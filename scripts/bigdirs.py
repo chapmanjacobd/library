@@ -38,17 +38,17 @@ def group_files_by_folder(args, media):
             p.pop()
             parent = "/".join(p) + "/"
 
-            file_exists = (m.get("was_deleted") or 0) == 0
+            file_exists = (m.get("time_deleted") or 0) == 0
 
             if d.get(parent):
                 d[parent]["size"] += m["size"] if file_exists else 0
                 d[parent]["count"] += 1 if file_exists else 0
-                d[parent]["count_deleted"] += m.get("was_deleted")
+                d[parent]["count_deleted"] += 0 if file_exists else 1
             else:
                 d[parent] = {
                     "size": m["size"] if file_exists else 0,
                     "count": 1 if file_exists else 0,
-                    "count_deleted": m.get("was_deleted"),
+                    "count_deleted": 0 if file_exists else 1,
                 }
 
     for path, pdict in list(d.items()):
@@ -99,7 +99,7 @@ def get_table(args) -> List[dict]:
         select
             path
             , size
-            {', time_deleted > 0 was_deleted' if 'time_deleted' in columns else ''}
+            {', time_deleted' if 'time_deleted' in columns else ''}
         from media
         where 1=1
             {'and time_downloaded > 0' if 'time_downloaded' in columns else ''}
@@ -108,7 +108,10 @@ def get_table(args) -> List[dict]:
         """
         )
     )
+    return media
 
+
+def process_bigdirs(args, media):
     folders = group_files_by_folder(args, media)
     if args.depth:
         folders = group_folders(args, folders)
@@ -118,6 +121,7 @@ def get_table(args) -> List[dict]:
 def bigdirs() -> None:
     args = parse_args()
     tbl = get_table(args)
+    tbl = process_bigdirs(args, tbl)
 
     if args.limit:
         tbl = tbl[-int(args.limit) :]
