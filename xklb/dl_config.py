@@ -33,7 +33,10 @@ yt_recoverable_errors = re.compile(
 .*Main webpage is locked behind the login page
 .*You need to log in to access this content
 .*This video is only available for registered users
+.*members-only content
+.*This video is only available to Music Premium members
 .*episode is not currently available
+.*This channel has no uploads
 .*Could not send HEAD request
 .*Unable to download JSON metadata
 .*Failed to parse JSON Expecting
@@ -91,7 +94,6 @@ yt_meaningless_errors = re.compile(
 .*Creating a generic title instead
 .*The channel is not currently live
 .*clips are not currently supported.
-.*Join this channel to get access to members-only content
 .*Confirm you are on the latest version using
 .*referenced before assignment
 .*field is missing or empty
@@ -138,7 +140,8 @@ yt_unrecoverable_errors = re.compile(
 .*list index out of range
 .*Unable to extract cnn url
 .*PornHd.*Unable to extract error message
-.*members-only content
+.*status error-notFound
+.*ERROR.*'items'\$
 .*You don't have permission to access this video.
 .*Video is unavailable pending review
 .*Video has been flagged for verification
@@ -150,17 +153,18 @@ yt_unrecoverable_errors = re.compile(
 .*This video requires payment to watch.\$
 .*Unable to download webpage
 .*dashboard-only post
-.*This video is only available to Music Premium members
 .*The policy key provided does not permit this account or video
 .*live stream recording
 .*The channel is not currently live
 .*This live event will begin in a few moments
 .*nudity or sexual content
 .*policy on harassment and bullying
+.*Can't find object userchannel
 .*stream.* is offline\$
 .*: Video unavailable\$
 .* does not exist.\$
-.* has been removed\$
+.* has been removed
+.* Track not found
 .*: Not found.
 .*Video no longer exists
 .*Premieres in.*hours\$
@@ -197,6 +201,7 @@ yt_unrecoverable_errors = re.compile(
 .*Community Guidelines
 .*Terms of Service
 .*This channel does not exist
+.*account that no longer exists
 .*account associated with this video
 .*This video doesn't exist.\$
 .*Track not found\$

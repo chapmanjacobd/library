@@ -598,7 +598,10 @@ def play(args, m: Dict) -> None:
             media_file = transcode(media_file)
 
     if args.action == SC.listen and not media_file.startswith("http"):
-        print(cmd("ffprobe", "-hide_banner", "-loglevel", "info", media_file).stderr)
+        try:
+            print(cmd("ffprobe", "-hide_banner", "-loglevel", "info", media_file).stderr)
+        except UnicodeEncodeError:
+            print(media_file)
     else:
         print(media_file)
 
