@@ -13,6 +13,7 @@ import screeninfo
 from rich.prompt import Confirm
 from tabulate import tabulate
 
+from scripts.bigdirs import bigdirs
 from xklb import consts, utils
 from xklb.consts import SC
 from xklb.utils import cmd, cmd_interactive, human_time, log
@@ -666,6 +667,9 @@ def printer(args, query, bindings) -> None:
 
     media = list(args.db.query(query, bindings))
 
+    if "b" in args.print:
+        media = bigdirs.process_bigdirs(args, media)
+
     if hasattr(args, "partial") and args.partial and Path(args.watch_later_directory).exists():
         media = utils.mpv_enrich2(args, media)
 
@@ -675,12 +679,11 @@ def printer(args, query, bindings) -> None:
     if not media:
         utils.no_media_found()
 
-    if "d" in args.print:
+    elif "d" in args.print:
         mark_media_deleted(args, list(map(operator.itemgetter("path"), media)))
         if not "f" in args.print:
             return print(f"Removed {len(media)} metadata records")
-
-    if "w" in args.print:
+    elif "w" in args.print:
         marked = mark_media_watched(args, list(map(operator.itemgetter("path"), media)))
         if not "f" in args.print:
             return print(f"Marked {marked} metadata records as watched")

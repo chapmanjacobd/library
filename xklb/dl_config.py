@@ -22,6 +22,7 @@ yt_recoverable_errors = re.compile(
 .*HTTP Error 429
 .*HTTP Error 400
 .*HTTP Error 503: Service Unavailable
+.*API is not granting access
 .*Did not get any data blocks
 .*Too Many Requests
 .*Premieres in
@@ -112,6 +113,7 @@ yt_meaningless_errors = re.compile(
 .*WARNING: unable to obtain file audio codec with ffprobe
 .*matching opening tag for closing p tag not found
 .*the JSON object must be str, bytes or bytearray, not dict
+.*list indices must be integers
 .*The read operation timed out
 .*Unable to recognize playlist.
 .*Premieres in""".splitlines()
@@ -124,11 +126,13 @@ yt_unrecoverable_errors = re.compile(
 .*It is not available
 .*has already been recorded in the archive
 .*ideo.*is private
+.*from a suspended account
 .*This video has been disabled
 .*No suitable extractor
 .*The URL must be suitable for the extractor
 .*Private video
 .*not a video
+.*Invalid URL
 .*The given url does not contain a video
 .*because this account owner limits who can view
 .*No status found with that ID

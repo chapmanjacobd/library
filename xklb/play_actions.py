@@ -368,6 +368,11 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     parser.add_argument("--local-media-only", "--local-only", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--safe", "-safe", action="store_true", help="Skip generic URLs")
 
+    parser.add_argument("--sort-by-deleted", action="store_true")
+    parser.add_argument("--depth", "-D", default=0, type=int, help="Depth of folders")
+    parser.add_argument("--lower", type=int, help="Number of files per folder lower limit")
+    parser.add_argument("--upper", type=int, help="Number of files per folder upper limit")
+
     parser.add_argument("--timeout", "-T", help=argparse.SUPPRESS)
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
     parser.add_argument("--ignore-errors", "--ignoreerrors", "-i", action="store_true")
