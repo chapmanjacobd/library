@@ -164,7 +164,7 @@ yt_unrecoverable_errors = re.compile(
 .*nudity or sexual content
 .*policy on harassment and bullying
 .*Can't find object userchannel
-.*stream.* is offline\$
+.*is offline
 .*: Video unavailable\$
 .* does not exist.\$
 .* has been removed

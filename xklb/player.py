@@ -13,7 +13,7 @@ import screeninfo
 from rich.prompt import Confirm
 from tabulate import tabulate
 
-from scripts.bigdirs import bigdirs
+from scripts import process_bigdirs
 from xklb import consts, utils
 from xklb.consts import SC
 from xklb.utils import cmd, cmd_interactive, human_time, log
@@ -668,7 +668,7 @@ def printer(args, query, bindings) -> None:
     media = list(args.db.query(query, bindings))
 
     if "b" in args.print:
-        media = bigdirs.process_bigdirs(args, media)
+        media = process_bigdirs(args, media)
 
     if hasattr(args, "partial") and args.partial and Path(args.watch_later_directory).exists():
         media = utils.mpv_enrich2(args, media)
