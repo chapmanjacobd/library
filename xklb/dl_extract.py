@@ -41,7 +41,7 @@ def parse_args(action, usage):
     parser.add_argument("--ext", default="DEFAULT")
     parser.add_argument("--print", "-p", default=False, const="p", nargs="?", help=argparse.SUPPRESS)
     parser.add_argument("--cols", "-cols", "-col", nargs="*", help=argparse.SUPPRESS)
-    parser.add_argument("--sort", "-u", nargs="+", help=argparse.SUPPRESS)
+    parser.add_argument("--sort", "-u", nargs="+", default=["random"], help=argparse.SUPPRESS)
     parser.add_argument("--where", "-w", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--include", "-s", "--search", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
@@ -143,6 +143,7 @@ def construct_query(args) -> Tuple[str, dict]:
             {args.sql_filter}
         ORDER BY 1=1
             , play_count
+            {', ' + args.sort if args.sort else ''}
             , random()
     {LIMIT}
     """
