@@ -142,7 +142,6 @@ def construct_query(args) -> Tuple[str, dict]:
             {'AND (upvote_ratio IS NULL OR upvote_ratio > 0.73)' if 'upvote_ratio' in m_columns else ''}
             {args.sql_filter}
         ORDER BY 1=1
-            {', ' + args.sort if args.sort else ''}
             , play_count
             , random()
     {LIMIT}

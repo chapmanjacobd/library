@@ -59,6 +59,7 @@ def usage(action) -> str:
         library {action} -p    # print in a table
         library {action} -p p  # equivalent
         library {action} -p a  # print an aggregate report
+        library {action} -p a  # print a bigdirs report (see lb bigdirs -h for more info)
         library {action} -p f  # print fields -- useful for piping paths to utilities like xargs or GNU Parallel
 
         Check if you have downloaded something before
@@ -75,7 +76,7 @@ def usage(action) -> str:
         ╘═══════════╧══════════════╧═════════╧═════════╛
         Total duration: 14 days, 23 hours and 42 minutes
 
-        Print an aggregate report of media that has no duration information (likely corrupt media)
+        Print an aggregate report of media that has no duration information (likely corrupt or online media)
         library {action} -w 'duration is null' -p=a
 
         Print a list of filenames which have below 1280px resolution

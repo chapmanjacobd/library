@@ -21,7 +21,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v1.23.018)
+    xk media library subcommands (v1.23.019)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -262,6 +262,7 @@ Organize via separate databases.
         library watch -p    # print in a table
         library watch -p p  # equivalent
         library watch -p a  # print an aggregate report
+        library watch -p a  # print a bigdirs report (see lb bigdirs -h for more info)
         library watch -p f  # print fields -- useful for piping paths to utilities like xargs or GNU Parallel
 
         Check if you have downloaded something before
@@ -278,7 +279,7 @@ Organize via separate databases.
         ╘═══════════╧══════════════╧═════════╧═════════╛
         Total duration: 14 days, 23 hours and 42 minutes
 
-        Print an aggregate report of media that has no duration information (likely corrupt media)
+        Print an aggregate report of media that has no duration information (likely corrupt or online media)
         library watch -w 'duration is null' -p=a
 
         Print a list of filenames which have below 1280px resolution
