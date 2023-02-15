@@ -84,6 +84,7 @@ def playback_stop() -> None:
     playing = _now_playing(args)
     if playing["mpv"]:
         args.mpv.command("loadfile", "/dev/null")  # make mpv exit with code 3
+        args.mpv.terminate()
 
     if playing["catt"] or not any(playing.values()):
         kill_process("catt")
@@ -120,5 +121,6 @@ def playback_next() -> None:
 
     if playing["mpv"]:
         args.mpv.command("playlist_next", "force")
+        args.mpv.terminate()
         if args.delete:
             utils.trash(playing["mpv"])
