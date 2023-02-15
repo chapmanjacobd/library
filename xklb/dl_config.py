@@ -38,6 +38,7 @@ yt_recoverable_errors = re.compile(
 .*This video is only available for registered users
 .*members-only content
 .*not available in your location
+.*linked to an account
 .*This video is only available to Music Premium members
 .*episode is not currently available
 .*This channel has no uploads
@@ -70,6 +71,7 @@ yt_meaningless_errors = re.compile(
 .*Unauthorized
 .*Forbidden
 .*Traceback
+.*Invalid argument
 .*KeyboardInterrupt
 .*Fatal Python error
 .*list index out of range
