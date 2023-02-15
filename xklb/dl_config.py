@@ -22,9 +22,11 @@ yt_recoverable_errors = re.compile(
 .*HTTP Error 429
 .*HTTP Error 400
 .*HTTP Error 503: Service Unavailable
+.*Origin Error
 .*API is not granting access
 .*Did not get any data blocks
 .*Too Many Requests
+.*Postprocessing
 .*Premieres in
 .*read operation timed out
 .*Internal Server Error
@@ -35,6 +37,7 @@ yt_recoverable_errors = re.compile(
 .*You need to log in to access this content
 .*This video is only available for registered users
 .*members-only content
+.*not available in your location
 .*This video is only available to Music Premium members
 .*episode is not currently available
 .*This channel has no uploads
@@ -126,6 +129,8 @@ yt_unrecoverable_errors = re.compile(
 .*It is not available
 .*has already been recorded in the archive
 .*ideo.*is private
+.*No video player ID
+.*has been removed
 .*from a suspended account
 .*This video has been disabled
 .*No suitable extractor
@@ -166,9 +171,10 @@ yt_unrecoverable_errors = re.compile(
 .*Can't find object userchannel
 .*is offline
 .*: Video unavailable\$
-.* does not exist.\$
-.* has been removed
-.* Track not found
+.*does not exist
+.*has been removed
+.*no video on the webpage
+.*Track not found
 .*: Not found.
 .*Video no longer exists
 .*Premieres in.*hours\$
