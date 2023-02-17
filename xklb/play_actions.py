@@ -384,7 +384,10 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     args = parser.parse_intermixed_args()
     args.action = action
     args.defaults = []
+
     args.include += args.search
+    if args.include == ["."]:
+        args.include = [str(Path().cwd().resolve())]
 
     if args.db:
         args.database = args.db

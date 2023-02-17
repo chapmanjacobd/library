@@ -1,4 +1,5 @@
 import argparse
+from pathlib import Path
 from time import sleep
 from typing import Dict, List, Tuple
 
@@ -98,7 +99,10 @@ def parse_args(action) -> argparse.Namespace:
     parser.add_argument("search", nargs="*")
     args = parser.parse_intermixed_args()
     args.action = action
+
     args.include += args.search
+    if args.include == ["."]:
+        args.include = [str(Path().cwd().resolve())]
 
     if args.db:
         args.database = args.db
