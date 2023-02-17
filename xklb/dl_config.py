@@ -139,6 +139,7 @@ yt_unrecoverable_errors = re.compile(
 .*No video player ID
 .*has been removed
 .*from a suspended account
+.*has not been found
 .*This video has been disabled
 .*No suitable extractor
 .*The URL must be suitable for the extractor
