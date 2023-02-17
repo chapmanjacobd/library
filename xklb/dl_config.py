@@ -28,9 +28,14 @@ yt_recoverable_errors = re.compile(
 .*Too Many Requests
 .*Postprocessing
 .*Premieres in
+.*user.*not allowed
 .*read operation timed out
+.*Could not connect
 .*Internal Server Error
 .*Internal error encountered
+.*not currently available
+.*currently unavailable
+.*selectionunavailable
 .*Downloaded .* bytes, expected .* bytes
 .*Playlists that require authentication may not extract correctly without a successful webpage download
 .*Main webpage is locked behind the login page
@@ -140,6 +145,7 @@ yt_unrecoverable_errors = re.compile(
 .*Private video
 .*not a video
 .*Invalid URL
+.*Incomplete.*ID
 .*The given url does not contain a video
 .*because this account owner limits who can view
 .*No status found with that ID
