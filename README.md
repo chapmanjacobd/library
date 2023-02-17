@@ -143,7 +143,7 @@ the metadata for 180,000 videos.
 Tubeupdate will go through the list of added playlists and fetch metadata for
 any videos not previously seen.
 
-    library tubeupdate
+    library tubeupdate tube.db
 
 ### 2. Watch / Listen from websites
 
@@ -163,7 +163,7 @@ or tools that you want to use for a few minutes daily, weekly, monthly, quarterl
 
 ### 1. Add your websites
 
-    library tabsadd --frequency monthly --category fun \
+    library tabsadd tabs.db --frequency monthly --category fun \
         https://old.reddit.com/r/Showerthoughts/top/?sort=top&t=month \
         https://old.reddit.com/r/RedditDayOf/top/?sort=top&t=month
 
@@ -201,15 +201,7 @@ Or with `systemd`:
 
 You can also invoke tabs manually:
 
-    library tabs -L 1  # open one tab
-
-## Things to know.db
-
-Organize via separate databases.
-
-    library fsadd --audio both.db ./audiobooks/ ./podcasts/
-    library fsadd --audio audiobooks.db ./audiobooks/
-    library fsadd --audio podcasts.db ./podcasts/ ./another/more/secret/podcasts_folder/
+    library tabs tabs.db -L 1  # open one tab
 
 ## Usage
 
@@ -429,6 +421,12 @@ Organize via separate databases.
 
 
 ## More examples
+
+### Organize via separate databases.
+
+    library fsadd --audio both.db ./audiobooks/ ./podcasts/
+    library fsadd --audio audiobooks.db ./audiobooks/
+    library fsadd --audio podcasts.db ./podcasts/ ./another/more/secret/podcasts_folder/
 
 ### Find large folders to curate or candidates for freeing up space by moving to another mount point
 
