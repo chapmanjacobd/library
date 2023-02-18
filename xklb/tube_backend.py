@@ -141,12 +141,14 @@ def tube_opts(args, func_opts=None, playlist_opts: Optional[str] = None) -> dict
     return all_opts
 
 
+IES = yt_dlp.extractor.gen_extractors()
+
+
 def is_supported(url) -> bool:  # thank you @dbr
     if consts.REGEX_V_REDD_IT.match(url):
         return True
 
-    ies = yt_dlp.extractor.gen_extractors()
-    for ie in ies:
+    for ie in IES:
         if ie.suitable(url) and ie.IE_NAME != "generic":
             return True  # Site has dedicated extractor
     return False
