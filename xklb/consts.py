@@ -29,6 +29,7 @@ REGEX_REDDITOR = re.compile(
         ]
     )
 )
+REGEX_V_REDD_IT = re.compile("https?://v.redd.it/(?:[^/?#&]+)")
 NOW = int(datetime.now().timestamp())
 
 try:

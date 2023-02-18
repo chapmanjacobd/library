@@ -142,6 +142,9 @@ def tube_opts(args, func_opts=None, playlist_opts: Optional[str] = None) -> dict
 
 
 def is_supported(url) -> bool:  # thank you @dbr
+    if consts.REGEX_V_REDD_IT.match(url):
+        return True
+
     ies = yt_dlp.extractor.gen_extractors()
     for ie in ies:
         if ie.suitable(url) and ie.IE_NAME != "generic":
@@ -574,24 +577,24 @@ def yt(args, m) -> None:
             else:
                 info["local_path"] = ydl.prepare_filename(info)
 
-        ydl_errors = ydl_log["error"] + ydl_log["warning"]
-        ydl_errors = "\n".join([l for l in ydl_errors if not yt_meaningless_errors.match(l)])
-        ydl_full_log = ydl_log["error"] + ydl_log["warning"] + ydl_log["info"]
+    ydl_errors = ydl_log["error"] + ydl_log["warning"]
+    ydl_errors = "\n".join([l for l in ydl_errors if not yt_meaningless_errors.match(l)])
+    ydl_full_log = ydl_log["error"] + ydl_log["warning"] + ydl_log["info"]
 
-        if not ydl_log["error"] and info:
-            log.debug("[%s]: No news is good news", m["path"])
-            save_tube_entry(args, m, info)
-        elif any([yt_recoverable_errors.match(l) for l in ydl_full_log]):
-            log.info("[%s]: Recoverable error matched (will try again later). %s", m["path"], ydl_errors)
-            save_tube_entry(args, m, info, error=ydl_errors)
-        elif any([yt_unrecoverable_errors.match(l) for l in ydl_full_log]):
-            matched_error = [m.string for m in utils.conform([yt_unrecoverable_errors.match(l) for l in ydl_full_log])]
-            log.debug("[%s]: Unrecoverable error matched. %s", m["path"], ydl_errors or utils.combine(matched_error))
-            save_tube_entry(args, m, info, error=ydl_errors, URE=True)
-        elif any([prefix_unrecoverable_errors.match(l) for l in ydl_full_log]):
-            log.warning("[%s]: Prefix error. %s", m["path"], ydl_errors)
-            raise SystemExit(28)
-        else:
-            if ydl_errors != "":
-                log.error("[%s]: Unknown error. %s", m["path"], ydl_errors)
-            save_tube_entry(args, m, info, error=ydl_errors)
+    if not ydl_log["error"] and info:
+        log.debug("[%s]: No news is good news", m["path"])
+        save_tube_entry(args, m, info)
+    elif any([yt_recoverable_errors.match(l) for l in ydl_full_log]):
+        log.info("[%s]: Recoverable error matched (will try again later). %s", m["path"], ydl_errors)
+        save_tube_entry(args, m, info, error=ydl_errors)
+    elif any([yt_unrecoverable_errors.match(l) for l in ydl_full_log]):
+        matched_error = [m.string for m in utils.conform([yt_unrecoverable_errors.match(l) for l in ydl_full_log])]
+        log.debug("[%s]: Unrecoverable error matched. %s", m["path"], ydl_errors or utils.combine(matched_error))
+        save_tube_entry(args, m, info, error=ydl_errors, URE=True)
+    elif any([prefix_unrecoverable_errors.match(l) for l in ydl_full_log]):
+        log.warning("[%s]: Prefix error. %s", m["path"], ydl_errors)
+        raise SystemExit(28)
+    else:
+        if ydl_errors != "":
+            log.error("[%s]: Unknown error. %s", m["path"], ydl_errors)
+        save_tube_entry(args, m, info, error=ydl_errors)
