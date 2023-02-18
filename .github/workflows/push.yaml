@@ -16,6 +16,7 @@ jobs:
         nv: [ {os: windows-latest, py: 3.8}, {os: macos-latest, py: 3.9}, {os: ubuntu-latest, py: "3.11"} ]
 
     runs-on: ${{ matrix.nv.os }}
+    timeout-minutes: 20
 
     steps:
       - uses: actions/checkout@v3
@@ -39,6 +40,7 @@ jobs:
   publish:
     needs: test
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
       - name: Checkout
@@ -63,6 +65,7 @@ jobs:
   release:
     needs: [test, publish]
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
       - uses: chapmanjacobd/create-release-node16@v1
