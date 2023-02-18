@@ -52,8 +52,8 @@ yt_recoverable_errors = re.compile(
 .*Failed to parse JSON Expecting
 .*expected string or bytes-like object
 .*Connection refused
-.*Failed to download MPD manifest:\$
-.*not currently available\$
+.*Failed to download MPD manifest:
+.*not currently available
 .*copyright claim""".splitlines()
     )
 )
@@ -65,7 +65,7 @@ yt_meaningless_errors = re.compile(
 ^\[redirect\]
 ^\[Merger\]
 ^\[dashsegments\]
-^Found\$
+^Found
 .*hidden
 .*timed out
 .*Timeout
@@ -88,14 +88,14 @@ yt_meaningless_errors = re.compile(
 .*no suitable InfoExtractor for URL
 .*No such file or directory
 .*Name or service not known
-.*: Downloading webpage\$
-.*: Extracting information\$
-.*: Requesting header\$
-.*Downloading .* metadata\$
-.*Downloading .* information\$
-.*Downloading .* manifest\$
-.*Determining source extension\$
-.*Downloading jwt token\$
+.*: Downloading webpage
+.*: Extracting information
+.*: Requesting header
+.*Downloading .* metadata
+.*Downloading .* information
+.*Downloading .* manifest
+.*Determining source extension
+.*Downloading jwt token
 .*Skipping embedding .* subtitle because the file is missing
 .*Finished downloading playlist
 .*The last 30x error message was:
@@ -159,16 +159,16 @@ yt_unrecoverable_errors = re.compile(
 .*Unable to extract cnn url
 .*PornHd.*Unable to extract error message
 .*status error-notFound
-.*ERROR.*'items'\$
+.*ERROR.*items
 .*You don't have permission to access this video.
 .*Video is unavailable pending review
 .*Video has been flagged for verification
-.*This video has been disabled\$
-.*The uploader has not made this video available.\$
+.*This video has been disabled
+.*The uploader has not made this video available.
 .*channel/playlist does not exist
 .*This video is DRM protected
 .*This video is protected by a password
-.*This video requires payment to watch.\$
+.*This video requires payment to watch.
 .*Unable to download webpage
 .*dashboard-only post
 .*The policy key provided does not permit this account or video
@@ -179,21 +179,21 @@ yt_unrecoverable_errors = re.compile(
 .*policy on harassment and bullying
 .*Can't find object userchannel
 .*is offline
-.*: Video unavailable\$
+.*: Video unavailable
 .*does not exist
 .*has been removed
 .*no video on the webpage
 .*Track not found
 .*: Not found.
 .*Video no longer exists
-.*Premieres in.*hours\$
-.*This clip is no longer available\$
-.*No media found\$
+.*Premieres in.*hours
+.*This clip is no longer available
+.*No media found
 .*No sources found for video
 .*caused by KeyError\('title'
 .*\[youtube:truncated_url\]
-.*: This video is not available.\$
-.*Video unavailable. This video is not available\$
+.*: This video is not available.
+.*Video unavailable. This video is not available
 .*This article does not contain a video
 .*Resource temporarily unavailable
 .*This video is unavailable
@@ -203,18 +203,18 @@ yt_unrecoverable_errors = re.compile(
 .*URL could be a direct video link
 .*No media found
 .*not a valid URL
-.*not a video\$
+.*not a video
 .*The page doesn't contain any tracks
 .*removed by the uploader
 .*Access to this video has been restricted by its creator
 .*blocked due to author's rights infingement
-.*blocked it on copyright grounds\$
+.*blocked it on copyright grounds
 .*uploader has closed their.*account
 .*account has been terminated because we received multiple
 .*User has been suspended
-.*policy on violent or graphic content\$
-.*The channel does not have a .* tab\$
-.*policy on spam, deceptive practices, and scams\$
+.*policy on violent or graphic content
+.*The channel does not have a .* tab
+.*policy on spam, deceptive practices, and scams
 .*This video does not exist, or has been deleted.
 .*The playlist does not exist.
 .*Community Guidelines
@@ -222,14 +222,14 @@ yt_unrecoverable_errors = re.compile(
 .*This channel does not exist
 .*account that no longer exists
 .*account associated with this video
-.*This video doesn't exist.\$
-.*Track not found\$
-.*Not found.\$
+.*This video doesn't exist.
+.*Track not found
+.*Not found.
 .*Can't find object media for
 .*No video formats found
 .*certificate is not valid
 .*CERTIFICATE_VERIFY_FAILED
-.*HTTP Error 403: Forbidden\$
+.*HTTP Error 403: Forbidden
 .*code -404
 .*HTTP Error 404
 .*HTTPError 404

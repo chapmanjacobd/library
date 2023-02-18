@@ -110,7 +110,9 @@ def construct_query(args) -> Tuple[str, dict]:
     )
 
     if "uploader" in m_columns:
-        cf.append(f"and m.uploader not in (select uploader from playlists where category='{consts.BLOCK_THE_CHANNEL}')")
+        cf.append(
+            f"and (m.uploader is NULL or m.uploader not in (select uploader from playlists where category='{consts.BLOCK_THE_CHANNEL}'))"
+        )
 
     args.sql_filter = " ".join(cf)
     args.sql_filter_bindings = bindings
