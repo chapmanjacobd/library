@@ -198,8 +198,8 @@ def consolidate(v: dict) -> Optional[dict]:
     duration = v.pop("duration", None)
     cv["duration"] = 0 if not duration else int(duration)
     cv["time_uploaded"] = upload_date
-    cv["time_created"] = int(datetime.now().timestamp())
-    cv["time_modified"] = 0
+    cv["time_created"] = consts.APPLICATION_START
+    cv["time_modified"] = 0  # this should be 0 if the file has never been downloaded
     cv["time_deleted"] = 0
     cv["time_downloaded"] = 0
     cv["play_count"] = 0
@@ -431,8 +431,8 @@ def save_tube_entry(args, m, info: Optional[dict] = None, error=None, URE=False)
         entry = {
             "path": webpath,
             "time_downloaded": 0,
-            "time_modified": consts.NOW,
-            "time_deleted": consts.NOW if URE else 0,
+            "time_modified": consts.now(),
+            "time_deleted": consts.APPLICATION_START if URE else 0,
             "error": error,
         }
         args.db["media"].upsert(utils.dict_filter_bool(entry), pk="path", alter=True)  # type: ignore
@@ -454,16 +454,16 @@ def save_tube_entry(args, m, info: Optional[dict] = None, error=None, URE=False)
         fs_tags = {}
 
     tube_entry = consolidate(info) or {}
-    tube_entry.pop("play_count", None)
+    tube_entry.pop("play_count", None)  # remove default 0s to not overwrite existing value during upsert
     tube_entry.pop("time_played", None)
 
     entry = {
         **tube_entry,
         **fs_tags,
         "webpath": webpath,
-        "time_modified": consts.NOW,
-        "time_downloaded": 0 if error else consts.NOW,
-        "time_deleted": consts.NOW if URE else 0,
+        "time_modified": consts.now(),
+        "time_downloaded": 0 if error else consts.APPLICATION_START,
+        "time_deleted": consts.APPLICATION_START if URE else 0,
         "error": error,
     }
     args.db["media"].upsert(utils.dict_filter_bool(entry), pk="path", alter=True)  # type: ignore

@@ -145,6 +145,7 @@ yt_unrecoverable_errors = re.compile(
 .*The URL must be suitable for the extractor
 .*Private video
 .*not a video
+.*content expired
 .*Invalid URL
 .*Incomplete.*ID
 .*The given url does not contain a video

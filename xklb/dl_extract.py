@@ -272,8 +272,8 @@ def dl_block(args=None) -> None:
 
     log.info(utils.dict_filter_bool(args.__dict__))
     args.category = consts.BLOCK_THE_CHANNEL
-    args.extra_playlist_data = dict(time_deleted=consts.NOW)
-    args.extra_media_data = dict(time_deleted=consts.NOW)
+    args.extra_playlist_data = dict(time_deleted=consts.APPLICATION_START)
+    args.extra_media_data = dict(time_deleted=consts.APPLICATION_START)
     for p in args.playlists:
         tube_backend.process_playlist(args, p, tube_backend.tube_opts(args, func_opts={"playlistend": 30}))
 
@@ -281,7 +281,7 @@ def dl_block(args=None) -> None:
         with args.db.conn:
             args.db.conn.execute(
                 f"""UPDATE playlists
-                SET time_deleted={consts.NOW}
+                SET time_deleted={consts.APPLICATION_START}
                 ,   category='{consts.BLOCK_THE_CHANNEL}'
                 WHERE path IN ("""
                 + ",".join(["?"] * len(args.playlists))

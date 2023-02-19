@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import List
 from urllib.parse import urlparse
 
-from xklb import db, player, utils
+from xklb import consts, db, player, utils
 from xklb.consts import Frequency
 from xklb.utils import argparse_enum, log, sanitize_url
 
@@ -97,7 +97,7 @@ def extract_url_metadata(args, path: str) -> dict:
         hostname=hostname,
         frequency=args.frequency.value,
         category=args.category or "Uncategorized",
-        time_created=int(datetime.now().timestamp()),
+        time_created=consts.APPLICATION_START,
         time_played=0,
         play_count=0,
         time_deleted=0,

@@ -154,7 +154,7 @@ def munge_av_tags(args, media, f) -> Optional[dict]:
                     tags.get("COMMENT"),
                     tags.get("comment"),
                 ),
-                "time_created": upload_date,
+                "time_uploaded": upload_date,
             }
         )
 
