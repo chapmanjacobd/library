@@ -58,7 +58,7 @@ def connect(args, conn=None, **kwargs):
 
 
 def optimize(args) -> None:
-    if not getattr(args, "force"):
+    if not hasattr(args, "force"):
         args.force = False
 
     print("\nOptimizing database")
