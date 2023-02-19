@@ -7,6 +7,11 @@ from typing import List
 
 import yt_dlp
 
+
+def now():
+    return int(datetime.now().timestamp())
+
+
 FAKE_SUBTITLE = os.path.join(gettempdir(), "sub.srt")  # https://github.com/skorokithakis/catt/issues/393
 CAST_NOW_PLAYING = os.path.join(gettempdir(), "catt_playing")
 DEFAULT_MPV_SOCKET = os.path.join(gettempdir(), "mpv_socket")
@@ -32,7 +37,7 @@ REGEX_REDDITOR = re.compile(
     )
 )
 REGEX_V_REDD_IT = re.compile("https?://v.redd.it/(?:[^/?#&]+)")
-NOW = int(datetime.now().timestamp())
+APPLICATION_START = now()
 YT_IES = yt_dlp.extractor.gen_extractors()
 
 try:

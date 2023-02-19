@@ -206,7 +206,7 @@ def mark_media_deleted(args, paths) -> int:
             with args.db.conn:
                 cursor = args.db.conn.execute(
                     f"""update media
-                    set time_deleted={consts.NOW}
+                    set time_deleted={consts.APPLICATION_START}
                     where path in ("""
                     + ",".join(["?"] * len(l))
                     + ")",
@@ -226,7 +226,7 @@ def mark_media_deleted_like(args, paths) -> int:
             with args.db.conn:
                 cursor = args.db.conn.execute(
                     f"""update media
-                    set time_deleted={consts.NOW}
+                    set time_deleted={consts.APPLICATION_START}
                     where path like ?""",
                     [p + "%"],
                 )

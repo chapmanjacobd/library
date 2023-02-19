@@ -110,9 +110,9 @@ def merge_online_local() -> None:
                 continue
 
             if fs_tags["time_modified"] is None or fs_tags["time_modified"] == 0:
-                fs_tags["time_modified"] = consts.NOW
+                fs_tags["time_modified"] = consts.now()
             if fs_tags["time_downloaded"] is None or fs_tags["time_downloaded"] == 0:
-                fs_tags["time_downloaded"] = consts.NOW
+                fs_tags["time_downloaded"] = consts.APPLICATION_START
 
             entry = {**tube_entry, **fs_tags, "webpath": webpath}
             args.db["media"].insert(utils.dict_filter_bool(entry), pk="path", alter=True, replace=True)  # type: ignore

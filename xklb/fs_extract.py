@@ -82,7 +82,7 @@ def parse_args(action, usage) -> argparse.Namespace:
     log.info(utils.dict_filter_bool(args.__dict__))
 
     if args.profile in (DBType.audio, DBType.video) and not which("ffprobe"):
-        print("ffmpeg is not installed. Install with your package manager.")
+        print("ffmpeg is not installed. Install it with your package manager.")
         raise SystemExit(3)
 
     return args
@@ -117,8 +117,8 @@ def extract_metadata(mp_args, f) -> Optional[Dict[str, int]]:
         "time_played": 0,
         "size": stat.st_size,
         "time_created": int(stat.st_ctime),
-        "time_modified": int(stat.st_mtime),
-        "time_downloaded": consts.NOW,
+        "time_modified": int(stat.st_mtime) or consts.now(),
+        "time_downloaded": consts.APPLICATION_START,
         "time_deleted": 0,
         "ie_key": "Local",
     }
