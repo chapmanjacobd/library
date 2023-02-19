@@ -347,7 +347,7 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", help=argparse.SUPPRESS)
     parser.add_argument("--skip", "--offset", help=argparse.SUPPRESS)
     parser.add_argument(
-        "--partial", "-P", "--recent", "-R", default=False, const="n", nargs="?", help=argparse.SUPPRESS
+        "--partial", "-P", "--previous", "--recent", default=False, const="n", nargs="?", help=argparse.SUPPRESS
     )
 
     parser.add_argument("--start", "-vs", help=argparse.SUPPRESS)
