@@ -59,7 +59,9 @@ def connect(args, conn=None, **kwargs):
 
 def optimize(args) -> None:
     print("\nOptimizing database")
-    db = args.db
+    from sqlite_utils import Database
+
+    db: Database = args.db
 
     config = {
         "media": {
@@ -95,43 +97,58 @@ def optimize(args) -> None:
     }
 
     for table in config:
-        if table in db.table_names():
-            log.info("Processing table: %s", table)
-            table_columns = db[table].columns_dict
-            table_config = config.get(table) or {}
-            ignore_columns = table_config.get("ignore_columns") or []
-            search_columns = table_config.get("search_columns") or []
+        if table not in db.table_names():
+            continue
+        if args.force:
+            try:
+                db[table].disable_fts()  # type: ignore
+            except Exception:
+                pass
 
-            fts_columns = [c for c in search_columns if c in table_columns]
-            int_columns = [k for k, v in table_columns.items() if v == int and k not in search_columns + ignore_columns]
-            str_columns = [k for k, v in table_columns.items() if v == str and k not in search_columns + ignore_columns]
+        log.info("Processing table: %s", table)
+        table_columns = db[table].columns_dict
+        table_config = config.get(table) or {}
+        ignore_columns = table_config.get("ignore_columns") or []
+        search_columns = table_config.get("search_columns") or []
 
-            optimized_column_order = [*int_columns, *(table_config.get("column_order") or [])]
-            compare_order = zip(table_columns, optimized_column_order)
-            was_transformed = False
-            if not all([x == y for x, y in compare_order]):
-                log.info("Transforming column order: %s", optimized_column_order)
-                db[table].transform(column_order=optimized_column_order)  # type: ignore
-                was_transformed = True
+        fts_columns = [c for c in search_columns if c in table_columns]
+        int_columns = [k for k, v in table_columns.items() if v == int and k not in search_columns + ignore_columns]
+        str_columns = [k for k, v in table_columns.items() if v == str and k not in search_columns + ignore_columns]
 
-            for column in int_columns + str_columns:
-                log.info("Creating index: %s", column)
-                db[table].create_index([column], if_not_exists=True, analyze=True)  # type: ignore
+        optimized_column_order = [*int_columns, *(table_config.get("column_order") or [])]
+        compare_order = zip(table_columns, optimized_column_order)
+        was_transformed = False
+        if not all([x == y for x, y in compare_order]):
+            log.info("Transforming column order: %s", optimized_column_order)
+            db[table].transform(column_order=optimized_column_order)  # type: ignore
+            was_transformed = True
 
-            if any(fts_columns) and (db[table].detect_fts() is None or was_transformed):  # type: ignore
-                log.info("Creating fts index: %s", fts_columns)
-                db[table].enable_fts(
-                    fts_columns,
-                    create_triggers=True,
-                    replace=True,
-                    tokenize="trigram"
-                    if sqlite3.sqlite_version_info >= (3, 34, 0)
-                    else 'unicode61 "tokenchars=_."',  # https://www.sqlite.org/releaselog/3_34_0.html
-                )
-            else:
-                with db.conn:
-                    log.info("Optimizing fts index: %s", table)
-                    db[table].optimize()  # type: ignore
+        if args.force:
+            indexes = db[table].indexes  # type: ignore
+            for index in indexes:
+                if index.unique == 1:
+                    db.execute(f"REINDEX {index.name}")
+                else:
+                    db.execute(f"DROP index {index.name}")
+
+        for column in int_columns + str_columns:
+            log.info("Creating index: %s", column)
+            db[table].create_index([column], if_not_exists=True, analyze=True)  # type: ignore
+
+        if any(fts_columns) and (db[table].detect_fts() is None or was_transformed):  # type: ignore
+            log.info("Creating fts index: %s", fts_columns)
+            db[table].enable_fts(
+                fts_columns,
+                create_triggers=True,
+                replace=True,
+                tokenize="trigram"
+                if sqlite3.sqlite_version_info >= (3, 34, 0)
+                else 'unicode61 "tokenchars=_."',  # https://www.sqlite.org/releaselog/3_34_0.html
+            )
+        else:
+            with db.conn:
+                log.info("Optimizing fts index: %s", table)
+                db[table].optimize()  # type: ignore
 
     log.info("Running VACUUM")
     db.vacuum()
