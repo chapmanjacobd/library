@@ -41,12 +41,12 @@ def group_files_by_folder(args, media):
             file_exists = (m.get("time_deleted") or 0) == 0
 
             if d.get(parent):
-                d[parent]["size"] += m["size"] if file_exists else 0
+                d[parent]["size"] += (m["size"] or 0) if file_exists else 0
                 d[parent]["count"] += 1 if file_exists else 0
                 d[parent]["count_deleted"] += 0 if file_exists else 1
             else:
                 d[parent] = {
-                    "size": m["size"] if file_exists else 0,
+                    "size": (m["size"] or 0) if file_exists else 0,
                     "count": 1 if file_exists else 0,
                     "count_deleted": 0 if file_exists else 1,
                 }

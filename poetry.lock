@@ -1130,21 +1130,21 @@ video = ["youtube-dl"]
 
 [[package]]
 name = "guessit"
-version = "3.5.0"
+version = "3.7.0"
 description = "GuessIt - a library for guessing information from video filenames."
 category = "main"
 optional = false
 python-versions = "*"
 files = [
-    {file = "guessit-3.5.0-py3-none-any.whl", hash = "sha256:616040afb9430941659da47f8d5d2b9db1e2e587db8627d57e711ea4888f9561"},
-    {file = "guessit-3.5.0.tar.gz", hash = "sha256:7a269e3a57cc073e61b56259893eab3c5c02d1ad8acbc8ae2e78c5e839f110bc"},
+    {file = "guessit-3.7.0-py3-none-any.whl", hash = "sha256:a7a3360d414bef45b2d3e23bbe5c821e9b0639c627a68b27925315d174832e13"},
+    {file = "guessit-3.7.0.tar.gz", hash = "sha256:eb1a983668af99ddaba05d3cf224c3b37885ff51be343032cde5b35345a768ac"},
 ]
 
 [package.dependencies]
 babelfish = ">=0.6.0"
 importlib-resources = {version = "*", markers = "python_version < \"3.9\""}
 python-dateutil = "*"
-rebulk = ">=3.1.0"
+rebulk = ">=3.2.0"
 
 [package.extras]
 dev = ["mkdocs", "mkdocs-material", "pyinstaller", "python-semantic-release", "tox"]
