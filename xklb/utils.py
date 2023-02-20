@@ -421,6 +421,31 @@ def mpv_watchlater_value(path, key):
     return [s.split("=")[1] for s in data if s.startswith(key)]
 
 
+def filter_episodic(args, media: List[dict]) -> List[dict]:
+    parent_dict = {}
+    for m in media:
+        path = Path(m["path"])
+        parent_path = path.parent
+        parent_dict.setdefault(parent_path, 0)
+        parent_dict[parent_path] += 1
+
+    filtered_media = []
+    for m in media:
+        path = Path(m["path"])
+        parent_path = path.parent
+
+        siblings = parent_dict[parent_path]
+
+        if args.lower is not None and siblings < args.lower:
+            continue
+        elif args.upper is not None and siblings > args.upper:
+            continue
+        else:
+            filtered_media.append(m)
+
+    return filtered_media
+
+
 def mpv_enrich2(args, media) -> List[dict]:
     md5s = {hashlib.md5(m["path"].encode("utf-8")).hexdigest().upper(): m for m in media}
     paths = set(Path(args.watch_later_directory).glob("*"))

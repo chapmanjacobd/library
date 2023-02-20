@@ -82,9 +82,9 @@ def group_folders(args, folders):
             d[parent] = f
 
     for path, pdict in list(d.items()):
-        if args.lower and pdict["count"] < args.lower:
+        if args.lower is not None and pdict["count"] < args.lower:
             d.pop(path)
-        elif args.upper and pdict["count"] > args.upper:
+        elif args.upper is not None and pdict["count"] > args.upper:
             d.pop(path)
 
     return [{**v, "path": k} for k, v in d.items()]

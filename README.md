@@ -21,7 +21,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v1.23.031)
+    xk media library subcommands (v1.23.032)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -230,6 +230,20 @@ You can also invoke tabs manually:
         library watch -O   # slow, more complex algorithm
         library watch -OO  # above, plus ignores most filters
         library watch -OOO # above, plus ignores include/exclude filter during ordinal search
+
+    Filter media by file siblings of parent directory:
+        library watch --sibling   # only include files which have more than or equal to one sibling
+        library watch --solo      # only include files which are alone by themselves
+
+        The value of this constraint is configurable via the `--lower` flag
+        library watch --lower 3   # only include files which have three or more siblings
+        library watch --upper 3   # only include files which have fewer than three siblings
+        library watch --lower 3 --upper 3   # only include files which are three siblings inclusive
+        library watch --lower 12 --upper 25 -OOO  # on my machine this launches My Mister 2018
+
+        `--sibling` is just a shortcut for `--lower 2`; `--solo` is `--upper 1`
+        library watch --sibling --solo      # you will always get zero records here
+        library watch --lower 2 --upper 1   # equivalent
 
     Play recent partially-watched videos (requires mpv history):
         library watch --partial       # play newest first
