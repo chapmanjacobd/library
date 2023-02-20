@@ -652,32 +652,41 @@ def local_player(args, m, media_file) -> subprocess.CompletedProcess:
 
 
 def printer(args, query, bindings) -> None:
-    # columns = args.db["media"].columns_dict
-    if "a" in args.print:
-        query = f"""select
-            "Aggregate" as path
-            {', sum(duration) duration' if 'duration' in query else ''}
-            {', avg(duration) avg_duration' if 'duration' in query else ''}
-            {', sparseness' if 'sparseness' in query else ''}
-            {', sum(size) size' if 'size' in query else ''}
-            , count(*) count
-            {', ' + ', '.join([f'sum({c}) sum_{c}' for c in args.cols]) if args.cols else ''}
-            {', ' + ', '.join([f'avg({c}) avg_{c}' for c in args.cols]) if args.cols else ''}
-        from ({query}) """
-
     media = list(args.db.query(query, bindings))
-
-    if "b" in args.print:
-        media = process_bigdirs(args, media)
 
     if hasattr(args, "partial") and args.partial and Path(args.watch_later_directory).exists():
         media = utils.mpv_enrich2(args, media)
+
+    if "b" in args.print:
+        media = process_bigdirs(args, media)
+    elif any([hasattr(args, "lower") and args.lower, hasattr(args, "upper") and args.upper]):
+        media = utils.filter_episodic(args, media)
 
     if args.verbose >= 2 and args.cols and "*" in args.cols:
         breakpoint()
 
     if not media:
         utils.no_media_found()
+
+    if "a" in args.print:
+        D = {"path": "Aggregate", "count": len(media)}
+
+        if "duration" in query:
+            D["duration"] = sum((d["duration"] or 0) for d in media)
+            D["avg_duration"] = sum((d["duration"] or 0) for d in media) / len(media)
+
+        if "sparseness" in query:
+            D["sparseness"] = None
+
+        if "size" in query:
+            D["size"] = sum((d["size"] or 0) for d in media)
+            D["avg_size"] = sum((d["size"] or 0) for d in media) / len(media)
+
+        if args.cols:
+            for c in args.cols:
+                D[f"sum_{c}"] = sum((d[c] or 0) for d in media)
+                D[f"avg_{c}"] = sum((d[c] or 0) for d in media) / len(media)
+        media = [D]
 
     elif "d" in args.print:
         mark_media_deleted(args, list(map(operator.itemgetter("path"), media)))
@@ -719,6 +728,7 @@ def printer(args, query, bindings) -> None:
         utils.col_resize(tbl, "title", 11)
 
         utils.col_naturalsize(tbl, "size")
+        utils.col_naturalsize(tbl, "avg_size")
         utils.col_duration(tbl, "duration")
         utils.col_duration(tbl, "avg_duration")
 

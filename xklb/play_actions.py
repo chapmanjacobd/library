@@ -36,6 +36,20 @@ def usage(action) -> str:
         library {action} -OO  # above, plus ignores most filters
         library {action} -OOO # above, plus ignores include/exclude filter during ordinal search
 
+    Filter media by file siblings of parent directory:
+        library {action} --sibling   # only include files which have more than or equal to one sibling
+        library {action} --solo      # only include files which are alone by themselves
+
+        The value of this constraint is configurable via the `--lower` flag
+        library {action} --lower 3   # only include files which have three or more siblings
+        library {action} --upper 3   # only include files which have fewer than three siblings
+        library {action} --lower 3 --upper 3   # only include files which are three siblings inclusive
+        library {action} --lower 12 --upper 25 -OOO  # on my machine this launches My Mister 2018
+
+        `--sibling` is just a shortcut for `--lower 2`; `--solo` is `--upper 1`
+        library {action} --sibling --solo      # you will always get zero records here
+        library {action} --lower 2 --upper 1   # equivalent
+
     Play recent partially-watched videos (requires mpv history):
         library {action} --partial       # play newest first
         library {action} --partial old   # play oldest first
@@ -369,6 +383,9 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     parser.add_argument("--local-media-only", "--local-only", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--safe", "-safe", action="store_true", help="Skip generic URLs")
 
+    parser.add_argument("--sibling", "--episode", action="store_true")
+    parser.add_argument("--solo", action="store_true")
+
     parser.add_argument("--sort-by-deleted", action="store_true")
     parser.add_argument("--depth", "-D", default=0, type=int, help="Depth of folders")
     parser.add_argument("--lower", type=int, help="Number of files per folder lower limit")
@@ -395,7 +412,7 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
 
     if not args.limit:
         args.defaults.append("limit")
-        if all([not (args.print and len(args.print.replace("p", "")) > 0), not args.partial]):
+        if not any([args.print and len(args.print.replace("p", "")) > 0, args.partial, args.lower, args.upper]):
             if args.action in (SC.listen, SC.watch, SC.read):
                 args.limit = consts.DEFAULT_PLAY_QUEUE
             elif args.action in (SC.view):
@@ -430,6 +447,11 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
 
     if args.keep_dir:
         args.keep_dir = Path(args.keep_dir).resolve()
+
+    if args.solo:
+        args.upper = 1
+    if args.sibling:
+        args.lower = 2
 
     utils.timeout(args.timeout)
 
@@ -499,7 +521,16 @@ def construct_query(args) -> Tuple[str, dict]:
         construct_search_bindings(args, cf, bindings, m_columns)
 
     if args.table == "media" and not any(
-        [cf, args.where, args.print, args.partial, args.limit != consts.DEFAULT_PLAY_QUEUE, args.duration_from_size]
+        [
+            cf,
+            args.where,
+            args.print,
+            args.partial,
+            args.lower,
+            args.upper,
+            args.limit != consts.DEFAULT_PLAY_QUEUE,
+            args.duration_from_size,
+        ]
     ):
         limit = 60_000
         if args.random:
@@ -654,6 +685,9 @@ def process_playqueue(args) -> None:
 
     if args.partial and Path(args.watch_later_directory).exists():
         media = utils.mpv_enrich2(args, media)
+
+    if args.lower is not None or args.upper is not None:
+        media = utils.filter_episodic(args, media)
 
     if not media:
         utils.no_media_found()
