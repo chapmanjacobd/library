@@ -255,6 +255,7 @@ def parse_args_sort(args):
         subtitle_count = "=0"
 
     sorts = [
+        (args.sort and "rank" in args.sort, args.sort, args.sort),
         ("video_count" in m_columns and args.action == SC.watch, "video_count > 0 desc", "video_count > 0 "),
         ("audio_count" in m_columns, "audio_count > 0 desc", "audio_count > 0"),
         (
@@ -278,7 +279,7 @@ def parse_args_sort(args):
             f"subtitle_count {subtitle_count} desc",
             f"subtitle_count {subtitle_count}",
         ),
-        (args.sort, args.sort, None),
+        (args.sort, args.sort, args.sort),
         (args.action in (SC.listen, SC.watch) and args.include, "duration desc", "duration"),
         (args.action in (SC.listen, SC.watch) and args.include, "size desc", "size"),
         (args.action in (SC.listen, SC.watch) and "play_count" in m_columns, "play_count", "play_count desc"),
@@ -290,7 +291,6 @@ def parse_args_sort(args):
         (args.action == SC.filesystem, "sparseness", "sparseness desc"),
         (args.action == SC.filesystem, "size", "size desc"),
         (True, "m.path", "m.path desc"),
-        (args.sort, None, args.sort),
         (True, "random", "random"),
     ]
 
