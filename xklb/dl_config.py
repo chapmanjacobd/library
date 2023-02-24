@@ -91,6 +91,8 @@ yt_meaningless_errors = re.compile(
 .*: Downloading webpage
 .*: Extracting information
 .*: Requesting header
+.*mismatched tag
+.*Fail.* parse
 .*Downloading .* metadata
 .*Downloading .* information
 .*Downloading .* manifest
