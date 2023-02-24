@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "xklb"
-version = "1.23.033"
+version = "1.23.034"
 description = "xk library"
 authors = ["Jacob Chapman <7908073+chapmanjacobd@users.noreply.github.com>"]
 readme = "README.md"
@@ -17,7 +17,7 @@ include = ["assets/*"]
 [tool.poetry.dependencies]
 python = "^3.8"
 sqlite-utils = ">=3.30"
-protobuf = "<4"
+# protobuf = "<4"
 catt = "*"
 ffmpeg-python = "*"
 ftfy = "*"
@@ -45,7 +45,7 @@ textract = {version = "*", optional = true}
 orjson = {version = "*", optional = true}
 pandas = {version = "*", optional = true}
 
-[tool.poetry.extras]
+[project.optional-dependencies]
 full = ["textract", "PyExifTool", "aiohttp", "brotab", "orjson", "pandas"]
 
 [tool.poetry.group.dev.dependencies]
