@@ -31,6 +31,7 @@ yt_recoverable_errors = re.compile(
 .*user.*not allowed
 .*read operation timed out
 .*Could not connect
+.*restricted
 .*Internal Server Error
 .*Internal error encountered
 .*not currently available
@@ -157,6 +158,7 @@ yt_unrecoverable_errors = re.compile(
 .*This playlist is private
 .*Unable to recognize tab page
 .*'bytes' object has no attribute 'encode'
+.*only video extraction is supported
 .*'NoneType' object has no attribute 'get'
 .*list index out of range
 .*Unable to extract cnn url
