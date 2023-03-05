@@ -87,6 +87,7 @@ yt_meaningless_errors = re.compile(
 .*This channel does not have
 .*fragment_filename_sanitized
 .*no suitable InfoExtractor for URL
+.*File name too long
 .*No such file or directory
 .*Name or service not known
 .*: Downloading webpage
