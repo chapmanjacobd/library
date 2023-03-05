@@ -36,6 +36,7 @@ def parse_args(action, usage) -> argparse.Namespace:
         "--image", "-I", action="store_const", dest="profile", const=DBType.image, help="Create image database"
     )
     parser.set_defaults(profile=DBType.video)
+    parser.add_argument("--scan-all-files", "-a", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--category", "-c", help=argparse.SUPPRESS)
 
     parser.add_argument("--io-multiplier", default="1")
@@ -167,7 +168,10 @@ def extract_chunk(args, parallel, chunk_paths) -> None:
 
 
 def find_new_files(args, path: Path) -> List[str]:
-    if args.profile == DBType.audio:
+    if args.scan_all_files or args.profile == DBType.filesystem:
+        # thanks to these people for making rglob fast https://bugs.python.org/issue26032
+        scanned_files = [str(p) for p in path.rglob("*")]
+    elif args.profile == DBType.audio:
         scanned_files = consts.get_media_files(path, audio=True)
     elif args.profile == DBType.video:
         scanned_files = consts.get_media_files(path)
@@ -175,9 +179,6 @@ def find_new_files(args, path: Path) -> List[str]:
         scanned_files = consts.get_text_files(path, OCR=args.ocr, speech_recognition=args.speech_recognition)
     elif args.profile == DBType.image:
         scanned_files = consts.get_image_files(path)
-    elif args.profile == DBType.filesystem:
-        # thanks to these people for making rglob fast https://bugs.python.org/issue26032
-        scanned_files = [str(p) for p in path.rglob("*")]
     else:
         raise Exception(f"fs_extract for profile {args.profile} not implemented")
 
@@ -308,6 +309,11 @@ def fs_add(args=None) -> None:
 
     Create a video database and read internal/external subtitle files into a searchable database:
         library fsadd --scan-subtitles tv.search.db ./tv/ ./movies/
+
+    Normally only relevant filetypes are included. You can scan all files with this flag:
+        library fsadd --scan-all-files mixed.db ./tv-and-maybe-audio-only-files/
+        # I use that with this to keep my folders organized:
+        library watch -w 'video_count=0 and audio_count>=1' -pf mixed.db | parallel mv {} ~/d/82_Audiobooks/
 
     Remove path roots with --force
         library fsadd audio.db /mnt/d/Youtube/
