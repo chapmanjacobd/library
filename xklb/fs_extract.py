@@ -168,8 +168,10 @@ def extract_chunk(args, parallel, chunk_paths) -> None:
 
 
 def find_new_files(args, path: Path) -> List[str]:
-    if args.scan_all_files or args.profile == DBType.filesystem:
+    if args.scan_all_files:
         # thanks to these people for making rglob fast https://bugs.python.org/issue26032
+        scanned_files = [str(p) for p in path.rglob("*") if p.is_file()]
+    elif args.profile == DBType.filesystem:
         scanned_files = [str(p) for p in path.rglob("*")]
     elif args.profile == DBType.audio:
         scanned_files = consts.get_media_files(path, audio=True)
