@@ -510,7 +510,7 @@ def yt(args, m) -> None:
         "skip_download": True if consts.PYTEST_RUNNING else False,
         "extract_flat": False,
         "lazy_playlist": False,
-        "postprocessors": [{"key": "FFmpegMetadata"}, {"key": "FFmpegEmbedSubtitle"}],
+        "postprocessors": [{"key": "FFmpegMetadata"}],
         "restrictfilenames": True,
         "extractor_retries": 13,
         "retries": 13,
@@ -523,10 +523,11 @@ def yt(args, m) -> None:
     }
 
     if args.profile != DBType.audio:
+        func_opts["subtitlesformat"] = "srt/best"
         func_opts["subtitleslangs"] = ["en.*", "EN.*"]
         func_opts["writesubtitles"] = True
         func_opts["writeautomaticsub"] = True
-        func_opts["subtitlesformat"] = "srt/best"
+        func_opts["postprocessors"].append({"key": "FFmpegEmbedSubtitle"})
 
     ydl_opts = tube_opts(
         args,
