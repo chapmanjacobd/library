@@ -21,6 +21,7 @@ def parse_args(prog, usage):
     parser.add_argument("--duration", "-d", action="append", help=argparse.SUPPRESS)
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", help=argparse.SUPPRESS)
     parser.add_argument("--safe", "-safe", action="store_true", help="Skip generic URLs")
+    parser.add_argument("--errors", "-errors", "--error", action="store_true", help="Show only rows with errors")
     parser.add_argument("--delete", "--remove", "--erase", "--rm", "-rm", nargs="+", help=argparse.SUPPRESS)
     parser.add_argument("--print", "-p", default=False, const="p", nargs="?", help=argparse.SUPPRESS)
     if "dlstatus" in prog:
@@ -227,6 +228,14 @@ def dlstatus() -> None:
         │                     │             │ days, 19 hours   │                    │          │
         │                     │             │ and 33 minutes   │                    │          │
         ╘═════════════════════╧═════════════╧══════════════════╧════════════════════╧══════════╛
+
+    Simulate --safe flag
+
+        library dlstatus video.db --safe
+
+    Show only download attempts with errors
+
+        library dlstatus video.db --errors
     """,
     )
     play_actions.parse_args_sort(args)
@@ -252,12 +261,13 @@ def dlstatus() -> None:
         {', sum(duration) duration' if 'duration' in query else ''}
         {count_paths}
         {', count(*) FILTER(WHERE COALESCE(time_modified,0) > 0 AND error IS NOT NULL) errors' if 'error' in query else ''}
-        {', group_concat(distinct error) error_descriptions' if 'error' in query and args.verbose >= 1 else ''}
+        {', group_concat(distinct error) error_descriptions' if args.errors or 'error' in query and args.verbose >= 1 else ''}
     from ({query}) m
     where 1=1
         and COALESCE(time_downloaded,0) = 0
         and COALESCE(time_deleted,0) = 0
-    group by category{', ie_key' if 'm.ie_key' in query else ''}
-    order by category nulls last"""
+        {'and error is not null' if args.errors else ''}
+    group by category{', ie_key' if 'm.ie_key' in query else ''}{', error' if args.errors else ''}
+    order by {'errors,' if args.errors else ''} category nulls last"""
 
     printer(args, query, bindings)
