@@ -502,30 +502,35 @@ def yt(args, m) -> None:
         ignoreerrors = True
 
     out_dir = lambda p: str(Path(args.prefix, m["category"] or "%(extractor_key,extractor)s", p))
+
+    func_opts = {
+        "ignoreerrors": ignoreerrors,
+        "extractor_args": {"youtube": {"skip": ["authcheck"]}},
+        "logger": BadToTheBoneLogger(),
+        "skip_download": True if consts.PYTEST_RUNNING else False,
+        "extract_flat": False,
+        "lazy_playlist": False,
+        "postprocessors": [{"key": "FFmpegMetadata"}, {"key": "FFmpegEmbedSubtitle"}],
+        "restrictfilenames": True,
+        "extractor_retries": 13,
+        "retries": 13,
+        "outtmpl": {
+            "default": out_dir("%(uploader,uploader_id)s/%(title).200B_[%(id).60B].%(ext)s"),
+            "chapter": out_dir(
+                "%(uploader,uploader_id)s/%(title).200B_%(section_number)03d_%(section_title)s_[%(id).60B].%(ext)s"
+            ),
+        },
+    }
+
+    if args.profile != DBType.audio:
+        func_opts["subtitleslangs"] = ["en.*", "EN.*"]
+        func_opts["writesubtitles"] = True
+        func_opts["writeautomaticsub"] = True
+        func_opts["subtitlesformat"] = "srt/best"
+
     ydl_opts = tube_opts(
         args,
-        func_opts={
-            "ignoreerrors": ignoreerrors,
-            "subtitleslangs": ["en.*", "EN.*"],
-            "extractor_args": {"youtube": {"skip": ["authcheck"]}},
-            "logger": BadToTheBoneLogger(),
-            "writesubtitles": True,
-            "writeautomaticsub": True,
-            "skip_download": True if consts.PYTEST_RUNNING else False,
-            "subtitlesformat": "srt/best",
-            "extract_flat": False,
-            "lazy_playlist": False,
-            "postprocessors": [{"key": "FFmpegMetadata"}, {"key": "FFmpegEmbedSubtitle"}],
-            "restrictfilenames": True,
-            "extractor_retries": 13,
-            "retries": 13,
-            "outtmpl": {
-                "default": out_dir("%(uploader,uploader_id)s/%(title).200B_[%(id).60B].%(ext)s"),
-                "chapter": out_dir(
-                    "%(uploader,uploader_id)s/%(title).200B_%(section_number)03d_%(section_title)s_[%(id).60B].%(ext)s"
-                ),
-            },
-        },
+        func_opts=func_opts,
         playlist_opts=m.get("dl_config", "{}"),
     )
 
