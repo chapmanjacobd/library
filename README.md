@@ -2,7 +2,7 @@
 
 A wise philosopher once told me: "[the future is autotainment](https://www.youtube.com/watch?v=F9sZFrsjPp0)".
 
-Manage large media libraries. Similar to Plex but more minimalist.
+Manage large media libraries. An index for your archive.
 Primary usage is local filesystem but also supports some virtual constructs like
 tracking online video playlists (eg. YouTube subscriptions) or daily browser tabs.
 
@@ -21,7 +21,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v1.23.041)
+    xk media library subcommands (v1.23.042)
 
     local media:
       lb fsadd                 Create a local media database; Add folders

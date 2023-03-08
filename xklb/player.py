@@ -1,6 +1,7 @@
 import csv, operator, os, platform, re, shutil, socket, subprocess
 from copy import deepcopy
 from io import StringIO
+from numbers import Number
 from pathlib import Path
 from platform import system
 from random import randrange
@@ -671,21 +672,22 @@ def printer(args, query, bindings) -> None:
     if "a" in args.print:
         D = {"path": "Aggregate", "count": len(media)}
 
-        if "duration" in query:
+        if "duration" in media[0]:
             D["duration"] = sum((d["duration"] or 0) for d in media)
             D["avg_duration"] = sum((d["duration"] or 0) for d in media) / len(media)
 
-        if "sparseness" in query:
+        if "sparseness" in media[0]:
             D["sparseness"] = None
 
-        if "size" in query:
+        if "size" in media[0]:
             D["size"] = sum((d["size"] or 0) for d in media)
             D["avg_size"] = sum((d["size"] or 0) for d in media) / len(media)
 
         if args.cols:
             for c in args.cols:
-                D[f"sum_{c}"] = sum((d[c] or 0) for d in media)
-                D[f"avg_{c}"] = sum((d[c] or 0) for d in media) / len(media)
+                if isinstance(media[0][c], Number):
+                    D[f"sum_{c}"] = sum((d[c] or 0) for d in media)
+                    D[f"avg_{c}"] = sum((d[c] or 0) for d in media) / len(media)
         media = [D]
 
     elif "d" in args.print:

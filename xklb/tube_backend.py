@@ -479,7 +479,7 @@ def yt(args, m) -> None:
     if not m["path"].startswith("http"):
         return
 
-    ydl_log = {"warning": [], "error": [], "info": []}
+    ydl_log = {"error": [], "warning": [], "info": []}
 
     class BadToTheBoneLogger:
         def debug(self, msg):
