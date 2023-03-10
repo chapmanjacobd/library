@@ -118,37 +118,65 @@ def construct_query(args) -> Tuple[str, dict]:
     args.sql_filter_bindings = bindings
 
     LIMIT = "LIMIT " + str(args.limit) if args.limit else ""
-    query = f"""select
-            m.path
-            {', playlist_path' if 'playlist_path' in m_columns else ''}
-            , m.title
-            {', m.duration' if 'duration' in m_columns else ''}
-            , m.time_created
-            {', m.size' if 'size' in m_columns else ''}
-            {', m.ie_key' if 'ie_key' in m_columns else ''}
-            {', m.time_modified' if 'time_modified' in m_columns else ''}
-            {', m.time_downloaded' if 'time_downloaded' in m_columns else ''}
-            {', m.time_deleted' if 'time_deleted' in m_columns else ''}
-            {', m.error' if 'error' in m_columns else ''}
-            {', m.id' if 'id' in m_columns else ''}
-            {', p.dl_config' if 'dl_config' in pl_columns else ''}
-            , coalesce(p.category, p.ie_key) category
-        FROM media m
-        LEFT JOIN playlists p on (p.path = m.playlist_path {"and p.ie_key != 'Local' and p.ie_key = m.ie_key" if 'ie_key' in m_columns else ''})
-        WHERE 1=1
-            and COALESCE(m.time_downloaded,0) = 0
-            and COALESCE(m.time_deleted,0) = 0
-            and COALESCE(p.time_deleted,0) = 0
-            and m.path like "http%"
-            {'AND (score IS NULL OR score > 7)' if 'score' in m_columns else ''}
-            {'AND (upvote_ratio IS NULL OR upvote_ratio > 0.73)' if 'upvote_ratio' in m_columns else ''}
-            {args.sql_filter}
-        ORDER BY 1=1
-            , play_count
-            {', ' + args.sort if args.sort else ''}
-            , random()
-    {LIMIT}
-    """
+    if "playlist_path" in m_columns:
+        query = f"""select
+                m.path
+                , playlist_path
+                , m.title
+                {', m.duration' if 'duration' in m_columns else ''}
+                , m.time_created
+                {', m.size' if 'size' in m_columns else ''}
+                {', m.ie_key' if 'ie_key' in m_columns else ''}
+                {', m.time_modified' if 'time_modified' in m_columns else ''}
+                {', m.time_downloaded' if 'time_downloaded' in m_columns else ''}
+                {', m.time_deleted' if 'time_deleted' in m_columns else ''}
+                {', m.error' if 'error' in m_columns else ''}
+                {', m.id' if 'id' in m_columns else ''}
+                {', p.dl_config' if 'dl_config' in pl_columns else ''}
+                , coalesce(p.category, p.ie_key) category
+            FROM media m
+            LEFT JOIN playlists p on (p.path = m.playlist_path {"and p.ie_key != 'Local' and p.ie_key = m.ie_key" if 'ie_key' in m_columns else ''})
+            WHERE 1=1
+                and COALESCE(m.time_downloaded,0) = 0
+                and COALESCE(m.time_deleted,0) = 0
+                and COALESCE(p.time_deleted,0) = 0
+                and m.path like "http%"
+                {'AND (score IS NULL OR score > 7)' if 'score' in m_columns else ''}
+                {'AND (upvote_ratio IS NULL OR upvote_ratio > 0.73)' if 'upvote_ratio' in m_columns else ''}
+                {args.sql_filter}
+            ORDER BY 1=1
+                , play_count
+                {', ' + args.sort if args.sort else ''}
+                , random()
+        {LIMIT}
+        """
+    else:
+        query = f"""select
+                m.path
+                , m.title
+                {', m.duration' if 'duration' in m_columns else ''}
+                , m.time_created
+                {', m.size' if 'size' in m_columns else ''}
+                {', m.ie_key' if 'ie_key' in m_columns else ''}
+                {', m.time_modified' if 'time_modified' in m_columns else ''}
+                {', m.time_downloaded' if 'time_downloaded' in m_columns else ''}
+                {', m.time_deleted' if 'time_deleted' in m_columns else ''}
+                {', m.error' if 'error' in m_columns else ''}
+                {', m.id' if 'id' in m_columns else ''}
+            FROM media m
+            WHERE 1=1
+                and COALESCE(m.time_downloaded,0) = 0
+                and COALESCE(m.time_deleted,0) = 0
+                and m.path like "http%"
+                {'AND (score IS NULL OR score > 7)' if 'score' in m_columns else ''}
+                {'AND (upvote_ratio IS NULL OR upvote_ratio > 0.73)' if 'upvote_ratio' in m_columns else ''}
+                {args.sql_filter}
+            ORDER BY 1=1
+                , play_count
+                {', ' + args.sort if args.sort else ''}
+                , random()
+        {LIMIT}
+        """
 
     return query, bindings
 
