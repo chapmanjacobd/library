@@ -5,6 +5,7 @@ from typing import Dict, Tuple
 
 from xklb import consts, db, player, tube_backend, utils
 from xklb.consts import SC
+from xklb.playback import now_playing
 from xklb.player import get_ordinal_media, mark_media_deleted, override_sort
 from xklb.subtitle import externalize_subtitle
 from xklb.utils import cmd, log
@@ -637,13 +638,7 @@ def play(args, m: Dict) -> None:
         if args.transcode:
             media_file = transcode(media_file)
 
-    if args.action == SC.listen and not media_file.startswith("http"):
-        try:
-            print(cmd("ffprobe", "-hide_banner", "-loglevel", "info", media_file).stderr)
-        except UnicodeEncodeError:
-            print(media_file)
-    else:
-        print(media_file)
+    print(now_playing(media_file))
 
     args.player = player.parse(args, m, media_file)
 

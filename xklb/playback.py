@@ -1,4 +1,4 @@
-import argparse, os, platform
+import argparse, os, platform, textwrap
 from pathlib import Path
 
 from python_mpv_jsonipc import MPV
@@ -38,11 +38,38 @@ def _now_playing(args) -> dict:
     return media
 
 
-def print_now_playing(playing, source) -> None:
-    if playing[source].startswith("http"):
-        print(source, "\t", cmd("ffprobe", "-hide_banner", "-loglevel", "info", playing[source]).stderr)
-    else:
-        print(source, "\t", playing[source])
+def indent_prefix_first(text, prefix, indent="\t"):
+    lines = text.splitlines()
+    first_line = textwrap.indent(lines[0], prefix + indent) + "\n"
+    rest_lines = textwrap.indent("\n".join(lines[1:]), indent)
+    return first_line + rest_lines
+
+
+def now_playing(path) -> str:
+    if path.startswith("http"):
+        return path
+
+    try:
+        text = (
+            path
+            + "\n"
+            + "\n".join(
+                l
+                for l in cmd("ffprobe", "-hide_banner", "-loglevel", "info", path).stderr.splitlines()
+                if path not in l
+            )
+        )
+        return text
+    except UnicodeEncodeError:
+        return path
+    except Exception:
+        return "\n"
+
+
+def source_now_playing(playing, source) -> str:
+    path = playing[source]
+    text = indent_prefix_first(now_playing(path), prefix=source)
+    return text
 
 
 def playback_now() -> None:
@@ -50,11 +77,11 @@ def playback_now() -> None:
     playing = _now_playing(args)
 
     if playing["mpv"]:
-        print_now_playing(playing, "mpv")
+        print(source_now_playing(playing, "mpv"))
         args.mpv.terminate()
 
     if playing["catt"]:
-        print_now_playing(playing, "catt")
+        print(source_now_playing(playing, "catt"))
 
 
 def catt_stop(args) -> None:
