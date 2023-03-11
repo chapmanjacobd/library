@@ -271,7 +271,11 @@ def dl_download(args=None) -> None:
             continue
 
         if args.profile in (DBType.audio, DBType.video):
-            tube_backend.yt(args, m)
+            try:
+                tube_backend.yt(args, m)
+            except Exception as e:
+                print("db:", args.database)
+                raise e
         else:
             raise NotImplementedError
 
