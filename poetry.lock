@@ -1099,14 +1099,14 @@ files = [
 
 [[package]]
 name = "gallery-dl"
-version = "1.24.5"
+version = "1.25.0"
 description = "Command-line program to download image galleries and collections from several image hosting sites"
 category = "main"
 optional = false
 python-versions = ">=3.4"
 files = [
-    {file = "gallery_dl-1.24.5-py3-none-any.whl", hash = "sha256:52781ba97da911f15e26fab90cdccd8886f8ab4de53f862ca132a0e9bf3c3b49"},
-    {file = "gallery_dl-1.24.5.tar.gz", hash = "sha256:3fbd4988623d3e958c025824e53c106bf87701411948467afcc6a163e208cbd3"},
+    {file = "gallery_dl-1.25.0-py3-none-any.whl", hash = "sha256:d08e071102c7587e6e2f69a21a9c7e28c0a9da7636edd410c3b76510e9082425"},
+    {file = "gallery_dl-1.25.0.tar.gz", hash = "sha256:5b1987eae00c9db9976563a42e1e01eab47a455db17d254167bbf8ec0c25c116"},
 ]
 
 [package.dependencies]
@@ -3473,14 +3473,14 @@ files = [
 
 [[package]]
 name = "xlsxwriter"
-version = "3.0.8"
+version = "3.0.9"
 description = "A Python module for creating Excel XLSX files."
 category = "main"
 optional = true
 python-versions = ">=3.6"
 files = [
-    {file = "XlsxWriter-3.0.8-py3-none-any.whl", hash = "sha256:f5c7491b8450cf49968428f062355de16c9140aa24eafc466c9dfe107610bd44"},
-    {file = "XlsxWriter-3.0.8.tar.gz", hash = "sha256:ec77335fb118c36bc5ed1c89e33904d649e4989df2d7980f7d6a9dd95ee5874e"},
+    {file = "XlsxWriter-3.0.9-py3-none-any.whl", hash = "sha256:5eaaf3c6f791cba1dd1c3065147c35982180f693436093aabe5b7d6c16148e95"},
+    {file = "XlsxWriter-3.0.9.tar.gz", hash = "sha256:7216d39a2075afac7a28cad81f6ac31b0b16d8976bf1b775577d157346f891dd"},
 ]
 
 [[package]]
