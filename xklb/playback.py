@@ -76,12 +76,22 @@ def playback_now() -> None:
     args = parse_args("now")
     playing = _now_playing(args)
 
-    if playing["mpv"]:
+    if playing["mpv"] and playing["catt"]:
         print(source_now_playing(playing, "mpv"))
         args.mpv.terminate()
-
-    if playing["catt"]:
         print(source_now_playing(playing, "catt"))
+
+    elif playing["mpv"]:
+        path = playing["mpv"]
+        print(now_playing(path))
+        args.mpv.terminate()
+
+    elif playing["catt"]:
+        path = playing["catt"]
+        print(now_playing(path))
+
+    else:
+        print("Nothing seems to be playing. You may need to specify --mpv-socket or --chromecast-device")
 
 
 def catt_stop(args) -> None:
