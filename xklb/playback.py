@@ -47,9 +47,8 @@ def indent_prefix_first(text, prefix, indent="\t"):
 
 def now_playing(path) -> str:
     if path.startswith("http"):
-        return path
-
-    try:
+        text = path
+    else:
         text = (
             path
             + "\n"
@@ -59,11 +58,16 @@ def now_playing(path) -> str:
                 if path not in l
             )
         )
+
+    try:
+        text.encode()
         return text
     except UnicodeEncodeError:
-        return path
+        text = path
+        text.encode()
+        return text
     except Exception:
-        return "\n"
+        return "Could not encode file path as UTF-8"
 
 
 def source_now_playing(playing, source) -> str:
