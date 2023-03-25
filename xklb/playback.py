@@ -63,11 +63,12 @@ def now_playing(path) -> str:
         text.encode()
         return text
     except UnicodeEncodeError:
-        text = path
-        text.encode()
-        return text
-    except Exception:
-        return "Could not encode file path as UTF-8"
+        try:
+            text = path
+            text.encode()
+            return text
+        except Exception:
+            return "Could not encode file path as UTF-8"
 
 
 def source_now_playing(playing, source) -> str:
