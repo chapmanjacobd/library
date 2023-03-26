@@ -172,6 +172,7 @@ def construct_tabs_query(args) -> Tuple[str, dict]:
         {', ' + ', '.join(args.cols) if args.cols else ''}
     FROM media
     WHERE 1=1
+        and COALESCE(time_deleted,0) = 0
         {args.sql_filter}
         {"and time_valid < cast(STRFTIME('%s', datetime()) as int)" if not args.print else ''}
     ORDER BY 1=1

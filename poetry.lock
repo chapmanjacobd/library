@@ -775,14 +775,14 @@ files = [
 
 [[package]]
 name = "gallery-dl"
-version = "1.25.0"
+version = "1.25.1"
 description = "Command-line program to download image galleries and collections from several image hosting sites"
 category = "main"
 optional = false
 python-versions = ">=3.4"
 files = [
-    {file = "gallery_dl-1.25.0-py3-none-any.whl", hash = "sha256:d08e071102c7587e6e2f69a21a9c7e28c0a9da7636edd410c3b76510e9082425"},
-    {file = "gallery_dl-1.25.0.tar.gz", hash = "sha256:5b1987eae00c9db9976563a42e1e01eab47a455db17d254167bbf8ec0c25c116"},
+    {file = "gallery_dl-1.25.1-py3-none-any.whl", hash = "sha256:cb507140b605d870fb358e48fabece4743c46bb5ed3b5d02a87aa233dc4c48f9"},
+    {file = "gallery_dl-1.25.1.tar.gz", hash = "sha256:bacf65cdc85db020f8b18e174357f88f7c0ab85b4466712e06b9526b71690cfe"},
 ]
 
 [package.dependencies]
@@ -1336,19 +1336,19 @@ files = [
 
 [[package]]
 name = "platformdirs"
-version = "3.1.1"
+version = "3.2.0"
 description = "A small Python package for determining appropriate platform-specific dirs, e.g. a \"user data dir\"."
 category = "dev"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "platformdirs-3.1.1-py3-none-any.whl", hash = "sha256:e5986afb596e4bb5bde29a79ac9061aa955b94fca2399b7aaac4090860920dd8"},
-    {file = "platformdirs-3.1.1.tar.gz", hash = "sha256:024996549ee88ec1a9aa99ff7f8fc819bb59e2c3477b410d90a16d32d6e707aa"},
+    {file = "platformdirs-3.2.0-py3-none-any.whl", hash = "sha256:ebe11c0d7a805086e99506aa331612429a72ca7cd52a1f0d277dc4adc20cb10e"},
+    {file = "platformdirs-3.2.0.tar.gz", hash = "sha256:d5b638ca397f25f979350ff789db335903d7ea010ab28903f57b27e1b16c2b08"},
 ]
 
 [package.extras]
 docs = ["furo (>=2022.12.7)", "proselint (>=0.13)", "sphinx (>=6.1.3)", "sphinx-autodoc-typehints (>=1.22,!=1.23.4)"]
-test = ["appdirs (==1.4.4)", "covdefaults (>=2.2.2)", "pytest (>=7.2.1)", "pytest-cov (>=4)", "pytest-mock (>=3.10)"]
+test = ["appdirs (==1.4.4)", "covdefaults (>=2.3)", "pytest (>=7.2.2)", "pytest-cov (>=4)", "pytest-mock (>=3.10)"]
 
 [[package]]
 name = "pluggy"
@@ -1730,14 +1730,14 @@ files = [
 
 [[package]]
 name = "pytz"
-version = "2022.7.1"
+version = "2023.2"
 description = "World timezone definitions, modern and historical"
 category = "main"
 optional = false
 python-versions = "*"
 files = [
-    {file = "pytz-2022.7.1-py2.py3-none-any.whl", hash = "sha256:78f4f37d8198e0627c5f1143240bb0206b8691d8d7ac6d78fee88b78733f8c4a"},
-    {file = "pytz-2022.7.1.tar.gz", hash = "sha256:01a0681c4b9684a28304615eba55d1ab31ae00bf68ec157ec3708a8182dbbcd0"},
+    {file = "pytz-2023.2-py2.py3-none-any.whl", hash = "sha256:8a8baaf1e237175b02f5c751eea67168043a749c843989e2b3015aa1ad9db68b"},
+    {file = "pytz-2023.2.tar.gz", hash = "sha256:a27dcf612c05d2ebde626f7d506555f10dfc815b3eddccfaadfc7d99b11c9a07"},
 ]
 
 [[package]]
