@@ -1,8 +1,6 @@
 import argparse, asyncio, queue, sqlite3, threading
 from pathlib import Path
 
-import requests
-
 from xklb import db, utils
 from xklb.utils import log
 
@@ -54,6 +52,8 @@ def parse_args(prog, usage) -> argparse.Namespace:
 
 
 def get(url):
+    import requests
+
     r = requests.get(url)
     return r.json()
 

@@ -2,7 +2,7 @@ import tempfile
 from pathlib import Path
 from typing import List, Optional, Union
 
-import ffmpeg, pysubs2, sqlite_utils
+import sqlite_utils
 from ffmpeg import Error
 
 from xklb.consts import SUB_TEMP_DIR
@@ -13,6 +13,9 @@ IMAGE_SUBTITLE_CODECS = ["dvbsub", "dvdsub", "pgssub", "xsub", "dvb_subtitle", "
 
 
 def extract(video_file, stream_index) -> Optional[str]:
+    import ffmpeg
+
+    Path(SUB_TEMP_DIR).mkdir(parents=True, exist_ok=True)
     temp_srt = tempfile.mktemp(".srt", dir=SUB_TEMP_DIR)
 
     stream_id = "0:" + str(stream_index)
@@ -31,6 +34,9 @@ def extract(video_file, stream_index) -> Optional[str]:
 
 
 def convert_to_srt(path) -> str:
+    import ffmpeg
+
+    Path(SUB_TEMP_DIR).mkdir(parents=True, exist_ok=True)
     temp_srt = tempfile.mktemp(".srt", dir=SUB_TEMP_DIR)
     try:
         ffmpeg.input(path).output(temp_srt).global_args("-nostdin").run(quiet=True)
@@ -43,6 +49,8 @@ def convert_to_srt(path) -> str:
 
 
 def read_sub_unsafe(path) -> List[str]:
+    import pysubs2
+
     return [
         remove_text_inside_brackets(caption.text.replace(r"\N", " ").replace(r"\n", " ").replace("\n", " "))
         for caption in pysubs2.load(path, format_="srt")
@@ -72,6 +80,8 @@ def subs_to_text(video_path, paths: List[str]) -> str:
 
 
 def externalize_subtitle(media_file) -> Union[str, None]:
+    import ffmpeg
+
     subs = ffmpeg.probe(media_file)["streams"]
 
     subtitles_file = None

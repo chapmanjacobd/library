@@ -1,9 +1,6 @@
 import argparse, html
 from urllib.parse import urlparse
 
-from bs4 import BeautifulSoup
-from markdown import markdown
-
 from xklb import db, utils
 from xklb.utils import log
 
@@ -20,6 +17,8 @@ def parse_args() -> argparse.Namespace:
 
 
 def get_page_links(path, text):
+    from bs4 import BeautifulSoup
+
     soup = BeautifulSoup(html.unescape(text), "lxml")
     internal_links = set()
     external_links = set()
@@ -39,6 +38,8 @@ def get_page_links(path, text):
 
 
 def parse_reddit_selftext() -> None:
+    from markdown import markdown
+
     args = parse_args()
     m_columns = args.db["media"].columns_dict
 

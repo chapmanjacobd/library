@@ -5,12 +5,11 @@ from numbers import Number
 from pathlib import Path
 from platform import system
 from random import randrange
-from shlex import join, quote
+from shlex import join, quote, split
 from shutil import which
 from time import sleep
 from typing import List, Optional, Tuple, Union
 
-import screeninfo
 from rich.prompt import Confirm
 from tabulate import tabulate
 
@@ -149,9 +148,7 @@ def mv_to_keep_folder(args, media_file: str) -> None:
     keep_path.mkdir(exist_ok=True)
     new_path = shutil.move(media_file, keep_path)
     if args.keep_cmd:
-        import shlex
-
-        utils.cmd_detach(shlex.split(args.keep_cmd), new_path)
+        utils.cmd_detach(split(args.keep_cmd), new_path)
     with args.db.conn:
         args.db.conn.execute("UPDATE media set path = ? where path = ?", [new_path, media_file])
 
@@ -507,7 +504,7 @@ def grid_stack(display, qty, swap=False):
     return [(hole, f'--screen-name="{display.name}"') for hole in holes]
 
 
-def get_display_by_name(displays, screen_name) -> List[screeninfo.Monitor]:
+def get_display_by_name(displays, screen_name):  # -> List[screeninfo.Monitor]
     for d in displays:
         if d.name == screen_name:
             return [d]
@@ -528,6 +525,8 @@ def is_hstack(args, display) -> bool:
 
 
 def get_multiple_player_template(args) -> List[str]:
+    import screeninfo
+
     displays = screeninfo.get_monitors()
     if args.screen_name:
         displays = get_display_by_name(displays, args.screen_name)

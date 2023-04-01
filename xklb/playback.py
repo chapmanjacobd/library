@@ -1,8 +1,6 @@
 import argparse, os, platform, textwrap
 from pathlib import Path
 
-from python_mpv_jsonipc import MPV
-
 from xklb import consts, utils
 from xklb.utils import cmd, log
 
@@ -20,6 +18,8 @@ def parse_args(action) -> argparse.Namespace:
 
     if os.path.exists(args.mpv_socket):
         try:
+            from python_mpv_jsonipc import MPV
+
             args.mpv = MPV(start_mpv=False, ipc_socket=args.mpv_socket)
         except ConnectionRefusedError:
             Path(args.mpv_socket).unlink(missing_ok=True)

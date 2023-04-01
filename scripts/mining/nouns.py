@@ -2,8 +2,6 @@ import sys
 from html.parser import HTMLParser
 from io import StringIO
 
-import regex
-
 from . import words
 
 """
@@ -38,11 +36,6 @@ def is_num(s):
     return s.replace(".", "", 1).replace("-", "", 1).isdigit()
 
 
-RE_NOUNS_SPLIT = regex.compile(
-    r"(?= [a-z]|(?<!\b[A-Z][a-z]*) (?=[A-Z]))|[.?!,\/#$%\^&\*;:{}=\-_`~()]|\,|\'|\"|\^|‘|’|“|”|\n| -| :| _"
-)
-
-
 def printer(parts):
     for part in parts:
         part = part.strip()
@@ -59,7 +52,14 @@ def printer(parts):
 def line_processor(txt):
     txt = strip_tags(txt)
 
-    parts = RE_NOUNS_SPLIT.split(txt)
+    if getattr(line_processor, "RE_NOUNS_SPLIT", None) is None:
+        import regex
+
+        line_processor.RE_NOUNS_SPLIT = regex.compile(
+            r"(?= [a-z]|(?<!\b[A-Z][a-z]*) (?=[A-Z]))|[.?!,\/#$%\^&\*;:{}=\-_`~()]|\,|\'|\"|\^|‘|’|“|”|\n| -| :| _"
+        )
+
+    parts = line_processor.RE_NOUNS_SPLIT.split(txt)
     printer(parts)
 
 

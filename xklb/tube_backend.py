@@ -4,7 +4,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-import yt_dlp
 from sqlite_utils.db import NotFoundError
 
 from xklb import consts, fs_extract, utils
@@ -16,6 +15,16 @@ from xklb.dl_config import (
     yt_unrecoverable_errors,
 )
 from xklb.utils import combine, log, safe_unpack
+
+yt_dlp = None
+
+
+def load_module_level_yt_dlp():
+    global yt_dlp
+
+    if yt_dlp is None:
+        import yt_dlp
+    return yt_dlp
 
 
 def tube_opts(args, func_opts=None, playlist_opts: Optional[str] = None) -> dict:
@@ -142,10 +151,15 @@ def tube_opts(args, func_opts=None, playlist_opts: Optional[str] = None) -> dict
 
 
 def is_supported(url) -> bool:  # thank you @dbr
+    yt_dlp = load_module_level_yt_dlp()
+
     if consts.REGEX_V_REDD_IT.match(url):
         return True
 
-    for ie in consts.YT_IES:
+    if getattr(is_supported, "yt_ies", None) is None:
+        is_supported.yt_ies = yt_dlp.extractor.gen_extractors()
+
+    for ie in is_supported.yt_ies:
         if ie.suitable(url) and ie.IE_NAME != "generic":
             return True  # Site has dedicated extractor
     return False
@@ -285,6 +299,8 @@ added_media_count = 0
 
 
 def process_playlist(args, playlist_path, ydl_opts, playlist_root=True) -> Optional[List[Dict]]:
+    yt_dlp = load_module_level_yt_dlp()
+
     for k, v in args.extra_playlist_data.items():
         setattr(args, k, v)
 
@@ -349,6 +365,8 @@ def process_playlist(args, playlist_path, ydl_opts, playlist_root=True) -> Optio
 
 
 def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Optional[List[Dict]]:
+    yt_dlp = load_module_level_yt_dlp()
+
     m_columns = args.db["media"].columns_dict
 
     with yt_dlp.YoutubeDL(
@@ -448,8 +466,7 @@ def save_tube_entry(args, m, info: Optional[dict] = None, error=None, URE=False)
             speech_recognition=False,
         )
         fs_tags = utils.dict_filter_bool(fs_extract.extract_metadata(fs_args, info["local_path"]), keep_0=False) or {}
-        for p in Path(consts.SUB_TEMP_DIR).glob("*.srt"):
-            p.unlink()
+        fs_extract.clean_up_temp_dirs()
     else:
         fs_tags = {}
 
@@ -476,6 +493,8 @@ def save_tube_entry(args, m, info: Optional[dict] = None, error=None, URE=False)
 
 
 def yt(args, m) -> None:
+    yt_dlp = load_module_level_yt_dlp()
+
     if not m["path"].startswith("http"):
         return
 

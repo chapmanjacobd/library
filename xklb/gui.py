@@ -1,8 +1,4 @@
-from tkinter import PhotoImage, Tk
-from tkinter.ttk import Button, Frame, Label, Style
 from typing import Tuple
-
-import screeninfo
 
 from xklb.utils import log
 
@@ -13,6 +9,9 @@ class UserQuit(BaseException):
 
 class MrSuperDialogue:
     def __init__(self, path, qty, geom_data=None):
+        from tkinter import PhotoImage, Tk
+        from tkinter.ttk import Button, Frame, Label, Style
+
         def raise_error(self, *args):
             raise  # pylint: disable=misplaced-bare-raise
 
@@ -118,7 +117,7 @@ class MrSuperDialogue:
         self.root.wm_attributes("-alpha", 1)
 
     @staticmethod
-    def _get_coord_offset_from_monitor(monitor: screeninfo.Monitor) -> Tuple[int, int]:
+    def _get_coord_offset_from_monitor(screeninfo_monitor) -> Tuple[int, int]:
         # TODO: assuming screeninfo returns monitors in the same order that Tk is expecting it should
         # be possible to figure out where the monitor sits in the framebuffer then add up the preceding
         # monitors to find the pixel offset within the framebuffer for the window to show up in
@@ -129,6 +128,8 @@ class MrSuperDialogue:
 
     @staticmethod
     def get_monitor_from_coord(X, Y):
+        import screeninfo
+
         monitors = screeninfo.get_monitors()
 
         for m in reversed(monitors):

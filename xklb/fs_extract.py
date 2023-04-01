@@ -150,6 +150,13 @@ def extract_metadata(mp_args, f) -> Optional[Dict[str, int]]:
     return media
 
 
+def clean_up_temp_dirs():
+    temp_subs_path = Path(consts.SUB_TEMP_DIR)
+    if temp_subs_path.exists():
+        for p in temp_subs_path.glob("*.srt"):
+            p.unlink()
+
+
 def extract_chunk(args, parallel, chunk_paths) -> None:
     from joblib import delayed
 
@@ -160,8 +167,7 @@ def extract_chunk(args, parallel, chunk_paths) -> None:
         metadata = books.extract_image_metadata_chunk(metadata, chunk_paths)
 
     if args.scan_subtitles:
-        for p in Path(consts.SUB_TEMP_DIR).glob("*.srt"):
-            p.unlink()
+        clean_up_temp_dirs()
 
     media = list(filter(None, metadata))
     args.db["media"].insert_all(utils.list_dict_filter_bool(media), pk="path", alter=True, replace=True)
@@ -235,7 +241,7 @@ def scan_path(args, path_str: str) -> int:
 
     n_jobs = -1
     if args.io_multiplier > 1:
-        n_jobs = int(consts.CPU_COUNT * args.io_multiplier)  # useful for text, image, filesystem db types
+        n_jobs = int(int(os.cpu_count() or 4) * args.io_multiplier)  # useful for text, image, filesystem db types
     if args.verbose >= 2:
         n_jobs = 1
 
@@ -255,7 +261,7 @@ def scan_path(args, path_str: str) -> int:
         log.debug(new_files)
 
         if args.profile in (DBType.text):
-            batch_count = consts.CPU_COUNT
+            batch_count = int(os.cpu_count() or 4)
         elif args.profile in (DBType.image):
             batch_count = consts.SQLITE_PARAM_LIMIT // 20
         else:

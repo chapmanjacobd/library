@@ -2,9 +2,6 @@ import sys
 from datetime import datetime
 from typing import Dict, Optional
 
-import ffmpeg, mutagen
-from tinytag import TinyTag
-
 from xklb import subtitle, utils
 from xklb.consts import DBType
 from xklb.utils import combine, log, safe_unpack
@@ -91,6 +88,9 @@ def parse_tags(mu: Dict, ti: Dict) -> dict:
 
 
 def get_audio_tags(f) -> dict:
+    import mutagen
+    from tinytag import TinyTag
+
     try:
         tiny_tags = utils.dict_filter_bool(TinyTag.get(f).as_dict()) or {}
     except Exception:
@@ -106,6 +106,8 @@ def get_audio_tags(f) -> dict:
 
 
 def munge_av_tags(args, media, f) -> Optional[dict]:
+    import ffmpeg
+
     try:
         probe = ffmpeg.probe(f, show_chapters=None)
     except (KeyboardInterrupt, SystemExit):

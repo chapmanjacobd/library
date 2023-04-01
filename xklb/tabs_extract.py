@@ -1,8 +1,6 @@
 import argparse, sys
-from datetime import datetime
 from pathlib import Path
 from typing import List
-from urllib.parse import urlparse
 
 from xklb import consts, db, player, utils
 from xklb.consts import Frequency
@@ -90,6 +88,8 @@ def get_new_paths(args) -> List[str]:
 
 
 def extract_url_metadata(args, path: str) -> dict:
+    from urllib.parse import urlparse
+
     hostname = urlparse(path).hostname or ""
 
     return dict(
