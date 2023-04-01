@@ -174,21 +174,25 @@ def extract_chunk(args, parallel, chunk_paths) -> None:
 
 
 def find_new_files(args, path: Path) -> List[str]:
-    if args.scan_all_files:
-        # thanks to these people for making rglob fast https://bugs.python.org/issue26032
-        scanned_files = [str(p) for p in path.rglob("*") if p.is_file()]
-    elif args.profile == DBType.filesystem:
-        scanned_files = [str(p) for p in path.rglob("*")]
-    elif args.profile == DBType.audio:
-        scanned_files = consts.get_media_files(path, audio=True)
-    elif args.profile == DBType.video:
-        scanned_files = consts.get_media_files(path)
-    elif args.profile == DBType.text:
-        scanned_files = consts.get_text_files(path, OCR=args.ocr, speech_recognition=args.speech_recognition)
-    elif args.profile == DBType.image:
-        scanned_files = consts.get_image_files(path)
-    else:
-        raise Exception(f"fs_extract for profile {args.profile} not implemented")
+    try:
+        if args.scan_all_files:
+            # thanks to these people for making rglob fast https://bugs.python.org/issue26032
+            scanned_files = [str(p) for p in path.rglob("*") if p.is_file()]
+        elif args.profile == DBType.filesystem:
+            scanned_files = [str(p) for p in path.rglob("*")]
+        elif args.profile == DBType.audio:
+            scanned_files = consts.get_media_files(path, audio=True)
+        elif args.profile == DBType.video:
+            scanned_files = consts.get_media_files(path)
+        elif args.profile == DBType.text:
+            scanned_files = consts.get_text_files(path, OCR=args.ocr, speech_recognition=args.speech_recognition)
+        elif args.profile == DBType.image:
+            scanned_files = consts.get_image_files(path)
+        else:
+            raise Exception(f"fs_extract for profile {args.profile} not implemented")
+    except FileNotFoundError:
+        print(f"[{path}] Not found")
+        return []
 
     columns = args.db["media"].columns_dict
     scanned_set = set(scanned_files)
@@ -213,6 +217,7 @@ def find_new_files(args, path: Path) -> List[str]:
 
         deleted_files = list(existing_set - scanned_set)
         if not new_files and len(deleted_files) >= len(existing_set) and not args.force:
+            print(f"[{path}] Path empty or device not mounted. Rerun with -f to mark all subpaths as deleted.")
             return []  # if path not mounted or all files deleted
         deleted_count = mark_media_deleted(args, deleted_files)
         if deleted_count > 0:
