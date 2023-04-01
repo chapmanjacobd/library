@@ -295,7 +295,7 @@ def parse_args_sort(args):
         (True, "random", "random"),
     ]
 
-    sort = [c[2] if args.print else c[1] for c in sorts if c[0]]
+    sort = [c[2] if args.print and "f" not in args.print and "limit" in args.defaults else c[1] for c in sorts if c[0]]
     sort = list(filter(bool, sort))
     sort = [override_sort(s) for s in sort]
     sort = "\n        , ".join(sort)
