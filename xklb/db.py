@@ -1,4 +1,5 @@
-import os, sqlite3
+import sqlite3
+from pathlib import Path
 from textwrap import dedent
 from typing import Any, Iterable, List, Optional, Union
 
@@ -45,7 +46,7 @@ def connect(args, conn=None, **kwargs):
                 raise exc
             return d
 
-    if not os.path.exists(args.database) and ":memory:" not in args.database:
+    if not Path(args.database).exists() and ":memory:" not in args.database:
         log.error(f"Database file '{args.database}' does not exist. Create one with lb fsadd, tubeadd, or tabsadd.")
         raise SystemExit(1)
 

@@ -8,7 +8,7 @@ from random import shuffle
 from shutil import which
 from typing import Any, Dict, Generator, List, Optional, Union
 
-import ftfy, humanize
+import humanize
 from IPython.core import ultratb
 from IPython.terminal.debugger import TerminalPdb
 from rich.logging import RichHandler
@@ -346,6 +346,8 @@ def clean_string(p):
 
 
 def clean_path(b, dot_space=False):
+    import ftfy
+
     p = b.decode("utf-8", "backslashreplace")
     p = ftfy.fix_text(p, explain=False)
     path = Path(p)
@@ -704,11 +706,15 @@ def clear_input():
 
         tcflush(sys.stdin, TCIFLUSH)
     elif platform.system() == "Windows":
-        import msvcrt
+        if getattr(clear_input, "kbhit", None) is None:
+            from msvcrt import getch, kbhit
+
+            clear_input.kbhit = kbhit
+            clear_input.getch = getch
 
         # Try to flush the buffer
-        while msvcrt.kbhit():
-            msvcrt.getch()
+        while clear_input.kbhit():
+            clear_input.getch()
 
 
 def set_readline_completion(list_):

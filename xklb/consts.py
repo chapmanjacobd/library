@@ -1,28 +1,26 @@
 import enum, os, re, sys
 from datetime import datetime
 from pathlib import Path
-from tempfile import gettempdir, mkdtemp
+from tempfile import gettempdir
 from types import SimpleNamespace
 from typing import List
-
-import yt_dlp
 
 
 def now():
     return int(datetime.now().timestamp())
 
 
-FAKE_SUBTITLE = os.path.join(gettempdir(), "sub.srt")  # https://github.com/skorokithakis/catt/issues/393
-CAST_NOW_PLAYING = os.path.join(gettempdir(), "catt_playing")
-DEFAULT_MPV_SOCKET = os.path.join(gettempdir(), "mpv_socket")
+TEMP_DIR = gettempdir()
+FAKE_SUBTITLE = os.path.join(TEMP_DIR, "sub.srt")  # https://github.com/skorokithakis/catt/issues/393
+CAST_NOW_PLAYING = os.path.join(TEMP_DIR, "catt_playing")
+DEFAULT_MPV_SOCKET = os.path.join(TEMP_DIR, "mpv_socket")
 DEFAULT_MPV_WATCH_LATER = str(Path("~/.config/mpv/watch_later/").expanduser().resolve())
-SUB_TEMP_DIR = mkdtemp()
+SUB_TEMP_DIR = os.path.join(TEMP_DIR, "library_temp_subtitles")
 BLOCK_THE_CHANNEL = "__BLOCKLIST_ENTRY_"
 
 SQLITE_PARAM_LIMIT = 32765
 DEFAULT_PLAY_QUEUE = 120
 DEFAULT_MULTIPLE_PLAYBACK = -1
-CPU_COUNT = int(os.cpu_count() or 4)
 PYTEST_RUNNING = "pytest" in sys.modules
 REGEX_ANSI_ESCAPE = re.compile(r"(?:\x1B[@-_]|[\x80-\x9F])[0-?]*[ -/]*[@-~]")
 REGEX_SUBREDDIT = re.compile("|".join([r".*reddit\.com/r/(.*?)/.*", r".*redd\.it/r/(.*?)/.*"]))
@@ -38,7 +36,6 @@ REGEX_REDDITOR = re.compile(
 )
 REGEX_V_REDD_IT = re.compile("https?://v.redd.it/(?:[^/?#&]+)")
 APPLICATION_START = now()
-YT_IES = yt_dlp.extractor.gen_extractors()
 
 try:
     TERMINAL_SIZE = os.get_terminal_size()

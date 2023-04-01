@@ -4,26 +4,18 @@ from typing import List, Optional
 from xklb import utils
 from xklb.utils import combine, log, safe_unpack
 
-try:
-    import textract as _textract
-except ModuleNotFoundError:
-    _textract = None
-try:
-    import exiftool as _exiftool
-except ModuleNotFoundError:
-    _exiftool = None
-
-
 REGEX_SENTENCE_ENDS = re.compile(r";|,|\.|\*|\n|\t")
 
 
 def munge_book_tags(media, f) -> Optional[dict]:
-    if _textract is None:
+    try:
+        import textract
+    except ModuleNotFoundError:
         raise ModuleNotFoundError(
             "textract is required for text database creation: pip install textract; sudo dnf install libxml2-devel libxslt-devel antiword unrtf poppler-utils tesseract sox-plugins-nonfree sox libjpeg-devel swig"
         )
     try:
-        tags = _textract.process(f)
+        tags = textract.process(f)
         tags = REGEX_SENTENCE_ENDS.split(tags.decode())
     except Exception as e:
         log.warning(e)
@@ -215,12 +207,14 @@ def munge_image_tags(m: dict, e: dict) -> dict:
 
 
 def extract_image_metadata_chunk(metadata: List[dict], chunk_paths: List[str]) -> List[dict]:
-    if _exiftool is None:
+    try:
+        import exiftool
+    except ModuleNotFoundError:
         raise ModuleNotFoundError(
             "exiftool and PyExifTool are required for image database creation: sudo dnf install perl-Image-ExifTool && pip install PyExifTool"
         )
 
-    with _exiftool.ExifToolHelper() as et:
+    with exiftool.ExifToolHelper() as et:
         exif = et.get_metadata(chunk_paths)
 
     exif_enriched = []

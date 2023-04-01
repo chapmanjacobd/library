@@ -1,13 +1,12 @@
-import sys
-from urllib.parse import urlparse
-
-import requests
-from bs4 import BeautifulSoup
-
 from xklb.utils import log
 
 
 def get_page_links(url):
+    from urllib.parse import urlparse
+
+    import requests
+    from bs4 import BeautifulSoup
+
     soup = BeautifulSoup(requests.get(url).content, "html.parser")
     film_list = set()
 
@@ -25,6 +24,8 @@ def get_page_links(url):
 
 
 def nfb_films() -> None:
+    import sys
+
     for l in sys.stdin:
         l = l.rstrip("\n")
         if l in ["", '""', "\n"]:

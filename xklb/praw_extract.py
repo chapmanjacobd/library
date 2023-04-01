@@ -7,8 +7,6 @@ from itertools import takewhile
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-import praw, prawcore
-
 from xklb import consts, db, utils
 from xklb.utils import log
 
@@ -64,6 +62,8 @@ def parse_args(action, usage) -> argparse.Namespace:
     args.db = db.connect(args)
 
     try:
+        import praw
+
         args.reddit = praw.Reddit(args.praw_site, config_interpolation="basic")
     except Exception as e:
         print(PRAW_SETUP_INSTRUCTIONS)
@@ -104,8 +104,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-skip_errors = (prawcore.exceptions.NotFound, prawcore.exceptions.Forbidden, prawcore.exceptions.Redirect)
-
 
 def created_since(row: Any, target_sec_utc: Optional[int]) -> bool:
     result = (not target_sec_utc) or (row.created_utc >= target_sec_utc)
@@ -113,6 +111,8 @@ def created_since(row: Any, target_sec_utc: Optional[int]) -> bool:
 
 
 def legalize(val: Any) -> Any:
+    import praw
+
     if isinstance(val, praw.models.reddit.base.RedditBase):  # type: ignore
         return str(val)
     if isinstance(val, praw.models.reddit.poll.PollData):  # type: ignore
@@ -240,6 +240,8 @@ def since_last_created(args, playlist_path):
 
 
 def redditor_new(args, redditor_dict) -> None:
+    import praw
+
     user_path, user_name = redditor_dict.values()
     user: praw.reddit.Redditor = args.reddit.redditor(user_name)
 
@@ -252,6 +254,8 @@ def redditor_new(args, redditor_dict) -> None:
 
 
 def subreddit_new(args, subreddit_dict) -> None:
+    import praw
+
     subreddit_path, subreddit_name = subreddit_dict.values()
     subreddit: praw.reddit.Subreddit = args.reddit.subreddit(subreddit_name)
 
@@ -277,6 +281,8 @@ def subreddit_new(args, subreddit_dict) -> None:
 
 
 def subreddit_top(args, subreddit_dict) -> None:
+    import praw
+
     subreddit_path, subreddit_name = subreddit_dict.values()
 
     subreddit: praw.reddit.Subreddit = args.reddit.subreddit(subreddit_name)
@@ -293,7 +299,22 @@ def subreddit_top(args, subreddit_dict) -> None:
             save_post(args, saveable(post), subreddit_path)
 
 
+skip_errors = None
+
+
+def load_module_level_skip_errors():
+    global skip_errors
+
+    if skip_errors is None:
+        import prawcore
+
+        skip_errors = (prawcore.exceptions.NotFound, prawcore.exceptions.Forbidden, prawcore.exceptions.Redirect)
+    return skip_errors
+
+
 def process_redditors(args, redditors):
+    load_module_level_skip_errors()
+
     for redditor in redditors:
         try:
             redditor_new(args, redditor)
@@ -303,6 +324,8 @@ def process_redditors(args, redditors):
 
 
 def process_subreddits(args, subreddits):
+    load_module_level_skip_errors()
+
     for subreddit in subreddits:
         try:
             subreddit_new(args, subreddit)
