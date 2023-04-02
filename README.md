@@ -268,7 +268,7 @@ You can also invoke tabs manually:
         library watch -p    # print in a table
         library watch -p p  # equivalent
         library watch -p a  # print an aggregate report
-        library watch -p a  # print a bigdirs report (see lb bigdirs -h for more info)
+        library watch -p b  # print a bigdirs report (see lb bigdirs -h for more info)
         library watch -p f  # print fields -- useful for piping paths to utilities like xargs or GNU Parallel
 
         Check if you have downloaded something before
