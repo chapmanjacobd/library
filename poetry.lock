@@ -1668,14 +1668,14 @@ chardet = "*"
 
 [[package]]
 name = "pysubs2"
-version = "1.6.0"
+version = "1.6.1"
 description = "A library for editing subtitle files"
 category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "pysubs2-1.6.0-py3-none-any.whl", hash = "sha256:20d8ebb85bc7d93702b22451a65095a21dbf7ed6f788526ee4c2fb4bf2272d48"},
-    {file = "pysubs2-1.6.0.tar.gz", hash = "sha256:ed6ff66eaf7d3bc98bb0970c6cd4bf7042a70a2da6e804ff03be4cd9c3179a4f"},
+    {file = "pysubs2-1.6.1-py3-none-any.whl", hash = "sha256:1f96d9dfb5f859a54a00e04621beb20ff21ea1d788821b2f4935c5c0ef8dc68e"},
+    {file = "pysubs2-1.6.1.tar.gz", hash = "sha256:0261611e71735ff7763972c519c72593c8063efcb9039c54af65f31b81cec116"},
 ]
 
 [[package]]
