@@ -256,6 +256,7 @@ def parse_args_sort(args):
         subtitle_count = "=0"
 
     sorts = [
+        (args.random, "random", "random"),
         (args.sort and "rank" in args.sort, args.sort, args.sort),
         ("video_count" in m_columns and args.action == SC.watch, "video_count > 0 desc", "video_count > 0 "),
         ("audio_count" in m_columns, "audio_count > 0 desc", "audio_count > 0"),
@@ -548,9 +549,6 @@ def construct_query(args) -> Tuple[str, dict]:
                 else ""
             )
             cf.append(f"and m.rowid in (select rowid from media {where_not_deleted} order by random() limit {limit})")
-    else:
-        if args.random:
-            args.sort = "random(), " + args.sort
 
     args.sql_filter = " ".join(cf)
     args.sql_filter_bindings = bindings
