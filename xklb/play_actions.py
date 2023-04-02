@@ -41,15 +41,15 @@ def usage(action) -> str:
         library {action} --sibling   # only include files which have more than or equal to one sibling
         library {action} --solo      # only include files which are alone by themselves
 
-        The value of this constraint is configurable via the `--lower` flag
+        `--sibling` is just a shortcut for `--lower 2`; `--solo` is `--upper 1`
+        library {action} --sibling --solo      # you will always get zero records here
+        library {action} --lower 2 --upper 1   # equivalent
+
+        You can be more specific via the `--upper` and `--lower` flags
         library {action} --lower 3   # only include files which have three or more siblings
         library {action} --upper 3   # only include files which have fewer than three siblings
         library {action} --lower 3 --upper 3   # only include files which are three siblings inclusive
         library {action} --lower 12 --upper 25 -OOO  # on my machine this launches My Mister 2018
-
-        `--sibling` is just a shortcut for `--lower 2`; `--solo` is `--upper 1`
-        library {action} --sibling --solo      # you will always get zero records here
-        library {action} --lower 2 --upper 1   # equivalent
 
     Play recent partially-watched videos (requires mpv history):
         library {action} --partial       # play newest first
