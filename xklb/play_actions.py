@@ -74,7 +74,7 @@ def usage(action) -> str:
         library {action} -p    # print in a table
         library {action} -p p  # equivalent
         library {action} -p a  # print an aggregate report
-        library {action} -p a  # print a bigdirs report (see lb bigdirs -h for more info)
+        library {action} -p b  # print a bigdirs report (see lb bigdirs -h for more info)
         library {action} -p f  # print fields -- useful for piping paths to utilities like xargs or GNU Parallel
 
         Check if you have downloaded something before
