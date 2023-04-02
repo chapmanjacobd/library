@@ -570,7 +570,7 @@ def construct_query(args) -> Tuple[str, dict]:
         {'AND (score IS NULL OR score > 7)' if 'score' in m_columns else ''}
         {'AND (upvote_ratio IS NULL OR upvote_ratio > 0.73)' if 'upvote_ratio' in m_columns else ''}
         {'AND COALESCE(time_downloaded,0) = 0' if args.online_media_only else ''}
-        {'AND time_downloaded > 0 AND path not like "http%"' if args.local_media_only else ''}
+        {'AND COALESCE(time_downloaded,1)!= 0 AND path not like "http%"' if args.local_media_only else ''}
     )
     SELECT
         {SELECT}
