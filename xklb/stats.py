@@ -6,7 +6,7 @@ from tabulate import tabulate
 
 from xklb import consts, db, dl_extract, play_actions, tube_backend, utils
 from xklb.player import delete_playlists
-from xklb.utils import human_time, log
+from xklb.utils import human_time, log, pipe_print
 
 
 def parse_args(prog, usage):
@@ -96,7 +96,7 @@ def printer(args, query, bindings) -> None:
     utils.col_duration(tbl, "avg_playlist_duration")
 
     if args.fields:
-        print("\n".join(list(map(operator.itemgetter("path"), media))))
+        pipe_print("\n".join(list(map(operator.itemgetter("path"), media))))
         return
     elif args.json or consts.TERMINAL_SIZE.columns < 80:
         print(json.dumps(tbl, indent=3))

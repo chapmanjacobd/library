@@ -718,9 +718,9 @@ def printer(args, query, bindings) -> None:
             virtual_csv.seek(0)
             for line in virtual_csv.readlines():
                 if args.moved:
-                    print(line.strip().replace(args.moved[0], "", 1))
+                    utils.pipe_print(line.strip().replace(args.moved[0], "", 1))
                 else:
-                    print(line.strip())
+                    utils.pipe_print(line.strip())
             if args.moved:
                 moved_media(args, list(map(operator.itemgetter("path"), media)), *args.moved)
     else:

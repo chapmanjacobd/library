@@ -1,4 +1,4 @@
-from xklb.utils import log
+from xklb.utils import log, pipe_print
 
 
 def get_page_links(url):
@@ -20,7 +20,7 @@ def get_page_links(url):
                 log.debug(href)
 
     for el in film_list:
-        print(el)
+        pipe_print(el)
 
 
 def nfb_films() -> None:

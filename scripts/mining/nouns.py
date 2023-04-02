@@ -2,6 +2,8 @@ import sys
 from html.parser import HTMLParser
 from io import StringIO
 
+from xklb.utils import pipe_print
+
 from . import words
 
 """
@@ -46,7 +48,7 @@ def printer(parts):
         if part_lookup in words.stop_words or part_lookup in words.prepositions or is_num(part):
             continue
 
-        print(part)
+        pipe_print(part)
 
 
 def line_processor(txt):
