@@ -542,7 +542,12 @@ def construct_query(args) -> Tuple[str, dict]:
             limit = consts.DEFAULT_PLAY_QUEUE * 16
 
         if "limit" in args.defaults:
-            cf.append(f"and m.rowid in (select rowid from media order by random() limit {limit})")
+            where_not_deleted = (
+                "where COALESCE(time_deleted,0) = 0"
+                if "time_deleted" in m_columns and "time_deleted" not in " ".join(sys.argv)
+                else ""
+            )
+            cf.append(f"and m.rowid in (select rowid from media {where_not_deleted} order by random() limit {limit})")
     else:
         if args.random:
             args.sort = "random(), " + args.sort
@@ -697,6 +702,7 @@ def process_playqueue(args) -> None:
             args.play_in_order == 0,
             "sort" in args.defaults,
             not args.partial,
+            not args.random,
         ]
     ):
         media = utils.mpv_enrich(args, media)
