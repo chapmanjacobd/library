@@ -256,7 +256,7 @@ def parse_args_sort(args):
         subtitle_count = "=0"
 
     sorts = [
-        (args.random, "random", "random"),
+        (getattr(args, "random", False), "random", "random"),
         (args.sort and "rank" in args.sort, args.sort, args.sort),
         ("video_count" in m_columns and args.action == SC.watch, "video_count > 0 desc", "video_count > 0 "),
         ("audio_count" in m_columns, "audio_count > 0 desc", "audio_count > 0"),
