@@ -74,7 +74,15 @@ def usage(action) -> str:
         library {action} -p    # print as a table
         library {action} -p a  # print an aggregate report
         library {action} -p b  # print a bigdirs report (see lb bigdirs -h for more info)
-        library {action} -p f  # print fields -- useful for piping paths to utilities like xargs or GNU Parallel
+        library {action} -p f  # print fields (defaults to path; use --cols to change)
+                               # -- useful for piping paths to utilities like xargs or GNU Parallel
+
+        library {action} -p d  # mark deleted
+        library {action} -p w  # mark watched
+
+        Some printing modes can be combined
+        library {action} -p df  # print files for piping into another program and mark them as deleted within the db
+        library {action} -p bf  # print fields from bigdirs report
 
         Check if you have downloaded something before
         library {action} -u duration -p -s 'title'
@@ -100,6 +108,7 @@ def usage(action) -> str:
         library {action} --partial -p
         library {action} -P -p  # equivalent
         library {action} --partial -pa  # print an aggregate report of partially watched files
+        library {action} -P -p f --cols path,progress,duration  # print CSV of partially watched files
 
         View how much time you have {action}ed
         library {action} -w play_count'>'0 -p=a
