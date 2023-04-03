@@ -1,4 +1,4 @@
-import argparse,  shlex
+import argparse, shlex
 from os.path import commonprefix
 from pathlib import Path
 

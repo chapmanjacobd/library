@@ -21,7 +21,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v1.24.013)
+    xk media library subcommands (v1.24.014)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -33,8 +33,10 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
       lb view                  View images
 
       lb bigdirs               Discover folders which take much room
-      lb mv-list               Reach a target free space by moving data across mount points
       lb dedupe                Deduplicate local db files
+      lb relmv                 Move files/folders while preserving relative paths
+      lb mv-list               Reach a target free space by moving data across mount points
+      lb scatter               Scatter files across multiple mountpoints (mergerfs balance)
 
       lb christen              Cleanse files by giving them a new name
 
