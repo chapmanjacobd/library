@@ -265,8 +265,7 @@ You can also invoke tabs manually:
         library watch -p  # this will print _all_ the media. be cautious about `-p` on an unfiltered set
 
         Printing modes
-        library watch -p    # print in a table
-        library watch -p p  # equivalent
+        library watch -p    # print as a table
         library watch -p a  # print an aggregate report
         library watch -p b  # print a bigdirs report (see lb bigdirs -h for more info)
         library watch -p f  # print fields -- useful for piping paths to utilities like xargs or GNU Parallel
@@ -285,14 +284,16 @@ You can also invoke tabs manually:
         ╘═══════════╧══════════════╧═════════╧═════════╛
         Total duration: 14 days, 23 hours and 42 minutes
 
-        Print an aggregate report of media that has no duration information (likely corrupt or online media)
+        Print an aggregate report of media that has no duration information (ie. online or corrupt local media)
         library watch -w 'duration is null' -p=a
 
         Print a list of filenames which have below 1280px resolution
         library watch -w 'width<1280' -p=f
 
         Print media you have partially viewed with mpv
-        library watch -p=v
+        library watch --partial -p
+        library watch -P -p  # equivalent
+        library watch --partial -pa  # print an aggregate report of partially watched files
 
         View how much time you have watched
         library watch -w play_count'>'0 -p=a
