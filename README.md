@@ -21,7 +21,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v1.24.012)
+    xk media library subcommands (v1.24.013)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -268,7 +268,15 @@ You can also invoke tabs manually:
         library watch -p    # print as a table
         library watch -p a  # print an aggregate report
         library watch -p b  # print a bigdirs report (see lb bigdirs -h for more info)
-        library watch -p f  # print fields -- useful for piping paths to utilities like xargs or GNU Parallel
+        library watch -p f  # print fields (defaults to path; use --cols to change)
+                               # -- useful for piping paths to utilities like xargs or GNU Parallel
+
+        library watch -p d  # mark deleted
+        library watch -p w  # mark watched
+
+        Some printing modes can be combined
+        library watch -p df  # print files for piping into another program and mark them as deleted within the db
+        library watch -p bf  # print fields from bigdirs report
 
         Check if you have downloaded something before
         library watch -u duration -p -s 'title'
@@ -294,6 +302,7 @@ You can also invoke tabs manually:
         library watch --partial -p
         library watch -P -p  # equivalent
         library watch --partial -pa  # print an aggregate report of partially watched files
+        library watch -P -p f --cols path,progress,duration  # print CSV of partially watched files
 
         View how much time you have watched
         library watch -w play_count'>'0 -p=a

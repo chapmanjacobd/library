@@ -1,4 +1,4 @@
-import csv, operator, os, platform, re, shutil, socket, subprocess
+import csv, operator, os, platform, re, shutil, socket, subprocess, sys
 from copy import deepcopy
 from io import StringIO
 from numbers import Number
@@ -690,22 +690,21 @@ def printer(args, query, bindings) -> None:
                     D[f"avg_{c}"] = sum((d[c] or 0) for d in media) / len(media)
         media = [D]
 
-    elif "d" in args.print:
-        mark_media_deleted(args, list(map(operator.itemgetter("path"), media)))
-        if not "f" in args.print:
-            return print(f"Removed {len(media)} metadata records")
-    elif "w" in args.print:
-        marked = mark_media_watched(args, list(map(operator.itemgetter("path"), media)))
-        if not "f" in args.print:
-            return print(f"Marked {marked} metadata records as watched")
+    else:
+        if "d" in args.print:
+            marked = mark_media_deleted(args, list(map(operator.itemgetter("path"), media)))
+            print(f"Marked {marked} metadata records as deleted", file=sys.stderr)
+        if "w" in args.print:
+            marked = mark_media_watched(args, list(map(operator.itemgetter("path"), media)))
+            print(f"Marked {marked} metadata records as watched", file=sys.stderr)
 
     if "f" in args.print:
         if args.limit == 1:
             f = media[0]["path"]
             if not Path(f).exists():
                 mark_media_deleted(args, f)
-                return printer(args, query, bindings)
-            print(quote(f))
+                return printer(args, query, bindings)  # try again to find a valid file
+            utils.pipe_print(quote(f))
         else:
             if not args.cols:
                 args.cols = ["path"]
