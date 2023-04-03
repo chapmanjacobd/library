@@ -196,8 +196,10 @@ def gen_include_excludes(cols_available):
 
     valid_cols = [f"m.{c}" for c in searchable_columns if c in cols_available]
 
-    include_string = "and (" + " like :include{0} OR ".join(valid_cols) + " like :include{0} )"
-    exclude_string = "and (" + " not like :exclude{0} AND ".join(valid_cols) + " not like :exclude{0} )"
+    incl = ":include{0}"
+    excl = ":exclude{0}"
+    include_string = "AND (" + " OR ".join([f"{col} LIKE {incl}" for col in valid_cols]) + ")"
+    exclude_string = "AND (" + " AND ".join([f"COALESCE({col},'') NOT LIKE {excl}" for col in valid_cols]) + ")"
 
     return include_string, exclude_string
 
