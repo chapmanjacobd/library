@@ -1,4 +1,4 @@
-import argparse, enum, errno, functools, hashlib, logging, math, multiprocessing, os, platform, re, shlex, shutil, signal, subprocess, sys, tempfile, textwrap
+import argparse, enum, functools, hashlib, logging, math, multiprocessing, os, platform, re, shlex, shutil, signal, subprocess, sys, tempfile, textwrap
 from ast import literal_eval
 from collections.abc import Iterable
 from datetime import datetime, timedelta
@@ -879,9 +879,7 @@ def human_to_seconds(input_str):
 
 def pipe_print(x):
     try:
-        print(x)
-    except IOError as e:
-        if e.errno == errno.EPIPE:
-            pass
-        else:
-            raise e
+        print(x, flush=True)
+    except BrokenPipeError:
+        sys.stdout = None
+        exit(141)
