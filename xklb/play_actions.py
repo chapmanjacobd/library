@@ -107,8 +107,8 @@ def usage(action) -> str:
         Print media you have partially viewed with mpv
         library {action} --partial -p
         library {action} -P -p  # equivalent
-        library {action} --partial -pa  # print an aggregate report of partially watched files
         library {action} -P -p f --cols path,progress,duration  # print CSV of partially watched files
+        library {action} --partial -pa  # print an aggregate report of partially watched files
 
         View how much time you have {action}ed
         library {action} -w play_count'>'0 -p=a

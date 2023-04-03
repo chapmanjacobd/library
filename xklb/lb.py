@@ -29,8 +29,10 @@ def usage() -> str:
       lb view                  View images
 
       lb bigdirs               Discover folders which take much room
-      lb mv-list               Reach a target free space by moving data across mount points
       lb dedupe                Deduplicate local db files
+      lb relmv                 Move files/folders while preserving relative paths
+      lb mv-list               Reach a target free space by moving data across mount points
+      lb scatter               Scatter files across multiple mountpoints (mergerfs balance)
 
       lb christen              Cleanse files by giving them a new name
 
@@ -125,6 +127,8 @@ def create_subcommands_parser():
     subp_bigdirs.set_defaults(func=scripts.bigdirs)
     subp_move_list = add_parser(subparsers, "mv-list", ["movelist", "move-list", "move_list"])
     subp_move_list.set_defaults(func=scripts.move_list)
+    subp_relmv = add_parser(subparsers, "relmv", ["rel-mv", "mvrel", "mv-rel"])
+    subp_relmv.set_defaults(func=scripts.relmv)
     subp_dedupe = add_parser(subparsers, "dedupe")
     subp_dedupe.set_defaults(func=scripts.deduplicate_db)
     subp_scatter = add_parser(subparsers, "scatter")

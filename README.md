@@ -301,8 +301,8 @@ You can also invoke tabs manually:
         Print media you have partially viewed with mpv
         library watch --partial -p
         library watch -P -p  # equivalent
-        library watch --partial -pa  # print an aggregate report of partially watched files
         library watch -P -p f --cols path,progress,duration  # print CSV of partially watched files
+        library watch --partial -pa  # print an aggregate report of partially watched files
 
         View how much time you have watched
         library watch -w play_count'>'0 -p=a
