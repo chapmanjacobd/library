@@ -1,4 +1,5 @@
 import argparse, shlex
+from collections import OrderedDict
 from os.path import commonprefix
 from pathlib import Path
 
@@ -24,11 +25,8 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def relmv() -> None:
-    args = parse_args()
-
-    dest = Path(args.dest).expanduser().resolve()
-    for source in args.sources:
+def _relmv(args, sources, dest):
+    for source in sources:
         abspath = Path(source).expanduser().resolve()
 
         try:
@@ -37,17 +35,33 @@ def relmv() -> None:
             relpath = str(abspath.relative_to(Path(commonprefix([abspath, dest])).parent))
         target_dir = (dest / relpath).parent
 
+        # remove duplicate path parts
+        target_dir = Path(*OrderedDict.fromkeys(target_dir.parts).keys())
+
         if args.test:
             print("mv", shlex.quote(str(abspath)), shlex.quote(str(target_dir)))
         else:
             target_dir.mkdir(parents=True, exist_ok=True)
             try:
-                abspath.rename(target_dir / abspath.name)
+                new_path = target_dir / abspath.name
+                log.info("%s -> %s", abspath, new_path)
+                abspath.rename(new_path)
             except OSError as e:
-                if e.errno == 18:
+                if e.errno == 18:  # cross-device move
+                    log.info("%s -d> %s", abspath, target_dir)
                     utils.cmd_interactive("mv", abspath, target_dir)
+                elif e.errno == 39:  # target dir not empty
+                    log.info("%s -m> %s", abspath, target_dir)
+                    _relmv(args, abspath.glob("*"), dest)
                 else:
                     raise e
+
+
+def relmv() -> None:
+    args = parse_args()
+
+    dest = Path(args.dest).expanduser().resolve()
+    _relmv(args, args.sources, dest)
 
 
 if __name__ == "__main__":
