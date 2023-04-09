@@ -165,10 +165,10 @@ def fts_quote(query: List[str]) -> List[str]:
     return [s if any([r in s for r in fts_words]) else '"' + s + '"' for s in query]
 
 
-def fts_search(args, bindings) -> str:
-    bindings["query"] = " AND ".join(fts_quote(args.include))
+def fts_search(args) -> str:
+    args.filter_bindings["query"] = " AND ".join(fts_quote(args.include))
     if args.exclude:
-        bindings["query"] += " NOT " + " NOT ".join(fts_quote(args.exclude))
+        args.filter_bindings["query"] += " NOT " + " NOT ".join(fts_quote(args.exclude))
     table = "(" + args.db["media"].search_sql(include_rank=True) + ")"
     return table
 

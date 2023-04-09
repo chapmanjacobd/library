@@ -49,21 +49,19 @@ def parse_args(prog, usage):
 def construct_query(args) -> Tuple[str, dict]:
     utils.ensure_playlists_exists(args)
     pl_columns = args.db["playlists"].columns_dict
-    cf = []
-    bindings = {}
+    args.filter_sql = []
+    args.filter_bindings = {}
 
-    cf.extend([" and " + w for w in args.where])
+    args.filter_sql.extend([" and " + w for w in args.where])
 
     args.table = "playlists"
     if args.db["playlists"].detect_fts():
         if args.include:
-            args.table = db.fts_search(args, bindings)
+            args.table = db.fts_search(args)
         elif args.exclude:
-            play_actions.construct_search_bindings(args, cf, bindings, pl_columns)
+            play_actions.construct_search_bindings(args, pl_columns)
     else:
-        play_actions.construct_search_bindings(args, cf, bindings, pl_columns)
-
-    args.sql_filter = " ".join(cf)
+        play_actions.construct_search_bindings(args, pl_columns)
 
     LIMIT = "LIMIT " + str(args.limit) if args.limit else ""
     query = f"""SELECT
@@ -71,7 +69,7 @@ def construct_query(args) -> Tuple[str, dict]:
     FROM {args.table}
     WHERE 1=1
         and COALESCE(time_deleted,0) = 0
-        {args.sql_filter}
+        {" ".join(args.filter_sql)}
         and (category is null or category != '{consts.BLOCK_THE_CHANNEL}')
     ORDER BY 1=1
         {', ' + args.sort if args.sort else ''}
@@ -80,7 +78,7 @@ def construct_query(args) -> Tuple[str, dict]:
     {LIMIT}
     """
 
-    return query, bindings
+    return query, args.filter_bindings
 
 
 def printer(args, query, bindings) -> None:

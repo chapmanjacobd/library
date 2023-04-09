@@ -93,29 +93,26 @@ def construct_query(args) -> Tuple[str, dict]:
     m_columns = args.db["media"].columns_dict
     pl_columns = args.db["playlists"].columns_dict
 
-    cf = []
-    bindings = {}
+    args.filter_sql = []
+    args.filter_bindings = {}
 
     if args.duration:
-        cf.append(" and duration IS NOT NULL " + args.duration)
+        args.filter_sql.append(" and duration IS NOT NULL " + args.duration)
 
-    cf.extend([" and " + w for w in args.where])
+    args.filter_sql.extend([" and " + w for w in args.where])
 
-    play_actions.construct_search_bindings(args, cf, bindings, m_columns)
+    play_actions.construct_search_bindings(args, m_columns)
 
-    cf.append(
+    args.filter_sql.append(
         f"""and cast(STRFTIME('%s',
           datetime( COALESCE(time_modified,0), 'unixepoch', '+{args.retry_delay}')
         ) as int) < STRFTIME('%s', datetime()) """
     )
 
     if "uploader" in m_columns:
-        cf.append(
+        args.filter_sql.append(
             f"and (m.uploader is NULL or m.uploader not in (select uploader from playlists where category='{consts.BLOCK_THE_CHANNEL}'))"
         )
-
-    args.sql_filter = " ".join(cf)
-    args.sql_filter_bindings = bindings
 
     LIMIT = "LIMIT " + str(args.limit) if args.limit else ""
     if "playlist_path" in m_columns:
@@ -143,7 +140,7 @@ def construct_query(args) -> Tuple[str, dict]:
                 and m.path like "http%"
                 {'AND (score IS NULL OR score > 7)' if 'score' in m_columns else ''}
                 {'AND (upvote_ratio IS NULL OR upvote_ratio > 0.73)' if 'upvote_ratio' in m_columns else ''}
-                {args.sql_filter}
+                {" ".join(args.filter_sql)}
             ORDER BY 1=1
                 , play_count
                 {', ' + args.sort if args.sort else ''}
@@ -170,7 +167,7 @@ def construct_query(args) -> Tuple[str, dict]:
                 and m.path like "http%"
                 {'AND (score IS NULL OR score > 7)' if 'score' in m_columns else ''}
                 {'AND (upvote_ratio IS NULL OR upvote_ratio > 0.73)' if 'upvote_ratio' in m_columns else ''}
-                {args.sql_filter}
+                {" ".join(args.filter_sql)}
             ORDER BY 1=1
                 , play_count
                 {', ' + args.sort if args.sort else ''}
@@ -178,7 +175,7 @@ def construct_query(args) -> Tuple[str, dict]:
         {LIMIT}
         """
 
-    return query, bindings
+    return query, args.filter_bindings
 
 
 def process_downloadqueue(args) -> List[dict]:
@@ -188,7 +185,7 @@ def process_downloadqueue(args) -> List[dict]:
         player.printer(args, query, bindings)
         return []
 
-    media = list(args.db.query(*construct_query(args)))
+    media = list(args.db.query(query, bindings))
     if not media:
         utils.no_media_found()
 

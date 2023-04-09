@@ -358,16 +358,16 @@ def get_ordinal_media(args, path: str) -> str:
             WHERE 1=1
                 and path like :candidate
                 {'and COALESCE(time_deleted,0) = 0' if 'time_deleted' in columns else ''}
-                {'' if args.play_in_order >= 2 else (args.sql_filter or '')}
+                {'' if args.play_in_order >= 2 else (args.filter_sql or '')}
             ORDER BY play_count, path
             LIMIT 1000
             """
         bindings = {"candidate": candidate + "%"}
         if args.play_in_order == 1:
             if args.include or args.exclude:
-                bindings = {**bindings, "query": args.sql_filter_bindings["query"]}
+                bindings = {**bindings, "query": args.filter_bindings["query"]}
         else:
-            bindings = {**bindings, **args.sql_filter_bindings}
+            bindings = {**bindings, **args.filter_bindings}
 
         similar_videos = [d["path"] for d in args.db.query(query, bindings)]
         log.debug(similar_videos)
