@@ -55,6 +55,8 @@ def _relmv(args, sources, dest):
             elif e.errno == 39:  # target dir not empty
                 log.info("%s ->m %s", abspath, dest)
                 _relmv(args, abspath.glob("*"), dest)
+            elif e.errno == 2:  # FileNotFoundError
+                log.error('%s not found', abspath)
             else:
                 raise e
 

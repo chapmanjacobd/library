@@ -173,7 +173,7 @@ def get_title_duplicates(args) -> List[dict]:
     return media
 
 
-def deduplicate_db() -> None:
+def dedupe() -> None:
     args = parse_args()
 
     if args.profile == DBType.audio:
@@ -247,4 +247,4 @@ def deduplicate_db() -> None:
 
 
 if __name__ == "__main__":
-    deduplicate_db()
+    dedupe()
