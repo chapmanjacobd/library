@@ -143,19 +143,17 @@ tabs_exclude_string = (
 
 
 def construct_tabs_query(args) -> Tuple[str, dict]:
-    cf = []
-    bindings = {}
+    args.filter_sql = []
+    args.filter_bindings = {}
 
-    cf.extend([" and " + w for w in args.where])
+    args.filter_sql.extend([" and " + w for w in args.where])
 
     for idx, inc in enumerate(args.include):
-        cf.append(tabs_include_string(idx))
-        bindings[f"include{idx}"] = "%" + inc.replace(" ", "%").replace("%%", " ") + "%"
+        args.filter_sql.append(tabs_include_string(idx))
+        args.filter_bindings[f"include{idx}"] = "%" + inc.replace(" ", "%").replace("%%", " ") + "%"
     for idx, exc in enumerate(args.exclude):
-        cf.append(tabs_exclude_string(idx))
-        bindings[f"exclude{idx}"] = "%" + exc.replace(" ", "%").replace("%%", " ") + "%"
-
-    args.sql_filter = " ".join(cf)
+        args.filter_sql.append(tabs_exclude_string(idx))
+        args.filter_bindings[f"exclude{idx}"] = "%" + exc.replace(" ", "%").replace("%%", " ") + "%"
 
     LIMIT = "LIMIT " + str(args.limit) if args.limit else ""
     OFFSET = f"OFFSET {args.skip}" if args.skip else ""
@@ -173,7 +171,7 @@ def construct_tabs_query(args) -> Tuple[str, dict]:
     FROM media
     WHERE 1=1
         and COALESCE(time_deleted,0) = 0
-        {args.sql_filter}
+        {" ".join(args.filter_sql)}
         {"and time_valid < cast(STRFTIME('%s', datetime()) as int)" if not args.print else ''}
     ORDER BY 1=1
         {', ' + args.sort if args.sort else ''}
@@ -194,7 +192,7 @@ def construct_tabs_query(args) -> Tuple[str, dict]:
     {LIMIT} {OFFSET}
     """
 
-    return query, bindings
+    return query, args.filter_bindings
 
 
 def play(args, m: Dict) -> None:

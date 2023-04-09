@@ -475,34 +475,34 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     return args
 
 
-def construct_search_bindings(args, cf, bindings, columns) -> None:
+def construct_search_bindings(args, columns) -> None:
     includes, excludes = db.gen_include_excludes(columns)
 
     for idx, inc in enumerate(args.include):
-        cf.append(includes.format(idx))
-        bindings[f"include{idx}"] = "%" + inc.replace(" ", "%").replace("%%", " ") + "%"
+        args.filter_sql.append(includes.format(idx))
+        args.filter_bindings[f"include{idx}"] = "%" + inc.replace(" ", "%").replace("%%", " ") + "%"
     for idx, exc in enumerate(args.exclude):
-        cf.append(excludes.format(idx))
-        bindings[f"exclude{idx}"] = "%" + exc.replace(" ", "%").replace("%%", " ") + "%"
+        args.filter_sql.append(excludes.format(idx))
+        args.filter_bindings[f"exclude{idx}"] = "%" + exc.replace(" ", "%").replace("%%", " ") + "%"
 
 
 def construct_query(args) -> Tuple[str, dict]:
     m_columns = args.db["media"].columns_dict
-    cf = []
-    bindings = {}
+    args.filter_sql = []
+    args.filter_bindings = {}
 
     if args.duration:
-        cf.append(" and duration IS NOT NULL " + args.duration)
+        args.filter_sql.append(" and duration IS NOT NULL " + args.duration)
     if args.size:
-        cf.append(" and size IS NOT NULL " + args.size)
+        args.filter_sql.append(" and size IS NOT NULL " + args.size)
     if args.duration_from_size:
-        cf.append(
+        args.filter_sql.append(
             " and size IS NOT NULL and duration in (select distinct duration from m where 1=1 "
             + args.duration_from_size
             + ")"
         )
 
-    cf.extend([" and " + w for w in args.where])
+    args.filter_sql.extend([" and " + w for w in args.where])
 
     def ii(string):
         if string.isdigit():
@@ -510,35 +510,51 @@ def construct_query(args) -> Tuple[str, dict]:
         return string.replace("mins", "minutes").replace("secs", "seconds")
 
     if args.created_within:
-        cf.append(f"and time_created > cast(STRFTIME('%s', datetime( 'now', '-{ii(args.created_within)}')) as int)")
+        args.filter_sql.append(
+            f"and time_created > cast(STRFTIME('%s', datetime( 'now', '-{ii(args.created_within)}')) as int)"
+        )
     if args.created_before:
-        cf.append(f"and time_created < cast(STRFTIME('%s', datetime( 'now', '-{ii(args.created_before)}')) as int)")
+        args.filter_sql.append(
+            f"and time_created < cast(STRFTIME('%s', datetime( 'now', '-{ii(args.created_before)}')) as int)"
+        )
     if args.changed_within:
-        cf.append(f"and time_modified > cast(STRFTIME('%s', datetime( 'now', '-{ii(args.changed_within)}')) as int)")
+        args.filter_sql.append(
+            f"and time_modified > cast(STRFTIME('%s', datetime( 'now', '-{ii(args.changed_within)}')) as int)"
+        )
     if args.changed_before:
-        cf.append(f"and time_modified < cast(STRFTIME('%s', datetime( 'now', '-{ii(args.changed_before)}')) as int)")
+        args.filter_sql.append(
+            f"and time_modified < cast(STRFTIME('%s', datetime( 'now', '-{ii(args.changed_before)}')) as int)"
+        )
     if args.played_within:
-        cf.append(f"and time_played > cast(STRFTIME('%s', datetime( 'now', '-{ii(args.played_within)}')) as int)")
+        args.filter_sql.append(
+            f"and time_played > cast(STRFTIME('%s', datetime( 'now', '-{ii(args.played_within)}')) as int)"
+        )
     if args.played_before:
-        cf.append(f"and time_played < cast(STRFTIME('%s', datetime( 'now', '-{ii(args.played_before)}')) as int)")
+        args.filter_sql.append(
+            f"and time_played < cast(STRFTIME('%s', datetime( 'now', '-{ii(args.played_before)}')) as int)"
+        )
     if args.deleted_within:
-        cf.append(f"and time_deleted > cast(STRFTIME('%s', datetime( 'now', '-{ii(args.deleted_within)}')) as int)")
+        args.filter_sql.append(
+            f"and time_deleted > cast(STRFTIME('%s', datetime( 'now', '-{ii(args.deleted_within)}')) as int)"
+        )
     if args.deleted_before:
-        cf.append(f"and time_deleted < cast(STRFTIME('%s', datetime( 'now', '-{ii(args.deleted_before)}')) as int)")
+        args.filter_sql.append(
+            f"and time_deleted < cast(STRFTIME('%s', datetime( 'now', '-{ii(args.deleted_before)}')) as int)"
+        )
 
     args.table = "media"
     if args.db["media"].detect_fts():
         if args.include:
-            args.table = db.fts_search(args, bindings)
+            args.table = db.fts_search(args)
             m_columns = {**m_columns, "rank": int}
         elif args.exclude:
-            construct_search_bindings(args, cf, bindings, m_columns)
+            construct_search_bindings(args, m_columns)
     else:
-        construct_search_bindings(args, cf, bindings, m_columns)
+        construct_search_bindings(args, m_columns)
 
     if args.table == "media" and not any(
         [
-            cf,
+            args.filter_sql,
             args.where,
             args.print,
             args.partial,
@@ -558,10 +574,9 @@ def construct_query(args) -> Tuple[str, dict]:
                 if "time_deleted" in m_columns and "time_deleted" not in " ".join(sys.argv)
                 else ""
             )
-            cf.append(f"and m.rowid in (select rowid from media {where_not_deleted} order by random() limit {limit})")
-
-    args.sql_filter = " ".join(cf)
-    args.sql_filter_bindings = bindings
+            args.filter_sql.append(
+                f"and m.rowid in (select rowid from media {where_not_deleted} order by random() limit {limit})"
+            )
 
     duration = "duration"
     if args.action == SC.read:
@@ -586,13 +601,17 @@ def construct_query(args) -> Tuple[str, dict]:
         {SELECT}
     FROM m
     WHERE 1=1
-        {args.sql_filter}
+        {" ".join(args.filter_sql)}
     ORDER BY 1=1
         , {args.sort}
     {LIMIT} {OFFSET}
     """
 
-    return query, bindings
+    args.filter_sql = [
+        s for s in args.filter_sql if "rowid" not in s
+    ]  # only use random rowid constraint in first query
+
+    return query, args.filter_bindings
 
 
 def chromecast_play(args, m) -> None:
