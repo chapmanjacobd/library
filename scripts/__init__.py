@@ -1,6 +1,6 @@
 from scripts.bigdirs import bigdirs, process_bigdirs
-from scripts.dedupe import deduplicate_db
-from scripts.invalid_paths import rename_invalid_paths
+from scripts.dedupe import dedupe
+from scripts.christen import christen
 from scripts.merge_dbs import merge_dbs
 from scripts.merge_online_local import merge_online_local
 from scripts.mining.nfb_ca import nfb_films
