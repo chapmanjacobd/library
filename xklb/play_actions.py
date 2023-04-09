@@ -590,7 +590,7 @@ def construct_query(args) -> Tuple[str, dict]:
     SELECT rowid, * FROM {args.table}
     WHERE 1=1
         {f'and path like "http%"' if args.safe else ''}
-        {f'and path not like "{Path(args.keep_dir).resolve()}%"' if args.post_action == 'askkeep' else ''}
+        {f'and path not like "{args.keep_dir}%"' if Path(args.keep_dir).exists() else ''}
         {'and COALESCE(time_deleted,0) = 0' if 'time_deleted' in m_columns and 'time_deleted' not in ' '.join(sys.argv) else ''}
         {'AND (score IS NULL OR score > 7)' if 'score' in m_columns else ''}
         {'AND (upvote_ratio IS NULL OR upvote_ratio > 0.73)' if 'upvote_ratio' in m_columns else ''}

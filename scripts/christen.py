@@ -53,7 +53,7 @@ def rename_path(args, b):
             print("")
 
 
-def rename_invalid_paths() -> None:
+def christen() -> None:
     args = parse_args()
 
     for path in args.paths:
@@ -73,4 +73,4 @@ def rename_invalid_paths() -> None:
 
 
 if __name__ == "__main__":
-    rename_invalid_paths()
+    christen()

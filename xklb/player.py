@@ -579,7 +579,7 @@ def gui_post_act(args, media, m, geom_data=None):
         elif r == "KEEP" and args.post_action == "askkeep":
             mv_to_keep_folder(args, m["path"])
         else:
-            raise Exception("I did not quite catch that... what did you say?")
+            raise NotImplementedError
     else:
         post_act(args, m["path"])
 
