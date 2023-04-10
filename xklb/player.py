@@ -358,7 +358,7 @@ def get_ordinal_media(args, path: str) -> str:
             WHERE 1=1
                 and path like :candidate
                 {'and COALESCE(time_deleted,0) = 0' if 'time_deleted' in columns else ''}
-                {'' if args.play_in_order >= 2 else (args.filter_sql or '')}
+                {'' if args.play_in_order >= 2 else (" ".join(args.filter_sql) or '')}
             ORDER BY play_count, path
             LIMIT 1000
             """
