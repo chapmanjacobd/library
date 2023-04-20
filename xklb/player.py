@@ -8,7 +8,7 @@ from random import randrange
 from shlex import join, quote, split
 from shutil import which
 from time import sleep
-from typing import List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 from rich.prompt import Confirm
 from tabulate import tabulate
@@ -72,7 +72,7 @@ def find_xdg_application(media_file) -> Optional[str]:
     return which(default_application.replace(".desktop", ""))
 
 
-def parse(args, m=None, media_file=None) -> List[str]:
+def parse(args, m) -> List[str]:
     player = generic_player(args)
     mpv = which("mpv.com") or which("mpv")
 
@@ -80,8 +80,8 @@ def parse(args, m=None, media_file=None) -> List[str]:
         player = args.override_player
         args.player_need_sleep = False
 
-    elif args.action in (SC.read) and media_file:
-        player_path = find_xdg_application(media_file)
+    elif args.action in (SC.read) and m["path"]:
+        player_path = find_xdg_application(m["path"])
         if player_path:
             args.player_need_sleep = False
             player = [player_path]
@@ -94,7 +94,7 @@ def parse(args, m=None, media_file=None) -> List[str]:
         elif args.action in (SC.watch):
             player.extend(["--force-window=yes", "--really-quiet"])
 
-        if media_file and media_file.startswith("http"):
+        if m["path"] and m["path"].startswith("http"):
             player.extend(["--script-opts=ytdl_hook-try_ytdl_first=yes"])
 
         if not args.multiple_playback:
@@ -125,7 +125,7 @@ def parse(args, m=None, media_file=None) -> List[str]:
                 player.extend(args.player_args_no_sub)
 
     elif system() == "Linux":
-        player_path = find_xdg_application(media_file)
+        player_path = find_xdg_application(m["path"])
         if player_path:
             args.player_need_sleep = False
             player = [player_path]
@@ -333,17 +333,17 @@ def last_chars(candidate):
     return remove_chars
 
 
-def get_ordinal_media(args, path: str) -> str:
+def get_ordinal_media(args, m: Dict) -> Dict:
     # TODO: maybe try https://dba.stackexchange.com/questions/43415/algorithm-for-finding-the-longest-prefix
 
     columns = args.db["media"].columns_dict
 
     total_media = args.db.execute("select count(*) val from media").fetchone()[0]
-    candidate = deepcopy(path)
+    candidate = deepcopy(m["path"])
     similar_videos = []
     while len(similar_videos) < 2:
         if candidate == "":
-            return path
+            return m
 
         remove_chars = last_chars(candidate)
 
@@ -351,7 +351,7 @@ def get_ordinal_media(args, path: str) -> str:
         log.debug(f"Matches for '{new_candidate}':")
 
         if candidate in ("" or new_candidate):
-            return path
+            return m
 
         candidate = new_candidate
         query = f"""SELECT path FROM {'media' if args.play_in_order >= 3 else args.table}
@@ -369,17 +369,17 @@ def get_ordinal_media(args, path: str) -> str:
         else:
             bindings = {**bindings, **args.filter_bindings}
 
-        similar_videos = [d["path"] for d in args.db.query(query, bindings)]
+        similar_videos = [d for d in args.db.query(query, bindings)]
         log.debug(similar_videos)
 
         if len(similar_videos) > 999 or len(similar_videos) == total_media:
-            return path
+            return m
 
-        commonprefix = os.path.commonprefix(similar_videos)
+        commonprefix = os.path.commonprefix([d["path"] for d in similar_videos])
         log.debug(commonprefix)
         if len(Path(commonprefix).name) < 3:
             log.debug("Using commonprefix")
-            return path
+            return m
 
     return similar_videos[0]
 
@@ -636,11 +636,11 @@ def multiple_player(args, media) -> None:
             m["process"].kill()
 
 
-def local_player(args, m, media_file) -> subprocess.CompletedProcess:
+def local_player(args, m) -> subprocess.CompletedProcess:
     if system() == "Windows" or args.action in (SC.watch):
-        r = cmd(*args.player, media_file, strict=False)
+        r = cmd(*args.player, m["path"], strict=False)
     else:  # args.action in (SC.listen)
-        r = cmd_interactive(*args.player, media_file)
+        r = cmd_interactive(*args.player, m["path"])
 
     if args.player_need_sleep:
         if hasattr(m, "duration"):

@@ -654,29 +654,32 @@ def transcode(next_video):
 
 
 def play(args, m: Dict) -> None:
-    media_file = m["path"]
-
     if args.safe and not tube_backend.is_supported(m["path"]):
         log.info("[%s]: Skipping unsupported URL (safe_mode)", m["path"])
         return
 
-    if is_play_in_order_lvl2(args, media_file):
-        media_file = get_ordinal_media(args, media_file)
+    if is_play_in_order_lvl2(args, m["path"]):
+        m = get_ordinal_media(args, m)
 
-    if args.action in (SC.watch, SC.listen) and not media_file.startswith("http"):
-        media_path = Path(args.prefix + media_file).resolve()
+    original_path = m["path"]
+    if args.action in (SC.watch, SC.listen) and not m["path"].startswith("http"):
+        if args.prefix:
+            media_path = Path(args.prefix + m["path"]).resolve()
+        else:
+            media_path = Path(m["path"])
+        m["path"] = str(media_path)
+
         if not media_path.exists():
-            mark_media_deleted(args, media_file)
-            log.warning("[%s]: Does not exist. Skipping...", media_file)
+            log.warning("[%s]: Does not exist. Skipping...", m["path"])
+            mark_media_deleted(args, original_path)
             return
-        media_file = str(media_path)
 
         if args.transcode:
-            media_file = transcode(media_file)
+            media_file = transcode(m["path"])
 
-    print(now_playing(media_file))
+    print(now_playing(m["path"]))
 
-    args.player = player.parse(args, m, media_file)
+    args.player = player.parse(args, m)
 
     if args.chromecast:
         try:
@@ -687,13 +690,13 @@ def play(args, m: Dict) -> None:
             else:
                 raise e
         else:
-            player.post_act(args, media_file)
+            player.post_act(args, original_path)
 
     elif args.interdimensional_cable:
         return player.socket_play(args, m)
 
     else:
-        r = player.local_player(args, m, media_file)
+        r = player.local_player(args, m)
         if r.returncode != 0:
             print("Player exited with code", r.returncode)
             if args.ignore_errors:
@@ -702,7 +705,7 @@ def play(args, m: Dict) -> None:
                 raise SystemExit(r.returncode)
 
     if args.action in (SC.listen, SC.watch):
-        player.post_act(args, media_file)
+        player.post_act(args, original_path)
 
 
 def process_playqueue(args) -> None:
