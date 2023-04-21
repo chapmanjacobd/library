@@ -4,8 +4,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-from sqlite_utils.db import NotFoundError
-
 from xklb import consts, fs_extract, utils
 from xklb.consts import DBType
 from xklb.dl_config import (
@@ -487,8 +485,8 @@ def save_tube_entry(args, m, info: Optional[dict] = None, error=None, URE=False)
 
     if fs_tags:
         try:
-            args.db["media"].delete(webpath)
-        except NotFoundError:
+            args.db["media"].delete(webpath)  # from sqlite_utils.db import NotFoundError
+        except Exception:
             pass
 
 

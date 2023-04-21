@@ -1,4 +1,4 @@
-import argparse, enum, functools, hashlib, logging, math, multiprocessing, os, platform, re, shlex, shutil, signal, subprocess, sys, tempfile, textwrap
+import argparse, enum, functools, hashlib, logging, math, multiprocessing, os, platform, random, re, shlex, shutil, signal, string, subprocess, sys, tempfile, textwrap
 from ast import literal_eval
 from collections.abc import Iterable
 from datetime import datetime, timedelta
@@ -883,3 +883,13 @@ def pipe_print(x):
     except BrokenPipeError:
         sys.stdout = None
         exit(141)
+
+
+def random_string():
+    return "".join(random.choices(string.ascii_uppercase + string.digits, k=5))
+
+
+def random_filename(path):
+    ext = Path(path).suffix
+    path = str(Path(path).with_suffix(""))
+    return f"{path}.{random_string()}{ext}"

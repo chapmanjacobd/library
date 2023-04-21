@@ -409,9 +409,6 @@ def watch_chromecast(args, m: dict, subtitles_file=None) -> Optional[subprocess.
             )
         else:
             catt_log = args.cc.play_url(m["path"], resolve=True, block=True)
-
-    if subtitles_file:
-        utils.trash(subtitles_file)
     return catt_log
 
 
@@ -589,7 +586,7 @@ def geom(x_size, y_size, x, y) -> str:
 
 
 def multiple_player(args, media) -> None:
-    args.player = parse(args)
+    args.player = parse(args, media[0])
 
     template = get_multiple_player_template(args)
     players = []

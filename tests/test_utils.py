@@ -1,6 +1,7 @@
 import os
 from datetime import timezone
 from pathlib import Path
+from unittest import mock
 
 from xklb import utils
 
@@ -256,3 +257,14 @@ def test_clean_path():
     assert utils.clean_path(b"/test/thing something.txt", dot_space=True) == p("/test/thing.something.txt")
     assert utils.clean_path(b"/_/~_[7].opus") == p("/_/~_[7].opus")
     assert utils.clean_path(b"/__/~_[7].opus") == p("/_/~_[7].opus")
+
+
+@mock.patch("xklb.utils.random_string", return_value="abcdef")
+def test_random_filename(mock_random_string):
+    assert utils.random_filename("testfile.txt") == "testfile.abcdef.txt"
+    assert utils.random_filename("/3_seconds_ago../Mike.webm") == "/3_seconds_ago../Mike.abcdef.webm"
+    assert utils.random_filename("/test") == "/test.abcdef"
+    assert utils.random_filename("/test./t") == "/test./t.abcdef"
+    assert utils.random_filename("/.test") == "/.test.abcdef"
+    assert utils.random_filename("/.test/t") == "/.test/t.abcdef"
+    assert utils.random_filename("/test/thing something.txt") == "/test/thing something.abcdef.txt"

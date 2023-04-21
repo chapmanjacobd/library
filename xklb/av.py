@@ -12,16 +12,9 @@ def get_subtitle_tags(args, f, streams, codec_types) -> dict:
     internal_subtitles_count = sum(1 for s in codec_types if s == "subtitle")
 
     if args.scan_subtitles:
-        internal_subtitles_text = utils.conform(
-            [
-                subtitle.extract(f, s["index"])
-                for s in streams
-                if s.get("codec_type") == "subtitle" and s.get("codec_name") not in subtitle.IMAGE_SUBTITLE_CODECS
-            ],
-        )
-
+        internal_subtitles = subtitle.externalize_internal_subtitles(f, streams)
         external_subtitles = subtitle.get_external(f)
-        subs_text = subtitle.subs_to_text(f, internal_subtitles_text + external_subtitles)
+        subs_text = subtitle.subs_to_text(f, internal_subtitles + external_subtitles)
     else:
         external_subtitles = []
         subs_text = []
