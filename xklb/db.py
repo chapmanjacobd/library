@@ -46,6 +46,10 @@ def connect(args, conn=None, **kwargs):
                 raise exc
             return d
 
+    if kwargs.get("memory"):
+        db = DB(tracer=tracer if args.verbose >= 2 else None, **kwargs)  # type: ignore
+        return db
+
     if not Path(args.database).exists() and ":memory:" not in args.database:
         log.error(f"Database file '{args.database}' does not exist. Create one with lb fsadd, tubeadd, or tabsadd.")
         raise SystemExit(1)

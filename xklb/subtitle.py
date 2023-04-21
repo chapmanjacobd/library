@@ -1,12 +1,13 @@
 import tempfile
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import List, Optional
 
-import sqlite_utils
+import ffmpeg
 from ffmpeg import Error
 
+from xklb import db, utils
 from xklb.consts import SUB_TEMP_DIR
-from xklb.utils import cmd, flatten, log, remove_consecutive_whitespace, remove_text_inside_brackets
+from xklb.utils import flatten, log, remove_consecutive_whitespace, remove_text_inside_brackets
 
 SUBTITLE_FORMATS = "vtt|srt|ssa|ass|jss|aqt|mpl2|mpsub|pjs|rt|sami|smi|stl|xml|txt|psb|ssf|usf"
 IMAGE_SUBTITLE_CODECS = ["dvbsub", "dvdsub", "pgssub", "xsub", "dvb_subtitle", "dvd_subtitle", "hdmv_pgs_subtitle"]
@@ -79,42 +80,19 @@ def subs_to_text(video_path, paths: List[str]) -> str:
     return remove_consecutive_whitespace(subtitles)
 
 
-def externalize_subtitle(media_file) -> Union[str, None]:
-    import ffmpeg
+def is_text_subtitle_stream(s):
+    return s.get("codec_type") == "subtitle" and s.get("codec_name") not in IMAGE_SUBTITLE_CODECS
 
-    subs = ffmpeg.probe(media_file)["streams"]
 
-    subtitles_file = None
-    if subs:
-        db = sqlite_utils.Database(memory=True)
-        db["subs"].insert_all(subs, pk="index")  # type: ignore
-        subtitle_index = db.execute_returning_dicts(
-            """select "index" from subs
-                order by
-                    lower(tags) like "%eng%" desc
-                    , lower(tags) like "%dialog%" desc
-                limit 1"""
-        )[0]["index"]
-        log.debug(f"Using subtitle {subtitle_index}")
+def externalize_internal_subtitles(f, streams=None) -> List[str]:
+    if streams is None:
+        streams = ffmpeg.probe(f, show_chapters=None)["streams"]
 
-        subtitles_file = cmd("mktemp", "--suffix=.vtt", "--dry-run").stdout.strip()
-        cmd(
-            "ffmpeg",
-            "-nostdin",
-            "-loglevel",
-            "warning",
-            "-txt_format",
-            "text",
-            "-i",
-            media_file,
-            "-map",
-            f"0:{subtitle_index}",
-            subtitles_file,
-            strict=False,
-        )
+    external_paths = utils.conform(
+        [extract(f, s["index"]) for s in streams if is_text_subtitle_stream(s)],
+    )
 
-        if Path(subtitles_file).exists():
-            return subtitles_file
+    return external_paths
 
 
 def get_external(file) -> List[str]:
@@ -128,3 +106,30 @@ def get_external(file) -> List[str]:
         return subtitles
 
     return []
+
+
+def get_subtitle_paths(f):
+    internal_subtitles = externalize_internal_subtitles(f)
+    if len(internal_subtitles) > 0:
+        return internal_subtitles
+
+    external_subtitles = get_external(f)
+    return external_subtitles
+
+
+def get_sub_index(args, f):
+    streams = ffmpeg.probe(f)["streams"]
+    temp_db = db.connect(args, memory=True)
+    temp_db["streams"].insert_all(streams, pk="index")  # type: ignore
+    subtitle_index = temp_db.pop(
+        f"""select "index" from streams
+            where codec_type = "subtitle"
+              and codec_name not in ({",".join(['?'] * len(IMAGE_SUBTITLE_CODECS))})
+            order by
+                lower(tags) like "%eng%" desc
+                , lower(tags) like "%en%" desc
+                , lower(tags) like "%dialog%" desc
+            limit 1""",
+        [*IMAGE_SUBTITLE_CODECS],
+    )
+    return subtitle_index

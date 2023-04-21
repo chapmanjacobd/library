@@ -3,12 +3,11 @@ from pathlib import Path
 from random import random
 from typing import Dict, Tuple
 
-from xklb import consts, db, player, tube_backend, utils
+from xklb import consts, db, player, subtitle, tube_backend, utils
 from xklb.consts import SC
 from xklb.playback import now_playing
 from xklb.player import get_ordinal_media, mark_media_deleted, override_sort
-from xklb.subtitle import externalize_subtitle
-from xklb.utils import cmd, log
+from xklb.utils import cmd, cmd_interactive, log, random_filename, safe_unpack
 
 
 def usage(action) -> str:
@@ -389,6 +388,7 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     parser.add_argument("--player-args-sub", "-player-sub", nargs="*", default=DEFAULT_PLAYER_ARGS_SUB)
     parser.add_argument("--player-args-no-sub", "-player-no-sub", nargs="*", default=DEFAULT_PLAYER_ARGS_NO_SUB)
     parser.add_argument("--transcode", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--transcode-audio", action="store_true", help=argparse.SUPPRESS)
 
     parser.add_argument("--post-action", "--action", "-k", default="keep", help=argparse.SUPPRESS)
     parser.add_argument("--keep-dir", "--keepdir", default="keep", help=argparse.SUPPRESS)
@@ -616,7 +616,7 @@ def construct_query(args) -> Tuple[str, dict]:
 
 def chromecast_play(args, m) -> None:
     if args.action in (SC.watch):
-        catt_log = player.watch_chromecast(args, m, subtitles_file=externalize_subtitle(m["path"]))
+        catt_log = player.watch_chromecast(args, m, subtitles_file=safe_unpack(subtitle.get_subtitle_paths(m["path"])))
     elif args.action in (SC.listen):
         catt_log = player.listen_chromecast(args, m)
     else:
@@ -639,18 +639,58 @@ def is_play_in_order_lvl2(args, media_file) -> bool:
     )
 
 
-def transcode(next_video):
-    temp_video = cmd("mktemp", "--suffix=.mkv", "--dry-run").stdout.strip()
-    shutil.move(next_video, temp_video)
-    next_video = str(Path(next_video).with_suffix(".mkv"))
-    cmd(
-        f"ffmpeg -nostdin -loglevel error -stats -i {temp_video} -map 0 -scodec webvtt -vcodec h264"
-        " -preset fast -profile:v high -level 4.1 -crf 17 -pix_fmt yuv420p"
-        " -acodec opus -ac 2 -b:a 128k -filter:a loudnorm=i=-18:lra=17"
-        f" {next_video} && rm {temp_video}"
+def transcode(args, path):
+    log.debug(path)
+    sub_index = subtitle.get_sub_index(args, path)
+
+    transcode_dest = str(Path(path).with_suffix(".mkv"))
+    temp_video = random_filename(transcode_dest)
+
+    maps = ["-map", "0"]
+    if sub_index:
+        maps = ["-map", "0:v", "-map", "0:a", "-map", "0:" + str(sub_index), "-scodec", "webvtt"]
+
+    video_settings = [
+        "-vcodec",
+        "h264",
+        "-preset",
+        "fast",
+        "-profile:v",
+        "high",
+        "-level",
+        "4.1",
+        "-crf",
+        "17",
+        "-pix_fmt",
+        "yuv420p",
+    ]
+    if args.transcode_audio:
+        video_settings = ["-c:v", "copy"]
+
+    print("Transcoding", temp_video)
+    cmd_interactive(
+        "ffmpeg",
+        "-nostdin",
+        "-loglevel",
+        "error",
+        "-stats",
+        "-i",
+        path,
+        *maps,
+        *video_settings,
+        "-acodec",
+        "libopus",
+        "-ac",
+        "2",
+        "-b:a",
+        "128k",
+        "-filter:a",
+        "loudnorm=i=-18:lra=17",
+        temp_video,
     )
-    print(next_video)
-    return next_video
+    Path(path).unlink()
+    shutil.move(temp_video, transcode_dest)
+    return transcode_dest
 
 
 def play(args, m: Dict) -> None:
@@ -674,8 +714,8 @@ def play(args, m: Dict) -> None:
             mark_media_deleted(args, original_path)
             return
 
-        if args.transcode:
-            media_file = transcode(m["path"])
+        if args.transcode or args.transcode_audio:
+            m["path"] = transcode(args, m["path"])
 
     print(now_playing(m["path"]))
 
