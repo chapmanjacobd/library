@@ -21,7 +21,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v1.25.002)
+    xk media library subcommands (v1.25.003)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
