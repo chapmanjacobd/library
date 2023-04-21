@@ -6,6 +6,10 @@ from unittest import mock
 from xklb import utils
 
 
+def p(string):
+    return str(Path(string))
+
+
 def take5():
     num = 0
     while num < 5:
@@ -238,9 +242,6 @@ def test_clean_string():
 
 
 def test_clean_path():
-    def p(string):
-        return str(Path(string))
-
     assert utils.clean_path(b"/_test/-t") == p("/_test/t")
     assert utils.clean_path(b"/3_seconds_ago.../Mike.webm") == p("/3_seconds_ago/Mike.webm")
     assert utils.clean_path(b"/3_seconds_ago../Mike.webm") == p("/3_seconds_ago/Mike.webm")
@@ -260,11 +261,11 @@ def test_clean_path():
 
 
 @mock.patch("xklb.utils.random_string", return_value="abcdef")
-def test_random_filename(mock_random_string):
-    assert utils.random_filename("testfile.txt") == "testfile.abcdef.txt"
-    assert utils.random_filename("/3_seconds_ago../Mike.webm") == "/3_seconds_ago../Mike.abcdef.webm"
-    assert utils.random_filename("/test") == "/test.abcdef"
-    assert utils.random_filename("/test./t") == "/test./t.abcdef"
-    assert utils.random_filename("/.test") == "/.test.abcdef"
-    assert utils.random_filename("/.test/t") == "/.test/t.abcdef"
-    assert utils.random_filename("/test/thing something.txt") == "/test/thing something.abcdef.txt"
+def test_random_filename(_mock_random_string):
+    assert utils.random_filename("testfile.txt") == p("testfile.abcdef.txt")
+    assert utils.random_filename("/3_seconds_ago../Mike.webm") == p("/3_seconds_ago../Mike.abcdef.webm")
+    assert utils.random_filename("/test") == p("/test.abcdef")
+    assert utils.random_filename("/test./t") == p("/test./t.abcdef")
+    assert utils.random_filename("/.test") == p("/.test.abcdef")
+    assert utils.random_filename("/.test/t") == p("/.test/t.abcdef")
+    assert utils.random_filename("/test/thing something.txt") == p("/test/thing something.abcdef.txt")
