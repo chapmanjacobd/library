@@ -260,9 +260,10 @@ def parse_args_sort(args):
     m_columns = args.db["media"].columns_dict
 
     # switching between videos with and without subs is annoying
-    subtitle_count = ">0"
-    if random() < 0.659:  # bias slightly toward videos without subtitles
-        subtitle_count = "=0"
+    subtitle_count = "=0"
+    if random() > 0.659:
+        # bias slightly toward videos without subtitles
+        subtitle_count = ">0"
 
     sorts = [
         (getattr(args, "random", False), "random", "random"),
