@@ -81,7 +81,7 @@ ignore = ["E401","E501"]
 line-length = 120
 # Exclude a variety of commonly ignored directories.
 exclude = [
-    ".git"
+    ".git",
     ".mypy_cache",
     ".ruff_cache",
     "build",
