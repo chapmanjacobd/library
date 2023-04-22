@@ -321,7 +321,7 @@ def dl_block(args=None) -> None:
     paths_to_delete = [
         d["path"]
         for d in args.db.query(
-            f"""SELECT path FROM media
+            """SELECT path FROM media
         WHERE time_downloaded > 0
         AND playlist_path IN ("""
             + ",".join(["?"] * len(args.playlists))
@@ -334,7 +334,7 @@ def dl_block(args=None) -> None:
         paths_to_delete = [
             d["path"]
             for d in args.db.query(
-                f"""SELECT path FROM media
+                """SELECT path FROM media
             WHERE time_downloaded > 0
             AND playlist_path IN (
                 select path from playlists where time_deleted > 0

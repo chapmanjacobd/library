@@ -215,7 +215,7 @@ def save_post(args, post_dict, subreddit_path):
 
 def since_last_created(args, playlist_path):
     latest_post_utc = args.db.pop(
-        f"""
+        """
         select max(time_created)
         from (
             select time_created, playlist_path from reddit_posts

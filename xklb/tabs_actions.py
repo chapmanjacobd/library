@@ -125,22 +125,20 @@ def parse_args(action) -> argparse.Namespace:
     return args
 
 
-tabs_include_string = (
-    lambda x: f"""and (
+
+def tabs_include_string(x):
+    return f"""and (
     path like :include{x}
     OR category like :include{x}
     OR frequency like :include{x}
 )"""
-)
 
-tabs_exclude_string = (
-    lambda x: f"""and (
+def tabs_exclude_string(x):
+    return f"""and (
     path not like :exclude{x}
     AND category not like :exclude{x}
     AND frequency not like :exclude{x}
 )"""
-)
-
 
 def construct_tabs_query(args) -> Tuple[str, dict]:
     args.filter_sql = []

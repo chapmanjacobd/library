@@ -54,7 +54,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def get_music_duplicates(args) -> List[dict]:
-    query = f"""
+    query = """
     SELECT
         m1.path keep_path
         -- , length(m1.path)-length(REPLACE(m1.path, '/', '')) num_slash
@@ -95,7 +95,7 @@ def get_music_duplicates(args) -> List[dict]:
 
 
 def get_id_duplicates(args) -> List[dict]:
-    query = f"""
+    query = """
     SELECT
         m1.path keep_path
         -- , length(m1.path)-length(REPLACE(m1.path, '/', '')) num_slash
@@ -135,7 +135,7 @@ def get_id_duplicates(args) -> List[dict]:
 
 
 def get_title_duplicates(args) -> List[dict]:
-    query = f"""
+    query = """
     SELECT
         m1.path keep_path
         -- , length(m1.path)-length(REPLACE(m1.path, '/', '')) num_slash

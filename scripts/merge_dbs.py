@@ -27,7 +27,7 @@ def merge_db(args, source_db):
     source_db = str(Path(source_db).resolve())
 
     s_db = db.connect(argparse.Namespace(database=source_db, verbose=args.verbose))
-    for table in [s for s in s_db.table_names() if not "_fts" in s and not s.startswith("sqlite_")]:
+    for table in [s for s in s_db.table_names() if "_fts" not in s and not s.startswith("sqlite_")]:
         log.info("[%s]: %s", source_db, table)
         data = s_db[table].rows
 

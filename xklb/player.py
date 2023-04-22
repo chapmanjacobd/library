@@ -310,7 +310,8 @@ def post_act(args, media_file: str, action=None) -> None:
 
 
 def override_sort(sort_expression: str) -> str:
-    YEAR_MONTH = lambda var: f"cast(strftime('%Y%m', datetime({var}, 'unixepoch')) as int)"
+    def YEAR_MONTH(var):
+        return f"cast(strftime('%Y%m', datetime({var}, 'unixepoch')) as int)"
 
     return (
         sort_expression.replace("month_created", YEAR_MONTH("time_created"))
@@ -741,5 +742,5 @@ def printer(args, query, bindings) -> None:
 
             duration = sum(map(lambda m: m.get("duration") or 0, media))
             duration = human_time(duration)
-            if not "a" in args.print:
+            if "a" not in args.print:
                 print("Total duration:", duration)
