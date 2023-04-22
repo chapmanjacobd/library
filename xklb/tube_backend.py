@@ -518,7 +518,8 @@ def yt(args, m) -> None:
     if m.get("time_modified") and m.get("time_modified") > 0:
         ignoreerrors = True
 
-    out_dir = lambda p: str(Path(args.prefix, m["category"] or "%(extractor_key,extractor)s", p))
+    def out_dir(p):
+        return str(Path(args.prefix, m["category"] or "%(extractor_key,extractor)s", p))
 
     func_opts = {
         "ignoreerrors": ignoreerrors,

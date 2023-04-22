@@ -112,7 +112,7 @@ def munge_av_tags(args, media, f) -> Optional[dict]:
             utils.trash(f)
         return
 
-    if not "format" in probe:
+    if "format" not in probe:
         print(f"[{f}] Failed reading format", file=sys.stderr)
         print(probe)
         return

@@ -101,7 +101,7 @@ def get_non_tube_media(args, paths) -> List[dict]:
 def get_deleted_media(args) -> List[dict]:
     if all([args.deleted_at, args.deleted_to]):
         # use timestamps between inclusive, converting from localtime to UTC
-        query = f"""
+        query = """
             SELECT *
             FROM media
             WHERE time_deleted >= strftime('%s', ?, 'utc') AND time_deleted <= strftime('%s', ?, 'utc')
@@ -110,7 +110,7 @@ def get_deleted_media(args) -> List[dict]:
         media = list(args.db.query(query, (args.deleted_at, args.deleted_to)))
     else:
         # use exact timestamp, converting from localtime to UTC
-        query = f"""
+        query = """
             SELECT *
             FROM media
             WHERE time_deleted = strftime('%s', ?, 'utc')

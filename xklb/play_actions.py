@@ -7,7 +7,7 @@ from xklb import consts, db, player, subtitle, tube_backend, utils
 from xklb.consts import SC
 from xklb.playback import now_playing
 from xklb.player import get_ordinal_media, mark_media_deleted, override_sort
-from xklb.utils import cmd, cmd_interactive, log, random_filename, safe_unpack
+from xklb.utils import cmd_interactive, log, random_filename, safe_unpack
 
 
 def usage(action) -> str:
@@ -589,7 +589,7 @@ def construct_query(args) -> Tuple[str, dict]:
     query = f"""WITH m as (
     SELECT rowid, * FROM {args.table}
     WHERE 1=1
-        {f'and path like "http%"' if args.safe else ''}
+        {'and path like "http%"' if args.safe else ''}
         {f'and path not like "{args.keep_dir}%"' if Path(args.keep_dir).exists() else ''}
         {'and COALESCE(time_deleted,0) = 0' if 'time_deleted' in m_columns and 'time_deleted' not in ' '.join(sys.argv) else ''}
         {'AND (score IS NULL OR score > 7)' if 'score' in m_columns else ''}
@@ -785,7 +785,7 @@ def process_playqueue(args) -> None:
                 play(args, m)
         finally:
             if args.interdimensional_cable:
-                args.sock.send((f"raw quit \n").encode())
+                args.sock.send(("raw quit \n").encode())
             Path(args.mpv_socket).unlink(missing_ok=True)
             if args.chromecast:
                 Path(consts.CAST_NOW_PLAYING).unlink(missing_ok=True)

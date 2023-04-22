@@ -56,7 +56,7 @@ def group_by_folder(args, media):
 def get_table(args) -> List[dict]:
     media = list(
         args.db.query(
-            f"""
+            """
         select
             path
             , size

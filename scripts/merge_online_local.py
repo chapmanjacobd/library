@@ -28,7 +28,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def get_duplicates(args) -> List[dict]:
-    query = f"""
+    query = """
     WITH m1 as (
         SELECT
             *

@@ -72,6 +72,24 @@ float_to_top = true
 py_version = 39
 combine_straight_imports = true
 
+[tool.ruff.per-file-ignores]
+"__init__.py" = ["F401"]
+[tool.ruff]
+select = ["ALL"]
+ignore = ["E401","E501"]
+
+line-length = 120
+# Exclude a variety of commonly ignored directories.
+exclude = [
+    ".git"
+    ".mypy_cache",
+    ".ruff_cache",
+    "build",
+    "dist",
+]
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
 [tool.pytest.ini_options]
 testpaths = ['tests']
 addopts = "--pdbcls=IPython.terminal.debugger:TerminalPdb --ignore=tests/data --capture=tee-sys --log-cli-level=ERROR"
