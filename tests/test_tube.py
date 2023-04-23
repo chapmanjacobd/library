@@ -14,7 +14,7 @@ tube_add(
         "--dl-config",
         "TEST1=1 TEST2=2",
         "https://youtube.com/playlist?list=PLVoczRgDnXDLWV1UJ_tO70VT_ON0tuEdm",
-    ]
+    ],
 )
 
 
@@ -51,7 +51,7 @@ class TestTube(unittest.TestCase):
             assert out["title"] == "Most Epic Video About Nothing"
             assert out["size"] == 4797012
 
-        sys.argv = ["wt"] + tube_db
+        sys.argv = ["wt", *tube_db]
         watch()
         out = play_mocked.call_args[0][1]
         assert "https://www.youtube.com/watch?v=QoXubRvB6tQ" in out["path"]

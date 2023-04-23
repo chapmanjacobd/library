@@ -35,7 +35,7 @@ def os_bg_kwargs() -> dict:
     # prevent ctrl-c from affecting subprocesses first
 
     if hasattr(os, "setpgrp"):
-        return dict(start_new_session=True)
+        return {"start_new_session": True}
     else:
         # CREATE_NEW_PROCESS_GROUP = 0x00000200
         # DETACHED_PROCESS = 0x00000008
@@ -50,6 +50,7 @@ def run_once(f):
             result = f(*args, **kwargs)
             f.has_run = True
             return result
+        return None
 
     f.has_run = False
     return wrapper
@@ -113,7 +114,7 @@ def cmd(*command, strict=True, cwd=None, quiet=True, **kwargs) -> subprocess.Com
                 r".*encoder.*",
                 r".*Metadata:",
                 r".*TSRC.*",
-            ]
+            ],
         ),
         re.IGNORECASE,
     )
@@ -549,7 +550,7 @@ def list_dict_filter_unique(data: List[dict]) -> List[dict]:
 
     unique_values = {}
     for key in set.intersection(*(set(d.keys()) for d in data)):
-        values = set(d[key] for d in data if key in d)
+        values = {d[key] for d in data if key in d}
         if len(values) > 1:
             unique_values[key] = values
     filtered_data = [{k: v for k, v in d.items() if k in unique_values} for d in data]
@@ -656,7 +657,7 @@ class argparse_dict(argparse.Action):
             k_eq_v = list(flatten([val.split(" ") for val in values]))
             for s in k_eq_v:
                 k, v = s.split("=")
-                if any([sym in v for sym in ("[", "{")]):
+                if any(sym in v for sym in ("[", "{")):
                     d[k] = literal_eval(v)
                 else:
                     d[k] = v
@@ -667,7 +668,7 @@ class argparse_dict(argparse.Action):
 
 
 class argparse_enum(argparse.Action):
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         # Pop off the type value
         enum_type = kwargs.pop("type", None)
 
@@ -744,10 +745,11 @@ def set_readline_completion(list_):
     readline.set_completer(create_completer(list_))
     readline.set_completer_delims("\t")
     readline.parse_and_bind("tab: complete")
+    return None
 
 
 def filter_file(path, sieve):
-    with open(path, "r") as fr:
+    with open(path) as fr:
         lines = fr.readlines()
         with tempfile.NamedTemporaryFile(mode="w", delete=False) as temp:
             temp.writelines(l for l in lines if l.rstrip() not in sieve)
@@ -882,7 +884,7 @@ def pipe_print(x):
         print(x, flush=True)
     except BrokenPipeError:
         sys.stdout = None
-        exit(141)
+        sys.exit(141)
 
 
 def random_string():

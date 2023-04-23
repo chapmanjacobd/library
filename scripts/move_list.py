@@ -64,8 +64,8 @@ def get_table(args) -> List[dict]:
         where 1=1
             and time_deleted = 0
         order by path
-        """
-        )
+        """,
+        ),
     )
 
     folders = group_by_folder(args, media)
@@ -73,10 +73,7 @@ def get_table(args) -> List[dict]:
 
 
 def print_some(args, tbl):
-    if args.limit:
-        vew = tbl[-int(args.limit) :]
-    else:
-        vew = tbl
+    vew = tbl[-int(args.limit):] if args.limit else tbl
 
     vew = utils.list_dict_filter_bool(vew, keep_0=False)
     vew = utils.col_resize(vew, "path", 60)
@@ -118,7 +115,7 @@ Type "done" when finished
 Type "more" to see more files
 Paste a folder (and press enter) to toggle selection
 Type "*" to select all files in the most recently printed table
-"""
+""",
     )
 
     selected_paths = set()
@@ -179,7 +176,7 @@ Type "*" to select all files in the most recently printed table
     Folder list saved to {temp_file}. You may want to use the following command to move files to an EMPTY folder target:
 
         rsync -aE --xattrs --info=progress2 --no-inc-recursive --remove-source-files --files-from={temp_file} -r -vv --dry-run / jim:/free/real/estate/
-        """
+        """,
         )
 
         if prompt.Confirm.ask(f"Mark as deleted in {args.database}?", default=True):  # type: ignore

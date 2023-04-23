@@ -382,5 +382,5 @@ Explore `library` databases in your browser
     pip install datasette
     datasette tv.db
 
-"""
+""",
 )

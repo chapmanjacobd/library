@@ -114,7 +114,7 @@ def catt_pause(args) -> None:
 
 
 def kill_process(name) -> None:
-    if any([p in platform.system() for p in ("Windows", "_NT-", "MSYS")]):
+    if any(p in platform.system() for p in ("Windows", "_NT-", "MSYS")):
         cmd("taskkill", "/f", "/im", name, strict=False)
     else:
         cmd("pkill", "-f", name, strict=False)

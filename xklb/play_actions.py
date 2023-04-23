@@ -253,9 +253,8 @@ def usage(action) -> str:
 def parse_args_sort(args):
     if args.sort:
         args.sort = " ".join(args.sort)
-    elif not args.sort:
-        if hasattr(args, "defaults"):
-            args.defaults.append("sort")
+    elif not args.sort and hasattr(args, "defaults"):
+        args.defaults.append("sort")
 
     m_columns = args.db["media"].columns_dict
 
@@ -286,7 +285,7 @@ def parse_args_sort(args):
                     consts.PYTEST_RUNNING,
                     "subtitle_count" in args.where,
                     args.limit != consts.DEFAULT_PLAY_QUEUE,
-                ]
+                ],
             ),
             f"subtitle_count {subtitle_count} desc",
             f"subtitle_count {subtitle_count}",
@@ -341,7 +340,7 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     parser.add_argument("--deleted-before", help=argparse.SUPPRESS)
 
     parser.add_argument(
-        "--chromecast-device", "--cast-to", "-t", default=default_chromecast or "", help=argparse.SUPPRESS
+        "--chromecast-device", "--cast-to", "-t", default=default_chromecast or "", help=argparse.SUPPRESS,
     )
     parser.add_argument("--chromecast", "--cast", "-c", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--cast-with-local", "-wl", action="store_true", help=argparse.SUPPRESS)
@@ -377,7 +376,7 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", help=argparse.SUPPRESS)
     parser.add_argument("--skip", "--offset", help=argparse.SUPPRESS)
     parser.add_argument(
-        "--partial", "-P", "--previous", "--recent", default=False, const="n", nargs="?", help=argparse.SUPPRESS
+        "--partial", "-P", "--previous", "--recent", default=False, const="n", nargs="?", help=argparse.SUPPRESS,
     )
 
     parser.add_argument("--start", "-vs", help=argparse.SUPPRESS)
@@ -500,7 +499,7 @@ def construct_query(args) -> Tuple[str, dict]:
         args.filter_sql.append(
             " and size IS NOT NULL and duration in (select distinct duration from m where 1=1 "
             + args.duration_from_size
-            + ")"
+            + ")",
         )
 
     args.filter_sql.extend([" and " + w for w in args.where])
@@ -512,35 +511,35 @@ def construct_query(args) -> Tuple[str, dict]:
 
     if args.created_within:
         args.filter_sql.append(
-            f"and time_created > cast(STRFTIME('%s', datetime( 'now', '-{ii(args.created_within)}')) as int)"
+            f"and time_created > cast(STRFTIME('%s', datetime( 'now', '-{ii(args.created_within)}')) as int)",
         )
     if args.created_before:
         args.filter_sql.append(
-            f"and time_created < cast(STRFTIME('%s', datetime( 'now', '-{ii(args.created_before)}')) as int)"
+            f"and time_created < cast(STRFTIME('%s', datetime( 'now', '-{ii(args.created_before)}')) as int)",
         )
     if args.changed_within:
         args.filter_sql.append(
-            f"and time_modified > cast(STRFTIME('%s', datetime( 'now', '-{ii(args.changed_within)}')) as int)"
+            f"and time_modified > cast(STRFTIME('%s', datetime( 'now', '-{ii(args.changed_within)}')) as int)",
         )
     if args.changed_before:
         args.filter_sql.append(
-            f"and time_modified < cast(STRFTIME('%s', datetime( 'now', '-{ii(args.changed_before)}')) as int)"
+            f"and time_modified < cast(STRFTIME('%s', datetime( 'now', '-{ii(args.changed_before)}')) as int)",
         )
     if args.played_within:
         args.filter_sql.append(
-            f"and time_played > cast(STRFTIME('%s', datetime( 'now', '-{ii(args.played_within)}')) as int)"
+            f"and time_played > cast(STRFTIME('%s', datetime( 'now', '-{ii(args.played_within)}')) as int)",
         )
     if args.played_before:
         args.filter_sql.append(
-            f"and time_played < cast(STRFTIME('%s', datetime( 'now', '-{ii(args.played_before)}')) as int)"
+            f"and time_played < cast(STRFTIME('%s', datetime( 'now', '-{ii(args.played_before)}')) as int)",
         )
     if args.deleted_within:
         args.filter_sql.append(
-            f"and time_deleted > cast(STRFTIME('%s', datetime( 'now', '-{ii(args.deleted_within)}')) as int)"
+            f"and time_deleted > cast(STRFTIME('%s', datetime( 'now', '-{ii(args.deleted_within)}')) as int)",
         )
     if args.deleted_before:
         args.filter_sql.append(
-            f"and time_deleted < cast(STRFTIME('%s', datetime( 'now', '-{ii(args.deleted_before)}')) as int)"
+            f"and time_deleted < cast(STRFTIME('%s', datetime( 'now', '-{ii(args.deleted_before)}')) as int)",
         )
 
     args.table = "media"
@@ -563,7 +562,7 @@ def construct_query(args) -> Tuple[str, dict]:
             args.upper,
             args.limit != consts.DEFAULT_PLAY_QUEUE,
             args.duration_from_size,
-        ]
+        ],
     ):
         limit = 60_000
         if args.random:
@@ -576,7 +575,7 @@ def construct_query(args) -> Tuple[str, dict]:
                 else ""
             )
             args.filter_sql.append(
-                f"and m.rowid in (select rowid from media {where_not_deleted} order by random() limit {limit})"
+                f"and m.rowid in (select rowid from media {where_not_deleted} order by random() limit {limit})",
             )
 
     duration = "duration"
@@ -636,7 +635,7 @@ def is_play_in_order_lvl2(args, media_file) -> bool:
         [
             args.play_in_order >= 1 and args.action != SC.listen,
             args.play_in_order >= 0 and args.action == SC.listen and "audiobook" in media_file.lower(),
-        ]
+        ],
     )
 
 
@@ -697,23 +696,20 @@ def transcode(args, path):
 def play(args, m: Dict) -> None:
     if args.safe and not tube_backend.is_supported(m["path"]):
         log.info("[%s]: Skipping unsupported URL (safe_mode)", m["path"])
-        return
+        return None
 
     if is_play_in_order_lvl2(args, m["path"]):
         m = get_ordinal_media(args, m)
 
     original_path = m["path"]
     if args.action in (SC.watch, SC.listen) and not m["path"].startswith("http"):
-        if args.prefix:
-            media_path = Path(args.prefix + m["path"]).resolve()
-        else:
-            media_path = Path(m["path"])
+        media_path = Path(args.prefix + m["path"]).resolve() if args.prefix else Path(m["path"])
         m["path"] = str(media_path)
 
         if not media_path.exists():
             log.warning("[%s]: Does not exist. Skipping...", m["path"])
             mark_media_deleted(args, original_path)
-            return
+            return None
 
         if args.transcode or args.transcode_audio:
             m["path"] = transcode(args, m["path"])
@@ -727,7 +723,7 @@ def play(args, m: Dict) -> None:
             chromecast_play(args, m)
         except Exception as e:
             if args.ignore_errors:
-                return
+                return None
             else:
                 raise e
         else:
@@ -741,12 +737,14 @@ def play(args, m: Dict) -> None:
         if r.returncode != 0:
             print("Player exited with code", r.returncode)
             if args.ignore_errors:
-                return
+                return None
             else:
                 raise SystemExit(r.returncode)
 
     if args.action in (SC.listen, SC.watch):
         player.post_act(args, original_path)
+        return None
+    return None
 
 
 def process_playqueue(args) -> None:
@@ -754,7 +752,7 @@ def process_playqueue(args) -> None:
 
     if args.print:
         player.printer(args, query, bindings)
-        return None
+        return
 
     media = list(args.db.query(query, bindings))
 
@@ -774,7 +772,7 @@ def process_playqueue(args) -> None:
             "sort" in args.defaults,
             not args.partial,
             not args.random,
-        ]
+        ],
     ):
         media = utils.mpv_enrich(args, media)
 
@@ -786,7 +784,7 @@ def process_playqueue(args) -> None:
                 play(args, m)
         finally:
             if args.interdimensional_cable:
-                args.sock.send(("raw quit \n").encode())
+                args.sock.send(b"raw quit \n")
             Path(args.mpv_socket).unlink(missing_ok=True)
             if args.chromecast:
                 Path(consts.CAST_NOW_PLAYING).unlink(missing_ok=True)

@@ -5,8 +5,8 @@ reddit_links_ignore = re.compile(
         r""".*youtube.com/user/
 .*youtube.com/c/
 .*youtube.com/channel/
-.*youtube.com/results""".splitlines()
-    )
+.*youtube.com/results""".splitlines(),
+    ),
 )
 
 yt_recoverable_errors = re.compile(
@@ -55,8 +55,8 @@ yt_recoverable_errors = re.compile(
 .*Connection refused
 .*Failed to download MPD manifest:
 .*not currently available
-.*copyright claim""".splitlines()
-    )
+.*copyright claim""".splitlines(),
+    ),
 )
 
 
@@ -130,8 +130,8 @@ yt_meaningless_errors = re.compile(
 .*list indices must be integers
 .*The read operation timed out
 .*Unable to recognize playlist.
-.*Premieres in""".splitlines()
-    )
+.*Premieres in""".splitlines(),
+    ),
 )
 
 yt_unrecoverable_errors = re.compile(
@@ -240,8 +240,8 @@ yt_unrecoverable_errors = re.compile(
 .*HTTP Error 404
 .*HTTPError 404
 .*HTTP Error 410
-.*HTTPError 410""".splitlines()
-    )
+.*HTTPError 410""".splitlines(),
+    ),
 )
 
 
@@ -251,6 +251,6 @@ prefix_unrecoverable_errors = re.compile(
 .*No space left on device
 .*Transport endpoint is not connected
 .*unable to create directory
-.*Permission denied""".splitlines()
-    )
+.*Permission denied""".splitlines(),
+    ),
 )

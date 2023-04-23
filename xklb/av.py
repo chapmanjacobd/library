@@ -110,12 +110,12 @@ def munge_av_tags(args, media, f) -> Optional[dict]:
         log.debug(e)
         if args.delete_unplayable:
             utils.trash(f)
-        return
+        return None
 
     if "format" not in probe:
         print(f"[{f}] Failed reading format", file=sys.stderr)
         print(probe)
-        return
+        return None
 
     format_ = probe["format"]
     format_.pop("size", None)
@@ -150,7 +150,7 @@ def munge_av_tags(args, media, f) -> Optional[dict]:
                     tags.get("comment"),
                 ),
                 "time_uploaded": upload_date,
-            }
+            },
         )
 
     if format_ != {}:
@@ -175,7 +175,7 @@ def munge_av_tags(args, media, f) -> Optional[dict]:
             parse_framerate(s.get("r_frame_rate"))
             for s in streams
             if s.get("r_frame_rate") is not None and "/0" not in s.get("r_frame_rate")
-        ]
+        ],
     )
     width = safe_unpack([s.get("width") for s in streams])
     height = safe_unpack([s.get("height") for s in streams])

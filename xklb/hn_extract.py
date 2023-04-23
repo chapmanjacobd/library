@@ -158,8 +158,8 @@ def hacker_news_add() -> None:
         SELECT * FROM t
         WHERE diff > 1
         ORDER BY diff DESC
-        """
-        )
+        """,
+        ),
     )
     if len(r) == 0:
         raise SystemExit(128)

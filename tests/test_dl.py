@@ -35,7 +35,7 @@ class TestTube(unittest.TestCase):
             download_archive="test",
         )
         args.db = connect(args)
-        yt(args, dict(path=PLAYLIST_VIDEO_URL, dl_config="{}", category="Self"))
+        yt(args, {"path": PLAYLIST_VIDEO_URL, "dl_config": "{}", "category": "Self"})
 
     @mock.patch("xklb.tube_backend.yt")
     @mock.patch("xklb.tube_backend.process_playlist")

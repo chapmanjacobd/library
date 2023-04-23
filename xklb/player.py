@@ -27,11 +27,8 @@ except ModuleNotFoundError:
 def generic_player(args) -> List[str]:
     if platform.system() == "Linux":
         player = ["xdg-open"]
-    elif any([p in platform.system() for p in ("Windows", "_NT-", "MSYS")]):
-        if shutil.which("cygstart"):
-            player = ["cygstart"]
-        else:
-            player = ["start", ""]
+    elif any(p in platform.system() for p in ("Windows", "_NT-", "MSYS")):
+        player = ["cygstart"] if shutil.which("cygstart") else ["start", ""]
     else:
         player = ["open"]
     args.player_need_sleep = True
@@ -43,10 +40,7 @@ def calculate_duration(args, m) -> Tuple[int, int]:
     end = m.get("duration", 0)
 
     if args.start:
-        if args.start == "wadsworth":
-            start = m["duration"] * 0.3
-        else:
-            start = args.start
+        start = m["duration"] * 0.3 if args.start == "wadsworth" else args.start
     if args.end:
         if args.end == "dawsworth":
             end = m["duration"] * 0.65
@@ -248,7 +242,7 @@ def delete_playlists(args, playlists) -> None:
     with args.db.conn:
         playlist_paths = playlists + [p.rstrip(os.sep) for p in playlists]
         args.db.conn.execute(
-            "delete from playlists where path in (" + ",".join(["?"] * len(playlist_paths)) + ")", playlist_paths
+            "delete from playlists where path in (" + ",".join(["?"] * len(playlist_paths)) + ")", playlist_paths,
         )
 
     online_media = [p for p in playlists if p.startswith("http")]
@@ -370,7 +364,7 @@ def get_ordinal_media(args, m: Dict) -> Dict:
         else:
             bindings = {**bindings, **args.filter_bindings}
 
-        similar_videos = [d for d in args.db.query(query, bindings)]
+        similar_videos = list(args.db.query(query, bindings))
         log.debug(similar_videos)
 
         if len(similar_videos) > 999 or len(similar_videos) == total_media:
@@ -476,7 +470,7 @@ def geom_walk(display, v=1, h=1) -> List[List[int]]:
         for h_idx in range(h):
             x = int(va * v_idx)
             y = int(ha * h_idx)
-            log.debug("geom_walk %s", dict(va=va, ha=ha, v_idx=v_idx, h_idx=h_idx, x=x, y=y))
+            log.debug("geom_walk %s", {"va": va, "ha": ha, "v_idx": v_idx, "h_idx": h_idx, "x": x, "y": y})
             geoms.append([va, ha, x, y])
 
     return geoms
@@ -489,12 +483,12 @@ def grid_stack(display, qty, swap=False):
         dv = list(utils.divisor_gen(qty))
         if not dv:
             vh = (qty, 1)
-            log.debug("not dv %s", dict(dv=dv, vh=vh))
+            log.debug("not dv %s", {"dv": dv, "vh": vh})
         else:
             v = dv[len(dv) // 2]
             h = qty // v
             vh = (v, h)
-            log.debug("dv %s", dict(dv=dv, vh=vh))
+            log.debug("dv %s", {"dv": dv, "vh": vh})
 
     v, h = vh
     if swap:
@@ -562,7 +556,7 @@ def _create_player(args, window_geometry, media):
     return {
         **m,
         "process": subprocess.Popen(
-            [*args.player, *mp_args, *window_geometry, "--", m["path"]], **utils.os_bg_kwargs()
+            [*args.player, *mp_args, *window_geometry, "--", m["path"]], **utils.os_bg_kwargs(),
         ),
     }
 
@@ -703,6 +697,7 @@ def printer(args, query, bindings) -> None:
                 mark_media_deleted(args, f)
                 return printer(args, query, bindings)  # try again to find a valid file
             utils.pipe_print(quote(f))
+            return None
         else:
             if not args.cols:
                 args.cols = ["path"]
@@ -721,6 +716,8 @@ def printer(args, query, bindings) -> None:
                     utils.pipe_print(line.strip())
             if args.moved:
                 moved_media(args, list(map(operator.itemgetter("path"), media)), *args.moved)
+                return None
+            return None
     else:
         tbl = deepcopy(media)
         utils.col_resize(tbl, "path", 22)
@@ -740,7 +737,10 @@ def printer(args, query, bindings) -> None:
             if len(media) >= 2:
                 print(f"{len(media)} media" + (f" (limited to {args.limit})" if args.limit else ""))
 
-            duration = sum(map(lambda m: m.get("duration") or 0, media))
+            duration = sum(m.get("duration") or 0 for m in media)
             duration = human_time(duration)
             if "a" not in args.print:
                 print("Total duration:", duration)
+                return None
+            return None
+        return None

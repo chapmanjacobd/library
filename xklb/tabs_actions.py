@@ -242,6 +242,7 @@ def process_tabs_actions(args) -> None:
         play(args, m)
         if len(media) >= 9:
             sleep(0.3)
+    return None
 
 
 def tabs() -> None:

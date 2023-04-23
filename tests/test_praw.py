@@ -19,7 +19,7 @@ class TestReddit(unittest.TestCase):
 
     @mock.patch("xklb.player.local_player", return_value=SimpleNamespace(returncode=0))
     def test_lb_fs(self, play_mocked):
-        sys.argv = ["wt"] + reddit_db
+        sys.argv = ["wt", *reddit_db]
         watch()
         out = play_mocked.call_args[0][1]
         assert len(out) > 0

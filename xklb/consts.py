@@ -31,8 +31,8 @@ REGEX_REDDITOR = re.compile(
             r".*redd\.it/u/(.*?)/.*",
             r".*reddit\.com/user/(.*?)/.*",
             r".*redd\.it/user/(.*?)/.*",
-        ]
-    )
+        ],
+    ),
 )
 REGEX_V_REDD_IT = re.compile("https?://v.redd.it/(?:[^/?#&]+)")
 APPLICATION_START = now()

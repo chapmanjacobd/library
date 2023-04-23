@@ -24,10 +24,10 @@ def parse_args() -> argparse.Namespace:
         help="Dedupe database by artist + album + title",
     )
     profile.add_argument(
-        "--id", action="store_const", dest="profile", const="id", help="Dedupe database by id + ie_key"
+        "--id", action="store_const", dest="profile", const="id", help="Dedupe database by id + ie_key",
     )
     profile.add_argument(
-        "--title", action="store_const", dest="profile", const="title", help="Dedupe database by title + uploader"
+        "--title", action="store_const", dest="profile", const="title", help="Dedupe database by title + uploader",
     )
     profile.add_argument(
         "--filesystem",
@@ -38,7 +38,7 @@ def parse_args() -> argparse.Namespace:
     )
     profile.add_argument("--text", action="store_const", dest="profile", const=DBType.text, help="Dedupe text database")
     profile.add_argument(
-        "--image", action="store_const", dest="profile", const=DBType.image, help="Dedupe image database"
+        "--image", action="store_const", dest="profile", const=DBType.image, help="Dedupe image database",
     )
 
     parser.add_argument("--only-soft-delete", action="store_true")
@@ -188,7 +188,7 @@ def dedupe() -> None:
         You should use `rmlint` instead:
 
             $ rmlint --progress --merge-directories --partial-hidden --xattr
-        """
+        """,
         )
         return
     else:
@@ -203,7 +203,7 @@ def dedupe() -> None:
                 d["keep_path"] in deletion_paths or d["duplicate_path"] in deletion_paths,
                 d["keep_path"] == d["duplicate_path"],
                 not Path(d["keep_path"]).resolve().exists(),
-            ]
+            ],
         ):
             continue
 

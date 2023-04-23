@@ -108,7 +108,7 @@ def printer(args, query, bindings) -> None:
         print(tabulate(tbl, tablefmt="fancy_grid", headers="keys", showindex=False))
 
     print(f"{len(media)} playlists" if len(media) >= 2 else "1 playlist")
-    duration = sum(map(lambda m: m.get("duration") or 0, media))
+    duration = sum(m.get("duration") or 0 for m in media)
     if duration > 0:
         duration = human_time(duration)
         if not args.aggregate:
@@ -190,6 +190,7 @@ def playlists() -> None:
         """
 
     printer(args, query, bindings)
+    return None
 
 
 def dlstatus() -> None:
@@ -269,3 +270,4 @@ def dlstatus() -> None:
     order by {'errors,' if args.errors else ''} category nulls last"""
 
     printer(args, query, bindings)
+    return None

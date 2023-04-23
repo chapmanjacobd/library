@@ -50,8 +50,8 @@ def parse_reddit_selftext() -> None:
             from reddit_posts
             where 1=1
                 {'AND path not in (select distinct webpage from media where webpage is not null)' if 'webpage' in m_columns else ''}
-            """
-        )
+            """,
+        ),
     )
 
     for d in reddit_posts:

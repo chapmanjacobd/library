@@ -132,7 +132,7 @@ def get_table(args) -> List[dict]:
                 "limit": args.limit,
                 **{f"path_{i}": f"%{path}%" for i, path in enumerate(args.relative_paths) if args.relative_paths},
             },
-        )
+        ),
     )
 
     return media
@@ -199,10 +199,10 @@ def rebin_files(args, disk_stats, all_files):
 
     if len(disk_stats) == len(full_disks):
         log.warning(
-            "No valid targets. You have selected an ideal state which is significantly different from the current path distribution."
+            "No valid targets. You have selected an ideal state which is significantly different from the current path distribution.",
         )
         log.warning(
-            'For this run, "full" source disks will be treated as valid targets. Otherwise, there is nothing to do.'
+            'For this run, "full" source disks will be treated as valid targets. Otherwise, there is nothing to do.',
         )
         full_disks = []
 
@@ -250,7 +250,7 @@ def scatter() -> None:
         disk_stats = utils.get_mount_stats(args.srcmounts)
     else:
         log.warning(
-            "srcmounts was not provided (-m) so provided paths will only be compared with each other. This might not be what you want!!"
+            "srcmounts was not provided (-m) so provided paths will only be compared with each other. This might not be what you want!!",
         )
         log.warning("In this setting paths should be absolute!--and the only valid policies are: `rand`, `used`.")
         args.srcmounts = [str(Path(p).resolve()) for p in args.relative_paths]
@@ -258,10 +258,10 @@ def scatter() -> None:
 
     if len(disk_stats) < 2:
         log.error(
-            (
+
                 "\nThis tool does not make sense to use for only one path."
-                " Define more paths or use the -m flag to define mountpoints which share the same subfolder (eg. mergerfs)"
-            )
+                " Define more paths or use the -m flag to define mountpoints which share the same subfolder (eg. mergerfs)",
+
         )
         raise SystemExit(2)
 
@@ -294,7 +294,7 @@ def scatter() -> None:
 
         print(
             f"""### Move {len(dest_disk_files)} files to {disk_stat['mount']}: ###
-rsync -aE --xattrs --info=progress2 --remove-source-files --files-from={temp_file} / {disk_stat['mount']}"""
+rsync -aE --xattrs --info=progress2 --remove-source-files --files-from={temp_file} / {disk_stat['mount']}""",
         )
 
 
