@@ -260,7 +260,7 @@ def parse_args_sort(args):
 
     # switching between videos with and without subs is annoying
     subtitle_count = "=0"
-    if random() > 0.659:
+    if random() < getattr(args, 'subtitle_mix', consts.DEFAULT_SUBTITLE_MIX):
         # bias slightly toward videos without subtitles
         subtitle_count = ">0"
 
@@ -383,6 +383,7 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     parser.add_argument("--end", "-ve", help=argparse.SUPPRESS)
     parser.add_argument("--mpv-socket", default=consts.DEFAULT_MPV_SOCKET, help=argparse.SUPPRESS)
     parser.add_argument("--watch-later-directory", default=consts.DEFAULT_MPV_WATCH_LATER, help=argparse.SUPPRESS)
+    parser.add_argument("--subtitle-mix", default=consts.DEFAULT_SUBTITLE_MIX, help=argparse.SUPPRESS)
 
     parser.add_argument("--override-player", "--player", "-player", help=argparse.SUPPRESS)
     parser.add_argument("--player-args-sub", "-player-sub", nargs="*", default=DEFAULT_PLAYER_ARGS_SUB)
