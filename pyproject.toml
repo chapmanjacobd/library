@@ -1,26 +1,35 @@
 [project]
 requires-python = ">=3.8"
 
+[project.optional-dependencies]
+full = ["textract", "PyExifTool", "aiohttp", "brotab", "orjson", "pandas"]
+dev = ["black", "ipdb", "pylint", "isort", "pytest", "scalene", "ssort"]
+
+[build-system]
+build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core>=1.0.0"]
+
 [tool.poetry]
-name = "xklb"
-version = "1.25.003"
-description = "xk library"
 authors = ["Jacob Chapman <7908073+chapmanjacobd@users.noreply.github.com>"]
-readme = "README.md"
+description = "xk library"
 documentation = "https://github.com/chapmanjacobd/library/wiki/Usage"
 homepage = "https://github.com/chapmanjacobd/library/"
-license = "BSD-3-Clause"
-packages = [
-    { include = "scripts/mining/" },
-    { include = "scripts/" },
-    { include = "xklb/" }
-]
 include = ["assets/*"]
+license = "BSD-3-Clause"
+name = "xklb"
+packages = [
+  {include = "scripts/mining/"},
+  {include = "scripts/"},
+  {include = "xklb/"},
+]
+readme = "README.md"
+version = "1.25.003"
 
 [tool.poetry.dependencies]
 python = "^3.8"
 sqlite-utils = ">=3.30"
 # protobuf = "<4"
+Markdown = "*"
 catt = "*"
 ffmpeg-python = "*"
 ftfy = "*"
@@ -28,7 +37,6 @@ gallery-dl = "*"
 humanize = "*"
 ipython = "*"
 joblib = "*"
-Markdown = "*"
 mutagen = "*"
 natsort = "*"
 praw = "*"
@@ -42,25 +50,9 @@ tabulate = "*"
 tinytag = "*"
 yt-dlp = "*"
 
-[project.optional-dependencies]
-full = ["textract", "PyExifTool", "aiohttp", "brotab", "orjson", "pandas"]
-
-[tool.poetry.group.dev.dependencies]
-black = "*"
-ipdb = "*"
-isort = "*"
-pylint = "*"
-pytest = "*"
-scalene = "*"
-ssort = "*"
-
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
-
 [tool.poetry.scripts]
-library = 'xklb.lb:library'
 lb = 'xklb.lb:library'
+library = 'xklb.lb:library'
 
 [tool.black]
 line-length = 120
@@ -68,26 +60,25 @@ target-version = ['py38', 'py39', 'py310']
 
 [tool.isort]
 atomic = true
-profile = "black"
-line_length = 120
-group_by_package = true
-float_to_top = true
-py_version = 39
 combine_straight_imports = true
+float_to_top = true
+group_by_package = true
+line_length = 120
+profile = "black"
 
 [tool.ruff.per-file-ignores]
 "__init__.py" = ["F401"]
 [tool.ruff]
-select = ["ALL"]
-ignore = ["E401","E501", "S311", "D100", "D103", "PGH003"]
+ignore = ["E401", "E501", "S311", "D100", "D103", "PGH003", "I001", "RUF001", "SIM105", "ERA001"]
 line-length = 120
+select = ["ALL"]
 # Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 show-fixes = true
 
 [tool.pytest.ini_options]
-testpaths = ['tests']
 addopts = "--pdbcls=IPython.terminal.debugger:TerminalPdb --ignore=tests/data --capture=tee-sys --log-cli-level=ERROR"
+testpaths = ['tests']
 
 [tool.pylint.main]
 fail-under = 8.0
@@ -95,7 +86,6 @@ ignore = ["input"]
 ignored-modules = ["pandas", "numpy"]
 limit-inference-results = 100
 persistent = true
-py-version = "3.10"
 suggestion-mode = true
 
 [tool.pylint.basic]
@@ -138,9 +128,9 @@ min-public-methods = 2
 overgeneral-exceptions = ["BaseException"]
 
 [tool.pylint.format]
+ignore-long-lines = "^\\s*(# )|^\\s*(\\w*\\s*=\\s*)?(\\\"|\\').*(\\\"|\\'),?\\s*$"
 indent-after-paren = 4
 indent-string = "    "
-ignore-long-lines = "^\\s*(# )|^\\s*(\\w*\\s*=\\s*)?(\\\"|\\').*(\\\"|\\'),?\\s*$"
 max-line-length = 350
 max-module-lines = 1500
 
@@ -153,11 +143,376 @@ logging-modules = ["logging"]
 
 [tool.pylint."messages control"]
 confidence = ["HIGH", "CONTROL_FLOW", "INFERENCE", "INFERENCE_FAILURE", "UNDEFINED"]
-disable = ["locally-disabled", "file-ignored", "suppressed-message", "use-symbolic-message-instead", "c-extension-no-member", "unnecessary-dunder-call", "too-many-lines", "trailing-whitespace", "missing-final-newline", "wrong-import-order", "ungrouped-imports", "wrong-import-position", "useless-import-alias", "import-outside-toplevel", "unnecessary-lambda-assignment", "unnecessary-direct-lambda-call", "non-ascii-name", "non-ascii-module-import", "bad-file-encoding", "invalid-name", "typevar-name-incorrect-variance", "typevar-double-variance", "typevar-name-mismatch", "missing-module-docstring", "missing-class-docstring", "missing-function-docstring", "consider-using-dict-items", "use-maxsplit-arg", "use-sequence-for-iteration", "consider-using-f-string", "use-implicit-booleaness-not-len", "use-implicit-booleaness-not-comparison", "too-many-ancestors", "too-many-instance-attributes", "too-few-public-methods", "too-many-public-methods", "too-many-return-statements", "too-many-branches", "too-many-arguments", "too-many-locals", "too-many-statements", "cyclic-import", "consider-using-from-import", "duplicate-code", "literal-comparison", "comparison-with-itself", "comparison-of-constants", "consider-merging-isinstance", "redefined-argument-from-local", "no-else-return", "consider-using-ternary", "trailing-comma-tuple", "stop-iteration-return", "simplify-boolean-expression", "inconsistent-return-statements", "useless-return", "consider-swap-variables", "consider-using-join", "consider-using-in", "consider-using-get", "chained-comparison", "consider-using-dict-comprehension", "consider-using-set-comprehension", "simplifiable-if-expression", "no-else-raise", "unnecessary-comprehension", "consider-using-sys-exit", "no-else-break", "no-else-continue", "super-with-arguments", "simplifiable-condition", "condition-evals-to-constant", "consider-using-generator", "use-a-generator", "consider-using-min-builtin", "consider-using-max-builtin", "consider-using-with", "unnecessary-dict-index-lookup", "use-list-literal", "use-dict-literal", "unnecessary-list-index-lookup", "unnecessary-ellipsis", "try-except-raise", "raise-missing-from", "raising-format-tuple", "wrong-exception-operation", "bad-indentation", "wildcard-import", "preferred-module", "logging-not-lazy", "logging-fstring-interpolation", "missing-timeout", "fixme", "modified-iterating-list", "non-ascii-file-name", "bad-thread-instantiation", "shallow-copy-environ", "invalid-envvar-default", "subprocess-popen-preexec-fn", "subprocess-run-check", "unspecified-encoding", "forgotten-debug-statement", "method-cache-max-size-none", "deprecated-argument", "deprecated-class", "deprecated-decorator", "duplicate-string-formatting-argument", "f-string-without-interpolation", "format-string-without-interpolation", "implicit-str-concat", "inconsistent-quotes", "redundant-u-string-prefix", "useless-with-lock", "keyword-arg-before-vararg", "arguments-out-of-order", "non-str-assignment-to-dunder-name", "isinstance-second-argument-not-valid-type", "using-f-string-in-unsupported-version", "using-final-decorator-in-unsupported-version", "global-statement", "unused-import", "unused-wildcard-import", "unbalanced-tuple-unpacking", "possibly-unused-variable", "self-cls-assignment", "missing-parentheses-for-call-in-test", "self-assigning-variable", "redeclared-assigned-name", "assert-on-string-literal", "duplicate-value", "comparison-with-callable", "nan-comparison", "bad-plugin-value", "bad-configuration-section", "unrecognized-option", "yield-inside-async-function", "not-async-context-manager", "bad-exception-cause", "notimplemented-raised", "relative-beyond-top-level", "logging-format-truncated", "modified-iterating-dict", "modified-iterating-set", "invalid-envvar-value", "mixed-format-string", "bad-string-format-type", "no-member", "missing-kwoa", "unsupported-assignment-operation", "unsupported-delete-operation", "invalid-metaclass", "dict-iter-missing-items", "await-outside-async", "unhashable-member", "invalid-unicode-codec", "bidirectional-unicode", "invalid-character-backspace", "invalid-character-carriage-return", "invalid-character-sub", "invalid-character-esc", "invalid-character-nul", "invalid-character-zero-width-space", "invalid-all-format", "potential-index-error", "too-many-star-expressions", "invalid-star-assignment-target", "star-needs-assignment-target", "nonlocal-and-global", "nonlocal-without-binding", "used-prior-global-declaration", "misplaced-format-function", "config-parse-error", "multiple-imports"]
-enable = ["raw-checker-failed", "bad-inline-option", "useless-suppression", "deprecated-pragma", "line-too-long", "trailing-newlines", "multiple-statements", "superfluous-parens", "mixed-line-endings", "unexpected-line-ending-format", "wrong-spelling-in-comment", "wrong-spelling-in-docstring", "invalid-characters-in-docstring", "disallowed-name", "empty-docstring", "singleton-comparison", "unidiomatic-typecheck", "bad-classmethod-argument", "bad-mcs-method-argument", "bad-mcs-classmethod-argument", "single-string-used-for-slots", "unneeded-not", "consider-using-enumerate", "consider-iterating-dictionary", "useless-option-value", "too-many-boolean-expressions", "no-classmethod-decorator", "no-staticmethod-decorator", "useless-object-inheritance", "property-with-parameters", "too-many-nested-blocks", "simplifiable-if-statement", "unknown-option-value", "bare-except", "broad-except", "duplicate-except", "binary-op-exception", "unnecessary-semicolon", "reimported", "import-self", "misplaced-future", "deprecated-module", "logging-format-interpolation", "bad-open-mode", "boolean-datetime", "redundant-unittest-assert", "deprecated-method", "bad-format-string-key", "unused-format-string-key", "bad-format-string", "missing-format-argument-key", "unused-format-string-argument", "format-combined-specification", "missing-format-attribute", "invalid-format-index", "anomalous-backslash-in-string", "anomalous-unicode-escape-in-string", "global-variable-undefined", "global-variable-not-assigned", "global-at-module-level", "unused-variable", "unused-argument", "redefined-outer-name", "redefined-builtin", "undefined-loop-variable", "cell-var-from-loop", "useless-else-on-loop", "unreachable", "dangerous-default-value", "pointless-statement", "pointless-string-statement", "expression-not-assigned", "unnecessary-lambda", "duplicate-key", "exec-used", "eval-used", "confusing-with-statement", "using-constant-test", "lost-exception", "assert-on-tuple", "unnecessary-pass", "attribute-defined-outside-init", "bad-staticmethod-argument", "protected-access", "arguments-differ", "signature-differs", "abstract-method", "super-init-not-called", "non-parent-init-called", "invalid-overridden-method", "arguments-renamed", "unused-private-member", "overridden-final-method", "subclassed-final-class", "redefined-slots-in-subclass", "super-without-brackets", "useless-parent-delegation", "syntax-error", "unrecognized-inline-option", "bad-except-order", "raising-bad-type", "misplaced-bare-raise", "raising-non-exception", "catching-non-exception", "import-error", "logging-unsupported-format", "logging-too-many-args", "logging-too-few-args", "bad-super-call", "bad-format-character", "truncated-format-string", "format-needs-mapping", "missing-format-string-key", "too-many-format-args", "too-few-format-args", "bad-str-strip-call", "not-callable", "assignment-from-no-return", "no-value-for-parameter", "too-many-function-args", "unexpected-keyword-arg", "redundant-keyword-arg", "invalid-sequence-index", "invalid-slice-index", "assignment-from-none", "not-context-manager", "invalid-unary-operand-type", "unsupported-binary-operation", "repeated-keyword", "unsupported-membership-test", "unsubscriptable-object", "not-an-iterable", "not-a-mapping", "used-before-assignment", "undefined-variable", "undefined-all-variable", "invalid-all-object", "no-name-in-module", "unpacking-non-sequence", "init-is-generator", "return-in-init", "function-redefined", "not-in-loop", "return-outside-function", "yield-outside-function", "return-arg-in-generator", "nonexistent-operator", "duplicate-argument-name", "abstract-class-instantiated", "continue-in-finally", "bad-reversed-sequence", "method-hidden", "access-member-before-definition", "no-method-argument", "no-self-argument", "invalid-slots-object", "assigning-non-slot", "invalid-slots", "inherit-non-class", "inconsistent-mro", "duplicate-bases", "class-variable-slots-conflict", "invalid-class-object", "invalid-enum-extension", "non-iterator-returned", "unexpected-special-method-signature", "invalid-length-returned", "invalid-bool-returned", "invalid-index-returned", "invalid-repr-returned", "invalid-str-returned", "invalid-bytes-returned", "invalid-hash-returned", "invalid-length-hint-returned", "invalid-format-returned", "invalid-getnewargs-returned", "invalid-getnewargs-ex-returned", "fatal", "astroid-error", "parse-error", "method-check-failed"]
+disable = [
+  "locally-disabled",
+  "file-ignored",
+  "suppressed-message",
+  "use-symbolic-message-instead",
+  "c-extension-no-member",
+  "unnecessary-dunder-call",
+  "too-many-lines",
+  "trailing-whitespace",
+  "missing-final-newline",
+  "wrong-import-order",
+  "ungrouped-imports",
+  "wrong-import-position",
+  "useless-import-alias",
+  "import-outside-toplevel",
+  "unnecessary-lambda-assignment",
+  "unnecessary-direct-lambda-call",
+  "non-ascii-name",
+  "non-ascii-module-import",
+  "bad-file-encoding",
+  "invalid-name",
+  "typevar-name-incorrect-variance",
+  "typevar-double-variance",
+  "typevar-name-mismatch",
+  "missing-module-docstring",
+  "missing-class-docstring",
+  "missing-function-docstring",
+  "consider-using-dict-items",
+  "use-maxsplit-arg",
+  "use-sequence-for-iteration",
+  "consider-using-f-string",
+  "use-implicit-booleaness-not-len",
+  "use-implicit-booleaness-not-comparison",
+  "too-many-ancestors",
+  "too-many-instance-attributes",
+  "too-few-public-methods",
+  "too-many-public-methods",
+  "too-many-return-statements",
+  "too-many-branches",
+  "too-many-arguments",
+  "too-many-locals",
+  "too-many-statements",
+  "cyclic-import",
+  "consider-using-from-import",
+  "duplicate-code",
+  "literal-comparison",
+  "comparison-with-itself",
+  "comparison-of-constants",
+  "consider-merging-isinstance",
+  "redefined-argument-from-local",
+  "no-else-return",
+  "consider-using-ternary",
+  "trailing-comma-tuple",
+  "stop-iteration-return",
+  "simplify-boolean-expression",
+  "inconsistent-return-statements",
+  "useless-return",
+  "consider-swap-variables",
+  "consider-using-join",
+  "consider-using-in",
+  "consider-using-get",
+  "chained-comparison",
+  "consider-using-dict-comprehension",
+  "consider-using-set-comprehension",
+  "simplifiable-if-expression",
+  "no-else-raise",
+  "unnecessary-comprehension",
+  "consider-using-sys-exit",
+  "no-else-break",
+  "no-else-continue",
+  "super-with-arguments",
+  "simplifiable-condition",
+  "condition-evals-to-constant",
+  "consider-using-generator",
+  "use-a-generator",
+  "consider-using-min-builtin",
+  "consider-using-max-builtin",
+  "consider-using-with",
+  "unnecessary-dict-index-lookup",
+  "use-list-literal",
+  "use-dict-literal",
+  "unnecessary-list-index-lookup",
+  "unnecessary-ellipsis",
+  "try-except-raise",
+  "raise-missing-from",
+  "raising-format-tuple",
+  "wrong-exception-operation",
+  "bad-indentation",
+  "wildcard-import",
+  "preferred-module",
+  "logging-not-lazy",
+  "logging-fstring-interpolation",
+  "missing-timeout",
+  "fixme",
+  "modified-iterating-list",
+  "non-ascii-file-name",
+  "bad-thread-instantiation",
+  "shallow-copy-environ",
+  "invalid-envvar-default",
+  "subprocess-popen-preexec-fn",
+  "subprocess-run-check",
+  "unspecified-encoding",
+  "forgotten-debug-statement",
+  "method-cache-max-size-none",
+  "deprecated-argument",
+  "deprecated-class",
+  "deprecated-decorator",
+  "duplicate-string-formatting-argument",
+  "f-string-without-interpolation",
+  "format-string-without-interpolation",
+  "implicit-str-concat",
+  "inconsistent-quotes",
+  "redundant-u-string-prefix",
+  "useless-with-lock",
+  "keyword-arg-before-vararg",
+  "arguments-out-of-order",
+  "non-str-assignment-to-dunder-name",
+  "isinstance-second-argument-not-valid-type",
+  "using-f-string-in-unsupported-version",
+  "using-final-decorator-in-unsupported-version",
+  "global-statement",
+  "unused-import",
+  "unused-wildcard-import",
+  "unbalanced-tuple-unpacking",
+  "possibly-unused-variable",
+  "self-cls-assignment",
+  "missing-parentheses-for-call-in-test",
+  "self-assigning-variable",
+  "redeclared-assigned-name",
+  "assert-on-string-literal",
+  "duplicate-value",
+  "comparison-with-callable",
+  "nan-comparison",
+  "bad-plugin-value",
+  "bad-configuration-section",
+  "unrecognized-option",
+  "yield-inside-async-function",
+  "not-async-context-manager",
+  "bad-exception-cause",
+  "notimplemented-raised",
+  "relative-beyond-top-level",
+  "logging-format-truncated",
+  "modified-iterating-dict",
+  "modified-iterating-set",
+  "invalid-envvar-value",
+  "mixed-format-string",
+  "bad-string-format-type",
+  "no-member",
+  "missing-kwoa",
+  "unsupported-assignment-operation",
+  "unsupported-delete-operation",
+  "invalid-metaclass",
+  "dict-iter-missing-items",
+  "await-outside-async",
+  "unhashable-member",
+  "invalid-unicode-codec",
+  "bidirectional-unicode",
+  "invalid-character-backspace",
+  "invalid-character-carriage-return",
+  "invalid-character-sub",
+  "invalid-character-esc",
+  "invalid-character-nul",
+  "invalid-character-zero-width-space",
+  "invalid-all-format",
+  "potential-index-error",
+  "too-many-star-expressions",
+  "invalid-star-assignment-target",
+  "star-needs-assignment-target",
+  "nonlocal-and-global",
+  "nonlocal-without-binding",
+  "used-prior-global-declaration",
+  "misplaced-format-function",
+  "config-parse-error",
+  "multiple-imports",
+]
+enable = [
+  "raw-checker-failed",
+  "bad-inline-option",
+  "useless-suppression",
+  "deprecated-pragma",
+  "line-too-long",
+  "trailing-newlines",
+  "multiple-statements",
+  "superfluous-parens",
+  "mixed-line-endings",
+  "unexpected-line-ending-format",
+  "wrong-spelling-in-comment",
+  "wrong-spelling-in-docstring",
+  "invalid-characters-in-docstring",
+  "disallowed-name",
+  "empty-docstring",
+  "singleton-comparison",
+  "unidiomatic-typecheck",
+  "bad-classmethod-argument",
+  "bad-mcs-method-argument",
+  "bad-mcs-classmethod-argument",
+  "single-string-used-for-slots",
+  "unneeded-not",
+  "consider-using-enumerate",
+  "consider-iterating-dictionary",
+  "useless-option-value",
+  "too-many-boolean-expressions",
+  "no-classmethod-decorator",
+  "no-staticmethod-decorator",
+  "useless-object-inheritance",
+  "property-with-parameters",
+  "too-many-nested-blocks",
+  "simplifiable-if-statement",
+  "unknown-option-value",
+  "bare-except",
+  "broad-except",
+  "duplicate-except",
+  "binary-op-exception",
+  "unnecessary-semicolon",
+  "reimported",
+  "import-self",
+  "misplaced-future",
+  "deprecated-module",
+  "logging-format-interpolation",
+  "bad-open-mode",
+  "boolean-datetime",
+  "redundant-unittest-assert",
+  "deprecated-method",
+  "bad-format-string-key",
+  "unused-format-string-key",
+  "bad-format-string",
+  "missing-format-argument-key",
+  "unused-format-string-argument",
+  "format-combined-specification",
+  "missing-format-attribute",
+  "invalid-format-index",
+  "anomalous-backslash-in-string",
+  "anomalous-unicode-escape-in-string",
+  "global-variable-undefined",
+  "global-variable-not-assigned",
+  "global-at-module-level",
+  "unused-variable",
+  "unused-argument",
+  "redefined-outer-name",
+  "redefined-builtin",
+  "undefined-loop-variable",
+  "cell-var-from-loop",
+  "useless-else-on-loop",
+  "unreachable",
+  "dangerous-default-value",
+  "pointless-statement",
+  "pointless-string-statement",
+  "expression-not-assigned",
+  "unnecessary-lambda",
+  "duplicate-key",
+  "exec-used",
+  "eval-used",
+  "confusing-with-statement",
+  "using-constant-test",
+  "lost-exception",
+  "assert-on-tuple",
+  "unnecessary-pass",
+  "attribute-defined-outside-init",
+  "bad-staticmethod-argument",
+  "protected-access",
+  "arguments-differ",
+  "signature-differs",
+  "abstract-method",
+  "super-init-not-called",
+  "non-parent-init-called",
+  "invalid-overridden-method",
+  "arguments-renamed",
+  "unused-private-member",
+  "overridden-final-method",
+  "subclassed-final-class",
+  "redefined-slots-in-subclass",
+  "super-without-brackets",
+  "useless-parent-delegation",
+  "syntax-error",
+  "unrecognized-inline-option",
+  "bad-except-order",
+  "raising-bad-type",
+  "misplaced-bare-raise",
+  "raising-non-exception",
+  "catching-non-exception",
+  "import-error",
+  "logging-unsupported-format",
+  "logging-too-many-args",
+  "logging-too-few-args",
+  "bad-super-call",
+  "bad-format-character",
+  "truncated-format-string",
+  "format-needs-mapping",
+  "missing-format-string-key",
+  "too-many-format-args",
+  "too-few-format-args",
+  "bad-str-strip-call",
+  "not-callable",
+  "assignment-from-no-return",
+  "no-value-for-parameter",
+  "too-many-function-args",
+  "unexpected-keyword-arg",
+  "redundant-keyword-arg",
+  "invalid-sequence-index",
+  "invalid-slice-index",
+  "assignment-from-none",
+  "not-context-manager",
+  "invalid-unary-operand-type",
+  "unsupported-binary-operation",
+  "repeated-keyword",
+  "unsupported-membership-test",
+  "unsubscriptable-object",
+  "not-an-iterable",
+  "not-a-mapping",
+  "used-before-assignment",
+  "undefined-variable",
+  "undefined-all-variable",
+  "invalid-all-object",
+  "no-name-in-module",
+  "unpacking-non-sequence",
+  "init-is-generator",
+  "return-in-init",
+  "function-redefined",
+  "not-in-loop",
+  "return-outside-function",
+  "yield-outside-function",
+  "return-arg-in-generator",
+  "nonexistent-operator",
+  "duplicate-argument-name",
+  "abstract-class-instantiated",
+  "continue-in-finally",
+  "bad-reversed-sequence",
+  "method-hidden",
+  "access-member-before-definition",
+  "no-method-argument",
+  "no-self-argument",
+  "invalid-slots-object",
+  "assigning-non-slot",
+  "invalid-slots",
+  "inherit-non-class",
+  "inconsistent-mro",
+  "duplicate-bases",
+  "class-variable-slots-conflict",
+  "invalid-class-object",
+  "invalid-enum-extension",
+  "non-iterator-returned",
+  "unexpected-special-method-signature",
+  "invalid-length-returned",
+  "invalid-bool-returned",
+  "invalid-index-returned",
+  "invalid-repr-returned",
+  "invalid-str-returned",
+  "invalid-bytes-returned",
+  "invalid-hash-returned",
+  "invalid-length-hint-returned",
+  "invalid-format-returned",
+  "invalid-getnewargs-returned",
+  "invalid-getnewargs-ex-returned",
+  "fatal",
+  "astroid-error",
+  "parse-error",
+  "method-check-failed",
+]
 
 [tool.pylint.method_args]
-timeout-methods = ["requests.api.delete", "requests.api.get", "requests.api.head", "requests.api.options", "requests.api.patch", "requests.api.post", "requests.api.put", "requests.api.request"]
+timeout-methods = [
+  "requests.api.delete",
+  "requests.api.get",
+  "requests.api.head",
+  "requests.api.options",
+  "requests.api.patch",
+  "requests.api.post",
+  "requests.api.put",
+  "requests.api.request",
+]
 
 [tool.pylint.miscellaneous]
 notes = ["FIXME", "XXX", "TODO"]
