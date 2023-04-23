@@ -25,7 +25,7 @@ def connect(args, conn=None, **kwargs):
                 curs = self.execute(sql, params)
                 data = curs.fetchone()
             except sqlite3.OperationalError as exc:
-                if any([e in str(exc) for e in ignore_errors]):
+                if any(e in str(exc) for e in ignore_errors):
                     return None
                 raise
             if data is None or len(data) == 0:
@@ -33,7 +33,7 @@ def connect(args, conn=None, **kwargs):
             return data[0]
 
         def pop_dict(
-            self, sql: str, params: Optional[Union[Iterable, dict]] = None, ignore_errors=None
+            self, sql: str, params: Optional[Union[Iterable, dict]] = None, ignore_errors=None,
         ) -> Optional[Any]:
             if ignore_errors is None:
                 ignore_errors = ["no such table"]
@@ -41,7 +41,7 @@ def connect(args, conn=None, **kwargs):
                 dg = self.query(sql, params)
                 d = next(dg, None)
             except sqlite3.OperationalError as exc:
-                if any([e in str(exc) for e in ignore_errors]):
+                if any(e in str(exc) for e in ignore_errors):
                     return None
                 raise exc
             return d
@@ -126,7 +126,7 @@ def optimize(args) -> None:
         optimized_column_order = [*int_columns, *(table_config.get("column_order") or [])]
         compare_order = zip(table_columns, optimized_column_order)
         was_transformed = False
-        if not all([x == y for x, y in compare_order]):
+        if not all(x == y for x, y in compare_order):
             log.info("Transforming column order: %s", optimized_column_order)
             db[table].transform(column_order=optimized_column_order)  # type: ignore
             was_transformed = True
@@ -166,7 +166,7 @@ def optimize(args) -> None:
 
 def fts_quote(query: List[str]) -> List[str]:
     fts_words = [" NOT ", " AND ", " OR ", "*", ":", "NEAR("]
-    return [s if any([r in s for r in fts_words]) else '"' + s + '"' for s in query]
+    return [s if any(r in s for r in fts_words) else '"' + s + '"' for s in query]
 
 
 def fts_search(args) -> str:
@@ -214,13 +214,12 @@ def get_playlists(args, cols="path, dl_config", constrain=False, sql_filters=Non
         sql_filters = []
     if "time_deleted" in columns:
         sql_filters.append("AND COALESCE(time_deleted,0) = 0")
-    if constrain:
-        if args.category:
-            sql_filters.append(f"AND category='{args.category}'")
+    if constrain and args.category:
+        sql_filters.append(f"AND category='{args.category}'")
 
     try:
         known_playlists = list(
-            args.db.query(f"select {cols} from playlists where 1=1 {' '.join(sql_filters)} order by random()")
+            args.db.query(f"select {cols} from playlists where 1=1 {' '.join(sql_filters)} order by random()"),
         )
     except sqlite3.OperationalError:
         known_playlists = []

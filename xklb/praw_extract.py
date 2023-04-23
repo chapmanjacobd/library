@@ -145,7 +145,7 @@ def slim_post_data(d: dict, playlist_path=None) -> dict:
     url = d.get("url")
     if url:
         url = url.lower()
-    if not url or any([domain in url for domain in skip_domains]):
+    if not url or any(domain in url for domain in skip_domains):
         d["url"] = d.get("url_overridden_by_dest")
 
     selftext = d.get("selftext")
@@ -271,7 +271,7 @@ def subreddit_new(args, subreddit_dict) -> None:
                         "path": subreddit_path,
                         "subscribers": post_dict.pop("subreddit_subscribers", None),
                         "visibility": post_dict.pop("subreddit_type", None),
-                    }
+                    },
                 ),
                 pk="path",
                 alter=True,
@@ -337,7 +337,7 @@ def process_subreddits(args, subreddits):
 
 def reddit_add(args=None) -> None:
     if args:
-        sys.argv = ["lb"] + args
+        sys.argv = ["lb", *args]
 
     args = parse_args(
         "redditadd",
@@ -394,7 +394,7 @@ def reddit_add(args=None) -> None:
                     "category": args.category or ie_key,
                     "ie_key": ie_key,
                     "time_deleted": 0,
-                }
+                },
             ),
             pk="path",
             alter=True,
@@ -408,7 +408,7 @@ def reddit_add(args=None) -> None:
 
 def reddit_update(args=None) -> None:
     if args:
-        sys.argv = ["lb"] + args
+        sys.argv = ["lb", *args]
 
     args = parse_args(
         "redditupdate",

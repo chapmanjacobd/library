@@ -14,7 +14,7 @@ xsv select text hn_comment_202210242109.csv | library nouns | sort | uniq -c | s
 
 
 class MLStripper(HTMLParser):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.reset()
         self.strict = False
@@ -58,7 +58,7 @@ def line_processor(txt):
         import regex
 
         line_processor.RE_NOUNS_SPLIT = regex.compile(
-            r"(?= [a-z]|(?<!\b[A-Z][a-z]*) (?=[A-Z]))|[.?!,\/#$%\^&\*;:{}=\-_`~()]|\,|\'|\"|\^|‘|’|“|”|\n| -| :| _"
+            r"(?= [a-z]|(?<!\b[A-Z][a-z]*) (?=[A-Z]))|[.?!,\/#$%\^&\*;:{}=\-_`~()]|\,|\'|\"|\^|‘|’|“|”|\n| -| :| _",
         )
 
     parts = line_processor.RE_NOUNS_SPLIT.split(txt)

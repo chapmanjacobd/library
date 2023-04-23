@@ -13,13 +13,13 @@ def parse_args(action, usage):
 
     subp_profile = parser.add_mutually_exclusive_group()
     subp_profile.add_argument(
-        "--audio", "-A", action="store_const", dest="profile", const=DBType.audio, help="Use audio downloader"
+        "--audio", "-A", action="store_const", dest="profile", const=DBType.audio, help="Use audio downloader",
     )
     subp_profile.add_argument(
-        "--video", "-V", action="store_const", dest="profile", const=DBType.video, help="Use video downloader"
+        "--video", "-V", action="store_const", dest="profile", const=DBType.video, help="Use video downloader",
     )
     subp_profile.add_argument(
-        "--image", "-I", action="store_const", dest="profile", const=DBType.image, help="Use image downloader"
+        "--image", "-I", action="store_const", dest="profile", const=DBType.image, help="Use image downloader",
     )
 
     parser.add_argument(
@@ -106,12 +106,12 @@ def construct_query(args) -> Tuple[str, dict]:
     args.filter_sql.append(
         f"""and cast(STRFTIME('%s',
           datetime( COALESCE(time_modified,0), 'unixepoch', '+{args.retry_delay}')
-        ) as int) < STRFTIME('%s', datetime()) """
+        ) as int) < STRFTIME('%s', datetime()) """,
     )
 
     if "uploader" in m_columns:
         args.filter_sql.append(
-            f"and (m.uploader is NULL or m.uploader not in (select uploader from playlists where category='{consts.BLOCK_THE_CHANNEL}'))"
+            f"and (m.uploader is NULL or m.uploader not in (select uploader from playlists where category='{consts.BLOCK_THE_CHANNEL}'))",
         )
 
     LIMIT = "LIMIT " + str(args.limit) if args.limit else ""
@@ -194,7 +194,7 @@ def process_downloadqueue(args) -> List[dict]:
 
 def dl_download(args=None) -> None:
     if args:
-        sys.argv = ["lb"] + args
+        sys.argv = ["lb", *args]
 
     args = parse_args(
         SC.download,
@@ -261,7 +261,7 @@ def dl_download(args=None) -> None:
                 {f'AND COALESCE(time_modified,0) > {str(previous_time_attempted)}' if 'time_modified' in m_columns else ''}
                 """,
                 [m["path"], m["path"]],
-            )
+            ),
         )
         if download_already_attempted:
             log.info("[%s]: Already downloaded. Skipping!", m["path"])
@@ -279,7 +279,7 @@ def dl_download(args=None) -> None:
 
 def dl_block(args=None) -> None:
     if args:
-        sys.argv = ["lb"] + args
+        sys.argv = ["lb", *args]
 
     args = parse_args(
         SC.block,
@@ -301,8 +301,8 @@ def dl_block(args=None) -> None:
 
     log.info(utils.dict_filter_bool(args.__dict__))
     args.category = consts.BLOCK_THE_CHANNEL
-    args.extra_playlist_data = dict(time_deleted=consts.APPLICATION_START)
-    args.extra_media_data = dict(time_deleted=consts.APPLICATION_START)
+    args.extra_playlist_data = {"time_deleted": consts.APPLICATION_START}
+    args.extra_media_data = {"time_deleted": consts.APPLICATION_START}
     for p in args.playlists:
         tube_backend.process_playlist(args, p, tube_backend.tube_opts(args, func_opts={"playlistend": 30}))
 
@@ -338,7 +338,7 @@ def dl_block(args=None) -> None:
             WHERE time_downloaded > 0
             AND playlist_path IN (
                 select path from playlists where time_deleted > 0
-            ) """
+            ) """,
             )
         ]
 

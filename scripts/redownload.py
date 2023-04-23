@@ -48,7 +48,7 @@ def parse_args() -> argparse.Namespace:
 
         $ library redownload city.db 2023-01-26T19:54:42 2023-01-26T20:45:24
 
-    """
+    """,
     )
     parser.add_argument("--download-archive", default="~/.local/share/yt_archive.txt")
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", default=100)
@@ -92,8 +92,8 @@ def get_non_tube_media(args, paths) -> List[dict]:
                         args.db.query(
                             "select * from media where path in (" + ",".join(["?"] * len(p)) + ")",
                             (*p,),
-                        )
-                    )
+                        ),
+                    ),
                 )
     return media
 

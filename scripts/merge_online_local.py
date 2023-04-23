@@ -16,7 +16,7 @@ def parse_args() -> argparse.Namespace:
     If you have previously downloaded YouTube or other online media, you can dedupe
     your database and combine the online and local media records as long as your
     files have the youtube-dl / yt-dlp id in the filename.
-    """
+    """,
     )
     parser.add_argument("database")
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", default=100)

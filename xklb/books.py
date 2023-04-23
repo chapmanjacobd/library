@@ -12,7 +12,7 @@ def munge_book_tags(media, f) -> Optional[dict]:
         import textract
     except ModuleNotFoundError:
         raise ModuleNotFoundError(
-            "textract is required for text database creation: pip install textract; sudo dnf install libxml2-devel libxslt-devel antiword unrtf poppler-utils tesseract sox-plugins-nonfree sox libjpeg-devel swig"
+            "textract is required for text database creation: pip install textract; sudo dnf install libxml2-devel libxslt-devel antiword unrtf poppler-utils tesseract sox-plugins-nonfree sox libjpeg-devel swig",
         )
     try:
         tags = textract.process(f)
@@ -211,7 +211,7 @@ def extract_image_metadata_chunk(metadata: List[dict], chunk_paths: List[str]) -
         import exiftool
     except ModuleNotFoundError:
         raise ModuleNotFoundError(
-            "exiftool and PyExifTool are required for image database creation: sudo dnf install perl-Image-ExifTool && pip install PyExifTool"
+            "exiftool and PyExifTool are required for image database creation: sudo dnf install perl-Image-ExifTool && pip install PyExifTool",
         )
 
     with exiftool.ExifToolHelper() as et:

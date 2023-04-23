@@ -84,7 +84,7 @@ subcommands = ["fs", "du"]
 
 
 def consecutive_prefixes(s):
-    prefixes = list(s[:j] for j in range(5, len(s)) if s[:j] and s[:j] not in subcommands)
+    prefixes = [s[:j] for j in range(5, len(s)) if s[:j] and s[:j] not in subcommands]
     subcommands.extend(prefixes)
     return prefixes
 
@@ -92,7 +92,7 @@ def consecutive_prefixes(s):
 def add_parser(subparsers, name, a=None):
     if a is None:
         a = []
-    subcommands.extend([name] + a)
+    subcommands.extend([name, *a])
     aliases = a + consecutive_prefixes(name) + utils.conform([consecutive_prefixes(a) for a in a])
     return subparsers.add_parser(name, aliases=aliases, add_help=False)
 
@@ -201,7 +201,7 @@ def create_subcommands_parser():
 
 def library(args=None) -> None:
     if args:
-        sys.argv = ["lb"] + args
+        sys.argv = ["lb", *args]
 
     parser = create_subcommands_parser()
     args, _unk = parser.parse_known_args(args)
@@ -216,6 +216,7 @@ def library(args=None) -> None:
 
     if hasattr(args, "func"):
         args.func()
+        return None
     else:
         try:
             print("Subcommand", original_argv[1], "not found")
@@ -223,6 +224,7 @@ def library(args=None) -> None:
             print("Invalid args. I see:", original_argv)
 
         print_help(parser)
+        return None
 
 
 if __name__ == "__main__":

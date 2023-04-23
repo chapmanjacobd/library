@@ -12,7 +12,7 @@ def parse_args() -> argparse.Namespace:
         usage="""library relmv [--dry-run] SOURCE ... DEST
 
     Move files/folders without losing hierarchy metadata
-"""
+""",
     )
     parser.add_argument("--verbose", "-v", action="count", default=0)
     parser.add_argument("--test", "--dry-run", action="store_true")

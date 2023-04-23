@@ -40,7 +40,7 @@ def save_data(args, reddit_posts, media):
 
 def pushshift_extract(args=None) -> None:
     if args:
-        sys.argv = ["lb"] + args
+        sys.argv = ["lb", *args]
 
     args = parse_args(
         "pushshift",

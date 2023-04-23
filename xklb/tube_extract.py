@@ -58,7 +58,7 @@ def parse_args(action, usage) -> argparse.Namespace:
 
 def tube_add(args=None) -> None:
     if args:
-        sys.argv = ["tubeadd"] + args
+        sys.argv = ["tubeadd", *args]
 
     args = parse_args(
         SC.tubeadd,
@@ -111,11 +111,11 @@ def tube_add(args=None) -> None:
                     {'and duration is null' if 'duration' in args.db[table].columns_dict else ''}
                     {'and size is null' if 'size' in args.db[table].columns_dict else ''}
                     ORDER by random()
-                    """
+                    """,
                     )
                 ]
                 for table in args.playlists
-            )
+            ),
         )
 
     for path in args.playlists:
@@ -135,7 +135,7 @@ def tube_add(args=None) -> None:
 
 def tube_update(args=None) -> None:
     if args:
-        sys.argv = ["tubeupdate"] + args
+        sys.argv = ["tubeupdate", *args]
 
     args = parse_args(
         SC.tubeupdate,

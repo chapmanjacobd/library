@@ -68,7 +68,7 @@ def christen() -> None:
     You may want to run bfs to remove nested empty folders:
 
         yes | bfs -nohidden -type d -exec bfs -f {} -not -type d -exit 1 \; -prune -ok bfs -f {} -type d -delete \;
-        """
+        """,
     )
 
 

@@ -122,7 +122,7 @@ def tube_opts(args, func_opts=None, playlist_opts: Optional[str] = None) -> dict
                 "TV Spot",
                 "Twitch",
                 "World Premiere",
-            ]
+            ],
         ),
     }
 
@@ -157,10 +157,7 @@ def is_supported(url) -> bool:  # thank you @dbr
     if getattr(is_supported, "yt_ies", None) is None:
         is_supported.yt_ies = yt_dlp.extractor.gen_extractors()
 
-    for ie in is_supported.yt_ies:
-        if ie.suitable(url) and ie.IE_NAME != "generic":
-            return True  # Site has dedicated extractor
-    return False
+    return any(ie.suitable(url) and ie.IE_NAME != "generic" for ie in is_supported.yt_ies)
 
 
 def is_playlist_known(args, playlist_path) -> bool:
@@ -382,7 +379,7 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Optional[L
                 "ignoreerrors": True,
             },
             playlist_opts=playlist_dl_opts,
-        )
+        ),
     ) as ydl:
         videos = args.db.execute(
             f"""
@@ -419,7 +416,7 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Optional[L
             current_video_count += 1
             sys.stdout.write("\033[K\r")
             print(
-                f"[{playlist_path}] {current_video_count} of {len(videos)} extra metadata fetched", end="\r", flush=True
+                f"[{playlist_path}] {current_video_count} of {len(videos)} extra metadata fetched", end="\r", flush=True,
             )
 
 
@@ -458,7 +455,7 @@ def save_tube_entry(args, m, info: Optional[dict] = None, error=None, URE=False)
     if Path(info["local_path"]).exists():
         fs_args = argparse.Namespace(
             profile=args.profile,
-            scan_subtitles=True if args.profile == DBType.video else False,
+            scan_subtitles=args.profile == DBType.video,
             delete_unplayable=False,
             ocr=False,
             speech_recognition=False,
@@ -525,7 +522,7 @@ def yt(args, m) -> None:
         "ignoreerrors": ignoreerrors,
         "extractor_args": {"youtube": {"skip": ["authcheck"]}},
         "logger": BadToTheBoneLogger(),
-        "skip_download": True if consts.PYTEST_RUNNING else False,
+        "skip_download": bool(consts.PYTEST_RUNNING),
         "extract_flat": False,
         "lazy_playlist": False,
         "postprocessors": [{"key": "FFmpegMetadata"}],
@@ -535,7 +532,7 @@ def yt(args, m) -> None:
         "outtmpl": {
             "default": out_dir("%(uploader,uploader_id)s/%(title).200B_[%(id).60B].%(ext)s"),
             "chapter": out_dir(
-                "%(uploader,uploader_id)s/%(title).200B_%(section_number)03d_%(section_title)s_[%(id).60B].%(ext)s"
+                "%(uploader,uploader_id)s/%(title).200B_%(section_number)03d_%(section_title)s_[%(id).60B].%(ext)s",
             ),
         },
     }
@@ -607,14 +604,14 @@ def yt(args, m) -> None:
     if not ydl_log["error"] and info:
         log.debug("[%s]: No news is good news", m["path"])
         save_tube_entry(args, m, info)
-    elif any([yt_recoverable_errors.match(l) for l in ydl_full_log]):
+    elif any(yt_recoverable_errors.match(l) for l in ydl_full_log):
         log.info("[%s]: Recoverable error matched (will try again later). %s", m["path"], ydl_errors)
         save_tube_entry(args, m, info, error=ydl_errors)
-    elif any([yt_unrecoverable_errors.match(l) for l in ydl_full_log]):
+    elif any(yt_unrecoverable_errors.match(l) for l in ydl_full_log):
         matched_error = [m.string for m in utils.conform([yt_unrecoverable_errors.match(l) for l in ydl_full_log])]
         log.debug("[%s]: Unrecoverable error matched. %s", m["path"], ydl_errors or utils.combine(matched_error))
         save_tube_entry(args, m, info, error=ydl_errors, URE=True)
-    elif any([prefix_unrecoverable_errors.match(l) for l in ydl_full_log]):
+    elif any(prefix_unrecoverable_errors.match(l) for l in ydl_full_log):
         log.warning("[%s]: Prefix error. %s", m["path"], ydl_errors)
         raise SystemExit(28)
     else:

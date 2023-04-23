@@ -16,7 +16,7 @@ def parse_args(action, usage) -> argparse.Namespace:
 
     profile = parser.add_mutually_exclusive_group()
     profile.add_argument(
-        "--audio", "-A", action="store_const", dest="profile", const=DBType.audio, help="Create audio database"
+        "--audio", "-A", action="store_const", dest="profile", const=DBType.audio, help="Create audio database",
     )
     profile.add_argument(
         "--filesystem",
@@ -27,13 +27,13 @@ def parse_args(action, usage) -> argparse.Namespace:
         help="Create filesystem database",
     )
     profile.add_argument(
-        "--video", "-V", action="store_const", dest="profile", const=DBType.video, help="Create video database"
+        "--video", "-V", action="store_const", dest="profile", const=DBType.video, help="Create video database",
     )
     profile.add_argument(
-        "--text", "-T", action="store_const", dest="profile", const=DBType.text, help="Create text database"
+        "--text", "-T", action="store_const", dest="profile", const=DBType.text, help="Create text database",
     )
     profile.add_argument(
-        "--image", "-I", action="store_const", dest="profile", const=DBType.image, help="Create image database"
+        "--image", "-I", action="store_const", dest="profile", const=DBType.image, help="Create image database",
     )
     parser.set_defaults(profile=DBType.video)
     parser.add_argument("--scan-all-files", "-a", action="store_true", help=argparse.SUPPRESS)
@@ -104,13 +104,13 @@ def extract_metadata(mp_args, f) -> Optional[Dict[str, int]]:
     try:
         stat = os.stat(f)
     except FileNotFoundError:
-        return
-    except IOError:
+        return None
+    except OSError:
         log.error(f"[{f}] IOError: possible filesystem corruption; check dmesg")
-        return
+        return None
     except Exception as e:
         log.error(f"[{f}] %s", e)
-        return
+        return None
 
     media = {
         "path": f,
@@ -206,7 +206,7 @@ def find_new_files(args, path: Path) -> List[str]:
                     and time_deleted = 0
                     and path like '{path}%'
                     {'AND time_downloaded > 0' if 'time_downloaded' in columns else ''}
-                """
+                """,
             )
         }
     except Exception as e:
@@ -298,7 +298,7 @@ def extractor(args, paths) -> None:
 
 def fs_add(args=None) -> None:
     if args:
-        sys.argv = ["lb"] + args
+        sys.argv = ["lb", *args]
 
     args = parse_args(
         SC.fsadd,
@@ -344,7 +344,7 @@ def fs_add(args=None) -> None:
 
 def fs_update(args=None) -> None:
     if args:
-        sys.argv = ["lb"] + args
+        sys.argv = ["lb", *args]
 
     args = parse_args(
         SC.fsupdate,
@@ -365,13 +365,13 @@ def fs_update(args=None) -> None:
             ORDER BY
                 length(path)-length(REPLACE(path, '/', '')) desc
                 , path
-            """
-        )
+            """,
+        ),
     )
 
     for playlist in playlists:
         args_env = argparse.Namespace(
-            **{**(playlist.get("config") or {}), **args.__dict__, "profile": playlist["profile"]}
+            **{**(playlist.get("config") or {}), **args.__dict__, "profile": playlist["profile"]},
         )
 
         extractor(args_env, [playlist["path"]])

@@ -92,21 +92,21 @@ def extract_url_metadata(args, path: str) -> dict:
 
     hostname = urlparse(path).hostname or ""
 
-    return dict(
-        path=path,
-        hostname=hostname,
-        frequency=args.frequency.value,
-        category=args.category or "Uncategorized",
-        time_created=consts.APPLICATION_START,
-        time_played=0,
-        play_count=0,
-        time_deleted=0,
-    )
+    return {
+        "path": path,
+        "hostname": hostname,
+        "frequency": args.frequency.value,
+        "category": args.category or "Uncategorized",
+        "time_created": consts.APPLICATION_START,
+        "time_played": 0,
+        "play_count": 0,
+        "time_deleted": 0,
+    }
 
 
 def tabs_add(args=None) -> None:
     if args:
-        sys.argv = ["lb"] + args
+        sys.argv = ["lb", *args]
     args = parse_args()
 
     tabs = [extract_url_metadata(args, path) for path in get_new_paths(args)]

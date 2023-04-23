@@ -8,7 +8,7 @@ class UserQuit(BaseException):
 
 
 class MrSuperDialogue:
-    def __init__(self, path, qty, geom_data=None):
+    def __init__(self, path, qty, geom_data=None) -> None:
         from tkinter import PhotoImage, Tk
         from tkinter.ttk import Button, Frame, Label, Style
 
@@ -104,7 +104,7 @@ class MrSuperDialogue:
                 "winfo_root_y": self.root.winfo_y(),
                 "winfo_screen": self.root.winfo_screen(),
                 "wm_maxsize": self.root.wm_maxsize(),
-            }
+            },
         )
 
         # TODO: Get the screen which contains the Tk Frame
