@@ -200,6 +200,7 @@ def save_post(args, post_dict, subreddit_path):
             **slim_dict,
             "play_count": 0,
             "time_played": 0,
+            "playhead": 0,
             "time_downloaded": 0,
             "time_deleted": 0,
             **(existing_meta or {}),
@@ -228,7 +229,7 @@ def since_last_created(args, playlist_path):
         ignore_errors=["no such column", "no such table"],
     )
     if latest_post_utc:
-        get_since = dt.datetime.fromtimestamp(latest_post_utc) - dt.timedelta(days=args.lookback)
+        get_since = dt.datetime.fromtimestamp(latest_post_utc, tz=dt.timezone.utc) - dt.timedelta(days=args.lookback)
         get_since = int(get_since.timestamp())
         log.info("Getting posts since timestamp %s", get_since)
     else:
@@ -363,24 +364,24 @@ def reddit_add(args=None) -> None:
         subreddit_matches = consts.REGEX_SUBREDDIT.match(path)
         redditor_matches = consts.REGEX_REDDITOR.match(path)
         ie_key = "reddit_praw"
-        match = path
+        name = path
         if subreddit_matches:
             ie_key = "reddit_praw_subreddit"
-            match = utils.conform(subreddit_matches.groups()).pop()
-            subreddits.append({"path": path, "name": match})
+            name = utils.conform(subreddit_matches.groups()).pop()
+            subreddits.append({"path": path, "name": name})
         elif redditor_matches:
             ie_key = "reddit_praw_redditor"
-            match = utils.conform(redditor_matches.groups()).pop()
-            redditors.append({"path": path, "name": match})
+            name = utils.conform(redditor_matches.groups()).pop()
+            redditors.append({"path": path, "name": name})
         else:
             if args.subreddits:
                 ie_key = "reddit_praw_subreddit"
-                path = f"https://old.reddit.com/r/{match}/"
-                subreddits.append({"path": path, "name": match})
+                path = f"https://old.reddit.com/r/{name}/"
+                subreddits.append({"path": path, "name": name})
             elif args.redditors:
                 ie_key = "reddit_praw_redditor"
-                path = f"https://old.reddit.com/user/{match}/"
-                redditors.append({"path": path, "name": match})
+                path = f"https://old.reddit.com/user/{name}/"
+                redditors.append({"path": path, "name": name})
             else:
                 log.error(f"[{path}]: Skipping unknown URL")
                 continue
@@ -389,7 +390,7 @@ def reddit_add(args=None) -> None:
             utils.dict_filter_bool(
                 {
                     "path": path,
-                    "id": match,
+                    "id": name,
                     "config": utils.filter_namespace(args, ["limit", "lookback", "praw_site"]),
                     "category": args.category or ie_key,
                     "ie_key": ie_key,
@@ -402,7 +403,8 @@ def reddit_add(args=None) -> None:
 
     process_subreddits(args, subreddits)
     process_redditors(args, redditors)
-    if not args.db["media"].detect_fts() or len(subreddits + redditors) > 75:
+    LARGE_NUMBER = 75
+    if not args.db["media"].detect_fts() or len(subreddits + redditors) > LARGE_NUMBER:
         db.optimize(args)
 
 

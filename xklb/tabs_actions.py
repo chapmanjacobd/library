@@ -198,7 +198,7 @@ def play(args, m: Dict) -> None:
     media_file = m["path"]
 
     cmd(*generic_player(args), media_file, strict=False)
-    mark_media_watched(args, media_file)
+    mark_media_watched(args, [media_file])
 
 
 def frequency_filter(args, media: List[Dict]) -> List[dict]:
@@ -240,7 +240,8 @@ def process_tabs_actions(args) -> None:
 
     for m in media:
         play(args, m)
-        if len(media) >= 9:
+        MANY_TABS = 9
+        if len(media) >= MANY_TABS:
             sleep(0.3)
     return None
 

@@ -10,7 +10,6 @@ from shutil import which
 from time import sleep
 from typing import Dict, List, Optional, Tuple, Union
 
-from rich.prompt import Confirm
 from tabulate import tabulate
 
 from scripts import process_bigdirs
@@ -19,6 +18,8 @@ from xklb.consts import SC
 from xklb.utils import cmd, cmd_interactive, human_time, log
 
 try:
+    import tkinter  # noqa
+
     from xklb import gui
 except ModuleNotFoundError:
     gui = None
@@ -38,16 +39,26 @@ def generic_player(args) -> List[str]:
 def calculate_duration(args, m) -> Tuple[int, int]:
     start = 0
     end = m.get("duration", 0)
+    minimum_duration = 7 * 60
 
     if args.start:
-        start = m["duration"] * 0.3 if args.start == "wadsworth" else args.start
+        playhead = m.get("playhead")
+
+        if args.start.isnumeric() and int(args.start) > 0:
+            start = int(args.start)
+        elif playhead and any([end == 0, end > minimum_duration]):
+            start = playhead
+        elif args.start == "wadsworth":
+            start = m["duration"] * 0.3
+        else:
+            start = int(args.start)
     if args.end:
         if args.end == "dawsworth":
             end = m["duration"] * 0.65
         elif "+" in args.end:
-            end = (m["duration"] * 0.3) + args.end
+            end = int(args.start) + int(args.end)
         else:
-            end = args.end
+            end = int(args.end)
 
     return start, end
 
@@ -167,6 +178,18 @@ def moved_media(args, moved_files: Union[str, list], base_from, base_to) -> int:
     return modified_row_count
 
 
+def set_playhead(args, path: str, playhead: int) -> int:
+    with args.db.conn:
+        cursor = args.db.conn.execute(
+            """UPDATE media
+            SET playhead = :playhead
+            WHERE path = :path
+            """,
+            {"playhead": playhead, "path": path},
+        )
+        return cursor.rowcount
+
+
 def mark_media_watched(args, files) -> int:
     files = utils.conform(files)
     modified_row_count = 0
@@ -242,7 +265,8 @@ def delete_playlists(args, playlists) -> None:
     with args.db.conn:
         playlist_paths = playlists + [p.rstrip(os.sep) for p in playlists]
         args.db.conn.execute(
-            "delete from playlists where path in (" + ",".join(["?"] * len(playlist_paths)) + ")", playlist_paths,
+            "delete from playlists where path in (" + ",".join(["?"] * len(playlist_paths)) + ")",
+            playlist_paths,
         )
 
     online_media = [p for p in playlists if p.startswith("http")]
@@ -259,48 +283,70 @@ def delete_playlists(args, playlists) -> None:
             args.db.conn.execute("delete from media where path like ?", (folder + "%",))
 
 
-def post_act(args, media_file: str, action=None) -> None:
-    action = action or args.post_action
+class Action:
+    KEEP = "keep"
+    DELETE = "delete"
+    DELETE_IF_AUDIOBOOK = "delete_if_audiobook"
+    SOFTDELETE = "softdelete"
+    MOVE = "move"
 
-    mark_media_watched(args, media_file)
-    if action == "keep":
+
+class AskAction:
+    ASK_KEEP = (Action.KEEP, Action.DELETE)
+    ASK_MOVE_OR_DELETE = (Action.MOVE, Action.DELETE)
+    ASK_DELETE = (Action.DELETE, Action.KEEP)
+    ASK_SOFTDELETE = (Action.SOFTDELETE, Action.KEEP)
+
+
+def post_act(args, media_file: str, action: Optional[str] = None, geom_data=None, media=None) -> None:
+    mark_media_watched(args, [media_file])
+
+    def handle_keep_action():
         return
 
-    if media_file.startswith("http"):
-        if action in ["softdelete", "remove", "delete"]:
+    def handle_delete_action():
+        if media_file.startswith("http"):
             mark_media_deleted(args, media_file)
-        elif action == "delete-if-audiobook":
-            # TODO: pass title to this function
-            pass
-        elif action == "ask":
-            if not Confirm.ask("Keep?", default=False):
-                mark_media_deleted(args, media_file)
         else:
-            raise Exception("Unrecognized action", action)
-    else:
-        if action == "softdelete":
-            mark_media_deleted(args, media_file)
-
-        elif action == "delete":
             delete_media(args, media_file)
 
-        elif action == "delete-if-audiobook":
-            if "audiobook" in media_file.lower():
-                delete_media(args, media_file)
+    def handle_soft_delete_action():
+        mark_media_deleted(args, media_file)
 
-        elif action == "ask":
-            if not Confirm.ask("Keep?", default=False):
-                delete_media(args, media_file)
+    def handle_move_action():
+        if not media_file.startswith("http"):
+            mv_to_keep_folder(args, media_file)
 
-        elif action == "askkeep":
-            utils.clear_input()
-            if not Confirm.ask("Keep?", default=False):
-                delete_media(args, media_file)
-            else:
-                mv_to_keep_folder(args, media_file)
-
+    def handle_ask_action(ask_action: str):
+        true_action, false_action = getattr(AskAction, ask_action)
+        if gui and args.gui:
+            response = gui.askkeep(
+                media_file,
+                len(media or []),
+                geom_data,
+                true_action=true_action,
+                false_action=false_action,
+            )
         else:
-            raise Exception("Unrecognized action", action)
+            response = utils.confirm(true_action.title() + "?")
+        post_act(args, media_file, action=true_action if response else false_action)
+
+    action = action or args.post_action
+
+    if action == Action.KEEP:
+        handle_keep_action()
+    elif action == Action.DELETE:
+        handle_delete_action()
+    elif action == Action.DELETE_IF_AUDIOBOOK and "audiobook" in media_file.lower():
+        handle_delete_action()
+    elif action == Action.SOFTDELETE:
+        handle_soft_delete_action()
+    elif action == Action.MOVE:
+        handle_move_action()
+    elif action.startswith("ask_"):
+        handle_ask_action(action)
+    else:
+        raise ValueError("Unrecognized action:", action)
 
 
 def override_sort(sort_expression: str) -> str:
@@ -336,7 +382,7 @@ def get_ordinal_media(args, m: Dict) -> Dict:
     total_media = args.db.execute("select count(*) val from media").fetchone()[0]
     candidate = deepcopy(m["path"])
     similar_videos = []
-    while len(similar_videos) < 2:
+    while len(similar_videos) <= 1:
         if candidate == "":
             return m
 
@@ -349,16 +395,16 @@ def get_ordinal_media(args, m: Dict) -> Dict:
             return m
 
         candidate = new_candidate
-        query = f"""SELECT path FROM {'media' if args.play_in_order >= 3 else args.table}
+        query = f"""SELECT path FROM {'media' if args.play_in_order >= consts.SIMILAR_NO_FILTER_NO_FTS else args.table}
             WHERE 1=1
                 and path like :candidate
                 {'and COALESCE(time_deleted,0) = 0' if 'time_deleted' in columns else ''}
-                {'' if args.play_in_order >= 2 else (" ".join(args.filter_sql) or '')}
+                {'' if args.play_in_order >= consts.SIMILAR_NO_FILTER else (" ".join(args.filter_sql) or '')}
             ORDER BY play_count, path
             LIMIT 1000
             """
         bindings = {"candidate": candidate + "%"}
-        if args.play_in_order == 1:
+        if args.play_in_order == consts.SIMILAR:
             if args.include or args.exclude:
                 bindings = {**bindings, "query": args.filter_bindings["query"]}
         else:
@@ -367,12 +413,14 @@ def get_ordinal_media(args, m: Dict) -> Dict:
         similar_videos = list(args.db.query(query, bindings))
         log.debug(similar_videos)
 
-        if len(similar_videos) > 999 or len(similar_videos) == total_media:
+        TOO_MANY_SIMILAR = 99
+        if len(similar_videos) > TOO_MANY_SIMILAR or len(similar_videos) == total_media:
             return m
 
         commonprefix = os.path.commonprefix([d["path"] for d in similar_videos])
         log.debug(commonprefix)
-        if len(Path(commonprefix).name) < 3:
+        PREFIX_LENGTH_THRESHOLD = 3
+        if len(Path(commonprefix).name) < PREFIX_LENGTH_THRESHOLD:
             log.debug("Using commonprefix")
             return m
 
@@ -526,7 +574,7 @@ def get_multiple_player_template(args) -> List[str]:
 
     if args.multiple_playback == consts.DEFAULT_MULTIPLE_PLAYBACK and len(displays) == 1:
         args.multiple_playback = 2
-    elif args.multiple_playback == consts.DEFAULT_MULTIPLE_PLAYBACK and len(displays) >= 2:
+    elif args.multiple_playback == consts.DEFAULT_MULTIPLE_PLAYBACK and len(displays) > 1:
         args.multiple_playback = len(displays)
     elif args.multiple_playback < len(displays):
         # play videos on supporting screens but not active one
@@ -549,6 +597,10 @@ def get_multiple_player_template(args) -> List[str]:
     return players
 
 
+def geom(x_size, y_size, x, y) -> str:
+    return f"--geometry={x_size}x{y_size}+{x}+{y}"
+
+
 def _create_player(args, window_geometry, media):
     m = media.pop()
     print(m["path"])
@@ -556,28 +608,10 @@ def _create_player(args, window_geometry, media):
     return {
         **m,
         "process": subprocess.Popen(
-            [*args.player, *mp_args, *window_geometry, "--", m["path"]], **utils.os_bg_kwargs(),
+            [*args.player, *mp_args, *window_geometry, "--", m["path"]],
+            **utils.os_bg_kwargs(),
         ),
     }
-
-
-def gui_post_act(args, media, m, geom_data=None):
-    if gui and args.post_action in ("ask", "askkeep"):
-        r = gui.askkeep(m["path"], len(media), geom_data)
-        if r == "DELETE":
-            post_act(args, m["path"], action="delete")
-        elif r == "KEEP" and args.post_action == "ask":
-            post_act(args, m["path"], action="keep")
-        elif r == "KEEP" and args.post_action == "askkeep":
-            mv_to_keep_folder(args, m["path"])
-        else:
-            raise NotImplementedError
-    else:
-        post_act(args, m["path"])
-
-
-def geom(x_size, y_size, x, y) -> str:
-    return f"--geometry={x_size}x{y_size}+{x}+{y}"
 
 
 def multiple_player(args, media) -> None:
@@ -590,10 +624,11 @@ def multiple_player(args, media) -> None:
     try:
         while media or players:
             for t_idx, t in enumerate(template):
-                if len(t) == 3:
+                SINGLE_PLAYBACK = ("--fs", '--screen-name="eDP"', '--fs-screen-name="eDP"')
+                if len(t) == len(SINGLE_PLAYBACK):
                     player_hole = t
                     geom_data = None
-                else:
+                else:  # MULTI_PLAYBACK = ([640, 1080, 0, 0], '--screen-name="eDP"')
                     geom_data, screen_name = t
                     player_hole = [geom(*geom_data), screen_name]
 
@@ -613,15 +648,14 @@ def multiple_player(args, media) -> None:
                             if not args.ignore_errors:
                                 raise SystemExit(r.returncode)
 
-                        if args.action in (SC.listen, SC.watch):
-                            gui_post_act(args, media, m, geom_data)
+                        post_act(args, m["path"], geom_data=geom_data, media=media)
 
                         if media:
                             players[t_idx] = _create_player(args, player_hole, media)
                         else:
                             del players[t_idx]
 
-            log.debug("-- A dragon slumbers over its hoard of %s media --", len(media))
+            log.debug("%s media", len(media))
             sleep(0.2)  # I don't know if this is necessary but may as well~~
     finally:
         for m in players:
@@ -655,7 +689,7 @@ def printer(args, query, bindings) -> None:
     elif any([hasattr(args, "lower") and args.lower, hasattr(args, "upper") and args.upper]):
         media = utils.filter_episodic(args, media)
 
-    if args.verbose >= 2 and args.cols and "*" in args.cols:
+    if args.verbose >= consts.LOG_DEBUG and args.cols and "*" in args.cols:
         breakpoint()
 
     if not media:
@@ -734,7 +768,7 @@ def printer(args, query, bindings) -> None:
         print(tabulate(tbl, tablefmt="fancy_grid", headers="keys", showindex=False))
 
         if "duration" in query:
-            if len(media) >= 2:
+            if len(media) > 1:
                 print(f"{len(media)} media" + (f" (limited to {args.limit})" if args.limit else ""))
 
             duration = sum(m.get("duration") or 0 for m in media)

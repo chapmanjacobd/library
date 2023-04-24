@@ -1,5 +1,5 @@
 import enum, os, re, sys
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from tempfile import gettempdir
 from types import SimpleNamespace
@@ -7,7 +7,7 @@ from typing import List
 
 
 def now():
-    return int(datetime.now().timestamp())
+    return int(datetime.now(tz=timezone.utc).timestamp())
 
 
 TEMP_DIR = gettempdir()
@@ -17,6 +17,12 @@ DEFAULT_MPV_SOCKET = os.path.join(TEMP_DIR, "mpv_socket")
 DEFAULT_MPV_WATCH_LATER = str(Path("~/.config/mpv/watch_later/").expanduser().resolve())
 SUB_TEMP_DIR = os.path.join(TEMP_DIR, "library_temp_subtitles")
 BLOCK_THE_CHANNEL = "__BLOCKLIST_ENTRY_"
+
+LOG_INFO = 1
+LOG_DEBUG = 2
+SIMILAR = 1
+SIMILAR_NO_FILTER = 2
+SIMILAR_NO_FILTER_NO_FTS = 2
 
 SQLITE_PARAM_LIMIT = 32765
 DEFAULT_PLAY_QUEUE = 120
@@ -54,6 +60,7 @@ TIME_COLUMNS = (
     "time_valid",
     "time_partial_first",
     "time_partial_last",
+    "playhead",
 )
 
 

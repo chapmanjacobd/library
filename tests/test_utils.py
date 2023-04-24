@@ -1,9 +1,8 @@
-import os
-from datetime import timezone
+import argparse, os, time
 from pathlib import Path
 from unittest import mock
 
-from xklb import utils
+from xklb import consts, utils
 
 
 def p(string):
@@ -97,8 +96,8 @@ def test_divisor_gen():
 
 
 def test_col_naturaldate():
-    assert utils.col_naturaldate([{"t": 0, "t1": 1}], "t", tz=timezone.utc) == [{"t": "Jan 01 1970", "t1": 1}]
-    assert utils.col_naturaldate([{"t": 946684800, "t1": 1}], "t", tz=timezone.utc) == [{"t": "Jan 01 2000", "t1": 1}]
+    assert utils.col_naturaldate([{"t": 0, "t1": 1}], "t") == [{"t": "Jan 01 1970", "t1": 1}]
+    assert utils.col_naturaldate([{"t": 946684800, "t1": 1}], "t") == [{"t": "Jan 01 2000", "t1": 1}]
 
 
 def test_col_naturalsize():
@@ -269,3 +268,42 @@ def test_random_filename(_mock_random_string):
     assert utils.random_filename("/.test") == p("/.test.abcdef")
     assert utils.random_filename("/.test/t") == p("/.test/t.abcdef")
     assert utils.random_filename("/test/thing something.txt") == p("/test/thing something.abcdef.txt")
+
+
+def test_mpv_md5():
+    assert (
+        utils.path_to_mpv_watchlater_md5("/home/xk/github/xk/lb/tests/data/test.mp4")
+        == "E1E0D0E3F0D2CB748303FDA43224B7E7"
+    )
+
+
+def test_get_playhead():
+    args = argparse.Namespace(
+        mpv_socket=consts.DEFAULT_MPV_SOCKET,
+        watch_later_directory=consts.DEFAULT_MPV_WATCH_LATER,
+    )
+    path = str(Path("tests/data/test.mp4").resolve())
+    metadata_path = Path("~/.config/mpv/watch_later/E1E0D0E3F0D2CB748303FDA43224B7E7").expanduser().resolve()
+
+    # use MPV time
+    start_time = time.time() - 2
+    Path(metadata_path).write_text("start=5.000000")
+    assert utils.get_playhead(args, path, start_time) == 5
+    # check invalid MPV time
+    Path(metadata_path).write_text("start=13.000000")
+    assert utils.get_playhead(args, path, start_time, media_duration=12) == 2
+
+    # use python time
+    Path(metadata_path).write_text("start=2.000000")
+    start_time = time.time() - 4
+    assert utils.get_playhead(args, path, start_time) == 4
+    # check invalid python time
+    start_time = time.time() - 13
+    assert utils.get_playhead(args, path, start_time, media_duration=12) == 2
+    # append existing time
+    start_time = time.time() - 3
+    assert utils.get_playhead(args, path, start_time, existing_playhead=4, media_duration=12) == 7
+    # unless invalid
+    assert utils.get_playhead(args, path, start_time, existing_playhead=10, media_duration=12) == 2
+    start_time = time.time() - 10
+    assert utils.get_playhead(args, path, start_time, existing_playhead=3, media_duration=12) == 2

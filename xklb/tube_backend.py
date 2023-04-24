@@ -135,7 +135,7 @@ def tube_opts(args, func_opts=None, playlist_opts: Optional[str] = None) -> dict
 
     if args.verbose == 0 and not consts.PYTEST_RUNNING:
         all_opts.update(ignoreerrors="only_download")
-    if args.verbose >= 2:
+    if args.verbose >= consts.LOG_DEBUG:
         all_opts.update(ignoreerrors=False, quiet=False)
     if args.ignore_errors:
         all_opts.update(ignoreerrors=True)
@@ -213,6 +213,7 @@ def consolidate(v: dict) -> Optional[dict]:
     cv["time_downloaded"] = 0
     cv["play_count"] = 0
     cv["time_played"] = 0
+    cv["playhead"] = 0
     language = v.pop("language", None)
     cv["tags"] = combine(
         "language:" + language if language else None,
@@ -278,7 +279,7 @@ def _add_playlist(args, playlist_path, pl: dict, media_path: Optional[str] = Non
         args.db["playlists"].upsert(utils.dict_filter_bool(playlist), pk="path", alter=True)
 
 
-def save_undownloadable(args, playlist_path):
+def save_undownloadable(args, playlist_path) -> None:
     entry = {
         "path": playlist_path,
         "title": "No data from ydl.extract_info",
@@ -388,6 +389,7 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Optional[L
             , ie_key
             , play_count
             , time_played
+            , playhead
             FROM media
             WHERE 1=1
                 {'and width is null' if 'width' in m_columns else ''}
@@ -399,7 +401,7 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Optional[L
         ).fetchall()
 
         current_video_count = 0
-        for path, ie_key, play_count, time_played in videos:
+        for path, ie_key, play_count, time_played, playhead in videos:
             entry = ydl.extract_info(path, ie_key=ie_key, download=False)
             if entry is None:
                 continue
@@ -411,16 +413,19 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Optional[L
             entry["playlist_path"] = playlist_path
             entry["play_count"] = play_count
             entry["time_played"] = time_played
+            entry["playhead"] = playhead
             args.db["media"].upsert(utils.dict_filter_bool(entry), pk="path", alter=True)
 
             current_video_count += 1
             sys.stdout.write("\033[K\r")
             print(
-                f"[{playlist_path}] {current_video_count} of {len(videos)} extra metadata fetched", end="\r", flush=True,
+                f"[{playlist_path}] {current_video_count} of {len(videos)} extra metadata fetched",
+                end="\r",
+                flush=True,
             )
 
 
-def update_playlists(args, playlists):
+def update_playlists(args, playlists) -> None:
     for d in playlists:
         process_playlist(
             args,
@@ -466,8 +471,10 @@ def save_tube_entry(args, m, info: Optional[dict] = None, error=None, URE=False)
         fs_tags = {}
 
     tube_entry = consolidate(info) or {}
-    tube_entry.pop("play_count", None)  # remove default 0s to not overwrite existing value during upsert
+    # remove default 0s to not overwrite existing value during upsert
+    tube_entry.pop("play_count", None)
     tube_entry.pop("time_played", None)
+    tube_entry.pop("playhead", None)
 
     entry = {
         **tube_entry,

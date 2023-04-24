@@ -3,7 +3,7 @@ from pathlib import Path
 from textwrap import dedent
 from typing import Any, Iterable, List, Optional, Union
 
-from xklb import utils
+from xklb import consts, utils
 from xklb.utils import log
 
 
@@ -33,7 +33,10 @@ def connect(args, conn=None, **kwargs):
             return data[0]
 
         def pop_dict(
-            self, sql: str, params: Optional[Union[Iterable, dict]] = None, ignore_errors=None,
+            self,
+            sql: str,
+            params: Optional[Union[Iterable, dict]] = None,
+            ignore_errors=None,
         ) -> Optional[Any]:
             if ignore_errors is None:
                 ignore_errors = ["no such table"]
@@ -47,7 +50,7 @@ def connect(args, conn=None, **kwargs):
             return d
 
     if kwargs.get("memory"):
-        db = DB(tracer=tracer if args.verbose >= 2 else None, **kwargs)  # type: ignore
+        db = DB(tracer=tracer if args.verbose >= consts.LOG_DEBUG else None, **kwargs)  # type: ignore
         return db
 
     if not Path(args.database).exists() and ":memory:" not in args.database:

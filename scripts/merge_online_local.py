@@ -2,7 +2,6 @@ import argparse
 from copy import deepcopy
 from typing import List, Optional
 
-from rich import prompt
 from tabulate import tabulate
 
 from xklb import consts, db, utils
@@ -93,7 +92,7 @@ def merge_online_local() -> None:
     print(tabulate(tbl, tablefmt="fancy_grid", headers="keys", showindex=False))
 
     print(f"{duplicates_count} duplicates found (showing first {args.limit})")
-    if duplicates and prompt.Confirm.ask("Merge duplicates?", default=False):  # type: ignore
+    if duplicates and utils.confirm("Merge duplicates?"):  # type: ignore
         print("Merging...")
 
         merged = []

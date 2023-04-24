@@ -16,13 +16,7 @@ def parse_args(action) -> argparse.Namespace:
     parser.add_argument("--verbose", "-v", action="count", default=0)
     args = parser.parse_args()
 
-    if os.path.exists(args.mpv_socket):
-        try:
-            from python_mpv_jsonipc import MPV
-
-            args.mpv = MPV(start_mpv=False, ipc_socket=args.mpv_socket)
-        except ConnectionRefusedError:
-            Path(args.mpv_socket).unlink(missing_ok=True)
+    args.mpv = utils.connect_mpv(args.mpv_socket)
 
     log.info(utils.dict_filter_bool(args.__dict__))
 

@@ -1,8 +1,6 @@
 import argparse, os, sys
 from typing import List, Tuple
 
-from rich.prompt import Confirm
-
 from xklb import consts, db, play_actions, player, tube_backend, utils
 from xklb.consts import SC, DBType
 from xklb.utils import log
@@ -13,13 +11,28 @@ def parse_args(action, usage):
 
     subp_profile = parser.add_mutually_exclusive_group()
     subp_profile.add_argument(
-        "--audio", "-A", action="store_const", dest="profile", const=DBType.audio, help="Use audio downloader",
+        "--audio",
+        "-A",
+        action="store_const",
+        dest="profile",
+        const=DBType.audio,
+        help="Use audio downloader",
     )
     subp_profile.add_argument(
-        "--video", "-V", action="store_const", dest="profile", const=DBType.video, help="Use video downloader",
+        "--video",
+        "-V",
+        action="store_const",
+        dest="profile",
+        const=DBType.video,
+        help="Use video downloader",
     )
     subp_profile.add_argument(
-        "--image", "-I", action="store_const", dest="profile", const=DBType.image, help="Use image downloader",
+        "--image",
+        "-I",
+        action="store_const",
+        dest="profile",
+        const=DBType.image,
+        help="Use image downloader",
     )
 
     parser.add_argument(
@@ -344,5 +357,5 @@ def dl_block(args=None) -> None:
 
     if paths_to_delete:
         print(paths_to_delete)
-        if not consts.PYTEST_RUNNING and Confirm.ask("Delete?"):
+        if not consts.PYTEST_RUNNING and utils.confirm("Delete?"):
             player.delete_media(args, paths_to_delete)

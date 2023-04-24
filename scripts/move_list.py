@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import List
 
 import humanize
-from rich import prompt
 from tabulate import tabulate
 
 from xklb import db, player, utils
@@ -73,7 +72,7 @@ def get_table(args) -> List[dict]:
 
 
 def print_some(args, tbl):
-    vew = tbl[-int(args.limit):] if args.limit else tbl
+    vew = tbl[-int(args.limit) :] if args.limit else tbl
 
     vew = utils.list_dict_filter_bool(vew, keep_0=False)
     vew = utils.col_resize(vew, "path", 60)
@@ -179,7 +178,7 @@ Type "*" to select all files in the most recently printed table
         """,
         )
 
-        if prompt.Confirm.ask(f"Mark as deleted in {args.database}?", default=True):  # type: ignore
+        if utils.confirm(f"Mark as deleted in {args.database}?"):  # type: ignore
             player.mark_media_deleted_like(args, list(selected_paths))
 
 

@@ -258,10 +258,8 @@ def scatter() -> None:
 
     if len(disk_stats) < 2:
         log.error(
-
-                "\nThis tool does not make sense to use for only one path."
-                " Define more paths or use the -m flag to define mountpoints which share the same subfolder (eg. mergerfs)",
-
+            "\nThis tool does not make sense to use for only one path."
+            " Define more paths or use the -m flag to define mountpoints which share the same subfolder (eg. mergerfs)",
         )
         raise SystemExit(2)
 

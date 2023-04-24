@@ -1,16 +1,17 @@
-import argparse, enum, functools, hashlib, logging, math, multiprocessing, os, platform, random, re, shlex, shutil, signal, string, subprocess, sys, tempfile, textwrap
+import argparse, enum, functools, hashlib, logging, math, multiprocessing, os, platform, random, re, shlex, shutil, signal, string, subprocess, sys, tempfile, textwrap, time
 from ast import literal_eval
 from collections.abc import Iterable
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 from pathlib import Path
 from random import shuffle
 from shutil import which
-from typing import Any, Dict, Generator, List, Optional, Union
+from typing import Any, Dict, Generator, List, NoReturn, Optional, Union
 
 import humanize
 from IPython.core import ultratb
 from IPython.terminal.debugger import TerminalPdb
+from rich import prompt
 from rich.logging import RichHandler
 
 from xklb import consts
@@ -23,7 +24,7 @@ else:
     sys.breakpointhook = ipdb.set_trace
 
 
-def exit_nicely(_signal, _frame):
+def exit_nicely(_signal, _frame) -> NoReturn:
     print("\nExiting... (Ctrl+C)")
     raise SystemExit(130)
 
@@ -31,19 +32,7 @@ def exit_nicely(_signal, _frame):
 signal.signal(signal.SIGINT, exit_nicely)
 
 
-def os_bg_kwargs() -> dict:
-    # prevent ctrl-c from affecting subprocesses first
-
-    if hasattr(os, "setpgrp"):
-        return {"start_new_session": True}
-    else:
-        # CREATE_NEW_PROCESS_GROUP = 0x00000200
-        # DETACHED_PROCESS = 0x00000008
-        # os_kwargs = dict(creationflags=DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP)
-        return {}
-
-
-def run_once(f):
+def run_once(f):  # noqa: ANN201
     @wraps(f)
     def wrapper(*args, **kwargs):
         if not f.has_run:
@@ -56,8 +45,50 @@ def run_once(f):
     return wrapper
 
 
+def repeat_until_same(fn):  # noqa: ANN201
+    def wrapper(*args, **kwargs):
+        p = args[0]
+        while True:
+            p1 = p
+            p = fn(p, *args[1:], **kwargs)
+            # print(fn.__name__, p)
+            if p1 == p:
+                break
+        return p
+
+    return wrapper
+
+
+def with_timeout(seconds):  # noqa: ANN201
+    def decorator(decorated):
+        @functools.wraps(decorated)
+        def inner(*args, **kwargs):
+            pool = multiprocessing.Pool(1)
+            async_result = pool.apply_async(decorated, args, kwargs)
+            try:
+                return async_result.get(seconds)
+            finally:
+                pool.close()
+
+        return inner
+
+    return decorator
+
+
+def os_bg_kwargs() -> Dict:
+    # prevent ctrl-c from affecting subprocesses first
+
+    if hasattr(os, "setpgrp"):
+        return {"start_new_session": True}
+    else:
+        # CREATE_NEW_PROCESS_GROUP = 0x00000200
+        # DETACHED_PROCESS = 0x00000008
+        # os_kwargs = dict(creationflags=DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP)
+        return {}
+
+
 @run_once
-def argparse_log():
+def argparse_log() -> logging.Logger:
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("-v", "--verbose", action="count", default=0)
     args, _unknown = parser.parse_known_args()
@@ -158,7 +189,7 @@ def cmd(*command, strict=True, cwd=None, quiet=True, **kwargs) -> subprocess.Com
     return r
 
 
-def timeout(minutes):
+def timeout(minutes) -> None:
     if minutes and float(minutes) > 0:
         seconds = int(float(minutes) * 60)
 
@@ -171,25 +202,9 @@ def timeout(minutes):
         signal.alarm(seconds)
 
 
-def no_media_found():
+def no_media_found() -> NoReturn:
     print("No media found")
     raise SystemExit(2)
-
-
-def with_timeout(seconds):
-    def decorator(decorated):
-        @functools.wraps(decorated)
-        def inner(*args, **kwargs):
-            pool = multiprocessing.Pool(1)
-            async_result = pool.apply_async(decorated, args, kwargs)
-            try:
-                return async_result.get(seconds)
-            finally:
-                pool.close()
-
-        return inner
-
-    return decorator
 
 
 def sanitize_url(args, path: str) -> str:
@@ -245,7 +260,7 @@ def Pclose(process) -> subprocess.CompletedProcess:
     return subprocess.CompletedProcess(process.args, return_code, stdout, stderr)
 
 
-def file_temp_copy(src):
+def file_temp_copy(src) -> str:
     fo_dest = tempfile.NamedTemporaryFile(delete=False)
     with open(src, "r+b") as fo_src:
         shutil.copyfileobj(fo_src, fo_dest)
@@ -269,53 +284,39 @@ def trash(f: Union[Path, str], detach=True) -> None:
         Path(f).unlink(missing_ok=True)
 
 
-def repeat_until_same(fn):
-    def wrapper(*args, **kwargs):
-        p = args[0]
-        while True:
-            p1 = p
-            p = fn(p, *args[1:], **kwargs)
-            # print(fn.__name__, p)
-            if p1 == p:
-                break
-        return p
-
-    return wrapper
+def remove_consecutive_whitespace(s) -> str:
+    return " ".join(s.split())  # spaces, tabs, and newlines
 
 
-def remove_consecutive_whitespace(string):
-    return " ".join(string.split())  # spaces, tabs, and newlines
-
-
-def remove_consecutive(string, char=" "):
-    return re.sub("\\" + char + "+", char, string)
+def remove_consecutive(s, char=" ") -> str:
+    return re.sub("\\" + char + "+", char, s)
 
 
 @repeat_until_same
-def remove_consecutives(string, chars):
+def remove_consecutives(s, chars) -> str:
     for char in chars:
-        string = remove_consecutive(string, char)
-    return string
+        s = remove_consecutive(s, char)
+    return s
 
 
 @repeat_until_same
-def remove_prefixes(string, prefixes):
+def remove_prefixes(s, prefixes) -> str:
     for prefix in prefixes:
-        if string.startswith(prefix):
-            string = string.replace(prefix, "", 1)
-    return string
+        if s.startswith(prefix):
+            s = s.replace(prefix, "", 1)
+    return s
 
 
 @repeat_until_same
-def remove_suffixes(string, suffixes):
+def remove_suffixes(s, suffixes) -> str:
     for suffix in suffixes:
-        if string.endswith(suffix):
-            string = string[: -len(suffix)]
-    return string
+        if s.endswith(suffix):
+            s = s[: -len(suffix)]
+    return s
 
 
 @repeat_until_same
-def clean_string(p):
+def clean_string(p) -> str:
     p = (
         p.replace("*", "")
         .replace("&", "")
@@ -346,7 +347,7 @@ def clean_string(p):
     return p
 
 
-def clean_path(b, dot_space=False):
+def clean_path(b, dot_space=False) -> str:
     import ftfy
 
     p = b.decode("utf-8", "backslashreplace")
@@ -394,7 +395,7 @@ def remove_text_inside_brackets(text: str, brackets="()[]") -> str:  # thanks @j
     return "".join(saved_chars)
 
 
-def get_ip_of_chromecast(device_name):
+def get_ip_of_chromecast(device_name) -> str:
     from pychromecast import discovery
 
     cast_infos, browser = discovery.discover_listed_chromecasts(friendly_names=[device_name])
@@ -406,12 +407,17 @@ def get_ip_of_chromecast(device_name):
     return cast_infos[0].host
 
 
-def mpv_enrich(args, media) -> List[dict]:
+def path_to_mpv_watchlater_md5(path: str):
+    return hashlib.md5(path.encode("utf-8")).hexdigest().upper()
+
+
+def mpv_enrich(args, media) -> List[Dict]:
     for m in media:
-        md5 = hashlib.md5(m["path"].encode("utf-8")).hexdigest().upper()
-        if Path(args.watch_later_directory, md5).exists():
-            m["time_partial_first"] = int(Path(args.watch_later_directory, md5).stat().st_ctime)
-            m["time_partial_last"] = int(Path(args.watch_later_directory, md5).stat().st_mtime)
+        md5 = path_to_mpv_watchlater_md5(m["path"])
+        metadata_path = Path(args.watch_later_directory, md5)
+        if metadata_path.exists():
+            m["time_partial_first"] = int(metadata_path.stat().st_ctime)
+            m["time_partial_last"] = int(metadata_path.stat().st_mtime)
         else:
             m["time_partial_first"] = 0
             m["time_partial_last"] = 0
@@ -419,12 +425,15 @@ def mpv_enrich(args, media) -> List[dict]:
     return sorted(media, key=lambda m: m.get("time_partial_first") or 0, reverse=True)
 
 
-def mpv_watchlater_value(path, key):
+def mpv_watchlater_value(path, key) -> Optional[str]:
     data = Path(path).read_text().splitlines()
-    return [s.split("=")[1] for s in data if s.startswith(key)]
+    for s in data:
+        if s.startswith(key + "="):
+            return s.split("=")[1]
+    return None
 
 
-def filter_episodic(args, media: List[dict]) -> List[dict]:
+def filter_episodic(args, media: List[Dict]) -> List[Dict]:
     parent_dict = {}
     for m in media:
         path = Path(m["path"])
@@ -449,23 +458,23 @@ def filter_episodic(args, media: List[dict]) -> List[dict]:
     return filtered_media
 
 
-def mpv_enrich2(args, media) -> List[dict]:
-    md5s = {hashlib.md5(m["path"].encode("utf-8")).hexdigest().upper(): m for m in media}
-    paths = set(Path(args.watch_later_directory).glob("*"))
+def safe_int(s):
+    try:
+        return int(float(s))
+    except Exception:
+        return None
 
-    def mpv_watchlater_progress(path):
-        value = mpv_watchlater_value(path, "start")
-        try:
-            return int(float(value[0]))
-        except Exception:
-            return None
+
+def mpv_enrich2(args, media) -> List[Dict]:
+    md5s = {path_to_mpv_watchlater_md5(m["path"]): m for m in media}
+    paths = set(Path(args.watch_later_directory).glob("*"))
 
     previously_watched = [
         {
             **(md5s.get(p.stem) or {}),
             "time_partial_first": int(p.stat().st_ctime),
             "time_partial_last": int(p.stat().st_mtime),
-            "progress": mpv_watchlater_progress(p),
+            "progress": safe_int(mpv_watchlater_value(p, "start")),
         }
         for p in paths
         if md5s.get(p.stem)
@@ -609,10 +618,10 @@ def col_resize(tbl: List[Dict], col: str, size=10) -> List[Dict]:
     return tbl
 
 
-def col_naturaldate(tbl: List[Dict], col: str, tz=None) -> List[Dict]:
+def col_naturaldate(tbl: List[Dict], col: str) -> List[Dict]:
     for idx, _d in enumerate(tbl):
         if tbl[idx].get(col) is not None:
-            tbl[idx][col] = humanize.naturaldate(datetime.fromtimestamp(int(tbl[idx][col]), tz=tz))
+            tbl[idx][col] = humanize.naturaldate(datetime.fromtimestamp(int(tbl[idx][col]), timezone.utc))
 
     return tbl
 
@@ -631,11 +640,15 @@ def col_naturalsize(tbl: List[Dict], col: str) -> List[Dict]:
 def human_time(seconds) -> Optional[str]:
     if seconds is None or math.isnan(seconds) or seconds == 0:
         return None
+
+    PRECISION_YEARS = 3
     hours = humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="hours", format="%0.0f")
-    if len(hours.split(",")) >= 3:
+    if len(hours.split(",")) >= PRECISION_YEARS:
         return hours
+
+    PRECISION_MONTHS = 2
     minutes = humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="minutes", format="%0.0f")
-    if len(minutes.split(",")) >= 2:
+    if len(minutes.split(",")) >= PRECISION_MONTHS:
         return minutes
 
     return humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="minutes")
@@ -691,24 +704,24 @@ class argparse_enum(argparse.Action):
         setattr(namespace, self.dest, value)
 
 
-def filter_namespace(args, config_opts):
+def filter_namespace(args, config_opts) -> (Dict | None):
     return dict_filter_bool({k: v for k, v in args.__dict__.items() if k in config_opts})
 
 
-def ensure_playlists_exists(args):
+def ensure_playlists_exists(args) -> None:
     if "playlists" not in args.db.table_names():
         with args.db.conn:
             args.db.conn.execute("create table playlists (path text, category text, ie_key text, time_deleted int)")
 
 
-def clear_input():
+def clear_input() -> None:
     if platform.system() == "Linux":
         from termios import TCIFLUSH, tcflush
 
         tcflush(sys.stdin, TCIFLUSH)
     elif platform.system() == "Windows":
         if getattr(clear_input, "kbhit", None) is None:
-            from msvcrt import getch, kbhit
+            from msvcrt import getch, kbhit  # type: ignore
 
             clear_input.kbhit = kbhit
             clear_input.getch = getch
@@ -718,11 +731,12 @@ def clear_input():
             clear_input.getch()
 
 
-def set_readline_completion(list_):
+def set_readline_completion(list_) -> None:
     try:
         import readline
     except ModuleNotFoundError:
-        return "Windows not supported lolz"
+        # "Windows not supported"
+        return
 
     def create_completer(list_):
         def list_completer(_text, state):
@@ -745,10 +759,10 @@ def set_readline_completion(list_):
     readline.set_completer(create_completer(list_))
     readline.set_completer_delims("\t")
     readline.parse_and_bind("tab: complete")
-    return None
+    return
 
 
-def filter_file(path, sieve):
+def filter_file(path, sieve) -> None:
     with open(path) as fr:
         lines = fr.readlines()
         with tempfile.NamedTemporaryFile(mode="w", delete=False) as temp:
@@ -759,7 +773,7 @@ def filter_file(path, sieve):
     os.remove(temp.name)
 
 
-def get_mount_stats(src_mounts):
+def get_mount_stats(src_mounts) -> List[Dict[str, Union[str, int]]]:
     mount_space = []
     total_used = 1
     total_free = 1
@@ -777,7 +791,7 @@ def get_mount_stats(src_mounts):
     ]
 
 
-def print_mount_stats(space):
+def print_mount_stats(space) -> None:
     print("Relative disk utilization:")
     for d in space:
         print(f"{d['mount']}: {'#' * int(d['used'] * 80)} {d['used']:.1%}")
@@ -787,7 +801,7 @@ def print_mount_stats(space):
         print(f"{d['mount']}: {'#' * int(d['free'] * 80)} {d['free']:.1%}")
 
 
-def mount_stats():
+def mount_stats() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("-v", "--verbose", action="count", default=0)
     parser.add_argument("mounts", nargs="+")
@@ -795,7 +809,7 @@ def mount_stats():
     print_mount_stats(get_mount_stats(args.mounts))
 
 
-def human_to_bytes(input_str):
+def human_to_bytes(input_str) -> int:
     byte_map = {"b": 1, "kb": 1024, "mb": 1024**2, "gb": 1024**3, "tb": 1024**4, "pb": 1024**5}
 
     input_str = input_str.strip().lower()
@@ -816,22 +830,18 @@ def human_to_bytes(input_str):
     return int(float(value) * unit_multiplier)
 
 
-def parse_human_to_sql(human_to_x, var, sizes):
+def parse_human_to_sql(human_to_x, var, sizes) -> str:
     size_rules = ""
 
     for size in sizes:
         if ">" in size:
-            size = size.lstrip(">")
-            size_rules += f"and {var} > {human_to_x(size)} "
+            size_rules += f"and {var} > {human_to_x(size.lstrip('>'))} "
         elif "<" in size:
-            size = size.lstrip("<")
-            size_rules += f"and {var} < {human_to_x(size)} "
+            size_rules += f"and {var} < {human_to_x(size.lstrip('<'))} "
         elif "+" in size:
-            size = size.lstrip("+")
-            size_rules += f"and {var} >= {human_to_x(size)} "
+            size_rules += f"and {var} >= {human_to_x(size.lstrip('+'))} "
         elif "-" in size:
-            size = size.lstrip("-")
-            size_rules += f"and {human_to_x(size)} >= {var} "
+            size_rules += f"and {human_to_x(size.lstrip('-'))} >= {var} "
         else:
             # approximate size rule +-10%
             size_bytes = human_to_x(size)
@@ -841,7 +851,7 @@ def parse_human_to_sql(human_to_x, var, sizes):
     return size_rules
 
 
-def human_to_seconds(input_str):
+def human_to_seconds(input_str) -> int:
     time_units = {
         "s": 1,
         "sec": 1,
@@ -879,7 +889,7 @@ def human_to_seconds(input_str):
     return int(float(value) * time_units[unit])
 
 
-def pipe_print(x):
+def pipe_print(x) -> None:
     try:
         print(x, flush=True)
     except BrokenPipeError:
@@ -887,11 +897,53 @@ def pipe_print(x):
         sys.exit(141)
 
 
-def random_string():
+def random_string() -> str:
     return "".join(random.choices(string.ascii_uppercase + string.digits, k=5))
 
 
-def random_filename(path):
+def random_filename(path) -> str:
     ext = Path(path).suffix
     path = str(Path(path).with_suffix(""))
     return f"{path}.{random_string()}{ext}"
+
+
+def confirm(*args, **kwargs) -> bool:
+    clear_input()
+    return prompt.Confirm.ask(*args, **kwargs, default=False)
+
+
+def connect_mpv(ipc_socket, start_mpv=False):
+    try:
+        from python_mpv_jsonipc import MPV
+
+        return MPV(start_mpv, ipc_socket)
+    except (ConnectionRefusedError, FileNotFoundError):
+        Path(ipc_socket).unlink(missing_ok=True)
+
+    return None
+
+
+def get_playhead(
+    args,
+    path: str,
+    start_time: float,
+    existing_playhead: Optional[int] = None,
+    media_duration: Optional[int] = None,
+) -> Optional[int]:
+    end_time = time.time()
+    session_duration = int(end_time - start_time)
+    python_playhead = session_duration
+    if existing_playhead:
+        python_playhead += existing_playhead
+
+    md5 = path_to_mpv_watchlater_md5(path)
+    metadata_path = Path(args.watch_later_directory, md5)
+    try:
+        mpv_playhead = safe_int(mpv_watchlater_value(metadata_path, "start"))
+    except:
+        mpv_playhead = None
+
+    for playhead in sorted([mpv_playhead or 0, python_playhead], reverse=True):
+        if playhead > 0 and (media_duration is None or media_duration >= playhead):
+            return playhead
+    return None
