@@ -1,4 +1,4 @@
-import argparse, shlex, shutil, sys
+import argparse, shlex, shutil, sys, time
 from pathlib import Path
 from random import random
 from typing import Dict, Tuple
@@ -260,7 +260,7 @@ def parse_args_sort(args):
 
     # switching between videos with and without subs is annoying
     subtitle_count = "=0"
-    if random() < getattr(args, 'subtitle_mix', consts.DEFAULT_SUBTITLE_MIX):
+    if random() < getattr(args, "subtitle_mix", consts.DEFAULT_SUBTITLE_MIX):
         # bias slightly toward videos without subtitles
         subtitle_count = ">0"
 
@@ -340,7 +340,11 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     parser.add_argument("--deleted-before", help=argparse.SUPPRESS)
 
     parser.add_argument(
-        "--chromecast-device", "--cast-to", "-t", default=default_chromecast or "", help=argparse.SUPPRESS,
+        "--chromecast-device",
+        "--cast-to",
+        "-t",
+        default=default_chromecast or "",
+        help=argparse.SUPPRESS,
     )
     parser.add_argument("--chromecast", "--cast", "-c", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--cast-with-local", "-wl", action="store_true", help=argparse.SUPPRESS)
@@ -376,7 +380,14 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", help=argparse.SUPPRESS)
     parser.add_argument("--skip", "--offset", help=argparse.SUPPRESS)
     parser.add_argument(
-        "--partial", "-P", "--previous", "--recent", default=False, const="n", nargs="?", help=argparse.SUPPRESS,
+        "--partial",
+        "-P",
+        "--previous",
+        "--recent",
+        default=False,
+        const="n",
+        nargs="?",
+        help=argparse.SUPPRESS,
     )
 
     parser.add_argument("--start", "-vs", help=argparse.SUPPRESS)
@@ -394,6 +405,7 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     parser.add_argument("--post-action", "--action", "-k", default="keep", help=argparse.SUPPRESS)
     parser.add_argument("--keep-dir", "--keepdir", default="keep", help=argparse.SUPPRESS)
     parser.add_argument("--keep-cmd", "--keepcmd", help=argparse.SUPPRESS)
+    parser.add_argument("--gui", action="store_true")
     parser.add_argument("--shallow-organize", default="/mnt/d/", help=argparse.SUPPRESS)
 
     parser.add_argument("--online-media-only", "--online-only", action="store_true", help=argparse.SUPPRESS)
@@ -463,7 +475,7 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     log.info(utils.dict_filter_bool(args.__dict__))
 
     if args.keep_dir:
-        args.keep_dir = Path(args.keep_dir).resolve()
+        args.keep_dir = Path(args.keep_dir).expanduser().resolve()
 
     if args.solo:
         args.upper = 1
@@ -634,8 +646,8 @@ def chromecast_play(args, m) -> None:
 def is_play_in_order_lvl2(args, media_file) -> bool:
     return any(
         [
-            args.play_in_order >= 1 and args.action != SC.listen,
-            args.play_in_order >= 0 and args.action == SC.listen and "audiobook" in media_file.lower(),
+            args.play_in_order >= consts.SIMILAR,
+            args.action == SC.listen and "audiobook" in media_file.lower(),
         ],
     )
 
@@ -697,7 +709,7 @@ def transcode(args, path):
 def play(args, m: Dict) -> None:
     if args.safe and not tube_backend.is_supported(m["path"]):
         log.info("[%s]: Skipping unsupported URL (safe_mode)", m["path"])
-        return None
+        return
 
     if is_play_in_order_lvl2(args, m["path"]):
         m = get_ordinal_media(args, m)
@@ -710,7 +722,7 @@ def play(args, m: Dict) -> None:
         if not media_path.exists():
             log.warning("[%s]: Does not exist. Skipping...", m["path"])
             mark_media_deleted(args, original_path)
-            return None
+            return
 
         if args.transcode or args.transcode_audio:
             m["path"] = transcode(args, m["path"])
@@ -719,33 +731,39 @@ def play(args, m: Dict) -> None:
 
     args.player = player.parse(args, m)
 
+    start_time = time.time()
     if args.chromecast:
         try:
             chromecast_play(args, m)
         except Exception as e:
             if args.ignore_errors:
-                return None
+                return
             else:
                 raise e
-        else:
-            player.post_act(args, original_path)
 
     elif args.interdimensional_cable:
-        return player.socket_play(args, m)
+        player.socket_play(args, m)
+        return
 
     else:
         r = player.local_player(args, m)
         if r.returncode != 0:
             print("Player exited with code", r.returncode)
             if args.ignore_errors:
-                return None
+                return
             else:
                 raise SystemExit(r.returncode)
 
-    if args.action in (SC.listen, SC.watch):
-        player.post_act(args, original_path)
-        return None
-    return None
+    playhead = utils.get_playhead(
+        args,
+        original_path,
+        start_time,
+        existing_playhead=m.get("playhead"),
+        media_duration=m.get("duration"),
+    )
+    if playhead:
+        player.set_playhead(args, original_path, playhead)
+    player.post_act(args, original_path)
 
 
 def process_playqueue(args) -> None:
@@ -778,6 +796,7 @@ def process_playqueue(args) -> None:
         media = utils.mpv_enrich(args, media)
 
     if args.multiple_playback:
+        args.gui = True
         player.multiple_player(args, media)
     else:
         try:

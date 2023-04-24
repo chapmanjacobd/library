@@ -8,7 +8,7 @@ class UserQuit(BaseException):
 
 
 class MrSuperDialogue:
-    def __init__(self, path, qty, geom_data=None) -> None:
+    def __init__(self, path, qty, geom_data=None, true_action="keep", false_action="delete") -> None:
         from tkinter import PhotoImage, Tk
         from tkinter.ttk import Button, Frame, Label, Style
 
@@ -36,24 +36,29 @@ class MrSuperDialogue:
         self.menu_left_upper = Frame(self.menu_left, width=150, height=150)
         self.menu_left_lower = Frame(self.menu_left, width=150)
 
-        keep_btn = Button(self.menu_left_upper, text="Keep", command=self.keep, cursor="heart")
-        keep_btn.bind("<Return>", lambda _ev: self.keep())
-        keep_btn.grid()
+        true_btn = Button(self.menu_left_upper, text=true_action.title(), command=self.return_true, cursor="heart")
+        true_btn.bind("<Return>", lambda _ev: self.return_true())
+        true_btn.grid()
 
-        del_btn = Button(self.menu_left_lower, text="Delete", command=self.delete, cursor="spraycan")
-        del_btn.bind("<Return>", lambda _ev: self.delete())
-        del_btn.focus()
-        del_btn.grid()
+        false_btn = Button(
+            self.menu_left_lower,
+            text=false_action.title(),
+            command=self.return_false,
+            cursor="spraycan",
+        )
+        false_btn.bind("<Return>", lambda _ev: self.return_false())
+        false_btn.focus()
+        false_btn.grid()
 
         self.menu_left_upper.pack(side="top", fill="both", expand=True)
         self.menu_left_lower.pack(side="top", fill="both", expand=True)
 
         # title
         self.some_title_frame = Frame(self.root)
-        self.some_title = Label(self.some_title_frame, text="Keep or Delete?")
+        self.some_title = Label(self.some_title_frame, text=f"{true_action.title()} or {false_action.title()}?")
         self.some_title.pack()
 
-        self.message = Label(self.root, text=f"Keep {path}?", wraplength=180, justify="center")
+        self.message = Label(self.root, text=f"{true_action.title()} {path}?", wraplength=180, justify="center")
         self.message.grid(row=1, column=1)
 
         # status bar
@@ -69,10 +74,19 @@ class MrSuperDialogue:
         self.root.grid_rowconfigure(1, weight=1)
         self.root.grid_columnconfigure(1, weight=1)
 
-        for keyseq in ("<Delete>", "d", "n", "1"):
-            self.root.bind(keyseq, lambda _ev: self.delete())
-        for keyseq in ("k", "y", "2", "\\"):
-            self.root.bind(keyseq, lambda _ev: self.keep())
+        for keyseq in ("y", "2"):
+            self.root.bind(keyseq, lambda _ev: self.return_true())
+        for keyseq in ("n", "1"):
+            self.root.bind(keyseq, lambda _ev: self.return_false())
+
+        if true_action.startswith("d"):
+            self.root.bind("<Delete>", lambda _ev: self.return_true())
+        if false_action.startswith("d"):
+            self.root.bind("<Delete>", lambda _ev: self.return_false())
+
+        # bind first letter key
+        self.root.bind(true_action[0], lambda _ev: self.return_true())
+        self.root.bind(false_action[0], lambda _ev: self.return_false())
 
         self.move_window(*(geom_data or []))
         self.root.mainloop()
@@ -80,12 +94,12 @@ class MrSuperDialogue:
     def quit(self):
         raise UserQuit
 
-    def keep(self):
-        self.action = "KEEP"
+    def return_true(self):
+        self.action = True
         self.root.destroy()
 
-    def delete(self):
-        self.action = "DELETE"
+    def return_false(self):
+        self.action = False
         self.root.destroy()
 
     def move_window(self, window_width=None, window_height=None, x=None, y=None):
@@ -138,9 +152,8 @@ class MrSuperDialogue:
         return monitors[0]
 
 
-def askkeep(path, qty, geom_data=None):
-    ex = MrSuperDialogue(path, qty, geom_data)
-    return ex.action
+def askkeep(*args, **kwargs):
+    return MrSuperDialogue(*args, **kwargs).action
 
 
 if __name__ == "__main__":

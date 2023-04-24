@@ -16,7 +16,12 @@ def parse_args(action, usage) -> argparse.Namespace:
 
     profile = parser.add_mutually_exclusive_group()
     profile.add_argument(
-        "--audio", "-A", action="store_const", dest="profile", const=DBType.audio, help="Create audio database",
+        "--audio",
+        "-A",
+        action="store_const",
+        dest="profile",
+        const=DBType.audio,
+        help="Create audio database",
     )
     profile.add_argument(
         "--filesystem",
@@ -27,13 +32,28 @@ def parse_args(action, usage) -> argparse.Namespace:
         help="Create filesystem database",
     )
     profile.add_argument(
-        "--video", "-V", action="store_const", dest="profile", const=DBType.video, help="Create video database",
+        "--video",
+        "-V",
+        action="store_const",
+        dest="profile",
+        const=DBType.video,
+        help="Create video database",
     )
     profile.add_argument(
-        "--text", "-T", action="store_const", dest="profile", const=DBType.text, help="Create text database",
+        "--text",
+        "-T",
+        action="store_const",
+        dest="profile",
+        const=DBType.text,
+        help="Create text database",
     )
     profile.add_argument(
-        "--image", "-I", action="store_const", dest="profile", const=DBType.image, help="Create image database",
+        "--image",
+        "-I",
+        action="store_const",
+        dest="profile",
+        const=DBType.image,
+        help="Create image database",
     )
     parser.set_defaults(profile=DBType.video)
     parser.add_argument("--scan-all-files", "-a", action="store_true", help=argparse.SUPPRESS)
@@ -116,6 +136,7 @@ def extract_metadata(mp_args, f) -> Optional[Dict[str, int]]:
         "path": f,
         "play_count": 0,
         "time_played": 0,
+        "playhead": 0,
         "size": stat.st_size,
         "time_created": int(stat.st_ctime),
         "time_modified": int(stat.st_mtime) or consts.now(),
@@ -247,12 +268,12 @@ def scan_path(args, path_str: str) -> int:
     n_jobs = -1
     if args.io_multiplier > 1:
         n_jobs = int(int(os.cpu_count() or 4) * args.io_multiplier)  # useful for text, image, filesystem db types
-    if args.verbose >= 2:
+    if args.verbose >= consts.LOG_DEBUG:
         n_jobs = 1
 
     threadsafe = [DBType.audio, DBType.video, DBType.filesystem]  # TODO: check text / image
 
-    path = Path(path_str).resolve()
+    path = Path(path_str).expanduser().resolve()
     if not path.exists():
         print(f"[{path}] Path does not exist")
         if args.force:

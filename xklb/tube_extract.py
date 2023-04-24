@@ -129,7 +129,8 @@ def tube_add(args=None) -> None:
             log.warning("[%s]: Getting extra metadata", path)
             tube_backend.get_extra_metadata(args, path)
 
-    if not args.db["media"].detect_fts() or tube_backend.added_media_count > 100000:
+    LARGE_NUMBER = 100000
+    if not args.db["media"].detect_fts() or tube_backend.added_media_count > LARGE_NUMBER:
         db.optimize(args)
 
 

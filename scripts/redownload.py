@@ -3,7 +3,6 @@ from copy import deepcopy
 from pathlib import Path
 from typing import List
 
-from rich import prompt
 from tabulate import tabulate
 
 from xklb import consts, db, utils
@@ -175,7 +174,7 @@ def redownload() -> None:
     paths = [d["path"] for d in deleted_media]
     redownload_ids = [d["id"] for d in deleted_media if d.get("id")]
     print(len(redownload_ids), "tube ids found")
-    if deleted_media and prompt.Confirm.ask("Redownload media?", default=False):  # type: ignore
+    if deleted_media and utils.confirm("Redownload media?"):  # type: ignore
         if len(redownload_ids) > 0:
             download_archive = Path(args.download_archive).expanduser().resolve()
             if download_archive.exists():
