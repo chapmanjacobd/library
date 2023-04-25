@@ -329,6 +329,7 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     parser.add_argument("--where", "-w", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--include", "-s", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
+    parser.add_argument("--no-fts", action="store_true")
 
     parser.add_argument("--created-within", help=argparse.SUPPRESS)
     parser.add_argument("--created-before", help=argparse.SUPPRESS)
@@ -556,7 +557,7 @@ def construct_query(args) -> Tuple[str, dict]:
         )
 
     args.table = "media"
-    if args.db["media"].detect_fts():
+    if args.db["media"].detect_fts() and not args.no_fts:
         if args.include:
             args.table = db.fts_search(args)
             m_columns = {**m_columns, "rank": int}
