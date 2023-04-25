@@ -284,7 +284,7 @@ def test_get_playhead():
     )
     path = str(Path("/home/runner/work/library/library/tests/data/test.mp4").resolve())
     md5 = utils.path_to_mpv_watchlater_md5(path)
-    metadata_path = Path(f"/home/runner/.config/mpv/watch_later/{md5}").expanduser().resolve()
+    metadata_path = Path(consts.DEFAULT_MPV_WATCH_LATER, md5).expanduser().resolve()
     metadata_path.parent.mkdir(parents=True, exist_ok=True)
 
     # use MPV time
