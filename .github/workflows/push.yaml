@@ -28,14 +28,11 @@ jobs:
       - uses: FedericoCarboni/setup-ffmpeg@v2
 
       - name: Install Dependencies
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install poetry pytest
+        run: python -m pip install pdm
 
       - run: |
-          poetry install
-          poetry build
-          poetry run pytest
+          pdm install --no-self --venv --dev
+          pdm run pytest
 
   publish:
     needs: test
@@ -51,16 +48,11 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Install poetry and dependencies
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install poetry
-
-      - name: Configure poetry
-        run: poetry config pypi-token.pypi ${{ secrets.PYPI_TOKEN }}
+      - name: Install pdm
+        run: python -m pip install pdm
 
       - name: Build and publish
-        run: poetry publish --build
+        run: pdm publish --password ${{ secrets.PYPI_TOKEN }}
 
   release:
     needs: [test, publish]
