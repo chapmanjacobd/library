@@ -1,0 +1,29 @@
+maybe remove joblib dep:
+
+"""
+    from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
+
+    # Use threads if args.profile is threadsafe
+    if args.profile in threadsafe:
+        pool_fn = ThreadPoolExecutor
+    else:
+        pool_fn = ProcessPoolExecutor
+
+    with pool_fn(n_jobs) as parallel:
+        for idx, chunk_paths in enumerate(df_chunked):
+            percent = ((batch_count * idx) + len(chunk_paths)) / len(new_files) * 100
+            print(f"[{path}] Extracting metadata {percent:3.1f}% (chunk {idx + 1} of {chunks_count})")
+            metadata = parallel.map(extract_metadata, chunk_paths)
+            extract_chunk(args, metadata, chunk_paths)
+
+def extract_chunk(args, metadata, chunk_paths) -> None:
+
+    if args.profile == DBType.image:
+        metadata = books.extract_image_metadata_chunk(metadata, chunk_paths)
+
+    if args.scan_subtitles:
+        clean_up_temp_dirs()
+
+    media = list(filter(None, metadata))
+    args.db["media"].insert_all(utils.list_dict_filter_bool(media), pk="path", alter=True, replace=True)
+"""

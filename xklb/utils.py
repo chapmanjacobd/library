@@ -940,7 +940,7 @@ def get_playhead(
     metadata_path = Path(args.watch_later_directory, md5)
     try:
         mpv_playhead = safe_int(mpv_watchlater_value(metadata_path, "start"))
-    except:
+    except Exception:
         mpv_playhead = None
 
     for playhead in sorted([mpv_playhead or 0, python_playhead], reverse=True):

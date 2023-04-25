@@ -1,7 +1,6 @@
 import argparse, sys
 
-import scripts
-from xklb import __version__, utils
+from xklb import __version__, scripts, utils
 from xklb.consts import SC
 from xklb.dl_extract import dl_block, dl_download
 from xklb.fs_extract import fs_add, fs_update

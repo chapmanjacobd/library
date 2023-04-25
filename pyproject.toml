@@ -1,58 +1,62 @@
 [project]
+authors = [
+  {name = "Jacob Chapman", email = "<7908073+chapmanjacobd@users.noreply.github.com>"},
+]
+dependencies = [
+  'sqlite-utils >=3.30',
+  'Markdown',
+  'catt',
+  'ffmpeg-python',
+  'ftfy',
+  'gallery-dl',
+  'humanize',
+  'ipython',
+  'joblib',
+  'mutagen',
+  'natsort',
+  'praw',
+  'pysubs2',
+  'python-mpv-jsonipc',
+  'regex',
+  'rich',
+  'screeninfo',
+  'subliminal',
+  'tabulate',
+  'tinytag',
+  'yt-dlp',
+]
+description = "xk library"
+dynamic = ["version"]
+license = {file = "LICENSE"}
+name = "xklb"
+readme = "README.md"
 requires-python = ">=3.8"
 
 [project.optional-dependencies]
-dev = ["black", "ipdb", "ruff", "isort", "pytest", "scalene", "ssort"]
+dev = ["black", "ipdb", "isort", "scalene", "ssort"]
 full = ["textract", "PyExifTool", "aiohttp", "brotab", "orjson", "pandas"]
+test = ["ruff", "pytest"]
 
-[build-system]
-build-backend = "poetry.core.masonry.api"
-requires = ["poetry-core>=1.0.0"]
-
-[tool.poetry]
-authors = ["Jacob Chapman <7908073+chapmanjacobd@users.noreply.github.com>"]
-description = "xk library"
+[project.urls]
 documentation = "https://github.com/chapmanjacobd/library/wiki/Usage"
 homepage = "https://github.com/chapmanjacobd/library/"
-include = ["assets/*"]
-license = "BSD-3-Clause"
-name = "xklb"
-packages = [
-  {include = "scripts/mining/"},
-  {include = "scripts/"},
-  {include = "xklb/"},
-]
-readme = "README.md"
-version = "1.26.001"
+repository = "https://github.com/chapmanjacobd/library/"
 
-[tool.poetry.dependencies]
-python = "^3.8"
-sqlite-utils = ">=3.30"
-# protobuf = "<4"
-Markdown = "*"
-catt = "*"
-ffmpeg-python = "*"
-ftfy = "*"
-gallery-dl = "*"
-humanize = "*"
-ipython = "*"
-joblib = "*"
-mutagen = "*"
-natsort = "*"
-praw = "*"
-pysubs2 = "*"
-python-mpv-jsonipc = "*"
-regex = "*"
-rich = "*"
-screeninfo = "*"
-subliminal = "*"
-tabulate = "*"
-tinytag = "*"
-yt-dlp = "*"
-
-[tool.poetry.scripts]
+[project.scripts]
 lb = 'xklb.lb:library'
 library = 'xklb.lb:library'
+
+[build-system]
+build-backend = "pdm.backend"
+requires = ["pdm-backend"]
+
+[tool.pdm]
+version = {source = "file", path = "xklb/__init__.py"}
+
+[tool.pdm.build]
+package-dir = "xklb/"
+includes = ["assets/*"]
+source-includes = ["LICENSE", "README.md"]
 
 [tool.black]
 line-length = 120
@@ -85,7 +89,8 @@ ignore = [
   "E501",
   "ERA001",
   "I001",
-  "PGH003","PLW2901",
+  "PGH003",
+  "PLW2901",
   "RET504",
   "RUF001",
   "S101",

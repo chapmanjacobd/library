@@ -12,9 +12,9 @@ from typing import Dict, List, Optional, Tuple, Union
 
 from tabulate import tabulate
 
-from scripts import process_bigdirs
 from xklb import consts, utils
 from xklb.consts import SC
+from xklb.scripts import process_bigdirs
 from xklb.utils import cmd, cmd_interactive, human_time, log
 
 try:

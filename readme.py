@@ -1,5 +1,4 @@
-import scripts
-from xklb import lb, play_actions
+from xklb import lb, play_actions, scripts
 
 print(
     rf"""# xk media library
