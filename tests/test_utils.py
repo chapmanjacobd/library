@@ -284,6 +284,7 @@ def test_get_playhead():
     )
     path = str(Path("tests/data/test.mp4").resolve())
     metadata_path = Path("~/.config/mpv/watch_later/E1E0D0E3F0D2CB748303FDA43224B7E7").expanduser().resolve()
+    metadata_path.parent.mkdir(parents=True, exist_ok=True)
 
     # use MPV time
     start_time = time.time() - 2
