@@ -228,13 +228,20 @@ def usage(action) -> str:
         library {action} -u 'subtitle_count > 0 desc' # play media that has at least one subtitle first
 
     Post-actions -- choose what to do after playing:
-        library {action} --post-action delete  # delete file after playing
-        library {action} -k ask  # ask after each whether to keep or delete
+        library {action} --post-action keep    # do nothing after playing (default)
+        library {action} -k delete             # delete file after playing
+        library {action} -k softdelete         # mark deleted after playing
 
-        library {action} -k askkeep  # ask after each whether to move to a keep folder or delete
+        library {action} -k ask_keep           # ask whether to keep after playing
+        library {action} -k ask_delete         # ask whether to delete after playing
+
+        library {action} -k move               # move to "keep" dir after playing
+        library {action} -k ask_move           # ask whether to move to "keep" folder
         The default location of the keep folder is ./keep/ (relative to the played media file)
         You can change this by explicitly setting an *absolute* `keep-dir` path:
-        library {action} -k askkeep --keep-dir /home/my/music/keep/
+        library {action} -k ask_move --keep-dir /home/my/music/keep/
+
+        library {action} -k ask_move_or_delete # ask after each whether to move to "keep" folder or delete
 
     Experimental options:
         Duration to play (in seconds) while changing the channel
@@ -482,6 +489,9 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
         args.upper = 1
     if args.sibling:
         args.lower = 2
+
+    if args.post_action:
+        args.post_action = args.post_action.replace("-", "_")
 
     utils.timeout(args.timeout)
 
@@ -755,15 +765,17 @@ def play(args, m: Dict) -> None:
             else:
                 raise SystemExit(r.returncode)
 
-    playhead = utils.get_playhead(
-        args,
-        original_path,
-        start_time,
-        existing_playhead=m.get("playhead"),
-        media_duration=m.get("duration"),
-    )
-    if playhead:
-        player.set_playhead(args, original_path, playhead)
+    m_columns = args.db["media"].columns_dict
+    if "playhead" in m_columns:
+        playhead = utils.get_playhead(
+            args,
+            original_path,
+            start_time,
+            existing_playhead=m.get("playhead"),
+            media_duration=m.get("duration"),
+        )
+        if playhead:
+            player.set_playhead(args, original_path, playhead)
     player.post_act(args, original_path)
 
 

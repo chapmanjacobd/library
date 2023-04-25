@@ -21,7 +21,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v1.26.012)
+    xk media library subcommands (v1.26.013)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -111,7 +111,7 @@ new files will be read by `ffprobe`.
 
     library watch tv.db                           # the default post-action is to do nothing
     library watch tv.db --post-action delete      # delete file after playing
-    library listen finalists.db --post-action=ask # ask whether to delete after playing
+    library listen finalists.db -k ask_keep       # ask whether to keep file after playing
 
 To stop playing press Ctrl+C in either the terminal or mpv
 
@@ -425,13 +425,20 @@ You can also invoke tabs manually:
         library watch -u 'subtitle_count > 0 desc' # play media that has at least one subtitle first
 
     Post-actions -- choose what to do after playing:
-        library watch --post-action delete  # delete file after playing
-        library watch -k ask  # ask after each whether to keep or delete
+        library watch --post-action keep    # do nothing after playing (default)
+        library watch -k delete             # delete file after playing
+        library watch -k softdelete         # mark deleted after playing
 
-        library watch -k askkeep  # ask after each whether to move to a keep folder or delete
+        library watch -k ask_keep           # ask whether to keep after playing
+        library watch -k ask_delete         # ask whether to delete after playing
+
+        library watch -k move               # move to "keep" dir after playing
+        library watch -k ask_move           # ask whether to move to "keep" folder
         The default location of the keep folder is ./keep/ (relative to the played media file)
         You can change this by explicitly setting an *absolute* `keep-dir` path:
-        library watch -k askkeep --keep-dir /home/my/music/keep/
+        library watch -k ask_move --keep-dir /home/my/music/keep/
+
+        library watch -k ask_move_or_delete # ask after each whether to move to "keep" folder or delete
 
     Experimental options:
         Duration to play (in seconds) while changing the channel

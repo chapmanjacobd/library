@@ -293,16 +293,14 @@ class Action:
 
 class AskAction:
     ASK_KEEP = (Action.KEEP, Action.DELETE)
-    ASK_MOVE_OR_DELETE = (Action.MOVE, Action.DELETE)
+    ASK_MOVE = (Action.MOVE, Action.KEEP)
     ASK_DELETE = (Action.DELETE, Action.KEEP)
     ASK_SOFTDELETE = (Action.SOFTDELETE, Action.KEEP)
+    ASK_MOVE_OR_DELETE = (Action.MOVE, Action.DELETE)
 
 
 def post_act(args, media_file: str, action: Optional[str] = None, geom_data=None, media=None) -> None:
     mark_media_watched(args, [media_file])
-
-    def handle_keep_action():
-        return
 
     def handle_delete_action():
         if media_file.startswith("http"):
@@ -334,11 +332,12 @@ def post_act(args, media_file: str, action: Optional[str] = None, geom_data=None
     action = action or args.post_action
 
     if action == Action.KEEP:
-        handle_keep_action()
+        pass
     elif action == Action.DELETE:
         handle_delete_action()
-    elif action == Action.DELETE_IF_AUDIOBOOK and "audiobook" in media_file.lower():
-        handle_delete_action()
+    elif action == Action.DELETE_IF_AUDIOBOOK:
+        if "audiobook" in media_file.lower():
+            handle_delete_action()
     elif action == Action.SOFTDELETE:
         handle_soft_delete_action()
     elif action == Action.MOVE:
