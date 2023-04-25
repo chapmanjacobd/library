@@ -34,9 +34,9 @@ requires-python = ">=3.8"
 
 [project.optional-dependencies]
 all = ["xklb[deluxe,dev,test]"]
-deluxe = ["xklb", "textract", "PyExifTool", "aiohttp", "brotab", "orjson", "pandas"]
-dev = ["xklb", "black", "ipdb", "isort", "scalene", "ssort"]
-test = ["xklb", "ruff", "pytest"]
+deluxe = ["textract", "PyExifTool", "aiohttp", "brotab", "orjson", "pandas"]
+dev = ["black", "ipdb", "isort", "scalene", "ssort"]
+test = ["ruff", "pytest"]
 
 [project.urls]
 documentation = "https://github.com/chapmanjacobd/library/wiki/Usage"
@@ -47,17 +47,24 @@ repository = "https://github.com/chapmanjacobd/library/"
 lb = 'xklb.lb:library'
 library = 'xklb.lb:library'
 
-[build-system]
-build-backend = "pdm.backend"
-requires = ["pdm-backend"]
-
 [tool.pdm]
 version = {source = "file", path = "xklb/__init__.py"}
 
-[tool.pdm.build]
-includes = ["assets/*"]
-package-dir = "xklb/"
-source-includes = ["LICENSE", "README.md"]
+[build-system]
+build-backend = "hatchling.build"
+requires = ["hatchling"]
+
+[tool.hatch.version]
+path = "xklb/__init__.py"
+
+[tool.hatch.build]
+exclude = [
+  "tests/",
+  "examples/",
+]
+
+[tool.hatch.build.force-include]
+"assets/" = "assets/"
 
 [tool.black]
 line-length = 120
