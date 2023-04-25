@@ -33,9 +33,10 @@ readme = "README.md"
 requires-python = ">=3.8"
 
 [project.optional-dependencies]
-dev = ["black", "ipdb", "isort", "scalene", "ssort"]
-full = ["textract", "PyExifTool", "aiohttp", "brotab", "orjson", "pandas"]
-test = ["ruff", "pytest"]
+all = ["xklb[deluxe,dev,test]"]
+deluxe = ["xklb", "textract", "PyExifTool", "aiohttp", "brotab", "orjson", "pandas"]
+dev = ["xklb", "black", "ipdb", "isort", "scalene", "ssort"]
+test = ["xklb", "ruff", "pytest"]
 
 [project.urls]
 documentation = "https://github.com/chapmanjacobd/library/wiki/Usage"
@@ -54,8 +55,8 @@ requires = ["pdm-backend"]
 version = {source = "file", path = "xklb/__init__.py"}
 
 [tool.pdm.build]
-package-dir = "xklb/"
 includes = ["assets/*"]
+package-dir = "xklb/"
 source-includes = ["LICENSE", "README.md"]
 
 [tool.black]
