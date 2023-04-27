@@ -718,13 +718,6 @@ def transcode(args, path):
 
 
 def play(args, m: Dict) -> None:
-    if args.safe and not tube_backend.is_supported(m["path"]):
-        log.info("[%s]: Skipping unsupported URL (safe_mode)", m["path"])
-        return
-
-    if is_play_in_order_lvl2(args, m["path"]):
-        m = get_ordinal_media(args, m)
-
     original_path = m["path"]
     if args.action in (SC.watch, SC.listen) and not m["path"].startswith("http"):
         media_path = Path(args.prefix + m["path"]).resolve() if args.prefix else Path(m["path"])
@@ -782,7 +775,7 @@ def play(args, m: Dict) -> None:
 def process_playqueue(args) -> None:
     query, bindings = construct_query(args)
 
-    if args.print:
+    if args.print and not any([args.partial, args.lower, args.upper, args.safe, args.play_in_order > 0]):
         player.printer(args, query, bindings)
         return
 
@@ -808,12 +801,21 @@ def process_playqueue(args) -> None:
     ):
         media = utils.mpv_enrich(args, media)
 
-    if args.multiple_playback:
+    if args.safe:
+        media = [d for d in media if tube_backend.is_supported(d["path"]) or Path(d["path"]).exists()]
+
+    if args.print:
+        if args.play_in_order >= consts.SIMILAR:
+            media = [get_ordinal_media(args, d) for d in media]
+        player.media_printer(args, media)
+    elif args.multiple_playback:
         args.gui = True
         player.multiple_player(args, media)
     else:
         try:
             for m in media:
+                if is_play_in_order_lvl2(args, m["path"]):
+                    m = get_ordinal_media(args, m)
                 play(args, m)
         finally:
             if args.interdimensional_cable:
