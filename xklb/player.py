@@ -677,16 +677,9 @@ def local_player(args, m) -> subprocess.CompletedProcess:
     return r
 
 
-def printer(args, query, bindings) -> None:
-    media = list(args.db.query(query, bindings))
-
-    if hasattr(args, "partial") and args.partial and Path(args.watch_later_directory).exists():
-        media = utils.mpv_enrich2(args, media)
-
+def media_printer(args, media) -> None:
     if "b" in args.print:
         media = process_bigdirs(args, media)
-    elif any([hasattr(args, "lower") and args.lower, hasattr(args, "upper") and args.upper]):
-        media = utils.filter_episodic(args, media)
 
     if args.verbose >= consts.LOG_DEBUG and args.cols and "*" in args.cols:
         breakpoint()
@@ -728,7 +721,7 @@ def printer(args, query, bindings) -> None:
             f = media[0]["path"]
             if not Path(f).exists():
                 mark_media_deleted(args, f)
-                return printer(args, query, bindings)  # try again to find a valid file
+                raise FileNotFoundError
             utils.pipe_print(quote(f))
             return None
         else:
@@ -766,14 +759,22 @@ def printer(args, query, bindings) -> None:
 
         print(tabulate(tbl, tablefmt="fancy_grid", headers="keys", showindex=False))
 
-        if "duration" in query:
-            if len(media) > 1:
-                print(f"{len(media)} media" + (f" (limited to {args.limit})" if args.limit else ""))
+        if len(media) > 1:
+            print(f"{len(media)} media" + (f" (limited to {args.limit})" if args.limit else ""))
 
-            duration = sum(m.get("duration") or 0 for m in media)
+        duration = sum(m.get("duration") or 0 for m in media)
+        if duration > 0:
             duration = human_time(duration)
             if "a" not in args.print:
                 print("Total duration:", duration)
                 return None
             return None
         return None
+
+
+def printer(args, query, bindings) -> None:
+    media = list(args.db.query(query, bindings))
+    try:
+        media_printer(args, media)
+    except FileNotFoundError:
+        return printer(args, query, bindings)  # try again to find a valid file
