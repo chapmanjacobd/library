@@ -22,6 +22,7 @@ def parse_args() -> argparse.Namespace:
 
     If you prefer GUI, check out https://unli.xyz/tabsender/
     """,
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument("database")
     parser.add_argument("--count", "-n", default=2, type=int)
@@ -73,12 +74,12 @@ def streaming_tab_loader() -> None:
                 try:
                     open_tabs(args, urls)
                 except ConnectionResetError:
-                    print("open_tabs ConnectionResetError")
+                    log.error("open_tabs:ConnectionResetError... trying again")
 
                 tabs_opened += fill_count
             sleep(0.1)
     finally:
-        print("Opened", tabs_opened, "tabs")
+        log.warning("Opened %s tabs", tabs_opened)
 
 
 if __name__ == "__main__":

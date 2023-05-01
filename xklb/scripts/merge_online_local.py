@@ -10,7 +10,8 @@ from xklb.utils import log
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        usage="""library merge-online-local database
+        prog="library merge-online-local",
+        usage="""library merge-online-local DATABASE
 
     If you have previously downloaded YouTube or other online media, you can dedupe
     your database and combine the online and local media records as long as your
@@ -93,7 +94,7 @@ def merge_online_local() -> None:
 
     print(f"{duplicates_count} duplicates found (showing first {args.limit})")
     if duplicates and utils.confirm("Merge duplicates?"):  # type: ignore
-        print("Merging...")
+        log.info("Merging...")
 
         merged = []
         for d in duplicates:

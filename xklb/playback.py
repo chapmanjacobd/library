@@ -6,7 +6,10 @@ from xklb.utils import cmd, log
 
 
 def parse_args(action) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(prog=f"library {action}")
+    parser = argparse.ArgumentParser(
+        prog=f"library {action}",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
     parser.add_argument("--mpv-socket", default=consts.DEFAULT_MPV_SOCKET)
     parser.add_argument("--chromecast-device", "--cast-to", "-t")
 
@@ -47,9 +50,9 @@ def now_playing(path) -> str:
             path
             + "\n"
             + "\n".join(
-                l
-                for l in cmd("ffprobe", "-hide_banner", "-loglevel", "info", path).stderr.splitlines()
-                if path not in l
+                line
+                for line in cmd("ffprobe", "-hide_banner", "-loglevel", "info", path).stderr.splitlines()
+                if path not in line
             )
         )
 
@@ -90,7 +93,7 @@ def playback_now() -> None:
         print(now_playing(path))
 
     else:
-        print("Nothing seems to be playing. You may need to specify --mpv-socket or --chromecast-device")
+        log.error("Nothing seems to be playing. You may need to specify --mpv-socket or --chromecast-device")
 
 
 def catt_stop(args) -> None:

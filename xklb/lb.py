@@ -30,10 +30,13 @@ def usage() -> str:
       lb bigdirs               Discover folders which take much room
       lb dedupe                Deduplicate local db files
       lb relmv                 Move files/folders while preserving relative paths
+      lb christen              Cleanse files by giving them a new name
+
       lb mv-list               Reach a target free space by moving data across mount points
       lb scatter               Scatter files across multiple mountpoints (mergerfs balance)
 
-      lb christen              Cleanse files by giving them a new name
+      lb merge-dbs             Merge multiple SQLITE files
+      lb copy-play-counts      Copy play counts from multiple SQLITE files
 
     online media:
       lb tubeadd               Create a tube database; Add playlists
@@ -46,7 +49,6 @@ def usage() -> str:
       lb download              Download media
       lb redownload            Redownload missing media
       lb block                 Prevent downloading specific URLs
-      lb merge-dbs             Merge multiple SQLITE files
       lb merge-online-local    Merge local and online metadata
 
     playback:
@@ -128,17 +130,22 @@ def create_subcommands_parser():
     subp_move_list.set_defaults(func=scripts.move_list)
     subp_relmv = add_parser(subparsers, "relmv", ["rel-mv", "mvrel", "mv-rel"])
     subp_relmv.set_defaults(func=scripts.relmv)
-    subp_dedupe = add_parser(subparsers, "dedupe")
-    subp_dedupe.set_defaults(func=scripts.dedupe)
+
     subp_scatter = add_parser(subparsers, "scatter")
     subp_scatter.set_defaults(func=scripts.scatter)
     subp_christen = add_parser(subparsers, "christen")
     subp_christen.set_defaults(func=scripts.christen)
-    subp_merge_db = add_parser(subparsers, "merge-dbs")
+
+    subp_merge_db = add_parser(subparsers, "merge-dbs", ["merge-db", "mergedb", "mergedbs", "merge_db", "merge_dbs"])
     subp_merge_db.set_defaults(func=scripts.merge_dbs)
+    subp_merge_db = add_parser(subparsers, "copy-play-counts")
+    subp_merge_db.set_defaults(func=scripts.copy_play_counts)
+
+    subp_dedupe = add_parser(subparsers, "dedupe")
+    subp_dedupe.set_defaults(func=scripts.dedupe)
     subp_dedupe_local = add_parser(subparsers, "merge-online-local")
     subp_dedupe_local.set_defaults(func=scripts.merge_online_local)
-    subp_optimize = add_parser(subparsers, "optimize")
+    subp_optimize = add_parser(subparsers, "optimize", ["optimize-db"])
     subp_optimize.set_defaults(func=scripts.optimize_db)
 
     subp_tubeadd = add_parser(subparsers, "tubeadd", ["dladd", "ta", "da", "xt"])
@@ -190,7 +197,7 @@ def create_subcommands_parser():
     subp_nouns.set_defaults(func=scripts.nouns)
 
     subp_reddit_selftext = add_parser(subparsers, "reddit-selftext", ["rst"])
-    subp_reddit_selftext.set_defaults(func=scripts.parse_reddit_selftext)
+    subp_reddit_selftext.set_defaults(func=scripts.reddit_selftext)
     subp_nfb_directors = add_parser(subparsers, "nfb-films")
     subp_nfb_directors.set_defaults(func=scripts.nfb_films)
 
@@ -218,9 +225,9 @@ def library(args=None) -> None:
         return None
     else:
         try:
-            print("Subcommand", original_argv[1], "not found")
+            log.error("Subcommand %s not found", original_argv[1])
         except Exception:
-            print("Invalid args. I see:", original_argv)
+            log.error("Invalid args. I see: %s", original_argv)
 
         print_help(parser)
         return None

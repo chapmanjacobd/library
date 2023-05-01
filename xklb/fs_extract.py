@@ -103,7 +103,7 @@ def parse_args(action, usage) -> argparse.Namespace:
     log.info(utils.dict_filter_bool(args.__dict__))
 
     if args.profile in (DBType.audio, DBType.video) and not which("ffprobe"):
-        print("ffmpeg is not installed. Install it with your package manager.")
+        log.error("ffmpeg is not installed. Install it with your package manager.")
         raise SystemExit(3)
 
     return args
@@ -122,7 +122,7 @@ def extract_metadata(mp_args, f) -> Optional[Dict[str, int]]:
     log.debug(f)
 
     try:
-        stat = os.stat(f)
+        stat = Path(f).stat()
     except FileNotFoundError:
         return None
     except OSError:
@@ -149,7 +149,7 @@ def extract_metadata(mp_args, f) -> Optional[Dict[str, int]]:
         media = {**media, "sparseness": calculate_sparseness(stat)}
 
     if mp_args.profile == DBType.filesystem:
-        media = {**media, "is_dir": os.path.isdir(f)}
+        media = {**media, "is_dir": Path(f).is_dir()}
 
     if mp_args.profile in (DBType.audio, DBType.video):
         return av.munge_av_tags(mp_args, media, f)
@@ -202,11 +202,13 @@ def find_new_files(args, path: Path) -> List[str]:
         elif args.profile == DBType.filesystem:
             scanned_files = [str(p) for p in path.rglob("*")]
         elif args.profile == DBType.audio:
-            scanned_files = consts.get_media_files(path, audio=True)
+            scanned_files = consts.get_audio_files(path)
         elif args.profile == DBType.video:
-            scanned_files = consts.get_media_files(path)
+            scanned_files = consts.get_video_files(path)
         elif args.profile == DBType.text:
-            scanned_files = consts.get_text_files(path, OCR=args.ocr, speech_recognition=args.speech_recognition)
+            scanned_files = consts.get_text_files(
+                path, image_recognition=args.ocr, speech_recognition=args.speech_recognition
+            )
         elif args.profile == DBType.image:
             scanned_files = consts.get_image_files(path)
         else:
@@ -295,10 +297,10 @@ def scan_path(args, path_str: str) -> int:
         chunks_count = math.ceil(len(new_files) / batch_count)
         df_chunked = utils.chunks(new_files, batch_count)
         with Parallel(n_jobs, prefer="threads" if args.profile in threadsafe else None) as parallel:
-            for idx, l in enumerate(df_chunked):
-                percent = ((batch_count * idx) + len(l)) / len(new_files) * 100
+            for idx, chunk_paths in enumerate(df_chunked):
+                percent = ((batch_count * idx) + len(chunk_paths)) / len(new_files) * 100
                 print(f"[{path}] Extracting metadata {percent:3.1f}% (chunk {idx + 1} of {chunks_count})")
-                extract_chunk(args, parallel, l)
+                extract_chunk(args, parallel, chunk_paths)
 
     _add_folder(args, path)
 

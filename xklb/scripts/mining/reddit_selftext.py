@@ -6,7 +6,13 @@ from xklb.utils import log
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        prog="library reddit-selftext",
+        usage="""library reddit-selftext DATABASE
+
+    Extract URLs from reddit selftext from the reddit_posts table to the media table
+""",
+    )
     parser.add_argument("database")
     parser.add_argument("--verbose", "-v", action="count", default=0)
     args = parser.parse_args()
@@ -37,7 +43,7 @@ def get_page_links(path, text):
     return internal_links, external_links
 
 
-def parse_reddit_selftext() -> None:
+def reddit_selftext() -> None:
     from markdown import markdown
 
     args = parse_args()
@@ -66,4 +72,4 @@ def parse_reddit_selftext() -> None:
 
 
 if __name__ == "__main__":
-    parse_reddit_selftext()
+    reddit_selftext()

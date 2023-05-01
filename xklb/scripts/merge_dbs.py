@@ -6,9 +6,18 @@ from xklb.utils import log
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        prog="library merge-dbs",
+        usage="""library merge-dbs DEST_DB SOURCE_DB ... [--upsert pk1[,pk2]]
+
+    Merge database data and tables
+
+        lb merge-dbs video.db tv.db movies.db
+        lb merge-dbs audio.db music.db podcasts.db
+""",
+    )
     parser.add_argument("database")
-    parser.add_argument("dbs", nargs="*")
+    parser.add_argument("source_dbs", nargs="+")
     parser.add_argument("--upsert")
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
     parser.add_argument("--verbose", "-v", action="count", default=0)
@@ -40,7 +49,7 @@ def merge_db(args, source_db):
 
 def merge_dbs():
     args = parse_args()
-    for s_db in args.dbs:
+    for s_db in args.source_dbs:
         merge_db(args, s_db)
 
 

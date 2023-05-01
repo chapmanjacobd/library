@@ -7,7 +7,11 @@ from xklb.utils import log
 
 
 def parse_args(action, usage) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(prog="library " + action, usage=usage)
+    parser = argparse.ArgumentParser(
+        prog="library " + action,
+        usage=usage,
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
 
     parser.add_argument(
         "--dl-config",

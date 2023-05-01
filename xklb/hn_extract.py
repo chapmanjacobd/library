@@ -100,10 +100,13 @@ async def run(args, db_queue):
         if not args.oldest:
             hn_ids = reversed(hn_ids)
 
+        background_tasks = set()
         for hn_id in hn_ids:
             log.debug("Getting item %s", hn_id)
             await sem.acquire()
-            asyncio.create_task(get_hn_item(session, db_queue, sem, hn_id))
+            task = asyncio.create_task(get_hn_item(session, db_queue, sem, hn_id))
+            background_tasks.add(task)
+            task.add_done_callback(background_tasks.discard)
 
         for _i in range(N):
             await sem.acquire()
@@ -131,7 +134,7 @@ def hacker_news_add() -> None:
     try:
         import aiohttp
     except ModuleNotFoundError as e:
-        print("aiohttp is required for hn_extract. Install with pip install aiohttp or pip install xklb[full]")
+        log.error("aiohttp is required for hn_extract. Install with pip install aiohttp or pip install xklb[full]")
         raise e
 
     args.db.enable_wal()

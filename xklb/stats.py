@@ -10,7 +10,11 @@ from xklb.utils import human_time, log, pipe_print
 
 
 def parse_args(prog, usage):
-    parser = argparse.ArgumentParser(prog, usage)
+    parser = argparse.ArgumentParser(
+        prog,
+        usage,
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
     parser.add_argument("--fields", "-f", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--aggregate", "-a", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--json", "-j", action="store_true", help=argparse.SUPPRESS)

@@ -752,7 +752,7 @@ def play(args, m: Dict) -> None:
     else:
         r = player.local_player(args, m)
         if r.returncode != 0:
-            print("Player exited with code", r.returncode)
+            log.warning("Player exited with code %s", r.returncode)
             if args.ignore_errors:
                 return
             else:

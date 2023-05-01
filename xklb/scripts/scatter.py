@@ -73,7 +73,11 @@ scatter_usage = """library scatter [--limit LIMIT] [--policy POLICY] [--sort SOR
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(usage=scatter_usage)
+    parser = argparse.ArgumentParser(
+        prog="library scatter",
+        usage=scatter_usage,
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue")
     parser.add_argument("--policy", "-p")
     parser.add_argument("--group", "-g")

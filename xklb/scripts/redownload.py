@@ -11,7 +11,8 @@ from xklb.utils import log
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        usage="""library redownload database
+        prog="library redownload",
+        usage="""library redownload DATABASE
 
     If you have previously downloaded YouTube or other online media, but your
     hard drive failed or you accidentally deleted something, and if that media
@@ -48,6 +49,7 @@ def parse_args() -> argparse.Namespace:
         $ library redownload city.db 2023-01-26T19:54:42 2023-01-26T20:45:24
 
     """,
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument("--download-archive", default="~/.local/share/yt_archive.txt")
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", default=100)

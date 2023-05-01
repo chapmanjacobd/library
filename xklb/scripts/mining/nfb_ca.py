@@ -26,12 +26,12 @@ def get_page_links(url):
 def nfb_films() -> None:
     import sys
 
-    for l in sys.stdin:
-        l = l.rstrip("\n")
-        if l in ["", '""', "\n"]:
+    for line in sys.stdin:
+        line = line.rstrip("\n")
+        if line in ["", '""', "\n"]:
             continue
 
-        get_page_links(l)
+        get_page_links(line)
 
 
 if __name__ == "__main__":

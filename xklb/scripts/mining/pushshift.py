@@ -68,15 +68,15 @@ def pushshift_extract(args=None) -> None:
     count = 0
     reddit_posts = []
     media = []
-    for l in sys.stdin:
-        l = l.rstrip("\n")
-        if l in ["", '""', "\n"]:
+    for line in sys.stdin:
+        line = line.rstrip("\n")
+        if line in ["", '""', "\n"]:
             continue
 
         try:
-            post_dict = orjson.loads(l)
+            post_dict = orjson.loads(line)
         except Exception:
-            print("Skipping unreadable line", l)
+            log.warning("Skipping unreadable line: %s", line)
             continue
 
         slim_dict = utils.dict_filter_bool(slim_post_data(post_dict, post_dict.get("subreddit")))

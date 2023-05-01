@@ -9,7 +9,7 @@ from xklb.utils import log
 
 def tracer(sql, params) -> None:
     sql = utils.remove_consecutives(dedent(sql), "\n")
-    print(f"SQL: {sql} - params: {params}")
+    log.info(f"SQL: {sql} - params: {params}")
 
 
 def connect(args, conn=None, **kwargs):
@@ -69,7 +69,7 @@ def optimize(args) -> None:
     if not hasattr(args, "force"):
         args.force = False
 
-    print("\nOptimizing database")
+    log.info("\nOptimizing database")
     from sqlite_utils import Database
 
     db: Database = args.db

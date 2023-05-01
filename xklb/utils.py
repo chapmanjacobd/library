@@ -24,14 +24,6 @@ else:
     sys.breakpointhook = ipdb.set_trace
 
 
-def exit_nicely(_signal, _frame) -> NoReturn:
-    print("\nExiting... (Ctrl+C)")
-    raise SystemExit(130)
-
-
-signal.signal(signal.SIGINT, exit_nicely)
-
-
 def run_once(f):  # noqa: ANN201
     @wraps(f)
     def wrapper(*args, **kwargs):
@@ -43,6 +35,46 @@ def run_once(f):  # noqa: ANN201
 
     f.has_run = False
     return wrapper
+
+
+@run_once
+def argparse_log() -> logging.Logger:
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument("-v", "--verbose", action="count", default=0)
+    args, _unknown = parser.parse_known_args()
+
+    try:
+        if args.verbose > 0 and os.getpgrp() == os.tcgetpgrp(sys.stdout.fileno()):
+            sys.excepthook = ultratb.FormattedTB(
+                mode="Context",
+                color_scheme="Neutral",
+                call_pdb=True,
+                debugger_cls=TerminalPdb,
+            )
+        else:
+            pass
+    except Exception:
+        pass
+
+    log_levels = [logging.WARNING, logging.INFO, logging.DEBUG]
+    logging.root.handlers = []  # clear any existing handlers
+    logging.basicConfig(
+        level=log_levels[min(len(log_levels) - 1, args.verbose)],
+        format="%(message)s",
+        handlers=[RichHandler(show_time=False, show_level=False, show_path=False)],
+    )
+    return logging.getLogger()
+
+
+log = argparse_log()
+
+
+def exit_nicely(_signal, _frame) -> NoReturn:
+    log.warning("\nExiting... (Ctrl+C)")
+    raise SystemExit(130)
+
+
+signal.signal(signal.SIGINT, exit_nicely)
 
 
 def repeat_until_same(fn):  # noqa: ANN201
@@ -85,38 +117,6 @@ def os_bg_kwargs() -> Dict:
         # DETACHED_PROCESS = 0x00000008
         # os_kwargs = dict(creationflags=DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP)
         return {}
-
-
-@run_once
-def argparse_log() -> logging.Logger:
-    parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument("-v", "--verbose", action="count", default=0)
-    args, _unknown = parser.parse_known_args()
-
-    try:
-        if args.verbose > 0 and os.getpgrp() == os.tcgetpgrp(sys.stdout.fileno()):
-            sys.excepthook = ultratb.FormattedTB(
-                mode="Context",
-                color_scheme="Neutral",
-                call_pdb=True,
-                debugger_cls=TerminalPdb,
-            )
-        else:
-            pass
-    except Exception:
-        pass
-
-    log_levels = [logging.WARNING, logging.INFO, logging.DEBUG]
-    logging.root.handlers = []  # clear any existing handlers
-    logging.basicConfig(
-        level=log_levels[min(len(log_levels) - 1, args.verbose)],
-        format="%(message)s",
-        handlers=[RichHandler(show_time=False, show_level=False, show_path=False)],
-    )
-    return logging.getLogger()
-
-
-log = argparse_log()
 
 
 def flatten(xs: Iterable) -> Generator:
@@ -203,7 +203,7 @@ def timeout(minutes) -> None:
 
 
 def no_media_found() -> NoReturn:
-    print("No media found")
+    log.error("No media found")
     raise SystemExit(2)
 
 
@@ -357,16 +357,16 @@ def clean_path(b, dot_space=False) -> str:
 
     parent = [clean_string(part) for part in path.parent.parts]
     stem = clean_string(path.stem)
-    # print('cleaned',parent, stem)
+    log.debug("cleaned %s %s", parent, stem)
 
     parent = [remove_prefixes(part, [" ", "-"]) for part in parent]
-    # print('parent_prefixes', parent, stem)
+    log.debug("parent_prefixes %s %s", parent, stem)
     parent = [remove_suffixes(part, [" ", "-", "_", "."]) for part in parent]
-    # print('parent_suffixes', parent, stem)
+    log.debug("parent_suffixes %s %s", parent, stem)
 
     stem = remove_prefixes(stem, [" ", "-"])
     stem = remove_suffixes(stem, [" ", "-", "."])
-    # print('stem', parent, stem)
+    log.debug("stem %s %s", parent, stem)
 
     parent = ["_" if part == "" else part for part in parent]
     p = str(Path(*parent) / stem[:1024])
@@ -401,7 +401,7 @@ def get_ip_of_chromecast(device_name) -> str:
     cast_infos, browser = discovery.discover_listed_chromecasts(friendly_names=[device_name])
     browser.stop_discovery()
     if not cast_infos:
-        print("Target chromecast device not found")
+        log.error("Target chromecast device not found")
         raise SystemExit(53)
 
     return cast_infos[0].host
@@ -766,11 +766,11 @@ def filter_file(path, sieve) -> None:
     with open(path) as fr:
         lines = fr.readlines()
         with tempfile.NamedTemporaryFile(mode="w", delete=False) as temp:
-            temp.writelines(l for l in lines if l.rstrip() not in sieve)
+            temp.writelines(line for line in lines if line.rstrip() not in sieve)
             temp.flush()
             os.fsync(temp.fileno())
     shutil.copy(temp.name, path)
-    os.remove(temp.name)
+    Path(temp.name).unlink()
 
 
 def get_mount_stats(src_mounts) -> List[Dict[str, Union[str, int]]]:
@@ -802,7 +802,7 @@ def print_mount_stats(space) -> None:
 
 
 def mount_stats() -> None:
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("-v", "--verbose", action="count", default=0)
     parser.add_argument("mounts", nargs="+")
     args = parser.parse_args()
