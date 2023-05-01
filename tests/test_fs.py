@@ -116,13 +116,19 @@ class TestFs(unittest.TestCase):
 
     @mock.patch("xklb.player.local_player", return_value=SimpleNamespace(returncode=0))
     def test_undelete(self, _play_mocked):
-        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
-            t_db = str(Path(temp_dir, "test.db"))
-            fs_add([t_db, "tests/data/"])
-            args = SimpleNamespace(db=db.connect(SimpleNamespace(database=t_db, verbose=0)))
-            mark_media_watched(args, [str(Path("tests/data/test.mp4").resolve())])
-            mark_media_deleted(args, [str(Path("tests/data/test.mp4").resolve())])
-            fs_add([t_db, "tests/data/"])
-            d = args.db.pop_dict("select * from media")
-            assert d["play_count"] == 1
-            assert d["time_deleted"] == 0
+        temp_dir = tempfile.TemporaryDirectory()
+
+        t_db = str(Path(temp_dir.name, "test.db"))
+        fs_add([t_db, "tests/data/"])
+        args = SimpleNamespace(db=db.connect(SimpleNamespace(database=t_db, verbose=0)))
+        mark_media_watched(args, [str(Path("tests/data/test.mp4").resolve())])
+        mark_media_deleted(args, [str(Path("tests/data/test.mp4").resolve())])
+        fs_add([t_db, "tests/data/"])
+        d = args.db.pop_dict("select * from media")
+        assert d["play_count"] == 1
+        assert d["time_deleted"] == 0
+
+        try:
+            temp_dir.cleanup()
+        except Exception:
+            pass
