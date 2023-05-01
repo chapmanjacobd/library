@@ -121,7 +121,7 @@ def get_deleted_media(args) -> List[dict]:
     return media
 
 
-def mark_media_undownloaded(args, deleted_media):
+def mark_media_undownloaded(args, deleted_media) -> None:
     m_columns = args.db["media"].columns_dict
 
     media = deepcopy(deleted_media)
@@ -140,14 +140,14 @@ def mark_media_undownloaded(args, deleted_media):
             args.db["media"].upsert(d, pk="path", alter=True)  # type: ignore
 
 
-def print_deletions(args, deletions):
+def print_deletions(args, deletions) -> None:
     print("Deletions:")
     tbl = deepcopy(deletions)
     print(tabulate(tbl, tablefmt="fancy_grid", headers="keys", showindex=False))
     print(f"Showing most recent {args.limit} deletions. Use -l to change this limit")
 
 
-def print_deleted(args, deleted_media):
+def print_deleted(args, deleted_media) -> None:
     tbl = deepcopy(deleted_media)
     tbl = utils.list_dict_filter_bool(tbl, keep_0=False)
     tbl = utils.list_dict_filter_unique(tbl)

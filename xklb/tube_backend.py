@@ -2,6 +2,7 @@ import argparse, json, sys
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
+from types import ModuleType
 from typing import Dict, List, Optional, Tuple
 
 from xklb import consts, fs_extract, utils
@@ -17,7 +18,7 @@ from xklb.utils import combine, log, safe_unpack
 yt_dlp = None
 
 
-def load_module_level_yt_dlp():
+def load_module_level_yt_dlp() -> ModuleType:
     global yt_dlp
 
     if yt_dlp is None:

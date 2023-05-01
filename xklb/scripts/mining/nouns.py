@@ -21,24 +21,24 @@ class MLStripper(HTMLParser):
         self.convert_charrefs = True
         self.text = StringIO()
 
-    def handle_data(self, data):
+    def handle_data(self, data) -> None:
         self.text.write(data)
 
-    def get_data(self):
+    def get_data(self) -> str:
         return self.text.getvalue()
 
 
-def strip_tags(html):
+def strip_tags(html) -> str:
     s = MLStripper()
     s.feed(html)
     return s.get_data()
 
 
-def is_num(s):
+def is_num(s) -> bool:
     return s.replace(".", "", 1).replace("-", "", 1).isdigit()
 
 
-def printer(parts):
+def printer(parts) -> None:
     for part in parts:
         part = part.strip()
         if not part:
@@ -51,7 +51,7 @@ def printer(parts):
         pipe_print(part)
 
 
-def line_processor(txt):
+def line_processor(txt) -> None:
     txt = strip_tags(txt)
 
     if getattr(line_processor, "RE_NOUNS_SPLIT", None) is None:
@@ -65,6 +65,6 @@ def line_processor(txt):
     printer(parts)
 
 
-def nouns():
+def nouns() -> None:
     for line in sys.stdin:
         line_processor(line)

@@ -407,7 +407,7 @@ def get_ip_of_chromecast(device_name) -> str:
     return cast_infos[0].host
 
 
-def path_to_mpv_watchlater_md5(path: str):
+def path_to_mpv_watchlater_md5(path: str) -> str:
     return hashlib.md5(path.encode("utf-8")).hexdigest().upper()
 
 
@@ -458,7 +458,7 @@ def filter_episodic(args, media: List[Dict]) -> List[Dict]:
     return filtered_media
 
 
-def safe_int(s):
+def safe_int(s) -> Optional[int]:
     try:
         return int(float(s))
     except Exception:
@@ -912,7 +912,7 @@ def confirm(*args, **kwargs) -> bool:
     return prompt.Confirm.ask(*args, **kwargs, default=False)
 
 
-def connect_mpv(ipc_socket, start_mpv=False):
+def connect_mpv(ipc_socket, start_mpv=False):  # noqa: ANN201
     try:
         from python_mpv_jsonipc import MPV
 

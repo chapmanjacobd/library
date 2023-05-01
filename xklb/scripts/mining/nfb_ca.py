@@ -1,7 +1,7 @@
 from xklb.utils import log, pipe_print
 
 
-def get_page_links(url):
+def get_page_links(url) -> None:
     from urllib.parse import urlparse
 
     import requests

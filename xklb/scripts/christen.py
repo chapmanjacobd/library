@@ -37,7 +37,7 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def rename_path(args, b):
+def rename_path(args, b) -> None:
     fixed = utils.clean_path(b, args.dot_space)
 
     if b != fixed.encode():

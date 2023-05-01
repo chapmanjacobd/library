@@ -32,7 +32,7 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def merge_db(args, source_db):
+def merge_db(args, source_db) -> None:
     source_db = str(Path(source_db).resolve())
 
     s_db = db.connect(argparse.Namespace(database=source_db, verbose=args.verbose))
@@ -47,7 +47,7 @@ def merge_db(args, source_db):
                 args.db[table].insert_all(data, alter=True, replace=True)
 
 
-def merge_dbs():
+def merge_dbs() -> None:
     args = parse_args()
     for s_db in args.source_dbs:
         merge_db(args, s_db)

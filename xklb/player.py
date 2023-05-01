@@ -63,7 +63,7 @@ def calculate_duration(args, m) -> Tuple[int, int]:
     return start, end
 
 
-def get_browser():
+def get_browser() -> Optional[str]:
     default_application = cmd("xdg-mime", "query", "default", "text/html").stdout
     return which(default_application.replace(".desktop", ""))
 
@@ -211,7 +211,7 @@ def mark_media_watched(args, files) -> int:
     return modified_row_count
 
 
-def mark_media_deleted(args, paths) -> int:
+def mark_media_deleted(args, paths, time_deleted=consts.APPLICATION_START) -> int:
     paths = utils.conform(paths)
 
     modified_row_count = 0
@@ -221,7 +221,7 @@ def mark_media_deleted(args, paths) -> int:
             with args.db.conn:
                 cursor = args.db.conn.execute(
                     f"""update media
-                    set time_deleted={consts.APPLICATION_START}
+                    set time_deleted={time_deleted}
                     where path in ("""
                     + ",".join(["?"] * len(chunk_paths))
                     + ")",
@@ -230,6 +230,10 @@ def mark_media_deleted(args, paths) -> int:
                 modified_row_count += cursor.rowcount
 
     return modified_row_count
+
+
+def mark_media_undeleted(args, paths) -> int:
+    return mark_media_deleted(args, paths, time_deleted=0)
 
 
 def mark_media_deleted_like(args, paths) -> int:
@@ -360,7 +364,7 @@ def override_sort(sort_expression: str) -> str:
     )
 
 
-def last_chars(candidate):
+def last_chars(candidate) -> str:
     remove_groups = re.split(r"([\W]+|\s+|Ep\d+|x\d+|\.\d+)", candidate)
     log.debug(remove_groups)
 
@@ -523,7 +527,7 @@ def geom_walk(display, v=1, h=1) -> List[List[int]]:
     return geoms
 
 
-def grid_stack(display, qty, swap=False):
+def grid_stack(display, qty, swap=False) -> List[Tuple]:
     if qty == 1:
         return [("--fs", f'--screen-name="{display.name}"', f'--fs-screen-name="{display.name}"')]
     else:
@@ -544,7 +548,7 @@ def grid_stack(display, qty, swap=False):
     return [(hole, f'--screen-name="{display.name}"') for hole in holes]
 
 
-def get_display_by_name(displays, screen_name):  # -> List[screeninfo.Monitor]
+def get_display_by_name(displays, screen_name):  # noqa: ANN201; -> List[screeninfo.Monitor]
     for d in displays:
         if d.name == screen_name:
             return [d]

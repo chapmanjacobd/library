@@ -1,18 +1,21 @@
-import sys, unittest
+import shutil, sys, tempfile, unittest
+from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
 
 import pytest
 
+from xklb import db
 from xklb.fs_extract import fs_add
 from xklb.lb import library as lb
 from xklb.play_actions import watch as wt
+from xklb.player import mark_media_deleted, mark_media_watched
 
-v_db = ["tests/data/video.db"]
-fs_add([*v_db, "--scan-subtitles", "tests/data/"])
+v_db = "tests/data/video.db"
+fs_add([v_db, "--scan-subtitles", "tests/data/"])
 
-a_db = ["tests/data/audio.db"]
-fs_add([*a_db, "--audio", "tests/data/"])
+a_db = "tests/data/audio.db"
+fs_add([a_db, "--audio", "tests/data/"])
 
 
 def test_wt_help(capsys):
@@ -34,17 +37,17 @@ def test_wt_help(capsys):
 
 def test_wt_print(capsys):
     for lb_command in [
-        ["wt", *v_db, "-p"],
-        ["pl", *v_db],
+        ["wt", v_db, "-p"],
+        ["pl", v_db],
     ]:
         lb(lb_command)
         captured = capsys.readouterr().out.replace("\n", "")
         assert "Aggregate" not in captured
 
     for lb_command in [
-        ["wt", *v_db, "-p", "a"],
-        ["wt", *v_db, "-pa"],
-        ["pl", *v_db, "-a"],
+        ["wt", v_db, "-p", "a"],
+        ["wt", v_db, "-pa"],
+        ["pl", v_db, "-a"],
     ]:
         lb(lb_command)
         captured = capsys.readouterr().out.replace("\n", "")
@@ -55,14 +58,14 @@ class TestFs(unittest.TestCase):
     @mock.patch("xklb.player.local_player", return_value=SimpleNamespace(returncode=0))
     def test_lb_fs(self, play_mocked):
         for SC in ("watch", "wt"):
-            lb([SC, *v_db])
+            lb([SC, v_db])
             out = play_mocked.call_args[0][1]
             assert "test.mp4" in out["path"]
             assert out["duration"] == 12
             assert out["subtitle_count"] == 3
             assert out["size"] == 136057
 
-        sys.argv = ["wt", *v_db]
+        sys.argv = ["wt", v_db]
         wt()
         out = play_mocked.call_args[0][1]
         assert "test.mp4" in out["path"]
@@ -70,7 +73,7 @@ class TestFs(unittest.TestCase):
         assert out["subtitle_count"] == 3
         assert out["size"] == 136057
 
-        lb(["listen", *a_db])
+        lb(["listen", a_db])
         out = play_mocked.call_args[0][1]
         assert "test" in out["path"]
 
@@ -78,7 +81,7 @@ class TestFs(unittest.TestCase):
     def test_wt_search(self, play_mocked):
         sys.argv = [
             "wt",
-            *v_db,
+            v_db,
             "-s",
             "tests",
             "test AND data",
@@ -99,14 +102,27 @@ class TestFs(unittest.TestCase):
 
     @mock.patch("xklb.player.local_player", return_value=SimpleNamespace(returncode=0))
     def test_wt_sort(self, play_mocked):
-        sys.argv = ["wt", *v_db, "-u", "duration"]
+        sys.argv = ["wt", v_db, "-u", "duration"]
         wt()
         out = play_mocked.call_args[0][1]
         assert out is not None
 
     @mock.patch("xklb.player.local_player", return_value=SimpleNamespace(returncode=0))
     def test_wt_size(self, play_mocked):
-        sys.argv = ["wt", *v_db, "--size", "-1"]  # less than 1MB
+        sys.argv = ["wt", v_db, "--size", "-1"]  # less than 1MB
         wt()
         out = play_mocked.call_args[0][1]
         assert out is not None
+
+    @mock.patch("xklb.player.local_player", return_value=SimpleNamespace(returncode=0))
+    def test_undelete(self, play_mocked):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            t_db = str(Path(temp_dir, "test.db"))
+            fs_add([t_db, "tests/data/"])
+            args = SimpleNamespace(db=db.connect(SimpleNamespace(database=t_db, verbose=0)))
+            mark_media_watched(args, [str(Path("tests/data/test.mp4").resolve())])
+            mark_media_deleted(args, [str(Path("tests/data/test.mp4").resolve())])
+            fs_add([t_db, "tests/data/"])
+            d = args.db.pop_dict("select * from media")
+            assert d["play_count"] == 1
+            assert d["time_deleted"] == 0

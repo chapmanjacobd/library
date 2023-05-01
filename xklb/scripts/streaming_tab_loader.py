@@ -1,5 +1,6 @@
 import argparse, logging, sys
 from time import sleep
+from typing import List
 
 from xklb import db, player, utils
 from xklb.utils import log
@@ -39,11 +40,11 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def list_tabs(args):
+def list_tabs(args) -> List:
     return args.bt_api.list_tabs([])
 
 
-def open_tabs(_args, urls):
+def open_tabs(_args, urls) -> None:
     for url in urls:
         utils.cmd(player.get_browser(), url)
 

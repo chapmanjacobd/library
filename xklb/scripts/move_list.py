@@ -1,7 +1,7 @@
 import argparse, shutil, tempfile
 from copy import deepcopy
 from pathlib import Path
-from typing import List
+from typing import Dict, List, Tuple
 
 import humanize
 from tabulate import tabulate
@@ -28,7 +28,7 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def group_by_folder(args, media):
+def group_by_folder(args, media) -> List[Dict]:
     d = {}
     for m in media:
         if m["path"].startswith("http"):
@@ -74,7 +74,7 @@ def get_table(args) -> List[dict]:
     return sorted(folders, key=lambda x: x["size"] / x["count"])
 
 
-def print_some(args, tbl):
+def iterate_and_show_options(args, tbl) -> Tuple[List[Dict], List[Dict]]:
     vew = tbl[-int(args.limit) :] if args.limit else tbl
 
     vew = utils.list_dict_filter_bool(vew, keep_0=False)
@@ -98,7 +98,7 @@ def move_list() -> None:
     data = get_table(args)
 
     tbl = deepcopy(data)
-    cur, rest = print_some(args, tbl)
+    cur, rest = iterate_and_show_options(args, tbl)
 
     data = {d["path"]: d for d in data}
 
@@ -130,7 +130,7 @@ Type "*" to select all files in the most recently printed table
             break
 
         if input_path.lower() == "more":
-            cur, rest = print_some(args, rest)
+            cur, rest = iterate_and_show_options(args, rest)
             continue
 
         if input_path == "*":
@@ -139,7 +139,7 @@ Type "*" to select all files in the most recently printed table
             else:
                 selected_paths.update(data.keys())
 
-            cur, rest = print_some(args, rest)
+            cur, rest = iterate_and_show_options(args, rest)
         else:
             try:
                 data[input_path]

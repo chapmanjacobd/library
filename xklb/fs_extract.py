@@ -7,7 +7,6 @@ from typing import Dict, List, Optional
 
 from xklb import av, books, consts, db, player, utils
 from xklb.consts import SC, DBType
-from xklb.player import mark_media_deleted
 from xklb.utils import log
 
 
@@ -221,6 +220,27 @@ def find_new_files(args, path: Path) -> List[str]:
     scanned_set = set(scanned_files)
 
     try:
+        deleted_set = {
+            d["path"]
+            for d in args.db.query(
+                f"""select path from media
+                where 1=1
+                    and time_deleted > 0
+                    and path like '{path}%'
+                    {'AND time_downloaded > 0' if 'time_downloaded' in columns else ''}
+                """,
+            )
+        }
+    except Exception as e:
+        log.debug(e)
+        pass
+    else:
+        undeleted_files = list(deleted_set.intersection(scanned_set))
+        undeleted_count = player.mark_media_undeleted(args, undeleted_files)
+        if undeleted_count > 0:
+            print(f"[{path}] Marking", undeleted_count, "metadata records as undeleted")
+
+    try:
         existing_set = {
             d["path"]
             for d in args.db.query(
@@ -242,7 +262,7 @@ def find_new_files(args, path: Path) -> List[str]:
         if not new_files and len(deleted_files) >= len(existing_set) and not args.force:
             print(f"[{path}] Path empty or device not mounted. Rerun with -f to mark all subpaths as deleted.")
             return []  # if path not mounted or all files deleted
-        deleted_count = mark_media_deleted(args, deleted_files)
+        deleted_count = player.mark_media_deleted(args, deleted_files)
         if deleted_count > 0:
             print(f"[{path}] Marking", deleted_count, "orphaned metadata records as deleted")
 

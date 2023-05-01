@@ -1,7 +1,7 @@
 import sqlite3
 from pathlib import Path
 from textwrap import dedent
-from typing import Any, Iterable, List, Optional, Union
+from typing import Any, Dict, Iterable, List, Optional, Union
 
 from xklb import consts, utils
 from xklb.utils import log
@@ -37,7 +37,7 @@ def connect(args, conn=None, **kwargs):
             sql: str,
             params: Optional[Union[Iterable, dict]] = None,
             ignore_errors=None,
-        ) -> Optional[Any]:
+        ) -> Optional[Dict]:
             if ignore_errors is None:
                 ignore_errors = ["no such table"]
             try:
