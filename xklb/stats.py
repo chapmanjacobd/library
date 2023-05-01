@@ -9,7 +9,7 @@ from xklb.player import delete_playlists
 from xklb.utils import human_time, log, pipe_print
 
 
-def parse_args(prog, usage):
+def parse_args(prog, usage) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog,
         usage,

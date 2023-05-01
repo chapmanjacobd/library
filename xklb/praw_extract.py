@@ -5,7 +5,7 @@ import sys
 from functools import partial
 from itertools import takewhile
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 from xklb import consts, db, utils
 from xklb.utils import log
@@ -183,7 +183,7 @@ def slim_post_data(d: dict, playlist_path=None) -> dict:
     }
 
 
-def save_post(args, post_dict, subreddit_path):
+def save_post(args, post_dict, subreddit_path) -> None:
     slim_dict = utils.dict_filter_bool(slim_post_data(post_dict, subreddit_path))
 
     if slim_dict:
@@ -307,7 +307,7 @@ def subreddit_top(args, subreddit_dict) -> None:
 skip_errors = None
 
 
-def load_module_level_skip_errors():
+def load_module_level_skip_errors() -> Tuple:
     global skip_errors
 
     if skip_errors is None:
@@ -317,7 +317,7 @@ def load_module_level_skip_errors():
     return skip_errors
 
 
-def process_redditors(args, redditors):
+def process_redditors(args, redditors) -> None:
     load_module_level_skip_errors()
 
     for redditor in redditors:
@@ -328,7 +328,7 @@ def process_redditors(args, redditors):
             continue
 
 
-def process_subreddits(args, subreddits):
+def process_subreddits(args, subreddits) -> None:
     load_module_level_skip_errors()
 
     for subreddit in subreddits:

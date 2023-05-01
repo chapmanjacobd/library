@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import NoReturn, Tuple
 
 from xklb.utils import log
 
@@ -91,18 +91,18 @@ class MrSuperDialogue:
         self.move_window(*(geom_data or []))
         self.root.mainloop()
 
-    def user_quit(self):
+    def user_quit(self) -> NoReturn:
         raise UserQuit
 
-    def return_true(self):
+    def return_true(self) -> None:
         self.action = True
         self.root.destroy()
 
-    def return_false(self):
+    def return_false(self) -> None:
         self.action = False
         self.root.destroy()
 
-    def move_window(self, window_width=None, window_height=None, x=None, y=None):
+    def move_window(self, window_width=None, window_height=None, x=None, y=None) -> None:
         s_width = window_width or self.root.winfo_screenwidth()
         s_height = window_height or self.root.winfo_screenheight()
 

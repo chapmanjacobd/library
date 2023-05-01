@@ -257,7 +257,7 @@ def usage(action) -> str:
 """
 
 
-def parse_args_sort(args):
+def parse_args_sort(args) -> None:
     if args.sort:
         args.sort = " ".join(args.sort)
     elif not args.sort and hasattr(args, "defaults"):
@@ -663,7 +663,7 @@ def is_play_in_order_lvl2(args, media_file) -> bool:
     )
 
 
-def transcode(args, path):
+def transcode(args, path) -> str:
     log.debug(path)
     sub_index = subtitle.get_sub_index(args, path)
 

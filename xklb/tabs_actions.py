@@ -125,7 +125,7 @@ def parse_args(action) -> argparse.Namespace:
     return args
 
 
-def tabs_include_string(x):
+def tabs_include_sql(x) -> str:
     return f"""and (
     path like :include{x}
     OR category like :include{x}
@@ -133,7 +133,7 @@ def tabs_include_string(x):
 )"""
 
 
-def tabs_exclude_string(x):
+def tabs_exclude_sql(x) -> str:
     return f"""and (
     path not like :exclude{x}
     AND category not like :exclude{x}
@@ -148,10 +148,10 @@ def construct_tabs_query(args) -> Tuple[str, dict]:
     args.filter_sql.extend([" and " + w for w in args.where])
 
     for idx, inc in enumerate(args.include):
-        args.filter_sql.append(tabs_include_string(idx))
+        args.filter_sql.append(tabs_include_sql(idx))
         args.filter_bindings[f"include{idx}"] = "%" + inc.replace(" ", "%").replace("%%", " ") + "%"
     for idx, exc in enumerate(args.exclude):
-        args.filter_sql.append(tabs_exclude_string(idx))
+        args.filter_sql.append(tabs_exclude_sql(idx))
         args.filter_bindings[f"exclude{idx}"] = "%" + exc.replace(" ", "%").replace("%%", " ") + "%"
 
     LIMIT = "LIMIT " + str(args.limit) if args.limit else ""

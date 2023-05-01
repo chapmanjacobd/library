@@ -1,5 +1,5 @@
 import argparse
-from typing import List
+from typing import Dict, List
 
 from tabulate import tabulate
 
@@ -44,7 +44,7 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def group_files_by_folder(args, media):
+def group_files_by_folder(args, media) -> List[Dict]:
     d = {}
     for m in media:
         p = m["path"].split("/")
@@ -77,7 +77,7 @@ def group_files_by_folder(args, media):
     return [{**v, "path": k} for k, v in d.items()]
 
 
-def group_folders(args, folders):
+def group_folders(args, folders) -> List[Dict]:
     d = {}
     for f in folders:
         p = f["path"].split("/")
@@ -125,7 +125,7 @@ def get_table(args) -> List[dict]:
     return media
 
 
-def process_bigdirs(args, media):
+def process_bigdirs(args, media) -> List[Dict]:
     folders = group_files_by_folder(args, media)
     if args.depth:
         folders = group_folders(args, folders)

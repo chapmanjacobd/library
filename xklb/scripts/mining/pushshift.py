@@ -29,7 +29,7 @@ def parse_args(action, usage) -> argparse.Namespace:
     return args
 
 
-def save_data(args, reddit_posts, media):
+def save_data(args, reddit_posts, media) -> None:
     if len(reddit_posts) > 0:
         args.db["reddit_posts"].insert_all(reddit_posts, alter=True)
         reddit_posts.clear()

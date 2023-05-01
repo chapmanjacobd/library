@@ -1,7 +1,7 @@
 import argparse, random, tempfile
 from pathlib import Path
 from statistics import median
-from typing import List
+from typing import Dict, List, Tuple, Union
 
 from humanize import naturalsize
 from tabulate import tabulate
@@ -142,7 +142,7 @@ def get_table(args) -> List[dict]:
     return media
 
 
-def get_path_stats(args, data):
+def get_path_stats(args, data) -> List[Dict]:
     result = []
     for srcmount in args.srcmounts:
         disk_files = [d for d in data if d["path"].startswith(srcmount)]
@@ -161,7 +161,7 @@ def get_path_stats(args, data):
     return result
 
 
-def print_path_stats(tbl):
+def print_path_stats(tbl) -> None:
     tbl = utils.list_dict_filter_bool(tbl, keep_0=False)
     tbl = utils.col_naturalsize(tbl, "total_size")
     tbl = utils.col_naturalsize(tbl, "median_size")
@@ -171,7 +171,7 @@ def print_path_stats(tbl):
     print(tabulate(tbl, tablefmt="fancy_grid", headers="keys", showindex=False))
 
 
-def rebin_files(args, disk_stats, all_files):
+def rebin_files(args, disk_stats, all_files) -> Tuple[List, List]:
     total_size = sum(d["size"] for d in all_files)
 
     untouched = []
@@ -231,7 +231,7 @@ def rebin_files(args, disk_stats, all_files):
     return untouched, rebinned
 
 
-def get_rel_stats(parents, files):
+def get_rel_stats(parents, files) -> List[Dict[str, Union[float, str]]]:
     mount_space = []
     total_used = 1
     for parent in parents:

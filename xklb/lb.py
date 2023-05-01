@@ -98,7 +98,7 @@ def add_parser(subparsers, name, a=None):
     return subparsers.add_parser(name, aliases=aliases, add_help=False)
 
 
-def create_subcommands_parser():
+def create_subcommands_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="lb",
         description="xk media library",

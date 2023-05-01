@@ -80,7 +80,7 @@ def subs_to_text(video_path, paths: List[str]) -> str:
     return remove_consecutive_whitespace(subtitles)
 
 
-def is_text_subtitle_stream(s):
+def is_text_subtitle_stream(s) -> bool:
     return s.get("codec_type") == "subtitle" and s.get("codec_name") not in IMAGE_SUBTITLE_CODECS
 
 
@@ -108,7 +108,7 @@ def get_external(file) -> List[str]:
     return []
 
 
-def get_subtitle_paths(f):
+def get_subtitle_paths(f) -> List[str]:
     internal_subtitles = externalize_internal_subtitles(f)
     if len(internal_subtitles) > 0:
         return internal_subtitles
@@ -117,7 +117,7 @@ def get_subtitle_paths(f):
     return external_subtitles
 
 
-def get_sub_index(args, f):
+def get_sub_index(args, f) -> Optional[int]:
     streams = ffmpeg.probe(f)["streams"]
     temp_db = db.connect(args, memory=True)
     temp_db["streams"].insert_all(streams, pk="index")  # type: ignore

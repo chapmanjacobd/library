@@ -4,7 +4,7 @@ from xklb import db, utils
 from xklb.utils import log
 
 
-def optimize_db():
+def optimize_db() -> None:
     parser = argparse.ArgumentParser(
         prog="library optimize",
         usage="""library optimize DATABASE [--force]

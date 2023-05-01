@@ -32,7 +32,7 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def copy_play_count(args, source_db):
+def copy_play_count(args, source_db) -> None:
     args.db.attach("src", Path(source_db).resolve())
 
     modified_row_count = 0
@@ -73,7 +73,7 @@ def copy_play_count(args, source_db):
     log.info("Updated %s rows", modified_row_count)
 
 
-def copy_play_counts():
+def copy_play_counts() -> None:
     args = parse_args()
     for s_db in args.source_dbs:
         copy_play_count(args, s_db)
