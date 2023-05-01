@@ -9,6 +9,7 @@ from xklb.utils import log
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
+        prog="library relmv",
         usage="""library relmv [--dry-run] SOURCE ... DEST
 
     Move files/folders without losing hierarchy metadata
@@ -40,7 +41,7 @@ def _relmv(args, sources, dest):
         target_dir = Path(*OrderedDict.fromkeys(target_dir.parts).keys())
 
         if args.test:
-            print("mv", shlex.quote(str(abspath)), shlex.quote(str(target_dir)))
+            log.warning("mv %s %s", shlex.quote(str(abspath)), shlex.quote(str(target_dir)))
             continue
 
         target_dir.mkdir(parents=True, exist_ok=True)

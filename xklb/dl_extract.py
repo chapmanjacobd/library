@@ -7,7 +7,11 @@ from xklb.utils import log
 
 
 def parse_args(action, usage):
-    parser = argparse.ArgumentParser(prog="library " + action, usage=usage)
+    parser = argparse.ArgumentParser(
+        prog="library " + action,
+        usage=usage,
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
 
     subp_profile = parser.add_mutually_exclusive_group()
     subp_profile.add_argument(
@@ -83,7 +87,7 @@ def parse_args(action, usage):
             args.duration = utils.parse_human_to_sql(utils.human_to_seconds, "duration", args.duration)
 
         if not args.profile and not args.print:
-            print("Download profile must be specified. Use one of: --video --audio")
+            log.error("Download profile must be specified. Use one of: --video --audio")
             raise SystemExit(1)
 
     if args.db:

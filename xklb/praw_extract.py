@@ -35,7 +35,11 @@ More details: https://praw.readthedocs.io/en/stable/getting_started/configuratio
 
 
 def parse_args(action, usage) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(prog="library " + action, usage=usage)
+    parser = argparse.ArgumentParser(
+        prog="library " + action,
+        usage=usage,
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
     parser.add_argument("--limit", default=1000, type=int)
     parser.add_argument("--lookback", default=4, type=int, help="Number of days to look back")
     parser.add_argument("--praw-site", default="bot1")

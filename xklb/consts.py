@@ -108,77 +108,71 @@ def reddit_frequency(frequency: Frequency) -> str:
     return mapper[frequency]
 
 
-def get_text_files(path: Path, OCR=False, speech_recognition=False) -> List[str]:
-    TEXTRACT_EXTENSIONS = "csv|tab|tsv|doc|docx|eml|epub|json|htm|html|msg|odt|pdf|pptx|ps|rtf|txt|log|xlsx|xls"
-    if OCR:
-        ocr_only = "|gif|jpg|jpeg|png|tif|tff|tiff"
-        TEXTRACT_EXTENSIONS += ocr_only
-    if speech_recognition:
-        speech_recognition_only = "|mp3|ogg|wav"
-        TEXTRACT_EXTENSIONS += speech_recognition_only
+TEXTRACT_EXTENSIONS = "csv|tab|tsv|doc|docx|eml|epub|json|htm|html|msg|odt|pdf|pptx|ps|rtf|txt|log|xlsx|xls".split("|")
+SPEECH_RECOGNITION_EXTENSIONS = "mp3|ogg|wav".split("|")
+OCR_EXTENSIONS = "gif|jpg|jpeg|png|tif|tff|tiff".split("|")
+AUDIO_ONLY_EXTENSIONS = "opus|oga|ogg|mp3|m2a|mpga|m4a|flac|wav|wma|aac|aa3|ac3|ape".split("|")
+VIDEO_EXTENSIONS = (
+    "str|aa|aax|acm|adf|adp|dtk|ads|ss2|adx|aea|afc|aix|al|apl"
+    "|mac|aptx|aptxhd|aqt|ast|obu|avi|avr|avs|avs2|avs3|bfstm|bcstm|binka"
+    "|bit|bmv|brstm|cdg|cdxl|xl|c2|302|daud|str|adp|dav|dss|dts|dtshd|dv"
+    "|dif|divx|cdata|eac3|paf|fap|flm|flv|fsb|fwse|g722|722|tco|rco"
+    "|g723_1|g729|genh|gsm|h261|h26l|h264|264|avc|hca|hevc|h265|265|idf"
+    "|ifv|cgi|ipu|sf|ircam|ivr|kux|669|abc|amf|ams|dbm|dmf|dsm|far|it|mdl"
+    "|med|mid|mod|mt2|mtm|okt|psm|ptm|s3m|stm|ult|umx|xm|itgz|itr|itz"
+    "|mdgz|mdr|mdz|s3gz|s3r|s3z|xmgz|xmr|xmz|669|amf|ams|dbm|digi|dmf"
+    "|dsm|dtm|far|gdm|ice|imf|it|j2b|m15|mdl|med|mmcmp|mms|mo3|mod|mptm"
+    "|mt2|mtm|nst|okt|ogm|ogv|plm|ppm|psm|pt36|ptm|s3m|sfx|sfx2|st26|stk|stm"
+    "|stp|ult|umx|wow|xm|xpk|flv|dat|lvf|m4v|mkv|mk3d|mka|mks|webm|mca|mcc"
+    "|mjpg|mjpeg|mpg|mpo|j2k|mlp|mods|moflex|mov|mp4|3gp|3g2|mj2|psp|m4b"
+    "|ism|ismv|isma|f4v|mp2|mpa|mpc|mjpg|mpl2|msf|mtaf|ul|musx|mvi|mxg"
+    "|v|nist|sph|nsp|nut|obu|oma|omg|pjs|pvf|yuv|cif|qcif|rgb|rt|rsd|rmvb|rm"
+    "|rsd|rso|sw|sb|sami|sbc|msbc|sbg|scc|sdr2|sds|sdx|ser|sga|shn|vb|son|imx"
+    "|sln|mjpg|stl|sup|svag|svs|tak|thd|tta|ans|art|asc|diz|ice|vt|ty|ty+|uw|ub"
+    "|v210|yuv10|vag|vc1|rcv|vob|viv|vpk|vqf|vql|vqe|wmv|wsd|xmv|xvag|yop|y4m"
+).split("|")
+IMAGE_EXTENSIONS = (
+    "pdf|ai|ait|png|jng|mng|arq|arw|cr2|cs1|dcp|dng|eps|epsf|ps|erf|exv|fff"
+    "|gpr|hdp|wdp|jxr|iiq|insp|jpeg|jpg|jpe|mef|mie|mos|mpo|mrw|nef|nrw|orf"
+    "|ori|pef|psd|psb|psdt|raf|raw|rw2|rwl|sr2|srw|thm|tiff|tif|x3f|flif|gif"
+    "|icc|icm|avif|heic|heif|hif|jp2|jpf|jpm|jpx|j2c|j2k|jpc|3fr|btf|dcr|k25"
+    "|kdc|miff|mif|rwz|srf|xcf|bpg|doc|dot|fla|fpx|max|ppt|pps|pot|vsd|xls"
+    "|xlt|pict|pct|360|3g2|3gp2|3gp|3gpp|aax|dvb|f4a|f4b|f4p|f4v|lrv|m4b"
+    "|m4p|m4v|mov|qt|mqv|qtif|qti|qif|cr3|crm|jxl|crw|ciff|ind|indd|indt"
+    "|nksc|vrd|xmp|la|ofr|pac|riff|rif|wav|webp|wv|asf|divx|djvu|djv|dvr-ms"
+    "|flv|insv|inx|swf|wma|wmv|exif|eip|psp|pspimage"
+).split("|")
 
-    TEXTRACT_EXTENSIONS = TEXTRACT_EXTENSIONS.split("|")
-    text_files = []
-    for f in path.rglob("*"):
-        if f.is_file() and (f.suffix[1:].lower() in TEXTRACT_EXTENSIONS):
-            text_files.append(str(f))
 
-    return text_files
+def get_files(base_dir: Path, extensions: List[str]) -> List[str]:
+    files = []
+    for f in base_dir.rglob("*"):
+        if f.is_file() and f.suffix[1:].lower() in extensions:
+            files.append(str(f))
 
-
-def get_media_files(path: Path, audio=False) -> List[str]:
-    FFMPEG_EXTENSIONS = (
-        "str|aa|aax|acm|adf|adp|dtk|ads|ss2|adx|aea|afc|aix|al|apl"
-        "|mac|aptx|aptxhd|aqt|ast|obu|avi|avr|avs|avs2|avs3|bfstm|bcstm|binka"
-        "|bit|bmv|brstm|cdg|cdxl|xl|c2|302|daud|str|adp|dav|dss|dts|dtshd|dv"
-        "|dif|divx|cdata|eac3|paf|fap|flm|flv|fsb|fwse|g722|722|tco|rco"
-        "|g723_1|g729|genh|gsm|h261|h26l|h264|264|avc|hca|hevc|h265|265|idf"
-        "|ifv|cgi|ipu|sf|ircam|ivr|kux|669|abc|amf|ams|dbm|dmf|dsm|far|it|mdl"
-        "|med|mid|mod|mt2|mtm|okt|psm|ptm|s3m|stm|ult|umx|xm|itgz|itr|itz"
-        "|mdgz|mdr|mdz|s3gz|s3r|s3z|xmgz|xmr|xmz|669|amf|ams|dbm|digi|dmf"
-        "|dsm|dtm|far|gdm|ice|imf|it|j2b|m15|mdl|med|mmcmp|mms|mo3|mod|mptm"
-        "|mt2|mtm|nst|okt|ogm|ogv|plm|ppm|psm|pt36|ptm|s3m|sfx|sfx2|st26|stk|stm"
-        "|stp|ult|umx|wow|xm|xpk|flv|dat|lvf|m4v|mkv|mk3d|mka|mks|webm|mca|mcc"
-        "|mjpg|mjpeg|mpg|mpo|j2k|mlp|mods|moflex|mov|mp4|3gp|3g2|mj2|psp|m4b"
-        "|ism|ismv|isma|f4v|mp2|mpa|mpc|mjpg|mpl2|msf|mtaf|ul|musx|mvi|mxg"
-        "|v|nist|sph|nsp|nut|obu|oma|omg|pjs|pvf|yuv|cif|qcif|rgb|rt|rsd|rmvb|rm"
-        "|rsd|rso|sw|sb|sami|sbc|msbc|sbg|scc|sdr2|sds|sdx|ser|sga|shn|vb|son|imx"
-        "|sln|mjpg|stl|sup|svag|svs|tak|thd|tta|ans|art|asc|diz|ice|vt|ty|ty+|uw|ub"
-        "|v210|yuv10|vag|vc1|rcv|vob|viv|vpk|vqf|vql|vqe|wmv|wsd|xmv|xvag|yop|y4m"
-    )
-    if audio:
-        audio_only = "|opus|oga|ogg|mp3|m2a|mpga|m4a|flac|wav|wma|aac|aa3|ac3|ape"
-        FFMPEG_EXTENSIONS += audio_only
-
-    FFMPEG_EXTENSIONS = FFMPEG_EXTENSIONS.split("|")
-    media_files = []
-    for f in path.rglob("*"):
-        if f.is_file() and (f.suffix[1:].lower() in FFMPEG_EXTENSIONS):
-            media_files.append(str(f))
-
-    return media_files
+    return files
 
 
 def get_image_files(path: Path) -> List[str]:
-    IMAGE_EXTENSIONS = (
-        "pdf|ai|ait|png|jng|mng|arq|arw|cr2|cs1|dcp|dng|eps|epsf|ps|erf|exv|fff"
-        "|gpr|hdp|wdp|jxr|iiq|insp|jpeg|jpg|jpe|mef|mie|mos|mpo|mrw|nef|nrw|orf"
-        "|ori|pef|psd|psb|psdt|raf|raw|rw2|rwl|sr2|srw|thm|tiff|tif|x3f|flif|gif"
-        "|icc|icm|avif|heic|heif|hif|jp2|jpf|jpm|jpx|j2c|j2k|jpc|3fr|btf|dcr|k25"
-        "|kdc|miff|mif|rwz|srf|xcf|bpg|doc|dot|fla|fpx|max|ppt|pps|pot|vsd|xls"
-        "|xlt|pict|pct|360|3g2|3gp2|3gp|3gpp|aax|dvb|f4a|f4b|f4p|f4v|lrv|m4b"
-        "|m4p|m4v|mov|qt|mqv|qtif|qti|qif|cr3|crm|jxl|crw|ciff|ind|indd|indt"
-        "|nksc|vrd|xmp|la|ofr|pac|riff|rif|wav|webp|wv|asf|divx|djvu|djv|dvr-ms"
-        "|flv|insv|inx|swf|wma|wmv|exif|eip|psp|pspimage"
-    )
+    return get_files(path, IMAGE_EXTENSIONS)
 
-    IMAGE_EXTENSIONS = IMAGE_EXTENSIONS.split("|")
-    image_files = []
-    for f in path.rglob("*"):
-        if f.is_file() and (f.suffix[1:].lower() in IMAGE_EXTENSIONS):
-            image_files.append(str(f))
 
-    return image_files
+def get_audio_files(path: Path) -> List[str]:
+    return get_files(path, [*VIDEO_EXTENSIONS, *AUDIO_ONLY_EXTENSIONS])
+
+
+def get_video_files(path: Path) -> List[str]:
+    return get_files(path, VIDEO_EXTENSIONS)
+
+
+def get_text_files(path: Path, image_recognition=False, speech_recognition=False) -> List[str]:
+    extensions = [*TEXTRACT_EXTENSIONS]
+    if image_recognition:
+        extensions.extend(OCR_EXTENSIONS)
+    if speech_recognition:
+        extensions.extend(SPEECH_RECOGNITION_EXTENSIONS)
+
+    return get_files(path, extensions)
 
 
 TUBE_IGNORE_KEYS = (

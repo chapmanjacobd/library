@@ -10,7 +10,7 @@ from xklb.utils import argparse_enum, log, sanitize_url
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="library tabsadd",
-        usage=r"""library tabsadd --frequency {daily,weekly,monthly,quarterly,yearly} --category CATEGORY [--no-sanitize] [database] paths ...
+        usage=r"""library tabsadd [--frequency daily weekly (monthly) quarterly yearly] [--category CATEGORY] [--no-sanitize] DATABASE URLS ...
 
     Adding one URL:
 

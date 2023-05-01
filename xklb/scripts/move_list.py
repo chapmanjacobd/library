@@ -11,7 +11,10 @@ from xklb.utils import log
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        prog="library mv-list",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", default="25")
     parser.add_argument("--lower", default=4, type=int, help="Number of files per folder lower limit")
     parser.add_argument("--upper", default=4000, type=int, help="Number of files per folder upper limit")

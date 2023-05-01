@@ -12,7 +12,13 @@ from xklb.utils import log
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        prog="library dedupe",
+        usage="""library [--audio | --id | --title | --filesystem] [--only-soft-delete] [--limit LIMIT] DATABASE
+
+    Dedupe your files
+""",
+    )
 
     profile = parser.add_mutually_exclusive_group()
     profile.add_argument(
@@ -43,13 +49,21 @@ def parse_args() -> argparse.Namespace:
         const=DBType.filesystem,
         help="Dedupe filesystem database",
     )
-    profile.add_argument("--text", action="store_const", dest="profile", const=DBType.text, help="Dedupe text database")
+    profile.add_argument(
+        "--text",
+        action="store_const",
+        dest="profile",
+        const=DBType.text,
+        help=argparse.SUPPRESS,
+        #  "Dedupe text database",
+    )
     profile.add_argument(
         "--image",
         action="store_const",
         dest="profile",
         const=DBType.image,
-        help="Dedupe image database",
+        help=argparse.SUPPRESS,
+        # "Dedupe image database",
     )
 
     parser.add_argument("--only-soft-delete", action="store_true")
@@ -223,7 +237,7 @@ def dedupe() -> None:
     duplicates = deletion_candidates
 
     if not duplicates:
-        print("No duplicates found")
+        log.error("No duplicates found")
         return
 
     tbl = deepcopy(duplicates)
@@ -249,7 +263,7 @@ def dedupe() -> None:
     print(f"Approx. space savings: {humanize.naturalsize(duplicates_size // 2)}")
 
     if duplicates and (args.force or utils.confirm("Delete duplicates?")):  # type: ignore
-        print("Deleting...")
+        log.info("Deleting...")
         for d in duplicates:
             path = d["duplicate_path"]
             if not path.startswith("http") and not args.only_soft_delete:

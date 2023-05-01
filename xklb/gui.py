@@ -29,7 +29,7 @@ class MrSuperDialogue:
         self.root.wm_attributes("-topmost", 1)
 
         for keyseq in ("<Escape>", "<Control-c>", "<Control-q>"):
-            self.root.bind(keyseq, lambda _ev: self.quit())
+            self.root.bind(keyseq, lambda _ev: self.user_quit())
 
         # menu left
         self.menu_left = Frame(self.root, width=150)
@@ -91,7 +91,7 @@ class MrSuperDialogue:
         self.move_window(*(geom_data or []))
         self.root.mainloop()
 
-    def quit(self):
+    def user_quit(self):
         raise UserQuit
 
     def return_true(self):
@@ -141,13 +141,13 @@ class MrSuperDialogue:
         raise NotImplementedError
 
     @staticmethod
-    def get_monitor_from_coord(X, Y):
+    def get_monitor_from_coord(coord_x, coord_y):
         import screeninfo
 
         monitors = screeninfo.get_monitors()
 
         for m in reversed(monitors):
-            if m.x <= X <= m.width + m.x and m.y <= Y <= m.height + m.y:
+            if m.x <= coord_x <= m.width + m.x and m.y <= coord_y <= m.height + m.y:
                 return m
         return monitors[0]
 

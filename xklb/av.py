@@ -106,15 +106,15 @@ def munge_av_tags(args, media, f) -> Optional[dict]:
     except (KeyboardInterrupt, SystemExit):
         raise SystemExit(130)
     except Exception as e:
-        print(f"[{f}] Failed reading header", file=sys.stderr)
+        log.error(f"[{f}] Failed reading header")
         log.debug(e)
         if args.delete_unplayable:
             utils.trash(f)
         return None
 
     if "format" not in probe:
-        print(f"[{f}] Failed reading format", file=sys.stderr)
-        print(probe)
+        log.error(f"[{f}] Failed reading format")
+        log.warning(probe)
         return None
 
     format_ = probe["format"]

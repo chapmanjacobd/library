@@ -8,7 +8,18 @@ from xklb.utils import log
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        prog="library bigdirs",
+        usage="""library bigdirs DATABASE [--limit (4000)] [--depth (0)] [--sort-by-deleted] [--size=+5MB]
+
+    See what folders take up space
+
+        lb bigdirs video.db
+        lb bigdirs audio.db
+        lb bigdirs fs.db
+""",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
     parser.add_argument("--sort-by-deleted", action="store_true")
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", default="4000")
     parser.add_argument("--depth", "-d", default=0, type=int, help="Depth of folders")

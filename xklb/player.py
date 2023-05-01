@@ -163,15 +163,15 @@ def moved_media(args, moved_files: Union[str, list], base_from, base_to) -> int:
     modified_row_count = 0
     if moved_files:
         df_chunked = utils.chunks(moved_files, consts.SQLITE_PARAM_LIMIT)
-        for l in df_chunked:
+        for chunk_paths in df_chunked:
             with args.db.conn:
                 cursor = args.db.conn.execute(
                     f"""UPDATE media
                     SET path=REPLACE(path, '{quote(base_from)}', '{quote(base_to)}')
                     where path in ("""
-                    + ",".join(["?"] * len(l))
+                    + ",".join(["?"] * len(chunk_paths))
                     + ")",
-                    (*l,),
+                    (*chunk_paths,),
                 )
                 modified_row_count += cursor.rowcount
 
@@ -195,16 +195,16 @@ def mark_media_watched(args, files) -> int:
     modified_row_count = 0
     if files:
         df_chunked = utils.chunks(files, consts.SQLITE_PARAM_LIMIT)
-        for l in df_chunked:
+        for chunk_paths in df_chunked:
             with args.db.conn:
                 cursor = args.db.conn.execute(
                     """UPDATE media
                     SET play_count = play_count + 1
                     , time_played = cast(STRFTIME('%s') as int)
                     WHERE path in ("""
-                    + ",".join(["?"] * len(l))
+                    + ",".join(["?"] * len(chunk_paths))
                     + ")",
-                    (*l,),
+                    (*chunk_paths,),
                 )
                 modified_row_count += cursor.rowcount
 
@@ -217,15 +217,15 @@ def mark_media_deleted(args, paths) -> int:
     modified_row_count = 0
     if paths:
         df_chunked = utils.chunks(paths, consts.SQLITE_PARAM_LIMIT)
-        for l in df_chunked:
+        for chunk_paths in df_chunked:
             with args.db.conn:
                 cursor = args.db.conn.execute(
                     f"""update media
                     set time_deleted={consts.APPLICATION_START}
                     where path in ("""
-                    + ",".join(["?"] * len(l))
+                    + ",".join(["?"] * len(chunk_paths))
                     + ")",
-                    (*l,),
+                    (*chunk_paths,),
                 )
                 modified_row_count += cursor.rowcount
 
@@ -642,7 +642,7 @@ def multiple_player(args, media) -> None:
                     if m["process"].poll() is not None:
                         r = utils.Pclose(m["process"])
                         if r.returncode != 0:
-                            print("Player exited with code", r.returncode)
+                            log.warning("Player exited with code %s", r.returncode)
                             log.debug(join(r.args))
                             if not args.ignore_errors:
                                 raise SystemExit(r.returncode)
@@ -711,10 +711,10 @@ def media_printer(args, media) -> None:
     else:
         if "d" in args.print:
             marked = mark_media_deleted(args, list(map(operator.itemgetter("path"), media)))
-            print(f"Marked {marked} metadata records as deleted", file=sys.stderr)
+            log.warning(f"Marked {marked} metadata records as deleted")
         if "w" in args.print:
             marked = mark_media_watched(args, list(map(operator.itemgetter("path"), media)))
-            print(f"Marked {marked} metadata records as watched", file=sys.stderr)
+            log.warning(f"Marked {marked} metadata records as watched")
 
     if "f" in args.print:
         if args.limit == 1:
