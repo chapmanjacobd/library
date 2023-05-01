@@ -115,8 +115,8 @@ class TestFs(unittest.TestCase):
         assert out is not None
 
     @mock.patch("xklb.player.local_player", return_value=SimpleNamespace(returncode=0))
-    def test_undelete(self, play_mocked):
-        with tempfile.TemporaryDirectory() as temp_dir:
+    def test_undelete(self, _play_mocked):
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
             t_db = str(Path(temp_dir, "test.db"))
             fs_add([t_db, "tests/data/"])
             args = SimpleNamespace(db=db.connect(SimpleNamespace(database=t_db, verbose=0)))
