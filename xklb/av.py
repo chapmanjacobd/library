@@ -112,7 +112,7 @@ def munge_av_tags(args, media, f) -> Optional[dict]:
             utils.trash(f)
         return None
 
-    if args.check_data_corruption:
+    if args.check_corrupt:
         error_log = ffmpeg.input(f, loglevel="error", output=None)  # TODO: test that this actually works...
         if error_log.returncode != 0:
             log.warning(f"[{f}] Data corruption")
