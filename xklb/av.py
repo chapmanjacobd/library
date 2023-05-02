@@ -106,11 +106,18 @@ def munge_av_tags(args, media, f) -> Optional[dict]:
     except (KeyboardInterrupt, SystemExit):
         raise SystemExit(130)
     except Exception as e:
-        log.error(f"[{f}] Failed reading header")
+        log.error(f"[{f}] Failed reading header. Metadata corruption")
         log.debug(e)
         if args.delete_unplayable:
             utils.trash(f)
         return None
+
+    if args.check_data_corruption:
+        error_log = ffmpeg.input(f, loglevel="error", output=None)  # TODO: test that this actually works...
+        if error_log.returncode != 0:
+            log.warning(f"[{f}] Data corruption")
+            if args.delete_corrupt:
+                utils.trash(f)
 
     if "format" not in probe:
         log.error(f"[{f}] Failed reading format")
