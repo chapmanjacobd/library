@@ -1,4 +1,4 @@
-import shutil, sys, tempfile, unittest
+import sys, tempfile, unittest
 from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
