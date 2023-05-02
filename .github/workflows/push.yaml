@@ -28,11 +28,12 @@ jobs:
       - uses: FedericoCarboni/setup-ffmpeg@v2
 
       - name: Install Dependencies
-        run: python -m pip install pdm
-
-      - run: |
+        run: |
+          python -m pip install pdm
           pdm install --no-editable -G test
-          pdm run pytest
+
+      - name: Run pytest
+        run: pdm run pytest
 
   publish:
     needs: test

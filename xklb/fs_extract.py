@@ -1,4 +1,6 @@
 import argparse, math, os, sys
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+from functools import partial
 from multiprocessing import TimeoutError as mp_TimeoutError
 from pathlib import Path
 from shutil import which
@@ -66,6 +68,8 @@ def parse_args(action, usage) -> argparse.Namespace:
     parser.add_argument("--extra-playlist-data", default={})
 
     parser.add_argument("--delete-unplayable", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--check-data-corrupt", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--delete-corrupt", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--force", "-f", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--verbose", "-v", action="count", default=0)
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
@@ -177,19 +181,13 @@ def clean_up_temp_dirs():
             p.unlink()
 
 
-def extract_chunk(args, parallel, chunk_paths) -> None:
-    from joblib import delayed
-
-    mp_args = argparse.Namespace(**{k: v for k, v in args.__dict__.items() if k not in {"db"}})
-    metadata = parallel((delayed(extract_metadata)(mp_args, p) for p in chunk_paths) or [])
-
+def extract_chunk(args, media) -> None:
     if args.profile == DBType.image:
-        metadata = books.extract_image_metadata_chunk(metadata, chunk_paths)
+        media = books.extract_image_metadata_chunk(media)
 
     if args.scan_subtitles:
         clean_up_temp_dirs()
 
-    media = list(filter(None, metadata))
     args.db["media"].insert_all(utils.list_dict_filter_bool(media), pk="path", alter=True, replace=True)
 
 
@@ -285,22 +283,20 @@ def _add_folder(args, folder_path: Path) -> None:
 
 
 def scan_path(args, path_str: str) -> int:
-    from joblib import Parallel
-
-    n_jobs = -1
-    if args.io_multiplier > 1:
-        n_jobs = int(int(os.cpu_count() or 4) * args.io_multiplier)  # useful for text, image, filesystem db types
-    if args.verbose >= consts.LOG_DEBUG:
-        n_jobs = 1
-
-    threadsafe = [DBType.audio, DBType.video, DBType.filesystem]  # TODO: check text / image
-
     path = Path(path_str).expanduser().resolve()
     if not path.exists():
         print(f"[{path}] Path does not exist")
         if args.force:
             player.delete_playlists(args, [str(path)])
         return 0
+
+    n_jobs = None
+    if args.io_multiplier > 1:
+        n_jobs = int(int(os.cpu_count() or 4) * args.io_multiplier)  # useful for text, image, filesystem db types
+    if args.verbose >= consts.LOG_DEBUG:
+        n_jobs = 1
+
+    threadsafe = [DBType.audio, DBType.video, DBType.filesystem]
 
     print(f"[{path}] Building file list...")
     new_files = find_new_files(args, path)
@@ -316,11 +312,21 @@ def scan_path(args, path_str: str) -> int:
             batch_count = consts.SQLITE_PARAM_LIMIT // 100
         chunks_count = math.ceil(len(new_files) / batch_count)
         df_chunked = utils.chunks(new_files, batch_count)
-        with Parallel(n_jobs, prefer="threads" if args.profile in threadsafe else None) as parallel:
+
+        if args.profile in threadsafe:
+            pool_fn = ThreadPoolExecutor
+        else:
+            pool_fn = ProcessPoolExecutor
+
+        with pool_fn(n_jobs) as parallel:
             for idx, chunk_paths in enumerate(df_chunked):
                 percent = ((batch_count * idx) + len(chunk_paths)) / len(new_files) * 100
                 print(f"[{path}] Extracting metadata {percent:3.1f}% (chunk {idx + 1} of {chunks_count})")
-                extract_chunk(args, parallel, chunk_paths)
+
+                mp_args = argparse.Namespace(**{k: v for k, v in args.__dict__.items() if k not in {"db"}})
+                metadata = parallel.map(partial(extract_metadata, mp_args), chunk_paths)
+                metadata = list(filter(None, metadata))
+                extract_chunk(args, metadata)
 
     _add_folder(args, path)
 

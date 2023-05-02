@@ -206,7 +206,7 @@ def munge_image_tags(m: dict, e: dict) -> dict:
     return m
 
 
-def extract_image_metadata_chunk(metadata: List[dict], chunk_paths: List[str]) -> List[dict]:
+def extract_image_metadata_chunk(metadata: List[dict]) -> List[dict]:
     try:
         import exiftool
     except ModuleNotFoundError:
@@ -214,6 +214,7 @@ def extract_image_metadata_chunk(metadata: List[dict], chunk_paths: List[str]) -
             "exiftool and PyExifTool are required for image database creation: sudo dnf install perl-Image-ExifTool && pip install PyExifTool",
         )
 
+    chunk_paths = [d["path"] for d in metadata]
     with exiftool.ExifToolHelper() as et:
         exif = et.get_metadata(chunk_paths)
 
