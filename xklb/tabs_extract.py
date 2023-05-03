@@ -4,7 +4,7 @@ from typing import List
 
 from xklb import consts, db, player, utils
 from xklb.consts import Frequency
-from xklb.utils import argparse_enum, log, sanitize_url
+from xklb.utils import ArgparseEnum, log, sanitize_url
 
 
 def parse_args() -> argparse.Namespace:
@@ -36,7 +36,7 @@ def parse_args() -> argparse.Namespace:
         "-f",
         default=Frequency.Monthly,
         type=Frequency,
-        action=argparse_enum,
+        action=ArgparseEnum,
         help=argparse.SUPPRESS,
     )
     parser.add_argument("--category", "-c", help=argparse.SUPPRESS)
@@ -76,8 +76,8 @@ def get_new_paths(args) -> List[str]:
 
     try:
         existing = {d["path"] for d in args.db.query(*qb)}
-    except Exception:
-        pass
+    except Exception as e:
+        log.debug(e)
     else:
         if existing:
             print(f"Updating frequency for {len(existing)} existing paths")

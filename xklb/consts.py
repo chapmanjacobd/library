@@ -11,11 +11,11 @@ def now():
 
 
 TEMP_DIR = gettempdir()
-FAKE_SUBTITLE = os.path.join(TEMP_DIR, "sub.srt")  # https://github.com/skorokithakis/catt/issues/393
-CAST_NOW_PLAYING = os.path.join(TEMP_DIR, "catt_playing")
-DEFAULT_MPV_SOCKET = os.path.join(TEMP_DIR, "mpv_socket")
+FAKE_SUBTITLE = Path(TEMP_DIR) / "sub.srt"  # https://github.com/skorokithakis/catt/issues/393
+CAST_NOW_PLAYING = Path(TEMP_DIR) / "catt_playing"
+DEFAULT_MPV_SOCKET = Path(TEMP_DIR) / "mpv_socket"
 DEFAULT_MPV_WATCH_LATER = str(Path("~/.config/mpv/watch_later/").expanduser().resolve())
-SUB_TEMP_DIR = os.path.join(TEMP_DIR, "library_temp_subtitles")
+SUB_TEMP_DIR = Path(TEMP_DIR) / "library_temp_subtitles"
 BLOCK_THE_CHANNEL = "__BLOCKLIST_ENTRY_"
 
 LOG_INFO = 1

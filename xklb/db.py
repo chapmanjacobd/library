@@ -1,10 +1,13 @@
 import sqlite3
 from pathlib import Path
 from textwrap import dedent
-from typing import Any, Dict, Iterable, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Union
 
 from xklb import consts, utils
 from xklb.utils import log
+
+if TYPE_CHECKING:
+    from sqlite_utils import Database
 
 
 def tracer(sql, params) -> None:
@@ -15,7 +18,7 @@ def tracer(sql, params) -> None:
 def connect(args, conn=None, **kwargs):
     from sqlite_utils import Database
 
-    sqlite3.enable_callback_tracebacks(True)
+    sqlite3.enable_callback_tracebacks(True)  # noqa: FBT003
 
     class DB(Database):
         def pop(self, sql: str, params: Optional[Union[Iterable, dict]] = None, ignore_errors=None) -> Optional[Any]:
@@ -43,10 +46,10 @@ def connect(args, conn=None, **kwargs):
             try:
                 dg = self.query(sql, params)
                 d = next(dg, None)
-            except sqlite3.OperationalError as exc:
-                if any(e in str(exc) for e in ignore_errors):
+            except sqlite3.OperationalError as e:
+                if any(ignore_error in str(e) for ignore_error in ignore_errors):
                     return None
-                raise exc
+                raise
             return d
 
     if kwargs.get("memory"):
@@ -70,7 +73,6 @@ def optimize(args) -> None:
         args.force = False
 
     log.info("\nOptimizing database")
-    from sqlite_utils import Database
 
     db: Database = args.db
 
@@ -113,8 +115,8 @@ def optimize(args) -> None:
         if args.force:
             try:
                 db[table].disable_fts()  # type: ignore
-            except Exception:
-                pass
+            except Exception as e:
+                log.debug(e)
 
         log.info("Processing table: %s", table)
         table_columns = db[table].columns_dict

@@ -649,9 +649,9 @@ def chromecast_play(args, m) -> None:
     if catt_log:
         if catt_log.stderr is None or catt_log.stderr == "":
             if not args.cast_with_local:
-                raise Exception("catt does not exit nonzero? but something might have gone wrong")
+                raise RuntimeError("catt does not exit nonzero? but something might have gone wrong")
         elif "Heartbeat timeout, resetting connection" in catt_log.stderr:
-            raise Exception("Media is possibly partially unwatched")
+            raise RuntimeError("Media is possibly partially unwatched")
 
 
 def is_play_in_order_lvl2(args, media_file) -> bool:
@@ -739,11 +739,11 @@ def play(args, m: Dict) -> None:
     if args.chromecast:
         try:
             chromecast_play(args, m)
-        except Exception as e:
+        except Exception:
             if args.ignore_errors:
                 return
             else:
-                raise e
+                raise
 
     elif args.interdimensional_cable:
         player.socket_play(args, m)

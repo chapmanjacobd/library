@@ -94,7 +94,8 @@ def parse_args(action, usage) -> argparse.Namespace:
         elif args.profile == DBType.image:
             args.database = "image.db"
         else:
-            raise Exception(f"fs_extract for profile {args.profile} not implemented")
+            msg = f"fs_extract for profile {args.profile}"
+            raise NotImplementedError(msg)
 
     if args.db:
         args.database = args.db
@@ -155,7 +156,7 @@ def extract_metadata(mp_args, f) -> Optional[Dict[str, int]]:
         media = {**media, "is_dir": Path(f).is_dir()}
 
     if mp_args.profile in (DBType.audio, DBType.video):
-        return av.munge_av_tags(mp_args, media, f)
+        media = av.munge_av_tags(mp_args, media, f)
 
     if mp_args.profile == DBType.text:
         try:
@@ -166,10 +167,8 @@ def extract_metadata(mp_args, f) -> Optional[Dict[str, int]]:
                 media = books.munge_book_tags_fast(media, f)
         except mp_TimeoutError:
             log.warning(f"[{f}]: Timed out trying to read file")
-            return media
         else:
             log.debug(f"[{f}]: {timer()-start}")
-            return media
 
     return media
 
@@ -204,12 +203,15 @@ def find_new_files(args, path: Path) -> List[str]:
             scanned_files = consts.get_video_files(path)
         elif args.profile == DBType.text:
             scanned_files = consts.get_text_files(
-                path, image_recognition=args.ocr, speech_recognition=args.speech_recognition
+                path,
+                image_recognition=args.ocr,
+                speech_recognition=args.speech_recognition,
             )
         elif args.profile == DBType.image:
             scanned_files = consts.get_image_files(path)
         else:
-            raise Exception(f"fs_extract for profile {args.profile} not implemented")
+            msg = f"fs_extract for profile {args.profile}"
+            raise NotImplementedError(msg)
     except FileNotFoundError:
         print(f"[{path}] Not found")
         return []
@@ -231,7 +233,6 @@ def find_new_files(args, path: Path) -> List[str]:
         }
     except Exception as e:
         log.debug(e)
-        pass
     else:
         undeleted_files = list(deleted_set.intersection(scanned_set))
         undeleted_count = player.mark_media_undeleted(args, undeleted_files)
@@ -340,9 +341,10 @@ def extractor(args, paths) -> None:
 
     log.info("Imported %s paths", new_files)
 
-    if args.profile in [DBType.audio, DBType.video, DBType.text]:
-        if not args.db["media"].detect_fts() or new_files > 100000:
-            db.optimize(args)
+    if args.profile in [DBType.audio, DBType.video, DBType.text] and (
+        not args.db["media"].detect_fts() or new_files > 100000
+    ):
+        db.optimize(args)
 
 
 def fs_add(args=None) -> None:

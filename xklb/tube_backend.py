@@ -1,6 +1,6 @@
 import argparse, json, sys
 from copy import deepcopy
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from types import ModuleType
 from typing import Dict, List, Optional, Tuple
@@ -164,7 +164,8 @@ def is_supported(url) -> bool:  # thank you @dbr
 def is_playlist_known(args, playlist_path) -> bool:
     try:
         known = args.db.execute("select 1 from playlists where path=?", [playlist_path]).fetchone()
-    except Exception:
+    except Exception as e:
+        log.debug(e)
         return False
     if known is None:
         return False
@@ -178,7 +179,8 @@ def is_video_known(args, playlist_path, path) -> bool:
             f"select 1 from media where playlist_path=? and (path=? or {'web' if 'webpath' in m_columns else ''}path=?)",
             [playlist_path, path, path],
         ).fetchone()
-    except Exception:
+    except Exception as e:
+        log.debug(e)
         return False
     if known is None:
         return False
@@ -197,7 +199,7 @@ def consolidate(v: dict) -> Optional[dict]:
     upload_date = v.pop("upload_date", None) or release_date
     if upload_date:
         try:
-            upload_date = int(datetime.strptime(upload_date, "%Y%m%d").timestamp())
+            upload_date = int(datetime.strptime(upload_date, "%Y%m%d").replace(tzinfo=timezone.utc).timestamp())
         except Exception:
             upload_date = None
 
@@ -491,8 +493,8 @@ def save_tube_entry(args, m, info: Optional[dict] = None, error=None, unrecovera
     if fs_tags:
         try:
             args.db["media"].delete(webpath)  # from sqlite_utils.db import NotFoundError
-        except Exception:
-            pass
+        except Exception as e:
+            log.debug(e)
 
 
 def yt(args, m) -> None:

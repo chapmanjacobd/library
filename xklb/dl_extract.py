@@ -43,14 +43,14 @@ def parse_args(action, usage):
         "--dl-config",
         "-dl-config",
         nargs=1,
-        action=utils.argparse_dict,
+        action=utils.ArgparseDict,
         default={},
         metavar="KEY=VALUE",
         help="Add key/value pairs to override or extend downloader configuration",
     )
     parser.add_argument("--download-archive", default="~/.local/share/yt_archive.txt")
-    parser.add_argument("--extra-media-data", default={}, nargs=1, action=utils.argparse_dict, metavar="KEY=VALUE")
-    parser.add_argument("--extra-playlist-data", default={}, nargs=1, action=utils.argparse_dict, metavar="KEY=VALUE")
+    parser.add_argument("--extra-media-data", default={}, nargs=1, action=utils.ArgparseDict, metavar="KEY=VALUE")
+    parser.add_argument("--extra-playlist-data", default={}, nargs=1, action=utils.ArgparseDict, metavar="KEY=VALUE")
     parser.add_argument("--ignore-errors", "--ignoreerrors", "-i", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--safe", "-safe", action="store_true", help="Skip generic URLs")
 
@@ -287,9 +287,9 @@ def dl_download(args=None) -> None:
         if args.profile in (DBType.audio, DBType.video):
             try:
                 tube_backend.yt(args, m)
-            except Exception as e:
+            except Exception:
                 print("db:", args.database)
-                raise e
+                raise
         else:
             raise NotImplementedError
 
@@ -314,7 +314,7 @@ def dl_block(args=None) -> None:
     )
 
     if not any([args.playlists, args.all_deleted_playlists]):
-        raise Exception("Specific URLs or --all-deleted-playlists must be supplied")
+        raise RuntimeError("Specific URLs or --all-deleted-playlists must be supplied")
 
     log.info(utils.dict_filter_bool(args.__dict__))
     args.category = consts.BLOCK_THE_CHANNEL

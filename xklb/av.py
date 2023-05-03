@@ -1,5 +1,4 @@
-import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Optional
 
 from xklb import subtitle, utils
@@ -103,8 +102,8 @@ def munge_av_tags(args, media, f) -> Optional[dict]:
 
     try:
         probe = ffmpeg.probe(f, show_chapters=None)
-    except (KeyboardInterrupt, SystemExit):
-        raise SystemExit(130)
+    except (KeyboardInterrupt, SystemExit) as sys_exit:
+        raise SystemExit(130) from sys_exit
     except Exception as e:
         log.error(f"[{f}] Failed reading header. Metadata corruption")
         log.debug(e)
@@ -141,7 +140,7 @@ def munge_av_tags(args, media, f) -> Optional[dict]:
         upload_date = tags.get("DATE")
         if upload_date:
             try:
-                upload_date = int(datetime.strptime(upload_date, "%Y%m%d").timestamp())
+                upload_date = int(datetime.strptime(upload_date, "%Y%m%d").replace(tzinfo=timezone.utc).timestamp())
             except Exception:
                 upload_date = None
 

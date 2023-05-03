@@ -12,7 +12,7 @@ class MrSuperDialogue:
         from tkinter import PhotoImage, Tk
         from tkinter.ttk import Button, Frame, Label, Style
 
-        def raise_error(self, *args):
+        def raise_error(_self, *_args):
             raise  # pylint: disable=misplaced-bare-raise
 
         Tk.report_callback_exception = raise_error
@@ -25,7 +25,7 @@ class MrSuperDialogue:
         style.theme_use("clam")
 
         photo = PhotoImage(file="assets/kotobago.png")
-        self.root.wm_iconphoto(False, photo)
+        self.root.wm_iconphoto(True, photo)  # noqa: FBT003
         self.root.wm_attributes("-topmost", 1)
 
         for keyseq in ("<Escape>", "<Control-c>", "<Control-q>"):
@@ -141,7 +141,7 @@ class MrSuperDialogue:
         raise NotImplementedError
 
     @staticmethod
-    def get_monitor_from_coord(coord_x, coord_y):
+    def get_monitor_from_coord(coord_x, coord_y):  # noqa: ANN205; -> Monitor
         import screeninfo
 
         monitors = screeninfo.get_monitors()

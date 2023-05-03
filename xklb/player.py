@@ -1,4 +1,4 @@
-import csv, operator, os, platform, re, shutil, socket, subprocess, sys
+import csv, operator, os, platform, re, shutil, socket, subprocess
 from copy import deepcopy
 from io import StringIO
 from numbers import Number
@@ -79,7 +79,7 @@ def find_xdg_application(media_file) -> Optional[str]:
 
 def parse(args, m) -> List[str]:
     player = generic_player(args)
-    mpv = which("mpv.com") or which("mpv")
+    mpv = which("mpv.com") or which("mpv") or "mpv"
 
     if args.override_player:
         player = args.override_player
@@ -353,12 +353,12 @@ def post_act(args, media_file: str, action: Optional[str] = None, geom_data=None
 
 
 def override_sort(sort_expression: str) -> str:
-    def YEAR_MONTH(var):
+    def year_month_sql(var):
         return f"cast(strftime('%Y%m', datetime({var}, 'unixepoch')) as int)"
 
     return (
-        sort_expression.replace("month_created", YEAR_MONTH("time_created"))
-        .replace("month_modified", YEAR_MONTH("time_modified"))
+        sort_expression.replace("month_created", year_month_sql("time_created"))
+        .replace("month_modified", year_month_sql("time_modified"))
         .replace("random", "random()")
         .replace("priority", "ntile(1000) over (order by size) desc, duration")
     )
@@ -461,9 +461,10 @@ def watch_chromecast(args, m: dict, subtitles_file=None) -> Optional[subprocess.
 def listen_chromecast(args, m: dict) -> Optional[subprocess.CompletedProcess]:
     Path(consts.CAST_NOW_PLAYING).write_text(m["path"])
     Path(consts.FAKE_SUBTITLE).touch()
+    catt = which("catt") or "catt"
     if args.cast_with_local:
         cast_process = subprocess.Popen(
-            ["catt", "-d", args.chromecast_device, "cast", "-s", consts.FAKE_SUBTITLE, m["path"]],
+            [catt, "-d", args.chromecast_device, "cast", "-s", consts.FAKE_SUBTITLE, m["path"]],
             **utils.os_bg_kwargs(),
         )
         sleep(0.974)  # imperfect lazy sync; I use keyboard shortcuts to send `set speed` commands to mpv for resync
@@ -475,15 +476,16 @@ def listen_chromecast(args, m: dict) -> Optional[subprocess.CompletedProcess]:
         if m["path"].startswith("http"):
             catt_log = args.cc.play_url(m["path"], resolve=True, block=True)
         else:  #  local file
-            catt_log = cmd("catt", "-d", args.chromecast_device, "cast", "-s", consts.FAKE_SUBTITLE, m["path"])
+            catt_log = cmd(catt, "-d", args.chromecast_device, "cast", "-s", consts.FAKE_SUBTITLE, m["path"])
 
     return catt_log
 
 
 def socket_play(args, m: dict) -> None:
+    mpv = which("mpv") or "mpv"
     if args.sock is None:
-        subprocess.Popen(["mpv", "--idle", "--input-ipc-server=" + args.mpv_socket])
-        while not os.path.exists(args.mpv_socket):
+        subprocess.Popen([mpv, "--idle", "--input-ipc-server=" + args.mpv_socket])
+        while not Path(args.mpv_socket).exists():
             sleep(0.2)
         args.sock = socket.socket(socket.AF_UNIX)
         args.sock.connect(args.mpv_socket)
@@ -493,8 +495,8 @@ def socket_play(args, m: dict) -> None:
     try:
         start = randrange(int(start), int(end - args.interdimensional_cable + 1))
         end = start + args.interdimensional_cable
-    except Exception:
-        pass
+    except Exception as e:
+        log.info(e)
     if end == 0:
         return
 
@@ -554,7 +556,8 @@ def get_display_by_name(displays, screen_name):  # noqa: ANN201; -> List[screeni
             return [d]
 
     display_names = '", "'.join([d.name for d in displays])
-    raise Exception(f'Display "{screen_name}" not found. I see: "{display_names}"')
+    msg = f'Display "{screen_name}" not found. I see: "{display_names}"'
+    raise ValueError(msg)
 
 
 def is_hstack(args, display) -> bool:
@@ -727,7 +730,7 @@ def media_printer(args, media) -> None:
                 mark_media_deleted(args, f)
                 raise FileNotFoundError
             utils.pipe_print(quote(f))
-            return None
+            return
         else:
             if not args.cols:
                 args.cols = ["path"]
@@ -746,8 +749,8 @@ def media_printer(args, media) -> None:
                     utils.pipe_print(line.strip())
             if args.moved:
                 moved_media(args, list(map(operator.itemgetter("path"), media)), *args.moved)
-                return None
-            return None
+                return
+            return
     else:
         tbl = deepcopy(media)
         utils.col_resize(tbl, "path", 22)
@@ -771,9 +774,9 @@ def media_printer(args, media) -> None:
             duration = human_time(duration)
             if "a" not in args.print:
                 print("Total duration:", duration)
-                return None
-            return None
-        return None
+                return
+            return
+        return
 
 
 def printer(args, query, bindings) -> None:
