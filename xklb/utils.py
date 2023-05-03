@@ -51,10 +51,8 @@ def argparse_log() -> logging.Logger:
                 call_pdb=True,
                 debugger_cls=TerminalPdb,
             )
-        else:
-            pass
-    except Exception:
-        pass
+    except Exception as e:
+        log.debug(e)
 
     log_levels = [logging.WARNING, logging.INFO, logging.DEBUG]
     logging.root.handlers = []  # clear any existing handlers
@@ -174,9 +172,9 @@ def cmd(*command, strict=True, cwd=None, quiet=True, **kwargs) -> subprocess.Com
             **os_bg_kwargs(),
             **kwargs,
         )
-    except UnicodeDecodeError as e:
+    except UnicodeDecodeError:
         print(repr(command))
-        raise e
+        raise
 
     log.debug(r.args)
     r.stdout = print_std(r.stdout)
@@ -184,7 +182,8 @@ def cmd(*command, strict=True, cwd=None, quiet=True, **kwargs) -> subprocess.Com
     if r.returncode != 0:
         log.info("[%s]: ERROR %s", shlex.join(command), r.returncode)
         if strict:
-            raise Exception(f"[{command}] exited {r.returncode}")
+            msg = f"[{command}] exited {r.returncode}"
+            raise RuntimeError(msg)
 
     return r
 
@@ -243,17 +242,19 @@ def cmd_interactive(*command) -> subprocess.CompletedProcess:
     return subprocess.CompletedProcess(command, return_code)
 
 
-def Pclose(process) -> subprocess.CompletedProcess:
+def Pclose(process) -> subprocess.CompletedProcess:  # noqa: N802
     try:
         stdout, stderr = process.communicate(input)
     except subprocess.TimeoutExpired as exc:
+        log.debug("subprocess.TimeoutExpired")
         process.kill()
         if platform.system() == "Windows":
             exc.stdout, exc.stderr = process.communicate()
         else:
             process.wait()
         raise
-    except Exception:
+    except Exception as e:
+        log.debug(e)
         process.kill()
         raise
     return_code = process.poll()
@@ -663,7 +664,7 @@ def col_duration(tbl: List[Dict], col: str) -> List[Dict]:
     return tbl
 
 
-class argparse_dict(argparse.Action):
+class ArgparseDict(argparse.Action):
     def __call__(self, parser, args, values, option_string=None):
         try:
             d = {}
@@ -676,11 +677,12 @@ class argparse_dict(argparse.Action):
                     d[k] = v
 
         except ValueError as ex:
-            raise argparse.ArgumentError(self, f'Could not parse argument "{values}" as k1=1 k2=2 format {ex}')
+            msg = f'Could not parse argument "{values}" as k1=1 k2=2 format {ex}'
+            raise argparse.ArgumentError(self, msg) from ex
         setattr(args, self.dest, d)
 
 
-class argparse_enum(argparse.Action):
+class ArgparseEnum(argparse.Action):
     def __init__(self, **kwargs) -> None:
         # Pop off the type value
         enum_type = kwargs.pop("type", None)

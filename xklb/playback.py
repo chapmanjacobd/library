@@ -28,8 +28,8 @@ def parse_args(action) -> argparse.Namespace:
 
 def _now_playing(args) -> dict:
     media = {
-        "catt": Path(consts.CAST_NOW_PLAYING).read_text() if os.path.exists(consts.CAST_NOW_PLAYING) else None,
-        "mpv": args.mpv.command("get_property", "path") if os.path.exists(args.mpv_socket) else None,
+        "catt": Path(consts.CAST_NOW_PLAYING).read_text() if Path(consts.CAST_NOW_PLAYING).exists() else None,
+        "mpv": args.mpv.command("get_property", "path") if Path(args.mpv_socket).exists() else None,
     }
     log.info(media)
     return media

@@ -10,6 +10,7 @@ from xklb.fs_extract import fs_add
 from xklb.lb import library as lb
 from xklb.play_actions import watch as wt
 from xklb.player import mark_media_deleted, mark_media_watched
+from xklb.utils import log
 
 v_db = "tests/data/video.db"
 fs_add([v_db, "--scan-subtitles", "tests/data/"])
@@ -130,5 +131,5 @@ class TestFs(unittest.TestCase):
 
         try:
             temp_dir.cleanup()
-        except Exception:
-            pass
+        except Exception as e:
+            log.debug(e)

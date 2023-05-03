@@ -54,7 +54,7 @@ def parse_args(prog, usage) -> argparse.Namespace:
 def get(url):
     import requests
 
-    r = requests.get(url)
+    r = requests.get(url, timeout=120)
     return r.json()
 
 
@@ -133,9 +133,9 @@ def hacker_news_add() -> None:
     )
     try:
         import aiohttp
-    except ModuleNotFoundError as e:
+    except ModuleNotFoundError:
         log.error("aiohttp is required for hn_extract. Install with pip install aiohttp or pip install xklb[full]")
-        raise e
+        raise
 
     args.db.enable_wal()
 

@@ -257,7 +257,7 @@ def dedupe() -> None:
         pd.DataFrame(duplicates).to_csv(csv_path, index=False)
         print("Full list saved to:", csv_path)
     except ModuleNotFoundError:
-        pass
+        log.info("Skipping CSV export because pandas is not installed")
 
     duplicates_size = sum(filter(None, map(operator.itemgetter("duplicate_size"), duplicates)))
     print(f"Approx. space savings: {humanize.naturalsize(duplicates_size // 2)}")

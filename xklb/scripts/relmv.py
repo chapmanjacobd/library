@@ -59,7 +59,7 @@ def _relmv(args, sources, dest):
             elif e.errno == 2:  # FileNotFoundError
                 log.error("%s not found", abspath)
             else:
-                raise e
+                raise
 
 
 def relmv() -> None:

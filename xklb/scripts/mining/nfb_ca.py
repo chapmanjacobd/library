@@ -7,7 +7,7 @@ def get_page_links(url) -> None:
     import requests
     from bs4 import BeautifulSoup
 
-    soup = BeautifulSoup(requests.get(url).content, "html.parser")
+    soup = BeautifulSoup(requests.get(url, timeout=120).content, "html.parser")
     film_list = set()
 
     for a in soup.findAll("a", attrs={"href": True}):

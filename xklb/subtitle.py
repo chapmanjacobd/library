@@ -44,7 +44,7 @@ def convert_to_srt(path) -> str:
     except Error as e:
         log.info("Could not convert subtitle")
         log.info(e.stderr.decode())
-        raise UnicodeDecodeError("utf-8", b"Dr. John A. Zoidberg", 1, 2, "Bleh!")
+        raise UnicodeDecodeError("utf-8", b"Dr. John A. Zoidberg", 1, 2, "Bleh!") from e
 
     return temp_srt
 

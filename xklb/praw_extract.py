@@ -5,7 +5,7 @@ import sys
 from functools import partial
 from itertools import takewhile
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple
 
 from xklb import consts, db, utils
 from xklb.utils import log
@@ -32,6 +32,10 @@ And save it in the following location:
 
 More details: https://praw.readthedocs.io/en/stable/getting_started/configuration/prawini.html
 """
+
+
+if TYPE_CHECKING:
+    import praw
 
 
 def parse_args(action, usage) -> argparse.Namespace:
@@ -71,7 +75,7 @@ def parse_args(action, usage) -> argparse.Namespace:
         args.reddit = praw.Reddit(args.praw_site, config_interpolation="basic")
     except Exception as e:
         print(PRAW_SETUP_INSTRUCTIONS)
-        raise SystemExit(e)
+        raise SystemExit(e) from e
 
     log.info(utils.dict_filter_bool(args.__dict__))
 
@@ -109,12 +113,12 @@ SOFTWARE.
 """
 
 
-def created_since(row: Any, target_sec_utc: Optional[int]) -> bool:
+def created_since(row, target_sec_utc: Optional[int]) -> bool:
     result = (not target_sec_utc) or (row.created_utc >= target_sec_utc)
     return result
 
 
-def legalize(val: Any) -> Any:
+def legalize(val):
     import praw
 
     if isinstance(val, praw.models.reddit.base.RedditBase):  # type: ignore
@@ -139,7 +143,7 @@ def _parent_ids_interpreted(dct: Dict[str, Any]) -> Dict[str, Any]:
     return dct
 
 
-def saveable(item: Any) -> Dict[str, Any]:
+def saveable(item) -> Dict[str, Any]:
     result = {k: legalize(v) for k, v in item.__dict__.items() if not k.startswith("_")}
     return _parent_ids_interpreted(result)
 
@@ -245,8 +249,6 @@ def since_last_created(args, playlist_path):
 
 
 def redditor_new(args, redditor_dict) -> None:
-    import praw
-
     user_path, user_name = redditor_dict.values()
     user: praw.reddit.Redditor = args.reddit.redditor(user_name)
 
@@ -259,8 +261,6 @@ def redditor_new(args, redditor_dict) -> None:
 
 
 def subreddit_new(args, subreddit_dict) -> None:
-    import praw
-
     subreddit_path, subreddit_name = subreddit_dict.values()
     subreddit: praw.reddit.Subreddit = args.reddit.subreddit(subreddit_name)
 
@@ -286,8 +286,6 @@ def subreddit_new(args, subreddit_dict) -> None:
 
 
 def subreddit_top(args, subreddit_dict) -> None:
-    import praw
-
     subreddit_path, subreddit_name = subreddit_dict.values()
 
     subreddit: praw.reddit.Subreddit = args.reddit.subreddit(subreddit_name)

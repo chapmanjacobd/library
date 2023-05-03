@@ -17,7 +17,7 @@ def parse_args(action, usage) -> argparse.Namespace:
         "--dl-config",
         "-dl-config",
         nargs=1,
-        action=utils.argparse_dict,
+        action=utils.ArgparseDict,
         default={},
         metavar="KEY=VALUE",
         help="Add key/value pairs to override or extend default downloader configuration",

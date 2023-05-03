@@ -37,7 +37,7 @@ def copy_play_count(args, source_db) -> None:
 
     modified_row_count = 0
     with args.db.conn:
-        sql = f"""
+        sql = """
         UPDATE
             main.media
         SET play_count = (
