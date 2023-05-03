@@ -35,42 +35,38 @@ def parse_args() -> argparse.Namespace:
 def copy_play_count(args, source_db) -> None:
     args.db.attach("src", Path(source_db).resolve())
 
-    modified_row_count = 0
-    with args.db.conn:
-        sql = """
-        UPDATE
-            main.media
-        SET play_count = (
-                SELECT
-                    play_count
-                FROM
-                    src.media
-                WHERE
-                    main.media.path = REPLACE(src.media.path, :source_prefix, :target_prefix)
-            ),
-            time_played = (
-                SELECT
-                    time_played
-                FROM
-                    src.media
-                WHERE
-                    main.media.path = REPLACE(src.media.path, :source_prefix, :target_prefix)
+    for col in ["play_count", "time_played"]:
+        modified_row_count = 0
+        with args.db.conn:
+            sql = f"""
+            UPDATE
+                main.media
+            SET
+                {col} = (
+                    SELECT
+                        {col}
+                    FROM
+                        src.media
+                    WHERE
+                        main.media.path = REPLACE(src.media.path, :source_prefix, :target_prefix)
+                )
+            WHERE
+                EXISTS(
+                    SELECT
+                        1
+                    FROM
+                        src.media
+                    WHERE
+                        main.media.path = REPLACE(src.media.path, :source_prefix, :target_prefix)
+                        AND src.media.play_count > 0
+                );
+            """
+            cursor = args.db.conn.execute(
+                sql, {"source_prefix": args.source_prefix, "target_prefix": args.target_prefix}
             )
-        WHERE
-            EXISTS(
-                SELECT
-                    1
-                FROM
-                    src.media
-                WHERE
-                    main.media.path = REPLACE(src.media.path, :source_prefix, :target_prefix)
-                    AND src.media.play_count > 0
-            );
-        """
-        cursor = args.db.conn.execute(sql, {"source_prefix": args.source_prefix, "target_prefix": args.target_prefix})
-        modified_row_count += cursor.rowcount
+            modified_row_count += cursor.rowcount
 
-    log.info("Updated %s rows", modified_row_count)
+        log.info("Updated %s rows (%s)", modified_row_count, col)
 
 
 def copy_play_counts() -> None:

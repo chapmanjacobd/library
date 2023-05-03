@@ -1,9 +1,10 @@
+- CLI eda tool
+
 - CLI incremental diff (SQLITE, NDJSON, CSV)
 
 compare 100 rows at a time using primary key
 
 show the differences between files
-
 
 - CLI incremental book reading
 
@@ -14,4 +15,3 @@ show the differences between files
 - CLI city abacus
 
 - CLI UNLI Neighborhoods
-
