@@ -35,38 +35,37 @@ def parse_args() -> argparse.Namespace:
 def copy_play_count(args, source_db) -> None:
     args.db.attach("src", Path(source_db).resolve())
 
-    for col in ["play_count", "time_played"]:
-        modified_row_count = 0
-        with args.db.conn:
+    copy_counts = args.db.query(
+        """
+        SELECT
+            *
+        FROM
+            src.media
+        WHERE
+            src.media.play_count > 0
+        """
+    )
+
+    modified_row_count = 0
+    with args.db.conn:
+        for d in copy_counts:
+            renamed_path = d["path"].replace(args.source_prefix, args.target_prefix, 1)
+            log.debug(renamed_path)
+
             sql = f"""
             UPDATE
                 main.media
             SET
-                {col} = (
-                    SELECT
-                        {col}
-                    FROM
-                        src.media
-                    WHERE
-                        main.media.path = REPLACE(src.media.path, :source_prefix, :target_prefix)
-                )
+                play_count = :play_count
+                , time_played = :time_played
+                , playhead = :playhead
             WHERE
-                EXISTS(
-                    SELECT
-                        1
-                    FROM
-                        src.media
-                    WHERE
-                        main.media.path = REPLACE(src.media.path, :source_prefix, :target_prefix)
-                        AND src.media.play_count > 0
-                );
+                main.media.path = :renamed_path
             """
-            cursor = args.db.conn.execute(
-                sql, {"source_prefix": args.source_prefix, "target_prefix": args.target_prefix}
-            )
+            cursor = args.db.conn.execute(sql, {**d, "renamed_path": renamed_path})
             modified_row_count += cursor.rowcount
 
-        log.info("Updated %s rows (%s)", modified_row_count, col)
+    log.info("Updated %s rows", modified_row_count)
 
 
 def copy_play_counts() -> None:
