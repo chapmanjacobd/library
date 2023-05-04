@@ -29,7 +29,7 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          python -m pip install pdm
+          python -m pip install pdm 'requests<=2.30.0'
           pdm install --no-editable -G test
 
       - name: Run pytest
