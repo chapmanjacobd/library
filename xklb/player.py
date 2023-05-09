@@ -288,11 +288,11 @@ def delete_playlists(args, playlists) -> None:
 
 
 class Action:
-    KEEP = "keep"
-    DELETE = "delete"
-    DELETE_IF_AUDIOBOOK = "delete_if_audiobook"
-    SOFTDELETE = "softdelete"
-    MOVE = "move"
+    KEEP = "KEEP"
+    DELETE = "DELETE"
+    DELETE_IF_AUDIOBOOK = "DELETE_IF_AUDIOBOOK"
+    SOFTDELETE = "SOFTDELETE"
+    MOVE = "MOVE"
 
 
 class AskAction:
@@ -334,6 +334,7 @@ def post_act(args, media_file: str, action: Optional[str] = None, geom_data=None
         post_act(args, media_file, action=true_action if response else false_action)
 
     action = action or args.post_action
+    action = action.upper()
 
     if action == Action.KEEP:
         pass
@@ -346,7 +347,7 @@ def post_act(args, media_file: str, action: Optional[str] = None, geom_data=None
         handle_soft_delete_action()
     elif action == Action.MOVE:
         handle_move_action()
-    elif action.startswith("ask_"):
+    elif action.startswith("ASK_"):
         handle_ask_action(action)
     else:
         raise ValueError("Unrecognized action:", action)
