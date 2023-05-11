@@ -4,7 +4,7 @@ from .copy_play_counts import copy_play_counts
 from .dedupe import dedupe
 from .merge_dbs import merge_dbs
 from .merge_online_local import merge_online_local
-from .mining.nfb_ca import nfb_films
+from .mining.extract_links import extract_links
 from .mining.nouns import nouns
 from .mining.pushshift import pushshift_extract
 from .mining.reddit_selftext import reddit_selftext

@@ -68,9 +68,9 @@ def usage() -> str:
       lb surf                  Load browser tabs in a streaming way (stdin)
 
     mining:
+      lb extract-links         Extract links from lists of web pages
       lb reddit-selftext       db selftext external links -> db media table
       lb pushshift             Convert Pushshift jsonl.zstd -> reddit.db format (stdin)
-      lb nfb-films             NFB Director links -> film links (stdin)
       lb nouns                 Unstructured text -> compound nouns (stdin)
       lb hnadd                 Create a hackernews database (this takes a few days)
     """
@@ -198,8 +198,8 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
 
     subp_reddit_selftext = add_parser(subparsers, "reddit-selftext", ["rst"])
     subp_reddit_selftext.set_defaults(func=scripts.reddit_selftext)
-    subp_nfb_directors = add_parser(subparsers, "nfb-films")
-    subp_nfb_directors.set_defaults(func=scripts.nfb_films)
+    subp_nfb_directors = add_parser(subparsers, "extract-links", ["links"])
+    subp_nfb_directors.set_defaults(func=scripts.extract_links)
 
     parser.add_argument("--version", "-V", action="store_true")
     return parser
