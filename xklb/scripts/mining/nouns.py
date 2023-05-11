@@ -4,7 +4,7 @@ from io import StringIO
 
 from xklb.utils import pipe_print
 
-from . import words
+from . import data
 
 """
 extract compound nouns and phrases from unstructured mixed HTML plain text
@@ -45,7 +45,7 @@ def printer(parts) -> None:
             continue
 
         part_lookup = part.lower()
-        if part_lookup in words.stop_words or part_lookup in words.prepositions or is_num(part):
+        if part_lookup in data.stop_words or part_lookup in data.prepositions or is_num(part):
             continue
 
         pipe_print(part)
