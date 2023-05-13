@@ -41,20 +41,27 @@ def calculate_duration(args, m) -> Tuple[int, int]:
     end = m.get("duration", 0)
     minimum_duration = 7 * 60
 
+    duration = m.get("duration", 20 * 60)
     if args.start:
         playhead = m.get("playhead")
 
         if args.start.isnumeric() and int(args.start) > 0:
             start = int(args.start)
+        elif args.start.endswith("%") and duration:
+            start_percent = int(args.start[:-1])
+            start = int(duration * start_percent / 100)
         elif playhead and any([end == 0, end > minimum_duration]):
             start = playhead
         elif args.start == "wadsworth":
-            start = m["duration"] * 0.3
+            start = duration * 0.3
         else:
             start = int(args.start)
     if args.end:
         if args.end == "dawsworth":
-            end = m["duration"] * 0.65
+            end = duration * 0.65
+        elif args.end.endswith("%") and duration:
+            end_percent = int(args.end[:-1])
+            end = int(duration * end_percent / 100)
         elif "+" in args.end:
             end = int(args.start) + int(args.end)
         else:

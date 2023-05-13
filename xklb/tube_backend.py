@@ -592,7 +592,7 @@ def yt(args, m) -> None:
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         try:
             info = ydl.extract_info(m["path"], download=True)
-        except yt_dlp.DownloadError as e:
+        except (yt_dlp.DownloadError, ConnectionResetError) as e:
             error = consts.REGEX_ANSI_ESCAPE.sub("", str(e))
             ydl_log["error"].append(error)
             info = None
