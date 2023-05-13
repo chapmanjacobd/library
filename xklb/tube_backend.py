@@ -467,6 +467,7 @@ def save_tube_entry(args, m, info: Optional[dict] = None, error=None, unrecovera
             delete_unplayable=False,
             ocr=False,
             speech_recognition=False,
+            check_corrupt=False,
         )
         fs_tags = utils.dict_filter_bool(fs_extract.extract_metadata(fs_args, info["local_path"]), keep_0=False) or {}
         fs_extract.clean_up_temp_dirs()
