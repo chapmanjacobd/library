@@ -579,6 +579,46 @@ def is_hstack(args, display) -> bool:
         return True
 
 
+def modify_display_size_for_taskbar(display):
+    try:
+        if platform.system() == "Windows":
+            import win32gui
+
+            taskbar_window_handle = win32gui.FindWindow("Shell_TrayWnd", None)
+            if taskbar_window_handle == 0:
+                taskbar_window_handle = win32gui.FindWindow("Shell_SecondaryTrayWnd", None)
+            if taskbar_window_handle == 0:
+                return display
+
+            work_area = win32gui.GetMonitorInfo(taskbar_window_handle)["rcWork"]
+
+            _taskbar_height = display.height - work_area[3]
+            display.height = work_area[3] - work_area[1]
+            display.width = work_area[2] - work_area[0]
+
+        elif platform.system() == "Linux":
+            xprop_output = subprocess.check_output("xprop -root _NET_WORKAREA".split()).decode().strip()
+            work_area = [int(x) for x in xprop_output.split(" = ")[1].split(",")]
+
+            _taskbar_height = display.height - work_area[3]
+            display.height = work_area[3] - work_area[1]
+            display.width = work_area[2] - work_area[0]
+
+        elif platform.system() == "Darwin":
+            dock_height = int(subprocess.check_output(["defaults", "read", "com.apple.dock", "tilesize"]).strip())
+            dock_position = (
+                subprocess.check_output(["defaults", "read", "com.apple.dock", "orientation"]).decode().strip()
+            )
+            if dock_position == "left" or dock_position == "right":
+                display.width -= dock_height
+            else:
+                display.height -= dock_height
+
+        return display
+    except:
+        return display
+
+
 def get_multiple_player_template(args) -> List[str]:
     import screeninfo
 
@@ -596,6 +636,9 @@ def get_multiple_player_template(args) -> List[str]:
         displays = displays[: len(args.multiple_playback)]
 
     min_media_per_screen, remainder = divmod(args.multiple_playback, len(displays))
+
+    if min_media_per_screen > 1:
+        displays[0] = modify_display_size_for_taskbar(displays[0])
 
     displays.sort(key=lambda d: d.width * d.height, reverse=True)
     players = []
