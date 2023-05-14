@@ -10,7 +10,7 @@ from xklb.utils import log
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="library bigdirs",
-        usage="""library bigdirs DATABASE [--limit (4000)] [--depth (0)] [--sort-by-deleted] [--size=+5MB]
+        usage="""library bigdirs DATABASE [--limit (4000)] [--depth (0)] [--sort-by "deleted" | "played"] [--size=+5MB]
 
     See what folders take up space
 
@@ -20,7 +20,7 @@ def parse_args() -> argparse.Namespace:
 """,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("--sort-by-deleted", action="store_true")
+    parser.add_argument("--sort-by")
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", default="4000")
     parser.add_argument("--depth", "-d", default=0, type=int, help="Depth of folders")
     parser.add_argument("--lower", type=int, help="Number of files per folder lower limit")
@@ -52,18 +52,17 @@ def group_files_by_folder(args, media) -> List[Dict]:
             p.pop()
             parent = "/".join(p) + "/"
 
-            file_exists = (m.get("time_deleted") or 0) == 0
-
-            if d.get(parent):
-                d[parent]["size"] += (m["size"] or 0) if file_exists else 0
-                d[parent]["count"] += 1 if file_exists else 0
-                d[parent]["count_deleted"] += 0 if file_exists else 1
+            file_deleted = bool(m.get("time_deleted", 0))
+            file_played = bool(m.get("time_played", 0))
+            if parent not in d:
+                d[parent] = {"size": 0, "count": 0, "count_deleted": 0, "count_played": 0}
+            if not file_deleted:
+                d[parent]["size"] += m.get("size", 0)
+                d[parent]["count"] += 1
             else:
-                d[parent] = {
-                    "size": (m["size"] or 0) if file_exists else 0,
-                    "count": 1 if file_exists else 0,
-                    "count_deleted": 0 if file_exists else 1,
-                }
+                d[parent]["count_deleted"] += 1
+            if file_played:
+                d[parent]["count_played"] += 1
 
     for path, pdict in list(d.items()):
         if pdict["count"] == 0:
@@ -92,6 +91,7 @@ def group_folders(args, folders) -> List[Dict]:
             d[parent]["size"] += f["size"]
             d[parent]["count"] += f["count"]
             d[parent]["count_deleted"] += f["count_deleted"]
+            d[parent]["count_played"] += f["count_played"]
         else:
             d[parent] = f
 
@@ -114,6 +114,7 @@ def get_table(args) -> List[dict]:
             path
             , size
             {', time_deleted' if 'time_deleted' in columns else ''}
+            {', time_played' if 'time_played' in columns else ''}
         from media
         where 1=1
             {'and time_downloaded > 0' if 'time_downloaded' in columns else ''}
@@ -125,11 +126,22 @@ def get_table(args) -> List[dict]:
     return media
 
 
+def sort_by(args):
+    if args.sort_by:
+        if args.sort_by == "played_ratio":
+            return lambda x: x["count_played"] / x["count_deleted"] if x["count_deleted"] else 0
+        elif args.sort_by == "deleted_ratio":
+            return lambda x: x["count_deleted"] / x["count_played"] if x["count_played"] else 0
+        else:
+            return lambda x: x[f"count_{args.sort_by}"]
+    return lambda x: x["size"] / x["count"]
+
+
 def process_bigdirs(args, media) -> List[Dict]:
     folders = group_files_by_folder(args, media)
     if args.depth:
         folders = group_folders(args, folders)
-    return sorted(folders, key=lambda x: x["count_deleted"] if args.sort_by_deleted else x["size"] / x["count"])
+    return sorted(folders, key=sort_by(args))
 
 
 def bigdirs() -> None:
@@ -141,7 +153,7 @@ def bigdirs() -> None:
         tbl = tbl[-int(args.limit) :]
 
     tbl = utils.list_dict_filter_bool(tbl, keep_0=False)
-    tbl = utils.col_resize(tbl, "path", 60)
+    tbl = utils.col_resize(tbl, "path", 50)
     tbl = utils.col_naturalsize(tbl, "size")
     print(tabulate(tbl, tablefmt="fancy_grid", headers="keys", showindex=False))
     if not args.limit:

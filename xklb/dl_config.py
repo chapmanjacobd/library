@@ -38,6 +38,7 @@ yt_recoverable_errors = re.compile(
 .*currently unavailable
 .*selectionunavailable
 .*Downloaded .* bytes, expected .* bytes
+.*FileNotFoundError
 .*Playlists that require authentication may not extract correctly without a successful webpage download
 .*Main webpage is locked behind the login page
 .*You need to log in to access this content
