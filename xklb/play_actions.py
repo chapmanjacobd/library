@@ -423,7 +423,7 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     parser.add_argument("--sibling", "--episode", action="store_true")
     parser.add_argument("--solo", action="store_true")
 
-    parser.add_argument("--sort-by-deleted", action="store_true")
+    parser.add_argument("--sort-by", action="store_true")
     parser.add_argument("--depth", "-D", default=0, type=int, help="Depth of folders")
     parser.add_argument("--lower", type=int, help="Number of files per folder lower limit")
     parser.add_argument("--upper", type=int, help="Number of files per folder upper limit")
