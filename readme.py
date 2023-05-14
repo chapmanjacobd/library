@@ -238,7 +238,7 @@ You may filter by folder depth (similar to QDirStat or WizTree)
 
 There is also an flag to prioritize folders which have many files which have been deleted (for example you delete songs you don't like--now you can see who wrote those songs and delete all their other songs...)
 
-    $ lb bigdirs --sort-by-deleted audio.db
+    $ lb bigdirs --sort-by deleted audio.db
 
 </details>
 
