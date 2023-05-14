@@ -1,4 +1,5 @@
 import argparse
+from pathlib import Path
 from typing import Dict, List
 
 from tabulate import tabulate
@@ -31,11 +32,18 @@ def parse_args() -> argparse.Namespace:
         action="append",
         help="Only include files of specific sizes (uses the same syntax as fd-find)",
     )
+    parser.add_argument("--include", "-s", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
+    parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--verbose", "-v", action="count", default=0)
 
     parser.add_argument("database")
-    args = parser.parse_args()
+    parser.add_argument("search", nargs="*")
+    args = parser.parse_intermixed_args()
     args.db = db.connect(args)
+
+    args.include += args.search
+    if args.include == ["."]:
+        args.include = [str(Path().cwd().resolve())]
 
     if args.size:
         args.size = utils.parse_human_to_sql(utils.human_to_bytes, "size", args.size)
@@ -105,7 +113,13 @@ def group_folders(args, folders) -> List[Dict]:
 
 
 def get_table(args) -> List[dict]:
-    columns = args.db["media"].columns_dict
+    m_columns = args.db["media"].columns_dict
+    args.filter_sql = []
+    args.filter_bindings = {}
+
+    if args.size:
+        args.filter_sql.append(" and size IS NOT NULL " + args.size)
+    db.construct_search_bindings(args, m_columns)
 
     media = list(
         args.db.query(
@@ -113,14 +127,15 @@ def get_table(args) -> List[dict]:
         select
             path
             , size
-            {', time_deleted' if 'time_deleted' in columns else ''}
-            {', time_played' if 'time_played' in columns else ''}
-        from media
+            {', time_deleted' if 'time_deleted' in m_columns else ''}
+            {', time_played' if 'time_played' in m_columns else ''}
+        from media m
         where 1=1
-            {'and time_downloaded > 0' if 'time_downloaded' in columns else ''}
-            {args.size if args.size else ''}
+            {'and time_downloaded > 0' if 'time_downloaded' in m_columns else ''}
+            {" ".join(args.filter_sql)}
         order by path
         """,
+            args.filter_bindings,
         ),
     )
     return media

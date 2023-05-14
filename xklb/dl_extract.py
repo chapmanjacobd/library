@@ -118,7 +118,7 @@ def construct_query(args) -> Tuple[str, dict]:
 
     args.filter_sql.extend([" and " + w for w in args.where])
 
-    play_actions.construct_search_bindings(args, m_columns)
+    db.construct_search_bindings(args, m_columns)
 
     args.filter_sql.append(
         f"""and cast(STRFTIME('%s',

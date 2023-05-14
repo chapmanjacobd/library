@@ -63,9 +63,9 @@ def construct_query(args) -> Tuple[str, dict]:
         if args.include:
             args.table = db.fts_search(args)
         elif args.exclude:
-            play_actions.construct_search_bindings(args, pl_columns)
+            db.construct_search_bindings(args, pl_columns)
     else:
-        play_actions.construct_search_bindings(args, pl_columns)
+        db.construct_search_bindings(args, pl_columns)
 
     LIMIT = "LIMIT " + str(args.limit) if args.limit else ""
     query = f"""SELECT

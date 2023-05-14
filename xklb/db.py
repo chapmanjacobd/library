@@ -213,6 +213,17 @@ def gen_include_excludes(cols_available):
     return include_string, exclude_string
 
 
+def construct_search_bindings(args, columns) -> None:
+    includes, excludes = gen_include_excludes(columns)
+
+    for idx, inc in enumerate(args.include):
+        args.filter_sql.append(includes.format(idx))
+        args.filter_bindings[f"include{idx}"] = "%" + inc.replace(" ", "%").replace("%%", " ") + "%"
+    for idx, exc in enumerate(args.exclude):
+        args.filter_sql.append(excludes.format(idx))
+        args.filter_bindings[f"exclude{idx}"] = "%" + exc.replace(" ", "%").replace("%%", " ") + "%"
+
+
 def get_playlists(args, cols="path, dl_config", constrain=False, sql_filters=None) -> List[dict]:
     columns = args.db["playlists"].columns_dict
     if sql_filters is None:
