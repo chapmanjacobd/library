@@ -55,14 +55,14 @@ def group_files_by_folder(args, media) -> List[Dict]:
             file_deleted = bool(m.get("time_deleted", 0))
             file_played = bool(m.get("time_played", 0))
             if parent not in d:
-                d[parent] = {"size": 0, "count": 0, "count_deleted": 0, "count_played": 0}
+                d[parent] = {"size": 0, "count": 0, "deleted": 0, "played": 0}
             if not file_deleted:
                 d[parent]["size"] += m.get("size", 0)
                 d[parent]["count"] += 1
             else:
-                d[parent]["count_deleted"] += 1
+                d[parent]["deleted"] += 1
             if file_played:
-                d[parent]["count_played"] += 1
+                d[parent]["played"] += 1
 
     for path, pdict in list(d.items()):
         if pdict["count"] == 0:
@@ -90,8 +90,8 @@ def group_folders(args, folders) -> List[Dict]:
         if d.get(parent):
             d[parent]["size"] += f["size"]
             d[parent]["count"] += f["count"]
-            d[parent]["count_deleted"] += f["count_deleted"]
-            d[parent]["count_played"] += f["count_played"]
+            d[parent]["deleted"] += f["deleted"]
+            d[parent]["played"] += f["played"]
         else:
             d[parent] = f
 
@@ -129,11 +129,12 @@ def get_table(args) -> List[dict]:
 def sort_by(args):
     if args.sort_by:
         if args.sort_by == "played_ratio":
-            return lambda x: x["count_played"] / x["count_deleted"] if x["count_deleted"] else 0
+            return lambda x: x["played"] / x["deleted"] if x["deleted"] else 0
         elif args.sort_by == "deleted_ratio":
-            return lambda x: x["count_deleted"] / x["count_played"] if x["count_played"] else 0
+            return lambda x: x["deleted"] / x["played"] if x["played"] else 0
         else:
-            return lambda x: x[f"count_{args.sort_by}"]
+            return lambda x: x[args.sort_by]
+
     return lambda x: x["size"] / x["count"]
 
 
