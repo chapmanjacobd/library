@@ -499,17 +499,6 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     return args
 
 
-def construct_search_bindings(args, columns) -> None:
-    includes, excludes = db.gen_include_excludes(columns)
-
-    for idx, inc in enumerate(args.include):
-        args.filter_sql.append(includes.format(idx))
-        args.filter_bindings[f"include{idx}"] = "%" + inc.replace(" ", "%").replace("%%", " ") + "%"
-    for idx, exc in enumerate(args.exclude):
-        args.filter_sql.append(excludes.format(idx))
-        args.filter_bindings[f"exclude{idx}"] = "%" + exc.replace(" ", "%").replace("%%", " ") + "%"
-
-
 def construct_query(args) -> Tuple[str, dict]:
     m_columns = args.db["media"].columns_dict
     args.filter_sql = []
@@ -572,9 +561,9 @@ def construct_query(args) -> Tuple[str, dict]:
             args.table = db.fts_search(args)
             m_columns = {**m_columns, "rank": int}
         elif args.exclude:
-            construct_search_bindings(args, m_columns)
+            db.construct_search_bindings(args, m_columns)
     else:
-        construct_search_bindings(args, m_columns)
+        db.construct_search_bindings(args, m_columns)
 
     if args.table == "media" and not any(
         [
