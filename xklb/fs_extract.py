@@ -67,9 +67,9 @@ def parse_args(action, usage) -> argparse.Namespace:
     parser.add_argument("--extra-media-data", default={})
     parser.add_argument("--extra-playlist-data", default={})
 
-    parser.add_argument("--delete-unplayable", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--check-corrupt", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--delete-corrupt", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--delete-unplayable", action="store_true")
+    parser.add_argument("--check-corrupt", action="store_true")
+    parser.add_argument("--delete-corrupt", action="store_true")
     parser.add_argument("--force", "-f", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--verbose", "-v", action="count", default=0)
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)

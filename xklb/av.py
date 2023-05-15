@@ -1,6 +1,8 @@
 from datetime import datetime, timezone
 from typing import Dict, Optional
 
+import ffmpeg
+
 from xklb import subtitle, utils
 from xklb.consts import DBType
 from xklb.utils import combine, log, safe_unpack
@@ -98,8 +100,6 @@ def get_audio_tags(f) -> dict:
 
 
 def munge_av_tags(args, media, f) -> Optional[dict]:
-    import ffmpeg
-
     try:
         probe = ffmpeg.probe(f, show_chapters=None)
     except (KeyboardInterrupt, SystemExit) as sys_exit:
@@ -111,9 +111,11 @@ def munge_av_tags(args, media, f) -> Optional[dict]:
             utils.trash(f)
         return None
 
-    if args.check_corrupt:
-        error_log = ffmpeg.input(f, loglevel="error", output=None)  # TODO: test that this actually works...
-        if error_log.returncode != 0:
+    if args.check_corrupt or args.delete_corrupt:
+        output = ffmpeg.output(ffmpeg.input(f), "/dev/null", f="null")
+        try:
+            error_log = ffmpeg.run(output, capture_stderr=True)
+        except ffmpeg.Error:
             log.warning(f"[{f}] Data corruption")
             if args.delete_corrupt:
                 utils.trash(f)
