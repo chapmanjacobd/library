@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import List, Optional
 
 import ffmpeg
-from ffmpeg import Error
 
 from xklb import db, utils
 from xklb.consts import SUB_TEMP_DIR
@@ -14,8 +13,6 @@ IMAGE_SUBTITLE_CODECS = ["dvbsub", "dvdsub", "pgssub", "xsub", "dvb_subtitle", "
 
 
 def extract(video_file, stream_index) -> Optional[str]:
-    import ffmpeg
-
     Path(SUB_TEMP_DIR).mkdir(parents=True, exist_ok=True)
     temp_srt = tempfile.mktemp(".srt", dir=SUB_TEMP_DIR)
 
@@ -23,7 +20,7 @@ def extract(video_file, stream_index) -> Optional[str]:
 
     try:
         ffmpeg.input(video_file).output(temp_srt, map=stream_id).global_args("-nostdin").run(quiet=True)
-    except Error as e:
+    except ffmpeg.Error as e:
         log.info(
             f"Could not extract subtitle {stream_id} from video file. Likely incorrect subtitle character encoding set. %s",
             video_file,
@@ -35,13 +32,11 @@ def extract(video_file, stream_index) -> Optional[str]:
 
 
 def convert_to_srt(path) -> str:
-    import ffmpeg
-
     Path(SUB_TEMP_DIR).mkdir(parents=True, exist_ok=True)
     temp_srt = tempfile.mktemp(".srt", dir=SUB_TEMP_DIR)
     try:
         ffmpeg.input(path).output(temp_srt).global_args("-nostdin").run(quiet=True)
-    except Error as e:
+    except ffmpeg.Error as e:
         log.info("Could not convert subtitle")
         log.info(e.stderr.decode())
         raise UnicodeDecodeError("utf-8", b"Dr. John A. Zoidberg", 1, 2, "Bleh!") from e
