@@ -32,9 +32,13 @@ def usage(action) -> str:
     Play media in order (similarly named episodes):
         library {action} --play-in-order
         There are multiple strictness levels of --play-in-order:
-        library {action} -O   # slow, more complex algorithm
+        library {action} -O   # equivalent
         library {action} -OO  # above, plus ignores most filters
         library {action} -OOO # above, plus ignores include/exclude filter during ordinal search
+
+        library {action} --related  # similar to -O but uses fts to find similar content
+        library {action} -R         # equivalent
+        library {action} -RR        # above, plus ignores most filters
 
     Filter media by file siblings of parent directory:
         library {action} --sibling   # only include files which have more than or equal to one sibling
@@ -330,6 +334,7 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library " + action, usage=usage(action))
 
     parser.add_argument("--play-in-order", "-O", action="count", default=0, help=argparse.SUPPRESS)
+    parser.add_argument("--related", "-R", action="count", default=0, help=argparse.SUPPRESS)
     parser.add_argument("--sort", "-u", nargs="+", help=argparse.SUPPRESS)
     parser.add_argument("--random", "-r", action="store_true", help=argparse.SUPPRESS)
 
@@ -573,7 +578,7 @@ def construct_query(args) -> Tuple[str, dict]:
             args.partial,
             args.lower,
             args.upper,
-            args.limit != consts.DEFAULT_PLAY_QUEUE,
+            args.limit not in args.defaults,
             args.duration_from_size,
         ],
     ):
@@ -581,24 +586,22 @@ def construct_query(args) -> Tuple[str, dict]:
         if args.random:
             limit = consts.DEFAULT_PLAY_QUEUE * 16
 
-        if "limit" in args.defaults:
-            where_not_deleted = (
-                "where COALESCE(time_deleted,0) = 0"
-                if "time_deleted" in m_columns and "time_deleted" not in " ".join(sys.argv)
-                else ""
-            )
-            args.filter_sql.append(
-                f"and m.rowid in (select rowid from media {where_not_deleted} order by random() limit {limit})",
-            )
+        where_not_deleted = (
+            "where COALESCE(time_deleted,0) = 0"
+            if "time_deleted" in m_columns and "time_deleted" not in " ".join(sys.argv)
+            else ""
+        )
+        args.filter_sql.append(
+            f"and m.rowid in (select rowid from media {where_not_deleted} order by random() limit {limit})",
+        )
 
-    duration = "duration"
-    if args.action == SC.read:
-        duration = "cast(length(tags) / 4.2 / 220 * 60 as INT) + 10 duration"
-
-    cols = args.cols or ["path", "title", duration, "size", "subtitle_count", "is_dir", "rank"]
-    SELECT = "\n        , ".join([c for c in cols if c in m_columns or c == "*"])
-    LIMIT = "LIMIT " + str(args.limit) if args.limit else ""
-    OFFSET = f"OFFSET {args.skip}" if args.skip and args.limit else ""
+    cols = args.cols or ["path", "title", "duration", "size", "subtitle_count", "is_dir", "rank"]
+    args.select = [c for c in cols if c in m_columns or c in ["*"]]
+    if args.action == SC.read and "tags" in m_columns:
+        args.select += "cast(length(tags) / 4.2 / 220 * 60 as INT) + 10 duration"
+    args.select_sql = "\n        , ".join(args.select)
+    args.limit_sql = "LIMIT " + str(args.limit) if args.limit else ""
+    args.offset_sql = f"OFFSET {args.skip}" if args.skip and args.limit else ""
     query = f"""WITH m as (
     SELECT rowid, * FROM {args.table}
     WHERE 1=1
@@ -611,13 +614,13 @@ def construct_query(args) -> Tuple[str, dict]:
         {'AND COALESCE(time_downloaded,1)!= 0 AND path not like "http%"' if args.local_media_only else ''}
     )
     SELECT
-        {SELECT}
+        {args.select_sql}
     FROM m
     WHERE 1=1
         {" ".join(args.filter_sql)}
     ORDER BY 1=1
         , {args.sort}
-    {LIMIT} {OFFSET}
+    {args.limit_sql} {args.offset_sql}
     """
 
     args.filter_sql = [
@@ -764,7 +767,16 @@ def play(args, m: Dict) -> None:
 def process_playqueue(args) -> None:
     query, bindings = construct_query(args)
 
-    if args.print and not any([args.partial, args.lower, args.upper, args.safe, args.play_in_order > 0]):
+    if args.print and not any(
+        [
+            args.partial,
+            args.lower,
+            args.upper,
+            args.safe,
+            args.play_in_order >= consts.SIMILAR,
+            args.related >= consts.RELATED,
+        ]
+    ):
         player.printer(args, query, bindings)
         return
 
@@ -783,6 +795,7 @@ def process_playqueue(args) -> None:
         [
             Path(args.watch_later_directory).exists(),
             args.play_in_order == 0,
+            args.related == 0,
             "sort" in args.defaults,
             not args.partial,
             not args.random,
@@ -794,17 +807,21 @@ def process_playqueue(args) -> None:
         media = [d for d in media if tube_backend.is_supported(d["path"]) or Path(d["path"]).exists()]
 
     if args.print:
+        if args.related >= consts.RELATED:
+            media = player.get_related_media(args, media[0])
         if args.play_in_order >= consts.SIMILAR:
-            media = [get_ordinal_media(args, d) for d in media]
+            media = [player.get_ordinal_media(args, d) for d in media]
         player.media_printer(args, media)
     elif args.multiple_playback:
         args.gui = True
         player.multiple_player(args, media)
     else:
+        if args.related >= consts.RELATED:
+            media = player.get_related_media(args, media[0])
         try:
             for m in media:
                 if is_play_in_order_lvl2(args, m["path"]):
-                    m = get_ordinal_media(args, m)
+                    m = player.get_ordinal_media(args, m)
                 play(args, m)
         finally:
             if args.interdimensional_cable:

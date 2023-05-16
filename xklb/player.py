@@ -12,7 +12,7 @@ from typing import Dict, List, Optional, Tuple, Union
 
 from tabulate import tabulate
 
-from xklb import consts, utils
+from xklb import consts, db, utils
 from xklb.consts import SC
 from xklb.scripts import process_bigdirs
 from xklb.utils import cmd, cmd_interactive, human_time, log
@@ -406,7 +406,10 @@ def get_ordinal_media(args, m: Dict) -> Dict:
             return m
 
         candidate = new_candidate
-        query = f"""SELECT path FROM {'media' if args.play_in_order >= consts.SIMILAR_NO_FILTER_NO_FTS else args.table}
+        query = f"""
+            SELECT
+                {args.select_sql}
+            FROM {'media' if args.play_in_order >= consts.SIMILAR_NO_FILTER_NO_FTS else args.table}
             WHERE 1=1
                 and path like :candidate
                 {'and COALESCE(time_deleted,0) = 0' if 'time_deleted' in columns else ''}
@@ -415,7 +418,7 @@ def get_ordinal_media(args, m: Dict) -> Dict:
             LIMIT 1000
             """
         bindings = {"candidate": candidate + "%"}
-        if args.play_in_order == consts.SIMILAR:
+        if args.play_in_order >= consts.SIMILAR_NO_FILTER:
             if args.include or args.exclude:
                 bindings = {**bindings, "query": args.filter_bindings["query"]}
         else:
@@ -436,6 +439,43 @@ def get_ordinal_media(args, m: Dict) -> Dict:
             return m
 
     return similar_videos[0]
+
+
+def get_related_media(args, m: Dict) -> List[Dict]:
+    m_columns = args.db["media"].columns_dict
+    m_columns.update(rank=int)
+
+    m = args.db["media"].get(m["path"])
+    words = set(
+        utils.conform(utils.extract_words(m.get(k)) for k in m.keys() if k in db.config["media"]["search_columns"])
+    )
+
+    args.include = words
+    args.table = db.fts_flexible_search(args)
+
+    cols = args.cols or ["path", "title", "duration", "size", "subtitle_count", "is_dir", "rank"]
+    args.select = [c for c in cols if c in m_columns or c in ["*"]]
+    args.select_sql = "\n        , ".join(args.select)
+    query = f"""
+        SELECT
+            {args.select_sql}, rank
+        FROM {args.table}
+        WHERE 1=1
+            {'and COALESCE(time_deleted,0) = 0' if 'time_deleted' in m_columns else ''}
+            {'' if args.related >= consts.RELATED_NO_FILTER else (" ".join(args.filter_sql) or '')}
+        ORDER BY play_count, rank, path
+        {args.limit_sql} {args.offset_sql}
+        """
+    bindings = {}
+    if args.related >= consts.RELATED_NO_FILTER:
+        bindings = {**bindings, "query": args.filter_bindings["query"]}
+    else:
+        bindings = {**bindings, **args.filter_bindings}
+
+    related_videos = list(args.db.query(query, bindings))
+    log.debug(related_videos)
+
+    return related_videos
 
 
 def watch_chromecast(args, m: dict, subtitles_file=None) -> Optional[subprocess.CompletedProcess]:

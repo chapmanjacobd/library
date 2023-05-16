@@ -60,12 +60,46 @@ def connect(args, conn=None, **kwargs):
         log.error(f"Database file '{args.database}' does not exist. Create one with lb fsadd, tubeadd, or tabsadd.")
         raise SystemExit(1)
 
-    db = DB(conn or args.database, tracer=tracer if args.verbose >= 2 else None, **kwargs)  # type: ignore
+    db = DB(conn or args.database, tracer=tracer if args.verbose >= consts.LOG_DEBUG else None, **kwargs)  # type: ignore
     with db.conn:
         db.conn.execute("PRAGMA main.cache_size = 8000")
 
     db.enable_wal()
     return db
+
+
+config = {
+    "media": {
+        "search_columns": ["path", "title", "tags", "mood", "genre", "description", "artist", "album"],
+        "column_order": ["path", "webpath", "id", "ie_key", "playlist_path"],
+        "ignore_columns": ["id"],
+    },
+    "reddit_posts": {
+        "search_columns": ["title", "selftext"],
+        "column_order": ["playlist_path", "path"],
+    },
+    "reddit_comments": {
+        "search_columns": ["body"],
+    },
+    "hn_comment": {
+        "search_columns": ["text", "author"],
+    },
+    "hn_pollopt": {
+        "search_columns": ["text", "author"],
+    },
+    "hn_poll": {
+        "search_columns": ["title", "text", "author"],
+    },
+    "hn_job": {
+        "search_columns": ["title", "text", "author", "path"],
+    },
+    "hn_story": {
+        "search_columns": ["title", "text", "author", "path"],
+    },
+    "playlists": {
+        "column_order": ["path", "ie_key"],
+    },
+}
 
 
 def optimize(args) -> None:
@@ -75,39 +109,6 @@ def optimize(args) -> None:
     log.info("\nOptimizing database")
 
     db: Database = args.db
-
-    config = {
-        "media": {
-            "search_columns": ["path", "title", "tags", "mood", "genre", "description", "artist", "album"],
-            "column_order": ["path", "webpath", "id", "ie_key", "playlist_path"],
-            "ignore_columns": ["id"],
-        },
-        "reddit_posts": {
-            "search_columns": ["title", "selftext"],
-            "column_order": ["playlist_path", "path"],
-        },
-        "reddit_comments": {
-            "search_columns": ["body"],
-        },
-        "hn_comment": {
-            "search_columns": ["text", "author"],
-        },
-        "hn_pollopt": {
-            "search_columns": ["text", "author"],
-        },
-        "hn_poll": {
-            "search_columns": ["title", "text", "author"],
-        },
-        "hn_job": {
-            "search_columns": ["title", "text", "author", "path"],
-        },
-        "hn_story": {
-            "search_columns": ["title", "text", "author", "path"],
-        },
-        "playlists": {
-            "column_order": ["path", "ie_key"],
-        },
-    }
 
     for table in config:
         if table not in db.table_names():
@@ -176,6 +177,14 @@ def fts_quote(query: List[str]) -> List[str]:
 
 def fts_search(args) -> str:
     args.filter_bindings["query"] = " AND ".join(fts_quote(args.include))
+    if args.exclude:
+        args.filter_bindings["query"] += " NOT " + " NOT ".join(fts_quote(args.exclude))
+    table = "(" + args.db["media"].search_sql(include_rank=True) + ")"
+    return table
+
+
+def fts_flexible_search(args) -> str:
+    args.filter_bindings["query"] = " OR ".join(fts_quote(args.include))
     if args.exclude:
         args.filter_bindings["query"] += " NOT " + " NOT ".join(fts_quote(args.exclude))
     table = "(" + args.db["media"].search_sql(include_rank=True) + ")"
