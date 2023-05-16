@@ -348,6 +348,15 @@ def clean_string(p) -> str:
     return p
 
 
+def extract_words(string):
+    if not string:
+        return None
+
+    cleaned_string = re.sub(r"[^\w\s]", " ", string)
+    words = [remove_consecutive_whitespace(s) for s in cleaned_string.split()]
+    return words
+
+
 def clean_path(b, dot_space=False) -> str:
     import ftfy
 
