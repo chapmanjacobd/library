@@ -385,8 +385,10 @@ def last_chars(candidate) -> str:
     return remove_chars
 
 
-def get_ordinal_media(args, m: Dict) -> Dict:
+def get_ordinal_media(args, m: Dict, ignore_paths=None) -> Dict:
     # TODO: maybe try https://dba.stackexchange.com/questions/43415/algorithm-for-finding-the-longest-prefix
+    if ignore_paths is None:
+        ignore_paths = []
 
     columns = args.db["media"].columns_dict
 
@@ -414,10 +416,12 @@ def get_ordinal_media(args, m: Dict) -> Dict:
                 and path like :candidate
                 {'and COALESCE(time_deleted,0) = 0' if 'time_deleted' in columns else ''}
                 {'' if args.play_in_order >= consts.SIMILAR_NO_FILTER else (" ".join(args.filter_sql) or '')}
+                {"and path not in ({})".format(",".join([":ignore_path{}".format(i) for i in range(len(ignore_paths))])) if len(ignore_paths) > 0 else ''}
             ORDER BY play_count, path
             LIMIT 1000
             """
-        bindings = {"candidate": candidate + "%"}
+        ignore_path_params = {":ignore_path{}".format(i): value for i, value in enumerate(ignore_paths)}
+        bindings = {"candidate": candidate + "%", **ignore_path_params}
         if args.play_in_order >= consts.SIMILAR_NO_FILTER:
             if args.include or args.exclude:
                 bindings = {**bindings, "query": args.filter_bindings["query"]}
