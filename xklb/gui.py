@@ -3,6 +3,8 @@ from typing import NoReturn, Tuple
 
 from xklb.utils import log
 
+base_folder = Path(__file__).resolve().parent
+
 
 class UserQuit(BaseException):
     pass
@@ -25,7 +27,7 @@ class MrSuperDialogue:
         style = Style(self.root)
         style.theme_use("clam")
 
-        photo = PhotoImage(file=str(Path("assets/kotobago.png")))
+        photo = PhotoImage(file=str(base_folder / "assets" / "kotobago.png"))
         self.root.wm_iconphoto(True, photo)  # noqa: FBT003
         self.root.wm_attributes("-topmost", 1)
 
