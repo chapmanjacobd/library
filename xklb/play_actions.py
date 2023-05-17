@@ -717,6 +717,9 @@ def transcode(args, path) -> str:
 
 def prep_media(args, m: Dict):
     t = utils.Timer()
+    args.db = db.connect(args)
+    log.debug("db.connect: %s", t.elapsed())
+
     if is_play_in_order_lvl2(args, m["path"]):
         m = player.get_ordinal_media(args, m)
         log.debug("player.get_ordinal_media: %s", t.elapsed())
@@ -853,13 +856,14 @@ def process_playqueue(args) -> None:
             media = player.get_related_media(args, media[0])
             log.debug("player.get_related_media: %s", t.elapsed())
         try:
+            mp_args = argparse.Namespace(**{k: v for k, v in args.__dict__.items() if k not in {"db"}})
             media.reverse()  # because media.pop()
             futures = deque()
             with ThreadPoolExecutor(max_workers=1) as executor:
                 while media or futures:
                     while media and len(futures) < 3:
                         m = media.pop()
-                        future = executor.submit(prep_media, args, m)
+                        future = executor.submit(prep_media, mp_args, m)
                         futures.append(future)
 
                     if futures:
