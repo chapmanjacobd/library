@@ -63,7 +63,7 @@ exclude = [
 ]
 
 [tool.hatch.build.force-include]
-"assets/" = "xklb/assets/"
+"xklb/assets/" = "xklb/assets/"
 
 [tool.black]
 line-length = 120
