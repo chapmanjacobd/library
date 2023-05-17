@@ -1,7 +1,10 @@
 import argparse, shlex, shutil, sys, time
+from collections import deque
+from concurrent.futures import ThreadPoolExecutor
+from copy import deepcopy
 from pathlib import Path
 from random import random
-from typing import Dict, Tuple
+from typing import Dict, Optional, Tuple
 
 from xklb import consts, db, player, subtitle, tube_backend, utils
 from xklb.consts import SC
@@ -307,8 +310,8 @@ def parse_args_sort(args) -> None:
         (args.action in (SC.listen, SC.watch) and "play_count" in m_columns, "play_count", "play_count desc"),
         (
             args.action in (SC.listen, SC.watch) and "size" in m_columns and "duration" in m_columns,
-            "ntile(1000) over (order by size) desc, duration",
-            "ntile(1000) over (order by size), duration desc",
+            "size desc, duration",
+            "size, duration desc",
         ),
         (args.action == SC.filesystem, "sparseness", "sparseness desc"),
         (args.action == SC.filesystem, "size", "size desc"),
@@ -704,28 +707,48 @@ def transcode(args, path) -> str:
         "loudnorm=i=-18:lra=17",
         temp_video,
     )
+
     Path(path).unlink()
     shutil.move(temp_video, transcode_dest)
+    with args.db.conn:
+        args.db.conn.execute("UPDATE media SET path = ? where path = ?", [transcode_dest, path])
     return transcode_dest
 
 
-def play(args, m: Dict) -> None:
-    original_path = m["path"]
+def prep_media(args, m: Dict):
+    t = utils.Timer()
+    if is_play_in_order_lvl2(args, m["path"]):
+        m = player.get_ordinal_media(args, m)
+        log.debug("player.get_ordinal_media: %s", t.elapsed())
+
+    m["original_path"] = m["path"]
     if args.action in (SC.watch, SC.listen) and not m["path"].startswith("http"):
         media_path = Path(args.prefix + m["path"]).resolve() if args.prefix else Path(m["path"])
         m["path"] = str(media_path)
 
         if not media_path.exists():
+            log.debug("media_path exists: %s", t.elapsed())
             log.warning("[%s]: Does not exist. Skipping...", m["path"])
-            mark_media_deleted(args, original_path)
-            return
+            mark_media_deleted(args, m["original_path"])
+            log.debug("mark_media_deleted: %s", t.elapsed())
+            return None
 
         if args.transcode or args.transcode_audio:
             m["path"] = transcode(args, m["path"])
+            log.debug("transcode: %s", t.elapsed())
 
-    print(now_playing(m["path"]))
+    m["now_playing"] = now_playing(m["path"])
+
+    return m
+
+
+def play(args, m) -> None:
+    t = utils.Timer()
+    print(m["now_playing"])
+    log.debug("now_playing: %s", t.elapsed())
 
     args.player = player.parse(args, m)
+    log.debug("player.parse: %s", t.elapsed())
 
     start_time = time.time()
     if args.chromecast:
@@ -754,18 +777,23 @@ def play(args, m: Dict) -> None:
     if "playhead" in m_columns:
         playhead = utils.get_playhead(
             args,
-            original_path,
+            m["original_path"],
             start_time,
             existing_playhead=m.get("playhead"),
             media_duration=m.get("duration"),
         )
         if playhead:
-            player.set_playhead(args, original_path, playhead)
-    player.post_act(args, original_path)
+            player.set_playhead(args, m["original_path"], playhead)
+
+    t.reset()
+    player.post_act(args, m["original_path"])
+    log.debug("player.post_act: %s", t.elapsed())
 
 
 def process_playqueue(args) -> None:
+    t = utils.Timer()
     query, bindings = construct_query(args)
+    log.debug("construct_query: %s", t.elapsed())
 
     if args.print and not any(
         [
@@ -781,12 +809,15 @@ def process_playqueue(args) -> None:
         return
 
     media = list(args.db.query(query, bindings))
+    log.debug("query: %s", t.elapsed())
 
     if args.partial and Path(args.watch_later_directory).exists():
         media = utils.mpv_enrich2(args, media)
+        log.debug("utils.mpv_enrich2: %s", t.elapsed())
 
     if args.lower is not None or args.upper is not None:
         media = utils.filter_episodic(args, media)
+        log.debug("utils.filter_episodic: %s", t.elapsed())
 
     if not media:
         utils.no_media_found()
@@ -802,9 +833,11 @@ def process_playqueue(args) -> None:
         ],
     ):
         media = utils.mpv_enrich(args, media)
+        log.debug("utils.mpv_enrich: %s", t.elapsed())
 
     if args.safe:
         media = [d for d in media if tube_backend.is_supported(d["path"]) or Path(d["path"]).exists()]
+        log.debug("tube_backend.is_supported: %s", t.elapsed())
 
     if args.print:
         if args.related >= consts.RELATED:
@@ -818,11 +851,22 @@ def process_playqueue(args) -> None:
     else:
         if args.related >= consts.RELATED:
             media = player.get_related_media(args, media[0])
+            log.debug("player.get_related_media: %s", t.elapsed())
         try:
-            for m in media:
-                if is_play_in_order_lvl2(args, m["path"]):
-                    m = player.get_ordinal_media(args, m)
-                play(args, m)
+            media.reverse()  # because media.pop()
+            futures = deque()
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                while media or futures:
+                    while media and len(futures) < 3:
+                        m = media.pop()
+                        future = executor.submit(prep_media, args, m)
+                        futures.append(future)
+
+                    if futures:
+                        future = futures.popleft()
+                        m = future.result()
+                        if m is not None:
+                            play(args, m)
         finally:
             if args.interdimensional_cable:
                 args.sock.send(b"raw quit \n")

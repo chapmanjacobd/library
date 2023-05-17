@@ -6,6 +6,7 @@ from functools import wraps
 from pathlib import Path
 from random import shuffle
 from shutil import which
+from timeit import default_timer
 from typing import Any, Dict, Generator, List, NoReturn, Optional, Union
 
 import humanize
@@ -958,3 +959,19 @@ def get_playhead(
         if playhead > 0 and (media_duration is None or media_duration >= playhead):
             return playhead
     return None
+
+
+class Timer:
+    def __init__(self):
+        self.reset()
+
+    def reset(self):
+        self.start_time = default_timer()
+
+    def elapsed(self):
+        if not hasattr(self, "start_time"):
+            raise RuntimeError("Timer has not been started.")
+        end_time = default_timer()
+        elapsed_time = end_time - self.start_time
+        self.reset()
+        return elapsed_time
