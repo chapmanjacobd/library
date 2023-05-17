@@ -715,17 +715,17 @@ def transcode(args, path) -> str:
     return transcode_dest
 
 
-def prep_media(args, m: Dict):
+def prep_media(args, m: Dict, ignore_paths):
     t = utils.Timer()
     args.db = db.connect(args)
     log.debug("db.connect: %s", t.elapsed())
 
     if is_play_in_order_lvl2(args, m["path"]):
-        m = player.get_ordinal_media(args, m)
+        m = player.get_ordinal_media(args, m, ignore_paths)
         log.debug("player.get_ordinal_media: %s", t.elapsed())
 
     m["original_path"] = m["path"]
-    if args.action in (SC.watch, SC.listen) and not m["path"].startswith("http"):
+    if not m["path"].startswith("http"):
         media_path = Path(args.prefix + m["path"]).resolve() if args.prefix else Path(m["path"])
         m["path"] = str(media_path)
 
@@ -737,7 +737,7 @@ def prep_media(args, m: Dict):
             return None
 
         if args.transcode or args.transcode_audio:
-            m["path"] = transcode(args, m["path"])
+            m["path"] = m["original_path"] = transcode(args, m["path"])
             log.debug("transcode: %s", t.elapsed())
 
     m["now_playing"] = now_playing(m["path"])
@@ -858,18 +858,20 @@ def process_playqueue(args) -> None:
         try:
             mp_args = argparse.Namespace(**{k: v for k, v in args.__dict__.items() if k not in {"db"}})
             media.reverse()  # because media.pop()
+            ignore_paths = []
             futures = deque()
             with ThreadPoolExecutor(max_workers=1) as executor:
                 while media or futures:
                     while media and len(futures) < 3:
                         m = media.pop()
-                        future = executor.submit(prep_media, mp_args, m)
+                        future = executor.submit(prep_media, mp_args, m, ignore_paths)
+                        ignore_paths.append(m["path"])
                         futures.append(future)
 
                     if futures:
                         future = futures.popleft()
                         m = future.result()
-                        if m is not None:
+                        if m is not None and Path(m["path"]).exists():
                             play(args, m)
         finally:
             if args.interdimensional_cable:
