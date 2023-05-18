@@ -420,7 +420,7 @@ def get_ordinal_media(args, m: Dict, ignore_paths=None) -> Dict:
             ORDER BY play_count, path
             LIMIT 1000
             """
-        ignore_path_params = {":ignore_path{}".format(i): value for i, value in enumerate(ignore_paths)}
+        ignore_path_params = {"ignore_path{}".format(i): value for i, value in enumerate(ignore_paths)}
         bindings = {"candidate": candidate + "%", **ignore_path_params}
         if args.play_in_order >= consts.SIMILAR_NO_FILTER:
             if args.include or args.exclude:
