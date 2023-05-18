@@ -871,7 +871,7 @@ def process_playqueue(args) -> None:
                     if futures:
                         future = futures.popleft()
                         m = future.result()
-                        if m is not None and Path(m["path"]).exists():
+                        if m is not None and (m["path"].startswith("http") or Path(m["path"]).exists()):
                             play(args, m)
         finally:
             if args.interdimensional_cable:
