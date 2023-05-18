@@ -2,9 +2,8 @@ import sys
 from html.parser import HTMLParser
 from io import StringIO
 
+from xklb import data
 from xklb.utils import pipe_print
-
-from . import data
 
 """
 extract compound nouns and phrases from unstructured mixed HTML plain text

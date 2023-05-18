@@ -1,4 +1,4 @@
-import csv, operator, os, platform, re, shutil, socket, subprocess
+import csv, operator, os, platform, re, shutil, socket, subprocess, sys
 from copy import deepcopy
 from io import StringIO
 from numbers import Number
@@ -385,12 +385,24 @@ def last_chars(candidate) -> str:
     return remove_chars
 
 
+def filter_args_sql(args, m_columns):
+    return f"""
+        {'and path like "http%"' if args.safe else ''}
+        {f'and path not like "{args.keep_dir}%"' if Path(args.keep_dir).exists() else ''}
+        {'and COALESCE(time_deleted,0) = 0' if 'time_deleted' in m_columns and 'time_deleted' not in ' '.join(sys.argv) else ''}
+        {'AND (score IS NULL OR score > 7)' if 'score' in m_columns else ''}
+        {'AND (upvote_ratio IS NULL OR upvote_ratio > 0.73)' if 'upvote_ratio' in m_columns else ''}
+        {'AND COALESCE(time_downloaded,0) = 0' if args.online_media_only else ''}
+        {'AND COALESCE(time_downloaded,1)!= 0 AND path not like "http%"' if args.local_media_only else ''}
+    """
+
+
 def get_ordinal_media(args, m: Dict, ignore_paths=None) -> Dict:
     # TODO: maybe try https://dba.stackexchange.com/questions/43415/algorithm-for-finding-the-longest-prefix
     if ignore_paths is None:
         ignore_paths = []
 
-    columns = args.db["media"].columns_dict
+    m_columns = args.db["media"].columns_dict
 
     total_media = args.db.execute("select count(*) val from media").fetchone()[0]
     candidate = deepcopy(m["path"])
@@ -414,7 +426,7 @@ def get_ordinal_media(args, m: Dict, ignore_paths=None) -> Dict:
             FROM {'media' if args.play_in_order >= consts.SIMILAR_NO_FILTER_NO_FTS else args.table}
             WHERE 1=1
                 and path like :candidate
-                {'and COALESCE(time_deleted,0) = 0' if 'time_deleted' in columns else ''}
+                {filter_args_sql(args, m_columns)}
                 {'' if args.play_in_order >= consts.SIMILAR_NO_FILTER else (" ".join(args.filter_sql) or '')}
                 {"and path not in ({})".format(",".join([":ignore_path{}".format(i) for i in range(len(ignore_paths))])) if len(ignore_paths) > 0 else ''}
             ORDER BY play_count, path
@@ -453,8 +465,7 @@ def get_related_media(args, m: Dict) -> List[Dict]:
     words = set(
         utils.conform(utils.extract_words(m.get(k)) for k in m.keys() if k in db.config["media"]["search_columns"])
     )
-
-    args.include = words
+    args.include = sorted(words, key=len, reverse=True)[:100]
     args.table = db.fts_flexible_search(args)
 
     cols = args.cols or ["path", "title", "duration", "size", "subtitle_count", "is_dir", "rank"]
@@ -463,14 +474,18 @@ def get_related_media(args, m: Dict) -> List[Dict]:
     query = f"""
         SELECT
             {args.select_sql}, rank
-        FROM {args.table}
+        FROM {args.table} m
         WHERE 1=1
-            {'and COALESCE(time_deleted,0) = 0' if 'time_deleted' in m_columns else ''}
+            and path != :path
+            {filter_args_sql(args, m_columns)}
             {'' if args.related >= consts.RELATED_NO_FILTER else (" ".join(args.filter_sql) or '')}
-        ORDER BY play_count, rank, path
-        {args.limit_sql} {args.offset_sql}
+        ORDER BY play_count
+            , m.path like "http%"
+            , {'rank' if 'sort' in args.defaults else f'ntile(1000) over (order by rank), {args.sort}'}
+            , path
+        {"LIMIT " + str(args.limit - 1) if args.limit else ""} {args.offset_sql}
         """
-    bindings = {}
+    bindings = {"path": m["path"]}
     if args.related >= consts.RELATED_NO_FILTER:
         bindings = {**bindings, "query": args.filter_bindings["query"]}
     else:
@@ -479,7 +494,7 @@ def get_related_media(args, m: Dict) -> List[Dict]:
     related_videos = list(args.db.query(query, bindings))
     log.debug(related_videos)
 
-    return related_videos
+    return [m] + related_videos
 
 
 def watch_chromecast(args, m: dict, subtitles_file=None) -> Optional[subprocess.CompletedProcess]:

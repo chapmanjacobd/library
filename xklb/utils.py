@@ -15,7 +15,7 @@ from IPython.terminal.debugger import TerminalPdb
 from rich import prompt
 from rich.logging import RichHandler
 
-from xklb import consts
+from xklb import consts, data
 
 try:
     import ipdb
@@ -349,12 +349,28 @@ def clean_string(p) -> str:
     return p
 
 
+def safe_int(s) -> Optional[int]:
+    try:
+        return int(float(s))
+    except Exception:
+        return None
+
+
 def extract_words(string):
     if not string:
         return None
 
     cleaned_string = re.sub(r"[^\w\s]", " ", string)
     words = [remove_consecutive_whitespace(s) for s in cleaned_string.split()]
+    words = [
+        s
+        for s in words
+        if not (
+            s.lower() in data.stop_words
+            or s.lower() in data.prepositions
+            or (safe_int(s) is not None and safe_int(s) < 100)
+        )
+    ]
     return words
 
 
@@ -467,13 +483,6 @@ def filter_episodic(args, media: List[Dict]) -> List[Dict]:
             filtered_media.append(m)
 
     return filtered_media
-
-
-def safe_int(s) -> Optional[int]:
-    try:
-        return int(float(s))
-    except Exception:
-        return None
 
 
 def mpv_enrich2(args, media) -> List[Dict]:
