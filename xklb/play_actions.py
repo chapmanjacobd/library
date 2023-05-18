@@ -608,19 +608,12 @@ def construct_query(args) -> Tuple[str, dict]:
     query = f"""WITH m as (
     SELECT rowid, * FROM {args.table}
     WHERE 1=1
-        {'and path like "http%"' if args.safe else ''}
-        {f'and path not like "{args.keep_dir}%"' if Path(args.keep_dir).exists() else ''}
-        {'and COALESCE(time_deleted,0) = 0' if 'time_deleted' in m_columns and 'time_deleted' not in ' '.join(sys.argv) else ''}
-        {'AND (score IS NULL OR score > 7)' if 'score' in m_columns else ''}
-        {'AND (upvote_ratio IS NULL OR upvote_ratio > 0.73)' if 'upvote_ratio' in m_columns else ''}
-        {'AND COALESCE(time_downloaded,0) = 0' if args.online_media_only else ''}
-        {'AND COALESCE(time_downloaded,1)!= 0 AND path not like "http%"' if args.local_media_only else ''}
+        {" ".join(args.filter_sql)}
+        {player.filter_args_sql(args, m_columns)}
     )
     SELECT
         {args.select_sql}
     FROM m
-    WHERE 1=1
-        {" ".join(args.filter_sql)}
     ORDER BY 1=1
         , {args.sort}
     {args.limit_sql} {args.offset_sql}
