@@ -1,4 +1,5 @@
-from xklb import lb, play_actions, scripts
+from xklb import lb, play_actions
+from xklb.scripts.scatter import scatter_usage
 
 print(
     rf"""# xk media library
@@ -248,7 +249,7 @@ There is also an flag to prioritize folders which have many files which have bee
 <details><summary>If you use mergerfs, you'll likely be interested in this</summary>
 
     library scatter -h
-    usage: {scripts.scatter_usage}
+    usage: {scatter_usage}
 
     positional arguments:
     database
