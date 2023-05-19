@@ -608,12 +608,13 @@ def construct_query(args) -> Tuple[str, dict]:
     query = f"""WITH m as (
     SELECT rowid, * FROM {args.table}
     WHERE 1=1
-        {" ".join(args.filter_sql)}
         {player.filter_args_sql(args, m_columns)}
     )
     SELECT
         {args.select_sql}
     FROM m
+    WHERE 1=1
+        {" ".join(args.filter_sql)}
     ORDER BY 1=1
         , {args.sort}
     {args.limit_sql} {args.offset_sql}
