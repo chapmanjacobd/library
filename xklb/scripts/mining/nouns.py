@@ -2,7 +2,7 @@ import sys
 from html.parser import HTMLParser
 from io import StringIO
 
-from xklb import data
+from xklb.scripts.mining import data
 from xklb.utils import pipe_print
 
 """

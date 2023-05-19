@@ -15,7 +15,8 @@ from IPython.terminal.debugger import TerminalPdb
 from rich import prompt
 from rich.logging import RichHandler
 
-from xklb import consts, data
+from xklb import consts
+from xklb.scripts.mining import data
 
 try:
     import ipdb
@@ -368,7 +369,7 @@ def extract_words(string):
         if not (
             s.lower() in data.stop_words
             or s.lower() in data.prepositions
-            or (safe_int(s) is not None and safe_int(s) < 100)
+            or safe_int(s) is not None
         )
     ]
     return words
