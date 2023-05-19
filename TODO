@@ -1,3 +1,7 @@
+- quick-scan media (percentage interval -- 0.05% to 100% check of video) divide duration by percent
+
+- scan bpm and key sig  https://github.com/aubio/aubio https://github.com/tyiannak/pyAudioAnalysis
+
 - CLI eda tool
 
 - CLI incremental diff (SQLITE, NDJSON, CSV)
