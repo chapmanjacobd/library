@@ -14,7 +14,7 @@ from tabulate import tabulate
 
 from xklb import consts, db, utils
 from xklb.consts import SC
-from xklb.scripts import process_bigdirs
+from xklb.scripts.bigdirs import process_bigdirs
 from xklb.utils import cmd, cmd_interactive, human_time, log
 
 try:
