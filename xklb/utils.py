@@ -366,11 +366,7 @@ def extract_words(string):
     words = [
         s
         for s in words
-        if not (
-            s.lower() in data.stop_words
-            or s.lower() in data.prepositions
-            or safe_int(s) is not None
-        )
+        if not (s.lower() in data.stop_words or s.lower() in data.prepositions or safe_int(s) is not None)
     ]
     return words
 
