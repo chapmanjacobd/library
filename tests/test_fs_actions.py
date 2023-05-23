@@ -59,14 +59,14 @@ class TestFs(unittest.TestCase):
     @mock.patch("xklb.player.local_player", return_value=SimpleNamespace(returncode=0))
     def test_lb_fs(self, play_mocked):
         for SC in ("watch", "wt"):
-            lb([SC, v_db])
+            lb([SC, v_db, "-w", "path like '%test.mp4'"])
             out = play_mocked.call_args[0][1]
             assert "test.mp4" in out["path"]
             assert out["duration"] == 12
             assert out["subtitle_count"] == 3
             assert out["size"] == 136057
 
-        sys.argv = ["wt", v_db]
+        sys.argv = ["wt", v_db, "-w", "path like '%test.mp4'"]
         wt()
         out = play_mocked.call_args[0][1]
         assert "test.mp4" in out["path"]
@@ -125,7 +125,7 @@ class TestFs(unittest.TestCase):
         mark_media_watched(args, [str(Path("tests/data/test.mp4").resolve())])
         mark_media_deleted(args, [str(Path("tests/data/test.mp4").resolve())])
         fs_add([t_db, "tests/data/"])
-        d = args.db.pop_dict("select * from media")
+        d = args.db.pop_dict("select * from media where path like '%test.mp4'")
         assert d["play_count"] == 1
         assert d["time_deleted"] == 0
 

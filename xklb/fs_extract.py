@@ -60,7 +60,9 @@ def parse_args(action, usage) -> argparse.Namespace:
     parser.add_argument("--scan-all-files", "-a", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--category", "-c", help=argparse.SUPPRESS)
 
-    parser.add_argument("--io-multiplier", default="1")
+    parser.add_argument(
+        "--io-multiplier", type=float, default=1.0, help="Especially useful for text, image, filesystem db types"
+    )
     parser.add_argument("--ocr", "--OCR", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--speech-recognition", "--speech", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--scan-subtitles", "--scan-subtitle", action="store_true", help=argparse.SUPPRESS)
@@ -68,8 +70,10 @@ def parse_args(action, usage) -> argparse.Namespace:
     parser.add_argument("--extra-playlist-data", default={})
 
     parser.add_argument("--delete-unplayable", action="store_true")
-    parser.add_argument("--check-corrupt", action="store_true")
-    parser.add_argument("--delete-corrupt", action="store_true")
+    parser.add_argument(
+        "--check-corrupt", type=float, default=0.0, help="check that 0 to 100 percent of media decodes correctly"
+    )
+    parser.add_argument("--delete-corrupt", type=float, help="delete media that is more corrupt than this threshold")
     parser.add_argument("--force", "-f", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--verbose", "-v", action="count", default=0)
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
@@ -103,7 +107,6 @@ def parse_args(action, usage) -> argparse.Namespace:
     args.db = db.connect(args)
     if hasattr(args, "paths"):
         args.paths = utils.conform(args.paths)
-    args.io_multiplier = float(args.io_multiplier)
     log.info(utils.dict_filter_bool(args.__dict__))
 
     if args.profile in (DBType.audio, DBType.video) and not which("ffprobe"):
@@ -292,8 +295,10 @@ def scan_path(args, path_str: str) -> int:
         return 0
 
     n_jobs = None
+    if args.check_corrupt > 0:
+        n_jobs = int(min(os.cpu_count() or 2, 2) * args.io_multiplier)
     if args.io_multiplier > 1:
-        n_jobs = int(int(os.cpu_count() or 4) * args.io_multiplier)  # useful for text, image, filesystem db types
+        n_jobs = int(max(os.cpu_count() or 4, 4) * args.io_multiplier)
     if args.verbose >= consts.LOG_DEBUG:
         n_jobs = 1
 
@@ -373,6 +378,17 @@ def fs_add(args=None) -> None:
 
     Create a video database and read internal/external subtitle files into a searchable database:
         library fsadd --scan-subtitles tv.search.db ./tv/ ./movies/
+
+    Decode media to check for corruption (slow):
+        library fsadd --check-corrupt 100 tv.db ./tv/  # scan through 100% of each file to evaluate how corrupt it is (very slow)
+        library fsadd --check-corrupt   1 tv.db ./tv/  # scan through 1% of each file to evaluate how corrupt it is (takes about one second per file)
+        library fsadd --check-corrupt   5 tv.db ./tv/  # scan through 1% of each file to evaluate how corrupt it is (takes about ten seconds per file)
+
+        library fsadd --check-corrupt   5 --delete-corrupt 30 tv.db ./tv/  # scan 5% of each file to evaluate how corrupt it is, if 30% or more of those checks fail then the file is deleted
+
+        nb: the behavior of delete-corrupt changes between full and partial scan
+        library fsadd --check-corrupt  99 --delete-corrupt  1 tv.db ./tv/  # partial scan 99% of each file to evaluate how corrupt it is, if 1% or more of those checks fail then the file is deleted
+        library fsadd --check-corrupt 100 --delete-corrupt  1 tv.db ./tv/  # full scan each file to evaluate how corrupt it is, if there is _any_ corruption then the file is deleted
 
     Normally only relevant filetypes are included. You can scan all files with this flag:
         library fsadd --scan-all-files mixed.db ./tv-and-maybe-audio-only-files/

@@ -222,7 +222,7 @@ summary = "A pure python-based utility to extract text and images from docx file
 
 [[package]]
 name = "dogpile-cache"
-version = "1.2.0"
+version = "1.2.1"
 requires_python = ">=3.6"
 summary = "A caching front-end based on the Dogpile lock."
 dependencies = [
@@ -871,7 +871,7 @@ summary = "Python functions for working with SQLite FTS4 search"
 
 [[package]]
 name = "sqlite-utils"
-version = "3.31"
+version = "3.32.1"
 requires_python = ">=3.7"
 summary = "CLI tool and Python library for manipulating SQLite databases"
 dependencies = [
@@ -974,7 +974,7 @@ summary = "Traitlets Python configuration system"
 
 [[package]]
 name = "typing-extensions"
-version = "4.5.0"
+version = "4.6.0"
 requires_python = ">=3.7"
 summary = "Backported and Experimental Type Hints for Python 3.7+"
 
@@ -1015,7 +1015,7 @@ summary = "Measures the displayed width of unicode strings in a terminal"
 
 [[package]]
 name = "websocket-client"
-version = "1.5.1"
+version = "1.5.2"
 requires_python = ">=3.7"
 summary = "WebSocket client for Python with low level API options"
 
@@ -1048,7 +1048,7 @@ summary = "Library for developers to extract data from Microsoft Excel (tm) spre
 
 [[package]]
 name = "xlsxwriter"
-version = "3.1.0"
+version = "3.1.1"
 requires_python = ">=3.6"
 summary = "A Python module for creating Excel XLSX files."
 
@@ -1621,9 +1621,9 @@ content_hash = "sha256:707176187d52bfd11f71fd3d9998f736f44f8bfe637878e74e8948ec9
 "docx2txt 0.8" = [
     {url = "https://files.pythonhosted.org/packages/7d/7d/60ee3f2b16d9bfdfa72e8599470a2c1a5b759cb113c6fe1006be28359327/docx2txt-0.8.tar.gz", hash = "sha256:2c06d98d7cfe2d3947e5760a57d924e3ff07745b379c8737723922e7009236e5"},
 ]
-"dogpile-cache 1.2.0" = [
-    {url = "https://files.pythonhosted.org/packages/01/bc/c6ff56c73fb4d9859a0f3080ed5d454646d6849e8a9aede1f95cb2771de4/dogpile.cache-1.2.0.tar.gz", hash = "sha256:47554c860ceb484dd5aef9ff1f88fecb3d4aef6bb92119450f5bcbaa026bbfb1"},
-    {url = "https://files.pythonhosted.org/packages/08/4f/11c49c820186a436471d5c15075456621a0bcd710dac7bac5e7b62e3bbcb/dogpile.cache-1.2.0-py3-none-any.whl", hash = "sha256:d371f310bcdbe5d9c8e7e473348b75c5c97517ac8be16759b24dbaadef1c70a6"},
+"dogpile-cache 1.2.1" = [
+    {url = "https://files.pythonhosted.org/packages/21/fa/2fec52e38feb6ce89930be010314aa99ff616d6f6dc068cfaa7491ce5f3e/dogpile.cache-1.2.1.tar.gz", hash = "sha256:1d0be0cef90505c9f24e9f00aedab8dce9356d28a4153d5660ab13eeb6a0cfd4"},
+    {url = "https://files.pythonhosted.org/packages/37/b3/d95ba629fa9d52cc2ea86298d930976f1e6a560d20fec64527342e61e29e/dogpile.cache-1.2.1-py3-none-any.whl", hash = "sha256:fa9c9c07640bdb66c5f5574e308123119b96c9a95c6856151d3fd2c91b4fb06a"},
 ]
 "ebcdic 1.1.1" = [
     {url = "https://files.pythonhosted.org/packages/0d/2f/633031205333bee5f9f93761af8268746aa75f38754823aabb8570eb245b/ebcdic-1.1.1-py2.py3-none-any.whl", hash = "sha256:33b4cb729bc2d0bf46cc1847b0e5946897cb8d3f53520c5b9aa5fa98d7e735f1"},
@@ -2603,9 +2603,9 @@ content_hash = "sha256:707176187d52bfd11f71fd3d9998f736f44f8bfe637878e74e8948ec9
     {url = "https://files.pythonhosted.org/packages/51/29/0096e8b1811aaa78cfb296996f621f41120c21c2f5cd448ae1d54979d9fc/sqlite_fts4-1.0.3-py3-none-any.whl", hash = "sha256:0359edd8dea6fd73c848989e1e2b1f31a50fe5f9d7272299ff0e8dbaa62d035f"},
     {url = "https://files.pythonhosted.org/packages/c2/6d/9dad6c3b433ab8912ace969c66abd595f8e0a2ccccdb73602b1291dbda29/sqlite-fts4-1.0.3.tar.gz", hash = "sha256:78b05eeaf6680e9dbed8986bde011e9c086a06cb0c931b3cf7da94c214e8930c"},
 ]
-"sqlite-utils 3.31" = [
-    {url = "https://files.pythonhosted.org/packages/61/c9/99abf36fcef22959316cff00a7f07b413256ad97ab803ee45d6de78f2a52/sqlite_utils-3.31-py3-none-any.whl", hash = "sha256:95849cf62a9d6aa7df2dd27dfc615c0ee71c515516284a7d85e2c061021893c9"},
-    {url = "https://files.pythonhosted.org/packages/e8/da/6f34fd782e805f275ac17ecaba247db6c53eeaf340907c0e536366b6de1b/sqlite-utils-3.31.tar.gz", hash = "sha256:54989f3d09ed121f9df97831d041738ae48771d3ca85008946f1bc1884109a8a"},
+"sqlite-utils 3.32.1" = [
+    {url = "https://files.pythonhosted.org/packages/1a/95/b6fe852980c9494bf8a5e99d017cc6b864f9807a3e082c7837c267302217/sqlite-utils-3.32.1.tar.gz", hash = "sha256:6c28fe32fcebd658a1691dedfa4d111499ad302cc0139c5a5893a590d461848a"},
+    {url = "https://files.pythonhosted.org/packages/9e/eb/144eb61fd739b78d412d84d2d79148a4c5f3160c766317e9a19cd4ce3160/sqlite_utils-3.32.1-py3-none-any.whl", hash = "sha256:dfa124c4f752d67b2a36aa41929c51c699d81364b7b076218885a5ea714610d0"},
 ]
 "ssort 0.11.6" = [
     {url = "https://files.pythonhosted.org/packages/27/c6/4fdb102b282380d5b4791d90302ba8778689f24bef118707fd50f037752e/ssort-0.11.6.tar.gz", hash = "sha256:21fec493487f32dff50d30efa5b6aad18286e9817600b64bfe686ae062bae7ae"},
@@ -2642,9 +2642,9 @@ content_hash = "sha256:707176187d52bfd11f71fd3d9998f736f44f8bfe637878e74e8948ec9
     {url = "https://files.pythonhosted.org/packages/39/c3/205e88f02959712b62008502952707313640369144a7fded4cbc61f48321/traitlets-5.9.0.tar.gz", hash = "sha256:f6cde21a9c68cf756af02035f72d5a723bf607e862e7be33ece505abf4a3bad9"},
     {url = "https://files.pythonhosted.org/packages/77/75/c28e9ef7abec2b7e9ff35aea3e0be6c1aceaf7873c26c95ae1f0d594de71/traitlets-5.9.0-py3-none-any.whl", hash = "sha256:9e6ec080259b9a5940c797d58b613b5e31441c2257b87c2e795c5228ae80d2d8"},
 ]
-"typing-extensions 4.5.0" = [
-    {url = "https://files.pythonhosted.org/packages/31/25/5abcd82372d3d4a3932e1fa8c3dbf9efac10cc7c0d16e78467460571b404/typing_extensions-4.5.0-py3-none-any.whl", hash = "sha256:fb33085c39dd998ac16d1431ebc293a8b3eedd00fd4a32de0ff79002c19511b4"},
-    {url = "https://files.pythonhosted.org/packages/d3/20/06270dac7316220643c32ae61694e451c98f8caf4c8eab3aa80a2bedf0df/typing_extensions-4.5.0.tar.gz", hash = "sha256:5cb5f4a79139d699607b3ef622a1dedafa84e115ab0024e0d9c044a9479ca7cb"},
+"typing-extensions 4.6.0" = [
+    {url = "https://files.pythonhosted.org/packages/85/d2/949d324c348014f0fd2e8e6d8efd3c0adefdcecd28990d4144f2cfc8105e/typing_extensions-4.6.0-py3-none-any.whl", hash = "sha256:6ad00b63f849b7dcc313b70b6b304ed67b2b2963b3098a33efe18056b1a9a223"},
+    {url = "https://files.pythonhosted.org/packages/e4/03/4670b4c206e1dc869f2f0120c3d0a2b17d42526ab2b5a8f66d4cd8642ef3/typing_extensions-4.6.0.tar.gz", hash = "sha256:ff6b238610c747e44c268aa4bb23c8c735d665a63726df3f9431ce707f2aa768"},
 ]
 "tzdata 2023.3" = [
     {url = "https://files.pythonhosted.org/packages/70/e5/81f99b9fced59624562ab62a33df639a11b26c582be78864b339dafa420d/tzdata-2023.3.tar.gz", hash = "sha256:11ef1e08e54acb0d4f95bdb1be05da659673de4acbd21bf9c69e94cc5e907a3a"},
@@ -2666,9 +2666,9 @@ content_hash = "sha256:707176187d52bfd11f71fd3d9998f736f44f8bfe637878e74e8948ec9
     {url = "https://files.pythonhosted.org/packages/20/f4/c0584a25144ce20bfcf1aecd041768b8c762c1eb0aa77502a3f0baa83f11/wcwidth-0.2.6-py2.py3-none-any.whl", hash = "sha256:795b138f6875577cd91bba52baf9e445cd5118fd32723b460e30a0af30ea230e"},
     {url = "https://files.pythonhosted.org/packages/5e/5f/1e4bd82a9cc1f17b2c2361a2d876d4c38973a997003ba5eb400e8a932b6c/wcwidth-0.2.6.tar.gz", hash = "sha256:a5220780a404dbe3353789870978e472cfe477761f06ee55077256e509b156d0"},
 ]
-"websocket-client 1.5.1" = [
-    {url = "https://files.pythonhosted.org/packages/6d/9a/6c793729c9d48fcca155ce55e4dfafacffb7fb52a62e3ae2198846c31af6/websocket_client-1.5.1-py3-none-any.whl", hash = "sha256:cdf5877568b7e83aa7cf2244ab56a3213de587bbe0ce9d8b9600fc77b455d89e"},
-    {url = "https://files.pythonhosted.org/packages/8b/94/696484b0c13234c91b316bc3d82d432f9b589a9ef09d016875a31c670b76/websocket-client-1.5.1.tar.gz", hash = "sha256:3f09e6d8230892547132177f575a4e3e73cfdf06526e20cc02aa1c3b47184d40"},
+"websocket-client 1.5.2" = [
+    {url = "https://files.pythonhosted.org/packages/3f/f2/2624e12ef854ee667d92ac5dc7815932095e0852e5ff2b2bf57feda8a11b/websocket-client-1.5.2.tar.gz", hash = "sha256:c7d67c13b928645f259d9b847ab5b57fd2d127213ca41ebd880de1f553b7c23b"},
+    {url = "https://files.pythonhosted.org/packages/86/5c/2ebfbb7d4dbb7f35a1f70c40d003f7844d78945ac7c69757067ebaea9c78/websocket_client-1.5.2-py3-none-any.whl", hash = "sha256:f8c64e28cd700e7ba1f04350d66422b6833b82a796b525a51e740b8cc8dab4b1"},
 ]
 "websockets 11.0.3" = [
     {url = "https://files.pythonhosted.org/packages/03/28/3a51ffcf51ac45746639f83128908bbb1cd212aa631e42d15a7acebce5cb/websockets-11.0.3-pp37-pypy37_pp73-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:e052b8467dd07d4943936009f46ae5ce7b908ddcac3fda581656b1b19c083d9b"},
@@ -2754,9 +2754,9 @@ content_hash = "sha256:707176187d52bfd11f71fd3d9998f736f44f8bfe637878e74e8948ec9
     {url = "https://files.pythonhosted.org/packages/aa/05/ec9d4fcbbb74bbf4da9f622b3b61aec541e4eccf31d3c60c5422ec027ce2/xlrd-1.2.0.tar.gz", hash = "sha256:546eb36cee8db40c3eaa46c351e67ffee6eeb5fa2650b71bc4c758a29a1b29b2"},
     {url = "https://files.pythonhosted.org/packages/b0/16/63576a1a001752e34bf8ea62e367997530dc553b689356b9879339cf45a4/xlrd-1.2.0-py2.py3-none-any.whl", hash = "sha256:e551fb498759fa3a5384a94ccd4c3c02eb7c00ea424426e212ac0c57be9dfbde"},
 ]
-"xlsxwriter 3.1.0" = [
-    {url = "https://files.pythonhosted.org/packages/17/00/b99c915fa2118b9a1dd061a5bf82094c843ab481c714c6d826668df834ad/XlsxWriter-3.1.0.tar.gz", hash = "sha256:02913b50b74c00f165933d5da3e3a02cab4204cb4932722a1b342c5c71034122"},
-    {url = "https://files.pythonhosted.org/packages/bd/00/28d48d105fa914b460e9721b315af096937e2e82bf540932c68420ccd9e1/XlsxWriter-3.1.0-py3-none-any.whl", hash = "sha256:b70a147d36235d1ee835cfd037396f789db1f76740a0e5c917d54137169341de"},
+"xlsxwriter 3.1.1" = [
+    {url = "https://files.pythonhosted.org/packages/86/c1/d58c9dc59c6e1683158af49cd9fca28b99f7a9f2887c572ae11d1132bce6/XlsxWriter-3.1.1-py3-none-any.whl", hash = "sha256:b50e3bd905d7dafa6ea45210e2cc5600b4ccd104a0d3a4d4d7cf813b78426440"},
+    {url = "https://files.pythonhosted.org/packages/e1/6e/954f509c86b65706c0eb7b6d26723a993c84c8ca5e1ee482c77adeaa8b9e/XlsxWriter-3.1.1.tar.gz", hash = "sha256:03459ee76f664470c4c63a8977cab624fb259d0fc1faac64dc9cc6f3cc08f945"},
 ]
 "yarl 1.9.2" = [
     {url = "https://files.pythonhosted.org/packages/0e/b1/a65fcf0363ae8c08c0e586772a34cc15b4200bae163eed24258cc95cda90/yarl-1.9.2-cp310-cp310-musllinux_1_1_aarch64.whl", hash = "sha256:566185e8ebc0898b11f8026447eacd02e46226716229cea8db37496c8cdd26e0"},

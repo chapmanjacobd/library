@@ -1,9 +1,11 @@
+import subprocess
 from datetime import datetime, timezone
+from math import log10
 from typing import Dict, Optional
 
 import ffmpeg
 
-from xklb import subtitle, utils
+from xklb import consts, subtitle, utils
 from xklb.consts import DBType
 from xklb.utils import combine, log, safe_unpack
 
@@ -111,15 +113,6 @@ def munge_av_tags(args, media, f) -> Optional[dict]:
             utils.trash(f)
         return None
 
-    if args.check_corrupt or args.delete_corrupt:
-        output = ffmpeg.output(ffmpeg.input(f), "/dev/null", f="null")
-        try:
-            error_log = ffmpeg.run(output, capture_stderr=True)
-        except ffmpeg.Error:
-            log.warning(f"[{f}] Data corruption")
-            if args.delete_corrupt:
-                utils.trash(f)
-
     if "format" not in probe:
         log.error(f"[{f}] Failed reading format")
         log.warning(probe)
@@ -136,7 +129,26 @@ def munge_av_tags(args, media, f) -> Optional[dict]:
     format_.pop("start_time", None)
     format_.pop("filename", None)
 
-    duration = format_.pop("duration", None)
+    duration = utils.safe_int(format_.pop("duration", None))
+
+    corruption = None
+    if args.check_corrupt and args.check_corrupt > 0.0:
+        if args.check_corrupt >= 100.0:
+            corruption = 0
+            try:
+                utils.decode_full_scan(f)
+            except ffmpeg.Error:
+                corruption = 101
+                log.warning(f"[{f}] Data corruption")
+                if args.delete_corrupt and not consts.PYTEST_RUNNING:
+                    utils.trash(f)
+        else:
+            corruption = utils.decode_quick_scan(f, *utils.cover_scan(duration, args.check_corrupt))
+            if args.delete_corrupt and corruption > args.delete_corrupt:
+                log.warning(f"[{f}] Data corruption ({corruption:.2%}) passed threshold ({args.delete_corrupt:.2%})")
+                if not consts.PYTEST_RUNNING:
+                    utils.trash(f)
+
     tags = format_.pop("tags", None)
     if tags:
         upload_date = tags.get("DATE")
@@ -205,6 +217,7 @@ def munge_av_tags(args, media, f) -> Optional[dict]:
         "fps": fps,
         "duration": 0 if not duration else int(float(duration)),
         "language": language,
+        "corruption": utils.safe_int(corruption),
         **(tags or {}),
     }
 
