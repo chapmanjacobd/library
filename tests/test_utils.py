@@ -309,3 +309,23 @@ def test_get_playhead():
     assert utils.get_playhead(args, path, start_time, existing_playhead=10, media_duration=12) == 2
     start_time = time.time() - 10
     assert utils.get_playhead(args, path, start_time, existing_playhead=3, media_duration=12) == 2
+
+
+def scan_stats(scans, scan_duration):
+    return (
+        len(scans),  # number of scans
+        scan_duration,  # duration of media scanned
+        len(scans) * scan_duration,  # total scanned time
+        0 if len(scans) == 1 else scans[1] - scan_duration,  # first gap time
+    )
+
+
+def test_cover_scan():
+    assert scan_stats(*utils.cover_scan(1, 0.01)) == (1, 1, 1, 0)
+    assert scan_stats(*utils.cover_scan(1, 100)) == (1, 1, 1, 0)
+
+    result = [scan_stats(*utils.cover_scan(5 * 60, percent)) for percent in [5, 10, 20, 30]]
+    assert result == [(3, 7, 21, 143), (6, 6, 36, 54), (12, 5, 60, 22), (18, 5, 90, 12)]
+
+    result = [scan_stats(*utils.cover_scan(2 * 60 * 60, percent)) for percent in [5, 10, 20, 30]]
+    assert result == [(5, 90, 450, 1710), (9, 90, 810, 810), (18, 84, 1512, 339), (27, 83, 2241, 193)]

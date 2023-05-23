@@ -1,15 +1,14 @@
 import argparse, shlex, shutil, sys, time
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
-from copy import deepcopy
 from pathlib import Path
 from random import random
-from typing import Dict, Optional, Tuple
+from typing import Dict, Tuple
 
 from xklb import consts, db, player, subtitle, tube_backend, utils
 from xklb.consts import SC
 from xklb.playback import now_playing
-from xklb.player import get_ordinal_media, mark_media_deleted, override_sort
+from xklb.player import mark_media_deleted, override_sort
 from xklb.utils import cmd_interactive, log, random_filename, safe_unpack
 
 
@@ -37,7 +36,7 @@ def usage(action) -> str:
         There are multiple strictness levels of --play-in-order:
         library {action} -O   # equivalent
         library {action} -OO  # above, plus ignores most filters
-        library {action} -OOO # above, plus ignores include/exclude filter during ordinal search
+        library {action} -OOO # above, plus ignores fts and (include/exclude) filter during ordinal search
 
         library {action} --related  # similar to -O but uses fts to find similar content
         library {action} -R         # equivalent
@@ -643,15 +642,6 @@ def chromecast_play(args, m) -> None:
             raise RuntimeError("Media is possibly partially unwatched")
 
 
-def is_play_in_order_lvl2(args, media_file) -> bool:
-    return any(
-        [
-            args.play_in_order >= consts.SIMILAR,
-            args.action == SC.listen and "audiobook" in media_file.lower(),
-        ],
-    )
-
-
 def transcode(args, path) -> str:
     log.debug(path)
     sub_index = subtitle.get_sub_index(args, path)
@@ -714,7 +704,7 @@ def prep_media(args, m: Dict, ignore_paths):
     args.db = db.connect(args)
     log.debug("db.connect: %s", t.elapsed())
 
-    if is_play_in_order_lvl2(args, m["path"]):
+    if (args.play_in_order >= consts.SIMILAR) or (args.action == SC.listen and "audiobook" in m["path"].lower()):
         m = player.get_ordinal_media(args, m, ignore_paths)
         log.debug("player.get_ordinal_media: %s", t.elapsed())
 

@@ -21,7 +21,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v1.28.011)
+    xk media library subcommands (v1.28.012)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -233,7 +233,7 @@ You can also invoke tabs manually:
         There are multiple strictness levels of --play-in-order:
         library watch -O   # equivalent
         library watch -OO  # above, plus ignores most filters
-        library watch -OOO # above, plus ignores include/exclude filter during ordinal search
+        library watch -OOO # above, plus ignores fts and (include/exclude) filter during ordinal search
 
         library watch --related  # similar to -O but uses fts to find similar content
         library watch -R         # equivalent

@@ -9,7 +9,7 @@ from shutil import which
 from timeit import default_timer
 from typing import Any, Dict, Generator, List, NoReturn, Optional, Union
 
-import humanize
+import ffmpeg, humanize
 from IPython.core import ultratb
 from IPython.terminal.debugger import TerminalPdb
 from rich import prompt
@@ -981,3 +981,33 @@ class Timer:
         elapsed_time = end_time - self.start_time
         self.reset()
         return elapsed_time
+
+
+def cover_scan(media_duration, scan_percentage):
+    num_scans = max(2, int(math.log(media_duration) * (scan_percentage / 10)))
+    scan_duration_total = max(1, media_duration * (scan_percentage / 100))
+    scan_duration = max(1, int(scan_duration_total / num_scans))
+    scan_interval = media_duration / num_scans
+
+    scans = sorted(set(int(scan * scan_interval) for scan in range(num_scans)))
+    if scans[-1] < media_duration - (scan_duration * 2):
+        scans.append(math.floor(media_duration - scan_duration))
+
+    return scans, scan_duration
+
+
+def decode_full_scan(path):
+    output = ffmpeg.input(path).output("/dev/null", f="null")
+    error_log = ffmpeg.run(output, quiet=True)
+
+
+def decode_quick_scan(path, scans, scan_duration=3):
+    fail_count = 0
+    for scan in scans:
+        try:
+            output = ffmpeg.input(path, ss=scan).output("/dev/null", t=scan_duration, f="null")
+            error_log = ffmpeg.run(output, quiet=True)
+        except ffmpeg.Error:
+            fail_count += 1
+
+    return (fail_count / len(scans)) * 100

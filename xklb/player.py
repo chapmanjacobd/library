@@ -372,6 +372,18 @@ def override_sort(sort_expression: str) -> str:
     )
 
 
+def filter_args_sql(args, m_columns):
+    return f"""
+        {'and path like "http%"' if args.safe else ''}
+        {f'and path not like "{args.keep_dir}%"' if Path(args.keep_dir).exists() else ''}
+        {'and COALESCE(time_deleted,0) = 0' if 'time_deleted' in m_columns and 'time_deleted' not in ' '.join(sys.argv) else ''}
+        {'AND (score IS NULL OR score > 7)' if 'score' in m_columns else ''}
+        {'AND (upvote_ratio IS NULL OR upvote_ratio > 0.73)' if 'upvote_ratio' in m_columns else ''}
+        {'AND COALESCE(time_downloaded,0) = 0' if args.online_media_only else ''}
+        {'AND COALESCE(time_downloaded,1)!= 0 AND path not like "http%"' if args.local_media_only else ''}
+    """
+
+
 def last_chars(candidate) -> str:
     remove_groups = re.split(r"([\W]+|\s+|Ep\d+|x\d+|\.\d+)", candidate)
     log.debug(remove_groups)
@@ -385,24 +397,15 @@ def last_chars(candidate) -> str:
     return remove_chars
 
 
-def filter_args_sql(args, m_columns):
-    return f"""
-        {'and path like "http%"' if args.safe else ''}
-        {f'and path not like "{args.keep_dir}%"' if Path(args.keep_dir).exists() else ''}
-        {'and COALESCE(time_deleted,0) = 0' if 'time_deleted' in m_columns and 'time_deleted' not in ' '.join(sys.argv) else ''}
-        {'AND (score IS NULL OR score > 7)' if 'score' in m_columns else ''}
-        {'AND (upvote_ratio IS NULL OR upvote_ratio > 0.73)' if 'upvote_ratio' in m_columns else ''}
-        {'AND COALESCE(time_downloaded,0) = 0' if args.online_media_only else ''}
-        {'AND COALESCE(time_downloaded,1)!= 0 AND path not like "http%"' if args.local_media_only else ''}
-    """
-
-
 def get_ordinal_media(args, m: Dict, ignore_paths=None) -> Dict:
     # TODO: maybe try https://dba.stackexchange.com/questions/43415/algorithm-for-finding-the-longest-prefix
     if ignore_paths is None:
         ignore_paths = []
 
     m_columns = args.db["media"].columns_dict
+
+    cols = args.cols or ["path", "title", "duration", "size", "subtitle_count", "is_dir"]
+    args.select_sql = "\n        , ".join([c for c in cols if c in m_columns or c in ["*"]])
 
     total_media = args.db.execute("select count(*) val from media").fetchone()[0]
     candidate = deepcopy(m["path"])
@@ -447,12 +450,13 @@ def get_ordinal_media(args, m: Dict, ignore_paths=None) -> Dict:
         if len(similar_videos) > TOO_MANY_SIMILAR or len(similar_videos) == total_media:
             return m
 
-        commonprefix = os.path.commonprefix([d["path"] for d in similar_videos])
-        log.debug(commonprefix)
-        PREFIX_LENGTH_THRESHOLD = 3
-        if len(Path(commonprefix).name) < PREFIX_LENGTH_THRESHOLD:
-            log.debug("Using commonprefix")
-            return m
+        if len(similar_videos) > 0:
+            commonprefix = os.path.commonprefix([d["path"] for d in similar_videos])
+            log.debug(commonprefix)
+            PREFIX_LENGTH_THRESHOLD = 3
+            if len(Path(commonprefix).name) < PREFIX_LENGTH_THRESHOLD:
+                log.debug("Using commonprefix")
+                return m
 
     return similar_videos[0]
 
@@ -468,9 +472,6 @@ def get_related_media(args, m: Dict) -> List[Dict]:
     args.include = sorted(words, key=len, reverse=True)[:100]
     args.table = db.fts_flexible_search(args)
 
-    cols = args.cols or ["path", "title", "duration", "size", "subtitle_count", "is_dir", "rank"]
-    args.select = [c for c in cols if c in m_columns or c in ["*"]]
-    args.select_sql = "\n        , ".join(args.select)
     query = f"""
         SELECT
             {args.select_sql}, rank
