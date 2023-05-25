@@ -822,10 +822,13 @@ def historical_usage(args):
     return list(args.db.query(query))
 
 
-def cadence_adjusted_duration(args, media):
-    historical_daily = statistics.mean((d["duration_sum"] or 0) for d in historical_usage(args))
-    sum_query_duration = sum((d["duration"] or 0) for d in media)
-    return sum_query_duration / historical_daily * 86400
+def cadence_adjusted_duration(args, duration):
+    try:
+        historical_daily = statistics.mean((d["duration_sum"] or 0) for d in historical_usage(args))
+    except statistics.StatisticsError:
+        return duration
+
+    return duration / historical_daily * 86400
 
 
 def media_printer(args, media) -> None:
@@ -838,13 +841,14 @@ def media_printer(args, media) -> None:
     if not media:
         utils.no_media_found()
 
+    duration = sum(m.get("duration") or 0 for m in media)
     if "a" in args.print:
         D = {"path": "Aggregate", "count": len(media)}
 
         if "duration" in media[0]:
-            D["duration"] = sum((d["duration"] or 0) for d in media)
-            D["avg_duration"] = sum((d["duration"] or 0) for d in media) / len(media)
-            D["cadence_adj_duration"] = cadence_adjusted_duration(args, media)
+            D["duration"] = duration
+            D["avg_duration"] = duration / len(media)
+            D["cadence_adj_duration"] = cadence_adjusted_duration(args, duration)
 
         if "sparseness" in media[0]:
             D["sparseness"] = None
@@ -915,7 +919,6 @@ def media_printer(args, media) -> None:
         if len(media) > 1:
             print(f"{len(media)} media" + (f" (limited to {args.limit})" if args.limit else ""))
 
-        duration = sum(m.get("duration") or 0 for m in media)
         if duration > 0:
             duration = human_time(duration)
             if "a" not in args.print:
