@@ -1046,7 +1046,7 @@ def load_spacy_model(model=None):
     except ModuleNotFoundError:
         log.error("Install spaCy and sklearn to use:")
         log.error("pip install spacy sklearn")
-        log.error("python -m spacy download en_core_web_md")
+        log.error("python -m spacy download en_core_web_sm")
         exit(1)
 
     if model:
@@ -1066,11 +1066,11 @@ def load_spacy_model(model=None):
         return loaded_model
 
     log.error("Language model not found. Download a model first using the following commands:")
-    log.error("python -m spacy download en_core_web_md")
+    log.error("python -m spacy download en_core_web_sm")
     exit(1)
 
 
-def cluster_paths(args, paths):
+def cluster_paths(args, paths, n_clusters=None):
     nlp = load_spacy_model(args.model)
 
     from sklearn.cluster import KMeans
@@ -1085,7 +1085,7 @@ def cluster_paths(args, paths):
     vectorizer = TfidfVectorizer()
     X = vectorizer.fit_transform(joined_strings)
 
-    kmeans = KMeans(n_clusters=int(X.shape[0] ** 0.5), random_state=0).fit(X)
+    kmeans = KMeans(n_clusters=n_clusters or int(X.shape[0] ** 0.5), random_state=0).fit(X)
     clusters = kmeans.labels_
 
     grouped_strings = {}
@@ -1102,7 +1102,7 @@ def cluster_paths(args, paths):
         common_prefix = os.path.commonprefix(paths)
         metadata = {
             "common_prefix": common_prefix,
-            "grouped_paths": paths,
+            "grouped_paths": sorted(paths),
         }
         result.append(metadata)
 

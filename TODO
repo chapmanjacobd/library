@@ -1,19 +1,13 @@
 - wt --cluster
 
-- show actual time based on playback statistics
+sort big clusters first
 
-    WITH monthly_sums AS (
-        SELECT strftime('%Y-%m', datetime(time_played, 'unixepoch')) AS month,
-        SUM(duration) AS monthly_sum
-        FROM media where time_played>0
-        GROUP BY month
-    )
-    SELECT AVG(monthly_sum) AS average_overall
-    FROM monthly_sums;
+- wt history
+    print player.historical_usage
 
 - scan bpm and key sig  https://github.com/aubio/aubio https://github.com/tyiannak/pyAudioAnalysis
 
-- CLI eda tool
+- CLI EDA tool
 
 - CLI incremental diff (SQLITE, NDJSON, CSV)
 
@@ -21,12 +15,16 @@
 
     show the differences between files
 
-- CLI incremental book reading
+- todo recursive todo management, fortune cookie style
 
-- CLI recursive financial planner
+- CLI recursive financial planner (nano budget)
+
+- CLI incremental book reading
 
 - CLI reverse flight search
 
 - CLI city abacus
 
 - CLI UNLI Neighborhoods
+
+- SELECT \* FROM playlists p WHERE PATH NOT IN (SELECT DISTINCT playlist_path FROM media WHERE playlist_path NOT NULL )
