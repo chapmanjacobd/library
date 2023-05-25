@@ -1,4 +1,4 @@
-import csv, operator, os, platform, re, shutil, socket, subprocess, sys
+import csv, operator, os, platform, re, shutil, socket, statistics, subprocess, sys
 from copy import deepcopy
 from io import StringIO
 from numbers import Number
@@ -796,13 +796,36 @@ def local_player(args, m) -> subprocess.CompletedProcess:
         r = cmd_interactive(*args.player, *paths)
 
     if args.player_need_sleep:
-        if hasattr(m, "duration"):
-            delay = m["duration"]
-        else:
-            delay = 10  # TODO: idk
-        sleep(delay)
+        try:
+            utils.confirm("Continue?")
+        except Exception:
+            if hasattr(m, "duration"):
+                delay = m["duration"]
+            else:
+                delay = 10  # TODO: idk
+            sleep(delay)
 
     return r
+
+
+def historical_usage(args):
+    query = """
+    SELECT
+        strftime('%Y-%m-%d', datetime(time_played, 'unixepoch')) AS day
+        , SUM(duration) AS duration_sum
+        , AVG(duration) AS duration_avg
+        , SUM(size) AS size_sum
+        , AVG(size) AS size_avg
+    FROM media where time_played>0
+    GROUP BY day
+    """
+    return list(args.db.query(query))
+
+
+def cadence_adjusted_duration(args, media):
+    historical_daily = statistics.mean((d["duration_sum"] or 0) for d in historical_usage(args))
+    sum_query_duration = sum((d["duration"] or 0) for d in media)
+    return sum_query_duration / historical_daily * 86400
 
 
 def media_printer(args, media) -> None:
@@ -821,6 +844,7 @@ def media_printer(args, media) -> None:
         if "duration" in media[0]:
             D["duration"] = sum((d["duration"] or 0) for d in media)
             D["avg_duration"] = sum((d["duration"] or 0) for d in media) / len(media)
+            D["cadence_adj_duration"] = cadence_adjusted_duration(args, media)
 
         if "sparseness" in media[0]:
             D["sparseness"] = None
@@ -881,6 +905,7 @@ def media_printer(args, media) -> None:
         utils.col_naturalsize(tbl, "avg_size")
         utils.col_duration(tbl, "duration")
         utils.col_duration(tbl, "avg_duration")
+        utils.col_duration(tbl, "cadence_adj_duration")
 
         for t in consts.TIME_COLUMNS:
             utils.col_naturaldate(tbl, t)
