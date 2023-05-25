@@ -409,6 +409,9 @@ def get_ordinal_media(args, m: Dict, ignore_paths=None) -> Dict:
 
     total_media = args.db.execute("select count(*) val from media").fetchone()[0]
     candidate = deepcopy(m["path"])
+    if args.play_in_order >= consts.SIMILAR_NO_FILTER_NO_FTS_PARENT:
+        candidate = str(Path(candidate).parent)
+
     similar_videos = []
     while len(similar_videos) <= 1:
         if candidate == "":
@@ -780,10 +783,17 @@ def multiple_player(args, media) -> None:
 
 
 def local_player(args, m) -> subprocess.CompletedProcess:
+    if args.folder:
+        paths = [str(Path(m["path"]).parent)]
+    elif args.folder_glob:
+        paths = utils.fast_glob(Path(m["path"]).parent, args.folder_glob)
+    else:
+        paths = [m["path"]]
+
     if system() == "Windows" or args.action in (SC.watch):
-        r = cmd(*args.player, m["path"], strict=False)
+        r = cmd(*args.player, *paths, strict=False)
     else:  # args.action in (SC.listen)
-        r = cmd_interactive(*args.player, m["path"])
+        r = cmd_interactive(*args.player, *paths)
 
     if args.player_need_sleep:
         if hasattr(m, "duration"):

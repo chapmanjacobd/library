@@ -10,6 +10,7 @@ from xklb.playback import playback_next, playback_now, playback_pause, playback_
 from xklb.praw_extract import reddit_add, reddit_update
 from xklb.scripts.bigdirs import bigdirs
 from xklb.scripts.christen import christen
+from xklb.scripts.cluster_sort import cluster_sort
 from xklb.scripts.copy_play_counts import copy_play_counts
 from xklb.scripts.dedupe import dedupe
 from xklb.scripts.merge_dbs import merge_dbs
@@ -84,11 +85,14 @@ def usage() -> str:
       lb surf                  Load browser tabs in a streaming way (stdin)
 
     mining:
-      lb extract-links         Extract links from lists of web pages
       lb reddit-selftext       db selftext external links -> db media table
       lb pushshift             Convert Pushshift jsonl.zstd -> reddit.db format (stdin)
-      lb nouns                 Unstructured text -> compound nouns (stdin)
       lb hnadd                 Create a hackernews database (this takes a few days)
+
+      lb extract-links         Extract links from lists of web pages
+
+      lb cluster-sort          Lines -> sorted by sentence similarity groups (stdin)
+      lb nouns                 Unstructured text -> compound nouns (stdin)
     """
 
 
@@ -211,6 +215,8 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
 
     subp_nouns = add_parser(subparsers, "nouns")
     subp_nouns.set_defaults(func=nouns)
+    subp_cluster_sort = add_parser(subparsers, "cluster-sort", ["cs", "clustersort", "cluster_sort"])
+    subp_cluster_sort.set_defaults(func=cluster_sort)
 
     subp_reddit_selftext = add_parser(subparsers, "reddit-selftext", ["rst"])
     subp_reddit_selftext.set_defaults(func=reddit_selftext)
