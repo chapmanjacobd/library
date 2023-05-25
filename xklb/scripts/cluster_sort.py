@@ -31,7 +31,7 @@ def cluster_sort() -> None:
     lines = args.input_path.readlines()
     args.input_path.close()
 
-    groups = utils.cluster_paths(args, lines, args.clusters)
+    groups = utils.cluster_paths(lines, args.model, args.clusters)
     groups = sorted(groups, key=lambda d: (len(d["grouped_paths"]), -len(d["common_prefix"])))
 
     if args.groups:

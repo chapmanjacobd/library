@@ -1070,8 +1070,8 @@ def load_spacy_model(model=None):
     exit(1)
 
 
-def cluster_paths(args, paths, n_clusters=None):
-    nlp = load_spacy_model(args.model)
+def cluster_paths(paths, model=None, n_clusters=None):
+    nlp = load_spacy_model(model)
 
     from sklearn.cluster import KMeans
     from sklearn.feature_extraction.text import TfidfVectorizer
