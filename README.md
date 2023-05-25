@@ -21,7 +21,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v1.28.013)
+    xk media library subcommands (v1.28.014)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -73,11 +73,14 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
       lb surf                  Load browser tabs in a streaming way (stdin)
 
     mining:
-      lb extract-links         Extract links from lists of web pages
       lb reddit-selftext       db selftext external links -> db media table
       lb pushshift             Convert Pushshift jsonl.zstd -> reddit.db format (stdin)
-      lb nouns                 Unstructured text -> compound nouns (stdin)
       lb hnadd                 Create a hackernews database (this takes a few days)
+
+      lb extract-links         Extract links from lists of web pages
+
+      lb cluster-sort          Lines -> sorted by sentence similarity groups (stdin)
+      lb nouns                 Unstructured text -> compound nouns (stdin)
     
 
 </details>

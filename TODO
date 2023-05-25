@@ -1,4 +1,15 @@
-- quick-scan media (percentage interval -- 0.05% to 100% check of video) divide duration by percent
+- wt --cluster
+
+- show actual time based on playback statistics
+
+    WITH monthly_sums AS (
+        SELECT strftime('%Y-%m', datetime(time_played, 'unixepoch')) AS month,
+        SUM(duration) AS monthly_sum
+        FROM media where time_played>0
+        GROUP BY month
+    )
+    SELECT AVG(monthly_sum) AS average_overall
+    FROM monthly_sums;
 
 - scan bpm and key sig  https://github.com/aubio/aubio https://github.com/tyiannak/pyAudioAnalysis
 
@@ -6,9 +17,9 @@
 
 - CLI incremental diff (SQLITE, NDJSON, CSV)
 
-compare 100 rows at a time using primary key
+    compare 100 rows at a time using primary key
 
-show the differences between files
+    show the differences between files
 
 - CLI incremental book reading
 

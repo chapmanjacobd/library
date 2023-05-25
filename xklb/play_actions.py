@@ -382,8 +382,6 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
 
     parser.add_argument("--portrait", "-portrait", action="store_true", help=argparse.SUPPRESS)
 
-    parser.add_argument("--prefix", default="", help=argparse.SUPPRESS)
-
     parser.add_argument("--duration", "-d", action="append", help=argparse.SUPPRESS)
     parser.add_argument("--size", "-S", action="append", help=argparse.SUPPRESS)
     parser.add_argument("--duration-from-size", action="append", help=argparse.SUPPRESS)
@@ -435,8 +433,24 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     parser.add_argument("--lower", type=int, help="Number of files per folder lower limit")
     parser.add_argument("--upper", type=int, help="Number of files per folder upper limit")
 
-    parser.add_argument("--timeout", "-T", help=argparse.SUPPRESS)
-    parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
+    parser.add_argument("--prefix", default="", help=argparse.SUPPRESS)
+    parser.add_argument(
+        "--folder",
+        action="store_true",
+        help="Experimental escape hatch to open folder which breaks a lot of features like post-actions",
+    )
+    parser.add_argument(
+        "--folder-glob",
+        "--folderglob",
+        type=int,
+        default=False,
+        const=10,
+        nargs="?",
+        help="Experimental escape hatch to open a folder glob limited to x number of files; breaks a lot of features like post-actions",
+    )
+
+    parser.add_argument("--timeout", "-T", help="Quit after x minutes")
+    parser.add_argument("--db", "-db", help="Override the positional argument database location")
     parser.add_argument("--ignore-errors", "--ignoreerrors", "-i", action="store_true")
     parser.add_argument("--verbose", "-v", action="count", default=0)
 

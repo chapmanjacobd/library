@@ -350,6 +350,22 @@ def clean_string(p) -> str:
     return p
 
 
+def path_to_sentence(s):
+    return remove_consecutive_whitespace(
+        s.replace("/", " ")
+        .replace("\\", " ")
+        .replace(".", " ")
+        .replace("[", " ")
+        .replace("(", " ")
+        .replace("]", " ")
+        .replace(")", " ")
+        .replace("{", " ")
+        .replace("}", " ")
+        .replace("_", " ")
+        .replace("-", " ")
+    )
+
+
 def safe_int(s) -> Optional[int]:
     try:
         return int(float(s))
@@ -1011,3 +1027,83 @@ def decode_quick_scan(path, scans, scan_duration=3):
             fail_count += 1
 
     return (fail_count / len(scans)) * 100
+
+
+def fast_glob(path_dir, limit=100):
+    files = []
+    with os.scandir(path_dir) as entries:
+        for entry in entries:
+            if entry.is_file():
+                files.append(entry.path)
+                if len(files) == limit:
+                    break
+    return sorted(files)
+
+
+def load_spacy_model(model=None):
+    try:
+        import spacy
+    except ModuleNotFoundError:
+        log.error("Install spaCy to use:")
+        log.error("pip install spacy")
+        log.error("python -m spacy download en_core_web_md")
+        exit(1)
+
+    if model:
+        return spacy.load(model)
+
+    model_sizes = ["lg", "md", "sm"]
+    loaded_model = None
+
+    for size in model_sizes:
+        try:
+            loaded_model = spacy.load(f"en_core_web_{size}")
+            log.info(f"Loaded 'en_core_web_{size}'")
+        except OSError:
+            pass
+
+    if loaded_model:
+        return loaded_model
+
+    log.error("Language model not found. Download a model first using the following commands:")
+    log.error("python -m spacy download en_core_web_md")
+    exit(1)
+
+
+def cluster_paths(args, paths):
+    from sklearn.cluster import KMeans
+    from sklearn.feature_extraction.text import TfidfVectorizer
+
+    nlp = load_spacy_model(args.model)
+
+    sentence_strings = (path_to_sentence(s) for s in paths)
+
+    joined_strings = []
+    for doc in nlp.pipe(sentence_strings, n_process=4):
+        joined_strings.append(" ".join([token.lower_ for token in doc if not token.is_stop]))
+
+    vectorizer = TfidfVectorizer()
+    X = vectorizer.fit_transform(joined_strings)
+
+    kmeans = KMeans(n_clusters=int(X.shape[0] ** 0.5), random_state=0).fit(X)
+    clusters = kmeans.labels_
+
+    grouped_strings = {}
+    for i, string in enumerate(paths):
+        cluster_id = clusters[i]
+
+        if cluster_id not in grouped_strings:
+            grouped_strings[cluster_id] = []
+
+        grouped_strings[cluster_id].append(string)
+
+    result = []
+    for _cluster_id, paths in grouped_strings.items():
+        common_prefix = os.path.commonprefix(paths)
+        metadata = {
+            "common_prefix": common_prefix,
+            "grouped_paths": paths,
+        }
+        result.append(metadata)
+
+    return result
