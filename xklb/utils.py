@@ -1044,8 +1044,8 @@ def load_spacy_model(model=None):
     try:
         import spacy
     except ModuleNotFoundError:
-        log.error("Install spaCy to use:")
-        log.error("pip install spacy")
+        log.error("Install spaCy and sklearn to use:")
+        log.error("pip install spacy sklearn")
         log.error("python -m spacy download en_core_web_md")
         exit(1)
 
@@ -1071,10 +1071,10 @@ def load_spacy_model(model=None):
 
 
 def cluster_paths(args, paths):
+    nlp = load_spacy_model(args.model)
+
     from sklearn.cluster import KMeans
     from sklearn.feature_extraction.text import TfidfVectorizer
-
-    nlp = load_spacy_model(args.model)
 
     sentence_strings = (path_to_sentence(s) for s in paths)
 
