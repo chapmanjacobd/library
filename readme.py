@@ -20,29 +20,6 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
 
     pip install xklb
 
-## Examples
-
-<details><summary>List all subcommands</summary>
-
-    $ library
-    {lb.usage()}
-
-</details>
-
-### Watch online media on your PC
-
-    wget https://github.com/chapmanjacobd/library/raw/main/examples/mealtime.tw.db
-    library watch mealtime.tw.db
-
-### Listen to online media on a chromecast group
-
-    wget https://github.com/chapmanjacobd/library/raw/main/examples/music.tl.db
-    library listen music.tl.db -ct "House speakers"
-
-### Hook into HackerNews
-
-    wget https://github.com/chapmanjacobd/hn_mining/raw/main/hackernews_only_direct.tw.db
-    library watch hackernews_only_direct.tw.db --random --ignore-errors
 
 ## Getting started
 
@@ -159,6 +136,30 @@ You can also invoke tabs manually:
     library tabs tabs.db -L 1  # open one tab
 
 </details>
+
+## Examples
+
+<details><summary>List all subcommands</summary>
+
+    $ library
+    {lb.usage()}
+
+</details>
+
+### Watch online media on your PC
+
+    wget https://github.com/chapmanjacobd/library/raw/main/examples/mealtime.tw.db
+    library watch mealtime.tw.db
+
+### Listen to online media on a chromecast group
+
+    wget https://github.com/chapmanjacobd/library/raw/main/examples/music.tl.db
+    library listen music.tl.db -ct "House speakers"
+
+### Hook into HackerNews
+
+    wget https://github.com/chapmanjacobd/hn_mining/raw/main/hackernews_only_direct.tw.db
+    library watch hackernews_only_direct.tw.db --random --ignore-errors
 
 ## Usage
 

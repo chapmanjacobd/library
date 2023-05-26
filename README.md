@@ -16,89 +16,6 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
 
     pip install xklb
 
-## Examples
-
-<details><summary>List all subcommands</summary>
-
-    $ library
-    xk media library subcommands (v1.28.016)
-
-    local media:
-      lb fsadd                 Create a local media database; Add folders
-      lb fsupdate              Refresh database: add new files, mark deleted
-
-      lb listen                Listen to local and online media
-      lb watch                 Watch local and online media
-      lb read                  Read books
-      lb view                  View images
-
-      lb bigdirs               Discover folders which take much room
-      lb dedupe                Deduplicate local db files
-      lb relmv                 Move files/folders while preserving relative paths
-      lb christen              Cleanse files by giving them a new name
-
-      lb mv-list               Reach a target free space by moving data across mount points
-      lb scatter               Scatter files across multiple mountpoints (mergerfs balance)
-
-      lb merge-dbs             Merge multiple SQLITE files
-      lb copy-play-counts      Copy play counts from multiple SQLITE files
-
-    online media:
-      lb tubeadd               Create a tube database; Add playlists
-      lb tubeupdate            Fetch new videos from saved playlists
-
-      lb redditadd             Create a reddit database; Add subreddits
-      lb redditupdate          Fetch new posts from saved subreddits
-
-    downloads:
-      lb download              Download media
-      lb redownload            Redownload missing media
-      lb block                 Prevent downloading specific URLs
-      lb merge-online-local    Merge local and online metadata
-
-    playback:
-      lb now                   Print what is currently playing
-      lb next                  Play next file
-      lb stop                  Stop all playback
-      lb pause                 Pause all playback
-
-    statistics:
-      lb playlists             List added playlists
-      lb dlstatus              Show download status
-      lb usage                 Print mount usage
-
-    browser tabs:
-      lb tabsadd               Create a tabs database; Add URLs
-      lb tabs                  Open your tabs for the day
-      lb surf                  Load browser tabs in a streaming way (stdin)
-
-    mining:
-      lb reddit-selftext       db selftext external links -> db media table
-      lb pushshift             Convert Pushshift jsonl.zstd -> reddit.db format (stdin)
-      lb hnadd                 Create a hackernews database (this takes a few days)
-
-      lb extract-links         Extract links from lists of web pages
-
-      lb cluster-sort          Lines -> sorted by sentence similarity groups (stdin)
-      lb nouns                 Unstructured text -> compound nouns (stdin)
-    
-
-</details>
-
-### Watch online media on your PC
-
-    wget https://github.com/chapmanjacobd/library/raw/main/examples/mealtime.tw.db
-    library watch mealtime.tw.db
-
-### Listen to online media on a chromecast group
-
-    wget https://github.com/chapmanjacobd/library/raw/main/examples/music.tl.db
-    library listen music.tl.db -ct "House speakers"
-
-### Hook into HackerNews
-
-    wget https://github.com/chapmanjacobd/hn_mining/raw/main/hackernews_only_direct.tw.db
-    library watch hackernews_only_direct.tw.db --random --ignore-errors
 
 ## Getting started
 
@@ -215,6 +132,90 @@ You can also invoke tabs manually:
     library tabs tabs.db -L 1  # open one tab
 
 </details>
+
+## Examples
+
+<details><summary>List all subcommands</summary>
+
+    $ library
+    xk media library subcommands (v1.28.016)
+
+    local media:
+      lb fsadd                 Create a local media database; Add folders
+      lb fsupdate              Refresh database: add new files, mark deleted
+
+      lb listen                Listen to local and online media
+      lb watch                 Watch local and online media
+      lb read                  Read books
+      lb view                  View images
+
+      lb bigdirs               Discover folders which take much room
+      lb dedupe                Deduplicate local db files
+      lb relmv                 Move files/folders while preserving relative paths
+      lb christen              Cleanse files by giving them a new name
+
+      lb mv-list               Reach a target free space by moving data across mount points
+      lb scatter               Scatter files across multiple mountpoints (mergerfs balance)
+
+      lb merge-dbs             Merge multiple SQLITE files
+      lb copy-play-counts      Copy play counts from multiple SQLITE files
+
+    online media:
+      lb tubeadd               Create a tube database; Add playlists
+      lb tubeupdate            Fetch new videos from saved playlists
+
+      lb redditadd             Create a reddit database; Add subreddits
+      lb redditupdate          Fetch new posts from saved subreddits
+
+    downloads:
+      lb download              Download media
+      lb redownload            Redownload missing media
+      lb block                 Prevent downloading specific URLs
+      lb merge-online-local    Merge local and online metadata
+
+    playback:
+      lb now                   Print what is currently playing
+      lb next                  Play next file
+      lb stop                  Stop all playback
+      lb pause                 Pause all playback
+
+    statistics:
+      lb playlists             List added playlists
+      lb dlstatus              Show download status
+      lb usage                 Print mount usage
+
+    browser tabs:
+      lb tabsadd               Create a tabs database; Add URLs
+      lb tabs                  Open your tabs for the day
+      lb surf                  Load browser tabs in a streaming way (stdin)
+
+    mining:
+      lb reddit-selftext       db selftext external links -> db media table
+      lb pushshift             Convert Pushshift jsonl.zstd -> reddit.db format (stdin)
+      lb hnadd                 Create a hackernews database (this takes a few days)
+
+      lb extract-links         Extract links from lists of web pages
+
+      lb cluster-sort          Lines -> sorted by sentence similarity groups (stdin)
+      lb nouns                 Unstructured text -> compound nouns (stdin)
+    
+
+</details>
+
+### Watch online media on your PC
+
+    wget https://github.com/chapmanjacobd/library/raw/main/examples/mealtime.tw.db
+    library watch mealtime.tw.db
+
+### Listen to online media on a chromecast group
+
+    wget https://github.com/chapmanjacobd/library/raw/main/examples/music.tl.db
+    library listen music.tl.db -ct "House speakers"
+
+### Hook into HackerNews
+
+    wget https://github.com/chapmanjacobd/hn_mining/raw/main/hackernews_only_direct.tw.db
+    library watch hackernews_only_direct.tw.db --random --ignore-errors
 
 ## Usage
 
