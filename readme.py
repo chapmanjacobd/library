@@ -44,7 +44,9 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
     wget https://github.com/chapmanjacobd/hn_mining/raw/main/hackernews_only_direct.tw.db
     library watch hackernews_only_direct.tw.db --random --ignore-errors
 
-## Getting started with local media
+## Getting started
+
+<details><summary>Local media</summary>
 
 ### 1. Extract Metadata
 
@@ -64,7 +66,9 @@ new files will be read by `ffprobe`.
 
 To stop playing press Ctrl+C in either the terminal or mpv
 
-## Getting started with online media
+</details>
+
+<details><summary>Online media</summary>
 
 ### 1. Download Metadata
 
@@ -153,6 +157,8 @@ Or with `systemd`:
 You can also invoke tabs manually:
 
     library tabs tabs.db -L 1  # open one tab
+
+</details>
 
 ## Usage
 
