@@ -1,21 +1,22 @@
 # xk media library
 
-A wise philosopher once told me: "[the future is autotainment](https://www.youtube.com/watch?v=F9sZFrsjPp0)".
+A wise philosopher once told me: "the future is [autotainment](https://www.youtube.com/watch?v=F9sZFrsjPp0)".
 
-Manage large media libraries. An index for your archive.
+Manage and curate large media libraries. An index for your archive.
 Primary usage is local filesystem but also supports some virtual constructs like
 tracking online video playlists (eg. YouTube subscriptions) and scheduling browser tabs.
 
-Required: `ffmpeg`
-
-Recommended: `mpv`, `fish`, `firefox`
-
 ## Install
 
-Linux recommended but [Windows setup instructions](./Windows.md) available.
+Linux recommended but [Windows setup instructions](./Windows.md) available. Most things should also work on Mac OS.
 
     pip install xklb
 
+### External dependencies
+
+Required: `ffmpeg`
+
+Some features require or work better with: `mpv`, `firefox`, `fish`
 
 ## Getting started
 
