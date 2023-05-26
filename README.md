@@ -133,8 +133,6 @@ You can also invoke tabs manually:
 
 </details>
 
-## Examples
-
 <details><summary>List all subcommands</summary>
 
     $ library
@@ -202,6 +200,8 @@ You can also invoke tabs manually:
 
 </details>
 
+## Examples
+
 ### Watch online media on your PC
 
     wget https://github.com/chapmanjacobd/library/raw/main/examples/mealtime.tw.db
@@ -217,7 +217,7 @@ You can also invoke tabs manually:
     wget https://github.com/chapmanjacobd/hn_mining/raw/main/hackernews_only_direct.tw.db
     library watch hackernews_only_direct.tw.db --random --ignore-errors
 
-## Usage
+## Watch/Listen Usage
 
     $ library watch -h
     usage: library watch [database] [optional args]
