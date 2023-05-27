@@ -291,19 +291,19 @@ After you are done selecting folders you can press ctrl-d and it will save the l
 
 </details>
 
-### Music alarm clock
+### Music alarm clock (via termux crontab)
 
-Wake up to your own music (via termux)
+Wake up to your own music
 
-    30 9 * * * lb listen ./audio.db
+    30 7 * * * lb listen ./audio.db
 
 Wake up to your own music _only when you are *not* home_ (computer on local-only IP)
 
-    30 9 * * * timeout 0.4 nc -z 192.168.1.12 22 || lb listen --random
+    30 7 * * * timeout 0.4 nc -z 192.168.1.12 22 || lb listen --random
 
 Wake up to your own music on your Chromecast speaker group _only when you are home_
 
-    30 9 * * * ssh 192.168.1.12 lb listen --random --play-in-order --cast --cast-to "Bedroom pair"
+    30 7 * * * ssh 192.168.1.12 lb listen --cast --cast-to "Bedroom pair"
 
 ### Pipe to [lowcharts](https://github.com/juan-leon/lowcharts)
 
