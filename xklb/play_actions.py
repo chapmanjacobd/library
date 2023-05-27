@@ -34,13 +34,20 @@ def usage(action) -> str:
     Play media in order (similarly named episodes):
         library {action} --play-in-order
         There are multiple strictness levels of --play-in-order:
-        library {action} -O   # equivalent
-        library {action} -OO  # above, plus ignores most filters
-        library {action} -OOO # above, plus ignores fts and (include/exclude) filter during ordinal search
+        library {action} -O    # equivalent
+        library {action} -OO   # above, plus ignores most filters
+        library {action} -OOO  # above, plus ignores fts and (include/exclude) filter during ordinal search
+        library {action} -OOOO # above, plus starts search with parent folder
 
         library {action} --related  # similar to -O but uses fts to find similar content
         library {action} -R         # equivalent
         library {action} -RR        # above, plus ignores most filters
+
+        library {action} --cluster  # cluster-sort to put similar paths closer together
+
+        All of these options can be used together but it will be a bit slow and the results might be mid-tier
+        as multiple different algorithms create a muddied signal (too many cooks in the kitchen):
+        library {action} -RRCOO
 
     Filter media by file siblings of parent directory:
         library {action} --sibling   # only include files which have more than or equal to one sibling
@@ -337,6 +344,7 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
 
     parser.add_argument("--play-in-order", "-O", action="count", default=0, help=argparse.SUPPRESS)
     parser.add_argument("--related", "-R", action="count", default=0, help=argparse.SUPPRESS)
+    parser.add_argument("--cluster", "-C", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--sort", "-u", nargs="+", help=argparse.SUPPRESS)
     parser.add_argument("--random", "-r", action="store_true", help=argparse.SUPPRESS)
 
@@ -804,6 +812,7 @@ def process_playqueue(args) -> None:
             args.safe,
             args.play_in_order >= consts.SIMILAR,
             args.related >= consts.RELATED,
+            args.cluster,
         ]
     ):
         player.printer(args, query, bindings)
@@ -828,6 +837,7 @@ def process_playqueue(args) -> None:
             Path(args.watch_later_directory).exists(),
             args.play_in_order == 0,
             args.related == 0,
+            not args.cluster,
             "sort" in args.defaults,
             not args.partial,
             not args.random,
@@ -840,9 +850,18 @@ def process_playqueue(args) -> None:
         media = [d for d in media if tube_backend.is_supported(d["path"]) or Path(d["path"]).exists()]
         log.debug("tube_backend.is_supported: %s", t.elapsed())
 
+    if args.related >= consts.RELATED:
+        media = player.get_related_media(args, media[0])
+        log.debug("player.get_related_media: %s", t.elapsed())
+
+    if args.cluster:
+        media_keyed = {d["path"]: d for d in media}
+        groups = utils.cluster_paths([d["path"] for d in media])
+        groups = sorted(groups, key=lambda d: (-len(d["grouped_paths"]), -len(d["common_prefix"])))
+        sorted_paths = utils.flatten(d["grouped_paths"] for d in groups)
+        media = [media_keyed[p] for p in sorted_paths]
+
     if args.print:
-        if args.related >= consts.RELATED:
-            media = player.get_related_media(args, media[0])
         if args.play_in_order >= consts.SIMILAR:
             media = [player.get_ordinal_media(args, d) for d in media]
         player.media_printer(args, media)
@@ -850,9 +869,6 @@ def process_playqueue(args) -> None:
         args.gui = True
         player.multiple_player(args, media)
     else:
-        if args.related >= consts.RELATED:
-            media = player.get_related_media(args, media[0])
-            log.debug("player.get_related_media: %s", t.elapsed())
         try:
             mp_args = argparse.Namespace(**{k: v for k, v in args.__dict__.items() if k not in {"db"}})
             media.reverse()  # because media.pop()
@@ -862,6 +878,8 @@ def process_playqueue(args) -> None:
                 while media or futures:
                     while media and len(futures) < 3:
                         m = media.pop()
+                        if m["path"] in ignore_paths:
+                            continue
                         future = executor.submit(prep_media, mp_args, m, ignore_paths)
                         ignore_paths.append(m["path"])
                         futures.append(future)
