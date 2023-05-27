@@ -1,9 +1,3 @@
-- subtitle save timestamp, search and open video to location
-
-- wt --cluster
-
-sort big clusters first
-
 - wt history
     print player.historical_usage
 

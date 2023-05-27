@@ -137,7 +137,7 @@ You can also invoke tabs manually:
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v1.28.016)
+    xk media library subcommands (v1.28.017)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -242,13 +242,20 @@ You can also invoke tabs manually:
     Play media in order (similarly named episodes):
         library watch --play-in-order
         There are multiple strictness levels of --play-in-order:
-        library watch -O   # equivalent
-        library watch -OO  # above, plus ignores most filters
-        library watch -OOO # above, plus ignores fts and (include/exclude) filter during ordinal search
+        library watch -O    # equivalent
+        library watch -OO   # above, plus ignores most filters
+        library watch -OOO  # above, plus ignores fts and (include/exclude) filter during ordinal search
+        library watch -OOOO # above, plus starts search with parent folder
 
         library watch --related  # similar to -O but uses fts to find similar content
         library watch -R         # equivalent
         library watch -RR        # above, plus ignores most filters
+
+        library watch --cluster  # cluster-sort to put similar paths closer together
+
+        All of these options can be used together but it will be a bit slow and the results might be mid-tier
+        as multiple different algorithms create a muddied signal (too many cooks in the kitchen):
+        library watch -RRCOO
 
     Filter media by file siblings of parent directory:
         library watch --sibling   # only include files which have more than or equal to one sibling

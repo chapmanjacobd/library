@@ -35,6 +35,7 @@ def parse_args(action, usage) -> argparse.Namespace:
     if action in (SC.tubeadd, SC.tubeupdate):
         parser.add_argument("--category", "-c", help=argparse.SUPPRESS)
 
+    parser.add_argument("--timeout", "-T", help="Quit after x minutes")
     parser.add_argument("--verbose", "-v", action="count", default=0)
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
 
@@ -56,6 +57,8 @@ def parse_args(action, usage) -> argparse.Namespace:
     if hasattr(args, "playlists"):
         args.playlists = utils.conform(args.playlists)
     log.info(utils.dict_filter_bool(args.__dict__))
+
+    utils.timeout(args.timeout)
 
     return args
 

@@ -512,7 +512,7 @@ def mpv_enrich2(args, media) -> List[Dict]:
         for p in paths
         if md5s.get(p.stem)
     ]
-    if "s" in args.partial:  # only unseen
+    if "s" in args.partial:  # skip; only play unseen
         previously_watched_paths = [m["path"] for m in previously_watched]
         return [m for m in media if m["path"] not in previously_watched_paths]
 
