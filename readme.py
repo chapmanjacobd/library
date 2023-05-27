@@ -175,7 +175,27 @@ You can also invoke tabs manually:
     library fsadd --audio audiobooks.db ./audiobooks/
     library fsadd --audio podcasts.db ./podcasts/ ./another/more/secret/podcasts_folder/
 
-### Find large folders to curate or candidates for freeing up space by moving to another mount point
+
+### Find large folders to curate
+
+<details><summary>lb bigdirs</summary>
+
+Also, if you are just looking for folders which are candidates for curation (ie. I need space but don't want to buy a hard drive). The bigdirs subcommand was written for that purpose:
+
+    $ lb bigdirs fs/d.db
+
+You may filter by folder depth (similar to QDirStat or WizTree)
+
+    $ lb bigdirs --depth=3 audio.db
+
+There is also an flag to prioritize folders which have many files which have been deleted (for example you delete songs you don't like--now you can see who wrote those songs and delete all their other songs...)
+
+    $ lb bigdirs --sort-by deleted audio.db
+
+</details>
+
+
+### Find candidates for freeing up space by moving to another mount point
 
 <details><summary>lb mv-list</summary>
 
@@ -235,22 +255,6 @@ After you are done selecting folders you can press ctrl-d and it will save the l
 
 </details>
 
-<details><summary>lb bigdirs</summary>
-
-Also, if you are just looking for folders which are candidates for curation (ie. I need space but don't want to buy a hard drive). The bigdirs subcommand was written for that purpose:
-
-    $ lb bigdirs fs/d.db
-
-You may filter by folder depth (similar to QDirStat or WizTree)
-
-    $ lb bigdirs --depth=3 audio.db
-
-There is also an flag to prioritize folders which have many files which have been deleted (for example you delete songs you don't like--now you can see who wrote those songs and delete all their other songs...)
-
-    $ lb bigdirs --sort-by deleted audio.db
-
-</details>
-
 
 ### Scatter your data across disks with [mergerfs](https://github.com/trapexit/mergerfs)
 
@@ -287,15 +291,17 @@ There is also an flag to prioritize folders which have many files which have bee
 
 </details>
 
-### Wake up to your own music (via termux)
+### Music alarm clock
+
+Wake up to your own music (via termux)
 
     30 9 * * * lb listen ./audio.db
 
-### Wake up to your own music _only when you are not home_ (computer on local-only IP)
+Wake up to your own music _only when you are *not* home_ (computer on local-only IP)
 
     30 9 * * * timeout 0.4 nc -z 192.168.1.12 22 || lb listen --random
 
-### Wake up to your own music on your Chromecast speaker group _only when you are home_
+Wake up to your own music on your Chromecast speaker group _only when you are home_
 
     30 9 * * * ssh 192.168.1.12 lb listen --random --play-in-order --cast --cast-to "Bedroom pair"
 
@@ -338,9 +344,10 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 ### Pipe to rsync
 
-<details><summary>Copy or move files to your phone via syncthing</summary>
+<details><summary>Move files to your phone via syncthing</summary>
 
-I use rsync to move files instead of copy-on-write duplication because I want deletions to stick.
+I used to use rsync to move files because I want deletions to stick.
+I now use `lb relmv`. But this is still a good rsync example:
 
     function mrmusic
         rsync -a --remove-source-files --files-from=(

@@ -13,6 +13,16 @@ def parse_args() -> argparse.Namespace:
         usage="""library relmv [--dry-run] SOURCE ... DEST
 
     Move files/folders without losing hierarchy metadata
+
+    Move fresh music to your phone every Sunday:
+
+        # move last weeks' music back to their source folders
+        lb relmv /mnt/d/80_Now_Listening/ /mnt/d/
+
+        # move new music for this week
+        lb relmv (
+            lb listen ~/lb/audio.db --local-media-only --where 'play_count=0' --random -L 600 -p f
+        ) /mnt/d/80_Now_Listening/
 """,
     )
     parser.add_argument("--verbose", "-v", action="count", default=0)
