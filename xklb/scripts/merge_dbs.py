@@ -46,12 +46,12 @@ def merge_db(args, source_db) -> None:
             source_columns = [s for s in source_columns if s in target_columns]
 
         log.info("[%s]: %s", table, source_columns)
-        source_table_pks = [s for s in args.pk if s in source_columns]
-
         kwargs = {}
-        if source_table_pks:
-            log.info("[%s]: Using %s as primary key(s)", table, ", ".join(source_table_pks))
-            kwargs["pk"] = source_table_pks
+        if args.pk:
+            source_table_pks = [s for s in args.pk if s in source_columns]
+            if source_table_pks:
+                log.info("[%s]: Using %s as primary key(s)", table, ", ".join(source_table_pks))
+                kwargs["pk"] = source_table_pks
 
         data = s_db[table].rows
         data = ({k: v for k, v in d.items() if k in source_columns} for d in data)
