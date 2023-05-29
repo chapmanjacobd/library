@@ -383,7 +383,7 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Optional[L
                 "skip_download": True,
                 "outtmpl": {
                     "default": str(
-                        Path(f"{consts.SUB_TEMP_DIR}/%(uploader,uploader_id)s/%(title).200B_[%(id).60B].%(ext)s")
+                        Path(f"{consts.SUB_TEMP_DIR}/%(uploader,uploader_id)s/%(title).200B_[%(id).60B].%(ext)s"),
                     ),
                 },
                 "ignoreerrors": True,

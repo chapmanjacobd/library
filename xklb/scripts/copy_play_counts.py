@@ -43,7 +43,7 @@ def copy_play_count(args, source_db) -> None:
             src.media
         WHERE
             src.media.play_count > 0
-        """
+        """,
     )
 
     modified_row_count = 0
@@ -52,7 +52,7 @@ def copy_play_count(args, source_db) -> None:
             renamed_path = d["path"].replace(args.source_prefix, args.target_prefix, 1)
             log.debug(renamed_path)
 
-            sql = f"""
+            sql = """
             UPDATE
                 main.media
             SET

@@ -434,11 +434,11 @@ def get_ordinal_media(args, m: Dict, ignore_paths=None) -> Dict:
                 and path like :candidate
                 {filter_args_sql(args, m_columns)}
                 {'' if args.play_in_order >= consts.SIMILAR_NO_FILTER else (" ".join(args.filter_sql) or '')}
-                {"and path not in ({})".format(",".join([":ignore_path{}".format(i) for i in range(len(ignore_paths))])) if len(ignore_paths) > 0 else ''}
+                {"and path not in ({})".format(",".join([f":ignore_path{i}" for i in range(len(ignore_paths))])) if len(ignore_paths) > 0 else ''}
             ORDER BY play_count, path
             LIMIT 1000
             """
-        ignore_path_params = {"ignore_path{}".format(i): value for i, value in enumerate(ignore_paths)}
+        ignore_path_params = {f"ignore_path{i}": value for i, value in enumerate(ignore_paths)}
         bindings = {"candidate": candidate + "%", **ignore_path_params}
         if args.play_in_order >= consts.SIMILAR_NO_FILTER:
             if args.include or args.exclude:
@@ -470,7 +470,7 @@ def get_related_media(args, m: Dict) -> List[Dict]:
 
     m = args.db["media"].get(m["path"])
     words = set(
-        utils.conform(utils.extract_words(m.get(k)) for k in m.keys() if k in db.config["media"]["search_columns"])
+        utils.conform(utils.extract_words(m.get(k)) for k in m if k in db.config["media"]["search_columns"]),
     )
     args.include = sorted(words, key=len, reverse=True)[:100]
     args.table = db.fts_flexible_search(args)
@@ -498,7 +498,7 @@ def get_related_media(args, m: Dict) -> List[Dict]:
     related_videos = list(args.db.query(query, bindings))
     log.debug(related_videos)
 
-    return [m] + related_videos
+    return [m, *related_videos]
 
 
 def watch_chromecast(args, m: dict, subtitles_file=None) -> Optional[subprocess.CompletedProcess]:

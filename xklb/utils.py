@@ -362,7 +362,7 @@ def path_to_sentence(s):
         .replace("{", " ")
         .replace("}", " ")
         .replace("_", " ")
-        .replace("-", " ")
+        .replace("-", " "),
     )
 
 
@@ -1034,7 +1034,7 @@ def cover_scan(media_duration, scan_percentage):
 
 def decode_full_scan(path):
     output = ffmpeg.input(path).output("/dev/null", f="null")
-    error_log = ffmpeg.run(output, quiet=True)
+    ffmpeg.run(output, quiet=True)
 
 
 def decode_quick_scan(path, scans, scan_duration=3):
@@ -1042,7 +1042,7 @@ def decode_quick_scan(path, scans, scan_duration=3):
     for scan in scans:
         try:
             output = ffmpeg.input(path, ss=scan).output("/dev/null", t=scan_duration, f="null")
-            error_log = ffmpeg.run(output, quiet=True)
+            ffmpeg.run(output, quiet=True)
         except ffmpeg.Error:
             fail_count += 1
 
@@ -1067,7 +1067,7 @@ def load_spacy_model(model=None):
         log.error("Install spaCy and sklearn to use:")
         log.error("pip install spacy sklearn")
         log.error("python -m spacy download en_core_web_sm")
-        exit(1)
+        sys.exit(1)
 
     if model:
         return spacy.load(model)
@@ -1087,7 +1087,7 @@ def load_spacy_model(model=None):
 
     log.error("Language model not found. Download a model first using the following commands:")
     log.error("python -m spacy download en_core_web_sm")
-    exit(1)
+    sys.exit(1)
 
 
 def cluster_paths(paths, model=None, n_clusters=None):
@@ -1130,15 +1130,12 @@ def cluster_paths(paths, model=None, n_clusters=None):
 
 
 def is_timecode_like(text):
-    for char in text:
-        if not (char in ":,_-;. " or char.isdigit()):
-            return False
-    return True
+    return all(char in ":,_-;. " or char.isdigit() for char in text)
 
 
 def is_generic_title(title):
     return (
-        (len(title) <= 12 and (title.startswith("Chapter") or title.startswith("Scene")))
+        (len(title) <= 12 and (title.startswith(("Chapter", "Scene"))))
         or "Untitled Chapter" in title
         or is_timecode_like(title)
         or title.isdigit()
