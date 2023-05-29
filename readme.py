@@ -12,15 +12,17 @@ tracking online video playlists (eg. YouTube subscriptions) and scheduling brows
 
 ## Install
 
-Linux recommended but [Windows setup instructions](./Windows.md) available. Most things should also work on Mac OS.
+Linux recommended but [Windows setup instructions](./Windows.md) available.
 
     pip install xklb
+
+Should also work on Mac OS.
 
 ### External dependencies
 
 Required: `ffmpeg`
 
-Some features require or work better with: `mpv`, `firefox`, `fish`
+Some features work better with: `mpv`, `firefox`, `fish`
 
 ## Getting started
 

@@ -1,4 +1,4 @@
-import argparse, operator, tempfile
+import argparse, tempfile
 from copy import deepcopy
 from pathlib import Path
 from typing import List
@@ -259,7 +259,7 @@ def dedupe() -> None:
     except ModuleNotFoundError:
         log.info("Skipping CSV export because pandas is not installed")
 
-    duplicates_size = sum(filter(None, map(operator.itemgetter("duplicate_size"), duplicates)))
+    duplicates_size = sum(filter(None, [d["duplicate_size"] for d in duplicates]))
     print(f"Approx. space savings: {humanize.naturalsize(duplicates_size // 2)}")
 
     if duplicates and (args.force or utils.confirm("Delete duplicates?")):  # type: ignore

@@ -1,3 +1,7 @@
+search: get title from media table
+
+-- update fish functions to use --subs --auto-subs
+
 - wt history
     print player.historical_usage
 

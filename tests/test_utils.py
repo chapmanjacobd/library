@@ -1,4 +1,4 @@
-import argparse, os, time
+import argparse, os, time, unittest
 from pathlib import Path
 from unittest import mock
 
@@ -329,3 +329,44 @@ def test_cover_scan():
 
     result = [scan_stats(*utils.cover_scan(2 * 60 * 60, percent)) for percent in [5, 10, 20, 30]]
     assert result == [(5, 90, 450, 1710), (9, 90, 810, 810), (18, 84, 1512, 339), (27, 83, 2241, 193)]
+
+
+class TimecodeTestCase(unittest.TestCase):
+    def test_valid_timecode(self):
+        self.assertTrue(utils.is_timecode_like("12:34:56"))
+        self.assertTrue(utils.is_timecode_like("12,34,56"))
+        self.assertTrue(utils.is_timecode_like("12_34_56"))
+        self.assertTrue(utils.is_timecode_like("12;34;56"))
+        self.assertTrue(utils.is_timecode_like("12.34.56"))
+        self.assertTrue(utils.is_timecode_like("12-34-56"))
+        self.assertTrue(utils.is_timecode_like("12 34 56"))
+        self.assertTrue(utils.is_timecode_like("12:34:56.789"))  # Contains a non-digit character (.)
+        self.assertTrue(utils.is_timecode_like("12:34:56,"))  # Contains a non-digit character (,)
+        self.assertTrue(utils.is_timecode_like("12:34:56_"))  # Contains a non-digit character (_)
+        self.assertTrue(utils.is_timecode_like("12:34:56;"))  # Contains a non-digit character (;)
+        self.assertTrue(utils.is_timecode_like("12:34:56-"))  # Contains a non-digit character (-)
+        self.assertTrue(utils.is_timecode_like("12:34:56 "))  # Contains a non-digit character (space)
+        self.assertTrue(utils.is_timecode_like("12:34:56."))  # Contains a non-digit character (.)
+        self.assertTrue(utils.is_timecode_like("12:34:56,"))  # Contains a non-digit character (,)
+        self.assertTrue(utils.is_timecode_like("12:34:56_"))  # Contains a non-digit character (_)
+        self.assertTrue(utils.is_timecode_like("12:34:56;"))  # Contains a non-digit character (;)
+        self.assertTrue(utils.is_timecode_like("12:34:56-"))  # Contains a non-digit character (-)
+        self.assertTrue(utils.is_timecode_like("12:34:56 "))  # Contains a non-digit character (space)
+
+    def test_invalid_timecode(self):
+        self.assertFalse(utils.is_timecode_like("12:34:56a"))
+        self.assertFalse(utils.is_timecode_like("hello there"))
+
+
+class SecondsToHHMMSSTestCase(unittest.TestCase):
+    def test_positive_seconds(self):
+        self.assertEqual(utils.seconds_to_hhmmss(1), "   00:01")
+        self.assertEqual(utils.seconds_to_hhmmss(59), "   00:59")
+        self.assertEqual(utils.seconds_to_hhmmss(3600), "01:00:00")
+        self.assertEqual(utils.seconds_to_hhmmss(3665), "01:01:05")
+        self.assertEqual(utils.seconds_to_hhmmss(86399), "23:59:59")
+        self.assertEqual(utils.seconds_to_hhmmss(86400), "24:00:00")
+        self.assertEqual(utils.seconds_to_hhmmss(90061), "25:01:01")
+
+    def test_zero_seconds(self):
+        self.assertEqual(utils.seconds_to_hhmmss(0), "   00:00")

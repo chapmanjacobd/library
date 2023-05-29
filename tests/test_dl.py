@@ -33,6 +33,9 @@ class TestTube(unittest.TestCase):
             small=False,
             verbose=0,
             download_archive="test",
+            subtitle_languages=None,
+            subs=False,
+            auto_subs=False,
         )
         args.db = connect(args)
         yt(args, {"path": PLAYLIST_VIDEO_URL, "dl_config": "{}", "category": "Self"})

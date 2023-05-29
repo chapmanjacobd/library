@@ -8,15 +8,17 @@ tracking online video playlists (eg. YouTube subscriptions) and scheduling brows
 
 ## Install
 
-Linux recommended but [Windows setup instructions](./Windows.md) available. Most things should also work on Mac OS.
+Linux recommended but [Windows setup instructions](./Windows.md) available.
 
     pip install xklb
+
+Should also work on Mac OS.
 
 ### External dependencies
 
 Required: `ffmpeg`
 
-Some features require or work better with: `mpv`, `firefox`, `fish`
+Some features work better with: `mpv`, `firefox`, `fish`
 
 ## Getting started
 
@@ -137,7 +139,7 @@ You can also invoke tabs manually:
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v1.28.017)
+    xk media library subcommands (v1.29.001)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -145,6 +147,8 @@ You can also invoke tabs manually:
 
       lb listen                Listen to local and online media
       lb watch                 Watch local and online media
+      lb search                Search text and subtitles
+
       lb read                  Read books
       lb view                  View images
 

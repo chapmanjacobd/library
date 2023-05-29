@@ -24,6 +24,7 @@ BLOCK_THE_CHANNEL = "__BLOCKLIST_ENTRY_"
 
 LOG_INFO = 1
 LOG_DEBUG = 2
+LOG_DEBUG_SQL = 3
 SIMILAR = 1
 SIMILAR_NO_FILTER = 2
 SIMILAR_NO_FILTER_NO_FTS = 3
@@ -93,6 +94,7 @@ class SC:
     download = "download"
     block = "block"
     stats = "stats"
+    search = "search"
 
 
 class Frequency(enum.Enum):
@@ -183,6 +185,10 @@ def get_text_files(path: Path, image_recognition=False, speech_recognition=False
 
 
 TUBE_IGNORE_KEYS = (
+    "track_id",
+    "track_number",
+    "repost_count",
+    "fragments",
     "thumbnail",
     "thumbnails",
     "availability",

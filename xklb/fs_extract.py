@@ -1,5 +1,6 @@
 import argparse, math, os, sys
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+from copy import deepcopy
 from functools import partial
 from multiprocessing import TimeoutError as mp_TimeoutError
 from pathlib import Path
@@ -125,22 +126,22 @@ def calculate_sparseness(stat) -> int:
     return sparseness
 
 
-def extract_metadata(mp_args, f) -> Optional[Dict[str, int]]:
-    log.debug(f)
+def extract_metadata(mp_args, path) -> Optional[Dict[str, int]]:
+    log.debug(path)
 
     try:
-        stat = Path(f).stat()
+        stat = Path(path).stat()
     except FileNotFoundError:
         return None
     except OSError:
-        log.error(f"[{f}] IOError: possible filesystem corruption; check dmesg")
+        log.error(f"[{path}] IOError: possible filesystem corruption; check dmesg")
         return None
     except Exception as e:
-        log.error(f"[{f}] %s", e)
+        log.error(f"[{path}] %s", e)
         return None
 
     media = {
-        "path": f,
+        "path": path,
         "play_count": 0,
         "time_played": 0,
         "playhead": 0,
@@ -156,22 +157,22 @@ def extract_metadata(mp_args, f) -> Optional[Dict[str, int]]:
         media = {**media, "sparseness": calculate_sparseness(stat)}
 
     if mp_args.profile == DBType.filesystem:
-        media = {**media, "is_dir": Path(f).is_dir()}
+        media = {**media, "is_dir": Path(path).is_dir()}
 
     if mp_args.profile in (DBType.audio, DBType.video):
-        media = av.munge_av_tags(mp_args, media, f)
+        media = av.munge_av_tags(mp_args, media, path)
 
     if mp_args.profile == DBType.text:
         try:
             start = timer()
             if any([mp_args.ocr, mp_args.speech_recognition]):
-                media = books.munge_book_tags_slow(media, f)
+                media = books.munge_book_tags_slow(media, path)
             else:
-                media = books.munge_book_tags_fast(media, f)
+                media = books.munge_book_tags_fast(media, path)
         except mp_TimeoutError:
-            log.warning(f"[{f}]: Timed out trying to read file")
+            log.warning(f"[{path}]: Timed out trying to read file")
         else:
-            log.debug(f"[{f}]: {timer()-start}")
+            log.debug(f"[{path}]: {timer()-start}")
 
     return media
 
@@ -190,34 +191,56 @@ def extract_chunk(args, media) -> None:
     if args.scan_subtitles:
         clean_up_temp_dirs()
 
+    captions_t0 = []
+    for d in media:
+        chapters = d.pop("chapters", None) or []
+        if len(chapters) > 0:
+            args.db["captions"].insert_all(chapters, alter=True)
+
+        subtitles = d.pop("subtitles", None) or []
+        if len(subtitles) > 0:
+            args.db["captions"].insert_all(subtitles, alter=True)
+
+        tags = d.pop("tags", None) or ""
+        description = d.pop("description", None) or ""
+        if description:
+            tags += "\n" + description
+        if tags:
+            captions_t0.append({"path": d["path"], "time": 0, "text": tags})
+    args.db["captions"].insert_all(captions_t0, alter=True)
+
+    media = utils.list_dict_filter_bool(media)
     args.db["media"].insert_all(utils.list_dict_filter_bool(media), pk="path", alter=True, replace=True)
 
 
 def find_new_files(args, path: Path) -> List[str]:
-    try:
-        if args.scan_all_files:
-            # thanks to these people for making rglob fast https://bugs.python.org/issue26032
-            scanned_files = [str(p) for p in path.rglob("*") if p.is_file()]
-        elif args.profile == DBType.filesystem:
-            scanned_files = [str(p) for p in path.rglob("*")]
-        elif args.profile == DBType.audio:
-            scanned_files = consts.get_audio_files(path)
-        elif args.profile == DBType.video:
-            scanned_files = consts.get_video_files(path)
-        elif args.profile == DBType.text:
-            scanned_files = consts.get_text_files(
-                path,
-                image_recognition=args.ocr,
-                speech_recognition=args.speech_recognition,
-            )
-        elif args.profile == DBType.image:
-            scanned_files = consts.get_image_files(path)
-        else:
-            msg = f"fs_extract for profile {args.profile}"
-            raise NotImplementedError(msg)
-    except FileNotFoundError:
-        print(f"[{path}] Not found")
-        return []
+    if path.is_file():
+        scanned_files = [str(path)]
+    else:
+        try:
+            if args.scan_all_files:
+                # thanks to these people for making rglob fast https://bugs.python.org/issue26032
+                scanned_files = [str(p) for p in path.rglob("*") if p.is_file()]
+            elif args.profile == DBType.filesystem:
+                scanned_files = [str(p) for p in path.rglob("*")]
+            elif args.profile == DBType.audio:
+                scanned_files = consts.get_audio_files(path)
+            elif args.profile == DBType.video:
+                scanned_files = consts.get_video_files(path)
+            elif args.profile == DBType.text:
+                scanned_files = consts.get_text_files(
+                    path,
+                    image_recognition=args.ocr,
+                    speech_recognition=args.speech_recognition,
+                )
+            elif args.profile == DBType.image:
+                scanned_files = consts.get_image_files(path)
+            else:
+                msg = f"fs_extract for profile {args.profile}"
+                raise NotImplementedError(msg)
+        except FileNotFoundError:
+            print(f"[{path}] Not found")
+            return []
 
     columns = args.db["media"].columns_dict
     scanned_set = set(scanned_files)
@@ -380,14 +403,14 @@ def fs_add(args=None) -> None:
         library fsadd --scan-subtitles tv.search.db ./tv/ ./movies/
 
     Decode media to check for corruption (slow):
-        library fsadd --check-corrupt 100 tv.db ./tv/  # scan through 100% of each file to evaluate how corrupt it is (very slow)
-        library fsadd --check-corrupt   1 tv.db ./tv/  # scan through 1% of each file to evaluate how corrupt it is (takes about one second per file)
-        library fsadd --check-corrupt   5 tv.db ./tv/  # scan through 1% of each file to evaluate how corrupt it is (takes about ten seconds per file)
+        library fsadd --check-corrupt 100 tv.db ./tv/  # scan through 100 percent of each file to evaluate how corrupt it is (very slow)
+        library fsadd --check-corrupt   1 tv.db ./tv/  # scan through 1 percent of each file to evaluate how corrupt it is (takes about one second per file)
+        library fsadd --check-corrupt   5 tv.db ./tv/  # scan through 1 percent of each file to evaluate how corrupt it is (takes about ten seconds per file)
 
-        library fsadd --check-corrupt   5 --delete-corrupt 30 tv.db ./tv/  # scan 5% of each file to evaluate how corrupt it is, if 30% or more of those checks fail then the file is deleted
+        library fsadd --check-corrupt   5 --delete-corrupt 30 tv.db ./tv/  # scan 5 percent of each file to evaluate how corrupt it is, if 30 percent or more of those checks fail then the file is deleted
 
         nb: the behavior of delete-corrupt changes between full and partial scan
-        library fsadd --check-corrupt  99 --delete-corrupt  1 tv.db ./tv/  # partial scan 99% of each file to evaluate how corrupt it is, if 1% or more of those checks fail then the file is deleted
+        library fsadd --check-corrupt  99 --delete-corrupt  1 tv.db ./tv/  # partial scan 99 percent of each file to evaluate how corrupt it is, if 1 percent or more of those checks fail then the file is deleted
         library fsadd --check-corrupt 100 --delete-corrupt  1 tv.db ./tv/  # full scan each file to evaluate how corrupt it is, if there is _any_ corruption then the file is deleted
 
     Normally only relevant filetypes are included. You can scan all files with this flag:

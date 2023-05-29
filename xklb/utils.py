@@ -1,4 +1,4 @@
-import argparse, enum, functools, hashlib, logging, math, multiprocessing, os, platform, random, re, shlex, shutil, signal, string, subprocess, sys, tempfile, textwrap, time
+import argparse, csv, enum, functools, hashlib, logging, math, multiprocessing, os, platform, random, re, shlex, shutil, signal, string, subprocess, sys, tempfile, textwrap, time
 from ast import literal_eval
 from collections.abc import Iterable
 from datetime import datetime, timedelta, timezone
@@ -53,8 +53,8 @@ def argparse_log() -> logging.Logger:
                 call_pdb=True,
                 debugger_cls=TerminalPdb,
             )
-    except Exception as e:
-        log.debug(e)
+    except Exception:
+        pass
 
     log_levels = [logging.WARNING, logging.INFO, logging.DEBUG]
     logging.root.handlers = []  # clear any existing handlers
@@ -273,18 +273,18 @@ def file_temp_copy(src) -> str:
     return fname
 
 
-def trash(f: Union[Path, str], detach=True) -> None:
+def trash(path: Union[Path, str], detach=True) -> None:
     trash_put = which("trash-put") or which("trash")
     if trash_put is not None:
         if not detach:
-            cmd(trash_put, f, strict=False)
+            cmd(trash_put, path, strict=False)
             return
         try:
-            cmd_detach(trash_put, f)
+            cmd_detach(trash_put, path)
         except Exception:
-            cmd(trash_put, f, strict=False)
+            cmd(trash_put, path, strict=False)
     else:
-        Path(f).unlink(missing_ok=True)
+        Path(path).unlink(missing_ok=True)
 
 
 def remove_consecutive_whitespace(s) -> str:
@@ -691,8 +691,28 @@ def col_duration(tbl: List[Dict], col: str) -> List[Dict]:
     for idx, _d in enumerate(tbl):
         if tbl[idx].get(col) is not None:
             tbl[idx][col] = human_time(tbl[idx][col])
+    return tbl
 
-    col_resize(tbl, "duration", 6)
+
+def seconds_to_hhmmss(seconds):
+    if seconds < 0:
+        seconds = abs(seconds)
+
+    hours = seconds // 3600
+    minutes = (seconds % 3600) // 60
+    seconds = seconds % 60
+
+    formatted_time = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+    if hours == 0:
+        formatted_time = f"   {minutes:02d}:{seconds:02d}"
+
+    return formatted_time
+
+
+def col_hhmmss(tbl: List[Dict], col: str) -> List[Dict]:
+    for idx, _d in enumerate(tbl):
+        if tbl[idx].get(col) is not None:
+            tbl[idx][col] = seconds_to_hhmmss(tbl[idx][col])
     return tbl
 
 
@@ -1107,3 +1127,34 @@ def cluster_paths(paths, model=None, n_clusters=None):
         result.append(metadata)
 
     return result
+
+
+def is_timecode_like(text):
+    for char in text:
+        if not (char in ":,_-;. " or char.isdigit()):
+            return False
+    return True
+
+
+def is_generic_title(title):
+    return (
+        (len(title) <= 12 and (title.startswith("Chapter") or title.startswith("Scene")))
+        or "Untitled Chapter" in title
+        or is_timecode_like(title)
+        or title.isdigit()
+    )
+
+
+def write_csv_to_stdout(data):
+    fieldnames = data[0].keys()
+    writer = csv.DictWriter(sys.stdout, fieldnames=fieldnames)
+    writer.writeheader()
+    writer.writerows(data)
+
+
+def order_set(items):
+    seen = set()
+    for item in items:
+        if item not in seen:
+            yield item
+            seen.add(item)

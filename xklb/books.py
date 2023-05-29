@@ -1,4 +1,4 @@
-import re
+import os, re
 from typing import List, Optional
 
 from xklb import utils
@@ -7,7 +7,7 @@ from xklb.utils import combine, log, safe_unpack
 REGEX_SENTENCE_ENDS = re.compile(r";|,|\.|\*|\n|\t")
 
 
-def munge_book_tags(media, f) -> Optional[dict]:
+def munge_book_tags(media, path) -> Optional[dict]:
     try:
         import textract
     except ModuleNotFoundError:
@@ -16,11 +16,11 @@ def munge_book_tags(media, f) -> Optional[dict]:
         )
         raise
     try:
-        tags = textract.process(f)
+        tags = textract.process(path, language=os.getenv("TESSERACT_LANGUAGE"))
         tags = REGEX_SENTENCE_ENDS.split(tags.decode())
     except Exception as e:
         log.warning(e)
-        log.error(f"[{f}] Failed reading file")
+        log.error(f"[{path}] Failed reading file")
         tags = []
     return {**media, "tags": combine(tags)}
 

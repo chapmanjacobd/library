@@ -1,4 +1,4 @@
-import csv, operator, os, platform, re, shutil, socket, statistics, subprocess, sys
+import csv, os, platform, re, shutil, socket, statistics, subprocess, sys
 from copy import deepcopy
 from io import StringIO
 from numbers import Number
@@ -109,16 +109,16 @@ def parse(args, m) -> List[str]:
         if m["path"] and m["path"].startswith("http"):
             player.extend(["--script-opts=ytdl_hook-try_ytdl_first=yes"])
 
-        if not args.multiple_playback:
+        if getattr(args, "multiple_playback", 1) < 2:
             player.extend(["--fs"])
 
         if args.loop:
             player.extend(["--loop-file=inf"])
 
-        if args.crop:
+        if getattr(args, "crop", None):
             player.extend(["--panscan=1.0"])
 
-        if args.action in (SC.watch, SC.listen) and m:
+        if args.action in (SC.watch, SC.listen, SC.search) and m:
             start, end = calculate_duration(args, m)
             if end != 0:
                 if start != 0:
@@ -374,8 +374,8 @@ def override_sort(sort_expression: str) -> str:
 
 def filter_args_sql(args, m_columns):
     return f"""
-        {'and path like "http%"' if args.safe else ''}
-        {f'and path not like "{args.keep_dir}%"' if Path(args.keep_dir).exists() else ''}
+        {'and path like "http%"' if getattr(args, 'safe', False) else ''}
+        {f'and path not like "{args.keep_dir}%"' if getattr(args, 'keep_dir', False) and Path(args.keep_dir).exists() else ''}
         {'and COALESCE(time_deleted,0) = 0' if 'time_deleted' in m_columns and 'time_deleted' not in ' '.join(sys.argv) else ''}
         {'AND (score IS NULL OR score > 7)' if 'score' in m_columns else ''}
         {'AND (upvote_ratio IS NULL OR upvote_ratio > 0.73)' if 'upvote_ratio' in m_columns else ''}
@@ -841,6 +841,9 @@ def media_printer(args, media) -> None:
     if not media:
         utils.no_media_found()
 
+    if "f" not in args.print and "limit" in getattr(args, "defaults", []):
+        media.reverse()
+
     duration = sum(m.get("duration") or 0 for m in media)
     if "a" in args.print:
         D = {"path": "Aggregate", "count": len(media)}
@@ -866,19 +869,19 @@ def media_printer(args, media) -> None:
 
     else:
         if "d" in args.print:
-            marked = mark_media_deleted(args, list(map(operator.itemgetter("path"), media)))
+            marked = mark_media_deleted(args, [d["path"] for d in media])
             log.warning(f"Marked {marked} metadata records as deleted")
         if "w" in args.print:
-            marked = mark_media_watched(args, list(map(operator.itemgetter("path"), media)))
+            marked = mark_media_watched(args, [d["path"] for d in media])
             log.warning(f"Marked {marked} metadata records as watched")
 
     if "f" in args.print:
         if args.limit == 1:
-            f = media[0]["path"]
-            if not Path(f).exists():
-                mark_media_deleted(args, f)
+            path = media[0]["path"]
+            if not Path(path).exists():
+                mark_media_deleted(args, path)
                 raise FileNotFoundError
-            utils.pipe_print(quote(f))
+            utils.pipe_print(quote(path))
             return
         else:
             if not args.cols:
@@ -897,7 +900,7 @@ def media_printer(args, media) -> None:
                 else:
                     utils.pipe_print(line.strip())
             if args.moved:
-                moved_media(args, list(map(operator.itemgetter("path"), media)), *args.moved)
+                moved_media(args, [d["path"] for d in media], *args.moved)
                 return
             return
     else:

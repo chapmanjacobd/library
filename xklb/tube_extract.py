@@ -28,6 +28,9 @@ def parse_args(action, usage) -> argparse.Namespace:
     parser.add_argument("--extra", "-extra", action="store_true", help="Get full metadata (takes a lot longer)")
     parser.add_argument("--playlist-files", action="store_true", help="Read playlists from text files")
     parser.add_argument("--playlist-db", action="store_true", help="Fetch metadata for paths in a table")
+    parser.add_argument("--subs", action="store_true")
+    parser.add_argument("--auto-subs", "--autosubs", action="store_true")
+    parser.add_argument("--subtitle-languages", "--subtitle-language", "--slang", "--lang", action="extend", nargs="+")
     parser.add_argument("--extra-media-data", default={})
     parser.add_argument("--extra-playlist-data", default={})
     parser.add_argument("--ignore-errors", "--ignoreerrors", "-i", "-f", action="store_true", help=argparse.SUPPRESS)
@@ -136,7 +139,7 @@ def tube_add(args=None) -> None:
             log.warning("[%s]: Getting extra metadata", path)
             tube_backend.get_extra_metadata(args, path)
 
-    LARGE_NUMBER = 100000
+    LARGE_NUMBER = 100_000
     if not args.db["media"].detect_fts() or tube_backend.added_media_count > LARGE_NUMBER:
         db.optimize(args)
 

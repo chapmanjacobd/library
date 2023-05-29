@@ -105,6 +105,7 @@ yt_meaningless_errors = re.compile(
 .*Finished downloading playlist
 .*The last 30x error message was:
 .*NoneType
+.*URL could be a direct video link
 .*unable to download video data
 .*HTTP Error 405
 .*Creating a generic title instead
@@ -207,7 +208,6 @@ yt_unrecoverable_errors = re.compile(
 .*No video could be found in this
 .*Unsupported URL
 .*The requested site is known to use DRM protection.
-.*URL could be a direct video link
 .*No media found
 .*not a valid URL
 .*not a video
