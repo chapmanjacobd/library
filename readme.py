@@ -38,7 +38,7 @@ for title, subcommand in [
     ('Clean filenames', 'christen'),
     # scatter usage is already in readme so intentionally skipped here
 ]:
-    if subcommand not in title:
+    if subcommand not in title.lower():
         title += f' ({subcommand})'
     usage_details.append(f'''
 <details><summary>{title}</summary>

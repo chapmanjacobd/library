@@ -670,7 +670,7 @@ Explore `library` databases in your browser
 
 </details>
 
-<details><summary>Watch / Listen (watch)</summary>
+<details><summary>Watch / Listen</summary>
 
     $ library watch -h
     usage: library watch [database] [optional args]
@@ -931,7 +931,7 @@ Explore `library` databases in your browser
 
 </details>
 
-<details><summary>Search captions / subtitles (search)</summary>
+<details><summary>Search captions / subtitles</summary>
 
     $ library search -h
     usage: library search
@@ -1027,7 +1027,7 @@ Explore `library` databases in your browser
 
 </details>
 
-<details><summary>Download media (download)</summary>
+<details><summary>Download media</summary>
 
     $ library download -h
     usage: library download database [--prefix /mnt/d/] --video | --audio
@@ -1229,7 +1229,7 @@ Explore `library` databases in your browser
 
 </details>
 
-<details><summary>Blocklist a channel (block)</summary>
+<details><summary>Blocklist a channel</summary>
 
     $ library block -h
     usage: library block database [playlists ...]
@@ -1272,7 +1272,7 @@ Explore `library` databases in your browser
 
 </details>
 
-<details><summary>Dedupe music (dedupe)</summary>
+<details><summary>Dedupe music</summary>
 
     $ library dedupe -h
     usage: library [--audio | --id | --title | --filesystem] [--only-soft-delete] [--limit LIMIT] DATABASE
