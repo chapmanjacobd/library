@@ -49,6 +49,10 @@ for title, subcommand in [
 </details>
 ''')
 
+expand_all_js = '''```js
+(() => { const readmeDiv = document.getElementById("readme"); const detailsElements = readmeDiv.getElementsByTagName("details"); for (let i = 0; i < detailsElements.length; i++) { detailsElements[i].setAttribute("open", "true"); } })();
+```'''
+
 print(
     rf"""# xk media library
 
@@ -448,6 +452,10 @@ Explore `library` databases in your browser
 ## Usage
 
 {''.join(usage_details)}
+
+You can expand all by running this in your browser console:
+
+{expand_all_js}
 
 """,
 )

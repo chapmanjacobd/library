@@ -205,7 +205,7 @@ Incremental surfing. 📈🏄 totally rad!
 
       lb cluster-sort          Lines -> sorted by sentence similarity groups (stdin)
       lb nouns                 Unstructured text -> compound nouns (stdin)
-
+    
 
 </details>
 
@@ -1449,10 +1449,10 @@ Explore `library` databases in your browser
 </details>
 
 
+You can expand all by running this in your browser console:
 
-[Expand All Details](javascript:(function() {
-  var detailsElements = document.getElementsByTagName("details");
-  for (var i = 0; i < detailsElements.length; i++) {
-    detailsElements[i].setAttribute("open", "true");
-  }
-})())
+```js
+(() => { const readmeDiv = document.getElementById("readme"); const detailsElements = readmeDiv.getElementsByTagName("details"); for (let i = 0; i < detailsElements.length; i++) { detailsElements[i].setAttribute("open", "true"); } })();
+```
+
+
