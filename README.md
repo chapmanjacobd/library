@@ -237,7 +237,8 @@ Incremental surfing. 📈🏄 totally rad!
 
 <details><summary>lb bigdirs</summary>
 
-Also, if you are just looking for folders which are candidates for curation (ie. I need space but don't want to buy a hard drive). The bigdirs subcommand was written for that purpose:
+If you are looking for candidate folders for curation (ie. you need space but don't want to buy another hard drive).
+The bigdirs subcommand was written for that purpose:
 
     $ lb bigdirs fs/d.db
 
