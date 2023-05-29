@@ -33,7 +33,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--open", "--play", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--duration", "-d", action="append", help=argparse.SUPPRESS)
-    parser.add_argument("--overlap", type=int, default=7, help=argparse.SUPPRESS)
+    parser.add_argument("--overlap", type=int, default=8, help=argparse.SUPPRESS)
     parser.add_argument("--include", "-s", "--search", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--where", "-w", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
@@ -161,19 +161,27 @@ def merge_captions(args, captions):
         return caption["time"] + (len(caption["text"]) / 4.2 / 220 * 60)
 
     merged_captions = []
-    for path, group in groupby(captions, key=lambda x: x["path"]):
+    for path, group in groupby(
+        captions, key=lambda x: x["path"]
+    ):  # group by only does contiguous items with the same key
         group = list(group)
         merged_group = {"path": path, "time": group[0]["time"], "end": get_end(group[0]), "text": group[0]["text"]}
         for i in range(1, len(group)):
-            if abs(group[i]["time"] - merged_group["end"]) <= args.overlap:
-                merged_group["end"] = get_end(group[i])
-                merged_group["text"] += ". " + group[i]["text"]
+            end = get_end(group[i])
+
+            if (
+                abs(group[i]["time"] - merged_group["end"]) <= args.overlap
+                or abs(group[i]["time"] - merged_group["time"]) <= args.overlap
+            ):
+                merged_group["end"] = end
+                if group[i]["text"] not in merged_group["text"]:
+                    merged_group["text"] += ". " + group[i]["text"]
             else:
                 merged_captions.append(merged_group)
                 merged_group = {
                     "path": path,
                     "time": group[i]["time"],
-                    "end": get_end(group[i]),
+                    "end": end,
                     "text": group[i]["text"],
                 }
         merged_captions.append(merged_group)

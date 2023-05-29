@@ -1128,11 +1128,13 @@ def cluster_paths(paths, model=None, n_clusters=None):
 
     return result
 
+
 def is_timecode_like(text):
     for char in text:
         if not (char in ":,_-;. " or char.isdigit()):
             return False
     return True
+
 
 def is_generic_title(title):
     return (
