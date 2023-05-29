@@ -86,12 +86,14 @@ any videos not previously seen.
 
 To stop playing press Ctrl+C in either the terminal or mpv
 
-## Getting started with tabs: visit websites on a schedule
+</details>
+
+<details><summary>tabs: visit websites on a schedule</summary>
 
 tabs is a way to organize your visits to URLs that you want to visit every once in a while.
 
-If you want to track _changes_ to websites over time there are better tools out there, like
-`huginn`, `urlwatch`, or `changedetection.io`.
+The benefit of using tabs is that you can have 500 monthly tabs saved and only the smallest
+amount of tabs to satisfy that goal (500/30) tabs will open each day. 17 tabs per day sounds manageable--500 does not.
 
 The use-case of tabs are websites that you know are going to change: subreddits, games,
 or tools that you want to use for a few minutes daily, weekly, monthly, quarterly, or yearly.
@@ -147,7 +149,7 @@ You can also invoke tabs manually:
 
 </details>
 
-<details><summary>Usage</summary>
+<details><summary>Watch Usage</summary>
 
     $ library watch -h
     usage: {play_actions.usage('watch')}
