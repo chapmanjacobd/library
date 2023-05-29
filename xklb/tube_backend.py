@@ -5,7 +5,7 @@ from pathlib import Path
 from types import ModuleType
 from typing import Dict, List, Optional, Tuple
 
-from xklb import consts, fs_extract, utils
+from xklb import consts, fs_extract, subtitle, utils
 from xklb.consts import DBType
 from xklb.dl_config import (
     prefix_unrecoverable_errors,
@@ -222,6 +222,7 @@ def consolidate(v: dict) -> Optional[dict]:
         "language:" + language if language else None,
         v.pop("description", None),
         v.pop("categories", None),
+        v.pop("genre", None),
         v.pop("tags", None),
     )
     cv["id"] = v.pop("id", None)
@@ -373,13 +374,18 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Optional[L
             args,
             func_opts={
                 "subtitlesformat": "srt/best",
-                "writesubtitles": True,
-                "writeautomaticsub": True,
-                "subtitleslangs": ["en.*", "EN.*"],
+                "writesubtitles": args.subs,
+                "writeautomaticsub": args.auto_subs,
+                "subtitleslangs": args.subtitle_languages,
                 "extract_flat": False,
                 "lazy_playlist": False,
-                "skip_download": True,
                 "check_formats": False,
+                "skip_download": True,
+                "outtmpl": {
+                    "default": str(
+                        Path(f"{consts.SUB_TEMP_DIR}/%(uploader,uploader_id)s/%(title).200B_[%(id).60B].%(ext)s")
+                    ),
+                },
                 "ignoreerrors": True,
             },
             playlist_opts=playlist_dl_opts,
@@ -405,9 +411,34 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Optional[L
 
         current_video_count = 0
         for path, ie_key, play_count, time_played, playhead in videos:
-            entry = ydl.extract_info(path, ie_key=ie_key, download=False)
+            entry = ydl.extract_info(path, ie_key=ie_key)
             if entry is None:
                 continue
+
+            chapters = getattr(entry, "chapters", [])
+            chapter_count = len(chapters)
+            if chapter_count > 0:
+                chapters = [
+                    {"path": path, "time": int(float(d["start_time"])), "text": d.get("title")}
+                    for d in chapters
+                    if d.get("title") and not utils.is_generic_title(d)
+                ]
+                if len(chapters) > 0:
+                    args.db["captions"].insert_all(chapters, alter=True)
+
+            if entry["requested_subtitles"]:
+                downloaded_subtitles = [d["filepath"] for d in entry["requested_subtitles"].values()]
+
+                captions = []
+                for subtitle_path in downloaded_subtitles:
+                    try:
+                        file_captions = subtitle.read_sub(subtitle_path)
+                    except UnicodeDecodeError:
+                        log.warning(f"[{path}] Could not decode subtitle {subtitle_path}")
+                    else:
+                        captions.extend([{"path": path, **d} for d in file_captions])
+                if len(captions) > 0:
+                    args.db["captions"].insert_all(captions, alter=True)
 
             entry = consolidate(entry)
             if entry is None:
@@ -415,6 +446,7 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Optional[L
 
             entry["playlist_path"] = playlist_path
             entry["play_count"] = play_count
+            entry["chapter_count"] = chapter_count
             entry["time_played"] = time_played
             entry["playhead"] = playhead
             args.db["media"].upsert(utils.dict_filter_bool(entry), pk="path", alter=True)
@@ -551,9 +583,9 @@ def yt(args, m) -> None:
 
     if args.profile != DBType.audio:
         func_opts["subtitlesformat"] = "srt/best"
-        func_opts["subtitleslangs"] = ["en.*", "EN.*"]
-        func_opts["writesubtitles"] = True
-        func_opts["writeautomaticsub"] = True
+        func_opts["subtitleslangs"] = args.subtitle_languages
+        func_opts["writesubtitles"] = args.subs
+        func_opts["writeautomaticsub"] = args.auto_subs
         func_opts["postprocessors"].append({"key": "FFmpegEmbedSubtitle"})
 
     ydl_opts = tube_opts(

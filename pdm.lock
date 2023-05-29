@@ -335,7 +335,7 @@ summary = "Clean single-source support for Python 3 and 2"
 
 [[package]]
 name = "gallery-dl"
-version = "1.25.4"
+version = "1.25.5"
 requires_python = ">=3.4"
 summary = "Command-line program to download image galleries and collections from several image hosting sites"
 dependencies = [
@@ -1231,7 +1231,7 @@ summary = "Library for developers to extract data from Microsoft Excel (tm) spre
 
 [[package]]
 name = "xlsxwriter"
-version = "3.1.1"
+version = "3.1.2"
 requires_python = ">=3.6"
 summary = "A Python module for creating Excel XLSX files."
 
@@ -1986,9 +1986,9 @@ content_hash = "sha256:838a39f6efcdf7890f45ea1f5c4bde5c496a26b207eb1344404bdaf9e
 "future 0.18.3" = [
     {url = "https://files.pythonhosted.org/packages/8f/2e/cf6accf7415237d6faeeebdc7832023c90e0282aa16fd3263db0eb4715ec/future-0.18.3.tar.gz", hash = "sha256:34a17436ed1e96697a86f9de3d15a3b0be01d8bc8de9c1dffd59fb8234ed5307"},
 ]
-"gallery-dl 1.25.4" = [
-    {url = "https://files.pythonhosted.org/packages/18/fc/a4af2c1e8de06c46464d67b3cf3993914d9a9b1ce1d6e3840ae82a90f09b/gallery_dl-1.25.4.tar.gz", hash = "sha256:e31d178d7ae21002564a66c68c15b16795895bdaee184f7056b7596137bac04e"},
-    {url = "https://files.pythonhosted.org/packages/4a/03/52dc3552087349a63eb94b6b9c6591205284ba9f93c9b999fb08f3b57146/gallery_dl-1.25.4-py3-none-any.whl", hash = "sha256:62396d46abe38c7f14c27e86734b14bcec9c395a76eb02a40a46f66cf6238fe2"},
+"gallery-dl 1.25.5" = [
+    {url = "https://files.pythonhosted.org/packages/77/f6/f62a94277168fd5f2adbed55f2358250b0aa3eb9508847fedb73090e842d/gallery_dl-1.25.5.tar.gz", hash = "sha256:205cca54722e659d962e4db766acb1bf0c57178e5fd8efd502a43f8fdf31e1a8"},
+    {url = "https://files.pythonhosted.org/packages/aa/d9/f9e4e2f7722c2b4c27fab9431c85b2e7f40c870d0537955073e548ea2ddf/gallery_dl-1.25.5-py3-none-any.whl", hash = "sha256:9b2c7f16954eeceeb8ede1f88f5e7b6bd13ebc680d54b5e8fee8e997d587e930"},
 ]
 "guessit 3.7.1" = [
     {url = "https://files.pythonhosted.org/packages/96/5f/64304acee35bac703cee51656a5caf37bd18c9490561fbff225922f41d39/guessit-3.7.1.tar.gz", hash = "sha256:2c18d982ee6db30db5d59557add0324a2b49bf3940a752947510632a2b58a3c1"},
@@ -3233,9 +3233,9 @@ content_hash = "sha256:838a39f6efcdf7890f45ea1f5c4bde5c496a26b207eb1344404bdaf9e
     {url = "https://files.pythonhosted.org/packages/aa/05/ec9d4fcbbb74bbf4da9f622b3b61aec541e4eccf31d3c60c5422ec027ce2/xlrd-1.2.0.tar.gz", hash = "sha256:546eb36cee8db40c3eaa46c351e67ffee6eeb5fa2650b71bc4c758a29a1b29b2"},
     {url = "https://files.pythonhosted.org/packages/b0/16/63576a1a001752e34bf8ea62e367997530dc553b689356b9879339cf45a4/xlrd-1.2.0-py2.py3-none-any.whl", hash = "sha256:e551fb498759fa3a5384a94ccd4c3c02eb7c00ea424426e212ac0c57be9dfbde"},
 ]
-"xlsxwriter 3.1.1" = [
-    {url = "https://files.pythonhosted.org/packages/86/c1/d58c9dc59c6e1683158af49cd9fca28b99f7a9f2887c572ae11d1132bce6/XlsxWriter-3.1.1-py3-none-any.whl", hash = "sha256:b50e3bd905d7dafa6ea45210e2cc5600b4ccd104a0d3a4d4d7cf813b78426440"},
-    {url = "https://files.pythonhosted.org/packages/e1/6e/954f509c86b65706c0eb7b6d26723a993c84c8ca5e1ee482c77adeaa8b9e/XlsxWriter-3.1.1.tar.gz", hash = "sha256:03459ee76f664470c4c63a8977cab624fb259d0fc1faac64dc9cc6f3cc08f945"},
+"xlsxwriter 3.1.2" = [
+    {url = "https://files.pythonhosted.org/packages/04/d4/3cc6a3cd112a91d95f554ca8909c8528addf06d79c51ccd40e39a6ff48e1/XlsxWriter-3.1.2.tar.gz", hash = "sha256:78751099a770273f1c98b8d6643351f68f98ae8e6acf9d09d37dc6798f8cd3de"},
+    {url = "https://files.pythonhosted.org/packages/37/94/25d3ec8587974de7ebd790232aa3155abfe44ed23df7ccaa4645977a1cbe/XlsxWriter-3.1.2-py3-none-any.whl", hash = "sha256:331508ff39d610ecdaf979e458840bc1eab6e6a02cfd5d08f044f0f73636236f"},
 ]
 "yarl 1.9.2" = [
     {url = "https://files.pythonhosted.org/packages/0e/b1/a65fcf0363ae8c08c0e586772a34cc15b4200bae163eed24258cc95cda90/yarl-1.9.2-cp310-cp310-musllinux_1_1_aarch64.whl", hash = "sha256:566185e8ebc0898b11f8026447eacd02e46226716229cea8db37496c8cdd26e0"},

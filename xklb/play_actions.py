@@ -285,52 +285,41 @@ def parse_args_sort(args) -> None:
         subtitle_count = ">0"
 
     sorts = [
-        (getattr(args, "random", False), "random", "random"),
-        (args.sort and "rank" in args.sort, args.sort, args.sort),
-        ("video_count" in m_columns and args.action == SC.watch, "video_count > 0 desc", "video_count > 0 "),
-        ("audio_count" in m_columns, "audio_count > 0 desc", "audio_count > 0"),
-        (
-            "time_downloaded" in m_columns and "time_downloaded" not in " ".join(sys.argv),
-            "time_downloaded > 0 desc",
-            "time_downloaded > 0",
-        ),
-        (True, 'm.path like "http%"', 'm.path like "http%" desc'),
-        ("width" in m_columns and hasattr(args, "portrait") and args.portrait, "width < height desc", "width < height"),
-        (
-            "subtitle_count" in m_columns
-            and args.action == SC.watch
-            and not any(
-                [
-                    args.print,
-                    consts.PYTEST_RUNNING,
-                    "subtitle_count" in args.where,
-                    args.limit != consts.DEFAULT_PLAY_QUEUE,
-                ],
-            ),
-            f"subtitle_count {subtitle_count} desc",
-            f"subtitle_count {subtitle_count}",
-        ),
-        (args.sort, args.sort, args.sort),
-        (args.action in (SC.listen, SC.watch) and args.include, "duration desc", "duration"),
-        (args.action in (SC.listen, SC.watch) and args.include, "size desc", "size"),
-        (args.action in (SC.listen, SC.watch) and "play_count" in m_columns, "play_count", "play_count desc"),
-        (
-            args.action in (SC.listen, SC.watch) and "size" in m_columns and "duration" in m_columns,
-            "size desc, duration",
-            "size, duration desc",
-        ),
-        (args.action == SC.filesystem, "sparseness", "sparseness desc"),
-        (args.action == SC.filesystem, "size", "size desc"),
-        (True, "m.path", "m.path desc"),
-        (True, "random", "random"),
+        "random" if getattr(args, "random", False) else None,
+        "rank" if args.sort and "rank" in args.sort else None,
+        "video_count > 0 desc" if "video_count" in m_columns and args.action == SC.watch else None,
+        "audio_count > 0 desc" if "audio_count" in m_columns else None,
+        "time_downloaded > 0 desc"
+        if "time_downloaded" in m_columns and "time_downloaded" not in " ".join(sys.argv)
+        else None,
+        'm.path like "http%"',
+        "width < height desc" if "width" in m_columns and hasattr(args, "portrait") and args.portrait else None,
+        f"subtitle_count {subtitle_count} desc"
+        if "subtitle_count" in m_columns
+        and args.action == SC.watch
+        and not any(
+            [
+                args.print,
+                consts.PYTEST_RUNNING,
+                "subtitle_count" in args.where,
+                args.limit != consts.DEFAULT_PLAY_QUEUE,
+            ],
+        )
+        else None,
+        args.sort,
+        "duration desc" if args.action in (SC.listen, SC.watch) and args.include else None,
+        "size desc" if args.action in (SC.listen, SC.watch) and args.include else None,
+        "play_count" if args.action in (SC.listen, SC.watch) and "play_count" in m_columns else None,
+        "size desc, duration"
+        if args.action in (SC.listen, SC.watch) and "size" in m_columns and "duration" in m_columns
+        else None,
+        "sparseness" if args.action == SC.filesystem else None,
+        "size" if args.action == SC.filesystem else None,
+        "m.path",
+        "random",
     ]
 
-    sort = [
-        c[2] if args.print and "f" not in args.print and "limit" in getattr(args, "defaults", []) else c[1]
-        for c in sorts
-        if c[0]
-    ]
-    sort = list(filter(bool, sort))
+    sort = list(filter(bool, sorts))
     sort = [override_sort(s) for s in sort]
     sort = "\n        , ".join(sort)
     args.sort = sort.replace(",,", ",")
@@ -587,7 +576,7 @@ def construct_query(args) -> Tuple[str, dict]:
     args.table = "media"
     if args.db["media"].detect_fts() and not args.no_fts:
         if args.include:
-            args.table = db.fts_search(args)
+            args.table = db.fts_flexible_search(args)
             m_columns = {**m_columns, "rank": int}
         elif args.exclude:
             db.construct_search_bindings(args, m_columns)

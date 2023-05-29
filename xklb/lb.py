@@ -25,6 +25,7 @@ from xklb.scripts.redownload import redownload
 from xklb.scripts.relmv import relmv
 from xklb.scripts.scatter import scatter
 from xklb.scripts.streaming_tab_loader import streaming_tab_loader
+from xklb.search import search
 from xklb.stats import dlstatus, playlists
 from xklb.tabs_actions import tabs
 from xklb.tabs_extract import tabs_add
@@ -41,6 +42,8 @@ def usage() -> str:
 
       lb listen                Listen to local and online media
       lb watch                 Watch local and online media
+      lb search                Search text and subtitles
+
       lb read                  Read books
       lb view                  View images
 
@@ -135,6 +138,9 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     subp_watch.set_defaults(func=watch)
     subp_listen = add_parser(subparsers, SC.listen, ["lt", "tubelisten", "tl"])
     subp_listen.set_defaults(func=listen)
+
+    subp_search = add_parser(subparsers, "search", ["s"])
+    subp_search.set_defaults(func=search)
 
     subp_read = add_parser(subparsers, SC.read, ["text", "books", "docs"])
     subp_read.set_defaults(func=read)

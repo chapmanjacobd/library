@@ -1,4 +1,4 @@
-import argparse, json, operator
+import argparse, json
 from copy import deepcopy
 from typing import Tuple
 
@@ -61,7 +61,7 @@ def construct_query(args) -> Tuple[str, dict]:
     args.table = "playlists"
     if args.db["playlists"].detect_fts():
         if args.include:
-            args.table = db.fts_search(args)
+            args.table = db.fts_flexible_search(args)
         elif args.exclude:
             db.construct_search_bindings(args, pl_columns)
     else:
@@ -98,7 +98,7 @@ def printer(args, query, bindings) -> None:
     utils.col_duration(tbl, "avg_playlist_duration")
 
     if args.fields:
-        pipe_print("\n".join(list(map(operator.itemgetter("path"), media))))
+        pipe_print("\n".join([d["path"] for d in media]))
         return
     elif args.json or consts.TERMINAL_SIZE.columns < 80:
         print(json.dumps(tbl, indent=3))

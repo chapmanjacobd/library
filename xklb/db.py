@@ -53,14 +53,14 @@ def connect(args, conn=None, **kwargs):
             return d
 
     if kwargs.get("memory"):
-        db = DB(tracer=tracer if args.verbose >= consts.LOG_DEBUG else None, **kwargs)  # type: ignore
+        db = DB(tracer=tracer if args.verbose >= consts.LOG_DEBUG_SQL else None, **kwargs)  # type: ignore
         return db
 
     if not Path(args.database).exists() and ":memory:" not in args.database:
         log.error(f"Database file '{args.database}' does not exist. Create one with lb fsadd, tubeadd, or tabsadd.")
         raise SystemExit(1)
 
-    db = DB(conn or args.database, tracer=tracer if args.verbose >= consts.LOG_DEBUG else None, **kwargs)  # type: ignore
+    db = DB(conn or args.database, tracer=tracer if args.verbose >= consts.LOG_DEBUG_SQL else None, **kwargs)  # type: ignore
     with db.conn:
         db.conn.execute("PRAGMA main.cache_size = 8000")
 
@@ -70,9 +70,12 @@ def connect(args, conn=None, **kwargs):
 
 config = {
     "media": {
-        "search_columns": ["path", "title", "tags", "mood", "genre", "description", "artist", "album"],
+        "search_columns": ["path", "title", "mood", "genre", "description", "artist", "album"],
         "column_order": ["path", "webpath", "id", "ie_key", "playlist_path"],
         "ignore_columns": ["id"],
+    },
+    "captions": {
+        "search_columns": ["text"],
     },
     "reddit_posts": {
         "search_columns": ["title", "selftext"],
@@ -175,19 +178,19 @@ def fts_quote(query: List[str]) -> List[str]:
     return [s if any(r in s for r in fts_words) else '"' + s + '"' for s in query]
 
 
-def fts_search(args) -> str:
+def fts_search(args, table="media") -> str:
     args.filter_bindings["query"] = " AND ".join(fts_quote(args.include))
     if args.exclude:
         args.filter_bindings["query"] += " NOT " + " NOT ".join(fts_quote(args.exclude))
-    table = "(" + args.db["media"].search_sql(include_rank=True) + ")"
+    table = "(" + args.db[table].search_sql(include_rank=True) + ")"
     return table
 
 
-def fts_flexible_search(args) -> str:
+def fts_flexible_search(args, table="media") -> str:
     args.filter_bindings["query"] = " OR ".join(fts_quote(args.include))
     if args.exclude:
         args.filter_bindings["query"] += " NOT " + " NOT ".join(fts_quote(args.exclude))
-    table = "(" + args.db["media"].search_sql(include_rank=True) + ")"
+    table = "(" + args.db[table].search_sql(include_rank=True) + ")"
     return table
 
 

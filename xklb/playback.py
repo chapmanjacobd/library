@@ -35,13 +35,6 @@ def _now_playing(args) -> dict:
     return media
 
 
-def indent_prefix_first(text, prefix, indent="\t"):
-    lines = text.splitlines()
-    first_line = textwrap.indent(lines[0], prefix + indent) + "\n"
-    rest_lines = textwrap.indent("\n".join(lines[1:]), indent)
-    return first_line + rest_lines
-
-
 def now_playing(path) -> str:
     if path.startswith("http"):
         text = path
@@ -66,6 +59,13 @@ def now_playing(path) -> str:
             return text
         except Exception:
             return "Could not encode file path as UTF-8"
+
+
+def indent_prefix_first(text, prefix, indent="\t"):
+    lines = text.splitlines()
+    first_line = textwrap.indent(lines[0], prefix + indent) + "\n"
+    rest_lines = textwrap.indent("\n".join(lines[1:]), indent)
+    return first_line + rest_lines
 
 
 def source_now_playing(playing, source) -> str:
