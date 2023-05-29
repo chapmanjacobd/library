@@ -718,7 +718,7 @@ def col_hhmmss(tbl: List[Dict], col: str) -> List[Dict]:
 
 class ArgparseList(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
-        items = getattr(namespace, self.dest, [])
+        items = getattr(namespace, self.dest, None) or []
 
         for value in values or []:
             items.extend(value.split(","))
