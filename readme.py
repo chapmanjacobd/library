@@ -88,12 +88,12 @@ To stop playing press Ctrl+C in either the terminal or mpv
 
 </details>
 
-<details><summary>tabs: visit websites on a schedule</summary>
+<details><summary>Tabs: visit websites on a schedule</summary>
 
-tabs is a way to organize your visits to URLs that you want to visit every once in a while.
+`tabs` is a way to organize your visits to URLs that you want to remember every once in a while.
 
-The benefit of using tabs is that you can have 500 monthly tabs saved and only the smallest
-amount of tabs to satisfy that goal (500/30) tabs will open each day. 17 tabs per day sounds manageable--500 does not.
+The main benefit of tabs is that you can have a large amount of tabs saved (say 500 monthly tabs) and only the smallest
+amount of tabs to satisfy that goal (500/30) tabs will open each day. 17 tabs per day seems manageable--500 all at once does not.
 
 The use-case of tabs are websites that you know are going to change: subreddits, games,
 or tools that you want to use for a few minutes daily, weekly, monthly, quarterly, or yearly.
@@ -139,6 +139,8 @@ Or with `systemd`:
 You can also invoke tabs manually:
 
     library tabs tabs.db -L 1  # open one tab
+
+Incremental surfing. 📈🏄 totally rad!
 
 </details>
 
