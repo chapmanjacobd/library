@@ -1,9 +1,9 @@
-search: get title from media table
-
--- update fish functions to use --subs --auto-subs
-
 - wt history
     print player.historical_usage
+
+- search: get title from media table
+
+- wt/lt/search join and use fts on both tables, threading ?
 
 - scan bpm and key sig  https://github.com/aubio/aubio https://github.com/tyiannak/pyAudioAnalysis
 

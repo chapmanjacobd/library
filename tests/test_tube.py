@@ -37,7 +37,7 @@ def test_tw_print(capsys):
     ]:
         lb(lb_command)
         captured = capsys.readouterr().out.replace("\n", "")
-        assert "Aggregate" or "ie_key" in captured
+        assert ("Aggregate" in captured) or ("ie_key" in captured)
 
 
 class TestTube(unittest.TestCase):

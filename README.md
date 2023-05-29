@@ -139,7 +139,7 @@ You can also invoke tabs manually:
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v1.29.001)
+    xk media library subcommands (v1.29.002)
 
     local media:
       lb fsadd                 Create a local media database; Add folders

@@ -802,7 +802,7 @@ def process_playqueue(args) -> None:
             args.play_in_order >= consts.SIMILAR,
             args.related >= consts.RELATED,
             args.cluster,
-        ]
+        ],
     ):
         player.printer(args, query, bindings)
         return

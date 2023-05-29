@@ -81,7 +81,7 @@ def extract_links() -> None:
         else:
             driver = webdriver.Chrome()
 
-    with open(args.filename, "r") as f:
+    with open(args.filename) as f:
         for line in f:
             url = line.rstrip("\n")
             if url in ["", '""', "\n"]:

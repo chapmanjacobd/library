@@ -62,7 +62,10 @@ def parse_args(action, usage) -> argparse.Namespace:
     parser.add_argument("--category", "-c", help=argparse.SUPPRESS)
 
     parser.add_argument(
-        "--io-multiplier", type=float, default=1.0, help="Especially useful for text, image, filesystem db types"
+        "--io-multiplier",
+        type=float,
+        default=1.0,
+        help="Especially useful for text, image, filesystem db types",
     )
     parser.add_argument("--ocr", "--OCR", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--speech-recognition", "--speech", action="store_true", help=argparse.SUPPRESS)
@@ -72,7 +75,10 @@ def parse_args(action, usage) -> argparse.Namespace:
 
     parser.add_argument("--delete-unplayable", action="store_true")
     parser.add_argument(
-        "--check-corrupt", type=float, default=0.0, help="check that 0 to 100 percent of media decodes correctly"
+        "--check-corrupt",
+        type=float,
+        default=0.0,
+        help="check that 0 to 100 percent of media decodes correctly",
     )
     parser.add_argument("--delete-corrupt", type=float, help="delete media that is more corrupt than this threshold")
     parser.add_argument("--force", "-f", action="store_true", help=argparse.SUPPRESS)
