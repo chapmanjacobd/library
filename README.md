@@ -1450,10 +1450,9 @@ Explore `library` databases in your browser
 
 
 
-<a href=javascript:(function() {
+[Expand All Details](javascript:(function() {
   var detailsElements = document.getElementsByTagName("details");
   for (var i = 0; i < detailsElements.length; i++) {
     detailsElements[i].setAttribute("open", "true");
   }
-})();
->
+})())
