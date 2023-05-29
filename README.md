@@ -209,268 +209,6 @@ Incremental surfing. 📈🏄 totally rad!
 
 </details>
 
-<details><summary>Watch Usage</summary>
-
-    $ library watch -h
-    usage: library watch [database] [optional args]
-
-    Control playback:
-        To stop playback press Ctrl-C in either the terminal or mpv
-
-        Create global shortcuts in your desktop environment by sending commands to mpv_socket:
-        echo 'playlist-next force' | socat - /tmp/mpv_socket
-
-    Override the default player (mpv):
-        library does a lot of things to try to automatically use your preferred media player
-        but if it doesn't guess right you can make it explicit:
-        library watch --player "vlc --vlc-opts"
-
-    Cast to chromecast groups:
-        library watch --cast --cast-to "Office pair"
-        library watch -ct "Office pair"  # equivalent
-        If you don't know the exact name of your chromecast group run `catt scan`
-
-    Play media in order (similarly named episodes):
-        library watch --play-in-order
-        There are multiple strictness levels of --play-in-order:
-        library watch -O    # equivalent
-        library watch -OO   # above, plus ignores most filters
-        library watch -OOO  # above, plus ignores fts and (include/exclude) filter during ordinal search
-        library watch -OOOO # above, plus starts search with parent folder
-
-        library watch --related  # similar to -O but uses fts to find similar content
-        library watch -R         # equivalent
-        library watch -RR        # above, plus ignores most filters
-
-        library watch --cluster  # cluster-sort to put similar paths closer together
-
-        All of these options can be used together but it will be a bit slow and the results might be mid-tier
-        as multiple different algorithms create a muddied signal (too many cooks in the kitchen):
-        library watch -RRCOO
-
-    Filter media by file siblings of parent directory:
-        library watch --sibling   # only include files which have more than or equal to one sibling
-        library watch --solo      # only include files which are alone by themselves
-
-        `--sibling` is just a shortcut for `--lower 2`; `--solo` is `--upper 1`
-        library watch --sibling --solo      # you will always get zero records here
-        library watch --lower 2 --upper 1   # equivalent
-
-        You can be more specific via the `--upper` and `--lower` flags
-        library watch --lower 3   # only include files which have three or more siblings
-        library watch --upper 3   # only include files which have fewer than three siblings
-        library watch --lower 3 --upper 3   # only include files which are three siblings inclusive
-        library watch --lower 12 --upper 25 -OOO  # on my machine this launches My Mister 2018
-
-    Play recent partially-watched videos (requires mpv history):
-        library watch --partial       # play newest first
-        library watch --partial old   # play oldest first
-        library watch -P o            # equivalent
-        library watch -P p            # sort by progress / duration
-        library watch -P s            # skip partially watched (only show unseen)
-
-        The default time used is "last-viewed" (ie. the most recent time you closed the video)
-        If you want to use the "first-viewed" time (ie. the very first time you opened the video)
-        library watch -P f            # use watch_later file creation time instead of modified time
-
-        You can combine most of these options, though some will be overridden by others.
-        library watch -P fo           # this means "show the oldest videos using the time I first opened them"
-
-    Print instead of play:
-        library watch --print --limit 10  # print the next 10 files
-        library watch -p -L 10  # print the next 10 files
-        library watch -p  # this will print _all_ the media. be cautious about `-p` on an unfiltered set
-
-        Printing modes
-        library watch -p    # print as a table
-        library watch -p a  # print an aggregate report
-        library watch -p b  # print a bigdirs report (see lb bigdirs -h for more info)
-        library watch -p f  # print fields (defaults to path; use --cols to change)
-                               # -- useful for piping paths to utilities like xargs or GNU Parallel
-
-        library watch -p d  # mark deleted
-        library watch -p w  # mark watched
-
-        Some printing modes can be combined
-        library watch -p df  # print files for piping into another program and mark them as deleted within the db
-        library watch -p bf  # print fields from bigdirs report
-
-        Check if you have downloaded something before
-        library watch -u duration -p -s 'title'
-
-        Print an aggregate report of deleted media
-        library watch -w time_deleted!=0 -p=a
-        ╒═══════════╤══════════════╤═════════╤═════════╕
-        │ path      │ duration     │ size    │   count │
-        ╞═══════════╪══════════════╪═════════╪═════════╡
-        │ Aggregate │ 14 days, 23  │ 50.6 GB │   29058 │
-        │           │ hours and 42 │         │         │
-        │           │ minutes      │         │         │
-        ╘═══════════╧══════════════╧═════════╧═════════╛
-        Total duration: 14 days, 23 hours and 42 minutes
-
-        Print an aggregate report of media that has no duration information (ie. online or corrupt local media)
-        library watch -w 'duration is null' -p=a
-
-        Print a list of filenames which have below 1280px resolution
-        library watch -w 'width<1280' -p=f
-
-        Print media you have partially viewed with mpv
-        library watch --partial -p
-        library watch -P -p  # equivalent
-        library watch -P -p f --cols path,progress,duration  # print CSV of partially watched files
-        library watch --partial -pa  # print an aggregate report of partially watched files
-
-        View how much time you have watched
-        library watch -w play_count'>'0 -p=a
-
-        See how much video you have
-        library watch video.db -p=a
-        ╒═══════════╤═════════╤═════════╤═════════╕
-        │ path      │   hours │ size    │   count │
-        ╞═══════════╪═════════╪═════════╪═════════╡
-        │ Aggregate │  145769 │ 37.6 TB │  439939 │
-        ╘═══════════╧═════════╧═════════╧═════════╛
-        Total duration: 16 years, 7 months, 19 days, 17 hours and 25 minutes
-
-        View all the columns
-        library watch -p -L 1 --cols '*'
-
-        Open ipython with all of your media
-        library watch -vv -p --cols '*'
-        ipdb> len(media)
-        462219
-
-    Set the play queue size:
-        By default the play queue is 120--long enough that you likely have not noticed
-        but short enough that the program is snappy.
-
-        If you want everything in your play queue you can use the aid of infinity.
-        Pick your poison (these all do effectively the same thing):
-        library watch -L inf
-        library watch -l inf
-        library watch --queue inf
-        library watch -L 99999999999999999999999
-
-        You may also want to restrict the play queue.
-        For example, when you only want 1000 random files:
-        library watch -u random -L 1000
-
-    Offset the play queue:
-        You can also offset the queue. For example if you want to skip one or ten media:
-        library watch --skip 10        # offset ten from the top of an ordered query
-
-    Repeat
-        library watch                  # listen to 120 random songs (DEFAULT_PLAY_QUEUE)
-        library watch --limit 5        # listen to FIVE songs
-        library watch -l inf -u random # listen to random songs indefinitely
-        library watch -s infinite      # listen to songs from the band infinite
-
-    Constrain media by search:
-        Audio files have many tags to readily search through so metadata like artist,
-        album, and even mood are included in search.
-        Video files have less consistent metadata and so only paths are included in search.
-        library watch --include happy  # only matches will be included
-        library watch -s happy         # equivalent
-        library watch --exclude sad    # matches will be excluded
-        library watch -E sad           # equivalent
-
-        Search only the path column
-        library watch -O -s 'path : mad max'
-        library watch -O -s 'path : "mad max"' # add "quotes" to be more strict
-
-        Double spaces are parsed as one space
-        library watch -s '  ost'        # will match OST and not ghost
-        library watch -s toy story      # will match '/folder/toy/something/story.mp3'
-        library watch -s 'toy  story'   # will match more strictly '/folder/toy story.mp3'
-
-        You can search without -s but it must directly follow the database due to how argparse works
-        library watch my.db searching for something
-
-    Constrain media by arbitrary SQL expressions:
-        library watch --where audio_count = 2  # media which have two audio tracks
-        library watch -w "language = 'eng'"    # media which have an English language tag
-                                                    (this could be audio _or_ subtitle)
-        library watch -w subtitle_count=0      # media that doesn't have subtitles
-
-    Constrain media to duration (in minutes):
-        library watch --duration 20
-        library watch -d 6  # 6 mins ±10 percent (ie. between 5 and 7 mins)
-        library watch -d-6  # less than 6 mins
-        library watch -d+6  # more than 6 mins
-
-        Duration can be specified multiple times:
-        library watch -d+5 -d-7  # should be similar to -d 6
-
-        If you want exact time use `where`
-        library watch --where 'duration=6*60'
-
-    Constrain media to file size (in megabytes):
-        library watch --size 20
-        library watch -S 6  # 6 MB ±10 percent (ie. between 5 and 7 MB)
-        library watch -S-6  # less than 6 MB
-        library watch -S+6  # more than 6 MB
-
-    Constrain media by time_created / time_played / time_deleted / time_modified:
-        library watch --created-within '3 days'
-        library watch --created-before '3 years'
-
-    Constrain media by throughput:
-        Bitrate information is not explicitly saved.
-        You can use file size and duration as a proxy for throughput:
-        library watch -w 'size/duration<50000'
-
-    Constrain media to portrait orientation video:
-        library watch --portrait
-        library watch -w 'width<height' # equivalent
-
-    Constrain media to duration of videos which match any size constraints:
-        library watch --duration-from-size +700 -u 'duration desc, size desc'
-
-    Constrain media to online-media or local-media:
-        Not to be confused with only local-media which is not "offline" (ie. one HDD disconnected)
-        library watch --online-media-only
-        library watch --online-media-only -i  # and ignore playback errors (ie. YouTube video deleted)
-        library watch --local-media-only
-
-    Specify media play order:
-        library watch --sort duration   # play shortest media first
-        library watch -u duration desc  # play longest media first
-        You can use multiple SQL ORDER BY expressions
-        library watch -u 'subtitle_count > 0 desc' # play media that has at least one subtitle first
-
-    Post-actions -- choose what to do after playing:
-        library watch --post-action keep    # do nothing after playing (default)
-        library watch -k delete             # delete file after playing
-        library watch -k softdelete         # mark deleted after playing
-
-        library watch -k ask_keep           # ask whether to keep after playing
-        library watch -k ask_delete         # ask whether to delete after playing
-
-        library watch -k move               # move to "keep" dir after playing
-        library watch -k ask_move           # ask whether to move to "keep" folder
-        The default location of the keep folder is ./keep/ (relative to the played media file)
-        You can change this by explicitly setting an *absolute* `keep-dir` path:
-        library watch -k ask_move --keep-dir /home/my/music/keep/
-
-        library watch -k ask_move_or_delete # ask after each whether to move to "keep" folder or delete
-
-    Experimental options:
-        Duration to play (in seconds) while changing the channel
-        library watch --interdimensional-cable 40
-        library watch -4dtv 40
-
-        Playback multiple files at once
-        library watch --multiple-playback    # one per display; or two if only one display detected
-        library watch --multiple-playback 4  # play four media at once, divide by available screens
-        library watch -m 4 --screen-name eDP # play four media at once on specific screen
-        library watch -m 4 --loop --crop     # play four cropped videos on a loop
-        library watch -m 4 --hstack          # use hstack style
-
-
-</details>
-
-
 ## Examples
 
 ### Watch online media on your PC
@@ -775,5 +513,935 @@ Explore `library` databases in your browser
 
     pip install datasette
     datasette tv.db
+
+## Usage
+
+
+<details><summary>Add local media (fsadd)</summary>
+
+    $ library fsadd -h
+    usage: library fsadd [--audio | --video | --image |  --text | --filesystem] -c CATEGORY [database] paths ...
+
+    The default database type is video:
+        library fsadd tv.db ./tv/
+        library fsadd --video tv.db ./tv/  # equivalent
+
+    You can also create audio databases. Both audio and video use ffmpeg to read metadata:
+        library fsadd --audio audio.db ./music/
+
+    Image uses ExifTool:
+        library fsadd --image image.db ./photos/
+
+    Text will try to read files and save the contents into a searchable database:
+        library fsadd --text text.db ./documents_and_books/
+
+    Create a text database and scan with OCR and speech-recognition:
+        library fsadd --text --ocr --speech-recognition ocr.db ./receipts_and_messages/
+
+    Create a video database and read internal/external subtitle files into a searchable database:
+        library fsadd --scan-subtitles tv.search.db ./tv/ ./movies/
+
+    Decode media to check for corruption (slow):
+        library fsadd --check-corrupt 100 tv.db ./tv/  # scan through 100 percent of each file to evaluate how corrupt it is (very slow)
+        library fsadd --check-corrupt   1 tv.db ./tv/  # scan through 1 percent of each file to evaluate how corrupt it is (takes about one second per file)
+        library fsadd --check-corrupt   5 tv.db ./tv/  # scan through 1 percent of each file to evaluate how corrupt it is (takes about ten seconds per file)
+
+        library fsadd --check-corrupt   5 --delete-corrupt 30 tv.db ./tv/  # scan 5 percent of each file to evaluate how corrupt it is, if 30 percent or more of those checks fail then the file is deleted
+
+        nb: the behavior of delete-corrupt changes between full and partial scan
+        library fsadd --check-corrupt  99 --delete-corrupt  1 tv.db ./tv/  # partial scan 99 percent of each file to evaluate how corrupt it is, if 1 percent or more of those checks fail then the file is deleted
+        library fsadd --check-corrupt 100 --delete-corrupt  1 tv.db ./tv/  # full scan each file to evaluate how corrupt it is, if there is _any_ corruption then the file is deleted
+
+    Normally only relevant filetypes are included. You can scan all files with this flag:
+        library fsadd --scan-all-files mixed.db ./tv-and-maybe-audio-only-files/
+        # I use that with this to keep my folders organized:
+        library watch -w 'video_count=0 and audio_count>=1' -pf mixed.db | parallel mv {} ~/d/82_Audiobooks/
+
+    Remove path roots with --force
+        library fsadd audio.db /mnt/d/Youtube/
+        [/mnt/d/Youtube] Path does not exist
+
+        library fsadd --force audio.db /mnt/d/Youtube/
+        [/mnt/d/Youtube] Path does not exist
+        [/mnt/d/Youtube] Building file list...
+        [/mnt/d/Youtube] Marking 28932 orphaned metadata records as deleted
+
+
+</details>
+
+<details><summary>Add online media (tubeadd)</summary>
+
+    $ library tubeadd -h
+    usage: library tubeadd [--audio | --video] -c CATEGORY [database] playlists ...
+
+    Create a dl database / add links to an existing database
+
+        library tubeadd -c Educational dl.db https://www.youdl.com/c/BranchEducation/videos
+
+    Add metadata for links in a database table
+
+        library tubeadd reddit.db --playlist-db media
+
+    If you include more than one URL, you must specify the database
+
+        library tubeadd 71_Mealtime_Videos dl.db (cat ~/.jobs/todo/71_Mealtime_Videos)
+
+    Files will be saved to <lb download prefix>/<lb tubeadd category>/
+
+        For example:
+        library tubeadd Cool ...
+        library download D:\'My Documents'\ ...
+        Media will be downloaded to 'D:\My Documents\Cool\'
+
+    Fetch extra metadata:
+
+        By default tubeadd will quickly add media at the expense of less metadata.
+        If you plan on using `library download` then it doesn't make sense to use `--extra`.
+        Downloading will add the extra metadata automatically to the database.
+        You can always fetch more metadata later via tubeupdate:
+        library tubeupdate tw.db --extra
+
+
+</details>
+
+<details><summary>Add reddit media (redditadd)</summary>
+
+    $ library redditadd -h
+    usage: library redditadd [--lookback N_DAYS] [--praw-site bot1] [database] paths ...
+
+    Fetch data for redditors and reddits:
+
+        library redditadd https://old.reddit.com/r/coolgithubprojects/ https://old.reddit.com/user/Diastro
+
+    If you have a file with a list of subreddits you can do this:
+
+        library redditadd --subreddits --db 96_Weird_History.db (cat ~/mc/96_Weird_History-reddit.txt)
+
+    Likewise for redditors:
+
+        library redditadd --redditors --db idk.db (cat ~/mc/shadow_banned.txt)
+
+
+</details>
+
+<details><summary>Create / Update a Hacker News database (hnadd)</summary>
+
+    $ library hnadd -h
+    usage: library hnadd [--oldest] database
+
+    Fetch latest stories first:
+
+        library hnadd hn.db -v
+        Fetching 154873 items (33212696 to 33367569)
+        Saving comment 33367568
+        Saving comment 33367543
+        Saving comment 33367564
+        ...
+
+    Fetch oldest stories first:
+
+        library hnadd --oldest hn.db
+
+
+</details>
+
+<details><summary>Add tabs (tabsadd)</summary>
+
+    $ library tabsadd -h
+    usage: library tabsadd [--frequency daily weekly (monthly) quarterly yearly] [--category CATEGORY] [--no-sanitize] DATABASE URLS ...
+
+    Adding one URL:
+
+        library tabsadd -f monthly -c travel ~/lb/tabs.db https://old.reddit.com/r/Colombia/top/?sort=top&t=month
+
+        Depending on your shell you may need to escape the URL (add quotes)
+
+        If you use Fish shell know that you can enable features to make pasting easier:
+            set -U fish_features stderr-nocaret qmark-noglob regex-easyesc ampersand-nobg-in-token
+
+        Also I recommend turning Ctrl+Backspace into a super-backspace for repeating similar commands with long args:
+            echo 'bind \b backward-kill-bigword' >> ~/.config/fish/config.fish
+
+    Importing from a line-delimitated file:
+
+        library tabsadd -f yearly -c reddit ~/lb/tabs.db (cat ~/mc/yearly-subreddit.cron)
+
+
+
+</details>
+
+<details><summary>Watch / Listen (watch)</summary>
+
+    $ library watch -h
+    usage: library watch [database] [optional args]
+
+    Control playback:
+        To stop playback press Ctrl-C in either the terminal or mpv
+
+        Create global shortcuts in your desktop environment by sending commands to mpv_socket:
+        echo 'playlist-next force' | socat - /tmp/mpv_socket
+
+    Override the default player (mpv):
+        library does a lot of things to try to automatically use your preferred media player
+        but if it doesn't guess right you can make it explicit:
+        library watch --player "vlc --vlc-opts"
+
+    Cast to chromecast groups:
+        library watch --cast --cast-to "Office pair"
+        library watch -ct "Office pair"  # equivalent
+        If you don't know the exact name of your chromecast group run `catt scan`
+
+    Play media in order (similarly named episodes):
+        library watch --play-in-order
+        There are multiple strictness levels of --play-in-order:
+        library watch -O    # equivalent
+        library watch -OO   # above, plus ignores most filters
+        library watch -OOO  # above, plus ignores fts and (include/exclude) filter during ordinal search
+        library watch -OOOO # above, plus starts search with parent folder
+
+        library watch --related  # similar to -O but uses fts to find similar content
+        library watch -R         # equivalent
+        library watch -RR        # above, plus ignores most filters
+
+        library watch --cluster  # cluster-sort to put similar paths closer together
+
+        All of these options can be used together but it will be a bit slow and the results might be mid-tier
+        as multiple different algorithms create a muddied signal (too many cooks in the kitchen):
+        library watch -RRCOO
+
+    Filter media by file siblings of parent directory:
+        library watch --sibling   # only include files which have more than or equal to one sibling
+        library watch --solo      # only include files which are alone by themselves
+
+        `--sibling` is just a shortcut for `--lower 2`; `--solo` is `--upper 1`
+        library watch --sibling --solo      # you will always get zero records here
+        library watch --lower 2 --upper 1   # equivalent
+
+        You can be more specific via the `--upper` and `--lower` flags
+        library watch --lower 3   # only include files which have three or more siblings
+        library watch --upper 3   # only include files which have fewer than three siblings
+        library watch --lower 3 --upper 3   # only include files which are three siblings inclusive
+        library watch --lower 12 --upper 25 -OOO  # on my machine this launches My Mister 2018
+
+    Play recent partially-watched videos (requires mpv history):
+        library watch --partial       # play newest first
+        library watch --partial old   # play oldest first
+        library watch -P o            # equivalent
+        library watch -P p            # sort by progress / duration
+        library watch -P s            # skip partially watched (only show unseen)
+
+        The default time used is "last-viewed" (ie. the most recent time you closed the video)
+        If you want to use the "first-viewed" time (ie. the very first time you opened the video)
+        library watch -P f            # use watch_later file creation time instead of modified time
+
+        You can combine most of these options, though some will be overridden by others.
+        library watch -P fo           # this means "show the oldest videos using the time I first opened them"
+
+    Print instead of play:
+        library watch --print --limit 10  # print the next 10 files
+        library watch -p -L 10  # print the next 10 files
+        library watch -p  # this will print _all_ the media. be cautious about `-p` on an unfiltered set
+
+        Printing modes
+        library watch -p    # print as a table
+        library watch -p a  # print an aggregate report
+        library watch -p b  # print a bigdirs report (see lb bigdirs -h for more info)
+        library watch -p f  # print fields (defaults to path; use --cols to change)
+                               # -- useful for piping paths to utilities like xargs or GNU Parallel
+
+        library watch -p d  # mark deleted
+        library watch -p w  # mark watched
+
+        Some printing modes can be combined
+        library watch -p df  # print files for piping into another program and mark them as deleted within the db
+        library watch -p bf  # print fields from bigdirs report
+
+        Check if you have downloaded something before
+        library watch -u duration -p -s 'title'
+
+        Print an aggregate report of deleted media
+        library watch -w time_deleted!=0 -p=a
+        ╒═══════════╤══════════════╤═════════╤═════════╕
+        │ path      │ duration     │ size    │   count │
+        ╞═══════════╪══════════════╪═════════╪═════════╡
+        │ Aggregate │ 14 days, 23  │ 50.6 GB │   29058 │
+        │           │ hours and 42 │         │         │
+        │           │ minutes      │         │         │
+        ╘═══════════╧══════════════╧═════════╧═════════╛
+        Total duration: 14 days, 23 hours and 42 minutes
+
+        Print an aggregate report of media that has no duration information (ie. online or corrupt local media)
+        library watch -w 'duration is null' -p=a
+
+        Print a list of filenames which have below 1280px resolution
+        library watch -w 'width<1280' -p=f
+
+        Print media you have partially viewed with mpv
+        library watch --partial -p
+        library watch -P -p  # equivalent
+        library watch -P -p f --cols path,progress,duration  # print CSV of partially watched files
+        library watch --partial -pa  # print an aggregate report of partially watched files
+
+        View how much time you have watched
+        library watch -w play_count'>'0 -p=a
+
+        See how much video you have
+        library watch video.db -p=a
+        ╒═══════════╤═════════╤═════════╤═════════╕
+        │ path      │   hours │ size    │   count │
+        ╞═══════════╪═════════╪═════════╪═════════╡
+        │ Aggregate │  145769 │ 37.6 TB │  439939 │
+        ╘═══════════╧═════════╧═════════╧═════════╛
+        Total duration: 16 years, 7 months, 19 days, 17 hours and 25 minutes
+
+        View all the columns
+        library watch -p -L 1 --cols '*'
+
+        Open ipython with all of your media
+        library watch -vv -p --cols '*'
+        ipdb> len(media)
+        462219
+
+    Set the play queue size:
+        By default the play queue is 120--long enough that you likely have not noticed
+        but short enough that the program is snappy.
+
+        If you want everything in your play queue you can use the aid of infinity.
+        Pick your poison (these all do effectively the same thing):
+        library watch -L inf
+        library watch -l inf
+        library watch --queue inf
+        library watch -L 99999999999999999999999
+
+        You may also want to restrict the play queue.
+        For example, when you only want 1000 random files:
+        library watch -u random -L 1000
+
+    Offset the play queue:
+        You can also offset the queue. For example if you want to skip one or ten media:
+        library watch --skip 10        # offset ten from the top of an ordered query
+
+    Repeat
+        library watch                  # listen to 120 random songs (DEFAULT_PLAY_QUEUE)
+        library watch --limit 5        # listen to FIVE songs
+        library watch -l inf -u random # listen to random songs indefinitely
+        library watch -s infinite      # listen to songs from the band infinite
+
+    Constrain media by search:
+        Audio files have many tags to readily search through so metadata like artist,
+        album, and even mood are included in search.
+        Video files have less consistent metadata and so only paths are included in search.
+        library watch --include happy  # only matches will be included
+        library watch -s happy         # equivalent
+        library watch --exclude sad    # matches will be excluded
+        library watch -E sad           # equivalent
+
+        Search only the path column
+        library watch -O -s 'path : mad max'
+        library watch -O -s 'path : "mad max"' # add "quotes" to be more strict
+
+        Double spaces are parsed as one space
+        library watch -s '  ost'        # will match OST and not ghost
+        library watch -s toy story      # will match '/folder/toy/something/story.mp3'
+        library watch -s 'toy  story'   # will match more strictly '/folder/toy story.mp3'
+
+        You can search without -s but it must directly follow the database due to how argparse works
+        library watch my.db searching for something
+
+    Constrain media by arbitrary SQL expressions:
+        library watch --where audio_count = 2  # media which have two audio tracks
+        library watch -w "language = 'eng'"    # media which have an English language tag
+                                                    (this could be audio _or_ subtitle)
+        library watch -w subtitle_count=0      # media that doesn't have subtitles
+
+    Constrain media to duration (in minutes):
+        library watch --duration 20
+        library watch -d 6  # 6 mins ±10 percent (ie. between 5 and 7 mins)
+        library watch -d-6  # less than 6 mins
+        library watch -d+6  # more than 6 mins
+
+        Duration can be specified multiple times:
+        library watch -d+5 -d-7  # should be similar to -d 6
+
+        If you want exact time use `where`
+        library watch --where 'duration=6*60'
+
+    Constrain media to file size (in megabytes):
+        library watch --size 20
+        library watch -S 6  # 6 MB ±10 percent (ie. between 5 and 7 MB)
+        library watch -S-6  # less than 6 MB
+        library watch -S+6  # more than 6 MB
+
+    Constrain media by time_created / time_played / time_deleted / time_modified:
+        library watch --created-within '3 days'
+        library watch --created-before '3 years'
+
+    Constrain media by throughput:
+        Bitrate information is not explicitly saved.
+        You can use file size and duration as a proxy for throughput:
+        library watch -w 'size/duration<50000'
+
+    Constrain media to portrait orientation video:
+        library watch --portrait
+        library watch -w 'width<height' # equivalent
+
+    Constrain media to duration of videos which match any size constraints:
+        library watch --duration-from-size +700 -u 'duration desc, size desc'
+
+    Constrain media to online-media or local-media:
+        Not to be confused with only local-media which is not "offline" (ie. one HDD disconnected)
+        library watch --online-media-only
+        library watch --online-media-only -i  # and ignore playback errors (ie. YouTube video deleted)
+        library watch --local-media-only
+
+    Specify media play order:
+        library watch --sort duration   # play shortest media first
+        library watch -u duration desc  # play longest media first
+        You can use multiple SQL ORDER BY expressions
+        library watch -u 'subtitle_count > 0 desc' # play media that has at least one subtitle first
+
+    Post-actions -- choose what to do after playing:
+        library watch --post-action keep    # do nothing after playing (default)
+        library watch -k delete             # delete file after playing
+        library watch -k softdelete         # mark deleted after playing
+
+        library watch -k ask_keep           # ask whether to keep after playing
+        library watch -k ask_delete         # ask whether to delete after playing
+
+        library watch -k move               # move to "keep" dir after playing
+        library watch -k ask_move           # ask whether to move to "keep" folder
+        The default location of the keep folder is ./keep/ (relative to the played media file)
+        You can change this by explicitly setting an *absolute* `keep-dir` path:
+        library watch -k ask_move --keep-dir /home/my/music/keep/
+
+        library watch -k ask_move_or_delete # ask after each whether to move to "keep" folder or delete
+
+    Experimental options:
+        Duration to play (in seconds) while changing the channel
+        library watch --interdimensional-cable 40
+        library watch -4dtv 40
+
+        Playback multiple files at once
+        library watch --multiple-playback    # one per display; or two if only one display detected
+        library watch --multiple-playback 4  # play four media at once, divide by available screens
+        library watch -m 4 --screen-name eDP # play four media at once on specific screen
+        library watch -m 4 --loop --crop     # play four cropped videos on a loop
+        library watch -m 4 --hstack          # use hstack style
+
+
+</details>
+
+<details><summary>Search captions / subtitles (search)</summary>
+
+    $ library search -h
+    usage: library search
+
+    Search text databases and subtitles
+
+    $ library search fts.db boil
+        7 captions
+        /mnt/d/70_Now_Watching/DidubeTheLastStop-720p.mp4
+           33:46 I brought a real stainless steel boiler
+           33:59 The world is using only stainless boilers nowadays
+           34:02 The boiler is old and authentic
+           34:30 - This boiler? - Yes
+           34:44 I am not forcing you to buy this boiler…
+           34:52 Who will give her a one liter stainless steel boiler for one Lari?
+           34:54 Glass boilers cost two
+
+    Search and open file
+    $ library search fts.db dashi --open
+
+
+</details>
+
+<details><summary>Open tabs</summary>
+
+    $ library tabs -h
+    usage: library tabs DATABASE
+
+    Tabs is meant to run **once per day**. Here is how you would configure it with `crontab`:
+
+        45 9 * * * DISPLAY=:0 library tabs /home/my/tabs.db
+
+    If things aren't working you can use `at` to simulate a similar environment as `cron`
+
+        echo 'fish -c "export DISPLAY=:0 && library tabs /full/path/to/tabs.db"' | at NOW
+
+    You can also invoke tabs manually:
+
+        library tabs -L 1  # open one tab
+
+    Print URLs
+
+        lb-dev tabs -w "frequency='yearly'" -p
+        ╒════════════════════════════════════════════════════════════════╤═════════════╤══════════════╕
+        │ path                                                           │ frequency   │ time_valid   │
+        ╞════════════════════════════════════════════════════════════════╪═════════════╪══════════════╡
+        │ https://old.reddit.com/r/Autonomia/top/?sort=top&t=year        │ yearly      │ Dec 31 1970  │
+        ├────────────────────────────────────────────────────────────────┼─────────────┼──────────────┤
+        │ https://old.reddit.com/r/Cyberpunk/top/?sort=top&t=year        │ yearly      │ Dec 31 1970  │
+        ├────────────────────────────────────────────────────────────────┼─────────────┼──────────────┤
+        │ https://old.reddit.com/r/ExperiencedDevs/top/?sort=top&t=year  │ yearly      │ Dec 31 1970  │
+
+        ...
+
+        ╘════════════════════════════════════════════════════════════════╧═════════════╧══════════════╛
+
+    View how many yearly tabs you have:
+
+        library tabs -w "frequency='yearly'" -p a
+        ╒═══════════╤═════════╕
+        │ path      │   count │
+        ╞═══════════╪═════════╡
+        │ Aggregate │     134 │
+        ╘═══════════╧═════════╛
+
+    Delete URLs
+
+        library tb -p -s cyber
+        ╒═══════════════════════════════════════╤═════════════╤══════════════╕
+        │ path                                  │ frequency   │ time_valid   │
+        ╞═══════════════════════════════════════╪═════════════╪══════════════╡
+        │ https://old.reddit.com/r/cyberDeck/to │ yearly      │ Dec 31 1970  │
+        │ p/?sort=top&t=year                    │             │              │
+        ├───────────────────────────────────────┼─────────────┼──────────────┤
+        │ https://old.reddit.com/r/Cyberpunk/to │ yearly      │ Aug 29 2023  │
+        │ p/?sort=top&t=year                    │             │              │
+        ├───────────────────────────────────────┼─────────────┼──────────────┤
+        │ https://www.reddit.com/r/cyberDeck/   │ yearly      │ Sep 05 2023  │
+        ╘═══════════════════════════════════════╧═════════════╧══════════════╛
+        library tb -p -w "path='https://www.reddit.com/r/cyberDeck/'" --delete
+        Removed 1 metadata records
+        library tb -p -s cyber
+        ╒═══════════════════════════════════════╤═════════════╤══════════════╕
+        │ path                                  │ frequency   │ time_valid   │
+        ╞═══════════════════════════════════════╪═════════════╪══════════════╡
+        │ https://old.reddit.com/r/cyberDeck/to │ yearly      │ Dec 31 1970  │
+        │ p/?sort=top&t=year                    │             │              │
+        ├───────────────────────────────────────┼─────────────┼──────────────┤
+        │ https://old.reddit.com/r/Cyberpunk/to │ yearly      │ Aug 29 2023  │
+        │ p/?sort=top&t=year                    │             │              │
+        ╘═══════════════════════════════════════╧═════════════╧══════════════╛
+
+
+</details>
+
+<details><summary>Download media (download)</summary>
+
+    $ library download -h
+    usage: library download database [--prefix /mnt/d/] --video | --audio
+
+    Download stuff in a random order.
+
+        library download dl.db --prefix ~/output/path/root/
+
+    Download stuff in a random order, limited to the specified playlist URLs.
+
+        library download dl.db https://www.youtube.com/c/BlenderFoundation/videos
+
+    Files will be saved to <lb download prefix>/<lb download category>/
+
+        For example:
+        library dladd Cool ...
+        library download D:\'My Documents'\ ...
+        Media will be downloaded to 'D:\My Documents\Cool\'
+
+    Print list of queued up downloads
+
+        library download --print
+
+    Print list of saved playlists
+
+        library playlists dl.db -p a
+
+    Print download queue groups
+
+        library dlstatus audio.db
+        ╒═════════════════════╤════════════╤══════════════════╤════════════════════╤══════════╕
+        │ category            │ ie_key     │ duration         │   never_downloaded │   errors │
+        ╞═════════════════════╪════════════╪══════════════════╪════════════════════╪══════════╡
+        │ 81_New_Music        │ Soundcloud │                  │                 10 │        0 │
+        ├─────────────────────┼────────────┼──────────────────┼────────────────────┼──────────┤
+        │ 81_New_Music        │ Youtube    │ 10 days, 4 hours │                  1 │     2555 │
+        │                     │            │ and 20 minutes   │                    │          │
+        ├─────────────────────┼────────────┼──────────────────┼────────────────────┼──────────┤
+        │ Playlist-less media │ Youtube    │ 7.68 minutes     │                 99 │        1 │
+        ╘═════════════════════╧════════════╧══════════════════╧════════════════════╧══════════╛
+
+
+</details>
+
+<details><summary>Show Download Status (dlstatus)</summary>
+
+    $ library dlstatus -h
+    usage: library dlstatus [database]
+
+    Print download queue groups
+
+        library dlstatus video.db
+        ╒═════════════════════╤═════════════╤══════════════════╤════════════════════╤══════════╕
+        │ category            │ ie_key      │ duration         │   never_downloaded │   errors │
+        ╞═════════════════════╪═════════════╪══════════════════╪════════════════════╪══════════╡
+        │ 71_Mealtime_Videos  │ Youtube     │ 3 hours and 2.07 │                 76 │        0 │
+        │                     │             │ minutes          │                    │          │
+        ├─────────────────────┼─────────────┼──────────────────┼────────────────────┼──────────┤
+        │ 75_MovieQueue       │ Dailymotion │                  │                 53 │        0 │
+        ├─────────────────────┼─────────────┼──────────────────┼────────────────────┼──────────┤
+        │ 75_MovieQueue       │ Youtube     │ 1 day, 18 hours  │                 30 │        0 │
+        │                     │             │ and 6 minutes    │                    │          │
+        ├─────────────────────┼─────────────┼──────────────────┼────────────────────┼──────────┤
+        │ Dailymotion         │ Dailymotion │                  │                186 │      198 │
+        ├─────────────────────┼─────────────┼──────────────────┼────────────────────┼──────────┤
+        │ Uncategorized       │ Youtube     │ 1 hour and 52.18 │                  1 │        0 │
+        │                     │             │ minutes          │                    │          │
+        ├─────────────────────┼─────────────┼──────────────────┼────────────────────┼──────────┤
+        │ Vimeo               │ Vimeo       │                  │                253 │       49 │
+        ├─────────────────────┼─────────────┼──────────────────┼────────────────────┼──────────┤
+        │ Youtube             │ Youtube     │ 2 years, 4       │              51676 │      197 │
+        │                     │             │ months, 15 days  │                    │          │
+        │                     │             │ and 6 hours      │                    │          │
+        ├─────────────────────┼─────────────┼──────────────────┼────────────────────┼──────────┤
+        │ Playlist-less media │ Youtube     │ 4 months, 23     │               2686 │        7 │
+        │                     │             │ days, 19 hours   │                    │          │
+        │                     │             │ and 33 minutes   │                    │          │
+        ╘═════════════════════╧═════════════╧══════════════════╧════════════════════╧══════════╛
+
+    Simulate --safe flag
+
+        library dlstatus video.db --safe
+
+    Show only download attempts with errors
+
+        library dlstatus video.db --errors
+
+
+</details>
+
+<details><summary>Update local media (fsupdate)</summary>
+
+    $ library fsupdate -h
+    usage: library fsupdate database
+
+    Update each path previously saved:
+
+        library fsupdate database
+
+
+</details>
+
+<details><summary>Update online media (tubeupdate)</summary>
+
+    $ library tubeupdate -h
+    usage: library tubeupdate [--audio | --video] [-c CATEGORY] [database]
+
+    Fetch the latest videos for every playlist saved in your database
+
+        library tubeupdate educational.db
+
+    Or limit to specific categories...
+
+        library tubeupdate -c "Bob Ross" educational.db
+
+    Run with --optimize to add indexes (might speed up searching but the size will increase):
+
+        library tubeupdate --optimize examples/music.tl.db
+
+    Fetch extra metadata:
+
+        By default tubeupdate will quickly add media.
+        You can run with --extra to fetch more details: (best resolution width, height, subtitle tags, etc)
+
+        library tubeupdate educational.db --extra https://www.youtube.com/channel/UCBsEUcR-ezAuxB2WlfeENvA/videos
+
+
+</details>
+
+<details><summary>Update reddit media (redditupdate)</summary>
+
+    $ library redditupdate -h
+    usage: library redditupdate [--audio | --video] [-c CATEGORY] [--lookback N_DAYS] [--praw-site bot1] [database]
+
+    Fetch the latest posts for every subreddit/redditor saved in your database
+
+        library redditupdate edu_subreddits.db
+
+
+</details>
+
+<details><summary>Convert pushshift data to reddit.db format</summary>
+
+    $ library pushshift -h
+    usage: library pushshift [database] < stdin
+
+    Download data (about 600GB jsonl.zst; 6TB uncompressed)
+
+        wget -e robots=off -r -k -A zst https://files.pushshift.io/reddit/submissions/
+
+    Load data from files via unzstd
+
+        unzstd --memory=2048MB --stdout RS_2005-07.zst | library pushshift pushshift.db
+
+    Or multiple (output is about 1.5TB SQLITE fts-searchable):
+
+        for f in psaw/files.pushshift.io/reddit/submissions/*.zst
+            echo "unzstd --memory=2048MB --stdout $f | library pushshift (basename $f).db"
+            library optimize (basename $f).db
+        end | parallel -j5
+
+
+</details>
+
+<details><summary>List playlists</summary>
+
+    $ library playlists -h
+    usage: library playlists [database] [--aggregate] [--fields] [--json] [--delete ...]
+
+    List of Playlists
+
+        library playlists
+        ╒══════════╤════════════════════╤══════════════════════════════════════════════════════════════════════════╕
+        │ ie_key   │ title              │ path                                                                     │
+        ╞══════════╪════════════════════╪══════════════════════════════════════════════════════════════════════════╡
+        │ Youtube  │ Highlights of Life │ https://www.youtube.com/playlist?list=PL7gXS9DcOm5-O0Fc1z79M72BsrHByda3n │
+        ╘══════════╧════════════════════╧══════════════════════════════════════════════════════════════════════════╛
+
+    Aggregate Report of Videos in each Playlist
+
+        library playlists -p a
+        ╒══════════╤════════════════════╤══════════════════════════════════════════════════════════════════════════╤═══════════════╤═════════╕
+        │ ie_key   │ title              │ path                                                                     │ duration      │   count │
+        ╞══════════╪════════════════════╪══════════════════════════════════════════════════════════════════════════╪═══════════════╪═════════╡
+        │ Youtube  │ Highlights of Life │ https://www.youtube.com/playlist?list=PL7gXS9DcOm5-O0Fc1z79M72BsrHByda3n │ 53.28 minutes │      15 │
+        ╘══════════╧════════════════════╧══════════════════════════════════════════════════════════════════════════╧═══════════════╧═════════╛
+        1 playlist
+        Total duration: 53.28 minutes
+
+    Print only playlist urls:
+        Useful for piping to other utilities like xargs or GNU Parallel.
+        library playlists -p f
+        https://www.youtube.com/playlist?list=PL7gXS9DcOm5-O0Fc1z79M72BsrHByda3n
+
+    Remove a playlist/channel and all linked videos:
+        library playlists --remove https://vimeo.com/canal180
+
+
+
+</details>
+
+<details><summary>Blocklist a channel (block)</summary>
+
+    $ library block -h
+    usage: library block database [playlists ...]
+
+    Blocklist specific URLs (eg. YouTube channels, etc). With YT URLs this will block
+    videos from the playlist uploader
+
+        library block dl.db https://annoyingwebsite/etc/
+
+    Use with the all-deleted-playlists flag to delete any previously downloaded files from the playlist uploader
+
+        library block dl.db --all-deleted-playlists https://annoyingwebsite/etc/
+
+
+</details>
+
+<details><summary>Show large folders (bigdirs)</summary>
+
+    $ library bigdirs -h
+    usage: library bigdirs DATABASE [--limit (4000)] [--depth (0)] [--sort-by "deleted" | "played"] [--size=+5MB]
+
+    See what folders take up space
+
+        lb bigdirs video.db
+        lb bigdirs audio.db
+        lb bigdirs fs.db
+
+
+</details>
+
+<details><summary>Copy play history (copy-play-counts)</summary>
+
+    $ library copy-play-counts -h
+    usage: library copy-play-counts DEST_DB SOURCE_DB ... [--source-prefix x] [--target-prefix y]
+
+    Copy play count information between databases
+
+        lb copy-play-counts audio.db phone.db --source-prefix /storage/6E7B-7DCE/d --target-prefix /mnt/d
+
+
+</details>
+
+<details><summary>Dedupe music (dedupe)</summary>
+
+    $ library dedupe -h
+    usage: library [--audio | --id | --title | --filesystem] [--only-soft-delete] [--limit LIMIT] DATABASE
+
+    Dedupe your files
+
+
+</details>
+
+<details><summary>Re-optimize database</summary>
+
+    $ library optimize -h
+    usage: library optimize DATABASE [--force]
+
+    Optimize library databases
+
+    The force flag is usually unnecessary and it can take much longer
+
+
+</details>
+
+<details><summary>Re-download media (redownload)</summary>
+
+    $ library redownload -h
+    usage: library redownload DATABASE
+
+    If you have previously downloaded YouTube or other online media, but your
+    hard drive failed or you accidentally deleted something, and if that media
+    is still accessible from the same URL, this script can help to redownload
+    everything that was scanned-as-deleted between two timestamps.
+
+    List deletions:
+
+        $ library redownload news.db
+        Deletions:
+        ╒═════════════════════╤═════════╕
+        │ time_deleted        │   count │
+        ╞═════════════════════╪═════════╡
+        │ 2023-01-26T00:31:26 │     120 │
+        ├─────────────────────┼─────────┤
+        │ 2023-01-26T19:54:42 │      18 │
+        ├─────────────────────┼─────────┤
+        │ 2023-01-26T20:45:24 │      26 │
+        ╘═════════════════════╧═════════╛
+        Showing most recent 3 deletions. Use -l to change this limit
+
+    Mark videos as candidates for download via specific deletion timestamp:
+
+        $ library redownload city.db 2023-01-26T19:54:42
+        ╒══════════╤════════════════╤═════════════════╤═══════════════════╤═════════╤══════════╤═══════╤══════════════════╤════════════════════════════════════════════════════════════════════════════════════════════════════════╕
+        │ size     │ time_created   │ time_modified   │ time_downloaded   │   width │   height │   fps │ duration         │ path                                                                                                   │
+        ╞══════════╪════════════════╪═════════════════╪═══════════════════╪═════════╪══════════╪═══════╪══════════════════╪════════════════════════════════════════════════════════════════════════════════════════════════════════╡
+        │ 697.7 MB │ Apr 13 2022    │ Mar 11 2022     │ Oct 19            │    1920 │     1080 │    30 │ 21.22 minutes    │ /mnt/d/76_CityVideos/PRAIA DE BARRA DE JANGADA CANDEIAS JABOATÃO                                       │
+        │          │                │                 │                   │         │          │       │                  │ RECIFE PE BRASIL AVENIDA BERNARDO VIEIRA DE MELO-4Lx3hheMPmg.mp4
+        ...
+
+    ...or between two timestamps inclusive:
+
+        $ library redownload city.db 2023-01-26T19:54:42 2023-01-26T20:45:24
+
+
+</details>
+
+<details><summary>Merge online and local data (merge-online-local)</summary>
+
+    $ library merge-online-local -h
+    usage: library merge-online-local DATABASE
+
+    If you have previously downloaded YouTube or other online media, you can dedupe
+    your database and combine the online and local media records as long as your
+    files have the youtube-dl / yt-dlp id in the filename.
+
+
+</details>
+
+<details><summary>Convert selftext links to media table (reddit-selftext)</summary>
+
+    $ library reddit-selftext -h
+    usage: library reddit-selftext DATABASE
+
+    Extract URLs from reddit selftext from the reddit_posts table to the media table
+
+
+</details>
+
+<details><summary>Merge SQLITE databases (merge-dbs)</summary>
+
+    $ library merge-dbs -h
+    usage: library merge-dbs DEST_DB SOURCE_DB ... [--upsert pk1[,pk2]]
+
+    Merge database data and tables
+
+        lb merge-dbs --upsert --pk path video.db tv.db movies.db
+        lb merge-dbs --table media,playlists --pk path audio.db music.db podcasts.db
+
+
+</details>
+
+<details><summary>Sort lines by similarity (cluster-sort)</summary>
+
+    $ library cluster-sort -h
+    usage: library cluster-sort [input_path | stdin] [output_path | stdout]
+
+    Group lines of text into sorted output
+
+
+</details>
+
+<details><summary>Move files preserving parent folder hierarchy (relmv)</summary>
+
+    $ library relmv -h
+    usage: library relmv [--dry-run] SOURCE ... DEST
+
+    Move files/folders without losing hierarchy metadata
+
+    Move fresh music to your phone every Sunday:
+
+        # move last weeks' music back to their source folders
+        lb relmv /mnt/d/80_Now_Listening/ /mnt/d/
+
+        # move new music for this week
+        lb relmv (
+            lb listen ~/lb/audio.db --local-media-only --where 'play_count=0' --random -L 600 -p f
+        ) /mnt/d/80_Now_Listening/
+
+
+</details>
+
+<details><summary>Automatic tab loader (surf)</summary>
+
+    $ library surf -h
+    usage: library surf [--count COUNT] [--target-hosts TARGET_HOSTS] < stdin
+
+    Streaming tab loader: press ctrl+c to stop.
+
+    Open tabs from a line-delimited file:
+
+        cat tabs.txt | library surf -n 5
+
+    You will likely want to use this setting in `about:config`
+
+        browser.tabs.loadDivertedInBackground = True
+
+    If you prefer GUI, check out https://unli.xyz/tabsender/
+
+
+</details>
+
+<details><summary>Clean filenames (christen)</summary>
+
+    $ library christen -h
+    usage: library christen DATABASE [--run]
+
+    Rename files to be somewhat normalized
+
+    Default mode is dry-run
+
+        lb christen fs.db
+
+    To actually do stuff use the run flag
+
+        lb christen audio.db --run
+
+    You can optionally replace all the spaces in your filenames with dots
+
+        lb christen --dot-space video.db
+
+
+</details>
+
 
 

@@ -1,7 +1,7 @@
 import argparse, os, sys
 from typing import List, Tuple
 
-from xklb import consts, db, play_actions, player, tube_backend, utils
+from xklb import consts, db, play_actions, player, tube_backend, usage, utils
 from xklb.consts import SC, DBType
 from xklb.utils import log
 
@@ -215,45 +215,7 @@ def dl_download(args=None) -> None:
 
     args = parse_args(
         SC.download,
-        usage=r"""library download database [--prefix /mnt/d/] --video | --audio
-
-    Download stuff in a random order.
-
-        library download dl.db --prefix ~/output/path/root/
-
-    Download stuff in a random order, limited to the specified playlist URLs.
-
-        library download dl.db https://www.youtube.com/c/BlenderFoundation/videos
-
-    Files will be saved to <lb download prefix>/<lb download category>/
-
-        For example:
-        library dladd Cool ...
-        library download D:\'My Documents'\ ...
-        Media will be downloaded to 'D:\My Documents\Cool\'
-
-    Print list of queued up downloads
-
-        library download --print
-
-    Print list of saved playlists
-
-        library playlists dl.db -p a
-
-    Print download queue groups
-
-        library dlstatus audio.db
-        ╒═════════════════════╤════════════╤══════════════════╤════════════════════╤══════════╕
-        │ category            │ ie_key     │ duration         │   never_downloaded │   errors │
-        ╞═════════════════════╪════════════╪══════════════════╪════════════════════╪══════════╡
-        │ 81_New_Music        │ Soundcloud │                  │                 10 │        0 │
-        ├─────────────────────┼────────────┼──────────────────┼────────────────────┼──────────┤
-        │ 81_New_Music        │ Youtube    │ 10 days, 4 hours │                  1 │     2555 │
-        │                     │            │ and 20 minutes   │                    │          │
-        ├─────────────────────┼────────────┼──────────────────┼────────────────────┼──────────┤
-        │ Playlist-less media │ Youtube    │ 7.68 minutes     │                 99 │        1 │
-        ╘═════════════════════╧════════════╧══════════════════╧════════════════════╧══════════╛
-    """,
+        usage=usage.download
     )
     m_columns = args.db["media"].columns_dict
 
@@ -300,17 +262,7 @@ def dl_block(args=None) -> None:
 
     args = parse_args(
         SC.block,
-        usage=r"""library block database [playlists ...]
-
-    Blocklist specific URLs (eg. YouTube channels, etc). With YT URLs this will block
-    videos from the playlist uploader
-
-        library block dl.db https://annoyingwebsite/etc/
-
-    Use with the all-deleted-playlists flag to delete any previously downloaded files from the playlist uploader
-
-        library block dl.db --all-deleted-playlists https://annoyingwebsite/etc/
-    """,
+        usage=usage.block
     )
 
     if not any([args.playlists, args.all_deleted_playlists]):

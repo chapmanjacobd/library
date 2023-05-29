@@ -2,27 +2,14 @@ import argparse, logging, sys
 from time import sleep
 from typing import List
 
-from xklb import db, player, utils
+from xklb import db, player, usage, utils
 from xklb.utils import log
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="library surf",
-        usage="""library surf [--count COUNT] [--target-hosts TARGET_HOSTS] < stdin
-
-    Streaming tab loader: press ctrl+c to stop.
-
-    Open tabs from a line-delimited file:
-
-        cat tabs.txt | library surf -n 5
-
-    You will likely want to use this setting in `about:config`
-
-        browser.tabs.loadDivertedInBackground = True
-
-    If you prefer GUI, check out https://unli.xyz/tabsender/
-    """,
+        usage=usage.surf,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument("database")

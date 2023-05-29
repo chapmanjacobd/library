@@ -1,7 +1,7 @@
 import argparse, sys
 from pathlib import Path
 
-from xklb import db, utils
+from xklb import db, usage, utils
 from xklb.praw_extract import slim_post_data
 from xklb.utils import log
 
@@ -44,23 +44,7 @@ def pushshift_extract(args=None) -> None:
 
     args = parse_args(
         "pushshift",
-        usage="""library pushshift [database] < stdin
-
-    Download data (about 600GB jsonl.zst; 6TB uncompressed)
-
-        wget -e robots=off -r -k -A zst https://files.pushshift.io/reddit/submissions/
-
-    Load data from files via unzstd
-
-        unzstd --memory=2048MB --stdout RS_2005-07.zst | library pushshift pushshift.db
-
-    Or multiple (output is about 1.5TB SQLITE fts-searchable):
-
-        for f in psaw/files.pushshift.io/reddit/submissions/*.zst
-            echo "unzstd --memory=2048MB --stdout $f | library pushshift (basename $f).db"
-            library optimize (basename $f).db
-        end | parallel -j5
-    """,
+        usage=usage.pushshift
     )
 
     args.db.enable_wal()

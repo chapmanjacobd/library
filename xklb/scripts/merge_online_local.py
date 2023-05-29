@@ -4,19 +4,14 @@ from typing import List, Optional
 
 from tabulate import tabulate
 
-from xklb import consts, db, utils
+from xklb import consts, db, usage, utils
 from xklb.utils import log
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="library merge-online-local",
-        usage="""library merge-online-local DATABASE
-
-    If you have previously downloaded YouTube or other online media, you can dedupe
-    your database and combine the online and local media records as long as your
-    files have the youtube-dl / yt-dlp id in the filename.
-    """,
+        usage=usage.merge_online_local
     )
     parser.add_argument("database")
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", default=100)

@@ -4,21 +4,14 @@ from typing import Dict, List
 
 from tabulate import tabulate
 
-from xklb import db, utils
+from xklb import db, usage, utils
 from xklb.utils import log
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="library bigdirs",
-        usage="""library bigdirs DATABASE [--limit (4000)] [--depth (0)] [--sort-by "deleted" | "played"] [--size=+5MB]
-
-    See what folders take up space
-
-        lb bigdirs video.db
-        lb bigdirs audio.db
-        lb bigdirs fs.db
-""",
+        usage=usage.bigdirs,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument("--sort-by")

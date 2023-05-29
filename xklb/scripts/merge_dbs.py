@@ -1,20 +1,14 @@
 import argparse
 from pathlib import Path
 
-from xklb import db, utils
+from xklb import db, usage, utils
 from xklb.utils import log
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="library merge-dbs",
-        usage="""library merge-dbs DEST_DB SOURCE_DB ... [--upsert pk1[,pk2]]
-
-    Merge database data and tables
-
-        lb merge-dbs --upsert --pk path video.db tv.db movies.db
-        lb merge-dbs --table media,playlists --pk path audio.db music.db podcasts.db
-""",
+        usage=usage.merge_dbs
     )
     parser.add_argument("database")
     parser.add_argument("source_dbs", nargs="+")

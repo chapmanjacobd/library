@@ -7,7 +7,7 @@ from itertools import takewhile
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple
 
-from xklb import consts, db, utils
+from xklb import consts, db, usage, utils
 from xklb.utils import log
 
 PRAW_SETUP_INSTRUCTIONS = r"""
@@ -337,27 +337,13 @@ def process_subreddits(args, subreddits) -> None:
             log.error("[%s] skipping subreddit: %s", subreddit["name"], e)
             continue
 
-
 def reddit_add(args=None) -> None:
     if args:
         sys.argv = ["lb", *args]
 
     args = parse_args(
         "redditadd",
-        usage="""library redditadd [--lookback N_DAYS] [--praw-site bot1] [database] paths ...
-
-    Fetch data for redditors and reddits:
-
-        library redditadd https://old.reddit.com/r/coolgithubprojects/ https://old.reddit.com/user/Diastro
-
-    If you have a file with a list of subreddits you can do this:
-
-        library redditadd --subreddits --db 96_Weird_History.db (cat ~/mc/96_Weird_History-reddit.txt)
-
-    Likewise for redditors:
-
-        library redditadd --redditors --db idk.db (cat ~/mc/shadow_banned.txt)
-    """,
+        usage=usage.redditadd
     )
 
     subreddits = []
@@ -416,12 +402,7 @@ def reddit_update(args=None) -> None:
 
     args = parse_args(
         "redditupdate",
-        usage="""library redditupdate [--audio | --video] [-c CATEGORY] [--lookback N_DAYS] [--praw-site bot1] [database]
-
-    Fetch the latest posts for every subreddit/redditor saved in your database
-
-        library redditupdate edu_subreddits.db
-    """,
+        usage=usage.redditupdate
     )
     playlists = db.get_playlists(
         args,

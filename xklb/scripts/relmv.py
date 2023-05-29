@@ -3,27 +3,14 @@ from collections import OrderedDict
 from os.path import commonprefix
 from pathlib import Path
 
-from xklb import utils
+from xklb import usage, utils
 from xklb.utils import log
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="library relmv",
-        usage="""library relmv [--dry-run] SOURCE ... DEST
-
-    Move files/folders without losing hierarchy metadata
-
-    Move fresh music to your phone every Sunday:
-
-        # move last weeks' music back to their source folders
-        lb relmv /mnt/d/80_Now_Listening/ /mnt/d/
-
-        # move new music for this week
-        lb relmv (
-            lb listen ~/lb/audio.db --local-media-only --where 'play_count=0' --random -L 600 -p f
-        ) /mnt/d/80_Now_Listening/
-""",
+        usage=usage.relmv
     )
     parser.add_argument("--verbose", "-v", action="count", default=0)
     parser.add_argument("--test", "--dry-run", action="store_true")

@@ -5,31 +5,14 @@ from typing import Tuple
 
 from tabulate import tabulate
 
-from xklb import consts, db, player, utils
+from xklb import consts, db, player, usage, utils
 from xklb.utils import log, pipe_print
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="library search",
-        usage="""library search
-
-    Search text databases and subtitles
-
-    $ library search fts.db boil
-        7 captions
-        /mnt/d/70_Now_Watching/DidubeTheLastStop-720p.mp4
-           33:46 I brought a real stainless steel boiler
-           33:59 The world is using only stainless boilers nowadays
-           34:02 The boiler is old and authentic
-           34:30 - This boiler? - Yes
-           34:44 I am not forcing you to buy this boiler…
-           34:52 Who will give her a one liter stainless steel boiler for one Lari?
-           34:54 Glass boilers cost two
-
-    Search and open file
-    $ library search fts.db dashi --open
-""",
+        usage=usage.search
     )
     parser.add_argument("--open", "--play", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--duration", "-d", action="append", help=argparse.SUPPRESS)
@@ -165,24 +148,24 @@ def merge_captions(args, captions):
         captions, key=lambda x: x["path"]
     ):  # group by only does contiguous items with the same key
         group = list(group)
-        merged_group = {"path": path, "time": group[0]["time"], "end": get_end(group[0]), "text": group[0]["text"]}
+        merged_group = {"path": path, "time": group[0]["time"], "end": get_end(group[0]), "text": group[0]["text"]}  # type: ignore
         for i in range(1, len(group)):
             end = get_end(group[i])
 
             if (
-                abs(group[i]["time"] - merged_group["end"]) <= args.overlap
-                or abs(group[i]["time"] - merged_group["time"]) <= args.overlap
+                abs(group[i]["time"] - merged_group["end"]) <= args.overlap  # type: ignore
+                or abs(group[i]["time"] - merged_group["time"]) <= args.overlap  # type: ignore
             ):
                 merged_group["end"] = end
-                if group[i]["text"] not in merged_group["text"]:
-                    merged_group["text"] += ". " + group[i]["text"]
+                if group[i]["text"] not in merged_group["text"]:  # type: ignore
+                    merged_group["text"] += ". " + group[i]["text"]  # type: ignore
             else:
                 merged_captions.append(merged_group)
                 merged_group = {
                     "path": path,
-                    "time": group[i]["time"],
+                    "time": group[i]["time"],  # type: ignore
                     "end": end,
-                    "text": group[i]["text"],
+                    "text": group[i]["text"],  # type: ignore
                 }
         merged_captions.append(merged_group)
 

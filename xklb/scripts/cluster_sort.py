@@ -1,16 +1,13 @@
 import argparse, sys
 
-from xklb import utils
+from xklb import usage, utils
 from xklb.utils import log
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="library cluster-sort",
-        usage="""library cluster-sort [input_path | stdin] [output_path | stdout]
-
-    Group lines of text into sorted output
-""",
+        usage=usage.cluster_sort
     )
     parser.add_argument("--model", "-m", help="Use a specific spaCy model")
     parser.add_argument("--clusters", "--n-clusters", "-c", type=int, help="Number of KMeans clusters")

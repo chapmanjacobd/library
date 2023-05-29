@@ -1,19 +1,14 @@
 import argparse
 from pathlib import Path
 
-from xklb import db, utils
+from xklb import db, usage, utils
 from xklb.utils import log
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="library copy-play-counts",
-        usage="""library copy-play-counts DEST_DB SOURCE_DB ... [--source-prefix x] [--target-prefix y]
-
-    Copy play count information between databases
-
-        lb copy-play-counts audio.db phone.db --source-prefix /storage/6E7B-7DCE/d --target-prefix /mnt/d
-""",
+        usage=usage.copy_play_counts
     )
     parser.add_argument("database")
     parser.add_argument("source_dbs", nargs="+")

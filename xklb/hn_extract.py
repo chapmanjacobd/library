@@ -1,7 +1,7 @@
 import argparse, asyncio, queue, sqlite3, threading
 from pathlib import Path
 
-from xklb import db, utils
+from xklb import db, usage, utils
 from xklb.utils import log
 
 """
@@ -115,21 +115,7 @@ async def run(args, db_queue):
 def hacker_news_add() -> None:
     args = parse_args(
         prog="library hnadd",
-        usage="""library hnadd [--oldest] database
-
-    Fetch latest stories first:
-
-        library hnadd hn.db -v
-        Fetching 154873 items (33212696 to 33367569)
-        Saving comment 33367568
-        Saving comment 33367543
-        Saving comment 33367564
-        ...
-
-    Fetch oldest stories first:
-
-        library hnadd --oldest hn.db
-    """,
+        usage=usage.hnadd
     )
     try:
         import aiohttp

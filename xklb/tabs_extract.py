@@ -2,7 +2,7 @@ import argparse, sys
 from pathlib import Path
 from typing import List
 
-from xklb import consts, db, player, utils
+from xklb import consts, db, player, usage, utils
 from xklb.consts import Frequency
 from xklb.utils import ArgparseEnum, log, sanitize_url
 
@@ -10,25 +10,7 @@ from xklb.utils import ArgparseEnum, log, sanitize_url
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="library tabsadd",
-        usage=r"""library tabsadd [--frequency daily weekly (monthly) quarterly yearly] [--category CATEGORY] [--no-sanitize] DATABASE URLS ...
-
-    Adding one URL:
-
-        library tabsadd -f monthly -c travel ~/lb/tabs.db https://old.reddit.com/r/Colombia/top/?sort=top&t=month
-
-        Depending on your shell you may need to escape the URL (add quotes)
-
-        If you use Fish shell know that you can enable features to make pasting easier:
-            set -U fish_features stderr-nocaret qmark-noglob regex-easyesc ampersand-nobg-in-token
-
-        Also I recommend turning Ctrl+Backspace into a super-backspace for repeating similar commands with long args:
-            echo 'bind \b backward-kill-bigword' >> ~/.config/fish/config.fish
-
-    Importing from a line-delimitated file:
-
-        library tabsadd -f yearly -c reddit ~/lb/tabs.db (cat ~/mc/yearly-subreddit.cron)
-
-""",
+        usage=usage.tabsadd
     )
     parser.add_argument(
         "--frequency",
