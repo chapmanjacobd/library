@@ -147,6 +147,14 @@ You can also invoke tabs manually:
 
 </details>
 
+<details><summary>Usage</summary>
+
+    $ library watch -h
+    usage: {play_actions.usage('watch')}
+
+</details>
+
+
 ## Examples
 
 ### Watch online media on your PC
@@ -163,13 +171,6 @@ You can also invoke tabs manually:
 
     wget https://github.com/chapmanjacobd/hn_mining/raw/main/hackernews_only_direct.tw.db
     library watch hackernews_only_direct.tw.db --random --ignore-errors
-
-## Watch/Listen Usage
-
-    $ library watch -h
-    usage: {play_actions.usage('watch')}
-
-## More examples
 
 ### Organize via separate databases.
 
