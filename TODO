@@ -1,5 +1,3 @@
-- merge dbs --only-new-rows --only-target-columns
-
 - wt history
     print player.historical_usage
 
