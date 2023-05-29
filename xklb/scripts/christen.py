@@ -2,29 +2,14 @@ import argparse, shutil
 from os import fsdecode
 from pathlib import Path
 
-from xklb import utils
+from xklb import usage, utils
 from xklb.utils import log
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="library christen",
-        usage="""library christen DATABASE [--run]
-
-    Rename files to be somewhat normalized
-
-    Default mode is dry-run
-
-        lb christen fs.db
-
-    To actually do stuff use the run flag
-
-        lb christen audio.db --run
-
-    You can optionally replace all the spaces in your filenames with dots
-
-        lb christen --dot-space video.db
-""",
+        usage=usage.christen
     )
     parser.add_argument("paths", nargs="*")
     parser.add_argument("--dot-space", action="store_true")

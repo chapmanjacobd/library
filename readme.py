@@ -1,5 +1,53 @@
-from xklb import lb, play_actions
-from xklb.scripts.scatter import scatter_usage
+from xklb import lb, usage
+
+usage_details = []
+for title, subcommand in [
+    ('Add local media', 'fsadd'),
+    ('Add online media', 'tubeadd'),
+    ('Add reddit media', 'redditadd'),
+    ('Create / Update a Hacker News database', 'hnadd'),
+    ('Add tabs', 'tabsadd'),
+
+    ('Watch / Listen', 'watch'),
+    ('Search captions / subtitles', 'search'),
+    ('Open tabs', 'tabs'),
+
+    ('Download media', 'download'),
+    ('Show Download Status', 'dlstatus'),
+
+    ('Update local media', 'fsupdate'),
+    ('Update online media', 'tubeupdate'),
+    ('Update reddit media', 'redditupdate'),
+    ('Convert pushshift data to reddit.db format', 'pushshift'),
+
+    ('List playlists', 'playlists'),
+    ('Blocklist a channel', 'block'),
+
+    ('Show large folders', 'bigdirs'),
+    ('Copy play history', 'copy-play-counts'),
+    ('Dedupe music', 'dedupe'),
+    ('Re-optimize database', 'optimize'),
+    ('Re-download media', 'redownload'),
+    ('Merge online and local data', 'merge-online-local'),
+    ('Convert selftext links to media table', 'reddit-selftext'),
+
+    ('Merge SQLITE databases', 'merge-dbs'),
+    ('Sort lines by similarity', 'cluster-sort'),
+    ('Move files preserving parent folder hierarchy', 'relmv'),
+    ('Automatic tab loader', 'surf'),
+    ('Clean filenames', 'christen'),
+    # scatter usage is already in readme so intentionally skipped here
+]:
+    if subcommand not in title:
+        title += f' ({subcommand})'
+    usage_details.append(f'''
+<details><summary>{title}</summary>
+
+    $ library {subcommand} -h
+    usage: {getattr(usage, subcommand.replace('-','_'))}
+
+</details>
+''')
 
 print(
     rf"""# xk media library
@@ -151,14 +199,6 @@ Incremental surfing. 📈🏄 totally rad!
 
 </details>
 
-<details><summary>Watch Usage</summary>
-
-    $ library watch -h
-    usage: {play_actions.usage('watch')}
-
-</details>
-
-
 ## Examples
 
 ### Watch online media on your PC
@@ -268,7 +308,7 @@ After you are done selecting folders you can press ctrl-d and it will save the l
 <details><summary>If you use mergerfs, you'll likely be interested in this</summary>
 
     library scatter -h
-    usage: {scatter_usage}
+    usage: {usage.scatter}
 
     positional arguments:
     database
@@ -403,6 +443,10 @@ Explore `library` databases in your browser
 
     pip install datasette
     datasette tv.db
+
+## Usage
+
+{''.join(usage_details)}
 
 """,
 )

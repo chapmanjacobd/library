@@ -3,7 +3,7 @@ from pathlib import Path
 from time import sleep
 from typing import Dict, List, Tuple
 
-from xklb import db, utils
+from xklb import db, usage, utils
 from xklb.consts import SC
 from xklb.player import generic_player, mark_media_watched, override_sort, printer
 from xklb.tabs_extract import Frequency
@@ -14,72 +14,7 @@ def parse_args(action) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="library tabs",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        usage="""library tabs DATABASE
-
-    Tabs is meant to run **once per day**. Here is how you would configure it with `crontab`:
-
-        45 9 * * * DISPLAY=:0 library tabs /home/my/tabs.db
-
-    If things aren't working you can use `at` to simulate a similar environment as `cron`
-
-        echo 'fish -c "export DISPLAY=:0 && library tabs /full/path/to/tabs.db"' | at NOW
-
-    You can also invoke tabs manually:
-
-        library tabs -L 1  # open one tab
-
-    Print URLs
-
-        lb-dev tabs -w "frequency='yearly'" -p
-        ╒════════════════════════════════════════════════════════════════╤═════════════╤══════════════╕
-        │ path                                                           │ frequency   │ time_valid   │
-        ╞════════════════════════════════════════════════════════════════╪═════════════╪══════════════╡
-        │ https://old.reddit.com/r/Autonomia/top/?sort=top&t=year        │ yearly      │ Dec 31 1970  │
-        ├────────────────────────────────────────────────────────────────┼─────────────┼──────────────┤
-        │ https://old.reddit.com/r/Cyberpunk/top/?sort=top&t=year        │ yearly      │ Dec 31 1970  │
-        ├────────────────────────────────────────────────────────────────┼─────────────┼──────────────┤
-        │ https://old.reddit.com/r/ExperiencedDevs/top/?sort=top&t=year  │ yearly      │ Dec 31 1970  │
-
-        ...
-
-        ╘════════════════════════════════════════════════════════════════╧═════════════╧══════════════╛
-
-    View how many yearly tabs you have:
-
-        library tabs -w "frequency='yearly'" -p a
-        ╒═══════════╤═════════╕
-        │ path      │   count │
-        ╞═══════════╪═════════╡
-        │ Aggregate │     134 │
-        ╘═══════════╧═════════╛
-
-    Delete URLs
-
-        library tb -p -s cyber
-        ╒═══════════════════════════════════════╤═════════════╤══════════════╕
-        │ path                                  │ frequency   │ time_valid   │
-        ╞═══════════════════════════════════════╪═════════════╪══════════════╡
-        │ https://old.reddit.com/r/cyberDeck/to │ yearly      │ Dec 31 1970  │
-        │ p/?sort=top&t=year                    │             │              │
-        ├───────────────────────────────────────┼─────────────┼──────────────┤
-        │ https://old.reddit.com/r/Cyberpunk/to │ yearly      │ Aug 29 2023  │
-        │ p/?sort=top&t=year                    │             │              │
-        ├───────────────────────────────────────┼─────────────┼──────────────┤
-        │ https://www.reddit.com/r/cyberDeck/   │ yearly      │ Sep 05 2023  │
-        ╘═══════════════════════════════════════╧═════════════╧══════════════╛
-        library tb -p -w "path='https://www.reddit.com/r/cyberDeck/'" --delete
-        Removed 1 metadata records
-        library tb -p -s cyber
-        ╒═══════════════════════════════════════╤═════════════╤══════════════╕
-        │ path                                  │ frequency   │ time_valid   │
-        ╞═══════════════════════════════════════╪═════════════╪══════════════╡
-        │ https://old.reddit.com/r/cyberDeck/to │ yearly      │ Dec 31 1970  │
-        │ p/?sort=top&t=year                    │             │              │
-        ├───────────────────────────────────────┼─────────────┼──────────────┤
-        │ https://old.reddit.com/r/Cyberpunk/to │ yearly      │ Aug 29 2023  │
-        │ p/?sort=top&t=year                    │             │              │
-        ╘═══════════════════════════════════════╧═════════════╧══════════════╛
-""",
+        usage=usage.tabs
     )
 
     parser.add_argument("--sort", "-u", nargs="+")

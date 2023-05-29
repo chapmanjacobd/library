@@ -1,7 +1,7 @@
 import argparse, sys
 from pathlib import Path
 
-from xklb import db, tube_backend, utils
+from xklb import db, tube_backend, usage, utils
 from xklb.consts import SC
 from xklb.utils import log
 
@@ -72,35 +72,7 @@ def tube_add(args=None) -> None:
 
     args = parse_args(
         SC.tubeadd,
-        usage=r"""library tubeadd [--audio | --video] -c CATEGORY [database] playlists ...
-
-    Create a dl database / add links to an existing database
-
-        library tubeadd -c Educational dl.db https://www.youdl.com/c/BranchEducation/videos
-
-    Add metadata for links in a database table
-
-        library tubeadd reddit.db --playlist-db media
-
-    If you include more than one URL, you must specify the database
-
-        library tubeadd 71_Mealtime_Videos dl.db (cat ~/.jobs/todo/71_Mealtime_Videos)
-
-    Files will be saved to <lb download prefix>/<lb tubeadd category>/
-
-        For example:
-        library tubeadd Cool ...
-        library download D:\'My Documents'\ ...
-        Media will be downloaded to 'D:\My Documents\Cool\'
-
-    Fetch extra metadata:
-
-        By default tubeadd will quickly add media at the expense of less metadata.
-        If you plan on using `library download` then it doesn't make sense to use `--extra`.
-        Downloading will add the extra metadata automatically to the database.
-        You can always fetch more metadata later via tubeupdate:
-        library tubeupdate tw.db --extra
-    """,
+        usage=usage.tubeadd
     )
     if args.playlist_files:
         args.playlists = list(utils.flatten([Path(p).read_text().splitlines() for p in args.playlists]))
@@ -150,27 +122,7 @@ def tube_update(args=None) -> None:
 
     args = parse_args(
         SC.tubeupdate,
-        usage="""library tubeupdate [--audio | --video] [-c CATEGORY] [database]
-
-    Fetch the latest videos for every playlist saved in your database
-
-        library tubeupdate educational.db
-
-    Or limit to specific categories...
-
-        library tubeupdate -c "Bob Ross" educational.db
-
-    Run with --optimize to add indexes (might speed up searching but the size will increase):
-
-        library tubeupdate --optimize examples/music.tl.db
-
-    Fetch extra metadata:
-
-        By default tubeupdate will quickly add media.
-        You can run with --extra to fetch more details: (best resolution width, height, subtitle tags, etc)
-
-        library tubeupdate educational.db --extra https://www.youtube.com/channel/UCBsEUcR-ezAuxB2WlfeENvA/videos
-""",
+        usage=usage.tubeupdate
     )
     playlists = db.get_playlists(args, constrain=True)
     tube_backend.update_playlists(args, playlists)

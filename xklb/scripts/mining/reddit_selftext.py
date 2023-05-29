@@ -2,17 +2,14 @@ import argparse, html
 from typing import Set, Tuple
 from urllib.parse import urlparse
 
-from xklb import db, utils
+from xklb import db, usage, utils
 from xklb.utils import log
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="library reddit-selftext",
-        usage="""library reddit-selftext DATABASE
-
-    Extract URLs from reddit selftext from the reddit_posts table to the media table
-""",
+        usage=usage.reddit_selftext
     )
     parser.add_argument("database")
     parser.add_argument("--verbose", "-v", action="count", default=0)

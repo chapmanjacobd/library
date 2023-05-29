@@ -1,6 +1,15 @@
 - wt history
     print player.historical_usage
 
+- sqlite-utils transform chickens.db chickens --pk id
+
+use rowid alias instead of string pks
+
+[author_id] INTEGER REFERENCES [authors]([id])
+db["dogs"].add_column("species_id", fk="species", fk_col="ref")
+
+table.transform(pk=None)
+
 - search: get title from media table
 
 - wt/lt/search join and use fts on both tables, threading ?

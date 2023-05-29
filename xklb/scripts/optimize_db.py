@@ -1,18 +1,13 @@
 import argparse
 
-from xklb import db, utils
+from xklb import db, usage, utils
 from xklb.utils import log
 
 
 def optimize_db() -> None:
     parser = argparse.ArgumentParser(
         prog="library optimize",
-        usage="""library optimize DATABASE [--force]
-
-    Optimize library databases
-
-    The force flag is usually unnecessary and it can take much longer
-""",
+        usage=usage.optimize
     )
     parser.add_argument("--force", "-f", action="store_true")
     parser.add_argument("--verbose", "-v", action="count", default=0)

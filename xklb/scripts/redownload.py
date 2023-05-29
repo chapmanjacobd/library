@@ -5,50 +5,14 @@ from typing import List
 
 from tabulate import tabulate
 
-from xklb import consts, db, utils
+from xklb import consts, db, usage, utils
 from xklb.utils import log
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="library redownload",
-        usage="""library redownload DATABASE
-
-    If you have previously downloaded YouTube or other online media, but your
-    hard drive failed or you accidentally deleted something, and if that media
-    is still accessible from the same URL, this script can help to redownload
-    everything that was scanned-as-deleted between two timestamps.
-
-    List deletions:
-
-        $ library redownload news.db
-        Deletions:
-        ╒═════════════════════╤═════════╕
-        │ time_deleted        │   count │
-        ╞═════════════════════╪═════════╡
-        │ 2023-01-26T00:31:26 │     120 │
-        ├─────────────────────┼─────────┤
-        │ 2023-01-26T19:54:42 │      18 │
-        ├─────────────────────┼─────────┤
-        │ 2023-01-26T20:45:24 │      26 │
-        ╘═════════════════════╧═════════╛
-        Showing most recent 3 deletions. Use -l to change this limit
-
-    Mark videos as candidates for download via specific deletion timestamp:
-
-        $ library redownload city.db 2023-01-26T19:54:42
-        ╒══════════╤════════════════╤═════════════════╤═══════════════════╤═════════╤══════════╤═══════╤══════════════════╤════════════════════════════════════════════════════════════════════════════════════════════════════════╕
-        │ size     │ time_created   │ time_modified   │ time_downloaded   │   width │   height │   fps │ duration         │ path                                                                                                   │
-        ╞══════════╪════════════════╪═════════════════╪═══════════════════╪═════════╪══════════╪═══════╪══════════════════╪════════════════════════════════════════════════════════════════════════════════════════════════════════╡
-        │ 697.7 MB │ Apr 13 2022    │ Mar 11 2022     │ Oct 19            │    1920 │     1080 │    30 │ 21.22 minutes    │ /mnt/d/76_CityVideos/PRAIA DE BARRA DE JANGADA CANDEIAS JABOATÃO                                       │
-        │          │                │                 │                   │         │          │       │                  │ RECIFE PE BRASIL AVENIDA BERNARDO VIEIRA DE MELO-4Lx3hheMPmg.mp4
-        ...
-
-    ...or between two timestamps inclusive:
-
-        $ library redownload city.db 2023-01-26T19:54:42 2023-01-26T20:45:24
-
-    """,
+        usage=usage.redownload,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument("--download-archive", default="~/.local/share/yt_archive.txt")

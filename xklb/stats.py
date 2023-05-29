@@ -4,7 +4,7 @@ from typing import Tuple
 
 from tabulate import tabulate
 
-from xklb import consts, db, dl_extract, play_actions, tube_backend, utils
+from xklb import consts, db, dl_extract, play_actions, tube_backend, usage, utils
 from xklb.player import delete_playlists
 from xklb.utils import human_time, log, pipe_print
 
@@ -122,37 +122,7 @@ def printer(args, query, bindings) -> None:
 def playlists() -> None:
     args = parse_args(
         prog="library playlists",
-        usage="""library playlists [database] [--aggregate] [--fields] [--json] [--delete ...]
-
-    List of Playlists
-
-        library playlists
-        ╒══════════╤════════════════════╤══════════════════════════════════════════════════════════════════════════╕
-        │ ie_key   │ title              │ path                                                                     │
-        ╞══════════╪════════════════════╪══════════════════════════════════════════════════════════════════════════╡
-        │ Youtube  │ Highlights of Life │ https://www.youtube.com/playlist?list=PL7gXS9DcOm5-O0Fc1z79M72BsrHByda3n │
-        ╘══════════╧════════════════════╧══════════════════════════════════════════════════════════════════════════╛
-
-    Aggregate Report of Videos in each Playlist
-
-        library playlists -p a
-        ╒══════════╤════════════════════╤══════════════════════════════════════════════════════════════════════════╤═══════════════╤═════════╕
-        │ ie_key   │ title              │ path                                                                     │ duration      │   count │
-        ╞══════════╪════════════════════╪══════════════════════════════════════════════════════════════════════════╪═══════════════╪═════════╡
-        │ Youtube  │ Highlights of Life │ https://www.youtube.com/playlist?list=PL7gXS9DcOm5-O0Fc1z79M72BsrHByda3n │ 53.28 minutes │      15 │
-        ╘══════════╧════════════════════╧══════════════════════════════════════════════════════════════════════════╧═══════════════╧═════════╛
-        1 playlist
-        Total duration: 53.28 minutes
-
-    Print only playlist urls:
-        Useful for piping to other utilities like xargs or GNU Parallel.
-        library playlists -p f
-        https://www.youtube.com/playlist?list=PL7gXS9DcOm5-O0Fc1z79M72BsrHByda3n
-
-    Remove a playlist/channel and all linked videos:
-        library playlists --remove https://vimeo.com/canal180
-
-    """,
+        usage=usage.playlists
     )
 
     if args.delete:
@@ -200,46 +170,7 @@ def playlists() -> None:
 def dlstatus() -> None:
     args = parse_args(
         prog="library dlstatus",
-        usage="""library dlstatus [database]
-
-    Print download queue groups
-
-        library dlstatus video.db
-        ╒═════════════════════╤═════════════╤══════════════════╤════════════════════╤══════════╕
-        │ category            │ ie_key      │ duration         │   never_downloaded │   errors │
-        ╞═════════════════════╪═════════════╪══════════════════╪════════════════════╪══════════╡
-        │ 71_Mealtime_Videos  │ Youtube     │ 3 hours and 2.07 │                 76 │        0 │
-        │                     │             │ minutes          │                    │          │
-        ├─────────────────────┼─────────────┼──────────────────┼────────────────────┼──────────┤
-        │ 75_MovieQueue       │ Dailymotion │                  │                 53 │        0 │
-        ├─────────────────────┼─────────────┼──────────────────┼────────────────────┼──────────┤
-        │ 75_MovieQueue       │ Youtube     │ 1 day, 18 hours  │                 30 │        0 │
-        │                     │             │ and 6 minutes    │                    │          │
-        ├─────────────────────┼─────────────┼──────────────────┼────────────────────┼──────────┤
-        │ Dailymotion         │ Dailymotion │                  │                186 │      198 │
-        ├─────────────────────┼─────────────┼──────────────────┼────────────────────┼──────────┤
-        │ Uncategorized       │ Youtube     │ 1 hour and 52.18 │                  1 │        0 │
-        │                     │             │ minutes          │                    │          │
-        ├─────────────────────┼─────────────┼──────────────────┼────────────────────┼──────────┤
-        │ Vimeo               │ Vimeo       │                  │                253 │       49 │
-        ├─────────────────────┼─────────────┼──────────────────┼────────────────────┼──────────┤
-        │ Youtube             │ Youtube     │ 2 years, 4       │              51676 │      197 │
-        │                     │             │ months, 15 days  │                    │          │
-        │                     │             │ and 6 hours      │                    │          │
-        ├─────────────────────┼─────────────┼──────────────────┼────────────────────┼──────────┤
-        │ Playlist-less media │ Youtube     │ 4 months, 23     │               2686 │        7 │
-        │                     │             │ days, 19 hours   │                    │          │
-        │                     │             │ and 33 minutes   │                    │          │
-        ╘═════════════════════╧═════════════╧══════════════════╧════════════════════╧══════════╛
-
-    Simulate --safe flag
-
-        library dlstatus video.db --safe
-
-    Show only download attempts with errors
-
-        library dlstatus video.db --errors
-    """,
+        usage=usage.dlstatus
     )
     play_actions.parse_args_sort(args)
 

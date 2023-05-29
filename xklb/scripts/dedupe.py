@@ -6,7 +6,7 @@ from typing import List
 import humanize
 from tabulate import tabulate
 
-from xklb import db, player, utils
+from xklb import db, player, usage, utils
 from xklb.consts import DBType
 from xklb.utils import log
 
@@ -14,10 +14,7 @@ from xklb.utils import log
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="library dedupe",
-        usage="""library [--audio | --id | --title | --filesystem] [--only-soft-delete] [--limit LIMIT] DATABASE
-
-    Dedupe your files
-""",
+        usage=usage.dedupe
     )
 
     profile = parser.add_mutually_exclusive_group()
