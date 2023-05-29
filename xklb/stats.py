@@ -120,10 +120,7 @@ def printer(args, query, bindings) -> None:
 
 
 def playlists() -> None:
-    args = parse_args(
-        prog="library playlists",
-        usage=usage.playlists
-    )
+    args = parse_args(prog="library playlists", usage=usage.playlists)
 
     if args.delete:
         return delete_playlists(args, args.delete)
@@ -168,10 +165,7 @@ def playlists() -> None:
 
 
 def dlstatus() -> None:
-    args = parse_args(
-        prog="library dlstatus",
-        usage=usage.dlstatus
-    )
+    args = parse_args(prog="library dlstatus", usage=usage.dlstatus)
     play_actions.parse_args_sort(args)
 
     if args.delete:

@@ -36,7 +36,7 @@ class TestTube(unittest.TestCase):
             subtitle_languages=None,
             subs=False,
             auto_subs=False,
-        )
+        )  # remember to add args to dl_extract if they need to be added here
         args.db = connect(args)
         yt(args, {"path": PLAYLIST_VIDEO_URL, "dl_config": "{}", "category": "Self"})
 

@@ -12,9 +12,7 @@ from xklb.utils import cmd, flatten, log
 
 def parse_args(action) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        prog="library tabs",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        usage=usage.tabs
+        prog="library tabs", formatter_class=argparse.ArgumentDefaultsHelpFormatter, usage=usage.tabs
     )
 
     parser.add_argument("--sort", "-u", nargs="+")

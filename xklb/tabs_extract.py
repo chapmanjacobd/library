@@ -8,10 +8,7 @@ from xklb.utils import ArgparseEnum, log, sanitize_url
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        prog="library tabsadd",
-        usage=usage.tabsadd
-    )
+    parser = argparse.ArgumentParser(prog="library tabsadd", usage=usage.tabsadd)
     parser.add_argument(
         "--frequency",
         "--freqency",

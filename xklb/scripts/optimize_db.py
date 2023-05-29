@@ -5,10 +5,7 @@ from xklb.utils import log
 
 
 def optimize_db() -> None:
-    parser = argparse.ArgumentParser(
-        prog="library optimize",
-        usage=usage.optimize
-    )
+    parser = argparse.ArgumentParser(prog="library optimize", usage=usage.optimize)
     parser.add_argument("--force", "-f", action="store_true")
     parser.add_argument("--verbose", "-v", action="count", default=0)
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)

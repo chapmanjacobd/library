@@ -2,56 +2,52 @@ from xklb import lb, usage
 
 usage_details = []
 for title, subcommand in [
-    ('Add local media', 'fsadd'),
-    ('Add online media', 'tubeadd'),
-    ('Add reddit media', 'redditadd'),
-    ('Create / Update a Hacker News database', 'hnadd'),
-    ('Add tabs', 'tabsadd'),
-
-    ('Watch / Listen', 'watch'),
-    ('Search captions / subtitles', 'search'),
-    ('Open tabs', 'tabs'),
-
-    ('Download media', 'download'),
-    ('Show Download Status', 'dlstatus'),
-
-    ('Update local media', 'fsupdate'),
-    ('Update online media', 'tubeupdate'),
-    ('Update reddit media', 'redditupdate'),
-    ('Convert pushshift data to reddit.db format', 'pushshift'),
-
-    ('List playlists', 'playlists'),
-    ('Blocklist a channel', 'block'),
-
-    ('Show large folders', 'bigdirs'),
-    ('Copy play history', 'copy-play-counts'),
-    ('Dedupe music', 'dedupe'),
-    ('Re-optimize database', 'optimize'),
-    ('Re-download media', 'redownload'),
-    ('Merge online and local data', 'merge-online-local'),
-    ('Convert selftext links to media table', 'reddit-selftext'),
-
-    ('Merge SQLITE databases', 'merge-dbs'),
-    ('Sort lines by similarity', 'cluster-sort'),
-    ('Move files preserving parent folder hierarchy', 'relmv'),
-    ('Automatic tab loader', 'surf'),
-    ('Clean filenames', 'christen'),
+    ("Add local media", "fsadd"),
+    ("Add online media", "tubeadd"),
+    ("Add reddit media", "redditadd"),
+    ("Create / Update a Hacker News database", "hnadd"),
+    ("Add tabs", "tabsadd"),
+    ("Watch / Listen", "watch"),
+    ("Search captions / subtitles", "search"),
+    ("Open tabs", "tabs"),
+    ("Download media", "download"),
+    ("Show Download Status", "dlstatus"),
+    ("Update local media", "fsupdate"),
+    ("Update online media", "tubeupdate"),
+    ("Update reddit media", "redditupdate"),
+    ("Convert pushshift data to reddit.db format", "pushshift"),
+    ("List playlists", "playlists"),
+    ("Blocklist a channel", "block"),
+    ("Show large folders", "bigdirs"),
+    ("Copy play history", "copy-play-counts"),
+    ("Dedupe music", "dedupe"),
+    ("Re-optimize database", "optimize"),
+    ("Re-download media", "redownload"),
+    ("Merge online and local data", "merge-online-local"),
+    ("Convert selftext links to media table", "reddit-selftext"),
+    ("Merge SQLITE databases", "merge-dbs"),
+    ("Sort lines by similarity", "cluster-sort"),
+    ("Move files preserving parent folder hierarchy", "relmv"),
+    ("Automatic tab loader", "surf"),
+    ("Clean filenames", "christen"),
     # scatter usage is already in readme so intentionally skipped here
 ]:
     if subcommand not in title.lower():
-        title += f' ({subcommand})'
-    usage_details.append(f'''
+        title += f" ({subcommand})"
+    usage_details.append(
+        f"""
 <details><summary>{title}</summary>
 
     $ library {subcommand} -h
     usage: {getattr(usage, subcommand.replace('-','_'))}
 
 </details>
-''')
+"""
+    )
 
-expand_all_js = '''```js
+expand_all_js = """```js
 (() => { const readmeDiv = document.getElementById("readme"); const detailsElements = readmeDiv.getElementsByTagName("details"); for (let i = 0; i < detailsElements.length; i++) { detailsElements[i].setAttribute("open", "true"); } })();
-```'''
+```"""
 
 print(
     rf"""# xk media library

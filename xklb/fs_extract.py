@@ -385,10 +385,7 @@ def fs_add(args=None) -> None:
     if args:
         sys.argv = ["lb", *args]
 
-    args = parse_args(
-        SC.fsadd,
-        usage.fsadd
-    )
+    args = parse_args(SC.fsadd, usage.fsadd)
 
     extractor(args, args.paths)
 
@@ -397,10 +394,7 @@ def fs_update(args=None) -> None:
     if args:
         sys.argv = ["lb", *args]
 
-    args = parse_args(
-        SC.fsupdate,
-        usage.fsupdate
-    )
+    args = parse_args(SC.fsupdate, usage.fsupdate)
 
     playlists = list(
         args.db.query(

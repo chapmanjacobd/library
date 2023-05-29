@@ -54,8 +54,13 @@ def parse_args(action, usage):
     parser.add_argument("--ignore-errors", "--ignoreerrors", "-i", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--safe", "-safe", action="store_true", help="Skip generic URLs")
 
+    parser.add_argument("--subs", action="store_true")
+    parser.add_argument("--auto-subs", "--autosubs", action="store_true")
+    parser.add_argument("--subtitle-languages", "--subtitle-language", "--sl", action="extend", nargs="+")
+
     parser.add_argument("--prefix", default=os.getcwd(), help=argparse.SUPPRESS)
     parser.add_argument("--ext", default="DEFAULT")
+
     parser.add_argument("--print", "-p", default=False, const="p", nargs="?", help=argparse.SUPPRESS)
     parser.add_argument("--cols", "-cols", "-col", nargs="*", help=argparse.SUPPRESS)
     parser.add_argument("--sort", "-u", nargs="+", default=["random"], help=argparse.SUPPRESS)
@@ -64,6 +69,7 @@ def parse_args(action, usage):
     parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--duration", "-d", action="append", help=argparse.SUPPRESS)
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", help=argparse.SUPPRESS)
+
     parser.add_argument("--small", action="store_true", help="Prefer 480p-like")
     parser.add_argument(
         "--retry-delay",
@@ -213,10 +219,7 @@ def dl_download(args=None) -> None:
     if args:
         sys.argv = ["lb", *args]
 
-    args = parse_args(
-        SC.download,
-        usage=usage.download
-    )
+    args = parse_args(SC.download, usage=usage.download)
     m_columns = args.db["media"].columns_dict
 
     if "media" in args.db.table_names() and "webpath" in m_columns:
@@ -260,10 +263,7 @@ def dl_block(args=None) -> None:
     if args:
         sys.argv = ["lb", *args]
 
-    args = parse_args(
-        SC.block,
-        usage=usage.block
-    )
+    args = parse_args(SC.block, usage=usage.block)
 
     if not any([args.playlists, args.all_deleted_playlists]):
         raise RuntimeError("Specific URLs or --all-deleted-playlists must be supplied")

@@ -7,10 +7,7 @@ from xklb.utils import log
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        prog="library christen",
-        usage=usage.christen
-    )
+    parser = argparse.ArgumentParser(prog="library christen", usage=usage.christen)
     parser.add_argument("paths", nargs="*")
     parser.add_argument("--dot-space", action="store_true")
     parser.add_argument("--overwrite", "-f", action="store_true")

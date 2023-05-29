@@ -378,7 +378,8 @@ def play(action) -> str:
         library {action} -m 4 --hstack          # use hstack style
 """
 
-watch = play('watch')
+
+watch = play("watch")
 
 
 redditadd = """library redditadd [--lookback N_DAYS] [--praw-site bot1] [database] paths ...
@@ -828,7 +829,7 @@ surf = """library surf [--count COUNT] [--target-hosts TARGET_HOSTS] < stdin
     If you prefer GUI, check out https://unli.xyz/tabsender/
 """
 
-pushshift="""library pushshift [database] < stdin
+pushshift = """library pushshift [database] < stdin
 
     Download data (about 600GB jsonl.zst; 6TB uncompressed)
 
@@ -846,7 +847,7 @@ pushshift="""library pushshift [database] < stdin
         end | parallel -j5
 """
 
-reddit_selftext="""library reddit-selftext DATABASE
+reddit_selftext = """library reddit-selftext DATABASE
 
     Extract URLs from reddit selftext from the reddit_posts table to the media table
 """
