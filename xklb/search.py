@@ -10,10 +10,7 @@ from xklb.utils import log, pipe_print
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        prog="library search",
-        usage=usage.search
-    )
+    parser = argparse.ArgumentParser(prog="library search", usage=usage.search)
     parser.add_argument("--open", "--play", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--duration", "-d", action="append", help=argparse.SUPPRESS)
     parser.add_argument("--overlap", type=int, default=8, help=argparse.SUPPRESS)

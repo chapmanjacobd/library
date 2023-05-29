@@ -12,8 +12,6 @@ from xklb.player import mark_media_deleted, override_sort
 from xklb.utils import cmd_interactive, log, random_filename, safe_unpack
 
 
-
-
 def parse_args_sort(args) -> None:
     if args.sort:
         args.sort = " ".join(args.sort)

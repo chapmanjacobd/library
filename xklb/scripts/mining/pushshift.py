@@ -42,10 +42,7 @@ def pushshift_extract(args=None) -> None:
     if args:
         sys.argv = ["lb", *args]
 
-    args = parse_args(
-        "pushshift",
-        usage=usage.pushshift
-    )
+    args = parse_args("pushshift", usage=usage.pushshift)
 
     args.db.enable_wal()
 

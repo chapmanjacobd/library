@@ -8,10 +8,7 @@ from xklb.utils import log
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        prog="library relmv",
-        usage=usage.relmv
-    )
+    parser = argparse.ArgumentParser(prog="library relmv", usage=usage.relmv)
     parser.add_argument("--verbose", "-v", action="count", default=0)
     parser.add_argument("--test", "--dry-run", action="store_true")
 

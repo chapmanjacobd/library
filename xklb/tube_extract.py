@@ -30,7 +30,7 @@ def parse_args(action, usage) -> argparse.Namespace:
     parser.add_argument("--playlist-db", action="store_true", help="Fetch metadata for paths in a table")
     parser.add_argument("--subs", action="store_true")
     parser.add_argument("--auto-subs", "--autosubs", action="store_true")
-    parser.add_argument("--subtitle-languages", "--subtitle-language", "--slang", "--lang", action="extend", nargs="+")
+    parser.add_argument("--subtitle-languages", "--subtitle-language", "--sl", action="extend", nargs="+")
     parser.add_argument("--extra-media-data", default={})
     parser.add_argument("--extra-playlist-data", default={})
     parser.add_argument("--ignore-errors", "--ignoreerrors", "-i", "-f", action="store_true", help=argparse.SUPPRESS)
@@ -70,10 +70,7 @@ def tube_add(args=None) -> None:
     if args:
         sys.argv = ["tubeadd", *args]
 
-    args = parse_args(
-        SC.tubeadd,
-        usage=usage.tubeadd
-    )
+    args = parse_args(SC.tubeadd, usage=usage.tubeadd)
     if args.playlist_files:
         args.playlists = list(utils.flatten([Path(p).read_text().splitlines() for p in args.playlists]))
     elif args.playlist_db:
@@ -120,9 +117,6 @@ def tube_update(args=None) -> None:
     if args:
         sys.argv = ["tubeupdate", *args]
 
-    args = parse_args(
-        SC.tubeupdate,
-        usage=usage.tubeupdate
-    )
+    args = parse_args(SC.tubeupdate, usage=usage.tubeupdate)
     playlists = db.get_playlists(args, constrain=True)
     tube_backend.update_playlists(args, playlists)

@@ -5,10 +5,7 @@ from xklb.utils import log
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        prog="library cluster-sort",
-        usage=usage.cluster_sort
-    )
+    parser = argparse.ArgumentParser(prog="library cluster-sort", usage=usage.cluster_sort)
     parser.add_argument("--model", "-m", help="Use a specific spaCy model")
     parser.add_argument("--clusters", "--n-clusters", "-c", type=int, help="Number of KMeans clusters")
     parser.add_argument("--groups", "-g", action="store_true", help="Show groups")

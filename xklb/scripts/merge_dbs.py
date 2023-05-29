@@ -6,10 +6,7 @@ from xklb.utils import log
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        prog="library merge-dbs",
-        usage=usage.merge_dbs
-    )
+    parser = argparse.ArgumentParser(prog="library merge-dbs", usage=usage.merge_dbs)
     parser.add_argument("database")
     parser.add_argument("source_dbs", nargs="+")
     parser.add_argument("--pk")

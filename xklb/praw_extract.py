@@ -337,14 +337,12 @@ def process_subreddits(args, subreddits) -> None:
             log.error("[%s] skipping subreddit: %s", subreddit["name"], e)
             continue
 
+
 def reddit_add(args=None) -> None:
     if args:
         sys.argv = ["lb", *args]
 
-    args = parse_args(
-        "redditadd",
-        usage=usage.redditadd
-    )
+    args = parse_args("redditadd", usage=usage.redditadd)
 
     subreddits = []
     redditors = []
@@ -400,10 +398,7 @@ def reddit_update(args=None) -> None:
     if args:
         sys.argv = ["lb", *args]
 
-    args = parse_args(
-        "redditupdate",
-        usage=usage.redditupdate
-    )
+    args = parse_args("redditupdate", usage=usage.redditupdate)
     playlists = db.get_playlists(
         args,
         "ie_key, path, id, config",

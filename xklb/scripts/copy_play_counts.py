@@ -6,10 +6,7 @@ from xklb.utils import log
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        prog="library copy-play-counts",
-        usage=usage.copy_play_counts
-    )
+    parser = argparse.ArgumentParser(prog="library copy-play-counts", usage=usage.copy_play_counts)
     parser.add_argument("database")
     parser.add_argument("source_dbs", nargs="+")
     parser.add_argument("--source-prefix", default="")

@@ -9,6 +9,7 @@ from tabulate import tabulate
 from xklb import consts, db, usage, utils
 from xklb.utils import log
 
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="library scatter",
