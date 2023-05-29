@@ -572,24 +572,28 @@ Explore `library` databases in your browser
 <details><summary>Add online media (tubeadd)</summary>
 
     $ library tubeadd -h
-    usage: library tubeadd [--audio | --video] -c CATEGORY [database] playlists ...
+    usage: library tubeadd [--audio | --video] [-c CATEGORY] [database] playlists ...
 
     Create a dl database / add links to an existing database
 
-        library tubeadd -c Educational dl.db https://www.youdl.com/c/BranchEducation/videos
+        library tubeadd dl.db https://www.youdl.com/c/BranchEducation/videos
 
-    Add metadata for links in a database table
+    Add links from a line-delimited file
+
+        library tubeadd reddit.db --playlist-file ./my_yt_subscriptions.txt
+
+    Add metadata to links already in a database table
 
         library tubeadd reddit.db --playlist-db media
 
-    If you include more than one URL, you must specify the database
+    You can also include a category for file organization
 
-        library tubeadd 71_Mealtime_Videos dl.db (cat ~/.jobs/todo/71_Mealtime_Videos)
+        library tubeadd -c Mealtime dl.db (cat ~/.jobs/todo/71_Mealtime_Videos)
 
     Files will be saved to <lb download prefix>/<lb tubeadd category>/
 
         For example:
-        library tubeadd Cool ...
+        library tubeadd -c Cool ...
         library download D:\'My Documents'\ ...
         Media will be downloaded to 'D:\My Documents\Cool\'
 
