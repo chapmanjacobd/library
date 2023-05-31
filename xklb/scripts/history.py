@@ -71,6 +71,9 @@ def print_recent(tbl, time_column=None):
         utils.col_naturaldate(tbl, time_column)
     tbl = [{"title_path": f"{d['title']}\n{d['path']}" if d["title"] is not None else d["path"], **d} for d in tbl]
     tbl = [{k: v for k, v in d.items() if k not in ("title", "path")} for d in tbl]
+
+    tbl = utils.col_resize(tbl, "title_path", 40)
+    tbl = utils.col_resize(tbl, "duration", 5)
     tbl = utils.list_dict_filter_bool(tbl)
     print(tabulate(tbl, tablefmt="fancy_grid", headers="keys", showindex=False))
 
@@ -96,6 +99,8 @@ def history() -> None:
 
     if args.facet.startswith(("all", "watching")):
         print("Partially watched:")
+        tbl = player.historical_usage(args, args.frequency, f"time_played", "and coalesce(play_count, 0)=0")
+        print_history(tbl)
         query = f"""SELECT
                 path
                 , title
@@ -112,11 +117,11 @@ def history() -> None:
         """
         tbl = list(args.db.query(query))
         print_recent(tbl, "time_played")
-        tbl = player.historical_usage(args, args.frequency, f"time_played", "and coalesce(play_count, 0)=0")
-        print_history(tbl)
 
     elif args.facet.startswith(("all", "watched")):
         print("Finished watching:")
+        tbl = player.historical_usage(args, args.frequency, f"time_played", "and coalesce(play_count, 0)>0")
+        print_history(tbl)
         query = f"""SELECT
                 path
                 , title
@@ -130,8 +135,6 @@ def history() -> None:
         """
         tbl = list(args.db.query(query))
         print_recent(tbl, "time_played")
-        tbl = player.historical_usage(args, args.frequency, f"time_played", "and coalesce(play_count, 0)>0")
-        print_history(tbl)
 
     else:
         print(f"{args.facet.title()} media:")
