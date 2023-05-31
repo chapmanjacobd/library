@@ -7,10 +7,10 @@ from xklb.utils import log
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library merge-dbs", usage=usage.merge_dbs)
-    parser.add_argument("--pk", nargs="+", action=utils.ArgparseList, help="Comma separated primary keys")
-    parser.add_argument("--table", "-t", nargs="+", action=utils.ArgparseList, help="Limit to specific table(s)")
+    parser.add_argument("--pk", action=utils.ArgparseList, help="Comma separated primary keys")
     parser.add_argument("--upsert", action="store_true")
     parser.add_argument("--ignore", "--only-new-rows", action="store_true")
+    parser.add_argument("--only-tables", "-t", action=utils.ArgparseList, help="Comma separated specific table(s)")
     parser.add_argument("--only-target-columns", action="store_true")
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
     parser.add_argument("--verbose", "-v", action="count", default=0)
@@ -34,7 +34,7 @@ def merge_db(args, source_db) -> None:
 
     s_db = db.connect(argparse.Namespace(database=source_db, verbose=args.verbose))
     for table in [s for s in s_db.table_names() if "_fts" not in s and not s.startswith("sqlite_")]:
-        if args.table and table not in args.table:
+        if args.only_tables and table not in args.only_tables:
             log.info("[%s]: Skipping %s", source_db, table)
             continue
         else:

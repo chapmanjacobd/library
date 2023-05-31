@@ -811,19 +811,21 @@ def local_player(args, m) -> subprocess.CompletedProcess:
 
 def historical_usage(args, freq="monthly", time_column="time_played", where=""):
     if freq == "daily":
-        time_format = "%Y-%m-%d"
+        time_period = f"strftime('%Y-%m-%d', datetime({time_column}, 'unixepoch'))"
     elif freq == "weekly":
-        time_format = "%Y-%W"
+        time_period = f"strftime('%Y-%W', datetime({time_column}, 'unixepoch'))"
     elif freq == "monthly":
-        time_format = "%Y-%m"
+        time_period = f"strftime('%Y-%m', datetime({time_column}, 'unixepoch'))"
+    elif freq == "quarterly":
+        time_period = f"strftime('%Y', datetime({time_column}, 'unixepoch', '-3 months')) || '-Q' || ((strftime('%m', datetime({time_column}, 'unixepoch', '-3 months')) - 1) / 3 + 1)"
     elif freq == "yearly":
-        time_format = "%Y"
+        time_period = f"strftime('%Y', datetime({time_column}, 'unixepoch'))"
     else:
         raise ValueError(f"Invalid value for 'freq': {freq}")
 
     query = f"""
     SELECT
-        strftime('{time_format}', datetime({time_column}, 'unixepoch')) AS time_period
+        {time_period} AS time_period
         , SUM(duration) AS duration_sum
         , AVG(duration) AS duration_avg
         , SUM(size) AS size_sum

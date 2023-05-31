@@ -1,5 +1,8 @@
 - use rowid alias instead of string pks
 
+captions table
+playlists table
+
 sqlite-utils transform chickens.db chickens --pk id
 
 [author_id] INTEGER REFERENCES [authors]([id])
@@ -14,6 +17,8 @@ table.transform(pk=None)
 - move time_played, playhead, and other ephemeral data to its own table
 
 - move mpv specific playhead code to a script subcommand
+
+option to delete mpv watch_later file if media file does not exist
 
 - improve playlists subcommand
 

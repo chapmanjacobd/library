@@ -1,4 +1,4 @@
-import argparse, enum
+import argparse
 
 from tabulate import tabulate
 
@@ -17,12 +17,11 @@ def parse_args() -> argparse.Namespace:
         "--freqency",
         "-f",
         metavar="frequency",
-        choices=consts.frequency,
         default="monthly",
         const="monthly",
         type=str.lower,
         nargs="?",
-        help=f"One of: %(choices)s (default: %(default)s)",
+        help="One of: %(choices)s (default: %(default)s)",
     )
 
     parser.add_argument("--sort", "-u", nargs="+", help=argparse.SUPPRESS)
@@ -39,15 +38,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "facet",
         metavar="facet",
-        choices=["all", *consts.time_facets],
         type=str.lower,
         default="all",
         const="all",
         nargs="?",
-        help=f"One of: %(choices)s (default: %(default)s)",
+        help="One of: %(choices)s (default: %(default)s)",
     )
 
     args = parser.parse_args()
+
+    args.facet = utils.partial_startswith(args.facet, consts.time_facets)
+    args.frequency = utils.partial_startswith(args.frequency, consts.frequency)
+
     if args.db:
         args.database = args.db
     args.db = db.connect(args)
@@ -99,7 +101,7 @@ def history() -> None:
 
     if args.facet.startswith(("all", "watching")):
         print("Partially watched:")
-        tbl = player.historical_usage(args, args.frequency, f"time_played", "and coalesce(play_count, 0)=0")
+        tbl = player.historical_usage(args, args.frequency, "time_played", "and coalesce(play_count, 0)=0")
         print_history(tbl)
         query = f"""SELECT
                 path
@@ -120,7 +122,7 @@ def history() -> None:
 
     elif args.facet.startswith(("all", "watched")):
         print("Finished watching:")
-        tbl = player.historical_usage(args, args.frequency, f"time_played", "and coalesce(play_count, 0)>0")
+        tbl = player.historical_usage(args, args.frequency, "time_played", "and coalesce(play_count, 0)>0")
         print_history(tbl)
         query = f"""SELECT
                 path

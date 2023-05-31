@@ -423,7 +423,7 @@ search = """library search
     $ library search fts.db dashi --open
 """
 
-history = """library history [--frequency daily|weekly|{monthly}|quarterly|yearly] [--limit LIMIT] DATABASE [{all}|watching|watched|deleted|created|modified]
+history = """library history [--frequency daily weekly (monthly) yearly] [--limit LIMIT] DATABASE [(all) watching watched created modified deleted]
 
     Explore history through different facets
 
@@ -444,6 +444,68 @@ history = """library history [--frequency daily|weekly|{monthly}|quarterly|yearl
     ├───────────────┼─────────────────────────────────┼────────────────┼────────────┼────────────┤
     │ 2023-05       │ 5 days, 5 hours and 4 minutes   │ 45.75 minutes  │ 152.9 GB   │ 932.1 MB   │
     ╘═══════════════╧═════════════════════════════════╧════════════════╧════════════╧════════════╛
+
+    $ library history video.db created --frequency yearly
+    Created media:
+    ╒═══════════════╤════════════════════════════════════════════╤════════════════╤════════════╤════════════╕
+    │   time_period │ duration_sum                               │ duration_avg   │ size_sum   │ size_avg   │
+    ╞═══════════════╪════════════════════════════════════════════╪════════════════╪════════════╪════════════╡
+    │          2005 │ 9.78 minutes                               │ 1.95 minutes   │ 16.9 MB    │ 3.4 MB     │
+    ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
+    │          2006 │ 7 hours and 10.67 minutes                  │ 5 minutes      │ 891.1 MB   │ 10.4 MB    │
+    ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
+    │          2007 │ 1 day, 17 hours and 33 minutes             │ 8.55 minutes   │ 5.9 GB     │ 20.3 MB    │
+    ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
+    │          2008 │ 5 days, 16 hours and 10 minutes            │ 17.02 minutes  │ 20.7 GB    │ 43.1 MB    │
+    ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
+    │          2009 │ 24 days, 2 hours and 56 minutes            │ 33.68 minutes  │ 108.4 GB   │ 105.2 MB   │
+    ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
+    │          2010 │ 1 month, 1 days and 1 minutes              │ 35.52 minutes  │ 124.2 GB   │ 95.7 MB    │
+    ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
+    │          2011 │ 2 months, 14 days, 1 hour and 22 minutes   │ 55.93 minutes  │ 222.0 GB   │ 114.9 MB   │
+    ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
+    │          2012 │ 2 months, 22 days, 19 hours and 17 minutes │ 45.50 minutes  │ 343.6 GB   │ 129.6 MB   │
+    ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
+    │          2013 │ 3 months, 11 days, 21 hours and 48 minutes │ 42.72 minutes  │ 461.1 GB   │ 131.7 MB   │
+    ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
+    │          2014 │ 3 months, 7 days, 10 hours and 22 minutes  │ 46.80 minutes  │ 529.6 GB   │ 173.1 MB   │
+    ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
+    │          2015 │ 2 months, 21 days, 23 hours and 36 minutes │ 36.73 minutes  │ 452.7 GB   │ 139.2 MB   │
+    ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
+    │          2016 │ 3 months, 26 days, 7 hours and 59 minutes  │ 39.48 minutes  │ 603.4 GB   │ 139.9 MB   │
+    ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
+    │          2017 │ 3 months, 10 days, 2 hours and 19 minutes  │ 31.78 minutes  │ 543.5 GB   │ 117.5 MB   │
+    ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
+    │          2018 │ 3 months, 21 days, 20 hours and 56 minutes │ 30.98 minutes  │ 607.5 GB   │ 114.8 MB   │
+    ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
+    │          2019 │ 5 months, 23 days, 2 hours and 30 minutes  │ 35.77 minutes  │ 919.7 GB   │ 129.7 MB   │
+    ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
+    │          2020 │ 7 months, 16 days, 10 hours and 58 minutes │ 26.15 minutes  │ 1.2 TB     │ 93.9 MB    │
+    ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
+    │          2021 │ 7 months, 21 days, 9 hours and 40 minutes  │ 39.93 minutes  │ 1.3 TB     │ 149.9 MB   │
+    ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
+    │          2022 │ 17 years, 3 months, 0 days and 21 hours    │ 19.62 minutes  │ 35.8 TB    │ 77.5 MB    │
+    ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
+    │          2023 │ 15 years, 3 months, 24 days and 1 hours    │ 17.57 minutes  │ 27.6 TB    │ 60.2 MB    │
+    ╘═══════════════╧════════════════════════════════════════════╧════════════════╧════════════╧════════════╛
+    ╒════════════════════════════════════════════════════════════════════════════════════════════╤═══════════════╤════════════════╕
+    │ title_path                                                                                 │ duration      │ time_created   │
+    ╞════════════════════════════════════════════════════════════════════════════════════════════╪═══════════════╪════════════════╡
+    │ [Eng Sub] TVB Drama | The King Of Snooker 桌球天王 07/20 | Adam Cheng | 2009 #Chinesedrama │ 43.85 minutes │ yesterday      │
+    │ https://www.youtube.com/watch?v=zntYD1yLrG8                                                │               │                │
+    ├────────────────────────────────────────────────────────────────────────────────────────────┼───────────────┼────────────────┤
+    │ [Eng Sub] TVB Drama | The King Of Snooker 桌球天王 08/20 | Adam Cheng | 2009 #Chinesedrama │ 43.63 minutes │ yesterday      │
+    │ https://www.youtube.com/watch?v=zQnSfoWrh-4                                                │               │                │
+    ├────────────────────────────────────────────────────────────────────────────────────────────┼───────────────┼────────────────┤
+    │ [Eng Sub] TVB Drama | The King Of Snooker 桌球天王 06/20 | Adam Cheng | 2009 #Chinesedrama │ 43.60 minutes │ yesterday      │
+    │ https://www.youtube.com/watch?v=Qiax1kFyGWU                                                │               │                │
+    ├────────────────────────────────────────────────────────────────────────────────────────────┼───────────────┼────────────────┤
+    │ [Eng Sub] TVB Drama | The King Of Snooker 桌球天王 04/20 | Adam Cheng | 2009 #Chinesedrama │ 43.45 minutes │ yesterday      │
+    │ https://www.youtube.com/watch?v=NT9C3PRrlTA                                                │               │                │
+    ├────────────────────────────────────────────────────────────────────────────────────────────┼───────────────┼────────────────┤
+    │ [Eng Sub] TVB Drama | The King Of Snooker 桌球天王 02/20 | Adam Cheng | 2009 #Chinesedrama │ 43.63 minutes │ yesterday      │
+    │ https://www.youtube.com/watch?v=MjpCiTawlTE                                                │               │                │
+    ╘════════════════════════════════════════════════════════════════════════════════════════════╧═══════════════╧════════════════╛
 
     $ library history video.db deleted
     Deleted media:
@@ -723,12 +785,29 @@ dedupe = """library [--audio | --id | --title | --filesystem] [--only-soft-delet
     Dedupe your files
 """
 
-merge_dbs = """library merge-dbs DEST_DB SOURCE_DB ... [--upsert pk1[,pk2]]
+merge_dbs = """library merge-dbs DEST_DB SOURCE_DB ... [--only-target-columns] [--only-new-rows] [--upsert] [--pk PK ...] [--table TABLE ...]
+
+    Merge-DBs will insert new rows from source dbs to target db, table by table. If primary key(s) are provided,
+    and there is an existing row with the same PK, the default action is to delete the existing row and insert the new row
+    replacing all existing fields.
+
+    Upsert mode will update matching PK rows such that if a source row has a NULL field and
+    the destination row has a value then the value will be preserved instead of changed to the source row's NULL value.
+
+    Ignore mode (--only-new-rows) will insert only rows which don't already exist in the destination db
+
+    Test first by using temp databases as the destination db.
+    Try out different modes / flags until you are satisfied with the behavior of the program
+
+        library merge-dbs --pk path (mktemp --suffix .db) tv.db movies.db
 
     Merge database data and tables
 
         library merge-dbs --upsert --pk path video.db tv.db movies.db
-        library merge-dbs --table media,playlists --pk path audio.db music.db podcasts.db
+        library merge-dbs --only-target-columns --only-new-rows --table media,playlists --pk path audio-fts.db audio.db
+
+        library merge-dbs --pk id --only-tables subreddits reddit/81_New_Music.db audio.db
+        library merge-dbs --only-new-rows --pk playlist_path,path --only-tables reddit_posts reddit/81_New_Music.db audio.db -v
 """
 
 merge_online_local = """library merge-online-local DATABASE

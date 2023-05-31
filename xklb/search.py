@@ -25,6 +25,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--cols", "-cols", "-col", nargs="*", help=argparse.SUPPRESS)
     parser.add_argument("--limit", "-L", "-l", help=argparse.SUPPRESS)
 
+    parser.add_argument("--print", "-p", default=False, const="p", nargs="?", help=argparse.SUPPRESS)
     parser.add_argument("--action", default="search", help=argparse.SUPPRESS)
     parser.add_argument("--folder", action="store_true", help="Experimental escape hatch to open folder")
     parser.add_argument(
@@ -142,7 +143,8 @@ def merge_captions(args, captions):
 
     merged_captions = []
     for path, group in groupby(
-        captions, key=lambda x: x["path"]
+        captions,
+        key=lambda x: x["path"],
     ):  # group by only does contiguous items with the same key
         group = list(group)
         merged_group = {"path": path, "time": group[0]["time"], "end": get_end(group[0]), "text": group[0]["text"]}  # type: ignore

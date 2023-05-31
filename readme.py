@@ -43,7 +43,7 @@ for title, subcommand in [
     usage: {getattr(usage, subcommand.replace('-','_'))}
 
 </details>
-"""
+""",
     )
 
 expand_all_js = """```js
