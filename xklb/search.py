@@ -74,7 +74,7 @@ def printer(args, captions) -> None:
     tbl = deepcopy(captions)
     utils.col_hhmmss(tbl, "time")
 
-    if "f" in args.print:
+    if args.print and "f" in args.print:
         pipe_print("\n".join([d["path"] for d in captions]))
         return
     elif args.json or consts.TERMINAL_SIZE.columns < 80:
