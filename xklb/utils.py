@@ -1,6 +1,7 @@
 import argparse, csv, enum, functools, hashlib, logging, math, multiprocessing, os, platform, random, re, shlex, shutil, signal, string, subprocess, sys, tempfile, textwrap, time
 from ast import literal_eval
 from collections.abc import Iterable
+from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 from pathlib import Path
@@ -720,8 +721,7 @@ class ArgparseList(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         items = getattr(namespace, self.dest, None) or []
 
-        for value in values or []:
-            items.extend(value.split(","))
+        items.extend(values.split(","))  # type: ignore
 
         setattr(namespace, self.dest, items)
 
@@ -1144,3 +1144,22 @@ def order_set(items):
         if item not in seen:
             yield item
             seen.add(item)
+
+
+def partial_startswith(original_string, startswith_match_list):
+    matching_strings = []
+
+    candidate = deepcopy(original_string)
+    while len(matching_strings) == 0 and len(candidate) > 0:
+        for s in startswith_match_list:
+            if s.startswith(candidate):
+                matching_strings.append(s)
+
+        if len(matching_strings) == 0:
+            candidate = candidate[:-1]  # remove the last char
+
+    if len(matching_strings) == 1:
+        return matching_strings[0]
+    else:
+        msg = f"{original_string} does not match any of {startswith_match_list}"
+        raise ValueError(msg)

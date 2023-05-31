@@ -370,3 +370,40 @@ class SecondsToHHMMSSTestCase(unittest.TestCase):
 
     def test_zero_seconds(self):
         assert utils.seconds_to_hhmmss(0) == "   00:00"
+
+
+class TestFindUnambiguousMatch(unittest.TestCase):
+    def test_matching_string(self):
+        my_string = "daily"
+        my_list = ["daily", "weekly", "monthly", "yearly"]
+
+        result = utils.partial_startswith(my_string, my_list)
+        assert result == "daily"
+
+    def test_no_matching_string(self):
+        my_string = "hour"
+        my_list = ["daily", "weekly", "monthly", "yearly"]
+
+        result = utils.partial_startswith(my_string, my_list)
+        assert result is None
+
+    def test_partial_matching_string(self):
+        my_string = "mon"
+        my_list = ["monthly", "daily", "weekly", "yearly"]
+
+        result = utils.partial_startswith(my_string, my_list)
+        assert result == "monthly"
+
+    def test_empty_list(self):
+        my_string = "day"
+        my_list = []
+
+        result = utils.partial_startswith(my_string, my_list)
+        assert result is None
+
+    def test_empty_string(self):
+        my_string = ""
+        my_list = ["daily", "weekly", "monthly", "yearly"]
+
+        result = utils.partial_startswith(my_string, my_list)
+        assert result is None

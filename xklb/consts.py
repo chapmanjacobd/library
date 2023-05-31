@@ -184,13 +184,7 @@ time_facets = [
     "modified",
 ]
 
-frequency = [
-    "daily",
-    "weekly",
-    "monthly",
-    "quarterly",
-    "yearly",
-]
+frequency = ["daily", "weekly", "monthly", "quarterly", "yearly"]
 
 
 TUBE_IGNORE_KEYS = (

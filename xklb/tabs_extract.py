@@ -13,12 +13,11 @@ def parse_args() -> argparse.Namespace:
         "--freqency",
         "-f",
         metavar="frequency",
-        choices=consts.frequency,
         default="monthly",
         const="monthly",
         type=str.lower,
         nargs="?",
-        help=f"One of: %(choices)s (default: %(default)s)",
+        help="One of: %(choices)s (default: %(default)s)",
     )
     parser.add_argument("--category", "-c", help=argparse.SUPPRESS)
     parser.add_argument("--no-sanitize", "-s", action="store_true", help="Don't sanitize some common URL parameters")
@@ -28,6 +27,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("database")
     parser.add_argument("paths", nargs="+")
     args = parser.parse_args()
+
+    args.frequency = utils.partial_startswith(args.frequency, consts.frequency)
 
     if args.db:
         args.database = args.db
