@@ -2,6 +2,8 @@ import argparse, os, time, unittest
 from pathlib import Path
 from unittest import mock
 
+import pytest
+
 from xklb import consts, utils
 
 
@@ -380,13 +382,6 @@ class TestFindUnambiguousMatch(unittest.TestCase):
         result = utils.partial_startswith(my_string, my_list)
         assert result == "daily"
 
-    def test_no_matching_string(self):
-        my_string = "hour"
-        my_list = ["daily", "weekly", "monthly", "yearly"]
-
-        result = utils.partial_startswith(my_string, my_list)
-        assert result is None
-
     def test_partial_matching_string(self):
         my_string = "mon"
         my_list = ["monthly", "daily", "weekly", "yearly"]
@@ -398,12 +393,19 @@ class TestFindUnambiguousMatch(unittest.TestCase):
         my_string = "day"
         my_list = []
 
-        result = utils.partial_startswith(my_string, my_list)
-        assert result is None
+        with pytest.raises(ValueError):
+            utils.partial_startswith(my_string, my_list)
 
     def test_empty_string(self):
         my_string = ""
         my_list = ["daily", "weekly", "monthly", "yearly"]
 
-        result = utils.partial_startswith(my_string, my_list)
-        assert result is None
+        with pytest.raises(ValueError):
+            utils.partial_startswith(my_string, my_list)
+
+    def test_no_matching_string(self):
+        my_string = "hour"
+        my_list = ["daily", "weekly", "monthly", "yearly"]
+
+        with pytest.raises(ValueError):
+            utils.partial_startswith(my_string, my_list)
