@@ -6,7 +6,6 @@ from typing import Dict, List, Tuple
 from xklb import db, usage, utils
 from xklb.consts import SC
 from xklb.player import generic_player, mark_media_watched, override_sort, printer
-from xklb.tabs_extract import Frequency
 from xklb.utils import cmd, flatten, log
 
 
@@ -136,11 +135,11 @@ def play(args, m: Dict) -> None:
 
 def frequency_filter(args, media: List[Dict]) -> List[dict]:
     mapper = {
-        Frequency.Daily.value: 1,
-        Frequency.Weekly.value: 7,
-        Frequency.Monthly.value: 30,
-        Frequency.Quarterly.value: 91,
-        Frequency.Yearly.value: 365,
+        "daily": 1,
+        "weekly": 7,
+        "monthly": 30,
+        "quarterly": 91,
+        "yearly": 365,
     }
     counts = args.db.execute("select frequency, count(*) from media group by 1").fetchall()
     filtered_media = []

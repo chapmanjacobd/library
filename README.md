@@ -143,7 +143,7 @@ Incremental surfing. 📈🏄 totally rad!
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v1.29.005)
+    xk media library subcommands (v1.29.006)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -187,9 +187,10 @@ Incremental surfing. 📈🏄 totally rad!
       lb pause                 Pause all playback
 
     statistics:
+      lb history               Show some playback statistics
       lb playlists             List added playlists
-      lb dlstatus              Show download status
-      lb usage                 Print mount usage
+      lb download-status       Show download status
+      lb disk-usage            Print mount usage
 
     browser tabs:
       lb tabsadd               Create a tabs database; Add URLs
@@ -1062,7 +1063,7 @@ Explore `library` databases in your browser
 
     Print download queue groups
 
-        library dlstatus audio.db
+        library download-status audio.db
         ╒═════════════════════╤════════════╤══════════════════╤════════════════════╤══════════╕
         │ category            │ ie_key     │ duration         │   never_downloaded │   errors │
         ╞═════════════════════╪════════════╪══════════════════╪════════════════════╪══════════╡
@@ -1077,14 +1078,14 @@ Explore `library` databases in your browser
 
 </details>
 
-<details><summary>Show Download Status (dlstatus)</summary>
+<details><summary>Show Download Status (download_status)</summary>
 
-    $ library dlstatus -h
-    usage: library dlstatus [database]
+    $ library download_status -h
+    usage: library download-status [database]
 
     Print download queue groups
 
-        library dlstatus video.db
+        library download-status video.db
         ╒═════════════════════╤═════════════╤══════════════════╤════════════════════╤══════════╕
         │ category            │ ie_key      │ duration         │   never_downloaded │   errors │
         ╞═════════════════════╪═════════════╪══════════════════╪════════════════════╪══════════╡
@@ -1114,11 +1115,11 @@ Explore `library` databases in your browser
 
     Simulate --safe flag
 
-        library dlstatus video.db --safe
+        library download-status video.db --safe
 
     Show only download attempts with errors
 
-        library dlstatus video.db --errors
+        library download-status video.db --errors
 
 
 </details>

@@ -1,4 +1,4 @@
-import enum, os, re, secrets, string, sys
+import os, re, secrets, string, sys
 from datetime import datetime, timezone
 from pathlib import Path
 from tempfile import gettempdir
@@ -97,21 +97,13 @@ class SC:
     search = "search"
 
 
-class Frequency(enum.Enum):
-    Daily = "daily"
-    Weekly = "weekly"
-    Monthly = "monthly"
-    Quarterly = "quarterly"
-    Yearly = "yearly"
-
-
-def reddit_frequency(frequency: Frequency) -> str:
+def reddit_frequency(frequency) -> str:
     mapper = {
-        Frequency.Daily: "day",
-        Frequency.Weekly: "week",
-        Frequency.Monthly: "month",
-        Frequency.Quarterly: "year",
-        Frequency.Yearly: "year",
+        "daily": "day",
+        "weekly": "week",
+        "monthly": "month",
+        "quarterly": "year",
+        "yearly": "year",
     }
 
     return mapper[frequency]
@@ -182,6 +174,23 @@ def get_text_files(path: Path, image_recognition=False, speech_recognition=False
         extensions.extend(SPEECH_RECOGNITION_EXTENSIONS)
 
     return get_files(path, extensions)
+
+
+time_facets = [
+    "watching",
+    "watched",
+    "deleted",
+    "created",
+    "modified",
+]
+
+frequency = [
+    "daily",
+    "weekly",
+    "monthly",
+    "quarterly",
+    "yearly",
+]
 
 
 TUBE_IGNORE_KEYS = (

@@ -13,6 +13,8 @@ from xklb.scripts.christen import christen
 from xklb.scripts.cluster_sort import cluster_sort
 from xklb.scripts.copy_play_counts import copy_play_counts
 from xklb.scripts.dedupe import dedupe
+from xklb.scripts.download_status import download_status
+from xklb.scripts.history import history
 from xklb.scripts.merge_dbs import merge_dbs
 from xklb.scripts.merge_online_local import merge_online_local
 from xklb.scripts.mining.extract_links import extract_links
@@ -21,12 +23,12 @@ from xklb.scripts.mining.pushshift import pushshift_extract
 from xklb.scripts.mining.reddit_selftext import reddit_selftext
 from xklb.scripts.move_list import move_list
 from xklb.scripts.optimize_db import optimize_db
+from xklb.scripts.playlists import playlists
 from xklb.scripts.redownload import redownload
 from xklb.scripts.relmv import relmv
 from xklb.scripts.scatter import scatter
 from xklb.scripts.streaming_tab_loader import streaming_tab_loader
 from xklb.search import search
-from xklb.stats import dlstatus, playlists
 from xklb.tabs_actions import tabs
 from xklb.tabs_extract import tabs_add
 from xklb.tube_extract import tube_add, tube_update
@@ -78,9 +80,10 @@ def usage() -> str:
       lb pause                 Pause all playback
 
     statistics:
+      lb history               Show some playback statistics
       lb playlists             List added playlists
-      lb dlstatus              Show download status
-      lb usage                 Print mount usage
+      lb download-status       Show download status
+      lb disk-usage            Print mount usage
 
     browser tabs:
       lb tabsadd               Create a tabs database; Add URLs
@@ -198,9 +201,11 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
 
     subp_playlist = add_parser(subparsers, "playlists", ["pl", "folders"])
     subp_playlist.set_defaults(func=playlists)
-    subp_dlstatus = add_parser(subparsers, "dlstatus", ["ds"])
-    subp_dlstatus.set_defaults(func=dlstatus)
-    subp_usage = add_parser(subparsers, "usage", ["du"])
+    subp_history = add_parser(subparsers, "history", ["hi", "log"])
+    subp_history.set_defaults(func=history)
+    subp_download_status = add_parser(subparsers, "download-status", ["ds", "dlstatus"])
+    subp_download_status.set_defaults(func=download_status)
+    subp_usage = add_parser(subparsers, "disk-usage", ["du", "usage", "mount-stats"])
     subp_usage.set_defaults(func=utils.mount_stats)
 
     subp_playback_now = add_parser(subparsers, "now")

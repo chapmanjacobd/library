@@ -25,7 +25,7 @@ download = r"""library download database [--prefix /mnt/d/] --video | --audio
 
     Print download queue groups
 
-        library dlstatus audio.db
+        library download-status audio.db
         ╒═════════════════════╤════════════╤══════════════════╤════════════════════╤══════════╕
         │ category            │ ie_key     │ duration         │   never_downloaded │   errors │
         ╞═════════════════════╪════════════╪══════════════════╪════════════════════╪══════════╡
@@ -423,6 +423,12 @@ search = """library search
     $ library search fts.db dashi --open
 """
 
+history = """library history [database]
+
+
+
+"""
+
 playlists = """library playlists [database] [--aggregate] [--fields] [--json] [--delete ...]
 
     List of Playlists
@@ -454,11 +460,12 @@ playlists = """library playlists [database] [--aggregate] [--fields] [--json] [-
         library playlists --remove https://vimeo.com/canal180
 
 """
-dlstatus = """library dlstatus [database]
+
+download_status = """library download-status [database]
 
     Print download queue groups
 
-        library dlstatus video.db
+        library download-status video.db
         ╒═════════════════════╤═════════════╤══════════════════╤════════════════════╤══════════╕
         │ category            │ ie_key      │ duration         │   never_downloaded │   errors │
         ╞═════════════════════╪═════════════╪══════════════════╪════════════════════╪══════════╡
@@ -488,11 +495,11 @@ dlstatus = """library dlstatus [database]
 
     Simulate --safe flag
 
-        library dlstatus video.db --safe
+        library download-status video.db --safe
 
     Show only download attempts with errors
 
-        library dlstatus video.db --errors
+        library download-status video.db --errors
 """
 
 tabs = """library tabs DATABASE
