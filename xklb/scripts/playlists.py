@@ -89,7 +89,7 @@ def printer(args, query, bindings) -> None:
     utils.col_duration(tbl, "duration")
     utils.col_duration(tbl, "avg_playlist_duration")
 
-    if "f" in args.print:
+    if args.print and "f" in args.print:
         utils.pipe_print("\n".join([d["path"] for d in media]))
         return
     elif args.json or consts.TERMINAL_SIZE.columns < 80:
