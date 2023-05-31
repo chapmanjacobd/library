@@ -1,9 +1,6 @@
-- wt history
-    print player.historical_usage
+- use rowid alias instead of string pks
 
-- sqlite-utils transform chickens.db chickens --pk id
-
-use rowid alias instead of string pks
+sqlite-utils transform chickens.db chickens --pk id
 
 [author_id] INTEGER REFERENCES [authors]([id])
 db["dogs"].add_column("species_id", fk="species", fk_col="ref")
@@ -13,6 +10,18 @@ table.transform(pk=None)
 - search: get title from media table
 
 - wt/lt/search join and use fts on both tables, threading ?
+
+- move time_played, playhead, and other ephemeral data to its own table
+
+- move mpv specific playhead code to a script subcommand
+
+- improve playlists subcommand
+
+- make generic printer. support --json or --csv for most subcommands
+
+SELECT \* FROM playlists p WHERE PATH NOT IN (SELECT DISTINCT playlist_path FROM media WHERE playlist_path NOT NULL )
+
+- improve dlstatus subcommand
 
 - scan bpm and key sig  https://github.com/aubio/aubio https://github.com/tyiannak/pyAudioAnalysis
 
@@ -35,5 +44,3 @@ table.transform(pk=None)
 - CLI city abacus
 
 - CLI UNLI Neighborhoods
-
-- SELECT \* FROM playlists p WHERE PATH NOT IN (SELECT DISTINCT playlist_path FROM media WHERE playlist_path NOT NULL )

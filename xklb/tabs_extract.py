@@ -3,8 +3,7 @@ from pathlib import Path
 from typing import List
 
 from xklb import consts, db, player, usage, utils
-from xklb.consts import Frequency
-from xklb.utils import ArgparseEnum, log, sanitize_url
+from xklb.utils import log, sanitize_url
 
 
 def parse_args() -> argparse.Namespace:
@@ -13,10 +12,13 @@ def parse_args() -> argparse.Namespace:
         "--frequency",
         "--freqency",
         "-f",
-        default=Frequency.Monthly,
-        type=Frequency,
-        action=ArgparseEnum,
-        help=argparse.SUPPRESS,
+        metavar="frequency",
+        choices=consts.frequency,
+        default="monthly",
+        const="monthly",
+        type=str.lower,
+        nargs="?",
+        help=f"One of: %(choices)s (default: %(default)s)",
     )
     parser.add_argument("--category", "-c", help=argparse.SUPPRESS)
     parser.add_argument("--no-sanitize", "-s", action="store_true", help="Don't sanitize some common URL parameters")
@@ -74,7 +76,7 @@ def extract_url_metadata(args, path: str) -> dict:
     return {
         "path": path,
         "hostname": hostname,
-        "frequency": args.frequency.value,
+        "frequency": args.frequency,
         "category": args.category or "Uncategorized",
         "time_created": consts.APPLICATION_START,
         "time_played": 0,

@@ -4,18 +4,17 @@ from typing import Tuple
 
 from tabulate import tabulate
 
-from xklb import consts, db, dl_extract, play_actions, tube_backend, usage, utils
+from xklb import consts, db, usage, utils
 from xklb.player import delete_playlists
-from xklb.utils import human_time, log, pipe_print
+from xklb.utils import log
 
 
-def parse_args(prog, usage) -> argparse.Namespace:
+def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        prog,
-        usage,
+        "library playlists",
+        usage.playlists,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("--fields", "-f", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--aggregate", "-a", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--json", "-j", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--sort", "-u", nargs="+", help=argparse.SUPPRESS)
@@ -28,13 +27,6 @@ def parse_args(prog, usage) -> argparse.Namespace:
     parser.add_argument("--errors", "-errors", "--error", action="store_true", help="Show only rows with errors")
     parser.add_argument("--delete", "--remove", "--erase", "--rm", "-rm", nargs="+", help=argparse.SUPPRESS)
     parser.add_argument("--print", "-p", default=False, const="p", nargs="?", help=argparse.SUPPRESS)
-    if "dlstatus" in prog:
-        parser.add_argument(
-            "--retry-delay",
-            "-r",
-            default="14 days",
-            help="Must be specified in SQLITE Modifiers format: N hours, days, months, or years",
-        )
 
     parser.add_argument("-v", "--verbose", action="count", default=0)
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
@@ -97,8 +89,8 @@ def printer(args, query, bindings) -> None:
     utils.col_duration(tbl, "duration")
     utils.col_duration(tbl, "avg_playlist_duration")
 
-    if args.fields:
-        pipe_print("\n".join([d["path"] for d in media]))
+    if "f" in args.print:
+        utils.pipe_print("\n".join([d["path"] for d in media]))
         return
     elif args.json or consts.TERMINAL_SIZE.columns < 80:
         print(json.dumps(tbl, indent=3))
@@ -114,13 +106,13 @@ def printer(args, query, bindings) -> None:
     print(f"{len(media)} playlists" if len(media) > 1 else "1 playlist")
     duration = sum(m.get("duration") or 0 for m in media)
     if duration > 0:
-        duration = human_time(duration)
+        duration = utils.human_time(duration)
         if not args.aggregate:
             print("Total duration:", duration)
 
 
 def playlists() -> None:
-    args = parse_args(prog="library playlists", usage=usage.playlists)
+    args = parse_args()
 
     if args.delete:
         return delete_playlists(args, args.delete)
@@ -159,44 +151,6 @@ def playlists() -> None:
             {', sum(count) videos_count' if 'count' in query else ''}
         from ({query})
         """
-
-    printer(args, query, bindings)
-    return None
-
-
-def dlstatus() -> None:
-    args = parse_args(prog="library dlstatus", usage=usage.dlstatus)
-    play_actions.parse_args_sort(args)
-
-    if args.delete:
-        return delete_playlists(args, args.delete)
-
-    query, bindings = dl_extract.construct_query(args)
-
-    count_paths = ""
-    if "time_modified" in query:
-        if args.safe:
-            args.db.register_function(tube_backend.is_supported, deterministic=True)
-            count_paths = (
-                ", count(*) FILTER(WHERE COALESCE(time_modified,0) = 0 and is_supported(path)) never_downloaded"
-            )
-        else:
-            count_paths = ", count(*) FILTER(WHERE COALESCE(time_modified,0) = 0) never_downloaded"
-
-    query = f"""select
-        coalesce(category, "Playlist-less media") category
-        {', ie_key' if 'm.ie_key' in query else ''}
-        {', sum(duration) duration' if 'duration' in query else ''}
-        {count_paths}
-        {', count(*) FILTER(WHERE COALESCE(time_modified,0) > 0 AND error IS NOT NULL) errors' if 'error' in query else ''}
-        {', group_concat(distinct error) error_descriptions' if args.errors or 'error' in query and args.verbose >= 1 else ''}
-    from ({query}) m
-    where 1=1
-        and COALESCE(time_downloaded,0) = 0
-        and COALESCE(time_deleted,0) = 0
-        {'and error is not null' if args.errors else ''}
-    group by category{', ie_key' if 'm.ie_key' in query else ''}{', error' if args.errors else ''}
-    order by {'errors,' if args.errors else ''} category nulls last"""
 
     printer(args, query, bindings)
     return None

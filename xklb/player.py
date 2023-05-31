@@ -190,11 +190,12 @@ def set_playhead(args, path: str, playhead: int) -> int:
         cursor = args.db.conn.execute(
             """UPDATE media
             SET playhead = :playhead
+                , time_played = cast(STRFTIME('%s') as int)
             WHERE path = :path
             """,
             {"playhead": playhead, "path": path},
         )
-        return cursor.rowcount
+    return cursor.rowcount
 
 
 def mark_media_watched(args, files) -> int:
@@ -207,7 +208,7 @@ def mark_media_watched(args, files) -> int:
                 cursor = args.db.conn.execute(
                     """UPDATE media
                     SET play_count = play_count + 1
-                    , time_played = cast(STRFTIME('%s') as int)
+                        , time_played = cast(STRFTIME('%s') as int)
                     WHERE path in ("""
                     + ",".join(["?"] * len(chunk_paths))
                     + ")",
@@ -645,7 +646,7 @@ def is_hstack(args, display) -> bool:
 def modify_display_size_for_taskbar(display):
     try:
         if platform.system() == "Windows":
-            import win32gui
+            import win32gui  # type: ignore
 
             taskbar_window_handle = win32gui.FindWindow("Shell_TrayWnd", None)
             if taskbar_window_handle == 0:
@@ -653,7 +654,7 @@ def modify_display_size_for_taskbar(display):
             if taskbar_window_handle == 0:
                 return display
 
-            work_area = win32gui.GetMonitorInfo(taskbar_window_handle)["rcWork"]
+            work_area = win32gui.GetMonitorInfo(taskbar_window_handle)["rcWork"]  # type: ignore
 
             _taskbar_height = display.height - work_area[3]
             display.height = work_area[3] - work_area[1]
@@ -808,16 +809,28 @@ def local_player(args, m) -> subprocess.CompletedProcess:
     return r
 
 
-def historical_usage(args):
-    query = """
+def historical_usage(args, freq="monthly", time_column="time_played", where=""):
+    if freq == "daily":
+        time_format = "%Y-%m-%d"
+    elif freq == "weekly":
+        time_format = "%Y-%W"
+    elif freq == "monthly":
+        time_format = "%Y-%m"
+    elif freq == "yearly":
+        time_format = "%Y"
+    else:
+        raise ValueError(f"Invalid value for 'freq': {freq}")
+
+    query = f"""
     SELECT
-        strftime('%Y-%m-%d', datetime(time_played, 'unixepoch')) AS day
+        strftime('{time_format}', datetime({time_column}, 'unixepoch')) AS time_period
         , SUM(duration) AS duration_sum
         , AVG(duration) AS duration_avg
         , SUM(size) AS size_sum
         , AVG(size) AS size_avg
-    FROM media where time_played>0
-    GROUP BY day
+    FROM media
+    WHERE coalesce(time_period, 0)>0 and {time_column}>0 {where}
+    GROUP BY time_period
     """
     return list(args.db.query(query))
 
@@ -828,7 +841,7 @@ def cadence_adjusted_duration(args, duration):
     except statistics.StatisticsError:
         return duration
 
-    return duration / historical_daily * 86400
+    return duration / historical_daily * 86400 * 30.42
 
 
 def media_printer(args, media) -> None:

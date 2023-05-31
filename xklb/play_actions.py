@@ -482,37 +482,7 @@ def prep_media(args, m: Dict, ignore_paths):
     return m
 
 
-def play(args, m) -> None:
-    t = utils.Timer()
-    print(m["now_playing"])
-    log.debug("now_playing: %s", t.elapsed())
-
-    args.player = player.parse(args, m)
-    log.debug("player.parse: %s", t.elapsed())
-
-    start_time = time.time()
-    if args.chromecast:
-        try:
-            chromecast_play(args, m)
-        except Exception:
-            if args.ignore_errors:
-                return
-            else:
-                raise
-
-    elif args.interdimensional_cable:
-        player.socket_play(args, m)
-        return
-
-    else:
-        r = player.local_player(args, m)
-        if r.returncode != 0:
-            log.warning("Player exited with code %s", r.returncode)
-            if args.ignore_errors:
-                return
-            else:
-                raise SystemExit(r.returncode)
-
+def save_playhead(args, m, start_time):
     m_columns = args.db["media"].columns_dict
     if "playhead" in m_columns:
         playhead = utils.get_playhead(
@@ -525,9 +495,46 @@ def play(args, m) -> None:
         if playhead:
             player.set_playhead(args, m["original_path"], playhead)
 
-    t.reset()
-    player.post_act(args, m["original_path"])
-    log.debug("player.post_act: %s", t.elapsed())
+
+def play(args, m) -> None:
+    t = utils.Timer()
+    print(m["now_playing"])
+    log.debug("now_playing: %s", t.elapsed())
+
+    args.player = player.parse(args, m)
+    log.debug("player.parse: %s", t.elapsed())
+
+    if args.interdimensional_cable:
+        player.socket_play(args, m)
+        return
+
+    start_time = time.time()
+    try:
+        if args.chromecast:
+            try:
+                chromecast_play(args, m)
+                t.reset()
+                player.post_act(args, m["original_path"])
+                log.debug("player.post_act: %s", t.elapsed())
+            except Exception:
+                if args.ignore_errors:
+                    return
+                else:
+                    raise
+        else:
+            r = player.local_player(args, m)
+            if r.returncode == 0:
+                t.reset()
+                player.post_act(args, m["original_path"])
+                log.debug("player.post_act: %s", t.elapsed())
+            else:
+                log.warning("Player exited with code %s", r.returncode)
+                if args.ignore_errors:
+                    return
+                else:
+                    raise SystemExit(r.returncode)
+    finally:
+        save_playhead(args, m, start_time)
 
 
 def process_playqueue(args) -> None:

@@ -11,7 +11,7 @@ for title, subcommand in [
     ("Search captions / subtitles", "search"),
     ("Open tabs", "tabs"),
     ("Download media", "download"),
-    ("Show Download Status", "dlstatus"),
+    ("Show Download Status", "download_status"),
     ("Update local media", "fsupdate"),
     ("Update online media", "tubeupdate"),
     ("Update reddit media", "redditupdate"),

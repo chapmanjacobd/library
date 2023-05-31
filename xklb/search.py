@@ -40,7 +40,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--ignore-errors", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--online-media-only", "--online-only", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--local-media-only", "--local-only", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--only-paths", "--paths", "--files-with-matches", action="store_true", help="Only print paths")
+
     parser.add_argument("--loop", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--override-player", "--player", "-player", help=argparse.SUPPRESS)
     parser.add_argument("--verbose", "-v", action="count", default=0)
@@ -74,7 +74,7 @@ def printer(args, captions) -> None:
     tbl = deepcopy(captions)
     utils.col_hhmmss(tbl, "time")
 
-    if args.only_paths:
+    if "f" in args.print:
         pipe_print("\n".join([d["path"] for d in captions]))
         return
     elif args.json or consts.TERMINAL_SIZE.columns < 80:
