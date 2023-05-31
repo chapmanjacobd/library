@@ -143,7 +143,7 @@ Incremental surfing. 📈🏄 totally rad!
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v1.29.007)
+    xk media library subcommands (v1.29.008)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -592,7 +592,7 @@ Explore `library` databases in your browser
 
         library tubeadd -c Mealtime dl.db (cat ~/.jobs/todo/71_Mealtime_Videos)
 
-    Files will be saved to <lb download prefix>/<lb tubeadd category>/
+    Files will be saved to <download prefix>/<tubeadd category>/
 
         For example:
         library tubeadd -c Cool ...
@@ -751,7 +751,7 @@ Explore `library` databases in your browser
         Printing modes
         library watch -p    # print as a table
         library watch -p a  # print an aggregate report
-        library watch -p b  # print a bigdirs report (see lb bigdirs -h for more info)
+        library watch -p b  # print a bigdirs report (see library bigdirs -h for more info)
         library watch -p f  # print fields (defaults to path; use --cols to change)
                                # -- useful for piping paths to utilities like xargs or GNU Parallel
 
@@ -961,6 +961,54 @@ Explore `library` databases in your browser
 
 </details>
 
+<details><summary>History</summary>
+
+    $ library history -h
+    usage: library history [--frequency daily|weekly|{monthly}|quarterly|yearly] [--limit LIMIT] DATABASE [{all}|watching|watched|deleted|created|modified]
+
+    Explore history through different facets
+
+    $ library history video.db watched
+    Finished watching:
+    ╒═══════════════╤═════════════════════════════════╤════════════════╤════════════╤════════════╕
+    │ time_period   │ duration_sum                    │ duration_avg   │ size_sum   │ size_avg   │
+    ╞═══════════════╪═════════════════════════════════╪════════════════╪════════════╪════════════╡
+    │ 2022-11       │ 4 days, 16 hours and 20 minutes │ 55.23 minutes  │ 26.3 GB    │ 215.9 MB   │
+    ├───────────────┼─────────────────────────────────┼────────────────┼────────────┼────────────┤
+    │ 2022-12       │ 23 hours and 20.03 minutes      │ 35.88 minutes  │ 8.3 GB     │ 213.8 MB   │
+    ├───────────────┼─────────────────────────────────┼────────────────┼────────────┼────────────┤
+    │ 2023-01       │ 17 hours and 3.32 minutes       │ 15.27 minutes  │ 14.3 GB    │ 214.1 MB   │
+    ├───────────────┼─────────────────────────────────┼────────────────┼────────────┼────────────┤
+    │ 2023-02       │ 4 days, 5 hours and 60 minutes  │ 23.17 minutes  │ 148.3 GB   │ 561.6 MB   │
+    ├───────────────┼─────────────────────────────────┼────────────────┼────────────┼────────────┤
+    │ 2023-03       │ 2 days, 18 hours and 18 minutes │ 11.20 minutes  │ 118.1 GB   │ 332.8 MB   │
+    ├───────────────┼─────────────────────────────────┼────────────────┼────────────┼────────────┤
+    │ 2023-05       │ 5 days, 5 hours and 4 minutes   │ 45.75 minutes  │ 152.9 GB   │ 932.1 MB   │
+    ╘═══════════════╧═════════════════════════════════╧════════════════╧════════════╧════════════╛
+
+    $ library history video.db deleted
+    Deleted media:
+    ╒═══════════════╤════════════════════════════════════════════╤════════════════╤════════════╤════════════╕
+    │ time_period   │ duration_sum                               │ duration_avg   │ size_sum   │ size_avg   │
+    ╞═══════════════╪════════════════════════════════════════════╪════════════════╪════════════╪════════════╡
+    │ 2023-04       │ 1 year, 10 months, 3 days and 8 hours      │ 4.47 minutes   │ 1.6 TB     │ 7.4 MB     │
+    ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
+    │ 2023-05       │ 9 months, 26 days, 20 hours and 34 minutes │ 30.35 minutes  │ 1.1 TB     │ 73.7 MB    │
+    ╘═══════════════╧════════════════════════════════════════════╧════════════════╧════════════╧════════════╛
+    ╒════════════════════════════════════════════════════════════════════════════════════════════════════════════╤═══════════════╤══════════════════╤════════════════╕
+    │ title_path                                                                                                 │ duration      │   subtitle_count │ time_deleted   │
+    ╞════════════════════════════════════════════════════════════════════════════════════════════════════════════╪═══════════════╪══════════════════╪════════════════╡
+    │ Terminus (1987)                                                                                            │ 1 hour and    │                0 │ yesterday      │
+    │ /mnt/d/70_Now_Watching/Terminus_1987.mp4                                                                   │ 15.55 minutes │                  │                │
+    ├────────────────────────────────────────────────────────────────────────────────────────────────────────────┼───────────────┼──────────────────┼────────────────┤
+    │ Commodore 64 Longplay [062] The Transformers (EU) /mnt/d/71_Mealtime_Videos/Youtube/World_of_Longplays/Com │ 24.77 minutes │                2 │ yesterday      │
+    │ modore_64_Longplay_062_The_Transformers_EU_[1RRX7Kykb38].webm                                              │               │                  │                │
+    ...
+
+
+
+</details>
+
 <details><summary>Open tabs</summary>
 
     $ library tabs -h
@@ -980,7 +1028,7 @@ Explore `library` databases in your browser
 
     Print URLs
 
-        lb-dev tabs -w "frequency='yearly'" -p
+        library tabs -w "frequency='yearly'" -p
         ╒════════════════════════════════════════════════════════════════╤═════════════╤══════════════╕
         │ path                                                           │ frequency   │ time_valid   │
         ╞════════════════════════════════════════════════════════════════╪═════════════╪══════════════╡
@@ -1078,9 +1126,9 @@ Explore `library` databases in your browser
 
 </details>
 
-<details><summary>Show Download Status (download_status)</summary>
+<details><summary>Download Status (download-status)</summary>
 
-    $ library download_status -h
+    $ library download-status -h
     usage: library download-status [database]
 
     Print download queue groups
@@ -1259,9 +1307,9 @@ Explore `library` databases in your browser
 
     See what folders take up space
 
-        lb bigdirs video.db
-        lb bigdirs audio.db
-        lb bigdirs fs.db
+        library bigdirs video.db
+        library bigdirs audio.db
+        library bigdirs fs.db
 
 
 </details>
@@ -1273,7 +1321,7 @@ Explore `library` databases in your browser
 
     Copy play count information between databases
 
-        lb copy-play-counts audio.db phone.db --source-prefix /storage/6E7B-7DCE/d --target-prefix /mnt/d
+        library copy-play-counts audio.db phone.db --source-prefix /storage/6E7B-7DCE/d --target-prefix /mnt/d
 
 
 </details>
@@ -1371,8 +1419,8 @@ Explore `library` databases in your browser
 
     Merge database data and tables
 
-        lb merge-dbs --upsert --pk path video.db tv.db movies.db
-        lb merge-dbs --table media,playlists --pk path audio.db music.db podcasts.db
+        library merge-dbs --upsert --pk path video.db tv.db movies.db
+        library merge-dbs --table media,playlists --pk path audio.db music.db podcasts.db
 
 
 </details>
@@ -1397,11 +1445,11 @@ Explore `library` databases in your browser
     Move fresh music to your phone every Sunday:
 
         # move last weeks' music back to their source folders
-        lb relmv /mnt/d/80_Now_Listening/ /mnt/d/
+        library relmv /mnt/d/80_Now_Listening/ /mnt/d/
 
         # move new music for this week
-        lb relmv (
-            lb listen ~/lb/audio.db --local-media-only --where 'play_count=0' --random -L 600 -p f
+        library relmv (
+            library listen ~/lb/audio.db --local-media-only --where 'play_count=0' --random -L 600 -p f
         ) /mnt/d/80_Now_Listening/
 
 
@@ -1436,15 +1484,15 @@ Explore `library` databases in your browser
 
     Default mode is dry-run
 
-        lb christen fs.db
+        library christen fs.db
 
     To actually do stuff use the run flag
 
-        lb christen audio.db --run
+        library christen audio.db --run
 
     You can optionally replace all the spaces in your filenames with dots
 
-        lb christen --dot-space video.db
+        library christen --dot-space video.db
 
 
 </details>
