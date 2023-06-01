@@ -188,9 +188,9 @@ def moved_media(args, moved_files: Union[str, list], base_from, base_to) -> int:
 def set_playhead(args, path: str, playhead: int) -> int:
     with args.db.conn:
         cursor = args.db.conn.execute(
-            """UPDATE media
+            f"""UPDATE media
             SET playhead = :playhead
-                , time_played = cast(STRFTIME('%s') as int)
+                , time_played = {consts.now()}
             WHERE path = :path
             """,
             {"playhead": playhead, "path": path},
@@ -198,17 +198,17 @@ def set_playhead(args, path: str, playhead: int) -> int:
     return cursor.rowcount
 
 
-def mark_media_watched(args, files) -> int:
-    files = utils.conform(files)
+def mark_media_watched(args, paths, time_watched=consts.now()) -> int:
+    paths = utils.conform(paths)
     modified_row_count = 0
-    if files:
-        df_chunked = utils.chunks(files, consts.SQLITE_PARAM_LIMIT)
+    if paths:
+        df_chunked = utils.chunks(paths, consts.SQLITE_PARAM_LIMIT)
         for chunk_paths in df_chunked:
             with args.db.conn:
                 cursor = args.db.conn.execute(
-                    """UPDATE media
+                    f"""UPDATE media
                     SET play_count = play_count + 1
-                        , time_played = cast(STRFTIME('%s') as int)
+                        , time_played = {time_watched}
                     WHERE path in ("""
                     + ",".join(["?"] * len(chunk_paths))
                     + ")",
