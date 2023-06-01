@@ -143,7 +143,7 @@ Incremental surfing. 📈🏄 totally rad!
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v1.29.010)
+    xk media library subcommands (v1.29.011)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -731,9 +731,12 @@ Explore `library` databases in your browser
 
     Play recent partially-watched videos (requires mpv history):
         library watch --partial       # play newest first
+
         library watch --partial old   # play oldest first
         library watch -P o            # equivalent
-        library watch -P p            # sort by progress / duration
+
+        library watch -P p            # sort by percent remaining
+        library watch -P t            # sort by time remaining
         library watch -P s            # skip partially watched (only show unseen)
 
         The default time used is "last-viewed" (ie. the most recent time you closed the video)
@@ -742,6 +745,7 @@ Explore `library` databases in your browser
 
         You can combine most of these options, though some will be overridden by others.
         library watch -P fo           # this means "show the oldest videos using the time I first opened them"
+        library watch -P pt           # weighted remaining (percent * time remaining)
 
     Print instead of play:
         library watch --print --limit 10  # print the next 10 files

@@ -174,9 +174,12 @@ def play(action) -> str:
 
     Play recent partially-watched videos (requires mpv history):
         library {action} --partial       # play newest first
+
         library {action} --partial old   # play oldest first
         library {action} -P o            # equivalent
-        library {action} -P p            # sort by progress / duration
+
+        library {action} -P p            # sort by percent remaining
+        library {action} -P t            # sort by time remaining
         library {action} -P s            # skip partially watched (only show unseen)
 
         The default time used is "last-viewed" (ie. the most recent time you closed the video)
@@ -185,6 +188,7 @@ def play(action) -> str:
 
         You can combine most of these options, though some will be overridden by others.
         library {action} -P fo           # this means "show the oldest videos using the time I first opened them"
+        library {action} -P pt           # weighted remaining (percent * time remaining)
 
     Print instead of play:
         library {action} --print --limit 10  # print the next 10 files
