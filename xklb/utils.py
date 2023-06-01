@@ -508,7 +508,7 @@ def mpv_enrich2(args, media) -> List[Dict]:
             **(md5s.get(p.stem) or {}),
             "time_partial_first": int(p.stat().st_ctime),
             "time_partial_last": int(p.stat().st_mtime),
-            "progress": safe_int(mpv_watchlater_value(p, "start")),
+            "playhead": safe_int(mpv_watchlater_value(p, "start")),
         }
         for p in paths
         if md5s.get(p.stem)
@@ -518,22 +518,24 @@ def mpv_enrich2(args, media) -> List[Dict]:
         return [m for m in media if m["path"] not in previously_watched_paths]
 
     def mpv_progress(m):
-        progress = m.get("progress")
+        playhead = m.get("playhead")
         duration = m.get("duration")
-        if not progress:
-            return 0.0
+        if not playhead:
+            return float("-inf")
         if not duration:
-            return progress / 100  # TODO: idk
+            return float("-max")
 
-        if "w" in args.partial:  # weight by total time
-            return progress / duration * progress
+        if "p" in args.partial and "t" in args.partial:
+            return (duration / playhead) * -(duration - playhead)  # weighted remaining
+        elif "t" in args.partial:
+            return -(duration - playhead)  # time remaining
         else:
-            return progress / duration
+            return playhead / duration  # percent remaining
 
     def sorting_hat():
         if "f" in args.partial:  # first-viewed
             return lambda m: m.get("time_partial_first") or 0
-        elif "p" in args.partial:  # sort by remaining duration
+        elif "p" in args.partial or "t" in args.partial:  # sort by remaining duration
             return mpv_progress
 
         return lambda m: m.get("time_partial_last") or m.get("time_partial_first") or 0

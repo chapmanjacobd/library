@@ -16,6 +16,8 @@ table.transform(pk=None)
 
 - move time_played, playhead, and other ephemeral data to its own table
 
+add time_first_played, time_last_played; remove time_played instead use play_count
+
 - move mpv specific playhead code to a script subcommand
 
 option to delete mpv watch_later file if media file does not exist
