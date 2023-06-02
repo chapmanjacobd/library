@@ -9,6 +9,7 @@ from xklb import consts, db, player, subtitle, tube_backend, usage, utils
 from xklb.consts import SC
 from xklb.playback import now_playing
 from xklb.player import mark_media_deleted, override_sort
+from xklb.scripts.bigdirs import process_bigdirs
 from xklb.utils import cmd_interactive, log, random_filename, safe_unpack
 
 
@@ -73,11 +74,12 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
 
     parser = argparse.ArgumentParser(prog="library " + action, usage=usage.play(action))
 
-    parser.add_argument("--play-in-order", "-O", action="count", default=0, help=argparse.SUPPRESS)
-    parser.add_argument("--related", "-R", action="count", default=0, help=argparse.SUPPRESS)
-    parser.add_argument("--cluster", "-C", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--sort", "-u", nargs="+", help=argparse.SUPPRESS)
     parser.add_argument("--random", "-r", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--big-dirs", "-B", action="count", default=0, help=argparse.SUPPRESS)
+    parser.add_argument("--related", "-R", action="count", default=0, help=argparse.SUPPRESS)
+    parser.add_argument("--cluster", "-C", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--play-in-order", "-O", action="count", default=0, help=argparse.SUPPRESS)
 
     parser.add_argument("--where", "-w", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--include", "-s", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
@@ -167,7 +169,7 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     parser.add_argument("--sibling", "--episode", action="store_true")
     parser.add_argument("--solo", action="store_true")
 
-    parser.add_argument("--sort-by", action="store_true")
+    parser.add_argument("--sort-by")
     parser.add_argument("--depth", "-D", default=0, type=int, help="Depth of folders")
     parser.add_argument("--lower", type=int, help="Number of files per folder lower limit")
     parser.add_argument("--upper", type=int, help="Number of files per folder upper limit")
@@ -206,6 +208,9 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     if args.db:
         args.database = args.db
     args.db = db.connect(args)
+
+    if args.big_dirs:
+        args.local_media_only = True
 
     if not args.limit:
         args.defaults.append("limit")
@@ -588,6 +593,16 @@ def process_playqueue(args) -> None:
         media = [d for d in media if tube_backend.is_supported(d["path"]) or Path(d["path"]).exists()]
         log.debug("tube_backend.is_supported: %s", t.elapsed())
 
+    if args.big_dirs:
+        media_keyed = {d["path"]: d for d in media}
+        dirs = process_bigdirs(args, media)
+        dirs = list(reversed(list(d["path"] for d in dirs)))
+        if "limit" in args.defaults:
+            media = player.get_dir_media(args, dirs)
+        else:
+            media = [media_keyed[key] for dir in dirs for key in media_keyed.keys() if key.startswith(dir)]
+        log.debug("big_dirs: %s", t.elapsed())
+
     if args.related >= consts.RELATED:
         media = player.get_related_media(args, media[0])
         log.debug("player.get_related_media: %s", t.elapsed())
@@ -598,6 +613,7 @@ def process_playqueue(args) -> None:
         groups = sorted(groups, key=lambda d: (-len(d["grouped_paths"]), -len(d["common_prefix"])))
         sorted_paths = utils.flatten(d["grouped_paths"] for d in groups)
         media = [media_keyed[p] for p in sorted_paths]
+        log.debug("cluster: %s", t.elapsed())
 
     if args.print:
         if args.play_in_order >= consts.SIMILAR:

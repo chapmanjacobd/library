@@ -50,7 +50,6 @@ yt_recoverable_errors = re.compile(
 .*episode is not currently available
 .*This channel has no uploads
 .*Could not send HEAD request
-.*Unable to download JSON metadata
 .*Failed to parse JSON Expecting
 .*expected string or bytes-like object
 .*Connection refused
@@ -131,6 +130,7 @@ yt_meaningless_errors = re.compile(
 .*the JSON object must be str, bytes or bytearray, not dict
 .*list indices must be integers
 .*The read operation timed out
+.*Unable to download JSON metadata
 .*Unable to recognize playlist.
 .*Premieres in""".splitlines(),
     ),

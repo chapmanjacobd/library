@@ -166,6 +166,7 @@ def construct_query(args) -> Tuple[str, dict]:
                 {" ".join(args.filter_sql)}
             ORDER BY 1=1
                 , play_count
+                , COALESCE(m.time_modified,0) = 0 DESC
                 {', ' + args.sort if args.sort else ''}
                 , random()
         {LIMIT}
@@ -193,6 +194,7 @@ def construct_query(args) -> Tuple[str, dict]:
                 {" ".join(args.filter_sql)}
             ORDER BY 1=1
                 , play_count
+                , COALESCE(m.time_modified,0) = 0 DESC
                 {', ' + args.sort if args.sort else ''}
                 , random()
         {LIMIT}

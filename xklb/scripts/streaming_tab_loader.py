@@ -43,7 +43,7 @@ def streaming_tab_loader() -> None:
         from brotab.api import SingleMediatorAPI
         from brotab.main import create_clients
     except ModuleNotFoundError:
-        print("brotab is required for surfing. Install with pip install brotab or pip install xklb[full]")
+        print("brotab is required for surfing. Install with pip install brotab or pip install xklb[deluxe]")
         raise
     else:
         logging.getLogger("brotab").setLevel(log.level)

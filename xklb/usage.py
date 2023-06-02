@@ -148,11 +148,15 @@ def play(action) -> str:
         library {action} -OOO  # above, plus ignores fts and (include/exclude) filter during ordinal search
         library {action} -OOOO # above, plus starts search with parent folder
 
-        library {action} --related  # similar to -O but uses fts to find similar content
+        library {action} --related  # Similar to -O but uses fts to find similar content
         library {action} -R         # equivalent
         library {action} -RR        # above, plus ignores most filters
 
-        library {action} --cluster  # cluster-sort to put similar paths closer together
+        library {action} --cluster  # cluster-sort to put similar-named paths closer together
+        library {action} -C         # equivalent
+
+        library {action} --big-dirs # Recommended to use with --duration or --depth filters; see `lb big-dirs -h` for more info
+        library {action} -B         # equivalent
 
         All of these options can be used together but it will be a bit slow and the results might be mid-tier
         as multiple different algorithms create a muddied signal (too many cooks in the kitchen):
@@ -748,7 +752,7 @@ tubeupdate = """library tubeupdate [--audio | --video] [-c CATEGORY] [database]
         library tubeupdate educational.db --extra https://www.youtube.com/channel/UCBsEUcR-ezAuxB2WlfeENvA/videos
 """
 
-bigdirs = """library bigdirs DATABASE [--limit (4000)] [--depth (0)] [--sort-by "deleted" | "played"] [--size=+5MB]
+bigdirs = """library bigdirs DATABASE [--limit (4000)] [--depth (0)] [--sort-by deleted | played] [--size=+5MB]
 
     See what folders take up space
 

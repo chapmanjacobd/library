@@ -22,6 +22,10 @@ add time_first_played, time_last_played; remove time_played instead use play_cou
 
 option to delete mpv watch_later file if media file does not exist
 
+- improve block subcommand
+
+add support for domains, specific combinations
+
 - improve playlists subcommand
 
 - make generic printer. support --json or --csv for most subcommands
