@@ -574,7 +574,7 @@ Explore `library` databases in your browser
 <details><summary>Add online media (tubeadd)</summary>
 
     $ library tubeadd -h
-    usage: library tubeadd [--audio | --video] [-c CATEGORY] [database] playlists ...
+    usage: library tubeadd [-c CATEGORY] [--safe] [--extra] [--subs] [--auto-subs] DATABASE URLS ...
 
     Create a dl database / add links to an existing database
 

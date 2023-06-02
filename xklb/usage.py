@@ -696,7 +696,7 @@ tabsadd = r"""library tabsadd [--frequency daily weekly (monthly) quarterly year
 
 """
 
-tubeadd = r"""library tubeadd [--audio | --video] [-c CATEGORY] [database] playlists ...
+tubeadd = r"""library tubeadd [-c CATEGORY] [--safe] [--extra] [--subs] [--auto-subs] DATABASE URLS ...
 
     Create a dl database / add links to an existing database
 
