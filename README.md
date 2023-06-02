@@ -320,7 +320,7 @@ After you are done selecting folders you can press ctrl-d and it will save the l
 <details><summary>If you use mergerfs, you'll likely be interested in this</summary>
 
     library scatter -h
-    usage: library scatter [--limit LIMIT] [--policy POLICY] [--sort SORT] --srcmounts SRCMOUNTS database relative_paths ...
+    usage: library scatter [--limit LIMIT] [--policy POLICY] [--sort SORT] --srcmounts SRCMOUNTS DATABASE RELATIVE_PATHS ...
 
     Balance size
 
@@ -522,52 +522,7 @@ Explore `library` databases in your browser
 <details><summary>Add local media (fsadd)</summary>
 
     $ library fsadd -h
-    usage: library fsadd [--audio | --video | --image |  --text | --filesystem] -c CATEGORY [database] paths ...
-
-    The default database type is video:
-        library fsadd tv.db ./tv/
-        library fsadd --video tv.db ./tv/  # equivalent
-
-    You can also create audio databases. Both audio and video use ffmpeg to read metadata:
-        library fsadd --audio audio.db ./music/
-
-    Image uses ExifTool:
-        library fsadd --image image.db ./photos/
-
-    Text will try to read files and save the contents into a searchable database:
-        library fsadd --text text.db ./documents_and_books/
-
-    Create a text database and scan with OCR and speech-recognition:
-        library fsadd --text --ocr --speech-recognition ocr.db ./receipts_and_messages/
-
-    Create a video database and read internal/external subtitle files into a searchable database:
-        library fsadd --scan-subtitles tv.search.db ./tv/ ./movies/
-
-    Decode media to check for corruption (slow):
-        library fsadd --check-corrupt 100 tv.db ./tv/  # scan through 100 percent of each file to evaluate how corrupt it is (very slow)
-        library fsadd --check-corrupt   1 tv.db ./tv/  # scan through 1 percent of each file to evaluate how corrupt it is (takes about one second per file)
-        library fsadd --check-corrupt   5 tv.db ./tv/  # scan through 1 percent of each file to evaluate how corrupt it is (takes about ten seconds per file)
-
-        library fsadd --check-corrupt   5 --delete-corrupt 30 tv.db ./tv/  # scan 5 percent of each file to evaluate how corrupt it is, if 30 percent or more of those checks fail then the file is deleted
-
-        nb: the behavior of delete-corrupt changes between full and partial scan
-        library fsadd --check-corrupt  99 --delete-corrupt  1 tv.db ./tv/  # partial scan 99 percent of each file to evaluate how corrupt it is, if 1 percent or more of those checks fail then the file is deleted
-        library fsadd --check-corrupt 100 --delete-corrupt  1 tv.db ./tv/  # full scan each file to evaluate how corrupt it is, if there is _any_ corruption then the file is deleted
-
-    Normally only relevant filetypes are included. You can scan all files with this flag:
-        library fsadd --scan-all-files mixed.db ./tv-and-maybe-audio-only-files/
-        # I use that with this to keep my folders organized:
-        library watch -w 'video_count=0 and audio_count>=1' -pf mixed.db | parallel mv {} ~/d/82_Audiobooks/
-
-    Remove path roots with --force
-        library fsadd audio.db /mnt/d/Youtube/
-        [/mnt/d/Youtube] Path does not exist
-
-        library fsadd --force audio.db /mnt/d/Youtube/
-        [/mnt/d/Youtube] Path does not exist
-        [/mnt/d/Youtube] Building file list...
-        [/mnt/d/Youtube] Marking 28932 orphaned metadata records as deleted
-
+    usage: None
 
 </details>
 
@@ -613,7 +568,7 @@ Explore `library` databases in your browser
 <details><summary>Add reddit media (redditadd)</summary>
 
     $ library redditadd -h
-    usage: library redditadd [--lookback N_DAYS] [--praw-site bot1] [database] paths ...
+    usage: library redditadd [--lookback N_DAYS] [--praw-site bot1] DATABASE URLS ...
 
     Fetch data for redditors and reddits:
 
@@ -633,7 +588,7 @@ Explore `library` databases in your browser
 <details><summary>Create / Update a Hacker News database (hnadd)</summary>
 
     $ library hnadd -h
-    usage: library hnadd [--oldest] database
+    usage: library hnadd [--oldest] DATABASE
 
     Fetch latest stories first:
 
@@ -679,7 +634,7 @@ Explore `library` databases in your browser
 <details><summary>Watch / Listen</summary>
 
     $ library watch -h
-    usage: library watch [database] [optional args]
+    usage: library watch DATABASE [optional args]
 
     Control playback:
         To stop playback press Ctrl-C in either the terminal or mpv
@@ -948,7 +903,7 @@ Explore `library` databases in your browser
 <details><summary>Search captions / subtitles</summary>
 
     $ library search -h
-    usage: library search
+    usage: library search DATABASE QUERY
 
     Search text databases and subtitles
 
@@ -964,7 +919,7 @@ Explore `library` databases in your browser
            34:54 Glass boilers cost two
 
     Search and open file
-    $ library search fts.db dashi --open
+    $ library search fts.db 'two words' --open
 
 
 </details>
@@ -1154,7 +1109,7 @@ Explore `library` databases in your browser
 <details><summary>Download media</summary>
 
     $ library download -h
-    usage: library download database [--prefix /mnt/d/] --video | --audio
+    usage: library download [--prefix /mnt/d/] [--safe] [--subs] [--auto-subs] [--small] DATABASE --video | --audio
 
     Download stuff in a random order.
 
@@ -1199,7 +1154,7 @@ Explore `library` databases in your browser
 <details><summary>Download Status (download-status)</summary>
 
     $ library download-status -h
-    usage: library download-status [database]
+    usage: library download-status DATABASE
 
     Print download queue groups
 
@@ -1245,11 +1200,11 @@ Explore `library` databases in your browser
 <details><summary>Update local media (fsupdate)</summary>
 
     $ library fsupdate -h
-    usage: library fsupdate database
+    usage: library fsupdate DATABASE
 
     Update each path previously saved:
 
-        library fsupdate database
+        library fsupdate video.db
 
 
 </details>
@@ -1257,7 +1212,7 @@ Explore `library` databases in your browser
 <details><summary>Update online media (tubeupdate)</summary>
 
     $ library tubeupdate -h
-    usage: library tubeupdate [--audio | --video] [-c CATEGORY] [database]
+    usage: library tubeupdate [--audio | --video] [-c CATEGORY] DATABASE
 
     Fetch the latest videos for every playlist saved in your database
 
@@ -1284,7 +1239,7 @@ Explore `library` databases in your browser
 <details><summary>Update reddit media (redditupdate)</summary>
 
     $ library redditupdate -h
-    usage: library redditupdate [--audio | --video] [-c CATEGORY] [--lookback N_DAYS] [--praw-site bot1] [database]
+    usage: library redditupdate [--audio | --video] [-c CATEGORY] [--lookback N_DAYS] [--praw-site bot1] DATABASE
 
     Fetch the latest posts for every subreddit/redditor saved in your database
 
@@ -1296,7 +1251,7 @@ Explore `library` databases in your browser
 <details><summary>Convert pushshift data to reddit.db format</summary>
 
     $ library pushshift -h
-    usage: library pushshift [database] < stdin
+    usage: library pushshift DATABASE < stdin
 
     Download data (about 600GB jsonl.zst; 6TB uncompressed)
 
@@ -1319,7 +1274,7 @@ Explore `library` databases in your browser
 <details><summary>List playlists</summary>
 
     $ library playlists -h
-    usage: library playlists [database] [--aggregate] [--fields] [--json] [--delete ...]
+    usage: library playlists DATABASE [--aggregate] [--fields] [--json] [--delete ...]
 
     List of Playlists
 
@@ -1356,7 +1311,7 @@ Explore `library` databases in your browser
 <details><summary>Blocklist a channel</summary>
 
     $ library block -h
-    usage: library block database [playlists ...]
+    usage: library block DATABASE URLS ...
 
     Blocklist specific URLs (eg. YouTube channels, etc). With YT URLs this will block
     videos from the playlist uploader
