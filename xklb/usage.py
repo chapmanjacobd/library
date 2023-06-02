@@ -1,4 +1,4 @@
-download = r"""library download database [--prefix /mnt/d/] --video | --audio
+download = r"""library download [--prefix /mnt/d/] [--safe] [--subs] [--auto-subs] [--small] DATABASE --video | --audio
 
     Download stuff in a random order.
 
@@ -38,7 +38,7 @@ download = r"""library download database [--prefix /mnt/d/] --video | --audio
         ╘═════════════════════╧════════════╧══════════════════╧════════════════════╧══════════╛
 """
 
-block = r"""library block database [playlists ...]
+block = r"""library block DATABASE URLS ...
 
     Blocklist specific URLs (eg. YouTube channels, etc). With YT URLs this will block
     videos from the playlist uploader
@@ -50,7 +50,9 @@ block = r"""library block database [playlists ...]
         library block dl.db --all-deleted-playlists https://annoyingwebsite/etc/
 """
 
-fsadd = """library fsadd [--audio | --video | --image |  --text | --filesystem] -c CATEGORY [database] paths ...
+fsadd = None
+
+"""library fsadd [(--video) | --audio | --image |  --text | --filesystem] DATABASE PATHS ...
 
     The default database type is video:
         library fsadd tv.db ./tv/
@@ -97,14 +99,14 @@ fsadd = """library fsadd [--audio | --video | --image |  --text | --filesystem] 
         [/mnt/d/Youtube] Marking 28932 orphaned metadata records as deleted
 """
 
-fsupdate = """library fsupdate database
+fsupdate = """library fsupdate DATABASE
 
     Update each path previously saved:
 
-        library fsupdate database
+        library fsupdate video.db
 """
 
-hnadd = """library hnadd [--oldest] database
+hnadd = """library hnadd [--oldest] DATABASE
 
     Fetch latest stories first:
 
@@ -122,7 +124,7 @@ hnadd = """library hnadd [--oldest] database
 
 
 def play(action) -> str:
-    return f"""library {action} [database] [optional args]
+    return f"""library {action} DATABASE [optional args]
 
     Control playback:
         To stop playback press Ctrl-C in either the terminal or mpv
@@ -390,7 +392,7 @@ def play(action) -> str:
 watch = play("watch")
 
 
-redditadd = """library redditadd [--lookback N_DAYS] [--praw-site bot1] [database] paths ...
+redditadd = """library redditadd [--lookback N_DAYS] [--praw-site bot1] DATABASE URLS ...
 
     Fetch data for redditors and reddits:
 
@@ -405,14 +407,14 @@ redditadd = """library redditadd [--lookback N_DAYS] [--praw-site bot1] [databas
         library redditadd --redditors --db idk.db (cat ~/mc/shadow_banned.txt)
 """
 
-redditupdate = """library redditupdate [--audio | --video] [-c CATEGORY] [--lookback N_DAYS] [--praw-site bot1] [database]
+redditupdate = """library redditupdate [--audio | --video] [-c CATEGORY] [--lookback N_DAYS] [--praw-site bot1] DATABASE
 
     Fetch the latest posts for every subreddit/redditor saved in your database
 
         library redditupdate edu_subreddits.db
 """
 
-search = """library search
+search = """library search DATABASE QUERY
 
     Search text databases and subtitles
 
@@ -428,7 +430,7 @@ search = """library search
            34:54 Glass boilers cost two
 
     Search and open file
-    $ library search fts.db dashi --open
+    $ library search fts.db 'two words' --open
 """
 
 history = """library history [--frequency daily weekly (monthly) yearly] [--limit LIMIT] DATABASE [(all) watching watched created modified deleted]
@@ -536,7 +538,7 @@ history = """library history [--frequency daily weekly (monthly) yearly] [--limi
 
 """
 
-playlists = """library playlists [database] [--aggregate] [--fields] [--json] [--delete ...]
+playlists = """library playlists DATABASE [--aggregate] [--fields] [--json] [--delete ...]
 
     List of Playlists
 
@@ -568,7 +570,7 @@ playlists = """library playlists [database] [--aggregate] [--fields] [--json] [-
 
 """
 
-download_status = """library download-status [database]
+download_status = """library download-status DATABASE
 
     Print download queue groups
 
@@ -730,7 +732,7 @@ tubeadd = r"""library tubeadd [-c CATEGORY] [--safe] [--extra] [--subs] [--auto-
         library tubeupdate tw.db --extra
 """
 
-tubeupdate = """library tubeupdate [--audio | --video] [-c CATEGORY] [database]
+tubeupdate = """library tubeupdate [--audio | --video] [-c CATEGORY] DATABASE
 
     Fetch the latest videos for every playlist saved in your database
 
@@ -884,7 +886,7 @@ relmv = """library relmv [--dry-run] SOURCE ... DEST
         ) /mnt/d/80_Now_Listening/
 """
 
-scatter = """library scatter [--limit LIMIT] [--policy POLICY] [--sort SORT] --srcmounts SRCMOUNTS database relative_paths ...
+scatter = """library scatter [--limit LIMIT] [--policy POLICY] [--sort SORT] --srcmounts SRCMOUNTS DATABASE RELATIVE_PATHS ...
 
     Balance size
 
@@ -960,7 +962,7 @@ surf = """library surf [--count COUNT] [--target-hosts TARGET_HOSTS] < stdin
     If you prefer GUI, check out https://unli.xyz/tabsender/
 """
 
-pushshift = """library pushshift [database] < stdin
+pushshift = """library pushshift DATABASE < stdin
 
     Download data (about 600GB jsonl.zst; 6TB uncompressed)
 
