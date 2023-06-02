@@ -47,6 +47,7 @@ def now_playing(path) -> str:
                 for line in cmd("ffprobe", "-hide_banner", "-loglevel", "info", path).stderr.splitlines()
                 if path not in line
             )
+            + "\n"
         )
 
     try:

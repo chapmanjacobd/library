@@ -47,7 +47,7 @@ def calculate_duration(args, m) -> Tuple[int, int]:
 
         if args.start.isnumeric() and int(args.start) > 0:
             start = int(args.start)
-        elif args.start.endswith("%") and duration:
+        elif "%" in args.start:
             start_percent = int(args.start[:-1])
             start = int(duration * start_percent / 100)
         elif playhead and any([end == 0, end > minimum_duration]):
@@ -59,7 +59,7 @@ def calculate_duration(args, m) -> Tuple[int, int]:
     if args.end:
         if args.end == "dawsworth":
             end = duration * 0.65
-        elif args.end.endswith("%") and duration:
+        elif "%" in args.end:
             end_percent = int(args.end[:-1])
             end = int(duration * end_percent / 100)
         elif "+" in args.end:
@@ -502,6 +502,50 @@ def get_related_media(args, m: Dict) -> List[Dict]:
     return [m, *related_videos]
 
 
+def get_dir_media(args, dirs: List, include_subdirs=False) -> List[Dict]:
+    if len(dirs) == 0:
+        return utils.no_media_found()
+
+    m_columns = args.db["media"].columns_dict
+
+    if include_subdirs:
+        filter_paths = "AND (" + " OR ".join([f"path LIKE :subpath{i}" for i in range(len(dirs))]) + ")"
+    else:
+        filter_paths = (
+            "AND ("
+            + " OR ".join([f"(path LIKE :subpath{i} and path not like :subpath{i} || '/%')" for i in range(len(dirs))])
+            + ")"
+        )
+
+    query = f"""
+        SELECT
+            {args.select_sql}
+        FROM {args.table} m
+        WHERE 1=1
+            {filter_args_sql(args, m_columns)}
+            {filter_paths}
+            {'' if args.related >= consts.DIRS_NO_FILTER else (" ".join(args.filter_sql) or '')}
+        ORDER BY play_count
+            , m.path LIKE "http%"
+            {'' if 'sort' in args.defaults else ', ' + args.sort}
+            , path
+        {"LIMIT 10000" if 'limit' in args.defaults else str(args.limit)} {args.offset_sql}
+    """
+    subpath_params = {f"subpath{i}": value + "%" for i, value in enumerate(dirs)}
+
+    bindings = {**subpath_params}
+    if args.related >= consts.DIRS_NO_FILTER:
+        bindings = {**bindings, "query": args.filter_bindings["query"]}
+    else:
+        bindings = {**bindings, **args.filter_bindings}
+
+    subpath_videos = list(args.db.query(query, bindings))
+    log.debug(subpath_videos)
+    log.info("len(subpath_videos) = %s", len(subpath_videos))
+
+    return subpath_videos
+
+
 def watch_chromecast(args, m: dict, subtitles_file=None) -> Optional[subprocess.CompletedProcess]:
     if "vlc" in args.player:
         catt_log = cmd(
@@ -847,9 +891,6 @@ def cadence_adjusted_duration(args, duration):
 
 
 def media_printer(args, media) -> None:
-    if "b" in args.print:
-        media = process_bigdirs(args, media)
-
     if args.verbose >= consts.LOG_DEBUG and args.cols and "*" in args.cols:
         breakpoint()
 

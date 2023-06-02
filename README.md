@@ -143,7 +143,7 @@ Incremental surfing. 📈🏄 totally rad!
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v1.29.012)
+    xk media library subcommands (v1.29.013)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -705,11 +705,15 @@ Explore `library` databases in your browser
         library watch -OOO  # above, plus ignores fts and (include/exclude) filter during ordinal search
         library watch -OOOO # above, plus starts search with parent folder
 
-        library watch --related  # similar to -O but uses fts to find similar content
+        library watch --related  # Similar to -O but uses fts to find similar content
         library watch -R         # equivalent
         library watch -RR        # above, plus ignores most filters
 
-        library watch --cluster  # cluster-sort to put similar paths closer together
+        library watch --cluster  # cluster-sort to put similar-named paths closer together
+        library watch -C         # equivalent
+
+        library watch --big-dirs # Recommended to use with --duration or --depth filters; see `lb big-dirs -h` for more info
+        library watch -B         # equivalent
 
         All of these options can be used together but it will be a bit slow and the results might be mid-tier
         as multiple different algorithms create a muddied signal (too many cooks in the kitchen):
@@ -1369,7 +1373,7 @@ Explore `library` databases in your browser
 <details><summary>Show large folders (bigdirs)</summary>
 
     $ library bigdirs -h
-    usage: library bigdirs DATABASE [--limit (4000)] [--depth (0)] [--sort-by "deleted" | "played"] [--size=+5MB]
+    usage: library bigdirs DATABASE [--limit (4000)] [--depth (0)] [--sort-by deleted | played] [--size=+5MB]
 
     See what folders take up space
 

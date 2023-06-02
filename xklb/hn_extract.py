@@ -117,7 +117,7 @@ def hacker_news_add() -> None:
     try:
         import aiohttp
     except ModuleNotFoundError:
-        log.error("aiohttp is required for hn_extract. Install with pip install aiohttp or pip install xklb[full]")
+        log.error("aiohttp is required for hn_extract. Install with pip install aiohttp or pip install xklb[deluxe]")
         raise
 
     args.db.enable_wal()
