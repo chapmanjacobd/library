@@ -522,7 +522,52 @@ Explore `library` databases in your browser
 <details><summary>Add local media (fsadd)</summary>
 
     $ library fsadd -h
-    usage: None
+    usage: library fsadd [(--video) | --audio | --image |  --text | --filesystem] DATABASE PATHS ...
+
+    The default database type is video:
+        library fsadd tv.db ./tv/
+        library fsadd --video tv.db ./tv/  # equivalent
+
+    You can also create audio databases. Both audio and video use ffmpeg to read metadata:
+        library fsadd --audio audio.db ./music/
+
+    Image uses ExifTool:
+        library fsadd --image image.db ./photos/
+
+    Text will try to read files and save the contents into a searchable database:
+        library fsadd --text text.db ./documents_and_books/
+
+    Create a text database and scan with OCR and speech-recognition:
+        library fsadd --text --ocr --speech-recognition ocr.db ./receipts_and_messages/
+
+    Create a video database and read internal/external subtitle files into a searchable database:
+        library fsadd --scan-subtitles tv.search.db ./tv/ ./movies/
+
+    Decode media to check for corruption (slow):
+        library fsadd --check-corrupt 100 tv.db ./tv/  # scan through 100 percent of each file to evaluate how corrupt it is (very slow)
+        library fsadd --check-corrupt   1 tv.db ./tv/  # scan through 1 percent of each file to evaluate how corrupt it is (takes about one second per file)
+        library fsadd --check-corrupt   5 tv.db ./tv/  # scan through 1 percent of each file to evaluate how corrupt it is (takes about ten seconds per file)
+
+        library fsadd --check-corrupt   5 --delete-corrupt 30 tv.db ./tv/  # scan 5 percent of each file to evaluate how corrupt it is, if 30 percent or more of those checks fail then the file is deleted
+
+        nb: the behavior of delete-corrupt changes between full and partial scan
+        library fsadd --check-corrupt  99 --delete-corrupt  1 tv.db ./tv/  # partial scan 99 percent of each file to evaluate how corrupt it is, if 1 percent or more of those checks fail then the file is deleted
+        library fsadd --check-corrupt 100 --delete-corrupt  1 tv.db ./tv/  # full scan each file to evaluate how corrupt it is, if there is _any_ corruption then the file is deleted
+
+    Normally only relevant filetypes are included. You can scan all files with this flag:
+        library fsadd --scan-all-files mixed.db ./tv-and-maybe-audio-only-files/
+        # I use that with this to keep my folders organized:
+        library watch -w 'video_count=0 and audio_count>=1' -pf mixed.db | parallel mv {} ~/d/82_Audiobooks/
+
+    Remove path roots with --force
+        library fsadd audio.db /mnt/d/Youtube/
+        [/mnt/d/Youtube] Path does not exist
+
+        library fsadd --force audio.db /mnt/d/Youtube/
+        [/mnt/d/Youtube] Path does not exist
+        [/mnt/d/Youtube] Building file list...
+        [/mnt/d/Youtube] Marking 28932 orphaned metadata records as deleted
+
 
 </details>
 
