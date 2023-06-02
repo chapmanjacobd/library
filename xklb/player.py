@@ -14,7 +14,6 @@ from tabulate import tabulate
 
 from xklb import consts, db, utils
 from xklb.consts import SC
-from xklb.scripts.bigdirs import process_bigdirs
 from xklb.utils import cmd, cmd_interactive, human_time, log
 
 try:
@@ -937,7 +936,7 @@ def media_printer(args, media) -> None:
             if not Path(path).exists():
                 mark_media_deleted(args, path)
                 raise FileNotFoundError
-            utils.pipe_print(quote(path))
+            utils.pipe_print(path)
             return
         else:
             if not args.cols:
