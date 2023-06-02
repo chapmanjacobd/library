@@ -50,9 +50,7 @@ block = r"""library block DATABASE URLS ...
         library block dl.db --all-deleted-playlists https://annoyingwebsite/etc/
 """
 
-fsadd = None
-
-"""library fsadd [(--video) | --audio | --image |  --text | --filesystem] DATABASE PATHS ...
+fsadd = """library fsadd [(--video) | --audio | --image |  --text | --filesystem] DATABASE PATHS ...
 
     The default database type is video:
         library fsadd tv.db ./tv/
