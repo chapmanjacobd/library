@@ -167,7 +167,7 @@ def block(args=None) -> None:
         tbl = utils.col_naturalsize(tbl, "size")
         tbl = utils.col_naturaldate(tbl, "time_deleted")
         print(tabulate(tbl, tablefmt="fancy_grid", headers="keys", showindex=False))
-        if utils.confirm(f"{len(matching_media)} media matching {p}. Add blocklist?"):
+        if utils.confirm(f"{len(matching_media)} media matching {p}. Add to blocklist?"):
             add_to_blocklist(args, p)
         else:
             continue
@@ -184,4 +184,4 @@ def block(args=None) -> None:
 
     if unmatched_playlists:
         log.error("Could not find media matching these URLs/words (rerun with --force to add a blocking rule):")
-        log.error(" ".join(t[0] for t in unmatched_playlists))
+        log.error('  ' + " ".join(t[0] for t in unmatched_playlists))

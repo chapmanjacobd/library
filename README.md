@@ -617,15 +617,20 @@ Explore `library` databases in your browser
 
     Fetch data for redditors and reddits:
 
-        library redditadd https://old.reddit.com/r/coolgithubprojects/ https://old.reddit.com/user/Diastro
+        library redditadd interesting.db https://old.reddit.com/r/coolgithubprojects/ https://old.reddit.com/user/Diastro
 
     If you have a file with a list of subreddits you can do this:
 
-        library redditadd --subreddits --db 96_Weird_History.db (cat ~/mc/96_Weird_History-reddit.txt)
+        library redditadd 96_Weird_History.db --subreddits (cat ~/mc/96_Weird_History-reddit.txt)
 
     Likewise for redditors:
 
-        library redditadd --redditors --db idk.db (cat ~/mc/shadow_banned.txt)
+        library redditadd shadow_banned.db --redditors (cat ~/mc/shadow_banned.txt)
+
+    Note that reddit's API is limited to 1000 posts and it usually doesn't go back very far historically.
+    Also, it may be the case that reddit's API (praw) will stop working in the near future. For both of these problems
+    my suggestion is to use pushshift data.
+    You can find more info here: https://github.com/chapmanjacobd/reddit_mining#how-was-this-made
 
 
 </details>
@@ -1366,6 +1371,7 @@ Explore `library` databases in your browser
         library block dl.db https://annoyingwebsite/etc/
         library block dl.db "%fastcompany.com%"
         library block dl.db --match-column title "% bitcoin%"
+        library block dl.db --force --match-column uploader Zeducation
 
 
 </details>
