@@ -20,7 +20,6 @@ CAST_NOW_PLAYING = str(Path(TEMP_DIR) / "catt_playing")
 DEFAULT_MPV_SOCKET = str(Path(TEMP_DIR) / "mpv_socket")
 DEFAULT_MPV_WATCH_LATER = str(Path("~/.config/mpv/watch_later/").expanduser().resolve())
 SUB_TEMP_DIR = str(Path(TEMP_DIR) / "library_temp_subtitles" / random_string())
-BLOCK_THE_CHANNEL = "__BLOCKLIST_ENTRY_"
 
 LOG_INFO = 1
 LOG_DEBUG = 2

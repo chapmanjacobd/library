@@ -2,9 +2,10 @@ import unittest
 from argparse import Namespace
 from unittest import mock
 
-from xklb import consts, utils
+from xklb import utils
 from xklb.db import connect
-from xklb.dl_extract import dl_block, dl_download
+from xklb.dl_extract import dl_download
+from xklb.scripts.block import block
 from xklb.tube_backend import yt
 from xklb.tube_extract import tube_add, tube_update
 
@@ -72,10 +73,11 @@ class TestTube(unittest.TestCase):
         out = update_playlists.call_args[0]
         assert out[1][0]["path"] == PLAYLIST_URL
 
-    def test_block_existing(self):
+    @mock.patch("xklb.tube_backend.update_playlists")
+    def test_block_existing(self, update_playlists):
         db_path = utils.file_temp_copy(dl_db[0])
-        dl_block([db_path, PLAYLIST_URL])
-        db = connect(Namespace(database=db_path, verbose=2))
-        playlists = list(db["playlists"].rows)
-        assert playlists[0]["time_deleted"] != 0
-        assert playlists[0]["category"] == consts.BLOCK_THE_CHANNEL
+        block([db_path, "--match-col=playlist_path", PLAYLIST_URL])
+        tube_update([db_path, "-c=Self"])
+        out = update_playlists.call_args[0]
+        print(out)
+        assert len(out[1]) == 0

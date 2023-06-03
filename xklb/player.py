@@ -264,10 +264,10 @@ def mark_media_deleted_like(args, paths) -> int:
 def delete_media(args, paths) -> int:
     paths = utils.conform(paths)
     for p in paths:
-        if args.prefix:
+        if getattr(args, "prefix", False):
             Path(p).unlink(missing_ok=True)
         else:
-            utils.trash(p)
+            utils.trash(p, detach=len(paths) < 30)
 
     return mark_media_deleted(args, paths)
 

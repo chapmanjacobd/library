@@ -71,7 +71,7 @@ def print_recent(tbl, time_column=None):
     utils.col_duration(tbl, "duration")
     if time_column:
         utils.col_naturaldate(tbl, time_column)
-    tbl = [{"title_path": f"{d['title']}\n{d['path']}" if d["title"] is not None else d["path"], **d} for d in tbl]
+    tbl = [{"title_path": "\n".join(utils.concat(d["title"], d["path"])), **d} for d in tbl]
     tbl = [{k: v for k, v in d.items() if k not in ("title", "path")} for d in tbl]
 
     tbl = utils.col_resize(tbl, "title_path", 40)

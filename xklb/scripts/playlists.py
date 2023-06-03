@@ -66,7 +66,6 @@ def construct_query(args) -> Tuple[str, dict]:
     WHERE 1=1
         and COALESCE(time_deleted,0) = 0
         {" ".join(args.filter_sql)}
-        and (category is null or category != '{consts.BLOCK_THE_CHANNEL}')
     ORDER BY 1=1
         {', ' + args.sort if args.sort else ''}
         , path

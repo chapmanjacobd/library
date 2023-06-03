@@ -2,13 +2,14 @@ import argparse, sys
 
 from xklb import __version__, utils
 from xklb.consts import SC
-from xklb.dl_extract import dl_block, dl_download
+from xklb.dl_extract import dl_download
 from xklb.fs_extract import fs_add, fs_update
 from xklb.hn_extract import hacker_news_add
 from xklb.play_actions import filesystem, listen, read, view, watch
 from xklb.playback import playback_next, playback_now, playback_pause, playback_stop
 from xklb.praw_extract import reddit_add, reddit_update
 from xklb.scripts.bigdirs import bigdirs
+from xklb.scripts.block import block
 from xklb.scripts.christen import christen
 from xklb.scripts.cluster_sort import cluster_sort
 from xklb.scripts.copy_play_counts import copy_play_counts
@@ -195,7 +196,7 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     subp_download = add_parser(subparsers, "download", ["dl"])
     subp_download.set_defaults(func=dl_download)
     subp_block = add_parser(subparsers, "block")
-    subp_block.set_defaults(func=dl_block)
+    subp_block.set_defaults(func=block)
     subp_redownload = add_parser(subparsers, "redownload", ["redl"])
     subp_redownload.set_defaults(func=redownload)
 

@@ -374,6 +374,10 @@ def safe_int(s) -> Optional[int]:
         return None
 
 
+def concat(*args):
+    return (part for part in args if part)
+
+
 def extract_words(string):
     if not string:
         return None
@@ -1117,6 +1121,15 @@ def cluster_paths(paths, model=None, n_clusters=None):
     return result
 
 
+def cluster_dicts(media):
+    media_keyed = {d["path"]: d for d in media}
+    groups = cluster_paths([d["path"] for d in media])
+    groups = sorted(groups, key=lambda d: (-len(d["grouped_paths"]), -len(d["common_prefix"])))
+    sorted_paths = flatten(d["grouped_paths"] for d in groups)
+    media = [media_keyed[p] for p in sorted_paths]
+    return media
+
+
 def is_timecode_like(text):
     for char in text:
         if not (char in ":,_-;. " or char.isdigit()):
@@ -1165,3 +1178,60 @@ def partial_startswith(original_string, startswith_match_list):
     else:
         msg = f"{original_string} does not match any of {startswith_match_list}"
         raise ValueError(msg)
+
+
+def compare_block_strings(value, media_value):
+    value = value.lower()
+    media_value = media_value.lower()
+
+    starts_with_wild = value.startswith("%")
+    ends_with_wild = value.endswith("%")
+    inner_value = value.lstrip("%").rstrip("%")
+    inner_wild = "%" in inner_value
+
+    if inner_wild:
+        regex_pattern = value.replace("%", ".*")
+        return bool(re.match(regex_pattern, media_value))
+    elif not ends_with_wild and not starts_with_wild:
+        return media_value.startswith(value)
+    elif ends_with_wild and not starts_with_wild:
+        return media_value.startswith(value.rstrip("%"))
+    elif starts_with_wild and not ends_with_wild:
+        return media_value.endswith(value.lstrip("%"))
+    elif starts_with_wild and ends_with_wild:
+        return inner_value in media_value
+    raise ValueError("Unreachable?")
+
+
+def block_dicts_like_sql(media, blocklist):
+    not_blocked_media = []
+    for m in media:
+        is_blocked = False
+        for block_dict in blocklist:
+            for key, value in block_dict.items():
+                if key in m and compare_block_strings(value, m[key]):
+                    is_blocked = True
+                    break
+            if is_blocked:
+                break
+        if not is_blocked:
+            not_blocked_media.append(m)
+
+    return not_blocked_media
+
+
+def allow_dicts_like_sql(media, allowlist):
+    allowed_media = []
+    for m in media:
+        is_blocked = False
+        for block_dict in allowlist:
+            for key, value in block_dict.items():
+                if key in m and compare_block_strings(value, m[key]):
+                    is_blocked = True
+                    break
+            if is_blocked:
+                break
+        if is_blocked:
+            allowed_media.append(m)
+
+    return allowed_media

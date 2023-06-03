@@ -409,3 +409,83 @@ class TestFindUnambiguousMatch(unittest.TestCase):
 
         with pytest.raises(ValueError):
             utils.partial_startswith(my_string, my_list)
+
+
+class TestStringComparison(unittest.TestCase):
+    def test_compare_block_strings_starts_with(self):
+        self.assertTrue(utils.compare_block_strings("hello", "hello world"))
+        self.assertFalse(utils.compare_block_strings("world", "hello world"))
+        self.assertFalse(utils.compare_block_strings("abc", "hello world"))
+
+    def test_compare_block_strings_ends_with(self):
+        self.assertTrue(utils.compare_block_strings("%world", "hello world"))
+        self.assertTrue(utils.compare_block_strings("hello", "hello world"))
+        self.assertFalse(utils.compare_block_strings("abc", "hello world"))
+
+    def test_compare_block_strings_contains(self):
+        self.assertTrue(utils.compare_block_strings("hello", "hello world"))
+        self.assertTrue(utils.compare_block_strings("%world%", "hello world ok"))
+        self.assertTrue(utils.compare_block_strings("hello world", "hello world"))
+        self.assertFalse(utils.compare_block_strings("abc", "hello world"))
+
+    def test_compare_block_strings_regex(self):
+        self.assertTrue(utils.compare_block_strings("he%o%", "hello world"))
+        self.assertTrue(utils.compare_block_strings("%he%o%", " hello world"))
+        self.assertFalse(utils.compare_block_strings("%abc%", "hello world"))
+        self.assertTrue(utils.compare_block_strings("h%o w%ld", "hello world"))
+        self.assertFalse(utils.compare_block_strings("abc", "hello world"))
+
+
+class TestBlocklist(unittest.TestCase):
+    def setUp(self):
+        self.media = [
+            {"title": "Movie 1", "genre": "Action"},
+            {"title": "Movie 2", "genre": "Comedy"},
+            {"title": "Movie 3", "genre": "Drama"},
+            {"title": "Movie 4", "genre": "Thriller"},
+        ]
+
+        self.blocklist = [{"genre": "Comedy"}, {"genre": "Thriller"}]
+
+    def test_filter_dicts_genre(self):
+        filtered_media = utils.block_dicts_like_sql(self.media, self.blocklist)
+        self.assertEqual(len(filtered_media), 2)
+        self.assertIn({"title": "Movie 1", "genre": "Action"}, filtered_media)
+        self.assertIn({"title": "Movie 3", "genre": "Drama"}, filtered_media)
+
+    def test_filter_dicts_title(self):
+        filtered_media = utils.block_dicts_like_sql(self.media, [{"title": "Movie 1"}, {"title": "Movie 33"}])
+        self.assertEqual(len(filtered_media), 3)
+        self.assertIn({"title": "Movie 3", "genre": "Drama"}, filtered_media)
+
+    def test_filter_rows_with_substrings_contains(self):
+        self.media.append({"title": "Movie 5", "genre": "Action Comedy"})
+        filtered_media = utils.block_dicts_like_sql(self.media, self.blocklist)
+        self.assertEqual(len(filtered_media), 3)
+        self.assertIn({"title": "Movie 5", "genre": "Action Comedy"}, filtered_media)
+
+
+class TestAllowlist(unittest.TestCase):
+    def setUp(self):
+        self.media = [
+            {"title": "Movie 1", "genre": "Action"},
+            {"title": "Movie 2", "genre": "Comedy"},
+            {"title": "Movie 3", "genre": "Drama"},
+            {"title": "Movie 4", "genre": "Thriller"},
+        ]
+
+        self.allowlist = [{"genre": "Comedy"}, {"genre": "Thriller"}]
+
+    def test_filter_dicts_genre(self):
+        filtered_media = utils.allow_dicts_like_sql(self.media, self.allowlist)
+        self.assertEqual(len(filtered_media), 2)
+
+    def test_filter_dicts_title(self):
+        filtered_media = utils.allow_dicts_like_sql(self.media, [{"title": "Movie 1"}, {"title": "Movie 33"}])
+        self.assertEqual(len(filtered_media), 1)
+
+    def test_filter_rows_with_substrings_contains(self):
+        self.media.append({"title": "Movie 5", "genre": "Action Comedy"})
+        filtered_media = utils.allow_dicts_like_sql(self.media, self.allowlist)
+        self.assertEqual(len(filtered_media), 2)
+        self.assertNotIn({"title": "Movie 5", "genre": "Action Comedy"}, filtered_media)

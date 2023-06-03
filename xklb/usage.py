@@ -43,11 +43,11 @@ block = r"""library block DATABASE URLS ...
     Blocklist specific URLs (eg. YouTube channels, etc). With YT URLs this will block
     videos from the playlist uploader
 
+        library block dl.db --match-column playlist_path 'https://youtube.com/playlist?list=PLVoczRgDnXDLWV1UJ_tO70VT_ON0tuEdm'
+
         library block dl.db https://annoyingwebsite/etc/
-
-    Use with the all-deleted-playlists flag to delete any previously downloaded files from the playlist uploader
-
-        library block dl.db --all-deleted-playlists https://annoyingwebsite/etc/
+        library block dl.db "%fastcompany.com%"
+        library block dl.db --match-column title "% bitcoin%"
 """
 
 fsadd = """library fsadd [(--video) | --audio | --image |  --text | --filesystem] DATABASE PATHS ...

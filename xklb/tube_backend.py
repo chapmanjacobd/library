@@ -53,78 +53,6 @@ def tube_opts(args, func_opts=None, playlist_opts: Optional[str] = None) -> dict
         "skip_playlist_after_errors": 21,
         "clean_infojson": False,
         "playlistend": 20000,
-        "rejecttitle": "|".join(
-            [
-                " AWARD",
-                " Clip",
-                " GPU ",
-                " Scene",
-                " Terror",
-                "360",
-                "Advert",
-                "Announcement",
-                "Apology",
-                "Best of",
-                "Bitcoin",
-                "campaign",
-                "Ceremony",
-                "Clip ",
-                "Compilation",
-                "Crypto ",
-                "Event",
-                "Final Look",
-                "First Look",
-                "Graphics Card",
-                "Horror",
-                "In Theaters",
-                "Live ",
-                "Makeup",
-                "Meetup",
-                "Montage",
-                "Now Playing",
-                "Outtakes",
-                "Panel",
-                "Preview",
-                "Promo",
-                "Red Carpet Premiere",
-                "Sneak Peek",
-                "Stream",
-                "Teaser",
-                "1 Hour",
-                "2 Hour",
-                "3 Hour",
-                "4 Hour",
-                "5 Hour",
-                "6 Hour",
-                "7 Hour",
-                "8 Hour",
-                "9 Hour",
-                "10 Hour",
-                "100 Hour",
-                "Top 10",
-                "Top 2",
-                "Top 3",
-                "Top 4",
-                "Top 5",
-                "Top 6",
-                "Top 7",
-                "Top 8",
-                "Top 9",
-                "Top Eight",
-                "Top Five",
-                "Top Four",
-                "Top Nine",
-                "Top Seven",
-                "Top Six",
-                "Top Ten",
-                "Top Three",
-                "Top Two",
-                "Trailer",
-                "TV Spot",
-                "Twitch",
-                "World Premiere",
-            ],
-        ),
     }
 
     all_opts = {
@@ -362,6 +290,31 @@ def process_playlist(args, playlist_path, ydl_opts, playlist_root=True) -> Optio
             if not pl and not args.safe:
                 log.warning("Logging undownloadable media")
                 save_undownloadable(args, playlist_path)
+
+
+def get_video_metadata(args, playlist_path) -> Optional[Dict]:
+    yt_dlp = load_module_level_yt_dlp()
+
+    with yt_dlp.YoutubeDL(
+        tube_opts(
+            args,
+            func_opts={
+                "skip_download": True,
+                "extract_flat": True,
+                "lazy_playlist": True,
+                "check_formats": False,
+                "ignoreerrors": False,
+                "playlistend": None,
+                "playlist_items": "1",
+                "noplaylist": True,
+            },
+        ),
+    ) as ydl:
+        entry = ydl.extract_info(playlist_path, download=False)
+        if entry and "entries" in entry:
+            entries = entry.pop("entries")[0]
+            entry = {**entry, **entries}
+        return entry
 
 
 def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Optional[List[Dict]]:
