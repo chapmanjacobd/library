@@ -6,10 +6,10 @@ from xklb.consts import SC, DBType
 from xklb.utils import log
 
 
-def parse_args(action, usage):
+def parse_args():
     parser = argparse.ArgumentParser(
-        prog="library " + action,
-        usage=usage,
+        prog="library download",
+        usage=usage.download,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
@@ -51,7 +51,6 @@ def parse_args(action, usage):
     parser.add_argument("--download-archive", default="~/.local/share/yt_archive.txt")
     parser.add_argument("--extra-media-data", default={}, nargs=1, action=utils.ArgparseDict, metavar="KEY=VALUE")
     parser.add_argument("--extra-playlist-data", default={}, nargs=1, action=utils.ArgparseDict, metavar="KEY=VALUE")
-    parser.add_argument("--ignore-errors", "--ignoreerrors", "-i", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--safe", "-safe", action="store_true", help="Skip generic URLs")
 
     parser.add_argument("--subs", action="store_true")
@@ -78,9 +77,7 @@ def parse_args(action, usage):
         help="Must be specified in SQLITE Modifiers format: N hours, days, months, or years",
     )
 
-    if action == SC.block:
-        parser.add_argument("--all-deleted-playlists", "--all", action="store_true", help=argparse.SUPPRESS)
-
+    parser.add_argument("--ignore-errors", "--ignoreerrors", "-i", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
     parser.add_argument("--verbose", "-v", action="count", default=0)
 
@@ -88,13 +85,12 @@ def parse_args(action, usage):
     parser.add_argument("playlists", nargs="*", help=argparse.SUPPRESS)
     args = parser.parse_intermixed_args()
 
-    if action == SC.download:
-        if args.duration:
-            args.duration = utils.parse_human_to_sql(utils.human_to_seconds, "duration", args.duration)
+    if args.duration:
+        args.duration = utils.parse_human_to_sql(utils.human_to_seconds, "duration", args.duration)
 
-        if not args.profile and not args.print:
-            log.error("Download profile must be specified. Use one of: --video --audio")
-            raise SystemExit(1)
+    if not args.profile and not args.print:
+        log.error("Download profile must be specified. Use one of: --video --audio")
+        raise SystemExit(1)
 
     if args.db:
         args.database = args.db
@@ -102,7 +98,7 @@ def parse_args(action, usage):
 
     args.playlists = utils.conform(args.playlists)
 
-    args.action = action
+    args.action = SC.download
     play_actions.parse_args_sort(args)
 
     log.info(utils.dict_filter_bool(args.__dict__))
@@ -131,11 +127,6 @@ def construct_query(args) -> Tuple[str, dict]:
           datetime( COALESCE(time_modified,0), 'unixepoch', '+{args.retry_delay}')
         ) as int) < STRFTIME('%s', datetime()) """,
     )
-
-    if "uploader" in m_columns:
-        args.filter_sql.append(
-            f"and (m.uploader is NULL or m.uploader not in (select uploader from playlists where category='{consts.BLOCK_THE_CHANNEL}'))",
-        )
 
     LIMIT = "LIMIT " + str(args.limit) if args.limit else ""
     if "playlist_path" in m_columns:
@@ -214,6 +205,9 @@ def process_downloadqueue(args) -> List[dict]:
     if not media:
         utils.no_media_found()
 
+    if "blocklist" in args.db.table_names():
+        media = utils.block_dicts_like_sql(media, [{d["key"]: d["value"]} for d in args.db["blocklist"].rows])
+
     return media
 
 
@@ -221,7 +215,7 @@ def dl_download(args=None) -> None:
     if args:
         sys.argv = ["lb", *args]
 
-    args = parse_args(SC.download, usage=usage.download)
+    args = parse_args()
     m_columns = args.db["media"].columns_dict
 
     if "media" in args.db.table_names() and "webpath" in m_columns:
@@ -259,61 +253,3 @@ def dl_download(args=None) -> None:
                 raise
         else:
             raise NotImplementedError
-
-
-def dl_block(args=None) -> None:
-    if args:
-        sys.argv = ["lb", *args]
-
-    args = parse_args(SC.block, usage=usage.block)
-
-    if not any([args.playlists, args.all_deleted_playlists]):
-        raise RuntimeError("Specific URLs or --all-deleted-playlists must be supplied")
-
-    log.info(utils.dict_filter_bool(args.__dict__))
-    args.category = consts.BLOCK_THE_CHANNEL
-    args.extra_playlist_data = {"time_deleted": consts.APPLICATION_START}
-    args.extra_media_data = {"time_deleted": consts.APPLICATION_START}
-    for p in args.playlists:
-        tube_backend.process_playlist(args, p, tube_backend.tube_opts(args, func_opts={"playlistend": 30}))
-
-    if args.playlists:
-        with args.db.conn:
-            args.db.conn.execute(
-                f"""UPDATE playlists
-                SET time_deleted={consts.APPLICATION_START}
-                ,   category='{consts.BLOCK_THE_CHANNEL}'
-                WHERE path IN ("""
-                + ",".join(["?"] * len(args.playlists))
-                + ")",
-                (*args.playlists,),
-            )
-
-    paths_to_delete = [
-        d["path"]
-        for d in args.db.query(
-            """SELECT path FROM media
-        WHERE time_downloaded > 0
-        AND playlist_path IN ("""
-            + ",".join(["?"] * len(args.playlists))
-            + ")",
-            (*args.playlists,),
-        )
-    ]
-
-    if args.all_deleted_playlists:
-        paths_to_delete = [
-            d["path"]
-            for d in args.db.query(
-                """SELECT path FROM media
-            WHERE time_downloaded > 0
-            AND playlist_path IN (
-                select path from playlists where time_deleted > 0
-            ) """,
-            )
-        ]
-
-    if paths_to_delete:
-        print(paths_to_delete)
-        if not consts.PYTEST_RUNNING and utils.confirm("Delete?"):
-            player.delete_media(args, paths_to_delete)

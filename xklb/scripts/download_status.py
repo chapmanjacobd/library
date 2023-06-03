@@ -1,6 +1,5 @@
 import argparse, json
 from copy import deepcopy
-from typing import Tuple
 
 from tabulate import tabulate
 
@@ -48,46 +47,14 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def construct_query(args) -> Tuple[str, dict]:
-    utils.ensure_playlists_exists(args)
-    pl_columns = args.db["playlists"].columns_dict
-    args.filter_sql = []
-    args.filter_bindings = {}
-
-    args.filter_sql.extend([" and " + w for w in args.where])
-
-    args.table = "playlists"
-    if args.db["playlists"].detect_fts():
-        if args.include:
-            args.table = db.fts_flexible_search(args)
-        elif args.exclude:
-            db.construct_search_bindings(args, pl_columns)
-    else:
-        db.construct_search_bindings(args, pl_columns)
-
-    LIMIT = "LIMIT " + str(args.limit) if args.limit else ""
-    query = f"""SELECT
-        *
-    FROM {args.table}
-    WHERE 1=1
-        and COALESCE(time_deleted,0) = 0
-        {" ".join(args.filter_sql)}
-        and (category is null or category != '{consts.BLOCK_THE_CHANNEL}')
-    ORDER BY 1=1
-        {', ' + args.sort if args.sort else ''}
-        , path
-        , random()
-    {LIMIT}
-    """
-
-    return query, args.filter_bindings
-
-
 def printer(args, query, bindings) -> None:
     media = list(args.db.query(query, bindings))
     media = utils.list_dict_filter_bool(media)
     if not media:
         utils.no_media_found()
+
+    if "blocklist" in args.db.table_names():
+        media = utils.block_dicts_like_sql(media, [{d["key"]: d["value"]} for d in args.db["blocklist"].rows])
 
     tbl = deepcopy(media)
     utils.col_naturaldate(tbl, "avg_time_since_download")

@@ -608,11 +608,7 @@ def process_playqueue(args) -> None:
         log.debug("player.get_related_media: %s", t.elapsed())
 
     if args.cluster:
-        media_keyed = {d["path"]: d for d in media}
-        groups = utils.cluster_paths([d["path"] for d in media])
-        groups = sorted(groups, key=lambda d: (-len(d["grouped_paths"]), -len(d["common_prefix"])))
-        sorted_paths = utils.flatten(d["grouped_paths"] for d in groups)
-        media = [media_keyed[p] for p in sorted_paths]
+        media = utils.cluster_dicts(media)
         log.debug("cluster: %s", t.elapsed())
 
     if args.print:
