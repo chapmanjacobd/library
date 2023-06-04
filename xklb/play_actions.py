@@ -174,12 +174,12 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     parser.add_argument("--lower", type=int, help="Number of files per folder lower limit")
     parser.add_argument("--upper", type=int, help="Number of files per folder upper limit")
 
-    parser.add_argument("--prefetch", type=int, default=1, help=argparse.SUPPRESS)
+    parser.add_argument("--prefetch", type=int, default=1)
     parser.add_argument("--prefix", default="", help=argparse.SUPPRESS)
     parser.add_argument(
         "--folder",
         action="store_true",
-        help="Experimental escape hatch to open folder which breaks a lot of features like post-actions",
+        help="Experimental escape hatch to open folder; breaks a lot of features like post-actions",
     )
     parser.add_argument(
         "--folder-glob",

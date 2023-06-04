@@ -69,6 +69,7 @@ def print_history(tbl):
 
 def print_recent(tbl, time_column=None):
     utils.col_duration(tbl, "duration")
+    utils.col_duration(tbl, "playhead")
     if time_column:
         utils.col_naturaldate(tbl, time_column)
     tbl = [{"title_path": "\n".join(utils.concat(d["title"], d["path"])), **d} for d in tbl]
@@ -76,6 +77,7 @@ def print_recent(tbl, time_column=None):
 
     tbl = utils.col_resize(tbl, "title_path", 40)
     tbl = utils.col_resize(tbl, "duration", 5)
+    tbl = utils.col_resize(tbl, "playhead", 5)
     tbl = utils.list_dict_filter_bool(tbl)
     print(tabulate(tbl, tablefmt="fancy_grid", headers="keys", showindex=False))
 
@@ -111,9 +113,9 @@ def history() -> None:
                 , time_played
                 , playhead
             FROM media
-            WHERE coalesce(time_deleted, 0)=0
-                and coalesce(playhead, 0)>0
-                and coalesce(play_count, 0)=0
+            WHERE coalesce(time_deleted, 0) = 0
+                and coalesce(playhead, 0) > 60
+                and coalesce(play_count, 0) = 0
             ORDER BY time_played desc, playhead desc
             LIMIT {args.limit or 5}
         """

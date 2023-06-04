@@ -143,7 +143,7 @@ Incremental surfing. 📈🏄 totally rad!
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v1.29.016)
+    xk media library subcommands (v1.29.017)
 
     local media:
       lb fsadd                 Create a local media database; Add folders

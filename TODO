@@ -14,6 +14,10 @@ table.transform(pk=None)
 
 - wt/lt/search join and use fts on both tables, threading ?
 
+- POIs CLI -- save your trip plans and see places to go with automated day trip itineraries. DBScan
+
+- upscale command -- download higher quality videos; use webpath, PURL, comment to get URL
+
 - move time_played, playhead, and other ephemeral data to its own table
 
 add time_first_played, time_last_played; remove time_played instead use play_count
