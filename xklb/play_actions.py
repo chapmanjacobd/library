@@ -174,6 +174,7 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     parser.add_argument("--lower", type=int, help="Number of files per folder lower limit")
     parser.add_argument("--upper", type=int, help="Number of files per folder upper limit")
 
+    parser.add_argument("--prefetch", type=int, default=1, help=argparse.SUPPRESS)
     parser.add_argument("--prefix", default="", help=argparse.SUPPRESS)
     parser.add_argument(
         "--folder",
@@ -626,7 +627,7 @@ def process_playqueue(args) -> None:
             futures = deque()
             with ThreadPoolExecutor(max_workers=1) as executor:
                 while media or futures:
-                    while media and len(futures) < 3:
+                    while media and len(futures) < args.prefetch:
                         m = media.pop()
                         if m["path"] in ignore_paths:
                             continue
