@@ -1,4 +1,4 @@
-import argparse, csv, enum, functools, hashlib, logging, math, multiprocessing, os, platform, random, re, shlex, shutil, signal, string, subprocess, sys, tempfile, textwrap, time
+import argparse, csv, functools, hashlib, logging, math, multiprocessing, os, platform, random, re, shlex, shutil, signal, string, subprocess, sys, tempfile, time
 from ast import literal_eval
 from collections.abc import Iterable
 from copy import deepcopy
@@ -650,10 +650,30 @@ def safe_unpack(*list_, idx=0) -> Optional[Any]:
         return None
 
 
+def path_fill(text, size):
+    width = max(10, int(size * (consts.TERMINAL_SIZE.columns / 80)))
+    lines = []
+    current_line = ""
+    for char in text:
+        if char == "\r":
+            continue  # Ignore carriage return character
+        elif char == "\n":
+            lines.append(current_line)
+            current_line = ""
+        else:
+            current_line += char
+            if len(current_line) == width:
+                lines.append(current_line)
+                current_line = ""
+    if current_line:
+        lines.append(current_line)
+    return "\n".join(lines)
+
+
 def col_resize(tbl: List[Dict], col: str, size=10) -> List[Dict]:
     for idx, _d in enumerate(tbl):
         if tbl[idx].get(col) is not None:
-            tbl[idx][col] = textwrap.fill(tbl[idx][col], max(10, int(size * (consts.TERMINAL_SIZE.columns / 80))))
+            tbl[idx][col] = path_fill(tbl[idx][col], size)
 
     return tbl
 
