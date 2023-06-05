@@ -226,6 +226,19 @@ playlists_of_playlists = []
 added_media_count = 0
 
 
+def save_entry(args, entry):
+    tags = entry.pop("tags", None) or ""
+    media_id = args.db.pop("select id from media where path = ?", [entry["path"]])
+    if media_id:
+        entry["id"] = media_id
+        args.db["media"].upsert(utils.dict_filter_bool(entry), pk="id", alter=True)
+    else:
+        args.db["media"].insert(utils.dict_filter_bool(entry), pk="id", alter=True)
+        media_id = args.db.pop("select id from media where path = ?", [entry["path"]])
+    if tags:
+        args.db["captions"].insert({"media_id": media_id, "time": 0, "text": tags}, alter=True)
+
+
 def process_playlist(args, playlist_path, ydl_opts, playlist_root=True) -> Optional[List[Dict]]:
     yt_dlp = load_module_level_yt_dlp()
 
@@ -265,8 +278,7 @@ def process_playlist(args, playlist_path, ydl_opts, playlist_root=True) -> Optio
                         raise ExistingPlaylistVideoReached
 
                     entry = {**entry, **args.extra_media_data}
-                    entry["id"] = args.db.pop("select id from media where path = ?", [entry["path"]])
-                    args.db["media"].insert(utils.dict_filter_bool(entry), pk="id", alter=True, replace=True)
+                    save_entry(args, entry)
 
                     added_media_count += 1
                     if added_media_count > 1:
@@ -405,7 +417,8 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Optional[L
             entry["chapter_count"] = chapter_count
             entry["time_played"] = time_played
             entry["playhead"] = playhead
-            args.db["media"].upsert(utils.dict_filter_bool(entry), pk="id", alter=True)
+
+            save_entry(args, entry)
 
             current_video_count += 1
             sys.stdout.write("\033[K\r")
@@ -438,13 +451,14 @@ def save_tube_entry(args, m, info: Optional[dict] = None, error=None, unrecovera
 
     if not info:  # not downloaded or already downloaded
         entry = {
+            "id": m["id"],
             "path": webpath,
             "time_downloaded": 0,
             "time_modified": consts.now(),
             "time_deleted": consts.APPLICATION_START if unrecoverable_error else 0,
             "error": error,
         }
-        args.db["media"].upsert(utils.dict_filter_bool(entry), pk="id", alter=True)  # type: ignore
+        save_entry(args, entry)
         return
 
     assert info["local_path"] != ""
@@ -472,13 +486,14 @@ def save_tube_entry(args, m, info: Optional[dict] = None, error=None, unrecovera
     entry = {
         **tube_entry,
         **fs_tags,
+        "id": m["id"],
         "webpath": webpath,
         "time_modified": consts.now(),
         "time_downloaded": 0 if error else consts.APPLICATION_START,
         "time_deleted": consts.APPLICATION_START if unrecoverable_error else 0,
         "error": error,
     }
-    args.db["media"].upsert(utils.dict_filter_bool(entry), pk="id", alter=True)  # type: ignore
+    save_entry(args, entry)
 
     if fs_tags:
         try:

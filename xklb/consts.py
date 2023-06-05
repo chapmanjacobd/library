@@ -183,6 +183,7 @@ time_facets = [
     "deleted",
     "created",
     "modified",
+    "downloaded",
 ]
 
 frequency = ["daily", "weekly", "monthly", "quarterly", "yearly"]
