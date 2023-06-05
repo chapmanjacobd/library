@@ -131,7 +131,8 @@ def construct_query(args) -> Tuple[str, dict]:
     LIMIT = "LIMIT " + str(args.limit) if args.limit else ""
     if "playlist_path" in m_columns:
         query = f"""select
-                m.path
+                m.id
+                , m.path
                 , playlist_path
                 , m.title
                 {', m.duration' if 'duration' in m_columns else ''}
