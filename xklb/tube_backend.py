@@ -451,7 +451,6 @@ def save_tube_entry(args, m, info: Optional[dict] = None, error=None, unrecovera
 
     if not info:  # not downloaded or already downloaded
         entry = {
-            "id": m["id"],
             "path": webpath,
             "time_downloaded": 0,
             "time_modified": consts.now(),
@@ -486,7 +485,6 @@ def save_tube_entry(args, m, info: Optional[dict] = None, error=None, unrecovera
     entry = {
         **tube_entry,
         **fs_tags,
-        "id": m["id"],
         "webpath": webpath,
         "time_modified": consts.now(),
         "time_downloaded": 0 if error else consts.APPLICATION_START,
