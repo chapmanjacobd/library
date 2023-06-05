@@ -71,12 +71,10 @@ def connect(args, conn=None, **kwargs):
 config = {
     "media": {
         "search_columns": ["path", "title", "mood", "genre", "description", "artist", "album"],
-        "column_order": ["path", "webpath", "id", "ie_key", "playlist_path"],
-        "ignore_columns": ["id"],
+        "column_order": ["path", "webpath", "tube_id", "ie_key", "playlist_path"],
+        "ignore_columns": ["id", "tube_id"],
     },
-    "captions": {
-        "search_columns": ["text"],
-    },
+    "captions": {"search_columns": ["text"]},
     "reddit_posts": {
         "search_columns": ["title", "selftext"],
         "column_order": ["playlist_path", "path"],

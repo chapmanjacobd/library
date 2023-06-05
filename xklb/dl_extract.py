@@ -1,7 +1,7 @@
 import argparse, os, sys
 from typing import List, Tuple
 
-from xklb import consts, db, play_actions, player, tube_backend, usage, utils
+from xklb import db, play_actions, player, tube_backend, usage, utils
 from xklb.consts import SC, DBType
 from xklb.utils import log
 
@@ -142,7 +142,6 @@ def construct_query(args) -> Tuple[str, dict]:
                 {', m.time_downloaded' if 'time_downloaded' in m_columns else ''}
                 {', m.time_deleted' if 'time_deleted' in m_columns else ''}
                 {', m.error' if 'error' in m_columns else ''}
-                {', m.id' if 'id' in m_columns else ''}
                 {', p.dl_config' if 'dl_config' in pl_columns else ''}
                 , coalesce(p.category, p.ie_key) category
             FROM media m
@@ -174,7 +173,6 @@ def construct_query(args) -> Tuple[str, dict]:
                 {', m.time_downloaded' if 'time_downloaded' in m_columns else ''}
                 {', m.time_deleted' if 'time_deleted' in m_columns else ''}
                 {', m.error' if 'error' in m_columns else ''}
-                {', m.id' if 'id' in m_columns else ''}
             FROM media m
             WHERE 1=1
                 and COALESCE(m.time_downloaded,0) = 0

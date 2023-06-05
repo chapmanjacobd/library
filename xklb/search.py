@@ -91,7 +91,9 @@ def printer(args, captions) -> None:
     else:
         print(f"{len(captions)} captions")
         for path, path_group in groupby(tbl, key=lambda x: x["path"]):
-            print(path)
+            path_group = list(path_group)
+            title = path_group[0].get("title")
+            print(" - ".join(utils.concat(title, path)))
             for caption in path_group:
                 for line in textwrap.wrap(caption["text"], subsequent_indent=" " * 9, initial_indent=f"{caption['time']} ", width=consts.TERMINAL_SIZE.columns - 2):  # type: ignore
                     print(line)
@@ -99,7 +101,8 @@ def printer(args, captions) -> None:
 
 
 def construct_query(args) -> Tuple[str, dict]:
-    m_columns = args.db["captions"].columns_dict
+    m_columns = args.db["media"].columns_dict
+    c_columns = args.db["captions"].columns_dict
     args.filter_sql = []
     args.filter_bindings = {}
 
@@ -109,24 +112,25 @@ def construct_query(args) -> Tuple[str, dict]:
     if args.db["captions"].detect_fts():
         if args.include:
             table = db.fts_flexible_search(args, "captions")
-            m_columns = {**m_columns, "rank": int}
+            c_columns = {**c_columns, "rank": int}
         elif args.exclude:
-            db.construct_search_bindings(args, m_columns)
+            db.construct_search_bindings(args, c_columns)
     else:
-        db.construct_search_bindings(args, m_columns)
+        db.construct_search_bindings(args, c_columns)
 
-    cols = args.cols or ["path", "text", "time", "rank"]
-    args.select = [c for c in cols if c in m_columns or c in ["*"]]
+    cols = args.cols or ["path", "text", "time", "rank", "title"]
+    args.select = [c for c in cols if c in {**c_columns, **m_columns, **{"*": "Any"}}]
     args.select_sql = "\n        , ".join(args.select)
     args.limit_sql = "LIMIT " + str(args.limit) if args.limit else ""
-    query = f"""WITH m as (
+    query = f"""WITH c as (
     SELECT rowid, * FROM {table}
     WHERE 1=1
-        {player.filter_args_sql(args, m_columns)}
+        {player.filter_args_sql(args, c_columns)}
     )
     SELECT
         {args.select_sql}
-    FROM m
+    FROM c
+    JOIN media m on m.id = c.media_id
     WHERE 1=1
         {" ".join(args.filter_sql)}
     ORDER BY 1=1
@@ -147,7 +151,7 @@ def merge_captions(args, captions):
         key=lambda x: x["path"],
     ):  # group by only does contiguous items with the same key
         group = list(group)
-        merged_group = {"path": path, "time": group[0]["time"], "end": get_end(group[0]), "text": group[0]["text"]}  # type: ignore
+        merged_group = {"path": path, "title": group[0]["title"], "time": group[0]["time"], "end": get_end(group[0]), "text": group[0]["text"]}  # type: ignore
         for i in range(1, len(group)):
             end = get_end(group[i])
 

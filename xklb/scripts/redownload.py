@@ -138,7 +138,7 @@ def redownload() -> None:
 
     print_deleted(args, deleted_media)
     paths = [d["path"] for d in deleted_media]
-    redownload_ids = [d["id"] for d in deleted_media if d.get("id")]
+    redownload_ids = [d["tube_id"] for d in deleted_media if d.get("tube_id")]
     print(len(redownload_ids), "tube ids found")
     if deleted_media and utils.confirm("Redownload media?"):  # type: ignore
         if len(redownload_ids) > 0:
