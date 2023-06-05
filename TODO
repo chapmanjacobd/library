@@ -1,20 +1,10 @@
-- use rowid alias instead of string pks
-
-captions table
-playlists table
-
-sqlite-utils transform chickens.db chickens --pk id
-
-[author_id] INTEGER REFERENCES [authors]([id])
-db["dogs"].add_column("species_id", fk="species", fk_col="ref")
-
-table.transform(pk=None)
+- use rowid alias instead of string pks: playlists table: switch playlist_path fk to integer id
 
 - search: get title from media table
 
 - wt/lt/search join and use fts on both tables, threading ?
 
-- POIs CLI -- save your trip plans and see places to go with automated day trip itineraries. DBScan
+- POIs CLI -- save your trip plans and see places to go with automated day trip itineraries, geopandas buffer
 
 - upscale command -- download higher quality videos; use webpath, PURL, comment to get URL
 

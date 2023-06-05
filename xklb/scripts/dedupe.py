@@ -23,11 +23,11 @@ def parse_args() -> argparse.Namespace:
         help="Dedupe database by artist + album + title",
     )
     profile.add_argument(
-        "--id",
+        "--tube-id",
         action="store_const",
         dest="profile",
-        const="id",
-        help="Dedupe database by id + ie_key",
+        const="tube_id",
+        help="Dedupe database by tube_id + ie_key",
     )
     profile.add_argument(
         "--title",
@@ -125,7 +125,7 @@ def get_id_duplicates(args) -> List[dict]:
     FROM
         media m1
     JOIN media m2 on 1=1
-        and m1.id = m2.id
+        and m1.tube_id = m2.tube_id
         and m1.duration >= m2.duration - 4
         and m1.duration <= m2.duration + 4
         and m1.ie_key in (m2.ie_key, 'Local')
@@ -133,7 +133,7 @@ def get_id_duplicates(args) -> List[dict]:
     WHERE 1=1
         and m1.time_deleted = 0 and m2.time_deleted = 0
         and abs(m1.sparseness - 1) < 0.1
-        and m1.id != '' and m1.ie_key != ''
+        and m1.tube_id != '' and m1.ie_key != ''
     ORDER BY 1=1
         , m1.video_count > 0 DESC
         , m1.subtitle_count > 0 DESC
@@ -197,7 +197,7 @@ def dedupe() -> None:
 
     if args.profile == DBType.audio:
         duplicates = get_music_duplicates(args)
-    elif args.profile == "id":
+    elif args.profile == "tube_id":
         duplicates = get_id_duplicates(args)
     elif args.profile == "title":
         duplicates = get_title_duplicates(args)

@@ -50,8 +50,8 @@ def get_duplicates(args) -> List[dict]:
     JOIN media_fts on m2.rowid = media_fts.rowid
     WHERE m2.ie_key = 'Local'
         AND m1.ie_key NOT IN ('NBCStations', 'TedTalk', 'ThisAmericanLife', 'InfoQ', 'NFB', 'KickStarter')
-        AND media_fts.path MATCH '"'||m1.id||'"'
-        AND m2.PATH LIKE '%['||m1.id||']%'
+        AND media_fts.path MATCH '"'||m1.tube_id||'"'
+        AND m2.PATH LIKE '%['||m1.tube_id||']%'
     ORDER BY 1=1
         , length(m2.path)-length(REPLACE(m2.path, '/', '')) desc
         , length(m2.path)-length(REPLACE(m2.path, '.', ''))
@@ -98,7 +98,7 @@ def merge_online_local() -> None:
             tube_entry = get_dict(args, webpath)
             fs_tags = get_dict(args, fspath)
 
-            if not tube_entry or not fs_tags or tube_entry["id"] not in fs_tags["path"]:
+            if not tube_entry or not fs_tags or tube_entry["tube_id"] not in fs_tags["path"]:
                 continue
 
             if fs_tags["time_modified"] is None or fs_tags["time_modified"] == 0:

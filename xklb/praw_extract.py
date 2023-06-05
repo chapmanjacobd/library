@@ -376,7 +376,7 @@ def reddit_add(args=None) -> None:
             utils.dict_filter_bool(
                 {
                     "path": path,
-                    "id": name,
+                    "playlist_id": name,
                     "config": utils.filter_namespace(args, ["limit", "lookback", "praw_site"]),
                     "category": args.category or ie_key,
                     "ie_key": ie_key,
@@ -411,6 +411,6 @@ def reddit_update(args=None) -> None:
         args_env = args if not config else argparse.Namespace(**{**config, **args.__dict__})
 
         if playlist["ie_key"] == "reddit_praw_subreddit":
-            process_subreddits(args_env, [{"path": playlist["path"], "name": playlist["id"]}])
+            process_subreddits(args_env, [{"path": playlist["path"], "name": playlist["playlist_id"]}])
         elif playlist["ie_key"] == "reddit_praw_subreddit":
-            process_redditors(args_env, [{"path": playlist["path"], "name": playlist["id"]}])
+            process_redditors(args_env, [{"path": playlist["path"], "name": playlist["playlist_id"]}])

@@ -153,8 +153,8 @@ def consolidate(v: dict) -> Optional[dict]:
         v.pop("genre", None),
         v.pop("tags", None),
     )
-    cv["id"] = v.pop("id", None)
-    if cv["id"] is None:
+    cv["tube_id"] = v.pop("id", None)
+    if cv["tube_id"] is None:
         log.warning("No id found in %s", v)
     cv["ie_key"] = safe_unpack(v.pop("ie_key", None), v.pop("extractor_key", None), v.pop("extractor", None))
     cv["title"] = safe_unpack(v.pop("title", None), v.get("playlist_title"))
@@ -198,14 +198,14 @@ def _add_playlist(args, playlist_path, pl: dict, media_path: Optional[str] = Non
         "title": pl.get("playlist_title"),
         "path": playlist_path,
         "uploader": safe_unpack(pl.get("playlist_uploader_id"), pl.get("playlist_uploader")),
-        "id": pl.get("playlist_id"),
+        "playlist_id": pl.get("playlist_id"),
         "dl_config": args.dl_config,
         "time_deleted": 0,
         "category": args.category or extractor,
         **args.extra_playlist_data,
     }
 
-    if not playlist.get("id") or media_path == playlist["path"]:
+    if not playlist.get("playlist_id") or media_path == playlist["path"]:
         log.warning("Importing playlist-less media %s", playlist["path"])
     else:
         args.db["playlists"].upsert(utils.dict_filter_bool(playlist), pk="path", alter=True)
@@ -265,7 +265,8 @@ def process_playlist(args, playlist_path, ydl_opts, playlist_root=True) -> Optio
                         raise ExistingPlaylistVideoReached
 
                     entry = {**entry, **args.extra_media_data}
-                    args.db["media"].upsert(utils.dict_filter_bool(entry), pk="path", alter=True)
+                    entry["id"] = args.db.pop("select id from media where path = ?", [entry["path"]])
+                    args.db["media"].insert(utils.dict_filter_bool(entry), pk="id", alter=True, replace=True)
 
                     added_media_count += 1
                     if added_media_count > 1:
@@ -347,7 +348,8 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Optional[L
         videos = args.db.execute(
             f"""
             SELECT
-                path
+              id
+            , path
             , ie_key
             , play_count
             , time_played
@@ -363,7 +365,7 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Optional[L
         ).fetchall()
 
         current_video_count = 0
-        for path, ie_key, play_count, time_played, playhead in videos:
+        for id, path, ie_key, play_count, time_played, playhead in videos:
             entry = ydl.extract_info(path, ie_key=ie_key)
             if entry is None:
                 continue
@@ -372,7 +374,7 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Optional[L
             chapter_count = len(chapters)
             if chapter_count > 0:
                 chapters = [
-                    {"path": path, "time": int(float(d["start_time"])), "text": d.get("title")}
+                    {"media_id": id, "time": int(float(d["start_time"])), "text": d.get("title")}
                     for d in chapters
                     if d.get("title") and not utils.is_generic_title(d)
                 ]
@@ -389,7 +391,7 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Optional[L
                     except UnicodeDecodeError:
                         log.warning(f"[{path}] Could not decode subtitle {subtitle_path}")
                     else:
-                        captions.extend([{"path": path, **d} for d in file_captions])
+                        captions.extend([{"media_id": id, **d} for d in file_captions])
                 if len(captions) > 0:
                     args.db["captions"].insert_all(captions, alter=True)
 
@@ -397,12 +399,13 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Optional[L
             if entry is None:
                 continue
 
+            entry["id"] = id
             entry["playlist_path"] = playlist_path
             entry["play_count"] = play_count
             entry["chapter_count"] = chapter_count
             entry["time_played"] = time_played
             entry["playhead"] = playhead
-            args.db["media"].upsert(utils.dict_filter_bool(entry), pk="path", alter=True)
+            args.db["media"].upsert(utils.dict_filter_bool(entry), pk="id", alter=True)
 
             current_video_count += 1
             sys.stdout.write("\033[K\r")
@@ -429,9 +432,9 @@ def update_playlists(args, playlists) -> None:
 def save_tube_entry(args, m, info: Optional[dict] = None, error=None, unrecoverable_error=False) -> None:
     webpath = m["path"]
 
-    v_id = m.get("id")
-    if v_id:
-        error = None if not error else error.replace(v_id, "").replace(" :", ":")
+    tube_id = m.get("tube_id")
+    if tube_id:
+        error = None if not error else error.replace(tube_id, "").replace(" :", ":")
 
     if not info:  # not downloaded or already downloaded
         entry = {
@@ -441,7 +444,7 @@ def save_tube_entry(args, m, info: Optional[dict] = None, error=None, unrecovera
             "time_deleted": consts.APPLICATION_START if unrecoverable_error else 0,
             "error": error,
         }
-        args.db["media"].upsert(utils.dict_filter_bool(entry), pk="path", alter=True)  # type: ignore
+        args.db["media"].upsert(utils.dict_filter_bool(entry), pk="id", alter=True)  # type: ignore
         return
 
     assert info["local_path"] != ""
@@ -475,7 +478,7 @@ def save_tube_entry(args, m, info: Optional[dict] = None, error=None, unrecovera
         "time_deleted": consts.APPLICATION_START if unrecoverable_error else 0,
         "error": error,
     }
-    args.db["media"].upsert(utils.dict_filter_bool(entry), pk="path", alter=True)  # type: ignore
+    args.db["media"].upsert(utils.dict_filter_bool(entry), pk="id", alter=True)  # type: ignore
 
     if fs_tags:
         try:

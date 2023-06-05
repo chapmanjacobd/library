@@ -197,26 +197,34 @@ def extract_chunk(args, media) -> None:
     if args.scan_subtitles:
         clean_up_temp_dirs()
 
-    captions_t0 = []
+    captions = []
     for d in media:
-        chapters = d.pop("chapters", None) or []
-        if len(chapters) > 0:
-            args.db["captions"].insert_all(chapters, alter=True)
+        caption = {}
+        caption["path"] = d["path"]
 
-        subtitles = d.pop("subtitles", None) or []
-        if len(subtitles) > 0:
-            args.db["captions"].insert_all(subtitles, alter=True)
+        caption["chapters"] = d.pop("chapters", None) or []
+        caption["subtitles"] = d.pop("subtitles", None) or []
 
         tags = d.pop("tags", None) or ""
         description = d.pop("description", None) or ""
         if description:
             tags += "\n" + description
         if tags:
-            captions_t0.append({"path": d["path"], "time": 0, "text": tags})
-    args.db["captions"].insert_all(captions_t0, alter=True)
+            caption["captions_t0"] = {"time": 0, "text": tags}
+
+        captions.append(caption)
 
     media = utils.list_dict_filter_bool(media)
-    args.db["media"].insert_all(utils.list_dict_filter_bool(media), pk="path", alter=True, replace=True)
+    args.db["media"].insert_all(utils.list_dict_filter_bool(media), pk="id", alter=True, replace=True)
+
+    for d in captions:
+        media_id = args.db.pop("select id from media where path = ?", [d["path"]])
+        if len(d["chapters"]) > 0:
+            args.db["captions"].insert_all([{**d, "media_id": media_id} for d in d["chapters"]], alter=True)
+        if len(d["subtitles"]) > 0:
+            args.db["captions"].insert_all([{**d, "media_id": media_id} for d in d["subtitles"]], alter=True)
+        if d.get("caption_t0"):
+            args.db["captions"].insert({**d["caption_t0"], "media_id": media_id}, alter=True)
 
 
 def find_new_files(args, path: Path) -> List[str]:

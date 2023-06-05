@@ -23,7 +23,7 @@ def get_subtitle_tags(args, path, streams, codec_types) -> dict:
             except UnicodeDecodeError:
                 log.warning(f"[{path}] Could not decode subtitle {subtitle_path}")
             else:
-                subtitles.extend([{"path": path, **d} for d in captions])
+                subtitles.extend(captions)
     else:
         external_subtitles = []
 
@@ -215,7 +215,7 @@ def munge_av_tags(args, media, path) -> Optional[dict]:
     chapter_count = len(chapters)
     if chapter_count > 0:
         chapters = [
-            {"path": path, "time": int(float(d["start_time"])), "text": d["tags"]["title"]}
+            {"time": int(float(d["start_time"])), "text": d["tags"]["title"]}
             for d in chapters
             if "tags" in d and "title" in d["tags"] and not utils.is_generic_title(d["tags"]["title"])
         ]
