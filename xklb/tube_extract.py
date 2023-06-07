@@ -99,27 +99,36 @@ def tube_add(args=None) -> None:
         )
 
     tables = args.db.table_names()
+    known_playlists = []
+    if "media" in tables and not args.playlist_db:
+        m_columns = args.db["media"].columns_dict
+        known_playlists = list(
+            set(
+                d["path"]
+                for d in args.db.query(
+                    (
+                        "SELECT path from media"
+                        + " WHERE path in ("
+                        + ",".join(["?"] * len(args.playlists))
+                        + f") or {'web' if 'webpath' in m_columns else ''}path in ("
+                        + ",".join(["?"] * len(args.playlists))
+                        + ")"
+                        + " UNION ALL"
+                        + " SELECT path from playlists"
+                    ),
+                    [*args.playlists, *args.playlists],
+                )
+            )
+        )
 
     for path in args.playlists:
         if args.safe and not tube_backend.is_supported(path):
             log.info("[%s]: Skipping unsupported playlist (safe_mode)", path)
             continue
 
-        if "media" in tables and not args.playlist_db:
-            m_columns = args.db["media"].columns_dict
-            playlist_already_added = list(
-                args.db.query(
-                    f"""
-                    SELECT path from media
-                    WHERE 1=1
-                    AND (path=? or {'web' if 'webpath' in m_columns else ''}path=?)
-                    """,
-                    [path, path],
-                ),
-            )
-            if playlist_already_added:
-                log.info("[%s]: Already added. Skipping!", path)
-                continue
+        if path in known_playlists:
+            log.info("[%s]: Already added. Skipping!", path)
+            continue
 
         tube_backend.process_playlist(args, path, tube_backend.tube_opts(args))
 
