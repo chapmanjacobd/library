@@ -1,7 +1,5 @@
 - use rowid alias instead of string pks: playlists table: switch playlist_path fk to integer id
 
-- search: get title from media table
-
 - wt/lt/search join and use fts on both tables, threading ?
 
 - POIs CLI -- save your trip plans and see places to go with automated day trip itineraries, geopandas buffer
