@@ -55,14 +55,15 @@ def parse_args(action, usage) -> argparse.Namespace:
         Path(args.database).touch()
     args.db = db.connect(args)
 
-    if hasattr(args, "no_sanitize") and hasattr(args, "playlists") and not args.no_sanitize:
-        args.playlists = [utils.sanitize_url(args, p) for p in args.playlists]
     if hasattr(args, "playlists"):
+        args.playlists = list(set(args.playlists))
+        if not args.no_sanitize:
+            args.playlists = [utils.sanitize_url(args, p) for p in args.playlists]
         args.playlists = utils.conform(args.playlists)
-    log.info(utils.dict_filter_bool(args.__dict__))
 
     utils.timeout(args.timeout)
 
+    log.info(utils.dict_filter_bool(args.__dict__))
     return args
 
 
@@ -97,10 +98,28 @@ def tube_add(args=None) -> None:
             ),
         )
 
+    tables = args.db.table_names()
+
     for path in args.playlists:
         if args.safe and not tube_backend.is_supported(path):
             log.info("[%s]: Skipping unsupported playlist (safe_mode)", path)
             continue
+
+        if "media" in tables and not args.playlist_db:
+            m_columns = args.db["media"].columns_dict
+            playlist_already_added = list(
+                args.db.query(
+                    f"""
+                    SELECT path from media
+                    WHERE 1=1
+                    AND (path=? or {'web' if 'webpath' in m_columns else ''}path=?)
+                    """,
+                    [path, path],
+                ),
+            )
+            if playlist_already_added:
+                log.info("[%s]: Already added. Skipping!", path)
+                continue
 
         tube_backend.process_playlist(args, path, tube_backend.tube_opts(args))
 

@@ -1,4 +1,4 @@
-import os, re, secrets, string, sys
+import os, re, secrets, shutil, string, sys
 from datetime import datetime, timezone
 from pathlib import Path
 from tempfile import gettempdir
@@ -52,11 +52,7 @@ REGEX_REDDITOR = re.compile(
 )
 REGEX_V_REDD_IT = re.compile("https?://v.redd.it/(?:[^/?#&]+)")
 APPLICATION_START = now()
-
-try:
-    TERMINAL_SIZE = os.get_terminal_size()
-except Exception:
-    TERMINAL_SIZE = SimpleNamespace(columns=80, lines=60)
+TERMINAL_SIZE = shutil.get_terminal_size(fallback=(80, 60))
 
 
 TIME_COLUMNS = (
