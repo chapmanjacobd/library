@@ -293,6 +293,8 @@ def process_playlist(args, playlist_path, ydl_opts, playlist_root=True) -> Optio
         count_before_extract = added_media_count
         try:
             pl = ydl.extract_info(playlist_path, download=False, process=True)
+        except yt_dlp.DownloadError:
+            log.error("[%s] DownloadError skipping", playlist_path)
         except ExistingPlaylistVideoReached:
             if added_media_count > count_before_extract:
                 sys.stdout.write("\n")
