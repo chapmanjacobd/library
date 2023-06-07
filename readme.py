@@ -433,7 +433,7 @@ for reddit_db in ~/lb/reddit/*.db
         sqlite-utils upsert --pk path --alter --csv --detect-types $reddit_db media $subreddit.csv
     end
 
-    library tubeadd --safe -i $reddit_db --playlist-db media
+    library tubeadd --safe --ignore-errors --force $reddit_db (sqlite-utils --raw-lines $reddit_db 'select path from media')
 end
 ```
 

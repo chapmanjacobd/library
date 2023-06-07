@@ -44,7 +44,7 @@ class TestTube(unittest.TestCase):
     @mock.patch("xklb.tube_backend.yt")
     @mock.patch("xklb.tube_backend.process_playlist")
     def test_tube_dl_conversion(self, process_playlist, mocked_yt):
-        tube_add([*tube_db, "-c=Self", PLAYLIST_URL])
+        tube_add([*tube_db, "-c=Self", "--force", PLAYLIST_URL])
         out = process_playlist.call_args[0][1]
         assert out == PLAYLIST_URL
 

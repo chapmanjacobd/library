@@ -714,7 +714,7 @@ tubeadd = r"""library tubeadd [-c CATEGORY] [--safe] [--extra] [--subs] [--auto-
 
     Add metadata to links already in a database table
 
-        library tubeadd reddit.db --playlist-db media
+        library tubeadd --force reddit.db (sqlite-utils --raw-lines reddit.db 'select path from media')
 
     You can also include a category for file organization
 
