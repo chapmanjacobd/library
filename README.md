@@ -143,7 +143,7 @@ Incremental surfing. 📈🏄 totally rad!
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v1.30.004)
+    xk media library subcommands (v1.30.005)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -503,7 +503,7 @@ for reddit_db in ~/lb/reddit/*.db
         sqlite-utils upsert --pk path --alter --csv --detect-types $reddit_db media $subreddit.csv
     end
 
-    library tubeadd --safe -i $reddit_db --playlist-db media
+    library tubeadd --safe --ignore-errors --force $reddit_db (sqlite-utils --raw-lines $reddit_db 'select path from media')
 end
 ```
 
@@ -586,7 +586,7 @@ Explore `library` databases in your browser
 
     Add metadata to links already in a database table
 
-        library tubeadd reddit.db --playlist-db media
+        library tubeadd --force reddit.db (sqlite-utils --raw-lines reddit.db 'select path from media')
 
     You can also include a category for file organization
 

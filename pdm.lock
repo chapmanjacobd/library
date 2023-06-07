@@ -773,17 +773,17 @@ summary = "Python Bindings for the NVIDIA Management Library"
 
 [[package]]
 name = "pyobjc-core"
-version = "9.1.1"
+version = "9.2"
 requires_python = ">=3.7"
 summary = "Python<->ObjC Interoperability Module"
 
 [[package]]
 name = "pyobjc-framework-cocoa"
-version = "9.1.1"
+version = "9.2"
 requires_python = ">=3.7"
 summary = "Wrappers for the Cocoa frameworks on macOS"
 dependencies = [
-    "pyobjc-core>=9.1.1",
+    "pyobjc-core>=9.2",
 ]
 
 [[package]]
@@ -1184,7 +1184,7 @@ summary = "HTTP library with thread-safe connection pooling, file post, and more
 
 [[package]]
 name = "wasabi"
-version = "1.1.1"
+version = "1.1.2"
 requires_python = ">=3.6"
 summary = "A lightweight console printing and formatting toolkit"
 dependencies = [
@@ -2752,23 +2752,25 @@ content_hash = "sha256:838a39f6efcdf7890f45ea1f5c4bde5c496a26b207eb1344404bdaf9e
     {url = "https://files.pythonhosted.org/packages/5b/9c/adb8070059caaa15d5a572b66bccd95900d8c1b9fa54d6ecea6ae97448d1/pynvml-11.5.0-py3-none-any.whl", hash = "sha256:5cce014ac01b098d08f06178f86c37be409b80b2e903a5a03ce15eed60f55e25"},
     {url = "https://files.pythonhosted.org/packages/77/1b/dbc48e97c0c005a5ac4574dbea98465211e918dd79e6bdbde21ee77cccb9/pynvml-11.5.0.tar.gz", hash = "sha256:d027b21b95b1088b9fc278117f9f61b7c67f8e33a787e9f83f735f0f71ac32d0"},
 ]
-"pyobjc-core 9.1.1" = [
-    {url = "https://files.pythonhosted.org/packages/0b/0b/f13a4ff6bc4ef8eacd4a487e2892041f71fbd7abfbc6791c78a458e314a7/pyobjc_core-9.1.1-cp38-cp38-macosx_11_0_universal2.whl", hash = "sha256:1626909916603a3b04c07c721cf1af0e0b892cec85bb3db98d05ba024f1786fc"},
-    {url = "https://files.pythonhosted.org/packages/10/49/63fca6412f4a0fcd3c73f333165222064f0a84fc9ef4d285cc1a4a009df7/pyobjc_core-9.1.1-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:d61e9517d451bc062a7fae8b3648f4deba4fa54a24926fa1cf581b90ef4ced5a"},
-    {url = "https://files.pythonhosted.org/packages/89/33/78a6350f83d071c502b778762564720dd6ab681a6c6104f7607aa83fe3c2/pyobjc_core-9.1.1-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:083004d28b92ccb483a41195c600728854843b0486566aba2d6e63eef51f80e6"},
-    {url = "https://files.pythonhosted.org/packages/9e/43/da6deaad1611502c4a05e3d4e669c9279c65a801a8317b912725bae72844/pyobjc_core-9.1.1-cp39-cp39-macosx_10_9_universal2.whl", hash = "sha256:2dde96462b52e952515d142e2afbb6913624a02c13582047e06211e6c3993728"},
-    {url = "https://files.pythonhosted.org/packages/b5/a6/22b65cabf1c05b388a5b48046d51b71b2478b0fc5b12c300375425fbdd2e/pyobjc_core-9.1.1-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:4bd07049fd9fe5b40e4b7c468af9cf942508387faf383a5acb043d20627bad2c"},
-    {url = "https://files.pythonhosted.org/packages/d2/b4/cb2a22c509c8ce435ac0617e3354a1f94411f0023d3c2feb350b007b8da0/pyobjc-core-9.1.1.tar.gz", hash = "sha256:4b6cb9053b5fcd3c0e76b8c8105a8110786b20f3403c5643a688c5ec51c55c6b"},
-    {url = "https://files.pythonhosted.org/packages/df/b0/fc43adf71907d1d9ae8ab0751426f1577e24588854e83e927c76c86b2cfa/pyobjc_core-9.1.1-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:1a8307527621729ff2ab67860e7ed84f76ad0da881b248c2ef31e0da0088e4ba"},
+"pyobjc-core 9.2" = [
+    {url = "https://files.pythonhosted.org/packages/04/8f/e005f4863a7257285d5c98365e2d6e2dd717298d829453fc6eb25ac74a11/pyobjc_core-9.2-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:fa674a39949f5cde8e5c7bbcd24496446bfc67592b028aedbec7f81dc5fc4daa"},
+    {url = "https://files.pythonhosted.org/packages/04/f5/f750f72af0fe30c3e30b92f514701fb724db28b860838bc3b83584af01ff/pyobjc_core-9.2-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:41189c2c680931c0395a55691763c481fc681f454f21bb4f1644f98c24a45954"},
+    {url = "https://files.pythonhosted.org/packages/08/45/b993d9ac2ea48f020ae6f295c61695818eebf3921d0959a000b8fcb2895e/pyobjc_core-9.2-cp312-cp312-macosx_10_9_universal2.whl", hash = "sha256:0fa950f092673883b8bd28bc18397415cabb457bf410920762109b411789ade9"},
+    {url = "https://files.pythonhosted.org/packages/35/5e/6d130b175bb4d4635a0e434e7d05be019841ac11c63e9be7eb3c25029346/pyobjc_core-9.2-cp39-cp39-macosx_10_9_universal2.whl", hash = "sha256:b9809cf96678797acb72a758f34932fe8e2602d5ab7abec15c5ac68ddb481720"},
+    {url = "https://files.pythonhosted.org/packages/48/d9/a13566ce8914746557b9e8637a5abe1caae86ed202b0fb072029626b8bb1/pyobjc-core-9.2.tar.gz", hash = "sha256:d734b9291fec91ff4e3ae38b9c6839debf02b79c07314476e87da8e90b2c68c3"},
+    {url = "https://files.pythonhosted.org/packages/81/49/766832436ba1f992328d6048145a1aaec11f677f1e53e0de658a2b627562/pyobjc_core-9.2-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:bbc8de304ee322a1ee530b4d2daca135a49b4a49aa3cedc6b2c26c43885f4842"},
+    {url = "https://files.pythonhosted.org/packages/b9/75/7750c084871975ead4fdfc4938315709d48ea7952e8a1a2c6247436e0478/pyobjc_core-9.2-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:586e4cae966282eaa61b21cae66ccdcee9d69c036979def26eebdc08ddebe20f"},
+    {url = "https://files.pythonhosted.org/packages/b9/bd/3d85098a8f2cfd725391abf145c37a638717968efa52bfc0568e155a628e/pyobjc_core-9.2-cp38-cp38-macosx_11_0_universal2.whl", hash = "sha256:2d23ee539f2ba5e9f5653d75a13f575c7e36586fc0086792739e69e4c2617eda"},
 ]
-"pyobjc-framework-cocoa 9.1.1" = [
-    {url = "https://files.pythonhosted.org/packages/1d/79/af7bd8fdc61a1210f679c1cff689b86894473a7e81ab355e2d0cb59dc131/pyobjc_framework_Cocoa-9.1.1-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:5e1e96fb3461f46ff951413515f2029e21be268b0e033db6abee7b64ec8e93d3"},
-    {url = "https://files.pythonhosted.org/packages/4e/d9/fc63476d44b2b1c6acbe6704eda28ddc8beb5aa9c1bb14833f9660e51389/pyobjc_framework_Cocoa-9.1.1-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:083b195c496d30c6b9dd86126a6093c4b95e0138e9b052b13e54103fcc0b4872"},
-    {url = "https://files.pythonhosted.org/packages/61/fd/df2e56a3e5962a0413014859225c663e3071c51a3d1e7837bbaebca9d72a/pyobjc_framework_Cocoa-9.1.1-cp38-cp38-macosx_11_0_universal2.whl", hash = "sha256:54c017354671f0d955432986c42218e452ca69906a101c8e7acde8510432303a"},
-    {url = "https://files.pythonhosted.org/packages/7d/b4/f9d0bde8f0da5857a857ffbbddb96fb549bc68365a0a35f126e7fd72cb5c/pyobjc_framework_Cocoa-9.1.1-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:9176a4276f3b4b4758e9b9ca10698be5341ceffaeaa4fa055133417179e6bc37"},
-    {url = "https://files.pythonhosted.org/packages/90/70/7ec76e482a49cdb4dd5c4371c52775d237fcbf4fc1932bd60889b8006f1a/pyobjc-framework-Cocoa-9.1.1.tar.gz", hash = "sha256:345c32b6d1f3db45f635e400f2d0d6c0f0f7349d45ec823f76fc1df43d13caeb"},
-    {url = "https://files.pythonhosted.org/packages/ab/04/ab93732b4aa8381790a9b7e43e2d73ccdf79a02570070b5c5f8ee433adc1/pyobjc_framework_Cocoa-9.1.1-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:a1b3333b1aa045608848bd68bbab4c31171f36aeeaa2fabeb4527c6f6f1e33cd"},
-    {url = "https://files.pythonhosted.org/packages/f4/f4/5837b90164d987ed14bb726b7deb3670c7d66471ba9f214bf38bdd2e6217/pyobjc_framework_Cocoa-9.1.1-cp39-cp39-macosx_10_9_universal2.whl", hash = "sha256:10c0075688ce95b92caf59e368585fffdcc98c919bc345067af070222f5d01d2"},
+"pyobjc-framework-cocoa 9.2" = [
+    {url = "https://files.pythonhosted.org/packages/04/0a/1bb7500d725593fa035b44c5d16b95c0b80d501db3ce1c2e97f47be23c69/pyobjc_framework_Cocoa-9.2-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:3b1e6287b3149e4c6679cdbccd8e9ef6557a4e492a892e80a77df143f40026d2"},
+    {url = "https://files.pythonhosted.org/packages/15/10/0d46760671b5fce9e494db4dca3a976cb0ea4feba1ad8ef489082a09b253/pyobjc_framework_Cocoa-9.2-cp38-cp38-macosx_11_0_universal2.whl", hash = "sha256:32d9ac1033fac1b821ddee8c68f972a7074ad8c50bec0bea9a719034c1c2fb94"},
+    {url = "https://files.pythonhosted.org/packages/38/91/c54fdffda6d7cfad67ff617f19001163658d50bc72376d1584e691cf4895/pyobjc-framework-Cocoa-9.2.tar.gz", hash = "sha256:efd78080872d8c8de6c2b97e0e4eac99d6203a5d1637aa135d071d464eb2db53"},
+    {url = "https://files.pythonhosted.org/packages/64/09/d0eb252549b3009f008c8415c9739a9c726ddfec9adc1aa92b6a8dec0efe/pyobjc_framework_Cocoa-9.2-cp39-cp39-macosx_10_9_universal2.whl", hash = "sha256:b236bb965e41aeb2e215d4e98a5a230d4b63252c6d26e00924ea2e69540a59d6"},
+    {url = "https://files.pythonhosted.org/packages/9b/e2/49ea296127184f8b578838ba0d3d170abb75c23760d940f952df0fe0e132/pyobjc_framework_Cocoa-9.2-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:739a421e14382a46cbeb9a883f192dceff368ad28ec34d895c48c0ad34cf2c1d"},
+    {url = "https://files.pythonhosted.org/packages/d7/b3/e9c6d3e8d53453567805ca461cf52a08807ca2c860c1364c27dc10cdc67e/pyobjc_framework_Cocoa-9.2-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:9e02d8a7cc4eb7685377c50ba4f17345701acf4c05b1e7480d421bff9e2f62a4"},
+    {url = "https://files.pythonhosted.org/packages/e0/f6/ecbc6323aa12df79acdaf8a75f7bb93d273b6dcd0c5b65658c2505bbc977/pyobjc_framework_Cocoa-9.2-cp312-cp312-macosx_10_9_universal2.whl", hash = "sha256:312977ce2e3989073c6b324c69ba24283de206fe7acd6dbbbaf3e29238a22537"},
+    {url = "https://files.pythonhosted.org/packages/fa/f1/d3d3528d1d62d3e21211bcb8bd6bfe1b8c2815d700eb986fdb1f37de9c7d/pyobjc_framework_Cocoa-9.2-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:aae7841cf40c26dd915f4dd828f91c6616e6b7998630b72e704750c09e00f334"},
 ]
 "pysrt 1.1.2" = [
     {url = "https://files.pythonhosted.org/packages/31/1a/0d858da1c6622dcf16011235a2639b0a01a49cecf812f8ab03308ab4de37/pysrt-1.1.2.tar.gz", hash = "sha256:b4f844ba33e4e7743e9db746492f3a193dc0bc112b153914698e7c1cdeb9b0b9"},
@@ -3137,9 +3139,9 @@ content_hash = "sha256:838a39f6efcdf7890f45ea1f5c4bde5c496a26b207eb1344404bdaf9e
     {url = "https://files.pythonhosted.org/packages/56/aa/4ef5aa67a9a62505db124a5cb5262332d1d4153462eb8fd89c9fa41e5d92/urllib3-1.25.11-py2.py3-none-any.whl", hash = "sha256:f5321fbe4bf3fefa0efd0bfe7fb14e90909eb62a48ccda331726b4319897dd5e"},
     {url = "https://files.pythonhosted.org/packages/76/d9/bbbafc76b18da706451fa91bc2ebe21c0daf8868ef3c30b869ac7cb7f01d/urllib3-1.25.11.tar.gz", hash = "sha256:8d7eaa5a82a1cac232164990f04874c594c9453ec55eef02eab885aa02fc17a2"},
 ]
-"wasabi 1.1.1" = [
-    {url = "https://files.pythonhosted.org/packages/58/5f/1f2833d59abf53e24dbadc21b0565fe10c64545da8705faed8eff3b14745/wasabi-1.1.1-py3-none-any.whl", hash = "sha256:32e44649d99a64e08e40c1c96cddb69fad460bd0cc33802a53cab6714dfb73f8"},
-    {url = "https://files.pythonhosted.org/packages/8d/d3/abe7d7d745657e43af711bdc58d4c9016f63546795ec9b5b62b2d9b89fa6/wasabi-1.1.1.tar.gz", hash = "sha256:f5ee7c609027811bd16e620f2fd7a7319466005848e41b051a62053ab8fd70d6"},
+"wasabi 1.1.2" = [
+    {url = "https://files.pythonhosted.org/packages/3e/09/bbd7e880b56e825d5859a58adb1bd1feb45b604218706057ca1e3278fa62/wasabi-1.1.2.tar.gz", hash = "sha256:1aaef3aceaa32edb9c91330d29d3936c0c39fdb965743549c173cb54b16c30b5"},
+    {url = "https://files.pythonhosted.org/packages/8f/69/26cbf0bad11703241cb84d5324d868097f7a8faf2f1888354dac8883f3fc/wasabi-1.1.2-py3-none-any.whl", hash = "sha256:0a3f933c4bf0ed3f93071132c1b87549733256d6c8de6473c5f7ed2e171b5cf9"},
 ]
 "wcwidth 0.2.6" = [
     {url = "https://files.pythonhosted.org/packages/20/f4/c0584a25144ce20bfcf1aecd041768b8c762c1eb0aa77502a3f0baa83f11/wcwidth-0.2.6-py2.py3-none-any.whl", hash = "sha256:795b138f6875577cd91bba52baf9e445cd5118fd32723b460e30a0af30ea230e"},

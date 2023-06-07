@@ -27,7 +27,9 @@ def parse_args(action, usage) -> argparse.Namespace:
     parser.add_argument("--no-sanitize", "-s", action="store_true", help="Don't sanitize some common URL parameters")
     parser.add_argument("--extra", "-extra", action="store_true", help="Get full metadata (takes a lot longer)")
     parser.add_argument("--playlist-files", action="store_true", help="Read playlists from text files")
-    parser.add_argument("--playlist-db", action="store_true", help="Fetch metadata for paths in a table")
+    parser.add_argument(
+        "--force", action="store_true", help="Fetch metadata for paths even if they are already in the media table"
+    )
     parser.add_argument("--subs", action="store_true")
     parser.add_argument("--auto-subs", "--autosubs", action="store_true")
     parser.add_argument("--subtitle-languages", "--subtitle-language", "--sl", action=utils.ArgparseList)
@@ -56,7 +58,7 @@ def parse_args(action, usage) -> argparse.Namespace:
     args.db = db.connect(args)
 
     if hasattr(args, "playlists"):
-        args.playlists = list(set(args.playlists))
+        args.playlists = list(set(s.strip() for s in args.playlists))
         if not args.no_sanitize:
             args.playlists = [utils.sanitize_url(args, p) for p in args.playlists]
         args.playlists = utils.conform(args.playlists)
@@ -74,33 +76,10 @@ def tube_add(args=None) -> None:
     args = parse_args(SC.tubeadd, usage=usage.tubeadd)
     if args.playlist_files:
         args.playlists = list(utils.flatten([Path(p).read_text().splitlines() for p in args.playlists]))
-    elif args.playlist_db:
-        args.playlists = list(
-            utils.flatten(
-                [
-                    d["path"]
-                    for d in args.db.query(
-                        f"""
-                    select path from {table}
-                    where 1=1
-                    and COALESCE(time_deleted,0) = 0
-                    and COALESCE(time_modified,0) = 0
-                    and COALESCE(time_downloaded,0) = 0
-                    {'and width is null' if 'width' in args.db[table].columns_dict else ''}
-                    {'and title is null' if 'title' in args.db[table].columns_dict else ''}
-                    {'and duration is null' if 'duration' in args.db[table].columns_dict else ''}
-                    {'and size is null' if 'size' in args.db[table].columns_dict else ''}
-                    ORDER by random()
-                    """,
-                    )
-                ]
-                for table in args.playlists
-            ),
-        )
 
     tables = args.db.table_names()
     known_playlists = []
-    if "media" in tables and not args.playlist_db:
+    if "media" in tables and not args.force:
         m_columns = args.db["media"].columns_dict
         known_playlists = list(
             set(
