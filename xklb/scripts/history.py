@@ -83,12 +83,13 @@ def print_recent(tbl, time_column=None):
 
 
 def recent_media(args, time_column):
+    m_columns = args.db["media"].columns_dict
     query = f"""
     SELECT
         path
-        , title
-        , duration
-        , subtitle_count
+        {', title' if 'title' in m_columns else ''}
+        {', duration' if 'duration' in m_columns else ''}
+        {', subtitle_count' if 'subtitle_count' in m_columns else ''}
         , {time_column}
     FROM media
     WHERE coalesce({time_column}, 0)>0
@@ -101,17 +102,19 @@ def recent_media(args, time_column):
 def history() -> None:
     args = parse_args()
 
+    m_columns = args.db["media"].columns_dict
+
     if args.facet.startswith(("all", "watching")):
         print("Partially watched:")
         tbl = player.historical_usage(args, args.frequency, "time_played", "and coalesce(play_count, 0)=0")
         print_history(tbl)
         query = f"""SELECT
                 path
-                , title
-                , duration
-                , subtitle_count
-                , time_played
-                , playhead
+                {', title' if 'title' in m_columns else ''}
+                {', duration' if 'duration' in m_columns else ''}
+                {', subtitle_count' if 'subtitle_count' in m_columns else ''}
+                {', time_played' if 'time_played' in m_columns else ''}
+                {', playhead' if 'playhead' in m_columns else ''}
             FROM media
             WHERE coalesce(time_deleted, 0) = 0
                 and coalesce(playhead, 0) > 60
@@ -128,10 +131,10 @@ def history() -> None:
         print_history(tbl)
         query = f"""SELECT
                 path
-                , title
-                , duration
-                , subtitle_count
-                , time_played
+                {', title' if 'title' in m_columns else ''}
+                {', duration' if 'duration' in m_columns else ''}
+                {', subtitle_count' if 'subtitle_count' in m_columns else ''}
+                {', time_played' if 'time_played' in m_columns else ''}
             FROM media
             WHERE coalesce(play_count, 0)>0
             ORDER BY time_played desc, path

@@ -963,6 +963,14 @@ def pipe_print(x) -> None:
         sys.exit(141)
 
 
+def pipe_lines(x) -> None:
+    try:
+        sys.stdout.writelines(x)
+    except BrokenPipeError:
+        sys.stdout = None
+        sys.exit(141)
+
+
 def random_string() -> str:
     return "".join(random.choices(string.ascii_uppercase + string.digits, k=5))
 
@@ -1072,53 +1080,17 @@ def fast_glob(path_dir, limit=100):
     return sorted(files)
 
 
-def load_spacy_model(model=None):
-    try:
-        import spacy
-    except ModuleNotFoundError:
-        log.error("Install spaCy and sklearn to use:")
-        log.error("pip install spacy sklearn")
-        log.error("python -m spacy download en_core_web_sm")
-        sys.exit(1)
-
-    if model:
-        return spacy.load(model)
-
-    model_sizes = ["lg", "md", "sm"]
-    loaded_model = None
-
-    for size in model_sizes:
-        try:
-            loaded_model = spacy.load(f"en_core_web_{size}")
-            log.info(f"Loaded 'en_core_web_{size}'")
-        except OSError:
-            pass
-
-    if loaded_model:
-        return loaded_model
-
-    log.error("Language model not found. Download a model first using the following commands:")
-    log.error("python -m spacy download en_core_web_sm")
-    sys.exit(1)
-
-
-def cluster_paths(paths, model=None, n_clusters=None):
-    nlp = load_spacy_model(model)
-
+def cluster_paths(paths, n_clusters=None):
     from sklearn.cluster import KMeans
     from sklearn.feature_extraction.text import TfidfVectorizer
 
     sentence_strings = (path_to_sentence(s) for s in paths)
 
-    joined_strings = []
-    for doc in nlp.pipe(sentence_strings, n_process=4):
-        joined_strings.append(" ".join([token.lower_ for token in doc if not token.is_stop]))
+    vectorizer = TfidfVectorizer(min_df=2, strip_accents="unicode", stop_words="english")
+    X = vectorizer.fit_transform(sentence_strings)
 
-    vectorizer = TfidfVectorizer()
-    X = vectorizer.fit_transform(joined_strings)
-
-    kmeans = KMeans(n_clusters=n_clusters or int(X.shape[0] ** 0.5), random_state=0).fit(X)
-    clusters = kmeans.labels_
+    clusterizer = KMeans(n_clusters=n_clusters or int(X.shape[0] ** 0.5), random_state=0, n_init=10).fit(X)
+    clusters = clusterizer.labels_
 
     grouped_strings = {}
     for i, string in enumerate(paths):
