@@ -1,32 +1,31 @@
-- use rowid alias instead of string pks: playlists table: switch playlist_path fk to integer id
-
-- wt/lt/search join and use fts on both tables, threading ?
+- use rowid alias instead of string pks: playlists table: switch playlist_path nullable fk to integer id
 
 - POIs CLI -- save your trip plans and see places to go with automated day trip itineraries, geopandas buffer
 
+- wt/lt/search join and use fts on both tables, threading ?
+
 - upscale command -- download higher quality videos; use webpath, PURL, comment to get URL
-
-- move time_played, playhead, and other ephemeral data to its own table
-
-add time_first_played, time_last_played; remove time_played instead use play_count
 
 - move mpv specific playhead code to a script subcommand
 
 option to delete mpv watch_later file if media file does not exist
 
-- improve block subcommand
+- move time_played, playhead, and other ephemeral data to its own table
 
-add support for domains, specific combinations
+add time_first_played, time_last_played; remove time_played instead use play_count
 
 - improve playlists subcommand
 
 - make generic printer. support --json or --csv for most subcommands
 
-SELECT \* FROM playlists p WHERE PATH NOT IN (SELECT DISTINCT playlist_path FROM media WHERE playlist_path NOT NULL )
-
 - improve dlstatus subcommand
 
 - scan bpm and key sig  https://github.com/aubio/aubio https://github.com/tyiannak/pyAudioAnalysis
+
+- cluster images
+
+https://github.com/HughKu/Im2txt
+https://github.com/immich-app/immich/tree/main/machine-learning/app
 
 - CLI EDA tool
 

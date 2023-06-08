@@ -6,7 +6,6 @@ from xklb.utils import log
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library cluster-sort", usage=usage.cluster_sort)
-    parser.add_argument("--model", "-m", help="Use a specific spaCy model")
     parser.add_argument("--clusters", "--n-clusters", "-c", type=int, help="Number of KMeans clusters")
     parser.add_argument("--groups", "-g", action="store_true", help="Show groups")
     parser.add_argument("--verbose", "-v", action="count", default=0)
@@ -25,7 +24,7 @@ def cluster_sort() -> None:
     lines = args.input_path.readlines()
     args.input_path.close()
 
-    groups = utils.cluster_paths(lines, args.model, args.clusters)
+    groups = utils.cluster_paths(lines, args.clusters)
     groups = sorted(groups, key=lambda d: (len(d["grouped_paths"]), -len(d["common_prefix"])))
 
     if args.groups:
@@ -38,7 +37,7 @@ def cluster_sort() -> None:
             with open(args.output_path, "w") as output_fd:
                 output_fd.writelines(lines)
         else:
-            sys.stdout.writelines(lines)
+            utils.pipe_lines(lines)
 
 
 if __name__ == "__main__":
