@@ -1,5 +1,4 @@
 import argparse, sys
-from token import NEWLINE
 
 import humanize
 from tabulate import tabulate
@@ -51,17 +50,17 @@ def block(args=None) -> None:
         sys.argv = ["lb", *args]
 
     args = parse_args()
-    m_columns = args.db["media"].columns_dict
+    m_columns = db.columns(args, "media")
     if args.match_column not in m_columns:
         raise ValueError(
-            "Match column does not exist in the media table. You may need to run tubeadd first or check your spelling"
+            "Match column does not exist in the media table. You may need to run tubeadd first or check your spelling",
         )
 
     columns = set(["path", "webpath", args.match_column, "size", "playlist_path", "time_deleted"])
     select_sql = ", ".join(s for s in columns if s in m_columns)
 
     if args.match_column == "playlist_path":
-        playlist_paths = list(s for s in args.playlists)
+        playlist_paths = list(args.playlists)
         for p in playlist_paths:
             add_to_blocklist(args, [p])
 
@@ -79,9 +78,11 @@ def block(args=None) -> None:
                 f"""UPDATE media
                 SET time_deleted={consts.APPLICATION_START}
                 WHERE path LIKE 'http%'
-                AND playlist_path IN ("""
+                AND playlist_id in (
+                    SELECT id from playlists
+                    WHERE path IN ("""
                 + ",".join(["?"] * len(playlist_paths))
-                + ")",
+                + "))",
                 (*playlist_paths,),
             )
 
@@ -90,18 +91,20 @@ def block(args=None) -> None:
                 """SELECT path, size FROM media
                 WHERE time_deleted = 0
                 AND time_downloaded > 0
-                AND playlist_path IN ("""
+                AND playlist_id in (
+                    SELECT id from playlists
+                    WHERE path IN ("""
                 + ",".join(["?"] * len(playlist_paths))
-                + ")",
+                + "))",
                 (*playlist_paths,),
-            )
+            ),
         )
         total_size = sum(d["size"] for d in playlist_media)
         paths_to_delete = [d["path"] for d in playlist_media]
         if paths_to_delete:
             print(paths_to_delete)
             if utils.confirm(
-                f"Would you like to delete these {len(paths_to_delete)} local files ({humanize.naturalsize(total_size)})?"
+                f"Would you like to delete these {len(paths_to_delete)} local files ({humanize.naturalsize(total_size)})?",
             ):
                 player.delete_media(args, paths_to_delete)
         return
@@ -114,13 +117,11 @@ def block(args=None) -> None:
             continue
 
         matching_media = list(
-            args.db.query(f"select {select_sql} from media where {args.match_column} LIKE ?", (p[0],))
+            args.db.query(f"select {select_sql} from media where {args.match_column} LIKE ?", (p[0],)),
         )
 
         if not matching_media:
-            matching_media = list(
-                args.db.query(f"select {select_sql} from media where path = ? or playlist_path = ?", (p[0], p[0]))
-            )
+            matching_media = list(args.db.query(f"select {select_sql} from media where path = ?", (p[0])))
             if matching_media:
                 log.debug("tube: found local %s", matching_media)
 
@@ -140,7 +141,7 @@ def block(args=None) -> None:
                     p[1] = data[args.match_column]
                     if p[1]:
                         matching_media = list(
-                            args.db.query(f"select {select_sql} from media where {args.match_column} = ?", (p[1],))
+                            args.db.query(f"select {select_sql} from media where {args.match_column} = ?", (p[1],)),
                         )
 
         if not matching_media:
@@ -155,14 +156,12 @@ def block(args=None) -> None:
         tbl = utils.list_dict_filter_bool(matching_media)
         tbl = [
             {
-                "title_path": "\n".join(
-                    utils.concat(d.get("title"), d.get("webpath"), d["path"], d.get("playlist_path"))
-                ),
+                "title_path": "\n".join(utils.concat(d.get("title"), d.get("webpath"), d["path"])),
                 **d,
             }
             for d in tbl
         ]
-        tbl = [{k: v for k, v in d.items() if k not in ("title", "path", "webpath", "playlist_path")} for d in tbl]
+        tbl = [{k: v for k, v in d.items() if k not in ("title", "path", "webpath")} for d in tbl]
         tbl = utils.col_resize(tbl, "title_path", 40)
         tbl = utils.col_naturalsize(tbl, "size")
         tbl = utils.col_naturaldate(tbl, "time_deleted")
@@ -178,7 +177,7 @@ def block(args=None) -> None:
         if paths_to_delete:
             total_size = sum(d["size"] for d in matching_media if d["time_deleted"] == 0)
             if utils.confirm(
-                f"Would you like to delete these {len(paths_to_delete)} local files ({humanize.naturalsize(total_size)})?"
+                f"Would you like to delete these {len(paths_to_delete)} local files ({humanize.naturalsize(total_size)})?",
             ):
                 player.delete_media(args, paths_to_delete)
 

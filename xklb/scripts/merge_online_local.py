@@ -1,10 +1,10 @@
 import argparse
 from copy import deepcopy
-from typing import List, Optional
+from typing import List
 
 from tabulate import tabulate
 
-from xklb import consts, db, usage, utils
+from xklb import consts, db, media, usage, utils
 from xklb.utils import log
 
 
@@ -29,8 +29,12 @@ def get_duplicates(args) -> List[dict]:
         WHERE 1=1
             and id is not null
             and id != ""
-            and ie_key != 'Local'
             and time_deleted = 0
+            and playlist_id in (
+                SELECT id from playlists
+                WHERE extractor_key
+                    NOT IN ('Local', 'NBCStations', 'TedTalk', 'ThisAmericanLife', 'InfoQ', 'NFB', 'KickStarter')
+            )
     )
     SELECT
         m2.path keep_path
@@ -48,10 +52,10 @@ def get_duplicates(args) -> List[dict]:
             and title is null
     ) m2
     JOIN media_fts on m2.rowid = media_fts.rowid
-    WHERE m2.ie_key = 'Local'
-        AND m1.ie_key NOT IN ('NBCStations', 'TedTalk', 'ThisAmericanLife', 'InfoQ', 'NFB', 'KickStarter')
-        AND media_fts.path MATCH '"'||m1.tube_id||'"'
-        AND m2.PATH LIKE '%['||m1.tube_id||']%'
+    JOIN playlists p2 on p2.id = m2.playlist_id
+    WHERE p2.extractor_key = 'Local'
+        AND media_fts.path MATCH '"'||m1.extractor_id||'"'
+        AND m2.PATH LIKE '%['||m1.extractor_id||']%'
     ORDER BY 1=1
         , length(m2.path)-length(REPLACE(m2.path, '/', '')) desc
         , length(m2.path)-length(REPLACE(m2.path, '.', ''))
@@ -62,13 +66,7 @@ def get_duplicates(args) -> List[dict]:
         , m2.path desc
     """
 
-    media = list(args.db.query(query))
-    return media
-
-
-def get_dict(args, path) -> Optional[dict]:
-    known = list(args.db.query("select * from media where path=?", [path]))[0]
-    return utils.dict_filter_bool(known, keep_0=False)
+    return list(args.db.query(query))
 
 
 def merge_online_local() -> None:
@@ -95,10 +93,10 @@ def merge_online_local() -> None:
             if webpath in merged or fspath == webpath:
                 continue
 
-            tube_entry = get_dict(args, webpath)
-            fs_tags = get_dict(args, fspath)
+            tube_entry = media.get(args, webpath)
+            fs_tags = media.get(args, fspath)
 
-            if not tube_entry or not fs_tags or tube_entry["tube_id"] not in fs_tags["path"]:
+            if not tube_entry or not fs_tags or tube_entry["extractor_id"] not in fs_tags["path"]:
                 continue
 
             if fs_tags["time_modified"] is None or fs_tags["time_modified"] == 0:
@@ -107,8 +105,9 @@ def merge_online_local() -> None:
                 fs_tags["time_downloaded"] = consts.APPLICATION_START
 
             entry = {**tube_entry, **fs_tags, "webpath": webpath}
-            args.db["media"].insert(utils.dict_filter_bool(entry), pk="id", alter=True, replace=True)  # type: ignore
-            args.db["media"].delete(webpath)
+            media._add(args, utils.dict_filter_bool(entry))  # type: ignore
+            with args.db.conn:
+                args.db.conn.execute("DELETE from media WHERE path = ?", [webpath])
             merged.append(webpath)
 
         print(len(merged), "merged")

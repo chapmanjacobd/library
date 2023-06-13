@@ -23,7 +23,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--duration", "-d", action="append", help=argparse.SUPPRESS)
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", help=argparse.SUPPRESS)
     parser.add_argument("--safe", "-safe", action="store_true", help="Skip generic URLs")
-    parser.add_argument("--errors", "-errors", "--error", action="store_true", help="Show only rows with errors")
     parser.add_argument("--delete", "--remove", "--erase", "--rm", "-rm", nargs="+", help=argparse.SUPPRESS)
     parser.add_argument("--print", "-p", default=False, const="p", nargs="?", help=argparse.SUPPRESS)
     parser.add_argument(
@@ -98,25 +97,23 @@ def download_status() -> None:
         if args.safe:
             args.db.register_function(tube_backend.is_supported, deterministic=True)
             count_paths = (
-                ", count(*) FILTER(WHERE COALESCE(time_modified,0) = 0 and is_supported(path)) never_downloaded"
+                "count(*) FILTER(WHERE COALESCE(m.time_modified,0) = 0 and is_supported(path)) never_downloaded"
             )
         else:
-            count_paths = ", count(*) FILTER(WHERE COALESCE(time_modified,0) = 0) never_downloaded"
+            count_paths = "count(*) FILTER(WHERE COALESCE(m.time_modified,0) = 0) never_downloaded"
 
     query = f"""select
-        coalesce(category, "Playlist-less media") category
-        {', ie_key' if 'm.ie_key' in query else ''}
-        {', sum(duration) duration' if 'duration' in query else ''}
         {count_paths}
-        {', count(*) FILTER(WHERE COALESCE(time_modified,0) > 0 AND error IS NOT NULL) errors' if 'error' in query else ''}
-        {', group_concat(distinct error) error_descriptions' if args.errors or 'error' in query and args.verbose >= 1 else ''}
+        , extractor_key
+        {', sum(duration) duration' if 'duration' in query else ''}
+        {', count(*) FILTER(WHERE COALESCE(m.time_modified,0) > 0 AND error IS NOT NULL) errors' if 'error' in query else ''}
+        {', group_concat(distinct error) error_descriptions' if 'error' in query and args.verbose >= 1 else ''}
     from ({query}) m
     where 1=1
         and COALESCE(time_downloaded,0) = 0
         and COALESCE(time_deleted,0) = 0
-        {'and error is not null' if args.errors else ''}
-    group by category{', ie_key' if 'm.ie_key' in query else ''}{', error' if args.errors else ''}
-    order by {'errors,' if args.errors else ''} category nulls last"""
+    group by extractor_key
+    order by never_downloaded"""
 
     printer(args, query, bindings)
     return None

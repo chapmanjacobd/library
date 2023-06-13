@@ -4,6 +4,7 @@ from xklb import __version__, utils
 from xklb.consts import SC
 from xklb.dl_extract import dl_download
 from xklb.fs_extract import fs_add, fs_update
+from xklb.gdl_extract import gallery_add, gallery_update
 from xklb.hn_extract import hacker_news_add
 from xklb.play_actions import filesystem, listen, read, view, watch
 from xklb.playback import playback_next, playback_now, playback_pause, playback_stop
@@ -64,6 +65,9 @@ def usage() -> str:
     online media:
       lb tubeadd               Create a tube database; Add playlists
       lb tubeupdate            Fetch new videos from saved playlists
+
+      lb galleryadd            Create a gallery database; Add albums
+      lb galleryupdate         Fetch new images from saved playlists
 
       lb redditadd             Create a reddit database; Add subreddits
       lb redditupdate          Fetch new posts from saved subreddits
@@ -178,16 +182,21 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     subp_optimize = add_parser(subparsers, "optimize", ["optimize-db"])
     subp_optimize.set_defaults(func=optimize_db)
 
-    subp_tubeadd = add_parser(subparsers, "tubeadd", ["dladd", "ta", "da", "xt"])
+    subp_tubeadd = add_parser(subparsers, "tubeadd", ["ta", "dladd", "da"])
     subp_tubeadd.set_defaults(func=tube_add)
     subp_tubeupdate = add_parser(subparsers, "tubeupdate", ["dlupdate", "tu"])
     subp_tubeupdate.set_defaults(func=tube_update)
 
-    subp_redditadd = add_parser(subparsers, "redditadd", ["ra", "xr"])
+    subp_galleryadd = add_parser(subparsers, "galleryadd", ["gdladd", "ga"])
+    subp_galleryadd.set_defaults(func=gallery_add)
+    subp_galleryupdate = add_parser(subparsers, "galleryupdate", ["gdlupdate", "gu"])
+    subp_galleryupdate.set_defaults(func=gallery_update)
+
+    subp_redditadd = add_parser(subparsers, "redditadd", ["ra"])
     subp_redditadd.set_defaults(func=reddit_add)
-    subp_redditupdate = add_parser(subparsers, "redditupdate", ["ru", "xru"])
+    subp_redditupdate = add_parser(subparsers, "redditupdate", ["ru"])
     subp_redditupdate.set_defaults(func=reddit_update)
-    subp_pushshift = add_parser(subparsers, "pushshift", ["ps"])
+    subp_pushshift = add_parser(subparsers, "pushshift")
     subp_pushshift.set_defaults(func=pushshift_extract)
 
     subp_hnadd = add_parser(subparsers, "hnadd")
@@ -222,7 +231,7 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     subp_tabsadd.set_defaults(func=tabs_add)
     subp_tabs = add_parser(subparsers, "tabs", ["tb"])
     subp_tabs.set_defaults(func=tabs)
-    subp_surf = add_parser(subparsers, "surf", ["browse", "load"])
+    subp_surf = add_parser(subparsers, "surf")
     subp_surf.set_defaults(func=streaming_tab_loader)
 
     subp_nouns = add_parser(subparsers, "nouns")
@@ -230,7 +239,7 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     subp_cluster_sort = add_parser(subparsers, "cluster-sort", ["cs", "clustersort", "cluster_sort"])
     subp_cluster_sort.set_defaults(func=cluster_sort)
 
-    subp_reddit_selftext = add_parser(subparsers, "reddit-selftext", ["rst"])
+    subp_reddit_selftext = add_parser(subparsers, "reddit-selftext")
     subp_reddit_selftext.set_defaults(func=reddit_selftext)
     subp_nfb_directors = add_parser(subparsers, "extract-links", ["links"])
     subp_nfb_directors.set_defaults(func=extract_links)

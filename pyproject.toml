@@ -3,26 +3,27 @@ authors = [
   {name = "Jacob Chapman", email = "7908073+chapmanjacobd@users.noreply.github.com"},
 ]
 dependencies = [
-  'sqlite-utils >=3.30',
-  'catt',
-  'ffmpeg-python',
-  'ftfy',
-  'gallery-dl',
-  'humanize',
-  'ipython',
-  'Markdown',
-  'mutagen',
-  'natsort',
-  'praw',
-  'pysubs2',
-  'python-mpv-jsonipc',
-  'regex',
-  'rich',
-  'screeninfo',
-  'subliminal',
-  'tabulate',
-  'tinytag',
-  'yt-dlp',
+    'sqlite-utils >=3.30',
+    'catt',
+    'ffmpeg-python',
+    'ftfy',
+    'gallery-dl',
+    'humanize',
+    'ipython',
+    'Markdown',
+    'mutagen',
+    'natsort',
+    'praw',
+    'pysubs2',
+    'python-mpv-jsonipc',
+    'regex',
+    'rich',
+    'screeninfo',
+    'subliminal',
+    'tabulate',
+    'tinytag',
+    'yt-dlp',
+    "python-dateutil",
 ]
 description = "xk library"
 dynamic = ["version"]
@@ -82,6 +83,8 @@ profile = "black"
 "tests/*" = ["ANN201", "PLR2004"]
 
 [tool.ruff]
+unfixable = ["F841"]
+
 ignore = [
   "ANN001",
   "ANN002",
@@ -89,7 +92,9 @@ ignore = [
   "ANN101",
   "ANN204",
   "BLE001",
+  "C400",
   "C401",
+  "C405",
   "C901",
   "D100",
   "D101",

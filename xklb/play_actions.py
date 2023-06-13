@@ -19,7 +19,7 @@ def parse_args_sort(args) -> None:
     elif not args.sort and hasattr(args, "defaults"):
         args.defaults.append("sort")
 
-    m_columns = args.db["media"].columns_dict
+    m_columns = db.columns(args, "media")
 
     # switching between videos with and without subs is annoying
     subtitle_count = "=0"
@@ -32,9 +32,6 @@ def parse_args_sort(args) -> None:
         "rank" if args.sort and "rank" in args.sort else None,
         "video_count > 0 desc" if "video_count" in m_columns and args.action == SC.watch else None,
         "audio_count > 0 desc" if "audio_count" in m_columns else None,
-        "time_downloaded > 0 desc"
-        if "time_downloaded" in m_columns and "time_downloaded" not in " ".join(sys.argv)
-        else None,
         'm.path like "http%"',
         "width < height desc" if "width" in m_columns and hasattr(args, "portrait") and args.portrait else None,
         f"subtitle_count {subtitle_count} desc"
@@ -50,6 +47,9 @@ def parse_args_sort(args) -> None:
         )
         else None,
         args.sort,
+        "time_downloaded > 0 desc"
+        if "time_downloaded" in m_columns and "time_downloaded" not in " ".join(sys.argv)
+        else None,
         "duration desc" if args.action in (SC.listen, SC.watch) and args.include else None,
         "size desc" if args.action in (SC.listen, SC.watch) and args.include else None,
         "play_count" if args.action in (SC.listen, SC.watch) and "play_count" in m_columns else None,
@@ -266,7 +266,7 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
 
 
 def construct_query(args) -> Tuple[str, dict]:
-    m_columns = args.db["media"].columns_dict
+    m_columns = db.columns(args, "media")
     args.filter_sql = []
     args.filter_bindings = {}
 
@@ -489,7 +489,7 @@ def prep_media(args, m: Dict, ignore_paths):
 
 
 def save_playhead(args, m, start_time):
-    m_columns = args.db["media"].columns_dict
+    m_columns = db.columns(args, "media")
     if "playhead" in m_columns:
         playhead = utils.get_playhead(
             args,
@@ -597,11 +597,11 @@ def process_playqueue(args) -> None:
     if args.big_dirs:
         media_keyed = {d["path"]: d for d in media}
         dirs = process_bigdirs(args, media)
-        dirs = list(reversed(list(d["path"] for d in dirs)))
+        dirs = list(reversed([d["path"] for d in dirs]))
         if "limit" in args.defaults:
             media = player.get_dir_media(args, dirs)
         else:
-            media = [media_keyed[key] for dir in dirs for key in media_keyed.keys() if key.startswith(dir)]
+            media = [media_keyed[key] for dir in dirs for key in media_keyed if key.startswith(dir)]
         log.debug("big_dirs: %s", t.elapsed())
 
     if args.related >= consts.RELATED:

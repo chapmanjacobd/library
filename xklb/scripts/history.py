@@ -71,7 +71,7 @@ def print_recent(tbl, time_column=None):
     utils.col_duration(tbl, "duration")
     utils.col_duration(tbl, "playhead")
     if time_column:
-        utils.col_naturaldate(tbl, time_column)
+        utils.col_naturaltime(tbl, time_column)
     tbl = [{"title_path": "\n".join(utils.concat(d["title"], d["path"])), **d} for d in tbl]
     tbl = [{k: v for k, v in d.items() if k not in ("title", "path")} for d in tbl]
 
@@ -83,7 +83,7 @@ def print_recent(tbl, time_column=None):
 
 
 def recent_media(args, time_column):
-    m_columns = args.db["media"].columns_dict
+    m_columns = db.columns(args, "media")
     query = f"""
     SELECT
         path

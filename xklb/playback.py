@@ -1,4 +1,4 @@
-import argparse, os, platform, textwrap
+import argparse, platform, textwrap
 from pathlib import Path
 
 from xklb import consts, utils

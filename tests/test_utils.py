@@ -63,6 +63,17 @@ def test_safe_unpack():
     assert utils.safe_unpack(None) is None
 
 
+def test_safe_sum():
+    assert utils.safe_sum(1, 2, 3, 4) == 10
+    assert utils.safe_sum([1, 2, 3, 4]) == 10
+    assert utils.safe_sum(None, "", 0, 1, 2, 3, 4) == 10
+    assert utils.safe_sum([None, 1]) == 1
+    assert utils.safe_sum([None]) is None
+    assert utils.safe_sum(None) is None
+    assert utils.safe_sum() is None
+    assert utils.safe_sum([0, 0, 0]) is None
+
+
 def test_dict_filter_bool():
     assert utils.dict_filter_bool({"t": 0}) == {"t": 0}
     assert utils.dict_filter_bool({"t": 0}, keep_0=False) is None
@@ -413,27 +424,27 @@ class TestFindUnambiguousMatch(unittest.TestCase):
 
 class TestStringComparison(unittest.TestCase):
     def test_compare_block_strings_starts_with(self):
-        self.assertTrue(utils.compare_block_strings("hello", "hello world"))
-        self.assertFalse(utils.compare_block_strings("world", "hello world"))
-        self.assertFalse(utils.compare_block_strings("abc", "hello world"))
+        assert utils.compare_block_strings("hello", "hello world")
+        assert not utils.compare_block_strings("world", "hello world")
+        assert not utils.compare_block_strings("abc", "hello world")
 
     def test_compare_block_strings_ends_with(self):
-        self.assertTrue(utils.compare_block_strings("%world", "hello world"))
-        self.assertTrue(utils.compare_block_strings("hello", "hello world"))
-        self.assertFalse(utils.compare_block_strings("abc", "hello world"))
+        assert utils.compare_block_strings("%world", "hello world")
+        assert utils.compare_block_strings("hello", "hello world")
+        assert not utils.compare_block_strings("abc", "hello world")
 
     def test_compare_block_strings_contains(self):
-        self.assertTrue(utils.compare_block_strings("hello", "hello world"))
-        self.assertTrue(utils.compare_block_strings("%world%", "hello world ok"))
-        self.assertTrue(utils.compare_block_strings("hello world", "hello world"))
-        self.assertFalse(utils.compare_block_strings("abc", "hello world"))
+        assert utils.compare_block_strings("hello", "hello world")
+        assert utils.compare_block_strings("%world%", "hello world ok")
+        assert utils.compare_block_strings("hello world", "hello world")
+        assert not utils.compare_block_strings("abc", "hello world")
 
     def test_compare_block_strings_regex(self):
-        self.assertTrue(utils.compare_block_strings("he%o%", "hello world"))
-        self.assertTrue(utils.compare_block_strings("%he%o%", " hello world"))
-        self.assertFalse(utils.compare_block_strings("%abc%", "hello world"))
-        self.assertTrue(utils.compare_block_strings("h%o w%ld", "hello world"))
-        self.assertFalse(utils.compare_block_strings("abc", "hello world"))
+        assert utils.compare_block_strings("he%o%", "hello world")
+        assert utils.compare_block_strings("%he%o%", " hello world")
+        assert not utils.compare_block_strings("%abc%", "hello world")
+        assert utils.compare_block_strings("h%o w%ld", "hello world")
+        assert not utils.compare_block_strings("abc", "hello world")
 
 
 class TestBlocklist(unittest.TestCase):
@@ -449,20 +460,20 @@ class TestBlocklist(unittest.TestCase):
 
     def test_filter_dicts_genre(self):
         filtered_media = utils.block_dicts_like_sql(self.media, self.blocklist)
-        self.assertEqual(len(filtered_media), 2)
-        self.assertIn({"title": "Movie 1", "genre": "Action"}, filtered_media)
-        self.assertIn({"title": "Movie 3", "genre": "Drama"}, filtered_media)
+        assert len(filtered_media) == 2
+        assert {"title": "Movie 1", "genre": "Action"} in filtered_media
+        assert {"title": "Movie 3", "genre": "Drama"} in filtered_media
 
     def test_filter_dicts_title(self):
         filtered_media = utils.block_dicts_like_sql(self.media, [{"title": "Movie 1"}, {"title": "Movie 33"}])
-        self.assertEqual(len(filtered_media), 3)
-        self.assertIn({"title": "Movie 3", "genre": "Drama"}, filtered_media)
+        assert len(filtered_media) == 3
+        assert {"title": "Movie 3", "genre": "Drama"} in filtered_media
 
     def test_filter_rows_with_substrings_contains(self):
         self.media.append({"title": "Movie 5", "genre": "Action Comedy"})
         filtered_media = utils.block_dicts_like_sql(self.media, self.blocklist)
-        self.assertEqual(len(filtered_media), 3)
-        self.assertIn({"title": "Movie 5", "genre": "Action Comedy"}, filtered_media)
+        assert len(filtered_media) == 3
+        assert {"title": "Movie 5", "genre": "Action Comedy"} in filtered_media
 
 
 class TestAllowlist(unittest.TestCase):
@@ -478,14 +489,32 @@ class TestAllowlist(unittest.TestCase):
 
     def test_filter_dicts_genre(self):
         filtered_media = utils.allow_dicts_like_sql(self.media, self.allowlist)
-        self.assertEqual(len(filtered_media), 2)
+        assert len(filtered_media) == 2
 
     def test_filter_dicts_title(self):
         filtered_media = utils.allow_dicts_like_sql(self.media, [{"title": "Movie 1"}, {"title": "Movie 33"}])
-        self.assertEqual(len(filtered_media), 1)
+        assert len(filtered_media) == 1
 
     def test_filter_rows_with_substrings_contains(self):
         self.media.append({"title": "Movie 5", "genre": "Action Comedy"})
         filtered_media = utils.allow_dicts_like_sql(self.media, self.allowlist)
-        self.assertEqual(len(filtered_media), 2)
-        self.assertNotIn({"title": "Movie 5", "genre": "Action Comedy"}, filtered_media)
+        assert len(filtered_media) == 2
+        assert {"title": "Movie 5", "genre": "Action Comedy"} not in filtered_media
+
+
+class TestTrimPathSegments(unittest.TestCase):
+    def test_trim_path_segments(self):
+        path = "/aaaaaaaaaa/fans/001.jpg"
+        desired_length = 16
+        expected_result = "/aaaa/fans/001.jpg"
+        self.assertEqual(utils.trim_path_segments(path, desired_length), expected_result)
+
+        path = "/ao/bo/co/do/eo/fo/go/ho"
+        desired_length = 9
+        expected_result = "/a/b/c/d/e/f/g/h"
+        self.assertEqual(utils.trim_path_segments(path, desired_length), expected_result)
+
+        path = "/a/b/c"
+        desired_length = 10
+        expected_result = "/a/b/c"
+        self.assertEqual(utils.trim_path_segments(path, desired_length), expected_result)
