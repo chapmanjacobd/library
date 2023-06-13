@@ -1,4 +1,5 @@
 import argparse, sys
+from pprint import pprint
 
 from xklb import usage, utils
 from xklb.utils import log
@@ -28,9 +29,7 @@ def cluster_sort() -> None:
     groups = sorted(groups, key=lambda d: (len(d["grouped_paths"]), -len(d["common_prefix"])))
 
     if args.groups:
-        from rich import print
-
-        print(groups)
+        pprint(groups)
     else:
         lines = utils.flatten(d["grouped_paths"] for d in groups)
         if args.output_path:

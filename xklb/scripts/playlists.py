@@ -24,7 +24,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--duration", "-d", action="append", help=argparse.SUPPRESS)
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", help=argparse.SUPPRESS)
     parser.add_argument("--safe", "-safe", action="store_true", help="Skip generic URLs")
-    parser.add_argument("--errors", "-errors", "--error", action="store_true", help="Show only rows with errors")
     parser.add_argument("--delete", "--remove", "--erase", "--rm", "-rm", nargs="+", help=argparse.SUPPRESS)
     parser.add_argument("--print", "-p", default=False, const="p", nargs="?", help=argparse.SUPPRESS)
 
@@ -43,8 +42,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def construct_query(args) -> Tuple[str, dict]:
-    utils.ensure_playlists_exists(args)
-    pl_columns = args.db["playlists"].columns_dict
+    pl_columns = db.columns(args, "playlists")
     args.filter_sql = []
     args.filter_bindings = {}
 
@@ -116,15 +114,15 @@ def playlists() -> None:
     if args.delete:
         return delete_playlists(args, args.delete)
 
-    pl_columns = args.db["playlists"].columns_dict
-    m_columns = args.db["media"].columns_dict
+    pl_columns = db.columns(args, "playlists")
+    m_columns = db.columns(args, "media")
     query, bindings = construct_query(args)
 
-    if "playlist_path" in m_columns:
+    if "playlist_id" in m_columns:
         query = f"""
         select
             coalesce(p.path, "Playlist-less media") path
-            {', p.ie_key' if 'ie_key' in pl_columns else ''}
+            , p.extractor_key
             {', p.title' if 'title' in pl_columns else ''}
             {', p.time_deleted' if 'time_deleted' in pl_columns else ''}
             {', count(*) FILTER(WHERE play_count>0) play_count' if 'play_count' in m_columns else ''}
@@ -132,9 +130,9 @@ def playlists() -> None:
             {', sum(m.size) size' if 'size' in m_columns else ''}
             , count(*) count
         from media m
-        left join ({query}) p on (p.path = m.playlist_path {"and p.ie_key = m.ie_key and m.ie_key != 'Local'" if 'ie_key' in m_columns else ''})
+        left join ({query}) p on p.id = m.playlist_id
         group by coalesce(p.path, "Playlist-less media")
-        order by count, p.category nulls last, p.path
+        order by count, p.path
         """
 
     if args.aggregate:

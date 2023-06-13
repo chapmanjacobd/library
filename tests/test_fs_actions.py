@@ -52,7 +52,7 @@ def test_wt_print(capsys):
     ]:
         lb(lb_command)
         captured = capsys.readouterr().out.replace("\n", "")
-        assert ("Aggregate" in captured) or ("ie_key" in captured)
+        assert ("Aggregate" in captured) or ("extractor_key" in captured)
 
 
 class TestFs(unittest.TestCase):

@@ -11,7 +11,7 @@ tube_add(
     [
         tube_db,
         "--extra",
-        "--dl-config",
+        "--extractor-config",
         "TEST1=1 TEST2=2",
         "https://youtube.com/playlist?list=PLVoczRgDnXDLWV1UJ_tO70VT_ON0tuEdm",
     ],
@@ -37,7 +37,7 @@ def test_tw_print(capsys):
     ]:
         lb(lb_command)
         captured = capsys.readouterr().out.replace("\n", "")
-        assert ("Aggregate" in captured) or ("ie_key" in captured)
+        assert ("Aggregate" in captured) or ("extractor_key" in captured)
 
 
 class TestTube(unittest.TestCase):
@@ -80,9 +80,9 @@ class TestTube(unittest.TestCase):
         out = play_mocked.call_args[0][1]
         assert out is not None
 
-    @mock.patch("xklb.tube_backend.process_playlist")
+    @mock.patch("xklb.tube_backend.get_playlist_metadata")
     def test_tubeupdate(self, play_mocked):
-        tube_update([tube_db, "--dl-config", "TEST2=4 TEST3=3"])
+        tube_update([tube_db, "--extractor-config", "TEST2=4 TEST3=3"])
         out = play_mocked.call_args[0][2]
         assert out is not None
         assert out["TEST1"] == "1"

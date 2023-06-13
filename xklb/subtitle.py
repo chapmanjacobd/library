@@ -6,7 +6,7 @@ import ffmpeg
 
 from xklb import db, utils
 from xklb.consts import SUB_TEMP_DIR
-from xklb.utils import flatten, log, remove_consecutive_whitespace, remove_text_inside_brackets
+from xklb.utils import log, remove_consecutive_whitespace, remove_text_inside_brackets
 
 SUBTITLE_FORMATS = "vtt|srt|ssa|ass|jss|aqt|mpl2|mpsub|pjs|rt|sami|smi|stl|xml|txt|psb|ssf|usf"
 IMAGE_SUBTITLE_CODECS = ["dvbsub", "dvdsub", "pgssub", "xsub", "dvb_subtitle", "dvd_subtitle", "hdmv_pgs_subtitle"]

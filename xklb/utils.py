@@ -10,7 +10,7 @@ from shutil import which
 from timeit import default_timer
 from typing import Any, Dict, Generator, List, NoReturn, Optional, Union
 
-import ffmpeg, humanize
+import humanize
 from IPython.core import ultratb
 from IPython.terminal.debugger import TerminalPdb
 from rich import prompt
@@ -131,6 +131,8 @@ def flatten(xs: Iterable) -> Generator:
 
 
 def conform(list_: Union[str, Iterable]) -> List:
+    if not list_:
+        return []
     if not isinstance(list_, list):
         list_ = [list_]
     list_ = flatten(list_)
@@ -368,6 +370,8 @@ def path_to_sentence(s):
 
 
 def safe_int(s) -> Optional[int]:
+    if not s:
+        return None
     try:
         return int(float(s))
     except Exception:
@@ -527,7 +531,7 @@ def mpv_enrich2(args, media) -> List[Dict]:
         if not playhead:
             return float("-inf")
         if not duration:
-            return float("-max")
+            return float("-inf")
 
         if "p" in args.partial and "t" in args.partial:
             return (duration / playhead) * -(duration - playhead)  # weighted remaining
@@ -639,15 +643,24 @@ def combine(*list_) -> Optional[str]:
     return ";".join(no_duplicates)
 
 
-def safe_unpack(*list_, idx=0) -> Optional[Any]:
+def safe_unpack(*list_, idx=0, keep_0=True) -> Optional[Any]:
     list_ = conform(list_)
     if not list_:
         return None
 
     try:
-        return list_[idx]
+        value = list_[idx]
+        return value if keep_0 or value != 0 else None
     except IndexError:
         return None
+
+
+def safe_sum(*list_, keep_0=False) -> Optional[Any]:
+    list_ = conform(list_)
+    if not list_:
+        return None
+    value = sum(list_)
+    return value if keep_0 or value != 0 else None
 
 
 def path_fill(text, size):
@@ -682,6 +695,14 @@ def col_naturaldate(tbl: List[Dict], col: str) -> List[Dict]:
     for idx, _d in enumerate(tbl):
         if tbl[idx].get(col) is not None:
             tbl[idx][col] = humanize.naturaldate(datetime.fromtimestamp(int(tbl[idx][col]), timezone.utc))
+
+    return tbl
+
+
+def col_naturaltime(tbl: List[Dict], col: str) -> List[Dict]:
+    for idx, _d in enumerate(tbl):
+        if tbl[idx].get(col) is not None:
+            tbl[idx][col] = humanize.naturaltime(datetime.fromtimestamp(int(tbl[idx][col])))
 
     return tbl
 
@@ -772,12 +793,6 @@ class ArgparseDict(argparse.Action):
 
 def filter_namespace(args, config_opts) -> Optional[Dict]:
     return dict_filter_bool({k: v for k, v in args.__dict__.items() if k in config_opts})
-
-
-def ensure_playlists_exists(args) -> None:
-    if "playlists" not in args.db.table_names():
-        with args.db.conn:
-            args.db.conn.execute("create table playlists (path text, category text, ie_key text, time_deleted int)")
 
 
 def clear_input() -> None:
@@ -1052,23 +1067,6 @@ def cover_scan(media_duration, scan_percentage):
     return scans, scan_duration
 
 
-def decode_full_scan(path):
-    output = ffmpeg.input(path).output("/dev/null", f="null")
-    ffmpeg.run(output, quiet=True)
-
-
-def decode_quick_scan(path, scans, scan_duration=3):
-    fail_count = 0
-    for scan in scans:
-        try:
-            output = ffmpeg.input(path, ss=scan).output("/dev/null", t=scan_duration, f="null")
-            ffmpeg.run(output, quiet=True)
-        except ffmpeg.Error:
-            fail_count += 1
-
-    return (fail_count / len(scans)) * 100
-
-
 def fast_glob(path_dir, limit=100):
     files = []
     with os.scandir(path_dir) as entries:
@@ -1227,3 +1225,22 @@ def allow_dicts_like_sql(media, allowlist):
             allowed_media.append(m)
 
     return allowed_media
+
+
+def trim_path_segments(path, desired_length):
+    path = Path(path)
+    segments = list(path.parent.parts) + [path.stem]
+    extension = path.suffix
+
+    desired_length -= len(extension)
+
+    while len("".join(segments)) > desired_length:
+        longest_segment_index = max(range(len(segments)), key=lambda i: len(segments[i]))
+        segments[longest_segment_index] = segments[longest_segment_index][:-1]
+
+        if all(len(segment) % 2 == 0 for segment in segments):
+            for i in range(len(segments)):
+                segments[i] = segments[i][:-1]
+
+    segments[-1] += extension
+    return str(Path(*segments))

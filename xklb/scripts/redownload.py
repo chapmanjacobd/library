@@ -86,7 +86,7 @@ def get_deleted_media(args) -> List[dict]:
 
 
 def mark_media_undownloaded(args, deleted_media) -> None:
-    m_columns = args.db["media"].columns_dict
+    m_columns = db.columns(args, "media")
 
     media = deepcopy(deleted_media)
     for d in media:
@@ -96,7 +96,8 @@ def mark_media_undownloaded(args, deleted_media) -> None:
         d.pop("error", None)
 
         if "webpath" in m_columns and (d.get("webpath") or "").startswith("http"):
-            args.db["media"].delete(d["path"])  # type: ignore
+            with args.db.conn:
+                args.db.conn.execute("DELETE from media WHERE path = ?", d["path"])
 
             d["path"] = d["webpath"]
             args.db["media"].upsert(d, pk="id", alter=True)  # type: ignore
@@ -138,7 +139,7 @@ def redownload() -> None:
 
     print_deleted(args, deleted_media)
     paths = [d["path"] for d in deleted_media]
-    redownload_ids = [d["tube_id"] for d in deleted_media if d.get("tube_id")]
+    redownload_ids = [d["extractor_id"] for d in deleted_media if d.get("extractor_id")]
     print(len(redownload_ids), "tube ids found")
     if deleted_media and utils.confirm("Redownload media?"):  # type: ignore
         if len(redownload_ids) > 0:

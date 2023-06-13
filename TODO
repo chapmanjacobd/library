@@ -1,4 +1,40 @@
-- use rowid alias instead of string pks: playlists table: switch playlist_path nullable fk to integer id
+- dedupe-db
+
+dedupe-db script
+
+--bk path --pk id --upsert-columns play_count,time_played,playhead,time_downloaded,time_deleted,time_uploaded,webpath,language,title,tube_id,view_count,uploader,playlist_path,live_status
+
+SELECT MIN(id) AS min_id, path
+FROM your_table
+GROUP BY path;
+
+for col in args.upsert_columns:
+    SELECT play_count
+    FROM media
+    WHERE play_count IS NOT NULL
+
+    UPDATE media set play_count = ? WHERE path = ?
+
+
+DELETE FROM your_table
+WHERE id NOT IN (
+  SELECT min_id
+  FROM temp_table
+);
+
+lb bigdirs ~/lb/video.db
+
+/mnt/d/75_MovieQueue/unsorted/NRMwalkthroughHD/ should be 200GB
+
+- scatter -- flatten to new directories
+
+- dlstatus print errors also:
+
+sqlite lb/fs/blogspot.db 'select error, count(*) from media group by 1 order by 2'
+[{"error": "NoExtractorError", "count(*)": 21},
+ {"error": null, "count(*)": 46},
+ {"error": "HTTPError", "count(*)": 112},
+ {"error": "HTTPNotFoundError", "count(*)": 118}]
 
 - POIs CLI -- save your trip plans and see places to go with automated day trip itineraries, geopandas buffer
 

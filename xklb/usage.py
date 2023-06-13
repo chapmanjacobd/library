@@ -8,7 +8,7 @@ download = r"""library download [--prefix /mnt/d/] [--safe] [--subs] [--auto-sub
 
         library download dl.db https://www.youtube.com/c/BlenderFoundation/videos
 
-    Files will be saved to <lb download prefix>/<lb download category>/
+    Files will be saved to <lb download prefix>/<extractor>/
 
         For example:
         library dladd Cool ...
@@ -26,16 +26,16 @@ download = r"""library download [--prefix /mnt/d/] [--safe] [--subs] [--auto-sub
     Print download queue groups
 
         library download-status audio.db
-        ╒═════════════════════╤════════════╤══════════════════╤════════════════════╤══════════╕
-        │ category            │ ie_key     │ duration         │   never_downloaded │   errors │
-        ╞═════════════════════╪════════════╪══════════════════╪════════════════════╪══════════╡
-        │ 81_New_Music        │ Soundcloud │                  │                 10 │        0 │
-        ├─────────────────────┼────────────┼──────────────────┼────────────────────┼──────────┤
-        │ 81_New_Music        │ Youtube    │ 10 days, 4 hours │                  1 │     2555 │
-        │                     │            │ and 20 minutes   │                    │          │
-        ├─────────────────────┼────────────┼──────────────────┼────────────────────┼──────────┤
-        │ Playlist-less media │ Youtube    │ 7.68 minutes     │                 99 │        1 │
-        ╘═════════════════════╧════════════╧══════════════════╧════════════════════╧══════════╛
+        ╒════════════╤══════════════════╤════════════════════╤══════════╕
+        │ extractor_key     │ duration         │   never_downloaded │   errors │
+        ╞════════════╪══════════════════╪════════════════════╪══════════╡
+        │ Soundcloud │                  │                 10 │        0 │
+        ├────────────┼──────────────────┼────────────────────┼──────────┤
+        │ Youtube    │ 10 days, 4 hours │                  1 │     2555 │
+        │            │ and 20 minutes   │                    │          │
+        ├────────────┼──────────────────┼────────────────────┼──────────┤
+        │ Youtube    │ 7.68 minutes     │                 99 │        1 │
+        ╘════════════╧══════════════════╧════════════════════╧══════════╛
 """
 
 block = r"""library block DATABASE URLS ...
@@ -411,7 +411,7 @@ redditadd = """library redditadd [--lookback N_DAYS] [--praw-site bot1] DATABASE
     You can find more info here: https://github.com/chapmanjacobd/reddit_mining#how-was-this-made
 """
 
-redditupdate = """library redditupdate [--audio | --video] [-c CATEGORY] [--lookback N_DAYS] [--praw-site bot1] DATABASE
+redditupdate = """library redditupdate [--audio | --video] [--lookback N_DAYS] [--praw-site bot1] DATABASE
 
     Fetch the latest posts for every subreddit/redditor saved in your database
 
@@ -548,7 +548,7 @@ playlists = """library playlists DATABASE [--aggregate] [--fields] [--json] [--d
 
         library playlists
         ╒══════════╤════════════════════╤══════════════════════════════════════════════════════════════════════════╕
-        │ ie_key   │ title              │ path                                                                     │
+        │ extractor_key   │ title              │ path                                                                     │
         ╞══════════╪════════════════════╪══════════════════════════════════════════════════════════════════════════╡
         │ Youtube  │ Highlights of Life │ https://www.youtube.com/playlist?list=PL7gXS9DcOm5-O0Fc1z79M72BsrHByda3n │
         ╘══════════╧════════════════════╧══════════════════════════════════════════════════════════════════════════╛
@@ -557,7 +557,7 @@ playlists = """library playlists DATABASE [--aggregate] [--fields] [--json] [--d
 
         library playlists -p a
         ╒══════════╤════════════════════╤══════════════════════════════════════════════════════════════════════════╤═══════════════╤═════════╕
-        │ ie_key   │ title              │ path                                                                     │ duration      │   count │
+        │ extractor_key   │ title              │ path                                                                     │ duration      │   count │
         ╞══════════╪════════════════════╪══════════════════════════════════════════════════════════════════════════╪═══════════════╪═════════╡
         │ Youtube  │ Highlights of Life │ https://www.youtube.com/playlist?list=PL7gXS9DcOm5-O0Fc1z79M72BsrHByda3n │ 53.28 minutes │      15 │
         ╘══════════╧════════════════════╧══════════════════════════════════════════════════════════════════════════╧═══════════════╧═════════╛
@@ -579,40 +579,36 @@ download_status = """library download-status DATABASE
     Print download queue groups
 
         library download-status video.db
-        ╒═════════════════════╤═════════════╤══════════════════╤════════════════════╤══════════╕
-        │ category            │ ie_key      │ duration         │   never_downloaded │   errors │
-        ╞═════════════════════╪═════════════╪══════════════════╪════════════════════╪══════════╡
-        │ 71_Mealtime_Videos  │ Youtube     │ 3 hours and 2.07 │                 76 │        0 │
-        │                     │             │ minutes          │                    │          │
-        ├─────────────────────┼─────────────┼──────────────────┼────────────────────┼──────────┤
-        │ 75_MovieQueue       │ Dailymotion │                  │                 53 │        0 │
-        ├─────────────────────┼─────────────┼──────────────────┼────────────────────┼──────────┤
-        │ 75_MovieQueue       │ Youtube     │ 1 day, 18 hours  │                 30 │        0 │
-        │                     │             │ and 6 minutes    │                    │          │
-        ├─────────────────────┼─────────────┼──────────────────┼────────────────────┼──────────┤
-        │ Dailymotion         │ Dailymotion │                  │                186 │      198 │
-        ├─────────────────────┼─────────────┼──────────────────┼────────────────────┼──────────┤
-        │ Uncategorized       │ Youtube     │ 1 hour and 52.18 │                  1 │        0 │
-        │                     │             │ minutes          │                    │          │
-        ├─────────────────────┼─────────────┼──────────────────┼────────────────────┼──────────┤
-        │ Vimeo               │ Vimeo       │                  │                253 │       49 │
-        ├─────────────────────┼─────────────┼──────────────────┼────────────────────┼──────────┤
-        │ Youtube             │ Youtube     │ 2 years, 4       │              51676 │      197 │
-        │                     │             │ months, 15 days  │                    │          │
-        │                     │             │ and 6 hours      │                    │          │
-        ├─────────────────────┼─────────────┼──────────────────┼────────────────────┼──────────┤
-        │ Playlist-less media │ Youtube     │ 4 months, 23     │               2686 │        7 │
-        │                     │             │ days, 19 hours   │                    │          │
-        │                     │             │ and 33 minutes   │                    │          │
-        ╘═════════════════════╧═════════════╧══════════════════╧════════════════════╧══════════╛
+        ╒═════════════╤══════════════════╤════════════════════╤══════════╕
+        │ extractor_key      │ duration         │   never_downloaded │   errors │
+        ╞═════════════╪══════════════════╪════════════════════╪══════════╡
+        │ Youtube     │ 3 hours and 2.07 │                 76 │        0 │
+        │             │ minutes          │                    │          │
+        ├─────────────┼──────────────────┼────────────────────┼──────────┤
+        │ Dailymotion │                  │                 53 │        0 │
+        ├─────────────┼──────────────────┼────────────────────┼──────────┤
+        │ Youtube     │ 1 day, 18 hours  │                 30 │        0 │
+        │             │ and 6 minutes    │                    │          │
+        ├─────────────┼──────────────────┼────────────────────┼──────────┤
+        │ Dailymotion │                  │                186 │      198 │
+        ├─────────────┼──────────────────┼────────────────────┼──────────┤
+        │ Youtube     │ 1 hour and 52.18 │                  1 │        0 │
+        │             │ minutes          │                    │          │
+        ├─────────────┼──────────────────┼────────────────────┼──────────┤
+        │ Vimeo       │                  │                253 │       49 │
+        ├─────────────┼──────────────────┼────────────────────┼──────────┤
+        │ Youtube     │ 2 years, 4       │              51676 │      197 │
+        │             │ months, 15 days  │                    │          │
+        │             │ and 6 hours      │                    │          │
+        ├─────────────┼──────────────────┼────────────────────┼──────────┤
+        │ Youtube     │ 4 months, 23     │               2686 │        7 │
+        │             │ days, 19 hours   │                    │          │
+        │             │ and 33 minutes   │                    │          │
+        ╘═════════════╧══════════════════╧════════════════════╧══════════╛
 
     Simulate --safe flag
 
         library download-status video.db --safe
-
-    Show only download attempts with errors
-
-        library download-status video.db --errors
 """
 
 tabs = """library tabs DATABASE
@@ -682,7 +678,7 @@ tabs = """library tabs DATABASE
         ╘═══════════════════════════════════════╧═════════════╧══════════════╛
 """
 
-tabsadd = r"""library tabsadd [--frequency daily weekly (monthly) quarterly yearly] [--category CATEGORY] [--no-sanitize] DATABASE URLS ...
+tabsadd = r"""library tabsadd [--frequency daily weekly (monthly) quarterly yearly] [--no-sanitize] DATABASE URLS ...
 
     Adding one URL:
 
@@ -702,7 +698,7 @@ tabsadd = r"""library tabsadd [--frequency daily weekly (monthly) quarterly year
 
 """
 
-tubeadd = r"""library tubeadd [-c CATEGORY] [--safe] [--extra] [--subs] [--auto-subs] DATABASE URLS ...
+tubeadd = r"""library tubeadd [--safe] [--extra] [--subs] [--auto-subs] DATABASE URLS ...
 
     Create a dl database / add links to an existing database
 
@@ -716,11 +712,7 @@ tubeadd = r"""library tubeadd [-c CATEGORY] [--safe] [--extra] [--subs] [--auto-
 
         library tubeadd --force reddit.db (sqlite-utils --raw-lines reddit.db 'select path from media')
 
-    You can also include a category for file organization
-
-        library tubeadd -c Mealtime dl.db (cat ~/.jobs/todo/71_Mealtime_Videos)
-
-    Files will be saved to <download prefix>/<tubeadd category>/
+    Files will be saved to <download prefix>/<extractor>/
 
         For example:
         library tubeadd -c Cool ...
@@ -736,15 +728,11 @@ tubeadd = r"""library tubeadd [-c CATEGORY] [--safe] [--extra] [--subs] [--auto-
         library tubeupdate tw.db --extra
 """
 
-tubeupdate = """library tubeupdate [--audio | --video] [-c CATEGORY] DATABASE
+tubeupdate = """library tubeupdate [--audio | --video] DATABASE
 
     Fetch the latest videos for every playlist saved in your database
 
         library tubeupdate educational.db
-
-    Or limit to specific categories...
-
-        library tubeupdate -c "Bob Ross" educational.db
 
     Run with --optimize to add indexes (might speed up searching but the size will increase):
 
@@ -757,6 +745,9 @@ tubeupdate = """library tubeupdate [--audio | --video] [-c CATEGORY] DATABASE
 
         library tubeupdate educational.db --extra https://www.youtube.com/channel/UCBsEUcR-ezAuxB2WlfeENvA/videos
 """
+
+galleryadd = None
+galleryupdate = None
 
 bigdirs = """library bigdirs DATABASE [--limit (4000)] [--depth (0)] [--sort-by deleted | played] [--size=+5MB]
 
@@ -821,7 +812,7 @@ merge_dbs = """library merge-dbs DEST_DB SOURCE_DB ... [--only-target-columns] [
         library merge-dbs --only-target-columns --only-new-rows --table media,playlists --pk path audio-fts.db audio.db
 
         library merge-dbs --pk id --only-tables subreddits reddit/81_New_Music.db audio.db
-        library merge-dbs --only-new-rows --pk playlist_path,path --only-tables reddit_posts reddit/81_New_Music.db audio.db -v
+        library merge-dbs --only-new-rows --pk subreddit,path --only-tables reddit_posts reddit/81_New_Music.db audio.db -v
 """
 
 merge_online_local = """library merge-online-local DATABASE

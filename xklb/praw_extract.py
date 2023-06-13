@@ -7,7 +7,7 @@ from itertools import takewhile
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple
 
-from xklb import consts, db, usage, utils
+from xklb import consts, db, media, playlists, usage, utils
 from xklb.utils import log
 
 PRAW_SETUP_INSTRUCTIONS = r"""
@@ -50,8 +50,6 @@ def parse_args(action, usage) -> argparse.Namespace:
 
     parser.add_argument("--subreddits", action="store_true")
     parser.add_argument("--redditors", action="store_true")
-
-    parser.add_argument("--category", "-c", help=argparse.SUPPRESS)
 
     parser.add_argument("--verbose", "-v", action="count", default=0)
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
@@ -148,7 +146,7 @@ def saveable(item) -> Dict[str, Any]:
     return _parent_ids_interpreted(result)
 
 
-def slim_post_data(d: dict, playlist_path=None) -> dict:
+def slim_post_data(d: dict, subreddit=None) -> dict:
     skip_domains = ["linktr.ee", "twitter.com", "t.me", "patreon", "onlyfans", "fans.ly", "file-upload", "file-link"]
     url = d.get("url")
     if url:
@@ -183,7 +181,7 @@ def slim_post_data(d: dict, playlist_path=None) -> dict:
         "selftext": selftext,
         "title": d.get("title"),
         "total_awards_received": d.get("total_awards_received"),
-        "playlist_path": playlist_path,
+        "subreddit": subreddit,
     }
 
 
@@ -217,9 +215,9 @@ def save_post(args, post_dict, subreddit_path) -> None:
         if post_dict.get("author_is_blocked") == 1:
             pass
         elif "selftext" in slim_dict:
-            args.db["reddit_posts"].upsert(slim_dict, pk=["path", "playlist_path"], alter=True)
+            args.db["reddit_posts"].upsert(slim_dict, pk=["path", "subreddit"], alter=True)
         else:
-            args.db["media"].upsert(slim_dict, pk=["path", "playlist_path"], alter=True)
+            media._add(args, slim_dict)
 
 
 def since_last_created(args, playlist_path):
@@ -227,11 +225,11 @@ def since_last_created(args, playlist_path):
         """
         select max(time_created)
         from (
-            select time_created, playlist_path from reddit_posts
+            select time_created, playlist_id from reddit_posts
             UNION ALL
-            select time_created, playlist_path from media
+            select time_created, playlist_id from media
         )
-        where playlist_path = ?
+        where playlist_id = (select id from playlists where path = ?)
     """,
         [playlist_path],
         ignore_errors=["no such column", "no such table"],
@@ -270,7 +268,8 @@ def subreddit_new(args, subreddit_dict) -> None:
         post_dict = saveable(post)
 
         if idx == 0:
-            args.db["playlists"].upsert(
+            playlists._add(
+                args,
                 utils.dict_filter_bool(
                     {
                         "path": subreddit_path,
@@ -278,8 +277,6 @@ def subreddit_new(args, subreddit_dict) -> None:
                         "visibility": post_dict.pop("subreddit_type", None),
                     },
                 ),
-                pk="path",
-                alter=True,
             )
 
         save_post(args, post_dict, subreddit_path)
@@ -349,42 +346,40 @@ def reddit_add(args=None) -> None:
     for path in args.paths:
         subreddit_matches = consts.REGEX_SUBREDDIT.match(path)
         redditor_matches = consts.REGEX_REDDITOR.match(path)
-        ie_key = "reddit_praw"
+        extractor_key = "reddit_praw"
         name = path
         if subreddit_matches:
-            ie_key = "reddit_praw_subreddit"
+            extractor_key = "reddit_praw_subreddit"
             name = utils.conform(subreddit_matches.groups()).pop()
             subreddits.append({"path": path, "name": name})
         elif redditor_matches:
-            ie_key = "reddit_praw_redditor"
+            extractor_key = "reddit_praw_redditor"
             name = utils.conform(redditor_matches.groups()).pop()
             redditors.append({"path": path, "name": name})
         else:
             if args.subreddits:
-                ie_key = "reddit_praw_subreddit"
+                extractor_key = "reddit_praw_subreddit"
                 path = f"https://old.reddit.com/r/{name}/"
                 subreddits.append({"path": path, "name": name})
             elif args.redditors:
-                ie_key = "reddit_praw_redditor"
+                extractor_key = "reddit_praw_redditor"
                 path = f"https://old.reddit.com/user/{name}/"
                 redditors.append({"path": path, "name": name})
             else:
                 log.error(f"[{path}]: Skipping unknown URL")
                 continue
 
-        args.db["playlists"].upsert(
+        playlists._add(
+            args,
             utils.dict_filter_bool(
                 {
                     "path": path,
-                    "playlist_id": name,
-                    "config": utils.filter_namespace(args, ["limit", "lookback", "praw_site"]),
-                    "category": args.category or ie_key,
-                    "ie_key": ie_key,
+                    "extractor_playlist_id": name,
+                    "extractor_config": utils.filter_namespace(args, ["limit", "lookback", "praw_site"]),
+                    "extractor_key": extractor_key,
                     "time_deleted": 0,
                 },
             ),
-            pk="path",
-            alter=True,
         )
 
     process_subreddits(args, subreddits)
@@ -399,18 +394,17 @@ def reddit_update(args=None) -> None:
         sys.argv = ["lb", *args]
 
     args = parse_args("redditupdate", usage=usage.redditupdate)
-    playlists = db.get_playlists(
+    reddit_playlists = playlists.get_all(
         args,
-        "ie_key, path, id, config",
-        sql_filters=['AND ie_key in ("reddit_praw_subreddit","reddit_praw_redditor")'],
-        constrain=True,
+        "extractor_key, path, id, extractor_config",
+        sql_filters=['AND extractor_key in ("reddit_praw_subreddit","reddit_praw_redditor")'],
     )
 
-    for playlist in playlists:
-        config = json.loads(playlist["config"])
-        args_env = args if not config else argparse.Namespace(**{**config, **args.__dict__})
+    for playlist in reddit_playlists:
+        extractor_config = json.loads(playlist["extractor_config"])
+        args_env = args if not extractor_config else argparse.Namespace(**{**extractor_config, **args.__dict__})
 
-        if playlist["ie_key"] == "reddit_praw_subreddit":
-            process_subreddits(args_env, [{"path": playlist["path"], "name": playlist["playlist_id"]}])
-        elif playlist["ie_key"] == "reddit_praw_subreddit":
-            process_redditors(args_env, [{"path": playlist["path"], "name": playlist["playlist_id"]}])
+        if playlist["extractor_key"] == "reddit_praw_subreddit":
+            process_subreddits(args_env, [{"path": playlist["path"], "name": playlist["extractor_playlist_id"]}])
+        elif playlist["extractor_key"] == "reddit_praw_redditor":
+            process_redditors(args_env, [{"path": playlist["path"], "name": playlist["extractor_playlist_id"]}])

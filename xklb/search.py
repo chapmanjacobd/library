@@ -101,8 +101,8 @@ def printer(args, captions) -> None:
 
 
 def construct_query(args) -> Tuple[str, dict]:
-    m_columns = args.db["media"].columns_dict
-    c_columns = args.db["captions"].columns_dict
+    m_columns = db.columns(args, "media")
+    c_columns = db.columns(args, "captions")
     args.filter_sql = []
     args.filter_bindings = {}
 

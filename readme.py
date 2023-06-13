@@ -114,7 +114,7 @@ And you can always add more later--even from different websites.
 To prevent mistakes the default configuration is to download metadata for only
 the most recent 20,000 videos per playlist/channel.
 
-    library tubeadd maker.db --dl-config playlistend=1000
+    library tubeadd maker.db --extractor-config playlistend=1000
 
 Be aware that there are some YouTube Channels which have many items--for example
 the TEDx channel has about 180,000 videos. Some channels even have upwards of

@@ -2,7 +2,7 @@ import argparse, sys
 from pathlib import Path
 from typing import List
 
-from xklb import consts, db, player, usage, utils
+from xklb import consts, db, media, player, usage, utils
 from xklb.utils import log, sanitize_url
 
 
@@ -91,5 +91,6 @@ def tabs_add(args=None) -> None:
         sys.argv = ["lb", *args]
     args = parse_args()
 
-    tabs = [extract_url_metadata(args, path) for path in get_new_paths(args)]
-    args.db["media"].insert_all(utils.list_dict_filter_bool(tabs), pk="path", alter=True, replace=True)
+    tabs = utils.list_dict_filter_bool([extract_url_metadata(args, path) for path in get_new_paths(args)])
+    for tab in tabs:
+        media._add(args, tab)

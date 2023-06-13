@@ -2,32 +2,30 @@ import unittest
 from argparse import Namespace
 from unittest import mock
 
-from xklb import utils
 from xklb.db import connect
 from xklb.dl_extract import dl_download
-from xklb.scripts.block import block
-from xklb.tube_backend import yt
-from xklb.tube_extract import tube_add, tube_update
+from xklb.tube_backend import download
+from xklb.tube_extract import tube_add
 
 PLAYLIST_URL = "https://youtube.com/playlist?list=PLVoczRgDnXDLWV1UJ_tO70VT_ON0tuEdm"
 PLAYLIST_VIDEO_URL = "https://www.youtube.com/watch?v=QoXubRvB6tQ"
 STORAGE_PREFIX = "tests/data/"
 
-dl_db = ["tests/data/dl.db"]
-tube_add([*dl_db, "-c=Self", PLAYLIST_URL])
-
-tube_db = ["tests/data/tube_dl.db"]
-tube_add([*tube_db, PLAYLIST_URL])
-
 
 class TestTube(unittest.TestCase):
+    dl_db = ["tests/data/dl.db"]
+
+    tube_db = ["tests/data/tube_dl.db"]
+    tube_add([*dl_db, PLAYLIST_URL])
+    tube_add([*tube_db, PLAYLIST_URL])
+
     def test_yt(self):
-        tube_add([*dl_db, "-c=Self", PLAYLIST_URL])
+        tube_add([*self.dl_db, PLAYLIST_URL])
 
         args = Namespace(
-            database=dl_db[0],
+            database=self.dl_db[0],
             profile="video",
-            dl_config={},
+            extractor_config={},
             prefix=STORAGE_PREFIX,
             ext=None,
             ignore_errors=False,
@@ -39,45 +37,15 @@ class TestTube(unittest.TestCase):
             auto_subs=False,
         )  # remember to add args to dl_extract if they need to be added here
         args.db = connect(args)
-        yt(args, {"path": PLAYLIST_VIDEO_URL, "dl_config": "{}", "category": "Self"})
+        download(args, {"path": PLAYLIST_VIDEO_URL, "extractor_config": "{}"})
 
-    @mock.patch("xklb.tube_backend.yt")
-    @mock.patch("xklb.tube_backend.process_playlist")
-    def test_tube_dl_conversion(self, process_playlist, mocked_yt):
-        tube_add([*tube_db, "-c=Self", "--force", PLAYLIST_URL])
-        out = process_playlist.call_args[0][1]
+    @mock.patch("xklb.tube_backend.download")
+    @mock.patch("xklb.tube_backend.get_playlist_metadata")
+    def test_tube_dl_conversion(self, get_playlist_metadata, mocked_yt):
+        tube_add([*self.tube_db, "--force", PLAYLIST_URL])
+        out = get_playlist_metadata.call_args[0][1]
         assert out == PLAYLIST_URL
 
-        dl_download([*tube_db, "--prefix", STORAGE_PREFIX, "--video"])
+        dl_download([*self.tube_db, "--prefix", STORAGE_PREFIX, "--video"])
         out = mocked_yt.call_args[0]
         assert out[1]["path"] == PLAYLIST_VIDEO_URL
-
-    @mock.patch("xklb.tube_backend.yt")
-    def test_download(self, mocked_yt):
-        db_path = utils.file_temp_copy(dl_db[0])
-        dl_download([db_path, "--prefix", STORAGE_PREFIX, "--audio"])
-        out = mocked_yt.call_args[0]
-        assert out[1]["path"] == PLAYLIST_VIDEO_URL
-
-    @mock.patch("xklb.tube_backend.update_playlists")
-    def test_dlupdate(self, update_playlists):
-        db_path = utils.file_temp_copy(dl_db[0])
-        tube_update([db_path])
-        out = update_playlists.call_args[0]
-        assert out[1][0]["path"] == PLAYLIST_URL
-
-    @mock.patch("xklb.tube_backend.update_playlists")
-    def test_dlupdate_subset_category(self, update_playlists):
-        db_path = utils.file_temp_copy(dl_db[0])
-        tube_update([db_path, "-c=Self"])
-        out = update_playlists.call_args[0]
-        assert out[1][0]["path"] == PLAYLIST_URL
-
-    @mock.patch("xklb.tube_backend.update_playlists")
-    def test_block_existing(self, update_playlists):
-        db_path = utils.file_temp_copy(dl_db[0])
-        block([db_path, "--match-col=playlist_path", PLAYLIST_URL])
-        tube_update([db_path, "-c=Self"])
-        out = update_playlists.call_args[0]
-        print(out)
-        assert len(out[1]) == 0

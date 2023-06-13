@@ -61,23 +61,31 @@ def connect(args, conn=None, **kwargs):
         raise SystemExit(1)
 
     db = DB(conn or args.database, tracer=tracer if args.verbose >= consts.LOG_DEBUG_SQL else None, **kwargs)  # type: ignore
-    with db.conn:
-        db.conn.execute("PRAGMA main.cache_size = 8000")
+    with db.conn:  # type: ignore
+        db.conn.execute("PRAGMA main.cache_size = 8000")  # type: ignore
 
     db.enable_wal()
     return db
 
 
+def columns(args, table_name):
+    return args.db[table_name].columns_dict
+
+
 config = {
+    "playlists": {
+        "column_order": ["path", "extractor_key"],
+        "ignore_columns": ["id", "extractor_playlist_id"],
+    },
     "media": {
         "search_columns": ["path", "title", "mood", "genre", "description", "artist", "album"],
-        "column_order": ["path", "webpath", "tube_id", "ie_key", "playlist_path"],
-        "ignore_columns": ["id", "tube_id"],
+        "column_order": ["path", "webpath", "extractor_id"],
+        "ignore_columns": ["id", "extractor_id"],
     },
     "captions": {"search_columns": ["text"]},
     "reddit_posts": {
         "search_columns": ["title", "selftext"],
-        "column_order": ["playlist_path", "path"],
+        "column_order": ["path"],
     },
     "reddit_comments": {
         "search_columns": ["body"],
@@ -96,9 +104,6 @@ config = {
     },
     "hn_story": {
         "search_columns": ["title", "text", "author", "path"],
-    },
-    "playlists": {
-        "column_order": ["path", "ie_key"],
     },
 }
 
@@ -161,7 +166,7 @@ def optimize(args) -> None:
                 else 'unicode61 "tokenchars=_."',  # https://www.sqlite.org/releaselog/3_34_0.html
             )
         else:
-            with db.conn:
+            with db.conn:  # type: ignore
                 log.info("Optimizing fts index: %s", table)
                 db[table].optimize()  # type: ignore
 
@@ -210,7 +215,6 @@ def gen_include_excludes(cols_available):
         "album",
         "artist",
         "tags",
-        "playlist_path",
     ]
 
     valid_cols = [f"m.{c}" for c in searchable_columns if c in cols_available]
@@ -232,21 +236,3 @@ def construct_search_bindings(args, columns) -> None:
     for idx, exc in enumerate(args.exclude):
         args.filter_sql.append(excludes.format(idx))
         args.filter_bindings[f"exclude{idx}"] = "%" + exc.replace(" ", "%").replace("%%", " ") + "%"
-
-
-def get_playlists(args, cols="path, dl_config", constrain=False, sql_filters=None) -> List[dict]:
-    columns = args.db["playlists"].columns_dict
-    if sql_filters is None:
-        sql_filters = []
-    if "time_deleted" in columns:
-        sql_filters.append("AND COALESCE(time_deleted,0) = 0")
-    if constrain and args.category:
-        sql_filters.append(f"AND category='{args.category}'")
-
-    try:
-        known_playlists = list(
-            args.db.query(f"select {cols} from playlists where 1=1 {' '.join(sql_filters)} order by random()"),
-        )
-    except sqlite3.OperationalError:
-        known_playlists = []
-    return known_playlists

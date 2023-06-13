@@ -2,7 +2,7 @@ import argparse, html
 from typing import Set, Tuple
 from urllib.parse import urlparse
 
-from xklb import db, usage, utils
+from xklb import db, media, usage, utils
 from xklb.utils import log
 
 
@@ -42,7 +42,7 @@ def reddit_selftext() -> None:
     from markdown import markdown
 
     args = parse_args()
-    m_columns = args.db["media"].columns_dict
+    m_columns = db.columns(args, "media")
 
     reddit_posts = list(
         args.db.query(
@@ -63,7 +63,7 @@ def reddit_selftext() -> None:
                 log.info(i_link)
 
         for e_link in external_links:
-            args.db["media"].upsert({**d, "path": e_link, "webpage": d["path"]}, pk="path", alter=True)
+            media._add(args, {**d, "path": e_link, "webpage": d["path"]})
 
 
 if __name__ == "__main__":

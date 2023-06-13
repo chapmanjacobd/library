@@ -1,11 +1,10 @@
-import argparse, json, sys
+import json, sys
 from copy import deepcopy
-from datetime import datetime, timezone
 from pathlib import Path
 from types import ModuleType
 from typing import Dict, List, Optional, Tuple
 
-from xklb import consts, fs_extract, subtitle, utils
+from xklb import consts, db, media, playlists, subtitle, utils
 from xklb.consts import DBType
 from xklb.dl_config import (
     prefix_unrecoverable_errors,
@@ -13,7 +12,7 @@ from xklb.dl_config import (
     yt_recoverable_errors,
     yt_unrecoverable_errors,
 )
-from xklb.utils import combine, log, safe_unpack
+from xklb.utils import log, safe_unpack
 
 yt_dlp = None
 
@@ -32,8 +31,8 @@ def tube_opts(args, func_opts=None, playlist_opts: Optional[str] = None) -> dict
     if func_opts is None:
         func_opts = {}
     cli_opts = {}
-    if hasattr(args, "dl_config"):
-        cli_opts = args.dl_config
+    if hasattr(args, "extractor_config"):
+        cli_opts = args.extractor_config
 
     default_opts = {
         "ignoreerrors": False,
@@ -78,172 +77,22 @@ def tube_opts(args, func_opts=None, playlist_opts: Optional[str] = None) -> dict
 
 
 def is_supported(url) -> bool:  # thank you @dbr
-    yt_dlp = load_module_level_yt_dlp()
-
     if consts.REGEX_V_REDD_IT.match(url):
         return True
 
     if getattr(is_supported, "yt_ies", None) is None:
+        yt_dlp = load_module_level_yt_dlp()
         is_supported.yt_ies = yt_dlp.extractor.gen_extractors()
 
     return any(ie.suitable(url) and ie.IE_NAME != "generic" for ie in is_supported.yt_ies)
-
-
-def is_playlist_known(args, playlist_path) -> bool:
-    try:
-        known = args.db.execute("select 1 from playlists where path=?", [playlist_path]).fetchone()
-    except Exception as e:
-        log.debug(e)
-        return False
-    if known is None:
-        return False
-    return True
-
-
-def is_video_known(args, playlist_path, path) -> bool:
-    m_columns = args.db["media"].columns_dict
-    try:
-        known = args.db.execute(
-            f"select 1 from media where playlist_path=? and (path=? or {'web' if 'webpath' in m_columns else ''}path=?)",
-            [playlist_path, path, path],
-        ).fetchone()
-    except Exception as e:
-        log.debug(e)
-        return False
-    if known is None:
-        return False
-    return True
-
-
-def consolidate(v: dict) -> Optional[dict]:
-    if v.get("title") in ("[Deleted video]", "[Private video]"):
-        return None
-
-    for k in list(v):
-        if k.startswith("_") or k in consts.TUBE_IGNORE_KEYS:
-            v.pop(k, None)
-
-    release_date = v.pop("release_date", None)
-    upload_date = v.pop("upload_date", None) or release_date
-    if upload_date:
-        try:
-            upload_date = int(datetime.strptime(upload_date, "%Y%m%d").replace(tzinfo=timezone.utc).timestamp())
-        except Exception:
-            upload_date = None
-
-    cv = {}
-    cv["path"] = safe_unpack(v.pop("webpage_url", None), v.pop("url", None), v.pop("original_url", None))
-    size_bytes = v.pop("filesize_approx", None)
-    cv["size"] = 0 if not size_bytes else int(size_bytes)
-    duration = v.pop("duration", None)
-    cv["duration"] = 0 if not duration else int(duration)
-    cv["time_uploaded"] = upload_date
-    cv["time_created"] = consts.APPLICATION_START
-    cv["time_modified"] = 0  # this should be 0 if the file has never been downloaded
-    cv["time_deleted"] = 0
-    cv["time_downloaded"] = 0
-    cv["play_count"] = 0
-    cv["time_played"] = 0
-    cv["playhead"] = 0
-    language = v.pop("language", None)
-    cv["tags"] = combine(
-        "language:" + language if language else None,
-        v.pop("description", None),
-        v.pop("categories", None),
-        v.pop("genre", None),
-        v.pop("tags", None),
-    )
-    cv["tube_id"] = v.pop("id", None)
-    if cv["tube_id"] is None:
-        log.warning("No id found in %s", v)
-    cv["ie_key"] = safe_unpack(v.pop("ie_key", None), v.pop("extractor_key", None), v.pop("extractor", None))
-    cv["title"] = safe_unpack(v.pop("title", None), v.get("playlist_title"))
-    cv["view_count"] = v.pop("view_count", None)
-    cv["width"] = v.pop("width", None)
-    cv["height"] = v.pop("height", None)
-    fps = v.pop("fps", None)
-    cv["fps"] = 0 if not fps else int(fps)
-    cv["average_rating"] = v.pop("average_rating", None)
-    cv["live_status"] = v.pop("live_status", None)
-    cv["age_limit"] = v.pop("age_limit", None)
-    cv["uploader"] = safe_unpack(
-        v.pop("playlist_uploader_id", None),
-        v.pop("channel_id", None),
-        v.pop("playlist_uploader", None),
-        v.pop("uploader_url", None),
-        v.pop("channel_url", None),
-        v.pop("uploader", None),
-        v.pop("channel", None),
-        v.pop("uploader_id", None),
-    )
-
-    if v != {}:
-        log.info("Extra data %s", v)
-        # breakpoint()
-
-    return utils.dict_filter_bool(cv)
-
-
-def log_problem(args, playlist_path) -> None:
-    if is_playlist_known(args, playlist_path):
-        log.warning("Start of known playlist reached %s", playlist_path)
-    else:
-        log.warning("Could not add playlist %s", playlist_path)
-
-
-def _add_playlist(args, playlist_path, pl: dict, media_path: Optional[str] = None) -> None:
-    extractor = safe_unpack(pl.get("ie_key"), pl.get("extractor_key"), pl.get("extractor"))
-    playlist = {
-        "ie_key": extractor,
-        "title": pl.get("playlist_title"),
-        "path": playlist_path,
-        "uploader": safe_unpack(pl.get("playlist_uploader_id"), pl.get("playlist_uploader")),
-        "playlist_id": pl.get("playlist_id"),
-        "dl_config": args.dl_config,
-        "time_deleted": 0,
-        "category": args.category or extractor,
-        **args.extra_playlist_data,
-    }
-
-    if not playlist.get("playlist_id") or media_path == playlist["path"]:
-        log.warning("Importing playlist-less media %s", playlist["path"])
-    else:
-        args.db["playlists"].upsert(utils.dict_filter_bool(playlist), pk="path", alter=True)
-
-
-def save_undownloadable(args, playlist_path) -> None:
-    entry = {
-        "path": playlist_path,
-        "title": "No data from ydl.extract_info",
-        "category": args.category or "Uncategorized",
-        "dl_config": args.dl_config,
-        **args.extra_playlist_data,
-    }
-    args.db["playlists"].upsert(utils.dict_filter_bool(entry), pk="path", alter=True)
 
 
 playlists_of_playlists = []
 added_media_count = 0
 
 
-def save_entry(args, entry):
-    tags = entry.pop("tags", None) or ""
-    media_id = args.db.pop("select id from media where path = ?", [entry["path"]])
-    if media_id:
-        entry["id"] = media_id
-        args.db["media"].upsert(utils.dict_filter_bool(entry), pk="id", alter=True)
-    else:
-        args.db["media"].insert(utils.dict_filter_bool(entry), pk="id", alter=True)
-        media_id = args.db.pop("select id from media where path = ?", [entry["path"]])
-    if tags:
-        args.db["captions"].insert({"media_id": media_id, "time": 0, "text": tags}, alter=True)
-
-
-def process_playlist(args, playlist_path, ydl_opts, playlist_root=True) -> Optional[List[Dict]]:
+def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True) -> None:
     yt_dlp = load_module_level_yt_dlp()
-
-    for k, v in args.extra_playlist_data.items():
-        setattr(args, k, v)
 
     class ExistingPlaylistVideoReached(yt_dlp.DownloadCancelled):
         pass
@@ -253,32 +102,35 @@ def process_playlist(args, playlist_path, ydl_opts, playlist_root=True) -> Optio
             global added_media_count
 
             if info:
-                url = safe_unpack(info.get("webpage_url"), info.get("url"), info.get("original_url"))
-                if url != playlist_path and info.get("webpage_url_basename") == "playlist":
+                webpath = safe_unpack(info.get("webpage_url"), info.get("url"), info.get("original_url"))
+                if webpath != playlist_path and info.get("webpage_url_basename") == "playlist":
                     if playlist_root:
-                        _add_playlist(args, playlist_path, deepcopy(info))
+                        if not info.get("playlist_id") or webpath == playlist_path:
+                            log.warning("Importing playlist-less media %s", playlist_path)
+                        playlists.add(args, playlist_path, info)
 
                     if args.ignore_errors:
-                        if url in playlists_of_playlists and not playlist_root:
+                        if webpath in playlists_of_playlists and not playlist_root:
                             raise ExistingPlaylistVideoReached  # prevent infinite bug
                     else:
-                        if url in playlists_of_playlists:
+                        if webpath in playlists_of_playlists:
                             raise ExistingPlaylistVideoReached  # prevent infinite bug
 
-                    process_playlist(args, url, ydl_opts, playlist_root=False)
-                    playlists_of_playlists.append(url)
+                    get_playlist_metadata(args, webpath, ydl_opts, playlist_root=False)
+                    playlists_of_playlists.append(webpath)
                     return [], info
 
-                entry = consolidate(deepcopy(info))
+                entry = deepcopy(info)
                 if entry:
-                    entry["playlist_path"] = playlist_path
-                    _add_playlist(args, playlist_path, deepcopy(info), entry["path"])
+                    if not info.get("playlist_id") or webpath == playlist_path:
+                        log.warning("Importing playlist-less media %s", playlist_path)
+                    playlist_id = playlists.add(args, playlist_path, info)
 
-                    if is_video_known(args, playlist_path, entry["path"]) and not args.ignore_errors:
+                    if playlists.media_exists(args, playlist_path, webpath) and not args.ignore_errors:
                         raise ExistingPlaylistVideoReached
 
-                    entry = {**entry, **args.extra_media_data}
-                    save_entry(args, entry)
+                    entry = {**entry, "playlist_id": playlist_id, **args.extra_media_data}
+                    media.add(args, webpath, entry)  # type: ignore
 
                     added_media_count += 1
                     if added_media_count > 1:
@@ -298,13 +150,13 @@ def process_playlist(args, playlist_path, ydl_opts, playlist_root=True) -> Optio
         except ExistingPlaylistVideoReached:
             if added_media_count > count_before_extract:
                 sys.stdout.write("\n")
-            log_problem(args, playlist_path)
+            playlists.log_problem(args, playlist_path)
         else:
             if added_media_count > count_before_extract:
                 sys.stdout.write("\n")
             if not pl and not args.safe:
                 log.warning("Logging undownloadable media")
-                save_undownloadable(args, playlist_path)
+                playlists.save_undownloadable(args, playlist_path, "video")
 
 
 def get_video_metadata(args, playlist_path) -> Optional[Dict]:
@@ -335,7 +187,7 @@ def get_video_metadata(args, playlist_path) -> Optional[Dict]:
 def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Optional[List[Dict]]:
     yt_dlp = load_module_level_yt_dlp()
 
-    m_columns = args.db["media"].columns_dict
+    m_columns = db.columns(args, "media")
 
     with yt_dlp.YoutubeDL(
         tube_opts(
@@ -364,7 +216,7 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Optional[L
             SELECT
               id
             , path
-            , ie_key
+            , playlist_id
             , play_count
             , time_played
             , playhead
@@ -372,15 +224,15 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Optional[L
             WHERE 1=1
                 {'and width is null' if 'width' in m_columns else ''}
                 and path not like '%playlist%'
-                and playlist_path = ?
+                and playlist_id = (select id from playlists where path = ?)
             ORDER by random()
             """,
             [playlist_path],
         ).fetchall()
 
         current_video_count = 0
-        for id, path, ie_key, play_count, time_played, playhead in videos:
-            entry = ydl.extract_info(path, ie_key=ie_key)
+        for id, path, playlist_id, play_count, time_played, playhead in videos:
+            entry = ydl.extract_info(path)
             if entry is None:
                 continue
 
@@ -409,18 +261,14 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Optional[L
                 if len(captions) > 0:
                     args.db["captions"].insert_all(captions, alter=True)
 
-            entry = consolidate(entry)
-            if entry is None:
-                continue
-
             entry["id"] = id
-            entry["playlist_path"] = playlist_path
+            entry["playlist_id"] = playlist_id
             entry["play_count"] = play_count
             entry["chapter_count"] = chapter_count
             entry["time_played"] = time_played
             entry["playhead"] = playhead
 
-            save_entry(args, entry)
+            media.add(args, path, entry)
 
             current_video_count += 1
             sys.stdout.write("\033[K\r")
@@ -431,86 +279,12 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Optional[L
             )
 
 
-def update_playlists(args, playlists) -> None:
-    for d in playlists:
-        process_playlist(
-            args,
-            d["path"],
-            tube_opts(args, playlist_opts=d.get("dl_config", "{}"), func_opts={"ignoreerrors": "only_download"}),
-        )
-
-        if args.extra:
-            log.warning("[%s]: Getting extra metadata", d["path"])
-            get_extra_metadata(args, d["path"], playlist_dl_opts=d.get("dl_config", "{}"))
-
-
-def save_tube_entry(args, m, info: Optional[dict] = None, error=None, unrecoverable_error=False) -> None:
-    webpath = m["path"]
-
-    tube_id = m.get("tube_id")
-    if tube_id:
-        error = None if not error else error.replace(tube_id, "").replace(" :", ":")
-
-    if not info:  # not downloaded or already downloaded
-        entry = {
-            "path": webpath,
-            "time_downloaded": 0,
-            "time_modified": consts.now(),
-            "time_deleted": consts.APPLICATION_START if unrecoverable_error else 0,
-            "error": error,
-        }
-        save_entry(args, entry)
-        return
-
-    assert info["local_path"] != ""
-    if Path(info["local_path"]).exists():
-        fs_args = argparse.Namespace(
-            profile=args.profile,
-            scan_subtitles=args.profile == DBType.video,
-            ocr=False,
-            speech_recognition=False,
-            delete_unplayable=False,
-            check_corrupt=0.0,
-            delete_corrupt=None,
-        )
-        fs_tags = utils.dict_filter_bool(fs_extract.extract_metadata(fs_args, info["local_path"]), keep_0=False) or {}
-        fs_extract.clean_up_temp_dirs()
-    else:
-        fs_tags = {}
-
-    tube_entry = consolidate(info) or {}
-    # remove default 0s to not overwrite existing value during upsert
-    tube_entry.pop("play_count", None)
-    tube_entry.pop("time_played", None)
-    tube_entry.pop("playhead", None)
-
-    entry = {
-        **tube_entry,
-        **fs_tags,
-        "webpath": webpath,
-        "time_modified": consts.now(),
-        "time_downloaded": 0 if error else consts.APPLICATION_START,
-        "time_deleted": consts.APPLICATION_START if unrecoverable_error else 0,
-        "error": error,
-    }
-    save_entry(args, entry)
-
-    if fs_tags:
-        try:
-            args.db["media"].delete(webpath)  # from sqlite_utils.db import NotFoundError
-        except Exception as e:
-            log.debug(e)
-
-
-def yt(args, m) -> None:
+def download(args, m) -> None:
     yt_dlp = load_module_level_yt_dlp()
-
-    if not m["path"].startswith("http"):
-        return
 
     ydl_log = {"error": [], "warning": [], "info": []}
 
-    class BadToTheBoneLogger:
+    class DictLogger:
         def debug(self, msg):
             if msg.startswith("[debug] "):
                 pass
@@ -531,12 +305,12 @@ def yt(args, m) -> None:
         ignoreerrors = True
 
     def out_dir(p):
-        return str(Path(args.prefix, m["category"] or "%(extractor_key,extractor)s", p))
+        return str(Path(args.prefix, "%(extractor_key,extractor)s", p))
 
     func_opts = {
         "ignoreerrors": ignoreerrors,
         "extractor_args": {"youtube": {"skip": ["authcheck"]}},
-        "logger": BadToTheBoneLogger(),
+        "logger": DictLogger(),
         "skip_download": bool(consts.PYTEST_RUNNING),
         "extract_flat": False,
         "lazy_playlist": False,
@@ -562,10 +336,10 @@ def yt(args, m) -> None:
     ydl_opts = tube_opts(
         args,
         func_opts=func_opts,
-        playlist_opts=m.get("dl_config", "{}"),
+        playlist_opts=m.get("extractor_config", "{}"),
     )
 
-    download_archive = Path(args.download_archive).expanduser().resolve()
+    download_archive = Path(args.download_archive or "~/.local/share/yt_archive.txt").expanduser().resolve()
     if download_archive.exists():
         ydl_opts["download_archive"] = str(download_archive)
         ydl_opts["cookiesfrombrowser"] = ("firefox",)
@@ -593,45 +367,48 @@ def yt(args, m) -> None:
         match_filters.append(match_filter_user_config)
     ydl_opts["match_filter"] = yt_dlp.utils.match_filter_func(" & ".join(match_filters).split(" | "))
 
+    webpath = m["path"]
+    local_path = None
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         try:
-            info = ydl.extract_info(m["path"], download=True)
+            info = ydl.extract_info(webpath, download=True)
         except (yt_dlp.DownloadError, ConnectionResetError, FileNotFoundError) as e:
             error = consts.REGEX_ANSI_ESCAPE.sub("", str(e))
             ydl_log["error"].append(error)
             info = None
-            log.debug("[%s]: yt-dlp %s", m["path"], error)
-            # save_tube_entry(args, m, error=error)
+            log.debug("[%s]: yt-dlp %s", webpath, error)
+            # media.add(args, webpath, error=error)
             # return
 
         if info is None:
-            log.debug("[%s]: yt-dlp returned no info", m["path"])
+            log.debug("[%s]: yt-dlp returned no info", webpath)
         else:
+            local_path = info.get("local_path", None)
             if args.profile == DBType.audio:
-                info["local_path"] = ydl.prepare_filename({**info, "ext": args.ext})
+                local_path = ydl.prepare_filename({**info, "ext": args.ext})
             else:
-                info["local_path"] = ydl.prepare_filename(info)
+                local_path = ydl.prepare_filename(info)
 
     ydl_errors = ydl_log["error"] + ydl_log["warning"]
     ydl_errors = "\n".join([line for line in ydl_errors if not yt_meaningless_errors.match(line)])
     ydl_full_log = ydl_log["error"] + ydl_log["warning"] + ydl_log["info"]
 
     if not ydl_log["error"] and info:
-        log.debug("[%s]: No news is good news", m["path"])
-        save_tube_entry(args, m, info)
+        log.debug("[%s]: No news is good news", webpath)
+        media.add(args, webpath, info, local_path)
     elif any(yt_recoverable_errors.match(line) for line in ydl_full_log):
-        log.info("[%s]: Recoverable error matched (will try again later). %s", m["path"], ydl_errors)
-        save_tube_entry(args, m, info, error=ydl_errors)
+        log.info("[%s]: Recoverable error matched (will try again later). %s", webpath, ydl_errors)
+        media.add(args, webpath, info, local_path, error=ydl_errors)
     elif any(yt_unrecoverable_errors.match(line) for line in ydl_full_log):
         matched_error = [
             m.string for m in utils.conform([yt_unrecoverable_errors.match(line) for line in ydl_full_log])
         ]
-        log.debug("[%s]: Unrecoverable error matched. %s", m["path"], ydl_errors or utils.combine(matched_error))
-        save_tube_entry(args, m, info, error=ydl_errors, unrecoverable_error=True)
+        log.debug("[%s]: Unrecoverable error matched. %s", webpath, ydl_errors or utils.combine(matched_error))
+        media.add(args, webpath, info, local_path, error=ydl_errors, unrecoverable_error=True)
     elif any(prefix_unrecoverable_errors.match(line) for line in ydl_full_log):
-        log.warning("[%s]: Prefix error. %s", m["path"], ydl_errors)
+        log.warning("[%s]: Prefix error. %s", webpath, ydl_errors)
         raise SystemExit(28)
     else:
         if ydl_errors != "":
-            log.error("[%s]: Unknown error. %s", m["path"], ydl_errors)
-        save_tube_entry(args, m, info, error=ydl_errors)
+            log.error("[%s]: Unknown error. %s", webpath, ydl_errors)
+        media.add(args, webpath, info, local_path, error=ydl_errors)

@@ -35,6 +35,8 @@ def copy_play_count(args, source_db) -> None:
             src.media
         WHERE
             src.media.play_count > 0
+            or
+            src.media.playhead > 0
         """,
     )
 

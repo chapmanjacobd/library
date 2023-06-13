@@ -1,8 +1,7 @@
-import os, re, secrets, shutil, string, sys
+import re, secrets, shutil, string, sys
 from datetime import datetime, timezone
 from pathlib import Path
 from tempfile import gettempdir
-from types import SimpleNamespace
 from typing import List
 
 
@@ -54,7 +53,6 @@ REGEX_V_REDD_IT = re.compile("https?://v.redd.it/(?:[^/?#&]+)")
 APPLICATION_START = now()
 TERMINAL_SIZE = shutil.get_terminal_size(fallback=(80, 60))
 
-
 TIME_COLUMNS = (
     "time_scanned",
     "time_downloaded",
@@ -85,6 +83,8 @@ class SC:
     filesystem = "filesystem"
     tubeadd = "tubeadd"
     tubeupdate = "tubeupdate"
+    galleryadd = "galleryadd"
+    galleryupdate = "galleryupdate"
     tabs = "tabs"
     read = "read"
     view = "view"
@@ -185,8 +185,97 @@ time_facets = [
 
 frequency = ["daily", "weekly", "monthly", "quarterly", "yearly"]
 
+PLAYLIST_KNOWN_KEYS = (
+    "url",
+    "duration",
+    "view_count",
+    "webpage_url",
+    "original_url",
+)
 
-TUBE_IGNORE_KEYS = (
+MEDIA_KNOWN_KEYS = (
+    "photoset_layout",
+    "asks_allow_media",
+    "submission_page_title",
+    "post_author_is_adult",
+    "is_submission",
+    "fragment",
+    "is_anonymous",
+    "ask",
+    "ask_anon",
+    "ask_page_title",
+    "avatar",
+    "theme",
+    "count",
+    "can_chat",
+    "can_subscribe",
+    "share_likes",
+    "subscribed",
+    "total_posts",
+    "is_blocks_post_format",
+    "blog_name",
+    "id_string",
+    "is_blazed",
+    "is_blaze_pending",
+    "can_blaze",
+    "slug",
+    "state",
+    "reblog_key",
+    "short_url",
+    "summary",
+    "should_open_in_legacy",
+    "note_count",
+    "caption",
+    "reblog",
+    "can_like",
+    "interactability_reblog",
+    "interactability_blaze",
+    "can_reblog",
+    "can_send_in_message",
+    "can_reply",
+    "display_avatar",
+    "reblogged",
+    "hash",
+    "link_url",
+    "query",
+    "domain",
+    "etag",
+    "pages",
+    "posts",
+    "locale",
+    "num",
+    "kind",
+    "ie_key",
+    "extractor_key",
+    "extractor",
+    "upvote_count",
+    "downvote_count",
+    "filename",
+    "extension",
+    "category",
+    "subcategory",
+    "virality",
+    "in_most_viral",
+    "is_album",
+    "is_mature",
+    "cover_id",
+    "image_count",
+    "privacy",
+    "vote",
+    "favorite",
+    "is_ad",
+    "include_album_ads",
+    "shared_with_community",
+    "is_pending",
+    "display",
+    "mime_type",
+    "type",
+    "name",
+    "basename",
+    "is_animated",
+    "is_looping",
+    "has_sound",
+    "platform",
     "track_id",
     "track_number",
     "repost_count",

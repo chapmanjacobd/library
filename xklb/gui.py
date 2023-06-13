@@ -1,8 +1,6 @@
 from pathlib import Path
 from typing import NoReturn, Tuple
 
-from xklb.utils import log
-
 base_folder = Path(__file__).resolve().parent
 
 

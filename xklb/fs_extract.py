@@ -1,6 +1,5 @@
 import argparse, math, os, sys
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
-from copy import deepcopy
 from functools import partial
 from multiprocessing import TimeoutError as mp_TimeoutError
 from pathlib import Path
@@ -8,7 +7,7 @@ from shutil import which
 from timeit import default_timer as timer
 from typing import Dict, List, Optional
 
-from xklb import av, books, consts, db, player, usage, utils
+from xklb import av, books, consts, db, player, playlists, usage, utils
 from xklb.consts import SC, DBType
 from xklb.utils import log
 
@@ -59,7 +58,6 @@ def parse_args(action, usage) -> argparse.Namespace:
     )
     parser.set_defaults(profile=DBType.video)
     parser.add_argument("--scan-all-files", "-a", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--category", "-c", help=argparse.SUPPRESS)
 
     parser.add_argument(
         "--io-multiplier",
@@ -70,8 +68,8 @@ def parse_args(action, usage) -> argparse.Namespace:
     parser.add_argument("--ocr", "--OCR", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--speech-recognition", "--speech", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--scan-subtitles", "--scan-subtitle", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--extra-media-data", default={})
-    parser.add_argument("--extra-playlist-data", default={})
+    parser.add_argument("--extra-media-data", default={}, nargs=1, action=utils.ArgparseDict, metavar="KEY=VALUE")
+    parser.add_argument("--extra-playlist-data", default={}, nargs=1, action=utils.ArgparseDict, metavar="KEY=VALUE")
 
     parser.add_argument("--delete-unplayable", action="store_true")
     parser.add_argument(
@@ -156,7 +154,6 @@ def extract_metadata(mp_args, path) -> Optional[Dict[str, int]]:
         "time_modified": int(stat.st_mtime) or consts.now(),
         "time_downloaded": consts.APPLICATION_START,
         "time_deleted": 0,
-        "ie_key": "Local",
     }
 
     if hasattr(stat, "st_blocks"):
@@ -214,6 +211,7 @@ def extract_chunk(args, media) -> None:
 
         captions.append(caption)
 
+    media = [{"playlist_id": args.playlist_id, **d} for d in media]
     media = utils.list_dict_filter_bool(media)
     args.db["media"].insert_all(utils.list_dict_filter_bool(media), pk="id", alter=True, replace=True)
 
@@ -256,7 +254,7 @@ def find_new_files(args, path: Path) -> List[str]:
             print(f"[{path}] Not found")
             return []
 
-    columns = args.db["media"].columns_dict
+    m_columns = db.columns(args, "media")
     scanned_set = set(scanned_files)
 
     try:
@@ -267,7 +265,7 @@ def find_new_files(args, path: Path) -> List[str]:
                 where 1=1
                     and time_deleted > 0
                     and path like '{path}%'
-                    {'AND time_downloaded > 0' if 'time_downloaded' in columns else ''}
+                    {'AND time_downloaded > 0' if 'time_downloaded' in m_columns else ''}
                 """,
             )
         }
@@ -285,10 +283,11 @@ def find_new_files(args, path: Path) -> List[str]:
             for d in args.db.query(
                 f"""select path from media
                 where 1=1
-                    and time_deleted = 0
-                    and path like '{path}%'
-                    {'AND time_downloaded > 0' if 'time_downloaded' in columns else ''}
+                    and path like ?
+                    and coalesce(time_deleted, 0) = 0
+                    {'AND coalesce(time_downloaded, 0) > 0' if 'time_downloaded' in m_columns else ''}
                 """,
+                [str(path) + "%"],
             )
         }
     except Exception as e:
@@ -308,21 +307,6 @@ def find_new_files(args, path: Path) -> List[str]:
     return new_files
 
 
-def _add_folder(args, folder_path: Path) -> None:
-    category = args.category or folder_path.parts[-1]
-
-    playlist = {
-        "ie_key": "Local",
-        "path": str(folder_path),
-        "config": utils.filter_namespace(args, ["ocr", "speech_recognition", "scan_subtitles"]),
-        "time_deleted": 0,
-        "profile": args.profile,
-        "category": category,
-        **args.extra_playlist_data,
-    }
-    args.db["playlists"].upsert(utils.dict_filter_bool(playlist), pk="path", alter=True)
-
-
 def scan_path(args, path_str: str) -> int:
     path = Path(path_str).expanduser().resolve()
     if not path.exists():
@@ -340,6 +324,13 @@ def scan_path(args, path_str: str) -> int:
         n_jobs = 1
 
     threadsafe = [DBType.audio, DBType.video, DBType.filesystem]
+
+    info = {
+        "extractor_key": "Local",
+        "extractor_config": utils.filter_namespace(args, ["ocr", "speech_recognition", "scan_subtitles"]),
+        "time_deleted": 0,
+    }
+    args.playlist_id = playlists.add(args, str(path), info)
 
     print(f"[{path}] Building file list...")
     new_files = find_new_files(args, path)
@@ -370,8 +361,6 @@ def scan_path(args, path_str: str) -> int:
                 metadata = parallel.map(partial(extract_metadata, mp_args), chunk_paths)
                 metadata = list(filter(None, metadata))
                 extract_chunk(args, metadata)
-
-    _add_folder(args, path)
 
     return len(new_files)
 
@@ -404,12 +393,12 @@ def fs_update(args=None) -> None:
 
     args = parse_args(SC.fsupdate, usage.fsupdate)
 
-    playlists = list(
+    fs_playlists = list(
         args.db.query(
             """
             SELECT *
             FROM playlists
-            WHERE ie_key = 'Local'
+            WHERE extractor_key = 'Local'
             ORDER BY
                 length(path)-length(REPLACE(path, '/', '')) desc
                 , path
@@ -417,9 +406,9 @@ def fs_update(args=None) -> None:
         ),
     )
 
-    for playlist in playlists:
+    for playlist in fs_playlists:
         args_env = argparse.Namespace(
-            **{**(playlist.get("config") or {}), **args.__dict__, "profile": playlist["profile"]},
+            **{**(playlist.get("extractor_config") or {}), **args.__dict__, "profile": playlist["profile"]},
         )
 
         extractor(args_env, [playlist["path"]])

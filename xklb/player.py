@@ -12,7 +12,7 @@ from typing import Dict, List, Optional, Tuple, Union
 
 from tabulate import tabulate
 
-from xklb import consts, db, utils
+from xklb import consts, db, media, utils
 from xklb.consts import SC
 from xklb.utils import cmd, cmd_interactive, human_time, log
 
@@ -284,7 +284,12 @@ def delete_playlists(args, playlists) -> None:
     if online_media:
         with args.db.conn:
             args.db.conn.execute(
-                "delete from media where playlist_path in (" + ",".join(["?"] * len(online_media)) + ")",
+                """DELETE from media where
+                playlist_id in (
+                    SELECT id from playlists
+                    WHERE path IN ("""
+                + ",".join(["?"] * len(online_media))
+                + "))",
                 (*online_media,),
             )
 
@@ -402,7 +407,7 @@ def get_ordinal_media(args, m: Dict, ignore_paths=None) -> Dict:
     if ignore_paths is None:
         ignore_paths = []
 
-    m_columns = args.db["media"].columns_dict
+    m_columns = db.columns(args, "media")
 
     cols = args.cols or ["path", "title", "duration", "size", "subtitle_count", "is_dir"]
     args.select_sql = "\n        , ".join([c for c in cols if c in m_columns or c in ["*"]])
@@ -465,10 +470,10 @@ def get_ordinal_media(args, m: Dict, ignore_paths=None) -> Dict:
 
 
 def get_related_media(args, m: Dict) -> List[Dict]:
-    m_columns = args.db["media"].columns_dict
+    m_columns = db.columns(args, "media")
     m_columns.update(rank=int)
 
-    m = args.db["media"].get(m["path"])
+    m = media.get(args, m["path"])
     words = set(
         utils.conform(utils.extract_words(m.get(k)) for k in m if k in db.config["media"]["search_columns"]),
     )
@@ -505,7 +510,7 @@ def get_dir_media(args, dirs: List, include_subdirs=False) -> List[Dict]:
     if len(dirs) == 0:
         return utils.no_media_found()
 
-    m_columns = args.db["media"].columns_dict
+    m_columns = db.columns(args, "media")
 
     if include_subdirs:
         filter_paths = "AND (" + " OR ".join([f"path LIKE :subpath{i}" for i in range(len(dirs))]) + ")"
@@ -864,7 +869,8 @@ def historical_usage(args, freq="monthly", time_column="time_played", where=""):
     elif freq == "yearly":
         time_period = f"strftime('%Y', datetime({time_column}, 'unixepoch'))"
     else:
-        raise ValueError(f"Invalid value for 'freq': {freq}")
+        msg = f"Invalid value for 'freq': {freq}"
+        raise ValueError(msg)
 
     query = f"""
     SELECT

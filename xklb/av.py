@@ -54,9 +54,8 @@ def parse_tags(mu: Dict, ti: Dict) -> dict:
             mu.get("TDRL"),
             ti.get("year"),
         ),
-        "bpm": safe_unpack(mu.get("fBPM"), mu.get("bpm"), mu.get("bpm_start")),
+        "bpm": utils.safe_int(safe_unpack(mu.get("fBPM"), mu.get("bpm"), mu.get("bpm_start"))),
         "key": safe_unpack(mu.get("TIT1"), mu.get("key"), mu.get("TKEY"), mu.get("key_start")),
-        "time": combine(mu.get("time_signature")),
         "decade": safe_unpack(mu.get("Songs-DB_Custom1")),
         "categories": safe_unpack(mu.get("Songs-DB_Custom2")),
         "city": safe_unpack(mu.get("Songs-DB_Custom3")),
@@ -243,3 +242,20 @@ def munge_av_tags(args, media, path) -> Optional[dict]:
         stream_tags = get_audio_tags(path)
         media = {**media, **stream_tags}
     return media
+
+
+def decode_full_scan(path):
+    output = ffmpeg.input(path).output("/dev/null", f="null")
+    ffmpeg.run(output, quiet=True)
+
+
+def decode_quick_scan(path, scans, scan_duration=3):
+    fail_count = 0
+    for scan in scans:
+        try:
+            output = ffmpeg.input(path, ss=scan).output("/dev/null", t=scan_duration, f="null")
+            ffmpeg.run(output, quiet=True)
+        except ffmpeg.Error:
+            fail_count += 1
+
+    return (fail_count / len(scans)) * 100

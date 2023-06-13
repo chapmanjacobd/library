@@ -106,7 +106,7 @@ def group_folders(args, folders) -> List[Dict]:
 
 
 def get_table(args) -> List[dict]:
-    m_columns = args.db["media"].columns_dict
+    m_columns = db.columns(args, "media")
     args.filter_sql = []
     args.filter_bindings = {}
 
