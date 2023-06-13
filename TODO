@@ -26,7 +26,11 @@ lb bigdirs ~/lb/video.db
 
 /mnt/d/75_MovieQueue/unsorted/NRMwalkthroughHD/ should be 200GB
 
+- if limit is less than 120, check up to 120 files to see if they exist
+
 - scatter -- flatten to new directories
+
+default 16000 files, flat subdirectory
 
 - dlstatus print errors also:
 

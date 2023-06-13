@@ -29,6 +29,16 @@ def get(args, path):
     return args.db.pop_dict("select * from media where path = ?", path)
 
 
+def get_paths(args):
+    tables = args.db.table_names()
+    known_playlists = set()
+    if "media" in tables:
+        known_playlists.update(d["path"] for d in args.db.query("SELECT path from media"))
+    if "playlists" in tables:
+        known_playlists.update(d["path"] for d in args.db.query("SELECT path from playlists"))
+    return known_playlists
+
+
 def consolidate(v: dict) -> Optional[dict]:
     v = {
         **(v.pop("photo", None) or {}),
