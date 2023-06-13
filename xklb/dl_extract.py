@@ -228,7 +228,10 @@ def process_downloadqueue(args) -> List[dict]:
         playlist_files_data = set(utils.flatten(Path(p).read_text().splitlines() for p in args.playlists))
         playlists = list(playlist_files_data - known_playlists)
         log.warning(
-            "%s new - %s known = %s to download", len(playlist_files_data), len(known_playlists), len(playlists)
+            "%s new - %s known = %s to download",
+            len(playlist_files_data),
+            len(known_playlists),
+            len(playlists),
         )
         random.shuffle(playlists)
 
@@ -245,9 +248,8 @@ def process_downloadqueue(args) -> List[dict]:
             return []
         media = list(args.db.query(query, bindings))
 
-    if media:
-        if "blocklist" in args.db.table_names():
-            media = utils.block_dicts_like_sql(media, [{d["key"]: d["value"]} for d in args.db["blocklist"].rows])
+    if media and "blocklist" in args.db.table_names():
+        media = utils.block_dicts_like_sql(media, [{d["key"]: d["value"]} for d in args.db["blocklist"].rows])
     if not media:
         utils.no_media_found()
 
