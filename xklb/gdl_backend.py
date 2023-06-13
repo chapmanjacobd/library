@@ -31,7 +31,9 @@ def load_module_level_gallery_dl(args) -> ModuleType:
         gallery_dl.config.set(("extractor",), "parent-directory", False)
         gallery_dl.config.set(("extractor",), "directory", ["{category}", "{blog['name'][:30]}"])
         gallery_dl.config.set(
-            ("extractor",), "filename", "{post['title'][:60]|summary[:30]|path[:50]}.{filename[:52]}.{extension}"
+            ("extractor",),
+            "filename",
+            "{post['title'][:60]|summary[:30]|path[:50]}.{filename[:52]}.{extension}",
         )
         gallery_dl.config.set(("extractor",), "browser", "firefox")
 
@@ -214,7 +216,11 @@ def get_playlist_metadata(args, playlist_path):
 
         info = {**info, "playlist_id": playlist_id, "webpath": webpath, **args.extra_media_data}
         media.add(
-            args, playlist_path, info, error=utils.combine(errors), unrecoverable_error="HTTPNotFoundError" in errors
+            args,
+            playlist_path,
+            info,
+            error=utils.combine(errors),
+            unrecoverable_error="HTTPNotFoundError" in errors,
         )
 
         added_media_count += 1

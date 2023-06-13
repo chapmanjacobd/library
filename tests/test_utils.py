@@ -507,14 +507,14 @@ class TestTrimPathSegments(unittest.TestCase):
         path = "/aaaaaaaaaa/fans/001.jpg"
         desired_length = 16
         expected_result = "/aaaa/fans/001.jpg"
-        self.assertEqual(utils.trim_path_segments(path, desired_length), expected_result)
+        assert utils.trim_path_segments(path, desired_length) == p(expected_result)
 
         path = "/ao/bo/co/do/eo/fo/go/ho"
         desired_length = 9
         expected_result = "/a/b/c/d/e/f/g/h"
-        self.assertEqual(utils.trim_path_segments(path, desired_length), expected_result)
+        assert utils.trim_path_segments(path, desired_length) == p(expected_result)
 
         path = "/a/b/c"
         desired_length = 10
         expected_result = "/a/b/c"
-        self.assertEqual(utils.trim_path_segments(path, desired_length), expected_result)
+        assert utils.trim_path_segments(path, desired_length) == p(expected_result)

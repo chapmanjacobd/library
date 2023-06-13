@@ -112,7 +112,8 @@ def consolidate(v: dict) -> Optional[dict]:
     cv["fps"] = 0 if not fps else int(fps)
     cv["live_status"] = v.pop("live_status", None)
     cv["age_limit"] = safe_unpack(
-        v.pop("age_limit", None), 18 if v.pop("is_mature", None) or v.pop("is_nsfw", None) else 0
+        v.pop("age_limit", None),
+        18 if v.pop("is_mature", None) or v.pop("is_nsfw", None) else 0,
     )
 
     account = v.pop("account", None) or {}

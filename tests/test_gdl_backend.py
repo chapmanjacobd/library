@@ -58,7 +58,8 @@ def test_get_playlist_metadata_imgur_album():
 def test_get_playlist_metadata_blogspot_album():
     args = create_args("get_playlist_metadata_blogspot_album")
     out = gdl_backend.get_playlist_metadata(
-        args, "http://dyanasmen.blogspot.com/2008/10/frumoasele-jucatoare-de-la-wimbledon.html"
+        args,
+        "http://dyanasmen.blogspot.com/2008/10/frumoasele-jucatoare-de-la-wimbledon.html",
     )
     assert out == 4
     media = list(args.db.query("select * from media"))
@@ -71,7 +72,8 @@ def test_get_playlist_metadata_blogspot_album():
 def test_get_playlist_metadata_tumblr_single():
     args = create_args("playlist_metadata_tumblr_single")
     out = gdl_backend.get_playlist_metadata(
-        args, "https://66.media.tumblr.com/7f87be573a76ccb4899ed24b24dc1328/tumblr_ny1nxrqkni1tse85no1_1280.jpg"
+        args,
+        "https://66.media.tumblr.com/7f87be573a76ccb4899ed24b24dc1328/tumblr_ny1nxrqkni1tse85no1_1280.jpg",
     )
     assert out == 1
     media = list(args.db.query("select * from media"))

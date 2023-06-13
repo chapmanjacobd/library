@@ -1229,7 +1229,7 @@ def allow_dicts_like_sql(media, allowlist):
 
 def trim_path_segments(path, desired_length):
     path = Path(path)
-    segments = list(path.parent.parts) + [path.stem]
+    segments = [*list(path.parent.parts), path.stem]
     extension = path.suffix
 
     desired_length -= len(extension)
