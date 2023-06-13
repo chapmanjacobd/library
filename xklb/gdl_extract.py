@@ -1,7 +1,7 @@
 import argparse, sys
 from pathlib import Path
 
-from xklb import consts, db, gdl_backend, playlists, usage, utils
+from xklb import consts, db, gdl_backend, media, playlists, usage, utils
 from xklb.consts import SC
 from xklb.utils import log
 
@@ -74,28 +74,9 @@ def gallery_add(args=None) -> None:
     if args.playlist_files:
         args.playlists = list(utils.flatten([Path(p).read_text().splitlines() for p in args.playlists]))
 
-    tables = args.db.table_names()
-    known_playlists = []
-    if "media" in tables and not args.force:
-        m_columns = db.columns(args, "media")
-        known_playlists = list(
-            set(
-                d["path"]
-                for d in args.db.query(
-                    (
-                        "SELECT path from media"
-                        + " WHERE path in ("
-                        + ",".join(["?"] * len(args.playlists))
-                        + f") or {'web' if 'webpath' in m_columns else ''}path in ("
-                        + ",".join(["?"] * len(args.playlists))
-                        + ")"
-                        + " UNION ALL"
-                        + " SELECT path from playlists"
-                    ),
-                    [*args.playlists, *args.playlists],
-                )
-            ),
-        )
+    known_playlists = set()
+    if not args.force:
+        known_playlists = media.get_paths(args)
 
     added_media_count = 0
     for path in args.playlists:

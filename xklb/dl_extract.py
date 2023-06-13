@@ -4,6 +4,7 @@ from typing import List, Tuple
 
 from xklb import db, gdl_backend, play_actions, player, tube_backend, usage, utils
 from xklb.consts import SC, DBType
+from xklb.media import get_paths
 from xklb.utils import log
 
 
@@ -203,26 +204,9 @@ def construct_query(args) -> Tuple[str, dict]:
 
 def process_downloadqueue(args) -> List[dict]:
     if args.playlist_files:
-        tables = args.db.table_names()
         known_playlists = set()
-        if "media" in tables and not args.force:
-            m_columns = db.columns(args, "media")
-            known_playlists = set(
-                d["path"]
-                for d in args.db.query(
-                    (
-                        "SELECT path from media"
-                        + " WHERE path in ("
-                        + ",".join(["?"] * len(args.playlists))
-                        + f") or {'web' if 'webpath' in m_columns else ''}path in ("
-                        + ",".join(["?"] * len(args.playlists))
-                        + ")"
-                        + " UNION ALL"
-                        + " SELECT path from playlists"
-                    ),
-                    [*args.playlists, *args.playlists],
-                )
-            )
+        if  not args.force:
+            known_playlists = get_paths(args)
 
         Path(args.database).touch()
         playlist_files_data = set(utils.flatten(Path(p).read_text().splitlines() for p in args.playlists))
