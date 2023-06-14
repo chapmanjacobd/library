@@ -7,9 +7,9 @@ from xklb.utils import log
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library dedupe-dbs", usage=usage.dedupe_db)
-    parser.add_argument(
-        "--primary-keys", "--pk", action=utils.ArgparseList, required=True, help="Comma separated primary keys"
-    )
+    parser.add_argument("--skip-0", action='store_true')
+    parser.add_argument("--only-columns", action=utils.ArgparseList, help="Comma separated column names to upsert")
+    parser.add_argument("--primary-keys", "--pk", action=utils.ArgparseList, help="Comma separated primary keys")
     parser.add_argument(
         "--business-keys", "--bk", action=utils.ArgparseList, required=True, help="Comma separated business keys"
     )
@@ -18,7 +18,6 @@ def parse_args() -> argparse.Namespace:
 
     parser.add_argument("database")
     parser.add_argument("table")
-    parser.add_argument("upsert_columns", action=utils.ArgparseList, help="Comma separated column names to upsert")
     args = parser.parse_intermixed_args()
 
     if args.db:
@@ -34,27 +33,40 @@ def parse_args() -> argparse.Namespace:
 def dedupe_db() -> None:
     args = parse_args()
 
+    upsert_columns = args.only_columns
     target_columns = args.db[args.table].columns_dict
-    missing_columns = [s for s in args.upsert_columns if s not in target_columns]
+    if not args.primary_keys:
+        args.primary_keys = list(o.name for o in args.db[args.table].columns if o.is_pk)
+    if not upsert_columns:
+        upsert_columns = [s for s in target_columns if s not in args.primary_keys + args.business_keys]
+
+    missing_columns = [s for s in upsert_columns if s not in target_columns]
     if missing_columns:
         raise ValueError('At least one upsert column not available in target table: %s', missing_columns)
 
-    if set(args.upsert_columns).intersection(args.primary_keys):
+    if set(upsert_columns).intersection(args.primary_keys):
         raise ValueError("One of your primary keys is also an upsert column. I don't think that will work...?")
-    if set(args.upsert_columns).intersection(args.business_keys):
-        raise ValueError("One of your business keys is also an upsert column. That might not do anything bad but you should spend some time with self-reflexivity")
+    if set(upsert_columns).intersection(args.business_keys):
+        raise ValueError("One of your business keys is also an upsert column. That might not do anything bad but...")
+    if len(args.primary_keys) == 0:
+        raise ValueError("No primary keys found. Try to re-run with --pk rowid ?")
 
     where_business = ' AND '.join([f'{key} = ?' for key in args.business_keys])
-    with args.db.conn:
-        for col in args.upsert_columns:
-            data = args.db.query(
+
+    for col in upsert_columns:
+        data = list(
+            args.db.query(
                 f'''
-                SELECT {col}
+                SELECT {','.join(args.business_keys + [col])}
                 FROM {args.table}
-                WHERE {col} IS NOT NULL
+                WHERE {f'NULLIF({col}, 0)' if args.skip_0 else col} IS NOT NULL
+                ORDER BY {','.join(args.primary_keys)}
                 '''
             )
-            for row in data:
+        )
+        log.info('%s (%s rows)', col, len(data))
+        for row in data:
+            with args.db.conn:
                 args.db.conn.execute(
                     f'''
                     UPDATE {args.table}
@@ -64,6 +76,7 @@ def dedupe_db() -> None:
                     [row[col], *[row[k] for k in args.business_keys]],
                 )
 
+    with args.db.conn:
         args.db.conn.execute(
             f'''
             DELETE FROM {args.table}
@@ -74,6 +87,7 @@ def dedupe_db() -> None:
             )
             '''
         )
+
 
 if __name__ == "__main__":
     dedupe_db()
