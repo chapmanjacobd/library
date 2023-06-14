@@ -1,26 +1,3 @@
-- dedupe-db
-
-dedupe-db script
-
---bk path --pk id --upsert-columns play_count,time_played,playhead,time_downloaded,time_deleted,time_uploaded,webpath,language,title,tube_id,view_count,uploader,playlist_path,live_status
-
-SELECT MIN(id) AS min_id, path
-FROM your_table
-GROUP BY path;
-
-for col in args.upsert_columns:
-    SELECT play_count
-    FROM media
-    WHERE play_count IS NOT NULL
-
-    UPDATE media set play_count = ? WHERE path = ?
-
-
-DELETE FROM your_table
-WHERE id NOT IN (
-  SELECT min_id
-  FROM temp_table
-);
 
 lb bigdirs ~/lb/video.db
 

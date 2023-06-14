@@ -18,6 +18,7 @@ from xklb.scripts.dedupe import dedupe
 from xklb.scripts.download_status import download_status
 from xklb.scripts.history import history
 from xklb.scripts.merge_dbs import merge_dbs
+from xklb.scripts.dedupe_db import dedupe_db
 from xklb.scripts.merge_online_local import merge_online_local
 from xklb.scripts.mining.extract_links import extract_links
 from xklb.scripts.mining.nouns import nouns
@@ -112,7 +113,7 @@ def print_help(parser) -> None:
     print(parser.epilog)
 
 
-subcommands = ["fs", "du"]
+subcommands = ["fs", "du", "dedupe"]
 
 
 def consecutive_prefixes(s):
@@ -172,8 +173,10 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
 
     subp_merge_db = add_parser(subparsers, "merge-dbs", ["merge-db", "mergedb", "mergedbs", "merge_db", "merge_dbs"])
     subp_merge_db.set_defaults(func=merge_dbs)
-    subp_merge_db = add_parser(subparsers, "copy-play-counts")
-    subp_merge_db.set_defaults(func=copy_play_counts)
+    subp_dedupe_db = add_parser(subparsers, "dedupe-dbs", ["dedupe-db", "dedupedb", "dedupe_db"])
+    subp_dedupe_db.set_defaults(func=dedupe_db)
+    subp_copy_play_counts = add_parser(subparsers, "copy-play-counts")
+    subp_copy_play_counts.set_defaults(func=copy_play_counts)
 
     subp_dedupe = add_parser(subparsers, "dedupe")
     subp_dedupe.set_defaults(func=dedupe)
