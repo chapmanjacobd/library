@@ -51,8 +51,6 @@ def dedupe_db() -> None:
     if len(args.primary_keys) == 0:
         raise ValueError("No primary keys found. Try to re-run with --pk rowid ?")
 
-    where_business = ' AND '.join([f'{key} = ?' for key in args.business_keys])
-
     for col in upsert_columns:
         data = list(
             args.db.query(
@@ -65,16 +63,16 @@ def dedupe_db() -> None:
             )
         )
         log.info('%s (%s rows)', col, len(data))
-        for row in data:
-            with args.db.conn:
-                args.db.conn.execute(
-                    f'''
-                    UPDATE {args.table}
-                    SET {col} = ?
-                    WHERE {where_business}
-                    ''',
-                    [row[col], *[row[k] for k in args.business_keys]],
+
+        with args.db.conn:
+            args.db.conn.executescript(
+                ''.join(
+                    [
+                        f"UPDATE {args.table} SET {col} = {args.db.quote(row[col])} WHERE {' AND '.join([f'{key} = {args.db.quote(row[key])}' for key in args.business_keys])};"
+                        for row in data
+                    ]
                 )
+            )
 
     with args.db.conn:
         args.db.conn.execute(
