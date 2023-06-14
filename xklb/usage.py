@@ -790,13 +790,18 @@ dedupe = """library [--audio | --id | --title | --filesystem] [--only-soft-delet
     Dedupe your files
 """
 
-dedupe_db = """library dedupe-dbs DATABASE TABLE --pk PRIMARY_KEYS --bk BUSINESS_KEYS UPSERT_COLUMNS
+dedupe_db = """library dedupe-dbs DATABASE TABLE --bk BUSINESS_KEYS [--pk PRIMARY_KEYS] [--only-columns COLUMNS]
 
     Dedupe your database (not to be confused with the dedupe subcommand)
 
+    It should not need to be said but *backup* your database before trying this tool!
+
     Dedupe-DB will help remove duplicate rows based on non-primary-key business keys
 
-        library dedupe-db ./video.db media --pk id --bk path play_count,time_played,playhead,time_downloaded,time_deleted,time_uploaded,webpath,title,extractor_id,view_count,uploader
+        library dedupe-db ./video.db media --bk path
+
+    If --primary-keys is not provided table metadata primary keys will be used
+    If --only-columns is not provided all non-primary and non-business key columns will be upserted
 """
 
 merge_dbs = """library merge-dbs DEST_DB SOURCE_DB ... [--only-target-columns] [--only-new-rows] [--upsert] [--pk PK ...] [--table TABLE ...]
