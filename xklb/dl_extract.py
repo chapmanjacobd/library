@@ -205,7 +205,7 @@ def construct_query(args) -> Tuple[str, dict]:
 def process_downloadqueue(args) -> List[dict]:
     if args.playlist_files:
         known_playlists = set()
-        if  not args.force:
+        if not args.force:
             known_playlists = get_paths(args)
 
         Path(args.database).touch()

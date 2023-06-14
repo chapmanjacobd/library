@@ -15,10 +15,10 @@ from xklb.scripts.christen import christen
 from xklb.scripts.cluster_sort import cluster_sort
 from xklb.scripts.copy_play_counts import copy_play_counts
 from xklb.scripts.dedupe import dedupe
+from xklb.scripts.dedupe_db import dedupe_db
 from xklb.scripts.download_status import download_status
 from xklb.scripts.history import history
 from xklb.scripts.merge_dbs import merge_dbs
-from xklb.scripts.dedupe_db import dedupe_db
 from xklb.scripts.merge_online_local import merge_online_local
 from xklb.scripts.mining.extract_links import extract_links
 from xklb.scripts.mining.nouns import nouns

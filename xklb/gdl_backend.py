@@ -57,7 +57,6 @@ def parse_gdl_job_status(job_status, path):
     if job_status & 1:
         errors.append("UnspecifiedError")
         log.error("[%s]: gallery_dl gave an UnspecifiedError.", path)
-        raise NotImplementedError
 
     if job_status & 64:  # no extractor
         errors.append("NoExtractorError")
