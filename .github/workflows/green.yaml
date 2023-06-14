@@ -1,0 +1,7 @@
+name: CI
+on: [push]
+jobs:
+  # This exists only to show the green checkmark on the repo
+  # green = "good" || "secure"
+  action-which-makes-garmonbozia:
+    runs-on: ubuntu-latest
