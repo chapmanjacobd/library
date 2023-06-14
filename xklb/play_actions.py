@@ -76,7 +76,7 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
 
     parser.add_argument("--sort", "-u", nargs="+", help=argparse.SUPPRESS)
     parser.add_argument("--random", "-r", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--big-dirs", "-B", action="count", default=0, help=argparse.SUPPRESS)
+    parser.add_argument("--big-dirs", "--bigdirs", "-B", action="count", default=0, help=argparse.SUPPRESS)
     parser.add_argument("--related", "-R", action="count", default=0, help=argparse.SUPPRESS)
     parser.add_argument("--cluster", "-C", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--play-in-order", "-O", action="count", default=0, help=argparse.SUPPRESS)

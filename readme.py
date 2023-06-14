@@ -27,6 +27,7 @@ for title, subcommand in [
     ("Merge online and local data", "merge-online-local"),
     ("Convert selftext links to media table", "reddit-selftext"),
     ("Merge SQLITE databases", "merge-dbs"),
+    ("Dedupe SQLITE tables", "dedupe-db"),
     ("Sort lines by similarity", "cluster-sort"),
     ("Move files preserving parent folder hierarchy", "relmv"),
     ("Automatic tab loader", "surf"),
@@ -224,37 +225,42 @@ Incremental surfing. 📈🏄 totally rad!
     library fsadd --audio podcasts.db ./podcasts/ ./another/more/secret/podcasts_folder/
 
 
-### Find large folders to curate
+### library bigdirs: curate
 
-<details><summary>lb bigdirs</summary>
+<details><summary>Find large folders</summary>
 
 If you are looking for candidate folders for curation (ie. you need space but don't want to buy another hard drive).
 The bigdirs subcommand was written for that purpose:
 
-    $ lb bigdirs fs/d.db
+    $ library bigdirs fs/d.db
 
 You may filter by folder depth (similar to QDirStat or WizTree)
 
-    $ lb bigdirs --depth=3 audio.db
+    $ library bigdirs --depth=3 audio.db
 
 There is also an flag to prioritize folders which have many files which have been deleted (for example you delete songs you don't like--now you can see who wrote those songs and delete all their other songs...)
 
-    $ lb bigdirs --sort-by deleted audio.db
+    $ library bigdirs --sort-by deleted audio.db
+
+Recently, this functionality has also been integrated into watch/listen subcommands so you could just do this:
+
+    $ library watch --big-dirs ./my.db
+    $ lb wt -B  # shorthand equivalent
 
 </details>
 
 
-### Find candidates for freeing up space by moving to another mount point
+### library mv-list: free up space
 
-<details><summary>lb mv-list</summary>
+<details><summary>Find candidates for moving to a different mount point</summary>
 
 The program takes a mount point and a xklb database file. If you don't have a database file you can create one like this:
 
-    $ lb fsadd --filesystem d.db ~/d/
+    $ library fsadd --filesystem d.db ~/d/
 
 But this should definitely also work with xklb audio and video databases:
 
-    $ lb mv-list /mnt/d/ video.db
+    $ library mv-list /mnt/d/ video.db
 
 The program will print a table with a sorted list of folders which are good candidates for moving. Candidates are determined by how many files are in the folder (so you don't spend hours waiting for folders with millions of tiny files to copy over). The default is 4 to 4000--but it can be adjusted via the --lower and --upper flags.
 
@@ -305,9 +311,9 @@ After you are done selecting folders you can press ctrl-d and it will save the l
 </details>
 
 
-### Scatter your data across disks with [mergerfs](https://github.com/trapexit/mergerfs)
+### Scatter your data across disks (for [mergerfs](https://github.com/trapexit/mergerfs))
 
-<details><summary>If you use mergerfs, you'll likely be interested in this</summary>
+<details><summary>Balance files across devices or filesystems</summary>
 
     library scatter -h
     usage: {usage.scatter}
@@ -344,19 +350,19 @@ After you are done selecting folders you can press ctrl-d and it will save the l
 
 Wake up to your own music
 
-    30 7 * * * lb listen ./audio.db
+    30 7 * * * library listen ./audio.db
 
 Wake up to your own music _only when you are *not* home_ (computer on local-only IP)
 
-    30 7 * * * timeout 0.4 nc -z 192.168.1.12 22 || lb listen --random
+    30 7 * * * timeout 0.4 nc -z 192.168.1.12 22 || library listen --random
 
 Wake up to your own music on your Chromecast speaker group _only when you are home_
 
-    30 7 * * * ssh 192.168.1.12 lb listen --cast --cast-to "Bedroom pair"
+    30 7 * * * ssh 192.168.1.12 library listen --cast --cast-to "Bedroom pair"
 
 ### Pipe to [lowcharts](https://github.com/juan-leon/lowcharts)
 
-<details><summary>$ lb watch -p f -col time_created | lowcharts timehist -w 80</summary>
+<details><summary>$ library watch -p f -col time_created | lowcharts timehist -w 80</summary>
 
     Matches: 445183.
     Each ∎ represents a count of 1896
@@ -383,7 +389,7 @@ Wake up to your own music on your Chromecast speaker group _only when you are ho
 
 BTW, for some cols like time_deleted you'll need to specify a where clause so they aren't filtered out:
 
-    $ lb watch -p f -col time_deleted -w time_deleted'>'0 | lowcharts timehist -w 80
+    $ library watch -p f -col time_deleted -w time_deleted'>'0 | lowcharts timehist -w 80
 
 ![video width](https://user-images.githubusercontent.com/7908073/184737808-b96fbe65-a1d9-43c2-b6b4-4bdfab592190.png)
 
@@ -396,7 +402,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 <details><summary>Move files to your phone via syncthing</summary>
 
 I used to use rsync to move files because I want deletions to stick.
-I now use `lb relmv`. But this is still a good rsync example:
+I now use `library relmv`. But this is still a good rsync example:
 
     function mrmusic
         rsync -a --remove-source-files --files-from=(
