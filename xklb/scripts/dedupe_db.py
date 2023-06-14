@@ -7,7 +7,7 @@ from xklb.utils import log
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library dedupe-dbs", usage=usage.dedupe_db)
-    parser.add_argument("--skip-0", action='store_true')
+    parser.add_argument("--skip-0", action="store_true")
     parser.add_argument("--only-columns", action=utils.ArgparseList, help="Comma separated column names to upsert")
     parser.add_argument("--primary-keys", "--pk", action=utils.ArgparseList, help="Comma separated primary keys")
     parser.add_argument(
@@ -42,7 +42,7 @@ def dedupe_db() -> None:
 
     missing_columns = [s for s in upsert_columns if s not in target_columns]
     if missing_columns:
-        raise ValueError('At least one upsert column not available in target table: %s', missing_columns)
+        raise ValueError("At least one upsert column not available in target table: %s", missing_columns)
 
     if set(upsert_columns).intersection(args.primary_keys):
         raise ValueError("One of your primary keys is also an upsert column. I don't think that will work...?")
@@ -54,19 +54,19 @@ def dedupe_db() -> None:
     for col in upsert_columns:
         data = list(
             args.db.query(
-                f'''
+                f"""
                 SELECT {','.join(args.business_keys + [col])}
                 FROM {args.table}
                 WHERE {f'NULLIF({col}, 0)' if args.skip_0 else col} IS NOT NULL
                 ORDER BY {','.join(args.primary_keys)}
-                '''
+                """
             )
         )
-        log.info('%s (%s rows)', col, len(data))
+        log.info("%s (%s rows)", col, len(data))
 
         with args.db.conn:
             args.db.conn.executescript(
-                ''.join(
+                "\n".join(
                     [
                         f"UPDATE {args.table} SET {col} = {args.db.quote(row[col])} WHERE {' AND '.join([f'{key} = {args.db.quote(row[key])}' for key in args.business_keys])};"
                         for row in data
@@ -76,14 +76,14 @@ def dedupe_db() -> None:
 
     with args.db.conn:
         args.db.conn.execute(
-            f'''
+            f"""
             DELETE FROM {args.table}
-            WHERE {','.join(args.primary_keys)} NOT IN (
+            WHERE ({','.join(args.primary_keys)}) NOT IN (
                 SELECT {','.join(f"MIN({col}) AS {col}" for col in args.primary_keys)}
                 FROM {args.table}
                 GROUP BY {','.join(args.business_keys)}
             )
-            '''
+            """
         )
 
 

@@ -153,7 +153,7 @@ def optimize(args) -> None:
 
         for column in int_columns + str_columns:
             log.info("Creating index: %s", column)
-            db[table].create_index([column], unique=column == 'path', if_not_exists=True, analyze=True)  # type: ignore
+            db[table].create_index([column], unique=column == "path", if_not_exists=True, analyze=True)  # type: ignore
 
         if any(fts_columns) and (db[table].detect_fts() is None or was_transformed):  # type: ignore
             log.info("Creating fts index: %s", fts_columns)
