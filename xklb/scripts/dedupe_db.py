@@ -74,8 +74,12 @@ def dedupe_db() -> None:
             log.info("%s (%s rows)", col, len(data))
 
             with args.db.conn:
-                gen_where_sql = lambda row: ' AND '.join([f'{key} = {args.db.quote(row[key])}' for key in args.business_keys])
-                gen_update_sql = lambda row: f"UPDATE {args.table} SET {col} = {args.db.quote(row[col])} WHERE {gen_where_sql(row)};"
+                gen_where_sql = lambda row: " AND ".join(
+                    [f"{key} = {args.db.quote(row[key])}" for key in args.business_keys]
+                )
+                gen_update_sql = (
+                    lambda row: f"UPDATE {args.table} SET {col} = {args.db.quote(row[col])} WHERE {gen_where_sql(row)};"
+                )
                 args.db.conn.executescript("\n".join([gen_update_sql(row) for row in data]))
 
     with args.db.conn:
