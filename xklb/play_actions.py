@@ -173,6 +173,7 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     parser.add_argument("--depth", "-D", default=0, type=int, help="Depth of folders")
     parser.add_argument("--lower", type=int, help="Number of files per folder lower limit")
     parser.add_argument("--upper", type=int, help="Number of files per folder upper limit")
+    parser.add_argument("--folder-size", "--foldersize", "-Z", action="append", help=argparse.SUPPRESS)
 
     parser.add_argument("--prefetch", type=int, default=1)
     parser.add_argument("--prefix", default="", help=argparse.SUPPRESS)
