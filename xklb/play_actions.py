@@ -1,4 +1,5 @@
 import argparse, shlex, shutil, sys, time
+import os
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -556,6 +557,7 @@ def process_playqueue(args) -> None:
             args.upper,
             args.safe,
             args.play_in_order >= consts.SIMILAR,
+            args.big_dirs,
             args.related >= consts.RELATED,
             args.cluster,
         ],
@@ -602,7 +604,12 @@ def process_playqueue(args) -> None:
         if "limit" in args.defaults:
             media = player.get_dir_media(args, dirs)
         else:
-            media = [media_keyed[key] for dir in dirs for key in media_keyed if key.startswith(dir)]
+            media = []
+            for dir in dirs:
+                for key in media_keyed:
+                    if os.sep not in key.replace(dir, '') and key.startswith(dir):
+                        media.append(media_keyed[key])
+                        break
         log.debug("big_dirs: %s", t.elapsed())
 
     if args.related >= consts.RELATED:

@@ -47,8 +47,6 @@ def parse_args() -> argparse.Namespace:
 
     if args.size:
         args.size = utils.parse_human_to_sql(utils.human_to_bytes, "size", args.size)
-    if args.folder_size:
-        args.folder_size = utils.parse_human_to_lambda(utils.human_to_bytes, args.folder_size)
 
     log.info(utils.dict_filter_bool(args.__dict__))
     return args
@@ -160,6 +158,7 @@ def process_bigdirs(args, media) -> List[Dict]:
     if args.depth:
         folders = folder_depth(args, folders)
     if args.folder_size:
+        args.folder_size = utils.parse_human_to_lambda(utils.human_to_bytes, args.folder_size)
         folders = [d for d in folders if args.folder_size(d["size"])]
     return sorted(folders, key=sort_by(args))
 
