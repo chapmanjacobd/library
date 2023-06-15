@@ -932,6 +932,27 @@ def parse_human_to_sql(human_to_x, var, sizes) -> str:
     return size_rules
 
 
+def parse_human_to_lambda(human_to_x, sizes):
+    return lambda var: all(
+        (
+            (var > human_to_x(size.lstrip(">")))
+            if ">" in size
+            else (var < human_to_x(size.lstrip("<")))
+            if "<" in size
+            else (var >= human_to_x(size.lstrip("+")))
+            if "+" in size
+            else (human_to_x(size.lstrip("-")) >= var)
+            if "-" in size
+            else (
+                int(human_to_x(size) + (human_to_x(size) / 10))
+                >= var
+                >= int(human_to_x(size) - (human_to_x(size) / 10))
+            )
+        )
+        for size in sizes
+    )
+
+
 def human_to_seconds(input_str) -> int:
     time_units = {
         "s": 1,

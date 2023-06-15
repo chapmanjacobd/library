@@ -802,6 +802,7 @@ dedupe_db = """library dedupe-dbs DATABASE TABLE --bk BUSINESS_KEYS [--pk PRIMAR
 
     If --primary-keys is not provided table metadata primary keys will be used
     If --only-columns is not provided all non-primary and non-business key columns will be upserted
+    If your duplicate rows contain exactly the same data in all the columns you can run with --skip-upsert to save a lot of time
 """
 
 merge_dbs = """library merge-dbs DEST_DB SOURCE_DB ... [--only-target-columns] [--only-new-rows] [--upsert] [--pk PK ...] [--table TABLE ...]
