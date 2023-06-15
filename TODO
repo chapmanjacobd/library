@@ -3,6 +3,11 @@ lb bigdirs ~/lb/video.db
 
 /mnt/d/75_MovieQueue/unsorted/NRMwalkthroughHD/ should be 200GB
 
+
+- move mpv specific playhead code to a script subcommand
+
+option to delete mpv watch_later file if media file does not exist
+
 - dlstatus print errors also:
 
 sqlite lb/fs/blogspot.db 'select error, count(*) from media group by 1 order by 2'
@@ -26,10 +31,6 @@ default 16000 files, flat subdirectory
 - POIs CLI -- save your trip plans and see places to go with automated day trip itineraries, geopandas buffer
 
 - wt/lt/search join and use fts on both tables, threading ?
-
-- move mpv specific playhead code to a script subcommand
-
-option to delete mpv watch_later file if media file does not exist
 
 - improve playlists subcommand
 

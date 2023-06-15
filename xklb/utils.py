@@ -1072,7 +1072,7 @@ class Timer:
         end_time = default_timer()
         elapsed_time = end_time - self.start_time
         self.reset()
-        return elapsed_time
+        return f"{elapsed_time:.4f}"
 
 
 def cover_scan(media_duration, scan_percentage):
