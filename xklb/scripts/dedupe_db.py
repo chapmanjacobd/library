@@ -7,6 +7,7 @@ from xklb.utils import log
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library dedupe-dbs", usage=usage.dedupe_db)
+    parser.add_argument("--skip-upsert", action="store_true")
     parser.add_argument("--skip-0", action="store_true")
     parser.add_argument("--only-columns", action=utils.ArgparseList, help="Comma separated column names to upsert")
     parser.add_argument("--primary-keys", "--pk", action=utils.ArgparseList, help="Comma separated primary keys")
@@ -51,28 +52,31 @@ def dedupe_db() -> None:
     if len(args.primary_keys) == 0:
         raise ValueError("No primary keys found. Try to re-run with --pk rowid ?")
 
-    for col in upsert_columns:
-        data = list(
-            args.db.query(
-                f"""
-                SELECT {','.join(args.business_keys + [col])}
-                FROM {args.table}
-                WHERE {f'NULLIF({col}, 0)' if args.skip_0 else col} IS NOT NULL
-                ORDER BY {','.join(args.primary_keys)}
-                """
-            )
-        )
-        log.info("%s (%s rows)", col, len(data))
+    if not args.skip_upsert:
+        log.info("Upserting data in %s", ",".join(upsert_columns))
 
-        with args.db.conn:
-            args.db.conn.executescript(
-                "\n".join(
-                    [
-                        f"UPDATE {args.table} SET {col} = {args.db.quote(row[col])} WHERE {' AND '.join([f'{key} = {args.db.quote(row[key])}' for key in args.business_keys])};"
-                        for row in data
-                    ]
+        for col in upsert_columns:
+            data = list(
+                args.db.query(
+                    f"""
+                    SELECT {','.join(args.business_keys + [col])}
+                    FROM {args.table}
+                    WHERE {f'NULLIF({col}, 0)' if args.skip_0 else col} IS NOT NULL
+                    AND ({','.join(args.business_keys)}) IN (
+                        SELECT {','.join(args.business_keys)}
+                        FROM {args.table}
+                        WHERE {col} IS NULL
+                    )
+                    ORDER BY {','.join(args.primary_keys)}
+                    """
                 )
             )
+            log.info("%s (%s rows)", col, len(data))
+
+            with args.db.conn:
+                gen_where_sql = lambda row: ' AND '.join([f'{key} = {args.db.quote(row[key])}' for key in args.business_keys])
+                gen_update_sql = lambda row: f"UPDATE {args.table} SET {col} = {args.db.quote(row[col])} WHERE {gen_where_sql(row)};"
+                args.db.conn.executescript("\n".join([gen_update_sql(row) for row in data]))
 
     with args.db.conn:
         args.db.conn.execute(

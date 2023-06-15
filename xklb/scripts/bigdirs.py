@@ -20,6 +20,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--lower", type=int, help="Number of files per folder lower limit")
     parser.add_argument("--upper", type=int, help="Number of files per folder upper limit")
     parser.add_argument(
+        "--folder-size",
+        "--foldersize",
+        "-Z",
+        action="append",
+        help="Only include folders of specific sizes (uses the same syntax as fd-find)",
+    )
+    parser.add_argument(
         "--size",
         "-S",
         action="append",
@@ -40,6 +47,8 @@ def parse_args() -> argparse.Namespace:
 
     if args.size:
         args.size = utils.parse_human_to_sql(utils.human_to_bytes, "size", args.size)
+    if args.folder_size:
+        args.folder_size = utils.parse_human_to_lambda(utils.human_to_bytes, args.folder_size)
 
     log.info(utils.dict_filter_bool(args.__dict__))
     return args
@@ -77,7 +86,7 @@ def group_files_by_folder(args, media) -> List[Dict]:
     return [{**v, "path": k} for k, v in d.items()]
 
 
-def group_folders(args, folders) -> List[Dict]:
+def folder_depth(args, folders) -> List[Dict]:
     d = {}
     for f in folders:
         p = f["path"].split("/")
@@ -149,7 +158,9 @@ def sort_by(args):
 def process_bigdirs(args, media) -> List[Dict]:
     folders = group_files_by_folder(args, media)
     if args.depth:
-        folders = group_folders(args, folders)
+        folders = folder_depth(args, folders)
+    if args.folder_size:
+        folders = [d for d in folders if args.folder_size(d["size"])]
     return sorted(folders, key=sort_by(args))
 
 

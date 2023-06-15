@@ -143,7 +143,7 @@ Incremental surfing. 📈🏄 totally rad!
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v1.31.003)
+    xk media library subcommands (v1.31.005)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -230,7 +230,7 @@ Incremental surfing. 📈🏄 totally rad!
     wget https://github.com/chapmanjacobd/hn_mining/raw/main/hackernews_only_direct.tw.db
     library watch hackernews_only_direct.tw.db --random --ignore-errors
 
-### Organize via separate databases.
+### Organize via separate databases
 
     library fsadd --audio both.db ./audiobooks/ ./podcasts/
     library fsadd --audio audiobooks.db ./audiobooks/
@@ -274,7 +274,9 @@ But this should definitely also work with xklb audio and video databases:
 
     $ library mv-list /mnt/d/ video.db
 
-The program will print a table with a sorted list of folders which are good candidates for moving. Candidates are determined by how many files are in the folder (so you don't spend hours waiting for folders with millions of tiny files to copy over). The default is 4 to 4000--but it can be adjusted via the --lower and --upper flags.
+The program will print a table with a sorted list of folders which are good candidates for moving.
+Candidates are determined by how many files are in the folder (so you don't spend hours waiting for folders with millions of tiny files to copy over).
+The default is 4 to 4000--but it can be adjusted via the --lower and --upper flags.
 
     ...
     ├──────────┼─────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
@@ -1529,6 +1531,7 @@ Explore `library` databases in your browser
 
     If --primary-keys is not provided table metadata primary keys will be used
     If --only-columns is not provided all non-primary and non-business key columns will be upserted
+    If your duplicate rows contain exactly the same data in all the columns you can run with --skip-upsert to save a lot of time
 
 
 </details>
