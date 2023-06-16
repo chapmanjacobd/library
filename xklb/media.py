@@ -86,7 +86,7 @@ def consolidate(v: dict) -> Optional[dict]:
     cv["time_uploaded"] = upload_date
     cv["time_created"] = consts.APPLICATION_START
     cv["time_modified"] = 0  # this should be 0 if the file has never been downloaded
-    cv["time_deleted"] = safe_unpack(v.pop("time_deleted", None), 0)
+    cv["time_deleted"] = 0
     cv["time_downloaded"] = 0
     cv["play_count"] = 0
     cv["time_played"] = 0
