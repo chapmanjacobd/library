@@ -30,7 +30,7 @@ def consolidate(args, v: dict) -> dict:
     cv["time_uploaded"] = upload_date
     cv["time_created"] = consts.APPLICATION_START
     cv["time_modified"] = 0
-    cv["time_deleted"] = safe_unpack(v.pop("time_deleted", None), 0)
+    cv["time_deleted"] = 0
 
     cv["profile"] = args.profile
     cv["extractor_config"] = {
