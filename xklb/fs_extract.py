@@ -1,4 +1,4 @@
-import argparse, math, os, sys
+import argparse, json, math, os, sys
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from functools import partial
 from multiprocessing import TimeoutError as mp_TimeoutError
@@ -407,8 +407,9 @@ def fs_update(args=None) -> None:
     )
 
     for playlist in fs_playlists:
+        extractor_config = json.loads((playlist.get("extractor_config") or "{}"))
         args_env = argparse.Namespace(
-            **{**(playlist.get("extractor_config") or {}), **args.__dict__, "profile": playlist["profile"]},
+            **{**extractor_config, **args.__dict__, "profile": playlist["profile"]},
         )
 
         extractor(args_env, [playlist["path"]])

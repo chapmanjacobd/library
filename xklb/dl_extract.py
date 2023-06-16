@@ -166,8 +166,8 @@ def construct_query(args) -> Tuple[str, dict]:
                 {'AND (upvote_ratio IS NULL OR upvote_ratio > 0.73)' if 'upvote_ratio' in m_columns else ''}
                 {" ".join(args.filter_sql)}
             ORDER BY 1=1
-                , play_count
-                , COALESCE(m.time_modified,0) = 0 DESC
+                , COALESCE(m.time_modified, 0) = 0 DESC
+                , m.time_modified
                 {', ' + args.sort if args.sort else ''}
                 , random()
         {LIMIT}
@@ -192,8 +192,8 @@ def construct_query(args) -> Tuple[str, dict]:
                 {'AND (upvote_ratio IS NULL OR upvote_ratio > 0.73)' if 'upvote_ratio' in m_columns else ''}
                 {" ".join(args.filter_sql)}
             ORDER BY 1=1
-                {', play_count' if 'play_count' in m_columns else ''}
                 {', COALESCE(m.time_modified,0) = 0 DESC' if 'time_modified' in m_columns else ''}
+                {', m.time_modified' if 'time_modified' in m_columns else ''}
                 {', ' + args.sort if args.sort else ''}
                 , random()
         {LIMIT}
