@@ -1105,8 +1105,20 @@ def cluster_paths(paths, n_clusters=None):
 
     sentence_strings = (path_to_sentence(s) for s in paths)
 
-    vectorizer = TfidfVectorizer(min_df=2, strip_accents="unicode", stop_words="english")
-    X = vectorizer.fit_transform(sentence_strings)
+    try:
+        vectorizer = TfidfVectorizer(min_df=2, strip_accents="unicode", stop_words="english")
+        X = vectorizer.fit_transform(sentence_strings)
+    except ValueError:
+        try:
+            vectorizer = TfidfVectorizer(strip_accents="unicode", stop_words="english")
+            X = vectorizer.fit_transform(sentence_strings)
+        except ValueError:
+            try:
+                vectorizer = TfidfVectorizer()
+                X = vectorizer.fit_transform(sentence_strings)
+            except ValueError:
+                vectorizer = TfidfVectorizer(analyzer="char_wb")
+                X = vectorizer.fit_transform(sentence_strings)
 
     clusterizer = KMeans(n_clusters=n_clusters or int(X.shape[0] ** 0.5), random_state=0, n_init=10).fit(X)
     clusters = clusterizer.labels_

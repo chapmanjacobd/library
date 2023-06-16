@@ -1,5 +1,4 @@
-import argparse, shlex, shutil, sys, time
-import os
+import argparse, os, shlex, shutil, sys, time
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -48,9 +47,6 @@ def parse_args_sort(args) -> None:
         )
         else None,
         args.sort,
-        "time_downloaded > 0 desc"
-        if "time_downloaded" in m_columns and "time_downloaded" not in " ".join(sys.argv)
-        else None,
         "duration desc" if args.action in (SC.listen, SC.watch) and args.include else None,
         "size desc" if args.action in (SC.listen, SC.watch) and args.include else None,
         "play_count" if args.action in (SC.listen, SC.watch) and "play_count" in m_columns else None,
@@ -605,9 +601,11 @@ def process_playqueue(args) -> None:
             media = player.get_dir_media(args, dirs)
         else:
             media = []
-            for dir in dirs:
-                for key in media_keyed:
-                    if os.sep not in key.replace(dir, '') and key.startswith(dir):
+            for key in media_keyed:
+                for dir in dirs:
+                    if len(dir) == 1:
+                        continue
+                    if os.sep not in key.replace(dir, "") and key.startswith(dir):
                         media.append(media_keyed[key])
                         break
         log.debug("big_dirs: %s", t.elapsed())
