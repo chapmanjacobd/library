@@ -142,8 +142,8 @@ def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True) -> 
 
                     added_media_count += 1
                     if added_media_count > 1:
-                        # sys.stdout.write("\033[K\r")
-                        print(f"[{playlist_path}] Added {added_media_count} media")  # , end="\r", flush=True)
+                        # sys.stdout.write("\033[K\r")  # this does not seem to be necessary
+                        print(f"[{playlist_path}] Added {added_media_count} media", end="\r", flush=True)
 
             return [], info
 
