@@ -814,10 +814,8 @@ cluster_sort = """library cluster-sort [input_path | stdin] [output_path | stdou
     red apple' | library cluster-sort --print-groups
 
     [
-        {'common_prefix': '',
-        'grouped_paths': ['orange apple\n', 'red apple\n', 'red apple\n']},
-        {'common_prefix': '',
-        'grouped_paths': ['broccoli\n', 'green\n', 'yellow\n']}
+        {'grouped_paths': ['orange apple', 'red apple', 'red apple']},
+        {'grouped_paths': ['broccoli', 'green', 'yellow']}
     ]
 
     Auto-sort images into directories

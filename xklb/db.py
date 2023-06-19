@@ -77,15 +77,15 @@ def columns(args, table_name):
 
 config = {
     "playlists": {
-        "column_order": ["path", "extractor_key"],
-        "ignore_columns": ["id", "extractor_playlist_id"],
+        "column_order": ["id", "path", "extractor_key"],
+        "ignore_columns": ["extractor_playlist_id"],
     },
     "media": {
         "search_columns": ["path", "title", "mood", "genre", "description", "artist", "album"],
-        "column_order": ["path", "webpath", "extractor_id"],
-        "ignore_columns": ["id", "extractor_id"],
+        "column_order": ["id", "path", "webpath", "extractor_id"],
+        "ignore_columns": ["extractor_id"],
     },
-    "history": {"ignore_columns": ["id"]},
+    "history": {"column_order": ["id"]},
     "captions": {"search_columns": ["text"]},
     "reddit_posts": {
         "search_columns": ["title", "selftext"],
