@@ -88,7 +88,8 @@ def download_status() -> None:
     play_actions.parse_args_sort(args)
 
     if args.delete:
-        return delete_playlists(args, args.delete)
+        delete_playlists(args, args.delete)
+        return
 
     query, bindings = dl_extract.construct_query(args)
 
@@ -96,19 +97,17 @@ def download_status() -> None:
     if "time_modified" in query:
         if args.safe:
             args.db.register_function(tube_backend.is_supported, deterministic=True)
-            count_paths = (
-                "count(*) FILTER(WHERE COALESCE(m.time_modified,0) = 0 and is_supported(path)) never_downloaded"
-            )
+            count_paths = "count(*) FILTER(WHERE COALESCE(time_modified,0) = 0 and is_supported(path)) never_downloaded"
         else:
-            count_paths = "count(*) FILTER(WHERE COALESCE(m.time_modified,0) = 0) never_downloaded"
+            count_paths = "count(*) FILTER(WHERE COALESCE(time_modified,0) = 0) never_downloaded"
 
     query = f"""select
         {count_paths}
         , extractor_key
         {', sum(duration) duration' if 'duration' in query else ''}
-        {', count(*) FILTER(WHERE COALESCE(m.time_modified,0) > 0 AND error IS NOT NULL) errors' if 'error' in query else ''}
+        {', count(*) FILTER(WHERE COALESCE(time_modified,0) > 0 AND error IS NOT NULL) errors' if 'error' in query else ''}
         {', group_concat(distinct error) error_descriptions' if 'error' in query and args.verbose >= 1 else ''}
-    from ({query}) m
+    from ({query})
     where 1=1
         and COALESCE(time_downloaded,0) = 0
         and COALESCE(time_deleted,0) = 0
@@ -116,4 +115,24 @@ def download_status() -> None:
     order by never_downloaded"""
 
     printer(args, query, bindings)
-    return None
+
+    query = """
+    select error, count(*) count
+    from media
+    where error is not null
+    group by 1
+    order by 2
+    """
+    errors = list(args.db.query(query))
+
+    common_errors = []
+    other_errors = []
+    for error in errors:
+        if error["count"] == 1:
+            other_errors.append(error)
+        else:
+            common_errors.append(error)
+
+    common_errors.append({"error": "Other", "count": len(other_errors)})
+    common_errors.append({"error": "Total", "count": sum(d["count"] for d in errors)})
+    print(tabulate(common_errors, tablefmt="fancy_grid", headers="keys", showindex=False))

@@ -143,7 +143,7 @@ Incremental surfing. 📈🏄 totally rad!
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v1.31.009)
+    xk media library subcommands (v2.1.001)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -207,6 +207,8 @@ Incremental surfing. 📈🏄 totally rad!
 
       lb extract-links         Extract links from lists of web pages
 
+      lb mpv-watchlater        Import timestamps from mpv watchlater to history table
+
       lb cluster-sort          Lines -> sorted by sentence similarity groups (stdin)
       lb nouns                 Unstructured text -> compound nouns (stdin)
     
@@ -261,154 +263,6 @@ Recently, this functionality has also been integrated into watch/listen subcomma
 
 </details>
 
-
-### library mv-list: free up space
-
-<details><summary>Find candidates for moving to a different mount point</summary>
-
-The program takes a mount point and a xklb database file. If you don't have a database file you can create one like this:
-
-    $ library fsadd --filesystem d.db ~/d/
-
-But this should definitely also work with xklb audio and video databases:
-
-    $ library mv-list /mnt/d/ video.db
-
-The program will print a table with a sorted list of folders which are good candidates for moving.
-Candidates are determined by how many files are in the folder (so you don't spend hours waiting for folders with millions of tiny files to copy over).
-The default is 4 to 4000--but it can be adjusted via the --lower and --upper flags.
-
-    ...
-    ├──────────┼─────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-    │ 4.0 GB   │       7 │ /mnt/d/71_Mealtime_Videos/unsorted/Miguel_4K/                                                                 │
-    ├──────────┼─────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-    │ 5.7 GB   │      10 │ /mnt/d/71_Mealtime_Videos/unsorted/Bollywood_Premium/                                                         │
-    ├──────────┼─────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-    │ 2.3 GB   │       4 │ /mnt/d/71_Mealtime_Videos/chief_wiggum/                                                                       │
-    ╘══════════╧═════════╧═══════════════════════════════════════════════════════════════════════════════════════════════════════════════╛
-    6702 other folders not shown
-
-    ██╗███╗░░██╗░██████╗████████╗██████╗░██╗░░░██╗░█████╗░████████╗██╗░█████╗░███╗░░██╗░██████╗
-    ██║████╗░██║██╔════╝╚══██╔══╝██╔══██╗██║░░░██║██╔══██╗╚══██╔══╝██║██╔══██╗████╗░██║██╔════╝
-    ██║██╔██╗██║╚█████╗░░░░██║░░░██████╔╝██║░░░██║██║░░╚═╝░░░██║░░░██║██║░░██║██╔██╗██║╚█████╗░
-    ██║██║╚████║░╚═══██╗░░░██║░░░██╔══██╗██║░░░██║██║░░██╗░░░██║░░░██║██║░░██║██║╚████║░╚═══██╗
-    ██║██║░╚███║██████╔╝░░░██║░░░██║░░██║╚██████╔╝╚█████╔╝░░░██║░░░██║╚█████╔╝██║░╚███║██████╔╝
-    ╚═╝╚═╝░░╚══╝╚═════╝░░░░╚═╝░░░╚═╝░░╚═╝░╚═════╝░░╚════╝░░░░╚═╝░░░╚═╝░╚════╝░╚═╝░░╚══╝╚═════╝░
-
-    Type "done" when finished
-    Type "more" to see more files
-    Paste a folder (and press enter) to toggle selection
-    Type "*" to select all files in the most recently printed table
-
-Then it will give you a prompt:
-
-    Paste a path:
-
-Wherein you can copy and paste paths you want to move from the table and the program will keep track for you.
-
-    Paste a path: /mnt/d/75_MovieQueue/720p/s11/
-    26 selected paths: 162.1 GB ; future free space: 486.9 GB
-
-You can also press the up arrow or paste it again to remove it from the list:
-
-    Paste a path: /mnt/d/75_MovieQueue/720p/s11/
-    25 selected paths: 159.9 GB ; future free space: 484.7 GB
-
-After you are done selecting folders you can press ctrl-d and it will save the list to a tmp file:
-
-    Paste a path: done
-
-        Folder list saved to /tmp/tmpa7x_75l8. You may want to use the following command to move files to an EMPTY folder target:
-
-            rsync -a --info=progress2 --no-inc-recursive --remove-source-files --files-from=/tmp/tmpa7x_75l8 -r --relative -vv --dry-run / jim:/free/real/estate/
-
-</details>
-
-
-### Scatter your data across disks (for [mergerfs](https://github.com/trapexit/mergerfs))
-
-<details><summary>Balance files across devices or filesystems</summary>
-
-    library scatter -h
-    usage: library scatter [--limit LIMIT] [--policy POLICY] [--sort SORT] --srcmounts SRCMOUNTS DATABASE RELATIVE_PATHS ...
-
-    Balance size
-
-        $ library scatter -m /mnt/d1:/mnt/d2:/mnt/d3:/mnt/d4/:/mnt/d5:/mnt/d6:/mnt/d7 ~/lb/fs/scatter.db subfolder/of/mergerfs/mnt
-        Current path distribution:
-        ╒═════════╤══════════════╤══════════════╤═══════════════╤════════════════╤═════════════════╤════════════════╕
-        │ mount   │   file_count │ total_size   │ median_size   │ time_created   │ time_modified   │ time_scanned   │
-        ╞═════════╪══════════════╪══════════════╪═══════════════╪════════════════╪═════════════════╪════════════════╡
-        │ /mnt/d1 │        12793 │ 169.5 GB     │ 4.5 MB        │ Jan 27         │ Jul 19 2022     │ Jan 31         │
-        ├─────────┼──────────────┼──────────────┼───────────────┼────────────────┼─────────────────┼────────────────┤
-        │ /mnt/d2 │        13226 │ 177.9 GB     │ 4.7 MB        │ Jan 27         │ Jul 19 2022     │ Jan 31         │
-        ├─────────┼──────────────┼──────────────┼───────────────┼────────────────┼─────────────────┼────────────────┤
-        │ /mnt/d3 │            1 │ 717.6 kB     │ 717.6 kB      │ Jan 31         │ Jul 18 2022     │ yesterday      │
-        ├─────────┼──────────────┼──────────────┼───────────────┼────────────────┼─────────────────┼────────────────┤
-        │ /mnt/d4 │           82 │ 1.5 GB       │ 12.5 MB       │ Jan 31         │ Apr 22 2022     │ yesterday      │
-        ╘═════════╧══════════════╧══════════════╧═══════════════╧════════════════╧═════════════════╧════════════════╛
-
-        Simulated path distribution:
-        5845 files should be moved
-        20257 files should not be moved
-        ╒═════════╤══════════════╤══════════════╤═══════════════╤════════════════╤═════════════════╤════════════════╕
-        │ mount   │   file_count │ total_size   │ median_size   │ time_created   │ time_modified   │ time_scanned   │
-        ╞═════════╪══════════════╪══════════════╪═══════════════╪════════════════╪═════════════════╪════════════════╡
-        │ /mnt/d1 │         9989 │ 46.0 GB      │ 2.4 MB        │ Jan 27         │ Jul 19 2022     │ Jan 31         │
-        ├─────────┼──────────────┼──────────────┼───────────────┼────────────────┼─────────────────┼────────────────┤
-        │ /mnt/d2 │        10185 │ 46.0 GB      │ 2.4 MB        │ Jan 27         │ Jul 19 2022     │ Jan 31         │
-        ├─────────┼──────────────┼──────────────┼───────────────┼────────────────┼─────────────────┼────────────────┤
-        │ /mnt/d3 │         1186 │ 53.6 GB      │ 30.8 MB       │ Jan 27         │ Apr 07 2022     │ Jan 31         │
-        ├─────────┼──────────────┼──────────────┼───────────────┼────────────────┼─────────────────┼────────────────┤
-        │ /mnt/d4 │         1216 │ 49.5 GB      │ 29.5 MB       │ Jan 27         │ Apr 07 2022     │ Jan 31         │
-        ├─────────┼──────────────┼──────────────┼───────────────┼────────────────┼─────────────────┼────────────────┤
-        │ /mnt/d5 │         1146 │ 53.0 GB      │ 30.9 MB       │ Jan 27         │ Apr 07 2022     │ Jan 31         │
-        ├─────────┼──────────────┼──────────────┼───────────────┼────────────────┼─────────────────┼────────────────┤
-        │ /mnt/d6 │         1198 │ 48.8 GB      │ 30.6 MB       │ Jan 27         │ Apr 07 2022     │ Jan 31         │
-        ├─────────┼──────────────┼──────────────┼───────────────┼────────────────┼─────────────────┼────────────────┤
-        │ /mnt/d7 │         1182 │ 52.0 GB      │ 30.9 MB       │ Jan 27         │ Apr 07 2022     │ Jan 31         │
-        ╘═════════╧══════════════╧══════════════╧═══════════════╧════════════════╧═════════════════╧════════════════╛
-        ### Move 1182 files to /mnt/d7 with this command: ###
-        rsync -aE --xattrs --info=progress2 --remove-source-files --files-from=/tmp/tmpmr1628ij / /mnt/d7
-        ### Move 1198 files to /mnt/d6 with this command: ###
-        rsync -aE --xattrs --info=progress2 --remove-source-files --files-from=/tmp/tmp9yd75f6j / /mnt/d6
-        ### Move 1146 files to /mnt/d5 with this command: ###
-        rsync -aE --xattrs --info=progress2 --remove-source-files --files-from=/tmp/tmpfrj141jj / /mnt/d5
-        ### Move 1185 files to /mnt/d3 with this command: ###
-        rsync -aE --xattrs --info=progress2 --remove-source-files --files-from=/tmp/tmpqh2euc8n / /mnt/d3
-        ### Move 1134 files to /mnt/d4 with this command: ###
-        rsync -aE --xattrs --info=progress2 --remove-source-files --files-from=/tmp/tmphzb0gj92 / /mnt/d4
-
-    Balance device inodes for specific subfolder
-
-        $ library scatter -m /mnt/d1:/mnt/d2 ~/lb/fs/scatter.db subfolder --group count --sort 'size desc'
-
-    Scatter the most recent 100 files
-
-        $ library scatter -m /mnt/d1:/mnt/d2 -l 100 -s 'time_modified desc' ~/lb/fs/scatter.db /
-
-    Scatter without mountpoints (limited functionality; only good for balancing fs inodes)
-
-        $ library scatter scatter.db /test/{0,1,2,3,4,5,6,7,8,9}
-
-
-    positional arguments:
-    database
-    relative_paths        Paths to scatter, relative to the root of your mergerfs mount; any path substring is valid
-
-    options:
-    -h, --help            show this help message and exit
-    --limit LIMIT, -L LIMIT, -l LIMIT, -queue LIMIT, --queue LIMIT
-    --policy POLICY, -p POLICY
-    --group GROUP, -g GROUP
-    --sort SORT, -s SORT  Sort files before moving
-    --usage, -u           Show disk usage
-    --verbose, -v
-    --srcmounts SRCMOUNTS, -m SRCMOUNTS
-                            /mnt/d1:/mnt/d2
-
-</details>
-
 ### Pipe to [mnamer](https://github.com/jkwill87/mnamer)
 
 <details><summary>Rename poorly named files</summary>
@@ -420,7 +274,9 @@ After you are done selecting folders you can press ctrl-d and it will save the l
 
 </details>
 
-### Music alarm clock (via termux crontab)
+### Music alarm clock
+
+<details><summary>via termux crontab</summary>
 
 Wake up to your own music
 
@@ -433,6 +289,8 @@ Wake up to your own music _only when you are *not* home_ (computer on local-only
 Wake up to your own music on your Chromecast speaker group _only when you are home_
 
     30 7 * * * ssh 192.168.1.12 library listen --cast --cast-to "Bedroom pair"
+
+</details>
 
 ### Pipe to [lowcharts](https://github.com/juan-leon/lowcharts)
 
@@ -556,7 +414,7 @@ Explore `library` databases in your browser
     Decode media to check for corruption (slow):
         library fsadd --check-corrupt 100 tv.db ./tv/  # scan through 100 percent of each file to evaluate how corrupt it is (very slow)
         library fsadd --check-corrupt   1 tv.db ./tv/  # scan through 1 percent of each file to evaluate how corrupt it is (takes about one second per file)
-        library fsadd --check-corrupt   5 tv.db ./tv/  # scan through 1 percent of each file to evaluate how corrupt it is (takes about ten seconds per file)
+        library fsadd --check-corrupt   5 tv.db ./tv/  # scan through 5 percent of each file to evaluate how corrupt it is (takes about ten seconds per file)
 
         library fsadd --check-corrupt   5 --delete-corrupt 30 tv.db ./tv/  # scan 5 percent of each file to evaluate how corrupt it is, if 30 percent or more of those checks fail then the file is deleted
 
@@ -1536,12 +1394,46 @@ Explore `library` databases in your browser
 
 </details>
 
-<details><summary>Sort lines by similarity (cluster-sort)</summary>
+<details><summary>Sort lines of text by similarity (cluster-sort)</summary>
 
     $ library cluster-sort -h
     usage: library cluster-sort [input_path | stdin] [output_path | stdout]
 
     Group lines of text into sorted output
+
+    $ echo 'red apple
+    broccoli
+    yellow
+    green
+    orange apple
+    red apple' | library cluster-sort
+
+    orange apple
+    red apple
+    red apple
+    broccoli
+    green
+    yellow
+
+    $ echo 'red apple
+    broccoli
+    yellow
+    green
+    orange apple
+    red apple' | library cluster-sort --groups
+
+    [
+        {'common_prefix': '',
+        'grouped_paths': ['orange apple
+', 'red apple
+', 'red apple
+']},
+        {'common_prefix': '',
+        'grouped_paths': ['broccoli
+', 'green
+', 'yellow
+']}
+    ]
 
 
 </details>

@@ -80,8 +80,6 @@ def extract_url_metadata(args, path: str) -> dict:
         "frequency": args.frequency,
         "category": args.category or "Uncategorized",
         "time_created": consts.APPLICATION_START,
-        "time_played": 0,
-        "play_count": 0,
         "time_deleted": 0,
     }
 

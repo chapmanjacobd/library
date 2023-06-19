@@ -1,5 +1,6 @@
 import argparse, csv, functools, hashlib, logging, math, multiprocessing, os, platform, random, re, shlex, shutil, signal, string, subprocess, sys, tempfile, time
 from ast import literal_eval
+from collections import Counter
 from collections.abc import Iterable
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
@@ -49,7 +50,7 @@ def argparse_log() -> logging.Logger:
     try:
         if args.verbose > 0 and os.getpgrp() == os.tcgetpgrp(sys.stdout.fileno()):
             sys.excepthook = ultratb.FormattedTB(
-                mode="Context",
+                mode="Verbose" if args.verbose > 1 else "Context",
                 color_scheme="Neutral",
                 call_pdb=True,
                 debugger_cls=TerminalPdb,
@@ -128,6 +129,19 @@ def flatten(xs: Iterable) -> Generator:
             yield x.decode("utf-8")
         else:
             yield x
+
+
+def flatten_dict(nested_dict, parent_key="", sep="_", passthrough_keys=None):
+    if passthrough_keys is None:
+        passthrough_keys = []
+    flattened_dict = {}
+    for key, value in nested_dict.items():
+        new_key = f"{parent_key}{sep}{key}" if parent_key else key
+        if isinstance(value, dict) and key not in passthrough_keys:
+            flattened_dict.update(flatten_dict(value, new_key, sep, passthrough_keys))
+        else:
+            flattened_dict[new_key] = value
+    return flattened_dict
 
 
 def conform(list_: Union[str, Iterable]) -> List:
@@ -460,28 +474,6 @@ def path_to_mpv_watchlater_md5(path: str) -> str:
     return hashlib.md5(path.encode("utf-8")).hexdigest().upper()
 
 
-def mpv_enrich(args, media) -> List[Dict]:
-    for m in media:
-        md5 = path_to_mpv_watchlater_md5(m["path"])
-        metadata_path = Path(args.watch_later_directory, md5)
-        if metadata_path.exists():
-            m["time_partial_first"] = int(metadata_path.stat().st_ctime)
-            m["time_partial_last"] = int(metadata_path.stat().st_mtime)
-        else:
-            m["time_partial_first"] = 0
-            m["time_partial_last"] = 0
-
-    return sorted(media, key=lambda m: m.get("time_partial_first") or 0, reverse=True)
-
-
-def mpv_watchlater_value(path, key) -> Optional[str]:
-    data = Path(path).read_text().splitlines()
-    for s in data:
-        if s.startswith(key + "="):
-            return s.split("=")[1]
-    return None
-
-
 def filter_episodic(args, media: List[Dict]) -> List[Dict]:
     parent_dict = {}
     for m in media:
@@ -507,22 +499,17 @@ def filter_episodic(args, media: List[Dict]) -> List[Dict]:
     return filtered_media
 
 
-def mpv_enrich2(args, media) -> List[Dict]:
-    md5s = {path_to_mpv_watchlater_md5(m["path"]): m for m in media}
-    paths = set(Path(args.watch_later_directory).glob("*"))
+def mpv_watchlater_value(path, key) -> Optional[str]:
+    data = Path(path).read_text().splitlines()
+    for s in data:
+        if s.startswith(key + "="):
+            return s.split("=")[1]
+    return None
 
-    previously_watched = [
-        {
-            **(md5s.get(p.stem) or {}),
-            "time_partial_first": int(p.stat().st_ctime),
-            "time_partial_last": int(p.stat().st_mtime),
-            "playhead": safe_int(mpv_watchlater_value(p, "start")),
-        }
-        for p in paths
-        if md5s.get(p.stem)
-    ]
+
+def history_sort(args, media) -> List[Dict]:
     if "s" in args.partial:  # skip; only play unseen
-        previously_watched_paths = [m["path"] for m in previously_watched]
+        previously_watched_paths = [m["path"] for m in media if m["time_first_played"]]
         return [m for m in media if m["path"] not in previously_watched_paths]
 
     def mpv_progress(m):
@@ -542,11 +529,11 @@ def mpv_enrich2(args, media) -> List[Dict]:
 
     def sorting_hat():
         if "f" in args.partial:  # first-viewed
-            return lambda m: m.get("time_partial_first") or 0
+            return lambda m: m.get("time_first_played") or 0
         elif "p" in args.partial or "t" in args.partial:  # sort by remaining duration
             return mpv_progress
 
-        return lambda m: m.get("time_partial_last") or m.get("time_partial_first") or 0
+        return lambda m: m.get("time_last_played") or m.get("time_first_played") or 0
 
     reverse_chronology = True
     if "o" in args.partial:  # oldest first
@@ -557,7 +544,7 @@ def mpv_enrich2(args, media) -> List[Dict]:
         reverse_chronology = not reverse_chronology
 
     media = sorted(
-        previously_watched,
+        media,
         key=key,
         reverse=reverse_chronology,
     )
@@ -1277,3 +1264,41 @@ def trim_path_segments(path, desired_length):
 
     segments[-1] += extension
     return str(Path(*segments))
+
+
+def rebin_folders(paths, max_files_per_folder=16000):
+    parent_counts = Counter(Path(p).parent for p in paths)
+    rebinned_tuples = []
+    untouched = []
+    parent_index = {}
+    parent_current_count = {}
+
+    for p in paths:
+        path = Path(p)
+        parent = path.parent
+        if parent_counts[parent] > max_files_per_folder:
+            if parent not in parent_index:
+                parent_index[parent] = 1
+                parent_current_count[parent] = 0
+
+            min_len = math.floor(parent_counts[parent] / max_files_per_folder)
+            rebinned_tuples.append((p, str(parent / str(parent_index[parent]).zfill(len(str(min_len))) / path.name)))
+            parent_current_count[parent] += 1
+
+            _quotient, remainder = divmod(parent_current_count[parent], max_files_per_folder)
+            if remainder == 0:
+                parent_index[parent] += 1
+        else:
+            untouched.append(p)
+
+    return untouched, rebinned_tuples
+
+
+def move_files(file_list):
+    for existing_path, new_path in file_list:
+        parent_dir = os.path.dirname(new_path)
+        os.makedirs(parent_dir, exist_ok=True)
+        try:
+            shutil.move(existing_path, new_path)
+        except Exception:
+            log.exception("Could not move %s", existing_path)

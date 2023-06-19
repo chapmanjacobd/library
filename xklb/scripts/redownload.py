@@ -116,7 +116,6 @@ def print_deleted(args, deleted_media) -> None:
     tbl = deepcopy(deleted_media)
     tbl = utils.list_dict_filter_bool(tbl, keep_0=False)
     tbl = utils.list_dict_filter_unique(tbl)
-    tbl = utils.list_dict_filter_keys(tbl, ["sparseness"])
     tbl = tbl[: int(args.limit)]
     tbl = utils.col_resize(tbl, "path", 25)
     tbl = utils.col_duration(tbl, "duration")

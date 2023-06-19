@@ -6,13 +6,14 @@ from typing import Dict, List, Tuple
 import humanize
 from tabulate import tabulate
 
-from xklb import db, player, utils
+from xklb import db, player, usage, utils
 from xklb.utils import log
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="library mv-list",
+        usage=usage.mv_list,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", default="25")

@@ -3,9 +3,9 @@ from pathlib import Path
 from time import sleep
 from typing import Dict, List, Tuple
 
-from xklb import db, usage, utils
+from xklb import db, history, usage, utils
 from xklb.consts import SC
-from xklb.player import generic_player, mark_media_watched, override_sort, printer
+from xklb.player import generic_player, override_sort, printer
 from xklb.utils import cmd, flatten, log
 
 
@@ -94,21 +94,24 @@ def construct_tabs_query(args) -> Tuple[str, dict]:
     query = f"""SELECT path
         , frequency
         , CASE
-            WHEN frequency = 'daily' THEN cast(STRFTIME('%s', datetime( time_played, 'unixepoch', '+1 Day' )) as int)
-            WHEN frequency = 'weekly' THEN cast(STRFTIME('%s', datetime( time_played, 'unixepoch', '+7 Days' )) as int)
-            WHEN frequency = 'monthly' THEN cast(STRFTIME('%s', datetime( time_played, 'unixepoch', '+1 Month' )) as int)
-            WHEN frequency = 'quarterly' THEN cast(STRFTIME('%s', datetime( time_played, 'unixepoch', '+3 Months' )) as int)
-            WHEN frequency = 'yearly' THEN cast(STRFTIME('%s', datetime( time_played, 'unixepoch', '+1 Year' )) as int)
+            WHEN frequency = 'daily' THEN cast(STRFTIME('%s', datetime( MAX(time_played), 'unixepoch', '+1 Day' )) as int)
+            WHEN frequency = 'weekly' THEN cast(STRFTIME('%s', datetime( MAX(time_played), 'unixepoch', '+7 Days' )) as int)
+            WHEN frequency = 'monthly' THEN cast(STRFTIME('%s', datetime( MAX(time_played), 'unixepoch', '+1 Month' )) as int)
+            WHEN frequency = 'quarterly' THEN cast(STRFTIME('%s', datetime( MAX(time_played), 'unixepoch', '+3 Months' )) as int)
+            WHEN frequency = 'yearly' THEN cast(STRFTIME('%s', datetime( MAX(time_played), 'unixepoch', '+1 Year' )) as int)
         END time_valid
+        , SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
         {', ' + ', '.join(args.cols) if args.cols else ''}
-    FROM media
+    FROM media m
+    LEFT JOIN history h on h.media_id = m.id
     WHERE 1=1
         and COALESCE(time_deleted,0) = 0
         {" ".join(args.filter_sql)}
         {"and time_valid < cast(STRFTIME('%s', datetime()) as int)" if not args.print else ''}
+    GROUP BY m.id
     ORDER BY 1=1
         {', ' + args.sort if args.sort else ''}
-        {', time_played, time_valid, path' if args.print else ''}
+        {', MAX(time_played), time_valid, path' if args.print else ''}
         , play_count
         , frequency = 'daily' desc
         , frequency = 'weekly' desc
@@ -132,7 +135,7 @@ def play(args, m: Dict) -> None:
     media_file = m["path"]
 
     cmd(*generic_player(args), media_file, strict=False)
-    mark_media_watched(args, [media_file])
+    history.add(args, [media_file], mark_done=True)
 
 
 def frequency_filter(args, media: List[Dict]) -> List[dict]:
@@ -182,4 +185,5 @@ def process_tabs_actions(args) -> None:
 
 def tabs() -> None:
     args = parse_args(SC.tabs)
+    history.create(args)
     process_tabs_actions(args)

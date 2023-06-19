@@ -79,7 +79,7 @@ def tube_add(args=None) -> None:
         args.playlists = list(utils.flatten([Path(p).read_text().splitlines() for p in args.playlists]))
 
     known_playlists = set()
-    if not args.force:
+    if not args.force and len(args.playlists) > 9:
         known_playlists = media.get_paths(args)
 
     for path in args.playlists:

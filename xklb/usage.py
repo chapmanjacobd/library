@@ -75,7 +75,7 @@ fsadd = """library fsadd [(--video) | --audio | --image |  --text | --filesystem
     Decode media to check for corruption (slow):
         library fsadd --check-corrupt 100 tv.db ./tv/  # scan through 100 percent of each file to evaluate how corrupt it is (very slow)
         library fsadd --check-corrupt   1 tv.db ./tv/  # scan through 1 percent of each file to evaluate how corrupt it is (takes about one second per file)
-        library fsadd --check-corrupt   5 tv.db ./tv/  # scan through 1 percent of each file to evaluate how corrupt it is (takes about ten seconds per file)
+        library fsadd --check-corrupt   5 tv.db ./tv/  # scan through 5 percent of each file to evaluate how corrupt it is (takes about ten seconds per file)
 
         library fsadd --check-corrupt   5 --delete-corrupt 30 tv.db ./tv/  # scan 5 percent of each file to evaluate how corrupt it is, if 30 percent or more of those checks fail then the file is deleted
 
@@ -746,8 +746,19 @@ tubeupdate = """library tubeupdate [--audio | --video] DATABASE
         library tubeupdate educational.db --extra https://www.youtube.com/channel/UCBsEUcR-ezAuxB2WlfeENvA/videos
 """
 
-galleryadd = None
-galleryupdate = None
+galleryadd = """library galleryadd DATABASE URLS
+
+Add gallery_dl URLs to download later or periodically update
+
+Passing the `--playlist-files` flag will treat each URL as a local file to read URLs from
+
+    library galleryadd my.db ./my-favorite-manhwa.txt
+"""
+
+galleryupdate = """library galleryupdate DATABASE URLS
+
+Check previously saved gallery_dl URLs for new content
+"""
 
 bigdirs = """library bigdirs DATABASE [--limit (4000)] [--depth (0)] [--sort-by deleted | played] [--size=+5MB]
 
@@ -774,9 +785,38 @@ christen = """library christen DATABASE [--run]
 
         library christen --dot-space video.db
 """
+
 cluster_sort = """library cluster-sort [input_path | stdin] [output_path | stdout]
 
     Group lines of text into sorted output
+
+    $ echo 'red apple
+    broccoli
+    yellow
+    green
+    orange apple
+    red apple' | library cluster-sort
+
+    orange apple
+    red apple
+    red apple
+    broccoli
+    green
+    yellow
+
+    $ echo 'red apple
+    broccoli
+    yellow
+    green
+    orange apple
+    red apple' | library cluster-sort --groups
+
+    [
+        {'common_prefix': '',
+        'grouped_paths': ['orange apple\n', 'red apple\n', 'red apple\n']},
+        {'common_prefix': '',
+        'grouped_paths': ['broccoli\n', 'green\n', 'yellow\n']}
+    ]
 """
 
 copy_play_counts = """library copy-play-counts DEST_DB SOURCE_DB ... [--source-prefix x] [--target-prefix y]
@@ -896,9 +936,81 @@ relmv = """library relmv [--dry-run] SOURCE ... DEST
         ) /mnt/d/80_Now_Listening/
 """
 
+mv_list = """library mv-list [--limit LIMIT] [--lower LOWER] [--upper UPPER] MOUNT_POINT DATABASE
+
+Free up space on a specific disk. Find candidates for moving data to a different mount point
+
+
+The program takes a mount point and a xklb database file. If you don't have a database file you can create one like this:
+
+    $ library fsadd --filesystem d.db ~/d/
+
+But this should definitely also work with xklb audio and video databases:
+
+    $ library mv-list /mnt/d/ video.db
+
+The program will print a table with a sorted list of folders which are good candidates for moving.
+Candidates are determined by how many files are in the folder (so you don't spend hours waiting for folders with millions of tiny files to copy over).
+The default is 4 to 4000--but it can be adjusted via the --lower and --upper flags.
+
+    ...
+    ├──────────┼─────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+    │ 4.0 GB   │       7 │ /mnt/d/71_Mealtime_Videos/unsorted/Miguel_4K/                                                                 │
+    ├──────────┼─────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+    │ 5.7 GB   │      10 │ /mnt/d/71_Mealtime_Videos/unsorted/Bollywood_Premium/                                                         │
+    ├──────────┼─────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+    │ 2.3 GB   │       4 │ /mnt/d/71_Mealtime_Videos/chief_wiggum/                                                                       │
+    ╘══════════╧═════════╧═══════════════════════════════════════════════════════════════════════════════════════════════════════════════╛
+    6702 other folders not shown
+
+    ██╗███╗░░██╗░██████╗████████╗██████╗░██╗░░░██╗░█████╗░████████╗██╗░█████╗░███╗░░██╗░██████╗
+    ██║████╗░██║██╔════╝╚══██╔══╝██╔══██╗██║░░░██║██╔══██╗╚══██╔══╝██║██╔══██╗████╗░██║██╔════╝
+    ██║██╔██╗██║╚█████╗░░░░██║░░░██████╔╝██║░░░██║██║░░╚═╝░░░██║░░░██║██║░░██║██╔██╗██║╚█████╗░
+    ██║██║╚████║░╚═══██╗░░░██║░░░██╔══██╗██║░░░██║██║░░██╗░░░██║░░░██║██║░░██║██║╚████║░╚═══██╗
+    ██║██║░╚███║██████╔╝░░░██║░░░██║░░██║╚██████╔╝╚█████╔╝░░░██║░░░██║╚█████╔╝██║░╚███║██████╔╝
+    ╚═╝╚═╝░░╚══╝╚═════╝░░░░╚═╝░░░╚═╝░░╚═╝░╚═════╝░░╚════╝░░░░╚═╝░░░╚═╝░╚════╝░╚═╝░░╚══╝╚═════╝░
+
+    Type "done" when finished
+    Type "more" to see more files
+    Paste a folder (and press enter) to toggle selection
+    Type "*" to select all files in the most recently printed table
+
+Then it will give you a prompt:
+
+    Paste a path:
+
+Wherein you can copy and paste paths you want to move from the table and the program will keep track for you.
+
+    Paste a path: /mnt/d/75_MovieQueue/720p/s11/
+    26 selected paths: 162.1 GB ; future free space: 486.9 GB
+
+You can also press the up arrow or paste it again to remove it from the list:
+
+    Paste a path: /mnt/d/75_MovieQueue/720p/s11/
+    25 selected paths: 159.9 GB ; future free space: 484.7 GB
+
+After you are done selecting folders you can press ctrl-d and it will save the list to a tmp file:
+
+    Paste a path: done
+
+        Folder list saved to /tmp/tmpa7x_75l8. You may want to use the following command to move files to an EMPTY folder target:
+
+            rsync -a --info=progress2 --no-inc-recursive --remove-source-files --files-from=/tmp/tmpa7x_75l8 -r --relative -vv --dry-run / jim:/free/real/estate/
+"""
+
 scatter = """library scatter [--limit LIMIT] [--policy POLICY] [--sort SORT] --srcmounts SRCMOUNTS DATABASE RELATIVE_PATHS ...
 
-    Balance size
+Balance files across filesystem folder trees or multiple devices (mostly useful for mergerfs)
+
+    Scatter filesystem folder trees (without mountpoints; limited functionality; good for balancing fs inodes)
+
+        $ library scatter scatter.db /test/{0,1,2,3,4,5,6,7,8,9}
+
+    Reduce number of files per folder (creates more folders)
+
+        $ library scatter scatter.db --max-files-per-folder 16000 /test/{0,1,2,3,4,5,6,7,8,9}
+
+    Multi-device re-bin: balance by size
 
         $ library scatter -m /mnt/d1:/mnt/d2:/mnt/d3:/mnt/d4/:/mnt/d5:/mnt/d6:/mnt/d7 ~/lb/fs/scatter.db subfolder/of/mergerfs/mnt
         Current path distribution:
@@ -945,17 +1057,13 @@ scatter = """library scatter [--limit LIMIT] [--policy POLICY] [--sort SORT] --s
         ### Move 1134 files to /mnt/d4 with this command: ###
         rsync -aE --xattrs --info=progress2 --remove-source-files --files-from=/tmp/tmphzb0gj92 / /mnt/d4
 
-    Balance device inodes for specific subfolder
+    Multi-device re-bin: balance device inodes for specific subfolder
 
         $ library scatter -m /mnt/d1:/mnt/d2 ~/lb/fs/scatter.db subfolder --group count --sort 'size desc'
 
-    Scatter the most recent 100 files
+    Multi-device re-bin: only consider the most recent 100 files
 
         $ library scatter -m /mnt/d1:/mnt/d2 -l 100 -s 'time_modified desc' ~/lb/fs/scatter.db /
-
-    Scatter without mountpoints (limited functionality; only good for balancing fs inodes)
-
-        $ library scatter scatter.db /test/{0,1,2,3,4,5,6,7,8,9}
 """
 surf = """library surf [--count COUNT] [--target-hosts TARGET_HOSTS] < stdin
 
@@ -993,4 +1101,9 @@ pushshift = """library pushshift DATABASE < stdin
 reddit_selftext = """library reddit-selftext DATABASE
 
     Extract URLs from reddit selftext from the reddit_posts table to the media table
+"""
+
+mpv_watchlater = """library mpv-watchlater DATABASE [--watch-later-directory ~/.config/mpv/watch_later/]
+
+    Extract timestamps from MPV to the history table
 """

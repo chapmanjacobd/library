@@ -1,7 +1,8 @@
 import argparse
 from pathlib import Path
 
-from xklb import db, usage, utils
+from xklb import db, history, usage, utils
+from xklb.scripts.dedupe_db import dedupe_rows
 from xklb.utils import log
 
 
@@ -27,45 +28,70 @@ def parse_args() -> argparse.Namespace:
 def copy_play_count(args, source_db) -> None:
     args.db.attach("src", Path(source_db).resolve())
 
-    copy_counts = args.db.query(
-        """
-        SELECT
-            *
-        FROM
-            src.media
-        WHERE
-            src.media.play_count > 0
-            or
-            src.media.playhead > 0
-        """,
-    )
+    copy_counts = []
+    try:
+        # TODO delete after 2024-06-01
+        old_schema = list(
+            args.db.query(
+                """
+                SELECT
+                    path, play_count, time_played, playhead
+                FROM
+                    src.media
+                WHERE
+                    src.media.play_count > 0
+                    OR
+                    src.media.playhead > 0
+                """,
+            )
+        )
 
-    modified_row_count = 0
-    with args.db.conn:
-        for d in copy_counts:
-            renamed_path = d["path"].replace(args.source_prefix, args.target_prefix, 1)
-            log.debug(renamed_path)
+        new_schema = []
+        for d in old_schema:
+            if d["playhead"] is None or d["playhead"] == 0:
+                new_schema.append(
+                    {"path": d["path"], "time_played": d["time_played"], "playhead": d["playhead"], "done": False}
+                )
+            else:
+                for _ in range(d["playhead"]):
+                    new_schema.append(
+                        {"path": d["path"], "time_played": d["time_played"], "playhead": d["playhead"], "done": True}
+                    )
+        copy_counts.extend(new_schema)
+    except:
+        log.info("Old schema playhead could not be read")
 
-            sql = """
-            UPDATE
-                main.media
-            SET
-                play_count = :play_count
-                , time_played = :time_played
-                , playhead = :playhead
-            WHERE
-                main.media.path = :renamed_path
-            """
-            cursor = args.db.conn.execute(sql, {**d, "renamed_path": renamed_path})
-            modified_row_count += cursor.rowcount
+    try:
+        copy_counts.extend(
+            list(
+                args.db.query(
+                    """
+                SELECT
+                    path, time_played, playhead, done
+                FROM
+                    src.media m
+                JOIN src.history h on h.media_id = m.id
+                WHERE
+                    h.time_played > 0
+                    OR
+                    h.playhead > 0
+                """,
+                )
+            )
+        )
+    except:
+        log.info("New schema playhead could not be read")
 
-    log.info("Updated %s rows", modified_row_count)
+    for d in copy_counts:
+        renamed_path = d["path"].replace(args.source_prefix, args.target_prefix, 1)
+        history.add(args, [renamed_path], time_played=d["time_played"], playhead=d["playhead"], mark_done=d["done"])
 
 
 def copy_play_counts() -> None:
     args = parse_args()
     for s_db in args.source_dbs:
         copy_play_count(args, s_db)
+    dedupe_rows(args, "history", ["id"], ["media_id", "time_played"])
 
 
 if __name__ == "__main__":

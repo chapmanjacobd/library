@@ -121,15 +121,6 @@ def parse_args(action, usage) -> argparse.Namespace:
     return args
 
 
-def calculate_sparseness(stat) -> int:
-    if stat.st_size == 0:
-        sparseness = 0
-    else:
-        blocks_allocated = stat.st_blocks * 512
-        sparseness = blocks_allocated / stat.st_size
-    return sparseness
-
-
 def extract_metadata(mp_args, path) -> Optional[Dict[str, int]]:
     log.debug(path)
 
@@ -146,18 +137,12 @@ def extract_metadata(mp_args, path) -> Optional[Dict[str, int]]:
 
     media = {
         "path": path,
-        "play_count": 0,
-        "time_played": 0,
-        "playhead": 0,
         "size": stat.st_size,
         "time_created": int(stat.st_ctime),
         "time_modified": int(stat.st_mtime) or consts.now(),
         "time_downloaded": consts.APPLICATION_START,
         "time_deleted": 0,
     }
-
-    if hasattr(stat, "st_blocks"):
-        media = {**media, "sparseness": calculate_sparseness(stat)}
 
     if mp_args.profile == DBType.filesystem:
         media = {**media, "is_dir": Path(path).is_dir()}
@@ -330,7 +315,7 @@ def scan_path(args, path_str: str) -> int:
         "extractor_config": utils.filter_namespace(args, ["ocr", "speech_recognition", "scan_subtitles"]),
         "time_deleted": 0,
     }
-    args.playlist_id = playlists.add(args, str(path), info)
+    args.playlist_id = playlists.add(args, str(path), info, check_subpath=True)
 
     print(f"[{path}] Building file list...")
     new_files = find_new_files(args, path)

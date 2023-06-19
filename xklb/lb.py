@@ -7,7 +7,6 @@ from xklb.fs_extract import fs_add, fs_update
 from xklb.gdl_extract import gallery_add, gallery_update
 from xklb.hn_extract import hacker_news_add
 from xklb.play_actions import filesystem, listen, read, view, watch
-from xklb.playback import playback_next, playback_now, playback_pause, playback_stop
 from xklb.praw_extract import reddit_add, reddit_update
 from xklb.scripts.bigdirs import bigdirs
 from xklb.scripts.block import block
@@ -21,11 +20,13 @@ from xklb.scripts.history import history
 from xklb.scripts.merge_dbs import merge_dbs
 from xklb.scripts.merge_online_local import merge_online_local
 from xklb.scripts.mining.extract_links import extract_links
+from xklb.scripts.mining.mpv_watchlater import mpv_watchlater
 from xklb.scripts.mining.nouns import nouns
 from xklb.scripts.mining.pushshift import pushshift_extract
 from xklb.scripts.mining.reddit_selftext import reddit_selftext
 from xklb.scripts.move_list import move_list
 from xklb.scripts.optimize_db import optimize_db
+from xklb.scripts.playback_control import playback_next, playback_now, playback_pause, playback_stop
 from xklb.scripts.playlists import playlists
 from xklb.scripts.redownload import redownload
 from xklb.scripts.relmv import relmv
@@ -102,6 +103,8 @@ def usage() -> str:
       lb hnadd                 Create a hackernews database (this takes a few days)
 
       lb extract-links         Extract links from lists of web pages
+
+      lb mpv-watchlater        Import timestamps from mpv watchlater to history table
 
       lb cluster-sort          Lines -> sorted by sentence similarity groups (stdin)
       lb nouns                 Unstructured text -> compound nouns (stdin)
@@ -241,6 +244,9 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     subp_nouns.set_defaults(func=nouns)
     subp_cluster_sort = add_parser(subparsers, "cluster-sort", ["cs", "clustersort", "cluster_sort"])
     subp_cluster_sort.set_defaults(func=cluster_sort)
+
+    subp_mpv_watchlater = add_parser(subparsers, "mpv-watchlater")
+    subp_mpv_watchlater.set_defaults(func=mpv_watchlater)
 
     subp_reddit_selftext = add_parser(subparsers, "reddit-selftext")
     subp_reddit_selftext.set_defaults(func=reddit_selftext)

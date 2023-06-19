@@ -1,32 +1,4 @@
-
-lb bigdirs ~/lb/video.db
-
-/mnt/d/75_MovieQueue/unsorted/NRMwalkthroughHD/ should be 200GB
-
-
-- move mpv specific playhead code to a script subcommand
-
-option to delete mpv watch_later file if media file does not exist
-
-- dlstatus print errors also:
-
-sqlite lb/fs/blogspot.db 'select error, count(*) from media group by 1 order by 2'
-[{"error": "NoExtractorError", "count(*)": 21},
- {"error": null, "count(*)": 46},
- {"error": "HTTPError", "count(*)": 112},
- {"error": "HTTPNotFoundError", "count(*)": 118}]
-
-- if limit is less than 120, check up to 120 files to see if they exist
-
 - use socket-play as default playback -- accurately get playhead
-
-- move time_played, playhead, and other sparse or ephemeral data to its own table
-
-add time_first_played, time_last_played; remove time_played instead use play_count
-
-- scatter -- flatten to new directories
-
-default 16000 files, flat subdirectory
 
 - POIs CLI -- save your trip plans and see places to go with automated day trip itineraries, geopandas buffer
 
@@ -40,12 +12,16 @@ default 16000 files, flat subdirectory
 
 - improve dlstatus subcommand tests
 
-- scan bpm and key sig  https://github.com/aubio/aubio https://github.com/tyiannak/pyAudioAnalysis
+- scan bpm and key sig
+
+    https://github.com/aubio/aubio
+    https://github.com/tyiannak/pyAudioAnalysis
 
 - cluster images
 
-https://github.com/HughKu/Im2txt
-https://github.com/immich-app/immich/tree/main/machine-learning/app
+    https://github.com/rhsimplex/image-match/blob/master/image_match/goldberg.py
+    https://github.com/HughKu/Im2txt
+    https://github.com/immich-app/immich/tree/main/machine-learning/app
 
 - CLI EDA tool
 

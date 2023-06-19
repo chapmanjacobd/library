@@ -29,6 +29,7 @@ yt_recoverable_errors = re.compile(
 .*Postprocessing
 .*Premieres in
 .*user.*not allowed
+.*Upgrade now
 .*read operation timed out
 .*Could not connect
 .*restricted

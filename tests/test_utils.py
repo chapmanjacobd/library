@@ -502,19 +502,81 @@ class TestAllowlist(unittest.TestCase):
         assert {"title": "Movie 5", "genre": "Action Comedy"} not in filtered_media
 
 
-class TestTrimPathSegments(unittest.TestCase):
-    def test_trim_path_segments(self):
-        path = "/aaaaaaaaaa/fans/001.jpg"
-        desired_length = 16
-        expected_result = "/aaaa/fans/001.jpg"
-        assert utils.trim_path_segments(path, desired_length) == p(expected_result)
+def test_trim_path_segments():
+    path = "/aaaaaaaaaa/fans/001.jpg"
+    desired_length = 16
+    expected_result = "/aaaa/fans/001.jpg"
+    assert utils.trim_path_segments(path, desired_length) == p(expected_result)
 
-        path = "/ao/bo/co/do/eo/fo/go/ho"
-        desired_length = 9
-        expected_result = "/a/b/c/d/e/f/g/h"
-        assert utils.trim_path_segments(path, desired_length) == p(expected_result)
+    path = "/ao/bo/co/do/eo/fo/go/ho"
+    desired_length = 9
+    expected_result = "/a/b/c/d/e/f/g/h"
+    assert utils.trim_path_segments(path, desired_length) == p(expected_result)
 
-        path = "/a/b/c"
-        desired_length = 10
-        expected_result = "/a/b/c"
-        assert utils.trim_path_segments(path, desired_length) == p(expected_result)
+    path = "/a/b/c"
+    desired_length = 10
+    expected_result = "/a/b/c"
+    assert utils.trim_path_segments(path, desired_length) == p(expected_result)
+
+
+def test_rebin_folders():
+    def dummy_folders(num_paths, base="/tmp/"):
+        return [f"{base}{x}" for x in range(1, num_paths + 1)]
+
+    untouched, rebinned = utils.rebin_folders(dummy_folders(5), 2)
+    assert untouched == []
+    expected = ["/tmp/1/1", "/tmp/1/2", "/tmp/2/3", "/tmp/2/4", "/tmp/3/5"]
+    assert list(t[1] for t in rebinned) == [p(s) for s in expected]
+
+    untouched, rebinned = utils.rebin_folders(dummy_folders(5), 4)
+    expected = ["/tmp/1/1", "/tmp/1/2", "/tmp/1/3", "/tmp/1/4", "/tmp/2/5"]
+    assert list(t[1] for t in rebinned) == [p(s) for s in expected]
+    assert untouched == []
+
+    untouched, rebinned = utils.rebin_folders(dummy_folders(5) + dummy_folders(5, "/tmp/f/"), 5)
+    expected = [
+        "/tmp/1",
+        "/tmp/2",
+        "/tmp/3",
+        "/tmp/4",
+        "/tmp/5",
+        "/tmp/f/1",
+        "/tmp/f/2",
+        "/tmp/f/3",
+        "/tmp/f/4",
+        "/tmp/f/5",
+    ]
+    assert rebinned == []
+    assert untouched == [p(s) for s in expected]
+
+    untouched, rebinned = utils.rebin_folders(dummy_folders(5) + dummy_folders(5, "/tmp/f/"), 6)
+    expected = [
+        "/tmp/1",
+        "/tmp/2",
+        "/tmp/3",
+        "/tmp/4",
+        "/tmp/5",
+        "/tmp/f/1",
+        "/tmp/f/2",
+        "/tmp/f/3",
+        "/tmp/f/4",
+        "/tmp/f/5",
+    ]
+    assert rebinned == []
+    assert untouched == [p(s) for s in expected]
+
+    untouched, rebinned = utils.rebin_folders(dummy_folders(5) + dummy_folders(5, "/tmp/f/"), 4)
+    expected = [
+        "/tmp/1/1",
+        "/tmp/1/2",
+        "/tmp/1/3",
+        "/tmp/1/4",
+        "/tmp/2/5",
+        "/tmp/f/1/1",
+        "/tmp/f/1/2",
+        "/tmp/f/1/3",
+        "/tmp/f/1/4",
+        "/tmp/f/2/5",
+    ]
+    assert list(t[1] for t in rebinned) == [p(s) for s in expected]
+    assert untouched == []

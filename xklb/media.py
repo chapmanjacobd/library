@@ -31,25 +31,26 @@ def get(args, path):
 
 def get_paths(args):
     tables = args.db.table_names()
+
     known_playlists = set()
     if "media" in tables:
         known_playlists.update(d["path"] for d in args.db.query("SELECT path from media"))
+
+        m_columns = db.columns(args, "media")
+        if "webpath" in m_columns:
+            known_playlists.update(d["webpath"] for d in args.db.query("SELECT webpath from media"))
+
     if "playlists" in tables:
         known_playlists.update(d["path"] for d in args.db.query("SELECT path from playlists"))
+
     return known_playlists
 
 
 def consolidate(v: dict) -> Optional[dict]:
-    v = {
-        **(v.pop("photo", None) or {}),
-        **(v.pop("blog", None) or {}),
-        **(v.pop("location", None) or {}),
-        **(v.pop("post", None) or {}),
-        **v,
-    }
-
     if v.get("title") in ("[Deleted video]", "[Private video]"):
         return None
+
+    v = utils.flatten_dict(v, passthrough_keys=["automatic_captions", "http_headers", "subtitles"])
 
     upload_date = safe_unpack(
         v.pop("upload_date", None),
@@ -88,9 +89,6 @@ def consolidate(v: dict) -> Optional[dict]:
     cv["time_modified"] = 0  # this should be 0 if the file has never been downloaded
     cv["time_deleted"] = 0
     cv["time_downloaded"] = 0
-    cv["play_count"] = 0
-    cv["time_played"] = 0
-    cv["playhead"] = 0
     language = v.pop("language", None)
     cv["tags"] = combine(
         "language:" + language if language else None,
@@ -182,11 +180,6 @@ def _add(args, entry):
     media_id = args.db.pop("select id from media where path = ?", [entry["path"]])
     if media_id:
         entry["id"] = media_id
-
-        # remove default 0s to not overwrite existing value during upsert
-        entry.pop("play_count", None)
-        entry.pop("time_played", None)
-        entry.pop("playhead", None)
 
         args.db["media"].upsert(utils.dict_filter_bool(entry), pk="id", alter=True)
     else:

@@ -61,8 +61,8 @@ TIME_COLUMNS = (
     "time_created",
     "time_played",
     "time_valid",
-    "time_partial_first",
-    "time_partial_last",
+    "time_first_played",
+    "time_last_played",
     "playhead",
 )
 
@@ -174,7 +174,6 @@ def get_text_files(path: Path, image_recognition=False, speech_recognition=False
 
 
 time_facets = [
-    "all",
     "watching",
     "watched",
     "deleted",
@@ -186,6 +185,7 @@ time_facets = [
 frequency = ["daily", "weekly", "monthly", "quarterly", "yearly"]
 
 PLAYLIST_KNOWN_KEYS = (
+    "description",
     "url",
     "duration",
     "view_count",

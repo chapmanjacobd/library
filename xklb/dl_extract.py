@@ -183,6 +183,7 @@ def construct_query(args) -> Tuple[str, dict]:
                 {', m.time_downloaded' if 'time_downloaded' in m_columns else ''}
                 {', m.time_deleted' if 'time_deleted' in m_columns else ''}
                 {', m.error' if 'error' in m_columns else ''}
+                , 'Playlist-less media' as extractor_key
             FROM media m
             WHERE 1=1
                 {'and COALESCE(m.time_downloaded,0) = 0' if 'time_downloaded' in m_columns else ''}
@@ -204,12 +205,12 @@ def construct_query(args) -> Tuple[str, dict]:
 
 def process_downloadqueue(args) -> List[dict]:
     if args.playlist_files:
-        known_playlists = set()
-        if not args.force:
-            known_playlists = get_paths(args)
-
         Path(args.database).touch()
         playlist_files_data = set(utils.flatten(Path(p).read_text().splitlines() for p in args.playlists))
+
+        known_playlists = set()
+        if not args.force and len(playlist_files_data) > 9:
+            known_playlists = get_paths(args)
         playlists = list(playlist_files_data - known_playlists)
         log.warning(
             "%s new - %s known = %s to download",

@@ -3,6 +3,7 @@ import argparse
 from tabulate import tabulate
 
 from xklb import consts, db, player, usage, utils
+from xklb.history import create
 from xklb.utils import log
 
 
@@ -39,8 +40,8 @@ def parse_args() -> argparse.Namespace:
         "facet",
         metavar="facet",
         type=str.lower,
-        default="all",
-        const="all",
+        default="watching",
+        const="watching",
         nargs="?",
         help="One of: %(choices)s (default: %(default)s)",
     )
@@ -101,10 +102,11 @@ def recent_media(args, time_column):
 
 def history() -> None:
     args = parse_args()
+    create(args)
 
     m_columns = args.db["media"].columns_dict
 
-    if args.facet.startswith(("all", "watching")):
+    if args.facet.startswith("watching"):
         print("Partially watched:")
         tbl = player.historical_usage(args, args.frequency, "time_played", "and coalesce(play_count, 0)=0")
         print_history(tbl)
@@ -113,19 +115,22 @@ def history() -> None:
                 {', title' if 'title' in m_columns else ''}
                 {', duration' if 'duration' in m_columns else ''}
                 {', subtitle_count' if 'subtitle_count' in m_columns else ''}
-                {', time_played' if 'time_played' in m_columns else ''}
-                {', playhead' if 'playhead' in m_columns else ''}
-            FROM media
+                , MAX(h.time_played) time_played
+                , SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
+                , FIRST_VALUE(h.playhead) OVER (PARTITION BY h.media_id ORDER BY h.time_played DESC) playhead
+            FROM media m
+            LEFT JOIN history h on h.media_id = m.id
             WHERE coalesce(time_deleted, 0) = 0
                 and coalesce(playhead, 0) > 60
                 and coalesce(play_count, 0) = 0
+            GROUP BY m.id
             ORDER BY time_played desc, playhead desc
             LIMIT {args.limit or 5}
         """
         tbl = list(args.db.query(query))
         print_recent(tbl, "time_played")
 
-    elif args.facet.startswith(("all", "watched")):
+    elif args.facet.startswith("watched"):
         print("Finished watching:")
         tbl = player.historical_usage(args, args.frequency, "time_played", "and coalesce(play_count, 0)>0")
         print_history(tbl)
@@ -134,9 +139,12 @@ def history() -> None:
                 {', title' if 'title' in m_columns else ''}
                 {', duration' if 'duration' in m_columns else ''}
                 {', subtitle_count' if 'subtitle_count' in m_columns else ''}
-                {', time_played' if 'time_played' in m_columns else ''}
-            FROM media
+                , MAX(h.time_played) time_played
+                , SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
+            FROM media m
+            LEFT JOIN history h on h.media_id = m.id
             WHERE coalesce(play_count, 0)>0
+            GROUP BY m.id
             ORDER BY time_played desc, path
             LIMIT {args.limit or 5}
         """

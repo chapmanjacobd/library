@@ -28,7 +28,7 @@ for title, subcommand in [
     ("Convert selftext links to media table", "reddit-selftext"),
     ("Merge SQLITE databases", "merge-dbs"),
     ("Dedupe SQLITE tables", "dedupe-db"),
-    ("Sort lines by similarity", "cluster-sort"),
+    ("Sort lines of text by similarity", "cluster-sort"),
     ("Move files preserving parent folder hierarchy", "relmv"),
     ("Automatic tab loader", "surf"),
     ("Clean filenames", "christen"),
@@ -249,94 +249,6 @@ Recently, this functionality has also been integrated into watch/listen subcomma
 
 </details>
 
-
-### library mv-list: free up space
-
-<details><summary>Find candidates for moving to a different mount point</summary>
-
-The program takes a mount point and a xklb database file. If you don't have a database file you can create one like this:
-
-    $ library fsadd --filesystem d.db ~/d/
-
-But this should definitely also work with xklb audio and video databases:
-
-    $ library mv-list /mnt/d/ video.db
-
-The program will print a table with a sorted list of folders which are good candidates for moving.
-Candidates are determined by how many files are in the folder (so you don't spend hours waiting for folders with millions of tiny files to copy over).
-The default is 4 to 4000--but it can be adjusted via the --lower and --upper flags.
-
-    ...
-    ├──────────┼─────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-    │ 4.0 GB   │       7 │ /mnt/d/71_Mealtime_Videos/unsorted/Miguel_4K/                                                                 │
-    ├──────────┼─────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-    │ 5.7 GB   │      10 │ /mnt/d/71_Mealtime_Videos/unsorted/Bollywood_Premium/                                                         │
-    ├──────────┼─────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-    │ 2.3 GB   │       4 │ /mnt/d/71_Mealtime_Videos/chief_wiggum/                                                                       │
-    ╘══════════╧═════════╧═══════════════════════════════════════════════════════════════════════════════════════════════════════════════╛
-    6702 other folders not shown
-
-    ██╗███╗░░██╗░██████╗████████╗██████╗░██╗░░░██╗░█████╗░████████╗██╗░█████╗░███╗░░██╗░██████╗
-    ██║████╗░██║██╔════╝╚══██╔══╝██╔══██╗██║░░░██║██╔══██╗╚══██╔══╝██║██╔══██╗████╗░██║██╔════╝
-    ██║██╔██╗██║╚█████╗░░░░██║░░░██████╔╝██║░░░██║██║░░╚═╝░░░██║░░░██║██║░░██║██╔██╗██║╚█████╗░
-    ██║██║╚████║░╚═══██╗░░░██║░░░██╔══██╗██║░░░██║██║░░██╗░░░██║░░░██║██║░░██║██║╚████║░╚═══██╗
-    ██║██║░╚███║██████╔╝░░░██║░░░██║░░██║╚██████╔╝╚█████╔╝░░░██║░░░██║╚█████╔╝██║░╚███║██████╔╝
-    ╚═╝╚═╝░░╚══╝╚═════╝░░░░╚═╝░░░╚═╝░░╚═╝░╚═════╝░░╚════╝░░░░╚═╝░░░╚═╝░╚════╝░╚═╝░░╚══╝╚═════╝░
-
-    Type "done" when finished
-    Type "more" to see more files
-    Paste a folder (and press enter) to toggle selection
-    Type "*" to select all files in the most recently printed table
-
-Then it will give you a prompt:
-
-    Paste a path:
-
-Wherein you can copy and paste paths you want to move from the table and the program will keep track for you.
-
-    Paste a path: /mnt/d/75_MovieQueue/720p/s11/
-    26 selected paths: 162.1 GB ; future free space: 486.9 GB
-
-You can also press the up arrow or paste it again to remove it from the list:
-
-    Paste a path: /mnt/d/75_MovieQueue/720p/s11/
-    25 selected paths: 159.9 GB ; future free space: 484.7 GB
-
-After you are done selecting folders you can press ctrl-d and it will save the list to a tmp file:
-
-    Paste a path: done
-
-        Folder list saved to /tmp/tmpa7x_75l8. You may want to use the following command to move files to an EMPTY folder target:
-
-            rsync -a --info=progress2 --no-inc-recursive --remove-source-files --files-from=/tmp/tmpa7x_75l8 -r --relative -vv --dry-run / jim:/free/real/estate/
-
-</details>
-
-
-### Scatter your data across disks (for [mergerfs](https://github.com/trapexit/mergerfs))
-
-<details><summary>Balance files across devices or filesystems</summary>
-
-    library scatter -h
-    usage: {usage.scatter}
-
-    positional arguments:
-    database
-    relative_paths        Paths to scatter, relative to the root of your mergerfs mount; any path substring is valid
-
-    options:
-    -h, --help            show this help message and exit
-    --limit LIMIT, -L LIMIT, -l LIMIT, -queue LIMIT, --queue LIMIT
-    --policy POLICY, -p POLICY
-    --group GROUP, -g GROUP
-    --sort SORT, -s SORT  Sort files before moving
-    --usage, -u           Show disk usage
-    --verbose, -v
-    --srcmounts SRCMOUNTS, -m SRCMOUNTS
-                            /mnt/d1:/mnt/d2
-
-</details>
-
 ### Pipe to [mnamer](https://github.com/jkwill87/mnamer)
 
 <details><summary>Rename poorly named files</summary>
@@ -348,7 +260,9 @@ After you are done selecting folders you can press ctrl-d and it will save the l
 
 </details>
 
-### Music alarm clock (via termux crontab)
+### Music alarm clock
+
+<details><summary>via termux crontab</summary>
 
 Wake up to your own music
 
@@ -361,6 +275,8 @@ Wake up to your own music _only when you are *not* home_ (computer on local-only
 Wake up to your own music on your Chromecast speaker group _only when you are home_
 
     30 7 * * * ssh 192.168.1.12 library listen --cast --cast-to "Bedroom pair"
+
+</details>
 
 ### Pipe to [lowcharts](https://github.com/juan-leon/lowcharts)
 
