@@ -183,6 +183,8 @@ def search() -> None:
 
     if args.open:
         for d in merged_captions:
+            print(d["text"])
+
             args.start = str(d["time"] - 2)
             args.end = str(int(d["end"] + 1.5))
             m = args.db.pop_dict("select * from media where path = ?", [d["path"]])

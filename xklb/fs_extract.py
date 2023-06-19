@@ -392,7 +392,7 @@ def fs_update(args=None) -> None:
     )
 
     for playlist in fs_playlists:
-        extractor_config = json.loads((playlist.get("extractor_config") or "{}"))
+        extractor_config = json.loads(playlist.get("extractor_config") or "{}")
         args_env = argparse.Namespace(
             **{**extractor_config, **args.__dict__, "profile": playlist["profile"]},
         )

@@ -116,23 +116,24 @@ def download_status() -> None:
 
     printer(args, query, bindings)
 
-    query = """
-    select error, count(*) count
-    from media
-    where error is not null
-    group by 1
-    order by 2
-    """
-    errors = list(args.db.query(query))
+    if "error" in db.columns(args, "media"):
+        query = """
+        select error, count(*) count
+        from media
+        where error is not null
+        group by 1
+        order by 2
+        """
+        errors = list(args.db.query(query))
 
-    common_errors = []
-    other_errors = []
-    for error in errors:
-        if error["count"] == 1:
-            other_errors.append(error)
-        else:
-            common_errors.append(error)
+        common_errors = []
+        other_errors = []
+        for error in errors:
+            if error["count"] == 1:
+                other_errors.append(error)
+            else:
+                common_errors.append(error)
 
-    common_errors.append({"error": "Other", "count": len(other_errors)})
-    common_errors.append({"error": "Total", "count": sum(d["count"] for d in errors)})
-    print(tabulate(common_errors, tablefmt="fancy_grid", headers="keys", showindex=False))
+        common_errors.append({"error": "Other", "count": len(other_errors)})
+        common_errors.append({"error": "Total", "count": sum(d["count"] for d in errors)})
+        print(tabulate(common_errors, tablefmt="fancy_grid", headers="keys", showindex=False))

@@ -214,7 +214,7 @@ def scatter() -> None:
         print(len(rebinned), "files would be moved (only 10 shown)")
         print(len(untouched), "files would not be moved")
 
-        if utils.confirm(f"Move files ?"):
+        if utils.confirm("Move files ?"):
             utils.move_files(rebinned)
         sys.exit(0)
 

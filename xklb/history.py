@@ -3,7 +3,10 @@ from xklb import consts, utils
 
 def create(args):
     args.db.create_table(
-        "history", {"media_id": int, "time_played": int, "playhead": int, "done": int}, pk="id", if_not_exists=True
+        "history",
+        {"media_id": int, "time_played": int, "playhead": int, "done": int},
+        pk="id",
+        if_not_exists=True,
     )
 
 
