@@ -399,16 +399,18 @@ def get_ordinal_media(args, m: Dict, ignore_paths=None) -> Dict:
             SELECT
                 {args.select_sql}
                 , SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
-            FROM {'media' if args.play_in_order >= consts.SIMILAR_NO_FILTER_NO_FTS else args.table}
+            FROM {'media' if args.play_in_order >= consts.SIMILAR_NO_FILTER_NO_FTS else args.table} m
             LEFT JOIN history h on h.media_id = m.id
             WHERE 1=1
                 and path like :candidate
                 {filter_args_sql(args, m_columns)}
                 {'' if args.play_in_order >= consts.SIMILAR_NO_FILTER else (" ".join(args.filter_sql) or '')}
                 {"and path not in ({})".format(",".join([f":ignore_path{i}" for i in range(len(ignore_paths))])) if len(ignore_paths) > 0 else ''}
+            GROUP BY m.id
             ORDER BY play_count, path
             LIMIT 1000
             """
+
         ignore_path_params = {f"ignore_path{i}": value for i, value in enumerate(ignore_paths)}
         bindings = {"candidate": candidate + "%", **ignore_path_params}
         if args.play_in_order >= consts.SIMILAR_NO_FILTER:
@@ -424,7 +426,7 @@ def get_ordinal_media(args, m: Dict, ignore_paths=None) -> Dict:
         if len(similar_videos) > TOO_MANY_SIMILAR or len(similar_videos) == total_media:
             return m
 
-        if len(similar_videos) > 0:
+        if len(similar_videos) > 1:
             commonprefix = os.path.commonprefix([d["path"] for d in similar_videos])
             log.debug(commonprefix)
             PREFIX_LENGTH_THRESHOLD = 3
@@ -456,6 +458,7 @@ def get_related_media(args, m: Dict) -> List[Dict]:
             and path != :path
             {filter_args_sql(args, m_columns)}
             {'' if args.related >= consts.RELATED_NO_FILTER else (" ".join(args.filter_sql) or '')}
+        GROUP BY m.id
         ORDER BY play_count
             , m.path like "http%"
             , {'rank' if 'sort' in args.defaults else f'ntile(1000) over (order by rank), {args.sort}'}
@@ -499,6 +502,7 @@ def get_dir_media(args, dirs: List, include_subdirs=False) -> List[Dict]:
             {filter_args_sql(args, m_columns)}
             {filter_paths}
             {'' if args.related >= consts.DIRS_NO_FILTER else (" ".join(args.filter_sql) or '')}
+        GROUP BY m.id
         ORDER BY play_count
             , m.path LIKE "http%"
             {'' if 'sort' in args.defaults else ', ' + args.sort}

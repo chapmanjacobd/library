@@ -131,7 +131,7 @@ def playlists() -> None:
             , count(*) count
         from media m
         left join ({query}) p on p.id = m.playlist_id
-        group by coalesce(p.path, "Playlist-less media")
+        group by m.playlist_id, coalesce(p.path, "Playlist-less media")
         order by count, p.path
         """
 

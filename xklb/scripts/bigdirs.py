@@ -135,6 +135,7 @@ def get_table(args) -> List[dict]:
         WHERE 1=1
             {'and time_downloaded > 0' if 'time_downloaded' in m_columns else ''}
             {" ".join(args.filter_sql)}
+        GROUP BY m.id
         ORDER BY path
         """,
             args.filter_bindings,
