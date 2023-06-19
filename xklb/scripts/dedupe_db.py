@@ -12,7 +12,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--only-columns", action=utils.ArgparseList, help="Comma separated column names to upsert")
     parser.add_argument("--primary-keys", "--pk", action=utils.ArgparseList, help="Comma separated primary keys")
     parser.add_argument(
-        "--business-keys", "--bk", action=utils.ArgparseList, required=True, help="Comma separated business keys"
+        "--business-keys",
+        "--bk",
+        action=utils.ArgparseList,
+        required=True,
+        help="Comma separated business keys",
     )
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
     parser.add_argument("--verbose", "-v", action="count", default=0)
@@ -41,7 +45,7 @@ def dedupe_rows(args, tablename, primary_keys, business_keys):
                 FROM {tablename}
                 GROUP BY {','.join(business_keys)}
             )
-            """
+            """,
         )
 
 
@@ -73,7 +77,7 @@ def dedupe_db() -> None:
             data = list(
                 args.db.query(
                     f"""
-                    SELECT {','.join(args.business_keys + [col])}
+                    SELECT {','.join([*args.business_keys, col])}
                     FROM {args.table}
                     WHERE {f'NULLIF({col}, 0)' if args.skip_0 else col} IS NOT NULL
                     AND ({','.join(args.business_keys)}) IN (
@@ -82,18 +86,19 @@ def dedupe_db() -> None:
                         WHERE {col} IS NULL
                     )
                     ORDER BY {','.join(args.primary_keys)}
-                    """
-                )
+                    """,
+                ),
             )
             log.info("%s (%s rows)", col, len(data))
 
             with args.db.conn:
-                gen_where_sql = lambda row: " AND ".join(
-                    [f"{key} = {args.db.quote(row[key])}" for key in args.business_keys]
-                )
-                gen_update_sql = (
-                    lambda row: f"UPDATE {args.table} SET {col} = {args.db.quote(row[col])} WHERE {gen_where_sql(row)};"
-                )
+
+                def gen_where_sql(row):
+                    return " AND ".join([f"{key} = {args.db.quote(row[key])}" for key in args.business_keys])
+
+                def gen_update_sql(row):
+                    return f"UPDATE {args.table} SET {col} = {args.db.quote(row[col])} WHERE {gen_where_sql(row)};"
+
                 args.db.conn.executescript("\n".join([gen_update_sql(row) for row in data]))
 
     dedupe_rows(args, args.table, primary_keys=args.primary_keys, business_keys=args.business_keys)

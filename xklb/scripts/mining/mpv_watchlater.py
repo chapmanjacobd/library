@@ -47,8 +47,8 @@ def mpv_watchlater():
             """
         select id, path from media
         where coalesce(time_deleted, 0) = 0
-        """
-        )
+        """,
+        ),
     )
     scan_and_import(args, media)
 

@@ -43,19 +43,19 @@ def copy_play_count(args, source_db) -> None:
                     OR
                     src.media.playhead > 0
                 """,
-            )
+            ),
         )
 
         new_schema = []
         for d in old_schema:
             if d["playhead"] is None or d["playhead"] == 0:
                 new_schema.append(
-                    {"path": d["path"], "time_played": d["time_played"], "playhead": d["playhead"], "done": False}
+                    {"path": d["path"], "time_played": d["time_played"], "playhead": d["playhead"], "done": False},
                 )
             else:
                 for _ in range(d["playhead"]):
                     new_schema.append(
-                        {"path": d["path"], "time_played": d["time_played"], "playhead": d["playhead"], "done": True}
+                        {"path": d["path"], "time_played": d["time_played"], "playhead": d["playhead"], "done": True},
                     )
         copy_counts.extend(new_schema)
     except:
@@ -76,8 +76,8 @@ def copy_play_count(args, source_db) -> None:
                     OR
                     h.playhead > 0
                 """,
-                )
-            )
+                ),
+            ),
         )
     except:
         log.info("New schema playhead could not be read")
