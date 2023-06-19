@@ -5,11 +5,11 @@ from pathlib import Path
 from random import random
 from typing import Dict, Tuple
 
-from xklb import consts, db, player, subtitle, tube_backend, usage, utils
+from xklb import consts, db, history, player, subtitle, tube_backend, usage, utils
 from xklb.consts import SC
-from xklb.playback import now_playing
 from xklb.player import mark_media_deleted, override_sort
 from xklb.scripts.bigdirs import process_bigdirs
+from xklb.scripts.playback_control import now_playing
 from xklb.utils import cmd_interactive, log, random_filename, safe_unpack
 
 
@@ -49,11 +49,10 @@ def parse_args_sort(args) -> None:
         args.sort,
         "duration desc" if args.action in (SC.listen, SC.watch) and args.include else None,
         "size desc" if args.action in (SC.listen, SC.watch) and args.include else None,
-        "play_count" if args.action in (SC.listen, SC.watch) and "play_count" in m_columns else None,
+        "play_count" if args.action in (SC.listen, SC.watch) else None,
         "size desc, duration"
         if args.action in (SC.listen, SC.watch) and "size" in m_columns and "duration" in m_columns
         else None,
-        "sparseness" if args.action == SC.filesystem else None,
         "size" if args.action == SC.filesystem else None,
         "m.path",
         "random",
@@ -265,6 +264,8 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
 
 def construct_query(args) -> Tuple[str, dict]:
     m_columns = db.columns(args, "media")
+    h_columns = db.columns(args, "history")
+
     args.filter_sql = []
     args.filter_bindings = {}
 
@@ -368,9 +369,15 @@ def construct_query(args) -> Tuple[str, dict]:
     )
     SELECT
         {args.select_sql}
+        , SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
+        , MIN(h.time_played) time_first_played
+        , MAX(h.time_played) time_last_played
+        , FIRST_VALUE(h.playhead) OVER (PARTITION BY h.media_id ORDER BY h.time_played DESC) playhead
     FROM m
+    LEFT JOIN history h on h.media_id = m.id
     WHERE 1=1
         {" ".join(args.filter_sql)}
+    GROUP BY m.id, m.path -- for time_played aggregates
     ORDER BY 1=1
         , {args.sort}
     {args.limit_sql} {args.offset_sql}
@@ -497,7 +504,7 @@ def save_playhead(args, m, start_time):
             media_duration=m.get("duration"),
         )
         if playhead:
-            player.set_playhead(args, m["original_path"], playhead)
+            history.add(args, [m["original_path"]], playhead=playhead)
 
 
 def play(args, m) -> None:
@@ -542,6 +549,8 @@ def play(args, m) -> None:
 
 
 def process_playqueue(args) -> None:
+    history.create(args)
+
     t = utils.Timer()
     query, bindings = construct_query(args)
     log.debug("construct_query: %s", t.elapsed())
@@ -564,9 +573,9 @@ def process_playqueue(args) -> None:
     media = list(args.db.query(query, bindings))
     log.debug("query: %s", t.elapsed())
 
-    if args.partial and Path(args.watch_later_directory).exists():
-        media = utils.mpv_enrich2(args, media)
-        log.debug("utils.mpv_enrich2: %s", t.elapsed())
+    if args.partial:
+        media = utils.history_sort(args, media)
+        log.debug("utils.history_sort: %s", t.elapsed())
 
     if args.lower is not None or args.upper is not None:
         media = utils.filter_episodic(args, media)
@@ -574,20 +583,6 @@ def process_playqueue(args) -> None:
 
     if not media:
         utils.no_media_found()
-
-    if all(
-        [
-            Path(args.watch_later_directory).exists(),
-            args.play_in_order == 0,
-            args.related == 0,
-            not args.cluster,
-            "sort" in args.defaults,
-            not args.partial,
-            not args.random,
-        ],
-    ):
-        media = utils.mpv_enrich(args, media)
-        log.debug("utils.mpv_enrich: %s", t.elapsed())
 
     if args.safe:
         media = [d for d in media if tube_backend.is_supported(d["path"]) or Path(d["path"]).exists()]

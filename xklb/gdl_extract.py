@@ -25,7 +25,6 @@ def parse_args(action, usage) -> argparse.Namespace:
     parser.add_argument("--download-archive", default="~/.local/share/gallerydl.sqlite3")
     parser.add_argument("--safe", "-safe", action="store_true", help="Skip generic URLs")
     parser.add_argument("--no-sanitize", "-s", action="store_true", help="Don't sanitize some common URL parameters")
-    parser.add_argument("--playlist-files", action="store_true", help="Read playlists from text files")
     parser.add_argument(
         "--force",
         "-f",
@@ -42,6 +41,7 @@ def parse_args(action, usage) -> argparse.Namespace:
 
     parser.add_argument("database")
     if action == SC.galleryadd:
+        parser.add_argument("--playlist-files", action="store_true", help="Read playlists from text files")
         parser.add_argument("playlists", nargs="+", help=argparse.SUPPRESS)
 
     args = parser.parse_args()
@@ -75,7 +75,7 @@ def gallery_add(args=None) -> None:
         args.playlists = list(utils.flatten([Path(p).read_text().splitlines() for p in args.playlists]))
 
     known_playlists = set()
-    if not args.force:
+    if not args.force and len(args.playlists) > 9:
         known_playlists = media.get_paths(args)
 
     added_media_count = 0

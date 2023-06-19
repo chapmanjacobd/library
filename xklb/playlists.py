@@ -1,7 +1,7 @@
 import sqlite3
 from copy import deepcopy
 from datetime import datetime, timezone
-from typing import List
+from typing import List, Optional
 
 from xklb import consts, db, utils
 from xklb.utils import log, safe_unpack
@@ -77,6 +77,7 @@ def _add(args, entry):
     else:
         args.db["playlists"].insert(entry, pk="id", alter=True)
         playlists_id = get_id(args, entry["path"])
+    return playlists_id
 
 
 def exists(args, playlist_path) -> bool:
@@ -90,23 +91,27 @@ def exists(args, playlist_path) -> bool:
     return True
 
 
-def is_playlist_subpath(args, playlist_path) -> bool:
+def get_subpath_playlist_id(args, playlist_path) -> Optional[int]:
     try:
-        known = args.db.pop("select path from playlists where ? like path || '%'", [str(playlist_path)])
+        known = args.db.pop(
+            "select path from playlists where ? like path || '%' and path != ?",
+            [str(playlist_path), str(playlist_path)],
+        )
     except sqlite3.OperationalError as e:
         log.debug(e)
-        return False
-    if known is None:
-        return False
-    return True
+        return None
+    return known
 
 
-def add(args, playlist_path: str, info: dict) -> int:
-    if exists(args, playlist_path) or not is_playlist_subpath(args, playlist_path):
-        pl = consolidate(args, deepcopy(info))
-        playlist = {**pl, "path": playlist_path, **args.extra_playlist_data}
-        _add(args, utils.dict_filter_bool(playlist))
-    return get_id(args, playlist_path)
+def add(args, playlist_path: str, info: dict, check_subpath=False) -> int:
+    if check_subpath:
+        subpath_playlist_id = get_subpath_playlist_id(args, playlist_path)
+        if subpath_playlist_id:
+            return subpath_playlist_id
+
+    pl = consolidate(args, deepcopy(info))
+    playlist = {**pl, "path": playlist_path, **args.extra_playlist_data}
+    return _add(args, utils.dict_filter_bool(playlist))
 
 
 def media_exists(args, playlist_path, path) -> bool:

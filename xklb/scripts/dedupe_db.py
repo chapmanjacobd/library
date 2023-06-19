@@ -31,6 +31,20 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
+def dedupe_rows(args, tablename, primary_keys, business_keys):
+    with args.db.conn:
+        args.db.conn.execute(
+            f"""
+            DELETE FROM {tablename}
+            WHERE ({','.join(primary_keys)}) NOT IN (
+                SELECT {','.join(f"MIN({col}) AS {col}" for col in primary_keys)}
+                FROM {tablename}
+                GROUP BY {','.join(business_keys)}
+            )
+            """
+        )
+
+
 def dedupe_db() -> None:
     args = parse_args()
 
@@ -82,17 +96,7 @@ def dedupe_db() -> None:
                 )
                 args.db.conn.executescript("\n".join([gen_update_sql(row) for row in data]))
 
-    with args.db.conn:
-        args.db.conn.execute(
-            f"""
-            DELETE FROM {args.table}
-            WHERE ({','.join(args.primary_keys)}) NOT IN (
-                SELECT {','.join(f"MIN({col}) AS {col}" for col in args.primary_keys)}
-                FROM {args.table}
-                GROUP BY {','.join(args.business_keys)}
-            )
-            """
-        )
+    dedupe_rows(args, args.table, primary_keys=args.primary_keys, business_keys=args.business_keys)
 
 
 if __name__ == "__main__":

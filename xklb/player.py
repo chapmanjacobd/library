@@ -12,7 +12,7 @@ from typing import Dict, List, Optional, Tuple, Union
 
 from tabulate import tabulate
 
-from xklb import consts, db, media, utils
+from xklb import consts, db, history, media, utils
 from xklb.consts import SC
 from xklb.utils import cmd, cmd_interactive, human_time, log
 
@@ -130,8 +130,6 @@ def parse(args, m) -> List[str]:
                 player.extend(args.player_args_sub)
             elif m["size"] > 500 * 1000000:  # 500 MB
                 log.debug("Skipping subs player_args: size")
-            elif m.get("time_partial_first"):
-                log.debug("Skipping subs player_args: partially watched")
             else:
                 player.extend(args.player_args_no_sub)
 
@@ -175,40 +173,6 @@ def moved_media(args, moved_files: Union[str, list], base_from, base_to) -> int:
                     f"""UPDATE media
                     SET path=REPLACE(path, '{quote(base_from)}', '{quote(base_to)}')
                     where path in ("""
-                    + ",".join(["?"] * len(chunk_paths))
-                    + ")",
-                    (*chunk_paths,),
-                )
-                modified_row_count += cursor.rowcount
-
-    return modified_row_count
-
-
-def set_playhead(args, path: str, playhead: int) -> int:
-    with args.db.conn:
-        cursor = args.db.conn.execute(
-            f"""UPDATE media
-            SET playhead = :playhead
-                , time_played = {consts.now()}
-            WHERE path = :path
-            """,
-            {"playhead": playhead, "path": path},
-        )
-    return cursor.rowcount
-
-
-def mark_media_watched(args, paths, time_watched=consts.now()) -> int:
-    paths = utils.conform(paths)
-    modified_row_count = 0
-    if paths:
-        df_chunked = utils.chunks(paths, consts.SQLITE_PARAM_LIMIT)
-        for chunk_paths in df_chunked:
-            with args.db.conn:
-                cursor = args.db.conn.execute(
-                    f"""UPDATE media
-                    SET play_count = play_count + 1
-                        , time_played = {time_watched}
-                    WHERE path in ("""
                     + ",".join(["?"] * len(chunk_paths))
                     + ")",
                     (*chunk_paths,),
@@ -316,7 +280,7 @@ class AskAction:
 
 
 def post_act(args, media_file: str, action: Optional[str] = None, geom_data=None, media=None) -> None:
-    mark_media_watched(args, [media_file])
+    history.add(args, [media_file], mark_done=True)
 
     def handle_delete_action():
         if media_file.startswith("http"):
@@ -434,7 +398,9 @@ def get_ordinal_media(args, m: Dict, ignore_paths=None) -> Dict:
         query = f"""
             SELECT
                 {args.select_sql}
+                , SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
             FROM {'media' if args.play_in_order >= consts.SIMILAR_NO_FILTER_NO_FTS else args.table}
+            LEFT JOIN history h on h.media_id = m.id
             WHERE 1=1
                 and path like :candidate
                 {filter_args_sql(args, m_columns)}
@@ -483,7 +449,9 @@ def get_related_media(args, m: Dict) -> List[Dict]:
     query = f"""
         SELECT
             {args.select_sql}, rank
+            , SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
         FROM {args.table} m
+        LEFT JOIN history h on h.media_id = m.id
         WHERE 1=1
             and path != :path
             {filter_args_sql(args, m_columns)}
@@ -524,7 +492,9 @@ def get_dir_media(args, dirs: List, include_subdirs=False) -> List[Dict]:
     query = f"""
         SELECT
             {args.select_sql}
+            , SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
         FROM {args.table} m
+        LEFT JOIN history h on h.media_id = m.id
         WHERE 1=1
             {filter_args_sql(args, m_columns)}
             {filter_paths}
@@ -879,7 +849,8 @@ def historical_usage(args, freq="monthly", time_column="time_played", where=""):
         , AVG(duration) AS duration_avg
         , SUM(size) AS size_sum
         , AVG(size) AS size_avg
-    FROM media
+    FROM media m
+    LEFT JOIN history h on h.media_id = m.id
     WHERE coalesce(time_period, 0)>0 and {time_column}>0 {where}
     GROUP BY time_period
     """
@@ -914,9 +885,6 @@ def media_printer(args, media) -> None:
             D["avg_duration"] = duration / len(media)
             D["cadence_adj_duration"] = cadence_adjusted_duration(args, duration)
 
-        if "sparseness" in media[0]:
-            D["sparseness"] = None
-
         if "size" in media[0]:
             D["size"] = sum((d["size"] or 0) for d in media)
             D["avg_size"] = sum((d["size"] or 0) for d in media) / len(media)
@@ -933,7 +901,7 @@ def media_printer(args, media) -> None:
             marked = mark_media_deleted(args, [d["path"] for d in media])
             log.warning(f"Marked {marked} metadata records as deleted")
         if "w" in args.print:
-            marked = mark_media_watched(args, [d["path"] for d in media])
+            marked = history.add(args, [d["path"] for d in media])
             log.warning(f"Marked {marked} metadata records as watched")
 
     if "f" in args.print:

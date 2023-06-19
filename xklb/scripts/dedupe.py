@@ -93,7 +93,6 @@ def get_music_duplicates(args) -> List[dict]:
     WHERE 1=1
         and m1.time_deleted = 0 and m2.time_deleted = 0
         and m1.audio_count > 0 and m2.audio_count > 0
-        and abs(m1.sparseness - 1) < 0.1
         and m1.title != ''
         and m1.artist != ''
         and m1.album != ''
@@ -134,7 +133,6 @@ def get_id_duplicates(args) -> List[dict]:
         and m2.path != m1.path
     WHERE 1=1
         and m1.time_deleted = 0 and m2.time_deleted = 0
-        and abs(m1.sparseness - 1) < 0.1
         and m1.extractor_id != '' and p1.extractor_key != ''
     ORDER BY 1=1
         , m1.video_count > 0 DESC
@@ -172,7 +170,6 @@ def get_title_duplicates(args) -> List[dict]:
         and m1.duration <= m2.duration + 4
     WHERE 1=1
         and m1.time_deleted = 0 and m2.time_deleted = 0
-        and abs(m1.sparseness - 1) < 0.1
         and m1.title != '' and m1.uploader != ''
         and m1.title = m2.title and m1.uploader = m2.uploader
     ORDER BY 1=1

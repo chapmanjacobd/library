@@ -93,6 +93,7 @@ added_media_count = 0
 
 def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True) -> None:
     yt_dlp = load_module_level_yt_dlp()
+    t = utils.Timer()
 
     class ExistingPlaylistVideoReached(yt_dlp.DownloadCancelled):
         pass
@@ -108,6 +109,7 @@ def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True) -> 
                         if not info.get("playlist_id") or webpath == playlist_path:
                             log.warning("Importing playlist-less media %s", playlist_path)
                         playlists.add(args, playlist_path, info)
+                        log.info("playlists.add %s", t.elapsed())
 
                     if args.ignore_errors:
                         if webpath in playlists_of_playlists and not playlist_root:
@@ -117,34 +119,42 @@ def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True) -> 
                             raise ExistingPlaylistVideoReached  # prevent infinite bug
 
                     get_playlist_metadata(args, webpath, ydl_opts, playlist_root=False)
+                    log.info("get_playlist_metadata %s", t.elapsed())
                     playlists_of_playlists.append(webpath)
                     return [], info
 
                 entry = deepcopy(info)
                 if entry:
-                    if not info.get("playlist_id") or webpath == playlist_path:
-                        log.warning("Importing playlist-less media %s", playlist_path)
-                    playlist_id = playlists.add(args, playlist_path, info)
-
                     if playlists.media_exists(args, playlist_path, webpath) and not args.ignore_errors:
                         raise ExistingPlaylistVideoReached
 
-                    entry = {**entry, "playlist_id": playlist_id, **args.extra_media_data}
+                    entry = {**entry, **args.extra_media_data}
+
+                    if not info.get("playlist_id") or webpath == playlist_path:
+                        log.warning("Importing playlist-less media %s", playlist_path)
+                    else:
+                        playlist_id = playlists.add(args, playlist_path, info)  # add sub-playlist
+                        entry["playlist_id"] = playlist_id
+                        log.info("playlists.add2 %s", t.elapsed())
+
                     media.add(args, webpath, entry)  # type: ignore
+                    log.info("media.add %s", t.elapsed())
 
                     added_media_count += 1
                     if added_media_count > 1:
-                        sys.stdout.write("\033[K\r")
-                        print(f"[{playlist_path}] Added {added_media_count} media", end="\r", flush=True)
+                        # sys.stdout.write("\033[K\r")
+                        print(f"[{playlist_path}] Added {added_media_count} media")  # , end="\r", flush=True)
 
             return [], info
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.add_post_processor(AddToArchivePP(), when="pre_process")
 
+        log.info("yt-dlp initialized %s", t.elapsed())
         count_before_extract = added_media_count
         try:
             pl = ydl.extract_info(playlist_path, download=False, process=True)
+            log.info("ydl.extract_info done %s", t.elapsed())
         except yt_dlp.DownloadError:
             log.error("[%s] DownloadError skipping", playlist_path)
         except ExistingPlaylistVideoReached:
@@ -217,9 +227,6 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Optional[L
               id
             , path
             , playlist_id
-            , play_count
-            , time_played
-            , playhead
             FROM media
             WHERE 1=1
                 {'and width is null' if 'width' in m_columns else ''}
@@ -231,7 +238,7 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Optional[L
         ).fetchall()
 
         current_video_count = 0
-        for id, path, playlist_id, play_count, time_played, playhead in videos:
+        for id, path, playlist_id in videos:
             entry = ydl.extract_info(path)
             if entry is None:
                 continue
@@ -263,10 +270,7 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Optional[L
 
             entry["id"] = id
             entry["playlist_id"] = playlist_id
-            entry["play_count"] = play_count
             entry["chapter_count"] = chapter_count
-            entry["time_played"] = time_played
-            entry["playhead"] = playhead
 
             media.add(args, path, entry)
 

@@ -197,19 +197,10 @@ def save_post(args, post_dict, subreddit_path) -> None:
         if already_downloaded_path:
             slim_dict["path"] = already_downloaded_path
 
-        existing_meta = args.db.pop_dict(
-            "SELECT play_count, time_played, time_downloaded, time_deleted FROM media WHERE path =?",
-            [slim_dict["path"]],
-            ignore_errors=["no such column", "no such table"],
-        )
         slim_dict = {
             **slim_dict,
-            "play_count": 0,
-            "time_played": 0,
-            "playhead": 0,
             "time_downloaded": 0,
             "time_deleted": 0,
-            **(existing_meta or {}),
         }
 
         if post_dict.get("author_is_blocked") == 1:

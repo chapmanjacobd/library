@@ -1,4 +1,4 @@
-import argparse, random, tempfile
+import argparse, random, sys, tempfile
 from pathlib import Path
 from statistics import median
 from typing import Dict, List, Tuple, Union
@@ -17,6 +17,7 @@ def parse_args() -> argparse.Namespace:
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue")
+    parser.add_argument("--max-files-per-folder", "--max-files-per-directory", type=int)
     parser.add_argument("--policy", "-p")
     parser.add_argument("--group", "-g")
     parser.add_argument("--sort", "-s", default="random()", help="Sort files before moving")
@@ -27,7 +28,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "relative_paths",
         nargs="+",
-        help="Paths to scatter, relative to the root of your mergerfs mount if using -m, any path substring is valid",
+        help="Paths to scatter; if using -m any path substring is valid (relative to the root of your mergerfs mount)",
     )
     args = parser.parse_args()
     args.db = db.connect(args)
@@ -43,6 +44,16 @@ def parse_args() -> argparse.Namespace:
             args.group = "count"
         if args.policy is None:
             args.policy = "rand"
+
+    if args.srcmounts and args.max_files_per_folder:
+        msg = (
+            "--max-files-per-folder has no affect during multi-device re-bin operation. Run as an independent operation"
+        )
+        raise ValueError(msg)
+
+    if args.srcmounts is None and args.policy not in ("rand", "used"):
+        msg = "Without srcmounts defined the only meaningful policies are: `rand` or `used`"
+        raise ValueError(msg)
 
     args.relative_paths = [p.lstrip(".") for p in args.relative_paths]
 
@@ -141,7 +152,7 @@ def rebin_files(args, disk_stats, all_files) -> Tuple[List, List]:
 
     if len(disk_stats) == len(full_disks):
         log.warning(
-            "No valid targets. You have selected an ideal state which is significantly different from the current path distribution.",
+            "No valid targets. You have selected an ideal state which is too similar or too different from the current path distribution.",
         )
         log.warning(
             'For this run, "full" source disks will be treated as valid targets. Otherwise, there is nothing to do.',
@@ -188,14 +199,35 @@ def scatter() -> None:
 
     files = get_table(args)
 
+    if args.max_files_per_folder:
+        paths = [d["path"] for d in files]
+        untouched, rebinned = utils.rebin_folders(paths, args.max_files_per_folder)
+
+        tbl = []
+        for existing_path, new_path in rebinned:
+            tbl.append({"existing_path": existing_path, "new_path": new_path})
+            if len(tbl) > 10:
+                break
+        tbl = utils.col_resize(tbl, "existing_path", 20)
+        tbl = utils.col_resize(tbl, "new_path", 20)
+        print(tabulate(tbl, tablefmt="fancy_grid", headers="keys", showindex=False))
+        print(len(rebinned), "files would be moved (only 10 shown)")
+        print(len(untouched), "files would not be moved")
+
+        if utils.confirm(f"Move files ?"):
+            utils.move_files(rebinned)
+        sys.exit(0)
+
     if args.srcmounts:
         disk_stats = utils.get_mount_stats(args.srcmounts)
+        assert all(p.exists() for p in args.srcmounts)
     else:
         log.warning(
             "srcmounts was not provided (-m) so provided paths will only be compared with each other. This might not be what you want!!",
         )
-        log.warning("In this setting paths should be absolute!--and the only valid policies are: `rand`, `used`.")
-        args.srcmounts = [str(Path(p).resolve()) for p in args.relative_paths]
+        paths = [Path(p).resolve() for p in args.relative_paths]
+        assert all(p.exists() for p in paths)
+        args.srcmounts = [str(p) for p in paths]
         disk_stats = get_rel_stats(args.srcmounts, files)
 
     if len(disk_stats) < 2:

@@ -1,10 +1,10 @@
-import argparse
+import argparse, os
 from pathlib import Path
 from typing import Dict, List
 
 from tabulate import tabulate
 
-from xklb import db, usage, utils
+from xklb import db, history, usage, utils
 from xklb.utils import log
 
 
@@ -55,10 +55,10 @@ def parse_args() -> argparse.Namespace:
 def group_files_by_folder(args, media) -> List[Dict]:
     d = {}
     for m in media:
-        p = m["path"].split("/")
+        p = m["path"].split(os.sep)
         while len(p) >= 2:
             p.pop()
-            parent = "/".join(p) + "/"
+            parent = os.sep.join(p) + os.sep
 
             file_deleted = bool(m.get("time_deleted", 0))
             file_played = bool(m.get("time_played", 0))
@@ -87,11 +87,11 @@ def group_files_by_folder(args, media) -> List[Dict]:
 def folder_depth(args, folders) -> List[Dict]:
     d = {}
     for f in folders:
-        p = f["path"].split("/")
+        p = f["path"].split(os.sep)
         p.pop()
 
         depth = 1 + args.depth
-        parent = "/".join(p[:depth]) + "/"
+        parent = os.sep.join(p[:depth]) + os.sep
         if len(p) < depth:
             continue
 
@@ -114,6 +114,7 @@ def folder_depth(args, folders) -> List[Dict]:
 
 def get_table(args) -> List[dict]:
     m_columns = db.columns(args, "media")
+    h_columns = db.columns(args, "history")
     args.filter_sql = []
     args.filter_bindings = {}
 
@@ -124,16 +125,17 @@ def get_table(args) -> List[dict]:
     media = list(
         args.db.query(
             f"""
-        select
+        SELECT
             path
             , size
             {', time_deleted' if 'time_deleted' in m_columns else ''}
-            {', time_played' if 'time_played' in m_columns else ''}
-        from media m
-        where 1=1
+            {', time_played' if 'time_played' in h_columns else ''}
+        FROM media m
+        LEFT JOIN history h on h.media_id = m.id
+        WHERE 1=1
             {'and time_downloaded > 0' if 'time_downloaded' in m_columns else ''}
             {" ".join(args.filter_sql)}
-        order by path
+        ORDER BY path
         """,
             args.filter_bindings,
         ),
@@ -165,6 +167,8 @@ def process_bigdirs(args, media) -> List[Dict]:
 
 def bigdirs() -> None:
     args = parse_args()
+    history.create(args)
+
     tbl = get_table(args)
     tbl = process_bigdirs(args, tbl)
 

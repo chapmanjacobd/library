@@ -69,7 +69,10 @@ def connect(args, conn=None, **kwargs):
 
 
 def columns(args, table_name):
-    return args.db[table_name].columns_dict
+    try:
+        return args.db[table_name].columns_dict
+    except Exception:
+        return {}
 
 
 config = {
@@ -82,6 +85,7 @@ config = {
         "column_order": ["path", "webpath", "extractor_id"],
         "ignore_columns": ["id", "extractor_id"],
     },
+    "history": {"ignore_columns": ["id"]},
     "captions": {"search_columns": ["text"]},
     "reddit_posts": {
         "search_columns": ["title", "selftext"],
