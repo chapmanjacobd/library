@@ -1131,6 +1131,76 @@ def cluster_paths(paths, n_clusters=None):
     return result
 
 
+def cluster_images(paths, n_clusters=None):
+    paths = [s.rstrip("\n") for s in paths]
+    t = Timer()
+
+    import os
+
+    import numpy as np
+    from annoy import AnnoyIndex
+    from PIL import Image
+
+    log.info("imports %s", t.elapsed())
+    index_dir = "image_cluster_indexes"
+    os.makedirs(index_dir, exist_ok=True)
+
+    img_size = 100  # trade-off between accuracy and speed
+
+    image_mode_groups = {}
+    for i, path in enumerate(paths):
+        img = Image.open(path)
+        img = img.resize((img_size, img_size), Image.Resampling.NEAREST)
+        img_array = np.array(img).reshape(-1)  # convert to scalar for ANNoy
+        mode = img.mode
+        if mode not in image_mode_groups:
+            image_mode_groups[mode] = []
+        image_mode_groups[mode].append(img_array)
+    log.info("image_mode_groups %s", t.elapsed())
+
+    annoy_indexes = {}
+    for mode, images in image_mode_groups.items():
+        dimension = images[0].shape[0]
+
+        annoy_index = AnnoyIndex(dimension, "angular")
+        for i, vector in enumerate(images):
+            annoy_index.add_item(i, vector)
+
+        annoy_index.build(100)  # trade-off between accuracy and speed
+        annoy_indexes[mode] = annoy_index
+    log.info("annoy_index %s", t.elapsed())
+
+    clusters = []
+    for mode, images in image_mode_groups.items():
+        annoy_index = annoy_indexes[mode]
+        for i in range(len(images)):
+            nearest_neighbors = annoy_index.get_nns_by_item(i, n_clusters or int(len(images) ** 0.6))
+            clusters.extend([i] * len(nearest_neighbors))
+    log.info("image_mode_groups %s", t.elapsed())
+
+    grouped_strings = {}
+    for i, string in enumerate(paths):
+        cluster_id = clusters[i]
+
+        if cluster_id not in grouped_strings:
+            grouped_strings[cluster_id] = []
+
+        grouped_strings[cluster_id].append(string + "\n")
+    log.info("grouped_strings %s", t.elapsed())
+
+    result = []
+    for _cluster_id, paths in grouped_strings.items():
+        common_prefix = os.path.commonprefix(paths)
+        metadata = {
+            "common_prefix": common_prefix,
+            "grouped_paths": sorted(paths),
+        }
+        result.append(metadata)
+    log.info("common_prefix %s", t.elapsed())
+
+    return result
+
+
 def cluster_dicts(media):
     media_keyed = {d["path"]: d for d in media}
     groups = cluster_paths([d["path"] for d in media])
