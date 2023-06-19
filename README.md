@@ -143,7 +143,7 @@ Incremental surfing. 📈🏄 totally rad!
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.1.004)
+    xk media library subcommands (v2.1.005)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -1425,16 +1425,8 @@ Explore `library` databases in your browser
     red apple' | library cluster-sort --print-groups
 
     [
-        {'common_prefix': '',
-        'grouped_paths': ['orange apple
-', 'red apple
-', 'red apple
-']},
-        {'common_prefix': '',
-        'grouped_paths': ['broccoli
-', 'green
-', 'yellow
-']}
+        {'grouped_paths': ['orange apple', 'red apple', 'red apple']},
+        {'grouped_paths': ['broccoli', 'green', 'yellow']}
     ]
 
     Auto-sort images into directories

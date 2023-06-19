@@ -2,7 +2,7 @@ import argparse, sys
 from pathlib import Path
 from pprint import pprint
 
-from xklb import usage, utils
+from xklb import consts, usage, utils
 from xklb.consts import DBType
 from xklb.utils import log
 
@@ -80,12 +80,33 @@ def cluster_sort() -> None:
     groups = sorted(groups, key=lambda d: (len(d["grouped_paths"]), -len(d["common_prefix"])))
 
     if args.print_groups:
+        for group in groups:
+            group["grouped_paths"] = [s.rstrip("\n") for s in group["grouped_paths"]]
+
         pprint(groups)
     elif args.move_groups:
         min_len = len(str(len(groups) + 1))
-        for i, group in enumerate(groups, start=1):
-            paths = [s.rstrip("\n") for s in group["grouped_paths"]]
-            utils.move_files([(p, str(Path(p).parent / str(i).zfill(min_len) / Path(p).name)) for p in paths])
+
+        if args.profile == "lines":
+            if args.output_path:
+                output_parent = Path(args.output_path).parent
+                output_name = Path(args.output_path).name
+            elif args.input_path.name == "<stdin>" or Path(args.input_path.name).parent == consts.TEMP_DIR:
+                output_parent = Path.cwd()
+                output_name = "stdin"
+            else:
+                output_parent = Path(args.input_path.name).parent
+                output_name = Path(args.input_path.name).name
+
+            for i, group in enumerate(groups, start=1):
+                output_path = output_parent / (output_name + "_" + str(i).zfill(min_len))
+                with open(output_path, "w") as output_fd:
+                    output_fd.writelines(group["grouped_paths"])
+
+        elif args.profile in ("image",):
+            for i, group in enumerate(groups, start=1):
+                paths = [s.rstrip("\n") for s in group["grouped_paths"]]
+                utils.move_files([(p, str(Path(p).parent / str(i).zfill(min_len) / Path(p).name)) for p in paths])
     else:
         lines = utils.flatten(d["grouped_paths"] for d in groups)
         if args.output_path:

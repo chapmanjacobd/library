@@ -6,7 +6,6 @@ from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 from pathlib import Path
-from random import shuffle
 from shutil import which
 from timeit import default_timer
 from typing import Any, Dict, Generator, List, NoReturn, Optional, Union
@@ -813,13 +812,13 @@ def set_readline_completion(list_) -> None:
             if not line:
                 min_depth = min([s.count(os.sep) for s in list_]) + 1
                 result_list = [c + " " for c in list_ if c.count(os.sep) <= min_depth]
-                shuffle(result_list)
+                random.shuffle(result_list)
                 return result_list[:25][state]
             else:
                 match_list = [s for s in list_ if s.startswith(line)]
                 min_depth = min([s.count(os.sep) for s in match_list]) + 1
                 result_list = [c + " " for c in match_list if c.count(os.sep) <= min_depth]
-                shuffle(result_list)
+                random.shuffle(result_list)
                 return result_list[:15][state]
 
         return list_completer
