@@ -804,12 +804,14 @@ cluster_sort = """library cluster-sort [input_path | stdin] [output_path | stdou
     green
     yellow
 
+    Show the groups
+
     $ echo 'red apple
     broccoli
     yellow
     green
     orange apple
-    red apple' | library cluster-sort --groups
+    red apple' | library cluster-sort --print-groups
 
     [
         {'common_prefix': '',
@@ -817,6 +819,12 @@ cluster_sort = """library cluster-sort [input_path | stdin] [output_path | stdou
         {'common_prefix': '',
         'grouped_paths': ['broccoli\n', 'green\n', 'yellow\n']}
     ]
+
+    Auto-sort images into directories
+
+    $ echo 'image1.jpg
+    image2.jpg
+    image3.jpg' | library cluster-sort --image --move-groups
 """
 
 copy_play_counts = """library copy-play-counts DEST_DB SOURCE_DB ... [--source-prefix x] [--target-prefix y]
