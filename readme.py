@@ -19,20 +19,21 @@ for title, subcommand in [
     ("Convert pushshift data to reddit.db format", "pushshift"),
     ("List playlists", "playlists"),
     ("Blocklist a channel", "block"),
-    ("Show large folders", "bigdirs"),
-    ("Copy play history", "copy-play-counts"),
-    ("Dedupe music", "dedupe"),
     ("Re-optimize database", "optimize"),
     ("Re-download media", "redownload"),
     ("Merge online and local data", "merge-online-local"),
     ("Convert selftext links to media table", "reddit-selftext"),
     ("Merge SQLITE databases", "merge-dbs"),
     ("Dedupe SQLITE tables", "dedupe-db"),
-    ("Sort lines of text by similarity", "cluster-sort"),
+    ("Show large folders", "bigdirs"),
+    ("Copy play history", "copy-play-counts"),
+    ("Import mpv watchlater files", "mpv-watchlater"),
+    ("Sort data by similarity", "cluster-sort"),
+    ("Scatter files between folders or disks", "scatter"),
     ("Move files preserving parent folder hierarchy", "relmv"),
-    ("Automatic tab loader", "surf"),
     ("Clean filenames", "christen"),
-    # scatter usage is already in readme so intentionally skipped here
+    ("Dedupe music", "dedupe"),
+    ("Automatic tab loader", "surf"),
 ]:
     if subcommand not in title.lower():
         title += f" ({subcommand})"

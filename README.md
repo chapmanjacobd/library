@@ -1232,42 +1232,6 @@ Explore `library` databases in your browser
 
 </details>
 
-<details><summary>Show large folders (bigdirs)</summary>
-
-    $ library bigdirs -h
-    usage: library bigdirs DATABASE [--limit (4000)] [--depth (0)] [--sort-by deleted | played] [--size=+5MB]
-
-    See what folders take up space
-
-        library bigdirs video.db
-        library bigdirs audio.db
-        library bigdirs fs.db
-
-
-</details>
-
-<details><summary>Copy play history (copy-play-counts)</summary>
-
-    $ library copy-play-counts -h
-    usage: library copy-play-counts DEST_DB SOURCE_DB ... [--source-prefix x] [--target-prefix y]
-
-    Copy play count information between databases
-
-        library copy-play-counts audio.db phone.db --source-prefix /storage/6E7B-7DCE/d --target-prefix /mnt/d
-
-
-</details>
-
-<details><summary>Dedupe music</summary>
-
-    $ library dedupe -h
-    usage: library [--audio | --id | --title | --filesystem] [--only-soft-delete] [--limit LIMIT] DATABASE
-
-    Dedupe your files
-
-
-</details>
-
 <details><summary>Re-optimize database</summary>
 
     $ library optimize -h
@@ -1394,7 +1358,43 @@ Explore `library` databases in your browser
 
 </details>
 
-<details><summary>Sort lines of text by similarity (cluster-sort)</summary>
+<details><summary>Show large folders (bigdirs)</summary>
+
+    $ library bigdirs -h
+    usage: library bigdirs DATABASE [--limit (4000)] [--depth (0)] [--sort-by deleted | played] [--size=+5MB]
+
+    See what folders take up space
+
+        library bigdirs video.db
+        library bigdirs audio.db
+        library bigdirs fs.db
+
+
+</details>
+
+<details><summary>Copy play history (copy-play-counts)</summary>
+
+    $ library copy-play-counts -h
+    usage: library copy-play-counts DEST_DB SOURCE_DB ... [--source-prefix x] [--target-prefix y]
+
+    Copy play count information between databases
+
+        library copy-play-counts audio.db phone.db --source-prefix /storage/6E7B-7DCE/d --target-prefix /mnt/d
+
+
+</details>
+
+<details><summary>Import mpv watchlater files (mpv-watchlater)</summary>
+
+    $ library mpv-watchlater -h
+    usage: library mpv-watchlater DATABASE [--watch-later-directory ~/.config/mpv/watch_later/]
+
+    Extract timestamps from MPV to the history table
+
+
+</details>
+
+<details><summary>Sort data by similarity (cluster-sort)</summary>
 
     $ library cluster-sort -h
     usage: library cluster-sort [input_path | stdin] [output_path | stdout]
@@ -1446,6 +1446,79 @@ Explore `library` databases in your browser
 
 </details>
 
+<details><summary>Scatter files between folders or disks</summary>
+
+    $ library scatter -h
+    usage: library scatter [--limit LIMIT] [--policy POLICY] [--sort SORT] --srcmounts SRCMOUNTS DATABASE RELATIVE_PATHS ...
+
+Balance files across filesystem folder trees or multiple devices (mostly useful for mergerfs)
+
+    Scatter filesystem folder trees (without mountpoints; limited functionality; good for balancing fs inodes)
+
+        $ library scatter scatter.db /test/{0,1,2,3,4,5,6,7,8,9}
+
+    Reduce number of files per folder (creates more folders)
+
+        $ library scatter scatter.db --max-files-per-folder 16000 /test/{0,1,2,3,4,5,6,7,8,9}
+
+    Multi-device re-bin: balance by size
+
+        $ library scatter -m /mnt/d1:/mnt/d2:/mnt/d3:/mnt/d4/:/mnt/d5:/mnt/d6:/mnt/d7 ~/lb/fs/scatter.db subfolder/of/mergerfs/mnt
+        Current path distribution:
+        ╒═════════╤══════════════╤══════════════╤═══════════════╤════════════════╤═════════════════╤════════════════╕
+        │ mount   │   file_count │ total_size   │ median_size   │ time_created   │ time_modified   │ time_scanned   │
+        ╞═════════╪══════════════╪══════════════╪═══════════════╪════════════════╪═════════════════╪════════════════╡
+        │ /mnt/d1 │        12793 │ 169.5 GB     │ 4.5 MB        │ Jan 27         │ Jul 19 2022     │ Jan 31         │
+        ├─────────┼──────────────┼──────────────┼───────────────┼────────────────┼─────────────────┼────────────────┤
+        │ /mnt/d2 │        13226 │ 177.9 GB     │ 4.7 MB        │ Jan 27         │ Jul 19 2022     │ Jan 31         │
+        ├─────────┼──────────────┼──────────────┼───────────────┼────────────────┼─────────────────┼────────────────┤
+        │ /mnt/d3 │            1 │ 717.6 kB     │ 717.6 kB      │ Jan 31         │ Jul 18 2022     │ yesterday      │
+        ├─────────┼──────────────┼──────────────┼───────────────┼────────────────┼─────────────────┼────────────────┤
+        │ /mnt/d4 │           82 │ 1.5 GB       │ 12.5 MB       │ Jan 31         │ Apr 22 2022     │ yesterday      │
+        ╘═════════╧══════════════╧══════════════╧═══════════════╧════════════════╧═════════════════╧════════════════╛
+
+        Simulated path distribution:
+        5845 files should be moved
+        20257 files should not be moved
+        ╒═════════╤══════════════╤══════════════╤═══════════════╤════════════════╤═════════════════╤════════════════╕
+        │ mount   │   file_count │ total_size   │ median_size   │ time_created   │ time_modified   │ time_scanned   │
+        ╞═════════╪══════════════╪══════════════╪═══════════════╪════════════════╪═════════════════╪════════════════╡
+        │ /mnt/d1 │         9989 │ 46.0 GB      │ 2.4 MB        │ Jan 27         │ Jul 19 2022     │ Jan 31         │
+        ├─────────┼──────────────┼──────────────┼───────────────┼────────────────┼─────────────────┼────────────────┤
+        │ /mnt/d2 │        10185 │ 46.0 GB      │ 2.4 MB        │ Jan 27         │ Jul 19 2022     │ Jan 31         │
+        ├─────────┼──────────────┼──────────────┼───────────────┼────────────────┼─────────────────┼────────────────┤
+        │ /mnt/d3 │         1186 │ 53.6 GB      │ 30.8 MB       │ Jan 27         │ Apr 07 2022     │ Jan 31         │
+        ├─────────┼──────────────┼──────────────┼───────────────┼────────────────┼─────────────────┼────────────────┤
+        │ /mnt/d4 │         1216 │ 49.5 GB      │ 29.5 MB       │ Jan 27         │ Apr 07 2022     │ Jan 31         │
+        ├─────────┼──────────────┼──────────────┼───────────────┼────────────────┼─────────────────┼────────────────┤
+        │ /mnt/d5 │         1146 │ 53.0 GB      │ 30.9 MB       │ Jan 27         │ Apr 07 2022     │ Jan 31         │
+        ├─────────┼──────────────┼──────────────┼───────────────┼────────────────┼─────────────────┼────────────────┤
+        │ /mnt/d6 │         1198 │ 48.8 GB      │ 30.6 MB       │ Jan 27         │ Apr 07 2022     │ Jan 31         │
+        ├─────────┼──────────────┼──────────────┼───────────────┼────────────────┼─────────────────┼────────────────┤
+        │ /mnt/d7 │         1182 │ 52.0 GB      │ 30.9 MB       │ Jan 27         │ Apr 07 2022     │ Jan 31         │
+        ╘═════════╧══════════════╧══════════════╧═══════════════╧════════════════╧═════════════════╧════════════════╛
+        ### Move 1182 files to /mnt/d7 with this command: ###
+        rsync -aE --xattrs --info=progress2 --remove-source-files --files-from=/tmp/tmpmr1628ij / /mnt/d7
+        ### Move 1198 files to /mnt/d6 with this command: ###
+        rsync -aE --xattrs --info=progress2 --remove-source-files --files-from=/tmp/tmp9yd75f6j / /mnt/d6
+        ### Move 1146 files to /mnt/d5 with this command: ###
+        rsync -aE --xattrs --info=progress2 --remove-source-files --files-from=/tmp/tmpfrj141jj / /mnt/d5
+        ### Move 1185 files to /mnt/d3 with this command: ###
+        rsync -aE --xattrs --info=progress2 --remove-source-files --files-from=/tmp/tmpqh2euc8n / /mnt/d3
+        ### Move 1134 files to /mnt/d4 with this command: ###
+        rsync -aE --xattrs --info=progress2 --remove-source-files --files-from=/tmp/tmphzb0gj92 / /mnt/d4
+
+    Multi-device re-bin: balance device inodes for specific subfolder
+
+        $ library scatter -m /mnt/d1:/mnt/d2 ~/lb/fs/scatter.db subfolder --group count --sort 'size desc'
+
+    Multi-device re-bin: only consider the most recent 100 files
+
+        $ library scatter -m /mnt/d1:/mnt/d2 -l 100 -s 'time_modified desc' ~/lb/fs/scatter.db /
+
+
+</details>
+
 <details><summary>Move files preserving parent folder hierarchy (relmv)</summary>
 
     $ library relmv -h
@@ -1462,26 +1535,6 @@ Explore `library` databases in your browser
         library relmv (
             library listen ~/lb/audio.db --local-media-only --where 'play_count=0' --random -L 600 -p f
         ) /mnt/d/80_Now_Listening/
-
-
-</details>
-
-<details><summary>Automatic tab loader (surf)</summary>
-
-    $ library surf -h
-    usage: library surf [--count COUNT] [--target-hosts TARGET_HOSTS] < stdin
-
-    Streaming tab loader: press ctrl+c to stop.
-
-    Open tabs from a line-delimited file:
-
-        cat tabs.txt | library surf -n 5
-
-    You will likely want to use this setting in `about:config`
-
-        browser.tabs.loadDivertedInBackground = True
-
-    If you prefer GUI, check out https://unli.xyz/tabsender/
 
 
 </details>
@@ -1504,6 +1557,36 @@ Explore `library` databases in your browser
     You can optionally replace all the spaces in your filenames with dots
 
         library christen --dot-space video.db
+
+
+</details>
+
+<details><summary>Dedupe music</summary>
+
+    $ library dedupe -h
+    usage: library [--audio | --id | --title | --filesystem] [--only-soft-delete] [--limit LIMIT] DATABASE
+
+    Dedupe your files
+
+
+</details>
+
+<details><summary>Automatic tab loader (surf)</summary>
+
+    $ library surf -h
+    usage: library surf [--count COUNT] [--target-hosts TARGET_HOSTS] < stdin
+
+    Streaming tab loader: press ctrl+c to stop.
+
+    Open tabs from a line-delimited file:
+
+        cat tabs.txt | library surf -n 5
+
+    You will likely want to use this setting in `about:config`
+
+        browser.tabs.loadDivertedInBackground = True
+
+    If you prefer GUI, check out https://unli.xyz/tabsender/
 
 
 </details>
