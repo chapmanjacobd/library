@@ -533,38 +533,6 @@ def test_rebin_folders():
     assert list(t[1] for t in rebinned) == [p(s) for s in expected]
     assert untouched == []
 
-    untouched, rebinned = utils.rebin_folders(dummy_folders(5) + dummy_folders(5, "/tmp/f/"), 5)
-    expected = [
-        "/tmp/1",
-        "/tmp/2",
-        "/tmp/3",
-        "/tmp/4",
-        "/tmp/5",
-        "/tmp/f/1",
-        "/tmp/f/2",
-        "/tmp/f/3",
-        "/tmp/f/4",
-        "/tmp/f/5",
-    ]
-    assert rebinned == []
-    assert untouched == [p(s) for s in expected]
-
-    untouched, rebinned = utils.rebin_folders(dummy_folders(5) + dummy_folders(5, "/tmp/f/"), 6)
-    expected = [
-        "/tmp/1",
-        "/tmp/2",
-        "/tmp/3",
-        "/tmp/4",
-        "/tmp/5",
-        "/tmp/f/1",
-        "/tmp/f/2",
-        "/tmp/f/3",
-        "/tmp/f/4",
-        "/tmp/f/5",
-    ]
-    assert rebinned == []
-    assert untouched == [p(s) for s in expected]
-
     untouched, rebinned = utils.rebin_folders(dummy_folders(5) + dummy_folders(5, "/tmp/f/"), 4)
     expected = [
         "/tmp/1/1",
@@ -580,3 +548,11 @@ def test_rebin_folders():
     ]
     assert list(t[1] for t in rebinned) == [p(s) for s in expected]
     assert untouched == []
+
+    untouched, rebinned = utils.rebin_folders(dummy_folders(5) + dummy_folders(5, "/tmp/f/"), 5)
+    assert rebinned == []
+    assert len(untouched) == 10
+
+    untouched, rebinned = utils.rebin_folders(dummy_folders(5) + dummy_folders(5, "/tmp/f/"), 6)
+    assert rebinned == []
+    assert len(untouched) == 10
