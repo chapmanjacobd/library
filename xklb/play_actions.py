@@ -507,7 +507,7 @@ def save_playhead(args, m, start_time):
             history.add(args, [m["original_path"]], playhead=playhead)
 
 
-def play(args, m) -> None:
+def play(args, m, media_len) -> None:
     t = utils.Timer()
     print(m["now_playing"])
     log.debug("now_playing: %s", t.elapsed())
@@ -525,7 +525,7 @@ def play(args, m) -> None:
             try:
                 chromecast_play(args, m)
                 t.reset()
-                player.post_act(args, m["original_path"])
+                player.post_act(args, m["original_path"], media_len=media_len)
                 log.debug("player.post_act: %s", t.elapsed())
             except Exception:
                 if args.ignore_errors:
@@ -536,7 +536,7 @@ def play(args, m) -> None:
             r = player.local_player(args, m)
             if r.returncode == 0:
                 t.reset()
-                player.post_act(args, m["original_path"])
+                player.post_act(args, m["original_path"], media_len=media_len)
                 log.debug("player.post_act: %s", t.elapsed())
             else:
                 log.warning("Player exited with code %s", r.returncode)
@@ -610,7 +610,7 @@ def process_playqueue(args) -> None:
         log.debug("player.get_related_media: %s", t.elapsed())
 
     if args.cluster:
-        media = utils.cluster_dicts(media)
+        media = utils.cluster_dicts(args, media)
         log.debug("cluster: %s", t.elapsed())
 
     if args.print:
@@ -640,7 +640,7 @@ def process_playqueue(args) -> None:
                         future = futures.popleft()
                         m = future.result()
                         if m is not None and (m["path"].startswith("http") or Path(m["path"]).exists()):
-                            play(args, m)
+                            play(args, m, len(media) + len(futures))
         finally:
             if args.interdimensional_cable:
                 args.sock.send(b"raw quit \n")

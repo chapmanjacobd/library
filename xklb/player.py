@@ -279,7 +279,7 @@ class AskAction:
     ASK_MOVE_OR_DELETE = (Action.MOVE, Action.DELETE)
 
 
-def post_act(args, media_file: str, action: Optional[str] = None, geom_data=None, media=None) -> None:
+def post_act(args, media_file: str, action: Optional[str] = None, geom_data=None, media_len=0) -> None:
     history.add(args, [media_file], mark_done=True)
 
     def handle_delete_action():
@@ -300,14 +300,14 @@ def post_act(args, media_file: str, action: Optional[str] = None, geom_data=None
         if gui and args.gui:
             response = gui.askkeep(
                 media_file,
-                len(media or []),
+                media_len,
                 geom_data,
                 true_action=true_action,
                 false_action=false_action,
             )
         else:
             response = utils.confirm(true_action.title() + "?")
-        post_act(args, media_file, action=true_action if response else false_action)
+        post_act(args, media_file, action=true_action if response else false_action)  # answer the question
 
     action = action or args.post_action
     action = action.upper()
@@ -791,7 +791,7 @@ def multiple_player(args, media) -> None:
                             if not args.ignore_errors:
                                 raise SystemExit(r.returncode)
 
-                        post_act(args, m["path"], geom_data=geom_data, media=media)
+                        post_act(args, m["path"], geom_data=geom_data, media_len=len(media))
 
                         if media:
                             players[t_idx] = _create_player(args, player_hole, media)
