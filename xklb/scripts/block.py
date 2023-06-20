@@ -149,7 +149,7 @@ def block(args=None) -> None:
             continue
 
         try:
-            matching_media = list(reversed(utils.cluster_dicts(matching_media)))
+            matching_media = list(reversed(utils.cluster_dicts(args, matching_media)))
         except ModuleNotFoundError:
             pass
 

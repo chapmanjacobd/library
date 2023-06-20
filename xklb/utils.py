@@ -1200,11 +1200,17 @@ def cluster_images(paths, n_clusters=None):
     return result
 
 
-def cluster_dicts(media):
+def cluster_dicts(args, media):
     media_keyed = {d["path"]: d for d in media}
     groups = cluster_paths([d["path"] for d in media])
     groups = sorted(groups, key=lambda d: (-len(d["grouped_paths"]), -len(d["common_prefix"])))
-    sorted_paths = flatten(d["grouped_paths"] for d in groups)
+    if hasattr(args, "sort") and "duration" in args.sort:
+        sorted_paths = flatten(
+            sorted(d["grouped_paths"], key=lambda p: media_keyed[p]["duration"], reverse="duration desc" in args.sort)
+            for d in groups
+        )
+    else:
+        sorted_paths = flatten(d["grouped_paths"] for d in groups)
     media = [media_keyed[p] for p in sorted_paths]
     return media
 

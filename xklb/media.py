@@ -176,7 +176,12 @@ def consolidate(v: dict) -> Optional[dict]:
 
 
 def _add(args, entry):
+    if "path" not in entry:
+        log.warning('Skipping insert: no "path" in entry %s', entry)
+        return
+
     tags = entry.pop("tags", None) or ""
+
     media_id = args.db.pop("select id from media where path = ?", [entry["path"]])
     if media_id:
         entry["id"] = media_id

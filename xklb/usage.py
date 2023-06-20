@@ -682,7 +682,7 @@ tabsadd = r"""library tabsadd [--frequency daily weekly (monthly) quarterly year
 
     Adding one URL:
 
-        library tabsadd -f monthly -c travel ~/lb/tabs.db https://old.reddit.com/r/Colombia/top/?sort=top&t=month
+        library tabsadd -f monthly -c travel tabs.db https://old.reddit.com/r/Colombia/top/?sort=top&t=month
 
         Depending on your shell you may need to escape the URL (add quotes)
 
@@ -694,7 +694,7 @@ tabsadd = r"""library tabsadd [--frequency daily weekly (monthly) quarterly year
 
     Importing from a line-delimitated file:
 
-        library tabsadd -f yearly -c reddit ~/lb/tabs.db (cat ~/mc/yearly-subreddit.cron)
+        library tabsadd -f yearly -c reddit tabs.db (cat ~/mc/yearly-subreddit.cron)
 
 """
 
@@ -767,6 +767,11 @@ bigdirs = """library bigdirs DATABASE [--limit (4000)] [--depth (0)] [--sort-by 
         library bigdirs video.db
         library bigdirs audio.db
         library bigdirs fs.db
+
+    lb bigdirs video.db --folder-size=+10G --lower 400 --upper 14000
+
+    lb bigdirs video.db --depth 5
+    lb bigdirs video.db --depth 7
 """
 
 christen = """library christen DATABASE [--run]
@@ -938,7 +943,7 @@ relmv = """library relmv [--dry-run] SOURCE ... DEST
 
         # move new music for this week
         library relmv (
-            library listen ~/lb/audio.db --local-media-only --where 'play_count=0' --random -L 600 -p f
+            library listen audio.db --local-media-only --where 'play_count=0' --random -L 600 -p f
         ) /mnt/d/80_Now_Listening/
 """
 
@@ -1018,7 +1023,7 @@ Balance files across filesystem folder trees or multiple devices (mostly useful 
 
     Multi-device re-bin: balance by size
 
-        $ library scatter -m /mnt/d1:/mnt/d2:/mnt/d3:/mnt/d4/:/mnt/d5:/mnt/d6:/mnt/d7 ~/lb/fs/scatter.db subfolder/of/mergerfs/mnt
+        $ library scatter -m /mnt/d1:/mnt/d2:/mnt/d3:/mnt/d4/:/mnt/d5:/mnt/d6:/mnt/d7 fs/scatter.db subfolder/of/mergerfs/mnt
         Current path distribution:
         ╒═════════╤══════════════╤══════════════╤═══════════════╤════════════════╤═════════════════╤════════════════╕
         │ mount   │   file_count │ total_size   │ median_size   │ time_created   │ time_modified   │ time_scanned   │
@@ -1065,11 +1070,11 @@ Balance files across filesystem folder trees or multiple devices (mostly useful 
 
     Multi-device re-bin: balance device inodes for specific subfolder
 
-        $ library scatter -m /mnt/d1:/mnt/d2 ~/lb/fs/scatter.db subfolder --group count --sort 'size desc'
+        $ library scatter -m /mnt/d1:/mnt/d2 fs/scatter.db subfolder --group count --sort 'size desc'
 
     Multi-device re-bin: only consider the most recent 100 files
 
-        $ library scatter -m /mnt/d1:/mnt/d2 -l 100 -s 'time_modified desc' ~/lb/fs/scatter.db /
+        $ library scatter -m /mnt/d1:/mnt/d2 -l 100 -s 'time_modified desc' fs/scatter.db /
 """
 surf = """library surf [--count COUNT] [--target-hosts TARGET_HOSTS] < stdin
 
