@@ -14,7 +14,7 @@ def parse_args() -> argparse.Namespace:
         usage=usage.bigdirs,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("--sort-by")
+    parser.add_argument("--sort-by", "--sort", "-u")
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", default="4000")
     parser.add_argument("--depth", "-d", default=0, type=int, help="Depth of folders")
     parser.add_argument("--lower", type=int, help="Number of files per folder lower limit")
@@ -163,7 +163,13 @@ def process_bigdirs(args, media) -> List[Dict]:
     if args.folder_size:
         args.folder_size = utils.parse_human_to_lambda(utils.human_to_bytes, args.folder_size)
         folders = [d for d in folders if args.folder_size(d["size"])]
-    return sorted(folders, key=sort_by(args))
+
+    reverse = False
+    if " desc" in args.sort_by:
+        args.sort_by = args.sort_by.replace(" desc", "")
+        reverse = True
+
+    return sorted(folders, key=sort_by(args), reverse=reverse)
 
 
 def bigdirs() -> None:

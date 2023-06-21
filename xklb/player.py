@@ -333,9 +333,14 @@ def override_sort(sort_expression: str) -> str:
     def year_month_sql(var):
         return f"cast(strftime('%Y%m', datetime({var}, 'unixepoch')) as int)"
 
+    def year_month_day_sql(var):
+        return f"cast(strftime('%Y%m%d', datetime({var}, 'unixepoch')) as int)"
+
     return (
         sort_expression.replace("month_created", year_month_sql("time_created"))
         .replace("month_modified", year_month_sql("time_modified"))
+        .replace("date_created", year_month_day_sql("time_created"))
+        .replace("date_modified", year_month_day_sql("time_modified"))
         .replace("random", "random()")
         .replace("priority", "ntile(1000) over (order by size) desc, duration")
     )
