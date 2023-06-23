@@ -95,7 +95,7 @@ def construct_tabs_query(args) -> Tuple[str, dict]:
             SELECT
                 path
                 , frequency
-                , COALESCE(MAX(time_played), 0) time_played
+                , COALESCE(MAX(h.time_played), 0) time_last_played
                 , SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
                 , time_deleted
                 , hostname
@@ -107,11 +107,11 @@ def construct_tabs_query(args) -> Tuple[str, dict]:
         SELECT path
         , frequency
         , CASE
-            WHEN frequency = 'daily' THEN cast(STRFTIME('%s', datetime( time_played, 'unixepoch', '+1 Day' )) as int)
-            WHEN frequency = 'weekly' THEN cast(STRFTIME('%s', datetime( time_played, 'unixepoch', '+7 Days' )) as int)
-            WHEN frequency = 'monthly' THEN cast(STRFTIME('%s', datetime( time_played, 'unixepoch', '+1 Month' )) as int)
-            WHEN frequency = 'quarterly' THEN cast(STRFTIME('%s', datetime( time_played, 'unixepoch', '+3 Months' )) as int)
-            WHEN frequency = 'yearly' THEN cast(STRFTIME('%s', datetime( time_played, 'unixepoch', '+1 Year' )) as int)
+            WHEN frequency = 'daily' THEN cast(STRFTIME('%s', datetime( time_last_played, 'unixepoch', '+1 Day' )) as int)
+            WHEN frequency = 'weekly' THEN cast(STRFTIME('%s', datetime( time_last_played, 'unixepoch', '+7 Days' )) as int)
+            WHEN frequency = 'monthly' THEN cast(STRFTIME('%s', datetime( time_last_played, 'unixepoch', '+1 Month' )) as int)
+            WHEN frequency = 'quarterly' THEN cast(STRFTIME('%s', datetime( time_last_played, 'unixepoch', '+3 Months' )) as int)
+            WHEN frequency = 'yearly' THEN cast(STRFTIME('%s', datetime( time_last_played, 'unixepoch', '+1 Year' )) as int)
         END time_valid
         {', ' + ', '.join(args.cols) if args.cols else ''}
     FROM m
@@ -121,7 +121,7 @@ def construct_tabs_query(args) -> Tuple[str, dict]:
         {"and time_valid < cast(STRFTIME('%s', datetime()) as int)" if not args.print else ''}
     ORDER BY 1=1
         {', ' + args.sort if args.sort else ''}
-        {', time_played, time_valid, path' if args.print else ''}
+        {', time_last_played, time_valid, path' if args.print else ''}
         , play_count
         , frequency = 'daily' desc
         , frequency = 'weekly' desc

@@ -400,18 +400,26 @@ def get_ordinal_media(args, m: Dict, ignore_paths=None) -> Dict:
             return m
 
         candidate = new_candidate
-        query = f"""
+        query = f"""WITH m as (
+                SELECT
+                    SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
+                    , MIN(h.time_played) time_first_played
+                    , MAX(h.time_played) time_last_played
+                    , FIRST_VALUE(h.playhead) OVER (PARTITION BY h.media_id ORDER BY h.time_played DESC) playhead
+                    , *
+                FROM media m
+                LEFT JOIN history h on h.media_id = m.id
+                GROUP BY m.id, m.path
+            )
             SELECT
                 {args.select_sql}
-                , SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
-            FROM {'media' if args.play_in_order >= consts.SIMILAR_NO_FILTER_NO_FTS else args.table} m
-            LEFT JOIN history h on h.media_id = m.id
+                , play_count
+            FROM {'m' if args.play_in_order >= consts.SIMILAR_NO_FILTER_NO_FTS else args.table} AS m
             WHERE 1=1
                 and path like :candidate
                 {filter_args_sql(args, m_columns)}
                 {'' if args.play_in_order >= consts.SIMILAR_NO_FILTER else (" ".join(args.filter_sql) or '')}
                 {"and path not in ({})".format(",".join([f":ignore_path{i}" for i in range(len(ignore_paths))])) if len(ignore_paths) > 0 else ''}
-            GROUP BY m.id
             ORDER BY play_count, path
             LIMIT 1000
             """
@@ -453,17 +461,25 @@ def get_related_media(args, m: Dict) -> List[Dict]:
     args.include = sorted(words, key=len, reverse=True)[:100]
     args.table = db.fts_flexible_search(args)
 
-    query = f"""
+    query = f"""WITH m as (
+            SELECT
+                SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
+                , MIN(h.time_played) time_first_played
+                , MAX(h.time_played) time_last_played
+                , FIRST_VALUE(h.playhead) OVER (PARTITION BY h.media_id ORDER BY h.time_played DESC) playhead
+                , *
+            FROM media m
+            LEFT JOIN history h on h.media_id = m.id
+            GROUP BY m.id, m.path
+        )
         SELECT
             {args.select_sql}, rank
-            , SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
+            , play_count
         FROM {args.table} m
-        LEFT JOIN history h on h.media_id = m.id
         WHERE 1=1
             and path != :path
             {filter_args_sql(args, m_columns)}
             {'' if args.related >= consts.RELATED_NO_FILTER else (" ".join(args.filter_sql) or '')}
-        GROUP BY m.id
         ORDER BY play_count
             , m.path like "http%"
             , {'rank' if 'sort' in args.defaults else f'ntile(1000) over (order by rank), {args.sort}'}
@@ -497,17 +513,25 @@ def get_dir_media(args, dirs: List, include_subdirs=False) -> List[Dict]:
             + ")"
         )
 
-    query = f"""
+    query = f"""WITH m as (
+            SELECT
+                SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
+                , MIN(h.time_played) time_first_played
+                , MAX(h.time_played) time_last_played
+                , FIRST_VALUE(h.playhead) OVER (PARTITION BY h.media_id ORDER BY h.time_played DESC) playhead
+                , *
+            FROM media m
+            LEFT JOIN history h on h.media_id = m.id
+            GROUP BY m.id, m.path
+        )
         SELECT
             {args.select_sql}
-            , SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
+            , play_count
         FROM {args.table} m
-        LEFT JOIN history h on h.media_id = m.id
         WHERE 1=1
             {filter_args_sql(args, m_columns)}
             {filter_paths}
             {'' if args.related >= consts.DIRS_NO_FILTER else (" ".join(args.filter_sql) or '')}
-        GROUP BY m.id
         ORDER BY play_count
             , m.path LIKE "http%"
             {'' if 'sort' in args.defaults else ', ' + args.sort}
@@ -851,17 +875,26 @@ def historical_usage(args, freq="monthly", time_column="time_played", where=""):
         msg = f"Invalid value for 'freq': {freq}"
         raise ValueError(msg)
 
-    query = f"""
-    SELECT
-        {time_period} AS time_period
-        , SUM(duration) AS duration_sum
-        , AVG(duration) AS duration_avg
-        , SUM(size) AS size_sum
-        , AVG(size) AS size_avg
-    FROM media m
-    LEFT JOIN history h on h.media_id = m.id
-    WHERE coalesce(time_period, 0)>0 and {time_column}>0 {where}
-    GROUP BY time_period
+    query = f"""WITH m as (
+            SELECT
+                SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
+                , MIN(h.time_played) time_first_played
+                , MAX(h.time_played) time_last_played
+                , FIRST_VALUE(h.playhead) OVER (PARTITION BY h.media_id ORDER BY h.time_played DESC) playhead
+                , *
+            FROM media m
+            LEFT JOIN history h on h.media_id = m.id
+            GROUP BY m.id, m.path
+        )
+        SELECT
+            {time_period} AS time_period
+            , SUM(duration) AS duration_sum
+            , AVG(duration) AS duration_avg
+            , SUM(size) AS size_sum
+            , AVG(size) AS size_avg
+        FROM m
+        WHERE coalesce(time_period, 0)>0 and {time_column}>0 {where}
+        GROUP BY time_period
     """
     return list(args.db.query(query))
 

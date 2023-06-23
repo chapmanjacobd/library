@@ -330,7 +330,7 @@ def play(action) -> str:
         library {action} -S-6  # less than 6 MB
         library {action} -S+6  # more than 6 MB
 
-    Constrain media by time_created / time_played / time_deleted / time_modified:
+    Constrain media by time_created / time_last_played / time_deleted / time_modified:
         library {action} --created-within '3 days'
         library {action} --created-before '3 years'
 
