@@ -114,7 +114,6 @@ def folder_depth(args, folders) -> List[Dict]:
 
 def get_table(args) -> List[dict]:
     m_columns = db.columns(args, "media")
-    h_columns = db.columns(args, "history")
     args.filter_sql = []
     args.filter_bindings = {}
 
@@ -129,7 +128,7 @@ def get_table(args) -> List[dict]:
             path
             , size
             {', time_deleted' if 'time_deleted' in m_columns else ''}
-            {', time_played' if 'time_played' in h_columns else ''}
+            , time_played
         FROM media m
         LEFT JOIN history h on h.media_id = m.id
         WHERE 1=1
@@ -165,7 +164,7 @@ def process_bigdirs(args, media) -> List[Dict]:
         folders = [d for d in folders if args.folder_size(d["size"])]
 
     reverse = False
-    if " desc" in args.sort_by:
+    if args.sort_by and " desc" in args.sort_by:
         args.sort_by = args.sort_by.replace(" desc", "")
         reverse = True
 

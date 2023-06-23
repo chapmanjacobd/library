@@ -110,46 +110,62 @@ def history() -> None:
         print("Partially watched:")
         tbl = player.historical_usage(args, args.frequency, "time_played", "and coalesce(play_count, 0)=0")
         print_history(tbl)
-        query = f"""SELECT
+        query = f"""WITH m as (
+                SELECT
+                    SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
+                    , MIN(h.time_played) time_first_played
+                    , MAX(h.time_played) time_last_played
+                    , FIRST_VALUE(h.playhead) OVER (PARTITION BY h.media_id ORDER BY h.time_played DESC) playhead
+                    , *
+                FROM media m
+                LEFT JOIN history h on h.media_id = m.id
+                GROUP BY m.id, m.path
+            )
+            SELECT
                 path
                 {', title' if 'title' in m_columns else ''}
                 {', duration' if 'duration' in m_columns else ''}
                 {', subtitle_count' if 'subtitle_count' in m_columns else ''}
-                , MAX(h.time_played) time_played
-                , SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
-                , FIRST_VALUE(h.playhead) OVER (PARTITION BY h.media_id ORDER BY h.time_played DESC) playhead
-            FROM media m
-            LEFT JOIN history h on h.media_id = m.id
+                , time_last_played
+            FROM m
             WHERE coalesce(time_deleted, 0) = 0
                 and coalesce(playhead, 0) > 60
                 and coalesce(play_count, 0) = 0
-            GROUP BY m.id
-            ORDER BY time_played desc, playhead desc
+            ORDER BY time_last_played desc, playhead desc
             LIMIT {args.limit or 5}
         """
         tbl = list(args.db.query(query))
-        print_recent(tbl, "time_played")
+        print_recent(tbl, "time_last_played")
 
     elif args.facet.startswith("watched"):
         print("Finished watching:")
         tbl = player.historical_usage(args, args.frequency, "time_played", "and coalesce(play_count, 0)>0")
         print_history(tbl)
-        query = f"""SELECT
+        query = f"""WITH m as (
+                SELECT
+                    SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
+                    , MIN(h.time_played) time_first_played
+                    , MAX(h.time_played) time_last_played
+                    , FIRST_VALUE(h.playhead) OVER (PARTITION BY h.media_id ORDER BY h.time_played DESC) playhead
+                    , *
+                FROM media m
+                LEFT JOIN history h on h.media_id = m.id
+                GROUP BY m.id, m.path
+            )
+            SELECT
                 path
                 {', title' if 'title' in m_columns else ''}
                 {', duration' if 'duration' in m_columns else ''}
                 {', subtitle_count' if 'subtitle_count' in m_columns else ''}
-                , MAX(h.time_played) time_played
-                , SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
-            FROM media m
-            LEFT JOIN history h on h.media_id = m.id
+                , time_last_played
+                , play_count
+            FROM m
             WHERE coalesce(play_count, 0)>0
-            GROUP BY m.id
-            ORDER BY time_played desc, path
+            ORDER BY time_last_played desc, path
             LIMIT {args.limit or 5}
         """
         tbl = list(args.db.query(query))
-        print_recent(tbl, "time_played")
+        print_recent(tbl, "time_last_played")
 
     else:
         print(f"{args.facet.title()} media:")

@@ -27,8 +27,8 @@ def get_duplicates(args) -> List[dict]:
         FROM
             media
         WHERE 1=1
-            and id is not null
-            and id != ""
+            and extractor_id is not null
+            and extractor_id != ""
             and time_deleted = 0
             and playlist_id in (
                 SELECT id from playlists
@@ -42,16 +42,16 @@ def get_duplicates(args) -> List[dict]:
         , m1.title
     FROM m1, (
         SELECT
-            rowid,
+            media.id,
             *
         FROM
             media
         WHERE 1=1
             and time_deleted = 0
-            and id is null
+            and extractor_id is null
             and title is null
     ) m2
-    JOIN media_fts on m2.rowid = media_fts.rowid
+    JOIN media_fts on m2.id = media_fts.id
     JOIN playlists p2 on p2.id = m2.playlist_id
     WHERE p2.extractor_key = 'Local'
         AND media_fts.path MATCH '"'||m1.extractor_id||'"'

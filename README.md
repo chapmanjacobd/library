@@ -211,7 +211,7 @@ Incremental surfing. 📈🏄 totally rad!
 
       lb cluster-sort          Lines -> sorted by sentence similarity groups (stdin)
       lb nouns                 Unstructured text -> compound nouns (stdin)
-    
+
 
 </details>
 
@@ -755,7 +755,7 @@ Explore `library` databases in your browser
         library watch -S-6  # less than 6 MB
         library watch -S+6  # more than 6 MB
 
-    Constrain media by time_created / time_played / time_deleted / time_modified:
+    Constrain media by time_created / time_last_played / time_deleted / time_modified:
         library watch --created-within '3 days'
         library watch --created-before '3 years'
 

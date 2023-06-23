@@ -123,9 +123,9 @@ def construct_query(args) -> Tuple[str, dict]:
     args.select_sql = "\n        , ".join(args.select)
     args.limit_sql = "LIMIT " + str(args.limit) if args.limit else ""
     query = f"""WITH c as (
-    SELECT rowid, * FROM {table}
-    WHERE 1=1
-        {player.filter_args_sql(args, c_columns)}
+        SELECT id, * FROM {table}
+        WHERE 1=1
+            {player.filter_args_sql(args, c_columns)}
     )
     SELECT
         {args.select_sql}

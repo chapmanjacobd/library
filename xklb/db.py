@@ -186,11 +186,13 @@ def fts_quote(query: List[str]) -> List[str]:
 
 
 def fts_search(args, table="media") -> str:
-    args.filter_bindings["query"] = " AND ".join(fts_quote(args.include))
+    fts_query = " AND ".join(fts_quote(args.include))
     if args.exclude:
-        args.filter_bindings["query"] += " NOT " + " NOT ".join(fts_quote(args.exclude))
+        fts_query += " NOT " + " NOT ".join(fts_quote(args.exclude))
+    args.filter_bindings["query"] = fts_query
     table = "(" + args.db[table].search_sql(include_rank=True) + ")"
     return table
+
 
 
 def fts_flexible_search(args, table="media") -> str:

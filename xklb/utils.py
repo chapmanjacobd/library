@@ -1086,6 +1086,9 @@ def fast_glob(path_dir, limit=100):
 
 
 def cluster_paths(paths, n_clusters=None):
+    if len(paths) < 2:
+        return paths
+
     from sklearn.cluster import KMeans
     from sklearn.feature_extraction.text import TfidfVectorizer
 
@@ -1201,6 +1204,8 @@ def cluster_images(paths, n_clusters=None):
 
 
 def cluster_dicts(args, media):
+    if len(media) < 2:
+        return media
     media_keyed = {d["path"]: d for d in media}
     groups = cluster_paths([d["path"] for d in media])
     groups = sorted(groups, key=lambda d: (-len(d["grouped_paths"]), -len(d["common_prefix"])))

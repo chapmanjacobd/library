@@ -264,7 +264,6 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
 
 def construct_query(args) -> Tuple[str, dict]:
     m_columns = db.columns(args, "media")
-    h_columns = db.columns(args, "history")
 
     args.filter_sql = []
     args.filter_bindings = {}
@@ -305,11 +304,11 @@ def construct_query(args) -> Tuple[str, dict]:
         )
     if args.played_within:
         args.filter_sql.append(
-            f"and time_played > cast(STRFTIME('%s', datetime( 'now', '-{ii(args.played_within)}')) as int)",
+            f"and time_last_played > cast(STRFTIME('%s', datetime( 'now', '-{ii(args.played_within)}')) as int)",
         )
     if args.played_before:
         args.filter_sql.append(
-            f"and time_played < cast(STRFTIME('%s', datetime( 'now', '-{ii(args.played_before)}')) as int)",
+            f"and time_last_played < cast(STRFTIME('%s', datetime( 'now', '-{ii(args.played_before)}')) as int)",
         )
     if args.deleted_within:
         args.filter_sql.append(
@@ -323,7 +322,7 @@ def construct_query(args) -> Tuple[str, dict]:
     args.table = "media"
     if args.db["media"].detect_fts() and not args.no_fts:
         if args.include:
-            args.table = db.fts_flexible_search(args)
+            args.table = db.fts_search(args)
             m_columns = {**m_columns, "rank": int}
         elif args.exclude:
             db.construct_search_bindings(args, m_columns)
@@ -352,7 +351,7 @@ def construct_query(args) -> Tuple[str, dict]:
             else ""
         )
         args.filter_sql.append(
-            f"and m.rowid in (select rowid from media {where_not_deleted} order by random() limit {limit})",
+            f"and m.id in (select id from media {where_not_deleted} order by random() limit {limit})",
         )
 
     cols = args.cols or ["path", "title", "duration", "size", "subtitle_count", "is_dir", "rank"]
@@ -363,29 +362,36 @@ def construct_query(args) -> Tuple[str, dict]:
     args.limit_sql = "LIMIT " + str(args.limit) if args.limit else ""
     args.offset_sql = f"OFFSET {args.skip}" if args.skip and args.limit else ""
     query = f"""WITH m as (
-    SELECT rowid, * FROM {args.table}
-    WHERE 1=1
-        {player.filter_args_sql(args, m_columns)}
-    )
-    SELECT
-        {args.select_sql}
-        , SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
-        , MIN(h.time_played) time_first_played
-        , MAX(h.time_played) time_last_played
-        , FIRST_VALUE(h.playhead) OVER (PARTITION BY h.media_id ORDER BY h.time_played DESC) playhead
-    FROM m
-    LEFT JOIN history h on h.media_id = m.id
-    WHERE 1=1
-        {" ".join(args.filter_sql)}
-    GROUP BY m.id, m.path -- for time_played aggregates
-    ORDER BY 1=1
-        , {args.sort}
-    {args.limit_sql} {args.offset_sql}
+            SELECT
+                m.id
+                , SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
+                , MIN(h.time_played) time_first_played
+                , MAX(h.time_played) time_last_played
+                , FIRST_VALUE(h.playhead) OVER (PARTITION BY h.media_id ORDER BY h.time_played DESC) playhead
+                , *
+            FROM {args.table} m
+            LEFT JOIN history h on h.media_id = m.id
+            WHERE 1=1
+                {player.filter_args_sql(args, m_columns)}
+            GROUP BY m.id, m.path
+        )
+        SELECT
+            {args.select_sql}
+            , play_count
+            , time_first_played
+            , time_last_played
+            , playhead
+        FROM m
+        WHERE 1=1
+            {" ".join(args.filter_sql)}
+        ORDER BY 1=1
+            , {args.sort}
+        {args.limit_sql} {args.offset_sql}
     """
 
     args.filter_sql = [
-        s for s in args.filter_sql if "rowid" not in s
-    ]  # only use random rowid constraint in first query
+        s for s in args.filter_sql if "id" not in s
+    ]  # only use random id constraint in first query
 
     return query, args.filter_bindings
 
