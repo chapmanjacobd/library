@@ -414,9 +414,10 @@ def get_ordinal_media(args, m: Dict, ignore_paths=None) -> Dict:
             SELECT
                 {args.select_sql}
                 , play_count
-            FROM {'m' if args.play_in_order >= consts.SIMILAR_NO_FILTER_NO_FTS else args.table} AS m
+            FROM m
             WHERE 1=1
                 and path like :candidate
+                {'' if args.play_in_order >= consts.SIMILAR_NO_FILTER_NO_FTS else f'and m.id in (select id from {args.table})'}
                 {filter_args_sql(args, m_columns)}
                 {'' if args.play_in_order >= consts.SIMILAR_NO_FILTER else (" ".join(args.filter_sql) or '')}
                 {"and path not in ({})".format(",".join([f":ignore_path{i}" for i in range(len(ignore_paths))])) if len(ignore_paths) > 0 else ''}
@@ -475,9 +476,10 @@ def get_related_media(args, m: Dict) -> List[Dict]:
         SELECT
             {args.select_sql}, rank
             , play_count
-        FROM {args.table} m
+        FROM m
         WHERE 1=1
             and path != :path
+            and m.id in (select id from {args.table})
             {filter_args_sql(args, m_columns)}
             {'' if args.related >= consts.RELATED_NO_FILTER else (" ".join(args.filter_sql) or '')}
         ORDER BY play_count
@@ -527,8 +529,9 @@ def get_dir_media(args, dirs: List, include_subdirs=False) -> List[Dict]:
         SELECT
             {args.select_sql}
             , play_count
-        FROM {args.table} m
+        FROM m
         WHERE 1=1
+            and m.id in (select id from {args.table})
             {filter_args_sql(args, m_columns)}
             {filter_paths}
             {'' if args.related >= consts.DIRS_NO_FILTER else (" ".join(args.filter_sql) or '')}
