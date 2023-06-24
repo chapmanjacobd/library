@@ -774,6 +774,8 @@ bigdirs = """library bigdirs DATABASE [--limit (4000)] [--depth (0)] [--sort-by 
     lb bigdirs video.db --depth 7
 """
 
+disk_usage =None
+
 christen = """library christen DATABASE [--run]
 
     Rename files to be somewhat normalized

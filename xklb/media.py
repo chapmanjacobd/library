@@ -26,7 +26,7 @@ def exists(args, path) -> bool:
 
 
 def get(args, path):
-    return args.db.pop_dict("select * from media where path = ?", path)
+    return args.db.pop_dict("select * from media where path = ?", [path])
 
 
 def get_paths(args):
