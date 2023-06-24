@@ -406,21 +406,20 @@ def get_ordinal_media(args, m: Dict, ignore_paths=None) -> Dict:
                     , MIN(h.time_played) time_first_played
                     , MAX(h.time_played) time_last_played
                     , FIRST_VALUE(h.playhead) OVER (PARTITION BY h.media_id ORDER BY h.time_played DESC) playhead
-                    , *
+                    , {args.select_sql}
                 FROM media m
                 LEFT JOIN history h on h.media_id = m.id
+                WHERE 1=1
+                    and path like :candidate
+                    {'' if args.play_in_order >= consts.SIMILAR_NO_FILTER_NO_FTS else f'and m.id in (select id from {args.table})'}
+                    {filter_args_sql(args, m_columns)}
+                    {'' if args.play_in_order >= consts.SIMILAR_NO_FILTER else (" ".join(args.filter_sql) or '')}
+                    {"and path not in ({})".format(",".join([f":ignore_path{i}" for i in range(len(ignore_paths))])) if len(ignore_paths) > 0 else ''}
                 GROUP BY m.id, m.path
             )
             SELECT
-                {args.select_sql}
-                , play_count
+                *
             FROM m
-            WHERE 1=1
-                and path like :candidate
-                {'' if args.play_in_order >= consts.SIMILAR_NO_FILTER_NO_FTS else f'and m.id in (select id from {args.table})'}
-                {filter_args_sql(args, m_columns)}
-                {'' if args.play_in_order >= consts.SIMILAR_NO_FILTER else (" ".join(args.filter_sql) or '')}
-                {"and path not in ({})".format(",".join([f":ignore_path{i}" for i in range(len(ignore_paths))])) if len(ignore_paths) > 0 else ''}
             ORDER BY play_count, path
             LIMIT 1000
             """
@@ -468,20 +467,17 @@ def get_related_media(args, m: Dict) -> List[Dict]:
                 , MIN(h.time_played) time_first_played
                 , MAX(h.time_played) time_last_played
                 , FIRST_VALUE(h.playhead) OVER (PARTITION BY h.media_id ORDER BY h.time_played DESC) playhead
-                , *
-            FROM media m
+                , {args.select_sql}
+            FROM {args.table} m
             LEFT JOIN history h on h.media_id = m.id
+            WHERE 1=1
+                and path != :path
+                {filter_args_sql(args, m_columns)}
+                {'' if args.related >= consts.RELATED_NO_FILTER else (" ".join(args.filter_sql) or '')}
             GROUP BY m.id, m.path
         )
-        SELECT
-            {args.select_sql}, rank
-            , play_count
+        SELECT *
         FROM m
-        WHERE 1=1
-            and path != :path
-            and m.id in (select id from {args.table})
-            {filter_args_sql(args, m_columns)}
-            {'' if args.related >= consts.RELATED_NO_FILTER else (" ".join(args.filter_sql) or '')}
         ORDER BY play_count
             , m.path like "http%"
             , {'rank' if 'sort' in args.defaults else f'ntile(1000) over (order by rank), {args.sort}'}
@@ -521,20 +517,18 @@ def get_dir_media(args, dirs: List, include_subdirs=False) -> List[Dict]:
                 , MIN(h.time_played) time_first_played
                 , MAX(h.time_played) time_last_played
                 , FIRST_VALUE(h.playhead) OVER (PARTITION BY h.media_id ORDER BY h.time_played DESC) playhead
-                , *
+                , {args.select_sql}
             FROM media m
             LEFT JOIN history h on h.media_id = m.id
+            WHERE 1=1
+                and m.id in (select id from {args.table})
+                {filter_args_sql(args, m_columns)}
+                {filter_paths}
+                {'' if args.related >= consts.DIRS_NO_FILTER else (" ".join(args.filter_sql) or '')}
             GROUP BY m.id, m.path
         )
-        SELECT
-            {args.select_sql}
-            , play_count
+        SELECT *
         FROM m
-        WHERE 1=1
-            and m.id in (select id from {args.table})
-            {filter_args_sql(args, m_columns)}
-            {filter_paths}
-            {'' if args.related >= consts.DIRS_NO_FILTER else (" ".join(args.filter_sql) or '')}
         ORDER BY play_count
             , m.path LIKE "http%"
             {'' if 'sort' in args.defaults else ', ' + args.sort}

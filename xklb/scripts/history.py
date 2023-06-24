@@ -116,19 +116,18 @@ def history() -> None:
                     , MIN(h.time_played) time_first_played
                     , MAX(h.time_played) time_last_played
                     , FIRST_VALUE(h.playhead) OVER (PARTITION BY h.media_id ORDER BY h.time_played DESC) playhead
-                    , *
+                    , path
+                    {', title' if 'title' in m_columns else ''}
+                    {', duration' if 'duration' in m_columns else ''}
+                    {', subtitle_count' if 'subtitle_count' in m_columns else ''}
                 FROM media m
                 LEFT JOIN history h on h.media_id = m.id
+                WHERE coalesce(time_deleted, 0) = 0
                 GROUP BY m.id, m.path
             )
-            SELECT
-                path
-                {', title' if 'title' in m_columns else ''}
-                {', duration' if 'duration' in m_columns else ''}
-                {', subtitle_count' if 'subtitle_count' in m_columns else ''}
-                , time_last_played
+            SELECT *
             FROM m
-            WHERE coalesce(time_deleted, 0) = 0
+            WHERE 1=1
                 and coalesce(playhead, 0) > 60
                 and coalesce(play_count, 0) = 0
             ORDER BY time_last_played desc, playhead desc
@@ -147,18 +146,15 @@ def history() -> None:
                     , MIN(h.time_played) time_first_played
                     , MAX(h.time_played) time_last_played
                     , FIRST_VALUE(h.playhead) OVER (PARTITION BY h.media_id ORDER BY h.time_played DESC) playhead
-                    , *
+                    , path
+                    {', title' if 'title' in m_columns else ''}
+                    {', duration' if 'duration' in m_columns else ''}
+                    {', subtitle_count' if 'subtitle_count' in m_columns else ''}
                 FROM media m
                 LEFT JOIN history h on h.media_id = m.id
                 GROUP BY m.id, m.path
             )
-            SELECT
-                path
-                {', title' if 'title' in m_columns else ''}
-                {', duration' if 'duration' in m_columns else ''}
-                {', subtitle_count' if 'subtitle_count' in m_columns else ''}
-                , time_last_played
-                , play_count
+            SELECT *
             FROM m
             WHERE coalesce(play_count, 0)>0
             ORDER BY time_last_played desc, path

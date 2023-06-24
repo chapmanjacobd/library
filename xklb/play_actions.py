@@ -373,6 +373,7 @@ def construct_query(args) -> Tuple[str, dict]:
             LEFT JOIN history h on h.media_id = m.id
             WHERE 1=1
                 {player.filter_args_sql(args, m_columns)}
+                {" ".join(args.filter_sql)}
             GROUP BY m.id, m.path
         )
         SELECT
@@ -383,7 +384,6 @@ def construct_query(args) -> Tuple[str, dict]:
             , playhead
         FROM m
         WHERE 1=1
-            {" ".join(args.filter_sql)}
         ORDER BY 1=1
             , {args.sort}
         {args.limit_sql} {args.offset_sql}
