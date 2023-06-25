@@ -185,14 +185,7 @@ time_facets = [
 
 frequency = ["daily", "weekly", "monthly", "quarterly", "yearly"]
 
-PLAYLIST_KNOWN_KEYS = (
-    "description",
-    "url",
-    "duration",
-    "view_count",
-    "webpage_url",
-    "original_url",
-)
+PLAYLIST_KNOWN_KEYS = ("description", "url", "duration", "view_count", "webpage_url", "original_url", "time_deleted")
 
 MEDIA_KNOWN_KEYS = (
     "photoset_layout",

@@ -1,7 +1,7 @@
 import argparse
 from pathlib import Path
 
-from xklb import db, history, usage, utils
+from xklb import consts, db, history, usage, utils
 from xklb.scripts.dedupe_db import dedupe_rows
 from xklb.utils import log
 
@@ -51,8 +51,9 @@ def copy_play_count(args, source_db) -> None:
             if (d.get("play_count") or 0) == 0:
                 new_schema.append({**d, "done": False})
             else:
-                for _ in range(d["play_count"]):
-                    new_schema.append({**d, "done": True})
+                n = d.get("time_played") or consts.now()
+                for i in range(d["play_count"]):
+                    new_schema.append({**d, "done": True, "time_played": n + i})
         copy_counts.extend(new_schema)
     except Exception:
         log.info("Old schema could not be read")
