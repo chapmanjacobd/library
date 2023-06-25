@@ -400,7 +400,7 @@ def get_ordinal_media(args, m: Dict, ignore_paths=None) -> Dict:
             return m
 
         candidate = new_candidate
-        query = f"""WITH m as (
+        query = f"""WITH mh as (
                 SELECT
                     SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
                     , MIN(h.time_played) time_first_played
@@ -419,7 +419,7 @@ def get_ordinal_media(args, m: Dict, ignore_paths=None) -> Dict:
             )
             SELECT
                 *
-            FROM m
+            FROM mh
             ORDER BY play_count, path
             LIMIT 1000
             """
@@ -461,7 +461,7 @@ def get_related_media(args, m: Dict) -> List[Dict]:
     args.include = sorted(words, key=len, reverse=True)[:100]
     args.table = db.fts_flexible_search(args)
 
-    query = f"""WITH m as (
+    query = f"""WITH mh as (
             SELECT
                 SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
                 , MIN(h.time_played) time_first_played
@@ -477,9 +477,9 @@ def get_related_media(args, m: Dict) -> List[Dict]:
             GROUP BY m.id, m.path
         )
         SELECT *
-        FROM m
+        FROM mh
         ORDER BY play_count
-            , m.path like "http%"
+            , path like "http%"
             , {'rank' if 'sort' in args.defaults else f'ntile(1000) over (order by rank), {args.sort}'}
             , path
         {"LIMIT " + str(args.limit - 1) if args.limit else ""} {args.offset_sql}
@@ -511,7 +511,7 @@ def get_dir_media(args, dirs: List, include_subdirs=False) -> List[Dict]:
             + ")"
         )
 
-    query = f"""WITH m as (
+    query = f"""WITH mh as (
             SELECT
                 SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
                 , MIN(h.time_played) time_first_played
@@ -528,9 +528,9 @@ def get_dir_media(args, dirs: List, include_subdirs=False) -> List[Dict]:
             GROUP BY m.id, m.path
         )
         SELECT *
-        FROM m
+        FROM mh
         ORDER BY play_count
-            , m.path LIKE "http%"
+            , path LIKE "http%"
             {'' if 'sort' in args.defaults else ', ' + args.sort}
             , path
         {"LIMIT 10000" if 'limit' in args.defaults else str(args.limit)} {args.offset_sql}
@@ -872,7 +872,7 @@ def historical_usage(args, freq="monthly", time_column="time_played", where=""):
         msg = f"Invalid value for 'freq': {freq}"
         raise ValueError(msg)
 
-    query = f"""WITH m as (
+    query = f"""WITH mh as (
             SELECT
                 SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
                 , MIN(h.time_played) time_first_played
@@ -889,7 +889,7 @@ def historical_usage(args, freq="monthly", time_column="time_played", where=""):
             , AVG(duration) AS duration_avg
             , SUM(size) AS size_sum
             , AVG(size) AS size_avg
-        FROM m
+        FROM mh
         WHERE coalesce(time_period, 0)>0 and {time_column}>0 {where}
         GROUP BY time_period
     """

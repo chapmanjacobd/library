@@ -110,7 +110,7 @@ def history() -> None:
         print("Partially watched:")
         tbl = player.historical_usage(args, args.frequency, "time_played", "and coalesce(play_count, 0)=0")
         print_history(tbl)
-        query = f"""WITH m as (
+        query = f"""WITH mh as (
                 SELECT
                     SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
                     , MIN(h.time_played) time_first_played
@@ -126,7 +126,7 @@ def history() -> None:
                 GROUP BY m.id, m.path
             )
             SELECT *
-            FROM m
+            FROM mh
             WHERE 1=1
                 and coalesce(playhead, 0) > 60
                 and coalesce(play_count, 0) = 0
@@ -140,7 +140,7 @@ def history() -> None:
         print("Finished watching:")
         tbl = player.historical_usage(args, args.frequency, "time_played", "and coalesce(play_count, 0)>0")
         print_history(tbl)
-        query = f"""WITH m as (
+        query = f"""WITH mh as (
                 SELECT
                     SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
                     , MIN(h.time_played) time_first_played
@@ -155,7 +155,7 @@ def history() -> None:
                 GROUP BY m.id, m.path
             )
             SELECT *
-            FROM m
+            FROM mh
             WHERE coalesce(play_count, 0)>0
             ORDER BY time_last_played desc, path
             LIMIT {args.limit or 5}
