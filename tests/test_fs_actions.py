@@ -19,42 +19,6 @@ a_db = "tests/data/audio.db"
 fs_add([a_db, "--audio", "tests/data/"])
 
 
-def test_wt_help(capsys):
-    wt_help_text = "usage:,where,sort,--duration".split(",")
-
-    sys.argv = ["wt", "-h"]
-    with pytest.raises(SystemExit):
-        wt()
-    captured = capsys.readouterr().out.replace("\n", "")
-    for help_text in wt_help_text:
-        assert help_text in captured
-
-    with pytest.raises(SystemExit):
-        lb(["wt", "-h"])
-    captured = capsys.readouterr().out.replace("\n", "")
-    for help_text in wt_help_text:
-        assert help_text in captured
-
-
-def test_wt_print(capsys):
-    for lb_command in [
-        ["wt", v_db, "-p"],
-        ["pl", v_db],
-    ]:
-        lb(lb_command)
-        captured = capsys.readouterr().out.replace("\n", "")
-        assert "Aggregate" not in captured, f"Test failed for {lb_command}"
-
-    for lb_command in [
-        ["wt", v_db, "-p", "a"],
-        ["wt", v_db, "-pa"],
-        ["pl", v_db, "-a"],
-    ]:
-        lb(lb_command)
-        captured = capsys.readouterr().out.replace("\n", "")
-        assert ("Aggregate" in captured) or ("extractor_key" in captured), f"Test failed for {lb_command}"
-
-
 local_player_flags = [
     "-s tests -s 'test AND data' -E 2 -s test -E 3",
     "--duration-from-size=-100Mb",
@@ -95,27 +59,55 @@ local_player_flags = [
     "-S+0 -S-10",
     "-S=-1Mi",
     "--created-before '3 days'",
-    "--played-within '3 days'",
+    "--downloaded-within '1 day'",
     "-u duration",
     "--portrait",
     # "--online-media-only",
     "--local-media-only",
     "-w 'size/duration<50000'",
     "-w time_deleted=0",
+    "-w 'playhead is NULL'",
+    "--played-within '3 days'",
     "-w 'play_count>0'",
     "-w 'time_played>0'",
     "-w 'done>0'",
-    "-w 'playhead is NULL'",
 ]
 
 
-@mock.patch("xklb.play_actions.play", return_value=SimpleNamespace(returncode=0))
-@pytest.mark.parametrize("flags", local_player_flags)
-def test_wt_flags(play_mocked, flags):
-    sys.argv = ["wt", v_db] + shlex.split(flags)
-    wt()
-    out = play_mocked.call_args[0][1]
-    assert out is not None, f"Test failed for {flags}"
+def test_wt_help(capsys):
+    wt_help_text = "usage:,where,sort,--duration".split(",")
+
+    sys.argv = ["wt", "-h"]
+    with pytest.raises(SystemExit):
+        wt()
+    captured = capsys.readouterr().out.replace("\n", "")
+    for help_text in wt_help_text:
+        assert help_text in captured
+
+    with pytest.raises(SystemExit):
+        lb(["wt", "-h"])
+    captured = capsys.readouterr().out.replace("\n", "")
+    for help_text in wt_help_text:
+        assert help_text in captured
+
+
+def test_wt_print(capsys):
+    for lb_command in [
+        ["wt", v_db, "-p"],
+        ["pl", v_db],
+    ]:
+        lb(lb_command)
+        captured = capsys.readouterr().out.replace("\n", "")
+        assert "Aggregate" not in captured, f"Test failed for {lb_command}"
+
+    for lb_command in [
+        ["wt", v_db, "-p", "a"],
+        ["wt", v_db, "-pa"],
+        ["pl", v_db, "-a"],
+    ]:
+        lb(lb_command)
+        captured = capsys.readouterr().out.replace("\n", "")
+        assert ("Aggregate" in captured) or ("extractor_key" in captured), f"Test failed for {lb_command}"
 
 
 class TestFs(unittest.TestCase):
@@ -172,3 +164,12 @@ class TestFs(unittest.TestCase):
             temp_dir.cleanup()
         except Exception as e:
             log.debug(e)
+
+
+@mock.patch("xklb.play_actions.play", return_value=SimpleNamespace(returncode=0))
+@pytest.mark.parametrize("flags", local_player_flags)
+def test_wt_flags(play_mocked, flags):
+    sys.argv = ["wt", v_db] + shlex.split(flags)
+    wt()
+    out = play_mocked.call_args[0][1]
+    assert out is not None, f"Test failed for {flags}"
