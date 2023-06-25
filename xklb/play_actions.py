@@ -266,6 +266,7 @@ def construct_query(args) -> Tuple[str, dict]:
     m_columns = db.columns(args, "media")
 
     args.filter_sql = []
+    args.aggregate_filter_sql = []
     args.filter_bindings = {}
 
     if args.duration:
@@ -285,35 +286,35 @@ def construct_query(args) -> Tuple[str, dict]:
         return string.replace("mins", "minutes").replace("secs", "seconds")
 
     if args.created_within:
-        args.filter_sql.append(
+        args.aggregate_filter_sql.append(
             f"and time_created > cast(STRFTIME('%s', datetime( 'now', '-{ii(args.created_within)}')) as int)",
         )
     if args.created_before:
-        args.filter_sql.append(
+        args.aggregate_filter_sql.append(
             f"and time_created < cast(STRFTIME('%s', datetime( 'now', '-{ii(args.created_before)}')) as int)",
         )
     if args.changed_within:
-        args.filter_sql.append(
+        args.aggregate_filter_sql.append(
             f"and time_modified > cast(STRFTIME('%s', datetime( 'now', '-{ii(args.changed_within)}')) as int)",
         )
     if args.changed_before:
-        args.filter_sql.append(
+        args.aggregate_filter_sql.append(
             f"and time_modified < cast(STRFTIME('%s', datetime( 'now', '-{ii(args.changed_before)}')) as int)",
         )
     if args.played_within:
-        args.filter_sql.append(
+        args.aggregate_filter_sql.append(
             f"and time_last_played > cast(STRFTIME('%s', datetime( 'now', '-{ii(args.played_within)}')) as int)",
         )
     if args.played_before:
-        args.filter_sql.append(
+        args.aggregate_filter_sql.append(
             f"and time_last_played < cast(STRFTIME('%s', datetime( 'now', '-{ii(args.played_before)}')) as int)",
         )
     if args.deleted_within:
-        args.filter_sql.append(
+        args.aggregate_filter_sql.append(
             f"and time_deleted > cast(STRFTIME('%s', datetime( 'now', '-{ii(args.deleted_within)}')) as int)",
         )
     if args.deleted_before:
-        args.filter_sql.append(
+        args.aggregate_filter_sql.append(
             f"and time_deleted < cast(STRFTIME('%s', datetime( 'now', '-{ii(args.deleted_before)}')) as int)",
         )
 
@@ -352,6 +353,8 @@ def construct_query(args) -> Tuple[str, dict]:
             f"and m.id in (select id from media {where_not_deleted} order by random() limit {limit})",
         )
 
+    aggregate_filter_columns = ["time_first_played", "time_last_played", "play_count", "playhead"]
+
     cols = args.cols or ["path", "title", "duration", "size", "subtitle_count", "is_dir", "rank"]
     args.select = [c for c in cols if c in m_columns or c in ["*"]]
     if args.action == SC.read and "tags" in m_columns:
@@ -372,6 +375,7 @@ def construct_query(args) -> Tuple[str, dict]:
             WHERE 1=1
                 {player.filter_args_sql(args, m_columns)}
                 {" ".join(args.filter_sql)}
+                {" ".join([" and " + w for w in args.where if not any(a in w for a in aggregate_filter_columns)])}
             GROUP BY m.id, m.path
         )
         SELECT
@@ -382,7 +386,8 @@ def construct_query(args) -> Tuple[str, dict]:
             , playhead
         FROM m
         WHERE 1=1
-            {' '.join([" and " + w for w in args.where])}
+            {" ".join(args.aggregate_filter_sql)}
+            {" ".join([" and " + w for w in args.where if any(a in w for a in aggregate_filter_columns)])}
         ORDER BY 1=1
             , {args.sort}
         {args.limit_sql} {args.offset_sql}

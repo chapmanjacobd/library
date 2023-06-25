@@ -1,4 +1,4 @@
-import sys, tempfile, unittest
+import shlex, sys, tempfile, unittest
 from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
@@ -43,7 +43,7 @@ def test_wt_print(capsys):
     ]:
         lb(lb_command)
         captured = capsys.readouterr().out.replace("\n", "")
-        assert "Aggregate" not in captured
+        assert "Aggregate" not in captured, f"Test failed for {lb_command}"
 
     for lb_command in [
         ["wt", v_db, "-p", "a"],
@@ -52,7 +52,70 @@ def test_wt_print(capsys):
     ]:
         lb(lb_command)
         captured = capsys.readouterr().out.replace("\n", "")
-        assert ("Aggregate" in captured) or ("extractor_key" in captured)
+        assert ("Aggregate" in captured) or ("extractor_key" in captured), f"Test failed for {lb_command}"
+
+
+local_player_flags = [
+    "-s tests -s 'test AND data' -E 2 -s test -E 3",
+    "--duration-from-size=-100Mb",
+    "-O",
+    "-OO",
+    "-OOO",
+    "-OOOO",
+    "-R",
+    "-RR",
+    "-C",
+    # "-B",
+    "-RCO",
+    "--sibling",
+    # "--solo",
+    "-P o",
+    "-P p",
+    "-P t",
+    # "-P s",
+    "-P f",
+    "-P fo",
+    "-P pt",
+    # "-p",
+    # "-pa",
+    # "-pb",
+    # "-pf",
+    # "-p df",
+    # "-p bf",
+    # "-p -P",
+    # "-p --cols '*' -L inf",
+    "--skip 1",
+    "-s test",
+    "test",
+    "-s 'path : test'",
+    "-w audio_count=1",
+    "-w subtitle_count=1",
+    "-d+0 -d-10",
+    "-d=-1",
+    "-S+0 -S-10",
+    "-S=-1Mi",
+    "--created-before '3 days'",
+    "--played-within '3 days'",
+    "-u duration",
+    "--portrait",
+    # "--online-media-only",
+    "--local-media-only",
+    "-w 'size/duration<50000'",
+    "-w time_deleted=0",
+    "-w 'play_count>0'",
+    "-w 'time_played>0'",
+    "-w 'done>0'",
+    "-w 'playhead is NULL'",
+]
+
+
+@mock.patch("xklb.play_actions.play", return_value=SimpleNamespace(returncode=0))
+@pytest.mark.parametrize("flags", local_player_flags)
+def test_wt_flags(play_mocked, flags):
+    sys.argv = ["wt", v_db] + shlex.split(flags)
+    wt()
+    out = play_mocked.call_args[0][1]
+    assert out is not None, f"Test failed for {flags}"
 
 
 class TestFs(unittest.TestCase):
@@ -77,26 +140,6 @@ class TestFs(unittest.TestCase):
         lb(["listen", a_db])
         out = play_mocked.call_args[0][1]
         assert "test" in out["path"]
-
-    @mock.patch("xklb.player.local_player", return_value=SimpleNamespace(returncode=0))
-    def test_wt_search(self, play_mocked):
-        sys.argv = [
-            "wt",
-            v_db,
-            "-s",
-            "tests",
-            "-s",
-            "test AND data",
-            "-E",
-            "2",
-            "-s",
-            "test",
-            "-E",
-            "3",
-        ]
-        wt()
-        out = play_mocked.call_args[0][1]
-        assert out is not None
 
     @mock.patch("xklb.player.local_player", return_value=SimpleNamespace(returncode=0))
     def test_wt_sort(self, play_mocked):
