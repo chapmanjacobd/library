@@ -26,6 +26,7 @@ for title, subcommand in [
     ("Merge SQLITE databases", "merge-dbs"),
     ("Dedupe SQLITE tables", "dedupe-db"),
     ("Show large folders", "bigdirs"),
+    ("Disk Usage", "disk-usage"),
     ("Copy play history", "copy-play-counts"),
     ("Import mpv watchlater files", "mpv-watchlater"),
     ("Sort data by similarity", "cluster-sort"),
