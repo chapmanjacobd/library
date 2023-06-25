@@ -32,7 +32,7 @@ def parse_args_sort(args) -> None:
         "rank" if args.sort and "rank" in args.sort else None,
         "video_count > 0 desc" if "video_count" in m_columns and args.action == SC.watch else None,
         "audio_count > 0 desc" if "audio_count" in m_columns else None,
-        'm.path like "http%"',
+        'path like "http%"',
         "width < height desc" if "width" in m_columns and hasattr(args, "portrait") and args.portrait else None,
         f"subtitle_count {subtitle_count} desc"
         if "subtitle_count" in m_columns
@@ -54,7 +54,7 @@ def parse_args_sort(args) -> None:
         if args.action in (SC.listen, SC.watch) and "size" in m_columns and "duration" in m_columns
         else None,
         "size" if args.action == SC.filesystem else None,
-        "m.path",
+        "path",
         "random",
     ]
 
@@ -274,7 +274,7 @@ def construct_query(args) -> Tuple[str, dict]:
         args.filter_sql.append(" and size IS NOT NULL " + args.size)
     if args.duration_from_size:
         args.filter_sql.append(
-            " and size IS NOT NULL and duration in (select distinct duration from m where 1=1 "
+            " and size IS NOT NULL and duration in (select distinct duration from media where 1=1 "
             + args.duration_from_size
             + ")",
         )
@@ -359,7 +359,7 @@ def construct_query(args) -> Tuple[str, dict]:
     args.select_sql = "\n        , ".join(args.select)
     args.limit_sql = "LIMIT " + str(args.limit) if args.limit else ""
     args.offset_sql = f"OFFSET {args.skip}" if args.skip and args.limit else ""
-    query = f"""WITH m as (
+    query = f"""WITH mh as (
             SELECT
                 m.id
                 , SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
@@ -380,7 +380,7 @@ def construct_query(args) -> Tuple[str, dict]:
             , time_first_played
             , time_last_played
             , playhead
-        FROM m
+        FROM mh
         WHERE 1=1
             {' '.join([" and " + w for w in args.where])}
         ORDER BY 1=1

@@ -91,7 +91,7 @@ def construct_tabs_query(args) -> Tuple[str, dict]:
     LIMIT = "LIMIT " + str(args.limit) if args.limit else ""
     OFFSET = f"OFFSET {args.skip}" if args.skip else ""
 
-    query = f"""WITH m as (
+    query = f"""WITH mh as (
             SELECT
                 path
                 , frequency
@@ -114,7 +114,7 @@ def construct_tabs_query(args) -> Tuple[str, dict]:
             WHEN frequency = 'yearly' THEN cast(STRFTIME('%s', datetime( time_last_played, 'unixepoch', '+1 Year' )) as int)
         END time_valid
         {', ' + ', '.join(args.cols) if args.cols else ''}
-    FROM m
+    FROM mh
     WHERE 1=1
         and COALESCE(time_deleted,0) = 0
         {" ".join(args.filter_sql)}
