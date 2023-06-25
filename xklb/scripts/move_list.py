@@ -81,7 +81,7 @@ def iterate_and_show_options(args, tbl) -> Tuple[List[Dict], List[Dict]]:
     vew = utils.list_dict_filter_bool(vew, keep_0=False)
     vew = utils.col_resize(vew, "path", 60)
     vew = utils.col_naturalsize(vew, "size")
-    print(tabulate(vew, tablefmt="fancy_grid", headers="keys", showindex=False))
+    print(tabulate(vew, tablefmt="github", headers="keys", showindex=False))
     print(len(tbl) - len(vew), "other folders not shown")
 
     if args.limit:

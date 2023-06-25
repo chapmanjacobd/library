@@ -238,7 +238,7 @@ def dedupe() -> None:
     tbl = utils.col_resize(tbl, "keep_path", 30)
     tbl = utils.col_resize(tbl, "duplicate_path", 30)
     tbl = utils.col_naturalsize(tbl, "duplicate_size")
-    print(tabulate(tbl, tablefmt="fancy_grid", headers="keys", showindex=False))
+    print(tabulate(tbl, tablefmt="github", headers="keys", showindex=False))
 
     duplicates_count = len(duplicates)
     print(f"{duplicates_count} duplicates found (showing first {args.limit})")

@@ -194,7 +194,6 @@ def fts_search(args, table="media") -> str:
     return table
 
 
-
 def fts_flexible_search(args, table="media") -> str:
     args.filter_bindings["query"] = " OR ".join(fts_quote(args.include))
     if args.exclude:

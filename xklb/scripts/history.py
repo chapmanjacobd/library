@@ -65,7 +65,7 @@ def print_history(tbl):
     utils.col_naturalsize(tbl, "size_sum")
     utils.col_naturalsize(tbl, "size_avg")
     tbl = utils.list_dict_filter_bool(tbl)
-    print(tabulate(tbl, tablefmt="fancy_grid", headers="keys", showindex=False))
+    print(tabulate(tbl, tablefmt="github", headers="keys", showindex=False))
 
 
 def print_recent(tbl, time_column=None):
@@ -80,7 +80,7 @@ def print_recent(tbl, time_column=None):
     tbl = utils.col_resize(tbl, "duration", 5)
     tbl = utils.col_resize(tbl, "playhead", 5)
     tbl = utils.list_dict_filter_bool(tbl)
-    print(tabulate(tbl, tablefmt="fancy_grid", headers="keys", showindex=False))
+    print(tabulate(tbl, tablefmt="github", headers="keys", showindex=False))
 
 
 def recent_media(args, time_column):

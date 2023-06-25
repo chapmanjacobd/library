@@ -128,7 +128,7 @@ def get_table(args) -> List[dict]:
             path
             , size
             {', time_deleted' if 'time_deleted' in m_columns else ''}
-            , time_played
+            , MAX(h.time_played) time_played
         FROM media m
         LEFT JOIN history h on h.media_id = m.id
         WHERE 1=1
@@ -184,7 +184,7 @@ def bigdirs() -> None:
     tbl = utils.list_dict_filter_bool(tbl, keep_0=False)
     tbl = utils.col_resize(tbl, "path", 50)
     tbl = utils.col_naturalsize(tbl, "size")
-    print(tabulate(tbl, tablefmt="fancy_grid", headers="keys", showindex=False))
+    print(tabulate(tbl, tablefmt="github", headers="keys", showindex=False))
     if not args.limit:
         print(f"{len(tbl)} folders found")
 
