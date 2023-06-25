@@ -143,7 +143,7 @@ Incremental surfing. 📈🏄 totally rad!
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.1.007)
+    xk media library subcommands (v2.1.011)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -193,7 +193,8 @@ Incremental surfing. 📈🏄 totally rad!
       lb history               Show some playback statistics
       lb playlists             List added playlists
       lb download-status       Show download status
-      lb disk-usage            Print mount usage
+      lb disk-usage            Print disk usage
+      lb mount-stats           Print mount usage
 
     browser tabs:
       lb tabsadd               Create a tabs database; Add URLs
@@ -211,7 +212,7 @@ Incremental surfing. 📈🏄 totally rad!
 
       lb cluster-sort          Lines -> sorted by sentence similarity groups (stdin)
       lb nouns                 Unstructured text -> compound nouns (stdin)
-
+    
 
 </details>
 

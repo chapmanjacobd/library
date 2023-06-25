@@ -279,8 +279,6 @@ def construct_query(args) -> Tuple[str, dict]:
             + ")",
         )
 
-    args.filter_sql.extend([" and " + w for w in args.where])
-
     def ii(string):
         if string.isdigit():
             return string + " minutes"
@@ -384,14 +382,13 @@ def construct_query(args) -> Tuple[str, dict]:
             , playhead
         FROM m
         WHERE 1=1
+            {' '.join([" and " + w for w in args.where])}
         ORDER BY 1=1
             , {args.sort}
         {args.limit_sql} {args.offset_sql}
     """
 
-    args.filter_sql = [
-        s for s in args.filter_sql if "id" not in s
-    ]  # only use random id constraint in first query
+    args.filter_sql = [s for s in args.filter_sql if "id" not in s]  # only use random id constraint in first query
 
     return query, args.filter_bindings
 

@@ -774,7 +774,36 @@ bigdirs = """library bigdirs DATABASE [--limit (4000)] [--depth (0)] [--sort-by 
     lb bigdirs video.db --depth 7
 """
 
-disk_usage =None
+disk_usage = """library disk-usage DATABASE [--sort-by size | count] [--depth DEPTH] [PATH / SUBSTRING SEARCH]
+
+    Only include files smaller than 1kib
+
+        library disk-usage du.db --size=-1Ki
+        lb du du.db -S-1Ki
+        | path                                  |      size |   count |
+        |---------------------------------------|-----------|---------|
+        | /home/xk/github/xk/lb/__pycache__/    | 620 Bytes |       1 |
+        | /home/xk/github/xk/lb/.github/        |    1.7 kB |       4 |
+        | /home/xk/github/xk/lb/__pypackages__/ |    1.4 MB |    3519 |
+        | /home/xk/github/xk/lb/xklb/           |    4.4 kB |      12 |
+        | /home/xk/github/xk/lb/tests/          |    3.2 kB |       9 |
+        | /home/xk/github/xk/lb/.git/           |  782.4 kB |    2276 |
+        | /home/xk/github/xk/lb/.pytest_cache/  |    1.5 kB |       5 |
+        | /home/xk/github/xk/lb/.ruff_cache/    |   19.5 kB |     100 |
+        | /home/xk/github/xk/lb/.gitattributes  | 119 Bytes |         |
+        | /home/xk/github/xk/lb/.mypy_cache/    | 280 Bytes |       4 |
+        | /home/xk/github/xk/lb/.pdm-python     |  15 Bytes |         |
+
+    Only include files with a specific depth
+
+        library disk-usage du.db --depth 19
+        lb du du.db -d 19
+        | path                                                                                                                                                                |     size |
+        |---------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|
+        | /home/xk/github/xk/lb/__pypackages__/3.11/lib/jedi/third_party/typeshed/third_party/2and3/requests/packages/urllib3/packages/ssl_match_hostname/__init__.pyi        | 88 Bytes |
+        | /home/xk/github/xk/lb/__pypackages__/3.11/lib/jedi/third_party/typeshed/third_party/2and3/requests/packages/urllib3/packages/ssl_match_hostname/_implementation.pyi | 81 Bytes |
+
+"""
 
 christen = """library christen DATABASE [--run]
 

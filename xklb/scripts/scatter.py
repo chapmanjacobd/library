@@ -117,7 +117,7 @@ def print_path_stats(tbl) -> None:
     for t in consts.TIME_COLUMNS:
         utils.col_naturaldate(tbl, t)
 
-    print(tabulate(tbl, tablefmt="fancy_grid", headers="keys", showindex=False))
+    print(tabulate(tbl, tablefmt="github", headers="keys", showindex=False))
 
 
 def rebin_files(args, disk_stats, all_files) -> Tuple[List, List]:
@@ -210,7 +210,7 @@ def scatter() -> None:
                 break
         tbl = utils.col_resize(tbl, "existing_path", 20)
         tbl = utils.col_resize(tbl, "new_path", 20)
-        print(tabulate(tbl, tablefmt="fancy_grid", headers="keys", showindex=False))
+        print(tabulate(tbl, tablefmt="github", headers="keys", showindex=False))
         print(len(rebinned), "files would be moved (only 10 shown)")
         print(len(untouched), "files would not be moved")
 

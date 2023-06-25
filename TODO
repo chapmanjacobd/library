@@ -1,7 +1,5 @@
 - speed up fsadd --audio
 
-- ncdu clone for sqlite
-
 - POIs CLI -- save your trip plans and see places to go with automated day trip itineraries, geopandas buffer
 
 - wt/lt/search join and use fts on both tables, threading ?

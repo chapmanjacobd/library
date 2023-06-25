@@ -86,7 +86,7 @@ def printer(args, captions) -> None:
         tbl = utils.col_resize(tbl, "path", 20)
         tbl = utils.col_resize(tbl, "text", 35)
         tbl = utils.list_dict_filter_bool(tbl)
-        print(tabulate(tbl, tablefmt="fancy_grid", headers="keys", showindex=False))
+        print(tabulate(tbl, tablefmt="github", headers="keys", showindex=False))
         print(f"{len(captions)} captions")
     else:
         print(f"{len(captions)} captions")

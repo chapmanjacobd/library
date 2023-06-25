@@ -15,6 +15,7 @@ from xklb.scripts.cluster_sort import cluster_sort
 from xklb.scripts.copy_play_counts import copy_play_counts
 from xklb.scripts.dedupe import dedupe
 from xklb.scripts.dedupe_db import dedupe_db
+from xklb.scripts.disk_usage import disk_usage
 from xklb.scripts.download_status import download_status
 from xklb.scripts.history import history
 from xklb.scripts.merge_dbs import merge_dbs
@@ -90,7 +91,8 @@ def usage() -> str:
       lb history               Show some playback statistics
       lb playlists             List added playlists
       lb download-status       Show download status
-      lb disk-usage            Print mount usage
+      lb disk-usage            Print disk usage
+      lb mount-stats           Print mount usage
 
     browser tabs:
       lb tabsadd               Create a tabs database; Add URLs
@@ -221,8 +223,10 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     subp_history.set_defaults(func=history)
     subp_download_status = add_parser(subparsers, "download-status", ["ds", "dlstatus"])
     subp_download_status.set_defaults(func=download_status)
-    subp_usage = add_parser(subparsers, "disk-usage", ["du", "usage", "mount-stats"])
-    subp_usage.set_defaults(func=utils.mount_stats)
+    subp_disk_usage = add_parser(subparsers, "disk-usage", ["du", "usage", "diskusage"])
+    subp_disk_usage.set_defaults(func=disk_usage)
+    subp_mount_stats = add_parser(subparsers, "mount-stats", ["mu", "mount-usage", "mountstats"])
+    subp_mount_stats.set_defaults(func=utils.mount_stats)
 
     subp_playback_now = add_parser(subparsers, "now")
     subp_playback_now.set_defaults(func=playback_now)
