@@ -92,9 +92,16 @@ def get_subset(args, level=None, prefix=None) -> List[Dict]:
 
 def load_subset(args):
     level = args.depth
-    while len(args.subset) < 2:
-        level += 1
+    if args.depth == 0:
+        while len(args.subset) < 2:
+            level += 1
+            args.subset = get_subset(args, level=level, prefix=args.cwd)
+    else:
         args.subset = get_subset(args, level=level, prefix=args.cwd)
+
+    if not args.subset:
+        utils.no_media_found()
+
     args.cwd = os.sep.join(args.subset[0]["path"].split(os.sep)[: level - 1]) + os.sep
     return args.cwd, args.subset
 
@@ -125,6 +132,9 @@ def get_data(args) -> List[dict]:
             args.filter_bindings,
         ),
     )
+
+    if not media:
+        utils.no_media_found()
     return media
 
 
