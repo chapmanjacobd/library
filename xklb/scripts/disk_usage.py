@@ -6,7 +6,7 @@ from typing import Dict, List
 import humanize
 from tabulate import tabulate
 
-from xklb import db, usage, utils
+from xklb import consts, db, usage, utils
 from xklb.utils import log
 
 
@@ -220,7 +220,9 @@ def disk_usage():
     else:
         tbl = deepcopy(args.subset)
         tbl = utils.col_naturalsize(tbl, "size")
-        print(tabulate(tbl, tablefmt="github", headers="keys", showindex=False, colalign=["left", "right"]))
+        print(
+            tabulate(tbl, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False, colalign=["left", "right"])
+        )
 
 
 if __name__ == "__main__":

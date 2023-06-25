@@ -6,7 +6,7 @@ from typing import Dict, List, Tuple
 import humanize
 from tabulate import tabulate
 
-from xklb import db, player, usage, utils
+from xklb import consts, db, player, usage, utils
 from xklb.utils import log
 
 
@@ -81,7 +81,7 @@ def iterate_and_show_options(args, tbl) -> Tuple[List[Dict], List[Dict]]:
     vew = utils.list_dict_filter_bool(vew, keep_0=False)
     vew = utils.col_resize(vew, "path", 60)
     vew = utils.col_naturalsize(vew, "size")
-    print(tabulate(vew, tablefmt="github", headers="keys", showindex=False))
+    print(tabulate(vew, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False))
     print(len(tbl) - len(vew), "other folders not shown")
 
     if args.limit:
