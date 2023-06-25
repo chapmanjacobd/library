@@ -90,6 +90,8 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     parser.add_argument("--played-before", help=argparse.SUPPRESS)
     parser.add_argument("--deleted-within", help=argparse.SUPPRESS)
     parser.add_argument("--deleted-before", help=argparse.SUPPRESS)
+    parser.add_argument("--downloaded-within", help=argparse.SUPPRESS)
+    parser.add_argument("--downloaded-before", help=argparse.SUPPRESS)
 
     parser.add_argument(
         "--chromecast-device",
@@ -316,6 +318,14 @@ def construct_query(args) -> Tuple[str, dict]:
     if args.deleted_before:
         args.aggregate_filter_sql.append(
             f"and time_deleted < cast(STRFTIME('%s', datetime( 'now', '-{ii(args.deleted_before)}')) as int)",
+        )
+    if args.downloaded_within:
+        args.aggregate_filter_sql.append(
+            f"and time_downloaded > cast(STRFTIME('%s', datetime( 'now', '-{ii(args.downloaded_within)}')) as int)",
+        )
+    if args.downloaded_before:
+        args.aggregate_filter_sql.append(
+            f"and time_downloaded < cast(STRFTIME('%s', datetime( 'now', '-{ii(args.downloaded_before)}')) as int)",
         )
 
     args.table = "media"
