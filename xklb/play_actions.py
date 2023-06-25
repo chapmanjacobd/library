@@ -274,7 +274,7 @@ def construct_query(args) -> Tuple[str, dict]:
         args.filter_sql.append(" and size IS NOT NULL " + args.size)
     if args.duration_from_size:
         args.filter_sql.append(
-            " and size IS NOT NULL and duration in (select distinct duration from m where 1=1 "
+            " and size IS NOT NULL and duration in (select distinct duration from media where 1=1 "
             + args.duration_from_size
             + ")",
         )
