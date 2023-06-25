@@ -1,3 +1,5 @@
+- test coverage: list of cmds to run: duration-from-size etc
+
 - speed up fsadd --audio
 
 - POIs CLI -- save your trip plans and see places to go with automated day trip itineraries, geopandas buffer

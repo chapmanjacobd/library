@@ -26,51 +26,50 @@ def parse_args() -> argparse.Namespace:
 
 
 def copy_play_count(args, source_db) -> None:
-    args.db.attach("src", Path(source_db).resolve())
+    s_db = db.connect(argparse.Namespace(database=source_db, verbose=args.verbose))
+    m_columns = s_db["media"].columns_dict
 
     copy_counts = []
     try:
         # TODO delete after 2024-06-01
         old_schema = list(
-            args.db.query(
-                """
+            s_db.query(
+                f"""
                 SELECT
-                    path, play_count, time_played, playhead
+                    path
+                    , {', '.join(s for s in ['play_count', 'time_played', 'playhead'] if s in m_columns)}
                 FROM
-                    src.media
+                    media
                 WHERE
-                    src.media.play_count > 0
-                    OR
-                    src.media.playhead > 0
+                    {' OR '.join(f"media.{s} > 0" for s in ['play_count', 'time_played', 'playhead'] if s in m_columns)}
                 """,
             ),
         )
 
         new_schema = []
         for d in old_schema:
-            if d["playhead"] is None or d["playhead"] == 0:
-                new_schema.append(
-                    {"path": d["path"], "time_played": d["time_played"], "playhead": d["playhead"], "done": False},
-                )
+            if (d.get("play_count") or 0) == 0:
+                new_schema.append({**d, "done": False})
             else:
-                for _ in range(d["playhead"]):
-                    new_schema.append(
-                        {"path": d["path"], "time_played": d["time_played"], "playhead": d["playhead"], "done": True},
-                    )
+                for _ in range(d["play_count"]):
+                    new_schema.append({**d, "done": True})
         copy_counts.extend(new_schema)
-    except:
-        log.info("Old schema playhead could not be read")
+    except Exception:
+        log.info("Old schema could not be read")
 
     try:
         copy_counts.extend(
             list(
-                args.db.query(
+                s_db.query(
                     """
                 SELECT
-                    path, time_played, playhead, done
+                    path
+                    , h.time_played
+                    , h.playhead
+                    , done
                 FROM
-                    src.media m
-                JOIN src.history h on h.media_id = m.id
+                    media m
+                JOIN history h on h.media_id = m.id
                 WHERE
                     h.time_played > 0
                     OR
@@ -79,16 +78,20 @@ def copy_play_count(args, source_db) -> None:
                 ),
             ),
         )
-    except:
-        log.info("New schema playhead could not be read")
+    except Exception:
+        log.exception("New schema could not be read")
 
+    log.info(len(copy_counts))
     for d in copy_counts:
         renamed_path = d["path"].replace(args.source_prefix, args.target_prefix, 1)
-        history.add(args, [renamed_path], time_played=d["time_played"], playhead=d["playhead"], mark_done=d["done"])
+        history.add(
+            args, [renamed_path], time_played=d.get("time_played"), playhead=d.get("playhead"), mark_done=d["done"]
+        )
 
 
 def copy_play_counts() -> None:
     args = parse_args()
+    history.create(args)
     for s_db in args.source_dbs:
         copy_play_count(args, s_db)
     dedupe_rows(args, "history", ["id"], ["media_id", "time_played"])
