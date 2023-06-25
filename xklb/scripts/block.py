@@ -165,7 +165,7 @@ def block(args=None) -> None:
         tbl = utils.col_resize(tbl, "title_path", 40)
         tbl = utils.col_naturalsize(tbl, "size")
         tbl = utils.col_naturaldate(tbl, "time_deleted")
-        print(tabulate(tbl, tablefmt="github", headers="keys", showindex=False))
+        print(tabulate(tbl, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False))
         if utils.confirm(f"{len(matching_media)} media matching {p}. Add to blocklist?"):
             add_to_blocklist(args, p)
         else:

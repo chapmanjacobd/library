@@ -108,7 +108,7 @@ def mark_media_undownloaded(args, deleted_media) -> None:
 def print_deletions(args, deletions) -> None:
     print("Deletions:")
     tbl = deepcopy(deletions)
-    print(tabulate(tbl, tablefmt="github", headers="keys", showindex=False))
+    print(tabulate(tbl, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False))
     print(f"Showing most recent {args.limit} deletions. Use -l to change this limit")
 
 
@@ -122,7 +122,7 @@ def print_deleted(args, deleted_media) -> None:
     tbl = utils.col_naturalsize(tbl, "size")
     for t in consts.TIME_COLUMNS:
         utils.col_naturaldate(tbl, t)
-    print(tabulate(tbl, tablefmt="github", headers="keys", showindex=False))
+    print(tabulate(tbl, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False))
     print(f"{len(deleted_media)} deleted media found (showing first {args.limit})")
 
 

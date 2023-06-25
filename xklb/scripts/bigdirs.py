@@ -4,7 +4,7 @@ from typing import Dict, List
 
 from tabulate import tabulate
 
-from xklb import db, history, usage, utils
+from xklb import consts, db, history, usage, utils
 from xklb.utils import log
 
 
@@ -184,7 +184,7 @@ def bigdirs() -> None:
     tbl = utils.list_dict_filter_bool(tbl, keep_0=False)
     tbl = utils.col_resize(tbl, "path", 50)
     tbl = utils.col_naturalsize(tbl, "size")
-    print(tabulate(tbl, tablefmt="github", headers="keys", showindex=False))
+    print(tabulate(tbl, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False))
     if not args.limit:
         print(f"{len(tbl)} folders found")
 

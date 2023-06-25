@@ -985,7 +985,7 @@ def media_printer(args, media) -> None:
         for t in consts.TIME_COLUMNS:
             utils.col_naturaldate(tbl, t)
 
-        print(tabulate(tbl, tablefmt="github", headers="keys", showindex=False))
+        print(tabulate(tbl, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False))
 
         if len(media) > 1:
             print(f"{len(media)} media" + (f" (limited to {args.limit})" if args.limit else ""))

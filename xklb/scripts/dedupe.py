@@ -6,7 +6,7 @@ from typing import List
 import humanize
 from tabulate import tabulate
 
-from xklb import db, player, usage, utils
+from xklb import consts, db, player, usage, utils
 from xklb.consts import DBType
 from xklb.utils import log
 
@@ -238,7 +238,7 @@ def dedupe() -> None:
     tbl = utils.col_resize(tbl, "keep_path", 30)
     tbl = utils.col_resize(tbl, "duplicate_path", 30)
     tbl = utils.col_naturalsize(tbl, "duplicate_size")
-    print(tabulate(tbl, tablefmt="github", headers="keys", showindex=False))
+    print(tabulate(tbl, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False))
 
     duplicates_count = len(duplicates)
     print(f"{duplicates_count} duplicates found (showing first {args.limit})")

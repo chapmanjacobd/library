@@ -98,7 +98,7 @@ def printer(args, query, bindings) -> None:
 
         tbl = utils.list_dict_filter_bool(tbl)
 
-        print(tabulate(tbl, tablefmt="github", headers="keys", showindex=False))
+        print(tabulate(tbl, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False))
 
     print(f"{len(media)} playlists" if len(media) > 1 else "1 playlist")
     duration = sum(m.get("duration") or 0 for m in media)
