@@ -143,7 +143,7 @@ Incremental surfing. 📈🏄 totally rad!
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.1.020)
+    xk media library subcommands (v2.1.021)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -200,6 +200,9 @@ Incremental surfing. 📈🏄 totally rad!
       lb tabsadd               Create a tabs database; Add URLs
       lb tabs                  Open your tabs for the day
       lb surf                  Load browser tabs in a streaming way (stdin)
+
+    places:
+      lb places-import         Load POIs from Google Maps Google Takeout
 
     mining:
       lb reddit-selftext       db selftext external links -> db media table
@@ -1625,6 +1628,33 @@ Balance files across filesystem folder trees or multiple devices (mostly useful 
 
 </details>
 
+
+<details><summary>Chicken mode</summary>
+
+just kidding :-)
+
+           ////////////////////////
+          ////////////////////////|
+         //////////////////////// |
+        ////////////////////////| |
+        |    _\/_   |   _\/_    | |
+        |     )o(>  |  <)o(     | |
+        |   _/ <\   |   /> \_   | |
+        |  (_____)  |  (_____)  | |_
+        | ~~~oOo~~~ | ~~~0oO~~~ |/__|
+       _|====\_=====|=====_/====|_ ||
+      |_|\_________ O _________/|_|||
+       ||//////////|_|\\\\\\\\\\|| ||
+       || ||       |\_\\        || ||
+       ||/||        \\_\\       ||/||
+       ||/||         \)_\)      ||/||
+       || ||         \  O /     || ||
+       ||             \  /      || LGB
+
+                   \________/======
+                   / ( || ) \\
+
+</details>
 
 You can expand all by running this in your browser console:
 

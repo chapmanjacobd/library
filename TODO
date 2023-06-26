@@ -1,5 +1,9 @@
 - POIs CLI -- save your trip plans and see places to go with automated day trip itineraries, geopandas buffer
 
+places lookup
+places plan
+places add
+
 - wt/lt/search join and use fts on both tables, threading ?
 
 - improve playlists subcommand

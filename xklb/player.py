@@ -906,6 +906,28 @@ def cadence_adjusted_duration(args, duration):
     return duration / historical_daily * 86400 * 30.42
 
 
+def filter_deleted(media):
+    http_list = []
+    local_list = []
+    nonexistent_local_paths = []
+
+    for i, m in enumerate(media):
+        path = m["path"]
+        if path.startswith("http"):
+            http_list.append(m)
+            continue
+
+        if len(local_list) == 50 and len(nonexistent_local_paths) <= 2:
+            return local_list + http_list + media[i:], nonexistent_local_paths
+
+        if os.path.exists(path):
+            local_list.append(m)
+        else:
+            nonexistent_local_paths.append(path)
+
+    return local_list + http_list, nonexistent_local_paths
+
+
 def media_printer(args, media) -> None:
     if args.verbose >= consts.LOG_DEBUG and args.cols and "*" in args.cols:
         breakpoint()
@@ -945,33 +967,31 @@ def media_printer(args, media) -> None:
             log.warning(f"Marked {marked} metadata records as watched")
 
     if "f" in args.print:
-        if args.limit == 1:
-            path = media[0]["path"]
-            if not Path(path).exists():
-                mark_media_deleted(args, path)
+        if len(media) <= 1000:
+            media, deleted_paths = filter_deleted(media)
+            mark_media_deleted(args, deleted_paths)
+            if len(media) == 0:
                 raise FileNotFoundError
-            utils.pipe_print(path)
-            return
-        else:
-            if not args.cols:
-                args.cols = ["path"]
 
-            selected_cols = [{k: d.get(k, None) for k in args.cols} for d in media]
-            virtual_csv = StringIO()
-            wr = csv.writer(virtual_csv, quoting=csv.QUOTE_NONE)
-            wr = csv.DictWriter(virtual_csv, fieldnames=args.cols)
-            wr.writerows(selected_cols)
+        if not args.cols:
+            args.cols = ["path"]
 
-            virtual_csv.seek(0)
-            for line in virtual_csv.readlines():
-                if args.moved:
-                    utils.pipe_print(line.strip().replace(args.moved[0], "", 1))
-                else:
-                    utils.pipe_print(line.strip())
+        selected_cols = [{k: d.get(k, None) for k in args.cols} for d in media]
+        virtual_csv = StringIO()
+        wr = csv.writer(virtual_csv, quoting=csv.QUOTE_NONE)
+        wr = csv.DictWriter(virtual_csv, fieldnames=args.cols)
+        wr.writerows(selected_cols)
+
+        virtual_csv.seek(0)
+        for line in virtual_csv.readlines():
             if args.moved:
-                moved_media(args, [d["path"] for d in media], *args.moved)
-                return
+                utils.pipe_print(line.strip().replace(args.moved[0], "", 1))
+            else:
+                utils.pipe_print(line.strip())
+        if args.moved:
+            moved_media(args, [d["path"] for d in media], *args.moved)
             return
+        return
     else:
         tbl = deepcopy(media)
         utils.col_resize(tbl, "path", 22)

@@ -148,6 +148,10 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     parser.add_argument("--watch-later-directory", default=consts.DEFAULT_MPV_WATCH_LATER, help=argparse.SUPPRESS)
     parser.add_argument("--subtitle-mix", default=consts.DEFAULT_SUBTITLE_MIX, help=argparse.SUPPRESS)
 
+    parser.add_argument("--no-video", "-vn", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--no-audio", "-an", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--no-subtitle", "-sn", action="store_true", help=argparse.SUPPRESS)
+
     parser.add_argument("--override-player", "--player", "-player", help=argparse.SUPPRESS)
     parser.add_argument("--player-args-sub", "-player-sub", nargs="*", default=DEFAULT_PLAYER_ARGS_SUB)
     parser.add_argument("--player-args-no-sub", "-player-no-sub", nargs="*", default=DEFAULT_PLAYER_ARGS_NO_SUB)
@@ -281,6 +285,13 @@ def construct_query(args) -> Tuple[str, dict]:
             + args.duration_from_size
             + ")",
         )
+
+    if args.no_video:
+        args.filter_sql.append(" and video_count=0 ")
+    if args.no_audio:
+        args.filter_sql.append(" and audio_count=0 ")
+    if args.no_subtitle:
+        args.filter_sql.append(" and subtitle_count=0 ")
 
     def ii(string):
         if string.isdigit():
@@ -528,6 +539,7 @@ def save_playhead(args, m, start_time):
 def play(args, m, media_len) -> None:
     t = utils.Timer()
     print(m["now_playing"])
+    log.debug(m)
     log.debug("now_playing: %s", t.elapsed())
 
     args.player = player.parse(args, m)

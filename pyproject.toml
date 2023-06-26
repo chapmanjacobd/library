@@ -39,8 +39,8 @@ dev = ["black", "ipdb", "isort", "scalene", "ssort"]
 test = ["ruff", "pytest"]
 
 [project.urls]
-documentation = "https://github.com/chapmanjacobd/library/wiki/Usage"
-homepage = "https://github.com/chapmanjacobd/library/"
+documentation = "https://github.com/chapmanjacobd/library#usage"
+homepage = "https://github.com/chapmanjacobd/library#readme"
 repository = "https://github.com/chapmanjacobd/library/"
 
 [project.scripts]
