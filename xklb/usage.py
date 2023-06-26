@@ -105,6 +105,12 @@ fsupdate = """library fsupdate DATABASE
         library fsupdate video.db
 """
 
+places_import = """library places-import DATABASE PATHS ...
+
+Load POIs from Google Maps Google Takeout
+
+"""
+
 hnadd = """library hnadd [--oldest] DATABASE
 
     Fetch latest stories first:

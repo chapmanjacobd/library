@@ -27,6 +27,7 @@ from xklb.scripts.mining.pushshift import pushshift_extract
 from xklb.scripts.mining.reddit_selftext import reddit_selftext
 from xklb.scripts.move_list import move_list
 from xklb.scripts.optimize_db import optimize_db
+from xklb.scripts.places_import import places_import
 from xklb.scripts.playback_control import playback_next, playback_now, playback_pause, playback_stop
 from xklb.scripts.playlists import playlists
 from xklb.scripts.redownload import redownload
@@ -98,6 +99,9 @@ def usage() -> str:
       lb tabsadd               Create a tabs database; Add URLs
       lb tabs                  Open your tabs for the day
       lb surf                  Load browser tabs in a streaming way (stdin)
+
+    places:
+      lb places-import         Load POIs from Google Maps Google Takeout
 
     mining:
       lb reddit-selftext       db selftext external links -> db media table
@@ -243,6 +247,9 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     subp_tabs.set_defaults(func=tabs)
     subp_surf = add_parser(subparsers, "surf")
     subp_surf.set_defaults(func=streaming_tab_loader)
+
+    subp_places_import = add_parser(subparsers, "places-import")
+    subp_places_import.set_defaults(func=places_import)
 
     subp_nouns = add_parser(subparsers, "nouns")
     subp_nouns.set_defaults(func=nouns)
