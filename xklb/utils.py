@@ -779,7 +779,7 @@ class ArgparseDict(argparse.Action):
 
 class ArgparseArgsOrStdin(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
-        if values == ["-"] or not values:
+        if values == ["-"]:
             lines = sys.stdin.readlines()
         else:
             lines = values

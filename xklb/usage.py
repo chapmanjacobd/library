@@ -758,7 +758,7 @@ Add gallery_dl URLs to download later or periodically update
 
 If you have many URLs use stdin
 
-    cat ./my-favorite-manhwa.txt | library galleryadd my.db --insert-only
+    cat ./my-favorite-manhwa.txt | library galleryadd my.db --insert-only -
 """
 
 galleryupdate = """library galleryupdate DATABASE URLS

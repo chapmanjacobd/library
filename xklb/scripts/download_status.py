@@ -37,6 +37,7 @@ def parse_args() -> argparse.Namespace:
 
     parser.add_argument("database")
     args = parser.parse_args()
+
     if args.db:
         args.database = args.db
     args.db = db.connect(args)
@@ -117,19 +118,19 @@ def download_status() -> None:
     printer(args, query, bindings)
 
     if "error" in db.columns(args, "media"):
-        query = """
+        query = f"""
         select error, count(*) count
         from media
         where error is not null
         group by 1
-        order by 2
+        order by 2 DESC
         """
         errors = list(args.db.query(query))
 
         common_errors = []
         other_errors = []
         for error in errors:
-            if error["count"] < 5:
+            if error["count"] < errors[:5][-1]["count"]:
                 other_errors.append(error)
             else:
                 common_errors.append(error)
