@@ -203,6 +203,7 @@ def add(
     unrecoverable_error=False,
 ) -> None:
     if local_path and Path(local_path).exists():
+        local_path = str(Path(local_path).resolve())
         fs_args = argparse.Namespace(
             profile=args.profile,
             scan_subtitles=args.profile == DBType.video,
