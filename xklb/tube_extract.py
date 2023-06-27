@@ -78,32 +78,31 @@ def tube_add(args=None) -> None:
 
     args = parse_args(SC.tubeadd, usage=usage.tubeadd)
 
-    known_playlists = set()
-    if not args.force and len(args.playlists) > 9:
-        known_playlists = media.get_paths(args)
+    if args.insert_only:
+        args.db["media"].insert_all([{"path": p} for p in args.playlists], alter=True, ignore=True, pk="path")
+    elif args.insert_only_playlists:
+        args.db["playlists"].insert_all([{"path": p} for p in args.playlists], alter=True, ignore=True, pk="path")
+    else:
+        known_playlists = set()
+        if not args.force and len(args.playlists) > 9:
+            known_playlists = media.get_paths(args)
 
-    for path in args.playlists:
-        if args.safe and not tube_backend.is_supported(path):
-            log.info("[%s]: Skipping unsupported playlist (safe_mode)", path)
-            continue
+        for path in args.playlists:
+            if args.safe and not tube_backend.is_supported(path):
+                log.info("[%s]: Skipping unsupported playlist (safe_mode)", path)
+                continue
 
-        if path in known_playlists:
-            log.info("[%s]: Already added. Skipping!", path)
-            continue
+            if path in known_playlists:
+                log.info("[%s]: Already added. Skipping!", path)
+                continue
 
-        if args.insert_only:
-            args.db["media"].insert({"path": path}, alter=True, ignore=True, pk="path")
-        elif args.insert_only_playlists:
-            args.db["playlists"].insert({"path": path}, alter=True, ignore=True, pk="path")
-        else:
             tube_backend.get_playlist_metadata(args, path, tube_backend.tube_opts(args))
 
-        if args.extra:
-            log.warning("[%s]: Getting extra metadata", path)
-            tube_backend.get_extra_metadata(args, path)
+            if args.extra:
+                log.warning("[%s]: Getting extra metadata", path)
+                tube_backend.get_extra_metadata(args, path)
 
-    LARGE_NUMBER = 100_000
-    if not args.db["media"].detect_fts() or tube_backend.added_media_count > LARGE_NUMBER:
+    if not args.db["media"].detect_fts():
         db.optimize(args)
 
 

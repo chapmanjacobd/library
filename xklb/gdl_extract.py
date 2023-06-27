@@ -73,29 +73,27 @@ def gallery_add(args=None) -> None:
 
     args = parse_args(SC.galleryadd, usage=usage.galleryadd)
 
-    known_playlists = set()
-    if not args.force and len(args.playlists) > 9:
-        known_playlists = media.get_paths(args)
+    if args.insert_only:
+        args.db["media"].insert_all([{"path": p} for p in args.playlists], alter=True, ignore=True, pk="path")
+    elif args.insert_only_playlists:
+        args.db["playlists"].insert_all([{"path": p} for p in args.playlists], alter=True, ignore=True, pk="path")
+    else:
+        known_playlists = set()
+        if not args.force and len(args.playlists) > 9:
+            known_playlists = media.get_paths(args)
 
-    added_media_count = len(args.playlists)
-    for path in args.playlists:
-        if path in known_playlists:
-            log.info("[%s]: Already added. Skipping!", path)
-            continue
+        for path in args.playlists:
+            if path in known_playlists:
+                log.info("[%s]: Already added. Skipping!", path)
+                continue
 
-        if args.safe and not gdl_backend.is_supported(args, path):
-            log.info("[%s]: Skipping unsupported playlist (safe_mode)", path)
-            continue
+            if args.safe and not gdl_backend.is_supported(args, path):
+                log.info("[%s]: Skipping unsupported playlist (safe_mode)", path)
+                continue
 
-        if args.insert_only:
-            args.db["media"].insert({"path": path}, alter=True, ignore=True, pk="path")
-        elif args.insert_only_playlists:
-            args.db["playlists"].insert({"path": path}, alter=True, ignore=True, pk="path")
-        else:
-            added_media_count += gdl_backend.get_playlist_metadata(args, path)
+            gdl_backend.get_playlist_metadata(args, path)
 
-    LARGE_NUMBER = 100_000
-    if not args.db["media"].detect_fts() or added_media_count > LARGE_NUMBER:
+    if not args.db["media"].detect_fts():
         db.optimize(args)
 
 

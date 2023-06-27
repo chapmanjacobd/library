@@ -164,7 +164,7 @@ def construct_query(args) -> Tuple[str, dict]:
                 {'AND (score IS NULL OR score > 7)' if 'score' in m_columns else ''}
                 {'AND (upvote_ratio IS NULL OR upvote_ratio > 0.73)' if 'upvote_ratio' in m_columns else ''}
                 {" ".join(args.filter_sql)}
-            GROUP BY m.playlist_id
+            GROUP BY m.playlist_id, m.path
             ORDER BY 1=1
                 , COALESCE(m.time_modified, 0) = 0 DESC
                 , m.time_modified
