@@ -308,20 +308,17 @@ def test_get_playhead():
     Path(metadata_path).write_text("start=13.000000")
     assert utils.get_playhead(args, path, start_time, media_duration=12) == 2
 
-    # use python time
-    Path(metadata_path).write_text("start=2.000000")
-    start_time = time.time() - 4
-    assert utils.get_playhead(args, path, start_time) == 4
-    # check invalid python time
-    start_time = time.time() - 13
-    assert utils.get_playhead(args, path, start_time, media_duration=12) == 2
+    # use python time only if MPV does not exist
+    assert utils.get_playhead(args, path, start_time) == 13
+    Path(metadata_path).unlink()
+    assert utils.get_playhead(args, path, start_time) == 2
     # append existing time
     start_time = time.time() - 3
     assert utils.get_playhead(args, path, start_time, existing_playhead=4, media_duration=12) == 7
     # unless invalid
-    assert utils.get_playhead(args, path, start_time, existing_playhead=10, media_duration=12) == 2
+    assert utils.get_playhead(args, path, start_time, existing_playhead=10, media_duration=12) is None
     start_time = time.time() - 10
-    assert utils.get_playhead(args, path, start_time, existing_playhead=3, media_duration=12) == 2
+    assert utils.get_playhead(args, path, start_time, existing_playhead=3, media_duration=12) is None
 
 
 def scan_stats(scans, scan_duration):
