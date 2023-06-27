@@ -41,10 +41,11 @@ def parse_args(action, usage) -> argparse.Namespace:
 
     parser.add_argument("database")
     if action == SC.galleryadd:
-        parser.add_argument("--playlist-files", action="store_true", help="Read playlists from text files")
-        parser.add_argument("playlists", nargs="+", help=argparse.SUPPRESS)
+        parser.add_argument("--insert-only", action="store_true")
+        parser.add_argument("--insert-only-playlists", action="store_true")
+        parser.add_argument("playlists", nargs="*", action=utils.ArgparseArgsOrStdin, help=argparse.SUPPRESS)
 
-    args = parser.parse_args()
+    args = parser.parse_intermixed_args()
     args.action = action
 
     if args.db:
@@ -71,14 +72,12 @@ def gallery_add(args=None) -> None:
         sys.argv = ["galleryadd", *args]
 
     args = parse_args(SC.galleryadd, usage=usage.galleryadd)
-    if args.playlist_files:
-        args.playlists = list(utils.flatten([Path(p).read_text().splitlines() for p in args.playlists]))
 
     known_playlists = set()
     if not args.force and len(args.playlists) > 9:
         known_playlists = media.get_paths(args)
 
-    added_media_count = 0
+    added_media_count = len(args.playlists)
     for path in args.playlists:
         if path in known_playlists:
             log.info("[%s]: Already added. Skipping!", path)
@@ -88,7 +87,12 @@ def gallery_add(args=None) -> None:
             log.info("[%s]: Skipping unsupported playlist (safe_mode)", path)
             continue
 
-        added_media_count += gdl_backend.get_playlist_metadata(args, path)
+        if args.insert_only:
+            args.db["media"].insert({"path": path}, alter=True, ignore=True, pk="path")
+        elif args.insert_only_playlists:
+            args.db["playlists"].insert({"path": path}, alter=True, ignore=True, pk="path")
+        else:
+            added_media_count += gdl_backend.get_playlist_metadata(args, path)
 
     LARGE_NUMBER = 100_000
     if not args.db["media"].detect_fts() or added_media_count > LARGE_NUMBER:

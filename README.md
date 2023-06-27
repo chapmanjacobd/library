@@ -143,7 +143,7 @@ Incremental surfing. 📈🏄 totally rad!
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.1.021)
+    xk media library subcommands (v2.2.001)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -454,7 +454,7 @@ Explore `library` databases in your browser
 
     Add links from a line-delimited file
 
-        library tubeadd reddit.db --playlist-file ./my_yt_subscriptions.txt
+        cat ./my_yt_subscriptions.txt | library tubeadd reddit.db -
 
     Add metadata to links already in a database table
 

@@ -57,7 +57,6 @@ def parse_args():
     parser.add_argument("--extra-media-data", default={}, nargs=1, action=utils.ArgparseDict, metavar="KEY=VALUE")
     parser.add_argument("--extra-playlist-data", default={}, nargs=1, action=utils.ArgparseDict, metavar="KEY=VALUE")
     parser.add_argument("--safe", "-safe", action="store_true", help="Skip generic URLs")
-    parser.add_argument("--playlist-files", action="store_true", help="Read playlists from text files")
 
     parser.add_argument("--subs", action="store_true")
     parser.add_argument("--auto-subs", "--autosubs", action="store_true")
@@ -94,7 +93,7 @@ def parse_args():
     parser.add_argument("--verbose", "-v", action="count", default=0)
 
     parser.add_argument("database", help=argparse.SUPPRESS)
-    parser.add_argument("playlists", nargs="*", help=argparse.SUPPRESS)
+    parser.add_argument("playlists", nargs="*", action=utils.ArgparseArgsOrStdin, help=argparse.SUPPRESS)
     args = parser.parse_intermixed_args()
 
     if args.duration:
@@ -205,34 +204,11 @@ def construct_query(args) -> Tuple[str, dict]:
 
 
 def process_downloadqueue(args) -> List[dict]:
-    if args.playlist_files:
-        Path(args.database).touch()
-        playlist_files_data = set(utils.flatten(Path(p).read_text().splitlines() for p in args.playlists))
-
-        known_playlists = set()
-        if not args.force and len(playlist_files_data) > 9:
-            known_playlists = get_paths(args)
-        playlists = list(playlist_files_data - known_playlists)
-        log.warning(
-            "%s new - %s known = %s to download",
-            len(playlist_files_data),
-            len(known_playlists),
-            len(playlists),
-        )
-        random.shuffle(playlists)
-
-        media = []
-        for i, path in enumerate(playlists):
-            media.append({"path": path})
-            if args.limit and i >= int(args.limit):
-                break
-        playlists = []
-    else:
-        query, bindings = construct_query(args)
-        if args.print:
-            player.printer(args, query, bindings)
-            return []
-        media = list(args.db.query(query, bindings))
+    query, bindings = construct_query(args)
+    if args.print:
+        player.printer(args, query, bindings)
+        return []
+    media = list(args.db.query(query, bindings))
 
     if media and "blocklist" in args.db.table_names():
         media = utils.block_dicts_like_sql(media, [{d["key"]: d["value"]} for d in args.db["blocklist"].rows])

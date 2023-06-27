@@ -39,11 +39,12 @@ def calculate_duration(args, m) -> Tuple[int, int]:
     start = 0
     end = m.get("duration", 0)
     minimum_duration = 7 * 60
+    playhead = m.get("playhead")
+    if playhead:
+        start = playhead
 
     duration = m.get("duration", 20 * 60)
     if args.start:
-        playhead = m.get("playhead")
-
         if args.start.isnumeric() and int(args.start) > 0:
             start = int(args.start)
         elif "%" in args.start:
@@ -66,6 +67,7 @@ def calculate_duration(args, m) -> Tuple[int, int]:
         else:
             end = int(args.end)
 
+    log.debug("calculate_duration: %s -- %s", start, end)
     return start, end
 
 
@@ -121,7 +123,9 @@ def parse(args, m) -> List[str]:
             start, end = calculate_duration(args, m)
             if end != 0:
                 if start != 0:
-                    player.extend([f"--start={start}", "--no-save-position-on-quit"])
+                    player.extend([f"--start={start}"])
+                    if args.start:
+                        player.extend(["--no-save-position-on-quit"])
                 if end != m["duration"]:
                     player.extend([f"--end={end}"])
 

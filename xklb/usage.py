@@ -712,7 +712,7 @@ tubeadd = r"""library tubeadd [--safe] [--extra] [--subs] [--auto-subs] DATABASE
 
     Add links from a line-delimited file
 
-        library tubeadd reddit.db --playlist-file ./my_yt_subscriptions.txt
+        cat ./my_yt_subscriptions.txt | library tubeadd reddit.db -
 
     Add metadata to links already in a database table
 
@@ -756,9 +756,9 @@ galleryadd = """library galleryadd DATABASE URLS
 
 Add gallery_dl URLs to download later or periodically update
 
-Passing the `--playlist-files` flag will treat each URL as a local file to read URLs from
+If you have many URLs use stdin
 
-    library galleryadd my.db ./my-favorite-manhwa.txt
+    cat ./my-favorite-manhwa.txt | library galleryadd my.db --insert-only
 """
 
 galleryupdate = """library galleryupdate DATABASE URLS
