@@ -777,6 +777,15 @@ class ArgparseDict(argparse.Action):
         setattr(args, self.dest, d)
 
 
+class ArgparseArgsOrStdin(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        if values == ["-"] or not values:
+            lines = sys.stdin.readlines()
+        else:
+            lines = values
+        setattr(namespace, self.dest, lines)
+
+
 def filter_namespace(args, config_opts) -> Optional[Dict]:
     return dict_filter_bool({k: v for k, v in args.__dict__.items() if k in config_opts})
 
@@ -1039,7 +1048,9 @@ def get_playhead(
     except Exception:
         mpv_playhead = None
 
-    for playhead in sorted([mpv_playhead or 0, python_playhead], reverse=True):
+    log.debug("mpv_playhead %s", mpv_playhead)
+    log.debug("python_playhead %s", python_playhead)
+    for playhead in [mpv_playhead or 0, python_playhead]:
         if playhead > 0 and (media_duration is None or media_duration >= playhead):
             return playhead
     return None

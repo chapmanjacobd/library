@@ -51,7 +51,7 @@ def get_duplicates(args) -> List[dict]:
             and extractor_id is null
             and title is null
     ) m2
-    JOIN media_fts on m2.id = media_fts.id
+    JOIN media_fts on m2.id = media_fts.rowid
     JOIN playlists p2 on p2.id = m2.playlist_id
     WHERE p2.extractor_key = 'Local'
         AND media_fts.path MATCH '"'||m1.extractor_id||'"'

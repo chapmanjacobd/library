@@ -26,7 +26,7 @@ def parse_args(action, usage) -> argparse.Namespace:
     parser.add_argument("--safe", "-safe", action="store_true", help="Skip generic URLs")
     parser.add_argument("--no-sanitize", "-s", action="store_true", help="Don't sanitize some common URL parameters")
     parser.add_argument("--extra", "-extra", action="store_true", help="Get full metadata (takes a lot longer)")
-    parser.add_argument("--playlist-files", action="store_true", help="Read playlists from text files")
+
     parser.add_argument(
         "--force",
         "-f",
@@ -46,9 +46,11 @@ def parse_args(action, usage) -> argparse.Namespace:
 
     parser.add_argument("database")
     if action == SC.tubeadd:
-        parser.add_argument("playlists", nargs="+", help=argparse.SUPPRESS)
+        parser.add_argument("--insert-only", action="store_true")
+        parser.add_argument("--insert-only-playlists", action="store_true")
+        parser.add_argument("playlists", nargs="*", action=utils.ArgparseArgsOrStdin, help=argparse.SUPPRESS)
 
-    args = parser.parse_args()
+    args = parser.parse_intermixed_args()
     args.action = action
 
     if args.db:
@@ -75,8 +77,6 @@ def tube_add(args=None) -> None:
         sys.argv = ["tubeadd", *args]
 
     args = parse_args(SC.tubeadd, usage=usage.tubeadd)
-    if args.playlist_files:
-        args.playlists = list(utils.flatten([Path(p).read_text().splitlines() for p in args.playlists]))
 
     known_playlists = set()
     if not args.force and len(args.playlists) > 9:
@@ -91,7 +91,12 @@ def tube_add(args=None) -> None:
             log.info("[%s]: Already added. Skipping!", path)
             continue
 
-        tube_backend.get_playlist_metadata(args, path, tube_backend.tube_opts(args))
+        if args.insert_only:
+            args.db["media"].insert({"path": path}, alter=True, ignore=True, pk="path")
+        elif args.insert_only_playlists:
+            args.db["playlists"].insert({"path": path}, alter=True, ignore=True, pk="path")
+        else:
+            tube_backend.get_playlist_metadata(args, path, tube_backend.tube_opts(args))
 
         if args.extra:
             log.warning("[%s]: Getting extra metadata", path)

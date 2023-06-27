@@ -523,17 +523,16 @@ def prep_media(args, m: Dict, ignore_paths):
 
 
 def save_playhead(args, m, start_time):
-    m_columns = db.columns(args, "media")
-    if "playhead" in m_columns:
-        playhead = utils.get_playhead(
-            args,
-            m["original_path"],
-            start_time,
-            existing_playhead=m.get("playhead"),
-            media_duration=m.get("duration"),
-        )
-        if playhead:
-            history.add(args, [m["original_path"]], playhead=playhead)
+    playhead = utils.get_playhead(
+        args,
+        m["original_path"],
+        start_time,
+        existing_playhead=m.get("playhead"),
+        media_duration=m.get("duration"),
+    )
+    log.debug("save_playhead %s", playhead)
+    if playhead:
+        history.add(args, [m["original_path"]], playhead=playhead)
 
 
 def play(args, m, media_len) -> None:
