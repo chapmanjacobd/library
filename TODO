@@ -1,3 +1,5 @@
+- combine-dbs (similar to moreutils combine but for sqlite databases)
+
 - POIs CLI -- save your trip plans and see places to go with automated day trip itineraries, geopandas buffer
 
 places lookup
