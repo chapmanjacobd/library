@@ -375,8 +375,7 @@ def reddit_add(args=None) -> None:
 
     process_subreddits(args, subreddits)
     process_redditors(args, redditors)
-    LARGE_NUMBER = 75
-    if not args.db["media"].detect_fts() or len(subreddits + redditors) > LARGE_NUMBER:
+    if not args.db["media"].detect_fts():
         db.optimize(args)
 
 

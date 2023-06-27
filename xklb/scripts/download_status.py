@@ -103,7 +103,7 @@ def download_status() -> None:
 
     query = f"""select
         {count_paths}
-        , extractor_key
+        , COALESCE(extractor_key, 'Unknown') extractor_key
         {', sum(duration) duration' if 'duration' in query else ''}
         {', count(*) FILTER(WHERE COALESCE(time_modified,0) > 0 AND error IS NOT NULL) errors' if 'error' in query else ''}
         {', group_concat(distinct error) error_descriptions' if 'error' in query and args.verbose >= 1 else ''}
@@ -112,7 +112,7 @@ def download_status() -> None:
         and COALESCE(time_downloaded,0) = 0
         and COALESCE(time_deleted,0) = 0
     group by extractor_key
-    order by never_downloaded"""
+    order by never_downloaded DESC"""
 
     printer(args, query, bindings)
 
@@ -129,7 +129,7 @@ def download_status() -> None:
         common_errors = []
         other_errors = []
         for error in errors:
-            if error["count"] == 1:
+            if error["count"] < 5:
                 other_errors.append(error)
             else:
                 common_errors.append(error)
