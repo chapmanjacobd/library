@@ -175,7 +175,7 @@ def consolidate(v: dict) -> Optional[dict]:
     return utils.dict_filter_bool(cv)
 
 
-def _add(args, entry):
+def add(args, entry):
     if "path" not in entry:
         log.warning('Skipping insert: no "path" in entry %s', entry)
         return
@@ -194,7 +194,28 @@ def _add(args, entry):
         args.db["captions"].insert({"media_id": media_id, "time": 0, "text": tags}, alter=True)
 
 
-def add(
+def playlist_media_add(
+    args,
+    webpath: str,
+    info: Optional[dict] = None,
+    error=None,
+    unrecoverable_error=False,
+) -> None:
+    if not info or not info.get("path"):
+        info = {"path": webpath}
+
+    consolidated_entry = consolidate(info) or {}
+
+    entry = {
+        **consolidated_entry,
+        "time_deleted": consts.APPLICATION_START if unrecoverable_error else 0,
+        "webpath": webpath,
+        "error": error,
+    }
+    add(args, entry)
+
+
+def download_add(
     args,
     webpath: str,
     info: Optional[dict] = None,
@@ -215,10 +236,12 @@ def add(
         )
         fs_tags = utils.dict_filter_bool(fs_extract.extract_metadata(fs_args, local_path), keep_0=False) or {}
         fs_extract.clean_up_temp_dirs()
+        with args.db.conn:
+            args.db.conn.execute("DELETE from media WHERE path = ?", [webpath])
     else:
-        fs_tags = {}
+        fs_tags = {"time_modified": consts.now()}
 
-    if not info:  # not downloaded or already downloaded
+    if not info or not info.get("path"):  # not downloaded or already downloaded
         info = {"path": webpath}
 
     consolidated_entry = consolidate(info) or {}
@@ -230,8 +253,4 @@ def add(
         "webpath": webpath,
         "error": error,
     }
-    _add(args, entry)
-
-    if fs_tags:
-        with args.db.conn:
-            args.db.conn.execute("DELETE from media WHERE path = ?", [webpath])
+    add(args, entry)

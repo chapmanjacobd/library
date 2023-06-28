@@ -63,7 +63,7 @@ def reddit_selftext() -> None:
                 log.info(i_link)
 
         for e_link in external_links:
-            media._add(args, {**d, "path": e_link, "webpage": d["path"]})
+            media.add(args, {**d, "path": e_link, "webpage": d["path"]})
 
 
 if __name__ == "__main__":
