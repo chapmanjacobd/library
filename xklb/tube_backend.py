@@ -137,8 +137,8 @@ def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True) -> 
                         entry["playlist_id"] = playlist_id
                         log.info("playlists.add2 %s", t.elapsed())
 
-                    media.add(args, webpath, entry)  # type: ignore
-                    log.info("media.add %s", t.elapsed())
+                    media.playlist_media_add(args, webpath, entry)  # type: ignore
+                    log.info("media.playlist_media_add %s", t.elapsed())
 
                     added_media_count += 1
                     if added_media_count > 1:
@@ -272,7 +272,7 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Optional[L
             entry["playlist_id"] = playlist_id
             entry["chapter_count"] = chapter_count
 
-            media.add(args, path, entry)
+            media.playlist_media_add(args, path, entry)
 
             current_video_count += 1
             sys.stdout.write("\033[K\r")
@@ -381,7 +381,7 @@ def download(args, m) -> None:
             ydl_log["error"].append(error)
             info = None
             log.debug("[%s]: yt-dlp %s", webpath, error)
-            # media.add(args, webpath, error=error)
+            # media.download_add(args, webpath, error=error)
             # return
 
         if info is None:
@@ -399,20 +399,20 @@ def download(args, m) -> None:
 
     if not ydl_log["error"] and info:
         log.debug("[%s]: No news is good news", webpath)
-        media.add(args, webpath, info, local_path)
+        media.download_add(args, webpath, info, local_path)
     elif any(yt_recoverable_errors.match(line) for line in ydl_full_log):
         log.info("[%s]: Recoverable error matched (will try again later). %s", webpath, ydl_errors)
-        media.add(args, webpath, info, local_path, error=ydl_errors)
+        media.download_add(args, webpath, info, local_path, error=ydl_errors)
     elif any(yt_unrecoverable_errors.match(line) for line in ydl_full_log):
         matched_error = [
             m.string for m in utils.conform([yt_unrecoverable_errors.match(line) for line in ydl_full_log])
         ]
         log.debug("[%s]: Unrecoverable error matched. %s", webpath, ydl_errors or utils.combine(matched_error))
-        media.add(args, webpath, info, local_path, error=ydl_errors, unrecoverable_error=True)
+        media.download_add(args, webpath, info, local_path, error=ydl_errors, unrecoverable_error=True)
     elif any(prefix_unrecoverable_errors.match(line) for line in ydl_full_log):
         log.warning("[%s]: Prefix error. %s", webpath, ydl_errors)
         raise SystemExit(28)
     else:
         if ydl_errors != "":
             log.error("[%s]: Unknown error. %s", webpath, ydl_errors)
-        media.add(args, webpath, info, local_path, error=ydl_errors)
+        media.download_add(args, webpath, info, local_path, error=ydl_errors)

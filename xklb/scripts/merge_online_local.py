@@ -105,7 +105,7 @@ def merge_online_local() -> None:
                 fs_tags["time_downloaded"] = consts.APPLICATION_START
 
             entry = {**tube_entry, **fs_tags, "webpath": webpath}
-            media._add(args, utils.dict_filter_bool(entry))  # type: ignore
+            media.add(args, utils.dict_filter_bool(entry))  # type: ignore
             with args.db.conn:
                 args.db.conn.execute("DELETE from media WHERE path = ?", [webpath])
             merged.append(webpath)

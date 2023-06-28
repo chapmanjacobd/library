@@ -91,4 +91,4 @@ def tabs_add(args=None) -> None:
 
     tabs = utils.list_dict_filter_bool([extract_url_metadata(args, path) for path in get_new_paths(args)])
     for tab in tabs:
-        media._add(args, tab)
+        media.add(args, tab)

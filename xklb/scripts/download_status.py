@@ -117,7 +117,7 @@ def download_status() -> None:
 
     printer(args, query, bindings)
 
-    if "error" in db.columns(args, "media"):
+    if "error" in db.columns(args, "media") and args.verbose >= consts.LOG_INFO:
         query = f"""
         select error, count(*) count
         from media

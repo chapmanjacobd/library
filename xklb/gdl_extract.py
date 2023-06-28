@@ -74,9 +74,19 @@ def gallery_add(args=None) -> None:
     args = parse_args(SC.galleryadd, usage=usage.galleryadd)
 
     if args.insert_only:
-        args.db["media"].insert_all([{"path": p} for p in args.playlists], alter=True, ignore=True, pk="path")
+        args.db["media"].insert_all(
+            [{"path": p, "time_created": consts.APPLICATION_START} for p in args.playlists],
+            alter=True,
+            ignore=True,
+            pk="path",
+        )
     elif args.insert_only_playlists:
-        args.db["playlists"].insert_all([{"path": p} for p in args.playlists], alter=True, ignore=True, pk="path")
+        args.db["playlists"].insert_all(
+            [{"path": p, "time_created": consts.APPLICATION_START} for p in args.playlists],
+            alter=True,
+            ignore=True,
+            pk="path",
+        )
     else:
         known_playlists = set()
         if not args.force and len(args.playlists) > 9:

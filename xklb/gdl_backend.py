@@ -108,7 +108,7 @@ def download(args, m):
         job = gallery_dl.job.DownloadJob(webpath)
     except gallery_dl.exception.NoExtractorError:
         log.info("[%s]: NoExtractorError", webpath)  # RecoverableError
-        media.add(args, webpath, error="NoExtractorError")
+        media.download_add(args, webpath, error="NoExtractorError")
         return
 
     job_status = job.run()
@@ -119,7 +119,7 @@ def download(args, m):
         info["path"] = webpath
 
     local_path = getattr(job.pathfmt, "path", "") or None
-    media.add(
+    media.download_add(
         args,
         webpath,
         info,
@@ -214,7 +214,7 @@ def get_playlist_metadata(args, playlist_path):
             log.warning("Media already exists")
 
         info = {**info, "playlist_id": playlist_id, "webpath": webpath, **args.extra_media_data}
-        media.add(
+        media.playlist_media_add(
             args,
             playlist_path,
             info,

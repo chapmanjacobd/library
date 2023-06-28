@@ -208,7 +208,7 @@ def save_post(args, post_dict, subreddit_path) -> None:
         elif "selftext" in slim_dict:
             args.db["reddit_posts"].upsert(slim_dict, pk=["path", "subreddit"], alter=True)
         else:
-            media._add(args, slim_dict)
+            media.add(args, slim_dict)
 
 
 def since_last_created(args, playlist_path):
