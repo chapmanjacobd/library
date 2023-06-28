@@ -201,7 +201,7 @@ def playlist_media_add(
     error=None,
     unrecoverable_error=False,
 ) -> None:
-    if not info or not info.get("path"):
+    if not info:
         info = {"path": webpath}
 
     consolidated_entry = consolidate(info) or {}
@@ -241,7 +241,7 @@ def download_add(
     else:
         fs_tags = {"time_modified": consts.now()}
 
-    if not info or not info.get("path"):  # not downloaded or already downloaded
+    if not info:  # not downloaded or already downloaded
         info = {"path": webpath}
 
     consolidated_entry = consolidate(info) or {}
