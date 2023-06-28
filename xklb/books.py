@@ -229,7 +229,6 @@ def extract_image_metadata_chunk(metadata: List[dict]) -> List[dict]:
         except Exception as e:
             log.error("[%s]: %s", m["path"], e)
             # continue ?
-
         exif_enriched.append(m)
 
-    return metadata
+    return exif_enriched
