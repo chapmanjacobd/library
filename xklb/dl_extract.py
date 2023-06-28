@@ -1,10 +1,8 @@
-import argparse, os, random, sys
-from pathlib import Path
+import argparse, os, sys
 from typing import List, Tuple
 
 from xklb import db, gdl_backend, play_actions, player, tube_backend, usage, utils
 from xklb.consts import SC, DBType
-from xklb.media import get_paths
 from xklb.utils import log
 
 
