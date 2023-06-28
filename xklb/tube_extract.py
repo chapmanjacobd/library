@@ -26,6 +26,7 @@ def parse_args(action, usage) -> argparse.Namespace:
     parser.add_argument("--safe", "-safe", action="store_true", help="Skip generic URLs")
     parser.add_argument("--no-sanitize", "-s", action="store_true", help="Don't sanitize some common URL parameters")
     parser.add_argument("--extra", "-extra", action="store_true", help="Get full metadata (takes a lot longer)")
+    parser.add_argument("--no-optimize", action="store_true", help=argparse.SUPPRESS)
 
     parser.add_argument(
         "--force",
@@ -112,7 +113,7 @@ def tube_add(args=None) -> None:
                 log.warning("[%s]: Getting extra metadata", path)
                 tube_backend.get_extra_metadata(args, path)
 
-    if not args.db["media"].detect_fts():
+    if not args.no_optimize and not args.db["media"].detect_fts():
         db.optimize(args)
 
 
