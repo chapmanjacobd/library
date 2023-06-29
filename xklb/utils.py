@@ -1393,3 +1393,7 @@ def move_files(file_list):
             shutil.move(existing_path, new_path)
         except Exception:
             log.exception("Could not move %s", existing_path)
+
+
+def dumbcopy(d):
+    return {i: j.copy() if type(j) == dict else j for i, j in d.items()}

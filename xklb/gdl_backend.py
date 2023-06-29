@@ -1,4 +1,5 @@
-import itertools, logging, os, sys, time
+import itertools, os, sys
+from inspect import isgenerator
 from pathlib import Path
 from types import ModuleType
 
@@ -7,10 +8,9 @@ from gallery_dl.exception import StopExtraction
 from gallery_dl.extractor.message import Message
 from gallery_dl.job import Job
 from gallery_dl.util import build_duration_func
-from rich import inspect
 
 from xklb import consts, media, playlists, utils
-from xklb.utils import log, safe_unpack
+from xklb.utils import log
 
 gallery_dl = None
 
@@ -27,7 +27,8 @@ def load_module_level_gallery_dl(args) -> ModuleType:
         if download_archive.exists():
             gallery_dl.config.set(("extractor",), "archive", str(download_archive))
 
-        gallery_dl.config.set(("extractor",), "base-directory", args.prefix)
+        if hasattr(args, "prefix"):
+            gallery_dl.config.set(("extractor",), "base-directory", args.prefix)
         gallery_dl.config.set(("extractor",), "parent-directory", False)
         gallery_dl.config.set(("extractor",), "directory", ["{category}", "{blog['name'][:30]}"])
         gallery_dl.config.set(
@@ -228,9 +229,11 @@ def get_playlist_metadata(args, playlist_path):
             print(f"[{playlist_path}] Added {added_media_count} media", end="\r", flush=True)
 
     if added_media_count == 0:
+        from rich import inspect
+
         job = gallery_dl.job.DataJob(playlist_path, file=open(os.devnull, "w"), ensure_ascii=False)
         job.run()
         inspect(job.data)
-        raise
+        raise RuntimeError("No data found")
 
     return added_media_count
