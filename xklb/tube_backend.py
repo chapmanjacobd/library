@@ -123,7 +123,7 @@ def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True) -> 
                     playlists_of_playlists.append(webpath)
                     return [], info
 
-                entry = deepcopy(info)
+                entry = utils.dumbcopy(info)
                 if entry:
                     if playlists.media_exists(args, playlist_path, webpath) and not args.ignore_errors:
                         raise ExistingPlaylistVideoReached

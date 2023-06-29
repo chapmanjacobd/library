@@ -183,13 +183,17 @@ def add(args, entry):
     tags = entry.pop("tags", None) or ""
 
     media_id = args.db.pop("select id from media where path = ?", [entry["path"]])
-    if media_id:
-        entry["id"] = media_id
+    try:
+        if media_id:
+            entry["id"] = media_id
 
-        args.db["media"].upsert(utils.dict_filter_bool(entry), pk="id", alter=True)
-    else:
-        args.db["media"].insert(utils.dict_filter_bool(entry), pk="id", alter=True)
-        media_id = args.db.pop("select id from media where path = ?", [entry["path"]])
+            args.db["media"].upsert(utils.dict_filter_bool(entry), pk="id", alter=True)
+        else:
+            args.db["media"].insert(utils.dict_filter_bool(entry), pk="id", alter=True)
+            media_id = args.db.pop("select id from media where path = ?", [entry["path"]])
+    except sqlite3.IntegrityError:
+        log.error("media_id %s: %s", media_id, entry)
+        raise
     if tags:
         args.db["captions"].insert({"media_id": media_id, "time": 0, "text": tags}, alter=True)
 

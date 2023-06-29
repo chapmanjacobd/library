@@ -109,7 +109,7 @@ def add(args, playlist_path: str, info: dict, check_subpath=False) -> int:
         if subpath_playlist_id:
             return subpath_playlist_id
 
-    pl = consolidate(args, deepcopy(info))
+    pl = consolidate(args, utils.dumbcopy(info))
     playlist = {**pl, "path": playlist_path, **args.extra_playlist_data}
     return _add(args, utils.dict_filter_bool(playlist))
 
