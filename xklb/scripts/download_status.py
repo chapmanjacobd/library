@@ -4,7 +4,6 @@ from copy import deepcopy
 from tabulate import tabulate
 
 from xklb import consts, db, dl_extract, play_actions, tube_backend, usage, utils
-from xklb.player import delete_playlists
 from xklb.utils import log
 
 
@@ -23,7 +22,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--duration", "-d", action="append", help=argparse.SUPPRESS)
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", help=argparse.SUPPRESS)
     parser.add_argument("--safe", "-safe", action="store_true", help="Skip generic URLs")
-    parser.add_argument("--delete", "--remove", "--erase", "--rm", "-rm", nargs="+", help=argparse.SUPPRESS)
     parser.add_argument("--print", "-p", default=False, const="p", nargs="?", help=argparse.SUPPRESS)
     parser.add_argument(
         "--retry-delay",
@@ -43,7 +41,7 @@ def parse_args() -> argparse.Namespace:
     args.db = db.connect(args)
     log.info(utils.dict_filter_bool(args.__dict__))
 
-    args.action = consts.SC.stats
+    args.action = consts.SC.download_status
     return args
 
 
@@ -52,9 +50,6 @@ def printer(args, query, bindings) -> None:
     media = utils.list_dict_filter_bool(media)
     if not media:
         utils.no_media_found()
-
-    if "blocklist" in args.db.table_names():
-        media = utils.block_dicts_like_sql(media, [{d["key"]: d["value"]} for d in args.db["blocklist"].rows])
 
     tbl = deepcopy(media)
     utils.col_naturaldate(tbl, "avg_time_since_download")
@@ -76,7 +71,7 @@ def printer(args, query, bindings) -> None:
 
         print(tabulate(tbl, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False))
 
-    print(f"{len(media)} playlists" if len(media) > 1 else "1 playlist")
+    print(f"{len(media)} extractors" if len(media) > 1 else "1 extractor")
     duration = sum(m.get("duration") or 0 for m in media)
     if duration > 0:
         duration = utils.human_time(duration)
@@ -88,30 +83,32 @@ def download_status() -> None:
     args = parse_args()
     play_actions.parse_args_sort(args)
 
-    if args.delete:
-        delete_playlists(args, args.delete)
-        return
-
     query, bindings = dl_extract.construct_query(args)
 
     count_paths = ""
     if "time_modified" in query:
         if args.safe:
             args.db.register_function(tube_backend.is_supported, deterministic=True)
-            count_paths = "count(*) FILTER(WHERE COALESCE(time_modified,0) = 0 and is_supported(path)) never_downloaded"
+            count_paths = (
+                ", count(*) FILTER(WHERE COALESCE(time_modified, 0) = 0 and is_supported(path)) never_downloaded"
+            )
+            count_paths += f", count(*) FILTER(WHERE cast(STRFTIME('%s', datetime( time_modified, 'unixepoch', '+{args.retry_delay}')) as int) >= STRFTIME('%s', datetime()) and is_supported(path)) failed_recently"
+            count_paths += f", count(*) FILTER(WHERE time_modified>0 and cast(STRFTIME('%s', datetime( time_modified, 'unixepoch', '+{args.retry_delay}')) as int) < STRFTIME('%s', datetime()) and is_supported(path)) retry_queued"
         else:
-            count_paths = "count(*) FILTER(WHERE COALESCE(time_modified,0) = 0) never_downloaded"
+            count_paths = ", count(*) FILTER(WHERE COALESCE(time_modified, 0) = 0) never_downloaded"
+            count_paths += f", count(*) FILTER(WHERE cast(STRFTIME('%s', datetime( time_modified, 'unixepoch', '+{args.retry_delay}')) as int) >= STRFTIME('%s', datetime())) failed_recently"
+            count_paths += f", count(*) FILTER(WHERE time_modified>0 and cast(STRFTIME('%s', datetime( time_modified, 'unixepoch', '+{args.retry_delay}')) as int) < STRFTIME('%s', datetime())) retry_queued"
 
     query = f"""select
+        COALESCE(extractor_key, 'Playlist-less media') extractor_key
         {count_paths}
-        , COALESCE(extractor_key, 'Unknown') extractor_key
         {', sum(duration) duration' if 'duration' in query else ''}
         {', count(*) FILTER(WHERE COALESCE(time_modified,0) > 0 AND error IS NOT NULL) errors' if 'error' in query else ''}
         {', group_concat(distinct error) error_descriptions' if 'error' in query and args.verbose >= 1 else ''}
     from ({query})
     where 1=1
-        and COALESCE(time_downloaded,0) = 0
-        and COALESCE(time_deleted,0) = 0
+        and COALESCE(time_downloaded, 0) = 0
+        and COALESCE(time_deleted, 0) = 0
     group by extractor_key
     order by never_downloaded DESC"""
 

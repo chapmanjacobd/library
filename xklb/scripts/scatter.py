@@ -62,6 +62,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def get_table(args) -> List[dict]:
+    m_columns = db.columns(args, "media")
     or_paths = [f"path like :path_{i}" for i, _path in enumerate(args.relative_paths)]
 
     media = list(
@@ -76,7 +77,7 @@ def get_table(args) -> List[dict]:
         from media
         where 1=1
             and time_deleted = 0
-            and is_dir is NULL
+            {'and is_dir is NULL' if 'is_dir' in m_columns else ""}
             and ({' or '.join(or_paths)})
         order by {args.sort}
         {'limit :limit' if args.limit else ''}

@@ -37,7 +37,7 @@ def parse_args() -> argparse.Namespace:
     args.db = db.connect(args)
     log.info(utils.dict_filter_bool(args.__dict__))
 
-    args.action = consts.SC.stats
+    args.action = consts.SC.playlists
     return args
 
 

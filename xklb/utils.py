@@ -8,7 +8,7 @@ from functools import wraps
 from pathlib import Path
 from shutil import which
 from timeit import default_timer
-from typing import Any, Dict, Generator, List, NoReturn, Optional, Union
+from typing import Any, Dict, Iterator, List, NoReturn, Optional, Union
 
 import humanize
 from IPython.core import ultratb
@@ -120,7 +120,7 @@ def os_bg_kwargs() -> Dict:
         return {}
 
 
-def flatten(xs: Iterable) -> Generator:
+def flatten(xs: Iterable) -> Iterator:
     for x in xs:
         if isinstance(x, Iterable) and not isinstance(x, (str, bytes)):
             yield from flatten(x)
@@ -596,12 +596,12 @@ def list_dict_filter_unique(data: List[dict]) -> List[dict]:
     return filtered_data
 
 
-def chunks(lst, n) -> Generator:
+def chunks(lst, n) -> Iterator:
     for i in range(0, len(lst), n):
         yield lst[i : i + n]
 
 
-def divisor_gen(n: int) -> Generator:
+def divisor_gen(n: int) -> Iterator:
     large_divisors = []
     for i in range(2, int(math.sqrt(n) + 1)):
         if n % i == 0:
@@ -1304,21 +1304,16 @@ def compare_block_strings(value, media_value):
     raise ValueError("Unreachable?")
 
 
-def block_dicts_like_sql(media, blocklist):
-    not_blocked_media = []
-    for m in media:
-        is_blocked = False
-        for block_dict in blocklist:
-            for key, value in block_dict.items():
-                if key in m and compare_block_strings(value, m[key]):
-                    is_blocked = True
-                    break
-            if is_blocked:
-                break
-        if not is_blocked:
-            not_blocked_media.append(m)
+def is_blocked_dict_like_sql(m, blocklist):
+    for block_dict in blocklist:
+        for key, value in block_dict.items():
+            if key in m and compare_block_strings(value, m[key]):
+                return True
+    return False
 
-    return not_blocked_media
+
+def block_dicts_like_sql(media, blocklist):
+    return conform([m for m in media if is_blocked_dict_like_sql(m, blocklist)])
 
 
 def allow_dicts_like_sql(media, allowlist):

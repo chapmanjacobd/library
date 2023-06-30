@@ -93,6 +93,7 @@ def parse_args():
     parser.add_argument("database", help=argparse.SUPPRESS)
     parser.add_argument("playlists", nargs="*", action=utils.ArgparseArgsOrStdin, help=argparse.SUPPRESS)
     args = parser.parse_intermixed_args()
+    args.defaults = []
 
     if args.duration:
         args.duration = utils.parse_human_to_sql(utils.human_to_seconds, "duration", args.duration)
@@ -109,6 +110,7 @@ def parse_args():
 
     args.action = SC.download
     play_actions.parse_args_sort(args)
+    play_actions.parse_args_limit(args)
 
     log.info(utils.dict_filter_bool(args.__dict__))
 
@@ -129,7 +131,7 @@ def construct_query(args) -> Tuple[str, dict]:
 
     db.construct_search_bindings(args, m_columns)
 
-    if "time_modified" in m_columns:
+    if args.action == SC.download and "time_modified" in m_columns:
         args.filter_sql.append(
             f"""and cast(STRFTIME('%s',
             datetime( COALESCE(m.time_modified,0), 'unixepoch', '+{args.retry_delay}')
@@ -205,15 +207,8 @@ def process_downloadqueue(args) -> List[dict]:
     query, bindings = construct_query(args)
     if args.print:
         player.printer(args, query, bindings)
-        return []
-    media = list(args.db.query(query, bindings))
-
-    if media and "blocklist" in args.db.table_names():
-        media = utils.block_dicts_like_sql(media, [{d["key"]: d["value"]} for d in args.db["blocklist"].rows])
-    if not media:
-        utils.no_media_found()
-
-    return media
+        sys.exit()
+    return list(args.db.query(query, bindings))
 
 
 def dl_download(args=None) -> None:
@@ -224,12 +219,23 @@ def dl_download(args=None) -> None:
     m_columns = db.columns(args, "media")
 
     if "media" in args.db.table_names() and "webpath" in m_columns:
-        with args.db.conn:
-            args.db.conn.execute("DELETE from media WHERE webpath is NULL and path in (select webpath from media)")
+        if args.db.pop("SELECT 1 from media WHERE webpath is NULL and path in (select webpath from media) LIMIT 1"):
+            with args.db.conn:
+                args.db.conn.execute("DELETE from media WHERE webpath is NULL and path in (select webpath from media)")
+
+    blocklist_rules = []
+    if "blocklist" in args.db.table_names():
+        blocklist_rules = [{d["key"]: d["value"]} for d in args.db["blocklist"].rows]
 
     media = process_downloadqueue(args)
+    if not media:
+        utils.no_media_found()
+
     for m in media:
         if not m["path"].startswith("http"):
+            continue
+
+        if blocklist_rules and utils.is_blocked_dict_like_sql(m, blocklist_rules):
             continue
 
         if args.safe:
@@ -242,16 +248,14 @@ def dl_download(args=None) -> None:
         # check again in case it was already attempted by another process
         previous_time_attempted = m.get("time_modified") or 0
         if not args.force and "time_modified" in m_columns:
-            download_already_attempted = list(
-                args.db.query(
-                    f"""
-                    SELECT path from media m
-                    WHERE 1=1
-                    AND (path=? or {'web' if 'webpath' in m_columns else ''}path=?)
-                    {f'AND COALESCE(m.time_modified,0) > {str(previous_time_attempted)}' if 'time_modified' in m_columns else ''}
-                    """,
-                    [m["path"], m["path"]],
-                ),
+            download_already_attempted = args.db.pop(
+                f"""
+                SELECT path from media m
+                WHERE 1=1
+                AND (path=? or {'web' if 'webpath' in m_columns else ''}path=?)
+                {f'AND COALESCE(m.time_modified,0) > {str(previous_time_attempted)}' if 'time_modified' in m_columns else ''}
+                """,
+                [m["path"], m["path"]],
             )
             if download_already_attempted:
                 log.info("[%s]: Download already attempted recently. Skipping!", m["path"])
