@@ -168,7 +168,7 @@ class TestFs(unittest.TestCase):
 @mock.patch("xklb.play_actions.play", return_value=SimpleNamespace(returncode=0))
 @pytest.mark.parametrize("flags", local_player_flags)
 def test_wt_flags(play_mocked, flags):
-    sys.argv = ["wt", v_db] + shlex.split(flags)
+    sys.argv = ["wt", v_db, *shlex.split(flags)]
     wt()
     out = play_mocked.call_args[0][1]
     assert out is not None, f"Test failed for {flags}"

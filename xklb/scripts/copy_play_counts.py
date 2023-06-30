@@ -86,7 +86,11 @@ def copy_play_count(args, source_db) -> None:
     for d in copy_counts:
         renamed_path = d["path"].replace(args.source_prefix, args.target_prefix, 1)
         history.add(
-            args, [renamed_path], time_played=d.get("time_played"), playhead=d.get("playhead"), mark_done=d["done"]
+            args,
+            [renamed_path],
+            time_played=d.get("time_played"),
+            playhead=d.get("playhead"),
+            mark_done=d["done"],
         )
 
 

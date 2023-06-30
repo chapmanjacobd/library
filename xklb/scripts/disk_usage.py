@@ -86,7 +86,9 @@ def get_subset(args, level=None, prefix=None) -> List[Dict]:
         reverse = False
 
     return sorted(
-        [{"path": k, **v} for k, v in d.items() if k not in excluded_files], key=sort_by(args), reverse=reverse
+        [{"path": k, **v} for k, v in d.items() if k not in excluded_files],
+        key=sort_by(args),
+        reverse=reverse,
     )
 
 
@@ -180,7 +182,7 @@ def run_tui(args):
             yield Label(f"--- {args.cwd} ---", id="cwd")
             yield VerticalScroll(OptionList(*[self._path(args.cwd, d) for d in self.args.subset]))
             yield Label(
-                f"Total disk usage: {humanize.naturalsize(sum(d['size'] for d in self.args.subset))}  Items: {sum(d.get('count') or 1 for d in self.args.subset)}"
+                f"Total disk usage: {humanize.naturalsize(sum(d['size'] for d in self.args.subset))}  Items: {sum(d.get('count') or 1 for d in self.args.subset)}",
             )
             yield Footer()
 
@@ -221,7 +223,7 @@ def disk_usage():
         tbl = deepcopy(args.subset)
         tbl = utils.col_naturalsize(tbl, "size")
         print(
-            tabulate(tbl, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False, colalign=["left", "right"])
+            tabulate(tbl, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False, colalign=["left", "right"]),
         )
 
 

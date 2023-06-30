@@ -35,8 +35,8 @@ def google_maps_takeout(df):
                 value if key == "Address" else f"{key}: {value}"
                 for key, value in x.items()
                 if key not in ["Business Name", "Geo Coordinates", "Country Code"]
-            ]
-        )
+            ],
+        ),
     )
 
     df["geometry"] = df["geometry"].apply(lambda x: x.representative_point())

@@ -73,7 +73,7 @@ def parse_args_limit(args):
                 getattr(args, "partial", False),
                 getattr(args, "lower", False),
                 getattr(args, "upper", False),
-            ]
+            ],
         ):
             if args.action in (SC.listen, SC.watch, SC.read):
                 args.limit = consts.DEFAULT_PLAY_QUEUE

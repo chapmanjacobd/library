@@ -1161,7 +1161,7 @@ def cluster_images(paths, n_clusters=None):
     img_size = 100  # trade-off between accuracy and speed
 
     image_mode_groups = {}
-    for i, path in enumerate(paths):
+    for path in paths:
         img = Image.open(path)
         img = img.resize((img_size, img_size), Image.Resampling.NEAREST)
         img_array = np.array(img).reshape(-1)  # convert to scalar for ANNoy
@@ -1313,7 +1313,7 @@ def is_blocked_dict_like_sql(m, blocklist):
 
 
 def block_dicts_like_sql(media, blocklist):
-    return conform([m for m in media if is_blocked_dict_like_sql(m, blocklist)])
+    return [m for m in media if not is_blocked_dict_like_sql(m, blocklist)]
 
 
 def allow_dicts_like_sql(media, allowlist):
