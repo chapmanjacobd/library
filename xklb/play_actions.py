@@ -64,6 +64,27 @@ def parse_args_sort(args) -> None:
     args.sort = sort.replace(",,", ",")
 
 
+def parse_args_limit(args):
+    if not args.limit:
+        args.defaults.append("limit")
+        if not any(
+            [
+                args.print and len(args.print.replace("p", "")) > 0,
+                getattr(args, "partial", False),
+                getattr(args, "lower", False),
+                getattr(args, "upper", False),
+            ]
+        ):
+            if args.action in (SC.listen, SC.watch, SC.read):
+                args.limit = consts.DEFAULT_PLAY_QUEUE
+            elif args.action in (SC.view):
+                args.limit = consts.DEFAULT_PLAY_QUEUE * 4
+            elif args.action in (SC.download):
+                args.limit = consts.DEFAULT_PLAY_QUEUE * 60
+    elif args.limit in ("inf", "all"):
+        args.limit = None
+
+
 def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     DEFAULT_PLAYER_ARGS_SUB = ["--speed=1"]
     DEFAULT_PLAYER_ARGS_NO_SUB = ["--speed=1.46"]
@@ -216,16 +237,7 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     if args.big_dirs:
         args.local_media_only = True
 
-    if not args.limit:
-        args.defaults.append("limit")
-        if not any([args.print and len(args.print.replace("p", "")) > 0, args.partial, args.lower, args.upper]):
-            if args.action in (SC.listen, SC.watch, SC.read):
-                args.limit = consts.DEFAULT_PLAY_QUEUE
-            elif args.action in (SC.view):
-                args.limit = consts.DEFAULT_PLAY_QUEUE * 4
-    elif args.limit in ("inf", "all"):
-        args.limit = None
-
+    parse_args_limit(args)
     parse_args_sort(args)
 
     if args.cols:

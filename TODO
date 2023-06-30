@@ -29,8 +29,6 @@ def intersect_using_spatial_index(source_gdf, intersecting_gdf):
 
 - make generic printer. support --json or --csv for most subcommands
 
-- improve dlstatus subcommand tests
-
 - scan bpm and key sig
 
     https://github.com/aubio/aubio

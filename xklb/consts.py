@@ -91,7 +91,8 @@ class SC:
     view = "view"
     download = "download"
     block = "block"
-    stats = "stats"
+    playlists = "playlists"
+    download_status = "download_status"
     search = "search"
 
 

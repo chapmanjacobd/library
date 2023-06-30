@@ -1,7 +1,7 @@
-import sqlite3
+import os, sqlite3
 from pathlib import Path
 from textwrap import dedent
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, Iterable, Iterator, List, Optional, Union
 
 from xklb import consts, utils
 from xklb.utils import log
