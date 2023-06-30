@@ -207,8 +207,12 @@ def process_downloadqueue(args) -> List[dict]:
     query, bindings = construct_query(args)
     if args.print:
         player.printer(args, query, bindings)
-        sys.exit()
-    return list(args.db.query(query, bindings))
+        return []
+
+    media = list(args.db.query(query, bindings))
+    if not media:
+        utils.no_media_found()
+    return media
 
 
 def dl_download(args=None) -> None:
@@ -228,9 +232,6 @@ def dl_download(args=None) -> None:
         blocklist_rules = [{d["key"]: d["value"]} for d in args.db["blocklist"].rows]
 
     media = process_downloadqueue(args)
-    if not media:
-        utils.no_media_found()
-
     for m in media:
         if not m["path"].startswith("http"):
             continue
