@@ -949,7 +949,7 @@ def media_printer(args, media) -> None:
         if "duration" in media[0]:
             D["duration"] = duration
             D["avg_duration"] = duration / len(media)
-            if args.profile in (SC.listen, SC.watch, SC.read, SC.view):
+            if hasattr(args, "profile") and args.profile in (SC.listen, SC.watch, SC.read, SC.view):
                 D["cadence_adj_duration"] = cadence_adjusted_duration(args, duration)
 
         if "size" in media[0]:
