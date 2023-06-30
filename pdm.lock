@@ -236,7 +236,7 @@ summary = "Compressed Rich Text Format (RTF) compression and decompression packa
 
 [[package]]
 name = "confection"
-version = "0.0.4"
+version = "0.1.0"
 requires_python = ">=3.6"
 summary = "The sweetest config system for Python"
 dependencies = [
@@ -513,7 +513,7 @@ dependencies = [
 
 [[package]]
 name = "joblib"
-version = "1.3.0"
+version = "1.3.1"
 requires_python = ">=3.7"
 summary = "Lightweight pipelining with Python functions"
 
@@ -1889,9 +1889,9 @@ content_hash = "sha256:aa42aafc020e86d43a66a11c7df64ffc69b73f931d34593da3b5938ac
 "compressed-rtf 1.0.6" = [
     {url = "https://files.pythonhosted.org/packages/8e/ac/abb196bb0b42a239d605fe97c314c3312374749013a07da4e6e0408f223c/compressed_rtf-1.0.6.tar.gz", hash = "sha256:c1c827f1d124d24608981a56e8b8691eb1f2a69a78ccad6440e7d92fde1781dd"},
 ]
-"confection 0.0.4" = [
-    {url = "https://files.pythonhosted.org/packages/35/03/540079384d9665d752631724f578505ddf721b11a7d8318b964397a7a3b8/confection-0.0.4.tar.gz", hash = "sha256:b1ddf5885da635f0e260a40b339730806dfb1bd17d30e08764f35af841b04ecf"},
-    {url = "https://files.pythonhosted.org/packages/b1/c4/07291f4947d20f545eee76ef20d1eacfb1f80d1d6ab4792bfa6797e0578c/confection-0.0.4-py3-none-any.whl", hash = "sha256:aeac5919ba770c7b281aa5863bb6b0efed42568a7ad8ea26b6cb632154503fb2"},
+"confection 0.1.0" = [
+    {url = "https://files.pythonhosted.org/packages/11/84/339d4abb58f432f357c464b8d9c4adcfe581a1c3cdd7d368260ea1422786/confection-0.1.0.tar.gz", hash = "sha256:81c8e58fa810f4a3135c3710652c2258c45b1eec35c8557762a0f133449c75a2"},
+    {url = "https://files.pythonhosted.org/packages/63/05/2d7acb83610e0c5171dfcb4a2968d676800da8082fc456e284fa8e0924f4/confection-0.1.0-py3-none-any.whl", hash = "sha256:1d6de16297efe937efaad13f83f45467dedc05acafdb0fb16074299a9c683d85"},
 ]
 "cymem 2.0.7" = [
     {url = "https://files.pythonhosted.org/packages/00/bd/0369d6325ef95eb71d251720e0f7551727a270b41bacc09db5323b87343c/cymem-2.0.7-cp36-cp36m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a2971b7da5aa2e65d8fbbe9f2acfc19ff8e73f1896e3d6e1223cc9bf275a0207"},
@@ -2172,9 +2172,9 @@ content_hash = "sha256:aa42aafc020e86d43a66a11c7df64ffc69b73f931d34593da3b5938ac
     {url = "https://files.pythonhosted.org/packages/7a/ff/75c28576a1d900e87eb6335b063fab47a8ef3c8b4d88524c4bf78f670cce/Jinja2-3.1.2.tar.gz", hash = "sha256:31351a702a408a9e7595a8fc6150fc3f43bb6bf7e319770cbc0db9df9437e852"},
     {url = "https://files.pythonhosted.org/packages/bc/c3/f068337a370801f372f2f8f6bad74a5c140f6fda3d9de154052708dd3c65/Jinja2-3.1.2-py3-none-any.whl", hash = "sha256:6088930bfe239f0e6710546ab9c19c9ef35e29792895fed6e6e31a023a182a61"},
 ]
-"joblib 1.3.0" = [
-    {url = "https://files.pythonhosted.org/packages/1e/f2/6ec7eb9e48c88c750da04050a5ba8250ca9949dfcf6e624ccee12d2fc653/joblib-1.3.0-py3-none-any.whl", hash = "sha256:172d56d4c43dd6bcd953bea213018c4084cf754963bbf54b8dae40faea716b98"},
-    {url = "https://files.pythonhosted.org/packages/46/03/2e46a5894e7ac7462cb6b6299f94d46e761b3b483c6ab54bdf96eee09b00/joblib-1.3.0.tar.gz", hash = "sha256:0b12a65dc76c530dbd790dd92881f75c40932b4254a7c8e608a868df408ca0a3"},
+"joblib 1.3.1" = [
+    {url = "https://files.pythonhosted.org/packages/28/08/9dcdaa5aac4634e4c23af26d92121f7ce445c630efa0d3037881ae2407fb/joblib-1.3.1-py3-none-any.whl", hash = "sha256:89cf0529520e01b3de7ac7b74a8102c90d16d54c64b5dd98cafcd14307fdf915"},
+    {url = "https://files.pythonhosted.org/packages/71/f6/fbe4661d202d11c9399d6bec6b2ad381f11e9643ae25236c3904cf46a331/joblib-1.3.1.tar.gz", hash = "sha256:1f937906df65329ba98013dc9692fe22a4c5e4a648112de500508b18a21b41e3"},
 ]
 "langcodes 3.3.0" = [
     {url = "https://files.pythonhosted.org/packages/5f/ec/9955d772ecac0bdfb5d706d64f185ac68bd0d4092acdc2c5a1882c824369/langcodes-3.3.0.tar.gz", hash = "sha256:794d07d5a28781231ac335a1561b8442f8648ca07cd518310aeb45d6f0807ef6"},

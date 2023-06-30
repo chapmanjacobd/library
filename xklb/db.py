@@ -139,7 +139,7 @@ def optimize(args) -> None:
         int_columns = [k for k, v in table_columns.items() if v == int and k not in search_columns + ignore_columns]
         str_columns = [k for k, v in table_columns.items() if v == str and k not in search_columns + ignore_columns]
         if "path" in table_columns:
-            str_columns = list(set(str_columns + ["path"]))
+            str_columns = list(set([*str_columns, "path"]))
 
         optimized_column_order = list(utils.order_set([*int_columns, *(table_config.get("column_order") or [])]))
         compare_order = zip(table_columns, optimized_column_order)
