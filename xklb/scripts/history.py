@@ -106,8 +106,8 @@ def history() -> None:
 
     m_columns = args.db["media"].columns_dict
 
-    if args.facet.startswith("watching"):
-        print("Partially watched:")
+    if args.facet in ("watching", "listening"):
+        print(args.facet.title() + ":")
         tbl = player.historical_usage(args, args.frequency, "time_played", "and coalesce(play_count, 0)=0")
         print_history(tbl)
         query = f"""WITH m as (
@@ -121,7 +121,7 @@ def history() -> None:
                     {', duration' if 'duration' in m_columns else ''}
                     {', subtitle_count' if 'subtitle_count' in m_columns else ''}
                 FROM media m
-                LEFT JOIN history h on h.media_id = m.id
+                JOIN history h on h.media_id = m.id
                 WHERE coalesce(time_deleted, 0) = 0
                 GROUP BY m.id, m.path
             )
@@ -136,8 +136,8 @@ def history() -> None:
         tbl = list(args.db.query(query))
         print_recent(tbl, "time_last_played")
 
-    elif args.facet.startswith("watched"):
-        print("Finished watching:")
+    elif args.facet in ("watched", "listened", "seen", "heard"):
+        print(args.facet.title() + ":")
         tbl = player.historical_usage(args, args.frequency, "time_played", "and coalesce(play_count, 0)>0")
         print_history(tbl)
         query = f"""WITH m as (
@@ -151,7 +151,7 @@ def history() -> None:
                     {', duration' if 'duration' in m_columns else ''}
                     {', subtitle_count' if 'subtitle_count' in m_columns else ''}
                 FROM media m
-                LEFT JOIN history h on h.media_id = m.id
+                JOIN history h on h.media_id = m.id
                 GROUP BY m.id, m.path
             )
             SELECT *

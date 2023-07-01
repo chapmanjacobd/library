@@ -169,8 +169,7 @@ def construct_query(args) -> Tuple[str, dict]:
                 {', p.extractor_key IS NOT NULL DESC' if 'sort' in args.defaults else ''}
                 , COALESCE(m.time_modified, 0) = 0 DESC
                 , m.time_modified
-                {', ' + args.sort if args.sort else ''}
-                , random()
+                {', random()' if 'sort' in args.defaults else ', ' + args.sort}
             {LIMIT}
         """
     else:
@@ -196,8 +195,7 @@ def construct_query(args) -> Tuple[str, dict]:
             ORDER BY 1=1
                 {', COALESCE(m.time_modified,0) = 0 DESC' if 'time_modified' in m_columns else ''}
                 {', m.time_modified' if 'time_modified' in m_columns else ''}
-                {', ' + args.sort if args.sort else ''}
-                , random()
+                {', random()' if 'sort' in args.defaults else ', ' + args.sort}
         {LIMIT}
         """
 

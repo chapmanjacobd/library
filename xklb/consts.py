@@ -178,6 +178,10 @@ def get_text_files(path: Path, image_recognition=False, speech_recognition=False
 time_facets = [
     "watching",
     "watched",
+    "listened",
+    "listening",
+    "heard",
+    "seen",
     "deleted",
     "created",
     "modified",

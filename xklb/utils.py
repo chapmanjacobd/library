@@ -1394,5 +1394,33 @@ def move_files(file_list):
                 log.exception("Could not move %s", existing_path)
 
 
+def move_files_bash(file_list):
+    move_sh = """#!/bin/sh
+existing_path=$1
+new_path=$2
+
+# Attempt to rename the file/directory
+mv -Tn "$existing_path" "$new_path" 2>/dev/null
+
+if [ $? -ne 0 ]; then
+    mkdir -p $(dirname "$new_path")
+    mv -Tn "$existing_path" "$new_path"
+fi
+"""
+    move_sh_path = Path(tempfile.mktemp(prefix="move_", suffix=".sh"))
+    move_sh_path.write_text(move_sh)
+    move_sh_path.chmod(move_sh_path.stat().st_mode | 0o100)
+
+    with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".tsv") as temp:
+        temp.writelines(
+            f"{shlex.quote(existing_path)}\t{shlex.quote(new_path)}\n" for existing_path, new_path in file_list
+        )
+        temp.flush()
+        os.fsync(temp.fileno())
+
+        print(f"""### Move {len(file_list)} files to new folders: ###""")
+        print(rf"parallel --colsep '\t' -a {temp.name} -j 20 {move_sh_path}")
+
+
 def dumbcopy(d):
     return {i: j.copy() if type(j) == dict else j for i, j in d.items()}

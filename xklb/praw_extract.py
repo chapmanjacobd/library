@@ -149,8 +149,6 @@ def saveable(item) -> Dict[str, Any]:
 def slim_post_data(d: dict, subreddit=None) -> dict:
     skip_domains = ["linktr.ee", "twitter.com", "t.me", "patreon", "onlyfans", "fans.ly", "file-upload", "file-link"]
     url = d.get("url")
-    if url:
-        url = url.lower()
     if not url or any(domain in url for domain in skip_domains):
         d["url"] = d.get("url_overridden_by_dest")
 

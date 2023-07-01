@@ -319,8 +319,13 @@ def download(args, m) -> None:
         "lazy_playlist": True,
         "noplaylist": True,
         "playlist_items": "1",
-        "extractor_retries": 13,
-        "retries": 13,
+        "extractor_retries": 3,
+        "retries": 12,
+        "retry_sleep_functions": {
+            "extractor": lambda n: 0.2 * n,
+            "http": lambda n: 0.1 * (2**n),
+            "fragment": lambda n: 0.04 * (2**n),
+        },
         "outtmpl": {
             "default": out_dir("%(uploader,uploader_id)s/%(title).200B_[%(id).60B].%(ext)s"),
             "chapter": out_dir(
