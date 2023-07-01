@@ -155,6 +155,9 @@ def play(action) -> str:
         library {action} -OOO  # above, plus ignores fts and (include/exclude) filter during ordinal search
         library {action} -OOOO # above, plus starts search with parent folder
 
+        If searching by a specific subpath it may be preferable to just sort by path instead
+        library {action} d/planet.earth.2024/ -u path
+
         library {action} --related  # Similar to -O but uses fts to find similar content
         library {action} -R         # equivalent
         library {action} -RR        # above, plus ignores most filters
