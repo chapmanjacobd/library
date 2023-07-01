@@ -77,6 +77,7 @@ def get_table(args) -> List[dict]:
         from media
         where 1=1
             and time_deleted = 0
+            and path not like "http%"
             {'and is_dir is NULL' if 'is_dir' in m_columns else ""}
             and ({' or '.join(or_paths)})
         order by {args.sort}

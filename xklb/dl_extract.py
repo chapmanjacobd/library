@@ -1,7 +1,7 @@
 import argparse, os, sys
 from typing import List, Tuple
 
-from xklb import db, gdl_backend, play_actions, player, tube_backend, usage, utils
+from xklb import consts, db, gdl_backend, play_actions, player, tube_backend, usage, utils
 from xklb.consts import SC, DBType
 from xklb.utils import log
 
@@ -65,7 +65,7 @@ def parse_args():
 
     parser.add_argument("--print", "-p", default=False, const="p", nargs="?", help=argparse.SUPPRESS)
     parser.add_argument("--cols", "-cols", "-col", nargs="*", help=argparse.SUPPRESS)
-    parser.add_argument("--sort", "-u", nargs="+", default=["random"], help=argparse.SUPPRESS)
+    parser.add_argument("--sort", "-u", nargs="+", help=argparse.SUPPRESS)
     parser.add_argument("--where", "-w", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--include", "-s", "--search", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
@@ -166,6 +166,7 @@ def construct_query(args) -> Tuple[str, dict]:
                 {" ".join(args.filter_sql)}
             GROUP BY m.playlist_id, m.path
             ORDER BY 1=1
+                {', p.extractor_key IS NOT NULL DESC' if 'sort' in args.defaults else ''}
                 , COALESCE(m.time_modified, 0) = 0 DESC
                 , m.time_modified
                 {', ' + args.sort if args.sort else ''}
@@ -247,7 +248,7 @@ def dl_download(args=None) -> None:
                 continue
 
         # check again in case it was already attempted by another process
-        previous_time_attempted = m.get("time_modified") or 0
+        previous_time_attempted = m.get("time_modified") or consts.now()
         if not args.force and "time_modified" in m_columns:
             download_already_attempted = args.db.pop(
                 f"""
@@ -263,6 +264,8 @@ def dl_download(args=None) -> None:
                 continue
 
         try:
+            log.debug(m)
+
             if args.profile in (DBType.audio, DBType.video):
                 tube_backend.download(args, m)
             elif args.profile == DBType.image:

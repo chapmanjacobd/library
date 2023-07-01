@@ -1,5 +1,4 @@
 import json, sys
-from copy import deepcopy
 from pathlib import Path
 from types import ModuleType
 from typing import Dict, List, Optional, Tuple
@@ -168,31 +167,6 @@ def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True) -> 
                 playlists.save_undownloadable(args, playlist_path, "video")
 
 
-def get_video_metadata(args, playlist_path) -> Optional[Dict]:
-    yt_dlp = load_module_level_yt_dlp()
-
-    with yt_dlp.YoutubeDL(
-        tube_opts(
-            args,
-            func_opts={
-                "skip_download": True,
-                "extract_flat": True,
-                "lazy_playlist": True,
-                "check_formats": False,
-                "ignoreerrors": False,
-                "playlistend": None,
-                "playlist_items": "1",
-                "noplaylist": True,
-            },
-        ),
-    ) as ydl:
-        entry = ydl.extract_info(playlist_path, download=False)
-        if entry and "entries" in entry:
-            entries = entry.pop("entries")[0]
-            entry = {**entry, **entries}
-        return entry
-
-
 def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Optional[List[Dict]]:
     yt_dlp = load_module_level_yt_dlp()
 
@@ -282,6 +256,30 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Optional[L
             )
 
 
+def get_video_metadata(args, playlist_path) -> Optional[Dict]:
+    yt_dlp = load_module_level_yt_dlp()
+
+    with yt_dlp.YoutubeDL(
+        tube_opts(
+            args,
+            func_opts={
+                "skip_download": True,
+                "extract_flat": True,
+                "lazy_playlist": True,
+                "check_formats": False,
+                "ignoreerrors": False,
+                "playlistend": ":1",
+                "noplaylist": True,
+            },
+        ),
+    ) as ydl:
+        entry = ydl.extract_info(playlist_path, download=False)
+        if entry and "entries" in entry:
+            entries = entry.pop("entries")[0]
+            entry = {**entry, **entries}
+        return entry
+
+
 def download(args, m) -> None:
     yt_dlp = load_module_level_yt_dlp()
 
@@ -315,10 +313,12 @@ def download(args, m) -> None:
         "extractor_args": {"youtube": {"skip": ["authcheck"]}},
         "logger": DictLogger(),
         "skip_download": bool(consts.PYTEST_RUNNING),
-        "extract_flat": False,
-        "lazy_playlist": False,
         "postprocessors": [{"key": "FFmpegMetadata"}],
         "restrictfilenames": True,
+        "extract_flat": False,
+        "lazy_playlist": True,
+        "noplaylist": True,
+        "playlist_items": "1",
         "extractor_retries": 13,
         "retries": 13,
         "outtmpl": {
@@ -395,6 +395,8 @@ def download(args, m) -> None:
     ydl_errors = ydl_log["error"] + ydl_log["warning"]
     ydl_errors = "\n".join([line for line in ydl_errors if not yt_meaningless_errors.match(line)])
     ydl_full_log = ydl_log["error"] + ydl_log["warning"] + ydl_log["info"]
+
+    # log.debug('\n'.join(ydl_full_log))
 
     if not ydl_log["error"] and info:
         log.debug("[%s]: No news is good news", webpath)

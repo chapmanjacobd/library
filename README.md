@@ -143,7 +143,7 @@ Incremental surfing. 📈🏄 totally rad!
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.2.013)
+    xk media library subcommands (v2.2.014)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -577,6 +577,9 @@ Explore `library` databases in your browser
         library watch -OO   # above, plus ignores most filters
         library watch -OOO  # above, plus ignores fts and (include/exclude) filter during ordinal search
         library watch -OOOO # above, plus starts search with parent folder
+
+        If searching by a specific subpath it may be preferable to just sort by path instead
+        library watch d/planet.earth.2024/ -u path
 
         library watch --related  # Similar to -O but uses fts to find similar content
         library watch -R         # equivalent

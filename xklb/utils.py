@@ -1382,12 +1382,16 @@ def rebin_folders(paths, max_files_per_folder=16000):
 
 def move_files(file_list):
     for existing_path, new_path in file_list:
-        parent_dir = os.path.dirname(new_path)
-        os.makedirs(parent_dir, exist_ok=True)
         try:
-            shutil.move(existing_path, new_path)
+            os.rename(existing_path, new_path)
         except Exception:
-            log.exception("Could not move %s", existing_path)
+            try:
+                parent_dir = os.path.dirname(new_path)
+                os.makedirs(parent_dir, exist_ok=True)
+
+                shutil.move(existing_path, new_path)
+            except Exception:
+                log.exception("Could not move %s", existing_path)
 
 
 def dumbcopy(d):
