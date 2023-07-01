@@ -885,7 +885,7 @@ def historical_usage(args, freq="monthly", time_column="time_played", where=""):
                 , FIRST_VALUE(h.playhead) OVER (PARTITION BY h.media_id ORDER BY h.time_played DESC) playhead
                 , *
             FROM media m
-            LEFT JOIN history h on h.media_id = m.id
+            JOIN history h on h.media_id = m.id
             GROUP BY m.id, m.path
         )
         SELECT
@@ -894,8 +894,10 @@ def historical_usage(args, freq="monthly", time_column="time_played", where=""):
             , AVG(duration) AS duration_avg
             , SUM(size) AS size_sum
             , AVG(size) AS size_avg
+            , count(*) as count
         FROM m
-        WHERE coalesce(time_period, 0)>0 and {time_column}>0 {where}
+        WHERE coalesce(time_period, 0)>0
+            and {time_column}>0 {where}
         GROUP BY time_period
     """
     return list(args.db.query(query))

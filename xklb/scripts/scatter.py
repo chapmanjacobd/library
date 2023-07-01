@@ -215,9 +215,7 @@ def scatter() -> None:
         print(tabulate(tbl, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False))
         print(len(rebinned), "files would be moved (only 10 shown)")
         print(len(untouched), "files would not be moved")
-
-        if utils.confirm("Move files ?"):
-            utils.move_files(rebinned)
+        utils.move_files_bash(rebinned)
         sys.exit(0)
 
     if args.srcmounts:
