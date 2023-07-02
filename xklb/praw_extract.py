@@ -384,7 +384,7 @@ def reddit_update(args=None) -> None:
     args = parse_args("redditupdate", usage=usage.redditupdate)
     reddit_playlists = playlists.get_all(
         args,
-        "extractor_key, path, id, extractor_config",
+        "extractor_key, path, extractor_playlist_id, extractor_config",
         sql_filters=['AND extractor_key in ("reddit_praw_subreddit","reddit_praw_redditor")'],
     )
 
