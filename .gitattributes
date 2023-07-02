@@ -3,3 +3,4 @@
 
 .git*       export-ignore
 examples    export-ignore
+pdm.lock    -diff

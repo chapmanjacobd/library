@@ -65,7 +65,7 @@ def group_files_by_folder(args, media) -> List[Dict]:
             if parent not in d:
                 d[parent] = {"size": 0, "count": 0, "deleted": 0, "played": 0}
             if not file_deleted:
-                d[parent]["size"] += m.get("size", 0)
+                d[parent]["size"] += m.get("size") or 0
                 d[parent]["count"] += 1
             else:
                 d[parent]["deleted"] += 1

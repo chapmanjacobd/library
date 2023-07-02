@@ -171,7 +171,8 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
 
     parser.add_argument("--no-video", "-vn", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--no-audio", "-an", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--no-subtitle", "-sn", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--no-subtitles", "--no-subtitle", "-sn", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--subtitles", "--subtitle", "-sy", action="store_true", help=argparse.SUPPRESS)
 
     parser.add_argument("--override-player", "--player", "-player", help=argparse.SUPPRESS)
     parser.add_argument("--player-args-sub", "-player-sub", nargs="*", default=DEFAULT_PLAYER_ARGS_SUB)
@@ -266,8 +267,6 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     if args.override_player:
         args.override_player = shlex.split(args.override_player)
 
-    log.info(utils.dict_filter_bool(args.__dict__))
-
     if args.keep_dir:
         args.keep_dir = Path(args.keep_dir).expanduser().resolve()
 
@@ -278,6 +277,8 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
 
     if args.post_action:
         args.post_action = args.post_action.replace("-", "_")
+
+    log.info(utils.dict_filter_bool(args.__dict__))
 
     utils.timeout(args.timeout)
 
@@ -307,7 +308,9 @@ def construct_query(args) -> Tuple[str, dict]:
         args.filter_sql.append(" and video_count=0 ")
     if args.no_audio:
         args.filter_sql.append(" and audio_count=0 ")
-    if args.no_subtitle:
+    if args.subtitles:
+        args.filter_sql.append(" and subtitle_count>0 ")
+    if args.no_subtitles:
         args.filter_sql.append(" and subtitle_count=0 ")
 
     def ii(string):
