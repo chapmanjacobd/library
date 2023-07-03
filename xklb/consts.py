@@ -54,17 +54,15 @@ APPLICATION_START = now()
 TERMINAL_SIZE = shutil.get_terminal_size(fallback=(80, 60))
 TABULATE_STYLE = "simple"
 
-TIME_COLUMNS = (
-    "time_scanned",
-    "time_downloaded",
-    "time_deleted",
-    "time_modified",
-    "time_created",
-    "time_played",
-    "time_valid",
-    "time_first_played",
-    "time_last_played",
-    "playhead",
+EPOCH_COLUMNS = (
+    "time_downloaded",  # APPLICATION_START time local file known to exist / time scanned
+    "time_deleted",  # APPLICATION_START time local file known to not exist
+    "time_created",  # earliest valid time of media creation
+    "time_modified",  # time of attempted download, file modification
+    "time_played",  # -- history table --
+    "time_first_played",  # generated at runtime
+    "time_last_played",  # generated at runtime
+    "time_valid",  # generated at runtime
 )
 
 
@@ -193,6 +191,10 @@ frequency = ["daily", "weekly", "monthly", "quarterly", "yearly"]
 PLAYLIST_KNOWN_KEYS = ("description", "url", "duration", "view_count", "webpage_url", "original_url", "time_deleted")
 
 MEDIA_KNOWN_KEYS = (
+    "cast",
+    "downloader_options_http_chunk_size",
+    "heatmap",
+    "expected_protocol",
     "photoset_layout",
     "asks_allow_media",
     "submission_page_title",

@@ -29,7 +29,7 @@ def consolidate(args, v: dict) -> dict:
     cv = {}
     cv["time_uploaded"] = upload_date
     cv["time_created"] = consts.APPLICATION_START
-    cv["time_modified"] = 0
+    cv["time_modified"] = consts.now()
     cv["time_deleted"] = 0
 
     cv["profile"] = args.profile

@@ -208,12 +208,12 @@ def test_parse_duration():
 
 
 def test_human_time():
-    assert utils.human_time(0) is None
+    assert utils.human_time(0) == ""
     assert utils.human_time(946684800) == "30 years and 7 days"
 
 
 def test_col_duration():
-    assert utils.col_duration([{"t": 0, "t1": 1}], "t") == [{"t": None, "t1": 1}]
+    assert utils.col_duration([{"t": 0, "t1": 1}], "t") == [{"t": "", "t1": 1}]
     assert utils.col_duration([{"t": 946684800, "t1": 1}], "t") == [{"t": "30 years and 7 days", "t1": 1}]
 
 

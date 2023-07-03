@@ -182,7 +182,7 @@ def bigdirs() -> None:
         tbl = tbl[-int(args.limit) :]
 
     tbl = utils.list_dict_filter_bool(tbl, keep_0=False)
-    tbl = utils.col_resize(tbl, "path", 50)
+    tbl = utils.col_resize_percent(tbl, "path", 50)
     tbl = utils.col_naturalsize(tbl, "size")
     print(tabulate(tbl, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False))
     if not args.limit:

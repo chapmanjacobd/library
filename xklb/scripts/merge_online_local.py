@@ -77,8 +77,8 @@ def merge_online_local() -> None:
 
     tbl = deepcopy(duplicates)
     tbl = tbl[: int(args.limit)]
-    tbl = utils.col_resize(tbl, "keep_path", 30)
-    tbl = utils.col_resize(tbl, "duplicate_path", 30)
+    tbl = utils.col_resize_percent(tbl, "keep_path", 30)
+    tbl = utils.col_resize_percent(tbl, "duplicate_path", 30)
     tbl = utils.col_naturalsize(tbl, "duplicate_size")
     print(tabulate(tbl, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False))
 

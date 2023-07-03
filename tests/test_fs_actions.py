@@ -102,7 +102,7 @@ def test_wt_print(capsys):
     for lb_command in [
         ["wt", v_db, "-p", "a"],
         ["wt", v_db, "-pa"],
-        ["pl", v_db, "-a"],
+        ["pl", v_db, "-pa"],
     ]:
         lb(lb_command)
         captured = capsys.readouterr().out.replace("\n", "")

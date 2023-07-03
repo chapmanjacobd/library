@@ -1,9 +1,7 @@
 import argparse, json
 from copy import deepcopy
 
-from tabulate import tabulate
-
-from xklb import consts, db, dl_extract, play_actions, tube_backend, usage, utils
+from xklb import consts, db, dl_extract, play_actions, player, tube_backend, usage, utils
 from xklb.utils import log
 
 
@@ -13,8 +11,8 @@ def parse_args() -> argparse.Namespace:
         usage=usage.download_status,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("--aggregate", "-a", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--json", "-j", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--print", "-p", default="p", const="p", nargs="?", help=argparse.SUPPRESS)
+    parser.add_argument("--cols", "-cols", "-col", nargs="*", help="Include a column when printing")
     parser.add_argument("--sort", "-u", nargs="+", help=argparse.SUPPRESS)
     parser.add_argument("--where", "-w", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--include", "-s", "--search", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
@@ -22,7 +20,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--duration", "-d", action="append", help=argparse.SUPPRESS)
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", help=argparse.SUPPRESS)
     parser.add_argument("--safe", "-safe", action="store_true", help="Skip generic URLs")
-    parser.add_argument("--print", "-p", default=False, const="p", nargs="?", help=argparse.SUPPRESS)
     parser.add_argument(
         "--retry-delay",
         "-r",
@@ -44,40 +41,6 @@ def parse_args() -> argparse.Namespace:
 
     args.action = consts.SC.download_status
     return args
-
-
-def printer(args, query, bindings) -> None:
-    media = list(args.db.query(query, bindings))
-    media = utils.list_dict_filter_bool(media)
-    if not media:
-        utils.no_media_found()
-
-    tbl = deepcopy(media)
-    utils.col_naturaldate(tbl, "avg_time_since_download")
-    utils.col_naturalsize(tbl, "size")
-    utils.col_duration(tbl, "duration")
-    utils.col_duration(tbl, "avg_playlist_duration")
-
-    if args.print and "f" in args.print:
-        utils.pipe_print("\n".join([d["path"] for d in media]))
-        return
-    elif args.json or consts.TERMINAL_SIZE.columns < 80:
-        print(json.dumps(tbl, indent=3))
-    else:
-        tbl = utils.col_resize(tbl, "path", 30)
-        tbl = utils.col_resize(tbl, "title", 20)
-        tbl = utils.col_resize(tbl, "uploader_url")
-
-        tbl = utils.list_dict_filter_bool(tbl)
-
-        print(tabulate(tbl, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False))
-
-    print(f"{len(media)} extractors" if len(media) > 1 else "1 extractor")
-    duration = sum(m.get("duration") or 0 for m in media)
-    if duration > 0:
-        duration = utils.human_time(duration)
-        if not args.aggregate:
-            print("Total duration:", duration)
 
 
 def download_status() -> None:
@@ -113,7 +76,7 @@ def download_status() -> None:
     group by extractor_key
     order by never_downloaded DESC"""
 
-    printer(args, query, bindings)
+    player.printer(args, query, bindings, units="extractors")
 
     if "error" in db.columns(args, "media") and args.verbose >= consts.LOG_INFO:
         query = """
@@ -135,4 +98,4 @@ def download_status() -> None:
 
         common_errors.append({"error": "Other", "count": len(other_errors)})
         common_errors.append({"error": "Total", "count": sum(d["count"] for d in errors)})
-        print(tabulate(common_errors, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False))
+        player.media_printer(args, common_errors)

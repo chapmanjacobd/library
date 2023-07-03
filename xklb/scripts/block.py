@@ -14,7 +14,8 @@ def parse_args():
         usage=usage.block,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("--print", "-p", default=False, const="p", nargs="?", help=argparse.SUPPRESS)
+    parser.add_argument("--print", "-p", default="", const="p", nargs="?", help=argparse.SUPPRESS)
+    parser.add_argument("--cols", "-cols", "-col", nargs="*", help="Include a column when printing")
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", help=argparse.SUPPRESS)
     parser.add_argument("--match-column", "-c", default="path", help="Column to block media if text matches")
 
@@ -162,7 +163,7 @@ def block(args=None) -> None:
             for d in tbl
         ]
         tbl = [{k: v for k, v in d.items() if k not in ("title", "path", "webpath")} for d in tbl]
-        tbl = utils.col_resize(tbl, "title_path", 40)
+        tbl = utils.col_resize_percent(tbl, "title_path", 40)
         tbl = utils.col_naturalsize(tbl, "size")
         tbl = utils.col_naturaldate(tbl, "time_deleted")
         print(tabulate(tbl, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False))

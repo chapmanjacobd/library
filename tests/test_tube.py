@@ -32,7 +32,7 @@ def test_tw_print(capsys):
     for lb_command in [
         ["tw", tube_db, "-p", "a"],
         ["tw", tube_db, "-pa"],
-        ["pl", tube_db, "-a"],
+        ["pl", tube_db, "-pa"],
         ["dl", tube_db, "-p", "a"],
     ]:
         lb(lb_command)

@@ -33,7 +33,7 @@ def parse_args_sort(args) -> None:
         "video_count > 0 desc" if "video_count" in m_columns and args.action == SC.watch else None,
         "audio_count > 0 desc" if "audio_count" in m_columns else None,
         'm.path like "http%"',
-        "width < height desc" if "width" in m_columns and hasattr(args, "portrait") and args.portrait else None,
+        "width < height desc" if "width" in m_columns and getattr(args, "portrait", False) else None,
         f"subtitle_count {subtitle_count} desc"
         if "subtitle_count" in m_columns
         and args.action == SC.watch
@@ -146,10 +146,10 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     parser.add_argument("--size", "-S", action="append", help=argparse.SUPPRESS)
     parser.add_argument("--duration-from-size", action="append", help=argparse.SUPPRESS)
 
-    parser.add_argument("--print", "-p", default=False, const="p", nargs="?", help=argparse.SUPPRESS)
+    parser.add_argument("--print", "-p", default="", const="p", nargs="?", help=argparse.SUPPRESS)
+    parser.add_argument("--cols", "-cols", "-col", nargs="*", help="Include a column when printing")
     parser.add_argument("--moved", nargs=2, help=argparse.SUPPRESS)
 
-    parser.add_argument("--cols", "-cols", "-col", nargs="*", help=argparse.SUPPRESS)
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", help=argparse.SUPPRESS)
     parser.add_argument("--skip", "--offset", help=argparse.SUPPRESS)
     parser.add_argument(
@@ -421,10 +421,10 @@ def construct_query(args) -> Tuple[str, dict]:
         )
         SELECT
             {args.select_sql}
-            , play_count
-            , time_first_played
-            , time_last_played
-            , playhead
+            --, play_count
+            --, time_first_played
+            --, time_last_played
+            --, playhead
         FROM m
         WHERE 1=1
             {" ".join(args.aggregate_filter_sql)}

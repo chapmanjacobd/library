@@ -29,6 +29,7 @@ yt_recoverable_errors = re.compile(
 .*Postprocessing
 .*Premieres in
 .*user.*not allowed
+.*Private subreddit
 .*Upgrade now
 .*read operation timed out
 .*Could not connect
@@ -143,6 +144,8 @@ yt_unrecoverable_errors = re.compile(
 .*It is not available
 .*has already been recorded in the archive
 .*ideo.*is private
+.*already ended
+post.*was not found
 .*No video player ID
 .*has been removed
 .*from a suspended account
