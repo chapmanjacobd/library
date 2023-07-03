@@ -20,9 +20,9 @@ def parse_args(action) -> argparse.Namespace:
     parser.add_argument("--where", "-w", nargs="+", action="extend", default=[])
     parser.add_argument("--include", "-s", "--search", nargs="+", action="extend", default=[])
     parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[])
-    parser.add_argument("--print", "-p", default=False, const="p", nargs="?")
+    parser.add_argument("--print", "-p", default="", const="p", nargs="?")
+    parser.add_argument("--cols", "-cols", "-col", nargs="*", help="Include a column when printing")
     parser.add_argument("--delete", "--remove", "--erase", "--rm", "-rm", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--cols", "-cols", "-col", nargs="*", help="Include a non-standard column when printing")
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue")
     parser.add_argument("--skip")
 

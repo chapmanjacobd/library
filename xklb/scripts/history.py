@@ -1,7 +1,5 @@
 import argparse
 
-from tabulate import tabulate
-
 from xklb import consts, db, player, usage, utils
 from xklb.history import create
 from xklb.utils import log
@@ -25,6 +23,8 @@ def parse_args() -> argparse.Namespace:
         help="One of: %(choices)s (default: %(default)s)",
     )
 
+    parser.add_argument("--print", "-p", default="p", const="p", nargs="?", help=argparse.SUPPRESS)
+    parser.add_argument("--cols", "-cols", "-col", nargs="*", help="Include a column when printing")
     parser.add_argument("--sort", "-u", nargs="+", help=argparse.SUPPRESS)
     parser.add_argument("--where", "-w", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--include", "-s", "--search", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
@@ -59,30 +59,6 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def print_history(tbl):
-    utils.col_duration(tbl, "duration_sum")
-    utils.col_duration(tbl, "duration_avg")
-    utils.col_naturalsize(tbl, "size_sum")
-    utils.col_naturalsize(tbl, "size_avg")
-    tbl = utils.list_dict_filter_bool(tbl)
-    print(tabulate(tbl, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False))
-
-
-def print_recent(tbl, time_column=None):
-    utils.col_duration(tbl, "duration")
-    utils.col_duration(tbl, "playhead")
-    if time_column:
-        utils.col_naturaltime(tbl, time_column)
-    tbl = [{"title_path": "\n".join(utils.concat(d["title"], d["path"])), **d} for d in tbl]
-    tbl = [{k: v for k, v in d.items() if k not in ("title", "path")} for d in tbl]
-
-    tbl = utils.col_resize(tbl, "title_path", 40)
-    tbl = utils.col_resize(tbl, "duration", 5)
-    tbl = utils.col_resize(tbl, "playhead", 5)
-    tbl = utils.list_dict_filter_bool(tbl)
-    print(tabulate(tbl, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False))
-
-
 def recent_media(args, time_column):
     m_columns = db.columns(args, "media")
     query = f"""
@@ -102,14 +78,13 @@ def recent_media(args, time_column):
 
 def history() -> None:
     args = parse_args()
-    create(args)
-
     m_columns = args.db["media"].columns_dict
+    create(args)
 
     if args.facet in ("watching", "listening"):
         print(args.facet.title() + ":")
         tbl = player.historical_usage(args, args.frequency, "time_played", "and coalesce(play_count, 0)=0")
-        print_history(tbl)
+        player.media_printer(args, tbl)
         query = f"""WITH m as (
                 SELECT
                     SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
@@ -134,12 +109,12 @@ def history() -> None:
             LIMIT {args.limit or 5}
         """
         tbl = list(args.db.query(query))
-        print_recent(tbl, "time_last_played")
+        player.media_printer(args, tbl)
 
     elif args.facet in ("watched", "listened", "seen", "heard"):
         print(args.facet.title() + ":")
         tbl = player.historical_usage(args, args.frequency, "time_played", "and coalesce(play_count, 0)>0")
-        print_history(tbl)
+        player.media_printer(args, tbl)
         query = f"""WITH m as (
                 SELECT
                     SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
@@ -161,14 +136,14 @@ def history() -> None:
             LIMIT {args.limit or 5}
         """
         tbl = list(args.db.query(query))
-        print_recent(tbl, "time_last_played")
+        player.media_printer(args, tbl)
 
     else:
         print(f"{args.facet.title()} media:")
         tbl = player.historical_usage(args, args.frequency, f"time_{args.facet}")
-        print_history(tbl)
+        player.media_printer(args, tbl)
         tbl = recent_media(args, f"time_{args.facet}")
-        print_recent(tbl, f"time_{args.facet}")
+        player.media_printer(args, tbl)
 
 
 if __name__ == "__main__":

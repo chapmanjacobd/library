@@ -85,7 +85,7 @@ def consolidate(v: dict) -> Optional[dict]:
     duration = v.pop("duration", None)
     cv["duration"] = 0 if not duration else int(duration)
     cv["time_uploaded"] = upload_date
-    cv["time_created"] = consts.APPLICATION_START
+    cv["time_created"] = consts.now()
     cv["time_modified"] = 0  # this should be 0 if the file has never been downloaded
     cv["time_deleted"] = 0
     cv["time_downloaded"] = 0

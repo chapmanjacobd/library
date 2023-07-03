@@ -1,12 +1,10 @@
-import argparse, json, textwrap
+import argparse, textwrap
 from copy import deepcopy
 from itertools import groupby
 from typing import Tuple
 
-from tabulate import tabulate
-
 from xklb import consts, db, player, usage, utils
-from xklb.utils import log, pipe_print
+from xklb.utils import log
 
 
 def parse_args() -> argparse.Namespace:
@@ -18,14 +16,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--where", "-w", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--sort", "-u", nargs="+", default=["path", "time"], help=argparse.SUPPRESS)
-    parser.add_argument("--csv", action="store_true")
-    parser.add_argument("--json", action="store_true")
     parser.add_argument("--table", action="store_true")
-    parser.add_argument("--aggregate", "-a", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--cols", "-cols", "-col", nargs="*", help=argparse.SUPPRESS)
     parser.add_argument("--limit", "-L", "-l", help=argparse.SUPPRESS)
 
-    parser.add_argument("--print", "-p", default=False, const="p", nargs="?", help=argparse.SUPPRESS)
+    parser.add_argument("--print", "-p", default="p", const="p", nargs="?", help=argparse.SUPPRESS)
+    parser.add_argument("--cols", "-cols", "-col", nargs="*", help="Include a column when printing")
     parser.add_argument("--action", default="search", help=argparse.SUPPRESS)
     parser.add_argument("--folder", action="store_true", help="Experimental escape hatch to open folder")
     parser.add_argument(
@@ -75,20 +70,7 @@ def printer(args, captions) -> None:
     tbl = deepcopy(captions)
     utils.col_hhmmss(tbl, "time")
 
-    if args.print and "f" in args.print:
-        pipe_print("\n".join([d["path"] for d in captions]))
-        return
-    elif args.json or consts.TERMINAL_SIZE.columns < 80:
-        print(json.dumps(tbl, indent=3))
-    elif args.csv:
-        utils.write_csv_to_stdout(tbl)
-    elif args.table:
-        tbl = utils.col_resize(tbl, "path", 20)
-        tbl = utils.col_resize(tbl, "text", 35)
-        tbl = utils.list_dict_filter_bool(tbl)
-        print(tabulate(tbl, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False))
-        print(f"{len(captions)} captions")
-    else:
+    if args.print == "p":
         print(f"{len(captions)} captions")
         for path, path_group in groupby(tbl, key=lambda x: x["path"]):
             path_group = list(path_group)
@@ -98,6 +80,8 @@ def printer(args, captions) -> None:
                 for line in textwrap.wrap(caption["text"], subsequent_indent=" " * 9, initial_indent=f"{caption['time']} ", width=consts.TERMINAL_SIZE.columns - 2):  # type: ignore
                     print(line)
             print()
+    else:
+        player.media_printer(args, captions, units="captions")
 
 
 def construct_query(args) -> Tuple[str, dict]:

@@ -63,8 +63,8 @@ def parse_args():
     parser.add_argument("--prefix", default=os.getcwd(), help=argparse.SUPPRESS)
     parser.add_argument("--ext", default="DEFAULT")
 
-    parser.add_argument("--print", "-p", default=False, const="p", nargs="?", help=argparse.SUPPRESS)
-    parser.add_argument("--cols", "-cols", "-col", nargs="*", help=argparse.SUPPRESS)
+    parser.add_argument("--print", "-p", default="", const="p", nargs="?", help=argparse.SUPPRESS)
+    parser.add_argument("--cols", "-cols", "-col", nargs="*", help="Include a column when printing")
     parser.add_argument("--sort", "-u", nargs="+", help=argparse.SUPPRESS)
     parser.add_argument("--where", "-w", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--include", "-s", "--search", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
@@ -166,8 +166,8 @@ def construct_query(args) -> Tuple[str, dict]:
                 {" ".join(args.filter_sql)}
             GROUP BY m.playlist_id, m.path
             ORDER BY 1=1
-                {', p.extractor_key IS NOT NULL DESC' if 'sort' in args.defaults else ''}
                 , COALESCE(m.time_modified, 0) = 0 DESC
+                {', p.extractor_key IS NOT NULL DESC' if 'sort' in args.defaults else ''}
                 , m.time_modified
                 {', random()' if 'sort' in args.defaults else ', ' + args.sort}
             {LIMIT}

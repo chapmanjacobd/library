@@ -1,10 +1,7 @@
-import argparse, json
-from copy import deepcopy
+import argparse
 from typing import Tuple
 
-from tabulate import tabulate
-
-from xklb import consts, db, usage, utils
+from xklb import consts, db, player, usage, utils
 from xklb.player import delete_playlists
 from xklb.utils import log
 
@@ -15,8 +12,6 @@ def parse_args() -> argparse.Namespace:
         usage.playlists,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("--aggregate", "-a", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--json", "-j", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--sort", "-u", nargs="+", help=argparse.SUPPRESS)
     parser.add_argument("--where", "-w", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--include", "-s", "--search", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
@@ -25,7 +20,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", help=argparse.SUPPRESS)
     parser.add_argument("--safe", "-safe", action="store_true", help="Skip generic URLs")
     parser.add_argument("--delete", "--remove", "--erase", "--rm", "-rm", nargs="+", help=argparse.SUPPRESS)
-    parser.add_argument("--print", "-p", default=False, const="p", nargs="?", help=argparse.SUPPRESS)
+    parser.add_argument("--print", "-p", default="p", const="p", nargs="?", help=argparse.SUPPRESS)
+    parser.add_argument("--cols", "-cols", "-col", nargs="*", help="Include a column when printing")
 
     parser.add_argument("-v", "--verbose", action="count", default=0)
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
@@ -74,40 +70,6 @@ def construct_query(args) -> Tuple[str, dict]:
     return query, args.filter_bindings
 
 
-def printer(args, query, bindings) -> None:
-    media = list(args.db.query(query, bindings))
-    media = utils.list_dict_filter_bool(media)
-    if not media:
-        utils.no_media_found()
-
-    tbl = deepcopy(media)
-    utils.col_naturaldate(tbl, "avg_time_since_download")
-    utils.col_naturalsize(tbl, "size")
-    utils.col_duration(tbl, "duration")
-    utils.col_duration(tbl, "avg_playlist_duration")
-
-    if args.print and "f" in args.print:
-        utils.pipe_print("\n".join([d["path"] for d in media]))
-        return
-    elif args.json or consts.TERMINAL_SIZE.columns < 80:
-        print(json.dumps(tbl, indent=3))
-    else:
-        tbl = utils.col_resize(tbl, "path", 30)
-        tbl = utils.col_resize(tbl, "title", 20)
-        tbl = utils.col_resize(tbl, "uploader_url")
-
-        tbl = utils.list_dict_filter_bool(tbl)
-
-        print(tabulate(tbl, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False))
-
-    print(f"{len(media)} playlists" if len(media) > 1 else "1 playlist")
-    duration = sum(m.get("duration") or 0 for m in media)
-    if duration > 0:
-        duration = utils.human_time(duration)
-        if not args.aggregate:
-            print("Total duration:", duration)
-
-
 def playlists() -> None:
     args = parse_args()
 
@@ -135,7 +97,7 @@ def playlists() -> None:
         order by count, p.path
         """
 
-    if args.aggregate:
+    if "a" in args.print:
         query = f"""
         select
             'Aggregate of playlists' path
@@ -149,5 +111,5 @@ def playlists() -> None:
         from ({query})
         """
 
-    printer(args, query, bindings)
+    player.printer(args, query, bindings, units="playlists")
     return None

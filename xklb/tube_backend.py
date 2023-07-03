@@ -14,6 +14,7 @@ from xklb.dl_config import (
 from xklb.utils import log, safe_unpack
 
 yt_dlp = None
+yt_archive = set()
 
 
 def load_module_level_yt_dlp() -> ModuleType:
@@ -86,7 +87,7 @@ def is_supported(url) -> bool:  # thank you @dbr
     return any(ie.suitable(url) and ie.IE_NAME != "generic" for ie in is_supported.yt_ies)
 
 
-playlists_of_playlists = []
+playlists_of_playlists = set()
 added_media_count = 0
 
 
@@ -119,7 +120,7 @@ def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True) -> 
 
                     get_playlist_metadata(args, webpath, ydl_opts, playlist_root=False)
                     log.info("get_playlist_metadata %s", t.elapsed())
-                    playlists_of_playlists.append(webpath)
+                    playlists_of_playlists.add(webpath)
                     return [], info
 
                 entry = utils.dumbcopy(info)
@@ -349,8 +350,16 @@ def download(args, m) -> None:
 
     download_archive = Path(args.download_archive or "~/.local/share/yt_archive.txt").expanduser().resolve()
     if download_archive.exists():
-        ydl_opts["download_archive"] = str(download_archive)
+        global yt_archive
         ydl_opts["cookiesfrombrowser"] = ("firefox",)
+        if len(yt_archive) == 0:
+            with yt_dlp.utils.locked_file(str(download_archive), "r", encoding="utf-8") as archive_file:
+                for line in archive_file:
+                    yt_archive.add(line.strip())
+        if len(yt_archive) > 0:  # check again
+            ydl_opts["download_archive"] = yt_archive
+        else:
+            ydl_opts["download_archive"] = str(download_archive)
 
     if args.small:
         ydl_opts["format"] = "bestvideo[height<=576]+bestaudio/best[height<=576]/best"
@@ -387,6 +396,12 @@ def download(args, m) -> None:
             log.debug("[%s]: yt-dlp %s", webpath, error)
             # media.download_add(args, webpath, error=error)
             # return
+        else:
+            if len(yt_archive) > 0 and info is not None:
+                archive_id = ydl._make_archive_id(info)
+                yt_archive.add(archive_id)
+                with yt_dlp.utils.locked_file(str(download_archive), "a", encoding="utf-8") as archive_file:
+                    archive_file.write(archive_id + "\n")
 
         if info is None:
             log.debug("[%s]: yt-dlp returned no info", webpath)

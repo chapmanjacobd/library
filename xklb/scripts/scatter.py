@@ -106,7 +106,7 @@ def get_path_stats(args, data) -> List[Dict]:
                     "median_size": median(d["size"] for d in disk_files),
                     "time_created": median(d["time_created"] for d in disk_files),
                     "time_modified": median(d["time_modified"] for d in disk_files),
-                    "time_scanned": median(d["time_downloaded"] for d in disk_files),
+                    "time_downloaded": median(d["time_downloaded"] for d in disk_files),
                 },
             )
     return result
@@ -116,7 +116,7 @@ def print_path_stats(tbl) -> None:
     tbl = utils.list_dict_filter_bool(tbl, keep_0=False)
     tbl = utils.col_naturalsize(tbl, "total_size")
     tbl = utils.col_naturalsize(tbl, "median_size")
-    for t in consts.TIME_COLUMNS:
+    for t in consts.EPOCH_COLUMNS:
         utils.col_naturaldate(tbl, t)
 
     print(tabulate(tbl, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False))
@@ -210,8 +210,8 @@ def scatter() -> None:
             tbl.append({"existing_path": existing_path, "new_path": new_path})
             if len(tbl) > 10:
                 break
-        tbl = utils.col_resize(tbl, "existing_path", 20)
-        tbl = utils.col_resize(tbl, "new_path", 20)
+        tbl = utils.col_resize_percent(tbl, "existing_path", 20)
+        tbl = utils.col_resize_percent(tbl, "new_path", 20)
         print(tabulate(tbl, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False))
         print(len(rebinned), "files would be moved (only 10 shown)")
         print(len(untouched), "files would not be moved")

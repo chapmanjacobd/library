@@ -117,10 +117,10 @@ def print_deleted(args, deleted_media) -> None:
     tbl = utils.list_dict_filter_bool(tbl, keep_0=False)
     tbl = utils.list_dict_filter_unique(tbl)
     tbl = tbl[: int(args.limit)]
-    tbl = utils.col_resize(tbl, "path", 25)
+    tbl = utils.col_resize_percent(tbl, "path", 25)
     tbl = utils.col_duration(tbl, "duration")
     tbl = utils.col_naturalsize(tbl, "size")
-    for t in consts.TIME_COLUMNS:
+    for t in consts.EPOCH_COLUMNS:
         utils.col_naturaldate(tbl, t)
     print(tabulate(tbl, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False))
     print(f"{len(deleted_media)} deleted media found (showing first {args.limit})")

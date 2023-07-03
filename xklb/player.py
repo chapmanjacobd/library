@@ -1,4 +1,4 @@
-import csv, os, platform, re, shutil, socket, statistics, subprocess, sys
+import csv, json, math, os, platform, re, shutil, socket, statistics, subprocess, sys
 from copy import deepcopy
 from io import StringIO
 from numbers import Number
@@ -186,7 +186,7 @@ def moved_media(args, moved_files: Union[str, list], base_from, base_to) -> int:
     return modified_row_count
 
 
-def mark_media_deleted(args, paths, time_deleted=consts.APPLICATION_START) -> int:
+def mark_media_deleted(args, paths) -> int:
     paths = utils.conform(paths)
 
     modified_row_count = 0
@@ -196,7 +196,7 @@ def mark_media_deleted(args, paths, time_deleted=consts.APPLICATION_START) -> in
             with args.db.conn:
                 cursor = args.db.conn.execute(
                     f"""update media
-                    set time_deleted={time_deleted}
+                    set time_deleted={consts.APPLICATION_START}
                     where path in ("""
                     + ",".join(["?"] * len(chunk_paths))
                     + ")",
@@ -208,7 +208,24 @@ def mark_media_deleted(args, paths, time_deleted=consts.APPLICATION_START) -> in
 
 
 def mark_media_undeleted(args, paths) -> int:
-    return mark_media_deleted(args, paths, time_deleted=0)
+    paths = utils.conform(paths)
+
+    modified_row_count = 0
+    if paths:
+        df_chunked = utils.chunks(paths, consts.SQLITE_PARAM_LIMIT)
+        for chunk_paths in df_chunked:
+            with args.db.conn:
+                cursor = args.db.conn.execute(
+                    f"""update media
+                    set time_deleted=0
+                    where path in ("""
+                    + ",".join(["?"] * len(chunk_paths))
+                    + ")",
+                    (*chunk_paths,),
+                )
+                modified_row_count += cursor.rowcount
+
+    return modified_row_count
 
 
 def mark_media_deleted_like(args, paths) -> int:
@@ -864,15 +881,20 @@ def local_player(args, m) -> subprocess.CompletedProcess:
 
 def historical_usage(args, freq="monthly", time_column="time_played", where=""):
     if freq == "daily":
-        time_period = f"strftime('%Y-%m-%d', datetime({time_column}, 'unixepoch'))"
+        freq_label = "day"
+        freq_sql = f"strftime('%Y-%m-%d', datetime({time_column}, 'unixepoch'))"
     elif freq == "weekly":
-        time_period = f"strftime('%Y-%W', datetime({time_column}, 'unixepoch'))"
+        freq_label = "week"
+        freq_sql = f"strftime('%Y-%W', datetime({time_column}, 'unixepoch'))"
     elif freq == "monthly":
-        time_period = f"strftime('%Y-%m', datetime({time_column}, 'unixepoch'))"
+        freq_label = "month"
+        freq_sql = f"strftime('%Y-%m', datetime({time_column}, 'unixepoch'))"
     elif freq == "quarterly":
-        time_period = f"strftime('%Y', datetime({time_column}, 'unixepoch', '-3 months')) || '-Q' || ((strftime('%m', datetime({time_column}, 'unixepoch', '-3 months')) - 1) / 3 + 1)"
+        freq_label = "quarter"
+        freq_sql = f"strftime('%Y', datetime({time_column}, 'unixepoch', '-3 months')) || '-Q' || ((strftime('%m', datetime({time_column}, 'unixepoch', '-3 months')) - 1) / 3 + 1)"
     elif freq == "yearly":
-        time_period = f"strftime('%Y', datetime({time_column}, 'unixepoch'))"
+        freq_label = "year"
+        freq_sql = f"strftime('%Y', datetime({time_column}, 'unixepoch'))"
     else:
         msg = f"Invalid value for 'freq': {freq}"
         raise ValueError(msg)
@@ -889,16 +911,16 @@ def historical_usage(args, freq="monthly", time_column="time_played", where=""):
             GROUP BY m.id, m.path
         )
         SELECT
-            {time_period} AS time_period
-            , SUM(duration) AS duration_sum
-            , AVG(duration) AS duration_avg
-            , SUM(size) AS size_sum
-            , AVG(size) AS size_avg
+            {freq_sql} AS {freq_label}
+            , SUM(duration) AS total_duration
+            , AVG(duration) AS avg_duration
+            , SUM(size) AS total_size
+            , AVG(size) AS avg_size
             , count(*) as count
         FROM m
-        WHERE coalesce(time_period, 0)>0
+        WHERE coalesce({freq_label}, 0)>0
             and {time_column}>0 {where}
-        GROUP BY time_period
+        GROUP BY {freq_label}
     """
     return list(args.db.query(query))
 
@@ -934,7 +956,10 @@ def filter_deleted(media):
     return local_list + http_list, nonexistent_local_paths
 
 
-def media_printer(args, media) -> None:
+def media_printer(args, media, units=None) -> None:
+    if units is None:
+        units = "media"
+
     if args.verbose >= consts.LOG_DEBUG and args.cols and "*" in args.cols:
         breakpoint()
 
@@ -991,45 +1016,49 @@ def media_printer(args, media) -> None:
 
         virtual_csv.seek(0)
         for line in virtual_csv.readlines():
-            if args.moved:
+            if getattr(args, "moved", False):
                 utils.pipe_print(line.strip().replace(args.moved[0], "", 1))
             else:
                 utils.pipe_print(line.strip())
         if args.moved:
             moved_media(args, [d["path"] for d in media], *args.moved)
-            return
-        return
+    elif "j" in args.print or consts.TERMINAL_SIZE.columns < 80:
+        print(json.dumps(media, indent=3))
+    elif "c" in args.print:
+        utils.write_csv_to_stdout(media)
     else:
         tbl = deepcopy(media)
-        utils.col_resize(tbl, "path", 22)
-        utils.col_resize(tbl, "title", 11)
 
-        utils.col_naturalsize(tbl, "size")
-        utils.col_naturalsize(tbl, "avg_size")
-        utils.col_duration(tbl, "duration")
-        utils.col_duration(tbl, "avg_duration")
-        utils.col_duration(tbl, "cadence_adj_duration")
+        for k in list(tbl[0].keys()):
+            if k.endswith("size"):
+                utils.col_naturalsize(tbl, k)
+            elif k.endswith("duration") or k in ("playhead",):
+                utils.col_duration(tbl, k)
+            elif k.startswith("time_") or "_time_" in k:
+                utils.col_naturaldate(tbl, k)
+            elif k == "title":
+                tbl = [{"title_path": "\n".join(utils.concat(d["title"], d["path"])), **d} for d in tbl]
+                tbl = [{k: v for k, v in d.items() if k not in ("title", "path")} for d in tbl]
 
-        for t in consts.TIME_COLUMNS:
-            utils.col_naturaldate(tbl, t)
+        max_col_widths = utils.calculate_max_col_widths(tbl)
+        adjusted_widths = utils.distribute_excess_width(max_col_widths)
+        for k, v in adjusted_widths.items():
+            utils.col_resize(tbl, k, v)
 
         print(tabulate(tbl, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False))
 
         if len(media) > 1:
-            print(f"{len(media)} media" + (f" (limited to {args.limit})" if args.limit else ""))
+            print(f"{len(media)} {units}" + (f" (limited to {args.limit})" if args.limit else ""))
 
         if duration > 0:
             duration = human_time(duration)
             if "a" not in args.print:
                 print("Total duration:", duration)
-                return
-            return
-        return
 
 
-def printer(args, query, bindings) -> None:
+def printer(args, query, bindings, units=None) -> None:
     media = list(args.db.query(query, bindings))
     try:
-        media_printer(args, media)
+        media_printer(args, media, units=units)
     except FileNotFoundError:
-        return printer(args, query, bindings)  # try again to find a valid file
+        printer(args, query, bindings)  # try again to find a valid file

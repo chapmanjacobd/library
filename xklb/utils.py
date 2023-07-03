@@ -649,8 +649,9 @@ def safe_sum(*list_, keep_0=False) -> Optional[Any]:
     return value if keep_0 or value != 0 else None
 
 
-def path_fill(text, size):
-    width = max(10, int(size * (consts.TERMINAL_SIZE.columns / 80)))
+def path_fill(text, percent=None, width=None):
+    if percent:
+        width = max(10, int(percent * (consts.TERMINAL_SIZE.columns / 80)))
     lines = []
     current_line = ""
     for char in text:
@@ -669,10 +670,66 @@ def path_fill(text, size):
     return "\n".join(lines)
 
 
-def col_resize(tbl: List[Dict], col: str, size=10) -> List[Dict]:
+def distribute_excess_width(max_col_widths, sep_char=4):
+    existing_width = sum(max_col_widths.values()) + (len(max_col_widths) * sep_char)
+    wide_cols = {
+        k: width
+        for k, width in max_col_widths.items()
+        if width > 14 and k not in ("duration", "size") + consts.EPOCH_COLUMNS
+    }
+    excess_width = 10 + existing_width - consts.TERMINAL_SIZE.columns
+
+    if excess_width <= 0:
+        return {}
+
+    distributed_widths = {}
+    for key, width in wide_cols.items():
+        ratio = width / sum(wide_cols.values())
+        subtract_width = math.ceil(ratio * excess_width)
+        distributed_widths[key] = width - subtract_width
+
+    return distributed_widths
+
+
+def multi_split(string, delimiters):
+    delimiters = tuple(delimiters)
+    stack = [
+        string,
+    ]
+
+    for delimiter in delimiters:
+        for i, substring in enumerate(stack):
+            substack = substring.split(delimiter)
+            stack.pop(i)
+            for j, _substring in enumerate(substack):
+                stack.insert(i + j, _substring)
+
+    return stack
+
+
+def calculate_max_col_widths(data):
+    max_col_widths = {}
+    for row in data:
+        for key, value in row.items():
+            if isinstance(value, str):
+                lines = value.splitlines()
+                max_line_length = max(len(line) for line in lines or [""])
+                max_col_widths[key] = max(max_col_widths.get(key, 0), max_line_length, len(key))
+    return max_col_widths
+
+
+def col_resize(tbl: List[Dict], col: str, width) -> List[Dict]:
     for idx, _d in enumerate(tbl):
         if tbl[idx].get(col) is not None:
-            tbl[idx][col] = path_fill(tbl[idx][col], size)
+            tbl[idx][col] = path_fill(tbl[idx][col], width=width)
+
+    return tbl
+
+
+def col_resize_percent(tbl: List[Dict], col: str, percent=10) -> List[Dict]:
+    for idx, _d in enumerate(tbl):
+        if tbl[idx].get(col) is not None:
+            tbl[idx][col] = path_fill(tbl[idx][col], percent=percent)
 
     return tbl
 
@@ -704,21 +761,21 @@ def col_naturalsize(tbl: List[Dict], col: str) -> List[Dict]:
     return tbl
 
 
-def human_time(seconds) -> Optional[str]:
+def human_time(seconds) -> str:
     if seconds is None or math.isnan(seconds) or seconds == 0:
-        return None
+        return ""
+
+    test = humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="minutes", format="%0.0f")
 
     PRECISION_YEARS = 3
-    hours = humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="hours", format="%0.0f")
-    if len(hours.split(",")) >= PRECISION_YEARS:
-        return hours
+    if len(test.split(",")) >= PRECISION_YEARS:
+        return humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="hours", format="%0.0f")
 
     PRECISION_MONTHS = 2
-    minutes = humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="minutes", format="%0.0f")
-    if len(minutes.split(",")) >= PRECISION_MONTHS:
-        return minutes
+    if len(test.split(",")) >= PRECISION_MONTHS:
+        return humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="hours", format="%0.0f")
 
-    return humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="minutes")
+    return humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="minutes", format="%0.0f")
 
 
 def col_duration(tbl: List[Dict], col: str) -> List[Dict]:

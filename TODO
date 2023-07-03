@@ -1,3 +1,16 @@
+- block: interactive mode
+
+sqlite video.db "SELECT
+        SUBSTR(path, INSTR(path, '//') + 2, INSTR(SUBSTR(path, INSTR(path, '//') + 2), '/') - 1) AS subdomain,
+    cast(COUNT(*) filter (where time_modified>0) as float) / COUNT(*) filter (where time_downloaded>0) AS downloadable_ratio
+    FROM
+        media
+    GROUP BY
+        subdomain order by 2 ;
+"
+
+- ds: cadence adj download duration
+
 - POIs CLI -- save your trip plans and see places to go with automated day trip itineraries, geopandas buffer
 
 places lookup
@@ -20,14 +33,13 @@ def intersect_using_spatial_index(source_gdf, intersecting_gdf):
     result = possible_matches.loc[possible_matches.intersects(intersecting_gdf.unary_union)]
     return result
 
+- organize util functions by data type
 
 - wt/lt/search join and use fts on both tables, threading ?
 
 - improve playlists subcommand
 
 - upscale command -- download higher quality videos; use webpath, PURL, comment to get URL
-
-- make generic printer. support --json or --csv for most subcommands
 
 - scan bpm and key sig
 
