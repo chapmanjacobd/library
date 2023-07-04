@@ -9,8 +9,6 @@ sqlite video.db "SELECT
         subdomain order by 2 ;
 "
 
-- ds: cadence adj download duration
-
 - POIs CLI -- save your trip plans and see places to go with automated day trip itineraries, geopandas buffer
 
 places lookup

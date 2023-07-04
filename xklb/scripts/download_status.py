@@ -1,5 +1,4 @@
-import argparse, json
-from copy import deepcopy
+import argparse
 
 from xklb import consts, db, dl_extract, play_actions, player, tube_backend, usage, utils
 from xklb.utils import log
@@ -67,8 +66,6 @@ def download_status() -> None:
         COALESCE(extractor_key, 'Playlist-less media') extractor_key
         {count_paths}
         {', sum(duration) duration' if 'duration' in query else ''}
-        {', count(*) FILTER(WHERE COALESCE(time_modified,0) > 0 AND error IS NOT NULL) errors' if 'error' in query else ''}
-        {', group_concat(distinct error) error_descriptions' if 'error' in query and args.verbose >= 1 else ''}
     from ({query})
     where 1=1
         and COALESCE(time_downloaded, 0) = 0
@@ -97,5 +94,5 @@ def download_status() -> None:
                 common_errors.append(error)
 
         common_errors.append({"error": "Other", "count": len(other_errors)})
-        common_errors.append({"error": "Total", "count": sum(d["count"] for d in errors)})
         player.media_printer(args, common_errors)
+        print(f"Total errors: {sum(d['count'] for d in errors)}")

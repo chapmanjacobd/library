@@ -654,7 +654,7 @@ def path_fill(text, percent=None, width=None):
         width = max(10, int(percent * (consts.TERMINAL_SIZE.columns / 80)))
     lines = []
     current_line = ""
-    for char in text:
+    for char in str(text):
         if char == "\r":
             continue  # Ignore carriage return character
         elif char == "\n":
@@ -715,6 +715,13 @@ def calculate_max_col_widths(data):
                 lines = value.splitlines()
                 max_line_length = max(len(line) for line in lines or [""])
                 max_col_widths[key] = max(max_col_widths.get(key, 0), max_line_length, len(key))
+            elif isinstance(value, list):
+                max_value_length = max(len(str(item)) for item in value)
+                max_col_widths[key] = max(max_col_widths.get(key, 0), max_value_length)
+            else:
+                max_value_length = len(str(value))
+                max_col_widths[key] = max(max_col_widths.get(key, 0), max_value_length)
+
     return max_col_widths
 
 
@@ -1476,7 +1483,7 @@ fi
         os.fsync(temp.fileno())
 
         print(f"""### Move {len(file_list)} files to new folders: ###""")
-        print(rf"parallel --colsep '\t' -a {temp.name} -j 20 {move_sh_path}")
+        print(rf"PARALLEL_SHELL=sh parallel --colsep '\t' -a {temp.name} -j 20 {move_sh_path}")
 
 
 def dumbcopy(d):

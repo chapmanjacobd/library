@@ -105,6 +105,23 @@ def get_audio_tags(f) -> dict:
     return stream_tags
 
 
+def decode_full_scan(path):
+    output = ffmpeg.input(path).output("/dev/null", f="null")
+    ffmpeg.run(output, quiet=True)
+
+
+def decode_quick_scan(path, scans, scan_duration=3):
+    fail_count = 0
+    for scan in scans:
+        try:
+            output = ffmpeg.input(path, ss=scan).output("/dev/null", t=scan_duration, f="null")
+            ffmpeg.run(output, quiet=True)
+        except ffmpeg.Error:
+            fail_count += 1
+
+    return (fail_count / len(scans)) * 100
+
+
 def munge_av_tags(args, media, path) -> Optional[dict]:
     try:
         probe = ffmpeg.probe(path, show_chapters=None)
@@ -140,14 +157,14 @@ def munge_av_tags(args, media, path) -> Optional[dict]:
         if args.check_corrupt >= 100.0:
             corruption = 0
             try:
-                utils.decode_full_scan(path)
+                decode_full_scan(path)
             except ffmpeg.Error:
                 corruption = 101
                 log.warning(f"[{path}] Data corruption")
                 if args.delete_corrupt and not consts.PYTEST_RUNNING:
                     utils.trash(path)
         else:
-            corruption = utils.decode_quick_scan(path, *utils.cover_scan(duration, args.check_corrupt))
+            corruption = decode_quick_scan(path, *utils.cover_scan(duration, args.check_corrupt))
             if args.delete_corrupt and corruption > args.delete_corrupt:
                 log.warning(f"[{path}] Data corruption ({corruption:.2%}) passed threshold ({args.delete_corrupt:.2%})")
                 if not consts.PYTEST_RUNNING:
@@ -237,25 +254,8 @@ def munge_av_tags(args, media, path) -> Optional[dict]:
     if args.profile == DBType.video:
         video_tags = get_subtitle_tags(args, path, streams, codec_types)
         media = {**media, **video_tags}
-
-    if args.profile == DBType.audio:
+    elif args.profile == DBType.audio:
         stream_tags = get_audio_tags(path)
         media = {**media, **stream_tags}
+
     return media
-
-
-def decode_full_scan(path):
-    output = ffmpeg.input(path).output("/dev/null", f="null")
-    ffmpeg.run(output, quiet=True)
-
-
-def decode_quick_scan(path, scans, scan_duration=3):
-    fail_count = 0
-    for scan in scans:
-        try:
-            output = ffmpeg.input(path, ss=scan).output("/dev/null", t=scan_duration, f="null")
-            ffmpeg.run(output, quiet=True)
-        except ffmpeg.Error:
-            fail_count += 1
-
-    return (fail_count / len(scans)) * 100
