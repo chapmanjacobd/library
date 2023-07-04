@@ -208,12 +208,12 @@ Incremental surfing. 📈🏄 totally rad!
 ### Watch online media on your PC
 
     wget https://github.com/chapmanjacobd/library/raw/main/examples/mealtime.tw.db
-    library watch mealtime.tw.db
+    library watch mealtime.tw.db --random --duration 30m
 
 ### Listen to online media on a chromecast group
 
     wget https://github.com/chapmanjacobd/library/raw/main/examples/music.tl.db
-    library listen music.tl.db -ct "House speakers"
+    library listen music.tl.db -ct "House speakers" --random
 
 ### Hook into HackerNews
 
@@ -225,7 +225,6 @@ Incremental surfing. 📈🏄 totally rad!
     library fsadd --audio both.db ./audiobooks/ ./podcasts/
     library fsadd --audio audiobooks.db ./audiobooks/
     library fsadd --audio podcasts.db ./podcasts/ ./another/more/secret/podcasts_folder/
-
 
 ### library bigdirs: curate
 

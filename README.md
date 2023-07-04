@@ -143,7 +143,7 @@ Incremental surfing. 📈🏄 totally rad!
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.2.019)
+    xk media library subcommands (v2.2.020)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -224,12 +224,12 @@ Incremental surfing. 📈🏄 totally rad!
 ### Watch online media on your PC
 
     wget https://github.com/chapmanjacobd/library/raw/main/examples/mealtime.tw.db
-    library watch mealtime.tw.db
+    library watch mealtime.tw.db --random --duration 30m
 
 ### Listen to online media on a chromecast group
 
     wget https://github.com/chapmanjacobd/library/raw/main/examples/music.tl.db
-    library listen music.tl.db -ct "House speakers"
+    library listen music.tl.db -ct "House speakers" --random
 
 ### Hook into HackerNews
 
@@ -241,7 +241,6 @@ Incremental surfing. 📈🏄 totally rad!
     library fsadd --audio both.db ./audiobooks/ ./podcasts/
     library fsadd --audio audiobooks.db ./audiobooks/
     library fsadd --audio podcasts.db ./podcasts/ ./another/more/secret/podcasts_folder/
-
 
 ### library bigdirs: curate
 
@@ -787,8 +786,13 @@ Explore `library` databases in your browser
     Specify media play order:
         library watch --sort duration   # play shortest media first
         library watch -u duration desc  # play longest media first
+
         You can use multiple SQL ORDER BY expressions
         library watch -u 'subtitle_count > 0 desc' # play media that has at least one subtitle first
+
+        Prioritize large-sized media
+        library watch --sort 'ntile(10000) over (order by size/duration) desc'
+        library watch -u 'ntile(100) over (order by size) desc'
 
     Post-actions -- choose what to do after playing:
         library watch --post-action keep    # do nothing after playing (default)
