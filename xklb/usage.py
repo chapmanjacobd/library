@@ -364,8 +364,13 @@ def play(action) -> str:
     Specify media play order:
         library {action} --sort duration   # play shortest media first
         library {action} -u duration desc  # play longest media first
+
         You can use multiple SQL ORDER BY expressions
         library {action} -u 'subtitle_count > 0 desc' # play media that has at least one subtitle first
+
+        Prioritize large-sized media
+        library watch --sort 'ntile(10000) over (order by size/duration) desc'
+        library watch -u 'ntile(100) over (order by size) desc'
 
     Post-actions -- choose what to do after playing:
         library {action} --post-action keep    # do nothing after playing (default)

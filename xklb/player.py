@@ -940,7 +940,7 @@ def cadence_adjusted_duration(args, duration):
         except IndexError:
             return
 
-    return duration / historical_daily * 86400
+    return int(duration / historical_daily * 86400)
 
 
 def historical_usage_items(args, freq="monthly", time_column="time_modified", where=""):
@@ -975,7 +975,7 @@ def cadence_adjusted_items(args, items):
 
     log.debug("items %s", items)
 
-    return items / historical_daily * 86400
+    return int(items / historical_daily * 86400)
 
 
 def filter_deleted(media):
