@@ -879,7 +879,7 @@ def local_player(args, m) -> subprocess.CompletedProcess:
     return r
 
 
-def historical_usage(args, freq="monthly", time_column="time_played", where=""):
+def frequency_time_to_sql(freq, time_column):
     if freq == "daily":
         freq_label = "day"
         freq_sql = f"strftime('%Y-%m-%d', datetime({time_column}, 'unixepoch'))"
@@ -898,6 +898,11 @@ def historical_usage(args, freq="monthly", time_column="time_played", where=""):
     else:
         msg = f"Invalid value for 'freq': {freq}"
         raise ValueError(msg)
+    return freq_label, freq_sql
+
+
+def historical_usage(args, freq="monthly", time_column="time_played", where=""):
+    freq_label, freq_sql = frequency_time_to_sql(freq, time_column)
 
     query = f"""WITH m as (
             SELECT
@@ -926,12 +931,51 @@ def historical_usage(args, freq="monthly", time_column="time_played", where=""):
 
 
 def cadence_adjusted_duration(args, duration):
+    history = historical_usage(args, freq="daily")
     try:
-        historical_daily = statistics.mean((d["duration_sum"] or 0) for d in historical_usage(args))
+        historical_daily = statistics.mean((d["total_duration"] or 0) for d in history)
     except statistics.StatisticsError:
-        return duration
+        try:
+            historical_daily = history[0]["total_duration"]
+        except IndexError:
+            return
 
-    return duration / historical_daily * 86400 * 30.42
+    return duration / historical_daily * 86400
+
+
+def historical_usage_items(args, freq="monthly", time_column="time_modified", where=""):
+    freq_label, freq_sql = frequency_time_to_sql(freq, time_column)
+    query = f"""SELECT
+            {freq_sql} AS {freq_label}
+            , SUM(duration) AS total_duration
+            , AVG(duration) AS avg_duration
+            , SUM(size) AS total_size
+            , AVG(size) AS avg_size
+            , count(*) as count
+        FROM media m
+        WHERE coalesce({freq_label}, 0)>0
+            and {time_column}>0 {where}
+        GROUP BY {freq_label}
+    """
+    return list(args.db.query(query))
+
+
+def cadence_adjusted_items(args, items):
+    history = historical_usage_items(args, freq="daily")
+    try:
+        historical_daily = statistics.mean((d["count"] or 0) for d in history)
+        log.debug("historical_daily mean %s", historical_daily)
+    except statistics.StatisticsError:
+        try:
+            historical_daily = history[0]["count"]
+            log.debug("historical_daily 1n %s", historical_daily)
+        except IndexError:
+            log.debug("historical_daily index error")
+            return
+
+    log.debug("items %s", items)
+
+    return items / historical_daily * 86400
 
 
 def filter_deleted(media):
@@ -971,13 +1015,23 @@ def media_printer(args, media, units=None) -> None:
 
     duration = sum(m.get("duration") or 0 for m in media)
     if "a" in args.print:
-        D = {"path": "Aggregate", "count": len(media)}
+        if "count" in media[0]:
+            D = {"path": "Aggregate", "count": sum(d["count"] for d in media)}
+        elif args.action in (SC.download_status):
+            potential_downloads = sum(d["never_downloaded"] + d["retry_queued"] for d in media)
+            D = {"path": "Aggregate", "count": potential_downloads}
+        else:
+            D = {"path": "Aggregate", "count": len(media)}
 
-        if "duration" in media[0]:
+        if "duration" in media[0] and args.action not in (SC.download_status):
             D["duration"] = duration
             D["avg_duration"] = duration / len(media)
-            if hasattr(args, "profile") and args.profile in (SC.listen, SC.watch, SC.read, SC.view):
+
+        if hasattr(args, "action"):
+            if args.action in (SC.listen, SC.watch, SC.read, SC.view):
                 D["cadence_adj_duration"] = cadence_adjusted_duration(args, duration)
+            elif args.action in (SC.download, SC.download_status):
+                D["download_duration"] = cadence_adjusted_items(args, D["count"])
 
         if "size" in media[0]:
             D["size"] = sum((d["size"] or 0) for d in media)
@@ -1036,10 +1090,11 @@ def media_printer(args, media, units=None) -> None:
                 utils.col_duration(tbl, k)
             elif k.startswith("time_") or "_time_" in k:
                 utils.col_naturaldate(tbl, k)
-            elif k == "title":
+            elif k == "title_path":
                 tbl = [{"title_path": "\n".join(utils.concat(d["title"], d["path"])), **d} for d in tbl]
                 tbl = [{k: v for k, v in d.items() if k not in ("title", "path")} for d in tbl]
 
+        tbl = [{k: "{:.3f}".format(v) if isinstance(v, float) else v for k, v in d.items()} for d in tbl]
         max_col_widths = utils.calculate_max_col_widths(tbl)
         adjusted_widths = utils.distribute_excess_width(max_col_widths)
         for k, v in adjusted_widths.items():

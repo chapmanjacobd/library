@@ -204,7 +204,7 @@ def save_post(args, post_dict, subreddit_path) -> None:
         if post_dict.get("author_is_blocked") == 1:
             pass
         elif "selftext" in slim_dict:
-            args.db["reddit_posts"].upsert(slim_dict, pk=["path", "subreddit"], alter=True)
+            args.db["reddit_posts"].upsert(slim_dict, pk=["path"], alter=True)
         else:
             media.add(args, slim_dict)
 

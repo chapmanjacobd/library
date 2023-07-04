@@ -61,7 +61,7 @@ def parse_args():
     parser.add_argument("--subtitle-languages", "--subtitle-language", "--sl", action=utils.ArgparseList)
 
     parser.add_argument("--prefix", default=os.getcwd(), help=argparse.SUPPRESS)
-    parser.add_argument("--ext", default="DEFAULT")
+    parser.add_argument("--ext")
 
     parser.add_argument("--print", "-p", default="", const="p", nargs="?", help=argparse.SUPPRESS)
     parser.add_argument("--cols", "-cols", "-col", nargs="*", help="Include a column when printing")

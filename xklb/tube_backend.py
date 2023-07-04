@@ -328,9 +328,9 @@ def download(args, m) -> None:
             "fragment": lambda n: 0.04 * (2**n),
         },
         "outtmpl": {
-            "default": out_dir("%(uploader,uploader_id)s/%(title).200B_[%(id).60B].%(ext)s"),
+            "default": out_dir("%(uploader,uploader_id)s/%(title).200B_%(view_count)3.2D_[%(id).60B].%(ext)s"),
             "chapter": out_dir(
-                "%(uploader,uploader_id)s/%(title).200B_%(section_number)03d_%(section_title)s_[%(id).60B].%(ext)s",
+                "%(uploader,uploader_id)s/%(title).200B_%(section_number)03d_%(section_title)s_%(view_count)3.2D_[%(id).60B].%(ext)s",
             ),
         },
     }
@@ -348,6 +348,25 @@ def download(args, m) -> None:
         playlist_opts=m.get("extractor_config", "{}"),
     )
 
+    match_filters = ["live_status=?not_live"]
+
+    if args.small:
+        match_filters.append("duration >? 59 & duration <? 14399")
+        ydl_opts["format"] = "bestvideo[height<=576]+bestaudio/best[height<=576]/best"
+
+    if args.profile == DBType.audio:
+        ydl_opts[
+            "format"
+        ] = "bestaudio[ext=opus]/bestaudio[ext=webm]/bestaudio[ext=ogg]/bestaudio[ext=oga]/bestaudio/best"
+        if args.ext is None:
+            args.ext = "opus"
+        ydl_opts["postprocessors"].append({"key": "FFmpegExtractAudio", "preferredcodec": args.ext})
+
+    match_filter_user_config = ydl_opts.get("match_filter")
+    if match_filter_user_config is not None:
+        match_filters.append(match_filter_user_config)
+    ydl_opts["match_filter"] = yt_dlp.utils.match_filter_func(" & ".join(match_filters).split(" | "))
+
     download_archive = Path(args.download_archive or "~/.local/share/yt_archive.txt").expanduser().resolve()
     if download_archive.exists():
         global yt_archive
@@ -360,29 +379,6 @@ def download(args, m) -> None:
             ydl_opts["download_archive"] = yt_archive
         else:
             ydl_opts["download_archive"] = str(download_archive)
-
-    if args.small:
-        ydl_opts["format"] = "bestvideo[height<=576]+bestaudio/best[height<=576]/best"
-
-    if args.ext == "DEFAULT":
-        if args.profile == DBType.audio:
-            args.ext = "opus"
-        else:
-            args.ext = None
-
-    if args.profile == DBType.audio:
-        ydl_opts[
-            "format"
-        ] = "bestaudio[ext=opus]/bestaudio[ext=webm]/bestaudio[ext=ogg]/bestaudio[ext=oga]/bestaudio/best"
-        ydl_opts["postprocessors"].append({"key": "FFmpegExtractAudio", "preferredcodec": args.ext})
-
-    match_filters = ["live_status=?not_live"]
-    if args.small:
-        match_filters.append("duration >? 59 & duration <? 14399")
-    match_filter_user_config = ydl_opts.get("match_filter")
-    if match_filter_user_config is not None:
-        match_filters.append(match_filter_user_config)
-    ydl_opts["match_filter"] = yt_dlp.utils.match_filter_func(" & ".join(match_filters).split(" | "))
 
     webpath = m["path"]
     local_path = None
