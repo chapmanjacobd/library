@@ -1017,7 +1017,7 @@ def media_printer(args, media, units=None) -> None:
     if "a" in args.print:
         if "count" in media[0]:
             D = {"path": "Aggregate", "count": sum(d["count"] for d in media)}
-        elif args.action in (SC.download_status):
+        elif args.action == SC.download_status and "never_downloaded" in media[0]:
             potential_downloads = sum(d["never_downloaded"] + d["retry_queued"] for d in media)
             D = {"path": "Aggregate", "count": potential_downloads}
         else:
