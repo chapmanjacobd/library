@@ -1471,7 +1471,7 @@ if [ $? -ne 0 ]; then
     mv -Tn "$existing_path" "$new_path"
 fi
 """
-    move_sh_path = Path(tempfile.mktemp(prefix="move_", suffix=".sh"))
+    move_sh_path = Path(tempfile.mktemp(dir=consts.TEMP_SCRIPT_DIR, prefix="move_", suffix=".sh"))
     move_sh_path.write_text(move_sh)
     move_sh_path.chmod(move_sh_path.stat().st_mode | 0o100)
 
