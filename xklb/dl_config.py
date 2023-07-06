@@ -39,6 +39,7 @@ yt_recoverable_errors = re.compile(
 .*not currently available
 .*currently unavailable
 .*selectionunavailable
+.*This playlist type is unviewable
 .*Downloaded .* bytes, expected .* bytes
 .*FileNotFoundError
 .*Playlists that require authentication may not extract correctly without a successful webpage download

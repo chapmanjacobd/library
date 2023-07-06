@@ -675,7 +675,7 @@ def distribute_excess_width(max_col_widths, sep_char=4):
     wide_cols = {
         k: width
         for k, width in max_col_widths.items()
-        if width > 14 and k not in ("duration", "size") + consts.EPOCH_COLUMNS
+        if width > 14 and k not in ("duration", "size", *consts.EPOCH_COLUMNS)
     }
     excess_width = 10 + existing_width - consts.TERMINAL_SIZE.columns
 

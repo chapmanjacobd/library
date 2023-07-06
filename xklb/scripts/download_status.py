@@ -65,7 +65,6 @@ def download_status() -> None:
     query = f"""select
         COALESCE(extractor_key, 'Playlist-less media') extractor_key
         {count_paths}
-        {', sum(duration) duration' if 'duration' in query else ''}
     from ({query})
     where 1=1
         and COALESCE(time_downloaded, 0) = 0
@@ -73,7 +72,13 @@ def download_status() -> None:
     group by extractor_key
     order by never_downloaded DESC"""
 
-    player.printer(args, query, bindings, units="extractors")
+    media = list(args.db.query(query, bindings))
+
+    if "blocklist" in args.db.table_names():
+        blocklist_rules = [{d["key"]: d["value"]} for d in args.db["blocklist"].rows]
+        media = utils.block_dicts_like_sql(media, blocklist_rules)
+
+    player.media_printer(args, media, units="extractors")
 
     if "error" in db.columns(args, "media") and args.verbose >= consts.LOG_INFO:
         query = """

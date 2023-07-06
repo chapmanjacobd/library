@@ -236,6 +236,7 @@ def dl_download(args=None) -> None:
             continue
 
         if blocklist_rules and utils.is_blocked_dict_like_sql(m, blocklist_rules):
+            player.mark_download_attempt(args, [m["path"]])
             continue
 
         if args.safe:
@@ -243,6 +244,7 @@ def dl_download(args=None) -> None:
                 args.profile in (DBType.image) and not gdl_backend.is_supported(args, m["path"])
             ):
                 log.info("[%s]: Skipping unsupported URL (safe_mode)", m["path"])
+                player.mark_download_attempt(args, [m["path"]])
                 continue
 
         # check again in case it was already attempted by another process
