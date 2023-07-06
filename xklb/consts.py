@@ -1,5 +1,4 @@
-import os
-import re, secrets, shutil, string, sys
+import os, re, secrets, shutil, string, sys
 from datetime import datetime, timezone
 from pathlib import Path
 from tempfile import gettempdir
@@ -15,7 +14,7 @@ def random_string(length=5):
 
 
 TEMP_DIR = gettempdir()
-TEMP_SCRIPT_DIR = os.getenv('XDG_RUNTIME_DIR') or TEMP_DIR
+TEMP_SCRIPT_DIR = os.getenv("XDG_RUNTIME_DIR") or TEMP_DIR
 FAKE_SUBTITLE = str(Path(TEMP_DIR) / "sub.srt")  # https://github.com/skorokithakis/catt/issues/393
 CAST_NOW_PLAYING = str(Path(TEMP_DIR) / "catt_playing")
 DEFAULT_MPV_SOCKET = str(Path(TEMP_SCRIPT_DIR) / "mpv_socket")
@@ -203,6 +202,8 @@ MEDIA_KNOWN_KEYS = (
     "post_author_is_adult",
     "is_submission",
     "fragment",
+    "fragment_base_url",
+    "direct",
     "is_anonymous",
     "ask",
     "ask_anon",

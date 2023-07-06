@@ -1,4 +1,4 @@
-import json, sys
+import json, ssl, sys
 from pathlib import Path
 from types import ModuleType
 from typing import Dict, List, Optional, Tuple
@@ -320,6 +320,7 @@ def download(args, m) -> None:
         "lazy_playlist": True,
         "noplaylist": True,
         "playlist_items": "1",
+        "playlist_end": None,
         "extractor_retries": 3,
         "retries": 12,
         "retry_sleep_functions": {
@@ -385,13 +386,22 @@ def download(args, m) -> None:
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         try:
             info = ydl.extract_info(webpath, download=True)
-        except (yt_dlp.DownloadError, ConnectionResetError, FileNotFoundError) as e:
+        except (
+            yt_dlp.DownloadError,
+            ConnectionResetError,
+            FileNotFoundError,
+            yt_dlp.utils.YoutubeDLError,
+            yt_dlp.compat.compat_HTMLParseError,
+        ) as e:
             error = consts.REGEX_ANSI_ESCAPE.sub("", str(e))
             ydl_log["error"].append(error)
             info = None
             log.debug("[%s]: yt-dlp %s", webpath, error)
             # media.download_add(args, webpath, error=error)
             # return
+        except Exception:
+            log.warning(webpath)
+            raise
         else:
             if len(yt_archive) > 0 and info is not None:
                 archive_id = ydl._make_archive_id(info)

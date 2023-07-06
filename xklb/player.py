@@ -186,6 +186,27 @@ def moved_media(args, moved_files: Union[str, list], base_from, base_to) -> int:
     return modified_row_count
 
 
+def mark_download_attempt(args, paths) -> int:
+    paths = utils.conform(paths)
+
+    modified_row_count = 0
+    if paths:
+        df_chunked = utils.chunks(paths, consts.SQLITE_PARAM_LIMIT)
+        for chunk_paths in df_chunked:
+            with args.db.conn:
+                cursor = args.db.conn.execute(
+                    f"""update media
+                    set time_modified={consts.now()}
+                    where path in ("""
+                    + ",".join(["?"] * len(chunk_paths))
+                    + ")",
+                    (*chunk_paths,),
+                )
+                modified_row_count += cursor.rowcount
+
+    return modified_row_count
+
+
 def mark_media_deleted(args, paths) -> int:
     paths = utils.conform(paths)
 
@@ -216,7 +237,7 @@ def mark_media_undeleted(args, paths) -> int:
         for chunk_paths in df_chunked:
             with args.db.conn:
                 cursor = args.db.conn.execute(
-                    f"""update media
+                    """update media
                     set time_deleted=0
                     where path in ("""
                     + ",".join(["?"] * len(chunk_paths))
@@ -938,7 +959,7 @@ def cadence_adjusted_duration(args, duration):
         try:
             historical_daily = history[0]["total_duration"]
         except IndexError:
-            return
+            return None
 
     return int(duration / historical_daily * 86400)
 
@@ -971,7 +992,7 @@ def cadence_adjusted_items(args, items):
             log.debug("historical_daily 1n %s", historical_daily)
         except IndexError:
             log.debug("historical_daily index error")
-            return
+            return None
 
     log.debug("items %s", items)
 
@@ -1052,6 +1073,26 @@ def media_printer(args, media, units=None) -> None:
             marked = history.add(args, [d["path"] for d in media])
             log.warning(f"Marked {marked} metadata records as watched")
 
+    if "a" not in args.print and args.action == SC.download_status:
+        for m in media:
+            m["download_duration"] = cadence_adjusted_items(
+                args, m["never_downloaded"] + m["retry_queued"]
+            )  # TODO where= p.extractor_key, or try to use SQL
+
+    for k in list(media[0].keys()):
+        if k.endswith("size"):
+            utils.col_naturalsize(media, k)
+        elif k.endswith("duration") or k in ("playhead",):
+            utils.col_duration(media, k)
+        elif k.startswith("time_") or "_time_" in k:
+            utils.col_naturaldate(media, k)
+        elif k == "title_path":
+            media = [{"title_path": "\n".join(utils.concat(d["title"], d["path"])), **d} for d in media]
+            media = [{k: v for k, v in d.items() if k not in ("title", "path")} for d in media]
+        elif k.startswith("percent") or k.endswith("ratio"):
+            for d in media:
+                d[k] = f"{d[k]:.2%}"
+
     if "f" in args.print:
         if len(media) <= 1000:
             media, deleted_paths = filter_deleted(media)
@@ -1082,19 +1123,7 @@ def media_printer(args, media, units=None) -> None:
         utils.write_csv_to_stdout(media)
     else:
         tbl = deepcopy(media)
-
-        for k in list(tbl[0].keys()):
-            if k.endswith("size"):
-                utils.col_naturalsize(tbl, k)
-            elif k.endswith("duration") or k in ("playhead",):
-                utils.col_duration(tbl, k)
-            elif k.startswith("time_") or "_time_" in k:
-                utils.col_naturaldate(tbl, k)
-            elif k == "title_path":
-                tbl = [{"title_path": "\n".join(utils.concat(d["title"], d["path"])), **d} for d in tbl]
-                tbl = [{k: v for k, v in d.items() if k not in ("title", "path")} for d in tbl]
-
-        tbl = [{k: "{:.3f}".format(v) if isinstance(v, float) else v for k, v in d.items()} for d in tbl]
+        tbl = [{k: f"{v:.4f}" if isinstance(v, float) else v for k, v in d.items()} for d in tbl]
         max_col_widths = utils.calculate_max_col_widths(tbl)
         adjusted_widths = utils.distribute_excess_width(max_col_widths)
         for k, v in adjusted_widths.items():
@@ -1103,7 +1132,10 @@ def media_printer(args, media, units=None) -> None:
         print(tabulate(tbl, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False))
 
         if len(media) > 1:
-            print(f"{len(media)} {units}" + (f" (limited to {args.limit})" if args.limit else ""))
+            print(
+                f"{len(media)} {units}"
+                + (f" (limited by --limit {args.limit})" if args.limit and args.limit <= len(media) else "")
+            )
 
         if duration > 0:
             duration = human_time(duration)

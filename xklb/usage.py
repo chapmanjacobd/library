@@ -40,15 +40,37 @@ download = r"""library download [--prefix /mnt/d/] [--safe] [--subs] [--auto-sub
 
 block = r"""library block DATABASE URLS ...
 
-    Blocklist specific URLs (eg. YouTube channels, etc). With YT URLs this will block
-    videos from the playlist uploader
+    Blocklist specific URLs (eg. YouTube channels, etc)
+
+        library block dl.db https://annoyingwebsite/etc/
+
+    Or URL substrings
+
+        library block dl.db "%%fastcompany.com%%"
+
+    Block videos from the playlist uploader
 
         library block dl.db --match-column playlist_path 'https://youtube.com/playlist?list=PLVoczRgDnXDLWV1UJ_tO70VT_ON0tuEdm'
 
-        library block dl.db https://annoyingwebsite/etc/
-        library block dl.db "%fastcompany.com%"
-        library block dl.db --match-column title "% bitcoin%"
+    Or other columns
+
+        library block dl.db --match-column title "%% bitcoin%%"
         library block dl.db --force --match-column uploader Zeducation
+
+    Display subdomains (similar to `lb download-status`)
+
+        library block audio.db
+        subdomain              count    new_links    tried  percent_tried      successful  percent_successful      failed  percent_failed
+        -------------------  -------  -----------  -------  ---------------  ------------  --------------------  --------  ----------------
+        dts.podtrac.com         5244          602     4642  88.52%                    690  14.86%                    3952  85.14%
+        soundcloud.com         16948        11931     5017  29.60%                    920  18.34%                    4097  81.66%
+        twitter.com              945          841      104  11.01%                      5  4.81%                       99  95.19%
+        v.redd.it               9530         6805     2725  28.59%                    225  8.26%                     2500  91.74%
+        vimeo.com                865          795       70  8.09%                      65  92.86%                       5  7.14%
+        www.youtube.com       210435       140952    69483  33.02%                  66017  95.01%                    3467  4.99%
+        youtu.be               60061        51911     8150  13.57%                   7736  94.92%                     414  5.08%
+        youtube.com             5976         5337      639  10.69%                    599  93.74%                      40  6.26%
+
 """
 
 fsadd = """library fsadd [(--video) | --audio | --image |  --text | --filesystem] DATABASE PATHS ...
