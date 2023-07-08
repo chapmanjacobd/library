@@ -921,6 +921,15 @@ def frequency_time_to_sql(freq, time_column):
     elif freq == "yearly":
         freq_label = "year"
         freq_sql = f"strftime('%Y', datetime({time_column}, 'unixepoch'))"
+    elif freq == "decadally":
+        freq_label = "decade"
+        freq_sql = f"(CAST(strftime('%Y', datetime({time_column}, 'unixepoch')) AS INTEGER) / 10) * 10"
+    elif freq == "hourly":
+        freq_label = "hour"
+        freq_sql = f"strftime('%Y-%m-%d %Hh', datetime({time_column}, 'unixepoch'))"
+    elif freq == "minutely":
+        freq_label = "minute"
+        freq_sql = f"strftime('%Y-%m-%d %H:%M', datetime({time_column}, 'unixepoch'))"
     else:
         msg = f"Invalid value for 'freq': {freq}"
         raise ValueError(msg)
@@ -957,16 +966,16 @@ def historical_usage(args, freq="monthly", time_column="time_played", where=""):
 
 
 def cadence_adjusted_duration(args, duration):
-    history = historical_usage(args, freq="daily")
+    history = historical_usage(args, freq="hourly")
     try:
-        historical_daily = statistics.mean((d["total_duration"] or 0) for d in history)
+        historical_hourly = statistics.mean((d["total_duration"] or 0) for d in history)
     except statistics.StatisticsError:
         try:
-            historical_daily = history[0]["total_duration"]
+            historical_hourly = history[0]["total_duration"]
         except IndexError:
             return None
 
-    return int(duration / historical_daily * 86400)
+    return int(duration / historical_hourly * 60 * 60)
 
 
 def historical_usage_items(args, freq="monthly", time_column="time_modified", where=""):
@@ -990,21 +999,21 @@ def historical_usage_items(args, freq="monthly", time_column="time_modified", wh
 
 
 def cadence_adjusted_items(args, items: int):
-    history = historical_usage_items(args, freq="daily")
+    history = historical_usage_items(args, freq="minutely")
     try:
-        historical_daily = statistics.mean((d["count"] or 0) for d in history)
-        log.debug("historical_daily mean %s", historical_daily)
+        historical_minutely = statistics.mean((d["count"] or 0) for d in history)
+        log.debug("historical_minutely mean %s", historical_minutely)
     except statistics.StatisticsError:
         try:
-            historical_daily = history[0]["count"]
-            log.debug("historical_daily 1n %s", historical_daily)
+            historical_minutely = history[0]["count"]
+            log.debug("historical_minutely 1n %s", historical_minutely)
         except IndexError:
-            log.debug("historical_daily index error")
+            log.debug("historical_minutely index error")
             return None
 
     log.debug("items %s", items)
 
-    return int(items / historical_daily * 86400)
+    return int(items / historical_minutely * 60)
 
 
 def filter_deleted(media):
@@ -1029,9 +1038,11 @@ def filter_deleted(media):
     return local_list + http_list, nonexistent_local_paths
 
 
-def media_printer(args, media, units=None) -> None:
+def media_printer(args, data, units=None) -> None:
     if units is None:
         units = "media"
+
+    media = deepcopy(data)
 
     if args.verbose >= consts.LOG_DEBUG and args.cols and "*" in args.cols:
         breakpoint()
@@ -1100,10 +1111,16 @@ def media_printer(args, media, units=None) -> None:
         elif k.startswith("percent") or k.endswith("ratio"):
             for d in media:
                 d[k] = f"{d[k]:.2%}"
-        # elif isinstance(v, int):
+        # elif isinstance(v, (int, float)):
         #     for d in media:
         #         if d[k] is not None:
         #             d[k] = f'{d[k]:n}'  # TODO add locale comma separators
+
+    def should_align_right(k, v):
+        if k.endswith("size") or k.startswith("percent") or k.endswith("ratio"):
+            return True
+        if isinstance(v, (int, float)):
+            return True
 
     media = utils.list_dict_filter_bool(media)
 
@@ -1143,7 +1160,8 @@ def media_printer(args, media, units=None) -> None:
         for k, v in adjusted_widths.items():
             utils.col_resize(tbl, k, v)
 
-        print(tabulate(tbl, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False))
+        colalign = ["right" if should_align_right(k, v) else "left" for k, v in tbl[0].items()]
+        print(tabulate(tbl, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False, colalign=colalign))
 
         if len(media) > 1:
             print(

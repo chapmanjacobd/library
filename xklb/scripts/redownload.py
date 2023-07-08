@@ -3,9 +3,7 @@ from copy import deepcopy
 from pathlib import Path
 from typing import List
 
-from tabulate import tabulate
-
-from xklb import consts, db, usage, utils
+from xklb import consts, db, player, usage, utils
 from xklb.utils import log
 
 
@@ -105,25 +103,12 @@ def mark_media_undownloaded(args, deleted_media) -> None:
             args.db["media"].upsert(d, pk="id", alter=True)  # type: ignore
 
 
-def print_deletions(args, deletions) -> None:
-    print("Deletions:")
-    tbl = deepcopy(deletions)
-    print(tabulate(tbl, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False))
-    print(f"Showing most recent {args.limit} deletions. Use -l to change this limit")
-
-
 def print_deleted(args, deleted_media) -> None:
     tbl = deepcopy(deleted_media)
     tbl = utils.list_dict_filter_bool(tbl, keep_0=False)
     tbl = utils.list_dict_filter_unique(tbl)
     tbl = tbl[: int(args.limit)]
-    tbl = utils.col_resize_percent(tbl, "path", 25)
-    tbl = utils.col_duration(tbl, "duration")
-    tbl = utils.col_naturalsize(tbl, "size")
-    for t in consts.EPOCH_COLUMNS:
-        utils.col_naturaldate(tbl, t)
-    print(tabulate(tbl, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False))
-    print(f"{len(deleted_media)} deleted media found (showing first {args.limit})")
+    player.media_printer(args, tbl, units="deleted media")
 
 
 def redownload() -> None:
@@ -133,7 +118,8 @@ def redownload() -> None:
         deleted_media = get_deleted_media(args)
     else:
         deletions = list_deletions(args)
-        print_deletions(args, deletions)
+        print("Deletions:")
+        player.media_printer(args, deletions, units="deletions")
         raise SystemExit(0)
 
     print_deleted(args, deleted_media)

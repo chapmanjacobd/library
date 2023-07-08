@@ -1,12 +1,10 @@
 import argparse, os
-from copy import deepcopy
 from pathlib import Path
 from typing import Dict, List
 
 import humanize
-from tabulate import tabulate
 
-from xklb import consts, db, usage, utils
+from xklb import consts, db, player, usage, utils
 from xklb.utils import log
 
 
@@ -29,6 +27,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
 
     parser.add_argument("--tui", "-tui", action="store_true")
+    parser.add_argument("--print", "-p", default="", const="p", nargs="?")
     parser.add_argument("--verbose", "-v", action="count", default=0)
 
     parser.add_argument("database")
@@ -43,6 +42,7 @@ def parse_args() -> argparse.Namespace:
     if args.size:
         args.size = utils.parse_human_to_sql(utils.human_to_bytes, "size", args.size)
 
+    args.action = consts.SC.diskusage
     log.info(utils.dict_filter_bool(args.__dict__))
     return args
 
@@ -220,11 +220,7 @@ def disk_usage():
     if args.tui:
         run_tui(args)
     else:
-        tbl = deepcopy(args.subset)
-        tbl = utils.col_naturalsize(tbl, "size")
-        print(
-            tabulate(tbl, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False, colalign=["left", "right"]),
-        )
+        player.media_printer(args, args.subset, units="folders")
 
 
 if __name__ == "__main__":

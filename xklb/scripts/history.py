@@ -30,7 +30,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--include", "-s", "--search", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--duration", "-d", action="append", help=argparse.SUPPRESS)
-    parser.add_argument("--count", "-c", action="store_true")
+    parser.add_argument("--count", "-c", action="store_true")  # TODO: remove? what is the difference between modes
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue")
 
     parser.add_argument("-v", "--verbose", action="count", default=0)

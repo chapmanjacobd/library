@@ -1,7 +1,6 @@
 import argparse, sys
 
 import humanize
-from tabulate import tabulate
 
 from xklb import consts, db, player, tube_backend, usage, utils
 from xklb.consts import SC
@@ -211,20 +210,7 @@ def block(args=None) -> None:
         if args.cluster:
             matching_media = list(reversed(utils.cluster_dicts(args, matching_media)))
 
-        tbl = utils.list_dict_filter_bool(matching_media)
-        tbl = [
-            {
-                "title_path": "\n".join(utils.concat(d.get("title"), d.get("webpath"), d["path"])),
-                **d,
-            }
-            for d in tbl
-        ]
-        tbl = [{k: v for k, v in d.items() if k not in ("title", "path", "webpath")} for d in tbl]
-        tbl = utils.col_resize_percent(tbl, "title_path", 40)
-        tbl = utils.col_naturalsize(tbl, "size")
-        tbl = utils.col_naturaldate(tbl, "time_deleted")
-        print(tabulate(tbl, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False))
-        print(f"{len(matching_media)} media matching {p}")
+        player.media_printer(args, matching_media)
         if args.no_confirm or utils.confirm("Add to blocklist?"):
             add_to_blocklist(args, p)
         else:
