@@ -20,7 +20,7 @@ def parse_args() -> argparse.Namespace:
         const="monthly",
         type=str.lower,
         nargs="?",
-        help="One of: %(choices)s (default: %(default)s)",
+        help=f"One of: {', '.join(consts.frequency)} (default: %(default)s)",
     )
 
     parser.add_argument("--print", "-p", default="p", const="p", nargs="?", help=argparse.SUPPRESS)
@@ -30,9 +30,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--include", "-s", "--search", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--duration", "-d", action="append", help=argparse.SUPPRESS)
-    parser.add_argument("--count", "-c", action="store_true")  # TODO: remove? what is the difference between modes
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue")
-
+    parser.add_argument("--played", "--opened", action="store_true")
     parser.add_argument("-v", "--verbose", action="count", default=0)
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
 
@@ -44,7 +43,7 @@ def parse_args() -> argparse.Namespace:
         default="watching",
         const="watching",
         nargs="?",
-        help="One of: %(choices)s (default: %(default)s)",
+        help=f"One of: {', '.join(consts.time_facets)} (default: %(default)s)",
     )
 
     args = parser.parse_args()
@@ -71,9 +70,11 @@ def recent_media(args, time_column):
         {', duration' if 'duration' in m_columns else ''}
         {', subtitle_count' if 'subtitle_count' in m_columns else ''}
         , {time_column}
-    FROM media
-    WHERE coalesce(time_deleted, 0)=0
+    FROM media m
+    {'JOIN history h on h.media_id = m.id' if args.played else ''}
+    WHERE 1=1
       AND coalesce({time_column}, 0)>0
+    {'' if time_column =="time_deleted" else "AND COALESCE(time_deleted, 0)=0"}
     ORDER BY {time_column} desc
     LIMIT {args.limit or 5}
     """
@@ -85,11 +86,16 @@ def history() -> None:
     m_columns = args.db["media"].columns_dict
     create(args)
 
-    history_fn = player.historical_usage
-    if args.count or "duration" not in m_columns or args.db.pop("select 1 from history") is None:
-        history_fn = player.historical_usage_items
+    WATCHED = ["watched", "listened", "seen", "heard"]
+    WATCHING = ["watching", "listening"]
+    if args.facet in WATCHED + WATCHING:
+        args.played = True
 
-    if args.facet in ("watching", "listening"):
+    history_fn = player.historical_usage_items
+    if args.played:
+        history_fn = player.historical_usage
+
+    if args.facet in WATCHING:
         print(args.facet.title() + ":")
         tbl = history_fn(args, args.frequency, "time_played", "and coalesce(play_count, 0)=0")
         player.media_printer(args, tbl)
@@ -119,7 +125,7 @@ def history() -> None:
         tbl = list(args.db.query(query))
         player.media_printer(args, tbl)
 
-    elif args.facet in ("watched", "listened", "seen", "heard"):
+    elif args.facet in WATCHED:
         print(args.facet.title() + ":")
         tbl = history_fn(args, args.frequency, "time_played", "and coalesce(play_count, 0)>0")
         player.media_printer(args, tbl)
