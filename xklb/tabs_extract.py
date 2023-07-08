@@ -17,7 +17,7 @@ def parse_args() -> argparse.Namespace:
         const="monthly",
         type=str.lower,
         nargs="?",
-        help="One of: %(choices)s (default: %(default)s)",
+        help=f"One of: {', '.join(consts.frequency)} (default: %(default)s)",
     )
     parser.add_argument("--category", "-c", help=argparse.SUPPRESS)
     parser.add_argument("--no-sanitize", "-s", action="store_true", help="Don't sanitize some common URL parameters")

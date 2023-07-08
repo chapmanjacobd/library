@@ -948,7 +948,8 @@ def historical_usage(args, freq="monthly", time_column="time_played", where=""):
                 , *
             FROM media m
             JOIN history h on h.media_id = m.id
-            WHERE COALESCE(time_deleted, 0)=0
+            WHERE 1=1
+            {'' if time_column =="time_deleted" else "AND COALESCE(time_deleted, 0)=0"}
             GROUP BY m.id, m.path
         )
         SELECT
@@ -992,7 +993,7 @@ def historical_usage_items(args, freq="monthly", time_column="time_modified", wh
         FROM media m
         WHERE coalesce({freq_label}, 0)>0
             and {time_column}>0 {where}
-            AND COALESCE(time_deleted, 0)=0
+            {'' if time_column =="time_deleted" else "AND COALESCE(time_deleted, 0)=0"}
         GROUP BY {freq_label}
     """
     return list(args.db.query(query))
