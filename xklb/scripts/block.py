@@ -19,6 +19,9 @@ def parse_args():
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", help=argparse.SUPPRESS)
     parser.add_argument("--match-column", "-c", default="path", help="Column to block media if text matches")
 
+    parser.add_argument("--cluster", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--min-tried", default=0, type=int, help=argparse.SUPPRESS)
+    parser.add_argument("--no-confirm", "--yes", "-y", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--force", "-f", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--offline", "--no-tube", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--ignore-errors", "--ignoreerrors", "-i", action="store_true", help=argparse.SUPPRESS)
@@ -65,9 +68,9 @@ def block(args=None) -> None:
             media = list(
                 args.db.query(
                     """
-                    select path
-                    from media
-                    where coalesce(time_deleted, 0)=0 and path like "http%"
+                    SELECT path
+                    FROM media
+                    WHERE COALESCE(time_deleted, 0)=0 AND path LIKE "http%"
                     """,
                 ),
             )
@@ -99,12 +102,15 @@ def block(args=None) -> None:
                 )
                 SELECT * from m
                 WHERE count != tried
-                  AND new_links > 15
+                  AND new_links >= 15
+                  AND tried >= {args.min_tried}
                 ORDER BY tried > 0 DESC
+                    , percent_failed >= 0.8 DESC
+                    , percent_succeeded <= 0.8 DESC
                     , ntile(3) over (order by new_links) desc
                     , ntile(2) over (order by tried) desc
-                    , ntile(3) over (order by percent_failed) desc
-                    , ntile(2) over (order by percent_succeeded)
+                    , ntile(3) over (order by failed) desc
+                    , ntile(2) over (order by succeeded)
                     , subdomain
                 """,
             ),
@@ -143,7 +149,7 @@ def block(args=None) -> None:
         playlist_media = list(
             args.db.query(
                 """SELECT path, size FROM media
-                WHERE time_deleted = 0
+                WHERE coalesce(time_deleted, 0)=0
                 AND time_downloaded > 0
                 AND playlist_id in (
                     SELECT id from playlists
@@ -153,7 +159,7 @@ def block(args=None) -> None:
                 (*playlist_paths,),
             ),
         )
-        total_size = sum(d["size"] for d in playlist_media)
+        total_size = sum(d["size"] or 0 for d in playlist_media)
         paths_to_delete = [d["path"] for d in playlist_media]
         if paths_to_delete:
             print(paths_to_delete)
@@ -202,10 +208,8 @@ def block(args=None) -> None:
             unmatched_playlists.append(p)
             continue
 
-        try:
+        if args.cluster:
             matching_media = list(reversed(utils.cluster_dicts(args, matching_media)))
-        except ModuleNotFoundError:
-            pass
 
         tbl = utils.list_dict_filter_bool(matching_media)
         tbl = [
@@ -220,7 +224,8 @@ def block(args=None) -> None:
         tbl = utils.col_naturalsize(tbl, "size")
         tbl = utils.col_naturaldate(tbl, "time_deleted")
         print(tabulate(tbl, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False))
-        if utils.confirm(f"{len(matching_media)} media matching {p}. Add to blocklist?"):
+        print(f"{len(matching_media)} media matching {p}")
+        if args.no_confirm or utils.confirm("Add to blocklist?"):
             add_to_blocklist(args, p)
         else:
             continue
@@ -229,7 +234,8 @@ def block(args=None) -> None:
             d["path"] for d in matching_media if d["time_deleted"] == 0 and not d["path"].startswith("http")
         ]
         if paths_to_delete:
-            total_size = sum(d["size"] for d in matching_media if d["time_deleted"] == 0)
+            total_size = sum(d["size"] or 0 for d in matching_media if d["time_deleted"] == 0)
+            print("\n".join(paths_to_delete))
             if utils.confirm(
                 f"Would you like to delete these {len(paths_to_delete)} local files ({humanize.naturalsize(total_size)})?",
             ):

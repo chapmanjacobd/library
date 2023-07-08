@@ -1,5 +1,4 @@
 import itertools, os, sys
-from inspect import isgenerator
 from pathlib import Path
 from types import ModuleType
 
@@ -30,12 +29,17 @@ def load_module_level_gallery_dl(args) -> ModuleType:
         if hasattr(args, "prefix"):
             gallery_dl.config.set(("extractor",), "base-directory", args.prefix)
         gallery_dl.config.set(("extractor",), "parent-directory", False)
-        gallery_dl.config.set(("extractor",), "directory", ["{category}", "{blog['name'][:30]}"])
         gallery_dl.config.set(
             ("extractor",),
-            "filename",
-            "{post['title'][:60]|summary[:30]|path[:50]}.{filename[:52]}.{extension}",
+            "directory",
+            [
+                "{user[account]|username|account[username]|user[id]|account[id]|id|subcategory}",
+                "{category}",
+                "{original_title[0]|title[0]|filename[0]}",
+                "{original_title[1]|title[1]|filename[1]}",
+            ],
         )
+        gallery_dl.config.set(("extractor",), "filename", "{filename[:100]}.{extension}")
         gallery_dl.config.set(("extractor",), "browser", "firefox")
 
         if consts.PYTEST_RUNNING:
@@ -194,7 +198,7 @@ def get_playlist_metadata(args, playlist_path):
     is_playlist = len(first_two) > 1
     for webpath, info in itertools.chain(first_two, gen):
         errors = parse_gdl_job_status(job.status, playlist_path)
-        extractor_key = job.extractor.category
+        extractor_key = "gdl_" + job.extractor.category
 
         if not info:
             log.error("No info returned from image extractor %s", extractor_key)

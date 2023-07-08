@@ -113,5 +113,8 @@ def gallery_update(args=None) -> None:
 
     args = parse_args(SC.galleryupdate, usage=usage.galleryupdate)
 
-    for d in playlists.get_all(args):
+    gdl_playlists = playlists.get_all(
+        args, sql_filters=["AND extractor_key NOT IN ('Local', 'reddit_praw_redditor', 'reddit_praw_subreddit')"]
+    )
+    for d in gdl_playlists:
         gdl_backend.get_playlist_metadata(args, d["path"])

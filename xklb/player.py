@@ -270,6 +270,9 @@ def mark_media_deleted_like(args, paths) -> int:
 def delete_media(args, paths) -> int:
     paths = utils.conform(paths)
     for p in paths:
+        if p.startswith("http"):
+            continue
+
         if getattr(args, "prefix", False):
             Path(p).unlink(missing_ok=True)
         else:
@@ -452,6 +455,7 @@ def get_ordinal_media(args, m: Dict, ignore_paths=None) -> Dict:
                 FROM media m
                 LEFT JOIN history h on h.media_id = m.id
                 WHERE 1=1
+                    AND COALESCE(time_deleted, 0)=0
                     and path like :candidate
                     {'' if args.play_in_order >= consts.SIMILAR_NO_FILTER_NO_FTS else f'and m.id in (select id from {args.table})'}
                     {filter_args_sql(args, m_columns)}
@@ -564,6 +568,7 @@ def get_dir_media(args, dirs: List, include_subdirs=False) -> List[Dict]:
             FROM media m
             LEFT JOIN history h on h.media_id = m.id
             WHERE 1=1
+                AND COALESCE(time_deleted, 0)=0
                 and m.id in (select id from {args.table})
                 {filter_args_sql(args, m_columns)}
                 {filter_paths}
@@ -934,6 +939,7 @@ def historical_usage(args, freq="monthly", time_column="time_played", where=""):
                 , *
             FROM media m
             JOIN history h on h.media_id = m.id
+            WHERE COALESCE(time_deleted, 0)=0
             GROUP BY m.id, m.path
         )
         SELECT
@@ -944,8 +950,7 @@ def historical_usage(args, freq="monthly", time_column="time_played", where=""):
             , AVG(size) AS avg_size
             , count(*) as count
         FROM m
-        WHERE coalesce({freq_label}, 0)>0
-            and {time_column}>0 {where}
+        WHERE {time_column}>0 {where}
         GROUP BY {freq_label}
     """
     return list(args.db.query(query))
@@ -965,23 +970,26 @@ def cadence_adjusted_duration(args, duration):
 
 
 def historical_usage_items(args, freq="monthly", time_column="time_modified", where=""):
+    m_columns = db.columns(args, "media")
+
     freq_label, freq_sql = frequency_time_to_sql(freq, time_column)
     query = f"""SELECT
             {freq_sql} AS {freq_label}
-            , SUM(duration) AS total_duration
-            , AVG(duration) AS avg_duration
-            , SUM(size) AS total_size
-            , AVG(size) AS avg_size
+            {', SUM(duration) AS total_duration' if 'duration' in m_columns else ''}
+            {', AVG(duration) AS avg_duration' if 'duration' in m_columns else ''}
+            {', SUM(size) AS total_size' if 'size' in m_columns else ''}
+            {', AVG(size) AS avg_size' if 'size' in m_columns else ''}
             , count(*) as count
         FROM media m
         WHERE coalesce({freq_label}, 0)>0
             and {time_column}>0 {where}
+            AND COALESCE(time_deleted, 0)=0
         GROUP BY {freq_label}
     """
     return list(args.db.query(query))
 
 
-def cadence_adjusted_items(args, items):
+def cadence_adjusted_items(args, items: int):
     history = historical_usage_items(args, freq="daily")
     try:
         historical_daily = statistics.mean((d["count"] or 0) for d in history)
@@ -1035,7 +1043,7 @@ def media_printer(args, media, units=None) -> None:
         media.reverse()
 
     duration = sum(m.get("duration") or 0 for m in media)
-    if "a" in args.print:
+    if "a" in args.print and "Aggregate" not in media[0]["path"]:
         if "count" in media[0]:
             D = {"path": "Aggregate", "count": sum(d["count"] for d in media)}
         elif args.action == SC.download_status and "never_downloaded" in media[0]:
@@ -1079,7 +1087,7 @@ def media_printer(args, media, units=None) -> None:
                 args, m["never_downloaded"] + m["retry_queued"]
             )  # TODO where= p.extractor_key, or try to use SQL
 
-    for k in list(media[0].keys()):
+    for k, v in list(media[0].items()):
         if k.endswith("size"):
             utils.col_naturalsize(media, k)
         elif k.endswith("duration") or k in ("playhead",):
@@ -1092,6 +1100,12 @@ def media_printer(args, media, units=None) -> None:
         elif k.startswith("percent") or k.endswith("ratio"):
             for d in media:
                 d[k] = f"{d[k]:.2%}"
+        # elif isinstance(v, int):
+        #     for d in media:
+        #         if d[k] is not None:
+        #             d[k] = f'{d[k]:n}'  # TODO add locale comma separators
+
+    media = utils.list_dict_filter_bool(media)
 
     if "f" in args.print:
         if len(media) <= 1000:
@@ -1134,7 +1148,7 @@ def media_printer(args, media, units=None) -> None:
         if len(media) > 1:
             print(
                 f"{len(media)} {units}"
-                + (f" (limited by --limit {args.limit})" if args.limit and args.limit <= len(media) else "")
+                + (f" (limited by --limit {args.limit})" if args.limit and int(args.limit) <= len(media) else "")
             )
 
         if duration > 0:

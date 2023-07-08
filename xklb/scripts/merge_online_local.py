@@ -29,7 +29,7 @@ def get_duplicates(args) -> List[dict]:
         WHERE 1=1
             and extractor_id is not null
             and extractor_id != ""
-            and time_deleted = 0
+            and coalesce(time_deleted, 0)=0
             and playlist_id in (
                 SELECT id from playlists
                 WHERE extractor_key
@@ -47,7 +47,7 @@ def get_duplicates(args) -> List[dict]:
         FROM
             media
         WHERE 1=1
-            and time_deleted = 0
+            and coalesce(time_deleted, 0)=0
             and extractor_id is null
             and title is null
     ) m2

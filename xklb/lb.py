@@ -290,10 +290,11 @@ def library(args=None) -> None:
         try:
             log.error("Subcommand %s not found", original_argv[1])
         except Exception:
-            log.error("Invalid args. I see: %s", original_argv)
+            if len(original_argv) > 1:
+                log.error("Invalid args. I see: %s", original_argv)
 
         print_help(parser)
-        return None
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":

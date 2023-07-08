@@ -12,19 +12,14 @@ from typing import Any, Dict, Iterator, List, NoReturn, Optional, Union
 
 import humanize
 from IPython.core import ultratb
-from IPython.terminal.debugger import TerminalPdb
+from IPython.terminal import debugger
 from rich import prompt
 from rich.logging import RichHandler
 
 from xklb import consts
 from xklb.scripts.mining import data
 
-try:
-    import ipdb
-except ModuleNotFoundError:
-    pass
-else:
-    sys.breakpointhook = ipdb.set_trace
+sys.breakpointhook = debugger.set_trace
 
 
 def run_once(f):  # noqa: ANN201
@@ -52,7 +47,7 @@ def argparse_log() -> logging.Logger:
                 mode="Verbose" if args.verbose > 1 else "Context",
                 color_scheme="Neutral",
                 call_pdb=True,
-                debugger_cls=TerminalPdb,
+                debugger_cls=debugger.TerminalPdb,
             )
     except Exception:
         pass
@@ -290,17 +285,18 @@ def file_temp_copy(src) -> str:
 
 
 def trash(path: Union[Path, str], detach=True) -> None:
-    trash_put = which("trash-put") or which("trash")
-    if trash_put is not None:
-        if not detach:
-            cmd(trash_put, path, strict=False)
-            return
-        try:
-            cmd_detach(trash_put, path)
-        except Exception:
-            cmd(trash_put, path, strict=False)
-    else:
-        Path(path).unlink(missing_ok=True)
+    if Path(path).exists():
+        trash_put = which("trash-put") or which("trash")
+        if trash_put is not None:
+            if not detach:
+                cmd(trash_put, path, strict=False)
+                return
+            try:
+                cmd_detach(trash_put, path)
+            except Exception:
+                cmd(trash_put, path, strict=False)
+        else:
+            Path(path).unlink(missing_ok=True)
 
 
 def remove_consecutive_whitespace(s) -> str:
@@ -568,8 +564,29 @@ def dict_filter_bool(kwargs, keep_0=True) -> Optional[dict]:
     return filtered_dict
 
 
+def find_none_keys(list_of_dicts, keep_0=True):
+    none_keys = []
+
+    if not list_of_dicts:
+        return none_keys
+
+    keys = list_of_dicts[0].keys()
+    for key in keys:
+        is_key_none = True
+        for d in list_of_dicts:
+            value = d.get(key)
+            if value or (keep_0 and value == 0):
+                is_key_none = False
+                break
+        if is_key_none:
+            none_keys.append(key)
+
+    return none_keys
+
+
 def list_dict_filter_bool(media: List[dict], keep_0=True) -> List[dict]:
-    return [d for d in [dict_filter_bool(d, keep_0) for d in media] if d]
+    keys_to_remove = find_none_keys(media, keep_0=keep_0)
+    return [d for d in [{k: v for k, v in m.items() if k not in keys_to_remove} for m in media] if d]
 
 
 def dict_filter_keys(kwargs, keys) -> Optional[dict]:
@@ -743,16 +760,26 @@ def col_resize_percent(tbl: List[Dict], col: str, percent=10) -> List[Dict]:
 
 def col_naturaldate(tbl: List[Dict], col: str) -> List[Dict]:
     for idx, _d in enumerate(tbl):
-        if tbl[idx].get(col) is not None:
-            tbl[idx][col] = humanize.naturaldate(datetime.fromtimestamp(int(tbl[idx][col]), timezone.utc))
+        val = tbl[idx].get(col)
+        if val is not None:
+            val = int(val)
+            if val == 0:
+                tbl[idx][col] = None
+            else:
+                tbl[idx][col] = humanize.naturaldate(datetime.fromtimestamp(val))
 
     return tbl
 
 
 def col_naturaltime(tbl: List[Dict], col: str) -> List[Dict]:
     for idx, _d in enumerate(tbl):
-        if tbl[idx].get(col) is not None:
-            tbl[idx][col] = humanize.naturaltime(datetime.fromtimestamp(int(tbl[idx][col])))
+        val = tbl[idx].get(col)
+        if val is not None:
+            val = int(val)
+            if val == 0:
+                tbl[idx][col] = None
+            else:
+                tbl[idx][col] = humanize.naturaltime(datetime.fromtimestamp(val))
 
     return tbl
 

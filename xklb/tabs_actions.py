@@ -102,6 +102,7 @@ def construct_tabs_query(args) -> Tuple[str, dict]:
                 , category
             FROM media
             LEFT JOIN history h on h.media_id = media.id
+            WHERE COALESCE(time_deleted, 0)=0
             GROUP BY media.id
         )
         SELECT path
@@ -116,7 +117,6 @@ def construct_tabs_query(args) -> Tuple[str, dict]:
         {', ' + ', '.join(args.cols) if args.cols else ''}
     FROM m
     WHERE 1=1
-        and COALESCE(time_deleted,0) = 0
         {" ".join(args.filter_sql)}
         {"and time_valid < cast(STRFTIME('%s', datetime()) as int)" if not args.print else ''}
     ORDER BY 1=1

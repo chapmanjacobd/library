@@ -7,11 +7,13 @@ from xklb.utils import log
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library merge-dbs", usage=usage.merge_dbs)
-    parser.add_argument("--pk", action=utils.ArgparseList, help="Comma separated primary keys")
+    parser.add_argument("--primary-keys", "--pk", action=utils.ArgparseList, help="Comma separated primary keys")
+    parser.add_argument("--business-keys", "--bk", action=utils.ArgparseList, help="Comma separated business keys")
     parser.add_argument("--upsert", action="store_true")
     parser.add_argument("--ignore", "--only-new-rows", action="store_true")
     parser.add_argument("--only-tables", "-t", action=utils.ArgparseList, help="Comma separated specific table(s)")
     parser.add_argument("--only-target-columns", action="store_true")
+    parser.add_argument("--skip-columns", action=utils.ArgparseList)
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
     parser.add_argument("--verbose", "-v", action="count", default=0)
 
@@ -40,15 +42,23 @@ def merge_db(args, source_db) -> None:
         else:
             log.info("[%s]: %s", source_db, table)
 
+        if args.business_keys:
+            if not args.primary_keys:
+                args.primary_keys = list(o.name for o in args.db[table].columns if o.is_pk)
+
+            args.skip_columns = [*(args.skip_columns or []), *args.primary_keys]
+
         source_columns = s_db[table].columns_dict
         if args.only_target_columns:
             target_columns = args.db[table].columns_dict
             source_columns = [s for s in source_columns if s in target_columns]
+        if args.skip_columns:
+            source_columns = [s for s in source_columns if s not in args.skip_columns]
 
         log.info("[%s]: %s", table, source_columns)
         kwargs = {}
-        if args.pk:
-            source_table_pks = [s for s in args.pk if s in source_columns]
+        if args.business_keys or args.primary_keys:
+            source_table_pks = [s for s in (args.business_keys or args.primary_keys) if s in source_columns]
             if source_table_pks:
                 log.info("[%s]: Using %s as primary key(s)", table, ", ".join(source_table_pks))
                 kwargs["pk"] = source_table_pks
