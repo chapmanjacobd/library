@@ -94,6 +94,9 @@ class SC:
     download_status = "download_status"
     search = "search"
     history = "history"
+    bigdirs = "bigdirs"
+    diskusage = "diskusage"
+    dedupe = "dedupe"
 
 
 def reddit_frequency(frequency) -> str:
@@ -188,7 +191,8 @@ time_facets = [
     "downloaded",
 ]
 
-frequency = ["daily", "weekly", "monthly", "quarterly", "yearly"]
+frequency = ["minutely", "hourly", "daily", "weekly", "monthly", "quarterly", "yearly", "decadally"]
+
 
 PLAYLIST_KNOWN_KEYS = ("description", "url", "duration", "view_count", "webpage_url", "original_url", "time_deleted")
 

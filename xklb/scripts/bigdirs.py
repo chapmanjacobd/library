@@ -2,9 +2,7 @@ import argparse, os
 from pathlib import Path
 from typing import Dict, List
 
-from tabulate import tabulate
-
-from xklb import consts, db, history, usage, utils
+from xklb import consts, db, history, player, usage, utils
 from xklb.utils import log
 
 
@@ -34,6 +32,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--include", "-s", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
+    parser.add_argument("--print", "-p", default="", const="p", nargs="?")
     parser.add_argument("--verbose", "-v", action="count", default=0)
 
     parser.add_argument("database")
@@ -48,6 +47,7 @@ def parse_args() -> argparse.Namespace:
     if args.size:
         args.size = utils.parse_human_to_sql(utils.human_to_bytes, "size", args.size)
 
+    args.action = consts.SC.bigdirs
     log.info(utils.dict_filter_bool(args.__dict__))
     return args
 
@@ -175,18 +175,13 @@ def bigdirs() -> None:
     args = parse_args()
     history.create(args)
 
-    tbl = get_table(args)
-    tbl = process_bigdirs(args, tbl)
+    media = get_table(args)
+    media = process_bigdirs(args, media)
 
     if args.limit:
-        tbl = tbl[-int(args.limit) :]
+        media = media[-int(args.limit) :]
 
-    tbl = utils.list_dict_filter_bool(tbl, keep_0=False)
-    tbl = utils.col_resize_percent(tbl, "path", 50)
-    tbl = utils.col_naturalsize(tbl, "size")
-    print(tabulate(tbl, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False))
-    if not args.limit:
-        print(f"{len(tbl)} folders found")
+    player.media_printer(args, media, units="folders")
 
 
 if __name__ == "__main__":

@@ -4,7 +4,7 @@ from typing import List
 
 from tabulate import tabulate
 
-from xklb import consts, db, media, usage, utils
+from xklb import consts, db, media, player, usage, utils
 from xklb.utils import log
 
 
@@ -73,16 +73,11 @@ def merge_online_local() -> None:
     args = parse_args()
     args.db["media"].rebuild_fts()
     duplicates = get_duplicates(args)
-    duplicates_count = len(duplicates)
 
     tbl = deepcopy(duplicates)
     tbl = tbl[: int(args.limit)]
-    tbl = utils.col_resize_percent(tbl, "keep_path", 30)
-    tbl = utils.col_resize_percent(tbl, "duplicate_path", 30)
-    tbl = utils.col_naturalsize(tbl, "duplicate_size")
-    print(tabulate(tbl, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False))
+    player.media_printer(args, tbl, units="duplicates")
 
-    print(f"{duplicates_count} duplicates found (showing first {args.limit})")
     if duplicates and utils.confirm("Merge duplicates?"):  # type: ignore
         log.info("Merging...")
 

@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import List
 
 import humanize
-from tabulate import tabulate
 
 from xklb import consts, db, player, usage, utils
 from xklb.consts import DBType
@@ -63,11 +62,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--only-soft-delete", action="store_true")
     parser.add_argument("--force", "-f", action="store_true")
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", default=100)
+    parser.add_argument("--print", "-p", default="", const="p", nargs="?")
     parser.add_argument("--verbose", "-v", action="count", default=0)
 
     parser.add_argument("database")
     args = parser.parse_args()
     args.db = db.connect(args)
+
+    args.action = consts.SC.dedupe
     log.info(utils.dict_filter_bool(args.__dict__))
     return args
 
@@ -235,13 +237,7 @@ def dedupe() -> None:
 
     tbl = deepcopy(duplicates)
     tbl = tbl[: int(args.limit)]
-    tbl = utils.col_resize_percent(tbl, "keep_path", 30)
-    tbl = utils.col_resize_percent(tbl, "duplicate_path", 30)
-    tbl = utils.col_naturalsize(tbl, "duplicate_size")
-    print(tabulate(tbl, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False))
-
-    duplicates_count = len(duplicates)
-    print(f"{duplicates_count} duplicates found (showing first {args.limit})")
+    player.media_printer(args, tbl, units="duplicates")
 
     try:
         import pandas as pd
