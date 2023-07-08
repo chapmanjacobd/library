@@ -143,7 +143,7 @@ Incremental surfing. 📈🏄 totally rad!
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.2.021)
+    xk media library subcommands (v2.2.022)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -936,6 +936,23 @@ Explore `library` databases in your browser
     │ https://www.youtube.com/watch?v=MjpCiTawlTE                                                │               │                │
     ╘════════════════════════════════════════════════════════════════════════════════════════════╧═══════════════╧════════════════╛
 
+    Use simple count instead of duration (incompatible with time_played, playhead)
+
+    $ library history video.db download --count
+    Downloaded media:
+    month    total_duration                           avg_duration           total_size    avg_size      count
+    -------  ---------------------------------------  ---------------------  ------------  ----------  -------
+    2022-10  1 year, 11 months, 16 days and 14 hours  48 minutes             271.2 GB      12.5 MB       21663
+    2022-11  21 days and 17 hours                     13 minutes             26.6 GB       10.9 MB        2452
+    2022-12  3 months, 17 days and 2 hours            1 hour and 29 minutes  47.6 GB       26.9 MB        1770
+    2023-01  16 hours and 28 minutes                  17 minutes             801.7 MB      13.6 MB          59
+    2023-02  11 months, 6 days and 6 hours            10 minutes             289.1 GB      5.8 MB        49451
+    2023-03  21 days and 22 hours                     28 minutes             29.2 GB       26.2 MB        1115
+    2023-04  2 months, 12 days and 12 hours           9 minutes              88.5 GB       7.5 MB        11845
+    2023-05  13 days and 14 hours                     12 minutes             14.1 GB       8.7 MB         1616
+    2023-06  4 hours and 8 minutes                    6 minutes              186.8 MB      4.4 MB           42
+    2023-07  3 months, 0 days and 23 hours            11 minutes             100.1 GB      8.2 MB        12246
+
     $ library history video.db deleted
     Deleted media:
     ╒═══════════════╤════════════════════════════════════════════╤════════════════╤════════════╤════════════╕
@@ -1363,7 +1380,7 @@ Explore `library` databases in your browser
     Merge database data and tables
 
         library merge-dbs --upsert --pk path video.db tv.db movies.db
-        library merge-dbs --only-target-columns --only-new-rows --table media,playlists --pk path audio-fts.db audio.db
+        library merge-dbs --only-target-columns --only-new-rows --table media,playlists --pk path --skip-column id audio-fts.db audio.db
 
         library merge-dbs --pk id --only-tables subreddits reddit/81_New_Music.db audio.db
         library merge-dbs --only-new-rows --pk subreddit,path --only-tables reddit_posts reddit/81_New_Music.db audio.db -v

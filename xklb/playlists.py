@@ -103,7 +103,7 @@ def get_subpath_playlist_id(args, playlist_path) -> Optional[int]:
     return known
 
 
-def add(args, playlist_path: str, info: dict, check_subpath=False) -> int:
+def add(args, playlist_path: str, info: dict, check_subpath=False, extractor_key=None) -> int:
     if check_subpath:
         subpath_playlist_id = get_subpath_playlist_id(args, playlist_path)
         if subpath_playlist_id:
@@ -111,6 +111,8 @@ def add(args, playlist_path: str, info: dict, check_subpath=False) -> int:
 
     pl = consolidate(args, utils.dumbcopy(info))
     playlist = {**pl, "path": playlist_path, **args.extra_playlist_data}
+    if extractor_key:
+        playlist["extractor_key"] = extractor_key
     return _add(args, utils.dict_filter_bool(playlist))
 
 

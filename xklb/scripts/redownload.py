@@ -35,7 +35,7 @@ def list_deletions(args) -> List[dict]:
             , COUNT(*) as count
         FROM media
         WHERE time_deleted > 0
-            AND time_downloaded > 0
+          AND time_downloaded > 0
         GROUP BY time_deleted
         HAVING count > 0
         ORDER BY time_deleted DESC

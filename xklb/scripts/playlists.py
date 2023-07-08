@@ -27,7 +27,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
 
     parser.add_argument("database")
-    args = parser.parse_args()
+    parser.add_argument("search", nargs="*")
+    args = parser.parse_intermixed_args()
+
+    if args.search:
+        args.include += args.search
+
     if args.db:
         args.database = args.db
     args.db = db.connect(args)
@@ -56,7 +61,7 @@ def construct_query(args) -> Tuple[str, dict]:
     LIMIT = "LIMIT " + str(args.limit) if args.limit else ""
     query = f"""SELECT
         *
-    FROM {args.table}
+    FROM {args.table} m
     WHERE 1=1
         and COALESCE(time_deleted,0) = 0
         {" ".join(args.filter_sql)}
@@ -92,7 +97,7 @@ def playlists() -> None:
             {', sum(m.size) size' if 'size' in m_columns else ''}
             , count(*) count
         from media m
-        left join ({query}) p on p.id = m.playlist_id
+        join ({query}) p on p.id = m.playlist_id
         group by m.playlist_id, coalesce(p.path, "Playlist-less media")
         order by count, p.path
         """

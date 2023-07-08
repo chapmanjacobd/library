@@ -151,7 +151,7 @@ def construct_query(args) -> Tuple[str, dict]:
                 {', m.time_modified' if 'time_modified' in m_columns else ''}
                 {', m.time_downloaded' if 'time_downloaded' in m_columns else ''}
                 {', m.time_deleted' if 'time_deleted' in m_columns else ''}
-                {', m.error' if 'error' in m_columns else ''}
+                {', m.error' if 'error' in m_columns and args.verbose >= consts.LOG_DEBUG else ''}
                 {', p.extractor_config' if 'extractor_config' in pl_columns else ''}
                 , p.extractor_key
             FROM media m
@@ -182,7 +182,7 @@ def construct_query(args) -> Tuple[str, dict]:
                 {', m.time_modified' if 'time_modified' in m_columns else ''}
                 {', m.time_downloaded' if 'time_downloaded' in m_columns else ''}
                 {', m.time_deleted' if 'time_deleted' in m_columns else ''}
-                {', m.error' if 'error' in m_columns else ''}
+                {', m.error' if 'error' in m_columns and args.verbose >= consts.LOG_DEBUG else ''}
                 , 'Playlist-less media' as extractor_key
             FROM media m
             WHERE 1=1
@@ -221,7 +221,7 @@ def dl_download(args=None) -> None:
     args = parse_args()
     m_columns = db.columns(args, "media")
 
-    if "media" in args.db.table_names() and "webpath" in m_columns:
+    if "limit" in args.defaults and "media" in args.db.table_names() and "webpath" in m_columns:
         if args.db.pop("SELECT 1 from media WHERE webpath is NULL and path in (select webpath from media) LIMIT 1"):
             with args.db.conn:
                 args.db.conn.execute("DELETE from media WHERE webpath is NULL and path in (select webpath from media)")
@@ -255,7 +255,7 @@ def dl_download(args=None) -> None:
                 SELECT path from media m
                 WHERE 1=1
                 AND (path=? or {'web' if 'webpath' in m_columns else ''}path=?)
-                {f'AND COALESCE(m.time_modified,0) > {str(previous_time_attempted)}' if 'time_modified' in m_columns else ''}
+                AND (time_modified > {str(previous_time_attempted)} OR time_deleted > 0)
                 """,
                 [m["path"], m["path"]],
             )

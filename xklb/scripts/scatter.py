@@ -76,7 +76,7 @@ def get_table(args) -> List[dict]:
             , time_downloaded
         from media
         where 1=1
-            and time_deleted = 0
+            and coalesce(time_deleted, 0)=0
             and path not like "http%"
             {'and is_dir is NULL' if 'is_dir' in m_columns else ""}
             and ({' or '.join(or_paths)})
@@ -102,8 +102,8 @@ def get_path_stats(args, data) -> List[Dict]:
                 {
                     "mount": srcmount,
                     "file_count": len(disk_files),
-                    "total_size": sum(d["size"] for d in disk_files),
-                    "median_size": median(d["size"] for d in disk_files),
+                    "total_size": sum(d["size"] or 0 for d in disk_files),
+                    "median_size": median(d["size"] or 0 for d in disk_files),
                     "time_created": median(d["time_created"] for d in disk_files),
                     "time_modified": median(d["time_modified"] for d in disk_files),
                     "time_downloaded": median(d["time_downloaded"] for d in disk_files),
@@ -123,7 +123,7 @@ def print_path_stats(tbl) -> None:
 
 
 def rebin_files(args, disk_stats, all_files) -> Tuple[List, List]:
-    total_size = sum(d["size"] for d in all_files)
+    total_size = sum(d["size"] or 0 for d in all_files)
 
     untouched = []
     to_rebin = []
@@ -246,8 +246,8 @@ def scatter() -> None:
     print("\nSimulated path distribution:")
     path_stats = get_path_stats(args, rebinned + untouched)
     print_path_stats(path_stats)
-    print(len(rebinned), "files would be moved", "(" + naturalsize(sum(d["size"] for d in rebinned)) + ")")
-    print(len(untouched), "files would not be moved", "(" + naturalsize(sum(d["size"] for d in untouched)) + ")")
+    print(len(rebinned), "files would be moved", "(" + naturalsize(sum(d["size"] or 0 for d in rebinned)) + ")")
+    print(len(untouched), "files would not be moved", "(" + naturalsize(sum(d["size"] or 0 for d in untouched)) + ")")
 
     print("\n######### Commands to run #########")
     for disk_stat in sorted(disk_stats, key=lambda d: d["free"], reverse=True):

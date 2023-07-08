@@ -270,7 +270,7 @@ def find_new_files(args, path: Path) -> List[str]:
                 where 1=1
                     and path like ?
                     and coalesce(time_deleted, 0) = 0
-                    {'AND coalesce(time_downloaded, 0) > 0' if 'time_downloaded' in m_columns else ''}
+                    {'AND time_downloaded > 0' if 'time_downloaded' in m_columns else ''}
                 """,
                 [str(path) + "%"],
             )

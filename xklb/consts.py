@@ -93,6 +93,7 @@ class SC:
     playlists = "playlists"
     download_status = "download_status"
     search = "search"
+    history = "history"
 
 
 def reddit_frequency(frequency) -> str:

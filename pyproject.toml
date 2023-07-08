@@ -35,7 +35,7 @@ requires-python = ">=3.8"
 [project.optional-dependencies]
 all = ["xklb[deluxe,dev,test]"]
 deluxe = ["textract", "PyExifTool", "aiohttp", "brotab", "orjson", "geopandas", "spacy", "scikit-learn"]
-dev = ["black", "ipdb", "isort", "scalene", "ssort"]
+dev = ["black", "isort", "scalene", "ssort"]
 test = ["ruff", "pytest"]
 
 [project.urls]

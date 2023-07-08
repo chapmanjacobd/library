@@ -104,11 +104,15 @@ def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True) -> 
 
             if info:
                 webpath = safe_unpack(info.get("webpage_url"), info.get("url"), info.get("original_url"))
+                extractor_key = "ydl_" + (
+                    safe_unpack(info.get("ie_key"), info.get("extractor_key"), info.get("extractor")) or ""
+                )
+
                 if webpath != playlist_path and info.get("webpage_url_basename") == "playlist":
                     if playlist_root:
                         if not info.get("playlist_id") or webpath == playlist_path:
                             log.warning("Importing playlist-less media %s", playlist_path)
-                        playlists.add(args, playlist_path, info)
+                        playlists.add(args, playlist_path, info, extractor_key=extractor_key)
                         log.info("playlists.add %s", t.elapsed())
 
                     if args.ignore_errors:
@@ -133,7 +137,8 @@ def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True) -> 
                     if not info.get("playlist_id") or webpath == playlist_path:
                         log.warning("Importing playlist-less media %s", playlist_path)
                     else:
-                        playlist_id = playlists.add(args, playlist_path, info)  # add sub-playlist
+                        # add sub-playlist
+                        playlist_id = playlists.add(args, playlist_path, info, extractor_key=extractor_key)
                         entry["playlist_id"] = playlist_id
                         log.info("playlists.add2 %s", t.elapsed())
 
@@ -203,6 +208,7 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Optional[L
             , playlist_id
             FROM media
             WHERE 1=1
+                AND COALESCE(time_deleted, 0)=0
                 {'and width is null' if 'width' in m_columns else ''}
                 and path not like '%playlist%'
                 and playlist_id = (select id from playlists where path = ?)

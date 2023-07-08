@@ -226,10 +226,10 @@ def since_last_created(args, playlist_path):
     if latest_post_utc:
         get_since = dt.datetime.fromtimestamp(latest_post_utc, tz=dt.timezone.utc) - dt.timedelta(days=args.lookback)
         get_since = int(get_since.timestamp())
-        log.info("Getting posts since timestamp %s", get_since)
+        log.info("[%s]: Getting posts since timestamp %s", playlist_path, get_since)
     else:
         get_since = 0
-        log.info("Getting posts since the dawn of time...")
+        log.info("[%s]: Getting posts since the dawn of time...", playlist_path)
 
     _takewhile = partial(created_since, target_sec_utc=get_since)
     return _takewhile
@@ -240,7 +240,7 @@ def redditor_new(args, redditor_dict) -> None:
     user: praw.reddit.Redditor = args.reddit.redditor(user_name)
 
     _takewhile = since_last_created(args, user_path)
-    log.info("Getting new posts")
+    log.info("[%s]: Getting new posts", user_path)
 
     for s in takewhile(_takewhile, user.submissions.new(limit=args.limit)):
         s.time_created = s.created_utc
@@ -252,7 +252,7 @@ def subreddit_new(args, subreddit_dict) -> None:
     subreddit: praw.reddit.Subreddit = args.reddit.subreddit(subreddit_name)
 
     _takewhile = since_last_created(args, subreddit_path)
-    log.info("Getting new posts")
+    log.info("[%s]: Getting new posts", subreddit_path)
     for idx, post in enumerate(takewhile(_takewhile, subreddit.new(limit=args.limit))):
         post_dict = saveable(post)
 
@@ -283,7 +283,7 @@ def subreddit_top(args, subreddit_dict) -> None:
 
     _takewhile = since_last_created(args, subreddit_path)
     for time_filter in time_filters:
-        log.info("Getting top posts in %s for time_filter '%s'", subreddit, time_filter)
+        log.info("[%s]: Getting top posts for time_filter '%s'", subreddit, time_filter)
         for post in takewhile(_takewhile, subreddit.top(time_filter, limit=args.limit)):
             save_post(args, saveable(post), subreddit_path)
 
@@ -301,38 +301,16 @@ def load_module_level_skip_errors() -> Tuple:
     return skip_errors
 
 
-def process_redditors(args, redditors) -> None:
-    load_module_level_skip_errors()
-
-    for redditor in redditors:
-        try:
-            redditor_new(args, redditor)
-        except skip_errors as e:
-            log.error("[%s] skipping redditor: %s", redditor["name"], e)
-            continue
-
-
-def process_subreddits(args, subreddits) -> None:
-    load_module_level_skip_errors()
-
-    for subreddit in subreddits:
-        try:
-            subreddit_new(args, subreddit)
-            subreddit_top(args, subreddit)
-        except skip_errors as e:
-            log.error("[%s] skipping subreddit: %s", subreddit["name"], e)
-            continue
-
-
 def reddit_add(args=None) -> None:
     if args:
         sys.argv = ["lb", *args]
 
     args = parse_args("redditadd", usage=usage.redditadd)
 
-    subreddits = []
-    redditors = []
+    load_module_level_skip_errors()
+
     for path in args.paths:
+        path = path.lower()
         subreddit_matches = consts.REGEX_SUBREDDIT.match(path)
         redditor_matches = consts.REGEX_REDDITOR.match(path)
         extractor_key = "reddit_praw"
@@ -340,23 +318,29 @@ def reddit_add(args=None) -> None:
         if subreddit_matches:
             extractor_key = "reddit_praw_subreddit"
             name = utils.conform(subreddit_matches.groups()).pop()
-            subreddits.append({"path": path, "name": name})
         elif redditor_matches:
             extractor_key = "reddit_praw_redditor"
             name = utils.conform(redditor_matches.groups()).pop()
-            redditors.append({"path": path, "name": name})
         else:
             if args.subreddits:
                 extractor_key = "reddit_praw_subreddit"
                 path = f"https://old.reddit.com/r/{name}/"
-                subreddits.append({"path": path, "name": name})
             elif args.redditors:
                 extractor_key = "reddit_praw_redditor"
                 path = f"https://old.reddit.com/user/{name}/"
-                redditors.append({"path": path, "name": name})
             else:
                 log.error(f"[{path}]: Skipping unknown URL")
                 continue
+
+        if playlists.get_id(args, path) is None:
+            try:
+                if extractor_key == "reddit_praw_redditor":
+                    redditor_new(args, {"path": path, "name": name})
+                elif extractor_key == "reddit_praw_subreddit":
+                    subreddit_new(args, {"path": path, "name": name})
+                    subreddit_top(args, {"path": path, "name": name})
+            except skip_errors as e:
+                log.error("[%s] skipping: %s", name, e)
 
         playlists._add(
             args,
@@ -371,8 +355,6 @@ def reddit_add(args=None) -> None:
             ),
         )
 
-    process_subreddits(args, subreddits)
-    process_redditors(args, redditors)
     if not args.db["media"].detect_fts():
         db.optimize(args)
 
@@ -388,11 +370,22 @@ def reddit_update(args=None) -> None:
         sql_filters=['AND extractor_key in ("reddit_praw_subreddit","reddit_praw_redditor")'],
     )
 
+    load_module_level_skip_errors()
+
     for playlist in reddit_playlists:
         extractor_config = json.loads(playlist["extractor_config"])
         args_env = args if not extractor_config else argparse.Namespace(**{**extractor_config, **args.__dict__})
 
-        if playlist["extractor_key"] == "reddit_praw_subreddit":
-            process_subreddits(args_env, [{"path": playlist["path"], "name": playlist["extractor_playlist_id"]}])
-        elif playlist["extractor_key"] == "reddit_praw_redditor":
-            process_redditors(args_env, [{"path": playlist["path"], "name": playlist["extractor_playlist_id"]}])
+        extractor_key = playlist["extractor_key"]
+        path = playlist["path"]
+        name = playlist["extractor_playlist_id"]
+
+        try:
+            if extractor_key == "reddit_praw_subreddit":
+                subreddit_new(args, {"path": path, "name": name})
+                subreddit_top(args, {"path": path, "name": name})
+            elif extractor_key == "reddit_praw_redditor":
+                redditor_new(args_env, {"path": path, "name": name})
+        except skip_errors as e:
+            log.error("[%s] skipping: %s", name, e)
+            continue

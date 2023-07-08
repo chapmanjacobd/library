@@ -22,6 +22,15 @@ def intersect_using_spatial_index(source_gdf, intersecting_gdf):
 
 - organize util functions by data type
 
+- dogsheep RSS feed rssadd rssupdate
+
+https://github.com/kurtmckee/feedparser
+https://github.com/gpodder/podcastparser/tree/master
+https://github.com/dhvcc/rss-parser
+https://github.com/vintageplayer/RSS-Parser/blob/master/src/data_parser.py
+https://simonwillison.net/atom/everything/
+https://micro.mjdescy.me/
+
 - globalnamespace py package to scan function names and search in github, print frequency of use in project, world, and namealikes, search function name, function body
 
 - wt/lt/search join and use fts on both tables, threading ?
