@@ -143,7 +143,7 @@ Incremental surfing. 📈🏄 totally rad!
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.2.024)
+    xk media library subcommands (v2.2.025)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -1051,15 +1051,19 @@ Explore `library` databases in your browser
 <details><summary>Download media</summary>
 
     $ library download -h
-    usage: library download [--prefix /mnt/d/] [--safe] [--subs] [--auto-subs] [--small] DATABASE --video | --audio
+    usage: library download [--prefix /mnt/d/] [--safe] [--subs] [--auto-subs] [--small] DATABASE --video | --audio | --photos
 
-    Download stuff in a random order.
+    Download stuff in a random order
 
         library download dl.db --prefix ~/output/path/root/
 
-    Download stuff in a random order, limited to the specified playlist URLs.
+    Download videos in a random order, limited to the specified playlist URLs or substring
 
         library download dl.db https://www.youtube.com/c/BlenderFoundation/videos
+
+    Download stuff maximizing variety of subdomains
+
+        library download photos.db --photos --image --sort "ROW_NUMBER() OVER ( PARTITION BY SUBSTR(m.path, INSTR(m.path, '//') + 2, INSTR( SUBSTR(m.path, INSTR(m.path, '//') + 2), '/') - 1) )"
 
     Files will be saved to <lb download prefix>/<extractor>/
 

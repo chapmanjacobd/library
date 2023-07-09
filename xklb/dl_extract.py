@@ -55,6 +55,7 @@ def parse_args():
     parser.add_argument("--extra-media-data", default={}, nargs=1, action=utils.ArgparseDict, metavar="KEY=VALUE")
     parser.add_argument("--extra-playlist-data", default={}, nargs=1, action=utils.ArgparseDict, metavar="KEY=VALUE")
     parser.add_argument("--safe", "-safe", action="store_true", help="Skip generic URLs")
+    parser.add_argument("--same-domain", action="store_true", help="Choose a random domain to focus on")
 
     parser.add_argument("--subs", action="store_true")
     parser.add_argument("--auto-subs", "--autosubs", action="store_true")
@@ -139,6 +140,15 @@ def construct_query(args) -> Tuple[str, dict]:
         )
 
     LIMIT = "LIMIT " + str(args.limit) if args.limit else ""
+    same_subdomain = """AND m.path like (
+        SELECT '%' || SUBSTR(path, INSTR(path, '//') + 2, INSTR( SUBSTR(path, INSTR(path, '//') + 2), '/') - 1) || '%'
+        FROM media
+        WHERE 1=1
+            AND COALESCE(time_downloaded,0) = 0
+            AND COALESCE(time_deleted,0) = 0
+        ORDER BY RANDOM()
+        LIMIT 1
+    )"""
     if "playlist_id" in m_columns:
         query = f"""select
                 m.id
@@ -161,14 +171,14 @@ def construct_query(args) -> Tuple[str, dict]:
                 and COALESCE(m.time_deleted,0) = 0
                 {'and COALESCE(p.time_deleted, 0) = 0' if 'time_deleted' in pl_columns else ''}
                 and m.path like "http%"
+                {same_subdomain if getattr(args, 'same_domain', False) else ''}
                 {'AND (score IS NULL OR score > 7)' if 'score' in m_columns else ''}
                 {'AND (upvote_ratio IS NULL OR upvote_ratio > 0.73)' if 'upvote_ratio' in m_columns else ''}
                 {" ".join(args.filter_sql)}
-            GROUP BY m.playlist_id, m.path
             ORDER BY 1=1
                 , COALESCE(m.time_modified, 0) = 0 DESC
                 {', p.extractor_key IS NOT NULL DESC' if 'sort' in args.defaults else ''}
-                , m.time_modified
+                {', m.error IS NULL DESC' if 'error' in m_columns else ''}
                 {', random()' if 'sort' in args.defaults else ', ' + args.sort}
             {LIMIT}
         """
@@ -189,12 +199,13 @@ def construct_query(args) -> Tuple[str, dict]:
                 {'and COALESCE(m.time_downloaded,0) = 0' if 'time_downloaded' in m_columns else ''}
                 {'and COALESCE(m.time_deleted,0) = 0' if 'time_deleted' in m_columns else ''}
                 and m.path like "http%"
+                {same_subdomain if args.same_domain else ''}
                 {'AND (score IS NULL OR score > 7)' if 'score' in m_columns else ''}
                 {'AND (upvote_ratio IS NULL OR upvote_ratio > 0.73)' if 'upvote_ratio' in m_columns else ''}
                 {" ".join(args.filter_sql)}
             ORDER BY 1=1
-                {', COALESCE(m.time_modified,0) = 0 DESC' if 'time_modified' in m_columns else ''}
-                {', m.time_modified' if 'time_modified' in m_columns else ''}
+                , COALESCE(m.time_modified, 0) = 0 DESC
+                {', m.error IS NULL DESC' if 'error' in m_columns else ''}
                 {', random()' if 'sort' in args.defaults else ', ' + args.sort}
         {LIMIT}
         """
