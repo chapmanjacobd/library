@@ -50,7 +50,7 @@ def parse_args_sort(args) -> None:
         "duration desc" if args.action in (SC.listen, SC.watch) and args.include else None,
         "size desc" if args.action in (SC.listen, SC.watch) and args.include else None,
         "play_count" if args.action in (SC.listen, SC.watch) else None,
-        "title IS NOT NULL desc" if "title" in m_columns else None,
+        "m.title IS NOT NULL desc" if "title" in m_columns else None,
         "m.path",
         "random",
     ]
