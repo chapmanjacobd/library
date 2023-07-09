@@ -33,13 +33,15 @@ def load_module_level_gallery_dl(args) -> ModuleType:
             ("extractor",),
             "directory",
             [
-                "{user[account]|username|account[username]|user[id]|account[id]|id|subcategory}",
+                "{user[account]|username|account[username]|user[id]|account[id]|subcategory}",
                 "{category}",
                 "{original_title[0]|title[0]|filename[0]}",
                 "{original_title[1]|title[1]|filename[1]}",
             ],
         )
-        gallery_dl.config.set(("extractor",), "filename", "{filename[:100]}.{extension}")
+        gallery_dl.config.set(
+            ("extractor",), "filename", "{filename[:100]|title[:100]|original_title[:100]|id[:100]}.{extension}"
+        )
         gallery_dl.config.set(("extractor",), "browser", "firefox")
 
         if consts.PYTEST_RUNNING:
@@ -56,7 +58,7 @@ def is_supported(args, url) -> bool:
     return any(ie.pattern.match(url) and ie.category != "generic" for ie in is_supported.extractors)
 
 
-def parse_gdl_job_status(job_status, path):
+def parse_gdl_job_status(job_status, path, ignore_errors=False):
     errors = []
 
     if job_status & 1:
@@ -85,7 +87,8 @@ def parse_gdl_job_status(job_status, path):
         log.debug("[%s]: Unrecoverable error %s. %s", path, error, utils.combine(errors))
 
     if job_status & 128:
-        raise OSError
+        if not ignore_errors:
+            raise OSError
     if job_status & 2:
         raise ValueError("gallery_dl configuration error")
 
@@ -117,7 +120,7 @@ def download(args, m):
         return
 
     job_status = job.run()
-    errors = parse_gdl_job_status(job_status, webpath)
+    errors = parse_gdl_job_status(job_status, webpath, ignore_errors=args.ignore_errors)
 
     info = getattr(job.pathfmt, "kwdict", None)
     if info:

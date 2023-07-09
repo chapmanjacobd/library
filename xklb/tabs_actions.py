@@ -1,5 +1,6 @@
 import argparse
 from pathlib import Path
+from shutil import which
 from time import sleep
 from typing import Dict, List, Tuple
 
@@ -141,10 +142,19 @@ def construct_tabs_query(args) -> Tuple[str, dict]:
     return query, args.filter_bindings
 
 
+def find_player(args) -> List[str]:
+    player = generic_player(args)
+    firefox = which("firefox") or which("firefox.exe")
+    if firefox:
+        player = [firefox, "--new-tab"]
+
+    return player
+
+
 def play(args, m: Dict) -> None:
     media_file = m["path"]
 
-    cmd(*generic_player(args), media_file, strict=False)
+    cmd(*args.player, media_file, strict=False)
     history.add(args, [media_file], mark_done=True)
 
 
@@ -185,6 +195,7 @@ def process_tabs_actions(args) -> None:
 
     media = frequency_filter(args, media)
 
+    args.player = find_player(args)
     for m in media:
         play(args, m)
         MANY_TABS = 9
