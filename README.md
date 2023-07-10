@@ -143,7 +143,7 @@ Incremental surfing. 📈🏄 totally rad!
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.2.026)
+    xk media library subcommands (v2.2.027)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -1273,14 +1273,14 @@ Explore `library` databases in your browser
         library block audio.db
         subdomain              count    new_links    tried  percent_tried      successful  percent_successful      failed  percent_failed
         -------------------  -------  -----------  -------  ---------------  ------------  --------------------  --------  ----------------
-        dts.podtrac.com         5244          602     4642  88.52%                    690  14.86%                    3952  85.14%
-        soundcloud.com         16948        11931     5017  29.60%                    920  18.34%                    4097  81.66%
-        twitter.com              945          841      104  11.01%                      5  4.81%                       99  95.19%
-        v.redd.it               9530         6805     2725  28.59%                    225  8.26%                     2500  91.74%
-        vimeo.com                865          795       70  8.09%                      65  92.86%                       5  7.14%
-        www.youtube.com       210435       140952    69483  33.02%                  66017  95.01%                    3467  4.99%
-        youtu.be               60061        51911     8150  13.57%                   7736  94.92%                     414  5.08%
-        youtube.com             5976         5337      639  10.69%                    599  93.74%                      40  6.26%
+        dts.podtrac.com         5244          602     4642  88.52%%                    690  14.86%%                    3952  85.14%%
+        soundcloud.com         16948        11931     5017  29.60%%                    920  18.34%%                    4097  81.66%%
+        twitter.com              945          841      104  11.01%%                      5  4.81%%                       99  95.19%%
+        v.redd.it               9530         6805     2725  28.59%%                    225  8.26%%                     2500  91.74%%
+        vimeo.com                865          795       70  8.09%%                      65  92.86%%                       5  7.14%%
+        www.youtube.com       210435       140952    69483  33.02%%                  66017  95.01%%                    3467  4.99%%
+        youtu.be               60061        51911     8150  13.57%%                   7736  94.92%%                     414  5.08%%
+        youtube.com             5976         5337      639  10.69%%                    599  93.74%%                      40  6.26%%
 
 
 

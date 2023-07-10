@@ -22,6 +22,7 @@ def parse_args():
     parser.add_argument("--min-tried", default=0, type=int, help=argparse.SUPPRESS)
     parser.add_argument("--no-confirm", "--yes", "-y", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--force", "-f", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--delete", "--rm", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--offline", "--no-tube", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--ignore-errors", "--ignoreerrors", "-i", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
@@ -48,6 +49,11 @@ def add_to_blocklist(args, p):
     args.db["blocklist"].insert({"key": args.match_column, "value": p}, alter=True, replace=True, pk=["key", "value"])
 
 
+def remove_from_blocklist(args, p):
+    p = p.pop()
+    args.db["blocklist"].delete([args.match_column, p])
+
+
 def block(args=None) -> None:
     if args:
         sys.argv = ["lb", *args]
@@ -64,27 +70,44 @@ def block(args=None) -> None:
 
     if not args.playlists:
         if "blocklist" in args.db.table_names():
-            media = list(
-                args.db.query(
-                    """
-                    SELECT path
-                    FROM media
-                    WHERE COALESCE(time_deleted, 0)=0 AND path LIKE "http%"
-                    """,
-                ),
-            )
-            blocklist = [{d["key"]: d["value"]} for d in args.db["blocklist"].rows]
-            player.mark_media_deleted(args, [m["path"] for m in media if utils.is_blocked_dict_like_sql(m, blocklist)])
+            deleted_count = 0
+            blocklist = [(d["key"], d["value"]) for d in args.db["blocklist"].rows if d["key"] in m_columns]
+            # TODO: add support for playlists table block rules
+            if blocklist:
+                # prevent Expression tree is too large (max depth 1000)
+                blocklist_chunked = utils.chunks(blocklist, consts.SQLITE_PARAM_LIMIT // 100)
+                for chunk in blocklist_chunked:
+                    columns = [t[0] for t in chunk]
+                    values = [t[1] for t in chunk]
+                    try:
+                        with args.db.conn:
+                            query = (
+                                f"""UPDATE media
+                                SET time_deleted = {consts.APPLICATION_START}
+                                WHERE COALESCE(time_deleted, 0)=0
+                                AND path LIKE "http%"
+                                AND ("""
+                                + " OR ".join(f"{c} LIKE ?" for c in columns)
+                                + ")"
+                            )
+                            cursor = args.db.conn.execute(query, [*values])
+                        deleted_count += cursor.rowcount
+                    except Exception:
+                        log.exception("Quick cleanup %s", chunk)
+                        raise
+
+            if deleted_count > 0:
+                log.info(f"Marked {deleted_count} blocked metadata records as deleted")
 
         args.match_column = "coalesce(webpath, path)"
         candidates = list(
             args.db.query(
                 f"""WITH m as (
                     SELECT
-                        SUBSTR({args.match_column}
+                        'http%//' || SUBSTR({args.match_column}
                             , INSTR({args.match_column}, '//') + 2
                             , INSTR( SUBSTR({args.match_column}, INSTR({args.match_column}, '//') + 2), '/') - 1
-                        ) AS subdomain
+                        ) || '%' AS subdomain
                         , COUNT(*) as count
                         , COUNT(*) filter (where coalesce(time_modified, 0)=0) AS new_links
                         , COUNT(*) filter (where time_modified>0) AS tried
@@ -96,7 +119,7 @@ def block(args=None) -> None:
                     FROM media
                     WHERE coalesce(time_deleted, 0)=0
                         AND {args.match_column} LIKE 'http%'
-                        AND subdomain != "/"
+                        AND subdomain != "http%///%"
                     GROUP BY subdomain
                 )
                 SELECT * from m
@@ -172,15 +195,23 @@ def block(args=None) -> None:
     for p in args.playlists:
         p = [p]
         if consts.PYTEST_RUNNING or args.force:
-            add_to_blocklist(args, p)
+            if args.delete:
+                remove_from_blocklist(args, p)
+            else:
+                add_to_blocklist(args, p)
             continue
 
         matching_media = list(
-            args.db.query(f"select {select_sql} from media where {args.match_column} LIKE ?", (p[0],)),
+            args.db.query(
+                f"select {select_sql} from media where coalesce(time_deleted, 0)=0 AND {args.match_column} LIKE ?",
+                (p[0],),
+            ),
         )
 
         if not matching_media:
-            matching_media = list(args.db.query(f"select {select_sql} from media where path = ?", (p[0],)))
+            matching_media = list(
+                args.db.query(f"select {select_sql} from media where coalesce(time_deleted, 0)=0 AND path = ?", (p[0],))
+            )
             if matching_media:
                 log.debug("tube: found local %s", matching_media)
 
@@ -200,7 +231,10 @@ def block(args=None) -> None:
                     p[1] = data[args.match_column]
                     if p[1]:
                         matching_media = list(
-                            args.db.query(f"select {select_sql} from media where {args.match_column} = ?", (p[1],)),
+                            args.db.query(
+                                f"select {select_sql} from media where coalesce(time_deleted, 0)=0 AND {args.match_column} = ?",
+                                (p[1],),
+                            ),
                         )
 
         if not matching_media:
@@ -216,22 +250,23 @@ def block(args=None) -> None:
         else:
             continue
 
-        paths_to_delete = [
-            d["path"] for d in matching_media if d["time_deleted"] == 0 and not d["path"].startswith("http")
+        web_paths_to_delete = [
+            d["path"] for d in matching_media if (d["time_deleted"] == 0 or 0) and d["path"].startswith("http")
         ]
-        if paths_to_delete:
-            total_size = sum(d["size"] or 0 for d in matching_media if d["time_deleted"] == 0)
-            print("\n".join(paths_to_delete))
+        if web_paths_to_delete:
+            player.delete_media(args, web_paths_to_delete)
+
+        local_paths_to_delete = [
+            d["path"] for d in matching_media if (d["time_deleted"] == 0 or 0) and not d["path"].startswith("http")
+        ]
+        if local_paths_to_delete:
+            total_size = sum(d["size"] or 0 for d in matching_media if (d["time_deleted"] or 0) == 0)
+            print("\n".join(local_paths_to_delete))
             if utils.confirm(
-                f"Would you like to delete these {len(paths_to_delete)} local files ({humanize.naturalsize(total_size)})?",
+                f"Would you like to delete these {len(local_paths_to_delete)} local files ({humanize.naturalsize(total_size)})?",
             ):
-                player.delete_media(args, paths_to_delete)
-        else:
-            player.delete_media(
-                args,
-                [d["path"] for d in matching_media if d["time_deleted"] == 0 and d["path"].startswith("http")],
-            )
+                player.delete_media(args, local_paths_to_delete)
 
     if unmatched_playlists:
-        log.error("Could not find media matching these URLs/words (rerun with --force to add a blocking rule):")
+        log.error("Could not find media matching these URLs/words (rerun with --force to add blocking rules):")
         log.error("  " + " ".join(t[0] for t in unmatched_playlists))

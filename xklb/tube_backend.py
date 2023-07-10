@@ -398,6 +398,9 @@ def download(args, m) -> None:
             FileNotFoundError,
             yt_dlp.utils.YoutubeDLError,
             yt_dlp.compat.compat_HTMLParseError,
+            IndexError,
+            RecursionError,
+            TypeError,
         ) as e:
             error = consts.REGEX_ANSI_ESCAPE.sub("", str(e))
             ydl_log["error"].append(error)
@@ -405,15 +408,24 @@ def download(args, m) -> None:
             log.debug("[%s]: yt-dlp %s", webpath, error)
             # media.download_add(args, webpath, error=error)
             # return
-        except Exception:
-            log.warning(webpath)
-            raise
+        except Exception as e:
+            if args.ignore_errors:
+                error = consts.REGEX_ANSI_ESCAPE.sub("", str(e))
+                ydl_log["error"].append(error)
+                info = None
+                log.debug("[%s]: yt-dlp %s", webpath, error)
+            else:
+                log.warning(webpath)
+                raise
         else:
             if len(yt_archive) > 0 and info is not None:
                 archive_id = ydl._make_archive_id(info)
-                yt_archive.add(archive_id)
-                with yt_dlp.utils.locked_file(str(download_archive), "a", encoding="utf-8") as archive_file:
-                    archive_file.write(archive_id + "\n")
+                if archive_id is None:
+                    log.info("archive_id not found %s", info)
+                else:
+                    yt_archive.add(archive_id)
+                    with yt_dlp.utils.locked_file(str(download_archive), "a", encoding="utf-8") as archive_file:
+                        archive_file.write(archive_id + "\n")
 
         if info is None:
             log.debug("[%s]: yt-dlp returned no info", webpath)
