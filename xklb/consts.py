@@ -199,6 +199,8 @@ PLAYLIST_KNOWN_KEYS = ("description", "url", "duration", "view_count", "webpage_
 MEDIA_KNOWN_KEYS = (
     "PURL",
     "cast",
+    "channel_is_verified",
+    "album_artist",
     "downloader_options_http_chunk_size",
     "heatmap",
     "expected_protocol",

@@ -386,6 +386,7 @@ def override_sort(sort_expression: str) -> str:
         .replace("month_modified", year_month_sql("time_modified"))
         .replace("date_created", year_month_day_sql("time_created"))
         .replace("date_modified", year_month_day_sql("time_modified"))
+        .replace("random()", "random")
         .replace("random", "random()")
         .replace("priority", "ntile(1000) over (order by size) desc, duration")
     )
