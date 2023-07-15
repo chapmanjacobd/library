@@ -220,7 +220,7 @@ def disk_usage():
     if args.tui:
         run_tui(args)
     else:
-        player.media_printer(args, args.subset, units="folders")
+        player.media_printer(args, args.subset, units="files / folders")
 
 
 if __name__ == "__main__":
