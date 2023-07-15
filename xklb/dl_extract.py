@@ -89,6 +89,7 @@ def parse_args():
     parser.add_argument("--force", "-f", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--ignore-errors", "--ignoreerrors", "-i", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
+    parser.add_argument("--timeout", "-T", help="Quit after x minutes")
     parser.add_argument("--verbose", "-v", action="count", default=0)
 
     parser.add_argument("database", help=argparse.SUPPRESS)
@@ -112,6 +113,8 @@ def parse_args():
     args.action = SC.download
     play_actions.parse_args_sort(args)
     play_actions.parse_args_limit(args)
+
+    utils.timeout(args.timeout)
 
     log.info(utils.dict_filter_bool(args.__dict__))
 

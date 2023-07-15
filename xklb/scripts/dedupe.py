@@ -115,7 +115,8 @@ def get_music_duplicates(args) -> List[dict]:
 
 
 def get_id_duplicates(args) -> List[dict]:
-    query = """
+    m_columns = db.columns(args, "media")
+    query = f"""
     SELECT
         m1.path keep_path
         -- , length(m1.path)-length(REPLACE(m1.path, '/', '')) num_slash
@@ -138,7 +139,7 @@ def get_id_duplicates(args) -> List[dict]:
         and m1.extractor_id != '' and p1.extractor_key != ''
     ORDER BY 1=1
         , m1.video_count > 0 DESC
-        , m1.subtitle_count > 0 DESC
+        {', m1.subtitle_count > 0 DESC' if 'subtitle_count' in m_columns else ''}
         , m1.audio_count DESC
         , length(m1.path)-length(REPLACE(m1.path, '/', '')) DESC
         , length(m1.path)-length(REPLACE(m1.path, '.', ''))
@@ -156,7 +157,8 @@ def get_id_duplicates(args) -> List[dict]:
 
 
 def get_title_duplicates(args) -> List[dict]:
-    query = """
+    m_columns = db.columns(args, "media")
+    query = f"""
     SELECT
         m1.path keep_path
         -- , length(m1.path)-length(REPLACE(m1.path, '/', '')) num_slash
@@ -176,7 +178,7 @@ def get_title_duplicates(args) -> List[dict]:
         and m1.title = m2.title and m1.uploader = m2.uploader
     ORDER BY 1=1
         , m1.video_count > 0 DESC
-        , m1.subtitle_count > 0 DESC
+        {', m1.subtitle_count > 0 DESC' if 'subtitle_count' in m_columns else ''}
         , m1.audio_count DESC
         , length(m1.path)-length(REPLACE(m1.path, '/', '')) DESC
         , length(m1.path)-length(REPLACE(m1.path, '.', ''))
