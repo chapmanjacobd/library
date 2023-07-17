@@ -4,13 +4,7 @@ from xklb.utils import log
 
 
 def try_get_feed(path):
-    try:
-        import feedparser
-    except ModuleNotFoundError:
-        print(
-            "feedparser is required for RSS database creation: pip install feedparser",
-        )
-        raise
+    import feedparser
 
     feed = feedparser.parse(path)
     if feed.version:

@@ -10,6 +10,7 @@ dependencies = [
   "ftfy",
   "gallery-dl",
   "humanize",
+  "ipython",
   "Markdown",
   "mutagen",
   "natsort",
@@ -43,7 +44,7 @@ deluxe = [
   "subliminal",
   "textract",
 ]
-dev = ["black", "isort", "ssort", "ipython"]
+dev = ["black", "isort", "ssort"]
 test = ["ruff", "pytest", "vcrpy"]
 all = ["xklb[deluxe,dev,test]"]
 
