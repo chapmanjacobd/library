@@ -2,6 +2,9 @@ import vcr
 
 
 def filter_query_param(r1, r2):
+    if r1 == r2:
+        return True
+
     query1 = dict(r1.query)
     query2 = dict(r2.query)
 
@@ -12,6 +15,6 @@ def filter_query_param(r1, r2):
     return query1 == query2
 
 
-dvd = vcr.VCR(cassette_library_dir="tests/cassettes/")
+dvd = vcr.VCR(cassette_library_dir="tests/cassettes/", filter_query_parameters=["key"])
 dvd.register_matcher("filter_query", filter_query_param)
 dvd.match_on = ["method", "scheme", "host", "port", "path", "filter_query"]
