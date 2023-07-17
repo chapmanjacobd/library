@@ -35,8 +35,8 @@ requires-python = ">=3.8"
 [project.optional-dependencies]
 all = ["xklb[deluxe,dev,test]"]
 deluxe = ["textract", "PyExifTool", "aiohttp", "brotab", "orjson", "geopandas", "spacy", "scikit-learn"]
-dev = ["black", "isort", "ssort", "vcrpy"]
-test = ["ruff", "pytest"]
+dev = ["black", "isort", "ssort"]
+test = ["ruff", "pytest", "vcrpy"]
 
 [project.urls]
 documentation = "https://github.com/chapmanjacobd/library#usage"
