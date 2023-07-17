@@ -1,0 +1,147 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8
+      Accept-Encoding:
+      - gzip, deflate, br
+      Accept-Language:
+      - en-US,en;q=0.5
+      Connection:
+      - keep-alive
+      DNT:
+      - '1'
+      Sec-Fetch-Dest:
+      - empty
+      Sec-Fetch-Mode:
+      - no-cors
+      Sec-Fetch-Site:
+      - same-origin
+      TE:
+      - trailers
+      Upgrade-Insecure-Requests:
+      - '1'
+      User-Agent:
+      - Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101 Firefox/102.0
+    method: GET
+    uri: https://www.googleapis.com/blogger/v3/blogs/byurl?url=http%3A%2F%2Fdyanasmen.blogspot.com&key=AIzaSyCN9ax34oMMyM07g_M-5pjeDp_312eITK8
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAC/7WSv27DIBDG9zwFcse6Nhi7dj13qdSteQFiXxwUDIg/idIo714wSasO2Vovx333
+        477j5PMKoWzP5Zj1KNsINU1gHmLM8ljhi161uHomLzVua9q1XVvVNJUlmyECrycm2ccMMskj2MFw
+        7biSSxWQU8wB0iCd8SFxHOVo66U85chqZVyONsxsIUcHGMGFOPtPPrAQ1chiUQ7e8CJ8yUH7jeB2
+        B2k8jLsn3D5Rsia0x01fk0ccDjixXo/B/EpWNJKkWVe0J03fVL9IIyK1c073ZTnGR9nwqCLuI4zp
+        ikHNZUItiO07l/sbb8OF4/FYTEpNApjmdoGvGy0PdDna8u4qtbLOhm7nkIQ07IiJNwdz1Ajp2jzp
+        f+hbJsvQ95ImYBPcm4D+h/3i920v1MAE/PgLJicfkGhlVHYdYFA+/EOnKN6kAzOcSbdIsdvqsvoC
+        evwLctYCAAA=
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Cache-Control:
+      - private
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Mon, 17 Jul 2023 13:06:41 GMT
+      Server:
+      - ESF
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      - X-Origin
+      - Referer
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-XSS-Protection:
+      - '0'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8
+      Accept-Encoding:
+      - gzip, deflate, br
+      Accept-Language:
+      - en-US,en;q=0.5
+      Connection:
+      - keep-alive
+      DNT:
+      - '1'
+      Sec-Fetch-Dest:
+      - empty
+      Sec-Fetch-Mode:
+      - no-cors
+      Sec-Fetch-Site:
+      - same-origin
+      TE:
+      - trailers
+      Upgrade-Insecure-Requests:
+      - '1'
+      User-Agent:
+      - Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101 Firefox/102.0
+    method: GET
+    uri: https://www.googleapis.com/blogger/v3/blogs/2702619407438787243/posts/bypath?path=%2F2008%2F10%2Ffrumoasele-jucatoare-de-la-wimbledon.html&key=AIzaSyCN9ax34oMMyM07g_M-5pjeDp_312eITK8
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAC/71WW3PiNhh931+h0seusXzjlukDuZSlCZAE2N2k6TCyLUAgS64kA8lO/ns/QSBJ
+        Szq7HSZkILL1XY7PkaXz7QNCpTkTaamBSjGXkwlVP+dSm9JHO8PW98O671cqXoRDXAmjqFKvR5tp
+        mwAB32C8C/ar2K949RBXw6BWrVX9MCjB/OM6IS9izvSUbiIxrjkedrA/8KKG7zUw/gUH8LspXuQp
+        MfsiA9yIXkcqbqOmxuQN103viSA6o6Js4elcmnIiM9fWcD3sjlWRSaIpp86sSIiRRFEnpQ4nzpJl
+        MaepFOWpyfimNgSOL5iYbxto6LBcLssTKSeckpzpdfUn6txFsB5qdw8NruVVu2+yaZjh1Pb5bQcR
+        7SCilCJO0JctxJ82OYkUhgqzzmIUJQRRbShaSBUTm9IUgqBzWSjB5nJBkCYF6hDFCOpPiSK5vQf1
+        IQUmyKwQGiXQN7YNobFihqCcqrFUGYFOXCpEVwnNDZOCAD4mEC8yCoVzqUzBCwZ5Cmlmm5McOhnG
+        IE7T1T1URsA6NAJxDBOFsenE4gc8uaKaso/2ls5pwghHBMUEnsMwaFu+KzAOklghdz2i/++aoKmi
+        41/vtovFK8f563UyWnUfNK3I1ICK/V6/ftwctUyn7TafPsdUuxIP9FnnUq1+H7raq2DsTF1YdQ5b
+        ECEXLCnP8sldCRmiJtRAt1HMiZjflV5CYdkEsRQmjy96rdbZ9ejyU2/QG7VPR5EPfwGu1XFUCWCZ
+        hBGGYtrccwrhp+3+5UXzpoEAdjI/Qp3mdavdbSCcr0BEI5EHoyN0Mrzu964baEpEeoQGZ18HTvOi
+        3YLABAinCioSbrHZ0io5LCUhxvv4iKVKqYJW9nle6eKSH1HN/w6It+fFX/lLiNiVl3H8+bxtBp+a
+        L1QDmPPdC3Ig4ao4Cv2wGlXfU7hDsLIRbh8lh9Iu+A6Un4djjl+irLmTao5n3Pe7zauddpndyBy9
+        3cgOpF0F+15YwTXsv6N2h2DFarefkvfUbhwG4dULlOMzN+iI2L+6mdGzZKcdbAr2eCEO7BBFkrAD
+        iVerRbUQ+/hdd8xD0GLFe4OTH1fvhLNkjvZraM2LnsplzB7KSrqZFCkVYFciD46aZwvkwNlNUuIQ
+        bU/ft5UhLGFoAlZAgf0YSyAzh9N+U/81yI1hAb6nUv3TNGLs4Wo9qNq3rhIE4InwxhRBRMp0zsl9
+        l2RrczQUcyGXYjv7wvttrdmTF1sLkSs5Bv/h/lcDlpEJ3SF6rvnvarAAt05vBP/kSMlCpKMgKudi
+        UlqnP+68rqI5Z1Q/P6qRhvC2oZleP/K2/bs4TBdKWNeln704JzHlFsofGxwtpuDyCVTf2rntxYKm
+        1FCb+ec6kxpibT+8B2mLm9uvXXzzxVv2WHPVmbXve4PhsjsbLjsP7egkq2e3osvTUznpDJph57S5
+        hO/5Xan04fHD3+OQq1x9DAAA
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Cache-Control:
+      - private
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Mon, 17 Jul 2023 13:06:41 GMT
+      ETag:
+      - '"dGltZXN0YW1wOiAxMjIyOTUwNjUwMzI5Cm9mZnNldDogMTA4MDAwMDAK"'
+      Server:
+      - ESF
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      - X-Origin
+      - Referer
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-XSS-Protection:
+      - '0'
+    status:
+      code: 200
+      message: OK
+version: 1

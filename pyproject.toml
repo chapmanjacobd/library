@@ -3,27 +3,27 @@ authors = [
   {name = "Jacob Chapman", email = "7908073+chapmanjacobd@users.noreply.github.com"},
 ]
 dependencies = [
-    'sqlite-utils',
-    'catt',
-    'ffmpeg-python',
-    'ftfy',
-    'gallery-dl',
-    'humanize',
-    'ipython',
-    'Markdown',
-    'mutagen',
-    'natsort',
-    'praw',
-    'pysubs2',
-    'python-mpv-jsonipc',
-    'regex',
-    'rich',
-    'screeninfo',
-    'subliminal',
-    'tabulate',
-    'tinytag',
-    'yt-dlp',
-    "python-dateutil",
+  'sqlite-utils',
+  'catt',
+  'ffmpeg-python',
+  'ftfy',
+  'gallery-dl',
+  'humanize',
+  'ipython',
+  'Markdown',
+  'mutagen',
+  'natsort',
+  'praw',
+  'pysubs2',
+  'python-mpv-jsonipc',
+  'regex',
+  'rich',
+  'screeninfo',
+  'subliminal',
+  'tabulate',
+  'tinytag',
+  'yt-dlp',
+  "python-dateutil",
 ]
 description = "xk library"
 dynamic = ["version"]
@@ -35,7 +35,7 @@ requires-python = ">=3.8"
 [project.optional-dependencies]
 all = ["xklb[deluxe,dev,test]"]
 deluxe = ["textract", "PyExifTool", "aiohttp", "brotab", "orjson", "geopandas", "spacy", "scikit-learn"]
-dev = ["black", "isort", "scalene", "ssort"]
+dev = ["black", "isort", "ssort", "vcrpy"]
 test = ["ruff", "pytest"]
 
 [project.urls]

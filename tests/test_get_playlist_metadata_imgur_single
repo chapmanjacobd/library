@@ -1,0 +1,97 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8
+      Accept-Encoding:
+      - gzip, deflate, br
+      Accept-Language:
+      - en-US,en;q=0.5
+      Authorization:
+      - Client-ID 546c25a59c58ad7
+      Connection:
+      - keep-alive
+      DNT:
+      - '1'
+      Sec-Fetch-Dest:
+      - empty
+      Sec-Fetch-Mode:
+      - no-cors
+      Sec-Fetch-Site:
+      - same-origin
+      TE:
+      - trailers
+      Upgrade-Insecure-Requests:
+      - '1'
+      User-Agent:
+      - Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101 Firefox/102.0
+    method: GET
+    uri: https://api.imgur.com/post/v1/media/0gybAXR?include=media%2Ctags%2Caccount
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAA/5xTy27bMBC89yvSPfTE2LJiWwqBoOgXFGiDtkgQEGuRkhcVH+BDjlP43wtafjVo
+        gaA37XA53Jkd/QKSwKHotqtPP74AA2wam0wUGV7Ui2p+U84YRIq9Ag6f2/Yq2qvv1v98DwykCo0n
+        F8ka4AAMBlIbsScAPq/q4mZZMkhusFEd4YKBtBvzCnKWTLyoSWN3Op8xaKzW6o+OFgfr6UxSL+b5
+        fY89xe2+IzTWq5HNCG1DFPtj4NEnxYCCwH6VNPAW+zACGmPKdw5IYwflxSuHGq8wKikwAoeymFXX
+        xeK6XN7PbnlR8dnNA2TJ8tRjUt8zSL4HDusYXeDTKeku+Ulj9fTM6zwN2GyBg0urnppsp43qSHDU
+        ezkuylOFUsStG+WiFONzkKU3fZJqlCpQhtONsEavpNhQXItsbzJ7407mOGUkme7U73qMrfUaOKCj
+        c1SAjyE6pyUF5Q3qHBiPL4iNyd0DRvTilQ+TsxMD3n9dflNCTpzpPmp83pCM67vytvjQklR5rXed
+        RyP/voP5dVHfz2pelryoH2DHQCtJCPzxjRnXpNXBwzF+045aYHAJAYODMGCwwqDO1b+FHR6ejHTq
+        Oc88fu8VAq/KgsFaUbeOhyLQiwK+rGdVURVZSUSJEbPVb/0VczwM6WzTxVJ7a91+qSMik8fxSp4A
+        gwg2mWOodv+X9d0TA0nB9bgF/vi0e/c7AAD//5nus69kBAAA
+    headers:
+      Accept-Ranges:
+      - bytes
+      Access-Control-Allow-Credentials:
+      - 'true'
+      Access-Control-Allow-Origin:
+      - '*'
+      Age:
+      - '0'
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '549'
+      Date:
+      - Mon, 17 Jul 2023 13:06:40 GMT
+      Server:
+      - cat factory 1.0
+      X-Cache:
+      - MISS, MISS
+      X-Cache-Hits:
+      - 0, 0
+      X-Frame-Options:
+      - DENY
+      X-Served-By:
+      - cache-iad-kcgs7200104-IAD, cache-lax10645-LGB
+      X-Timer:
+      - S1689599200.180332,VS0,VE69
+      access-control-allow-headers:
+      - Authorization, Content-Type, Accept, X-Mashape-Authorization, IMGURPLATFORM,
+        IMGURUIDJAFO, sessionCount, IMGURMWBETA, IMGURMWBETAOPTIN
+      access-control-allow-methods:
+      - GET, PUT, POST, PATCH, DELETE, OPTIONS
+      content-encoding:
+      - gzip
+      content-type:
+      - application/vnd.imgur.v1+json
+      imgur-media-type:
+      - imgur.v1; param=full; format=json
+      x-ratelimit-clientlimit:
+      - '12500'
+      x-ratelimit-clientremaining:
+      - '12500'
+      x-ratelimit-clientreset:
+      - '86400'
+      x-ratelimit-userlimit:
+      - '500'
+      x-ratelimit-userremaining:
+      - '500'
+      x-ratelimit-userreset:
+      - '3600'
+    status:
+      code: 200
+      message: OK
+version: 1
