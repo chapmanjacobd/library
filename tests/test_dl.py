@@ -1,7 +1,6 @@
 from argparse import Namespace
 
-import vcr
-
+from tests.utils import dvd
 from xklb.db import connect
 from xklb.tube_backend import download
 from xklb.tube_extract import tube_add
@@ -15,7 +14,7 @@ tube_db = ["tests/data/tube_dl.db"]
 # tube_add([*dl_db, PLAYLIST_URL])
 
 
-@vcr.use_cassette
+@dvd.use_cassette
 def test_yt():
     tube_add([*dl_db, PLAYLIST_URL])
 

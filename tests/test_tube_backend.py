@@ -1,7 +1,6 @@
 from types import SimpleNamespace
 
-import vcr
-
+from tests.utils import dvd
 from xklb import tube_backend
 
 
@@ -13,13 +12,13 @@ def test_safe_mode():
     assert tube_backend.is_supported("www.com") is False
 
 
-@vcr.use_cassette
+@dvd.use_cassette
 def test_get_video_metadata():
     args = SimpleNamespace(verbose=0, ignore_errors=False)
     tube_backend.get_video_metadata(args, "https://www.youtube.com/watch?v=hRVgC7eE-Ow")
 
 
-@vcr.use_cassette
+@dvd.use_cassette
 def test_get_video_metadata_playlist():
     args = SimpleNamespace(verbose=0, ignore_errors=False)
     tube_backend.get_video_metadata(
@@ -28,7 +27,7 @@ def test_get_video_metadata_playlist():
     )
 
 
-@vcr.use_cassette
+@dvd.use_cassette
 def test_get_video_metadata_channel():
     args = SimpleNamespace(verbose=0, ignore_errors=False)
     tube_backend.get_video_metadata(args, "https://www.youtube.com/@ZeducationTyler")

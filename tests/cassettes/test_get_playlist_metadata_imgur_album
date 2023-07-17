@@ -53,7 +53,7 @@ interactions:
       Content-Length:
       - '401'
       Date:
-      - Mon, 17 Jul 2023 13:06:40 GMT
+      - Mon, 17 Jul 2023 15:57:50 GMT
       Server:
       - cat factory 1.0
       X-Cache:
@@ -63,9 +63,9 @@ interactions:
       X-Frame-Options:
       - DENY
       X-Served-By:
-      - cache-iad-kcgs7200125-IAD, cache-lax10675-LGB
+      - cache-iad-kcgs7200125-IAD, cache-lax10669-LGB
       X-Timer:
-      - S1689599200.433193,VS0,VE81
+      - S1689609471.605866,VS0,VE86
       access-control-allow-headers:
       - Authorization, Content-Type, Accept, X-Mashape-Authorization, IMGURPLATFORM,
         IMGURUIDJAFO, sessionCount, IMGURMWBETA, IMGURMWBETAOPTIN
@@ -150,7 +150,7 @@ interactions:
       Content-Length:
       - '662'
       Date:
-      - Mon, 17 Jul 2023 13:06:40 GMT
+      - Mon, 17 Jul 2023 15:57:50 GMT
       Server:
       - cat factory 1.0
       X-Cache:
@@ -160,9 +160,9 @@ interactions:
       X-Frame-Options:
       - DENY
       X-Served-By:
-      - cache-iad-kcgs7200077-IAD, cache-lax10675-LGB
+      - cache-iad-kcgs7200077-IAD, cache-lax10669-LGB
       X-Timer:
-      - S1689599201.541310,VS0,VE78
+      - S1689609471.714017,VS0,VE102
       access-control-allow-headers:
       - Authorization, Content-Type, Accept, X-Mashape-Authorization, IMGURPLATFORM,
         IMGURUIDJAFO, sessionCount, IMGURMWBETA, IMGURMWBETAOPTIN
