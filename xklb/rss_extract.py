@@ -1,16 +1,25 @@
-import feedparser, requests
-from bs4 import BeautifulSoup
+import requests
 
 from xklb.utils import log
 
 
 def try_get_feed(path):
+    try:
+        import feedparser
+    except ModuleNotFoundError:
+        print(
+            "feedparser is required for RSS database creation: pip install feedparser",
+        )
+        raise
+
     feed = feedparser.parse(path)
     if feed.version:
         return feed
 
 
 def try_get_head_link(path):
+    from bs4 import BeautifulSoup
+
     try:
         response = requests.get(path)
         soup = BeautifulSoup(response.text, "html.parser")
@@ -22,6 +31,8 @@ def try_get_head_link(path):
 
 
 def try_get_link_endswith(path):
+    from bs4 import BeautifulSoup
+
     try:
         response = requests.get(path)
         soup = BeautifulSoup(response.text, "html.parser")

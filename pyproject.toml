@@ -3,27 +3,27 @@ authors = [
   {name = "Jacob Chapman", email = "7908073+chapmanjacobd@users.noreply.github.com"},
 ]
 dependencies = [
-  'sqlite-utils',
-  'catt',
-  'ffmpeg-python',
-  'ftfy',
-  'gallery-dl',
-  'humanize',
-  'ipython',
-  'Markdown',
-  'mutagen',
-  'natsort',
-  'praw',
-  'pysubs2',
-  'python-mpv-jsonipc',
-  'regex',
-  'rich',
-  'screeninfo',
-  'subliminal',
-  'tabulate',
-  'tinytag',
-  'yt-dlp',
+  "beautifulsoup4",
+  "catt",
+  "feedparser",
+  "ffmpeg-python",
+  "ftfy",
+  "gallery-dl",
+  "humanize",
+  "Markdown",
+  "mutagen",
+  "natsort",
+  "praw",
+  "pysubs2",
   "python-dateutil",
+  "python-mpv-jsonipc",
+  "regex",
+  "rich",
+  "screeninfo",
+  "sqlite-utils",
+  "tabulate",
+  "tinytag",
+  "yt-dlp",
 ]
 description = "xk library"
 dynamic = ["version"]
@@ -33,10 +33,19 @@ readme = "README.md"
 requires-python = ">=3.8"
 
 [project.optional-dependencies]
-all = ["xklb[deluxe,dev,test]"]
-deluxe = ["textract", "PyExifTool", "aiohttp", "brotab", "orjson", "geopandas", "spacy", "scikit-learn"]
-dev = ["black", "isort", "ssort"]
+deluxe = [
+  "aiohttp",
+  "brotab",
+  "geopandas",
+  "orjson",
+  "PyExifTool",
+  "scikit-learn",
+  "subliminal",
+  "textract",
+]
+dev = ["black", "isort", "ssort", "ipython"]
 test = ["ruff", "pytest", "vcrpy"]
+all = ["xklb[deluxe,dev,test]"]
 
 [project.urls]
 documentation = "https://github.com/chapmanjacobd/library#usage"
@@ -44,8 +53,8 @@ homepage = "https://github.com/chapmanjacobd/library#readme"
 repository = "https://github.com/chapmanjacobd/library/"
 
 [project.scripts]
-lb = 'xklb.lb:library'
-library = 'xklb.lb:library'
+lb = "xklb.lb:library"
+library = "xklb.lb:library"
 
 [tool.pdm]
 version = {source = "file", path = "xklb/__init__.py"}
@@ -68,7 +77,7 @@ exclude = [
 
 [tool.black]
 line-length = 120
-target-version = ['py38', 'py39', 'py310']
+target-version = ["py38", "py39", "py310"]
 
 [tool.isort]
 atomic = true
@@ -149,4 +158,4 @@ show-fixes = true
 
 [tool.pytest.ini_options]
 addopts = "--pdbcls=IPython.terminal.debugger:TerminalPdb --ignore=tests/data --capture=tee-sys --log-cli-level=ERROR"
-testpaths = ['tests']
+testpaths = ["tests"]
