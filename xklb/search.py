@@ -95,7 +95,13 @@ def construct_query(args) -> Tuple[str, dict]:
     table = "captions"
     if args.db["captions"].detect_fts():
         if args.include:
-            table = db.fts_flexible_search(args, "captions")
+            args.table, search_bindings = db.fts_search_sql(
+                "captions",
+                fts_table=args.db["captions"].detect_fts(),
+                include=args.include,
+                exclude=args.exclude,
+            )
+            args.filter_bindings = {**args.filter_bindings, **search_bindings}
             c_columns = {**c_columns, "rank": int}
         elif args.exclude:
             db.construct_search_bindings(args, c_columns)

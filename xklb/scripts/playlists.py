@@ -52,7 +52,13 @@ def construct_query(args) -> Tuple[str, dict]:
     args.table = "playlists"
     if args.db["playlists"].detect_fts():
         if args.include:
-            args.table = db.fts_flexible_search(args)
+            args.table, search_bindings = db.fts_search_sql(
+                "playlists",
+                fts_table=args.db["playlists"].detect_fts(),
+                include=args.include,
+                exclude=args.exclude,
+            )
+            args.filter_bindings = {**args.filter_bindings, **search_bindings}
         elif args.exclude:
             db.construct_search_bindings(args, pl_columns)
     else:

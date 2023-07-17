@@ -475,7 +475,7 @@ def get_ordinal_media(args, m: Dict, ignore_paths=None) -> Dict:
         bindings = {"candidate": candidate + "%", **ignore_path_params}
         if args.play_in_order >= consts.SIMILAR_NO_FILTER:
             if args.include or args.exclude:
-                bindings = {**bindings, "query": args.filter_bindings["query"]}
+                bindings = {**bindings, **{k: v for k, v in args.filter_bindings.items() if k.startswith("FTS")}}
         else:
             bindings = {**bindings, **args.filter_bindings}
 
@@ -506,7 +506,13 @@ def get_related_media(args, m: Dict) -> List[Dict]:
         utils.conform(utils.extract_words(m.get(k)) for k in m if k in db.config["media"]["search_columns"]),
     )
     args.include = sorted(words, key=len, reverse=True)[:100]
-    args.table = db.fts_flexible_search(args)
+    args.table, search_bindings = db.fts_search_sql(
+        "media",
+        fts_table=args.db["media"].detect_fts(),
+        include=args.include,
+        exclude=args.exclude,
+    )
+    args.filter_bindings = {**args.filter_bindings, **search_bindings}
 
     query = f"""WITH m as (
             SELECT
@@ -534,7 +540,7 @@ def get_related_media(args, m: Dict) -> List[Dict]:
         """
     bindings = {"path": m["path"]}
     if args.related >= consts.RELATED_NO_FILTER:
-        bindings = {**bindings, "query": args.filter_bindings["query"]}
+        bindings = {**bindings, **{k: v for k, v in args.filter_bindings.items() if k.startswith("FTS")}}
     else:
         bindings = {**bindings, **args.filter_bindings}
 
@@ -588,7 +594,7 @@ def get_dir_media(args, dirs: List, include_subdirs=False) -> List[Dict]:
 
     bindings = {**subpath_params}
     if args.related >= consts.DIRS_NO_FILTER:
-        bindings = {**bindings, "query": args.filter_bindings["query"]}
+        bindings = {**bindings, **{k: v for k, v in args.filter_bindings.items() if k.startswith("FTS")}}
     else:
         bindings = {**bindings, **args.filter_bindings}
 
@@ -1056,7 +1062,7 @@ def media_printer(args, data, units=None) -> None:
         media.reverse()
 
     duration = sum(m.get("duration") or 0 for m in media)
-    if "a" in args.print and "Aggregate" not in media[0]["path"]:
+    if "a" in args.print and "Aggregate" not in getattr(media[0], "path", ""):
         if "count" in media[0]:
             D = {"path": "Aggregate", "count": sum(d["count"] for d in media)}
         elif args.action == SC.download_status and "never_downloaded" in media[0]:
@@ -1087,9 +1093,13 @@ def media_printer(args, data, units=None) -> None:
         media = [D]
 
     else:
-        if "d" in args.print:
+        if "r" in args.print:
+            marked = mark_media_deleted(args, [d["path"] for d in media if not Path(d["path"]).exists()])
+            log.warning(f"Marked {marked} metadata records as deleted")
+        elif "d" in args.print:
             marked = mark_media_deleted(args, [d["path"] for d in media])
             log.warning(f"Marked {marked} metadata records as deleted")
+
         if "w" in args.print:
             marked = history.add(args, [d["path"] for d in media])
             log.warning(f"Marked {marked} metadata records as watched")

@@ -1,9 +1,10 @@
-import argparse, tempfile
+import argparse, re, tempfile
 from copy import deepcopy
 from pathlib import Path
 from typing import List
 
 import humanize
+from rich import print
 
 from xklb import consts, db, player, usage, utils
 from xklb.consts import DBType
@@ -22,18 +23,26 @@ def parse_args() -> argparse.Namespace:
         help="Dedupe database by artist + album + title",
     )
     profile.add_argument(
-        "--tube-id",
+        "--extractor-id",
+        "--id",
         action="store_const",
         dest="profile",
         const="extractor_id",
-        help="Dedupe database by extractor_id + extractor_key",
+        help="Dedupe database by extractor_id",
     )
     profile.add_argument(
         "--title",
         action="store_const",
         dest="profile",
         const="title",
-        help="Dedupe database by title + uploader",
+        help="Dedupe database by title",
+    )
+    profile.add_argument(
+        "--fts",
+        action="store_const",
+        dest="profile",
+        const="fts",
+        help=argparse.SUPPRESS,
     )
     profile.add_argument(
         "--filesystem",
@@ -58,24 +67,77 @@ def parse_args() -> argparse.Namespace:
         help=argparse.SUPPRESS,
         # "Dedupe image database",
     )
+    profile.set_defaults(profile="audio")
 
     parser.add_argument("--only-soft-delete", action="store_true")
     parser.add_argument("--force", "-f", action="store_true")
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", default=100)
+    parser.add_argument("--include", "-s", "--search", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
+    parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--print", "-p", default="", const="p", nargs="?")
+    parser.add_argument("--cols", "-cols", "-col", nargs="*", help="Include a column when printing")
     parser.add_argument("--verbose", "-v", action="count", default=0)
 
     parser.add_argument("database")
+    parser.add_argument("paths", nargs="*")
     args = parser.parse_args()
     args.db = db.connect(args)
+
+    args.filter_sql = []
+    args.filter_bindings = {}
+
+    args.table = "media"
+    if args.db["media"].detect_fts() and args.include:  # type: ignore
+        args.table, search_bindings = db.fts_search_sql(
+            "media",
+            fts_table=args.db["media"].detect_fts(),
+            include=args.include,
+            exclude=args.exclude,
+        )
+        args.filter_bindings = {**args.filter_bindings, **search_bindings}
+    elif args.paths:
+        args.table = (
+            "(select * from media where 1=1"
+            " and (" + " OR ".join(f"path like :path{idx}" for idx in range(len(args.paths))) + ")"
+            ")"
+        )
+        for idx, path in enumerate(args.paths):
+            args.filter_bindings[f"path{idx}"] = path.replace(" ", "%").replace("%%", " ") + "%"
 
     args.action = consts.SC.dedupe
     log.info(utils.dict_filter_bool(args.__dict__))
     return args
 
 
+def get_rows(args) -> List[dict]:
+    query = f"""
+    SELECT
+        {', '.join(db.config["media"]["search_columns"])}
+    FROM
+        {args.table}
+    WHERE 1=1
+        and time_deleted = 0
+        and audio_count > 0
+        and duration is not null
+        and path not like 'http%'
+        {" ".join(args.filter_sql)}
+    ORDER BY 1=1
+        , length(path)-length(REPLACE(path, '/', '')) DESC
+        , length(path)-length(REPLACE(path, '.', ''))
+        , length(path)
+        , size DESC
+        , time_modified DESC
+        , time_created DESC
+        , duration DESC
+        , path DESC
+    """
+
+    return args.db.query(query, args.filter_bindings)
+
+
 def get_music_duplicates(args) -> List[dict]:
-    query = """
+    m_columns = db.columns(args, "media")
+    query = f"""
     SELECT
         m1.path keep_path
         -- , length(m1.path)-length(REPLACE(m1.path, '/', '')) num_slash
@@ -84,21 +146,25 @@ def get_music_duplicates(args) -> List[dict]:
         , m2.path duplicate_path
         , m2.size duplicate_size
     FROM
-        media m1
-    JOIN media m2 on 1=1
+        {args.table} m1
+    JOIN {args.table} m2 on 1=1
         and m2.path != m1.path
         and m1.duration >= m2.duration - 4
         and m1.duration <= m2.duration + 4
         and m1.title = m2.title
-        and m1.artist = m2.artist
-        and m1.album = m2.album
+        {"and m1.artist = m2.artist" if 'artist' in m_columns else ''}
+        {"and m1.album = m2.album" if 'album' in m_columns else ''}
     WHERE 1=1
-        and m1.time_deleted = 0 and m2.time_deleted = 0
-        and m1.audio_count > 0 and m2.audio_count > 0
+        and coalesce(m1.time_deleted,0) = 0 and coalesce(m2.time_deleted,0) = 0
         and m1.title != ''
-        and m1.artist != ''
-        and m1.album != ''
+        {"and m1.artist != ''" if 'artist' in m_columns else ''}
+        {"and m1.album != ''" if 'album' in m_columns else ''}
+        {" ".join(args.filter_sql)}
     ORDER BY 1=1
+        {', m1.video_count > 0 DESC' if 'video_count' in m_columns else ''}
+        {', m1.subtitle_count > 0 DESC' if 'subtitle_count' in m_columns else ''}
+        {', m1.audio_count > 0 DESC' if 'audio_count' in m_columns else ''}
+        {', m1.uploader IS NOT NULL DESC' if 'uploader' in m_columns else ''}
         , length(m1.path)-length(REPLACE(m1.path, '/', '')) DESC
         , length(m1.path)-length(REPLACE(m1.path, '.', ''))
         , length(m1.path)
@@ -109,7 +175,7 @@ def get_music_duplicates(args) -> List[dict]:
         , m1.path DESC
     """
 
-    media = list(args.db.query(query))
+    media = list(args.db.query(query, args.filter_bindings))
 
     return media
 
@@ -125,18 +191,16 @@ def get_id_duplicates(args) -> List[dict]:
         , m2.path duplicate_path
         , m2.size duplicate_size
     FROM
-        media m1
-    JOIN playlists p1 on p1.id = m1.playlist_id
-    JOIN playlists p2 on p2.id = m2.playlist_id
-    JOIN media m2 on 1=1
+        {args.table} m1
+    JOIN {args.table} m2 on 1=1
         and m1.extractor_id = m2.extractor_id
         and m1.duration >= m2.duration - 4
         and m1.duration <= m2.duration + 4
-        and p1.extractor_key in (p2.extractor_key, 'Local')
         and m2.path != m1.path
     WHERE 1=1
-        and m1.time_deleted = 0 and m2.time_deleted = 0
-        and m1.extractor_id != '' and p1.extractor_key != ''
+        and coalesce(m1.time_deleted,0) = 0 and coalesce(m2.time_deleted,0) = 0
+        and m1.extractor_id != ''
+        {" ".join(args.filter_sql)}
     ORDER BY 1=1
         , m1.video_count > 0 DESC
         {', m1.subtitle_count > 0 DESC' if 'subtitle_count' in m_columns else ''}
@@ -151,7 +215,7 @@ def get_id_duplicates(args) -> List[dict]:
         , m1.path DESC
     """
 
-    media = list(args.db.query(query))
+    media = list(args.db.query(query, args.filter_bindings))
 
     return media
 
@@ -167,19 +231,20 @@ def get_title_duplicates(args) -> List[dict]:
         , m2.path duplicate_path
         , m2.size duplicate_size
     FROM
-        media m1
-    JOIN media m2 on 1=1
+        {args.table} m1
+    JOIN {args.table} m2 on 1=1
         and m2.path != m1.path
         and m1.duration >= m2.duration - 4
         and m1.duration <= m2.duration + 4
     WHERE 1=1
-        and m1.time_deleted = 0 and m2.time_deleted = 0
-        and m1.title != '' and m1.uploader != ''
-        and m1.title = m2.title and m1.uploader = m2.uploader
+        and coalesce(m1.time_deleted,0) = 0 and coalesce(m2.time_deleted,0) = 0
+        and m1.title != '' and m1.title = m2.title
+        {" ".join(args.filter_sql)}
     ORDER BY 1=1
         , m1.video_count > 0 DESC
         {', m1.subtitle_count > 0 DESC' if 'subtitle_count' in m_columns else ''}
         , m1.audio_count DESC
+        , m1.uploader IS NOT NULL DESC
         , length(m1.path)-length(REPLACE(m1.path, '/', '')) DESC
         , length(m1.path)-length(REPLACE(m1.path, '.', ''))
         , length(m1.path)
@@ -190,9 +255,14 @@ def get_title_duplicates(args) -> List[dict]:
         , m1.path DESC
     """
 
-    media = list(args.db.query(query))
+    media = list(args.db.query(query, args.filter_bindings))
 
     return media
+
+
+def filter_split_files(paths):
+    pattern = r"\.\d{3,5}\."
+    return filter(lambda x: not re.search(pattern, x), paths)
 
 
 def dedupe() -> None:
@@ -213,8 +283,53 @@ def dedupe() -> None:
         """,
         )
         return
+    elif args.profile == "fts":
+        m_columns = db.columns(args, "media")
+        m_columns.update(rank=int)
+        fts_table = args.db["media"].detect_fts()
+
+        rows = get_rows(args)
+        for row in rows:
+            words = set(utils.conform(utils.extract_words(Path(v).stem if k == "path" else v) for k, v in row.items()))
+            table, search_bindings = db.fts_search_sql(
+                "media",
+                fts_table=fts_table,
+                include=sorted(words, key=len, reverse=True)[:100],
+                exclude=args.exclude,
+                flexible=False,
+            )
+
+            query = f"""
+                SELECT path
+                FROM {table} m
+                WHERE path in (select path from {args.table})
+                ORDER BY
+                    video_count > 0 DESC
+                    {', subtitle_count > 0 DESC' if 'subtitle_count' in m_columns else ''}
+                    , audio_count DESC
+                    , length(path)-length(REPLACE(path, '/', '')) DESC
+                    , length(path)-length(REPLACE(path, '.', ''))
+                    , length(path)
+                    , size DESC
+                    , time_modified DESC
+                    , time_created DESC
+                    , duration DESC
+                    , path DESC
+                    , path
+                {"LIMIT " + str(args.limit) if args.limit else ""}
+                """
+
+            related_media = set(
+                filter_split_files(d["path"] for d in args.db.query(query, {**args.filter_bindings, **search_bindings}))
+            )
+            if len(related_media) > 1:
+                print("Found", len(related_media) - 1, "duplicates")
+                print(related_media)
+
+                breakpoint()  # TODO: get this working...
+
+        return
     else:
-        # TODO: add fts-similarity option...
         raise NotImplementedError
 
     deletion_candidates = []

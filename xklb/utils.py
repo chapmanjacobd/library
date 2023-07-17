@@ -809,7 +809,10 @@ def human_time(seconds) -> str:
     if len(test.split(",")) >= PRECISION_MONTHS:
         return humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="hours", format="%0.0f")
 
-    return humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="minutes", format="%0.0f")
+    if int(seconds) > 10 * 60:
+        return humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="minutes", format="%0.0f")
+
+    return humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="seconds", format="%0.0f")
 
 
 def col_duration(tbl: List[Dict], col: str) -> List[Dict]:
@@ -1094,7 +1097,9 @@ def pipe_lines(x) -> None:
 
 
 def random_string() -> str:
-    return "".join(random.choices(string.ascii_uppercase + string.digits, k=5))
+    return "".join(
+        random.choices(string.ascii_uppercase, k=1) + random.choices(string.ascii_uppercase + string.digits, k=4)
+    )
 
 
 def random_filename(path) -> str:

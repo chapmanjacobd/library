@@ -3,7 +3,7 @@ authors = [
   {name = "Jacob Chapman", email = "7908073+chapmanjacobd@users.noreply.github.com"},
 ]
 dependencies = [
-    'sqlite-utils >=3.30',
+    'sqlite-utils',
     'catt',
     'ffmpeg-python',
     'ftfy',
