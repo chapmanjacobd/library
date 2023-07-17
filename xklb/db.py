@@ -187,21 +187,29 @@ def fts_quote(query: List[str]) -> List[str]:
     return [s if any(r in s for r in fts_words) else '"' + s + '"' for s in query]
 
 
-def fts_search(args, table="media") -> str:
-    fts_query = " AND ".join(fts_quote(args.include))
-    if args.exclude:
-        fts_query += " NOT " + " NOT ".join(fts_quote(args.exclude))
-    args.filter_bindings["query"] = fts_query
-    table = "(" + args.db[table].search_sql(include_rank=True) + ")"
-    return table
+def fts_search_sql(table, fts_table, include, exclude=None, flexible=True):
+    param_key = "FTS" + utils.random_string()
+    table = f"""(
+    with original as (select rowid, * from [{table}])
+    select
+        [original].*
+        , [{fts_table}].rank
+    from
+        [original]
+        join [{fts_table}] on [original].rowid = [{fts_table}].rowid
+    where
+        [{fts_table}] match :{param_key}
+    )
+    """
+    if flexible:
+        param_value = " OR ".join(fts_quote(include))
+    else:
+        param_value = " AND ".join(fts_quote(include))
+    if exclude:
+        param_value += " NOT " + " NOT ".join(fts_quote(exclude))
 
-
-def fts_flexible_search(args, table="media") -> str:
-    args.filter_bindings["query"] = " OR ".join(fts_quote(args.include))
-    if args.exclude:
-        args.filter_bindings["query"] += " NOT " + " NOT ".join(fts_quote(args.exclude))
-    table = "(" + args.db[table].search_sql(include_rank=True) + ")"
-    return table
+    bound_parameters = {param_key: param_value}
+    return table, bound_parameters
 
 
 def gen_include_excludes(cols_available):

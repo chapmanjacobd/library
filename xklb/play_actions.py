@@ -168,8 +168,10 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
 
     parser.add_argument("--no-video", "-vn", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--no-audio", "-an", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--no-subtitles", "--no-subtitle", "-sn", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--subtitles", "--subtitle", "-sy", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument(
+        "--no-subtitles", "--no-subtitle", "--no-subs", "--nosubs", "-sn", action="store_true", help=argparse.SUPPRESS
+    )
+    parser.add_argument("--subtitles", "--subtitle", "--subs", "-sy", action="store_true", help=argparse.SUPPRESS)
 
     parser.add_argument("--override-player", "--player", "-player", help=argparse.SUPPRESS)
     parser.add_argument("--player-args-sub", "-player-sub", nargs="*", default=DEFAULT_PLAYER_ARGS_SUB)
@@ -359,7 +361,14 @@ def construct_query(args) -> Tuple[str, dict]:
     args.table = "media"
     if args.db["media"].detect_fts() and not args.no_fts:
         if args.include:
-            args.table = db.fts_search(args)
+            args.table, search_bindings = db.fts_search_sql(
+                "media",
+                fts_table=args.db["media"].detect_fts(),
+                include=args.include,
+                exclude=args.exclude,
+                flexible=args.action == SC.filesystem,
+            )
+            args.filter_bindings = {**args.filter_bindings, **search_bindings}
             m_columns = {**m_columns, "rank": int}
         elif args.exclude:
             db.construct_search_bindings(args, m_columns)
