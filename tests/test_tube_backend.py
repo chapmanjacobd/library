@@ -1,5 +1,6 @@
 from types import SimpleNamespace
-from unittest import skip
+
+import vcr
 
 from xklb import tube_backend
 
@@ -12,25 +13,22 @@ def test_safe_mode():
     assert tube_backend.is_supported("www.com") is False
 
 
-@skip("network")
+@vcr.use_cassette
 def test_get_video_metadata():
     args = SimpleNamespace(verbose=0, ignore_errors=False)
     tube_backend.get_video_metadata(args, "https://www.youtube.com/watch?v=hRVgC7eE-Ow")
-    raise
 
 
-@skip("network")
+@vcr.use_cassette
 def test_get_video_metadata_playlist():
     args = SimpleNamespace(verbose=0, ignore_errors=False)
     tube_backend.get_video_metadata(
         args,
         "https://www.youtube.com/playlist?list=PLQoygnhlz2LhnqLUuQQ0Z67fwouadzGIf",
     )
-    raise
 
 
-@skip("network")
+@vcr.use_cassette
 def test_get_video_metadata_channel():
     args = SimpleNamespace(verbose=0, ignore_errors=False)
     tube_backend.get_video_metadata(args, "https://www.youtube.com/@ZeducationTyler")
-    raise

@@ -375,7 +375,7 @@ def download(args, m) -> None:
     ydl_opts["match_filter"] = yt_dlp.utils.match_filter_func(" & ".join(match_filters).split(" | "))
 
     download_archive = Path(args.download_archive or "~/.local/share/yt_archive.txt").expanduser().resolve()
-    if download_archive.exists():
+    if download_archive.exists() and not consts.PYTEST_RUNNING:
         global yt_archive
         ydl_opts["cookiesfrombrowser"] = ("firefox",)
         if len(yt_archive) == 0:
