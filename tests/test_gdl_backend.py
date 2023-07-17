@@ -1,8 +1,7 @@
 import argparse
 from pathlib import Path
 
-import vcr
-
+from tests.utils import dvd
 from xklb import gdl_backend
 from xklb.db import connect
 
@@ -33,7 +32,7 @@ def test_safe_mode():
     assert gdl_backend.is_supported(args, "https://youtu.be/HoY5RbzRcmo") is False
 
 
-@vcr.use_cassette
+@dvd.use_cassette
 def test_get_playlist_metadata_imgur_single():
     args = create_args("playlist_metadata_imgur_single")
     out = gdl_backend.get_playlist_metadata(args, "https://imgur.com/0gybAXR")
@@ -44,7 +43,7 @@ def test_get_playlist_metadata_imgur_single():
     assert data[0]["webpath"] == "https://imgur.com/0gybAXR"
 
 
-@vcr.use_cassette
+@dvd.use_cassette
 def test_get_playlist_metadata_imgur_album():
     args = create_args("playlist_metadata_imgur_album")
     out = gdl_backend.get_playlist_metadata(args, "https://imgur.com/t/album/jc19AA5")
@@ -55,7 +54,7 @@ def test_get_playlist_metadata_imgur_album():
     assert len(playlists) == 1
 
 
-@vcr.use_cassette
+@dvd.use_cassette
 def test_get_playlist_metadata_blogspot_album():
     args = create_args("get_playlist_metadata_blogspot_album")
     out = gdl_backend.get_playlist_metadata(
@@ -69,7 +68,7 @@ def test_get_playlist_metadata_blogspot_album():
     assert len(playlists) == 1
 
 
-@vcr.use_cassette
+@dvd.use_cassette
 def test_get_playlist_metadata_tumblr_single():
     args = create_args("playlist_metadata_tumblr_single")
     out = gdl_backend.get_playlist_metadata(
@@ -81,7 +80,7 @@ def test_get_playlist_metadata_tumblr_single():
     assert len(media) == 1
 
 
-@vcr.use_cassette
+@dvd.use_cassette
 def test_get_playlist_metadata_tumblr_album():
     args = create_args("playlist_metadata_tumblr_album")
     out = gdl_backend.get_playlist_metadata(args, "https://www.tumblr.com/toricoriot/719481863148830720/fairy")
