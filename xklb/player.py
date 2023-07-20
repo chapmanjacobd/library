@@ -1046,7 +1046,7 @@ def filter_deleted(media):
     return local_list + http_list, nonexistent_local_paths
 
 
-def media_printer(args, data, units=None) -> None:
+def media_printer(args, data, units=None, media_len=None) -> None:
     if units is None:
         units = "media"
 
@@ -1177,7 +1177,7 @@ def media_printer(args, data, units=None) -> None:
 
         if len(media) > 1:
             print(
-                f"{len(media)} {units}"
+                f"{media_len or len(media)} {units}"
                 + (f" (limited by --limit {args.limit})" if args.limit and int(args.limit) <= len(media) else "")
             )
 
