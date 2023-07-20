@@ -86,6 +86,24 @@ def parse_args() -> argparse.Namespace:
     args.filter_sql = []
     args.filter_bindings = {}
 
+    COMPARE_DIRS = False
+    if len(args.include + args.paths) == 2:
+        COMPARE_DIRS = True
+        if len(args.include) == 2:
+            include2 = args.include.pop()
+            args.table2, search_bindings = db.fts_search_sql(
+                "media",
+                fts_table=args.db["media"].detect_fts(),
+                include=include2,
+                exclude=args.exclude,
+            )
+            args.filter_bindings = {**args.filter_bindings, **search_bindings}
+        else:
+            path2 = args.paths.pop()
+            args.table2 = "(select * from media where path like :path2)"
+            for idx, path in enumerate(args.paths):
+                args.filter_bindings[f"path2"] = path2.replace(" ", "%").replace("%%", " ") + "%"
+
     args.table = "media"
     if args.db["media"].detect_fts() and args.include:  # type: ignore
         args.table, search_bindings = db.fts_search_sql(
@@ -103,6 +121,9 @@ def parse_args() -> argparse.Namespace:
         )
         for idx, path in enumerate(args.paths):
             args.filter_bindings[f"path{idx}"] = path.replace(" ", "%").replace("%%", " ") + "%"
+
+    if not COMPARE_DIRS:
+        args.table2 = args.table
 
     args.action = consts.SC.dedupe
     log.info(utils.dict_filter_bool(args.__dict__))
@@ -147,7 +168,7 @@ def get_music_duplicates(args) -> List[dict]:
         , m2.size duplicate_size
     FROM
         {args.table} m1
-    JOIN {args.table} m2 on 1=1
+    JOIN {args.table2} m2 on 1=1
         and m2.path != m1.path
         and m1.duration >= m2.duration - 4
         and m1.duration <= m2.duration + 4
@@ -192,7 +213,7 @@ def get_id_duplicates(args) -> List[dict]:
         , m2.size duplicate_size
     FROM
         {args.table} m1
-    JOIN {args.table} m2 on 1=1
+    JOIN {args.table2} m2 on 1=1
         and m1.extractor_id = m2.extractor_id
         and m1.duration >= m2.duration - 4
         and m1.duration <= m2.duration + 4
@@ -232,7 +253,7 @@ def get_title_duplicates(args) -> List[dict]:
         , m2.size duplicate_size
     FROM
         {args.table} m1
-    JOIN {args.table} m2 on 1=1
+    JOIN {args.table2} m2 on 1=1
         and m2.path != m1.path
         and m1.duration >= m2.duration - 4
         and m1.duration <= m2.duration + 4
@@ -354,7 +375,7 @@ def dedupe() -> None:
 
     tbl = deepcopy(duplicates)
     tbl = tbl[: int(args.limit)]
-    player.media_printer(args, tbl, units="duplicates")
+    player.media_printer(args, tbl, units="duplicates", media_len=len(duplicates))
 
     try:
         import pandas as pd
