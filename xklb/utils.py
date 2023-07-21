@@ -207,7 +207,6 @@ def timeout(minutes) -> None:
 
         def exit_timeout(_signal, _frame):
             print(f"\nReached timeout... ({seconds}s)")
-            cmd("pkill", "mpv")
             raise SystemExit(124)
 
         signal.signal(signal.SIGALRM, exit_timeout)
