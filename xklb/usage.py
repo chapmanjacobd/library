@@ -950,7 +950,7 @@ merge_dbs = """library merge-dbs DEST_DB SOURCE_DB ... [--only-target-columns] [
     and there is an existing row with the same PK, the default action is to delete the existing row and insert the new row
     replacing all existing fields.
 
-    Upsert mode will update matching PK rows such that if a source row has a NULL field and
+    Upsert mode will update each matching PK row such that if a source row has a NULL field and
     the destination row has a value then the value will be preserved instead of changed to the source row's NULL value.
 
     Ignore mode (--only-new-rows) will insert only rows which don't already exist in the destination db
