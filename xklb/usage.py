@@ -926,7 +926,9 @@ copy_play_counts = """library copy-play-counts DEST_DB SOURCE_DB ... [--source-p
 """
 dedupe = """library [--audio | --id | --title | --filesystem] [--only-soft-delete] [--limit LIMIT] DATABASE
 
-    Dedupe your files
+    Dedupe your files (not to be confused with the dedupe-db subcommand)
+
+    library dedupe video.db / http
 """
 
 dedupe_db = """library dedupe-dbs DATABASE TABLE --bk BUSINESS_KEYS [--pk PRIMARY_KEYS] [--only-columns COLUMNS]
