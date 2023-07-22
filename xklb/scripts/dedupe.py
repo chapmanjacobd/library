@@ -310,8 +310,8 @@ def dedupe() -> None:
         You should use `cbird` instead:
 
             $ cbird -i.algos 1 -update
-            $ cbird -dups -sort resolution -chop -select-result -nuke  # exact duplicates
-            $ cbird -p.dht 1 -similar -sort resolution -chop -select-result -nuke  # similar photos
+            $ cbird -dups -select-result -sort-rev resolution -chop -nuke  # exact duplicates
+            $ cbird -p.dht 1 -similar -select-result -sort-rev resolution -chop -nuke  # similar photos
         """,
         )
         return
