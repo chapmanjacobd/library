@@ -143,7 +143,7 @@ Incremental surfing. 📈🏄 totally rad!
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.2.040)
+    xk media library subcommands (v2.2.041)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -1653,7 +1653,9 @@ Balance files across filesystem folder trees or multiple devices (mostly useful 
     $ library dedupe -h
     usage: library [--audio | --id | --title | --filesystem] [--only-soft-delete] [--limit LIMIT] DATABASE
 
-    Dedupe your files
+    Dedupe your files (not to be confused with the dedupe-db subcommand)
+
+    library dedupe video.db / http
 
 
 </details>

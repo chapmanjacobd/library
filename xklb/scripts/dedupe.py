@@ -304,6 +304,17 @@ def dedupe() -> None:
         """,
         )
         return
+    elif args.profile == DBType.image:
+        print(
+            """
+        You should use `cbird` instead:
+
+            $ cbird -i.algos 1 -update
+            $ cbird -dups -sort resolution -chop -select-result -nuke  # exact duplicates
+            $ cbird -p.dht 1 -similar -sort resolution -chop -select-result -nuke  # similar photos
+        """,
+        )
+        return
     elif args.profile == "fts":
         m_columns = db.columns(args, "media")
         m_columns.update(rank=int)
