@@ -357,6 +357,9 @@ def post_act(args, media_file: str, action: Optional[str] = None, geom_data=None
     action = action or args.post_action
     action = action.upper()
 
+    if action == "NONE":
+        action = Action.KEEP
+
     if action == Action.KEEP:
         pass
     elif action == Action.DELETE:

@@ -687,13 +687,13 @@ def process_playqueue(args) -> None:
                         m = media.pop()
                         if m["path"] in ignore_paths:
                             continue
-                        future = executor.submit(prep_media, mp_args, m, ignore_paths)
+                        future = executor.submit(prep_media, mp_args, m, ignore_paths if args.prefetch > 1 else [])
                         ignore_paths.append(m["path"])
                         futures.append(future)
 
                     if futures:
-                        future = futures.popleft()
-                        m = future.result()
+                        f = futures.popleft()
+                        m = f.result()
                         if m is not None and (m["path"].startswith("http") or Path(m["path"]).exists()):
                             play(args, m, len(media) + len(futures))
         finally:
