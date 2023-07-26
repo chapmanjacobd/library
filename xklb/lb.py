@@ -238,7 +238,7 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     subp_playback_next.set_defaults(func=playback_next)
     subp_playback_stop = add_parser(subparsers, "stop")
     subp_playback_stop.set_defaults(func=playback_stop)
-    subp_playback_pause = add_parser(subparsers, "pause")
+    subp_playback_pause = add_parser(subparsers, "pause", ["play"])
     subp_playback_pause.set_defaults(func=playback_pause)
 
     subp_tabsadd = add_parser(subparsers, "tabsadd")

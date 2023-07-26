@@ -395,8 +395,15 @@ def play(action) -> str:
         library {action} -u 'subtitle_count > 0 desc' # play media that has at least one subtitle first
 
         Prioritize large-sized media
-        library watch --sort 'ntile(10000) over (order by size/duration) desc'
-        library watch -u 'ntile(100) over (order by size) desc'
+        library {action} --sort 'ntile(10000) over (order by size/duration) desc'
+        library {action} -u 'ntile(100) over (order by size) desc'
+
+        Sort by count of media with the same columnX (most common to least common value)
+        library {action} -u same-duration
+        library {action} -u same-title
+        library {action} -u same-size
+        library {action} -u same-width, same-height, same-fps
+        library {action} -u same-time_uploaded same-view_count same-upvote_ratio
 
     Post-actions -- choose what to do after playing:
         library {action} --post-action keep    # do nothing after playing (default)
@@ -739,7 +746,7 @@ tabsadd = r"""library tabsadd [--frequency daily weekly (monthly) quarterly year
 
     Adding one URL:
 
-        library tabsadd -f monthly -c travel tabs.db https://old.reddit.com/r/Colombia/top/?sort=top&t=month
+        library tabsadd -f daily tabs.db https://wiby.me/surprise/
 
         Depending on your shell you may need to escape the URL (add quotes)
 

@@ -1053,9 +1053,11 @@ def media_printer(args, data, units=None, media_len=None) -> None:
     if units is None:
         units = "media"
 
+    cols = getattr(args, "cols", [])
+
     media = deepcopy(data)
 
-    if args.verbose >= consts.LOG_DEBUG and args.cols and "*" in args.cols:
+    if args.verbose >= consts.LOG_DEBUG and cols and "*" in cols:
         breakpoint()
 
     if not media:
@@ -1088,8 +1090,8 @@ def media_printer(args, data, units=None, media_len=None) -> None:
             D["size"] = sum((d["size"] or 0) for d in media)
             D["avg_size"] = sum((d["size"] or 0) for d in media) / len(media)
 
-        if args.cols:
-            for c in args.cols:
+        if cols:
+            for c in cols:
                 if isinstance(media[0][c], Number):
                     D[f"sum_{c}"] = sum((d[c] or 0) for d in media)
                     D[f"avg_{c}"] = sum((d[c] or 0) for d in media) / len(media)
@@ -1146,13 +1148,13 @@ def media_printer(args, data, units=None, media_len=None) -> None:
             if len(media) == 0:
                 raise FileNotFoundError
 
-        if not args.cols:
-            args.cols = ["path"]
+        if not cols:
+            cols = ["path"]
 
-        selected_cols = [{k: d.get(k, None) for k in args.cols} for d in media]
+        selected_cols = [{k: d.get(k, None) for k in cols} for d in media]
         virtual_csv = StringIO()
         wr = csv.writer(virtual_csv, quoting=csv.QUOTE_NONE)
-        wr = csv.DictWriter(virtual_csv, fieldnames=args.cols)
+        wr = csv.DictWriter(virtual_csv, fieldnames=cols)
         wr.writerows(selected_cols)
 
         virtual_csv.seek(0)
