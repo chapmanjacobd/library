@@ -398,11 +398,11 @@ def play(action) -> str:
         library {action} --sort 'ntile(10000) over (order by size/duration) desc'
         library {action} -u 'ntile(100) over (order by size) desc'
 
-        Sort by count of media with the same columnX (most common to least common value)
+        Sort by count of media with the same-X column (default DESC: most common to least common value)
         library {action} -u same-duration
         library {action} -u same-title
         library {action} -u same-size
-        library {action} -u same-width, same-height, same-fps
+        library {action} -u same-width, same-height ASC, same-fps
         library {action} -u same-time_uploaded same-view_count same-upvote_ratio
 
     Post-actions -- choose what to do after playing:

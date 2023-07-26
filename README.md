@@ -143,7 +143,7 @@ Incremental surfing. 📈🏄 totally rad!
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.2.044)
+    xk media library subcommands (v2.2.045)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -794,11 +794,11 @@ Explore `library` databases in your browser
         library watch --sort 'ntile(10000) over (order by size/duration) desc'
         library watch -u 'ntile(100) over (order by size) desc'
 
-        Sort by count of media with the same columnX (most common to least common value)
+        Sort by count of media with the same-X column (default DESC: most common to least common value)
         library watch -u same-duration
         library watch -u same-title
         library watch -u same-size
-        library watch -u same-width, same-height, same-fps
+        library watch -u same-width, same-height ASC, same-fps
         library watch -u same-time_uploaded same-view_count same-upvote_ratio
 
     Post-actions -- choose what to do after playing:
