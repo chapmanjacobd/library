@@ -27,10 +27,14 @@ def parse_args_sort(args) -> None:
         for s in combined_sort:
             if s.startswith("same-"):
                 var = s[len("same-") :]
+                direction = "DESC"
+                if var.lower().endswith((" asc", " desc")):
+                    var, direction = var.split(" ")
+
                 select_list.append(
                     f"CASE WHEN {var} IS NULL THEN NULL ELSE COUNT(*) OVER (PARTITION BY {var}) END AS same_{var}_count"
                 )
-                sort_list.append(f"same_{var}_count DESC")
+                sort_list.append(f"same_{var}_count {direction}")
             else:
                 sort_list.append(s)
 
