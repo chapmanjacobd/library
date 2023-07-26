@@ -15,7 +15,27 @@ from xklb.utils import cmd_interactive, log, random_filename, safe_unpack
 
 def parse_args_sort(args) -> None:
     if args.sort:
-        args.sort = " ".join(args.sort)
+        combined_sort = []
+        for s in utils.flatten([s.split(",") for s in args.sort]):
+            if s.strip() in ["asc", "desc"] and combined_sort:
+                combined_sort[-1] += " " + s.strip()
+            else:
+                combined_sort.append(s.strip())
+
+        sort_list = []
+        select_list = []
+        for s in combined_sort:
+            if s.startswith("same-"):
+                var = s[len("same-") :]
+                select_list.append(
+                    f"CASE WHEN {var} IS NULL THEN NULL ELSE COUNT(*) OVER (PARTITION BY {var}) END AS same_{var}_count"
+                )
+                sort_list.append(f"same_{var}_count DESC")
+            else:
+                sort_list.append(s)
+
+        args.sort = sort_list
+        args.select = select_list
     elif not args.sort and hasattr(args, "defaults"):
         args.defaults.append("sort")
 
@@ -46,7 +66,7 @@ def parse_args_sort(args) -> None:
             ],
         )
         else None,
-        args.sort,
+        *(args.sort or []),
         "duration desc" if args.action in (SC.listen, SC.watch) and args.include else None,
         "size desc" if args.action in (SC.listen, SC.watch) and args.include else None,
         "play_count" if args.action in (SC.listen, SC.watch) else None,
@@ -403,7 +423,7 @@ def construct_query(args) -> Tuple[str, dict]:
     aggregate_filter_columns = ["time_first_played", "time_last_played", "play_count", "playhead"]
 
     cols = args.cols or ["path", "title", "duration", "size", "subtitle_count", "is_dir", "rank"]
-    args.select = [c for c in cols if c in m_columns or c in ["*"]]
+    args.select = [c for c in cols if c in m_columns or c in ["*"]] + getattr(args, "select", [])
     if args.action == SC.read and "tags" in m_columns:
         args.select += "cast(length(tags) / 4.2 / 220 * 60 as INT) + 10 duration"
     args.select_sql = "\n        , ".join(args.select)

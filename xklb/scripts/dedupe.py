@@ -38,6 +38,13 @@ def parse_args() -> argparse.Namespace:
         help="Dedupe database by title",
     )
     profile.add_argument(
+        "--duration",
+        action="store_const",
+        dest="profile",
+        const="duration",
+        help="Dedupe database by duration (caution obviously)",
+    )
+    profile.add_argument(
         "--fts",
         action="store_const",
         dest="profile",
@@ -281,6 +288,46 @@ def get_title_duplicates(args) -> List[dict]:
     return media
 
 
+def get_duration_duplicates(args) -> List[dict]:
+    m_columns = db.columns(args, "media")
+    query = f"""
+    SELECT
+        m1.path keep_path
+        -- , length(m1.path)-length(REPLACE(m1.path, '/', '')) num_slash
+        -- , length(m1.path)-length(REPLACE(m1.path, '.', '')) num_dot
+        -- , length(m1.path) len_p
+        , m2.path duplicate_path
+        , m2.size duplicate_size
+    FROM
+        {args.table} m1
+    JOIN {args.table2} m2 on 1=1
+        and m2.path != m1.path
+        and m1.duration >= m2.duration - 4
+        and m1.duration <= m2.duration + 4
+    WHERE 1=1
+        and coalesce(m1.time_deleted,0) = 0 and coalesce(m2.time_deleted,0) = 0
+        and m1.duration = m2.duration
+        {" ".join(args.filter_sql)}
+    ORDER BY 1=1
+        , m1.video_count > 0 DESC
+        {', m1.subtitle_count > 0 DESC' if 'subtitle_count' in m_columns else ''}
+        , m1.audio_count DESC
+        , m1.uploader IS NOT NULL DESC
+        , length(m1.path)-length(REPLACE(m1.path, '/', '')) DESC
+        , length(m1.path)-length(REPLACE(m1.path, '.', ''))
+        , length(m1.path)
+        , m1.size DESC
+        , m1.time_modified DESC
+        , m1.time_created DESC
+        , m1.duration DESC
+        , m1.path DESC
+    """
+
+    media = list(args.db.query(query, args.filter_bindings))
+
+    return media
+
+
 def filter_split_files(paths):
     pattern = r"\.\d{3,5}\."
     return filter(lambda x: not re.search(pattern, x), paths)
@@ -295,6 +342,8 @@ def dedupe() -> None:
         duplicates = get_id_duplicates(args)
     elif args.profile == "title":
         duplicates = get_title_duplicates(args)
+    elif args.profile == "duration":
+        duplicates = get_duration_duplicates(args)
     elif args.profile == DBType.filesystem:
         print(
             """
