@@ -51,7 +51,7 @@ def reformat_ffprobe(path):
     excluded_keys = ["encoder", "major_brand", "minor_version", "compatible_brands"]
 
     seen = set()
-    metadata = utils.lower_keys(probe["format"]["tags"])
+    metadata = utils.lower_keys(probe["format"].get("tags", {}))
     for key, value in deepcopy(metadata).items():
         if key in excluded_keys or value in seen or path in value:
             metadata.pop(key, None)
@@ -98,8 +98,8 @@ def reformat_ffprobe(path):
     if title:
         formatted_output += f"Title: {title}\n"
 
-    formatted_output += f"Duration: {utils.seconds_to_hhmmss(utils.safe_int(probe['format']['duration']))}\n"
-    formatted_output += f"   Start: {utils.seconds_to_hhmmss(utils.safe_int(probe['format']['start_time']))}\n"
+    formatted_output += f"Duration: {utils.seconds_to_hhmmss(utils.safe_int(probe['format'].get('duration', '0')))}\n"
+    formatted_output += f"   Start: {utils.seconds_to_hhmmss(utils.safe_int(probe['format'].get('start_time', '0')))}\n"
 
     # print(cmd("ffprobe", "-hide_banner", "-loglevel", "info", path).stderr)
     return textwrap.indent(formatted_output, "    ")
