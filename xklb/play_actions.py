@@ -209,8 +209,8 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     parser.add_argument("--gui", action="store_true")
     parser.add_argument("--shallow-organize", default="/mnt/d/", help=argparse.SUPPRESS)
 
-    parser.add_argument("--online-media-only", "--online-only", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--local-media-only", "--local-only", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--online-media-only", "--online", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--local-media-only", "--local", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--safe", "-safe", action="store_true", help="Skip generic URLs")
 
     parser.add_argument("--sibling", "--episode", action="store_true")
@@ -721,11 +721,13 @@ def process_playqueue(args) -> None:
                         if m is not None and (m["path"].startswith("http") or Path(m["path"]).exists()):
                             play(args, m, len(media) + len(futures))
         finally:
-            if args.interdimensional_cable:
-                args.sock.send(b"raw quit \n")
-            Path(args.mpv_socket).unlink(missing_ok=True)
-            if args.chromecast:
-                Path(consts.CAST_NOW_PLAYING).unlink(missing_ok=True)
+            try:
+                if args.interdimensional_cable:
+                    args.sock.send(b"raw quit \n")
+            finally:
+                Path(args.mpv_socket).unlink(missing_ok=True)
+                if args.chromecast:
+                    Path(consts.CAST_NOW_PLAYING).unlink(missing_ok=True)
 
 
 def watch() -> None:

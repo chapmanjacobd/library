@@ -678,14 +678,16 @@ def socket_play(args, m: dict) -> None:
     if end == 0:
         return
 
-    play_opts = f"start={start},save-position-on-quit=no"
+    play_opts = f"start={start},save-position-on-quit=no,resume-playback=no"
     if args.action in (SC.listen):
-        play_opts += ",video=no,really-quiet=yes"
+        play_opts += ",video=no"
     elif args.action in (SC.watch):
-        play_opts += ",fullscreen=yes,force-window=yes,really-quiet=yes"
+        play_opts += ",fullscreen=yes,force-window=yes"
 
     if m["path"].startswith("http"):
         play_opts += ",script-opts=ytdl_hook-try_ytdl_first=yes"
+    else:
+        play_opts += ",really-quiet=yes"
 
     f = m["path"].replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
     args.sock.send((f'raw loadfile "{f}" replace "{play_opts}" \n').encode())
@@ -1165,7 +1167,7 @@ def media_printer(args, data, units=None, media_len=None) -> None:
                 utils.pipe_print(line.strip())
         if args.moved:
             moved_media(args, [d["path"] for d in media], *args.moved)
-    elif "j" in args.print or consts.TERMINAL_SIZE.columns < 80:
+    elif "j" in args.print or consts.MOBILE_TERMINAL:
         print(json.dumps(media, indent=3))
     elif "c" in args.print:
         utils.write_csv_to_stdout(media)
