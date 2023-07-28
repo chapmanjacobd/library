@@ -1,9 +1,9 @@
-import argparse, csv, functools, hashlib, logging, math, multiprocessing, os, platform, random, re, shlex, shutil, signal, string, subprocess, sys, tempfile, time
+import argparse, csv, functools, hashlib, logging, math, multiprocessing, os, platform, random, re, shlex, shutil, signal, string, subprocess, sys, tempfile, textwrap, time
 from ast import literal_eval
 from collections import Counter
 from collections.abc import Iterable
 from copy import deepcopy
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from functools import wraps
 from pathlib import Path
 from shutil import which
@@ -673,6 +673,13 @@ def safe_sum(*list_, keep_0=False) -> Optional[Any]:
         return None
     value = sum(list_)
     return value if keep_0 or value != 0 else None
+
+
+def wrap_paragraphs(text, width=80):
+    paragraphs = text.split("\n\n")
+    wrapped_paragraphs = [textwrap.fill(paragraph, width=width) for paragraph in paragraphs]
+    formatted_text = "\n\n".join(wrapped_paragraphs)
+    return formatted_text
 
 
 def path_fill(text, percent=None, width=None):

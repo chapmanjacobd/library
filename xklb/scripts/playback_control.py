@@ -48,7 +48,7 @@ def reformat_ffprobe(path):
     codec_types = [s.get("codec_type") for s in probe["streams"]]
     audio_count = sum(1 for s in codec_types if s == "audio")
 
-    excluded_keys = ["encoder", "major_brand", "minor_version", "compatible_brands"]
+    excluded_keys = ["encoder", "major_brand", "minor_version", "compatible_brands", "software"]
 
     seen = set()
     metadata = utils.lower_keys(probe["format"].get("tags", {}))
@@ -80,26 +80,34 @@ def reformat_ffprobe(path):
 
     formatted_output = ""
     for key, value in metadata.items():
-        formatted_output += f" {key} : {value}\n"
+        formatted_output += f" {key} : {value.strip()}\n"
 
     if audio_count > 1:
         formatted_output += f"Audio tracks: {audio_count}\n"
     if len(probe["chapters"]) > 1:
         formatted_output += f"Chapters: {len(probe['chapters'])}\n"
 
-    if description and not consts.MOBILE_TERMINAL:
-        formatted_output += f"Description: \n{textwrap.indent(description, '    ')}\n"
     if date:
-        formatted_output += f"Date: {date}\n"
-    if url:
-        formatted_output += f"URL: {url}\n"
+        formatted_output += f"    Date: {date}\n"
+    if description and not consts.MOBILE_TERMINAL:
+        description = utils.wrap_paragraphs(description.strip(), width=100)
+        formatted_output += f"Description: \n{textwrap.indent(description, '          ')}\n"
     if artist:
-        formatted_output += f"Artist: {artist}\n"
+        formatted_output += f"  Artist: {artist}\n"
+    if url:
+        formatted_output += f"     URL: {url}\n"
     if title:
-        formatted_output += f"Title: {title}\n"
+        formatted_output += f"   Title: {title}\n"
 
-    formatted_output += f"Duration: {utils.seconds_to_hhmmss(utils.safe_int(probe['format'].get('duration', '0')))}\n"
-    formatted_output += f"   Start: {utils.seconds_to_hhmmss(utils.safe_int(probe['format'].get('start_time', '0')))}\n"
+    duration = utils.safe_int(probe["format"].get("duration")) or 0
+    if duration > 0:
+        duration_str = utils.seconds_to_hhmmss(duration).strip()
+        formatted_output += f"Duration: {duration_str}\n"
+
+        start = utils.safe_int(probe["format"].get("start_time")) or 0
+        if start > 0:
+            start_str = utils.seconds_to_hhmmss(start).strip()
+            formatted_output += f"   Start: {start_str.rjust(len(duration_str) - len(start_str))}\n"
 
     # print(cmd("ffprobe", "-hide_banner", "-loglevel", "info", path).stderr)
     return textwrap.indent(formatted_output, "    ")

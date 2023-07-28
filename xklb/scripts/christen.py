@@ -50,7 +50,7 @@ def rename_path(args, b) -> None:
         else:
             log.warning(printable_p)
             log.warning(fixed)
-            print("")
+            print()
 
 
 def christen() -> None:
