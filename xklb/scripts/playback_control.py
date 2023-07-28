@@ -1,5 +1,8 @@
 import argparse, platform, textwrap
+from copy import deepcopy
 from pathlib import Path
+
+import ffmpeg
 
 from xklb import consts, utils
 from xklb.utils import cmd, log
@@ -35,20 +38,78 @@ def _now_playing(args) -> dict:
     return media
 
 
+def reformat_ffprobe(path):
+    try:
+        probe = ffmpeg.probe(path, show_chapters=None)
+    except Exception:
+        log.exception(f"[{path}] Failed reading header. Metadata corruption")
+        return path
+
+    codec_types = [s.get("codec_type") for s in probe["streams"]]
+    audio_count = sum(1 for s in codec_types if s == "audio")
+
+    excluded_keys = ["encoder", "major_brand", "minor_version", "compatible_brands"]
+
+    seen = set()
+    metadata = utils.lower_keys(probe["format"]["tags"])
+    for key, value in deepcopy(metadata).items():
+        if key in excluded_keys or value in seen or path in value:
+            metadata.pop(key, None)
+        seen.add(value)
+
+    description = utils.safe_unpack(
+        metadata.pop("description", None),
+        metadata.pop("synopsis", None),
+    )
+    artist = utils.safe_unpack(
+        metadata.pop("artist", None),
+    )
+    title = utils.safe_unpack(
+        metadata.pop("title", None),
+    )
+    url = utils.safe_unpack(
+        metadata.pop("purl", None),
+        metadata.pop("url", None),
+        metadata.pop("comment", None),
+    )
+    date = utils.safe_unpack(
+        metadata.pop("date", None),
+        metadata.pop("time", None),
+        metadata.pop("creation_time", None),
+    )
+
+    formatted_output = ""
+    for key, value in metadata.items():
+        formatted_output += f" {key} : {value}\n"
+
+    if audio_count > 1:
+        formatted_output += f"Audio tracks: {audio_count}\n"
+    if len(probe["chapters"]) > 1:
+        formatted_output += f"Chapters: {len(probe['chapters'])}\n"
+
+    if description and not consts.MOBILE_TERMINAL:
+        formatted_output += f"Description: \n{textwrap.indent(description, '    ')}\n"
+    if date:
+        formatted_output += f"Date: {date}\n"
+    if url:
+        formatted_output += f"URL: {url}\n"
+    if artist:
+        formatted_output += f"Artist: {artist}\n"
+    if title:
+        formatted_output += f"Title: {title}\n"
+
+    formatted_output += f"Duration: {utils.seconds_to_hhmmss(utils.safe_int(probe['format']['duration']))}\n"
+    formatted_output += f"   Start: {utils.seconds_to_hhmmss(utils.safe_int(probe['format']['start_time']))}\n"
+
+    # print(cmd("ffprobe", "-hide_banner", "-loglevel", "info", path).stderr)
+    return textwrap.indent(formatted_output, "    ")
+
+
 def now_playing(path) -> str:
     if path.startswith("http"):
         text = path
     else:
-        text = (
-            path
-            + "\n"
-            + "\n".join(
-                line
-                for line in cmd("ffprobe", "-hide_banner", "-loglevel", "info", path).stderr.splitlines()
-                if path not in line
-            )
-            + "\n"
-        )
+        text = path + "\n" + reformat_ffprobe(path)
 
     try:
         text.encode()

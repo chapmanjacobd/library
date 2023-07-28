@@ -53,6 +53,7 @@ REGEX_REDDITOR = re.compile(
 REGEX_V_REDD_IT = re.compile("https?://v.redd.it/(?:[^/?#&]+)")
 APPLICATION_START = now()
 TERMINAL_SIZE = shutil.get_terminal_size(fallback=(80, 60))
+MOBILE_TERMINAL = TERMINAL_SIZE.columns < 80
 TABULATE_STYLE = "simple"
 
 EPOCH_COLUMNS = (

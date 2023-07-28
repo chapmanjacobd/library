@@ -269,7 +269,7 @@ Wake up to your own music
 
     30 7 * * * library listen ./audio.db
 
-Wake up to your own music _only when you are *not* home_ (computer on local-only IP)
+Wake up to your own music _only when you are *not* home_ (computer on local IP)
 
     30 7 * * * timeout 0.4 nc -z 192.168.1.12 22 || library listen --random
 

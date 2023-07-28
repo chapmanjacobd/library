@@ -34,8 +34,8 @@ def parse_args() -> argparse.Namespace:
     )
 
     parser.add_argument("--ignore-errors", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--online-media-only", "--online-only", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--local-media-only", "--local-only", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--online-media-only", "--online", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--local-media-only", "--local", action="store_true", help=argparse.SUPPRESS)
 
     parser.add_argument("--loop", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--override-player", "--player", "-player", help=argparse.SUPPRESS)
