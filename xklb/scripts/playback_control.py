@@ -87,11 +87,11 @@ def reformat_ffprobe(path):
     if len(probe["chapters"]) > 1:
         formatted_output += f"Chapters: {len(probe['chapters'])}\n"
 
-    if date:
-        formatted_output += f"    Date: {date}\n"
     if description and not consts.MOBILE_TERMINAL:
         description = utils.wrap_paragraphs(description.strip(), width=100)
         formatted_output += f"Description: \n{textwrap.indent(description, '          ')}\n"
+    if date:
+        formatted_output += f"    Date: {date}\n"
     if artist:
         formatted_output += f"  Artist: {artist}\n"
     if url:
@@ -106,8 +106,10 @@ def reformat_ffprobe(path):
 
         start = utils.safe_int(probe["format"].get("start_time")) or 0
         if start > 0:
-            start_str = utils.seconds_to_hhmmss(start).strip()
-            formatted_output += f"   Start: {start_str.rjust(len(duration_str) - len(start_str))}\n"
+            start_str = utils.seconds_to_hhmmss(start)
+            if duration < 3600:
+                start_str = start_str.strip()
+            formatted_output += f"   Start: {start_str}\n"
 
     # print(cmd("ffprobe", "-hide_banner", "-loglevel", "info", path).stderr)
     return textwrap.indent(formatted_output, "    ")
