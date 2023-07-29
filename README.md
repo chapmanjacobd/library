@@ -84,62 +84,6 @@ To stop playing press Ctrl+C in either the terminal or mpv
 
 </details>
 
-<details><summary>Tabs: visit websites on a schedule</summary>
-
-`tabs` is a way to organize your visits to URLs that you want to remember every once in a while.
-
-The main benefit of tabs is that you can have a large amount of tabs saved (say 500 monthly tabs) and only the smallest
-amount of tabs to satisfy that goal (500/30) tabs will open each day. 17 tabs per day seems manageable--500 all at once does not.
-
-The use-case of tabs are websites that you know are going to change: subreddits, games,
-or tools that you want to use for a few minutes daily, weekly, monthly, quarterly, or yearly.
-
-### 1. Add your websites
-
-    library tabsadd tabs.db --frequency monthly --category fun \
-        https://old.reddit.com/r/Showerthoughts/top/?sort=top&t=month \
-        https://old.reddit.com/r/RedditDayOf/top/?sort=top&t=month
-
-### 2. Add library tabs to cron
-
-library tabs is meant to run **once per day**. Here is how you would configure it with `crontab`:
-
-    45 9 * * * DISPLAY=:0 library tabs /home/my/tabs.db
-
-Or with `systemd`:
-
-    tee ~/.config/systemd/user/tabs.service
-    [Unit]
-    Description=xklb daily browser tabs
-
-    [Service]
-    Type=simple
-    RemainAfterExit=no
-    Environment="DISPLAY=:0"
-    ExecStart="/usr/bin/fish" "-c" "lb tabs /home/xk/lb/tabs.db"
-
-    tee ~/.config/systemd/user/tabs.timer
-    [Unit]
-    Description=xklb daily browser tabs timer
-
-    [Timer]
-    Persistent=yes
-    OnCalendar=*-*-* 9:58
-
-    [Install]
-    WantedBy=timers.target
-
-    systemctl --user daemon-reload
-    systemctl --user enable --now tabs.service
-
-You can also invoke tabs manually:
-
-    library tabs tabs.db -L 1  # open one tab
-
-Incremental surfing. 📈🏄 totally rad!
-
-</details>
-
 <details><summary>List all subcommands</summary>
 
     $ library
@@ -242,9 +186,67 @@ Incremental surfing. 📈🏄 totally rad!
     library fsadd --audio audiobooks.db ./audiobooks/
     library fsadd --audio podcasts.db ./podcasts/ ./another/more/secret/podcasts_folder/
 
-### library bigdirs: curate
+### Tabs
 
-<details><summary>Find large folders</summary>
+<details><summary>Visit websites on a schedule</summary>
+
+`tabs` is a way to organize your visits to URLs that you want to remember every once in a while.
+
+The main benefit of tabs is that you can have a large amount of tabs saved (say 500 monthly tabs) and only the smallest
+amount of tabs to satisfy that goal (500/30) tabs will open each day. 17 tabs per day seems manageable--500 all at once does not.
+
+The use-case of tabs are websites that you know are going to change: subreddits, games,
+or tools that you want to use for a few minutes daily, weekly, monthly, quarterly, or yearly.
+
+### 1. Add your websites
+
+    library tabsadd tabs.db --frequency monthly --category fun \
+        https://old.reddit.com/r/Showerthoughts/top/?sort=top&t=month \
+        https://old.reddit.com/r/RedditDayOf/top/?sort=top&t=month
+
+### 2. Add library tabs to cron
+
+library tabs is meant to run **once per day**. Here is how you would configure it with `crontab`:
+
+    45 9 * * * DISPLAY=:0 library tabs /home/my/tabs.db
+
+Or with `systemd`:
+
+    tee ~/.config/systemd/user/tabs.service
+    [Unit]
+    Description=xklb daily browser tabs
+
+    [Service]
+    Type=simple
+    RemainAfterExit=no
+    Environment="DISPLAY=:0"
+    ExecStart="/usr/bin/fish" "-c" "lb tabs /home/xk/lb/tabs.db"
+
+    tee ~/.config/systemd/user/tabs.timer
+    [Unit]
+    Description=xklb daily browser tabs timer
+
+    [Timer]
+    Persistent=yes
+    OnCalendar=*-*-* 9:58
+
+    [Install]
+    WantedBy=timers.target
+
+    systemctl --user daemon-reload
+    systemctl --user enable --now tabs.service
+
+You can also invoke tabs manually:
+
+    library tabs tabs.db -L 1  # open one tab
+
+Incremental surfing. 📈🏄 totally rad!
+
+</details>
+
+### Find large folders
+
+<details><summary>Curate with library bigdirs</summary>
 
 If you are looking for candidate folders for curation (ie. you need space but don't want to buy another hard drive).
 The bigdirs subcommand was written for that purpose:

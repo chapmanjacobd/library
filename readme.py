@@ -140,7 +140,39 @@ To stop playing press Ctrl+C in either the terminal or mpv
 
 </details>
 
-<details><summary>Tabs: visit websites on a schedule</summary>
+<details><summary>List all subcommands</summary>
+
+    $ library
+    {lb.usage()}
+
+</details>
+
+## Examples
+
+### Watch online media on your PC
+
+    wget https://github.com/chapmanjacobd/library/raw/main/examples/mealtime.tw.db
+    library watch mealtime.tw.db --random --duration 30m
+
+### Listen to online media on a chromecast group
+
+    wget https://github.com/chapmanjacobd/library/raw/main/examples/music.tl.db
+    library listen music.tl.db -ct "House speakers" --random
+
+### Hook into HackerNews
+
+    wget https://github.com/chapmanjacobd/hn_mining/raw/main/hackernews_only_direct.tw.db
+    library watch hackernews_only_direct.tw.db --random --ignore-errors
+
+### Organize via separate databases
+
+    library fsadd --audio both.db ./audiobooks/ ./podcasts/
+    library fsadd --audio audiobooks.db ./audiobooks/
+    library fsadd --audio podcasts.db ./podcasts/ ./another/more/secret/podcasts_folder/
+
+### Tabs
+
+<details><summary>Visit websites on a schedule</summary>
 
 `tabs` is a way to organize your visits to URLs that you want to remember every once in a while.
 
@@ -196,39 +228,9 @@ Incremental surfing. 📈🏄 totally rad!
 
 </details>
 
-<details><summary>List all subcommands</summary>
+### Find large folders
 
-    $ library
-    {lb.usage()}
-
-</details>
-
-## Examples
-
-### Watch online media on your PC
-
-    wget https://github.com/chapmanjacobd/library/raw/main/examples/mealtime.tw.db
-    library watch mealtime.tw.db --random --duration 30m
-
-### Listen to online media on a chromecast group
-
-    wget https://github.com/chapmanjacobd/library/raw/main/examples/music.tl.db
-    library listen music.tl.db -ct "House speakers" --random
-
-### Hook into HackerNews
-
-    wget https://github.com/chapmanjacobd/hn_mining/raw/main/hackernews_only_direct.tw.db
-    library watch hackernews_only_direct.tw.db --random --ignore-errors
-
-### Organize via separate databases
-
-    library fsadd --audio both.db ./audiobooks/ ./podcasts/
-    library fsadd --audio audiobooks.db ./audiobooks/
-    library fsadd --audio podcasts.db ./podcasts/ ./another/more/secret/podcasts_folder/
-
-### library bigdirs: curate
-
-<details><summary>Find large folders</summary>
+<details><summary>Curate with library bigdirs</summary>
 
 If you are looking for candidate folders for curation (ie. you need space but don't want to buy another hard drive).
 The bigdirs subcommand was written for that purpose:
