@@ -262,20 +262,32 @@ def dl_download(args=None) -> None:
                 continue
 
         # check again in case it was already attempted by another process
-        previous_time_attempted = m.get("time_modified") or consts.now()
+        previous_time_attempted = m.get("time_modified") or consts.APPLICATION_START  # 0 is nullified
         if not args.force and "time_modified" in m_columns:
-            download_already_attempted = args.db.pop(
+            d = args.db.pop_dict(
                 f"""
-                SELECT path from media m
+                SELECT time_modified, time_deleted from media m
                 WHERE 1=1
-                AND (path=? or {'web' if 'webpath' in m_columns else ''}path=?)
+                AND path=?
                 AND (time_modified > {str(previous_time_attempted)} OR time_deleted > 0)
                 """,
-                [m["path"], m["path"]],
+                [m["path"]],
             )
-            if download_already_attempted:
-                log.info("[%s]: Download already attempted recently. Skipping!", m["path"])
-                continue
+            if d:
+                if d["time_deleted"]:
+                    log.info(
+                        "[%s]: Download marked deleted (%s ago). Skipping!",
+                        m["path"],
+                        utils.human_time(consts.now() - d["time_deleted"]),
+                    )
+                    continue
+                elif d["time_modified"]:
+                    log.info(
+                        "[%s]: Download already attempted recently (%s ago). Skipping!",
+                        m["path"],
+                        utils.human_time(consts.now() - d["time_modified"]),
+                    )
+                    continue
 
         try:
             log.debug(m)
