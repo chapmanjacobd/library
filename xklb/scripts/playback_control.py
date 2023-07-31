@@ -48,12 +48,13 @@ def reformat_ffprobe(path):
     codec_types = [s.get("codec_type") for s in probe["streams"]]
     audio_count = sum(1 for s in codec_types if s == "audio")
 
-    excluded_keys = ["encoder", "major_brand", "minor_version", "compatible_brands", "software"]
+    excluded_keys = ["encoder", "major_brand", "minor_version", "compatible_brands", "software", "Segment-Durations-Ms"]
+    excluded_key_like = ["durations"]
 
     seen = set()
     metadata = utils.lower_keys(probe["format"].get("tags", {}))
     for key, value in deepcopy(metadata).items():
-        if key in excluded_keys or value in seen or path in value:
+        if key in excluded_keys or any(s in key for s in excluded_key_like) or value in seen or path in value:
             metadata.pop(key, None)
         seen.add(value)
 
