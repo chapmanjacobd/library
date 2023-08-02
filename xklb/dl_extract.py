@@ -246,9 +246,6 @@ def dl_download(args=None) -> None:
 
     media = process_downloadqueue(args)
     for m in media:
-        if not m["path"].startswith("http"):
-            continue
-
         if blocklist_rules and utils.is_blocked_dict_like_sql(m, blocklist_rules):
             player.mark_download_attempt(args, [m["path"]])
             continue
