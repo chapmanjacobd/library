@@ -240,8 +240,6 @@ def download_add(
         )
         fs_tags = utils.dict_filter_bool(fs_extract.extract_metadata(fs_args, local_path), keep_0=False) or {}
         fs_extract.clean_up_temp_dirs()
-        with args.db.conn:
-            args.db.conn.execute("DELETE from media WHERE path = ?", [webpath])
     else:
         fs_tags = {"time_modified": consts.now()}
 
@@ -258,3 +256,6 @@ def download_add(
         "error": error,
     }
     add(args, entry)
+    if entry["path"] != webpath:
+        with args.db.conn:
+            args.db.conn.execute("DELETE from media WHERE path = ?", [webpath])
