@@ -442,6 +442,9 @@ class TestStringComparison(unittest.TestCase):
         assert not utils.compare_block_strings("%abc%", "hello world")
         assert utils.compare_block_strings("h%o w%ld", "hello world")
         assert not utils.compare_block_strings("abc", "hello world")
+        assert utils.compare_block_strings(None, None)
+        assert not utils.compare_block_strings(None, "hello world")
+        assert not utils.compare_block_strings("abc", None)
 
 
 class TestBlocklist(unittest.TestCase):
