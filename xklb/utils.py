@@ -1394,6 +1394,11 @@ def partial_startswith(original_string, startswith_match_list):
 
 
 def compare_block_strings(value, media_value):
+    if value is None and media_value is None:
+        return True
+    elif value is None or media_value is None:
+        return False
+
     value = value.lower()
     media_value = media_value.lower()
 

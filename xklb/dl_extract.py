@@ -270,6 +270,7 @@ def dl_download(args=None) -> None:
                 """,
                 [m["path"]],
             )
+            log.debug(d)
             if d:
                 if d["time_deleted"]:
                     log.info(
@@ -277,6 +278,7 @@ def dl_download(args=None) -> None:
                         m["path"],
                         utils.human_time(consts.now() - d["time_deleted"]),
                     )
+                    player.mark_download_attempt(args, [m["path"]])
                     continue
                 elif d["time_modified"]:
                     log.info(
