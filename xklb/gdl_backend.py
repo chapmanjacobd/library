@@ -87,8 +87,10 @@ def parse_gdl_job_status(job_status, path, ignore_errors=False):
         log.debug("[%s]: Unrecoverable error %s. %s", path, error, utils.combine(errors))
 
     if job_status & 128:
-        if not ignore_errors:
-            raise OSError
+        errors.append("OSOrJSONDecodeError")
+        # https://github.com/mikf/gallery-dl/issues/4380
+        # if not ignore_errors:
+        # raise OSError
     if job_status & 2:
         raise ValueError("gallery_dl configuration error")
 
