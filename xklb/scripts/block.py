@@ -127,12 +127,14 @@ def block(args=None) -> None:
                   AND new_links >= 15
                   AND tried >= {args.min_tried}
                 ORDER BY tried > 0 DESC
+                    , percent_succeeded >= 1.0 and failed = 0
+                    , tried > 15 DESC
                     , percent_failed >= 0.8 DESC
-                    , percent_succeeded <= 0.8 DESC
-                    , ntile(3) over (order by new_links) desc
+                    , succeeded = 0 DESC
+                    , percent_failed + percent_succeeded > 1 DESC
+                    , ntile(4) over (order by new_links) desc
                     , ntile(2) over (order by tried) desc
-                    , ntile(3) over (order by failed) desc
-                    , ntile(2) over (order by succeeded)
+                    , ntile(2) over (order by succeeded) desc
                     , subdomain
                 """,
             ),
