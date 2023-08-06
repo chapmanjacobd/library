@@ -254,6 +254,9 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     if args.include == ["."]:
         args.include = [str(Path().cwd().resolve())]
 
+    if len(args.include) == 1 and os.sep in args.include[0]:
+        args.include = [str(Path(args.include[0]).resolve())]
+
     if args.db:
         args.database = args.db
     args.db = db.connect(args)
