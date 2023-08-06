@@ -451,10 +451,10 @@ def construct_query(args) -> Tuple[str, dict]:
         )
         SELECT
             {args.select_sql}
-            --, play_count
-            --, time_first_played
-            --, time_last_played
-            --, playhead
+            , play_count
+            , time_first_played
+            , time_last_played
+            , playhead
         FROM m
         WHERE 1=1
             {" ".join(args.aggregate_filter_sql)}
