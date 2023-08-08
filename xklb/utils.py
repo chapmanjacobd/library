@@ -1124,6 +1124,15 @@ def random_filename(path) -> str:
     return f"{path}.{random_string()}{ext}"
 
 
+def resolve_if_exists(input_path):
+    resolved_path = Path(input_path).expanduser().resolve()
+
+    if resolved_path.exists():
+        return str(resolved_path)
+    else:
+        return input_path
+
+
 def confirm(*args, **kwargs) -> bool:
     clear_input()
     return prompt.Confirm.ask(*args, **kwargs, default=False)

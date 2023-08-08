@@ -14,7 +14,7 @@ def parse_args() -> argparse.Namespace:
         usage=usage.disk_usage,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("--sort-by", "--sort", "-u")
+    parser.add_argument("--sort-by", "--sort", "-u", nargs="+", action="extend")
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", default="4000")
     parser.add_argument(
         "--size",
@@ -39,6 +39,11 @@ def parse_args() -> argparse.Namespace:
     if args.include == ["."]:
         args.include = [str(Path().cwd().resolve())]
 
+    if len(args.include) == 1 and os.sep in args.include[0]:
+        args.include = [utils.resolve_if_exists(args.include[0])]
+
+    args.sort_by = " ".join(args.sort_by)
+
     if args.size:
         args.size = utils.parse_human_to_sql(utils.human_to_bytes, "size", args.size)
 
@@ -49,7 +54,7 @@ def parse_args() -> argparse.Namespace:
 
 def sort_by(args):
     if args.sort_by:
-        return lambda x: x.get(args.sort_by)
+        return lambda x: x.get(args.sort_by) or 0
 
     return lambda x: (x["size"] / (x.get("count") or 1), x["size"], x.get("count") or 1)
 

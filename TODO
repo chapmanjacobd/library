@@ -1,3 +1,7 @@
+lb-dev du ~/lb/audio.db d/82_Audiobooks/ -u count desc
+
+du: print number of files, number of folders via count
+
 - POIs CLI -- save your trip plans and see places to go with automated day trip itineraries, geopandas buffer
 
 places lookup
