@@ -1,8 +1,7 @@
-import argparse, os, shlex, shutil, sys, time
+import argparse, os, random, shlex, shutil, sys, time
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from random import random
 from typing import Dict, Tuple
 
 from xklb import consts, db, history, player, subtitle, tube_backend, usage, utils
@@ -47,7 +46,7 @@ def parse_args_sort(args) -> None:
 
     # switching between videos with and without subs is annoying
     subtitle_count = "=0"
-    if random() < getattr(args, "subtitle_mix", consts.DEFAULT_SUBTITLE_MIX):
+    if random.random() < getattr(args, "subtitle_mix", consts.DEFAULT_SUBTITLE_MIX):
         # bias slightly toward videos without subtitles
         subtitle_count = ">0"
 
@@ -402,22 +401,8 @@ def construct_query(args) -> Tuple[str, dict]:
     else:
         db.construct_search_bindings(args, m_columns)
 
-    if args.table == "media" and not any(
-        [
-            args.filter_sql,
-            args.where,
-            args.print,
-            args.partial,
-            args.lower,
-            args.upper,
-            args.limit not in args.defaults,
-            args.duration_from_size,
-        ],
-    ):
-        limit = 60_000
-        if args.random:
-            limit = consts.DEFAULT_PLAY_QUEUE * 16
-
+    if args.table == "media" and args.random:
+        limit = 16 * (args.limit or consts.DEFAULT_PLAY_QUEUE)
         where_not_deleted = (
             "where COALESCE(time_deleted,0) = 0"
             if "time_deleted" in m_columns and "time_deleted" not in " ".join(sys.argv)
