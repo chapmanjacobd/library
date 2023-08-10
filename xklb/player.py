@@ -589,6 +589,7 @@ def get_dir_media(args, dirs: List, include_subdirs=False) -> List[Dict]:
         FROM m
         ORDER BY play_count
             , m.path LIKE "http%"
+            {', random()' if args.random else ''}
             {'' if 'sort' in args.defaults else ', ' + args.sort}
             , path
         {"LIMIT 10000" if 'limit' in args.defaults else str(args.limit)} {args.offset_sql}
