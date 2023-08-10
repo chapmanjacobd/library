@@ -401,7 +401,7 @@ def construct_query(args) -> Tuple[str, dict]:
     else:
         db.construct_search_bindings(args, m_columns)
 
-    if args.table == "media" and args.random:
+    if args.table == "media" and args.random and not any([args.print, args.limit not in args.defaults]):
         limit = 16 * (args.limit or consts.DEFAULT_PLAY_QUEUE)
         where_not_deleted = (
             "where COALESCE(time_deleted,0) = 0"
