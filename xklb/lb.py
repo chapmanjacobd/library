@@ -165,7 +165,7 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     subp_view = add_parser(subparsers, SC.view, ["image", "see", "look"])
     subp_view.set_defaults(func=view)
 
-    subp_filesystem = add_parser(subparsers, SC.filesystem, ["fs"])
+    subp_filesystem = add_parser(subparsers, SC.filesystem, ["fs", "open"])
     subp_filesystem.set_defaults(func=filesystem)
 
     subp_bigdirs = add_parser(subparsers, "bigdirs", ["largefolders", "large_folders"])

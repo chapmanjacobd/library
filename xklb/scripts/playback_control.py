@@ -90,7 +90,7 @@ def reformat_ffprobe(path):
 
     if description and not consts.MOBILE_TERMINAL:
         description = utils.wrap_paragraphs(description.strip(), width=100)
-        formatted_output += f"Description: \n{textwrap.indent(description, '          ')}\n"
+        formatted_output += f" Details: {textwrap.indent(description, '          ')}\n"
     if date:
         formatted_output += f"    Date: {date}\n"
     if artist:
