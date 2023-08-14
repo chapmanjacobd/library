@@ -177,6 +177,8 @@ def consolidate(v: dict) -> Optional[dict]:
 
 def add(args, entry):
     if "path" not in entry:
+        entry["path"] = entry.get("webpath")
+    if not entry.get("path"):
         log.warning('Skipping insert: no "path" in entry %s', entry)
         return
 
