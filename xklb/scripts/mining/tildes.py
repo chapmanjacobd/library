@@ -57,7 +57,7 @@ def save_page(args, url):
             if edited_time_element
             else None,
             "score": int(score_element.text.split()[0]) if score_element else 0,
-            "text": comment_element.find("div", class_="comment-text").get_text("\n", strip=True),
+            "text": "".join(str(el) for el in comment_element.find("div", class_="comment-text").contents),
         }
         media.add(args, comment)
 
@@ -120,7 +120,7 @@ def save_page(args, url):
             else 0,
             "num_words": num_words,
             "title": topic_title_element.get_text("\n", strip=True),
-            "text": text_element.get_text("\n", strip=True) if text_element else None,
+            "text": "".join(str(el) for el in text_element.contents) if text_element else None,
         }
         media.add(args, topic)
 
