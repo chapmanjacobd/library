@@ -788,7 +788,7 @@ def modify_display_size_for_taskbar(display):
                 display.height -= dock_height
 
         return display
-    except:
+    except Exception:
         return display
 
 

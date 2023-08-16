@@ -87,7 +87,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.2.062)
+    xk media library subcommands (v2.2.063)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -120,6 +120,8 @@ To stop playing press Ctrl+C in either the terminal or mpv
 
       lb redditadd             Create a reddit database; Add subreddits
       lb redditupdate          Fetch new posts from saved subreddits
+
+      lb tildes                Backup tildes comments and topics
 
     downloads:
       lb download              Download media
@@ -504,6 +506,22 @@ Explore `library` databases in your browser
 
 </details>
 
+<details><summary>Backup tildes comments and topics</summary>
+
+    $ library tildes -h
+    usage: library tildes DATABASE USER
+
+    Backup tildes.net user comments and topics
+
+        library tildes tildes.net.db xk3
+
+    Without cookies you are limited to the first page. You can use cookies like this:
+        https://github.com/rotemdan/ExportCookies
+        library tildes tildes.net.db xk3 --cookies ~/Downloads/cookies-tildes-net.txt
+
+
+</details>
+
 <details><summary>Create / Update a Hacker News database (hnadd)</summary>
 
     $ library hnadd -h
@@ -802,6 +820,23 @@ Explore `library` databases in your browser
         library watch -u same-size
         library watch -u same-width, same-height ASC, same-fps
         library watch -u same-time_uploaded same-view_count same-upvote_ratio
+
+        No media found when using --random
+        In addition to -u/--sort random, there is also the -r/--random flag.
+        If you have a large database it should be faster than -u random but it comes with a caveat:
+        This flag randomizes via rowid at an earlier stage to boost performance.
+        It is possible that you see "No media found" or a smaller amount of media than correct.
+        You can bypass this by setting --limit. For example:
+        library watch -B --folder-size=+12GiB --folder-size=-100GiB -r -pa
+        path         count      size  duration                        avg_duration      avg_size
+        ---------  -------  --------  ------------------------------  --------------  ----------
+        Aggregate    10000  752.5 GB  4 months, 15 days and 10 hours  20 minutes         75.3 MB
+        (17 seconds)
+        library watch -B --folder-size=+12GiB --folder-size=-100GiB -r -pa -l inf
+        path         count     size  duration                                 avg_duration      avg_size
+        ---------  -------  -------  ---------------------------------------  --------------  ----------
+        Aggregate   140868  10.6 TB  5 years, 2 months, 28 days and 14 hours  20 minutes         75.3 MB
+        (30 seconds)
 
     Post-actions -- choose what to do after playing:
         library watch --post-action keep    # do nothing after playing (default)

@@ -5,6 +5,7 @@ for title, subcommand in [
     ("Add local media", "fsadd"),
     ("Add online media", "tubeadd"),
     ("Add reddit media", "redditadd"),
+    ("Backup tildes comments and topics", "tildes"),
     ("Create / Update a Hacker News database", "hnadd"),
     ("Add tabs", "tabsadd"),
     ("Watch / Listen", "watch"),
