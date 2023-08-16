@@ -25,6 +25,7 @@ from xklb.scripts.mining.mpv_watchlater import mpv_watchlater
 from xklb.scripts.mining.nouns import nouns
 from xklb.scripts.mining.pushshift import pushshift_extract
 from xklb.scripts.mining.reddit_selftext import reddit_selftext
+from xklb.scripts.mining.tildes import tildes
 from xklb.scripts.move_list import move_list
 from xklb.scripts.optimize_db import optimize_db
 from xklb.scripts.places_import import places_import
@@ -75,6 +76,8 @@ def usage() -> str:
 
       lb redditadd             Create a reddit database; Add subreddits
       lb redditupdate          Fetch new posts from saved subreddits
+
+      lb tildes                Backup tildes comments and topics
 
     downloads:
       lb download              Download media
@@ -210,6 +213,9 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     subp_redditupdate.set_defaults(func=reddit_update)
     subp_pushshift = add_parser(subparsers, "pushshift")
     subp_pushshift.set_defaults(func=pushshift_extract)
+
+    subp_tildes = add_parser(subparsers, "tildes")
+    subp_tildes.set_defaults(func=tildes)
 
     subp_hnadd = add_parser(subparsers, "hnadd")
     subp_hnadd.set_defaults(func=hacker_news_add)

@@ -1,4 +1,4 @@
-import argparse, csv, functools, hashlib, logging, math, multiprocessing, os, platform, random, re, shlex, shutil, signal, string, subprocess, sys, tempfile, textwrap, time
+import argparse, csv, functools, hashlib, logging, math, multiprocessing, os, platform, random, re, shlex, shutil, signal, string, subprocess, sys, tempfile, textwrap, time, urllib.error, urllib.request
 from ast import literal_eval
 from collections import Counter
 from collections.abc import Iterable
@@ -1550,3 +1550,24 @@ fi
 
 def dumbcopy(d):
     return {i: j.copy() if type(j) == dict else j for i, j in d.items()}
+
+
+class ChocolateChip:
+    def __init__(self, args):
+        from yt_dlp.cookies import load_cookies
+        from yt_dlp.utils import YoutubeDLCookieProcessor
+
+        if args.cookies_from_browser:
+            args.cookies_from_browser = (args.cookies_from_browser,)
+        cookiejar = load_cookies(args.cookies, args.cookies_from_browser, ydl=None)
+        cookie_processor = YoutubeDLCookieProcessor(cookiejar)
+        self.opener = urllib.request.build_opener(cookie_processor)
+
+    def get(self, url):
+        request = urllib.request.Request(url)
+        response = self.opener.open(request, timeout=60)
+        response_data = response.read()
+        if response.getcode() != 200:
+            raise urllib.error.HTTPError(url, response.getcode(), response_data, response.headers, None)
+        response.close()
+        return response_data
