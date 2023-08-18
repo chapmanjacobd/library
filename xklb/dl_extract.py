@@ -240,13 +240,13 @@ def dl_download(args=None) -> None:
             with args.db.conn:
                 args.db.conn.execute("DELETE from media WHERE webpath is NULL and path in (select webpath from media)")
 
-    blocklist_rules = []
+    args.blocklist_rules = []
     if "blocklist" in args.db.table_names():
-        blocklist_rules = [{d["key"]: d["value"]} for d in args.db["blocklist"].rows]
+        args.blocklist_rules = [{d["key"]: d["value"]} for d in args.db["blocklist"].rows]
 
     media = process_downloadqueue(args)
     for m in media:
-        if blocklist_rules and utils.is_blocked_dict_like_sql(m, blocklist_rules):
+        if args.blocklist_rules and utils.is_blocked_dict_like_sql(m, args.blocklist_rules):
             player.mark_download_attempt(args, [m["path"]])
             continue
 
@@ -258,7 +258,7 @@ def dl_download(args=None) -> None:
                 player.mark_download_attempt(args, [m["path"]])
                 continue
 
-        # check again in case it was already attempted by another process
+        # check if download already attempted recently by another process
         previous_time_attempted = m.get("time_modified") or consts.APPLICATION_START  # 0 is nullified
         if not args.force and "time_modified" in m_columns:
             d = args.db.pop_dict(

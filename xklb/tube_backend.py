@@ -1,4 +1,5 @@
 import json, ssl, sys
+from copy import deepcopy
 from pathlib import Path
 from types import ModuleType
 from typing import Dict, List, Optional, Tuple
@@ -372,7 +373,16 @@ def download(args, m) -> None:
     match_filter_user_config = ydl_opts.get("match_filter")
     if match_filter_user_config is not None:
         match_filters.append(match_filter_user_config)
-    ydl_opts["match_filter"] = yt_dlp.utils.match_filter_func(" & ".join(match_filters).split(" | "))
+
+    def blocklist_check(info, *pargs, incomplete):
+        if getattr(args, "blocklist_rules", False):
+            media_entry = media.consolidate(deepcopy(info))
+            if utils.is_blocked_dict_like_sql(media_entry or {}, args.blocklist_rules):
+                raise yt_dlp.utils.RejectedVideoReached("Video matched library block rules")
+        ytdlp_match_filter = yt_dlp.utils.match_filter_func(" & ".join(match_filters).split(" | "))
+        return ytdlp_match_filter(info, *pargs, incomplete)
+
+    ydl_opts["match_filter"] = blocklist_check
 
     download_archive = Path(args.download_archive or "~/.local/share/yt_archive.txt").expanduser().resolve()
     if download_archive.exists() and not consts.PYTEST_RUNNING:
