@@ -246,7 +246,8 @@ yt_unrecoverable_errors = re.compile(
 .*HTTP Error 404
 .*HTTPError 404
 .*HTTP Error 410
-.*HTTPError 410""".splitlines(),
+.*HTTPError 410
+.*stopping due to --break-match-filter""".splitlines(),
     ),
 )
 

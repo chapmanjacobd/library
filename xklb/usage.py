@@ -645,6 +645,13 @@ playlists = """library playlists DATABASE [--delete ...]
         │ Youtube  │ Highlights of Life │ https://www.youtube.com/playlist?list=PL7gXS9DcOm5-O0Fc1z79M72BsrHByda3n │
         ╘══════════╧════════════════════╧══════════════════════════════════════════════════════════════════════════╛
 
+    Search playlists
+
+        library playlists audio.db badfinger
+        path                                                        extractor_key    title                             count
+        ----------------------------------------------------------  ---------------  ------------------------------  -------
+        https://music.youtube.com/channel/UCyJzUJ95hXeBVfO8zOA0GZQ  ydl_Youtube      Uploads from Badfinger - Topic      226
+
     Aggregate Report of Videos in each Playlist
 
         library playlists -p a

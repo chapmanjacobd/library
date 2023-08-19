@@ -360,7 +360,9 @@ def download(args, m) -> None:
 
     if args.small:
         match_filters.append("duration >? 59 & duration <? 14399")
-        ydl_opts["format"] = "bestvideo[height<=576]+bestaudio/best[height<=576]/best"
+        ydl_opts[
+            "format"
+        ] = "bestvideo[height<=576][filesize<2G]+bestaudio/best[height<=576][filesize<2G]/bestvideo[height<=576]+bestaudio/best[height<=576]/best"
 
     if args.profile == DBType.audio:
         ydl_opts[
@@ -378,7 +380,7 @@ def download(args, m) -> None:
         if getattr(args, "blocklist_rules", False):
             media_entry = media.consolidate(deepcopy(info))
             if utils.is_blocked_dict_like_sql(media_entry or {}, args.blocklist_rules):
-                raise yt_dlp.utils.RejectedVideoReached("Video matched library block rules")
+                raise yt_dlp.utils.RejectedVideoReached("Video matched library blocklist")
         ytdlp_match_filter = yt_dlp.utils.match_filter_func(" & ".join(match_filters).split(" | "))
         return ytdlp_match_filter(info, *pargs, incomplete)
 
