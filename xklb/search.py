@@ -104,9 +104,9 @@ def construct_query(args) -> Tuple[str, dict]:
             args.filter_bindings = {**args.filter_bindings, **search_bindings}
             c_columns = {**c_columns, "rank": int}
         elif args.exclude:
-            db.construct_search_bindings(args, c_columns)
+            db.construct_search_bindings(args, ['text'])
     else:
-        db.construct_search_bindings(args, c_columns)
+        db.construct_search_bindings(args, ['text'])
 
     cols = args.cols or ["path", "text", "time", "rank", "title"]
     args.select = [c for c in cols if c in {**c_columns, **m_columns, **{"*": "Any"}}]

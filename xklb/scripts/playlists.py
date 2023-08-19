@@ -60,9 +60,9 @@ def construct_query(args) -> Tuple[str, dict]:
             )
             args.filter_bindings = {**args.filter_bindings, **search_bindings}
         elif args.exclude:
-            db.construct_search_bindings(args, pl_columns)
+            db.construct_search_bindings(args, [f'm.{k}' for k in pl_columns if k in db.config["media"]["search_columns"]])
     else:
-        db.construct_search_bindings(args, pl_columns)
+        db.construct_search_bindings(args, [f'm.{k}' for k in pl_columns if k in db.config["media"]["search_columns"]])
 
     LIMIT = "LIMIT " + str(args.limit) if args.limit else ""
     query = f"""SELECT

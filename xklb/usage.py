@@ -988,6 +988,11 @@ dedupe_db = """library dedupe-dbs DATABASE TABLE --bk BUSINESS_KEYS [--pk PRIMAR
     If your duplicate rows contain exactly the same data in all the columns you can run with --skip-upsert to save a lot of time
 """
 
+search_db = """library search-db DATABASE TABLE SEARCH ... [--delete]
+
+Search all columns in a SQLITE table. If the table does not exist, uses the table which startswith (if only one match)
+"""
+
 merge_dbs = """library merge-dbs DEST_DB SOURCE_DB ... [--only-target-columns] [--only-new-rows] [--upsert] [--pk PK ...] [--table TABLE ...]
 
     Merge-DBs will insert new rows from source dbs to target db, table by table. If primary key(s) are provided,

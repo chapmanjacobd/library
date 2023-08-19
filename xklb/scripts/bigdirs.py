@@ -122,7 +122,7 @@ def get_table(args) -> List[dict]:
 
     if args.size:
         args.filter_sql.append(" and size IS NOT NULL " + args.size)
-    db.construct_search_bindings(args, m_columns)
+    db.construct_search_bindings(args, [f'm.{k}' for k in m_columns if k in db.config["media"]["search_columns"]])
 
     media = list(
         args.db.query(

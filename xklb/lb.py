@@ -18,6 +18,7 @@ from xklb.scripts.dedupe_db import dedupe_db
 from xklb.scripts.disk_usage import disk_usage
 from xklb.scripts.download_status import download_status
 from xklb.scripts.history import history
+from xklb.scripts.search_db import search_db
 from xklb.scripts.merge_dbs import merge_dbs
 from xklb.scripts.merge_online_local import merge_online_local
 from xklb.scripts.mining.extract_links import extract_links
@@ -64,6 +65,7 @@ def usage() -> str:
       lb mv-list               Reach a target free space by moving data across mount points
       lb scatter               Scatter files across multiple mountpoints (mergerfs balance)
 
+      lb search-db             Search a SQLITE file
       lb merge-dbs             Merge multiple SQLITE files
       lb copy-play-counts      Copy play counts from multiple SQLITE files
 
@@ -160,7 +162,7 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     subp_listen = add_parser(subparsers, SC.listen, ["lt", "tubelisten", "tl"])
     subp_listen.set_defaults(func=listen)
 
-    subp_search = add_parser(subparsers, "search", ["s"])
+    subp_search = add_parser(subparsers, "search-captions", ["sc", "search"])
     subp_search.set_defaults(func=search)
 
     subp_read = add_parser(subparsers, SC.read, ["text", "books", "docs"])
@@ -183,6 +185,8 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     subp_christen = add_parser(subparsers, "christen")
     subp_christen.set_defaults(func=christen)
 
+    subp_search_db = add_parser(subparsers, "search-db", ["s","sdb", "searchdb", "search_db"])
+    subp_search_db.set_defaults(func=search_db)
     subp_merge_db = add_parser(subparsers, "merge-dbs", ["merge-db", "mergedb", "mergedbs", "merge_db", "merge_dbs"])
     subp_merge_db.set_defaults(func=merge_dbs)
     subp_dedupe_db = add_parser(subparsers, "dedupe-dbs", ["dedupe-db", "dedupedb", "dedupe_db"])

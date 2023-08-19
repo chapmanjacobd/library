@@ -74,7 +74,6 @@ def columns(args, table_name):
     except Exception:
         return {}
 
-
 config = {
     "playlists": {
         "column_order": ["id", "path", "extractor_key"],
@@ -216,32 +215,11 @@ def fts_search_sql(table, fts_table, include, exclude=None, flexible=True):
     return table, bound_parameters
 
 
-def gen_include_excludes(cols_available):
-    searchable_columns = [
-        "path",
-        "title",
-        "mood",
-        "genre",
-        "year",
-        "bpm",
-        "key",
-        "time",
-        "decade",
-        "categories",
-        "city",
-        "country",
-        "description",
-        "album",
-        "artist",
-        "tags",
-    ]
-
-    valid_cols = [f"m.{c}" for c in searchable_columns if c in cols_available]
-
+def gen_include_excludes(cols):
     incl = ":include{0}"
     excl = ":exclude{0}"
-    include_string = "AND (" + " OR ".join([f"{col} LIKE {incl}" for col in valid_cols]) + ")"
-    exclude_string = "AND (" + " AND ".join([f"COALESCE({col},'') NOT LIKE {excl}" for col in valid_cols]) + ")"
+    include_string = "AND (" + " OR ".join([f"{col} LIKE {incl}" for col in cols]) + ")"
+    exclude_string = "AND (" + " AND ".join([f"COALESCE({col},'') NOT LIKE {excl}" for col in cols]) + ")"
 
     return include_string, exclude_string
 
