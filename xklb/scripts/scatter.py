@@ -220,7 +220,7 @@ def scatter() -> None:
 
     if args.srcmounts:
         disk_stats = utils.get_mount_stats(args.srcmounts)
-        assert all(p.exists() for p in args.srcmounts)
+        assert all(Path(p).exists() for p in args.srcmounts)
     else:
         log.warning(
             "srcmounts was not provided (-m) so provided paths will only be compared with each other. This might not be what you want!!",
