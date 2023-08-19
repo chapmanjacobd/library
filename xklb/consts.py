@@ -198,6 +198,7 @@ frequency = ["minutely", "hourly", "daily", "weekly", "monthly", "quarterly", "y
 PLAYLIST_KNOWN_KEYS = ("description", "url", "duration", "view_count", "webpage_url", "original_url", "time_deleted")
 
 MEDIA_KNOWN_KEYS = (
+    "cookies",
     "PURL",
     "cast",
     "channel_is_verified",

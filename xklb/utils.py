@@ -1434,6 +1434,7 @@ def is_blocked_dict_like_sql(m, blocklist):
     for block_dict in blocklist:
         for key, value in block_dict.items():
             if key in m and compare_block_strings(value, m[key]):
+                log.warning("%s matched %s block rule 「%s」 %s", key, value, m[key], m.get("path"))
                 return True
     return False
 
