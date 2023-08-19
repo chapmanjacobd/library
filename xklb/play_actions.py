@@ -397,9 +397,9 @@ def construct_query(args) -> Tuple[str, dict]:
             args.filter_bindings = {**args.filter_bindings, **search_bindings}
             m_columns = {**m_columns, "rank": int}
         elif args.exclude:
-            db.construct_search_bindings(args, m_columns)
+            db.construct_search_bindings(args, [f'm.{k}' for k in m_columns if k in db.config["media"]["search_columns"]])
     else:
-        db.construct_search_bindings(args, m_columns)
+        db.construct_search_bindings(args, [f'm.{k}' for k in m_columns if k in db.config["media"]["search_columns"]])
 
     if args.table == "media" and args.random and not any([args.print, args.limit not in args.defaults]):
         limit = 16 * (args.limit or consts.DEFAULT_PLAY_QUEUE)

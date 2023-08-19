@@ -133,7 +133,7 @@ def construct_query(args) -> Tuple[str, dict]:
 
     args.filter_sql.extend([" and " + w for w in args.where])
 
-    db.construct_search_bindings(args, m_columns)
+    db.construct_search_bindings(args, [f'm.{k}' for k in m_columns if k in db.config["media"]["search_columns"]])
 
     if args.action == SC.download and "time_modified" in m_columns:
         args.filter_sql.append(

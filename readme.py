@@ -24,6 +24,7 @@ for title, subcommand in [
     ("Re-download media", "redownload"),
     ("Merge online and local data", "merge-online-local"),
     ("Convert selftext links to media table", "reddit-selftext"),
+    ("Search a SQLITE database", "search-db"),
     ("Merge SQLITE databases", "merge-dbs"),
     ("Dedupe SQLITE tables", "dedupe-db"),
     ("Show large folders", "bigdirs"),
