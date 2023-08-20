@@ -18,7 +18,6 @@ from xklb.scripts.dedupe_db import dedupe_db
 from xklb.scripts.disk_usage import disk_usage
 from xklb.scripts.download_status import download_status
 from xklb.scripts.history import history
-from xklb.scripts.search_db import search_db
 from xklb.scripts.merge_dbs import merge_dbs
 from xklb.scripts.merge_online_local import merge_online_local
 from xklb.scripts.mining.extract_links import extract_links
@@ -35,6 +34,7 @@ from xklb.scripts.playlists import playlists
 from xklb.scripts.redownload import redownload
 from xklb.scripts.relmv import relmv
 from xklb.scripts.scatter import scatter
+from xklb.scripts.search_db import search_db
 from xklb.scripts.streaming_tab_loader import streaming_tab_loader
 from xklb.search import search
 from xklb.tabs_actions import tabs
@@ -185,7 +185,7 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     subp_christen = add_parser(subparsers, "christen")
     subp_christen.set_defaults(func=christen)
 
-    subp_search_db = add_parser(subparsers, "search-db", ["s","sdb", "searchdb", "search_db"])
+    subp_search_db = add_parser(subparsers, "search-db", ["s", "sdb", "searchdb", "search_db"])
     subp_search_db.set_defaults(func=search_db)
     subp_merge_db = add_parser(subparsers, "merge-dbs", ["merge-db", "mergedb", "mergedbs", "merge_db", "merge_dbs"])
     subp_merge_db.set_defaults(func=merge_dbs)

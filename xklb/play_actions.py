@@ -120,6 +120,7 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
 
     parser.add_argument("--where", "-w", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--include", "-s", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
+    parser.add_argument("--flexible-search", "--or", "--flex", action="store_true")
     parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--no-fts", action="store_true")
 
@@ -392,14 +393,16 @@ def construct_query(args) -> Tuple[str, dict]:
                 fts_table=args.db["media"].detect_fts(),
                 include=args.include,
                 exclude=args.exclude,
-                flexible=args.action == SC.filesystem,
+                flexible=args.flexible_search,
             )
             args.filter_bindings = {**args.filter_bindings, **search_bindings}
             m_columns = {**m_columns, "rank": int}
         elif args.exclude:
-            db.construct_search_bindings(args, [f'm.{k}' for k in m_columns if k in db.config["media"]["search_columns"]])
+            db.construct_search_bindings(
+                args, [f"m.{k}" for k in m_columns if k in db.config["media"]["search_columns"]]
+            )
     else:
-        db.construct_search_bindings(args, [f'm.{k}' for k in m_columns if k in db.config["media"]["search_columns"]])
+        db.construct_search_bindings(args, [f"m.{k}" for k in m_columns if k in db.config["media"]["search_columns"]])
 
     if args.table == "media" and args.random and not any([args.print, args.limit not in args.defaults]):
         limit = 16 * (args.limit or consts.DEFAULT_PLAY_QUEUE)

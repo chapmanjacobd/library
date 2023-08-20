@@ -87,7 +87,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.2.067)
+    xk media library subcommands (v2.2.068)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -108,6 +108,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
       lb mv-list               Reach a target free space by moving data across mount points
       lb scatter               Scatter files across multiple mountpoints (mergerfs balance)
 
+      lb search-db             Search a SQLITE file
       lb merge-dbs             Merge multiple SQLITE files
       lb copy-play-counts      Copy play counts from multiple SQLITE files
 
@@ -1333,6 +1334,15 @@ Explore `library` databases in your browser
         youtu.be               60061        51911     8150  13.57%%                   7736  94.92%%                     414  5.08%%
         youtube.com             5976         5337      639  10.69%%                    599  93.74%%                      40  6.26%%
 
+    Find some words to block based on frequency / recency of downloaded media
+
+        library watch dl.db -u time_downloaded desc -L 10000 -pf | lb nouns | sort | uniq -c | sort -g
+        ...
+        183 ArchiveOrg
+        187 Documentary
+        237 PBS
+        243 BBC
+        ...
 
 
 </details>
@@ -1409,6 +1419,16 @@ Explore `library` databases in your browser
     usage: library reddit-selftext DATABASE
 
     Extract URLs from reddit selftext from the reddit_posts table to the media table
+
+
+</details>
+
+<details><summary>Search a SQLITE database (search-db)</summary>
+
+    $ library search-db -h
+    usage: library search-db DATABASE TABLE SEARCH ... [--delete]
+
+Search all columns in a SQLITE table. If the table does not exist, uses the table which startswith (if only one match)
 
 
 </details>

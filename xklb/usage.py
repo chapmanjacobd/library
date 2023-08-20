@@ -75,6 +75,15 @@ block = r"""library block DATABASE URLS ...
         youtu.be               60061        51911     8150  13.57%%                   7736  94.92%%                     414  5.08%%
         youtube.com             5976         5337      639  10.69%%                    599  93.74%%                      40  6.26%%
 
+    Find some words to block based on frequency / recency of downloaded media
+
+        library watch dl.db -u time_downloaded desc -L 10000 -pf | lb nouns | sort | uniq -c | sort -g
+        ...
+        183 ArchiveOrg
+        187 Documentary
+        237 PBS
+        243 BBC
+        ...
 """
 
 fsadd = """library fsadd [(--video) | --audio | --image |  --text | --filesystem] DATABASE PATHS ...

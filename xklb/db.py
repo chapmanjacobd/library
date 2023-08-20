@@ -74,6 +74,7 @@ def columns(args, table_name):
     except Exception:
         return {}
 
+
 config = {
     "playlists": {
         "column_order": ["id", "path", "extractor_key"],
@@ -190,7 +191,7 @@ def fts_quote(query: List[str]) -> List[str]:
     return [s if any(r in s for r in fts_words) else '"' + s + '"' for s in query]
 
 
-def fts_search_sql(table, fts_table, include, exclude=None, flexible=True):
+def fts_search_sql(table, fts_table, include, exclude=None, flexible=False):
     param_key = "FTS" + utils.random_string()
     table = f"""(
     with original as (select rowid, * from [{table}])
@@ -215,21 +216,19 @@ def fts_search_sql(table, fts_table, include, exclude=None, flexible=True):
     return table, bound_parameters
 
 
-def gen_include_excludes(cols):
-    incl = ":include{0}"
-    excl = ":exclude{0}"
-    include_string = "AND (" + " OR ".join([f"{col} LIKE {incl}" for col in cols]) + ")"
-    exclude_string = "AND (" + " AND ".join([f"COALESCE({col},'') NOT LIKE {excl}" for col in cols]) + ")"
-
-    return include_string, exclude_string
-
-
 def construct_search_bindings(args, columns) -> None:
-    includes, excludes = gen_include_excludes(columns)
-
+    incl = ":include{0}"
+    includes = "(" + " OR ".join([f"[{col}] LIKE {incl}" for col in columns]) + ")"
+    includes_sql_parts = []
     for idx, inc in enumerate(args.include):
-        args.filter_sql.append(includes.format(idx))
+        includes_sql_parts.append(includes.format(idx))
         args.filter_bindings[f"include{idx}"] = "%" + inc.replace(" ", "%").replace("%%", " ") + "%"
+    join_op = " OR " if getattr(args, "flexible_search", False) else " AND "
+    if len(includes_sql_parts) > 0:
+        args.filter_sql.append("AND (" + join_op.join(includes_sql_parts) + ")")
+
+    excl = ":exclude{0}"
+    excludes = "AND (" + " AND ".join([f"COALESCE([{col}],'') NOT LIKE {excl}" for col in columns]) + ")"
     for idx, exc in enumerate(args.exclude):
         args.filter_sql.append(excludes.format(idx))
         args.filter_bindings[f"exclude{idx}"] = "%" + exc.replace(" ", "%").replace("%%", " ") + "%"

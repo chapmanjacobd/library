@@ -80,6 +80,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--force", "-f", action="store_true")
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", default=100)
     parser.add_argument("--include", "-s", "--search", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
+    parser.add_argument("--flexible-search", "--or", "--flex", action="store_true")
     parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--print", "-p", default="", const="p", nargs="?")
     parser.add_argument("--cols", "-cols", "-col", nargs="*", help="Include a column when printing")
@@ -103,6 +104,7 @@ def parse_args() -> argparse.Namespace:
                 fts_table=args.db["media"].detect_fts(),
                 include=include2,
                 exclude=args.exclude,
+                flexible=args.flexible_search,
             )
             args.filter_bindings = {**args.filter_bindings, **search_bindings}
         else:
@@ -118,6 +120,7 @@ def parse_args() -> argparse.Namespace:
             fts_table=args.db["media"].detect_fts(),
             include=args.include,
             exclude=args.exclude,
+            flexible=args.flexible_search,
         )
         args.filter_bindings = {**args.filter_bindings, **search_bindings}
     elif args.paths:
@@ -356,7 +359,11 @@ def dedupe() -> None:
     elif args.profile == DBType.image:
         print(
             """
-        You should use `cbird` instead:
+        You should use `czkawka` or `cbird` instead:
+
+            $ czkawka image -d (pwd) > dupes.txt
+            $ wget https://raw.githubusercontent.com/chapmanjacobd/computer/main/bin/czkawka_output_dupdelete.py
+            $ python czkawka_output_dupdelete.py dupes.txt
 
             $ cbird -i.algos 1 -update
             $ cbird -dups -select-result -sort-rev resolution -chop -nuke  # exact duplicates

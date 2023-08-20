@@ -1,4 +1,4 @@
-import csv, json, os, platform, re, shutil, socket, statistics, subprocess, sys
+import csv, json, os, platform, re, shutil, socket, sqlite3, statistics, subprocess, sys
 from copy import deepcopy
 from io import StringIO
 from numbers import Number
@@ -282,30 +282,40 @@ def delete_media(args, paths) -> int:
 
 
 def delete_playlists(args, playlists) -> None:
+    deleted_playlist_count = 0
     with args.db.conn:
         playlist_paths = playlists + [p.rstrip(os.sep) for p in playlists]
-        args.db.conn.execute(
+        cursor = args.db.conn.execute(
             "delete from playlists where path in (" + ",".join(["?"] * len(playlist_paths)) + ")",
             playlist_paths,
         )
+        deleted_playlist_count = cursor.rowcount
 
-    online_media = [p for p in playlists if p.startswith("http")]
-    if online_media:
-        with args.db.conn:
-            args.db.conn.execute(
-                """DELETE from media where
-                playlist_id in (
-                    SELECT id from playlists
-                    WHERE path IN ("""
-                + ",".join(["?"] * len(online_media))
-                + "))",
-                (*online_media,),
-            )
+    deleted_media_count = 0
+    try:
+        online_media = [p for p in playlists if p.startswith("http")]
+        if online_media:
+            with args.db.conn:
+                cursor = args.db.conn.execute(
+                    """DELETE from media where
+                    playlist_id in (
+                        SELECT id from playlists
+                        WHERE path IN ("""
+                    + ",".join(["?"] * len(online_media))
+                    + "))",
+                    (*online_media,),
+                )
+                deleted_media_count += cursor.rowcount
+    except sqlite3.OperationalError:  # no such column: playlist_id
+        pass
 
     local_media = [p.rstrip(os.sep) for p in playlists if not p.startswith("http")]
     for folder in local_media:
         with args.db.conn:
-            args.db.conn.execute("delete from media where path like ?", (folder + "%",))
+            cursor = args.db.conn.execute("delete from media where path like ?", (folder + "%",))
+            deleted_media_count += cursor.rowcount
+
+    print(f"Deleted {deleted_playlist_count} playlists ({deleted_media_count} media records)")
 
 
 class Action:
@@ -514,6 +524,7 @@ def get_related_media(args, m: Dict) -> List[Dict]:
         fts_table=args.db["media"].detect_fts(),
         include=args.include,
         exclude=args.exclude,
+        flexible=getattr(args, "flexible_search", True),
     )
     args.filter_bindings = {**args.filter_bindings, **search_bindings}
 
@@ -949,7 +960,7 @@ def frequency_time_to_sql(freq, time_column):
     return freq_label, freq_sql
 
 
-def historical_usage(args, freq="monthly", time_column="time_played", where=""):
+def historical_usage(args, freq="monthly", time_column="time_played", hide_deleted=False, where=""):
     freq_label, freq_sql = frequency_time_to_sql(freq, time_column)
 
     query = f"""WITH m as (
@@ -962,7 +973,7 @@ def historical_usage(args, freq="monthly", time_column="time_played", where=""):
             FROM media m
             JOIN history h on h.media_id = m.id
             WHERE 1=1
-            {'' if time_column =="time_deleted" else "AND COALESCE(time_deleted, 0)=0"}
+            {"AND COALESCE(time_deleted, 0)=0" if hide_deleted else ""}
             GROUP BY m.id, m.path
         )
         SELECT
@@ -980,7 +991,7 @@ def historical_usage(args, freq="monthly", time_column="time_played", where=""):
 
 
 def cadence_adjusted_duration(args, duration):
-    history = historical_usage(args, freq="hourly")
+    history = historical_usage(args, freq="hourly", hide_deleted=True)
     try:
         historical_hourly = statistics.mean((d["total_duration"] or 0) for d in history)
     except statistics.StatisticsError:
@@ -992,7 +1003,7 @@ def cadence_adjusted_duration(args, duration):
     return int(duration / historical_hourly * 60 * 60)
 
 
-def historical_usage_items(args, freq="monthly", time_column="time_modified", where=""):
+def historical_usage_items(args, freq="monthly", time_column="time_modified", hide_deleted=False, where=""):
     m_columns = db.columns(args, "media")
 
     freq_label, freq_sql = frequency_time_to_sql(freq, time_column)
@@ -1006,14 +1017,14 @@ def historical_usage_items(args, freq="monthly", time_column="time_modified", wh
         FROM media m
         WHERE coalesce({freq_label}, 0)>0
             and {time_column}>0 {where}
-            {'' if time_column =="time_deleted" else "AND COALESCE(time_deleted, 0)=0"}
+            {"AND COALESCE(time_deleted, 0)=0" if hide_deleted else ""}
         GROUP BY {freq_label}
     """
     return list(args.db.query(query))
 
 
 def cadence_adjusted_items(args, items: int):
-    history = historical_usage_items(args, freq="minutely")
+    history = historical_usage_items(args, freq="minutely", hide_deleted=True)
     try:
         historical_minutely = statistics.mean((d["count"] or 0) for d in history)
         log.debug("historical_minutely mean %s", historical_minutely)

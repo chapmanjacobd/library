@@ -13,6 +13,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--duration", "-d", action="append", help=argparse.SUPPRESS)
     parser.add_argument("--overlap", type=int, default=8, help=argparse.SUPPRESS)
     parser.add_argument("--include", "-s", "--search", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
+    parser.add_argument("--flexible-search", "--or", "--flex", action="store_true")
     parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--where", "-w", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--sort", "-u", nargs="+", default=["path", "time"], help=argparse.SUPPRESS)
@@ -100,13 +101,14 @@ def construct_query(args) -> Tuple[str, dict]:
                 fts_table=args.db["captions"].detect_fts(),
                 include=args.include,
                 exclude=args.exclude,
+                flexible=args.flexible_search,
             )
             args.filter_bindings = {**args.filter_bindings, **search_bindings}
             c_columns = {**c_columns, "rank": int}
         elif args.exclude:
-            db.construct_search_bindings(args, ['text'])
+            db.construct_search_bindings(args, ["text"])
     else:
-        db.construct_search_bindings(args, ['text'])
+        db.construct_search_bindings(args, ["text"])
 
     cols = args.cols or ["path", "text", "time", "rank", "title"]
     args.select = [c for c in cols if c in {**c_columns, **m_columns, **{"*": "Any"}}]

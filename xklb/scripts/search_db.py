@@ -1,5 +1,4 @@
-import argparse
-import json
+import argparse, json
 from pathlib import Path
 
 from xklb import db, usage, utils
@@ -12,10 +11,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--verbose", "-v", action="count", default=0)
     parser.add_argument("--include", "-s", "--search", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
-    parser.add_argument('--delete', action='store_true', help='Delete matching rows')
+    parser.add_argument(
+        "--delete", "--remove", "--erase", "--rm", "-rm", nargs="store_true", help="Delete matching rows"
+    )
 
     parser.add_argument("database")
-    parser.add_argument('table')
+    parser.add_argument("table")
     parser.add_argument("search", nargs="+")
     args = parser.parse_intermixed_args()
 
@@ -29,13 +30,14 @@ def parse_args() -> argparse.Namespace:
 
     return args
 
+
 def get_table_name(args):
     if args.table in args.db.table_names():
         return args.table
 
     valid_tables = []
     for s in args.db.table_names():
-        if '_fts_' in s or s.endswith('_fts') or 'sqlite_stat' in s:
+        if "_fts_" in s or s.endswith("_fts") or "sqlite_stat" in s:
             continue
         valid_tables.append(s)
 
@@ -47,8 +49,9 @@ def get_table_name(args):
     if len(matching_tables) == 1:
         return matching_tables[0]
 
-    msg = f'Table {args.table} does not exist in {args.database}'
+    msg = f"Table {args.table} does not exist in {args.database}"
     raise ValueError(msg)
+
 
 def search_db() -> None:
     args = parse_args()
@@ -63,11 +66,15 @@ def search_db() -> None:
     if args.delete:
         deleted_count = 0
         with args.db.conn:
-            cursor = args.db.conn.execute(f'DELETE FROM {args.table} WHERE 1=1 ' + " ".join(args.filter_sql), args.filter_bindings)
+            cursor = args.db.conn.execute(
+                f"DELETE FROM {args.table} WHERE 1=1 " + " ".join(args.filter_sql), args.filter_bindings
+            )
         deleted_count += cursor.rowcount
-        print(f'Deleted {deleted_count} rows')
+        print(f"Deleted {deleted_count} rows")
     else:
-        for row in args.db.execute_returning_dicts(f'SELECT * FROM {args.table} WHERE 1=1 ' + " ".join(args.filter_sql), args.filter_bindings):
+        for row in args.db.execute_returning_dicts(
+            f"SELECT * FROM {args.table} WHERE 1=1 " + " ".join(args.filter_sql), args.filter_bindings
+        ):
             print(json.dumps(row))
 
 
