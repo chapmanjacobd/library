@@ -31,6 +31,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--duration", "-d", action="append", help=argparse.SUPPRESS)
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue")
+    parser.add_argument("--hide-deleted", action="store_true")
     parser.add_argument("--played", "--opened", action="store_true")
     parser.add_argument("-v", "--verbose", action="count", default=0)
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
@@ -40,8 +41,8 @@ def parse_args() -> argparse.Namespace:
         "facet",
         metavar="facet",
         type=str.lower,
-        default="watching",
-        const="watching",
+        default="watched",
+        const="watched",
         nargs="?",
         help=f"One of: {', '.join(consts.time_facets)} (default: %(default)s)",
     )
@@ -74,7 +75,7 @@ def recent_media(args, time_column):
     {'JOIN history h on h.media_id = m.id' if args.played else ''}
     WHERE 1=1
       AND coalesce({time_column}, 0)>0
-    {'' if time_column =="time_deleted" else "AND COALESCE(time_deleted, 0)=0"}
+    {'AND COALESCE(time_deleted, 0)=0' if args.hide_deleted else ""}
     ORDER BY {time_column} desc
     LIMIT {args.limit or 5}
     """
@@ -97,7 +98,7 @@ def history() -> None:
 
     if args.facet in WATCHING:
         print(args.facet.title() + ":")
-        tbl = history_fn(args, args.frequency, "time_played", "and coalesce(play_count, 0)=0")
+        tbl = history_fn(args, args.frequency, "time_played", args.hide_deleted, "and coalesce(play_count, 0)=0")
         player.media_printer(args, tbl)
         query = f"""WITH m as (
                 SELECT
@@ -111,7 +112,8 @@ def history() -> None:
                     {', subtitle_count' if 'subtitle_count' in m_columns else ''}
                 FROM media m
                 JOIN history h on h.media_id = m.id
-                WHERE coalesce(time_deleted, 0) = 0
+                WHERE 1=1
+                {'AND COALESCE(time_deleted, 0)=0' if args.hide_deleted else ""}
                 GROUP BY m.id, m.path
             )
             SELECT *
@@ -127,7 +129,7 @@ def history() -> None:
 
     elif args.facet in WATCHED:
         print(args.facet.title() + ":")
-        tbl = history_fn(args, args.frequency, "time_played", "and coalesce(play_count, 0)>0")
+        tbl = history_fn(args, args.frequency, "time_played", args.hide_deleted, "and coalesce(play_count, 0)>0")
         player.media_printer(args, tbl)
         query = f"""WITH m as (
                 SELECT
@@ -141,7 +143,8 @@ def history() -> None:
                     {', subtitle_count' if 'subtitle_count' in m_columns else ''}
                 FROM media m
                 JOIN history h on h.media_id = m.id
-                WHERE coalesce(time_deleted, 0) = 0
+                WHERE 1=1
+                {'AND COALESCE(time_deleted, 0)=0' if args.hide_deleted else ""}
                 GROUP BY m.id, m.path
             )
             SELECT *
@@ -155,7 +158,7 @@ def history() -> None:
 
     else:
         print(f"{args.facet.title()} media:")
-        tbl = history_fn(args, args.frequency, f"time_{args.facet}")
+        tbl = history_fn(args, args.frequency, f"time_{args.facet}", args.hide_deleted)
         player.media_printer(args, tbl)
         tbl = recent_media(args, f"time_{args.facet}")
         player.media_printer(args, tbl)

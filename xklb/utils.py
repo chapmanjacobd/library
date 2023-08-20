@@ -1245,13 +1245,13 @@ def cluster_paths(paths, n_clusters=None):
     clusters = clusterizer.labels_
 
     grouped_strings = {}
-    for i, string in enumerate(paths):
+    for i, group_string in enumerate(paths):
         cluster_id = clusters[i]
 
         if cluster_id not in grouped_strings:
             grouped_strings[cluster_id] = []
 
-        grouped_strings[cluster_id].append(string)
+        grouped_strings[cluster_id].append(group_string)
 
     result = []
     for _cluster_id, paths in grouped_strings.items():
@@ -1313,13 +1313,13 @@ def cluster_images(paths, n_clusters=None):
     log.info("image_mode_groups %s", t.elapsed())
 
     grouped_strings = {}
-    for i, string in enumerate(paths):
+    for i, group_string in enumerate(paths):
         cluster_id = clusters[i]
 
         if cluster_id not in grouped_strings:
             grouped_strings[cluster_id] = []
 
-        grouped_strings[cluster_id].append(string + "\n")
+        grouped_strings[cluster_id].append(group_string + "\n")
     log.info("grouped_strings %s", t.elapsed())
 
     result = []

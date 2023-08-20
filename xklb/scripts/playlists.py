@@ -15,13 +15,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--sort", "-u", nargs="+", help=argparse.SUPPRESS)
     parser.add_argument("--where", "-w", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--include", "-s", "--search", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
+    parser.add_argument("--flexible-search", "--or", "--flex", action="store_true")
     parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--duration", "-d", action="append", help=argparse.SUPPRESS)
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", help=argparse.SUPPRESS)
     parser.add_argument("--safe", "-safe", action="store_true", help="Skip generic URLs")
-    parser.add_argument("--delete", "--remove", "--erase", "--rm", "-rm", nargs="+", help=argparse.SUPPRESS)
     parser.add_argument("--print", "-p", default="p", const="p", nargs="?", help=argparse.SUPPRESS)
     parser.add_argument("--cols", "-cols", "-col", nargs="*", help="Include a column when printing")
+    parser.add_argument("--delete", "--remove", "--erase", "--rm", "-rm", action="store_true")
 
     parser.add_argument("-v", "--verbose", action="count", default=0)
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
@@ -57,12 +58,15 @@ def construct_query(args) -> Tuple[str, dict]:
                 fts_table=args.db["playlists"].detect_fts(),
                 include=args.include,
                 exclude=args.exclude,
+                flexible=args.flexible_search,
             )
             args.filter_bindings = {**args.filter_bindings, **search_bindings}
         elif args.exclude:
-            db.construct_search_bindings(args, [f'm.{k}' for k in pl_columns if k in db.config["media"]["search_columns"]])
+            db.construct_search_bindings(
+                args, [f"{k}" for k in pl_columns if k in db.config["media"]["search_columns"]]
+            )
     else:
-        db.construct_search_bindings(args, [f'm.{k}' for k in pl_columns if k in db.config["media"]["search_columns"]])
+        db.construct_search_bindings(args, [f"{k}" for k in pl_columns if k in db.config["media"]["search_columns"]])
 
     LIMIT = "LIMIT " + str(args.limit) if args.limit else ""
     query = f"""SELECT
@@ -83,9 +87,6 @@ def construct_query(args) -> Tuple[str, dict]:
 
 def playlists() -> None:
     args = parse_args()
-
-    if args.delete:
-        return delete_playlists(args, args.delete)
 
     pl_columns = db.columns(args, "playlists")
     m_columns = db.columns(args, "media")
@@ -122,5 +123,8 @@ def playlists() -> None:
         from ({query})
         """
 
-    player.printer(args, query, bindings, units="playlists")
-    return None
+    playlists = list(args.db.query(query, bindings))
+    player.media_printer(args, playlists, units="playlists")
+
+    if args.delete:
+        delete_playlists(args, [d["path"] for d in playlists])
