@@ -1,5 +1,3 @@
-scatter: from to to to to to to instead of -m format
-
 lb-dev du ~/lb/audio.db d/82_Audiobooks/ -u count desc
 
 du: print number of files, number of folders via count

@@ -22,7 +22,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--group", "-g")
     parser.add_argument("--sort", "-s", default="random()", help="Sort files before moving")
     parser.add_argument("--verbose", "-v", action="count", default=0)
-    parser.add_argument("--srcmounts", "-m", help="/mnt/d1:/mnt/d2")
+    parser.add_argument("--targets", "--srcmounts", "-m", help="Colon separated destinations eg. /mnt/d1:/mnt/d2")
 
     parser.add_argument("database")
     parser.add_argument(
@@ -33,8 +33,8 @@ def parse_args() -> argparse.Namespace:
     args = parser.parse_args()
     args.db = db.connect(args)
 
-    if args.srcmounts:
-        args.srcmounts = [m.rstrip("\\/") for m in args.srcmounts.split(":")]
+    if args.targets:
+        args.targets = [m.rstrip("\\/") for m in args.targets.split(":")]
         if args.group is None:
             args.group = "size"
         if args.policy is None:
@@ -45,17 +45,20 @@ def parse_args() -> argparse.Namespace:
         if args.policy is None:
             args.policy = "rand"
 
-    if args.srcmounts and args.max_files_per_folder:
+    if args.targets and args.max_files_per_folder:
         msg = (
             "--max-files-per-folder has no affect during multi-device re-bin operation. Run as an independent operation"
         )
         raise ValueError(msg)
 
-    if args.srcmounts is None and args.policy not in ("rand", "used"):
-        msg = "Without srcmounts defined the only meaningful policies are: `rand` or `used`"
+    if args.targets is None and args.policy not in ("rand", "used"):
+        msg = "Without targets defined the only meaningful policies are: `rand` or `used`"
         raise ValueError(msg)
 
-    args.relative_paths = [p.lstrip(".") for p in args.relative_paths]
+    assert all(Path(p).exists() for p in args.relative_paths)
+    args.relative_paths = [str(Path(p).resolve()) for p in args.relative_paths]
+    assert all(Path(p).exists() for p in args.targets)
+    args.targets = [str(Path(p).resolve()) for p in args.targets]
 
     log.info(utils.dict_filter_bool(args.__dict__))
     return args
@@ -95,7 +98,7 @@ def get_table(args) -> List[dict]:
 
 def get_path_stats(args, data) -> List[Dict]:
     result = []
-    for srcmount in args.srcmounts:
+    for srcmount in args.targets + [s for s in args.relative_paths if not any(m in s for m in args.targets)]:
         disk_files = [d for d in data if d["path"].startswith(srcmount)]
         if disk_files:
             result.append(
@@ -128,6 +131,12 @@ def rebin_files(args, disk_stats, all_files) -> Tuple[List, List]:
     untouched = []
     to_rebin = []
     full_disks = []
+
+    read_only_mounts = [s for s in args.relative_paths if not any(m in s for m in args.targets)]
+    for disk_stat in utils.get_mount_stats(read_only_mounts):
+        disk_files = [d for d in all_files if d["path"].startswith(disk_stat["mount"])]
+        to_rebin.extend({"mount": disk_stat["mount"], **file} for file in disk_files)
+
     for disk_stat in disk_stats:
         disk_files = [d for d in all_files if d["path"].startswith(disk_stat["mount"])]
 
@@ -218,17 +227,14 @@ def scatter() -> None:
         utils.move_files_bash(rebinned)
         sys.exit(0)
 
-    if args.srcmounts:
-        disk_stats = utils.get_mount_stats(args.srcmounts)
-        assert all(Path(p).exists() for p in args.srcmounts)
+    if args.targets:
+        disk_stats = utils.get_mount_stats(args.targets)
     else:
         log.warning(
-            "srcmounts was not provided (-m) so provided paths will only be compared with each other. This might not be what you want!!",
+            "targets were not provided (-m) so provided paths will only be compared with each other. This might not be what you want!!",
         )
-        paths = [Path(p).resolve() for p in args.relative_paths]
-        assert all(p.exists() for p in paths)
-        args.srcmounts = [str(p) for p in paths]
-        disk_stats = get_rel_stats(args.srcmounts, files)
+        args.targets = args.relative_paths
+        disk_stats = get_rel_stats(args.targets, files)
 
     if len(disk_stats) < 2:
         log.error(

@@ -1155,7 +1155,7 @@ After you are done selecting folders you can press ctrl-d and it will save the l
             rsync -a --info=progress2 --no-inc-recursive --remove-source-files --files-from=/tmp/tmpa7x_75l8 -r --relative -vv --dry-run / jim:/free/real/estate/
 """
 
-scatter = """library scatter [--limit LIMIT] [--policy POLICY] [--sort SORT] --srcmounts SRCMOUNTS DATABASE RELATIVE_PATHS ...
+scatter = """library scatter [--limit LIMIT] [--policy POLICY] [--sort SORT] --targets TARGETS DATABASE RELATIVE_PATHS ...
 
 Balance files across filesystem folder trees or multiple devices (mostly useful for mergerfs)
 
