@@ -227,7 +227,7 @@ def munge_av_tags(args, media, path) -> Optional[dict]:
     video_count = sum(1 for s in codec_types if s == "video")
     audio_count = sum(1 for s in codec_types if s == "audio")
 
-    chapters = getattr(probe, "chapters", [])
+    chapters = probe.get("chapters") or []
     chapter_count = len(chapters)
     if chapter_count > 0:
         chapters = [
