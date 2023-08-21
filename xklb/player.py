@@ -586,6 +586,7 @@ def get_dir_media(args, dirs: List, include_subdirs=False) -> List[Dict]:
                 , MAX(h.time_played) time_last_played
                 , FIRST_VALUE(h.playhead) OVER (PARTITION BY h.media_id ORDER BY h.time_played DESC) playhead
                 , {args.select_sql}
+                , m.*
             FROM media m
             LEFT JOIN history h on h.media_id = m.id
             WHERE 1=1
