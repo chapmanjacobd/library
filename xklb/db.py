@@ -165,20 +165,21 @@ def optimize(args) -> None:
                 log.warning("%s %s table %s column is not unique", args.database, table, column)
                 db[table].create_index([column], if_not_exists=True, analyze=True)  # type: ignore
 
-        if any(fts_columns) and (db[table].detect_fts() is None or was_transformed):  # type: ignore
-            log.info("Creating fts index: %s", fts_columns)
-            db[table].enable_fts(
-                fts_columns,
-                create_triggers=True,
-                replace=True,
-                tokenize="trigram"
-                if sqlite3.sqlite_version_info >= (3, 34, 0)
-                else 'unicode61 "tokenchars=_."',  # https://www.sqlite.org/releaselog/3_34_0.html
-            )
-        else:
-            with db.conn:  # type: ignore
-                log.info("Optimizing fts index: %s", table)
-                db[table].optimize()  # type: ignore
+        if getattr(args, "fts", True) and any(fts_columns):
+            if db[table].detect_fts() is None or was_transformed:  # type: ignore
+                log.info("Creating fts index: %s", fts_columns)
+                db[table].enable_fts(
+                    fts_columns,
+                    create_triggers=True,
+                    replace=True,
+                    tokenize="trigram"
+                    if sqlite3.sqlite_version_info >= (3, 34, 0)
+                    else 'unicode61 "tokenchars=_."',  # https://www.sqlite.org/releaselog/3_34_0.html
+                )
+            else:
+                with db.conn:  # type: ignore
+                    log.info("Optimizing fts index: %s", table)
+                    db[table].optimize()  # type: ignore
 
     log.info("Running VACUUM")
     db.vacuum()

@@ -1,9 +1,8 @@
-pl: --media search media but aggregate to playlist
-
-
 lb pl ~/lb/audio.db Catlow --cols id -pa
 lb pl ~/lb/audio.db Catlow --cols id -pf
 lb lt ~/lb/audio.db -c -w 'pl.title = "Catlow"'
+
+pl: --media search media but aggregate to playlist
 
 - POIs CLI -- save your trip plans and see places to go with automated day trip itineraries, geopandas buffer
 
