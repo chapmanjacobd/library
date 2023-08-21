@@ -2,8 +2,6 @@ import argparse, os
 from pathlib import Path
 from typing import Dict, List
 
-import humanize
-
 from xklb import consts, db, player, usage, utils
 from xklb.utils import log
 
@@ -26,7 +24,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--include", "-s", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
 
-    parser.add_argument("--tui", "-tui", action="store_true")
     parser.add_argument("--print", "-p", default="", const="p", nargs="?")
     parser.add_argument("--verbose", "-v", action="count", default=0)
 
@@ -120,7 +117,7 @@ def get_data(args) -> List[dict]:
 
     if args.size:
         args.filter_sql.append(" and size IS NOT NULL " + args.size)
-    db.construct_search_bindings(args, [f"m.{k}" for k in m_columns if k in db.config["media"]["search_columns"]])
+    db.construct_search_bindings(args, [f"{k}" for k in m_columns if k in db.config["media"]["search_columns"]])
 
     media = list(
         args.db.query(
@@ -145,75 +142,6 @@ def get_data(args) -> List[dict]:
     return media
 
 
-def run_tui(args):
-    from textual.app import App, ComposeResult
-    from textual.containers import VerticalScroll
-    from textual.reactive import var
-    from textual.widgets import Footer, Label, OptionList
-
-    class DiskUsage(App):
-        CSS = """
-        Screen {
-            opacity: 0%;
-        }
-
-        Label {
-            text-style: reverse;
-        }
-
-        """
-
-        BINDINGS = [
-            ("q", "quit", "Quit"),
-            ("Left", "pop", "Go up"),
-        ]
-
-        def __init__(self, args):
-            super().__init__()
-            self.args = args
-            self.dark = False
-            var(self.args.subset, always_update=True)
-
-        @staticmethod
-        def _path(cwd, d):
-            file_count = ""
-            if d.get("count"):
-                file_count = str(d["count"]) + " files"
-
-            return "\t".join([d["path"].replace(cwd, ""), humanize.naturalsize(d["size"]), file_count])
-
-        def compose(self) -> ComposeResult:
-            yield Label("Disk Usage ~ Use the arrow keys to navigate")
-            yield Label(f"--- {args.cwd} ---", id="cwd")
-            yield VerticalScroll(OptionList(*[self._path(args.cwd, d) for d in self.args.subset]))
-            yield Label(
-                f"Total disk usage: {humanize.naturalsize(sum(d['size'] for d in self.args.subset))}  Items: {sum(d.get('count') or 1 for d in self.args.subset)}",
-            )
-            yield Footer()
-
-        def on_mount(self) -> None:
-            self.query_one(OptionList).focus()
-            # self.call_later(self.load_directory, self.root)
-
-        def on_option_list_option_selected(self, event: OptionList.OptionSelected) -> None:
-            m = self.args.subset[event.option_index]
-            if m.get("count"):
-                self.args.cwd = m["path"]
-                cwd, subset = load_subset(self.args)
-                self.query_one(OptionList).clear_options()
-                self.query_one(OptionList).add_options([self._path(cwd, d) for d in subset])
-                self.query_one(OptionList).refresh()
-
-            self.refresh()
-
-        def action_pop(self) -> None:
-            self.args.cwd.pop()
-            load_subset(self.args)
-            self.refresh()
-
-    DiskUsage(args).run()
-
-
 def disk_usage():
     args = parse_args()
     args.data = get_data(args)
@@ -222,10 +150,9 @@ def disk_usage():
 
     load_subset(args)
 
-    if args.tui:
-        run_tui(args)
-    else:
-        player.media_printer(args, args.subset, units="files / folders")
+    num_folders = sum(1 for d in args.subset if d.get("count"))
+    num_files = sum(1 for d in args.subset if not d.get("count"))
+    player.media_printer(args, args.subset, units=f"paths at current depth ({num_folders} folders, {num_files} files)")
 
 
 if __name__ == "__main__":
