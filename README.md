@@ -87,7 +87,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.2.069)
+    xk media library subcommands (v2.2.070)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -1621,7 +1621,7 @@ Balance files across filesystem folder trees or multiple devices (mostly useful 
 
     Multi-device re-bin: balance by size
 
-        $ library scatter -m /mnt/d1:/mnt/d2:/mnt/d3:/mnt/d4/:/mnt/d5:/mnt/d6:/mnt/d7 fs/scatter.db subfolder/of/mergerfs/mnt
+        $ library scatter -m /mnt/d1:/mnt/d2:/mnt/d3:/mnt/d4/:/mnt/d5:/mnt/d6:/mnt/d7 fs.db subfolder/of/mergerfs/mnt
         Current path distribution:
         ╒═════════╤══════════════╤══════════════╤═══════════════╤════════════════╤═════════════════╤════════════════╕
         │ mount   │   file_count │ total_size   │ median_size   │ time_created   │ time_modified   │ time_downloaded│
@@ -1668,11 +1668,15 @@ Balance files across filesystem folder trees or multiple devices (mostly useful 
 
     Multi-device re-bin: balance device inodes for specific subfolder
 
-        $ library scatter -m /mnt/d1:/mnt/d2 fs/scatter.db subfolder --group count --sort 'size desc'
+        $ library scatter -m /mnt/d1:/mnt/d2 fs.db subfolder --group count --sort 'size desc'
 
     Multi-device re-bin: only consider the most recent 100 files
 
-        $ library scatter -m /mnt/d1:/mnt/d2 -l 100 -s 'time_modified desc' fs/scatter.db /
+        $ library scatter -m /mnt/d1:/mnt/d2 -l 100 -s 'time_modified desc' fs.db /
+
+    Multi-device re-bin: empty out a disk (/mnt/d2) into many other disks (/mnt/d1, /mnt/d3, and /mnt/d4)
+
+        $ library scatter fs.db -m /mnt/d1:/mnt/d3:/mnt/d4 /mnt/d2
 
 
 </details>
