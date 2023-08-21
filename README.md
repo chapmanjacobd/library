@@ -87,7 +87,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.2.068)
+    xk media library subcommands (v2.2.069)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -1607,7 +1607,7 @@ Search all columns in a SQLITE table. If the table does not exist, uses the tabl
 <details><summary>Scatter files between folders or disks</summary>
 
     $ library scatter -h
-    usage: library scatter [--limit LIMIT] [--policy POLICY] [--sort SORT] --srcmounts SRCMOUNTS DATABASE RELATIVE_PATHS ...
+    usage: library scatter [--limit LIMIT] [--policy POLICY] [--sort SORT] --targets TARGETS DATABASE RELATIVE_PATHS ...
 
 Balance files across filesystem folder trees or multiple devices (mostly useful for mergerfs)
 
