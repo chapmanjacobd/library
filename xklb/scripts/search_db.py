@@ -12,7 +12,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--include", "-s", "--search", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument(
-        "--delete", "--remove", "--erase", "--rm", "-rm", nargs="store_true", help="Delete matching rows"
+        "--delete", "--remove", "--erase", "--rm", "-rm", action="store_true", help="Delete matching rows"
     )
 
     parser.add_argument("database")

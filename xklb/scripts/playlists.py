@@ -22,7 +22,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--safe", "-safe", action="store_true", help="Skip generic URLs")
     parser.add_argument("--print", "-p", default="p", const="p", nargs="?", help=argparse.SUPPRESS)
     parser.add_argument("--cols", "-cols", "-col", nargs="*", help="Include a column when printing")
-    parser.add_argument("--delete", "--remove", "--erase", "--rm", "-rm", action="store_true")
+    parser.add_argument(
+        "--delete",
+        "--remove",
+        "--erase",
+        "--rm",
+        "-rm",
+        action="store_true",
+        help="Delete matching playlists and playlist media",
+    )
 
     parser.add_argument("-v", "--verbose", action="count", default=0)
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)

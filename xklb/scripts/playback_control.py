@@ -17,7 +17,9 @@ def parse_args(action) -> argparse.Namespace:
     parser.add_argument("--chromecast-device", "--cast-to", "-t")
 
     if action == "next":
-        parser.add_argument("--delete", action="store_true")
+        parser.add_argument(
+            "--delete", "--remove", "--erase", "--rm", "-rm", action="store_true", help="Delete currently playing media"
+        )
 
     parser.add_argument("--verbose", "-v", action="count", default=0)
     args = parser.parse_args()
