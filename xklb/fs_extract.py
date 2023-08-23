@@ -289,6 +289,7 @@ def find_new_files(args, path: Path) -> List[str]:
         if deleted_count > 0:
             print(f"[{path}] Marking", deleted_count, "orphaned metadata records as deleted")
 
+    new_files.sort()
     return new_files
 
 
