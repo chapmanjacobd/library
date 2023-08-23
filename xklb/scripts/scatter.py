@@ -10,6 +10,21 @@ from xklb import consts, db, usage, utils
 from xklb.utils import log
 
 
+def check_paths(paths):
+    resolved_paths = []
+    for s in paths:
+        p = Path(s)
+        if p.is_absolute():
+            p = p.resolve()
+            if not p.exists():
+                log.warning("[%s] does not exist locally", p)
+            resolved_paths.append(str(p))
+        else:  # relative path
+            log.info("[%s] using as relative path", p)
+            resolved_paths.append(s)
+    return resolved_paths
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="library scatter",
@@ -55,10 +70,8 @@ def parse_args() -> argparse.Namespace:
         msg = "Without targets defined the only meaningful policies are: `rand` or `used`"
         raise ValueError(msg)
 
-    assert all(Path(p).exists() for p in args.relative_paths)
-    args.relative_paths = [str(Path(p).resolve()) for p in args.relative_paths]
-    assert all(Path(p).exists() for p in args.targets)
-    args.targets = [str(Path(p).resolve()) for p in args.targets]
+    args.relative_paths = check_paths(args.relative_paths)
+    args.targets = check_paths(args.targets)
 
     log.info(utils.dict_filter_bool(args.__dict__))
     return args
@@ -81,7 +94,7 @@ def get_table(args) -> List[dict]:
         where 1=1
             and coalesce(time_deleted, 0)=0
             and path not like "http%"
-            {'and is_dir is NULL' if 'is_dir' in m_columns else ""}
+            {'and coalesce(is_dir, 0)=0' if 'is_dir' in m_columns else ""}
             and ({' or '.join(or_paths)})
         order by {args.sort}
         {'limit :limit' if args.limit else ''}
@@ -97,8 +110,11 @@ def get_table(args) -> List[dict]:
 
 
 def get_path_stats(args, data) -> List[Dict]:
+    read_only_mounts = [
+        s for s in args.relative_paths if Path(s).is_absolute() and not any(m in s for m in args.targets)
+    ]
     result = []
-    for srcmount in args.targets + [s for s in args.relative_paths if not any(m in s for m in args.targets)]:
+    for srcmount in args.targets + read_only_mounts:
         disk_files = [d for d in data if d["path"].startswith(srcmount)]
         if disk_files:
             result.append(
@@ -132,7 +148,9 @@ def rebin_files(args, disk_stats, all_files) -> Tuple[List, List]:
     to_rebin = []
     full_disks = []
 
-    read_only_mounts = [s for s in args.relative_paths if not any(m in s for m in args.targets)]
+    read_only_mounts = [
+        s for s in args.relative_paths if Path(s).is_absolute() and not any(m in s for m in args.targets)
+    ]
     for disk_stat in utils.get_mount_stats(read_only_mounts):
         disk_files = [d for d in all_files if d["path"].startswith(disk_stat["mount"])]
         to_rebin.extend({"mount": disk_stat["mount"], **file} for file in disk_files)
