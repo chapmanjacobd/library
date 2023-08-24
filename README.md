@@ -87,7 +87,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.2.075)
+    xk media library subcommands (v2.2.076)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -981,22 +981,23 @@ Explore `library` databases in your browser
     │ https://www.youtube.com/watch?v=MjpCiTawlTE                                                │               │                │
     ╘════════════════════════════════════════════════════════════════════════════════════════════╧═══════════════╧════════════════╛
 
-    Use simple count instead of duration (incompatible with time_played, playhead)
+    View download stats
 
-    $ library history video.db download --count
+    $ library history video.db --freqency daily downloaded
     Downloaded media:
-    month    total_duration                           avg_duration           total_size    avg_size      count
-    -------  ---------------------------------------  ---------------------  ------------  ----------  -------
-    2022-10  1 year, 11 months, 16 days and 14 hours  48 minutes             271.2 GB      12.5 MB       21663
-    2022-11  21 days and 17 hours                     13 minutes             26.6 GB       10.9 MB        2452
-    2022-12  3 months, 17 days and 2 hours            1 hour and 29 minutes  47.6 GB       26.9 MB        1770
-    2023-01  16 hours and 28 minutes                  17 minutes             801.7 MB      13.6 MB          59
-    2023-02  11 months, 6 days and 6 hours            10 minutes             289.1 GB      5.8 MB        49451
-    2023-03  21 days and 22 hours                     28 minutes             29.2 GB       26.2 MB        1115
-    2023-04  2 months, 12 days and 12 hours           9 minutes              88.5 GB       7.5 MB        11845
-    2023-05  13 days and 14 hours                     12 minutes             14.1 GB       8.7 MB         1616
-    2023-06  4 hours and 8 minutes                    6 minutes              186.8 MB      4.4 MB           42
-    2023-07  3 months, 0 days and 23 hours            11 minutes             100.1 GB      8.2 MB        12246
+    day         total_duration                          avg_duration                total_size    avg_size    count
+    ----------  --------------------------------------  ------------------------  ------------  ----------  -------
+    2023-08-11  1 month, 7 days and 8 hours             17 minutes                    192.2 GB     58.3 MB     3296
+    2023-08-12  18 days and 15 hours                    17 minutes                     89.7 GB     56.4 MB     1590
+    2023-08-14  13 days and 1 hours                     22 minutes                    111.2 GB    127.2 MB      874
+    2023-08-15  13 days and 6 hours                     17 minutes                    140.0 GB    126.7 MB     1105
+    2023-08-17  2 months, 8 days and 8 hours            19 minutes                    380.4 GB     72.6 MB     5243
+    2023-08-18  2 months, 30 days and 18 hours          17 minutes                    501.9 GB     63.3 MB     7926
+    2023-08-19  2 months, 6 days and 19 hours           19 minutes                    578.1 GB    110.6 MB     5229
+    2023-08-20  3 days and 9 hours                      6 minutes and 57 seconds       14.5 GB     20.7 MB      700
+    2023-08-21  4 days and 3 hours                      12 minutes                     18.0 GB     36.3 MB      495
+    2023-08-22  10 days and 8 hours                     17 minutes                     82.1 GB     91.7 MB      895
+    2023-08-23  19 days and 9 hours                     22 minutes                     93.7 GB     74.7 MB     1254
 
     $ library history video.db deleted
     Deleted media:

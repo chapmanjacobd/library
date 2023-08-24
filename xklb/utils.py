@@ -929,13 +929,13 @@ def set_readline_completion(list_) -> None:
             line = readline.get_line_buffer()
 
             if not line:
-                min_depth = min([s.count(os.sep) for s in list_]) + 1
+                min_depth = min([s.count(os.sep) for s in list_]) + 1  # type: ignore
                 result_list = [c + " " for c in list_ if c.count(os.sep) <= min_depth]
                 random.shuffle(result_list)
                 return result_list[:25][state]
             else:
                 match_list = [s for s in list_ if s.startswith(line)]
-                min_depth = min([s.count(os.sep) for s in match_list]) + 1
+                min_depth = min([s.count(os.sep) for s in match_list]) + 1  # type: ignore
                 result_list = [c + " " for c in match_list if c.count(os.sep) <= min_depth]
                 random.shuffle(result_list)
                 return result_list[:15][state]
@@ -1124,13 +1124,17 @@ def random_filename(path) -> str:
     return f"{path}.{random_string()}{ext}"
 
 
-def resolve_if_exists(input_path):
-    resolved_path = Path(input_path).expanduser().resolve()
+def resolve_absolute_path(s):
+    p = Path(s).expanduser()
+    if p.is_absolute():
+        p = p.resolve()
+        if p.exists():
+            return str(p)
+    return s  # relative path
 
-    if resolved_path.exists():
-        return str(resolved_path)
-    else:
-        return input_path
+
+def resolve_absolute_paths(paths):
+    return [resolve_absolute_path(s) for s in paths]
 
 
 def confirm(*args, **kwargs) -> bool:

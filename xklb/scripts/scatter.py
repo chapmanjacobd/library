@@ -10,21 +10,6 @@ from xklb import consts, db, usage, utils
 from xklb.utils import log
 
 
-def check_paths(paths):
-    resolved_paths = []
-    for s in paths:
-        p = Path(s)
-        if p.is_absolute():
-            p = p.resolve()
-            if not p.exists():
-                log.warning("[%s] does not exist locally", p)
-            resolved_paths.append(str(p))
-        else:  # relative path
-            log.info("[%s] using as relative path", p)
-            resolved_paths.append(s)
-    return resolved_paths
-
-
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="library scatter",
@@ -70,8 +55,8 @@ def parse_args() -> argparse.Namespace:
         msg = "Without targets defined the only meaningful policies are: `rand` or `used`"
         raise ValueError(msg)
 
-    args.relative_paths = check_paths(args.relative_paths)
-    args.targets = check_paths(args.targets)
+    args.relative_paths = utils.resolve_absolute_paths(args.relative_paths)
+    args.targets = utils.resolve_absolute_paths(args.targets)
 
     log.info(utils.dict_filter_bool(args.__dict__))
     return args
