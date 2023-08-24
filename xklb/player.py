@@ -524,7 +524,7 @@ def get_related_media(args, m: Dict) -> List[Dict]:
         fts_table=args.db["media"].detect_fts(),
         include=args.include,
         exclude=args.exclude,
-        flexible=getattr(args, "flexible_search", True),
+        flexible=True,
     )
     args.filter_bindings = {**args.filter_bindings, **search_bindings}
 

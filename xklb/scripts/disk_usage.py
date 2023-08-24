@@ -37,7 +37,7 @@ def parse_args() -> argparse.Namespace:
         args.include = [str(Path().cwd().resolve())]
 
     if len(args.include) == 1 and os.sep in args.include[0]:
-        args.include = [utils.resolve_if_exists(args.include[0])]
+        args.include = [utils.resolve_absolute_path(args.include[0])]
 
     args.sort_by = " ".join(args.sort_by)
 
