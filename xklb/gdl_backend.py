@@ -40,7 +40,9 @@ def load_module_level_gallery_dl(args) -> ModuleType:
             ],
         )
         gallery_dl.config.set(
-            ("extractor",), "filename", "{filename[:100]|title[:100]|original_title[:100]|id[:100]}.{extension}"
+            ("extractor",),
+            "filename",
+            "{filename[:100]|title[:100]|original_title[:100]|id[:100]}.{extension}",
         )
         gallery_dl.config.set(("extractor",), "browser", "firefox")
 

@@ -123,7 +123,8 @@ def tube_update(args=None) -> None:
 
     args = parse_args(SC.tubeupdate, usage=usage.tubeupdate)
     tube_playlists = playlists.get_all(
-        args, sql_filters=["AND extractor_key NOT IN ('Local', 'reddit_praw_redditor', 'reddit_praw_subreddit')"]
+        args,
+        sql_filters=["AND extractor_key NOT IN ('Local', 'reddit_praw_redditor', 'reddit_praw_subreddit')"],
     )
     for d in tube_playlists:
         tube_backend.get_playlist_metadata(

@@ -11,8 +11,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--verbose", "-v", action="count", default=0)
     parser.add_argument("--include", "-s", "--search", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
+    parser.add_argument("--exact", action="store_true")
     parser.add_argument(
-        "--delete", "--remove", "--erase", "--rm", "-rm", action="store_true", help="Delete matching rows"
+        "--delete",
+        "--remove",
+        "--erase",
+        "--rm",
+        "-rm",
+        action="store_true",
+        help="Delete matching rows",
     )
 
     parser.add_argument("database")
@@ -67,13 +74,15 @@ def search_db() -> None:
         deleted_count = 0
         with args.db.conn:
             cursor = args.db.conn.execute(
-                f"DELETE FROM {args.table} WHERE 1=1 " + " ".join(args.filter_sql), args.filter_bindings
+                f"DELETE FROM {args.table} WHERE 1=1 " + " ".join(args.filter_sql),
+                args.filter_bindings,
             )
         deleted_count += cursor.rowcount
         print(f"Deleted {deleted_count} rows")
     else:
         for row in args.db.execute_returning_dicts(
-            f"SELECT * FROM {args.table} WHERE 1=1 " + " ".join(args.filter_sql), args.filter_bindings
+            f"SELECT * FROM {args.table} WHERE 1=1 " + " ".join(args.filter_sql),
+            args.filter_bindings,
         ):
             print(json.dumps(row))
 

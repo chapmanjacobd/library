@@ -50,8 +50,8 @@ def save_page(args, url):
             "parent_path": "https://tildes.net" + parent_path_element["href"] if parent_path_element else None,
             "time_created": int(
                 datetime.fromisoformat(
-                    comment_element.find("time", class_="comment-posted-time")["datetime"][:-1]
-                ).timestamp()
+                    comment_element.find("time", class_="comment-posted-time")["datetime"][:-1],
+                ).timestamp(),
             ),
             "time_modified": int(datetime.fromisoformat(edited_time_element["datetime"][:-1]).timestamp())
             if edited_time_element
@@ -107,11 +107,11 @@ def save_page(args, url):
         topic = {
             "path": path,
             "path_parent": topic_source,
-            "group": topic_group,
+            "topic_group": topic_group,
             "time_created": int(
                 datetime.fromisoformat(
-                    topic_element.find("time", class_="time-responsive")["datetime"][:-1]
-                ).timestamp()
+                    topic_element.find("time", class_="time-responsive")["datetime"][:-1],
+                ).timestamp(),
             ),
             "time_published": time_published,
             "score": int(score_element.text.split()[0]) if score_element else 0,

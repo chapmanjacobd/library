@@ -519,6 +519,7 @@ def get_related_media(args, m: Dict) -> List[Dict]:
         utils.conform(utils.extract_words(m.get(k)) for k in m if k in db.config["media"]["search_columns"]),
     )
     args.include = sorted(words, key=len, reverse=True)[:100]
+    log.info("related_words: %s", args.include)
     args.table, search_bindings = db.fts_search_sql(
         "media",
         fts_table=args.db["media"].detect_fts(),
@@ -1127,7 +1128,8 @@ def media_printer(args, data, units=None, media_len=None) -> None:
     if "a" not in args.print and args.action == SC.download_status:
         for m in media:
             m["download_duration"] = cadence_adjusted_items(
-                args, m["never_downloaded"] + m["retry_queued"]
+                args,
+                m["never_downloaded"] + m["retry_queued"],
             )  # TODO where= p.extractor_key, or try to use SQL
 
     for k, v in list(media[0].items()):
@@ -1149,10 +1151,11 @@ def media_printer(args, data, units=None, media_len=None) -> None:
         #             d[k] = f'{d[k]:n}'  # TODO add locale comma separators
 
     def should_align_right(k, v):
-        if k.endswith("size") or k.startswith("percent") or k.endswith("ratio"):
+        if k.endswith(("size", "ratio")) or k.startswith("percent"):
             return True
         if isinstance(v, (int, float)):
             return True
+        return None
 
     media = utils.list_dict_filter_bool(media)
 
@@ -1198,7 +1201,7 @@ def media_printer(args, data, units=None, media_len=None) -> None:
         if len(media) > 1:
             print(
                 f"{media_len or len(media)} {units}"
-                + (f" (limited by --limit {args.limit})" if args.limit and int(args.limit) <= len(media) else "")
+                + (f" (limited by --limit {args.limit})" if args.limit and int(args.limit) <= len(media) else ""),
             )
 
         if duration > 0:

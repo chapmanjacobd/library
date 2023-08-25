@@ -71,7 +71,8 @@ def construct_query(args) -> Tuple[str, dict]:
             args.filter_bindings = {**args.filter_bindings, **search_bindings}
         elif args.exclude:
             db.construct_search_bindings(
-                args, [f"{k}" for k in pl_columns if k in db.config["media"]["search_columns"]]
+                args,
+                [f"{k}" for k in pl_columns if k in db.config["media"]["search_columns"]],
             )
     else:
         db.construct_search_bindings(args, [f"{k}" for k in pl_columns if k in db.config["media"]["search_columns"]])
