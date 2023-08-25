@@ -9,6 +9,7 @@ def try_get_feed(path):
     feed = feedparser.parse(path)
     if feed.version:
         return feed
+    return None
 
 
 def try_get_head_link(path):
@@ -30,7 +31,7 @@ def try_get_link_endswith(path):
     try:
         response = requests.get(path)
         soup = BeautifulSoup(response.text, "html.parser")
-        link = soup.find("a", href=lambda href: href and (href.endswith(".rss") or href.endswith(".xml")))
+        link = soup.find("a", href=lambda href: href and (href.endswith((".rss", ".xml"))))
         if link:
             return link.get("href")
     except TypeError:

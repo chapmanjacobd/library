@@ -31,7 +31,7 @@ def parse_args_sort(args) -> None:
                     var, direction = var.split(" ")
 
                 select_list.append(
-                    f"CASE WHEN {var} IS NULL THEN NULL ELSE COUNT(*) OVER (PARTITION BY {var}) END AS same_{var}_count"
+                    f"CASE WHEN {var} IS NULL THEN NULL ELSE COUNT(*) OVER (PARTITION BY {var}) END AS same_{var}_count",
                 )
                 sort_list.append(f"same_{var}_count {direction}")
             else:
@@ -193,7 +193,13 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     parser.add_argument("--no-video", "-vn", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--no-audio", "-an", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument(
-        "--no-subtitles", "--no-subtitle", "--no-subs", "--nosubs", "-sn", action="store_true", help=argparse.SUPPRESS
+        "--no-subtitles",
+        "--no-subtitle",
+        "--no-subs",
+        "--nosubs",
+        "-sn",
+        action="store_true",
+        help=argparse.SUPPRESS,
     )
     parser.add_argument("--subtitles", "--subtitle", "--subs", "-sy", action="store_true", help=argparse.SUPPRESS)
 
@@ -399,7 +405,8 @@ def construct_query(args) -> Tuple[str, dict]:
             m_columns = {**m_columns, "rank": int}
         elif args.exclude:
             db.construct_search_bindings(
-                args, [f"m.{k}" for k in m_columns if k in db.config["media"]["search_columns"]]
+                args,
+                [f"m.{k}" for k in m_columns if k in db.config["media"]["search_columns"]],
             )
     else:
         db.construct_search_bindings(args, [f"m.{k}" for k in m_columns if k in db.config["media"]["search_columns"]])

@@ -23,7 +23,13 @@ def parse_args():
     parser.add_argument("--no-confirm", "--yes", "-y", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--force", "-f", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument(
-        "--delete", "--remove", "--erase", "--rm", "-rm", action="store_true", help="Delete matching rows"
+        "--delete",
+        "--remove",
+        "--erase",
+        "--rm",
+        "-rm",
+        action="store_true",
+        help="Delete matching rows",
     )
     parser.add_argument("--offline", "--no-tube", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--ignore-errors", "--ignoreerrors", "-i", action="store_true", help=argparse.SUPPRESS)
@@ -214,7 +220,10 @@ def block(args=None) -> None:
 
         if not matching_media:
             matching_media = list(
-                args.db.query(f"select {select_sql} from media where coalesce(time_deleted, 0)=0 AND path = ?", (p[0],))
+                args.db.query(
+                    f"select {select_sql} from media where coalesce(time_deleted, 0)=0 AND path = ?",
+                    (p[0],),
+                ),
             )
             if matching_media:
                 log.debug("tube: found local %s", matching_media)

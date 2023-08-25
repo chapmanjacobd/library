@@ -1114,7 +1114,7 @@ def pipe_lines(x) -> None:
 
 def random_string() -> str:
     return "".join(
-        random.choices(string.ascii_uppercase, k=1) + random.choices(string.ascii_uppercase + string.digits, k=4)
+        random.choices(string.ascii_uppercase, k=1) + random.choices(string.ascii_uppercase + string.digits, k=4),
     )
 
 

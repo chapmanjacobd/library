@@ -101,7 +101,7 @@ def parse_args() -> argparse.Namespace:
             include2 = args.include.pop()
             args.table2, search_bindings = db.fts_search_sql(
                 "media",
-                fts_table=args.db["media"].detect_fts(),
+                fts_table=args.db["media"].detect_fts(),  # type: ignore
                 include=include2,
                 exclude=args.exclude,
                 flexible=args.flexible_search,
@@ -110,14 +110,14 @@ def parse_args() -> argparse.Namespace:
         else:
             path2 = args.paths.pop()
             args.table2 = "(select * from media where path like :path2)"
-            for idx, path in enumerate(args.paths):
-                args.filter_bindings[f"path2"] = path2.replace(" ", "%").replace("%%", " ") + "%"
+            for _idx, _path in enumerate(args.paths):  # this does not seem right...
+                args.filter_bindings["path2"] = path2.replace(" ", "%").replace("%%", " ") + "%"
 
     args.table = "media"
     if args.db["media"].detect_fts() and args.include:  # type: ignore
         args.table, search_bindings = db.fts_search_sql(
             "media",
-            fts_table=args.db["media"].detect_fts(),
+            fts_table=args.db["media"].detect_fts(),  # type: ignore
             include=args.include,
             exclude=args.exclude,
             flexible=args.flexible_search,
@@ -408,7 +408,9 @@ def dedupe() -> None:
                 """
 
             related_media = set(
-                filter_split_files(d["path"] for d in args.db.query(query, {**args.filter_bindings, **search_bindings}))
+                filter_split_files(
+                    d["path"] for d in args.db.query(query, {**args.filter_bindings, **search_bindings})
+                ),
             )
             if len(related_media) > 1:
                 print("Found", len(related_media) - 1, "duplicates")

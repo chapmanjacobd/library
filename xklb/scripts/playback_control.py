@@ -18,7 +18,13 @@ def parse_args(action) -> argparse.Namespace:
 
     if action == "next":
         parser.add_argument(
-            "--delete", "--remove", "--erase", "--rm", "-rm", action="store_true", help="Delete currently playing media"
+            "--delete",
+            "--remove",
+            "--erase",
+            "--rm",
+            "-rm",
+            action="store_true",
+            help="Delete currently playing media",
         )
 
     parser.add_argument("--verbose", "-v", action="count", default=0)

@@ -219,17 +219,23 @@ def fts_search_sql(table, fts_table, include, exclude=None, flexible=False):
 
 def construct_search_bindings(args, columns) -> None:
     incl = ":include{0}"
-    includes = "(" + " OR ".join([f"[{col}] LIKE {incl}" for col in columns]) + ")"
+    includes = "(" + " OR ".join([f"{col} LIKE {incl}" for col in columns]) + ")"
     includes_sql_parts = []
     for idx, inc in enumerate(args.include):
         includes_sql_parts.append(includes.format(idx))
-        args.filter_bindings[f"include{idx}"] = "%" + inc.replace(" ", "%").replace("%%", " ") + "%"
+        if getattr(args, "exact", False):
+            args.filter_bindings[f"include{idx}"] = inc
+        else:
+            args.filter_bindings[f"include{idx}"] = "%" + inc.replace(" ", "%").replace("%%", " ") + "%"
     join_op = " OR " if getattr(args, "flexible_search", False) else " AND "
     if len(includes_sql_parts) > 0:
         args.filter_sql.append("AND (" + join_op.join(includes_sql_parts) + ")")
 
     excl = ":exclude{0}"
-    excludes = "AND (" + " AND ".join([f"COALESCE([{col}],'') NOT LIKE {excl}" for col in columns]) + ")"
+    excludes = "AND (" + " AND ".join([f"COALESCE({col},'') NOT LIKE {excl}" for col in columns]) + ")"
     for idx, exc in enumerate(args.exclude):
         args.filter_sql.append(excludes.format(idx))
-        args.filter_bindings[f"exclude{idx}"] = "%" + exc.replace(" ", "%").replace("%%", " ") + "%"
+        if getattr(args, "exact", False):
+            args.filter_bindings[f"exclude{idx}"] = exc
+        else:
+            args.filter_bindings[f"exclude{idx}"] = "%" + exc.replace(" ", "%").replace("%%", " ") + "%"

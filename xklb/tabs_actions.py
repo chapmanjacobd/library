@@ -21,10 +21,17 @@ def parse_args(action) -> argparse.Namespace:
     parser.add_argument("--where", "-w", nargs="+", action="extend", default=[])
     parser.add_argument("--include", "-s", "--search", nargs="+", action="extend", default=[])
     parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[])
+    parser.add_argument("--exact", action="store_true")
     parser.add_argument("--print", "-p", default="", const="p", nargs="?")
     parser.add_argument("--cols", "-cols", "-col", nargs="*", help="Include a column when printing")
     parser.add_argument(
-        "--delete", "--remove", "--erase", "--rm", "-rm", action="store_true", help="Delete matching rows"
+        "--delete",
+        "--remove",
+        "--erase",
+        "--rm",
+        "-rm",
+        action="store_true",
+        help="Delete matching rows",
     )
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue")
     parser.add_argument("--skip")
@@ -86,10 +93,16 @@ def construct_tabs_query(args) -> Tuple[str, dict]:
 
     for idx, inc in enumerate(args.include):
         args.filter_sql.append(tabs_include_sql(idx))
-        args.filter_bindings[f"include{idx}"] = "%" + inc.replace(" ", "%").replace("%%", " ") + "%"
+        if args.exact:
+            args.filter_bindings[f"include{idx}"] = inc
+        else:
+            args.filter_bindings[f"include{idx}"] = "%" + inc.replace(" ", "%").replace("%%", " ") + "%"
     for idx, exc in enumerate(args.exclude):
         args.filter_sql.append(tabs_exclude_sql(idx))
-        args.filter_bindings[f"exclude{idx}"] = "%" + exc.replace(" ", "%").replace("%%", " ") + "%"
+        if args.exact:
+            args.filter_bindings[f"exclude{idx}"] = exc
+        else:
+            args.filter_bindings[f"exclude{idx}"] = "%" + exc.replace(" ", "%").replace("%%", " ") + "%"
 
     LIMIT = "LIMIT " + str(args.limit) if args.limit else ""
     OFFSET = f"OFFSET {args.skip}" if args.skip else ""
