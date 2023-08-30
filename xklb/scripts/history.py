@@ -36,7 +36,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("-v", "--verbose", action="count", default=0)
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
 
-    parser.add_argument("database")
     parser.add_argument(
         "facet",
         metavar="facet",
@@ -46,6 +45,7 @@ def parse_args() -> argparse.Namespace:
         nargs="?",
         help=f"One of: {', '.join(consts.time_facets)} (default: %(default)s)",
     )
+    parser.add_argument("database")
 
     args = parser.parse_args()
 
