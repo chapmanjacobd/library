@@ -121,7 +121,7 @@ def block(args=None) -> None:
                         , COUNT(*) filter (where time_modified>0) AS tried
                         , cast(COUNT(*) filter (where time_modified>0) as float) / COUNT(*) AS percent_tried
                         , COUNT(*) filter (where time_downloaded>0) AS succeeded
-                        , coalesce(cast(COUNT(*) filter (where time_downloaded > 0) as float) / COUNT(*) filter (where time_modified > 0), 0) AS percent_succeeded
+                        , coalesce(cast(COUNT(*) filter (where time_downloaded > 0 and time_modified > 0) as float) / COUNT(*) filter (where time_modified > 0), 0) AS percent_succeeded
                         , COUNT(*) filter (where coalesce(time_downloaded, 0)=0 AND coalesce(time_modified, 0)>0) AS failed
                         , coalesce(cast(COUNT(*) filter (where coalesce(time_downloaded, 0)=0 AND coalesce(time_modified, 0)>0) as float) / COUNT(*) filter (where time_modified > 0), 0) AS percent_failed
                     FROM media
