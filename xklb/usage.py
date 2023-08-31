@@ -1085,7 +1085,7 @@ relmv = """library relmv [--dry-run] SOURCE ... DEST
 
     Move fresh music to your phone every Sunday:
 
-        # move last weeks' music back to their source folders
+        # move last week music back to their source folders
         library relmv /mnt/d/80_Now_Listening/ /mnt/d/
 
         # move new music for this week

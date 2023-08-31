@@ -32,7 +32,6 @@ def consolidate(args, v: dict) -> dict:
     cv["time_modified"] = consts.now()
     cv["time_deleted"] = 0
 
-    cv["profile"] = args.profile
     cv["extractor_config"] = {
         **(v.pop("extractor_config", None) or {}),
         **(getattr(args, "extractor_config", None) or {}),

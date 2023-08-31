@@ -87,7 +87,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.2.078)
+    xk media library subcommands (v2.2.079)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -1691,7 +1691,7 @@ Balance files across filesystem folder trees or multiple devices (mostly useful 
 
     Move fresh music to your phone every Sunday:
 
-        # move last weeks' music back to their source folders
+        # move last week music back to their source folders
         library relmv /mnt/d/80_Now_Listening/ /mnt/d/
 
         # move new music for this week
