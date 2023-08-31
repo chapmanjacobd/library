@@ -68,7 +68,6 @@ def parse_args(action, usage) -> argparse.Namespace:
 
     utils.timeout(args.timeout)
 
-    args.profile = consts.DBType.video
     log.info(utils.dict_filter_bool(args.__dict__))
     return args
 

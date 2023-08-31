@@ -91,21 +91,6 @@ def parse_args(action, usage) -> argparse.Namespace:
     if args.db:
         args.database = args.db
 
-    if not args.database:
-        if args.profile == DBType.audio:
-            args.database = "audio.db"
-        elif args.profile == DBType.filesystem:
-            args.database = "fs.db"
-        elif args.profile == DBType.video:
-            args.database = "video.db"
-        elif args.profile == DBType.text:
-            args.database = "text.db"
-        elif args.profile == DBType.image:
-            args.database = "image.db"
-        else:
-            msg = f"fs_extract for profile {args.profile}"
-            raise NotImplementedError(msg)
-
     if args.db:
         args.database = args.db
     Path(args.database).touch()

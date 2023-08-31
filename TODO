@@ -1,42 +1,16 @@
 lb pl ~/lb/audio.db Catlow --cols id -pa
 lb pl ~/lb/audio.db Catlow --cols id -pf
-lb lt ~/lb/audio.db -c -w 'pl.title = "Catlow"'
 
 pl: --media search media but aggregate to playlist
 
-- POIs CLI -- save your trip plans and see places to go with automated day trip itineraries, geopandas buffer
-
-places lookup
-places plan
-places add
-
-# compare speed with sjoin
-def intersect_using_spatial_index(source_gdf, intersecting_gdf):
-    source_sindex = source_gdf.sindex
-    possible_matches_index = []
-
-    for other in intersecting_gdf.itertuples():
-        bounds = other.geometry.bounds
-        c = list(source_sindex.intersection(bounds))
-        possible_matches_index += c
-
-    unique_candidate_matches = list(set(possible_matches_index))
-    possible_matches = source_gdf.iloc[unique_candidate_matches]
-
-    result = possible_matches.loc[possible_matches.intersects(intersecting_gdf.unary_union)]
-    return result
+wt: search playlist
+lb lt ~/lb/audio.db -c -w 'pl.title = "Catlow"'
 
 - organize util functions by data type
 
-- dogsheep RSS feed rssadd rssupdate
-
 - globalnamespace py package to scan function names and search in github, print frequency of use in project, world, and namealikes, search function name, function body
 
-- wt/lt/search join and use fts on both tables, threading ?
-
 - improve playlists subcommand
-
-- upscale command -- download higher quality videos; use webpath, PURL, comment to get URL
 
 - scan bpm and key sig
 
@@ -71,3 +45,29 @@ def intersect_using_spatial_index(source_gdf, intersecting_gdf):
 
 - CLI UNLI Neighborhoods
 https://indigo.re/feed.xml
+
+- POIs CLI -- save your trip plans and see places to go with automated day trip itineraries, geopandas buffer
+
+places lookup
+places plan
+places add
+
+# compare speed with sjoin
+def intersect_using_spatial_index(source_gdf, intersecting_gdf):
+    source_sindex = source_gdf.sindex
+    possible_matches_index = []
+
+    for other in intersecting_gdf.itertuples():
+        bounds = other.geometry.bounds
+        c = list(source_sindex.intersection(bounds))
+        possible_matches_index += c
+
+    unique_candidate_matches = list(set(possible_matches_index))
+    possible_matches = source_gdf.iloc[unique_candidate_matches]
+
+    result = possible_matches.loc[possible_matches.intersects(intersecting_gdf.unary_union)]
+    return result
+
+- upscale command -- download higher quality videos; use webpath, PURL, comment to get URL
+
+- dogsheep RSS feed rssadd rssupdate
