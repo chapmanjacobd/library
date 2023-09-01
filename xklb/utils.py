@@ -331,6 +331,7 @@ def remove_suffixes(s, suffixes) -> str:
 
 @repeat_until_same
 def clean_string(p) -> str:
+    p = re.sub(r"\x7F", "", p)
     p = html.unescape(p)
     p = (
         p.replace("*", "")
@@ -362,8 +363,8 @@ def clean_string(p) -> str:
         .replace(" _", "_")
         .replace("_ ", "_")
     )
-    p = re.sub(r"\x7F", "", p)
     p = remove_consecutive_whitespace(p)
+    p = p.title()
     return p
 
 
