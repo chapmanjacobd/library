@@ -57,6 +57,7 @@ def christen() -> None:
     args = parse_args()
 
     for path in args.paths:
+        path = Path(path).resolve()
         log.info("[%s]: Processing subfolders...", path)
         subpaths = sorted((bytes(p) for p in Path(path).rglob("*")), key=len, reverse=True)
         for p in subpaths:
