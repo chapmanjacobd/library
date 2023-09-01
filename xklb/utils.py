@@ -1,4 +1,4 @@
-import argparse, csv, functools, hashlib, logging, math, multiprocessing, os, platform, random, re, shlex, shutil, signal, string, subprocess, sys, tempfile, textwrap, time, urllib.error, urllib.request
+import argparse, csv, functools, hashlib, html, logging, math, multiprocessing, os, platform, random, re, shlex, shutil, signal, string, subprocess, sys, tempfile, textwrap, time, urllib.error, urllib.request
 from ast import literal_eval
 from collections import Counter
 from collections.abc import Iterable
@@ -331,6 +331,7 @@ def remove_suffixes(s, suffixes) -> str:
 
 @repeat_until_same
 def clean_string(p) -> str:
+    p = html.unescape(p)
     p = (
         p.replace("*", "")
         .replace("&", "")
@@ -338,18 +339,22 @@ def clean_string(p) -> str:
         .replace("$", "")
         .replace("#", "")
         .replace(" @", "")
-        .replace("?.", ".")
-        .replace("!.", ".")
+        .replace("!", "")
+        .replace("?", "")
+        .replace("|", "")
         .replace("^", "")
         .replace("'", "")
         .replace('"', "")
         .replace(")", "")
+        .replace(":", "")
+        .replace(">", "")
+        .replace("<", "")
+        .replace("\\", "")
     )
     p = remove_consecutives(p, chars=["."])
     p = (
         p.replace("(", " ")
         .replace("-.", ".")
-        .replace(" :", ":")
         .replace(" - ", " ")
         .replace("- ", " ")
         .replace(" -", " ")
@@ -357,6 +362,7 @@ def clean_string(p) -> str:
         .replace(" _", "_")
         .replace("_ ", "_")
     )
+    p = re.sub(r"\x7F", "", p)
     p = remove_consecutive_whitespace(p)
     return p
 
