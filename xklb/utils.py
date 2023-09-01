@@ -364,7 +364,6 @@ def clean_string(p) -> str:
         .replace("_ ", "_")
     )
     p = remove_consecutive_whitespace(p)
-    p = p.title()
     return p
 
 
@@ -443,6 +442,7 @@ def clean_path(b, dot_space=False) -> str:
     log.debug("stem %s %s", parent, stem)
 
     parent = ["_" if part == "" else part for part in parent]
+    parent = [p.title() for p in parent]
     p = str(Path(*parent) / stem[:1024])
 
     if dot_space:
