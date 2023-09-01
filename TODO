@@ -6,6 +6,10 @@ pl: --media search media but aggregate to playlist
 wt: search playlist
 lb lt ~/lb/audio.db -c -w 'pl.title = "Catlow"'
 
+- proliferation: tools generator
+
+- automatic photo essay generator
+
 - organize util functions by data type
 
 - globalnamespace py package to scan function names and search in github, print frequency of use in project, world, and namealikes, search function name, function body

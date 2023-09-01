@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import List
 
 import humanize
-from rich import print
 
 from xklb import consts, db, player, usage, utils
 from xklb.consts import DBType
