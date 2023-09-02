@@ -19,13 +19,13 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def rename_path(args, b) -> None:
+def rename_path(args, base, b) -> None:
     fixed = utils.clean_path(b, args.dot_space)
 
     if b != fixed.encode():
         printable_p = b.decode("utf-8", "backslashreplace")
         if args.run:
-            p = Path(fsdecode(b))
+            p = base / fsdecode(b)
             if not p.is_file():
                 log.info("Skipping non-file. %s", printable_p)
                 return
@@ -33,7 +33,8 @@ def rename_path(args, b) -> None:
                 log.info("Skipping symlink. %s", printable_p)
                 return
             try:
-                Path(fixed).parent.mkdir(parents=True, exist_ok=True)
+                fixed = base / fixed
+                fixed.parent.mkdir(parents=True, exist_ok=True)
 
                 if Path(fixed).exists() and not args.overwrite:
                     raise FileExistsError
@@ -57,18 +58,18 @@ def christen() -> None:
     args = parse_args()
 
     for path in args.paths:
-        path = Path(path).resolve()
-        log.info("[%s]: Processing subfolders...", path)
-        subpaths = sorted((bytes(p) for p in Path(path).rglob("*")), key=len, reverse=True)
+        base = Path(path).resolve()
+        log.info("[%s]: Processing subfolders...", base)
+        subpaths = sorted((bytes(p.relative_to(base)) for p in base.rglob("*")), key=len, reverse=True)
         for p in subpaths:
-            rename_path(args, p)
+            rename_path(args, base, p)
         # Parallel()(delayed(rename_path)(p) for p in subpaths)  # mostly IO bound
 
     print(
         r"""
     You may want to run bfs to remove nested empty folders:
 
-        yes | bfs -nohidden -type d -exec bfs -f {} -not -type d -exit 1 \; -prune -ok bfs -f {} -type d -delete \;
+        yes | bfs -type d -exec bfs -f {} -not -type d -exit 1 \; -prune -ok bfs -f {} -type d -delete \;
         """,
     )
 
