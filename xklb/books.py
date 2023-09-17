@@ -42,9 +42,15 @@ def munge_image_tags(m: dict, e: dict) -> dict:
     if chroma_subsample == 0:
         chroma_subsample = None
 
-    unit_x = safe_unpack(pop_substring_keys(e, "XResolution"))
-    unit_y = safe_unpack(pop_substring_keys(e, "YResolution"))
-    unit = safe_unpack(pop_substring_keys(e, "ResolutionUnit"))
+    unit_x = safe_unpack(
+        *pop_substring_keys(e, "XResolution"),
+    )
+    unit_y = safe_unpack(
+        *pop_substring_keys(e, "YResolution"),
+    )
+    unit = safe_unpack(
+        *pop_substring_keys(e, "ResolutionUnit"),
+    )
     if unit == 0:
         unit = None
         unit_x = None if unit_x == 1 else unit_x
@@ -53,7 +59,7 @@ def munge_image_tags(m: dict, e: dict) -> dict:
     m = {
         **m,
         "orientation": safe_unpack(
-            pop_substring_keys(e, "Orientation"),
+            *pop_substring_keys(e, "Orientation"),
         ),
         "width": safe_unpack(
             e.pop("File:ImageWidth", None),
@@ -72,11 +78,23 @@ def munge_image_tags(m: dict, e: dict) -> dict:
             *pop_substring_keys(e, "ImageHeight"),
         ),
         "chroma_subsample": chroma_subsample,
-        "color_depth": safe_unpack(*pop_substring_keys(e, "ColorResolutionDepth")),
-        "color_background": safe_unpack(*pop_substring_keys(e, "BackgroundColor")),
-        "color_transparent": safe_unpack(*pop_substring_keys(e, "TransparentColor")),
-        "longitude": safe_unpack(*pop_substring_keys(e, "GPSLongitude")),
-        "latitude": safe_unpack(*pop_substring_keys(e, "GPSLatitude")),
+        "color_depth": safe_unpack(
+            *pop_substring_keys(e, "ColorResolutionDepth"),
+        ),
+        "color_background": safe_unpack(
+            *pop_substring_keys(e, "BackgroundColor"),
+        ),
+        "color_transparent": safe_unpack(
+            *pop_substring_keys(e, "TransparentColor"),
+        ),
+        "longitude": safe_unpack(
+            e.pop("Composite:GPSLongitude", None),
+            *pop_substring_keys(e, "GPSLongitude"),
+        ),
+        "latitude": safe_unpack(
+            e.pop("Composite:GPSLatitude", None),
+            *pop_substring_keys(e, "GPSLatitude"),
+        ),
         "unit": unit,
         "unit_x": unit_x,
         "unit_y": unit_y,

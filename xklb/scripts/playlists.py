@@ -128,7 +128,7 @@ def playlists() -> None:
             {', avg(duration) avg_playlist_duration' if 'duration' in query else ''}
             {', sum(size) size' if 'size' in query else ''}
             , count(*) playlists_count
-            {', sum(count) videos_count' if 'count' in query else ''}
+            {', sum(count) media_count' if 'count' in query else ''}
         from ({query})
         """
 

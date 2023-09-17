@@ -1,8 +1,6 @@
 lb pl ~/lb/audio.db Catlow --cols id -pa
 lb pl ~/lb/audio.db Catlow --cols id -pf
 
-pl: --media search media but aggregate to playlist
-
 wt: search playlist
 lb lt ~/lb/audio.db -c -w 'pl.title = "Catlow"'
 
@@ -14,14 +12,12 @@ lb lt ~/lb/audio.db -c -w 'pl.title = "Catlow"'
 
 - globalnamespace py package to scan function names and search in github, print frequency of use in project, world, and namealikes, search function name, function body
 
-- improve playlists subcommand
-
 - scan bpm and key sig
 
     https://github.com/aubio/aubio
     https://github.com/tyiannak/pyAudioAnalysis
 
-- cluster images
+ - cluster images
 
     https://github.com/rhsimplex/image-match/blob/master/image_match/goldberg.py
     https://github.com/HughKu/Im2txt

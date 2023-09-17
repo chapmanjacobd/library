@@ -1083,7 +1083,7 @@ def media_printer(args, data, units=None, media_len=None) -> None:
         media.reverse()
 
     duration = sum(m.get("duration") or 0 for m in media)
-    if "a" in args.print and "Aggregate" not in getattr(media[0], "path", ""):
+    if "a" in args.print and ("Aggregate" not in media[0].get("path") or ""):
         if "count" in media[0]:
             D = {"path": "Aggregate", "count": sum(d["count"] for d in media)}
         elif args.action == SC.download_status and "never_downloaded" in media[0]:
