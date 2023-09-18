@@ -5,7 +5,7 @@ from xklb.lb import library as lb
 from xklb.tabs_extract import tabs_add
 
 tabs_db = ["tests/data/tabs.db"]
-tabs_add([*tabs_db, "https://unli.xyz/proliferation/verbs.html"])
+tabs_add([*tabs_db, "--allow-immediate", "https://unli.xyz/proliferation/verbs.html"])
 
 
 class TestTabs(unittest.TestCase):
