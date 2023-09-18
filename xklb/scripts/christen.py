@@ -36,7 +36,7 @@ def rename_path(args, base, b) -> None:
                 fixed = base / fixed
                 fixed.parent.mkdir(parents=True, exist_ok=True)
 
-                if Path(fixed).exists() and not args.overwrite:
+                if fixed.exists() and not args.overwrite:
                     raise FileExistsError
 
                 p.rename(fixed)

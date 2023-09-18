@@ -2,7 +2,7 @@ import argparse, sys
 from pathlib import Path
 from typing import List
 
-from xklb import consts, db, media, player, usage, utils
+from xklb import consts, db, history, media, player, usage, utils
 from xklb.utils import log, sanitize_url
 
 
@@ -21,6 +21,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--category", "-c", help=argparse.SUPPRESS)
     parser.add_argument("--no-sanitize", "-s", action="store_true", help="Don't sanitize some common URL parameters")
+    parser.add_argument("--allow-immediate", action="store_true")
     parser.add_argument("-v", "--verbose", action="count", default=0)
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
 
@@ -92,3 +93,5 @@ def tabs_add(args=None) -> None:
     tabs = utils.list_dict_filter_bool([extract_url_metadata(args, path) for path in get_new_paths(args)])
     for tab in tabs:
         media.add(args, tab)
+    if not args.allow_immediate:
+        history.add(args, [d["path"] for d in tabs], mark_done=True)  # prevent immediately opening
