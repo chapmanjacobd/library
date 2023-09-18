@@ -1181,7 +1181,7 @@ def media_printer(args, data, units=None, media_len=None) -> None:
                 utils.pipe_print(line.strip().replace(args.moved[0], "", 1))
             else:
                 utils.pipe_print(line.strip())
-        if args.moved:
+        if getattr(args, "moved", False):
             moved_media(args, [d["path"] for d in media], *args.moved)
     elif "j" in args.print or consts.MOBILE_TERMINAL:
         print(json.dumps(media, indent=3))

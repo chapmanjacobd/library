@@ -1,8 +1,15 @@
-lb pl ~/lb/audio.db Catlow --cols id -pa
-lb pl ~/lb/audio.db Catlow --cols id -pf
+
 
 wt: search playlist
 lb lt ~/lb/audio.db -c -w 'pl.title = "Catlow"'
+
+- czkawka-dup-compare
+
+- artsearch
+
+"August Macke Colourfull shapes 2"
+Large size Google similar image search
+Wikimedia commons
 
 - proliferation: tools generator
 
