@@ -1140,6 +1140,8 @@ def resolve_absolute_path(s):
 
 
 def resolve_absolute_paths(paths):
+    if paths is None:
+        return paths
     return [resolve_absolute_path(s) for s in paths]
 
 
@@ -1427,7 +1429,7 @@ def compare_block_strings(value, media_value):
     inner_wild = "%" in inner_value
 
     if inner_wild:
-        regex_pattern = value.replace("%", ".*")
+        regex_pattern = ".*".join(re.escape(s) for s in value.split("%"))
         return bool(re.match(regex_pattern, media_value))
     elif not ends_with_wild and not starts_with_wild:
         return media_value.startswith(value)
