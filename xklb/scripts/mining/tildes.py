@@ -3,7 +3,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 from time import sleep
 
-import requests
 from bs4 import BeautifulSoup
 from dateutil import parser
 
@@ -34,7 +33,7 @@ def save_page(args, url):
     if args.cookies or args.cookies_from_browser:
         text = args.authed_web.get(url)
     else:
-        response = requests.get(url, timeout=60)
+        response = utils.requests_session().get(url, timeout=60)
         response.raise_for_status()
         text = response.text
 

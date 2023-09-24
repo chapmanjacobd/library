@@ -1,10 +1,11 @@
 import argparse, time
 from shutil import which
 
+from xklb import utils
 from xklb.utils import log, pipe_print
 
 
-def get_links(url, markup, include=None, exclude=None) -> None:
+def get_inner_urls(url, markup, include=None, exclude=None):
     from urllib.parse import urlparse
 
     from bs4 import BeautifulSoup
@@ -36,7 +37,7 @@ def get_links(url, markup, include=None, exclude=None) -> None:
 
         # breakpoint()
 
-    pipe_print("\n".join(film_list))
+    return film_list
 
 
 def get_page_infinite_scroll(driver, url):
@@ -66,12 +67,12 @@ def extract_links() -> None:
         help="substrings for exclusion (any must match to exclude)",
     )
     parser.add_argument("--scroll", action="store_true", help="Scroll down the page; infinite scroll")
+    parser.add_argument("--download", action="store_true", help="Download filtered links")
     parser.add_argument("--verbose", "-v", action="count", default=0)
 
-    parser.add_argument("filename", help="File with one URL per line")
+    parser.add_argument("--file", "-f", help="File with one URL per line")
+    parser.add_argument("paths", nargs="*")
     args = parser.parse_args()
-
-    import requests
 
     if args.scroll:
         from selenium import webdriver
@@ -81,18 +82,50 @@ def extract_links() -> None:
         else:
             driver = webdriver.Chrome()
 
-    with open(args.filename) as f:
-        for line in f:
-            url = line.rstrip("\n")
-            if url in ["", '""', "\n"]:
-                continue
+    def download_url(url):
+        response = utils.requests_session().get(url, stream=True)
 
-            if args.scroll:
-                markup = get_page_infinite_scroll(driver, url)
-            else:
-                markup = requests.get(url, timeout=120).content
+        if response.status_code // 100 != 2:  # Not 2xx
+            print(f"Error {response.status_code} downloading {url}")
 
-            get_links(url, markup, include=args.include, exclude=args.exclude)
+        content_d = response.headers.get("Content-Disposition")
+        if content_d:
+            filename = content_d.split("filename=")[1]
+        else:
+            filename = url.split("/")[-1]
+        filename = utils.clean_string(filename)
+
+        with open(filename, "wb") as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                if chunk:
+                    f.write(chunk)
+
+    def process_url(line):
+        url = line.rstrip("\n")
+        if url in ["", '""', "\n"]:
+            return
+
+        if args.scroll:
+            markup = get_page_infinite_scroll(driver, url)
+        else:
+            r = utils.requests_session().get(url, timeout=120, headers=utils.headers)
+            r.raise_for_status()
+            markup = r.content
+        inner_urls = get_inner_urls(url, markup, include=args.include, exclude=args.exclude)
+
+        if args.download:
+            for inner_url in inner_urls:
+                download_url(inner_url)
+        else:
+            pipe_print("\n".join(inner_urls))
+
+    if args.file:
+        with open(args.file) as f:
+            for line in f:
+                process_url(line)
+    else:
+        for path in args.paths:
+            process_url(path)
 
     if args.scroll:
         driver.quit()

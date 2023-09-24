@@ -72,6 +72,44 @@ def exit_nicely(_signal, _frame) -> NoReturn:
 
 signal.signal(signal.SIGINT, exit_nicely)
 
+headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/117.0"}
+session = None
+
+
+def _get_retry_adapter(max_retries: Optional[int] = 5):
+    import requests, requests.adapters, requests.packages, urllib3
+
+    retries = urllib3.util.retry.Retry(
+        total=max_retries,
+        connect=max_retries,
+        read=max_retries,
+        status=2,
+        redirect=False,  # don't fail on redirect
+        backoff_factor=5,
+        status_forcelist=[
+            413,
+            429,
+            500,
+            502,
+            503,
+            504,
+        ],
+    )
+
+    return requests.adapters.HTTPAdapter(max_retries=retries)
+
+
+def requests_session(max_retries: Optional[int] = 5):
+    global session
+
+    if session is None:
+        import requests
+
+        session = requests.Session()
+        session.mount("http", _get_retry_adapter(max_retries))  # also includes https
+
+    return session
+
 
 def repeat_until_same(fn):  # noqa: ANN201
     def wrapper(*args, **kwargs):
