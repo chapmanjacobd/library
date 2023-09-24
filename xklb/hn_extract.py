@@ -52,9 +52,7 @@ def parse_args(prog, usage) -> argparse.Namespace:
 
 
 def get(url):
-    import requests
-
-    r = requests.get(url, timeout=120)
+    r = utils.requests_session().get(url, timeout=120)
     return r.json()
 
 

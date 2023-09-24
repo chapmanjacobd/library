@@ -26,6 +26,7 @@ def parse_args(action, usage) -> argparse.Namespace:
     )
     profile.add_argument(
         "--filesystem",
+        "--fs",
         "-F",
         action="store_const",
         dest="profile",
@@ -107,10 +108,14 @@ def parse_args(action, usage) -> argparse.Namespace:
 
 
 def extract_metadata(mp_args, path) -> Optional[Dict[str, int]]:
+    import puremagic
+
     log.debug(path)
 
+    p = Path(path)
+
     try:
-        stat = Path(path).stat()
+        stat = p.stat()
     except FileNotFoundError:
         return None
     except OSError:
@@ -120,17 +125,32 @@ def extract_metadata(mp_args, path) -> Optional[Dict[str, int]]:
         log.error(f"[{path}] %s", e)
         return None
 
+    mimetype = None
+    if p.is_dir():
+        mimetype = "directory"
+    try:
+        mimetype = puremagic.from_file(path, mime=True) or None
+    except Exception:
+        if p.is_socket():
+            mimetype = "socket"
+        elif p.is_fifo():
+            mimetype = "fifo"
+        elif p.is_symlink():
+            mimetype = "symlink"
+        elif p.is_block_device():
+            mimetype = "block device"
+        elif p.is_char_device():
+            mimetype = "char device"
+
     media = {
         "path": path,
         "size": stat.st_size,
+        "type": mimetype,
         "time_created": int(stat.st_ctime),
         "time_modified": int(stat.st_mtime) or consts.now(),
         "time_downloaded": consts.APPLICATION_START,
         "time_deleted": 0,
     }
-
-    if mp_args.profile == DBType.filesystem:
-        media = {**media, "is_dir": Path(path).is_dir()}
 
     if mp_args.profile in (DBType.audio, DBType.video):
         media = av.munge_av_tags(mp_args, media, path)
