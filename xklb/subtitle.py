@@ -99,7 +99,7 @@ def is_text_subtitle_stream(s) -> bool:
 
 def externalize_internal_subtitles(path, streams=None) -> List[str]:
     if streams is None:
-        streams = ffmpeg.probe(path, show_chapters=None)["streams"]
+        streams = utils.FFProbe(path).streams
 
     external_paths = utils.conform(
         [extract_from_video(path, s["index"]) for s in streams if is_text_subtitle_stream(s)],
@@ -131,9 +131,9 @@ def get_subtitle_paths(path) -> List[str]:
 
 
 def get_sub_index(args, path) -> Optional[int]:
-    streams = ffmpeg.probe(path)["streams"]
+    probe = utils.FFProbe(path)
     temp_db = db.connect(args, memory=True)
-    temp_db["streams"].insert_all(streams, pk="index")  # type: ignore
+    temp_db["streams"].insert_all(probe.streams, pk="index")  # type: ignore
     subtitle_index = temp_db.pop(
         f"""select "index" from streams
             where codec_type = "subtitle"

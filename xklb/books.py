@@ -20,7 +20,7 @@ def munge_book_tags(media, path) -> Optional[dict]:
         tags = REGEX_SENTENCE_ENDS.split(tags.decode())
     except Exception as e:
         log.warning(e)
-        log.error(f"[{path}] Failed reading file")
+        log.error(f"Failed reading text. {path}")
         tags = []
     return {**media, "tags": combine(tags)}
 

@@ -148,7 +148,7 @@ def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True) -> 
 
                     added_media_count += 1
                     if added_media_count > 1:
-                        print(f"[{playlist_path}] Added {added_media_count} media", end="\r", flush=True)
+                        utils.print_overwrite(f"[{playlist_path}] Added {added_media_count} media")
 
             return [], info
 
@@ -256,12 +256,7 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Optional[L
             media.playlist_media_add(args, path, entry)
 
             current_video_count += 1
-            sys.stdout.write("\033[K\r")
-            print(
-                f"[{playlist_path}] {current_video_count} of {len(videos)} extra metadata fetched",
-                end="\r",
-                flush=True,
-            )
+            utils.print_overwrite(f"[{playlist_path}] {current_video_count} of {len(videos)} extra metadata fetched")
 
 
 def get_video_metadata(args, playlist_path) -> Optional[Dict]:

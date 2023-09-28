@@ -1,4 +1,4 @@
-import argparse, csv, functools, hashlib, html, logging, math, multiprocessing, os, platform, random, re, shlex, shutil, signal, string, subprocess, sys, tempfile, textwrap, time, urllib.error, urllib.request
+import argparse, csv, functools, glob, hashlib, html, json, logging, math, multiprocessing, os, platform, random, re, shlex, shutil, signal, string, subprocess, sys, tempfile, textwrap, time, urllib.error, urllib.request
 from ast import literal_eval
 from collections import Counter
 from collections.abc import Iterable
@@ -13,8 +13,6 @@ from typing import Any, Dict, Iterator, List, NoReturn, Optional, Union
 import humanize
 from IPython.core import ultratb
 from IPython.terminal import debugger
-from rich import prompt
-from rich.logging import RichHandler
 
 from xklb import consts
 from xklb.scripts.mining import data
@@ -57,7 +55,6 @@ def argparse_log() -> logging.Logger:
     logging.basicConfig(
         level=log_levels[min(len(log_levels) - 1, args.verbose)],
         format="%(message)s",
-        handlers=[RichHandler(show_time=False, show_level=False, show_path=False)],
     )
     return logging.getLogger()
 
@@ -123,6 +120,171 @@ def repeat_until_same(fn):  # noqa: ANN201
         return p
 
     return wrapper
+
+
+def remove_consecutive_whitespace(s) -> str:
+    return " ".join(s.split())  # spaces, tabs, and newlines
+
+
+def remove_consecutive(s, char=" ") -> str:
+    return re.sub("\\" + char + "+", char, s)
+
+
+@repeat_until_same
+def remove_consecutives(s, chars) -> str:
+    for char in chars:
+        s = remove_consecutive(s, char)
+    return s
+
+
+@repeat_until_same
+def remove_prefixes(s, prefixes) -> str:
+    for prefix in prefixes:
+        if s.startswith(prefix):
+            s = s.replace(prefix, "", 1)
+    return s
+
+
+@repeat_until_same
+def remove_suffixes(s, suffixes) -> str:
+    for suffix in suffixes:
+        if s.endswith(suffix):
+            s = s[: -len(suffix)]
+    return s
+
+
+@repeat_until_same
+def clean_string(p) -> str:
+    p = re.sub(r"\x7F", "", p)
+    p = html.unescape(p)
+    p = (
+        p.replace("*", "")
+        .replace("&", "")
+        .replace("%", "")
+        .replace("$", "")
+        .replace("#", "")
+        .replace(" @", "")
+        .replace("!", "")
+        .replace("?", "")
+        .replace("|", "")
+        .replace("^", "")
+        .replace("'", "")
+        .replace('"', "")
+        .replace(")", "")
+        .replace(":", "")
+        .replace(">", "")
+        .replace("<", "")
+    )
+    p = remove_consecutives(p, chars=["."])
+    p = (
+        p.replace("(", " ")
+        .replace("-.", ".")
+        .replace(" - ", " ")
+        .replace("- ", " ")
+        .replace(" -", " ")
+        .replace(" _ ", "_")
+        .replace(" _", "_")
+        .replace("_ ", "_")
+    )
+    p = remove_consecutive_whitespace(p)
+    return p
+
+
+def safe_int(s) -> Optional[int]:
+    if not s:
+        return None
+    try:
+        return int(float(s))
+    except Exception:
+        return None
+
+
+def clean_path(b, dot_space=False, max_name_len=1024) -> str:
+    import ftfy
+
+    p = b.decode("utf-8", "backslashreplace")
+    p = ftfy.fix_text(p, explain=False)
+    path = Path(p)
+    ext = path.suffix
+
+    parent = [clean_string(part) for part in path.parent.parts]
+    stem = clean_string(path.stem)
+    log.debug("cleaned %s %s", parent, stem)
+
+    parent = [remove_prefixes(part, [" ", "-"]) for part in parent]
+    log.debug("parent_prefixes %s %s", parent, stem)
+    parent = [remove_suffixes(part, [" ", "-", "_", "."]) for part in parent]
+    log.debug("parent_suffixes %s %s", parent, stem)
+
+    stem = remove_prefixes(stem, [" ", "-"])
+    stem = remove_suffixes(stem, [" ", "-", "."])
+    log.debug("stem %s %s", parent, stem)
+
+    parent = ["_" if part == "" else part for part in parent]
+    parent = [p.title() if any(x in p[1:-1] for x in (" ", "_", ".")) else p.lower() for p in parent]
+
+    ffmpeg_limit = max_name_len - len(ext.encode()) - len("...")
+    if len(stem.encode()) > ffmpeg_limit:
+        start = stem[: ffmpeg_limit // 2]
+        end = stem[-ffmpeg_limit // 2 :]
+        while len(start.encode()) > ffmpeg_limit // 2:
+            start = start[:-1]
+        while len(end.encode()) > ffmpeg_limit // 2:
+            end = end[1:]
+        stem = start + "..." + end
+
+    p = str(Path(*parent) / stem)
+
+    if dot_space:
+        p = p.replace(" ", ".")
+
+    return p + ext
+
+
+def download_url(url, output_path=None, output_prefix=None, chunk_size=8 * 1024 * 1024, retries=2):
+    response = requests_session().get(url, stream=True)
+
+    if response.status_code // 100 != 2:  # Not 2xx
+        log.error(f"Error {response.status_code} downloading {url}")
+
+    remote_size = safe_int(response.headers.get("Content-Length"))
+
+    if output_path is None:
+        content_d = response.headers.get("Content-Disposition")
+        if content_d:
+            output_path = content_d.split("filename=")[1].replace("/", "-")
+        else:
+            output_path = url.split("/")[-1]
+
+        if output_prefix:
+            output_path = os.path.join(output_prefix / output_path)
+        output_path = clean_path(output_path.encode())
+
+    p = Path(output_path)
+    if remote_size and p.exists():
+        local_size = p.stat().st_size
+        if local_size == remote_size:
+            log.warning(f"Download skipped. File with same size already exists: {output_path}")
+        else:
+            headers = {"Range": f"bytes={local_size}-"}
+            response = requests_session().get(url, headers=headers, stream=True)
+            if response.status_code != 206:
+                p.unlink()
+                response = requests_session().get(url, stream=True)
+
+    with open(output_path, "ab") as f:
+        for chunk in response.iter_content(chunk_size=chunk_size):
+            if chunk:
+                f.write(chunk)
+
+    if remote_size:
+        downloaded_size = os.path.getsize(output_path)
+        if downloaded_size < remote_size:
+            if retries == 0:
+                msg = f"Download interrupted ({downloaded_size/remote_size:.1%}) {output_path}"
+                raise RuntimeError(msg)
+            else:
+                download_url(url, output_path, output_prefix, chunk_size, retries=retries - 1)
 
 
 def with_timeout(seconds):  # noqa: ANN201
@@ -209,8 +371,11 @@ def cmd(*command, strict=True, cwd=None, quiet=True, **kwargs) -> subprocess.Com
 
     def print_std(r_std):
         s = filter_output(r_std)
-        if not quiet and s:
-            print(s)
+        if s:
+            if quiet:
+                log.info(s)
+            else:
+                print(s)
         return s
 
     try:
@@ -231,10 +396,11 @@ def cmd(*command, strict=True, cwd=None, quiet=True, **kwargs) -> subprocess.Com
     r.stdout = print_std(r.stdout)
     r.stderr = print_std(r.stderr)
     if r.returncode != 0:
-        log.info("[%s]: ERROR %s", shlex.join(command), r.returncode)
+        msg = f"[{shlex.join(command)}] exited {r.returncode}"
         if strict:
-            msg = f"[{command}] exited {r.returncode}"
             raise RuntimeError(msg)
+        else:
+            log.info(msg)
 
     return r
 
@@ -336,72 +502,26 @@ def trash(path: Union[Path, str], detach=True) -> None:
             Path(path).unlink(missing_ok=True)
 
 
-def remove_consecutive_whitespace(s) -> str:
-    return " ".join(s.split())  # spaces, tabs, and newlines
-
-
-def remove_consecutive(s, char=" ") -> str:
-    return re.sub("\\" + char + "+", char, s)
-
-
-@repeat_until_same
-def remove_consecutives(s, chars) -> str:
-    for char in chars:
-        s = remove_consecutive(s, char)
-    return s
-
-
-@repeat_until_same
-def remove_prefixes(s, prefixes) -> str:
-    for prefix in prefixes:
-        if s.startswith(prefix):
-            s = s.replace(prefix, "", 1)
-    return s
-
-
-@repeat_until_same
-def remove_suffixes(s, suffixes) -> str:
-    for suffix in suffixes:
-        if s.endswith(suffix):
-            s = s[: -len(suffix)]
-    return s
-
-
-@repeat_until_same
-def clean_string(p) -> str:
-    p = re.sub(r"\x7F", "", p)
-    p = html.unescape(p)
-    p = (
-        p.replace("*", "")
-        .replace("&", "")
-        .replace("%", "")
-        .replace("$", "")
-        .replace("#", "")
-        .replace(" @", "")
-        .replace("!", "")
-        .replace("?", "")
-        .replace("|", "")
-        .replace("^", "")
-        .replace("'", "")
-        .replace('"', "")
-        .replace(")", "")
-        .replace(":", "")
-        .replace(">", "")
-        .replace("<", "")
-    )
-    p = remove_consecutives(p, chars=["."])
-    p = (
-        p.replace("(", " ")
-        .replace("-.", ".")
-        .replace(" - ", " ")
-        .replace("- ", " ")
-        .replace(" -", " ")
-        .replace(" _ ", "_")
-        .replace(" _", "_")
-        .replace("_ ", "_")
-    )
-    p = remove_consecutive_whitespace(p)
-    return p
+def is_file_open(path):
+    try:
+        if os.name == "posix":
+            widlcard = "/proc/*/fd/*"
+            lfds = glob.glob(widlcard)
+            for fds in lfds:
+                try:
+                    file = os.readlink(fds)
+                    if file == path:
+                        return True
+                except OSError as err:
+                    if err.errno == 2:
+                        file = None
+                    else:
+                        raise err
+        else:
+            open(path, "r")  # Windows will error here
+    except IOError:
+        return True
+    return False
 
 
 def path_to_sentence(s):
@@ -418,15 +538,6 @@ def path_to_sentence(s):
         .replace("_", " ")
         .replace("-", " "),
     )
-
-
-def safe_int(s) -> Optional[int]:
-    if not s:
-        return None
-    try:
-        return int(float(s))
-    except Exception:
-        return None
 
 
 def concat(*args):
@@ -455,37 +566,6 @@ def extract_words(string):
         if not (s.lower() in data.stop_words or s.lower() in data.prepositions or safe_int(s) is not None)
     ]
     return words
-
-
-def clean_path(b, dot_space=False) -> str:
-    import ftfy
-
-    p = b.decode("utf-8", "backslashreplace")
-    p = ftfy.fix_text(p, explain=False)
-    path = Path(p)
-    ext = path.suffix
-
-    parent = [clean_string(part) for part in path.parent.parts]
-    stem = clean_string(path.stem)
-    log.debug("cleaned %s %s", parent, stem)
-
-    parent = [remove_prefixes(part, [" ", "-"]) for part in parent]
-    log.debug("parent_prefixes %s %s", parent, stem)
-    parent = [remove_suffixes(part, [" ", "-", "_", "."]) for part in parent]
-    log.debug("parent_suffixes %s %s", parent, stem)
-
-    stem = remove_prefixes(stem, [" ", "-"])
-    stem = remove_suffixes(stem, [" ", "-", "."])
-    log.debug("stem %s %s", parent, stem)
-
-    parent = ["_" if part == "" else part for part in parent]
-    parent = [p.title() if any(x in p[1:-1] for x in (" ", "_", ".")) else p.lower() for p in parent]
-    p = str(Path(*parent) / stem[:1024])
-
-    if dot_space:
-        p = p.replace(" ", ".")
-
-    return p + ext
 
 
 def remove_text_inside_brackets(text: str, brackets="()[]") -> str:  # thanks @jfs
@@ -885,6 +965,7 @@ def col_duration(tbl: List[Dict], col: str) -> List[Dict]:
 def seconds_to_hhmmss(seconds):
     if seconds < 0:
         seconds = abs(seconds)
+    seconds = int(seconds)
 
     hours = seconds // 3600
     minutes = (seconds % 3600) // 60
@@ -944,11 +1025,25 @@ def filter_namespace(args, config_opts) -> Optional[Dict]:
     return dict_filter_bool({k: v for k, v in args.__dict__.items() if k in config_opts})
 
 
+def print_overwrite(text):
+    if os.name == "posix":
+        print("\r" + text, end="\033[K", flush=True)
+    elif platform.system() == "Windows":
+        print("\r" + text, end="", flush=True)
+    else:
+        print(text)
+
+
 def clear_input() -> None:
     if platform.system() == "Linux":
         from termios import TCIFLUSH, tcflush
 
         tcflush(sys.stdin, TCIFLUSH)
+    elif platform.system() == "Darwin":
+        import select
+
+        while select.select([sys.stdin], [], [], 0.01) == ([sys.stdin], [], []):
+            sys.stdin.read(1)
     elif platform.system() == "Windows":
         if getattr(clear_input, "kbhit", None) is None:
             from msvcrt import getch, kbhit  # type: ignore
@@ -1037,6 +1132,14 @@ def mount_stats() -> None:
     parser.add_argument("mounts", nargs="+")
     args = parser.parse_args()
     print_mount_stats(get_mount_stats(args.mounts))
+
+
+def tempdir_unlink(pattern):
+    temp_dir = tempfile.gettempdir()
+    cutoff = time.time() - 15 * 60  # 15 minutes in seconds
+    for p in Path(temp_dir).glob(pattern):
+        if p.stat().st_mtime < cutoff:
+            p.unlink(missing_ok=True)
 
 
 def human_to_bytes(input_str) -> int:
@@ -1184,6 +1287,8 @@ def resolve_absolute_paths(paths):
 
 
 def confirm(*args, **kwargs) -> bool:
+    from rich import prompt
+
     clear_input()
     return prompt.Confirm.ask(*args, **kwargs, default=False)
 
@@ -1622,3 +1727,38 @@ class ChocolateChip:
             raise urllib.error.HTTPError(url, response.getcode(), response_data, response.headers, None)
         response.close()
         return response_data
+
+
+class FFProbe:
+    def __init__(self, path, *args):
+        args = ["ffprobe", "-show_format", "-show_streams", "-show_chapters", "-of", "json", *args, path]
+        p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        out, err = p.communicate()
+        if p.returncode != 0:
+            raise RuntimeError(out, err)
+        d = json.loads(out.decode("utf-8"))
+
+        self.streams = d.get("streams")
+        self.chapters = d.get("chapters")
+        self.format = d.get("format")
+
+        self.video_streams = []
+        self.audio_streams = []
+        self.subtitle_streams = []
+        self.other_streams = []
+
+        for stream in self.streams:
+            if stream["codec_type"] == "video":
+                self.video_streams.append(stream)
+            elif stream["codec_type"] == "audio":
+                self.audio_streams.append(stream)
+            elif stream["codec_type"] == "subtitle":
+                self.subtitle_streams.append(stream)
+            else:
+                self.other_streams.append(stream)
+
+        self.has_video = len(self.video_streams) > 0
+        self.has_audio = len(self.audio_streams) > 0
+
+        self.duration = float(self.format["duration"])

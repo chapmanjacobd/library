@@ -1,3 +1,4 @@
+import fractions, json, subprocess
 from datetime import datetime, timezone
 from typing import Dict, Optional
 
@@ -21,7 +22,7 @@ def get_subtitle_tags(args, path, streams, codec_types) -> dict:
             try:
                 captions = subtitle.read_sub(subtitle_path)
             except UnicodeDecodeError:
-                log.warning(f"[{path}] Could not decode subtitle {subtitle_path}")
+                log.warning(f"Could not decode subtitle {subtitle_path} for {path}")
             else:
                 subtitles.extend(captions)
     else:
@@ -106,8 +107,41 @@ def get_audio_tags(f) -> dict:
 
 
 def decode_full_scan(path):
-    output = ffmpeg.input(path).output("/dev/null", f="null")
-    ffmpeg.run(output, quiet=True)
+    ffprobe_cmd = [
+        "ffprobe",
+        "-show_entries",
+        "stream=r_frame_rate,nb_read_frames,duration",
+        "-select_streams",
+        "v",
+        "-count_frames",
+        "-of",
+        "json",
+        "-threads",
+        "5",
+        "-v",
+        "0",
+        path,
+    ]
+
+    ffprobe = subprocess.Popen(ffprobe_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    output, err = ffprobe.communicate()
+    data = json.loads(output)["streams"][0]
+
+    r_frame_rate = fractions.Fraction(data["r_frame_rate"])
+    nb_frames = int(data["nb_read_frames"])
+    metadata_duration = float(data["duration"])
+    actual_duration = nb_frames * r_frame_rate.denominator / r_frame_rate.numerator
+
+    difference = abs(actual_duration - metadata_duration)
+    average_duration = (actual_duration + metadata_duration) / 2
+    percent_diff = difference / average_duration
+
+    if difference > 0.1:
+        log.warning(
+            f"Metadata {utils.seconds_to_hhmmss(metadata_duration).strip()} does not match actual duration {utils.seconds_to_hhmmss(actual_duration).strip()} (diff {difference:.2f}s) {path}"
+        )
+
+    return percent_diff
 
 
 def decode_quick_scan(path, scans, scan_duration=3):
@@ -119,27 +153,27 @@ def decode_quick_scan(path, scans, scan_duration=3):
         except ffmpeg.Error:
             fail_count += 1
 
-    return (fail_count / len(scans)) * 100
+    return fail_count / len(scans)
 
 
 def munge_av_tags(args, media, path) -> Optional[dict]:
     try:
-        probe = ffmpeg.probe(path, show_chapters=None)
+        probe = utils.FFProbe(path)
     except (KeyboardInterrupt, SystemExit) as sys_exit:
         raise SystemExit(130) from sys_exit
     except Exception as e:
-        log.error(f"[{path}] Failed reading header. Metadata corruption")
+        log.error(f"Failed reading header. {path}")
         log.debug(e)
-        if args.delete_unplayable:
+        if args.delete_unplayable and not utils.is_file_open(path):
             utils.trash(path)
         return None
 
-    if "format" not in probe:
-        log.error(f"[{path}] Failed reading format")
+    if not probe.format:
+        log.error(f"Failed reading format. {path}")
         log.warning(probe)
         return None
 
-    format_ = probe["format"]
+    format_ = probe.format
     format_.pop("size", None)
     format_.pop("bit_rate", None)
     format_.pop("format_name", None)
@@ -151,22 +185,26 @@ def munge_av_tags(args, media, path) -> Optional[dict]:
     format_.pop("filename", None)
 
     duration = utils.safe_int(format_.pop("duration", None))
-
     corruption = None
     if args.check_corrupt and args.check_corrupt > 0.0:
-        if args.check_corrupt >= 100.0:
-            corruption = 0
+        if args.check_corrupt >= 100.0 and args.profile != DBType.video:
             try:
-                decode_full_scan(path)
+                output = ffmpeg.input(path).output("/dev/null", f="null")
+                ffmpeg.run(output, quiet=True)
             except ffmpeg.Error:
-                corruption = 101
-                log.warning(f"[{path}] Data corruption")
+                log.warning(f"Data corruption found. {path}")
                 if args.delete_corrupt and not consts.PYTEST_RUNNING:
                     utils.trash(path)
         else:
-            corruption = decode_quick_scan(path, *utils.cover_scan(duration, args.check_corrupt))
+            if args.check_corrupt >= 100.0:
+                corruption = decode_full_scan(path)
+            else:
+                corruption = decode_quick_scan(path, *utils.cover_scan(duration, args.check_corrupt))
+
+            DEFAULT_THRESHOLD = 0.02
+            if corruption > DEFAULT_THRESHOLD:
+                log.warning(f"Data corruption found ({corruption:.2%}). {path}")
             if args.delete_corrupt and corruption > args.delete_corrupt:
-                log.warning(f"[{path}] Data corruption ({corruption:.2%}) passed threshold ({args.delete_corrupt:.2%})")
                 if not consts.PYTEST_RUNNING:
                     utils.trash(path)
 
@@ -197,7 +235,7 @@ def munge_av_tags(args, media, path) -> Optional[dict]:
     if format_ != {}:
         log.info("Extra data %s", format_)
 
-    streams = probe["streams"]
+    streams = probe.streams
 
     def parse_framerate(string) -> Optional[int]:
         top, bot = string.split("/")
@@ -227,7 +265,7 @@ def munge_av_tags(args, media, path) -> Optional[dict]:
     video_count = sum(1 for s in codec_types if s == "video")
     audio_count = sum(1 for s in codec_types if s == "audio")
 
-    chapters = probe.get("chapters") or []
+    chapters = probe.chapters or []
     chapter_count = len(chapters)
     if chapter_count > 0:
         chapters = [

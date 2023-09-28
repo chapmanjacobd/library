@@ -236,8 +236,7 @@ def get_playlist_metadata(args, playlist_path):
 
         added_media_count += 1
         if added_media_count > 1:
-            sys.stdout.write("\033[K\r")
-            print(f"[{playlist_path}] Added {added_media_count} media", end="\r", flush=True)
+            utils.print_overwrite(f"[{playlist_path}] Added {added_media_count} media")
 
     if added_media_count == 0:
         from rich import inspect

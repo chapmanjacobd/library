@@ -72,8 +72,7 @@ def pushshift_extract(args=None) -> None:
         count += 1
         remainder = count % 1_000_000
         if remainder == 0:
-            sys.stdout.write("\033[K\r")
-            print("Processing", count, end="\r", flush=True)
+            utils.print_overwrite(f"Processing {count}")
             save_data(args, reddit_posts, media)
 
     save_data(args, reddit_posts, media)
