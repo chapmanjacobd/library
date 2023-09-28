@@ -82,24 +82,6 @@ def extract_links() -> None:
         else:
             driver = webdriver.Chrome()
 
-    def download_url(url):
-        response = utils.requests_session().get(url, stream=True)
-
-        if response.status_code // 100 != 2:  # Not 2xx
-            print(f"Error {response.status_code} downloading {url}")
-
-        content_d = response.headers.get("Content-Disposition")
-        if content_d:
-            filename = content_d.split("filename=")[1]
-        else:
-            filename = url.split("/")[-1]
-        filename = utils.clean_string(filename)
-
-        with open(filename, "wb") as f:
-            for chunk in response.iter_content(chunk_size=8192):
-                if chunk:
-                    f.write(chunk)
-
     def process_url(line):
         url = line.rstrip("\n")
         if url in ["", '""', "\n"]:
@@ -115,7 +97,7 @@ def extract_links() -> None:
 
         if args.download:
             for inner_url in inner_urls:
-                download_url(inner_url)
+                utils.download_url(inner_url)
         else:
             pipe_print("\n".join(inner_urls))
 

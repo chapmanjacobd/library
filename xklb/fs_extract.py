@@ -119,10 +119,10 @@ def extract_metadata(mp_args, path) -> Optional[Dict[str, int]]:
     except FileNotFoundError:
         return None
     except OSError:
-        log.error(f"[{path}] IOError: possible filesystem corruption; check dmesg")
+        log.error(f"IOError: possible filesystem corruption; check dmesg. {path}")
         return None
     except Exception as e:
-        log.error(f"[{path}] %s", e)
+        log.error(f"%s {path}", e)
         return None
 
     mimetype = None
@@ -163,9 +163,9 @@ def extract_metadata(mp_args, path) -> Optional[Dict[str, int]]:
             else:
                 media = books.munge_book_tags_fast(media, path)
         except mp_TimeoutError:
-            log.warning(f"[{path}]: Timed out trying to read file")
+            log.warning(f"Timed out trying to read file. {path}")
         else:
-            log.debug(f"[{path}]: {timer()-start}")
+            log.debug(f"{timer()-start} {path}")
 
     return media
 
@@ -241,7 +241,7 @@ def find_new_files(args, path: Path) -> List[str]:
                 msg = f"fs_extract for profile {args.profile}"
                 raise NotImplementedError(msg)
         except FileNotFoundError:
-            print(f"[{path}] Not found")
+            print(f"File not found. {path}")
             return []
 
     m_columns = db.columns(args, "media")

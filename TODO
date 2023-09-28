@@ -1,3 +1,17 @@
+- proliferation: tools generator, life calendar (ics ? everydayfocus)
+
+- tubeupdate, redditupdate, playlist update frequency. daily, weekly, monthly, quarterly, yearly
+
+- CLI EDA tool eda.py, sqlite-preview
+
+    /home/xk/d/22_Vector/pleiades_gis_data
+
+- CLI incremental diff (SQLITE, NDJSON, CSV)
+
+    compare 100 rows at a time using primary key
+
+    show the differences between files
+
 - czkawka-dup-compare
 
 - artsearch
@@ -9,13 +23,11 @@ https://dezoomify.ophir.dev/#https://artsandculture.google.com/asset/sitting-nud
 Large size Google similar image search
 Wikimedia commons
 
-- proliferation: tools generator, life calendar (ics ? everydayfocus)
-
 - automatic photo essay generator
 
 - organize util functions by data type
 
-- globalnamespace py package to scan function names and search in github, print frequency of use in project, world, and namealikes, search function name, function body
+- globalnamespace py package to scan function names and search in github, print frequency of use in project, world, and namealikes, search function name, diff function body
 
 - scan bpm and key sig
 
@@ -27,14 +39,6 @@ Wikimedia commons
     https://github.com/rhsimplex/image-match/blob/master/image_match/goldberg.py
     https://github.com/HughKu/Im2txt
     https://github.com/immich-app/immich/tree/main/machine-learning/app
-
-- CLI EDA tool
-
-- CLI incremental diff (SQLITE, NDJSON, CSV)
-
-    compare 100 rows at a time using primary key
-
-    show the differences between files
 
 - todo recursive todo management, fortune cookie style
 

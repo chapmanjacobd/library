@@ -48,19 +48,19 @@ def _now_playing(args) -> dict:
 
 def reformat_ffprobe(path):
     try:
-        probe = ffmpeg.probe(path, show_chapters=None)
+        probe = utils.FFProbe(path)
     except Exception:
-        log.exception(f"[{path}] Failed reading header. Metadata corruption")
+        log.exception(f"Failed reading header. {path}")
         return path
 
-    codec_types = [s.get("codec_type") for s in probe["streams"]]
+    codec_types = [s.get("codec_type") for s in probe.streams]
     audio_count = sum(1 for s in codec_types if s == "audio")
 
     excluded_keys = ["encoder", "major_brand", "minor_version", "compatible_brands", "software", "Segment-Durations-Ms"]
     excluded_key_like = ["durations"]
 
     seen = set()
-    metadata = utils.lower_keys(probe["format"].get("tags", {}))
+    metadata = utils.lower_keys(probe.format.get("tags", {}))
     for key, value in deepcopy(metadata).items():
         if key in excluded_keys or any(s in key for s in excluded_key_like) or value in seen or path in value:
             metadata.pop(key, None)
@@ -93,8 +93,8 @@ def reformat_ffprobe(path):
 
     if audio_count > 1:
         formatted_output += f"Audio tracks: {audio_count}\n"
-    if len(probe["chapters"]) > 1:
-        formatted_output += f"Chapters: {len(probe['chapters'])}\n"
+    if len(probe.chapters) > 1:
+        formatted_output += f"Chapters: {len(probe.chapters)}\n"
 
     if description and not consts.MOBILE_TERMINAL:
         description = utils.wrap_paragraphs(description.strip(), width=100)
@@ -108,12 +108,12 @@ def reformat_ffprobe(path):
     if title:
         formatted_output += f"   Title: {title}\n"
 
-    duration = utils.safe_int(probe["format"].get("duration")) or 0
+    duration = utils.safe_int(probe.format.get("duration")) or 0
     if duration > 0:
         duration_str = utils.seconds_to_hhmmss(duration).strip()
         formatted_output += f"Duration: {duration_str}\n"
 
-        start = utils.safe_int(probe["format"].get("start_time")) or 0
+        start = utils.safe_int(probe.format.get("start_time")) or 0
         if start > 0:
             start_str = utils.seconds_to_hhmmss(start)
             if duration < 3600:
