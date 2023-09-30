@@ -150,6 +150,7 @@ def decode_quick_scan(path, scans, scan_duration=3):
         try:
             output = ffmpeg.input(path, ss=scan).output("/dev/null", t=scan_duration, f="null")
             ffmpeg.run(output, quiet=True)
+            # ffmpeg -xerror ?
         except ffmpeg.Error:
             fail_count += 1
 

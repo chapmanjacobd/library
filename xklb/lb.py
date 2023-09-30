@@ -14,6 +14,7 @@ from xklb.scripts.christen import christen
 from xklb.scripts.cluster_sort import cluster_sort
 from xklb.scripts.copy_play_counts import copy_play_counts
 from xklb.scripts.dedupe import dedupe
+from xklb.scripts.dedupe_czkawka import czkawka_dedupe
 from xklb.scripts.dedupe_db import dedupe_db
 from xklb.scripts.disk_usage import disk_usage
 from xklb.scripts.download_status import download_status
@@ -59,6 +60,7 @@ def usage() -> str:
 
       lb bigdirs               Discover folders which take much room
       lb dedupe                Deduplicate local db files
+      lb czkawka-dedupe        Split-screen czkawka results to decide which to delete
       lb relmv                 Move files/folders while preserving relative paths
       lb christen              Cleanse files by giving them a new name
 
@@ -67,6 +69,7 @@ def usage() -> str:
 
       lb search-db             Search a SQLITE file
       lb merge-dbs             Merge multiple SQLITE files
+      lb dedupe-dbs            Deduplicate SQLITE tables
       lb copy-play-counts      Copy play counts from multiple SQLITE files
 
     online media:
@@ -81,11 +84,12 @@ def usage() -> str:
 
       lb tildes                Backup tildes comments and topics
 
+      lb merge-online-local    Merge local and online metadata
+
     downloads:
       lb download              Download media
       lb redownload            Redownload missing media
-      lb block                 Prevent downloading specific URLs
-      lb merge-online-local    Merge local and online metadata
+      lb block                 Prevent downloading specific media
 
     playback:
       lb now                   Print what is currently playing
@@ -196,6 +200,8 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
 
     subp_dedupe = add_parser(subparsers, "dedupe")
     subp_dedupe.set_defaults(func=dedupe)
+    subp_czkawka_dedupe = add_parser(subparsers, "czkawka-dedupe")
+    subp_czkawka_dedupe.set_defaults(func=czkawka_dedupe)
     subp_dedupe_local = add_parser(subparsers, "merge-online-local")
     subp_dedupe_local.set_defaults(func=merge_online_local)
     subp_optimize = add_parser(subparsers, "optimize", ["optimize-db"])

@@ -51,6 +51,8 @@ def javtiful() -> None:
         local_probe = utils.FFProbe(output_path)
         assert local_probe.has_audio
         assert local_probe.has_video
+        # if decode_full_scan(output_path) > 1:
+        #     exit(3)
 
     process_url(args.path)
     utils.tempdir_unlink("*.xpi")

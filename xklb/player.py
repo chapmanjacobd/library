@@ -1,15 +1,15 @@
-import csv, json, os, platform, re, shutil, socket, sqlite3, statistics, subprocess, sys
+import csv, json, os, platform, re, shlex, shutil, socket, sqlite3, statistics, subprocess, sys
 from copy import deepcopy
 from io import StringIO
 from numbers import Number
 from pathlib import Path
 from platform import system
 from random import randrange
-from shlex import join, quote, split
 from shutil import which
 from time import sleep
 from typing import Dict, List, Optional, Tuple, Union
 
+import humanize
 from tabulate import tabulate
 
 from xklb import consts, db, history, media, utils
@@ -159,10 +159,36 @@ def mv_to_keep_folder(args, media_file: str) -> None:
             keep_path = Path(media_file).parent / f"{args.keep_dir}/"
 
     keep_path.mkdir(exist_ok=True)
-    new_path = shutil.move(media_file, keep_path)
+
+    try:
+        new_path = shutil.move(media_file, keep_path)
+    except shutil.Error as e:
+        if "already exists" not in str(e):
+            raise
+        p = Path(media_file)
+        new_path = Path(keep_path) / p.name
+
+        src_size = p.stat().st_size
+        dst_size = new_path.stat().st_size
+        diff_size = humanize.naturalsize(src_size - dst_size)
+
+        if src_size > dst_size:
+            print("Source is larger than destination", diff_size)
+        elif src_size < dst_size:
+            print("Source is smaller than destination", diff_size)
+        else:
+            print("Source and destination are the same size", humanize.naturalsize(src_size))
+        if args.post_action.upper().startswith("ASK_"):
+            if utils.confirm("Replace destination file?"):
+                utils.trash(new_path, detach=False)
+                new_path = shutil.move(media_file, keep_path)
+        else:
+            raise
+
     if args.keep_cmd:
-        utils.cmd_detach(split(args.keep_cmd), new_path)
+        utils.cmd_detach(shlex.split(args.keep_cmd), new_path)
     with args.db.conn:
+        args.db.conn.execute("DELETE FROM media where path = ?", [new_path])
         args.db.conn.execute("UPDATE media set path = ? where path = ?", [new_path, media_file])
 
 
@@ -175,7 +201,7 @@ def moved_media(args, moved_files: Union[str, list], base_from, base_to) -> int:
             with args.db.conn:
                 cursor = args.db.conn.execute(
                     f"""UPDATE media
-                    SET path=REPLACE(path, '{quote(base_from)}', '{quote(base_to)}')
+                    SET path=REPLACE(path, '{shlex.quote(base_from)}', '{shlex.quote(base_to)}')
                     where path in ("""
                     + ",".join(["?"] * len(chunk_paths))
                     + ")",
@@ -887,7 +913,7 @@ def multiple_player(args, media) -> None:
                         r = utils.Pclose(m["process"])
                         if r.returncode != 0:
                             log.warning("Player exited with code %s", r.returncode)
-                            log.debug(join(r.args))
+                            log.debug(shlex.join(r.args))
                             if not args.ignore_errors:
                                 raise SystemExit(r.returncode)
 

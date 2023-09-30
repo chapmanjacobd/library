@@ -381,7 +381,6 @@ Explore `library` databases in your browser
 
 <details><summary>Chicken mode</summary>
 
-just kidding :-)
 
            ////////////////////////
           ////////////////////////|
@@ -389,7 +388,7 @@ just kidding :-)
         ////////////////////////| |
         |    _\/_   |   _\/_    | |
         |     )o(>  |  <)o(     | |
-        |   _/ <\   |   /> \_   | |
+        |   _/ <\   |   /> \_   | |        just kidding :-)
         |  (_____)  |  (_____)  | |_
         | ~~~oOo~~~ | ~~~0oO~~~ |/__|
        _|====\_=====|=====_/====|_ ||
