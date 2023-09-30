@@ -241,7 +241,7 @@ def clean_path(b, dot_space=False, max_name_len=1024) -> str:
     return p + ext
 
 
-def download_url(url, output_path=None, output_prefix=None, chunk_size=8 * 1024 * 1024, retries=2):
+def download_url(url, output_path=None, output_prefix=None, chunk_size=8 * 1024 * 1024, retries=3):
     response = requests_session().get(url, stream=True)
 
     if response.status_code // 100 != 2:  # Not 2xx
@@ -265,10 +265,11 @@ def download_url(url, output_path=None, output_prefix=None, chunk_size=8 * 1024 
         local_size = p.stat().st_size
         if local_size == remote_size:
             log.warning(f"Download skipped. File with same size already exists: {output_path}")
+            return
         else:
             headers = {"Range": f"bytes={local_size}-"}
             response = requests_session().get(url, headers=headers, stream=True)
-            if response.status_code != 206:
+            if response.status_code != 206:  # HTTP Partial Content
                 p.unlink()
                 response = requests_session().get(url, stream=True)
 
@@ -280,7 +281,7 @@ def download_url(url, output_path=None, output_prefix=None, chunk_size=8 * 1024 
     if remote_size:
         downloaded_size = os.path.getsize(output_path)
         if downloaded_size < remote_size:
-            if retries == 0:
+            if retries <= 0:
                 msg = f"Download interrupted ({downloaded_size/remote_size:.1%}) {output_path}"
                 raise RuntimeError(msg)
             else:
@@ -512,11 +513,11 @@ def is_file_open(path):
                     file = os.readlink(fds)
                     if file == path:
                         return True
-                except OSError as err:
-                    if err.errno == 2:
+                except OSError as e:
+                    if e.errno == 2:
                         file = None
                     else:
-                        raise err
+                        raise
         else:
             open(path, "r")  # Windows will error here
     except IOError:
@@ -1138,8 +1139,11 @@ def tempdir_unlink(pattern):
     temp_dir = tempfile.gettempdir()
     cutoff = time.time() - 15 * 60  # 15 minutes in seconds
     for p in Path(temp_dir).glob(pattern):
-        if p.stat().st_mtime < cutoff:
-            p.unlink(missing_ok=True)
+        try:
+            if p.stat().st_mtime < cutoff:
+                p.unlink(missing_ok=True)
+        except FileNotFoundError:  # glob->stat() racing
+            pass
 
 
 def human_to_bytes(input_str) -> int:
@@ -1761,4 +1765,16 @@ class FFProbe:
         self.has_video = len(self.video_streams) > 0
         self.has_audio = len(self.audio_streams) > 0
 
-        self.duration = float(self.format["duration"])
+        self.duration = None
+        try:
+            self.duration = float(self.format["duration"])
+        except Exception:
+            pass
+        try:
+            self.duration = float(self.video_streams[0]["duration"])
+        except Exception:
+            pass
+        try:
+            self.duration = float(self.audio_streams[0]["duration"])
+        except Exception:
+            pass

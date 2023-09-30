@@ -87,7 +87,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.2.096)
+    xk media library subcommands (v2.2.097)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -102,6 +102,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 
       lb bigdirs               Discover folders which take much room
       lb dedupe                Deduplicate local db files
+      lb czkawka-dedupe        Split-screen czkawka results to decide which to delete
       lb relmv                 Move files/folders while preserving relative paths
       lb christen              Cleanse files by giving them a new name
 
@@ -110,6 +111,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 
       lb search-db             Search a SQLITE file
       lb merge-dbs             Merge multiple SQLITE files
+      lb dedupe-dbs            Deduplicate SQLITE tables
       lb copy-play-counts      Copy play counts from multiple SQLITE files
 
     online media:
@@ -124,11 +126,12 @@ To stop playing press Ctrl+C in either the terminal or mpv
 
       lb tildes                Backup tildes comments and topics
 
+      lb merge-online-local    Merge local and online metadata
+
     downloads:
       lb download              Download media
       lb redownload            Redownload missing media
-      lb block                 Prevent downloading specific URLs
-      lb merge-online-local    Merge local and online metadata
+      lb block                 Prevent downloading specific media
 
     playback:
       lb now                   Print what is currently playing
@@ -1759,7 +1762,6 @@ Balance files across filesystem folder trees or multiple devices (mostly useful 
 
 <details><summary>Chicken mode</summary>
 
-just kidding :-)
 
            ////////////////////////
           ////////////////////////|
@@ -1767,7 +1769,7 @@ just kidding :-)
         ////////////////////////| |
         |    _\/_   |   _\/_    | |
         |     )o(>  |  <)o(     | |
-        |   _/ <\   |   /> \_   | |
+        |   _/ <\   |   /> \_   | |        just kidding :-)
         |  (_____)  |  (_____)  | |_
         | ~~~oOo~~~ | ~~~0oO~~~ |/__|
        _|====\_=====|=====_/====|_ ||

@@ -158,8 +158,8 @@ def jav_guru() -> None:
         assert local_probe.has_video
         if abs(local_probe.duration - remote_probe.duration) > 2.0:  # within 2 seconds
             exit(3)
-        if decode_full_scan(output_path) > 1:
-            exit(3)
+        # if decode_full_scan(output_path) > 1:
+        #     exit(3)
 
     process_url(args.path)
     utils.tempdir_unlink("*.xpi")
