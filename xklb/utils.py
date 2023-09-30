@@ -104,6 +104,7 @@ def requests_session(max_retries: Optional[int] = 5):
 
         session = requests.Session()
         session.mount("http", _get_retry_adapter(max_retries))  # also includes https
+        session.request = functools.partial(session.request, timeout=(4, 45))
 
     return session
 
@@ -261,17 +262,22 @@ def download_url(url, output_path=None, output_prefix=None, chunk_size=8 * 1024 
         output_path = clean_path(output_path.encode())
 
     p = Path(output_path)
-    if remote_size and p.exists():
-        local_size = p.stat().st_size
-        if local_size == remote_size:
-            log.warning(f"Download skipped. File with same size already exists: {output_path}")
-            return
+    if p.exists():
+        if remote_size:
+            local_size = p.stat().st_size
+            if local_size == remote_size:
+                log.warning(f"Download skipped. File with same size already exists: {output_path}")
+                return
+            else:
+                headers = {"Range": f"bytes={local_size}-"}
+                response = requests_session().get(url, headers=headers, stream=True)
+                if response.status_code != 206:  # HTTP Partial Content
+                    p.unlink()
+                    response = requests_session().get(url, stream=True)
         else:
-            headers = {"Range": f"bytes={local_size}-"}
-            response = requests_session().get(url, headers=headers, stream=True)
-            if response.status_code != 206:  # HTTP Partial Content
-                p.unlink()
-                response = requests_session().get(url, stream=True)
+            p.unlink()
+    else:
+        exit(4)  # TODO: remove !!
 
     with open(output_path, "ab") as f:
         for chunk in response.iter_content(chunk_size=chunk_size):

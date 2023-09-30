@@ -173,74 +173,75 @@ def group_and_delete(args, groups):
 
         kept_paths = [d["path"] for d in group]
 
+        def delete_dupe(d):
+            utils.trash(d["path"], detach=is_interactive)
+            print(f"{d['path']}: Deleted")
+            kept_paths.remove(d["path"])
+
         group.sort(key=lambda x: x["size"], reverse=True)
-        largest_path = group[0]["path"]
-        largest_size = group[0]["size"]
+        left = group[0]
 
-        if os.path.exists(largest_path):
-            print(largest_path, humanize.naturalsize(largest_size))
+        if os.path.exists(left["path"]):
+            print(left["path"], humanize.naturalsize(left["size"]))
 
-            delete_largest_path = False
-            for d in group[1:]:
-                path = d["path"]
-                size = d["size"]
-                if os.path.exists(path):
-                    print(path, humanize.naturalsize(size))
+            for right in group[1:]:
+                if os.path.exists(right["path"]):
+                    print(right["path"], humanize.naturalsize(right["size"]))
 
                     if args.auto_select_min_ratio < 1.0:
                         similar_ratio = difflib.SequenceMatcher(
-                            None, os.path.basename(largest_path), os.path.basename(path)
+                            None, os.path.basename(left["path"]), os.path.basename(right["path"])
                         ).ratio()
-                        if similar_ratio > 0.7 or any(s in largest_path and s in path for s in ["Goldmines_Bollywood"]):
-                            utils.trash(path, detach=is_interactive)
-                            print(f"{path}: Deleted")
-                            kept_paths.remove(path)
+                        if similar_ratio > 0.7 or any(
+                            s in left["path"] and s in right["path"] for s in ["Goldmines_Bollywood"]
+                        ):
+                            utils.trash(right["path"], detach=is_interactive)
+                            print(f"{right['path']}: Deleted")
+                            kept_paths.remove(right["path"])
                         continue
 
-                    if is_interactive:
-                        side_by_side_mpv(largest_path, path)
+                    if not is_interactive:
+                        if args.all_left:
+                            delete_dupe(right)
+                        elif args.all_right:
+                            delete_dupe(left)
+                            left = right
+                        elif args.all_delete:
+                            delete_dupe(left)
+                            delete_dupe(right)
+                            left = {"path": kept_paths[0], "size": Path(kept_paths[0]).stat().st_size}
+                        continue
+
+                    side_by_side_mpv(left["path"], right["path"])
                     while True:
-                        user_input = ""
-                        if is_interactive:
-                            user_input = (
-                                input(
-                                    "Names are pretty different. Keep which files? (l Left/r Right/k Keep both/d Delete both) [default: l]: "
-                                )
-                                .strip()
-                                .lower()
+                        user_input = (
+                            input(
+                                "Names are pretty different. Keep which files? (l Left/r Right/k Keep both/d Delete both) [default: l]: "
                             )
-                        if args.all_keep or user_input in ("k"):
+                            .strip()
+                            .lower()
+                        )
+                        if args.all_keep or user_input in ("k", "keep"):
                             break
                         elif args.all_left or user_input in ("l", "left", ""):
-                            utils.trash(path, detach=is_interactive)
-                            print(f"{path}: Deleted")
-                            kept_paths.remove(path)
+                            delete_dupe(right)
                             break
                         elif args.all_right or user_input in ("r", "right"):
-                            largest_path, path = path, largest_path
-                            utils.trash(path, detach=is_interactive)
-                            print(f"{path}: Deleted")
-                            kept_paths.remove(path)
+                            delete_dupe(left)
+                            left = right
                             break
-                        elif args.all_delete or user_input in ("d"):
-                            utils.trash(path, detach=is_interactive)
-                            print(f"{path}: Deleted")
-                            kept_paths.remove(path)
-                            delete_largest_path = True
+                        elif args.all_delete or user_input in ("d", "delete"):
+                            delete_dupe(left)
+                            delete_dupe(right)
+                            left = {"path": kept_paths[0], "size": Path(kept_paths[0]).stat().st_size}
                             break
-                        elif user_input in ("q"):
-                            truncate_file_before_match(args.file_path, largest_path)
-                            if delete_largest_path:
-                                utils.trash(largest_path, detach=is_interactive)
+                        elif user_input in ("q", "quit"):
+                            truncate_file_before_match(args.file_path, left["path"])
                             sys.exit(0)
                         else:
-                            print("Invalid input. Please type 'y', 'n', or nothing and enter")
+                            print("Invalid input. Please type 'left', 'right', 'keep', 'delete', or 'quit' and enter")
                 else:
-                    print(f"{path}: not found")
-            if delete_largest_path:
-                utils.trash(largest_path, detach=is_interactive)
-                kept_paths.remove(largest_path)
-                print(f"{largest_path}: Deleted")
+                    print(f"{right['path']}: not found")
 
             if args.keep_dir:
                 for f in kept_paths:
@@ -248,7 +249,7 @@ def group_and_delete(args, groups):
                         mv_to_keep_folder(args, f)
 
         else:
-            print(f"Original not found: {largest_path}")
+            print(f"Original not found: {left['path']}")
 
         print()
 
