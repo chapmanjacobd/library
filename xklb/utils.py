@@ -276,8 +276,6 @@ def download_url(url, output_path=None, output_prefix=None, chunk_size=8 * 1024 
                     response = requests_session().get(url, stream=True)
         else:
             p.unlink()
-    else:
-        exit(4)  # TODO: remove !!
 
     with open(output_path, "ab") as f:
         for chunk in response.iter_content(chunk_size=chunk_size):
