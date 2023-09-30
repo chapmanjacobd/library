@@ -2661,11 +2661,11 @@ files = [
 
 [[package]]
 name = "wcwidth"
-version = "0.2.7"
+version = "0.2.8"
 summary = "Measures the displayed width of unicode strings in a terminal"
 files = [
-    {file = "wcwidth-0.2.7-py2.py3-none-any.whl", hash = "sha256:fabf3e32999d9b0dab7d19d845149f326f04fe29bac67709ee071dbd92640a36"},
-    {file = "wcwidth-0.2.7.tar.gz", hash = "sha256:1b6d30a98ddd5ce9bbdb33658191fd2423fc9da203fe3ef1855407dcb7ee4e26"},
+    {file = "wcwidth-0.2.8-py2.py3-none-any.whl", hash = "sha256:77f719e01648ed600dfa5402c347481c0992263b81a027344f3e1ba25493a704"},
+    {file = "wcwidth-0.2.8.tar.gz", hash = "sha256:8705c569999ffbb4f6a87c6d1b80f324bd6db952f5eb0b95bc07517f4c1813d4"},
 ]
 
 [[package]]
