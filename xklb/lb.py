@@ -200,7 +200,7 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
 
     subp_dedupe = add_parser(subparsers, "dedupe")
     subp_dedupe.set_defaults(func=dedupe)
-    subp_czkawka_dedupe = add_parser(subparsers, "czkawka-dedupe")
+    subp_czkawka_dedupe = add_parser(subparsers, "czkawka-dedupe", ["dedupe-czkawka"])
     subp_czkawka_dedupe.set_defaults(func=czkawka_dedupe)
     subp_dedupe_local = add_parser(subparsers, "merge-online-local")
     subp_dedupe_local.set_defaults(func=merge_online_local)
