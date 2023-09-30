@@ -1,7 +1,9 @@
 #!/usr/bin/python3
 
 import argparse, difflib, os, re, shutil, subprocess, sys, time
+from pathlib import Path
 
+import humanize
 from screeninfo import get_monitors
 
 from xklb import utils
@@ -11,7 +13,7 @@ MPV_OPTIONS = [
     "--no-resume-playback",
     "--image-display-duration=inf",
     "--script-opts=osc-visibility=always",
-    "--start=10%",
+    "--start=80%",
 ]
 
 NEWLINE = "\n"
@@ -68,10 +70,12 @@ def extract_group_data(group_content):
 
         path, size_value, size_unit = parse_czkawka_line(match)
         if size_unit == "GiB":
-            size_value *= 1024
+            size_value *= 1024 * 1024 * 1024
+        elif size_unit == "MiB":
+            size_value *= 1024 * 1024
         elif size_unit == "KiB":
-            size_value /= 1024
-        paths_and_sizes.append({"path": path, "size_mb": size_value})
+            size_value *= 1024
+        paths_and_sizes.append({"path": path, "size": size_value})
     return paths_and_sizes
 
 
@@ -126,74 +130,123 @@ def side_by_side_mpv(left_side, right_side):
         right_mpv_process.terminate()
 
 
+def mv_to_keep_folder(args, media_file: str) -> None:
+    keep_path = Path(args.keep_dir)
+    keep_path.mkdir(exist_ok=True)
+
+    try:
+        new_path = shutil.move(media_file, keep_path)
+    except shutil.Error as e:
+        if "already exists" not in str(e):
+            raise
+        p = Path(media_file)
+        new_path = Path(keep_path) / p.name
+
+        src_size = p.stat().st_size
+        dst_size = new_path.stat().st_size
+        diff_size = humanize.naturalsize(src_size - dst_size)
+
+        if src_size > dst_size:
+            print("Source is larger than destination", diff_size)
+        elif src_size < dst_size:
+            print("Source is smaller than destination", diff_size)
+        else:
+            print("Source and destination are the same size", humanize.naturalsize(src_size))
+        if utils.confirm("Replace destination file?"):
+            utils.trash(new_path, detach=False)
+            new_path = shutil.move(media_file, keep_path)
+
+    print(f"{new_path}: new location")
+
+
 def group_and_delete(args, groups):
     is_interactive = not any([args.all_keep, args.all_left, args.all_right, args.all_delete])
 
     for group_content in groups:
+
         if group_content == "":
             continue
 
         group = extract_group_data(group_content)
         if group is None:
             continue
-        group.sort(key=lambda x: x["size_mb"], reverse=True)
+
+        kept_paths = [d["path"] for d in group]
+
+        group.sort(key=lambda x: x["size"], reverse=True)
         largest_path = group[0]["path"]
+        largest_size = group[0]["size"]
 
         if os.path.exists(largest_path):
-            print(largest_path)
+            print(largest_path, humanize.naturalsize(largest_size))
 
             delete_largest_path = False
             for d in group[1:]:
                 path = d["path"]
+                size = d["size"]
                 if os.path.exists(path):
-                    similar_ratio = difflib.SequenceMatcher(
-                        None, os.path.basename(largest_path), os.path.basename(path)
-                    ).ratio()
-                    if similar_ratio > 0.7 or any(s in largest_path and s in path for s in ["Goldmines_Bollywood"]):
-                        utils.trash(path, detach=is_interactive)
-                        print(f"{path}: Deleted")
-                    else:
-                        print(path)
+                    print(path, humanize.naturalsize(size))
+
+                    if args.auto_select_min_ratio < 1.0:
+                        similar_ratio = difflib.SequenceMatcher(
+                            None, os.path.basename(largest_path), os.path.basename(path)
+                        ).ratio()
+                        if similar_ratio > 0.7 or any(s in largest_path and s in path for s in ["Goldmines_Bollywood"]):
+                            utils.trash(path, detach=is_interactive)
+                            print(f"{path}: Deleted")
+                            kept_paths.remove(path)
+                        continue
+
+                    if is_interactive:
+                        side_by_side_mpv(largest_path, path)
+                    while True:
+                        user_input = ""
                         if is_interactive:
-                            side_by_side_mpv(largest_path, path)
-                        while True:
-                            user_input = ""
-                            if is_interactive:
-                                user_input = (
-                                    input(
-                                        "Names are pretty different. Keep which files? (l Left/r Right/k Keep both/d Delete both) [default: l]: "
-                                    )
-                                    .strip()
-                                    .lower()
+                            user_input = (
+                                input(
+                                    "Names are pretty different. Keep which files? (l Left/r Right/k Keep both/d Delete both) [default: l]: "
                                 )
-                            if args.all_keep or user_input in ("k", "b", "both"):
-                                break
-                            elif args.all_left or user_input in ("l", "left", ""):
-                                utils.trash(path, detach=is_interactive)
-                                print(f"{path}: Deleted")
-                                break
-                            elif args.all_right or user_input in ("r", "right"):
-                                largest_path, path = path, largest_path
-                                utils.trash(path, detach=is_interactive)
-                                print(f"{path}: Deleted")
-                                break
-                            elif args.all_delete or user_input in ("d"):
-                                utils.trash(path, detach=is_interactive)
-                                print(f"{path}: Deleted")
-                                delete_largest_path = True
-                                break
-                            elif user_input in ("q"):
-                                truncate_file_before_match(args.file_path, largest_path)
-                                if delete_largest_path:
-                                    utils.trash(largest_path, detach=is_interactive)
-                                sys.exit(0)
-                            else:
-                                print("Invalid input. Please type 'y', 'n', or nothing and enter")
+                                .strip()
+                                .lower()
+                            )
+                        if args.all_keep or user_input in ("k"):
+                            break
+                        elif args.all_left or user_input in ("l", "left", ""):
+                            utils.trash(path, detach=is_interactive)
+                            print(f"{path}: Deleted")
+                            kept_paths.remove(path)
+                            break
+                        elif args.all_right or user_input in ("r", "right"):
+                            largest_path, path = path, largest_path
+                            utils.trash(path, detach=is_interactive)
+                            print(f"{path}: Deleted")
+                            kept_paths.remove(path)
+                            break
+                        elif args.all_delete or user_input in ("d"):
+                            utils.trash(path, detach=is_interactive)
+                            print(f"{path}: Deleted")
+                            kept_paths.remove(path)
+                            delete_largest_path = True
+                            break
+                        elif user_input in ("q"):
+                            truncate_file_before_match(args.file_path, largest_path)
+                            if delete_largest_path:
+                                utils.trash(largest_path, detach=is_interactive)
+                            sys.exit(0)
+                        else:
+                            print("Invalid input. Please type 'y', 'n', or nothing and enter")
                 else:
                     print(f"{path}: not found")
             if delete_largest_path:
                 utils.trash(largest_path, detach=is_interactive)
+                kept_paths.remove(largest_path)
                 print(f"{largest_path}: Deleted")
+
+            if args.keep_dir:
+                for f in kept_paths:
+                    if os.path.exists(f):
+                        mv_to_keep_folder(args, f)
+
         else:
             print(f"Original not found: {largest_path}")
 
@@ -203,6 +256,13 @@ def group_and_delete(args, groups):
 def czkawka_dedupe():
     parser = argparse.ArgumentParser(description="Cleanup duplicate files based on their sizes.")
     parser.add_argument("file_path", help="Path to the text file containing the file list.")
+    parser.add_argument(
+        "--auto-select-min-ratio",
+        type=float,
+        default=1.0,
+        help="Automatically select largest file if files have similar basenames. A sane value is in the range of 0.7~0.9",
+    )
+    parser.add_argument("--keep-dir", "--keepdir", help=argparse.SUPPRESS)
     parser.add_argument("--all-keep", action="store_true")
     parser.add_argument("--all-left", action="store_true")
     parser.add_argument("--all-right", action="store_true")
