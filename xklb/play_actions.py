@@ -203,6 +203,7 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     )
     parser.add_argument("--subtitles", "--subtitle", "--subs", "-sy", action="store_true", help=argparse.SUPPRESS)
 
+    parser.add_argument("--volume", type=float)
     parser.add_argument("--override-player", "--player", "-player", help=argparse.SUPPRESS)
     parser.add_argument("--player-args-sub", "-player-sub", nargs="*", default=DEFAULT_PLAYER_ARGS_SUB)
     parser.add_argument("--player-args-no-sub", "-player-no-sub", nargs="*", default=DEFAULT_PLAYER_ARGS_NO_SUB)

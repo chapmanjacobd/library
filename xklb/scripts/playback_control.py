@@ -56,22 +56,69 @@ def reformat_ffprobe(path):
     codec_types = [s.get("codec_type") for s in probe.streams]
     audio_count = sum(1 for s in codec_types if s == "audio")
 
-    excluded_keys = ["encoder", "major_brand", "minor_version", "compatible_brands", "software", "Segment-Durations-Ms"]
-    excluded_key_like = ["durations"]
+    excluded_keys = [
+        "encoder",
+        "major_brand",
+        "minor_version",
+        "compatible_brands",
+        "software",
+        "Segment-Durations-Ms",
+        "play_count",
+        "script",
+        "barcode",
+        "catalognumber",
+        "isrc",
+        "label",
+        "media",
+    ]
+    excluded_key_like = [
+        "duration",
+        "musicbrainz",
+        "release",
+        "timestamp",
+        "writing",
+        "bps-",
+        "number",
+        "statistics",
+        "language",
+        "vendor",
+        "handler",
+    ]
+
+    tags = {k: v for d in probe.streams + [probe.format] for k, v in d.get("tags", {}).items()}
 
     seen = set()
-    metadata = utils.lower_keys(probe.format.get("tags", {}))
+    metadata = utils.lower_keys(tags)
     for key, value in deepcopy(metadata).items():
         if key in excluded_keys or any(s in key for s in excluded_key_like) or value in seen or path in value:
             metadata.pop(key, None)
         seen.add(value)
 
+    comment = metadata.pop("comment", None) or ""
+    if len(comment) < 15 and "cover" in comment.lower():
+        comment = ""
     description = utils.safe_unpack(
         metadata.pop("description", None),
         metadata.pop("synopsis", None),
+        metadata.pop("unsynced lyrics", None),
+        comment if "http" not in comment else None,
+    )
+    genre = utils.safe_unpack(
+        metadata.pop("genre", None),
     )
     artist = utils.safe_unpack(
         metadata.pop("artist", None),
+        metadata.pop("album_artist", None),
+        metadata.pop("performer", None),
+    )
+    album = utils.safe_unpack(
+        metadata.pop("album", None),
+    )
+    track = utils.safe_unpack(
+        metadata.pop("track", None),
+    )
+    track_total = utils.safe_unpack(
+        metadata.pop("tracktotal", None),
     )
     title = utils.safe_unpack(
         metadata.pop("title", None),
@@ -79,17 +126,18 @@ def reformat_ffprobe(path):
     url = utils.safe_unpack(
         metadata.pop("purl", None),
         metadata.pop("url", None),
-        metadata.pop("comment", None),
+        comment if "http" in comment else None,
     )
     date = utils.safe_unpack(
         metadata.pop("date", None),
         metadata.pop("time", None),
+        metadata.pop("originalyear", None),
         metadata.pop("creation_time", None),
     )
 
     formatted_output = ""
     for key, value in metadata.items():
-        formatted_output += f" {key} : {value.strip()}\n"
+        formatted_output += f"{key}::{value.strip()}\n"
 
     if audio_count > 1:
         formatted_output += f"Audio tracks: {audio_count}\n"
@@ -99,14 +147,21 @@ def reformat_ffprobe(path):
     if description and not consts.MOBILE_TERMINAL:
         description = utils.wrap_paragraphs(description.strip(), width=100)
         formatted_output += f" Details: {textwrap.indent(description, '          ').lstrip()}\n"
-    if date:
-        formatted_output += f"    Date: {date}\n"
     if artist:
         formatted_output += f"  Artist: {artist}\n"
-    if url:
-        formatted_output += f"     URL: {url}\n"
+    if album:
+        formatted_output += f"   Album: {album}"
+        if track:
+            formatted_output += f" (track {track}{(' of ' + track_total) if track_total else ''})"
+        formatted_output += "\n"
     if title:
         formatted_output += f"   Title: {title}\n"
+    if genre:
+        formatted_output += f"   Genre: {genre}\n"
+    if date:
+        formatted_output += f"    Date: {date}\n"
+    if url:
+        formatted_output += f"     URL: {url}\n"
 
     duration = utils.safe_int(probe.format.get("duration")) or 0
     if duration > 0:
