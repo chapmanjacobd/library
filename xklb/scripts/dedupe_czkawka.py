@@ -7,6 +7,7 @@ import humanize
 from screeninfo import get_monitors
 
 from xklb import utils
+from xklb.utils import log
 
 
 def backup_and_read_file(file_path):
@@ -78,7 +79,7 @@ def truncate_file_before_match(filename, match_string):
         line_index = matching_lines[0]
         with open(filename, "w") as file:
             file.write("".join(lines[line_index - 1 :]))
-        print(f"File truncated before the line containing: '{match_string}'")
+        print(f"Progress saved. File truncated before the line containing: '{match_string}'")
         remaining = sum(1 for s in lines[line_index - 1 :] if s == "\n") - 2
         print(f"{remaining} left to check")
     elif len(matching_lines) == 0:
@@ -130,9 +131,11 @@ def side_by_side_mpv(args, left_side, right_side):
         right_mpv_process.terminate()
 
 
-def mv_to_keep_folder(args, media_file: str) -> None:
+def mv_to_keep_folder(args, d) -> None:
     keep_path = Path(args.keep_dir)
     keep_path.mkdir(exist_ok=True)
+
+    media_file = d["path"]
 
     try:
         new_path = shutil.move(media_file, keep_path)
@@ -142,7 +145,7 @@ def mv_to_keep_folder(args, media_file: str) -> None:
         p = Path(media_file)
         new_path = Path(keep_path) / p.name
 
-        src_size = p.stat().st_size
+        src_size = d["size"]
         dst_size = new_path.stat().st_size
         diff_size = humanize.naturalsize(src_size - dst_size)
 
@@ -156,7 +159,7 @@ def mv_to_keep_folder(args, media_file: str) -> None:
             utils.trash(new_path, detach=False)
             new_path = shutil.move(media_file, keep_path)
 
-    print(f"{new_path}: new location")
+    log.info(f"{new_path}: new location")
 
 
 def group_and_delete(args, groups):
@@ -170,87 +173,94 @@ def group_and_delete(args, groups):
         if group is None:
             continue
 
-        kept_paths = [d["path"] for d in group]
-
-        def delete_dupe(d):
-            utils.trash(d["path"], detach=is_interactive)
-            print(f"{d['path']}: Deleted")
-            kept_paths.remove(d["path"])
+        def delete_dupe(d, detach=is_interactive):
+            utils.trash(d["path"], detach=detach)
+            log.info(f"{d['path']}: Deleted")
 
         group.sort(key=lambda x: x["size"], reverse=True)
         left = group[0]
 
-        if os.path.exists(left["path"]):
+        dups = group[1:]
+        kept_paths = []
+        while len(dups) > 0:
+            right = dups.pop()
+
+            if right["path"] == left["path"]:
+                continue
+
+            if not os.path.exists(right["path"]):
+                log.debug(f"{right['path']}: not found")
+                continue
+
+            if not os.path.exists(left["path"]):
+                log.debug(f"{left['path']}: not found")
+                left = right
+                continue
+
             print(left["path"], humanize.naturalsize(left["size"]))
+            print(right["path"], humanize.naturalsize(right["size"]))
 
-            for right in group[1:]:
-                if os.path.exists(right["path"]):
-                    print(right["path"], humanize.naturalsize(right["size"]))
+            if args.auto_select_min_ratio < 1.0:
+                similar_ratio = difflib.SequenceMatcher(
+                    None, os.path.basename(left["path"]), os.path.basename(right["path"])
+                ).ratio()
+                if similar_ratio >= args.auto_select_min_ratio or any(
+                    s in left["path"] and s in right["path"] for s in ["Goldmines_Bollywood"]
+                ):
+                    delete_dupe(right)
+                continue
 
-                    if args.auto_select_min_ratio < 1.0:
-                        similar_ratio = difflib.SequenceMatcher(
-                            None, os.path.basename(left["path"]), os.path.basename(right["path"])
-                        ).ratio()
-                        if similar_ratio > 0.7 or any(
-                            s in left["path"] and s in right["path"] for s in ["Goldmines_Bollywood"]
-                        ):
-                            utils.trash(right["path"], detach=is_interactive)
-                            print(f"{right['path']}: Deleted")
-                            kept_paths.remove(right["path"])
-                        continue
+            if not is_interactive:
+                if args.all_left:
+                    kept_paths.append(left)
+                    delete_dupe(right)
+                elif args.all_right:
+                    kept_paths.append(right)
+                    delete_dupe(left)
+                    left = right
+                elif args.all_delete:
+                    delete_dupe(left)
+                    delete_dupe(right)
+                continue
 
-                    if not is_interactive:
-                        if args.all_left:
-                            delete_dupe(right)
-                        elif args.all_right:
-                            delete_dupe(left)
-                            left = right
-                        elif args.all_delete:
-                            delete_dupe(left)
-                            delete_dupe(right)
-                            if len(kept_paths) > 0:
-                                left = {"path": kept_paths[0], "size": Path(kept_paths[0]).stat().st_size}
-                        continue
-
-                    side_by_side_mpv(args, left["path"], right["path"])
-                    while True:
-                        user_input = (
-                            input(
-                                "Names are pretty different. Keep which files? (l Left/r Right/k Keep both/d Delete both) [default: l]: "
-                            )
-                            .strip()
-                            .lower()
-                        )
-                        if args.all_keep or user_input in ("k", "keep"):
-                            break
-                        elif args.all_left or user_input in ("l", "left", ""):
-                            delete_dupe(right)
-                            break
-                        elif args.all_right or user_input in ("r", "right"):
-                            delete_dupe(left)
-                            left = right
-                            break
-                        elif args.all_delete or user_input in ("d", "delete"):
-                            delete_dupe(left)
-                            delete_dupe(right)
-                            if len(kept_paths) > 0:
-                                left = {"path": kept_paths[0], "size": Path(kept_paths[0]).stat().st_size}
-                            break
-                        elif user_input in ("q", "quit"):
-                            truncate_file_before_match(args.file_path, left["path"])
-                            sys.exit(0)
-                        else:
-                            print("Invalid input. Please type 'left', 'right', 'keep', 'delete', or 'quit' and enter")
+            side_by_side_mpv(args, left["path"], right["path"])
+            while True:
+                user_input = (
+                    input(
+                        "Names are pretty different. Keep which files? (l Left/r Right/k Keep both/d Delete both) [default: l]: "
+                    )
+                    .strip()
+                    .lower()
+                )
+                if args.all_keep or user_input in ("k", "keep"):
+                    kept_paths.append(left)
+                    kept_paths.append(right)
+                    break
+                elif args.all_left or user_input in ("l", "left", ""):
+                    kept_paths.append(left)
+                    delete_dupe(right)
+                    break
+                elif args.all_right or user_input in ("r", "right"):
+                    kept_paths.append(right)
+                    delete_dupe(left, detach=False)
+                    break
+                elif args.all_delete or user_input in ("d", "delete"):
+                    delete_dupe(right)
+                    delete_dupe(left, detach=False)
+                    break
+                elif user_input in ("q", "quit"):
+                    truncate_file_before_match(args.file_path, left["path"])
+                    sys.exit(0)
                 else:
-                    print(f"{right['path']}: not found")
+                    print("Invalid input. Please type 'left', 'right', 'keep', 'delete', or 'quit' and enter")
 
-            if args.keep_dir:
-                for f in kept_paths:
-                    if os.path.exists(f):
-                        mv_to_keep_folder(args, f)
+            if len(dups) > 1:
+                left = dups.pop()
 
-        else:
-            print(f"Original not found: {left['path']}")
+        if args.keep_dir:
+            for d in utils.list_dict_unique(kept_paths, ["path"]):
+                if os.path.exists(d["path"]):
+                    mv_to_keep_folder(args, d)
 
         print()
 
@@ -271,6 +281,7 @@ def czkawka_dedupe():
     parser.add_argument("--all-left", action="store_true")
     parser.add_argument("--all-right", action="store_true")
     parser.add_argument("--all-delete", action="store_true")
+    parser.add_argument("--verbose", "-v", action="count", default=0)
     args = parser.parse_args()
 
     content = backup_and_read_file(args.file_path)

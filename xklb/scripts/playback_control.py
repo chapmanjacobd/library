@@ -68,21 +68,25 @@ def reformat_ffprobe(path):
         "barcode",
         "catalognumber",
         "isrc",
+        "tsrc",
         "label",
         "media",
     ]
     excluded_key_like = [
         "duration",
         "musicbrainz",
+        "acoustid",
         "release",
         "timestamp",
         "writing",
+        "disc",
         "bps-",
         "number",
         "statistics",
         "language",
         "vendor",
         "handler",
+        "publisher",
     ]
 
     tags = {k: v for d in probe.streams + [probe.format] for k, v in d.get("tags", {}).items()}
@@ -101,14 +105,24 @@ def reformat_ffprobe(path):
         metadata.pop("description", None),
         metadata.pop("synopsis", None),
         metadata.pop("unsynced lyrics", None),
+        metadata.pop("lyrics-none-eng", None),
+        metadata.pop("songs-db_custom1", None),
+        metadata.pop("songs-db_custom2", None),
+        metadata.pop("songs-db_custom3", None),
+        metadata.pop("songs-db_custom4", None),
+        metadata.pop("songs-db_occasion", None),
+        metadata.pop("albummood", None),
         comment if "http" not in comment else None,
     )
     genre = utils.safe_unpack(
         metadata.pop("genre", None),
+        metadata.pop("albumgenre", None),
+        metadata.pop("albumgrouping", None),
     )
     artist = utils.safe_unpack(
         metadata.pop("artist", None),
         metadata.pop("album_artist", None),
+        metadata.pop("tso2", None),
         metadata.pop("performer", None),
     )
     album = utils.safe_unpack(

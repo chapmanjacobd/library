@@ -751,6 +751,19 @@ def list_dict_filter_unique(data: List[dict]) -> List[dict]:
     return filtered_data
 
 
+def list_dict_unique(data: List[dict], unique_keys: List[str]) -> List[dict]:
+    seen = set()
+    result = []
+    for d in data:
+        t = tuple(d[key] for key in unique_keys)
+
+        if t not in seen:
+            seen.add(t)
+            result.append(d)
+
+    return result
+
+
 def chunks(lst, n) -> Iterator:
     for i in range(0, len(lst), n):
         yield lst[i : i + n]
