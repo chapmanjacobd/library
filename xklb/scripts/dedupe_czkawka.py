@@ -8,16 +8,6 @@ from screeninfo import get_monitors
 
 from xklb import utils
 
-MPV_OPTIONS = [
-    "--save-position-on-quit=no",
-    "--no-resume-playback",
-    "--image-display-duration=inf",
-    "--script-opts=osc-visibility=always",
-    "--start=80%",
-]
-
-NEWLINE = "\n"
-
 
 def backup_and_read_file(file_path):
     backup_filename = file_path + ".bak"
@@ -89,14 +79,15 @@ def truncate_file_before_match(filename, match_string):
         with open(filename, "w") as file:
             file.write("".join(lines[line_index - 1 :]))
         print(f"File truncated before the line containing: '{match_string}'")
-        print(f"{sum(1 for s in lines[line_index - 1 :] if s == NEWLINE) - 2} left to check")
+        remaining = sum(1 for s in lines[line_index - 1 :] if s == "\n") - 2
+        print(f"{remaining} left to check")
     elif len(matching_lines) == 0:
         print(f"Match not found in the file: '{match_string}'")
     else:
         print(f"Multiple matches found in the file for: '{match_string}'")
 
 
-def side_by_side_mpv(left_side, right_side):
+def side_by_side_mpv(args, left_side, right_side):
     # Get the size of the first connected display
     monitors = get_monitors()
     if not monitors:
@@ -106,13 +97,22 @@ def side_by_side_mpv(left_side, right_side):
     display_width = monitors[0].width
     mpv_width = display_width // 2
 
+    mpv_options = [
+        "--save-position-on-quit=no",
+        "--no-resume-playback",
+        "--image-display-duration=inf",
+        "--script-opts=osc-visibility=always",
+        f"--start={args.start}",
+        f"--volume={args.volume}",
+    ]
+
     left_mpv_process = subprocess.Popen(
-        ["mpv", left_side, f"--geometry={mpv_width}x{monitors[0].height}+0+0", *MPV_OPTIONS],
+        ["mpv", left_side, f"--geometry={mpv_width}x{monitors[0].height}+0+0", *mpv_options],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
     right_mpv_process = subprocess.Popen(
-        ["mpv", right_side, f"--geometry={mpv_width}x{monitors[0].height}+{mpv_width}+0", *MPV_OPTIONS],
+        ["mpv", right_side, f"--geometry={mpv_width}x{monitors[0].height}+{mpv_width}+0", *mpv_options],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
@@ -163,7 +163,6 @@ def group_and_delete(args, groups):
     is_interactive = not any([args.all_keep, args.all_left, args.all_right, args.all_delete])
 
     for group_content in groups:
-
         if group_content == "":
             continue
 
@@ -209,10 +208,11 @@ def group_and_delete(args, groups):
                         elif args.all_delete:
                             delete_dupe(left)
                             delete_dupe(right)
-                            left = {"path": kept_paths[0], "size": Path(kept_paths[0]).stat().st_size}
+                            if len(kept_paths) > 0:
+                                left = {"path": kept_paths[0], "size": Path(kept_paths[0]).stat().st_size}
                         continue
 
-                    side_by_side_mpv(left["path"], right["path"])
+                    side_by_side_mpv(args, left["path"], right["path"])
                     while True:
                         user_input = (
                             input(
@@ -233,7 +233,8 @@ def group_and_delete(args, groups):
                         elif args.all_delete or user_input in ("d", "delete"):
                             delete_dupe(left)
                             delete_dupe(right)
-                            left = {"path": kept_paths[0], "size": Path(kept_paths[0]).stat().st_size}
+                            if len(kept_paths) > 0:
+                                left = {"path": kept_paths[0], "size": Path(kept_paths[0]).stat().st_size}
                             break
                         elif user_input in ("q", "quit"):
                             truncate_file_before_match(args.file_path, left["path"])
@@ -263,6 +264,8 @@ def czkawka_dedupe():
         default=1.0,
         help="Automatically select largest file if files have similar basenames. A sane value is in the range of 0.7~0.9",
     )
+    parser.add_argument("--start", default="80%")
+    parser.add_argument("--volume", default="70", type=float)
     parser.add_argument("--keep-dir", "--keepdir", help=argparse.SUPPRESS)
     parser.add_argument("--all-keep", action="store_true")
     parser.add_argument("--all-left", action="store_true")

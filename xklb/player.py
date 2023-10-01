@@ -107,6 +107,9 @@ def parse(args, m) -> List[str]:
         elif args.action in (SC.watch):
             player.extend(["--force-window=yes", "--really-quiet"])
 
+        if args.volume is not None:
+            player.extend([f"--volume={args.volume}"])
+
         if m["path"] and m["path"].startswith("http"):
             player.extend(["--script-opts=ytdl_hook-try_ytdl_first=yes"])
 

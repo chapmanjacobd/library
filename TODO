@@ -29,6 +29,11 @@ Carel Adolph Lion Cachet
 
 - organize util functions by data type
 
+- speed up queries:
+
+1. do joins in python (this is kinda sketchy for the DBA in me but I think it will ultimately be good. SQLite only uses one index per query so I will have more ability to control which indexes get used per subquery.)
+2. use postgres? but I kinda hate the portability aspect--but maybe it isn't so bad
+
 - globalnamespace py package to scan function names and search in github, print frequency of use in project, world, and namealikes, search function name, diff function body
 
 - scan bpm and key sig
