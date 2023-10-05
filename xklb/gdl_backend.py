@@ -144,6 +144,8 @@ def download(args, m):
 class GeneratorJob(Job):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        if hasattr(super(), "_init"):
+            super()._init()
         self.dispatched = False
         self.visited = set()
         self.status = 0
