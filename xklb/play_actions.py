@@ -631,7 +631,7 @@ def play(args, m, media_len) -> None:
             x_mpv.play(m["path"])
             try:
                 utils.auto_seek(x_mpv)
-            except (BrokenPipeError, MPVError):
+            except (BrokenPipeError, MPVError, ConnectionResetError):
                 log.debug("BrokenPipeError ignored")
 
             if SIGINT_EXIT.is_set():

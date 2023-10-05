@@ -1460,7 +1460,7 @@ def cluster_paths(paths, n_clusters=None):
             suffix_words.extend(words)
 
         word_counts = Counter(suffix_words)
-        common_words = [w for w, c in word_counts.items() if c > int(len(paths) * 0.73) and len(w) > 2]
+        common_words = [w for w, c in word_counts.items() if c > int(len(paths) * 0.6) and len(w) > 1]
 
         # join but preserve order
         suffix = "*"
