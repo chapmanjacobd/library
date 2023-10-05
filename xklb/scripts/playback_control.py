@@ -2,8 +2,6 @@ import argparse, platform, textwrap
 from copy import deepcopy
 from pathlib import Path
 
-import ffmpeg
-
 from xklb import consts, utils
 from xklb.utils import cmd, log
 
@@ -179,15 +177,24 @@ def reformat_ffprobe(path):
 
     duration = utils.safe_int(probe.format.get("duration")) or 0
     if duration > 0:
-        duration_str = utils.seconds_to_hhmmss(duration).strip()
-        formatted_output += f"Duration: {duration_str}\n"
-
         start = utils.safe_int(probe.format.get("start_time")) or 0
         if start > 0:
-            start_str = utils.seconds_to_hhmmss(start)
-            if duration < 3600:
-                start_str = start_str.strip()
-            formatted_output += f"   Start: {start_str}\n"
+            total_duration = duration
+            end = utils.safe_int(probe.format.get("end_time")) or 0
+            if end > 0:
+                duration = start - end
+            else:
+                duration -= start
+
+            start_str = utils.seconds_to_hhmmss(start).strip()
+            total_duration_str = utils.seconds_to_hhmmss(total_duration).strip()
+            duration_str = utils.seconds_to_hhmmss(duration).strip()
+
+            formatted_output += f"Duration: {duration_str}"
+            formatted_output += f"({total_duration_str}; starting at {start_str})\n"
+        else:
+            duration_str = utils.seconds_to_hhmmss(duration).strip()
+            formatted_output += f"Duration: {duration_str}\n"
 
     # print(cmd("ffprobe", "-hide_banner", "-loglevel", "info", path).stderr)
     return textwrap.indent(formatted_output, "    ")

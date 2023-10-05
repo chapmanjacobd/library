@@ -15,8 +15,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--sort-by", "--sort", "-u")
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", default="4000")
     parser.add_argument("--depth", "-d", default=0, type=int, help="Depth of folders")
-    parser.add_argument("--lower", type=int, help="Number of files per folder lower limit")
-    parser.add_argument("--upper", type=int, help="Number of files per folder upper limit")
+    parser.add_argument("--lower", type=int, default=4, help="Minimum number of files per folder")
+    parser.add_argument("--upper", type=int, help="Maximum number of files per folder")
     parser.add_argument(
         "--folder-size",
         "--foldersize",
@@ -32,6 +32,8 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--include", "-s", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
+    parser.add_argument("--cluster-sort", action="store_true", help="Cluster by filename instead of grouping by folder")
+    parser.add_argument("--clusters", "--n-clusters", "-c", type=int, help="Number of KMeans clusters")
     parser.add_argument("--print", "-p", default="", const="p", nargs="?")
     parser.add_argument("--verbose", "-v", action="count", default=0)
 
@@ -79,9 +81,9 @@ def group_files_by_folder(args, media) -> List[Dict]:
         if pdict["count"] == 0:
             d.pop(path)
         elif not args.depth:
-            if pdict["count"] < (args.lower or 4):
+            if args.lower and pdict["count"] < args.lower:
                 d.pop(path)
-            elif pdict["count"] > (args.upper or 4000):
+            elif args.upper and pdict["count"] > args.upper:
                 d.pop(path)
 
     return [{**v, "path": k} for k, v in d.items()]
@@ -159,7 +161,23 @@ def sort_by(args):
 
 
 def process_bigdirs(args, media) -> List[Dict]:
-    folders = group_files_by_folder(args, media)
+    if args.cluster_sort and len(media) > 2:
+        media_keyed = {d["path"]: d for d in media}
+        groups = utils.cluster_paths([d["path"] for d in media], n_clusters=getattr(args, "clusters", None))
+        groups = sorted(groups, key=lambda d: (-len(d["grouped_paths"]), -len(d["common_prefix"])))
+        folders = [
+            {
+                "path": group["common_prefix"],
+                "count": len(group["grouped_paths"]),
+                "size": sum(media_keyed[s].get("size", 0) for s in group["grouped_paths"]),
+                "played": sum(bool(media_keyed[s].get("time_played", 0)) for s in group["grouped_paths"]),
+                "deleted": sum(bool(media_keyed[s].get("time_deleted", 0)) for s in group["grouped_paths"]),
+            }
+            for group in groups
+        ]
+    else:
+        folders = group_files_by_folder(args, media)
+
     if args.depth:
         folders = folder_depth(args, folders)
     if args.folder_size:

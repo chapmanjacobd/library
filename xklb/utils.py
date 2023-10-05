@@ -1325,6 +1325,18 @@ def connect_mpv(ipc_socket, start_mpv=False):  # noqa: ANN201
     return None
 
 
+def auto_seek(x_mpv, delay=0.0):
+    x_mpv.wait_for_property("duration")
+    time.sleep(delay)
+    while True:
+        wait = random.uniform(0.08, 0.18)
+        for _ in range(10):
+            x_mpv.command("no-osd", "seek", "4")
+            time.sleep(wait)
+        x_mpv.command("seek", str(random.uniform(0.2, 4)), "relative-percent")
+        time.sleep(random.uniform(0.8, 1.2))
+
+
 def get_playhead(
     args,
     path: str,
@@ -1393,6 +1405,14 @@ def fast_glob(path_dir, limit=100):
     return sorted(files)
 
 
+def ordered_set(items):
+    seen = set()
+    for item in items:
+        if item not in seen:
+            yield item
+            seen.add(item)
+
+
 def cluster_paths(paths, n_clusters=None):
     if len(paths) < 2:
         return paths
@@ -1432,8 +1452,24 @@ def cluster_paths(paths, n_clusters=None):
     result = []
     for _cluster_id, paths in grouped_strings.items():
         common_prefix = os.path.commonprefix(paths)
+
+        suffix_words = []
+        for path in paths:
+            suffix = path[len(common_prefix) :]
+            words = list(ordered_set(path_to_sentence(suffix).split()))
+            suffix_words.extend(words)
+
+        word_counts = Counter(suffix_words)
+        common_words = [w for w, c in word_counts.items() if c > int(len(paths) * 0.73) and len(w) > 2]
+
+        # join but preserve order
+        suffix = "*"
+        for word in ordered_set(suffix_words):
+            if word in common_words:
+                suffix += word + "*"
+
         metadata = {
-            "common_prefix": common_prefix,
+            "common_prefix": common_prefix.strip() + suffix,
             "grouped_paths": sorted(paths),
         }
         result.append(metadata)
@@ -1515,7 +1551,7 @@ def cluster_dicts(args, media):
     if len(media) < 2:
         return media
     media_keyed = {d["path"]: d for d in media}
-    groups = cluster_paths([d["path"] for d in media])
+    groups = cluster_paths([d["path"] for d in media], n_clusters=getattr(args, "clusters", None))
     groups = sorted(groups, key=lambda d: (-len(d["grouped_paths"]), -len(d["common_prefix"])))
     if hasattr(args, "sort") and "duration" in args.sort:
         sorted_paths = flatten(
@@ -1549,14 +1585,6 @@ def write_csv_to_stdout(data):
     writer = csv.DictWriter(sys.stdout, fieldnames=fieldnames)
     writer.writeheader()
     writer.writerows(data)
-
-
-def order_set(items):
-    seen = set()
-    for item in items:
-        if item not in seen:
-            yield item
-            seen.add(item)
 
 
 def partial_startswith(original_string, startswith_match_list):

@@ -1,4 +1,4 @@
-import argparse, os, random, shlex, shutil, sys, time
+import argparse, os, random, shlex, shutil, sys, threading, time
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -204,6 +204,7 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     parser.add_argument("--subtitles", "--subtitle", "--subs", "-sy", action="store_true", help=argparse.SUPPRESS)
 
     parser.add_argument("--volume", type=float)
+    parser.add_argument("--auto-seek", action="store_true")
     parser.add_argument("--override-player", "--player", "-player", help=argparse.SUPPRESS)
     parser.add_argument("--player-args-sub", "-player-sub", nargs="*", default=DEFAULT_PLAYER_ARGS_SUB)
     parser.add_argument("--player-args-no-sub", "-player-no-sub", nargs="*", default=DEFAULT_PLAYER_ARGS_NO_SUB)
@@ -610,6 +611,32 @@ def play(args, m, media_len) -> None:
                     return
                 else:
                     raise
+        elif args.auto_seek:
+            from python_mpv_jsonipc import MPV, MPVError
+
+            mpv_kwargs = {"save_position_on_quit": False, "start": args.start, "fs": True}
+
+            x_mpv = MPV(args.mpv_socket, **mpv_kwargs)
+            x_mpv.volume = args.volume
+
+            SIGINT_EXIT = threading.Event()
+
+            @x_mpv.on_key_press("ctrl+c")
+            def sig_interrupt_handler():
+                SIGINT_EXIT.set()
+                x_mpv.command("quit", "4")
+
+            x_mpv.play(m["path"])
+            try:
+                utils.auto_seek(x_mpv)
+            except (BrokenPipeError, MPVError):
+                log.debug("BrokenPipeError ignored")
+
+            if SIGINT_EXIT.is_set():
+                log.warning("Player exited with code 4")
+                raise SystemExit(4)
+
+            player.post_act(args, m["original_path"], media_len=media_len)
         else:
             r = player.local_player(args, m)
             if r.returncode == 0:
