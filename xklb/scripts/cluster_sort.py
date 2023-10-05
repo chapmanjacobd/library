@@ -1,4 +1,4 @@
-import argparse, sys
+import argparse, json, sys
 from pathlib import Path
 from pprint import pprint
 
@@ -83,7 +83,7 @@ def cluster_sort() -> None:
         for group in groups:
             group["grouped_paths"] = [s.rstrip("\n") for s in group["grouped_paths"]]
 
-        pprint(groups)
+        print(json.dumps(groups))
     elif args.move_groups:
         min_len = len(str(len(groups) + 1))
 

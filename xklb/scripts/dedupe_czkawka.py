@@ -1,13 +1,17 @@
 #!/usr/bin/python3
 
-import argparse, difflib, os, re, shutil, subprocess, sys, time
+import argparse, difflib, os, random, re, shutil, subprocess, sys, time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import humanize
 from screeninfo import get_monitors
 
-from xklb import utils
+from xklb import consts, player, utils
 from xklb.utils import log
+
+left_mpv_socket = str(Path(consts.TEMP_SCRIPT_DIR) / f"mpv_socket_{consts.random_string()}")
+right_mpv_socket = str(Path(consts.TEMP_SCRIPT_DIR) / f"mpv_socket_{consts.random_string()}")
 
 
 def backup_and_read_file(file_path):
@@ -81,7 +85,8 @@ def truncate_file_before_match(filename, match_string):
             file.write("".join(lines[line_index - 1 :]))
         print(f"Progress saved. File truncated before the line containing: '{match_string}'")
         remaining = sum(1 for s in lines[line_index - 1 :] if s == "\n") - 2
-        print(f"{remaining} left to check")
+        num_videos = sum(1 for s in lines[line_index - 1 :] if s != "\n") - 2
+        print(f"{remaining} groups (~{num_videos} videos) remain to check")
     elif len(matching_lines) == 0:
         print(f"Match not found in the file: '{match_string}'")
     else:
@@ -89,46 +94,95 @@ def truncate_file_before_match(filename, match_string):
 
 
 def side_by_side_mpv(args, left_side, right_side):
-    # Get the size of the first connected display
     monitors = get_monitors()
     if not monitors:
         print("No connected displays found.")
         return
 
-    display_width = monitors[0].width
-    mpv_width = display_width // 2
+    display = player.modify_display_size_for_taskbar(monitors[0])
+    mpv_width = display.width // 2
 
-    mpv_options = [
-        "--save-position-on-quit=no",
-        "--no-resume-playback",
-        "--image-display-duration=inf",
-        "--script-opts=osc-visibility=always",
-        f"--start={args.start}",
-        f"--volume={args.volume}",
-    ]
+    if args.auto_seek:
+        from python_mpv_jsonipc import MPV
 
-    left_mpv_process = subprocess.Popen(
-        ["mpv", left_side, f"--geometry={mpv_width}x{monitors[0].height}+0+0", *mpv_options],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
-    right_mpv_process = subprocess.Popen(
-        ["mpv", right_side, f"--geometry={mpv_width}x{monitors[0].height}+{mpv_width}+0", *mpv_options],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
+        mpv_kwargs = {
+            "save_position_on_quit": False,
+            "start": args.start,
+        }
 
-    # Monitor the processes and terminate the other one when one finishes
-    while True:
-        if left_mpv_process.poll() is not None or right_mpv_process.poll() is not None:
-            break
-        time.sleep(0.1)
+        left_mpv = MPV(ipc_socket=left_mpv_socket, geometry=f"{mpv_width}x{display.height}+0+0", **mpv_kwargs)
+        right_mpv = MPV(
+            ipc_socket=right_mpv_socket, geometry=f"{mpv_width}x{display.height}+{mpv_width}+0", **mpv_kwargs
+        )
 
-    # Terminate the other process
-    if left_mpv_process.poll() is None:
-        left_mpv_process.terminate()
-    if right_mpv_process.poll() is None:
-        right_mpv_process.terminate()
+        for x_mpv in (left_mpv, right_mpv):
+            x_mpv.volume = args.volume
+            x_mpv.command("script-message", "osc-visibility", "always")  # , "no-osd"
+
+            @x_mpv.on_key_press("k")
+            def keep_handler():
+                print("keep")
+
+            @x_mpv.on_key_press("d")
+            def delete_handler():
+                print("delete")
+
+        left_mpv.play(left_side)
+        right_mpv.play(right_side)
+
+        left_mpv.quit_callback = right_mpv.terminate
+        # right_mpv.quit_callback = left_mpv.terminate
+
+        with ThreadPoolExecutor() as e:
+            e.submit(utils.auto_seek, left_mpv)
+            e.submit(utils.auto_seek, right_mpv, delay=0.4)
+
+    else:
+        mpv_options = [
+            "--save-position-on-quit=no",
+            "--no-resume-playback",
+            "--image-display-duration=inf",
+            "--script-opts=osc-visibility=always",
+            f"--start={args.start}",
+            f"--volume={args.volume}",
+        ]
+
+        left_mpv_process = subprocess.Popen(
+            [
+                "mpv",
+                left_side,
+                f"--input-ipc-server={left_mpv_socket}",
+                f"--geometry={mpv_width}x{display.height}+0+0",
+                *mpv_options,
+            ],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        right_mpv_process = subprocess.Popen(
+            [
+                "mpv",
+                right_side,
+                f"--input-ipc-server={right_mpv_socket}",
+                f"--geometry={mpv_width}x{display.height}+{mpv_width}+0",
+                *mpv_options,
+            ],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+
+        # if not all([Path(left_side).exists(), Path(right_side).exists()]):
+        #     return  # race condition
+
+        while True:  # Monitor the processes and terminate the other one when one finishes
+            if left_mpv_process.poll() is not None or right_mpv_process.poll() is not None:
+                break
+            time.sleep(0.1)
+
+        # Terminate the other process
+        if left_mpv_process.poll() is None:
+            left_mpv_process.terminate()
+        if right_mpv_process.poll() is None:
+            right_mpv_process.terminate()
 
 
 def mv_to_keep_folder(args, d) -> None:
@@ -139,6 +193,8 @@ def mv_to_keep_folder(args, d) -> None:
 
     try:
         new_path = shutil.move(media_file, keep_path)
+    except FileNotFoundError:
+        return
     except shutil.Error as e:
         if "already exists" not in str(e):
             raise
@@ -181,7 +237,7 @@ def group_and_delete(args, groups):
         left = group[0]
 
         dups = group[1:]
-        kept_paths = []
+        kept_dups = []
         while len(dups) > 0:
             right = dups.pop()
 
@@ -212,10 +268,10 @@ def group_and_delete(args, groups):
 
             if not is_interactive:
                 if args.all_left:
-                    kept_paths.append(left)
+                    kept_dups.append(left)
                     delete_dupe(right)
                 elif args.all_right:
-                    kept_paths.append(right)
+                    kept_dups.append(right)
                     delete_dupe(left)
                     left = right
                 elif args.all_delete:
@@ -224,29 +280,26 @@ def group_and_delete(args, groups):
                 continue
 
             side_by_side_mpv(args, left["path"], right["path"])
+            is_next_iter_not_last = len(dups) > 1
             while True:
                 user_input = (
-                    input(
-                        "Names are pretty different. Keep which files? (l Left/r Right/k Keep both/d Delete both) [default: l]: "
-                    )
-                    .strip()
-                    .lower()
+                    input("Keep which files? (l Left/r Right/k Keep both/d Delete both) [default: l]: ").strip().lower()
                 )
                 if args.all_keep or user_input in ("k", "keep"):
-                    kept_paths.append(left)
-                    kept_paths.append(right)
+                    kept_dups.append(left)
+                    kept_dups.append(right)
                     break
                 elif args.all_left or user_input in ("l", "left", ""):
-                    kept_paths.append(left)
-                    delete_dupe(right)
+                    kept_dups.append(left)
+                    delete_dupe(right, detach=is_next_iter_not_last)
                     break
                 elif args.all_right or user_input in ("r", "right"):
-                    kept_paths.append(right)
-                    delete_dupe(left, detach=False)
+                    kept_dups.append(right)
+                    delete_dupe(left, detach=is_next_iter_not_last)
                     break
                 elif args.all_delete or user_input in ("d", "delete"):
-                    delete_dupe(right)
-                    delete_dupe(left, detach=False)
+                    delete_dupe(right, detach=is_next_iter_not_last)
+                    delete_dupe(left, detach=is_next_iter_not_last)
                     break
                 elif user_input in ("q", "quit"):
                     truncate_file_before_match(args.file_path, left["path"])
@@ -256,9 +309,11 @@ def group_and_delete(args, groups):
 
             if len(dups) > 1:
                 left = dups.pop()
+            elif len(dups) == 1 and len(kept_dups) > 0:
+                left = kept_dups[-1]
 
         if args.keep_dir:
-            for d in utils.list_dict_unique(kept_paths, ["path"]):
+            for d in utils.list_dict_unique(kept_dups, ["path"]):
                 if os.path.exists(d["path"]):
                     mv_to_keep_folder(args, d)
 
@@ -274,9 +329,10 @@ def czkawka_dedupe():
         default=1.0,
         help="Automatically select largest file if files have similar basenames. A sane value is in the range of 0.7~0.9",
     )
-    parser.add_argument("--start", default="80%")
+    parser.add_argument("--start", default="15%")
     parser.add_argument("--volume", default="70", type=float)
     parser.add_argument("--keep-dir", "--keepdir", help=argparse.SUPPRESS)
+    parser.add_argument("--auto-seek", action="store_true")
     parser.add_argument("--all-keep", action="store_true")
     parser.add_argument("--all-left", action="store_true")
     parser.add_argument("--all-right", action="store_true")

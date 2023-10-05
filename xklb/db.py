@@ -141,7 +141,7 @@ def optimize(args) -> None:
         if "path" in table_columns:
             str_columns = list(set([*str_columns, "path"]))
 
-        optimized_column_order = list(utils.order_set([*int_columns, *(table_config.get("column_order") or [])]))
+        optimized_column_order = list(utils.ordered_set([*int_columns, *(table_config.get("column_order") or [])]))
         compare_order = zip(table_columns, optimized_column_order)
         was_transformed = False
         if not all(x == y for x, y in compare_order):

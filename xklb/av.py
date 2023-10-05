@@ -151,6 +151,7 @@ def decode_quick_scan(path, scans, scan_duration=3):
             output = ffmpeg.input(path, ss=scan).output("/dev/null", t=scan_duration, f="null")
             ffmpeg.run(output, quiet=True)
             # ffmpeg -xerror ?
+            # I wonder if something like this would be faster: ffmpeg -ss 01:48:00 -i in.mp4 -map 0:v:0 -filter:v "select=eq(pict_type\,I)" -frames:v 1 out.jpg
         except ffmpeg.Error:
             fail_count += 1
 

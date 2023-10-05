@@ -703,6 +703,7 @@ def listen_chromecast(args, m: dict) -> Optional[subprocess.CompletedProcess]:
 
 
 def socket_play(args, m: dict) -> None:
+    # TODO: replace with python_mpv_jsonipc
     mpv = which("mpv") or "mpv"
     if args.sock is None:
         subprocess.Popen([mpv, "--idle", "--input-ipc-server=" + args.mpv_socket])
