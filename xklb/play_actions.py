@@ -614,7 +614,9 @@ def play(args, m, media_len) -> None:
         elif args.auto_seek:
             from python_mpv_jsonipc import MPV, MPVError
 
-            mpv_kwargs = {"save_position_on_quit": False, "start": args.start, "fs": True}
+            mpv_kwargs = {"save_position_on_quit": False, "fs": True}
+            if args.start:
+                mpv_kwargs["start"] = args.start
 
             x_mpv = MPV(args.mpv_socket, **mpv_kwargs)
             x_mpv.volume = args.volume
