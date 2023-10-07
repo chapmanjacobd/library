@@ -1,4 +1,4 @@
-import itertools, os, sys
+import itertools, os
 from pathlib import Path
 from types import ModuleType
 

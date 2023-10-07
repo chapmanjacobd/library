@@ -107,9 +107,6 @@ def parse(args, m) -> List[str]:
         elif args.action in (SC.watch):
             player.extend(["--force-window=yes", "--really-quiet"])
 
-        if args.volume is not None:
-            player.extend([f"--volume={args.volume}"])
-
         if m["path"] and m["path"].startswith("http"):
             player.extend(["--script-opts=ytdl_hook-try_ytdl_first=yes"])
 
@@ -145,6 +142,9 @@ def parse(args, m) -> List[str]:
         if player_path:
             args.player_need_sleep = False
             player = [player_path]
+
+    if args.volume is not None:
+        player.extend([f"--volume={args.volume}"])
 
     log.debug("player: %s", player)
     return player
@@ -185,6 +185,8 @@ def mv_to_keep_folder(args, media_file: str) -> None:
             if utils.confirm("Replace destination file?"):
                 utils.trash(new_path, detach=False)
                 new_path = shutil.move(media_file, keep_path)
+            else:
+                return
         else:
             raise
 

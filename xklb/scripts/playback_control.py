@@ -11,7 +11,7 @@ def parse_args(action) -> argparse.Namespace:
         prog=f"library {action}",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("--mpv-socket", default=consts.DEFAULT_MPV_SOCKET)
+    parser.add_argument("--mpv-socket", default=consts.DEFAULT_MPV_LISTEN_SOCKET)
     parser.add_argument("--chromecast-device", "--cast-to", "-t")
 
     if action == "next":

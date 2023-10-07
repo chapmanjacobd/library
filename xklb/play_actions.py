@@ -186,7 +186,7 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
 
     parser.add_argument("--start", "-vs", help=argparse.SUPPRESS)
     parser.add_argument("--end", "-ve", help=argparse.SUPPRESS)
-    parser.add_argument("--mpv-socket", default=consts.DEFAULT_MPV_SOCKET, help=argparse.SUPPRESS)
+    parser.add_argument("--mpv-socket", help=argparse.SUPPRESS)
     parser.add_argument("--watch-later-directory", default=consts.DEFAULT_MPV_WATCH_LATER, help=argparse.SUPPRESS)
     parser.add_argument("--subtitle-mix", default=consts.DEFAULT_SUBTITLE_MIX, help=argparse.SUPPRESS)
 
@@ -268,6 +268,12 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     if args.db:
         args.database = args.db
     args.db = db.connect(args)
+
+    if args.mpv_socket is None:
+        if args.action in (SC.listen):
+            args.mpv_socket = consts.DEFAULT_MPV_LISTEN_SOCKET
+        else:
+            args.mpv_socket = consts.DEFAULT_MPV_WATCH_SOCKET
 
     if args.big_dirs:
         args.local_media_only = True

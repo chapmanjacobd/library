@@ -1329,7 +1329,7 @@ def auto_seek(x_mpv, delay=0.0):
     x_mpv.wait_for_property("duration")
     time.sleep(delay)
     while True:
-        wait = random.uniform(0.08, 0.18)
+        wait = random.uniform(0.12, 0.18)
         for _ in range(10):
             x_mpv.command("no-osd", "seek", "4")
             time.sleep(wait)
