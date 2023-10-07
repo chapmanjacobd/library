@@ -89,8 +89,8 @@ class MrSuperDialogue:
         self.root.mainloop()
 
     def user_quit(self) -> NoReturn:
-        print("Ctrl-c exit")
-        raise SystemExit(2)
+        print("\nCtrl+C exit")
+        raise SystemExit(130)
 
     def return_true(self) -> None:
         self.action = True
