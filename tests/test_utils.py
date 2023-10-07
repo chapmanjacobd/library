@@ -292,7 +292,7 @@ def test_mpv_md5():
 
 def test_get_playhead():
     args = argparse.Namespace(
-        mpv_socket=consts.DEFAULT_MPV_SOCKET,
+        mpv_socket=consts.DEFAULT_MPV_LISTEN_SOCKET,
         watch_later_directory=consts.DEFAULT_MPV_WATCH_LATER,
     )
     path = str(Path("/home/runner/work/library/library/tests/data/test.mp4").resolve())
