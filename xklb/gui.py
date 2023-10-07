@@ -4,10 +4,6 @@ from typing import NoReturn, Tuple
 base_folder = Path(__file__).resolve().parent
 
 
-class UserQuit(BaseException):
-    pass
-
-
 class MrSuperDialogue:
     def __init__(self, path, qty, geom_data=None, true_action="keep", false_action="delete") -> None:
         from tkinter import PhotoImage, Tk
@@ -93,7 +89,8 @@ class MrSuperDialogue:
         self.root.mainloop()
 
     def user_quit(self) -> NoReturn:
-        raise UserQuit
+        print("Ctrl-c exit")
+        raise SystemExit(2)
 
     def return_true(self) -> None:
         self.action = True

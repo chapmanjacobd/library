@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import argparse, difflib, os, random, re, shutil, subprocess, sys, time
+import argparse, difflib, os, re, shutil, subprocess, sys, time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -84,8 +84,8 @@ def truncate_file_before_match(filename, match_string):
         with open(filename, "w") as file:
             file.write("".join(lines[line_index - 1 :]))
         print(f"Progress saved. File truncated before the line containing: '{match_string}'")
-        remaining = sum(1 for s in lines[line_index - 1 :] if s == "\n") - 2
-        num_videos = sum(1 for s in lines[line_index - 1 :] if s != "\n") - 2
+        remaining = sum(1 for s in lines[line_index - 1 :] if s == "\n") - 1
+        num_videos = sum(1 for s in lines[line_index - 1 :] if s != "\n") - 12
         print(f"{remaining} groups (~{num_videos} videos) remain to check")
     elif len(matching_lines) == 0:
         print(f"Match not found in the file: '{match_string}'")
@@ -130,8 +130,14 @@ def side_by_side_mpv(args, left_side, right_side):
         left_mpv.play(left_side)
         right_mpv.play(right_side)
 
+        def right_quit_callback():
+            try:
+                left_mpv.command("quit")
+            except BrokenPipeError:
+                pass
+
         left_mpv.quit_callback = right_mpv.terminate
-        # right_mpv.quit_callback = left_mpv.terminate
+        right_mpv.quit_callback = right_quit_callback  # they can't both be the same
 
         with ThreadPoolExecutor() as e:
             e.submit(utils.auto_seek, left_mpv)
@@ -282,6 +288,7 @@ def group_and_delete(args, groups):
             side_by_side_mpv(args, left["path"], right["path"])
             is_next_iter_not_last = len(dups) > 1
             while True:
+                utils.clear_input()
                 user_input = (
                     input("Keep which files? (l Left/r Right/k Keep both/d Delete both) [default: l]: ").strip().lower()
                 )
