@@ -56,7 +56,7 @@ expand_all_js = """```js
 ```"""
 
 print(
-    rf"""# xk media library
+    rf"""# library (media toolkit)
 
 A wise philosopher once told me: "the future is [autotainment](https://www.youtube.com/watch?v=F9sZFrsjPp0)".
 
