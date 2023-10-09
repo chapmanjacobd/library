@@ -119,15 +119,8 @@ def parse(args, m) -> List[str]:
         if getattr(args, "crop", None):
             player.extend(["--panscan=1.0"])
 
-        if args.action in (SC.watch, SC.listen, SC.search) and m:
-            start, end = calculate_duration(args, m)
-            if end != 0:
-                if start != 0:
-                    player.extend([f"--start={start}"])
-                    if args.start:
-                        player.extend(["--no-save-position-on-quit"])
-                if end != m["duration"]:
-                    player.extend([f"--end={end}"])
+        if args.start:
+            player.extend(["--no-save-position-on-quit"])
 
         if args.action == SC.watch and m and m.get("subtitle_count") is not None:
             if m["subtitle_count"] > 0:
@@ -145,6 +138,18 @@ def parse(args, m) -> List[str]:
 
     if args.volume is not None:
         player.extend([f"--volume={args.volume}"])
+
+    if args.action in (SC.watch, SC.listen, SC.search) and m:
+        try:
+            start, end = calculate_duration(args, m)
+        except Exception:
+            pass
+        else:
+            if end != 0:
+                if start != 0:
+                    player.extend([f"--start={start}"])
+                if end != m["duration"]:
+                    player.extend([f"--end={end}"])
 
     log.debug("player: %s", player)
     return player

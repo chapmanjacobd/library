@@ -1,5 +1,3 @@
-- proliferation: tools generator, life calendar (ics ? everydayfocus), bifurcation
-
 - tubeupdate, redditupdate, playlist update frequency. daily, weekly, monthly, quarterly, yearly
 
 - CLI EDA tool eda.py, sqlite-preview
@@ -25,7 +23,7 @@ Wikimedia commons
 
 Carel Adolph Lion Cachet
 
-- automatic photo essay generator
+- automatic photo essay generator using cluster-sort
 
 - organize util functions by data type
 

@@ -1,4 +1,4 @@
-# xk media library
+# library (media toolkit)
 
 A wise philosopher once told me: "the future is [autotainment](https://www.youtube.com/watch?v=F9sZFrsjPp0)".
 
