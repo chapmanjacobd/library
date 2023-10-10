@@ -195,11 +195,12 @@ def mv_to_keep_folder(args, media_file: str) -> None:
         else:
             raise
 
-    if args.keep_cmd:
+    if getattr(args, "keep_cmd", None):
         utils.cmd_detach(shlex.split(args.keep_cmd), new_path)
-    with args.db.conn:
-        args.db.conn.execute("DELETE FROM media where path = ?", [new_path])
-        args.db.conn.execute("UPDATE media set path = ? where path = ?", [new_path, media_file])
+    if hasattr(args, "db"):
+        with args.db.conn:
+            args.db.conn.execute("DELETE FROM media where path = ?", [new_path])
+            args.db.conn.execute("UPDATE media set path = ? where path = ?", [new_path, media_file])
 
 
 def moved_media(args, moved_files: Union[str, list], base_from, base_to) -> int:
@@ -314,7 +315,10 @@ def delete_media(args, paths) -> int:
         else:
             utils.trash(p, detach=len(paths) < 30)
 
-    return mark_media_deleted(args, paths)
+    if hasattr(args, "db"):
+        return mark_media_deleted(args, paths)
+    else:
+        return len(paths)
 
 
 def delete_playlists(args, playlists) -> None:
@@ -371,8 +375,6 @@ class AskAction:
 
 
 def post_act(args, media_file: str, action: Optional[str] = None, geom_data=None, media_len=0) -> None:
-    history.add(args, [media_file], mark_done=True)
-
     def handle_delete_action():
         if media_file.startswith("http"):
             mark_media_deleted(args, media_file)
@@ -928,6 +930,7 @@ def multiple_player(args, media) -> None:
                             if not args.ignore_errors:
                                 raise SystemExit(r.returncode)
 
+                        history.add(args, [m["path"]], mark_done=True)
                         post_act(args, m["path"], geom_data=geom_data, media_len=len(media))
 
                         if media:

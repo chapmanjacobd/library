@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import argparse, difflib, os, re, shutil, subprocess, sys, time
+import argparse, difflib, os, re, shlex, shutil, subprocess, sys, time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -285,34 +285,47 @@ def group_and_delete(args, groups):
                     delete_dupe(right)
                 continue
 
-            side_by_side_mpv(args, left["path"], right["path"])
             is_next_iter_not_last = len(dups) > 1
-            while True:
-                utils.clear_input()
-                user_input = (
-                    input("Keep which files? (l Left/r Right/k Keep both/d Delete both) [default: l]: ").strip().lower()
-                )
-                if args.all_keep or user_input in ("k", "keep"):
-                    kept_dups.append(left)
-                    kept_dups.append(right)
-                    break
-                elif args.all_left or user_input in ("l", "left", ""):
-                    kept_dups.append(left)
-                    delete_dupe(right, detach=is_next_iter_not_last)
-                    break
-                elif args.all_right or user_input in ("r", "right"):
-                    kept_dups.append(right)
-                    delete_dupe(left, detach=is_next_iter_not_last)
-                    break
-                elif args.all_delete or user_input in ("d", "delete"):
-                    delete_dupe(right, detach=is_next_iter_not_last)
-                    delete_dupe(left, detach=is_next_iter_not_last)
-                    break
-                elif user_input in ("q", "quit"):
-                    truncate_file_before_match(args.file_path, left["path"])
-                    sys.exit(0)
-                else:
-                    print("Invalid input. Please type 'left', 'right', 'keep', 'delete', or 'quit' and enter")
+
+            if args.override_player:
+                for path in (left["path"], right["path"]):
+                    r = utils.cmd(*shlex.split(args.override_player), path, strict=False)
+                    if r.returncode == 0:
+                        player.post_act(args, path, action="ASK_MOVE_OR_DELETE" if args.keep_dir else "ASK_DELETE")
+                    else:
+                        truncate_file_before_match(args.file_path, left["path"])
+                        log.warning("Player exited with code %s", r.returncode)
+                        raise SystemExit(r.returncode)
+            else:
+                side_by_side_mpv(args, left["path"], right["path"])
+                while True:
+                    utils.clear_input()
+                    user_input = (
+                        input("Keep which files? (l Left/r Right/k Keep both/d Delete both) [default: l]: ")
+                        .strip()
+                        .lower()
+                    )
+                    if args.all_keep or user_input in ("k", "keep"):
+                        kept_dups.append(left)
+                        kept_dups.append(right)
+                        break
+                    elif args.all_left or user_input in ("l", "left", ""):
+                        kept_dups.append(left)
+                        delete_dupe(right, detach=is_next_iter_not_last)
+                        break
+                    elif args.all_right or user_input in ("r", "right"):
+                        kept_dups.append(right)
+                        delete_dupe(left, detach=is_next_iter_not_last)
+                        break
+                    elif args.all_delete or user_input in ("d", "delete"):
+                        delete_dupe(right, detach=is_next_iter_not_last)
+                        delete_dupe(left, detach=is_next_iter_not_last)
+                        break
+                    elif user_input in ("q", "quit"):
+                        truncate_file_before_match(args.file_path, left["path"])
+                        sys.exit(0)
+                    else:
+                        print("Invalid input. Please type 'left', 'right', 'keep', 'delete', or 'quit' and enter")
 
             if len(dups) > 1:
                 left = dups.pop()
@@ -339,7 +352,9 @@ def czkawka_dedupe():
     parser.add_argument("--start", default="15%")
     parser.add_argument("--volume", default="70", type=float)
     parser.add_argument("--keep-dir", "--keepdir", help=argparse.SUPPRESS)
+    parser.add_argument("--gui", action="store_true")
     parser.add_argument("--auto-seek", action="store_true")
+    parser.add_argument("--override-player", "--player", "-player", help=argparse.SUPPRESS)
     parser.add_argument("--all-keep", action="store_true")
     parser.add_argument("--all-left", action="store_true")
     parser.add_argument("--all-right", action="store_true")

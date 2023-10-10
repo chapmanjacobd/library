@@ -178,7 +178,7 @@ def process_bigdirs(args, media) -> List[Dict]:
     else:
         folders = group_files_by_folder(args, media)
 
-    folders = [d for d in folders if d['deleted'] != d['count']]  # remove folders where all deleted
+    folders = [d for d in folders if d["deleted"] != d["count"]]  # remove folders where all deleted
 
     if args.depth:
         folders = folder_depth(args, folders)

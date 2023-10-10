@@ -610,6 +610,7 @@ def play(args, m, media_len) -> None:
             try:
                 chromecast_play(args, m)
                 t.reset()
+                history.add(args, [m["original_path"]], mark_done=True)
                 player.post_act(args, m["original_path"], media_len=media_len)
                 log.debug("player.post_act: %s", t.elapsed())
             except Exception:
@@ -644,11 +645,13 @@ def play(args, m, media_len) -> None:
                 log.warning("Player exited with code 4")
                 raise SystemExit(4)
 
+            history.add(args, [m["original_path"]], mark_done=True)
             player.post_act(args, m["original_path"], media_len=media_len)
         else:
             r = player.local_player(args, m)
             if r.returncode == 0:
                 t.reset()
+                history.add(args, [m["original_path"]], mark_done=True)
                 player.post_act(args, m["original_path"], media_len=media_len)
                 log.debug("player.post_act: %s", t.elapsed())
             else:
