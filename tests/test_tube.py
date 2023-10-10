@@ -85,6 +85,9 @@ class TestTube(dvd.test_case()):
     @mock.patch("xklb.tube_backend.get_playlist_metadata")
     def test_tubeupdate(self, play_mocked):
         tube_update([tube_db, "--extractor-config", "TEST2=4 TEST3=3"])
+        assert play_mocked.call_args is None
+
+        tube_update([tube_db, "--extractor-config", "TEST2=4 TEST3=3", "--force"])
         out = play_mocked.call_args[0][2]
         assert out is not None
         assert out["TEST1"] == "1"
