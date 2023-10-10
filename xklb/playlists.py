@@ -1,5 +1,4 @@
 import sqlite3
-from copy import deepcopy
 from datetime import datetime, timezone
 from typing import List, Optional
 
@@ -28,7 +27,6 @@ def consolidate(args, v: dict) -> dict:
 
     cv = {}
     cv["time_uploaded"] = upload_date
-    cv["time_created"] = consts.APPLICATION_START
     cv["time_modified"] = consts.now()
     cv["time_deleted"] = 0
 
@@ -74,6 +72,8 @@ def _add(args, entry):
         entry["id"] = playlists_id
         args.db["playlists"].upsert(entry, pk="id", alter=True)
     else:
+        entry["time_created"] = consts.APPLICATION_START
+        entry["hours_update_delay"] = 70  # about three days
         args.db["playlists"].insert(entry, pk="id", alter=True)
         playlists_id = get_id(args, entry["path"])
     return playlists_id
@@ -130,12 +130,58 @@ def media_exists(args, playlist_path, path) -> bool:
     return True
 
 
+def decrease_update_delay(args, playlist_path: str) -> None:
+    try:
+        with args.db.conn:
+            args.db.conn.execute(
+                """
+                UPDATE playlists
+                SET time_modified = cast(STRFTIME('%s', 'now') as int)
+                , hours_update_delay = CASE
+                    WHEN 0.5 * hours_update_delay <= 0 THEN 1
+                    WHEN 0.5 * hours_update_delay >= 8760 THEN 8760
+                    ELSE 0.5 * hours_update_delay
+                END
+                WHERE hours_update_delay IS NOT NULL
+                    AND path = ?
+                """,
+                [playlist_path],
+            )
+    except sqlite3.OperationalError:
+        with args.db.conn:
+            args.db.conn.execute("ALTER TABLE playlists ADD COLUMN hours_update_delay INTEGER DEFAULT 70")
+
+
+def increase_update_delay(args, playlist_path: str) -> None:
+    try:
+        with args.db.conn:
+            args.db.conn.execute(
+                """
+                UPDATE playlists
+                SET time_modified = cast(STRFTIME('%s', 'now') as int)
+                ,   hours_update_delay = CASE
+                    WHEN 2 * hours_update_delay <= 0 THEN 1
+                    WHEN 2 * hours_update_delay >= 8760 THEN 8760
+                    ELSE 2 * hours_update_delay
+                END
+                WHERE hours_update_delay IS NOT NULL
+                    AND path = ?
+                """,
+                [playlist_path],
+            )
+    except sqlite3.OperationalError:
+        with args.db.conn:
+            args.db.conn.execute("ALTER TABLE playlists ADD COLUMN IF NOT EXISTS hours_update_delay INTEGER DEFAULT 70")
+
+
 def get_all(args, cols="path, extractor_config", sql_filters=None) -> List[dict]:
     pl_columns = db.columns(args, "playlists")
     if sql_filters is None:
         sql_filters = []
     if "time_deleted" in pl_columns:
         sql_filters.append("AND COALESCE(time_deleted,0) = 0")
+    if "hours_update_delay" in pl_columns and not args.force:
+        sql_filters.append("AND (cast(STRFTIME('%s', 'now') as int) - time_modified) >= (hours_update_delay * 60 * 60)")
 
     try:
         known_playlists = list(

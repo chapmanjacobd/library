@@ -134,7 +134,7 @@ def construct_tabs_query(args) -> Tuple[str, dict]:
     FROM m
     WHERE 1=1
         {" ".join(args.filter_sql)}
-        {"and time_valid < cast(STRFTIME('%s', datetime()) as int)" if not args.print else ''}
+        {"and time_valid < cast(STRFTIME('%s', 'now') as int)" if not args.print else ''}
     ORDER BY 1=1
         {', ' + args.sort if args.sort else ''}
         {', time_last_played, time_valid, path' if args.print else ''}
