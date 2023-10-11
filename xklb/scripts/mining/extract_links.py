@@ -1,5 +1,4 @@
 import argparse, time
-from shutil import which
 
 from xklb import utils
 from xklb.utils import log, pipe_print
@@ -56,6 +55,30 @@ def get_page_infinite_scroll(driver, url):
     return driver.page_source
 
 
+def from_url(args, line):
+    url = line.rstrip("\n")
+    if url in ["", '""', "\n"]:
+        return
+
+    if args.scroll:
+        markup = get_page_infinite_scroll(args.driver, url)
+    else:
+        r = utils.requests_session().get(url, timeout=120, headers=utils.headers)
+        r.raise_for_status()
+        markup = r.content
+    inner_urls = get_inner_urls(url, markup, include=args.include, exclude=args.exclude)
+
+    return inner_urls
+
+
+def print_or_download(args, found_urls):
+    if args.download:
+        for inner_url in found_urls:
+            utils.download_url(inner_url)
+    else:
+        pipe_print("\n".join(found_urls))
+
+
 def extract_links() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--include", "-s", nargs="*", help="substrings for inclusion (all must match to include)")
@@ -75,42 +98,20 @@ def extract_links() -> None:
     args = parser.parse_args()
 
     if args.scroll:
-        from selenium import webdriver
-
-        if which("firefox"):
-            driver = webdriver.Firefox()
-        else:
-            driver = webdriver.Chrome()
-
-    def process_url(line):
-        url = line.rstrip("\n")
-        if url in ["", '""', "\n"]:
-            return
-
-        if args.scroll:
-            markup = get_page_infinite_scroll(driver, url)
-        else:
-            r = utils.requests_session().get(url, timeout=120, headers=utils.headers)
-            r.raise_for_status()
-            markup = r.content
-        inner_urls = get_inner_urls(url, markup, include=args.include, exclude=args.exclude)
-
-        if args.download:
-            for inner_url in inner_urls:
-                utils.download_url(inner_url)
-        else:
-            pipe_print("\n".join(inner_urls))
+        utils.load_selenium(args)
 
     if args.file:
         with open(args.file) as f:
             for line in f:
-                process_url(line)
+                found_urls = from_url(args, line)
+                print_or_download(args, found_urls)
     else:
         for path in args.paths:
-            process_url(path)
+            found_urls = from_url(args, path)
+            print_or_download(args, found_urls)
 
     if args.scroll:
-        driver.quit()
+        args.driver.quit()
 
 
 if __name__ == "__main__":

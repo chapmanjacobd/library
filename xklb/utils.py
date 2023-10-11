@@ -1,9 +1,9 @@
-import argparse, csv, functools, glob, hashlib, html, json, logging, math, multiprocessing, os, platform, random, re, shlex, shutil, signal, string, subprocess, sys, tempfile, textwrap, time, urllib.error, urllib.request
+import argparse, csv, functools, glob, hashlib, html, json, logging, math, multiprocessing, os, platform, random, re, shlex, shutil, signal, string, subprocess, sys, tempfile, textwrap, time, urllib.error, urllib.parse, urllib.request
 from ast import literal_eval
 from collections import Counter
 from collections.abc import Iterable
 from copy import deepcopy
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 from pathlib import Path
 from shutil import which
@@ -688,6 +688,10 @@ def history_sort(args, media) -> List[Dict]:
     return media
 
 
+def to_timestamp(dt_object):
+    return int(dt_object.replace(tzinfo=timezone.utc).timestamp())
+
+
 def dict_filter_bool(kwargs, keep_0=True) -> Optional[dict]:
     if kwargs is None:
         return None
@@ -924,7 +928,7 @@ def col_naturaldate(tbl: List[Dict], col: str) -> List[Dict]:
             if val == 0:
                 tbl[idx][col] = None
             else:
-                tbl[idx][col] = humanize.naturaldate(datetime.fromtimestamp(val))
+                tbl[idx][col] = humanize.naturaldate(datetime.fromtimestamp(val, timezone.utc))
 
     return tbl
 
@@ -937,7 +941,7 @@ def col_naturaltime(tbl: List[Dict], col: str) -> List[Dict]:
             if val == 0:
                 tbl[idx][col] = None
             else:
-                tbl[idx][col] = humanize.naturaltime(datetime.fromtimestamp(val))
+                tbl[idx][col] = humanize.naturaltime(datetime.fromtimestamp(val, timezone.utc))
 
     return tbl
 
@@ -1776,6 +1780,50 @@ class ChocolateChip:
             raise urllib.error.HTTPError(url, response.getcode(), response_data, response.headers, None)
         response.close()
         return response_data
+
+
+def requests_authed_get(args, url) -> bytes:
+    if args.cookies or args.cookies_from_browser:
+        if not hasattr(args, "authed_web"):
+            args.authed_web = ChocolateChip(args)
+        return args.authed_web.get(url)
+    else:
+        response = requests_session().get(url, timeout=60)
+        response.raise_for_status()
+        return response.content
+
+
+def download_embeds(args, soup):
+    for img in soup.find_all("img"):
+        local_path = Path.cwd() / "images"
+        local_path.mkdir(exist_ok=True)
+        local_path = local_path / Path(urllib.parse.unquote(img["src"])).name
+
+        data = requests_authed_get(args, img["src"])
+        with open(local_path, "wb") as f:
+            f.write(data)
+
+        img["src"] = local_path.relative_to(Path.cwd())  # Update image source to point to local file
+
+
+def find_date(soup):
+    import dateutil.parser
+
+    for text in soup.find_all(text=True):
+        try:
+            date = dateutil.parser.parse(text)
+            return date
+        except ValueError:
+            pass
+
+
+def load_selenium(args):
+    from selenium import webdriver
+
+    if which("firefox"):
+        args.driver = webdriver.Firefox()
+    else:
+        args.driver = webdriver.Chrome()
 
 
 class FFProbe:

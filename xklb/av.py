@@ -215,7 +215,7 @@ def munge_av_tags(args, media, path) -> Optional[dict]:
         upload_date = tags.get("DATE")
         if upload_date:
             try:
-                upload_date = int(datetime.strptime(upload_date, "%Y%m%d").replace(tzinfo=timezone.utc).timestamp())
+                upload_date = utils.to_timestamp(datetime.strptime(upload_date, "%Y%m%d"))
             except Exception:
                 upload_date = None
 

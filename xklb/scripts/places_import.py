@@ -25,7 +25,7 @@ def google_maps_takeout(df):
     new_df = pd.DataFrame()
 
     new_df["path"] = df["Google Maps URL"]
-    new_df["time_modified"] = df["Updated"].apply(lambda x: int(x.to_pydatetime().timestamp()))
+    new_df["time_modified"] = df["Updated"].apply(lambda x: utils.to_timestamp(x.to_pydatetime()))
     new_df["time_downloaded"] = consts.APPLICATION_START
     new_df["title"] = df["Title"].fillna(df["Location"].apply(lambda x: x.get("Business Name")))
 

@@ -87,7 +87,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.2.109)
+    xk media library subcommands (v2.2.110)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -125,6 +125,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
       lb redditupdate          Fetch new posts from saved subreddits
 
       lb tildes                Backup tildes comments and topics
+      lb substack              Backup substack articles
 
       lb merge-online-local    Merge local and online metadata
 
@@ -522,6 +523,16 @@ Explore `library` databases in your browser
     Without cookies you are limited to the first page. You can use cookies like this:
         https://github.com/rotemdan/ExportCookies
         library tildes tildes.net.db xk3 --cookies ~/Downloads/cookies-tildes-net.txt
+
+
+</details>
+
+<details><summary>Backup substack articles</summary>
+
+    $ library substack -h
+    usage: library substack DATABASE PATH ...
+
+    Backup substack articles
 
 
 </details>
