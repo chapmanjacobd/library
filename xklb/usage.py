@@ -173,6 +173,11 @@ tildes = """library tildes DATABASE USER
         library tildes tildes.net.db xk3 --cookies ~/Downloads/cookies-tildes-net.txt
 """
 
+substack = """library substack DATABASE PATH ...
+
+    Backup substack articles
+"""
+
 
 def play(action) -> str:
     return f"""library {action} DATABASE [optional args]
@@ -1269,4 +1274,9 @@ reddit_selftext = """library reddit-selftext DATABASE
 mpv_watchlater = """library mpv-watchlater DATABASE [--watch-later-directory ~/.config/mpv/watch_later/]
 
     Extract timestamps from MPV to the history table
+"""
+
+export_text = """library export-text DATABASE
+
+    Generate HTML files from SQLite databases
 """

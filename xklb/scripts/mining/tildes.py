@@ -20,9 +20,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("username", help="Tildes.net user to extract comments for")
     args = parser.parse_args()
 
-    if args.cookies or args.cookies_from_browser:
-        args.authed_web = utils.ChocolateChip(args)
-
     Path(args.database).touch()
     args.db = db.connect(args)
     log.info(utils.dict_filter_bool(args.__dict__))
@@ -30,13 +27,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def save_page(args, url):
-    if args.cookies or args.cookies_from_browser:
-        text = args.authed_web.get(url)
-    else:
-        response = utils.requests_session().get(url, timeout=60)
-        response.raise_for_status()
-        text = response.text
-
+    text = utils.requests_authed_get(args, url)
     soup = BeautifulSoup(text, "html.parser")
 
     comment_elements = soup.find_all("article", class_="comment")
@@ -47,12 +38,12 @@ def save_page(args, url):
         comment = {
             "path": "https://tildes.net" + comment_element.find("a", class_="comment-nav-link")["href"],
             "parent_path": "https://tildes.net" + parent_path_element["href"] if parent_path_element else None,
-            "time_created": int(
+            "time_created": utils.to_timestamp(
                 datetime.fromisoformat(
                     comment_element.find("time", class_="comment-posted-time")["datetime"][:-1],
-                ).timestamp(),
+                )
             ),
-            "time_modified": int(datetime.fromisoformat(edited_time_element["datetime"][:-1]).timestamp())
+            "time_modified": utils.to_timestamp(datetime.fromisoformat(edited_time_element["datetime"][:-1]))
             if edited_time_element
             else None,
             "score": int(score_element.text.split()[0]) if score_element else 0,
@@ -95,7 +86,7 @@ def save_page(args, url):
         time_published = None
         if published_date_element:
             published_date = published_date_element.get_text("\n", strip=True).split()[-1]
-            time_published = int(parser.parse(published_date).replace(tzinfo=timezone.utc).timestamp())
+            time_published = utils.to_timestamp(parser.parse(published_date))
 
         num_words = None
         if article_words_element:
@@ -107,10 +98,10 @@ def save_page(args, url):
             "path": path,
             "path_parent": topic_source,
             "topic_group": topic_group,
-            "time_created": int(
+            "time_created": utils.to_timestamp(
                 datetime.fromisoformat(
                     topic_element.find("time", class_="time-responsive")["datetime"][:-1],
-                ).timestamp(),
+                ),
             ),
             "time_published": time_published,
             "score": int(score_element.text.split()[0]) if score_element else 0,

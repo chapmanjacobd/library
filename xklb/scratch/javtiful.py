@@ -1,4 +1,5 @@
 import argparse, time
+from pathlib import Path
 
 from xklb import utils
 
@@ -27,13 +28,15 @@ def javtiful() -> None:
         options.set_preference("media.volume_scale", "0.0")
         driver = webdriver.Firefox(options=options)
         try:
-            driver.install_addon("/home/xk/Downloads/ublock_origin-1.51.0.xpi")
+            driver.install_addon(str(Path("~/.local/lib/ublock_origin.xpi").expanduser().resolve()))
 
             driver.get(url)
             driver.implicitly_wait(5)
 
-            title = driver.find_element(By.CSS_SELECTOR, "h1.video-title").text.replace("/", "-")
-            output_path = utils.clean_path(f"/mnt/d/69_Taxes/javtiful/{title}.mp4".encode(), max_name_len=255)
+            title = driver.find_element(By.CSS_SELECTOR, "h1.video-title").text.replace("/", "-").replace("\\", "-")
+            target_dir = Path.cwd() / "javtiful"
+            target_dir.mkdir(exist_ok=True)
+            output_path = utils.clean_path(bytes(target_dir / f"{title}.mp4"), max_name_len=255)
 
             stream_btn = driver.find_element(By.CLASS_NAME, "x-video-btn")
             stream_btn.click()

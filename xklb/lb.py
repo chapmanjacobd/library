@@ -18,6 +18,7 @@ from xklb.scripts.dedupe_czkawka import czkawka_dedupe
 from xklb.scripts.dedupe_db import dedupe_db
 from xklb.scripts.disk_usage import disk_usage
 from xklb.scripts.download_status import download_status
+from xklb.scripts.export_text import export_text
 from xklb.scripts.history import history
 from xklb.scripts.merge_dbs import merge_dbs
 from xklb.scripts.merge_online_local import merge_online_local
@@ -26,6 +27,7 @@ from xklb.scripts.mining.mpv_watchlater import mpv_watchlater
 from xklb.scripts.mining.nouns import nouns
 from xklb.scripts.mining.pushshift import pushshift_extract
 from xklb.scripts.mining.reddit_selftext import reddit_selftext
+from xklb.scripts.mining.substack import substack
 from xklb.scripts.mining.tildes import tildes
 from xklb.scripts.move_list import move_list
 from xklb.scripts.optimize_db import optimize_db
@@ -83,6 +85,7 @@ def usage() -> str:
       lb redditupdate          Fetch new posts from saved subreddits
 
       lb tildes                Backup tildes comments and topics
+      lb substack              Backup substack articles
 
       lb merge-online-local    Merge local and online metadata
 
@@ -226,6 +229,11 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
 
     subp_tildes = add_parser(subparsers, "tildes")
     subp_tildes.set_defaults(func=tildes)
+    subp_substack = add_parser(subparsers, "substack")
+    subp_substack.set_defaults(func=substack)
+
+    subp_export_text = add_parser(subparsers, "export-text")
+    subp_export_text.set_defaults(func=export_text)
 
     subp_hnadd = add_parser(subparsers, "hnadd")
     subp_hnadd.set_defaults(func=hacker_news_add)

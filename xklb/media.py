@@ -62,10 +62,10 @@ def consolidate(v: dict) -> Optional[dict]:
     )
     if upload_date:
         if isinstance(upload_date, datetime):
-            upload_date = int(upload_date.replace(tzinfo=timezone.utc).timestamp())
+            upload_date = utils.to_timestamp(upload_date)
         else:
             try:
-                upload_date = int(parser.parse(upload_date).replace(tzinfo=timezone.utc).timestamp())
+                upload_date = utils.to_timestamp(parser.parse(upload_date))
             except Exception:
                 upload_date = None
 
