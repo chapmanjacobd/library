@@ -131,6 +131,9 @@ def media_exists(args, playlist_path, path) -> bool:
 
 
 def decrease_update_delay(args, playlist_path: str) -> None:
+    if "playlists" not in args.db.table_names():
+        return
+
     try:
         with args.db.conn:
             args.db.conn.execute(
@@ -153,6 +156,9 @@ def decrease_update_delay(args, playlist_path: str) -> None:
 
 
 def increase_update_delay(args, playlist_path: str) -> None:
+    if "playlists" not in args.db.table_names():
+        return
+
     try:
         with args.db.conn:
             args.db.conn.execute(
