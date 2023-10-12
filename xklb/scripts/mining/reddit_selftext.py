@@ -2,7 +2,7 @@ import argparse, html
 from typing import Set, Tuple
 from urllib.parse import urlparse
 
-from xklb import db, media, usage
+from xklb import db, db_media, usage
 from xklb.utils import log_utils, objects
 from xklb.utils.log_utils import log
 
@@ -64,7 +64,7 @@ def reddit_selftext() -> None:
                 log.info(i_link)
 
         for e_link in external_links:
-            media.add(args, {**d, "path": e_link, "webpage": d["path"]})
+            db_media.add(args, {**d, "path": e_link, "webpage": d["path"]})
 
 
 if __name__ == "__main__":

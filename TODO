@@ -21,8 +21,6 @@ Wikimedia commons
 
 Carel Adolph Lion Cachet
 
-- organize util functions by data type
-
 - speed up queries:
 
 1. do joins in python (this is kinda sketchy for the DBA in me but I think it will ultimately be good. SQLite only uses one index per query so I will have more ability to control which indexes get used per subquery.)

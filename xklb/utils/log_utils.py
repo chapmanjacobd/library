@@ -47,6 +47,9 @@ def argparse_log() -> logging.Logger:
     return logging.getLogger()
 
 
+log = argparse_log()
+
+
 class Timer:
     def __init__(self):
         self.reset()
@@ -61,6 +64,3 @@ class Timer:
         elapsed_time = end_time - self.start_time
         self.reset()
         return f"{elapsed_time:.4f}"
-
-
-log = argparse_log()

@@ -1,7 +1,7 @@
 import argparse
 from pathlib import Path
 
-from xklb import consts, db, media, usage
+from xklb import consts, db, db_media, usage
 from xklb.utils import nums, objects
 from xklb.utils.log_utils import log
 
@@ -61,7 +61,7 @@ def places_import() -> None:
 
         data = df.to_dict(orient="records")
         for d in data:
-            media.add(args, objects.dict_filter_bool(d))
+            db_media.add(args, objects.dict_filter_bool(d))
 
 
 if __name__ == "__main__":

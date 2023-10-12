@@ -4,8 +4,9 @@ from unittest import mock
 
 import pytest
 
-from xklb import av, consts
+from xklb import consts
 from xklb.scripts import scatter
+from xklb.media import av
 from xklb.utils import iterables, mpv_utils, nums, objects, path_utils, printing, sql_utils, strings
 
 

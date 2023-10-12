@@ -7,8 +7,9 @@ from shutil import which
 from timeit import default_timer as timer
 from typing import Dict, List, Optional
 
-from xklb import av, books, consts, db, player, playlists, usage
+from xklb import consts, db, db_playlists, player, usage
 from xklb.consts import SC, DBType
+from xklb.media import av, books
 from xklb.utils import arg_utils, iterables, objects
 from xklb.utils.log_utils import log
 
@@ -324,7 +325,7 @@ def scan_path(args, path_str: str) -> int:
         "extractor_config": objects.filter_namespace(args, ["ocr", "speech_recognition", "scan_subtitles"]),
         "time_deleted": 0,
     }
-    args.playlist_id = playlists.add(args, str(path), info, check_subpath=True)
+    args.playlist_id = db_playlists.add(args, str(path), info, check_subpath=True)
 
     print(f"[{path}] Building file list...")
     new_files = find_new_files(args, path)

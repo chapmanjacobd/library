@@ -2,7 +2,7 @@ import argparse, sys
 from pathlib import Path
 
 from xklb import db, usage
-from xklb.praw_extract import slim_post_data
+from xklb.reddit_extract import slim_post_data
 from xklb.utils import objects, printing
 from xklb.utils.log_utils import log
 

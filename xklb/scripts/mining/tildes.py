@@ -6,7 +6,7 @@ from time import sleep
 from bs4 import BeautifulSoup
 from dateutil import parser
 
-from xklb import db, media, usage
+from xklb import db, db_media, usage
 from xklb.utils import nums, objects, web
 from xklb.utils.log_utils import log
 
@@ -50,7 +50,7 @@ def save_page(args, url):
             "score": int(score_element.text.split()[0]) if score_element else 0,
             "text": "".join(str(el) for el in comment_element.find("div", class_="comment-text").contents),
         }
-        media.add(args, comment)
+        db_media.add(args, comment)
 
     topic_elements = soup.find_all("article", class_="topic")
     for topic_element in topic_elements:
@@ -113,7 +113,7 @@ def save_page(args, url):
             "title": topic_title_element.get_text("\n", strip=True),
             "text": "".join(str(el) for el in text_element.contents) if text_element else None,
         }
-        media.add(args, topic)
+        db_media.add(args, topic)
 
     main_element = soup.find("main")
     if main_element:

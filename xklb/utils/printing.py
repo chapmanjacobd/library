@@ -16,6 +16,49 @@ def print_overwrite(text):
         print(text)
 
 
+def pipe_print(x) -> None:
+    try:
+        print(x, flush=True)
+    except BrokenPipeError:
+        sys.stdout = None
+        sys.exit(141)
+
+
+def pipe_lines(x) -> None:
+    try:
+        sys.stdout.writelines(x)
+    except BrokenPipeError:
+        sys.stdout = None
+        sys.exit(141)
+
+
+def write_csv_to_stdout(data):
+    fieldnames = data[0].keys()
+    writer = csv.DictWriter(sys.stdout, fieldnames=fieldnames)
+    writer.writeheader()
+    writer.writerows(data)
+
+
+def human_time(seconds) -> str:
+    if seconds is None or math.isnan(seconds) or seconds == 0:
+        return ""
+
+    test = humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="minutes", format="%0.0f")
+
+    PRECISION_YEARS = 3
+    if len(test.split(",")) >= PRECISION_YEARS:
+        return humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="hours", format="%0.0f")
+
+    PRECISION_MONTHS = 2
+    if len(test.split(",")) >= PRECISION_MONTHS:
+        return humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="hours", format="%0.0f")
+
+    if int(seconds) > 10 * 60:
+        return humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="minutes", format="%0.0f")
+
+    return humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="seconds", format="%0.0f")
+
+
 def path_fill(text, percent=None, width=None):
     if percent:
         width = max(10, int(percent * (consts.TERMINAL_SIZE.columns / 80)))
@@ -88,26 +131,6 @@ def col_naturalsize(tbl: List[Dict], col: str) -> List[Dict]:
                 tbl[idx][col] = humanize.naturalsize(tbl[idx][col])
 
     return tbl
-
-
-def human_time(seconds) -> str:
-    if seconds is None or math.isnan(seconds) or seconds == 0:
-        return ""
-
-    test = humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="minutes", format="%0.0f")
-
-    PRECISION_YEARS = 3
-    if len(test.split(",")) >= PRECISION_YEARS:
-        return humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="hours", format="%0.0f")
-
-    PRECISION_MONTHS = 2
-    if len(test.split(",")) >= PRECISION_MONTHS:
-        return humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="hours", format="%0.0f")
-
-    if int(seconds) > 10 * 60:
-        return humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="minutes", format="%0.0f")
-
-    return humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="seconds", format="%0.0f")
 
 
 def col_duration(tbl: List[Dict], col: str) -> List[Dict]:
@@ -184,26 +207,3 @@ def col_hhmmss(tbl: List[Dict], col: str) -> List[Dict]:
         if tbl[idx].get(col) is not None:
             tbl[idx][col] = seconds_to_hhmmss(tbl[idx][col])
     return tbl
-
-
-def pipe_print(x) -> None:
-    try:
-        print(x, flush=True)
-    except BrokenPipeError:
-        sys.stdout = None
-        sys.exit(141)
-
-
-def pipe_lines(x) -> None:
-    try:
-        sys.stdout.writelines(x)
-    except BrokenPipeError:
-        sys.stdout = None
-        sys.exit(141)
-
-
-def write_csv_to_stdout(data):
-    fieldnames = data[0].keys()
-    writer = csv.DictWriter(sys.stdout, fieldnames=fieldnames)
-    writer.writeheader()
-    writer.writerows(data)
