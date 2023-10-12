@@ -3,8 +3,9 @@ from collections import OrderedDict
 from os.path import commonprefix
 from pathlib import Path
 
-from xklb import usage, utils
-from xklb.utils import log
+from xklb import usage
+from xklb.utils import objects, processes
+from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
@@ -16,7 +17,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("dest", help="destination directory")
     args = parser.parse_args()
 
-    log.info(utils.dict_filter_bool(args.__dict__))
+    log.info(objects.dict_filter_bool(args.__dict__))
     return args
 
 
@@ -46,7 +47,7 @@ def _relmv(args, sources, dest):
         except OSError as e:
             if e.errno == 18:  # cross-device move
                 log.info("%s ->d %s", abspath, target_dir)
-                utils.cmd_interactive("mv", abspath, target_dir)
+                processes.cmd_interactive("mv", abspath, target_dir)
             elif e.errno == 39:  # target dir not empty
                 log.info("%s ->m %s", abspath, dest)
                 _relmv(args, abspath.glob("*"), dest)

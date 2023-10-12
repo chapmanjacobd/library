@@ -1,13 +1,14 @@
 import argparse, sqlite3
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
 from dateutil import parser
 
-from xklb import consts, db, fs_extract, utils
+from xklb import consts, db, fs_extract
 from xklb.consts import DBType
-from xklb.utils import combine, log, safe_unpack
+from xklb.utils import iterables, nums, objects, strings
+from xklb.utils.log_utils import log
 
 
 def exists(args, path) -> bool:
@@ -50,9 +51,9 @@ def consolidate(v: dict) -> Optional[dict]:
     if v.get("title") in ("[Deleted video]", "[Private video]"):
         return None
 
-    v = utils.flatten_dict(v, passthrough_keys=["automatic_captions", "http_headers", "subtitles"])
+    v = objects.flatten_dict(v, passthrough_keys=["automatic_captions", "http_headers", "subtitles"])
 
-    upload_date = safe_unpack(
+    upload_date = iterables.safe_unpack(
         v.pop("upload_date", None),
         v.pop("release_date", None),
         v.pop("date", None),
@@ -62,16 +63,16 @@ def consolidate(v: dict) -> Optional[dict]:
     )
     if upload_date:
         if isinstance(upload_date, datetime):
-            upload_date = utils.to_timestamp(upload_date)
+            upload_date = nums.to_timestamp(upload_date)
         else:
             try:
-                upload_date = utils.to_timestamp(parser.parse(upload_date))
+                upload_date = nums.to_timestamp(parser.parse(upload_date))
             except Exception:
                 upload_date = None
 
     cv = {}
     cv["playlist_id"] = v.pop("playlist_id", None)
-    cv["webpath"] = safe_unpack(
+    cv["webpath"] = iterables.safe_unpack(
         v.pop("webpath", None),
         v.pop("webpage_url", None),
         v.pop("url", None),
@@ -79,8 +80,8 @@ def consolidate(v: dict) -> Optional[dict]:
         v.pop("post_url", None),
         v.pop("image_permalink", None),
     )
-    cv["path"] = safe_unpack(v.pop("path", None), v.pop("local_path", None), cv["webpath"])
-    size_bytes = safe_unpack(v.pop("filesize_approx", None), v.pop("size", None))
+    cv["path"] = iterables.safe_unpack(v.pop("path", None), v.pop("local_path", None), cv["webpath"])
+    size_bytes = iterables.safe_unpack(v.pop("filesize_approx", None), v.pop("size", None))
     cv["size"] = 0 if not size_bytes else int(size_bytes)
     duration = v.pop("duration", None)
     cv["duration"] = 0 if not duration else int(duration)
@@ -90,7 +91,7 @@ def consolidate(v: dict) -> Optional[dict]:
     cv["time_deleted"] = 0
     cv["time_downloaded"] = 0
     language = v.pop("language", None)
-    cv["tags"] = combine(
+    cv["tags"] = strings.combine(
         "language:" + language if language else None,
         v.pop("description", None),
         v.pop("caption", None),
@@ -101,11 +102,11 @@ def consolidate(v: dict) -> Optional[dict]:
         v.pop("labels", None),
     )
 
-    cv["latitude"] = safe_unpack(
+    cv["latitude"] = iterables.safe_unpack(
         v.pop("latitude", None),
         v.pop("lat", None),
     )
-    cv["longitude"] = safe_unpack(
+    cv["longitude"] = iterables.safe_unpack(
         v.pop("longitude", None),
         v.pop("long", None),
         v.pop("lng", None),
@@ -113,19 +114,19 @@ def consolidate(v: dict) -> Optional[dict]:
 
     # extractor_key should only be in playlist table
     cv["extractor_id"] = v.pop("id", None)
-    cv["title"] = safe_unpack(v.pop("title", None), v.get("playlist_title"))
+    cv["title"] = iterables.safe_unpack(v.pop("title", None), v.get("playlist_title"))
     cv["width"] = v.pop("width", None)
     cv["height"] = v.pop("height", None)
     fps = v.pop("fps", None)
     cv["fps"] = 0 if not fps else int(fps)
     cv["live_status"] = v.pop("live_status", None)
-    cv["age_limit"] = safe_unpack(
+    cv["age_limit"] = iterables.safe_unpack(
         v.pop("age_limit", None),
         18 if v.pop("is_mature", None) or v.pop("is_nsfw", None) else 0,
     )
 
     account = v.pop("account", None) or {}
-    cv["uploader"] = safe_unpack(
+    cv["uploader"] = iterables.safe_unpack(
         v.pop("channel_id", None),
         v.pop("uploader_url", None),
         v.pop("channel_url", None),
@@ -144,19 +145,19 @@ def consolidate(v: dict) -> Optional[dict]:
         v.pop("playlist_uploader", None),
     )
 
-    cv["view_count"] = utils.safe_unpack(
+    cv["view_count"] = iterables.safe_unpack(
         v.pop("view_count", None),
     )
-    cv["num_comments"] = utils.safe_unpack(
+    cv["num_comments"] = iterables.safe_unpack(
         v.pop("replies", None),
     )
-    cv["favorite_count"] = utils.safe_sum(
+    cv["favorite_count"] = iterables.safe_sum(
         v.pop("favorite_count", None),
         v.pop("likes", None),
         v.pop("note_count", None),
         v.pop("point_count", None),
     )
-    cv["score"] = safe_unpack(v.pop("score", None))
+    cv["score"] = iterables.safe_unpack(v.pop("score", None))
     cv["upvote_ratio"] = v.pop("average_rating", None)
     if v.get("upvote_count") and v.get("upvote_count"):
         upvote_count = v.pop("upvote_count")
@@ -172,7 +173,7 @@ def consolidate(v: dict) -> Optional[dict]:
         log.info("Extra media data %s", v)
         # breakpoint()
 
-    return utils.dict_filter_bool(cv)
+    return objects.dict_filter_bool(cv)
 
 
 def add(args, entry):
@@ -189,9 +190,9 @@ def add(args, entry):
         if media_id:
             entry["id"] = media_id
 
-            args.db["media"].upsert(utils.dict_filter_bool(entry), pk="id", alter=True)
+            args.db["media"].upsert(objects.dict_filter_bool(entry), pk="id", alter=True)
         else:
-            args.db["media"].insert(utils.dict_filter_bool(entry), pk="id", alter=True)
+            args.db["media"].insert(objects.dict_filter_bool(entry), pk="id", alter=True)
             media_id = args.db.pop("select id from media where path = ?", [entry["path"]])
     except sqlite3.IntegrityError:
         log.error("media_id %s: %s", media_id, entry)
@@ -240,7 +241,7 @@ def download_add(
             check_corrupt=0.0,
             delete_corrupt=None,
         )
-        fs_tags = utils.dict_filter_bool(fs_extract.extract_metadata(fs_args, local_path), keep_0=False) or {}
+        fs_tags = objects.dict_filter_bool(fs_extract.extract_metadata(fs_args, local_path), keep_0=False) or {}
         fs_extract.clean_up_temp_dirs()
     else:
         fs_tags = {"time_modified": consts.now()}

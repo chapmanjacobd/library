@@ -2,8 +2,9 @@ import argparse, os
 from pathlib import Path
 from typing import Dict, List
 
-from xklb import consts, db, player, usage, utils
-from xklb.utils import log
+from xklb import consts, db, player, usage
+from xklb.utils import file_utils, nums, objects, processes, sql_utils
+from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
@@ -37,15 +38,15 @@ def parse_args() -> argparse.Namespace:
         args.include = [str(Path().cwd().resolve())]
 
     if len(args.include) == 1 and os.sep in args.include[0]:
-        args.include = [utils.resolve_absolute_path(args.include[0])]
+        args.include = [file_utils.resolve_absolute_path(args.include[0])]
 
     args.sort_by = " ".join(args.sort_by)
 
     if args.size:
-        args.size = utils.parse_human_to_sql(utils.human_to_bytes, "size", args.size)
+        args.size = sql_utils.parse_human_to_sql(nums.human_to_bytes, "size", args.size)
 
     args.action = consts.SC.diskusage
-    log.info(utils.dict_filter_bool(args.__dict__))
+    log.info(objects.dict_filter_bool(args.__dict__))
     return args
 
 
@@ -104,7 +105,7 @@ def load_subset(args):
         args.subset = get_subset(args, level=level, prefix=args.cwd)
 
     if not args.subset:
-        utils.no_media_found()
+        processes.no_media_found()
 
     args.cwd = os.sep.join(args.subset[0]["path"].split(os.sep)[: level - 1]) + os.sep
     return args.cwd, args.subset
@@ -138,7 +139,7 @@ def get_data(args) -> List[dict]:
     )
 
     if not media:
-        utils.no_media_found()
+        processes.no_media_found()
     return media
 
 

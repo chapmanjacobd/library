@@ -1,8 +1,9 @@
 import argparse
 from pathlib import Path
 
-from xklb import consts, db, media, usage, utils
-from xklb.utils import log
+from xklb import consts, db, media, usage
+from xklb.utils import nums, objects
+from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
@@ -15,7 +16,7 @@ def parse_args() -> argparse.Namespace:
     Path(args.database).touch()
     args.db = db.connect(args)
 
-    log.info(utils.dict_filter_bool(args.__dict__))
+    log.info(objects.dict_filter_bool(args.__dict__))
     return args
 
 
@@ -25,7 +26,7 @@ def google_maps_takeout(df):
     new_df = pd.DataFrame()
 
     new_df["path"] = df["Google Maps URL"]
-    new_df["time_modified"] = df["Updated"].apply(lambda x: utils.to_timestamp(x.to_pydatetime()))
+    new_df["time_modified"] = df["Updated"].apply(lambda x: nums.to_timestamp(x.to_pydatetime()))
     new_df["time_downloaded"] = consts.APPLICATION_START
     new_df["title"] = df["Title"].fillna(df["Location"].apply(lambda x: x.get("Business Name")))
 
@@ -60,7 +61,7 @@ def places_import() -> None:
 
         data = df.to_dict(orient="records")
         for d in data:
-            media.add(args, utils.dict_filter_bool(d))
+            media.add(args, objects.dict_filter_bool(d))
 
 
 if __name__ == "__main__":

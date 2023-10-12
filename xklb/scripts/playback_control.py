@@ -2,8 +2,9 @@ import argparse, platform, textwrap
 from copy import deepcopy
 from pathlib import Path
 
-from xklb import consts, utils
-from xklb.utils import cmd, log
+from xklb import consts
+from xklb.utils import file_utils, iterables, mpv_utils, nums, objects, printing, processes
+from xklb.utils.log_utils import log
 
 
 def parse_args(action) -> argparse.Namespace:
@@ -28,9 +29,9 @@ def parse_args(action) -> argparse.Namespace:
     parser.add_argument("--verbose", "-v", action="count", default=0)
     args = parser.parse_args()
 
-    args.mpv = utils.connect_mpv(args.mpv_socket)
+    args.mpv = mpv_utils.connect_mpv(args.mpv_socket)
 
-    log.info(utils.dict_filter_bool(args.__dict__))
+    log.info(objects.dict_filter_bool(args.__dict__))
 
     return args
 
@@ -46,7 +47,7 @@ def _now_playing(args) -> dict:
 
 def reformat_ffprobe(path):
     try:
-        probe = utils.FFProbe(path)
+        probe = processes.FFProbe(path)
     except Exception:
         log.exception(f"Failed reading header. {path}")
         return path
@@ -67,6 +68,9 @@ def reformat_ffprobe(path):
         "catalognumber",
         "isrc",
         "tsrc",
+        "asin",
+        "tlen",
+        "tmed",
         "label",
         "media",
     ]
@@ -85,12 +89,13 @@ def reformat_ffprobe(path):
         "vendor",
         "handler",
         "publisher",
+        "id3v2_priv",
     ]
 
     tags = {k: v for d in probe.streams + [probe.format] for k, v in d.get("tags", {}).items()}
 
     seen = set()
-    metadata = utils.lower_keys(tags)
+    metadata = objects.lower_keys(tags)
     for key, value in deepcopy(metadata).items():
         if key in excluded_keys or any(s in key for s in excluded_key_like) or value in seen or path in value:
             metadata.pop(key, None)
@@ -99,7 +104,7 @@ def reformat_ffprobe(path):
     comment = metadata.pop("comment", None) or ""
     if len(comment) < 15 and "cover" in comment.lower():
         comment = ""
-    description = utils.safe_unpack(
+    description = iterables.safe_unpack(
         metadata.pop("description", None),
         metadata.pop("synopsis", None),
         metadata.pop("unsynced lyrics", None),
@@ -112,35 +117,37 @@ def reformat_ffprobe(path):
         metadata.pop("albummood", None),
         comment if "http" not in comment else None,
     )
-    genre = utils.safe_unpack(
+    genre = iterables.safe_unpack(
         metadata.pop("genre", None),
         metadata.pop("albumgenre", None),
         metadata.pop("albumgrouping", None),
     )
-    artist = utils.safe_unpack(
+    artist = iterables.safe_unpack(
         metadata.pop("artist", None),
         metadata.pop("album_artist", None),
         metadata.pop("tso2", None),
         metadata.pop("performer", None),
+        metadata.pop("artists", None),
+        metadata.pop("composer", None),
     )
-    album = utils.safe_unpack(
+    album = iterables.safe_unpack(
         metadata.pop("album", None),
     )
-    track = utils.safe_unpack(
+    track = iterables.safe_unpack(
         metadata.pop("track", None),
     )
-    track_total = utils.safe_unpack(
+    track_total = iterables.safe_unpack(
         metadata.pop("tracktotal", None),
     )
-    title = utils.safe_unpack(
+    title = iterables.safe_unpack(
         metadata.pop("title", None),
     )
-    url = utils.safe_unpack(
+    url = iterables.safe_unpack(
         metadata.pop("purl", None),
         metadata.pop("url", None),
         comment if "http" in comment else None,
     )
-    date = utils.safe_unpack(
+    date = iterables.safe_unpack(
         metadata.pop("date", None),
         metadata.pop("time", None),
         metadata.pop("originalyear", None),
@@ -157,7 +164,7 @@ def reformat_ffprobe(path):
         formatted_output += f"Chapters: {len(probe.chapters)}\n"
 
     if description and not consts.MOBILE_TERMINAL:
-        description = utils.wrap_paragraphs(description.strip(), width=100)
+        description = printing.wrap_paragraphs(description.strip(), width=100)
         formatted_output += f" Details: {textwrap.indent(description, '          ').lstrip()}\n"
     if artist:
         formatted_output += f"  Artist: {artist}\n"
@@ -175,25 +182,25 @@ def reformat_ffprobe(path):
     if url:
         formatted_output += f"     URL: {url}\n"
 
-    duration = utils.safe_int(probe.format.get("duration")) or 0
+    duration = nums.safe_int(probe.format.get("duration")) or 0
     if duration > 0:
-        start = utils.safe_int(probe.format.get("start_time")) or 0
+        start = nums.safe_int(probe.format.get("start_time")) or 0
         if start > 0:
             total_duration = duration
-            end = utils.safe_int(probe.format.get("end_time")) or 0
+            end = nums.safe_int(probe.format.get("end_time")) or 0
             if end > 0:
                 duration = start - end
             else:
                 duration -= start
 
-            start_str = utils.seconds_to_hhmmss(start).strip()
-            total_duration_str = utils.seconds_to_hhmmss(total_duration).strip()
-            duration_str = utils.seconds_to_hhmmss(duration).strip()
+            start_str = printing.seconds_to_hhmmss(start).strip()
+            total_duration_str = printing.seconds_to_hhmmss(total_duration).strip()
+            duration_str = printing.seconds_to_hhmmss(duration).strip()
 
             formatted_output += f"Duration: {duration_str}"
             formatted_output += f"({total_duration_str}; starting at {start_str})\n"
         else:
-            duration_str = utils.seconds_to_hhmmss(duration).strip()
+            duration_str = printing.seconds_to_hhmmss(duration).strip()
             formatted_output += f"Duration: {duration_str}\n"
 
     # print(cmd("ffprobe", "-hide_banner", "-loglevel", "info", path).stderr)
@@ -257,21 +264,21 @@ def catt_stop(args) -> None:
     catt_device = []
     if args.chromecast_device:
         catt_device = ["-d", args.chromecast_device]
-    cmd("catt", *catt_device, "stop")
+    processes.cmd("catt", *catt_device, "stop")
 
 
 def catt_pause(args) -> None:
     catt_device = []
     if args.chromecast_device:
         catt_device = ["-d", args.chromecast_device]
-    cmd("catt", *catt_device, "play_toggle")
+    processes.cmd("catt", *catt_device, "play_toggle")
 
 
 def kill_process(name) -> None:
     if any(p in platform.system() for p in ("Windows", "_NT-", "MSYS")):
-        cmd("taskkill", "/f", "/im", name, strict=False)
+        processes.cmd("taskkill", "/f", "/im", name, strict=False)
     else:
-        cmd("pkill", "-f", name, strict=False)
+        processes.cmd("pkill", "-f", name, strict=False)
 
 
 def playback_stop() -> None:
@@ -313,10 +320,10 @@ def playback_next() -> None:
         Path(consts.CAST_NOW_PLAYING).unlink(missing_ok=True)
         catt_stop(args)
         if args.delete:
-            utils.trash(playing["catt"])
+            file_utils.trash(playing["catt"])
 
     if playing["mpv"]:
         args.mpv.command("playlist_next", "force")
         args.mpv.terminate()
         if args.delete:
-            utils.trash(playing["mpv"])
+            file_utils.trash(playing["mpv"])

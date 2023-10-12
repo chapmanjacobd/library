@@ -21,8 +21,6 @@ Wikimedia commons
 
 Carel Adolph Lion Cachet
 
-- automatic photo essay generator using cluster-sort
-
 - organize util functions by data type
 
 - speed up queries:
@@ -39,9 +37,12 @@ Carel Adolph Lion Cachet
 
  - cluster images
 
+    https://github.com/zhjohnchan/awesome-image-captioning#popular-implementations
     https://github.com/rhsimplex/image-match/blob/master/image_match/goldberg.py
     https://github.com/HughKu/Im2txt
     https://github.com/immich-app/immich/tree/main/machine-learning/app
+
+- automatic photo essay generator using cluster-sort
 
 - todo recursive todo management, fortune cookie style
 
@@ -56,7 +57,6 @@ Carel Adolph Lion Cachet
 - CLI city abacus
 
 - CLI UNLI Neighborhoods
-https://indigo.re/feed.xml
 
 - POIs CLI -- save your trip plans and see places to go with automated day trip itineraries, geopandas buffer
 

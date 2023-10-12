@@ -1,4 +1,5 @@
-import argparse, random, sys, tempfile
+import argparse, math, random, sys, tempfile
+from collections import Counter
 from pathlib import Path
 from statistics import median
 from typing import Dict, List, Tuple, Union
@@ -6,8 +7,9 @@ from typing import Dict, List, Tuple, Union
 from humanize import naturalsize
 from tabulate import tabulate
 
-from xklb import consts, db, usage, utils
-from xklb.utils import log
+from xklb import consts, db, usage
+from xklb.utils import devices, file_utils, iterables, objects, printing
+from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
@@ -55,10 +57,10 @@ def parse_args() -> argparse.Namespace:
         msg = "Without targets defined the only meaningful policies are: `rand` or `used`"
         raise ValueError(msg)
 
-    args.relative_paths = utils.resolve_absolute_paths(args.relative_paths)
-    args.targets = utils.resolve_absolute_paths(args.targets)
+    args.relative_paths = file_utils.resolve_absolute_paths(args.relative_paths)
+    args.targets = file_utils.resolve_absolute_paths(args.targets)
 
-    log.info(utils.dict_filter_bool(args.__dict__))
+    log.info(objects.dict_filter_bool(args.__dict__))
     return args
 
 
@@ -117,11 +119,11 @@ def get_path_stats(args, data) -> List[Dict]:
 
 
 def print_path_stats(tbl) -> None:
-    tbl = utils.list_dict_filter_bool(tbl, keep_0=False)
-    tbl = utils.col_naturalsize(tbl, "total_size")
-    tbl = utils.col_naturalsize(tbl, "median_size")
+    tbl = iterables.list_dict_filter_bool(tbl, keep_0=False)
+    tbl = printing.col_naturalsize(tbl, "total_size")
+    tbl = printing.col_naturalsize(tbl, "median_size")
     for t in consts.EPOCH_COLUMNS:
-        utils.col_naturaldate(tbl, t)
+        printing.col_naturaldate(tbl, t)
 
     print(tabulate(tbl, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False))
 
@@ -136,7 +138,7 @@ def rebin_files(args, disk_stats, all_files) -> Tuple[List, List]:
     read_only_mounts = [
         s for s in args.relative_paths if Path(s).is_absolute() and not any(m in s for m in args.targets)
     ]
-    for disk_stat in utils.get_mount_stats(read_only_mounts):
+    for disk_stat in devices.get_mount_stats(read_only_mounts):
         disk_files = [d for d in all_files if d["path"].startswith(disk_stat["mount"])]
         to_rebin.extend({"mount": disk_stat["mount"], **file} for file in disk_files)
 
@@ -208,6 +210,34 @@ def get_rel_stats(parents, files) -> List[Dict[str, Union[float, str]]]:
     ]
 
 
+def rebin_folders(paths, max_files_per_folder=16000):
+    parent_counts = Counter(Path(p).parent for p in paths)
+    rebinned_tuples = []
+    untouched = []
+    parent_index = {}
+    parent_current_count = {}
+
+    for p in paths:
+        path = Path(p)
+        parent = path.parent
+        if parent_counts[parent] > max_files_per_folder:
+            if parent not in parent_index:
+                parent_index[parent] = 1
+                parent_current_count[parent] = 0
+
+            min_len = math.floor(parent_counts[parent] / max_files_per_folder)
+            rebinned_tuples.append((p, str(parent / str(parent_index[parent]).zfill(len(str(min_len))) / path.name)))
+            parent_current_count[parent] += 1
+
+            _quotient, remainder = divmod(parent_current_count[parent], max_files_per_folder)
+            if remainder == 0:
+                parent_index[parent] += 1
+        else:
+            untouched.append(p)
+
+    return untouched, rebinned_tuples
+
+
 def scatter() -> None:
     args = parse_args()
 
@@ -215,23 +245,23 @@ def scatter() -> None:
 
     if args.max_files_per_folder:
         paths = [d["path"] for d in files]
-        untouched, rebinned = utils.rebin_folders(paths, args.max_files_per_folder)
+        untouched, rebinned = rebin_folders(paths, args.max_files_per_folder)
 
         tbl = []
         for existing_path, new_path in rebinned:
             tbl.append({"existing_path": existing_path, "new_path": new_path})
             if len(tbl) > 10:
                 break
-        tbl = utils.col_resize_percent(tbl, "existing_path", 20)
-        tbl = utils.col_resize_percent(tbl, "new_path", 20)
+        tbl = printing.col_resize_percent(tbl, "existing_path", 20)
+        tbl = printing.col_resize_percent(tbl, "new_path", 20)
         print(tabulate(tbl, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False))
         print(len(rebinned), "files would be moved (only 10 shown)")
         print(len(untouched), "files would not be moved")
-        utils.move_files_bash(rebinned)
+        file_utils.move_files_bash(rebinned)
         sys.exit(0)
 
     if args.targets:
-        disk_stats = utils.get_mount_stats(args.targets)
+        disk_stats = devices.get_mount_stats(args.targets)
     else:
         log.warning(
             "targets were not provided (-m) so provided paths will only be compared with each other. This might not be what you want!!",

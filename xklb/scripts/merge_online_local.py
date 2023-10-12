@@ -2,10 +2,9 @@ import argparse
 from copy import deepcopy
 from typing import List
 
-from tabulate import tabulate
-
-from xklb import consts, db, media, player, usage, utils
-from xklb.utils import log
+from xklb import consts, db, media, player, usage
+from xklb.utils import devices, objects
+from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
@@ -15,7 +14,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--verbose", "-v", action="count", default=0)
     args = parser.parse_args()
     args.db = db.connect(args)
-    log.info(utils.dict_filter_bool(args.__dict__))
+    log.info(objects.dict_filter_bool(args.__dict__))
     return args
 
 
@@ -78,7 +77,7 @@ def merge_online_local() -> None:
     tbl = tbl[: int(args.limit)]
     player.media_printer(args, tbl, units="duplicates")
 
-    if duplicates and utils.confirm("Merge duplicates?"):  # type: ignore
+    if duplicates and devices.confirm("Merge duplicates?"):  # type: ignore
         log.info("Merging...")
 
         merged = []
@@ -100,7 +99,7 @@ def merge_online_local() -> None:
                 fs_tags["time_downloaded"] = consts.APPLICATION_START
 
             entry = {**tube_entry, **fs_tags, "webpath": webpath}
-            media.add(args, utils.dict_filter_bool(entry))  # type: ignore
+            media.add(args, objects.dict_filter_bool(entry))  # type: ignore
             with args.db.conn:
                 args.db.conn.execute("DELETE from media WHERE path = ?", [webpath])
             merged.append(webpath)

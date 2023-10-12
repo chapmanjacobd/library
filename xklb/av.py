@@ -1,12 +1,13 @@
-import fractions, json, subprocess
-from datetime import datetime, timezone
+import fractions, json, math, subprocess
+from datetime import datetime
 from typing import Dict, Optional
 
 import ffmpeg
 
-from xklb import consts, subtitle, utils
+from xklb import consts, subtitle
 from xklb.consts import DBType
-from xklb.utils import combine, log, safe_unpack
+from xklb.utils import file_utils, iterables, nums, objects, printing, processes, strings
+from xklb.utils.log_utils import log
 
 
 def get_subtitle_tags(args, path, streams, codec_types) -> dict:
@@ -39,14 +40,14 @@ def get_subtitle_tags(args, path, streams, codec_types) -> dict:
 
 def parse_tags(mu: Dict, ti: Dict) -> dict:
     tags = {
-        "mood": combine(
+        "mood": strings.combine(
             mu.get("albummood"),
             mu.get("MusicMatch_Situation"),
             mu.get("Songs-DB_Occasion"),
             mu.get("albumgrouping"),
         ),
-        "genre": combine(mu.get("genre"), ti.get("genre"), mu.get("albumgenre")),
-        "year": combine(
+        "genre": strings.combine(mu.get("genre"), ti.get("genre"), mu.get("albumgenre")),
+        "year": strings.combine(
             mu.get("originalyear"),
             mu.get("TDOR"),
             mu.get("TORY"),
@@ -55,25 +56,25 @@ def parse_tags(mu: Dict, ti: Dict) -> dict:
             mu.get("TDRL"),
             ti.get("year"),
         ),
-        "bpm": utils.safe_int(safe_unpack(mu.get("fBPM"), mu.get("bpm"), mu.get("bpm_start"))),
-        "key": safe_unpack(mu.get("TIT1"), mu.get("key"), mu.get("TKEY"), mu.get("key_start")),
-        "decade": safe_unpack(mu.get("Songs-DB_Custom1")),
-        "categories": safe_unpack(mu.get("Songs-DB_Custom2")),
-        "city": safe_unpack(mu.get("Songs-DB_Custom3")),
-        "country": combine(
+        "bpm": nums.safe_int(iterables.safe_unpack(mu.get("fBPM"), mu.get("bpm"), mu.get("bpm_start"))),
+        "key": iterables.safe_unpack(mu.get("TIT1"), mu.get("key"), mu.get("TKEY"), mu.get("key_start")),
+        "decade": iterables.safe_unpack(mu.get("Songs-DB_Custom1")),
+        "categories": iterables.safe_unpack(mu.get("Songs-DB_Custom2")),
+        "city": iterables.safe_unpack(mu.get("Songs-DB_Custom3")),
+        "country": strings.combine(
             mu.get("Songs-DB_Custom4"),
             mu.get("MusicBrainz Album Release Country"),
             mu.get("musicbrainz album release country"),
             mu.get("language"),
         ),
-        "description": combine(
+        "description": strings.combine(
             mu.get("description"),
             mu.get("lyrics"),
             ti.get("comment"),
         ),
-        "album": safe_unpack(ti.get("album"), mu.get("album")),
-        "title": safe_unpack(ti.get("title"), mu.get("title")),
-        "artist": combine(
+        "album": iterables.safe_unpack(ti.get("album"), mu.get("album")),
+        "title": iterables.safe_unpack(ti.get("title"), mu.get("title")),
+        "artist": strings.combine(
             ti.get("artist"),
             mu.get("artist"),
             mu.get("artists"),
@@ -93,12 +94,12 @@ def get_audio_tags(f) -> dict:
     from tinytag import TinyTag
 
     try:
-        tiny_tags = utils.dict_filter_bool(TinyTag.get(f).as_dict()) or {}
+        tiny_tags = objects.dict_filter_bool(TinyTag.get(f).as_dict()) or {}
     except Exception:
         tiny_tags = {}
 
     try:
-        mutagen_tags = utils.dict_filter_bool(mutagen.File(f).tags.as_dict()) or {}  # type: ignore
+        mutagen_tags = objects.dict_filter_bool(mutagen.File(f).tags.as_dict()) or {}  # type: ignore
     except Exception:
         mutagen_tags = {}
 
@@ -138,7 +139,7 @@ def decode_full_scan(path):
 
     if difference > 0.1:
         log.warning(
-            f"Metadata {utils.seconds_to_hhmmss(metadata_duration).strip()} does not match actual duration {utils.seconds_to_hhmmss(actual_duration).strip()} (diff {difference:.2f}s) {path}"
+            f"Metadata {printing.seconds_to_hhmmss(metadata_duration).strip()} does not match actual duration {printing.seconds_to_hhmmss(actual_duration).strip()} (diff {difference:.2f}s) {path}"
         )
 
     return percent_diff
@@ -158,16 +159,29 @@ def decode_quick_scan(path, scans, scan_duration=3):
     return fail_count / len(scans)
 
 
+def cover_scan(media_duration, scan_percentage):
+    num_scans = max(2, int(math.log(media_duration) * (scan_percentage / 10)))
+    scan_duration_total = max(1, media_duration * (scan_percentage / 100))
+    scan_duration = max(1, int(scan_duration_total / num_scans))
+    scan_interval = media_duration / num_scans
+
+    scans = sorted(set(int(scan * scan_interval) for scan in range(num_scans)))
+    if scans[-1] < media_duration - (scan_duration * 2):
+        scans.append(math.floor(media_duration - scan_duration))
+
+    return scans, scan_duration
+
+
 def munge_av_tags(args, media, path) -> Optional[dict]:
     try:
-        probe = utils.FFProbe(path)
+        probe = processes.FFProbe(path)
     except (KeyboardInterrupt, SystemExit) as sys_exit:
         raise SystemExit(130) from sys_exit
     except Exception as e:
         log.error(f"Failed reading header. {path}")
         log.debug(e)
-        if args.delete_unplayable and not utils.is_file_open(path):
-            utils.trash(path)
+        if args.delete_unplayable and not file_utils.is_file_open(path):
+            file_utils.trash(path)
         return None
 
     if not probe.format:
@@ -186,7 +200,7 @@ def munge_av_tags(args, media, path) -> Optional[dict]:
     format_.pop("start_time", None)
     format_.pop("filename", None)
 
-    duration = utils.safe_int(format_.pop("duration", None))
+    duration = nums.safe_int(format_.pop("duration", None))
     corruption = None
     if args.check_corrupt and args.check_corrupt > 0.0:
         if args.check_corrupt >= 100.0 and args.profile != DBType.video:
@@ -196,34 +210,34 @@ def munge_av_tags(args, media, path) -> Optional[dict]:
             except ffmpeg.Error:
                 log.warning(f"Data corruption found. {path}")
                 if args.delete_corrupt and not consts.PYTEST_RUNNING:
-                    utils.trash(path)
+                    file_utils.trash(path)
         else:
             if args.check_corrupt >= 100.0:
                 corruption = decode_full_scan(path)
             else:
-                corruption = decode_quick_scan(path, *utils.cover_scan(duration, args.check_corrupt))
+                corruption = decode_quick_scan(path, *cover_scan(duration, args.check_corrupt))
 
             DEFAULT_THRESHOLD = 0.02
             if corruption > DEFAULT_THRESHOLD:
                 log.warning(f"Data corruption found ({corruption:.2%}). {path}")
             if args.delete_corrupt and corruption > args.delete_corrupt:
                 if not consts.PYTEST_RUNNING:
-                    utils.trash(path)
+                    file_utils.trash(path)
 
     tags = format_.pop("tags", None)
     if tags:
         upload_date = tags.get("DATE")
         if upload_date:
             try:
-                upload_date = utils.to_timestamp(datetime.strptime(upload_date, "%Y%m%d"))
+                upload_date = nums.to_timestamp(datetime.strptime(upload_date, "%Y%m%d"))
             except Exception:
                 upload_date = None
 
-        tags = utils.dict_filter_bool(
+        tags = objects.dict_filter_bool(
             {
                 "title": tags.get("title"),
                 "webpath": tags.get("PURL"),
-                "description": combine(
+                "description": strings.combine(
                     tags.get("DESCRIPTION"),
                     tags.get("SYNOPSIS"),
                     tags.get("ARTIST"),
@@ -246,7 +260,7 @@ def munge_av_tags(args, media, path) -> Optional[dict]:
             return None
         return int(int(top) / bot)
 
-    fps = safe_unpack(
+    fps = iterables.safe_unpack(
         [
             parse_framerate(s.get("avg_frame_rate"))
             for s in streams
@@ -258,11 +272,13 @@ def munge_av_tags(args, media, path) -> Optional[dict]:
             if s.get("r_frame_rate") is not None and "/0" not in s.get("r_frame_rate")
         ],
     )
-    width = safe_unpack([s.get("width") for s in streams])
-    height = safe_unpack([s.get("height") for s in streams])
+    width = iterables.safe_unpack([s.get("width") for s in streams])
+    height = iterables.safe_unpack([s.get("height") for s in streams])
     codec_types = [s.get("codec_type") for s in streams]
     stream_tags = [s.get("tags") for s in streams if s.get("tags") is not None]
-    language = combine([t.get("language") for t in stream_tags if t.get("language") not in (None, "und", "unk")])
+    language = strings.combine(
+        [t.get("language") for t in stream_tags if t.get("language") not in (None, "und", "unk")]
+    )
 
     video_count = sum(1 for s in codec_types if s == "video")
     audio_count = sum(1 for s in codec_types if s == "audio")
@@ -273,7 +289,7 @@ def munge_av_tags(args, media, path) -> Optional[dict]:
         chapters = [
             {"time": int(float(d["start_time"])), "text": d["tags"]["title"]}
             for d in chapters
-            if "tags" in d and "title" in d["tags"] and not utils.is_generic_title(d["tags"]["title"])
+            if "tags" in d and "title" in d["tags"] and not strings.is_generic_title(d["tags"]["title"])
         ]
 
     media = {
@@ -286,7 +302,7 @@ def munge_av_tags(args, media, path) -> Optional[dict]:
         "fps": fps,
         "duration": 0 if not duration else int(float(duration)),
         "language": language,
-        "corruption": utils.safe_int(corruption),
+        "corruption": nums.safe_int(corruption),
         **(tags or {}),
         "chapters": chapters,
     }

@@ -1,9 +1,10 @@
 import argparse, sys
 from pathlib import Path
 
-from xklb import db, usage, utils
+from xklb import db, usage
 from xklb.praw_extract import slim_post_data
-from xklb.utils import log
+from xklb.utils import objects, printing
+from xklb.utils.log_utils import log
 
 try:
     import orjson
@@ -24,7 +25,7 @@ def parse_args(action, usage) -> argparse.Namespace:
     Path(args.database).touch()
     args.db = db.connect(args)
 
-    log.info(utils.dict_filter_bool(args.__dict__))
+    log.info(objects.dict_filter_bool(args.__dict__))
 
     return args
 
@@ -60,7 +61,7 @@ def pushshift_extract(args=None) -> None:
             log.warning("Skipping unreadable line: %s", line)
             continue
 
-        slim_dict = utils.dict_filter_bool(slim_post_data(post_dict, post_dict.get("subreddit")))
+        slim_dict = objects.dict_filter_bool(slim_post_data(post_dict, post_dict.get("subreddit")))
         if slim_dict:
             if "selftext" in slim_dict:
                 reddit_posts.append(slim_dict)
@@ -72,7 +73,7 @@ def pushshift_extract(args=None) -> None:
         count += 1
         remainder = count % 1_000_000
         if remainder == 0:
-            utils.print_overwrite(f"Processing {count}")
+            printing.print_overwrite(f"Processing {count}")
             save_data(args, reddit_posts, media)
 
     save_data(args, reddit_posts, media)

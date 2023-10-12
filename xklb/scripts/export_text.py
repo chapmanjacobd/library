@@ -1,8 +1,9 @@
 import argparse
 from pathlib import Path
 
-from xklb import db, usage, utils
-from xklb.utils import log
+from xklb import db, usage
+from xklb.utils import objects
+from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
@@ -14,7 +15,7 @@ def parse_args() -> argparse.Namespace:
 
     Path(args.database).touch()
     args.db = db.connect(args)
-    log.info(utils.dict_filter_bool(args.__dict__))
+    log.info(objects.dict_filter_bool(args.__dict__))
     return args
 
 

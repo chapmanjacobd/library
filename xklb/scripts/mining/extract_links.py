@@ -1,7 +1,7 @@
 import argparse, time
 
-from xklb import utils
-from xklb.utils import log, pipe_print
+from xklb.utils import printing, web
+from xklb.utils.log_utils import log
 
 
 def get_inner_urls(url, markup, include=None, exclude=None):
@@ -63,7 +63,7 @@ def from_url(args, line):
     if args.scroll:
         markup = get_page_infinite_scroll(args.driver, url)
     else:
-        r = utils.requests_session().get(url, timeout=120, headers=utils.headers)
+        r = web.requests_session().get(url, timeout=120, headers=web.headers)
         r.raise_for_status()
         markup = r.content
     inner_urls = get_inner_urls(url, markup, include=args.include, exclude=args.exclude)
@@ -74,9 +74,9 @@ def from_url(args, line):
 def print_or_download(args, found_urls):
     if args.download:
         for inner_url in found_urls:
-            utils.download_url(inner_url)
+            web.download_url(inner_url)
     else:
-        pipe_print("\n".join(found_urls))
+        printing.pipe_print("\n".join(found_urls))
 
 
 def extract_links() -> None:
@@ -98,7 +98,7 @@ def extract_links() -> None:
     args = parser.parse_args()
 
     if args.scroll:
-        utils.load_selenium(args)
+        web.load_selenium(args)
 
     if args.file:
         with open(args.file) as f:

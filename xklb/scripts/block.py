@@ -2,9 +2,10 @@ import argparse, sys
 
 import humanize
 
-from xklb import consts, db, player, tube_backend, usage, utils
+from xklb import consts, db, player, tube_backend, usage
 from xklb.consts import SC
-from xklb.utils import log
+from xklb.utils import devices, iterables, objects
+from xklb.utils.log_utils import log
 
 
 def parse_args():
@@ -44,10 +45,10 @@ def parse_args():
         args.database = args.db
     args.db = db.connect(args)
 
-    args.playlists = utils.conform(args.playlists)
+    args.playlists = iterables.conform(args.playlists)
 
     args.action = SC.block
-    log.info(utils.dict_filter_bool(args.__dict__))
+    log.info(objects.dict_filter_bool(args.__dict__))
 
     return args
 
@@ -83,7 +84,7 @@ def block(args=None) -> None:
             # TODO: add support for playlists table block rules
             if blocklist:
                 # prevent Expression tree is too large (max depth 1000)
-                blocklist_chunked = utils.chunks(blocklist, consts.SQLITE_PARAM_LIMIT // 100)
+                blocklist_chunked = iterables.chunks(blocklist, consts.SQLITE_PARAM_LIMIT // 100)
                 for chunk in blocklist_chunked:
                     columns = [t[0] for t in chunk]
                     values = [t[1] for t in chunk]
@@ -195,7 +196,7 @@ def block(args=None) -> None:
         paths_to_delete = [d["path"] for d in playlist_media]
         if paths_to_delete:
             print(paths_to_delete)
-            if utils.confirm(
+            if devices.confirm(
                 f"Would you like to delete these {len(paths_to_delete)} local files ({humanize.naturalsize(total_size)})?",
             ):
                 player.delete_media(args, paths_to_delete)
@@ -255,10 +256,12 @@ def block(args=None) -> None:
             continue
 
         if args.cluster:
-            matching_media = list(reversed(utils.cluster_dicts(args, matching_media)))
+            from xklb.scripts.cluster_sort import cluster_dicts
+
+            matching_media = list(reversed(cluster_dicts(args, matching_media)))
 
         player.media_printer(args, matching_media)
-        if args.no_confirm or utils.confirm("Add to blocklist?"):
+        if args.no_confirm or devices.confirm("Add to blocklist?"):
             add_to_blocklist(args, p)
         else:
             continue
@@ -275,7 +278,7 @@ def block(args=None) -> None:
         if local_paths_to_delete:
             total_size = sum(d["size"] or 0 for d in matching_media if (d["time_deleted"] or 0) == 0)
             print("\n".join(local_paths_to_delete))
-            if utils.confirm(
+            if devices.confirm(
                 f"Would you like to delete these {len(local_paths_to_delete)} local files ({humanize.naturalsize(total_size)})?",
             ):
                 player.delete_media(args, local_paths_to_delete)

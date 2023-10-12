@@ -3,8 +3,9 @@ from pathlib import Path
 
 from bs4 import BeautifulSoup
 
-from xklb import db, media, usage, utils
-from xklb.utils import log
+from xklb import db, media, usage
+from xklb.utils import nums, objects, web
+from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
@@ -19,27 +20,27 @@ def parse_args() -> argparse.Namespace:
 
     Path(args.database).touch()
     args.db = db.connect(args)
-    log.info(utils.dict_filter_bool(args.__dict__))
+    log.info(objects.dict_filter_bool(args.__dict__))
     return args
 
 
 def save_page(args, url):
-    text = utils.requests_authed_get(args, url)
+    text = web.requests_authed_get(args, url)
     soup = BeautifulSoup(text, "html.parser")
-    utils.download_embeds(args, soup)
+    web.download_embeds(args, soup)
 
     try:
-        subtitle = soup.select_one("h3.subtitle").getText()
+        subtitle = soup.select_one("h3.subtitle").getText()  # type: ignore
     except AttributeError:
         subtitle = None
 
     article = {
         "path": url,
-        "time_created": utils.to_timestamp(utils.find_date(soup)),
-        "author": soup.find("meta", {"name": "author"})["content"],
-        "title": soup.select_one("h1.post-title").getText(),
+        "time_created": nums.to_timestamp(web.find_date(soup)),
+        "author": soup.find("meta", {"name": "author"})["content"],  # type: ignore
+        "title": soup.select_one("h1.post-title").getText(),  # type: ignore
         "subtitle": subtitle,
-        "text": soup.select_one("div.body").prettify(),
+        "text": soup.select_one("div.body").prettify(),  # type: ignore
     }
 
     media.add(args, article)

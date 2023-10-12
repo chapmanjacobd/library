@@ -2,8 +2,8 @@ import argparse, time
 from pathlib import Path
 from urllib.parse import urljoin
 
-from xklb import consts, utils
-from xklb.av import decode_full_scan
+from xklb import consts
+from xklb.utils import file_utils, path_utils, processes, web
 
 """
 https://old.reddit.com/r/DataHoarder/comments/z12y6p/bulk_downloading_from_javguru/
@@ -33,7 +33,6 @@ def jav_guru() -> None:
                 return provider
             except NoSuchElementException:
                 tried_providers.append(provider)
-                pass
 
         raise RuntimeError("No video stream found")
 
@@ -55,11 +54,11 @@ def jav_guru() -> None:
             title = driver.find_element(By.CSS_SELECTOR, "h1.titl").text.replace("/", "-").replace("\\", "-")
             target_dir = Path.cwd() / "javguru"
             target_dir.mkdir(exist_ok=True)
-            output_path = utils.clean_path(bytes(target_dir / f"{title}.mp4"), max_name_len=255)
+            output_path = path_utils.clean_path(bytes(target_dir / f"{title}.mp4"), max_name_len=255)
             local_probe = None
             if Path(output_path).exists():
                 try:
-                    local_probe = utils.FFProbe(output_path)
+                    local_probe = processes.FFProbe(output_path)
                     assert local_probe.has_audio
                     assert local_probe.has_video
                 except Exception:
@@ -94,11 +93,11 @@ def jav_guru() -> None:
         finally:
             driver.quit()
             if consts.LOG_DEBUG > args.verbose:
-                display.stop()
+                display.stop()  # type: ignore
 
         try:
-            remote_probe = utils.FFProbe(
-                master_playlist_url,
+            remote_probe = processes.FFProbe(
+                master_playlist_url,  # type: ignore
                 "-headers",
                 "User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/117.0",
                 "-headers",
@@ -114,21 +113,21 @@ def jav_guru() -> None:
             audio_index = audio_streams[0]["index"]
 
         except Exception as e:
-            print("failed to load in ffprobe:", master_playlist_url, e)
+            print("failed to load in ffprobe:", master_playlist_url, e)  # type: ignore
             tried_providers.append(provider)
             return process_url(line)
 
         if local_probe:
-            if abs(local_probe.duration - remote_probe.duration) <= 2.0:  # within 2 seconds
+            if abs(local_probe.duration - remote_probe.duration) <= 2.0:  # within 2 seconds  # type: ignore
                 print("Already downloaded", output_path)
                 exit(0)
             else:
                 Path(output_path).unlink()
 
         if provider == "ST":
-            utils.download_url(master_playlist_url, output_path)
+            web.download_url(master_playlist_url, output_path)  # type: ignore
         elif provider == "TV":
-            utils.cmd(
+            processes.cmd(
                 "ffmpeg",
                 "-nostdin",
                 "-hide_banner",
@@ -139,7 +138,7 @@ def jav_guru() -> None:
                 "-headers",
                 "Referer: https://emturbovid.com/",
                 "-i",
-                master_playlist_url,
+                master_playlist_url,  # type: ignore
                 "-map",
                 f"0:{video_index}",
                 "-map",
@@ -155,16 +154,16 @@ def jav_guru() -> None:
                 output_path,
             )
 
-        local_probe = utils.FFProbe(output_path)
+        local_probe = processes.FFProbe(output_path)
         assert local_probe.has_audio
         assert local_probe.has_video
-        if abs(local_probe.duration - remote_probe.duration) > 2.0:  # within 2 seconds
+        if abs(local_probe.duration - remote_probe.duration) > 2.0:  # within 2 seconds   # type: ignore
             exit(3)
         # if decode_full_scan(output_path) > 1:
         #     exit(3)
 
     process_url(args.path)
-    utils.tempdir_unlink("*.xpi")
+    file_utils.tempdir_unlink("*.xpi")
 
 
 if __name__ == "__main__":

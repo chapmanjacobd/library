@@ -4,9 +4,10 @@ from typing import List, Optional
 
 import ffmpeg
 
-from xklb import db, utils
+from xklb import db
 from xklb.consts import SUB_TEMP_DIR
-from xklb.utils import log, remove_consecutive_whitespace, remove_text_inside_brackets
+from xklb.utils import iterables, processes, strings
+from xklb.utils.log_utils import log
 
 SUBTITLE_FORMATS = "vtt|srt|ssa|ass|jss|aqt|mpl2|mpsub|pjs|rt|sami|smi|stl|xml|txt|psb|ssf|usf"
 IMAGE_SUBTITLE_CODECS = ["dvbsub", "dvdsub", "pgssub", "xsub", "dvb_subtitle", "dvd_subtitle", "hdmv_pgs_subtitle"]
@@ -69,8 +70,8 @@ def read_sub_unsafe(path):
 
     combined_captions = {}
     for caption in subs:
-        text = remove_consecutive_whitespace(ssa_to_markdown(caption.text).strip())
-        if remove_text_inside_brackets(text):
+        text = strings.remove_consecutive_whitespace(ssa_to_markdown(caption.text).strip())
+        if strings.remove_text_inside_brackets(text):
             start_time = caption.start // 1000
             if start_time in combined_captions:
                 combined_captions[start_time]["text"] += " " + text
@@ -99,9 +100,9 @@ def is_text_subtitle_stream(s) -> bool:
 
 def externalize_internal_subtitles(path, streams=None) -> List[str]:
     if streams is None:
-        streams = utils.FFProbe(path).streams
+        streams = processes.FFProbe(path).streams
 
-    external_paths = utils.conform(
+    external_paths = iterables.conform(
         [extract_from_video(path, s["index"]) for s in streams if is_text_subtitle_stream(s)],
     )
 
@@ -131,7 +132,7 @@ def get_subtitle_paths(path) -> List[str]:
 
 
 def get_sub_index(args, path) -> Optional[int]:
-    probe = utils.FFProbe(path)
+    probe = processes.FFProbe(path)
     temp_db = db.connect(args, memory=True)
     temp_db["streams"].insert_all(probe.streams, pk="index")  # type: ignore
     subtitle_index = temp_db.pop(

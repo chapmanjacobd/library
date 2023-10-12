@@ -2,8 +2,9 @@ import argparse, shutil
 from os import fsdecode
 from pathlib import Path
 
-from xklb import usage, utils
-from xklb.utils import log
+from xklb import usage
+from xklb.utils import objects, path_utils
+from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
@@ -15,12 +16,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--verbose", "-v", action="count", default=0)
     args = parser.parse_args()
 
-    log.info(utils.dict_filter_bool(args.__dict__))
+    log.info(objects.dict_filter_bool(args.__dict__))
     return args
 
 
 def rename_path(args, base, b) -> None:
-    fixed = utils.clean_path(b, args.dot_space)
+    fixed = path_utils.clean_path(b, args.dot_space)
 
     if b != fixed.encode():
         printable_p = b.decode("utf-8", "backslashreplace")

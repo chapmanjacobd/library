@@ -1,6 +1,6 @@
 import argparse, sys
 
-from xklb import __version__, utils
+from xklb import __version__
 from xklb.consts import SC
 from xklb.dl_extract import dl_download
 from xklb.fs_extract import fs_add, fs_update
@@ -43,7 +43,8 @@ from xklb.search import search
 from xklb.tabs_actions import tabs
 from xklb.tabs_extract import tabs_add
 from xklb.tube_extract import tube_add, tube_update
-from xklb.utils import log
+from xklb.utils import devices, iterables
+from xklb.utils.log_utils import log
 
 
 def usage() -> str:
@@ -147,7 +148,7 @@ def add_parser(subparsers, name, a=None):
     if a is None:
         a = []
     subcommands.extend([name, *a])
-    aliases = a + consecutive_prefixes(name) + utils.conform([consecutive_prefixes(a) for a in a])
+    aliases = a + consecutive_prefixes(name) + iterables.conform([consecutive_prefixes(a) for a in a])
     return subparsers.add_parser(name, aliases=aliases, add_help=False)
 
 
@@ -254,7 +255,7 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     subp_disk_usage = add_parser(subparsers, "disk-usage", ["du", "usage", "diskusage"])
     subp_disk_usage.set_defaults(func=disk_usage)
     subp_mount_stats = add_parser(subparsers, "mount-stats", ["mu", "mount-usage", "mountstats"])
-    subp_mount_stats.set_defaults(func=utils.mount_stats)
+    subp_mount_stats.set_defaults(func=devices.mount_stats)
 
     subp_playback_now = add_parser(subparsers, "now")
     subp_playback_now.set_defaults(func=playback_now)

@@ -2,8 +2,9 @@ import argparse, logging, sys
 from time import sleep
 from typing import List
 
-from xklb import db, player, usage, utils
-from xklb.utils import log
+from xklb import db, player, usage
+from xklb.utils import objects, processes
+from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
@@ -23,7 +24,7 @@ def parse_args() -> argparse.Namespace:
         log.error("Currently only stdin is supported")
         raise NotImplementedError
 
-    log.info(utils.dict_filter_bool(args.__dict__))
+    log.info(objects.dict_filter_bool(args.__dict__))
     return args
 
 
@@ -33,7 +34,7 @@ def list_tabs(args) -> List:
 
 def open_tabs(_args, urls) -> None:
     for url in urls:
-        utils.cmd(player.get_browser(), url)
+        processes.cmd(player.get_browser(), url)
 
 
 def streaming_tab_loader() -> None:

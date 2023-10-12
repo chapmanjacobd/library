@@ -1,8 +1,9 @@
 import argparse
 
-from xklb import consts, db, player, usage, utils
+from xklb import consts, db, player, usage
 from xklb.history import create
-from xklb.utils import log
+from xklb.utils import objects, strings
+from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
@@ -49,15 +50,15 @@ def parse_args() -> argparse.Namespace:
 
     args = parser.parse_args()
 
-    args.facet = utils.partial_startswith(args.facet, consts.time_facets)
-    args.frequency = utils.partial_startswith(args.frequency, consts.frequency)
+    args.facet = strings.partial_startswith(args.facet, consts.time_facets)
+    args.frequency = strings.partial_startswith(args.frequency, consts.frequency)
 
     if args.db:
         args.database = args.db
     args.db = db.connect(args)
 
     args.action = consts.SC.history
-    log.info(utils.dict_filter_bool(args.__dict__))
+    log.info(objects.dict_filter_bool(args.__dict__))
 
     return args
 

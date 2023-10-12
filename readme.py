@@ -128,6 +128,14 @@ two million videos. More than you could likely watch in one sitting--maybe even 
 On a high-speed connection (>500 Mbps), it can take up to five hours to download
 the metadata for 180,000 videos.
 
+TIP! If you often copy and paste many URLs you can paste line-delimited text as arguments via a subshell. For example, in `fish` shell with [cb](https://github.com/niedzielski/cb):
+
+    library tubeadd my.db (cb)
+
+Or in BASH:
+
+    library tubeadd my.db $(xclip -selection c)
+
 #### 1a. Get new videos for saved playlists
 
 Tubeupdate will go through the list of added playlists and fetch metadata for

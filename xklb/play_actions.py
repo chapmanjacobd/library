@@ -2,20 +2,21 @@ import argparse, os, random, shlex, shutil, sys, threading, time
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Dict, Tuple
+from typing import Dict, List, Tuple
 
-from xklb import consts, db, history, player, subtitle, tube_backend, usage, utils
+from xklb import consts, db, history, player, subtitle, tube_backend, usage
 from xklb.consts import SC
 from xklb.player import mark_media_deleted, override_sort
 from xklb.scripts.bigdirs import process_bigdirs
 from xklb.scripts.playback_control import now_playing
-from xklb.utils import cmd_interactive, log, random_filename, safe_unpack
+from xklb.utils import devices, file_utils, iterables, mpv_utils, nums, objects, path_utils, processes, sql_utils
+from xklb.utils.log_utils import Timer, log
 
 
 def parse_args_sort(args) -> None:
     if args.sort:
         combined_sort = []
-        for s in utils.flatten([s.split(",") for s in args.sort]):
+        for s in iterables.flatten([s.split(",") for s in args.sort]):
             if s.strip() in ["asc", "desc"] and combined_sort:
                 combined_sort[-1] += " " + s.strip()
             else:
@@ -263,7 +264,7 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
         args.include = [str(Path().cwd().resolve())]
 
     if len(args.include) == 1 and os.sep in args.include[0]:
-        args.include = [utils.resolve_absolute_path(args.include[0])]
+        args.include = [file_utils.resolve_absolute_path(args.include[0])]
 
     if args.db:
         args.database = args.db
@@ -287,22 +288,22 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     parse_args_sort(args)
 
     if args.cols:
-        args.cols = list(utils.flatten([s.split(",") for s in args.cols]))
+        args.cols = list(iterables.flatten([s.split(",") for s in args.cols]))
 
     if args.duration:
-        args.duration = utils.parse_human_to_sql(utils.human_to_seconds, "duration", args.duration)
+        args.duration = sql_utils.parse_human_to_sql(nums.human_to_seconds, "duration", args.duration)
 
     if args.size:
-        args.size = utils.parse_human_to_sql(utils.human_to_bytes, "size", args.size)
+        args.size = sql_utils.parse_human_to_sql(nums.human_to_bytes, "size", args.size)
 
     if args.duration_from_size:
-        args.duration_from_size = utils.parse_human_to_sql(utils.human_to_bytes, "size", args.duration_from_size)
+        args.duration_from_size = sql_utils.parse_human_to_sql(nums.human_to_bytes, "size", args.duration_from_size)
 
     if args.chromecast:
         from catt.api import CattDevice
 
         args.cc = CattDevice(args.chromecast_device, lazy=True)
-        args.cc_ip = utils.get_ip_of_chromecast(args.chromecast_device)
+        args.cc_ip = devices.get_ip_of_chromecast(args.chromecast_device)
 
     if args.override_player:
         args.override_player = shlex.split(args.override_player)
@@ -318,9 +319,9 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     if args.post_action:
         args.post_action = args.post_action.replace("-", "_")
 
-    log.info(utils.dict_filter_bool(args.__dict__))
+    log.info(objects.dict_filter_bool(args.__dict__))
 
-    utils.timeout(args.timeout)
+    processes.timeout(args.timeout)
 
     args.sock = None
     return args
@@ -477,7 +478,9 @@ def construct_query(args) -> Tuple[str, dict]:
 
 def chromecast_play(args, m) -> None:
     if args.action in (SC.watch):
-        catt_log = player.watch_chromecast(args, m, subtitles_file=safe_unpack(subtitle.get_subtitle_paths(m["path"])))
+        catt_log = player.watch_chromecast(
+            args, m, subtitles_file=iterables.safe_unpack(subtitle.get_subtitle_paths(m["path"]))
+        )
     elif args.action in (SC.listen):
         catt_log = player.listen_chromecast(args, m)
     else:
@@ -496,7 +499,7 @@ def transcode(args, path) -> str:
     sub_index = subtitle.get_sub_index(args, path)
 
     transcode_dest = str(Path(path).with_suffix(".mkv"))
-    temp_video = random_filename(transcode_dest)
+    temp_video = path_utils.random_filename(transcode_dest)
 
     maps = ["-map", "0"]
     if sub_index:
@@ -520,7 +523,7 @@ def transcode(args, path) -> str:
         video_settings = ["-c:v", "copy"]
 
     print("Transcoding", temp_video)
-    cmd_interactive(
+    processes.cmd_interactive(
         "ffmpeg",
         "-nostdin",
         "-loglevel",
@@ -549,7 +552,7 @@ def transcode(args, path) -> str:
 
 
 def prep_media(args, m: Dict, ignore_paths):
-    t = utils.Timer()
+    t = Timer()
     args.db = db.connect(args)
     log.debug("db.connect: %s", t.elapsed())
 
@@ -579,7 +582,7 @@ def prep_media(args, m: Dict, ignore_paths):
 
 
 def save_playhead(args, m, start_time):
-    playhead = utils.get_playhead(
+    playhead = mpv_utils.get_playhead(
         args,
         m["original_path"],
         start_time,
@@ -592,7 +595,7 @@ def save_playhead(args, m, start_time):
 
 
 def play(args, m, media_len) -> None:
-    t = utils.Timer()
+    t = Timer()
     print(m["now_playing"])
     log.debug(m)
     log.debug("now_playing: %s", t.elapsed())
@@ -637,7 +640,7 @@ def play(args, m, media_len) -> None:
 
             x_mpv.play(m["path"])
             try:
-                utils.auto_seek(x_mpv)
+                mpv_utils.auto_seek(x_mpv)
             except (BrokenPipeError, MPVError, ConnectionResetError):
                 log.debug("BrokenPipeError ignored")
 
@@ -664,10 +667,83 @@ def play(args, m, media_len) -> None:
         save_playhead(args, m, start_time)
 
 
+def filter_episodic(args, media: List[Dict]) -> List[Dict]:
+    parent_dict = {}
+    for m in media:
+        path = Path(m["path"])
+        parent_path = path.parent
+        parent_dict.setdefault(parent_path, 0)
+        parent_dict[parent_path] += 1
+
+    filtered_media = []
+    for m in media:
+        path = Path(m["path"])
+        parent_path = path.parent
+
+        siblings = parent_dict[parent_path]
+
+        if args.lower is not None and siblings < args.lower:
+            continue
+        elif args.upper is not None and siblings > args.upper:
+            continue
+        else:
+            filtered_media.append(m)
+
+    return filtered_media
+
+
+def history_sort(args, media) -> List[Dict]:
+    if "s" in args.partial:  # skip; only play unseen
+        previously_watched_paths = [m["path"] for m in media if m["time_first_played"]]
+        return [m for m in media if m["path"] not in previously_watched_paths]
+
+    def mpv_progress(m):
+        playhead = m.get("playhead")
+        duration = m.get("duration")
+        if not playhead:
+            return float("-inf")
+        if not duration:
+            return float("-inf")
+
+        if "p" in args.partial and "t" in args.partial:
+            return (duration / playhead) * -(duration - playhead)  # weighted remaining
+        elif "t" in args.partial:
+            return -(duration - playhead)  # time remaining
+        else:
+            return playhead / duration  # percent remaining
+
+    def sorting_hat():
+        if "f" in args.partial:  # first-viewed
+            return lambda m: m.get("time_first_played") or 0
+        elif "p" in args.partial or "t" in args.partial:  # sort by remaining duration
+            return mpv_progress
+
+        return lambda m: m.get("time_last_played") or m.get("time_first_played") or 0
+
+    reverse_chronology = True
+    if "o" in args.partial:  # oldest first
+        reverse_chronology = False
+
+    key = sorting_hat()
+    if args.print:
+        reverse_chronology = not reverse_chronology
+
+    media = sorted(
+        media,
+        key=key,
+        reverse=reverse_chronology,
+    )
+
+    if args.skip:
+        media = media[int(args.skip) :]
+
+    return media
+
+
 def process_playqueue(args) -> None:
     history.create(args)
 
-    t = utils.Timer()
+    t = Timer()
     query, bindings = construct_query(args)
     log.debug("construct_query: %s", t.elapsed())
 
@@ -690,15 +766,15 @@ def process_playqueue(args) -> None:
     log.debug("query: %s", t.elapsed())
 
     if args.partial:
-        media = utils.history_sort(args, media)
+        media = history_sort(args, media)
         log.debug("utils.history_sort: %s", t.elapsed())
 
     if args.lower is not None or args.upper is not None:
-        media = utils.filter_episodic(args, media)
+        media = filter_episodic(args, media)
         log.debug("utils.filter_episodic: %s", t.elapsed())
 
     if not media:
-        utils.no_media_found()
+        processes.no_media_found()
 
     if args.safe:
         media = [d for d in media if tube_backend.is_supported(d["path"]) or Path(d["path"]).exists()]
@@ -726,7 +802,9 @@ def process_playqueue(args) -> None:
         log.debug("player.get_related_media: %s", t.elapsed())
 
     if args.cluster:
-        media = utils.cluster_dicts(args, media)
+        from xklb.scripts.cluster_sort import cluster_dicts
+
+        media = cluster_dicts(args, media)
         log.debug("cluster: %s", t.elapsed())
 
     if args.print:
