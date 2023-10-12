@@ -5,8 +5,8 @@ from typing import List, Optional
 import ffmpeg
 
 from xklb import db
-from xklb.consts import SUB_TEMP_DIR
 from xklb.utils import iterables, processes, strings
+from xklb.utils.consts import SUB_TEMP_DIR
 from xklb.utils.log_utils import log
 
 SUBTITLE_FORMATS = "vtt|srt|ssa|ass|jss|aqt|mpl2|mpsub|pjs|rt|sami|smi|stl|xml|txt|psb|ssf|usf"

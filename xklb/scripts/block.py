@@ -2,9 +2,9 @@ import argparse, sys
 
 import humanize
 
-from xklb import consts, db, player, tube_backend, usage
-from xklb.consts import SC
-from xklb.utils import devices, iterables, objects
+from xklb import db, player, tube_backend, usage
+from xklb.utils import consts, devices, iterables, objects
+from xklb.utils.consts import SC
 from xklb.utils.log_utils import log
 
 

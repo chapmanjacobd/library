@@ -2,7 +2,7 @@ import sys
 from html.parser import HTMLParser
 from io import StringIO
 
-from xklb.scripts.mining import data
+from xklb.data import wordbank
 from xklb.utils import printing
 
 """
@@ -44,7 +44,7 @@ def printer(parts) -> None:
             continue
 
         part_lookup = part.lower()
-        if part_lookup in data.stop_words or part_lookup in data.prepositions or is_num(part):
+        if part_lookup in wordbank.stop_words or part_lookup in wordbank.prepositions or is_num(part):
             continue
 
         printing.pipe_print(part)

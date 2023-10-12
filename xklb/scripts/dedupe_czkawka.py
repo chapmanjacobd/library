@@ -5,8 +5,8 @@ from pathlib import Path
 import humanize
 from screeninfo import get_monitors
 
-from xklb import consts, player
-from xklb.utils import devices, file_utils, iterables, mpv_utils, processes
+from xklb import player
+from xklb.utils import consts, devices, file_utils, iterables, mpv_utils, processes
 from xklb.utils.log_utils import log
 
 #!/usr/bin/python3

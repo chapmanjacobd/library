@@ -7,10 +7,10 @@ from shutil import which
 from timeit import default_timer as timer
 from typing import Dict, List, Optional
 
-from xklb import consts, db, db_playlists, player, usage
-from xklb.consts import SC, DBType
+from xklb import db, db_playlists, player, usage
 from xklb.media import av, books
-from xklb.utils import arg_utils, iterables, objects
+from xklb.utils import arg_utils, consts, iterables, objects
+from xklb.utils.consts import SC, DBType
 from xklb.utils.log_utils import log
 
 

@@ -6,8 +6,8 @@ from typing import Dict, List, Tuple
 import humanize
 from tabulate import tabulate
 
-from xklb import consts, db, player, usage
-from xklb.utils import devices, iterables, objects, printing
+from xklb import db, player, usage
+from xklb.utils import consts, devices, iterables, objects, printing
 from xklb.utils.log_utils import log
 
 

@@ -2,9 +2,9 @@ import argparse, json, os.path, sys
 from collections import Counter
 from pathlib import Path
 
-from xklb import consts, usage
-from xklb.consts import DBType
-from xklb.utils import file_utils, iterables, objects, printing, strings
+from xklb import usage
+from xklb.utils import consts, file_utils, iterables, objects, printing, strings
+from xklb.utils.consts import DBType
 from xklb.utils.log_utils import Timer, log
 
 

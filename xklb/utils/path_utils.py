@@ -1,7 +1,6 @@
 from pathlib import Path
 
-from xklb import consts
-from xklb.utils import iterables, strings
+from xklb.utils import consts, iterables, strings
 from xklb.utils.log_utils import log
 
 

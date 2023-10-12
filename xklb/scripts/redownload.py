@@ -3,8 +3,8 @@ from copy import deepcopy
 from pathlib import Path
 from typing import List
 
-from xklb import consts, db, player, usage
-from xklb.utils import devices, file_utils, iterables, objects
+from xklb import db, player, usage
+from xklb.utils import consts, devices, file_utils, iterables, objects
 from xklb.utils.log_utils import log
 
 

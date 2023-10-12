@@ -1,9 +1,9 @@
 import argparse, os, sys
 from typing import List, Tuple
 
-from xklb import consts, db, gdl_backend, play_actions, player, tube_backend, usage
-from xklb.consts import SC, DBType
-from xklb.utils import arg_utils, iterables, nums, objects, printing, processes, sql_utils
+from xklb import db, gdl_backend, play_actions, player, tube_backend, usage
+from xklb.utils import arg_utils, consts, iterables, nums, objects, printing, processes, sql_utils
+from xklb.utils.consts import SC, DBType
 from xklb.utils.log_utils import log
 
 

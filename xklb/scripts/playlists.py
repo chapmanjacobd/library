@@ -1,9 +1,9 @@
 import argparse
 from typing import Tuple
 
-from xklb import consts, db, player, usage
+from xklb import db, player, usage
 from xklb.player import delete_playlists
-from xklb.utils import objects
+from xklb.utils import consts, objects
 from xklb.utils.log_utils import log
 
 

@@ -12,15 +12,15 @@ from typing import Dict, List, Optional, Tuple, Union
 import humanize
 from tabulate import tabulate
 
-from xklb import consts, db, db_media, history
-from xklb.consts import SC
-from xklb.utils import devices, file_utils, iterables, printing, processes, strings
+from xklb import db, db_media, history
+from xklb.utils import consts, devices, file_utils, iterables, printing, processes, strings
+from xklb.utils.consts import SC
 from xklb.utils.log_utils import log
 
 try:
     import tkinter  # noqa
 
-    from xklb import gui
+    from xklb.utils import gui
 except ModuleNotFoundError:
     gui = None
 

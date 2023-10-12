@@ -1,5 +1,4 @@
-from xklb import consts
-from xklb.utils import iterables
+from xklb.utils import consts, iterables
 
 
 def create(args):

@@ -7,8 +7,8 @@ from typing import Dict, List, Tuple, Union
 from humanize import naturalsize
 from tabulate import tabulate
 
-from xklb import consts, db, usage
-from xklb.utils import devices, file_utils, iterables, objects, printing
+from xklb import db, usage
+from xklb.utils import consts, devices, file_utils, iterables, objects, printing
 from xklb.utils.log_utils import log
 
 

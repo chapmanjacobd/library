@@ -5,9 +5,9 @@ from typing import List
 
 import humanize
 
-from xklb import consts, db, player, usage
-from xklb.consts import DBType
-from xklb.utils import devices, file_utils, iterables, objects, strings
+from xklb import db, player, usage
+from xklb.utils import consts, devices, file_utils, iterables, objects, strings
+from xklb.utils.consts import DBType
 from xklb.utils.log_utils import log
 
 
