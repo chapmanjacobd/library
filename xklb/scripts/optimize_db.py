@@ -1,7 +1,8 @@
 import argparse
 
-from xklb import db, usage, utils
-from xklb.utils import log
+from xklb import db, usage
+from xklb.utils import objects
+from xklb.utils.log_utils import log
 
 
 def optimize_db() -> None:
@@ -15,6 +16,6 @@ def optimize_db() -> None:
     if args.db:
         args.database = args.db
     args.db = db.connect(args)
-    log.info(utils.dict_filter_bool(args.__dict__))
+    log.info(objects.dict_filter_bool(args.__dict__))
 
     db.optimize(args)

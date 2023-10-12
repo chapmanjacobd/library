@@ -1,9 +1,10 @@
 import argparse
 from typing import Tuple
 
-from xklb import consts, db, player, usage, utils
+from xklb import consts, db, player, usage
 from xklb.player import delete_playlists
-from xklb.utils import log
+from xklb.utils import objects
+from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
@@ -45,7 +46,7 @@ def parse_args() -> argparse.Namespace:
     if args.db:
         args.database = args.db
     args.db = db.connect(args)
-    log.info(utils.dict_filter_bool(args.__dict__))
+    log.info(objects.dict_filter_bool(args.__dict__))
 
     args.action = consts.SC.playlists
     return args

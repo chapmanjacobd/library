@@ -1,6 +1,6 @@
 import requests
 
-from xklb.utils import log
+from xklb.utils.log_utils import log
 
 
 def try_get_feed(path):
@@ -20,7 +20,7 @@ def try_get_head_link(path):
         soup = BeautifulSoup(response.text, "html.parser")
         link = soup.find("link", type="application/rss+xml")
         if link:
-            return link.get("href")
+            return link.get("href")  # type: ignore
     except TypeError:
         return None
 
@@ -31,9 +31,9 @@ def try_get_link_endswith(path):
     try:
         response = requests.get(path)
         soup = BeautifulSoup(response.text, "html.parser")
-        link = soup.find("a", href=lambda href: href and (href.endswith((".rss", ".xml"))))
+        link = soup.find("a", href=lambda href: href and (href.endswith((".rss", ".xml"))))  # type: ignore
         if link:
-            return link.get("href")
+            return link.get("href")  # type: ignore
     except TypeError:
         return None
 

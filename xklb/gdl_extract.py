@@ -1,9 +1,10 @@
 import argparse, sys
 from pathlib import Path
 
-from xklb import consts, db, gdl_backend, media, playlists, usage, utils
+from xklb import consts, db, gdl_backend, media, playlists, usage
 from xklb.consts import SC
-from xklb.utils import log
+from xklb.utils import arg_utils, iterables, objects, path_utils, processes
+from xklb.utils.log_utils import log
 
 
 def parse_args(action, usage) -> argparse.Namespace:
@@ -17,7 +18,7 @@ def parse_args(action, usage) -> argparse.Namespace:
         "--extractor-config",
         "-extractor-config",
         nargs=1,
-        action=utils.ArgparseDict,
+        action=arg_utils.ArgparseDict,
         default={},
         metavar="KEY=VALUE",
         help="Add key/value pairs to override or extend default downloader configuration",
@@ -31,8 +32,10 @@ def parse_args(action, usage) -> argparse.Namespace:
         action="store_true",
         help="Fetch metadata for paths even if they are already in the media table",
     )
-    parser.add_argument("--extra-media-data", default={}, nargs=1, action=utils.ArgparseDict, metavar="KEY=VALUE")
-    parser.add_argument("--extra-playlist-data", default={}, nargs=1, action=utils.ArgparseDict, metavar="KEY=VALUE")
+    parser.add_argument("--extra-media-data", default={}, nargs=1, action=arg_utils.ArgparseDict, metavar="KEY=VALUE")
+    parser.add_argument(
+        "--extra-playlist-data", default={}, nargs=1, action=arg_utils.ArgparseDict, metavar="KEY=VALUE"
+    )
     parser.add_argument("--ignore-errors", "--ignoreerrors", "-i", action="store_true", help=argparse.SUPPRESS)
 
     parser.add_argument("--timeout", "-T", help="Quit after x minutes")
@@ -43,7 +46,7 @@ def parse_args(action, usage) -> argparse.Namespace:
     if action == SC.galleryadd:
         parser.add_argument("--insert-only", action="store_true")
         parser.add_argument("--insert-only-playlists", action="store_true")
-        parser.add_argument("playlists", nargs="*", action=utils.ArgparseArgsOrStdin, help=argparse.SUPPRESS)
+        parser.add_argument("playlists", nargs="*", action=arg_utils.ArgparseArgsOrStdin, help=argparse.SUPPRESS)
 
     args = parser.parse_intermixed_args()
     args.action = action
@@ -57,13 +60,13 @@ def parse_args(action, usage) -> argparse.Namespace:
     if hasattr(args, "playlists"):
         args.playlists = list(set(s.strip() for s in args.playlists))
         if not args.no_sanitize:
-            args.playlists = [utils.sanitize_url(args, p) for p in args.playlists]
-        args.playlists = utils.conform(args.playlists)
+            args.playlists = [path_utils.sanitize_url(args, p) for p in args.playlists]
+        args.playlists = iterables.conform(args.playlists)
 
-    utils.timeout(args.timeout)
+    processes.timeout(args.timeout)
 
     args.profile = consts.DBType.image
-    log.info(utils.dict_filter_bool(args.__dict__))
+    log.info(objects.dict_filter_bool(args.__dict__))
     return args
 
 

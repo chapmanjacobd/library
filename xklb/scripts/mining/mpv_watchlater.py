@@ -1,8 +1,9 @@
 import argparse
 from pathlib import Path
 
-from xklb import consts, db, history, usage, utils
-from xklb.utils import log
+from xklb import consts, db, history, usage
+from xklb.utils import mpv_utils, nums, objects
+from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
@@ -14,12 +15,12 @@ def parse_args() -> argparse.Namespace:
     args = parser.parse_args()
 
     args.db = db.connect(args)
-    log.info(utils.dict_filter_bool(args.__dict__))
+    log.info(objects.dict_filter_bool(args.__dict__))
     return args
 
 
 def scan_and_import(args, media) -> None:
-    md5s = {utils.path_to_mpv_watchlater_md5(m["path"]): m for m in media}
+    md5s = {mpv_utils.path_to_mpv_watchlater_md5(m["path"]): m for m in media}
     paths = set(Path(args.watch_later_directory).glob("*"))
 
     previously_watched = [
@@ -27,7 +28,7 @@ def scan_and_import(args, media) -> None:
             **(md5s.get(p.stem) or {}),
             "time_first_played": int(p.stat().st_ctime),
             "time_last_played": int(p.stat().st_mtime),
-            "playhead": utils.safe_int(utils.mpv_watchlater_value(p, "start")),
+            "playhead": nums.safe_int(mpv_utils.mpv_watchlater_value(p, "start")),
         }
         for p in paths
         if md5s.get(p.stem)

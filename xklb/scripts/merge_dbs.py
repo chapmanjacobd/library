@@ -1,19 +1,20 @@
 import argparse
 from pathlib import Path
 
-from xklb import db, usage, utils
-from xklb.utils import log
+from xklb import db, usage
+from xklb.utils import arg_utils, objects
+from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library merge-dbs", usage=usage.merge_dbs)
-    parser.add_argument("--primary-keys", "--pk", action=utils.ArgparseList, help="Comma separated primary keys")
-    parser.add_argument("--business-keys", "--bk", action=utils.ArgparseList, help="Comma separated business keys")
+    parser.add_argument("--primary-keys", "--pk", action=arg_utils.ArgparseList, help="Comma separated primary keys")
+    parser.add_argument("--business-keys", "--bk", action=arg_utils.ArgparseList, help="Comma separated business keys")
     parser.add_argument("--upsert", action="store_true")
     parser.add_argument("--ignore", "--only-new-rows", action="store_true")
-    parser.add_argument("--only-tables", "-t", action=utils.ArgparseList, help="Comma separated specific table(s)")
+    parser.add_argument("--only-tables", "-t", action=arg_utils.ArgparseList, help="Comma separated specific table(s)")
     parser.add_argument("--only-target-columns", action="store_true")
-    parser.add_argument("--skip-columns", action=utils.ArgparseList)
+    parser.add_argument("--skip-columns", action=arg_utils.ArgparseList)
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
     parser.add_argument("--verbose", "-v", action="count", default=0)
 
@@ -26,7 +27,7 @@ def parse_args() -> argparse.Namespace:
     Path(args.database).touch()
     args.db = db.connect(args)
 
-    log.info(utils.dict_filter_bool(args.__dict__))
+    log.info(objects.dict_filter_bool(args.__dict__))
 
     return args
 

@@ -2,8 +2,9 @@ import argparse, os
 from pathlib import Path
 from typing import Dict, List
 
-from xklb import consts, db, history, player, usage, utils
-from xklb.utils import log
+from xklb import consts, db, history, player, usage
+from xklb.utils import file_utils, nums, objects, sql_utils
+from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
@@ -47,13 +48,13 @@ def parse_args() -> argparse.Namespace:
         args.include = [str(Path().cwd().resolve())]
 
     if len(args.include) == 1 and os.sep in args.include[0]:
-        args.include = [utils.resolve_absolute_path(args.include[0])]
+        args.include = [file_utils.resolve_absolute_path(args.include[0])]
 
     if args.size:
-        args.size = utils.parse_human_to_sql(utils.human_to_bytes, "size", args.size)
+        args.size = sql_utils.parse_human_to_sql(nums.human_to_bytes, "size", args.size)
 
     args.action = consts.SC.bigdirs
-    log.info(utils.dict_filter_bool(args.__dict__))
+    log.info(objects.dict_filter_bool(args.__dict__))
     return args
 
 
@@ -162,9 +163,12 @@ def sort_by(args):
 
 def process_bigdirs(args, media) -> List[Dict]:
     if args.cluster_sort and len(media) > 2:
-        media_keyed = {d["path"]: d for d in media}
-        groups = utils.cluster_paths([d["path"] for d in media], n_clusters=getattr(args, "clusters", None))
+        from xklb.scripts.cluster_sort import cluster_paths
+
+        groups = cluster_paths([d["path"] for d in media], n_clusters=getattr(args, "clusters", None))
         groups = sorted(groups, key=lambda d: (-len(d["grouped_paths"]), -len(d["common_prefix"])))
+
+        media_keyed = {d["path"]: d for d in media}
         folders = [
             {
                 "path": group["common_prefix"],
@@ -183,7 +187,7 @@ def process_bigdirs(args, media) -> List[Dict]:
     if args.depth:
         folders = folder_depth(args, folders)
     if args.folder_size:
-        args.folder_size = utils.parse_human_to_lambda(utils.human_to_bytes, args.folder_size)
+        args.folder_size = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.folder_size)
         folders = [d for d in folders if args.folder_size(d["size"])]
 
     reverse = False

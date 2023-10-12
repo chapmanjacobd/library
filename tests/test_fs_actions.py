@@ -10,7 +10,7 @@ from xklb.fs_extract import fs_add
 from xklb.lb import library as lb
 from xklb.play_actions import watch as wt
 from xklb.player import mark_media_deleted
-from xklb.utils import log
+from xklb.utils.log_utils import log
 
 v_db = "tests/data/video.db"
 fs_add([v_db, "--scan-subtitles", "tests/data/"])

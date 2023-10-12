@@ -6,8 +6,9 @@ from typing import Dict, List, Tuple
 import humanize
 from tabulate import tabulate
 
-from xklb import consts, db, player, usage, utils
-from xklb.utils import log
+from xklb import consts, db, player, usage
+from xklb.utils import devices, iterables, objects, printing
+from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
@@ -25,7 +26,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("database")
     args = parser.parse_args()
     args.db = db.connect(args)
-    log.info(utils.dict_filter_bool(args.__dict__))
+    log.info(objects.dict_filter_bool(args.__dict__))
     return args
 
 
@@ -78,9 +79,9 @@ def get_table(args) -> List[dict]:
 def iterate_and_show_options(args, tbl) -> Tuple[List[Dict], List[Dict]]:
     vew = tbl[-int(args.limit) :] if args.limit else tbl
 
-    vew = utils.list_dict_filter_bool(vew, keep_0=False)
-    vew = utils.col_resize_percent(vew, "path", 60)
-    vew = utils.col_naturalsize(vew, "size")
+    vew = iterables.list_dict_filter_bool(vew, keep_0=False)
+    vew = printing.col_resize_percent(vew, "path", 60)
+    vew = printing.col_naturalsize(vew, "size")
     print(tabulate(vew, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False))
     print(len(tbl) - len(vew), "other folders not shown")
 
@@ -103,7 +104,7 @@ def move_list() -> None:
 
     data = {d["path"]: d for d in data}
 
-    utils.set_readline_completion(list(data.keys()))
+    devices.set_readline_completion(list(data.keys()))
 
     print(
         """
@@ -182,7 +183,7 @@ Type "*" to select all files in the most recently printed table
         """,
         )
 
-        if utils.confirm(f"Mark as deleted in {args.database}?"):  # type: ignore
+        if devices.confirm(f"Mark as deleted in {args.database}?"):  # type: ignore
             player.mark_media_deleted_like(args, list(selected_paths))
 
 

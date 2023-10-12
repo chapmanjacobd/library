@@ -1,4 +1,5 @@
-from xklb import consts, utils
+from xklb import consts
+from xklb.utils import iterables
 
 
 def create(args):
@@ -25,4 +26,4 @@ def add(args, paths=None, media_ids=None, time_played=None, playhead=None, mark_
         for media_id in media_ids
         if media_id
     ]
-    args.db["history"].insert_all(utils.list_dict_filter_bool(rows), pk="id", alter=True)
+    args.db["history"].insert_all(iterables.list_dict_filter_bool(rows), pk="id", alter=True)

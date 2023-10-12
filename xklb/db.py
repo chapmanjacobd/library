@@ -3,15 +3,16 @@ from pathlib import Path
 from textwrap import dedent
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Union
 
-from xklb import consts, utils
-from xklb.utils import log
+from xklb import consts
+from xklb.utils import iterables, strings
+from xklb.utils.log_utils import log
 
 if TYPE_CHECKING:
     from sqlite_utils import Database
 
 
 def tracer(sql, params) -> None:
-    sql = utils.remove_consecutives(dedent(sql), "\n")
+    sql = strings.remove_consecutives(dedent(sql), "\n")
     log.info(f"SQL: {sql} - params: {params}")
 
 
@@ -141,7 +142,7 @@ def optimize(args) -> None:
         if "path" in table_columns:
             str_columns = list(set([*str_columns, "path"]))
 
-        optimized_column_order = list(utils.ordered_set([*int_columns, *(table_config.get("column_order") or [])]))
+        optimized_column_order = list(iterables.ordered_set([*int_columns, *(table_config.get("column_order") or [])]))
         compare_order = zip(table_columns, optimized_column_order)
         was_transformed = False
         if not all(x == y for x, y in compare_order):
@@ -193,7 +194,7 @@ def fts_quote(query: List[str]) -> List[str]:
 
 
 def fts_search_sql(table, fts_table, include, exclude=None, flexible=False):
-    param_key = "FTS" + utils.random_string()
+    param_key = "FTS" + consts.random_string()
     table = f"""(
     with original as (select rowid, * from [{table}])
     select

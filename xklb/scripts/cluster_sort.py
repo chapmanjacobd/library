@@ -1,10 +1,11 @@
-import argparse, json, sys
+import argparse, json, os.path, sys
+from collections import Counter
 from pathlib import Path
-from pprint import pprint
 
-from xklb import consts, usage, utils
+from xklb import consts, usage
 from xklb.consts import DBType
-from xklb.utils import log
+from xklb.utils import file_utils, iterables, objects, printing, strings
+from xklb.utils.log_utils import Timer, log
 
 
 def parse_args() -> argparse.Namespace:
@@ -61,8 +62,142 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("output_path", nargs="?")
     args = parser.parse_args()
 
-    log.info(utils.dict_filter_bool(args.__dict__))
+    log.info(objects.dict_filter_bool(args.__dict__))
     return args
+
+
+def cluster_paths(paths, n_clusters=None):
+    if len(paths) < 2:
+        return paths
+
+    from sklearn.cluster import KMeans
+    from sklearn.feature_extraction.text import TfidfVectorizer
+
+    sentence_strings = (strings.path_to_sentence(s) for s in paths)
+
+    try:
+        vectorizer = TfidfVectorizer(min_df=2, strip_accents="unicode", stop_words="english")
+        X = vectorizer.fit_transform(sentence_strings)
+    except ValueError:
+        try:
+            vectorizer = TfidfVectorizer(strip_accents="unicode", stop_words="english")
+            X = vectorizer.fit_transform(sentence_strings)
+        except ValueError:
+            try:
+                vectorizer = TfidfVectorizer()
+                X = vectorizer.fit_transform(sentence_strings)
+            except ValueError:
+                vectorizer = TfidfVectorizer(analyzer="char_wb")
+                X = vectorizer.fit_transform(sentence_strings)
+
+    clusterizer = KMeans(n_clusters=n_clusters or int(X.shape[0] ** 0.5), random_state=0, n_init=10).fit(X)
+    clusters = clusterizer.labels_
+
+    grouped_strings = {}
+    for i, group_string in enumerate(paths):
+        cluster_id = clusters[i]
+
+        if cluster_id not in grouped_strings:
+            grouped_strings[cluster_id] = []
+
+        grouped_strings[cluster_id].append(group_string)
+
+    result = []
+    for _cluster_id, paths in grouped_strings.items():
+        common_prefix = os.path.commonprefix(paths)
+
+        suffix_words = []
+        for path in paths:
+            suffix = path[len(common_prefix) :]
+            words = list(iterables.ordered_set(strings.path_to_sentence(suffix).split()))
+            suffix_words.extend(words)
+
+        word_counts = Counter(suffix_words)
+        common_words = [w for w, c in word_counts.items() if c > int(len(paths) * 0.6) and len(w) > 1]
+
+        # join but preserve order
+        suffix = "*"
+        for word in iterables.ordered_set(suffix_words):
+            if word in common_words:
+                suffix += word + "*"
+
+        metadata = {
+            "common_prefix": common_prefix.strip() + suffix,
+            "grouped_paths": sorted(paths),
+        }
+        result.append(metadata)
+
+    return result
+
+
+def cluster_images(paths, n_clusters=None):
+    paths = [s.rstrip("\n") for s in paths]
+    t = Timer()
+
+    import os
+
+    import numpy as np
+    from annoy import AnnoyIndex
+    from PIL import Image
+
+    log.info("imports %s", t.elapsed())
+    index_dir = "image_cluster_indexes"
+    os.makedirs(index_dir, exist_ok=True)
+
+    img_size = 100  # trade-off between accuracy and speed
+
+    image_mode_groups = {}
+    for path in paths:
+        img = Image.open(path)
+        img = img.resize((img_size, img_size), Image.Resampling.NEAREST)
+        img_array = np.array(img).reshape(-1)  # convert to scalar for ANNoy
+        mode = img.mode
+        if mode not in image_mode_groups:
+            image_mode_groups[mode] = []
+        image_mode_groups[mode].append(img_array)
+    log.info("image_mode_groups %s", t.elapsed())
+
+    annoy_indexes = {}
+    for mode, images in image_mode_groups.items():
+        dimension = images[0].shape[0]
+
+        annoy_index = AnnoyIndex(dimension, "angular")
+        for i, vector in enumerate(images):
+            annoy_index.add_item(i, vector)
+
+        annoy_index.build(100)  # trade-off between accuracy and speed
+        annoy_indexes[mode] = annoy_index
+    log.info("annoy_index %s", t.elapsed())
+
+    clusters = []
+    for mode, images in image_mode_groups.items():
+        annoy_index = annoy_indexes[mode]
+        for i in range(len(images)):
+            nearest_neighbors = annoy_index.get_nns_by_item(i, n_clusters or int(len(images) ** 0.6))
+            clusters.extend([i] * len(nearest_neighbors))
+    log.info("image_mode_groups %s", t.elapsed())
+
+    grouped_strings = {}
+    for i, group_string in enumerate(paths):
+        cluster_id = clusters[i]
+
+        if cluster_id not in grouped_strings:
+            grouped_strings[cluster_id] = []
+
+        grouped_strings[cluster_id].append(group_string + "\n")
+    log.info("grouped_strings %s", t.elapsed())
+
+    result = []
+    for _cluster_id, paths in grouped_strings.items():
+        common_prefix = os.path.commonprefix(paths)
+        metadata = {
+            "common_prefix": common_prefix,
+            "grouped_paths": sorted(paths),
+        }
+        result.append(metadata)
+    log.info("common_prefix %s", t.elapsed())
+
+    return result
 
 
 def cluster_sort() -> None:
@@ -72,9 +207,9 @@ def cluster_sort() -> None:
     args.input_path.close()
 
     if args.profile == "lines":
-        groups = utils.cluster_paths(lines, args.clusters)
+        groups = cluster_paths(lines, args.clusters)
     elif args.profile == "image":
-        groups = utils.cluster_images(lines, args.clusters)
+        groups = cluster_images(lines, args.clusters)
     else:
         raise NotImplementedError
     groups = sorted(groups, key=lambda d: (len(d["grouped_paths"]), -len(d["common_prefix"])))
@@ -106,14 +241,31 @@ def cluster_sort() -> None:
         elif args.profile in ("image",):
             for i, group in enumerate(groups, start=1):
                 paths = [s.rstrip("\n") for s in group["grouped_paths"]]
-                utils.move_files([(p, str(Path(p).parent / str(i).zfill(min_len) / Path(p).name)) for p in paths])
+                file_utils.move_files([(p, str(Path(p).parent / str(i).zfill(min_len) / Path(p).name)) for p in paths])
     else:
-        lines = utils.flatten(d["grouped_paths"] for d in groups)
+        lines = iterables.flatten(d["grouped_paths"] for d in groups)
         if args.output_path:
             with open(args.output_path, "w") as output_fd:
                 output_fd.writelines(lines)
         else:
-            utils.pipe_lines(lines)
+            printing.pipe_lines(lines)
+
+
+def cluster_dicts(args, media):
+    if len(media) < 2:
+        return media
+    media_keyed = {d["path"]: d for d in media}
+    groups = cluster_paths([d["path"] for d in media], n_clusters=getattr(args, "clusters", None))
+    groups = sorted(groups, key=lambda d: (-len(d["grouped_paths"]), -len(d["common_prefix"])))
+    if hasattr(args, "sort") and "duration" in args.sort:
+        sorted_paths = iterables.flatten(
+            sorted(d["grouped_paths"], key=lambda p: media_keyed[p]["duration"], reverse="duration desc" in args.sort)
+            for d in groups
+        )
+    else:
+        sorted_paths = iterables.flatten(d["grouped_paths"] for d in groups)
+    media = [media_keyed[p] for p in sorted_paths]
+    return media
 
 
 if __name__ == "__main__":

@@ -1,9 +1,10 @@
 import argparse, os, sys
 from typing import List, Tuple
 
-from xklb import consts, db, gdl_backend, play_actions, player, tube_backend, usage, utils
+from xklb import consts, db, gdl_backend, play_actions, player, tube_backend, usage
 from xklb.consts import SC, DBType
-from xklb.utils import log
+from xklb.utils import arg_utils, iterables, nums, objects, printing, processes, sql_utils
+from xklb.utils.log_utils import log
 
 
 def parse_args():
@@ -46,20 +47,22 @@ def parse_args():
         "--extractor-config",
         "-extractor-config",
         nargs=1,
-        action=utils.ArgparseDict,
+        action=arg_utils.ArgparseDict,
         default={},
         metavar="KEY=VALUE",
         help="Add key/value pairs to override or extend downloader configuration",
     )
     parser.add_argument("--download-archive")
-    parser.add_argument("--extra-media-data", default={}, nargs=1, action=utils.ArgparseDict, metavar="KEY=VALUE")
-    parser.add_argument("--extra-playlist-data", default={}, nargs=1, action=utils.ArgparseDict, metavar="KEY=VALUE")
+    parser.add_argument("--extra-media-data", default={}, nargs=1, action=arg_utils.ArgparseDict, metavar="KEY=VALUE")
+    parser.add_argument(
+        "--extra-playlist-data", default={}, nargs=1, action=arg_utils.ArgparseDict, metavar="KEY=VALUE"
+    )
     parser.add_argument("--safe", "-safe", action="store_true", help="Skip generic URLs")
     parser.add_argument("--same-domain", action="store_true", help="Choose a random domain to focus on")
 
     parser.add_argument("--subs", action="store_true")
     parser.add_argument("--auto-subs", "--autosubs", action="store_true")
-    parser.add_argument("--subtitle-languages", "--subtitle-language", "--sl", action=utils.ArgparseList)
+    parser.add_argument("--subtitle-languages", "--subtitle-language", "--sl", action=arg_utils.ArgparseList)
 
     parser.add_argument("--prefix", default=os.getcwd(), help=argparse.SUPPRESS)
     parser.add_argument("--ext")
@@ -93,18 +96,18 @@ def parse_args():
     parser.add_argument("--verbose", "-v", action="count", default=0)
 
     parser.add_argument("database", help=argparse.SUPPRESS)
-    parser.add_argument("playlists", nargs="*", action=utils.ArgparseArgsOrStdin, help=argparse.SUPPRESS)
+    parser.add_argument("playlists", nargs="*", action=arg_utils.ArgparseArgsOrStdin, help=argparse.SUPPRESS)
     args = parser.parse_intermixed_args()
     args.defaults = []
 
     if args.duration:
-        args.duration = utils.parse_human_to_sql(utils.human_to_seconds, "duration", args.duration)
+        args.duration = sql_utils.parse_human_to_sql(nums.human_to_seconds, "duration", args.duration)
 
     if not args.profile and not args.print:
         log.error("Download profile must be specified. Use one of: --video OR --audio OR --image")
         raise SystemExit(1)
 
-    args.playlists = utils.conform(args.playlists)
+    args.playlists = iterables.conform(args.playlists)
 
     if args.db:
         args.database = args.db
@@ -114,9 +117,9 @@ def parse_args():
     play_actions.parse_args_sort(args)
     play_actions.parse_args_limit(args)
 
-    utils.timeout(args.timeout)
+    processes.timeout(args.timeout)
 
-    log.info(utils.dict_filter_bool(args.__dict__))
+    log.info(objects.dict_filter_bool(args.__dict__))
 
     return args
 
@@ -224,7 +227,7 @@ def process_downloadqueue(args) -> List[dict]:
 
     media = list(args.db.query(query, bindings))
     if not media:
-        utils.no_media_found()
+        processes.no_media_found()
     return media
 
 
@@ -246,7 +249,7 @@ def dl_download(args=None) -> None:
 
     media = process_downloadqueue(args)
     for m in media:
-        if args.blocklist_rules and utils.is_blocked_dict_like_sql(m, args.blocklist_rules):
+        if args.blocklist_rules and sql_utils.is_blocked_dict_like_sql(m, args.blocklist_rules):
             player.mark_download_attempt(args, [m["path"]])
             continue
 
@@ -276,7 +279,7 @@ def dl_download(args=None) -> None:
                     log.info(
                         "[%s]: Download marked deleted (%s ago). Skipping!",
                         m["path"],
-                        utils.human_time(consts.now() - d["time_deleted"]),
+                        printing.human_time(consts.now() - d["time_deleted"]),
                     )
                     player.mark_download_attempt(args, [m["path"]])
                     continue
@@ -284,7 +287,7 @@ def dl_download(args=None) -> None:
                     log.info(
                         "[%s]: Download already attempted recently (%s ago). Skipping!",
                         m["path"],
-                        utils.human_time(consts.now() - d["time_modified"]),
+                        printing.human_time(consts.now() - d["time_modified"]),
                     )
                     continue
 

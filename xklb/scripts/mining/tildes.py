@@ -1,13 +1,14 @@
 import argparse
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 from time import sleep
 
 from bs4 import BeautifulSoup
 from dateutil import parser
 
-from xklb import db, media, usage, utils
-from xklb.utils import log
+from xklb import db, media, usage
+from xklb.utils import nums, objects, web
+from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
@@ -22,12 +23,12 @@ def parse_args() -> argparse.Namespace:
 
     Path(args.database).touch()
     args.db = db.connect(args)
-    log.info(utils.dict_filter_bool(args.__dict__))
+    log.info(objects.dict_filter_bool(args.__dict__))
     return args
 
 
 def save_page(args, url):
-    text = utils.requests_authed_get(args, url)
+    text = web.requests_authed_get(args, url)
     soup = BeautifulSoup(text, "html.parser")
 
     comment_elements = soup.find_all("article", class_="comment")
@@ -38,12 +39,12 @@ def save_page(args, url):
         comment = {
             "path": "https://tildes.net" + comment_element.find("a", class_="comment-nav-link")["href"],
             "parent_path": "https://tildes.net" + parent_path_element["href"] if parent_path_element else None,
-            "time_created": utils.to_timestamp(
+            "time_created": nums.to_timestamp(
                 datetime.fromisoformat(
                     comment_element.find("time", class_="comment-posted-time")["datetime"][:-1],
                 )
             ),
-            "time_modified": utils.to_timestamp(datetime.fromisoformat(edited_time_element["datetime"][:-1]))
+            "time_modified": nums.to_timestamp(datetime.fromisoformat(edited_time_element["datetime"][:-1]))
             if edited_time_element
             else None,
             "score": int(score_element.text.split()[0]) if score_element else 0,
@@ -86,7 +87,7 @@ def save_page(args, url):
         time_published = None
         if published_date_element:
             published_date = published_date_element.get_text("\n", strip=True).split()[-1]
-            time_published = utils.to_timestamp(parser.parse(published_date))
+            time_published = nums.to_timestamp(parser.parse(published_date))
 
         num_words = None
         if article_words_element:
@@ -98,7 +99,7 @@ def save_page(args, url):
             "path": path,
             "path_parent": topic_source,
             "topic_group": topic_group,
-            "time_created": utils.to_timestamp(
+            "time_created": nums.to_timestamp(
                 datetime.fromisoformat(
                     topic_element.find("time", class_="time-responsive")["datetime"][:-1],
                 ),
@@ -116,11 +117,11 @@ def save_page(args, url):
 
     main_element = soup.find("main")
     if main_element:
-        pagination = main_element.find("div", class_="pagination")
+        pagination = main_element.find("div", class_="pagination")  # type: ignore
         if pagination:
-            next_a = pagination.find("a", text="Next")
+            next_a = pagination.find("a", text="Next")  # type: ignore
             if next_a:
-                next_page_url = next_a["href"]
+                next_page_url = next_a["href"]  # type: ignore
                 sleep(1)
                 save_page(args, next_page_url)
 

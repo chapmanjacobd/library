@@ -1,8 +1,9 @@
 import argparse, asyncio, queue, sqlite3, threading
 from pathlib import Path
 
-from xklb import db, usage, utils
-from xklb.utils import log
+from xklb import db, usage
+from xklb.utils import objects, web
+from xklb.utils.log_utils import log
 
 """
 My understanding of aiohttp is stolen
@@ -46,13 +47,13 @@ def parse_args(prog, usage) -> argparse.Namespace:
         args.database = args.db
     Path(args.database).touch()
     args.db = db.connect(args)
-    log.info(utils.dict_filter_bool(args.__dict__))
+    log.info(objects.dict_filter_bool(args.__dict__))
 
     return args
 
 
 def get(url):
-    r = utils.requests_session().get(url, timeout=120)
+    r = web.requests_session().get(url, timeout=120)
     return r.json()
 
 
@@ -80,7 +81,7 @@ async def get_hn_item(session, db_queue, sem, hn_id):
             data["is_dead"] = data.pop("dead", None)
             data["is_deleted"] = data.pop("deleted", None)
             data["time_created"] = data.pop("time", None)
-            data = utils.dict_filter_bool(data)
+            data = objects.dict_filter_bool(data)
             log.debug("Saving %s", data)
             db_queue.put((hn_type, data))
     finally:

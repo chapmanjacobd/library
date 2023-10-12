@@ -1,7 +1,8 @@
 import argparse
 
-from xklb import consts, db, dl_extract, play_actions, player, tube_backend, usage, utils
-from xklb.utils import log
+from xklb import consts, db, dl_extract, play_actions, player, tube_backend, usage
+from xklb.utils import objects, sql_utils
+from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
@@ -36,7 +37,7 @@ def parse_args() -> argparse.Namespace:
     if args.db:
         args.database = args.db
     args.db = db.connect(args)
-    log.info(utils.dict_filter_bool(args.__dict__))
+    log.info(objects.dict_filter_bool(args.__dict__))
 
     args.action = consts.SC.download_status
     return args
@@ -76,7 +77,7 @@ def download_status() -> None:
 
     if "blocklist" in args.db.table_names():
         blocklist_rules = [{d["key"]: d["value"]} for d in args.db["blocklist"].rows]
-        media = utils.block_dicts_like_sql(media, blocklist_rules)
+        media = sql_utils.block_dicts_like_sql(media, blocklist_rules)
 
     player.media_printer(args, media, units="extractors")
 

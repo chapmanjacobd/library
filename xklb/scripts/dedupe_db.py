@@ -1,20 +1,21 @@
 import argparse
 from pathlib import Path
 
-from xklb import db, usage, utils
-from xklb.utils import log
+from xklb import db, usage
+from xklb.utils import arg_utils, objects
+from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library dedupe-dbs", usage=usage.dedupe_db)
     parser.add_argument("--skip-upsert", action="store_true")
     parser.add_argument("--skip-0", action="store_true")
-    parser.add_argument("--only-columns", action=utils.ArgparseList, help="Comma separated column names to upsert")
-    parser.add_argument("--primary-keys", "--pk", action=utils.ArgparseList, help="Comma separated primary keys")
+    parser.add_argument("--only-columns", action=arg_utils.ArgparseList, help="Comma separated column names to upsert")
+    parser.add_argument("--primary-keys", "--pk", action=arg_utils.ArgparseList, help="Comma separated primary keys")
     parser.add_argument(
         "--business-keys",
         "--bk",
-        action=utils.ArgparseList,
+        action=arg_utils.ArgparseList,
         required=True,
         help="Comma separated business keys",
     )
@@ -30,7 +31,7 @@ def parse_args() -> argparse.Namespace:
     Path(args.database).touch()
     args.db = db.connect(args)
 
-    log.info(utils.dict_filter_bool(args.__dict__))
+    log.info(objects.dict_filter_bool(args.__dict__))
 
     return args
 

@@ -1,8 +1,8 @@
 import os, re
 from typing import List, Optional
 
-from xklb import utils
-from xklb.utils import combine, log, safe_unpack
+from xklb.utils import iterables, processes, strings
+from xklb.utils.log_utils import log
 
 REGEX_SENTENCE_ENDS = re.compile(r";|,|\.|\*|\n|\t")
 
@@ -22,11 +22,11 @@ def munge_book_tags(media, path) -> Optional[dict]:
         log.warning(e)
         log.error(f"Failed reading text. {path}")
         tags = []
-    return {**media, "tags": combine(tags)}
+    return {**media, "tags": strings.combine(tags)}
 
 
-munge_book_tags_fast = utils.with_timeout(70)(munge_book_tags)
-munge_book_tags_slow = utils.with_timeout(350)(munge_book_tags)
+munge_book_tags_fast = processes.with_timeout(70)(munge_book_tags)
+munge_book_tags_slow = processes.with_timeout(350)(munge_book_tags)
 
 
 def pop_substring_keys(e, key_substring):
@@ -42,13 +42,13 @@ def munge_image_tags(m: dict, e: dict) -> dict:
     if chroma_subsample == 0:
         chroma_subsample = None
 
-    unit_x = safe_unpack(
+    unit_x = iterables.safe_unpack(
         *pop_substring_keys(e, "XResolution"),
     )
-    unit_y = safe_unpack(
+    unit_y = iterables.safe_unpack(
         *pop_substring_keys(e, "YResolution"),
     )
-    unit = safe_unpack(
+    unit = iterables.safe_unpack(
         *pop_substring_keys(e, "ResolutionUnit"),
     )
     if unit == 0:
@@ -58,10 +58,10 @@ def munge_image_tags(m: dict, e: dict) -> dict:
 
     m = {
         **m,
-        "orientation": safe_unpack(
+        "orientation": iterables.safe_unpack(
             *pop_substring_keys(e, "Orientation"),
         ),
-        "width": safe_unpack(
+        "width": iterables.safe_unpack(
             e.pop("File:ImageWidth", None),
             e.pop("Composite:ImageWidth", None),
             e.pop("EXIF:ImageWidth", None),
@@ -69,7 +69,7 @@ def munge_image_tags(m: dict, e: dict) -> dict:
             e.pop("PNG:ImageWidth", None),
             *pop_substring_keys(e, "ImageWidth"),
         ),
-        "height": safe_unpack(
+        "height": iterables.safe_unpack(
             e.pop("File:ImageHeight", None),
             e.pop("Composite:ImageHeight", None),
             e.pop("EXIF:ImageHeight", None),
@@ -78,28 +78,28 @@ def munge_image_tags(m: dict, e: dict) -> dict:
             *pop_substring_keys(e, "ImageHeight"),
         ),
         "chroma_subsample": chroma_subsample,
-        "color_depth": safe_unpack(
+        "color_depth": iterables.safe_unpack(
             *pop_substring_keys(e, "ColorResolutionDepth"),
         ),
-        "color_background": safe_unpack(
+        "color_background": iterables.safe_unpack(
             *pop_substring_keys(e, "BackgroundColor"),
         ),
-        "color_transparent": safe_unpack(
+        "color_transparent": iterables.safe_unpack(
             *pop_substring_keys(e, "TransparentColor"),
         ),
-        "longitude": safe_unpack(
+        "longitude": iterables.safe_unpack(
             e.pop("Composite:GPSLongitude", None),
             *pop_substring_keys(e, "GPSLongitude"),
         ),
-        "latitude": safe_unpack(
+        "latitude": iterables.safe_unpack(
             e.pop("Composite:GPSLatitude", None),
             *pop_substring_keys(e, "GPSLatitude"),
         ),
         "unit": unit,
         "unit_x": unit_x,
         "unit_y": unit_y,
-        "exiftool_warning": combine(*pop_substring_keys(e, "ExifTool:Warning")),
-        "tags": combine(
+        "exiftool_warning": strings.combine(*pop_substring_keys(e, "ExifTool:Warning")),
+        "tags": strings.combine(
             *pop_substring_keys(e, "Headline"),
             *pop_substring_keys(e, "Title"),
             *pop_substring_keys(e, "ImageDescription"),

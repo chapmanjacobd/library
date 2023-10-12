@@ -1,5 +1,3 @@
-#!/usr/bin/python3
-
 import argparse, difflib, os, re, shlex, shutil, subprocess, sys, time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -7,8 +5,12 @@ from pathlib import Path
 import humanize
 from screeninfo import get_monitors
 
-from xklb import consts, player, utils
-from xklb.utils import log
+from xklb import consts, player
+from xklb.utils import devices, file_utils, iterables, mpv_utils, processes
+from xklb.utils.log_utils import log
+
+#!/usr/bin/python3
+
 
 left_mpv_socket = str(Path(consts.TEMP_SCRIPT_DIR) / f"mpv_socket_{consts.random_string()}")
 right_mpv_socket = str(Path(consts.TEMP_SCRIPT_DIR) / f"mpv_socket_{consts.random_string()}")
@@ -140,8 +142,8 @@ def side_by_side_mpv(args, left_side, right_side):
         right_mpv.quit_callback = right_quit_callback  # they can't both be the same
 
         with ThreadPoolExecutor() as e:
-            e.submit(utils.auto_seek, left_mpv)
-            e.submit(utils.auto_seek, right_mpv, delay=0.4)
+            e.submit(mpv_utils.auto_seek, left_mpv)
+            e.submit(mpv_utils.auto_seek, right_mpv, delay=0.4)
 
     else:
         mpv_options = [
@@ -217,8 +219,8 @@ def mv_to_keep_folder(args, d) -> None:
             print("Source is smaller than destination", diff_size)
         else:
             print("Source and destination are the same size", humanize.naturalsize(src_size))
-        if utils.confirm("Replace destination file?"):
-            utils.trash(new_path, detach=False)
+        if devices.confirm("Replace destination file?"):
+            file_utils.trash(new_path, detach=False)
             new_path = shutil.move(media_file, keep_path)
 
     log.info(f"{new_path}: new location")
@@ -236,7 +238,7 @@ def group_and_delete(args, groups):
             continue
 
         def delete_dupe(d, detach=is_interactive):
-            utils.trash(d["path"], detach=detach)
+            file_utils.trash(d["path"], detach=detach)
             log.info(f"{d['path']}: Deleted")
 
         group.sort(key=lambda x: x["size"], reverse=True)
@@ -289,7 +291,7 @@ def group_and_delete(args, groups):
 
             if args.override_player:
                 for path in (left["path"], right["path"]):
-                    r = utils.cmd(*shlex.split(args.override_player), path, strict=False)
+                    r = processes.cmd(*shlex.split(args.override_player), path, strict=False)
                     if r.returncode == 0:
                         player.post_act(args, path, action="ASK_MOVE_OR_DELETE" if args.keep_dir else "ASK_DELETE")
                     else:
@@ -299,7 +301,7 @@ def group_and_delete(args, groups):
             else:
                 side_by_side_mpv(args, left["path"], right["path"])
                 while True:
-                    utils.clear_input()
+                    devices.clear_input()
                     user_input = (
                         input("Keep which files? (l Left/r Right/k Keep both/d Delete both) [default: l]: ")
                         .strip()
@@ -333,7 +335,7 @@ def group_and_delete(args, groups):
                 left = kept_dups[-1]
 
         if args.keep_dir:
-            for d in utils.list_dict_unique(kept_dups, ["path"]):
+            for d in iterables.list_dict_unique(kept_dups, ["path"]):
                 if os.path.exists(d["path"]):
                     mv_to_keep_folder(args, d)
 

@@ -12,9 +12,10 @@ from typing import Dict, List, Optional, Tuple, Union
 import humanize
 from tabulate import tabulate
 
-from xklb import consts, db, history, media, utils
+from xklb import consts, db, history, media
 from xklb.consts import SC
-from xklb.utils import cmd, cmd_interactive, human_time, log
+from xklb.utils import devices, file_utils, iterables, printing, processes, strings
+from xklb.utils.log_utils import log
 
 try:
     import tkinter  # noqa
@@ -72,7 +73,7 @@ def calculate_duration(args, m) -> Tuple[int, int]:
 
 
 def get_browser() -> Optional[str]:
-    default_application = cmd("xdg-mime", "query", "default", "text/html").stdout
+    default_application = processes.cmd("xdg-mime", "query", "default", "text/html").stdout
     return which(default_application.replace(".desktop", ""))
 
 
@@ -80,8 +81,8 @@ def find_xdg_application(media_file) -> Optional[str]:
     if media_file.startswith("http"):
         return get_browser()
 
-    mimetype = cmd("xdg-mime", "query", "filetype", media_file).stdout
-    default_application = cmd("xdg-mime", "query", "default", mimetype).stdout
+    mimetype = processes.cmd("xdg-mime", "query", "filetype", media_file).stdout
+    default_application = processes.cmd("xdg-mime", "query", "default", mimetype).stdout
     return which(default_application.replace(".desktop", ""))
 
 
@@ -187,8 +188,8 @@ def mv_to_keep_folder(args, media_file: str) -> None:
         else:
             print("Source and destination are the same size", humanize.naturalsize(src_size))
         if args.post_action.upper().startswith("ASK_"):
-            if utils.confirm("Replace destination file?"):
-                utils.trash(new_path, detach=False)
+            if devices.confirm("Replace destination file?"):
+                file_utils.trash(new_path, detach=False)
                 new_path = shutil.move(media_file, keep_path)
             else:
                 return
@@ -196,7 +197,7 @@ def mv_to_keep_folder(args, media_file: str) -> None:
             raise
 
     if getattr(args, "keep_cmd", None):
-        utils.cmd_detach(shlex.split(args.keep_cmd), new_path)
+        processes.cmd_detach(shlex.split(args.keep_cmd), new_path)
     if hasattr(args, "db"):
         with args.db.conn:
             args.db.conn.execute("DELETE FROM media where path = ?", [new_path])
@@ -204,10 +205,10 @@ def mv_to_keep_folder(args, media_file: str) -> None:
 
 
 def moved_media(args, moved_files: Union[str, list], base_from, base_to) -> int:
-    moved_files = utils.conform(moved_files)
+    moved_files = iterables.conform(moved_files)
     modified_row_count = 0
     if moved_files:
-        df_chunked = utils.chunks(moved_files, consts.SQLITE_PARAM_LIMIT)
+        df_chunked = iterables.chunks(moved_files, consts.SQLITE_PARAM_LIMIT)
         for chunk_paths in df_chunked:
             with args.db.conn:
                 cursor = args.db.conn.execute(
@@ -224,11 +225,11 @@ def moved_media(args, moved_files: Union[str, list], base_from, base_to) -> int:
 
 
 def mark_download_attempt(args, paths) -> int:
-    paths = utils.conform(paths)
+    paths = iterables.conform(paths)
 
     modified_row_count = 0
     if paths:
-        df_chunked = utils.chunks(paths, consts.SQLITE_PARAM_LIMIT)
+        df_chunked = iterables.chunks(paths, consts.SQLITE_PARAM_LIMIT)
         for chunk_paths in df_chunked:
             with args.db.conn:
                 cursor = args.db.conn.execute(
@@ -245,11 +246,11 @@ def mark_download_attempt(args, paths) -> int:
 
 
 def mark_media_deleted(args, paths) -> int:
-    paths = utils.conform(paths)
+    paths = iterables.conform(paths)
 
     modified_row_count = 0
     if paths:
-        df_chunked = utils.chunks(paths, consts.SQLITE_PARAM_LIMIT)
+        df_chunked = iterables.chunks(paths, consts.SQLITE_PARAM_LIMIT)
         for chunk_paths in df_chunked:
             with args.db.conn:
                 cursor = args.db.conn.execute(
@@ -266,11 +267,11 @@ def mark_media_deleted(args, paths) -> int:
 
 
 def mark_media_undeleted(args, paths) -> int:
-    paths = utils.conform(paths)
+    paths = iterables.conform(paths)
 
     modified_row_count = 0
     if paths:
-        df_chunked = utils.chunks(paths, consts.SQLITE_PARAM_LIMIT)
+        df_chunked = iterables.chunks(paths, consts.SQLITE_PARAM_LIMIT)
         for chunk_paths in df_chunked:
             with args.db.conn:
                 cursor = args.db.conn.execute(
@@ -287,7 +288,7 @@ def mark_media_undeleted(args, paths) -> int:
 
 
 def mark_media_deleted_like(args, paths) -> int:
-    paths = utils.conform(paths)
+    paths = iterables.conform(paths)
 
     modified_row_count = 0
     if paths:
@@ -305,7 +306,7 @@ def mark_media_deleted_like(args, paths) -> int:
 
 
 def delete_media(args, paths) -> int:
-    paths = utils.conform(paths)
+    paths = iterables.conform(paths)
     for p in paths:
         if p.startswith("http"):
             continue
@@ -313,7 +314,7 @@ def delete_media(args, paths) -> int:
         if getattr(args, "prefix", False):
             Path(p).unlink(missing_ok=True)
         else:
-            utils.trash(p, detach=len(paths) < 30)
+            file_utils.trash(p, detach=len(paths) < 30)
 
     if hasattr(args, "db"):
         return mark_media_deleted(args, paths)
@@ -399,7 +400,7 @@ def post_act(args, media_file: str, action: Optional[str] = None, geom_data=None
                 false_action=false_action,
             )
         else:
-            response = utils.confirm(true_action.title() + "?")
+            response = devices.confirm(true_action.title() + "?")
         post_act(args, media_file, action=true_action if response else false_action)  # answer the question
 
     action = action or args.post_action
@@ -554,7 +555,7 @@ def get_related_media(args, m: Dict) -> List[Dict]:
 
     m = media.get(args, m["path"])
     words = set(
-        utils.conform(utils.extract_words(m.get(k)) for k in m if k in db.config["media"]["search_columns"]),
+        iterables.conform(strings.extract_words(m.get(k)) for k in m if k in db.config["media"]["search_columns"]),
     )
     args.include = sorted(words, key=len, reverse=True)[:100]
     log.info("related_words: %s", args.include)
@@ -605,7 +606,7 @@ def get_related_media(args, m: Dict) -> List[Dict]:
 
 def get_dir_media(args, dirs: List, include_subdirs=False) -> List[Dict]:
     if len(dirs) == 0:
-        return utils.no_media_found()
+        return processes.no_media_found()
 
     m_columns = db.columns(args, "media")
 
@@ -662,7 +663,7 @@ def get_dir_media(args, dirs: List, include_subdirs=False) -> List[Dict]:
 
 def watch_chromecast(args, m: dict, subtitles_file=None) -> Optional[subprocess.CompletedProcess]:
     if "vlc" in args.player:
-        catt_log = cmd(
+        catt_log = processes.cmd(
             "vlc",
             "--sout",
             "#chromecast",
@@ -674,7 +675,7 @@ def watch_chromecast(args, m: dict, subtitles_file=None) -> Optional[subprocess.
         )
     else:
         if args.action in (SC.watch, SC.listen):
-            catt_log = cmd(
+            catt_log = processes.cmd(
                 "catt",
                 "-d",
                 args.chromecast_device,
@@ -695,18 +696,18 @@ def listen_chromecast(args, m: dict) -> Optional[subprocess.CompletedProcess]:
     if args.cast_with_local:
         cast_process = subprocess.Popen(
             [catt, "-d", args.chromecast_device, "cast", "-s", consts.FAKE_SUBTITLE, m["path"]],
-            **utils.os_bg_kwargs(),
+            **processes.os_bg_kwargs(),
         )
         sleep(0.974)  # imperfect lazy sync; I use keyboard shortcuts to send `set speed` commands to mpv for resync
         # if pyChromecast provides a way to sync accurately that would be very interesting to know; I have not researched it
-        cmd_interactive(*args.player, "--", m["path"])
-        catt_log = utils.Pclose(cast_process)  # wait for chromecast to stop (you can tell any chromecast to pause)
+        processes.cmd_interactive(*args.player, "--", m["path"])
+        catt_log = processes.Pclose(cast_process)  # wait for chromecast to stop (you can tell any chromecast to pause)
         sleep(3.0)  # give chromecast some time to breathe
     else:
         if m["path"].startswith("http"):
             catt_log = args.cc.play_url(m["path"], resolve=True, block=True)
         else:  #  local file
-            catt_log = cmd(catt, "-d", args.chromecast_device, "cast", "-s", consts.FAKE_SUBTITLE, m["path"])
+            catt_log = processes.cmd(catt, "-d", args.chromecast_device, "cast", "-s", consts.FAKE_SUBTITLE, m["path"])
 
     return catt_log
 
@@ -766,7 +767,7 @@ def grid_stack(display, qty, swap=False) -> List[Tuple]:
     if qty == 1:
         return [("--fs", f'--screen-name="{display.name}"', f'--fs-screen-name="{display.name}"')]
     else:
-        dv = list(utils.divisor_gen(qty))
+        dv = list(iterables.divisor_gen(qty))
         if not dv:
             vh = (qty, 1)
             log.debug("not dv %s", {"dv": dv, "vh": vh})
@@ -891,7 +892,7 @@ def _create_player(args, window_geometry, media):
         **m,
         "process": subprocess.Popen(
             [*args.player, *mp_args, *window_geometry, "--", m["path"]],
-            **utils.os_bg_kwargs(),
+            **processes.os_bg_kwargs(),
         ),
     }
 
@@ -923,7 +924,7 @@ def multiple_player(args, media) -> None:
                 else:
                     log.debug("%s Check if still running", t_idx)
                     if m["process"].poll() is not None:
-                        r = utils.Pclose(m["process"])
+                        r = processes.Pclose(m["process"])
                         if r.returncode != 0:
                             log.warning("Player exited with code %s", r.returncode)
                             log.debug(shlex.join(r.args))
@@ -949,18 +950,18 @@ def local_player(args, m) -> subprocess.CompletedProcess:
     if args.folder:
         paths = [str(Path(m["path"]).parent)]
     elif args.folder_glob:
-        paths = utils.fast_glob(Path(m["path"]).parent, args.folder_glob)
+        paths = file_utils.fast_glob(Path(m["path"]).parent, args.folder_glob)
     else:
         paths = [m["path"]]
 
     if system() == "Windows" or args.action in (SC.watch):
-        r = cmd(*args.player, *paths, strict=False)
+        r = processes.cmd(*args.player, *paths, strict=False)
     else:  # args.action in (SC.listen)
-        r = cmd_interactive(*args.player, *paths)
+        r = processes.cmd_interactive(*args.player, *paths)
 
     if args.player_need_sleep:
         try:
-            utils.confirm("Continue?")
+            devices.confirm("Continue?")
         except Exception:
             if hasattr(m, "duration"):
                 delay = m["duration"]
@@ -1117,7 +1118,7 @@ def media_printer(args, data, units=None, media_len=None) -> None:
         breakpoint()
 
     if not media:
-        utils.no_media_found()
+        processes.no_media_found()
 
     if "f" not in args.print and "limit" in getattr(args, "defaults", []):
         media.reverse()
@@ -1174,13 +1175,13 @@ def media_printer(args, data, units=None, media_len=None) -> None:
 
     for k, v in list(media[0].items()):
         if k.endswith("size"):
-            utils.col_naturalsize(media, k)
+            printing.col_naturalsize(media, k)
         elif k.endswith("duration") or k in ("playhead",):
-            utils.col_duration(media, k)
+            printing.col_duration(media, k)
         elif k.startswith("time_") or "_time_" in k:
-            utils.col_naturaldate(media, k)
+            printing.col_naturaldate(media, k)
         elif k == "title_path":
-            media = [{"title_path": "\n".join(utils.concat(d["title"], d["path"])), **d} for d in media]
+            media = [{"title_path": "\n".join(iterables.concat(d["title"], d["path"])), **d} for d in media]
             media = [{k: v for k, v in d.items() if k not in ("title", "path")} for d in media]
         elif k.startswith("percent") or k.endswith("ratio"):
             for d in media:
@@ -1197,7 +1198,7 @@ def media_printer(args, data, units=None, media_len=None) -> None:
             return True
         return None
 
-    media = utils.list_dict_filter_bool(media)
+    media = iterables.list_dict_filter_bool(media)
 
     if "f" in args.print:
         if len(media) <= 1000:
@@ -1218,22 +1219,22 @@ def media_printer(args, data, units=None, media_len=None) -> None:
         virtual_csv.seek(0)
         for line in virtual_csv.readlines():
             if getattr(args, "moved", False):
-                utils.pipe_print(line.strip().replace(args.moved[0], "", 1))
+                printing.pipe_print(line.strip().replace(args.moved[0], "", 1))
             else:
-                utils.pipe_print(line.strip())
+                printing.pipe_print(line.strip())
         if getattr(args, "moved", False):
             moved_media(args, [d["path"] for d in media], *args.moved)
     elif "j" in args.print or consts.MOBILE_TERMINAL:
         print(json.dumps(media, indent=3))
     elif "c" in args.print:
-        utils.write_csv_to_stdout(media)
+        printing.write_csv_to_stdout(media)
     else:
         tbl = deepcopy(media)
         tbl = [{k: f"{v:.4f}" if isinstance(v, float) else v for k, v in d.items()} for d in tbl]
-        max_col_widths = utils.calculate_max_col_widths(tbl)
-        adjusted_widths = utils.distribute_excess_width(max_col_widths)
+        max_col_widths = printing.calculate_max_col_widths(tbl)
+        adjusted_widths = printing.distribute_excess_width(max_col_widths)
         for k, v in adjusted_widths.items():
-            utils.col_resize(tbl, k, v)
+            printing.col_resize(tbl, k, v)
 
         colalign = ["right" if should_align_right(k, v) else "left" for k, v in tbl[0].items()]
         print(tabulate(tbl, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False, colalign=colalign))
@@ -1245,7 +1246,7 @@ def media_printer(args, data, units=None, media_len=None) -> None:
             )
 
         if duration > 0:
-            duration = human_time(duration)
+            duration = printing.human_time(duration)
             if "a" not in args.print:
                 print("Total duration:", duration)
 

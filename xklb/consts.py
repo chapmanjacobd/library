@@ -1,4 +1,4 @@
-import os, re, secrets, shutil, string, sys
+import os, random, re, shutil, string, sys
 from datetime import datetime, timezone
 from pathlib import Path
 from tempfile import gettempdir
@@ -9,8 +9,10 @@ def now():
     return int(datetime.now(tz=timezone.utc).timestamp())
 
 
-def random_string(length=5):
-    return "".join(secrets.choice(string.ascii_letters + string.digits) for _ in range(length))
+def random_string() -> str:
+    return "".join(
+        random.choices(string.ascii_uppercase, k=1) + random.choices(string.ascii_uppercase + string.digits, k=4),
+    )
 
 
 TEMP_DIR = gettempdir()
@@ -159,7 +161,7 @@ def get_files(base_dir: Path, extensions: List[str]) -> List[str]:
 
 
 def get_image_files(path: Path) -> List[str]:
-    return get_files(path, IMAGE_EXTENSIONS)
+    return get_files(path, IMAGE_EXTENSIONS)  # type: ignore
 
 
 def get_audio_files(path: Path) -> List[str]:
@@ -167,7 +169,7 @@ def get_audio_files(path: Path) -> List[str]:
 
 
 def get_video_files(path: Path) -> List[str]:
-    return get_files(path, VIDEO_EXTENSIONS)
+    return get_files(path, VIDEO_EXTENSIONS)  # type: ignore
 
 
 def get_text_files(path: Path, image_recognition=False, speech_recognition=False) -> List[str]:

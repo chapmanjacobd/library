@@ -848,10 +848,6 @@ tubeupdate = """library tubeupdate [--audio | --video] DATABASE
 
         library tubeupdate educational.db
 
-    Run with --optimize to add indexes (might speed up searching but the size will increase):
-
-        library tubeupdate --optimize examples/music.tl.db
-
     Fetch extra metadata:
 
         By default tubeupdate will quickly add media.

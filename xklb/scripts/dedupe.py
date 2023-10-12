@@ -5,9 +5,10 @@ from typing import List
 
 import humanize
 
-from xklb import consts, db, player, usage, utils
+from xklb import consts, db, player, usage
 from xklb.consts import DBType
-from xklb.utils import log
+from xklb.utils import devices, file_utils, iterables, objects, strings
+from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
@@ -135,7 +136,7 @@ def parse_args() -> argparse.Namespace:
         args.table2 = args.table
 
     args.action = consts.SC.dedupe
-    log.info(utils.dict_filter_bool(args.__dict__))
+    log.info(objects.dict_filter_bool(args.__dict__))
     return args
 
 
@@ -377,7 +378,9 @@ def dedupe() -> None:
 
         rows = get_rows(args)
         for row in rows:
-            words = set(utils.conform(utils.extract_words(Path(v).stem if k == "path" else v) for k, v in row.items()))
+            words = set(
+                iterables.conform(strings.extract_words(Path(v).stem if k == "path" else v) for k, v in row.items())
+            )
             table, search_bindings = db.fts_search_sql(
                 "media",
                 fts_table=fts_table,
@@ -457,12 +460,12 @@ def dedupe() -> None:
     duplicates_size = sum(filter(None, [d["duplicate_size"] for d in duplicates]))
     print(f"Approx. space savings: {humanize.naturalsize(duplicates_size // 2)}")
 
-    if duplicates and (args.force or utils.confirm("Delete duplicates?")):  # type: ignore
+    if duplicates and (args.force or devices.confirm("Delete duplicates?")):  # type: ignore
         log.info("Deleting...")
         for d in duplicates:
             path = d["duplicate_path"]
             if not path.startswith("http") and not args.only_soft_delete:
-                utils.trash(path, detach=False)
+                file_utils.trash(path, detach=False)
             player.mark_media_deleted(args, path)
 
 

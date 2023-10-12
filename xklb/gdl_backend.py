@@ -8,8 +8,9 @@ from gallery_dl.extractor.message import Message
 from gallery_dl.job import Job
 from gallery_dl.util import build_duration_func
 
-from xklb import consts, media, playlists, utils
-from xklb.utils import log
+from xklb import consts, media, playlists
+from xklb.utils import printing, strings
+from xklb.utils.log_utils import log
 
 gallery_dl = None
 
@@ -86,7 +87,7 @@ def parse_gdl_job_status(job_status, path, ignore_errors=False):
         if job_status & 8:
             error = "HTTPNotFoundError"
         errors.append(error)
-        log.debug("[%s]: Unrecoverable error %s. %s", path, error, utils.combine(errors))
+        log.debug("[%s]: Unrecoverable error %s. %s", path, error, strings.combine(errors))
 
     if job_status & 128:
         errors.append("OSOrJSONDecodeError")
@@ -136,7 +137,7 @@ def download(args, m):
         webpath,
         info,
         local_path=local_path,
-        error=utils.combine(errors),
+        error=strings.combine(errors),
         unrecoverable_error="HTTPNotFoundError" in errors,
     )
 
@@ -232,13 +233,13 @@ def get_playlist_metadata(args, playlist_path):
             args,
             playlist_path,
             info,
-            error=utils.combine(errors),
+            error=strings.combine(errors),
             unrecoverable_error="HTTPNotFoundError" in errors,
         )
 
         added_media_count += 1
         if added_media_count > 1:
-            utils.print_overwrite(f"[{playlist_path}] Added {added_media_count} media")
+            printing.print_overwrite(f"[{playlist_path}] Added {added_media_count} media")
 
     if added_media_count == 0:
         from rich import inspect

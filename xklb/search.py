@@ -3,8 +3,9 @@ from copy import deepcopy
 from itertools import groupby
 from typing import Tuple
 
-from xklb import consts, db, player, usage, utils
-from xklb.utils import log
+from xklb import consts, db, player, usage
+from xklb.utils import iterables, objects, printing, processes
+from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
@@ -49,7 +50,7 @@ def parse_args() -> argparse.Namespace:
     args.include += args.search
 
     if args.cols:
-        args.cols = list(utils.flatten([s.split(",") for s in args.cols]))
+        args.cols = list(iterables.flatten([s.split(",") for s in args.cols]))
 
     sort = [player.override_sort(s) for s in args.sort]
     sort = "\n        , ".join(sort)
@@ -58,25 +59,25 @@ def parse_args() -> argparse.Namespace:
     if args.db:
         args.database = args.db
     args.db = db.connect(args)
-    log.info(utils.dict_filter_bool(args.__dict__))
+    log.info(objects.dict_filter_bool(args.__dict__))
 
     return args
 
 
 def printer(args, captions) -> None:
-    captions = utils.list_dict_filter_bool(captions)
+    captions = iterables.list_dict_filter_bool(captions)
     if not captions:
-        utils.no_media_found()
+        processes.no_media_found()
 
     tbl = deepcopy(captions)
-    utils.col_hhmmss(tbl, "time")
+    printing.col_hhmmss(tbl, "time")
 
     if args.print == "p":
         print(f"{len(captions)} captions")
         for path, path_group in groupby(tbl, key=lambda x: x["path"]):
             path_group = list(path_group)
             title = path_group[0].get("title")
-            print(" - ".join(utils.concat(title, path)))
+            print(" - ".join(iterables.concat(title, path)))
             for caption in path_group:
                 for line in textwrap.wrap(caption["text"], subsequent_indent=" " * 9, initial_indent=f"{caption['time']} ", width=consts.TERMINAL_SIZE.columns - 2):  # type: ignore
                     print(line)

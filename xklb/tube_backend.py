@@ -1,10 +1,10 @@
-import json, ssl, sys
+import json, sys
 from copy import deepcopy
 from pathlib import Path
 from types import ModuleType
 from typing import Dict, List, Optional, Tuple
 
-from xklb import consts, db, media, playlists, subtitle, utils
+from xklb import consts, db, media, playlists, subtitle
 from xklb.consts import DBType
 from xklb.dl_config import (
     prefix_unrecoverable_errors,
@@ -12,7 +12,8 @@ from xklb.dl_config import (
     yt_recoverable_errors,
     yt_unrecoverable_errors,
 )
-from xklb.utils import log, safe_unpack
+from xklb.utils import iterables, objects, path_utils, printing, sql_utils, strings
+from xklb.utils.log_utils import Timer, log
 
 yt_dlp = None
 yt_archive = set()
@@ -69,10 +70,10 @@ def tube_opts(args, func_opts=None, playlist_opts: Optional[str] = None) -> dict
     if args.ignore_errors:
         all_opts.update(ignoreerrors=True)
 
-    log.debug(utils.dict_filter_bool(all_opts))
+    log.debug(objects.dict_filter_bool(all_opts))
 
     if hasattr(args, "playlists") and args.playlists and hasattr(args, "no_sanitize") and not args.no_sanitize:
-        args.playlists = [utils.sanitize_url(args, path) for path in args.playlists]
+        args.playlists = [path_utils.sanitize_url(args, path) for path in args.playlists]
 
     return all_opts
 
@@ -94,7 +95,7 @@ added_media_count = 0
 
 def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True) -> None:
     yt_dlp = load_module_level_yt_dlp()
-    t = utils.Timer()
+    t = Timer()
 
     class ExistingPlaylistVideoReached(yt_dlp.DownloadCancelled):
         pass
@@ -104,9 +105,9 @@ def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True) -> 
             global added_media_count
 
             if info:
-                webpath = safe_unpack(info.get("webpage_url"), info.get("url"), info.get("original_url"))
+                webpath = iterables.safe_unpack(info.get("webpage_url"), info.get("url"), info.get("original_url"))
                 extractor_key = "ydl_" + (
-                    safe_unpack(info.get("ie_key"), info.get("extractor_key"), info.get("extractor")) or ""
+                    iterables.safe_unpack(info.get("ie_key"), info.get("extractor_key"), info.get("extractor")) or ""
                 )
 
                 if webpath != playlist_path and info.get("webpage_url_basename") == "playlist":
@@ -128,7 +129,7 @@ def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True) -> 
                     playlists_of_playlists.add(webpath)
                     return [], info
 
-                entry = utils.dumbcopy(info)
+                entry = objects.dumbcopy(info)
                 if entry:
                     if playlists.media_exists(args, playlist_path, webpath) and not args.ignore_errors:
                         raise ExistingPlaylistVideoReached
@@ -148,7 +149,7 @@ def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True) -> 
 
                     added_media_count += 1
                     if added_media_count > 1:
-                        utils.print_overwrite(f"[{playlist_path}] Added {added_media_count} media")
+                        printing.print_overwrite(f"[{playlist_path}] Added {added_media_count} media")
 
             return [], info
 
@@ -233,7 +234,7 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Optional[L
                 chapters = [
                     {"media_id": id, "time": int(float(d["start_time"])), "text": d.get("title")}
                     for d in chapters
-                    if d.get("title") and not utils.is_generic_title(d)
+                    if d.get("title") and not strings.is_generic_title(d)
                 ]
                 if len(chapters) > 0:
                     args.db["captions"].insert_all(chapters, alter=True)
@@ -259,7 +260,7 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Optional[L
             media.playlist_media_add(args, path, entry)
 
             current_video_count += 1
-            utils.print_overwrite(f"[{playlist_path}] {current_video_count} of {len(videos)} extra metadata fetched")
+            printing.print_overwrite(f"[{playlist_path}] {current_video_count} of {len(videos)} extra metadata fetched")
 
 
 def get_video_metadata(args, playlist_path) -> Optional[Dict]:
@@ -377,7 +378,7 @@ def download(args, m) -> None:
     def blocklist_check(info, *pargs, incomplete):
         if getattr(args, "blocklist_rules", False):
             media_entry = media.consolidate(deepcopy(info))
-            if utils.is_blocked_dict_like_sql(media_entry or {}, args.blocklist_rules):
+            if sql_utils.is_blocked_dict_like_sql(media_entry or {}, args.blocklist_rules):
                 raise yt_dlp.utils.RejectedVideoReached("Video matched library blocklist")
         ytdlp_match_filter = yt_dlp.utils.match_filter_func(" & ".join(match_filters).split(" | "))
         return ytdlp_match_filter(info, *pargs, incomplete)
@@ -460,9 +461,9 @@ def download(args, m) -> None:
         media.download_add(args, webpath, info, local_path, error=ydl_errors)
     elif any(yt_unrecoverable_errors.match(line) for line in ydl_full_log):
         matched_error = [
-            m.string for m in utils.conform([yt_unrecoverable_errors.match(line) for line in ydl_full_log])
+            m.string for m in iterables.conform([yt_unrecoverable_errors.match(line) for line in ydl_full_log])
         ]
-        log.debug("[%s]: Unrecoverable error matched. %s", webpath, ydl_errors or utils.combine(matched_error))
+        log.debug("[%s]: Unrecoverable error matched. %s", webpath, ydl_errors or strings.combine(matched_error))
         media.download_add(args, webpath, info, local_path, error=ydl_errors, unrecoverable_error=True)
     elif any(prefix_unrecoverable_errors.match(line) for line in ydl_full_log):
         log.warning("[%s]: Prefix error. %s", webpath, ydl_errors)

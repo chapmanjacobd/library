@@ -1,9 +1,10 @@
 import sqlite3
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import List, Optional
 
-from xklb import consts, db, utils
-from xklb.utils import log, safe_unpack
+from xklb import consts, db
+from xklb.utils import iterables, nums, objects
+from xklb.utils.log_utils import log
 
 """
 playlists table
@@ -21,7 +22,7 @@ def consolidate(args, v: dict) -> dict:
     upload_date = v.pop("upload_date", None) or release_date
     if upload_date:
         try:
-            upload_date = utils.to_timestamp(datetime.strptime(upload_date, "%Y%m%d"))
+            upload_date = nums.to_timestamp(datetime.strptime(upload_date, "%Y%m%d"))
         except Exception:
             upload_date = None
 
@@ -35,11 +36,13 @@ def consolidate(args, v: dict) -> dict:
         **(getattr(args, "extractor_config", None) or {}),
     }
 
-    cv["extractor_key"] = safe_unpack(v.pop("ie_key", None), v.pop("extractor_key", None), v.pop("extractor", None))
-    cv["extractor_playlist_id"] = safe_unpack(v.pop("playlist_id", None), v.pop("id", None))
-    cv["title"] = safe_unpack(v.get("playlist_title"), v.pop("title", None))
+    cv["extractor_key"] = iterables.safe_unpack(
+        v.pop("ie_key", None), v.pop("extractor_key", None), v.pop("extractor", None)
+    )
+    cv["extractor_playlist_id"] = iterables.safe_unpack(v.pop("playlist_id", None), v.pop("id", None))
+    cv["title"] = iterables.safe_unpack(v.get("playlist_title"), v.pop("title", None))
 
-    cv["uploader"] = safe_unpack(
+    cv["uploader"] = iterables.safe_unpack(
         v.pop("playlist_uploader_id", None),
         v.pop("playlist_uploader", None),
         v.pop("channel_id", None),
@@ -59,7 +62,7 @@ def consolidate(args, v: dict) -> dict:
         log.info("Extra playlists data %s", v)
         # breakpoint()
 
-    return utils.dict_filter_bool(cv) or {}
+    return objects.dict_filter_bool(cv) or {}
 
 
 def get_id(args, playlist_path) -> int:
@@ -108,11 +111,11 @@ def add(args, playlist_path: str, info: dict, check_subpath=False, extractor_key
         if subpath_playlist_id:
             return subpath_playlist_id
 
-    pl = consolidate(args, utils.dumbcopy(info))
+    pl = consolidate(args, objects.dumbcopy(info))
     playlist = {**pl, "path": playlist_path, **args.extra_playlist_data}
     if extractor_key:
         playlist["extractor_key"] = extractor_key
-    return _add(args, utils.dict_filter_bool(playlist))
+    return _add(args, objects.dict_filter_bool(playlist))
 
 
 def media_exists(args, playlist_path, path) -> bool:
@@ -212,4 +215,4 @@ def save_undownloadable(args, playlist_path, extractor) -> None:
         "extractor_config": args.extractor_config,
         **args.extra_playlist_data,
     }
-    _add(args, utils.dict_filter_bool(entry))
+    _add(args, objects.dict_filter_bool(entry))

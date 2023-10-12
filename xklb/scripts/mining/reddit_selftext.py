@@ -2,8 +2,9 @@ import argparse, html
 from typing import Set, Tuple
 from urllib.parse import urlparse
 
-from xklb import db, media, usage, utils
-from xklb.utils import log
+from xklb import db, media, usage
+from xklb.utils import log_utils, objects
+from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
@@ -13,7 +14,7 @@ def parse_args() -> argparse.Namespace:
     args = parser.parse_args()
 
     args.db = db.connect(args)
-    log.info(utils.dict_filter_bool(args.__dict__))
+    log.info(objects.dict_filter_bool(args.__dict__))
     return args
 
 
@@ -33,7 +34,7 @@ def get_page_links(path, text) -> Tuple[Set, Set]:
                 else:
                     external_links.add(a["href"])
             else:
-                utils.log.debug(a["href"])
+                log_utils.log.debug(a["href"])
 
     return internal_links, external_links
 

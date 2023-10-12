@@ -7,9 +7,10 @@ from shutil import which
 from timeit import default_timer as timer
 from typing import Dict, List, Optional
 
-from xklb import av, books, consts, db, player, playlists, usage, utils
+from xklb import av, books, consts, db, player, playlists, usage
 from xklb.consts import SC, DBType
-from xklb.utils import log
+from xklb.utils import arg_utils, iterables, objects
+from xklb.utils.log_utils import log
 
 
 def parse_args(action, usage) -> argparse.Namespace:
@@ -69,8 +70,10 @@ def parse_args(action, usage) -> argparse.Namespace:
     parser.add_argument("--ocr", "--OCR", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--speech-recognition", "--speech", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--scan-subtitles", "--scan-subtitle", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--extra-media-data", default={}, nargs=1, action=utils.ArgparseDict, metavar="KEY=VALUE")
-    parser.add_argument("--extra-playlist-data", default={}, nargs=1, action=utils.ArgparseDict, metavar="KEY=VALUE")
+    parser.add_argument("--extra-media-data", default={}, nargs=1, action=arg_utils.ArgparseDict, metavar="KEY=VALUE")
+    parser.add_argument(
+        "--extra-playlist-data", default={}, nargs=1, action=arg_utils.ArgparseDict, metavar="KEY=VALUE"
+    )
 
     parser.add_argument("--delete-unplayable", action="store_true")
     parser.add_argument(
@@ -97,8 +100,8 @@ def parse_args(action, usage) -> argparse.Namespace:
     Path(args.database).touch()
     args.db = db.connect(args)
     if hasattr(args, "paths"):
-        args.paths = utils.conform(args.paths)
-    log.info(utils.dict_filter_bool(args.__dict__))
+        args.paths = iterables.conform(args.paths)
+    log.info(objects.dict_filter_bool(args.__dict__))
 
     if args.profile in (DBType.audio, DBType.video) and not which("ffprobe"):
         log.error("ffmpeg is not installed. Install it with your package manager.")
@@ -202,8 +205,8 @@ def extract_chunk(args, media) -> None:
         captions.append(caption)
 
     media = [{"playlist_id": args.playlist_id, **d} for d in media]
-    media = utils.list_dict_filter_bool(media)
-    args.db["media"].insert_all(utils.list_dict_filter_bool(media), pk="id", alter=True, replace=True)
+    media = iterables.list_dict_filter_bool(media)
+    args.db["media"].insert_all(iterables.list_dict_filter_bool(media), pk="id", alter=True, replace=True)
 
     for d in captions:
         media_id = args.db.pop("select id from media where path = ?", [d["path"]])
@@ -318,7 +321,7 @@ def scan_path(args, path_str: str) -> int:
 
     info = {
         "extractor_key": "Local",
-        "extractor_config": utils.filter_namespace(args, ["ocr", "speech_recognition", "scan_subtitles"]),
+        "extractor_config": objects.filter_namespace(args, ["ocr", "speech_recognition", "scan_subtitles"]),
         "time_deleted": 0,
     }
     args.playlist_id = playlists.add(args, str(path), info, check_subpath=True)
@@ -336,7 +339,7 @@ def scan_path(args, path_str: str) -> int:
         else:
             batch_count = consts.SQLITE_PARAM_LIMIT // 100
         chunks_count = math.ceil(len(new_files) / batch_count)
-        df_chunked = utils.chunks(new_files, batch_count)
+        df_chunked = iterables.chunks(new_files, batch_count)
 
         if args.profile in threadsafe:
             pool_fn = ThreadPoolExecutor

@@ -7,8 +7,9 @@ from itertools import takewhile
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple
 
-from xklb import consts, db, media, playlists, usage, utils
-from xklb.utils import log
+from xklb import consts, db, media, playlists, usage
+from xklb.utils import iterables, objects
+from xklb.utils.log_utils import log
 
 PRAW_SETUP_INSTRUCTIONS = r"""
 You will need your Reddit user login info, client id, and secret.
@@ -60,7 +61,7 @@ def parse_args(action, usage) -> argparse.Namespace:
     args = parser.parse_args()
 
     if action == "redditadd":
-        args.paths = utils.conform(args.paths)
+        args.paths = iterables.conform(args.paths)
 
     if args.db:
         args.database = args.db
@@ -75,7 +76,7 @@ def parse_args(action, usage) -> argparse.Namespace:
         print(PRAW_SETUP_INSTRUCTIONS)
         raise SystemExit(e) from e
 
-    log.info(utils.dict_filter_bool(args.__dict__))
+    log.info(objects.dict_filter_bool(args.__dict__))
 
     return args
 
@@ -184,7 +185,7 @@ def slim_post_data(d: dict, subreddit=None) -> dict:
 
 
 def save_post(args, post_dict, subreddit_path) -> None:
-    slim_dict = utils.dict_filter_bool(slim_post_data(post_dict, subreddit_path))
+    slim_dict = objects.dict_filter_bool(slim_post_data(post_dict, subreddit_path))
 
     if slim_dict:
         already_downloaded_path = args.db.pop(
@@ -259,7 +260,7 @@ def subreddit_new(args, subreddit_dict) -> None:
         if idx == 0:
             playlists._add(
                 args,
-                utils.dict_filter_bool(
+                objects.dict_filter_bool(
                     {
                         "path": subreddit_path,
                         "subscribers": post_dict.pop("subreddit_subscribers", None),
@@ -317,10 +318,10 @@ def reddit_add(args=None) -> None:
         name = path
         if subreddit_matches:
             extractor_key = "reddit_praw_subreddit"
-            name = utils.conform(subreddit_matches.groups()).pop()
+            name = iterables.conform(subreddit_matches.groups()).pop()
         elif redditor_matches:
             extractor_key = "reddit_praw_redditor"
-            name = utils.conform(redditor_matches.groups()).pop()
+            name = iterables.conform(redditor_matches.groups()).pop()
         else:
             if args.subreddits:
                 extractor_key = "reddit_praw_subreddit"
@@ -344,11 +345,11 @@ def reddit_add(args=None) -> None:
 
         playlists._add(
             args,
-            utils.dict_filter_bool(
+            objects.dict_filter_bool(
                 {
                     "path": path,
                     "extractor_playlist_id": name,
-                    "extractor_config": utils.filter_namespace(args, ["limit", "lookback", "praw_site"]),
+                    "extractor_config": objects.filter_namespace(args, ["limit", "lookback", "praw_site"]),
                     "extractor_key": extractor_key,
                     "time_deleted": 0,
                 },

@@ -4,10 +4,11 @@ from shutil import which
 from time import sleep
 from typing import Dict, List, Tuple
 
-from xklb import db, history, usage, utils
+from xklb import db, history, usage
 from xklb.consts import SC
 from xklb.player import generic_player, override_sort, printer
-from xklb.utils import cmd, flatten, log
+from xklb.utils import iterables, objects, processes
+from xklb.utils.log_utils import log
 
 
 def parse_args(action) -> argparse.Namespace:
@@ -56,7 +57,7 @@ def parse_args(action) -> argparse.Namespace:
         args.sort = " ".join(args.sort)
 
     if args.cols:
-        args.cols = list(flatten([s.split(",") for s in args.cols]))
+        args.cols = list(iterables.flatten([s.split(",") for s in args.cols]))
 
     if args.delete:
         args.print += "d"
@@ -64,7 +65,7 @@ def parse_args(action) -> argparse.Namespace:
     if args.db:
         args.database = args.db
     args.db = db.connect(args)
-    log.info(utils.dict_filter_bool(args.__dict__))
+    log.info(objects.dict_filter_bool(args.__dict__))
 
     return args
 
@@ -169,7 +170,7 @@ def find_player(args) -> List[str]:
 def play(args, m: Dict) -> None:
     media_file = m["path"]
 
-    cmd(*args.player, media_file, strict=False)
+    processes.cmd(*args.player, media_file, strict=False)
     history.add(args, [media_file], mark_done=True)
 
 
@@ -206,7 +207,7 @@ def process_tabs_actions(args) -> None:
 
     media = list(args.db.query(query, bindings))
     if not media:
-        utils.no_media_found()
+        processes.no_media_found()
 
     media = frequency_filter(args, media)
 

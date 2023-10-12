@@ -3,8 +3,9 @@ from copy import deepcopy
 from pathlib import Path
 from typing import List
 
-from xklb import consts, db, player, usage, utils
-from xklb.utils import log
+from xklb import consts, db, player, usage
+from xklb.utils import devices, file_utils, iterables, objects
+from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
@@ -22,7 +23,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("deleted_to", nargs="?")
     args = parser.parse_args()
     args.db = db.connect(args)
-    log.info(utils.dict_filter_bool(args.__dict__))
+    log.info(objects.dict_filter_bool(args.__dict__))
     return args
 
 
@@ -46,9 +47,9 @@ def list_deletions(args) -> List[dict]:
 
 def get_non_tube_media(args, paths) -> List[dict]:
     media = []
-    paths = utils.conform(paths)
+    paths = iterables.conform(paths)
     if paths:
-        for p in utils.chunks(paths, consts.SQLITE_PARAM_LIMIT):
+        for p in iterables.chunks(paths, consts.SQLITE_PARAM_LIMIT):
             with args.db.conn:
                 media.extend(
                     list(
@@ -105,8 +106,8 @@ def mark_media_undownloaded(args, deleted_media) -> None:
 
 def print_deleted(args, deleted_media) -> None:
     tbl = deepcopy(deleted_media)
-    tbl = utils.list_dict_filter_bool(tbl, keep_0=False)
-    tbl = utils.list_dict_filter_unique(tbl)
+    tbl = iterables.list_dict_filter_bool(tbl, keep_0=False)
+    tbl = iterables.list_dict_filter_unique(tbl)
     tbl = tbl[: int(args.limit)]
     player.media_printer(args, tbl, units="deleted media")
 
@@ -126,11 +127,11 @@ def redownload() -> None:
     paths = [d["path"] for d in deleted_media]
     redownload_ids = [d["extractor_id"] for d in deleted_media if d.get("extractor_id")]
     print(len(redownload_ids), "tube ids found")
-    if deleted_media and utils.confirm("Redownload media?"):  # type: ignore
+    if deleted_media and devices.confirm("Redownload media?"):  # type: ignore
         if len(redownload_ids) > 0:
             download_archive = Path(args.download_archive).expanduser().resolve()
             if download_archive.exists():
-                utils.filter_file(str(download_archive), redownload_ids)
+                file_utils.filter_file(str(download_archive), redownload_ids)
 
         mark_media_undownloaded(args, deleted_media)
         non_tube_media = get_non_tube_media(args, paths)
