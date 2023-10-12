@@ -2,8 +2,8 @@ import sqlite3
 from datetime import datetime
 from typing import List, Optional
 
-from xklb import consts, db
-from xklb.utils import iterables, nums, objects
+from xklb import db
+from xklb.utils import consts, iterables, nums, objects
 from xklb.utils.log_utils import log
 
 """

@@ -2,8 +2,8 @@ import argparse, os
 from pathlib import Path
 from typing import Dict, List
 
-from xklb import consts, db, player, usage
-from xklb.utils import file_utils, nums, objects, processes, sql_utils
+from xklb import db, player, usage
+from xklb.utils import consts, file_utils, nums, objects, processes, sql_utils
 from xklb.utils.log_utils import log
 
 

@@ -7,8 +7,8 @@ from itertools import takewhile
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple
 
-from xklb import consts, db, db_media, db_playlists, usage
-from xklb.utils import iterables, objects
+from xklb import db, db_media, db_playlists, usage
+from xklb.utils import consts, iterables, objects
 from xklb.utils.log_utils import log
 
 PRAW_SETUP_INSTRUCTIONS = r"""

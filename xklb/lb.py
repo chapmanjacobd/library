@@ -1,7 +1,6 @@
 import argparse, sys
 
 from xklb import __version__
-from xklb.consts import SC
 from xklb.dl_extract import dl_download
 from xklb.fs_extract import fs_add, fs_update
 from xklb.gdl_extract import gallery_add, gallery_update
@@ -44,6 +43,7 @@ from xklb.tabs_actions import tabs
 from xklb.tabs_extract import tabs_add
 from xklb.tube_extract import tube_add, tube_update
 from xklb.utils import devices, iterables
+from xklb.utils.consts import SC
 from xklb.utils.log_utils import log
 
 

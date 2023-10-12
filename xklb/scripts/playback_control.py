@@ -2,8 +2,7 @@ import argparse, platform, textwrap
 from copy import deepcopy
 from pathlib import Path
 
-from xklb import consts
-from xklb.utils import file_utils, iterables, mpv_utils, nums, objects, printing, processes
+from xklb.utils import consts, file_utils, iterables, mpv_utils, nums, objects, printing, processes
 from xklb.utils.log_utils import log
 
 

@@ -1,8 +1,8 @@
 import argparse
 
-from xklb import consts, db, player, usage
+from xklb import db, player, usage
 from xklb.history import create
-from xklb.utils import objects, strings
+from xklb.utils import consts, objects, strings
 from xklb.utils.log_utils import log
 
 

@@ -3,8 +3,8 @@ from copy import deepcopy
 from itertools import groupby
 from typing import Tuple
 
-from xklb import consts, db, player, usage
-from xklb.utils import iterables, objects, printing, processes
+from xklb import db, player, usage
+from xklb.utils import consts, iterables, objects, printing, processes
 from xklb.utils.log_utils import log
 
 

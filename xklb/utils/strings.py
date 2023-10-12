@@ -2,7 +2,7 @@ import html, re
 from copy import deepcopy
 from typing import Optional
 
-from xklb.scripts.mining import data
+from xklb.data import wordbank
 from xklb.utils import iterables, nums
 
 
@@ -113,7 +113,7 @@ def extract_words(string):
     words = [
         s
         for s in words
-        if not (s.lower() in data.stop_words or s.lower() in data.prepositions or nums.safe_int(s) is not None)
+        if not (s.lower() in wordbank.stop_words or s.lower() in wordbank.prepositions or nums.safe_int(s) is not None)
     ]
     return words
 

@@ -4,16 +4,16 @@ from pathlib import Path
 from types import ModuleType
 from typing import Dict, List, Optional, Tuple
 
-from xklb import consts, db, db_media, db_playlists
-from xklb.consts import DBType
-from xklb.dl_config import (
+from xklb import db, db_media, db_playlists
+from xklb.data.dl_config import (
     prefix_unrecoverable_errors,
     yt_meaningless_errors,
     yt_recoverable_errors,
     yt_unrecoverable_errors,
 )
 from xklb.media import subtitle
-from xklb.utils import iterables, objects, path_utils, printing, sql_utils, strings
+from xklb.utils import consts, iterables, objects, path_utils, printing, sql_utils, strings
+from xklb.utils.consts import DBType
 from xklb.utils.log_utils import Timer, log
 
 yt_dlp = None

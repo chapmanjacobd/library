@@ -4,7 +4,7 @@ from typing import Dict, List
 
 import humanize
 
-from xklb import consts
+from xklb.utils import consts
 
 
 def print_overwrite(text):

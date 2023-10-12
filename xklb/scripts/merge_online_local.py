@@ -2,8 +2,8 @@ import argparse
 from copy import deepcopy
 from typing import List
 
-from xklb import consts, db, db_media, player, usage
-from xklb.utils import devices, objects
+from xklb import db, db_media, player, usage
+from xklb.utils import consts, devices, objects
 from xklb.utils.log_utils import log
 
 

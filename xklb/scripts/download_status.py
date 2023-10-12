@@ -1,7 +1,7 @@
 import argparse
 
-from xklb import consts, db, dl_extract, play_actions, player, tube_backend, usage
-from xklb.utils import objects, sql_utils
+from xklb import db, dl_extract, play_actions, player, tube_backend, usage
+from xklb.utils import consts, objects, sql_utils
 from xklb.utils.log_utils import log
 
 

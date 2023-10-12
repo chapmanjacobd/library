@@ -2,8 +2,8 @@ import argparse, sys
 from pathlib import Path
 from typing import List
 
-from xklb import consts, db, db_media, history, player, usage
-from xklb.utils import iterables, objects, path_utils, strings
+from xklb import db, db_media, history, player, usage
+from xklb.utils import consts, iterables, objects, path_utils, strings
 from xklb.utils.log_utils import log
 
 

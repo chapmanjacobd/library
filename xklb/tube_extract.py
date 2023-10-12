@@ -1,9 +1,9 @@
 import argparse, sys
 from pathlib import Path
 
-from xklb import consts, db, db_media, db_playlists, tube_backend, usage
-from xklb.consts import SC
-from xklb.utils import arg_utils, iterables, objects, path_utils, processes
+from xklb import db, db_media, db_playlists, tube_backend, usage
+from xklb.utils import arg_utils, consts, iterables, objects, path_utils, processes
+from xklb.utils.consts import SC
 from xklb.utils.log_utils import log
 
 

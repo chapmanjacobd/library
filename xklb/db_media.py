@@ -5,9 +5,9 @@ from typing import Optional
 
 from dateutil import parser
 
-from xklb import consts, db, fs_extract
-from xklb.consts import DBType
-from xklb.utils import iterables, nums, objects, strings
+from xklb import db, fs_extract
+from xklb.utils import consts, iterables, nums, objects, strings
+from xklb.utils.consts import DBType
 from xklb.utils.log_utils import log
 
 

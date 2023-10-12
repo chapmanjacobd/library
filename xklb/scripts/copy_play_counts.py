@@ -1,9 +1,9 @@
 import argparse
 from pathlib import Path
 
-from xklb import consts, db, history, usage
+from xklb import db, history, usage
 from xklb.scripts.dedupe_db import dedupe_rows
-from xklb.utils import objects
+from xklb.utils import consts, objects
 from xklb.utils.log_utils import log
 
 

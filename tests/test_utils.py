@@ -4,10 +4,9 @@ from unittest import mock
 
 import pytest
 
-from xklb import consts
-from xklb.scripts import scatter
 from xklb.media import av
-from xklb.utils import iterables, mpv_utils, nums, objects, path_utils, printing, sql_utils, strings
+from xklb.scripts import scatter
+from xklb.utils import consts, iterables, mpv_utils, nums, objects, path_utils, printing, sql_utils, strings
 
 
 def p(string):
@@ -275,7 +274,7 @@ def test_clean_path():
     assert path_utils.clean_path(b"__/~_[7].opus") == p("_/~_[7].opus")
 
 
-@mock.patch("xklb.consts.random_string", return_value="abcdef")
+@mock.patch("xklb.utils.consts.random_string", return_value="abcdef")
 def test_random_filename(_mock_random_string):
     assert path_utils.random_filename("testfile.txt") == p("testfile.abcdef.txt")
     assert path_utils.random_filename("/3_seconds_ago../Mike.webm") == p("/3_seconds_ago../Mike.abcdef.webm")

@@ -3,8 +3,7 @@ from pathlib import Path
 from shutil import which
 from typing import Union
 
-from xklb import consts
-from xklb.utils import processes
+from xklb.utils import consts, processes
 from xklb.utils.log_utils import log
 
 

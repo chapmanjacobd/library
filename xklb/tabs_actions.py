@@ -5,9 +5,9 @@ from time import sleep
 from typing import Dict, List, Tuple
 
 from xklb import db, history, usage
-from xklb.consts import SC
 from xklb.player import generic_player, override_sort, printer
 from xklb.utils import iterables, objects, processes
+from xklb.utils.consts import SC
 from xklb.utils.log_utils import log
 
 
