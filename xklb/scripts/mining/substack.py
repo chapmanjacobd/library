@@ -3,7 +3,7 @@ from pathlib import Path
 
 from bs4 import BeautifulSoup
 
-from xklb import db, media, usage
+from xklb import db, db_media, usage
 from xklb.utils import nums, objects, web
 from xklb.utils.log_utils import log
 
@@ -43,7 +43,7 @@ def save_page(args, url):
         "text": soup.select_one("div.body").prettify(),  # type: ignore
     }
 
-    media.add(args, article)
+    db_media.add(args, article)
 
 
 def substack():

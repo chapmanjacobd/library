@@ -7,7 +7,7 @@ from itertools import takewhile
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple
 
-from xklb import consts, db, media, playlists, usage
+from xklb import consts, db, db_media, db_playlists, usage
 from xklb.utils import iterables, objects
 from xklb.utils.log_utils import log
 
@@ -207,7 +207,7 @@ def save_post(args, post_dict, subreddit_path) -> None:
         elif "selftext" in slim_dict:
             args.db["reddit_posts"].upsert(slim_dict, pk=["path"], alter=True)
         else:
-            media.add(args, slim_dict)
+            db_media.add(args, slim_dict)
 
 
 def since_last_created(args, playlist_path):
@@ -258,7 +258,7 @@ def subreddit_new(args, subreddit_dict) -> None:
         post_dict = saveable(post)
 
         if idx == 0:
-            playlists._add(
+            db_playlists._add(
                 args,
                 objects.dict_filter_bool(
                     {
@@ -333,7 +333,7 @@ def reddit_add(args=None) -> None:
                 log.error(f"[{path}]: Skipping unknown URL")
                 continue
 
-        if playlists.get_id(args, path) is None:
+        if db_playlists.get_id(args, path) is None:
             try:
                 if extractor_key == "reddit_praw_redditor":
                     redditor_new(args, {"path": path, "name": name})
@@ -343,7 +343,7 @@ def reddit_add(args=None) -> None:
             except skip_errors as e:
                 log.error("[%s] skipping: %s", name, e)
 
-        playlists._add(
+        db_playlists._add(
             args,
             objects.dict_filter_bool(
                 {
@@ -365,7 +365,7 @@ def reddit_update(args=None) -> None:
         sys.argv = ["lb", *args]
 
     args = parse_args("redditupdate", usage=usage.redditupdate)
-    reddit_playlists = playlists.get_all(
+    reddit_playlists = db_playlists.get_all(
         args,
         "extractor_key, path, extractor_playlist_id, extractor_config",
         sql_filters=['AND extractor_key in ("reddit_praw_subreddit","reddit_praw_redditor")'],

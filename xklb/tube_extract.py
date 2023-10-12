@@ -1,7 +1,7 @@
 import argparse, sys
 from pathlib import Path
 
-from xklb import consts, db, media, playlists, tube_backend, usage
+from xklb import consts, db, db_media, db_playlists, tube_backend, usage
 from xklb.consts import SC
 from xklb.utils import arg_utils, iterables, objects, path_utils, processes
 from xklb.utils.log_utils import log
@@ -98,7 +98,7 @@ def tube_add(args=None) -> None:
     else:
         known_playlists = set()
         if not args.force and len(args.playlists) > 9:
-            known_playlists = media.get_paths(args)
+            known_playlists = db_media.get_paths(args)
 
         for path in args.playlists:
             if args.safe and not tube_backend.is_supported(path):
@@ -124,7 +124,7 @@ def tube_update(args=None) -> None:
         sys.argv = ["tubeupdate", *args]
 
     args = parse_args(SC.tubeupdate, usage=usage.tubeupdate)
-    tube_playlists = playlists.get_all(
+    tube_playlists = db_playlists.get_all(
         args,
         sql_filters=["AND extractor_key NOT IN ('Local', 'reddit_praw_redditor', 'reddit_praw_subreddit')"],
     )

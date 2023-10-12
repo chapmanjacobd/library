@@ -4,8 +4,9 @@ from typing import Dict, Optional
 
 import ffmpeg
 
-from xklb import consts, subtitle
+from xklb import consts
 from xklb.consts import DBType
+from xklb.media import subtitle
 from xklb.utils import file_utils, iterables, nums, objects, printing, processes, strings
 from xklb.utils.log_utils import log
 

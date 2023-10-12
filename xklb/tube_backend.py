@@ -4,7 +4,7 @@ from pathlib import Path
 from types import ModuleType
 from typing import Dict, List, Optional, Tuple
 
-from xklb import consts, db, media, playlists, subtitle
+from xklb import consts, db, db_media, db_playlists
 from xklb.consts import DBType
 from xklb.dl_config import (
     prefix_unrecoverable_errors,
@@ -12,6 +12,7 @@ from xklb.dl_config import (
     yt_recoverable_errors,
     yt_unrecoverable_errors,
 )
+from xklb.media import subtitle
 from xklb.utils import iterables, objects, path_utils, printing, sql_utils, strings
 from xklb.utils.log_utils import Timer, log
 
@@ -114,7 +115,7 @@ def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True) -> 
                     if playlist_root:
                         if not info.get("playlist_id") or webpath == playlist_path:
                             log.warning("Importing playlist-less media %s", playlist_path)
-                        playlists.add(args, playlist_path, info, extractor_key=extractor_key)
+                        db_playlists.add(args, playlist_path, info, extractor_key=extractor_key)
                         log.info("playlists.add %s", t.elapsed())
 
                     if args.ignore_errors:
@@ -131,7 +132,7 @@ def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True) -> 
 
                 entry = objects.dumbcopy(info)
                 if entry:
-                    if playlists.media_exists(args, playlist_path, webpath) and not args.ignore_errors:
+                    if db_playlists.media_exists(args, playlist_path, webpath) and not args.ignore_errors:
                         raise ExistingPlaylistVideoReached
 
                     entry = {**entry, **args.extra_media_data}
@@ -140,11 +141,11 @@ def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True) -> 
                         log.warning("Importing playlist-less media %s", playlist_path)
                     else:
                         # add sub-playlist
-                        playlist_id = playlists.add(args, playlist_path, info, extractor_key=extractor_key)
+                        playlist_id = db_playlists.add(args, playlist_path, info, extractor_key=extractor_key)
                         entry["playlist_id"] = playlist_id
                         log.info("playlists.add2 %s", t.elapsed())
 
-                    media.playlist_media_add(args, webpath, entry)  # type: ignore
+                    db_media.playlist_media_add(args, webpath, entry)  # type: ignore
                     log.info("media.playlist_media_add %s", t.elapsed())
 
                     added_media_count += 1
@@ -165,17 +166,17 @@ def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True) -> 
             log.error("[%s] DownloadError skipping", playlist_path)
             return
         except ExistingPlaylistVideoReached:
-            playlists.log_problem(args, playlist_path)
+            db_playlists.log_problem(args, playlist_path)
         else:
             if not pl and not args.safe:
                 log.warning("Logging undownloadable media")
-                playlists.save_undownloadable(args, playlist_path, "video")
+                db_playlists.save_undownloadable(args, playlist_path, "video")
 
         if added_media_count > count_before_extract:
-            playlists.decrease_update_delay(args, playlist_path)
+            db_playlists.decrease_update_delay(args, playlist_path)
             sys.stdout.write("\n")
         else:
-            playlists.increase_update_delay(args, playlist_path)
+            db_playlists.increase_update_delay(args, playlist_path)
 
 
 def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Optional[List[Dict]]:
@@ -257,7 +258,7 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Optional[L
             entry["playlist_id"] = playlist_id
             entry["chapter_count"] = chapter_count
 
-            media.playlist_media_add(args, path, entry)
+            db_media.playlist_media_add(args, path, entry)
 
             current_video_count += 1
             printing.print_overwrite(f"[{playlist_path}] {current_video_count} of {len(videos)} extra metadata fetched")
@@ -377,7 +378,7 @@ def download(args, m) -> None:
 
     def blocklist_check(info, *pargs, incomplete):
         if getattr(args, "blocklist_rules", False):
-            media_entry = media.consolidate(deepcopy(info))
+            media_entry = db_media.consolidate(deepcopy(info))
             if sql_utils.is_blocked_dict_like_sql(media_entry or {}, args.blocklist_rules):
                 raise yt_dlp.utils.RejectedVideoReached("Video matched library blocklist")
         ytdlp_match_filter = yt_dlp.utils.match_filter_func(" & ".join(match_filters).split(" | "))
@@ -455,20 +456,20 @@ def download(args, m) -> None:
 
     if not ydl_log["error"] and info:
         log.debug("[%s]: No news is good news", webpath)
-        media.download_add(args, webpath, info, local_path)
+        db_media.download_add(args, webpath, info, local_path)
     elif any(yt_recoverable_errors.match(line) for line in ydl_full_log):
         log.info("[%s]: Recoverable error matched (will try again later). %s", webpath, ydl_errors)
-        media.download_add(args, webpath, info, local_path, error=ydl_errors)
+        db_media.download_add(args, webpath, info, local_path, error=ydl_errors)
     elif any(yt_unrecoverable_errors.match(line) for line in ydl_full_log):
         matched_error = [
             m.string for m in iterables.conform([yt_unrecoverable_errors.match(line) for line in ydl_full_log])
         ]
         log.debug("[%s]: Unrecoverable error matched. %s", webpath, ydl_errors or strings.combine(matched_error))
-        media.download_add(args, webpath, info, local_path, error=ydl_errors, unrecoverable_error=True)
+        db_media.download_add(args, webpath, info, local_path, error=ydl_errors, unrecoverable_error=True)
     elif any(prefix_unrecoverable_errors.match(line) for line in ydl_full_log):
         log.warning("[%s]: Prefix error. %s", webpath, ydl_errors)
         raise SystemExit(28)
     else:
         if ydl_errors != "":
             log.error("[%s]: Unknown error. %s", webpath, ydl_errors)
-        media.download_add(args, webpath, info, local_path, error=ydl_errors)
+        db_media.download_add(args, webpath, info, local_path, error=ydl_errors)

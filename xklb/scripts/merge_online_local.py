@@ -2,7 +2,7 @@ import argparse
 from copy import deepcopy
 from typing import List
 
-from xklb import consts, db, media, player, usage
+from xklb import consts, db, db_media, player, usage
 from xklb.utils import devices, objects
 from xklb.utils.log_utils import log
 
@@ -87,8 +87,8 @@ def merge_online_local() -> None:
             if webpath in merged or fspath == webpath:
                 continue
 
-            tube_entry = media.get(args, webpath)
-            fs_tags = media.get(args, fspath)
+            tube_entry = db_media.get(args, webpath)
+            fs_tags = db_media.get(args, fspath)
 
             if not tube_entry or not fs_tags or tube_entry["extractor_id"] not in fs_tags["path"]:
                 continue
@@ -99,7 +99,7 @@ def merge_online_local() -> None:
                 fs_tags["time_downloaded"] = consts.APPLICATION_START
 
             entry = {**tube_entry, **fs_tags, "webpath": webpath}
-            media.add(args, objects.dict_filter_bool(entry))  # type: ignore
+            db_media.add(args, objects.dict_filter_bool(entry))  # type: ignore
             with args.db.conn:
                 args.db.conn.execute("DELETE from media WHERE path = ?", [webpath])
             merged.append(webpath)

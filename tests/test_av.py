@@ -1,6 +1,6 @@
 from unittest import skip
 
-from xklb import av
+from xklb.media import av
 
 
 def test_decode_full_scan():

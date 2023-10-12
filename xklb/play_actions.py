@@ -4,11 +4,12 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-from xklb import consts, db, history, player, subtitle, tube_backend, usage
+from xklb import consts, db, history, player, tube_backend, usage
 from xklb.consts import SC
 from xklb.player import mark_media_deleted, override_sort
 from xklb.scripts.bigdirs import process_bigdirs
 from xklb.scripts.playback_control import now_playing
+from xklb.media import subtitle
 from xklb.utils import devices, file_utils, iterables, mpv_utils, nums, objects, path_utils, processes, sql_utils
 from xklb.utils.log_utils import Timer, log
 

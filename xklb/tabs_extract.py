@@ -2,7 +2,7 @@ import argparse, sys
 from pathlib import Path
 from typing import List
 
-from xklb import consts, db, history, media, player, usage
+from xklb import consts, db, db_media, history, player, usage
 from xklb.utils import iterables, objects, path_utils, strings
 from xklb.utils.log_utils import log
 
@@ -93,6 +93,6 @@ def tabs_add(args=None) -> None:
 
     tabs = iterables.list_dict_filter_bool([extract_url_metadata(args, path) for path in get_new_paths(args)])
     for tab in tabs:
-        media.add(args, tab)
+        db_media.add(args, tab)
     if not args.allow_immediate:
         history.add(args, [d["path"] for d in tabs], mark_done=True)  # prevent immediately opening

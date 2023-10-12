@@ -7,7 +7,7 @@ from xklb.fs_extract import fs_add, fs_update
 from xklb.gdl_extract import gallery_add, gallery_update
 from xklb.hn_extract import hacker_news_add
 from xklb.play_actions import filesystem, listen, read, view, watch
-from xklb.praw_extract import reddit_add, reddit_update
+from xklb.reddit_extract import reddit_add, reddit_update
 from xklb.scripts.bigdirs import bigdirs
 from xklb.scripts.block import block
 from xklb.scripts.christen import christen
