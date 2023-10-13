@@ -21,7 +21,7 @@ class MrSuperDialogue:
         style = Style(self.root)
         style.theme_use("clam")
 
-        photo = PhotoImage(file=str(base_folder / "assets" / "kotobago.png"))
+        photo = PhotoImage(file=str(base_folder / ".." / "assets" / "kotobago.png"))
         self.root.wm_iconphoto(True, photo)  # noqa: FBT003
         self.root.wm_attributes("-topmost", 1)
 
