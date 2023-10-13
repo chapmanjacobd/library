@@ -117,7 +117,7 @@ class TestFs(unittest.TestCase):
             out = play_mocked.call_args[0][1]
             assert "test.mp4" in out["path"]
             assert out["duration"] == 12
-            assert out["subtitle_count"] == 3
+            assert out["subtitle_count"] == 4
             assert out["size"] == 136057
 
         sys.argv = ["wt", v_db, "-w", "path like '%test.mp4'"]
@@ -125,7 +125,7 @@ class TestFs(unittest.TestCase):
         out = play_mocked.call_args[0][1]
         assert "test.mp4" in out["path"]
         assert out["duration"] == 12
-        assert out["subtitle_count"] == 3
+        assert out["subtitle_count"] == 4
         assert out["size"] == 136057
 
         lb(["listen", a_db])

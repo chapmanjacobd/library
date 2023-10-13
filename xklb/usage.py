@@ -1276,3 +1276,10 @@ export_text = """library export-text DATABASE
 
     Generate HTML files from SQLite databases
 """
+
+eda = """library eda PATH ... [--table TABLE] [--start-row START_ROW] [--end-row END_ROW] [--repl]
+
+Perform Exploratory Data Analysis (EDA) on one or more files
+
+Only 20,000 rows per file are loaded for performance purposes. Set `--end-row 999999999999` to read all the rows and/or run out of RAM.
+"""
