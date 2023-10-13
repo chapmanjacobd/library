@@ -180,7 +180,7 @@ def increase_update_delay(args, playlist_path: str) -> None:
             )
     except sqlite3.OperationalError:
         with args.db.conn:
-            args.db.conn.execute("ALTER TABLE playlists ADD COLUMN IF NOT EXISTS hours_update_delay INTEGER DEFAULT 70")
+            args.db.conn.execute("ALTER TABLE playlists ADD COLUMN hours_update_delay INTEGER DEFAULT 70")
 
 
 def get_all(args, cols="path, extractor_config", sql_filters=None) -> List[dict]:
