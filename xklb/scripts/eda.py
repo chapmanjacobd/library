@@ -7,13 +7,15 @@ from xklb import usage
 from xklb.utils import file_utils, nums
 from xklb.utils.log_utils import log
 
+DEFAULT_LIMIT = 20_000
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Perform EDA on one or more files", usage=usage.eda)
     parser.add_argument("--table", "-t")
     parser.add_argument("--table-index", type=int)
     parser.add_argument("--start-row", "--skiprows", type=int, default=None)
-    parser.add_argument("--end-row", "--nrows", "--limit", "-L", default="20000")
+    parser.add_argument("--end-row", "--nrows", "--limit", "-L", default=str(DEFAULT_LIMIT))
     parser.add_argument("--repl", "-r", action="store_true")
     parser.add_argument("--verbose", "-v", action="count", default=0)
 
@@ -144,12 +146,12 @@ def print_series(s):
         print()
 
 
-def df_column_values(dataframe, column_name) -> Dict:
-    total = len(dataframe)
+def df_column_values(df, column_name) -> Dict:
+    total = len(df)
 
-    null = dataframe[column_name].isnull().sum()
-    zero = (dataframe[column_name] == 0).sum()
-    empty = (dataframe[column_name] == "").sum()
+    null = df[column_name].isnull().sum()
+    zero = (df[column_name] == 0).sum()
+    empty = (df[column_name] == "").sum()
     values = total - empty - zero - null
 
     return {
@@ -165,21 +167,36 @@ def df_column_values(dataframe, column_name) -> Dict:
     }
 
 
-def print_info(df):
+def print_info(args, df):
     import pandas as pd
 
     if df.shape == (0, 0):
         print(f"Table [{df.name}] empty")
         return
 
+    if args.end_row is None:
+        partial_dataset_msg = ""
+    elif args.end_row == DEFAULT_LIMIT:
+        partial_dataset_msg = f"(limited by default --end-row {args.end_row})"
+    else:
+        partial_dataset_msg = f"(limited by --end-row {args.end_row})"
+    if args.end_row is not None and args.end_row not in df.shape:
+        partial_dataset_msg = ""
     print("### Shape")
-    print(df.shape)
+    print()
+    print(df.shape, partial_dataset_msg)
     print()
 
     print("### Sample of rows")
-    print_md(df.head())
     print()
+    if len(df) > 6:
+        print_md(pd.concat([df.head(3), df.tail(3)]))
+    else:
+        print_md(df.head(6))
+    print()
+
     print("### Summary statistics")
+    print()
     print_md(df.describe())
     print()
 
@@ -193,18 +210,47 @@ def print_info(df):
             diff_dtypes.append((col, df.dtypes[col], converted.dtypes[col]))
     if len(same_dtypes) > 0:
         print("### Pandas columns with 'original' dtypes")
+        print()
         same_dtypes = pd.DataFrame(same_dtypes, columns=["column", "dtype"])
         print_md(same_dtypes.set_index("column"))
         print()
     if len(diff_dtypes) > 0:
         print("### Pandas columns with 'converted' dtypes")
+        print()
         diff_dtypes = pd.DataFrame(diff_dtypes, columns=["column", "original_dtype", "converted_dtype"])
         print_md(diff_dtypes.set_index("column"))
         print()
 
+    categorical_columns = [s for s in df.columns if pd.api.types.is_categorical_dtype(df[s])]
+    if categorical_columns:
+        print("### Categorical columns")
+        print()
+        for col in categorical_columns:
+            print(col)
+            print("#### values")
+            print_md(df[col].value_counts(normalize=True))
+            print("#### groupby")
+            print_md(df.groupby(col).describe())
+            print()
+
+    numeric_columns = df.select_dtypes("number").columns.to_list()
+    if numeric_columns and len(df) > 15:
+        print("### Numerical columns")
+        print()
+        print("#### Bins")
+        print()
+        for col in numeric_columns:
+            bins = pd.cut(df[col], bins=6)
+            print_md(bins.value_counts().sort_index())
+            print()
+
     print("### Missing values")
+    print()
     nan_col_sums = df.isna().sum()
-    print(f"{nan_col_sums.sum():,} NaNs", f"({(nan_col_sums.sum() / (df.shape[0] * df.shape[1])):.1%})")
+    print(
+        f"{nan_col_sums.sum():,} nulls/NaNs",
+        f"({(nan_col_sums.sum() / (df.shape[0] * df.shape[1])):.1%} dataset values missing)",
+    )
     print()
 
     if nan_col_sums.sum():
@@ -225,16 +271,20 @@ def print_info(df):
         print()
 
 
+def file_eda(args, path):
+    dfs = read_file_to_dataframes(args, path)
+    if getattr(args, "repl", False):
+        breakpoint()
+
+    for df in dfs:
+        print(f"## {path}:{df.name}")
+        print_info(args, df)
+
+
 def eda():
     args = parse_args()
     for path in args.paths:
-        dfs = read_file_to_dataframes(args, path)
-        if args.repl:
-            breakpoint()
-
-        for df in dfs:
-            print(f"## {path}:{df.name}")
-            print_info(df)
+        file_eda(args, path)
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-- CLI incremental diff (SQLITE, NDJSON, CSV)
+- CLI incremental diff (SQLITE, NDJSON, CSV) using generators
 
     compare 100 rows at a time using primary key
 
