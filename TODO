@@ -1,7 +1,3 @@
-- CLI EDA tool eda.py, sqlite-preview
-
-    /home/xk/d/22_Vector/pleiades_gis_data
-
 - CLI incremental diff (SQLITE, NDJSON, CSV)
 
     compare 100 rows at a time using primary key
@@ -62,7 +58,8 @@ places lookup
 places plan
 places add
 
-whc-sites-2021.xls
+    whc-sites-2021.xls
+    /home/xk/d/22_Vector/pleiades_gis_data
 
 # compare speed with sjoin
 def intersect_using_spatial_index(source_gdf, intersecting_gdf):

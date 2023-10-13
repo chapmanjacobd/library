@@ -9,7 +9,7 @@ from typing import Dict, List, Optional
 
 from xklb import db, db_playlists, player, usage
 from xklb.media import av, books
-from xklb.utils import arg_utils, consts, iterables, objects
+from xklb.utils import arg_utils, consts, file_utils, iterables, objects
 from xklb.utils.consts import SC, DBType
 from xklb.utils.log_utils import log
 
@@ -112,8 +112,6 @@ def parse_args(action, usage) -> argparse.Namespace:
 
 
 def extract_metadata(mp_args, path) -> Optional[Dict[str, int]]:
-    import puremagic
-
     log.debug(path)
 
     p = Path(path)
@@ -129,27 +127,10 @@ def extract_metadata(mp_args, path) -> Optional[Dict[str, int]]:
         log.error(f"%s {path}", e)
         return None
 
-    mimetype = None
-    if p.is_dir():
-        mimetype = "directory"
-    try:
-        mimetype = puremagic.from_file(path, mime=True) or None
-    except Exception:
-        if p.is_socket():
-            mimetype = "socket"
-        elif p.is_fifo():
-            mimetype = "fifo"
-        elif p.is_symlink():
-            mimetype = "symlink"
-        elif p.is_block_device():
-            mimetype = "block device"
-        elif p.is_char_device():
-            mimetype = "char device"
-
     media = {
         "path": path,
         "size": stat.st_size,
-        "type": mimetype,
+        "type": file_utils.mimetype(path),
         "time_created": int(stat.st_ctime),
         "time_modified": int(stat.st_mtime) or consts.now(),
         "time_downloaded": consts.APPLICATION_START,

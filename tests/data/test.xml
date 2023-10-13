@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='utf-8'?>
+<data>
+  <row>
+    <index>0</index>
+    <A>1</A>
+    <B>3</B>
+    <C>5</C>
+  </row>
+  <row>
+    <index>1</index>
+    <A>2</A>
+    <B>4</B>
+    <C>6</C>
+  </row>
+</data>

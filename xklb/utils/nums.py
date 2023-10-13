@@ -3,6 +3,12 @@ from datetime import timezone
 from typing import Optional
 
 
+def percent(value, total):
+    if total == 0:
+        return 0
+    return (value / total) * 100
+
+
 def to_timestamp(dt_object):
     return int(dt_object.replace(tzinfo=timezone.utc).timestamp())
 

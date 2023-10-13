@@ -69,6 +69,14 @@ two million videos. More than you could likely watch in one sitting--maybe even 
 On a high-speed connection (>500 Mbps), it can take up to five hours to download
 the metadata for 180,000 videos.
 
+TIP! If you often copy and paste many URLs you can paste line-delimited text as arguments via a subshell. For example, in `fish` shell with [cb](https://github.com/niedzielski/cb):
+
+    library tubeadd my.db (cb)
+
+Or in BASH:
+
+    library tubeadd my.db $(xclip -selection c)
+
 #### 1a. Get new videos for saved playlists
 
 Tubeupdate will go through the list of added playlists and fetch metadata for
@@ -87,7 +95,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.2.111)
+    xk media library subcommands (v2.2.112)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -156,6 +164,8 @@ To stop playing press Ctrl+C in either the terminal or mpv
       lb places-import         Load POIs from Google Maps Google Takeout
 
     mining:
+      lb eda                   Exploratory Data Analysis on table-like files
+
       lb reddit-selftext       db selftext external links -> db media table
       lb pushshift             Convert Pushshift jsonl.zstd -> reddit.db format (stdin)
       lb hnadd                 Create a hackernews database (this takes a few days)
@@ -1219,10 +1229,6 @@ Explore `library` databases in your browser
     Fetch the latest videos for every playlist saved in your database
 
         library tubeupdate educational.db
-
-    Run with --optimize to add indexes (might speed up searching but the size will increase):
-
-        library tubeupdate --optimize examples/music.tl.db
 
     Fetch extra metadata:
 

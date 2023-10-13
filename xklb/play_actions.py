@@ -114,7 +114,7 @@ def parse_args_limit(args):
                 args.limit = consts.DEFAULT_PLAY_QUEUE * 4
             elif args.action in (SC.download):
                 args.limit = consts.DEFAULT_PLAY_QUEUE * 60
-    elif args.limit in ("inf", "all"):
+    elif args.limit.lower() in ("inf", "all"):
         args.limit = None
 
 

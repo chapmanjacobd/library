@@ -17,6 +17,7 @@ from xklb.scripts.dedupe_czkawka import czkawka_dedupe
 from xklb.scripts.dedupe_db import dedupe_db
 from xklb.scripts.disk_usage import disk_usage
 from xklb.scripts.download_status import download_status
+from xklb.scripts.eda import eda
 from xklb.scripts.export_text import export_text
 from xklb.scripts.history import history
 from xklb.scripts.merge_dbs import merge_dbs
@@ -117,6 +118,8 @@ def usage() -> str:
       lb places-import         Load POIs from Google Maps Google Takeout
 
     mining:
+      lb eda                   Exploratory Data Analysis on table-like files
+
       lb reddit-selftext       db selftext external links -> db media table
       lb pushshift             Convert Pushshift jsonl.zstd -> reddit.db format (stdin)
       lb hnadd                 Create a hackernews database (this takes a few days)
@@ -280,6 +283,9 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     subp_nouns.set_defaults(func=nouns)
     subp_cluster_sort = add_parser(subparsers, "cluster-sort", ["cs", "clustersort", "cluster_sort"])
     subp_cluster_sort.set_defaults(func=cluster_sort)
+
+    subp_eda = add_parser(subparsers, "eda", ["preview"])
+    subp_eda.set_defaults(func=eda)
 
     subp_mpv_watchlater = add_parser(subparsers, "mpv-watchlater")
     subp_mpv_watchlater.set_defaults(func=mpv_watchlater)
