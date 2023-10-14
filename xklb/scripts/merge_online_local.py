@@ -2,8 +2,8 @@ import argparse
 from copy import deepcopy
 from typing import List
 
-from xklb import db, db_media, player, usage
-from xklb.utils import consts, devices, objects
+from xklb import db_media, player, usage
+from xklb.utils import consts, db_utils, devices, objects
 from xklb.utils.log_utils import log
 
 
@@ -13,7 +13,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", default=100)
     parser.add_argument("--verbose", "-v", action="count", default=0)
     args = parser.parse_args()
-    args.db = db.connect(args)
+    args.db = db_utils.connect(args)
     log.info(objects.dict_filter_bool(args.__dict__))
     return args
 

@@ -2,8 +2,8 @@ import argparse, sys
 
 import humanize
 
-from xklb import db, player, tube_backend, usage
-from xklb.utils import consts, devices, iterables, objects
+from xklb import player, tube_backend, usage
+from xklb.utils import consts, db_utils, devices, iterables, objects
 from xklb.utils.consts import SC
 from xklb.utils.log_utils import log
 
@@ -43,7 +43,7 @@ def parse_args():
 
     if args.db:
         args.database = args.db
-    args.db = db.connect(args)
+    args.db = db_utils.connect(args)
 
     args.playlists = iterables.conform(args.playlists)
 
@@ -68,7 +68,7 @@ def block(args=None) -> None:
         sys.argv = ["lb", *args]
 
     args = parse_args()
-    m_columns = db.columns(args, "media")
+    m_columns = db_utils.columns(args, "media")
     if args.match_column not in m_columns:
         raise ValueError(
             "Match column does not exist in the media table. You may need to run tubeadd first or check your spelling",

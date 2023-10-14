@@ -3,7 +3,7 @@ from pathlib import Path
 from shutil import which
 from typing import Union
 
-from xklb.utils import consts, processes
+from xklb.utils import consts, file_utils, processes
 from xklb.utils.log_utils import log
 
 
@@ -199,3 +199,100 @@ fi
 
         print(f"""### Move {len(file_list)} files to new folders: ###""")
         print(rf"PARALLEL_SHELL=sh parallel --colsep '\t' -a {temp.name} -j 20 {move_sh_path}")
+
+
+def pd_read_sqlite(path, table_name=None, table_index=None, start_row=None, end_row=None):
+    import pandas as pd
+    from sqlite_utils import Database
+
+    db = Database(path)
+
+    if table_name:
+        tables = [table_name]
+    else:
+        tables = [
+            s
+            for s in db.table_names() + db.view_names()
+            if not any(["_fts_" in s, s.endswith("_fts"), s.startswith("sqlite_")])
+        ]
+        if table_index:
+            tables = [table_index]
+
+    dfs = []
+    for table in tables:
+        df = pd.DataFrame(db[table].rows_where(offset=start_row, limit=end_row, order_by="random()"))
+        df.name = table
+        dfs.append(df)
+
+    return dfs
+
+
+def read_file_to_dataframes(path, table_name=None, table_index=None, start_row=None, end_row=None):
+    import pandas as pd
+
+    mimetype = file_utils.mimetype(path)
+    log.info(mimetype)
+
+    if mimetype in ("text/csv",):
+        dfs = [pd.read_csv(path, nrows=end_row, skiprows=start_row or 0)]
+    elif mimetype in ("text/tab-separated-values",):
+        dfs = [pd.read_csv(path, delimiter="\t", nrows=end_row, skiprows=start_row or 0)]
+    elif mimetype in (
+        "application/vnd.ms-excel",
+        "Excel spreadsheet subheader",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ):
+        excel_data = pd.read_excel(path, sheet_name=table_name or table_index, nrows=end_row, skiprows=start_row)
+        dfs = []
+        if isinstance(excel_data, pd.DataFrame):
+            worksheet_names = excel_data.index.levels[0]  # type: ignore
+            for name in worksheet_names:
+                df = excel_data.loc[name]
+                df.name = name
+                dfs.append(df)
+        else:
+            for worksheet_name, df in excel_data.items():
+                df.name = worksheet_name
+                dfs.append(df)
+    elif mimetype in ("application/json",):
+        dfs = [pd.read_json(path)]
+    elif mimetype in ("JSON Lines", "GeoJSON Lines"):
+        dfs = [pd.read_json(path, nrows=end_row, lines=True)]
+    elif mimetype in ("application/parquet",):
+        dfs = [pd.read_parquet(path)]
+    elif mimetype in ("Pickle", "application/octet-stream"):
+        dfs = [pd.read_pickle(path)]
+    elif mimetype in ("text/html",):
+        dfs = pd.read_html(path, skiprows=start_row)
+    elif mimetype in ("SQLite database file",):
+        dfs = pd_read_sqlite(path, table_name=table_name, table_index=table_index, start_row=start_row, end_row=end_row)
+    elif mimetype in ("Stata",):
+        dfs = [pd.read_stata(path)]
+    elif mimetype in ("Feather",):
+        dfs = [pd.read_feather(path)]
+    elif mimetype in ("application/x-hdf",):
+        dfs = [pd.read_hdf(path, start=start_row, stop=end_row)]
+    elif mimetype in ("ORC",):
+        dfs = [pd.read_orc(path)]
+    elif mimetype in ("Parquet",):
+        dfs = [pd.read_parquet(path)]
+    elif mimetype in ("text/xml",):
+        dfs = [pd.read_xml(path)]
+    elif mimetype in ("application/x-netcdf",):
+        import xarray as xr
+
+        ds = xr.open_dataset(path)
+        dfs = [ds.to_dataframe()]
+    elif mimetype in ("Zarr",):
+        import xarray as xr
+
+        ds = xr.open_zarr(path)
+        dfs = [ds.to_dataframe()]
+    else:
+        raise ValueError(f"{path}: Unsupported file type: {mimetype}")
+
+    for table_index, df in enumerate(dfs):
+        if not hasattr(df, "name"):
+            df.name = str(table_index)
+
+    return dfs

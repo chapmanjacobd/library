@@ -5,8 +5,8 @@ from typing import List
 
 import humanize
 
-from xklb import db, player, usage
-from xklb.utils import consts, devices, file_utils, iterables, objects, strings
+from xklb import player, usage
+from xklb.utils import consts, db_utils, devices, file_utils, iterables, objects, strings
 from xklb.utils.consts import DBType
 from xklb.utils.log_utils import log
 
@@ -89,7 +89,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("database")
     parser.add_argument("paths", nargs="*")
     args = parser.parse_args()
-    args.db = db.connect(args)
+    args.db = db_utils.connect(args)
 
     args.filter_sql = []
     args.filter_bindings = {}
@@ -99,7 +99,7 @@ def parse_args() -> argparse.Namespace:
         COMPARE_DIRS = True
         if len(args.include) == 2:
             include2 = args.include.pop()
-            args.table2, search_bindings = db.fts_search_sql(
+            args.table2, search_bindings = db_utils.fts_search_sql(
                 "media",
                 fts_table=args.db["media"].detect_fts(),  # type: ignore
                 include=include2,
@@ -115,7 +115,7 @@ def parse_args() -> argparse.Namespace:
 
     args.table = "media"
     if args.db["media"].detect_fts() and args.include:  # type: ignore
-        args.table, search_bindings = db.fts_search_sql(
+        args.table, search_bindings = db_utils.fts_search_sql(
             "media",
             fts_table=args.db["media"].detect_fts(),  # type: ignore
             include=args.include,
@@ -143,7 +143,7 @@ def parse_args() -> argparse.Namespace:
 def get_rows(args) -> List[dict]:
     query = f"""
     SELECT
-        {', '.join(db.config["media"]["search_columns"])}
+        {', '.join(db_utils.config["media"]["search_columns"])}
     FROM
         {args.table}
     WHERE 1=1
@@ -167,7 +167,7 @@ def get_rows(args) -> List[dict]:
 
 
 def get_music_duplicates(args) -> List[dict]:
-    m_columns = db.columns(args, "media")
+    m_columns = db_utils.columns(args, "media")
     query = f"""
     SELECT
         m1.path keep_path
@@ -212,7 +212,7 @@ def get_music_duplicates(args) -> List[dict]:
 
 
 def get_id_duplicates(args) -> List[dict]:
-    m_columns = db.columns(args, "media")
+    m_columns = db_utils.columns(args, "media")
     query = f"""
     SELECT
         m1.path keep_path
@@ -252,7 +252,7 @@ def get_id_duplicates(args) -> List[dict]:
 
 
 def get_title_duplicates(args) -> List[dict]:
-    m_columns = db.columns(args, "media")
+    m_columns = db_utils.columns(args, "media")
     query = f"""
     SELECT
         m1.path keep_path
@@ -292,7 +292,7 @@ def get_title_duplicates(args) -> List[dict]:
 
 
 def get_duration_duplicates(args) -> List[dict]:
-    m_columns = db.columns(args, "media")
+    m_columns = db_utils.columns(args, "media")
     query = f"""
     SELECT
         m1.path keep_path
@@ -372,7 +372,7 @@ def dedupe() -> None:
         )
         return
     elif args.profile == "fts":
-        m_columns = db.columns(args, "media")
+        m_columns = db_utils.columns(args, "media")
         m_columns.update(rank=int)
         fts_table = args.db["media"].detect_fts()
 
@@ -381,7 +381,7 @@ def dedupe() -> None:
             words = set(
                 iterables.conform(strings.extract_words(Path(v).stem if k == "path" else v) for k, v in row.items())
             )
-            table, search_bindings = db.fts_search_sql(
+            table, search_bindings = db_utils.fts_search_sql(
                 "media",
                 fts_table=fts_table,
                 include=sorted(words, key=len, reverse=True)[:100],

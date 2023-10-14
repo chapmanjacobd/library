@@ -1,8 +1,8 @@
 import argparse
 from pathlib import Path
 
-from xklb import db, usage
-from xklb.utils import arg_utils, objects
+from xklb import usage
+from xklb.utils import arg_utils, db_utils, objects
 from xklb.utils.log_utils import log
 
 
@@ -25,7 +25,7 @@ def parse_args() -> argparse.Namespace:
     if args.db:
         args.database = args.db
     Path(args.database).touch()
-    args.db = db.connect(args)
+    args.db = db_utils.connect(args)
 
     log.info(objects.dict_filter_bool(args.__dict__))
 
@@ -35,7 +35,7 @@ def parse_args() -> argparse.Namespace:
 def merge_db(args, source_db) -> None:
     source_db = str(Path(source_db).resolve())
 
-    s_db = db.connect(argparse.Namespace(database=source_db, verbose=args.verbose))
+    s_db = db_utils.connect(argparse.Namespace(database=source_db, verbose=args.verbose))
     for table in [s for s in s_db.table_names() if "_fts" not in s and not s.startswith("sqlite_")]:
         if args.only_tables and table not in args.only_tables:
             log.info("[%s]: Skipping %s", source_db, table)

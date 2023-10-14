@@ -7,8 +7,8 @@ from itertools import takewhile
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple
 
-from xklb import db, db_media, db_playlists, usage
-from xklb.utils import consts, iterables, objects
+from xklb import db_media, db_playlists, usage
+from xklb.utils import consts, db_utils, iterables, objects
 from xklb.utils.log_utils import log
 
 PRAW_SETUP_INSTRUCTIONS = r"""
@@ -66,7 +66,7 @@ def parse_args(action, usage) -> argparse.Namespace:
     if args.db:
         args.database = args.db
     Path(args.database).touch()
-    args.db = db.connect(args)
+    args.db = db_utils.connect(args)
 
     try:
         import praw
@@ -357,7 +357,7 @@ def reddit_add(args=None) -> None:
         )
 
     if not args.db["media"].detect_fts():
-        db.optimize(args)
+        db_utils.optimize(args)
 
 
 def reddit_update(args=None) -> None:

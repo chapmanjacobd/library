@@ -4,13 +4,14 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-from xklb import db, history, player, tube_backend, usage
+from xklb import history, player, tube_backend, usage
 from xklb.media import subtitle
 from xklb.player import mark_media_deleted, override_sort
 from xklb.scripts.bigdirs import process_bigdirs
 from xklb.scripts.playback_control import now_playing
 from xklb.utils import (
     consts,
+    db_utils,
     devices,
     file_utils,
     iterables,
@@ -55,7 +56,7 @@ def parse_args_sort(args) -> None:
     elif not args.sort and hasattr(args, "defaults"):
         args.defaults.append("sort")
 
-    m_columns = db.columns(args, "media")
+    m_columns = db_utils.columns(args, "media")
 
     # switching between videos with and without subs is annoying
     subtitle_count = "=0"
@@ -280,7 +281,7 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
 
     if args.db:
         args.database = args.db
-    args.db = db.connect(args)
+    args.db = db_utils.connect(args)
 
     if args.mpv_socket is None:
         if args.action in (SC.listen):
@@ -340,7 +341,7 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
 
 
 def construct_query(args) -> Tuple[str, dict]:
-    m_columns = db.columns(args, "media")
+    m_columns = db_utils.columns(args, "media")
 
     args.filter_sql = []
     args.aggregate_filter_sql = []
@@ -415,7 +416,7 @@ def construct_query(args) -> Tuple[str, dict]:
     args.table = "media"
     if args.db["media"].detect_fts() and not args.no_fts:
         if args.include:
-            args.table, search_bindings = db.fts_search_sql(
+            args.table, search_bindings = db_utils.fts_search_sql(
                 "media",
                 fts_table=args.db["media"].detect_fts(),
                 include=args.include,
@@ -425,12 +426,14 @@ def construct_query(args) -> Tuple[str, dict]:
             args.filter_bindings = {**args.filter_bindings, **search_bindings}
             m_columns = {**m_columns, "rank": int}
         elif args.exclude:
-            db.construct_search_bindings(
+            db_utils.construct_search_bindings(
                 args,
-                [f"m.{k}" for k in m_columns if k in db.config["media"]["search_columns"]],
+                [f"m.{k}" for k in m_columns if k in db_utils.config["media"]["search_columns"]],
             )
     else:
-        db.construct_search_bindings(args, [f"m.{k}" for k in m_columns if k in db.config["media"]["search_columns"]])
+        db_utils.construct_search_bindings(
+            args, [f"m.{k}" for k in m_columns if k in db_utils.config["media"]["search_columns"]]
+        )
 
     if args.table == "media" and args.random and not any([args.print, args.limit not in args.defaults]):
         limit = 16 * (args.limit or consts.DEFAULT_PLAY_QUEUE)
@@ -565,7 +568,7 @@ def transcode(args, path) -> str:
 
 def prep_media(args, m: Dict, ignore_paths):
     t = Timer()
-    args.db = db.connect(args)
+    args.db = db_utils.connect(args)
     log.debug("db.connect: %s", t.elapsed())
 
     if (args.play_in_order >= consts.SIMILAR) or (args.action == SC.listen and "audiobook" in m["path"].lower()):

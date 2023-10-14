@@ -12,8 +12,8 @@ from typing import Dict, List, Optional, Tuple, Union
 import humanize
 from tabulate import tabulate
 
-from xklb import db, db_media, history
-from xklb.utils import consts, devices, file_utils, iterables, printing, processes, strings
+from xklb import db_media, history
+from xklb.utils import consts, db_utils, devices, file_utils, iterables, printing, processes, strings
 from xklb.utils.consts import SC
 from xklb.utils.log_utils import log
 
@@ -474,7 +474,7 @@ def get_ordinal_media(args, m: Dict, ignore_paths=None) -> Dict:
     if ignore_paths is None:
         ignore_paths = []
 
-    m_columns = db.columns(args, "media")
+    m_columns = db_utils.columns(args, "media")
 
     cols = args.cols or ["path", "title", "duration", "size", "subtitle_count", "is_dir"]
     args.select_sql = "\n        , ".join([c for c in cols if c in m_columns or c in ["*"]])
@@ -550,16 +550,18 @@ def get_ordinal_media(args, m: Dict, ignore_paths=None) -> Dict:
 
 
 def get_related_media(args, m: Dict) -> List[Dict]:
-    m_columns = db.columns(args, "media")
+    m_columns = db_utils.columns(args, "media")
     m_columns.update(rank=int)
 
     m = db_media.get(args, m["path"])
     words = set(
-        iterables.conform(strings.extract_words(m.get(k)) for k in m if k in db.config["media"]["search_columns"]),
+        iterables.conform(
+            strings.extract_words(m.get(k)) for k in m if k in db_utils.config["media"]["search_columns"]
+        ),
     )
     args.include = sorted(words, key=len, reverse=True)[:100]
     log.info("related_words: %s", args.include)
-    args.table, search_bindings = db.fts_search_sql(
+    args.table, search_bindings = db_utils.fts_search_sql(
         "media",
         fts_table=args.db["media"].detect_fts(),
         include=args.include,
@@ -608,7 +610,7 @@ def get_dir_media(args, dirs: List, include_subdirs=False) -> List[Dict]:
     if len(dirs) == 0:
         return processes.no_media_found()
 
-    m_columns = db.columns(args, "media")
+    m_columns = db_utils.columns(args, "media")
 
     if include_subdirs:
         filter_paths = "AND (" + " OR ".join([f"path LIKE :subpath{i}" for i in range(len(dirs))]) + ")"
@@ -1047,7 +1049,7 @@ def cadence_adjusted_duration(args, duration):
 
 
 def historical_usage_items(args, freq="monthly", time_column="time_modified", hide_deleted=False, where=""):
-    m_columns = db.columns(args, "media")
+    m_columns = db_utils.columns(args, "media")
 
     freq_label, freq_sql = frequency_time_to_sql(freq, time_column)
     query = f"""SELECT

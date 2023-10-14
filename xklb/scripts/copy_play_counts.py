@@ -1,9 +1,9 @@
 import argparse
 from pathlib import Path
 
-from xklb import db, history, usage
+from xklb import history, usage
 from xklb.scripts.dedupe_db import dedupe_rows
-from xklb.utils import consts, objects
+from xklb.utils import consts, db_utils, objects
 from xklb.utils.log_utils import log
 
 
@@ -20,14 +20,14 @@ def parse_args() -> argparse.Namespace:
     if args.db:
         args.database = args.db
     Path(args.database).touch()
-    args.db = db.connect(args)
+    args.db = db_utils.connect(args)
     log.info(objects.dict_filter_bool(args.__dict__))
 
     return args
 
 
 def copy_play_count(args, source_db) -> None:
-    s_db = db.connect(argparse.Namespace(database=source_db, verbose=args.verbose))
+    s_db = db_utils.connect(argparse.Namespace(database=source_db, verbose=args.verbose))
     m_columns = s_db["media"].columns_dict
 
     copy_counts = []

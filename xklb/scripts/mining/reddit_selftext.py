@@ -2,8 +2,8 @@ import argparse, html
 from typing import Set, Tuple
 from urllib.parse import urlparse
 
-from xklb import db, db_media, usage
-from xklb.utils import log_utils, objects
+from xklb import db_media, usage
+from xklb.utils import db_utils, log_utils, objects
 from xklb.utils.log_utils import log
 
 
@@ -13,7 +13,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--verbose", "-v", action="count", default=0)
     args = parser.parse_args()
 
-    args.db = db.connect(args)
+    args.db = db_utils.connect(args)
     log.info(objects.dict_filter_bool(args.__dict__))
     return args
 
@@ -43,7 +43,7 @@ def reddit_selftext() -> None:
     from markdown import markdown
 
     args = parse_args()
-    m_columns = db.columns(args, "media")
+    m_columns = db_utils.columns(args, "media")
 
     reddit_posts = list(
         args.db.query(

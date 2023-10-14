@@ -4,8 +4,7 @@ from typing import List, Optional
 
 import ffmpeg
 
-from xklb import db
-from xklb.utils import iterables, processes, strings
+from xklb.utils import db_utils, iterables, processes, strings
 from xklb.utils.consts import SUB_TEMP_DIR
 from xklb.utils.log_utils import log
 
@@ -133,7 +132,7 @@ def get_subtitle_paths(path) -> List[str]:
 
 def get_sub_index(args, path) -> Optional[int]:
     probe = processes.FFProbe(path)
-    temp_db = db.connect(args, memory=True)
+    temp_db = db_utils.connect(args, memory=True)
     temp_db["streams"].insert_all(probe.streams, pk="index")  # type: ignore
     subtitle_index = temp_db.pop(
         f"""select "index" from streams

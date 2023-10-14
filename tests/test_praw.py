@@ -3,10 +3,10 @@ from argparse import Namespace
 from types import SimpleNamespace
 from unittest import mock, skip
 
-from xklb.db import connect
 from xklb.lb import library as lb
 from xklb.play_actions import watch
 from xklb.reddit_extract import reddit_add, reddit_update
+from xklb.utils.db_utils import connect
 
 reddit_db = ["tests/data/reddit.db"]
 

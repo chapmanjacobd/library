@@ -95,7 +95,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.2.115)
+    xk media library subcommands (v2.2.116)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -165,6 +165,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 
     mining:
       lb eda                   Exploratory Data Analysis on table-like files
+      lb incremental-diff      Diff large table-like files in chunks
 
       lb reddit-selftext       db selftext external links -> db media table
       lb pushshift             Convert Pushshift jsonl.zstd -> reddit.db format (stdin)

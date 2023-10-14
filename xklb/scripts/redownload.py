@@ -3,8 +3,8 @@ from copy import deepcopy
 from pathlib import Path
 from typing import List
 
-from xklb import db, player, usage
-from xklb.utils import consts, devices, file_utils, iterables, objects
+from xklb import player, usage
+from xklb.utils import consts, db_utils, devices, file_utils, iterables, objects
 from xklb.utils.log_utils import log
 
 
@@ -22,7 +22,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("deleted_at", nargs="?")
     parser.add_argument("deleted_to", nargs="?")
     args = parser.parse_args()
-    args.db = db.connect(args)
+    args.db = db_utils.connect(args)
     log.info(objects.dict_filter_bool(args.__dict__))
     return args
 
@@ -85,7 +85,7 @@ def get_deleted_media(args) -> List[dict]:
 
 
 def mark_media_undownloaded(args, deleted_media) -> None:
-    m_columns = db.columns(args, "media")
+    m_columns = db_utils.columns(args, "media")
 
     media = deepcopy(deleted_media)
     for d in media:

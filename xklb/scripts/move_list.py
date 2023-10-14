@@ -6,8 +6,8 @@ from typing import Dict, List, Tuple
 import humanize
 from tabulate import tabulate
 
-from xklb import db, player, usage
-from xklb.utils import consts, devices, iterables, objects, printing
+from xklb import player, usage
+from xklb.utils import consts, db_utils, devices, iterables, objects, printing
 from xklb.utils.log_utils import log
 
 
@@ -25,7 +25,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("mount_point")
     parser.add_argument("database")
     args = parser.parse_args()
-    args.db = db.connect(args)
+    args.db = db_utils.connect(args)
     log.info(objects.dict_filter_bool(args.__dict__))
     return args
 

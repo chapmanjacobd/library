@@ -4,7 +4,7 @@ from pathlib import Path
 from types import ModuleType
 from typing import Dict, List, Optional, Tuple
 
-from xklb import db, db_media, db_playlists
+from xklb import db_media, db_playlists
 from xklb.data.dl_config import (
     prefix_unrecoverable_errors,
     yt_meaningless_errors,
@@ -12,7 +12,7 @@ from xklb.data.dl_config import (
     yt_unrecoverable_errors,
 )
 from xklb.media import subtitle
-from xklb.utils import consts, iterables, objects, path_utils, printing, sql_utils, strings
+from xklb.utils import consts, db_utils, iterables, objects, path_utils, printing, sql_utils, strings
 from xklb.utils.consts import DBType
 from xklb.utils.log_utils import Timer, log
 
@@ -182,7 +182,7 @@ def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True) -> 
 def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Optional[List[Dict]]:
     yt_dlp = load_module_level_yt_dlp()
 
-    m_columns = db.columns(args, "media")
+    m_columns = db_utils.columns(args, "media")
 
     with yt_dlp.YoutubeDL(
         tube_opts(

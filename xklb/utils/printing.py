@@ -207,3 +207,7 @@ def col_hhmmss(tbl: List[Dict], col: str) -> List[Dict]:
         if tbl[idx].get(col) is not None:
             tbl[idx][col] = seconds_to_hhmmss(tbl[idx][col])
     return tbl
+
+
+def print_df(df):
+    print(df.to_markdown(tablefmt="github"))

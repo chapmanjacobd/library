@@ -1283,3 +1283,9 @@ Perform Exploratory Data Analysis (EDA) on one or more files
 
 Only 20,000 rows per file are loaded for performance purposes. Set `--end-row 999999999999` to read all the rows and/or run out of RAM.
 """
+
+incremental_diff = """library incremental-diff PATH1 PATH2
+
+[--table1 TABLE1] [--table2 TABLE2] [--table1-index TABLE1_INDEX] [--table2-index TABLE2_INDEX] [--start-row START_ROW] [--end-row END_ROW] [--verbose] [--primary-keys PRIMARY_KEYS]
+
+"""
