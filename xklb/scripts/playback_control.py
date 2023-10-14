@@ -89,6 +89,7 @@ def reformat_ffprobe(path):
         "handler",
         "publisher",
         "id3v2_priv",
+        "replaygain_",
     ]
 
     tags = {k: v for d in probe.streams + [probe.format] for k, v in d.get("tags", {}).items()}

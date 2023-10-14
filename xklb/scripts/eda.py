@@ -14,6 +14,7 @@ def parse_args():
     parser.add_argument("--table-index", type=int)
     parser.add_argument("--start-row", "--skiprows", type=int, default=None)
     parser.add_argument("--end-row", "--nrows", "--limit", "-L", default=str(DEFAULT_FILE_ROWS_READ_LIMIT))
+    parser.add_argument("--sort", "-u", default="random()")
     parser.add_argument("--repl", "-r", action="store_true")
     parser.add_argument("--verbose", "-v", action="count", default=0)
 
@@ -172,6 +173,7 @@ def file_eda(args, path):
         table_index=args.table_index,
         start_row=args.start_row,
         end_row=args.end_row,
+        order_by=args.sort,
     )
     if getattr(args, "repl", False):
         breakpoint()

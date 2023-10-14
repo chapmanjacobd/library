@@ -1,5 +1,3 @@
-- mpv_jsonipc driven option for wt (loadfile, )
-
 - artsearch
 
 https://artsandculture.google.com/search?q=august+macke
@@ -10,6 +8,8 @@ Large size Google similar image search
 Wikimedia commons
 
 Carel Adolph Lion Cachet
+
+- mpv_jsonipc driven option for wt (loadfile, ) when '>' is pressed
 
 - speed up queries:
 
