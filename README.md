@@ -409,6 +409,7 @@ Explore `library` databases in your browser
 
 ## Usage
 
+
 ### Database subcommands
 
 <details><summary>Show large folders (bigdirs)</summary>
@@ -1763,6 +1764,7 @@ Search all columns in a SQLITE table. If the table does not exist, uses the tabl
 
 
 </details>
+
 ### File subcommands
 
 <details><summary>Exploratory Data Analysis (eda)</summary>
@@ -1787,6 +1789,7 @@ Only 20,000 rows per file are loaded for performance purposes. Set `--end-row 99
 
 
 </details>
+
 ### Other subcommands
 
 <details><summary>Sort data by similarity (cluster-sort)</summary>
