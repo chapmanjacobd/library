@@ -329,7 +329,7 @@ def play(action) -> str:
         library {action} -L inf
         library {action} -l inf
         library {action} --queue inf
-        library {action} -L 99999999999999999999999
+        library {action} -L 999999999999
 
         You may also want to restrict the play queue.
         For example, when you only want 1000 random files:
@@ -1281,7 +1281,7 @@ eda = """library eda PATH ... [--table TABLE] [--start-row START_ROW] [--end-row
 
 Perform Exploratory Data Analysis (EDA) on one or more files
 
-Only 20,000 rows per file are loaded for performance purposes. Set `--end-row 999999999999` to read all the rows and/or run out of RAM.
+Only 20,000 rows per file are loaded for performance purposes. Set `--end-row inf` to read all the rows and/or run out of RAM.
 """
 
 incremental_diff = """library incremental-diff PATH1 PATH2

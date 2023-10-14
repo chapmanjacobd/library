@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" id="terminal" baseProfile="full" viewBox="0 0 800 172" width="800" version="1.1">
+    <defs>
+        <termtosvg:template_settings xmlns:termtosvg="https://github.com/nbedos/termtosvg">
+            <termtosvg:screen_geometry columns="100" rows="10"/>
+            <termtosvg:animation type="css"/>
+        </termtosvg:template_settings>
+        <style type="text/css" id="generated-style"><![CDATA[#screen {
+                font-family: 'DejaVu Sans Mono', monospace;
+                font-style: normal;
+                font-size: 14px;
+            }
+
+        text {
+            dominant-baseline: text-before-edge;
+            white-space: pre;
+        }
+    
+            :root {
+                --animation-duration: 12625ms;
+            }
+
+            @keyframes roll {
+                0.000%{transform:translateY(0px)}
+5.220%{transform:translateY(-204px)}
+10.424%{transform:translateY(-408px)}
+23.073%{transform:translateY(-612px)}
+24.800%{transform:translateY(-816px)}
+26.400%{transform:translateY(-1020px)}
+28.966%{transform:translateY(-1224px)}
+31.105%{transform:translateY(-1428px)}
+40.388%{transform:translateY(-1632px)}
+44.095%{transform:translateY(-1836px)}
+50.883%{transform:translateY(-2040px)}
+52.475%{transform:translateY(-2244px)}
+92.079%{transform:translateY(-2448px)}
+100.000%{transform:translateY(-2448px)}
+            }
+
+            #screen_view {
+                animation-duration: 12625ms;
+                animation-iteration-count:infinite;
+                animation-name:roll;
+                animation-timing-function: steps(1,end);
+                animation-fill-mode: forwards;
+            }
+        ]]></style>
+        <style type="text/css" id="user-style">
+            /* The colors defined below are the default 16 colors used for rendering text of the terminal. Adjust
+               them as needed.
+               Solarized light color theme (http://ethanschoonover.com/solarized) */
+            .foreground {fill: #586e75;}
+            .background {fill: #fdf6e3;}
+            .color0 {fill: #fdf6e3;}
+            .color1 {fill: #dc322f;}
+            .color2 {fill: #859900;}
+            .color3 {fill: #b58900;}
+            .color4 {fill: #268bd2;}
+            .color5 {fill: #6c71c4;}
+            .color6 {fill: #2aa198;}
+            .color7 {fill: #586e75;}
+            .color8 {fill: #839496;}
+            .color9 {fill: #cb4b16;}
+            .color10 {fill: #eee8d5;}
+            .color11 {fill: #93a1a1;}
+            .color12 {fill: #657b83;}
+            .color13 {fill: #073642;}
+            .color14 {fill: #d33682;}
+            .color15 {fill: #002b36;}
+        </style>
+    </defs>
+    <svg id="screen" width="800" height="170" viewBox="0 0 800 170" preserveAspectRatio="xMidYMin slice"><rect class="background" height="100%" width="100%" x="0" y="0"/><defs><g id="g1"><text x="0" textLength="32" class="foreground">4.83</text></g><g id="g2"><text x="0" textLength="40" class="foreground">&#9618;&#9619;&#9619;&#9618; </text><text x="40" textLength="8" class="color2">~</text><text x="48" textLength="24" class="foreground"> &#127179; </text><text x="72" textLength="8" class="background"> </text><text x="80" textLength="720" class="foreground">                                                                                          </text></g><g id="g3"><text x="0" textLength="40" class="foreground">&#9618;&#9619;&#9619;&#9618; </text><text x="40" textLength="8" class="color2">~</text><text x="48" textLength="24" class="foreground"> &#127179; </text><text x="72" textLength="16" fill="#005fd7">lb</text><text x="88" textLength="8" class="foreground"> </text><text x="96" textLength="56" fill="#00afff">tubeadd</text><text x="152" textLength="8" class="foreground"> </text><text x="160" textLength="112" fill="#00afff">educational.db</text><text x="272" textLength="8" class="foreground"> </text><text x="280" textLength="384" fill="#00afff">https://www.youtube.com/c/BranchEducation/videos</text><text x="664" textLength="8" class="background"> </text><text x="672" textLength="128" class="foreground">                </text></g><g id="g4"><text x="0" textLength="40" class="foreground">&#9618;&#9619;&#9619;&#9618; </text><text x="40" textLength="8" class="color2">~</text><text x="48" textLength="24" class="foreground"> &#127179; </text><text x="72" textLength="16" fill="#005fd7">lb</text><text x="88" textLength="8" class="foreground"> </text><text x="96" textLength="56" fill="#00afff">tubeadd</text><text x="152" textLength="8" class="foreground"> </text><text x="160" textLength="112" fill="#00afff">educational.db</text><text x="272" textLength="8" class="foreground"> </text><text x="280" textLength="384" fill="#00afff">https://www.youtube.com/c/BranchEducation/videos</text><text x="664" textLength="136" class="foreground">                 </text></g><g id="g5"><text x="0" textLength="8" class="background"> </text></g><g id="g6"><text x="0" textLength="8" class="background">h</text><text x="8" textLength="792" class="foreground">ttps://www.youtube.com/c/BranchEducation/videos: added 11 videos                                   </text></g><g id="g7"><text x="0" textLength="8" class="background">h</text><text x="8" textLength="792" class="foreground">ttps://www.youtube.com/c/BranchEducation/videos: added 21 videos                                   </text></g><g id="g8"><text x="0" textLength="8" class="background">h</text><text x="8" textLength="792" class="foreground">ttps://www.youtube.com/c/BranchEducation/videos: added 30 videos                                   </text></g><g id="g9"><text x="0" textLength="8" class="background">h</text><text x="8" textLength="792" class="foreground">ttps://www.youtube.com/c/BranchEducation/videos: added 33 videos                                   </text></g><g id="g10"><text x="0" textLength="72" class="foreground">932 2.6s </text><text x="72" textLength="8" class="color2">~</text><text x="80" textLength="24" class="foreground"> &#127170; </text><text x="104" textLength="8" class="background"> </text><text x="112" textLength="688" class="foreground">                                                                                      </text></g><g id="g11"><text x="0" textLength="72" class="foreground">932 2.6s </text><text x="72" textLength="8" class="color2">~</text><text x="80" textLength="24" class="foreground"> &#127170; </text><text x="104" textLength="16" fill="#005fd7">lb</text><text x="120" textLength="8" class="foreground"> </text><text x="128" textLength="16" fill="#00afff">tw</text><text x="144" textLength="8" class="foreground"> </text><text x="152" textLength="112" text-decoration="underline" fill="#00afff">educational.db</text><text x="264" textLength="8" class="foreground"> </text><text x="272" textLength="16" fill="#00afff">-p</text><text x="288" textLength="8" class="foreground"> </text><text x="296" textLength="8" fill="#00afff">a</text><text x="304" textLength="8" class="background"> </text><text x="312" textLength="488" class="foreground">                                                             </text></g><g id="g12"><text x="0" textLength="72" class="foreground">932 2.6s </text><text x="72" textLength="8" class="color2">~</text><text x="80" textLength="24" class="foreground"> &#127170; </text><text x="104" textLength="16" fill="#005fd7">lb</text><text x="120" textLength="8" class="foreground"> </text><text x="128" textLength="16" fill="#00afff">tw</text><text x="144" textLength="8" class="foreground"> </text><text x="152" textLength="112" text-decoration="underline" fill="#00afff">educational.db</text><text x="264" textLength="8" class="foreground"> </text><text x="272" textLength="16" fill="#00afff">-p</text><text x="288" textLength="8" class="foreground"> </text><text x="296" textLength="8" fill="#00afff">a</text><text x="304" textLength="496" class="foreground">                                                              </text></g><g id="g13"><text x="0" textLength="336" class="foreground">&#9554;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9572;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9572;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9572;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9557;</text></g><g id="g14"><text x="0" textLength="336" class="foreground">&#9474; path      &#9474;   hours &#9474; size   &#9474;   count &#9474;</text></g><g id="g15"><text x="0" textLength="336" class="foreground">&#9566;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9578;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9578;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9578;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9569;</text></g><g id="g16"><text x="0" textLength="336" class="foreground">&#9474; Aggregate &#9474; 5.14833 &#9474;        &#9474;      33 &#9474;</text></g><g id="g17"><text x="0" textLength="336" class="foreground">&#9560;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9575;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9575;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9575;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9563;</text></g><g id="g18"><text x="0" textLength="296" class="foreground">Total duration: 5 hours and 9 minutes</text></g><g id="g19"><text x="0" textLength="8" class="background"> </text><text x="8" textLength="792" class="foreground">                                                                                                   </text></g><g id="g20"><text x="0" textLength="56" class="foreground">932 1s </text><text x="56" textLength="8" class="color2">~</text><text x="64" textLength="8" class="foreground"> </text><text x="72" textLength="40" class="color1">[255]</text><text x="112" textLength="24" class="foreground">&#127800; </text><text x="136" textLength="8" class="background"> </text><text x="144" textLength="656" class="foreground">                                                                                  </text></g><g id="g21"><text x="0" textLength="56" class="foreground">932 1s </text><text x="56" textLength="8" class="color2">~</text><text x="64" textLength="8" class="foreground"> </text><text x="72" textLength="40" class="color1">[255]</text><text x="112" textLength="688" class="foreground">&#127800;                                                                                    </text></g></defs><g id="screen_view"><g><use xlink:href="#g1" y="0"/><rect x="72" y="17" width="8" height="17" class="foreground"/><use xlink:href="#g2" y="17"/></g><g><use xlink:href="#g1" y="204"/><rect x="664" y="221" width="8" height="17" class="foreground"/><use xlink:href="#g3" y="221"/></g><g><use xlink:href="#g1" y="408"/><use xlink:href="#g4" y="425"/><rect x="0" y="442" width="8" height="17" class="foreground"/><use xlink:href="#g5" y="442"/></g><g><use xlink:href="#g1" y="612"/><use xlink:href="#g4" y="629"/><rect x="0" y="646" width="8" height="17" class="foreground"/><use xlink:href="#g6" y="646"/></g><g><use xlink:href="#g1" y="816"/><use xlink:href="#g4" y="833"/><rect x="0" y="850" width="8" height="17" class="foreground"/><use xlink:href="#g7" y="850"/></g><g><use xlink:href="#g1" y="1020"/><use xlink:href="#g4" y="1037"/><rect x="0" y="1054" width="8" height="17" class="foreground"/><use xlink:href="#g8" y="1054"/></g><g><use xlink:href="#g1" y="1224"/><use xlink:href="#g4" y="1241"/><rect x="0" y="1258" width="8" height="17" class="foreground"/><use xlink:href="#g9" y="1258"/></g><g><use xlink:href="#g1" y="1428"/><use xlink:href="#g4" y="1445"/><rect x="104" y="1462" width="8" height="17" class="foreground"/><use xlink:href="#g10" y="1462"/></g><g><use xlink:href="#g1" y="1632"/><use xlink:href="#g4" y="1649"/><rect x="304" y="1666" width="8" height="17" class="foreground"/><use xlink:href="#g11" y="1666"/></g><g><use xlink:href="#g1" y="1836"/><use xlink:href="#g4" y="1853"/><use xlink:href="#g12" y="1870"/><rect x="0" y="1887" width="8" height="17" class="foreground"/><use xlink:href="#g5" y="1887"/></g><g><use xlink:href="#g1" y="2040"/><use xlink:href="#g4" y="2057"/><use xlink:href="#g12" y="2074"/><use xlink:href="#g13" y="2091"/><use xlink:href="#g14" y="2108"/><use xlink:href="#g15" y="2125"/><use xlink:href="#g16" y="2142"/><use xlink:href="#g17" y="2159"/><use xlink:href="#g18" y="2176"/><rect x="0" y="2193" width="8" height="17" class="foreground"/><use xlink:href="#g19" y="2193"/></g><g><use xlink:href="#g1" y="2244"/><use xlink:href="#g4" y="2261"/><use xlink:href="#g12" y="2278"/><use xlink:href="#g13" y="2295"/><use xlink:href="#g14" y="2312"/><use xlink:href="#g15" y="2329"/><use xlink:href="#g16" y="2346"/><use xlink:href="#g17" y="2363"/><use xlink:href="#g18" y="2380"/><rect x="136" y="2397" width="8" height="17" class="foreground"/><use xlink:href="#g20" y="2397"/></g><g><use xlink:href="#g4" y="2448"/><use xlink:href="#g12" y="2465"/><use xlink:href="#g13" y="2482"/><use xlink:href="#g14" y="2499"/><use xlink:href="#g15" y="2516"/><use xlink:href="#g16" y="2533"/><use xlink:href="#g17" y="2550"/><use xlink:href="#g18" y="2567"/><use xlink:href="#g21" y="2584"/><rect x="0" y="2601" width="8" height="17" class="foreground"/><use xlink:href="#g5" y="2601"/></g></g></svg>
+</svg>
