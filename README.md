@@ -1932,8 +1932,6 @@ Search all columns in a SQLITE table. If the table does not exist, uses the tabl
 
 </details>
 
-### Other subcommands
-
 
 <details><summary>Chicken mode</summary>
 
