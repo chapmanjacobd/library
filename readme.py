@@ -1,56 +1,75 @@
 from xklb import lb, usage
 
+prog_descriptions = {
+    "fsadd": "Add local media",
+    "tubeadd": "Add online media",
+    "redditadd": "Add reddit media",
+    "tildes": "Backup tildes comments and topics",
+    "substack": "Backup substack articles",
+    "hnadd": "Create / Update a Hacker News database",
+    "tabsadd": "Add tabs",
+    "watch": "Watch / Listen",
+    "search": "Search captions / subtitles",
+    "history": "History",
+    "tabs": "Open tabs",
+    "download": "Download media",
+    "download_status": "Download Status",
+    "fsupdate": "Update local media",
+    "tubeupdate": "Update online media",
+    "redditupdate": "Update reddit media",
+    "pushshift": "Convert pushshift data to reddit.db format",
+    "playlists": "List playlists",
+    "block": "Blocklist a channel",
+    "optimize": "Re-optimize database",
+    "redownload": "Re-download media",
+    "merge_online_local": "Merge online and local data",
+    "reddit_selftext": "Convert selftext links to media table",
+    "search_db": "Search a SQLITE database",
+    "merge_dbs": "Merge SQLITE databases",
+    "dedupe_db": "Dedupe SQLITE tables",
+    "bigdirs": "Show large folders",
+    "disk_usage": "Disk Usage",
+    "copy_play_counts": "Copy play history",
+    "mpv_watchlater": "Import mpv watchlater files",
+    "cluster_sort": "Sort data by similarity",
+    "scatter": "Scatter files between folders or disks",
+    "relmv": "Move files preserving parent folder hierarchy",
+    "christen": "Clean filenames",
+    "eda": "Exploratory Data Analysis",
+    "incremental_diff": "Compare data files",
+    "dedupe": "Dedupe music",
+    "surf": "Automatic tab loader"
+}
+
+all_progs = [s for s in dir(usage) if not s.startswith('_') and isinstance(getattr(usage, s), str)]
+db_progs = [s for s in all_progs if 'DATABASE' in getattr(usage, s)]
+path_progs = [s for s in all_progs if 'PATH' in getattr(usage, s) and s not in db_progs]
+other_progs = [s for s in all_progs if s not in db_progs + path_progs]
+
 usage_details = []
-for title, subcommand in [
-    ("Add local media", "fsadd"),
-    ("Add online media", "tubeadd"),
-    ("Add reddit media", "redditadd"),
-    ("Backup tildes comments and topics", "tildes"),
-    ("Backup substack articles", "substack"),
-    ("Create / Update a Hacker News database", "hnadd"),
-    ("Add tabs", "tabsadd"),
-    ("Watch / Listen", "watch"),
-    ("Search captions / subtitles", "search"),
-    ("History", "history"),
-    ("Open tabs", "tabs"),
-    ("Download media", "download"),
-    ("Download Status", "download-status"),
-    ("Update local media", "fsupdate"),
-    ("Update online media", "tubeupdate"),
-    ("Update reddit media", "redditupdate"),
-    ("Convert pushshift data to reddit.db format", "pushshift"),
-    ("List playlists", "playlists"),
-    ("Blocklist a channel", "block"),
-    ("Re-optimize database", "optimize"),
-    ("Re-download media", "redownload"),
-    ("Merge online and local data", "merge-online-local"),
-    ("Convert selftext links to media table", "reddit-selftext"),
-    ("Search a SQLITE database", "search-db"),
-    ("Merge SQLITE databases", "merge-dbs"),
-    ("Dedupe SQLITE tables", "dedupe-db"),
-    ("Show large folders", "bigdirs"),
-    ("Disk Usage", "disk-usage"),
-    ("Copy play history", "copy-play-counts"),
-    ("Import mpv watchlater files", "mpv-watchlater"),
-    ("Sort data by similarity", "cluster-sort"),
-    ("Scatter files between folders or disks", "scatter"),
-    ("Move files preserving parent folder hierarchy", "relmv"),
-    ("Clean filenames", "christen"),
-    ("Dedupe music", "dedupe"),
-    ("Automatic tab loader", "surf"),
-]:
-    if subcommand not in title.lower():
-        title += f" ({subcommand})"
-    usage_details.append(
-        f"""
-<details><summary>{title}</summary>
+for prog_type, progs in [('Database subcommands', db_progs), ('File subcommands', path_progs), ('Other subcommands', other_progs)]:
+    usage_details.append(f'### {prog_type}')
 
-    $ library {subcommand} -h
-    usage: {getattr(usage, subcommand.replace('-','_'))}
+    for prog in progs:
+        prog_usage = getattr(usage, prog)
+        prog_description = prog_descriptions.get(prog)
+        subcommand = prog.replace('_','-')
 
-</details>
-""",
-    )
+        if prog_description is None:
+            prog_description = subcommand
+
+        if subcommand not in prog_description.lower():
+            prog_description += f" ({subcommand})"
+        usage_details.append(
+            f"""
+    <details><summary>{prog_description}</summary>
+
+        $ library {subcommand} -h
+        usage: {prog_usage}
+
+    </details>
+    """,
+            )
 
 expand_all_js = """```js
 (() => { const readmeDiv = document.getElementById("readme"); const detailsElements = readmeDiv.getElementsByTagName("details"); for (let i = 0; i < detailsElements.length; i++) { detailsElements[i].setAttribute("open", "true"); } })();
