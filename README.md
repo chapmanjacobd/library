@@ -410,10 +410,10 @@ Explore `library` databases in your browser
 ## Usage
 
 ### Database subcommands
-    <details><summary>Show large folders (bigdirs)</summary>
+<details><summary>Show large folders (bigdirs)</summary>
 
-        $ library bigdirs -h
-        usage: library bigdirs DATABASE [--limit (4000)] [--depth (0)] [--sort-by deleted | played] [--size=+5MB]
+    $ library bigdirs -h
+    usage: library bigdirs DATABASE [--limit (4000)] [--depth (0)] [--sort-by deleted | played] [--size=+5MB]
 
     See what folders take up space
 
@@ -427,12 +427,12 @@ Explore `library` databases in your browser
     lb bigdirs video.db --depth 7
 
 
-    </details>
-    
-    <details><summary>Blocklist a channel</summary>
+</details>
 
-        $ library block -h
-        usage: library block DATABASE URLS ...
+<details><summary>Blocklist a channel</summary>
+
+    $ library block -h
+    usage: library block DATABASE URLS ...
 
     Blocklist specific URLs (eg. YouTube channels, etc)
 
@@ -476,12 +476,12 @@ Explore `library` databases in your browser
         ...
 
 
-    </details>
-    
-    <details><summary>Clean filenames (christen)</summary>
+</details>
 
-        $ library christen -h
-        usage: library christen DATABASE [--run]
+<details><summary>Clean filenames (christen)</summary>
+
+    $ library christen -h
+    usage: library christen DATABASE [--run]
 
     Rename files to be somewhat normalized
 
@@ -498,24 +498,24 @@ Explore `library` databases in your browser
         library christen --dot-space video.db
 
 
-    </details>
-    
-    <details><summary>Dedupe music</summary>
+</details>
 
-        $ library dedupe -h
-        usage: library [--audio | --id | --title | --filesystem] [--only-soft-delete] [--limit LIMIT] DATABASE
+<details><summary>Dedupe music</summary>
+
+    $ library dedupe -h
+    usage: library [--audio | --id | --title | --filesystem] [--only-soft-delete] [--limit LIMIT] DATABASE
 
     Dedupe your files (not to be confused with the dedupe-db subcommand)
 
     library dedupe video.db / http
 
 
-    </details>
-    
-    <details><summary>Dedupe SQLITE tables (dedupe-db)</summary>
+</details>
 
-        $ library dedupe-db -h
-        usage: library dedupe-dbs DATABASE TABLE --bk BUSINESS_KEYS [--pk PRIMARY_KEYS] [--only-columns COLUMNS]
+<details><summary>Dedupe SQLITE tables (dedupe-db)</summary>
+
+    $ library dedupe-db -h
+    usage: library dedupe-dbs DATABASE TABLE --bk BUSINESS_KEYS [--pk PRIMARY_KEYS] [--only-columns COLUMNS]
 
     Dedupe your database (not to be confused with the dedupe subcommand)
 
@@ -530,12 +530,12 @@ Explore `library` databases in your browser
     If your duplicate rows contain exactly the same data in all the columns you can run with --skip-upsert to save a lot of time
 
 
-    </details>
-    
-    <details><summary>Disk Usage (disk-usage)</summary>
+</details>
 
-        $ library disk-usage -h
-        usage: library disk-usage DATABASE [--sort-by size | count] [--depth DEPTH] [PATH / SUBSTRING SEARCH]
+<details><summary>Disk Usage (disk-usage)</summary>
+
+    $ library disk-usage -h
+    usage: library disk-usage DATABASE [--sort-by size | count] [--depth DEPTH] [PATH / SUBSTRING SEARCH]
 
     Only include files smaller than 1kib
 
@@ -566,12 +566,12 @@ Explore `library` databases in your browser
 
 
 
-    </details>
-    
-    <details><summary>Download media</summary>
+</details>
 
-        $ library download -h
-        usage: library download [--prefix /mnt/d/] [--safe] [--subs] [--auto-subs] [--small] DATABASE --video | --audio | --photos
+<details><summary>Download media</summary>
+
+    $ library download -h
+    usage: library download [--prefix /mnt/d/] [--safe] [--subs] [--auto-subs] [--small] DATABASE --video | --audio | --photos
 
     Download stuff in a random order
 
@@ -615,12 +615,12 @@ Explore `library` databases in your browser
         ╘════════════╧══════════════════╧════════════════════╧══════════╛
 
 
-    </details>
-    
-    <details><summary>Download Status (download-status)</summary>
+</details>
 
-        $ library download-status -h
-        usage: library download-status DATABASE
+<details><summary>Download Status (download-status)</summary>
+
+    $ library download-status -h
+    usage: library download-status DATABASE
 
     Print download queue groups
 
@@ -657,22 +657,22 @@ Explore `library` databases in your browser
         library download-status video.db --safe
 
 
-    </details>
-    
-    <details><summary>export-text</summary>
+</details>
 
-        $ library export-text -h
-        usage: library export-text DATABASE
+<details><summary>export-text</summary>
+
+    $ library export-text -h
+    usage: library export-text DATABASE
 
     Generate HTML files from SQLite databases
 
 
-    </details>
-    
-    <details><summary>Add local media (fsadd)</summary>
+</details>
 
-        $ library fsadd -h
-        usage: library fsadd [(--video) | --audio | --image |  --text | --filesystem] DATABASE PATHS ...
+<details><summary>Add local media (fsadd)</summary>
+
+    $ library fsadd -h
+    usage: library fsadd [(--video) | --audio | --image |  --text | --filesystem] DATABASE PATHS ...
 
     The default database type is video:
         library fsadd tv.db ./tv/
@@ -719,24 +719,24 @@ Explore `library` databases in your browser
         [/mnt/d/Youtube] Marking 28932 orphaned metadata records as deleted
 
 
-    </details>
-    
-    <details><summary>Update local media (fsupdate)</summary>
+</details>
 
-        $ library fsupdate -h
-        usage: library fsupdate DATABASE
+<details><summary>Update local media (fsupdate)</summary>
+
+    $ library fsupdate -h
+    usage: library fsupdate DATABASE
 
     Update each path previously saved:
 
         library fsupdate video.db
 
 
-    </details>
-    
-    <details><summary>galleryadd</summary>
+</details>
 
-        $ library galleryadd -h
-        usage: library galleryadd DATABASE URLS
+<details><summary>galleryadd</summary>
+
+    $ library galleryadd -h
+    usage: library galleryadd DATABASE URLS
 
 Add gallery_dl URLs to download later or periodically update
 
@@ -745,22 +745,22 @@ If you have many URLs use stdin
     cat ./my-favorite-manhwa.txt | library galleryadd my.db --insert-only -
 
 
-    </details>
-    
-    <details><summary>galleryupdate</summary>
+</details>
 
-        $ library galleryupdate -h
-        usage: library galleryupdate DATABASE URLS
+<details><summary>galleryupdate</summary>
+
+    $ library galleryupdate -h
+    usage: library galleryupdate DATABASE URLS
 
 Check previously saved gallery_dl URLs for new content
 
 
-    </details>
-    
-    <details><summary>History</summary>
+</details>
 
-        $ library history -h
-        usage: library history [--frequency daily weekly (monthly) yearly] [--limit LIMIT] DATABASE [(all) watching watched created modified deleted]
+<details><summary>History</summary>
+
+    $ library history -h
+    usage: library history [--frequency daily weekly (monthly) yearly] [--limit LIMIT] DATABASE [(all) watching watched created modified deleted]
 
     Explore history through different facets
 
@@ -883,12 +883,12 @@ Check previously saved gallery_dl URLs for new content
 
 
 
-    </details>
-    
-    <details><summary>Create / Update a Hacker News database (hnadd)</summary>
+</details>
 
-        $ library hnadd -h
-        usage: library hnadd [--oldest] DATABASE
+<details><summary>Create / Update a Hacker News database (hnadd)</summary>
+
+    $ library hnadd -h
+    usage: library hnadd [--oldest] DATABASE
 
     Fetch latest stories first:
 
@@ -904,34 +904,34 @@ Check previously saved gallery_dl URLs for new content
         library hnadd --oldest hn.db
 
 
-    </details>
-    
-    <details><summary>Merge online and local data (merge-online-local)</summary>
+</details>
 
-        $ library merge-online-local -h
-        usage: library merge-online-local DATABASE
+<details><summary>Merge online and local data (merge-online-local)</summary>
+
+    $ library merge-online-local -h
+    usage: library merge-online-local DATABASE
 
     If you have previously downloaded YouTube or other online media, you can dedupe
     your database and combine the online and local media records as long as your
     files have the youtube-dl / yt-dlp id in the filename.
 
 
-    </details>
-    
-    <details><summary>Import mpv watchlater files (mpv-watchlater)</summary>
+</details>
 
-        $ library mpv-watchlater -h
-        usage: library mpv-watchlater DATABASE [--watch-later-directory ~/.config/mpv/watch_later/]
+<details><summary>Import mpv watchlater files (mpv-watchlater)</summary>
+
+    $ library mpv-watchlater -h
+    usage: library mpv-watchlater DATABASE [--watch-later-directory ~/.config/mpv/watch_later/]
 
     Extract timestamps from MPV to the history table
 
 
-    </details>
-    
-    <details><summary>mv-list</summary>
+</details>
 
-        $ library mv-list -h
-        usage: library mv-list [--limit LIMIT] [--lower LOWER] [--upper UPPER] MOUNT_POINT DATABASE
+<details><summary>mv-list</summary>
+
+    $ library mv-list -h
+    usage: library mv-list [--limit LIMIT] [--lower LOWER] [--upper UPPER] MOUNT_POINT DATABASE
 
 Free up space on a specific disk. Find candidates for moving data to a different mount point
 
@@ -993,35 +993,35 @@ After you are done selecting folders you can press ctrl-d and it will save the l
             rsync -a --info=progress2 --no-inc-recursive --remove-source-files --files-from=/tmp/tmpa7x_75l8 -r --relative -vv --dry-run / jim:/free/real/estate/
 
 
-    </details>
-    
-    <details><summary>Re-optimize database</summary>
+</details>
 
-        $ library optimize -h
-        usage: library optimize DATABASE [--force]
+<details><summary>Re-optimize database</summary>
+
+    $ library optimize -h
+    usage: library optimize DATABASE [--force]
 
     Optimize library databases
 
     The force flag is usually unnecessary and it can take much longer
 
 
-    </details>
-    
-    <details><summary>places-import</summary>
+</details>
 
-        $ library places-import -h
-        usage: library places-import DATABASE PATHS ...
+<details><summary>places-import</summary>
+
+    $ library places-import -h
+    usage: library places-import DATABASE PATHS ...
 
 Load POIs from Google Maps Google Takeout
 
 
 
-    </details>
-    
-    <details><summary>List playlists</summary>
+</details>
 
-        $ library playlists -h
-        usage: library playlists DATABASE [--delete ...]
+<details><summary>List playlists</summary>
+
+    $ library playlists -h
+    usage: library playlists DATABASE [--delete ...]
 
     List of Playlists
 
@@ -1060,12 +1060,12 @@ Load POIs from Google Maps Google Takeout
 
 
 
-    </details>
-    
-    <details><summary>Convert pushshift data to reddit.db format</summary>
+</details>
 
-        $ library pushshift -h
-        usage: library pushshift DATABASE < stdin
+<details><summary>Convert pushshift data to reddit.db format</summary>
+
+    $ library pushshift -h
+    usage: library pushshift DATABASE < stdin
 
     Download data (about 600GB jsonl.zst; 6TB uncompressed)
 
@@ -1083,22 +1083,22 @@ Load POIs from Google Maps Google Takeout
         end | parallel -j5
 
 
-    </details>
-    
-    <details><summary>Convert selftext links to media table (reddit-selftext)</summary>
+</details>
 
-        $ library reddit-selftext -h
-        usage: library reddit-selftext DATABASE
+<details><summary>Convert selftext links to media table (reddit-selftext)</summary>
+
+    $ library reddit-selftext -h
+    usage: library reddit-selftext DATABASE
 
     Extract URLs from reddit selftext from the reddit_posts table to the media table
 
 
-    </details>
-    
-    <details><summary>Add reddit media (redditadd)</summary>
+</details>
 
-        $ library redditadd -h
-        usage: library redditadd [--lookback N_DAYS] [--praw-site bot1] DATABASE URLS ...
+<details><summary>Add reddit media (redditadd)</summary>
+
+    $ library redditadd -h
+    usage: library redditadd [--lookback N_DAYS] [--praw-site bot1] DATABASE URLS ...
 
     Fetch data for redditors and reddits:
 
@@ -1118,24 +1118,24 @@ Load POIs from Google Maps Google Takeout
     You can find more info here: https://github.com/chapmanjacobd/reddit_mining#how-was-this-made
 
 
-    </details>
-    
-    <details><summary>Update reddit media (redditupdate)</summary>
+</details>
 
-        $ library redditupdate -h
-        usage: library redditupdate [--audio | --video] [--lookback N_DAYS] [--praw-site bot1] DATABASE
+<details><summary>Update reddit media (redditupdate)</summary>
+
+    $ library redditupdate -h
+    usage: library redditupdate [--audio | --video] [--lookback N_DAYS] [--praw-site bot1] DATABASE
 
     Fetch the latest posts for every subreddit/redditor saved in your database
 
         library redditupdate edu_subreddits.db
 
 
-    </details>
-    
-    <details><summary>Re-download media (redownload)</summary>
+</details>
 
-        $ library redownload -h
-        usage: library redownload DATABASE
+<details><summary>Re-download media (redownload)</summary>
+
+    $ library redownload -h
+    usage: library redownload DATABASE
 
     If you have previously downloaded YouTube or other online media, but your
     hard drive failed or you accidentally deleted something, and if that media
@@ -1172,12 +1172,12 @@ Load POIs from Google Maps Google Takeout
         $ library redownload city.db 2023-01-26T19:54:42 2023-01-26T20:45:24
 
 
-    </details>
-    
-    <details><summary>Scatter files between folders or disks</summary>
+</details>
 
-        $ library scatter -h
-        usage: library scatter [--limit LIMIT] [--policy POLICY] [--sort SORT] --targets TARGETS DATABASE RELATIVE_PATHS ...
+<details><summary>Scatter files between folders or disks</summary>
+
+    $ library scatter -h
+    usage: library scatter [--limit LIMIT] [--policy POLICY] [--sort SORT] --targets TARGETS DATABASE RELATIVE_PATHS ...
 
 Balance files across filesystem folder trees or multiple devices (mostly useful for mergerfs)
 
@@ -1249,12 +1249,12 @@ Balance files across filesystem folder trees or multiple devices (mostly useful 
         $ library scatter fs.db -m /mnt/d1:/mnt/d3:/mnt/d4 /mnt/d2
 
 
-    </details>
-    
-    <details><summary>Search captions / subtitles</summary>
+</details>
 
-        $ library search -h
-        usage: library search DATABASE QUERY
+<details><summary>Search captions / subtitles</summary>
+
+    $ library search -h
+    usage: library search DATABASE QUERY
 
     Search text databases and subtitles
 
@@ -1273,32 +1273,32 @@ Balance files across filesystem folder trees or multiple devices (mostly useful 
     $ library search fts.db 'two words' --open
 
 
-    </details>
-    
-    <details><summary>Search a SQLITE database (search-db)</summary>
+</details>
 
-        $ library search-db -h
-        usage: library search-db DATABASE TABLE SEARCH ... [--delete]
+<details><summary>Search a SQLITE database (search-db)</summary>
+
+    $ library search-db -h
+    usage: library search-db DATABASE TABLE SEARCH ... [--delete]
 
 Search all columns in a SQLITE table. If the table does not exist, uses the table which startswith (if only one match)
 
 
-    </details>
-    
-    <details><summary>Backup substack articles</summary>
+</details>
 
-        $ library substack -h
-        usage: library substack DATABASE PATH ...
+<details><summary>Backup substack articles</summary>
+
+    $ library substack -h
+    usage: library substack DATABASE PATH ...
 
     Backup substack articles
 
 
-    </details>
-    
-    <details><summary>Open tabs</summary>
+</details>
 
-        $ library tabs -h
-        usage: library tabs DATABASE
+<details><summary>Open tabs</summary>
+
+    $ library tabs -h
+    usage: library tabs DATABASE
 
     Tabs is meant to run **once per day**. Here is how you would configure it with `crontab`:
 
@@ -1365,12 +1365,12 @@ Search all columns in a SQLITE table. If the table does not exist, uses the tabl
         ╘═══════════════════════════════════════╧═════════════╧══════════════╛
 
 
-    </details>
-    
-    <details><summary>Add tabs (tabsadd)</summary>
+</details>
 
-        $ library tabsadd -h
-        usage: library tabsadd [--frequency daily weekly (monthly) quarterly yearly] [--no-sanitize] DATABASE URLS ...
+<details><summary>Add tabs (tabsadd)</summary>
+
+    $ library tabsadd -h
+    usage: library tabsadd [--frequency daily weekly (monthly) quarterly yearly] [--no-sanitize] DATABASE URLS ...
 
     Adding one URL:
 
@@ -1390,12 +1390,12 @@ Search all columns in a SQLITE table. If the table does not exist, uses the tabl
 
 
 
-    </details>
-    
-    <details><summary>Backup tildes comments and topics</summary>
+</details>
 
-        $ library tildes -h
-        usage: library tildes DATABASE USER
+<details><summary>Backup tildes comments and topics</summary>
+
+    $ library tildes -h
+    usage: library tildes DATABASE USER
 
     Backup tildes.net user comments and topics
 
@@ -1406,12 +1406,12 @@ Search all columns in a SQLITE table. If the table does not exist, uses the tabl
         library tildes tildes.net.db xk3 --cookies ~/Downloads/cookies-tildes-net.txt
 
 
-    </details>
-    
-    <details><summary>Add online media (tubeadd)</summary>
+</details>
 
-        $ library tubeadd -h
-        usage: library tubeadd [--safe] [--extra] [--subs] [--auto-subs] DATABASE URLS ...
+<details><summary>Add online media (tubeadd)</summary>
+
+    $ library tubeadd -h
+    usage: library tubeadd [--safe] [--extra] [--subs] [--auto-subs] DATABASE URLS ...
 
     Create a dl database / add links to an existing database
 
@@ -1441,12 +1441,12 @@ Search all columns in a SQLITE table. If the table does not exist, uses the tabl
         library tubeupdate tw.db --extra
 
 
-    </details>
-    
-    <details><summary>Update online media (tubeupdate)</summary>
+</details>
 
-        $ library tubeupdate -h
-        usage: library tubeupdate [--audio | --video] DATABASE
+<details><summary>Update online media (tubeupdate)</summary>
+
+    $ library tubeupdate -h
+    usage: library tubeupdate [--audio | --video] DATABASE
 
     Fetch the latest videos for every playlist saved in your database
 
@@ -1460,12 +1460,12 @@ Search all columns in a SQLITE table. If the table does not exist, uses the tabl
         library tubeupdate educational.db --extra https://www.youtube.com/channel/UCBsEUcR-ezAuxB2WlfeENvA/videos
 
 
-    </details>
-    
-    <details><summary>Watch / Listen</summary>
+</details>
 
-        $ library watch -h
-        usage: library watch DATABASE [optional args]
+<details><summary>Watch / Listen</summary>
+
+    $ library watch -h
+    usage: library watch DATABASE [optional args]
 
     Control playback:
         To stop playback press Ctrl-C in either the terminal or mpv
@@ -1761,35 +1761,35 @@ Search all columns in a SQLITE table. If the table does not exist, uses the tabl
         library watch -m 4 --hstack          # use hstack style
 
 
-    </details>
-    ### File subcommands
-    <details><summary>Exploratory Data Analysis (eda)</summary>
+</details>
+### File subcommands
+<details><summary>Exploratory Data Analysis (eda)</summary>
 
-        $ library eda -h
-        usage: library eda PATH ... [--table TABLE] [--start-row START_ROW] [--end-row END_ROW] [--repl]
+    $ library eda -h
+    usage: library eda PATH ... [--table TABLE] [--start-row START_ROW] [--end-row END_ROW] [--repl]
 
 Perform Exploratory Data Analysis (EDA) on one or more files
 
 Only 20,000 rows per file are loaded for performance purposes. Set `--end-row 999999999999` to read all the rows and/or run out of RAM.
 
 
-    </details>
-    
-    <details><summary>Compare data files (incremental-diff)</summary>
+</details>
 
-        $ library incremental-diff -h
-        usage: library incremental-diff PATH1 PATH2
+<details><summary>Compare data files (incremental-diff)</summary>
+
+    $ library incremental-diff -h
+    usage: library incremental-diff PATH1 PATH2
 
 [--table1 TABLE1] [--table2 TABLE2] [--table1-index TABLE1_INDEX] [--table2-index TABLE2_INDEX] [--start-row START_ROW] [--end-row END_ROW] [--verbose] [--primary-keys PRIMARY_KEYS]
 
 
 
-    </details>
-    ### Other subcommands
-    <details><summary>Sort data by similarity (cluster-sort)</summary>
+</details>
+### Other subcommands
+<details><summary>Sort data by similarity (cluster-sort)</summary>
 
-        $ library cluster-sort -h
-        usage: library cluster-sort [input_path | stdin] [output_path | stdout]
+    $ library cluster-sort -h
+    usage: library cluster-sort [input_path | stdin] [output_path | stdout]
 
     Group lines of text into sorted output
 
@@ -1828,24 +1828,24 @@ Only 20,000 rows per file are loaded for performance purposes. Set `--end-row 99
     image3.jpg' | library cluster-sort --image --move-groups
 
 
-    </details>
-    
-    <details><summary>Copy play history (copy-play-counts)</summary>
+</details>
 
-        $ library copy-play-counts -h
-        usage: library copy-play-counts DEST_DB SOURCE_DB ... [--source-prefix x] [--target-prefix y]
+<details><summary>Copy play history (copy-play-counts)</summary>
+
+    $ library copy-play-counts -h
+    usage: library copy-play-counts DEST_DB SOURCE_DB ... [--source-prefix x] [--target-prefix y]
 
     Copy play count information between databases
 
         library copy-play-counts audio.db phone.db --source-prefix /storage/6E7B-7DCE/d --target-prefix /mnt/d
 
 
-    </details>
-    
-    <details><summary>Merge SQLITE databases (merge-dbs)</summary>
+</details>
 
-        $ library merge-dbs -h
-        usage: library merge-dbs DEST_DB SOURCE_DB ... [--only-target-columns] [--only-new-rows] [--upsert] [--pk PK ...] [--table TABLE ...]
+<details><summary>Merge SQLITE databases (merge-dbs)</summary>
+
+    $ library merge-dbs -h
+    usage: library merge-dbs DEST_DB SOURCE_DB ... [--only-target-columns] [--only-new-rows] [--upsert] [--pk PK ...] [--table TABLE ...]
 
     Merge-DBs will insert new rows from source dbs to target db, table by table. If primary key(s) are provided,
     and there is an existing row with the same PK, the default action is to delete the existing row and insert the new row
@@ -1870,12 +1870,12 @@ Only 20,000 rows per file are loaded for performance purposes. Set `--end-row 99
         library merge-dbs --only-new-rows --pk subreddit,path --only-tables reddit_posts reddit/81_New_Music.db audio.db -v
 
 
-    </details>
-    
-    <details><summary>Move files preserving parent folder hierarchy (relmv)</summary>
+</details>
 
-        $ library relmv -h
-        usage: library relmv [--dry-run] SOURCE ... DEST
+<details><summary>Move files preserving parent folder hierarchy (relmv)</summary>
+
+    $ library relmv -h
+    usage: library relmv [--dry-run] SOURCE ... DEST
 
     Move files/folders without losing hierarchy metadata
 
@@ -1890,12 +1890,12 @@ Only 20,000 rows per file are loaded for performance purposes. Set `--end-row 99
         ) /mnt/d/80_Now_Listening/
 
 
-    </details>
-    
-    <details><summary>Automatic tab loader (surf)</summary>
+</details>
 
-        $ library surf -h
-        usage: library surf [--count COUNT] [--target-hosts TARGET_HOSTS] < stdin
+<details><summary>Automatic tab loader (surf)</summary>
+
+    $ library surf -h
+    usage: library surf [--count COUNT] [--target-hosts TARGET_HOSTS] < stdin
 
     Streaming tab loader: press ctrl+c to stop.
 
@@ -1910,8 +1910,8 @@ Only 20,000 rows per file are loaded for performance purposes. Set `--end-row 99
     If you prefer GUI, check out https://unli.xyz/tabsender/
 
 
-    </details>
-    
+</details>
+
 
 <details><summary>Chicken mode</summary>
 
