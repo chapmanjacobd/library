@@ -29,9 +29,9 @@ dependencies = [
 ]
 description = "xk library"
 dynamic = ["version"]
-license = {file = "LICENSE"}
+license = {file = ".github/LICENSE"}
 name = "xklb"
-readme = "README.md"
+readme = ".github/README.md"
 requires-python = ">=3.8"
 
 [project.optional-dependencies]
