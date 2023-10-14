@@ -204,13 +204,6 @@ To stop playing press Ctrl+C in either the terminal or mpv
     library fsadd --audio audiobooks.db ./audiobooks/
     library fsadd --audio podcasts.db ./podcasts/ ./another/more/secret/podcasts_folder/
 
-### Datasette
-
-Explore `library` databases in your browser
-
-    pip install datasette
-    datasette tv.db
-
 ## Guides
 
 ### Music alarm clock
@@ -340,6 +333,13 @@ end
 ```
 
 </details>
+
+### Datasette
+
+Explore `library` databases in your browser
+
+    pip install datasette
+    datasette tv.db
 
 ### Pipe to [mnamer](https://github.com/jkwill87/mnamer)
 
