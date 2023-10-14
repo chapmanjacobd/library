@@ -1,59 +1,78 @@
 from xklb import lb, usage
 
-prog_descriptions = {
-    "fsadd": "Add local media",
-    "tubeadd": "Add online media",
-    "redditadd": "Add reddit media",
-    "tildes": "Backup tildes comments and topics",
-    "substack": "Backup substack articles",
-    "hnadd": "Create / Update a Hacker News database",
-    "tabsadd": "Add tabs",
-    "watch": "Watch / Listen",
-    "search": "Search captions / subtitles",
-    "history": "History",
-    "tabs": "Open tabs",
-    "download": "Download media",
-    "download_status": "Download Status",
-    "fsupdate": "Update local media",
-    "tubeupdate": "Update online media",
-    "redditupdate": "Update reddit media",
-    "pushshift": "Convert pushshift data to reddit.db format",
-    "playlists": "List playlists",
-    "block": "Blocklist a channel",
-    "optimize": "Re-optimize database",
-    "redownload": "Re-download media",
-    "merge_online_local": "Merge online and local data",
-    "reddit_selftext": "Convert selftext links to media table",
-    "search_db": "Search a SQLITE database",
-    "merge_dbs": "Merge SQLITE databases",
-    "dedupe_db": "Dedupe SQLITE tables",
-    "bigdirs": "Show large folders",
-    "disk_usage": "Disk Usage",
-    "copy_play_counts": "Copy play history",
-    "mpv_watchlater": "Import mpv watchlater files",
-    "cluster_sort": "Sort data by similarity",
-    "scatter": "Scatter files between folders or disks",
-    "relmv": "Move files preserving parent folder hierarchy",
-    "christen": "Clean filenames",
-    "eda": "Exploratory Data Analysis",
-    "incremental_diff": "Compare data files",
-    "dedupe": "Dedupe music",
-    "surf": "Automatic tab loader"
+progs = {
+    'Create database subcommands': {
+        "fsadd": "Add local media",
+        "tubeadd": "Add online media",
+        "tabsadd": "Add tabs",
+        "redditadd": "Add reddit media",
+        "pushshift": "Convert pushshift data to reddit.db format",
+        "hnadd": "Create / Update a Hacker News database",
+        "substack": "Backup substack articles",
+        "tildes": "Backup tildes comments and topics",
+    },
+    'Update database subcommands': {
+        "fsupdate": "Update local media",
+        "tubeupdate": "Update online media",
+        "redditupdate": "Update reddit media",
+    },
+    'Media database subcommands': {
+        "watch": "Watch / Listen",
+        "tabs": "Open tabs",
+        "block": "Block a channel",
+        "playlists": "List playlists",
+        "download": "Download media",
+        "download_status": "Download Status",
+        "redownload": "Re-download deleted/lost media",
+        "history": "History",
+        "search": "Search captions / subtitles",
+    },
+    'Multi-database subcommands': {
+        "merge_dbs": "Merge SQLITE databases",
+        "copy_play_counts": "Copy play history",
+    },
+    'File subcommands': {
+        "eda": "Exploratory Data Analysis",
+        "incremental_diff": "Compare data files",
+    },
+    'Folder subcommands': {
+        "relmv": "Move files preserving parent folder hierarchy",
+        "scatter": "Scatter files between folders or disks",
+    },
+    'Text subcommands': {
+        "cluster_sort": "Sort data by similarity",
+    },
+    'Filesystem Database subcommands': {
+        "christen": "Clean filenames",
+        "disk_usage": "Disk Usage",
+        "bigdirs": "Show large folders",
+        "search_db": "Search a SQLITE database",
+        "optimize": "Re-optimize database",
+    },
+    'Database enrichment subcommands': {
+        "dedupe_db": "Dedupe SQLITE tables",
+        "dedupe": "Dedupe similar media",
+        "merge_online_local": "Merge online and local data",
+        "mpv_watchlater": "Import mpv watchlater files to history",
+        "reddit_selftext": "Convert selftext links to media table",
+    },
+    'Misc subcommands': {
+        "surf": "Automatic tab loader",
+    },
 }
 
 all_progs = [s for s in dir(usage) if not s.startswith('_') and isinstance(getattr(usage, s), str)]
-db_progs = [s for s in all_progs if 'DATABASE' in getattr(usage, s)]
-path_progs = [s for s in all_progs if 'PATH' in getattr(usage, s) and s not in db_progs]
-other_progs = [s for s in all_progs if s not in db_progs + path_progs]
+categorized_progs = [key for key in progs.values() if isinstance(key, str)]
+other_progs = [s for s in all_progs if s not in categorized_progs]
+progs['Other subcommands'] = {s: s for s in other_progs}
 
 usage_details = []
-for prog_type, progs in [('Database subcommands', db_progs), ('File subcommands', path_progs), ('Other subcommands', other_progs)]:
-    usage_details.append(f'\n### {prog_type}\n')
+for category, category_progs in progs.items():
+    usage_details.append(f'\n### {category}\n')
 
-    for prog in progs:
+    for prog, prog_description in category_progs.items():
         prog_usage = getattr(usage, prog)
-        prog_description = prog_descriptions.get(prog)
-        subcommand = prog.replace('_','-')
+        subcommand = prog.replace('_', '-')
 
         if prog_description is None:
             prog_description = subcommand
@@ -61,7 +80,7 @@ for prog_type, progs in [('Database subcommands', db_progs), ('File subcommands'
         if subcommand not in prog_description.lower():
             prog_description += f" ({subcommand})"
         usage_details.append(
-        f"""
+            f"""
 <details><summary>{prog_description}</summary>
 
     $ library {subcommand} -h
@@ -69,7 +88,7 @@ for prog_type, progs in [('Database subcommands', db_progs), ('File subcommands'
 
 </details>
 """,
-            )
+        )
 
 expand_all_js = """```js
 (() => { const readmeDiv = document.getElementById("readme"); const detailsElements = readmeDiv.getElementsByTagName("details"); for (let i = 0; i < detailsElements.length; i++) { detailsElements[i].setAttribute("open", "true"); } })();
