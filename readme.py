@@ -61,14 +61,14 @@ for prog_type, progs in [('Database subcommands', db_progs), ('File subcommands'
         if subcommand not in prog_description.lower():
             prog_description += f" ({subcommand})"
         usage_details.append(
-            f"""
-    <details><summary>{prog_description}</summary>
+        f"""
+<details><summary>{prog_description}</summary>
 
-        $ library {subcommand} -h
-        usage: {prog_usage}
+    $ library {subcommand} -h
+    usage: {prog_usage}
 
-    </details>
-    """,
+</details>
+""",
             )
 
 expand_all_js = """```js
