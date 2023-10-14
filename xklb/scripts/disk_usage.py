@@ -2,8 +2,8 @@ import argparse, os
 from pathlib import Path
 from typing import Dict, List
 
-from xklb import db, player, usage
-from xklb.utils import consts, file_utils, nums, objects, processes, sql_utils
+from xklb import player, usage
+from xklb.utils import consts, db_utils, file_utils, nums, objects, processes, sql_utils
 from xklb.utils.log_utils import log
 
 
@@ -31,7 +31,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("database")
     parser.add_argument("working_directory", nargs="*", default=os.sep)
     args = parser.parse_intermixed_args()
-    args.db = db.connect(args)
+    args.db = db_utils.connect(args)
 
     args.include += args.working_directory
     if args.include == ["."]:
@@ -112,13 +112,15 @@ def load_subset(args):
 
 
 def get_data(args) -> List[dict]:
-    m_columns = db.columns(args, "media")
+    m_columns = db_utils.columns(args, "media")
     args.filter_sql = []
     args.filter_bindings = {}
 
     if args.size:
         args.filter_sql.append(" and size IS NOT NULL " + args.size)
-    db.construct_search_bindings(args, [f"{k}" for k in m_columns if k in db.config["media"]["search_columns"]])
+    db_utils.construct_search_bindings(
+        args, [f"{k}" for k in m_columns if k in db_utils.config["media"]["search_columns"]]
+    )
 
     media = list(
         args.db.query(

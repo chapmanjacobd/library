@@ -7,8 +7,8 @@ from typing import Dict, List, Tuple, Union
 from humanize import naturalsize
 from tabulate import tabulate
 
-from xklb import db, usage
-from xklb.utils import consts, devices, file_utils, iterables, objects, printing
+from xklb import usage
+from xklb.utils import consts, db_utils, devices, file_utils, iterables, objects, printing
 from xklb.utils.log_utils import log
 
 
@@ -33,7 +33,7 @@ def parse_args() -> argparse.Namespace:
         help="Paths to scatter; if using -m any path substring is valid (relative to the root of your mergerfs mount)",
     )
     args = parser.parse_args()
-    args.db = db.connect(args)
+    args.db = db_utils.connect(args)
 
     if args.targets:
         args.targets = [m.rstrip("\\/") for m in args.targets.split(":")]
@@ -65,7 +65,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def get_table(args) -> List[dict]:
-    m_columns = db.columns(args, "media")
+    m_columns = db_utils.columns(args, "media")
     or_paths = [f"path like :path_{i}" for i, _path in enumerate(args.relative_paths)]
 
     media = list(

@@ -6,8 +6,8 @@ from time import sleep
 from bs4 import BeautifulSoup
 from dateutil import parser
 
-from xklb import db, db_media, usage
-from xklb.utils import nums, objects, web
+from xklb import db_media, usage
+from xklb.utils import db_utils, nums, objects, web
 from xklb.utils.log_utils import log
 
 
@@ -22,7 +22,7 @@ def parse_args() -> argparse.Namespace:
     args = parser.parse_args()
 
     Path(args.database).touch()
-    args.db = db.connect(args)
+    args.db = db_utils.connect(args)
     log.info(objects.dict_filter_bool(args.__dict__))
     return args
 

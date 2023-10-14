@@ -3,8 +3,8 @@ from copy import deepcopy
 from itertools import groupby
 from typing import Tuple
 
-from xklb import db, player, usage
-from xklb.utils import consts, iterables, objects, printing, processes
+from xklb import player, usage
+from xklb.utils import consts, db_utils, iterables, objects, printing, processes
 from xklb.utils.log_utils import log
 
 
@@ -58,7 +58,7 @@ def parse_args() -> argparse.Namespace:
 
     if args.db:
         args.database = args.db
-    args.db = db.connect(args)
+    args.db = db_utils.connect(args)
     log.info(objects.dict_filter_bool(args.__dict__))
 
     return args
@@ -87,8 +87,8 @@ def printer(args, captions) -> None:
 
 
 def construct_query(args) -> Tuple[str, dict]:
-    m_columns = db.columns(args, "media")
-    c_columns = db.columns(args, "captions")
+    m_columns = db_utils.columns(args, "media")
+    c_columns = db_utils.columns(args, "captions")
     args.filter_sql = []
     args.filter_bindings = {}
 
@@ -97,7 +97,7 @@ def construct_query(args) -> Tuple[str, dict]:
     table = "captions"
     if args.db["captions"].detect_fts():
         if args.include:
-            args.table, search_bindings = db.fts_search_sql(
+            args.table, search_bindings = db_utils.fts_search_sql(
                 "captions",
                 fts_table=args.db["captions"].detect_fts(),
                 include=args.include,
@@ -107,9 +107,9 @@ def construct_query(args) -> Tuple[str, dict]:
             args.filter_bindings = {**args.filter_bindings, **search_bindings}
             c_columns = {**c_columns, "rank": int}
         elif args.exclude:
-            db.construct_search_bindings(args, ["text"])
+            db_utils.construct_search_bindings(args, ["text"])
     else:
-        db.construct_search_bindings(args, ["text"])
+        db_utils.construct_search_bindings(args, ["text"])
 
     cols = args.cols or ["path", "text", "time", "rank", "title"]
     args.select = [c for c in cols if c in {**c_columns, **m_columns, **{"*": "Any"}}]

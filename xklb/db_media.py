@@ -5,14 +5,14 @@ from typing import Optional
 
 from dateutil import parser
 
-from xklb import db, fs_extract
-from xklb.utils import consts, iterables, nums, objects, strings
+from xklb import fs_extract
+from xklb.utils import consts, db_utils, iterables, nums, objects, strings
 from xklb.utils.consts import DBType
 from xklb.utils.log_utils import log
 
 
 def exists(args, path) -> bool:
-    m_columns = db.columns(args, "media")
+    m_columns = db_utils.columns(args, "media")
     try:
         known = args.db.execute(
             f"select 1 from media where path=? or {'web' if 'webpath' in m_columns else ''}path=?",
@@ -37,7 +37,7 @@ def get_paths(args):
     if "media" in tables:
         known_playlists.update(d["path"] for d in args.db.query("SELECT path from media"))
 
-        m_columns = db.columns(args, "media")
+        m_columns = db_utils.columns(args, "media")
         if "webpath" in m_columns:
             known_playlists.update(d["webpath"] for d in args.db.query("SELECT webpath from media"))
 

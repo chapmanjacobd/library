@@ -1,9 +1,9 @@
 from argparse import Namespace
 
 from tests.utils import dvd
-from xklb.db import connect
 from xklb.tube_backend import download
 from xklb.tube_extract import tube_add
+from xklb.utils.db_utils import connect
 
 PLAYLIST_URL = "https://youtube.com/playlist?list=PLVoczRgDnXDLWV1UJ_tO70VT_ON0tuEdm"
 PLAYLIST_VIDEO_URL = "https://www.youtube.com/watch?v=QoXubRvB6tQ"

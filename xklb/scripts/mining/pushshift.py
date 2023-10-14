@@ -1,9 +1,9 @@
 import argparse, sys
 from pathlib import Path
 
-from xklb import db, usage
+from xklb import usage
 from xklb.reddit_extract import slim_post_data
-from xklb.utils import objects, printing
+from xklb.utils import db_utils, objects, printing
 from xklb.utils.log_utils import log
 
 try:
@@ -23,7 +23,7 @@ def parse_args(action, usage) -> argparse.Namespace:
     if args.db:
         args.database = args.db
     Path(args.database).touch()
-    args.db = db.connect(args)
+    args.db = db_utils.connect(args)
 
     log.info(objects.dict_filter_bool(args.__dict__))
 

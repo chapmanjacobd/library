@@ -4,9 +4,9 @@ from shutil import which
 from time import sleep
 from typing import Dict, List, Tuple
 
-from xklb import db, history, usage
+from xklb import history, usage
 from xklb.player import generic_player, override_sort, printer
-from xklb.utils import iterables, objects, processes
+from xklb.utils import db_utils, iterables, objects, processes
 from xklb.utils.consts import SC
 from xklb.utils.log_utils import log
 
@@ -64,7 +64,7 @@ def parse_args(action) -> argparse.Namespace:
 
     if args.db:
         args.database = args.db
-    args.db = db.connect(args)
+    args.db = db_utils.connect(args)
     log.info(objects.dict_filter_bool(args.__dict__))
 
     return args

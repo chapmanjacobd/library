@@ -1,8 +1,8 @@
 import argparse, os, sys
 from typing import List, Tuple
 
-from xklb import db, gdl_backend, play_actions, player, tube_backend, usage
-from xklb.utils import arg_utils, consts, iterables, nums, objects, printing, processes, sql_utils
+from xklb import gdl_backend, play_actions, player, tube_backend, usage
+from xklb.utils import arg_utils, consts, db_utils, iterables, nums, objects, printing, processes, sql_utils
 from xklb.utils.consts import SC, DBType
 from xklb.utils.log_utils import log
 
@@ -111,7 +111,7 @@ def parse_args():
 
     if args.db:
         args.database = args.db
-    args.db = db.connect(args)
+    args.db = db_utils.connect(args)
 
     args.action = SC.download
     play_actions.parse_args_sort(args)
@@ -125,8 +125,8 @@ def parse_args():
 
 
 def construct_query(args) -> Tuple[str, dict]:
-    m_columns = db.columns(args, "media")
-    pl_columns = db.columns(args, "playlists")
+    m_columns = db_utils.columns(args, "media")
+    pl_columns = db_utils.columns(args, "playlists")
 
     args.filter_sql = []
     args.filter_bindings = {}
@@ -136,7 +136,9 @@ def construct_query(args) -> Tuple[str, dict]:
 
     args.filter_sql.extend([" and " + w for w in args.where])
 
-    db.construct_search_bindings(args, [f"m.{k}" for k in m_columns if k in db.config["media"]["search_columns"]])
+    db_utils.construct_search_bindings(
+        args, [f"m.{k}" for k in m_columns if k in db_utils.config["media"]["search_columns"]]
+    )
 
     if args.action == SC.download and "time_modified" in m_columns:
         args.filter_sql.append(
@@ -236,7 +238,7 @@ def dl_download(args=None) -> None:
         sys.argv = ["lb", *args]
 
     args = parse_args()
-    m_columns = db.columns(args, "media")
+    m_columns = db_utils.columns(args, "media")
 
     if "limit" in args.defaults and "media" in args.db.table_names() and "webpath" in m_columns:
         if args.db.pop("SELECT 1 from media WHERE webpath is NULL and path in (select webpath from media) LIMIT 1"):

@@ -3,7 +3,7 @@ from pathlib import Path
 
 from tests.utils import dvd
 from xklb import gdl_backend
-from xklb.db import connect
+from xklb.utils.db_utils import connect
 
 
 def create_args(test_name):

@@ -1,9 +1,9 @@
 import argparse
 from typing import Tuple
 
-from xklb import db, player, usage
+from xklb import player, usage
 from xklb.player import delete_playlists
-from xklb.utils import consts, objects
+from xklb.utils import consts, db_utils, objects
 from xklb.utils.log_utils import log
 
 
@@ -45,7 +45,7 @@ def parse_args() -> argparse.Namespace:
 
     if args.db:
         args.database = args.db
-    args.db = db.connect(args)
+    args.db = db_utils.connect(args)
     log.info(objects.dict_filter_bool(args.__dict__))
 
     args.action = consts.SC.playlists
@@ -53,7 +53,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def construct_query(args) -> Tuple[str, dict]:
-    pl_columns = db.columns(args, "playlists")
+    pl_columns = db_utils.columns(args, "playlists")
     args.filter_sql = []
     args.filter_bindings = {}
 
@@ -62,7 +62,7 @@ def construct_query(args) -> Tuple[str, dict]:
     args.table = "playlists"
     if args.db["playlists"].detect_fts():
         if args.include:
-            args.table, search_bindings = db.fts_search_sql(
+            args.table, search_bindings = db_utils.fts_search_sql(
                 "playlists",
                 fts_table=args.db["playlists"].detect_fts(),
                 include=args.include,
@@ -71,12 +71,14 @@ def construct_query(args) -> Tuple[str, dict]:
             )
             args.filter_bindings = {**args.filter_bindings, **search_bindings}
         elif args.exclude:
-            db.construct_search_bindings(
+            db_utils.construct_search_bindings(
                 args,
-                [f"{k}" for k in pl_columns if k in db.config["media"]["search_columns"]],
+                [f"{k}" for k in pl_columns if k in db_utils.config["media"]["search_columns"]],
             )
     else:
-        db.construct_search_bindings(args, [f"{k}" for k in pl_columns if k in db.config["media"]["search_columns"]])
+        db_utils.construct_search_bindings(
+            args, [f"{k}" for k in pl_columns if k in db_utils.config["media"]["search_columns"]]
+        )
 
     LIMIT = "LIMIT " + str(args.limit) if args.limit else ""
     query = f"""SELECT
@@ -98,8 +100,8 @@ def construct_query(args) -> Tuple[str, dict]:
 def playlists() -> None:
     args = parse_args()
 
-    pl_columns = db.columns(args, "playlists")
-    m_columns = db.columns(args, "media")
+    pl_columns = db_utils.columns(args, "playlists")
+    m_columns = db_utils.columns(args, "media")
     query, bindings = construct_query(args)
 
     if "playlist_id" in m_columns:

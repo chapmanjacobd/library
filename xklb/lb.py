@@ -20,6 +20,7 @@ from xklb.scripts.download_status import download_status
 from xklb.scripts.eda import eda
 from xklb.scripts.export_text import export_text
 from xklb.scripts.history import history
+from xklb.scripts.incremental_diff import incremental_diff
 from xklb.scripts.merge_dbs import merge_dbs
 from xklb.scripts.merge_online_local import merge_online_local
 from xklb.scripts.mining.extract_links import extract_links
@@ -119,6 +120,7 @@ def usage() -> str:
 
     mining:
       lb eda                   Exploratory Data Analysis on table-like files
+      lb incremental-diff      Diff large table-like files in chunks
 
       lb reddit-selftext       db selftext external links -> db media table
       lb pushshift             Convert Pushshift jsonl.zstd -> reddit.db format (stdin)
@@ -286,6 +288,8 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
 
     subp_eda = add_parser(subparsers, "eda", ["preview"])
     subp_eda.set_defaults(func=eda)
+    subp_incremental_diff = add_parser(subparsers, "incremental-diff")
+    subp_incremental_diff.set_defaults(func=incremental_diff)
 
     subp_mpv_watchlater = add_parser(subparsers, "mpv-watchlater")
     subp_mpv_watchlater.set_defaults(func=mpv_watchlater)

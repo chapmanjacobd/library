@@ -7,9 +7,9 @@ from shutil import which
 from timeit import default_timer as timer
 from typing import Dict, List, Optional
 
-from xklb import db, db_playlists, player, usage
+from xklb import db_playlists, player, usage
 from xklb.media import av, books
-from xklb.utils import arg_utils, consts, file_utils, iterables, objects
+from xklb.utils import arg_utils, consts, db_utils, file_utils, iterables, objects
 from xklb.utils.consts import SC, DBType
 from xklb.utils.log_utils import log
 
@@ -99,7 +99,7 @@ def parse_args(action, usage) -> argparse.Namespace:
     if args.db:
         args.database = args.db
     Path(args.database).touch()
-    args.db = db.connect(args)
+    args.db = db_utils.connect(args)
     if hasattr(args, "paths"):
         args.paths = iterables.conform(args.paths)
     log.info(objects.dict_filter_bool(args.__dict__))
@@ -229,7 +229,7 @@ def find_new_files(args, path: Path) -> List[str]:
             print(f"File not found. {path}")
             return []
 
-    m_columns = db.columns(args, "media")
+    m_columns = db_utils.columns(args, "media")
     scanned_set = set(scanned_files)
 
     try:
@@ -351,7 +351,7 @@ def extractor(args, paths) -> None:
     if args.profile in [DBType.audio, DBType.video, DBType.text] and (
         not args.db["media"].detect_fts() or new_files > 100000
     ):
-        db.optimize(args)
+        db_utils.optimize(args)
 
 
 def fs_add(args=None) -> None:

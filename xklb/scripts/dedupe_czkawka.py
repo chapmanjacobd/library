@@ -9,9 +9,6 @@ from xklb import player
 from xklb.utils import consts, devices, file_utils, iterables, mpv_utils, processes
 from xklb.utils.log_utils import log
 
-#!/usr/bin/python3
-
-
 left_mpv_socket = str(Path(consts.TEMP_SCRIPT_DIR) / f"mpv_socket_{consts.random_string()}")
 right_mpv_socket = str(Path(consts.TEMP_SCRIPT_DIR) / f"mpv_socket_{consts.random_string()}")
 

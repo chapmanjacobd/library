@@ -1,8 +1,8 @@
 import argparse
 
-from xklb import db, player, usage
+from xklb import player, usage
 from xklb.history import create
-from xklb.utils import consts, objects, strings
+from xklb.utils import consts, db_utils, objects, strings
 from xklb.utils.log_utils import log
 
 
@@ -55,7 +55,7 @@ def parse_args() -> argparse.Namespace:
 
     if args.db:
         args.database = args.db
-    args.db = db.connect(args)
+    args.db = db_utils.connect(args)
 
     args.action = consts.SC.history
     log.info(objects.dict_filter_bool(args.__dict__))
@@ -64,7 +64,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def recent_media(args, time_column):
-    m_columns = db.columns(args, "media")
+    m_columns = db_utils.columns(args, "media")
     query = f"""
     SELECT
         path

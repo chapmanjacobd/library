@@ -1,8 +1,8 @@
 import argparse, sys
 from pathlib import Path
 
-from xklb import db, db_media, db_playlists, gdl_backend, usage
-from xklb.utils import arg_utils, consts, iterables, objects, path_utils, processes
+from xklb import db_media, db_playlists, gdl_backend, usage
+from xklb.utils import arg_utils, consts, db_utils, iterables, objects, path_utils, processes
 from xklb.utils.consts import SC
 from xklb.utils.log_utils import log
 
@@ -55,7 +55,7 @@ def parse_args(action, usage) -> argparse.Namespace:
         args.database = args.db
     if action == SC.galleryadd:
         Path(args.database).touch()
-    args.db = db.connect(args)
+    args.db = db_utils.connect(args)
 
     if hasattr(args, "playlists"):
         args.playlists = list(set(s.strip() for s in args.playlists))
@@ -107,7 +107,7 @@ def gallery_add(args=None) -> None:
             gdl_backend.get_playlist_metadata(args, path)
 
     if not args.db["media"].detect_fts():
-        db.optimize(args)
+        db_utils.optimize(args)
 
 
 def gallery_update(args=None) -> None:

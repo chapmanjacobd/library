@@ -1,21 +1,19 @@
-#!/usr/bin/python
-
 import argparse
 from typing import Dict
 
 from xklb import usage
-from xklb.utils import file_utils, nums
-from xklb.utils.log_utils import log
-
-DEFAULT_LIMIT = 20_000
+from xklb.utils import nums
+from xklb.utils.consts import DEFAULT_FILE_ROWS_READ_LIMIT
+from xklb.utils.file_utils import read_file_to_dataframes
+from xklb.utils.printing import print_df
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Perform EDA on one or more files", usage=usage.eda)
-    parser.add_argument("--table", "-t")
+    parser.add_argument("--table-name", "--table", "-t")
     parser.add_argument("--table-index", type=int)
     parser.add_argument("--start-row", "--skiprows", type=int, default=None)
-    parser.add_argument("--end-row", "--nrows", "--limit", "-L", default=str(DEFAULT_LIMIT))
+    parser.add_argument("--end-row", "--nrows", "--limit", "-L", default=str(DEFAULT_FILE_ROWS_READ_LIMIT))
     parser.add_argument("--repl", "-r", action="store_true")
     parser.add_argument("--verbose", "-v", action="count", default=0)
 
@@ -33,110 +31,6 @@ def parse_args():
         args.end_row = int(args.end_row)
 
     return args
-
-
-def pd_read_sqlite(args, path):
-    import pandas as pd
-    from sqlite_utils import Database
-
-    db = Database(path)
-
-    if args.table:
-        tables = [args.table]
-    else:
-        tables = [
-            s
-            for s in db.table_names() + db.view_names()
-            if not any(["_fts_" in s, s.endswith("_fts"), s.startswith("sqlite_")])
-        ]
-        if args.table_index:
-            tables = [args.table_index]
-
-    dfs = []
-    for table in tables:
-        df = pd.DataFrame(db[table].rows_where(offset=args.start_row, limit=args.end_row, order_by="random()"))
-        df.name = table
-        dfs.append(df)
-
-    return dfs
-
-
-def read_file_to_dataframes(args, path):
-    import pandas as pd
-
-    skiprows = args.start_row
-    nrows = args.end_row
-
-    mimetype = file_utils.mimetype(path)
-    log.info(mimetype)
-
-    if mimetype in ("text/csv",):
-        dfs = [pd.read_csv(path, nrows=nrows, skiprows=skiprows or 0)]
-    elif mimetype in ("text/tab-separated-values",):
-        dfs = [pd.read_csv(path, delimiter="\t", nrows=nrows, skiprows=skiprows or 0)]
-    elif mimetype in (
-        "application/vnd.ms-excel",
-        "Excel spreadsheet subheader",
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    ):
-        excel_data = pd.read_excel(path, sheet_name=args.table or args.table_index, nrows=nrows, skiprows=skiprows)
-        dfs = []
-        if isinstance(excel_data, pd.DataFrame):
-            worksheet_names = excel_data.index.levels[0]
-            for name in worksheet_names:
-                df = excel_data.loc[name]
-                df.name = name
-                dfs.append(df)
-        else:
-            for worksheet_name, df in excel_data.items():
-                df.name = worksheet_name
-                dfs.append(df)
-    elif mimetype in ("application/json",):
-        dfs = [pd.read_json(path)]
-    elif mimetype in ("JSON Lines", "GeoJSON Lines"):
-        dfs = [pd.read_json(path, nrows=nrows, lines=True)]
-    elif mimetype in ("application/parquet",):
-        dfs = [pd.read_parquet(path)]
-    elif mimetype in ("Pickle", "application/octet-stream"):
-        dfs = [pd.read_pickle(path)]
-    elif mimetype in ("text/html",):
-        dfs = pd.read_html(path, skiprows=skiprows)
-    elif mimetype in ("SQLite database file",):
-        dfs = pd_read_sqlite(args, path)
-    elif mimetype in ("Stata",):
-        dfs = [pd.read_stata(path)]
-    elif mimetype in ("Feather",):
-        dfs = [pd.read_feather(path)]
-    elif mimetype in ("application/x-hdf",):
-        dfs = [pd.read_hdf(path, start=skiprows, stop=nrows)]
-    elif mimetype in ("ORC",):
-        dfs = [pd.read_orc(path)]
-    elif mimetype in ("Parquet",):
-        dfs = [pd.read_parquet(path)]
-    elif mimetype in ("text/xml",):
-        dfs = [pd.read_xml(path)]
-    elif mimetype in ("application/x-netcdf",):
-        import xarray as xr
-
-        ds = xr.open_dataset(path)
-        dfs = [ds.to_dataframe()]
-    elif mimetype in ("Zarr",):
-        import xarray as xr
-
-        ds = xr.open_zarr(path)
-        dfs = [ds.to_dataframe()]
-    else:
-        raise ValueError(f"{path}: Unsupported file type: {mimetype}")
-
-    for table_index, df in enumerate(dfs):
-        if not hasattr(df, "name"):
-            df.name = str(table_index)
-
-    return dfs
-
-
-def print_md(df):
-    print(df.to_markdown(tablefmt="github"))
 
 
 def print_series(s):
@@ -176,7 +70,7 @@ def print_info(args, df):
 
     if args.end_row is None:
         partial_dataset_msg = ""
-    elif args.end_row == DEFAULT_LIMIT:
+    elif args.end_row == DEFAULT_FILE_ROWS_READ_LIMIT:
         partial_dataset_msg = f"(limited by default --end-row {args.end_row})"
     else:
         partial_dataset_msg = f"(limited by --end-row {args.end_row})"
@@ -190,14 +84,14 @@ def print_info(args, df):
     print("### Sample of rows")
     print()
     if len(df) > 6:
-        print_md(pd.concat([df.head(3), df.tail(3)]))
+        print_df(pd.concat([df.head(3), df.tail(3)]))
     else:
-        print_md(df.head(6))
+        print_df(df.head(6))
     print()
 
     print("### Summary statistics")
     print()
-    print_md(df.describe())
+    print_df(df.describe())
     print()
 
     converted = df.convert_dtypes()
@@ -212,13 +106,13 @@ def print_info(args, df):
         print("### Pandas columns with 'original' dtypes")
         print()
         same_dtypes = pd.DataFrame(same_dtypes, columns=["column", "dtype"])
-        print_md(same_dtypes.set_index("column"))
+        print_df(same_dtypes.set_index("column"))
         print()
     if len(diff_dtypes) > 0:
         print("### Pandas columns with 'converted' dtypes")
         print()
         diff_dtypes = pd.DataFrame(diff_dtypes, columns=["column", "original_dtype", "converted_dtype"])
-        print_md(diff_dtypes.set_index("column"))
+        print_df(diff_dtypes.set_index("column"))
         print()
 
     categorical_columns = [s for s in df.columns if pd.api.types.is_categorical_dtype(df[s])]
@@ -228,9 +122,9 @@ def print_info(args, df):
         for col in categorical_columns:
             print(col)
             print("#### values")
-            print_md(df[col].value_counts(normalize=True))
+            print_df(df[col].value_counts(normalize=True))
             print("#### groupby")
-            print_md(df.groupby(col).describe())
+            print_df(df.groupby(col).describe())
             print()
 
     numeric_columns = df.select_dtypes("number").columns.to_list()
@@ -241,7 +135,7 @@ def print_info(args, df):
         print()
         for col in numeric_columns:
             bins = pd.cut(df[col], bins=6)
-            print_md(bins.value_counts().sort_index())
+            print_df(bins.value_counts().sort_index())
             print()
 
     print("### Missing values")
@@ -267,12 +161,18 @@ def print_info(args, df):
         print(f"#### Value stats")
         column_report = pd.DataFrame(df_column_values(df, col) for col in df.columns).set_index("column")
         column_report = column_report.sort_values(["empty_string_count", "zero_count", "null_count"])
-        print_md(column_report[["values", "null", "zero", "empty_string"]])
+        print_df(column_report[["values", "null", "zero", "empty_string"]])
         print()
 
 
 def file_eda(args, path):
-    dfs = read_file_to_dataframes(args, path)
+    dfs = read_file_to_dataframes(
+        path,
+        table_name=args.table_name,
+        table_index=args.table_index,
+        start_row=args.start_row,
+        end_row=args.end_row,
+    )
     if getattr(args, "repl", False):
         breakpoint()
 

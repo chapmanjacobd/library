@@ -2,8 +2,8 @@ import argparse, sys
 from pathlib import Path
 from typing import List
 
-from xklb import db, db_media, history, player, usage
-from xklb.utils import consts, iterables, objects, path_utils, strings
+from xklb import db_media, history, player, usage
+from xklb.utils import consts, db_utils, iterables, objects, path_utils, strings
 from xklb.utils.log_utils import log
 
 
@@ -36,7 +36,7 @@ def parse_args() -> argparse.Namespace:
         args.database = args.db
 
     Path(args.database).touch()
-    args.db = db.connect(args)
+    args.db = db_utils.connect(args)
 
     log.info(objects.dict_filter_bool(args.__dict__))
 

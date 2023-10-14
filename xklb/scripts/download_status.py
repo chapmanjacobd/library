@@ -1,7 +1,7 @@
 import argparse
 
-from xklb import db, dl_extract, play_actions, player, tube_backend, usage
-from xklb.utils import consts, objects, sql_utils
+from xklb import dl_extract, play_actions, player, tube_backend, usage
+from xklb.utils import consts, db_utils, objects, sql_utils
 from xklb.utils.log_utils import log
 
 
@@ -36,7 +36,7 @@ def parse_args() -> argparse.Namespace:
 
     if args.db:
         args.database = args.db
-    args.db = db.connect(args)
+    args.db = db_utils.connect(args)
     log.info(objects.dict_filter_bool(args.__dict__))
 
     args.action = consts.SC.download_status
@@ -81,7 +81,7 @@ def download_status() -> None:
 
     player.media_printer(args, media, units="extractors")
 
-    if "error" in db.columns(args, "media") and args.verbose >= consts.LOG_INFO:
+    if "error" in db_utils.columns(args, "media") and args.verbose >= consts.LOG_INFO:
         query = """
         select error, count(*) count
         from media

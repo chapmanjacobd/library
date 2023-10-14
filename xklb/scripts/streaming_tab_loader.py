@@ -2,8 +2,8 @@ import argparse, logging, sys
 from time import sleep
 from typing import List
 
-from xklb import db, player, usage
-from xklb.utils import objects, processes
+from xklb import player, usage
+from xklb.utils import db_utils, objects, processes
 from xklb.utils.log_utils import log
 
 
@@ -20,7 +20,7 @@ def parse_args() -> argparse.Namespace:
     args = parser.parse_args()
 
     if args.database:
-        args.db = db.connect(args)
+        args.db = db_utils.connect(args)
         log.error("Currently only stdin is supported")
         raise NotImplementedError
 

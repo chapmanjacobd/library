@@ -1,8 +1,8 @@
 import argparse, asyncio, queue, sqlite3, threading
 from pathlib import Path
 
-from xklb import db, usage
-from xklb.utils import objects, web
+from xklb import usage
+from xklb.utils import db_utils, objects, web
 from xklb.utils.log_utils import log
 
 """
@@ -46,7 +46,7 @@ def parse_args(prog, usage) -> argparse.Namespace:
     if args.db:
         args.database = args.db
     Path(args.database).touch()
-    args.db = db.connect(args)
+    args.db = db_utils.connect(args)
     log.info(objects.dict_filter_bool(args.__dict__))
 
     return args
@@ -59,7 +59,7 @@ def get(url):
 
 def db_worker(args, input_queue):
     conn = sqlite3.connect(args.database, isolation_level=None)
-    db_conn = db.connect(args, conn)
+    db_conn = db_utils.connect(args, conn)
     while True:
         r = input_queue.get()
         if r is None:

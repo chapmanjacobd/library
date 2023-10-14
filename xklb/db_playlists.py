@@ -2,8 +2,7 @@ import sqlite3
 from datetime import datetime
 from typing import List, Optional
 
-from xklb import db
-from xklb.utils import consts, iterables, nums, objects
+from xklb.utils import consts, db_utils, iterables, nums, objects
 from xklb.utils.log_utils import log
 
 """
@@ -119,7 +118,7 @@ def add(args, playlist_path: str, info: dict, check_subpath=False, extractor_key
 
 
 def media_exists(args, playlist_path, path) -> bool:
-    m_columns = db.columns(args, "media")
+    m_columns = db_utils.columns(args, "media")
     try:
         known = args.db.execute(
             f"select 1 from media where playlist_id in (select id from playlists where path = ?) and (path=? or {'web' if 'webpath' in m_columns else ''}path=?)",
@@ -184,7 +183,7 @@ def increase_update_delay(args, playlist_path: str) -> None:
 
 
 def get_all(args, cols="path, extractor_config", sql_filters=None) -> List[dict]:
-    pl_columns = db.columns(args, "playlists")
+    pl_columns = db_utils.columns(args, "playlists")
     if sql_filters is None:
         sql_filters = []
     if "time_deleted" in pl_columns:
