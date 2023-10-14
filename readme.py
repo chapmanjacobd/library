@@ -62,7 +62,7 @@ progs = {
 }
 
 all_progs = [s for s in dir(usage) if not s.startswith('_') and isinstance(getattr(usage, s), str)]
-categorized_progs = [key for key in progs.values() if isinstance(key, str)]
+categorized_progs = [key for d in progs.values() for key in d.keys() if isinstance(key, str)]
 other_progs = [s for s in all_progs if s not in categorized_progs]
 progs['Other subcommands'] = {s: s for s in other_progs}
 
