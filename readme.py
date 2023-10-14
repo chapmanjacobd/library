@@ -3,17 +3,20 @@ from xklb import lb, usage
 progs = {
     'Create database subcommands': {
         "fsadd": "Add local media",
-        "tubeadd": "Add online media",
-        "tabsadd": "Add tabs",
+        "tubeadd": "Add online video media (yt-dlp)",
+        "galleryadd": "Add online gallery media (gallery-dl)",
+        "tabsadd": "Add browser tabs",
         "redditadd": "Add reddit media",
         "pushshift": "Convert pushshift data to reddit.db format",
         "hnadd": "Create / Update a Hacker News database",
         "substack": "Backup substack articles",
         "tildes": "Backup tildes comments and topics",
+        "places_import": "Import places of interest (POIs)",
     },
     'Update database subcommands': {
         "fsupdate": "Update local media",
-        "tubeupdate": "Update online media",
+        "tubeupdate": "Update online video media",
+        "galleryupdate": "Update online gallery media",
         "redditupdate": "Update reddit media",
     },
     'Media database subcommands': {
@@ -27,9 +30,8 @@ progs = {
         "history": "History",
         "search": "Search captions / subtitles",
     },
-    'Multi-database subcommands': {
-        "merge_dbs": "Merge SQLITE databases",
-        "copy_play_counts": "Copy play history",
+    'Text subcommands': {
+        "cluster_sort": "Sort text and images by similarity",
     },
     'File subcommands': {
         "eda": "Exploratory Data Analysis",
@@ -38,9 +40,11 @@ progs = {
     'Folder subcommands': {
         "relmv": "Move files preserving parent folder hierarchy",
         "scatter": "Scatter files between folders or disks",
+        "mv_list": "Find specific folders to move to different disks"
     },
-    'Text subcommands': {
-        "cluster_sort": "Sort data by similarity",
+    'Multi-database subcommands': {
+        "merge_dbs": "Merge SQLITE databases",
+        "copy_play_counts": "Copy play history",
     },
     'Filesystem Database subcommands': {
         "christen": "Clean filenames",
@@ -58,6 +62,7 @@ progs = {
     },
     'Misc subcommands': {
         "surf": "Automatic tab loader",
+        "export_text": "Export HTML files from SQLite databases"
     },
 }
 
