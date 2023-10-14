@@ -48,7 +48,7 @@ other_progs = [s for s in all_progs if s not in db_progs + path_progs]
 
 usage_details = []
 for prog_type, progs in [('Database subcommands', db_progs), ('File subcommands', path_progs), ('Other subcommands', other_progs)]:
-    usage_details.append(f'### {prog_type}\n')
+    usage_details.append(f'\n### {prog_type}\n')
 
     for prog in progs:
         prog_usage = getattr(usage, prog)
