@@ -204,7 +204,35 @@ To stop playing press Ctrl+C in either the terminal or mpv
     library fsadd --audio audiobooks.db ./audiobooks/
     library fsadd --audio podcasts.db ./podcasts/ ./another/more/secret/podcasts_folder/
 
-### Tabs
+### Datasette
+
+Explore `library` databases in your browser
+
+    pip install datasette
+    datasette tv.db
+
+## Guides
+
+### Music alarm clock
+
+<details><summary>via termux crontab</summary>
+
+Wake up to your own music
+
+    30 7 * * * library listen ./audio.db
+
+Wake up to your own music _only when you are *not* home_ (computer on local IP)
+
+    30 7 * * * timeout 0.4 nc -z 192.168.1.12 22 || library listen --random
+
+Wake up to your own music on your Chromecast speaker group _only when you are home_
+
+    30 7 * * * ssh 192.168.1.12 library listen --cast --cast-to "Bedroom pair"
+
+</details>
+
+
+### Browser Tabs
 
 <details><summary>Visit websites on a schedule</summary>
 
@@ -286,6 +314,33 @@ Recently, this functionality has also been integrated into watch/listen subcomma
 
 </details>
 
+### Backfill data
+
+<details><summary>Backfill reddit databases with pushshift data</summary>
+
+[https://github.com/chapmanjacobd/reddit_mining/](https://github.com/chapmanjacobd/reddit_mining/)
+
+```fish
+for reddit_db in ~/lb/reddit/*.db
+    set subreddits (sqlite-utils $reddit_db 'select path from playlists' --tsv --no-headers | grep old.reddit.com | sed 's|https://old.reddit.com/r/\(.*\)/|\1|' | sed 's|https://old.reddit.com/user/\(.*\)/|u_\1|' | tr -d "\r")
+
+    ~/github/xk/reddit_mining/links/
+    for subreddit in $subreddits
+        if not test -e "$subreddit.csv"
+            echo "octosql -o csv \"select path,score,'https://old.reddit.com/r/$subreddit/' as playlist_path from `../reddit_links.parquet` where lower(playlist_path) = '$subreddit' order by score desc \" > $subreddit.csv"
+        end
+    end | parallel -j8
+
+    for subreddit in $subreddits
+        sqlite-utils upsert --pk path --alter --csv --detect-types $reddit_db media $subreddit.csv
+    end
+
+    library tubeadd --safe --ignore-errors --force $reddit_db (sqlite-utils --raw-lines $reddit_db 'select path from media')
+end
+```
+
+</details>
+
 ### Pipe to [mnamer](https://github.com/jkwill87/mnamer)
 
 <details><summary>Rename poorly named files</summary>
@@ -294,24 +349,6 @@ Recently, this functionality has also been integrated into watch/listen subcomma
     mnamer --movie-directory ~/d/70_Now_Watching/ --episode-directory ~/d/70_Now_Watching/ \
         --no-overwrite -b (library watch -p fd -s 'path : McCloud')
     library fsadd ~/d/70_Now_Watching/
-
-</details>
-
-### Music alarm clock
-
-<details><summary>via termux crontab</summary>
-
-Wake up to your own music
-
-    30 7 * * * library listen ./audio.db
-
-Wake up to your own music _only when you are *not* home_ (computer on local IP)
-
-    30 7 * * * timeout 0.4 nc -z 192.168.1.12 22 || library listen --random
-
-Wake up to your own music on your Chromecast speaker group _only when you are home_
-
-    30 7 * * * ssh 192.168.1.12 library listen --cast --cast-to "Bedroom pair"
 
 </details>
 
@@ -351,61 +388,6 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 ![fps](https://user-images.githubusercontent.com/7908073/184738438-ee566a4b-2da0-4e6d-a4b3-9bfca036aa2a.png)
 
 </details>
-
-### Pipe to rsync
-
-<details><summary>Move files to your phone via syncthing</summary>
-
-I used to use rsync to move files because I want deletions to stick.
-I now use `library relmv`. But this is still a good rsync example:
-
-    function mrmusic
-        rsync -a --remove-source-files --files-from=(
-            library lt ~/lb/audio.db -s /mnt/d/80_Now_Listening/ -p f \
-            --moved /mnt/d/80_Now_Listening/ /mnt/d/ | psub
-        ) /mnt/d/80_Now_Listening/ /mnt/d/
-
-        rsync -a --remove-source-files --files-from=(
-            library lt ~/lb/audio.db -w play_count=0 -u random -L 1200 -p f \
-            --moved /mnt/d/ /mnt/d/80_Now_Listening/ | psub
-        ) /mnt/d/ /mnt/d/80_Now_Listening/
-    end
-
-</details>
-
-### Backfill
-
-<details><summary>Backfill reddit databases with pushshift data</summary>
-
-[https://github.com/chapmanjacobd/reddit_mining/](https://github.com/chapmanjacobd/reddit_mining/)
-
-```fish
-for reddit_db in ~/lb/reddit/*.db
-    set subreddits (sqlite-utils $reddit_db 'select path from playlists' --tsv --no-headers | grep old.reddit.com | sed 's|https://old.reddit.com/r/\(.*\)/|\1|' | sed 's|https://old.reddit.com/user/\(.*\)/|u_\1|' | tr -d "\r")
-
-    ~/github/xk/reddit_mining/links/
-    for subreddit in $subreddits
-        if not test -e "$subreddit.csv"
-            echo "octosql -o csv \"select path,score,'https://old.reddit.com/r/$subreddit/' as playlist_path from `../reddit_links.parquet` where lower(playlist_path) = '$subreddit' order by score desc \" > $subreddit.csv"
-        end
-    end | parallel -j8
-
-    for subreddit in $subreddits
-        sqlite-utils upsert --pk path --alter --csv --detect-types $reddit_db media $subreddit.csv
-    end
-
-    library tubeadd --safe --ignore-errors --force $reddit_db (sqlite-utils --raw-lines $reddit_db 'select path from media')
-end
-```
-
-</details>
-
-### Datasette
-
-Explore `library` databases in your browser
-
-    pip install datasette
-    datasette tv.db
 
 ## Usage
 
