@@ -354,10 +354,12 @@ end
 
 ### Datasette
 
-Explore `library` databases in your browser
+<details><summary>Explore `library` databases in your browser</summary>
 
     pip install datasette
     datasette tv.db
+
+</details>
 
 ### Pipe to [mnamer](https://github.com/jkwill87/mnamer)
 
