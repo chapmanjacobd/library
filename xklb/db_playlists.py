@@ -145,7 +145,7 @@ def decrease_update_delay(args, playlist_path: str) -> None:
                 , hours_update_delay = CASE
                     WHEN 0.5 * hours_update_delay <= 0 THEN 1
                     WHEN 0.5 * hours_update_delay >= 8760 THEN 8760
-                    ELSE 0.5 * hours_update_delay
+                    ELSE cast(0.5 * hours_update_delay as int)
                 END
                 WHERE hours_update_delay IS NOT NULL
                     AND path = ?
