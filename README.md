@@ -464,7 +464,7 @@ Explore `library` databases in your browser
 
 </details>
 
-<details><summary>Add online media (tubeadd)</summary>
+<details><summary>Add online video media (yt-dlp) (tubeadd)</summary>
 
     $ library tubeadd -h
     usage: library tubeadd [--safe] [--extra] [--subs] [--auto-subs] DATABASE URLS ...
@@ -499,7 +499,21 @@ Explore `library` databases in your browser
 
 </details>
 
-<details><summary>Add tabs (tabsadd)</summary>
+<details><summary>Add online gallery media (gallery-dl) (galleryadd)</summary>
+
+    $ library galleryadd -h
+    usage: library galleryadd DATABASE URLS
+
+Add gallery_dl URLs to download later or periodically update
+
+If you have many URLs use stdin
+
+    cat ./my-favorite-manhwa.txt | library galleryadd my.db --insert-only -
+
+
+</details>
+
+<details><summary>Add browser tabs (tabsadd)</summary>
 
     $ library tabsadd -h
     usage: library tabsadd [--frequency daily weekly (monthly) quarterly yearly] [--no-sanitize] DATABASE URLS ...
@@ -619,6 +633,17 @@ Explore `library` databases in your browser
 
 </details>
 
+<details><summary>Import places of interest (POIs) (places-import)</summary>
+
+    $ library places-import -h
+    usage: library places-import DATABASE PATHS ...
+
+Load POIs from Google Maps Google Takeout
+
+
+
+</details>
+
 ### Update database subcommands
 
 <details><summary>Update local media (fsupdate)</summary>
@@ -633,7 +658,7 @@ Explore `library` databases in your browser
 
 </details>
 
-<details><summary>Update online media (tubeupdate)</summary>
+<details><summary>Update online video media (tubeupdate)</summary>
 
     $ library tubeupdate -h
     usage: library tubeupdate [--audio | --video] DATABASE
@@ -648,6 +673,16 @@ Explore `library` databases in your browser
         You can run with --extra to fetch more details: (best resolution width, height, subtitle tags, etc)
 
         library tubeupdate educational.db --extra https://www.youtube.com/channel/UCBsEUcR-ezAuxB2WlfeENvA/videos
+
+
+</details>
+
+<details><summary>Update online gallery media (galleryupdate)</summary>
+
+    $ library galleryupdate -h
+    usage: library galleryupdate DATABASE URLS
+
+Check previously saved gallery_dl URLs for new content
 
 
 </details>
@@ -1417,46 +1452,48 @@ Explore `library` databases in your browser
 
 </details>
 
-### Multi-database subcommands
+### Text subcommands
 
-<details><summary>Merge SQLITE databases (merge-dbs)</summary>
+<details><summary>Sort text and images by similarity (cluster-sort)</summary>
 
-    $ library merge-dbs -h
-    usage: library merge-dbs DEST_DB SOURCE_DB ... [--only-target-columns] [--only-new-rows] [--upsert] [--pk PK ...] [--table TABLE ...]
+    $ library cluster-sort -h
+    usage: library cluster-sort [input_path | stdin] [output_path | stdout]
 
-    Merge-DBs will insert new rows from source dbs to target db, table by table. If primary key(s) are provided,
-    and there is an existing row with the same PK, the default action is to delete the existing row and insert the new row
-    replacing all existing fields.
+    Group lines of text into sorted output
 
-    Upsert mode will update each matching PK row such that if a source row has a NULL field and
-    the destination row has a value then the value will be preserved instead of changed to the source row's NULL value.
+    $ echo 'red apple
+    broccoli
+    yellow
+    green
+    orange apple
+    red apple' | library cluster-sort
 
-    Ignore mode (--only-new-rows) will insert only rows which don't already exist in the destination db
+    orange apple
+    red apple
+    red apple
+    broccoli
+    green
+    yellow
 
-    Test first by using temp databases as the destination db.
-    Try out different modes / flags until you are satisfied with the behavior of the program
+    Show the groups
 
-        library merge-dbs --pk path (mktemp --suffix .db) tv.db movies.db
+    $ echo 'red apple
+    broccoli
+    yellow
+    green
+    orange apple
+    red apple' | library cluster-sort --print-groups
 
-    Merge database data and tables
+    [
+        {'grouped_paths': ['orange apple', 'red apple', 'red apple']},
+        {'grouped_paths': ['broccoli', 'green', 'yellow']}
+    ]
 
-        library merge-dbs --upsert --pk path video.db tv.db movies.db
-        library merge-dbs --only-target-columns --only-new-rows --table media,playlists --pk path --skip-column id audio-fts.db audio.db
+    Auto-sort images into directories
 
-        library merge-dbs --pk id --only-tables subreddits reddit/81_New_Music.db audio.db
-        library merge-dbs --only-new-rows --pk subreddit,path --only-tables reddit_posts reddit/81_New_Music.db audio.db -v
-
-
-</details>
-
-<details><summary>Copy play history (copy-play-counts)</summary>
-
-    $ library copy-play-counts -h
-    usage: library copy-play-counts DEST_DB SOURCE_DB ... [--source-prefix x] [--target-prefix y]
-
-    Copy play count information between databases
-
-        library copy-play-counts audio.db phone.db --source-prefix /storage/6E7B-7DCE/d --target-prefix /mnt/d
+    $ echo 'image1.jpg
+    image2.jpg
+    image3.jpg' | library cluster-sort --image --move-groups
 
 
 </details>
@@ -1585,48 +1622,113 @@ Balance files across filesystem folder trees or multiple devices (mostly useful 
 
 </details>
 
-### Text subcommands
+<details><summary>Find specific folders to move to different disks (mv-list)</summary>
 
-<details><summary>Sort data by similarity (cluster-sort)</summary>
+    $ library mv-list -h
+    usage: library mv-list [--limit LIMIT] [--lower LOWER] [--upper UPPER] MOUNT_POINT DATABASE
 
-    $ library cluster-sort -h
-    usage: library cluster-sort [input_path | stdin] [output_path | stdout]
+Free up space on a specific disk. Find candidates for moving data to a different mount point
 
-    Group lines of text into sorted output
 
-    $ echo 'red apple
-    broccoli
-    yellow
-    green
-    orange apple
-    red apple' | library cluster-sort
+The program takes a mount point and a xklb database file. If you don't have a database file you can create one like this:
 
-    orange apple
-    red apple
-    red apple
-    broccoli
-    green
-    yellow
+    $ library fsadd --filesystem d.db ~/d/
 
-    Show the groups
+But this should definitely also work with xklb audio and video databases:
 
-    $ echo 'red apple
-    broccoli
-    yellow
-    green
-    orange apple
-    red apple' | library cluster-sort --print-groups
+    $ library mv-list /mnt/d/ video.db
 
-    [
-        {'grouped_paths': ['orange apple', 'red apple', 'red apple']},
-        {'grouped_paths': ['broccoli', 'green', 'yellow']}
-    ]
+The program will print a table with a sorted list of folders which are good candidates for moving.
+Candidates are determined by how many files are in the folder (so you don't spend hours waiting for folders with millions of tiny files to copy over).
+The default is 4 to 4000--but it can be adjusted via the --lower and --upper flags.
 
-    Auto-sort images into directories
+    ...
+    ├──────────┼─────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+    │ 4.0 GB   │       7 │ /mnt/d/71_Mealtime_Videos/unsorted/Miguel_4K/                                                                 │
+    ├──────────┼─────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+    │ 5.7 GB   │      10 │ /mnt/d/71_Mealtime_Videos/unsorted/Bollywood_Premium/                                                         │
+    ├──────────┼─────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+    │ 2.3 GB   │       4 │ /mnt/d/71_Mealtime_Videos/chief_wiggum/                                                                       │
+    ╘══════════╧═════════╧═══════════════════════════════════════════════════════════════════════════════════════════════════════════════╛
+    6702 other folders not shown
 
-    $ echo 'image1.jpg
-    image2.jpg
-    image3.jpg' | library cluster-sort --image --move-groups
+    ██╗███╗░░██╗░██████╗████████╗██████╗░██╗░░░██╗░█████╗░████████╗██╗░█████╗░███╗░░██╗░██████╗
+    ██║████╗░██║██╔════╝╚══██╔══╝██╔══██╗██║░░░██║██╔══██╗╚══██╔══╝██║██╔══██╗████╗░██║██╔════╝
+    ██║██╔██╗██║╚█████╗░░░░██║░░░██████╔╝██║░░░██║██║░░╚═╝░░░██║░░░██║██║░░██║██╔██╗██║╚█████╗░
+    ██║██║╚████║░╚═══██╗░░░██║░░░██╔══██╗██║░░░██║██║░░██╗░░░██║░░░██║██║░░██║██║╚████║░╚═══██╗
+    ██║██║░╚███║██████╔╝░░░██║░░░██║░░██║╚██████╔╝╚█████╔╝░░░██║░░░██║╚█████╔╝██║░╚███║██████╔╝
+    ╚═╝╚═╝░░╚══╝╚═════╝░░░░╚═╝░░░╚═╝░░╚═╝░╚═════╝░░╚════╝░░░░╚═╝░░░╚═╝░╚════╝░╚═╝░░╚══╝╚═════╝░
+
+    Type "done" when finished
+    Type "more" to see more files
+    Paste a folder (and press enter) to toggle selection
+    Type "*" to select all files in the most recently printed table
+
+Then it will give you a prompt:
+
+    Paste a path:
+
+Wherein you can copy and paste paths you want to move from the table and the program will keep track for you.
+
+    Paste a path: /mnt/d/75_MovieQueue/720p/s11/
+    26 selected paths: 162.1 GB ; future free space: 486.9 GB
+
+You can also press the up arrow or paste it again to remove it from the list:
+
+    Paste a path: /mnt/d/75_MovieQueue/720p/s11/
+    25 selected paths: 159.9 GB ; future free space: 484.7 GB
+
+After you are done selecting folders you can press ctrl-d and it will save the list to a tmp file:
+
+    Paste a path: done
+
+        Folder list saved to /tmp/tmpa7x_75l8. You may want to use the following command to move files to an EMPTY folder target:
+
+            rsync -a --info=progress2 --no-inc-recursive --remove-source-files --files-from=/tmp/tmpa7x_75l8 -r --relative -vv --dry-run / jim:/free/real/estate/
+
+
+</details>
+
+### Multi-database subcommands
+
+<details><summary>Merge SQLITE databases (merge-dbs)</summary>
+
+    $ library merge-dbs -h
+    usage: library merge-dbs DEST_DB SOURCE_DB ... [--only-target-columns] [--only-new-rows] [--upsert] [--pk PK ...] [--table TABLE ...]
+
+    Merge-DBs will insert new rows from source dbs to target db, table by table. If primary key(s) are provided,
+    and there is an existing row with the same PK, the default action is to delete the existing row and insert the new row
+    replacing all existing fields.
+
+    Upsert mode will update each matching PK row such that if a source row has a NULL field and
+    the destination row has a value then the value will be preserved instead of changed to the source row's NULL value.
+
+    Ignore mode (--only-new-rows) will insert only rows which don't already exist in the destination db
+
+    Test first by using temp databases as the destination db.
+    Try out different modes / flags until you are satisfied with the behavior of the program
+
+        library merge-dbs --pk path (mktemp --suffix .db) tv.db movies.db
+
+    Merge database data and tables
+
+        library merge-dbs --upsert --pk path video.db tv.db movies.db
+        library merge-dbs --only-target-columns --only-new-rows --table media,playlists --pk path --skip-column id audio-fts.db audio.db
+
+        library merge-dbs --pk id --only-tables subreddits reddit/81_New_Music.db audio.db
+        library merge-dbs --only-new-rows --pk subreddit,path --only-tables reddit_posts reddit/81_New_Music.db audio.db -v
+
+
+</details>
+
+<details><summary>Copy play history (copy-play-counts)</summary>
+
+    $ library copy-play-counts -h
+    usage: library copy-play-counts DEST_DB SOURCE_DB ... [--source-prefix x] [--target-prefix y]
+
+    Copy play count information between databases
+
+        library copy-play-counts audio.db phone.db --source-prefix /storage/6E7B-7DCE/d --target-prefix /mnt/d
 
 
 </details>
@@ -1820,9 +1922,7 @@ Search all columns in a SQLITE table. If the table does not exist, uses the tabl
 
 </details>
 
-### Other subcommands
-
-<details><summary>export_text (export-text)</summary>
+<details><summary>Export HTML files from SQLite databases (export-text)</summary>
 
     $ library export-text -h
     usage: library export-text DATABASE
@@ -1832,107 +1932,7 @@ Search all columns in a SQLITE table. If the table does not exist, uses the tabl
 
 </details>
 
-<details><summary>galleryadd</summary>
-
-    $ library galleryadd -h
-    usage: library galleryadd DATABASE URLS
-
-Add gallery_dl URLs to download later or periodically update
-
-If you have many URLs use stdin
-
-    cat ./my-favorite-manhwa.txt | library galleryadd my.db --insert-only -
-
-
-</details>
-
-<details><summary>galleryupdate</summary>
-
-    $ library galleryupdate -h
-    usage: library galleryupdate DATABASE URLS
-
-Check previously saved gallery_dl URLs for new content
-
-
-</details>
-
-<details><summary>mv_list (mv-list)</summary>
-
-    $ library mv-list -h
-    usage: library mv-list [--limit LIMIT] [--lower LOWER] [--upper UPPER] MOUNT_POINT DATABASE
-
-Free up space on a specific disk. Find candidates for moving data to a different mount point
-
-
-The program takes a mount point and a xklb database file. If you don't have a database file you can create one like this:
-
-    $ library fsadd --filesystem d.db ~/d/
-
-But this should definitely also work with xklb audio and video databases:
-
-    $ library mv-list /mnt/d/ video.db
-
-The program will print a table with a sorted list of folders which are good candidates for moving.
-Candidates are determined by how many files are in the folder (so you don't spend hours waiting for folders with millions of tiny files to copy over).
-The default is 4 to 4000--but it can be adjusted via the --lower and --upper flags.
-
-    ...
-    ├──────────┼─────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-    │ 4.0 GB   │       7 │ /mnt/d/71_Mealtime_Videos/unsorted/Miguel_4K/                                                                 │
-    ├──────────┼─────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-    │ 5.7 GB   │      10 │ /mnt/d/71_Mealtime_Videos/unsorted/Bollywood_Premium/                                                         │
-    ├──────────┼─────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-    │ 2.3 GB   │       4 │ /mnt/d/71_Mealtime_Videos/chief_wiggum/                                                                       │
-    ╘══════════╧═════════╧═══════════════════════════════════════════════════════════════════════════════════════════════════════════════╛
-    6702 other folders not shown
-
-    ██╗███╗░░██╗░██████╗████████╗██████╗░██╗░░░██╗░█████╗░████████╗██╗░█████╗░███╗░░██╗░██████╗
-    ██║████╗░██║██╔════╝╚══██╔══╝██╔══██╗██║░░░██║██╔══██╗╚══██╔══╝██║██╔══██╗████╗░██║██╔════╝
-    ██║██╔██╗██║╚█████╗░░░░██║░░░██████╔╝██║░░░██║██║░░╚═╝░░░██║░░░██║██║░░██║██╔██╗██║╚█████╗░
-    ██║██║╚████║░╚═══██╗░░░██║░░░██╔══██╗██║░░░██║██║░░██╗░░░██║░░░██║██║░░██║██║╚████║░╚═══██╗
-    ██║██║░╚███║██████╔╝░░░██║░░░██║░░██║╚██████╔╝╚█████╔╝░░░██║░░░██║╚█████╔╝██║░╚███║██████╔╝
-    ╚═╝╚═╝░░╚══╝╚═════╝░░░░╚═╝░░░╚═╝░░╚═╝░╚═════╝░░╚════╝░░░░╚═╝░░░╚═╝░╚════╝░╚═╝░░╚══╝╚═════╝░
-
-    Type "done" when finished
-    Type "more" to see more files
-    Paste a folder (and press enter) to toggle selection
-    Type "*" to select all files in the most recently printed table
-
-Then it will give you a prompt:
-
-    Paste a path:
-
-Wherein you can copy and paste paths you want to move from the table and the program will keep track for you.
-
-    Paste a path: /mnt/d/75_MovieQueue/720p/s11/
-    26 selected paths: 162.1 GB ; future free space: 486.9 GB
-
-You can also press the up arrow or paste it again to remove it from the list:
-
-    Paste a path: /mnt/d/75_MovieQueue/720p/s11/
-    25 selected paths: 159.9 GB ; future free space: 484.7 GB
-
-After you are done selecting folders you can press ctrl-d and it will save the list to a tmp file:
-
-    Paste a path: done
-
-        Folder list saved to /tmp/tmpa7x_75l8. You may want to use the following command to move files to an EMPTY folder target:
-
-            rsync -a --info=progress2 --no-inc-recursive --remove-source-files --files-from=/tmp/tmpa7x_75l8 -r --relative -vv --dry-run / jim:/free/real/estate/
-
-
-</details>
-
-<details><summary>places_import (places-import)</summary>
-
-    $ library places-import -h
-    usage: library places-import DATABASE PATHS ...
-
-Load POIs from Google Maps Google Takeout
-
-
-
-</details>
+### Other subcommands
 
 
 <details><summary>Chicken mode</summary>
