@@ -7,53 +7,49 @@ from xklb.utils.printing import print_df
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Perform EDA on one or more files", usage=usage.incremental_diff)
+    parser = argparse.ArgumentParser(description="Diff two table-like files", usage=usage.incremental_diff)
     parser.add_argument("--table1-name", "--table1", "-t1")
     parser.add_argument("--table2-name", "--table2", "-t2")
     parser.add_argument("--table1-index", type=int)
     parser.add_argument("--table2-index", type=int)
     parser.add_argument("--start-row", "--skiprows", type=int, default=None)
-    parser.add_argument("--end-row", "--nrows", "--limit", "-L", default=str(consts.DEFAULT_FILE_ROWS_READ_LIMIT))
+    parser.add_argument("--batch-size", "--batch-rows", default=str(consts.DEFAULT_FILE_ROWS_READ_LIMIT))
+    parser.add_argument("--join-keys", action=arg_utils.ArgparseList, help="Comma separated join keys")
     parser.add_argument("--sort", "-u")
     parser.add_argument("--verbose", "-v", action="count", default=0)
 
     parser.add_argument("path1", help="path to dataset 1")
     parser.add_argument("path2", help="path to dataset 2")
-    parser.add_argument(
-        "--primary-keys", "--pk", "-pk", action=arg_utils.ArgparseList, help="Comma separated primary keys"
-    )
     args = parser.parse_args()
 
     # TODO: add an option to load from df2 where ids (select ids from df1)
 
-    if args.end_row.lower() in ("inf", "none", "all"):
-        args.end_row = None
+    if args.batch_size.lower() in ("inf", "none", "all"):
+        args.batch_size = None
     else:
-        args.end_row = int(args.end_row)
-
-    args.batch_size = None
-    if args.end_row is not None and args.start_row is not None:
-        args.batch_size = abs(args.end_row - args.start_row)
+        args.batch_size = int(args.batch_size)
 
     return args
 
 
 def process_chunks(args):
+    chunk_start_row = args.start_row
+    chunk_end_row = args.batch_size
     while True:
         dfs1 = file_utils.read_file_to_dataframes(
             args.path1,
             table_name=args.table1_name,
             table_index=args.table1_index,
-            start_row=args.start_row,
-            end_row=args.end_row,
+            start_row=chunk_start_row,
+            end_row=chunk_end_row,
             order_by=args.sort,
         )
         dfs2 = file_utils.read_file_to_dataframes(
             args.path2,
             table_name=args.table2_name,
             table_index=args.table2_index,
-            start_row=args.start_row,
-            end_row=args.end_row,
+            start_row=chunk_start_row,
+            end_row=chunk_end_row,
             order_by=args.sort,
         )
 
@@ -71,8 +67,8 @@ def process_chunks(args):
             df2 = dfs2[df_idx]
 
             # drop cols with all nulls to allow merging "X" and object columns
-            df1 = df1.drop(columns=df1.columns[df1.isnull().all()])
-            df2 = df2.drop(columns=df2.columns[df2.isnull().all()])
+            df1.drop(columns=df1.columns[df1.isnull().all()], inplace=True)  # inplace to preserve df.name
+            df2.drop(columns=df2.columns[df2.isnull().all()], inplace=True)  # inplace to preserve df.name
 
             if df1.empty and df2.empty:
                 empty_dfs.add(df_idx)
@@ -82,7 +78,7 @@ def process_chunks(args):
             elif df2.empty:
                 log.warning("df2 has no more rows")
 
-            df_diff = df1.merge(df2, on=args.primary_keys, how="outer", indicator=True)
+            df_diff = df1.merge(df2, on=args.join_keys, how="outer", indicator=True)
             df_diff = df_diff[df_diff["_merge"] != "both"]
 
             if len(df_diff) > 0:
@@ -100,9 +96,11 @@ def process_chunks(args):
         del dfs2
 
         if args.batch_size:
-            args.start_row = args.batch_size + (args.start_row or 0)
-            args.end_row += args.batch_size
-            log.debug(args.end_row)
+            if chunk_start_row is None:
+                chunk_start_row = 0
+            chunk_start_row += args.batch_size
+            chunk_end_row += args.batch_size
+            log.debug(chunk_end_row)
             continue
         else:
             break

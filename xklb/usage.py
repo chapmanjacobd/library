@@ -142,8 +142,7 @@ fsupdate = """library fsupdate DATABASE
 
 places_import = """library places-import DATABASE PATHS ...
 
-Load POIs from Google Maps Google Takeout
-
+    Load POIs from Google Maps Google Takeout
 """
 
 hnadd = """library hnadd [--oldest] DATABASE
@@ -858,16 +857,16 @@ tubeupdate = """library tubeupdate [--audio | --video] DATABASE
 
 galleryadd = """library galleryadd DATABASE URLS
 
-Add gallery_dl URLs to download later or periodically update
+    Add gallery_dl URLs to download later or periodically update
 
-If you have many URLs use stdin
+    If you have many URLs use stdin
 
-    cat ./my-favorite-manhwa.txt | library galleryadd my.db --insert-only -
+        cat ./my-favorite-manhwa.txt | library galleryadd my.db --insert-only -
 """
 
 galleryupdate = """library galleryupdate DATABASE URLS
 
-Check previously saved gallery_dl URLs for new content
+    Check previously saved gallery_dl URLs for new content
 """
 
 bigdirs = """library bigdirs DATABASE [--limit (4000)] [--depth (0)] [--sort-by deleted | played] [--size=+5MB]
@@ -1001,7 +1000,7 @@ dedupe_db = """library dedupe-dbs DATABASE TABLE --bk BUSINESS_KEYS [--pk PRIMAR
 
 search_db = """library search-db DATABASE TABLE SEARCH ... [--delete]
 
-Search all columns in a SQLITE table. If the table does not exist, uses the table which startswith (if only one match)
+    Search all columns in a SQLITE table. If the table does not exist, uses the table which startswith (if only one match)
 """
 
 merge_dbs = """library merge-dbs DEST_DB SOURCE_DB ... [--only-target-columns] [--only-new-rows] [--upsert] [--pk PK ...] [--table TABLE ...]
@@ -1159,7 +1158,7 @@ After you are done selecting folders you can press ctrl-d and it will save the l
 
 scatter = """library scatter [--limit LIMIT] [--policy POLICY] [--sort SORT] --targets TARGETS DATABASE RELATIVE_PATHS ...
 
-Balance files across filesystem folder trees or multiple devices (mostly useful for mergerfs)
+    Balance files across filesystem folder trees or multiple devices (mostly useful for mergerfs)
 
     Scatter filesystem folder trees (without mountpoints; limited functionality; good for balancing fs inodes)
 
@@ -1279,13 +1278,18 @@ export_text = """library export-text DATABASE
 
 eda = """library eda PATH ... [--table TABLE] [--start-row START_ROW] [--end-row END_ROW] [--repl]
 
-Perform Exploratory Data Analysis (EDA) on one or more files
+    Perform Exploratory Data Analysis (EDA) on one or more files
 
-Only 20,000 rows per file are loaded for performance purposes. Set `--end-row inf` to read all the rows and/or run out of RAM.
+    Only 20,000 rows per file are loaded for performance purposes. Set `--end-row inf` to read all the rows and/or run out of RAM.
 """
 
-incremental_diff = """library incremental-diff PATH1 PATH2
+incremental_diff = """library incremental-diff PATH1 PATH2 [--join-keys JOIN_KEYS] [--table1 TABLE1] [--table2 TABLE2] [--table1-index TABLE1_INDEX] [--table2-index TABLE2_INDEX] [--start-row START_ROW] [--batch-size BATCH_SIZE]
 
-[--table1 TABLE1] [--table2 TABLE2] [--table1-index TABLE1_INDEX] [--table2-index TABLE2_INDEX] [--start-row START_ROW] [--end-row END_ROW] [--verbose] [--primary-keys PRIMARY_KEYS]
+    See data differences in an incremental way to quickly see how two different files differ.
 
+    Data (PATH1, PATH2) can be two different files of different file formats (CSV, Excel) or it could even be the same file with different tables.
+
+    If files are unsorted you may need to use `--join-keys id,name` to specify ID columns. Rows that have the same ID will then be compared. If you are comparing SQLITE files you may be able to use `--sort id,name` to achieve the same effect.
+
+    To diff everything at once run with `--batch-size inf`
 """
