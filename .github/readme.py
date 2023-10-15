@@ -1,7 +1,7 @@
 from xklb import lb, usage
 
 progs = {
-    'Create database subcommands': {
+    "Create database subcommands": {
         "fsadd": "Add local media",
         "tubeadd": "Add online video media (yt-dlp)",
         "galleryadd": "Add online gallery media (gallery-dl)",
@@ -13,13 +13,13 @@ progs = {
         "tildes": "Backup tildes comments and topics",
         "places_import": "Import places of interest (POIs)",
     },
-    'Update database subcommands': {
+    "Update database subcommands": {
         "fsupdate": "Update local media",
         "tubeupdate": "Update online video media",
         "galleryupdate": "Update online gallery media",
         "redditupdate": "Update reddit media",
     },
-    'Media database subcommands': {
+    "Media database subcommands": {
         "watch": "Watch / Listen",
         "tabs": "Open tabs",
         "block": "Block a channel",
@@ -30,52 +30,52 @@ progs = {
         "history": "History",
         "search": "Search captions / subtitles",
     },
-    'Text subcommands': {
+    "Text subcommands": {
         "cluster_sort": "Sort text and images by similarity",
     },
-    'File subcommands': {
+    "File subcommands": {
         "eda": "Exploratory Data Analysis",
         "incremental_diff": "Compare data files",
     },
-    'Folder subcommands': {
+    "Folder subcommands": {
         "relmv": "Move files preserving parent folder hierarchy",
         "scatter": "Scatter files between folders or disks",
         "mv_list": "Find specific folders to move to different disks",
     },
-    'Multi-database subcommands': {
+    "Multi-database subcommands": {
         "merge_dbs": "Merge SQLITE databases",
         "copy_play_counts": "Copy play history",
     },
-    'Filesystem Database subcommands': {
+    "Filesystem Database subcommands": {
         "christen": "Clean filenames",
         "disk_usage": "Disk Usage",
         "bigdirs": "Show large folders",
         "search_db": "Search a SQLITE database",
         "optimize": "Re-optimize database",
     },
-    'Database enrichment subcommands': {
+    "Database enrichment subcommands": {
         "dedupe_db": "Dedupe SQLITE tables",
         "dedupe": "Dedupe similar media",
         "merge_online_local": "Merge online and local data",
         "mpv_watchlater": "Import mpv watchlater files to history",
         "reddit_selftext": "Convert selftext links to media table",
     },
-    'Misc subcommands': {"surf": "Automatic tab loader", "export_text": "Export HTML files from SQLite databases"},
+    "Misc subcommands": {"surf": "Automatic tab loader", "export_text": "Export HTML files from SQLite databases"},
 }
 
-all_progs = [s for s in dir(usage) if not s.startswith('_') and isinstance(getattr(usage, s), str)]
+all_progs = [s for s in dir(usage) if not s.startswith("_") and isinstance(getattr(usage, s), str)]
 categorized_progs = [key for d in progs.values() for key in d.keys() if isinstance(key, str)]
 other_progs = [s for s in all_progs if s not in categorized_progs]
 if len(other_progs) > 0:
-    progs['Other subcommands'] = {s: s for s in other_progs}
+    progs["Other subcommands"] = {s: s for s in other_progs}
 
 usage_details = []
 for category, category_progs in progs.items():
-    usage_details.append(f'\n### {category}\n')
+    usage_details.append(f"\n### {category}\n")
 
     for prog, prog_description in category_progs.items():
         prog_usage = getattr(usage, prog)
-        subcommand = prog.replace('_', '-')
+        subcommand = prog.replace("_", "-")
 
         if prog_description is None:
             prog_description = subcommand
