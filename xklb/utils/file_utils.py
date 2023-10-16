@@ -4,8 +4,9 @@ from pathlib import Path
 from shutil import which
 from typing import Union
 
-from xklb.utils import consts, file_utils, processes
+from xklb.utils import consts, file_utils, processes, web
 from xklb.utils.log_utils import log
+
 
 
 def mimetype(path):
@@ -202,6 +203,33 @@ fi
         print(rf"PARALLEL_SHELL=sh parallel --colsep '\t' -a {temp.name} -j 20 {move_sh_path}")
 
 
+def get_file_encoding(path):
+    import chardet
+
+    if path.startswith('http'):
+        response = web.requests_session().get(path, stream=True)
+        detector = chardet.UniversalDetector()
+        num_bytes = 0
+        for chunk in response.iter_content(chunk_size=16_384):
+            if num_bytes > 1048576:  # 1MiB
+                break
+            detector.feed(chunk)
+            if detector.done:
+                break
+            num_bytes += len(chunk)
+        detector.close()
+
+        encoding=detector.result['encoding']
+    else:
+        with open(path, 'rb') as f:
+            sample = f.read(1048576)  # 1 MiB
+
+        encoding=chardet.detect(sample)['encoding']
+
+    if encoding:
+        log.info(f'The encoding of {path} is likely: {encoding}')
+    return encoding
+
 def retry_with_different_encodings(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
@@ -210,7 +238,12 @@ def retry_with_different_encodings(func):
         except UnicodeDecodeError as exc:
             original_exc = exc
 
-        for encoding in consts.COMMON_ENCODINGS:
+        likely_encodings = []
+        detected_encoding = get_file_encoding(args[0])
+        if detected_encoding:
+            likely_encodings.append(detected_encoding)
+
+        for encoding in likely_encodings + consts.COMMON_ENCODINGS:
             try:
                 kwargs["encoding"] = encoding
                 return func(*args, **kwargs)
@@ -220,7 +253,6 @@ def retry_with_different_encodings(func):
         raise original_exc  # If no encoding worked, raise the original exception
 
     return wrapper
-
 
 @retry_with_different_encodings
 def read_file_to_dataframes(
