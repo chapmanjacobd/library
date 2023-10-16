@@ -1,122 +1,18 @@
-import argparse, os, random, shlex, shutil, sys, threading, time
+import argparse, os, shlex, sys, threading, time
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-from xklb import history, player, tube_backend, usage
-from xklb.media import subtitle
-from xklb.player import mark_media_deleted, override_sort
+from xklb import history, tube_backend, usage
+from xklb.media import media_player, media_printer
+from xklb.post_actions import post_act
 from xklb.scripts.bigdirs import process_bigdirs
 from xklb.scripts.playback_control import now_playing
-from xklb.utils import (
-    consts,
-    db_utils,
-    devices,
-    file_utils,
-    iterables,
-    mpv_utils,
-    nums,
-    objects,
-    path_utils,
-    processes,
-    sql_utils,
-)
+from xklb.utils import consts, db_utils, devices, file_utils, iterables, mpv_utils, nums, objects, processes, sql_utils
+from xklb.utils.arg_utils import parse_args_limit, parse_args_sort
 from xklb.utils.consts import SC
 from xklb.utils.log_utils import Timer, log
-
-
-def parse_args_sort(args) -> None:
-    if args.sort:
-        combined_sort = []
-        for s in iterables.flatten([s.split(",") for s in args.sort]):
-            if s.strip() in ["asc", "desc"] and combined_sort:
-                combined_sort[-1] += " " + s.strip()
-            else:
-                combined_sort.append(s.strip())
-
-        sort_list = []
-        select_list = []
-        for s in combined_sort:
-            if s.startswith("same-"):
-                var = s[len("same-") :]
-                direction = "DESC"
-                if var.lower().endswith((" asc", " desc")):
-                    var, direction = var.split(" ")
-
-                select_list.append(
-                    f"CASE WHEN {var} IS NULL THEN NULL ELSE COUNT(*) OVER (PARTITION BY {var}) END AS same_{var}_count",
-                )
-                sort_list.append(f"same_{var}_count {direction}")
-            else:
-                sort_list.append(s)
-
-        args.sort = sort_list
-        args.select = select_list
-    elif not args.sort and hasattr(args, "defaults"):
-        args.defaults.append("sort")
-
-    m_columns = db_utils.columns(args, "media")
-
-    # switching between videos with and without subs is annoying
-    subtitle_count = "=0"
-    if random.random() < getattr(args, "subtitle_mix", consts.DEFAULT_SUBTITLE_MIX):
-        # bias slightly toward videos without subtitles
-        subtitle_count = ">0"
-
-    sorts = [
-        "random" if getattr(args, "random", False) else None,
-        "rank" if args.sort and "rank" in args.sort else None,
-        "video_count > 0 desc" if "video_count" in m_columns and args.action == SC.watch else None,
-        "audio_count > 0 desc" if "audio_count" in m_columns else None,
-        'm.path like "http%"',
-        "width < height desc" if "width" in m_columns and getattr(args, "portrait", False) else None,
-        f"subtitle_count {subtitle_count} desc"
-        if "subtitle_count" in m_columns
-        and args.action == SC.watch
-        and not any(
-            [
-                args.print,
-                consts.PYTEST_RUNNING,
-                "subtitle_count" in args.where,
-                args.limit != consts.DEFAULT_PLAY_QUEUE,
-            ],
-        )
-        else None,
-        *(args.sort or []),
-        "duration desc" if args.action in (SC.listen, SC.watch) and args.include else None,
-        "size desc" if args.action in (SC.listen, SC.watch) and args.include else None,
-        "play_count" if args.action in (SC.listen, SC.watch) else None,
-        "m.title IS NOT NULL desc" if "title" in m_columns else None,
-        "m.path",
-        "random",
-    ]
-
-    sort = list(filter(bool, sorts))
-    sort = [override_sort(s) for s in sort]
-    sort = "\n        , ".join(sort)
-    args.sort = sort.replace(",,", ",")
-
-
-def parse_args_limit(args):
-    if not args.limit:
-        args.defaults.append("limit")
-        if not any(
-            [
-                args.print and len(args.print.replace("p", "")) > 0,
-                getattr(args, "partial", False),
-                getattr(args, "lower", False),
-                getattr(args, "upper", False),
-            ],
-        ):
-            if args.action in (SC.listen, SC.watch, SC.read):
-                args.limit = consts.DEFAULT_PLAY_QUEUE
-            elif args.action in (SC.view):
-                args.limit = consts.DEFAULT_PLAY_QUEUE * 4
-            elif args.action in (SC.download):
-                args.limit = consts.DEFAULT_PLAY_QUEUE * 60
-    elif args.limit.lower() in ("inf", "all"):
-        args.limit = None
 
 
 def parse_args(action, default_chromecast=None) -> argparse.Namespace:
@@ -130,6 +26,7 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     parser.add_argument("--big-dirs", "--bigdirs", "-B", action="count", default=0, help=argparse.SUPPRESS)
     parser.add_argument("--related", "-R", action="count", default=0, help=argparse.SUPPRESS)
     parser.add_argument("--cluster", "-C", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--clusters", "--n-clusters", type=int, help="Number of KMeans clusters")
     parser.add_argument("--play-in-order", "-O", action="count", default=0, help=argparse.SUPPRESS)
 
     parser.add_argument("--where", "-w", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
@@ -432,7 +329,8 @@ def construct_query(args) -> Tuple[str, dict]:
             )
     else:
         db_utils.construct_search_bindings(
-            args, [f"m.{k}" for k in m_columns if k in db_utils.config["media"]["search_columns"]]
+            args,
+            [f"m.{k}" for k in m_columns if k in db_utils.config["media"]["search_columns"]],
         )
 
     if args.table == "media" and args.random and not any([args.print, args.limit not in args.defaults]):
@@ -466,7 +364,7 @@ def construct_query(args) -> Tuple[str, dict]:
             FROM {args.table} m
             LEFT JOIN history h on h.media_id = m.id
             WHERE 1=1
-                {player.filter_args_sql(args, m_columns)}
+                {sql_utils.filter_args_sql(args, m_columns)}
                 {" ".join(args.filter_sql)}
                 {" ".join([" and " + w for w in args.where if not any(a in w for a in aggregate_filter_columns)])}
             GROUP BY m.id, m.path
@@ -491,88 +389,13 @@ def construct_query(args) -> Tuple[str, dict]:
     return query, args.filter_bindings
 
 
-def chromecast_play(args, m) -> None:
-    if args.action in (SC.watch):
-        catt_log = player.watch_chromecast(
-            args, m, subtitles_file=iterables.safe_unpack(subtitle.get_subtitle_paths(m["path"]))
-        )
-    elif args.action in (SC.listen):
-        catt_log = player.listen_chromecast(args, m)
-    else:
-        raise NotImplementedError
-
-    if catt_log:
-        if catt_log.stderr is None or catt_log.stderr == "":
-            if not args.cast_with_local:
-                raise RuntimeError("catt does not exit nonzero? but something might have gone wrong")
-        elif "Heartbeat timeout, resetting connection" in catt_log.stderr:
-            raise RuntimeError("Media is possibly partially unwatched")
-
-
-def transcode(args, path) -> str:
-    log.debug(path)
-    sub_index = subtitle.get_sub_index(args, path)
-
-    transcode_dest = str(Path(path).with_suffix(".mkv"))
-    temp_video = path_utils.random_filename(transcode_dest)
-
-    maps = ["-map", "0"]
-    if sub_index:
-        maps = ["-map", "0:v", "-map", "0:a", "-map", "0:" + str(sub_index), "-scodec", "webvtt"]
-
-    video_settings = [
-        "-vcodec",
-        "h264",
-        "-preset",
-        "fast",
-        "-profile:v",
-        "high",
-        "-level",
-        "4.1",
-        "-crf",
-        "17",
-        "-pix_fmt",
-        "yuv420p",
-    ]
-    if args.transcode_audio:
-        video_settings = ["-c:v", "copy"]
-
-    print("Transcoding", temp_video)
-    processes.cmd_interactive(
-        "ffmpeg",
-        "-nostdin",
-        "-loglevel",
-        "error",
-        "-stats",
-        "-i",
-        path,
-        *maps,
-        *video_settings,
-        "-acodec",
-        "libopus",
-        "-ac",
-        "2",
-        "-b:a",
-        "128k",
-        "-filter:a",
-        "loudnorm=i=-18:lra=17",
-        temp_video,
-    )
-
-    Path(path).unlink()
-    shutil.move(temp_video, transcode_dest)
-    with args.db.conn:
-        args.db.conn.execute("UPDATE media SET path = ? where path = ?", [transcode_dest, path])
-    return transcode_dest
-
-
 def prep_media(args, m: Dict, ignore_paths):
     t = Timer()
     args.db = db_utils.connect(args)
     log.debug("db.connect: %s", t.elapsed())
 
     if (args.play_in_order >= consts.SIMILAR) or (args.action == SC.listen and "audiobook" in m["path"].lower()):
-        m = player.get_ordinal_media(args, m, ignore_paths)
+        m = sql_utils.get_ordinal_media(args, m, ignore_paths)
         log.debug("player.get_ordinal_media: %s", t.elapsed())
 
     m["original_path"] = m["path"]
@@ -583,30 +406,17 @@ def prep_media(args, m: Dict, ignore_paths):
         if not media_path.exists():
             log.debug("media_path exists: %s", t.elapsed())
             log.warning("[%s]: Does not exist. Skipping...", m["path"])
-            mark_media_deleted(args, m["original_path"])
+            sql_utils.mark_media_deleted(args, m["original_path"])
             log.debug("mark_media_deleted: %s", t.elapsed())
             return None
 
         if args.transcode or args.transcode_audio:
-            m["path"] = m["original_path"] = transcode(args, m["path"])
+            m["path"] = m["original_path"] = media_player.transcode(args, m["path"])
             log.debug("transcode: %s", t.elapsed())
 
     m["now_playing"] = now_playing(m["path"])
 
     return m
-
-
-def save_playhead(args, m, start_time):
-    playhead = mpv_utils.get_playhead(
-        args,
-        m["original_path"],
-        start_time,
-        existing_playhead=m.get("playhead"),
-        media_duration=m.get("duration"),
-    )
-    log.debug("save_playhead %s", playhead)
-    if playhead:
-        history.add(args, [m["original_path"]], playhead=playhead)
 
 
 def play(args, m, media_len) -> None:
@@ -615,21 +425,21 @@ def play(args, m, media_len) -> None:
     log.debug(m)
     log.debug("now_playing: %s", t.elapsed())
 
-    args.player = player.parse(args, m)
+    player = media_player.parse(args, m)
     log.debug("player.parse: %s", t.elapsed())
 
     if args.interdimensional_cable:
-        player.socket_play(args, m)
+        media_player.socket_play(args, m)
         return
 
     start_time = time.time()
     try:
         if args.chromecast:
             try:
-                chromecast_play(args, m)
+                media_player.chromecast_play(args, player, m)
                 t.reset()
                 history.add(args, [m["original_path"]], mark_done=True)
-                player.post_act(args, m["original_path"], media_len=media_len)
+                post_act(args, m["original_path"], media_len=media_len)
                 log.debug("player.post_act: %s", t.elapsed())
             except Exception:
                 if args.ignore_errors:
@@ -664,13 +474,13 @@ def play(args, m, media_len) -> None:
                 raise SystemExit(4)
 
             history.add(args, [m["original_path"]], mark_done=True)
-            player.post_act(args, m["original_path"], media_len=media_len)
+            post_act(args, m["original_path"], media_len=media_len)
         else:
-            r = player.local_player(args, m)
+            r = media_player.local_player(args, player, m)
             if r.returncode == 0:
                 t.reset()
                 history.add(args, [m["original_path"]], mark_done=True)
-                player.post_act(args, m["original_path"], media_len=media_len)
+                post_act(args, m["original_path"], media_len=media_len)
                 log.debug("player.post_act: %s", t.elapsed())
             else:
                 log.warning("Player exited with code %s", r.returncode)
@@ -679,7 +489,16 @@ def play(args, m, media_len) -> None:
                 else:
                     raise SystemExit(r.returncode)
     finally:
-        save_playhead(args, m, start_time)
+        playhead = mpv_utils.get_playhead(
+            args,
+            m["original_path"],
+            start_time,
+            existing_playhead=m.get("playhead"),
+            media_duration=m.get("duration"),
+        )
+        log.debug("save_playhead %s", playhead)
+        if playhead:
+            history.add(args, [m["original_path"]], playhead=playhead)
 
 
 def filter_episodic(args, media: List[Dict]) -> List[Dict]:
@@ -774,7 +593,7 @@ def process_playqueue(args) -> None:
             args.cluster,
         ],
     ):
-        player.printer(args, query, bindings)
+        media_printer.printer(args, query, bindings)
         return
 
     media = list(args.db.query(query, bindings))
@@ -800,7 +619,7 @@ def process_playqueue(args) -> None:
         dirs = process_bigdirs(args, media)
         dirs = list(reversed([d["path"] for d in dirs]))
         if "limit" in args.defaults:
-            media = player.get_dir_media(args, dirs)
+            media = sql_utils.get_dir_media(args, dirs)
         else:
             media = []
             for key in media_keyed:
@@ -813,7 +632,7 @@ def process_playqueue(args) -> None:
         log.debug("big_dirs: %s", t.elapsed())
 
     if args.related >= consts.RELATED:
-        media = player.get_related_media(args, media[0])
+        media = sql_utils.get_related_media(args, media[0])
         log.debug("player.get_related_media: %s", t.elapsed())
 
     if args.cluster:
@@ -824,11 +643,11 @@ def process_playqueue(args) -> None:
 
     if args.print:
         if args.play_in_order >= consts.SIMILAR:
-            media = [player.get_ordinal_media(args, d) for d in media]
-        player.media_printer(args, media)
+            media = [sql_utils.get_ordinal_media(args, d) for d in media]
+        media_printer.media_printer(args, media)
     elif args.multiple_playback:
         args.gui = True
-        player.multiple_player(args, media)
+        media_player.multiple_player(args, media)
     else:
         try:
             mp_args = argparse.Namespace(**{k: v for k, v in args.__dict__.items() if k not in {"db"}})

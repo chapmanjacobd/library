@@ -17,11 +17,11 @@ class TestReddit(unittest.TestCase):
         reddit_add([*reddit_db, "--limit", "10", "https://old.reddit.com/user/BuonaparteII/"])
         reddit_add([*reddit_db, "--limit", "1", "https://old.reddit.com/r/pytest/"])
 
-    @mock.patch("xklb.player.local_player", return_value=SimpleNamespace(returncode=0))
+    @mock.patch("xklb.media.media_player.local_player", return_value=SimpleNamespace(returncode=0))
     def test_lb_fs(self, play_mocked):
         sys.argv = ["wt", *reddit_db]
         watch()
-        out = play_mocked.call_args[0][1]
+        out = play_mocked.call_args[0][2]
         assert len(out) > 0
 
     def test_redditupdate(self):

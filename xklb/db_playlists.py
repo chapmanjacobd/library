@@ -36,7 +36,9 @@ def consolidate(args, v: dict) -> dict:
     }
 
     cv["extractor_key"] = iterables.safe_unpack(
-        v.pop("ie_key", None), v.pop("extractor_key", None), v.pop("extractor", None)
+        v.pop("ie_key", None),
+        v.pop("extractor_key", None),
+        v.pop("extractor", None),
     )
     cv["extractor_playlist_id"] = iterables.safe_unpack(v.pop("playlist_id", None), v.pop("id", None))
     cv["title"] = iterables.safe_unpack(v.get("playlist_title"), v.pop("title", None))

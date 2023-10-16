@@ -7,9 +7,10 @@ from shutil import which
 from timeit import default_timer as timer
 from typing import Dict, List, Optional
 
-from xklb import db_playlists, player, usage
+import xklb.scripts.playlists
+from xklb import db_playlists, usage
 from xklb.media import av, books
-from xklb.utils import arg_utils, consts, db_utils, file_utils, iterables, objects
+from xklb.utils import arg_utils, consts, db_utils, file_utils, iterables, objects, sql_utils
 from xklb.utils.consts import SC, DBType
 from xklb.utils.log_utils import log
 
@@ -73,7 +74,11 @@ def parse_args(action, usage) -> argparse.Namespace:
     parser.add_argument("--scan-subtitles", "--scan-subtitle", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--extra-media-data", default={}, nargs=1, action=arg_utils.ArgparseDict, metavar="KEY=VALUE")
     parser.add_argument(
-        "--extra-playlist-data", default={}, nargs=1, action=arg_utils.ArgparseDict, metavar="KEY=VALUE"
+        "--extra-playlist-data",
+        default={},
+        nargs=1,
+        action=arg_utils.ArgparseDict,
+        metavar="KEY=VALUE",
     )
 
     parser.add_argument("--delete-unplayable", action="store_true")
@@ -200,6 +205,27 @@ def extract_chunk(args, media) -> None:
             args.db["captions"].insert({**d["caption_t0"], "media_id": media_id}, alter=True)
 
 
+def mark_media_undeleted(args, paths) -> int:
+    paths = iterables.conform(paths)
+
+    modified_row_count = 0
+    if paths:
+        df_chunked = iterables.chunks(paths, consts.SQLITE_PARAM_LIMIT)
+        for chunk_paths in df_chunked:
+            with args.db.conn:
+                cursor = args.db.conn.execute(
+                    """update media
+                    set time_deleted=0
+                    where path in ("""
+                    + ",".join(["?"] * len(chunk_paths))
+                    + ")",
+                    (*chunk_paths,),
+                )
+                modified_row_count += cursor.rowcount
+
+    return modified_row_count
+
+
 def find_new_files(args, path: Path) -> List[str]:
     if path.is_file():
         scanned_files = [str(path)]
@@ -248,7 +274,7 @@ def find_new_files(args, path: Path) -> List[str]:
         log.debug(e)
     else:
         undeleted_files = list(deleted_set.intersection(scanned_set))
-        undeleted_count = player.mark_media_undeleted(args, undeleted_files)
+        undeleted_count = mark_media_undeleted(args, undeleted_files)
         if undeleted_count > 0:
             print(f"[{path}] Marking", undeleted_count, "metadata records as undeleted")
 
@@ -275,7 +301,7 @@ def find_new_files(args, path: Path) -> List[str]:
         if not new_files and len(deleted_files) >= len(existing_set) and not args.force:
             print(f"[{path}] Path empty or device not mounted. Rerun with -f to mark all subpaths as deleted.")
             return []  # if path not mounted or all files deleted
-        deleted_count = player.mark_media_deleted(args, deleted_files)
+        deleted_count = sql_utils.mark_media_deleted(args, deleted_files)
         if deleted_count > 0:
             print(f"[{path}] Marking", deleted_count, "orphaned metadata records as deleted")
 
@@ -288,7 +314,7 @@ def scan_path(args, path_str: str) -> int:
     if not path.exists():
         print(f"[{path}] Path does not exist")
         if args.force:
-            player.delete_playlists(args, [str(path)])
+            xklb.scripts.playlists.delete_playlists(args, [str(path)])
         return 0
 
     n_jobs = None

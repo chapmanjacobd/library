@@ -1,7 +1,8 @@
 import argparse, os, sys
 from typing import List, Tuple
 
-from xklb import gdl_backend, play_actions, player, tube_backend, usage
+from xklb import gdl_backend, tube_backend, usage
+from xklb.media import media_printer
 from xklb.utils import arg_utils, consts, db_utils, iterables, nums, objects, printing, processes, sql_utils
 from xklb.utils.consts import SC, DBType
 from xklb.utils.log_utils import log
@@ -55,7 +56,11 @@ def parse_args():
     parser.add_argument("--download-archive")
     parser.add_argument("--extra-media-data", default={}, nargs=1, action=arg_utils.ArgparseDict, metavar="KEY=VALUE")
     parser.add_argument(
-        "--extra-playlist-data", default={}, nargs=1, action=arg_utils.ArgparseDict, metavar="KEY=VALUE"
+        "--extra-playlist-data",
+        default={},
+        nargs=1,
+        action=arg_utils.ArgparseDict,
+        metavar="KEY=VALUE",
     )
     parser.add_argument("--safe", "-safe", action="store_true", help="Skip generic URLs")
     parser.add_argument("--same-domain", action="store_true", help="Choose a random domain to focus on")
@@ -114,8 +119,8 @@ def parse_args():
     args.db = db_utils.connect(args)
 
     args.action = SC.download
-    play_actions.parse_args_sort(args)
-    play_actions.parse_args_limit(args)
+    arg_utils.parse_args_sort(args)
+    arg_utils.parse_args_limit(args)
 
     processes.timeout(args.timeout)
 
@@ -137,7 +142,8 @@ def construct_query(args) -> Tuple[str, dict]:
     args.filter_sql.extend([" and " + w for w in args.where])
 
     db_utils.construct_search_bindings(
-        args, [f"m.{k}" for k in m_columns if k in db_utils.config["media"]["search_columns"]]
+        args,
+        [f"m.{k}" for k in m_columns if k in db_utils.config["media"]["search_columns"]],
     )
 
     if args.action == SC.download and "time_modified" in m_columns:
@@ -224,13 +230,34 @@ def construct_query(args) -> Tuple[str, dict]:
 def process_downloadqueue(args) -> List[dict]:
     query, bindings = construct_query(args)
     if args.print:
-        player.printer(args, query, bindings)
+        media_printer.printer(args, query, bindings)
         return []
 
     media = list(args.db.query(query, bindings))
     if not media:
         processes.no_media_found()
     return media
+
+
+def mark_download_attempt(args, paths) -> int:
+    paths = iterables.conform(paths)
+
+    modified_row_count = 0
+    if paths:
+        df_chunked = iterables.chunks(paths, consts.SQLITE_PARAM_LIMIT)
+        for chunk_paths in df_chunked:
+            with args.db.conn:
+                cursor = args.db.conn.execute(
+                    f"""update media
+                    set time_modified={consts.now()}
+                    where path in ("""
+                    + ",".join(["?"] * len(chunk_paths))
+                    + ")",
+                    (*chunk_paths,),
+                )
+                modified_row_count += cursor.rowcount
+
+    return modified_row_count
 
 
 def dl_download(args=None) -> None:
@@ -252,7 +279,7 @@ def dl_download(args=None) -> None:
     media = process_downloadqueue(args)
     for m in media:
         if args.blocklist_rules and sql_utils.is_blocked_dict_like_sql(m, args.blocklist_rules):
-            player.mark_download_attempt(args, [m["path"]])
+            mark_download_attempt(args, [m["path"]])
             continue
 
         if args.safe:
@@ -260,7 +287,7 @@ def dl_download(args=None) -> None:
                 args.profile in (DBType.image) and not gdl_backend.is_supported(args, m["path"])
             ):
                 log.info("[%s]: Skipping unsupported URL (safe_mode)", m["path"])
-                player.mark_download_attempt(args, [m["path"]])
+                mark_download_attempt(args, [m["path"]])
                 continue
 
         # check if download already attempted recently by another process
@@ -283,7 +310,7 @@ def dl_download(args=None) -> None:
                         m["path"],
                         printing.human_time(consts.now() - d["time_deleted"]),
                     )
-                    player.mark_download_attempt(args, [m["path"]])
+                    mark_download_attempt(args, [m["path"]])
                     continue
                 elif d["time_modified"]:
                     log.info(

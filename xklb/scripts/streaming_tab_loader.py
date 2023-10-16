@@ -2,7 +2,8 @@ import argparse, logging, sys
 from time import sleep
 from typing import List
 
-from xklb import player, usage
+from xklb import usage
+from xklb.media import media_player
 from xklb.utils import db_utils, objects, processes
 from xklb.utils.log_utils import log
 
@@ -34,7 +35,7 @@ def list_tabs(args) -> List:
 
 def open_tabs(_args, urls) -> None:
     for url in urls:
-        processes.cmd(player.get_browser(), url)
+        processes.cmd(media_player.get_browser(), url)
 
 
 def streaming_tab_loader() -> None:

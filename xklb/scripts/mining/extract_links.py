@@ -58,7 +58,7 @@ def get_page_infinite_scroll(driver, url):
 def from_url(args, line):
     url = line.rstrip("\n")
     if url in ["", '""', "\n"]:
-        return
+        return None
 
     if args.scroll:
         markup = get_page_infinite_scroll(args.driver, url)

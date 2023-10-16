@@ -4,6 +4,7 @@ from typing import Optional
 
 from xklb.data import wordbank
 from xklb.utils import iterables, nums
+from xklb.utils.log_utils import log
 
 
 def repeat_until_same(fn):  # noqa: ANN201
@@ -186,3 +187,16 @@ def partial_startswith(original_string, startswith_match_list):
     else:
         msg = f"{original_string} does not match any of {startswith_match_list}"
         raise ValueError(msg)
+
+
+def last_chars(candidate) -> str:
+    remove_groups = re.split(r"([\W]+|\s+|Ep\d+|x\d+|\.\d+)", candidate)
+    log.debug(remove_groups)
+
+    remove_chars = ""
+    number_of_groups = 1
+    while len(remove_chars) < 1:
+        remove_chars += remove_groups[-number_of_groups]
+        number_of_groups += 1
+
+    return remove_chars

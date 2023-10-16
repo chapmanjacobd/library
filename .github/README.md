@@ -95,7 +95,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.2.117)
+    xk media library subcommands (v2.2.118)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -488,11 +488,11 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     $ library galleryadd -h
     usage: library galleryadd DATABASE URLS
 
-Add gallery_dl URLs to download later or periodically update
+    Add gallery_dl URLs to download later or periodically update
 
-If you have many URLs use stdin
+    If you have many URLs use stdin
 
-    cat ./my-favorite-manhwa.txt | library galleryadd my.db --insert-only -
+        cat ./my-favorite-manhwa.txt | library galleryadd my.db --insert-only -
 
 
 </details>
@@ -622,8 +622,7 @@ If you have many URLs use stdin
     $ library places-import -h
     usage: library places-import DATABASE PATHS ...
 
-Load POIs from Google Maps Google Takeout
-
+    Load POIs from Google Maps Google Takeout
 
 
 </details>
@@ -666,7 +665,7 @@ Load POIs from Google Maps Google Takeout
     $ library galleryupdate -h
     usage: library galleryupdate DATABASE URLS
 
-Check previously saved gallery_dl URLs for new content
+    Check previously saved gallery_dl URLs for new content
 
 
 </details>
@@ -837,7 +836,7 @@ Check previously saved gallery_dl URLs for new content
         library watch -L inf
         library watch -l inf
         library watch --queue inf
-        library watch -L 99999999999999999999999
+        library watch -L 999999999999
 
         You may also want to restrict the play queue.
         For example, when you only want 1000 random files:
@@ -1489,9 +1488,9 @@ Check previously saved gallery_dl URLs for new content
     $ library eda -h
     usage: library eda PATH ... [--table TABLE] [--start-row START_ROW] [--end-row END_ROW] [--repl]
 
-Perform Exploratory Data Analysis (EDA) on one or more files
+    Perform Exploratory Data Analysis (EDA) on one or more files
 
-Only 20,000 rows per file are loaded for performance purposes. Set `--end-row 999999999999` to read all the rows and/or run out of RAM.
+    Only 20,000 rows per file are loaded for performance purposes. Set `--end-row inf` to read all the rows and/or run out of RAM.
 
 
 </details>
@@ -1499,10 +1498,15 @@ Only 20,000 rows per file are loaded for performance purposes. Set `--end-row 99
 <details><summary>Compare data files (incremental-diff)</summary>
 
     $ library incremental-diff -h
-    usage: library incremental-diff PATH1 PATH2
+    usage: library incremental-diff PATH1 PATH2 [--join-keys JOIN_KEYS] [--table1 TABLE1] [--table2 TABLE2] [--table1-index TABLE1_INDEX] [--table2-index TABLE2_INDEX] [--start-row START_ROW] [--batch-size BATCH_SIZE]
 
-[--table1 TABLE1] [--table2 TABLE2] [--table1-index TABLE1_INDEX] [--table2-index TABLE2_INDEX] [--start-row START_ROW] [--end-row END_ROW] [--verbose] [--primary-keys PRIMARY_KEYS]
+    See data differences in an incremental way to quickly see how two different files differ.
 
+    Data (PATH1, PATH2) can be two different files of different file formats (CSV, Excel) or it could even be the same file with different tables.
+
+    If files are unsorted you may need to use `--join-keys id,name` to specify ID columns. Rows that have the same ID will then be compared. If you are comparing SQLITE files you may be able to use `--sort id,name` to achieve the same effect.
+
+    To diff everything at once run with `--batch-size inf`
 
 
 </details>
@@ -1534,7 +1538,7 @@ Only 20,000 rows per file are loaded for performance purposes. Set `--end-row 99
     $ library scatter -h
     usage: library scatter [--limit LIMIT] [--policy POLICY] [--sort SORT] --targets TARGETS DATABASE RELATIVE_PATHS ...
 
-Balance files across filesystem folder trees or multiple devices (mostly useful for mergerfs)
+    Balance files across filesystem folder trees or multiple devices (mostly useful for mergerfs)
 
     Scatter filesystem folder trees (without mountpoints; limited functionality; good for balancing fs inodes)
 
@@ -1801,7 +1805,7 @@ After you are done selecting folders you can press ctrl-d and it will save the l
     $ library search-db -h
     usage: library search-db DATABASE TABLE SEARCH ... [--delete]
 
-Search all columns in a SQLITE table. If the table does not exist, uses the table which startswith (if only one match)
+    Search all columns in a SQLITE table. If the table does not exist, uses the table which startswith (if only one match)
 
 
 </details>

@@ -1,8 +1,8 @@
-import argparse
+import argparse, os, sqlite3
 from typing import Tuple
 
-from xklb import player, usage
-from xklb.player import delete_playlists
+from xklb import usage
+from xklb.media import media_printer
 from xklb.utils import consts, db_utils, objects
 from xklb.utils.log_utils import log
 
@@ -77,7 +77,8 @@ def construct_query(args) -> Tuple[str, dict]:
             )
     else:
         db_utils.construct_search_bindings(
-            args, [f"{k}" for k in pl_columns if k in db_utils.config["media"]["search_columns"]]
+            args,
+            [f"{k}" for k in pl_columns if k in db_utils.config["media"]["search_columns"]],
         )
 
     LIMIT = "LIMIT " + str(args.limit) if args.limit else ""
@@ -95,6 +96,43 @@ def construct_query(args) -> Tuple[str, dict]:
     """
 
     return query, args.filter_bindings
+
+
+def delete_playlists(args, playlists) -> None:
+    deleted_playlist_count = 0
+    with args.db.conn:
+        playlist_paths = playlists + [p.rstrip(os.sep) for p in playlists]
+        cursor = args.db.conn.execute(
+            "delete from playlists where path in (" + ",".join(["?"] * len(playlist_paths)) + ")",
+            playlist_paths,
+        )
+        deleted_playlist_count = cursor.rowcount
+
+    deleted_media_count = 0
+    try:
+        online_media = [p for p in playlists if p.startswith("http")]
+        if online_media:
+            with args.db.conn:
+                cursor = args.db.conn.execute(
+                    """DELETE from media where
+                    playlist_id in (
+                        SELECT id from playlists
+                        WHERE path IN ("""
+                    + ",".join(["?"] * len(online_media))
+                    + "))",
+                    (*online_media,),
+                )
+                deleted_media_count += cursor.rowcount
+    except sqlite3.OperationalError:  # no such column: playlist_id
+        pass
+
+    local_media = [p.rstrip(os.sep) for p in playlists if not p.startswith("http")]
+    for folder in local_media:
+        with args.db.conn:
+            cursor = args.db.conn.execute("delete from media where path like ?", (folder + "%",))
+            deleted_media_count += cursor.rowcount
+
+    print(f"Deleted {deleted_playlist_count} playlists ({deleted_media_count} media records)")
 
 
 def playlists() -> None:
@@ -136,7 +174,7 @@ def playlists() -> None:
         """
 
     playlists = list(args.db.query(query, bindings))
-    player.media_printer(args, playlists, units="playlists")
+    media_printer.media_printer(args, playlists, units="playlists")
 
     if args.delete:
         delete_playlists(args, [d["path"] for d in playlists])

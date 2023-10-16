@@ -43,11 +43,11 @@ def test_tw_print(capsys):
 
 
 class TestTube(dvd.test_case()):
-    @mock.patch("xklb.player.local_player", return_value=SimpleNamespace(returncode=0))
+    @mock.patch("xklb.media.media_player.local_player", return_value=SimpleNamespace(returncode=0))
     def test_lb_fs(self, play_mocked):
         for SC in ("tubewatch", "tw"):
             lb([SC, tube_db])
-            out = play_mocked.call_args[0][1]
+            out = play_mocked.call_args[0][2]
             assert "https://www.youtube.com/watch?v=QoXubRvB6tQ" in out["path"]
             assert out["duration"] == 28
             assert out["title"] == "Most Epic Video About Nothing"
@@ -55,31 +55,31 @@ class TestTube(dvd.test_case()):
 
         sys.argv = ["wt", tube_db]
         watch()
-        out = play_mocked.call_args[0][1]
+        out = play_mocked.call_args[0][2]
         assert "https://www.youtube.com/watch?v=QoXubRvB6tQ" in out["path"]
         assert out["duration"] == 28
         assert out["title"] == "Most Epic Video About Nothing"
         assert out["size"] == 4797012
 
-    @mock.patch("xklb.player.local_player", return_value=SimpleNamespace(returncode=0))
+    @mock.patch("xklb.media.media_player.local_player", return_value=SimpleNamespace(returncode=0))
     def test_tw_search(self, play_mocked):
         sys.argv = ["tw", tube_db, "-s", "nothing"]
         watch()
-        out = play_mocked.call_args[0][1]
+        out = play_mocked.call_args[0][2]
         assert out is not None
 
-    @mock.patch("xklb.player.local_player", return_value=SimpleNamespace(returncode=0))
+    @mock.patch("xklb.media.media_player.local_player", return_value=SimpleNamespace(returncode=0))
     def test_tw_sort(self, play_mocked):
         sys.argv = ["tw", tube_db, "-u", "duration"]
         watch()
-        out = play_mocked.call_args[0][1]
+        out = play_mocked.call_args[0][2]
         assert out is not None
 
-    @mock.patch("xklb.player.local_player", return_value=SimpleNamespace(returncode=0))
+    @mock.patch("xklb.media.media_player.local_player", return_value=SimpleNamespace(returncode=0))
     def test_tw_size(self, play_mocked):
         sys.argv = ["tw", tube_db, "--size", "+1"]  # more than 1MB
         watch()
-        out = play_mocked.call_args[0][1]
+        out = play_mocked.call_args[0][2]
         assert out is not None
 
     @mock.patch("xklb.tube_backend.get_playlist_metadata")

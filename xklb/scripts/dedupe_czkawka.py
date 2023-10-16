@@ -5,7 +5,8 @@ from pathlib import Path
 import humanize
 from screeninfo import get_monitors
 
-from xklb import player
+import xklb.play_actions
+from xklb.media import media_player
 from xklb.utils import consts, devices, file_utils, iterables, mpv_utils, processes
 from xklb.utils.log_utils import log
 
@@ -21,7 +22,7 @@ def backup_and_read_file(file_path):
         except Exception as e:
             print(f"Failed to create backup file: {e}")
 
-    with open(file_path, "r") as file:
+    with open(file_path) as file:
         content = file.read()
     return content
 
@@ -57,7 +58,7 @@ def extract_group_data(group_content):
     paths_and_sizes = []
     groups = group_content.split("\n")
     if len(groups) < 2:
-        return
+        return None
     for match in groups:
         if match == "":
             continue
@@ -74,7 +75,7 @@ def extract_group_data(group_content):
 
 
 def truncate_file_before_match(filename, match_string):
-    with open(filename, "r") as file:
+    with open(filename) as file:
         lines = file.readlines()
     matching_lines = [i for i, line in enumerate(lines) if match_string in line]
 
@@ -98,7 +99,7 @@ def side_by_side_mpv(args, left_side, right_side):
         print("No connected displays found.")
         return
 
-    display = player.modify_display_size_for_taskbar(monitors[0])
+    display = media_player.modify_display_size_for_taskbar(monitors[0])
     mpv_width = display.width // 2
 
     if args.auto_seek:
@@ -111,7 +112,9 @@ def side_by_side_mpv(args, left_side, right_side):
 
         left_mpv = MPV(ipc_socket=left_mpv_socket, geometry=f"{mpv_width}x{display.height}+0+0", **mpv_kwargs)
         right_mpv = MPV(
-            ipc_socket=right_mpv_socket, geometry=f"{mpv_width}x{display.height}+{mpv_width}+0", **mpv_kwargs
+            ipc_socket=right_mpv_socket,
+            geometry=f"{mpv_width}x{display.height}+{mpv_width}+0",
+            **mpv_kwargs,
         )
 
         for x_mpv in (left_mpv, right_mpv):
@@ -263,7 +266,9 @@ def group_and_delete(args, groups):
 
             if args.auto_select_min_ratio < 1.0:
                 similar_ratio = difflib.SequenceMatcher(
-                    None, os.path.basename(left["path"]), os.path.basename(right["path"])
+                    None,
+                    os.path.basename(left["path"]),
+                    os.path.basename(right["path"]),
                 ).ratio()
                 if similar_ratio >= args.auto_select_min_ratio or any(
                     s in left["path"] and s in right["path"] for s in ["Goldmines_Bollywood"]
@@ -290,7 +295,11 @@ def group_and_delete(args, groups):
                 for path in (left["path"], right["path"]):
                     r = processes.cmd(*shlex.split(args.override_player), path, strict=False)
                     if r.returncode == 0:
-                        player.post_act(args, path, action="ASK_MOVE_OR_DELETE" if args.keep_dir else "ASK_DELETE")
+                        xklb.play_actions.post_act(
+                            args,
+                            path,
+                            action="ASK_MOVE_OR_DELETE" if args.keep_dir else "ASK_DELETE",
+                        )
                     else:
                         truncate_file_before_match(args.file_path, left["path"])
                         log.warning("Player exited with code %s", r.returncode)

@@ -2,7 +2,8 @@ import argparse, sys
 
 import humanize
 
-from xklb import player, tube_backend, usage
+from xklb import post_actions, tube_backend, usage
+from xklb.media import media_printer
 from xklb.utils import consts, db_utils, devices, iterables, objects
 from xklb.utils.consts import SC
 from xklb.utils.log_utils import log
@@ -149,7 +150,7 @@ def block(args=None) -> None:
             ),
         )
 
-        player.media_printer(args, candidates, units="subdomains")
+        media_printer.media_printer(args, candidates, units="subdomains")
         return
 
     if args.match_column == "playlist_path":
@@ -199,7 +200,7 @@ def block(args=None) -> None:
             if devices.confirm(
                 f"Would you like to delete these {len(paths_to_delete)} local files ({humanize.naturalsize(total_size)})?",
             ):
-                player.delete_media(args, paths_to_delete)
+                post_actions.delete_media(args, paths_to_delete)
         return
 
     unmatched_playlists = []
@@ -260,7 +261,7 @@ def block(args=None) -> None:
 
             matching_media = list(reversed(cluster_dicts(args, matching_media)))
 
-        player.media_printer(args, matching_media)
+        media_printer.media_printer(args, matching_media)
         if args.no_confirm or devices.confirm("Add to blocklist?"):
             add_to_blocklist(args, p)
         else:
@@ -270,7 +271,7 @@ def block(args=None) -> None:
             d["path"] for d in matching_media if (d["time_deleted"] == 0 or 0) and d["path"].startswith("http")
         ]
         if web_paths_to_delete:
-            player.delete_media(args, web_paths_to_delete)
+            post_actions.delete_media(args, web_paths_to_delete)
 
         local_paths_to_delete = [
             d["path"] for d in matching_media if (d["time_deleted"] == 0 or 0) and not d["path"].startswith("http")
@@ -281,7 +282,7 @@ def block(args=None) -> None:
             if devices.confirm(
                 f"Would you like to delete these {len(local_paths_to_delete)} local files ({humanize.naturalsize(total_size)})?",
             ):
-                player.delete_media(args, local_paths_to_delete)
+                post_actions.delete_media(args, local_paths_to_delete)
 
     if unmatched_playlists:
         log.error("Could not find media matching these URLs/words (rerun with --force to add blocking rules):")

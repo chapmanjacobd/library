@@ -3,8 +3,9 @@ from copy import deepcopy
 from itertools import groupby
 from typing import Tuple
 
-from xklb import player, usage
-from xklb.utils import consts, db_utils, iterables, objects, printing, processes
+from xklb import usage
+from xklb.media import media_player, media_printer
+from xklb.utils import arg_utils, consts, db_utils, iterables, objects, printing, processes, sql_utils
 from xklb.utils.log_utils import log
 
 
@@ -52,7 +53,7 @@ def parse_args() -> argparse.Namespace:
     if args.cols:
         args.cols = list(iterables.flatten([s.split(",") for s in args.cols]))
 
-    sort = [player.override_sort(s) for s in args.sort]
+    sort = [arg_utils.override_sort(s) for s in args.sort]
     sort = "\n        , ".join(sort)
     args.sort = sort.replace(",,", ",")
 
@@ -83,7 +84,7 @@ def printer(args, captions) -> None:
                     print(line)
             print()
     else:
-        player.media_printer(args, captions, units="captions")
+        media_printer.media_printer(args, captions, units="captions")
 
 
 def construct_query(args) -> Tuple[str, dict]:
@@ -118,7 +119,7 @@ def construct_query(args) -> Tuple[str, dict]:
     query = f"""WITH c as (
         SELECT id, * FROM {table}
         WHERE 1=1
-            {player.filter_args_sql(args, c_columns)}
+            {sql_utils.filter_args_sql(args, c_columns)}
     )
     SELECT
         {args.select_sql}
@@ -181,8 +182,8 @@ def search() -> None:
             args.start = str(d["time"] - 2)
             args.end = str(int(d["end"] + 1.5))
             m = args.db.pop_dict("select * from media where path = ?", [d["path"]])
-            args.player = player.parse(args, m)
-            r = player.local_player(args, m)
+            player = media_player.parse(args, m)
+            r = media_player.local_player(args, player, m)
             if r.returncode != 0:
                 log.warning("Player exited with code %s", r.returncode)
                 if args.ignore_errors:

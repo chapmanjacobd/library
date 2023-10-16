@@ -6,7 +6,7 @@ from typing import Dict, List, Tuple
 import humanize
 from tabulate import tabulate
 
-from xklb import player, usage
+from xklb import usage
 from xklb.utils import consts, db_utils, devices, iterables, objects, printing
 from xklb.utils.log_utils import log
 
@@ -89,6 +89,24 @@ def iterate_and_show_options(args, tbl) -> Tuple[List[Dict], List[Dict]]:
         return tbl[-int(args.limit) :], tbl[: -int(args.limit)]
     else:
         return tbl, tbl
+
+
+def mark_media_deleted_like(args, paths) -> int:
+    paths = iterables.conform(paths)
+
+    modified_row_count = 0
+    if paths:
+        for p in paths:
+            with args.db.conn:
+                cursor = args.db.conn.execute(
+                    f"""update media
+                    set time_deleted={consts.APPLICATION_START}
+                    where path like ?""",
+                    [p + "%"],
+                )
+                modified_row_count += cursor.rowcount
+
+    return modified_row_count
 
 
 def move_list() -> None:
@@ -184,7 +202,7 @@ Type "*" to select all files in the most recently printed table
         )
 
         if devices.confirm(f"Mark as deleted in {args.database}?"):  # type: ignore
-            player.mark_media_deleted_like(args, list(selected_paths))
+            mark_media_deleted_like(args, list(selected_paths))
 
 
 if __name__ == "__main__":

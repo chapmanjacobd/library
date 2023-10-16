@@ -139,7 +139,7 @@ def decode_full_scan(path):
 
     if difference > 0.1:
         log.warning(
-            f"Metadata {printing.seconds_to_hhmmss(metadata_duration).strip()} does not match actual duration {printing.seconds_to_hhmmss(actual_duration).strip()} (diff {difference:.2f}s) {path}"
+            f"Metadata {printing.seconds_to_hhmmss(metadata_duration).strip()} does not match actual duration {printing.seconds_to_hhmmss(actual_duration).strip()} (diff {difference:.2f}s) {path}",
         )
 
     return percent_diff
@@ -220,9 +220,8 @@ def munge_av_tags(args, media, path) -> Optional[dict]:
             DEFAULT_THRESHOLD = 0.02
             if corruption > DEFAULT_THRESHOLD:
                 log.warning(f"Data corruption found ({corruption:.2%}). {path}")
-            if args.delete_corrupt and corruption > args.delete_corrupt:
-                if not consts.PYTEST_RUNNING:
-                    file_utils.trash(path)
+            if args.delete_corrupt and corruption > args.delete_corrupt and not consts.PYTEST_RUNNING:
+                file_utils.trash(path)
 
     tags = format_.pop("tags", None)
     if tags:
@@ -277,7 +276,7 @@ def munge_av_tags(args, media, path) -> Optional[dict]:
     codec_types = [s.get("codec_type") for s in streams]
     stream_tags = [s.get("tags") for s in streams if s.get("tags") is not None]
     language = strings.combine(
-        [t.get("language") for t in stream_tags if t.get("language") not in (None, "und", "unk")]
+        [t.get("language") for t in stream_tags if t.get("language") not in (None, "und", "unk")],
     )
 
     video_count = sum(1 for s in codec_types if s == "video")

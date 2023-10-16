@@ -99,6 +99,7 @@ def find_date(soup):
             return date
         except ValueError:
             pass
+    return None
 
 
 def load_selenium(args):

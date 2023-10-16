@@ -42,7 +42,7 @@ def save_page(args, url):
             "time_created": nums.to_timestamp(
                 datetime.fromisoformat(
                     comment_element.find("time", class_="comment-posted-time")["datetime"][:-1],
-                )
+                ),
             ),
             "time_modified": nums.to_timestamp(datetime.fromisoformat(edited_time_element["datetime"][:-1]))
             if edited_time_element
