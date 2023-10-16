@@ -1,4 +1,5 @@
 import glob, os, shlex, shutil, tempfile, time
+from functools import wraps
 from pathlib import Path
 from shutil import which
 from typing import Union
@@ -201,7 +202,30 @@ fi
         print(rf"PARALLEL_SHELL=sh parallel --colsep '\t' -a {temp.name} -j 20 {move_sh_path}")
 
 
-def read_file_to_dataframes(path, table_name=None, table_index=None, start_row=None, end_row=None, order_by=None):
+def retry_with_different_encodings(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except UnicodeDecodeError as exc:
+            original_exc = exc
+
+        for encoding in consts.COMMON_ENCODINGS:
+            try:
+                kwargs["encoding"] = encoding
+                return func(*args, **kwargs)
+            except UnicodeDecodeError:
+                pass
+
+        raise original_exc  # If no encoding worked, raise the original exception
+
+    return wrapper
+
+
+@retry_with_different_encodings
+def read_file_to_dataframes(
+    path, table_name=None, table_index=None, start_row=None, end_row=None, order_by=None, encoding=None
+):
     import pandas as pd
 
     mimetype = file_utils.mimetype(path)
@@ -260,22 +284,22 @@ def read_file_to_dataframes(path, table_name=None, table_index=None, start_row=N
     elif mimetype in ("application/x-hdf",):
         dfs = [pd.read_hdf(path, start=start_row, stop=end_row)]
     elif mimetype in ("application/json",):
-        dfs = [pd.read_json(path)]
+        dfs = [pd.read_json(path, encoding=encoding)]
     elif mimetype in ("JSON Lines", "GeoJSON Lines"):
-        dfs = [pd.read_json(path, nrows=end_row, lines=True)]
+        dfs = [pd.read_json(path, nrows=end_row, lines=True, encoding=encoding)]
     elif mimetype in ("text/csv",):
-        dfs = [pd.read_csv(path, nrows=end_row, skiprows=start_row or 0)]
+        dfs = [pd.read_csv(path, nrows=end_row, skiprows=start_row or 0, encoding=encoding)]
     elif mimetype in (
         "text/tsv",
         "text/tab-separated-values",
     ):
-        dfs = [pd.read_csv(path, delimiter="\t", nrows=end_row, skiprows=start_row or 0)]
+        dfs = [pd.read_csv(path, delimiter="\t", nrows=end_row, skiprows=start_row or 0, encoding=encoding)]
     elif mimetype in ("Parquet", "application/parquet"):
         dfs = [pd.read_parquet(path)]
     elif mimetype in ("Pickle", "application/octet-stream"):
         dfs = [pd.read_pickle(path)]
     elif mimetype in ("text/html",):
-        dfs = pd.read_html(path, skiprows=start_row)
+        dfs = pd.read_html(path, skiprows=start_row, encoding=encoding)
     elif mimetype in ("Stata",):
         dfs = [pd.read_stata(path)]
     elif mimetype in ("Feather",):
@@ -283,7 +307,7 @@ def read_file_to_dataframes(path, table_name=None, table_index=None, start_row=N
     elif mimetype in ("ORC",):
         dfs = [pd.read_orc(path)]
     elif mimetype in ("text/xml",):
-        dfs = [pd.read_xml(path)]
+        dfs = [pd.read_xml(path, encoding=encoding)]
     else:
         msg = f"{path}: Unsupported file type: {mimetype}"
         raise ValueError(msg)
