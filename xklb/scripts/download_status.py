@@ -1,7 +1,8 @@
 import argparse
 
-from xklb import dl_extract, play_actions, player, tube_backend, usage
-from xklb.utils import consts, db_utils, objects, sql_utils
+from xklb import dl_extract, tube_backend, usage
+from xklb.media import media_printer
+from xklb.utils import arg_utils, consts, db_utils, objects, sql_utils
 from xklb.utils.log_utils import log
 
 
@@ -45,7 +46,7 @@ def parse_args() -> argparse.Namespace:
 
 def download_status() -> None:
     args = parse_args()
-    play_actions.parse_args_sort(args)
+    arg_utils.parse_args_sort(args)
 
     query, bindings = dl_extract.construct_query(args)
 
@@ -79,7 +80,7 @@ def download_status() -> None:
         blocklist_rules = [{d["key"]: d["value"]} for d in args.db["blocklist"].rows]
         media = sql_utils.block_dicts_like_sql(media, blocklist_rules)
 
-    player.media_printer(args, media, units="extractors")
+    media_printer.media_printer(args, media, units="extractors")
 
     if "error" in db_utils.columns(args, "media") and args.verbose >= consts.LOG_INFO:
         query = """
@@ -100,5 +101,5 @@ def download_status() -> None:
                 common_errors.append(error)
 
         common_errors.append({"error": "Other", "count": len(other_errors)})
-        player.media_printer(args, common_errors)
+        media_printer.media_printer(args, common_errors)
         print(f"Total errors: {sum(d['count'] for d in errors)}")

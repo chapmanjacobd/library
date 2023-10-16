@@ -92,7 +92,7 @@ def reformat_ffprobe(path):
         "replaygain_",
     ]
 
-    tags = {k: v for d in probe.streams + [probe.format] for k, v in d.get("tags", {}).items()}
+    tags = {k: v for d in [*probe.streams, probe.format] for k, v in d.get("tags", {}).items()}
 
     seen = set()
     metadata = objects.lower_keys(tags)

@@ -5,8 +5,9 @@ from typing import List
 
 import humanize
 
-from xklb import player, usage
-from xklb.utils import consts, db_utils, devices, file_utils, iterables, objects, strings
+from xklb import usage
+from xklb.media import media_printer
+from xklb.utils import consts, db_utils, devices, file_utils, iterables, objects, sql_utils, strings
 from xklb.utils.consts import DBType
 from xklb.utils.log_utils import log
 
@@ -379,7 +380,7 @@ def dedupe() -> None:
         rows = get_rows(args)
         for row in rows:
             words = set(
-                iterables.conform(strings.extract_words(Path(v).stem if k == "path" else v) for k, v in row.items())
+                iterables.conform(strings.extract_words(Path(v).stem if k == "path" else v) for k, v in row.items()),
             )
             table, search_bindings = db_utils.fts_search_sql(
                 "media",
@@ -446,7 +447,7 @@ def dedupe() -> None:
 
     tbl = deepcopy(duplicates)
     tbl = tbl[: int(args.limit)]
-    player.media_printer(args, tbl, units="duplicates", media_len=len(duplicates))
+    media_printer.media_printer(args, tbl, units="duplicates", media_len=len(duplicates))
 
     try:
         import pandas as pd
@@ -466,7 +467,7 @@ def dedupe() -> None:
             path = d["duplicate_path"]
             if not path.startswith("http") and not args.only_soft_delete:
                 file_utils.trash(path, detach=False)
-            player.mark_media_deleted(args, path)
+            sql_utils.mark_media_deleted(args, path)
 
 
 if __name__ == "__main__":

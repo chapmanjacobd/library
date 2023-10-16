@@ -2,7 +2,8 @@ import argparse, os
 from pathlib import Path
 from typing import Dict, List
 
-from xklb import history, player, usage
+from xklb import history, usage
+from xklb.media import media_printer
 from xklb.utils import consts, db_utils, file_utils, nums, objects, sql_utils
 from xklb.utils.log_utils import log
 
@@ -126,7 +127,8 @@ def get_table(args) -> List[dict]:
     if args.size:
         args.filter_sql.append(" and size IS NOT NULL " + args.size)
     db_utils.construct_search_bindings(
-        args, [f"m.{k}" for k in m_columns if k in db_utils.config["media"]["search_columns"]]
+        args,
+        [f"m.{k}" for k in m_columns if k in db_utils.config["media"]["search_columns"]],
     )
 
     media = list(
@@ -210,7 +212,7 @@ def bigdirs() -> None:
     if args.limit:
         media = media[-int(args.limit) :]
 
-    player.media_printer(args, media, units="folders")
+    media_printer.media_printer(args, media, units="folders")
 
 
 if __name__ == "__main__":

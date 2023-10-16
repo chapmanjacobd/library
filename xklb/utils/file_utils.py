@@ -105,8 +105,8 @@ def is_file_open(path):
                     else:
                         raise
         else:
-            open(path, "r")  # Windows will error here
-    except IOError:
+            open(path)  # Windows will error here
+    except OSError:
         return True
     return False
 
@@ -285,7 +285,8 @@ def read_file_to_dataframes(path, table_name=None, table_index=None, start_row=N
     elif mimetype in ("text/xml",):
         dfs = [pd.read_xml(path)]
     else:
-        raise ValueError(f"{path}: Unsupported file type: {mimetype}")
+        msg = f"{path}: Unsupported file type: {mimetype}"
+        raise ValueError(msg)
 
     for table_index, df in enumerate(dfs):
         if not hasattr(df, "name"):

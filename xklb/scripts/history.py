@@ -1,8 +1,9 @@
 import argparse
 
-from xklb import player, usage
+from xklb import usage
 from xklb.history import create
-from xklb.utils import consts, db_utils, objects, strings
+from xklb.media import media_printer
+from xklb.utils import consts, db_utils, objects, sql_utils, strings
 from xklb.utils.log_utils import log
 
 
@@ -93,14 +94,14 @@ def history() -> None:
     if args.facet in WATCHED + WATCHING:
         args.played = True
 
-    history_fn = player.historical_usage_items
+    history_fn = sql_utils.historical_usage_items
     if args.played:
-        history_fn = player.historical_usage
+        history_fn = sql_utils.historical_usage
 
     if args.facet in WATCHING:
         print(args.facet.title() + ":")
         tbl = history_fn(args, args.frequency, "time_played", args.hide_deleted, "and coalesce(play_count, 0)=0")
-        player.media_printer(args, tbl)
+        media_printer.media_printer(args, tbl)
         query = f"""WITH m as (
                 SELECT
                     SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
@@ -126,12 +127,12 @@ def history() -> None:
             LIMIT {args.limit or 5}
         """
         tbl = list(args.db.query(query))
-        player.media_printer(args, tbl)
+        media_printer.media_printer(args, tbl)
 
     elif args.facet in WATCHED:
         print(args.facet.title() + ":")
         tbl = history_fn(args, args.frequency, "time_played", args.hide_deleted, "and coalesce(play_count, 0)>0")
-        player.media_printer(args, tbl)
+        media_printer.media_printer(args, tbl)
         query = f"""WITH m as (
                 SELECT
                     SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
@@ -155,14 +156,14 @@ def history() -> None:
             LIMIT {args.limit or 5}
         """
         tbl = list(args.db.query(query))
-        player.media_printer(args, tbl)
+        media_printer.media_printer(args, tbl)
 
     else:
         print(f"{args.facet.title()} media:")
         tbl = history_fn(args, args.frequency, f"time_{args.facet}", args.hide_deleted)
-        player.media_printer(args, tbl)
+        media_printer.media_printer(args, tbl)
         tbl = recent_media(args, f"time_{args.facet}")
-        player.media_printer(args, tbl)
+        media_printer.media_printer(args, tbl)
 
 
 if __name__ == "__main__":

@@ -159,7 +159,7 @@ def print_info(args, df):
             print(f"#### {len(all_nas)} columns with all missing values")
             print_series(all_nas)
 
-        print(f"#### Value stats")
+        print("#### Value stats")
         column_report = pd.DataFrame(df_column_values(df, col) for col in df.columns).set_index("column")
         column_report = column_report.sort_values(["empty_string_count", "zero_count", "null_count"])
         print_df(column_report[["values", "null", "zero", "empty_string"]])

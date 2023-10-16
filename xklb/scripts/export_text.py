@@ -30,7 +30,7 @@ def media_to_files(args):
 
         lines = ["<html><body>", path, "<br>", title, "<br>"]
 
-        for key in ["subtitle", "author", "artist", "time_created", "duration", "text"] + list(d.keys()):
+        for key in ["subtitle", "author", "artist", "time_created", "duration", "text", *list(d.keys())]:
             value = d.pop(key, None)
             if value:
                 lines.append(f"{key}: {value}")

@@ -3,7 +3,8 @@ from copy import deepcopy
 from pathlib import Path
 from typing import List
 
-from xklb import player, usage
+from xklb import usage
+from xklb.media import media_printer
 from xklb.utils import consts, db_utils, devices, file_utils, iterables, objects
 from xklb.utils.log_utils import log
 
@@ -109,7 +110,7 @@ def print_deleted(args, deleted_media) -> None:
     tbl = iterables.list_dict_filter_bool(tbl, keep_0=False)
     tbl = iterables.list_dict_filter_unique(tbl)
     tbl = tbl[: int(args.limit)]
-    player.media_printer(args, tbl, units="deleted media")
+    media_printer.media_printer(args, tbl, units="deleted media")
 
 
 def redownload() -> None:
@@ -120,7 +121,7 @@ def redownload() -> None:
     else:
         deletions = list_deletions(args)
         print("Deletions:")
-        player.media_printer(args, deletions, units="deletions")
+        media_printer.media_printer(args, deletions, units="deletions")
         raise SystemExit(0)
 
     print_deleted(args, deleted_media)

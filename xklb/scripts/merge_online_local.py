@@ -2,7 +2,8 @@ import argparse
 from copy import deepcopy
 from typing import List
 
-from xklb import db_media, player, usage
+from xklb import db_media, usage
+from xklb.media import media_printer
 from xklb.utils import consts, db_utils, devices, objects
 from xklb.utils.log_utils import log
 
@@ -75,7 +76,7 @@ def merge_online_local() -> None:
 
     tbl = deepcopy(duplicates)
     tbl = tbl[: int(args.limit)]
-    player.media_printer(args, tbl, units="duplicates")
+    media_printer.media_printer(args, tbl, units="duplicates")
 
     if duplicates and devices.confirm("Merge duplicates?"):  # type: ignore
         log.info("Merging...")

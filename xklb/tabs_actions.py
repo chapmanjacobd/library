@@ -5,9 +5,8 @@ from time import sleep
 from typing import Dict, List, Tuple
 
 from xklb import history, usage
-from xklb.player import generic_player, override_sort, printer
-from xklb.utils import db_utils, iterables, objects, processes
-from xklb.utils.consts import SC
+from xklb.media import media_player, media_printer
+from xklb.utils import arg_utils, consts, db_utils, iterables, objects, processes
 from xklb.utils.log_utils import log
 
 
@@ -53,7 +52,7 @@ def parse_args(action) -> argparse.Namespace:
         args.database = args.db
 
     if args.sort:
-        args.sort = [override_sort(s) for s in args.sort]
+        args.sort = [arg_utils.override_sort(s) for s in args.sort]
         args.sort = " ".join(args.sort)
 
     if args.cols:
@@ -159,7 +158,7 @@ def construct_tabs_query(args) -> Tuple[str, dict]:
 
 
 def find_player(args) -> List[str]:
-    player = generic_player(args)
+    player = media_player.generic_player(args)
     firefox = which("firefox") or which("firefox.exe")
     if firefox:
         player = [firefox, "--new-tab"]
@@ -167,10 +166,10 @@ def find_player(args) -> List[str]:
     return player
 
 
-def play(args, m: Dict) -> None:
+def play(args, player, m: Dict) -> None:
     media_file = m["path"]
 
-    processes.cmd(*args.player, media_file, strict=False)
+    processes.cmd(*player, media_file, strict=False)
     history.add(args, [media_file], mark_done=True)
 
 
@@ -203,7 +202,7 @@ def process_tabs_actions(args) -> None:
     query, bindings = construct_tabs_query(args)
 
     if args.print:
-        return printer(args, query, bindings)
+        return media_printer.printer(args, query, bindings)
 
     media = list(args.db.query(query, bindings))
     if not media:
@@ -211,9 +210,9 @@ def process_tabs_actions(args) -> None:
 
     media = frequency_filter(args, media)
 
-    args.player = find_player(args)
+    player = find_player(args)
     for m in media:
-        play(args, m)
+        play(args, player, m)
         MANY_TABS = 9
         if len(media) >= MANY_TABS:
             sleep(0.3)
@@ -221,6 +220,6 @@ def process_tabs_actions(args) -> None:
 
 
 def tabs() -> None:
-    args = parse_args(SC.tabs)
+    args = parse_args(consts.SC.tabs)
     history.create(args)
     process_tabs_actions(args)
