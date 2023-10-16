@@ -3,8 +3,8 @@ from typing import Dict
 
 from xklb import usage
 from xklb.utils import nums
+from xklb.utils import file_utils
 from xklb.utils.consts import DEFAULT_FILE_ROWS_READ_LIMIT
-from xklb.utils.file_utils import read_file_to_dataframes
 from xklb.utils.printing import print_df
 
 
@@ -167,7 +167,7 @@ def print_info(args, df):
 
 
 def file_eda(args, path):
-    dfs = read_file_to_dataframes(
+    dfs = file_utils.read_file_to_dataframes(
         path,
         table_name=args.table_name,
         table_index=args.table_index,

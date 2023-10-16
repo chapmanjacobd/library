@@ -1,5 +1,3 @@
-import requests
-
 from xklb.utils.log_utils import log
 
 
@@ -14,6 +12,7 @@ def try_get_feed(path):
 
 def try_get_head_link(path):
     from bs4 import BeautifulSoup
+    import requests
 
     try:
         response = requests.get(path)
@@ -27,6 +26,7 @@ def try_get_head_link(path):
 
 def try_get_link_endswith(path):
     from bs4 import BeautifulSoup
+    import requests
 
     try:
         response = requests.get(path)
