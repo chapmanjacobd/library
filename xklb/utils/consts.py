@@ -389,3 +389,22 @@ MEDIA_KNOWN_KEYS = (
     "manifest_stream_number",
     "start_time",
 )
+
+COMMON_ENCODINGS = [
+    "ISO-8859-1",
+    "ISO-8859-2",
+    "Windows-1252",
+    "Windows-1251",
+    "Windows-1250",
+    "Shift-JIS",
+    "utf-16",
+    "utf-16-le",
+    "utf-16-be",
+    "utf-32",
+    "utf-32-le",
+    "utf-32-be",
+    "gb18030",
+    "big5",
+    "euc-jp",
+    "euc-kr",
+]
