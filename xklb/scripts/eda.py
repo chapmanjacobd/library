@@ -2,8 +2,7 @@ import argparse
 from typing import Dict
 
 from xklb import usage
-from xklb.utils import nums
-from xklb.utils import file_utils
+from xklb.utils import file_utils, nums
 from xklb.utils.consts import DEFAULT_FILE_ROWS_READ_LIMIT
 from xklb.utils.printing import print_df
 

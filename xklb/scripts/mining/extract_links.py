@@ -4,39 +4,82 @@ from xklb.utils import printing, web
 from xklb.utils.log_utils import log
 
 
-def get_inner_urls(url, markup, include=None, exclude=None):
+def construct_absolute_url(url, href):
     from urllib.parse import urlparse
 
+    up = urlparse(href)
+    if not up.netloc:
+        up = urlparse(url)
+        href = up.scheme + "://" + up.netloc + href
+    return href
+
+
+def is_desired_url(args, a_element, href) -> bool:
+    path = href if args.case_sensitive else href.lower()
+
+    if args.path_include and not all(inc in path for inc in args.path_include):
+        log.debug("path-include: %s", path)
+        return False
+    if args.path_exclude and any(ex in path for ex in args.path_exclude):
+        log.debug("path-exclude: %s", path)
+        return False
+
+    link_text = a_element.text if args.case_sensitive else a_element.text.lower()
+
+    if args.text_exclude and any(ex in link_text for ex in args.text_exclude):
+        log.debug("text-exclude: %s", link_text)
+        return False
+    if args.text_include and not all(inc in link_text for inc in args.text_include):
+        log.debug("text-include: %s", link_text)
+        return False
+
+    if args.before_exclude or args.before_include or args.after_exclude or args.after_include:
+
+        before, after = web.extract_nearby_text(a_element)
+        before_text = before if args.case_sensitive else before.lower()
+        after_text = after if args.case_sensitive else after.lower()
+
+        if args.before_exclude and any(ex in before_text for ex in args.before_exclude):
+            log.debug("before-exclude: %s", before_text)
+            return False
+        if args.after_exclude and any(ex in after_text for ex in args.after_exclude):
+            log.debug("after-exclude: %s", after_text)
+            return False
+        if args.before_include and not all(inc in before_text for inc in args.before_include):
+            log.debug("before-include: %s", before_text)
+            return False
+        if args.after_include and not all(inc in after_text for inc in args.after_include):
+            log.debug("after-include: %s", after_text)
+            return False
+
+        if args.before_exclude or args.before_include:
+            log.info("  before: %s", before_text)
+        if args.after_exclude or args.after_include:
+            log.info("  after: %s", after_text)
+
+    if args.text_exclude or args.text_include:
+        log.info("  text: %s", link_text)
+
+    return True
+
+
+def get_inner_urls(args, url, markup):
     from bs4 import BeautifulSoup
 
     soup = BeautifulSoup(markup, "html.parser")
-    film_list = set()
+    inner_urls = set()
 
     for a in soup.findAll("a", attrs={"href": True}):
         log.debug(a)
 
         href = a["href"].strip()
         if (len(href) > 1) and href[0] != "#":
-            if any(s in href for s in (exclude or [])):
-                log.debug("excluded: %s", href)
-                continue
-
-            up = urlparse(href)
-            if not up.netloc:
-                up = urlparse(url)
-                href = up.scheme + "://" + up.netloc + href
-
-            if include is None or len(include) == 0:
-                film_list.add(href)
-            elif all(s in href for s in include):
-                log.debug("included: %s", href)
-                film_list.add(href)
-            else:
-                log.debug("else: %s", href)
+            if is_desired_url(args, a, href):
+                inner_urls.add(construct_absolute_url(url, href))
 
         # breakpoint()
 
-    return film_list
+    return inner_urls
 
 
 def get_page_infinite_scroll(driver, url):
@@ -60,13 +103,18 @@ def from_url(args, line):
     if url in ["", '""', "\n"]:
         return None
 
-    if args.scroll:
+    if args.local_html:
+        with open(url, "r") as f:
+            markup = f.read()
+        url = "file://" + url
+    elif args.scroll:
         markup = get_page_infinite_scroll(args.driver, url)
     else:
         r = web.requests_session().get(url, timeout=120, headers=web.headers)
         r.raise_for_status()
         markup = r.content
-    inner_urls = get_inner_urls(url, markup, include=args.include, exclude=args.exclude)
+
+    inner_urls = get_inner_urls(args, url, markup)
 
     return inner_urls
 
@@ -81,18 +129,61 @@ def print_or_download(args, found_urls):
 
 def extract_links() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--include", "-s", nargs="*", help="substrings for inclusion (all must match to include)")
     parser.add_argument(
+        "--path-include",
+        "--include",
+        "-s",
+        nargs="*",
+        default=[],
+        help="path substrings for inclusion (all must match to include)",
+    )
+    parser.add_argument(
+        "--text-include", nargs="*", default=[], help="link text substrings for inclusion (all must match to include)"
+    )
+    parser.add_argument(
+        "--after-include",
+        nargs="*",
+        default=[],
+        help="plain text substrings after URL for inclusion (all must match to include)",
+    )
+    parser.add_argument(
+        "--before-include",
+        nargs="*",
+        default=[],
+        help="plain text substrings before URL for inclusion (all must match to include)",
+    )
+    parser.add_argument(
+        "--path-exclude",
         "--exclude",
         "-E",
         nargs="*",
         default=["javascript:", "mailto:", "tel:"],
-        help="substrings for exclusion (any must match to exclude)",
+        help="path substrings for exclusion (any must match to exclude)",
     )
+    parser.add_argument(
+        "--text-exclude",
+        nargs="*",
+        default=[],
+        help="link text substrings for exclusion (any must match to exclude)",
+    )
+    parser.add_argument(
+        "--after-exclude",
+        nargs="*",
+        default=[],
+        help="plain text substrings after URL for exclusion (any must match to exclude)",
+    )
+    parser.add_argument(
+        "--before-exclude",
+        nargs="*",
+        default=[],
+        help="plain text substrings before URL for exclusion (any must match to exclude)",
+    )
+    parser.add_argument("--case-sensitive", action="store_true", help="Filter with case sensitivity")
     parser.add_argument("--scroll", action="store_true", help="Scroll down the page; infinite scroll")
     parser.add_argument("--download", action="store_true", help="Download filtered links")
     parser.add_argument("--verbose", "-v", action="count", default=0)
 
+    parser.add_argument("--local-html", action="store_true", help="Treat paths as Local HTML files")
     parser.add_argument("--file", "-f", help="File with one URL per line")
     parser.add_argument("paths", nargs="*")
     args = parser.parse_args()
