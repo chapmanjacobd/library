@@ -8,7 +8,6 @@ from xklb.utils import consts, file_utils, processes, web
 from xklb.utils.log_utils import log
 
 
-
 def mimetype(path):
     import mimetypes
 
@@ -206,7 +205,7 @@ fi
 def get_file_encoding(path):
     import chardet
 
-    if path.startswith('http'):
+    if path.startswith("http"):
         response = web.requests_session().get(path, stream=True)
         detector = chardet.UniversalDetector()
         num_bytes = 0
@@ -219,16 +218,17 @@ def get_file_encoding(path):
             num_bytes += len(chunk)
         detector.close()
 
-        encoding=detector.result['encoding']
+        encoding = detector.result["encoding"]
     else:
-        with open(path, 'rb') as f:
+        with open(path, "rb") as f:
             sample = f.read(1048576)  # 1 MiB
 
-        encoding=chardet.detect(sample)['encoding']
+        encoding = chardet.detect(sample)["encoding"]
 
     if encoding:
-        log.info(f'The encoding of {path} is likely: {encoding}')
+        log.info(f"The encoding of {path} is likely: {encoding}")
     return encoding
+
 
 def retry_with_different_encodings(func):
     @wraps(func)
@@ -253,6 +253,7 @@ def retry_with_different_encodings(func):
         raise original_exc  # If no encoding worked, raise the original exception
 
     return wrapper
+
 
 @retry_with_different_encodings
 def read_file_to_dataframes(

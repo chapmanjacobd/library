@@ -159,3 +159,27 @@ def download_url(url, output_path=None, output_prefix=None, chunk_size=8 * 1024 
                 raise RuntimeError(msg)
             else:
                 download_url(url, output_path, output_prefix, chunk_size, retries=retries - 1)
+
+
+def get_elements_forward(start, end):
+    elements = []
+    current = start.next_sibling
+    while current and current != end:
+        elements.append(current)
+        current = current.next_sibling
+    return elements
+
+
+def extract_nearby_text(a_element):
+    prev_a = a_element.find_previous("a")
+    next_a = a_element.find_next("a")
+
+    before = ""
+    if prev_a:
+        before = " ".join(s.strip() for s in get_elements_forward(prev_a, a_element) if s and s.strip())
+
+    after = ""
+    if next_a:
+        after = " ".join(s.strip() for s in get_elements_forward(a_element, next_a) if s and s.strip())
+
+    return before, after
