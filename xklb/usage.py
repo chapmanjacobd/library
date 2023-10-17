@@ -86,7 +86,7 @@ block = r"""library block DATABASE URLS ...
         ...
 """
 
-fsadd = """library fsadd [(--video) | --audio | --image |  --text | --filesystem] DATABASE PATHS ...
+fsadd = """library fsadd [(--video) | --audio | --image |  --text | --filesystem] DATABASE PATH ...
 
     The default database type is video:
         library fsadd tv.db ./tv/
@@ -140,7 +140,7 @@ fsupdate = """library fsupdate DATABASE
         library fsupdate video.db
 """
 
-places_import = """library places-import DATABASE PATHS ...
+places_import = """library places-import DATABASE PATH ...
 
     Load POIs from Google Maps Google Takeout
 """
@@ -1156,7 +1156,7 @@ After you are done selecting folders you can press ctrl-d and it will save the l
             rsync -a --info=progress2 --no-inc-recursive --remove-source-files --files-from=/tmp/tmpa7x_75l8 -r --relative -vv --dry-run / jim:/free/real/estate/
 """
 
-scatter = """library scatter [--limit LIMIT] [--policy POLICY] [--sort SORT] --targets TARGETS DATABASE RELATIVE_PATHS ...
+scatter = """library scatter [--limit LIMIT] [--policy POLICY] [--sort SORT] --targets TARGETS DATABASE RELATIVE_PATH ...
 
     Balance files across filesystem folder trees or multiple devices (mostly useful for mergerfs)
 
@@ -1292,4 +1292,15 @@ incremental_diff = """library incremental-diff PATH1 PATH2 [--join-keys JOIN_KEY
     If files are unsorted you may need to use `--join-keys id,name` to specify ID columns. Rows that have the same ID will then be compared. If you are comparing SQLITE files you may be able to use `--sort id,name` to achieve the same effect.
 
     To diff everything at once run with `--batch-size inf`
+"""
+
+extract_links = """library extract-links PATH ... [--case-sensitive] [--scroll] [--download] [--verbose] [--local-html] [--file FILE] [--path-include ...] [--text-include ...] [--after-include ...] [--before-include ...] [--path-exclude ...] [--text-exclude ...] [--after-exclude ...] [--before-exclude ...]
+
+    Extract links from within local HTML fragments, files, or remote pages
+
+    Read from local clipboard and filter out links based on nearby plain text:
+
+        library links --local-html (cb -t text/html | psub) --after-exclude paranormal spooky horror podcast tech fantasy supernatural lecture sport
+        # note: the equivalent BASH-ism is <(xclip -selection clipboard -t text/html)
+
 """

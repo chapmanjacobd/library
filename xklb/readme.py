@@ -32,6 +32,7 @@ progs = {
     },
     "Text subcommands": {
         "cluster_sort": "Sort text and images by similarity",
+        "extract_links": "Extract links from HTML pages",
     },
     "File subcommands": {
         "eda": "Exploratory Data Analysis",
@@ -60,7 +61,10 @@ progs = {
         "mpv_watchlater": "Import mpv watchlater files to history",
         "reddit_selftext": "Convert selftext links to media table",
     },
-    "Misc subcommands": {"surf": "Automatic tab loader", "export_text": "Export HTML files from SQLite databases"},
+    "Misc subcommands": {
+        "surf": "Automatic tab loader",
+        "export_text": "Export HTML files from SQLite databases",
+    },
 }
 
 all_progs = [s for s in dir(usage) if not s.startswith("_") and isinstance(getattr(usage, s), str)]
