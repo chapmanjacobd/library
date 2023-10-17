@@ -1,5 +1,6 @@
 import argparse, time
 
+from xklb import usage
 from xklb.utils import printing, web
 from xklb.utils.log_utils import log
 
@@ -128,7 +129,10 @@ def print_or_download(args, found_urls):
 
 
 def extract_links() -> None:
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        prog="library extract-links",
+        usage=usage.extract_links,
+    )
     parser.add_argument(
         "--path-include",
         "--include",

@@ -95,7 +95,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.2.119)
+    xk media library subcommands (v2.2.120)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -399,7 +399,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 <details><summary>Add local media (fsadd)</summary>
 
     $ library fsadd -h
-    usage: library fsadd [(--video) | --audio | --image |  --text | --filesystem] DATABASE PATHS ...
+    usage: library fsadd [(--video) | --audio | --image |  --text | --filesystem] DATABASE PATH ...
 
     The default database type is video:
         library fsadd tv.db ./tv/
@@ -620,7 +620,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 <details><summary>Import places of interest (POIs) (places-import)</summary>
 
     $ library places-import -h
-    usage: library places-import DATABASE PATHS ...
+    usage: library places-import DATABASE PATH ...
 
     Load POIs from Google Maps Google Takeout
 
@@ -1481,6 +1481,22 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 </details>
 
+<details><summary>Extract links from HTML pages (extract-links)</summary>
+
+    $ library extract-links -h
+    usage: library extract-links PATH ... [--case-sensitive] [--scroll] [--download] [--verbose] [--local-html] [--file FILE] [--path-include ...] [--text-include ...] [--after-include ...] [--before-include ...] [--path-exclude ...] [--text-exclude ...] [--after-exclude ...] [--before-exclude ...]
+
+    Extract links from within local HTML fragments, files, or remote pages
+
+    Read from local clipboard and filter out links based on nearby plain text:
+
+        library links --local-html (cb -t text/html | psub) --after-exclude paranormal spooky horror podcast tech fantasy supernatural lecture sport
+        # note: the equivalent BASH-ism is <(xclip -selection clipboard -t text/html)
+
+
+
+</details>
+
 ### File subcommands
 
 <details><summary>Exploratory Data Analysis (eda)</summary>
@@ -1536,7 +1552,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 <details><summary>Scatter files between folders or disks</summary>
 
     $ library scatter -h
-    usage: library scatter [--limit LIMIT] [--policy POLICY] [--sort SORT] --targets TARGETS DATABASE RELATIVE_PATHS ...
+    usage: library scatter [--limit LIMIT] [--policy POLICY] [--sort SORT] --targets TARGETS DATABASE RELATIVE_PATH ...
 
     Balance files across filesystem folder trees or multiple devices (mostly useful for mergerfs)
 
