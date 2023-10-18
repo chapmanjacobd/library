@@ -3,7 +3,7 @@ authors = [
   {name = "Jacob Chapman", email = "7908073+chapmanjacobd@users.noreply.github.com"},
 ]
 dependencies = [
-    "beautifulsoup4",
+    "beautifulsoup4>=4.10.0",  # https://git.launchpad.net/beautifulsoup/commit/?id=34e0ce8a9dd43ada1c55b50a156fbce63b1e2ebb
     "catt",
     "feedparser",
     "ffmpeg-python",
