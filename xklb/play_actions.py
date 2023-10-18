@@ -25,7 +25,7 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     parser.add_argument("--random", "-r", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--big-dirs", "--bigdirs", "-B", action="count", default=0, help=argparse.SUPPRESS)
     parser.add_argument("--related", "-R", action="count", default=0, help=argparse.SUPPRESS)
-    parser.add_argument("--cluster", "-C", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--cluster-sort", "--cluster", "-C", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--clusters", "--n-clusters", type=int, help="Number of KMeans clusters")
     parser.add_argument("--play-in-order", "-O", action="count", default=0, help=argparse.SUPPRESS)
 
@@ -590,7 +590,7 @@ def process_playqueue(args) -> None:
             args.play_in_order >= consts.SIMILAR,
             args.big_dirs,
             args.related >= consts.RELATED,
-            args.cluster,
+            args.cluster_sort,
         ],
     ):
         media_printer.printer(args, query, bindings)
@@ -617,7 +617,7 @@ def process_playqueue(args) -> None:
     if args.big_dirs:
         media_keyed = {d["path"]: d for d in media}
         dirs = process_bigdirs(args, media)
-        dirs = list(reversed([d["path"] for d in dirs]))
+        dirs = list(reversed([d["path"].replace('*', "%") for d in dirs]))
         if "limit" in args.defaults:
             media = sql_utils.get_dir_media(args, dirs)
         else:
@@ -626,20 +626,22 @@ def process_playqueue(args) -> None:
                 for dir in dirs:
                     if len(dir) == 1:
                         continue
-                    if os.sep not in key.replace(dir, "") and key.startswith(dir):
+                    if '%' in dir and sql_utils.compare_block_strings(dir, key):
                         media.append(media_keyed[key])
-                        break
+                    else:
+                        if os.sep not in key.replace(dir, "") and key.startswith(dir):
+                            media.append(media_keyed[key])
+                            break
         log.debug("big_dirs: %s", t.elapsed())
-
-    if args.related >= consts.RELATED:
-        media = sql_utils.get_related_media(args, media[0])
-        log.debug("player.get_related_media: %s", t.elapsed())
-
-    if args.cluster:
+    elif args.cluster_sort:
         from xklb.scripts.cluster_sort import cluster_dicts
 
         media = cluster_dicts(args, media)
         log.debug("cluster: %s", t.elapsed())
+
+    if args.related >= consts.RELATED:
+        media = sql_utils.get_related_media(args, media[0])
+        log.debug("player.get_related_media: %s", t.elapsed())
 
     if args.print:
         if args.play_in_order >= consts.SIMILAR:

@@ -1,23 +1,18 @@
 download = r"""library download [--prefix /mnt/d/] [--safe] [--subs] [--auto-subs] [--small] DATABASE --video | --audio | --photos
 
-    Download stuff in a random order
+    Files will be saved to <lb download prefix>/<extractor>/. If prefix is not specified the current working directory will be used
+
+    By default things will download in a random order
 
         library download dl.db --prefix ~/output/path/root/
 
-    Download videos in a random order, limited to the specified playlist URLs or substring
+    Limit downloads to a specified playlist URLs or substring
 
         library download dl.db https://www.youtube.com/c/BlenderFoundation/videos
 
-    Download stuff maximizing variety of subdomains
+    Maximizing the variety of subdomains
 
         library download photos.db --photos --image --sort "ROW_NUMBER() OVER ( PARTITION BY SUBSTR(m.path, INSTR(m.path, '//') + 2, INSTR( SUBSTR(m.path, INSTR(m.path, '//') + 2), '/') - 1) )"
-
-    Files will be saved to <lb download prefix>/<extractor>/
-
-        For example:
-        library dladd Cool ...
-        library download D:\'My Documents'\ ...
-        Media will be downloaded to 'D:\My Documents\Cool\'
 
     Print list of queued up downloads
 
@@ -824,13 +819,6 @@ tubeadd = r"""library tubeadd [--safe] [--extra] [--subs] [--auto-subs] DATABASE
     Add metadata to links already in a database table
 
         library tubeadd --force reddit.db (sqlite-utils --raw-lines reddit.db 'select path from media')
-
-    Files will be saved to <download prefix>/<extractor>/
-
-        For example:
-        library tubeadd -c Cool ...
-        library download D:\'My Documents'\ ...
-        Media will be downloaded to 'D:\My Documents\Cool\'
 
     Fetch extra metadata:
 
