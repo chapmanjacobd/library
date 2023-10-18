@@ -6,7 +6,7 @@ groups = ["default", "all", "deluxe", "dev", "test"]
 cross_platform = true
 static_urls = false
 lock_version = "4.3"
-content_hash = "sha256:e380346d4a879447277cbef5067de63aee94ba7267bace97f67e58dc8decce52"
+content_hash = "sha256:6445466c9b7140246de502a8d81b20d166f642e7354ca08c81df79d63264660e"
 
 [[package]]
 name = "aiohttp"
@@ -2242,14 +2242,6 @@ summary = "Pretty-print tabular data"
 files = [
     {file = "tabulate-0.9.0-py3-none-any.whl", hash = "sha256:024ca478df22e9340661486f85298cff5f6dcdba14f3813e8830015b9ed1948f"},
     {file = "tabulate-0.9.0.tar.gz", hash = "sha256:0095b12bf5966de529c0feb1fa08671671b3368eec77d7ef7ab114be2c068b3c"},
-]
-
-[[package]]
-name = "textract"
-version = "1.6.4"
-summary = ""
-files = [
-    {file = "textract-1.6.4.tar.gz", hash = "sha256:35ac0302e2dbe53eb8d513b4cf0741264ea89a695fd89a3d48e3bd94d517cef6"},
 ]
 
 [[package]]

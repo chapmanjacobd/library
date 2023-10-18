@@ -43,7 +43,7 @@ deluxe = [
   "PyExifTool",
   "scikit-learn",
   "subliminal",
-  "textract",
+  # "textract",  # deps definition causing issues with pdm/bs4
 ]
 dev = ["black", "isort", "ssort"]
 test = ["ruff", "pytest", "vcrpy"]
