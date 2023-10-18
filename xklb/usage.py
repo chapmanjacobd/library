@@ -1296,7 +1296,10 @@ incremental_diff = """library incremental-diff PATH1 PATH2 [--join-keys JOIN_KEY
 
 extract_links = """library extract-links PATH ... [--case-sensitive] [--scroll] [--download] [--verbose] [--local-html] [--file FILE] [--path-include ...] [--text-include ...] [--after-include ...] [--before-include ...] [--path-exclude ...] [--text-exclude ...] [--after-exclude ...] [--before-exclude ...]
 
-    Extract links from within local HTML fragments, files, or remote pages
+    Extract links from within local HTML fragments, files, or remote pages; filtering on link text and nearby plain-text
+
+        $ library links https://en.wikipedia.org/wiki/List_of_bacon_dishes --path-include https://en.wikipedia.org/wiki/ --after-include famous
+        https://en.wikipedia.org/wiki/Omelette
 
     Read from local clipboard and filter out links based on nearby plain text:
 

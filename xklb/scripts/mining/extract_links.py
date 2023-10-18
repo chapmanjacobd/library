@@ -75,8 +75,9 @@ def get_inner_urls(args, url, markup):
 
         href = a["href"].strip()
         if (len(href) > 1) and href[0] != "#":
+            href = construct_absolute_url(url, href)
             if is_desired_url(args, a, href):
-                inner_urls.add(construct_absolute_url(url, href))
+                inner_urls.add(href)
 
         # breakpoint()
 
@@ -191,6 +192,16 @@ def extract_links() -> None:
     parser.add_argument("--file", "-f", help="File with one URL per line")
     parser.add_argument("paths", nargs="*")
     args = parser.parse_args()
+
+    if not args.case_sensitive:
+        args.before_include = [s.lower() for s in args.before_include]
+        args.path_include = [s.lower() for s in args.path_include]
+        args.text_include = [s.lower() for s in args.text_include]
+        args.after_include = [s.lower() for s in args.after_include]
+        args.before_exclude = [s.lower() for s in args.before_exclude]
+        args.path_exclude = [s.lower() for s in args.path_exclude]
+        args.text_exclude = [s.lower() for s in args.text_exclude]
+        args.after_exclude = [s.lower() for s in args.after_exclude]
 
     if args.scroll:
         web.load_selenium(args)

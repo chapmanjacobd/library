@@ -176,10 +176,10 @@ def extract_nearby_text(a_element):
 
     before = ""
     if prev_a:
-        before = " ".join(s.strip() for s in get_elements_forward(prev_a, a_element) if s and s.strip())
+        before = " ".join(" ".join(s.stripped_strings) for s in get_elements_forward(prev_a, a_element))
 
     after = ""
     if next_a:
-        after = " ".join(s.strip() for s in get_elements_forward(a_element, next_a) if s and s.strip())
+        after = " ".join(" ".join(s.stripped_strings) for s in get_elements_forward(a_element, next_a))
 
     return before, after

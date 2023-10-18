@@ -95,7 +95,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.2.120)
+    xk media library subcommands (v2.2.121)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -1486,7 +1486,10 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     $ library extract-links -h
     usage: library extract-links PATH ... [--case-sensitive] [--scroll] [--download] [--verbose] [--local-html] [--file FILE] [--path-include ...] [--text-include ...] [--after-include ...] [--before-include ...] [--path-exclude ...] [--text-exclude ...] [--after-exclude ...] [--before-exclude ...]
 
-    Extract links from within local HTML fragments, files, or remote pages
+    Extract links from within local HTML fragments, files, or remote pages; filtering on link text and nearby plain-text
+
+        $ library links https://en.wikipedia.org/wiki/List_of_bacon_dishes --path-include https://en.wikipedia.org/wiki/ --after-include famous
+        https://en.wikipedia.org/wiki/Omelette
 
     Read from local clipboard and filter out links based on nearby plain text:
 
