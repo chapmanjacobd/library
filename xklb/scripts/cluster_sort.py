@@ -1,9 +1,9 @@
-import argparse, json, os.path, sys
+import argparse, json, os.path, statistics, sys
 from collections import Counter
 from pathlib import Path
 
 from xklb import usage
-from xklb.utils import consts, file_utils, iterables, objects, printing, strings
+from xklb.utils import consts, file_utils, iterables, objects, printing, sql_utils, strings
 from xklb.utils.consts import DBType
 from xklb.utils.log_utils import Timer, log
 
@@ -104,6 +104,7 @@ def cluster_paths(paths, n_clusters=None):
 
     result = []
     for _cluster_id, paths in grouped_strings.items():
+        paths = sorted(paths)
         common_prefix = os.path.commonprefix(paths)
 
         suffix_words = []
@@ -116,18 +117,57 @@ def cluster_paths(paths, n_clusters=None):
         common_words = [w for w, c in word_counts.items() if c > int(len(paths) * 0.6) and len(w) > 1]
 
         # join but preserve order
-        suffix = "*"
-        for word in iterables.ordered_set(suffix_words):
-            if word in common_words:
-                suffix += word + "*"
+        suffix = "*".join(s for s in iterables.ordered_set(suffix_words) if s in common_words)
 
         metadata = {
-            "common_prefix": common_prefix.strip() + suffix,
-            "grouped_paths": sorted(paths),
+            "common_prefix": common_prefix.strip() + "*" + suffix,
+            "grouped_paths": paths,
         }
         result.append(metadata)
 
     return result
+
+
+def cluster_dicts(args, media):
+    if len(media) < 2:
+        return media
+    media_keyed = {d["path"]: d for d in media}
+    groups = cluster_paths([d["path"] for d in media], n_clusters=getattr(args, "clusters", None))
+    groups = sorted(groups, key=lambda d: (-len(d["grouped_paths"]), -len(d["common_prefix"])))
+
+    if hasattr(args, "sort_by"):
+        if args.sort_by in ("duration", "duration desc"):
+            sorted_paths = iterables.flatten(
+                sorted(d["grouped_paths"], key=lambda p: media_keyed[p]["duration"], reverse=" desc" in args.sort)
+                for d in groups
+            )
+        else:
+            groups = [
+                {
+                    **group,
+                    "count": len(group["grouped_paths"]),
+                    "size": statistics.median(media_keyed[s].get("size", 0) for s in group["grouped_paths"]),
+                    "played": sum(bool(media_keyed[s].get("time_last_played", 0)) for s in group["grouped_paths"])
+                    / len(group["grouped_paths"]),
+                    "deleted/played": sum(
+                        (bool(media_keyed[s].get("time_deleted", 0)) for s in group["grouped_paths"]), start=1
+                    )
+                    / sum((bool(media_keyed[s].get("time_last_played", 0)) for s in group["grouped_paths"]), start=1),
+                    "deleted": sum(bool(media_keyed[s].get("time_deleted", 0)) for s in group["grouped_paths"])
+                    / len(group["grouped_paths"]),
+                }
+                for group in groups
+            ]
+            groups = sorted(groups, key=sql_utils.sort_like_sql(args.sort_by))
+            sorted_paths = iterables.flatten(
+                s for d in groups for s in d["grouped_paths"] if media_keyed[s].get("time_deleted", 0) == 0
+            )
+    else:
+        sorted_paths = iterables.flatten(
+            s for d in groups for s in d["grouped_paths"] if media_keyed[s].get("time_deleted", 0) == 0
+        )
+    media = [media_keyed[p] for p in sorted_paths]
+    return media
 
 
 def cluster_images(paths, n_clusters=None):
@@ -249,23 +289,6 @@ def cluster_sort() -> None:
                 output_fd.writelines(lines)
         else:
             printing.pipe_lines(lines)
-
-
-def cluster_dicts(args, media):
-    if len(media) < 2:
-        return media
-    media_keyed = {d["path"]: d for d in media}
-    groups = cluster_paths([d["path"] for d in media], n_clusters=getattr(args, "clusters", None))
-    groups = sorted(groups, key=lambda d: (-len(d["grouped_paths"]), -len(d["common_prefix"])))
-    if hasattr(args, "sort") and "duration" in args.sort:
-        sorted_paths = iterables.flatten(
-            sorted(d["grouped_paths"], key=lambda p: media_keyed[p]["duration"], reverse="duration desc" in args.sort)
-            for d in groups
-        )
-    else:
-        sorted_paths = iterables.flatten(d["grouped_paths"] for d in groups)
-    media = [media_keyed[p] for p in sorted_paths]
-    return media
 
 
 if __name__ == "__main__":
