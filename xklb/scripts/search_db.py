@@ -2,7 +2,7 @@ import argparse, json
 from pathlib import Path
 
 from xklb import usage
-from xklb.utils import db_utils, objects
+from xklb.utils import consts, db_utils, objects
 from xklb.utils.log_utils import log
 
 
@@ -13,6 +13,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--include", "-s", "--search", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--exact", action="store_true")
+    parser.add_argument("--flexible-search", "--or", "--flex", action="store_true")
     parser.add_argument(
         "--delete",
         "--remove",
@@ -22,6 +23,7 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Delete matching rows",
     )
+    parser.add_argument("--soft-delete", action="store_true", help="Mark matching rows as deleted")
 
     parser.add_argument("database")
     parser.add_argument("table")
@@ -78,8 +80,18 @@ def search_db() -> None:
                 f"DELETE FROM {args.table} WHERE 1=1 " + " ".join(args.filter_sql),
                 args.filter_bindings,
             )
-        deleted_count += cursor.rowcount
+            deleted_count += cursor.rowcount
         print(f"Deleted {deleted_count} rows")
+    elif args.soft_delete:
+        modified_row_count = 0
+        with args.db.conn:
+            cursor = args.db.conn.execute(
+                f"UPDATE {args.table} SET time_deleted={consts.APPLICATION_START} WHERE 1=1 "
+                + " ".join(args.filter_sql),
+                args.filter_bindings,
+            )
+            modified_row_count += cursor.rowcount
+        print(f"Marked {modified_row_count} rows as deleted")
     else:
         for row in args.db.execute_returning_dicts(
             f"SELECT * FROM {args.table} WHERE 1=1 " + " ".join(args.filter_sql),

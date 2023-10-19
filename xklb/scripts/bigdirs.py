@@ -165,27 +165,7 @@ def sort_by(args):
     return lambda x: x["size"] / x["count"]
 
 
-def process_bigdirs(args, media) -> List[Dict]:
-    if args.cluster_sort and len(media) > 2:
-        from xklb.scripts.cluster_sort import cluster_paths
-
-        groups = cluster_paths([d["path"] for d in media], n_clusters=getattr(args, "clusters", None))
-        groups = sorted(groups, key=lambda d: (-len(d["grouped_paths"]), -len(d["common_prefix"])))
-
-        media_keyed = {d["path"]: d for d in media}
-        folders = [
-            {
-                "path": group["common_prefix"],
-                "count": len(group["grouped_paths"]),
-                "size": sum(media_keyed[s].get("size", 0) for s in group["grouped_paths"]),
-                "played": sum(bool(media_keyed[s].get("time_played", 0)) for s in group["grouped_paths"]),
-                "deleted": sum(bool(media_keyed[s].get("time_deleted", 0)) for s in group["grouped_paths"]),
-            }
-            for group in groups
-        ]
-    else:
-        folders = group_files_by_folder(args, media)
-
+def process_bigdirs(args, folders) -> List[Dict]:
     folders = [d for d in folders if d["deleted"] != d["count"]]  # remove folders where all deleted
 
     if args.depth:
@@ -207,7 +187,26 @@ def bigdirs() -> None:
     history.create(args)
 
     media = get_table(args)
-    media = process_bigdirs(args, media)
+    if args.cluster_sort and len(media) > 2:
+        from xklb.scripts.cluster_sort import cluster_paths
+
+        groups = cluster_paths([d["path"] for d in media], n_clusters=getattr(args, "clusters", None))
+        groups = sorted(groups, key=lambda d: (-len(d["grouped_paths"]), -len(d["common_prefix"])))
+
+        media_keyed = {d["path"]: d for d in media}
+        folders = [
+            {
+                "path": group["common_prefix"],
+                "count": len(group["grouped_paths"]),
+                "size": sum(media_keyed[s].get("size", 0) for s in group["grouped_paths"]),
+                "played": sum(bool(media_keyed[s].get("time_played", 0)) for s in group["grouped_paths"]),
+                "deleted": sum(bool(media_keyed[s].get("time_deleted", 0)) for s in group["grouped_paths"]),
+            }
+            for group in groups
+        ]
+    else:
+        folders = group_files_by_folder(args, media)
+    media = process_bigdirs(args, folders)
 
     if args.limit:
         media = media[-int(args.limit) :]

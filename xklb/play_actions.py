@@ -7,8 +7,7 @@ from typing import Dict, List, Tuple
 from xklb import history, tube_backend, usage
 from xklb.media import media_player, media_printer
 from xklb.post_actions import post_act
-from xklb.scripts.bigdirs import process_bigdirs
-from xklb.scripts.playback_control import now_playing
+from xklb.scripts import bigdirs, playback_control
 from xklb.utils import consts, db_utils, devices, file_utils, iterables, mpv_utils, nums, objects, processes, sql_utils
 from xklb.utils.arg_utils import parse_args_limit, parse_args_sort
 from xklb.utils.consts import SC
@@ -337,7 +336,7 @@ def construct_query(args) -> Tuple[str, dict]:
         limit = 16 * (args.limit or consts.DEFAULT_PLAY_QUEUE)
         where_not_deleted = (
             "where COALESCE(time_deleted,0) = 0"
-            if "time_deleted" in m_columns and "time_deleted" not in " ".join(sys.argv)
+            if "time_deleted" in m_columns and "deleted" not in " ".join(sys.argv)
             else ""
         )
         args.filter_sql.append(
@@ -347,6 +346,10 @@ def construct_query(args) -> Tuple[str, dict]:
     aggregate_filter_columns = ["time_first_played", "time_last_played", "play_count", "playhead"]
 
     cols = args.cols or ["path", "title", "duration", "size", "subtitle_count", "is_dir", "rank"]
+    if "deleted" in " ".join(sys.argv):
+        cols.append("time_deleted")
+    if "played" in " ".join(sys.argv):
+        cols.append("time_last_played")
     args.select = [c for c in cols if c in m_columns or c in ["*"]] + getattr(args, "select", [])
     if args.action == SC.read and "tags" in m_columns:
         args.select += "cast(length(tags) / 4.2 / 220 * 60 as INT) + 10 duration"
@@ -414,7 +417,7 @@ def prep_media(args, m: Dict, ignore_paths):
             m["path"] = m["original_path"] = media_player.transcode(args, m["path"])
             log.debug("transcode: %s", t.elapsed())
 
-    m["now_playing"] = now_playing(m["path"])
+    m["now_playing"] = playback_control.now_playing(m["path"])
 
     return m
 
@@ -614,34 +617,40 @@ def process_playqueue(args) -> None:
         media = [d for d in media if tube_backend.is_supported(d["path"]) or Path(d["path"]).exists()]
         log.debug("tube_backend.is_supported: %s", t.elapsed())
 
-    if args.big_dirs:
-        media_keyed = {d["path"]: d for d in media}
-        dirs = process_bigdirs(args, media)
-        dirs = list(reversed([d["path"].replace('*', "%") for d in dirs]))
-        if "limit" in args.defaults:
-            media = sql_utils.get_dir_media(args, dirs)
-        else:
-            media = []
-            for key in media_keyed:
-                for dir in dirs:
-                    if len(dir) == 1:
-                        continue
-                    if '%' in dir and sql_utils.compare_block_strings(dir, key):
-                        media.append(media_keyed[key])
-                    else:
-                        if os.sep not in key.replace(dir, "") and key.startswith(dir):
-                            media.append(media_keyed[key])
-                            break
-        log.debug("big_dirs: %s", t.elapsed())
-    elif args.cluster_sort:
-        from xklb.scripts.cluster_sort import cluster_dicts
-
-        media = cluster_dicts(args, media)
-        log.debug("cluster: %s", t.elapsed())
-
     if args.related >= consts.RELATED:
         media = sql_utils.get_related_media(args, media[0])
         log.debug("player.get_related_media: %s", t.elapsed())
+
+    if args.big_dirs:
+        media_keyed = {d["path"]: d for d in media}
+        folders = bigdirs.group_files_by_folder(args, media)
+        dirs = bigdirs.process_bigdirs(args, folders)
+        log.debug("process_bigdirs: %s", t.elapsed())
+        dirs = list(reversed([d["path"] for d in dirs]))
+        if "limit" in args.defaults:
+            media = sql_utils.get_dir_media(args, dirs)
+            log.debug("get_dir_media: %s", t.elapsed())
+        else:
+            media = []
+            media_set = set()
+            for dir in dirs:
+                if len(dir) == 1:
+                    continue
+
+                for key in media_keyed:
+                    if key in media_set:
+                        continue
+
+                    if os.sep not in key.replace(dir, "") and key.startswith(dir):
+                        media_set.add(key)
+                        media.append(media_keyed[key])
+            log.debug("double for loop compare_block_strings: %s", t.elapsed())
+
+    if args.cluster_sort:
+        from xklb.scripts.cluster_sort import cluster_dicts
+
+        media = cluster_dicts(args, media)
+        log.debug("cluster-sort: %s", t.elapsed())
 
     if args.print:
         if args.play_in_order >= consts.SIMILAR:

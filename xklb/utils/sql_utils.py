@@ -66,6 +66,35 @@ def allow_dicts_like_sql(media, allowlist):
     return allowed_media
 
 
+def sort_like_sql(order_bys):
+    order_bys = [s.strip() for s in order_bys.split(",")]
+
+    class Reversor:
+        def __init__(self, obj):
+            self.obj = obj
+
+        def __eq__(self, other):
+            return other.obj == self.obj
+
+        def __lt__(self, other):
+            return other.obj < self.obj
+
+    def get_key(d):
+        key = []
+        for order in order_bys:
+            if order.endswith(" desc"):
+                order = order[:-5]
+                reverse = True
+            else:
+                reverse = False
+
+            key.append(Reversor(d[order]) if reverse else d[order])
+
+        return tuple(key)
+
+    return get_key
+
+
 def parse_human_to_sql(human_to_x, var, sizes) -> str:
     size_rules = ""
 
@@ -193,7 +222,7 @@ def filter_args_sql(args, m_columns):
     return f"""
         {'and path like "http%"' if getattr(args, 'safe', False) else ''}
         {f'and path not like "{args.keep_dir}%"' if getattr(args, 'keep_dir', False) and Path(args.keep_dir).exists() else ''}
-        {'and COALESCE(time_deleted,0) = 0' if 'time_deleted' in m_columns and 'time_deleted' not in ' '.join(sys.argv) else ''}
+        {'and COALESCE(time_deleted,0) = 0' if 'time_deleted' in m_columns and 'deleted' not in ' '.join(sys.argv) else ''}
         {'AND (score IS NULL OR score > 7)' if 'score' in m_columns else ''}
         {'AND (upvote_ratio IS NULL OR upvote_ratio > 0.73)' if 'upvote_ratio' in m_columns else ''}
         {'AND COALESCE(time_downloaded,0) = 0' if args.online_media_only else ''}

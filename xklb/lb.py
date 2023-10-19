@@ -303,7 +303,7 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def library(args=None) -> None:
+def library(args) -> None:
     if args:
         sys.argv = ["lb", *args]
 
@@ -333,4 +333,4 @@ def library(args=None) -> None:
 
 
 if __name__ == "__main__":
-    library()
+    library(None)
