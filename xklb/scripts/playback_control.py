@@ -155,8 +155,8 @@ def reformat_ffprobe(path):
     )
 
     formatted_output = ""
-    for key, value in metadata.items():
-        formatted_output += f"{key}::{value.strip()}\n"
+    # for key, value in metadata.items():
+    #     formatted_output += f"{key}::{value.strip()}\n"
 
     if audio_count > 1:
         formatted_output += f"Audio tracks: {audio_count}\n"
@@ -198,7 +198,7 @@ def reformat_ffprobe(path):
             duration_str = printing.seconds_to_hhmmss(duration).strip()
 
             formatted_output += f"Duration: {duration_str}"
-            formatted_output += f"({total_duration_str}; starting at {start_str})\n"
+            formatted_output += f" ({total_duration_str}; starting at {start_str})\n"
         else:
             duration_str = printing.seconds_to_hhmmss(duration).strip()
             formatted_output += f"Duration: {duration_str}\n"

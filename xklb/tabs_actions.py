@@ -157,8 +157,8 @@ def construct_tabs_query(args) -> Tuple[str, dict]:
     return query, args.filter_bindings
 
 
-def find_player(args) -> List[str]:
-    player = media_player.generic_player(args)
+def find_player() -> List[str]:
+    player = media_player.generic_player()
     firefox = which("firefox") or which("firefox.exe")
     if firefox:
         player = [firefox, "--new-tab"]
@@ -210,7 +210,7 @@ def process_tabs_actions(args) -> None:
 
     media = frequency_filter(args, media)
 
-    player = find_player(args)
+    player = find_player()
     for m in media:
         play(args, player, m)
         MANY_TABS = 9

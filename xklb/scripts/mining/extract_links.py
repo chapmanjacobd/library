@@ -5,6 +5,83 @@ from xklb.utils import printing, web
 from xklb.utils.log_utils import log
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(
+        prog="library extract-links",
+        usage=usage.extract_links,
+    )
+    parser.add_argument(
+        "--path-include",
+        "--include",
+        "-s",
+        nargs="*",
+        default=[],
+        help="path substrings for inclusion (all must match to include)",
+    )
+    parser.add_argument(
+        "--text-include", nargs="*", default=[], help="link text substrings for inclusion (all must match to include)"
+    )
+    parser.add_argument(
+        "--after-include",
+        nargs="*",
+        default=[],
+        help="plain text substrings after URL for inclusion (all must match to include)",
+    )
+    parser.add_argument(
+        "--before-include",
+        nargs="*",
+        default=[],
+        help="plain text substrings before URL for inclusion (all must match to include)",
+    )
+    parser.add_argument(
+        "--path-exclude",
+        "--exclude",
+        "-E",
+        nargs="*",
+        default=["javascript:", "mailto:", "tel:"],
+        help="path substrings for exclusion (any must match to exclude)",
+    )
+    parser.add_argument(
+        "--text-exclude",
+        nargs="*",
+        default=[],
+        help="link text substrings for exclusion (any must match to exclude)",
+    )
+    parser.add_argument(
+        "--after-exclude",
+        nargs="*",
+        default=[],
+        help="plain text substrings after URL for exclusion (any must match to exclude)",
+    )
+    parser.add_argument(
+        "--before-exclude",
+        nargs="*",
+        default=[],
+        help="plain text substrings before URL for exclusion (any must match to exclude)",
+    )
+    parser.add_argument("--case-sensitive", action="store_true", help="Filter with case sensitivity")
+    parser.add_argument("--scroll", action="store_true", help="Scroll down the page; infinite scroll")
+    parser.add_argument("--download", action="store_true", help="Download filtered links")
+    parser.add_argument("--verbose", "-v", action="count", default=0)
+
+    parser.add_argument("--local-html", action="store_true", help="Treat paths as Local HTML files")
+    parser.add_argument("--file", "-f", help="File with one URL per line")
+    parser.add_argument("paths", nargs="*")
+    args = parser.parse_args()
+
+    if not args.case_sensitive:
+        args.before_include = [s.lower() for s in args.before_include]
+        args.path_include = [s.lower() for s in args.path_include]
+        args.text_include = [s.lower() for s in args.text_include]
+        args.after_include = [s.lower() for s in args.after_include]
+        args.before_exclude = [s.lower() for s in args.before_exclude]
+        args.path_exclude = [s.lower() for s in args.path_exclude]
+        args.text_exclude = [s.lower() for s in args.text_exclude]
+        args.after_exclude = [s.lower() for s in args.after_exclude]
+
+    return args
+
+
 def construct_absolute_url(url, href):
     from urllib.parse import urlparse
 
@@ -130,78 +207,7 @@ def print_or_download(args, found_urls):
 
 
 def extract_links() -> None:
-    parser = argparse.ArgumentParser(
-        prog="library extract-links",
-        usage=usage.extract_links,
-    )
-    parser.add_argument(
-        "--path-include",
-        "--include",
-        "-s",
-        nargs="*",
-        default=[],
-        help="path substrings for inclusion (all must match to include)",
-    )
-    parser.add_argument(
-        "--text-include", nargs="*", default=[], help="link text substrings for inclusion (all must match to include)"
-    )
-    parser.add_argument(
-        "--after-include",
-        nargs="*",
-        default=[],
-        help="plain text substrings after URL for inclusion (all must match to include)",
-    )
-    parser.add_argument(
-        "--before-include",
-        nargs="*",
-        default=[],
-        help="plain text substrings before URL for inclusion (all must match to include)",
-    )
-    parser.add_argument(
-        "--path-exclude",
-        "--exclude",
-        "-E",
-        nargs="*",
-        default=["javascript:", "mailto:", "tel:"],
-        help="path substrings for exclusion (any must match to exclude)",
-    )
-    parser.add_argument(
-        "--text-exclude",
-        nargs="*",
-        default=[],
-        help="link text substrings for exclusion (any must match to exclude)",
-    )
-    parser.add_argument(
-        "--after-exclude",
-        nargs="*",
-        default=[],
-        help="plain text substrings after URL for exclusion (any must match to exclude)",
-    )
-    parser.add_argument(
-        "--before-exclude",
-        nargs="*",
-        default=[],
-        help="plain text substrings before URL for exclusion (any must match to exclude)",
-    )
-    parser.add_argument("--case-sensitive", action="store_true", help="Filter with case sensitivity")
-    parser.add_argument("--scroll", action="store_true", help="Scroll down the page; infinite scroll")
-    parser.add_argument("--download", action="store_true", help="Download filtered links")
-    parser.add_argument("--verbose", "-v", action="count", default=0)
-
-    parser.add_argument("--local-html", action="store_true", help="Treat paths as Local HTML files")
-    parser.add_argument("--file", "-f", help="File with one URL per line")
-    parser.add_argument("paths", nargs="*")
-    args = parser.parse_args()
-
-    if not args.case_sensitive:
-        args.before_include = [s.lower() for s in args.before_include]
-        args.path_include = [s.lower() for s in args.path_include]
-        args.text_include = [s.lower() for s in args.text_include]
-        args.after_include = [s.lower() for s in args.after_include]
-        args.before_exclude = [s.lower() for s in args.before_exclude]
-        args.path_exclude = [s.lower() for s in args.path_exclude]
-        args.text_exclude = [s.lower() for s in args.text_exclude]
-        args.after_exclude = [s.lower() for s in args.after_exclude]
+    args = parse_args()
 
     if args.scroll:
         web.load_selenium(args)
