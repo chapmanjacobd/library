@@ -30,6 +30,7 @@ local_player_flags = [
     "-RR",
     "-C",
     # "-B",
+    # "-B -pa",
     "-RCO",
     "--sibling",
     # "--solo",
@@ -110,7 +111,7 @@ def test_wt_print(capsys):
 
 
 class TestFs(unittest.TestCase):
-    @mock.patch("xklb.media.media_player.local_player", return_value=SimpleNamespace(returncode=0))
+    @mock.patch("xklb.media.media_player.single_player", return_value=SimpleNamespace(returncode=0))
     def test_lb_fs(self, play_mocked):
         for SC in ("watch", "wt"):
             lb([SC, v_db, "-w", "path like '%test.mp4'"])
@@ -132,21 +133,21 @@ class TestFs(unittest.TestCase):
         out = play_mocked.call_args[0][2]
         assert "test" in out["path"]
 
-    @mock.patch("xklb.media.media_player.local_player", return_value=SimpleNamespace(returncode=0))
+    @mock.patch("xklb.media.media_player.single_player", return_value=SimpleNamespace(returncode=0))
     def test_wt_sort(self, play_mocked):
         sys.argv = ["wt", v_db, "-u", "duration"]
         wt()
         out = play_mocked.call_args[0][2]
         assert out is not None
 
-    @mock.patch("xklb.media.media_player.local_player", return_value=SimpleNamespace(returncode=0))
+    @mock.patch("xklb.media.media_player.single_player", return_value=SimpleNamespace(returncode=0))
     def test_wt_size(self, play_mocked):
         sys.argv = ["wt", v_db, "--size", "-1"]  # less than 1MB
         wt()
         out = play_mocked.call_args[0][2]
         assert out is not None
 
-    @mock.patch("xklb.media.media_player.local_player", return_value=SimpleNamespace(returncode=0))
+    @mock.patch("xklb.media.media_player.single_player", return_value=SimpleNamespace(returncode=0))
     def test_undelete(self, _play_mocked):
         temp_dir = tempfile.TemporaryDirectory()
 

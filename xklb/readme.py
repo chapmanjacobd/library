@@ -207,12 +207,12 @@ To stop playing press Ctrl+C in either the terminal or mpv
 
 ### Watch online media on your PC
 
-    wget https://github.com/chapmanjacobd/library/raw/main/examples/mealtime.tw.db
+    wget https://github.com/chapmanjacobd/library/raw/main/example_dbs/mealtime.tw.db
     library watch mealtime.tw.db --random --duration 30m
 
 ### Listen to online media on a chromecast group
 
-    wget https://github.com/chapmanjacobd/library/raw/main/examples/music.tl.db
+    wget https://github.com/chapmanjacobd/library/raw/main/example_dbs/music.tl.db
     library listen music.tl.db -ct "House speakers" --random
 
 ### Hook into HackerNews

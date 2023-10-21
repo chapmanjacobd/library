@@ -71,7 +71,7 @@ path = "xklb/__init__.py"
 [tool.hatch.build]
 exclude = [
   "tests/",
-  "examples/",
+  "example_dbs/",
 ]
 
 [tool.hatch.build.force-include]

@@ -5,7 +5,7 @@ from pathlib import Path
 import humanize
 from screeninfo import get_monitors
 
-import xklb.play_actions
+from xklb import post_actions
 from xklb.media import media_player
 from xklb.utils import consts, devices, file_utils, iterables, mpv_utils, processes
 from xklb.utils.log_utils import log
@@ -295,7 +295,7 @@ def group_and_delete(args, groups):
                 for path in (left["path"], right["path"]):
                     r = processes.cmd(*shlex.split(args.override_player), path, strict=False)
                     if r.returncode == 0:
-                        xklb.play_actions.post_act(
+                        post_actions.post_act(
                             args,
                             path,
                             action="ASK_MOVE_OR_DELETE" if args.keep_dir else "ASK_DELETE",
