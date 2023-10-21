@@ -67,3 +67,12 @@ def get_playhead(
         if playhead > 0 and (media_duration is None or media_duration >= playhead):
             return playhead
     return None
+
+
+def mpv_cli_args_to_pythonic(arg_strings):
+    arg_dict = {}
+    for s in arg_strings:
+        for arg in s.split(","):
+            k,v = arg.lstrip("-").split("=")
+            arg_dict[k] = v
+    return arg_dict

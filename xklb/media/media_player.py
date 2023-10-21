@@ -1,22 +1,172 @@
-import platform, shlex, shutil, socket, subprocess
+import argparse, platform, shlex, shutil, subprocess, threading, time
+import os
+from collections import deque
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from platform import system
 from random import randrange
 from shutil import which
 from time import sleep
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from xklb import history
 from xklb.media import subtitle
 from xklb.post_actions import post_act
-from xklb.utils import consts, devices, file_utils, iterables, path_utils, processes
+from xklb.scripts import playback_control
+from xklb.utils import (
+    consts,
+    db_utils,
+    devices,
+    file_utils,
+    iterables,
+    log_utils,
+    mpv_utils,
+    path_utils,
+    processes,
+    sql_utils,
+)
 from xklb.utils.consts import SC
 from xklb.utils.log_utils import log
+
+
+def watch_chromecast(args, m: dict, subtitles_file=None) -> Optional[subprocess.CompletedProcess]:
+    if "vlc" in args.player:
+        catt_log = processes.cmd(
+            "vlc",
+            "--sout",
+            "#chromecast",
+            f"--sout-chromecast-ip={args.cc_ip}",
+            "--demux-filter=demux_chromecast",
+            "--sub-file=" + subtitles_file if subtitles_file else "",
+            *args.player[1:],
+            m["path"],
+        )
+    else:
+        if args.action in (SC.watch, SC.listen):
+            catt_log = processes.cmd(
+                "catt",
+                "-d",
+                args.chromecast_device,
+                "cast",
+                "-s",
+                subtitles_file if subtitles_file else consts.FAKE_SUBTITLE,
+                m["path"],
+            )
+        else:
+            catt_log = args.cc.play_url(m["path"], resolve=True, block=True)
+    return catt_log
+
+
+def listen_chromecast(args, m: dict) -> Optional[subprocess.CompletedProcess]:
+    Path(consts.CAST_NOW_PLAYING).write_text(m["path"])
+    Path(consts.FAKE_SUBTITLE).touch()
+    catt = which("catt") or "catt"
+    if args.cast_with_local:
+        cast_process = subprocess.Popen(
+            [catt, "-d", args.chromecast_device, "cast", "-s", consts.FAKE_SUBTITLE, m["path"]],
+            **processes.os_bg_kwargs(),
+        )
+        sleep(0.974)  # imperfect lazy sync; I use keyboard shortcuts to send `set speed` commands to mpv for resync
+        # if pyChromecast provides a way to sync accurately that would be very interesting to know; I have not researched it
+        processes.cmd_interactive(*m['player'], "--", m["path"])
+        catt_log = processes.Pclose(cast_process)  # wait for chromecast to stop (you can tell any chromecast to pause)
+        sleep(3.0)  # give chromecast some time to breathe
+    else:
+        if m["path"].startswith("http"):
+            catt_log = args.cc.play_url(m["path"], resolve=True, block=True)
+        else:  #  local file
+            catt_log = processes.cmd(catt, "-d", args.chromecast_device, "cast", "-s", consts.FAKE_SUBTITLE, m["path"])
+
+    return catt_log
+
+
+def chromecast_play(args, m) -> None:
+    if args.action in (SC.watch):
+        catt_log = watch_chromecast(
+            args,
+            m,
+            subtitles_file=iterables.safe_unpack(subtitle.get_subtitle_paths(m["path"])),
+        )
+    elif args.action in (SC.listen):
+        catt_log = listen_chromecast(args, m)
+    else:
+        raise NotImplementedError
+
+    if catt_log:
+        if catt_log.stderr is None or catt_log.stderr == "":
+            if not args.cast_with_local:
+                raise RuntimeError("catt does not exit nonzero? but something might have gone wrong")
+        elif "Heartbeat timeout, resetting connection" in catt_log.stderr:
+            raise RuntimeError("Media is possibly partially unwatched")
+
+
+def transcode(args, path) -> str:
+    log.debug(path)
+    sub_index = subtitle.get_sub_index(args, path)
+
+    transcode_dest = str(Path(path).with_suffix(".mkv"))
+    temp_video = path_utils.random_filename(transcode_dest)
+
+    maps = ["-map", "0"]
+    if sub_index:
+        maps = ["-map", "0:v", "-map", "0:a", "-map", "0:" + str(sub_index), "-scodec", "webvtt"]
+
+    video_settings = [
+        "-vcodec",
+        "h264",
+        "-preset",
+        "fast",
+        "-profile:v",
+        "high",
+        "-level",
+        "4.1",
+        "-crf",
+        "17",
+        "-pix_fmt",
+        "yuv420p",
+    ]
+    if args.transcode_audio:
+        video_settings = ["-c:v", "copy"]
+
+    print("Transcoding", temp_video)
+    processes.cmd_interactive(
+        "ffmpeg",
+        "-nostdin",
+        "-loglevel",
+        "error",
+        "-stats",
+        "-i",
+        path,
+        *maps,
+        *video_settings,
+        "-acodec",
+        "libopus",
+        "-ac",
+        "2",
+        "-b:a",
+        "128k",
+        "-filter:a",
+        "loudnorm=i=-18:lra=17",
+        temp_video,
+    )
+
+    Path(path).unlink()
+    shutil.move(temp_video, transcode_dest)
+    with args.db.conn:
+        args.db.conn.execute("UPDATE media SET path = ? where path = ?", [transcode_dest, path])
+    return transcode_dest
 
 
 def calculate_duration(args, m) -> Tuple[int, int]:
     start = 0
     end = m.get("duration", 0)
+
+    if args.interdimensional_cable:
+        start = randrange(int(start), int(end - args.interdimensional_cable + 1))
+        end = start + args.interdimensional_cable
+        log.debug("calculate_duration: %s -- %s", start, end)
+        return start, end
+
     minimum_duration = 7 * 60
     playhead = m.get("playhead")
     if playhead:
@@ -64,172 +214,14 @@ def find_xdg_application(media_file) -> Optional[str]:
     return which(default_application.replace(".desktop", ""))
 
 
-def generic_player(args) -> List[str]:
+def generic_player() -> List[str]:
     if platform.system() == "Linux":
         player = ["xdg-open"]
     elif any(p in platform.system() for p in ("Windows", "_NT-", "MSYS")):
         player = ["cygstart"] if shutil.which("cygstart") else ["start", ""]
     else:
         player = ["open"]
-    args.player_need_sleep = True
     return player
-
-
-def parse(args, m) -> List[str]:
-    player = generic_player(args)
-    mpv = which("mpv.com") or which("mpv") or "mpv"
-
-    if args.override_player:
-        player = [*args.override_player]
-        args.player_need_sleep = False
-
-    elif args.action in (SC.read) and m["path"]:
-        player_path = find_xdg_application(m["path"])
-        if player_path:
-            args.player_need_sleep = False
-            player = [player_path]
-
-    elif mpv:
-        args.player_need_sleep = False
-        player = [mpv]
-        if args.action in (SC.listen):
-            player.extend([f"--input-ipc-server={args.mpv_socket}", "--no-video", "--keep-open=no", "--really-quiet"])
-        elif args.action in (SC.watch):
-            player.extend(["--force-window=yes", "--really-quiet"])
-
-        if m["path"] and m["path"].startswith("http"):
-            player.extend(["--script-opts=ytdl_hook-try_ytdl_first=yes"])
-
-        if getattr(args, "multiple_playback", 1) < 2:
-            player.extend(["--fs"])
-
-        if args.loop:
-            player.extend(["--loop-file=inf"])
-
-        if getattr(args, "crop", None):
-            player.extend(["--panscan=1.0"])
-
-        if args.start:
-            player.extend(["--no-save-position-on-quit"])
-
-        if args.action == SC.watch and m and m.get("subtitle_count") is not None:
-            if m["subtitle_count"] > 0:
-                player.extend(args.player_args_sub)
-            elif m["size"] > 500 * 1000000:  # 500 MB
-                log.debug("Skipping subs player_args: size")
-            else:
-                player.extend(args.player_args_no_sub)
-
-    elif system() == "Linux":
-        player_path = find_xdg_application(m["path"])
-        if player_path:
-            args.player_need_sleep = False
-            player = [player_path]
-
-    if args.volume is not None:
-        player.extend([f"--volume={args.volume}"])
-
-    if args.action in (SC.watch, SC.listen, SC.search) and m:
-        try:
-            start, end = calculate_duration(args, m)
-        except Exception:
-            pass
-        else:
-            if end != 0:
-                if start != 0:
-                    player.extend([f"--start={start}"])
-                if end != m["duration"]:
-                    player.extend([f"--end={end}"])
-
-    log.debug("player: %s", player)
-    return player
-
-
-def watch_chromecast(args, m: dict, subtitles_file=None) -> Optional[subprocess.CompletedProcess]:
-    if "vlc" in args.player:
-        catt_log = processes.cmd(
-            "vlc",
-            "--sout",
-            "#chromecast",
-            f"--sout-chromecast-ip={args.cc_ip}",
-            "--demux-filter=demux_chromecast",
-            "--sub-file=" + subtitles_file if subtitles_file else "",
-            *args.player[1:],
-            m["path"],
-        )
-    else:
-        if args.action in (SC.watch, SC.listen):
-            catt_log = processes.cmd(
-                "catt",
-                "-d",
-                args.chromecast_device,
-                "cast",
-                "-s",
-                subtitles_file if subtitles_file else consts.FAKE_SUBTITLE,
-                m["path"],
-            )
-        else:
-            catt_log = args.cc.play_url(m["path"], resolve=True, block=True)
-    return catt_log
-
-
-def listen_chromecast(args, player, m: dict) -> Optional[subprocess.CompletedProcess]:
-    Path(consts.CAST_NOW_PLAYING).write_text(m["path"])
-    Path(consts.FAKE_SUBTITLE).touch()
-    catt = which("catt") or "catt"
-    if args.cast_with_local:
-        cast_process = subprocess.Popen(
-            [catt, "-d", args.chromecast_device, "cast", "-s", consts.FAKE_SUBTITLE, m["path"]],
-            **processes.os_bg_kwargs(),
-        )
-        sleep(0.974)  # imperfect lazy sync; I use keyboard shortcuts to send `set speed` commands to mpv for resync
-        # if pyChromecast provides a way to sync accurately that would be very interesting to know; I have not researched it
-        processes.cmd_interactive(*player, "--", m["path"])
-        catt_log = processes.Pclose(cast_process)  # wait for chromecast to stop (you can tell any chromecast to pause)
-        sleep(3.0)  # give chromecast some time to breathe
-    else:
-        if m["path"].startswith("http"):
-            catt_log = args.cc.play_url(m["path"], resolve=True, block=True)
-        else:  #  local file
-            catt_log = processes.cmd(catt, "-d", args.chromecast_device, "cast", "-s", consts.FAKE_SUBTITLE, m["path"])
-
-    return catt_log
-
-
-def socket_play(args, m: dict) -> None:
-    # TODO: replace with python_mpv_jsonipc
-    mpv = which("mpv") or "mpv"
-    if args.sock is None:
-        subprocess.Popen([mpv, "--idle", "--input-ipc-server=" + args.mpv_socket])
-        while not Path(args.mpv_socket).exists():
-            sleep(0.2)
-        args.sock = socket.socket(socket.AF_UNIX)
-        args.sock.connect(args.mpv_socket)
-
-    start, end = calculate_duration(args, m)
-
-    try:
-        start = randrange(int(start), int(end - args.interdimensional_cable + 1))
-        end = start + args.interdimensional_cable
-    except Exception as e:
-        log.info(e)
-    if end == 0:
-        return
-
-    play_opts = f"start={start},save-position-on-quit=no,resume-playback=no"
-    if args.action in (SC.listen):
-        play_opts += ",video=no"
-    elif args.action in (SC.watch):
-        play_opts += ",fullscreen=yes,force-window=yes"
-
-    if m["path"].startswith("http"):
-        play_opts += ",script-opts=ytdl_hook-try_ytdl_first=yes"
-    else:
-        play_opts += ",really-quiet=yes"
-
-    f = m["path"].replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
-    args.sock.send((f'raw loadfile "{f}" replace "{play_opts}" \n').encode())
-    sleep(args.interdimensional_cable)
 
 
 def geom_walk(display, v=1, h=1) -> List[List[int]]:
@@ -329,7 +321,7 @@ def modify_display_size_for_taskbar(display):
         return display
 
 
-def get_multiple_player_template(args) -> List[str]:
+def get_multiple_player_template(args) -> List[Tuple[str, str]]:
     import screeninfo
 
     displays = screeninfo.get_monitors()
@@ -343,7 +335,7 @@ def get_multiple_player_template(args) -> List[str]:
     elif args.multiple_playback < len(displays):
         # play videos on supporting screens but not active one
         displays = [d for d in displays if not d.is_primary]
-        displays = displays[: len(args.multiple_playback)]
+        displays = displays[: args.multiple_playback]
 
     min_media_per_screen, remainder = divmod(args.multiple_playback, len(displays))
 
@@ -363,48 +355,193 @@ def get_multiple_player_template(args) -> List[str]:
 
     return players
 
+class MediaPrefetcher:
+    def __init__(self, args, media: List[Dict]):
+        self.args = argparse.Namespace(**{k: v for k, v in args.__dict__.items() if k not in {"db"}})
+        self.media = media
+        self.media.reverse()
+        self.remaining = len(media)
+        self.ignore_paths = set()
+        self.futures = deque()
 
-def geom(x_size, y_size, x, y) -> str:
-    return f"--geometry={x_size}x{y_size}+{x}+{y}"
+    def fetch(self):
+        if self.media:
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                while self.media and len(self.futures) < max(1, self.args.prefetch):
+                    m = self.media.pop()
+                    if m["path"] in self.ignore_paths:
+                        continue
+
+                    future = executor.submit(self.prep_media, m, self.ignore_paths)  # if self.args.prefetch > 1 else []
+                    self.ignore_paths.add(m["path"])
+                    self.futures.append(future)
+                    log.debug('fill prefetch')
+                log.debug('prefetch full')
+        return self
+
+    def infer_command(self, m) -> Tuple[List[str], bool]:
+        args = self.args
+
+        player = generic_player()
+        player_need_sleep = True
+
+        if getattr(args, 'override_player', False):
+            player = [*args.override_player]
+            player_need_sleep = False
+
+        elif args.action in (SC.read):
+            if system() == "Linux":
+                player_path = find_xdg_application(m['path'])
+                if player_path:
+                    player_need_sleep = False
+                    player = [player_path]
+
+        else:
+            mpv = which("mpv.com") or which("mpv")
+            if mpv:
+                player_need_sleep = False
+                player = [mpv]
+                if args.action in (SC.listen):
+                    player.extend([f"--input-ipc-server={args.mpv_socket}", "--video=no", "--keep-open=no", "--really-quiet=yes"])
+                elif args.action in (SC.watch):
+                    player.extend(["--force-window=yes", "--really-quiet=yes"])
+
+                if getattr(args, "multiple_playback", 1) < 2:
+                    player.extend(["--fullscreen=yes"])
+
+                if getattr(args, 'loop', False):
+                    player.extend(["--loop-file=inf"])
+
+                if getattr(args, "crop", None):
+                    player.extend(["--panscan=1.0"])
+
+                if getattr(args, 'start', False):
+                    player.extend(["--save-position-on-quit=no"])
+
+                if args.action == SC.watch and m.get("subtitle_count") is not None:
+                    if m["subtitle_count"] > 0:
+                        player.extend(args.player_args_sub)
+                    elif m["size"] > 500 * 1000000:  # 500 MB
+                        log.debug("Skipping subs player_args: size")
+                    else:
+                        player.extend(args.player_args_no_sub)
+
+                if getattr(args, 'volume', False):
+                    player.extend([f"--volume={args.volume}"])
+
+                if m['path'] and m['path'].startswith("http"):
+                    player.extend(["--script-opts=ytdl_hook-try_ytdl_first=yes"])
+
+                if args.action in (SC.watch, SC.listen, SC.search):
+                    try:
+                        start, end = calculate_duration(args, m)
+                    except Exception as e:
+                        log.info(e)
+                    else:
+                        if end != 0:
+                            if start != 0:
+                                player.extend([f"--start={start}"])
+                            if end != m["duration"]:
+                                player.extend([f"--end={end}"])
+
+                if getattr(args, 'interdimensional_cable', False):
+                    player.extend(["--save-position-on-quit=no", "--resume-playback=no"])
+
+        log.debug("player: %s", player)
+        return player, player_need_sleep
 
 
-def _create_player(args, player, window_geometry, media):
-    m = media.pop()
-    print(m["path"])
-    mp_args = ["--window-scale=1", "--no-border", "--no-keepaspect-window"]
-    return {
-        **m,
-        "process": subprocess.Popen(
-            [*player, *mp_args, *window_geometry, "--", m["path"]],
-            **processes.os_bg_kwargs(),
-        ),
-    }
+    def prep_media(self, m: Dict, ignore_paths):
+        t = log_utils.Timer()
+        self.args.db = db_utils.connect(self.args)
+        log.debug("db.connect: %s", t.elapsed())
+
+        if (self.args.play_in_order >= consts.SIMILAR) or (self.args.action == SC.listen and "audiobook" in m["path"].lower()):
+            m = sql_utils.get_ordinal_media(self.args, m, ignore_paths)
+            log.debug("player.get_ordinal_media: %s", t.elapsed())
+
+        m["original_path"] = m["path"]
+        if not m["path"].startswith("http"):
+            media_path = Path(self.args.prefix + m["path"]).resolve() if self.args.prefix else Path(m["path"])
+            m["path"] = str(media_path)
+
+            if not media_path.exists():
+                log.debug("media_path exists: %s", t.elapsed())
+                log.warning("[%s]: Does not exist. Skipping...", m["path"])
+                sql_utils.mark_media_deleted(self.args, m["original_path"])
+                log.debug("mark_media_deleted: %s", t.elapsed())
+                return None
+
+            if self.args.transcode or self.args.transcode_audio:
+                m["path"] = m["original_path"] = transcode(self.args, m["path"])
+                log.debug("transcode: %s", t.elapsed())
+
+        m["now_playing"] = playback_control.now_playing(m["path"])
+        log.debug("playback_control: %s", t.elapsed())
+        m['player'], m['player_need_sleep'] = self.infer_command(m)
+        log.debug("player.parse: %s", t.elapsed())
+
+        return m
+
+    def get_m(self):
+        m = None
+        while m is None:
+            if not self.futures:
+                self.remaining = 0
+                return
+
+            f = self.futures.popleft()
+            f = f.result()
+
+            if f["path"].startswith("http") or Path(f["path"]).exists():
+                m = f
+
+        self.remaining = len(self.media) + len(self.futures)
+        self.fetch()
+        return m
 
 
-def multiple_player(args, media) -> None:
-    player = parse(args, media[0])
+def single_player(args, m):
+    if system() == "Windows" or args.action in (SC.watch):
+        r = processes.cmd(*m['player'], m['path'], strict=False)
+    else:  # args.action in (SC.listen)
+        r = processes.cmd_interactive(*m['player'], m['path'])
 
+    if m['player_need_sleep']:
+        try:
+            devices.confirm("Continue?")
+        except Exception:
+            log.exception('Could not open prompt')
+            delay = 10  # TODO: idk
+            sleep(delay)
+    return r
+
+
+def multiple_player(args, playlist) -> None:
     template = get_multiple_player_template(args)
     players = []
 
-    media.reverse()  # because media.pop()
     try:
-        while media or players:
+        while playlist.remaining or players:
             for t_idx, t in enumerate(template):
-                SINGLE_PLAYBACK = ("--fs", '--screen-name="eDP"', '--fs-screen-name="eDP"')
+                SINGLE_PLAYBACK = ("--fs=yes", '--screen-name="eDP"', '--fs-screen-name="eDP"')
                 if len(t) == len(SINGLE_PLAYBACK):
-                    player_hole = t
+                    window_geometry = t
                     geom_data = None
                 else:  # MULTI_PLAYBACK = ([640, 1080, 0, 0], '--screen-name="eDP"')
                     geom_data, screen_name = t
-                    player_hole = [geom(*geom_data), screen_name]
+                    x_size, y_size, x, y = geom_data
+                    window_geometry = [f"--geometry={x_size}x{y_size}+{x}+{y}", screen_name]
+
+                window_geometry = ["--window-scale=1", "--no-border", "--no-keepaspect-window", *window_geometry]
 
                 try:
                     m = players[t_idx]
                 except IndexError:
                     log.debug("%s IndexError", t_idx)
-                    if media:
-                        players.append(_create_player(args, player, player_hole, media))
+                    m = playlist.get_m()
+                    if m:
+                        players.append(_create_window_player(args, window_geometry, m))
                 else:
                     log.debug("%s Check if still running", t_idx)
                     if m["process"].poll() is not None:
@@ -416,118 +553,167 @@ def multiple_player(args, media) -> None:
                                 raise SystemExit(r.returncode)
 
                         history.add(args, [m["path"]], mark_done=True)
-                        post_act(args, m["path"], geom_data=geom_data, media_len=len(media))
+                        post_act(args, m["path"], geom_data=geom_data, media_len=playlist.remaining)
 
-                        if media:
-                            players[t_idx] = _create_player(args, player, player_hole, media)
+                        m = playlist.get_m()
+                        if m:
+                            players[t_idx] = _create_window_player(args, window_geometry, m)
                         else:
                             del players[t_idx]
 
-            log.debug("%s media", len(media))
-            sleep(0.2)  # I don't know if this is necessary but may as well~~
+            log.debug("%s media", playlist.remaining)
+            sleep(0.02)  # may as well~~
     finally:
         for m in players:
             m["process"].kill()
 
 
-def local_player(args, player, m) -> subprocess.CompletedProcess:
-    if args.folder:
-        paths = [str(Path(m["path"]).parent)]
-    elif args.folder_glob:
-        paths = file_utils.fast_glob(Path(m["path"]).parent, args.folder_glob)
-    else:
-        paths = [m["path"]]
+'''
+- single play
+- 4dtv -- when mpv end event is reached get next path from xklb
+- multiple play
 
-    if system() == "Windows" or args.action in (SC.watch):
-        r = processes.cmd(*player, *paths, strict=False)
-    else:  # args.action in (SC.listen)
-        r = processes.cmd_interactive(*player, *paths)
+    # next > is skip post action
+    # --mpv-keys '>:skip,del:delete,1:delete,2,keep'
 
-    if args.player_need_sleep:
+
+                f = m["path"].replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
+                args.sock.send((f'raw loadfile "{f}" replace "{play_opts}" \n').encode())
+                sleep(args.interdimensional_cable)
+
+Popen jsonipc
+'''
+
+def _create_window_player(args, window_geometry, m):
+    print(m["path"])
+
+    m['player'].extend(window_geometry)
+    if Path(m['player'][0]).name in ['mpv', 'mpv.com']:
+        mpv_jsonipc(args, m)
+
+        # TODO fix this return: create mpv_jsonipc per window and reuse
+
+    return {
+        **m,
+        "process": subprocess.Popen(
+            [*m['player'], "--", m["path"]],
+            **processes.os_bg_kwargs(),
+        ),
+    }
+
+
+def mpv_jsonipc(args, m):  # playlist
+    from python_mpv_jsonipc import MPV, MPVError
+    # TODO: try python-mpv ??
+
+    mpv_kwargs = {"save_position_on_quit": False, "fs": True}
+    if args.start:
+        mpv_kwargs["start"] = args.start
+
+    x_mpv = MPV(args.mpv_socket, **mpv_kwargs)
+    # x_mpv.process
+
+    @x_mpv.on_event("log-message")
+    def print_event(event):
+        print(event)
+
+    @x_mpv.on_event("property-change")
+    def print_event1(event):
+        print(event)
+
+    @x_mpv.on_event("client-message")
+    def print_event2(event):
+        print(event)
+
+    if args.volume:
+        x_mpv.volume = args.volume
+
+    SIGINT_EXIT = threading.Event()
+
+    @x_mpv.on_key_press("ctrl+c")
+    def sig_interrupt_handler():
+        SIGINT_EXIT.set()
+        x_mpv.command("quit", "4")
+
+    x_mpv.play(m["path"])
+    if args.auto_seek:
         try:
-            devices.confirm("Continue?")
-        except Exception:
-            if hasattr(m, "duration"):
-                delay = m["duration"]
+            mpv_utils.auto_seek(x_mpv)
+        except (BrokenPipeError, MPVError, ConnectionResetError):
+            log.debug("BrokenPipeError ignored")
+
+    x_mpv.wait_for_property('idle-active')
+    # x_mpv.terminate()
+
+    if SIGINT_EXIT.is_set():
+        log.warning("Player exited with code 4")
+        raise SystemExit(4)
+
+
+def play(args, m, media_len) -> None:
+    t = log_utils.Timer()
+    print(m["now_playing"])
+
+    start_time = time.time()
+    try:
+        if args.chromecast:
+            try:
+                chromecast_play(args, m)
+                t.reset()
+                history.add(args, [m["original_path"]], mark_done=True)
+                post_act(args, m["original_path"], media_len=media_len)
+                log.debug("player.post_act: %s", t.elapsed())
+            except Exception:
+                if args.ignore_errors:
+                    return
+                else:
+                    raise
+        elif Path(m['player'][0]).name in ['mpv', 'mpv.com']:
+            mpv_jsonipc(args, m)
+            history.add(args, [m["original_path"]], mark_done=True)
+            post_act(args, m["original_path"], media_len=media_len)
+        else:
+            r = single_player(args, m)
+            if r.returncode == 0:
+                t.reset()
+                history.add(args, [m["original_path"]], mark_done=True)
+                post_act(args, m["original_path"], media_len=media_len)
+                log.debug("player.post_act: %s", t.elapsed())
             else:
-                delay = 10  # TODO: idk
-            sleep(delay)
-
-    return r
-
-
-def chromecast_play(args, player, m) -> None:
-    if args.action in (SC.watch):
-        catt_log = watch_chromecast(
+                log.warning("Player exited with code %s", r.returncode)
+                if args.ignore_errors:
+                    return
+                else:
+                    raise SystemExit(r.returncode)
+    finally:
+        playhead = mpv_utils.get_playhead(
             args,
-            m,
-            subtitles_file=iterables.safe_unpack(subtitle.get_subtitle_paths(m["path"])),
+            m["original_path"],
+            start_time,
+            existing_playhead=m.get("playhead"),
+            media_duration=m.get("duration"),
         )
-    elif args.action in (SC.listen):
-        catt_log = listen_chromecast(args, player, m)
-    else:
-        raise NotImplementedError
-
-    if catt_log:
-        if catt_log.stderr is None or catt_log.stderr == "":
-            if not args.cast_with_local:
-                raise RuntimeError("catt does not exit nonzero? but something might have gone wrong")
-        elif "Heartbeat timeout, resetting connection" in catt_log.stderr:
-            raise RuntimeError("Media is possibly partially unwatched")
+        log.debug("save_playhead %s", playhead)
+        if playhead:
+            history.add(args, [m["original_path"]], playhead=playhead)
 
 
-def transcode(args, path) -> str:
-    log.debug(path)
-    sub_index = subtitle.get_sub_index(args, path)
+def play_list(args, media):
+    try:
+        playlist = MediaPrefetcher(args, media)
+        playlist.fetch()
 
-    transcode_dest = str(Path(path).with_suffix(".mkv"))
-    temp_video = path_utils.random_filename(transcode_dest)
+        # maybe I can create an array of jsonipc * args.multiple_playback
 
-    maps = ["-map", "0"]
-    if sub_index:
-        maps = ["-map", "0:v", "-map", "0:a", "-map", "0:" + str(sub_index), "-scodec", "webvtt"]
+        if args.multiple_playback > 1:
+            multiple_player(args, playlist)
+        else:
+            while playlist.remaining:
+                m = playlist.get_m()
+                if m:
+                    play(args, m, playlist.remaining)
 
-    video_settings = [
-        "-vcodec",
-        "h264",
-        "-preset",
-        "fast",
-        "-profile:v",
-        "high",
-        "-level",
-        "4.1",
-        "-crf",
-        "17",
-        "-pix_fmt",
-        "yuv420p",
-    ]
-    if args.transcode_audio:
-        video_settings = ["-c:v", "copy"]
-
-    print("Transcoding", temp_video)
-    processes.cmd_interactive(
-        "ffmpeg",
-        "-nostdin",
-        "-loglevel",
-        "error",
-        "-stats",
-        "-i",
-        path,
-        *maps,
-        *video_settings,
-        "-acodec",
-        "libopus",
-        "-ac",
-        "2",
-        "-b:a",
-        "128k",
-        "-filter:a",
-        "loudnorm=i=-18:lra=17",
-        temp_video,
-    )
-
-    Path(path).unlink()
-    shutil.move(temp_video, transcode_dest)
-    with args.db.conn:
-        args.db.conn.execute("UPDATE media SET path = ? where path = ?", [transcode_dest, path])
-    return transcode_dest
+    finally:
+        Path(args.mpv_socket).unlink(missing_ok=True)
+        if args.chromecast:
+            Path(consts.CAST_NOW_PLAYING).unlink(missing_ok=True)

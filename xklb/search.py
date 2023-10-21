@@ -176,21 +176,21 @@ def search() -> None:
     merged_captions = merge_captions(args, captions)
 
     if args.open:
-        for d in merged_captions:
-            print(d["text"])
-
-            args.start = str(d["time"] - 2)
-            args.end = str(int(d["end"] + 1.5))
-            m = args.db.pop_dict("select * from media where path = ?", [d["path"]])
-            player = media_player.parse(args, m)
-            r = media_player.local_player(args, player, m)
-            if r.returncode != 0:
-                log.warning("Player exited with code %s", r.returncode)
-                if args.ignore_errors:
-                    return
-                else:
-                    raise SystemExit(r.returncode)
-
+        pl = media_player.MediaPrefetcher(args, merged_captions)
+        pl.fetch()
+        while pl.remaining:
+            d = pl.get_m()
+            if d:
+                print(d["text"])
+                m = args.db.pop_dict("select * from media where path = ?", [d["path"]])
+                m['player'].extend([f'--start={d["time"] - 2}', f'--end={int(d["end"] + 1.5)}'])
+                r = media_player.single_player(args, m)
+                if r.returncode != 0:
+                    log.warning("Player exited with code %s", r.returncode)
+                    if args.ignore_errors:
+                        return
+                    else:
+                        raise SystemExit(r.returncode)
     else:
         printer(args, merged_captions)
 

@@ -1,14 +1,11 @@
-import argparse, os, shlex, sys, threading, time
-from collections import deque
-from concurrent.futures import ThreadPoolExecutor
+import argparse, os, shlex, sys
 from pathlib import Path
 from typing import Dict, List, Tuple
 
 from xklb import history, tube_backend, usage
 from xklb.media import media_player, media_printer
-from xklb.post_actions import post_act
 from xklb.scripts import bigdirs, playback_control
-from xklb.utils import consts, db_utils, devices, file_utils, iterables, mpv_utils, nums, objects, processes, sql_utils
+from xklb.utils import consts, db_utils, devices, file_utils, iterables, nums, objects, processes, sql_utils
 from xklb.utils.arg_utils import parse_args_limit, parse_args_sort
 from xklb.utils.consts import SC
 from xklb.utils.log_utils import Timer, log
@@ -217,6 +214,9 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     if args.override_player:
         args.override_player = shlex.split(args.override_player)
 
+    if args.multiple_playback > 1:
+        args.gui = True
+
     if args.keep_dir:
         args.keep_dir = Path(args.keep_dir).expanduser().resolve()
 
@@ -392,118 +392,6 @@ def construct_query(args) -> Tuple[str, dict]:
     return query, args.filter_bindings
 
 
-def prep_media(args, m: Dict, ignore_paths):
-    t = Timer()
-    args.db = db_utils.connect(args)
-    log.debug("db.connect: %s", t.elapsed())
-
-    if (args.play_in_order >= consts.SIMILAR) or (args.action == SC.listen and "audiobook" in m["path"].lower()):
-        m = sql_utils.get_ordinal_media(args, m, ignore_paths)
-        log.debug("player.get_ordinal_media: %s", t.elapsed())
-
-    m["original_path"] = m["path"]
-    if not m["path"].startswith("http"):
-        media_path = Path(args.prefix + m["path"]).resolve() if args.prefix else Path(m["path"])
-        m["path"] = str(media_path)
-
-        if not media_path.exists():
-            log.debug("media_path exists: %s", t.elapsed())
-            log.warning("[%s]: Does not exist. Skipping...", m["path"])
-            sql_utils.mark_media_deleted(args, m["original_path"])
-            log.debug("mark_media_deleted: %s", t.elapsed())
-            return None
-
-        if args.transcode or args.transcode_audio:
-            m["path"] = m["original_path"] = media_player.transcode(args, m["path"])
-            log.debug("transcode: %s", t.elapsed())
-
-    m["now_playing"] = playback_control.now_playing(m["path"])
-
-    return m
-
-
-def play(args, m, media_len) -> None:
-    t = Timer()
-    print(m["now_playing"])
-    log.debug(m)
-    log.debug("now_playing: %s", t.elapsed())
-
-    player = media_player.parse(args, m)
-    log.debug("player.parse: %s", t.elapsed())
-
-    if args.interdimensional_cable:
-        media_player.socket_play(args, m)
-        return
-
-    start_time = time.time()
-    try:
-        if args.chromecast:
-            try:
-                media_player.chromecast_play(args, player, m)
-                t.reset()
-                history.add(args, [m["original_path"]], mark_done=True)
-                post_act(args, m["original_path"], media_len=media_len)
-                log.debug("player.post_act: %s", t.elapsed())
-            except Exception:
-                if args.ignore_errors:
-                    return
-                else:
-                    raise
-        elif args.auto_seek:
-            from python_mpv_jsonipc import MPV, MPVError
-
-            mpv_kwargs = {"save_position_on_quit": False, "fs": True}
-            if args.start:
-                mpv_kwargs["start"] = args.start
-
-            x_mpv = MPV(args.mpv_socket, **mpv_kwargs)
-            x_mpv.volume = args.volume
-
-            SIGINT_EXIT = threading.Event()
-
-            @x_mpv.on_key_press("ctrl+c")
-            def sig_interrupt_handler():
-                SIGINT_EXIT.set()
-                x_mpv.command("quit", "4")
-
-            x_mpv.play(m["path"])
-            try:
-                mpv_utils.auto_seek(x_mpv)
-            except (BrokenPipeError, MPVError, ConnectionResetError):
-                log.debug("BrokenPipeError ignored")
-
-            if SIGINT_EXIT.is_set():
-                log.warning("Player exited with code 4")
-                raise SystemExit(4)
-
-            history.add(args, [m["original_path"]], mark_done=True)
-            post_act(args, m["original_path"], media_len=media_len)
-        else:
-            r = media_player.local_player(args, player, m)
-            if r.returncode == 0:
-                t.reset()
-                history.add(args, [m["original_path"]], mark_done=True)
-                post_act(args, m["original_path"], media_len=media_len)
-                log.debug("player.post_act: %s", t.elapsed())
-            else:
-                log.warning("Player exited with code %s", r.returncode)
-                if args.ignore_errors:
-                    return
-                else:
-                    raise SystemExit(r.returncode)
-    finally:
-        playhead = mpv_utils.get_playhead(
-            args,
-            m["original_path"],
-            start_time,
-            existing_playhead=m.get("playhead"),
-            media_duration=m.get("duration"),
-        )
-        log.debug("save_playhead %s", playhead)
-        if playhead:
-            history.add(args, [m["original_path"]], playhead=playhead)
-
-
 def filter_episodic(args, media: List[Dict]) -> List[Dict]:
     parent_dict = {}
     for m in media:
@@ -594,6 +482,8 @@ def process_playqueue(args) -> None:
             args.big_dirs,
             args.related >= consts.RELATED,
             args.cluster_sort,
+            args.folder,
+            args.folder_glob,
         ],
     ):
         media_printer.printer(args, query, bindings)
@@ -652,42 +542,17 @@ def process_playqueue(args) -> None:
         media = cluster_dicts(args, media)
         log.debug("cluster-sort: %s", t.elapsed())
 
+    if args.folder:
+        media = ({**m, 'path': str(Path(m["path"]).parent)} for m in media)
+    elif args.folder_glob:
+        media = ({'path': s} for m in media for s in file_utils.fast_glob(Path(m["path"]).parent, args.folder_glob))
+
     if args.print:
         if args.play_in_order >= consts.SIMILAR:
             media = [sql_utils.get_ordinal_media(args, d) for d in media]
         media_printer.media_printer(args, media)
-    elif args.multiple_playback:
-        args.gui = True
-        media_player.multiple_player(args, media)
     else:
-        try:
-            mp_args = argparse.Namespace(**{k: v for k, v in args.__dict__.items() if k not in {"db"}})
-            media.reverse()  # because media.pop()
-            ignore_paths = []
-            futures = deque()
-            with ThreadPoolExecutor(max_workers=1) as executor:
-                while media or futures:
-                    while media and len(futures) < args.prefetch:
-                        m = media.pop()
-                        if m["path"] in ignore_paths:
-                            continue
-                        future = executor.submit(prep_media, mp_args, m, ignore_paths if args.prefetch > 1 else [])
-                        ignore_paths.append(m["path"])
-                        futures.append(future)
-
-                    if futures:
-                        f = futures.popleft()
-                        m = f.result()
-                        if m is not None and (m["path"].startswith("http") or Path(m["path"]).exists()):
-                            play(args, m, len(media) + len(futures))
-        finally:
-            try:
-                if args.interdimensional_cable:
-                    args.sock.send(b"raw quit \n")
-            finally:
-                Path(args.mpv_socket).unlink(missing_ok=True)
-                if args.chromecast:
-                    Path(consts.CAST_NOW_PLAYING).unlink(missing_ok=True)
+        media_player.play_list(args, media)
 
 
 def watch() -> None:
