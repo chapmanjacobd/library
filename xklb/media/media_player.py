@@ -226,12 +226,11 @@ def geom_walk(display, v=1, h=1) -> List[List[int]]:
 
     return geoms
 
-
 def grid_stack(display, qty, swap=False) -> List[Tuple]:
     if qty == 1:
         return [("--fs", f'--screen-name="{display.name}"', f'--fs-screen-name="{display.name}"')]
     else:
-        dv = list(iterables.divisor_gen(qty))
+        dv = sorted(iterables.divisors_upto_sqrt(qty))
         if not dv:
             vh = (qty, 1)
             log.debug("not dv %s", {"dv": dv, "vh": vh})
