@@ -109,16 +109,12 @@ def chunks(lst, n) -> Iterator:
         yield lst[i : i + n]
 
 
-def divisor_gen(n: int) -> Iterator:
-    large_divisors = []
-    for i in range(2, int(math.sqrt(n) + 1)):
+def divisors_upto_sqrt(n: int) -> Iterator:
+    for i in range(2, int(math.sqrt(n)) + 1):
         if n % i == 0:
             yield i
-            if i * i != n:
-                large_divisors.append(n / i)
-    for divisor in reversed(large_divisors):
-        yield int(divisor)
-
+            if i*i != n:
+                yield int(n / i)
 
 def ordered_set(items):
     seen = set()

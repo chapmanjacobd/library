@@ -101,13 +101,13 @@ def test_chunks():
 
 def test_divisor_gen():
     for v in [0, 1, 2, 3, 5, 7]:
-        assert list(iterables.divisor_gen(v)) == []
-    assert list(iterables.divisor_gen(4)) == [2]
-    assert list(iterables.divisor_gen(6)) == [2, 3]
-    assert list(iterables.divisor_gen(8)) == [2, 4]
-    assert list(iterables.divisor_gen(9)) == [3]
-    assert list(iterables.divisor_gen(10)) == [2, 5]
-    assert list(iterables.divisor_gen(100)) == [2, 4, 5, 10, 20, 25, 50]
+        assert sorted(iterables.divisors_upto_sqrt(v)) == []
+    assert sorted(iterables.divisors_upto_sqrt(4)) == [2]
+    assert sorted(iterables.divisors_upto_sqrt(6)) == [2, 3]
+    assert sorted(iterables.divisors_upto_sqrt(8)) == [2, 4]
+    assert sorted(iterables.divisors_upto_sqrt(9)) == [3]
+    assert sorted(iterables.divisors_upto_sqrt(10)) == [2, 5]
+    assert sorted(iterables.divisors_upto_sqrt(100)) == [2, 4, 5, 10, 20, 25, 50]
 
 
 def test_col_naturaldate():
