@@ -115,7 +115,7 @@ class TestFs(unittest.TestCase):
     def test_lb_fs(self, play_mocked):
         for SC in ("watch", "wt"):
             lb([SC, v_db, "-w", "path like '%test.mp4'"])
-            out = play_mocked.call_args[0][2]
+            out = play_mocked.call_args[0][1]
             assert "test.mp4" in out["path"]
             assert out["duration"] == 12
             assert out["subtitle_count"] == 4
@@ -123,28 +123,28 @@ class TestFs(unittest.TestCase):
 
         sys.argv = ["wt", v_db, "-w", "path like '%test.mp4'"]
         wt()
-        out = play_mocked.call_args[0][2]
+        out = play_mocked.call_args[0][1]
         assert "test.mp4" in out["path"]
         assert out["duration"] == 12
         assert out["subtitle_count"] == 4
         assert out["size"] == 136057
 
         lb(["listen", a_db])
-        out = play_mocked.call_args[0][2]
+        out = play_mocked.call_args[0][1]
         assert "test" in out["path"]
 
     @mock.patch("xklb.media.media_player.single_player", return_value=SimpleNamespace(returncode=0))
     def test_wt_sort(self, play_mocked):
         sys.argv = ["wt", v_db, "-u", "duration"]
         wt()
-        out = play_mocked.call_args[0][2]
+        out = play_mocked.call_args[0][1]
         assert out is not None
 
     @mock.patch("xklb.media.media_player.single_player", return_value=SimpleNamespace(returncode=0))
     def test_wt_size(self, play_mocked):
         sys.argv = ["wt", v_db, "--size", "-1"]  # less than 1MB
         wt()
-        out = play_mocked.call_args[0][2]
+        out = play_mocked.call_args[0][1]
         assert out is not None
 
     @mock.patch("xklb.media.media_player.single_player", return_value=SimpleNamespace(returncode=0))
@@ -166,10 +166,10 @@ class TestFs(unittest.TestCase):
             log.debug(e)
 
 
-@mock.patch("xklb.play_actions.play", return_value=SimpleNamespace(returncode=0))
+@mock.patch("xklb.media.media_player.play", return_value=SimpleNamespace(returncode=0))
 @pytest.mark.parametrize("flags", local_player_flags)
 def test_wt_flags(play_mocked, flags):
     sys.argv = ["wt", v_db, *shlex.split(flags)]
     wt()
-    out = play_mocked.call_args[0][2]
+    out = play_mocked.call_args[0][1]
     assert out is not None, f"Test failed for {flags}"
