@@ -113,8 +113,9 @@ def divisors_upto_sqrt(n: int) -> Iterator:
     for i in range(2, int(math.sqrt(n)) + 1):
         if n % i == 0:
             yield i
-            if i*i != n:
+            if i * i != n:
                 yield int(n / i)
+
 
 def ordered_set(items):
     seen = set()

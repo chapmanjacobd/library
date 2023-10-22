@@ -5,6 +5,7 @@ from typing import Optional
 import humanize
 
 from xklb.utils import devices, file_utils, iterables, processes, sql_utils
+from xklb.utils.log_utils import log
 
 try:
     import tkinter  # noqa
@@ -96,7 +97,9 @@ class AskAction:
     ASK_MOVE_OR_DELETE = (Action.MOVE, Action.DELETE)
 
 
-def post_act(args, media_file: str, action: Optional[str] = None, geom_data=None, media_len=0) -> None:
+def post_act(
+    args, media_file: str, action: Optional[str] = None, geom_data=None, media_len=0, player_exit_code=None
+) -> None:
     def handle_delete_action():
         if media_file.startswith("http"):
             sql_utils.mark_media_deleted(args, media_file)
@@ -112,7 +115,10 @@ def post_act(args, media_file: str, action: Optional[str] = None, geom_data=None
 
     def handle_ask_action(ask_action: str):
         true_action, false_action = getattr(AskAction, ask_action)
-        if gui and args.gui:
+        if args.exit_code_confirm and player_exit_code is not None:
+            log.info("%s remaining", media_len)
+            response = player_exit_code
+        elif gui and args.gui:
             response = gui.askkeep(
                 media_file,
                 media_len,
@@ -122,7 +128,10 @@ def post_act(args, media_file: str, action: Optional[str] = None, geom_data=None
             )
         else:
             response = devices.confirm(true_action.title() + "?")
-        post_act(args, media_file, action=true_action if response else false_action)  # answer the question
+        confirmed_action = true_action if response else false_action
+        if geom_data is not None:
+            log.warning("%s: %s", confirmed_action, media_file)
+        post_act(args, media_file, action=confirmed_action)  # answer the question
 
     action = action or args.post_action
     action = action.upper()

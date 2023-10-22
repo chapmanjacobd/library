@@ -14,6 +14,31 @@ left_mpv_socket = str(Path(consts.TEMP_SCRIPT_DIR) / f"mpv_socket_{consts.random
 right_mpv_socket = str(Path(consts.TEMP_SCRIPT_DIR) / f"mpv_socket_{consts.random_string()}")
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(description="Cleanup duplicate files based on their sizes.")
+    parser.add_argument("file_path", help="Path to the text file containing the file list.")
+    parser.add_argument(
+        "--auto-select-min-ratio",
+        type=float,
+        default=1.0,
+        help="Automatically select largest file if files have similar basenames. A sane value is in the range of 0.7~0.9",
+    )
+    parser.add_argument("--start", default="15%")
+    parser.add_argument("--volume", default="70", type=float)
+    parser.add_argument("--keep-dir", "--keepdir", help=argparse.SUPPRESS)
+    parser.add_argument("--exit-code-confirm", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--gui", action="store_true")
+    parser.add_argument("--auto-seek", action="store_true")
+    parser.add_argument("--override-player", "--player", "-player", help=argparse.SUPPRESS)
+    parser.add_argument("--all-keep", action="store_true")
+    parser.add_argument("--all-left", action="store_true")
+    parser.add_argument("--all-right", action="store_true")
+    parser.add_argument("--all-delete", action="store_true")
+    parser.add_argument("--verbose", "-v", action="count", default=0)
+    args = parser.parse_args()
+    return args
+
+
 def backup_and_read_file(file_path):
     backup_filename = file_path + ".bak"
     if not os.path.exists(backup_filename):
@@ -299,6 +324,7 @@ def group_and_delete(args, groups):
                             args,
                             path,
                             action="ASK_MOVE_OR_DELETE" if args.keep_dir else "ASK_DELETE",
+                            player_exit_code=r.returncode == 0,
                         )
                     else:
                         truncate_file_before_match(args.file_path, left["path"])
@@ -349,26 +375,7 @@ def group_and_delete(args, groups):
 
 
 def czkawka_dedupe():
-    parser = argparse.ArgumentParser(description="Cleanup duplicate files based on their sizes.")
-    parser.add_argument("file_path", help="Path to the text file containing the file list.")
-    parser.add_argument(
-        "--auto-select-min-ratio",
-        type=float,
-        default=1.0,
-        help="Automatically select largest file if files have similar basenames. A sane value is in the range of 0.7~0.9",
-    )
-    parser.add_argument("--start", default="15%")
-    parser.add_argument("--volume", default="70", type=float)
-    parser.add_argument("--keep-dir", "--keepdir", help=argparse.SUPPRESS)
-    parser.add_argument("--gui", action="store_true")
-    parser.add_argument("--auto-seek", action="store_true")
-    parser.add_argument("--override-player", "--player", "-player", help=argparse.SUPPRESS)
-    parser.add_argument("--all-keep", action="store_true")
-    parser.add_argument("--all-left", action="store_true")
-    parser.add_argument("--all-right", action="store_true")
-    parser.add_argument("--all-delete", action="store_true")
-    parser.add_argument("--verbose", "-v", action="count", default=0)
-    args = parser.parse_args()
+    args = parse_args()
 
     content = backup_and_read_file(args.file_path)
     groups = extract_dupe_groups(content)

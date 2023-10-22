@@ -226,6 +226,7 @@ def geom_walk(display, v=1, h=1) -> List[List[int]]:
 
     return geoms
 
+
 def grid_stack(display, qty, swap=False) -> List[Tuple]:
     if qty == 1:
         return [("--fs", f'--screen-name="{display.name}"', f'--fs-screen-name="{display.name}"')]
@@ -552,14 +553,22 @@ def multiple_player(args, playlist) -> None:
                     log.debug("%s Check if still running", t_idx)
                     if m["process"].poll() is not None:
                         r = processes.Pclose(m["process"])
-                        if r.returncode != 0:
-                            log.warning("Player exited with code %s", r.returncode)
+                        if r.returncode == 0:
+                            history.add(args, [m["path"]], mark_done=True)
+                        else:
+                            log.info("Player exited with code %s", r.returncode)
                             log.debug(shlex.join(r.args))
                             if not args.ignore_errors:
+                                log.error("Player exited with code %s", r.returncode)
                                 raise SystemExit(r.returncode)
 
-                        history.add(args, [m["path"]], mark_done=True)
-                        post_act(args, m["path"], geom_data=geom_data, media_len=playlist.remaining)
+                        post_act(
+                            args,
+                            m["path"],
+                            geom_data=geom_data,
+                            media_len=playlist.remaining,
+                            player_exit_code=r.returncode == 0,
+                        )
 
                         m = playlist.get_m()
                         if m:
@@ -572,6 +581,7 @@ def multiple_player(args, playlist) -> None:
     finally:
         for m in players:
             m["process"].kill()
+
 
 def mpv_jsonipc(args, m):
     from python_mpv_jsonipc import MPV, MPVError
@@ -601,7 +611,7 @@ def mpv_jsonipc(args, m):
         # x_mpv.wait_for_property('idle-active')
 
     if SIGINT_EXIT.is_set():
-        log.warning("Player exited with code 4")
+        log.error("Player exited with code 4")
         raise SystemExit(4)
 
 
@@ -630,16 +640,16 @@ def play(args, m, media_len) -> None:
         else:
             r = single_player(args, m)
             if r.returncode == 0:
-                t.reset()
                 history.add(args, [m["original_path"]], mark_done=True)
-                post_act(args, m["original_path"], media_len=media_len)
-                log.debug("player.post_act: %s", t.elapsed())
             else:
-                log.warning("Player exited with code %s", r.returncode)
-                if args.ignore_errors:
-                    return
-                else:
+                log.info("Player exited with code %s", r.returncode)
+                log.debug(shlex.join(r.args))
+                if not args.ignore_errors:
+                    log.error("Player exited with code %s", r.returncode)
                     raise SystemExit(r.returncode)
+            t.reset()
+            post_act(args, m["original_path"], media_len=media_len, player_exit_code=r.returncode == 0)
+            log.debug("player.post_act: %s", t.elapsed())
     finally:
         playhead = mpv_utils.get_playhead(
             args,
