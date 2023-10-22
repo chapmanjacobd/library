@@ -59,6 +59,8 @@ def parse_args():
         default=[],
         help="plain text substrings before URL for exclusion (any must match to exclude)",
     )
+    parser.add_argument("--strict-include", action="store_true", help="All include args must resolve true")
+    parser.add_argument("--strict-exclude", action="store_true", help="All exclude args must resolve true")
     parser.add_argument("--case-sensitive", action="store_true", help="Filter with case sensitivity")
     parser.add_argument("--scroll", action="store_true", help="Scroll down the page; infinite scroll")
     parser.add_argument("--download", action="store_true", help="Download filtered links")
@@ -95,19 +97,22 @@ def construct_absolute_url(url, href):
 def is_desired_url(args, a_element, href) -> bool:
     path = href if args.case_sensitive else href.lower()
 
-    if args.path_include and not any(inc in path for inc in args.path_include):
+    include_cond = all if args.strict_include else any
+    exclude_cond = all if args.strict_exclude else any
+
+    if args.path_include and not include_cond(inc in path for inc in args.path_include):
         log.debug("path-include: %s", path)
         return False
-    if args.path_exclude and any(ex in path for ex in args.path_exclude):
+    if args.path_exclude and exclude_cond(ex in path for ex in args.path_exclude):
         log.debug("path-exclude: %s", path)
         return False
 
     link_text = a_element.text if args.case_sensitive else a_element.text.lower()
 
-    if args.text_exclude and any(ex in link_text for ex in args.text_exclude):
+    if args.text_exclude and exclude_cond(ex in link_text for ex in args.text_exclude):
         log.debug("text-exclude: %s", link_text)
         return False
-    if args.text_include and not any(inc in link_text for inc in args.text_include):
+    if args.text_include and not include_cond(inc in link_text for inc in args.text_include):
         log.debug("text-include: %s", link_text)
         return False
 
@@ -117,16 +122,16 @@ def is_desired_url(args, a_element, href) -> bool:
         before_text = before if args.case_sensitive else before.lower()
         after_text = after if args.case_sensitive else after.lower()
 
-        if args.before_exclude and any(ex in before_text for ex in args.before_exclude):
+        if args.before_exclude and exclude_cond(ex in before_text for ex in args.before_exclude):
             log.debug("before-exclude: %s", before_text)
             return False
-        if args.after_exclude and any(ex in after_text for ex in args.after_exclude):
+        if args.after_exclude and exclude_cond(ex in after_text for ex in args.after_exclude):
             log.debug("after-exclude: %s", after_text)
             return False
-        if args.before_include and not any(inc in before_text for inc in args.before_include):
+        if args.before_include and not include_cond(inc in before_text for inc in args.before_include):
             log.debug("before-include: %s", before_text)
             return False
-        if args.after_include and not any(inc in after_text for inc in args.after_include):
+        if args.after_include and not include_cond(inc in after_text for inc in args.after_include):
             log.debug("after-include: %s", after_text)
             return False
 
