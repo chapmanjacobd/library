@@ -119,6 +119,7 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     parser.add_argument("--transcode-audio", action="store_true", help=argparse.SUPPRESS)
 
     parser.add_argument("--post-action", "--action", "-k", default="keep", help=argparse.SUPPRESS)
+    parser.add_argument("--exit-code-confirm", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--keep-dir", "--keepdir", default="keep", help=argparse.SUPPRESS)
     parser.add_argument("--keep-cmd", "--keepcmd", help=argparse.SUPPRESS)
     parser.add_argument("--gui", action="store_true")
