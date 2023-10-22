@@ -1,5 +1,11 @@
+from pathlib import Path
+
 import vcr
 from vcr.record_mode import RecordMode
+
+
+def p(string):
+    return str(Path(string))
 
 
 def filter_query_param(r1, r2):

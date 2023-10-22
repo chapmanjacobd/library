@@ -4,13 +4,10 @@ from unittest import mock
 
 import pytest
 
+from tests import utils
 from xklb.media import av
 from xklb.scripts import scatter
 from xklb.utils import consts, iterables, mpv_utils, nums, objects, path_utils, printing, sql_utils, strings
-
-
-def p(string):
-    return str(Path(string))
 
 
 def take5():
@@ -256,33 +253,33 @@ def test_clean_string():
 
 
 def test_clean_path():
-    assert path_utils.clean_path(b"_test/-t") == p("_test/t")
-    assert path_utils.clean_path(b"3_seconds_ago.../Mike.webm") == p("3_Seconds_Ago/Mike.webm")
-    assert path_utils.clean_path(b"3_seconds_ago../Mike.webm") == p("3_Seconds_Ago/Mike.webm")
-    assert path_utils.clean_path(b"3_seconds_ago./Mike.webm") == p("3_Seconds_Ago/Mike.webm")
-    assert path_utils.clean_path(b"3_seconds_ago___/ Mike.webm") == p("3_Seconds_Ago/Mike.webm")
-    assert path_utils.clean_path(b"test") == p("test")
-    assert path_utils.clean_path(b"test./t") == p("test/t")
-    assert path_utils.clean_path(b".test") == p(".test")
-    assert path_utils.clean_path(b".test/t") == p(".test/t")
-    assert path_utils.clean_path(b"_test/t") == p("_test/t")
-    assert path_utils.clean_path(b"_test/t-") == p("_test/t")
-    assert path_utils.clean_path(b"test/\xff\xfeH") == p("test/\\xff\\xfeH")
-    assert path_utils.clean_path(b"test/thing something.txt") == p("test/thing something.txt")
-    assert path_utils.clean_path(b"test/thing something.txt", dot_space=True) == p("test/thing.something.txt")
-    assert path_utils.clean_path(b"_/~_[7].opus") == p("_/~_[7].opus")
-    assert path_utils.clean_path(b"__/~_[7].opus") == p("_/~_[7].opus")
+    assert path_utils.clean_path(b"_test/-t") == utils.p("_test/t")
+    assert path_utils.clean_path(b"3_seconds_ago.../Mike.webm") == utils.p("3_Seconds_Ago/Mike.webm")
+    assert path_utils.clean_path(b"3_seconds_ago../Mike.webm") == utils.p("3_Seconds_Ago/Mike.webm")
+    assert path_utils.clean_path(b"3_seconds_ago./Mike.webm") == utils.p("3_Seconds_Ago/Mike.webm")
+    assert path_utils.clean_path(b"3_seconds_ago___/ Mike.webm") == utils.p("3_Seconds_Ago/Mike.webm")
+    assert path_utils.clean_path(b"test") == utils.p("test")
+    assert path_utils.clean_path(b"test./t") == utils.p("test/t")
+    assert path_utils.clean_path(b".test") == utils.p(".test")
+    assert path_utils.clean_path(b".test/t") == utils.p(".test/t")
+    assert path_utils.clean_path(b"_test/t") == utils.p("_test/t")
+    assert path_utils.clean_path(b"_test/t-") == utils.p("_test/t")
+    assert path_utils.clean_path(b"test/\xff\xfeH") == utils.p("test/\\xff\\xfeH")
+    assert path_utils.clean_path(b"test/thing something.txt") == utils.p("test/thing something.txt")
+    assert path_utils.clean_path(b"test/thing something.txt", dot_space=True) == utils.p("test/thing.something.txt")
+    assert path_utils.clean_path(b"_/~_[7].opus") == utils.p("_/~_[7].opus")
+    assert path_utils.clean_path(b"__/~_[7].opus") == utils.p("_/~_[7].opus")
 
 
 @mock.patch("xklb.utils.consts.random_string", return_value="abcdef")
 def test_random_filename(_mock_random_string):
-    assert path_utils.random_filename("testfile.txt") == p("testfile.abcdef.txt")
-    assert path_utils.random_filename("/3_seconds_ago../Mike.webm") == p("/3_seconds_ago../Mike.abcdef.webm")
-    assert path_utils.random_filename("/test") == p("/test.abcdef")
-    assert path_utils.random_filename("/test./t") == p("/test./t.abcdef")
-    assert path_utils.random_filename("/.test") == p("/.test.abcdef")
-    assert path_utils.random_filename("/.test/t") == p("/.test/t.abcdef")
-    assert path_utils.random_filename("/test/thing something.txt") == p("/test/thing something.abcdef.txt")
+    assert path_utils.random_filename("testfile.txt") == utils.p("testfile.abcdef.txt")
+    assert path_utils.random_filename("/3_seconds_ago../Mike.webm") == utils.p("/3_seconds_ago../Mike.abcdef.webm")
+    assert path_utils.random_filename("/test") == utils.p("/test.abcdef")
+    assert path_utils.random_filename("/test./t") == utils.p("/test./t.abcdef")
+    assert path_utils.random_filename("/.test") == utils.p("/.test.abcdef")
+    assert path_utils.random_filename("/.test/t") == utils.p("/.test/t.abcdef")
+    assert path_utils.random_filename("/test/thing something.txt") == utils.p("/test/thing something.abcdef.txt")
 
 
 def test_mpv_md5():
@@ -508,17 +505,17 @@ def test_trim_path_segments():
     path = "/aaaaaaaaaa/fans/001.jpg"
     desired_length = 16
     expected_result = "/aaaa/fans/001.jpg"
-    assert path_utils.trim_path_segments(path, desired_length) == p(expected_result)
+    assert path_utils.trim_path_segments(path, desired_length) == utils.p(expected_result)
 
     path = "/ao/bo/co/do/eo/fo/go/ho"
     desired_length = 9
     expected_result = "/a/b/c/d/e/f/g/h"
-    assert path_utils.trim_path_segments(path, desired_length) == p(expected_result)
+    assert path_utils.trim_path_segments(path, desired_length) == utils.p(expected_result)
 
     path = "/a/b/c"
     desired_length = 10
     expected_result = "/a/b/c"
-    assert path_utils.trim_path_segments(path, desired_length) == p(expected_result)
+    assert path_utils.trim_path_segments(path, desired_length) == utils.p(expected_result)
 
 
 def test_rebin_folders():
@@ -528,11 +525,11 @@ def test_rebin_folders():
     untouched, rebinned = scatter.rebin_folders(dummy_folders(5), 2)
     assert untouched == []
     expected = ["/tmp/1/1", "/tmp/1/2", "/tmp/2/3", "/tmp/2/4", "/tmp/3/5"]
-    assert list(t[1] for t in rebinned) == [p(s) for s in expected]
+    assert list(t[1] for t in rebinned) == [utils.p(s) for s in expected]
 
     untouched, rebinned = scatter.rebin_folders(dummy_folders(5), 4)
     expected = ["/tmp/1/1", "/tmp/1/2", "/tmp/1/3", "/tmp/1/4", "/tmp/2/5"]
-    assert list(t[1] for t in rebinned) == [p(s) for s in expected]
+    assert list(t[1] for t in rebinned) == [utils.p(s) for s in expected]
     assert untouched == []
 
     untouched, rebinned = scatter.rebin_folders(dummy_folders(5) + dummy_folders(5, "/tmp/f/"), 4)
@@ -548,7 +545,7 @@ def test_rebin_folders():
         "/tmp/f/1/4",
         "/tmp/f/2/5",
     ]
-    assert list(t[1] for t in rebinned) == [p(s) for s in expected]
+    assert list(t[1] for t in rebinned) == [utils.p(s) for s in expected]
     assert untouched == []
 
     untouched, rebinned = scatter.rebin_folders(dummy_folders(5) + dummy_folders(5, "/tmp/f/"), 5)

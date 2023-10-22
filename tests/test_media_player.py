@@ -2,6 +2,7 @@ import argparse
 
 import pytest
 
+from tests import utils
 from xklb.media.media_player import MediaPrefetcher
 from xklb.utils import consts
 
@@ -40,7 +41,7 @@ def test_prefetch(media):
 
     m = prep.get_m()
     assert m is not None
-    assert m["path"] == "tests/data/test.mp4"
+    assert m["path"] == utils.p("tests/data/test.mp4")
     assert prep.remaining == 3
     assert len(prep.media) == 1
     assert len(prep.futures) == 2
@@ -57,7 +58,7 @@ def test_prefetch(media):
 
     m = prep.get_m()
     assert m is not None
-    assert m["path"] == "tests/data/test.vtt"
+    assert m["path"] == utils.p("tests/data/test.vtt")
     assert prep.remaining == 0
     assert len(prep.media) == 0
     assert len(prep.futures) == 0
