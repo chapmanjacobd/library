@@ -417,7 +417,7 @@ class MediaPrefetcher:
                     else:
                         player.extend(args.player_args_no_sub)
 
-                if getattr(args, "volume", False):
+                if getattr(args, "volume", None) is not None:
                     player.extend([f"--volume={args.volume}"])
 
                 if m["path"] and m["path"].startswith("http"):
@@ -579,7 +579,7 @@ def mpv_jsonipc(args, m):
 
     mpv_cli_args = m["player"][1:]
     mpv_kwargs = mpv_utils.mpv_cli_args_to_pythonic(mpv_cli_args)
-    x_mpv = MPV(args.mpv_socket, **mpv_kwargs)
+    x_mpv = MPV(args.mpv_socket, log_handler=print, **mpv_kwargs)
 
     if args.volume:
         x_mpv.volume = args.volume
