@@ -95,7 +95,7 @@ def construct_absolute_url(url, href):
 def is_desired_url(args, a_element, href) -> bool:
     path = href if args.case_sensitive else href.lower()
 
-    if args.path_include and not all(inc in path for inc in args.path_include):
+    if args.path_include and not any(inc in path for inc in args.path_include):
         log.debug("path-include: %s", path)
         return False
     if args.path_exclude and any(ex in path for ex in args.path_exclude):
@@ -107,7 +107,7 @@ def is_desired_url(args, a_element, href) -> bool:
     if args.text_exclude and any(ex in link_text for ex in args.text_exclude):
         log.debug("text-exclude: %s", link_text)
         return False
-    if args.text_include and not all(inc in link_text for inc in args.text_include):
+    if args.text_include and not any(inc in link_text for inc in args.text_include):
         log.debug("text-include: %s", link_text)
         return False
 
@@ -123,10 +123,10 @@ def is_desired_url(args, a_element, href) -> bool:
         if args.after_exclude and any(ex in after_text for ex in args.after_exclude):
             log.debug("after-exclude: %s", after_text)
             return False
-        if args.before_include and not all(inc in before_text for inc in args.before_include):
+        if args.before_include and not any(inc in before_text for inc in args.before_include):
             log.debug("before-include: %s", before_text)
             return False
-        if args.after_include and not all(inc in after_text for inc in args.after_include):
+        if args.after_include and not any(inc in after_text for inc in args.after_include):
             log.debug("after-include: %s", after_text)
             return False
 
