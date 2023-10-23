@@ -556,10 +556,9 @@ def multiple_player(args, playlist) -> None:
                         if r.returncode == 0:
                             history.add(args, [m["path"]], mark_done=True)
                         else:
-                            log.info("Player exited with code %s", r.returncode)
-                            log.debug(shlex.join(r.args))
                             if not args.ignore_errors:
                                 log.error("Player exited with code %s", r.returncode)
+                                log.debug(shlex.join(r.args))
                                 raise SystemExit(r.returncode)
 
                         post_act(
@@ -642,9 +641,8 @@ def play(args, m, media_len) -> None:
             if r.returncode == 0:
                 history.add(args, [m["original_path"]], mark_done=True)
             else:
-                log.info("Player exited with code %s", r.returncode)
-                log.debug(shlex.join(r.args))
                 if not args.ignore_errors:
+                    log.debug(shlex.join(r.args))
                     log.error("Player exited with code %s", r.returncode)
                     raise SystemExit(r.returncode)
             t.reset()

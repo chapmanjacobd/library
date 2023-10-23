@@ -4,11 +4,13 @@ from typing import Dict
 from xklb import usage
 from xklb.utils import file_utils, nums
 from xklb.utils.consts import DEFAULT_FILE_ROWS_READ_LIMIT
-from xklb.utils.printing import print_df
+from xklb.utils.printing import print_df, print_series
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Perform EDA on one or more files", usage=usage.eda)
+    parser.add_argument("--mimetype", "--filetype")
+    parser.add_argument("--encoding")
     parser.add_argument("--table-name", "--table", "-t")
     parser.add_argument("--table-index", type=int)
     parser.add_argument("--start-row", "--skiprows", type=int, default=None)
@@ -31,13 +33,6 @@ def parse_args():
         args.end_row = int(args.end_row)
 
     return args
-
-
-def print_series(s):
-    if len(s) > 0:
-        print()
-        print("\n".join([f"- {col}" for col in s]))
-        print()
 
 
 def df_column_values(df, column_name) -> Dict:
@@ -82,17 +77,13 @@ def print_info(args, df):
     print()
 
     print("### Sample of rows")
-    print()
     if len(df) > 6:
         print_df(pd.concat([df.head(3), df.tail(3)]))
     else:
         print_df(df.head(6))
-    print()
 
     print("### Summary statistics")
-    print()
     print_df(df.describe())
-    print()
 
     converted = df.convert_dtypes()
     same_dtypes = []
@@ -104,39 +95,58 @@ def print_info(args, df):
             diff_dtypes.append((col, df.dtypes[col], converted.dtypes[col]))
     if len(same_dtypes) > 0:
         print("### Pandas columns with 'original' dtypes")
-        print()
         same_dtypes = pd.DataFrame(same_dtypes, columns=["column", "dtype"])
         print_df(same_dtypes.set_index("column"))
-        print()
     if len(diff_dtypes) > 0:
         print("### Pandas columns with 'converted' dtypes")
-        print()
         diff_dtypes = pd.DataFrame(diff_dtypes, columns=["column", "original_dtype", "converted_dtype"])
         print_df(diff_dtypes.set_index("column"))
-        print()
 
-    categorical_columns = [s for s in df.columns if pd.api.types.is_categorical_dtype(df[s])]
-    if categorical_columns:
-        print("### Categorical columns")
-        print()
-        for col in categorical_columns:
-            print(col)
-            print("#### values")
-            print_df(df[col].value_counts(normalize=True))
-            print("#### groupby")
-            print_df(df.groupby(col).describe())
-            print()
+    if len(df) > 15:
 
-    numeric_columns = df.select_dtypes("number").columns.to_list()
-    if numeric_columns and len(df) > 15:
-        print("### Numerical columns")
-        print()
-        print("#### Bins")
-        print()
-        for col in numeric_columns:
-            bins = pd.cut(df[col], bins=6)
-            print_df(bins.value_counts().sort_index())
+        numeric_columns = df.select_dtypes("number").columns.to_list()
+        if numeric_columns:
+            print("### Numerical columns")
             print()
+            print("#### Bins")
+            print()
+            for col in numeric_columns:
+                bins = pd.cut(df[col], bins=6)
+                print_df(bins.value_counts().sort_index())
+
+        categorical_columns = [s for s in df.columns.to_list() if s not in numeric_columns]
+        if categorical_columns:
+            high_cardinality_cols = []
+            low_cardinality_cols = []
+
+            print("### Categorical columns")
+            print()
+            for col in categorical_columns:
+                vc = df[col].value_counts()
+                vc = vc[vc > (len(df) * 0.005)]
+                if len(vc) > 0:
+                    low_cardinality_cols.append(col)
+                    print(f"#### {col} common values")
+                    vc = pd.DataFrame({"Count": vc, "Percentage": (vc / len(df)) * 100}).sort_values(
+                        by="Count", ascending=False
+                    )
+                    print_df(vc.head(30))
+
+                    groups = df.groupby(col).size()
+                    groups = groups[groups >= 15]
+                    if len(groups) > 0:
+                        print(f"#### {col} groupby")
+                        print_df(df[df[col].isin(groups.index)].groupby(col).describe())
+
+                unique_count = df[col].nunique()
+                if unique_count >= (len(df) * 0.2):
+                    high_cardinality_cols.append(col)
+
+            print("#### High cardinality (many unique values)")
+            print_series(high_cardinality_cols)
+
+            print("#### Low cardinality (many similar values)")
+            print_series(low_cardinality_cols)
 
     print("### Missing values")
     print()
@@ -162,7 +172,6 @@ def print_info(args, df):
         column_report = pd.DataFrame(df_column_values(df, col) for col in df.columns).set_index("column")
         column_report = column_report.sort_values(["empty_string_count", "zero_count", "null_count"])
         print_df(column_report[["values", "null", "zero", "empty_string"]])
-        print()
 
 
 def file_eda(args, path):
@@ -173,6 +182,8 @@ def file_eda(args, path):
         start_row=args.start_row,
         end_row=args.end_row,
         order_by=args.sort,
+        encoding=args.encoding,
+        mimetype=args.mimetype,
     )
     if getattr(args, "repl", False):
         breakpoint()

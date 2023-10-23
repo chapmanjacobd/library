@@ -8,6 +8,10 @@ from xklb.utils.printing import print_df
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Diff two table-like files", usage=usage.incremental_diff)
+    parser.add_argument("--mimetype1", "--filetype1")
+    parser.add_argument("--encoding1")
+    parser.add_argument("--mimetype2", "--filetype2")
+    parser.add_argument("--encoding2")
     parser.add_argument("--table1-name", "--table1", "-t1")
     parser.add_argument("--table2-name", "--table2", "-t2")
     parser.add_argument("--table1-index", type=int)
@@ -43,6 +47,8 @@ def process_chunks(args):
             start_row=chunk_start_row,
             end_row=chunk_end_row,
             order_by=args.sort,
+            encoding=args.encoding1,
+            mimetype=args.mimetype1,
         )
         dfs2 = file_utils.read_file_to_dataframes(
             args.path2,
@@ -51,6 +57,8 @@ def process_chunks(args):
             start_row=chunk_start_row,
             end_row=chunk_end_row,
             order_by=args.sort,
+            encoding=args.encoding2,
+            mimetype=args.mimetype2,
         )
 
         # TODO: https://github.com/ICRAR/ijson

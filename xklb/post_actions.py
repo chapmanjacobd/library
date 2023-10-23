@@ -116,7 +116,6 @@ def post_act(
     def handle_ask_action(ask_action: str):
         true_action, false_action = getattr(AskAction, ask_action)
         if args.exit_code_confirm and player_exit_code is not None:
-            log.info("%s remaining", media_len)
             response = player_exit_code
         elif gui and args.gui:
             response = gui.askkeep(
@@ -130,7 +129,10 @@ def post_act(
             response = devices.confirm(true_action.title() + "?")
         confirmed_action = true_action if response else false_action
         if geom_data is not None:
-            log.warning("%s: %s", confirmed_action, media_file)
+            if args.exit_code_confirm:
+                log.warning("%s: %s (%s remaining)", confirmed_action, media_file, media_len)
+            else:
+                log.warning("%s: %s", confirmed_action, media_file)
         post_act(args, media_file, action=confirmed_action)  # answer the question
 
     action = action or args.post_action
