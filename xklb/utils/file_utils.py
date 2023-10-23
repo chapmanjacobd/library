@@ -61,6 +61,8 @@ def mimetype(path):
                 file_type = "block device"
             elif p.is_char_device():
                 file_type = "char device"
+        except (FileNotFoundError):
+            return
 
     return file_type
 
@@ -257,14 +259,17 @@ def retry_with_different_encodings(func):
 
 @retry_with_different_encodings
 def read_file_to_dataframes(
-    path, table_name=None, table_index=None, start_row=None, end_row=None, order_by=None, encoding=None
+    path, table_name=None, table_index=None, start_row=None, end_row=None, order_by=None, encoding=None, mimetype=None
 ):
     import pandas as pd
 
-    mimetype = file_utils.mimetype(path)
+    if mimetype is None:
+        mimetype = file_utils.mimetype(path)
+    if mimetype is not None:
+        mimetype = mimetype.strip().lower()
     log.info(mimetype)
 
-    if mimetype in ("SQLite database file",):
+    if mimetype in ("sqlite", "sqlite3", "sqlite database file"):
         import pandas as pd
         from sqlite_utils import Database
 
@@ -288,8 +293,9 @@ def read_file_to_dataframes(
             dfs.append(df)
         db.close()
     elif mimetype in (
+        "excel",
         "application/vnd.ms-excel",
-        "Excel spreadsheet subheader",
+        "excel spreadsheet subheader",
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     ):
         excel_data = pd.read_excel(path, sheet_name=table_name or table_index, nrows=end_row, skiprows=start_row)
@@ -304,42 +310,62 @@ def read_file_to_dataframes(
             for worksheet_name, df in excel_data.items():
                 df.name = worksheet_name
                 dfs.append(df)
-    elif mimetype in ("application/x-netcdf",):
+    elif mimetype in (
+        "netcdf",
+        "application/x-netcdf",
+    ):
         import xarray as xr
 
         ds = xr.open_dataset(path)
         dfs = [ds.to_dataframe()]
-    elif mimetype in ("Zarr",):
+    elif mimetype in ("zarr",):
         import xarray as xr
 
         ds = xr.open_zarr(path)
         dfs = [ds.to_dataframe()]
-    elif mimetype in ("application/x-hdf",):
+    elif mimetype in (
+        "hdf",
+        "application/x-hdf",
+    ):
         dfs = [pd.read_hdf(path, start=start_row, stop=end_row)]
-    elif mimetype in ("application/json",):
+    elif mimetype in (
+        "json",
+        "application/json",
+    ):
         dfs = [pd.read_json(path, encoding=encoding)]
-    elif mimetype in ("JSON Lines", "GeoJSON Lines"):
+    elif mimetype in ("jsonl", "json lines", "geojson lines"):
         dfs = [pd.read_json(path, nrows=end_row, lines=True, encoding=encoding)]
-    elif mimetype in ("text/csv",):
+    elif mimetype in (
+        "csv",
+        "text/csv",
+    ):
         dfs = [pd.read_csv(path, nrows=end_row, skiprows=start_row or 0, encoding=encoding)]
     elif mimetype in (
+        "tsv",
         "text/tsv",
         "text/tab-separated-values",
     ):
         dfs = [pd.read_csv(path, delimiter="\t", nrows=end_row, skiprows=start_row or 0, encoding=encoding)]
-    elif mimetype in ("Parquet", "application/parquet"):
+    elif mimetype in ("parq", "parquet", "application/parquet"):
         dfs = [pd.read_parquet(path)]
-    elif mimetype in ("Pickle", "application/octet-stream"):
+    elif mimetype in ("pkl", "pickle", "application/octet-stream"):
         dfs = [pd.read_pickle(path)]
-    elif mimetype in ("text/html",):
+    elif mimetype in (
+        "html",
+        "htm",
+        "text/html",
+    ):
         dfs = pd.read_html(path, skiprows=start_row, encoding=encoding)
-    elif mimetype in ("Stata",):
+    elif mimetype in ("stata",):
         dfs = [pd.read_stata(path)]
-    elif mimetype in ("Feather",):
+    elif mimetype in ("feather",):
         dfs = [pd.read_feather(path)]
-    elif mimetype in ("ORC",):
+    elif mimetype in ("orc",):
         dfs = [pd.read_orc(path)]
-    elif mimetype in ("text/xml",):
+    elif mimetype in (
+        "xml",
+        "text/xml",
+    ):
         dfs = [pd.read_xml(path, encoding=encoding)]
     else:
         msg = f"{path}: Unsupported file type: {mimetype}"

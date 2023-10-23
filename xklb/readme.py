@@ -101,8 +101,7 @@ expand_all_js = """```js
 (() => { const readmeDiv = document.getElementById("readme"); const detailsElements = readmeDiv.getElementsByTagName("details"); for (let i = 0; i < detailsElements.length; i++) { detailsElements[i].setAttribute("open", "true"); } })();
 ```"""
 
-print(
-    rf"""# library (media toolkit)
+readme = rf"""# library (media toolkit)
 
 A wise philosopher once told me: "the future is [autotainment](https://www.youtube.com/watch?v=F9sZFrsjPp0)".
 
@@ -447,5 +446,6 @@ You can expand all by running this in your browser console:
 
 {expand_all_js}
 
-""",
-)
+"""
+
+print(readme)

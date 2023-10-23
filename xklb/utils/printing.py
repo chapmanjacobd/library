@@ -210,4 +210,13 @@ def col_hhmmss(tbl: List[Dict], col: str) -> List[Dict]:
 
 
 def print_df(df):
+    print()
     print(df.to_markdown(tablefmt="github"))
+    print()
+
+
+def print_series(s):
+    if len(s) > 0:
+        print()
+        print("\n".join([f"- {col}" for col in s]))
+        print()
