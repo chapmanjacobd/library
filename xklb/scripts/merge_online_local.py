@@ -74,9 +74,8 @@ def merge_online_local() -> None:
     args.db["media"].rebuild_fts()
     duplicates = get_duplicates(args)
 
-    tbl = deepcopy(duplicates)
-    tbl = tbl[: int(args.limit)]
-    media_printer.media_printer(args, tbl, units="duplicates")
+    tbl = deepcopy(duplicates[: int(args.limit)])
+    media_printer.media_printer(args, tbl, units="duplicates", media_len=len(duplicates))
 
     if duplicates and devices.confirm("Merge duplicates?"):  # type: ignore
         log.info("Merging...")

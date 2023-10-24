@@ -198,19 +198,33 @@ def bigdirs() -> None:
             {
                 "path": group["common_prefix"],
                 "count": len(group["grouped_paths"]),
-                "size": sum(media_keyed[s].get("size", 0) for s in group["grouped_paths"]),
                 "played": sum(bool(media_keyed[s].get("time_played", 0)) for s in group["grouped_paths"]),
                 "deleted": sum(bool(media_keyed[s].get("time_deleted", 0)) for s in group["grouped_paths"]),
+                "deleted_size": sum(
+                    media_keyed[s].get("size", 0)
+                    for s in group["grouped_paths"]
+                    if bool(media_keyed[s].get("time_deleted", 0))
+                ),
+                "size": sum(
+                    media_keyed[s].get("size", 0)
+                    for s in group["grouped_paths"]
+                    if not bool(media_keyed[s].get("time_deleted", 0))
+                ),
+                "median_size": nums.safe_median(
+                    media_keyed[s].get("size", 0)
+                    for s in group["grouped_paths"]
+                    if not bool(media_keyed[s].get("time_deleted", 0))
+                ),
             }
             for group in groups
         ]
     else:
         folders = group_files_by_folder(args, media)
+
     media = process_bigdirs(args, folders)
 
     if args.limit:
         media = media[-int(args.limit) :]
-
     media_printer.media_printer(args, media, units="folders")
 
 

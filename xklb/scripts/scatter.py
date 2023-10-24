@@ -1,14 +1,13 @@
 import argparse, math, random, sys, tempfile
 from collections import Counter
 from pathlib import Path
-from statistics import median
 from typing import Dict, List, Tuple, Union
 
 from humanize import naturalsize
 from tabulate import tabulate
 
 from xklb import usage
-from xklb.utils import consts, db_utils, devices, file_utils, iterables, objects, printing
+from xklb.utils import consts, db_utils, devices, file_utils, iterables, nums, objects, printing
 from xklb.utils.log_utils import log
 
 
@@ -109,10 +108,10 @@ def get_path_stats(args, data) -> List[Dict]:
                     "mount": srcmount,
                     "file_count": len(disk_files),
                     "total_size": sum(d["size"] or 0 for d in disk_files),
-                    "median_size": median(d["size"] or 0 for d in disk_files),
-                    "time_created": median(d["time_created"] for d in disk_files),
-                    "time_modified": median(d["time_modified"] for d in disk_files),
-                    "time_downloaded": median(d["time_downloaded"] for d in disk_files),
+                    "median_size": nums.safe_median(d["size"] or 0 for d in disk_files),
+                    "time_created": nums.safe_median(d["time_created"] for d in disk_files),
+                    "time_modified": nums.safe_median(d["time_modified"] for d in disk_files),
+                    "time_downloaded": nums.safe_median(d["time_downloaded"] for d in disk_files),
                 },
             )
     return result

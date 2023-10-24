@@ -89,6 +89,9 @@ def construct_absolute_url(url, href):
     from urllib.parse import urlparse
 
     up = urlparse(href)
+    if up.scheme and up.scheme not in ("https", "http", "ftp"):
+        return href
+
     if not up.netloc:
         up = urlparse(url)
         href = up.scheme + "://" + up.netloc + href
