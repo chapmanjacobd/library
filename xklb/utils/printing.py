@@ -1,5 +1,5 @@
 import csv, math, os, platform, sys, textwrap
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from typing import Dict, List
 
 import humanize
@@ -104,7 +104,7 @@ def col_naturaldate(tbl: List[Dict], col: str) -> List[Dict]:
             if val == 0:
                 tbl[idx][col] = None
             else:
-                tbl[idx][col] = humanize.naturaldate(datetime.fromtimestamp(val, timezone.utc))
+                tbl[idx][col] = humanize.naturaldate(datetime.fromtimestamp(val))
 
     return tbl
 
@@ -117,7 +117,7 @@ def col_naturaltime(tbl: List[Dict], col: str) -> List[Dict]:
             if val == 0:
                 tbl[idx][col] = None
             else:
-                tbl[idx][col] = humanize.naturaltime(datetime.fromtimestamp(val, timezone.utc))
+                tbl[idx][col] = humanize.naturaltime(datetime.fromtimestamp(val))
 
     return tbl
 

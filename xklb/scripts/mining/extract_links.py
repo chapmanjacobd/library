@@ -62,6 +62,7 @@ def parse_args():
     parser.add_argument("--strict-include", action="store_true", help="All include args must resolve true")
     parser.add_argument("--strict-exclude", action="store_true", help="All exclude args must resolve true")
     parser.add_argument("--case-sensitive", action="store_true", help="Filter with case sensitivity")
+    parser.add_argument("--print-link-text", action="store_true")
     parser.add_argument("--scroll", action="store_true", help="Scroll down the page; infinite scroll")
     parser.add_argument("--download", action="store_true", help="Download filtered links")
     parser.add_argument("--verbose", "-v", action="count", default=0)
@@ -159,7 +160,10 @@ def get_inner_urls(args, url, markup):
         if (len(href) > 1) and href[0] != "#":
             href = construct_absolute_url(url, href)
             if is_desired_url(args, a, href):
-                inner_urls.add(href)
+                if args.print_link_text:
+                    inner_urls.add(href + "\t" + a.text.lower())
+                else:
+                    inner_urls.add(href)
 
         # breakpoint()
 
