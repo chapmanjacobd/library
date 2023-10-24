@@ -1,4 +1,4 @@
-import re
+import re, statistics
 from datetime import timezone
 from typing import Optional
 
@@ -19,6 +19,15 @@ def safe_int(s) -> Optional[int]:
     try:
         return int(float(s))
     except Exception:
+        return None
+
+
+def safe_median(l) -> Optional[float]:
+    if not l:
+        return None
+    try:
+        return statistics.median(l)
+    except statistics.StatisticsError:
         return None
 
 

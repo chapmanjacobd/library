@@ -90,6 +90,8 @@ def media_printer(args, data, units=None, media_len=None) -> None:
     if units is None:
         units = "media"
 
+    action = getattr(args, "action", "")
+    print_args = getattr(args, "print", "")
     cols = getattr(args, "cols", [])
 
     media = deepcopy(data)
@@ -100,27 +102,27 @@ def media_printer(args, data, units=None, media_len=None) -> None:
     if not media:
         processes.no_media_found()
 
-    if "f" not in args.print and "limit" in getattr(args, "defaults", []):
+    if "f" not in print_args and "limit" in getattr(args, "defaults", []):
         media.reverse()
 
     duration = sum(m.get("duration") or 0 for m in media)
-    if "a" in args.print and ("Aggregate" not in media[0].get("path") or ""):
+    if "a" in print_args and ("Aggregate" not in media[0].get("path") or ""):
         if "count" in media[0]:
             D = {"path": "Aggregate", "count": sum(d["count"] for d in media)}
-        elif args.action == SC.download_status and "never_downloaded" in media[0]:
+        elif action == SC.download_status and "never_downloaded" in media[0]:
             potential_downloads = sum(d["never_downloaded"] + d["retry_queued"] for d in media)
             D = {"path": "Aggregate", "count": potential_downloads}
         else:
             D = {"path": "Aggregate", "count": len(media)}
 
-        if "duration" in media[0] and args.action not in (SC.download_status):
+        if "duration" in media[0] and action not in (SC.download_status):
             D["duration"] = duration
             D["avg_duration"] = duration / len(media)
 
         if hasattr(args, "action"):
-            if args.action in (SC.listen, SC.watch, SC.read, SC.view):
+            if action in (SC.listen, SC.watch, SC.read, SC.view):
                 D["cadence_adj_duration"] = cadence_adjusted_duration(args, duration)
-            elif args.action in (SC.download, SC.download_status):
+            elif action in (SC.download, SC.download_status):
                 D["download_duration"] = cadence_adjusted_items(args, D["count"])
 
         if "size" in media[0]:
@@ -135,18 +137,18 @@ def media_printer(args, data, units=None, media_len=None) -> None:
         media = [D]
 
     else:
-        if "r" in args.print:
+        if "r" in print_args:
             marked = sql_utils.mark_media_deleted(args, [d["path"] for d in media if not Path(d["path"]).exists()])
             log.warning(f"Marked {marked} metadata records as deleted")
-        elif "d" in args.print:
+        elif "d" in print_args:
             marked = sql_utils.mark_media_deleted(args, [d["path"] for d in media])
             log.warning(f"Marked {marked} metadata records as deleted")
 
-        if "w" in args.print:
+        if "w" in print_args:
             marked = history.add(args, [d["path"] for d in media])
             log.warning(f"Marked {marked} metadata records as watched")
 
-    if "a" not in args.print and args.action == SC.download_status:
+    if "a" not in print_args and action == SC.download_status:
         for m in media:
             m["download_duration"] = cadence_adjusted_items(
                 args,
@@ -180,7 +182,7 @@ def media_printer(args, data, units=None, media_len=None) -> None:
 
     media = iterables.list_dict_filter_bool(media)
 
-    if "f" in args.print:
+    if "f" in print_args:
         if len(media) <= 1000:
             media, deleted_paths = filter_deleted(media)
             sql_utils.mark_media_deleted(args, deleted_paths)
@@ -197,16 +199,17 @@ def media_printer(args, data, units=None, media_len=None) -> None:
         wr.writerows(selected_cols)
 
         virtual_csv.seek(0)
-        for line in virtual_csv.readlines():
-            if getattr(args, "moved", False):
-                printing.pipe_print(line.strip().replace(args.moved[0], "", 1))
-            else:
-                printing.pipe_print(line.strip())
         if getattr(args, "moved", False):
+            for line in virtual_csv.readlines():
+                printing.pipe_print(line.strip().replace(args.moved[0], "", 1))
             moved_media(args, [d["path"] for d in media], *args.moved)
-    elif "j" in args.print or consts.MOBILE_TERMINAL:
+        else:
+            for line in virtual_csv.readlines():
+                printing.pipe_print(line.strip())
+
+    elif "j" in print_args or consts.MOBILE_TERMINAL:
         print(json.dumps(media, indent=3))
-    elif "c" in args.print:
+    elif "c" in print_args:
         printing.write_csv_to_stdout(media)
     else:
         tbl = deepcopy(media)
@@ -227,7 +230,7 @@ def media_printer(args, data, units=None, media_len=None) -> None:
 
         if duration > 0:
             duration = printing.human_time(duration)
-            if "a" not in args.print:
+            if "a" not in print_args:
                 print("Total duration:", duration)
 
 

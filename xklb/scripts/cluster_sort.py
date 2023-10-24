@@ -1,9 +1,9 @@
-import argparse, json, os.path, statistics, sys
+import argparse, json, os.path, sys
 from collections import Counter
 from pathlib import Path
 
 from xklb import usage
-from xklb.utils import consts, file_utils, iterables, objects, printing, sql_utils, strings
+from xklb.utils import consts, file_utils, iterables, nums, objects, printing, sql_utils, strings
 from xklb.utils.consts import DBType
 from xklb.utils.log_utils import Timer, log
 
@@ -146,7 +146,7 @@ def cluster_dicts(args, media):
                 {
                     **group,
                     "count": len(group["grouped_paths"]),
-                    "size": statistics.median(media_keyed[s].get("size", 0) for s in group["grouped_paths"]),
+                    "size": nums.safe_median(media_keyed[s].get("size", 0) for s in group["grouped_paths"]),
                     "played": sum(bool(media_keyed[s].get("time_last_played", 0)) for s in group["grouped_paths"])
                     / len(group["grouped_paths"]),
                     "deleted/played": sum(
