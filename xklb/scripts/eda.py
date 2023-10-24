@@ -126,7 +126,7 @@ def print_info(args, df):
                 vc = vc[vc > (len(df) * 0.005)]
                 if len(vc) > 0:
                     low_cardinality_cols.append(col)
-                    print(f"#### {col} common values")
+                    print(f"#### common values of {col} column")
                     vc = pd.DataFrame({"Count": vc, "Percentage": (vc / len(df)) * 100}).sort_values(
                         by="Count", ascending=False
                     )
@@ -135,18 +135,20 @@ def print_info(args, df):
                     groups = df.groupby(col).size()
                     groups = groups[groups >= 15]
                     if len(groups) > 0:
-                        print(f"#### {col} groupby")
+                        print(f"#### group by {col}")
                         print_df(df[df[col].isin(groups.index)].groupby(col).describe())
 
                 unique_count = df[col].nunique()
                 if unique_count >= (len(df) * 0.2):
                     high_cardinality_cols.append(col)
 
-            print("#### High cardinality (many unique values)")
-            print_series(high_cardinality_cols)
+            if high_cardinality_cols:
+                print("#### High cardinality (many unique values)")
+                print_series(high_cardinality_cols)
 
-            print("#### Low cardinality (many similar values)")
-            print_series(low_cardinality_cols)
+            if low_cardinality_cols:
+                print("#### Low cardinality (many similar values)")
+                print_series(low_cardinality_cols)
 
     print("### Missing values")
     print()

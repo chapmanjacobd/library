@@ -129,7 +129,7 @@ def post_act(
             response = devices.confirm(true_action.title() + "?")
         confirmed_action = true_action if response else false_action
         if geom_data is not None:
-            if args.exit_code_confirm:
+            if args.exit_code_confirm and media_len > 0:
                 log.warning("%s: %s (%s remaining)", confirmed_action, media_file, media_len)
             else:
                 log.warning("%s: %s", confirmed_action, media_file)
