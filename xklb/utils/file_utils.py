@@ -8,65 +8,6 @@ from xklb.utils import consts, file_utils, processes, web
 from xklb.utils.log_utils import log
 
 
-def mimetype(path):
-    import mimetypes
-
-    import puremagic
-
-    p = Path(path)
-
-    file_type = None
-    ext = puremagic.ext_from_filename(path)
-    if ext in (".zarr", ".zarr/"):
-        file_type = "Zarr"
-    elif p.is_dir():
-        file_type = "directory"
-    else:
-        file_type, encoding = mimetypes.guess_type(path, strict=False)
-
-    if file_type is None:
-        pandas_ext = {
-            ".dta": "Stata",
-            ".xlsx": "Excel",
-            ".xls": "Excel",
-            ".json": "JSON",
-            ".jsonl": "JSON Lines",
-            ".ndjson": "JSON Lines",
-            ".geojson": "GeoJSON",
-            ".geojsonl": "GeoJSON Lines",
-            ".ndgeojson": "GeoJSON Lines",
-            ".hdf": "HDF5",
-            ".feather": "Feather",
-            ".parquet": "Parquet",
-            ".sas7bdat": "SAS",
-            ".sav": "SPSS",
-            ".pkl": "Pickle",
-            ".orc": "ORC",
-        }
-        file_type = pandas_ext.get(ext)
-
-    if file_type is None:
-        try:
-            info = puremagic.magic_file(path)
-            log.debug(info)
-            file_type = info[0].name
-        except (puremagic.PureError, IndexError):
-            if p.is_socket():
-                file_type = "socket"
-            elif p.is_fifo():
-                file_type = "fifo"
-            elif p.is_symlink():
-                file_type = "symlink"
-            elif p.is_block_device():
-                file_type = "block device"
-            elif p.is_char_device():
-                file_type = "char device"
-        except (FileNotFoundError):
-            return
-
-    return file_type
-
-
 def file_temp_copy(src) -> str:
     fo_dest = tempfile.NamedTemporaryFile(delete=False)
     with open(src, "r+b") as fo_src:
@@ -230,6 +171,84 @@ def get_file_encoding(path):
     if encoding:
         log.info(f"The encoding of {path} is likely: {encoding}")
     return encoding
+
+
+def head_foot_stream(url, head_len, foot_len):
+    import io
+
+    head_response = web.requests_session().get(url, stream=True)
+    head_response.raise_for_status()
+    head_bytes = head_response.raw.read(head_len)
+
+    foot_response = web.requests_session().get(url, stream=True, headers={"Range": f"bytes={-foot_len}"})
+    foot_bytes = foot_response.raw.read(foot_len)
+
+    stream = io.BytesIO(head_bytes + foot_bytes)
+    return stream
+
+
+def mimetype(path):
+    import mimetypes
+
+    import puremagic
+
+    p = Path(path)
+
+    file_type = None
+    ext = puremagic.ext_from_filename(path)
+    if ext in (".zarr", ".zarr/"):
+        file_type = "Zarr"
+    elif p.is_dir():
+        file_type = "directory"
+    else:
+        file_type, encoding = mimetypes.guess_type(path, strict=False)
+
+    if ext and file_type is None:
+        pandas_ext = {
+            ".dta": "Stata",
+            ".xlsx": "Excel",
+            ".xls": "Excel",
+            ".json": "JSON",
+            ".jsonl": "JSON Lines",
+            ".ndjson": "JSON Lines",
+            ".geojson": "GeoJSON",
+            ".geojsonl": "GeoJSON Lines",
+            ".ndgeojson": "GeoJSON Lines",
+            ".hdf": "HDF5",
+            ".feather": "Feather",
+            ".parquet": "Parquet",
+            ".sas7bdat": "SAS",
+            ".sav": "SPSS",
+            ".pkl": "Pickle",
+            ".orc": "ORC",
+        }
+        file_type = pandas_ext.get(ext)
+
+    if file_type is None:
+        try:
+            if path.startswith("http"):
+                max_head = max([len(x.byte_match) + x.offset for x in puremagic.magic_header_array])
+                max_foot = max([len(x.byte_match) + abs(x.offset) for x in puremagic.magic_footer_array])
+                info = puremagic.magic_stream(head_foot_stream(path, max_head, max_foot), path)
+            else:
+                info = puremagic.magic_file(path)
+            log.debug(info)
+            file_type = info[0].name
+        except (puremagic.PureError, IndexError):
+            if p.is_socket():
+                file_type = "socket"
+            elif p.is_fifo():
+                file_type = "fifo"
+            elif p.is_symlink():
+                file_type = "symlink"
+            elif p.is_block_device():
+                file_type = "block device"
+            elif p.is_char_device():
+                file_type = "char device"
+        except (FileNotFoundError):
+            return
+
+    return file_type
 
 
 def retry_with_different_encodings(func):
