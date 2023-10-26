@@ -236,14 +236,14 @@ def mv_to_keep_folder(args, d) -> None:
 
         src_size = d["size"]
         dst_size = new_path.stat().st_size
-        diff_size = humanize.naturalsize(src_size - dst_size)
+        diff_size = humanize.naturalsize(src_size - dst_size, binary=True)
 
         if src_size > dst_size:
             print("Source is larger than destination", diff_size)
         elif src_size < dst_size:
             print("Source is smaller than destination", diff_size)
         else:
-            print("Source and destination are the same size", humanize.naturalsize(src_size))
+            print("Source and destination are the same size", humanize.naturalsize(src_size, binary=True))
         if devices.confirm("Replace destination file?"):
             file_utils.trash(new_path, detach=False)
             new_path = shutil.move(media_file, keep_path)
@@ -286,8 +286,8 @@ def group_and_delete(args, groups):
                 left = right
                 continue
 
-            print(left["path"], humanize.naturalsize(left["size"]))
-            print(right["path"], humanize.naturalsize(right["size"]))
+            print(left["path"], humanize.naturalsize(left["size"], binary=True))
+            print(right["path"], humanize.naturalsize(right["size"], binary=True))
 
             if args.auto_select_min_ratio < 1.0:
                 similar_ratio = difflib.SequenceMatcher(

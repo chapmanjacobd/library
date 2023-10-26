@@ -128,7 +128,7 @@ def col_naturalsize(tbl: List[Dict], col: str) -> List[Dict]:
             if tbl[idx][col] == 0:
                 tbl[idx][col] = None
             else:
-                tbl[idx][col] = humanize.naturalsize(tbl[idx][col])
+                tbl[idx][col] = humanize.naturalsize(tbl[idx][col], binary=True)
 
     return tbl
 

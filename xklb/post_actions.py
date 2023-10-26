@@ -39,14 +39,14 @@ def mv_to_keep_folder(args, media_file: str) -> None:
 
         src_size = p.stat().st_size
         dst_size = new_path.stat().st_size
-        diff_size = humanize.naturalsize(src_size - dst_size)
+        diff_size = humanize.naturalsize(src_size - dst_size, binary=True)
 
         if src_size > dst_size:
             print("Source is larger than destination", diff_size)
         elif src_size < dst_size:
             print("Source is smaller than destination", diff_size)
         else:
-            print("Source and destination are the same size", humanize.naturalsize(src_size))
+            print("Source and destination are the same size", humanize.naturalsize(src_size, binary=True))
         if args.post_action.upper().startswith("ASK_"):
             if devices.confirm("Replace destination file?"):
                 file_utils.trash(new_path, detach=False)
