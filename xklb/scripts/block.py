@@ -198,7 +198,7 @@ def block(args=None) -> None:
         if paths_to_delete:
             print(paths_to_delete)
             if devices.confirm(
-                f"Would you like to delete these {len(paths_to_delete)} local files ({humanize.naturalsize(total_size)})?",
+                f"Would you like to delete these {len(paths_to_delete)} local files ({humanize.naturalsize(total_size, binary=True)})?",
             ):
                 post_actions.delete_media(args, paths_to_delete)
         return
@@ -280,7 +280,7 @@ def block(args=None) -> None:
             total_size = sum(d["size"] or 0 for d in matching_media if (d["time_deleted"] or 0) == 0)
             print("\n".join(local_paths_to_delete))
             if devices.confirm(
-                f"Would you like to delete these {len(local_paths_to_delete)} local files ({humanize.naturalsize(total_size)})?",
+                f"Would you like to delete these {len(local_paths_to_delete)} local files ({humanize.naturalsize(total_size, binary=True)})?",
             ):
                 post_actions.delete_media(args, local_paths_to_delete)
 

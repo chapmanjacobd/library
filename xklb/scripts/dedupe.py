@@ -459,7 +459,7 @@ def dedupe() -> None:
         log.info("Skipping CSV export because pandas is not installed")
 
     duplicates_size = sum(filter(None, [d["duplicate_size"] for d in duplicates]))
-    print(f"Approx. space savings: {humanize.naturalsize(duplicates_size // 2)}")
+    print(f"Approx. space savings: {humanize.naturalsize(duplicates_size // 2, binary=True)}")
 
     if duplicates and (args.force or devices.confirm("Delete duplicates?")):  # type: ignore
         log.info("Deleting...")

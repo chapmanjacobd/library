@@ -182,9 +182,9 @@ Type "*" to select all files in the most recently printed table
         print(
             len(selected_paths),
             "selected paths:",
-            humanize.naturalsize(selected_paths_size),
+            humanize.naturalsize(selected_paths_size, binary=True),
             "; future free space:",
-            humanize.naturalsize(selected_paths_size + free),
+            humanize.naturalsize(selected_paths_size + free, binary=True),
         )
 
     if selected_paths:
