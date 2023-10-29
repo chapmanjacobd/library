@@ -10,9 +10,11 @@ from xklb.utils.log_utils import log
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library merge-online-local", usage=usage.merge_online_local)
-    parser.add_argument("database")
+    parser.add_argument("--no-confirm", "--yes", "-y", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", default=100)
     parser.add_argument("--verbose", "-v", action="count", default=0)
+
+    parser.add_argument("database")
     args = parser.parse_args()
     args.db = db_utils.connect(args)
     log.info(objects.dict_filter_bool(args.__dict__))
@@ -77,7 +79,7 @@ def merge_online_local() -> None:
     tbl = deepcopy(duplicates[: int(args.limit)])
     media_printer.media_printer(args, tbl, units="duplicates", media_len=len(duplicates))
 
-    if duplicates and devices.confirm("Merge duplicates?"):  # type: ignore
+    if duplicates and (args.no_confirm or devices.confirm("Merge duplicates?")):  # type: ignore
         log.info("Merging...")
 
         merged = []
