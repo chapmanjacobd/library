@@ -98,7 +98,7 @@ def test_wt_print(capsys):
     ]:
         lb(lb_command)
         captured = capsys.readouterr().out.replace("\n", "")
-        assert "Aggregate" not in captured, f"Test failed for {lb_command}"
+        assert "Agg" not in captured, f"Test failed for {lb_command}"
 
     for lb_command in [
         ["wt", v_db, "-p", "a"],
@@ -107,7 +107,7 @@ def test_wt_print(capsys):
     ]:
         lb(lb_command)
         captured = capsys.readouterr().out.replace("\n", "")
-        assert ("Aggregate" in captured) or ("extractor_key" in captured), f"Test failed for {lb_command}"
+        assert ("Agg" in captured) or ("extractor_key" in captured), f"Test failed for {lb_command}"
 
 
 class TestFs(unittest.TestCase):
