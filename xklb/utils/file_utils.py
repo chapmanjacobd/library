@@ -189,6 +189,7 @@ def head_foot_stream(url, head_len, foot_len):
 
 def mimetype(path):
     import mimetypes
+
     import puremagic
 
     p = Path(path)

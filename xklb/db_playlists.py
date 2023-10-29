@@ -145,9 +145,9 @@ def decrease_update_delay(args, playlist_path: str) -> None:
                 UPDATE playlists
                 SET time_modified = cast(STRFTIME('%s', 'now') as int)
                 , hours_update_delay = CASE
-                    WHEN 0.5 * hours_update_delay <= 0 THEN 1
-                    WHEN 0.5 * hours_update_delay >= 8760 THEN 8760
-                    ELSE cast(0.5 * hours_update_delay as int)
+                    WHEN 0.3 * hours_update_delay <= 1 THEN 1
+                    WHEN 0.3 * hours_update_delay >= 8760 THEN 8760
+                    ELSE cast(0.3 * hours_update_delay as int)
                 END
                 WHERE hours_update_delay IS NOT NULL
                     AND path = ?
@@ -170,7 +170,7 @@ def increase_update_delay(args, playlist_path: str) -> None:
                 UPDATE playlists
                 SET time_modified = cast(STRFTIME('%s', 'now') as int)
                 ,   hours_update_delay = CASE
-                    WHEN 2 * hours_update_delay <= 0 THEN 1
+                    WHEN 2 * hours_update_delay <= 1 THEN 1
                     WHEN 2 * hours_update_delay >= 8760 THEN 8760
                     ELSE 2 * hours_update_delay
                 END

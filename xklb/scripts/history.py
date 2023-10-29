@@ -61,11 +61,37 @@ def parse_args() -> argparse.Namespace:
     args.action = consts.SC.history
     log.info(objects.dict_filter_bool(args.__dict__))
 
+    args.filter_bindings = {}
+
     return args
+
+
+def process_search(args, m_columns):
+    args.table = "media"
+    if args.db["media"].detect_fts():
+        if args.include:
+            args.table, search_bindings = db_utils.fts_search_sql(
+                "media",
+                fts_table=args.db["media"].detect_fts(),
+                include=args.include,
+                exclude=args.exclude,
+            )
+            args.filter_bindings = search_bindings
+        elif args.exclude:
+            db_utils.construct_search_bindings(
+                args,
+                [f"m.{k}" for k in m_columns if k in db_utils.config["media"]["search_columns"]],
+            )
+    else:
+        db_utils.construct_search_bindings(
+            args,
+            [f"m.{k}" for k in m_columns if k in db_utils.config["media"]["search_columns"]],
+        )
 
 
 def recent_media(args, time_column):
     m_columns = db_utils.columns(args, "media")
+    process_search(args, m_columns)
     query = f"""
     SELECT
         path
@@ -73,7 +99,7 @@ def recent_media(args, time_column):
         {', duration' if 'duration' in m_columns else ''}
         {', subtitle_count' if 'subtitle_count' in m_columns else ''}
         , {time_column}
-    FROM media m
+    FROM {args.table} m
     {'JOIN history h on h.media_id = m.id' if args.played else ''}
     WHERE 1=1
       AND coalesce({time_column}, 0)>0
@@ -81,7 +107,7 @@ def recent_media(args, time_column):
     ORDER BY {time_column} desc
     LIMIT {args.limit or 5}
     """
-    return list(args.db.query(query))
+    return list(args.db.query(query, args.filter_bindings))
 
 
 def history() -> None:
@@ -102,6 +128,8 @@ def history() -> None:
         print(args.facet.title() + ":")
         tbl = history_fn(args, args.frequency, "time_played", args.hide_deleted, "and coalesce(play_count, 0)=0")
         media_printer.media_printer(args, tbl)
+
+        process_search(args, m_columns)
         query = f"""WITH m as (
                 SELECT
                     SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
@@ -112,7 +140,7 @@ def history() -> None:
                     {', title' if 'title' in m_columns else ''}
                     {', duration' if 'duration' in m_columns else ''}
                     {', subtitle_count' if 'subtitle_count' in m_columns else ''}
-                FROM media m
+                FROM {args.table} m
                 JOIN history h on h.media_id = m.id
                 WHERE 1=1
                 {'AND COALESCE(time_deleted, 0)=0' if args.hide_deleted else ""}
@@ -126,13 +154,15 @@ def history() -> None:
             ORDER BY time_last_played desc, playhead desc
             LIMIT {args.limit or 5}
         """
-        tbl = list(args.db.query(query))
+        tbl = list(args.db.query(query, args.filter_bindings))
         media_printer.media_printer(args, tbl)
 
     elif args.facet in WATCHED:
         print(args.facet.title() + ":")
         tbl = history_fn(args, args.frequency, "time_played", args.hide_deleted, "and coalesce(play_count, 0)>0")
         media_printer.media_printer(args, tbl)
+
+        process_search(args, m_columns)
         query = f"""WITH m as (
                 SELECT
                     SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
@@ -143,7 +173,7 @@ def history() -> None:
                     {', title' if 'title' in m_columns else ''}
                     {', duration' if 'duration' in m_columns else ''}
                     {', subtitle_count' if 'subtitle_count' in m_columns else ''}
-                FROM media m
+                FROM {args.table} m
                 JOIN history h on h.media_id = m.id
                 WHERE 1=1
                 {'AND COALESCE(time_deleted, 0)=0' if args.hide_deleted else ""}
@@ -155,7 +185,7 @@ def history() -> None:
             ORDER BY time_last_played desc, path
             LIMIT {args.limit or 5}
         """
-        tbl = list(args.db.query(query))
+        tbl = list(args.db.query(query, args.filter_bindings))
         media_printer.media_printer(args, tbl)
 
     else:

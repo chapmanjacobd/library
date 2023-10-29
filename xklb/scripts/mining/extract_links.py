@@ -1,7 +1,7 @@
 import argparse, time
 
 from xklb import usage
-from xklb.utils import printing, web
+from xklb.utils import consts, printing, web
 from xklb.utils.log_utils import log
 
 
@@ -121,7 +121,6 @@ def is_desired_url(args, a_element, href) -> bool:
         return False
 
     if args.before_exclude or args.before_include or args.after_exclude or args.after_include:
-
         before, after = web.extract_nearby_text(a_element)
         before_text = before if args.case_sensitive else before.lower()
         after_text = after if args.case_sensitive else after.lower()
@@ -154,8 +153,9 @@ def get_inner_urls(args, url, markup):
     from bs4 import BeautifulSoup
 
     soup = BeautifulSoup(markup, "html.parser")
-    inner_urls = set()
 
+    inner_urls = set()
+    # for a in soup.findAll(href=True):  # TODO: check if non-a href are common
     for a in soup.findAll("a", attrs={"href": True}):
         log.debug(a)
 
@@ -168,9 +168,29 @@ def get_inner_urls(args, url, markup):
                 else:
                     inner_urls.add(href)
 
-        # breakpoint()
+        if args.verbose > consts.LOG_DEBUG:
+            breakpoint()
 
     return inner_urls
+
+
+def flatten_shadows(driver):
+    # Shadow DOM can go to hell !!
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.support import expected_conditions as EC
+    from selenium.webdriver.support.wait import WebDriverWait
+
+    def get_all_elements(driver, elements):
+        for el in elements:
+            shadow_root = driver.execute_script("return arguments[0].shadowRoot", el)
+            if shadow_root:
+                shadow_els = driver.execute_script('return arguments[0].shadowRoot.querySelectorAll("*")', el)
+                yield from get_all_elements(driver, shadow_els)
+            else:
+                yield el
+
+    els = WebDriverWait(driver, 10).until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, "*")))
+    yield from get_all_elements(driver, els)
 
 
 def get_page_infinite_scroll(driver, url):
@@ -186,7 +206,17 @@ def get_page_infinite_scroll(driver, url):
             break
         last_height = new_height
 
-    return driver.page_source
+    # trigger rollover events
+    driver.execute_script(
+        "(function(){function k(x) { if (x.onmouseover) { x.onmouseover(); x.backupmouseover = x.onmouseover; x.backupmouseout = x.onmouseout; x.onmouseover = null; x.onmouseout = null; } else if (x.backupmouseover) { x.onmouseover = x.backupmouseover; x.onmouseout = x.backupmouseout; x.onmouseover();/*for MM_swapImgRestore*/ x.onmouseout(); } } var i,x; for(i=0; x=document.links[i]; ++i) k(x); for (i=0; x=document.images[i]; ++i) k(x); })()"
+    )
+
+    html_text = driver.page_source
+    for el in flatten_shadows(driver):
+        if el:
+            html_text += el.get_attribute("innerHTML")
+
+    return html_text
 
 
 def from_url(args, line):
