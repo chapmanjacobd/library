@@ -174,25 +174,6 @@ def get_inner_urls(args, url, markup):
     return inner_urls
 
 
-def flatten_shadows(driver):
-    # Shadow DOM can go to hell !!
-    from selenium.webdriver.common.by import By
-    from selenium.webdriver.support import expected_conditions as EC
-    from selenium.webdriver.support.wait import WebDriverWait
-
-    def get_all_elements(driver, elements):
-        for el in elements:
-            shadow_root = driver.execute_script("return arguments[0].shadowRoot", el)
-            if shadow_root:
-                shadow_els = driver.execute_script('return arguments[0].shadowRoot.querySelectorAll("*")', el)
-                yield from get_all_elements(driver, shadow_els)
-            else:
-                yield el
-
-    els = WebDriverWait(driver, 10).until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, "*")))
-    yield from get_all_elements(driver, els)
-
-
 def get_page_infinite_scroll(driver, url):
     driver.get(url)
     time.sleep(1)
@@ -211,10 +192,8 @@ def get_page_infinite_scroll(driver, url):
         "(function(){function k(x) { if (x.onmouseover) { x.onmouseover(); x.backupmouseover = x.onmouseover; x.backupmouseout = x.onmouseout; x.onmouseover = null; x.onmouseout = null; } else if (x.backupmouseover) { x.onmouseover = x.backupmouseover; x.onmouseout = x.backupmouseout; x.onmouseover();/*for MM_swapImgRestore*/ x.onmouseout(); } } var i,x; for(i=0; x=document.links[i]; ++i) k(x); for (i=0; x=document.images[i]; ++i) k(x); })()"
     )
 
-    html_text = driver.page_source
-    for el in flatten_shadows(driver):
-        if el:
-            html_text += el.get_attribute("innerHTML")
+    # html_text = driver.page_source
+    html_text = driver.execute_script('function s(n=document.body){if(!n)return"";if(n.nodeType===Node.TEXT_NODE)return n.textContent.trim();if(n.nodeType!==Node.ELEMENT_NODE)return"";let t="";let r=n.cloneNode();n=n.shadowRoot||n;if(n.children.length)for(let o of n.childNodes)if(o.assignedNodes){if(o.assignedNodes()[0])t+=s(o.assignedNodes()[0]);else t+=o.innerHTML}else t+=s(o);else t=n.innerHTML;return r.innerHTML=t,r.outerHTML}; return s()')
 
     return html_text
 
