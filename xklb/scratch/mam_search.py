@@ -16,6 +16,14 @@ def parse_args():
     parser.add_argument("--narrator", action="store_true")
     parser.add_argument("--series", action="store_true")
     parser.add_argument("--description", action="store_true")
+
+    parser.add_argument("--books", action="store_true")
+    parser.add_argument("--audiobooks", action="store_true")
+    parser.add_argument("--comics", action="store_true")
+    parser.add_argument("--cookbooks", action="store_true")
+    parser.add_argument("--musicology", action="store_true")
+    parser.add_argument("--radio", action="store_true")
+
     parser.add_argument("--cookie", required=True)
 
     parser.add_argument("database")
@@ -42,6 +50,7 @@ def get_page(args, query_data):
 
     try:
         data = response.json()
+        data_found = data["found"]
         data = data["data"]
     except KeyError:
         if "Nothing returned" in data["error"]:
@@ -64,7 +73,7 @@ def get_page(args, query_data):
 
     log.debug(df)
 
-    return df.to_dict(orient="records"), data["found"]
+    return df.to_dict(orient="records"), data_found
 
 
 def search():
@@ -81,50 +90,15 @@ def search():
                 "series": args.series,
                 "description": args.description,
             },
-            "searchType": "active",  # fl-VIP, fl, VIP, all
+            "searchType": "all",  # fl-VIP, fl, VIP, all
             "searchIn": "torrents",
             "browseFlagsHideVsShow": 0,
-            "cat": [
-                39,
-                49,
-                97,
-                40,
-                41,
-                42,
-                52,
-                98,
-                54,
-                55,
-                99,
-                45,
-                87,
-                119,
-                59,
-                46,
-                47,
-                89,
-                100,
-                108,
-                48,
-                111,
-                71,
-                61,
-                101,
-                107,
-                79,
-                118,
-                127,
-                130,
-                128,
-                132,
-                0,
-            ],
-            # "main_cat": [13, 16],
+            "cat": [],
             "sortType": "dateDesc",
             "startNumber": 0,
-            "minSeeders": 1,
+            "minSeeders": 0,
             "maxSeeders": 0,
-            "minSnatched": 0,  # 80
+            "minSnatched": 20,
             "maxSnatched": 0,
             "minSize": 0,
             "maxSize": 0,
@@ -132,6 +106,121 @@ def search():
         "description": "true",
         "thumbnail": "false",
     }
+
+    if args.cookbooks:
+        query_data['tor']['cat'].extend([107])
+    if args.comics:
+        query_data['tor']['cat'].extend([61])
+    if args.audiobooks:
+        query_data['tor']['cat'].extend(
+            [
+                39,  # Action/Adventure
+                40,  # Crime/Thriller
+                41,  # Fantasy
+                42,  # General Fiction
+                45,  # Literary Classics
+                46,  # Romance
+                47,  # Science Fiction
+                48,  # Western
+                49,  # Art
+                52,  # General Non-Fic
+                54,  # History
+                55,  # Home/Garden
+                59,  # Recreation
+                87,  # Mystery
+                89,  # Travel/Adventure
+                97,  # Crafts
+                98,  # Historical Fiction
+                99,  # Humor
+                100,  # True Crime
+                108,  # Urban Fantasy
+                111,  # Young Adult
+                119,  # Nature
+                # 43,  # Horror
+                # 44,  # Juvenile
+                # 50,  # Biographical
+                # 51,  # Computer/Internet
+                # 53,  # Self-Help
+                # 56,  # Language
+                # 57,  # Math/Science/Tech
+                # 58,  # Pol/Soc/Relig
+                # 83,  # Business
+                # 84,  # Instructional
+                # 85,  # Medical
+                # 88,  # Philosophy
+                # 106,  # Food
+            ]
+        )
+    if args.books:
+        query_data['tor']['cat'].extend(
+            [
+                71,  # Art
+                79,  # Magazines/Newspapers
+                101,  # Crafts
+                118,  # Mixed Collections
+                # 60,  # Action/Adventure
+                # 62,  # Crime/Thriller
+                # 63,  # Fantasy
+                # 64,  # General Fiction
+                # 65,  # Horror
+                # 66,  # Juvenile
+                # 67,  # Literary Classics
+                # 68,  # Romance
+                # 69,  # Science Fiction
+                # 70,  # Western
+                # 72,  # Biographical
+                # 73,  # Computer/Internet
+                # 74,  # General Non-Fiction
+                # 75,  # Self-Help
+                # 76,  # History
+                # 77,  # Home/Garden
+                # 78,  # Language
+                # 80,  # Math/Science/Tech
+                # 81,  # Pol/Soc/Relig
+                # 82,  # Recreation
+                # 90,  # Business
+                # 91,  # Instructional
+                # 92,  # Medical
+                # 94,  # Mystery
+                # 95,  # Philosophy
+                # 96,  # Travel/Adventure
+                # 102,  # Historical Fiction
+                # 103,  # Humor
+                # 104,  # True Crime
+                # 109,  # Urban Fantasy
+                # 112,  # Young Adult
+                # 115,  # Illusion/Magic
+                # 120,  # Nature
+            ]
+        )
+    if args.musicology:
+        query_data['tor']['cat'].extend(
+            [
+                17,  # Music - Complete Editions
+                19,  # Guitar/Bass Tabs
+                20,  # Individual Sheet
+                22,  # Instructional Media - Music
+                24,  # Individual Sheet MP3
+                26,  # Music Book
+                27,  # Music Book MP3
+                30,  # Sheet Collection
+                31,  # Sheet Collection MP3
+                113,  # Lick Library - LTP/Jam With
+                114,  # Lick Library - Techniques/QL
+                126,  # Instructional Book with Video
+            ]
+        )
+    if args.radio:
+        query_data['tor']['cat'].extend(
+            [
+                127,  # Comedy
+                128,  # Factual/Documentary
+                130,  # Drama
+                132,  # Reading
+            ]
+        )
+    if len(query_data['tor']['cat']) == 0:
+        query_data['tor']['cat'] = [0]
 
     df, len_found = get_page(args, query_data)
     page_size = len(df)
