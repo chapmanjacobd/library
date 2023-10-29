@@ -162,3 +162,13 @@ show-fixes = true
 [tool.pytest.ini_options]
 addopts = "--pdbcls=IPython.terminal.debugger:TerminalPdb --ignore=tests/data --capture=tee-sys --log-cli-level=ERROR"
 testpaths = ["tests"]
+
+[tool.pyright]
+typeCheckingMode = "basic"
+exclude = [
+  "**/__pycache__",
+  ".*cache",
+  "__pypackages__",
+  ".git",
+]
+reportMissingImports = true

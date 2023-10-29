@@ -841,6 +841,10 @@ tubeupdate = """library tubeupdate [--audio | --video] DATABASE
         You can run with --extra to fetch more details: (best resolution width, height, subtitle tags, etc)
 
         library tubeupdate educational.db --extra https://www.youtube.com/channel/UCBsEUcR-ezAuxB2WlfeENvA/videos
+
+    Remove duplicate playlists:
+
+        lb dedupe-db video.db playlists --bk extractor_playlist_id
 """
 
 galleryadd = """library galleryadd DATABASE URLS

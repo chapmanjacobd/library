@@ -9,6 +9,7 @@ from xklb.utils.printing import print_df, print_series
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Perform EDA on one or more files", usage=usage.eda)
+    parser.add_argument("--groupby", "--group-by", "-g", action="store_true")
     parser.add_argument("--mimetype", "--filetype")
     parser.add_argument("--encoding")
     parser.add_argument("--table-name", "--table", "-t")
@@ -132,11 +133,12 @@ def print_info(args, df):
                     )
                     print_df(vc.head(30))
 
-                    groups = df.groupby(col).size()
-                    groups = groups[groups >= 15]
-                    if len(groups) > 0:
-                        print(f"#### group by {col}")
-                        print_df(df[df[col].isin(groups.index)].groupby(col).describe())
+                    if args.groupby:
+                        groups = df.groupby(col).size()
+                        groups = groups[groups >= 15]
+                        if len(groups) > 0:
+                            print(f"#### group by {col}")
+                            print_df(df[df[col].isin(groups.index)].groupby(col).describe())
 
                 unique_count = df[col].nunique()
                 if unique_count >= (len(df) * 0.2):

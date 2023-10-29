@@ -95,7 +95,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.2.135)
+    xk media library subcommands (v2.2.136)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -308,6 +308,23 @@ Recently, this functionality has also been integrated into watch/listen subcomma
 </details>
 
 ### Backfill data
+
+<details><summary>Backfill missing YouTube videos from the Internet Archive</summary>
+
+```fish
+for base in https://youtu.be/ http://youtu.be/ http://youtube.com/watch?v= https://youtube.com/watch?v= https://m.youtube.com/watch?v= http://www.youtube.com/watch?v= https://www.youtube.com/watch?v=
+    sqlite3 video.db "
+        update or ignore media
+            set path = replace(path, '$base', 'https://web.archive.org/web/2oe_/http://wayback-fakeurl.archive.org/yt/')
+              , time_deleted = 0
+        where time_deleted > 0
+        and (path = webpath or path not in (select webpath from media))
+        and path like '$base%'
+    "
+end
+```
+
+</details>
 
 <details><summary>Backfill reddit databases with pushshift data</summary>
 
@@ -649,6 +666,10 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         You can run with --extra to fetch more details: (best resolution width, height, subtitle tags, etc)
 
         library tubeupdate educational.db --extra https://www.youtube.com/channel/UCBsEUcR-ezAuxB2WlfeENvA/videos
+
+    Remove duplicate playlists:
+
+        lb dedupe-db video.db playlists --bk extractor_playlist_id
 
 
 </details>

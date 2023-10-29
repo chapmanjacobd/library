@@ -173,10 +173,13 @@ def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True) -> 
                 db_playlists.save_undownloadable(args, playlist_path, "video")
 
         if added_media_count > count_before_extract:
-            db_playlists.decrease_update_delay(args, playlist_path)
             sys.stdout.write("\n")
-        else:
-            db_playlists.increase_update_delay(args, playlist_path)
+
+        if args.action == consts.SC.tubeupdate:
+            if added_media_count > count_before_extract:
+                db_playlists.decrease_update_delay(args, playlist_path)
+            else:
+                db_playlists.increase_update_delay(args, playlist_path)
 
 
 def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Optional[List[Dict]]:

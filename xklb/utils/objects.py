@@ -1,9 +1,8 @@
+from functools import wraps
 from typing import Dict, Optional
 
 from xklb.utils.log_utils import log
 
-
-from functools import wraps
 
 def fallback(func, fallback):
     @wraps(func)
@@ -12,7 +11,9 @@ def fallback(func, fallback):
             return func(*args, **kwargs)
         except Exception:
             return fallback
+
     return wrapped
+
 
 def flatten_dict(nested_dict, parent_key="", sep="_", passthrough_keys=None):
     if passthrough_keys is None:
