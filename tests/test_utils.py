@@ -114,7 +114,7 @@ def test_col_naturaldate():
 
 def test_col_naturalsize():
     assert printing.col_naturalsize([{"t": 0, "t1": 1}], "t") == [{"t": None, "t1": 1}]
-    assert printing.col_naturalsize([{"t": 946684800, "t1": 1}], "t") == [{"t": "946.7 MB", "t1": 1}]
+    assert printing.col_naturalsize([{"t": 946684800, "t1": 1}], "t") == [{"t": "902.8 MiB", "t1": 1}]
 
 
 def test_human_to_bytes():
