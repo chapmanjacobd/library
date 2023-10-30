@@ -1,6 +1,7 @@
-import argparse, json, os.path, sys
+import argparse, difflib, json, os.path, sys
 from collections import Counter
 from pathlib import Path
+from typing import Dict, List
 
 from xklb import usage
 from xklb.utils import consts, file_utils, iterables, nums, objects, printing, sql_utils, strings
@@ -54,6 +55,11 @@ def parse_args() -> argparse.Namespace:
     parser.set_defaults(profile="lines")
 
     parser.add_argument("--clusters", "--n-clusters", "-c", type=int, help="Number of KMeans clusters")
+    parser.add_argument("--near-duplicates", "--similar-only", action="store_true", help="Re-group by difflib ratio")
+    parser.add_argument(
+        "--unique-only", action="store_true", help="Include only 'unique' lines (not including originals or duplicates)"
+    )
+    parser.add_argument("--exclude-unique", "--no-unique", action="store_true", help="Exclude 'unique' lines")
     parser.add_argument("--print-groups", "--groups", "-g", action="store_true", help="Print groups")
     parser.add_argument("--move-groups", "-M", action="store_true", help="Move groups into subfolders")
     parser.add_argument("--verbose", "-v", action="count", default=0)
@@ -240,6 +246,33 @@ def cluster_images(paths, n_clusters=None):
     return result
 
 
+def filter_near_duplicates(groups: List[Dict]) -> List[Dict]:
+    regrouped_data = []
+
+    for group in groups:
+        temp_groups: Dict[str, List[str]] = {}
+        for curr in group["grouped_paths"]:
+            curr = curr.strip()
+            if not curr or curr in ["'", '"']:
+                continue
+
+            is_duplicate = False
+            for prev in temp_groups.keys():
+                if difflib.SequenceMatcher(None, curr, prev).ratio() > 0.73:
+                    temp_groups[prev].append(curr)
+                    is_duplicate = True
+                    break
+            if not is_duplicate:
+                temp_groups[curr] = []
+
+        sorted_temp_groups = sorted(temp_groups.items(), key=lambda t: len(t[1]))
+        for new_group_idx, (path, similar_paths) in enumerate(sorted_temp_groups):
+            new_group_name = group["common_prefix"] + f"#{new_group_idx}"
+            regrouped_data.append({"common_prefix": new_group_name, "grouped_paths": [path] + similar_paths})
+
+    return regrouped_data
+
+
 def cluster_sort() -> None:
     args = parse_args()
 
@@ -253,6 +286,14 @@ def cluster_sort() -> None:
     else:
         raise NotImplementedError
     groups = sorted(groups, key=lambda d: (len(d["grouped_paths"]), -len(d["common_prefix"])))
+
+    if args.near_duplicates:
+        groups = filter_near_duplicates(groups)
+
+    if args.exclude_unique:
+        groups = [d for d in groups if len(d["grouped_paths"]) > 1]
+    elif args.unique_only:
+        groups = [d for d in groups if len(d["grouped_paths"]) == 1]
 
     if args.print_groups:
         for group in groups:

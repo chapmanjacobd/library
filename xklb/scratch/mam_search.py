@@ -108,11 +108,11 @@ def search():
     }
 
     if args.cookbooks:
-        query_data['tor']['cat'].extend([107])
+        query_data["tor"]["cat"].extend([107])
     if args.comics:
-        query_data['tor']['cat'].extend([61])
+        query_data["tor"]["cat"].extend([61])
     if args.audiobooks:
-        query_data['tor']['cat'].extend(
+        query_data["tor"]["cat"].extend(
             [
                 39,  # Action/Adventure
                 40,  # Crime/Thriller
@@ -152,7 +152,7 @@ def search():
             ]
         )
     if args.books:
-        query_data['tor']['cat'].extend(
+        query_data["tor"]["cat"].extend(
             [
                 71,  # Art
                 79,  # Magazines/Newspapers
@@ -194,7 +194,7 @@ def search():
             ]
         )
     if args.musicology:
-        query_data['tor']['cat'].extend(
+        query_data["tor"]["cat"].extend(
             [
                 17,  # Music - Complete Editions
                 19,  # Guitar/Bass Tabs
@@ -211,7 +211,7 @@ def search():
             ]
         )
     if args.radio:
-        query_data['tor']['cat'].extend(
+        query_data["tor"]["cat"].extend(
             [
                 127,  # Comedy
                 128,  # Factual/Documentary
@@ -219,8 +219,8 @@ def search():
                 132,  # Reading
             ]
         )
-    if len(query_data['tor']['cat']) == 0:
-        query_data['tor']['cat'] = [0]
+    if len(query_data["tor"]["cat"]) == 0:
+        query_data["tor"]["cat"] = [0]
 
     df, len_found = get_page(args, query_data)
     page_size = len(df)
