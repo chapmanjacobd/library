@@ -1,9 +1,10 @@
 import argparse, json, time
 from pathlib import Path
+from sqlite3 import IntegrityError
 
 from pyparsing import nums
 
-from xklb.utils import db_utils, iterables, nums, objects, web
+from xklb.utils import db_utils, nums, objects, web
 from xklb.utils.log_utils import log
 
 
@@ -74,6 +75,15 @@ def get_page(args, query_data):
     log.debug(df)
 
     return df.to_dict(orient="records"), data_found
+
+
+def save_to_db(args, data):
+    for d in data:
+        try:
+            args.db["media"].insert(objects.dict_filter_bool(d), pk="id", alter=True)
+        except IntegrityError:
+            log.error("Reached existing id")
+            raise SystemExit(0)
 
 
 def search():
@@ -222,18 +232,18 @@ def search():
     if len(query_data["tor"]["cat"]) == 0:
         query_data["tor"]["cat"] = [0]
 
-    df, len_found = get_page(args, query_data)
-    page_size = len(df)
+    data, len_found = get_page(args, query_data)
+    page_size = len(data)
 
-    args.db["media"].upsert_all(iterables.list_dict_filter_bool(df), pk="id", alter=True)
+    save_to_db(args, data)
 
     for page_number, current_start in enumerate(range(page_size, len_found, page_size), start=2):
         log.info("Getting page %s", page_number)
 
         query_data["tor"]["startNumber"] = current_start
-        df, _ = get_page(args, query_data)
+        data, _ = get_page(args, query_data)
 
-        args.db["media"].upsert_all(iterables.list_dict_filter_bool(df), pk="id", alter=True)
+        save_to_db(args, data)
 
         time.sleep(1)
 

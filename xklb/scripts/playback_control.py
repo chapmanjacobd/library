@@ -198,7 +198,7 @@ def reformat_ffprobe(path):
             duration_str = printing.seconds_to_hhmmss(duration).strip()
 
             formatted_output += f"Duration: {duration_str}"
-            formatted_output += f" ({total_duration_str}; starting at {start_str})\n"
+            formatted_output += f" ({start_str} to {total_duration_str})\n"
         else:
             duration_str = printing.seconds_to_hhmmss(duration).strip()
             formatted_output += f"Duration: {duration_str}\n"

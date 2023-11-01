@@ -4,10 +4,6 @@ from urllib.parse import urljoin
 
 from xklb.utils import consts, file_utils, path_utils, processes, web
 
-"""
-https://old.reddit.com/r/DataHoarder/comments/z12y6p/bulk_downloading_from_javguru/
-"""
-
 
 def jav_guru() -> None:
     parser = argparse.ArgumentParser()
