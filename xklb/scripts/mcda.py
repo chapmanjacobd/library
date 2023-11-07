@@ -25,9 +25,22 @@ def parse_args():
         action=arg_utils.ArgparseList,
         default=[],
     )
-    parser.add_argument("--exclude-columns", "--ignore-columns", nargs="*", action=arg_utils.ArgparseList, default=[])
     parser.add_argument(
-        "--include-columns", "--columns", "--cols", nargs="*", action=arg_utils.ArgparseList, default=[]
+        "--columns-exclude",
+        "--exclude-columns",
+        "--ignore-columns",
+        nargs="*",
+        action=arg_utils.ArgparseList,
+        default=[],
+    )
+    parser.add_argument(
+        "--columns-include",
+        "--include-columns",
+        "--columns",
+        "--cols",
+        nargs="*",
+        action=arg_utils.ArgparseList,
+        default=[],
     )
     parser.add_argument("--words-nums-map")
     parser.add_argument("--mcda-method")
@@ -179,17 +192,17 @@ def print_info(args, df):
     print(df.shape, partial_dataset_msg)
     print()
 
-    if args.include_columns:
-        args.minimize_columns += [s.lstrip("-") for s in args.include_columns if s.startswith("-")]
-        include_columns = [s.lstrip("-") for s in args.include_columns]
+    if args.columns_include:
+        args.minimize_columns += [s.lstrip("-") for s in args.columns_include if s.startswith("-")]
+        columns_include = [s.lstrip("-") for s in args.columns_include]
 
         # TODO: convert str categories like easy, hard, good, bad
-        # if include_columns and the col is not numeric
+        # if columns_include and the col is not numeric
         #     col.apply(words_to_numbers(args, words))
-        alternatives = df[include_columns]
+        alternatives = df[columns_include]
     else:
         alternatives = df.select_dtypes("number")
-    alternatives = alternatives.drop(columns=args.exclude_columns)
+    alternatives = alternatives.drop(columns=args.columns_exclude)
 
     minimize_cols = set(args.minimize_columns)
     maximize_cols = set(alternatives.columns) - minimize_cols
