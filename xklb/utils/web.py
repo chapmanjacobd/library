@@ -1,8 +1,8 @@
-import functools, os, urllib.error, urllib.parse, urllib.request
+import functools, os, time, urllib.error, urllib.parse, urllib.request
 from pathlib import Path
 from shutil import which
 
-from xklb.utils import nums, path_utils
+from xklb.utils import consts, nums, path_utils
 from xklb.utils.log_utils import log
 
 headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/117.0"}
@@ -105,10 +105,39 @@ def find_date(soup):
 def load_selenium(args):
     from selenium import webdriver
 
+    if consts.LOG_DEBUG > args.verbose:
+        from pyvirtualdisplay.display import Display
+
+        args.driver_display = Display(visible=False, size=(1280, 720))
+        args.driver_display.start()
+
     if which("firefox"):
-        args.driver = webdriver.Firefox()
+        from selenium.webdriver.firefox.options import Options
+
+        options = Options()
+        options.set_preference("media.volume_scale", "0.0")
+        args.driver = webdriver.Firefox(options=options)
+        for addon_path in [
+            Path("~/.local/lib/ublock_origin.xpi").expanduser().resolve(),
+            Path("~/.local/lib/weautopagerize.xpi").expanduser().resolve(),
+        ]:
+            try:
+                args.driver.install_addon(str(addon_path))
+            except Exception:
+                if args.verbose > 0:
+                    log.warning("Could not install firefox addon. Missing file %s", addon_path)
+                else:
+                    log.exception("Could not install firefox addon. Missing file %s", addon_path)
+        if getattr(args, "auto_pager", False):
+            time.sleep(60)  # let addons install
     else:
         args.driver = webdriver.Chrome()
+
+
+def quit_selenium(args):
+    args.driver.quit()
+    if consts.LOG_DEBUG > args.verbose:
+        args.driver_display.stop()
 
 
 def download_url(url, output_path=None, output_prefix=None, chunk_size=8 * 1024 * 1024, retries=3):

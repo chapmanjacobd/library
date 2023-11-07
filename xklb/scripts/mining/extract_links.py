@@ -12,6 +12,7 @@ def parse_args():
     )
     parser.add_argument(
         "--path-include",
+        "--include-path",
         "--include",
         "-s",
         nargs="*",
@@ -19,22 +20,29 @@ def parse_args():
         help="path substrings for inclusion (all must match to include)",
     )
     parser.add_argument(
-        "--text-include", nargs="*", default=[], help="link text substrings for inclusion (all must match to include)"
+        "--text-include",
+        "--include-text",
+        nargs="*",
+        default=[],
+        help="link text substrings for inclusion (all must match to include)",
     )
     parser.add_argument(
         "--after-include",
+        "--include-after",
         nargs="*",
         default=[],
         help="plain text substrings after URL for inclusion (all must match to include)",
     )
     parser.add_argument(
         "--before-include",
+        "--include-before",
         nargs="*",
         default=[],
         help="plain text substrings before URL for inclusion (all must match to include)",
     )
     parser.add_argument(
         "--path-exclude",
+        "--exclude-path",
         "--exclude",
         "-E",
         nargs="*",
@@ -43,18 +51,21 @@ def parse_args():
     )
     parser.add_argument(
         "--text-exclude",
+        "--exclude-text",
         nargs="*",
         default=[],
         help="link text substrings for exclusion (any must match to exclude)",
     )
     parser.add_argument(
         "--after-exclude",
+        "--exclude-after",
         nargs="*",
         default=[],
         help="plain text substrings after URL for exclusion (any must match to exclude)",
     )
     parser.add_argument(
         "--before-exclude",
+        "--exclude-before",
         nargs="*",
         default=[],
         help="plain text substrings before URL for exclusion (any must match to exclude)",
@@ -63,6 +74,7 @@ def parse_args():
     parser.add_argument("--strict-exclude", action="store_true", help="All exclude args must resolve true")
     parser.add_argument("--case-sensitive", action="store_true", help="Filter with case sensitivity")
     parser.add_argument("--print-link-text", action="store_true")
+    parser.add_argument("--auto-pager", "--autopager", action="store_true")
     parser.add_argument("--scroll", action="store_true", help="Scroll down the page; infinite scroll")
     parser.add_argument("--download", action="store_true", help="Download filtered links")
     parser.add_argument("--verbose", "-v", action="count", default=0)
@@ -174,17 +186,25 @@ def get_inner_urls(args, url, markup):
     return inner_urls
 
 
+def scroll_down(driver):
+    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+    time.sleep(2)
+    new_height = driver.execute_script("return document.body.scrollHeight")
+    return new_height
+
+
 def get_page_infinite_scroll(driver, url):
     driver.get(url)
     time.sleep(1)
 
     last_height = driver.execute_script("return document.body.scrollHeight")
     while True:
-        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-        time.sleep(2)
-        new_height = driver.execute_script("return document.body.scrollHeight")
-        if new_height == last_height:
-            break
+        new_height = scroll_down(driver)
+        if new_height == last_height:  # last page
+            time.sleep(5)  # try once more in case slow page
+            new_height = scroll_down(driver)
+            if new_height == last_height:
+                break
         last_height = new_height
 
     # trigger rollover events
@@ -235,18 +255,19 @@ def extract_links() -> None:
     if args.scroll:
         web.load_selenium(args)
 
-    if args.file:
-        with open(args.file) as f:
-            for line in f:
-                found_urls = from_url(args, line)
+    try:
+        if args.file:
+            with open(args.file) as f:
+                for line in f:
+                    found_urls = from_url(args, line)
+                    print_or_download(args, found_urls)
+        else:
+            for path in args.paths:
+                found_urls = from_url(args, path)
                 print_or_download(args, found_urls)
-    else:
-        for path in args.paths:
-            found_urls = from_url(args, path)
-            print_or_download(args, found_urls)
-
-    if args.scroll:
-        args.driver.quit()
+    finally:
+        if args.scroll:
+            web.quit_selenium(args)
 
 
 if __name__ == "__main__":
