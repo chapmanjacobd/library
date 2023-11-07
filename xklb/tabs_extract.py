@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import List
 
 from xklb import db_media, history, usage
-from xklb.utils import consts, db_utils, iterables, objects, path_utils, sql_utils, strings
+from xklb.utils import consts, db_utils, iterables, objects, path_utils, strings
 from xklb.utils.log_utils import log
 
 
@@ -65,7 +65,7 @@ def get_new_paths(args) -> List[str]:
     else:
         if existing:
             print(f"Updating frequency for {len(existing)} existing paths")
-            sql_utils.mark_media_deleted(args, list(existing))
+            db_media.mark_media_deleted(args, list(existing))
 
     args.paths = iterables.conform([path.strip() for path in args.paths])
     return args.paths

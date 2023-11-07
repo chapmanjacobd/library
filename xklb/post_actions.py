@@ -4,7 +4,8 @@ from typing import Optional
 
 import humanize
 
-from xklb.utils import devices, file_utils, iterables, processes, sql_utils
+from xklb import db_media
+from xklb.utils import devices, file_utils, iterables, processes
 from xklb.utils.log_utils import log
 
 try:
@@ -76,7 +77,7 @@ def delete_media(args, paths) -> int:
             file_utils.trash(p, detach=len(paths) < 30)
 
     if hasattr(args, "db"):
-        return sql_utils.mark_media_deleted(args, paths)
+        return db_media.mark_media_deleted(args, paths)
     else:
         return len(paths)
 
@@ -102,12 +103,12 @@ def post_act(
 ) -> None:
     def handle_delete_action():
         if media_file.startswith("http"):
-            sql_utils.mark_media_deleted(args, media_file)
+            db_media.mark_media_deleted(args, media_file)
         else:
             delete_media(args, media_file)
 
     def handle_soft_delete_action():
-        sql_utils.mark_media_deleted(args, media_file)
+        db_media.mark_media_deleted(args, media_file)
 
     def handle_move_action():
         if not media_file.startswith("http"):

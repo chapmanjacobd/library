@@ -2,9 +2,10 @@ import argparse, os, shlex, sys
 from pathlib import Path
 from typing import Dict, List, Tuple
 
+import xklb.db_media
 from xklb import history, tube_backend, usage
 from xklb.media import media_player, media_printer
-from xklb.scripts import bigdirs
+from xklb.scripts import bigdirs, mcda
 from xklb.utils import consts, db_utils, devices, file_utils, iterables, nums, objects, processes, sql_utils
 from xklb.utils.arg_utils import parse_args_limit, parse_args_sort
 from xklb.utils.consts import SC
@@ -368,7 +369,7 @@ def construct_query(args) -> Tuple[str, dict]:
             FROM {args.table} m
             LEFT JOIN history h on h.media_id = m.id
             WHERE 1=1
-                {sql_utils.filter_args_sql(args, m_columns)}
+                {xklb.db_media.filter_args_sql(args, m_columns)}
                 {" ".join(args.filter_sql)}
                 {" ".join([" and " + w for w in args.where if not any(a in w for a in aggregate_filter_columns)])}
             GROUP BY m.id, m.path
@@ -509,17 +510,18 @@ def process_playqueue(args) -> None:
         log.debug("tube_backend.is_supported: %s", t.elapsed())
 
     if args.related >= consts.RELATED:
-        media = sql_utils.get_related_media(args, media[0])
+        media = xklb.db_media.get_related_media(args, media[0])
         log.debug("player.get_related_media: %s", t.elapsed())
 
     if args.big_dirs:
         media_keyed = {d["path"]: d for d in media}
         folders = bigdirs.group_files_by_folder(args, media)
         dirs = bigdirs.process_bigdirs(args, folders)
+        dirs = mcda.group_sort_by(args, dirs)
         log.debug("process_bigdirs: %s", t.elapsed())
         dirs = list(reversed([d["path"] for d in dirs]))
         if "limit" in args.defaults:
-            media = sql_utils.get_dir_media(args, dirs)
+            media = xklb.db_media.get_dir_media(args, dirs)
             log.debug("get_dir_media: %s", t.elapsed())
         else:
             media = []
@@ -550,7 +552,7 @@ def process_playqueue(args) -> None:
 
     if args.print:
         if args.play_in_order >= consts.SIMILAR:
-            media = [sql_utils.get_ordinal_media(args, d) for d in media]
+            media = [xklb.db_media.get_ordinal_media(args, d) for d in media]
         media_printer.media_printer(args, media)
     else:
         media_player.play_list(args, media)

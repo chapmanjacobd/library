@@ -2,8 +2,6 @@ import argparse, json, time
 from pathlib import Path
 from sqlite3 import IntegrityError
 
-from pyparsing import nums
-
 from xklb.utils import db_utils, nums, objects, web
 from xklb.utils.log_utils import log
 
@@ -50,7 +48,6 @@ def get_page(args, query_data):
     data = response.json()
 
     try:
-        data = response.json()
         data_found = data["found"]
         data = data["data"]
     except KeyError:

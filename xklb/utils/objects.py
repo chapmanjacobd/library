@@ -1,3 +1,5 @@
+import json
+from contextlib import contextmanager
 from functools import wraps
 from typing import Dict, Optional
 
@@ -65,3 +67,19 @@ def dumbcopy(d):
 
 def filter_namespace(args, config_opts) -> Optional[Dict]:
     return dict_filter_bool({k: v for k, v in args.__dict__.items() if k in config_opts})
+
+
+@contextmanager
+def json_shelve(filename, default):
+    try:
+        with open(filename) as f:
+            stored_mappings = json.load(f)
+            default.update(stored_mappings)
+
+        yield default
+
+        with open(filename, "w") as f:
+            json.dump(default, f)
+
+    except OSError:
+        yield default

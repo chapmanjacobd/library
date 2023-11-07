@@ -95,7 +95,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.2.144)
+    xk media library subcommands (v2.2.145)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -165,6 +165,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 
     mining:
       lb eda                   Exploratory Data Analysis on table-like files
+      lb mcda                  Multi-criteria ranking on table-like files
       lb incremental-diff      Diff large table-like files in chunks
 
       lb reddit-selftext       db selftext external links -> db media table
@@ -743,6 +744,10 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         All of these options can be used together but it will be a bit slow and the results might be mid-tier
         as multiple different algorithms create a muddied signal (too many cooks in the kitchen):
         library watch -RRCOO
+
+        You can even sort the items within each cluster by auto-MCDA ~LOL~
+        library watch -B --sort-by 'mcda median_size,-deleted'
+        library watch -C --sort-by 'mcda median_size,-deleted'
 
     Filter media by file siblings of parent directory:
         library watch --sibling   # only include files which have more than or equal to one sibling
@@ -1488,6 +1493,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     image3.jpg' | library cluster-sort --image --move-groups
 
 
+
 </details>
 
 <details><summary>Extract links from HTML pages (extract-links)</summary>
@@ -1517,6 +1523,18 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     usage: library eda PATH ... [--table TABLE] [--start-row START_ROW] [--end-row END_ROW] [--repl]
 
     Perform Exploratory Data Analysis (EDA) on one or more files
+
+    Only 20,000 rows per file are loaded for performance purposes. Set `--end-row inf` to read all the rows and/or run out of RAM.
+
+
+</details>
+
+<details><summary>Multi-criteria Ranking for Decision Support (mcda)</summary>
+
+    $ library mcda -h
+    usage: library mcda PATH ... [--table TABLE] [--start-row START_ROW] [--end-row END_ROW]
+
+    Perform Multiple Criteria Decision Analysis (MCDA) on one or more files
 
     Only 20,000 rows per file are loaded for performance purposes. Set `--end-row inf` to read all the rows and/or run out of RAM.
 
@@ -1824,6 +1842,10 @@ After you are done selecting folders you can press ctrl-d and it will save the l
 
     lb bigdirs video.db --depth 5
     lb bigdirs video.db --depth 7
+
+    You can even sort by auto-MCDA ~LOL~
+
+    lb bigdirs video.db -u 'mcda median_size,-deleted'
 
 
 </details>

@@ -4,6 +4,7 @@ from typing import Dict
 from xklb import usage
 from xklb.utils import file_utils, nums
 from xklb.utils.consts import DEFAULT_FILE_ROWS_READ_LIMIT
+from xklb.utils.log_utils import log
 from xklb.utils.printing import print_df, print_series
 
 
@@ -112,13 +113,16 @@ def print_info(args, df):
             print("#### Bins")
             print()
             for col in numeric_columns:
-                bins = pd.cut(df[col], bins=6)
-                print_df(bins.value_counts().sort_index())
+                try:
+                    bins = pd.cut(df[col], bins=6)
+                    print_df(bins.value_counts().sort_index())
+                except TypeError:  # putmask: first argument must be an array
+                    log.warning("Could not calculate bins for col %s", col)
 
         categorical_columns = [s for s in df.columns.to_list() if s not in numeric_columns]
         if categorical_columns:
-            high_cardinality_cols = []
-            low_cardinality_cols = []
+            high_cardinality_cols = set()
+            low_cardinality_cols = set()
 
             print("### Categorical columns")
             print()
@@ -126,7 +130,7 @@ def print_info(args, df):
                 vc = df[col].value_counts()
                 vc = vc[vc > (len(df) * 0.005)]
                 if len(vc) > 0:
-                    low_cardinality_cols.append(col)
+                    low_cardinality_cols.add(col)
                     print(f"#### common values of {col} column")
                     vc = pd.DataFrame({"Count": vc, "Percentage": (vc / len(df)) * 100}).sort_values(
                         by="Count", ascending=False
@@ -142,12 +146,18 @@ def print_info(args, df):
 
                 unique_count = df[col].nunique()
                 if unique_count >= (len(df) * 0.2):
-                    high_cardinality_cols.append(col)
+                    high_cardinality_cols.add(col)
+
+            med_cardinality_cols = low_cardinality_cols.intersection(high_cardinality_cols)
+            low_cardinality_cols = low_cardinality_cols - med_cardinality_cols
+            high_cardinality_cols = high_cardinality_cols - med_cardinality_cols
 
             if high_cardinality_cols:
                 print("#### High cardinality (many unique values)")
                 print_series(high_cardinality_cols)
-
+            if med_cardinality_cols:
+                print("#### Medium cardinality (many unique but also many similar values)")
+                print_series(med_cardinality_cols)
             if low_cardinality_cols:
                 print("#### Low cardinality (many similar values)")
                 print_series(low_cardinality_cols)

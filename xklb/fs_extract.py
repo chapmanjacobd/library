@@ -8,9 +8,9 @@ from timeit import default_timer as timer
 from typing import Dict, List, Optional
 
 import xklb.scripts.playlists
-from xklb import db_playlists, usage
+from xklb import db_media, db_playlists, usage
 from xklb.media import av, books
-from xklb.utils import arg_utils, consts, db_utils, file_utils, iterables, objects, sql_utils
+from xklb.utils import arg_utils, consts, db_utils, file_utils, iterables, objects
 from xklb.utils.consts import SC, DBType
 from xklb.utils.log_utils import log
 
@@ -301,7 +301,7 @@ def find_new_files(args, path: Path) -> List[str]:
         if not new_files and len(deleted_files) >= len(existing_set) and not args.force:
             print(f"[{path}] Path empty or device not mounted. Rerun with -f to mark all subpaths as deleted.")
             return []  # if path not mounted or all files deleted
-        deleted_count = sql_utils.mark_media_deleted(args, deleted_files)
+        deleted_count = db_media.mark_media_deleted(args, deleted_files)
         if deleted_count > 0:
             print(f"[{path}] Marking", deleted_count, "orphaned metadata records as deleted")
 
