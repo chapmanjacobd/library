@@ -41,6 +41,7 @@ deluxe = [
   "geopandas",
   "orjson",
   "PyExifTool",
+  "pymcdm",
   "scikit-learn",
   "subliminal",
   # "textract",  # deps definition causing issues with pdm/bs4

@@ -4,7 +4,8 @@ from pathlib import Path
 from typing import Dict, List
 
 from xklb import usage
-from xklb.utils import consts, file_utils, iterables, nums, objects, printing, sql_utils, strings
+from xklb.scripts import mcda
+from xklb.utils import consts, file_utils, iterables, nums, objects, printing, strings
 from xklb.utils.consts import DBType
 from xklb.utils.log_utils import Timer, log
 
@@ -151,20 +152,16 @@ def cluster_dicts(args, media):
             groups = [
                 {
                     **group,
-                    "count": len(group["grouped_paths"]),
-                    "size": nums.safe_median(media_keyed[s].get("size", 0) for s in group["grouped_paths"]),
-                    "played": sum(bool(media_keyed[s].get("time_last_played", 0)) for s in group["grouped_paths"])
-                    / len(group["grouped_paths"]),
-                    "deleted/played": sum(
-                        (bool(media_keyed[s].get("time_deleted", 0)) for s in group["grouped_paths"]), start=1
-                    )
-                    / sum((bool(media_keyed[s].get("time_last_played", 0)) for s in group["grouped_paths"]), start=1),
-                    "deleted": sum(bool(media_keyed[s].get("time_deleted", 0)) for s in group["grouped_paths"])
-                    / len(group["grouped_paths"]),
+                    "size": sum(media_keyed[s].get("size", 0) for s in group["grouped_paths"]),
+                    "median_size": nums.safe_median(media_keyed[s].get("size", 0) for s in group["grouped_paths"]),
+                    "total": len(group["grouped_paths"]),
+                    "exists": sum(not bool(media_keyed[s].get("time_deleted", 0)) for s in group["grouped_paths"]),
+                    "deleted": sum(bool(media_keyed[s].get("time_deleted", 0)) for s in group["grouped_paths"]),
+                    "played": sum(bool(media_keyed[s].get("time_last_played", 0)) for s in group["grouped_paths"]),
                 }
                 for group in groups
             ]
-            groups = sorted(groups, key=sql_utils.sort_like_sql(args.sort_by))
+            groups = mcda.group_sort_by(args, groups)
             sorted_paths = iterables.flatten(
                 s for d in groups for s in d["grouped_paths"] if media_keyed[s].get("time_deleted", 0) == 0
             )

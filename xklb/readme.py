@@ -36,6 +36,7 @@ progs = {
     },
     "File subcommands": {
         "eda": "Exploratory Data Analysis",
+        "mcda": "Multi-criteria Ranking for Decision Support",
         "incremental_diff": "Compare data files",
     },
     "Folder subcommands": {

@@ -5,9 +5,9 @@ from typing import List
 
 import humanize
 
-from xklb import usage
+from xklb import db_media, usage
 from xklb.media import media_printer
-from xklb.utils import consts, db_utils, devices, file_utils, iterables, objects, sql_utils, strings
+from xklb.utils import consts, db_utils, devices, file_utils, iterables, objects, strings
 from xklb.utils.consts import DBType
 from xklb.utils.log_utils import log
 
@@ -467,7 +467,7 @@ def dedupe() -> None:
             path = d["duplicate_path"]
             if not path.startswith("http") and not args.only_soft_delete:
                 file_utils.trash(path, detach=False)
-            sql_utils.mark_media_deleted(args, path)
+            db_media.mark_media_deleted(args, path)
 
 
 if __name__ == "__main__":

@@ -3,9 +3,9 @@ from copy import deepcopy
 from itertools import groupby
 from typing import Tuple
 
-from xklb import usage
+from xklb import db_media, usage
 from xklb.media import media_player, media_printer
-from xklb.utils import arg_utils, consts, db_utils, iterables, objects, printing, processes, sql_utils
+from xklb.utils import arg_utils, consts, db_utils, iterables, objects, printing, processes
 from xklb.utils.log_utils import log
 
 
@@ -119,7 +119,7 @@ def construct_query(args) -> Tuple[str, dict]:
     query = f"""WITH c as (
         SELECT id, * FROM {table}
         WHERE 1=1
-            {sql_utils.filter_args_sql(args, c_columns)}
+            {db_media.filter_args_sql(args, c_columns)}
     )
     SELECT
         {args.select_sql}

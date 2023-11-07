@@ -8,11 +8,12 @@ from shutil import which
 from time import sleep
 from typing import Dict, List, Optional, Tuple
 
+import xklb.db_media
 from xklb import history
 from xklb.media import subtitle
 from xklb.post_actions import post_act
 from xklb.scripts import playback_control
-from xklb.utils import consts, db_utils, devices, iterables, log_utils, mpv_utils, path_utils, processes, sql_utils
+from xklb.utils import consts, db_utils, devices, iterables, log_utils, mpv_utils, path_utils, processes
 from xklb.utils.consts import SC
 from xklb.utils.log_utils import log
 
@@ -449,7 +450,7 @@ class MediaPrefetcher:
         if (self.args.play_in_order >= consts.SIMILAR) or (
             self.args.action == SC.listen and "audiobook" in m["path"].lower()
         ):
-            m = sql_utils.get_ordinal_media(self.args, m, ignore_paths)
+            m = xklb.db_media.get_ordinal_media(self.args, m, ignore_paths)
             log.debug("player.get_ordinal_media: %s", t.elapsed())
 
         m["original_path"] = m["path"]
@@ -460,7 +461,7 @@ class MediaPrefetcher:
             if not media_path.exists():
                 log.debug("media_path exists: %s", t.elapsed())
                 log.warning("[%s]: Does not exist. Skipping...", m["path"])
-                sql_utils.mark_media_deleted(self.args, m["original_path"])
+                xklb.db_media.mark_media_deleted(self.args, m["original_path"])
                 log.debug("mark_media_deleted: %s", t.elapsed())
                 return None
 

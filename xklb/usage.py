@@ -217,6 +217,10 @@ def play(action) -> str:
         as multiple different algorithms create a muddied signal (too many cooks in the kitchen):
         library {action} -RRCOO
 
+        You can even sort the items within each cluster by auto-MCDA ~LOL~
+        library {action} -B --sort-by 'mcda median_size,-deleted'
+        library {action} -C --sort-by 'mcda median_size,-deleted'
+
     Filter media by file siblings of parent directory:
         library {action} --sibling   # only include files which have more than or equal to one sibling
         library {action} --solo      # only include files which are alone by themselves
@@ -873,6 +877,10 @@ bigdirs = """library bigdirs DATABASE [--limit (4000)] [--depth (0)] [--sort-by 
 
     lb bigdirs video.db --depth 5
     lb bigdirs video.db --depth 7
+
+    You can even sort by auto-MCDA ~LOL~
+
+    lb bigdirs video.db -u 'mcda median_size,-deleted'
 """
 
 disk_usage = """library disk-usage DATABASE [--sort-by size | count] [--depth DEPTH] [PATH / SUBSTRING SEARCH]
@@ -960,6 +968,7 @@ cluster_sort = """library cluster-sort [input_path | stdin] [output_path | stdou
     $ echo 'image1.jpg
     image2.jpg
     image3.jpg' | library cluster-sort --image --move-groups
+
 """
 
 copy_play_counts = """library copy-play-counts DEST_DB SOURCE_DB ... [--source-prefix x] [--target-prefix y]
@@ -1271,6 +1280,13 @@ export_text = """library export-text DATABASE
 eda = """library eda PATH ... [--table TABLE] [--start-row START_ROW] [--end-row END_ROW] [--repl]
 
     Perform Exploratory Data Analysis (EDA) on one or more files
+
+    Only 20,000 rows per file are loaded for performance purposes. Set `--end-row inf` to read all the rows and/or run out of RAM.
+"""
+
+mcda = """library mcda PATH ... [--table TABLE] [--start-row START_ROW] [--end-row END_ROW]
+
+    Perform Multiple Criteria Decision Analysis (MCDA) on one or more files
 
     Only 20,000 rows per file are loaded for performance purposes. Set `--end-row inf` to read all the rows and/or run out of RAM.
 """

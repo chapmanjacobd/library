@@ -7,6 +7,7 @@ from typing import Union
 
 from tabulate import tabulate
 
+import xklb.db_media
 from xklb import history
 from xklb.utils import consts, iterables, printing, processes, sql_utils
 from xklb.utils.consts import SC
@@ -138,10 +139,10 @@ def media_printer(args, data, units=None, media_len=None) -> None:
 
     else:
         if "r" in print_args:
-            marked = sql_utils.mark_media_deleted(args, [d["path"] for d in media if not Path(d["path"]).exists()])
+            marked = xklb.db_media.mark_media_deleted(args, [d["path"] for d in media if not Path(d["path"]).exists()])
             log.warning(f"Marked {marked} metadata records as deleted")
         elif "d" in print_args:
-            marked = sql_utils.mark_media_deleted(args, [d["path"] for d in media])
+            marked = xklb.db_media.mark_media_deleted(args, [d["path"] for d in media])
             log.warning(f"Marked {marked} metadata records as deleted")
 
         if "w" in print_args:
@@ -185,7 +186,7 @@ def media_printer(args, data, units=None, media_len=None) -> None:
     if "f" in print_args:
         if len(media) <= 1000:
             media, deleted_paths = filter_deleted(media)
-            sql_utils.mark_media_deleted(args, deleted_paths)
+            xklb.db_media.mark_media_deleted(args, deleted_paths)
             if len(media) == 0:
                 raise FileNotFoundError
 

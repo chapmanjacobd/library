@@ -10,7 +10,10 @@ class ArgparseList(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         items = getattr(namespace, self.dest, None) or []
 
-        items.extend(values.split(","))  # type: ignore
+        if isinstance(values, str):
+            items.extend(values.split(","))  # type: ignore
+        else:
+            items.extend(flatten(s.split(",") for s in values))  # type: ignore
 
         setattr(namespace, self.dest, items)
 
@@ -60,14 +63,19 @@ def override_sort(sort_expression: str) -> str:
     )
 
 
+def parse_ambiguous_sort(sort):
+    combined_sort = []
+    for s in iterables.flatten([s.split(",") for s in sort]):
+        if s.strip() in ["asc", "desc"] and combined_sort:
+            combined_sort[-1] += " " + s.strip()
+        else:
+            combined_sort.append(s.strip())
+    return combined_sort
+
+
 def parse_args_sort(args) -> None:
     if args.sort:
-        combined_sort = []
-        for s in iterables.flatten([s.split(",") for s in args.sort]):
-            if s.strip() in ["asc", "desc"] and combined_sort:
-                combined_sort[-1] += " " + s.strip()
-            else:
-                combined_sort.append(s.strip())
+        combined_sort = parse_ambiguous_sort(args.sort)
 
         sort_list = []
         select_list = []

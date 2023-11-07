@@ -4,7 +4,8 @@ from typing import Dict, List
 
 from xklb import history, usage
 from xklb.media import media_printer
-from xklb.utils import consts, db_utils, file_utils, nums, objects, sql_utils
+from xklb.scripts import mcda
+from xklb.utils import arg_utils, consts, db_utils, file_utils, nums, objects, sql_utils
 from xklb.utils.log_utils import log
 
 
@@ -14,7 +15,7 @@ def parse_args() -> argparse.Namespace:
         usage=usage.bigdirs,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("--sort-by", "--sort", "-u")
+    parser.add_argument("--sort-by", "--sort", "-u", nargs="+")
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", default="4000")
     parser.add_argument("--depth", "-d", default=0, type=int, help="Depth of folders")
     parser.add_argument("--lower", type=int, default=4, help="Minimum number of files per folder")
@@ -44,6 +45,10 @@ def parse_args() -> argparse.Namespace:
     args = parser.parse_intermixed_args()
     args.db = db_utils.connect(args)
 
+    if args.sort_by:
+        args.sort_by = arg_utils.parse_ambiguous_sort(args.sort_by)
+        args.sort_by = ",".join(args.sort_by)
+
     args.include += args.search
     if args.include == ["."]:
         args.include = [str(Path().cwd().resolve())]
@@ -60,32 +65,36 @@ def parse_args() -> argparse.Namespace:
 
 
 def group_files_by_folder(args, media) -> List[Dict]:
-    d = {}
+    p_media = {}
     for m in media:
         p = m["path"].split(os.sep)
         while len(p) >= 2:
             p.pop()
             parent = os.sep.join(p) + os.sep
 
-            file_deleted = bool(m.get("time_deleted", 0))
-            file_played = bool(m.get("time_played", 0))
-            if parent not in d:
-                d[parent] = {"size": 0, "count": 0, "deleted": 0, "played": 0}
-            if not file_deleted:
-                d[parent]["size"] += m.get("size") or 0
-                d[parent]["count"] += 1
+            if parent not in p_media:
+                p_media[parent] = []
             else:
-                d[parent]["deleted"] += 1
-            if file_played:
-                d[parent]["played"] += 1
+                p_media[parent].append(m)
+
+    d = {}
+    for parent, media in list(p_media.items()):
+        d[parent] = {
+            "size": sum(m.get("size", 0) for m in media),
+            "median_size": nums.safe_median(m.get("size", 0) for m in media),
+            "total": len(media),
+            "exists": sum(not bool(m.get("time_deleted", 0)) for m in media),
+            "deleted": sum(bool(m.get("time_deleted", 0)) for m in media),
+            "played": sum(bool(m.get("time_last_played", 0)) for m in media),
+        }
 
     for path, pdict in list(d.items()):
-        if pdict["count"] == 0:
+        if pdict["exists"] == 0:
             d.pop(path)
         elif not args.depth:
-            if args.lower and pdict["count"] < args.lower:
+            if args.lower and pdict["exists"] < args.lower:
                 d.pop(path)
-            elif args.upper and pdict["count"] > args.upper:
+            elif args.upper and pdict["exists"] > args.upper:
                 d.pop(path)
 
     return [{**v, "path": k} for k, v in d.items()]
@@ -104,16 +113,17 @@ def folder_depth(args, folders) -> List[Dict]:
 
         if d.get(parent):
             d[parent]["size"] += f["size"]
-            d[parent]["count"] += f["count"]
+            d[parent]["total"] += f["total"]
+            d[parent]["exists"] += f["exists"]
             d[parent]["deleted"] += f["deleted"]
             d[parent]["played"] += f["played"]
         else:
             d[parent] = f
 
     for path, pdict in list(d.items()):
-        if args.lower is not None and pdict["count"] < args.lower:
+        if args.lower is not None and pdict["exists"] < args.lower:
             d.pop(path)
-        elif args.upper is not None and pdict["count"] > args.upper:
+        elif args.upper is not None and pdict["exists"] > args.upper:
             d.pop(path)
 
     return [{**v, "path": k} for k, v in d.items()]
@@ -153,20 +163,8 @@ def get_table(args) -> List[dict]:
     return media
 
 
-def sort_by(args):
-    if args.sort_by:
-        if args.sort_by == "played_ratio":
-            return lambda x: x["played"] / x["deleted"] if x["deleted"] else 0
-        elif args.sort_by == "deleted_ratio":
-            return lambda x: x["deleted"] / x["played"] if x["played"] else 0
-        else:
-            return lambda x: x[args.sort_by]
-
-    return lambda x: x["size"] / x["count"]
-
-
 def process_bigdirs(args, folders) -> List[Dict]:
-    folders = [d for d in folders if d["deleted"] != d["count"]]  # remove folders where all deleted
+    folders = [d for d in folders if d["total"] != d["deleted"]]  # remove folders where all deleted
 
     if args.depth:
         folders = folder_depth(args, folders)
@@ -174,12 +172,7 @@ def process_bigdirs(args, folders) -> List[Dict]:
         args.folder_size = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.folder_size)
         folders = [d for d in folders if args.folder_size(d["size"])]
 
-    reverse = False
-    if args.sort_by and " desc" in args.sort_by:
-        args.sort_by = args.sort_by.replace(" desc", "")
-        reverse = True
-
-    return sorted(folders, key=sort_by(args), reverse=reverse)
+    return folders
 
 
 def bigdirs() -> None:
@@ -197,8 +190,9 @@ def bigdirs() -> None:
         folders = [
             {
                 "path": group["common_prefix"],
-                "count": len(group["grouped_paths"]),
+                "total": len(group["grouped_paths"]),
                 "played": sum(bool(media_keyed[s].get("time_played", 0)) for s in group["grouped_paths"]),
+                "exists": sum(not bool(media_keyed[s].get("time_deleted", 0)) for s in group["grouped_paths"]),
                 "deleted": sum(bool(media_keyed[s].get("time_deleted", 0)) for s in group["grouped_paths"]),
                 "deleted_size": sum(
                     media_keyed[s].get("size", 0)
@@ -221,6 +215,7 @@ def bigdirs() -> None:
     else:
         folders = group_files_by_folder(args, media)
 
+    folders = mcda.group_sort_by(args, folders)
     media = process_bigdirs(args, folders)
 
     if args.limit:

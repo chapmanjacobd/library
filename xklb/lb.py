@@ -21,6 +21,7 @@ from xklb.scripts.eda import eda
 from xklb.scripts.export_text import export_text
 from xklb.scripts.history import history
 from xklb.scripts.incremental_diff import incremental_diff
+from xklb.scripts.mcda import mcda
 from xklb.scripts.merge_dbs import merge_dbs
 from xklb.scripts.merge_online_local import merge_online_local
 from xklb.scripts.mining.extract_links import extract_links
@@ -120,6 +121,7 @@ def usage() -> str:
 
     mining:
       lb eda                   Exploratory Data Analysis on table-like files
+      lb mcda                  Multi-criteria ranking on table-like files
       lb incremental-diff      Diff large table-like files in chunks
 
       lb reddit-selftext       db selftext external links -> db media table
@@ -288,6 +290,8 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
 
     subp_eda = add_parser(subparsers, "eda", ["preview"])
     subp_eda.set_defaults(func=eda)
+    subp_mcda = add_parser(subparsers, "mcda", ["mcdm", "rank"])
+    subp_mcda.set_defaults(func=mcda)
     subp_incremental_diff = add_parser(subparsers, "incremental-diff")
     subp_incremental_diff.set_defaults(func=incremental_diff)
 
