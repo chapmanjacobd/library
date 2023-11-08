@@ -117,10 +117,12 @@ def load_selenium(args):
         options = Options()
         options.set_preference("media.volume_scale", "0.0")
         args.driver = webdriver.Firefox(options=options)
-        for addon_path in [
-            Path("~/.local/lib/ublock_origin.xpi").expanduser().resolve(),
-            Path("~/.local/lib/weautopagerize.xpi").expanduser().resolve(),
-        ]:
+
+        addons = [Path("~/.local/lib/ublock_origin.xpi").expanduser().resolve()]
+        if getattr(args, "auto_pager", False):
+            addons.append(Path("~/.local/lib/weautopagerize.xpi").expanduser().resolve())
+
+        for addon_path in addons:
             try:
                 args.driver.install_addon(str(addon_path))
             except Exception:
@@ -128,8 +130,10 @@ def load_selenium(args):
                     log.warning("Could not install firefox addon. Missing file %s", addon_path)
                 else:
                     log.exception("Could not install firefox addon. Missing file %s", addon_path)
+
         if getattr(args, "auto_pager", False):
-            time.sleep(60)  # let addons install
+            time.sleep(60)  # let auto-pager initialize
+
     else:
         args.driver = webdriver.Chrome()
 
