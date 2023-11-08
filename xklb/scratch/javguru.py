@@ -87,7 +87,7 @@ def jav_guru() -> None:
                 "-headers",
                 "User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/117.0",
                 "-headers",
-                "Referrer: https://emturbovid.com/",
+                "Referer: https://emturbovid.com/",
             )
 
             video_streams = [s for s in remote_probe.video_streams if s["height"] <= 720]
@@ -122,7 +122,7 @@ def jav_guru() -> None:
                 "-headers",
                 "User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/117.0",
                 "-headers",
-                "Referrer: https://emturbovid.com/",
+                "Referer: https://emturbovid.com/",
                 "-i",
                 master_playlist_url,  # type: ignore
                 "-map",
