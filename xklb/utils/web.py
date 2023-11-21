@@ -116,7 +116,7 @@ def load_selenium(args, wire=False):
     else:
         from selenium import webdriver
 
-    if consts.LOG_DEBUG > getattr(args, "verbose", 0):
+    if args.verbose < consts.LOG_DEBUG:
         from pyvirtualdisplay.display import Display
 
         args.driver_display = Display(visible=False, size=(1280, 720))
@@ -149,14 +149,6 @@ def load_selenium(args, wire=False):
 
     else:
         args.driver = webdriver.Chrome()
-
-    if wire:
-
-        def interceptor(request):
-            if request.path.endswith((".png", ".jpg", ".gif")):
-                request.abort()
-
-        args.driver.request_interceptor = interceptor  # type: ignore
 
 
 def quit_selenium(args):

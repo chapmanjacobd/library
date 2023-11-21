@@ -95,7 +95,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.2.155)
+    xk media library subcommands (v2.2.156)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -158,10 +158,8 @@ To stop playing press Ctrl+C in either the terminal or mpv
     browser tabs:
       lb tabsadd               Create a tabs database; Add URLs
       lb tabs                  Open your tabs for the day
-      lb surf                  Load browser tabs in a streaming way (stdin)
-
       lb siteadd               Create a sites database; Add URLs
-      lb siteupdate            Update data in a sites database
+      lb surf                  Load browser tabs in a streaming way (stdin)
 
     places:
       lb places-import         Load POIs from Google Maps Google Takeout
@@ -533,6 +531,20 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
         library tabsadd -f yearly -c reddit tabs.db (cat ~/mc/yearly-subreddit.cron)
 
+
+
+</details>
+
+<details><summary>Auto-scrape website data to SQLITE (siteadd)</summary>
+
+    $ library siteadd -h
+    usage: library site-add DATABASE PATH ... [--auto-pager] [--poke] [--local-html] [--file FILE]
+
+    Extract data from website requests to a database
+
+        library siteadd jobs.st.db --poke https://hk.jobsdb.com/hk/search-jobs/python/
+
+    Run with `-vv` to see and interact with the browser
 
 
 </details>
@@ -1988,22 +2000,6 @@ After you are done selecting folders you can press ctrl-d and it will save the l
     usage: library export-text DATABASE
 
     Generate HTML files from SQLite databases
-
-
-</details>
-
-### Other subcommands
-
-<details><summary>site_add (site-add)</summary>
-
-    $ library site-add -h
-    usage: library site-add DATABASE PATH ... [--auto-pager] [--poke] [--local-html] [--file FILE]
-
-    Extract data from website requests to a database
-
-        library siteadd jobs.st.db --poke https://hk.jobsdb.com/hk/search-jobs/python/
-
-    Run with `-vv` to see and interact with the browser
 
 
 </details>

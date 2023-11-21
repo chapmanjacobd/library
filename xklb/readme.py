@@ -6,6 +6,7 @@ progs = {
         "tubeadd": "Add online video media (yt-dlp)",
         "galleryadd": "Add online gallery media (gallery-dl)",
         "tabsadd": "Add browser tabs",
+        "siteadd": "Auto-scrape website data to SQLITE",
         "redditadd": "Add reddit media",
         "pushshift": "Convert pushshift data to reddit.db format",
         "hnadd": "Create / Update a Hacker News database",
