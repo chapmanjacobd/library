@@ -1,5 +1,5 @@
 import csv, math, os, platform, sys, textwrap
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta
 from typing import Dict, List
 
 import humanize
@@ -39,7 +39,7 @@ def write_csv_to_stdout(data):
     writer.writerows(data)
 
 
-def human_time(seconds) -> str:
+def human_duration(seconds) -> str:
     if seconds is None or math.isnan(seconds) or seconds == 0:
         return ""
 
@@ -57,6 +57,26 @@ def human_time(seconds) -> str:
         return humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="minutes", format="%0.0f")
 
     return humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="seconds", format="%0.0f")
+
+
+def human_time(seconds) -> str:
+    if seconds is None or math.isnan(seconds) or seconds == 0:
+        return ""
+
+    dt = datetime.fromtimestamp(seconds)
+    delta = datetime.today() - dt
+
+    midnight_today = datetime.combine(datetime.today(), time.min)
+    midnight_yesterday = midnight_today - timedelta(days=1)
+
+    if dt >= midnight_today:
+        return dt.strftime("today, %H:%M")
+    elif dt >= midnight_yesterday:
+        return dt.strftime("yesterday, %H:%M")
+    elif delta.days < 46:
+        return datetime.fromtimestamp(seconds).strftime(f"{delta.days + 1} days ago, %H:%M")
+    else:
+        return datetime.fromtimestamp(seconds).strftime("%Y-%m-%d %H:%M")
 
 
 def path_fill(text, percent=None, width=None):
@@ -117,7 +137,7 @@ def col_naturaltime(tbl: List[Dict], col: str) -> List[Dict]:
             if val == 0:
                 tbl[idx][col] = None
             else:
-                tbl[idx][col] = humanize.naturaltime(datetime.fromtimestamp(val))
+                tbl[idx][col] = human_time(val)
 
     return tbl
 
@@ -136,7 +156,7 @@ def col_naturalsize(tbl: List[Dict], col: str) -> List[Dict]:
 def col_duration(tbl: List[Dict], col: str) -> List[Dict]:
     for idx, _d in enumerate(tbl):
         if tbl[idx].get(col) is not None:
-            tbl[idx][col] = human_time(tbl[idx][col])
+            tbl[idx][col] = human_duration(tbl[idx][col])
     return tbl
 
 
@@ -195,9 +215,9 @@ def seconds_to_hhmmss(seconds):
     minutes = (seconds % 3600) // 60
     seconds = seconds % 60
 
-    formatted_time = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+    formatted_time = f"{hours: 2}:{minutes:02d}:{seconds:02d}"
     if hours == 0:
-        formatted_time = f"   {minutes:02d}:{seconds:02d}"
+        formatted_time = f"   {minutes: 2}:{seconds:02d}"
 
     return formatted_time
 

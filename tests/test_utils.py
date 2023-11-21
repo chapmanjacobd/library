@@ -207,8 +207,8 @@ def test_parse_duration():
 
 
 def test_human_time():
-    assert printing.human_time(0) == ""
-    assert printing.human_time(946684800) == "30 years and 7 days"
+    assert printing.human_duration(0) == ""
+    assert printing.human_duration(946684800) == "30 years and 7 days"
 
 
 def test_col_duration():
@@ -369,8 +369,9 @@ class TimecodeTestCase(unittest.TestCase):
 
 class SecondsToHHMMSSTestCase(unittest.TestCase):
     def test_positive_seconds(self):
-        assert printing.seconds_to_hhmmss(1) == "   00:01"
-        assert printing.seconds_to_hhmmss(59) == "   00:59"
+        assert printing.seconds_to_hhmmss(1) == "    0:01"
+        assert printing.seconds_to_hhmmss(59) == "    0:59"
+        assert printing.seconds_to_hhmmss(600) == "   10:00"
         assert printing.seconds_to_hhmmss(3600) == "01:00:00"
         assert printing.seconds_to_hhmmss(3665) == "01:01:05"
         assert printing.seconds_to_hhmmss(86399) == "23:59:59"
@@ -378,7 +379,7 @@ class SecondsToHHMMSSTestCase(unittest.TestCase):
         assert printing.seconds_to_hhmmss(90061) == "25:01:01"
 
     def test_zero_seconds(self):
-        assert printing.seconds_to_hhmmss(0) == "   00:00"
+        assert printing.seconds_to_hhmmss(0) == "    0:00"
 
 
 class TestFindUnambiguousMatch(unittest.TestCase):

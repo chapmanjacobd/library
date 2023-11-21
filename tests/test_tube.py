@@ -2,7 +2,6 @@ import sys
 from types import SimpleNamespace
 from unittest import mock
 
-from tests.utils import dvd
 from xklb.dl_extract import dl_download
 from xklb.lb import library as lb
 from xklb.play_actions import watch
@@ -42,7 +41,7 @@ def test_tw_print(capsys):
         assert ("Aggregate" in captured) or ("extractor_key" in captured)
 
 
-class TestTube(dvd.test_case()):
+class TestTube:
     @mock.patch("xklb.media.media_player.single_player", return_value=SimpleNamespace(returncode=0))
     def test_lb_fs(self, play_mocked):
         for SC in ("tubewatch", "tw"):

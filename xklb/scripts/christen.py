@@ -11,6 +11,8 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library christen", usage=usage.christen)
     parser.add_argument("paths", nargs="*")
     parser.add_argument("--dot-space", action="store_true")
+    parser.add_argument("--case-insensitive", action="store_true")
+    parser.add_argument("--lowercase-folders", action="store_true")
     parser.add_argument("--overwrite", "-f", action="store_true")
     parser.add_argument("--run", "-r", action="store_true")
     parser.add_argument("--verbose", "-v", action="count", default=0)
@@ -21,7 +23,12 @@ def parse_args() -> argparse.Namespace:
 
 
 def rename_path(args, base, b) -> None:
-    fixed = path_utils.clean_path(b, args.dot_space)
+    fixed = path_utils.clean_path(
+        b,
+        dot_space=args.dot_space,
+        case_insensitive=args.case_insensitive,
+        lowercase_folders=args.lowercase_folders,
+    )
 
     if b != fixed.encode():
         printable_p = b.decode("utf-8", "backslashreplace")
@@ -64,7 +71,6 @@ def christen() -> None:
         subpaths = sorted((bytes(p.relative_to(base)) for p in base.rglob("*")), key=len, reverse=True)
         for p in subpaths:
             rename_path(args, base, p)
-        # Parallel()(delayed(rename_path)(p) for p in subpaths)  # mostly IO bound
 
     print(
         r"""

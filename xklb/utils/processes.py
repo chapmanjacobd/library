@@ -120,14 +120,17 @@ def cmd_detach(*command, **kwargs) -> subprocess.CompletedProcess:
     # After lb closes, the detached process becomes daemonized (ie. not connected to the terminal so they won't show up in the shell command `jobs`)
     # If you shut down your computer often, you may want to open: `watch progress -wc ffmpeg` in another terminal so that you don't forget many things are in the background
     # If using with ffmpeg remember to include ffmpeg's flag `-nostdin` in the command when calling this function
-    stdout = os.open(os.devnull, os.O_WRONLY)
-    stderr = os.open(os.devnull, os.O_WRONLY)
-    stdin = os.open(os.devnull, os.O_RDONLY)
+    stdout = subprocess.DEVNULL
+    stderr = subprocess.DEVNULL
+    stdin = subprocess.DEVNULL
 
     command = iterables.conform(command)
     if command[0] in ["fish", "bash"]:
         command = command[0:2] + [shlex.join(command[2:])]
-    subprocess.Popen(command, stdin=stdin, stdout=stdout, stderr=stderr, close_fds=True, **os_bg_kwargs(), **kwargs)
+    proc = subprocess.Popen(
+        command, stdin=stdin, stdout=stdout, stderr=stderr, close_fds=True, **os_bg_kwargs(), **kwargs
+    )
+    log.debug("pid %s cmd: %s", proc.pid, command)
     return subprocess.CompletedProcess(command, 0, "Detached command is async")
 
 

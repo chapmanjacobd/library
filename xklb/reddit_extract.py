@@ -45,6 +45,7 @@ def parse_args(action, usage) -> argparse.Namespace:
         usage=usage,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
+    parser.add_argument("--force", "-f", action="store_true")
     parser.add_argument("--limit", default=1000, type=int)
     parser.add_argument("--lookback", default=4, type=int, help="Number of days to look back")
     parser.add_argument("--praw-site", default="bot1")
@@ -265,6 +266,7 @@ def subreddit_new(args, subreddit_dict) -> None:
                         "path": subreddit_path,
                         "subscribers": post_dict.pop("subreddit_subscribers", None),
                         "visibility": post_dict.pop("subreddit_type", None),
+                        "time_modified": consts.now(),
                     },
                 ),
             )
@@ -351,6 +353,7 @@ def reddit_add(args=None) -> None:
                     "extractor_playlist_id": name,
                     "extractor_config": objects.filter_namespace(args, ["limit", "lookback", "praw_site"]),
                     "extractor_key": extractor_key,
+                    "time_modified": consts.now(),
                     "time_deleted": 0,
                 },
             ),
@@ -387,6 +390,9 @@ def reddit_update(args=None) -> None:
                 subreddit_top(args, {"path": path, "name": name})
             elif extractor_key == "reddit_praw_redditor":
                 redditor_new(args_env, {"path": path, "name": name})
+
+            db_playlists.increase_update_delay(args, playlist["path"])
         except skip_errors as e:
+            db_playlists.decrease_update_delay(args, playlist["path"])
             log.error("[%s] skipping: %s", name, e)
             continue

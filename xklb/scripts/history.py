@@ -110,6 +110,12 @@ def recent_media(args, time_column):
     return list(args.db.query(query, args.filter_bindings))
 
 
+def remove_duplicate_data(tbl):
+    if all(d["play_count"] == 1 for d in tbl):
+        for d in tbl:
+            del d["time_first_played"]
+
+
 def history() -> None:
     args = parse_args()
     m_columns = args.db["media"].columns_dict
@@ -155,6 +161,7 @@ def history() -> None:
             LIMIT {args.limit or 5}
         """
         tbl = list(args.db.query(query, args.filter_bindings))
+        remove_duplicate_data(tbl)
         media_printer.media_printer(args, tbl)
 
     elif args.facet in WATCHED:
@@ -186,6 +193,7 @@ def history() -> None:
             LIMIT {args.limit or 5}
         """
         tbl = list(args.db.query(query, args.filter_bindings))
+        remove_duplicate_data(tbl)
         media_printer.media_printer(args, tbl)
 
     else:
@@ -193,6 +201,7 @@ def history() -> None:
         tbl = history_fn(args, args.frequency, f"time_{args.facet}", args.hide_deleted)
         media_printer.media_printer(args, tbl)
         tbl = recent_media(args, f"time_{args.facet}")
+        remove_duplicate_data(tbl)
         media_printer.media_printer(args, tbl)
 
 

@@ -17,6 +17,13 @@ def fallback(func, fallback):
     return wrapped
 
 
+def last_item(gen):
+    last = None
+    for _ in gen:
+        last = _
+    return last
+
+
 def flatten_dict(nested_dict, parent_key="", sep="_", passthrough_keys=None):
     if passthrough_keys is None:
         passthrough_keys = []
@@ -28,6 +35,46 @@ def flatten_dict(nested_dict, parent_key="", sep="_", passthrough_keys=None):
         else:
             flattened_dict[new_key] = value
     return flattened_dict
+
+
+def flatten_grandparents(nested_dict, parent="", sep="_"):
+    flattened_dict = {}
+
+    for k, v in nested_dict.items():
+        prefix = parent.split(sep)[-1]
+        new_key = f"{prefix}{sep}{k}" if prefix else k
+
+        if new_key in flattened_dict:
+            flattened_dict.update(nested_dict)
+        else:
+            if isinstance(v, dict):
+                flattened_dict.update(flatten_grandparents(v, new_key, sep))
+            else:
+                flattened_dict[new_key] = v
+
+    return flattened_dict
+
+
+def flatten_dict_single_parents(nested_dict):
+    flattened_dict = {}
+    for k, v in nested_dict.items():
+        if isinstance(v, dict) and len(v) == 1:
+            next_key, next_v = flatten_dict_single_parents(v).popitem()
+            flattened_dict[next_key] = next_v
+        else:
+            flattened_dict[k] = v
+    return flattened_dict
+
+
+def recursive_flattener(func, obj):
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            obj[k] = recursive_flattener(func, v)
+        return func(obj)
+    elif isinstance(obj, list):
+        return [recursive_flattener(func, i) for i in obj]
+    else:
+        return obj
 
 
 def lower_keys(input_dict):

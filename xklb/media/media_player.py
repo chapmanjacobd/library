@@ -463,7 +463,7 @@ class MediaPrefetcher:
                 log.warning("[%s]: Does not exist. Skipping...", m["path"])
                 xklb.db_media.mark_media_deleted(self.args, m["original_path"])
                 log.debug("mark_media_deleted: %s", t.elapsed())
-                return None
+                return {}
 
             if self.args.transcode or self.args.transcode_audio:
                 m["path"] = m["original_path"] = transcode(self.args, m["path"])
@@ -488,6 +488,8 @@ class MediaPrefetcher:
             if f is None:
                 self.remaining = 0
                 return
+            elif f == {}:
+                continue
 
             if f["path"].startswith("http") or Path(f["path"]).exists():
                 m = f
@@ -567,7 +569,7 @@ def multiple_player(args, playlist) -> None:
                             m["path"],
                             geom_data=geom_data,
                             media_len=playlist.remaining,
-                            player_exit_code=r.returncode == 0,
+                            player_exit_code=r.returncode,
                         )
 
                         m = playlist.get_m()
@@ -647,7 +649,7 @@ def play(args, m, media_len) -> None:
                     log.error("Player exited with code %s", r.returncode)
                     raise SystemExit(r.returncode)
             t.reset()
-            post_act(args, m["original_path"], media_len=media_len, player_exit_code=r.returncode == 0)
+            post_act(args, m["original_path"], media_len=media_len, player_exit_code=r.returncode)
             log.debug("player.post_act: %s", t.elapsed())
     finally:
         playhead = mpv_utils.get_playhead(

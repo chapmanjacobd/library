@@ -117,7 +117,11 @@ def parse_args(action, usage) -> argparse.Namespace:
 
 
 def extract_metadata(mp_args, path) -> Optional[Dict[str, int]]:
-    log.debug(path)
+    try:
+        path.encode()
+    except UnicodeEncodeError:
+        log.error("Could not encode file path as UTF-8. Skipping %s", path)
+        return None
 
     p = Path(path)
 

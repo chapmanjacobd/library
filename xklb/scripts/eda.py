@@ -105,7 +105,6 @@ def print_info(args, df):
         print_df(diff_dtypes.set_index("column"))
 
     if len(df) > 15:
-
         numeric_columns = df.select_dtypes("number").columns.to_list()
         if numeric_columns:
             print("### Numerical columns")
