@@ -26,6 +26,7 @@ jobs:
 
       - name: Install Dependencies
         run: |
+          python -m pip uninstall urllib3 six
           python -m pip install pdm
           pdm install --no-editable -G deluxe -G test
 
