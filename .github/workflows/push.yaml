@@ -26,9 +26,9 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          python -m pip install --upgrade --ignore-installed urllib3 requests
           python -m pip install pdm
           pdm install --no-editable -G deluxe -G test
+          python -m pip install --upgrade --ignore-installed urllib3 requests
 
       - name: Run pytest
         run: pdm run pytest
