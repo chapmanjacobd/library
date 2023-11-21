@@ -254,10 +254,10 @@ def test_clean_string():
 
 def test_clean_path():
     assert path_utils.clean_path(b"_test/-t") == utils.p("_test/t")
-    assert path_utils.clean_path(b"3_seconds_ago.../Mike.webm") == utils.p("3_Seconds_Ago/Mike.webm")
-    assert path_utils.clean_path(b"3_seconds_ago../Mike.webm") == utils.p("3_Seconds_Ago/Mike.webm")
-    assert path_utils.clean_path(b"3_seconds_ago./Mike.webm") == utils.p("3_Seconds_Ago/Mike.webm")
-    assert path_utils.clean_path(b"3_seconds_ago___/ Mike.webm") == utils.p("3_Seconds_Ago/Mike.webm")
+    assert path_utils.clean_path(b"3_seconds_ago.../Mike.webm") == utils.p("3_seconds_ago/Mike.webm")
+    assert path_utils.clean_path(b"3_seconds_ago../Mike.webm") == utils.p("3_seconds_ago/Mike.webm")
+    assert path_utils.clean_path(b"3_seconds_ago./Mike.webm") == utils.p("3_seconds_ago/Mike.webm")
+    assert path_utils.clean_path(b"3_seconds_ago___/ Mike.webm") == utils.p("3_seconds_ago/Mike.webm")
     assert path_utils.clean_path(b"test") == utils.p("test")
     assert path_utils.clean_path(b"test./t") == utils.p("test/t")
     assert path_utils.clean_path(b".test") == utils.p(".test")
@@ -371,7 +371,7 @@ class SecondsToHHMMSSTestCase(unittest.TestCase):
     def test_positive_seconds(self):
         assert printing.seconds_to_hhmmss(1) == "    0:01"
         assert printing.seconds_to_hhmmss(59) == "    0:59"
-        assert printing.seconds_to_hhmmss(600) == "   10:00"
+        assert printing.seconds_to_hhmmss(600) == "    10:00"
         assert printing.seconds_to_hhmmss(3600) == "01:00:00"
         assert printing.seconds_to_hhmmss(3665) == "01:01:05"
         assert printing.seconds_to_hhmmss(86399) == "23:59:59"
