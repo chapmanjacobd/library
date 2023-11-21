@@ -371,7 +371,7 @@ class SecondsToHHMMSSTestCase(unittest.TestCase):
     def test_positive_seconds(self):
         assert printing.seconds_to_hhmmss(1) == "    0:01"
         assert printing.seconds_to_hhmmss(59) == "    0:59"
-        assert printing.seconds_to_hhmmss(600) == "    10:00"
+        assert printing.seconds_to_hhmmss(600) == "   10:00"
         assert printing.seconds_to_hhmmss(3600) == " 1:00:00"
         assert printing.seconds_to_hhmmss(3665) == " 1:01:05"
         assert printing.seconds_to_hhmmss(86399) == "23:59:59"
