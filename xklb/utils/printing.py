@@ -215,9 +215,9 @@ def seconds_to_hhmmss(seconds):
     minutes = (seconds % 3600) // 60
     seconds = seconds % 60
 
-    formatted_time = f"{hours: 2}:{minutes:02d}:{seconds:02d}"
+    formatted_time = f"{hours:>2}:{minutes:02d}:{seconds:02d}"
     if hours == 0:
-        formatted_time = f"   {minutes: 2}:{seconds:02d}"
+        formatted_time = f"   {minutes:>2}:{seconds:02d}"
 
     return formatted_time
 
