@@ -1334,7 +1334,7 @@ extract_links = """library extract-links PATH ... [--case-sensitive] [--scroll] 
     Run with `-vv` to see the browser
 """
 
-site_add = """library site-add DATABASE PATH ... [--auto-pager] [--poke] [--local-html] [--file FILE]
+siteadd = """library site-add DATABASE PATH ... [--auto-pager] [--poke] [--local-html] [--file FILE]
 
     Extract data from website requests to a database
 
@@ -1343,7 +1343,7 @@ site_add = """library site-add DATABASE PATH ... [--auto-pager] [--poke] [--loca
     Run with `-vv` to see and interact with the browser
 """
 
-site_sql = None
+sitesql = None
 """library site-sql PATH ... [--table TABLE] [--repl]
 
     Extract data from website requests or HTML tables to a temporary database and perform queries on them in one go

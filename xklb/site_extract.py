@@ -3,12 +3,12 @@ from collections import defaultdict
 from pathlib import Path
 
 from xklb import usage
-from xklb.utils import db_utils, iterables, objects, web
+from xklb.utils import consts, db_utils, iterables, objects, web
 from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(prog="library site-add", usage=usage.site_add)
+    parser = argparse.ArgumentParser(prog="library site-add", usage=usage.siteadd)
     parser.add_argument("--auto-pager", "--autopager", action="store_true")
     parser.add_argument("--poke", action="store_true")
     parser.add_argument("--local-html", action="store_true", help="Treat paths as Local HTML files")
@@ -112,64 +112,92 @@ def add_missing_table_names(args, tables):
     return tables
 
 
-def save_path_data(args, path):
+def attach_interceptors(args):
     from seleniumwire.utils import decode
+
+    def request_interceptor(request):
+        if request.path.endswith((".png", ".jpg", ".gif")):
+            request.abort()
+
+    args.driver.request_interceptor = request_interceptor  # type: ignore
+
+    def response_interceptor(request, response):
+        # TODO: websockets, protobufs...
+
+        host = request.host.lower()
+        request_path = request.path.lower()
+        if (
+            host.endswith((".mozilla.com", ".mozilla.net", ".firefox.com"))
+            or any(s in host for s in ("ublockorigin",))
+            or any(s in request_path for s in ("ublock",))
+        ):
+            return
+
+        if (
+            response
+            and response.status_code // 100 == 2  # HTTP 2xx
+            and "Content-Type" in response.headers
+            and response.headers["Content-Type"].startswith(("application/json",))
+        ):
+            body = decode(response.body, response.headers.get("Content-Encoding", "identity"))
+            body = body.decode()
+            if any(s in body for s in ["searchKeywords"]):
+                return
+
+            body = json.loads(body)
+            tables = nosql_to_sql(body)
+            if args.verbose > 2:
+                breakpoint()
+
+            tables = add_missing_table_names(args, tables)
+            db_thread = db_utils.connect(argparse.Namespace(database=args.database, verbose=args.verbose))
+            for d in tables:
+                db_thread[d["table_name"]].insert_all(iterables.list_dict_filter_bool(d["data"]), alter=True)  # type: ignore
+
+        elif (
+            response
+            and "Content-Type" in response.headers
+            and response.headers["Content-Type"].startswith(
+                (
+                    "application/javascript",
+                    "image/jpeg",
+                    "image/vnd.microsoft.icon",
+                    "text/css",
+                    "text/html",
+                )
+            )
+        ):
+            pass
+        elif response:
+            log.info("%s\t%s\t%s", request.url, response.headers["Content-Type"], response.status_code)
+
+        request = None
+        response = None  # tell selenium-wire to not keep the response... idk if this works
+
+    args.driver.response_interceptor = response_interceptor  # type: ignore
+
+
+def load_page(args, path):
+    from selenium.common.exceptions import WebDriverException
+
+    attach_interceptors(args)
 
     web.selenium_get_page(args, path)
 
-    for page_html_text in web.infinite_scroll(args.driver):
-        # TODO: extract HTML tables (via pandas?)
-        # TODO: websockets, protobufs...
-
-        for request in args.driver.requests:
-            host = request.host.lower()
-            request_path = request.path.lower()
-            if (
-                host.endswith((".mozilla.com", ".mozilla.net", ".firefox.com"))
-                or any(s in host for s in ("ublockorigin",))
-                or any(s in request_path for s in ("ublock",))
-            ):
-                continue
-
-            r = request.response
-            if (
-                r
-                and r.status_code // 100 == 2  # HTTP 2xx
-                and "Content-Type" in r.headers
-                and r.headers["Content-Type"].startswith(("application/json",))
-            ):
-                body = decode(r.body, r.headers.get("Content-Encoding", "identity"))
-                body = body.decode()
-                if any(s in body for s in ["searchKeywords"]):
-                    continue
-
-                body = json.loads(body)
-                tables = nosql_to_sql(body)
-                if args.verbose > 2:
-                    breakpoint()
-
-                tables = add_missing_table_names(args, tables)
-                for d in tables:
-                    args.db[d["table_name"]].insert_all(iterables.list_dict_filter_bool(d["data"]), alter=True)
-
-            elif (
-                r
-                and "Content-Type" in r.headers
-                and r.headers["Content-Type"].startswith(
-                    (
-                        "application/javascript",
-                        "image/jpeg",
-                        "image/vnd.microsoft.icon",
-                        "text/css",
-                        "text/html",
-                    )
-                )
-            ):
-                pass
-            elif r:
-                log.info("%s\t%s\t%s", request.url, r.headers["Content-Type"], r.status_code)
-
-        # del args.driver.requests  # idk if this is needed or not
+    while True:  # repeat until browser closed
+        try:
+            # TODO: extract HTML tables (via pandas?)
+            if args.auto_pager:
+                for page_html_text in web.infinite_scroll(args.driver):
+                    args.driver.implicitly_wait(1)
+            else:
+                args.driver.implicitly_wait(5)  # give the interceptors some time to work
+        except WebDriverException:
+            break
+        else:
+            del args.driver.requests  # clear processed responses
+            if args.verbose < consts.LOG_DEBUG:
+                break  # if browser hidden, exit
 
 
 def site_add(args=None) -> None:
@@ -183,11 +211,11 @@ def site_add(args=None) -> None:
                     url = line.rstrip("\n")
                     if url in ["", '""', "\n"]:
                         continue
-                    save_path_data(args, url)
+                    load_page(args, url)
         else:
             for url in args.paths:
                 if url in ["", '""', "\n"]:
                     continue
-                save_path_data(args, url)
+                load_page(args, url)
     finally:
         web.quit_selenium(args)

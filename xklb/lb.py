@@ -116,10 +116,8 @@ def usage() -> str:
     browser tabs:
       lb tabsadd               Create a tabs database; Add URLs
       lb tabs                  Open your tabs for the day
-      lb surf                  Load browser tabs in a streaming way (stdin)
-
       lb siteadd               Create a sites database; Add URLs
-      lb siteupdate            Update data in a sites database
+      lb surf                  Load browser tabs in a streaming way (stdin)
 
     places:
       lb places-import         Load POIs from Google Maps Google Takeout
