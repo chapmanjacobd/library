@@ -1,7 +1,7 @@
-import argparse, time
+import argparse
 
 from xklb import usage
-from xklb.utils import consts, printing, web
+from xklb.utils import consts, iterables, printing, strings, web
 from xklb.utils.log_utils import log
 
 
@@ -73,8 +73,9 @@ def parse_args():
     parser.add_argument("--strict-include", action="store_true", help="All include args must resolve true")
     parser.add_argument("--strict-exclude", action="store_true", help="All exclude args must resolve true")
     parser.add_argument("--case-sensitive", action="store_true", help="Filter with case sensitivity")
-    parser.add_argument("--print-link-text", action="store_true")
+    parser.add_argument("--print-link-text", "--print-title", action="store_true")
     parser.add_argument("--auto-pager", "--autopager", action="store_true")
+    parser.add_argument("--poke", action="store_true")
     parser.add_argument("--scroll", action="store_true", help="Scroll down the page; infinite scroll")
     parser.add_argument("--download", action="store_true", help="Download filtered links")
     parser.add_argument("--verbose", "-v", action="count", default=0)
@@ -110,20 +111,16 @@ def construct_absolute_url(url, href):
     return href
 
 
-def is_desired_url(args, a_element, href) -> bool:
-    path = href if args.case_sensitive else href.lower()
-
+def is_desired_url(args, a_element, link, link_text) -> bool:
     include_cond = all if args.strict_include else any
     exclude_cond = all if args.strict_exclude else any
 
-    if args.path_include and not include_cond(inc in path for inc in args.path_include):
-        log.debug("path-include: %s", path)
+    if args.path_include and not include_cond(inc in link for inc in args.path_include):
+        log.debug("path-include: %s", link)
         return False
-    if args.path_exclude and exclude_cond(ex in path for ex in args.path_exclude):
-        log.debug("path-exclude: %s", path)
+    if args.path_exclude and exclude_cond(ex in link for ex in args.path_exclude):
+        log.debug("path-exclude: %s", link)
         return False
-
-    link_text = a_element.text if args.case_sensitive else a_element.text.lower()
 
     if args.text_exclude and exclude_cond(ex in link_text for ex in args.text_exclude):
         log.debug("text-exclude: %s", link_text)
@@ -156,97 +153,65 @@ def is_desired_url(args, a_element, href) -> bool:
             log.info("  after: %s", after_text)
 
     if args.text_exclude or args.text_include:
-        log.info("  text: %s", link_text)
+        log.info("  text: `%s`", link_text.strip())
 
     return True
 
 
-def get_inner_urls(args, url, markup):
+def parse_inner_urls(args, url, markup):
     from bs4 import BeautifulSoup
 
     soup = BeautifulSoup(markup, "html.parser")
 
-    inner_urls = set()
     # for a in soup.findAll(href=True):  # TODO: check if non-a href are common
     for a in soup.findAll("a", attrs={"href": True}):
         log.debug(a)
 
         href = a["href"].strip()
         if (len(href) > 1) and href[0] != "#":
-            href = construct_absolute_url(url, href)
-            if is_desired_url(args, a, href):
+            link = construct_absolute_url(url, href)
+
+            link = link if args.case_sensitive else link.lower()
+            link_text = a.text if args.case_sensitive else a.text.lower()
+
+            link = strings.remove_consecutive_whitespace(link)
+            link_text = strings.remove_consecutive_whitespace(link_text)
+
+            if is_desired_url(args, a, link, link_text):
                 if args.print_link_text:
-                    inner_urls.add(href + "\t" + a.text.lower())
+                    yield link + "\t" + link_text
                 else:
-                    inner_urls.add(href)
+                    yield link
 
         if args.verbose > consts.LOG_DEBUG:
             breakpoint()
 
-    return inner_urls
 
+@iterables.return_unique
+def get_inner_urls(args, url):
+    if args.scroll:
+        web.selenium_get_page(args, url)
 
-def scroll_down(driver):
-    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-    time.sleep(2)
-    new_height = driver.execute_script("return document.body.scrollHeight")
-    return new_height
-
-
-def get_page_infinite_scroll(driver, url):
-    driver.get(url)
-    time.sleep(1)
-
-    last_height = driver.execute_script("return document.body.scrollHeight")
-    while True:
-        new_height = scroll_down(driver)
-        if new_height == last_height:  # last page
-            time.sleep(5)  # try once more in case slow page
-            new_height = scroll_down(driver)
-            if new_height == last_height:
-                break
-        last_height = new_height
-
-    # trigger rollover events
-    driver.execute_script(
-        "(function(){function k(x) { if (x.onmouseover) { x.onmouseover(); x.backupmouseover = x.onmouseover; x.backupmouseout = x.onmouseout; x.onmouseover = null; x.onmouseout = null; } else if (x.backupmouseover) { x.onmouseover = x.backupmouseover; x.onmouseout = x.backupmouseout; x.onmouseover(); x.onmouseout(); } } var i,x; for(i=0; x=document.links[i]; ++i) k(x); for (i=0; x=document.images[i]; ++i) k(x); })()"
-    )
-
-    # include Shadow DOM
-    html_text = driver.execute_script(
-        'function s(n=document.body){if(!n)return"";if(n.nodeType===Node.TEXT_NODE)return n.textContent.trim();if(n.nodeType!==Node.ELEMENT_NODE)return"";let t="";let r=n.cloneNode();n=n.shadowRoot||n;if(n.children.length)for(let o of n.childNodes)if(o.assignedNodes){if(o.assignedNodes()[0])t+=s(o.assignedNodes()[0]);else t+=o.innerHTML}else t+=s(o);else t=n.innerHTML;return r.innerHTML=t,r.outerHTML}; return s()'
-    )
-
-    return html_text
-
-
-def from_url(args, line):
-    url = line.rstrip("\n")
-    if url in ["", '""', "\n"]:
-        return None
-
-    if args.local_html:
-        with open(url, "r") as f:
-            markup = f.read()
-        url = "file://" + url
-    elif args.scroll:
-        markup = get_page_infinite_scroll(args.driver, url)
+        for markup in web.infinite_scroll(args.driver):
+            yield from parse_inner_urls(args, url, markup)
     else:
-        r = web.requests_session().get(url, timeout=120, headers=web.headers)
-        r.raise_for_status()
-        markup = r.content
+        if args.local_html:
+            with open(url, "r") as f:
+                markup = f.read()
+            url = "file://" + url
+        else:
+            r = web.requests_session().get(url, timeout=120, headers=web.headers)
+            r.raise_for_status()
+            markup = r.content
 
-    inner_urls = get_inner_urls(args, url, markup)
-
-    return inner_urls
+        yield from parse_inner_urls(args, url, markup)
 
 
-def print_or_download(args, found_urls):
+def print_or_download(args, inner_url):
     if args.download:
-        for inner_url in found_urls:
-            web.download_url(inner_url)
+        web.download_url(inner_url)
     else:
-        printing.pipe_print("\n".join(found_urls))
+        printing.pipe_print(inner_url)
 
 
 def extract_links() -> None:
@@ -254,22 +219,25 @@ def extract_links() -> None:
 
     if args.scroll:
         web.load_selenium(args)
-
     try:
         if args.file:
             with open(args.file) as f:
                 for line in f:
-                    found_urls = from_url(args, line)
-                    print_or_download(args, found_urls)
+                    url = line.rstrip("\n")
+                    if url in ["", '""', "\n"]:
+                        continue
+                    for found_urls in get_inner_urls(args, line):
+                        print_or_download(args, found_urls)
         else:
-            for path in args.paths:
-                found_urls = from_url(args, path)
-                print_or_download(args, found_urls)
+            for url in args.paths:
+                if url in ["", '""', "\n"]:
+                    continue
+                for found_urls in get_inner_urls(args, url):
+                    print_or_download(args, found_urls)
     finally:
         if args.scroll:
             web.quit_selenium(args)
 
 
 if __name__ == "__main__":
-    # echo $directors | python scripts/mining/nfb.ca.py | tee -a ~/.jobs/75
     extract_links()

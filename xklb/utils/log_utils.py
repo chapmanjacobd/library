@@ -8,6 +8,10 @@ from IPython.terminal import debugger
 sys.breakpointhook = debugger.set_trace
 
 
+def clamp_index(arr, idx):
+    return arr[min(max(idx, 0), len(arr) - 1)]
+
+
 def run_once(f):  # noqa: ANN201
     @wraps(f)
     def wrapper(*args, **kwargs):
@@ -39,12 +43,19 @@ def argparse_log() -> logging.Logger:
         pass
 
     log_levels = [logging.WARNING, logging.INFO, logging.DEBUG]
-    logging.root.handlers = []  # clear any existing handlers
-    logging.basicConfig(
-        level=log_levels[min(len(log_levels) - 1, args.verbose)],
-        format="%(message)s",
-    )
-    return logging.getLogger()
+
+    if args.verbose > 3 or args.verbose == 0:
+        logging.root.handlers = []  # clear any existing handlers
+        logging.basicConfig(
+            level=clamp_index(log_levels, args.verbose),
+            format="%(message)s",
+        )
+    else:
+        logging.basicConfig(format="%(message)s")
+
+    logger = logging.getLogger("library")
+    logger.setLevel(clamp_index(log_levels, args.verbose))
+    return logger
 
 
 log = argparse_log()

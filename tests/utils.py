@@ -1,8 +1,5 @@
 from pathlib import Path
 
-import vcr
-from vcr.record_mode import RecordMode
-
 
 def p(string):
     return str(Path(string))
@@ -20,8 +17,3 @@ def filter_query_param(r1, r2):
         query2.pop(k, None)
 
     return query1 == query2
-
-
-dvd = vcr.VCR(cassette_library_dir="tests/cassettes/", record_mode=RecordMode.NEW_EPISODES)
-dvd.register_matcher("filter_query", filter_query_param)
-dvd.match_on = ["method", "scheme", "host", "port", "path", "filter_query"]

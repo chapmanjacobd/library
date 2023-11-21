@@ -1,5 +1,6 @@
 import math
 from collections.abc import Iterable
+from functools import wraps
 from typing import Any, Iterator, List, Optional, Union
 
 from xklb.utils import objects
@@ -35,6 +36,30 @@ def safe_unpack(*list_, idx=0, keep_0=True) -> Optional[Any]:
         return value if keep_0 or value != 0 else None
     except IndexError:
         return None
+
+
+def safe_pop(list_, idx=-1) -> Optional[Any]:
+    if not list_:
+        return None
+    return list_[idx]
+
+
+def get_all_lists(nested_dict):
+    list_ = []
+
+    for value in nested_dict.values():
+        if isinstance(value, list):
+            list_.append(value)
+        elif isinstance(value, dict):
+            list_.extend(get_all_lists(value))
+
+    return list_
+
+
+def get_list_with_most_items(nested_dict):
+    list_ = get_all_lists(nested_dict)
+    list_ = sorted(list_, key=len)
+    return safe_pop(list_)
 
 
 def safe_sum(*list_, keep_0=False) -> Optional[Any]:
@@ -93,15 +118,15 @@ def list_dict_filter_unique(data: List[dict]) -> List[dict]:
 
 def list_dict_unique(data: List[dict], unique_keys: List[str]) -> List[dict]:
     seen = set()
-    result = []
+    list_ = []
     for d in data:
         t = tuple(d[key] for key in unique_keys)
 
         if t not in seen:
             seen.add(t)
-            result.append(d)
+            list_.append(d)
 
-    return result
+    return list_
 
 
 def chunks(lst, n) -> Iterator:
@@ -123,6 +148,33 @@ def ordered_set(items):
         if item not in seen:
             yield item
             seen.add(item)
+
+
+def return_unique(gen_func):
+    seen = set()
+
+    @wraps(gen_func)
+    def wrapper(*args, **kwargs):
+        for item in gen_func(*args, **kwargs):
+            if item in seen:
+                continue
+            seen.add(item)
+            yield item
+
+    return wrapper
+
+
+def return_unique_set_items(gen_func):
+    seen = set()
+
+    def wrapper(*args, **kwargs):
+        for item in gen_func(*args, **kwargs):
+            diff = item - seen
+            if diff:
+                seen.update(item)
+                yield diff
+
+    return wrapper
 
 
 def multi_split(string, delimiters):

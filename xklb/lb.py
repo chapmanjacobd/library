@@ -5,6 +5,7 @@ from xklb.dl_extract import dl_download
 from xklb.fs_extract import fs_add, fs_update
 from xklb.gdl_extract import gallery_add, gallery_update
 from xklb.hn_extract import hacker_news_add
+from xklb.media.dedupe import dedupe_media
 from xklb.play_actions import filesystem, listen, read, view, watch
 from xklb.reddit_extract import reddit_add, reddit_update
 from xklb.scripts.bigdirs import bigdirs
@@ -12,7 +13,6 @@ from xklb.scripts.block import block
 from xklb.scripts.christen import christen
 from xklb.scripts.cluster_sort import cluster_sort
 from xklb.scripts.copy_play_counts import copy_play_counts
-from xklb.scripts.dedupe import dedupe
 from xklb.scripts.dedupe_czkawka import czkawka_dedupe
 from xklb.scripts.dedupe_db import dedupe_db
 from xklb.scripts.disk_usage import disk_usage
@@ -25,6 +25,7 @@ from xklb.scripts.mcda import mcda
 from xklb.scripts.merge_dbs import merge_dbs
 from xklb.scripts.merge_online_local import merge_online_local
 from xklb.scripts.mining.extract_links import extract_links
+from xklb.scripts.mining.markdown_links import markdown_links
 from xklb.scripts.mining.mpv_watchlater import mpv_watchlater
 from xklb.scripts.mining.nouns import nouns
 from xklb.scripts.mining.pushshift import pushshift_extract
@@ -42,6 +43,7 @@ from xklb.scripts.scatter import scatter
 from xklb.scripts.search_db import search_db
 from xklb.scripts.streaming_tab_loader import streaming_tab_loader
 from xklb.search import search
+from xklb.site_extract import site_add
 from xklb.tabs_actions import tabs
 from xklb.tabs_extract import tabs_add
 from xklb.tube_extract import tube_add, tube_update
@@ -65,7 +67,7 @@ def usage() -> str:
       lb view                  View images
 
       lb bigdirs               Discover folders which take much room
-      lb dedupe                Deduplicate local db files
+      lb dedupe                Deduplicate a media db's media files
       lb czkawka-dedupe        Split-screen czkawka results to decide which to delete
       lb relmv                 Move files/folders while preserving relative paths
       lb christen              Cleanse files by giving them a new name
@@ -116,6 +118,9 @@ def usage() -> str:
       lb tabs                  Open your tabs for the day
       lb surf                  Load browser tabs in a streaming way (stdin)
 
+      lb siteadd               Create a sites database; Add URLs
+      lb siteupdate            Update data in a sites database
+
     places:
       lb places-import         Load POIs from Google Maps Google Takeout
 
@@ -128,7 +133,8 @@ def usage() -> str:
       lb pushshift             Convert Pushshift jsonl.zstd -> reddit.db format (stdin)
       lb hnadd                 Create a hackernews database (this takes a few days)
 
-      lb extract-links         Extract links from lists of web pages
+      lb extract-links         Extract inner links from lists of web pages
+      lb markdown-links        Extract titles from lists of web pages
 
       lb mpv-watchlater        Import timestamps from mpv watchlater to history table
 
@@ -142,20 +148,28 @@ def print_help(parser) -> None:
     print(parser.epilog)
 
 
-subcommands = ["fs", "du", "dedupe"]
+known_subcommands = ["fs", "du", "tabs"]
 
 
 def consecutive_prefixes(s):
-    prefixes = [s[:j] for j in range(5, len(s)) if s[:j] and s[:j] not in subcommands]
-    subcommands.extend(prefixes)
+    prefixes = [s[:j] for j in range(5, len(s)) if s[:j] and s[:j] not in known_subcommands]
+    known_subcommands.extend(prefixes)
     return prefixes
 
 
-def add_parser(subparsers, name, a=None):
-    if a is None:
-        a = []
-    subcommands.extend([name, *a])
-    aliases = a + consecutive_prefixes(name) + iterables.conform([consecutive_prefixes(a) for a in a])
+def add_parser(subparsers, name, aliases=None):
+    if aliases is None:
+        aliases = []
+
+    aliases += [
+        s.replace("-", "") for s in [name] + aliases if "-" in s and s.replace("-", "") not in known_subcommands
+    ]
+    aliases += [
+        s.replace("-", "_") for s in [name] + aliases if "-" in s and s.replace("-", "_") not in known_subcommands
+    ]
+    known_subcommands.extend([name, *aliases])
+
+    aliases += consecutive_prefixes(name) + iterables.conform([consecutive_prefixes(a) for a in aliases])
     return subparsers.add_parser(name, aliases=aliases, add_help=False)
 
 
@@ -167,9 +181,9 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
         add_help=False,
     )
     subparsers = parser.add_subparsers()
-    subp_fsadd = add_parser(subparsers, "fsadd", ["x", "extract"])
+    subp_fsadd = add_parser(subparsers, "fs-add", ["x", "extract"])
     subp_fsadd.set_defaults(func=fs_add)
-    subp_fsupdate = add_parser(subparsers, "fsupdate", ["xu"])
+    subp_fsupdate = add_parser(subparsers, "fs-update", ["xu"])
     subp_fsupdate.set_defaults(func=fs_update)
 
     subp_watch = add_parser(subparsers, SC.watch, ["wt", "tubewatch", "tw", "entries"])
@@ -188,11 +202,11 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     subp_filesystem = add_parser(subparsers, SC.filesystem, ["fs", "open"])
     subp_filesystem.set_defaults(func=filesystem)
 
-    subp_bigdirs = add_parser(subparsers, "bigdirs", ["largefolders", "large_folders"])
+    subp_bigdirs = add_parser(subparsers, "big-dirs", ["large-folders"])
     subp_bigdirs.set_defaults(func=bigdirs)
-    subp_move_list = add_parser(subparsers, "mv-list", ["movelist", "move-list", "move_list"])
+    subp_move_list = add_parser(subparsers, "mv-list", ["move-list"])
     subp_move_list.set_defaults(func=move_list)
-    subp_relmv = add_parser(subparsers, "relmv", ["rel-mv", "mvrel", "mv-rel"])
+    subp_relmv = add_parser(subparsers, "rel-mv", ["mv-rel"])
     subp_relmv.set_defaults(func=relmv)
 
     subp_scatter = add_parser(subparsers, "scatter")
@@ -200,17 +214,17 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     subp_christen = add_parser(subparsers, "christen")
     subp_christen.set_defaults(func=christen)
 
-    subp_search_db = add_parser(subparsers, "search-db", ["s", "sdb", "searchdb", "search_db"])
+    subp_search_db = add_parser(subparsers, "search-db", ["s", "sdb"])
     subp_search_db.set_defaults(func=search_db)
-    subp_merge_db = add_parser(subparsers, "merge-dbs", ["merge-db", "mergedb", "mergedbs", "merge_db", "merge_dbs"])
+    subp_merge_db = add_parser(subparsers, "merge-dbs", ["merge-db"])
     subp_merge_db.set_defaults(func=merge_dbs)
-    subp_dedupe_db = add_parser(subparsers, "dedupe-dbs", ["dedupe-db", "dedupedb", "dedupe_db"])
+    subp_dedupe_db = add_parser(subparsers, "dedupe-dbs", ["dedupe-db"])
     subp_dedupe_db.set_defaults(func=dedupe_db)
     subp_copy_play_counts = add_parser(subparsers, "copy-play-counts")
     subp_copy_play_counts.set_defaults(func=copy_play_counts)
 
-    subp_dedupe = add_parser(subparsers, "dedupe")
-    subp_dedupe.set_defaults(func=dedupe)
+    subp_dedupe = add_parser(subparsers, "dedupe-media")
+    subp_dedupe.set_defaults(func=dedupe_media)
     subp_czkawka_dedupe = add_parser(subparsers, "czkawka-dedupe", ["dedupe-czkawka"])
     subp_czkawka_dedupe.set_defaults(func=czkawka_dedupe)
     subp_dedupe_local = add_parser(subparsers, "merge-online-local")
@@ -218,19 +232,26 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     subp_optimize = add_parser(subparsers, "optimize", ["optimize-db"])
     subp_optimize.set_defaults(func=optimize_db)
 
-    subp_tubeadd = add_parser(subparsers, "tubeadd", ["ta", "dladd", "da"])
+    subp_site_add = add_parser(subparsers, "site-add", ["sa"])
+    subp_site_add.set_defaults(func=site_add)
+    # subp_site_update = add_parser(subparsers, "site-update", ["su"])
+    # subp_site_update.set_defaults(func=site_update)
+    # subp_site_sql = add_parser(subparsers, "site-sql", ["ss", "sql-site"])
+    # subp_site_sql.set_defaults(func=site_sql)
+
+    subp_tubeadd = add_parser(subparsers, "tube-add", ["ta", "dladd", "da"])
     subp_tubeadd.set_defaults(func=tube_add)
-    subp_tubeupdate = add_parser(subparsers, "tubeupdate", ["dlupdate", "tu"])
+    subp_tubeupdate = add_parser(subparsers, "tube-update", ["dlupdate", "tu"])
     subp_tubeupdate.set_defaults(func=tube_update)
 
-    subp_galleryadd = add_parser(subparsers, "galleryadd", ["gdladd", "ga"])
+    subp_galleryadd = add_parser(subparsers, "gallery-add", ["gdl-add", "ga"])
     subp_galleryadd.set_defaults(func=gallery_add)
-    subp_galleryupdate = add_parser(subparsers, "galleryupdate", ["gdlupdate", "gu"])
+    subp_galleryupdate = add_parser(subparsers, "gallery-update", ["gdl-update", "gu"])
     subp_galleryupdate.set_defaults(func=gallery_update)
 
-    subp_redditadd = add_parser(subparsers, "redditadd", ["ra"])
+    subp_redditadd = add_parser(subparsers, "reddit-add", ["ra"])
     subp_redditadd.set_defaults(func=reddit_add)
-    subp_redditupdate = add_parser(subparsers, "redditupdate", ["ru"])
+    subp_redditupdate = add_parser(subparsers, "reddit-update", ["ru"])
     subp_redditupdate.set_defaults(func=reddit_update)
     subp_pushshift = add_parser(subparsers, "pushshift")
     subp_pushshift.set_defaults(func=pushshift_extract)
@@ -243,25 +264,25 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     subp_export_text = add_parser(subparsers, "export-text")
     subp_export_text.set_defaults(func=export_text)
 
-    subp_hnadd = add_parser(subparsers, "hnadd")
+    subp_hnadd = add_parser(subparsers, "hn-add")
     subp_hnadd.set_defaults(func=hacker_news_add)
 
     subp_download = add_parser(subparsers, "download", ["dl"])
     subp_download.set_defaults(func=dl_download)
     subp_block = add_parser(subparsers, "block")
     subp_block.set_defaults(func=block)
-    subp_redownload = add_parser(subparsers, "redownload", ["redl"])
+    subp_redownload = add_parser(subparsers, "re-download", ["re-dl"])
     subp_redownload.set_defaults(func=redownload)
 
     subp_playlist = add_parser(subparsers, "playlists", ["pl", "folders"])
     subp_playlist.set_defaults(func=playlists)
     subp_history = add_parser(subparsers, "history", ["hi", "log"])
     subp_history.set_defaults(func=history)
-    subp_download_status = add_parser(subparsers, "download-status", ["ds", "dlstatus"])
+    subp_download_status = add_parser(subparsers, "download-status", ["ds", "dl-status"])
     subp_download_status.set_defaults(func=download_status)
-    subp_disk_usage = add_parser(subparsers, "disk-usage", ["du", "usage", "diskusage"])
+    subp_disk_usage = add_parser(subparsers, "disk-usage", ["du", "usage"])
     subp_disk_usage.set_defaults(func=disk_usage)
-    subp_mount_stats = add_parser(subparsers, "mount-stats", ["mu", "mount-usage", "mountstats"])
+    subp_mount_stats = add_parser(subparsers, "mount-stats", ["mu", "mount-usage"])
     subp_mount_stats.set_defaults(func=devices.mount_stats)
 
     subp_playback_now = add_parser(subparsers, "now")
@@ -273,7 +294,7 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     subp_playback_pause = add_parser(subparsers, "pause", ["play"])
     subp_playback_pause.set_defaults(func=playback_pause)
 
-    subp_tabsadd = add_parser(subparsers, "tabsadd")
+    subp_tabsadd = add_parser(subparsers, "tabs-add")
     subp_tabsadd.set_defaults(func=tabs_add)
     subp_tabs = add_parser(subparsers, "tabs", ["tb"])
     subp_tabs.set_defaults(func=tabs)
@@ -285,7 +306,7 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
 
     subp_nouns = add_parser(subparsers, "nouns")
     subp_nouns.set_defaults(func=nouns)
-    subp_cluster_sort = add_parser(subparsers, "cluster-sort", ["cs", "clustersort", "cluster_sort"])
+    subp_cluster_sort = add_parser(subparsers, "cluster-sort", ["cs"])
     subp_cluster_sort.set_defaults(func=cluster_sort)
 
     subp_eda = add_parser(subparsers, "eda", ["preview"])
@@ -300,8 +321,10 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
 
     subp_reddit_selftext = add_parser(subparsers, "reddit-selftext")
     subp_reddit_selftext.set_defaults(func=reddit_selftext)
-    subp_nfb_directors = add_parser(subparsers, "extract-links", ["links"])
-    subp_nfb_directors.set_defaults(func=extract_links)
+    subp_extract_links = add_parser(subparsers, "extract-links", ["links"])
+    subp_extract_links.set_defaults(func=extract_links)
+    subp_markdown_links = add_parser(subparsers, "markdown-links", ["markdown-urls"])
+    subp_markdown_links.set_defaults(func=markdown_links)
 
     parser.add_argument("--version", "-V", action="store_true")
     return parser

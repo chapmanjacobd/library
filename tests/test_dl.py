@@ -1,6 +1,5 @@
 from argparse import Namespace
 
-from tests.utils import dvd
 from xklb.tube_backend import download
 from xklb.tube_extract import tube_add
 from xklb.utils.db_utils import connect
@@ -14,7 +13,6 @@ tube_db = ["tests/data/tube_dl.db"]
 # tube_add([*dl_db, PLAYLIST_URL])
 
 
-@dvd.use_cassette
 def test_yt():
     tube_add([*dl_db, PLAYLIST_URL])
 

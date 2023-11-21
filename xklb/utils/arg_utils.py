@@ -38,8 +38,10 @@ class ArgparseDict(argparse.Action):
 
 class ArgparseArgsOrStdin(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
-        if values == ["-"]:
+        if values == ["-"] or not values:
             lines = sys.stdin.readlines()
+            if not lines or (len(lines) == 1 and lines[0].strip() == ""):
+                lines = None
         else:
             lines = values
         setattr(namespace, self.dest, lines)

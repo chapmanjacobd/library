@@ -324,7 +324,7 @@ def group_and_delete(args, groups):
                             args,
                             path,
                             action="ASK_MOVE_OR_DELETE" if args.keep_dir else "ASK_DELETE",
-                            player_exit_code=r.returncode == 0,
+                            player_exit_code=r.returncode,
                         )
                     else:
                         truncate_file_before_match(args.file_path, left["path"])

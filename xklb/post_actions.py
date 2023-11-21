@@ -17,14 +17,14 @@ except ModuleNotFoundError:
     gui = None
 
 
-def mv_to_keep_folder(args, media_file: str) -> None:
+def mv_to_keep_folder(args, media_file: str):
     keep_path = Path(args.keep_dir)
     if not keep_path.is_absolute():
         kp = re.match(args.shallow_organize + "(.*?)/", media_file)
         if kp:
             keep_path = Path(kp[0], f"{args.keep_dir}/")
         elif Path(media_file).parent.match(f"*/{args.keep_dir}/*"):
-            return
+            return media_file
         else:
             keep_path = Path(media_file).parent / f"{args.keep_dir}/"
 
@@ -49,20 +49,20 @@ def mv_to_keep_folder(args, media_file: str) -> None:
         else:
             print("Source and destination are the same size", humanize.naturalsize(src_size, binary=True))
         if args.post_action.upper().startswith("ASK_"):
-            if devices.confirm("Replace destination file?"):
+            if getattr(args, "move_replace", False) or devices.confirm("Replace destination file?"):
                 file_utils.trash(new_path, detach=False)
-                new_path = shutil.move(media_file, keep_path)
+                new_path = str(shutil.move(media_file, keep_path))
             else:
-                return
+                return media_file
         else:
             raise
 
-    if getattr(args, "keep_cmd", None):
-        processes.cmd_detach(shlex.split(args.keep_cmd), new_path)
     if hasattr(args, "db"):
         with args.db.conn:
             args.db.conn.execute("DELETE FROM media where path = ?", [new_path])
             args.db.conn.execute("UPDATE media set path = ? where path = ?", [new_path, media_file])
+
+    return new_path
 
 
 def delete_media(args, paths) -> int:
@@ -101,6 +101,13 @@ class AskAction:
 def post_act(
     args, media_file: str, action: Optional[str] = None, geom_data=None, media_len=0, player_exit_code=None
 ) -> None:
+    def log_action(confirmed_action):
+        if geom_data is not None:  # multiplexing needs more context than normal
+            if args.exit_code_confirm and media_len > 0:
+                log.warning("%s: %s (%s remaining)", confirmed_action, media_file, media_len)
+            else:
+                log.warning("%s: %s", confirmed_action, media_file)
+
     def handle_delete_action():
         if media_file.startswith("http"):
             db_media.mark_media_deleted(args, media_file)
@@ -110,14 +117,10 @@ def post_act(
     def handle_soft_delete_action():
         db_media.mark_media_deleted(args, media_file)
 
-    def handle_move_action():
-        if not media_file.startswith("http"):
-            mv_to_keep_folder(args, media_file)
-
     def handle_ask_action(ask_action: str):
         true_action, false_action = getattr(AskAction, ask_action)
         if args.exit_code_confirm and player_exit_code is not None:
-            response = player_exit_code
+            response = player_exit_code == 0
         elif gui and args.gui:
             response = gui.askkeep(
                 media_file,
@@ -129,11 +132,7 @@ def post_act(
         else:
             response = devices.confirm(true_action.title() + "?")
         confirmed_action = true_action if response else false_action
-        if geom_data is not None:
-            if args.exit_code_confirm and media_len > 0:
-                log.warning("%s: %s (%s remaining)", confirmed_action, media_file, media_len)
-            else:
-                log.warning("%s: %s", confirmed_action, media_file)
+        log_action(confirmed_action)
         post_act(args, media_file, action=confirmed_action)  # answer the question
 
     action = action or args.post_action
@@ -142,18 +141,30 @@ def post_act(
     if action == "NONE":
         action = Action.KEEP
 
-    if action == Action.KEEP:
-        pass
-    elif action == Action.DELETE:
-        handle_delete_action()
-    elif action == Action.DELETE_IF_AUDIOBOOK:
-        if "audiobook" in media_file.lower():
+    if player_exit_code is None or player_exit_code < 5:
+        if action == Action.KEEP:
+            pass
+        elif action == Action.DELETE:
             handle_delete_action()
-    elif action == Action.SOFTDELETE:
-        handle_soft_delete_action()
-    elif action == Action.MOVE:
-        handle_move_action()
-    elif action.startswith("ASK_"):
-        handle_ask_action(action)
-    else:
-        raise ValueError("Unrecognized action:", action)
+        elif action == Action.DELETE_IF_AUDIOBOOK:
+            if "audiobook" in media_file.lower():
+                handle_delete_action()
+        elif action == Action.SOFTDELETE:
+            handle_soft_delete_action()
+        elif action == Action.MOVE:
+            if not media_file.startswith("http"):
+                media_file = mv_to_keep_folder(args, media_file)
+        elif action.startswith("ASK_"):
+            handle_ask_action(action)
+        else:
+            raise ValueError("Unrecognized action:", action)
+
+    if player_exit_code:
+        player_exit_code_cmd = f"cmd{player_exit_code}"
+        cmd = getattr(args, player_exit_code_cmd, None)
+        if cmd:
+            log_action(player_exit_code_cmd.upper())
+            if "{}" in cmd:
+                processes.cmd_detach(media_file if s == "{}" else s for s in shlex.split(cmd))
+            else:
+                processes.cmd_detach(shlex.split(cmd), media_file)

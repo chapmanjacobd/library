@@ -3,7 +3,7 @@ from pathlib import Path
 
 from xklb import history, usage
 from xklb.scripts.dedupe_db import dedupe_rows
-from xklb.utils import consts, db_utils, objects
+from xklb.utils import db_utils, objects
 from xklb.utils.log_utils import log
 
 
@@ -30,58 +30,24 @@ def copy_play_count(args, source_db) -> None:
     s_db = db_utils.connect(argparse.Namespace(database=source_db, verbose=args.verbose))
     m_columns = s_db["media"].columns_dict
 
-    copy_counts = []
-    try:
-        # TODO delete after 2024-06-01
-        old_schema = list(
-            s_db.query(
-                f"""
-                SELECT
-                    path
-                    , {', '.join(s for s in ['play_count', 'time_played', 'playhead'] if s in m_columns)}
-                FROM
-                    media
-                WHERE
-                    {' OR '.join(f"media.{s} > 0" for s in ['play_count', 'time_played', 'playhead'] if s in m_columns)}
-                """,
-            ),
-        )
-
-        new_schema = []
-        for d in old_schema:
-            if (d.get("play_count") or 0) == 0:
-                new_schema.append({**d, "done": False})
-            else:
-                n = d.get("time_played") or consts.now()
-                for i in range(d["play_count"]):
-                    new_schema.append({**d, "done": True, "time_played": n + i})
-        copy_counts.extend(new_schema)
-    except Exception:
-        log.info("Old schema could not be read")
-
-    try:
-        copy_counts.extend(
-            list(
-                s_db.query(
-                    """
-                SELECT
-                    path
-                    , h.time_played
-                    , h.playhead
-                    , done
-                FROM
-                    media m
-                JOIN history h on h.media_id = m.id
-                WHERE
-                    h.time_played > 0
-                    OR
-                    h.playhead > 0
-                """,
-                ),
-            ),
-        )
-    except Exception:
-        log.exception("New schema could not be read")
+    copy_counts = list(
+        s_db.query(
+            """
+            SELECT
+                path
+                , h.time_played
+                , h.playhead
+                , done
+            FROM
+                media m
+            JOIN history h on h.media_id = m.id
+            WHERE
+                h.time_played > 0
+                OR
+                h.playhead > 0
+            """,
+        ),
+    )
 
     log.info(len(copy_counts))
     for d in copy_counts:

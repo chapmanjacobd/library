@@ -7,6 +7,7 @@ from xklb.utils.log_utils import log
 
 """
 playlists table
+    profile = Type of extractor -- consts.DBType
     extractor_key = Name of the Extractor -- "Local", "Imgur", "YouTube"
     extractor_playlist_id = ID that the extractor uses to refer to playlists
 
@@ -26,6 +27,7 @@ def consolidate(args, v: dict) -> dict:
             upload_date = None
 
     cv = {}
+    cv["profile"] = iterables.safe_unpack(getattr(args, "profile", None), v.pop("profile", None))
     cv["time_uploaded"] = upload_date
     cv["time_modified"] = consts.now()
     cv["time_deleted"] = 0
@@ -94,7 +96,7 @@ def exists(args, playlist_path) -> bool:
     return True
 
 
-def get_subpath_playlist_id(args, playlist_path) -> Optional[int]:
+def get_parentpath_playlist_id(args, playlist_path) -> Optional[int]:
     try:
         known = args.db.pop(
             "select path from playlists where ? like path || '%' and path != ?",
@@ -106,11 +108,30 @@ def get_subpath_playlist_id(args, playlist_path) -> Optional[int]:
     return known
 
 
+def delete_subpath_playlists(args, playlist_path) -> Optional[int]:
+    try:
+        with args.db.conn:
+            args.db.conn.execute(
+                f"""
+                UPDATE playlists
+                SET time_deleted = {consts.APPLICATION_START}
+                WHERE COALESCE(time_deleted, 0)=0
+                    AND path LIKE ?
+                    AND path != ?
+                """,
+                [str(playlist_path) + "%", str(playlist_path)],
+            )
+    except sqlite3.OperationalError:
+        pass
+
+
 def add(args, playlist_path: str, info: dict, check_subpath=False, extractor_key=None) -> int:
     if check_subpath:
-        subpath_playlist_id = get_subpath_playlist_id(args, playlist_path)
-        if subpath_playlist_id:
-            return subpath_playlist_id
+        parentpath_playlist_id = get_parentpath_playlist_id(args, playlist_path)
+        if parentpath_playlist_id:
+            return parentpath_playlist_id
+        else:
+            delete_subpath_playlists(args, playlist_path)
 
     pl = consolidate(args, objects.dumbcopy(info))
     playlist = {**pl, "path": playlist_path, **args.extra_playlist_data}
@@ -190,7 +211,7 @@ def get_all(args, cols="path, extractor_config", sql_filters=None) -> List[dict]
         sql_filters = []
     if "time_deleted" in pl_columns:
         sql_filters.append("AND COALESCE(time_deleted,0) = 0")
-    if "hours_update_delay" in pl_columns and not args.force:
+    if "hours_update_delay" in pl_columns and not getattr(args, "force", False):
         sql_filters.append("AND (cast(STRFTIME('%s', 'now') as int) - time_modified) >= (hours_update_delay * 60 * 60)")
 
     try:

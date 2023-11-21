@@ -1,9 +1,9 @@
-import functools, os, time, urllib.error, urllib.parse, urllib.request
+import functools, os, tempfile, time, urllib.error, urllib.parse, urllib.request
 from pathlib import Path
 from shutil import which
 
 from xklb.utils import consts, nums, path_utils
-from xklb.utils.log_utils import log
+from xklb.utils.log_utils import clamp_index, log
 
 headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/117.0"}
 session = None
@@ -102,10 +102,21 @@ def find_date(soup):
     return None
 
 
-def load_selenium(args):
-    from selenium import webdriver
+def load_selenium(args, wire=False):
+    if wire:
+        import logging
 
-    if consts.LOG_DEBUG > args.verbose:
+        from seleniumwire import webdriver
+
+        log_levels = [logging.ERROR, logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG]
+        for logger_name, logger in logging.root.manager.loggerDict.items():
+            if logger_name.startswith("selenium"):
+                logging.getLogger(logger_name).setLevel(clamp_index(log_levels, args.verbose - 1))
+
+    else:
+        from selenium import webdriver
+
+    if consts.LOG_DEBUG > getattr(args, "verbose", 0):
         from pyvirtualdisplay.display import Display
 
         args.driver_display = Display(visible=False, size=(1280, 720))
@@ -113,10 +124,12 @@ def load_selenium(args):
 
     if which("firefox"):
         from selenium.webdriver.firefox.options import Options
+        from selenium.webdriver.firefox.service import Service
 
+        service = Service(log_path=tempfile.mktemp(".geckodriver.log"))
         options = Options()
         options.set_preference("media.volume_scale", "0.0")
-        args.driver = webdriver.Firefox(options=options)
+        args.driver = webdriver.Firefox(service=service, options=options)
 
         addons = [Path("~/.local/lib/ublock_origin.xpi").expanduser().resolve()]
         if getattr(args, "auto_pager", False):
@@ -137,11 +150,30 @@ def load_selenium(args):
     else:
         args.driver = webdriver.Chrome()
 
+    if wire:
+
+        def interceptor(request):
+            if request.path.endswith((".png", ".jpg", ".gif")):
+                request.abort()
+
+        args.driver.request_interceptor = interceptor  # type: ignore
+
 
 def quit_selenium(args):
     args.driver.quit()
     if consts.LOG_DEBUG > args.verbose:
         args.driver_display.stop()
+
+
+def wait_selenium_close(args):
+    from selenium.common.exceptions import InvalidSessionIdException
+
+    while True:
+        try:
+            _ = args.driver.window_handles
+        except InvalidSessionIdException:
+            break
+        time.sleep(1)
 
 
 def download_url(url, output_path=None, output_prefix=None, chunk_size=8 * 1024 * 1024, retries=3):
@@ -216,3 +248,91 @@ def extract_nearby_text(a_element):
         after = " ".join(s.get_text(strip=True) for s in get_elements_forward(a_element, next_a))
 
     return before, after
+
+
+def re_trigger_input(driver):
+    from selenium.common.exceptions import NoSuchElementException
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.common.keys import Keys
+
+    input_field = None
+    for by, name in [
+        (By.NAME, "q"),
+        (By.NAME, "query"),
+        (By.CSS_SELECTOR, "input[type='search']"),
+        (By.NAME, "search"),
+        (By.NAME, "search-input"),
+        (By.NAME, "search-query"),
+        (By.NAME, "search-box"),
+        (By.ID, "q"),
+        (By.ID, "query"),
+        (By.ID, "search"),
+        (By.ID, "search-input"),
+        (By.ID, "search-query"),
+        (By.ID, "search-input"),
+        (By.ID, "search-box"),
+        (By.CLASS_NAME, "q"),
+        (By.CLASS_NAME, "query"),
+        (By.CLASS_NAME, "search"),
+        (By.CLASS_NAME, "search-input"),
+        (By.CLASS_NAME, "search-query"),
+        (By.CLASS_NAME, "search-input"),
+        (By.CLASS_NAME, "search-box"),
+        (By.TAG_NAME, "input"),
+    ]:
+        try:
+            input_field = driver.find_element(by, name)
+            break
+        except NoSuchElementException:
+            pass
+
+    if input_field is None:
+        return
+    else:
+        input_field.send_keys(Keys.RETURN)
+        driver.implicitly_wait(8)
+
+
+def selenium_get_page(args, url):
+    args.driver.get(url)
+    args.driver.implicitly_wait(3)
+
+    if getattr(args, "poke", False):
+        re_trigger_input(args.driver)
+
+
+def scroll_down(driver):
+    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+    time.sleep(2)
+    new_height = driver.execute_script("return document.body.scrollHeight")
+    return new_height
+
+
+def extract_html_text(driver):
+    # trigger rollover events
+    driver.execute_script(
+        "(function(){function k(x) { if (x.onmouseover) { x.onmouseover(); x.backupmouseover = x.onmouseover; x.backupmouseout = x.onmouseout; x.onmouseover = null; x.onmouseout = null; } else if (x.backupmouseover) { x.onmouseover = x.backupmouseover; x.onmouseout = x.backupmouseout; x.onmouseover(); x.onmouseout(); } } var i,x; for(i=0; x=document.links[i]; ++i) k(x); for (i=0; x=document.images[i]; ++i) k(x); })()"
+    )
+
+    # include Shadow DOM
+    html_text = driver.execute_script(
+        'function s(n=document.body){if(!n)return"";if(n.nodeType===Node.TEXT_NODE)return n.textContent.trim();if(n.nodeType!==Node.ELEMENT_NODE)return"";let t="";let r=n.cloneNode();n=n.shadowRoot||n;if(n.children.length)for(let o of n.childNodes)if(o.assignedNodes){if(o.assignedNodes()[0])t+=s(o.assignedNodes()[0]);else t+=o.innerHTML}else t+=s(o);else t=n.innerHTML;return r.innerHTML=t,r.outerHTML}; return s()'
+    )
+
+    return html_text
+
+
+def infinite_scroll(driver):
+    last_height = driver.execute_script("return document.body.scrollHeight")
+    while True:
+        new_height = scroll_down(driver)
+        yield extract_html_text(driver)
+
+        if new_height == last_height:  # last page
+            time.sleep(5)  # try once more in case slow page
+            new_height = scroll_down(driver)
+            if new_height == last_height:
+                break
+        last_height = new_height
+
+    yield extract_html_text(driver)

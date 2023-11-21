@@ -245,7 +245,7 @@ def mimetype(path):
                 file_type = "block device"
             elif p.is_char_device():
                 file_type = "char device"
-        except (FileNotFoundError):
+        except FileNotFoundError:
             return
 
     return file_type

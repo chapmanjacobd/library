@@ -337,7 +337,7 @@ def filter_split_files(paths):
     return filter(lambda x: not re.search(pattern, x), paths)
 
 
-def dedupe() -> None:
+def dedupe_media() -> None:
     args = parse_args()
 
     if args.profile == DBType.audio:
@@ -471,4 +471,4 @@ def dedupe() -> None:
 
 
 if __name__ == "__main__":
-    dedupe()
+    dedupe_media()

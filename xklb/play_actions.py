@@ -122,7 +122,9 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     parser.add_argument("--post-action", "--action", "-k", default="keep", help=argparse.SUPPRESS)
     parser.add_argument("--exit-code-confirm", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--keep-dir", "--keepdir", default="keep", help=argparse.SUPPRESS)
-    parser.add_argument("--keep-cmd", "--keepcmd", help=argparse.SUPPRESS)
+    parser.add_argument("--move-replace", action="store_true", help=argparse.SUPPRESS)
+    for i in range(0, 255):
+        parser.add_argument(f"--cmd{i}", help=argparse.SUPPRESS)
     parser.add_argument("--gui", action="store_true")
     parser.add_argument("--shallow-organize", default="/mnt/d/", help=argparse.SUPPRESS)
 

@@ -461,6 +461,18 @@ def play(action) -> str:
 
         library {action} -k ask_move_or_delete # ask after each whether to move to "keep" folder or delete
 
+        You can also bind keys in mpv to different exit codes. For example in input.conf:
+            ; quit 5
+
+        And if you run something like:
+            library {action} --cmd5 ~/bin/process_audio.py
+
+        When semicolon is pressed in mpv (it will exit with error code 5) then the applicable player-exit-code command
+        will start with the media file as the first argument; in this case `~/bin/process_audio.py $path`.
+        The command will be daemonized if library exits before it completes.
+        To prevent confusion, post-actions will be skipped if the exit-code is greater than 4.
+        Exit-codes 0, 1, 2, 3, and 4: the player-exit-code command will run after post-actions. Be careful of conflicting player-exit-code command and post-action behavior when using these!
+
     Experimental options:
         Duration to play (in seconds) while changing the channel
         library {action} --interdimensional-cable 40
@@ -509,141 +521,146 @@ search = """library search DATABASE QUERY
 
     Search text databases and subtitles
 
-    $ library search fts.db boil
-        7 captions
-        /mnt/d/70_Now_Watching/DidubeTheLastStop-720p.mp4
-           33:46 I brought a real stainless steel boiler
-           33:59 The world is using only stainless boilers nowadays
-           34:02 The boiler is old and authentic
-           34:30 - This boiler? - Yes
-           34:44 I am not forcing you to buy this boiler…
-           34:52 Who will give her a one liter stainless steel boiler for one Lari?
-           34:54 Glass boilers cost two
+        library search fts.db boil
+            7 captions
+            /mnt/d/70_Now_Watching/DidubeTheLastStop-720p.mp4
+               33:46 I brought a real stainless steel boiler
+               33:59 The world is using only stainless boilers nowadays
+               34:02 The boiler is old and authentic
+               34:30 - This boiler? - Yes
+               34:44 I am not forcing you to buy this boiler…
+               34:52 Who will give her a one liter stainless steel boiler for one Lari?
+               34:54 Glass boilers cost two
 
     Search and open file
-    $ library search fts.db 'two words' --open
+
+        library search fts.db 'two words' --open
 """
 
 history = """library history [--frequency daily weekly (monthly) yearly] [--limit LIMIT] DATABASE [(all) watching watched created modified deleted]
 
     Explore history through different facets
 
-    $ library history video.db watched
-    Finished watching:
-    ╒═══════════════╤═════════════════════════════════╤════════════════╤════════════╤════════════╕
-    │ time_period   │ duration_sum                    │ duration_avg   │ size_sum   │ size_avg   │
-    ╞═══════════════╪═════════════════════════════════╪════════════════╪════════════╪════════════╡
-    │ 2022-11       │ 4 days, 16 hours and 20 minutes │ 55.23 minutes  │ 26.3 GB    │ 215.9 MB   │
-    ├───────────────┼─────────────────────────────────┼────────────────┼────────────┼────────────┤
-    │ 2022-12       │ 23 hours and 20.03 minutes      │ 35.88 minutes  │ 8.3 GB     │ 213.8 MB   │
-    ├───────────────┼─────────────────────────────────┼────────────────┼────────────┼────────────┤
-    │ 2023-01       │ 17 hours and 3.32 minutes       │ 15.27 minutes  │ 14.3 GB    │ 214.1 MB   │
-    ├───────────────┼─────────────────────────────────┼────────────────┼────────────┼────────────┤
-    │ 2023-02       │ 4 days, 5 hours and 60 minutes  │ 23.17 minutes  │ 148.3 GB   │ 561.6 MB   │
-    ├───────────────┼─────────────────────────────────┼────────────────┼────────────┼────────────┤
-    │ 2023-03       │ 2 days, 18 hours and 18 minutes │ 11.20 minutes  │ 118.1 GB   │ 332.8 MB   │
-    ├───────────────┼─────────────────────────────────┼────────────────┼────────────┼────────────┤
-    │ 2023-05       │ 5 days, 5 hours and 4 minutes   │ 45.75 minutes  │ 152.9 GB   │ 932.1 MB   │
-    ╘═══════════════╧═════════════════════════════════╧════════════════╧════════════╧════════════╛
+        library history video.db watched
+        Finished watching:
+        ╒═══════════════╤═════════════════════════════════╤════════════════╤════════════╤════════════╕
+        │ time_period   │ duration_sum                    │ duration_avg   │ size_sum   │ size_avg   │
+        ╞═══════════════╪═════════════════════════════════╪════════════════╪════════════╪════════════╡
+        │ 2022-11       │ 4 days, 16 hours and 20 minutes │ 55.23 minutes  │ 26.3 GB    │ 215.9 MB   │
+        ├───────────────┼─────────────────────────────────┼────────────────┼────────────┼────────────┤
+        │ 2022-12       │ 23 hours and 20.03 minutes      │ 35.88 minutes  │ 8.3 GB     │ 213.8 MB   │
+        ├───────────────┼─────────────────────────────────┼────────────────┼────────────┼────────────┤
+        │ 2023-01       │ 17 hours and 3.32 minutes       │ 15.27 minutes  │ 14.3 GB    │ 214.1 MB   │
+        ├───────────────┼─────────────────────────────────┼────────────────┼────────────┼────────────┤
+        │ 2023-02       │ 4 days, 5 hours and 60 minutes  │ 23.17 minutes  │ 148.3 GB   │ 561.6 MB   │
+        ├───────────────┼─────────────────────────────────┼────────────────┼────────────┼────────────┤
+        │ 2023-03       │ 2 days, 18 hours and 18 minutes │ 11.20 minutes  │ 118.1 GB   │ 332.8 MB   │
+        ├───────────────┼─────────────────────────────────┼────────────────┼────────────┼────────────┤
+        │ 2023-05       │ 5 days, 5 hours and 4 minutes   │ 45.75 minutes  │ 152.9 GB   │ 932.1 MB   │
+        ╘═══════════════╧═════════════════════════════════╧════════════════╧════════════╧════════════╛
 
-    $ library history video.db created --frequency yearly
-    Created media:
-    ╒═══════════════╤════════════════════════════════════════════╤════════════════╤════════════╤════════════╕
-    │   time_period │ duration_sum                               │ duration_avg   │ size_sum   │ size_avg   │
-    ╞═══════════════╪════════════════════════════════════════════╪════════════════╪════════════╪════════════╡
-    │          2005 │ 9.78 minutes                               │ 1.95 minutes   │ 16.9 MB    │ 3.4 MB     │
-    ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
-    │          2006 │ 7 hours and 10.67 minutes                  │ 5 minutes      │ 891.1 MB   │ 10.4 MB    │
-    ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
-    │          2007 │ 1 day, 17 hours and 33 minutes             │ 8.55 minutes   │ 5.9 GB     │ 20.3 MB    │
-    ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
-    │          2008 │ 5 days, 16 hours and 10 minutes            │ 17.02 minutes  │ 20.7 GB    │ 43.1 MB    │
-    ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
-    │          2009 │ 24 days, 2 hours and 56 minutes            │ 33.68 minutes  │ 108.4 GB   │ 105.2 MB   │
-    ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
-    │          2010 │ 1 month, 1 days and 1 minutes              │ 35.52 minutes  │ 124.2 GB   │ 95.7 MB    │
-    ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
-    │          2011 │ 2 months, 14 days, 1 hour and 22 minutes   │ 55.93 minutes  │ 222.0 GB   │ 114.9 MB   │
-    ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
-    │          2012 │ 2 months, 22 days, 19 hours and 17 minutes │ 45.50 minutes  │ 343.6 GB   │ 129.6 MB   │
-    ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
-    │          2013 │ 3 months, 11 days, 21 hours and 48 minutes │ 42.72 minutes  │ 461.1 GB   │ 131.7 MB   │
-    ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
-    │          2014 │ 3 months, 7 days, 10 hours and 22 minutes  │ 46.80 minutes  │ 529.6 GB   │ 173.1 MB   │
-    ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
-    │          2015 │ 2 months, 21 days, 23 hours and 36 minutes │ 36.73 minutes  │ 452.7 GB   │ 139.2 MB   │
-    ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
-    │          2016 │ 3 months, 26 days, 7 hours and 59 minutes  │ 39.48 minutes  │ 603.4 GB   │ 139.9 MB   │
-    ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
-    │          2017 │ 3 months, 10 days, 2 hours and 19 minutes  │ 31.78 minutes  │ 543.5 GB   │ 117.5 MB   │
-    ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
-    │          2018 │ 3 months, 21 days, 20 hours and 56 minutes │ 30.98 minutes  │ 607.5 GB   │ 114.8 MB   │
-    ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
-    │          2019 │ 5 months, 23 days, 2 hours and 30 minutes  │ 35.77 minutes  │ 919.7 GB   │ 129.7 MB   │
-    ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
-    │          2020 │ 7 months, 16 days, 10 hours and 58 minutes │ 26.15 minutes  │ 1.2 TB     │ 93.9 MB    │
-    ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
-    │          2021 │ 7 months, 21 days, 9 hours and 40 minutes  │ 39.93 minutes  │ 1.3 TB     │ 149.9 MB   │
-    ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
-    │          2022 │ 17 years, 3 months, 0 days and 21 hours    │ 19.62 minutes  │ 35.8 TB    │ 77.5 MB    │
-    ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
-    │          2023 │ 15 years, 3 months, 24 days and 1 hours    │ 17.57 minutes  │ 27.6 TB    │ 60.2 MB    │
-    ╘═══════════════╧════════════════════════════════════════════╧════════════════╧════════════╧════════════╛
-    ╒════════════════════════════════════════════════════════════════════════════════════════════╤═══════════════╤════════════════╕
-    │ title_path                                                                                 │ duration      │ time_created   │
-    ╞════════════════════════════════════════════════════════════════════════════════════════════╪═══════════════╪════════════════╡
-    │ [Eng Sub] TVB Drama | The King Of Snooker 桌球天王 07/20 | Adam Cheng | 2009 #Chinesedrama │ 43.85 minutes │ yesterday      │
-    │ https://www.youtube.com/watch?v=zntYD1yLrG8                                                │               │                │
-    ├────────────────────────────────────────────────────────────────────────────────────────────┼───────────────┼────────────────┤
-    │ [Eng Sub] TVB Drama | The King Of Snooker 桌球天王 08/20 | Adam Cheng | 2009 #Chinesedrama │ 43.63 minutes │ yesterday      │
-    │ https://www.youtube.com/watch?v=zQnSfoWrh-4                                                │               │                │
-    ├────────────────────────────────────────────────────────────────────────────────────────────┼───────────────┼────────────────┤
-    │ [Eng Sub] TVB Drama | The King Of Snooker 桌球天王 06/20 | Adam Cheng | 2009 #Chinesedrama │ 43.60 minutes │ yesterday      │
-    │ https://www.youtube.com/watch?v=Qiax1kFyGWU                                                │               │                │
-    ├────────────────────────────────────────────────────────────────────────────────────────────┼───────────────┼────────────────┤
-    │ [Eng Sub] TVB Drama | The King Of Snooker 桌球天王 04/20 | Adam Cheng | 2009 #Chinesedrama │ 43.45 minutes │ yesterday      │
-    │ https://www.youtube.com/watch?v=NT9C3PRrlTA                                                │               │                │
-    ├────────────────────────────────────────────────────────────────────────────────────────────┼───────────────┼────────────────┤
-    │ [Eng Sub] TVB Drama | The King Of Snooker 桌球天王 02/20 | Adam Cheng | 2009 #Chinesedrama │ 43.63 minutes │ yesterday      │
-    │ https://www.youtube.com/watch?v=MjpCiTawlTE                                                │               │                │
-    ╘════════════════════════════════════════════════════════════════════════════════════════════╧═══════════════╧════════════════╛
+    library history video.db created --frequency yearly
+        Created media:
+        ╒═══════════════╤════════════════════════════════════════════╤════════════════╤════════════╤════════════╕
+        │   time_period │ duration_sum                               │ duration_avg   │ size_sum   │ size_avg   │
+        ╞═══════════════╪════════════════════════════════════════════╪════════════════╪════════════╪════════════╡
+        │          2005 │ 9.78 minutes                               │ 1.95 minutes   │ 16.9 MB    │ 3.4 MB     │
+        ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
+        │          2006 │ 7 hours and 10.67 minutes                  │ 5 minutes      │ 891.1 MB   │ 10.4 MB    │
+        ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
+        │          2007 │ 1 day, 17 hours and 33 minutes             │ 8.55 minutes   │ 5.9 GB     │ 20.3 MB    │
+        ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
+        │          2008 │ 5 days, 16 hours and 10 minutes            │ 17.02 minutes  │ 20.7 GB    │ 43.1 MB    │
+        ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
+        │          2009 │ 24 days, 2 hours and 56 minutes            │ 33.68 minutes  │ 108.4 GB   │ 105.2 MB   │
+        ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
+        │          2010 │ 1 month, 1 days and 1 minutes              │ 35.52 minutes  │ 124.2 GB   │ 95.7 MB    │
+        ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
+        │          2011 │ 2 months, 14 days, 1 hour and 22 minutes   │ 55.93 minutes  │ 222.0 GB   │ 114.9 MB   │
+        ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
+        │          2012 │ 2 months, 22 days, 19 hours and 17 minutes │ 45.50 minutes  │ 343.6 GB   │ 129.6 MB   │
+        ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
+        │          2013 │ 3 months, 11 days, 21 hours and 48 minutes │ 42.72 minutes  │ 461.1 GB   │ 131.7 MB   │
+        ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
+        │          2014 │ 3 months, 7 days, 10 hours and 22 minutes  │ 46.80 minutes  │ 529.6 GB   │ 173.1 MB   │
+        ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
+        │          2015 │ 2 months, 21 days, 23 hours and 36 minutes │ 36.73 minutes  │ 452.7 GB   │ 139.2 MB   │
+        ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
+        │          2016 │ 3 months, 26 days, 7 hours and 59 minutes  │ 39.48 minutes  │ 603.4 GB   │ 139.9 MB   │
+        ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
+        │          2017 │ 3 months, 10 days, 2 hours and 19 minutes  │ 31.78 minutes  │ 543.5 GB   │ 117.5 MB   │
+        ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
+        │          2018 │ 3 months, 21 days, 20 hours and 56 minutes │ 30.98 minutes  │ 607.5 GB   │ 114.8 MB   │
+        ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
+        │          2019 │ 5 months, 23 days, 2 hours and 30 minutes  │ 35.77 minutes  │ 919.7 GB   │ 129.7 MB   │
+        ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
+        │          2020 │ 7 months, 16 days, 10 hours and 58 minutes │ 26.15 minutes  │ 1.2 TB     │ 93.9 MB    │
+        ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
+        │          2021 │ 7 months, 21 days, 9 hours and 40 minutes  │ 39.93 minutes  │ 1.3 TB     │ 149.9 MB   │
+        ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
+        │          2022 │ 17 years, 3 months, 0 days and 21 hours    │ 19.62 minutes  │ 35.8 TB    │ 77.5 MB    │
+        ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
+        │          2023 │ 15 years, 3 months, 24 days and 1 hours    │ 17.57 minutes  │ 27.6 TB    │ 60.2 MB    │
+        ╘═══════════════╧════════════════════════════════════════════╧════════════════╧════════════╧════════════╛
+        ╒════════════════════════════════════════════════════════════════════════════════════════════╤═══════════════╤════════════════╕
+        │ title_path                                                                                 │ duration      │ time_created   │
+        ╞════════════════════════════════════════════════════════════════════════════════════════════╪═══════════════╪════════════════╡
+        │ [Eng Sub] TVB Drama | The King Of Snooker 桌球天王 07/20 | Adam Cheng | 2009 #Chinesedrama │ 43.85 minutes │ yesterday      │
+        │ https://www.youtube.com/watch?v=zntYD1yLrG8                                                │               │                │
+        ├────────────────────────────────────────────────────────────────────────────────────────────┼───────────────┼────────────────┤
+        │ [Eng Sub] TVB Drama | The King Of Snooker 桌球天王 08/20 | Adam Cheng | 2009 #Chinesedrama │ 43.63 minutes │ yesterday      │
+        │ https://www.youtube.com/watch?v=zQnSfoWrh-4                                                │               │                │
+        ├────────────────────────────────────────────────────────────────────────────────────────────┼───────────────┼────────────────┤
+        │ [Eng Sub] TVB Drama | The King Of Snooker 桌球天王 06/20 | Adam Cheng | 2009 #Chinesedrama │ 43.60 minutes │ yesterday      │
+        │ https://www.youtube.com/watch?v=Qiax1kFyGWU                                                │               │                │
+        ├────────────────────────────────────────────────────────────────────────────────────────────┼───────────────┼────────────────┤
+        │ [Eng Sub] TVB Drama | The King Of Snooker 桌球天王 04/20 | Adam Cheng | 2009 #Chinesedrama │ 43.45 minutes │ yesterday      │
+        │ https://www.youtube.com/watch?v=NT9C3PRrlTA                                                │               │                │
+        ├────────────────────────────────────────────────────────────────────────────────────────────┼───────────────┼────────────────┤
+        │ [Eng Sub] TVB Drama | The King Of Snooker 桌球天王 02/20 | Adam Cheng | 2009 #Chinesedrama │ 43.63 minutes │ yesterday      │
+        │ https://www.youtube.com/watch?v=MjpCiTawlTE                                                │               │                │
+        ╘════════════════════════════════════════════════════════════════════════════════════════════╧═══════════════╧════════════════╛
 
     View download stats
 
-    $ library history video.db --freqency daily downloaded
-    Downloaded media:
-    day         total_duration                          avg_duration                total_size    avg_size    count
-    ----------  --------------------------------------  ------------------------  ------------  ----------  -------
-    2023-08-11  1 month, 7 days and 8 hours             17 minutes                    192.2 GB     58.3 MB     3296
-    2023-08-12  18 days and 15 hours                    17 minutes                     89.7 GB     56.4 MB     1590
-    2023-08-14  13 days and 1 hours                     22 minutes                    111.2 GB    127.2 MB      874
-    2023-08-15  13 days and 6 hours                     17 minutes                    140.0 GB    126.7 MB     1105
-    2023-08-17  2 months, 8 days and 8 hours            19 minutes                    380.4 GB     72.6 MB     5243
-    2023-08-18  2 months, 30 days and 18 hours          17 minutes                    501.9 GB     63.3 MB     7926
-    2023-08-19  2 months, 6 days and 19 hours           19 minutes                    578.1 GB    110.6 MB     5229
-    2023-08-20  3 days and 9 hours                      6 minutes and 57 seconds       14.5 GB     20.7 MB      700
-    2023-08-21  4 days and 3 hours                      12 minutes                     18.0 GB     36.3 MB      495
-    2023-08-22  10 days and 8 hours                     17 minutes                     82.1 GB     91.7 MB      895
-    2023-08-23  19 days and 9 hours                     22 minutes                     93.7 GB     74.7 MB     1254
+        library history video.db --freqency daily downloaded
+        Downloaded media:
+        day         total_duration                          avg_duration                total_size    avg_size    count
+        ----------  --------------------------------------  ------------------------  ------------  ----------  -------
+        2023-08-11  1 month, 7 days and 8 hours             17 minutes                    192.2 GB     58.3 MB     3296
+        2023-08-12  18 days and 15 hours                    17 minutes                     89.7 GB     56.4 MB     1590
+        2023-08-14  13 days and 1 hours                     22 minutes                    111.2 GB    127.2 MB      874
+        2023-08-15  13 days and 6 hours                     17 minutes                    140.0 GB    126.7 MB     1105
+        2023-08-17  2 months, 8 days and 8 hours            19 minutes                    380.4 GB     72.6 MB     5243
+        2023-08-18  2 months, 30 days and 18 hours          17 minutes                    501.9 GB     63.3 MB     7926
+        2023-08-19  2 months, 6 days and 19 hours           19 minutes                    578.1 GB    110.6 MB     5229
+        2023-08-20  3 days and 9 hours                      6 minutes and 57 seconds       14.5 GB     20.7 MB      700
+        2023-08-21  4 days and 3 hours                      12 minutes                     18.0 GB     36.3 MB      495
+        2023-08-22  10 days and 8 hours                     17 minutes                     82.1 GB     91.7 MB      895
+        2023-08-23  19 days and 9 hours                     22 minutes                     93.7 GB     74.7 MB     1254
 
-    $ library history video.db deleted
-    Deleted media:
-    ╒═══════════════╤════════════════════════════════════════════╤════════════════╤════════════╤════════════╕
-    │ time_period   │ duration_sum                               │ duration_avg   │ size_sum   │ size_avg   │
-    ╞═══════════════╪════════════════════════════════════════════╪════════════════╪════════════╪════════════╡
-    │ 2023-04       │ 1 year, 10 months, 3 days and 8 hours      │ 4.47 minutes   │ 1.6 TB     │ 7.4 MB     │
-    ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
-    │ 2023-05       │ 9 months, 26 days, 20 hours and 34 minutes │ 30.35 minutes  │ 1.1 TB     │ 73.7 MB    │
-    ╘═══════════════╧════════════════════════════════════════════╧════════════════╧════════════╧════════════╛
-    ╒════════════════════════════════════════════════════════════════════════════════════════════════════════════╤═══════════════╤══════════════════╤════════════════╕
-    │ title_path                                                                                                 │ duration      │   subtitle_count │ time_deleted   │
-    ╞════════════════════════════════════════════════════════════════════════════════════════════════════════════╪═══════════════╪══════════════════╪════════════════╡
-    │ Terminus (1987)                                                                                            │ 1 hour and    │                0 │ yesterday      │
-    │ /mnt/d/70_Now_Watching/Terminus_1987.mp4                                                                   │ 15.55 minutes │                  │                │
-    ├────────────────────────────────────────────────────────────────────────────────────────────────────────────┼───────────────┼──────────────────┼────────────────┤
-    │ Commodore 64 Longplay [062] The Transformers (EU) /mnt/d/71_Mealtime_Videos/Youtube/World_of_Longplays/Com │ 24.77 minutes │                2 │ yesterday      │
-    │ modore_64_Longplay_062_The_Transformers_EU_[1RRX7Kykb38].webm                                              │               │                  │                │
-    ...
+        See also: library history video.db --freqency daily downloaded --hide-deleted
+
+    View deleted stats
+
+        library history video.db deleted
+        Deleted media:
+        ╒═══════════════╤════════════════════════════════════════════╤════════════════╤════════════╤════════════╕
+        │ time_period   │ duration_sum                               │ duration_avg   │ size_sum   │ size_avg   │
+        ╞═══════════════╪════════════════════════════════════════════╪════════════════╪════════════╪════════════╡
+        │ 2023-04       │ 1 year, 10 months, 3 days and 8 hours      │ 4.47 minutes   │ 1.6 TB     │ 7.4 MB     │
+        ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
+        │ 2023-05       │ 9 months, 26 days, 20 hours and 34 minutes │ 30.35 minutes  │ 1.1 TB     │ 73.7 MB    │
+        ╘═══════════════╧════════════════════════════════════════════╧════════════════╧════════════╧════════════╛
+        ╒════════════════════════════════════════════════════════════════════════════════════════════════════════════╤═══════════════╤══════════════════╤════════════════╕
+        │ title_path                                                                                                 │ duration      │   subtitle_count │ time_deleted   │
+        ╞════════════════════════════════════════════════════════════════════════════════════════════════════════════╪═══════════════╪══════════════════╪════════════════╡
+        │ Terminus (1987)                                                                                            │ 1 hour and    │                0 │ yesterday      │
+        │ /mnt/d/70_Now_Watching/Terminus_1987.mp4                                                                   │ 15.55 minutes │                  │                │
+        ├────────────────────────────────────────────────────────────────────────────────────────────────────────────┼───────────────┼──────────────────┼────────────────┤
+        │ Commodore 64 Longplay [062] The Transformers (EU) /mnt/d/71_Mealtime_Videos/Youtube/World_of_Longplays/Com │ 24.77 minutes │                2 │ yesterday      │
+        │ modore_64_Longplay_062_The_Transformers_EU_[1RRX7Kykb38].webm                                              │               │                  │                │
+        ...
 
 """
 
@@ -935,39 +952,39 @@ cluster_sort = """library cluster-sort [input_path | stdin] [output_path | stdou
 
     Group lines of text into sorted output
 
-    $ echo 'red apple
-    broccoli
-    yellow
-    green
-    orange apple
-    red apple' | library cluster-sort
+        echo 'red apple
+        broccoli
+        yellow
+        green
+        orange apple
+        red apple' | library cluster-sort
 
-    orange apple
-    red apple
-    red apple
-    broccoli
-    green
-    yellow
+        orange apple
+        red apple
+        red apple
+        broccoli
+        green
+        yellow
 
-    Show the groups
+    Show the groupings
 
-    $ echo 'red apple
-    broccoli
-    yellow
-    green
-    orange apple
-    red apple' | library cluster-sort --print-groups
+        echo 'red apple
+        broccoli
+        yellow
+        green
+        orange apple
+        red apple' | library cluster-sort --print-groups
 
-    [
-        {'grouped_paths': ['orange apple', 'red apple', 'red apple']},
-        {'grouped_paths': ['broccoli', 'green', 'yellow']}
-    ]
+        [
+            {'grouped_paths': ['orange apple', 'red apple', 'red apple']},
+            {'grouped_paths': ['broccoli', 'green', 'yellow']}
+        ]
 
     Auto-sort images into directories
 
-    $ echo 'image1.jpg
-    image2.jpg
-    image3.jpg' | library cluster-sort --image --move-groups
+        echo 'image1.jpg
+        image2.jpg
+        image3.jpg' | library cluster-sort --image --move-groups
 
 """
 
@@ -1052,7 +1069,7 @@ redownload = """library redownload DATABASE
 
     List deletions:
 
-        $ library redownload news.db
+        library redownload news.db
         Deletions:
         ╒═════════════════════╤═════════╕
         │ time_deleted        │   count │
@@ -1067,7 +1084,7 @@ redownload = """library redownload DATABASE
 
     Mark videos as candidates for download via specific deletion timestamp:
 
-        $ library redownload city.db 2023-01-26T19:54:42
+        library redownload city.db 2023-01-26T19:54:42
         ╒══════════╤════════════════╤═════════════════╤═══════════════════╤═════════╤══════════╤═══════╤══════════════════╤════════════════════════════════════════════════════════════════════════════════════════════════════════╕
         │ size     │ time_created   │ time_modified   │ time_downloaded   │   width │   height │   fps │ duration         │ path                                                                                                   │
         ╞══════════╪════════════════╪═════════════════╪═══════════════════╪═════════╪══════════╪═══════╪══════════════════╪════════════════════════════════════════════════════════════════════════════════════════════════════════╡
@@ -1077,7 +1094,7 @@ redownload = """library redownload DATABASE
 
     ...or between two timestamps inclusive:
 
-        $ library redownload city.db 2023-01-26T19:54:42 2023-01-26T20:45:24
+        library redownload city.db 2023-01-26T19:54:42 2023-01-26T20:45:24
 """
 
 relmv = """library relmv [--dry-run] SOURCE ... DEST
@@ -1102,11 +1119,11 @@ Free up space on a specific disk. Find candidates for moving data to a different
 
 The program takes a mount point and a xklb database file. If you don't have a database file you can create one like this:
 
-    $ library fsadd --filesystem d.db ~/d/
+    library fsadd --filesystem d.db ~/d/
 
 But this should definitely also work with xklb audio and video databases:
 
-    $ library mv-list /mnt/d/ video.db
+    library mv-list /mnt/d/ video.db
 
 The program will print a table with a sorted list of folders which are good candidates for moving.
 Candidates are determined by how many files are in the folder (so you don't spend hours waiting for folders with millions of tiny files to copy over).
@@ -1152,9 +1169,9 @@ After you are done selecting folders you can press ctrl-d and it will save the l
 
     Paste a path: done
 
-        Folder list saved to /tmp/tmpa7x_75l8. You may want to use the following command to move files to an EMPTY folder target:
+        Folder list saved to /tmp/tmp7x_75l8. You may want to use the following command to move files to an EMPTY folder target:
 
-            rsync -a --info=progress2 --no-inc-recursive --remove-source-files --files-from=/tmp/tmpa7x_75l8 -r --relative -vv --dry-run / jim:/free/real/estate/
+            rsync -a --info=progress2 --no-inc-recursive --remove-source-files --files-from=/tmp/tmp7x_75l8 -r --relative -vv --dry-run / jim:/free/real/estate/
 """
 
 scatter = """library scatter [--limit LIMIT] [--policy POLICY] [--sort SORT] --targets TARGETS DATABASE RELATIVE_PATH ...
@@ -1163,15 +1180,15 @@ scatter = """library scatter [--limit LIMIT] [--policy POLICY] [--sort SORT] --t
 
     Scatter filesystem folder trees (without mountpoints; limited functionality; good for balancing fs inodes)
 
-        $ library scatter scatter.db /test/{0,1,2,3,4,5,6,7,8,9}
+        library scatter scatter.db /test/{0,1,2,3,4,5,6,7,8,9}
 
     Reduce number of files per folder (creates more folders)
 
-        $ library scatter scatter.db --max-files-per-folder 16000 /test/{0,1,2,3,4,5,6,7,8,9}
+        library scatter scatter.db --max-files-per-folder 16000 /test/{0,1,2,3,4,5,6,7,8,9}
 
     Multi-device re-bin: balance by size
 
-        $ library scatter -m /mnt/d1:/mnt/d2:/mnt/d3:/mnt/d4/:/mnt/d5:/mnt/d6:/mnt/d7 fs.db subfolder/of/mergerfs/mnt
+        library scatter -m /mnt/d1:/mnt/d2:/mnt/d3:/mnt/d4/:/mnt/d5:/mnt/d6:/mnt/d7 fs.db subfolder/of/mergerfs/mnt
         Current path distribution:
         ╒═════════╤══════════════╤══════════════╤═══════════════╤════════════════╤═════════════════╤════════════════╕
         │ mount   │   file_count │ total_size   │ median_size   │ time_created   │ time_modified   │ time_downloaded│
@@ -1218,15 +1235,15 @@ scatter = """library scatter [--limit LIMIT] [--policy POLICY] [--sort SORT] --t
 
     Multi-device re-bin: balance device inodes for specific subfolder
 
-        $ library scatter -m /mnt/d1:/mnt/d2 fs.db subfolder --group count --sort 'size desc'
+        library scatter -m /mnt/d1:/mnt/d2 fs.db subfolder --group count --sort 'size desc'
 
     Multi-device re-bin: only consider the most recent 100 files
 
-        $ library scatter -m /mnt/d1:/mnt/d2 -l 100 -s 'time_modified desc' fs.db /
+        library scatter -m /mnt/d1:/mnt/d2 -l 100 -s 'time_modified desc' fs.db /
 
     Multi-device re-bin: empty out a disk (/mnt/d2) into many other disks (/mnt/d1, /mnt/d3, and /mnt/d4)
 
-        $ library scatter fs.db -m /mnt/d1:/mnt/d3:/mnt/d4 /mnt/d2
+        library scatter fs.db -m /mnt/d1:/mnt/d3:/mnt/d4 /mnt/d2
 """
 
 surf = """library surf [--count COUNT] [--target-hosts TARGET_HOSTS] < stdin
@@ -1306,7 +1323,7 @@ extract_links = """library extract-links PATH ... [--case-sensitive] [--scroll] 
 
     Extract links from within local HTML fragments, files, or remote pages; filtering on link text and nearby plain-text
 
-        $ library links https://en.wikipedia.org/wiki/List_of_bacon_dishes --path-include https://en.wikipedia.org/wiki/ --after-include famous
+        library links https://en.wikipedia.org/wiki/List_of_bacon_dishes --path-include https://en.wikipedia.org/wiki/ --after-include famous
         https://en.wikipedia.org/wiki/Omelette
 
     Read from local clipboard and filter out links based on nearby plain text:
@@ -1314,4 +1331,22 @@ extract_links = """library extract-links PATH ... [--case-sensitive] [--scroll] 
         library links --local-html (cb -t text/html | psub) --after-exclude paranormal spooky horror podcast tech fantasy supernatural lecture sport
         # note: the equivalent BASH-ism is <(xclip -selection clipboard -t text/html)
 
+    Run with `-vv` to see the browser
+"""
+
+site_add = """library site-add DATABASE PATH ... [--auto-pager] [--poke] [--local-html] [--file FILE]
+
+    Extract data from website requests to a database
+
+        library siteadd jobs.st.db --poke https://hk.jobsdb.com/hk/search-jobs/python/
+
+    Run with `-vv` to see and interact with the browser
+"""
+
+site_sql = None
+"""library site-sql PATH ... [--table TABLE] [--repl]
+
+    Extract data from website requests or HTML tables to a temporary database and perform queries on them in one go
+
+    To create permanent and updatable databases use `library site-add`
 """

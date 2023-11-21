@@ -83,7 +83,7 @@ def save_to_db(args, data):
             raise SystemExit(0)
 
 
-def search():
+def mam_search():
     args = parse_args()
 
     query_data = {
@@ -246,4 +246,4 @@ def search():
 
 
 if __name__ == "__main__":
-    search()
+    mam_search()

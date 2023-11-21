@@ -162,7 +162,7 @@ def media_printer(args, data, units=None, media_len=None) -> None:
         elif k.endswith("duration") or k in ("playhead",):
             printing.col_duration(media, k)
         elif k.startswith("time_") or "_time_" in k:
-            printing.col_naturaldate(media, k)
+            printing.col_naturaltime(media, k)
         elif k == "title_path":
             media = [{"title_path": "\n".join(iterables.concat(d["title"], d["path"])), **d} for d in media]
             media = [{k: v for k, v in d.items() if k not in ("title", "path")} for d in media]
@@ -230,7 +230,7 @@ def media_printer(args, data, units=None, media_len=None) -> None:
             )
 
         if duration > 0:
-            duration = printing.human_time(duration)
+            duration = printing.human_duration(duration)
             if "a" not in print_args:
                 print("Total duration:", duration)
 

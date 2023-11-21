@@ -9,7 +9,7 @@ Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManage
 Install dependencies with choco
 
 ```powershell
-choco install mpv ffmpeg
+choco install mpv ffmpeg python
 ```
 
 Then install xklb and enjoy!
