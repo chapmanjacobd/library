@@ -1,8 +1,5 @@
 import argparse, urllib.parse
 
-import requests
-from bs4 import BeautifulSoup
-
 from xklb.utils import arg_utils, web
 
 COMMON_SITE_TITLE_SUFFIXES = [
@@ -32,6 +29,9 @@ def markdown_links():
 
     parser.add_argument("paths", nargs="*", action=arg_utils.ArgparseArgsOrStdin)
     args = parser.parse_args()
+
+    import requests
+    from bs4 import BeautifulSoup
 
     if args.selenium:
         web.load_selenium(args)
