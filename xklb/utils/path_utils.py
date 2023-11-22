@@ -51,15 +51,17 @@ def clean_path(b, max_name_len=1024, dot_space=False, case_insensitive=False, lo
     log.debug("stem %s %s", parent, stem)
 
     parent = ["_" if part == "" else part for part in parent]
-    if case_insensitive:
+    if lowercase_folders:
+        parent = [p.lower() for p in parent]
+    elif case_insensitive:
 
-        def case_insensitive_ize(p):
-            if not lowercase_folders and any(x in p[1:-1] for x in (" ", "_", ".")):
+        def case_insensitive_r(p):
+            if any(x in p[1:-1] for x in (" ", "_", ".")):
                 return p.title()
             else:
                 return p.lower()
 
-        parent = [case_insensitive_ize(p) for p in parent]
+        parent = [case_insensitive_r(p) for p in parent]
 
     ffmpeg_limit = max_name_len - len(ext.encode()) - len("...")
     if len(stem.encode()) > ffmpeg_limit:

@@ -659,12 +659,12 @@ files = [
 
 [[package]]
 name = "exceptiongroup"
-version = "1.1.3"
+version = "1.2.0"
 requires_python = ">=3.7"
 summary = "Backport of PEP 654 (exception groups)"
 files = [
-    {file = "exceptiongroup-1.1.3-py3-none-any.whl", hash = "sha256:343280667a4585d195ca1cf9cef84a4e178c4b6cf2274caef9859782b567d5e3"},
-    {file = "exceptiongroup-1.1.3.tar.gz", hash = "sha256:097acd85d473d75af5bb98e41b61ff7fe35efe6675e4f9370ec6ec5126d160e9"},
+    {file = "exceptiongroup-1.2.0-py3-none-any.whl", hash = "sha256:4bfd3996ac73b41e9b9628b04e079f193850720ea5945fc96a08633c66912f14"},
+    {file = "exceptiongroup-1.2.0.tar.gz", hash = "sha256:91f5c769735f051a4290d52edd0858999b57e5876e9f85937691bd4c9fa3ed68"},
 ]
 
 [[package]]
@@ -1797,7 +1797,7 @@ files = [
 
 [[package]]
 name = "pychromecast"
-version = "13.0.7"
+version = "13.0.8"
 summary = "Python module to talk to Google Chromecast."
 dependencies = [
     "casttube>=0.2.0",
@@ -1805,8 +1805,8 @@ dependencies = [
     "zeroconf>=0.25.1",
 ]
 files = [
-    {file = "PyChromecast-13.0.7-py2.py3-none-any.whl", hash = "sha256:2327f1a2c3902e7be901f43dc97e65aeebb42f0d0a8b2c29f55453c6cacc3bd0"},
-    {file = "PyChromecast-13.0.7.tar.gz", hash = "sha256:0de98e9e5be43269dd41efb16126ab0d5ba941ca4acae024329712851c0c0324"},
+    {file = "PyChromecast-13.0.8-py2.py3-none-any.whl", hash = "sha256:acbee4cd5e4a65cc8057b22ea994680c0996effff23a9648bb242adfb524aefe"},
+    {file = "PyChromecast-13.0.8.tar.gz", hash = "sha256:e4b7523db137f8de05eedcc6154113b68532848629442b448c2334fac966a447"},
 ]
 
 [[package]]
@@ -2330,12 +2330,12 @@ files = [
 
 [[package]]
 name = "setuptools"
-version = "69.0.0"
+version = "69.0.1"
 requires_python = ">=3.8"
 summary = "Easily download, build, install, upgrade, and uninstall Python packages"
 files = [
-    {file = "setuptools-69.0.0-py3-none-any.whl", hash = "sha256:eb03b43f23910c5fd0909cb677ad017cd9531f493d27f8b3f5316ff1fb07390e"},
-    {file = "setuptools-69.0.0.tar.gz", hash = "sha256:4c65d4f7891e5b046e9146913b87098144de2ca2128fbc10135b8556a6ddd946"},
+    {file = "setuptools-69.0.1-py3-none-any.whl", hash = "sha256:6875bbd06382d857b1b90cd07cee6a2df701a164f241095706b5192bc56c5c62"},
+    {file = "setuptools-69.0.1.tar.gz", hash = "sha256:f25195d54deb649832182d6455bffba7ac3d8fe71d35185e738d2198a4310044"},
 ]
 
 [[package]]

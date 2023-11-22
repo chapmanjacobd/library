@@ -95,7 +95,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.2.156)
+    xk media library subcommands (v2.2.157)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -2000,6 +2000,28 @@ After you are done selecting folders you can press ctrl-d and it will save the l
     usage: library export-text DATABASE
 
     Generate HTML files from SQLite databases
+
+
+</details>
+
+### Other subcommands
+
+<details><summary>process_audio (process-audio)</summary>
+
+    $ library process-audio -h
+    usage: library process-audio PATH ... [--always-split] [--split-longer-than SPLIT_IF_OVER_DURATION] [--min-split-segment MIN_SPLIT_SEGMENT] [--dry-run]
+
+    Convert audio to Opus. Optionally split up long tracks into multiple files.
+
+        fd -tf -eDTS -eAAC -eWAV -eAIF -eAIFF -eFLAC -eAIFF -eM4A -eMP3 -eOGG -eMP4 -eWMA -j4 -x library process-audio
+
+    Use --always-split to _always_ split files if silence is detected
+
+        library process-audio --always-split audiobook.m4a
+
+    Use --split-longer-than to _only_ detect silence for files in excess of a specific duration
+
+        library process-audio --split-longer-than 36mins audiobook.m4b audiobook2.mp3
 
 
 </details>

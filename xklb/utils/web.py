@@ -287,7 +287,7 @@ def re_trigger_input(driver):
 
 def selenium_get_page(args, url):
     args.driver.get(url)
-    args.driver.implicitly_wait(3)
+    args.driver.implicitly_wait(5)
 
     if getattr(args, "poke", False):
         re_trigger_input(args.driver)
