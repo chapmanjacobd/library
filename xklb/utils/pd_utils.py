@@ -4,9 +4,10 @@ import re
 def kebab_camel_snake(col):
     col = re.sub(r"(?<!^)(?=[A-Z])", "_", col)
     col = col.lower()
-    col = re.sub(r"[-:.]", "_", col)
     col = re.sub(r"\s+", "_", col)
-    col = re.sub(r"_+", "_", col)
+    col = re.sub(r"[\]\[\)\(\{\}]+", "", col)
+    col = re.sub(r"[\:\-\.]+", "_", col)
+    col = re.sub(r"__+", "_", col)
     return col
 
 

@@ -1,8 +1,9 @@
 import functools, os, tempfile, time, urllib.error, urllib.parse, urllib.request
+from io import StringIO
 from pathlib import Path
 from shutil import which
 
-from xklb.utils import consts, nums, path_utils
+from xklb.utils import consts, db_utils, iterables, nums, path_utils, pd_utils
 from xklb.utils.log_utils import clamp_index, log
 
 headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/117.0"}
@@ -240,6 +241,34 @@ def extract_nearby_text(a_element):
         after = " ".join(s.get_text(strip=True) for s in get_elements_forward(a_element, next_a))
 
     return before, after
+
+
+def save_html_table(args, html_text):
+    import pandas as pd
+
+    dfs = pd.read_html(StringIO(html_text), extract_links="body", flavor="bs4")
+    tables = []
+    for df in dfs:
+        df = pd_utils.columns_snake_case(df)
+
+        # extract URLs into their own columns
+        for col in df.columns:
+            if df[col].dtype == "object":
+                df[[col, col + "_url"]] = pd.DataFrame(df[col].tolist(), index=df.index)
+        df = df.dropna(axis=1, how="all")  # drop empty columns
+
+        for col in df.columns:
+            try:
+                df.loc[:, col] = df[col].str.replace(",", "").astype(float)
+            except ValueError:
+                continue  # column was not numeric after all (•́⍜•̀), skip
+        df = df.convert_dtypes()
+
+        tables.append({"table_name": None, "data": df.to_dict(orient="records")})
+
+    tables = db_utils.add_missing_table_names(args, tables)
+    for d in tables:
+        args.db[d["table_name"]].insert_all(iterables.list_dict_filter_bool(d["data"]), alter=True)
 
 
 def re_trigger_input(driver):
