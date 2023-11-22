@@ -1,5 +1,6 @@
 import argparse, json
 from collections import defaultdict
+from io import StringIO
 from pathlib import Path
 
 from xklb import usage
@@ -160,10 +161,13 @@ def attach_interceptors(args):
 
 
 def load_page(args, path):
+    if args.local_html:
+        web.save_html_table(args, path)
+        return
+
     from selenium.common.exceptions import WebDriverException
 
     attach_interceptors(args)
-
     web.selenium_get_page(args, path)
 
     while True:  # repeat until browser closed
@@ -178,7 +182,7 @@ def load_page(args, path):
         else:
             del args.driver.requests  # clear processed responses
 
-            web.save_html_table(args, web.extract_html_text(args.driver))
+            web.save_html_table(args, StringIO(web.extract_html_text(args.driver)))
 
             if args.verbose < consts.LOG_DEBUG:
                 break  # if browser hidden, exit
