@@ -1,5 +1,4 @@
 import functools, os, tempfile, time, urllib.error, urllib.parse, urllib.request
-from io import StringIO
 from pathlib import Path
 from shutil import which
 
@@ -243,10 +242,10 @@ def extract_nearby_text(a_element):
     return before, after
 
 
-def save_html_table(args, html_text):
+def save_html_table(args, html_file):
     import pandas as pd
 
-    dfs = pd.read_html(StringIO(html_text), extract_links="body", flavor="bs4")
+    dfs = pd.read_html(html_file, extract_links="body", flavor="bs4")
     tables = []
     for df in dfs:
         df = pd_utils.columns_snake_case(df)

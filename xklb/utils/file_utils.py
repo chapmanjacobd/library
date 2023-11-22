@@ -1,4 +1,4 @@
-import glob, os, shlex, shutil, tempfile, time
+import os, shlex, shutil, tempfile, time
 from functools import wraps
 from pathlib import Path
 from shutil import which
@@ -34,25 +34,24 @@ def trash(path: Union[Path, str], detach=True) -> None:
 
 
 def is_file_open(path):
-    try:
-        if os.name == "posix":
-            widlcard = "/proc/*/fd/*"
-            lfds = glob.glob(widlcard)
-            for fds in lfds:
-                try:
-                    file = os.readlink(fds)
-                    if file == path:
-                        return True
-                except OSError as e:
-                    if e.errno == 2:
-                        file = None
-                    else:
-                        raise
-        else:
-            open(path)  # Windows will error here
-    except OSError:
-        return True
-    return False
+    if os.name == "nt":
+        try:
+            os.open(path, os.O_RDWR | os.O_EXCL)
+            return False
+        except OSError:
+            return True
+    else:
+        open_files = set()
+        for proc in os.listdir("/proc"):
+            try:
+                fd_dir = os.path.join("/proc", proc, "fd")
+                for fd in os.listdir(fd_dir):
+                    link = os.readlink(os.path.join(fd_dir, fd))
+                    if link.startswith("/") and link == path:
+                        open_files.add(link)
+            except (OSError, IOError):
+                continue
+        return path in open_files
 
 
 def filter_file(path, sieve) -> None:
