@@ -459,10 +459,8 @@ class MediaPrefetcher:
             m["path"] = str(media_path)
 
             if not media_path.exists():
-                log.debug("media_path exists: %s", t.elapsed())
                 log.warning("[%s]: Does not exist. Skipping...", m["path"])
                 xklb.db_media.mark_media_deleted(self.args, m["original_path"])
-                log.debug("mark_media_deleted: %s", t.elapsed())
                 return {}
 
             if self.args.transcode or self.args.transcode_audio:
@@ -489,10 +487,13 @@ class MediaPrefetcher:
                 self.remaining = 0
                 return
             elif f == {}:
+                self.fetch()
                 continue
 
             if f["path"].startswith("http") or Path(f["path"]).exists():
                 m = f
+            else:
+                self.fetch()
 
         self.remaining = len(self.media) + len(self.futures)
         self.fetch()

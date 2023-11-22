@@ -50,7 +50,7 @@ def mv_to_keep_folder(args, media_file: str):
             print("Source and destination are the same size", humanize.naturalsize(src_size, binary=True))
         if args.post_action.upper().startswith("ASK_"):
             if getattr(args, "move_replace", False) or devices.confirm("Replace destination file?"):
-                file_utils.trash(new_path, detach=False)
+                new_path.unlink()
                 new_path = str(shutil.move(media_file, keep_path))
             else:
                 return media_file
