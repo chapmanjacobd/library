@@ -37,6 +37,7 @@ from xklb.scripts.optimize_db import optimize_db
 from xklb.scripts.places_import import places_import
 from xklb.scripts.playback_control import playback_next, playback_now, playback_pause, playback_stop
 from xklb.scripts.playlists import playlists
+from xklb.scripts.process_audio import process_audio
 from xklb.scripts.redownload import redownload
 from xklb.scripts.relmv import relmv
 from xklb.scripts.scatter import scatter
@@ -299,9 +300,6 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     subp_surf = add_parser(subparsers, "surf")
     subp_surf.set_defaults(func=streaming_tab_loader)
 
-    subp_places_import = add_parser(subparsers, "places-import")
-    subp_places_import.set_defaults(func=places_import)
-
     subp_nouns = add_parser(subparsers, "nouns")
     subp_nouns.set_defaults(func=nouns)
     subp_cluster_sort = add_parser(subparsers, "cluster-sort", ["cs"])
@@ -313,6 +311,12 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     subp_mcda.set_defaults(func=mcda)
     subp_incremental_diff = add_parser(subparsers, "incremental-diff")
     subp_incremental_diff.set_defaults(func=incremental_diff)
+
+    subp_process_audio = add_parser(subparsers, "process-audio")
+    subp_process_audio.set_defaults(func=process_audio)
+
+    subp_places_import = add_parser(subparsers, "places-import")
+    subp_places_import.set_defaults(func=places_import)
 
     subp_mpv_watchlater = add_parser(subparsers, "mpv-watchlater")
     subp_mpv_watchlater.set_defaults(func=mpv_watchlater)

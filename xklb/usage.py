@@ -1343,10 +1343,17 @@ siteadd = """library site-add DATABASE PATH ... [--auto-pager] [--poke] [--local
     Run with `-vv` to see and interact with the browser
 """
 
-sitesql = None
-"""library site-sql PATH ... [--table TABLE] [--repl]
+process_audio = """library process-audio PATH ... [--always-split] [--split-longer-than SPLIT_IF_OVER_DURATION] [--min-split-segment MIN_SPLIT_SEGMENT] [--dry-run]
 
-    Extract data from website requests or HTML tables to a temporary database and perform queries on them in one go
+    Convert audio to Opus. Optionally split up long tracks into multiple files.
 
-    To create permanent and updatable databases use `library site-add`
+        fd -tf -eDTS -eAAC -eWAV -eAIF -eAIFF -eFLAC -eAIFF -eM4A -eMP3 -eOGG -eMP4 -eWMA -j4 -x library process-audio
+
+    Use --always-split to _always_ split files if silence is detected
+
+        library process-audio --always-split audiobook.m4a
+
+    Use --split-longer-than to _only_ detect silence for files in excess of a specific duration
+
+        library process-audio --split-longer-than 36mins audiobook.m4b audiobook2.mp3
 """
