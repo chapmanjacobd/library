@@ -1,4 +1,4 @@
-import argparse, itertools, json
+import argparse, json
 from collections import defaultdict
 from pathlib import Path
 
@@ -94,24 +94,6 @@ def nosql_to_sql(dict_or_arr, table_name=None):
     return tables
 
 
-def add_missing_table_names(args, tables):
-    if all(d["table_name"] for d in tables):
-        return tables
-
-    existing_tables = list(args.db.query("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 't%'"))
-    table_id_gen = itertools.count(start=1)
-
-    tables = sorted(tables, key=lambda d: len(d["data"]), reverse=True)
-    for d in tables:
-        if d["table_name"] is None:
-            table_name = f"t{next(table_id_gen)}"
-            while table_name in existing_tables:
-                table_name = f"t{next(table_id_gen)}"
-            d["table_name"] = table_name
-
-    return tables
-
-
 def attach_interceptors(args):
     from seleniumwire.utils import decode
 
@@ -149,7 +131,7 @@ def attach_interceptors(args):
             if args.verbose > 2:
                 breakpoint()
 
-            tables = add_missing_table_names(args, tables)
+            tables = db_utils.add_missing_table_names(args, tables)
             db_thread = db_utils.connect(argparse.Namespace(database=args.database, verbose=args.verbose))
             for d in tables:
                 db_thread[d["table_name"]].insert_all(iterables.list_dict_filter_bool(d["data"]), alter=True)  # type: ignore
@@ -186,9 +168,8 @@ def load_page(args, path):
 
     while True:  # repeat until browser closed
         try:
-            # TODO: extract HTML tables (via pandas?)
             if args.auto_pager:
-                for page_html_text in web.infinite_scroll(args.driver):
+                for _page_html_text in web.infinite_scroll(args.driver):
                     args.driver.implicitly_wait(1)
             else:
                 args.driver.implicitly_wait(5)  # give the interceptors some time to work
@@ -196,6 +177,9 @@ def load_page(args, path):
             break
         else:
             del args.driver.requests  # clear processed responses
+
+            web.save_html_table(args, web.extract_html_text(args.driver))
+
             if args.verbose < consts.LOG_DEBUG:
                 break  # if browser hidden, exit
 

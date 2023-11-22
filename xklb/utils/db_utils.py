@@ -1,4 +1,4 @@
-import sqlite3
+import itertools, sqlite3
 from pathlib import Path
 from textwrap import dedent
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Union
@@ -239,3 +239,21 @@ def construct_search_bindings(args, columns) -> None:
             args.filter_bindings[f"exclude{idx}"] = exc
         else:
             args.filter_bindings[f"exclude{idx}"] = "%" + exc.replace(" ", "%").replace("%%", " ") + "%"
+
+
+def add_missing_table_names(args, tables):
+    if all(d["table_name"] for d in tables):
+        return tables
+
+    existing_tables = list(args.db.query("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 't%'"))
+    table_id_gen = itertools.count(start=1)
+
+    tables = sorted(tables, key=lambda d: len(d["data"]), reverse=True)
+    for d in tables:
+        if d["table_name"] is None:
+            table_name = f"t{next(table_id_gen)}"
+            while table_name in existing_tables:
+                table_name = f"t{next(table_id_gen)}"
+            d["table_name"] = table_name
+
+    return tables

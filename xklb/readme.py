@@ -66,6 +66,7 @@ progs = {
     "Misc subcommands": {
         "surf": "Automatic tab loader",
         "export_text": "Export HTML files from SQLite databases",
+        "process_audio": "Shrink audio by converting to Opus format",
     },
 }
 

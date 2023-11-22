@@ -95,7 +95,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.2.157)
+    xk media library subcommands (v2.2.158)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -2004,9 +2004,7 @@ After you are done selecting folders you can press ctrl-d and it will save the l
 
 </details>
 
-### Other subcommands
-
-<details><summary>process_audio (process-audio)</summary>
+<details><summary>Shrink audio by converting to Opus format (process-audio)</summary>
 
     $ library process-audio -h
     usage: library process-audio PATH ... [--always-split] [--split-longer-than SPLIT_IF_OVER_DURATION] [--min-split-segment MIN_SPLIT_SEGMENT] [--dry-run]
