@@ -11,8 +11,8 @@ from xklb.utils.log_utils import log
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        prog="library bigdirs",
-        usage=usage.bigdirs,
+        prog="library big_dirs",
+        usage=usage.big_dirs,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument("--sort-by", "--sort", "-u", nargs="+")
@@ -163,7 +163,7 @@ def get_table(args) -> List[dict]:
     return media
 
 
-def process_bigdirs(args, folders) -> List[Dict]:
+def process_big_dirs(args, folders) -> List[Dict]:
     folders = [d for d in folders if d["total"] != d["deleted"]]  # remove folders where all deleted
 
     if args.depth:
@@ -175,7 +175,7 @@ def process_bigdirs(args, folders) -> List[Dict]:
     return folders
 
 
-def bigdirs() -> None:
+def big_dirs() -> None:
     args = parse_args()
     history.create(args)
 
@@ -216,7 +216,7 @@ def bigdirs() -> None:
         folders = group_files_by_folder(args, media)
 
     folders = mcda.group_sort_by(args, folders)
-    media = process_bigdirs(args, folders)
+    media = process_big_dirs(args, folders)
 
     if args.limit:
         media = media[-int(args.limit) :]
@@ -224,4 +224,4 @@ def bigdirs() -> None:
 
 
 if __name__ == "__main__":
-    bigdirs()
+    big_dirs()

@@ -3,7 +3,7 @@ from pathlib import Path
 from textwrap import dedent
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Union
 
-from xklb.utils import consts, iterables, strings
+from xklb.utils import consts, iterables, nums, strings
 from xklb.utils.log_utils import log
 
 if TYPE_CHECKING:
@@ -241,19 +241,74 @@ def construct_search_bindings(args, columns) -> None:
             args.filter_bindings[f"exclude{idx}"] = "%" + exc.replace(" ", "%").replace("%%", " ") + "%"
 
 
+def linear_interpolation(x, x1, y1, x2, y2):
+    y = y1 + ((x - x1) / (x2 - x1)) * (y2 - y1)
+    return y
+
+
+def has_similar_schema(set1, set2):
+    len1 = len(set1)
+    len2 = len(set2)
+    min_len = min(len1, len2)
+
+    if min_len <= 3:
+        return set1 == set2
+    elif min_len <= 5:
+        return set1.issubset(set2) or set2.issubset(set1)
+    else:
+        threshold = min_len * (nums.linear_interpolation(min_len, [(6, 0.875), (100, 0.3)]) or 0.8)
+        if len1 == min_len:
+            return len(set1.intersection(set2)) >= threshold
+        else:
+            return len(set2.intersection(set1)) >= threshold
+
+
+def most_similar_schema(keys, existing_tables):
+    best_match = None
+    best_similarity = 0
+
+    keys = set(keys)
+    threshold = nums.linear_interpolation(len(keys), [(3, 0.8), (100, 0.3)]) or 0.73
+
+    for table_name, columns_dict in existing_tables.items():
+        existing_keys = set(columns_dict.keys())
+
+        if keys == existing_keys:
+            return table_name
+
+        similar_values = len(keys.intersection(existing_keys))
+        if not similar_values:
+            similarity = 0
+        else:
+            similarity1 = similar_values / len(keys)
+            similarity2 = similar_values / len(existing_keys)
+            similarity = (similarity1 + similarity2) / 2
+            if similarity > best_similarity and similarity >= threshold:
+                best_similarity = similarity
+                best_match = table_name
+        log.debug("%s %.2f%%", table_name, similarity * 100)
+
+    return best_match
+
+
 def add_missing_table_names(args, tables):
     if all(d["table_name"] for d in tables):
         return tables
 
-    existing_tables = list(args.db.query("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 't%'"))
+    existing_tables = {table_name: args.db[table_name].columns_dict for table_name in args.db.table_names()}
     table_id_gen = itertools.count(start=1)
 
     tables = sorted(tables, key=lambda d: len(d["data"]), reverse=True)
     for d in tables:
         if d["table_name"] is None:
-            table_name = f"t{next(table_id_gen)}"
-            while table_name in existing_tables:
+            first_dict_keys = d["data"][0].keys()
+            existing_candidate = most_similar_schema(first_dict_keys, existing_tables)
+            if existing_candidate:
+                d["table_name"] = existing_candidate
+            else:
                 table_name = f"t{next(table_id_gen)}"
-            d["table_name"] = table_name
+                while table_name in existing_tables:
+                    table_name = f"t{next(table_id_gen)}"
+                d["table_name"] = table_name
 
     return tables

@@ -88,3 +88,32 @@ def human_to_seconds(input_str) -> int:
         unit = "m"
 
     return int(float(value) * time_units[unit])
+
+
+def linear_interpolation(x, data_points, clip=True):
+    data_points.sort(key=lambda point: point[0])  # Sort the data points based on x values
+    n = len(data_points)
+
+    if clip:
+        if x < data_points[0][0]:
+            return data_points[0][1]
+        elif x > data_points[n - 1][0]:
+            return data_points[n - 1][1]
+    else:
+        # If x is outside the range of provided data points, use the trend
+        if x < data_points[0][0]:
+            x1, y1 = data_points[0]
+            x2, y2 = data_points[1]
+            return y1 + ((x - x1) / (x2 - x1)) * (y2 - y1)
+        elif x > data_points[n - 1][0]:
+            x1, y1 = data_points[n - 2]
+            x2, y2 = data_points[n - 1]
+            return y1 + ((x - x1) / (x2 - x1)) * (y2 - y1)
+
+    # perform linear interpolation
+    for i in range(n - 1):
+        if data_points[i][0] <= x <= data_points[i + 1][0]:
+            x1, y1 = data_points[i]
+            x2, y2 = data_points[i + 1]
+            interpolated_y = y1 + ((x - x1) / (x2 - x1)) * (y2 - y1)
+            return interpolated_y

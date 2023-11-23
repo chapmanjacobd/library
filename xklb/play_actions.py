@@ -5,7 +5,7 @@ from typing import Dict, List, Tuple
 import xklb.db_media
 from xklb import history, tube_backend, usage
 from xklb.media import media_player, media_printer
-from xklb.scripts import bigdirs, mcda
+from xklb.scripts import big_dirs, mcda
 from xklb.utils import consts, db_utils, devices, file_utils, iterables, nums, objects, processes, sql_utils
 from xklb.utils.arg_utils import parse_args_limit, parse_args_sort
 from xklb.utils.consts import SC
@@ -517,8 +517,8 @@ def process_playqueue(args) -> None:
 
     if args.big_dirs:
         media_keyed = {d["path"]: d for d in media}
-        folders = bigdirs.group_files_by_folder(args, media)
-        dirs = bigdirs.process_bigdirs(args, folders)
+        folders = big_dirs.group_files_by_folder(args, media)
+        dirs = big_dirs.process_big_dirs(args, folders)
         dirs = mcda.group_sort_by(args, dirs)
         log.debug("process_bigdirs: %s", t.elapsed())
         dirs = list(reversed([d["path"] for d in dirs]))

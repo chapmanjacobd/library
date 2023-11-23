@@ -57,7 +57,7 @@ def _relmv(args, sources, dest):
                 raise
 
 
-def relmv() -> None:
+def rel_mv() -> None:
     args = parse_args()
 
     dest = Path(args.dest).expanduser().resolve()
@@ -65,4 +65,4 @@ def relmv() -> None:
 
 
 if __name__ == "__main__":
-    relmv()
+    rel_mv()

@@ -7,7 +7,7 @@ import pytest
 from tests import utils
 from xklb.media import av
 from xklb.scripts import scatter
-from xklb.utils import consts, iterables, mpv_utils, nums, objects, path_utils, printing, sql_utils, strings
+from xklb.utils import consts, db_utils, iterables, mpv_utils, nums, objects, path_utils, printing, sql_utils, strings
 
 
 def take5():
@@ -556,3 +556,41 @@ def test_rebin_folders():
     untouched, rebinned = scatter.rebin_folders(dummy_folders(5) + dummy_folders(5, "/tmp/f/"), 6)
     assert rebinned == []
     assert len(untouched) == 10
+
+
+class TestMostSimilarSchema(unittest.TestCase):
+    def test_exact_match(self):
+        existing_tables = {
+            "table1": {"id": "INT", "name": "VARCHAR", "age": "INT"},
+            "table2": {"id": "INT", "email": "VARCHAR", "phone": "VARCHAR"},
+        }
+        keys = ["id", "name", "age"]
+        result = db_utils.most_similar_schema(keys, existing_tables)
+        self.assertEqual(result, "table1")
+
+    def test_partial_match(self):
+        existing_tables = {
+            "table1": {"id": "INT", "name": "VARCHAR", "age": "INT"},
+            "table2": {"id": "INT", "email": "VARCHAR", "phone": "VARCHAR"},
+        }
+        keys = ["id", "name", "address", "age"]
+        result = db_utils.most_similar_schema(keys, existing_tables)
+        self.assertEqual(result, "table1")
+
+    def test_no_match(self):
+        existing_tables = {
+            "table1": {"id": "INT", "name": "VARCHAR", "age": "INT"},
+            "table2": {"id": "INT", "email": "VARCHAR", "phone": "VARCHAR"},
+        }
+        keys = ["salary", "position", "department"]
+        result = db_utils.most_similar_schema(keys, existing_tables)
+        self.assertIsNone(result)
+
+    def test_empty_input(self):
+        existing_tables = {
+            "table1": {"id": "INT", "name": "VARCHAR", "age": "INT"},
+            "table2": {"id": "INT", "email": "VARCHAR", "phone": "VARCHAR"},
+        }
+        keys = []
+        result = db_utils.most_similar_schema(keys, existing_tables)
+        self.assertIsNone(result)
