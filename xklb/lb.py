@@ -99,7 +99,7 @@ def print_help(parser) -> None:
     print(parser.epilog)
 
 
-known_subcommands = ["fs", "du", "tabs"]
+known_subcommands = ["fs", "du", "search"]
 
 
 def consecutive_prefixes(s):
