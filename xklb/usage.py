@@ -261,7 +261,7 @@ def play(action) -> str:
         Printing modes
         library {action} -p    # print as a table
         library {action} -p a  # print an aggregate report
-        library {action} -p b  # print a bigdirs report (see library bigdirs -h for more info)
+        library {action} -p b  # print a big-dirs report (see library bigdirs -h for more info)
         library {action} -p f  # print fields (defaults to path; use --cols to change)
                                # -- useful for piping paths to utilities like xargs or GNU Parallel
 
@@ -270,7 +270,7 @@ def play(action) -> str:
 
         Some printing modes can be combined
         library {action} -p df  # print files for piping into another program and mark them as deleted within the db
-        library {action} -p bf  # print fields from bigdirs report
+        library {action} -p bf  # print fields from big-dirs report
 
         Check if you have downloaded something before
         library {action} -u duration -p -s 'title'
@@ -882,22 +882,22 @@ galleryupdate = """library galleryupdate DATABASE URLS
     Check previously saved gallery_dl URLs for new content
 """
 
-bigdirs = """library bigdirs DATABASE [--limit (4000)] [--depth (0)] [--sort-by deleted | played] [--size=+5MB]
+big_dirs = """library big-dirs DATABASE [--limit (4000)] [--depth (0)] [--sort-by deleted | played] [--size=+5MB]
 
     See what folders take up space
 
-        library bigdirs video.db
-        library bigdirs audio.db
-        library bigdirs fs.db
+        library big-dirs video.db
+        library big-dirs audio.db
+        library big-dirs fs.db
 
-    lb bigdirs video.db --folder-size=+10G --lower 400 --upper 14000
+    lb big-dirs video.db --folder-size=+10G --lower 400 --upper 14000
 
-    lb bigdirs video.db --depth 5
-    lb bigdirs video.db --depth 7
+    lb big-dirs video.db --depth 5
+    lb big-dirs video.db --depth 7
 
     You can even sort by auto-MCDA ~LOL~
 
-    lb bigdirs video.db -u 'mcda median_size,-deleted'
+    lb big-dirs video.db -u 'mcda median_size,-deleted'
 """
 
 disk_usage = """library disk-usage DATABASE [--sort-by size | count] [--depth DEPTH] [PATH / SUBSTRING SEARCH]

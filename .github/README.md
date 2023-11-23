@@ -95,7 +95,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.2.160)
+    xk media library subcommands (v2.2.161)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -288,20 +288,20 @@ Incremental surfing. 📈🏄 totally rad!
 
 ### Find large folders
 
-<details><summary>Curate with library bigdirs</summary>
+<details><summary>Curate with library big-dirs</summary>
 
 If you are looking for candidate folders for curation (ie. you need space but don't want to buy another hard drive).
-The bigdirs subcommand was written for that purpose:
+The big-dirs subcommand was written for that purpose:
 
-    $ library bigdirs fs/d.db
+    $ library big-dirs fs/d.db
 
 You may filter by folder depth (similar to QDirStat or WizTree)
 
-    $ library bigdirs --depth=3 audio.db
+    $ library big-dirs --depth=3 audio.db
 
 There is also an flag to prioritize folders which have many files which have been deleted (for example you delete songs you don't like--now you can see who wrote those songs and delete all their other songs...)
 
-    $ library bigdirs --sort-by deleted audio.db
+    $ library big-dirs --sort-by deleted audio.db
 
 Recently, this functionality has also been integrated into watch/listen subcommands so you could just do this:
 
@@ -805,7 +805,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         Printing modes
         library watch -p    # print as a table
         library watch -p a  # print an aggregate report
-        library watch -p b  # print a bigdirs report (see library bigdirs -h for more info)
+        library watch -p b  # print a big-dirs report (see library bigdirs -h for more info)
         library watch -p f  # print fields (defaults to path; use --cols to change)
                                # -- useful for piping paths to utilities like xargs or GNU Parallel
 
@@ -814,7 +814,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
         Some printing modes can be combined
         library watch -p df  # print files for piping into another program and mark them as deleted within the db
-        library watch -p bf  # print fields from bigdirs report
+        library watch -p bf  # print fields from big-dirs report
 
         Check if you have downloaded something before
         library watch -u duration -p -s 'title'
@@ -1861,25 +1861,25 @@ After you are done selecting folders you can press ctrl-d and it will save the l
 
 </details>
 
-<details><summary>Show large folders (bigdirs)</summary>
+<details><summary>Show large folders (big-dirs)</summary>
 
-    $ library bigdirs -h
-    usage: library bigdirs DATABASE [--limit (4000)] [--depth (0)] [--sort-by deleted | played] [--size=+5MB]
+    $ library big-dirs -h
+    usage: library big-dirs DATABASE [--limit (4000)] [--depth (0)] [--sort-by deleted | played] [--size=+5MB]
 
     See what folders take up space
 
-        library bigdirs video.db
-        library bigdirs audio.db
-        library bigdirs fs.db
+        library big-dirs video.db
+        library big-dirs audio.db
+        library big-dirs fs.db
 
-    lb bigdirs video.db --folder-size=+10G --lower 400 --upper 14000
+    lb big-dirs video.db --folder-size=+10G --lower 400 --upper 14000
 
-    lb bigdirs video.db --depth 5
-    lb bigdirs video.db --depth 7
+    lb big-dirs video.db --depth 5
+    lb big-dirs video.db --depth 7
 
     You can even sort by auto-MCDA ~LOL~
 
-    lb bigdirs video.db -u 'mcda median_size,-deleted'
+    lb big-dirs video.db -u 'mcda median_size,-deleted'
 
 
 </details>

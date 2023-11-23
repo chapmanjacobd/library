@@ -52,7 +52,7 @@ progs = {
     "Filesystem Database subcommands": {
         "christen": "Clean filenames",
         "disk_usage": "Disk Usage",
-        "bigdirs": "Show large folders",
+        "big_dirs": "Show large folders",
         "search_db": "Search a SQLITE database",
         "optimize": "Re-optimize database",
     },
@@ -309,20 +309,20 @@ Incremental surfing. 📈🏄 totally rad!
 
 ### Find large folders
 
-<details><summary>Curate with library bigdirs</summary>
+<details><summary>Curate with library big-dirs</summary>
 
 If you are looking for candidate folders for curation (ie. you need space but don't want to buy another hard drive).
-The bigdirs subcommand was written for that purpose:
+The big-dirs subcommand was written for that purpose:
 
-    $ library bigdirs fs/d.db
+    $ library big-dirs fs/d.db
 
 You may filter by folder depth (similar to QDirStat or WizTree)
 
-    $ library bigdirs --depth=3 audio.db
+    $ library big-dirs --depth=3 audio.db
 
 There is also an flag to prioritize folders which have many files which have been deleted (for example you delete songs you don't like--now you can see who wrote those songs and delete all their other songs...)
 
-    $ library bigdirs --sort-by deleted audio.db
+    $ library big-dirs --sort-by deleted audio.db
 
 Recently, this functionality has also been integrated into watch/listen subcommands so you could just do this:
 
