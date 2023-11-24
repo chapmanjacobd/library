@@ -13,7 +13,7 @@ dependencies = [
     "ipython",
     "Markdown",
     "mutagen",
-    "natsort",
+    "natsort[pyicu]",
     "praw",
     "puremagic",
     "pysubs2",

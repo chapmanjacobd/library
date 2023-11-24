@@ -2,6 +2,8 @@ import argparse, os, shlex, sys
 from pathlib import Path
 from typing import Dict, List, Tuple
 
+from natsort import natsorted
+
 import xklb.db_media
 from xklb import history, tube_backend, usage
 from xklb.media import media_player, media_printer
@@ -472,9 +474,7 @@ def history_sort(args, media) -> List[Dict]:
 def process_playqueue(args) -> None:
     history.create(args)
 
-    t = Timer()
     query, bindings = construct_query(args)
-    log.debug("construct_query: %s", t.elapsed())
 
     if args.print and not any(
         [
@@ -482,9 +482,9 @@ def process_playqueue(args) -> None:
             args.lower,
             args.upper,
             args.safe,
-            args.play_in_order >= consts.SIMILAR,
+            args.play_in_order,
             args.big_dirs,
-            args.related >= consts.RELATED,
+            args.related,
             args.cluster_sort,
             args.folder,
             args.folder_glob,
@@ -493,8 +493,49 @@ def process_playqueue(args) -> None:
         media_printer.printer(args, query, bindings)
         return
 
+    t = Timer()
     media = list(args.db.query(query, bindings))
     log.debug("query: %s", t.elapsed())
+
+    if args.play_in_order == consts.SIMILAR_NATURAL_SORT:
+        def media_sort_key(d):
+            path = Path(d['path'])
+            return (path.parent, d['title'], path.stem)
+        media = natsorted(media, key=media_sort_key)
+
+        '''
+        TODO:
+
+        -O (default to natural_pts)
+        -O os_path
+        -O os_title
+
+        if args.play_in-order.startswith('ordinal'):
+            get_ordinal_media:
+                -O ordinal
+                -O ordinal_no_filter
+                -O ordinal_no_filter_no_fts
+                -O ordinal_no_filter_no_fts_parent
+        else:
+            alg, sort_key = args.play_in-order.split('_')
+
+            natural     natsorted
+            nspath      alg=ns.PATH
+            ignorecase  ns.IGNORECASE
+            lowercase   alg=ns.LOWERCASEFIRST
+            os          os_sorted
+            human       humansorted
+            signed      realsorted
+            python      sorted
+
+            sort_keys
+            pts     parent,title,stem
+            stem
+            others (no need to hardcode, just use d[sort_key])
+                path
+                title
+
+        '''
 
     if args.partial:
         media = history_sort(args, media)
