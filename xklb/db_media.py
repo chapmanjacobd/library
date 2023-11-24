@@ -299,7 +299,6 @@ def filter_args_sql(args, m_columns):
 
 
 def get_ordinal_media(args, m: Dict, ignore_paths=None) -> Dict:
-    # TODO: maybe try https://dba.stackexchange.com/questions/43415/algorithm-for-finding-the-longest-prefix
     if ignore_paths is None:
         ignore_paths = []
 
