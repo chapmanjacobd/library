@@ -447,7 +447,7 @@ class MediaPrefetcher:
         self.args.db = db_utils.connect(self.args)
         log.debug("db.connect: %s", t.elapsed())
 
-        if (self.args.play_in_order >= consts.SIMILAR) or (
+        if (isinstance(self.args.play_in_order, int) and self.args.play_in_order >= consts.SIMILAR) or (
             self.args.action == SC.listen and "audiobook" in m["path"].lower()
         ):
             m = xklb.db_media.get_ordinal_media(self.args, m, ignore_paths)
