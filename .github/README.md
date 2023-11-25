@@ -95,7 +95,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.2.162)
+    xk media library subcommands (v2.2.163)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -738,11 +738,53 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Play media in order (similarly named episodes):
         library watch --play-in-order
-        There are multiple strictness levels of --play-in-order:
         library watch -O    # equivalent
-        library watch -OO   # above, plus ignores most filters
-        library watch -OOO  # above, plus ignores fts and (include/exclude) filter during ordinal search
-        library watch -OOOO # above, plus starts search with parent folder
+
+        The default sort value is 'natural_ps' which means media will be sorted by parent path
+        and then stem in a natural way (using the integer values within the path). But there are many other options:
+
+        Options:
+
+            - reverse: reverse the sort order
+            - compat: treat characters like '⑦' as '7'
+
+        Algorithms:
+
+            - natural: parse numbers as integers
+            - os: sort similar to the OS File Explorer sorts
+            - path: use natsort "path" algorithm (https://natsort.readthedocs.io/en/stable/api.html#the-ns-enum)
+            - human: use system locale
+            - ignorecase: treat all case as equal
+            - lowercase: sort lowercase first
+            - signed: sort with an understanding of negative numbers
+            - python: sort like default python
+
+        Values:
+
+            - path
+            - parent
+            - stem
+            - title (or any other column value)
+            - ps: parent, stem
+            - pts: parent, title, stem
+
+        Use this format: algorithm, value, algorithm_value, or option_algorithm_value.
+        For example:
+
+            - library watch -O human
+            - library watch -O title
+            - library watch -O human_title
+            - library watch -O reverse_compat_human_title
+
+            - library watch -O path       # path algorithm and parent, stem values (path_ps)
+            - library watch -O path_path  # path algorithm and path values
+
+        Additionally, there is a separate option that will query the database for more media, even if you initially chose a random subset:
+
+            - library watch -O ordinal
+            - library watch -O ordinal-no-filter  # ignores most filters
+            - library watch -O ordinal-no-filter-no-fts  # above, plus ignores fts and (include/exclude) filter during ordinal search
+            - library watch -O ordinal-no-filter-no-fts-parent  # above, plus starts search with parent folder
 
         If searching by a specific subpath it may be preferable to just sort by path instead
         library watch d/planet.earth.2024/ -u path
@@ -759,7 +801,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
         All of these options can be used together but it will be a bit slow and the results might be mid-tier
         as multiple different algorithms create a muddied signal (too many cooks in the kitchen):
-        library watch -RRCOO
+        library watch -RRCO
 
         You can even sort the items within each cluster by auto-MCDA ~LOL~
         library watch -B --sort-by 'mcda median_size,-deleted'

@@ -2,7 +2,6 @@ import argparse, os, shlex, sys
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-from natsort import natsorted
 
 import xklb.db_media
 from xklb import history, tube_backend, usage
@@ -26,7 +25,7 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     parser.add_argument("--related", "-R", action="count", default=0, help=argparse.SUPPRESS)
     parser.add_argument("--cluster-sort", "--cluster", "-C", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--clusters", "--n-clusters", type=int, help="Number of KMeans clusters")
-    parser.add_argument("--play-in-order", "-O", action="count", default=0, help=argparse.SUPPRESS)
+    parser.add_argument("--play-in-order", "-O", nargs="?", const='natural_ps', help=argparse.SUPPRESS)
 
     parser.add_argument("--where", "-w", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--include", "-s", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
@@ -497,45 +496,76 @@ def process_playqueue(args) -> None:
     media = list(args.db.query(query, bindings))
     log.debug("query: %s", t.elapsed())
 
-    if args.play_in_order == consts.SIMILAR_NATURAL_SORT:
-        def media_sort_key(d):
-            path = Path(d['path'])
-            return (path.parent, d['title'], path.stem)
-        media = natsorted(media, key=media_sort_key)
-
-        '''
-        TODO:
-
-        -O (default to natural_pts)
-        -O os_path
-        -O os_title
-
-        if args.play_in-order.startswith('ordinal'):
-            get_ordinal_media:
-                -O ordinal
-                -O ordinal_no_filter
-                -O ordinal_no_filter_no_fts
-                -O ordinal_no_filter_no_fts_parent
+    if args.play_in_order:
+        if args.play_in_order.startswith('ordinal'):
+            if args.play_in_order == 'ordinal':
+                args.play_in_order = consts.SIMILAR
+            elif args.play_in_order in ('ordinal-no-filter', 'ordinal_no_filter'):
+                args.play_in_order = consts.SIMILAR_NO_FILTER
+            elif args.play_in_order in ('ordinal-no-filter-no-fts', 'ordinal_no_filter_no_fts'):
+                args.play_in_order = consts.SIMILAR_NO_FILTER_NO_FTS
+            elif args.play_in_order in ('ordinal-no-filter-no-fts-parent', 'ordinal_no_filter_no_fts_parent'):
+                args.play_in_order = consts.SIMILAR_NO_FILTER_NO_FTS_PARENT
         else:
-            alg, sort_key = args.play_in-order.split('_')
+            from natsort import natsorted, ns, os_sorted
 
-            natural     natsorted
-            nspath      alg=ns.PATH
-            ignorecase  ns.IGNORECASE
-            lowercase   alg=ns.LOWERCASEFIRST
-            os          os_sorted
-            human       humansorted
-            signed      realsorted
-            python      sorted
+            reverse = False
+            if args.play_in_order.startswith('reverse_'):
+                args.play_in_order = args.play_in_order.replace('reverse_', '', 1)
+                reverse = True
 
-            sort_keys
-            pts     parent,title,stem
-            stem
-            others (no need to hardcode, just use d[sort_key])
-                path
-                title
+            compat = False
+            for opt in ('compat_', 'nfkd_'):
+                if args.play_in_order.startswith(opt):
+                    args.play_in_order = args.play_in_order.replace(opt, '', 1)
+                    compat = True
 
-        '''
+            if '_' in args.play_in_order:
+                alg, sort_key = args.play_in_order.split('_', 1)
+            else:
+                alg, sort_key = args.play_in_order, 'ps'
+
+            def func_sort_key(sort_key):
+                def fn_key(d):
+                    if sort_key in ('parent', 'stem', 'ps', 'pts'):
+                        path = Path(d['path'])
+
+                        if sort_key == 'parent':
+                            return path.parent
+                        elif sort_key == 'stem':
+                            return path.stem
+                        elif sort_key == 'ps':
+                            return (path.parent, path.stem)
+                        else:  # sort_key == 'pts'
+                            return (path.parent, d['title'], path.stem)
+                    else:
+                        return d[sort_key]
+                return fn_key
+
+            media_sort_key = func_sort_key(sort_key)
+
+            NS_OPTS = ns.NUMAFTER | ns.NOEXP | ns.NANLAST
+            if compat:
+                NS_OPTS = NS_OPTS | ns.COMPATIBILITYNORMALIZE | ns.GROUPLETTERS
+
+            if alg == 'natural':
+                media = natsorted(media, key=media_sort_key, alg=NS_OPTS | ns.DEFAULT, reverse=reverse)
+            elif alg in ('nspath', 'path'):
+                media = natsorted(media, key=media_sort_key, alg=NS_OPTS | ns.PATH, reverse=reverse)
+            elif alg == 'ignorecase':
+                media = natsorted(media, key=media_sort_key, alg=NS_OPTS | ns.IGNORECASE, reverse=reverse)
+            elif alg == 'lowercase':
+                media = natsorted(media, key=media_sort_key, alg=NS_OPTS | ns.LOWERCASEFIRST, reverse=reverse)
+            elif alg in ('human', 'locale'):
+                media = natsorted(media, key=media_sort_key, alg=NS_OPTS | ns.LOCALE, reverse=reverse)
+            elif alg == 'signed':
+                media = natsorted(media, key=media_sort_key, alg=NS_OPTS | ns.REAL, reverse=reverse)
+            elif alg == 'os':
+                media = os_sorted(media, key=media_sort_key, reverse=reverse)
+            elif alg == 'python':
+                media = sorted(media, key=media_sort_key, reverse=reverse)
+            else:
+                media = natsorted(media, key=func_sort_key(alg), alg=NS_OPTS | ns.DEFAULT, reverse=reverse)
 
     if args.partial:
         media = history_sort(args, media)
@@ -594,8 +624,6 @@ def process_playqueue(args) -> None:
         media = ({"path": s} for m in media for s in file_utils.fast_glob(Path(m["path"]).parent, args.folder_glob))
 
     if args.print:
-        if args.play_in_order >= consts.SIMILAR:
-            media = [xklb.db_media.get_ordinal_media(args, d) for d in media]
         media_printer.media_printer(args, media)
     else:
         media_player.play_list(args, media)

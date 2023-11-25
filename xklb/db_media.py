@@ -299,6 +299,7 @@ def filter_args_sql(args, m_columns):
 
 
 def get_ordinal_media(args, m: Dict, ignore_paths=None) -> Dict:
+    # TODO: maybe use get_dir_media(... args.limit='inf') and sort with natsort instead
     if ignore_paths is None:
         ignore_paths = []
 

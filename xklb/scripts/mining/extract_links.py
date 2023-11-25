@@ -163,8 +163,7 @@ def parse_inner_urls(args, url, markup):
 
     soup = BeautifulSoup(markup, "html.parser")
 
-    # for a in soup.findAll(href=True):  # TODO: check if non-a href are common
-    for a in soup.findAll("a", attrs={"href": True}):
+    for a in soup.findAll(href=True):
         log.debug(a)
 
         href = a["href"].strip()

@@ -221,7 +221,6 @@ def print_info(args, df):
     from pymcdm.methods import COMET
     from pymcdm.methods.comet_tools import TriadSupportExpert
 
-    # TODO: create useful subset?
     cvalues = [
             [0, 500, 1000],
             [1, 5]
