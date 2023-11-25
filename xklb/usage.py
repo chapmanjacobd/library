@@ -207,7 +207,7 @@ def play(action) -> str:
         Algorithms:
 
             - natural: parse numbers as integers
-            - os: sort similar to the OS File Explorer sorts
+            - os: sort similar to the OS File Explorer sorts. To improve non-alphanumeric sorting on Mac OS X and Linux it is necessary to install pyicu (perhaps via python3-icu -- https://gitlab.pyicu.org/main/pyicu#installing-pyicu)
             - path: use natsort "path" algorithm (https://natsort.readthedocs.io/en/stable/api.html#the-ns-enum)
             - human: use system locale
             - ignorecase: treat all case as equal

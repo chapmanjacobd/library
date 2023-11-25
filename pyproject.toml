@@ -16,7 +16,6 @@ dependencies = [
     "natsort",
     "praw",
     "puremagic",
-    "pyicu",
     "pysubs2",
     "python-dateutil",
     "python-mpv-jsonipc",
