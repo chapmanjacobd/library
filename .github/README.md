@@ -95,7 +95,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.2.164)
+    xk media library subcommands (v2.2.165)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -751,7 +751,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         Algorithms:
 
             - natural: parse numbers as integers
-            - os: sort similar to the OS File Explorer sorts
+            - os: sort similar to the OS File Explorer sorts. To improve non-alphanumeric sorting on Mac OS X and Linux it is necessary to install pyicu (perhaps via python3-icu -- https://gitlab.pyicu.org/main/pyicu#installing-pyicu)
             - path: use natsort "path" algorithm (https://natsort.readthedocs.io/en/stable/api.html#the-ns-enum)
             - human: use system locale
             - ignorecase: treat all case as equal
