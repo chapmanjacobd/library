@@ -95,7 +95,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.2.163)
+    xk media library subcommands (v2.2.164)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -819,7 +819,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         library watch --lower 3   # only include files which have three or more siblings
         library watch --upper 3   # only include files which have fewer than three siblings
         library watch --lower 3 --upper 3   # only include files which are three siblings inclusive
-        library watch --lower 12 --upper 25 -OOO  # on my machine this launches My Mister 2018
+        library watch --lower 12 --upper 25 -O  # on my machine this launches My Mister 2018
 
     Play recent partially-watched videos (requires mpv history):
         library watch --partial       # play newest first

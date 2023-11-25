@@ -275,7 +275,7 @@ def play(action) -> str:
         library {action} --lower 3   # only include files which have three or more siblings
         library {action} --upper 3   # only include files which have fewer than three siblings
         library {action} --lower 3 --upper 3   # only include files which are three siblings inclusive
-        library {action} --lower 12 --upper 25 -OOO  # on my machine this launches My Mister 2018
+        library {action} --lower 12 --upper 25 -O  # on my machine this launches My Mister 2018
 
     Play recent partially-watched videos (requires mpv history):
         library {action} --partial       # play newest first
