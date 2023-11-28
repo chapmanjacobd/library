@@ -47,6 +47,19 @@ class ArgparseArgsOrStdin(argparse.Action):
         setattr(namespace, self.dest, lines)
 
 
+def gen_urls(args):
+    if args.file:
+        with open(args.file) as f:
+            for line in f:
+                url = line.rstrip("\n")
+                if url.strip():
+                    yield url
+    else:
+        for url in args.paths:
+            if url.strip():
+                yield url
+
+
 def override_sort(sort_expression: str) -> str:
     def year_month_sql(var):
         return f"cast(strftime('%Y%m', datetime({var}, 'unixepoch')) as int)"

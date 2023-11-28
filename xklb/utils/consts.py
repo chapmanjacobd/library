@@ -19,10 +19,15 @@ TEMP_DIR = gettempdir()
 TEMP_SCRIPT_DIR = os.getenv("XDG_RUNTIME_DIR") or TEMP_DIR
 FAKE_SUBTITLE = str(Path(TEMP_DIR) / "sub.srt")  # https://github.com/skorokithakis/catt/issues/393
 CAST_NOW_PLAYING = str(Path(TEMP_DIR) / "catt_playing")
+SUB_TEMP_DIR = str(Path(TEMP_DIR) / "library_temp_subtitles" / random_string())
 DEFAULT_MPV_LISTEN_SOCKET = str(Path(TEMP_SCRIPT_DIR) / "mpv_socket")
 DEFAULT_MPV_WATCH_SOCKET = str(Path("~/.config/mpv/socket").expanduser().resolve())
-DEFAULT_MPV_WATCH_LATER = str(Path("~/.config/mpv/watch_later/").expanduser().resolve())
-SUB_TEMP_DIR = str(Path(TEMP_DIR) / "library_temp_subtitles" / random_string())
+
+mpv_dir = Path("~/.local/state/mpv/").expanduser().resolve()
+if mpv_dir.exists():
+    DEFAULT_MPV_WATCH_LATER = str(mpv_dir)
+else:
+    DEFAULT_MPV_WATCH_LATER = str(Path("~/.config/mpv/watch_later/").expanduser().resolve())
 
 LOG_INFO = 1
 LOG_DEBUG = 2

@@ -41,7 +41,8 @@ def parse_args() -> argparse.Namespace:
     if len(args.include) == 1 and os.sep in args.include[0]:
         args.include = [file_utils.resolve_absolute_path(args.include[0])]
 
-    args.sort_by = " ".join(args.sort_by)
+    if args.sort_by:
+        args.sort_by = " ".join(args.sort_by)
 
     if args.size:
         args.size = sql_utils.parse_human_to_sql(nums.human_to_bytes, "size", args.size)
