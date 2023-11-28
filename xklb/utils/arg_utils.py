@@ -24,9 +24,11 @@ class ArgparseDict(argparse.Action):
             d = {}
             k_eq_v = list(flatten([val.split(" ") for val in values]))
             for s in k_eq_v:
-                k, v = s.split("=")
-                if any(sym in v for sym in ("[", "{")):
+                k, v = s.split("=", 1)
+                if any(sym in v for sym in (" [", " {")):
                     d[k] = literal_eval(v)
+                elif v.strip() in ("True", "False"):
+                    d[k] = bool(v.strip())
                 else:
                     d[k] = v
 
