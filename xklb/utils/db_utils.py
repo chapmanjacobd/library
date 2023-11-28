@@ -265,7 +265,7 @@ def has_similar_schema(set1, set2):
 
 def most_similar_schema(keys, existing_tables):
     best_match = None
-    best_similarity = 0
+    highest_ratio = 0
 
     keys = set(keys)
     threshold = nums.linear_interpolation(len(keys), [(3, 0.8), (100, 0.3)]) or 0.73
@@ -278,15 +278,16 @@ def most_similar_schema(keys, existing_tables):
 
         similar_values = len(keys.intersection(existing_keys))
         if not similar_values:
-            similarity = 0
+            avg_commonality = 0
         else:
-            similarity1 = similar_values / len(keys)
-            similarity2 = similar_values / len(existing_keys)
-            similarity = (similarity1 + similarity2) / 2
-            if similarity > best_similarity and similarity >= threshold:
-                best_similarity = similarity
+            provided = similar_values / len(keys)
+            existing = similar_values / len(existing_keys)
+            avg_commonality = (provided + existing) / 2
+
+            if avg_commonality >= threshold and avg_commonality > highest_ratio:
+                highest_ratio = avg_commonality
                 best_match = table_name
-        log.debug("%s %.2f%%", table_name, similarity * 100)
+        log.debug("%s %.2f%%", table_name, avg_commonality * 100)
 
     return best_match
 

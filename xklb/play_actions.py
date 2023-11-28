@@ -2,7 +2,6 @@ import argparse, os, shlex, sys
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-
 import xklb.db_media
 from xklb import history, tube_backend, usage
 from xklb.media import media_player, media_printer
@@ -25,7 +24,7 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     parser.add_argument("--related", "-R", action="count", default=0, help=argparse.SUPPRESS)
     parser.add_argument("--cluster-sort", "--cluster", "-C", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--clusters", "--n-clusters", type=int, help="Number of KMeans clusters")
-    parser.add_argument("--play-in-order", "-O", nargs="?", const='natural_ps', help=argparse.SUPPRESS)
+    parser.add_argument("--play-in-order", "-O", nargs="?", const="natural_ps", help=argparse.SUPPRESS)
 
     parser.add_argument("--where", "-w", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--include", "-s", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
@@ -497,49 +496,50 @@ def process_playqueue(args) -> None:
     log.debug("query: %s", t.elapsed())
 
     if args.play_in_order:
-        if args.play_in_order.startswith('ordinal'):
-            if args.play_in_order == 'ordinal':
+        if args.play_in_order.startswith("ordinal"):
+            if args.play_in_order == "ordinal":
                 args.play_in_order = consts.SIMILAR
-            elif args.play_in_order in ('ordinal-no-filter', 'ordinal_no_filter'):
+            elif args.play_in_order in ("ordinal-no-filter", "ordinal_no_filter"):
                 args.play_in_order = consts.SIMILAR_NO_FILTER
-            elif args.play_in_order in ('ordinal-no-filter-no-fts', 'ordinal_no_filter_no_fts'):
+            elif args.play_in_order in ("ordinal-no-filter-no-fts", "ordinal_no_filter_no_fts"):
                 args.play_in_order = consts.SIMILAR_NO_FILTER_NO_FTS
-            elif args.play_in_order in ('ordinal-no-filter-no-fts-parent', 'ordinal_no_filter_no_fts_parent'):
+            elif args.play_in_order in ("ordinal-no-filter-no-fts-parent", "ordinal_no_filter_no_fts_parent"):
                 args.play_in_order = consts.SIMILAR_NO_FILTER_NO_FTS_PARENT
         else:
             from natsort import natsorted, ns, os_sorted
 
             reverse = False
-            if args.play_in_order.startswith('reverse_'):
-                args.play_in_order = args.play_in_order.replace('reverse_', '', 1)
+            if args.play_in_order.startswith("reverse_"):
+                args.play_in_order = args.play_in_order.replace("reverse_", "", 1)
                 reverse = True
 
             compat = False
-            for opt in ('compat_', 'nfkd_'):
+            for opt in ("compat_", "nfkd_"):
                 if args.play_in_order.startswith(opt):
-                    args.play_in_order = args.play_in_order.replace(opt, '', 1)
+                    args.play_in_order = args.play_in_order.replace(opt, "", 1)
                     compat = True
 
-            if '_' in args.play_in_order:
-                alg, sort_key = args.play_in_order.split('_', 1)
+            if "_" in args.play_in_order:
+                alg, sort_key = args.play_in_order.split("_", 1)
             else:
-                alg, sort_key = args.play_in_order, 'ps'
+                alg, sort_key = args.play_in_order, "ps"
 
             def func_sort_key(sort_key):
                 def fn_key(d):
-                    if sort_key in ('parent', 'stem', 'ps', 'pts'):
-                        path = Path(d['path'])
+                    if sort_key in ("parent", "stem", "ps", "pts"):
+                        path = Path(d["path"])
 
-                        if sort_key == 'parent':
+                        if sort_key == "parent":
                             return path.parent
-                        elif sort_key == 'stem':
+                        elif sort_key == "stem":
                             return path.stem
-                        elif sort_key == 'ps':
+                        elif sort_key == "ps":
                             return (path.parent, path.stem)
                         else:  # sort_key == 'pts'
-                            return (path.parent, d['title'], path.stem)
+                            return (path.parent, d["title"], path.stem)
                     else:
                         return d[sort_key]
+
                 return fn_key
 
             media_sort_key = func_sort_key(sort_key)
@@ -548,21 +548,21 @@ def process_playqueue(args) -> None:
             if compat:
                 NS_OPTS = NS_OPTS | ns.COMPATIBILITYNORMALIZE | ns.GROUPLETTERS
 
-            if alg == 'natural':
+            if alg == "natural":
                 media = natsorted(media, key=media_sort_key, alg=NS_OPTS | ns.DEFAULT, reverse=reverse)
-            elif alg in ('nspath', 'path'):
+            elif alg in ("nspath", "path"):
                 media = natsorted(media, key=media_sort_key, alg=NS_OPTS | ns.PATH, reverse=reverse)
-            elif alg == 'ignorecase':
+            elif alg == "ignorecase":
                 media = natsorted(media, key=media_sort_key, alg=NS_OPTS | ns.IGNORECASE, reverse=reverse)
-            elif alg == 'lowercase':
+            elif alg == "lowercase":
                 media = natsorted(media, key=media_sort_key, alg=NS_OPTS | ns.LOWERCASEFIRST, reverse=reverse)
-            elif alg in ('human', 'locale'):
+            elif alg in ("human", "locale"):
                 media = natsorted(media, key=media_sort_key, alg=NS_OPTS | ns.LOCALE, reverse=reverse)
-            elif alg == 'signed':
+            elif alg == "signed":
                 media = natsorted(media, key=media_sort_key, alg=NS_OPTS | ns.REAL, reverse=reverse)
-            elif alg == 'os':
+            elif alg == "os":
                 media = os_sorted(media, key=media_sort_key, reverse=reverse)
-            elif alg == 'python':
+            elif alg == "python":
                 media = sorted(media, key=media_sort_key, reverse=reverse)
             else:
                 media = natsorted(media, key=func_sort_key(alg), alg=NS_OPTS | ns.DEFAULT, reverse=reverse)

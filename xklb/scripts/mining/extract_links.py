@@ -1,7 +1,7 @@
 import argparse
 
 from xklb import usage
-from xklb.utils import consts, iterables, printing, strings, web
+from xklb.utils import arg_utils, consts, iterables, printing, strings, web
 from xklb.utils.log_utils import log
 
 
@@ -219,20 +219,9 @@ def extract_links() -> None:
     if args.scroll:
         web.load_selenium(args)
     try:
-        if args.file:
-            with open(args.file) as f:
-                for line in f:
-                    url = line.rstrip("\n")
-                    if url in ["", '""', "\n"]:
-                        continue
-                    for found_urls in get_inner_urls(args, line):
-                        print_or_download(args, found_urls)
-        else:
-            for url in args.paths:
-                if url in ["", '""', "\n"]:
-                    continue
-                for found_urls in get_inner_urls(args, url):
-                    print_or_download(args, found_urls)
+        for url in arg_utils.gen_urls(args):
+            for found_urls in get_inner_urls(args, url):
+                print_or_download(args, found_urls)
     finally:
         if args.scroll:
             web.quit_selenium(args)

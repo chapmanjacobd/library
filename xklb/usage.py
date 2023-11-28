@@ -1385,7 +1385,7 @@ siteadd = """library site-add DATABASE PATH ... [--auto-pager] [--poke] [--local
     Run with `-vv` to see and interact with the browser
 """
 
-process_audio = """library process-audio PATH ... [--always-split] [--split-longer-than SPLIT_IF_OVER_DURATION] [--min-split-segment MIN_SPLIT_SEGMENT] [--dry-run]
+process_audio = """library process-audio PATH ... [--always-split] [--split-longer-than DURATION] [--min-split-segment SECONDS] [--dry-run]
 
     Convert audio to Opus. Optionally split up long tracks into multiple files.
 

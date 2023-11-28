@@ -4,7 +4,7 @@ from io import StringIO
 from pathlib import Path
 
 from xklb import usage
-from xklb.utils import consts, db_utils, iterables, objects, web
+from xklb.utils import arg_utils, consts, db_utils, iterables, objects, web
 from xklb.utils.log_utils import log
 
 
@@ -193,17 +193,7 @@ def site_add(args=None) -> None:
 
     web.load_selenium(args, wire=True)
     try:
-        if args.file:
-            with open(args.file) as f:
-                for line in f:
-                    url = line.rstrip("\n")
-                    if url in ["", '""', "\n"]:
-                        continue
-                    load_page(args, url)
-        else:
-            for url in args.paths:
-                if url in ["", '""', "\n"]:
-                    continue
-                load_page(args, url)
+        for url in arg_utils.gen_urls(args):
+            load_page(args, url)
     finally:
         web.quit_selenium(args)
