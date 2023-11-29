@@ -353,9 +353,18 @@ def download(args, m) -> None:
         func_opts["writeautomaticsub"] = args.auto_subs
         func_opts["postprocessors"].append({"key": "FFmpegEmbedSubtitle"})
 
+    def yt_cli_to_api(opts):
+        default = yt_dlp.parse_options([]).ydl_opts
+        supplied = yt_dlp.parse_options(opts).ydl_opts
+        diff = {k: v for k, v in supplied.items() if default[k] != v}
+        if diff.get("postprocessors"):
+            diff["postprocessors"] = [pp for pp in diff["postprocessors"] if pp not in default["postprocessors"]]
+        return diff
+
+    extra_args = yt_cli_to_api(args.unk)
     ydl_opts = tube_opts(
         args,
-        func_opts=func_opts,
+        func_opts=func_opts | extra_args,
         playlist_opts=m.get("extractor_config", "{}"),
     )
 

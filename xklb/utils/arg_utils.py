@@ -5,6 +5,8 @@ from xklb.utils import consts, db_utils, iterables
 from xklb.utils.consts import SC
 from xklb.utils.iterables import flatten
 
+STDIN_DASH = ["-"]
+
 
 class ArgparseList(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
@@ -40,7 +42,7 @@ class ArgparseDict(argparse.Action):
 
 class ArgparseArgsOrStdin(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
-        if values == ["-"] or not values:
+        if values == STDIN_DASH:
             lines = sys.stdin.readlines()
             if not lines or (len(lines) == 1 and lines[0].strip() == ""):
                 lines = None

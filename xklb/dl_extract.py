@@ -102,8 +102,12 @@ def parse_args():
 
     parser.add_argument("database", help=argparse.SUPPRESS)
     parser.add_argument("playlists", nargs="*", action=arg_utils.ArgparseArgsOrStdin, help=argparse.SUPPRESS)
-    args = parser.parse_intermixed_args()
+    args, unk = parser.parse_known_intermixed_args()
     args.defaults = []
+
+    if unk and not args.profile in (DBType.video, DBType.audio):
+        parser.error(f"unrecognized arguments: {" ".join(unk)}")
+    args.unk = unk
 
     if args.duration:
         args.duration = sql_utils.parse_human_to_sql(nums.human_to_seconds, "duration", args.duration)

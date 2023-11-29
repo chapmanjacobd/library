@@ -56,7 +56,7 @@ def parse_args(action, usage) -> argparse.Namespace:
     if action == SC.tubeadd:
         parser.add_argument("--insert-only", action="store_true")
         parser.add_argument("--insert-only-playlists", action="store_true")
-        parser.add_argument("playlists", nargs="*", action=arg_utils.ArgparseArgsOrStdin, help=argparse.SUPPRESS)
+        parser.add_argument("playlists", nargs="*", default=arg_utils.STDIN_DASH, action=arg_utils.ArgparseArgsOrStdin)
 
     args = parser.parse_intermixed_args()
     args.action = action
