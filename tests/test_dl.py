@@ -29,6 +29,7 @@ def test_yt():
         subtitle_languages=None,
         subs=False,
         auto_subs=False,
+        unk=["--no-write-thumbnail"],
     )  # remember to add args to dl_extract if they need to be added here
     args.db = connect(args)
     download(args, {"path": PLAYLIST_VIDEO_URL, "extractor_config": "{}"})
