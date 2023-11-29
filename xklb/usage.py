@@ -235,12 +235,10 @@ def play(action) -> str:
             - library {action} -O path       # path algorithm and parent, stem values (path_ps)
             - library {action} -O path_path  # path algorithm and path values
 
-        Additionally, there is a separate option that will query the database for more media, even if you initially chose a random subset:
+        Also, if you are using --random you need to fetch sibling media to play the media in order:
 
-            - library {action} -O ordinal
-            - library {action} -O ordinal-no-filter  # ignores most filters
-            - library {action} -O ordinal-no-filter-no-fts  # above, plus ignores fts and (include/exclude) filter during ordinal search
-            - library {action} -O ordinal-no-filter-no-fts-parent  # above, plus starts search with parent folder
+            - library {action} --random --fetch-siblings always -O
+            - library {action} --random --fetch-siblings if-audiobook -O
 
         If searching by a specific subpath it may be preferable to just sort by path instead
         library {action} d/planet.earth.2024/ -u path

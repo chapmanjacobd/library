@@ -182,7 +182,7 @@ def load_page(args, path):
         else:
             del args.driver.requests  # clear processed responses
 
-            web.save_html_table(args, StringIO(web.extract_html_text(args.driver)))
+            web.save_html_table(args, StringIO(web.selenium_extract_html(args.driver)))
 
             if args.verbose < consts.LOG_DEBUG:
                 break  # if browser hidden, exit

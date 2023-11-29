@@ -2,7 +2,7 @@ import argparse
 from pathlib import Path
 
 from xklb import usage
-from xklb.utils import arg_utils, file_utils, iterables, objects, sql_utils
+from xklb.utils import arg_utils, file_utils, iterables, objects, pd_utils, sql_utils
 from xklb.utils.consts import DEFAULT_FILE_ROWS_READ_LIMIT
 from xklb.utils.log_utils import log
 from xklb.utils.printing import print_df, print_series
@@ -45,6 +45,7 @@ def parse_args():
     parser.add_argument("--words-nums-map")
     parser.add_argument("--mcda-method")
     parser.add_argument("--nodata", type=int, default=0)
+    parser.add_argument("--clean", action="store_true")
     parser.add_argument("--sort", "-u", default="random()")
     parser.add_argument("--verbose", "-v", action="count", default=0)
 
@@ -127,11 +128,10 @@ def auto_mcda(args, df, alternatives, minimize_cols):
     borda_points = borda(votes_df, weights=[1] * len(votes))
     borda_df = pd.DataFrame({"BORDA": borda_points}, index=df.index)
 
-    # TODO: warning if a criterion accounts for less than 3% of variance (PCA)
+    # TODO: PCA option and warning if a criterion accounts for less than 3% of variance
 
-    df = pd.concat((df, votes_df, borda_df), axis=1).sort_values(
-        getattr(args, "mcda_method", "TOPSIS"), ascending=False
-    )
+    df = pd.concat((df, votes_df, borda_df), axis=1)
+    df = df.sort_values(getattr(args, "mcda_method", None) or "TOPSIS", ascending=False)
     return df
 
 
@@ -153,7 +153,9 @@ def sort(args, df, values):
 
 
 def group_sort_by(args, folders):
-    if args.sort_by.startswith("mcda "):
+    if args.sort_by is None:
+        sort_func = lambda x: x["size"] / x["exists"]
+    elif args.sort_by.startswith("mcda "):
         import pandas as pd
 
         if not isinstance(folders, pd.DataFrame):
@@ -162,16 +164,14 @@ def group_sort_by(args, folders):
         df = sort(args, folders, values)
         return df.drop(columns=["TOPSIS", "MABAC", "SPOTIS", "BORDA"]).to_dict(orient="records")
     else:
-        sort_func = lambda x: x["size"] / x["exists"]
-        if args.sort_by:
-            if args.sort_by == "played_ratio":
-                sort_func = lambda x: x["played"] / x["deleted"] if x["deleted"] else 0
-            elif args.sort_by == "deleted_ratio":
-                sort_func = lambda x: x["deleted"] / x["played"] if x["played"] else 0
-            else:
-                sort_func = sql_utils.sort_like_sql(args.sort_by)
+        if args.sort_by == "played_ratio":
+            sort_func = lambda x: x["played"] / x["deleted"] if x["deleted"] else 0
+        elif args.sort_by == "deleted_ratio":
+            sort_func = lambda x: x["deleted"] / x["played"] if x["played"] else 0
+        else:
+            sort_func = sql_utils.sort_like_sql(args.sort_by)
 
-        return sorted(folders, key=sort_func)
+    return sorted(folders, key=sort_func)
 
 
 def print_info(args, df):
@@ -203,6 +203,12 @@ def print_info(args, df):
     else:
         alternatives = df.select_dtypes("number")
     alternatives = alternatives.drop(columns=args.columns_exclude)
+
+    if alternatives.empty:
+        print("No alternatives could be identified. The data likely needs to be cleaned...")
+        print("You can try running with --clean but compare the output with the original data:")
+        print_df(df.head(5))
+        return
 
     minimize_cols = set(args.minimize_columns)
     maximize_cols = set(alternatives.columns) - minimize_cols
@@ -252,6 +258,7 @@ def file_mcda(args, path):
 
     for df in dfs:
         print(f"## {path}:{df.name}")
+        df = pd_utils.convert_dtypes(df, clean=args.clean)
         print_info(args, df)
 
 

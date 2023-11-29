@@ -95,7 +95,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.2.170)
+    xk media library subcommands (v2.2.171)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -779,12 +779,10 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
             - library watch -O path       # path algorithm and parent, stem values (path_ps)
             - library watch -O path_path  # path algorithm and path values
 
-        Additionally, there is a separate option that will query the database for more media, even if you initially chose a random subset:
+        Also, if you are using --random you need to fetch sibling media to play the media in order:
 
-            - library watch -O ordinal
-            - library watch -O ordinal-no-filter  # ignores most filters
-            - library watch -O ordinal-no-filter-no-fts  # above, plus ignores fts and (include/exclude) filter during ordinal search
-            - library watch -O ordinal-no-filter-no-fts-parent  # above, plus starts search with parent folder
+            - library watch --random --fetch-siblings always -O
+            - library watch --random --fetch-siblings if-audiobook -O
 
         If searching by a specific subpath it may be preferable to just sort by path instead
         library watch d/planet.earth.2024/ -u path

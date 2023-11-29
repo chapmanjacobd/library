@@ -1,4 +1,4 @@
-import argparse
+import argparse, os
 from copy import deepcopy
 from typing import List
 
@@ -22,7 +22,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def get_duplicates(args) -> List[dict]:
-    query = """
+    query = f"""
     WITH m1 as (
         SELECT
             *
@@ -59,7 +59,7 @@ def get_duplicates(args) -> List[dict]:
         AND media_fts.path MATCH '"'||m1.extractor_id||'"'
         AND m2.PATH LIKE '%['||m1.extractor_id||']%'
     ORDER BY 1=1
-        , length(m2.path)-length(REPLACE(m2.path, '/', '')) desc
+        , length(m2.path)-length(REPLACE(m2.path, '{os.sep}', '')) desc
         , length(m2.path)-length(REPLACE(m2.path, '.', ''))
         , length(m2.path)
         , m2.time_modified desc

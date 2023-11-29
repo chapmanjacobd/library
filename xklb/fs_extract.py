@@ -401,12 +401,12 @@ def fs_update(args=None) -> None:
 
     fs_playlists = list(
         args.db.query(
-            """
+            f"""
             SELECT *
             FROM playlists
             WHERE extractor_key = 'Local'
             ORDER BY
-                length(path)-length(REPLACE(path, '/', '')) desc
+                length(path)-length(REPLACE(path, '{os.sep}', '')) desc
                 , path
             """,
         ),

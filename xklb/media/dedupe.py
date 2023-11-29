@@ -1,4 +1,4 @@
-import argparse, re, tempfile
+import argparse, os, re, tempfile
 from copy import deepcopy
 from pathlib import Path
 from typing import List
@@ -154,7 +154,7 @@ def get_rows(args) -> List[dict]:
         and path not like 'http%'
         {" ".join(args.filter_sql)}
     ORDER BY 1=1
-        , length(path)-length(REPLACE(path, '/', '')) DESC
+        , length(path)-length(REPLACE(path, '{os.sep}', '')) DESC
         , length(path)-length(REPLACE(path, '.', ''))
         , length(path)
         , size DESC
@@ -172,7 +172,7 @@ def get_music_duplicates(args) -> List[dict]:
     query = f"""
     SELECT
         m1.path keep_path
-        -- , length(m1.path)-length(REPLACE(m1.path, '/', '')) num_slash
+        -- , length(m1.path)-length(REPLACE(m1.path, '{os.sep}', '')) num_slash
         -- , length(m1.path)-length(REPLACE(m1.path, '.', '')) num_dot
         -- , length(m1.path) len_p
         , m2.path duplicate_path
@@ -197,7 +197,7 @@ def get_music_duplicates(args) -> List[dict]:
         {', m1.subtitle_count > 0 DESC' if 'subtitle_count' in m_columns else ''}
         {', m1.audio_count > 0 DESC' if 'audio_count' in m_columns else ''}
         {', m1.uploader IS NOT NULL DESC' if 'uploader' in m_columns else ''}
-        , length(m1.path)-length(REPLACE(m1.path, '/', '')) DESC
+        , length(m1.path)-length(REPLACE(m1.path, '{os.sep}', '')) DESC
         , length(m1.path)-length(REPLACE(m1.path, '.', ''))
         , length(m1.path)
         , m1.size DESC
@@ -217,7 +217,7 @@ def get_id_duplicates(args) -> List[dict]:
     query = f"""
     SELECT
         m1.path keep_path
-        -- , length(m1.path)-length(REPLACE(m1.path, '/', '')) num_slash
+        -- , length(m1.path)-length(REPLACE(m1.path, '{os.sep}', '')) num_slash
         -- , length(m1.path)-length(REPLACE(m1.path, '.', '')) num_dot
         -- , length(m1.path) len_p
         , m2.path duplicate_path
@@ -237,7 +237,7 @@ def get_id_duplicates(args) -> List[dict]:
         , m1.video_count > 0 DESC
         {', m1.subtitle_count > 0 DESC' if 'subtitle_count' in m_columns else ''}
         , m1.audio_count DESC
-        , length(m1.path)-length(REPLACE(m1.path, '/', '')) DESC
+        , length(m1.path)-length(REPLACE(m1.path, '{os.sep}', '')) DESC
         , length(m1.path)-length(REPLACE(m1.path, '.', ''))
         , length(m1.path)
         , m1.size DESC
@@ -257,7 +257,7 @@ def get_title_duplicates(args) -> List[dict]:
     query = f"""
     SELECT
         m1.path keep_path
-        -- , length(m1.path)-length(REPLACE(m1.path, '/', '')) num_slash
+        -- , length(m1.path)-length(REPLACE(m1.path, '{os.sep}', '')) num_slash
         -- , length(m1.path)-length(REPLACE(m1.path, '.', '')) num_dot
         -- , length(m1.path) len_p
         , m2.path duplicate_path
@@ -277,7 +277,7 @@ def get_title_duplicates(args) -> List[dict]:
         {', m1.subtitle_count > 0 DESC' if 'subtitle_count' in m_columns else ''}
         , m1.audio_count DESC
         , m1.uploader IS NOT NULL DESC
-        , length(m1.path)-length(REPLACE(m1.path, '/', '')) DESC
+        , length(m1.path)-length(REPLACE(m1.path, '{os.sep}', '')) DESC
         , length(m1.path)-length(REPLACE(m1.path, '.', ''))
         , length(m1.path)
         , m1.size DESC
@@ -297,7 +297,7 @@ def get_duration_duplicates(args) -> List[dict]:
     query = f"""
     SELECT
         m1.path keep_path
-        -- , length(m1.path)-length(REPLACE(m1.path, '/', '')) num_slash
+        -- , length(m1.path)-length(REPLACE(m1.path, '{os.sep}', '')) num_slash
         -- , length(m1.path)-length(REPLACE(m1.path, '.', '')) num_dot
         -- , length(m1.path) len_p
         , m2.path duplicate_path
@@ -317,7 +317,7 @@ def get_duration_duplicates(args) -> List[dict]:
         {', m1.subtitle_count > 0 DESC' if 'subtitle_count' in m_columns else ''}
         , m1.audio_count DESC
         , m1.uploader IS NOT NULL DESC
-        , length(m1.path)-length(REPLACE(m1.path, '/', '')) DESC
+        , length(m1.path)-length(REPLACE(m1.path, '{os.sep}', '')) DESC
         , length(m1.path)-length(REPLACE(m1.path, '.', ''))
         , length(m1.path)
         , m1.size DESC
@@ -398,7 +398,7 @@ def dedupe_media() -> None:
                     video_count > 0 DESC
                     {', subtitle_count > 0 DESC' if 'subtitle_count' in m_columns else ''}
                     , audio_count DESC
-                    , length(path)-length(REPLACE(path, '/', '')) DESC
+                    , length(path)-length(REPLACE(path, '{os.sep}', '')) DESC
                     , length(path)-length(REPLACE(path, '.', ''))
                     , length(path)
                     , size DESC

@@ -2,8 +2,7 @@ import argparse, os, shlex, sys
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-import xklb.db_media
-from xklb import history, tube_backend, usage
+from xklb import db_media, history, tube_backend, usage
 from xklb.media import media_player, media_printer
 from xklb.scripts import big_dirs, mcda
 from xklb.utils import consts, db_utils, devices, file_utils, iterables, nums, objects, processes, sql_utils
@@ -132,6 +131,7 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     parser.add_argument("--local-media-only", "--local", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--safe", "-safe", action="store_true", help="Skip generic URLs")
 
+    parser.add_argument("--fetch-siblings")
     parser.add_argument("--sibling", "--episode", action="store_true")
     parser.add_argument("--solo", action="store_true")
 
@@ -371,7 +371,7 @@ def construct_query(args) -> Tuple[str, dict]:
             FROM {args.table} m
             LEFT JOIN history h on h.media_id = m.id
             WHERE 1=1
-                {xklb.db_media.filter_args_sql(args, m_columns)}
+                {db_media.filter_args_sql(args, m_columns)}
                 {" ".join(args.filter_sql)}
                 {" ".join([" and " + w for w in args.where if not any(a in w for a in aggregate_filter_columns)])}
             GROUP BY m.id, m.path
@@ -482,6 +482,7 @@ def process_playqueue(args) -> None:
             args.safe,
             args.play_in_order,
             args.big_dirs,
+            args.fetch_siblings,
             args.related,
             args.cluster_sort,
             args.folder,
@@ -495,77 +496,11 @@ def process_playqueue(args) -> None:
     media = list(args.db.query(query, bindings))
     log.debug("query: %s", t.elapsed())
 
+    if args.fetch_siblings:
+        media = db_media.get_sibling_media(args, media)
+
     if args.play_in_order:
-        if args.play_in_order.startswith("ordinal"):
-            if args.play_in_order == "ordinal":
-                args.play_in_order = consts.SIMILAR
-            elif args.play_in_order in ("ordinal-no-filter", "ordinal_no_filter"):
-                args.play_in_order = consts.SIMILAR_NO_FILTER
-            elif args.play_in_order in ("ordinal-no-filter-no-fts", "ordinal_no_filter_no_fts"):
-                args.play_in_order = consts.SIMILAR_NO_FILTER_NO_FTS
-            elif args.play_in_order in ("ordinal-no-filter-no-fts-parent", "ordinal_no_filter_no_fts_parent"):
-                args.play_in_order = consts.SIMILAR_NO_FILTER_NO_FTS_PARENT
-        else:
-            from natsort import natsorted, ns, os_sorted
-
-            reverse = False
-            if args.play_in_order.startswith("reverse_"):
-                args.play_in_order = args.play_in_order.replace("reverse_", "", 1)
-                reverse = True
-
-            compat = False
-            for opt in ("compat_", "nfkd_"):
-                if args.play_in_order.startswith(opt):
-                    args.play_in_order = args.play_in_order.replace(opt, "", 1)
-                    compat = True
-
-            if "_" in args.play_in_order:
-                alg, sort_key = args.play_in_order.split("_", 1)
-            else:
-                alg, sort_key = args.play_in_order, "ps"
-
-            def func_sort_key(sort_key):
-                def fn_key(d):
-                    if sort_key in ("parent", "stem", "ps", "pts"):
-                        path = Path(d["path"])
-
-                        if sort_key == "parent":
-                            return path.parent
-                        elif sort_key == "stem":
-                            return path.stem
-                        elif sort_key == "ps":
-                            return (path.parent, path.stem)
-                        else:  # sort_key == 'pts'
-                            return (path.parent, d["title"], path.stem)
-                    else:
-                        return d[sort_key]
-
-                return fn_key
-
-            media_sort_key = func_sort_key(sort_key)
-
-            NS_OPTS = ns.NUMAFTER | ns.NOEXP | ns.NANLAST
-            if compat:
-                NS_OPTS = NS_OPTS | ns.COMPATIBILITYNORMALIZE | ns.GROUPLETTERS
-
-            if alg == "natural":
-                media = natsorted(media, key=media_sort_key, alg=NS_OPTS | ns.DEFAULT, reverse=reverse)
-            elif alg in ("nspath", "path"):
-                media = natsorted(media, key=media_sort_key, alg=NS_OPTS | ns.PATH, reverse=reverse)
-            elif alg == "ignorecase":
-                media = natsorted(media, key=media_sort_key, alg=NS_OPTS | ns.IGNORECASE, reverse=reverse)
-            elif alg == "lowercase":
-                media = natsorted(media, key=media_sort_key, alg=NS_OPTS | ns.LOWERCASEFIRST, reverse=reverse)
-            elif alg in ("human", "locale"):
-                media = natsorted(media, key=media_sort_key, alg=NS_OPTS | ns.LOCALE, reverse=reverse)
-            elif alg == "signed":
-                media = natsorted(media, key=media_sort_key, alg=NS_OPTS | ns.REAL, reverse=reverse)
-            elif alg == "os":
-                media = os_sorted(media, key=media_sort_key, reverse=reverse)
-            elif alg == "python":
-                media = sorted(media, key=media_sort_key, reverse=reverse)
-            else:
-                media = natsorted(media, key=func_sort_key(alg), alg=NS_OPTS | ns.DEFAULT, reverse=reverse)
+        media = db_media.natsort_media(args, media)
 
     if args.partial:
         media = history_sort(args, media)
@@ -583,7 +518,7 @@ def process_playqueue(args) -> None:
         log.debug("tube_backend.is_supported: %s", t.elapsed())
 
     if args.related >= consts.RELATED:
-        media = xklb.db_media.get_related_media(args, media[0])
+        media = db_media.get_related_media(args, media[0])
         log.debug("player.get_related_media: %s", t.elapsed())
 
     if args.big_dirs:
@@ -594,7 +529,7 @@ def process_playqueue(args) -> None:
         log.debug("process_bigdirs: %s", t.elapsed())
         dirs = list(reversed([d["path"] for d in dirs]))
         if "limit" in args.defaults:
-            media = xklb.db_media.get_dir_media(args, dirs)
+            media = db_media.get_dir_media(args, dirs)
             log.debug("get_dir_media: %s", t.elapsed())
         else:
             media = []

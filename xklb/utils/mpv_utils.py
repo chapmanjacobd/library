@@ -59,7 +59,7 @@ def get_playhead(
     try:
         mpv_playhead = nums.safe_int(mpv_watchlater_value(metadata_path, "start"))
     except Exception as e:
-        log.debug(e)
+        # log.debug(e)
         mpv_playhead = None
 
     log.debug("mpv_playhead %s", mpv_playhead)
