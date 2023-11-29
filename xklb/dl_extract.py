@@ -106,7 +106,7 @@ def parse_args():
     args.defaults = []
 
     if unk and not args.profile in (DBType.video, DBType.audio):
-        parser.error(f"unrecognized arguments: {" ".join(unk)}")
+        parser.error(f"unrecognized arguments: {' '.join(unk)}")
     args.unk = unk
 
     if args.duration:
