@@ -27,7 +27,7 @@ def markdown_links():
     parser.add_argument("--selenium", action="store_true")
     parser.add_argument("-v", "--verbose", action="count", default=0)
 
-    parser.add_argument("paths", nargs="*", action=arg_utils.ArgparseArgsOrStdin)
+    parser.add_argument("paths", nargs="*", default=arg_utils.STDIN_DASH, action=arg_utils.ArgparseArgsOrStdin)
     args = parser.parse_args()
 
     import requests

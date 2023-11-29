@@ -23,7 +23,7 @@ SUB_TEMP_DIR = str(Path(TEMP_DIR) / "library_temp_subtitles" / random_string())
 DEFAULT_MPV_LISTEN_SOCKET = str(Path(TEMP_SCRIPT_DIR) / "mpv_socket")
 DEFAULT_MPV_WATCH_SOCKET = str(Path("~/.config/mpv/socket").expanduser().resolve())
 
-mpv_dir = Path("~/.local/state/mpv/").expanduser().resolve()
+mpv_dir = Path("~/.local/state/mpv/watch_later/").expanduser().resolve()
 if mpv_dir.exists():
     DEFAULT_MPV_WATCH_LATER = str(mpv_dir)
 else:
