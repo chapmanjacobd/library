@@ -1,5 +1,6 @@
-import os, shlex, shutil, tempfile, time
+import mimetypes, os, shlex, shutil, tempfile, time
 from functools import wraps
+from io import StringIO
 from pathlib import Path
 from shutil import which
 from typing import Union
@@ -148,8 +149,10 @@ def get_file_encoding(path):
     import chardet
 
     if path.startswith("http"):
-        response = web.requests_session().get(path, stream=True)
         detector = chardet.UniversalDetector()
+        response = web.requests_session().get(path, stream=True)
+        response.raw.decode_content = True
+
         num_bytes = 0
         for chunk in response.iter_content(chunk_size=16_384):
             if num_bytes > 1048576:  # 1MiB
@@ -176,10 +179,13 @@ def head_foot_stream(url, head_len, foot_len):
     import io
 
     head_response = web.requests_session().get(url, stream=True)
+    head_response.raw.decode_content = True
     head_response.raise_for_status()
+
     head_bytes = head_response.raw.read(head_len)
 
     foot_response = web.requests_session().get(url, stream=True, headers={"Range": f"bytes={-foot_len}"})
+    foot_response.raw.decode_content = True
     foot_bytes = foot_response.raw.read(foot_len)
 
     stream = io.BytesIO(head_bytes + foot_bytes)
@@ -187,8 +193,6 @@ def head_foot_stream(url, head_len, foot_len):
 
 
 def mimetype(path):
-    import mimetypes
-
     import puremagic
 
     p = Path(path)
@@ -287,6 +291,10 @@ def read_file_to_dataframes(
         mimetype = mimetype.strip().lower()
     log.info(mimetype)
 
+    if mimetype is None:
+        msg = f"{path}: File type could not be determined. Pass in --filetype"
+        raise ValueError(msg)
+
     if mimetype in ("sqlite", "sqlite3", "sqlite database file"):
         import pandas as pd
         from sqlite_utils import Database
@@ -372,7 +380,10 @@ def read_file_to_dataframes(
         "html",
         "htm",
         "text/html",
+        "html document",
     ):
+        if path.startswith("http"):
+            path = StringIO(web.extract_html(path))
         dfs = pd.read_html(path, skiprows=start_row, encoding=encoding)
     elif mimetype in ("stata",):
         dfs = [pd.read_stata(path)]
@@ -380,11 +391,8 @@ def read_file_to_dataframes(
         dfs = [pd.read_feather(path)]
     elif mimetype in ("orc",):
         dfs = [pd.read_orc(path)]
-    elif mimetype in (
-        "xml",
-        "text/xml",
-    ):
-        dfs = [pd.read_xml(path, encoding=encoding)]
+    elif "xml" in mimetype:
+        dfs = [pd.read_xml(path, encoding=encoding or "utf-8")]
     else:
         msg = f"{path}: Unsupported file type: {mimetype}"
         raise ValueError(msg)

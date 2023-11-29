@@ -194,6 +194,8 @@ def download_url(url, output_path=None, output_prefix=None, chunk_size=8 * 1024 
             if local_size == remote_size:
                 log.warning(f"Download skipped. File with same size already exists: {output_path}")
                 return
+            elif local_size < 5242880:  # TODO: check if first few kilobytes match what already exists locally...
+                p.unlink()
             else:
                 headers = {"Range": f"bytes={local_size}-"}
                 response = requests_session().get(url, headers=headers, stream=True)
@@ -256,12 +258,7 @@ def save_html_table(args, html_file):
                 df[[col, col + "_url"]] = pd.DataFrame(df[col].tolist(), index=df.index)
         df = df.dropna(axis=1, how="all")  # drop empty columns
 
-        for col in df.columns:
-            try:
-                df.loc[:, col] = df[col].str.replace(",", "").astype(float)
-            except ValueError:
-                continue  # column was not numeric after all (•́⍜•̀), skip
-        df = df.convert_dtypes()
+        df = pd_utils.convert_dtypes(df)
 
         tables.append({"table_name": None, "data": df.to_dict(orient="records")})
 
@@ -328,7 +325,14 @@ def scroll_down(driver):
     return new_height
 
 
-def extract_html_text(driver):
+def extract_html(url) -> str:
+    r = requests_session().get(url, timeout=120, headers=headers)
+    r.raise_for_status()
+    markup = r.text
+    return markup
+
+
+def selenium_extract_html(driver) -> str:
     # trigger rollover events
     driver.execute_script(
         "(function(){function k(x) { if (x.onmouseover) { x.onmouseover(); x.backupmouseover = x.onmouseover; x.backupmouseout = x.onmouseout; x.onmouseover = null; x.onmouseout = null; } else if (x.backupmouseover) { x.onmouseover = x.backupmouseover; x.onmouseout = x.backupmouseout; x.onmouseover(); x.onmouseout(); } } var i,x; for(i=0; x=document.links[i]; ++i) k(x); for (i=0; x=document.images[i]; ++i) k(x); })()"
@@ -346,7 +350,7 @@ def infinite_scroll(driver):
     last_height = driver.execute_script("return document.body.scrollHeight")
     while True:
         new_height = scroll_down(driver)
-        yield extract_html_text(driver)
+        yield selenium_extract_html(driver)
 
         if new_height == last_height:  # last page
             time.sleep(5)  # try once more in case slow page
@@ -355,4 +359,4 @@ def infinite_scroll(driver):
                 break
         last_height = new_height
 
-    yield extract_html_text(driver)
+    yield selenium_extract_html(driver)

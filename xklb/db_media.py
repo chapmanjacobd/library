@@ -1,8 +1,7 @@
 import argparse, os, sqlite3, sys
-from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Collection, Dict, List, Optional
 
 from dateutil import parser
 
@@ -298,84 +297,147 @@ def filter_args_sql(args, m_columns):
     """
 
 
-def get_ordinal_media(args, m: Dict, ignore_paths=None) -> Dict:
-    # TODO: maybe use get_dir_media(... args.limit='inf') and sort with natsort instead
-    if ignore_paths is None:
-        ignore_paths = []
+def get_dir_media(args, dirs: Collection, include_subdirs=False) -> List[Dict]:
+    if len(dirs) == 0:
+        return processes.no_media_found()
 
     m_columns = db_utils.columns(args, "media")
 
-    cols = args.cols or ["path", "title", "duration", "size", "subtitle_count", "is_dir"]
-    args.select_sql = "\n        , ".join([c for c in cols if c in m_columns or c in ["*"]])
-
-    total_media = args.db.execute("select count(*) val from media").fetchone()[0]
-    candidate = deepcopy(m["path"])
-    if args.play_in_order >= consts.SIMILAR_NO_FILTER_NO_FTS_PARENT:
-        candidate = str(Path(candidate).parent)
-
-    similar_videos = []
-    while len(similar_videos) <= 1:
-        if candidate == "":
-            return m
-
-        remove_chars = strings.last_chars(candidate)
-
-        new_candidate = candidate[: -len(remove_chars)]
-        log.debug(f"Matches for '{new_candidate}':")
-
-        if candidate in ("" or new_candidate):
-            return m
-
-        candidate = new_candidate
-        query = f"""WITH m as (
-                SELECT
-                    SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
-                    , MIN(h.time_played) time_first_played
-                    , MAX(h.time_played) time_last_played
-                    , FIRST_VALUE(h.playhead) OVER (PARTITION BY h.media_id ORDER BY h.time_played DESC) playhead
-                    , {args.select_sql}
-                FROM media m
-                LEFT JOIN history h on h.media_id = m.id
-                WHERE 1=1
-                    AND COALESCE(time_deleted, 0)=0
-                    and path like :candidate
-                    {'' if args.play_in_order >= consts.SIMILAR_NO_FILTER_NO_FTS else f'and m.id in (select id from {args.table})'}
-                    {filter_args_sql(args, m_columns)}
-                    {'' if args.play_in_order >= consts.SIMILAR_NO_FILTER else (" ".join(args.filter_sql) or '')}
-                    {"and path not in ({})".format(",".join([f":ignore_path{i}" for i in range(len(ignore_paths))])) if len(ignore_paths) > 0 else ''}
-                GROUP BY m.id, m.path
+    if include_subdirs:
+        filter_paths = "AND (" + " OR ".join([f"path LIKE :subpath{i}" for i in range(len(dirs))]) + ")"
+    else:
+        filter_paths = (
+            "AND ("
+            + " OR ".join(
+                [f"(path LIKE :subpath{i} and path not like :subpath{i} || '%{os.sep}%')" for i in range(len(dirs))]
             )
+            + ")"
+        )
+
+    query = f"""WITH m as (
             SELECT
-                *
-            FROM m
-            ORDER BY play_count, path
-            LIMIT 1000
-            """
+                SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
+                , MIN(h.time_played) time_first_played
+                , MAX(h.time_played) time_last_played
+                , FIRST_VALUE(h.playhead) OVER (PARTITION BY h.media_id ORDER BY h.time_played DESC) playhead
+                , {args.select_sql}
+                , m.*
+            FROM media m
+            LEFT JOIN history h on h.media_id = m.id
+            WHERE 1=1
+                and m.id in (select id from {args.table})
+                {filter_args_sql(args, m_columns)}
+                {filter_paths}
+            GROUP BY m.id, m.path
+        )
+        SELECT *
+        FROM m
+        ORDER BY play_count
+            , m.path LIKE "http%"
+            {'' if 'sort' in args.defaults else ', ' + args.sort}
+            , path
+        LIMIT 10000
+    """
 
-        ignore_path_params = {f"ignore_path{i}": value for i, value in enumerate(ignore_paths)}
-        bindings = {"candidate": candidate + "%", **ignore_path_params}
-        if args.play_in_order >= consts.SIMILAR_NO_FILTER:
-            if args.include or args.exclude:
-                bindings = {**bindings, **{k: v for k, v in args.filter_bindings.items() if k.startswith("FTS")}}
-        else:
-            bindings = {**bindings, **args.filter_bindings}
+    subpath_params = {f"subpath{i}": value + "%" for i, value in enumerate(dirs)}
 
-        similar_videos = list(args.db.query(query, bindings))
-        log.debug(similar_videos)
+    bindings = {**subpath_params}
+    bindings = {**bindings, **{k: v for k, v in args.filter_bindings.items() if k.startswith("FTS")}}
 
-        TOO_MANY_SIMILAR = 99
-        if len(similar_videos) > TOO_MANY_SIMILAR or len(similar_videos) == total_media:
-            return m
+    media = list(args.db.query(query, bindings))
+    log.debug("len(dir_media) = %s", len(media))
+    if len(media) == 0:
+        log.debug("dir_media dirs %s", dirs)
+    else:
+        log.debug("get_dir_media[0] %s", media[0:1])
 
-        if len(similar_videos) > 1:
-            commonprefix = os.path.commonprefix([d["path"] for d in similar_videos])
-            log.debug(commonprefix)
-            PREFIX_LENGTH_THRESHOLD = 3
-            if len(Path(commonprefix).name) < PREFIX_LENGTH_THRESHOLD:
-                log.debug("Using commonprefix")
-                return m
+    return media
 
-    return similar_videos[0]
+
+def get_sibling_media(args, media):
+    if args.fetch_siblings == "always":
+        dirs = set(str(Path(d["path"]).parent) + os.sep for d in media)
+        media = get_dir_media(args, dirs)
+    elif args.fetch_siblings == "if-audiobook":
+        new_media = []
+        seen = set()
+        for d in media:
+            if "audiobook" in d["path"].lower():
+                parent = str(Path(d["path"]).parent) + os.sep
+                if parent not in seen:
+                    seen.add(parent)
+                    new_media.extend(get_dir_media(args, [parent])[0:1])
+            else:
+                new_media.append(d)
+        media = new_media
+
+    return media
+
+
+def natsort_media(args, media):
+    from natsort import natsorted, ns, os_sorted
+
+    reverse = False
+    if args.play_in_order.startswith("reverse_"):
+        args.play_in_order = args.play_in_order.replace("reverse_", "", 1)
+        reverse = True
+
+    compat = False
+    for opt in ("compat_", "nfkd_"):
+        if args.play_in_order.startswith(opt):
+            args.play_in_order = args.play_in_order.replace(opt, "", 1)
+            compat = True
+
+    if "_" in args.play_in_order:
+        alg, sort_key = args.play_in_order.split("_", 1)
+    else:
+        alg, sort_key = args.play_in_order, "ps"
+
+    def func_sort_key(sort_key):
+        def fn_key(d):
+            if sort_key in ("parent", "stem", "ps", "pts"):
+                path = Path(d["path"])
+
+                if sort_key == "parent":
+                    return path.parent
+                elif sort_key == "stem":
+                    return path.stem
+                elif sort_key == "ps":
+                    return (path.parent, path.stem)
+                else:  # sort_key == 'pts'
+                    return (path.parent, d["title"], path.stem)
+            else:
+                return d[sort_key]
+
+        return fn_key
+
+    media_sort_key = func_sort_key(sort_key)
+
+    NS_OPTS = ns.NUMAFTER | ns.NOEXP | ns.NANLAST
+    if compat:
+        NS_OPTS = NS_OPTS | ns.COMPATIBILITYNORMALIZE | ns.GROUPLETTERS
+
+    if alg == "natural":
+        media = natsorted(media, key=media_sort_key, alg=NS_OPTS | ns.DEFAULT, reverse=reverse)
+    elif alg in ("nspath", "path"):
+        media = natsorted(media, key=media_sort_key, alg=NS_OPTS | ns.PATH, reverse=reverse)
+    elif alg == "ignorecase":
+        media = natsorted(media, key=media_sort_key, alg=NS_OPTS | ns.IGNORECASE, reverse=reverse)
+    elif alg == "lowercase":
+        media = natsorted(media, key=media_sort_key, alg=NS_OPTS | ns.LOWERCASEFIRST, reverse=reverse)
+    elif alg in ("human", "locale"):
+        media = natsorted(media, key=media_sort_key, alg=NS_OPTS | ns.LOCALE, reverse=reverse)
+    elif alg == "signed":
+        media = natsorted(media, key=media_sort_key, alg=NS_OPTS | ns.REAL, reverse=reverse)
+    elif alg == "os":
+        media = os_sorted(media, key=media_sort_key, reverse=reverse)
+    elif alg == "python":
+        media = sorted(media, key=media_sort_key, reverse=reverse)
+    else:
+        media = natsorted(media, key=func_sort_key(alg), alg=NS_OPTS | ns.DEFAULT, reverse=reverse)
+
+    log.debug("natsort[0] %s", media[0:1])
+    return media
 
 
 def get_related_media(args, m: Dict) -> List[Dict]:
@@ -429,64 +491,8 @@ def get_related_media(args, m: Dict) -> List[Dict]:
     else:
         bindings = {**bindings, **args.filter_bindings}
 
-    related_videos = list(args.db.query(query, bindings))
-    log.debug(related_videos)
+    related_media = list(args.db.query(query, bindings))
+    log.debug(related_media)
+    log.debug("related_media[0] %s", related_media[0:1])
 
-    return [m, *related_videos]
-
-
-def get_dir_media(args, dirs: List, include_subdirs=False) -> List[Dict]:
-    if len(dirs) == 0:
-        return processes.no_media_found()
-
-    m_columns = db_utils.columns(args, "media")
-
-    if include_subdirs:
-        filter_paths = "AND (" + " OR ".join([f"path LIKE :subpath{i}" for i in range(len(dirs))]) + ")"
-    else:
-        filter_paths = (
-            "AND ("
-            + " OR ".join([f"(path LIKE :subpath{i} and path not like :subpath{i} || '/%')" for i in range(len(dirs))])
-            + ")"
-        )
-
-    query = f"""WITH m as (
-            SELECT
-                SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
-                , MIN(h.time_played) time_first_played
-                , MAX(h.time_played) time_last_played
-                , FIRST_VALUE(h.playhead) OVER (PARTITION BY h.media_id ORDER BY h.time_played DESC) playhead
-                , {args.select_sql}
-                , m.*
-            FROM media m
-            LEFT JOIN history h on h.media_id = m.id
-            WHERE 1=1
-                AND COALESCE(time_deleted, 0)=0
-                and m.id in (select id from {args.table})
-                {filter_args_sql(args, m_columns)}
-                {filter_paths}
-                {'' if args.related >= consts.DIRS_NO_FILTER else (" ".join(args.filter_sql) or '')}
-            GROUP BY m.id, m.path
-        )
-        SELECT *
-        FROM m
-        ORDER BY play_count
-            , m.path LIKE "http%"
-            {', random()' if args.random else ''}
-            {'' if 'sort' in args.defaults else ', ' + args.sort}
-            , path
-        {"LIMIT 10000" if 'limit' in args.defaults else str(args.limit)} {args.offset_sql}
-    """
-    subpath_params = {f"subpath{i}": value + "%" for i, value in enumerate(dirs)}
-
-    bindings = {**subpath_params}
-    if args.related >= consts.DIRS_NO_FILTER:
-        bindings = {**bindings, **{k: v for k, v in args.filter_bindings.items() if k.startswith("FTS")}}
-    else:
-        bindings = {**bindings, **args.filter_bindings}
-
-    subpath_videos = list(args.db.query(query, bindings))
-    log.debug(subpath_videos)
-    log.info("len(subpath_videos) = %s", len(subpath_videos))
-
-    return subpath_videos
+    return [m, *related_media]

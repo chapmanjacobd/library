@@ -8,8 +8,7 @@ from shutil import which
 from time import sleep
 from typing import Dict, List, Optional, Tuple
 
-import xklb.db_media
-from xklb import history
+from xklb import db_media, history
 from xklb.media import subtitle
 from xklb.post_actions import post_act
 from xklb.scripts import playback_control
@@ -362,7 +361,7 @@ class MediaPrefetcher:
                     if m["path"] in self.ignore_paths:
                         continue
 
-                    future = executor.submit(self.prep_media, m, self.ignore_paths)  # if self.args.prefetch > 1 else []
+                    future = executor.submit(self.prep_media, m)  # if self.args.prefetch > 1 else []
                     self.ignore_paths.add(m["path"])
                     self.futures.append(future)
                     log.debug("fill prefetch")
@@ -442,16 +441,10 @@ class MediaPrefetcher:
         log.debug("player: %s", player)
         return player, player_need_sleep
 
-    def prep_media(self, m: Dict, ignore_paths):
+    def prep_media(self, m: Dict):
         t = log_utils.Timer()
         self.args.db = db_utils.connect(self.args)
         log.debug("db.connect: %s", t.elapsed())
-
-        if (isinstance(self.args.play_in_order, int) and self.args.play_in_order >= consts.SIMILAR) or (
-            self.args.action == SC.listen and "audiobook" in m["path"].lower()
-        ):
-            m = xklb.db_media.get_ordinal_media(self.args, m, ignore_paths)
-            log.debug("player.get_ordinal_media: %s", t.elapsed())
 
         m["original_path"] = m["path"]
         if not m["path"].startswith("http"):
@@ -460,7 +453,7 @@ class MediaPrefetcher:
 
             if not media_path.exists():
                 log.warning("[%s]: Does not exist. Skipping...", m["path"])
-                xklb.db_media.mark_media_deleted(self.args, m["original_path"])
+                db_media.mark_media_deleted(self.args, m["original_path"])
                 return {}
 
             if self.args.transcode or self.args.transcode_audio:
