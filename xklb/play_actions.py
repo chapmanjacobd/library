@@ -141,7 +141,7 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     parser.add_argument("--upper", type=int, help="Number of files per folder upper limit")
     parser.add_argument("--folder-size", "--foldersize", "-Z", action="append", help=argparse.SUPPRESS)
 
-    parser.add_argument("--prefetch", type=int)
+    parser.add_argument("--prefetch", type=int, default=3)
     parser.add_argument("--prefix", default="", help=argparse.SUPPRESS)
     parser.add_argument(
         "--folder",
@@ -188,11 +188,6 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
 
     if args.big_dirs:
         args.local_media_only = True
-
-    if args.prefetch is None:
-        args.prefetch = 1
-        if not any([args.play_in_order]):
-            args.prefetch = 3
 
     parse_args_limit(args)
     parse_args_sort(args)

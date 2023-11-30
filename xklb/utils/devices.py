@@ -101,7 +101,7 @@ def mount_stats() -> None:
     args = parser.parse_args()
     space = get_mount_stats(args.mounts)
 
-    print("Relative disk utilization:")
+    print("Relative disk dependence:")
     for d in space:
         print(f"{d['mount']}: {'#' * int(d['used'] * 80)} {d['used']:.1%}")
 
