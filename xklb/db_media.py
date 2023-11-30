@@ -297,7 +297,7 @@ def filter_args_sql(args, m_columns):
     """
 
 
-def get_dir_media(args, dirs: Collection, include_subdirs=False) -> List[Dict]:
+def get_dir_media(args, dirs: Collection, include_subdirs=False, limit=2_000) -> List[Dict]:
     if len(dirs) == 0:
         return processes.no_media_found()
 
@@ -336,7 +336,7 @@ def get_dir_media(args, dirs: Collection, include_subdirs=False) -> List[Dict]:
             , m.path LIKE "http%"
             {'' if 'sort' in args.defaults else ', ' + args.sort}
             , path
-        LIMIT 10000
+        LIMIT {limit}
     """
 
     subpath_params = {f"subpath{i}": value + "%" for i, value in enumerate(dirs)}
@@ -355,9 +355,14 @@ def get_dir_media(args, dirs: Collection, include_subdirs=False) -> List[Dict]:
 
 
 def get_sibling_media(args, media):
-    if args.fetch_siblings == "always":
+    if args.fetch_siblings in ("always", "all"):
         dirs = set(str(Path(d["path"]).parent) + os.sep for d in media)
         media = get_dir_media(args, dirs)
+    elif args.fetch_siblings == "each":
+        parents = set(str(Path(d["path"]).parent) + os.sep for d in media)
+        media = []
+        for parent in parents:
+            media.extend(get_dir_media(args, [parent], limit=1)[0:1])
     elif args.fetch_siblings == "if-audiobook":
         new_media = []
         seen = set()
@@ -366,7 +371,7 @@ def get_sibling_media(args, media):
                 parent = str(Path(d["path"]).parent) + os.sep
                 if parent not in seen:
                     seen.add(parent)
-                    new_media.extend(get_dir_media(args, [parent])[0:1])
+                    new_media.extend(get_dir_media(args, [parent], limit=1)[0:1])
             else:
                 new_media.append(d)
         media = new_media
