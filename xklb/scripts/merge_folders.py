@@ -152,12 +152,18 @@ def apply_merge(args, empty_folder_data, rename_data):
         for t in rename_data:
             try:
                 mv(t)
-            except IsADirectoryError:
-                log.error("File %s not moved because target is a folder %s", t[1], t[2])
-                log.error("\tSuggested action: mv %s %s.txt", t[1], t[2])
-            except NotADirectoryError:
-                log.error("Folder %s not moved because target is a file %s", t[1], t[2])
+            except (NotADirectoryError, FileExistsError):
+                log.error("Folder %s not moved because target is a file with the same name %s", t[1], t[2])
                 log.error("\tSuggested action: mv %s %s_folder", t[1], t[2])
+            except IsADirectoryError:
+                log.error("File %s not moved because target is a folder with the same name %s", t[1], t[2])
+                log.error("\tSuggested action: mv %s %s.txt", t[1], t[2])
+            except OSError as e:
+                if getattr(e, "winerror", 0) == 87:
+                    log.error("File %s not moved because target is a folder with the same name %s", t[1], t[2])
+                    log.error("\tSuggested action: mv %s %s.txt", t[1], t[2])
+                else:
+                    raise e
 
 
 def merge_folders() -> None:
