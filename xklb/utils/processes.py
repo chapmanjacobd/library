@@ -18,6 +18,12 @@ def no_media_found() -> NoReturn:
     raise SystemExit(2)
 
 
+def player_exit(completed_process) -> NoReturn:
+    log.error("Player exited with code %s", completed_process.returncode)
+    log.debug(shlex.join(completed_process.args))
+    raise SystemExit(completed_process.returncode)
+
+
 def timeout(minutes) -> None:
     if minutes and float(minutes) > 0:
         seconds = int(float(minutes) * 60)

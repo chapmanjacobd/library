@@ -318,18 +318,19 @@ def group_and_delete(args, groups):
 
             if args.override_player:
                 for path in (left["path"], right["path"]):
-                    r = processes.cmd(*shlex.split(args.override_player), path, strict=False)
-                    if r.returncode == 0:
+                    player_process = processes.cmd(*shlex.split(args.override_player), path, strict=False)
+                    if player_process.returncode == 0:
                         post_actions.post_act(
                             args,
                             path,
+                            media_len=len(dups),
+                            record_history=False,
+                            player_process=player_process,
                             action="ASK_MOVE_OR_DELETE" if args.keep_dir else "ASK_DELETE",
-                            player_exit_code=r.returncode,
                         )
                     else:
                         truncate_file_before_match(args.file_path, left["path"])
-                        log.warning("Player exited with code %s", r.returncode)
-                        raise SystemExit(r.returncode)
+                        processes.player_exit(player_process)
             else:
                 side_by_side_mpv(args, left["path"], right["path"])
                 while True:

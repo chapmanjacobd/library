@@ -1,4 +1,4 @@
-import argparse, platform, shlex, shutil, subprocess, threading, time
+import argparse, platform, shutil, subprocess, threading, time
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -549,21 +549,14 @@ def multiple_player(args, playlist) -> None:
                 else:
                     log.debug("%s Check if still running", t_idx)
                     if m["process"].poll() is not None:
-                        r = processes.Pclose(m["process"])
-                        if r.returncode == 0:
-                            history.add(args, [m["path"]], mark_done=True)
-                        else:
-                            if not args.ignore_errors:
-                                log.error("Player exited with code %s", r.returncode)
-                                log.debug(shlex.join(r.args))
-                                raise SystemExit(r.returncode)
+                        player_process = processes.Pclose(m["process"])
 
                         post_act(
                             args,
                             m["path"],
-                            geom_data=geom_data,
                             media_len=playlist.remaining,
-                            player_exit_code=r.returncode,
+                            geom_data=geom_data,
+                            player_process=player_process,
                         )
 
                         m = playlist.get_m()
@@ -621,7 +614,6 @@ def play(args, m, media_len) -> None:
             try:
                 chromecast_play(args, m)
                 t.reset()
-                history.add(args, [m["original_path"]], mark_done=True)
                 post_act(args, m["original_path"], media_len=media_len)
                 log.debug("player.post_act: %s", t.elapsed())
             except Exception:
@@ -631,19 +623,11 @@ def play(args, m, media_len) -> None:
                     raise
         elif args.auto_seek and Path(m["player"][0]).name in ["mpv", "mpv.com"]:
             mpv_jsonipc(args, m)
-            history.add(args, [m["original_path"]], mark_done=True)
             post_act(args, m["original_path"], media_len=media_len)
         else:
-            r = single_player(args, m)
-            if r.returncode == 0:
-                history.add(args, [m["original_path"]], mark_done=True)
-            else:
-                if not args.ignore_errors:
-                    log.debug(shlex.join(r.args))
-                    log.error("Player exited with code %s", r.returncode)
-                    raise SystemExit(r.returncode)
+            player_process = single_player(args, m)
             t.reset()
-            post_act(args, m["original_path"], media_len=media_len, player_exit_code=r.returncode)
+            post_act(args, m["original_path"], media_len=media_len, player_process=player_process)
             log.debug("player.post_act: %s", t.elapsed())
     finally:
         playhead = mpv_utils.get_playhead(

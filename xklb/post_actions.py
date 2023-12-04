@@ -1,10 +1,9 @@
 import re, shlex, shutil
 from pathlib import Path
-from typing import Optional
 
 import humanize
 
-from xklb import db_media
+from xklb import db_media, history
 from xklb.utils import devices, file_utils, iterables, processes
 from xklb.utils.log_utils import log
 
@@ -98,16 +97,7 @@ class AskAction:
     ASK_MOVE_OR_DELETE = (Action.MOVE, Action.DELETE)
 
 
-def post_act(
-    args, media_file: str, action: Optional[str] = None, geom_data=None, media_len=0, player_exit_code=None
-) -> None:
-    def log_action(confirmed_action):
-        if geom_data is not None:  # multiplexing needs more context than normal
-            if args.exit_code_confirm and media_len > 0:
-                log.warning("%s: %s (%s remaining)", confirmed_action, media_file, media_len)
-            else:
-                log.warning("%s: %s", confirmed_action, media_file)
-
+def normal_action(args, media_file, action, handle_ask_action=None):
     def handle_delete_action():
         if media_file.startswith("http"):
             db_media.mark_media_deleted(args, media_file)
@@ -116,6 +106,64 @@ def post_act(
 
     def handle_soft_delete_action():
         db_media.mark_media_deleted(args, media_file)
+
+    action = action or args.post_action
+    action = action.upper()
+
+    if action == "NONE":
+        action = Action.KEEP
+
+    if action == Action.KEEP:
+        pass
+    elif action == Action.DELETE:
+        handle_delete_action()
+    elif action == Action.DELETE_IF_AUDIOBOOK:
+        if "audiobook" in media_file.lower():
+            handle_delete_action()
+    elif action == Action.SOFTDELETE:
+        handle_soft_delete_action()
+    elif action == Action.MOVE:
+        if not media_file.startswith("http"):
+            media_file = mv_to_keep_folder(args, media_file)
+    elif action.startswith("ASK_"):
+        if handle_ask_action is None:
+            raise RuntimeError
+        handle_ask_action(action)
+    else:
+        raise ValueError("Unrecognized action:", action)
+
+
+def external_action(args, log_action, media_file, player_exit_code, player_process):
+    player_exit_code_cmd = f"cmd{player_exit_code}"
+    cmd = getattr(args, player_exit_code_cmd, None)
+    if cmd:
+        log_action(player_exit_code_cmd.upper())
+        if "{}" in cmd:
+            processes.cmd_detach(media_file if s == "{}" else s for s in shlex.split(cmd))
+        else:
+            processes.cmd_detach(shlex.split(cmd), media_file)
+    else:
+        if 0 < player_exit_code:
+            processes.player_exit(player_process)
+
+
+def post_act(
+    args, media_file: str, media_len=0, record_history=True, geom_data=None, player_process=None, action=None
+) -> None:
+    def log_action(confirmed_action):
+        if geom_data is not None:  # multiplexing needs more context than normal
+            if args.exit_code_confirm and media_len > 0:
+                log.warning("%s: %s (%s remaining)", confirmed_action, media_file, media_len)
+            else:
+                log.warning("%s: %s", confirmed_action, media_file)
+
+    player_exit_code = getattr(player_process, "returncode", 0)
+
+    if record_history and player_exit_code == 0:
+        history.add(args, [media_file], mark_done=True)
+
+    if 0 < player_exit_code < 5 and not args.ignore_errors:
+        processes.player_exit(player_process)
 
     def handle_ask_action(ask_action: str):
         true_action, false_action = getattr(AskAction, ask_action)
@@ -133,38 +181,9 @@ def post_act(
             response = devices.confirm(true_action.title() + "?")
         confirmed_action = true_action if response else false_action
         log_action(confirmed_action)
-        post_act(args, media_file, action=confirmed_action)  # answer the question
+        normal_action(args, media_file, action=confirmed_action)  # answer the question
 
-    action = action or args.post_action
-    action = action.upper()
+    if player_exit_code < 5:
+        normal_action(args, media_file, action=action, handle_ask_action=handle_ask_action)
 
-    if action == "NONE":
-        action = Action.KEEP
-
-    if player_exit_code is None or player_exit_code < 5:
-        if action == Action.KEEP:
-            pass
-        elif action == Action.DELETE:
-            handle_delete_action()
-        elif action == Action.DELETE_IF_AUDIOBOOK:
-            if "audiobook" in media_file.lower():
-                handle_delete_action()
-        elif action == Action.SOFTDELETE:
-            handle_soft_delete_action()
-        elif action == Action.MOVE:
-            if not media_file.startswith("http"):
-                media_file = mv_to_keep_folder(args, media_file)
-        elif action.startswith("ASK_"):
-            handle_ask_action(action)
-        else:
-            raise ValueError("Unrecognized action:", action)
-
-    if player_exit_code:
-        player_exit_code_cmd = f"cmd{player_exit_code}"
-        cmd = getattr(args, player_exit_code_cmd, None)
-        if cmd:
-            log_action(player_exit_code_cmd.upper())
-            if "{}" in cmd:
-                processes.cmd_detach(media_file if s == "{}" else s for s in shlex.split(cmd))
-            else:
-                processes.cmd_detach(shlex.split(cmd), media_file)
+    external_action(args, log_action, media_file, player_exit_code=player_exit_code, player_process=player_process)

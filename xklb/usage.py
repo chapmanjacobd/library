@@ -237,8 +237,9 @@ def play(action) -> str:
 
         Also, if you are using --random you need to fetch sibling media to play the media in order:
 
-            - library {action} --random --fetch-siblings always -O
-            - library {action} --random --fetch-siblings if-audiobook -O
+            - library {action} --random --fetch-siblings each -O          # get the first result per directory
+            - library {action} --random --fetch-siblings if-audiobook -O  # get the first result per directory if 'audiobook' is in the path
+            - library {action} --random --fetch-siblings always -O        # get 2,000 results per directory
 
         If searching by a specific subpath it may be preferable to just sort by path instead
         library {action} d/planet.earth.2024/ -u path
