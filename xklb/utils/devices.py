@@ -39,10 +39,17 @@ def clear_input() -> None:
 
 
 def confirm(*args, **kwargs) -> bool:
-    from rich import prompt
+    from rich.prompt import Confirm
 
     clear_input()
-    return prompt.Confirm.ask(*args, **kwargs, default=False)
+    return Confirm.ask(*args, **kwargs, default=False)
+
+
+def prompt(*args, **kwargs) -> str:
+    from rich.prompt import Prompt
+
+    clear_input()
+    return Prompt.ask(*args, **kwargs)
 
 
 def set_readline_completion(list_) -> None:

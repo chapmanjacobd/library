@@ -1,5 +1,6 @@
 import argparse, random, sys
 from ast import literal_eval
+from pathlib import Path
 
 from xklb.utils import consts, db_utils, iterables
 from xklb.utils.consts import SC
@@ -178,3 +179,11 @@ def parse_args_limit(args):
                 args.limit = consts.DEFAULT_PLAY_QUEUE * 60
     elif args.limit.lower() in ("inf", "all"):
         args.limit = None
+
+
+def split_folder_glob(s):
+    p = Path(s).resolve()
+
+    if p.is_dir():
+        return p, "*"
+    return p.parent, p.name

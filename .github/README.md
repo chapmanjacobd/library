@@ -95,7 +95,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.2.172)
+    xk media library subcommands (v2.2.173)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -111,6 +111,8 @@ To stop playing press Ctrl+C in either the terminal or mpv
       lb bigdirs               Discover folders which take much room
       lb dedupe                Deduplicate a media db's media files
       lb czkawka-dedupe        Split-screen czkawka results to decide which to delete
+
+      lb merge-folders         Merge two or more folders
       lb relmv                 Move files/folders while preserving relative paths
       lb christen              Cleanse files by giving them a new name
 
@@ -1942,6 +1944,22 @@ After you are done selecting folders you can press ctrl-d and it will save the l
     Optimize library databases
 
     The force flag is usually unnecessary and it can take much longer
+
+
+</details>
+
+<details><summary>Merge two or more file trees (merge-folders)</summary>
+
+    $ library merge-folders -h
+    usage: library merge-folders [--replace] [--skip] [--simulate] SOURCES ... DESTINATION
+
+    Merge multiple folders with the same file tree into a single folder.
+
+    https://github.com/chapmanjacobd/journal/blob/main/programming/linux/misconceptions.md#mv-src-vs-mv-src
+
+    Trumps are files that are new or replaced files from an earlier source which now conflict with this later source.
+    The count of conflicts also includes trumps.
+
 
 
 </details>
