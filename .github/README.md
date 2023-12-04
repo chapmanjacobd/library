@@ -95,7 +95,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.2.175)
+    xk media library subcommands (v2.2.176)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -1053,12 +1053,14 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
         And if you run something like:
             library watch --cmd5 ~/bin/process_audio.py
+            library watch --cmd5 echo  # this will effectively do nothing except skip the normal post-actions via mpv shortcut
 
         When semicolon is pressed in mpv (it will exit with error code 5) then the applicable player-exit-code command
         will start with the media file as the first argument; in this case `~/bin/process_audio.py $path`.
         The command will be daemonized if library exits before it completes.
-        To prevent confusion, post-actions will be skipped if the exit-code is greater than 4.
-        Exit-codes 0, 1, 2, 3, and 4: the player-exit-code command will run after post-actions. Be careful of conflicting player-exit-code command and post-action behavior when using these!
+
+        To prevent confusion, normal post-actions will be skipped if the exit-code is greater than 4.
+        Exit-codes 0, 1, 2, 3, and 4: the external post-action will run after normal post-actions. Be careful of conflicting player-exit-code command and post-action behavior when using these!
 
     Experimental options:
         Duration to play (in seconds) while changing the channel
