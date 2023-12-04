@@ -22,6 +22,8 @@ def usage() -> str:
       lb bigdirs               Discover folders which take much room
       lb dedupe                Deduplicate a media db's media files
       lb czkawka-dedupe        Split-screen czkawka results to decide which to delete
+
+      lb merge-folders         Merge two or more folders
       lb relmv                 Move files/folders while preserving relative paths
       lb christen              Cleanse files by giving them a new name
 
@@ -175,6 +177,7 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     add_parser(subparsers, "xklb.scripts.history.history", ["hi", "log"])
     add_parser(subparsers, "xklb.scripts.incremental_diff.incremental_diff")
     add_parser(subparsers, "xklb.scripts.mcda.mcda", ["mcdm", "rank"])
+    add_parser(subparsers, "xklb.scripts.merge_folders.merge_folders", ["merge", "merge-folder"])
     add_parser(subparsers, "xklb.scripts.merge_dbs.merge_dbs", ["merge-db"])
     add_parser(subparsers, "xklb.scripts.merge_online_local.merge_online_local")
     add_parser(subparsers, "xklb.scripts.mining.extract_links.extract_links", ["links"])

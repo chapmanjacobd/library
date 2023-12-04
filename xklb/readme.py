@@ -55,6 +55,7 @@ progs = {
         "big_dirs": "Show large folders",
         "search_db": "Search a SQLITE database",
         "optimize": "Re-optimize database",
+        "merge_folders": "Merge two or more file trees",
     },
     "Database enrichment subcommands": {
         "dedupe_db": "Dedupe SQLITE tables",

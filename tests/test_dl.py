@@ -33,3 +33,4 @@ def test_yt():
     )  # remember to add args to dl_extract if they need to be added here
     args.db = connect(args)
     download(args, {"path": PLAYLIST_VIDEO_URL, "extractor_config": "{}"})
+    # lb(['dl', *dl_db, '--video', f'--prefix={STORAGE_PREFIX}', "--no-write-thumbnail", '--download-archive=test', '--force'])

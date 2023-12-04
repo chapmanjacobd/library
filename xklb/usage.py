@@ -1085,6 +1085,16 @@ merge_dbs = """library merge-dbs DEST_DB SOURCE_DB ... [--only-target-columns] [
         library merge-dbs --pk id --only-tables subreddits reddit/81_New_Music.db audio.db
         library merge-dbs --only-new-rows --pk subreddit,path --only-tables reddit_posts reddit/81_New_Music.db audio.db -v
 """
+merge_folders = """library merge-folders [--replace] [--skip] [--simulate] SOURCES ... DESTINATION
+
+    Merge multiple folders with the same file tree into a single folder.
+
+    https://github.com/chapmanjacobd/journal/blob/main/programming/linux/misconceptions.md#mv-src-vs-mv-src
+
+    Trumps are files that are new or replaced files from an earlier source which now conflict with this later source.
+    The count of conflicts also includes trumps.
+
+"""
 
 merge_online_local = """library merge-online-local DATABASE
 

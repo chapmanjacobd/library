@@ -16,9 +16,9 @@ def print_overwrite(text):
         print(text)
 
 
-def pipe_print(x) -> None:
+def pipe_print(*args) -> None:
     try:
-        print(x, flush=True)
+        print(*args, flush=True)
     except BrokenPipeError:
         sys.stdout = None
         sys.exit(141)
