@@ -241,17 +241,17 @@ def find_new_files(args, path: Path) -> List[str]:
             elif args.profile == DBType.filesystem:
                 scanned_files = [str(p) for p in path.rglob("*")]
             elif args.profile == DBType.audio:
-                scanned_files = consts.get_audio_files(path)
+                scanned_files = file_utils.get_audio_files(path)
             elif args.profile == DBType.video:
-                scanned_files = consts.get_video_files(path)
+                scanned_files = file_utils.get_video_files(path)
             elif args.profile == DBType.text:
-                scanned_files = consts.get_text_files(
+                scanned_files = file_utils.get_text_files(
                     path,
                     image_recognition=args.ocr,
                     speech_recognition=args.speech_recognition,
                 )
             elif args.profile == DBType.image:
-                scanned_files = consts.get_image_files(path)
+                scanned_files = file_utils.get_image_files(path)
             else:
                 msg = f"fs_extract for profile {args.profile}"
                 raise NotImplementedError(msg)
@@ -351,7 +351,7 @@ def scan_path(args, path_str: str) -> int:
         else:
             batch_count = consts.SQLITE_PARAM_LIMIT // 100
         chunks_count = math.ceil(len(new_files) / batch_count)
-        df_chunked = iterables.chunks(new_files, batch_count)
+        files_chunked = iterables.chunks(new_files, batch_count)
 
         if args.profile in threadsafe:
             pool_fn = ThreadPoolExecutor
@@ -359,7 +359,7 @@ def scan_path(args, path_str: str) -> int:
             pool_fn = ProcessPoolExecutor
 
         with pool_fn(n_jobs) as parallel:
-            for idx, chunk_paths in enumerate(df_chunked):
+            for idx, chunk_paths in enumerate(files_chunked):
                 percent = ((batch_count * idx) + len(chunk_paths)) / len(new_files) * 100
                 print(f"[{path}] Extracting metadata {percent:3.1f}% (chunk {idx + 1} of {chunks_count})")
 

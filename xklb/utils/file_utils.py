@@ -3,10 +3,54 @@ from functools import wraps
 from io import StringIO
 from pathlib import Path
 from shutil import which
-from typing import Union
+from typing import List, Union
 
-from xklb.utils import consts, file_utils, processes, web
+from xklb.utils import consts, file_utils, printing, processes, web
 from xklb.utils.log_utils import log
+
+
+def get_files(base_dir: Path, extensions: List[str]) -> List[str]:
+    folders = 0
+    filtered_files = 0
+    files = []
+    for idx, f in enumerate(base_dir.rglob("*")):
+        if f.is_file():
+            if f.suffix[1:].lower() in extensions:
+                files.append(str(f))
+            else:
+                filtered_files += 1
+        else:
+            folders += 1
+
+        if idx % 15 == 0:
+            printing.print_overwrite(
+                f"[{base_dir}] Files: {len(files)} Filtered files: {filtered_files} Folders: {folders}"
+            )
+
+    print(f"\r[{base_dir}] Media files: {len(files)} Filtered files: {filtered_files} Folders: {folders}")
+    return files
+
+
+def get_image_files(path: Path) -> List[str]:
+    return get_files(path, consts.IMAGE_EXTENSIONS)  # type: ignore
+
+
+def get_audio_files(path: Path) -> List[str]:
+    return get_files(path, [*consts.VIDEO_EXTENSIONS, *consts.AUDIO_ONLY_EXTENSIONS])
+
+
+def get_video_files(path: Path) -> List[str]:
+    return get_files(path, consts.VIDEO_EXTENSIONS)  # type: ignore
+
+
+def get_text_files(path: Path, image_recognition=False, speech_recognition=False) -> List[str]:
+    extensions = [*consts.TEXTRACT_EXTENSIONS]
+    if image_recognition:
+        extensions.extend(consts.OCR_EXTENSIONS)
+    if speech_recognition:
+        extensions.extend(consts.SPEECH_RECOGNITION_EXTENSIONS)
+
+    return get_files(path, extensions)
 
 
 def file_temp_copy(src) -> str:

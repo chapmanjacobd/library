@@ -259,8 +259,8 @@ def play(action) -> str:
         library {action} -RRCO
 
         You can even sort the items within each cluster by auto-MCDA ~LOL~
-        library {action} -B --sort-by 'mcda median_size,-deleted'
-        library {action} -C --sort-by 'mcda median_size,-deleted'
+        library {action} -B --sort-groups-by 'mcda median_size,-deleted'
+        library {action} -C --sort-groups-by 'mcda median_size,-deleted'
 
     Filter media by file siblings of parent directory:
         library {action} --sibling   # only include files which have more than or equal to one sibling
@@ -925,7 +925,7 @@ galleryupdate = """library galleryupdate DATABASE URLS
     Check previously saved gallery_dl URLs for new content
 """
 
-big_dirs = """library big-dirs DATABASE [--limit (4000)] [--depth (0)] [--sort-by deleted | played] [--size=+5MB]
+big_dirs = """library big-dirs DATABASE [--limit (4000)] [--depth (0)] [--sort-groups-by deleted | played] [--size=+5MB]
 
     See what folders take up space
 
@@ -943,7 +943,7 @@ big_dirs = """library big-dirs DATABASE [--limit (4000)] [--depth (0)] [--sort-b
     lb big-dirs video.db -u 'mcda median_size,-deleted'
 """
 
-disk_usage = """library disk-usage DATABASE [--sort-by size | count] [--depth DEPTH] [PATH / SUBSTRING SEARCH]
+disk_usage = """library disk-usage DATABASE [--sort-groups-by size | count] [--depth DEPTH] [PATH / SUBSTRING SEARCH]
 
     Only include files smaller than 1kib
 

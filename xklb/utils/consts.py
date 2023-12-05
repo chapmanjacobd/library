@@ -2,7 +2,6 @@ import os, random, re, shutil, string, sys
 from datetime import datetime, timezone
 from pathlib import Path
 from tempfile import gettempdir
-from typing import List
 
 
 def now():
@@ -155,37 +154,6 @@ IMAGE_EXTENSIONS = (
     "|nksc|vrd|xmp|la|ofr|pac|riff|rif|wav|webp|wv|asf|divx|djvu|djv|dvr-ms"
     "|flv|insv|inx|swf|wma|wmv|exif|eip|psp|pspimage"
 ).split("|")
-
-
-def get_files(base_dir: Path, extensions: List[str]) -> List[str]:
-    files = []
-    for f in base_dir.rglob("*"):
-        if f.is_file() and f.suffix[1:].lower() in extensions:
-            files.append(str(f))
-
-    return files
-
-
-def get_image_files(path: Path) -> List[str]:
-    return get_files(path, IMAGE_EXTENSIONS)  # type: ignore
-
-
-def get_audio_files(path: Path) -> List[str]:
-    return get_files(path, [*VIDEO_EXTENSIONS, *AUDIO_ONLY_EXTENSIONS])
-
-
-def get_video_files(path: Path) -> List[str]:
-    return get_files(path, VIDEO_EXTENSIONS)  # type: ignore
-
-
-def get_text_files(path: Path, image_recognition=False, speech_recognition=False) -> List[str]:
-    extensions = [*TEXTRACT_EXTENSIONS]
-    if image_recognition:
-        extensions.extend(OCR_EXTENSIONS)
-    if speech_recognition:
-        extensions.extend(SPEECH_RECOGNITION_EXTENSIONS)
-
-    return get_files(path, extensions)
 
 
 time_facets = [

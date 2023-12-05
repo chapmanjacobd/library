@@ -132,10 +132,10 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     parser.add_argument("--safe", "-safe", action="store_true", help="Skip generic URLs")
 
     parser.add_argument("--fetch-siblings")
-    parser.add_argument("--sibling", "--episode", action="store_true")
+    parser.add_argument("--sibling", "--episode", "--episodes", "--episodic", action="store_true")
     parser.add_argument("--solo", action="store_true")
 
-    parser.add_argument("--sort-by")
+    parser.add_argument("--sort-groups-by", "--sort-groups")
     parser.add_argument("--depth", "-D", default=0, type=int, help="Depth of folders")
     parser.add_argument("--lower", type=int, help="Number of files per folder lower limit")
     parser.add_argument("--upper", type=int, help="Number of files per folder upper limit")
@@ -335,7 +335,7 @@ def construct_query(args) -> Tuple[str, dict]:
         limit = 16 * (args.limit or consts.DEFAULT_PLAY_QUEUE)
         where_not_deleted = (
             "where COALESCE(time_deleted,0) = 0"
-            if "time_deleted" in m_columns and "deleted" not in args.sort_by and "time_deleted" not in args.where
+            if "time_deleted" in m_columns and "deleted" not in args.sort_groups_by and "time_deleted" not in args.where
             else ""
         )
         args.filter_sql.append(
