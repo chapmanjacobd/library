@@ -95,7 +95,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.2.176)
+    xk media library subcommands (v2.2.177)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -303,7 +303,7 @@ You may filter by folder depth (similar to QDirStat or WizTree)
 
 There is also an flag to prioritize folders which have many files which have been deleted (for example you delete songs you don't like--now you can see who wrote those songs and delete all their other songs...)
 
-    $ library big-dirs --sort-by deleted audio.db
+    $ library big-dirs --sort-groups-by deleted audio.db
 
 Recently, this functionality has also been integrated into watch/listen subcommands so you could just do this:
 
@@ -805,8 +805,8 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         library watch -RRCO
 
         You can even sort the items within each cluster by auto-MCDA ~LOL~
-        library watch -B --sort-by 'mcda median_size,-deleted'
-        library watch -C --sort-by 'mcda median_size,-deleted'
+        library watch -B --sort-groups-by 'mcda median_size,-deleted'
+        library watch -C --sort-groups-by 'mcda median_size,-deleted'
 
     Filter media by file siblings of parent directory:
         library watch --sibling   # only include files which have more than or equal to one sibling
@@ -1873,7 +1873,7 @@ After you are done selecting folders you can press ctrl-d and it will save the l
 <details><summary>Disk Usage (disk-usage)</summary>
 
     $ library disk-usage -h
-    usage: library disk-usage DATABASE [--sort-by size | count] [--depth DEPTH] [PATH / SUBSTRING SEARCH]
+    usage: library disk-usage DATABASE [--sort-groups-by size | count] [--depth DEPTH] [PATH / SUBSTRING SEARCH]
 
     Only include files smaller than 1kib
 
@@ -1909,7 +1909,7 @@ After you are done selecting folders you can press ctrl-d and it will save the l
 <details><summary>Show large folders (big-dirs)</summary>
 
     $ library big-dirs -h
-    usage: library big-dirs DATABASE [--limit (4000)] [--depth (0)] [--sort-by deleted | played] [--size=+5MB]
+    usage: library big-dirs DATABASE [--limit (4000)] [--depth (0)] [--sort-groups-by deleted | played] [--size=+5MB]
 
     See what folders take up space
 

@@ -35,10 +35,10 @@ def rename_path(args, base, b) -> None:
         if args.run:
             p = base / fsdecode(b)
             if not p.is_file():
-                log.info("Skipping non-file. %s", printable_p)
+                log.info("Skipping non-file: %s", printable_p)
                 return
             if p.is_symlink():
-                log.info("Skipping symlink. %s", printable_p)
+                log.info("Skipping symlink: %s", printable_p)
                 return
             try:
                 fixed = base / fixed
@@ -49,11 +49,11 @@ def rename_path(args, base, b) -> None:
 
                 p.rename(fixed)
             except FileNotFoundError:
-                log.warning("FileNotFound. %s", printable_p)
+                log.warning("FileNotFound: %s", printable_p)
             except FileExistsError:
-                log.warning("Destination file already exists. %s", fixed)
+                log.warning("Destination file already exists: %s", fixed)
             except shutil.Error as e:
-                log.warning("%s. %s", e, printable_p)
+                log.warning("%s: %s", e, printable_p)
             else:
                 log.info(fixed)
         else:

@@ -153,23 +153,23 @@ def sort(args, df, values):
 
 
 def group_sort_by(args, folders):
-    if args.sort_by is None:
+    if args.sort_groups_by is None:
         sort_func = lambda x: x["size"] / x["exists"]
-    elif args.sort_by.startswith("mcda "):
+    elif args.sort_groups_by.startswith("mcda "):
         import pandas as pd
 
         if not isinstance(folders, pd.DataFrame):
             folders = pd.DataFrame(folders)
-        values = args.sort_by.replace("mcda ", "", 1)
+        values = args.sort_groups_by.replace("mcda ", "", 1)
         df = sort(args, folders, values)
         return df.drop(columns=["TOPSIS", "MABAC", "SPOTIS", "BORDA"]).to_dict(orient="records")
     else:
-        if args.sort_by == "played_ratio":
+        if args.sort_groups_by == "played_ratio":
             sort_func = lambda x: x["played"] / x["deleted"] if x["deleted"] else 0
-        elif args.sort_by == "deleted_ratio":
+        elif args.sort_groups_by == "deleted_ratio":
             sort_func = lambda x: x["deleted"] / x["played"] if x["played"] else 0
         else:
-            sort_func = sql_utils.sort_like_sql(args.sort_by)
+            sort_func = sql_utils.sort_like_sql(args.sort_groups_by)
 
     return sorted(folders, key=sort_func)
 

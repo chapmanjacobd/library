@@ -289,7 +289,7 @@ def filter_args_sql(args, m_columns):
     return f"""
         {'and path like "http%"' if getattr(args, 'safe', False) else ''}
         {f'and path not like "{args.keep_dir}%"' if getattr(args, 'keep_dir', False) and Path(args.keep_dir).exists() else ''}
-        {'and COALESCE(time_deleted,0) = 0' if 'time_deleted' in m_columns and "deleted" not in (getattr(args, 'sort_by',None) or '') and "time_deleted" not in args.where else ''}
+        {'and COALESCE(time_deleted,0) = 0' if 'time_deleted' in m_columns and "deleted" not in (getattr(args, 'sort_groups_by',None) or '') and "time_deleted" not in args.where else ''}
         {'AND (score IS NULL OR score > 7)' if 'score' in m_columns else ''}
         {'AND (upvote_ratio IS NULL OR upvote_ratio > 0.73)' if 'upvote_ratio' in m_columns else ''}
         {'AND COALESCE(time_downloaded,0) = 0' if args.online_media_only else ''}

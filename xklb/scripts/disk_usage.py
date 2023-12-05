@@ -14,7 +14,7 @@ def parse_args() -> argparse.Namespace:
         usage=usage.disk_usage,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("--sort-by", "--sort", "-u", nargs="+", action="extend")
+    parser.add_argument("--sort-groups-by", "--sort-groups", "--sort", "-u", nargs="+", action="extend")
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", default="4000")
     parser.add_argument(
         "--size",
@@ -41,8 +41,8 @@ def parse_args() -> argparse.Namespace:
     if len(args.include) == 1 and os.sep in args.include[0]:
         args.include = [file_utils.resolve_absolute_path(args.include[0])]
 
-    if args.sort_by:
-        args.sort_by = " ".join(args.sort_by)
+    if args.sort_groups_by:
+        args.sort_groups_by = " ".join(args.sort_groups_by)
 
     if args.size:
         args.size = sql_utils.parse_human_to_sql(nums.human_to_bytes, "size", args.size)
@@ -53,8 +53,8 @@ def parse_args() -> argparse.Namespace:
 
 
 def sort_by(args):
-    if args.sort_by:
-        return lambda x: x.get(args.sort_by) or 0
+    if args.sort_groups_by:
+        return lambda x: x.get(args.sort_groups_by) or 0
 
     return lambda x: (x["size"] / (x.get("count") or 1), x["size"], x.get("count") or 1)
 
@@ -86,8 +86,8 @@ def get_subset(args, level=None, prefix=None) -> List[Dict]:
             d[parent]["count"] += 1
 
     reverse = True
-    if args.sort_by and " desc" in args.sort_by:
-        args.sort_by = args.sort_by.replace(" desc", "")
+    if args.sort_groups_by and " desc" in args.sort_groups_by:
+        args.sort_groups_by = args.sort_groups_by.replace(" desc", "")
         reverse = False
 
     return sorted(

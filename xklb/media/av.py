@@ -177,6 +177,10 @@ def munge_av_tags(args, media, path) -> Optional[dict]:
         probe = processes.FFProbe(path)
     except (KeyboardInterrupt, SystemExit) as sys_exit:
         raise SystemExit(130) from sys_exit
+    except OSError as e:
+        if e.errno == 23:  # Too many open files
+            raise e
+        raise e
     except Exception as e:
         log.error(f"Failed reading header. {path}")
         log.debug(e)

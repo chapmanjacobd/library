@@ -15,7 +15,7 @@ def parse_args() -> argparse.Namespace:
         usage=usage.big_dirs,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("--sort-by", "--sort", "-u", nargs="+")
+    parser.add_argument("--sort-groups-by", "--sort-groups", "--sort-by", "--sort", "-u", nargs="+")
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", default="4000")
     parser.add_argument("--depth", "-d", default=0, type=int, help="Depth of folders")
     parser.add_argument("--lower", type=int, default=4, help="Minimum number of files per folder")
@@ -45,9 +45,9 @@ def parse_args() -> argparse.Namespace:
     args = parser.parse_intermixed_args()
     args.db = db_utils.connect(args)
 
-    if args.sort_by:
-        args.sort_by = arg_utils.parse_ambiguous_sort(args.sort_by)
-        args.sort_by = ",".join(args.sort_by)
+    if args.sort_groups_by:
+        args.sort_groups_by = arg_utils.parse_ambiguous_sort(args.sort_groups_by)
+        args.sort_groups_by = ",".join(args.sort_groups_by)
 
     args.include += args.search
     if args.include == ["."]:

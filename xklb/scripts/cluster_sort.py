@@ -142,8 +142,8 @@ def cluster_dicts(args, media):
     groups = cluster_paths([d["path"] for d in media], n_clusters=getattr(args, "clusters", None))
     groups = sorted(groups, key=lambda d: (-len(d["grouped_paths"]), -len(d["common_prefix"])))
 
-    if getattr(args, "sort_by", None) is not None:
-        if args.sort_by in ("duration", "duration desc"):
+    if getattr(args, "sort_groups_by", None) is not None:
+        if args.sort_groups_by in ("duration", "duration desc"):
             sorted_paths = iterables.flatten(
                 sorted(d["grouped_paths"], key=lambda p: media_keyed[p]["duration"], reverse=" desc" in args.sort)
                 for d in groups
