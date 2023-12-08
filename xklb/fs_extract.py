@@ -236,10 +236,9 @@ def find_new_files(args, path: Path) -> List[str]:
     else:
         try:
             if args.scan_all_files:
-                # thanks to these people for making rglob fast https://bugs.python.org/issue26032
-                scanned_files = [str(p) for p in path.rglob("*") if p.is_file()]
+                scanned_files = [str(p) for p in file_utils.rglob(path, "*", yield_folders=False)]
             elif args.profile == DBType.filesystem:
-                scanned_files = [str(p) for p in path.rglob("*")]
+                scanned_files = [str(p) for p in file_utils.rglob(path, "*")]
             elif args.profile == DBType.audio:
                 scanned_files = file_utils.get_audio_files(path)
             elif args.profile == DBType.video:

@@ -403,6 +403,9 @@ class MediaPrefetcher:
                 if getattr(args, "loop", False):
                     player.extend(["--loop-file=inf"])
 
+                if getattr(args, "pause", False):
+                    player.extend(["--pause=yes"])
+
                 if getattr(args, "crop", None):
                     player.extend(["--panscan=1.0"])
 
