@@ -91,6 +91,7 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
         help=argparse.SUPPRESS,
     )
 
+    parser.add_argument("--pause", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--start", "-vs", help=argparse.SUPPRESS)
     parser.add_argument("--end", "-ve", help=argparse.SUPPRESS)
     parser.add_argument("--mpv-socket", help=argparse.SUPPRESS)

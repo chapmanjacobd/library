@@ -123,7 +123,7 @@ def reddit_frequency(frequency) -> str:
 TEXTRACT_EXTENSIONS = "csv|tab|tsv|doc|docx|eml|epub|json|htm|html|msg|odt|pdf|pptx|ps|rtf|txt|log|xlsx|xls".split("|")
 SPEECH_RECOGNITION_EXTENSIONS = "mp3|ogg|wav".split("|")
 OCR_EXTENSIONS = "gif|jpg|jpeg|png|tif|tff|tiff".split("|")
-AUDIO_ONLY_EXTENSIONS = "opus|oga|ogg|mp3|m2a|mpga|m4a|flac|wav|wma|aac|aa3|ac3|ape".split("|")
+AUDIO_ONLY_EXTENSIONS = "opus|oga|ogg|mp3|m2a|mpga|m4a|flac|wav|wma|aac|aa3|ac3|ape|mid|midi".split("|")
 VIDEO_EXTENSIONS = (
     "str|aa|aax|acm|adf|adp|dtk|ads|ss2|adx|aea|afc|aix|al|apl"
     "|mac|aptx|aptxhd|aqt|ast|obu|avi|avr|avs|avs2|avs3|bfstm|bcstm|binka"
@@ -131,7 +131,7 @@ VIDEO_EXTENSIONS = (
     "|dif|divx|cdata|eac3|paf|fap|flm|flv|fsb|fwse|g722|722|tco|rco"
     "|g723_1|g729|genh|gsm|h261|h26l|h264|264|avc|hca|hevc|h265|265|idf"
     "|ifv|cgi|ipu|sf|ircam|ivr|kux|669|abc|amf|ams|dbm|dmf|dsm|far|it|mdl"
-    "|med|mid|mod|mt2|mtm|okt|psm|ptm|s3m|stm|ult|umx|xm|itgz|itr|itz"
+    "|med|mod|mt2|mtm|okt|psm|ptm|s3m|stm|ult|umx|xm|itgz|itr|itz"
     "|mdgz|mdr|mdz|s3gz|s3r|s3z|xmgz|xmr|xmz|669|amf|ams|dbm|digi|dmf"
     "|dsm|dtm|far|gdm|ice|imf|it|j2b|m15|mdl|med|mmcmp|mms|mo3|mod|mptm"
     "|mt2|mtm|nst|okt|ogm|ogv|plm|ppm|psm|pt36|ptm|s3m|sfx|sfx2|st26|stk|stm"

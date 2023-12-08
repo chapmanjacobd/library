@@ -3,10 +3,31 @@ from functools import wraps
 from io import StringIO
 from pathlib import Path
 from shutil import which
-from typing import List, Union
+from typing import Generator, List, Union
 
 from xklb.utils import consts, file_utils, printing, processes, web
 from xklb.utils.log_utils import log
+
+
+def rglob(base_dir: Path, base_glob: str, yield_files=True, yield_folders=True) -> Generator:
+    prefix = f"{base_dir}{os.sep}{base_glob}"
+
+    files_count = 0
+    folders_count = 0
+    for idx, item in enumerate(base_dir.rglob(base_glob)):
+        if item.is_dir():
+            folders_count += 1
+            if yield_folders:
+                yield item
+        else:
+            files_count += 1
+            if yield_files:
+                yield item
+
+        if idx % 15 == 0:
+            printing.print_overwrite(f"[{prefix}] Files: {files_count} Folders: {folders_count}")
+
+    print(f"\r[{prefix}] Files: {files_count} Folders: {folders_count}", flush=True)
 
 
 def get_files(base_dir: Path, extensions: List[str]) -> List[str]:
