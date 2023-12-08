@@ -302,7 +302,7 @@ def mimetype(path):
                 info = puremagic.magic_file(path)
             log.debug(info)
             file_type = info[0].name
-        except (puremagic.PureError, IndexError):
+        except (puremagic.PureError, IndexError, ValueError):
             if p.is_socket():
                 file_type = "socket"
             elif p.is_fifo():
@@ -313,6 +313,8 @@ def mimetype(path):
                 file_type = "block device"
             elif p.is_char_device():
                 file_type = "char device"
+            elif Path(path).stat().st_size == 0:
+                file_type = "empty file"
         except FileNotFoundError:
             return
 
