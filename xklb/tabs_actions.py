@@ -1,4 +1,4 @@
-import argparse
+import argparse, math
 from pathlib import Path
 from shutil import which
 from time import sleep
@@ -124,11 +124,11 @@ def construct_tabs_query(args) -> Tuple[str, dict]:
         SELECT path
         , frequency
         , CASE
-            WHEN frequency = 'daily' THEN cast(STRFTIME('%s', datetime( time_last_played, 'unixepoch', '+1 Day' )) as int)
-            WHEN frequency = 'weekly' THEN cast(STRFTIME('%s', datetime( time_last_played, 'unixepoch', '+7 Days' )) as int)
-            WHEN frequency = 'monthly' THEN cast(STRFTIME('%s', datetime( time_last_played, 'unixepoch', '+1 Month' )) as int)
-            WHEN frequency = 'quarterly' THEN cast(STRFTIME('%s', datetime( time_last_played, 'unixepoch', '+3 Months' )) as int)
-            WHEN frequency = 'yearly' THEN cast(STRFTIME('%s', datetime( time_last_played, 'unixepoch', '+1 Year' )) as int)
+            WHEN frequency = 'daily' THEN cast(STRFTIME('%s', datetime( time_last_played, 'unixepoch', '+1 Day', '-5 minutes' )) as int)
+            WHEN frequency = 'weekly' THEN cast(STRFTIME('%s', datetime( time_last_played, 'unixepoch', '+7 Days', '-5 minutes' )) as int)
+            WHEN frequency = 'monthly' THEN cast(STRFTIME('%s', datetime( time_last_played, 'unixepoch', '+1 Month', '-5 minutes' )) as int)
+            WHEN frequency = 'quarterly' THEN cast(STRFTIME('%s', datetime( time_last_played, 'unixepoch', '+3 Months', '-5 minutes' )) as int)
+            WHEN frequency = 'yearly' THEN cast(STRFTIME('%s', datetime( time_last_played, 'unixepoch', '+1 Year', '-5 minutes' )) as int)
         END time_valid
         {', ' + ', '.join(args.cols) if args.cols else ''}
     FROM m
@@ -185,15 +185,10 @@ def frequency_filter(args, media: List[Dict]) -> List[dict]:
     filtered_media = []
     for freq, freq_count in counts:
         num_days = mapper.get(freq, 365)
-        num_tabs = max(1, freq_count // num_days)
-        log.debug(f"freq_count {freq_count} // num_days {num_days} = num_tabs {num_tabs}")
+        num_tabs = max(1, math.ceil(freq_count / num_days))
+        log.debug(f"freq_count {freq_count} / num_days {num_days} = num_tabs {num_tabs}")
 
-        t = []
-        for m in media:
-            if m["frequency"] == freq:
-                t.append(m)
-
-        filtered_media.extend(t[:num_tabs])
+        filtered_media.extend([m for m in media if m["frequency"] == freq][:num_tabs])
 
     return filtered_media
 
