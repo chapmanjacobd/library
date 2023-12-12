@@ -131,11 +131,7 @@ def apply_merge(args, empty_folder_data, rename_data):
             if not clobber:
                 log.info("[%s]: Skipping due to existing file %s", t[1], t[2])
             else:
-                try:
-                    os.replace(t[1], t[2])
-                except ValueError:  # TODO: update with correct error
-                    t[2].parent.mkdir(parents=True)
-                    os.replace(t[1], t[2])
+                os.replace(t[1], t[2])
         else:  ## file does not exist in destination already
             os.renames(t[1], t[2])
 

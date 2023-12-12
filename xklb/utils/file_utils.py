@@ -9,7 +9,7 @@ from xklb.utils import consts, file_utils, printing, processes, web
 from xklb.utils.log_utils import log
 
 
-def rglob(base_dir: Path, base_glob: str, yield_files=True, yield_folders=True) -> Generator:
+def rglob(base_dir: Path, base_glob: str, yield_files=True, yield_folders=True) -> Generator[Path, None, None]:
     prefix = f"{base_dir}{os.sep}{base_glob}"
 
     files_count = 0
