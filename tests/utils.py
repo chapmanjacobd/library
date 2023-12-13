@@ -1,4 +1,7 @@
+import argparse
 from pathlib import Path
+
+from xklb.utils import db_utils
 
 
 def p(string):
@@ -17,3 +20,7 @@ def filter_query_param(r1, r2):
         query2.pop(k, None)
 
     return query1 == query2
+
+
+def connect_db_args(db_path):
+    return argparse.Namespace(db=db_utils.connect(argparse.Namespace(database=db_path, verbose=0)))

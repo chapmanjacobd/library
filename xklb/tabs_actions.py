@@ -134,7 +134,7 @@ def construct_tabs_query(args) -> Tuple[str, dict]:
     FROM m
     WHERE 1=1
         {" ".join(args.filter_sql)}
-        {"and time_valid < cast(STRFTIME('%s', 'now') as int)" if not args.print else ''}
+        {f"and time_valid < {consts.today_stamp()}" if not args.print else ''}
     ORDER BY 1=1
         {', ' + args.sort if args.sort else ''}
         {', time_last_played, time_valid, path' if args.print else ''}
@@ -170,10 +170,10 @@ def play(args, player, m: Dict) -> None:
     media_file = m["path"]
 
     processes.cmd(*player, media_file, strict=False)
-    history.add(args, [media_file], mark_done=True)
+    history.add(args, [media_file], time_played=consts.today_stamp(), mark_done=True)
 
 
-def frequency_filter(args, media: List[Dict]) -> List[dict]:
+def frequency_filter(counts, media: List[Dict]) -> List[dict]:
     mapper = {
         "daily": 1,
         "weekly": 7,
@@ -181,7 +181,6 @@ def frequency_filter(args, media: List[Dict]) -> List[dict]:
         "quarterly": 91,
         "yearly": 365,
     }
-    counts = args.db.execute("select frequency, count(*) from media group by 1").fetchall()
     filtered_media = []
     for freq, freq_count in counts:
         num_days = mapper.get(freq, 365)
@@ -193,28 +192,30 @@ def frequency_filter(args, media: List[Dict]) -> List[dict]:
     return filtered_media
 
 
-def process_tabs_actions(args) -> None:
-    query, bindings = construct_tabs_query(args)
-
-    if args.print:
-        return media_printer.printer(args, query, bindings)
-
-    media = list(args.db.query(query, bindings))
-    if not media:
-        processes.no_media_found()
-
-    media = frequency_filter(args, media)
-
+def open_tabs(args, media):
     player = find_player()
     for m in media:
         play(args, player, m)
         MANY_TABS = 9
         if len(media) >= MANY_TABS:
             sleep(0.3)
-    return None
 
 
 def tabs() -> None:
     args = parse_args(consts.SC.tabs)
     history.create(args)
-    process_tabs_actions(args)
+
+    query, bindings = construct_tabs_query(args)
+
+    if args.print:
+        media_printer.printer(args, query, bindings)
+        return
+
+    media = list(args.db.query(query, bindings))
+    if not media:
+        processes.no_media_found()
+
+    counts = args.db.execute("select frequency, count(*) from media group by 1").fetchall()
+    media = frequency_filter(counts, media)
+
+    open_tabs(args, media)

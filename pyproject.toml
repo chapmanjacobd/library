@@ -48,7 +48,7 @@ deluxe = [
   # "textract",  # deps definition causing issues with pdm/bs4
 ]
 dev = ["black", "isort", "ssort"]
-test = ["ruff", "pytest"]
+test = ["ruff", "pytest", "freezegun"]
 all = ["xklb[deluxe,dev,test]"]
 
 [project.urls]

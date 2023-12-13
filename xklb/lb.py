@@ -101,45 +101,6 @@ def print_help(parser) -> None:
     print(parser.epilog)
 
 
-known_subcommands = ["fs", "du", "search"]
-
-
-def consecutive_prefixes(s):
-    prefixes = [s[:j] for j in range(5, len(s)) if s[:j] and s[:j] not in known_subcommands]
-    known_subcommands.extend(prefixes)
-    return prefixes
-
-
-def set_func(subparser, module_name: str, function_name: str):
-    def import_func():
-        module = importlib.import_module(module_name)
-        return getattr(module, function_name)()
-
-    subparser.set_defaults(func=import_func)
-
-
-def add_parser(subparsers, func, aliases=None):
-    if aliases is None:
-        aliases = []
-
-    module_name, function_name = func.rsplit(".", 1)
-    name = function_name.replace("_", "-")
-
-    aliases += [
-        s.replace("-", "") for s in [name] + aliases if "-" in s and s.replace("-", "") not in known_subcommands
-    ]
-    aliases += [
-        s.replace("-", "_") for s in [name] + aliases if "-" in s and s.replace("-", "_") not in known_subcommands
-    ]
-    known_subcommands.extend([name, *aliases])
-
-    aliases += consecutive_prefixes(name) + iterables.conform([consecutive_prefixes(a) for a in aliases])
-    subp = subparsers.add_parser(name, aliases=aliases, add_help=False)
-
-    set_func(subp, module_name, function_name)
-    return subp
-
-
 def create_subcommands_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="lb",
@@ -148,6 +109,42 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
         add_help=False,
     )
     subparsers = parser.add_subparsers()
+
+    # this needs to stay inside the function because if create_subcommands_parser() is called twice and if known_subcommands is preserved then the results won't be the same
+    known_subcommands = ["fs", "du", "search"]
+
+    def consecutive_prefixes(s):
+        prefixes = [s[:j] for j in range(5, len(s)) if s[:j] and s[:j] not in known_subcommands]
+        known_subcommands.extend(prefixes)
+        return prefixes
+
+    def set_func(subparser, module_name: str, function_name: str):
+        def import_func():
+            module = importlib.import_module(module_name)
+            return getattr(module, function_name)()
+
+        subparser.set_defaults(func=import_func)
+
+    def add_parser(subparsers, func, aliases=None):
+        if aliases is None:
+            aliases = []
+
+        module_name, function_name = func.rsplit(".", 1)
+        name = function_name.replace("_", "-")
+
+        aliases += [
+            s.replace("-", "") for s in [name] + aliases if "-" in s and s.replace("-", "") not in known_subcommands
+        ]
+        aliases += [
+            s.replace("-", "_") for s in [name] + aliases if "-" in s and s.replace("-", "_") not in known_subcommands
+        ]
+        known_subcommands.extend([name, *aliases])
+
+        aliases += consecutive_prefixes(name) + iterables.conform([consecutive_prefixes(a) for a in aliases])
+        subp = subparsers.add_parser(name, aliases=aliases, add_help=False)
+
+        set_func(subp, module_name, function_name)
+        return subp
 
     add_parser(subparsers, "xklb.dl_extract.dl_download", ["dl", "download"])
     add_parser(subparsers, "xklb.fs_extract.fs_add", ["x", "extract"])
@@ -211,6 +208,7 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     add_parser(subparsers, "xklb.utils.devices.mount_stats", ["mu", "mount-usage"])
 
     parser.add_argument("--version", "-V", action="store_true")
+
     return parser
 
 

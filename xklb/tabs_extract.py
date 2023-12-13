@@ -95,4 +95,6 @@ def tabs_add(args=None) -> None:
     for tab in tabs:
         db_media.add(args, tab)
     if not args.allow_immediate:
-        history.add(args, [d["path"] for d in tabs], mark_done=True)  # prevent immediately opening
+        history.add(
+            args, [d["path"] for d in tabs], time_played=consts.today_stamp(), mark_done=True
+        )  # prevent immediately opening
