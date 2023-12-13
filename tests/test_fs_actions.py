@@ -5,11 +5,11 @@ from unittest import mock
 
 import pytest
 
+from tests.utils import connect_db_args
 from xklb import db_media, history
 from xklb.fs_extract import fs_add
 from xklb.lb import library as lb
 from xklb.play_actions import watch as wt
-from xklb.utils import db_utils
 from xklb.utils.log_utils import log
 
 v_db = "tests/data/video.db"
@@ -153,7 +153,7 @@ class TestFs(unittest.TestCase):
 
         t_db = str(Path(temp_dir.name, "test.db"))
         fs_add([t_db, "tests/data/"])
-        args = SimpleNamespace(db=db_utils.connect(SimpleNamespace(database=t_db, verbose=0)))
+        args = connect_db_args(t_db)
         history.add(args, [str(Path("tests/data/test.mp4").resolve())])
         db_media.mark_media_deleted(args, [str(Path("tests/data/test.mp4").resolve())])
         fs_add([t_db, "tests/data/"])

@@ -25,6 +25,16 @@ def temp_file_tree(request):
     return _create_temp_file_tree
 
 
+@pytest.fixture
+def temp_db(request):
+    def _create_temp_file_tree():
+        temp_dir_fd, temp_dir_name = tempfile.mkstemp(".db")
+        request.addfinalizer(lambda: Path(temp_dir_name).unlink())
+        return temp_dir_name
+
+    return _create_temp_file_tree
+
+
 def generate_file_tree_dict(temp_dir):
     def _generate_tree_dict(directory):
         tree_dict = {}

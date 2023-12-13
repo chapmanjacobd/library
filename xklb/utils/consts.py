@@ -8,6 +8,10 @@ def now():
     return int(datetime.now(tz=timezone.utc).timestamp())
 
 
+def today_stamp():
+    return int(datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
+
+
 def random_string() -> str:
     return "".join(
         random.choices(string.ascii_uppercase, k=1) + random.choices(string.ascii_uppercase + string.digits, k=4),
