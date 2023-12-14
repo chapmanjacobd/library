@@ -27,12 +27,19 @@ def temp_file_tree(request):
 
 @pytest.fixture
 def temp_db(request):
-    def _create_temp_file_tree():
-        temp_dir_fd, temp_dir_name = tempfile.mkstemp(".db")
-        request.addfinalizer(lambda: Path(temp_dir_name).unlink())
-        return temp_dir_name
+    def _create_temp_db():
+        def remove_file(file_name):
+            try:
+                Path(file_name).unlink()
+            except OSError:
+                pass
 
-    return _create_temp_file_tree
+        temp_db_name = tempfile.mktemp(".db")
+        Path(temp_db_name).touch()
+        request.addfinalizer(lambda: remove_file(temp_db_name))
+        return temp_db_name
+
+    return _create_temp_db
 
 
 def generate_file_tree_dict(temp_dir):
