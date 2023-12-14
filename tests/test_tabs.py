@@ -71,12 +71,27 @@ def test_simple(play_mocked, temp_db):
 @mock.patch("xklb.tabs_actions.play")
 def test_immediate(play_mocked, temp_db):
     db1 = temp_db()
-    lb(["tabsadd", db1, "--allow-immediate", TEST_URL])
+    with freeze_time("1970-02-01 00:00:00") as clock:
+        lb(["tabsadd", db1, "--allow-immediate", TEST_URL])
 
-    lb(["tabs", db1])
-    out = play_mocked.call_args[0][2]
-    assert out == {
-        "path": TEST_URL,
-        "frequency": "monthly",
-        "time_valid": 2678100,
-    }
+        lb(["tabs", db1])
+        out = play_mocked.call_args[0][2]
+        assert out == {
+            "path": TEST_URL,
+            "frequency": "monthly",
+            "time_valid": 2678100,
+        }
+
+        args = connect_db_args(db1)
+        history.add(args, [TEST_URL], time_played=consts.today_stamp(), mark_done=True)
+        with pytest.raises(SystemExit):  # it should not be available until the month after
+            lb(["tabs", db1])
+
+        clock.move_to("1970-03-01 00:00:00")
+        lb(["tabs", db1])
+        out = play_mocked.call_args[0][2]
+        assert out == {
+                "path": TEST_URL,
+                "frequency": "monthly",
+                "time_valid": 5097300,
+            }
