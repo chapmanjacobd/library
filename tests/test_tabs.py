@@ -91,7 +91,7 @@ def test_immediate(play_mocked, temp_db):
         lb(["tabs", db1])
         out = play_mocked.call_args[0][2]
         assert out == {
-                "path": TEST_URL,
-                "frequency": "monthly",
-                "time_valid": 5097300,
-            }
+            "path": TEST_URL,
+            "frequency": "monthly",
+            "time_valid": 5097300,
+        }

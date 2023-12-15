@@ -195,13 +195,13 @@ def calculate_max_col_widths(data):
             if isinstance(value, str):
                 lines = value.splitlines()
                 max_line_length = max(len(line) for line in lines or [""])
-                max_col_widths[key] = max(max_col_widths.get(key, 0), max_line_length, len(key))
+                max_col_widths[key] = max(max_col_widths.get(key) or 0, max_line_length, len(key))
             elif isinstance(value, list):
                 max_value_length = max(len(str(item)) for item in value)
-                max_col_widths[key] = max(max_col_widths.get(key, 0), max_value_length)
+                max_col_widths[key] = max(max_col_widths.get(key) or 0, max_value_length)
             else:
                 max_value_length = len(str(value))
-                max_col_widths[key] = max(max_col_widths.get(key, 0), max_value_length)
+                max_col_widths[key] = max(max_col_widths.get(key) or 0, max_value_length)
 
     return max_col_widths
 

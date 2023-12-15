@@ -157,7 +157,7 @@ def post_act(
             else:
                 log.warning("%s: %s", confirmed_action, media_file)
 
-    player_exit_code = getattr(player_process, "returncode", 0)
+    player_exit_code = getattr(player_process, "returncode", None) or 0
 
     if record_history and player_exit_code == 0:
         history.add(args, [media_file], mark_done=True)

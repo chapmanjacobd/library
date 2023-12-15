@@ -80,12 +80,13 @@ def group_files_by_folder(args, media) -> List[Dict]:
     d = {}
     for parent, media in list(p_media.items()):
         d[parent] = {
-            "size": sum(m.get("size", 0) for m in media),
-            "median_size": nums.safe_median(m.get("size", 0) for m in media),
+            "size": sum(m.get("size") or 0 for m in media if not bool(m.get("time_deleted"))),
+            "median_size": nums.safe_median(m.get("size") or 0 for m in media if not bool(m.get("time_deleted"))),
             "total": len(media),
-            "exists": sum(not bool(m.get("time_deleted", 0)) for m in media),
-            "deleted": sum(bool(m.get("time_deleted", 0)) for m in media),
-            "played": sum(bool(m.get("time_last_played", 0)) for m in media),
+            "exists": sum(not bool(m.get("time_deleted")) for m in media),
+            "deleted": sum(bool(m.get("time_deleted")) for m in media),
+            "deleted_size": sum(m.get("size") or 0 for m in media if bool(m.get("time_deleted"))),
+            "played": sum(bool(m.get("time_last_played")) for m in media),
         }
 
     for path, pdict in list(d.items()):
@@ -191,23 +192,23 @@ def big_dirs() -> None:
             {
                 "path": group["common_prefix"],
                 "total": len(group["grouped_paths"]),
-                "played": sum(bool(media_keyed[s].get("time_played", 0)) for s in group["grouped_paths"]),
-                "exists": sum(not bool(media_keyed[s].get("time_deleted", 0)) for s in group["grouped_paths"]),
-                "deleted": sum(bool(media_keyed[s].get("time_deleted", 0)) for s in group["grouped_paths"]),
+                "played": sum(bool(media_keyed[s].get("time_played")) for s in group["grouped_paths"]),
+                "exists": sum(not bool(media_keyed[s].get("time_deleted")) for s in group["grouped_paths"]),
+                "deleted": sum(bool(media_keyed[s].get("time_deleted")) for s in group["grouped_paths"]),
                 "deleted_size": sum(
-                    media_keyed[s].get("size", 0)
+                    media_keyed[s].get("size") or 0
                     for s in group["grouped_paths"]
-                    if bool(media_keyed[s].get("time_deleted", 0))
+                    if bool(media_keyed[s].get("time_deleted"))
                 ),
                 "size": sum(
-                    media_keyed[s].get("size", 0)
+                    media_keyed[s].get("size") or 0
                     for s in group["grouped_paths"]
-                    if not bool(media_keyed[s].get("time_deleted", 0))
+                    if not bool(media_keyed[s].get("time_deleted"))
                 ),
                 "median_size": nums.safe_median(
-                    media_keyed[s].get("size", 0)
+                    media_keyed[s].get("size") or 0
                     for s in group["grouped_paths"]
-                    if not bool(media_keyed[s].get("time_deleted", 0))
+                    if not bool(media_keyed[s].get("time_deleted"))
                 ),
             }
             for group in groups

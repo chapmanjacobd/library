@@ -152,22 +152,35 @@ def cluster_dicts(args, media):
             groups = [
                 {
                     **group,
-                    "size": sum(media_keyed[s].get("size", 0) for s in group["grouped_paths"]),
-                    "median_size": nums.safe_median(media_keyed[s].get("size", 0) for s in group["grouped_paths"]),
+                    "size": sum(
+                        media_keyed[s].get("size") or 0
+                        for s in group["grouped_paths"]
+                        if not bool(media_keyed[s].get("time_deleted"))
+                    ),
+                    "median_size": nums.safe_median(
+                        media_keyed[s].get("size") or 0
+                        for s in group["grouped_paths"]
+                        if not bool(media_keyed[s].get("time_deleted"))
+                    ),
                     "total": len(group["grouped_paths"]),
-                    "exists": sum(not bool(media_keyed[s].get("time_deleted", 0)) for s in group["grouped_paths"]),
-                    "deleted": sum(bool(media_keyed[s].get("time_deleted", 0)) for s in group["grouped_paths"]),
-                    "played": sum(bool(media_keyed[s].get("time_last_played", 0)) for s in group["grouped_paths"]),
+                    "exists": sum(not bool(media_keyed[s].get("time_deleted")) for s in group["grouped_paths"]),
+                    "deleted": sum(bool(media_keyed[s].get("time_deleted")) for s in group["grouped_paths"]),
+                    "deleted_size": sum(
+                        media_keyed[s].get("size") or 0
+                        for s in group["grouped_paths"]
+                        if bool(media_keyed[s].get("time_deleted"))
+                    ),
+                    "played": sum(bool(media_keyed[s].get("time_last_played")) for s in group["grouped_paths"]),
                 }
                 for group in groups
             ]
             groups = mcda.group_sort_by(args, groups)
             sorted_paths = iterables.flatten(
-                s for d in groups for s in d["grouped_paths"] if media_keyed[s].get("time_deleted", 0) == 0
+                s for d in groups for s in d["grouped_paths"] if not bool(media_keyed[s].get("time_deleted"))
             )
     else:
         sorted_paths = iterables.flatten(
-            s for d in groups for s in d["grouped_paths"] if media_keyed[s].get("time_deleted", 0) == 0
+            s for d in groups for s in d["grouped_paths"] if not bool(media_keyed[s].get("time_deleted"))
         )
     media = [media_keyed[p] for p in sorted_paths]
     return media

@@ -155,7 +155,7 @@ def apply_merge(args, empty_folder_data, rename_data):
                 log.error("File %s not moved because target is a folder with the same name %s", t[1], t[2])
                 log.error("\tSuggested action: mv %s %s.txt", t[1], t[2])
             except OSError as e:
-                if getattr(e, "winerror", 0) == 87:
+                if (getattr(e, "winerror", None) or 0) == 87:
                     log.error("File %s not moved because target is a folder with the same name %s", t[1], t[2])
                     log.error("\tSuggested action: mv %s %s.txt", t[1], t[2])
                 else:
