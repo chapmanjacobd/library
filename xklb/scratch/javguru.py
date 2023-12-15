@@ -95,7 +95,7 @@ def jav_guru() -> None:
             video_index = video_streams[0]["index"]
 
             audio_streams = remote_probe.audio_streams
-            audio_streams.sort(key=lambda s: s["tags"].get("variant_bitrate", 0), reverse=True)
+            audio_streams.sort(key=lambda s: (s["tags"].get("variant_bitrate") or 0), reverse=True)
             audio_index = audio_streams[0]["index"]
 
         except Exception as e:

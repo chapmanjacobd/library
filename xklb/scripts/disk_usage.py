@@ -82,7 +82,7 @@ def get_subset(args, level=None, prefix=None) -> List[Dict]:
 
             if parent not in d:
                 d[parent] = {"size": 0, "count": 0}
-            d[parent]["size"] += m.get("size", 0)
+            d[parent]["size"] += m.get("size") or 0
             d[parent]["count"] += 1
 
     reverse = True

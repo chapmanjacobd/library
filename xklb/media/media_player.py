@@ -147,7 +147,7 @@ def transcode(args, path) -> str:
 
 def calculate_duration(args, m) -> Tuple[int, int]:
     start = 0
-    end = m.get("duration", 0)
+    end = m.get("duration") or 0
 
     if args.interdimensional_cable:
         start = randrange(int(start), int(end - args.interdimensional_cable + 1))

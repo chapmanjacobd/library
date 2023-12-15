@@ -115,7 +115,7 @@ def auto_mcda(args, df, alternatives, minimize_cols):
     from pymcdm.methods import MABAC, SPOTIS, TOPSIS
 
     goal_directions = np.array([-1 if col in minimize_cols else 1 for col in alternatives.columns])
-    alternatives_np = alternatives.fillna(getattr(args, "nodata", 0)).to_numpy()
+    alternatives_np = alternatives.fillna(getattr(args, "nodata", None) or 0).to_numpy()
     methods = [TOPSIS(), MABAC(), SPOTIS(SPOTIS.make_bounds(alternatives_np))]
     method_names = ["TOPSIS", "MABAC", "SPOTIS"]
     votes = []
