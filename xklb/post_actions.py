@@ -143,7 +143,7 @@ def external_action(args, log_action, media_file, player_exit_code, player_proce
         else:
             processes.cmd_detach(shlex.split(cmd), media_file)
     else:
-        if 0 < player_exit_code and not args.ignore_errors:
+        if 0 < player_exit_code and not args.ignore_errors and not (args.delete_unplayable and player_exit_code == 2):
             processes.player_exit(player_process)
 
 
