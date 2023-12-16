@@ -163,7 +163,10 @@ def post_act(
         history.add(args, [media_file], mark_done=True)
 
     if 0 < player_exit_code < 5 and not args.ignore_errors:
-        processes.player_exit(player_process)
+        if args.delete_unplayable:
+            delete_media(args, [media_file])
+        else:
+            processes.player_exit(player_process)
 
     def handle_ask_action(ask_action: str):
         true_action, false_action = getattr(AskAction, ask_action)

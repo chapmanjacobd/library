@@ -162,6 +162,7 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     parser.add_argument("--timeout", "-T", help="Quit after x minutes")
     parser.add_argument("--db", "-db", help="Override the positional argument database location")
     parser.add_argument("--ignore-errors", "--ignoreerrors", "-i", action="store_true")
+    parser.add_argument("--delete-unplayable", action="store_true")
     parser.add_argument("--verbose", "-v", action="count", default=0)
 
     parser.add_argument("database")
