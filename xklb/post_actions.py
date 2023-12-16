@@ -163,7 +163,7 @@ def post_act(
         history.add(args, [media_file], mark_done=True)
 
     if 0 < player_exit_code < 5 and not args.ignore_errors:
-        if args.delete_unplayable:
+        if args.delete_unplayable and player_exit_code == 2:  #  https://mpv.io/manual/master/#exit-codes
             delete_media(args, [media_file])
         else:
             processes.player_exit(player_process)
