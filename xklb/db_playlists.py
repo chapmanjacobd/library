@@ -1,4 +1,4 @@
-import sqlite3
+import os, sqlite3
 from datetime import datetime
 from typing import List, Optional
 
@@ -113,13 +113,12 @@ def delete_subpath_playlists(args, playlist_path) -> Optional[int]:
         with args.db.conn:
             args.db.conn.execute(
                 f"""
-                UPDATE playlists
-                SET time_deleted = {consts.APPLICATION_START}
+                DELETE from playlists
                 WHERE COALESCE(time_deleted, 0)=0
                     AND path LIKE ?
                     AND path != ?
                 """,
-                [str(playlist_path) + "%", str(playlist_path)],
+                [str(playlist_path) + os.sep + "%", str(playlist_path)],
             )
     except sqlite3.OperationalError:
         pass
