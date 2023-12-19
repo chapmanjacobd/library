@@ -75,7 +75,7 @@ def test_immediate(play_mocked, temp_db):
         lb(["tabsadd", db1, "--allow-immediate", TEST_URL])
 
         lb(["tabs", db1])
-        out = play_mocked.call_args[0][2]
+        out = play_mocked.call_args[0][1]
         assert out == {
             "path": TEST_URL,
             "frequency": "monthly",
@@ -89,7 +89,7 @@ def test_immediate(play_mocked, temp_db):
 
         clock.move_to("1970-03-01 00:00:00")
         lb(["tabs", db1])
-        out = play_mocked.call_args[0][2]
+        out = play_mocked.call_args[0][1]
         assert out == {
             "path": TEST_URL,
             "frequency": "monthly",
