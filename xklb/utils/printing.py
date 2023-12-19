@@ -1,5 +1,5 @@
 import csv, math, os, platform, sys, textwrap
-from datetime import datetime, time, timedelta
+from datetime import datetime, timedelta
 from typing import Dict, List
 
 import humanize
@@ -63,20 +63,27 @@ def human_time(seconds) -> str:
     if seconds is None or math.isnan(seconds) or seconds == 0:
         return ""
 
+    now = datetime.now()
+    midnight_today = now.replace(hour=0, minute=0, second=0, microsecond=0)
+
     dt = datetime.fromtimestamp(seconds)
     delta = datetime.today() - dt
-
-    midnight_today = datetime.combine(datetime.today(), time.min)
-    midnight_yesterday = midnight_today - timedelta(days=1)
+    delta_days = (abs(delta.days) - 1) if delta.days < 0 else delta.days
 
     if dt >= midnight_today:
-        return dt.strftime("today, %H:%M")
-    elif dt >= midnight_yesterday:
+        if delta_days == 0:
+            return dt.strftime("today, %H:%M")
+        elif delta_days == 1:
+            return dt.strftime("tomorrow, %H:%M")
+        elif delta_days < 46:
+            return dt.strftime(f"in {delta_days} days, %H:%M")
+
+    elif dt >= midnight_today - timedelta(days=1):
         return dt.strftime("yesterday, %H:%M")
-    elif delta.days < 46:
-        return datetime.fromtimestamp(seconds).strftime(f"{delta.days + 1} days ago, %H:%M")
-    else:
-        return datetime.fromtimestamp(seconds).strftime("%Y-%m-%d %H:%M")
+    elif delta_days < 46:
+        return dt.strftime(f"{delta_days} days ago, %H:%M")
+
+    return dt.strftime("%Y-%m-%d %H:%M")
 
 
 def path_fill(text, percent=None, width=None):

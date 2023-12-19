@@ -122,6 +122,7 @@ def construct_tabs_query(args) -> Tuple[str, dict]:
         )
         SELECT path
         , frequency
+        {", time_last_played" if args.print else ''}
         , CASE
             WHEN frequency = 'daily' THEN cast(STRFTIME('%s', datetime( time_last_played, 'unixepoch', '+1 Day', '-5 minutes' )) as int)
             WHEN frequency = 'weekly' THEN cast(STRFTIME('%s', datetime( time_last_played, 'unixepoch', '+7 Days', '-5 minutes' )) as int)
