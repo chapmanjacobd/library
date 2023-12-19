@@ -15,9 +15,6 @@ from xklb.utils.log_utils import log
 v_db = "tests/data/video.db"
 fs_add([v_db, "--scan-subtitles", "tests/data/"])
 
-a_db = "tests/data/audio.db"
-fs_add([a_db, "--audio", "tests/data/"])
-
 
 local_player_flags = [
     "-s tests -s 'test AND data' -E 2 -s test -E 3",
@@ -129,6 +126,8 @@ class TestFs(unittest.TestCase):
         assert out["subtitle_count"] == 4
         assert out["size"] == 136057
 
+        a_db = "tests/data/audio.db"
+        fs_add([a_db, "--audio", "tests/data/"])
         lb(["listen", a_db])
         out = play_mocked.call_args[0][1]
         assert "test" in out["path"]

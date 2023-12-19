@@ -95,7 +95,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.2.189)
+    xk media library subcommands (v2.2.190)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
