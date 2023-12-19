@@ -1,11 +1,10 @@
-import argparse, math
+import argparse, math, webbrowser
 from pathlib import Path
-from shutil import which
 from time import sleep
 from typing import Dict, List, Tuple
 
 from xklb import history, usage
-from xklb.media import media_player, media_printer
+from xklb.media import media_printer
 from xklb.utils import arg_utils, consts, db_utils, iterables, objects, processes
 from xklb.utils.log_utils import log
 
@@ -157,19 +156,10 @@ def construct_tabs_query(args) -> Tuple[str, dict]:
     return query, args.filter_bindings
 
 
-def find_player() -> List[str]:
-    player = media_player.generic_player()
-    firefox = which("firefox") or which("firefox.exe")
-    if firefox:
-        player = [firefox, "--new-tab"]
-
-    return player
-
-
-def play(args, player, m: Dict) -> None:
+def play(args, m: Dict) -> None:
     media_file = m["path"]
 
-    processes.cmd(*player, media_file, strict=False)
+    webbrowser.open(media_file, 2, autoraise=False)
     history.add(args, [media_file], time_played=consts.today_stamp(), mark_done=True)
 
 
@@ -193,9 +183,8 @@ def frequency_filter(counts, media: List[Dict]) -> List[dict]:
 
 
 def open_tabs(args, media):
-    player = find_player()
     for m in media:
-        play(args, player, m)
+        play(args, m)
         MANY_TABS = 9
         if len(media) >= MANY_TABS:
             sleep(0.3)

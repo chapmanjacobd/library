@@ -200,7 +200,10 @@ def get_inner_urls(args, url):
             url = "file://" + url
         else:
             r = web.requests_session().get(url, timeout=120, headers=web.headers)
-            r.raise_for_status()
+            if r.status_code == 404:
+                log.warning("404 Not Found Error: %s", url)
+            else:
+                r.raise_for_status()
             markup = r.content
 
         yield from parse_inner_urls(args, url, markup)
