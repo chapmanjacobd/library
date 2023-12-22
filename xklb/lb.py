@@ -196,6 +196,8 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     add_parser(subparsers, "xklb.scripts.process_audio.process_audio")
     add_parser(subparsers, "xklb.scripts.redownload.redownload", ["re-dl", "re-download"])
     add_parser(subparsers, "xklb.scripts.rel_mv.rel_mv", ["relmv", "mv-rel", "mvrel"])
+    add_parser(subparsers, "xklb.scripts.sample_hash.sample_hash", ["hash", "hash-file"])
+    add_parser(subparsers, "xklb.scripts.sample_compare.sample_compare", ["cmp"])
     add_parser(subparsers, "xklb.scripts.scatter.scatter")
     add_parser(subparsers, "xklb.scripts.search_db.search_db", ["s", "sdb", "search-dbs"])
     add_parser(subparsers, "xklb.scripts.streaming_tab_loader.streaming_tab_loader", ["surf"])

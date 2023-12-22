@@ -1410,3 +1410,17 @@ process_audio = """library process-audio PATH ... [--always-split] [--split-long
 
         library process-audio --split-longer-than 36mins audiobook.m4b audiobook2.mp3
 """
+
+sample_hash = """library sample-hash [--threads 10] [--chunk-size BYTES] [--gap BYTES OR 0.0-1.0*FILESIZE] PATH ...
+
+    Calculate hashes for large files by reading only small segments of each file
+
+        library sample-hash ./my_file.mkv
+
+    The threads flag seems to be faster for rotational media but slower on SSDs
+"""
+
+sample_compare = """library sample-hash [--threads 10] [--chunk-size BYTES] [--gap BYTES OR 0.0-1.0*FILESIZE] PATH ...
+
+Convenience subcommand to compare multiple files using sample-hash
+"""

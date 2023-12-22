@@ -95,7 +95,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.2.190)
+    xk media library subcommands (v2.2.191)
 
     local media:
       lb fsadd                 Create a local media database; Add folders
@@ -1620,7 +1620,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 </details>
 
-<details><summary>Compare data files (incremental-diff)</summary>
+<details><summary>Compare table-like files (incremental-diff)</summary>
 
     $ library incremental-diff -h
     usage: library incremental-diff PATH1 PATH2 [--join-keys JOIN_KEYS] [--table1 TABLE1] [--table2 TABLE2] [--table1-index TABLE1_INDEX] [--table2-index TABLE2_INDEX] [--start-row START_ROW] [--batch-size BATCH_SIZE]
@@ -1636,7 +1636,47 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 </details>
 
+<details><summary>Calculate a hash based on small file segments (sample-hash)</summary>
+
+    $ library sample-hash -h
+    usage: library sample-hash [--threads 10] [--chunk-size BYTES] [--gap BYTES OR 0.0-1.0*FILESIZE] PATH ...
+
+    Calculate hashes for large files by reading only small segments of each file
+
+        library sample-hash ./my_file.mkv
+
+    The threads flag seems to be faster for rotational media but slower on SSDs
+
+
+</details>
+
+<details><summary>Compare files using sample-hash and other shortcuts (sample-compare)</summary>
+
+    $ library sample-compare -h
+    usage: library sample-hash [--threads 10] [--chunk-size BYTES] [--gap BYTES OR 0.0-1.0*FILESIZE] PATH ...
+
+Convenience subcommand to compare multiple files using sample-hash
+
+
+</details>
+
 ### Folder subcommands
+
+<details><summary>Merge two or more file trees (merge-folders)</summary>
+
+    $ library merge-folders -h
+    usage: library merge-folders [--replace] [--skip] [--simulate] SOURCES ... DESTINATION
+
+    Merge multiple folders with the same file tree into a single folder.
+
+    https://github.com/chapmanjacobd/journal/blob/main/programming/linux/misconceptions.md#mv-src-vs-mv-src
+
+    Trumps are files that are new or replaced files from an earlier source which now conflict with this later source.
+    The count of conflicts also includes trumps.
+
+
+
+</details>
 
 <details><summary>Move files preserving parent folder hierarchy (relmv)</summary>
 
@@ -1654,6 +1694,73 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         library relmv (
             library listen audio.db --local-media-only --where 'play_count=0' --random -L 600 -p f
         ) /mnt/d/80_Now_Listening/
+
+
+</details>
+
+<details><summary>Find specific folders to move to different disks (mv-list)</summary>
+
+    $ library mv-list -h
+    usage: library mv-list [--limit LIMIT] [--lower LOWER] [--upper UPPER] MOUNT_POINT DATABASE
+
+Free up space on a specific disk. Find candidates for moving data to a different mount point
+
+
+The program takes a mount point and a xklb database file. If you don't have a database file you can create one like this:
+
+    library fsadd --filesystem d.db ~/d/
+
+But this should definitely also work with xklb audio and video databases:
+
+    library mv-list /mnt/d/ video.db
+
+The program will print a table with a sorted list of folders which are good candidates for moving.
+Candidates are determined by how many files are in the folder (so you don't spend hours waiting for folders with millions of tiny files to copy over).
+The default is 4 to 4000--but it can be adjusted via the --lower and --upper flags.
+
+    ...
+    ├──────────┼─────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+    │ 4.0 GB   │       7 │ /mnt/d/71_Mealtime_Videos/unsorted/Miguel_4K/                                                                 │
+    ├──────────┼─────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+    │ 5.7 GB   │      10 │ /mnt/d/71_Mealtime_Videos/unsorted/Bollywood_Premium/                                                         │
+    ├──────────┼─────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+    │ 2.3 GB   │       4 │ /mnt/d/71_Mealtime_Videos/chief_wiggum/                                                                       │
+    ╘══════════╧═════════╧═══════════════════════════════════════════════════════════════════════════════════════════════════════════════╛
+    6702 other folders not shown
+
+    ██╗███╗░░██╗░██████╗████████╗██████╗░██╗░░░██╗░█████╗░████████╗██╗░█████╗░███╗░░██╗░██████╗
+    ██║████╗░██║██╔════╝╚══██╔══╝██╔══██╗██║░░░██║██╔══██╗╚══██╔══╝██║██╔══██╗████╗░██║██╔════╝
+    ██║██╔██╗██║╚█████╗░░░░██║░░░██████╔╝██║░░░██║██║░░╚═╝░░░██║░░░██║██║░░██║██╔██╗██║╚█████╗░
+    ██║██║╚████║░╚═══██╗░░░██║░░░██╔══██╗██║░░░██║██║░░██╗░░░██║░░░██║██║░░██║██║╚████║░╚═══██╗
+    ██║██║░╚███║██████╔╝░░░██║░░░██║░░██║╚██████╔╝╚█████╔╝░░░██║░░░██║╚█████╔╝██║░╚███║██████╔╝
+    ╚═╝╚═╝░░╚══╝╚═════╝░░░░╚═╝░░░╚═╝░░╚═╝░╚═════╝░░╚════╝░░░░╚═╝░░░╚═╝░╚════╝░╚═╝░░╚══╝╚═════╝░
+
+    Type "done" when finished
+    Type "more" to see more files
+    Paste a folder (and press enter) to toggle selection
+    Type "*" to select all files in the most recently printed table
+
+Then it will give you a prompt:
+
+    Paste a path:
+
+Wherein you can copy and paste paths you want to move from the table and the program will keep track for you.
+
+    Paste a path: /mnt/d/75_MovieQueue/720p/s11/
+    26 selected paths: 162.1 GB ; future free space: 486.9 GB
+
+You can also press the up arrow or paste it again to remove it from the list:
+
+    Paste a path: /mnt/d/75_MovieQueue/720p/s11/
+    25 selected paths: 159.9 GB ; future free space: 484.7 GB
+
+After you are done selecting folders you can press ctrl-d and it will save the list to a tmp file:
+
+    Paste a path: done
+
+        Folder list saved to /tmp/tmp7x_75l8. You may want to use the following command to move files to an EMPTY folder target:
+
+            rsync -a --info=progress2 --no-inc-recursive --remove-source-files --files-from=/tmp/tmp7x_75l8 -r --relative -vv --dry-run / jim:/free/real/estate/
 
 
 </details>
@@ -1731,73 +1838,6 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     Multi-device re-bin: empty out a disk (/mnt/d2) into many other disks (/mnt/d1, /mnt/d3, and /mnt/d4)
 
         library scatter fs.db -m /mnt/d1:/mnt/d3:/mnt/d4 /mnt/d2
-
-
-</details>
-
-<details><summary>Find specific folders to move to different disks (mv-list)</summary>
-
-    $ library mv-list -h
-    usage: library mv-list [--limit LIMIT] [--lower LOWER] [--upper UPPER] MOUNT_POINT DATABASE
-
-Free up space on a specific disk. Find candidates for moving data to a different mount point
-
-
-The program takes a mount point and a xklb database file. If you don't have a database file you can create one like this:
-
-    library fsadd --filesystem d.db ~/d/
-
-But this should definitely also work with xklb audio and video databases:
-
-    library mv-list /mnt/d/ video.db
-
-The program will print a table with a sorted list of folders which are good candidates for moving.
-Candidates are determined by how many files are in the folder (so you don't spend hours waiting for folders with millions of tiny files to copy over).
-The default is 4 to 4000--but it can be adjusted via the --lower and --upper flags.
-
-    ...
-    ├──────────┼─────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-    │ 4.0 GB   │       7 │ /mnt/d/71_Mealtime_Videos/unsorted/Miguel_4K/                                                                 │
-    ├──────────┼─────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-    │ 5.7 GB   │      10 │ /mnt/d/71_Mealtime_Videos/unsorted/Bollywood_Premium/                                                         │
-    ├──────────┼─────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-    │ 2.3 GB   │       4 │ /mnt/d/71_Mealtime_Videos/chief_wiggum/                                                                       │
-    ╘══════════╧═════════╧═══════════════════════════════════════════════════════════════════════════════════════════════════════════════╛
-    6702 other folders not shown
-
-    ██╗███╗░░██╗░██████╗████████╗██████╗░██╗░░░██╗░█████╗░████████╗██╗░█████╗░███╗░░██╗░██████╗
-    ██║████╗░██║██╔════╝╚══██╔══╝██╔══██╗██║░░░██║██╔══██╗╚══██╔══╝██║██╔══██╗████╗░██║██╔════╝
-    ██║██╔██╗██║╚█████╗░░░░██║░░░██████╔╝██║░░░██║██║░░╚═╝░░░██║░░░██║██║░░██║██╔██╗██║╚█████╗░
-    ██║██║╚████║░╚═══██╗░░░██║░░░██╔══██╗██║░░░██║██║░░██╗░░░██║░░░██║██║░░██║██║╚████║░╚═══██╗
-    ██║██║░╚███║██████╔╝░░░██║░░░██║░░██║╚██████╔╝╚█████╔╝░░░██║░░░██║╚█████╔╝██║░╚███║██████╔╝
-    ╚═╝╚═╝░░╚══╝╚═════╝░░░░╚═╝░░░╚═╝░░╚═╝░╚═════╝░░╚════╝░░░░╚═╝░░░╚═╝░╚════╝░╚═╝░░╚══╝╚═════╝░
-
-    Type "done" when finished
-    Type "more" to see more files
-    Paste a folder (and press enter) to toggle selection
-    Type "*" to select all files in the most recently printed table
-
-Then it will give you a prompt:
-
-    Paste a path:
-
-Wherein you can copy and paste paths you want to move from the table and the program will keep track for you.
-
-    Paste a path: /mnt/d/75_MovieQueue/720p/s11/
-    26 selected paths: 162.1 GB ; future free space: 486.9 GB
-
-You can also press the up arrow or paste it again to remove it from the list:
-
-    Paste a path: /mnt/d/75_MovieQueue/720p/s11/
-    25 selected paths: 159.9 GB ; future free space: 484.7 GB
-
-After you are done selecting folders you can press ctrl-d and it will save the list to a tmp file:
-
-    Paste a path: done
-
-        Folder list saved to /tmp/tmp7x_75l8. You may want to use the following command to move files to an EMPTY folder target:
-
-            rsync -a --info=progress2 --no-inc-recursive --remove-source-files --files-from=/tmp/tmp7x_75l8 -r --relative -vv --dry-run / jim:/free/real/estate/
 
 
 </details>
@@ -1947,22 +1987,6 @@ After you are done selecting folders you can press ctrl-d and it will save the l
     Optimize library databases
 
     The force flag is usually unnecessary and it can take much longer
-
-
-</details>
-
-<details><summary>Merge two or more file trees (merge-folders)</summary>
-
-    $ library merge-folders -h
-    usage: library merge-folders [--replace] [--skip] [--simulate] SOURCES ... DESTINATION
-
-    Merge multiple folders with the same file tree into a single folder.
-
-    https://github.com/chapmanjacobd/journal/blob/main/programming/linux/misconceptions.md#mv-src-vs-mv-src
-
-    Trumps are files that are new or replaced files from an earlier source which now conflict with this later source.
-    The count of conflicts also includes trumps.
-
 
 
 </details>

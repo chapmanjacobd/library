@@ -508,7 +508,10 @@ def process_playqueue(args) -> None:
         log.debug("utils.filter_episodic: %s", t.elapsed())
 
     if not media:
-        processes.no_media_found()
+        if Path(args.include).is_file():
+            media = [{"path": str(Path(args.include).resolve())}]
+        else:
+            processes.no_media_found()
 
     if args.safe:
         media = [d for d in media if tube_backend.is_supported(d["path"]) or Path(d["path"]).exists()]
