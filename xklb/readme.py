@@ -38,12 +38,15 @@ progs = {
     "File subcommands": {
         "eda": "Exploratory Data Analysis",
         "mcda": "Multi-criteria Ranking for Decision Support",
-        "incremental_diff": "Compare data files",
+        "incremental_diff": "Compare table-like files",
+        "sample_hash": "Calculate a hash based on small file segments",
+        "sample_compare": "Compare files using sample-hash and other shortcuts",
     },
     "Folder subcommands": {
+        "merge_folders": "Merge two or more file trees",
         "relmv": "Move files preserving parent folder hierarchy",
-        "scatter": "Scatter files between folders or disks",
         "mv_list": "Find specific folders to move to different disks",
+        "scatter": "Scatter files between folders or disks",
     },
     "Multi-database subcommands": {
         "merge_dbs": "Merge SQLITE databases",
@@ -55,7 +58,6 @@ progs = {
         "big_dirs": "Show large folders",
         "search_db": "Search a SQLITE database",
         "optimize": "Re-optimize database",
-        "merge_folders": "Merge two or more file trees",
     },
     "Database enrichment subcommands": {
         "dedupe_db": "Dedupe SQLITE tables",

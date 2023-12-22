@@ -1,4 +1,4 @@
-import re, statistics
+import math, re, statistics
 from datetime import timezone
 from typing import Optional
 
@@ -90,7 +90,7 @@ def human_to_seconds(input_str) -> int:
     return int(float(value) * time_units[unit])
 
 
-def linear_interpolation(x, data_points, clip=True):
+def linear_interpolation(x, data_points, clip=True) -> float:
     data_points.sort(key=lambda point: point[0])  # Sort the data points based on x values
     n = len(data_points)
 
@@ -117,3 +117,28 @@ def linear_interpolation(x, data_points, clip=True):
             x2, y2 = data_points[i + 1]
             interpolated_y = y1 + ((x - x1) / (x2 - x1)) * (y2 - y1)
             return interpolated_y
+
+    msg = f"Could not determine value y for value x {x}"
+    raise ValueError(msg)
+
+
+def calculate_segments(file_size, chunk_size, gap=0.1):
+    segments = []
+    start = 0
+
+    if file_size == 0:
+        return []
+    elif file_size <= chunk_size * 3:
+        return [(0, file_size)]
+
+    end_segment_start = file_size - chunk_size
+
+    while start + chunk_size < end_segment_start:
+        end = min(start + chunk_size, file_size)
+        segments.append((start, end - start))
+
+        if gap < 1:
+            gap = math.ceil(file_size * gap)
+        start = end + gap
+
+    return segments + [(end_segment_start, chunk_size)]  # always scan the end

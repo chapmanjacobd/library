@@ -229,10 +229,9 @@ def log_problem(args, playlist_path) -> None:
         log.warning("Could not add playlist %s", playlist_path)
 
 
-def save_undownloadable(args, playlist_path, extractor) -> None:
+def save_undownloadable(args, playlist_path) -> None:
     entry = {
         "path": playlist_path,
-        "title": f"No data from {extractor} extractor",
         "extractor_config": args.extractor_config,
         **args.extra_playlist_data,
     }
