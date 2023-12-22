@@ -1,8 +1,6 @@
 import argparse
 from concurrent.futures import ThreadPoolExecutor
-from os import stat_result
 from pathlib import Path
-from typing import Dict
 
 from xklb import usage
 from xklb.scripts import sample_hash
@@ -10,19 +8,26 @@ from xklb.utils import objects
 from xklb.utils.log_utils import log
 
 
-def sample_cmp(*paths, threads=1, gap=0.1, chunk_size=None):
+def sample_cmp(*paths, threads=1, gap=0.1, chunk_size=None, ignore_holes=False):
     if len(paths) < 2:
         raise ValueError("Not enough paths. Include 2 or more paths to compare")
 
-    path_stats: Dict[str, stat_result] = {}
-    for path in paths:
-        file_stats = Path(path).stat()
-        path_stats[path] = file_stats
+    path_stats = {path: Path(path).stat() for path in paths}
 
     sizes = [stat_res.st_size for stat_res in path_stats.values()]
     if not all(size == sizes[0] for size in sizes):
-        log.error("File sizes don't match: %s", {path: st.st_size for path, st in path_stats.items()})
+        sorted_paths = sorted(path_stats.items(), key=lambda x: x[1].st_size)
+        paths_str = "\n".join([f"{st.st_size} bytes\t{path}" for path, st in sorted_paths])
+        log.error("File apparent-sizes do not match:\n%s", paths_str)
         raise SystemExit(4)
+
+    if not ignore_holes:
+        sizes = [stat_res.st_blocks for stat_res in path_stats.values()]
+        if not all(size == sizes[0] for size in sizes):
+            sorted_paths = sorted(path_stats.items(), key=lambda x: x[1].st_blocks)
+            paths_str = "\n".join([f"{st.st_blocks} blocks\t{path}" for path, st in sorted_paths])
+            log.error("File holes do not match:\n%s", paths_str)
+            raise SystemExit(4)
 
     with ThreadPoolExecutor(max_workers=4) as pool:
         futures = {
@@ -33,12 +38,15 @@ def sample_cmp(*paths, threads=1, gap=0.1, chunk_size=None):
     for path, future in futures.items():
         paths[path] = future.result()
 
+    sorted_paths = sorted(paths.items(), key=lambda x: x[1])
+    paths_str = "\n".join([f"{hash}\t{path}" for path, hash in sorted_paths])
+
     hashes = [hash for hash in paths.values()]
     is_equal = all(hash == hashes[0] for hash in hashes)
     if is_equal:
-        log.info("Files equal: %s", paths)
+        log.info("Files might be equal:\n%s", paths_str)
     else:
-        log.error("Files not equal: %s", paths)
+        log.error("Files are not equal:\n%s", paths_str)
 
     return is_equal
 
@@ -57,12 +65,15 @@ def sample_compare() -> None:
         default=0.1,
         help="Width between chunks to skip (default 0.1 (10%%)). Values greater than 1 are treated as number of bytes",
     )
+    parser.add_argument("--ignore-holes", "--ignore-sparse", action="store_true")
     parser.add_argument("--verbose", "-v", action="count", default=0)
     parser.add_argument("paths", nargs="+")
     args = parser.parse_args()
     log.info(objects.dict_filter_bool(args.__dict__))
 
-    is_equal = sample_cmp(*args.paths, threads=args.threads, gap=args.gap, chunk_size=args.chunk_size)
+    is_equal = sample_cmp(
+        *args.paths, threads=args.threads, gap=args.gap, chunk_size=args.chunk_size, ignore_holes=args.ignore_holes
+    )
 
     if not is_equal:
         raise SystemExit(1)

@@ -1,4 +1,4 @@
-import argparse, hashlib
+import argparse, hashlib, shlex
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
@@ -30,9 +30,11 @@ def threadpool_read(path, segments, max_workers=10):
 
 def sample_hash_file(path, threads=1, gap=0.1, chunk_size=None):
     file_stats = Path(path).stat()
-    disk_usage = file_stats.st_blocks * file_stats.st_blksize
+    disk_usage = (
+        file_stats.st_blocks * 512
+    )  # https://github.com/python/cpython/blob/main/Doc/library/os.rst#files-and-directories
     if file_stats.st_size > disk_usage:
-        log.warning(f"File might be sparse %s", path)
+        log.warning(f"File has holes %s", path)
 
     if chunk_size is None:
         chunk_size = int(nums.linear_interpolation(file_stats.st_size, [(26214400, 262144), (52428800000, 10485760)]))
@@ -79,6 +81,6 @@ def sample_hash() -> None:
             path = future_to_path[future]
             try:
                 file_hash_hex = future.result()
-                print(file_hash_hex, path, sep="\t")
+                print(file_hash_hex, shlex.quote(path), sep="\t")
             except Exception as e:
                 print(f"Error hashing {path}: {e}")
