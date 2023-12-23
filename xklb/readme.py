@@ -23,13 +23,13 @@ for category, category_progs in lb.progs.items():
         if prog_usage is not None:
             usage_details_md.append(
                 f"""
-    <details><summary>{prog_description}</summary>
+<details><summary>{prog_description}</summary>
 
-        $ library {subcommand} -h
-        usage: {prog_usage}
+    $ library {subcommand} -h
+    usage: {prog_usage}
 
-    </details>
-    """,
+</details>
+""",
         )
 
 expand_all_js = """```js
