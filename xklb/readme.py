@@ -1,90 +1,17 @@
 from xklb import lb, usage
 
-progs = {
-    "Create database subcommands": {
-        "fsadd": "Add local media",
-        "tubeadd": "Add online video media (yt-dlp)",
-        "galleryadd": "Add online gallery media (gallery-dl)",
-        "tabsadd": "Add browser tabs",
-        "siteadd": "Auto-scrape website data to SQLITE",
-        "redditadd": "Add reddit media",
-        "pushshift": "Convert pushshift data to reddit.db format",
-        "hnadd": "Create / Update a Hacker News database",
-        "substack": "Backup substack articles",
-        "tildes": "Backup tildes comments and topics",
-        "places_import": "Import places of interest (POIs)",
-    },
-    "Update database subcommands": {
-        "fsupdate": "Update local media",
-        "tubeupdate": "Update online video media",
-        "galleryupdate": "Update online gallery media",
-        "redditupdate": "Update reddit media",
-    },
-    "Media database subcommands": {
-        "watch": "Watch / Listen",
-        "tabs": "Open tabs",
-        "block": "Block a channel",
-        "playlists": "List playlists",
-        "download": "Download media",
-        "download_status": "Download Status",
-        "redownload": "Re-download deleted/lost media",
-        "history": "History",
-        "search": "Search captions / subtitles",
-    },
-    "Text subcommands": {
-        "cluster_sort": "Sort text and images by similarity",
-        "extract_links": "Extract links from HTML pages",
-    },
-    "File subcommands": {
-        "eda": "Exploratory Data Analysis",
-        "mcda": "Multi-criteria Ranking for Decision Support",
-        "incremental_diff": "Compare table-like files",
-        "sample_hash": "Calculate a hash based on small file segments",
-        "sample_compare": "Compare files using sample-hash and other shortcuts",
-    },
-    "Folder subcommands": {
-        "merge_folders": "Merge two or more file trees",
-        "relmv": "Move files preserving parent folder hierarchy",
-        "mv_list": "Find specific folders to move to different disks",
-        "scatter": "Scatter files between folders or disks",
-    },
-    "Multi-database subcommands": {
-        "merge_dbs": "Merge SQLITE databases",
-        "copy_play_counts": "Copy play history",
-    },
-    "Filesystem Database subcommands": {
-        "christen": "Clean filenames",
-        "disk_usage": "Disk Usage",
-        "big_dirs": "Show large folders",
-        "search_db": "Search a SQLITE database",
-        "optimize": "Re-optimize database",
-    },
-    "Database enrichment subcommands": {
-        "dedupe_db": "Dedupe SQLITE tables",
-        "dedupe": "Dedupe similar media",
-        "merge_online_local": "Merge online and local data",
-        "mpv_watchlater": "Import mpv watchlater files to history",
-        "reddit_selftext": "Convert selftext links to media table",
-    },
-    "Misc subcommands": {
-        "surf": "Automatic tab loader",
-        "export_text": "Export HTML files from SQLite databases",
-        "process_audio": "Shrink audio by converting to Opus format",
-    },
-}
-
 all_progs = [s for s in dir(usage) if not s.startswith("_") and isinstance(getattr(usage, s), str)]
-categorized_progs = [key for d in progs.values() for key in d if isinstance(key, str)]
+categorized_progs = [key for d in lb.progs.values() for key in d if isinstance(key, str)]
 other_progs = [s for s in all_progs if s not in categorized_progs]
 if len(other_progs) > 0:
-    progs["Other subcommands"] = {s: s for s in other_progs}
+    lb.progs["Other subcommands"] = {s: s for s in other_progs}
 
-usage_details = []
-for category, category_progs in progs.items():
-    usage_details.append(f"\n### {category}\n")
+usage_details_md = []
+for category, category_progs in lb.progs.items():
+    usage_details_md.append(f"\n### {category}\n")
 
     for prog, prog_description in category_progs.items():
-        prog_usage = getattr(usage, prog)
+        prog_usage = getattr(usage, prog, None)
         subcommand = prog.replace("_", "-")
 
         if prog_description is None:
@@ -92,15 +19,17 @@ for category, category_progs in progs.items():
 
         if subcommand not in prog_description.lower():
             prog_description += f" ({subcommand})"
-        usage_details.append(
-            f"""
-<details><summary>{prog_description}</summary>
 
-    $ library {subcommand} -h
-    usage: {prog_usage}
+        if prog_usage is not None:
+            usage_details_md.append(
+                f"""
+    <details><summary>{prog_description}</summary>
 
-</details>
-""",
+        $ library {subcommand} -h
+        usage: {prog_usage}
+
+    </details>
+    """,
         )
 
 expand_all_js = """```js
@@ -437,7 +366,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 ## Usage
 
-{''.join(usage_details)}
+{''.join(usage_details_md)}
 
 <details><summary>Chicken mode</summary>
 

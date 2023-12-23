@@ -97,92 +97,155 @@ To stop playing press Ctrl+C in either the terminal or mpv
     $ library
     xk media library subcommands (v2.2.192)
 
-    local media:
-      lb fsadd                 Create a local media database; Add folders
-      lb fsupdate              Refresh database: add new files, mark deleted
+    Create database subcommands:
+    ╭───────────────┬────────────────────────────────────────────────────╮
+    │ fsadd         │ Add local media                                    │
+    ├───────────────┼────────────────────────────────────────────────────┤
+    │ tubeadd       │ Add online video media (yt-dlp)                    │
+    ├───────────────┼────────────────────────────────────────────────────┤
+    │ galleryadd    │ Add online gallery media (gallery-dl)              │
+    ├───────────────┼────────────────────────────────────────────────────┤
+    │ tabsadd       │ Create a tabs database; Add URLs                   │
+    ├───────────────┼────────────────────────────────────────────────────┤
+    │ siteadd       │ Auto-scrape website data to SQLITE                 │
+    ├───────────────┼────────────────────────────────────────────────────┤
+    │ redditadd     │ Add reddit media                                   │
+    ├───────────────┼────────────────────────────────────────────────────┤
+    │ pushshift     │ Convert pushshift data to reddit.db format (stdin) │
+    ├───────────────┼────────────────────────────────────────────────────┤
+    │ hnadd         │ Create / Update a Hacker News database             │
+    ├───────────────┼────────────────────────────────────────────────────┤
+    │ substack      │ Backup substack articles                           │
+    ├───────────────┼────────────────────────────────────────────────────┤
+    │ tildes        │ Backup tildes comments and topics                  │
+    ├───────────────┼────────────────────────────────────────────────────┤
+    │ places-import │ Import places of interest (POIs)                   │
+    ╰───────────────┴────────────────────────────────────────────────────╯
 
-      lb listen                Listen to local and online media
-      lb watch                 Watch local and online media
-      lb search                Search text and subtitles
+    Update database subcommands:
+    ╭───────────────┬─────────────────────────────╮
+    │ fsupdate      │ Update local media          │
+    ├───────────────┼─────────────────────────────┤
+    │ tubeupdate    │ Update online video media   │
+    ├───────────────┼─────────────────────────────┤
+    │ galleryupdate │ Update online gallery media │
+    ├───────────────┼─────────────────────────────┤
+    │ redditupdate  │ Update reddit media         │
+    ╰───────────────┴─────────────────────────────╯
 
-      lb read                  Read books
-      lb view                  View images
+    Playback subcommands:
+    ╭───────┬───────────────────────────────────────────────────╮
+    │ watch │ Watch / Listen                                    │
+    ├───────┼───────────────────────────────────────────────────┤
+    │ now   │ Show what is currently playing                    │
+    ├───────┼───────────────────────────────────────────────────┤
+    │ next  │ Play next file and optionally delete current file │
+    ├───────┼───────────────────────────────────────────────────┤
+    │ stop  │ Stop all playback                                 │
+    ├───────┼───────────────────────────────────────────────────┤
+    │ pause │ Pause all playback                                │
+    ╰───────┴───────────────────────────────────────────────────╯
 
-      lb bigdirs               Discover folders which take much room
-      lb dedupe                Deduplicate a media db's media files
-      lb czkawka-dedupe        Split-screen czkawka results to decide which to delete
+    Media database subcommands:
+    ╭─────────────────┬────────────────────────────────╮
+    │ tabs            │ Open your tabs for the day     │
+    ├─────────────────┼────────────────────────────────┤
+    │ block           │ Block a channel                │
+    ├─────────────────┼────────────────────────────────┤
+    │ playlists       │ List stored playlists          │
+    ├─────────────────┼────────────────────────────────┤
+    │ download        │ Download media                 │
+    ├─────────────────┼────────────────────────────────┤
+    │ download-status │ Show download status           │
+    ├─────────────────┼────────────────────────────────┤
+    │ redownload      │ Re-download deleted/lost media │
+    ├─────────────────┼────────────────────────────────┤
+    │ history         │ Show some playback statistics  │
+    ├─────────────────┼────────────────────────────────┤
+    │ search          │ Search captions / subtitles    │
+    ╰─────────────────┴────────────────────────────────╯
 
-      lb merge-folders         Merge two or more folders
-      lb relmv                 Move files/folders while preserving relative paths
-      lb christen              Cleanse files by giving them a new name
+    Text subcommands:
+    ╭────────────────┬─────────────────────────────────────────────╮
+    │ cluster-sort   │ Sort text and images by similarity          │
+    ├────────────────┼─────────────────────────────────────────────┤
+    │ extract-links  │ Extract inner links from lists of web links │
+    ├────────────────┼─────────────────────────────────────────────┤
+    │ markdown-links │ Extract titles from lists of web links      │
+    ╰────────────────┴─────────────────────────────────────────────╯
 
-      lb mv-list               Reach a target free space by moving data across mount points
-      lb scatter               Scatter files across multiple mountpoints (mergerfs balance)
+    File subcommands:
+    ╭──────────────────┬─────────────────────────────────────────────────────╮
+    │ eda              │ Exploratory Data Analysis on table-like files       │
+    ├──────────────────┼─────────────────────────────────────────────────────┤
+    │ mcda             │ Multi-criteria Ranking for Decision Support         │
+    ├──────────────────┼─────────────────────────────────────────────────────┤
+    │ incremental-diff │ Diff large table-like files in chunks               │
+    ├──────────────────┼─────────────────────────────────────────────────────┤
+    │ sample-hash      │ Calculate a hash based on small file segments       │
+    ├──────────────────┼─────────────────────────────────────────────────────┤
+    │ sample-compare   │ Compare files using sample-hash and other shortcuts │
+    ╰──────────────────┴─────────────────────────────────────────────────────╯
 
-      lb search-db             Search a SQLITE file
-      lb merge-dbs             Merge multiple SQLITE files
-      lb dedupe-dbs            Deduplicate SQLITE tables
-      lb copy-play-counts      Copy play counts from multiple SQLITE files
+    Folder subcommands:
+    ╭───────────────┬──────────────────────────────────────────────────╮
+    │ merge-folders │ Merge two or more file trees                     │
+    ├───────────────┼──────────────────────────────────────────────────┤
+    │ relmv         │ Move files preserving parent folder hierarchy    │
+    ├───────────────┼──────────────────────────────────────────────────┤
+    │ mv-list       │ Find specific folders to move to different disks │
+    ├───────────────┼──────────────────────────────────────────────────┤
+    │ scatter       │ Scatter files between folders or disks           │
+    ╰───────────────┴──────────────────────────────────────────────────╯
 
-    online media:
-      lb tubeadd               Create a tube database; Add playlists
-      lb tubeupdate            Fetch new videos from saved playlists
+    Multi-database subcommands:
+    ╭──────────────────┬────────────────────────╮
+    │ merge-dbs        │ Merge SQLITE databases │
+    ├──────────────────┼────────────────────────┤
+    │ copy-play-counts │ Copy play history      │
+    ╰──────────────────┴────────────────────────╯
 
-      lb galleryadd            Create a gallery database; Add albums
-      lb galleryupdate         Fetch new images from saved playlists
+    Filesystem Database subcommands:
+    ╭─────────────┬────────────────────────────────╮
+    │ christen    │ Clean filenames                │
+    ├─────────────┼────────────────────────────────┤
+    │ disk-usage  │ Show disk usage                │
+    ├─────────────┼────────────────────────────────┤
+    │ mount-stats │ Show some relative mount stats │
+    ├─────────────┼────────────────────────────────┤
+    │ big-dirs    │ Show large folders             │
+    ├─────────────┼────────────────────────────────┤
+    │ search-db   │ Search a SQLITE database       │
+    ├─────────────┼────────────────────────────────┤
+    │ optimize    │ Re-optimize database           │
+    ╰─────────────┴────────────────────────────────╯
 
-      lb redditadd             Create a reddit database; Add subreddits
-      lb redditupdate          Fetch new posts from saved subreddits
+    Single database enrichment subcommands:
+    ╭────────────────────┬────────────────────────────────────────╮
+    │ dedupe-db          │ Dedupe SQLITE tables                   │
+    ├────────────────────┼────────────────────────────────────────┤
+    │ dedupe             │ Dedupe similar media                   │
+    ├────────────────────┼────────────────────────────────────────┤
+    │ merge-online-local │ Merge online and local data            │
+    ├────────────────────┼────────────────────────────────────────┤
+    │ mpv-watchlater     │ Import mpv watchlater files to history │
+    ├────────────────────┼────────────────────────────────────────┤
+    │ reddit-selftext    │ Copy selftext links to media table     │
+    ╰────────────────────┴────────────────────────────────────────╯
 
-      lb tildes                Backup tildes comments and topics
-      lb substack              Backup substack articles
+    Misc subcommands:
+    ╭────────────────┬───────────────────────────────────────────────────╮
+    │ surf           │ Auto-load browser tabs in a streaming way (stdin) │
+    ├────────────────┼───────────────────────────────────────────────────┤
+    │ export-text    │ Export HTML files from SQLite databases           │
+    ├────────────────┼───────────────────────────────────────────────────┤
+    │ process-audio  │ Shrink audio by converting to Opus format         │
+    ├────────────────┼───────────────────────────────────────────────────┤
+    │ dedupe-czkawka │ Process czkawka diff output                       │
+    ├────────────────┼───────────────────────────────────────────────────┤
+    │ nouns          │ Unstructured text -> compound nouns (stdin)       │
+    ╰────────────────┴───────────────────────────────────────────────────╯
 
-      lb merge-online-local    Merge local and online metadata
-
-    downloads:
-      lb download              Download media
-      lb redownload            Redownload missing media
-      lb block                 Prevent downloading specific media
-
-    playback:
-      lb now                   Print what is currently playing
-      lb next                  Play next file
-      lb stop                  Stop all playback
-      lb pause                 Pause all playback
-
-    statistics:
-      lb history               Show some playback statistics
-      lb playlists             List added playlists
-      lb download-status       Show download status
-      lb disk-usage            Print disk usage
-      lb mount-stats           Print mount usage
-
-    browser tabs:
-      lb tabsadd               Create a tabs database; Add URLs
-      lb tabs                  Open your tabs for the day
-      lb siteadd               Create a sites database; Add URLs
-      lb surf                  Load browser tabs in a streaming way (stdin)
-
-    places:
-      lb places-import         Load POIs from Google Maps Google Takeout
-
-    mining:
-      lb eda                   Exploratory Data Analysis on table-like files
-      lb mcda                  Multi-criteria ranking on table-like files
-      lb incremental-diff      Diff large table-like files in chunks
-
-      lb reddit-selftext       db selftext external links -> db media table
-      lb pushshift             Convert Pushshift jsonl.zstd -> reddit.db format (stdin)
-      lb hnadd                 Create a hackernews database (this takes a few days)
-
-      lb extract-links         Extract inner links from lists of web pages
-      lb markdown-links        Extract titles from lists of web pages
-
-      lb mpv-watchlater        Import timestamps from mpv watchlater to history table
-
-      lb cluster-sort          Lines -> sorted by sentence similarity groups (stdin)
-      lb nouns                 Unstructured text -> compound nouns (stdin)
-    
 
 </details>
 
@@ -418,10 +481,10 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 ### Create database subcommands
 
-<details><summary>Add local media (fsadd)</summary>
+    <details><summary>Add local media (fsadd)</summary>
 
-    $ library fsadd -h
-    usage: library fsadd [(--video) | --audio | --image |  --text | --filesystem] DATABASE PATH ...
+        $ library fsadd -h
+        usage: library fsadd [(--video) | --audio | --image |  --text | --filesystem] DATABASE PATH ...
 
     The default database type is video:
         library fsadd tv.db ./tv/
@@ -468,12 +531,12 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         [/mnt/d/Youtube] Marking 28932 orphaned metadata records as deleted
 
 
-</details>
+    </details>
+    
+    <details><summary>Add online video media (yt-dlp) (tubeadd)</summary>
 
-<details><summary>Add online video media (yt-dlp) (tubeadd)</summary>
-
-    $ library tubeadd -h
-    usage: library tubeadd [--safe] [--extra] [--subs] [--auto-subs] DATABASE URLS ...
+        $ library tubeadd -h
+        usage: library tubeadd [--safe] [--extra] [--subs] [--auto-subs] DATABASE URLS ...
 
     Create a dl database / add links to an existing database
 
@@ -496,12 +559,12 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         library tubeupdate tw.db --extra
 
 
-</details>
+    </details>
+    
+    <details><summary>Add online gallery media (gallery-dl) (galleryadd)</summary>
 
-<details><summary>Add online gallery media (gallery-dl) (galleryadd)</summary>
-
-    $ library galleryadd -h
-    usage: library galleryadd DATABASE URLS
+        $ library galleryadd -h
+        usage: library galleryadd DATABASE URLS
 
     Add gallery_dl URLs to download later or periodically update
 
@@ -510,12 +573,12 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         cat ./my-favorite-manhwa.txt | library galleryadd my.db --insert-only -
 
 
-</details>
+    </details>
+    
+    <details><summary>Create a tabs database; Add URLs (tabsadd)</summary>
 
-<details><summary>Add browser tabs (tabsadd)</summary>
-
-    $ library tabsadd -h
-    usage: library tabsadd [--frequency daily weekly (monthly) quarterly yearly] [--no-sanitize] DATABASE URLS ...
+        $ library tabsadd -h
+        usage: library tabsadd [--frequency daily weekly (monthly) quarterly yearly] [--no-sanitize] DATABASE URLS ...
 
     Adding one URL:
 
@@ -535,12 +598,12 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 
 
-</details>
+    </details>
+    
+    <details><summary>Auto-scrape website data to SQLITE (siteadd)</summary>
 
-<details><summary>Auto-scrape website data to SQLITE (siteadd)</summary>
-
-    $ library siteadd -h
-    usage: library site-add DATABASE PATH ... [--auto-pager] [--poke] [--local-html] [--file FILE]
+        $ library siteadd -h
+        usage: library site-add DATABASE PATH ... [--auto-pager] [--poke] [--local-html] [--file FILE]
 
     Extract data from website requests to a database
 
@@ -549,12 +612,12 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     Run with `-vv` to see and interact with the browser
 
 
-</details>
+    </details>
+    
+    <details><summary>Add reddit media (redditadd)</summary>
 
-<details><summary>Add reddit media (redditadd)</summary>
-
-    $ library redditadd -h
-    usage: library redditadd [--lookback N_DAYS] [--praw-site bot1] DATABASE URLS ...
+        $ library redditadd -h
+        usage: library redditadd [--lookback N_DAYS] [--praw-site bot1] DATABASE URLS ...
 
     Fetch data for redditors and reddits:
 
@@ -574,12 +637,12 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     You can find more info here: https://github.com/chapmanjacobd/reddit_mining#how-was-this-made
 
 
-</details>
+    </details>
+    
+    <details><summary>Convert pushshift data to reddit.db format (stdin)</summary>
 
-<details><summary>Convert pushshift data to reddit.db format</summary>
-
-    $ library pushshift -h
-    usage: library pushshift DATABASE < stdin
+        $ library pushshift -h
+        usage: library pushshift DATABASE < stdin
 
     Download data (about 600GB jsonl.zst; 6TB uncompressed)
 
@@ -597,12 +660,12 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         end | parallel -j5
 
 
-</details>
+    </details>
+    
+    <details><summary>Create / Update a Hacker News database (hnadd)</summary>
 
-<details><summary>Create / Update a Hacker News database (hnadd)</summary>
-
-    $ library hnadd -h
-    usage: library hnadd [--oldest] DATABASE
+        $ library hnadd -h
+        usage: library hnadd [--oldest] DATABASE
 
     Fetch latest stories first:
 
@@ -618,22 +681,22 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         library hnadd --oldest hn.db
 
 
-</details>
+    </details>
+    
+    <details><summary>Backup substack articles</summary>
 
-<details><summary>Backup substack articles</summary>
-
-    $ library substack -h
-    usage: library substack DATABASE PATH ...
+        $ library substack -h
+        usage: library substack DATABASE PATH ...
 
     Backup substack articles
 
 
-</details>
+    </details>
+    
+    <details><summary>Backup tildes comments and topics</summary>
 
-<details><summary>Backup tildes comments and topics</summary>
-
-    $ library tildes -h
-    usage: library tildes DATABASE USER
+        $ library tildes -h
+        usage: library tildes DATABASE USER
 
     Backup tildes.net user comments and topics
 
@@ -644,36 +707,36 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         library tildes tildes.net.db xk3 --cookies ~/Downloads/cookies-tildes-net.txt
 
 
-</details>
+    </details>
+    
+    <details><summary>Import places of interest (POIs) (places-import)</summary>
 
-<details><summary>Import places of interest (POIs) (places-import)</summary>
-
-    $ library places-import -h
-    usage: library places-import DATABASE PATH ...
+        $ library places-import -h
+        usage: library places-import DATABASE PATH ...
 
     Load POIs from Google Maps Google Takeout
 
 
-</details>
-
+    </details>
+    
 ### Update database subcommands
 
-<details><summary>Update local media (fsupdate)</summary>
+    <details><summary>Update local media (fsupdate)</summary>
 
-    $ library fsupdate -h
-    usage: library fsupdate DATABASE
+        $ library fsupdate -h
+        usage: library fsupdate DATABASE
 
     Update each path previously saved:
 
         library fsupdate video.db
 
 
-</details>
+    </details>
+    
+    <details><summary>Update online video media (tubeupdate)</summary>
 
-<details><summary>Update online video media (tubeupdate)</summary>
-
-    $ library tubeupdate -h
-    usage: library tubeupdate [--audio | --video] DATABASE
+        $ library tubeupdate -h
+        usage: library tubeupdate [--audio | --video] DATABASE
 
     Fetch the latest videos for every playlist saved in your database
 
@@ -691,36 +754,36 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         lb dedupe-db video.db playlists --bk extractor_playlist_id
 
 
-</details>
+    </details>
+    
+    <details><summary>Update online gallery media (galleryupdate)</summary>
 
-<details><summary>Update online gallery media (galleryupdate)</summary>
-
-    $ library galleryupdate -h
-    usage: library galleryupdate DATABASE URLS
+        $ library galleryupdate -h
+        usage: library galleryupdate DATABASE URLS
 
     Check previously saved gallery_dl URLs for new content
 
 
-</details>
+    </details>
+    
+    <details><summary>Update reddit media (redditupdate)</summary>
 
-<details><summary>Update reddit media (redditupdate)</summary>
-
-    $ library redditupdate -h
-    usage: library redditupdate [--audio | --video] [--lookback N_DAYS] [--praw-site bot1] DATABASE
+        $ library redditupdate -h
+        usage: library redditupdate [--audio | --video] [--lookback N_DAYS] [--praw-site bot1] DATABASE
 
     Fetch the latest posts for every subreddit/redditor saved in your database
 
         library redditupdate edu_subreddits.db
 
 
-</details>
+    </details>
+    
+### Playback subcommands
 
-### Media database subcommands
+    <details><summary>Watch / Listen</summary>
 
-<details><summary>Watch / Listen</summary>
-
-    $ library watch -h
-    usage: library watch DATABASE [optional args]
+        $ library watch -h
+        usage: library watch DATABASE [optional args]
 
     Control playback:
         To stop playback press Ctrl-C in either the terminal or mpv
@@ -1075,12 +1138,14 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         library watch -m 4 --hstack          # use hstack style
 
 
-</details>
+    </details>
+    
+### Media database subcommands
 
-<details><summary>Open tabs</summary>
+    <details><summary>Open your tabs for the day</summary>
 
-    $ library tabs -h
-    usage: library tabs DATABASE
+        $ library tabs -h
+        usage: library tabs DATABASE
 
     Tabs is meant to run **once per day**. Here is how you would configure it with `crontab`:
 
@@ -1147,12 +1212,12 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         ╘═══════════════════════════════════════╧═════════════╧══════════════╛
 
 
-</details>
+    </details>
+    
+    <details><summary>Block a channel</summary>
 
-<details><summary>Block a channel</summary>
-
-    $ library block -h
-    usage: library block DATABASE URLS ...
+        $ library block -h
+        usage: library block DATABASE URLS ...
 
     Blocklist specific URLs (eg. YouTube channels, etc)
 
@@ -1196,12 +1261,12 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         ...
 
 
-</details>
+    </details>
+    
+    <details><summary>List stored playlists</summary>
 
-<details><summary>List playlists</summary>
-
-    $ library playlists -h
-    usage: library playlists DATABASE [--delete ...]
+        $ library playlists -h
+        usage: library playlists DATABASE [--delete ...]
 
     List of Playlists
 
@@ -1240,12 +1305,12 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 
 
-</details>
+    </details>
+    
+    <details><summary>Download media</summary>
 
-<details><summary>Download media</summary>
-
-    $ library download -h
-    usage: library download [--prefix /mnt/d/] [--safe] [--subs] [--auto-subs] [--small] DATABASE --video | --audio | --photos
+        $ library download -h
+        usage: library download [--prefix /mnt/d/] [--safe] [--subs] [--auto-subs] [--small] DATABASE --video | --audio | --photos
 
     Files will be saved to <lb download prefix>/<extractor>/. If prefix is not specified the current working directory will be used
 
@@ -1284,12 +1349,12 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         ╘════════════╧══════════════════╧════════════════════╧══════════╛
 
 
-</details>
+    </details>
+    
+    <details><summary>Show download status (download-status)</summary>
 
-<details><summary>Download Status (download-status)</summary>
-
-    $ library download-status -h
-    usage: library download-status DATABASE
+        $ library download-status -h
+        usage: library download-status DATABASE
 
     Print download queue groups
 
@@ -1326,12 +1391,12 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         library download-status video.db --safe
 
 
-</details>
+    </details>
+    
+    <details><summary>Re-download deleted/lost media (redownload)</summary>
 
-<details><summary>Re-download deleted/lost media (redownload)</summary>
-
-    $ library redownload -h
-    usage: library redownload DATABASE
+        $ library redownload -h
+        usage: library redownload DATABASE
 
     If you have previously downloaded YouTube or other online media, but your
     hard drive failed or you accidentally deleted something, and if that media
@@ -1368,12 +1433,12 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         library redownload city.db 2023-01-26T19:54:42 2023-01-26T20:45:24
 
 
-</details>
+    </details>
+    
+    <details><summary>Show some playback statistics (history)</summary>
 
-<details><summary>History</summary>
-
-    $ library history -h
-    usage: library history [--frequency daily weekly (monthly) yearly] [--limit LIMIT] DATABASE [(all) watching watched created modified deleted]
+        $ library history -h
+        usage: library history [--frequency daily weekly (monthly) yearly] [--limit LIMIT] DATABASE [(all) watching watched created modified deleted]
 
     Explore history through different facets
 
@@ -1500,12 +1565,12 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 
 
-</details>
+    </details>
+    
+    <details><summary>Search captions / subtitles</summary>
 
-<details><summary>Search captions / subtitles</summary>
-
-    $ library search -h
-    usage: library search DATABASE QUERY
+        $ library search -h
+        usage: library search DATABASE QUERY
 
     Search text databases and subtitles
 
@@ -1525,14 +1590,14 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         library search fts.db 'two words' --open
 
 
-</details>
-
+    </details>
+    
 ### Text subcommands
 
-<details><summary>Sort text and images by similarity (cluster-sort)</summary>
+    <details><summary>Sort text and images by similarity (cluster-sort)</summary>
 
-    $ library cluster-sort -h
-    usage: library cluster-sort [input_path | stdin] [output_path | stdout]
+        $ library cluster-sort -h
+        usage: library cluster-sort [input_path | stdin] [output_path | stdout]
 
     Group lines of text into sorted output
 
@@ -1572,12 +1637,12 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 
 
-</details>
+    </details>
+    
+    <details><summary>Extract inner links from lists of web links (extract-links)</summary>
 
-<details><summary>Extract links from HTML pages (extract-links)</summary>
-
-    $ library extract-links -h
-    usage: library extract-links PATH ... [--case-sensitive] [--scroll] [--download] [--verbose] [--local-html] [--file FILE] [--path-include ...] [--text-include ...] [--after-include ...] [--before-include ...] [--path-exclude ...] [--text-exclude ...] [--after-exclude ...] [--before-exclude ...]
+        $ library extract-links -h
+        usage: library extract-links PATH ... [--case-sensitive] [--scroll] [--download] [--verbose] [--local-html] [--file FILE] [--path-include ...] [--text-include ...] [--after-include ...] [--before-include ...] [--path-exclude ...] [--text-exclude ...] [--after-exclude ...] [--before-exclude ...]
 
     Extract links from within local HTML fragments, files, or remote pages; filtering on link text and nearby plain-text
 
@@ -1592,38 +1657,38 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     Run with `-vv` to see the browser
 
 
-</details>
-
+    </details>
+    
 ### File subcommands
 
-<details><summary>Exploratory Data Analysis (eda)</summary>
+    <details><summary>Exploratory Data Analysis on table-like files (eda)</summary>
 
-    $ library eda -h
-    usage: library eda PATH ... [--table TABLE] [--start-row START_ROW] [--end-row END_ROW] [--repl]
+        $ library eda -h
+        usage: library eda PATH ... [--table TABLE] [--start-row START_ROW] [--end-row END_ROW] [--repl]
 
     Perform Exploratory Data Analysis (EDA) on one or more files
 
     Only 20,000 rows per file are loaded for performance purposes. Set `--end-row inf` to read all the rows and/or run out of RAM.
 
 
-</details>
+    </details>
+    
+    <details><summary>Multi-criteria Ranking for Decision Support (mcda)</summary>
 
-<details><summary>Multi-criteria Ranking for Decision Support (mcda)</summary>
-
-    $ library mcda -h
-    usage: library mcda PATH ... [--table TABLE] [--start-row START_ROW] [--end-row END_ROW]
+        $ library mcda -h
+        usage: library mcda PATH ... [--table TABLE] [--start-row START_ROW] [--end-row END_ROW]
 
     Perform Multiple Criteria Decision Analysis (MCDA) on one or more files
 
     Only 20,000 rows per file are loaded for performance purposes. Set `--end-row inf` to read all the rows and/or run out of RAM.
 
 
-</details>
+    </details>
+    
+    <details><summary>Diff large table-like files in chunks (incremental-diff)</summary>
 
-<details><summary>Compare table-like files (incremental-diff)</summary>
-
-    $ library incremental-diff -h
-    usage: library incremental-diff PATH1 PATH2 [--join-keys JOIN_KEYS] [--table1 TABLE1] [--table2 TABLE2] [--table1-index TABLE1_INDEX] [--table2-index TABLE2_INDEX] [--start-row START_ROW] [--batch-size BATCH_SIZE]
+        $ library incremental-diff -h
+        usage: library incremental-diff PATH1 PATH2 [--join-keys JOIN_KEYS] [--table1 TABLE1] [--table2 TABLE2] [--table1-index TABLE1_INDEX] [--table2-index TABLE2_INDEX] [--start-row START_ROW] [--batch-size BATCH_SIZE]
 
     See data differences in an incremental way to quickly see how two different files differ.
 
@@ -1634,12 +1699,12 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     To diff everything at once run with `--batch-size inf`
 
 
-</details>
+    </details>
+    
+    <details><summary>Calculate a hash based on small file segments (sample-hash)</summary>
 
-<details><summary>Calculate a hash based on small file segments (sample-hash)</summary>
-
-    $ library sample-hash -h
-    usage: library sample-hash [--threads 10] [--chunk-size BYTES] [--gap BYTES OR 0.0-1.0*FILESIZE] PATH ...
+        $ library sample-hash -h
+        usage: library sample-hash [--threads 10] [--chunk-size BYTES] [--gap BYTES OR 0.0-1.0*FILESIZE] PATH ...
 
     Calculate hashes for large files by reading only small segments of each file
 
@@ -1648,24 +1713,24 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     The threads flag seems to be faster for rotational media but slower on SSDs
 
 
-</details>
+    </details>
+    
+    <details><summary>Compare files using sample-hash and other shortcuts (sample-compare)</summary>
 
-<details><summary>Compare files using sample-hash and other shortcuts (sample-compare)</summary>
-
-    $ library sample-compare -h
-    usage: library sample-hash [--threads 10] [--chunk-size BYTES] [--gap BYTES OR 0.0-1.0*FILESIZE] PATH ...
+        $ library sample-compare -h
+        usage: library sample-hash [--threads 10] [--chunk-size BYTES] [--gap BYTES OR 0.0-1.0*FILESIZE] PATH ...
 
 Convenience subcommand to compare multiple files using sample-hash
 
 
-</details>
-
+    </details>
+    
 ### Folder subcommands
 
-<details><summary>Merge two or more file trees (merge-folders)</summary>
+    <details><summary>Merge two or more file trees (merge-folders)</summary>
 
-    $ library merge-folders -h
-    usage: library merge-folders [--replace] [--skip] [--simulate] SOURCES ... DESTINATION
+        $ library merge-folders -h
+        usage: library merge-folders [--replace] [--skip] [--simulate] SOURCES ... DESTINATION
 
     Merge multiple folders with the same file tree into a single folder.
 
@@ -1676,12 +1741,12 @@ Convenience subcommand to compare multiple files using sample-hash
 
 
 
-</details>
+    </details>
+    
+    <details><summary>Move files preserving parent folder hierarchy (relmv)</summary>
 
-<details><summary>Move files preserving parent folder hierarchy (relmv)</summary>
-
-    $ library relmv -h
-    usage: library relmv [--dry-run] SOURCE ... DEST
+        $ library relmv -h
+        usage: library relmv [--dry-run] SOURCE ... DEST
 
     Move files/folders without losing hierarchy metadata
 
@@ -1696,12 +1761,12 @@ Convenience subcommand to compare multiple files using sample-hash
         ) /mnt/d/80_Now_Listening/
 
 
-</details>
+    </details>
+    
+    <details><summary>Find specific folders to move to different disks (mv-list)</summary>
 
-<details><summary>Find specific folders to move to different disks (mv-list)</summary>
-
-    $ library mv-list -h
-    usage: library mv-list [--limit LIMIT] [--lower LOWER] [--upper UPPER] MOUNT_POINT DATABASE
+        $ library mv-list -h
+        usage: library mv-list [--limit LIMIT] [--lower LOWER] [--upper UPPER] MOUNT_POINT DATABASE
 
 Free up space on a specific disk. Find candidates for moving data to a different mount point
 
@@ -1763,12 +1828,12 @@ After you are done selecting folders you can press ctrl-d and it will save the l
             rsync -a --info=progress2 --no-inc-recursive --remove-source-files --files-from=/tmp/tmp7x_75l8 -r --relative -vv --dry-run / jim:/free/real/estate/
 
 
-</details>
+    </details>
+    
+    <details><summary>Scatter files between folders or disks</summary>
 
-<details><summary>Scatter files between folders or disks</summary>
-
-    $ library scatter -h
-    usage: library scatter [--limit LIMIT] [--policy POLICY] [--sort SORT] --targets TARGETS DATABASE RELATIVE_PATH ...
+        $ library scatter -h
+        usage: library scatter [--limit LIMIT] [--policy POLICY] [--sort SORT] --targets TARGETS DATABASE RELATIVE_PATH ...
 
     Balance files across filesystem folder trees or multiple devices (mostly useful for mergerfs)
 
@@ -1840,14 +1905,14 @@ After you are done selecting folders you can press ctrl-d and it will save the l
         library scatter fs.db -m /mnt/d1:/mnt/d3:/mnt/d4 /mnt/d2
 
 
-</details>
-
+    </details>
+    
 ### Multi-database subcommands
 
-<details><summary>Merge SQLITE databases (merge-dbs)</summary>
+    <details><summary>Merge SQLITE databases (merge-dbs)</summary>
 
-    $ library merge-dbs -h
-    usage: library merge-dbs DEST_DB SOURCE_DB ... [--only-target-columns] [--only-new-rows] [--upsert] [--pk PK ...] [--table TABLE ...]
+        $ library merge-dbs -h
+        usage: library merge-dbs DEST_DB SOURCE_DB ... [--only-target-columns] [--only-new-rows] [--upsert] [--pk PK ...] [--table TABLE ...]
 
     Merge-DBs will insert new rows from source dbs to target db, table by table. If primary key(s) are provided,
     and there is an existing row with the same PK, the default action is to delete the existing row and insert the new row
@@ -1872,26 +1937,26 @@ After you are done selecting folders you can press ctrl-d and it will save the l
         library merge-dbs --only-new-rows --pk subreddit,path --only-tables reddit_posts reddit/81_New_Music.db audio.db -v
 
 
-</details>
+    </details>
+    
+    <details><summary>Copy play history (copy-play-counts)</summary>
 
-<details><summary>Copy play history (copy-play-counts)</summary>
-
-    $ library copy-play-counts -h
-    usage: library copy-play-counts DEST_DB SOURCE_DB ... [--source-prefix x] [--target-prefix y]
+        $ library copy-play-counts -h
+        usage: library copy-play-counts DEST_DB SOURCE_DB ... [--source-prefix x] [--target-prefix y]
 
     Copy play count information between databases
 
         library copy-play-counts audio.db phone.db --source-prefix /storage/6E7B-7DCE/d --target-prefix /mnt/d
 
 
-</details>
-
+    </details>
+    
 ### Filesystem Database subcommands
 
-<details><summary>Clean filenames (christen)</summary>
+    <details><summary>Clean filenames (christen)</summary>
 
-    $ library christen -h
-    usage: library christen DATABASE [--run]
+        $ library christen -h
+        usage: library christen DATABASE [--run]
 
     Rename files to be somewhat normalized
 
@@ -1908,12 +1973,12 @@ After you are done selecting folders you can press ctrl-d and it will save the l
         library christen --dot-space video.db
 
 
-</details>
+    </details>
+    
+    <details><summary>Show disk usage (disk-usage)</summary>
 
-<details><summary>Disk Usage (disk-usage)</summary>
-
-    $ library disk-usage -h
-    usage: library disk-usage DATABASE [--sort-groups-by size | count] [--depth DEPTH] [PATH / SUBSTRING SEARCH]
+        $ library disk-usage -h
+        usage: library disk-usage DATABASE [--sort-groups-by size | count] [--depth DEPTH] [PATH / SUBSTRING SEARCH]
 
     Only include files smaller than 1kib
 
@@ -1944,12 +2009,12 @@ After you are done selecting folders you can press ctrl-d and it will save the l
 
 
 
-</details>
+    </details>
+    
+    <details><summary>Show large folders (big-dirs)</summary>
 
-<details><summary>Show large folders (big-dirs)</summary>
-
-    $ library big-dirs -h
-    usage: library big-dirs DATABASE [--limit (4000)] [--depth (0)] [--sort-groups-by deleted | played] [--size=+5MB]
+        $ library big-dirs -h
+        usage: library big-dirs DATABASE [--limit (4000)] [--depth (0)] [--sort-groups-by deleted | played] [--size=+5MB]
 
     See what folders take up space
 
@@ -1967,36 +2032,36 @@ After you are done selecting folders you can press ctrl-d and it will save the l
     lb big-dirs video.db -u 'mcda median_size,-deleted'
 
 
-</details>
+    </details>
+    
+    <details><summary>Search a SQLITE database (search-db)</summary>
 
-<details><summary>Search a SQLITE database (search-db)</summary>
-
-    $ library search-db -h
-    usage: library search-db DATABASE TABLE SEARCH ... [--delete]
+        $ library search-db -h
+        usage: library search-db DATABASE TABLE SEARCH ... [--delete]
 
     Search all columns in a SQLITE table. If the table does not exist, uses the table which startswith (if only one match)
 
 
-</details>
+    </details>
+    
+    <details><summary>Re-optimize database</summary>
 
-<details><summary>Re-optimize database</summary>
-
-    $ library optimize -h
-    usage: library optimize DATABASE [--force]
+        $ library optimize -h
+        usage: library optimize DATABASE [--force]
 
     Optimize library databases
 
     The force flag is usually unnecessary and it can take much longer
 
 
-</details>
+    </details>
+    
+### Single database enrichment subcommands
 
-### Database enrichment subcommands
+    <details><summary>Dedupe SQLITE tables (dedupe-db)</summary>
 
-<details><summary>Dedupe SQLITE tables (dedupe-db)</summary>
-
-    $ library dedupe-db -h
-    usage: library dedupe-dbs DATABASE TABLE --bk BUSINESS_KEYS [--pk PRIMARY_KEYS] [--only-columns COLUMNS]
+        $ library dedupe-db -h
+        usage: library dedupe-dbs DATABASE TABLE --bk BUSINESS_KEYS [--pk PRIMARY_KEYS] [--only-columns COLUMNS]
 
     Dedupe your database (not to be confused with the dedupe subcommand)
 
@@ -2011,58 +2076,58 @@ After you are done selecting folders you can press ctrl-d and it will save the l
     If your duplicate rows contain exactly the same data in all the columns you can run with --skip-upsert to save a lot of time
 
 
-</details>
+    </details>
+    
+    <details><summary>Dedupe similar media</summary>
 
-<details><summary>Dedupe similar media</summary>
-
-    $ library dedupe -h
-    usage: library [--audio | --id | --title | --filesystem] [--only-soft-delete] [--limit LIMIT] DATABASE
+        $ library dedupe -h
+        usage: library [--audio | --id | --title | --filesystem] [--only-soft-delete] [--limit LIMIT] DATABASE
 
     Dedupe your files (not to be confused with the dedupe-db subcommand)
 
     library dedupe video.db / http
 
 
-</details>
+    </details>
+    
+    <details><summary>Merge online and local data (merge-online-local)</summary>
 
-<details><summary>Merge online and local data (merge-online-local)</summary>
-
-    $ library merge-online-local -h
-    usage: library merge-online-local DATABASE
+        $ library merge-online-local -h
+        usage: library merge-online-local DATABASE
 
     If you have previously downloaded YouTube or other online media, you can dedupe
     your database and combine the online and local media records as long as your
     files have the youtube-dl / yt-dlp id in the filename.
 
 
-</details>
+    </details>
+    
+    <details><summary>Import mpv watchlater files to history (mpv-watchlater)</summary>
 
-<details><summary>Import mpv watchlater files to history (mpv-watchlater)</summary>
-
-    $ library mpv-watchlater -h
-    usage: library mpv-watchlater DATABASE [--watch-later-directory ~/.config/mpv/watch_later/]
+        $ library mpv-watchlater -h
+        usage: library mpv-watchlater DATABASE [--watch-later-directory ~/.config/mpv/watch_later/]
 
     Extract timestamps from MPV to the history table
 
 
-</details>
+    </details>
+    
+    <details><summary>Copy selftext links to media table (reddit-selftext)</summary>
 
-<details><summary>Convert selftext links to media table (reddit-selftext)</summary>
-
-    $ library reddit-selftext -h
-    usage: library reddit-selftext DATABASE
+        $ library reddit-selftext -h
+        usage: library reddit-selftext DATABASE
 
     Extract URLs from reddit selftext from the reddit_posts table to the media table
 
 
-</details>
-
+    </details>
+    
 ### Misc subcommands
 
-<details><summary>Automatic tab loader (surf)</summary>
+    <details><summary>Auto-load browser tabs in a streaming way (stdin) (surf)</summary>
 
-    $ library surf -h
-    usage: library surf [--count COUNT] [--target-hosts TARGET_HOSTS] < stdin
+        $ library surf -h
+        usage: library surf [--count COUNT] [--target-hosts TARGET_HOSTS] < stdin
 
     Streaming tab loader: press ctrl+c to stop.
 
@@ -2077,22 +2142,22 @@ After you are done selecting folders you can press ctrl-d and it will save the l
     If you prefer GUI, check out https://unli.xyz/tabsender/
 
 
-</details>
+    </details>
+    
+    <details><summary>Export HTML files from SQLite databases (export-text)</summary>
 
-<details><summary>Export HTML files from SQLite databases (export-text)</summary>
-
-    $ library export-text -h
-    usage: library export-text DATABASE
+        $ library export-text -h
+        usage: library export-text DATABASE
 
     Generate HTML files from SQLite databases
 
 
-</details>
+    </details>
+    
+    <details><summary>Shrink audio by converting to Opus format (process-audio)</summary>
 
-<details><summary>Shrink audio by converting to Opus format (process-audio)</summary>
-
-    $ library process-audio -h
-    usage: library process-audio PATH ... [--always-split] [--split-longer-than DURATION] [--min-split-segment SECONDS] [--dry-run]
+        $ library process-audio -h
+        usage: library process-audio PATH ... [--always-split] [--split-longer-than DURATION] [--min-split-segment SECONDS] [--dry-run]
 
     Convert audio to Opus. Optionally split up long tracks into multiple files.
 
@@ -2107,8 +2172,8 @@ After you are done selecting folders you can press ctrl-d and it will save the l
         library process-audio --split-longer-than 36mins audiobook.m4b audiobook2.mp3
 
 
-</details>
-
+    </details>
+    
 
 <details><summary>Chicken mode</summary>
 
