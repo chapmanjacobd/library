@@ -14,7 +14,7 @@ progs = {
         "galleryadd": "Add online gallery media (gallery-dl)",
         "tabsadd": "Create a tabs database; Add URLs",
         "siteadd": "Auto-scrape website data to SQLITE",
-        "redditadd": "Add reddit media",
+        "redditadd": "Create a reddit database; Add subreddits",
         "pushshift": "Convert pushshift data to reddit.db format (stdin)",
         "hnadd": "Create / Update a Hacker News database",
         "substack": "Backup substack articles",

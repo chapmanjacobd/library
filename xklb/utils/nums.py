@@ -142,3 +142,17 @@ def calculate_segments(file_size, chunk_size, gap=0.1):
         start = end + gap
 
     return segments + [(end_segment_start, chunk_size)]  # always scan the end
+
+
+def cover_scan(media_duration, scan_percentage):
+    # TODO: replace or combine with calculate_segments()
+    num_scans = max(2, int(math.log(media_duration) * (scan_percentage / 10)))
+    scan_duration_total = max(1, media_duration * (scan_percentage / 100))
+    scan_duration = max(1, int(scan_duration_total / num_scans))
+    scan_interval = media_duration / num_scans
+
+    scans = sorted(set(int(scan * scan_interval) for scan in range(num_scans)))
+    if scans[-1] < media_duration - (scan_duration * 2):
+        scans.append(math.floor(media_duration - scan_duration))
+
+    return scans, scan_duration
