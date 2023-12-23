@@ -1,99 +1,107 @@
 import argparse, importlib, sys
+import textwrap
+
+from tabulate import tabulate
 
 from xklb import __version__
-from xklb.utils import iterables
+from xklb.utils import consts, iterables
 from xklb.utils.log_utils import log
+
+progs = {
+    "Create database subcommands": {
+        "fsadd": "Add local media",
+        "tubeadd": "Add online video media (yt-dlp)",
+        "galleryadd": "Add online gallery media (gallery-dl)",
+        "tabsadd": "Create a tabs database; Add URLs",
+        "siteadd": "Auto-scrape website data to SQLITE",
+        "redditadd": "Add reddit media",
+        "pushshift": "Convert pushshift data to reddit.db format (stdin)",
+        "hnadd": "Create / Update a Hacker News database",
+        "substack": "Backup substack articles",
+        "tildes": "Backup tildes comments and topics",
+        "places_import": "Import places of interest (POIs)",
+    },
+    "Update database subcommands": {
+        "fsupdate": "Update local media",
+        "tubeupdate": "Update online video media",
+        "galleryupdate": "Update online gallery media",
+        "redditupdate": "Update reddit media",
+    },
+    "Playback subcommands": {
+        "watch": "Watch / Listen",
+        "now": "Show what is currently playing",
+        "next": "Play next file and optionally delete current file",
+        "stop": "Stop all playback",
+        "pause": "Pause all playback",
+    },
+    "Media database subcommands": {
+        "tabs": "Open your tabs for the day",
+        "block": "Block a channel",
+        "playlists": "List stored playlists",
+        "download": "Download media",
+        "download_status": "Show download status",
+        "redownload": "Re-download deleted/lost media",
+        "history": "Show some playback statistics",
+        "search": "Search captions / subtitles",
+    },
+    "Text subcommands": {
+        "cluster_sort": "Sort text and images by similarity",
+        "extract_links": "Extract inner links from lists of web links",
+        "markdown-links": "Extract titles from lists of web links"
+    },
+    "File subcommands": {
+        "eda": "Exploratory Data Analysis on table-like files",
+        "mcda": "Multi-criteria Ranking for Decision Support",
+        "incremental_diff": "Diff large table-like files in chunks",
+        "sample_hash": "Calculate a hash based on small file segments",
+        "sample_compare": "Compare files using sample-hash and other shortcuts",
+    },
+    "Folder subcommands": {
+        "merge_folders": "Merge two or more file trees",
+        "relmv": "Move files preserving parent folder hierarchy",
+        "mv_list": "Find specific folders to move to different disks",
+        "scatter": "Scatter files between folders or disks",
+    },
+    "Multi-database subcommands": {
+        "merge_dbs": "Merge SQLITE databases",
+        "copy_play_counts": "Copy play history",
+    },
+    "Filesystem Database subcommands": {
+        "christen": "Clean filenames",
+        "disk_usage": "Show disk usage",
+        "mount_stats": "Show some relative mount stats",
+        "big_dirs": "Show large folders",
+        "search_db": "Search a SQLITE database",
+        "optimize": "Re-optimize database",
+    },
+    "Single database enrichment subcommands": {
+        "dedupe_db": "Dedupe SQLITE tables",
+        "dedupe": "Dedupe similar media",
+        "merge_online_local": "Merge online and local data",
+        "mpv_watchlater": "Import mpv watchlater files to history",
+        "reddit_selftext": "Copy selftext links to media table",
+    },
+    "Misc subcommands": {
+        "surf": "Auto-load browser tabs in a streaming way (stdin)",
+        "export_text": "Export HTML files from SQLite databases",
+        "process_audio": "Shrink audio by converting to Opus format",
+        "dedupe_czkawka": "Process czkawka diff output",
+        "nouns": "Unstructured text -> compound nouns (stdin)"
+    },
+}
+
 
 
 def usage() -> str:
+    subcommands_list = []
+    for category, category_progs in progs.items():
+        subcommands_list.append(f"\n    {category}:\n")
+        category_progs_text = tabulate([(key.replace('_', '-'), value) for key, value in category_progs.items()], tablefmt='rounded_grid', showindex=False)
+        subcommands_list.append(textwrap.indent(category_progs_text, '    '))
+        subcommands_list.append("\n")
+
     return f"""xk media library subcommands (v{__version__})
-
-    local media:
-      lb fsadd                 Create a local media database; Add folders
-      lb fsupdate              Refresh database: add new files, mark deleted
-
-      lb listen                Listen to local and online media
-      lb watch                 Watch local and online media
-      lb search                Search text and subtitles
-
-      lb read                  Read books
-      lb view                  View images
-
-      lb bigdirs               Discover folders which take much room
-      lb dedupe                Deduplicate a media db's media files
-      lb czkawka-dedupe        Split-screen czkawka results to decide which to delete
-
-      lb merge-folders         Merge two or more folders
-      lb relmv                 Move files/folders while preserving relative paths
-      lb christen              Cleanse files by giving them a new name
-
-      lb mv-list               Reach a target free space by moving data across mount points
-      lb scatter               Scatter files across multiple mountpoints (mergerfs balance)
-
-      lb search-db             Search a SQLITE file
-      lb merge-dbs             Merge multiple SQLITE files
-      lb dedupe-dbs            Deduplicate SQLITE tables
-      lb copy-play-counts      Copy play counts from multiple SQLITE files
-
-    online media:
-      lb tubeadd               Create a tube database; Add playlists
-      lb tubeupdate            Fetch new videos from saved playlists
-
-      lb galleryadd            Create a gallery database; Add albums
-      lb galleryupdate         Fetch new images from saved playlists
-
-      lb redditadd             Create a reddit database; Add subreddits
-      lb redditupdate          Fetch new posts from saved subreddits
-
-      lb tildes                Backup tildes comments and topics
-      lb substack              Backup substack articles
-
-      lb merge-online-local    Merge local and online metadata
-
-    downloads:
-      lb download              Download media
-      lb redownload            Redownload missing media
-      lb block                 Prevent downloading specific media
-
-    playback:
-      lb now                   Print what is currently playing
-      lb next                  Play next file
-      lb stop                  Stop all playback
-      lb pause                 Pause all playback
-
-    statistics:
-      lb history               Show some playback statistics
-      lb playlists             List added playlists
-      lb download-status       Show download status
-      lb disk-usage            Print disk usage
-      lb mount-stats           Print mount usage
-
-    browser tabs:
-      lb tabsadd               Create a tabs database; Add URLs
-      lb tabs                  Open your tabs for the day
-      lb siteadd               Create a sites database; Add URLs
-      lb surf                  Load browser tabs in a streaming way (stdin)
-
-    places:
-      lb places-import         Load POIs from Google Maps Google Takeout
-
-    mining:
-      lb eda                   Exploratory Data Analysis on table-like files
-      lb mcda                  Multi-criteria ranking on table-like files
-      lb incremental-diff      Diff large table-like files in chunks
-
-      lb reddit-selftext       db selftext external links -> db media table
-      lb pushshift             Convert Pushshift jsonl.zstd -> reddit.db format (stdin)
-      lb hnadd                 Create a hackernews database (this takes a few days)
-
-      lb extract-links         Extract inner links from lists of web pages
-      lb markdown-links        Extract titles from lists of web pages
-
-      lb mpv-watchlater        Import timestamps from mpv watchlater to history table
-
-      lb cluster-sort          Lines -> sorted by sentence similarity groups (stdin)
-      lb nouns                 Unstructured text -> compound nouns (stdin)
-    """
+{''.join(subcommands_list)}"""
 
 
 def print_help(parser) -> None:
