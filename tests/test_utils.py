@@ -5,7 +5,7 @@ from unittest import mock
 import pytest
 
 from tests import utils
-from xklb.media import av
+from xklb.media import media_check
 from xklb.scripts import scatter
 from xklb.utils import consts, db_utils, iterables, mpv_utils, nums, objects, path_utils, printing, sql_utils, strings
 
@@ -319,25 +319,6 @@ def test_get_playhead():
     start_time = time.time() - 10
     assert mpv_utils.get_playhead(args, path, start_time, existing_playhead=3, media_duration=12) is None
 
-
-def scan_stats(scans, scan_duration):
-    return (
-        len(scans),  # number of scans
-        scan_duration,  # duration of media scanned
-        len(scans) * scan_duration,  # total scanned time
-        0 if len(scans) == 1 else scans[1] - scan_duration,  # first gap time
-    )
-
-
-def test_cover_scan():
-    assert scan_stats(*av.cover_scan(1, 0.01)) == (1, 1, 1, 0)
-    assert scan_stats(*av.cover_scan(1, 100)) == (1, 1, 1, 0)
-
-    result = [scan_stats(*av.cover_scan(5 * 60, percent)) for percent in [5, 10, 20, 30]]
-    assert result == [(3, 7, 21, 143), (6, 6, 36, 54), (12, 5, 60, 22), (18, 5, 90, 12)]
-
-    result = [scan_stats(*av.cover_scan(2 * 60 * 60, percent)) for percent in [5, 10, 20, 30]]
-    assert result == [(5, 90, 450, 1710), (9, 90, 810, 810), (18, 84, 1512, 339), (27, 83, 2241, 193)]
 
 
 class TimecodeTestCase(unittest.TestCase):

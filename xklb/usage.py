@@ -1424,3 +1424,5 @@ sample_compare = """library sample-hash [--threads 10] [--chunk-size BYTES] [--g
 
 Convenience subcommand to compare multiple files using sample-hash
 """
+
+media_check = None
