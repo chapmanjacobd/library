@@ -96,7 +96,7 @@ def parse_args(action, usage) -> argparse.Namespace:
         default=0.1,
         help="Width between chunks to skip (default 0.10 (10%%)). Values greater than 1 are treated as number of seconds",
     )
-    parser.add_argument("--delete-corrupt", default=100, const=2, type=float, nargs="?", help="delete media that is more corrupt than this threshold")
+    parser.add_argument("--delete-corrupt", type=float, help="delete media that is more corrupt than this threshold")
     parser.add_argument("--full-scan", action='store_true')
 
     parser.add_argument("--force", "-f", action="store_true", help=argparse.SUPPRESS)

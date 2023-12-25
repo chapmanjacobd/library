@@ -95,7 +95,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.2.194)
+    xk media library subcommands (v2.2.195)
 
     Create database subcommands:
     ╭───────────────┬────────────────────────────────────────────────────╮
@@ -245,6 +245,11 @@ To stop playing press Ctrl+C in either the terminal or mpv
     ├────────────────┼───────────────────────────────────────────────────┤
     │ nouns          │ Unstructured text -> compound nouns (stdin)       │
     ╰────────────────┴───────────────────────────────────────────────────╯
+
+    Other subcommands:
+    ╭─────────────┬─────────────╮
+    │ media-check │ media_check │
+    ╰─────────────┴─────────────╯
 
 
 </details>
@@ -506,13 +511,8 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         library fsadd --scan-subtitles tv.search.db ./tv/ ./movies/
 
     Decode media to check for corruption (slow):
-        library fsadd --check-corrupt --full-scan tv.db ./tv/  # decode all the frames of each file to evaluate how corrupt it is (very slow; about 150 seconds for an hour-long file)
-        library fsadd --check-corrupt --full-scan --gap 0 tv.db ./tv/  # decode all the packets of each file to evaluate how corrupt it is (about one second of each file but only accurate if 1 packet == 1 frame)
-        library fsadd --check-corrupt --full-scan --audio tv.db ./tv/  # decode all audio of each file to evaluate how corrupt it is (about four seconds per file)
-        library fsadd --check-corrupt --chunk-size 0.05 --gap 0.999 tv.db ./tv/  # decode at least ~2 frames at the start and end of each file to evaluate how corrupt it is (takes about one second per file)
-        library fsadd --check-corrupt --chunk-size 3 --gap 0.05 tv.db ./tv/  # decode 3s every 5% of a file to evaluate how corrupt it is (takes about three seconds per file)
-
-        library fsadd --check-corrupt --delete-corrupt 20 tv.db ./tv/  # if 20 percent or more of checks fail then the file is deleted
+        library fsadd --check-corrupt
+        # See media-check command for full options
 
     Normally only relevant filetypes are included. You can scan all files with this flag:
         library fsadd --scan-all-files mixed.db ./tv-and-maybe-audio-only-files/
@@ -2168,6 +2168,46 @@ After you are done selecting folders you can press ctrl-d and it will save the l
     Use --split-longer-than to _only_ detect silence for files in excess of a specific duration
 
         library process-audio --split-longer-than 36mins audiobook.m4b audiobook2.mp3
+
+
+</details>
+
+### Other subcommands
+
+<details><summary>media_check (media-check)</summary>
+
+    $ library media-check -h
+    usage: library media-check [--chunk-size SECONDS] [--gap SECONDS OR 0.0-1.0*DURATION] [--delete-corrupt >0-100] [--full-scan] [--audio-scan] PATH ...
+
+    Defaults to decode 0.5 second per 10%% of each file
+
+        library media-check ./video.mp4
+
+    Decode all the frames of each file to evaluate how corrupt it is (very slow; about 150 seconds for an hour-long file)
+
+        library media-check --full-scan ./video.mp4
+
+    Decode all the packets of each file to evaluate how corrupt it is (about one second of each file but only accurate for formats where 1 packet == 1 frame)
+
+        library media-check --full-scan --gap 0 ./video.mp4
+
+    Decode all audio of each file to evaluate how corrupt it is (about four seconds per file)
+
+        library media-check --full-scan --audio ./video.mp4
+
+    Decode at least one frame at the start and end of each file to evaluate how corrupt it is (takes about one second per file)
+
+        library media-check --chunk-size 0.05 --gap 0.999 ./video.mp4
+
+    Decode 3s every 5% of a file to evaluate how corrupt it is (takes about three seconds per file)
+
+        library media-check --chunk-size 3 --gap 0.05 ./video.mp4
+
+    Delete the file if 20 percent or more of checks fail
+
+        library media-check --delete-corrupt 20 ./video.mp4
+
+
 
 
 </details>
