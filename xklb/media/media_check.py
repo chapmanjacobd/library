@@ -30,9 +30,7 @@ def media_check() -> None:
     )
     parser.add_argument(
         "--delete-corrupt",
-        default=100,
-        const=2,
-        nargs="?",
+        type=float,
         help="delete media that is more corrupt than this threshold",
     )
     parser.add_argument("--full-scan", "--full", action='store_true')
@@ -65,7 +63,7 @@ def media_check() -> None:
                 if args.verbose >= consts.LOG_DEBUG:
                     raise
             else:
-                if corruption > (args.delete_corrupt / 100):
+                if args.delete_corrupt and corruption > (args.delete_corrupt / 100):
                     file_utils.trash(path)
 
 

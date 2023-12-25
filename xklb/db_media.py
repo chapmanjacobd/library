@@ -239,7 +239,6 @@ def download_add(
             speech_recognition=False,
             delete_unplayable=False,
             check_corrupt=False,
-            delete_corrupt=100,
         )
         fs_tags = objects.dict_filter_bool(fs_extract.extract_metadata(fs_args, local_path), keep_0=False) or {}
         fs_extract.clean_up_temp_dirs()
