@@ -175,17 +175,19 @@ To stop playing press Ctrl+C in either the terminal or mpv
     ╰────────────────┴─────────────────────────────────────────────╯
 
     File subcommands:
-    ╭──────────────────┬─────────────────────────────────────────────────────╮
-    │ eda              │ Exploratory Data Analysis on table-like files       │
-    ├──────────────────┼─────────────────────────────────────────────────────┤
-    │ mcda             │ Multi-criteria Ranking for Decision Support         │
-    ├──────────────────┼─────────────────────────────────────────────────────┤
-    │ incremental-diff │ Diff large table-like files in chunks               │
-    ├──────────────────┼─────────────────────────────────────────────────────┤
-    │ sample-hash      │ Calculate a hash based on small file segments       │
-    ├──────────────────┼─────────────────────────────────────────────────────┤
-    │ sample-compare   │ Compare files using sample-hash and other shortcuts │
-    ╰──────────────────┴─────────────────────────────────────────────────────╯
+    ╭──────────────────┬───────────────────────────────────────────────────────╮
+    │ eda              │ Exploratory Data Analysis on table-like files         │
+    ├──────────────────┼───────────────────────────────────────────────────────┤
+    │ mcda             │ Multi-criteria Ranking for Decision Support           │
+    ├──────────────────┼───────────────────────────────────────────────────────┤
+    │ incremental-diff │ Diff large table-like files in chunks                 │
+    ├──────────────────┼───────────────────────────────────────────────────────┤
+    │ media-check      │ Check video and audio files for corruption via ffmpeg │
+    ├──────────────────┼───────────────────────────────────────────────────────┤
+    │ sample-hash      │ Calculate a hash based on small file segments         │
+    ├──────────────────┼───────────────────────────────────────────────────────┤
+    │ sample-compare   │ Compare files using sample-hash and other shortcuts   │
+    ╰──────────────────┴───────────────────────────────────────────────────────╯
 
     Folder subcommands:
     ╭───────────────┬──────────────────────────────────────────────────╮
@@ -245,11 +247,6 @@ To stop playing press Ctrl+C in either the terminal or mpv
     ├────────────────┼───────────────────────────────────────────────────┤
     │ nouns          │ Unstructured text -> compound nouns (stdin)       │
     ╰────────────────┴───────────────────────────────────────────────────╯
-
-    Other subcommands:
-    ╭─────────────┬─────────────╮
-    │ media-check │ media_check │
-    ╰─────────────┴─────────────╯
 
 
 </details>
@@ -1699,6 +1696,44 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 </details>
 
+<details><summary>Check video and audio files for corruption via ffmpeg (media-check)</summary>
+
+    $ library media-check -h
+    usage: library media-check [--chunk-size SECONDS] [--gap SECONDS OR 0.0-1.0*DURATION] [--delete-corrupt >0-100] [--full-scan] [--audio-scan] PATH ...
+
+    Defaults to decode 0.5 second per 10%% of each file
+
+        library media-check ./video.mp4
+
+    Decode all the frames of each file to evaluate how corrupt it is (very slow; about 150 seconds for an hour-long file)
+
+        library media-check --full-scan ./video.mp4
+
+    Decode all the packets of each file to evaluate how corrupt it is (about one second of each file but only accurate for formats where 1 packet == 1 frame)
+
+        library media-check --full-scan --gap 0 ./video.mp4
+
+    Decode all audio of each file to evaluate how corrupt it is (about four seconds per file)
+
+        library media-check --full-scan --audio ./video.mp4
+
+    Decode at least one frame at the start and end of each file to evaluate how corrupt it is (takes about one second per file)
+
+        library media-check --chunk-size 0.05 --gap 0.999 ./video.mp4
+
+    Decode 3s every 5% of a file to evaluate how corrupt it is (takes about three seconds per file)
+
+        library media-check --chunk-size 3 --gap 0.05 ./video.mp4
+
+    Delete the file if 20 percent or more of checks fail
+
+        library media-check --delete-corrupt 20 ./video.mp4
+
+
+
+
+</details>
+
 <details><summary>Calculate a hash based on small file segments (sample-hash)</summary>
 
     $ library sample-hash -h
@@ -2168,46 +2203,6 @@ After you are done selecting folders you can press ctrl-d and it will save the l
     Use --split-longer-than to _only_ detect silence for files in excess of a specific duration
 
         library process-audio --split-longer-than 36mins audiobook.m4b audiobook2.mp3
-
-
-</details>
-
-### Other subcommands
-
-<details><summary>media_check (media-check)</summary>
-
-    $ library media-check -h
-    usage: library media-check [--chunk-size SECONDS] [--gap SECONDS OR 0.0-1.0*DURATION] [--delete-corrupt >0-100] [--full-scan] [--audio-scan] PATH ...
-
-    Defaults to decode 0.5 second per 10%% of each file
-
-        library media-check ./video.mp4
-
-    Decode all the frames of each file to evaluate how corrupt it is (very slow; about 150 seconds for an hour-long file)
-
-        library media-check --full-scan ./video.mp4
-
-    Decode all the packets of each file to evaluate how corrupt it is (about one second of each file but only accurate for formats where 1 packet == 1 frame)
-
-        library media-check --full-scan --gap 0 ./video.mp4
-
-    Decode all audio of each file to evaluate how corrupt it is (about four seconds per file)
-
-        library media-check --full-scan --audio ./video.mp4
-
-    Decode at least one frame at the start and end of each file to evaluate how corrupt it is (takes about one second per file)
-
-        library media-check --chunk-size 0.05 --gap 0.999 ./video.mp4
-
-    Decode 3s every 5% of a file to evaluate how corrupt it is (takes about three seconds per file)
-
-        library media-check --chunk-size 3 --gap 0.05 ./video.mp4
-
-    Delete the file if 20 percent or more of checks fail
-
-        library media-check --delete-corrupt 20 ./video.mp4
-
-
 
 
 </details>
