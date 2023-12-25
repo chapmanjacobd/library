@@ -53,6 +53,7 @@ progs = {
         "eda": "Exploratory Data Analysis on table-like files",
         "mcda": "Multi-criteria Ranking for Decision Support",
         "incremental_diff": "Diff large table-like files in chunks",
+        "media_check": "Check video and audio files for corruption via ffmpeg",
         "sample_hash": "Calculate a hash based on small file segments",
         "sample_compare": "Compare files using sample-hash and other shortcuts",
     },
