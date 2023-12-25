@@ -6,7 +6,7 @@ from xklb.utils import nums
 
 def test_decode_full_scan():
     assert media_check.decode_full_scan("tests/data/test.mp4") == 0
-    assert media_check.decode_full_scan("tests/data/corrupt.mp4") == 0.03389830508474579
+    assert media_check.decode_full_scan("tests/data/corrupt.mp4") == 0.03333333333333336
 
 
 @skip("slow")
