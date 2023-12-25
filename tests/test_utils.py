@@ -5,7 +5,6 @@ from unittest import mock
 import pytest
 
 from tests import utils
-from xklb.media import media_check
 from xklb.scripts import scatter
 from xklb.utils import consts, db_utils, iterables, mpv_utils, nums, objects, path_utils, printing, sql_utils, strings
 
@@ -318,7 +317,6 @@ def test_get_playhead():
     assert mpv_utils.get_playhead(args, path, start_time, existing_playhead=10, media_duration=12) is None
     start_time = time.time() - 10
     assert mpv_utils.get_playhead(args, path, start_time, existing_playhead=3, media_duration=12) is None
-
 
 
 class TimecodeTestCase(unittest.TestCase):

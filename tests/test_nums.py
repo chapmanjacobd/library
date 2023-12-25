@@ -2,6 +2,15 @@ from xklb.utils import nums
 from xklb.utils.nums import calculate_segments
 
 
+def scan_stats(scans, scan_duration):
+    return (
+        len(scans),  # number of scans
+        scan_duration,  # duration of media scanned
+        len(scans) * scan_duration,  # total scanned time
+        0 if len(scans) == 1 else scans[1] - scan_duration,  # first gap time
+    )
+
+
 def test_calculate_segments():
     assert calculate_segments(100, 25) == [0, 35, 75]
     assert calculate_segments(1000, 100) == [0, 200, 400, 600, 900]
@@ -17,7 +26,7 @@ def test_calculate_segments():
     assert calculate_segments(100, 25, 0.9) == [0, 75]
 
     # medium_gap
-    assert calculate_segments(100, 25, 0.2) == [0,45,75]
+    assert calculate_segments(100, 25, 0.2) == [0, 45, 75]
 
     # small_gap
     assert calculate_segments(100, 25, 0.01) == [0, 26, 75]
@@ -28,13 +37,5 @@ def test_calculate_segments():
     assert calculate_segments(100, 100) == [0]
     assert calculate_segments(50, 100) == [0]
 
-    result = [scan_stats(nums.calculate_segments(5 * 60, 3, 50-percent), 3 ) for percent in [10, 20, 30, 40, 45]]
+    result = [scan_stats(nums.calculate_segments(5 * 60, 3, 50 - percent), 3) for percent in [10, 20, 30, 40, 45]]
     assert result == [(8, 3, 24, 40), (10, 3, 30, 30), (14, 3, 42, 20), (24, 3, 72, 10), (38, 3, 114, 5)]
-
-def scan_stats(scans, scan_duration):
-    return (
-        len(scans),  # number of scans
-        scan_duration,  # duration of media scanned
-        len(scans) * scan_duration,  # total scanned time
-        0 if len(scans) == 1 else scans[1] - scan_duration,  # first gap time
-    )

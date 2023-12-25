@@ -26,9 +26,10 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     parser.add_argument("--play-in-order", "-O", nargs="?", const="natural_ps", help=argparse.SUPPRESS)
 
     parser.add_argument("--where", "-w", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
+    parser.add_argument("--ext", "-e", nargs="+", action="extend", default=[])
     parser.add_argument("--include", "-s", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--flexible-search", "--or", "--flex", action="store_true")
-    parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
+    parser.add_argument("--exclude", "-E", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--no-fts", action="store_true")
 
     parser.add_argument("--created-within", help=argparse.SUPPRESS)
@@ -370,6 +371,7 @@ def construct_query(args) -> Tuple[str, dict]:
             WHERE 1=1
                 {db_media.filter_args_sql(args, m_columns)}
                 {" ".join(args.filter_sql)}
+                {" ".join([f" and path like '%.{ext}'" for ext in args.ext])}
                 {" ".join([" and " + w for w in args.where if not any(a in w for a in aggregate_filter_columns)])}
             GROUP BY m.id, m.path
         )
@@ -508,7 +510,7 @@ def process_playqueue(args) -> None:
         log.debug("utils.filter_episodic: %s", t.elapsed())
 
     if not media:
-        if Path(args.include).is_file():
+        if args.include and Path(args.include).is_file():
             media = [{"path": str(Path(args.include).resolve())}]
         else:
             processes.no_media_found()

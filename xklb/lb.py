@@ -1,10 +1,9 @@
-import argparse, importlib, sys
-import textwrap
+import argparse, importlib, sys, textwrap
 
 from tabulate import tabulate
 
 from xklb import __version__
-from xklb.utils import consts, iterables
+from xklb.utils import iterables
 from xklb.utils.log_utils import log
 
 progs = {
@@ -47,7 +46,7 @@ progs = {
     "Text subcommands": {
         "cluster_sort": "Sort text and images by similarity",
         "extract_links": "Extract inner links from lists of web links",
-        "markdown-links": "Extract titles from lists of web links"
+        "markdown-links": "Extract titles from lists of web links",
     },
     "File subcommands": {
         "eda": "Exploratory Data Analysis on table-like files",
@@ -87,18 +86,21 @@ progs = {
         "export_text": "Export HTML files from SQLite databases",
         "process_audio": "Shrink audio by converting to Opus format",
         "dedupe_czkawka": "Process czkawka diff output",
-        "nouns": "Unstructured text -> compound nouns (stdin)"
+        "nouns": "Unstructured text -> compound nouns (stdin)",
     },
 }
-
 
 
 def usage() -> str:
     subcommands_list = []
     for category, category_progs in progs.items():
         subcommands_list.append(f"\n    {category}:\n")
-        category_progs_text = tabulate([(key.replace('_', '-'), value) for key, value in category_progs.items()], tablefmt='rounded_grid', showindex=False)
-        subcommands_list.append(textwrap.indent(category_progs_text, '    '))
+        category_progs_text = tabulate(
+            [(key.replace("_", "-"), value) for key, value in category_progs.items()],
+            tablefmt="rounded_grid",
+            showindex=False,
+        )
+        subcommands_list.append(textwrap.indent(category_progs_text, "    "))
         subcommands_list.append("\n")
 
     return f"""xk media library subcommands (v{__version__})
