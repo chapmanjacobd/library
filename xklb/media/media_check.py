@@ -49,7 +49,7 @@ def decode_full_scan(path, audio_scan=False, frames="frames", threads=5):
     metadata_duration = ffprobe.duration or 0
 
     if audio_scan or not ffprobe.has_video:
-        with tempfile.NamedTemporaryFile(suffix=".wav") as temp_output:
+        with tempfile.NamedTemporaryFile(suffix=".mkv") as temp_output:
             processes.cmd(
                 "ffmpeg",
                 "-nostdin",
