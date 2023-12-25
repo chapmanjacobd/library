@@ -161,6 +161,7 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     add_parser(subparsers, "xklb.gdl_extract.gallery_update", ["gdl-update", "gu"])
     add_parser(subparsers, "xklb.hn_extract.hacker_news_add", ["hn-add"])
     add_parser(subparsers, "xklb.media.dedupe.dedupe_media")
+    add_parser(subparsers, "xklb.media.media_check.media_check")
     add_parser(subparsers, "xklb.play_actions.filesystem", ["fs", "open"])
     add_parser(subparsers, "xklb.play_actions.listen", ["lt", "tubelisten", "tl"])
     add_parser(subparsers, "xklb.play_actions.read", ["text", "books", "docs"])

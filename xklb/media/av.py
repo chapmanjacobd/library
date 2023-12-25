@@ -137,8 +137,12 @@ def munge_av_tags(args, media, path) -> Optional[dict]:
     format_.pop("start_time", None)
     format_.pop("filename", None)
 
-    duration = nums.safe_int(format_.pop("duration", None))
-    corruption = media_check.calculate_corruption(args, path, duration)
+    corruption = None
+    if args.check_corrupt:
+        corruption = media_check.calculate_corruption(path, chunk_size=args.chunk_size, gap=args.gap, full_scan=args.full_scan, threads=1)
+        if corruption > (args.delete_corrupt / 100):
+            file_utils.trash(path)
+            return None
 
     tags = format_.pop("tags", None)
     if tags:
@@ -169,12 +173,12 @@ def munge_av_tags(args, media, path) -> Optional[dict]:
 
     streams = probe.streams
 
-    def parse_framerate(string) -> Optional[int]:
+    def parse_framerate(string) -> Optional[float]:
         top, bot = string.split("/")
-        bot = int(bot)
+        bot = float(bot)
         if bot == 0:
             return None
-        return int(int(top) / bot)
+        return float(top) / bot
 
     fps = iterables.safe_unpack(
         [
@@ -216,9 +220,9 @@ def munge_av_tags(args, media, path) -> Optional[dict]:
         "width": width,
         "height": height,
         "fps": fps,
-        "duration": 0 if not duration else int(float(duration)),
+        "duration": nums.safe_int(format_.pop("duration", None)),
         "language": language,
-        "corruption": nums.safe_int(corruption),
+        "corruption": None if corruption is None else int(corruption * 100),
         **(tags or {}),
         "chapters": chapters,
     }
