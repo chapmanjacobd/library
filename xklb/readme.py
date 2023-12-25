@@ -26,7 +26,7 @@ for category, category_progs in lb.progs.items():
 <details><summary>{prog_description}</summary>
 
     $ library {subcommand} -h
-    usage: {prog_usage}
+    usage: {prog_usage.replace('%%','%')}
 
 </details>
 """,
