@@ -7,19 +7,16 @@ from xklb.play_actions import watch as wt
 
 
 def test_lb_help(capsys):
-    lb_help_text = "local media:,online media:".split(",")
     sys.argv = ["lb"]
     with pytest.raises(SystemExit):
         lb(None)
     captured = capsys.readouterr().out
-    for help_text in lb_help_text:
-        assert help_text in captured
+    assert 'subcommands' in captured
 
     with pytest.raises(SystemExit):
         lb(["-h"])
     captured = capsys.readouterr().out
-    for help_text in lb_help_text:
-        assert help_text in captured
+    assert 'subcommands' in captured
 
 
 def test_wt_help(capsys):

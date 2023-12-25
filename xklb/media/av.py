@@ -1,11 +1,9 @@
-import fractions, json, math, subprocess
 from datetime import datetime
 from typing import Dict, Optional
 
-import ffmpeg
 
-from xklb.media import subtitle
-from xklb.utils import consts, file_utils, iterables, nums, objects, printing, processes, strings
+from xklb.media import subtitle, media_check
+from xklb.utils import consts, file_utils, iterables, nums, objects, processes, strings
 from xklb.utils.consts import DBType
 from xklb.utils.log_utils import log
 
@@ -107,71 +105,6 @@ def get_audio_tags(f) -> dict:
     return stream_tags
 
 
-def decode_full_scan(path):
-    ffprobe_cmd = [
-        "ffprobe",
-        "-show_entries",
-        "stream=r_frame_rate,nb_read_frames,duration",
-        "-select_streams",
-        "v",
-        "-count_frames",
-        "-of",
-        "json",
-        "-threads",
-        "5",
-        "-v",
-        "0",
-        path,
-    ]
-
-    ffprobe = subprocess.Popen(ffprobe_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    output, err = ffprobe.communicate()
-    data = json.loads(output)["streams"][0]
-
-    r_frame_rate = fractions.Fraction(data["r_frame_rate"])
-    nb_frames = int(data["nb_read_frames"])
-    metadata_duration = float(data["duration"])
-    actual_duration = nb_frames * r_frame_rate.denominator / r_frame_rate.numerator
-
-    difference = abs(actual_duration - metadata_duration)
-    average_duration = (actual_duration + metadata_duration) / 2
-    percent_diff = difference / average_duration
-
-    if difference > 0.1:
-        log.warning(
-            f"Metadata {printing.seconds_to_hhmmss(metadata_duration).strip()} does not match actual duration {printing.seconds_to_hhmmss(actual_duration).strip()} (diff {difference:.2f}s) {path}",
-        )
-
-    return percent_diff
-
-
-def decode_quick_scan(path, scans, scan_duration=3):
-    fail_count = 0
-    for scan in scans:
-        try:
-            output = ffmpeg.input(path, ss=scan).output("/dev/null", t=scan_duration, f="null")
-            ffmpeg.run(output, quiet=True)
-            # ffmpeg -xerror ?
-            # I wonder if something like this would be faster: ffmpeg -ss 01:48:00 -i in.mp4 -map 0:v:0 -filter:v "select=eq(pict_type\,I)" -frames:v 1 out.jpg
-        except ffmpeg.Error:
-            fail_count += 1
-
-    return fail_count / len(scans)
-
-
-def cover_scan(media_duration, scan_percentage):
-    num_scans = max(2, int(math.log(media_duration) * (scan_percentage / 10)))
-    scan_duration_total = max(1, media_duration * (scan_percentage / 100))
-    scan_duration = max(1, int(scan_duration_total / num_scans))
-    scan_interval = media_duration / num_scans
-
-    scans = sorted(set(int(scan * scan_interval) for scan in range(num_scans)))
-    if scans[-1] < media_duration - (scan_duration * 2):
-        scans.append(math.floor(media_duration - scan_duration))
-
-    return scans, scan_duration
-
-
 def munge_av_tags(args, media, path) -> Optional[dict]:
     try:
         probe = processes.FFProbe(path)
@@ -204,28 +137,12 @@ def munge_av_tags(args, media, path) -> Optional[dict]:
     format_.pop("start_time", None)
     format_.pop("filename", None)
 
-    duration = nums.safe_int(format_.pop("duration", None))
     corruption = None
-    if args.check_corrupt and args.check_corrupt > 0.0:
-        if args.check_corrupt >= 100.0 and args.profile != DBType.video:
-            try:
-                output = ffmpeg.input(path).output("/dev/null", f="null")
-                ffmpeg.run(output, quiet=True)
-            except ffmpeg.Error:
-                log.warning(f"Data corruption found. {path}")
-                if args.delete_corrupt and not consts.PYTEST_RUNNING:
-                    file_utils.trash(path)
-        else:
-            if args.check_corrupt >= 100.0:
-                corruption = decode_full_scan(path)
-            else:
-                corruption = decode_quick_scan(path, *cover_scan(duration, args.check_corrupt))
-
-            DEFAULT_THRESHOLD = 0.02
-            if corruption > DEFAULT_THRESHOLD:
-                log.warning(f"Data corruption found ({corruption:.2%}). {path}")
-            if args.delete_corrupt and corruption > args.delete_corrupt and not consts.PYTEST_RUNNING:
-                file_utils.trash(path)
+    if args.check_corrupt:
+        corruption = media_check.calculate_corruption(path, chunk_size=args.chunk_size, gap=args.gap, full_scan=args.full_scan, threads=1)
+        if corruption > (args.delete_corrupt / 100):
+            file_utils.trash(path)
+            return None
 
     tags = format_.pop("tags", None)
     if tags:
@@ -256,12 +173,12 @@ def munge_av_tags(args, media, path) -> Optional[dict]:
 
     streams = probe.streams
 
-    def parse_framerate(string) -> Optional[int]:
+    def parse_framerate(string) -> Optional[float]:
         top, bot = string.split("/")
-        bot = int(bot)
+        bot = float(bot)
         if bot == 0:
             return None
-        return int(int(top) / bot)
+        return float(top) / bot
 
     fps = iterables.safe_unpack(
         [
@@ -303,9 +220,9 @@ def munge_av_tags(args, media, path) -> Optional[dict]:
         "width": width,
         "height": height,
         "fps": fps,
-        "duration": 0 if not duration else int(float(duration)),
+        "duration": nums.safe_int(format_.pop("duration", None)),
         "language": language,
-        "corruption": nums.safe_int(corruption),
+        "corruption": None if corruption is None else int(corruption * 100),
         **(tags or {}),
         "chapters": chapters,
     }

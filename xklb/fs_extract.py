@@ -82,13 +82,23 @@ def parse_args(action, usage) -> argparse.Namespace:
     )
 
     parser.add_argument("--delete-unplayable", action="store_true")
+
+    parser.add_argument("--check-corrupt", action="store_true")
     parser.add_argument(
-        "--check-corrupt",
+        "--chunk-size",
         type=float,
-        default=0.0,
-        help="check that 0 to 100 percent of media decodes correctly",
+        help="Duration to decode per segment (default 0.5 second). If set, recommended to use >0.1 seconds",
+        default=0.5,
     )
-    parser.add_argument("--delete-corrupt", type=float, help="delete media that is more corrupt than this threshold")
+    parser.add_argument(
+        "--gap",
+        type=float,
+        default=0.1,
+        help="Width between chunks to skip (default 0.10 (10%%)). Values greater than 1 are treated as number of seconds",
+    )
+    parser.add_argument("--delete-corrupt", default=100, const=2, type=float, nargs="?", help="delete media that is more corrupt than this threshold")
+    parser.add_argument("--full-scan", action='store_true')
+
     parser.add_argument("--force", "-f", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--verbose", "-v", action="count", default=0)
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
@@ -321,8 +331,6 @@ def scan_path(args, path_str: str) -> int:
         return 0
 
     n_jobs = None
-    if args.check_corrupt > 0:
-        n_jobs = int(min(os.cpu_count() or 2, 2) * args.io_multiplier)
     if args.io_multiplier > 1:
         n_jobs = int(max(os.cpu_count() or 4, 4) * args.io_multiplier)
     if args.verbose >= consts.LOG_DEBUG:

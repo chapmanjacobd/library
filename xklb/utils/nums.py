@@ -129,16 +129,16 @@ def calculate_segments(file_size, chunk_size, gap=0.1):
     if file_size == 0:
         return []
     elif file_size <= chunk_size * 3:
-        return [(0, file_size)]
+        return [0]
 
     end_segment_start = file_size - chunk_size
 
     while start + chunk_size < end_segment_start:
         end = min(start + chunk_size, file_size)
-        segments.append((start, end - start))
+        segments.append(start)
 
         if gap < 1:
             gap = math.ceil(file_size * gap)
         start = end + gap
 
-    return segments + [(end_segment_start, chunk_size)]  # always scan the end
+    return segments + [end_segment_start]  # always scan the end
