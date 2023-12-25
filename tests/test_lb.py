@@ -11,12 +11,12 @@ def test_lb_help(capsys):
     with pytest.raises(SystemExit):
         lb(None)
     captured = capsys.readouterr().out
-    assert 'subcommands' in captured
+    assert "subcommands" in captured
 
     with pytest.raises(SystemExit):
         lb(["-h"])
     captured = capsys.readouterr().out
-    assert 'subcommands' in captured
+    assert "subcommands" in captured
 
 
 def test_wt_help(capsys):

@@ -1,9 +1,8 @@
 from datetime import datetime
 from typing import Dict, Optional
 
-
-from xklb.media import subtitle, media_check
-from xklb.utils import consts, file_utils, iterables, nums, objects, processes, strings
+from xklb.media import media_check, subtitle
+from xklb.utils import file_utils, iterables, nums, objects, processes, strings
 from xklb.utils.consts import DBType
 from xklb.utils.log_utils import log
 
@@ -139,7 +138,9 @@ def munge_av_tags(args, media, path) -> Optional[dict]:
 
     corruption = None
     if args.check_corrupt:
-        corruption = media_check.calculate_corruption(path, chunk_size=args.chunk_size, gap=args.gap, full_scan=args.full_scan, threads=1)
+        corruption = media_check.calculate_corruption(
+            path, chunk_size=args.chunk_size, gap=args.gap, full_scan=args.full_scan, threads=1
+        )
         if args.delete_corrupt and corruption > (args.delete_corrupt / 100):
             file_utils.trash(path)
             return None

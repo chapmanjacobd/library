@@ -30,7 +30,7 @@ for category, category_progs in lb.progs.items():
 
 </details>
 """,
-        )
+            )
 
 expand_all_js = """```js
 (() => { const readmeDiv = document.getElementById("readme"); const detailsElements = readmeDiv.getElementsByTagName("details"); for (let i = 0; i < detailsElements.length; i++) { detailsElements[i].setAttribute("open", "true"); } })();

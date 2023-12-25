@@ -1,82 +1,9 @@
-import argparse
+import argparse, fractions, json, os, shlex, subprocess, tempfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
-import fractions
-import json
-import os
-import shlex
-import subprocess
-import tempfile
 
 from xklb import usage
-
-from xklb.utils import consts, file_utils, objects, printing, nums, processes
+from xklb.utils import consts, file_utils, nums, objects, printing, processes
 from xklb.utils.log_utils import log
-
-
-def media_check() -> None:
-    parser = argparse.ArgumentParser(prog="library media-check", usage=usage.media_check)
-    parser.add_argument("--threads", default=1, const=10, nargs="?")
-    parser.add_argument(
-        "--chunk-size",
-        type=float,
-        help="Chunk size in seconds (default 0.5 second). If set, recommended to use >0.1 seconds",
-        default=0.5,
-    )
-    parser.add_argument(
-        "--gap",
-        type=float,
-        default=0.1,
-        help="Width between chunks to skip (default 0.10 (10%%)). Values greater than 1 are treated as number of seconds",
-    )
-    parser.add_argument(
-        "--delete-corrupt",
-        type=float,
-        help="delete media that is more corrupt than this threshold",
-    )
-    parser.add_argument("--full-scan", "--full", action='store_true')
-    parser.add_argument("--audio-scan", "--audio", action='store_true')
-    parser.add_argument("--verbose", "-v", action="count", default=0)
-    parser.add_argument("paths", nargs="+")
-    args = parser.parse_args()
-    log.info(objects.dict_filter_bool(args.__dict__))
-
-    with ThreadPoolExecutor(max_workers=1 if args.verbose >= consts.LOG_DEBUG else 4) as pool:
-        future_to_path = {
-            pool.submit(
-                calculate_corruption,
-                path,
-                chunk_size=args.chunk_size,
-                gap=args.gap,
-                full_scan=args.full_scan,
-                audio_scan=args.audio_scan,
-                threads=args.threads,
-            ): path
-            for path in args.paths
-        }
-        for future in as_completed(future_to_path):
-            path = future_to_path[future]
-            try:
-                corruption = future.result()
-                print(f"{corruption:.2%}", shlex.quote(path), sep="\t")
-            except Exception as e:
-                print(f"Error hashing {path}: {e}")
-                if args.verbose >= consts.LOG_DEBUG:
-                    raise
-            else:
-                if args.delete_corrupt and corruption > (args.delete_corrupt / 100):
-                    file_utils.trash(path)
-
-
-def calculate_corruption(path, chunk_size=1, gap=0.1, full_scan=False, audio_scan=False, threads=5):
-    if full_scan:
-        if gap == 0:
-            corruption = decode_full_scan(path, audio_scan=audio_scan, frames='packets', threads=threads)
-        else:
-            corruption = decode_full_scan(path, audio_scan=audio_scan, threads=threads)
-    else:
-        duration = nums.safe_int(processes.FFProbe(path).duration)
-        corruption = decode_quick_scan(path, nums.calculate_segments(duration, chunk_size, gap), chunk_size)
-    return corruption
 
 
 def decode_quick_scan(path, scans, scan_duration=3):
@@ -84,24 +11,24 @@ def decode_quick_scan(path, scans, scan_duration=3):
         proc = processes.cmd(
             "ffmpeg",
             "-nostdin",
-            '-nostats',
+            "-nostats",
             "-xerror",
             "-v",
             "16",
             "-err_detect",
             "explode",
-            '-ss',
+            "-ss",
             str(scan),
-            '-i',
+            "-i",
             path,
-            '-t',
+            "-t",
             str(scan_duration),
-            '-f',
-            'null',
+            "-f",
+            "null",
             os.devnull,
         )
         # I wonder if something like this would be faster: -map 0:v:0 -filter:v "select=eq(pict_type\,I)" -frames:v 1
-        if proc.stderr != '':
+        if proc.stderr != "":
             raise RuntimeError
 
     with ThreadPoolExecutor(max_workers=4) as pool:
@@ -117,25 +44,25 @@ def decode_quick_scan(path, scans, scan_duration=3):
     return fail_count / len(scans)
 
 
-def decode_full_scan(path, audio_scan=False, frames='frames', threads=5):
+def decode_full_scan(path, audio_scan=False, frames="frames", threads=5):
     ffprobe = processes.FFProbe(path)
     metadata_duration = ffprobe.duration or 0
 
     if audio_scan or not ffprobe.has_video:
-        with tempfile.NamedTemporaryFile(suffix='.wav') as temp_output:
+        with tempfile.NamedTemporaryFile(suffix=".wav") as temp_output:
             processes.cmd(
-                'ffmpeg',
+                "ffmpeg",
                 "-nostdin",
-                '-nostats',
+                "-nostats",
                 "-v",
                 "16",
-                '-i',
+                "-i",
                 path,
-                '-acodec',
-                'copy',
-                '-map_metadata',
-                '-1',
-                '-y',
+                "-acodec",
+                "copy",
+                "-map_metadata",
+                "-1",
+                "-y",
                 temp_output.name,
             )
             actual_duration = processes.FFProbe(temp_output.name).duration or 0
@@ -174,3 +101,69 @@ def decode_full_scan(path, audio_scan=False, frames='frames', threads=5):
         )
 
     return corruption
+
+
+def calculate_corruption(path, chunk_size=1, gap=0.1, full_scan=False, audio_scan=False, threads=5):
+    if full_scan:
+        if gap == 0:
+            corruption = decode_full_scan(path, audio_scan=audio_scan, frames="packets", threads=threads)
+        else:
+            corruption = decode_full_scan(path, audio_scan=audio_scan, threads=threads)
+    else:
+        duration = nums.safe_int(processes.FFProbe(path).duration)
+        corruption = decode_quick_scan(path, nums.calculate_segments(duration, chunk_size, gap), chunk_size)
+    return corruption
+
+
+def media_check() -> None:
+    parser = argparse.ArgumentParser(prog="library media-check", usage=usage.media_check)
+    parser.add_argument("--threads", default=1, const=10, nargs="?")
+    parser.add_argument(
+        "--chunk-size",
+        type=float,
+        help="Chunk size in seconds (default 0.5 second). If set, recommended to use >0.1 seconds",
+        default=0.5,
+    )
+    parser.add_argument(
+        "--gap",
+        type=float,
+        default=0.1,
+        help="Width between chunks to skip (default 0.10 (10%%)). Values greater than 1 are treated as number of seconds",
+    )
+    parser.add_argument(
+        "--delete-corrupt",
+        type=float,
+        help="delete media that is more corrupt than this threshold",
+    )
+    parser.add_argument("--full-scan", "--full", action="store_true")
+    parser.add_argument("--audio-scan", "--audio", action="store_true")
+    parser.add_argument("--verbose", "-v", action="count", default=0)
+    parser.add_argument("paths", nargs="+")
+    args = parser.parse_args()
+    log.info(objects.dict_filter_bool(args.__dict__))
+
+    with ThreadPoolExecutor(max_workers=1 if args.verbose >= consts.LOG_DEBUG else 4) as pool:
+        future_to_path = {
+            pool.submit(
+                calculate_corruption,
+                path,
+                chunk_size=args.chunk_size,
+                gap=args.gap,
+                full_scan=args.full_scan,
+                audio_scan=args.audio_scan,
+                threads=args.threads,
+            ): path
+            for path in args.paths
+        }
+        for future in as_completed(future_to_path):
+            path = future_to_path[future]
+            try:
+                corruption = future.result()
+                print(f"{corruption:.2%}", shlex.quote(path), sep="\t")
+            except Exception as e:
+                print(f"Error hashing {path}: {e}")
+                if args.verbose >= consts.LOG_DEBUG:
+                    raise
+            else:
+                if args.delete_corrupt and corruption > (args.delete_corrupt / 100):
+                    file_utils.trash(path)
