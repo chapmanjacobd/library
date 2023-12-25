@@ -103,15 +103,13 @@ fsadd = """library fsadd [(--video) | --audio | --image |  --text | --filesystem
         library fsadd --scan-subtitles tv.search.db ./tv/ ./movies/
 
     Decode media to check for corruption (slow):
-        library fsadd --check-corrupt 100 tv.db ./tv/  # scan through 100 percent of each file to evaluate how corrupt it is (very slow)
-        library fsadd --check-corrupt   1 tv.db ./tv/  # scan through 1 percent of each file to evaluate how corrupt it is (takes about one second per file)
-        library fsadd --check-corrupt   5 tv.db ./tv/  # scan through 5 percent of each file to evaluate how corrupt it is (takes about ten seconds per file)
+        library fsadd --check-corrupt --full-scan tv.db ./tv/  # decode all the frames of each file to evaluate how corrupt it is (very slow; about 150 seconds for an hour-long file)
+        library fsadd --check-corrupt --full-scan --gap 0 tv.db ./tv/  # decode all the packets of each file to evaluate how corrupt it is (about one second of each file but only accurate if 1 packet == 1 frame)
+        library fsadd --check-corrupt --full-scan --audio tv.db ./tv/  # decode all audio of each file to evaluate how corrupt it is (about four seconds per file)
+        library fsadd --check-corrupt --chunk-size 0.05 --gap 0.999 tv.db ./tv/  # decode at least ~2 frames at the start and end of each file to evaluate how corrupt it is (takes about one second per file)
+        library fsadd --check-corrupt --chunk-size 3 --gap 0.05 tv.db ./tv/  # decode 3s every 5% of a file to evaluate how corrupt it is (takes about three seconds per file)
 
-        library fsadd --check-corrupt   5 --delete-corrupt 30 tv.db ./tv/  # scan 5 percent of each file to evaluate how corrupt it is, if 30 percent or more of those checks fail then the file is deleted
-
-        nb: the behavior of delete-corrupt changes between full and partial scan
-        library fsadd --check-corrupt  99 --delete-corrupt  1 tv.db ./tv/  # partial scan 99 percent of each file to evaluate how corrupt it is, if 1 percent or more of those checks fail then the file is deleted
-        library fsadd --check-corrupt 100 --delete-corrupt  1 tv.db ./tv/  # full scan each file to evaluate how corrupt it is, if there is _any_ corruption then the file is deleted
+        library fsadd --check-corrupt --delete-corrupt 20 tv.db ./tv/  # if 20 percent or more of checks fail then the file is deleted
 
     Normally only relevant filetypes are included. You can scan all files with this flag:
         library fsadd --scan-all-files mixed.db ./tv-and-maybe-audio-only-files/
@@ -1424,3 +1422,5 @@ sample_compare = """library sample-hash [--threads 10] [--chunk-size BYTES] [--g
 
 Convenience subcommand to compare multiple files using sample-hash
 """
+
+media_check = None

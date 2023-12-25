@@ -198,7 +198,7 @@ class FFProbe:
 
         self.duration = None
         try:
-            self.duration = float(self.format["duration"])
+            self.duration = float(self.audio_streams[0]["duration"])
         except Exception:
             pass
         try:
@@ -206,6 +206,6 @@ class FFProbe:
         except Exception:
             pass
         try:
-            self.duration = float(self.audio_streams[0]["duration"])
+            self.duration = float(self.format["duration"])
         except Exception:
             pass

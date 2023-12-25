@@ -14,7 +14,7 @@ progs = {
         "galleryadd": "Add online gallery media (gallery-dl)",
         "tabsadd": "Create a tabs database; Add URLs",
         "siteadd": "Auto-scrape website data to SQLITE",
-        "redditadd": "Add reddit media",
+        "redditadd": "Create a reddit database; Add subreddits",
         "pushshift": "Convert pushshift data to reddit.db format (stdin)",
         "hnadd": "Create / Update a Hacker News database",
         "substack": "Backup substack articles",
@@ -161,6 +161,7 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     add_parser(subparsers, "xklb.gdl_extract.gallery_update", ["gdl-update", "gu"])
     add_parser(subparsers, "xklb.hn_extract.hacker_news_add", ["hn-add"])
     add_parser(subparsers, "xklb.media.dedupe.dedupe_media")
+    add_parser(subparsers, "xklb.media.media_check.media_check")
     add_parser(subparsers, "xklb.play_actions.filesystem", ["fs", "open"])
     add_parser(subparsers, "xklb.play_actions.listen", ["lt", "tubelisten", "tl"])
     add_parser(subparsers, "xklb.play_actions.read", ["text", "books", "docs"])
