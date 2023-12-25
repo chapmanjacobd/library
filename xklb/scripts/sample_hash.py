@@ -7,11 +7,11 @@ from xklb.utils import nums, objects
 from xklb.utils.log_utils import log
 
 
-def single_thread_read(path, segments):
+def single_thread_read(path, segments, chunk_size):
     with open(path, "rb") as f:
-        for start, size in segments:
+        for start in segments:
             f.seek(start)
-            yield f.read(size)
+            yield f.read(chunk_size)
 
 
 def open_seek_read(path, start, size):
@@ -20,9 +20,9 @@ def open_seek_read(path, start, size):
         return f.read(size)
 
 
-def threadpool_read(path, segments, max_workers=10):
+def threadpool_read(path, segments, chunk_size, max_workers=10):
     with ThreadPoolExecutor(max_workers=max_workers) as pool:
-        futures = [pool.submit(open_seek_read, path, start, size) for start, size in segments]
+        futures = [pool.submit(open_seek_read, path, start, chunk_size) for start in segments]
 
         for future in futures:
             yield future.result()
@@ -42,9 +42,9 @@ def sample_hash_file(path, threads=1, gap=0.1, chunk_size=None):
     segments = nums.calculate_segments(file_stats.st_size, chunk_size, gap)
 
     if threads > 1:
-        data = threadpool_read(path, segments, max_workers=10)
+        data = threadpool_read(path, segments, chunk_size, max_workers=threads)
     else:
-        data = single_thread_read(path, segments)
+        data = single_thread_read(path, segments, chunk_size)
 
     file_hash = hashlib.sha256()
     for d in data:
