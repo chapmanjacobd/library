@@ -3,75 +3,73 @@ from functools import wraps
 from io import StringIO
 from pathlib import Path
 from shutil import which
-from typing import Generator, List, Union
+from typing import List, Optional, Tuple, Union
+
+from pyparsing import Set
 
 from xklb.utils import consts, file_utils, printing, processes, web
 from xklb.utils.log_utils import log
 
 
-def rglob(base_dir: Path, base_glob: str, yield_files=True, yield_folders=True) -> Generator[Path, None, None]:
-    prefix = f"{base_dir}{os.sep}{base_glob}"
+def scan_stats(files, filtered_files, folders):
+    return (
+        f"""Files: {len(files)}{f" [{len(filtered_files)} ignored]" if filtered_files else ''}"""
+        f" Folders: {len(folders)}"
+    )
 
-    files_count = 0
-    folders_count = 0
-    for idx, item in enumerate(base_dir.rglob(base_glob)):
-        if item.is_dir():
-            folders_count += 1
-            if yield_folders:
-                yield item
+
+def rglob(base_dir: str, extensions: Optional[List[str]] = None) -> Tuple[Set[str], Set[str], Set[str]]:
+    files = set()
+    filtered_files = set()
+    folders = set()
+    stack = [base_dir]
+    while stack:
+        current_dir = stack.pop()
+        try:
+            scanned_dir = os.scandir(current_dir)
+        except FileNotFoundError:
+            pass
         else:
-            files_count += 1
-            if yield_files:
-                yield item
+            for entry in scanned_dir:
+                if entry.is_dir(follow_symlinks=False):
+                    folders.add(entry.path)
+                    stack.append(entry.path)
+                else:
+                    if extensions is None:
+                        files.add(entry.path)
+                    else:
+                        extension = entry.path.rsplit(".", 1)[-1].lower()
+                        if extension in extensions:
+                            files.add(entry.path)
+                        else:
+                            filtered_files.add(entry.path)
 
-        if idx % 15 == 0:
-            printing.print_overwrite(f"[{prefix}] Files: {files_count} Folders: {folders_count}")
+            printing.print_overwrite(f"[{base_dir}] {scan_stats(files, filtered_files, folders)}")
 
-    print(f"\r[{prefix}] Files: {files_count} Folders: {folders_count}", flush=True)
-
-
-def get_files(base_dir: Path, extensions: List[str]) -> List[str]:
-    folders = 0
-    filtered_files = 0
-    files = []
-    for idx, f in enumerate(base_dir.rglob("*")):
-        if f.is_file():
-            if f.suffix[1:].lower() in extensions:
-                files.append(str(f))
-            else:
-                filtered_files += 1
-        else:
-            folders += 1
-
-        if idx % 15 == 0:
-            printing.print_overwrite(
-                f"[{base_dir}] Files: {len(files)} Filtered files: {filtered_files} Folders: {folders}"
-            )
-
-    print(f"\r[{base_dir}] Media files: {len(files)} Filtered files: {filtered_files} Folders: {folders}")
-    return files
+    print(f"\r[{base_dir}] {scan_stats(files, filtered_files, folders)}")
+    return files, filtered_files, folders
 
 
-def get_image_files(path: Path) -> List[str]:
-    return get_files(path, consts.IMAGE_EXTENSIONS)  # type: ignore
+def get_image_files(path) -> Set[str]:
+    return rglob(path, consts.IMAGE_EXTENSIONS)[0]  # type: ignore
 
 
-def get_audio_files(path: Path) -> List[str]:
-    return get_files(path, [*consts.VIDEO_EXTENSIONS, *consts.AUDIO_ONLY_EXTENSIONS])
+def get_audio_files(path) -> Set[str]:
+    return rglob(path, [*consts.VIDEO_EXTENSIONS, *consts.AUDIO_ONLY_EXTENSIONS])[0]
 
 
-def get_video_files(path: Path) -> List[str]:
-    return get_files(path, consts.VIDEO_EXTENSIONS)  # type: ignore
+def get_video_files(path) -> Set[str]:
+    return rglob(path, consts.VIDEO_EXTENSIONS)[0]  # type: ignore
 
 
-def get_text_files(path: Path, image_recognition=False, speech_recognition=False) -> List[str]:
+def get_text_files(path, image_recognition=False, speech_recognition=False) -> Set[str]:
     extensions = [*consts.TEXTRACT_EXTENSIONS]
     if image_recognition:
         extensions.extend(consts.OCR_EXTENSIONS)
     if speech_recognition:
         extensions.extend(consts.SPEECH_RECOGNITION_EXTENSIONS)
 
-    return get_files(path, extensions)
+    return rglob(path, extensions)[0]
 
 
 def file_temp_copy(src) -> str:
