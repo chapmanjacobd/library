@@ -133,10 +133,8 @@ def extract_metadata(mp_args, path) -> Optional[Dict[str, int]]:
         log.error("Could not encode file path as UTF-8. Skipping %s", path)
         return None
 
-    p = Path(path)
-
     try:
-        stat = p.stat()
+        stat = os.stat(path, follow_symlinks=False)
     except FileNotFoundError:
         return None
     except OSError:
@@ -240,36 +238,31 @@ def mark_media_undeleted(args, paths) -> int:
     return modified_row_count
 
 
-def find_new_files(args, path: Path) -> List[str]:
+def find_new_files(args, path) -> List[str]:
     if path.is_file():
-        scanned_files = [str(path)]
+        scanned_set = set(str(path))
     else:
-        try:
-            if args.scan_all_files:
-                scanned_files = [str(p) for p in file_utils.rglob(path, "*", yield_folders=False)]
-            elif args.profile == DBType.filesystem:
-                scanned_files = [str(p) for p in file_utils.rglob(path, "*")]
-            elif args.profile == DBType.audio:
-                scanned_files = file_utils.get_audio_files(path)
-            elif args.profile == DBType.video:
-                scanned_files = file_utils.get_video_files(path)
-            elif args.profile == DBType.text:
-                scanned_files = file_utils.get_text_files(
-                    path,
-                    image_recognition=args.ocr,
-                    speech_recognition=args.speech_recognition,
-                )
-            elif args.profile == DBType.image:
-                scanned_files = file_utils.get_image_files(path)
-            else:
-                msg = f"fs_extract for profile {args.profile}"
-                raise NotImplementedError(msg)
-        except FileNotFoundError:
-            print(f"File not found. {path}")
-            return []
+        if args.scan_all_files:
+            scanned_set = file_utils.rglob(path)[0]
+        elif args.profile == DBType.filesystem:
+            scanned_set = set.union(*file_utils.rglob(path))
+        elif args.profile == DBType.audio:
+            scanned_set = file_utils.get_audio_files(path)
+        elif args.profile == DBType.video:
+            scanned_set = file_utils.get_video_files(path)
+        elif args.profile == DBType.text:
+            scanned_set = file_utils.get_text_files(
+                path,
+                image_recognition=args.ocr,
+                speech_recognition=args.speech_recognition,
+            )
+        elif args.profile == DBType.image:
+            scanned_set = file_utils.get_image_files(path)
+        else:
+            msg = f"fs_extract for profile {args.profile}"
+            raise NotImplementedError(msg)
 
     m_columns = db_utils.columns(args, "media")
-    scanned_set = set(scanned_files)
 
     try:
         deleted_set = {
@@ -318,7 +311,7 @@ def find_new_files(args, path: Path) -> List[str]:
         if deleted_count > 0:
             print(f"[{path}] Marking", deleted_count, "orphaned metadata records as deleted")
 
-    new_files.sort()
+    new_files.sort(key=len, reverse=True)
     return new_files
 
 
