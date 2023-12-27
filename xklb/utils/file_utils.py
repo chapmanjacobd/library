@@ -8,13 +8,11 @@ from typing import List, Optional, Set, Tuple, Union
 from xklb.utils import consts, file_utils, printing, processes, web
 from xklb.utils.log_utils import log
 
-
 def scan_stats(files, filtered_files, folders):
     return (
         f"""Files: {len(files)}{f" [{len(filtered_files)} ignored]" if filtered_files else ''}"""
         f" Folders: {len(folders)}"
     )
-
 
 def rglob(base_dir: str, extensions: Optional[List[str]] = None) -> Tuple[Set[str], Set[str], Set[str]]:
     files = set()
