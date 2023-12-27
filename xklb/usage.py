@@ -1440,13 +1440,12 @@ media_check = """library media-check [--chunk-size SECONDS] [--gap SECONDS OR 0.
 
         library media-check --chunk-size 0.05 --gap 0.999 ./video.mp4
 
-    Decode 3s every 5% of a file to evaluate how corrupt it is (takes about three seconds per file)
+    Decode 3s every 5%% of a file to evaluate how corrupt it is (takes about three seconds per file)
 
         library media-check --chunk-size 3 --gap 0.05 ./video.mp4
 
     Delete the file if 20 percent or more of checks fail
 
         library media-check --delete-corrupt 20 ./video.mp4
-
 
 """
