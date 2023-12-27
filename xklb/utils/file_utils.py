@@ -3,9 +3,7 @@ from functools import wraps
 from io import StringIO
 from pathlib import Path
 from shutil import which
-from typing import List, Optional, Tuple, Union
-
-from pyparsing import Set
+from typing import List, Optional, Set, Tuple, Union
 
 from xklb.utils import consts, file_utils, printing, processes, web
 from xklb.utils.log_utils import log
