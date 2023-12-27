@@ -27,12 +27,16 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install pdm
-          pdm install --no-editable -G test
-          pytest tests/test_modules.py
-          pdm install --no-editable -G deluxe -G test
 
-      - name: Run pytest
-        run: pdm run pytest
+      - name: Run missing modules test
+        run: |
+          pdm install --no-editable -G test
+          pdm run pytest tests/test_modules.py
+
+      - name: Run deluxe pytest
+        run: |
+          pdm install --no-editable -G deluxe
+          pdm run pytest
 
   publish:
     needs: test
