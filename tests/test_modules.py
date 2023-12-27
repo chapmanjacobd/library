@@ -3,7 +3,7 @@ from pathlib import Path
 
 
 def extract_imports(file_path):
-    with open(file_path, "r") as file:
+    with open(file_path, "r", encoding="utf-8") as file:
         try:
             tree = ast.parse(file.read(), filename=file_path)
         except SyntaxError:
@@ -24,15 +24,7 @@ def find_missing_modules(paths):
     checked_modules = set()
     missing_modules = set()
     for path in paths:
-        try:
-            modules = extract_imports(path)
-        except UnicodeDecodeError:
-            if path.name in ["readme.py"]:
-                continue
-            else:
-                print(path)
-                raise
-
+        modules = extract_imports(path)
         for module in modules:
             module = module.split(".")[0]
             if module in checked_modules:
