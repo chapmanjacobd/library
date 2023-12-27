@@ -5,6 +5,34 @@ from xklb import usage
 from xklb.utils import consts, file_utils, nums, objects, printing, processes
 from xklb.utils.log_utils import log
 
+def parse_args():
+    parser = argparse.ArgumentParser(prog="library media-check", usage=usage.media_check)
+    parser.add_argument("--threads", default=1, const=10, nargs="?")
+    parser.add_argument(
+        "--chunk-size",
+        type=float,
+        help="Chunk size in seconds (default 0.5 second). If set, recommended to use >0.1 seconds",
+        default=0.5,
+    )
+    parser.add_argument(
+        "--gap",
+        type=float,
+        default=0.05,
+        help="Width between chunks to skip (default 0.05 (5%%)). Values greater than 1 are treated as number of seconds",
+    )
+    parser.add_argument(
+        "--delete-corrupt",
+        type=float,
+        help="delete media that is more corrupt than this threshold",
+    )
+    parser.add_argument("--full-scan", "--full", action="store_true")
+    parser.add_argument("--audio-scan", "--audio", action="store_true")
+    parser.add_argument("--verbose", "-v", action="count", default=0)
+    parser.add_argument("paths", nargs="+")
+    args = parser.parse_args()
+    log.info(objects.dict_filter_bool(args.__dict__))
+    return args
+
 
 def decode_quick_scan(path, scans, scan_duration=3):
     def decode(scan):
@@ -116,31 +144,7 @@ def calculate_corruption(path, chunk_size=1, gap=0.1, full_scan=False, audio_sca
 
 
 def media_check() -> None:
-    parser = argparse.ArgumentParser(prog="library media-check", usage=usage.media_check)
-    parser.add_argument("--threads", default=1, const=10, nargs="?")
-    parser.add_argument(
-        "--chunk-size",
-        type=float,
-        help="Chunk size in seconds (default 0.5 second). If set, recommended to use >0.1 seconds",
-        default=0.5,
-    )
-    parser.add_argument(
-        "--gap",
-        type=float,
-        default=0.1,
-        help="Width between chunks to skip (default 0.10 (10%%)). Values greater than 1 are treated as number of seconds",
-    )
-    parser.add_argument(
-        "--delete-corrupt",
-        type=float,
-        help="delete media that is more corrupt than this threshold",
-    )
-    parser.add_argument("--full-scan", "--full", action="store_true")
-    parser.add_argument("--audio-scan", "--audio", action="store_true")
-    parser.add_argument("--verbose", "-v", action="count", default=0)
-    parser.add_argument("paths", nargs="+")
-    args = parser.parse_args()
-    log.info(objects.dict_filter_bool(args.__dict__))
+    args = parse_args()
 
     with ThreadPoolExecutor(max_workers=1 if args.verbose >= consts.LOG_DEBUG else 4) as pool:
         future_to_path = {
