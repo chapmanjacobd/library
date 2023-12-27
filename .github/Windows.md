@@ -65,6 +65,7 @@ Optional: xklb[deluxe] deps: `choco install exiftool rust`
 
     ```fish
     set -Ux MSYSTEM MINGW64
+    set -Ux PYTHONUTF8 1
     ```
 
 </details>
