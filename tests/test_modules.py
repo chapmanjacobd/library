@@ -1,11 +1,9 @@
-import os
-import importlib.util
+import ast, importlib.util
 from pathlib import Path
-import ast
-import importlib.util
+
 
 def extract_imports(file_path):
-    with open(file_path, 'r') as file:
+    with open(file_path, "r") as file:
         try:
             tree = ast.parse(file.read(), filename=file_path)
         except SyntaxError:
@@ -21,22 +19,35 @@ def extract_imports(file_path):
 
         return imports
 
-def find_missing_modules(paths):
-    missing_modules = set()
 
+def find_missing_modules(paths):
+    checked_modules = set()
+    missing_modules = set()
     for path in paths:
-        modules=extract_imports(path)
+        try:
+            modules = extract_imports(path)
+        except UnicodeDecodeError:
+            if path.name in ["readme.py"]:
+                continue
+            else:
+                raise
+
         for module in modules:
-            module = module.split('.')[0]
+            module = module.split(".")[0]
+            if module in checked_modules:
+                continue
+
             try:
                 importlib.import_module(module)
             except ModuleNotFoundError:
                 missing_modules.add(module)
+            checked_modules.add(module)
 
     return missing_modules
 
+
 def test_modules():
-    missing = find_missing_modules(Path('xklb').rglob('*.py'))
+    missing = find_missing_modules(Path("xklb").rglob("*.py"))
 
     if missing:
         print("Missing modules:")
