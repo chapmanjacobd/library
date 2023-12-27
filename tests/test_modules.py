@@ -30,6 +30,7 @@ def find_missing_modules(paths):
             if path.name in ["readme.py"]:
                 continue
             else:
+                print(path)
                 raise
 
         for module in modules:
