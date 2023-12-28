@@ -1448,4 +1448,8 @@ media_check = """library media-check [--chunk-size SECONDS] [--gap SECONDS OR 0.
 
         library media-check --delete-corrupt 20 ./video.mp4
 
+    To scan a large folder use `fsadd`. I recommend something like this two-stage approach:
+
+        library fsadd --delete-unplayable --check-corrupt --chunk-size 0.05 tmp.db ./video ./folders
+        library media-check (library fs tmp.db -w 'corruption>15' -pf) --full-scan --delete-corrupt 25
 """
