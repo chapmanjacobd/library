@@ -126,7 +126,7 @@ def calculate_segments(file_size, chunk_size, gap=0.1):
     segments = []
     start = 0
 
-    if file_size == 0:
+    if file_size in [None, 0]:
         return []
     elif file_size <= chunk_size * 3:
         return [0]

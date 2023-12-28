@@ -95,7 +95,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.2.202)
+    xk media library subcommands (v2.2.203)
 
     Create database subcommands:
     ╭───────────────┬────────────────────────────────────────────────────╮
@@ -1728,7 +1728,6 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     Delete the file if 20 percent or more of checks fail
 
         library media-check --delete-corrupt 20 ./video.mp4
-
 
 
 
