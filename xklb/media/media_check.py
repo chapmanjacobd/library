@@ -2,7 +2,7 @@ import argparse, fractions, json, os, shlex, subprocess, tempfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from xklb import usage
-from xklb.utils import consts, file_utils, nums, objects, printing, processes
+from xklb.utils import consts, file_utils, nums, objects, printing, processes, strings
 from xklb.utils.log_utils import log
 
 
@@ -166,7 +166,7 @@ def media_check() -> None:
             path = future_to_path[future]
             try:
                 corruption = future.result()
-                print(f"{corruption:.2%}", shlex.quote(path), sep="\t")
+                print(strings.safe_percent(corruption), shlex.quote(path), sep="\t")
             except Exception as e:
                 print(f"Error hashing {path}: {e}")
                 if args.verbose >= consts.LOG_DEBUG:
