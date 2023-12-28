@@ -9,7 +9,7 @@ from tabulate import tabulate
 
 import xklb.db_media
 from xklb import history
-from xklb.utils import consts, iterables, printing, processes, sql_utils
+from xklb.utils import consts, iterables, printing, processes, sql_utils, strings
 from xklb.utils.consts import SC
 from xklb.utils.log_utils import log
 
@@ -168,7 +168,7 @@ def media_printer(args, data, units=None, media_len=None) -> None:
             media = [{k: v for k, v in d.items() if k not in ("title", "path")} for d in media]
         elif k.startswith("percent") or k.endswith("ratio"):
             for d in media:
-                d[k] = f"{d[k]:.2%}"
+                d[k] = strings.safe_percent(d[k])
         # elif isinstance(v, (int, float)):
         #     for d in media:
         #         if d[k] is not None:

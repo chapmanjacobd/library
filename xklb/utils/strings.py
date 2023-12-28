@@ -200,3 +200,12 @@ def last_chars(candidate) -> str:
         number_of_groups += 1
 
     return remove_chars
+
+
+def safe_percent(v) -> Optional[str]:
+    if v in [None, '']:
+        return None
+    try:
+        return f"{v:.2%}"
+    except Exception:
+        return None

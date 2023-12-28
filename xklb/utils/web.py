@@ -2,7 +2,7 @@ import functools, os, tempfile, time, urllib.error, urllib.parse, urllib.request
 from pathlib import Path
 from shutil import which
 
-from xklb.utils import consts, db_utils, iterables, nums, path_utils, pd_utils
+from xklb.utils import consts, db_utils, iterables, nums, path_utils, pd_utils, strings
 from xklb.utils.log_utils import clamp_index, log
 
 headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/117.0"}
@@ -214,7 +214,7 @@ def download_url(url, output_path=None, output_prefix=None, chunk_size=8 * 1024 
         downloaded_size = os.path.getsize(output_path)
         if downloaded_size < remote_size:
             if retries <= 0:
-                msg = f"Download interrupted ({downloaded_size/remote_size:.1%}) {output_path}"
+                msg = f"Download interrupted ({strings.safe_percent(downloaded_size/remote_size)}) {output_path}"
                 raise RuntimeError(msg)
             else:
                 download_url(url, output_path, output_prefix, chunk_size, retries=retries - 1)
