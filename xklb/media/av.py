@@ -138,9 +138,14 @@ def munge_av_tags(args, media, path) -> Optional[dict]:
 
     corruption = None
     if args.check_corrupt:
-        corruption = media_check.calculate_corruption(
-            path, chunk_size=args.chunk_size, gap=args.gap, full_scan=args.full_scan, threads=1
-        )
+        try:
+            corruption = media_check.calculate_corruption(
+                path, chunk_size=args.chunk_size, gap=args.gap, full_scan=args.full_scan, threads=1
+            )
+        except Exception:
+            print(path)
+            raise
+
         if args.delete_corrupt and corruption > (args.delete_corrupt / 100):
             file_utils.trash(path)
             return None

@@ -5,6 +5,7 @@ from xklb import usage
 from xklb.utils import consts, file_utils, nums, objects, printing, processes
 from xklb.utils.log_utils import log
 
+
 def parse_args():
     parser = argparse.ArgumentParser(prog="library media-check", usage=usage.media_check)
     parser.add_argument("--threads", default=1, const=10, nargs="?")
@@ -139,6 +140,8 @@ def calculate_corruption(path, chunk_size=1, gap=0.1, full_scan=False, audio_sca
             corruption = decode_full_scan(path, audio_scan=audio_scan, threads=threads)
     else:
         duration = nums.safe_int(processes.FFProbe(path).duration)
+        if duration is None:
+            return 0.99
         corruption = decode_quick_scan(path, nums.calculate_segments(duration, chunk_size, gap), chunk_size)
     return corruption
 
