@@ -114,9 +114,7 @@ def get_clobber(args):
     return choice == "replace"
 
 
-def apply_merge(args, empty_folder_data, rename_data):
-    clobber = get_clobber(args)
-
+def apply_merge(args, empty_folder_data, rename_data, clobber):
     def print_mv(t):
         if t[0]:  ## file exists in destination already
             if not clobber:
@@ -178,6 +176,7 @@ def merge_folders() -> None:
     all_source_folders = set()
     empty_folder_data: set[Path] = set()
     rename_data: List[tuple[bool, Path, Path]] = []
+    clobber = False
     print("Sources:")
     for source in args.sources:
         source_folder, source_glob = arg_utils.split_folder_glob(source)
@@ -195,16 +194,20 @@ def merge_folders() -> None:
         trumping_files = [t for t in source_file_renames if t[0] and t[2] in previous_source_renames]
 
         source_new_file_folders = {t[2].parent for t in source_file_renames if not t[0]} - destination_folders
+        conflicts = sum(1 for t in source_file_renames if t[0])
         print(
             f"""Simulated move:
 \tNew files: {sum(1 for t in source_file_renames if not t[0])}
-\tConflicts: {sum(1 for t in source_file_renames if t[0])}
+\tConflicts: {conflicts}
 \tTrumps: {len(trumping_files)}
 \tNew folders from files: {len(source_new_file_folders)}
 \tNew empty folders: {len(source_new_empty_folders)} """
         )
 
+        if conflicting_files:
+            clobber = None
         if trumping_files:
+            clobber = None
             log.info("Trumped files found:")
             for trumping_tuple in trumping_files:
                 trumped_files = [str(t[1]) for t in rename_data if t[2] == trumping_tuple[2]]
@@ -217,7 +220,10 @@ def merge_folders() -> None:
         destination_folders |= {as_dest(source_folder, destination_folder, p) for p in all_source_folders}
         print()
 
-    apply_merge(args, empty_folder_data, rename_data)
+    if clobber is None:
+        clobber = get_clobber(args)
+
+    apply_merge(args, empty_folder_data, rename_data, clobber=clobber)
 
     for f in sorted((str(p) for p in all_source_folders), key=len, reverse=True):
         try:
