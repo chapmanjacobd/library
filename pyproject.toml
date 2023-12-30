@@ -32,21 +32,23 @@ dynamic = ["version"]
 license = {file = ".github/LICENSE"}
 name = "xklb"
 readme = ".github/README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 
 [project.optional-dependencies]
 deluxe = [
   "aiohttp",
-  "brotab",
   "geopandas",
-  "orjson",
   "PyExifTool",
   "pymcdm",
+  "pyvirtualdisplay",
   "scikit-learn",
   "selenium-wire",
-  "pyvirtualdisplay",
   "subliminal",
-  # "textract",  # deps definition causing issues with pdm/bs4
+]
+fat = [
+  "brotab",
+  "orjson",
+  "textract",
 ]
 dev = ["black", "isort", "ssort"]
 test = ["ruff", "pytest", "freezegun"]

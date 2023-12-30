@@ -4,7 +4,7 @@ from xklb import usage
 from xklb.utils import arg_utils, consts, iterables, printing, strings, web
 from xklb.utils.log_utils import log
 
-from xklb.utils import consts, db_utils, devices, iterables, objects
+from xklb.utils import consts, devices, iterables
 
 def parse_args():
     parser = argparse.ArgumentParser(
