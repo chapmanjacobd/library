@@ -1087,9 +1087,9 @@ merge_folders = """library merge-folders [--replace] [--skip] [--simulate] SOURC
 
     https://github.com/chapmanjacobd/journal/blob/main/programming/linux/misconceptions.md#mv-src-vs-mv-src
 
-    Trumps are files that are new or replaced files from an earlier source which now conflict with this later source.
+    Trumps are new or replaced files from an earlier source which now conflict with a later source.
+    If you only have one source then the count of trumps will always be zero.
     The count of conflicts also includes trumps.
-
 """
 
 merge_online_local = """library merge-online-local DATABASE

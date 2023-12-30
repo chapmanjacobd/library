@@ -95,7 +95,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.2.203)
+    xk media library subcommands (v2.2.204)
 
     Create database subcommands:
     ╭───────────────┬────────────────────────────────────────────────────╮
@@ -1768,9 +1768,9 @@ Convenience subcommand to compare multiple files using sample-hash
 
     https://github.com/chapmanjacobd/journal/blob/main/programming/linux/misconceptions.md#mv-src-vs-mv-src
 
-    Trumps are files that are new or replaced files from an earlier source which now conflict with this later source.
+    Trumps are new or replaced files from an earlier source which now conflict with a later source.
+    If you only have one source then the count of trumps will always be zero.
     The count of conflicts also includes trumps.
-
 
 
 </details>

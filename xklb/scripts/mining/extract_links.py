@@ -4,6 +4,7 @@ from xklb import usage
 from xklb.utils import arg_utils, consts, iterables, printing, strings, web
 from xklb.utils.log_utils import log
 
+from xklb.utils import consts, db_utils, devices, iterables, objects
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -74,9 +75,11 @@ def parse_args():
     parser.add_argument("--strict-exclude", action="store_true", help="All exclude args must resolve true")
     parser.add_argument("--case-sensitive", action="store_true", help="Filter with case sensitivity")
     parser.add_argument("--print-link-text", "--print-title", action="store_true")
+    parser.add_argument("--selenium", action="store_true")
+    parser.add_argument("--manual", action="store_true", help='Confirm manually in shell before exiting the browser')
+    parser.add_argument("--scroll", action="store_true", help="Scroll down the page; infinite scroll")
     parser.add_argument("--auto-pager", "--autopager", action="store_true")
     parser.add_argument("--poke", action="store_true")
-    parser.add_argument("--scroll", action="store_true", help="Scroll down the page; infinite scroll")
     parser.add_argument("--download", action="store_true", help="Download filtered links")
     parser.add_argument("--verbose", "-v", action="count", default=0)
 
@@ -84,6 +87,9 @@ def parse_args():
     parser.add_argument("--file", "-f", help="File with one URL per line")
     parser.add_argument("paths", nargs="*")
     args = parser.parse_args()
+
+    if args.scroll:
+        args.selenium = True
 
     if not args.case_sensitive:
         args.before_include = [s.lower() for s in args.before_include]
@@ -188,11 +194,16 @@ def parse_inner_urls(args, url, markup):
 
 @iterables.return_unique
 def get_inner_urls(args, url):
-    if args.scroll:
+    if args.selenium:
         web.selenium_get_page(args, url)
 
-        for markup in web.infinite_scroll(args.driver):
-            yield from parse_inner_urls(args, url, markup)
+        if args.manual:
+            while devices.confirm("Extract HTML from browser?"):
+                markup = web.selenium_extract_html(args.driver)
+                yield from parse_inner_urls(args, url, markup)
+        else:
+            for markup in web.infinite_scroll(args.driver):
+                yield from parse_inner_urls(args, url, markup)
     else:
         if args.local_html:
             with open(url, "r") as f:
@@ -219,14 +230,14 @@ def print_or_download(args, inner_url):
 def extract_links() -> None:
     args = parse_args()
 
-    if args.scroll:
+    if args.selenium:
         web.load_selenium(args)
     try:
         for url in arg_utils.gen_urls(args):
             for found_urls in get_inner_urls(args, url):
                 print_or_download(args, found_urls)
     finally:
-        if args.scroll:
+        if args.selenium:
             web.quit_selenium(args)
 
 
