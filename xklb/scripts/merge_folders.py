@@ -204,7 +204,7 @@ def merge_folders() -> None:
 \tNew empty folders: {len(source_new_empty_folders)} """
         )
 
-        if conflicting_files:
+        if conflicts:
             clobber = None
         if trumping_files:
             clobber = None

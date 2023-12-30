@@ -1,10 +1,9 @@
 import argparse
 
 from xklb import usage
-from xklb.utils import arg_utils, consts, iterables, printing, strings, web
+from xklb.utils import arg_utils, consts, devices, iterables, printing, strings, web
 from xklb.utils.log_utils import log
 
-from xklb.utils import consts, devices, iterables
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -76,7 +75,7 @@ def parse_args():
     parser.add_argument("--case-sensitive", action="store_true", help="Filter with case sensitivity")
     parser.add_argument("--print-link-text", "--print-title", action="store_true")
     parser.add_argument("--selenium", action="store_true")
-    parser.add_argument("--manual", action="store_true", help='Confirm manually in shell before exiting the browser')
+    parser.add_argument("--manual", action="store_true", help="Confirm manually in shell before exiting the browser")
     parser.add_argument("--scroll", action="store_true", help="Scroll down the page; infinite scroll")
     parser.add_argument("--auto-pager", "--autopager", action="store_true")
     parser.add_argument("--poke", action="store_true")
