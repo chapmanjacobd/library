@@ -24,7 +24,7 @@ def fake_title(url):
 
 def markdown_links():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--selenium", action="store_true")
+    parser.add_argument("--selenium", "--scroll", action="store_true")
     parser.add_argument("-v", "--verbose", action="count", default=0)
 
     parser.add_argument("paths", nargs="*", default=arg_utils.STDIN_DASH, action=arg_utils.ArgparseArgsOrStdin)

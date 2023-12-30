@@ -116,7 +116,7 @@ def load_selenium(args, wire=False):
     else:
         from selenium import webdriver
 
-    if args.verbose < consts.LOG_DEBUG:
+    if args.verbose < consts.LOG_DEBUG and not getattr(args, 'manual', False):
         from pyvirtualdisplay.display import Display
 
         args.driver_display = Display(visible=False, size=(1280, 720))
@@ -153,19 +153,8 @@ def load_selenium(args, wire=False):
 
 def quit_selenium(args):
     args.driver.quit()
-    if consts.LOG_DEBUG > args.verbose:
+    if consts.LOG_DEBUG > args.verbose and not getattr(args, 'manual', False):
         args.driver_display.stop()
-
-
-def wait_selenium_close(args):
-    from selenium.common.exceptions import InvalidSessionIdException
-
-    while True:
-        try:
-            _ = args.driver.window_handles
-        except InvalidSessionIdException:
-            break
-        time.sleep(1)
 
 
 def download_url(url, output_path=None, output_prefix=None, chunk_size=8 * 1024 * 1024, retries=3):

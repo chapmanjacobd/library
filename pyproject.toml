@@ -44,6 +44,7 @@ deluxe = [
   "pymcdm",
   "scikit-learn",
   "selenium-wire",
+  "pyvirtualdisplay",
   "subliminal",
   # "textract",  # deps definition causing issues with pdm/bs4
 ]
