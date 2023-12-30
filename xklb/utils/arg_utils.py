@@ -184,7 +184,7 @@ def parse_args_limit(args):
 def split_folder_glob(s):
     p = Path(s).resolve()
 
-    if "*" not in p and not p.exists():
+    if "*" not in s and not p.exists():
         p.mkdir(parents=True, exist_ok=True)
 
     if p.is_dir():

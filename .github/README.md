@@ -95,7 +95,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.2.204)
+    xk media library subcommands (v2.2.205)
 
     Create database subcommands:
     ╭───────────────┬────────────────────────────────────────────────────╮
@@ -1729,6 +1729,35 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
         library media-check --delete-corrupt 20 ./video.mp4
 
+    To scan a large folder use `fsadd`. I recommend something like this two-stage approach:
+
+        library fsadd --delete-unplayable --check-corrupt --chunk-size 0.05 tmp.db ./video/ ./folders/
+        library media-check (library fs tmp.db -w 'corruption>15' -pf) --full-scan --delete-corrupt 25
+
+    Corruption stats
+
+        library fs tmp.db -w 'corruption>15' -pa
+        path         count  duration             avg_duration         size    avg_size
+        ---------  -------  -------------------  --------------  ---------  ----------
+        Aggregate      907  15 days and 9 hours  24 minutes      130.6 GiB   147.4 MiB
+
+    Corruption graph
+
+        sqlite --raw-lines tmp.db 'select corruption from media' | lowcharts hist --min 10 --intervals 10
+
+        Samples = 931; Min = 10.0; Max = 100.0
+        Average = 39.1; Variance = 1053.103; STD = 32.452
+        each ∎ represents a count of 6
+        [ 10.0 ..  19.0] [561] ∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎
+        [ 19.0 ..  28.0] [ 69] ∎∎∎∎∎∎∎∎∎∎∎
+        [ 28.0 ..  37.0] [ 33] ∎∎∎∎∎
+        [ 37.0 ..  46.0] [ 18] ∎∎∎
+        [ 46.0 ..  55.0] [ 14] ∎∎
+        [ 55.0 ..  64.0] [ 12] ∎∎
+        [ 64.0 ..  73.0] [ 15] ∎∎
+        [ 73.0 ..  82.0] [ 18] ∎∎∎
+        [ 82.0 ..  91.0] [ 50] ∎∎∎∎∎∎∎∎
+        [ 91.0 .. 100.0] [141] ∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎
 
 
 </details>
