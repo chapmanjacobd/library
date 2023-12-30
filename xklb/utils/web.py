@@ -116,7 +116,7 @@ def load_selenium(args, wire=False):
     else:
         from selenium import webdriver
 
-    if args.verbose < consts.LOG_DEBUG and not getattr(args, 'manual', False):
+    if args.verbose < consts.LOG_DEBUG and not getattr(args, "manual", False):
         from pyvirtualdisplay.display import Display
 
         args.driver_display = Display(visible=False, size=(1280, 720))
@@ -153,7 +153,7 @@ def load_selenium(args, wire=False):
 
 def quit_selenium(args):
     args.driver.quit()
-    if consts.LOG_DEBUG > args.verbose and not getattr(args, 'manual', False):
+    if consts.LOG_DEBUG > args.verbose and not getattr(args, "manual", False):
         args.driver_display.stop()
 
 

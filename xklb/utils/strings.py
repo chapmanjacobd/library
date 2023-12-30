@@ -203,7 +203,7 @@ def last_chars(candidate) -> str:
 
 
 def safe_percent(v) -> Optional[str]:
-    if v in [None, '']:
+    if v in [None, ""]:
         return None
     try:
         return f"{v:.2%}"
