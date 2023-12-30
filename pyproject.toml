@@ -52,7 +52,7 @@ fat = [
 ]
 dev = ["black", "isort", "ssort"]
 test = ["ruff", "pytest", "freezegun"]
-all = ["xklb[deluxe,dev,test]"]
+all = ["xklb[deluxe,test]"]
 
 [project.urls]
 documentation = "https://github.com/chapmanjacobd/library#usage"
