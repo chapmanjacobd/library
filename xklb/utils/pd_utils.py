@@ -21,9 +21,8 @@ def convert_dtypes(df, clean=False):
         try:
             if clean:
                 df[col] = df[col].str.replace(r"\[.*|\(.*|\/.*", "", regex=True)
-
             df.loc[:, col] = df[col].str.replace(",", "").astype(float)
-        except ValueError:
+        except Exception:
             continue  # column was not numeric after all (•́⍜•̀), skip
     df = df.convert_dtypes()
     return df

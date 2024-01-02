@@ -1352,6 +1352,47 @@ mcda = """library mcda PATH ... [--table TABLE] [--start-row START_ROW] [--end-r
     Perform Multiple Criteria Decision Analysis (MCDA) on one or more files
 
     Only 20,000 rows per file are loaded for performance purposes. Set `--end-row inf` to read all the rows and/or run out of RAM.
+
+    $ library mcda ~/storage.csv --minimize price --ignore warranty
+
+        ### Goals
+        #### Maximize
+        - size
+        #### Minimize
+        - price
+
+        |    |   price |   size |   warranty |   TOPSIS |      MABAC |   SPOTIS |   BORDA |
+        |----|---------|--------|------------|----------|------------|----------|---------|
+        |  0 |     359 |     36 |          5 | 0.769153 |  0.348907  | 0.230847 | 7.65109 |
+        |  1 |     453 |     40 |          2 | 0.419921 |  0.0124531 | 0.567301 | 8.00032 |
+        |  2 |     519 |     44 |          2 | 0.230847 | -0.189399  | 0.769153 | 8.1894  |
+
+    $ library mcda ~/storage.csv --ignore warranty
+
+        ### Goals
+        #### Maximize
+        - price
+        - size
+
+        |    |   price |   size |   warranty |   TOPSIS |     MABAC |   SPOTIS |   BORDA |
+        |----|---------|--------|------------|----------|-----------|----------|---------|
+        |  2 |     519 |     44 |          2 | 1        |  0.536587 | 0        | 7.46341 |
+        |  1 |     453 |     40 |          2 | 0.580079 |  0.103888 | 0.432699 | 7.88333 |
+        |  0 |     359 |     36 |          5 | 0        | -0.463413 | 1        | 8.46341 |
+
+    $ library mcda ~/storage.csv --minimize price --ignore warranty
+
+        ### Goals
+        #### Maximize
+        - size
+        #### Minimize
+        - price
+
+        |    |   price |   size |   warranty |   TOPSIS |      MABAC |   SPOTIS |   BORDA |
+        |----|---------|--------|------------|----------|------------|----------|---------|
+        |  0 |     359 |     36 |          5 | 0.769153 |  0.348907  | 0.230847 | 7.65109 |
+        |  1 |     453 |     40 |          2 | 0.419921 |  0.0124531 | 0.567301 | 8.00032 |
+        |  2 |     519 |     44 |          2 | 0.230847 | -0.189399  | 0.769153 | 8.1894  |
 """
 
 incremental_diff = """library incremental-diff PATH1 PATH2 [--join-keys JOIN_KEYS] [--table1 TABLE1] [--table2 TABLE2] [--table1-index TABLE1_INDEX] [--table2-index TABLE2_INDEX] [--start-row START_ROW] [--batch-size BATCH_SIZE]
@@ -1438,20 +1479,20 @@ media_check = """library media-check [--chunk-size SECONDS] [--gap SECONDS OR 0.
 
     Decode at least one frame at the start and end of each file to evaluate how corrupt it is (takes about one second per file)
 
-        library media-check --chunk-size 0.05 --gap 0.999 ./video.mp4
+        library media-check --chunk-size 5% --gap 99.9% ./video.mp4
 
     Decode 3s every 5%% of a file to evaluate how corrupt it is (takes about three seconds per file)
 
-        library media-check --chunk-size 3 --gap 0.05 ./video.mp4
+        library media-check --chunk-size 3 --gap 5% ./video.mp4
 
     Delete the file if 20 percent or more of checks fail
 
-        library media-check --delete-corrupt 20 ./video.mp4
+        library media-check --delete-corrupt 20% ./video.mp4
 
     To scan a large folder use `fsadd`. I recommend something like this two-stage approach:
 
-        library fsadd --delete-unplayable --check-corrupt --chunk-size 0.05 tmp.db ./video/ ./folders/
-        library media-check (library fs tmp.db -w 'corruption>15' -pf) --full-scan --delete-corrupt 25
+        library fsadd --delete-unplayable --check-corrupt --chunk-size 5% tmp.db ./video/ ./folders/
+        library media-check (library fs tmp.db -w 'corruption>15' -pf) --full-scan --delete-corrupt 25%
 
     Corruption stats
 

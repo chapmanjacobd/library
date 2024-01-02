@@ -510,7 +510,7 @@ def process_playqueue(args) -> None:
         log.debug("utils.filter_episodic: %s", t.elapsed())
 
     if not media:
-        if args.include and Path(args.include).is_file():
+        if args.include and Path(" ".join(args.include)).is_file():
             media = [{"path": str(Path(args.include).resolve())}]
         else:
             processes.no_media_found()

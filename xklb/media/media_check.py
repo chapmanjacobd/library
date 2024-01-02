@@ -17,20 +17,23 @@ def parse_args():
     )
     parser.add_argument(
         "--gap",
-        type=float,
-        default=0.05,
-        help="Width between chunks to skip (default 0.05 (5%%)). Values greater than 1 are treated as number of seconds",
+        default="0.05",
+        help="Width between chunks to skip (default 5%%). Values greater than 1 are treated as number of seconds",
     )
     parser.add_argument(
         "--delete-corrupt",
-        type=float,
-        help="delete media that is more corrupt than this threshold",
+        help="delete media that is more corrupt than this threshold. Values greater than 1 are treated as number of seconds",
     )
     parser.add_argument("--full-scan", "--full", action="store_true")
     parser.add_argument("--audio-scan", "--audio", action="store_true")
     parser.add_argument("--verbose", "-v", action="count", default=0)
     parser.add_argument("paths", nargs="+")
     args = parser.parse_args()
+
+    args.gap = nums.float_from_percent(args.gap)
+    if args.delete_corrupt:
+        args.delete_corrupt = nums.float_from_percent(args.delete_corrupt)
+
     log.info(objects.dict_filter_bool(args.__dict__))
     return args
 
@@ -122,11 +125,14 @@ def decode_full_scan(path, audio_scan=False, frames="frames", threads=5):
         actual_duration = nb_frames * r_frame_rate.denominator / r_frame_rate.numerator
 
     difference = abs(actual_duration - metadata_duration)
-    corruption = difference / metadata_duration
+    try:
+        corruption = difference / metadata_duration
+    except ZeroDivisionError:
+        corruption = 0.5
 
     if difference > 0.1:
-        log.warning(
-            f"Metadata {printing.seconds_to_hhmmss(metadata_duration).strip()} does not match actual duration {printing.seconds_to_hhmmss(actual_duration).strip()} (diff {difference:.2f}s) {path}",
+        log.info(
+            f"Metadata {printing.seconds_to_hhmmss(metadata_duration).strip()} does not match actual duration {printing.seconds_to_hhmmss(actual_duration).strip()} (diff {difference:.2f}s)\t{path}",
         )
 
     return corruption
@@ -172,5 +178,8 @@ def media_check() -> None:
                 if args.verbose >= consts.LOG_DEBUG:
                     raise
             else:
-                if args.delete_corrupt and corruption > (args.delete_corrupt / 100):
-                    file_utils.trash(path)
+                if args.delete_corrupt:
+                    if (1 > args.delete_corrupt > 0 and corruption > args.delete_corrupt) or (
+                        ((processes.FFProbe(path).duration or 100) * corruption) > args.delete_corrupt
+                    ):
+                        file_utils.trash(path)

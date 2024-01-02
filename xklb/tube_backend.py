@@ -1,4 +1,4 @@
-import json, sys
+import json, sqlite3, sys
 from copy import deepcopy
 from pathlib import Path
 from types import ModuleType
@@ -11,7 +11,7 @@ from xklb.data.dl_config import (
     yt_recoverable_errors,
     yt_unrecoverable_errors,
 )
-from xklb.media import subtitle
+from xklb.media import media_check, subtitle
 from xklb.utils import consts, db_utils, iterables, objects, path_utils, printing, sql_utils, strings
 from xklb.utils.consts import DBType
 from xklb.utils.log_utils import Timer, log
@@ -209,22 +209,25 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Optional[L
             playlist_opts=playlist_dl_opts,
         ),
     ) as ydl:
-        videos = args.db.execute(
-            f"""
-            SELECT
-              id
-            , path
-            , playlist_id
-            FROM media
-            WHERE 1=1
-                AND COALESCE(time_deleted, 0)=0
-                {'and width is null' if 'width' in m_columns else ''}
-                and path not like '%playlist%'
-                and playlist_id = (select id from playlists where path = ?)
-            ORDER by random()
-            """,
-            [playlist_path],
-        ).fetchall()
+        try:
+            videos = args.db.execute(
+                f"""
+                SELECT
+                id
+                , path
+                , playlist_id
+                FROM media
+                WHERE 1=1
+                    AND COALESCE(time_deleted, 0)=0
+                    {'and width is null' if 'width' in m_columns else ''}
+                    and path not like '%playlist%'
+                    and playlist_id = (select id from playlists where path = ?)
+                ORDER by random()
+                """,
+                [playlist_path],
+            ).fetchall()
+        except sqlite3.OperationalError:
+            videos = []
 
         current_video_count = 0
         for id, path, playlist_id in videos:
@@ -464,11 +467,20 @@ def download(args, m) -> None:
     ydl_errors = "\n".join([line for line in ydl_errors if not yt_meaningless_errors.match(line)])
     ydl_full_log = ydl_log["error"] + ydl_log["warning"] + ydl_log["info"]
 
-    # log.debug('\n'.join(ydl_full_log))
+    if args.verbose >= consts.LOG_DEBUG_SQL:
+        log.debug("\n".join(ydl_full_log))
 
     if not ydl_log["error"] and info:
-        log.debug("[%s]: No news is good news", webpath)
-        db_media.download_add(args, webpath, info, local_path)
+        try:
+            info["corruption"] = int(media_check.calculate_corruption(local_path, threads=1) * 100)
+        except RuntimeError:
+            info["corruption"] = 50
+        if info["corruption"] > 7:
+            log.debug("[%s]: Media check failed (will try again later)", webpath)
+            db_media.download_add(args, webpath, info, local_path, error="Media check failed")
+        else:
+            log.debug("[%s]: No news is good news", webpath)
+            db_media.download_add(args, webpath, info, local_path)
     elif any(yt_recoverable_errors.match(line) for line in ydl_full_log):
         log.info("[%s]: Recoverable error matched (will try again later). %s", webpath, ydl_errors)
         db_media.download_add(args, webpath, info, local_path, error=ydl_errors)
