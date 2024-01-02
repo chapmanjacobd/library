@@ -1,6 +1,7 @@
 import argparse, time
 from pathlib import Path
 
+from xklb.media import media_check
 from xklb.utils import file_utils, path_utils, processes, web
 
 
@@ -45,8 +46,9 @@ def javtiful() -> None:
         local_probe = processes.FFProbe(output_path)
         assert local_probe.has_audio
         assert local_probe.has_video
-        # if decode_full_scan(output_path) > 1:
-        #     exit(3)
+        corruption = media_check.calculate_corruption(output_path)
+        if corruption > 0.1:
+            exit(3)
 
     process_url(args.path)
     file_utils.tempdir_unlink("*.xpi")

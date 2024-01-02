@@ -10,7 +10,7 @@ from typing import Dict, List, Optional
 import xklb.scripts.playlists
 from xklb import db_media, db_playlists, usage
 from xklb.media import av, books
-from xklb.utils import arg_utils, consts, db_utils, file_utils, iterables, objects
+from xklb.utils import arg_utils, consts, db_utils, file_utils, iterables, nums, objects
 from xklb.utils.consts import SC, DBType
 from xklb.utils.log_utils import log
 
@@ -92,11 +92,10 @@ def parse_args(action, usage) -> argparse.Namespace:
     )
     parser.add_argument(
         "--gap",
-        type=float,
-        default=0.1,
-        help="Width between chunks to skip (default 0.10 (10%%)). Values greater than 1 are treated as number of seconds",
+        default="0.1",
+        help="Width between chunks to skip (default 10%%). Values greater than 1 are treated as number of seconds",
     )
-    parser.add_argument("--delete-corrupt", type=float, help="delete media that is more corrupt than this threshold")
+    parser.add_argument("--delete-corrupt", help="delete media that is more corrupt than this threshold")
     parser.add_argument("--full-scan", action="store_true")
 
     parser.add_argument("--force", "-f", action="store_true", help=argparse.SUPPRESS)
@@ -107,6 +106,10 @@ def parse_args(action, usage) -> argparse.Namespace:
     if action == SC.fsadd:
         parser.add_argument("paths", nargs="+")
     args = parser.parse_args()
+
+    args.gap = nums.float_from_percent(args.gap)
+    if args.delete_corrupt:
+        args.delete_corrupt = nums.float_from_percent(args.delete_corrupt)
 
     if args.db:
         args.database = args.db

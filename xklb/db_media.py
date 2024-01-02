@@ -184,6 +184,8 @@ def add(args, entry):
         return
 
     tags = entry.pop("tags", None) or ""
+    chapters = entry.pop("chapters", None) or []
+    entry.pop("description", None)
 
     media_id = args.db.pop("select id from media where path = ?", [entry["path"]])
     try:
@@ -197,8 +199,11 @@ def add(args, entry):
     except sqlite3.IntegrityError:
         log.error("media_id %s: %s", media_id, entry)
         raise
+
     if tags:
         args.db["captions"].insert({"media_id": media_id, "time": 0, "text": tags}, alter=True)
+    for chapter in chapters:
+        args.db["captions"].insert({"media_id": media_id, **chapter}, alter=True)
 
 
 def playlist_media_add(
@@ -258,7 +263,7 @@ def download_add(
         "error": error,
     }
     add(args, entry)
-    if entry["path"] != webpath:
+    if entry["path"] != webpath and (unrecoverable_error or not error):
         with args.db.conn:
             args.db.conn.execute("DELETE from media WHERE path = ?", [webpath])
 

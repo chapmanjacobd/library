@@ -2,6 +2,7 @@ import argparse, time
 from pathlib import Path
 from urllib.parse import urljoin
 
+from xklb.media import media_check
 from xklb.utils import file_utils, path_utils, processes, web
 
 
@@ -145,8 +146,9 @@ def jav_guru() -> None:
         assert local_probe.has_video
         if abs(local_probe.duration - remote_probe.duration) > 2.0:  # within 2 seconds   # type: ignore
             exit(3)
-        # if decode_full_scan(output_path) > 1:
-        #     exit(3)
+        corruption = media_check.calculate_corruption(output_path)
+        if corruption > 0.1:
+            exit(3)
 
     process_url(args.path)
     file_utils.tempdir_unlink("*.xpi")

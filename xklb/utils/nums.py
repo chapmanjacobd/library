@@ -9,6 +9,14 @@ def percent(value, total):
     return (value / total) * 100
 
 
+def float_from_percent(s: str):
+    if s.endswith("%"):
+        v = float(s.rstrip("%")) / 100
+    else:
+        v = float(s)
+    return v
+
+
 def to_timestamp(dt_object):
     return int(dt_object.replace(tzinfo=timezone.utc).timestamp())
 

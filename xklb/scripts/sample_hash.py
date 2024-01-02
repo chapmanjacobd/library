@@ -63,13 +63,15 @@ def sample_hash() -> None:
     )
     parser.add_argument(
         "--gap",
-        type=float,
-        default=0.1,
-        help="Width between chunks to skip (default 0.1 (10%%)). Values greater than 1 are treated as number of bytes",
+        default="0.1",
+        help="Width between chunks to skip (default 10%%). Values greater than 1 are treated as number of bytes",
     )
     parser.add_argument("--verbose", "-v", action="count", default=0)
     parser.add_argument("paths", nargs="+")
     args = parser.parse_args()
+
+    args.gap = nums.float_from_percent(args.gap)
+
     log.info(objects.dict_filter_bool(args.__dict__))
 
     with ThreadPoolExecutor(max_workers=4) as pool:

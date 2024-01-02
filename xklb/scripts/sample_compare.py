@@ -4,7 +4,7 @@ from pathlib import Path
 
 from xklb import usage
 from xklb.scripts import sample_hash
-from xklb.utils import objects
+from xklb.utils import nums, objects
 from xklb.utils.log_utils import log
 
 
@@ -61,14 +61,16 @@ def sample_compare() -> None:
     )
     parser.add_argument(
         "--gap",
-        type=float,
-        default=0.1,
-        help="Width between chunks to skip (default 0.1 (10%%)). Values greater than 1 are treated as number of bytes",
+        default="0.1",
+        help="Width between chunks to skip (default 10%%). Values greater than 1 are treated as number of bytes",
     )
     parser.add_argument("--ignore-holes", "--ignore-sparse", action="store_true")
     parser.add_argument("--verbose", "-v", action="count", default=0)
     parser.add_argument("paths", nargs="+")
     args = parser.parse_args()
+
+    args.gap = nums.float_from_percent(args.gap)
+
     log.info(objects.dict_filter_bool(args.__dict__))
 
     is_equal = sample_cmp(

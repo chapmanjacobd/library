@@ -95,7 +95,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.2.207)
+    xk media library subcommands (v2.3.001)
 
     Create database subcommands:
     ╭───────────────┬────────────────────────────────────────────────────╮
@@ -1677,6 +1677,47 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Only 20,000 rows per file are loaded for performance purposes. Set `--end-row inf` to read all the rows and/or run out of RAM.
 
+    $ library mcda ~/storage.csv --minimize price --ignore warranty
+
+        ### Goals
+        #### Maximize
+        - size
+        #### Minimize
+        - price
+
+        |    |   price |   size |   warranty |   TOPSIS |      MABAC |   SPOTIS |   BORDA |
+        |----|---------|--------|------------|----------|------------|----------|---------|
+        |  0 |     359 |     36 |          5 | 0.769153 |  0.348907  | 0.230847 | 7.65109 |
+        |  1 |     453 |     40 |          2 | 0.419921 |  0.0124531 | 0.567301 | 8.00032 |
+        |  2 |     519 |     44 |          2 | 0.230847 | -0.189399  | 0.769153 | 8.1894  |
+
+    $ library mcda ~/storage.csv --ignore warranty
+
+        ### Goals
+        #### Maximize
+        - price
+        - size
+
+        |    |   price |   size |   warranty |   TOPSIS |     MABAC |   SPOTIS |   BORDA |
+        |----|---------|--------|------------|----------|-----------|----------|---------|
+        |  2 |     519 |     44 |          2 | 1        |  0.536587 | 0        | 7.46341 |
+        |  1 |     453 |     40 |          2 | 0.580079 |  0.103888 | 0.432699 | 7.88333 |
+        |  0 |     359 |     36 |          5 | 0        | -0.463413 | 1        | 8.46341 |
+
+    $ library mcda ~/storage.csv --minimize price --ignore warranty
+
+        ### Goals
+        #### Maximize
+        - size
+        #### Minimize
+        - price
+
+        |    |   price |   size |   warranty |   TOPSIS |      MABAC |   SPOTIS |   BORDA |
+        |----|---------|--------|------------|----------|------------|----------|---------|
+        |  0 |     359 |     36 |          5 | 0.769153 |  0.348907  | 0.230847 | 7.65109 |
+        |  1 |     453 |     40 |          2 | 0.419921 |  0.0124531 | 0.567301 | 8.00032 |
+        |  2 |     519 |     44 |          2 | 0.230847 | -0.189399  | 0.769153 | 8.1894  |
+
 
 </details>
 
@@ -1719,20 +1760,20 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Decode at least one frame at the start and end of each file to evaluate how corrupt it is (takes about one second per file)
 
-        library media-check --chunk-size 0.05 --gap 0.999 ./video.mp4
+        library media-check --chunk-size 5% --gap 99.9% ./video.mp4
 
     Decode 3s every 5% of a file to evaluate how corrupt it is (takes about three seconds per file)
 
-        library media-check --chunk-size 3 --gap 0.05 ./video.mp4
+        library media-check --chunk-size 3 --gap 5% ./video.mp4
 
     Delete the file if 20 percent or more of checks fail
 
-        library media-check --delete-corrupt 20 ./video.mp4
+        library media-check --delete-corrupt 20% ./video.mp4
 
     To scan a large folder use `fsadd`. I recommend something like this two-stage approach:
 
-        library fsadd --delete-unplayable --check-corrupt --chunk-size 0.05 tmp.db ./video/ ./folders/
-        library media-check (library fs tmp.db -w 'corruption>15' -pf) --full-scan --delete-corrupt 25
+        library fsadd --delete-unplayable --check-corrupt --chunk-size 5% tmp.db ./video/ ./folders/
+        library media-check (library fs tmp.db -w 'corruption>15' -pf) --full-scan --delete-corrupt 25%
 
     Corruption stats
 
