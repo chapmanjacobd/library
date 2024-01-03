@@ -1479,20 +1479,20 @@ media_check = """library media-check [--chunk-size SECONDS] [--gap SECONDS OR 0.
 
     Decode at least one frame at the start and end of each file to evaluate how corrupt it is (takes about one second per file)
 
-        library media-check --chunk-size 5% --gap 99.9% ./video.mp4
+        library media-check --chunk-size 5%% --gap 99.9%% ./video.mp4
 
     Decode 3s every 5%% of a file to evaluate how corrupt it is (takes about three seconds per file)
 
-        library media-check --chunk-size 3 --gap 5% ./video.mp4
+        library media-check --chunk-size 3 --gap 5%% ./video.mp4
 
     Delete the file if 20 percent or more of checks fail
 
-        library media-check --delete-corrupt 20% ./video.mp4
+        library media-check --delete-corrupt 20%% ./video.mp4
 
     To scan a large folder use `fsadd`. I recommend something like this two-stage approach:
 
-        library fsadd --delete-unplayable --check-corrupt --chunk-size 5% tmp.db ./video/ ./folders/
-        library media-check (library fs tmp.db -w 'corruption>15' -pf) --full-scan --delete-corrupt 25%
+        library fsadd --delete-unplayable --check-corrupt --chunk-size 5%% tmp.db ./video/ ./folders/
+        library media-check (library fs tmp.db -w 'corruption>15' -pf) --full-scan --delete-corrupt 25%%
 
     Corruption stats
 

@@ -50,7 +50,7 @@ def decode_quick_scan(path, scans, scan_duration=3):
             "-err_detect",
             "explode",
             "-ss",
-            str(scan),
+            f"{scan:.2f}",
             "-i",
             path,
             "-t",
@@ -152,6 +152,16 @@ def calculate_corruption(path, chunk_size=1, gap=0.1, full_scan=False, audio_sca
     return corruption
 
 
+def should_delete(args, corruption, duration):
+    if args.delete_corrupt:
+        if 1 > args.delete_corrupt > 0:
+            if corruption >= args.delete_corrupt:
+                return True
+        elif ((duration or 100) * corruption) >= args.delete_corrupt:
+            return True
+    return False
+
+
 def media_check() -> None:
     args = parse_args()
 
@@ -178,8 +188,5 @@ def media_check() -> None:
                 if args.verbose >= consts.LOG_DEBUG:
                     raise
             else:
-                if args.delete_corrupt:
-                    if (1 > args.delete_corrupt > 0 and corruption > args.delete_corrupt) or (
-                        ((processes.FFProbe(path).duration or 100) * corruption) > args.delete_corrupt
-                    ):
-                        file_utils.trash(path)
+                if should_delete(args, corruption, processes.FFProbe(path).duration):
+                    file_utils.trash(path)
