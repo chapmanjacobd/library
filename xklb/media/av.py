@@ -146,12 +146,9 @@ def munge_av_tags(args, media, path) -> Optional[dict]:
             print(path)
             raise
 
-        if args.delete_corrupt:
-            if (1 > args.delete_corrupt > 0 and corruption > args.delete_corrupt) or (
-                (format_.get("duration", 100) * corruption) > args.delete_corrupt
-            ):
-                file_utils.trash(path)
-                return None
+        if media_check.should_delete(args, corruption, format_.get("duration", 100)):
+            file_utils.trash(path)
+            return None
 
     tags = format_.pop("tags", None)
     if tags:
