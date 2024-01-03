@@ -217,7 +217,7 @@ def construct_query(args) -> Tuple[str, dict]:
                 {'and COALESCE(m.time_downloaded,0) = 0' if 'time_downloaded' in m_columns else ''}
                 {'and COALESCE(m.time_deleted,0) = 0' if 'time_deleted' in m_columns else ''}
                 and m.path like "http%"
-                {same_subdomain if args.same_domain else ''}
+                {same_subdomain if getattr(args, 'same_domain', '') else ''}
                 {'AND (score IS NULL OR score > 7)' if 'score' in m_columns else ''}
                 {'AND (upvote_ratio IS NULL OR upvote_ratio > 0.73)' if 'upvote_ratio' in m_columns else ''}
                 {" ".join(args.filter_sql)}
