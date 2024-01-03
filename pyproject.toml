@@ -36,6 +36,7 @@ requires-python = ">=3.10"
 
 [project.optional-dependencies]
 deluxe = [
+  "annoy",
   "aiohttp",
   "geopandas",
   "PyExifTool",

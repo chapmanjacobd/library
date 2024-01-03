@@ -173,11 +173,11 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     args.defaults = []
 
     args.include += args.search
-    if args.include == ["."]:
-        args.include = [str(Path().cwd().resolve())]
-
-    if len(args.include) == 1 and os.sep in args.include[0]:
-        args.include = [file_utils.resolve_absolute_path(args.include[0])]
+    if len(args.include) == 1:
+        if args.include == ["."]:
+            args.include = [str(Path().cwd().resolve())]
+        elif os.sep in args.include[0]:
+            args.include = [file_utils.resolve_absolute_path(args.include[0])]
 
     if args.db:
         args.database = args.db
@@ -510,8 +510,10 @@ def process_playqueue(args) -> None:
         log.debug("utils.filter_episodic: %s", t.elapsed())
 
     if not media:
-        if args.include and Path(" ".join(args.include)).is_file():
-            media = [{"path": str(Path(args.include).resolve())}]
+        if args.include:
+            p = Path(" ".join(args.include)).resolve()
+            if p.is_file():
+                media = [{"path": str(p)}]
         else:
             processes.no_media_found()
 

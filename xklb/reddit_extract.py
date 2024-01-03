@@ -5,7 +5,9 @@ import sys
 from functools import partial
 from itertools import takewhile
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, Optional
+
+import prawcore
 
 from xklb import db_media, db_playlists, usage
 from xklb.utils import consts, db_utils, iterables, objects
@@ -291,17 +293,7 @@ def subreddit_top(args, subreddit_dict) -> None:
             save_post(args, saveable(post), subreddit_path)
 
 
-skip_errors = None
-
-
-def load_module_level_skip_errors() -> Tuple:
-    global skip_errors
-
-    if skip_errors is None:
-        import prawcore
-
-        skip_errors = (prawcore.exceptions.NotFound, prawcore.exceptions.Forbidden, prawcore.exceptions.Redirect)
-    return skip_errors
+skip_errors = (prawcore.exceptions.NotFound, prawcore.exceptions.Forbidden, prawcore.exceptions.Redirect)
 
 
 def reddit_add(args=None) -> None:
@@ -309,8 +301,6 @@ def reddit_add(args=None) -> None:
         sys.argv = ["lb", *args]
 
     args = parse_args("redditadd", usage=usage.redditadd)
-
-    load_module_level_skip_errors()
 
     for path in args.paths:
         path = path.lower()
@@ -374,8 +364,6 @@ def reddit_update(args=None) -> None:
         sql_filters=['AND extractor_key in ("reddit_praw_subreddit","reddit_praw_redditor")'],
     )
 
-    load_module_level_skip_errors()
-
     for playlist in reddit_playlists:
         extractor_config = json.loads(playlist["extractor_config"])
         args_env = args if not extractor_config else argparse.Namespace(**{**extractor_config, **args.__dict__})
@@ -391,8 +379,8 @@ def reddit_update(args=None) -> None:
             elif extractor_key == "reddit_praw_redditor":
                 redditor_new(args_env, {"path": path, "name": name})
 
-            db_playlists.increase_update_delay(args, playlist["path"])
-        except skip_errors as e:
             db_playlists.decrease_update_delay(args, playlist["path"])
+        except skip_errors as e:
+            db_playlists.increase_update_delay(args, playlist["path"])
             log.error("[%s] skipping: %s", name, e)
             continue
