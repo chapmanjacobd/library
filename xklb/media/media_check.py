@@ -22,7 +22,11 @@ def parse_args():
     )
     parser.add_argument(
         "--delete-corrupt",
-        help="delete media that is more corrupt than this threshold. Values greater than 1 are treated as number of seconds",
+        help="delete media that is more corrupt or equal to this threshold. Values greater than 1 are treated as number of seconds",
+    )
+    parser.add_argument(
+        "--full-scan-if-corrupt",
+        help="full scan as second pass if initial scan result more corruption or equal to this threshold. Values greater than 1 are treated as number of seconds",
     )
     parser.add_argument("--full-scan", "--full", action="store_true")
     parser.add_argument("--audio-scan", "--audio", action="store_true")
@@ -33,6 +37,8 @@ def parse_args():
     args.gap = nums.float_from_percent(args.gap)
     if args.delete_corrupt:
         args.delete_corrupt = nums.float_from_percent(args.delete_corrupt)
+    if args.full_scan_if_corrupt:
+        args.full_scan_if_corrupt = nums.float_from_percent(args.full_scan_if_corrupt)
 
     log.info(objects.dict_filter_bool(args.__dict__))
     return args
@@ -138,7 +144,19 @@ def decode_full_scan(path, audio_scan=False, frames="frames", threads=5):
     return corruption
 
 
-def calculate_corruption(path, chunk_size=1, gap=0.1, full_scan=False, audio_scan=False, threads=5):
+def corruption_threshold_exceeded(threshold, corruption, duration):
+    if threshold:
+        if 1 > threshold > 0:
+            if corruption >= threshold:
+                return True
+        elif ((duration or 100) * corruption) >= threshold:
+            return True
+    return False
+
+
+def calculate_corruption(
+    path, chunk_size=1, gap=0.1, full_scan=False, full_scan_if_corrupt=False, audio_scan=False, threads=5
+):
     if full_scan:
         if gap == 0:
             corruption = decode_full_scan(path, audio_scan=audio_scan, frames="packets", threads=threads)
@@ -149,17 +167,9 @@ def calculate_corruption(path, chunk_size=1, gap=0.1, full_scan=False, audio_sca
         if duration in [None, 0]:
             return 0.5
         corruption = decode_quick_scan(path, nums.calculate_segments(duration, chunk_size, gap), chunk_size)
+        if corruption_threshold_exceeded(full_scan_if_corrupt, corruption, duration):
+            corruption = decode_full_scan(path, audio_scan=audio_scan, threads=threads)
     return corruption
-
-
-def should_delete(args, corruption, duration):
-    if args.delete_corrupt:
-        if 1 > args.delete_corrupt > 0:
-            if corruption >= args.delete_corrupt:
-                return True
-        elif ((duration or 100) * corruption) >= args.delete_corrupt:
-            return True
-    return False
 
 
 def media_check() -> None:
@@ -188,5 +198,5 @@ def media_check() -> None:
                 if args.verbose >= consts.LOG_DEBUG:
                     raise
             else:
-                if should_delete(args, corruption, processes.FFProbe(path).duration):
+                if corruption_threshold_exceeded(args.delete_corrupt, corruption, processes.FFProbe(path).duration):
                     file_utils.trash(path)

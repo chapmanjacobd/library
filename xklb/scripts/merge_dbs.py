@@ -49,23 +49,23 @@ def merge_db(args, source_db) -> None:
 
             args.skip_columns = [*(args.skip_columns or []), *args.primary_keys]
 
-        source_columns = s_db[table].columns_dict
+        selected_columns = s_db[table].columns_dict
         if args.only_target_columns:
             target_columns = args.db[table].columns_dict
-            source_columns = [s for s in source_columns if s in target_columns]
+            selected_columns = [s for s in selected_columns if s in target_columns]
         if args.skip_columns:
-            source_columns = [s for s in source_columns if s not in args.skip_columns]
+            selected_columns = [s for s in selected_columns if s not in args.skip_columns]
 
-        log.info("[%s]: %s", table, source_columns)
+        log.info("[%s]: %s", table, selected_columns)
         kwargs = {}
         if args.business_keys or args.primary_keys:
-            source_table_pks = [s for s in (args.business_keys or args.primary_keys) if s in source_columns]
+            source_table_pks = [s for s in (args.business_keys or args.primary_keys) if s in selected_columns]
             if source_table_pks:
                 log.info("[%s]: Using %s as primary key(s)", table, ", ".join(source_table_pks))
                 kwargs["pk"] = source_table_pks
 
         data = s_db[table].rows
-        data = ({k: v for k, v in d.items() if k in source_columns} for d in data)
+        data = ({k: v for k, v in d.items() if k in selected_columns} for d in data)
         with args.db.conn:
             args.db[table].insert_all(
                 data,

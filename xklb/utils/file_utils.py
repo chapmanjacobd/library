@@ -1,4 +1,4 @@
-import mimetypes, os, shlex, shutil, tempfile, time
+import errno, mimetypes, os, shlex, shutil, tempfile, time
 from functools import wraps
 from io import StringIO
 from pathlib import Path
@@ -162,6 +162,25 @@ def fast_glob(path_dir, limit=100):
                 if len(files) == limit:
                     break
     return sorted(files)
+
+
+def rename_move_file(source_file, destination_file):
+    try:
+        os.rename(source_file, destination_file)  # performance
+    except OSError as e:
+        if e.errno == errno.ENOENT:
+            try:
+                os.makedirs(os.path.dirname(destination_file), exist_ok=True)
+                os.rename(source_file, destination_file)  # try again
+            except OSError as e:
+                if e.errno == errno.EXDEV:  # Cross-device
+                    shutil.move(source_file, destination_file)  # Fallback to shutil.move
+                else:
+                    raise
+        elif e.errno == errno.EXDEV:  # Cross-device
+            shutil.move(source_file, destination_file)  # Fallback to shutil.move
+        else:
+            raise
 
 
 def move_files(file_list):
