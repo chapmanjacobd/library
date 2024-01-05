@@ -62,6 +62,7 @@ def parse_args(action, usage) -> argparse.Namespace:
     )
     parser.set_defaults(profile=DBType.video)
     parser.add_argument("--scan-all-files", "-a", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--ext", action=arg_utils.ArgparseList)
 
     parser.add_argument(
         "--io-multiplier",
@@ -117,7 +118,7 @@ def parse_args(action, usage) -> argparse.Namespace:
     args = parser.parse_args()
 
     if args.move:
-        args.move = Path(args.move).expanduser().resolve()
+        args.move = str(Path(args.move).expanduser().resolve())
 
     args.gap = nums.float_from_percent(args.gap)
     if args.delete_corrupt:
@@ -171,10 +172,6 @@ def extract_metadata(mp_args, path) -> Optional[Dict[str, int]]:
         "time_deleted": 0,
     }
 
-    if mp_args.hash:
-        # TODO: it would be better if this was saved to and checked against an external global file
-        media["hash"] = sample_hash.sample_hash_file(path)
-
     if mp_args.profile in (DBType.audio, DBType.video):
         media = av.munge_av_tags(mp_args, media, path)
         if media is None:
@@ -192,8 +189,12 @@ def extract_metadata(mp_args, path) -> Optional[Dict[str, int]]:
         else:
             log.debug(f"{timer()-start} {path}")
 
-    if mp_args.move:
-        dest_path = bytes(mp_args.move / Path(path).relative_to(mp_args.playlist_path))
+    if getattr(mp_args, "hash", False):
+        # TODO: it would be better if this was saved to and checked against an external global file
+        media["hash"] = sample_hash.sample_hash_file(path)
+
+    if getattr(mp_args, "move", False):
+        dest_path = bytes(Path(mp_args.move) / Path(path).relative_to(mp_args.playlist_path))
         dest_path = path_utils.clean_path(dest_path)
         file_utils.rename_move_file(path, dest_path)
         media["path"] = dest_path
@@ -271,7 +272,9 @@ def find_new_files(args, path) -> List[str]:
     if path.is_file():
         scanned_set = set(str(path))
     else:
-        if args.scan_all_files:
+        if args.ext:
+            scanned_set = file_utils.rglob(path, args.ext)[0]
+        elif args.scan_all_files:
             scanned_set = file_utils.rglob(path)[0]
         elif args.profile == DBType.filesystem:
             scanned_set = set.union(*file_utils.rglob(path))
@@ -362,7 +365,13 @@ def scan_path(args, path_str: str) -> int:
 
     info = {
         "extractor_key": "Local",
-        "extractor_config": objects.filter_namespace(args, ["ocr", "speech_recognition", "scan_subtitles"]),
+        "extractor_config": objects.dict_filter_bool(
+            {
+                k: v
+                for k, v in args.__dict__.items()
+                if k not in ["db", "database", "verbose", "extra_playlist_data", "force", "paths"]
+            }
+        ),
         "time_deleted": 0,
     }
     args.playlist_id = db_playlists.add(args, str(path), info, check_subpath=True)
