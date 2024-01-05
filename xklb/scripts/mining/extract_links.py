@@ -79,6 +79,7 @@ def parse_args():
     parser.add_argument("--scroll", action="store_true", help="Scroll down the page; infinite scroll")
     parser.add_argument("--auto-pager", "--autopager", action="store_true")
     parser.add_argument("--poke", action="store_true")
+    parser.add_argument("--chrome", action="store_true")
     parser.add_argument("--download", action="store_true", help="Download filtered links")
     parser.add_argument("--verbose", "-v", action="count", default=0)
 
