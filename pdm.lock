@@ -823,7 +823,7 @@ files = [
 
 [[package]]
 name = "geopandas"
-version = "0.14.1"
+version = "0.14.2"
 requires_python = ">=3.9"
 summary = "Geographic pandas extensions"
 dependencies = [
@@ -834,8 +834,8 @@ dependencies = [
     "shapely>=1.8.0",
 ]
 files = [
-    {file = "geopandas-0.14.1-py3-none-any.whl", hash = "sha256:ed5a7cae7874bfc3238fb05e0501cc1760e1b7b11e5b76ecad29da644ca305da"},
-    {file = "geopandas-0.14.1.tar.gz", hash = "sha256:4853ff89ecb6d1cfc43e7b3671092c8160e8a46a3dd7368f25906283314e42bb"},
+    {file = "geopandas-0.14.2-py3-none-any.whl", hash = "sha256:0efa61235a68862c1c6be89fc3707cdeba67667d5676bb19e24f3c57a8c2f723"},
+    {file = "geopandas-0.14.2.tar.gz", hash = "sha256:6e71d57b8376f9fdc9f1c3aa3170e7e420e91778de854f51013ae66fd371ccdb"},
 ]
 
 [[package]]

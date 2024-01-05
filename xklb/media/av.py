@@ -154,8 +154,13 @@ def munge_av_tags(args, media, path) -> Optional[dict]:
             raise
 
         if media_check.corruption_threshold_exceeded(args.delete_corrupt, corruption, duration):
-            log.info("Deleting %s corruption %.1f%% exceeded threshold %s", path, corruption, args.delete_corrupt)
-            file_utils.trash(path)
+            threshold_str = (
+                strings.safe_percent(args.delete_corrupt)
+                if 0 < args.delete_corrupt < 1
+                else (args.delete_corrupt + "s")
+            )
+            log.warning("Deleting %s corruption %.1f%% exceeded threshold %s", path, corruption * 100, threshold_str)
+            file_utils.trash(path)  # file is not open, checked during initial probe
             return None
 
     tags = format_.pop("tags", None)
