@@ -163,6 +163,19 @@ def load_selenium(args, wire=False):
         options.add_argument("--mute-audio")
         if xvfb is False:
             options.add_argument("--headless=new")
+
+        addons = [Path("~/.local/lib/ublock_origin.crx").expanduser().resolve()]
+        if getattr(args, "auto_pager", False):
+            addons.append(Path("~/.local/lib/weautopagerize.crx").expanduser().resolve())
+        for addon_path in addons:
+            try:
+                options.add_extension(str(addon_path))
+            except Exception:
+                if args.verbose > 0:
+                    log.warning("Could not install chrome extension. Missing file %s", addon_path)
+                else:
+                    log.exception("Could not install chrome extension. Missing file %s", addon_path)
+
         args.driver = webdriver.Chrome(options=options)
 
 
