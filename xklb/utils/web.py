@@ -116,11 +116,17 @@ def load_selenium(args, wire=False):
     else:
         from selenium import webdriver
 
+    xvfb = None
     if args.verbose < consts.LOG_DEBUG and not getattr(args, "manual", False):
-        from pyvirtualdisplay.display import Display
+        xvfb = False
+        try:
+            from pyvirtualdisplay.display import Display
 
-        args.driver_display = Display(visible=False, size=(1280, 720))
-        args.driver_display.start()
+            args.driver_display = Display(visible=False, size=(1280, 720))
+            args.driver_display.start()
+            xvfb = True
+        except Exception:
+            pass
 
     if which("firefox"):
         from selenium.webdriver.firefox.options import Options
@@ -129,6 +135,9 @@ def load_selenium(args, wire=False):
         service = Service(log_path=tempfile.mktemp(".geckodriver.log"))
         options = Options()
         options.set_preference("media.volume_scale", "0.0")
+        if xvfb is False:
+            options.add_argument("--headless")
+
         args.driver = webdriver.Firefox(service=service, options=options)
 
         addons = [Path("~/.local/lib/ublock_origin.xpi").expanduser().resolve()]
@@ -148,7 +157,12 @@ def load_selenium(args, wire=False):
             time.sleep(60)  # let auto-pager initialize
 
     else:
-        args.driver = webdriver.Chrome()
+        from selenium.webdriver.chrome.options import Options
+
+        options = Options()
+        if xvfb is False:
+            options.add_argument("--headless=new")
+        args.driver = webdriver.Chrome(options=options)
 
 
 def quit_selenium(args):
