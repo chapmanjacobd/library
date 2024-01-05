@@ -128,7 +128,7 @@ def load_selenium(args, wire=False):
         except Exception:
             pass
 
-    if which("firefox"):
+    if which("firefox") and not getattr(args, "chrome", False):
         from selenium.webdriver.firefox.options import Options
         from selenium.webdriver.firefox.service import Service
 
@@ -160,6 +160,7 @@ def load_selenium(args, wire=False):
         from selenium.webdriver.chrome.options import Options
 
         options = Options()
+        options.add_argument("--mute-audio")
         if xvfb is False:
             options.add_argument("--headless=new")
         args.driver = webdriver.Chrome(options=options)
@@ -168,7 +169,10 @@ def load_selenium(args, wire=False):
 def quit_selenium(args):
     args.driver.quit()
     if consts.LOG_DEBUG > args.verbose and not getattr(args, "manual", False):
-        args.driver_display.stop()
+        try:
+            args.driver_display.stop()
+        except Exception:
+            pass
 
 
 def download_url(url, output_path=None, output_prefix=None, chunk_size=8 * 1024 * 1024, retries=3):

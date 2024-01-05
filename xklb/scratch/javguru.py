@@ -8,6 +8,7 @@ from xklb.utils import file_utils, path_utils, processes, web
 
 def jav_guru() -> None:
     parser = argparse.ArgumentParser()
+    parser.add_argument("--chrome", action="store_true")
     parser.add_argument("--verbose", "-v", action="count", default=0)
 
     parser.add_argument("path", help="JAV.GURU URL")
