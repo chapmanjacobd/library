@@ -7,10 +7,10 @@ from shutil import which
 from timeit import default_timer as timer
 from typing import Dict, List, Optional
 
-import xklb.scripts.playlists
 from xklb import db_media, db_playlists, usage
 from xklb.media import av, books
-from xklb.utils import arg_utils, consts, db_utils, file_utils, iterables, nums, objects
+from xklb.scripts import playlists, sample_hash
+from xklb.utils import arg_utils, consts, db_utils, file_utils, iterables, nums, objects, path_utils
 from xklb.utils.consts import SC, DBType
 from xklb.utils.log_utils import log
 
@@ -82,6 +82,8 @@ def parse_args(action, usage) -> argparse.Namespace:
     )
 
     parser.add_argument("--delete-unplayable", action="store_true")
+    parser.add_argument("--hash", action="store_true")
+    parser.add_argument("--move")
 
     parser.add_argument("--check-corrupt", action="store_true")
     parser.add_argument(
@@ -95,7 +97,14 @@ def parse_args(action, usage) -> argparse.Namespace:
         default="0.1",
         help="Width between chunks to skip (default 10%%). Values greater than 1 are treated as number of seconds",
     )
-    parser.add_argument("--delete-corrupt", help="delete media that is more corrupt than this threshold")
+    parser.add_argument(
+        "--delete-corrupt",
+        help="delete media that is more corrupt or equal to this threshold. Values greater than 1 are treated as number of seconds",
+    )
+    parser.add_argument(
+        "--full-scan-if-corrupt",
+        help="full scan as second pass if initial scan result more corruption or equal to this threshold. Values greater than 1 are treated as number of seconds",
+    )
     parser.add_argument("--full-scan", action="store_true")
 
     parser.add_argument("--force", "-f", action="store_true", help=argparse.SUPPRESS)
@@ -107,9 +116,14 @@ def parse_args(action, usage) -> argparse.Namespace:
         parser.add_argument("paths", nargs="+")
     args = parser.parse_args()
 
+    if args.move:
+        args.move = Path(args.move).expanduser().resolve()
+
     args.gap = nums.float_from_percent(args.gap)
     if args.delete_corrupt:
         args.delete_corrupt = nums.float_from_percent(args.delete_corrupt)
+    if args.full_scan_if_corrupt:
+        args.full_scan_if_corrupt = nums.float_from_percent(args.full_scan_if_corrupt)
 
     if args.db:
         args.database = args.db
@@ -157,8 +171,14 @@ def extract_metadata(mp_args, path) -> Optional[Dict[str, int]]:
         "time_deleted": 0,
     }
 
+    if mp_args.hash:
+        # TODO: it would be better if this was saved to and checked against an external global file
+        media["hash"] = sample_hash.sample_hash_file(path)
+
     if mp_args.profile in (DBType.audio, DBType.video):
         media = av.munge_av_tags(mp_args, media, path)
+        if media is None:
+            return
 
     if mp_args.profile == DBType.text:
         try:
@@ -171,6 +191,12 @@ def extract_metadata(mp_args, path) -> Optional[Dict[str, int]]:
             log.warning(f"Timed out trying to read file. {path}")
         else:
             log.debug(f"{timer()-start} {path}")
+
+    if mp_args.move:
+        dest_path = bytes(mp_args.move / Path(path).relative_to(mp_args.playlist_path))
+        dest_path = path_utils.clean_path(dest_path)
+        file_utils.rename_move_file(path, dest_path)
+        media["path"] = dest_path
 
     return media
 
@@ -323,7 +349,7 @@ def scan_path(args, path_str: str) -> int:
     if not path.exists():
         print(f"[{path}] Path does not exist")
         if args.force:
-            xklb.scripts.playlists.delete_playlists(args, [str(path)])
+            playlists.delete_playlists(args, [str(path)])
         return 0
 
     n_jobs = None
@@ -366,7 +392,9 @@ def scan_path(args, path_str: str) -> int:
                 percent = ((batch_count * idx) + len(chunk_paths)) / len(new_files) * 100
                 print(f"[{path}] Extracting metadata {percent:3.1f}% (chunk {idx + 1} of {chunks_count})")
 
-                mp_args = argparse.Namespace(**{k: v for k, v in args.__dict__.items() if k not in {"db"}})
+                mp_args = argparse.Namespace(
+                    playlist_path=path, **{k: v for k, v in args.__dict__.items() if k not in {"db"}}
+                )
                 metadata = parallel.map(partial(extract_metadata, mp_args), chunk_paths)
                 metadata = list(filter(None, metadata))
                 extract_chunk(args, metadata)

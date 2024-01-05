@@ -95,7 +95,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.3.003)
+    xk media library subcommands (v2.3.004)
 
     Create database subcommands:
     ╭───────────────┬────────────────────────────────────────────────────╮
@@ -524,6 +524,11 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         [/mnt/d/Youtube] Path does not exist
         [/mnt/d/Youtube] Building file list...
         [/mnt/d/Youtube] Marking 28932 orphaned metadata records as deleted
+
+    Move files on import
+
+        library fsadd audio.db --move ~/library/ ./added_folder/
+        This will run destination paths through `library christen` and move files relative to the added folder root
 
 
 </details>
@@ -1775,6 +1780,10 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         library fsadd --delete-unplayable --check-corrupt --chunk-size 5% tmp.db ./video/ ./folders/
         library media-check (library fs tmp.db -w 'corruption>15' -pf) --full-scan --delete-corrupt 25%
 
+    The above can now be done in one command via `--full-scan-if-corrupt`:
+
+        library fsadd --delete-unplayable --check-corrupt --chunk-size 5% tmp.db ./video/ ./folders/ --full-scan-if-corrupt 15% --delete-corrupt 25%
+
     Corruption stats
 
         library fs tmp.db -w 'corruption>15' -pa
@@ -2038,6 +2047,8 @@ After you are done selecting folders you can press ctrl-d and it will save the l
         library merge-dbs --pk id --only-tables subreddits reddit/81_New_Music.db audio.db
         library merge-dbs --only-new-rows --pk subreddit,path --only-tables reddit_posts reddit/81_New_Music.db audio.db -v
 
+     To skip copying primary-keys from the source table(s) use --business-keys instead of --primary-keys
+
 
 </details>
 
@@ -2173,8 +2184,8 @@ After you are done selecting folders you can press ctrl-d and it will save the l
 
         library dedupe-db ./video.db media --bk path
 
+    By default all non-primary and non-business key columns will be upserted unless --only-columns is provided
     If --primary-keys is not provided table metadata primary keys will be used
-    If --only-columns is not provided all non-primary and non-business key columns will be upserted
     If your duplicate rows contain exactly the same data in all the columns you can run with --skip-upsert to save a lot of time
 
 

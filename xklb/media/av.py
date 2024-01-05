@@ -136,17 +136,25 @@ def munge_av_tags(args, media, path) -> Optional[dict]:
     format_.pop("start_time", None)
     format_.pop("filename", None)
 
+    duration = format_.pop("duration", None)
+
     corruption = None
     if args.check_corrupt:
         try:
             corruption = media_check.calculate_corruption(
-                path, chunk_size=args.chunk_size, gap=args.gap, full_scan=args.full_scan, threads=1
+                path,
+                chunk_size=args.chunk_size,
+                gap=args.gap,
+                full_scan=args.full_scan,
+                full_scan_if_corrupt=args.full_scan_if_corrupt,
+                threads=1,
             )
         except Exception:
             print(path)
             raise
 
-        if media_check.should_delete(args, corruption, format_.get("duration", 100)):
+        if media_check.corruption_threshold_exceeded(args.delete_corrupt, corruption, duration):
+            log.info("Deleting %s corruption %.1f%% exceeded threshold %s", path, corruption, args.delete_corrupt)
             file_utils.trash(path)
             return None
 
@@ -226,7 +234,7 @@ def munge_av_tags(args, media, path) -> Optional[dict]:
         "width": width,
         "height": height,
         "fps": fps,
-        "duration": nums.safe_int(format_.pop("duration", None)),
+        "duration": nums.safe_int(duration),
         "language": language,
         "corruption": None if corruption is None else int(corruption * 100),
         **(tags or {}),
