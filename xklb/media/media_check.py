@@ -126,7 +126,7 @@ def decode_full_scan(path, audio_scan=False, frames="frames", threads=5):
         data = json.loads(output)["streams"][0]
 
         r_frame_rate = fractions.Fraction(data["r_frame_rate"])
-        nb_frames = int(data[f"nb_read_{frames}"])
+        nb_frames = int(data.get(f"nb_read_{frames}") or 0)
         metadata_duration = ffprobe.duration or 0
         actual_duration = nb_frames * r_frame_rate.denominator / r_frame_rate.numerator
 
@@ -199,4 +199,12 @@ def media_check() -> None:
                     raise
             else:
                 if corruption_threshold_exceeded(args.delete_corrupt, corruption, processes.FFProbe(path).duration):
+                    threshold_str = (
+                        strings.safe_percent(args.delete_corrupt)
+                        if 0 < args.delete_corrupt < 1
+                        else (args.delete_corrupt + "s")
+                    )
+                    log.warning(
+                        "Deleting %s corruption %.1f%% exceeded threshold %s", path, corruption * 100, threshold_str
+                    )
                     file_utils.trash(path)
