@@ -166,7 +166,7 @@ def load_selenium(args, wire=False):
 
         addons = [Path("~/.local/lib/ublock_origin.crx").expanduser().resolve()]
         if getattr(args, "auto_pager", False):
-            addons.append(Path("~/.local/lib/weautopagerize.crx").expanduser().resolve())
+            addons.append(Path("~/.local/lib/autopager.crx").expanduser().resolve())
         for addon_path in addons:
             try:
                 options.add_extension(str(addon_path))
@@ -208,6 +208,7 @@ def download_url(url, output_path=None, output_prefix=None, chunk_size=8 * 1024 
         output_path = path_utils.clean_path(output_path.encode())
 
     p = Path(output_path)
+    p.parent.mkdir(parents=True, exist_ok=True)
     if p.exists():
         if remote_size:
             local_size = p.stat().st_size
