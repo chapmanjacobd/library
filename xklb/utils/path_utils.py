@@ -37,6 +37,11 @@ def clean_path(b, max_name_len=1024, dot_space=False, case_insensitive=False, lo
     path = Path(p)
     ext = path.suffix
 
+    pre = ""
+    if path.drive and path.drive.endswith(":"):
+        pre = path.drive
+        path = Path(str(path)[len(path.drive) :])
+
     parent = [strings.clean_string(part) for part in path.parent.parts]
     stem = strings.clean_string(path.stem)
     log.debug("cleaned %s %s", parent, stem)
@@ -78,7 +83,7 @@ def clean_path(b, max_name_len=1024, dot_space=False, case_insensitive=False, lo
     if dot_space:
         p = p.replace(" ", ".")
 
-    return p + ext
+    return pre + p + ext
 
 
 def sanitize_url(args, path: str) -> str:
