@@ -357,10 +357,10 @@ def scan_path(args, path_str: str) -> int:
         return 0
 
     n_jobs = None
-    if args.io_multiplier > 1:
-        n_jobs = int(max(os.cpu_count() or 4, 4) * args.io_multiplier)
     if args.verbose >= consts.LOG_DEBUG:
         n_jobs = 1
+    if args.io_multiplier != 1.0:
+        n_jobs = max(1, int(max(os.cpu_count() or 4, 4) * args.io_multiplier))
 
     threadsafe = [DBType.audio, DBType.video, DBType.filesystem]
 

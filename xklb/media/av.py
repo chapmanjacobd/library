@@ -162,7 +162,7 @@ def munge_av_tags(args, media, path) -> dict:
                 else (args.delete_corrupt + "s")
             )
             log.warning("Deleting %s corruption %.1f%% exceeded threshold %s", path, corruption * 100, threshold_str)
-            file_utils.trash(path)  # file is not open, checked during initial probe
+            file_utils.trash(path, detach=False)  # file is not open, checked during initial probe
             media["time_deleted"] = consts.APPLICATION_START
             media["error"] = "Media check failed"
 

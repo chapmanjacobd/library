@@ -95,7 +95,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.3.010)
+    xk media library subcommands (v2.3.011)
 
     Create database subcommands:
     ╭───────────────┬────────────────────────────────────────────────────╮
@@ -524,6 +524,10 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         [/mnt/d/Youtube] Path does not exist
         [/mnt/d/Youtube] Building file list...
         [/mnt/d/Youtube] Marking 28932 orphaned metadata records as deleted
+
+    If you run out of RAM, for example scanning large VR videos, you can lower the number of threads via --io-multiplier
+
+        library fsadd vr.db --delete-unplayable --check-corrupt --full-scan-if-corrupt 15% --delete-corrupt 20% ./vr/ --io-multiplier 0.2
 
     Move files on import
 
