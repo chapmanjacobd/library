@@ -810,15 +810,15 @@ files = [
 
 [[package]]
 name = "gallery-dl"
-version = "1.26.5"
+version = "1.26.6"
 requires_python = ">=3.4"
 summary = "Command-line program to download image galleries and collections from several image hosting sites"
 dependencies = [
     "requests>=2.11.0",
 ]
 files = [
-    {file = "gallery_dl-1.26.5-py3-none-any.whl", hash = "sha256:968ef5a72143fc074c973a320b7b03bbdb4b4fbe70dcc57ed61463409a5af4d9"},
-    {file = "gallery_dl-1.26.5.tar.gz", hash = "sha256:5e51df08fc13832eba0a222f12efcd53c80d5df2e0fbc8bdf1a9e78327917c65"},
+    {file = "gallery_dl-1.26.6-py3-none-any.whl", hash = "sha256:8b1f3db1403d734441a10f07691b96f7cdaeb447b36c590a2c8dfe640f869987"},
+    {file = "gallery_dl-1.26.6.tar.gz", hash = "sha256:420bf0c47f306f0c5f8d969e6bcf6c20db476d25f222ae571a95948baace5fe9"},
 ]
 
 [[package]]
@@ -2316,11 +2316,11 @@ files = [
 
 [[package]]
 name = "wcwidth"
-version = "0.2.12"
+version = "0.2.13"
 summary = "Measures the displayed width of unicode strings in a terminal"
 files = [
-    {file = "wcwidth-0.2.12-py2.py3-none-any.whl", hash = "sha256:f26ec43d96c8cbfed76a5075dac87680124fa84e0855195a6184da9c187f133c"},
-    {file = "wcwidth-0.2.12.tar.gz", hash = "sha256:f01c104efdf57971bcb756f054dd58ddec5204dd15fa31d6503ea57947d97c02"},
+    {file = "wcwidth-0.2.13-py2.py3-none-any.whl", hash = "sha256:3da69048e4540d84af32131829ff948f1e022c1c6bdb8d6102117aac784f6859"},
+    {file = "wcwidth-0.2.13.tar.gz", hash = "sha256:72ea0c06399eb286d978fdedb6923a9eb47e1c486ce63e9b4e64fc18303972b5"},
 ]
 
 [[package]]
