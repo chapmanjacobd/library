@@ -174,8 +174,9 @@ def extract_metadata(mp_args, path) -> Optional[Dict[str, int]]:
 
     if mp_args.profile in (DBType.audio, DBType.video):
         media = av.munge_av_tags(mp_args, media, path)
-        if media is None:
-            return
+
+    if not Path(path).exists():
+        return media
 
     if mp_args.profile == DBType.text:
         try:
