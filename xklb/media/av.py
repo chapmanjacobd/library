@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Dict, Optional
 
 from xklb.media import media_check, subtitle
-from xklb.utils import file_utils, iterables, nums, objects, processes, strings
+from xklb.utils import consts, file_utils, iterables, nums, objects, processes, strings
 from xklb.utils.consts import DBType
 from xklb.utils.log_utils import log
 
@@ -104,7 +104,7 @@ def get_audio_tags(f) -> dict:
     return stream_tags
 
 
-def munge_av_tags(args, media, path) -> Optional[dict]:
+def munge_av_tags(args, media, path) -> dict:
     try:
         probe = processes.FFProbe(path)
     except (KeyboardInterrupt, SystemExit) as sys_exit:
@@ -117,13 +117,15 @@ def munge_av_tags(args, media, path) -> Optional[dict]:
         log.error(f"Failed reading header. {path}")
         log.debug(e)
         if args.delete_unplayable and not file_utils.is_file_open(path):
-            file_utils.trash(path)
-        return None
+            file_utils.trash(path, detach=False)
+            media["time_deleted"] = consts.APPLICATION_START
+        media["error"] = "Metadata check failed"
+        return media
 
     if not probe.format:
         log.error(f"Failed reading format. {path}")
         log.warning(probe)
-        return None
+        return media
 
     format_ = probe.format
     format_.pop("size", None)
@@ -161,7 +163,8 @@ def munge_av_tags(args, media, path) -> Optional[dict]:
             )
             log.warning("Deleting %s corruption %.1f%% exceeded threshold %s", path, corruption * 100, threshold_str)
             file_utils.trash(path)  # file is not open, checked during initial probe
-            return None
+            media["time_deleted"] = consts.APPLICATION_START
+            media["error"] = "Media check failed"
 
     tags = format_.pop("tags", None)
     if tags:
@@ -245,6 +248,9 @@ def munge_av_tags(args, media, path) -> Optional[dict]:
         **(tags or {}),
         "chapters": chapters,
     }
+
+    if media.get("time_deleted"):
+        return media
 
     if args.profile == DBType.video:
         video_tags = get_subtitle_tags(args, path, streams, codec_types)
