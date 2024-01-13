@@ -4,7 +4,7 @@ from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 from xklb import db_media, db_playlists, usage
 from xklb.scripts import links_extract
-from xklb.utils import arg_utils, db_utils, objects, web
+from xklb.utils import arg_utils, db_utils, objects, printing, web
 from xklb.utils.log_utils import log
 
 
@@ -16,8 +16,9 @@ def parse_args(**kwargs):
     parser.add_argument("--fixed-pages", "--backfill", type=int)
     parser.add_argument("--stop-known", type=int, default=10)
     parser.add_argument("--stop-link")
+    parser.add_argument("--page-key", default="page")
     parser.add_argument("--page-step", "--step", "-S", type=int, default=1)
-    parser.add_argument("--page-start", "--start", type=int)
+    parser.add_argument("--page-start", "--start-page", "--start", type=int)
 
     parser.add_argument(
         "--path-include",
@@ -156,10 +157,10 @@ def add_media(args, variadic):
         db_media.add(args, d)
 
 
-def set_page_number(input_string, page_number):
+def set_page_number(input_string, page_key, page_number):
     parsed_url = urlparse(input_string)
     query_params = parse_qs(parsed_url.query)
-    query_params["page"] = [str(page_number)]
+    query_params[page_key] = [str(page_number)]
     updated_query = urlencode(query_params, doseq=True)
     modified_url = urlunparse(
         (parsed_url.scheme, parsed_url.netloc, parsed_url.path, parsed_url.params, updated_query, parsed_url.fragment)
@@ -170,11 +171,11 @@ def set_page_number(input_string, page_number):
 
 def count_pages(args):
     page_limit = args.fixed_pages or args.max_pages
-    start_page = args.page_start or 1
+    page_start = args.page_start or 1
     if page_limit:
-        yield from range(start_page, start_page + (page_limit * args.page_step), args.page_step)
+        yield from range(page_start, page_start + (page_limit * args.page_step), args.page_step)
     else:
-        page_num = start_page
+        page_num = page_start
         while True:
             yield page_num
             page_num += args.page_step
@@ -185,7 +186,8 @@ def extractor(args, playlist_path):
     end_of_playlist = False
     page_limit = args.fixed_pages or args.max_pages
 
-    new_media = 0
+    new_media = set()
+    page_count = 0
     for page_num in count_pages(args):
         if end_of_playlist:
             break
@@ -193,21 +195,28 @@ def extractor(args, playlist_path):
         if page_limit == 1 and args.page_start is None:
             page_path = playlist_path
         else:
-            page_path = set_page_number(playlist_path, page_num)
+            page_path = set_page_number(playlist_path, args.page_key, page_num)
 
-        log.info("Loading page #%s: %s", page_num, page_path)
+        log.info("Loading page %s", page_path)
         for a_ref in links_extract.get_inner_urls(args, page_path):
             if a_ref.link == args.stop_link or (len(known_media) > args.stop_known and not args.fixed_pages):
                 end_of_playlist = True
                 break
 
-            if db_media.exists(args, a_ref.link):
+            if a_ref.link in new_media:
+                pass  # TODO: concat title
+            elif db_media.exists(args, a_ref.link):
                 known_media.add(a_ref.link)
             else:
                 add_media(args, [a_ref])
-                new_media += 1
-
-    return new_media
+                new_media.add(a_ref.link)
+            printing.print_overwrite(f"Page {page_num} link scan: {len(new_media)} new [{len(known_media)} known]")
+        page_count += 1
+    print()
+    print(
+        f"{page_count} pages scanned. Avg links per page: {len(new_media) // page_count} new [{len(known_media) // page_count} known]"
+    )
+    return len(new_media)
 
 
 def links_add() -> None:
