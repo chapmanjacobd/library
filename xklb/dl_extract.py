@@ -129,7 +129,6 @@ def parse_args():
     processes.timeout(args.timeout)
 
     log.info(objects.dict_filter_bool(args.__dict__))
-
     return args
 
 

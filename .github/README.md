@@ -95,7 +95,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.3.011)
+    xk media library subcommands (v2.3.012)
 
     Create database subcommands:
     ╭───────────────┬────────────────────────────────────────────────────╮
@@ -247,6 +247,15 @@ To stop playing press Ctrl+C in either the terminal or mpv
     ├────────────────┼───────────────────────────────────────────────────┤
     │ nouns          │ Unstructured text -> compound nouns (stdin)       │
     ╰────────────────┴───────────────────────────────────────────────────╯
+
+    Other subcommands:
+    ╭───────────────┬───────────────╮
+    │ links-add     │ links_add     │
+    ├───────────────┼───────────────┤
+    │ links-extract │ links_extract │
+    ├───────────────┼───────────────┤
+    │ links-update  │ links_update  │
+    ╰───────────────┴───────────────╯
 
 
 </details>
@@ -1643,26 +1652,6 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 </details>
 
-<details><summary>Extract inner links from lists of web links (extract-links)</summary>
-
-    $ library extract-links -h
-    usage: library extract-links PATH ... [--case-sensitive] [--scroll] [--download] [--verbose] [--local-html] [--file FILE] [--path-include ...] [--text-include ...] [--after-include ...] [--before-include ...] [--path-exclude ...] [--text-exclude ...] [--after-exclude ...] [--before-exclude ...]
-
-    Extract links from within local HTML fragments, files, or remote pages; filtering on link text and nearby plain-text
-
-        library links https://en.wikipedia.org/wiki/List_of_bacon_dishes --path-include https://en.wikipedia.org/wiki/ --after-include famous
-        https://en.wikipedia.org/wiki/Omelette
-
-    Read from local clipboard and filter out links based on nearby plain text:
-
-        library links --local-html (cb -t text/html | psub) --after-exclude paranormal spooky horror podcast tech fantasy supernatural lecture sport
-        # note: the equivalent BASH-ism is <(xclip -selection clipboard -t text/html)
-
-    Run with `-vv` to see the browser
-
-
-</details>
-
 ### File subcommands
 
 <details><summary>Exploratory Data Analysis on table-like files (eda)</summary>
@@ -2287,6 +2276,110 @@ After you are done selecting folders you can press ctrl-d and it will save the l
     Use --split-longer-than to _only_ detect silence for files in excess of a specific duration
 
         library process-audio --split-longer-than 36mins audiobook.m4b audiobook2.mp3
+
+
+</details>
+
+### Other subcommands
+
+<details><summary>links_add (links-add)</summary>
+
+    $ library links-add -h
+    usage: library links-add DATABASE PATH ... [--case-sensitive] [--cookies-from-browser BROWSER[+KEYRING][:PROFILE][::CONTAINER]] [--selenium] [--manual] [--scroll] [--auto-pager] [--poke] [--chrome] [--local-html] [--file FILE]
+
+Database version of extract-links
+
+You can fine-tune what links get saved with --path/text/before/after-include/exclude.
+
+    library links-add --path-include /video/
+
+Defaults to stop fetching after encountering ten known links
+
+    library links-add --stop-known 10
+    library links-add --stop-link https://special.fish/specific_pacific
+
+Backfill fixed number of pages
+
+    You can disable automatic stopping by any of the following:
+    1. Set `--fixed-pages` to the desired number of pages
+    2. Set `--stop-link` to an unlikely URL
+    3. Set `--stop-known` to an absurdly high number
+
+    If the website is supported by --auto-pager data is fetched twice when using page iteration.
+    As such, page iteration (--max-pages, --fixed-pages, etc) is disabled when using `--auto-pager`.
+
+To use "&p=1" instead of "&page=1"
+
+    library links-add --page-key p
+
+    By default the script will attempt to modify each given URL with "&page=1".
+
+Single page
+
+    If `--fixed-pages` is 1 and --start-page is not set then the URL will not be modified.
+
+    library links-add --fixed-pages=1
+    library links-add --fixed-pages=1 --page-start 99
+
+Reverse chronological paging
+
+    library links-add --max-pages 10
+    library links-add --fixed-pages (overrides --max-pages and --stop-known but you can still stop early via --stop-link ie. 429 page)
+
+Chronological paging
+
+    library links-add --page-start 100 --page-step 1
+
+    library links-add --page-start 100 --page-step=-1 --fixed-pages=5  # go backwards
+
+    # TODO: store previous page id (max of sliding window)
+
+Jump pages
+
+    Some pages don't count page numbers but instead count items like messages or forum posts. You can iterate through like this:
+
+    library links-add --page-start 1 --page-key start --page-step 50
+
+    which translates to
+    &start=0    first page
+    &start=50   second page
+    &start=100  third page
+
+Import media paths directly
+
+    library links-add --no-extract links.db
+
+
+</details>
+
+<details><summary>links_extract (links-extract)</summary>
+
+    $ library links-extract -h
+    usage: library links-extract PATH ... [--case-sensitive] [--scroll] [--download] [--verbose] [--local-html] [--file FILE] [--path-include ...] [--text-include ...] [--after-include ...] [--before-include ...] [--path-exclude ...] [--text-exclude ...] [--after-exclude ...] [--before-exclude ...]
+
+    Extract links from within local HTML fragments, files, or remote pages; filtering on link text and nearby plain-text
+
+        library links https://en.wikipedia.org/wiki/List_of_bacon_dishes --path-include https://en.wikipedia.org/wiki/ --after-include famous
+        https://en.wikipedia.org/wiki/Omelette
+
+    Read from local clipboard and filter out links based on nearby plain text:
+
+        library links --local-html (cb -t text/html | psub) --after-exclude paranormal spooky horror podcast tech fantasy supernatural lecture sport
+        # note: the equivalent BASH-ism is <(xclip -selection clipboard -t text/html)
+
+    Run with `-vv` to see the browser
+
+
+</details>
+
+<details><summary>links_update (links-update)</summary>
+
+    $ library links-update -h
+    usage: library links-update DATABASE
+
+    Fetch new links from each path previously saved
+
+        library links-update links.db
 
 
 </details>

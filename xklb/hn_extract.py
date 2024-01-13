@@ -52,11 +52,6 @@ def parse_args(prog, usage) -> argparse.Namespace:
     return args
 
 
-def get(url):
-    r = web.requests_session().get(url, timeout=120)
-    return r.json()
-
-
 def db_worker(args, input_queue):
     conn = sqlite3.connect(args.database, isolation_level=None)
     db_conn = db_utils.connect(args, conn)
@@ -121,7 +116,9 @@ def hacker_news_add() -> None:
 
     args.db.enable_wal()
 
-    max_item_id = get("https://hacker-news.firebaseio.com/v0/maxitem.json")
+    max_item_id = (
+        web.requests_session(args).get("https://hacker-news.firebaseio.com/v0/maxitem.json", timeout=120).json()
+    )
     tables = args.db.table_names()
     r = list(
         args.db.query(

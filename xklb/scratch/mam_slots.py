@@ -11,6 +11,8 @@ def parse_args():
     parser.add_argument("--max", type=int, default=150)
 
     parser.add_argument("--cookie", required=True)
+    parser.add_argument("--cookies", help="path to a Netscape formatted cookies file")
+    parser.add_argument("--cookies-from-browser", metavar="BROWSER[+KEYRING][:PROFILE][::CONTAINER]")
     args = parser.parse_args()
 
     log.info(objects.dict_filter_bool(args.__dict__))
@@ -18,10 +20,10 @@ def parse_args():
 
 
 def get_unsat(args):
-    response = web.requests_session().get(
+    response = web.requests_session(args).get(
         f"{args.base_url}/jsonLoad.php?snatch_summary",
         headers={"Content-Type": "application/json"},
-        cookies={"mam_id": args.cookie},
+        cookies={"mam_id": args.cookie} if args.cookie else None,
     )
     response.raise_for_status()
     data = response.json()

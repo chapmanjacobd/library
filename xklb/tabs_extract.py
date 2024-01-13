@@ -71,27 +71,12 @@ def get_new_paths(args) -> List[str]:
     return args.paths
 
 
-def extract_url_metadata(args, path: str) -> dict:
-    from urllib.parse import urlparse
-
-    hostname = urlparse(path).hostname or ""
-
-    return {
-        "path": path,
-        "hostname": hostname,
-        "frequency": args.frequency,
-        "category": args.category or "Uncategorized",
-        "time_created": consts.APPLICATION_START,
-        "time_deleted": 0,
-    }
-
-
 def tabs_add(args=None) -> None:
     if args:
         sys.argv = ["lb", *args]
     args = parse_args()
 
-    tabs = iterables.list_dict_filter_bool([extract_url_metadata(args, path) for path in get_new_paths(args)])
+    tabs = iterables.list_dict_filter_bool([db_media.consolidate_url(args, path) for path in get_new_paths(args)])
     for tab in tabs:
         db_media.add(args, tab)
     if not args.allow_immediate:

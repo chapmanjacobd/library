@@ -14,8 +14,8 @@ from xklb.utils.log_utils import log
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library tildes", usage=usage.tildes)
     parser.add_argument("--verbose", "-v", action="count", default=0)
-    parser.add_argument("--cookies")
-    parser.add_argument("--cookies-from-browser")
+    parser.add_argument("--cookies", help="path to a Netscape formatted cookies file")
+    parser.add_argument("--cookies-from-browser", metavar="BROWSER[+KEYRING][:PROFILE][::CONTAINER]")
 
     parser.add_argument("database")
     parser.add_argument("username", help="Tildes.net user to extract comments for")
@@ -27,8 +27,7 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def save_page(args, url):
-    text = web.requests_authed_get(args, url)
+def save_page(args, text):
     soup = BeautifulSoup(text, "html.parser")
 
     comment_elements = soup.find_all("article", class_="comment")
@@ -123,12 +122,16 @@ def save_page(args, url):
             if next_a:
                 next_page_url = next_a["href"]  # type: ignore
                 sleep(1)
-                save_page(args, next_page_url)
+                response = web.get(args, next_page_url)
+                if response:
+                    save_page(args, response.text)
 
 
 def tildes():
     args = parse_args()
-    save_page(args, f"https://tildes.net/user/{args.username}")
+    response = web.get(args, f"https://tildes.net/user/{args.username}")
+    if response:
+        save_page(args, response.text)
 
 
 if __name__ == "__main__":

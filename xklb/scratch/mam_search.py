@@ -24,6 +24,8 @@ def parse_args():
     parser.add_argument("--radio", action="store_true")
 
     parser.add_argument("--cookie", required=True)
+    parser.add_argument("--cookies", help="path to a Netscape formatted cookies file")
+    parser.add_argument("--cookies-from-browser", metavar="BROWSER[+KEYRING][:PROFILE][::CONTAINER]")
 
     parser.add_argument("database")
     parser.add_argument("search_text", nargs="+")
@@ -38,10 +40,10 @@ def parse_args():
 def get_page(args, query_data):
     import pandas as pd
 
-    response = web.requests_session().post(
+    response = web.requests_session(args).post(
         f"{args.base_url}/tor/js/loadSearchJSONbasic.php",
         headers={"Content-Type": "application/json"},
-        cookies={"mam_id": args.cookie},
+        cookies={"mam_id": args.cookie} if args.cookie else None,
         json=query_data,
     )
     response.raise_for_status()

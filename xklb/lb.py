@@ -122,7 +122,7 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers()
 
     # this needs to stay inside the function because if create_subcommands_parser() is called twice and if known_subcommands is preserved then the results won't be the same
-    known_subcommands = ["fs", "du", "search"]
+    known_subcommands = ["fs", "du", "search", "links"]
 
     def consecutive_prefixes(s):
         prefixes = [s[:j] for j in range(5, len(s)) if s[:j] and s[:j] not in known_subcommands]
@@ -185,11 +185,13 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     add_parser(subparsers, "xklb.scripts.export_text.export_text")
     add_parser(subparsers, "xklb.scripts.history.history", ["hi", "log"])
     add_parser(subparsers, "xklb.scripts.incremental_diff.incremental_diff")
+    add_parser(subparsers, "xklb.scripts.links_db.links_add", ["links-db"])
+    add_parser(subparsers, "xklb.scripts.links_db.links_update")
+    add_parser(subparsers, "xklb.scripts.links_extract.links_extract", ["links", "extract_links"])
     add_parser(subparsers, "xklb.scripts.mcda.mcda", ["mcdm", "rank"])
     add_parser(subparsers, "xklb.scripts.merge_folders.merge_folders", ["merge", "merge-folder"])
     add_parser(subparsers, "xklb.scripts.merge_dbs.merge_dbs", ["merge-db"])
     add_parser(subparsers, "xklb.scripts.merge_online_local.merge_online_local")
-    add_parser(subparsers, "xklb.scripts.mining.extract_links.extract_links", ["links"])
     add_parser(subparsers, "xklb.scripts.mining.markdown_links.markdown_links", ["markdown-urls"])
     add_parser(subparsers, "xklb.scripts.mining.mpv_watchlater.mpv_watchlater")
     add_parser(subparsers, "xklb.scripts.mining.nouns.nouns", ["nouns"])

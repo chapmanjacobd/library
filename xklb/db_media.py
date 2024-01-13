@@ -30,6 +30,21 @@ def get(args, path):
     return args.db.pop_dict("select * from media where path = ?", [path])
 
 
+def consolidate_url(args, path: str) -> dict:
+    from urllib.parse import urlparse
+
+    hostname = urlparse(path).hostname or ""
+
+    return {
+        "path": path,
+        "hostname": hostname,
+        "frequency": getattr(args, "frequency", None),
+        "category": getattr(args, "category", None) or "Uncategorized",
+        "time_created": consts.APPLICATION_START,
+        "time_deleted": 0,
+    }
+
+
 def get_paths(args):
     tables = args.db.table_names()
 

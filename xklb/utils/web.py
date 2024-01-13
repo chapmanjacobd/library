@@ -1,6 +1,8 @@
-import functools, os, tempfile, time, urllib.error, urllib.parse, urllib.request
+import argparse, functools, os, re, tempfile, time, urllib.error, urllib.parse, urllib.request
 from pathlib import Path
 from shutil import which
+
+import requests
 
 from xklb.utils import consts, db_utils, iterables, nums, path_utils, pd_utils, strings
 from xklb.utils.log_utils import clamp_index, log
@@ -32,49 +34,95 @@ def _get_retry_adapter(max_retries):
     return requests.adapters.HTTPAdapter(max_retries=retries)
 
 
-def requests_session(max_retries=5):
-    global session
+def parse_cookies_from_browser(input_str):
+    from yt_dlp.cookies import SUPPORTED_BROWSERS, SUPPORTED_KEYRINGS
+
+    # lifted from yt_dlp to have a compatible interface
+    container = None
+    mobj = re.fullmatch(
+        r"""(?x)
+        (?P<name>[^+:]+)
+        (?:\s*\+\s*(?P<keyring>[^:]+))?
+        (?:\s*:\s*(?!:)(?P<profile>.+?))?
+        (?:\s*::\s*(?P<container>.+))?
+    """,
+        input_str,
+    )
+    if mobj is None:
+        raise ValueError(f"invalid cookies from browser arguments: {input_str}")
+    browser_name, keyring, profile, container = mobj.group("name", "keyring", "profile", "container")
+    browser_name = browser_name.lower()
+    if browser_name not in SUPPORTED_BROWSERS:
+        raise ValueError(
+            f'unsupported browser specified for cookies: "{browser_name}". '
+            f'Supported browsers are: {", ".join(sorted(SUPPORTED_BROWSERS))}'
+        )
+    if keyring is not None:
+        keyring = keyring.upper()
+        if keyring not in SUPPORTED_KEYRINGS:
+            raise ValueError(
+                f'unsupported keyring specified for cookies: "{keyring}". '
+                f'Supported keyrings are: {", ".join(sorted(SUPPORTED_KEYRINGS))}'
+            )
+    return (browser_name, profile, keyring, container)
+
+
+def requests_session(args=argparse.Namespace()):
+    global session  # TODO: maybe run_once similar to log_utils.log
 
     if session is None:
         import requests
 
+        http_max_retries = getattr(args, "http_max_retries", None) or 5
+        cookie_file = getattr(args, "cookies", None)
+        cookies_from_browser = getattr(args, "cookies_from_browser", None)
+
         session = requests.Session()
-        session.mount("http", _get_retry_adapter(max_retries))  # also includes https
-        session.request = functools.partial(session.request, timeout=(4, 45))  # type: ignore
+        session.mount("http", _get_retry_adapter(http_max_retries))  # also includes https
+        session.request = functools.partial(session.request, headers=headers, timeout=(4, 45))  # type: ignore
+
+        if cookie_file or cookies_from_browser:
+            from yt_dlp.cookies import load_cookies
+
+            browser_specification = parse_cookies_from_browser(args.cookies_from_browser)
+            cookie_jar = load_cookies(cookie_file, browser_specification, ydl=None)
+            session.cookies = cookie_jar  # type: ignore
 
     return session
 
 
-class ChocolateChip:
-    def __init__(self, args):
-        from yt_dlp.cookies import load_cookies
-        from yt_dlp.utils import YoutubeDLCookieProcessor  # type: ignore
-
-        if args.cookies_from_browser:
-            args.cookies_from_browser = (args.cookies_from_browser,)
-        cookiejar = load_cookies(args.cookies, args.cookies_from_browser, ydl=None)
-        cookie_processor = YoutubeDLCookieProcessor(cookiejar)
-        self.opener = urllib.request.build_opener(cookie_processor)
-
-    def get(self, url):
-        request = urllib.request.Request(url)
-        response = self.opener.open(request, timeout=60)
-        response_data = response.read()
-        if response.getcode() != 200:
-            raise urllib.error.HTTPError(url, response.getcode(), response_data, response.headers, None)
-        response.close()
-        return response_data
-
-
-def requests_authed_get(args, url) -> bytes:
-    if args.cookies or args.cookies_from_browser:
-        if not hasattr(args, "authed_web"):
-            args.authed_web = ChocolateChip(args)
-        return args.authed_web.get(url)
+def get(args, url, skip_404=True, ignore_errors=False, ignore_429=False, **kwargs):
+    s = requests_session(args)
+    try:
+        response = s.get(url, **kwargs)
+    except (
+        requests.exceptions.ConnectionError,
+        requests.exceptions.Timeout,
+        requests.exceptions.ChunkedEncodingError,
+        requests.exceptions.ContentDecodingError,
+        requests.exceptions.RequestException,
+    ):
+        raise
     else:
-        response = requests_session().get(url, timeout=60)
-        response.raise_for_status()
-        return response.content
+        code = response.status_code
+
+        if 200 <= code < 400:
+            return response
+        elif code == 404:
+            if skip_404:
+                log.warning("HTTP404 Not Found: %s", url)
+                return None
+            else:
+                raise FileNotFoundError
+        elif ignore_errors and (400 <= code < 429 or 431 <= code < 500):
+            return response
+        elif ignore_429 and (400 <= code < 500):
+            return response
+        else:
+            response.raise_for_status()
+
+    log.info("Something weird is happening probably: %s", url)
+    return response
 
 
 def download_embeds(args, soup):
@@ -83,11 +131,12 @@ def download_embeds(args, soup):
         local_path.mkdir(exist_ok=True)
         local_path = local_path / Path(urllib.parse.unquote(img["src"])).name
 
-        data = requests_authed_get(args, img["src"])
-        with open(local_path, "wb") as f:
-            f.write(data)
+        response = get(args, img["src"])
+        if response:
+            with open(local_path, "wb") as f:
+                f.write(response.content)
 
-        img["src"] = local_path.relative_to(Path.cwd())  # Update image source to point to local file
+            img["src"] = local_path.relative_to(Path.cwd())  # Update image source to point to local file
 
 
 def find_date(soup):
@@ -134,6 +183,9 @@ def load_selenium(args, wire=False):
 
         service = Service(log_path=tempfile.mktemp(".geckodriver.log"))
         options = Options()
+        if Path("selenium").exists():
+            options.profile = "selenium"
+
         options.set_preference("media.volume_scale", "0.0")
         if xvfb is False:
             options.add_argument("--headless")
@@ -160,6 +212,9 @@ def load_selenium(args, wire=False):
         from selenium.webdriver.chrome.options import Options
 
         options = Options()
+        if Path("selenium").exists():
+            options.add_argument("user-data-dir=selenium")
+
         options.add_argument("--mute-audio")
         if xvfb is False:
             options.add_argument("--headless=new")
@@ -189,7 +244,8 @@ def quit_selenium(args):
 
 
 def download_url(url, output_path=None, output_prefix=None, chunk_size=8 * 1024 * 1024, retries=3):
-    response = requests_session().get(url, stream=True)
+    session = requests_session()
+    response = session.get(url, stream=True)
 
     if response.status_code // 100 != 2:  # Not 2xx
         log.error(f"Error {response.status_code} downloading {url}")
@@ -219,10 +275,10 @@ def download_url(url, output_path=None, output_prefix=None, chunk_size=8 * 1024 
                 p.unlink()
             else:
                 headers = {"Range": f"bytes={local_size}-"}
-                response = requests_session().get(url, headers=headers, stream=True)
+                response = session.get(url, headers=headers, stream=True)
                 if response.status_code != 206:  # HTTP Partial Content
                     p.unlink()
-                    response = requests_session().get(url, stream=True)
+                    response = session.get(url, stream=True)
         else:
             p.unlink()
 
@@ -347,7 +403,8 @@ def scroll_down(driver):
 
 
 def extract_html(url) -> str:
-    r = requests_session().get(url, timeout=120, headers=headers)
+    session = requests_session()
+    r = session.get(url, timeout=120, headers=headers)
     r.raise_for_status()
     markup = r.text
     return markup

@@ -204,7 +204,7 @@ def increase_update_delay(args, playlist_path: str) -> None:
             args.db.conn.execute("ALTER TABLE playlists ADD COLUMN hours_update_delay INTEGER DEFAULT 70")
 
 
-def get_all(args, cols="path, extractor_config", sql_filters=None) -> List[dict]:
+def get_all(args, cols="path, extractor_config", sql_filters=None, order_by="random()") -> List[dict]:
     pl_columns = db_utils.columns(args, "playlists")
     if sql_filters is None:
         sql_filters = []
@@ -215,7 +215,7 @@ def get_all(args, cols="path, extractor_config", sql_filters=None) -> List[dict]
 
     try:
         known_playlists = list(
-            args.db.query(f"select {cols} from playlists where 1=1 {' '.join(sql_filters)} order by random()"),
+            args.db.query(f"select {cols} from playlists where 1=1 {' '.join(sql_filters)} order by {order_by}"),
         )
     except sqlite3.OperationalError:
         known_playlists = []

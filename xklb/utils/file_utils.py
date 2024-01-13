@@ -230,7 +230,7 @@ def get_file_encoding(path):
 
     if path.startswith("http"):
         detector = chardet.UniversalDetector()
-        response = web.requests_session().get(path, stream=True)
+        response = web.session.get(path, stream=True)
         response.raw.decode_content = True
 
         num_bytes = 0
@@ -258,13 +258,13 @@ def get_file_encoding(path):
 def head_foot_stream(url, head_len, foot_len):
     import io
 
-    head_response = web.requests_session().get(url, stream=True)
+    head_response = web.session.get(url, stream=True)
     head_response.raw.decode_content = True
     head_response.raise_for_status()
 
     head_bytes = head_response.raw.read(head_len)
 
-    foot_response = web.requests_session().get(url, stream=True, headers={"Range": f"bytes={-foot_len}"})
+    foot_response = web.session.get(url, stream=True, headers={"Range": f"bytes={-foot_len}"})
     foot_response.raw.decode_content = True
     foot_bytes = foot_response.raw.read(foot_len)
 
