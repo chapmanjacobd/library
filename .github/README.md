@@ -95,7 +95,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.3.012)
+    xk media library subcommands (v2.3.013)
 
     Create database subcommands:
     ╭───────────────┬────────────────────────────────────────────────────╮
@@ -645,7 +645,10 @@ Single page
     If `--fixed-pages` is 1 and --start-page is not set then the URL will not be modified.
 
     library links-add --fixed-pages=1
+    Loading page https://site/path
+
     library links-add --fixed-pages=1 --page-start 99
+    Loading page https://site/path?page=99
 
 Reverse chronological paging
 
