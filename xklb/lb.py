@@ -12,6 +12,7 @@ progs = {
         "tubeadd": "Add online video media (yt-dlp)",
         "galleryadd": "Add online gallery media (gallery-dl)",
         "tabsadd": "Create a tabs database; Add URLs",
+        "links_add": "Create a link-scraping database",
         "siteadd": "Auto-scrape website data to SQLITE",
         "redditadd": "Create a reddit database; Add subreddits",
         "pushshift": "Convert pushshift data to reddit.db format (stdin)",
@@ -24,6 +25,7 @@ progs = {
         "fsupdate": "Update local media",
         "tubeupdate": "Update online video media",
         "galleryupdate": "Update online gallery media",
+        "links_update": "Update a link-scraping database",
         "redditupdate": "Update reddit media",
     },
     "Playback subcommands": {
@@ -45,8 +47,8 @@ progs = {
     },
     "Text subcommands": {
         "cluster_sort": "Sort text and images by similarity",
-        "extract_links": "Extract inner links from lists of web links",
-        "markdown-links": "Extract titles from lists of web links",
+        "links_extract": "Extract inner links from lists of web links",
+        "markdown_links": "Extract titles from lists of web links",
     },
     "File subcommands": {
         "eda": "Exploratory Data Analysis on table-like files",
