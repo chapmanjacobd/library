@@ -24,6 +24,8 @@ def fake_title(url):
 
 def markdown_links():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--cookies", help="path to a Netscape formatted cookies file")
+    parser.add_argument("--cookies-from-browser", metavar="BROWSER[+KEYRING][:PROFILE][::CONTAINER]")
     parser.add_argument("--selenium", "--scroll", action="store_true")
     parser.add_argument("-v", "--verbose", action="count", default=0)
 
@@ -44,7 +46,7 @@ def markdown_links():
                     web.selenium_get_page(args, url)
                     html_text = args.driver.page_source
                 else:
-                    html_text = web.requests_session().get(url).text
+                    html_text = web.requests_session(args).get(url).text
 
                 soup = BeautifulSoup(html_text, "html.parser")
                 title = soup.title.text.strip() if soup.title else url

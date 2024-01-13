@@ -8,7 +8,7 @@ from xklb.utils.log_utils import log
 def parse_args():
     parser = argparse.ArgumentParser(
         prog="library extract-links",
-        usage=usage.extract_links,
+        usage=usage.links_extract,
     )
     parser.add_argument(
         "--path-include",
@@ -74,6 +74,8 @@ def parse_args():
     parser.add_argument("--strict-exclude", action="store_true", help="All exclude args must resolve true")
     parser.add_argument("--case-sensitive", action="store_true", help="Filter with case sensitivity")
     parser.add_argument("--print-link-text", "--print-title", action="store_true")
+    parser.add_argument("--cookies", help="path to a Netscape formatted cookies file")
+    parser.add_argument("--cookies-from-browser", metavar="BROWSER[+KEYRING][:PROFILE][::CONTAINER]")
     parser.add_argument("--selenium", action="store_true")
     parser.add_argument("--manual", action="store_true", help="Confirm manually in shell before exiting the browser")
     parser.add_argument("--scroll", action="store_true", help="Scroll down the page; infinite scroll")
@@ -169,24 +171,23 @@ def parse_inner_urls(args, url, markup):
 
     soup = BeautifulSoup(markup, "html.parser")
 
-    for a in soup.findAll(href=True):
-        log.debug(a)
+    for a_ref in soup.findAll(href=True):
+        log.debug(a_ref)
 
-        href = a["href"].strip()
+        href = a_ref["href"].strip()
         if (len(href) > 1) and href[0] != "#":
             link = construct_absolute_url(url, href)
 
             link = link if args.case_sensitive else link.lower()
-            link_text = a.text if args.case_sensitive else a.text.lower()
+            link_text = a_ref.text if args.case_sensitive else a_ref.text.lower()
 
             link = strings.remove_consecutive_whitespace(link)
             link_text = strings.remove_consecutive_whitespace(link_text)
 
-            if is_desired_url(args, a, link, link_text):
-                if args.print_link_text:
-                    yield link + "\t" + link_text
-                else:
-                    yield link
+            if is_desired_url(args, a_ref, link, link_text):
+                a_ref.link = link
+                a_ref.link_text = link_text
+                yield a_ref
 
         if args.verbose > consts.LOG_DEBUG:
             breakpoint()
@@ -210,7 +211,7 @@ def get_inner_urls(args, url):
                 markup = f.read()
             url = "file://" + url
         else:
-            r = web.requests_session().get(url, timeout=120, headers=web.headers)
+            r = web.requests_session(args).get(url, timeout=120)
             if r.status_code == 404:
                 log.warning("404 Not Found Error: %s", url)
             else:
@@ -220,26 +221,29 @@ def get_inner_urls(args, url):
         yield from parse_inner_urls(args, url, markup)
 
 
-def print_or_download(args, inner_url):
+def print_or_download(args, a_ref):
     if args.download:
-        web.download_url(inner_url)
+        web.download_url(a_ref.link)
     else:
-        printing.pipe_print(inner_url)
+        if args.print_link_text:
+            printing.pipe_print(f"{a_ref.link}\t{a_ref.link_text}")
+        else:
+            printing.pipe_print(a_ref.link)
 
 
-def extract_links() -> None:
+def links_extract() -> None:
     args = parse_args()
 
     if args.selenium:
         web.load_selenium(args)
     try:
         for url in arg_utils.gen_urls(args):
-            for found_urls in get_inner_urls(args, url):
-                print_or_download(args, found_urls)
+            for a_ref in get_inner_urls(args, url):
+                print_or_download(args, a_ref)
     finally:
         if args.selenium:
             web.quit_selenium(args)
 
 
 if __name__ == "__main__":
-    extract_links()
+    links_extract()

@@ -128,11 +128,9 @@ def parse_args(action, usage) -> argparse.Namespace:
 
     if args.db:
         args.database = args.db
-
-    if args.db:
-        args.database = args.db
     Path(args.database).touch()
     args.db = db_utils.connect(args)
+
     if hasattr(args, "paths"):
         args.paths = iterables.conform(args.paths)
     log.info(objects.dict_filter_bool(args.__dict__))
