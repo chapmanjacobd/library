@@ -1504,6 +1504,13 @@ Jump pages
 Import media paths directly
 
     library links-add --no-extract links.db
+
+Examples
+
+    library links-add --path-include viewtopic.php --cookies-from-browser firefox \\
+      --page-key start --page-start 0 --page-step 50 --fixed-pages 14 --stop-pages-no-match 1 \\
+      plab.db https://plab/forum/tracker.php?o=(echo 1 4 7 10 15 | string split ' ')&s=2&tm=-1&f=(echo 1670 1768 60 1671 1644 1672 1111 508 555 1112 1718 1143 1717 1851 1713 1712 1775 1674 902 1675 36 1830 1803 1831 1741 1676 1677 1780 1110 1124 1784 1769 1793 1797 1804 1819 1825 1836 1842 1846 1857 1861 1867 1451 1788 1789 1792 1798 1805 1820 1826 1837 1843 1847 1856 1862 1868 284 1853 1823 1800 1801 1719 997 1818 1849 1711 1791 1762 | string split ' ')
+
 """
 
 

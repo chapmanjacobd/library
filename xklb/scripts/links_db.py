@@ -4,7 +4,7 @@ from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 from xklb import db_media, db_playlists, usage
 from xklb.scripts import links_extract
-from xklb.utils import arg_utils, db_utils, objects, printing, web
+from xklb.utils import arg_utils, db_utils, iterables, objects, printing, web
 from xklb.utils.log_utils import log
 
 
@@ -194,6 +194,7 @@ def extractor(args, playlist_path):
     new_media = set()
     page_count = 0
     page_count_since_match = 0
+    unique_get_inner_urls = iterables.return_unique(links_extract.get_inner_urls)
     for page_value in count_pages(args):
         if end_of_playlist:
             break
@@ -209,7 +210,7 @@ def extractor(args, playlist_path):
 
         log.info("Loading page %s", page_path)
         page_media = set()
-        for a_ref in links_extract.get_inner_urls(args, page_path):
+        for a_ref in unique_get_inner_urls(args, page_path):
             page_media.add(a_ref.link)
 
             if a_ref.link == args.stop_link or (not args.fixed_pages and len(known_media) > args.stop_known):

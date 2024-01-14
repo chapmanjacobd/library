@@ -46,7 +46,7 @@ def parse_cookies_from_browser(input_str):
         (?:\s*:\s*(?!:)(?P<profile>.+?))?
         (?:\s*::\s*(?P<container>.+))?
     """,
-        input_str,
+        input_str or "",
     )
     if mobj is None:
         raise ValueError(f"invalid cookies from browser arguments: {input_str}")
