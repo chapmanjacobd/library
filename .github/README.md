@@ -95,7 +95,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.3.013)
+    xk media library subcommands (v2.3.014)
 
     Create database subcommands:
     ╭───────────────┬────────────────────────────────────────────────────╮
@@ -619,10 +619,15 @@ You can fine-tune what links get saved with --path/text/before/after-include/exc
 
     library links-add --path-include /video/
 
-Defaults to stop fetching after encountering ten known links
+Defaults to stop fetching
 
+    After encountering ten known links:
     library links-add --stop-known 10
     library links-add --stop-link https://special.fish/specific_pacific
+
+    Some websites don't give an error when you try to access pages which don't exist.
+    To compensate for this the script will only continue fetching pages until there are both no new nor known links for one-hundred pages:
+    library links-add --stop-pages-no-match 100
 
 Backfill fixed number of pages
 
