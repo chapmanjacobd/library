@@ -1,4 +1,4 @@
-import argparse, json, sys
+import argparse, json, random, sys, time
 from pathlib import Path
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
@@ -12,10 +12,14 @@ def parse_args(**kwargs):
     parser = argparse.ArgumentParser(**kwargs)
     parser.add_argument("--category", "-c", help=argparse.SUPPRESS)
     parser.add_argument("--no-extract", action="store_true")
+
     parser.add_argument("--max-pages", type=int)
     parser.add_argument("--fixed-pages", "--backfill", type=int)
-    parser.add_argument("--stop-known", type=int, default=10)
+
     parser.add_argument("--stop-link")
+    parser.add_argument("--stop-known", type=int, default=10)
+    parser.add_argument("--stop-pages-no-match", type=int, default=100)
+
     parser.add_argument("--page-key", default="page")
     parser.add_argument("--page-step", "--step", "-S", type=int, default=1)
     parser.add_argument("--page-start", "--start-page", "--start", type=int)
@@ -80,6 +84,7 @@ def parse_args(**kwargs):
         default=[],
         help="plain text substrings before URL for exclusion (any must match to exclude)",
     )
+
     parser.add_argument("--strict-include", action="store_true", help="All include args must resolve true")
     parser.add_argument("--strict-exclude", action="store_true", help="All exclude args must resolve true")
     parser.add_argument("--case-sensitive", action="store_true", help="Filter with case sensitivity")
@@ -157,7 +162,7 @@ def add_media(args, variadic):
         db_media.add(args, d)
 
 
-def set_page_number(input_string, page_key, page_number):
+def set_page(input_string, page_key, page_number):
     parsed_url = urlparse(input_string)
     query_params = parse_qs(parsed_url.query)
     query_params[page_key] = [str(page_number)]
@@ -171,7 +176,7 @@ def set_page_number(input_string, page_key, page_number):
 
 def count_pages(args):
     page_limit = args.fixed_pages or args.max_pages
-    page_start = args.page_start or 1
+    page_start = 1 if args.page_start is None else args.page_start
     if page_limit:
         yield from range(page_start, page_start + (page_limit * args.page_step), args.page_step)
     else:
@@ -188,18 +193,26 @@ def extractor(args, playlist_path):
 
     new_media = set()
     page_count = 0
-    for page_num in count_pages(args):
+    page_count_since_match = 0
+    for page_value in count_pages(args):
         if end_of_playlist:
             break
+
+        page_count += 1
+        if page_count > 3:
+            time.sleep(random.uniform(0.05, 5))
 
         if page_limit == 1 and args.page_start is None:
             page_path = playlist_path
         else:
-            page_path = set_page_number(playlist_path, args.page_key, page_num)
+            page_path = set_page(playlist_path, args.page_key, page_value)
 
         log.info("Loading page %s", page_path)
+        page_media = set()
         for a_ref in links_extract.get_inner_urls(args, page_path):
-            if a_ref.link == args.stop_link or (len(known_media) > args.stop_known and not args.fixed_pages):
+            page_media.add(a_ref.link)
+
+            if a_ref.link == args.stop_link or (not args.fixed_pages and len(known_media) > args.stop_known):
                 end_of_playlist = True
                 break
 
@@ -210,9 +223,16 @@ def extractor(args, playlist_path):
             else:
                 add_media(args, [a_ref])
                 new_media.add(a_ref.link)
-            printing.print_overwrite(f"Page {page_num} link scan: {len(new_media)} new [{len(known_media)} known]")
-        page_count += 1
+            printing.print_overwrite(f"Page {page_count} link scan: {len(new_media)} new [{len(known_media)} known]")
+
+        if len(page_media) > 0:
+            page_count_since_match = 0
+        else:
+            page_count_since_match += 1
+        if page_count_since_match >= args.stop_pages_no_match:
+            end_of_playlist = True
     print()
+
     print(
         f"{page_count} pages scanned. Avg links per page: {len(new_media) // page_count} new [{len(known_media) // page_count} known]"
     )
@@ -229,9 +249,14 @@ def links_add() -> None:
     if args.selenium:
         web.load_selenium(args)
     try:
+        playlist_count = 0
         for playlist_path in arg_utils.gen_urls(args):
             add_playlist(args, playlist_path)
             extractor(args, playlist_path)
+
+            if playlist_count > 3:
+                time.sleep(random.uniform(0.05, 2))
+            playlist_count += 1
 
     finally:
         if args.selenium:
