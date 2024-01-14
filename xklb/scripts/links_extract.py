@@ -193,7 +193,6 @@ def parse_inner_urls(args, url, markup):
             breakpoint()
 
 
-@iterables.return_unique
 def get_inner_urls(args, url):
     if args.selenium:
         web.selenium_get_page(args, url)
@@ -238,7 +237,7 @@ def links_extract() -> None:
         web.load_selenium(args)
     try:
         for url in arg_utils.gen_urls(args):
-            for a_ref in get_inner_urls(args, url):
+            for a_ref in iterables.return_unique(get_inner_urls)(args, url):
                 print_or_download(args, a_ref)
     finally:
         if args.selenium:
