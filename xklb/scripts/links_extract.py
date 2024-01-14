@@ -194,6 +194,7 @@ def parse_inner_urls(args, url, markup):
 
 
 def get_inner_urls(args, url):
+    is_error = False
     if args.selenium:
         web.selenium_get_page(args, url)
 
@@ -213,11 +214,15 @@ def get_inner_urls(args, url):
             r = web.requests_session(args).get(url, timeout=120)
             if r.status_code == 404:
                 log.warning("404 Not Found Error: %s", url)
+                is_error = True
             else:
                 r.raise_for_status()
             markup = r.content
 
         yield from parse_inner_urls(args, url, markup)
+
+    if is_error:
+        yield None
 
 
 def print_or_download(args, a_ref):
@@ -238,7 +243,11 @@ def links_extract() -> None:
     try:
         for url in arg_utils.gen_urls(args):
             for a_ref in iterables.return_unique(get_inner_urls)(args, url):
+                if a_ref is None:
+                    break
+
                 print_or_download(args, a_ref)
+
     finally:
         if args.selenium:
             web.quit_selenium(args)

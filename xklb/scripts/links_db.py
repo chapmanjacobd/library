@@ -164,12 +164,37 @@ def add_media(args, variadic):
 
 def set_page(input_string, page_key, page_number):
     parsed_url = urlparse(input_string)
-    query_params = parse_qs(parsed_url.query)
-    query_params[page_key] = [str(page_number)]
-    updated_query = urlencode(query_params, doseq=True)
-    modified_url = urlunparse(
-        (parsed_url.scheme, parsed_url.netloc, parsed_url.path, parsed_url.params, updated_query, parsed_url.fragment)
-    )
+
+    path_parts = parsed_url.path.split("/")
+
+    if page_key in path_parts:
+        page_key_index = path_parts.index(page_key)
+        path_parts[page_key_index + 1] = str(page_number)  # Replace the page number at the next index
+        updated_path = "/".join(path_parts)
+        modified_url = urlunparse(
+            (
+                parsed_url.scheme,
+                parsed_url.netloc,
+                updated_path,
+                parsed_url.params,
+                parsed_url.query,
+                parsed_url.fragment,
+            )
+        )
+    else:
+        query_params = parse_qs(parsed_url.query)
+        query_params[page_key] = [str(page_number)]
+        updated_query = urlencode(query_params, doseq=True)
+        modified_url = urlunparse(
+            (
+                parsed_url.scheme,
+                parsed_url.netloc,
+                parsed_url.path,
+                parsed_url.params,
+                updated_query,
+                parsed_url.fragment,
+            )
+        )
 
     return modified_url
 
@@ -201,7 +226,7 @@ def extractor(args, playlist_path):
 
         page_count += 1
         if page_count > 3:
-            time.sleep(random.uniform(0.05, 5))
+            time.sleep(random.uniform(0.3, 4.55))
 
         if page_limit == 1 and args.page_start is None:
             page_path = playlist_path
@@ -211,6 +236,10 @@ def extractor(args, playlist_path):
         log.info("Loading page %s", page_path)
         page_media = set()
         for a_ref in unique_get_inner_urls(args, page_path):
+            if a_ref is None:
+                end_of_playlist = True
+                break
+
             page_media.add(a_ref.link)
 
             if a_ref.link == args.stop_link or (not args.fixed_pages and len(known_media) > args.stop_known):

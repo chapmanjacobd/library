@@ -1494,12 +1494,19 @@ Jump pages
 
     Some pages don't count page numbers but instead count items like messages or forum posts. You can iterate through like this:
 
-    library links-add --page-start 1 --page-key start --page-step 50
+    library links-add --page-key start --page-start 0 --page-step 50
 
     which translates to
     &start=0    first page
     &start=50   second page
     &start=100  third page
+
+Page folders
+
+    Some websites use paths instead of query parameters. In this case make sure the URL provided includes that information with a matching --page-key
+
+    library links-add --page-key page https://website/page/1/
+    library links-add --page-key article https://website/article/1/
 
 Import media paths directly
 
@@ -1507,10 +1514,14 @@ Import media paths directly
 
 Examples
 
+    library links-add links.db https://video/site/ --path-include /video/
+
+    library links-add links.db https://loginsite/ --path-include /article/ --cookies-from-browser firefox
+    library links-add links.db https://loginsite/ --path-include /article/ --cookies-from-browser chrome
+
     library links-add --path-include viewtopic.php --cookies-from-browser firefox \\
       --page-key start --page-start 0 --page-step 50 --fixed-pages 14 --stop-pages-no-match 1 \\
-      plab.db https://plab/forum/tracker.php?o=(echo 1 4 7 10 15 | string split ' ')&s=2&tm=-1&f=(echo 1670 1768 60 1671 1644 1672 1111 508 555 1112 1718 1143 1717 1851 1713 1712 1775 1674 902 1675 36 1830 1803 1831 1741 1676 1677 1780 1110 1124 1784 1769 1793 1797 1804 1819 1825 1836 1842 1846 1857 1861 1867 1451 1788 1789 1792 1798 1805 1820 1826 1837 1843 1847 1856 1862 1868 284 1853 1823 1800 1801 1719 997 1818 1849 1711 1791 1762 | string split ' ')
-
+      plab.db https://plab/forum/tracker.php?o=(string replace ' ' \n -- 1 4 7 10 15)&s=2&tm=-1&f=(string replace ' ' \n -- 1670 1768 60 1671 1644 1672 1111 508 555 1112 1718 1143 1717 1851 1713 1712 1775 1674 902 1675 36 1830 1803 1831 1741 1676 1677 1780 1110 1124 1784 1769 1793 1797 1804 1819 1825 1836 1842 1846 1857 1861 1867 1451 1788 1789 1792 1798 1805 1820 1826 1837 1843 1847 1856 1862 1868 284 1853 1823 1800 1801 1719 997 1818 1849 1711 1791 1762)
 """
 
 
