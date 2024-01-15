@@ -190,3 +190,13 @@ def split_folder_glob(s):
     if p.is_dir():
         return p, "*"
     return p.parent, p.name
+
+
+def get_defaults(parse_args):
+    original_argv = sys.argv
+    sys.argv = []
+    try:
+        args = parse_args()
+        return args
+    finally:
+        sys.argv = original_argv
