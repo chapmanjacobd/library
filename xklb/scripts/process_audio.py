@@ -63,7 +63,7 @@ def process_path(args, path):
         opus_rate = 16000
     ff_opts.extend([f"-ar {opus_rate}"])
 
-    output_path = path.with_suffix(".opus")
+    output_path = path.with_suffix(".mka")
     if args.always_split or (args.split_longer_than and duration > args.split_longer_than):
         splits = (
             subprocess.check_output(
@@ -98,12 +98,12 @@ def process_path(args, path):
                 prev = split
 
         if final_splits:
-            output_path = path.with_suffix(".%03d.opus")
+            output_path = path.with_suffix(".%03d.mka")
             final_splits = ",".join(final_splits)
             print(f"Splitting {path} at points: {final_splits}")
             ff_opts.extend(["-f segment", f"-segment_times {final_splits}"])
 
-    cmd = f'ffmpeg -nostdin -hide_banner -loglevel warning -y -i {shlex.quote(str(path))} -vn -c:a libopus {" ".join(ff_opts)} -vbr constrained -filter:a loudnorm=i=-18:tp=-3:lra=17 {shlex.quote(str(output_path))}'
+    cmd = f'ffmpeg -nostdin -hide_banner -loglevel warning -y -i {shlex.quote(str(path))} -vn -c:a libopus {" ".join(ff_opts)} -filter:a loudnorm=i=-18:tp=-3:lra=17 {shlex.quote(str(output_path))}'
     if args.dry_run:
         print(cmd)
     else:

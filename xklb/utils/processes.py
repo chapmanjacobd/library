@@ -164,6 +164,10 @@ def Pclose(process) -> subprocess.CompletedProcess:  # noqa: N802
     return subprocess.CompletedProcess(process.args, return_code, stdout, stderr)
 
 
+class UnplayableFile(RuntimeError):
+    pass
+
+
 class FFProbe:
     def __init__(self, path, *args):
         args = ["ffprobe", "-show_format", "-show_streams", "-show_chapters", "-of", "json", *args, path]
@@ -171,7 +175,11 @@ class FFProbe:
 
         out, err = p.communicate()
         if p.returncode != 0:
-            raise RuntimeError(out, err)
+            log.info("ffprobe %s out %s error %s", p.returncode, out, err)
+            if p.returncode == -2:
+                raise KeyboardInterrupt
+            else:
+                raise UnplayableFile(out, err)
         d = json.loads(out.decode("utf-8"))
 
         self.streams = d.get("streams")

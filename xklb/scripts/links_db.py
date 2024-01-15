@@ -14,7 +14,8 @@ def parse_args(**kwargs):
     parser.add_argument("--no-extract", action="store_true")
 
     parser.add_argument("--max-pages", type=int)
-    parser.add_argument("--fixed-pages", "--backfill", type=int)
+    parser.add_argument("--fixed-pages", type=int)
+    parser.add_argument("--backfill-pages", "--backfill", type=int)
 
     parser.add_argument("--stop-link")
     parser.add_argument("--stop-known", type=int, default=10)
@@ -145,7 +146,9 @@ def parse_args(**kwargs):
 
 def add_playlist(args, path):
     info = {
-        "extractor_config": {k: v for k, v in args.__dict__.items() if k not in ["db", "database", "verbose", "paths"]},
+        "extractor_config": {
+            k: v for k, v in args.__dict__.items() if k not in ["db", "database", "verbose", "paths", "backfill_pages"]
+        },
         "time_deleted": 0,
     }
     args.playlist_id = db_playlists.add(args, str(path), info)
@@ -199,8 +202,7 @@ def set_page(input_string, page_key, page_number):
     return modified_url
 
 
-def count_pages(args):
-    page_limit = args.fixed_pages or args.max_pages
+def count_pages(args, page_limit):
     page_start = 1 if args.page_start is None else args.page_start
     if page_limit:
         yield from range(page_start, page_start + (page_limit * args.page_step), args.page_step)
@@ -214,13 +216,14 @@ def count_pages(args):
 def extractor(args, playlist_path):
     known_media = set()
     end_of_playlist = False
-    page_limit = args.fixed_pages or args.max_pages
+    page_limit = args.backfill_pages or args.fixed_pages or args.max_pages
+    is_auto_stop = not bool(args.backfill_pages or args.fixed_pages or args.stop_link)
 
     new_media = set()
     page_count = 0
     page_count_since_match = 0
     unique_get_inner_urls = iterables.return_unique(links_extract.get_inner_urls)
-    for page_value in count_pages(args):
+    for page_value in count_pages(args, page_limit):
         if end_of_playlist:
             break
 
@@ -242,7 +245,7 @@ def extractor(args, playlist_path):
 
             page_media.add(a_ref.link)
 
-            if a_ref.link == args.stop_link or (not args.fixed_pages and len(known_media) > args.stop_known):
+            if a_ref.link == args.stop_link or (is_auto_stop and len(known_media) > args.stop_known):
                 end_of_playlist = True
                 break
 

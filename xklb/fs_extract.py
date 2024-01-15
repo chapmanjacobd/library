@@ -269,7 +269,7 @@ def mark_media_undeleted(args, paths) -> int:
 
 def find_new_files(args, path) -> List[str]:
     if path.is_file():
-        scanned_set = set(str(path))
+        scanned_set = set([str(path)])
     else:
         if args.ext:
             scanned_set = file_utils.rglob(path, args.ext)[0]
@@ -357,7 +357,7 @@ def scan_path(args, path_str: str) -> int:
     n_jobs = None
     if args.verbose >= consts.LOG_DEBUG:
         n_jobs = 1
-    if args.io_multiplier != 1.0:
+    elif args.io_multiplier != 1.0:
         n_jobs = max(1, int(max(os.cpu_count() or 4, 4) * args.io_multiplier))
 
     threadsafe = [DBType.audio, DBType.video, DBType.filesystem]
@@ -379,7 +379,7 @@ def scan_path(args, path_str: str) -> int:
     new_files = find_new_files(args, path)
     if new_files:
         print(f"[{path}] Adding {len(new_files)} new media")
-        log.debug(new_files)
+        # log.debug(new_files)
 
         if args.profile in (DBType.text):
             batch_count = int(os.cpu_count() or 4)

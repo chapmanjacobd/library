@@ -145,6 +145,7 @@ def test_human_to_bytes():
 
 
 def test_human_to_seconds():
+    assert nums.human_to_seconds(None) is None
     assert nums.human_to_seconds("30") == 1800
     assert nums.human_to_seconds("30s") == 30
     assert nums.human_to_seconds("30m") == 1800
