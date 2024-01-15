@@ -60,7 +60,10 @@ def human_to_bytes(input_str) -> int:
     return int(float(value) * unit_multiplier)
 
 
-def human_to_seconds(input_str) -> int:
+def human_to_seconds(input_str):
+    if input_str is None:
+        return None
+
     time_units = {
         "s": 1,
         "sec": 1,

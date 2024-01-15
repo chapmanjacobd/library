@@ -514,6 +514,8 @@ def process_playqueue(args) -> None:
             p = Path(" ".join(args.include)).resolve()
             if p.is_file():
                 media = [{"path": str(p)}]
+            else:
+                processes.no_media_found()
         else:
             processes.no_media_found()
 

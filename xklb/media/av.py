@@ -113,7 +113,7 @@ def munge_av_tags(args, media, path) -> dict:
         if e.errno == 23:  # Too many open files
             raise e
         raise e
-    except Exception as e:
+    except processes.UnplayableFile as e:
         log.error(f"Failed reading header. {path}")
         log.debug(e)
         if args.delete_unplayable and not file_utils.is_file_open(path):

@@ -1433,7 +1433,7 @@ links_extract = """library links-extract PATH ... [--case-sensitive] [--scroll] 
     Run with `-vv` to see the browser
 """
 
-links_add = """library links-add DATABASE PATH ... [--case-sensitive] [--cookies-from-browser BROWSER[+KEYRING][:PROFILE][::CONTAINER]] [--selenium] [--manual] [--scroll] [--auto-pager] [--poke] [--chrome] [--local-html] [--file FILE]
+links_add = r"""library links-add DATABASE PATH ... [--case-sensitive] [--cookies-from-browser BROWSER[+KEYRING][:PROFILE][::CONTAINER]] [--selenium] [--manual] [--scroll] [--auto-pager] [--poke] [--chrome] [--local-html] [--file FILE]
 
 Database version of extract-links
 
@@ -1454,12 +1454,16 @@ Defaults to stop fetching
 Backfill fixed number of pages
 
     You can disable automatic stopping by any of the following:
-    1. Set `--fixed-pages` to the desired number of pages
+    1. Set `--backfill-pages` to the desired number of pages for the first run
+    2. Set `--fixed-pages` to _always_ fetch the desired number of pages
     2. Set `--stop-link` to an unlikely URL
     3. Set `--stop-known` to an absurdly high number
 
     If the website is supported by --auto-pager data is fetched twice when using page iteration.
     As such, page iteration (--max-pages, --fixed-pages, etc) is disabled when using `--auto-pager`.
+
+    You can set unset --fixed-pages for all the playlists in your database by running this command:
+    sqlite my.db "UPDATE playlists SET extractor_config = json_replace(extractor_config, '$.fixed_pages', null)"
 
 To use "&p=1" instead of "&page=1"
 
@@ -1519,8 +1523,8 @@ Examples
     library links-add links.db https://loginsite/ --path-include /article/ --cookies-from-browser firefox
     library links-add links.db https://loginsite/ --path-include /article/ --cookies-from-browser chrome
 
-    library links-add --path-include viewtopic.php --cookies-from-browser firefox \\
-      --page-key start --page-start 0 --page-step 50 --fixed-pages 14 --stop-pages-no-match 1 \\
+    library links-add --path-include viewtopic.php --cookies-from-browser firefox \
+      --page-key start --page-start 0 --page-step 50 --fixed-pages 14 --stop-pages-no-match 1 \
       plab.db https://plab/forum/tracker.php?o=(string replace ' ' \n -- 1 4 7 10 15)&s=2&tm=-1&f=(string replace ' ' \n -- 1670 1768 60 1671 1644 1672 1111 508 555 1112 1718 1143 1717 1851 1713 1712 1775 1674 902 1675 36 1830 1803 1831 1741 1676 1677 1780 1110 1124 1784 1769 1793 1797 1804 1819 1825 1836 1842 1846 1857 1861 1867 1451 1788 1789 1792 1798 1805 1820 1826 1837 1843 1847 1856 1862 1868 284 1853 1823 1800 1801 1719 997 1818 1849 1711 1791 1762)
 """
 
