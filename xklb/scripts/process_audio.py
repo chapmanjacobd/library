@@ -6,12 +6,14 @@ from xklb import usage
 from xklb.utils import nums, objects
 from xklb.utils.log_utils import log
 
+DEFAULT_MIN_SPLIT = "20s"
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library process-audio", usage=usage.process_audio)
     parser.add_argument("--always-split", action="store_true")
     parser.add_argument("--split-longer-than")
-    parser.add_argument("--min-split-segment", default="20s")
+    parser.add_argument("--min-split-segment", default=DEFAULT_MIN_SPLIT)
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--verbose", "-v", action="count", default=0)
     parser.add_argument("paths", nargs="+")
@@ -24,7 +26,13 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def process_path(args, path):
+def process_path(
+    path,
+    always_split=False,
+    split_longer_than=None,
+    min_split_segment=nums.human_to_seconds(DEFAULT_MIN_SPLIT),
+    dry_run=False,
+):
     path = Path(path)
     ffprobe_cmd = ["ffprobe", "-v", "error", "-print_format", "json", "-show_format", "-show_streams", path]
     result = subprocess.run(ffprobe_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -64,7 +72,7 @@ def process_path(args, path):
     ff_opts.extend([f"-ar {opus_rate}"])
 
     output_path = path.with_suffix(".mka")
-    if args.always_split or (args.split_longer_than and duration > args.split_longer_than):
+    if always_split or (split_longer_than and duration > split_longer_than):
         splits = (
             subprocess.check_output(
                 [
@@ -93,7 +101,7 @@ def process_path(args, path):
         final_splits = []
         for split in splits:
             split = float(split)
-            if (split - prev) >= args.min_split_segment:
+            if (split - prev) >= min_split_segment:  # type: ignore
                 final_splits.append(str(split))
                 prev = split
 
@@ -104,7 +112,7 @@ def process_path(args, path):
             ff_opts.extend(["-f segment", f"-segment_times {final_splits}"])
 
     cmd = f'ffmpeg -nostdin -hide_banner -loglevel warning -y -i {shlex.quote(str(path))} -vn -c:a libopus {" ".join(ff_opts)} -filter:a loudnorm=i=-18:tp=-3:lra=17 {shlex.quote(str(output_path))}'
-    if args.dry_run:
+    if dry_run:
         print(cmd)
     else:
         subprocess.check_call(cmd, shell=True)
@@ -118,7 +126,13 @@ def process_audio():
         path = str(Path(path).resolve())
 
         try:
-            process_path(args, path)
+            process_path(
+                path,
+                always_split=args.always_split,
+                split_longer_than=args.split_longer_than,
+                min_split_segment=args.min_split_segment,
+                dry_run=args.dry_run,
+            )
         except Exception:
             print(path)
             raise
