@@ -95,7 +95,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.3.018)
+    xk media library subcommands (v2.3.019)
 
     Create database subcommands:
     ╭───────────────┬────────────────────────────────────────────────────╮
@@ -173,7 +173,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
     ╭────────────────┬─────────────────────────────────────────────╮
     │ cluster-sort   │ Sort text and images by similarity          │
     ├────────────────┼─────────────────────────────────────────────┤
-    │ links-extract  │ Extract inner links from lists of web links │
+    │ extract-links  │ Extract inner links from lists of web links │
     ├────────────────┼─────────────────────────────────────────────┤
     │ markdown-links │ Extract titles from lists of web links      │
     ╰────────────────┴─────────────────────────────────────────────╯
@@ -251,6 +251,11 @@ To stop playing press Ctrl+C in either the terminal or mpv
     ├────────────────┼───────────────────────────────────────────────────┤
     │ nouns          │ Unstructured text -> compound nouns (stdin)       │
     ╰────────────────┴───────────────────────────────────────────────────╯
+
+    Other subcommands:
+    ╭──────────────┬──────────────╮
+    │ extract-text │ extract_text │
+    ╰──────────────┴──────────────╯
 
 
 </details>
@@ -1759,10 +1764,10 @@ Examples
 
 </details>
 
-<details><summary>Extract inner links from lists of web links (links-extract)</summary>
+<details><summary>Extract inner links from lists of web links (extract-links)</summary>
 
-    $ library links-extract -h
-    usage: library links-extract PATH ... [--case-sensitive] [--scroll] [--download] [--verbose] [--local-html] [--file FILE] [--path-include ...] [--text-include ...] [--after-include ...] [--before-include ...] [--path-exclude ...] [--text-exclude ...] [--after-exclude ...] [--before-exclude ...]
+    $ library extract-links -h
+    usage: library extract-links PATH ... [--case-sensitive] [--scroll] [--download] [--verbose] [--local-html] [--file FILE] [--path-include ...] [--text-include ...] [--after-include ...] [--before-include ...] [--path-exclude ...] [--text-exclude ...] [--after-exclude ...] [--before-exclude ...]
 
     Extract links from within local HTML fragments, files, or remote pages; filtering on link text and nearby plain-text
 
@@ -2403,6 +2408,22 @@ After you are done selecting folders you can press ctrl-d and it will save the l
     Use --split-longer-than to _only_ detect silence for files in excess of a specific duration
 
         library process-audio --split-longer-than 36mins audiobook.m4b audiobook2.mp3
+
+
+</details>
+
+### Other subcommands
+
+<details><summary>extract_text (extract-text)</summary>
+
+    $ library extract-text -h
+    usage: library extract-text PATH ... [--skip-links]
+
+Sorting suggestions
+
+    lb extract-text --skip-links --local-file (cb -t text/html | psub) | lb cs --groups | jq -r '.[] | .grouped_paths | "
+" + join("
+")'
 
 
 </details>

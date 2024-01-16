@@ -57,14 +57,10 @@ def existing_stats(root_folder, root_glob):
     return files, {"file": file_folders, "folder": folder_folders, "empty": empty_folders}
 
 
-def as_dest(source_folder, destination_folder, path):
-    return destination_folder / path.relative_to(source_folder)
-
-
 def gen_rename_data(destination_folder, destination_files, source_folder, source_files):
     source_rename_data = []
     for source_file in source_files:
-        renamed_file = as_dest(source_folder, destination_folder, source_file)
+        renamed_file = destination_folder / source_file.relative_to(source_folder)
         is_conflict = renamed_file in destination_files
         if is_conflict:
             log.info("%s conflicts with %s", source_file, renamed_file)
@@ -181,7 +177,7 @@ def merge_folders() -> None:
     for source in args.sources:
         source_folder, source_glob = arg_utils.split_folder_glob(source)
         source_files, source_folders_dict = existing_stats(source_folder, source_glob)
-        all_source_folders |= source_folders_dict["file"] | source_folders_dict["folder"] | source_folders_dict["empty"]
+        source_folders = source_folders_dict["file"] | source_folders_dict["folder"] | source_folders_dict["empty"]
 
         source_new_empty_folders = gen_rename_data(
             destination_folder, destination_folders, source_folder, source_folders_dict["empty"]
@@ -217,7 +213,8 @@ def merge_folders() -> None:
 
         empty_folder_data |= {t[2] for t in source_new_empty_folders}
         rename_data.extend(source_file_renames)
-        destination_folders |= {as_dest(source_folder, destination_folder, p) for p in all_source_folders}
+        destination_folders |= {destination_folder / p.relative_to(source_folder) for p in source_folders}
+        all_source_folders |= source_folders
         print()
 
     if clobber is None:

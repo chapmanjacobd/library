@@ -47,7 +47,7 @@ progs = {
     },
     "Text subcommands": {
         "cluster_sort": "Sort text and images by similarity",
-        "links_extract": "Extract inner links from lists of web links",
+        "extract_links": "Extract inner links from lists of web links",
         "markdown_links": "Extract titles from lists of web links",
     },
     "File subcommands": {
@@ -169,7 +169,7 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     add_parser(subparsers, "xklb.media.media_check.media_check")
     add_parser(subparsers, "xklb.play_actions.filesystem", ["fs", "open"])
     add_parser(subparsers, "xklb.play_actions.listen", ["lt", "tubelisten", "tl"])
-    add_parser(subparsers, "xklb.play_actions.read", ["text", "books", "docs"])
+    add_parser(subparsers, "xklb.play_actions.read", ["books", "docs"])
     add_parser(subparsers, "xklb.play_actions.view", ["image", "see", "look"])
     add_parser(subparsers, "xklb.play_actions.watch", ["wt", "tubewatch", "tw", "entries"])
     add_parser(subparsers, "xklb.reddit_extract.reddit_add", ["ra"])
@@ -189,11 +189,12 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     add_parser(subparsers, "xklb.scripts.incremental_diff.incremental_diff")
     add_parser(subparsers, "xklb.scripts.links_db.links_add", ["links-db"])
     add_parser(subparsers, "xklb.scripts.links_db.links_update")
-    add_parser(subparsers, "xklb.scripts.links_extract.links_extract", ["links", "extract_links"])
     add_parser(subparsers, "xklb.scripts.mcda.mcda", ["mcdm", "rank"])
-    add_parser(subparsers, "xklb.scripts.merge_folders.merge_folders", ["merge", "merge-folder"])
     add_parser(subparsers, "xklb.scripts.merge_dbs.merge_dbs", ["merge-db"])
+    add_parser(subparsers, "xklb.scripts.merge_folders.merge_folders", ["merge-folder"])
     add_parser(subparsers, "xklb.scripts.merge_online_local.merge_online_local")
+    add_parser(subparsers, "xklb.scripts.mining.extract_links.extract_links", ["links", "links_extract"])
+    add_parser(subparsers, "xklb.scripts.mining.extract_text.extract_text", ["text", "text_extract"])
     add_parser(subparsers, "xklb.scripts.mining.markdown_links.markdown_links", ["markdown-urls"])
     add_parser(subparsers, "xklb.scripts.mining.mpv_watchlater.mpv_watchlater")
     add_parser(subparsers, "xklb.scripts.mining.nouns.nouns", ["nouns"])

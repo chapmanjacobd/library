@@ -1494,7 +1494,7 @@ files = [
 
 [[package]]
 name = "pychromecast"
-version = "13.0.8"
+version = "13.1.0"
 summary = "Python module to talk to Google Chromecast."
 dependencies = [
     "casttube>=0.2.0",
@@ -1502,8 +1502,8 @@ dependencies = [
     "zeroconf>=0.25.1",
 ]
 files = [
-    {file = "PyChromecast-13.0.8-py2.py3-none-any.whl", hash = "sha256:acbee4cd5e4a65cc8057b22ea994680c0996effff23a9648bb242adfb524aefe"},
-    {file = "PyChromecast-13.0.8.tar.gz", hash = "sha256:e4b7523db137f8de05eedcc6154113b68532848629442b448c2334fac966a447"},
+    {file = "PyChromecast-13.1.0-py2.py3-none-any.whl", hash = "sha256:cac3c6d740deb2d4fd5ac4101a1f8fd2404eab1a32cf40292ea9477075315663"},
+    {file = "PyChromecast-13.1.0.tar.gz", hash = "sha256:08e61a8b54bd2119d3c9ab1ec0136d3d8563aa97e0a3b57841588b9be60c2676"},
 ]
 
 [[package]]

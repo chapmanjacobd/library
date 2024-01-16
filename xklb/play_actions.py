@@ -184,7 +184,7 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     args.db = db_utils.connect(args)
 
     if args.mpv_socket is None:
-        if args.action in (SC.listen):
+        if args.action in (SC.listen,):
             args.mpv_socket = consts.DEFAULT_MPV_LISTEN_SOCKET
         else:
             args.mpv_socket = consts.DEFAULT_MPV_WATCH_SOCKET
@@ -514,6 +514,19 @@ def process_playqueue(args) -> None:
             p = Path(" ".join(args.include)).resolve()
             if p.is_file():
                 media = [{"path": str(p)}]
+            elif p.is_dir():
+                if args.folder_glob:
+                    media = [{"path": s} for s in file_utils.fast_glob(p)]
+                elif args.action in SC.watch:
+                    media = [{"path": s} for s in file_utils.get_video_files(p)]
+                elif args.action == SC.listen:
+                    media = [{"path": s} for s in file_utils.get_audio_files(p)]
+                elif args.action in SC.view:
+                    media = [{"path": s} for s in file_utils.get_image_files(p)]
+                elif args.action in SC.read:
+                    media = [{"path": s} for s in file_utils.get_text_files(p)]
+                else:
+                    media = [{"path": s} for s in file_utils.rglob(str(p))[0]]
             else:
                 processes.no_media_found()
         else:
