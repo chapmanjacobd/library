@@ -1418,7 +1418,7 @@ incremental_diff = """library incremental-diff PATH1 PATH2 [--join-keys JOIN_KEY
     To diff everything at once run with `--batch-size inf`
 """
 
-links_extract = """library links-extract PATH ... [--case-sensitive] [--scroll] [--download] [--verbose] [--local-html] [--file FILE] [--path-include ...] [--text-include ...] [--after-include ...] [--before-include ...] [--path-exclude ...] [--text-exclude ...] [--after-exclude ...] [--before-exclude ...]
+extract_links = """library extract-links PATH ... [--case-sensitive] [--scroll] [--download] [--verbose] [--local-html] [--file FILE] [--path-include ...] [--text-include ...] [--after-include ...] [--before-include ...] [--path-exclude ...] [--text-exclude ...] [--after-exclude ...] [--before-exclude ...]
 
     Extract links from within local HTML fragments, files, or remote pages; filtering on link text and nearby plain-text
 
@@ -1534,6 +1534,13 @@ links_update = """library links-update DATABASE
     Fetch new links from each path previously saved
 
         library links-update links.db
+"""
+
+extract_text = """library extract-text PATH ... [--skip-links]
+
+Sorting suggestions
+
+    lb extract-text --skip-links --local-file (cb -t text/html | psub) | lb cs --groups | jq -r '.[] | .grouped_paths | "\n" + join("\n")'
 """
 
 siteadd = """library site-add DATABASE PATH ... [--auto-pager] [--poke] [--local-html] [--file FILE]

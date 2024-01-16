@@ -3,7 +3,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 from xklb import db_media, db_playlists, usage
-from xklb.scripts import links_extract
+from xklb.scripts.mining import extract_links
 from xklb.utils import arg_utils, db_utils, iterables, objects, printing, web
 from xklb.utils.log_utils import log
 
@@ -111,7 +111,7 @@ def parse_args(**kwargs):
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
     parser.add_argument("--verbose", "-v", action="count", default=0)
 
-    parser.add_argument("--local-html", action="store_true", help="Treat paths as Local HTML files")
+    parser.add_argument("--local-file", "--local-html", action="store_true", help="Treat paths as Local HTML files")
     parser.add_argument("--file", "-f", help="File with one URL per line")
 
     parser.add_argument("database", help=argparse.SUPPRESS)
@@ -222,7 +222,7 @@ def extractor(args, playlist_path):
     new_media = set()
     page_count = 0
     page_count_since_match = 0
-    unique_get_inner_urls = iterables.return_unique(links_extract.get_inner_urls)
+    unique_get_inner_urls = iterables.return_unique(extract_links.get_inner_urls)
     for page_value in count_pages(args, page_limit):
         if end_of_playlist:
             break

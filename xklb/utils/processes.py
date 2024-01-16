@@ -1,4 +1,4 @@
-import functools, json, multiprocessing, os, platform, re, shlex, signal, string, subprocess, sys
+import functools, json, multiprocessing, os, platform, re, shlex, signal, subprocess, sys
 from typing import Dict, NoReturn
 
 from xklb.utils import iterables

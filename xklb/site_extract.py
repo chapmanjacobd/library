@@ -13,7 +13,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--auto-pager", "--autopager", action="store_true")
     parser.add_argument("--poke", action="store_true")
     parser.add_argument("--chrome", action="store_true")
-    parser.add_argument("--local-html", action="store_true", help="Treat paths as Local HTML files")
+    parser.add_argument("--local-file", "--local-html", action="store_true", help="Treat paths as Local HTML files")
     parser.add_argument("--file", "-f", help="File with one URL per line")
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
     parser.add_argument("--verbose", "-v", action="count", default=0)
@@ -162,7 +162,7 @@ def attach_interceptors(args):
 
 
 def load_page(args, path):
-    if args.local_html:
+    if args.local_file:
         web.save_html_table(args, path)
         return
 

@@ -8,7 +8,7 @@ from xklb.utils.log_utils import log
 def parse_args():
     parser = argparse.ArgumentParser(
         prog="library extract-links",
-        usage=usage.links_extract,
+        usage=usage.extract_links,
     )
     parser.add_argument(
         "--path-include",
@@ -85,7 +85,7 @@ def parse_args():
     parser.add_argument("--download", action="store_true", help="Download filtered links")
     parser.add_argument("--verbose", "-v", action="count", default=0)
 
-    parser.add_argument("--local-html", action="store_true", help="Treat paths as Local HTML files")
+    parser.add_argument("--local-file", "--local-html", action="store_true", help="Treat paths as Local HTML files")
     parser.add_argument("--file", "-f", help="File with one URL per line")
     parser.add_argument("paths", nargs="*")
     args = parser.parse_args()
@@ -206,7 +206,7 @@ def get_inner_urls(args, url):
             for markup in web.infinite_scroll(args.driver):
                 yield from parse_inner_urls(args, url, markup)
     else:
-        if args.local_html:
+        if args.local_file:
             with open(url, "r") as f:
                 markup = f.read()
             url = "file://" + url
