@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from pathlib import Path
 
 from xklb.utils import consts, iterables, strings
@@ -99,3 +100,7 @@ def sanitize_url(args, path: str) -> str:
         return path.replace("/m.", "/www.")
 
     return path
+
+
+def dedupe_path_parts(p):
+    return Path(*OrderedDict.fromkeys(Path(p).parts).keys())

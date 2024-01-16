@@ -489,6 +489,8 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 ### Create database subcommands
 
+###### fsadd
+
 <details><summary>Add local media (fsadd)</summary>
 
     $ library fsadd -h
@@ -543,6 +545,8 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 </details>
 
+###### tubeadd
+
 <details><summary>Add online video media (yt-dlp) (tubeadd)</summary>
 
     $ library tubeadd -h
@@ -571,6 +575,8 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 </details>
 
+###### galleryadd
+
 <details><summary>Add online gallery media (gallery-dl) (galleryadd)</summary>
 
     $ library galleryadd -h
@@ -584,6 +590,8 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 
 </details>
+
+###### tabsadd
 
 <details><summary>Create a tabs database; Add URLs (tabsadd)</summary>
 
@@ -609,6 +617,8 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 
 </details>
+
+###### links-add
 
 <details><summary>Create a link-scraping database (links-add)</summary>
 
@@ -710,6 +720,8 @@ Examples
 
 </details>
 
+###### siteadd
+
 <details><summary>Auto-scrape website data to SQLITE (siteadd)</summary>
 
     $ library siteadd -h
@@ -723,6 +735,8 @@ Examples
 
 
 </details>
+
+###### redditadd
 
 <details><summary>Create a reddit database; Add subreddits (redditadd)</summary>
 
@@ -749,6 +763,8 @@ Examples
 
 </details>
 
+###### pushshift
+
 <details><summary>Convert pushshift data to reddit.db format (stdin)</summary>
 
     $ library pushshift -h
@@ -772,6 +788,8 @@ Examples
 
 </details>
 
+###### hnadd
+
 <details><summary>Create / Update a Hacker News database (hnadd)</summary>
 
     $ library hnadd -h
@@ -793,6 +811,8 @@ Examples
 
 </details>
 
+###### substack
+
 <details><summary>Backup substack articles</summary>
 
     $ library substack -h
@@ -802,6 +822,8 @@ Examples
 
 
 </details>
+
+###### tildes
 
 <details><summary>Backup tildes comments and topics</summary>
 
@@ -819,6 +841,8 @@ Examples
 
 </details>
 
+###### places-import
+
 <details><summary>Import places of interest (POIs) (places-import)</summary>
 
     $ library places-import -h
@@ -831,6 +855,8 @@ Examples
 
 ### Update database subcommands
 
+###### fsupdate
+
 <details><summary>Update local media (fsupdate)</summary>
 
     $ library fsupdate -h
@@ -842,6 +868,8 @@ Examples
 
 
 </details>
+
+###### tubeupdate
 
 <details><summary>Update online video media (tubeupdate)</summary>
 
@@ -866,6 +894,8 @@ Examples
 
 </details>
 
+###### galleryupdate
+
 <details><summary>Update online gallery media (galleryupdate)</summary>
 
     $ library galleryupdate -h
@@ -875,6 +905,8 @@ Examples
 
 
 </details>
+
+###### links-update
 
 <details><summary>Update a link-scraping database (links-update)</summary>
 
@@ -887,6 +919,8 @@ Examples
 
 
 </details>
+
+###### redditupdate
 
 <details><summary>Update reddit media (redditupdate)</summary>
 
@@ -901,6 +935,8 @@ Examples
 </details>
 
 ### Playback subcommands
+
+###### watch
 
 <details><summary>Watch / Listen</summary>
 
@@ -1264,6 +1300,8 @@ Examples
 
 ### Media database subcommands
 
+###### tabs
+
 <details><summary>Open your tabs for the day</summary>
 
     $ library tabs -h
@@ -1336,6 +1374,8 @@ Examples
 
 </details>
 
+###### block
+
 <details><summary>Block a channel</summary>
 
     $ library block -h
@@ -1385,6 +1425,8 @@ Examples
 
 </details>
 
+###### playlists
+
 <details><summary>List stored playlists</summary>
 
     $ library playlists -h
@@ -1428,6 +1470,8 @@ Examples
 
 
 </details>
+
+###### download
 
 <details><summary>Download media</summary>
 
@@ -1473,6 +1517,8 @@ Examples
 
 </details>
 
+###### download-status
+
 <details><summary>Show download status (download-status)</summary>
 
     $ library download-status -h
@@ -1515,6 +1561,8 @@ Examples
 
 </details>
 
+###### redownload
+
 <details><summary>Re-download deleted/lost media (redownload)</summary>
 
     $ library redownload -h
@@ -1556,6 +1604,8 @@ Examples
 
 
 </details>
+
+###### history
 
 <details><summary>Show some playback statistics (history)</summary>
 
@@ -1689,6 +1739,8 @@ Examples
 
 </details>
 
+###### search
+
 <details><summary>Search captions / subtitles</summary>
 
     $ library search -h
@@ -1715,6 +1767,8 @@ Examples
 </details>
 
 ### Text subcommands
+
+###### cluster-sort
 
 <details><summary>Sort text and images by similarity (cluster-sort)</summary>
 
@@ -1761,6 +1815,8 @@ Examples
 
 </details>
 
+###### extract-links
+
 <details><summary>Extract inner links from lists of web links (extract-links)</summary>
 
     $ library extract-links -h
@@ -1781,6 +1837,8 @@ Examples
 
 </details>
 
+###### extract-text
+
 <details><summary>Extract human text from lists of web links (extract-text)</summary>
 
     $ library extract-text -h
@@ -1797,6 +1855,8 @@ Sorting suggestions
 
 ### File subcommands
 
+###### eda
+
 <details><summary>Exploratory Data Analysis on table-like files (eda)</summary>
 
     $ library eda -h
@@ -1808,6 +1868,8 @@ Sorting suggestions
 
 
 </details>
+
+###### mcda
 
 <details><summary>Multi-criteria Ranking for Decision Support (mcda)</summary>
 
@@ -1862,6 +1924,8 @@ Sorting suggestions
 
 </details>
 
+###### incremental-diff
+
 <details><summary>Diff large table-like files in chunks (incremental-diff)</summary>
 
     $ library incremental-diff -h
@@ -1877,6 +1941,8 @@ Sorting suggestions
 
 
 </details>
+
+###### media-check
 
 <details><summary>Check video and audio files for corruption via ffmpeg (media-check)</summary>
 
@@ -1948,6 +2014,8 @@ Sorting suggestions
 
 </details>
 
+###### sample-hash
+
 <details><summary>Calculate a hash based on small file segments (sample-hash)</summary>
 
     $ library sample-hash -h
@@ -1962,6 +2030,8 @@ Sorting suggestions
 
 </details>
 
+###### sample-compare
+
 <details><summary>Compare files using sample-hash and other shortcuts (sample-compare)</summary>
 
     $ library sample-compare -h
@@ -1973,6 +2043,8 @@ Convenience subcommand to compare multiple files using sample-hash
 </details>
 
 ### Folder subcommands
+
+###### merge-folders
 
 <details><summary>Merge two or more file trees (merge-folders)</summary>
 
@@ -1989,6 +2061,8 @@ Convenience subcommand to compare multiple files using sample-hash
 
 
 </details>
+
+###### relmv
 
 <details><summary>Move files preserving parent folder hierarchy (relmv)</summary>
 
@@ -2009,6 +2083,8 @@ Convenience subcommand to compare multiple files using sample-hash
 
 
 </details>
+
+###### mv-list
 
 <details><summary>Find specific folders to move to different disks (mv-list)</summary>
 
@@ -2076,6 +2152,8 @@ After you are done selecting folders you can press ctrl-d and it will save the l
 
 
 </details>
+
+###### scatter
 
 <details><summary>Scatter files between folders or disks</summary>
 
@@ -2156,6 +2234,8 @@ After you are done selecting folders you can press ctrl-d and it will save the l
 
 ### Multi-database subcommands
 
+###### merge-dbs
+
 <details><summary>Merge SQLITE databases (merge-dbs)</summary>
 
     $ library merge-dbs -h
@@ -2188,6 +2268,8 @@ After you are done selecting folders you can press ctrl-d and it will save the l
 
 </details>
 
+###### copy-play-counts
+
 <details><summary>Copy play history (copy-play-counts)</summary>
 
     $ library copy-play-counts -h
@@ -2201,6 +2283,8 @@ After you are done selecting folders you can press ctrl-d and it will save the l
 </details>
 
 ### Filesystem Database subcommands
+
+###### christen
 
 <details><summary>Clean filenames (christen)</summary>
 
@@ -2223,6 +2307,8 @@ After you are done selecting folders you can press ctrl-d and it will save the l
 
 
 </details>
+
+###### disk-usage
 
 <details><summary>Show disk usage (disk-usage)</summary>
 
@@ -2260,6 +2346,8 @@ After you are done selecting folders you can press ctrl-d and it will save the l
 
 </details>
 
+###### big-dirs
+
 <details><summary>Show large folders (big-dirs)</summary>
 
     $ library big-dirs -h
@@ -2283,6 +2371,8 @@ After you are done selecting folders you can press ctrl-d and it will save the l
 
 </details>
 
+###### search-db
+
 <details><summary>Search a SQLITE database (search-db)</summary>
 
     $ library search-db -h
@@ -2292,6 +2382,8 @@ After you are done selecting folders you can press ctrl-d and it will save the l
 
 
 </details>
+
+###### optimize
 
 <details><summary>Re-optimize database</summary>
 
@@ -2306,6 +2398,8 @@ After you are done selecting folders you can press ctrl-d and it will save the l
 </details>
 
 ### Single database enrichment subcommands
+
+###### dedupe-db
 
 <details><summary>Dedupe SQLITE tables (dedupe-db)</summary>
 
@@ -2327,6 +2421,8 @@ After you are done selecting folders you can press ctrl-d and it will save the l
 
 </details>
 
+###### dedupe
+
 <details><summary>Dedupe similar media</summary>
 
     $ library dedupe -h
@@ -2338,6 +2434,8 @@ After you are done selecting folders you can press ctrl-d and it will save the l
 
 
 </details>
+
+###### merge-online-local
 
 <details><summary>Merge online and local data (merge-online-local)</summary>
 
@@ -2351,6 +2449,8 @@ After you are done selecting folders you can press ctrl-d and it will save the l
 
 </details>
 
+###### mpv-watchlater
+
 <details><summary>Import mpv watchlater files to history (mpv-watchlater)</summary>
 
     $ library mpv-watchlater -h
@@ -2360,6 +2460,8 @@ After you are done selecting folders you can press ctrl-d and it will save the l
 
 
 </details>
+
+###### reddit-selftext
 
 <details><summary>Copy selftext links to media table (reddit-selftext)</summary>
 
@@ -2372,6 +2474,8 @@ After you are done selecting folders you can press ctrl-d and it will save the l
 </details>
 
 ### Misc subcommands
+
+###### surf
 
 <details><summary>Auto-load browser tabs in a streaming way (stdin) (surf)</summary>
 
@@ -2393,6 +2497,8 @@ After you are done selecting folders you can press ctrl-d and it will save the l
 
 </details>
 
+###### export-text
+
 <details><summary>Export HTML files from SQLite databases (export-text)</summary>
 
     $ library export-text -h
@@ -2402,6 +2508,8 @@ After you are done selecting folders you can press ctrl-d and it will save the l
 
 
 </details>
+
+###### process-audio
 
 <details><summary>Shrink audio by converting to Opus format (process-audio)</summary>
 

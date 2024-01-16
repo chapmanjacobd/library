@@ -23,6 +23,8 @@ for category, category_progs in lb.progs.items():
         if prog_usage is not None:
             usage_details_md.append(
                 f"""
+###### {subcommand}
+
 <details><summary>{prog_description}</summary>
 
     $ library {subcommand} -h
