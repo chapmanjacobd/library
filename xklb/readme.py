@@ -17,9 +17,6 @@ for category, category_progs in lb.progs.items():
         if prog_description is None:
             prog_description = subcommand
 
-        if subcommand not in prog_description.lower():
-            prog_description += f" ({subcommand})"
-
         if prog_usage is not None:
             usage_details_md.append(
                 f"""
