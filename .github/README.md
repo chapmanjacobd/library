@@ -175,6 +175,8 @@ To stop playing press Ctrl+C in either the terminal or mpv
     ├────────────────┼─────────────────────────────────────────────┤
     │ extract-links  │ Extract inner links from lists of web links │
     ├────────────────┼─────────────────────────────────────────────┤
+    │ extract-text   │ Extract human text from lists of web links  │
+    ├────────────────┼─────────────────────────────────────────────┤
     │ markdown-links │ Extract titles from lists of web links      │
     ╰────────────────┴─────────────────────────────────────────────╯
 
@@ -251,11 +253,6 @@ To stop playing press Ctrl+C in either the terminal or mpv
     ├────────────────┼───────────────────────────────────────────────────┤
     │ nouns          │ Unstructured text -> compound nouns (stdin)       │
     ╰────────────────┴───────────────────────────────────────────────────╯
-
-    Other subcommands:
-    ╭──────────────┬──────────────╮
-    │ extract-text │ extract_text │
-    ╰──────────────┴──────────────╯
 
 
 </details>
@@ -1784,6 +1781,20 @@ Examples
 
 </details>
 
+<details><summary>Extract human text from lists of web links (extract-text)</summary>
+
+    $ library extract-text -h
+    usage: library extract-text PATH ... [--skip-links]
+
+Sorting suggestions
+
+    lb extract-text --skip-links --local-file (cb -t text/html | psub) | lb cs --groups | jq -r '.[] | .grouped_paths | "
+" + join("
+")'
+
+
+</details>
+
 ### File subcommands
 
 <details><summary>Exploratory Data Analysis on table-like files (eda)</summary>
@@ -2408,22 +2419,6 @@ After you are done selecting folders you can press ctrl-d and it will save the l
     Use --split-longer-than to _only_ detect silence for files in excess of a specific duration
 
         library process-audio --split-longer-than 36mins audiobook.m4b audiobook2.mp3
-
-
-</details>
-
-### Other subcommands
-
-<details><summary>extract_text (extract-text)</summary>
-
-    $ library extract-text -h
-    usage: library extract-text PATH ... [--skip-links]
-
-Sorting suggestions
-
-    lb extract-text --skip-links --local-file (cb -t text/html | psub) | lb cs --groups | jq -r '.[] | .grouped_paths | "
-" + join("
-")'
 
 
 </details>

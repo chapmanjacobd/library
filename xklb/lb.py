@@ -48,6 +48,7 @@ progs = {
     "Text subcommands": {
         "cluster_sort": "Sort text and images by similarity",
         "extract_links": "Extract inner links from lists of web links",
+        "extract_text": "Extract human text from lists of web links",
         "markdown_links": "Extract titles from lists of web links",
     },
     "File subcommands": {
