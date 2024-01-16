@@ -491,7 +491,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 ###### fsadd
 
-<details><summary>Add local media (fsadd)</summary>
+<details><summary>Add local media</summary>
 
     $ library fsadd -h
     usage: library fsadd [(--video) | --audio | --image |  --text | --filesystem] DATABASE PATH ...
@@ -547,7 +547,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 ###### tubeadd
 
-<details><summary>Add online video media (yt-dlp) (tubeadd)</summary>
+<details><summary>Add online video media (yt-dlp)</summary>
 
     $ library tubeadd -h
     usage: library tubeadd [--safe] [--extra] [--subs] [--auto-subs] DATABASE URLS ...
@@ -577,7 +577,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 ###### galleryadd
 
-<details><summary>Add online gallery media (gallery-dl) (galleryadd)</summary>
+<details><summary>Add online gallery media (gallery-dl)</summary>
 
     $ library galleryadd -h
     usage: library galleryadd DATABASE URLS
@@ -593,7 +593,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 ###### tabsadd
 
-<details><summary>Create a tabs database; Add URLs (tabsadd)</summary>
+<details><summary>Create a tabs database; Add URLs</summary>
 
     $ library tabsadd -h
     usage: library tabsadd [--frequency daily weekly (monthly) quarterly yearly] [--no-sanitize] DATABASE URLS ...
@@ -620,7 +620,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 ###### links-add
 
-<details><summary>Create a link-scraping database (links-add)</summary>
+<details><summary>Create a link-scraping database</summary>
 
     $ library links-add -h
     usage: library links-add DATABASE PATH ... [--case-sensitive] [--cookies-from-browser BROWSER[+KEYRING][:PROFILE][::CONTAINER]] [--selenium] [--manual] [--scroll] [--auto-pager] [--poke] [--chrome] [--local-html] [--file FILE]
@@ -722,7 +722,7 @@ Examples
 
 ###### siteadd
 
-<details><summary>Auto-scrape website data to SQLITE (siteadd)</summary>
+<details><summary>Auto-scrape website data to SQLITE</summary>
 
     $ library siteadd -h
     usage: library site-add DATABASE PATH ... [--auto-pager] [--poke] [--local-html] [--file FILE]
@@ -738,7 +738,7 @@ Examples
 
 ###### redditadd
 
-<details><summary>Create a reddit database; Add subreddits (redditadd)</summary>
+<details><summary>Create a reddit database; Add subreddits</summary>
 
     $ library redditadd -h
     usage: library redditadd [--lookback N_DAYS] [--praw-site bot1] DATABASE URLS ...
@@ -790,7 +790,7 @@ Examples
 
 ###### hnadd
 
-<details><summary>Create / Update a Hacker News database (hnadd)</summary>
+<details><summary>Create / Update a Hacker News database</summary>
 
     $ library hnadd -h
     usage: library hnadd [--oldest] DATABASE
@@ -843,7 +843,7 @@ Examples
 
 ###### places-import
 
-<details><summary>Import places of interest (POIs) (places-import)</summary>
+<details><summary>Import places of interest (POIs)</summary>
 
     $ library places-import -h
     usage: library places-import DATABASE PATH ...
@@ -857,7 +857,7 @@ Examples
 
 ###### fsupdate
 
-<details><summary>Update local media (fsupdate)</summary>
+<details><summary>Update local media</summary>
 
     $ library fsupdate -h
     usage: library fsupdate DATABASE
@@ -871,7 +871,7 @@ Examples
 
 ###### tubeupdate
 
-<details><summary>Update online video media (tubeupdate)</summary>
+<details><summary>Update online video media</summary>
 
     $ library tubeupdate -h
     usage: library tubeupdate [--audio | --video] DATABASE
@@ -896,7 +896,7 @@ Examples
 
 ###### galleryupdate
 
-<details><summary>Update online gallery media (galleryupdate)</summary>
+<details><summary>Update online gallery media</summary>
 
     $ library galleryupdate -h
     usage: library galleryupdate DATABASE URLS
@@ -908,7 +908,7 @@ Examples
 
 ###### links-update
 
-<details><summary>Update a link-scraping database (links-update)</summary>
+<details><summary>Update a link-scraping database</summary>
 
     $ library links-update -h
     usage: library links-update DATABASE
@@ -922,7 +922,7 @@ Examples
 
 ###### redditupdate
 
-<details><summary>Update reddit media (redditupdate)</summary>
+<details><summary>Update reddit media</summary>
 
     $ library redditupdate -h
     usage: library redditupdate [--audio | --video] [--lookback N_DAYS] [--praw-site bot1] DATABASE
@@ -1519,7 +1519,7 @@ Examples
 
 ###### download-status
 
-<details><summary>Show download status (download-status)</summary>
+<details><summary>Show download status</summary>
 
     $ library download-status -h
     usage: library download-status DATABASE
@@ -1563,7 +1563,7 @@ Examples
 
 ###### redownload
 
-<details><summary>Re-download deleted/lost media (redownload)</summary>
+<details><summary>Re-download deleted/lost media</summary>
 
     $ library redownload -h
     usage: library redownload DATABASE
@@ -1607,7 +1607,7 @@ Examples
 
 ###### history
 
-<details><summary>Show some playback statistics (history)</summary>
+<details><summary>Show some playback statistics</summary>
 
     $ library history -h
     usage: library history [--frequency daily weekly (monthly) yearly] [--limit LIMIT] DATABASE [(all) watching watched created modified deleted]
@@ -1770,7 +1770,7 @@ Examples
 
 ###### cluster-sort
 
-<details><summary>Sort text and images by similarity (cluster-sort)</summary>
+<details><summary>Sort text and images by similarity</summary>
 
     $ library cluster-sort -h
     usage: library cluster-sort [input_path | stdin] [output_path | stdout]
@@ -1817,7 +1817,7 @@ Examples
 
 ###### extract-links
 
-<details><summary>Extract inner links from lists of web links (extract-links)</summary>
+<details><summary>Extract inner links from lists of web links</summary>
 
     $ library extract-links -h
     usage: library extract-links PATH ... [--case-sensitive] [--scroll] [--download] [--verbose] [--local-html] [--file FILE] [--path-include ...] [--text-include ...] [--after-include ...] [--before-include ...] [--path-exclude ...] [--text-exclude ...] [--after-exclude ...] [--before-exclude ...]
@@ -1839,7 +1839,7 @@ Examples
 
 ###### extract-text
 
-<details><summary>Extract human text from lists of web links (extract-text)</summary>
+<details><summary>Extract human text from lists of web links</summary>
 
     $ library extract-text -h
     usage: library extract-text PATH ... [--skip-links]
@@ -1857,7 +1857,7 @@ Sorting suggestions
 
 ###### eda
 
-<details><summary>Exploratory Data Analysis on table-like files (eda)</summary>
+<details><summary>Exploratory Data Analysis on table-like files</summary>
 
     $ library eda -h
     usage: library eda PATH ... [--table TABLE] [--start-row START_ROW] [--end-row END_ROW] [--repl]
@@ -1871,7 +1871,7 @@ Sorting suggestions
 
 ###### mcda
 
-<details><summary>Multi-criteria Ranking for Decision Support (mcda)</summary>
+<details><summary>Multi-criteria Ranking for Decision Support</summary>
 
     $ library mcda -h
     usage: library mcda PATH ... [--table TABLE] [--start-row START_ROW] [--end-row END_ROW]
@@ -1926,7 +1926,7 @@ Sorting suggestions
 
 ###### incremental-diff
 
-<details><summary>Diff large table-like files in chunks (incremental-diff)</summary>
+<details><summary>Diff large table-like files in chunks</summary>
 
     $ library incremental-diff -h
     usage: library incremental-diff PATH1 PATH2 [--join-keys JOIN_KEYS] [--table1 TABLE1] [--table2 TABLE2] [--table1-index TABLE1_INDEX] [--table2-index TABLE2_INDEX] [--start-row START_ROW] [--batch-size BATCH_SIZE]
@@ -1944,7 +1944,7 @@ Sorting suggestions
 
 ###### media-check
 
-<details><summary>Check video and audio files for corruption via ffmpeg (media-check)</summary>
+<details><summary>Check video and audio files for corruption via ffmpeg</summary>
 
     $ library media-check -h
     usage: library media-check [--chunk-size SECONDS] [--gap SECONDS OR 0.0-1.0*DURATION] [--delete-corrupt >0-100] [--full-scan] [--audio-scan] PATH ...
@@ -2016,7 +2016,7 @@ Sorting suggestions
 
 ###### sample-hash
 
-<details><summary>Calculate a hash based on small file segments (sample-hash)</summary>
+<details><summary>Calculate a hash based on small file segments</summary>
 
     $ library sample-hash -h
     usage: library sample-hash [--threads 10] [--chunk-size BYTES] [--gap BYTES OR 0.0-1.0*FILESIZE] PATH ...
@@ -2032,7 +2032,7 @@ Sorting suggestions
 
 ###### sample-compare
 
-<details><summary>Compare files using sample-hash and other shortcuts (sample-compare)</summary>
+<details><summary>Compare files using sample-hash and other shortcuts</summary>
 
     $ library sample-compare -h
     usage: library sample-hash [--threads 10] [--chunk-size BYTES] [--gap BYTES OR 0.0-1.0*FILESIZE] PATH ...
@@ -2046,7 +2046,7 @@ Convenience subcommand to compare multiple files using sample-hash
 
 ###### merge-folders
 
-<details><summary>Merge two or more file trees (merge-folders)</summary>
+<details><summary>Merge two or more file trees</summary>
 
     $ library merge-folders -h
     usage: library merge-folders [--replace] [--skip] [--simulate] SOURCES ... DESTINATION
@@ -2064,7 +2064,7 @@ Convenience subcommand to compare multiple files using sample-hash
 
 ###### relmv
 
-<details><summary>Move files preserving parent folder hierarchy (relmv)</summary>
+<details><summary>Move files preserving parent folder hierarchy</summary>
 
     $ library relmv -h
     usage: library relmv [--dry-run] SOURCE ... DEST
@@ -2086,7 +2086,7 @@ Convenience subcommand to compare multiple files using sample-hash
 
 ###### mv-list
 
-<details><summary>Find specific folders to move to different disks (mv-list)</summary>
+<details><summary>Find specific folders to move to different disks</summary>
 
     $ library mv-list -h
     usage: library mv-list [--limit LIMIT] [--lower LOWER] [--upper UPPER] MOUNT_POINT DATABASE
@@ -2236,7 +2236,7 @@ After you are done selecting folders you can press ctrl-d and it will save the l
 
 ###### merge-dbs
 
-<details><summary>Merge SQLITE databases (merge-dbs)</summary>
+<details><summary>Merge SQLITE databases</summary>
 
     $ library merge-dbs -h
     usage: library merge-dbs DEST_DB SOURCE_DB ... [--only-target-columns] [--only-new-rows] [--upsert] [--pk PK ...] [--table TABLE ...]
@@ -2270,7 +2270,7 @@ After you are done selecting folders you can press ctrl-d and it will save the l
 
 ###### copy-play-counts
 
-<details><summary>Copy play history (copy-play-counts)</summary>
+<details><summary>Copy play history</summary>
 
     $ library copy-play-counts -h
     usage: library copy-play-counts DEST_DB SOURCE_DB ... [--source-prefix x] [--target-prefix y]
@@ -2286,7 +2286,7 @@ After you are done selecting folders you can press ctrl-d and it will save the l
 
 ###### christen
 
-<details><summary>Clean filenames (christen)</summary>
+<details><summary>Clean filenames</summary>
 
     $ library christen -h
     usage: library christen DATABASE [--run]
@@ -2310,7 +2310,7 @@ After you are done selecting folders you can press ctrl-d and it will save the l
 
 ###### disk-usage
 
-<details><summary>Show disk usage (disk-usage)</summary>
+<details><summary>Show disk usage</summary>
 
     $ library disk-usage -h
     usage: library disk-usage DATABASE [--sort-groups-by size | count] [--depth DEPTH] [PATH / SUBSTRING SEARCH]
@@ -2348,7 +2348,7 @@ After you are done selecting folders you can press ctrl-d and it will save the l
 
 ###### big-dirs
 
-<details><summary>Show large folders (big-dirs)</summary>
+<details><summary>Show large folders</summary>
 
     $ library big-dirs -h
     usage: library big-dirs DATABASE [--limit (4000)] [--depth (0)] [--sort-groups-by deleted | played] [--size=+5MB]
@@ -2373,7 +2373,7 @@ After you are done selecting folders you can press ctrl-d and it will save the l
 
 ###### search-db
 
-<details><summary>Search a SQLITE database (search-db)</summary>
+<details><summary>Search a SQLITE database</summary>
 
     $ library search-db -h
     usage: library search-db DATABASE TABLE SEARCH ... [--delete]
@@ -2401,7 +2401,7 @@ After you are done selecting folders you can press ctrl-d and it will save the l
 
 ###### dedupe-db
 
-<details><summary>Dedupe SQLITE tables (dedupe-db)</summary>
+<details><summary>Dedupe SQLITE tables</summary>
 
     $ library dedupe-db -h
     usage: library dedupe-dbs DATABASE TABLE --bk BUSINESS_KEYS [--pk PRIMARY_KEYS] [--only-columns COLUMNS]
@@ -2437,7 +2437,7 @@ After you are done selecting folders you can press ctrl-d and it will save the l
 
 ###### merge-online-local
 
-<details><summary>Merge online and local data (merge-online-local)</summary>
+<details><summary>Merge online and local data</summary>
 
     $ library merge-online-local -h
     usage: library merge-online-local DATABASE
@@ -2451,7 +2451,7 @@ After you are done selecting folders you can press ctrl-d and it will save the l
 
 ###### mpv-watchlater
 
-<details><summary>Import mpv watchlater files to history (mpv-watchlater)</summary>
+<details><summary>Import mpv watchlater files to history</summary>
 
     $ library mpv-watchlater -h
     usage: library mpv-watchlater DATABASE [--watch-later-directory ~/.config/mpv/watch_later/]
@@ -2463,7 +2463,7 @@ After you are done selecting folders you can press ctrl-d and it will save the l
 
 ###### reddit-selftext
 
-<details><summary>Copy selftext links to media table (reddit-selftext)</summary>
+<details><summary>Copy selftext links to media table</summary>
 
     $ library reddit-selftext -h
     usage: library reddit-selftext DATABASE
@@ -2477,7 +2477,7 @@ After you are done selecting folders you can press ctrl-d and it will save the l
 
 ###### surf
 
-<details><summary>Auto-load browser tabs in a streaming way (stdin) (surf)</summary>
+<details><summary>Auto-load browser tabs in a streaming way (stdin)</summary>
 
     $ library surf -h
     usage: library surf [--count COUNT] [--target-hosts TARGET_HOSTS] < stdin
@@ -2499,7 +2499,7 @@ After you are done selecting folders you can press ctrl-d and it will save the l
 
 ###### export-text
 
-<details><summary>Export HTML files from SQLite databases (export-text)</summary>
+<details><summary>Export HTML files from SQLite databases</summary>
 
     $ library export-text -h
     usage: library export-text DATABASE
@@ -2511,7 +2511,7 @@ After you are done selecting folders you can press ctrl-d and it will save the l
 
 ###### process-audio
 
-<details><summary>Shrink audio by converting to Opus format (process-audio)</summary>
+<details><summary>Shrink audio by converting to Opus format</summary>
 
     $ library process-audio -h
     usage: library process-audio PATH ... [--always-split] [--split-longer-than DURATION] [--min-split-segment SECONDS] [--dry-run]
