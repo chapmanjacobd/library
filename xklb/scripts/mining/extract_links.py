@@ -235,7 +235,7 @@ def print_or_download(args, a_ref):
             printing.pipe_print(a_ref.link)
 
 
-def links_extract() -> None:
+def extract_links() -> None:
     args = parse_args()
 
     if args.selenium:
@@ -254,4 +254,4 @@ def links_extract() -> None:
 
 
 if __name__ == "__main__":
-    links_extract()
+    extract_links()
