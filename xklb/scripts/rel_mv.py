@@ -4,7 +4,7 @@ from os.path import commonprefix
 from pathlib import Path
 
 from xklb import usage
-from xklb.utils import objects, processes
+from xklb.utils import objects, path_utils, processes
 from xklb.utils.log_utils import log
 
 
@@ -31,9 +31,7 @@ def _relmv(args, sources, dest):
         except ValueError:
             relpath = str(abspath.relative_to(Path(rel_prefix).parent))
         target_dir = (dest / relpath).parent
-
-        # remove duplicate path parts
-        target_dir = Path(*OrderedDict.fromkeys(target_dir.parts).keys())
+        target_dir = path_utils.dedupe_path_parts(target_dir)
 
         if args.test:
             log.warning("mv %s %s", shlex.quote(str(abspath)), shlex.quote(str(target_dir)))
