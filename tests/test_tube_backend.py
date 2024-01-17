@@ -20,7 +20,7 @@ def test_get_video_metadata_playlist():
     args = SimpleNamespace(verbose=0, ignore_errors=False)
     tube_backend.get_video_metadata(
         args,
-        "https://www.youtube.com/playlist?list=PLQoygnhlz2LhnqLUuQQ0Z67fwouadzGIf",
+        "https://www.youtube.com/playlist?list=PLVoczRgDnXDLWV1UJ_tO70VT_ON0tuEdm",
     )
 
 
