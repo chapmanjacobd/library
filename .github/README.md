@@ -95,7 +95,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.3.020)
+    xk media library subcommands (v2.3.021)
 
     Create database subcommands:
     ╭───────────────┬────────────────────────────────────────────────────╮
@@ -633,21 +633,19 @@ You can fine-tune what links get saved with --path/text/before/after-include/exc
 
 Defaults to stop fetching
 
-    After encountering ten known links:
-    library links-add --stop-known 10
-    library links-add --stop-link https://special.fish/specific_pacific
+    After encountering ten pages with no new links:
+    library links-add --stop-pages-no-new 10
 
     Some websites don't give an error when you try to access pages which don't exist.
-    To compensate for this the script will only continue fetching pages until there are both no new nor known links for one-hundred pages:
-    library links-add --stop-pages-no-match 100
+    To compensate for this the script will only continue fetching pages until there are both no new nor known links for four pages:
+    library links-add --stop-pages-no-match 4
 
 Backfill fixed number of pages
 
     You can disable automatic stopping by any of the following:
-    1. Set `--backfill-pages` to the desired number of pages for the first run
-    2. Set `--fixed-pages` to _always_ fetch the desired number of pages
-    2. Set `--stop-link` to an unlikely URL
-    3. Set `--stop-known` to an absurdly high number
+
+    - Set `--backfill-pages` to the desired number of pages for the first run
+    - Set `--fixed-pages` to _always_ fetch the desired number of pages
 
     If the website is supported by --auto-pager data is fetched twice when using page iteration.
     As such, page iteration (--max-pages, --fixed-pages, etc) is disabled when using `--auto-pager`.

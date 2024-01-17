@@ -1,5 +1,4 @@
 import argparse, shlex
-from collections import OrderedDict
 from os.path import commonprefix
 from pathlib import Path
 

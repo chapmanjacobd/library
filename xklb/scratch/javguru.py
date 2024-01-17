@@ -9,6 +9,7 @@ from xklb.utils import file_utils, path_utils, processes, web
 def jav_guru() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--chrome", action="store_true")
+    parser.add_argument("--small", action="store_true")
     parser.add_argument("--verbose", "-v", action="count", default=0)
 
     parser.add_argument("path", help="JAV.GURU URL")
@@ -92,7 +93,9 @@ def jav_guru() -> None:
                 "Referer: https://emturbovid.com/",
             )
 
-            video_streams = [s for s in remote_probe.video_streams if s["height"] <= 720]
+            video_streams = [s for s in remote_probe.video_streams]
+            if args.small:
+                video_streams = [s for s in video_streams if s["height"] <= 720]
             video_streams.sort(key=lambda s: s["height"], reverse=True)
             video_index = video_streams[0]["index"]
 
