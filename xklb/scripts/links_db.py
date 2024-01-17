@@ -17,9 +17,11 @@ def parse_args(**kwargs):
     parser.add_argument("--fixed-pages", type=int)
     parser.add_argument("--backfill-pages", "--backfill", type=int)
 
+    parser.add_argument("--stop-pages-no-match", type=int, default=4)
+    parser.add_argument("--stop-pages-no-new", type=int, default=10)
+    parser.add_argument("--stop-new", type=int)
+    parser.add_argument("--stop-known", type=int)
     parser.add_argument("--stop-link")
-    parser.add_argument("--stop-known", type=int, default=10)
-    parser.add_argument("--stop-pages-no-match", type=int, default=100)
 
     parser.add_argument("--page-key", default="page")
     parser.add_argument("--page-step", "--step", "-S", type=int, default=1)
@@ -215,13 +217,13 @@ def count_pages(args, page_limit):
 
 def extractor(args, playlist_path):
     known_media = set()
+    new_media = set()
     end_of_playlist = False
     page_limit = args.backfill_pages or args.fixed_pages or args.max_pages
-    is_auto_stop = not bool(args.backfill_pages or args.fixed_pages or args.stop_link)
 
-    new_media = set()
     page_count = 0
     page_count_since_match = 0
+    page_count_since_new = 0
     unique_get_inner_urls = iterables.return_unique(extract_links.get_inner_urls)
     for page_value in count_pages(args, page_limit):
         if end_of_playlist:
@@ -237,28 +239,44 @@ def extractor(args, playlist_path):
             page_path = set_page(playlist_path, args.page_key, page_value)
 
         log.info("Loading page %s", page_path)
-        page_media = set()
+        page_known = set()
+        page_new = set()
         for a_ref in unique_get_inner_urls(args, page_path):
             if a_ref is None:
                 end_of_playlist = True
                 break
 
-            page_media.add(a_ref.link)
-
-            if a_ref.link == args.stop_link or (is_auto_stop and len(known_media) > args.stop_known):
+            if a_ref.link == args.stop_link:
                 end_of_playlist = True
                 break
 
             if a_ref.link in new_media:
                 pass  # TODO: concat title
             elif db_media.exists(args, a_ref.link):
-                known_media.add(a_ref.link)
+                page_known.add(a_ref.link)
             else:
                 add_media(args, [a_ref])
-                new_media.add(a_ref.link)
-            printing.print_overwrite(f"Page {page_count} link scan: {len(new_media)} new [{len(known_media)} known]")
+                page_new.add(a_ref.link)
+            printing.print_overwrite(f"Page {page_count} link scan: {len(page_new)} new [{len(page_known)} known]")
 
-        if len(page_media) > 0:
+            if not (args.backfill_pages or args.fixed_pages):
+                if (args.stop_known and len(page_known) > args.stop_known) or (
+                    args.stop_new and args.stop_new >= len(page_new)
+                ):
+                    end_of_playlist = True
+                    break
+
+        new_media |= page_new
+        known_media |= page_known
+
+        if len(page_new) > 0:
+            page_count_since_new = 0
+        else:
+            page_count_since_new += 1
+        if page_count_since_new >= args.stop_pages_no_new:
+            end_of_playlist = True
+
+        if len(page_new) > 0 or len(page_known) > 0:
             page_count_since_match = 0
         else:
             page_count_since_match += 1
@@ -267,7 +285,7 @@ def extractor(args, playlist_path):
     print()
 
     print(
-        f"{page_count} pages scanned. Avg links per page: {len(new_media) // page_count} new [{len(known_media) // page_count} known]"
+        f"{len(new_media)} new [{len(known_media)} known] in {page_count} pages (avg {len(new_media) // page_count} new [{len(known_media) // page_count} known])"
     )
     return len(new_media)
 

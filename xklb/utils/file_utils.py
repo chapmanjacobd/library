@@ -1,4 +1,5 @@
 import errno, mimetypes, os, shlex, shutil, tempfile, time
+from collections import Counter
 from functools import wraps
 from io import StringIO
 from pathlib import Path
@@ -45,6 +46,10 @@ def rglob(base_dir: str, extensions: Optional[List[str]] = None) -> Tuple[Set[st
             printing.print_overwrite(f"[{base_dir}] {scan_stats(files, filtered_files, folders)}")
 
     print(f"\r[{base_dir}] {scan_stats(files, filtered_files, folders)}")
+
+    filtered_extensions = Counter(Path(s).suffix.lower() for s in filtered_files)
+    log.info("Filtered extensions: %s", filtered_extensions)
+
     return files, filtered_files, folders
 
 
