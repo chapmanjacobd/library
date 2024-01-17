@@ -7,11 +7,11 @@ import humanize
 from xklb.utils import consts
 
 
-def print_overwrite(text):
+def print_overwrite(*text):
     if os.name == "posix":
-        print("\r" + text, end="\033[K", flush=True)
+        print("\r" + text[0], *text[1:], end="\033[K", flush=True)
     elif platform.system() == "Windows":
-        print("\r" + text, end="", flush=True)
+        print("\r" + text[0], *text[1:], end="", flush=True)
     else:
         print(text)
 

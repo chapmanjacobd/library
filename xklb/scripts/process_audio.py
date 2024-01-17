@@ -41,7 +41,7 @@ def process_path(
     audio_stream = next((stream for stream in info["streams"] if stream["codec_type"] == "audio"), None)
     if not audio_stream:
         print("No audio stream found:", path)
-        return
+        return path
 
     channels = audio_stream["channels"]
     bitrate = int(audio_stream.get("bit_rate", None) or info["format"]["bit_rate"])
@@ -72,7 +72,8 @@ def process_path(
     ff_opts.extend([f"-ar {opus_rate}"])
 
     output_path = path.with_suffix(".mka")
-    if always_split or (split_longer_than and duration > split_longer_than):
+    is_split = always_split or (split_longer_than and duration > split_longer_than)
+    if is_split:
         splits = (
             subprocess.check_output(
                 [
@@ -116,7 +117,15 @@ def process_path(
         print(cmd)
     else:
         subprocess.check_call(cmd, shell=True)
-        path.unlink()  # Remove original
+        if is_split:
+            path.unlink()  # Remove original
+        else:
+            if output_path.stat().st_size > path.stat().st_size:
+                output_path.unlink()  # Remove transcode
+                return path
+            else:
+                path.unlink()  # Remove original
+    return output_path
 
 
 def process_audio():
