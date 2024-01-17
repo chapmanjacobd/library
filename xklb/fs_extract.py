@@ -9,7 +9,7 @@ from typing import Dict, List, Optional
 
 from xklb import db_media, db_playlists, usage
 from xklb.media import av, books
-from xklb.scripts import playlists, sample_hash
+from xklb.scripts import playlists, process_audio, sample_hash
 from xklb.utils import arg_utils, consts, db_utils, file_utils, iterables, nums, objects, path_utils
 from xklb.utils.consts import SC, DBType
 from xklb.utils.log_utils import log
@@ -84,6 +84,7 @@ def parse_args(action, usage) -> argparse.Namespace:
 
     parser.add_argument("--delete-unplayable", action="store_true")
     parser.add_argument("--hash", action="store_true")
+    parser.add_argument("--process", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--move")
 
     parser.add_argument("--check-corrupt", action="store_true")
@@ -191,6 +192,11 @@ def extract_metadata(mp_args, path) -> Optional[Dict[str, int]]:
     if getattr(mp_args, "hash", False):
         # TODO: it would be better if this was saved to and checked against an external global file
         media["hash"] = sample_hash.sample_hash_file(path)
+
+    if getattr(mp_args, "process", False):
+        if mp_args.profile == DBType.audio and Path(path).suffix not in [".opus", ".mka"]:
+            process_audio.process_path(path)
+            media["path"] = str(Path(path).with_suffix(".mka"))
 
     if getattr(mp_args, "move", False):
         dest_path = bytes(Path(mp_args.move) / Path(path).relative_to(mp_args.playlist_path))

@@ -46,7 +46,7 @@ def parse_cookies_from_browser(input_str):
         (?:\s*:\s*(?!:)(?P<profile>.+?))?
         (?:\s*::\s*(?P<container>.+))?
     """,
-        input_str or "",
+        input_str,
     )
     if mobj is None:
         raise ValueError(f"invalid cookies from browser arguments: {input_str}")
@@ -84,8 +84,9 @@ def requests_session(args=argparse.Namespace()):
         if cookie_file or cookies_from_browser:
             from yt_dlp.cookies import load_cookies
 
-            browser_specification = parse_cookies_from_browser(args.cookies_from_browser)
-            cookie_jar = load_cookies(cookie_file, browser_specification, ydl=None)
+            if cookies_from_browser:
+                cookies_from_browser = parse_cookies_from_browser(cookies_from_browser)
+            cookie_jar = load_cookies(cookie_file, cookies_from_browser, ydl=None)
             session.cookies = cookie_jar  # type: ignore
 
     return session
