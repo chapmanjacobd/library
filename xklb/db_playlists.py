@@ -174,9 +174,12 @@ def decrease_update_delay(args, playlist_path: str) -> None:
                 """,
                 [playlist_path],
             )
-    except sqlite3.OperationalError:
-        with args.db.conn:
-            args.db.conn.execute("ALTER TABLE playlists ADD COLUMN hours_update_delay INTEGER DEFAULT 70")
+    except sqlite3.OperationalError as e:
+        try:
+            with args.db.conn:
+                args.db.conn.execute("ALTER TABLE playlists ADD COLUMN hours_update_delay INTEGER DEFAULT 70")
+        except Exception:
+            raise e
 
 
 def increase_update_delay(args, playlist_path: str) -> None:
@@ -199,9 +202,12 @@ def increase_update_delay(args, playlist_path: str) -> None:
                 """,
                 [playlist_path],
             )
-    except sqlite3.OperationalError:
-        with args.db.conn:
-            args.db.conn.execute("ALTER TABLE playlists ADD COLUMN hours_update_delay INTEGER DEFAULT 70")
+    except sqlite3.OperationalError as e:
+        try:
+            with args.db.conn:
+                args.db.conn.execute("ALTER TABLE playlists ADD COLUMN hours_update_delay INTEGER DEFAULT 70")
+        except Exception:
+            raise e
 
 
 def get_all(args, cols="path, extractor_config", sql_filters=None, order_by="random()") -> List[dict]:
