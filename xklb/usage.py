@@ -122,7 +122,7 @@ fsadd = """library fsadd [(--video) | --audio | --image |  --text | --filesystem
 
     If you run out of RAM, for example scanning large VR videos, you can lower the number of threads via --io-multiplier
 
-        library fsadd vr.db --delete-unplayable --check-corrupt --full-scan-if-corrupt 15% --delete-corrupt 20% ./vr/ --io-multiplier 0.2
+        library fsadd vr.db --delete-unplayable --check-corrupt --full-scan-if-corrupt 15%% --delete-corrupt 20%% ./vr/ --io-multiplier 0.2
 
     Move files on import
 

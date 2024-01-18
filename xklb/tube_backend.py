@@ -374,10 +374,14 @@ def download(args, m) -> None:
         playlist_opts=m.get("extractor_config", "{}"),
     )
 
+    match_filter_user_config = ydl_opts.get("match_filter")
     match_filters = ["live_status=?not_live"]
+    if match_filter_user_config is not None:
+        match_filters.append(match_filter_user_config)
 
     if args.small:
-        match_filters.append("duration >? 59 & duration <? 14399")
+        if match_filter_user_config is None:
+            match_filters.append("duration >? 59 & duration <? 14399")
         ydl_opts[
             "format"
         ] = "bestvideo[height<=576][filesize<2G]+bestaudio/best[height<=576][filesize<2G]/bestvideo[height<=576]+bestaudio/best[height<=576]/best"
@@ -389,10 +393,6 @@ def download(args, m) -> None:
         if args.ext is None:
             args.ext = "opus"
         ydl_opts["postprocessors"].append({"key": "FFmpegExtractAudio", "preferredcodec": args.ext})
-
-    match_filter_user_config = ydl_opts.get("match_filter")
-    if match_filter_user_config is not None:
-        match_filters.append(match_filter_user_config)
 
     def blocklist_check(info, *pargs, incomplete):
         if getattr(args, "blocklist_rules", False):
