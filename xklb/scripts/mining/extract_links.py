@@ -189,7 +189,7 @@ def parse_inner_urls(args, url, markup):
                 a_ref.link_text = link_text
                 yield a_ref
 
-        if args.verbose > consts.LOG_DEBUG:
+        if args.verbose > consts.LOG_DEBUG_SQL:
             breakpoint()
 
 

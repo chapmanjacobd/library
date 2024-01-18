@@ -1,6 +1,5 @@
 import argparse
 import datetime as dt
-import json
 import sys
 from functools import partial
 from itertools import takewhile
@@ -365,9 +364,6 @@ def reddit_update(args=None) -> None:
     )
 
     for playlist in reddit_playlists:
-        extractor_config = json.loads(playlist["extractor_config"])
-        args_env = args if not extractor_config else argparse.Namespace(**{**extractor_config, **args.__dict__})
-
         extractor_key = playlist["extractor_key"]
         path = playlist["path"]
         name = playlist["extractor_playlist_id"]
@@ -377,7 +373,7 @@ def reddit_update(args=None) -> None:
                 subreddit_new(args, {"path": path, "name": name})
                 subreddit_top(args, {"path": path, "name": name})
             elif extractor_key == "reddit_praw_redditor":
-                redditor_new(args_env, {"path": path, "name": name})
+                redditor_new(args, {"path": path, "name": name})
 
             db_playlists.decrease_update_delay(args, playlist["path"])
         except skip_errors as e:

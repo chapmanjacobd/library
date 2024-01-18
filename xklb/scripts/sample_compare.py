@@ -35,7 +35,7 @@ def sample_cmp(*paths, threads=1, gap=0.1, chunk_size=None, ignore_holes=False, 
         sorted_paths = sorted(path_stats.items(), key=lambda x: x[1].st_size)
         paths_str = "\n".join([f"{st.st_size} bytes\t{path}" for path, st in sorted_paths])
         log.error("File apparent-sizes do not match:\n%s", paths_str)
-        raise SystemExit(4)
+        return False
 
     if not ignore_holes:
         sizes = [stat_res.st_blocks for stat_res in path_stats.values()]
@@ -43,7 +43,7 @@ def sample_cmp(*paths, threads=1, gap=0.1, chunk_size=None, ignore_holes=False, 
             sorted_paths = sorted(path_stats.items(), key=lambda x: x[1].st_blocks)
             paths_str = "\n".join([f"{st.st_blocks} blocks\t{path}" for path, st in sorted_paths])
             log.error("File holes do not match:\n%s", paths_str)
-            raise SystemExit(4)
+            return False
 
     with ThreadPoolExecutor(max_workers=4) as pool:
         futures = {

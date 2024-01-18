@@ -15,7 +15,7 @@ from xklb.utils.consts import SC, DBType
 from xklb.utils.log_utils import log
 
 
-def parse_args(action, usage) -> argparse.Namespace:
+def parse_args(action, usage):
     parser = argparse.ArgumentParser(prog="library " + action, usage=usage)
 
     profile = parser.add_mutually_exclusive_group()
@@ -140,7 +140,7 @@ def parse_args(action, usage) -> argparse.Namespace:
         log.error("ffmpeg is not installed. Install it with your package manager.")
         raise SystemExit(3)
 
-    return args
+    return args, parser
 
 
 def extract_metadata(mp_args, path) -> Optional[Dict[str, int]]:
@@ -432,7 +432,7 @@ def fs_add(args=None) -> None:
     if args:
         sys.argv = ["lb", *args]
 
-    args = parse_args(SC.fsadd, usage.fsadd)
+    args, _parser = parse_args(SC.fsadd, usage.fsadd)
 
     extractor(args, args.paths)
 
@@ -441,7 +441,7 @@ def fs_update(args=None) -> None:
     if args:
         sys.argv = ["lb", *args]
 
-    args = parse_args(SC.fsupdate, usage.fsupdate)
+    args, parser = parse_args(SC.fsupdate, usage.fsupdate)
 
     fs_playlists = list(
         args.db.query(
@@ -458,8 +458,6 @@ def fs_update(args=None) -> None:
 
     for playlist in fs_playlists:
         extractor_config = json.loads(playlist.get("extractor_config") or "{}")
-        args_env = argparse.Namespace(
-            **{**extractor_config, **args.__dict__, "profile": playlist["profile"]},
-        )
+        args_env = arg_utils.override_config(parser, extractor_config, args)
 
         extractor(args_env, [playlist["path"]])

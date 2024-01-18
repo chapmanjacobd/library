@@ -194,9 +194,16 @@ def split_folder_glob(s):
 
 def get_defaults(parse_args):
     original_argv = sys.argv
-    sys.argv = []
+    sys.argv = sys.argv[0:1]
     try:
         args = parse_args()
         return args
     finally:
         sys.argv = original_argv
+
+
+def override_config(parser, extractor_config, args):
+    default_args = {key: parser.get_default(key) for key in vars(args)}
+    overridden_args = {k: v for k, v in args.__dict__.items() if default_args.get(k) != v}
+    args_env = argparse.Namespace(**{**default_args, **extractor_config, **overridden_args})
+    return args_env
