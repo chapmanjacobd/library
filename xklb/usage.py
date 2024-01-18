@@ -1534,7 +1534,7 @@ links_update = """library links-update DATABASE
         library links-update links.db
 """
 
-extract_text = """library extract-text PATH ... [--skip-links]
+extract_text = r"""library extract-text PATH ... [--skip-links]
 
     Sorting suggestions
 
