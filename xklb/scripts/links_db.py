@@ -4,7 +4,7 @@ from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 from xklb import db_media, db_playlists, usage
 from xklb.scripts.mining import extract_links
-from xklb.utils import arg_utils, db_utils, iterables, objects, printing, web
+from xklb.utils import arg_utils, consts, db_utils, iterables, objects, printing, web
 from xklb.utils.log_utils import log
 
 
@@ -110,6 +110,8 @@ def parse_args(**kwargs):
         metavar="KEY=VALUE",
     )
 
+    parser.add_argument("--force", action="store_true")
+
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
     parser.add_argument("--verbose", "-v", action="count", default=0)
 
@@ -143,11 +145,14 @@ def parse_args(**kwargs):
     args.db = db_utils.connect(args)
 
     log.info(objects.dict_filter_bool(args.__dict__))
-    return args
+    return args, parser
 
 
 def add_playlist(args, path):
     info = {
+        "hostname": urlparse(path).hostname,
+        "category": getattr(args, "category", None) or "Uncategorized",
+        "time_created": consts.APPLICATION_START,
         "extractor_config": {
             k: v for k, v in args.__dict__.items() if k not in ["db", "database", "verbose", "paths", "backfill_pages"]
         },
@@ -156,14 +161,22 @@ def add_playlist(args, path):
     args.playlist_id = db_playlists.add(args, str(path), info)
 
 
+def consolidate_media(args, path: str) -> dict:
+    return {
+        "path": path,
+        "time_created": consts.APPLICATION_START,
+        "time_deleted": 0,
+    }
+
+
 def add_media(args, variadic):
     for a_ref_or_path in variadic:
         if isinstance(a_ref_or_path, str):
             path = a_ref_or_path
-            d = objects.dict_filter_bool(db_media.consolidate_url(args, path))
+            d = objects.dict_filter_bool(consolidate_media(args, path))
         else:
             a_ref = a_ref_or_path
-            d = objects.dict_filter_bool({**db_media.consolidate_url(args, a_ref.link), "title": a_ref.text.strip()})
+            d = objects.dict_filter_bool({**consolidate_media(args, a_ref.link), "title": a_ref.text.strip()})
         db_media.add(args, d)
 
 
@@ -291,7 +304,7 @@ def extractor(args, playlist_path):
 
 
 def links_add() -> None:
-    args = parse_args(prog="library links-add", usage=usage.links_add)
+    args, _parser = parse_args(prog="library links-add", usage=usage.links_add)
 
     if args.no_extract:
         add_media(args, list(arg_utils.gen_urls(args)))
@@ -313,30 +326,29 @@ def links_add() -> None:
         if args.selenium:
             web.quit_selenium(args)
 
+    if not args.db["media"].detect_fts():
+        db_utils.optimize(args)
+
 
 def links_update() -> None:
-    args = parse_args(prog="library links-update", usage=usage.links_update)
+    args, parser = parse_args(prog="library links-update", usage=usage.links_update)
 
     link_playlists = db_playlists.get_all(
         args,
-        order_by="""ROW_NUMBER() OVER ( PARTITION BY
-            hostname
-            , category
-        ) -- prefer to spread hostname, category over time
-        length(path)-length(REPLACE(path, '/', '')) desc
-        , path
+        order_by="""length(path)-length(REPLACE(path, '/', '')) desc
+        , random()
         """,
     )
 
-    try:
+    selenium_needed = any([json.loads(d.get("extractor_config") or "{}").get("selenium") for d in link_playlists])
+    if selenium_needed:
         web.load_selenium(args)
-    except Exception:
-        pass
 
     try:
+        playlist_count = 0
         for playlist in link_playlists:
             extractor_config = json.loads(playlist.get("extractor_config") or "{}")
-            args_env = argparse.Namespace(**{**extractor_config, **args.__dict__})
+            args_env = arg_utils.override_config(parser, extractor_config, args)
 
             new_media = extractor(args_env, playlist["path"])
 
@@ -345,11 +357,13 @@ def links_update() -> None:
             else:
                 db_playlists.increase_update_delay(args, playlist["path"])
 
+            if playlist_count > 3:
+                time.sleep(random.uniform(0.05, 2))
+            playlist_count += 1
+
     finally:
-        try:
+        if selenium_needed:
             web.quit_selenium(args)
-        except Exception:
-            pass
 
 
 if __name__ == "__main__":

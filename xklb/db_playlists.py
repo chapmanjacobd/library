@@ -223,7 +223,7 @@ def get_all(args, cols="path, extractor_config", sql_filters=None, order_by="ran
         known_playlists = list(
             args.db.query(f"select {cols} from playlists where 1=1 {' '.join(sql_filters)} order by {order_by}"),
         )
-    except sqlite3.OperationalError:
+    except TypeError:
         known_playlists = []
     return known_playlists
 
