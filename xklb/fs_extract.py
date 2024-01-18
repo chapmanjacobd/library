@@ -87,7 +87,7 @@ def parse_args(action, usage):
     parser.add_argument("--process", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--move")
 
-    parser.add_argument("--check-corrupt", action="store_true")
+    parser.add_argument("--check-corrupt", "--check-corruption", action="store_true")
     parser.add_argument(
         "--chunk-size",
         type=float,
@@ -101,10 +101,12 @@ def parse_args(action, usage):
     )
     parser.add_argument(
         "--delete-corrupt",
+        "--delete-corruption",
         help="delete media that is more corrupt or equal to this threshold. Values greater than 1 are treated as number of seconds",
     )
     parser.add_argument(
         "--full-scan-if-corrupt",
+        "--full-scan-if-corruption",
         help="full scan as second pass if initial scan result more corruption or equal to this threshold. Values greater than 1 are treated as number of seconds",
     )
     parser.add_argument("--full-scan", action="store_true")
@@ -197,7 +199,7 @@ def extract_metadata(mp_args, path) -> Optional[Dict[str, int]]:
         if mp_args.profile == DBType.audio and Path(path).suffix not in [".opus", ".mka"]:
             path = media["path"] = process_audio.process_path(path)
 
-    if getattr(mp_args, "move", False):
+    if getattr(mp_args, "move", False) and not file_utils.is_file_open(path):
         dest_path = bytes(Path(mp_args.move) / Path(path).relative_to(mp_args.playlist_path))
         dest_path = path_utils.clean_path(dest_path)
         file_utils.rename_move_file(path, dest_path)

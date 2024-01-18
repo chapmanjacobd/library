@@ -1,4 +1,5 @@
 import argparse
+from urllib.parse import urljoin
 
 from xklb import usage
 from xklb.utils import arg_utils, consts, devices, iterables, printing, strings, web
@@ -114,8 +115,7 @@ def construct_absolute_url(url, href):
         return href
 
     if not up.netloc:
-        up = urlparse(url)
-        href = up.scheme + "://" + up.netloc + href
+        href = urljoin(url, href)
     return href
 
 
