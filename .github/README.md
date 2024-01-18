@@ -1844,9 +1844,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Sorting suggestions
 
-        lb extract-text --skip-links --local-file (cb -t text/html | psub) | lb cs --groups | jq -r '.[] | .grouped_paths | "
-" + join("
-")'
+        lb extract-text --skip-links --local-file (cb -t text/html | psub) | lb cs --groups | jq -r '.[] | .grouped_paths | "\n" + join("\n")'
 
 
 </details>
