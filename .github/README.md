@@ -625,95 +625,95 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     $ library links-add -h
     usage: library links-add DATABASE PATH ... [--case-sensitive] [--cookies-from-browser BROWSER[+KEYRING][:PROFILE][::CONTAINER]] [--selenium] [--manual] [--scroll] [--auto-pager] [--poke] [--chrome] [--local-html] [--file FILE]
 
-Database version of extract-links
+    Database version of extract-links
 
-You can fine-tune what links get saved with --path/text/before/after-include/exclude.
+    You can fine-tune what links get saved with --path/text/before/after-include/exclude.
 
-    library links-add --path-include /video/
+        library links-add --path-include /video/
 
-Defaults to stop fetching
+    Defaults to stop fetching
 
-    After encountering ten pages with no new links:
-    library links-add --stop-pages-no-new 10
+        After encountering ten pages with no new links:
+        library links-add --stop-pages-no-new 10
 
-    Some websites don't give an error when you try to access pages which don't exist.
-    To compensate for this the script will only continue fetching pages until there are both no new nor known links for four pages:
-    library links-add --stop-pages-no-match 4
+        Some websites don't give an error when you try to access pages which don't exist.
+        To compensate for this the script will only continue fetching pages until there are both no new nor known links for four pages:
+        library links-add --stop-pages-no-match 4
 
-Backfill fixed number of pages
+    Backfill fixed number of pages
 
-    You can disable automatic stopping by any of the following:
+        You can disable automatic stopping by any of the following:
 
-    - Set `--backfill-pages` to the desired number of pages for the first run
-    - Set `--fixed-pages` to _always_ fetch the desired number of pages
+        - Set `--backfill-pages` to the desired number of pages for the first run
+        - Set `--fixed-pages` to _always_ fetch the desired number of pages
 
-    If the website is supported by --auto-pager data is fetched twice when using page iteration.
-    As such, page iteration (--max-pages, --fixed-pages, etc) is disabled when using `--auto-pager`.
+        If the website is supported by --auto-pager data is fetched twice when using page iteration.
+        As such, page iteration (--max-pages, --fixed-pages, etc) is disabled when using `--auto-pager`.
 
-    You can set unset --fixed-pages for all the playlists in your database by running this command:
-    sqlite my.db "UPDATE playlists SET extractor_config = json_replace(extractor_config, '$.fixed_pages', null)"
+        You can set unset --fixed-pages for all the playlists in your database by running this command:
+        sqlite my.db "UPDATE playlists SET extractor_config = json_replace(extractor_config, '$.fixed_pages', null)"
 
-To use "&p=1" instead of "&page=1"
+    To use "&p=1" instead of "&page=1"
 
-    library links-add --page-key p
+        library links-add --page-key p
 
-    By default the script will attempt to modify each given URL with "&page=1".
+        By default the script will attempt to modify each given URL with "&page=1".
 
-Single page
+    Single page
 
-    If `--fixed-pages` is 1 and --start-page is not set then the URL will not be modified.
+        If `--fixed-pages` is 1 and --start-page is not set then the URL will not be modified.
 
-    library links-add --fixed-pages=1
-    Loading page https://site/path
+        library links-add --fixed-pages=1
+        Loading page https://site/path
 
-    library links-add --fixed-pages=1 --page-start 99
-    Loading page https://site/path?page=99
+        library links-add --fixed-pages=1 --page-start 99
+        Loading page https://site/path?page=99
 
-Reverse chronological paging
+    Reverse chronological paging
 
-    library links-add --max-pages 10
-    library links-add --fixed-pages (overrides --max-pages and --stop-known but you can still stop early via --stop-link ie. 429 page)
+        library links-add --max-pages 10
+        library links-add --fixed-pages (overrides --max-pages and --stop-known but you can still stop early via --stop-link ie. 429 page)
 
-Chronological paging
+    Chronological paging
 
-    library links-add --page-start 100 --page-step 1
+        library links-add --page-start 100 --page-step 1
 
-    library links-add --page-start 100 --page-step=-1 --fixed-pages=5  # go backwards
+        library links-add --page-start 100 --page-step=-1 --fixed-pages=5  # go backwards
 
-    # TODO: store previous page id (max of sliding window)
+        # TODO: store previous page id (max of sliding window)
 
-Jump pages
+    Jump pages
 
-    Some pages don't count page numbers but instead count items like messages or forum posts. You can iterate through like this:
+        Some pages don't count page numbers but instead count items like messages or forum posts. You can iterate through like this:
 
-    library links-add --page-key start --page-start 0 --page-step 50
+        library links-add --page-key start --page-start 0 --page-step 50
 
-    which translates to
-    &start=0    first page
-    &start=50   second page
-    &start=100  third page
+        which translates to
+        &start=0    first page
+        &start=50   second page
+        &start=100  third page
 
-Page folders
+    Page folders
 
-    Some websites use paths instead of query parameters. In this case make sure the URL provided includes that information with a matching --page-key
+        Some websites use paths instead of query parameters. In this case make sure the URL provided includes that information with a matching --page-key
 
-    library links-add --page-key page https://website/page/1/
-    library links-add --page-key article https://website/article/1/
+        library links-add --page-key page https://website/page/1/
+        library links-add --page-key article https://website/article/1/
 
-Import media paths directly
+    Import media paths directly
 
-    library links-add --no-extract links.db
+        library links-add --no-extract links.db
 
-Examples
+    Examples
 
-    library links-add links.db https://video/site/ --path-include /video/
+        library links-add links.db https://video/site/ --path-include /video/
 
-    library links-add links.db https://loginsite/ --path-include /article/ --cookies-from-browser firefox
-    library links-add links.db https://loginsite/ --path-include /article/ --cookies-from-browser chrome
+        library links-add links.db https://loginsite/ --path-include /article/ --cookies-from-browser firefox
+        library links-add links.db https://loginsite/ --path-include /article/ --cookies-from-browser chrome
 
-    library links-add --path-include viewtopic.php --cookies-from-browser firefox \
-      --page-key start --page-start 0 --page-step 50 --fixed-pages 14 --stop-pages-no-match 1 \
-      plab.db https://plab/forum/tracker.php?o=(string replace ' ' \n -- 1 4 7 10 15)&s=2&tm=-1&f=(string replace ' ' \n -- 1670 1768 60 1671 1644 1672 1111 508 555 1112 1718 1143 1717 1851 1713 1712 1775 1674 902 1675 36 1830 1803 1831 1741 1676 1677 1780 1110 1124 1784 1769 1793 1797 1804 1819 1825 1836 1842 1846 1857 1861 1867 1451 1788 1789 1792 1798 1805 1820 1826 1837 1843 1847 1856 1862 1868 284 1853 1823 1800 1801 1719 997 1818 1849 1711 1791 1762)
+        library links-add --path-include viewtopic.php --cookies-from-browser firefox \
+        --page-key start --page-start 0 --page-step 50 --fixed-pages 14 --stop-pages-no-match 1 \
+        plab.db https://plab/forum/tracker.php?o=(string replace ' ' \n -- 1 4 7 10 15)&s=2&tm=-1&f=(string replace ' ' \n -- 1670 1768 60 1671 1644 1672 1111 508 555 1112 1718 1143 1717 1851 1713 1712 1775 1674 902 1675 36 1830 1803 1831 1741 1676 1677 1780 1110 1124 1784 1769 1793 1797 1804 1819 1825 1836 1842 1846 1857 1861 1867 1451 1788 1789 1792 1798 1805 1820 1826 1837 1843 1847 1856 1862 1868 284 1853 1823 1800 1801 1719 997 1818 1849 1711 1791 1762)
 
 
 </details>
@@ -1842,9 +1842,9 @@ Examples
     $ library extract-text -h
     usage: library extract-text PATH ... [--skip-links]
 
-Sorting suggestions
+    Sorting suggestions
 
-    lb extract-text --skip-links --local-file (cb -t text/html | psub) | lb cs --groups | jq -r '.[] | .grouped_paths | "
+        lb extract-text --skip-links --local-file (cb -t text/html | psub) | lb cs --groups | jq -r '.[] | .grouped_paths | "
 " + join("
 ")'
 
@@ -2035,7 +2035,7 @@ Sorting suggestions
     $ library sample-compare -h
     usage: library sample-hash [--threads 10] [--chunk-size BYTES] [--gap BYTES OR 0.0-1.0*FILESIZE] PATH ...
 
-Convenience subcommand to compare multiple files using sample-hash
+    Convenience subcommand to compare multiple files using sample-hash
 
 
 </details>
@@ -2089,64 +2089,64 @@ Convenience subcommand to compare multiple files using sample-hash
     $ library mv-list -h
     usage: library mv-list [--limit LIMIT] [--lower LOWER] [--upper UPPER] MOUNT_POINT DATABASE
 
-Free up space on a specific disk. Find candidates for moving data to a different mount point
+    Free up space on a specific disk. Find candidates for moving data to a different mount point
 
 
-The program takes a mount point and a xklb database file. If you don't have a database file you can create one like this:
+    The program takes a mount point and a xklb database file. If you don't have a database file you can create one like this:
 
-    library fsadd --filesystem d.db ~/d/
+        library fsadd --filesystem d.db ~/d/
 
-But this should definitely also work with xklb audio and video databases:
+    But this should definitely also work with xklb audio and video databases:
 
-    library mv-list /mnt/d/ video.db
+        library mv-list /mnt/d/ video.db
 
-The program will print a table with a sorted list of folders which are good candidates for moving.
-Candidates are determined by how many files are in the folder (so you don't spend hours waiting for folders with millions of tiny files to copy over).
-The default is 4 to 4000--but it can be adjusted via the --lower and --upper flags.
+    The program will print a table with a sorted list of folders which are good candidates for moving.
+    Candidates are determined by how many files are in the folder (so you don't spend hours waiting for folders with millions of tiny files to copy over).
+    The default is 4 to 4000--but it can be adjusted via the --lower and --upper flags.
 
-    ...
-    ├──────────┼─────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-    │ 4.0 GB   │       7 │ /mnt/d/71_Mealtime_Videos/unsorted/Miguel_4K/                                                                 │
-    ├──────────┼─────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-    │ 5.7 GB   │      10 │ /mnt/d/71_Mealtime_Videos/unsorted/Bollywood_Premium/                                                         │
-    ├──────────┼─────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-    │ 2.3 GB   │       4 │ /mnt/d/71_Mealtime_Videos/chief_wiggum/                                                                       │
-    ╘══════════╧═════════╧═══════════════════════════════════════════════════════════════════════════════════════════════════════════════╛
-    6702 other folders not shown
+        ...
+        ├──────────┼─────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+        │ 4.0 GB   │       7 │ /mnt/d/71_Mealtime_Videos/unsorted/Miguel_4K/                                                                 │
+        ├──────────┼─────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+        │ 5.7 GB   │      10 │ /mnt/d/71_Mealtime_Videos/unsorted/Bollywood_Premium/                                                         │
+        ├──────────┼─────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+        │ 2.3 GB   │       4 │ /mnt/d/71_Mealtime_Videos/chief_wiggum/                                                                       │
+        ╘══════════╧═════════╧═══════════════════════════════════════════════════════════════════════════════════════════════════════════════╛
+        6702 other folders not shown
 
-    ██╗███╗░░██╗░██████╗████████╗██████╗░██╗░░░██╗░█████╗░████████╗██╗░█████╗░███╗░░██╗░██████╗
-    ██║████╗░██║██╔════╝╚══██╔══╝██╔══██╗██║░░░██║██╔══██╗╚══██╔══╝██║██╔══██╗████╗░██║██╔════╝
-    ██║██╔██╗██║╚█████╗░░░░██║░░░██████╔╝██║░░░██║██║░░╚═╝░░░██║░░░██║██║░░██║██╔██╗██║╚█████╗░
-    ██║██║╚████║░╚═══██╗░░░██║░░░██╔══██╗██║░░░██║██║░░██╗░░░██║░░░██║██║░░██║██║╚████║░╚═══██╗
-    ██║██║░╚███║██████╔╝░░░██║░░░██║░░██║╚██████╔╝╚█████╔╝░░░██║░░░██║╚█████╔╝██║░╚███║██████╔╝
-    ╚═╝╚═╝░░╚══╝╚═════╝░░░░╚═╝░░░╚═╝░░╚═╝░╚═════╝░░╚════╝░░░░╚═╝░░░╚═╝░╚════╝░╚═╝░░╚══╝╚═════╝░
+        ██╗███╗░░██╗░██████╗████████╗██████╗░██╗░░░██╗░█████╗░████████╗██╗░█████╗░███╗░░██╗░██████╗
+        ██║████╗░██║██╔════╝╚══██╔══╝██╔══██╗██║░░░██║██╔══██╗╚══██╔══╝██║██╔══██╗████╗░██║██╔════╝
+        ██║██╔██╗██║╚█████╗░░░░██║░░░██████╔╝██║░░░██║██║░░╚═╝░░░██║░░░██║██║░░██║██╔██╗██║╚█████╗░
+        ██║██║╚████║░╚═══██╗░░░██║░░░██╔══██╗██║░░░██║██║░░██╗░░░██║░░░██║██║░░██║██║╚████║░╚═══██╗
+        ██║██║░╚███║██████╔╝░░░██║░░░██║░░██║╚██████╔╝╚█████╔╝░░░██║░░░██║╚█████╔╝██║░╚███║██████╔╝
+        ╚═╝╚═╝░░╚══╝╚═════╝░░░░╚═╝░░░╚═╝░░╚═╝░╚═════╝░░╚════╝░░░░╚═╝░░░╚═╝░╚════╝░╚═╝░░╚══╝╚═════╝░
 
-    Type "done" when finished
-    Type "more" to see more files
-    Paste a folder (and press enter) to toggle selection
-    Type "*" to select all files in the most recently printed table
+        Type "done" when finished
+        Type "more" to see more files
+        Paste a folder (and press enter) to toggle selection
+        Type "*" to select all files in the most recently printed table
 
-Then it will give you a prompt:
+    Then it will give you a prompt:
 
-    Paste a path:
+        Paste a path:
 
-Wherein you can copy and paste paths you want to move from the table and the program will keep track for you.
+    Wherein you can copy and paste paths you want to move from the table and the program will keep track for you.
 
-    Paste a path: /mnt/d/75_MovieQueue/720p/s11/
-    26 selected paths: 162.1 GB ; future free space: 486.9 GB
+        Paste a path: /mnt/d/75_MovieQueue/720p/s11/
+        26 selected paths: 162.1 GB ; future free space: 486.9 GB
 
-You can also press the up arrow or paste it again to remove it from the list:
+    You can also press the up arrow or paste it again to remove it from the list:
 
-    Paste a path: /mnt/d/75_MovieQueue/720p/s11/
-    25 selected paths: 159.9 GB ; future free space: 484.7 GB
+        Paste a path: /mnt/d/75_MovieQueue/720p/s11/
+        25 selected paths: 159.9 GB ; future free space: 484.7 GB
 
-After you are done selecting folders you can press ctrl-d and it will save the list to a tmp file:
+    After you are done selecting folders you can press ctrl-d and it will save the list to a tmp file:
 
-    Paste a path: done
+        Paste a path: done
 
-        Folder list saved to /tmp/tmp7x_75l8. You may want to use the following command to move files to an EMPTY folder target:
+            Folder list saved to /tmp/tmp7x_75l8. You may want to use the following command to move files to an EMPTY folder target:
 
-            rsync -a --info=progress2 --no-inc-recursive --remove-source-files --files-from=/tmp/tmp7x_75l8 -r --relative -vv --dry-run / jim:/free/real/estate/
+                rsync -a --info=progress2 --no-inc-recursive --remove-source-files --files-from=/tmp/tmp7x_75l8 -r --relative -vv --dry-run / jim:/free/real/estate/
 
 
 </details>
