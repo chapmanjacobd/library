@@ -48,8 +48,7 @@ def parse_args() -> argparse.Namespace:
         help=f"One of: {', '.join(consts.time_facets)} (default: %(default)s)",
     )
     parser.add_argument("database")
-
-    args = parser.parse_args()
+    args = parser.parse_intermixed_args()
 
     args.facet = strings.partial_startswith(args.facet, consts.time_facets)
     args.frequency = strings.partial_startswith(args.frequency, consts.frequency)

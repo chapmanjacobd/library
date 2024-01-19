@@ -9,13 +9,14 @@ from xklb.utils.log_utils import log
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library christen", usage=usage.christen)
-    parser.add_argument("paths", nargs="*")
     parser.add_argument("--dot-space", action="store_true")
     parser.add_argument("--case-insensitive", action="store_true")
     parser.add_argument("--lowercase-folders", action="store_true")
     parser.add_argument("--overwrite", "-f", action="store_true")
     parser.add_argument("--run", "-r", action="store_true")
     parser.add_argument("--verbose", "-v", action="count", default=0)
+
+    parser.add_argument("paths", nargs="*")
     args = parser.parse_args()
 
     log.info(objects.dict_filter_bool(args.__dict__))

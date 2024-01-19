@@ -11,7 +11,7 @@ from xklb.utils.log_utils import log
 def parse_args(**kwargs):
     parser = argparse.ArgumentParser(**kwargs)
     parser.add_argument("--category", "-c", help=argparse.SUPPRESS)
-    parser.add_argument("--no-extract", action="store_true")
+    parser.add_argument("--no-extract", "--skip-extract", action="store_true")
 
     parser.add_argument("--max-pages", type=int)
     parser.add_argument("--fixed-pages", type=int)
@@ -23,6 +23,7 @@ def parse_args(**kwargs):
     parser.add_argument("--stop-known", type=int)
     parser.add_argument("--stop-link")
 
+    parser.add_argument("--page-replace")
     parser.add_argument("--page-key", default="page")
     parser.add_argument("--page-step", "--step", "-S", type=int, default=1)
     parser.add_argument("--page-start", "--start-page", "--start", type=int)
@@ -121,7 +122,7 @@ def parse_args(**kwargs):
     parser.add_argument("database", help=argparse.SUPPRESS)
     if "add" in kwargs["prog"]:
         parser.add_argument("paths", nargs="*", action=arg_utils.ArgparseArgsOrStdin, help=argparse.SUPPRESS)
-    args = parser.parse_args()
+    args = parser.parse_intermixed_args()
 
     if args.auto_pager:
         args.fixed_pages = 1
@@ -165,6 +166,7 @@ def consolidate_media(args, path: str) -> dict:
     return {
         "path": path,
         "time_created": consts.APPLICATION_START,
+        "time_modified": 0,
         "time_deleted": 0,
     }
 
@@ -248,6 +250,8 @@ def extractor(args, playlist_path):
 
         if page_limit == 1 and args.page_start is None:
             page_path = playlist_path
+        elif args.page_replace:
+            page_path = playlist_path.replace(args.page_replace, str(page_value))
         else:
             page_path = set_page(playlist_path, args.page_key, page_value)
 
@@ -307,7 +311,15 @@ def links_add() -> None:
     args, _parser = parse_args(prog="library links-add", usage=usage.links_add)
 
     if args.no_extract:
-        add_media(args, list(arg_utils.gen_urls(args)))
+        media_new = set()
+        media_known = set()
+        for p in arg_utils.gen_urls(args):
+            if db_media.exists(args, p):
+                media_known.add(p)
+            else:
+                add_media(args, [p])
+                media_new.add(p)
+            printing.print_overwrite(f"Link import: {len(media_new)} new [{len(media_known)} known]")
         sys.exit(0)
 
     if args.selenium:

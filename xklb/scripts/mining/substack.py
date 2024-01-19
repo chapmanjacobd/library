@@ -16,7 +16,7 @@ def parse_args() -> argparse.Namespace:
 
     parser.add_argument("database")
     parser.add_argument("paths", nargs="+", help="Substack path to extract article for")
-    args = parser.parse_args()
+    args = parser.parse_intermixed_args()
 
     Path(args.database).touch()
     args.db = db_utils.connect(args)

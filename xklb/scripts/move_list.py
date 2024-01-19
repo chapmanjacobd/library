@@ -24,7 +24,7 @@ def parse_args() -> argparse.Namespace:
 
     parser.add_argument("mount_point")
     parser.add_argument("database")
-    args = parser.parse_args()
+    args = parser.parse_intermixed_args()
     args.db = db_utils.connect(args)
     log.info(objects.dict_filter_bool(args.__dict__))
     return args

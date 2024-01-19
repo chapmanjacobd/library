@@ -67,6 +67,7 @@ def sample_hash() -> None:
         help="Width between chunks to skip (default 10%%). Values greater than 1 are treated as number of bytes",
     )
     parser.add_argument("--verbose", "-v", action="count", default=0)
+
     parser.add_argument("paths", nargs="+")
     args = parser.parse_args()
 

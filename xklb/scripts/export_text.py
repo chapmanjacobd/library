@@ -8,8 +8,9 @@ from xklb.utils.log_utils import log
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library export-text", usage=usage.export_text)
-    parser.add_argument("--verbose", "-v", action="count", default=0)
     parser.add_argument("--format", default="html")
+    parser.add_argument("--verbose", "-v", action="count", default=0)
+
     parser.add_argument("database")
     args = parser.parse_args()
 

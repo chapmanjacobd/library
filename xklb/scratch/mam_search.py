@@ -29,7 +29,7 @@ def parse_args():
 
     parser.add_argument("database")
     parser.add_argument("search_text", nargs="+")
-    args = parser.parse_args()
+    args = parser.parse_intermixed_args()
 
     Path(args.database).touch()
     args.db = db_utils.connect(args)

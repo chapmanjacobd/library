@@ -88,6 +88,7 @@ def parse_args():
 
     parser.add_argument("--local-file", "--local-html", action="store_true", help="Treat paths as Local HTML files")
     parser.add_argument("--file", "-f", help="File with one URL per line")
+
     parser.add_argument("paths", nargs="*")
     args = parser.parse_args()
 
@@ -176,15 +177,13 @@ def parse_inner_urls(args, url, markup):
 
         href = a_ref["href"].strip()
         if (len(href) > 1) and href[0] != "#":
-            link = construct_absolute_url(url, href)
+            link = construct_absolute_url(url, href).strip()
+            link_text = strings.remove_consecutive_whitespace(a_ref.text.strip())
 
-            link = link if args.case_sensitive else link.lower()
-            link_text = a_ref.text if args.case_sensitive else a_ref.text.lower()
+            link_lower = link if args.case_sensitive else link.lower()
+            link_text_lower = link_text if args.case_sensitive else link_text.lower()
 
-            link = strings.remove_consecutive_whitespace(link)
-            link_text = strings.remove_consecutive_whitespace(link_text)
-
-            if is_desired_url(args, a_ref, link, link_text):
+            if is_desired_url(args, a_ref, link_lower, link_text_lower):
                 a_ref.link = link
                 a_ref.link_text = link_text
                 yield a_ref

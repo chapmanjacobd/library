@@ -104,8 +104,10 @@ def get_mount_stats(src_mounts) -> List[Dict[str, Union[str, int]]]:
 def mount_stats() -> None:
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("-v", "--verbose", action="count", default=0)
+
     parser.add_argument("mounts", nargs="+")
     args = parser.parse_args()
+
     space = get_mount_stats(args.mounts)
 
     print("Relative disk dependence:")

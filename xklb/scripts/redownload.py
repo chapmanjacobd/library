@@ -23,6 +23,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("deleted_at", nargs="?")
     parser.add_argument("deleted_to", nargs="?")
     args = parser.parse_args()
+
     args.db = db_utils.connect(args)
     log.info(objects.dict_filter_bool(args.__dict__))
     return args

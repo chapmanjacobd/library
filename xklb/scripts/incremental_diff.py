@@ -24,7 +24,7 @@ def parse_args():
 
     parser.add_argument("path1", help="path to dataset 1")
     parser.add_argument("path2", help="path to dataset 2")
-    args = parser.parse_args()
+    args = parser.parse_intermixed_args()
 
     # TODO: add an option to load from df2 where ids (select ids from df1)
 

@@ -24,6 +24,7 @@ def parse_args():
 
     parser.add_argument("--local-file", "--local-html", action="store_true", help="Treat paths as Local HTML files")
     parser.add_argument("--file", "-f", help="File with one URL per line")
+
     parser.add_argument("paths", nargs="*")
     args = parser.parse_args()
 
