@@ -16,7 +16,6 @@ right_mpv_socket = str(Path(consts.TEMP_SCRIPT_DIR) / f"mpv_socket_{consts.rando
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Choose which duplicate to keep by opening both side-by-side in mpv")
-    parser.add_argument("file_path", help="Path to the text file containing the file list.")
     parser.add_argument(
         "--auto-select-min-ratio",
         type=float,
@@ -35,6 +34,8 @@ def parse_args():
     parser.add_argument("--all-right", action="store_true")
     parser.add_argument("--all-delete", action="store_true")
     parser.add_argument("--verbose", "-v", action="count", default=0)
+
+    parser.add_argument("file_path", help="Path to the text file containing the file list.")
     args = parser.parse_args()
     return args
 

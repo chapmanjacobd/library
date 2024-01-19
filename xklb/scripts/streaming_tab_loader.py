@@ -14,10 +14,11 @@ def parse_args() -> argparse.Namespace:
         usage=usage.surf,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("database")
     parser.add_argument("--count", "-n", default=2, type=int)
     parser.add_argument("--target-hosts", "--target", default=None, help="Target hosts IP:Port")
     parser.add_argument("--verbose", "-v", action="count", default=0)
+
+    parser.add_argument("database")
     args = parser.parse_args()
 
     if args.database:

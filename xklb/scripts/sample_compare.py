@@ -89,6 +89,7 @@ def sample_compare() -> None:
     parser.add_argument("--ignore-holes", "--ignore-sparse", action="store_true")
     parser.add_argument("--skip-full-hash", action="store_true")
     parser.add_argument("--verbose", "-v", action="count", default=0)
+
     parser.add_argument("paths", nargs="+")
     args = parser.parse_args()
 

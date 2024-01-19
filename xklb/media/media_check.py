@@ -1,5 +1,6 @@
 import argparse, fractions, json, os, shlex, subprocess, tempfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
 
 from xklb import usage
 from xklb.utils import consts, file_utils, nums, objects, printing, processes, strings
@@ -187,6 +188,7 @@ def media_check() -> None:
                 threads=args.threads,
             ): path
             for path in args.paths
+            if Path(path).suffix.lower() != ".iso"
         }
         for future in as_completed(future_to_path):
             path = future_to_path[future]

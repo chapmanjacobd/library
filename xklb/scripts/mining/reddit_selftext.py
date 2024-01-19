@@ -9,8 +9,9 @@ from xklb.utils.log_utils import log
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library reddit-selftext", usage=usage.reddit_selftext)
-    parser.add_argument("database")
     parser.add_argument("--verbose", "-v", action="count", default=0)
+
+    parser.add_argument("database")
     args = parser.parse_args()
 
     args.db = db_utils.connect(args)

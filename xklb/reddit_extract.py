@@ -60,7 +60,7 @@ def parse_args(action, usage) -> argparse.Namespace:
     parser.add_argument("database")
     if action == "redditadd":
         parser.add_argument("paths", nargs="+")
-    args = parser.parse_args()
+    args = parser.parse_intermixed_args()
 
     if action == "redditadd":
         args.paths = iterables.conform(args.paths)

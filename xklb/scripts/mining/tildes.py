@@ -19,7 +19,7 @@ def parse_args() -> argparse.Namespace:
 
     parser.add_argument("database")
     parser.add_argument("username", help="Tildes.net user to extract comments for")
-    args = parser.parse_args()
+    args = parser.parse_intermixed_args()
 
     Path(args.database).touch()
     args.db = db_utils.connect(args)

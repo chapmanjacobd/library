@@ -118,7 +118,7 @@ def parse_args(action, usage):
     parser.add_argument("database")
     if action == SC.fsadd:
         parser.add_argument("paths", nargs="+")
-    args = parser.parse_args()
+    args = parser.parse_intermixed_args()
 
     if args.move:
         args.move = str(Path(args.move).expanduser().resolve())

@@ -31,7 +31,7 @@ def parse_args() -> argparse.Namespace:
         nargs="+",
         help="Paths to scatter; if using -m any path substring is valid (relative to the root of your mergerfs mount)",
     )
-    args = parser.parse_args()
+    args = parser.parse_intermixed_args()
     args.db = db_utils.connect(args)
 
     if args.targets:

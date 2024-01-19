@@ -47,7 +47,7 @@ def rglob(base_dir: str, extensions: Optional[List[str]] = None) -> Tuple[Set[st
 
     print(f"\r[{base_dir}] {scan_stats(files, filtered_files, folders)}")
 
-    filtered_extensions = Counter(Path(s).suffix.lower() for s in filtered_files)
+    filtered_extensions = Counter(Path(s).suffix for s in filtered_files)
     log.info("Filtered extensions: %s", filtered_extensions)
 
     return files, filtered_files, folders

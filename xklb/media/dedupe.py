@@ -89,7 +89,7 @@ def parse_args() -> argparse.Namespace:
 
     parser.add_argument("database")
     parser.add_argument("paths", nargs="*")
-    args = parser.parse_args()
+    args = parser.parse_intermixed_args()
     args.db = db_utils.connect(args)
 
     args.filter_sql = []

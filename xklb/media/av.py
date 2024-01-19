@@ -1,4 +1,5 @@
 from datetime import datetime
+from pathlib import Path
 from typing import Dict, Optional
 
 from xklb.media import media_check, subtitle
@@ -141,7 +142,7 @@ def munge_av_tags(args, media, path) -> dict:
     duration = format_.pop("duration", None)
 
     corruption = None
-    if args.check_corrupt:
+    if args.check_corrupt and Path(path).suffix.lower() != ".iso":
         try:
             corruption = media_check.calculate_corruption(
                 path,

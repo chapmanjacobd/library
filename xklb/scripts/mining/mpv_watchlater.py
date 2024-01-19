@@ -9,9 +9,9 @@ from xklb.utils.log_utils import log
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library mpv-watchlater", usage=usage.mpv_watchlater)
     parser.add_argument("--watch-later-directory", default=consts.DEFAULT_MPV_WATCH_LATER, help=argparse.SUPPRESS)
+    parser.add_argument("--verbose", "-v", action="count", default=0)
 
     parser.add_argument("database")
-    parser.add_argument("--verbose", "-v", action="count", default=0)
     args = parser.parse_args()
 
     args.db = db_utils.connect(args)

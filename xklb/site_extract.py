@@ -20,7 +20,7 @@ def parse_args() -> argparse.Namespace:
 
     parser.add_argument("database")
     parser.add_argument("paths", nargs="+")
-    args = parser.parse_args()
+    args = parser.parse_intermixed_args()
 
     if args.db:
         args.database = args.db

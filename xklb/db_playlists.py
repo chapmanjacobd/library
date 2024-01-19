@@ -125,6 +125,7 @@ def delete_subpath_playlists(args, playlist_path) -> Optional[int]:
 
 
 def add(args, playlist_path: str, info: dict, check_subpath=False, extractor_key=None) -> int:
+    playlist_path = playlist_path.strip()
     if check_subpath:
         parentpath_playlist_id = get_parentpath_playlist_id(args, playlist_path)
         if parentpath_playlist_id:

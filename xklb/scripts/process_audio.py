@@ -16,6 +16,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--min-split-segment", default=DEFAULT_MIN_SPLIT)
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--verbose", "-v", action="count", default=0)
+
     parser.add_argument("paths", nargs="+")
     args = parser.parse_args()
 
