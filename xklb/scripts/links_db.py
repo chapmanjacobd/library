@@ -4,7 +4,7 @@ from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 from xklb import db_media, db_playlists, usage
 from xklb.scripts.mining import extract_links
-from xklb.utils import arg_utils, consts, db_utils, iterables, objects, printing, web
+from xklb.utils import arg_utils, consts, db_utils, iterables, objects, printing, strings, web
 from xklb.utils.log_utils import log
 
 
@@ -92,6 +92,12 @@ def parse_args(**kwargs):
     parser.add_argument("--strict-include", action="store_true", help="All include args must resolve true")
     parser.add_argument("--strict-exclude", action="store_true", help="All exclude args must resolve true")
     parser.add_argument("--case-sensitive", action="store_true", help="Filter with case sensitivity")
+    parser.add_argument(
+        "--no-url-decode",
+        "--skip-url-decode",
+        action="store_true",
+        help="Skip URL-decode for --path-include/--path-exclude",
+    )
 
     parser.add_argument("--cookies", help="path to a Netscape formatted cookies file")
     parser.add_argument("--cookies-from-browser", metavar="BROWSER[+KEYRING][:PROFILE][::CONTAINER]")
@@ -140,6 +146,10 @@ def parse_args(**kwargs):
         args.text_exclude = [s.lower() for s in args.text_exclude]
         args.after_exclude = [s.lower() for s in args.after_exclude]
 
+    if not args.no_url_decode:
+        args.path_include = [web.url_decode(s) for s in args.path_include]
+        args.path_exclude = [web.url_decode(s) for s in args.path_exclude]
+
     if args.db:
         args.database = args.db
     Path(args.database).touch()
@@ -172,13 +182,14 @@ def consolidate_media(args, path: str) -> dict:
 
 
 def add_media(args, variadic):
-    for a_ref_or_path in variadic:
-        if isinstance(a_ref_or_path, str):
-            path = a_ref_or_path
+    for path_or_dict in variadic:
+        if isinstance(path_or_dict, str):
+            path = path_or_dict
             d = objects.dict_filter_bool(consolidate_media(args, path))
         else:
-            a_ref = a_ref_or_path
-            d = objects.dict_filter_bool({**consolidate_media(args, a_ref.link), "title": a_ref.text.strip()})
+            d = objects.dict_filter_bool(
+                {**consolidate_media(args, path_or_dict["path"]), "title": path_or_dict["title"]}
+            )
         db_media.add(args, d)
 
 
@@ -257,7 +268,7 @@ def extractor(args, playlist_path):
 
         log.info("Loading page %s", page_path)
         page_known = set()
-        page_new = set()
+        page_new = {}
         for a_ref in unique_get_inner_urls(args, page_path):
             if a_ref is None:
                 end_of_playlist = True
@@ -267,13 +278,14 @@ def extractor(args, playlist_path):
                 end_of_playlist = True
                 break
 
-            if a_ref.link in new_media:
-                pass  # TODO: concat title
+            if a_ref.link in page_known:
+                pass
             elif db_media.exists(args, a_ref.link):
                 page_known.add(a_ref.link)
+            elif a_ref.link in page_new:
+                page_new[a_ref.link] = strings.combine(page_new[a_ref.link], a_ref.link_text)
             else:
-                add_media(args, [a_ref])
-                page_new.add(a_ref.link)
+                page_new[a_ref.link] = a_ref.link_text
             printing.print_overwrite(f"Page {page_count} link scan: {len(page_new)} new [{len(page_known)} known]")
 
             if not (args.backfill_pages or args.fixed_pages):
@@ -283,7 +295,9 @@ def extractor(args, playlist_path):
                     end_of_playlist = True
                     break
 
-        new_media |= page_new
+        add_media(args, [{"path": k, "title": v} for k, v in page_new.items()])
+
+        new_media |= set(page_new.keys())
         known_media |= page_known
 
         if len(page_new) > 0:

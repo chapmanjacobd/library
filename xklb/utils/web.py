@@ -1,8 +1,10 @@
 import argparse, functools, os, re, tempfile, time, urllib.error, urllib.parse, urllib.request
 from pathlib import Path
 from shutil import which
+from urllib.parse import unquote, urljoin, urlparse
 
 import requests
+from idna import decode as puny_decode
 
 from xklb.utils import consts, db_utils, iterables, nums, path_utils, pd_utils, strings
 from xklb.utils.log_utils import clamp_index, log
@@ -439,3 +441,42 @@ def infinite_scroll(driver):
         last_height = new_height
 
     yield selenium_extract_html(driver)
+
+
+def safe_unquote(url):
+    # https://en.wikipedia.org/wiki/Internationalized_Resource_Identifier
+    # we aren't writing HTML so we can unquote
+    try:
+        return unquote(url, errors="strict")
+    except UnicodeDecodeError:
+        return url
+
+
+def url_decode(href):
+    href = safe_unquote(href)
+    up = urlparse(href)
+    if up.netloc:
+        try:
+            href = href.replace(up.netloc, puny_decode(up.netloc), 1)
+        except Exception:
+            pass
+    return href
+
+
+def construct_absolute_url(base_url, href):
+    href = safe_unquote(href)
+
+    up = urlparse(href)
+    if up.scheme and up.scheme not in ("https", "http", "ftp"):
+        return href
+
+    if not up.netloc:
+        href = urljoin(base_url, href)
+
+    up = urlparse(href)
+    if up.netloc:
+        try:
+            href = href.replace(up.netloc, puny_decode(up.netloc), 1)
+        except Exception:
+            pass
+    return href
