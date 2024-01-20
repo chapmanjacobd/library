@@ -1,5 +1,4 @@
 import argparse
-from urllib.parse import urljoin
 
 from xklb import usage
 from xklb.utils import arg_utils, consts, devices, iterables, printing, strings, web
@@ -71,9 +70,17 @@ def parse_args():
         default=[],
         help="plain text substrings before URL for exclusion (any must match to exclude)",
     )
+
     parser.add_argument("--strict-include", action="store_true", help="All include args must resolve true")
     parser.add_argument("--strict-exclude", action="store_true", help="All exclude args must resolve true")
     parser.add_argument("--case-sensitive", action="store_true", help="Filter with case sensitivity")
+    parser.add_argument(
+        "--no-url-decode",
+        "--skip-url-decode",
+        action="store_true",
+        help="Skip URL-decode for --path-include/--path-exclude",
+    )
+
     parser.add_argument("--print-link-text", "--print-title", action="store_true")
     parser.add_argument("--cookies", help="path to a Netscape formatted cookies file")
     parser.add_argument("--cookies-from-browser", metavar="BROWSER[+KEYRING][:PROFILE][::CONTAINER]")
@@ -105,19 +112,11 @@ def parse_args():
         args.text_exclude = [s.lower() for s in args.text_exclude]
         args.after_exclude = [s.lower() for s in args.after_exclude]
 
+    if not args.no_url_decode:
+        args.path_include = [web.url_decode(s) for s in args.path_include]
+        args.path_exclude = [web.url_decode(s) for s in args.path_exclude]
+
     return args
-
-
-def construct_absolute_url(url, href):
-    from urllib.parse import urlparse
-
-    up = urlparse(href)
-    if up.scheme and up.scheme not in ("https", "http", "ftp"):
-        return href
-
-    if not up.netloc:
-        href = urljoin(url, href)
-    return href
 
 
 def is_desired_url(args, a_element, link, link_text) -> bool:
@@ -177,7 +176,7 @@ def parse_inner_urls(args, url, markup):
 
         href = a_ref["href"].strip()
         if (len(href) > 1) and href[0] != "#":
-            link = construct_absolute_url(url, href).strip()
+            link = web.construct_absolute_url(url, href).strip()
             link_text = strings.remove_consecutive_whitespace(a_ref.text.strip())
 
             link_lower = link if args.case_sensitive else link.lower()
