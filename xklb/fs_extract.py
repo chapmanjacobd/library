@@ -197,7 +197,9 @@ def extract_metadata(mp_args, path) -> Optional[Dict[str, int]]:
 
     if getattr(mp_args, "process", False):
         if mp_args.profile == DBType.audio and Path(path).suffix not in [".opus", ".mka"]:
-            path = media["path"] = process_audio.process_path(path)
+            path = media["path"] = process_audio.process_path(
+                path, split_longer_than="36mins" if "audiobook" in path.lower() else None
+            )
 
     if getattr(mp_args, "move", False) and not file_utils.is_file_open(path):
         dest_path = bytes(Path(mp_args.move) / Path(path).relative_to(mp_args.playlist_path))

@@ -17,8 +17,8 @@ def parse_args(**kwargs):
     parser.add_argument("--fixed-pages", type=int)
     parser.add_argument("--backfill-pages", "--backfill", type=int)
 
-    parser.add_argument("--stop-pages-no-match", type=int, default=4)
-    parser.add_argument("--stop-pages-no-new", type=int, default=10)
+    parser.add_argument("--stop-pages-no-match", "--stop-no-match", type=int, default=4)
+    parser.add_argument("--stop-pages-no-new", "--stop-no-new", type=int, default=10)
     parser.add_argument("--stop-new", type=int)
     parser.add_argument("--stop-known", type=int)
     parser.add_argument("--stop-link")
@@ -327,7 +327,7 @@ def links_add() -> None:
     if args.no_extract:
         media_new = set()
         media_known = set()
-        for p in arg_utils.gen_urls(args):
+        for p in arg_utils.gen_paths(args):
             if db_media.exists(args, p):
                 media_known.add(p)
             else:
@@ -340,7 +340,7 @@ def links_add() -> None:
         web.load_selenium(args)
     try:
         playlist_count = 0
-        for playlist_path in arg_utils.gen_urls(args):
+        for playlist_path in arg_utils.gen_paths(args):
             add_playlist(args, playlist_path)
             extractor(args, playlist_path)
 

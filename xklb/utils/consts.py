@@ -124,6 +124,8 @@ def reddit_frequency(frequency) -> str:
     return mapper[frequency]
 
 
+SKIP_MEDIA_CHECK = [".iso", ".vob"]
+
 TEXTRACT_EXTENSIONS = "csv|tab|tsv|doc|docx|eml|epub|json|htm|html|msg|odt|pdf|pptx|ps|rtf|txt|log|xlsx|xls".split("|")
 SPEECH_RECOGNITION_EXTENSIONS = "mp3|ogg|wav".split("|")
 OCR_EXTENSIONS = "gif|jpg|jpeg|png|tif|tff|tiff".split("|")

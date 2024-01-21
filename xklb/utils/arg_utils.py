@@ -52,17 +52,25 @@ class ArgparseArgsOrStdin(argparse.Action):
         setattr(namespace, self.dest, lines)
 
 
-def gen_urls(args):
+def gen_paths(args):
     if args.file:
         with open(args.file) as f:
             for line in f:
-                url = line.rstrip("\n")
-                if url.strip():
-                    yield url
+                path = line.rstrip("\n")
+                if path.strip():
+                    yield path
     else:
-        for url in args.paths:
-            if url.strip():
-                yield url
+        for path in args.paths:
+            if path.strip():
+                yield path
+
+
+def stdarg():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--file", "-f", help="File with one URL per line")
+    parser.add_argument("paths", nargs="*", default=STDIN_DASH, action=ArgparseArgsOrStdin)
+    args = parser.parse_args()
+    return gen_paths(args)
 
 
 def override_sort(sort_expression: str) -> str:
@@ -190,16 +198,6 @@ def split_folder_glob(s):
     if p.is_dir():
         return p, "*"
     return p.parent, p.name
-
-
-def get_defaults(parse_args):
-    original_argv = sys.argv
-    sys.argv = sys.argv[0:1]
-    try:
-        args = parse_args()
-        return args
-    finally:
-        sys.argv = original_argv
 
 
 def override_config(parser, extractor_config, args):
