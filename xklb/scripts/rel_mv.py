@@ -20,16 +20,26 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def rel_move(sources, dest, dry_run=False):
+def rel_move(sources, dest, dry_run=False, relative_to=None):
+    if relative_to:
+        relative_to = Path(relative_to).expanduser().resolve()
+
     new_paths = []
     for source in sources:
         abspath = Path(source).expanduser().resolve()
 
-        rel_prefix = commonprefix([abspath, dest])
-        try:
-            relpath = str(abspath.relative_to(rel_prefix))
-        except ValueError:
-            relpath = str(abspath.relative_to(Path(rel_prefix).parent))
+        if relative_to:
+            relpath = str(abspath.relative_to(relative_to))
+        else:
+            rel_prefix = commonprefix([abspath, dest])
+            try:
+                relpath = str(abspath.relative_to(rel_prefix))
+            except ValueError:
+                try:
+                    relpath = str(abspath.relative_to(Path(rel_prefix).parent))
+                except ValueError:
+                    relpath = str(source)
+
         target_dir = (dest / relpath).parent
         target_dir = path_utils.dedupe_path_parts(target_dir)
 
