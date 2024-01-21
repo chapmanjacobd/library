@@ -10,7 +10,7 @@ from xklb.utils.log_utils import log
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library relmv", usage=usage.relmv)
     parser.add_argument("--verbose", "-v", action="count", default=0)
-    parser.add_argument("--test", "--dry-run", action="store_true")
+    parser.add_argument("--dry-run", action="store_true")
 
     parser.add_argument("sources", nargs="+", help="one or more source files or directories to move")
     parser.add_argument("dest", help="destination directory")
@@ -20,7 +20,8 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def _relmv(args, sources, dest):
+def rel_move(sources, dest, dry_run=False):
+    new_paths = []
     for source in sources:
         abspath = Path(source).expanduser().resolve()
 
@@ -32,33 +33,36 @@ def _relmv(args, sources, dest):
         target_dir = (dest / relpath).parent
         target_dir = path_utils.dedupe_path_parts(target_dir)
 
-        if args.test:
+        if dry_run:
             log.warning("mv %s %s", shlex.quote(str(abspath)), shlex.quote(str(target_dir)))
             continue
 
         target_dir.mkdir(parents=True, exist_ok=True)
+        new_path = target_dir / abspath.name
         try:
-            new_path = target_dir / abspath.name
             log.info("%s -> %s", abspath, new_path)
             abspath.rename(new_path)
+            new_paths.append(new_path)
         except OSError as e:
             if e.errno == 18:  # cross-device move
                 log.info("%s ->d %s", abspath, target_dir)
                 processes.cmd_interactive("mv", abspath, target_dir)
+                new_paths.append(new_path)
             elif e.errno == 39:  # target dir not empty
                 log.info("%s ->m %s", abspath, dest)
-                _relmv(args, abspath.glob("*"), dest)
+                new_paths.extend(rel_move(abspath.glob("*"), dest, dry_run=dry_run))
             elif e.errno == 2:  # FileNotFoundError
                 log.error("%s not found", abspath)
             else:
                 raise
+    return new_paths
 
 
 def rel_mv() -> None:
     args = parse_args()
 
     dest = Path(args.dest).expanduser().resolve()
-    _relmv(args, args.sources, dest)
+    rel_move(args.sources, dest, dry_run=args.dry_run)
 
 
 if __name__ == "__main__":
