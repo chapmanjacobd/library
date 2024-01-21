@@ -239,7 +239,7 @@ def extract_links() -> None:
     if args.selenium:
         web.load_selenium(args)
     try:
-        for url in arg_utils.gen_urls(args):
+        for url in arg_utils.gen_paths(args):
             for a_ref in iterables.return_unique(get_inner_urls)(args, url):
                 if a_ref is None:
                     break

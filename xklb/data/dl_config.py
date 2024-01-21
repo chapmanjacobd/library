@@ -34,6 +34,7 @@ yt_recoverable_errors = re.compile(
 .*read operation timed out
 .*Could not connect
 .*restricted
+.*Media check failed
 .*Internal Server Error
 .*Internal error encountered
 .*not currently available

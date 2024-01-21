@@ -194,7 +194,7 @@ def site_add(args=None) -> None:
 
     web.load_selenium(args, wire=True)
     try:
-        for url in arg_utils.gen_urls(args):
+        for url in arg_utils.gen_paths(args):
             load_page(args, url)
     finally:
         web.quit_selenium(args)

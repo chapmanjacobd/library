@@ -142,7 +142,7 @@ def munge_av_tags(args, media, path) -> dict:
     duration = format_.pop("duration", None)
 
     corruption = None
-    if args.check_corrupt and Path(path).suffix.lower() != ".iso":
+    if args.check_corrupt and Path(path).suffix.lower() not in consts.SKIP_MEDIA_CHECK:
         try:
             corruption = media_check.calculate_corruption(
                 path,

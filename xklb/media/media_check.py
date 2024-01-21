@@ -188,7 +188,7 @@ def media_check() -> None:
                 threads=args.threads,
             ): path
             for path in args.paths
-            if Path(path).suffix.lower() != ".iso"
+            if Path(path).suffix.lower() not in consts.SKIP_MEDIA_CHECK
         }
         for future in as_completed(future_to_path):
             path = future_to_path[future]
