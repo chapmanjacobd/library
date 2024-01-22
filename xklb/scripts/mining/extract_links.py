@@ -93,6 +93,7 @@ def parse_args():
     parser.add_argument("--download", action="store_true", help="Download filtered links")
     parser.add_argument("--verbose", "-v", action="count", default=0)
 
+    parser.add_argument("--no-extract", "--skip-extract", action="store_true")
     parser.add_argument("--local-file", "--local-html", action="store_true", help="Treat paths as Local HTML files")
     parser.add_argument("--file", "-f", help="File with one URL per line")
 
@@ -235,6 +236,15 @@ def print_or_download(args, a_ref):
 
 def extract_links() -> None:
     args = parse_args()
+
+    if args.no_extract:
+        for url in arg_utils.gen_paths(args):
+            url = web.url_decode(url).strip()
+            if args.download:
+                web.download_url(url)
+            else:
+                printing.pipe_print(url)
+        return
 
     if args.selenium:
         web.load_selenium(args)

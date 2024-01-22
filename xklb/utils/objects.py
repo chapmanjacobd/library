@@ -82,7 +82,7 @@ def lower_keys(input_dict):
     for key, value in input_dict.items():
         lowercase_key = key.lower().strip()
         if lowercase_key in output_dict:
-            log.warning("Overriding key %s: %s -> %s", lowercase_key, output_dict[lowercase_key], value)
+            log.info("Overriding key %s: %s -> %s", lowercase_key, output_dict[lowercase_key], value)
         output_dict[lowercase_key] = value
     return output_dict
 

@@ -4,7 +4,7 @@ from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 from xklb import db_media, db_playlists, usage
 from xklb.scripts.mining import extract_links
-from xklb.utils import arg_utils, consts, db_utils, iterables, objects, printing, strings, web
+from xklb.utils import arg_utils, consts, db_utils, objects, printing, strings, web
 from xklb.utils.log_utils import log
 
 
@@ -250,7 +250,6 @@ def extractor(args, playlist_path):
     page_count = 0
     page_count_since_match = 0
     page_count_since_new = 0
-    unique_get_inner_urls = iterables.return_unique(extract_links.get_inner_urls)
     for page_value in count_pages(args, page_limit):
         if end_of_playlist:
             break
@@ -269,7 +268,7 @@ def extractor(args, playlist_path):
         log.info("Loading page %s", page_path)
         page_known = set()
         page_new = {}
-        for a_ref in unique_get_inner_urls(args, page_path):
+        for a_ref in extract_links.get_inner_urls(args, page_path):
             if a_ref is None:
                 end_of_playlist = True
                 break
@@ -304,14 +303,14 @@ def extractor(args, playlist_path):
             page_count_since_new = 0
         else:
             page_count_since_new += 1
-        if page_count_since_new >= args.stop_pages_no_new:
-            end_of_playlist = True
-
         if len(page_new) > 0 or len(page_known) > 0:
             page_count_since_match = 0
         else:
             page_count_since_match += 1
-        if page_count_since_match >= args.stop_pages_no_match:
+
+        if not (args.backfill_pages or args.fixed_pages) and (
+            page_count_since_new >= args.stop_pages_no_new or page_count_since_match >= args.stop_pages_no_match
+        ):
             end_of_playlist = True
     print()
 
