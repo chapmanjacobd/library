@@ -1,4 +1,4 @@
-import argparse, functools, os, re, tempfile, time, urllib.error, urllib.parse, urllib.request
+import argparse, datetime, functools, os, re, tempfile, time, urllib.error, urllib.parse, urllib.request
 from pathlib import Path
 from shutil import which
 from urllib.parse import unquote, urljoin, urlparse
@@ -154,6 +154,14 @@ def find_date(soup):
     return None
 
 
+def set_timestamp(headers, path):
+    if "Last-Modified" in headers:
+        modified_time = datetime.datetime.strptime(headers["Last-Modified"], "%a, %d %b %Y %H:%M:%S GMT")
+        mtime = time.mktime(modified_time.timetuple())
+        atime = time.time()
+        os.utime(path, (atime, mtime))
+
+
 def load_selenium(args, wire=False):
     if wire:
         import logging
@@ -246,7 +254,7 @@ def quit_selenium(args):
             pass
 
 
-def download_url(url, output_path=None, output_prefix=None, chunk_size=8 * 1024 * 1024, retries=3):
+def download_url(url, output_path=None, output_prefix=None, chunk_size=8 * 1024 * 1024, retry_num=0):
     session = requests_session()
     response = session.get(url, stream=True)
 
@@ -265,6 +273,12 @@ def download_url(url, output_path=None, output_prefix=None, chunk_size=8 * 1024 
         if output_prefix:
             output_path = os.path.join(output_prefix / output_path)
         output_path = path_utils.clean_path(output_path.encode())
+
+    if output_path == ".":
+        log.warning("Skipping directory %s", url)
+        return
+    else:
+        log.info("Saving %s to %s", url, output_path)
 
     p = Path(output_path)
     p.parent.mkdir(parents=True, exist_ok=True)
@@ -286,18 +300,25 @@ def download_url(url, output_path=None, output_prefix=None, chunk_size=8 * 1024 
             p.unlink()
 
     with open(output_path, "ab") as f:
-        for chunk in response.iter_content(chunk_size=chunk_size):
-            if chunk:
-                f.write(chunk)
+        try:
+            for chunk in response.iter_content(chunk_size=chunk_size):
+                if chunk:
+                    f.write(chunk)
+        except (requests.exceptions.ChunkedEncodingError, ConnectionError):
+            if not remote_size:
+                raise
 
     if remote_size:
         downloaded_size = os.path.getsize(output_path)
         if downloaded_size < remote_size:
-            if retries <= 0:
+            if retry_num >= 10:
                 msg = f"Download interrupted ({strings.safe_percent(downloaded_size/remote_size)}) {output_path}"
                 raise RuntimeError(msg)
             else:
-                download_url(url, output_path, output_prefix, chunk_size, retries=retries - 1)
+                time.sleep(retry_num)
+                download_url(url, output_path, output_prefix, chunk_size, retry_num=retry_num + 1)
+
+    set_timestamp(response.headers, output_path)
 
 
 def get_elements_forward(start, end):

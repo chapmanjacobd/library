@@ -192,7 +192,9 @@ class FFProbe:
         self.other_streams = []
 
         for stream in self.streams:
-            if stream["codec_type"] == "video":
+            if "codec_type" not in stream:
+                continue
+            elif stream["codec_type"] == "video":
                 self.video_streams.append(stream)
             elif stream["codec_type"] == "audio":
                 self.audio_streams.append(stream)

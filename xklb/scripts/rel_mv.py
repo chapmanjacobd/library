@@ -20,16 +20,16 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def rel_move(sources, dest, dry_run=False, relative_to=None):
-    if relative_to:
-        relative_to = Path(relative_to).expanduser().resolve()
+def rel_move(sources, dest, dry_run=False, relative_from=None):
+    if relative_from:
+        relative_from = Path(relative_from).expanduser().resolve()
 
     new_paths = []
     for source in sources:
         abspath = Path(source).expanduser().resolve()
 
-        if relative_to:
-            relpath = str(abspath.relative_to(relative_to))
+        if relative_from:
+            relpath = str(abspath.relative_to(relative_from))
         else:
             rel_prefix = commonprefix([abspath, dest])
             try:
