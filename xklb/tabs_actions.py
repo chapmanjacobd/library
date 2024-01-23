@@ -186,8 +186,7 @@ def frequency_filter(counts, media: List[Dict]) -> List[dict]:
 def open_tabs(args, media):
     for m in media:
         play(args, m)
-        MANY_TABS = 9
-        if len(media) >= MANY_TABS:
+        if len(media) >= consts.MANY_LINKS:
             sleep(0.3)
 
 

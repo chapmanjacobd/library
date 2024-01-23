@@ -49,6 +49,7 @@ SQLITE_PARAM_LIMIT = 32766
 DEFAULT_PLAY_QUEUE = 120
 DEFAULT_MULTIPLE_PLAYBACK = -1
 DEFAULT_SUBTITLE_MIX = 0.35
+MANY_LINKS = 8
 PYTEST_RUNNING = "pytest" in sys.modules
 REGEX_ANSI_ESCAPE = re.compile(r"(?:\x1B[@-_]|[\x80-\x9F])[0-?]*[ -/]*[@-~]")
 REGEX_SUBREDDIT = re.compile("|".join([r".*reddit\.com/r/(.*?)/.*", r".*redd\.it/r/(.*?)/.*"]))

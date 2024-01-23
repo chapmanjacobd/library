@@ -34,6 +34,8 @@ progs = {
         "next": "Play next file and optionally delete current file",
         "stop": "Stop all playback",
         "pause": "Pause all playback",
+        "open_links": "Open links from link dbs",
+        "surf": "Auto-load browser tabs in a streaming way (stdin)",
     },
     "Media database subcommands": {
         "tabs": "Open your tabs for the day",
@@ -85,7 +87,6 @@ progs = {
         "reddit_selftext": "Copy selftext links to media table",
     },
     "Misc subcommands": {
-        "surf": "Auto-load browser tabs in a streaming way (stdin)",
         "export_text": "Export HTML files from SQLite databases",
         "process_audio": "Shrink audio by converting to Opus format",
         "dedupe_czkawka": "Process czkawka diff output",
@@ -204,6 +205,7 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     add_parser(subparsers, "xklb.scripts.mining.substack.substack")
     add_parser(subparsers, "xklb.scripts.mining.tildes.tildes")
     add_parser(subparsers, "xklb.scripts.move_list.move_list", ["mv-list"])
+    add_parser(subparsers, "xklb.scripts.open_links.open_links")
     add_parser(subparsers, "xklb.scripts.optimize_db.optimize_db", ["optimize"])
     add_parser(subparsers, "xklb.scripts.places_import.places_import")
     add_parser(subparsers, "xklb.scripts.playback_control.playback_next", ["next"])
