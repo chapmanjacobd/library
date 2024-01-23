@@ -405,7 +405,7 @@ def play(action) -> str:
         library {action} -s 'toy  story'   # will match more strictly '/folder/toy story.mp3'
 
         You can search without -s but it must directly follow the database due to how argparse works
-        library {action} my.db searching for something
+        library {action} ./your.db searching for something
 
     Constrain media by arbitrary SQL expressions:
         library {action} --where audio_count = 2  # media which have two audio tracks
@@ -919,7 +919,7 @@ galleryadd = """library galleryadd DATABASE URLS
 
     If you have many URLs use stdin
 
-        cat ./my-favorite-manhwa.txt | library galleryadd my.db --insert-only -
+        cat ./my-favorite-manhwa.txt | library galleryadd your.db --insert-only -
 """
 
 galleryupdate = """library galleryupdate DATABASE URLS
@@ -1311,15 +1311,32 @@ open_links = """library open-links DATABASE [search] [--title] [--title-prefix T
         wget https://github.com/chapmanjacobd/library/raw/main/example_dbs/music.korea.ln.db
         library open-links music.korea.ln.db
 
-        library open-links ~/lb/sites/my.db --cols time_modified -p
+    Only open links once
+
+        library open-links ln.db -w 'time_modified=0'
 
     Print a preview instead of opening tabs
 
-        library open-links music.korea.ln.db -p
+        library open-links ln.db -p
+        library open-links ln.db --cols time_modified -p
+
+    Delete rows
+
+        Make sure you have the right search query
+        library open-links ln.db "query" -p -L inf
+        library open-links ln.db "query" -pa  # view total
+
+        library open-links ln.db "query" -pd  # mark as deleted
 
     Custom search engine
 
-        library open-links ~/lb/sites/my.db --title --prefix 'https://duckduckgo.com/?q='
+        library open-links ln.db --title --prefix 'https://duckduckgo.com/?q='
+
+    Skip local media
+
+        library open-links dl.db --online
+        library open-links dl.db -w 'path like "http%"'  # equivalent
+
 """
 
 surf = """library surf [--count COUNT] [--target-hosts TARGET_HOSTS] < stdin
@@ -1479,7 +1496,7 @@ links_add = r"""library links-add DATABASE PATH ... [--case-sensitive] [--cookie
         As such, page iteration (--max-pages, --fixed-pages, etc) is disabled when using `--auto-pager`.
 
         You can set unset --fixed-pages for all the playlists in your database by running this command:
-        sqlite my.db "UPDATE playlists SET extractor_config = json_replace(extractor_config, '$.fixed_pages', null)"
+        sqlite your.db "UPDATE playlists SET extractor_config = json_replace(extractor_config, '$.fixed_pages', null)"
 
     To use "&p=1" instead of "&page=1"
 

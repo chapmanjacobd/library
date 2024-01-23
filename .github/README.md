@@ -95,7 +95,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.3.033)
+    xk media library subcommands (v2.3.034)
 
     Create database subcommands:
     ╭───────────────┬────────────────────────────────────────────────────╮
@@ -588,7 +588,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     If you have many URLs use stdin
 
-        cat ./my-favorite-manhwa.txt | library galleryadd my.db --insert-only -
+        cat ./my-favorite-manhwa.txt | library galleryadd your.db --insert-only -
 
 
 </details>
@@ -653,7 +653,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         As such, page iteration (--max-pages, --fixed-pages, etc) is disabled when using `--auto-pager`.
 
         You can set unset --fixed-pages for all the playlists in your database by running this command:
-        sqlite my.db "UPDATE playlists SET extractor_config = json_replace(extractor_config, '$.fixed_pages', null)"
+        sqlite your.db "UPDATE playlists SET extractor_config = json_replace(extractor_config, '$.fixed_pages', null)"
 
     To use "&p=1" instead of "&page=1"
 
@@ -1174,7 +1174,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         library watch -s 'toy  story'   # will match more strictly '/folder/toy story.mp3'
 
         You can search without -s but it must directly follow the database due to how argparse works
-        library watch my.db searching for something
+        library watch ./your.db searching for something
 
     Constrain media by arbitrary SQL expressions:
         library watch --where audio_count = 2  # media which have two audio tracks
@@ -1314,15 +1314,32 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         wget https://github.com/chapmanjacobd/library/raw/main/example_dbs/music.korea.ln.db
         library open-links music.korea.ln.db
 
-        library open-links ~/lb/sites/my.db --cols time_modified -p
+    Only open links once
+
+        library open-links ln.db -w 'time_modified=0'
 
     Print a preview instead of opening tabs
 
-        library open-links music.korea.ln.db -p
+        library open-links ln.db -p
+        library open-links ln.db --cols time_modified -p
+
+    Delete rows
+
+        Make sure you have the right search query
+        library open-links ln.db "query" -p -L inf
+        library open-links ln.db "query" -pa  # view total
+
+        library open-links ln.db "query" -pd  # mark as deleted
 
     Custom search engine
 
-        library open-links ~/lb/sites/my.db --title --prefix 'https://duckduckgo.com/?q='
+        library open-links ln.db --title --prefix 'https://duckduckgo.com/?q='
+
+    Skip local media
+
+        library open-links dl.db --online
+        library open-links dl.db -w 'path like "http%"'  # equivalent
+
 
 
 </details>
