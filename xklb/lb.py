@@ -205,7 +205,7 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     add_parser(subparsers, "xklb.scripts.mining.substack.substack")
     add_parser(subparsers, "xklb.scripts.mining.tildes.tildes")
     add_parser(subparsers, "xklb.scripts.move_list.move_list", ["mv-list"])
-    add_parser(subparsers, "xklb.scripts.open_links.open_links")
+    add_parser(subparsers, "xklb.scripts.open_links.open_links", ["links-open"])
     add_parser(subparsers, "xklb.scripts.optimize_db.optimize_db", ["optimize"])
     add_parser(subparsers, "xklb.scripts.places_import.places_import")
     add_parser(subparsers, "xklb.scripts.playback_control.playback_next", ["next"])

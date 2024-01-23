@@ -8,19 +8,29 @@ from xklb.utils.log_utils import log
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library merge-dbs", usage=usage.merge_dbs)
+
+    parser.add_argument("--only-tables", "-t", action=arg_utils.ArgparseList, help="Comma separated specific table(s)")
+
     parser.add_argument("--primary-keys", "--pk", action=arg_utils.ArgparseList, help="Comma separated primary keys")
     parser.add_argument("--business-keys", "--bk", action=arg_utils.ArgparseList, help="Comma separated business keys")
+
     parser.add_argument("--upsert", action="store_true")
     parser.add_argument("--ignore", "--only-new-rows", action="store_true")
-    parser.add_argument("--only-tables", "-t", action=arg_utils.ArgparseList, help="Comma separated specific table(s)")
+
     parser.add_argument("--only-target-columns", action="store_true")
     parser.add_argument("--skip-columns", action=arg_utils.ArgparseList)
+
+    parser.add_argument("--where", "-w", nargs="+", action="extend", help=argparse.SUPPRESS)
+
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
     parser.add_argument("--verbose", "-v", action="count", default=0)
 
     parser.add_argument("database")
     parser.add_argument("source_dbs", nargs="+")
     args = parser.parse_intermixed_args()
+
+    if args.where:
+        args.where = " and ".join(args.where)
 
     if args.db:
         args.database = args.db
@@ -64,7 +74,7 @@ def merge_db(args, source_db) -> None:
                 log.info("[%s]: Using %s as primary key(s)", table, ", ".join(source_table_pks))
                 kwargs["pk"] = source_table_pks
 
-        data = s_db[table].rows
+        data = s_db[table].rows_where(where=args.where)
         data = ({k: v for k, v in d.items() if k in selected_columns} for d in data)
         with args.db.conn:
             args.db[table].insert_all(
