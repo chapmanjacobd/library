@@ -95,7 +95,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.3.032)
+    xk media library subcommands (v2.3.033)
 
     Create database subcommands:
     ╭───────────────┬────────────────────────────────────────────────────╮
@@ -138,17 +138,21 @@ To stop playing press Ctrl+C in either the terminal or mpv
     ╰───────────────┴─────────────────────────────────╯
 
     Playback subcommands:
-    ╭───────┬───────────────────────────────────────────────────╮
-    │ watch │ Watch / Listen                                    │
-    ├───────┼───────────────────────────────────────────────────┤
-    │ now   │ Show what is currently playing                    │
-    ├───────┼───────────────────────────────────────────────────┤
-    │ next  │ Play next file and optionally delete current file │
-    ├───────┼───────────────────────────────────────────────────┤
-    │ stop  │ Stop all playback                                 │
-    ├───────┼───────────────────────────────────────────────────┤
-    │ pause │ Pause all playback                                │
-    ╰───────┴───────────────────────────────────────────────────╯
+    ╭────────────┬───────────────────────────────────────────────────╮
+    │ watch      │ Watch / Listen                                    │
+    ├────────────┼───────────────────────────────────────────────────┤
+    │ now        │ Show what is currently playing                    │
+    ├────────────┼───────────────────────────────────────────────────┤
+    │ next       │ Play next file and optionally delete current file │
+    ├────────────┼───────────────────────────────────────────────────┤
+    │ stop       │ Stop all playback                                 │
+    ├────────────┼───────────────────────────────────────────────────┤
+    │ pause      │ Pause all playback                                │
+    ├────────────┼───────────────────────────────────────────────────┤
+    │ open-links │ Open links from link dbs                          │
+    ├────────────┼───────────────────────────────────────────────────┤
+    │ surf       │ Auto-load browser tabs in a streaming way (stdin) │
+    ╰────────────┴───────────────────────────────────────────────────╯
 
     Media database subcommands:
     ╭─────────────────┬────────────────────────────────╮
@@ -242,17 +246,15 @@ To stop playing press Ctrl+C in either the terminal or mpv
     ╰────────────────────┴────────────────────────────────────────╯
 
     Misc subcommands:
-    ╭────────────────┬───────────────────────────────────────────────────╮
-    │ surf           │ Auto-load browser tabs in a streaming way (stdin) │
-    ├────────────────┼───────────────────────────────────────────────────┤
-    │ export-text    │ Export HTML files from SQLite databases           │
-    ├────────────────┼───────────────────────────────────────────────────┤
-    │ process-audio  │ Shrink audio by converting to Opus format         │
-    ├────────────────┼───────────────────────────────────────────────────┤
-    │ dedupe-czkawka │ Process czkawka diff output                       │
-    ├────────────────┼───────────────────────────────────────────────────┤
-    │ nouns          │ Unstructured text -> compound nouns (stdin)       │
-    ╰────────────────┴───────────────────────────────────────────────────╯
+    ╭────────────────┬─────────────────────────────────────────────╮
+    │ export-text    │ Export HTML files from SQLite databases     │
+    ├────────────────┼─────────────────────────────────────────────┤
+    │ process-audio  │ Shrink audio by converting to Opus format   │
+    ├────────────────┼─────────────────────────────────────────────┤
+    │ dedupe-czkawka │ Process czkawka diff output                 │
+    ├────────────────┼─────────────────────────────────────────────┤
+    │ nouns          │ Unstructured text -> compound nouns (stdin) │
+    ╰────────────────┴─────────────────────────────────────────────╯
 
 
 </details>
@@ -1292,6 +1294,46 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         library watch -m 4 --screen-name eDP # play four media at once on specific screen
         library watch -m 4 --loop --crop     # play four cropped videos on a loop
         library watch -m 4 --hstack          # use hstack style
+
+
+</details>
+
+###### open-links
+
+<details><summary>Open links from link dbs</summary>
+
+    $ library open-links -h
+    usage: library open-links DATABASE [search] [--title] [--title-prefix TITLE_PREFIX]
+
+    Open links from a links db
+
+        library open-links ~/lb/sites/my.db --cols time_modified -p
+
+    Custom search engine
+
+        library open-links ~/lb/sites/my.db --title --prefix 'https://duckduckgo.com/?q='
+
+
+</details>
+
+###### surf
+
+<details><summary>Auto-load browser tabs in a streaming way (stdin)</summary>
+
+    $ library surf -h
+    usage: library surf [--count COUNT] [--target-hosts TARGET_HOSTS] < stdin
+
+    Streaming tab loader: press ctrl+c to stop.
+
+    Open tabs from a line-delimited file:
+
+        cat tabs.txt | library surf -n 5
+
+    You will likely want to use this setting in `about:config`
+
+        browser.tabs.loadDivertedInBackground = True
+
+    If you prefer GUI, check out https://unli.xyz/tabsender/
 
 
 </details>
@@ -2470,28 +2512,6 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 </details>
 
 ### Misc subcommands
-
-###### surf
-
-<details><summary>Auto-load browser tabs in a streaming way (stdin)</summary>
-
-    $ library surf -h
-    usage: library surf [--count COUNT] [--target-hosts TARGET_HOSTS] < stdin
-
-    Streaming tab loader: press ctrl+c to stop.
-
-    Open tabs from a line-delimited file:
-
-        cat tabs.txt | library surf -n 5
-
-    You will likely want to use this setting in `about:config`
-
-        browser.tabs.loadDivertedInBackground = True
-
-    If you prefer GUI, check out https://unli.xyz/tabsender/
-
-
-</details>
 
 ###### export-text
 

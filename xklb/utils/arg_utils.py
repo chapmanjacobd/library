@@ -52,6 +52,15 @@ class ArgparseArgsOrStdin(argparse.Action):
         setattr(namespace, self.dest, lines)
 
 
+def is_sqlite(path):
+    try:
+        with open(path, "rb") as f:
+            header = f.read(16)
+        return header == b"SQLite format 3\000"
+    except IOError:
+        return False
+
+
 def gen_paths(args):
     if args.file:
         with open(args.file) as f:

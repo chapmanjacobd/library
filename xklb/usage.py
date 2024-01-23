@@ -1304,6 +1304,17 @@ scatter = """library scatter [--limit LIMIT] [--policy POLICY] [--sort SORT] --t
         library scatter fs.db -m /mnt/d1:/mnt/d3:/mnt/d4 /mnt/d2
 """
 
+open_links = """library open-links DATABASE [search] [--title] [--title-prefix TITLE_PREFIX]
+
+    Open links from a links db
+
+        library open-links ~/lb/sites/my.db --cols time_modified -p
+
+    Custom search engine
+
+        library open-links ~/lb/sites/my.db --title --prefix 'https://duckduckgo.com/?q='
+"""
+
 surf = """library surf [--count COUNT] [--target-hosts TARGET_HOSTS] < stdin
 
     Streaming tab loader: press ctrl+c to stop.
