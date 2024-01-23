@@ -47,6 +47,8 @@ class ArgparseArgsOrStdin(argparse.Action):
             lines = sys.stdin.readlines()
             if not lines or (len(lines) == 1 and lines[0].strip() == ""):
                 lines = None
+            else:
+                lines = [s.strip() for s in lines]
         else:
             lines = values
         setattr(namespace, self.dest, lines)
@@ -192,6 +194,8 @@ def parse_args_limit(args):
                 args.limit = consts.DEFAULT_PLAY_QUEUE
             elif args.action in (SC.view):
                 args.limit = consts.DEFAULT_PLAY_QUEUE * 4
+            elif args.action in (SC.open_links):
+                args.limit = consts.MANY_LINKS - 1
             elif args.action in (SC.download):
                 args.limit = consts.DEFAULT_PLAY_QUEUE * 60
     elif args.limit.lower() in ("inf", "all"):

@@ -36,7 +36,7 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Delete matching rows",
     )
-    parser.add_argument("--limit", "-L", "-l", "-n", type=int, default=7)
+    parser.add_argument("--limit", "-L", "-l", "-n")
     parser.add_argument("--skip")
 
     parser.add_argument("--cluster-sort", "--cluster", "-C", action="store_true", help=argparse.SUPPRESS)
@@ -49,7 +49,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("database")
     parser.add_argument("search", nargs="*")
     args = parser.parse_intermixed_args()
-    args.action = "open-links"
+    args.action = "open_links"
+    args.defaults = []
+
+    arg_utils.parse_args_limit(args)
 
     args.include += args.search
     if args.include == ["."]:
@@ -188,7 +191,7 @@ def open_links() -> None:
         processes.no_media_found()
 
     for m in media:
-        play(args, m["path"], m["title"])
+        play(args, m["path"], m["url"])
 
         if len(media) >= consts.MANY_LINKS:
             sleep(0.3)
