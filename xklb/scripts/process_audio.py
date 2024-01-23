@@ -39,6 +39,9 @@ def process_path(
     result = subprocess.run(ffprobe_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     info = json.loads(result.stdout)
 
+    if "streams" not in info:
+        print("No stream found:", path)
+        return path
     audio_stream = next((stream for stream in info["streams"] if stream["codec_type"] == "audio"), None)
     if not audio_stream:
         print("No audio stream found:", path)

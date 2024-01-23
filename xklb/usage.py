@@ -1308,7 +1308,14 @@ open_links = """library open-links DATABASE [search] [--title] [--title-prefix T
 
     Open links from a links db
 
+        wget https://github.com/chapmanjacobd/library/raw/main/example_dbs/music.korea.ln.db
+        library open-links music.korea.ln.db
+
         library open-links ~/lb/sites/my.db --cols time_modified -p
+
+    Print a preview instead of opening tabs
+
+        library open-links music.korea.ln.db -p
 
     Custom search engine
 
@@ -1521,11 +1528,15 @@ links_add = r"""library links-add DATABASE PATH ... [--case-sensitive] [--cookie
         library links-add --page-key page https://website/page/1/
         library links-add --page-key article https://website/article/1/
 
-    Import media paths directly
+    Import links from args
 
-        library links-add --no-extract links.db
+        library links-add --no-extract links.db (cb)
 
-    Examples
+    Import lines from stdin
+
+        cb | lb linksdb example_dbs/links.db --skip-extract -
+
+    Other Examples
 
         library links-add links.db https://video/site/ --path-include /video/
 

@@ -100,6 +100,7 @@ class SC:
     galleryadd = "galleryadd"
     galleryupdate = "galleryupdate"
     tabs = "tabs"
+    open_links = "open_links"
     read = "read"
     view = "view"
     download = "download"
