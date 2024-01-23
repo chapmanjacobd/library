@@ -19,6 +19,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--title", "-S", action="store_true")
     parser.add_argument("--title-prefix", "--prefix", nargs="+", action="extend")
 
+    parser.add_argument("--online-media-only", "--online", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--local-media-only", "--local", action="store_true", help=argparse.SUPPRESS)
+
     parser.add_argument("--sort", "-u", nargs="+")
     parser.add_argument("--where", "-w", nargs="+", action="extend", default=[])
     parser.add_argument("--include", "-s", "--search", nargs="+", action="extend", default=[])
@@ -133,7 +136,8 @@ def construct_links_query(args) -> Tuple[str, dict]:
     FROM media
     WHERE 1=1
         AND COALESCE(time_deleted, 0)=0
-        AND path like "http%"
+        {'AND path like "http%"' if args.online_media_only else ''}
+        {'AND path not like "http%"' if args.local_media_only else ''}
         {" ".join(args.filter_sql)}
     ORDER BY 1=1
         {', ' + args.sort if args.sort else ''}
@@ -162,7 +166,11 @@ def make_souffle(args, media):
                 pan.append({**m, "url": url})
 
         if not args.title or args.path:
-            pan.append({**m, "url": m["path"]})
+            if not m["path"].startswith("http"):
+                for pre in args.title_prefix:
+                    pan.append({**m, "url": pre + m["path"]})
+            else:
+                pan.append({**m, "url": m["path"]})
 
     return pan
 
