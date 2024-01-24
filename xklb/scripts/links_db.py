@@ -1,4 +1,4 @@
-import argparse, json, random, sys, time
+import argparse, json, random, time
 from pathlib import Path
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
@@ -177,7 +177,6 @@ def consolidate_media(args, path: str) -> dict:
         "path": path,
         "category": getattr(args, "category", None) or "Uncategorized",
         "time_created": consts.APPLICATION_START,
-        "time_modified": 0,
         "time_deleted": 0,
     }
 
@@ -344,23 +343,22 @@ def links_add() -> None:
                 add_media(args, [p])
                 media_new.add(p)
             printing.print_overwrite(f"Link import: {len(media_new)} new [{len(media_known)} known]")
-        sys.exit(0)
-
-    if args.selenium:
-        web.load_selenium(args)
-    try:
-        playlist_count = 0
-        for playlist_path in arg_utils.gen_paths(args):
-            add_playlist(args, playlist_path)
-            extractor(args, playlist_path)
-
-            if playlist_count > 3:
-                time.sleep(random.uniform(0.05, 2))
-            playlist_count += 1
-
-    finally:
+    else:
         if args.selenium:
-            web.quit_selenium(args)
+            web.load_selenium(args)
+        try:
+            playlist_count = 0
+            for playlist_path in arg_utils.gen_paths(args):
+                add_playlist(args, playlist_path)
+                extractor(args, playlist_path)
+
+                if playlist_count > 3:
+                    time.sleep(random.uniform(0.05, 2))
+                playlist_count += 1
+
+        finally:
+            if args.selenium:
+                web.quit_selenium(args)
 
     if not args.db["media"].detect_fts():
         db_utils.optimize(args)

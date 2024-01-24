@@ -324,7 +324,7 @@ def get_dir_media(args, dirs: Collection, include_subdirs=False, limit=2_000) ->
                 , MIN(h.time_played) time_first_played
                 , MAX(h.time_played) time_last_played
                 , FIRST_VALUE(h.playhead) OVER (PARTITION BY h.media_id ORDER BY h.time_played DESC) playhead
-                , {args.select_sql}
+                , {"\n        , ".join(args.select)}
                 , m.*
             FROM media m
             LEFT JOIN history h on h.media_id = m.id
@@ -476,24 +476,25 @@ def get_related_media(args, m: Dict) -> List[Dict]:
                 , MIN(h.time_played) time_first_played
                 , MAX(h.time_played) time_last_played
                 , FIRST_VALUE(h.playhead) OVER (PARTITION BY h.media_id ORDER BY h.time_played DESC) playhead
-                , {args.select_sql}
+                , {"\n        , ".join(args.select)}
                 , rank
             FROM {args.table} m
             LEFT JOIN history h on h.media_id = m.id
             WHERE 1=1
                 and path != :path
                 {filter_args_sql(args, m_columns)}
-                {'' if args.related >= consts.RELATED_NO_FILTER else (" ".join(args.filter_sql) or '')}
             GROUP BY m.id, m.path
         )
         SELECT *
         FROM m
+        WHERE 1=1
+            {'' if args.related >= consts.RELATED_NO_FILTER else (" ".join(args.filter_sql) or '')}
         ORDER BY play_count
             , m.path like "http%"
-            , {'rank' if 'sort' in args.defaults else f'ntile(1000) over (order by rank), {args.sort}'}
+            , {'rank' if 'sort' in args.defaults else f'ntile(1000) over (order by rank)' + (f', {args.sort}' if args.sort else '')}
             , path
         {"LIMIT " + str(args.limit - 1) if args.limit else ""} {args.offset_sql}
-        """
+    """
     bindings = {"path": m["path"]}
     if args.related >= consts.RELATED_NO_FILTER:
         bindings = {**bindings, **{k: v for k, v in args.filter_bindings.items() if k.startswith("FTS")}}
