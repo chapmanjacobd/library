@@ -175,6 +175,7 @@ def add_playlist(args, path):
 def consolidate_media(args, path: str) -> dict:
     return {
         "path": path,
+        "category": getattr(args, "category", None) or "Uncategorized",
         "time_created": consts.APPLICATION_START,
         "time_modified": 0,
         "time_deleted": 0,
@@ -241,6 +242,11 @@ def count_pages(args, page_limit):
             page_num += args.page_step
 
 
+def update_category(args, path):
+    with args.db.conn:
+        args.db.conn.execute("UPDATE media SET category = ? WHERE path = ?", [args.category, path])
+
+
 def extractor(args, playlist_path):
     known_media = set()
     new_media = set()
@@ -281,10 +287,13 @@ def extractor(args, playlist_path):
                 pass
             elif db_media.exists(args, a_ref.link):
                 page_known.add(a_ref.link)
+                if args.category:
+                    update_category(args, a_ref.link)
             elif a_ref.link in page_new:
                 page_new[a_ref.link] = strings.combine(page_new[a_ref.link], a_ref.link_text)
             else:
                 page_new[a_ref.link] = a_ref.link_text
+
             printing.print_overwrite(f"Page {page_count} link scan: {len(page_new)} new [{len(page_known)} known]")
 
             if not (args.backfill_pages or args.fixed_pages):
@@ -329,6 +338,8 @@ def links_add() -> None:
         for p in arg_utils.gen_paths(args):
             if db_media.exists(args, p):
                 media_known.add(p)
+                if args.category:
+                    update_category(args, p)
             else:
                 add_media(args, [p])
                 media_new.add(p)

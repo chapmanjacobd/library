@@ -178,6 +178,10 @@ class FFProbe:
             log.info("ffprobe %s out %s error %s", p.returncode, out, err)
             if p.returncode == -2:
                 raise KeyboardInterrupt
+            elif p.returncode == 127:  # Cannot open shared object file
+                raise RuntimeError
+            elif p.returncode == -6:  # Too many open files
+                raise OSError
             else:
                 raise UnplayableFile(out, err)
         d = json.loads(out.decode("utf-8"))

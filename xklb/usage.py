@@ -1335,7 +1335,7 @@ open_links = """library open-links DATABASE [search] [--title] [--title-prefix T
     Skip local media
 
         library open-links dl.db --online
-        library open-links dl.db -w 'path like "http%"'  # equivalent
+        library open-links dl.db -w 'path like "http%%"'  # equivalent
 
 """
 
