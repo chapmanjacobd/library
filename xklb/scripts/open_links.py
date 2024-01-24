@@ -3,7 +3,7 @@ from pathlib import Path
 from time import sleep
 from typing import Tuple
 
-from xklb import db_media, usage
+from xklb import db_media, history, usage
 from xklb.media import media_printer
 from xklb.utils import arg_utils, consts, db_utils, iterables, objects, processes
 from xklb.utils.log_utils import log
@@ -128,13 +128,31 @@ def construct_links_query(args) -> Tuple[str, dict]:
         else:
             args.filter_bindings[f"category"] = "%" + args.category.replace(" ", "%").replace("%%", " ") + "%"
 
-    LIMIT = "LIMIT " + str(args.limit) if args.limit else ""
-    OFFSET = f"OFFSET {args.skip}" if args.skip else ""
+    args.limit_sql = "LIMIT " + str(args.limit) if args.limit and not args.cluster_sort else ""
+    args.offset_sql = f"OFFSET {args.skip}" if args.skip and args.limit_sql else ""
 
-    query = f"""SELECT path
-        {', title' if 'title' in m_columns else ''}
-        {', ' + ', '.join(args.cols) if args.cols else ''}
-    FROM media
+    args.select = ["path"]
+    if args.cols:
+        args.select.extend(args.cols)
+    for s in ["title", "hostname", "category"]:
+        if s in m_columns:
+            args.select.append(s)
+
+    query = f"""WITH m as (
+            SELECT
+                {', '.join(args.select) if args.select else ''}
+                , COALESCE(MAX(h.time_played), 0) time_last_played
+                , SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
+                , time_deleted
+            FROM media
+            LEFT JOIN history h on h.media_id = media.id
+            WHERE COALESCE(time_deleted, 0)=0
+            GROUP BY media.id
+        )
+        SELECT
+        {', '.join(args.select) if args.select else ''}
+        {", time_last_played" if args.print else ''}
+    FROM m
     WHERE 1=1
         AND COALESCE(time_deleted, 0)=0
         {'AND path like "http%"' if args.online_media_only else ''}
@@ -142,11 +160,11 @@ def construct_links_query(args) -> Tuple[str, dict]:
         {" ".join(args.filter_sql)}
     ORDER BY 1=1
         {', ' + args.sort if args.sort else ''}
-        , time_modified = 0 DESC
+        , play_count
         {', ROW_NUMBER() OVER ( PARTITION BY hostname )' if 'hostname' in m_columns else ''}
         {', ROW_NUMBER() OVER ( PARTITION BY category )' if 'category' in m_columns else ''}
         , random()
-    {LIMIT} {OFFSET}
+    {args.limit_sql} {args.offset_sql}
     """
 
     return query, args.filter_bindings
@@ -154,8 +172,7 @@ def construct_links_query(args) -> Tuple[str, dict]:
 
 def play(args, path, url) -> None:
     webbrowser.open(url, 2, autoraise=False)
-    with args.db.conn:
-        args.db.conn.execute("UPDATE media SET time_modified = coalesce(time_modified,0) +1 WHERE path = ?", [path])
+    history.add(args, [path], time_played=consts.today_stamp(), mark_done=True)
 
 
 def make_souffle(args, media):
@@ -184,6 +201,7 @@ def make_souffle(args, media):
 
 def open_links() -> None:
     args = parse_args()
+    history.create(args)
 
     query, bindings = construct_links_query(args)
     media = list(args.db.query(query, bindings))
@@ -194,7 +212,7 @@ def open_links() -> None:
     if args.cluster_sort:
         from xklb.scripts.cluster_sort import cluster_dicts
 
-        media = cluster_dicts(args, media)
+        media = cluster_dicts(args, media)[: args.limit]
 
     media = make_souffle(args, media)
 

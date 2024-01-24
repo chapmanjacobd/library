@@ -354,8 +354,8 @@ def construct_query(args) -> Tuple[str, dict]:
         cols.append("time_last_played")
     args.select = [c for c in cols if c in m_columns or c in ["*"]] + getattr(args, "select", [])
     if args.action == SC.read and "tags" in m_columns:
-        args.select += "cast(length(tags) / 4.2 / 220 * 60 as INT) + 10 duration"
-    args.select_sql = "\n        , ".join(args.select)
+        args.select += ["cast(length(tags) / 4.2 / 220 * 60 as INT) + 10 duration"]
+
     args.limit_sql = "LIMIT " + str(args.limit) if args.limit else ""
     args.offset_sql = f"OFFSET {args.skip}" if args.skip and args.limit else ""
     query = f"""WITH m as (
@@ -376,7 +376,7 @@ def construct_query(args) -> Tuple[str, dict]:
             GROUP BY m.id, m.path
         )
         SELECT
-            {args.select_sql}
+            {"\n        , ".join(args.select)}
             , play_count
             , time_first_played
             , time_last_played
