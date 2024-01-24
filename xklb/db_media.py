@@ -318,13 +318,15 @@ def get_dir_media(args, dirs: Collection, include_subdirs=False, limit=2_000) ->
             + ")"
         )
 
+    select_sql = "\n        , ".join(args.select)
+
     query = f"""WITH m as (
             SELECT
                 SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
                 , MIN(h.time_played) time_first_played
                 , MAX(h.time_played) time_last_played
                 , FIRST_VALUE(h.playhead) OVER (PARTITION BY h.media_id ORDER BY h.time_played DESC) playhead
-                , {"\n        , ".join(args.select)}
+                , {select_sql}
                 , m.*
             FROM media m
             LEFT JOIN history h on h.media_id = m.id
@@ -470,13 +472,16 @@ def get_related_media(args, m: Dict) -> List[Dict]:
     )
     args.filter_bindings = {**args.filter_bindings, **search_bindings}
 
+    select_sql = "\n        , ".join(args.select)
+    limit_sql = "LIMIT " + str(args.limit - 1) if args.limit else ""
+    offset_sql = f"OFFSET {args.skip}" if args.skip and limit_sql else ""
     query = f"""WITH m as (
             SELECT
                 SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
                 , MIN(h.time_played) time_first_played
                 , MAX(h.time_played) time_last_played
                 , FIRST_VALUE(h.playhead) OVER (PARTITION BY h.media_id ORDER BY h.time_played DESC) playhead
-                , {"\n        , ".join(args.select)}
+                , {select_sql}
                 , rank
             FROM {args.table} m
             LEFT JOIN history h on h.media_id = m.id
@@ -493,8 +498,9 @@ def get_related_media(args, m: Dict) -> List[Dict]:
             , m.path like "http%"
             , {'rank' if 'sort' in args.defaults else f'ntile(1000) over (order by rank)' + (f', {args.sort}' if args.sort else '')}
             , path
-        {"LIMIT " + str(args.limit - 1) if args.limit else ""} {args.offset_sql}
+        {limit_sql} {offset_sql}
     """
+
     bindings = {"path": m["path"]}
     if args.related >= consts.RELATED_NO_FILTER:
         bindings = {**bindings, **{k: v for k, v in args.filter_bindings.items() if k.startswith("FTS")}}

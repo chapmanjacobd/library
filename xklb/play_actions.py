@@ -356,8 +356,9 @@ def construct_query(args) -> Tuple[str, dict]:
     if args.action == SC.read and "tags" in m_columns:
         args.select += ["cast(length(tags) / 4.2 / 220 * 60 as INT) + 10 duration"]
 
-    args.limit_sql = "LIMIT " + str(args.limit) if args.limit else ""
-    args.offset_sql = f"OFFSET {args.skip}" if args.skip and args.limit else ""
+    select_sql = "\n        , ".join(args.select)
+    limit_sql = "LIMIT " + str(args.limit) if args.limit else ""
+    offset_sql = f"OFFSET {args.skip}" if args.skip and args.limit else ""
     query = f"""WITH m as (
             SELECT
                 m.id
@@ -376,7 +377,7 @@ def construct_query(args) -> Tuple[str, dict]:
             GROUP BY m.id, m.path
         )
         SELECT
-            {"\n        , ".join(args.select)}
+            {select_sql}
             , play_count
             , time_first_played
             , time_last_played
@@ -387,7 +388,7 @@ def construct_query(args) -> Tuple[str, dict]:
             {" ".join([" and " + w for w in args.where if any(a in w for a in aggregate_filter_columns)])}
         ORDER BY 1=1
             , {args.sort}
-        {args.limit_sql} {args.offset_sql}
+        {limit_sql} {offset_sql}
     """
 
     args.filter_sql = [s for s in args.filter_sql if "id" not in s]  # only use random id constraint in first query
