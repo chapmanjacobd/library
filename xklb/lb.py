@@ -239,25 +239,27 @@ def library(args=None) -> None:
         sys.argv = ["lb", *args]
 
     parser = create_subcommands_parser()
-    args, _unk = parser.parse_known_args(args)
+    parser.exit_on_error = False  # type: ignore
+    try:
+        args, _unk = parser.parse_known_args(args)
+    except argparse.ArgumentError:
+        args = argparse.Namespace(version=False)
     if args.version:
         return print(__version__)
 
     log.info("library v%s", __version__)
     log.info(sys.argv)
-    original_argv = sys.argv
-    if len(sys.argv) >= 2:
-        del sys.argv[1]
 
     if hasattr(args, "func"):
-        args.func()
-        return None
+        if len(sys.argv) >= 2:
+            del sys.argv[1]
+        return args.func()
     else:
         try:
-            log.error("Subcommand %s not found", original_argv[1])
+            log.error("Subcommand %s not found", sys.argv[1])
         except Exception:
-            if len(original_argv) > 1:
-                log.error("Invalid args. I see: %s", original_argv)
+            if len(sys.argv) > 1:
+                log.error("Invalid args. I see: %s", sys.argv)
 
         print_help(parser)
         raise SystemExit(1)

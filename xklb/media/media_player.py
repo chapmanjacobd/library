@@ -45,13 +45,69 @@ def watch_chromecast(args, m: dict, subtitles_file=None) -> Optional[subprocess.
     return catt_log
 
 
+def calculate_duration(args, m) -> Tuple[int, int]:
+    start = 0
+    end = m.get("duration") or 0
+
+    if args.interdimensional_cable:
+        start = randrange(int(start), int(end - args.interdimensional_cable + 1))
+        end = start + args.interdimensional_cable
+        log.debug("calculate_duration: %s -- %s", start, end)
+        return start, end
+
+    minimum_duration = 7 * 60
+    playhead = m.get("playhead")
+    if playhead:
+        start = playhead
+
+    duration = m.get("duration", 20 * 60)
+    if args.start:
+        if args.start.isnumeric() and int(args.start) > 0:
+            start = int(args.start)
+        elif "%" in args.start:
+            start_percent = int(args.start[:-1])
+            start = int(duration * start_percent / 100)
+        elif playhead and any([end == 0, end > minimum_duration]):
+            start = playhead
+        elif args.start == "wadsworth":
+            start = duration * 0.3
+        else:
+            start = int(args.start)
+    if args.end:
+        if args.end == "dawsworth":
+            end = duration * 0.65
+        elif "%" in args.end:
+            end_percent = int(args.end[:-1])
+            end = int(duration * end_percent / 100)
+        elif "+" in args.end:
+            end = int(args.start) + int(args.end)
+        else:
+            end = int(args.end)
+
+    log.debug("calculate_duration: %s -- %s", start, end)
+    return start, end
+
+
 def listen_chromecast(args, m: dict) -> Optional[subprocess.CompletedProcess]:
     Path(consts.CAST_NOW_PLAYING).write_text(m["path"])
     Path(consts.FAKE_SUBTITLE).touch()
     catt = which("catt") or "catt"
+    start, end = calculate_duration(args, m)
+
     if args.cast_with_local:
         cast_process = subprocess.Popen(
-            [catt, "-d", args.chromecast_device, "cast", "-s", consts.FAKE_SUBTITLE, m["path"]],
+            [
+                catt,
+                "-d",
+                args.chromecast_device,
+                "cast",
+                "-s",
+                consts.FAKE_SUBTITLE,
+                "--block",
+                "--seek-to",
+                str(start),
+                m["path"],
+            ],
             **processes.os_bg_kwargs(),
         )
         sleep(0.974)  # imperfect lazy sync; I use keyboard shortcuts to send `set speed` commands to mpv for resync
@@ -63,7 +119,18 @@ def listen_chromecast(args, m: dict) -> Optional[subprocess.CompletedProcess]:
         if m["path"].startswith("http"):
             catt_log = args.cc.play_url(m["path"], resolve=True, block=True)
         else:  #  local file
-            catt_log = processes.cmd(catt, "-d", args.chromecast_device, "cast", "-s", consts.FAKE_SUBTITLE, m["path"])
+            catt_log = processes.cmd(
+                catt,
+                "-d",
+                args.chromecast_device,
+                "cast",
+                "-s",
+                consts.FAKE_SUBTITLE,
+                "--block",
+                "--seek-to",
+                str(start),
+                m["path"],
+            )
 
     return catt_log
 
@@ -143,49 +210,6 @@ def transcode(args, path) -> str:
     with args.db.conn:
         args.db.conn.execute("UPDATE media SET path = ? where path = ?", [transcode_dest, path])
     return transcode_dest
-
-
-def calculate_duration(args, m) -> Tuple[int, int]:
-    start = 0
-    end = m.get("duration") or 0
-
-    if args.interdimensional_cable:
-        start = randrange(int(start), int(end - args.interdimensional_cable + 1))
-        end = start + args.interdimensional_cable
-        log.debug("calculate_duration: %s -- %s", start, end)
-        return start, end
-
-    minimum_duration = 7 * 60
-    playhead = m.get("playhead")
-    if playhead:
-        start = playhead
-
-    duration = m.get("duration", 20 * 60)
-    if args.start:
-        if args.start.isnumeric() and int(args.start) > 0:
-            start = int(args.start)
-        elif "%" in args.start:
-            start_percent = int(args.start[:-1])
-            start = int(duration * start_percent / 100)
-        elif playhead and any([end == 0, end > minimum_duration]):
-            start = playhead
-        elif args.start == "wadsworth":
-            start = duration * 0.3
-        else:
-            start = int(args.start)
-    if args.end:
-        if args.end == "dawsworth":
-            end = duration * 0.65
-        elif "%" in args.end:
-            end_percent = int(args.end[:-1])
-            end = int(duration * end_percent / 100)
-        elif "+" in args.end:
-            end = int(args.start) + int(args.end)
-        else:
-            end = int(args.end)
-
-    log.debug("calculate_duration: %s -- %s", start, end)
-    return start, end
 
 
 def get_browser() -> Optional[str]:

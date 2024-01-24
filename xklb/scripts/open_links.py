@@ -62,7 +62,8 @@ def parse_args() -> argparse.Namespace:
         args.include = [str(Path().cwd().resolve())]
 
     if not args.title_prefix:
-        args.title_prefix = ["https://www.google.com/search?q="]
+        args.title_prefix = ["https://www.google.com/search?q=%"]
+    args.title_prefix = [s if "%" in s else s + "%" for s in args.title_prefix]
 
     if args.db:
         args.database = args.db
@@ -159,18 +160,24 @@ def play(args, path, url) -> None:
 
 def make_souffle(args, media):
     pan = []
+
+    urls = set()
     for m in media:
+        m_urls = set()
         if args.title:
             for pre in args.title_prefix:
-                url = pre + (m.get("title") or m["path"])
-                pan.append({**m, "url": url})
+                suffix = m.get("title") or m["path"]
+                m_urls.add(suffix if suffix.startswith("http") else pre.replace("%", suffix))
 
         if not args.title or args.path:
             if not m["path"].startswith("http"):
                 for pre in args.title_prefix:
-                    pan.append({**m, "url": pre + m["path"]})
+                    m_urls.add(pre.replace("%", m["path"]))
             else:
-                pan.append({**m, "url": m["path"]})
+                m_urls.add(m["path"])
+
+        pan.extend([{**m, "url": url} for url in m_urls if url not in urls])
+        urls |= m_urls
 
     return pan
 
