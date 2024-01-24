@@ -115,21 +115,22 @@ def construct_query(args) -> Tuple[str, dict]:
     cols = args.cols or ["path", "text", "time", "rank", "title"]
     args.select = [c for c in cols if c in {**c_columns, **m_columns, **{"*": "Any"}}]
 
-    args.limit_sql = "LIMIT " + str(args.limit) if args.limit else ""
+    select_sql = "\n        , ".join(args.select)
+    limit_sql = "LIMIT " + str(args.limit) if args.limit else ""
     query = f"""WITH c as (
         SELECT id, * FROM {table}
         WHERE 1=1
             {db_media.filter_args_sql(args, c_columns)}
     )
     SELECT
-        {"\n        , ".join(args.select)}
+        {select_sql}
     FROM c
     JOIN media m on m.id = c.media_id
     WHERE 1=1
         {" ".join(args.filter_sql)}
     ORDER BY 1=1
         , {args.sort}
-    {args.limit_sql}
+    {limit_sql}
     """
 
     return query, args.filter_bindings

@@ -128,8 +128,8 @@ def construct_links_query(args) -> Tuple[str, dict]:
         else:
             args.filter_bindings[f"category"] = "%" + args.category.replace(" ", "%").replace("%%", " ") + "%"
 
-    args.limit_sql = "LIMIT " + str(args.limit) if args.limit and not args.cluster_sort else ""
-    args.offset_sql = f"OFFSET {args.skip}" if args.skip and args.limit_sql else ""
+    limit_sql = "LIMIT " + str(args.limit) if args.limit and not args.cluster_sort else ""
+    offset_sql = f"OFFSET {args.skip}" if args.skip and limit_sql else ""
 
     args.select = ["path"]
     if args.cols:
@@ -164,7 +164,7 @@ def construct_links_query(args) -> Tuple[str, dict]:
         {', ROW_NUMBER() OVER ( PARTITION BY hostname )' if 'hostname' in m_columns else ''}
         {', ROW_NUMBER() OVER ( PARTITION BY category )' if 'category' in m_columns else ''}
         , random()
-    {args.limit_sql} {args.offset_sql}
+    {limit_sql} {offset_sql}
     """
 
     return query, args.filter_bindings
