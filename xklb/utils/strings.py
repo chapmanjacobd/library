@@ -137,6 +137,16 @@ def remove_text_inside_brackets(text: str, brackets="()[]") -> str:  # thanks @j
     return "".join(saved_chars)
 
 
+def strip_enclosing_quotes(s):
+    if len(s) < 2:
+        return s
+
+    if (s[0] == '"' and s[-1] == '"') or (s[0] == "'" and s[-1] == "'"):
+        return s[1:-1]
+
+    return s
+
+
 _RE_COMBINE_WHITESPACE = re.compile(r"\s+")
 
 

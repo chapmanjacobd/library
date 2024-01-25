@@ -184,11 +184,14 @@ def consolidate_media(args, path: str) -> dict:
 def add_media(args, variadic):
     for path_or_dict in variadic:
         if isinstance(path_or_dict, str):
-            path = path_or_dict
+            path = strings.strip_enclosing_quotes(path_or_dict)
             d = objects.dict_filter_bool(consolidate_media(args, path))
         else:
             d = objects.dict_filter_bool(
-                {**consolidate_media(args, path_or_dict["path"]), "title": path_or_dict["title"]}
+                {
+                    **consolidate_media(args, strings.strip_enclosing_quotes(path_or_dict["path"])),
+                    "title": strings.strip_enclosing_quotes(path_or_dict["title"]),
+                }
             )
         db_media.add(args, d)
 

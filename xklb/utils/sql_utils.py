@@ -206,6 +206,7 @@ def historical_usage_items(args, freq="monthly", time_column="time_modified", hi
 
 def historical_usage(args, freq="monthly", time_column="time_played", hide_deleted=False, where=""):
     freq_label, freq_sql = frequency_time_to_sql(freq, time_column)
+    m_columns = args.db["media"].columns_dict
 
     query = f"""WITH m as (
             SELECT
@@ -222,13 +223,14 @@ def historical_usage(args, freq="monthly", time_column="time_played", hide_delet
         )
         SELECT
             {freq_sql} AS {freq_label}
-            , SUM(duration) AS total_duration
-            , AVG(duration) AS avg_duration
-            , SUM(size) AS total_size
-            , AVG(size) AS avg_size
+            {', SUM(duration) AS total_duration' if 'duration' in m_columns else ''}
+            {', AVG(duration) AS avg_duration' if 'duration' in m_columns else ''}
+            {', SUM(size) AS total_size' if 'size' in m_columns else ''}
+            {', AVG(size) AS avg_size' if 'size' in m_columns else ''}
             , count(*) as count
         FROM m
         WHERE {time_column}>0 {where}
         GROUP BY {freq_label}
     """
+
     return list(args.db.query(query))
