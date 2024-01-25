@@ -1,9 +1,14 @@
-import json
+import json, types
 from contextlib import contextmanager
 from functools import wraps
 from typing import Dict, Optional
 
 from xklb.utils.log_utils import log
+
+
+class NoneSpace(types.SimpleNamespace):
+    def __getattr__(self, name):
+        return None
 
 
 def fallback(func, fallback):
