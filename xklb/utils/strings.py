@@ -137,12 +137,23 @@ def remove_text_inside_brackets(text: str, brackets="()[]") -> str:  # thanks @j
     return "".join(saved_chars)
 
 
+@repeat_until_same
 def strip_enclosing_quotes(s):
     if len(s) < 2:
         return s
 
-    if (s[0] == '"' and s[-1] == '"') or (s[0] == "'" and s[-1] == "'"):
-        return s[1:-1]
+    for q in ['"', "'", "＇", '"', '‛', '‟', '＂', '‚', '〞', '〝', '〟', '„', '⹂', '❟', '❜', '❛', '❝', '❞']:
+        if s[0] == q and s[-1] == q:
+            return s[1:-1]
+
+    ls = ['‘', '“', '❮', '‹', '«']
+    rs = ['’', '”', '❯', '›', '»']
+    for l, r in zip(ls, rs):
+        if s[0] == l and s[-1] == r:
+            return s[1:-1]
+    for r, l in zip(ls, rs):
+        if s[0] == l and s[-1] == r:
+            return s[1:-1]
 
     return s
 
