@@ -5,7 +5,7 @@ from typing import Tuple
 
 from xklb import db_media, history, usage
 from xklb.media import media_printer
-from xklb.utils import arg_utils, consts, db_utils, iterables, objects, processes
+from xklb.utils import arg_utils, consts, db_utils, iterables, objects, processes, web
 from xklb.utils.log_utils import log
 
 
@@ -182,14 +182,14 @@ def make_souffle(args, media):
     for m in media:
         m_urls = set()
         if args.title:
-            for pre in args.title_prefix:
+            for engine in args.title_prefix:
                 suffix = m.get("title") or m["path"]
-                m_urls.add(suffix if suffix.startswith("http") else pre.replace("%", suffix))
+                m_urls.add(suffix if suffix.startswith("http") else web.construct_search(engine, suffix))
 
         if not args.title or args.path:
             if not m["path"].startswith("http"):
-                for pre in args.title_prefix:
-                    m_urls.add(pre.replace("%", m["path"]))
+                for engine in args.title_prefix:
+                    m_urls.add(web.construct_search(engine, m["path"]))
             else:
                 m_urls.add(m["path"])
 

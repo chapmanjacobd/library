@@ -1,11 +1,11 @@
-import argparse, difflib, json, os.path, sys
+import argparse, difflib, json, logging, os.path, sys
 from collections import Counter
 from pathlib import Path
 from typing import Dict, List
 
 from xklb import usage
-from xklb.scripts import mcda
-from xklb.utils import consts, file_utils, iterables, nums, objects, printing, strings
+from xklb.scripts import eda, mcda
+from xklb.utils import consts, db_utils, file_utils, iterables, nums, objects, printing, strings
 from xklb.utils.consts import DBType
 from xklb.utils.log_utils import Timer, log
 
@@ -73,33 +73,7 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def cluster_paths(paths, n_clusters=None):
-    if len(paths) < 2:
-        return paths
-
-    from sklearn.cluster import KMeans
-    from sklearn.feature_extraction.text import TfidfVectorizer
-
-    sentence_strings = (strings.path_to_sentence(s) for s in paths)
-
-    try:
-        vectorizer = TfidfVectorizer(min_df=2, strip_accents="unicode", stop_words="english")
-        X = vectorizer.fit_transform(sentence_strings)
-    except ValueError:
-        try:
-            vectorizer = TfidfVectorizer(strip_accents="unicode", stop_words="english")
-            X = vectorizer.fit_transform(sentence_strings)
-        except ValueError:
-            try:
-                vectorizer = TfidfVectorizer()
-                X = vectorizer.fit_transform(sentence_strings)
-            except ValueError:
-                vectorizer = TfidfVectorizer(analyzer="char_wb")
-                X = vectorizer.fit_transform(sentence_strings)
-
-    clusterizer = KMeans(n_clusters=n_clusters or int(X.shape[0] ** 0.5), random_state=0, n_init=10).fit(X)
-    clusters = clusterizer.labels_
-
+def map_cluster_to_paths(paths, clusters):
     grouped_strings = {}
     for i, group_string in enumerate(paths):
         cluster_id = clusters[i]
@@ -108,6 +82,11 @@ def cluster_paths(paths, n_clusters=None):
             grouped_strings[cluster_id] = []
 
         grouped_strings[cluster_id].append(group_string)
+    return grouped_strings
+
+
+def group_paths(paths, clusters):
+    grouped_strings = map_cluster_to_paths(paths, clusters)
 
     result = []
     for _cluster_id, paths in grouped_strings.items():
@@ -131,6 +110,40 @@ def cluster_paths(paths, n_clusters=None):
             "grouped_paths": paths,
         }
         result.append(metadata)
+    return result
+
+
+def find_clusters(n_clusters, sentence_strings):
+    from sklearn.cluster import KMeans
+    from sklearn.feature_extraction.text import TfidfVectorizer
+
+    try:
+        vectorizer = TfidfVectorizer(min_df=2, strip_accents="unicode", stop_words="english")
+        X = vectorizer.fit_transform(sentence_strings)
+    except ValueError:
+        try:
+            vectorizer = TfidfVectorizer(strip_accents="unicode", stop_words="english")
+            X = vectorizer.fit_transform(sentence_strings)
+        except ValueError:
+            try:
+                vectorizer = TfidfVectorizer()
+                X = vectorizer.fit_transform(sentence_strings)
+            except ValueError:
+                vectorizer = TfidfVectorizer(analyzer="char_wb")
+                X = vectorizer.fit_transform(sentence_strings)
+
+    clusterizer = KMeans(n_clusters=n_clusters or int(X.shape[0] ** 0.5), random_state=0, n_init=10).fit(X)
+    clusters = clusterizer.labels_
+    return clusters
+
+
+def cluster_paths(paths, n_clusters=None):
+    if len(paths) < 2:
+        return paths
+
+    sentence_strings = (strings.path_to_sentence(s) for s in paths)
+    clusters = find_clusters(n_clusters, sentence_strings)
+    result = group_paths(paths, clusters)
 
     return result
 
@@ -138,8 +151,29 @@ def cluster_paths(paths, n_clusters=None):
 def cluster_dicts(args, media):
     if len(media) < 2:
         return media
+
+    n_clusters = getattr(args, "clusters", None)
+    search_columns = {
+        col
+        for _table, table_config in db_utils.config.items()
+        if "search_columns" in table_config
+        for col in table_config["search_columns"]
+    }
+
     media_keyed = {d["path"]: d for d in media}
-    groups = cluster_paths([d["path"] for d in media], n_clusters=getattr(args, "clusters", None))
+    paths = [d["path"] for d in media]
+    sentence_strings = (
+        strings.path_to_sentence(" ".join(str(v) for k, v in d.items() if v and k in search_columns)) for d in media
+    )
+
+    clusters = find_clusters(n_clusters, sentence_strings)
+
+    if log.getEffectiveLevel() >= logging.DEBUG:
+        from pandas import DataFrame
+
+        eda.print_info(objects.NoneSpace(end_row="inf"), DataFrame(clusters))
+
+    groups = group_paths(paths, clusters)
     groups = sorted(groups, key=lambda d: (-len(d["grouped_paths"]), -len(d["common_prefix"])))
 
     if getattr(args, "sort_groups_by", None) is not None:

@@ -464,6 +464,11 @@ def infinite_scroll(driver):
     yield selenium_extract_html(driver)
 
 
+def construct_search(engine, s):
+    s = urllib.parse.quote(s, safe="")
+    return engine.replace("%", s, 1)
+
+
 def safe_unquote(url):
     # https://en.wikipedia.org/wiki/Internationalized_Resource_Identifier
     # we aren't writing HTML so we can unquote

@@ -499,9 +499,6 @@ def process_playqueue(args) -> None:
     if args.fetch_siblings:
         media = db_media.get_sibling_media(args, media)
 
-    if args.play_in_order:
-        media = db_media.natsort_media(args, media)
-
     if args.partial:
         media = history_sort(args, media)
         log.debug("utils.history_sort: %s", t.elapsed())
@@ -566,6 +563,9 @@ def process_playqueue(args) -> None:
                         media_set.add(key)
                         media.append(media_keyed[key])
             log.debug("double for loop compare_block_strings: %s", t.elapsed())
+
+    if args.play_in_order:
+        media = db_media.natsort_media(args, media)
 
     if args.cluster_sort:
         from xklb.scripts.cluster_sort import cluster_dicts
