@@ -52,7 +52,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("database")
     parser.add_argument("search", nargs="*")
     args = parser.parse_intermixed_args()
-    args.action = "open_links"
+    args.action = consts.SC.open_links
     args.defaults = []
 
     arg_utils.parse_args_limit(args)
