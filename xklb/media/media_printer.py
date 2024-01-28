@@ -36,22 +36,21 @@ def filter_deleted(media):
     return local_list + http_list, nonexistent_local_paths
 
 
-def cadence_adjusted_items(args, items: int):
-    history = sql_utils.historical_usage_items(args, freq="minutely", hide_deleted=True)
+def cadence_adjusted_items(args, items: int, time_column=None):
+    if time_column:
+        history = sql_utils.historical_usage_items(args, freq="daily", time_column=time_column, hide_deleted=True)
+    else:
+        history = sql_utils.historical_usage(args, freq="daily", hide_deleted=True)
+
     try:
-        historical_minutely = statistics.mean((d["count"] or 0) for d in history)
-        log.debug("historical_minutely mean %s", historical_minutely)
+        historical_daily = statistics.mean((d["count"] or 0) for d in history)
     except statistics.StatisticsError:
         try:
-            historical_minutely = history[0]["count"]
-            log.debug("historical_minutely 1n %s", historical_minutely)
+            historical_daily = history[0]["count"]
         except IndexError:
-            log.debug("historical_minutely index error")
             return None
 
-    log.debug("items %s", items)
-
-    return int(items / historical_minutely * 60)
+    return int(items / historical_daily * 24 * 60 * 60)
 
 
 def cadence_adjusted_duration(args, duration):
@@ -121,10 +120,13 @@ def media_printer(args, data, units=None, media_len=None) -> None:
             D["avg_duration"] = duration / len(media)
 
         if hasattr(args, "action"):
-            if action in (SC.listen, SC.watch, SC.read, SC.view):
-                D["cadence_adj_duration"] = cadence_adjusted_duration(args, duration)
-            elif action in (SC.download, SC.download_status):
-                D["download_duration"] = cadence_adjusted_items(args, D["count"])
+            if action in (SC.download, SC.download_status):
+                D["download_duration"] = cadence_adjusted_items(args, D["count"], time_column="time_downloaded")
+            else:
+                if duration > 0:
+                    D["cadence_adj_duration"] = cadence_adjusted_duration(args, duration)
+                else:
+                    D["cadence_adj_duration"] = cadence_adjusted_items(args, D["count"])
 
         if "size" in media[0]:
             D["size"] = sum((d.get("size") or 0) for d in media)
@@ -152,8 +154,7 @@ def media_printer(args, data, units=None, media_len=None) -> None:
     if "a" not in print_args and action == SC.download_status:
         for m in media:
             m["download_duration"] = cadence_adjusted_items(
-                args,
-                m["never_downloaded"] + m["retry_queued"],
+                args, m["never_downloaded"] + m["retry_queued"], time_column="time_downloaded"
             )  # TODO where= p.extractor_key, or try to use SQL
 
     for k, v in list(media[0].items()):

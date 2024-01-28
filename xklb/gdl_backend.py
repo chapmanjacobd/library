@@ -228,7 +228,7 @@ def get_playlist_metadata(args, playlist_path):
         if db_media.exists(args, webpath):
             log.warning("Media already exists")
 
-        info = {**info, "playlist_id": playlist_id, "webpath": webpath, **args.extra_media_data}
+        info = {**info, "playlist_id": playlist_id, "webpath": webpath}
         db_media.playlist_media_add(
             args,
             playlist_path,

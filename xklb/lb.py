@@ -10,6 +10,7 @@ progs = {
     "Create database subcommands": {
         "fsadd": "Add local media",
         "tubeadd": "Add online video media (yt-dlp)",
+        "webadd": "Add open-directory media",
         "galleryadd": "Add online gallery media (gallery-dl)",
         "tabsadd": "Create a tabs database; Add URLs",
         "links_add": "Create a link-scraping database",
@@ -221,6 +222,7 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     add_parser(subparsers, "xklb.scripts.scatter.scatter")
     add_parser(subparsers, "xklb.scripts.search_db.search_db", ["s", "sdb", "search-dbs"])
     add_parser(subparsers, "xklb.scripts.streaming_tab_loader.streaming_tab_loader", ["surf"])
+    add_parser(subparsers, "xklb.scripts.web_add.web_add", ["web-dir-add"])
     add_parser(subparsers, "xklb.search.search", ["sc", "search-captions"])
     add_parser(subparsers, "xklb.site_extract.site_add", ["sa", "sql-site", "site-sql"])
     add_parser(subparsers, "xklb.tabs_actions.tabs", ["tb"])

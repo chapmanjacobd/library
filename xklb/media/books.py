@@ -1,5 +1,5 @@
 import os, re
-from typing import List, Optional
+from typing import List
 
 from xklb.utils import iterables, processes, strings
 from xklb.utils.log_utils import log
@@ -7,7 +7,7 @@ from xklb.utils.log_utils import log
 REGEX_SENTENCE_ENDS = re.compile(r";|,|\.|\*|\n|\t")
 
 
-def munge_book_tags(media, path) -> Optional[dict]:
+def munge_book_tags(path) -> dict:
     try:
         import textract
     except ModuleNotFoundError:
@@ -22,7 +22,7 @@ def munge_book_tags(media, path) -> Optional[dict]:
         log.warning(e)
         log.error(f"Failed reading text. {path}")
         tags = []
-    return {**media, "tags": strings.combine(tags)}
+    return {"tags": strings.combine(tags)}
 
 
 munge_book_tags_fast = processes.with_timeout(70)(munge_book_tags)

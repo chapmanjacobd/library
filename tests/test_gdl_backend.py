@@ -16,8 +16,6 @@ def create_args(test_name):
         verbose=2,
         profile={},
         extractor_config={},
-        extra_playlist_data={},
-        extra_media_data={},
     )
     args.db = connect(args)
     return args

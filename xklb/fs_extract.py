@@ -73,14 +73,6 @@ def parse_args(action, usage):
     parser.add_argument("--ocr", "--OCR", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--speech-recognition", "--speech", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--scan-subtitles", "--scan-subtitle", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--extra-media-data", default={}, nargs=1, action=arg_utils.ArgparseDict, metavar="KEY=VALUE")
-    parser.add_argument(
-        "--extra-playlist-data",
-        default={},
-        nargs=1,
-        action=arg_utils.ArgparseDict,
-        metavar="KEY=VALUE",
-    )
 
     parser.add_argument("--delete-unplayable", action="store_true")
     parser.add_argument("--hash", action="store_true")
@@ -174,7 +166,7 @@ def extract_metadata(mp_args, path) -> Optional[Dict[str, int]]:
     }
 
     if mp_args.profile in (DBType.audio, DBType.video):
-        media = av.munge_av_tags(mp_args, media, path)
+        media |= av.munge_av_tags(mp_args, path)
 
     if not Path(path).exists():
         return media
@@ -183,9 +175,9 @@ def extract_metadata(mp_args, path) -> Optional[Dict[str, int]]:
         try:
             start = timer()
             if any([mp_args.ocr, mp_args.speech_recognition]):
-                media = books.munge_book_tags_slow(media, path)
+                media |= books.munge_book_tags_slow(path)
             else:
-                media = books.munge_book_tags_fast(media, path)
+                media |= books.munge_book_tags_fast(path)
         except mp_TimeoutError:
             log.warning(f"Timed out trying to read file. {path}")
         else:
@@ -243,7 +235,7 @@ def extract_chunk(args, media) -> None:
 
     media = [{"playlist_id": args.playlist_id, **d} for d in media]
     media = iterables.list_dict_filter_bool(media)
-    args.db["media"].insert_all(iterables.list_dict_filter_bool(media), pk="id", alter=True, replace=True)
+    args.db["media"].insert_all(media, pk="id", alter=True, replace=True)
 
     for d in captions:
         media_id = args.db.pop("select id from media where path = ?", [d["path"]])
@@ -374,11 +366,7 @@ def scan_path(args, path_str: str) -> int:
     info = {
         "extractor_key": "Local",
         "extractor_config": objects.dict_filter_bool(
-            {
-                k: v
-                for k, v in args.__dict__.items()
-                if k not in ["db", "database", "verbose", "extra_playlist_data", "force", "paths"]
-            }
+            {k: v for k, v in args.__dict__.items() if k not in ["db", "database", "verbose", "force", "paths"]}
         ),
         "time_deleted": 0,
     }

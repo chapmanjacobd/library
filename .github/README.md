@@ -95,13 +95,15 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.4.004)
+    xk media library subcommands (v2.4.005)
 
     Create database subcommands:
     ╭───────────────┬────────────────────────────────────────────────────╮
     │ fsadd         │ Add local media                                    │
     ├───────────────┼────────────────────────────────────────────────────┤
     │ tubeadd       │ Add online video media (yt-dlp)                    │
+    ├───────────────┼────────────────────────────────────────────────────┤
+    │ webadd        │ Add open-directory media                           │
     ├───────────────┼────────────────────────────────────────────────────┤
     │ galleryadd    │ Add online gallery media (gallery-dl)              │
     ├───────────────┼────────────────────────────────────────────────────┤
@@ -255,6 +257,11 @@ To stop playing press Ctrl+C in either the terminal or mpv
     ├────────────────┼─────────────────────────────────────────────┤
     │ nouns          │ Unstructured text -> compound nouns (stdin) │
     ╰────────────────┴─────────────────────────────────────────────╯
+
+    Other subcommands:
+    ╭───────────┬───────────╮
+    │ webupdate │ webupdate │
+    ╰───────────┴───────────╯
 
 
 </details>
@@ -573,6 +580,19 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         Downloading will add the extra metadata automatically to the database.
         You can always fetch more metadata later via tubeupdate:
         library tubeupdate tw.db --extra
+
+
+</details>
+
+###### webadd
+
+<details><summary>Add open-directory media</summary>
+
+    $ library webadd -h
+    usage: library web-add [(--filesystem) | --video | --audio | --image | --text] DATABASE URL ...
+
+    Scan open directories
+
 
 
 </details>
@@ -2571,6 +2591,21 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     Use --split-longer-than to _only_ detect silence for files in excess of a specific duration
 
         library process-audio --split-longer-than 36mins audiobook.m4b audiobook2.mp3
+
+
+</details>
+
+### Other subcommands
+
+###### webupdate
+
+<details><summary>webupdate</summary>
+
+    $ library webupdate -h
+    usage: library web-update DATABASE
+
+    Update saved open directories
+
 
 
 </details>

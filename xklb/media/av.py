@@ -8,12 +8,12 @@ from xklb.utils.consts import DBType
 from xklb.utils.log_utils import log
 
 
-def get_subtitle_tags(args, path, streams, codec_types) -> dict:
+def get_subtitle_tags(path, streams, codec_types, scan_subtitles=False) -> dict:
     attachment_count = sum(1 for s in codec_types if s == "attachment")
     internal_subtitles_count = sum(1 for s in codec_types if s == "subtitle")
 
     subtitles = []
-    if args.scan_subtitles:
+    if scan_subtitles:
         internal_subtitles = subtitle.externalize_internal_subtitles(path, streams)
         external_subtitles = subtitle.get_external(path)
 
@@ -105,7 +105,8 @@ def get_audio_tags(f) -> dict:
     return stream_tags
 
 
-def munge_av_tags(args, media, path) -> dict:
+def munge_av_tags(args, path) -> dict:
+    media = {}
     try:
         probe = processes.FFProbe(path)
     except (KeyboardInterrupt, SystemExit) as sys_exit:
@@ -117,7 +118,7 @@ def munge_av_tags(args, media, path) -> dict:
     except processes.UnplayableFile as e:
         log.error(f"Failed reading header. {path}")
         log.debug(e)
-        if args.delete_unplayable and not file_utils.is_file_open(path):
+        if getattr(args, "delete_unplayable", False) and not file_utils.is_file_open(path):
             file_utils.trash(path, detach=False)
             media["time_deleted"] = consts.APPLICATION_START
         media["error"] = "Metadata check failed"
@@ -142,7 +143,7 @@ def munge_av_tags(args, media, path) -> dict:
     duration = format_.pop("duration", None)
 
     corruption = None
-    if args.check_corrupt and Path(path).suffix.lower() not in consts.SKIP_MEDIA_CHECK:
+    if getattr(args, "check_corrupt", False) and Path(path).suffix.lower() not in consts.SKIP_MEDIA_CHECK:
         try:
             corruption = media_check.calculate_corruption(
                 path,
@@ -256,7 +257,9 @@ def munge_av_tags(args, media, path) -> dict:
         return media
 
     if args.profile == DBType.video:
-        video_tags = get_subtitle_tags(args, path, streams, codec_types)
+        video_tags = get_subtitle_tags(
+            path, streams, codec_types, scan_subtitles=getattr(args, "scan_subtitles", False)
+        )
         media = {**media, **video_tags}
     elif args.profile == DBType.audio:
         stream_tags = get_audio_tags(path)

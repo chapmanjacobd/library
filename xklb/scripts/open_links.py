@@ -226,5 +226,6 @@ def open_links() -> None:
     for m in media:
         play(args, m["path"], m["url"])
 
+        sleep(0.1)
         if len(media) >= consts.MANY_LINKS:
-            sleep(0.3)
+            sleep(0.7)

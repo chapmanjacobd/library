@@ -184,9 +184,7 @@ def parse_inner_urls(args, url, markup):
             link_text_lower = link_text if args.case_sensitive else link_text.lower()
 
             if is_desired_url(args, a_ref, link_lower, link_text_lower):
-                a_ref.link = link
-                a_ref.link_text = link_text
-                yield a_ref
+                yield (link, strings.strip_enclosing_quotes(link_text))
 
         if args.verbose > consts.LOG_DEBUG_SQL:
             breakpoint()
@@ -225,13 +223,14 @@ def get_inner_urls(args, url):
 
 
 def print_or_download(args, a_ref):
+    link, link_text = a_ref
     if args.download:
-        web.download_url(a_ref.link)
+        web.download_url(link)
     else:
         if args.print_link_text:
-            printing.pipe_print(f"{a_ref.link}\t{a_ref.link_text}")
+            printing.pipe_print(f"{link}\t{link_text}")
         else:
-            printing.pipe_print(a_ref.link)
+            printing.pipe_print(link)
 
 
 def extract_links() -> None:

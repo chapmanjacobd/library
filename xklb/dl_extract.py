@@ -3,7 +3,7 @@ from typing import List, Tuple
 
 from xklb import gdl_backend, tube_backend, usage
 from xklb.media import media_printer
-from xklb.utils import arg_utils, consts, db_utils, iterables, nums, objects, printing, processes, sql_utils
+from xklb.utils import arg_utils, consts, db_utils, iterables, nums, objects, printing, processes, sql_utils, web
 from xklb.utils.consts import SC, DBType
 from xklb.utils.log_utils import log
 
@@ -43,6 +43,14 @@ def parse_args():
         const=DBType.image,
         help="Use image downloader",
     )
+    subp_profile.add_argument(
+        "--filesystem",
+        "--fs",
+        action="store_const",
+        dest="profile",
+        const=DBType.filesystem,
+        help="Use filesystem downloader",
+    )
 
     parser.add_argument(
         "--extractor-config",
@@ -54,14 +62,7 @@ def parse_args():
         help="Add key/value pairs to override or extend downloader configuration",
     )
     parser.add_argument("--download-archive")
-    parser.add_argument("--extra-media-data", default={}, nargs=1, action=arg_utils.ArgparseDict, metavar="KEY=VALUE")
-    parser.add_argument(
-        "--extra-playlist-data",
-        default={},
-        nargs=1,
-        action=arg_utils.ArgparseDict,
-        metavar="KEY=VALUE",
-    )
+
     parser.add_argument("--safe", "-safe", action="store_true", help="Skip generic URLs")
     parser.add_argument("--same-domain", action="store_true", help="Choose a random domain to focus on")
 
@@ -184,7 +185,7 @@ def construct_query(args) -> Tuple[str, dict]:
             FROM media m
             LEFT JOIN playlists p on p.id = m.playlist_id
             WHERE 1=1
-                and COALESCE(m.time_downloaded,0) = 0
+                {'and COALESCE(m.time_downloaded,0) = 0' if 'time_downloaded' in m_columns else ''}
                 and COALESCE(m.time_deleted,0) = 0
                 {'and COALESCE(p.time_deleted, 0) = 0' if 'time_deleted' in pl_columns else ''}
                 and m.path like "http%"
@@ -273,7 +274,15 @@ def dl_download(args=None) -> None:
     if "limit" in args.defaults and "media" in args.db.table_names() and "webpath" in m_columns:
         if args.db.pop("SELECT 1 from media WHERE webpath is NULL and path in (select webpath from media) LIMIT 1"):
             with args.db.conn:
-                args.db.conn.execute("DELETE from media WHERE webpath is NULL and path in (select webpath from media)")
+                args.db.conn.execute(
+                    """
+                    DELETE from media WHERE webpath is NULL
+                    AND path in (
+                        select webpath from media
+                        WHERE error IS NULL OR error != 'Media check failed'
+                    )
+                    """
+                )
 
     args.blocklist_rules = []
     if "blocklist" in args.db.table_names():
@@ -330,6 +339,8 @@ def dl_download(args=None) -> None:
                 tube_backend.download(args, m)
             elif args.profile == DBType.image:
                 gdl_backend.download(args, m)
+            elif args.profile == DBType.filesystem:
+                web.download_url(m["path"], output_prefix=args.prefix)
             else:
                 raise NotImplementedError
         except Exception:

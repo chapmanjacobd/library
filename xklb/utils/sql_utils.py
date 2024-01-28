@@ -184,7 +184,7 @@ def frequency_time_to_sql(freq, time_column):
     return freq_label, freq_sql
 
 
-def historical_usage_items(args, freq="monthly", time_column="time_modified", hide_deleted=False, where=""):
+def historical_usage_items(args, freq="monthly", time_column="time_modified", hide_deleted=False, where=None):
     m_columns = db_utils.columns(args, "media")
 
     freq_label, freq_sql = frequency_time_to_sql(freq, time_column)
@@ -197,23 +197,25 @@ def historical_usage_items(args, freq="monthly", time_column="time_modified", hi
             , count(*) as count
         FROM media m
         WHERE coalesce({freq_label}, 0)>0
-            and {time_column}>0 {where}
+            and {time_column}>0 {where or ''}
             {"AND COALESCE(time_deleted, 0)=0" if hide_deleted else ""}
         GROUP BY {freq_label}
     """
+
     return list(args.db.query(query))
 
 
-def historical_usage(args, freq="monthly", time_column="time_played", hide_deleted=False, where=""):
+def historical_usage(args, freq="monthly", time_column="time_played", hide_deleted=False, where=None):
     freq_label, freq_sql = frequency_time_to_sql(freq, time_column)
     m_columns = args.db["media"].columns_dict
+    h_columns = args.db["history"].columns_dict
 
     query = f"""WITH m as (
             SELECT
                 SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
                 , MIN(h.time_played) time_first_played
                 , MAX(h.time_played) time_last_played
-                , FIRST_VALUE(h.playhead) OVER (PARTITION BY h.media_id ORDER BY h.time_played DESC) playhead
+                {', FIRST_VALUE(h.playhead) OVER (PARTITION BY h.media_id ORDER BY h.time_played DESC) playhead' if 'playhead' in h_columns else ''}
                 , *
             FROM media m
             JOIN history h on h.media_id = m.id
@@ -229,7 +231,7 @@ def historical_usage(args, freq="monthly", time_column="time_played", hide_delet
             {', AVG(size) AS avg_size' if 'size' in m_columns else ''}
             , count(*) as count
         FROM m
-        WHERE {time_column}>0 {where}
+        WHERE {time_column}>0 {where or ''}
         GROUP BY {freq_label}
     """
 

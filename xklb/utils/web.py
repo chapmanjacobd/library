@@ -1,7 +1,7 @@
 import argparse, datetime, functools, os, re, tempfile, time, urllib.error, urllib.parse, urllib.request
 from pathlib import Path
 from shutil import which
-from urllib.parse import unquote, urljoin, urlparse
+from urllib.parse import parse_qs, unquote, urlencode, urljoin, urlparse, urlunparse
 
 import requests
 from idna import decode as puny_decode
@@ -94,6 +94,32 @@ def requests_session(args=argparse.Namespace()):
     return session
 
 
+def stat(path):
+    try:
+        r = requests_session().head(path)
+        info = {"time_created": consts.APPLICATION_START, "time_deleted": 0}
+
+        if 200 <= r.status_code < 400:
+            if "content-length" in r.headers:
+                info["size"] = int(r.headers["content-length"])
+
+            if "last-modified" in r.headers:
+                last_modified = r.headers["last-modified"]
+                info["time_modified"] = int(
+                    datetime.datetime.strptime(last_modified, "%a, %d %b %Y %H:%M:%S GMT").timestamp()
+                )
+
+        elif r.status_code == 404:
+            info["time_deleted"] = consts.now()
+        else:
+            r.raise_for_status()
+
+        return info
+    except requests.RequestException as e:
+        log.exception("%s could not get metadata", path)
+        return {}
+
+
 def get(args, url, skip_404=True, ignore_errors=False, ignore_429=False, **kwargs):
     s = requests_session(args)
     try:
@@ -126,6 +152,31 @@ def get(args, url, skip_404=True, ignore_errors=False, ignore_429=False, **kwarg
 
     log.info("Something weird is happening probably: %s", url)
     return response
+
+
+class PartialContent:
+    def __init__(self, url, max_size=1048576):
+        self.url = url
+        self.max_size = max_size
+        self.temp_file = None
+
+    def __enter__(self):
+        response = requests_session().get(self.url, stream=True)
+        response.raise_for_status()
+        self.temp_file = tempfile.NamedTemporaryFile(delete=False)
+
+        for chunk in response.iter_content(chunk_size=65536):
+            if self.temp_file.tell() < self.max_size:
+                self.temp_file.write(chunk)
+            else:
+                break
+
+        self.temp_file.close()
+        return self.temp_file.name
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        if self.temp_file:
+            os.remove(self.temp_file.name)
 
 
 def download_embeds(args, soup):
@@ -506,3 +557,36 @@ def construct_absolute_url(base_url, href):
         except Exception:
             pass
     return href
+
+
+def is_subpath(parent_url, child_url):
+    child = urlparse(child_url)
+    parent = urlparse(parent_url)
+
+    if child.scheme != parent.scheme or child.netloc != parent.netloc:
+        return False
+
+    return child.path.startswith(parent.path.rstrip("/") + "/")
+
+
+def remove_apache_sorting_params(url):
+    parsed_url = urlparse(url)
+    query_params = parse_qs(parsed_url.query)
+
+    apache_sorting_keys = ["C", "O"]
+    for key in apache_sorting_keys:
+        query_params.pop(key, None)
+    new_query_string = urlencode(query_params, doseq=True)
+
+    new_url = urlunparse(
+        (
+            parsed_url.scheme,
+            parsed_url.netloc,
+            parsed_url.path,
+            parsed_url.params,
+            new_query_string,
+            parsed_url.fragment,
+        )
+    )
+
+    return new_url
