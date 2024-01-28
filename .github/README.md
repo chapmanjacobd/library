@@ -95,7 +95,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.4.005)
+    xk media library subcommands (v2.4.006)
 
     Create database subcommands:
     ╭───────────────┬────────────────────────────────────────────────────╮
@@ -131,6 +131,8 @@ To stop playing press Ctrl+C in either the terminal or mpv
     │ fsupdate      │ Update local media              │
     ├───────────────┼─────────────────────────────────┤
     │ tubeupdate    │ Update online video media       │
+    ├───────────────┼─────────────────────────────────┤
+    │ webupdate     │ Update open-directory media     │
     ├───────────────┼─────────────────────────────────┤
     │ galleryupdate │ Update online gallery media     │
     ├───────────────┼─────────────────────────────────┤
@@ -257,11 +259,6 @@ To stop playing press Ctrl+C in either the terminal or mpv
     ├────────────────┼─────────────────────────────────────────────┤
     │ nouns          │ Unstructured text -> compound nouns (stdin) │
     ╰────────────────┴─────────────────────────────────────────────╯
-
-    Other subcommands:
-    ╭───────────┬───────────╮
-    │ webupdate │ webupdate │
-    ╰───────────┴───────────╯
 
 
 </details>
@@ -593,6 +590,8 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Scan open directories
 
+    library download open_dir.db --fs --prefix ~/d/dump/video/ --relative -vv -s factory -p
+
 
 
 </details>
@@ -914,6 +913,19 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     Remove duplicate playlists:
 
         lb dedupe-db video.db playlists --bk extractor_playlist_id
+
+
+</details>
+
+###### webupdate
+
+<details><summary>Update open-directory media</summary>
+
+    $ library webupdate -h
+    usage: library web-update DATABASE
+
+    Update saved open directories
+
 
 
 </details>
@@ -2591,21 +2603,6 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     Use --split-longer-than to _only_ detect silence for files in excess of a specific duration
 
         library process-audio --split-longer-than 36mins audiobook.m4b audiobook2.mp3
-
-
-</details>
-
-### Other subcommands
-
-###### webupdate
-
-<details><summary>webupdate</summary>
-
-    $ library webupdate -h
-    usage: library web-update DATABASE
-
-    Update saved open directories
-
 
 
 </details>

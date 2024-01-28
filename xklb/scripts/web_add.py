@@ -214,6 +214,10 @@ def spider(args, paths: Set):
         traversed_paths.add(path)
         log.info("Loading %s", path)
 
+        printing.print_overwrite(
+            f"Pages to scan {len(paths)} link scan: {new_media_count} new [{len(known_paths)} known]"
+        )
+
         if path.endswith("/"):
             for a_ref in get_urls(args, path):
                 if a_ref is None:
@@ -243,34 +247,46 @@ def spider(args, paths: Set):
                 else:
                     new_paths[path] = None  # add key to map; title: None
 
-        printing.print_overwrite(
-            f"Pages to scan {len(paths)} link scan: {len(new_paths)} new [{len(known_paths)} known]"
-        )
-
         media = [{"path": k, "title": v} for k, v in new_paths.items()]
-        for m in media:
+        new_media_count += len(media)
+        for i, m in enumerate(media, start=1):
+            printing.print_overwrite(
+                f"Pages to scan {len(paths)} link scan: {new_media_count} new [{len(known_paths)} known]; basic metadata {i} of {len(media)}"
+            )
+
             m |= web.stat(m["path"])
-            m["type"] = file_utils.mimetype(path)
+            m["type"] = file_utils.mimetype(m["path"])
 
             if getattr(args, "hash", False):
                 # TODO: use head_foot_stream
                 m["hash"] = sample_hash.sample_hash_file(path)
 
-        if args.profile in [DBType.audio, DBType.video]:
-            for m in media:
+        for i, m in enumerate(media, start=1):
+            printing.print_overwrite(
+                f"Pages to scan {len(paths)} link scan: {new_media_count} new [{len(known_paths)} known]; {args.profile} metadata {i} of {len(media)}"
+            )
+
+            extension = m["path"].rsplit(".", 1)[-1].lower()
+            remote_path = m["path"]
+            if args.profile == DBType.video and extension in consts.VIDEO_EXTENSIONS:
                 m |= av.munge_av_tags(args, m["path"])
-        elif args.profile == DBType.text:
-            for m in media:
+            elif args.profile == DBType.audio and extension in consts.AUDIO_ONLY_EXTENSIONS:
+                m |= av.munge_av_tags(args, m["path"])
+            elif args.profile == DBType.text and extension in consts.TEXTRACT_EXTENSIONS:
                 with web.PartialContent(m["path"]) as temp_file_path:
                     m |= books.munge_book_tags_fast(temp_file_path)
-        elif args.profile == DBType.image:
-            for m in media:
+            elif args.profile == DBType.image and extension in consts.IMAGE_EXTENSIONS:
                 with web.PartialContent(m["path"], max_size=32 * 1024) as temp_file_path:
                     m |= books.extract_image_metadata_chunk([{"path": temp_file_path}])[0]
+            m["path"] = remote_path  # required for temp file extraction
 
         if media:
             add_media(args, media)
-            new_media_count += len(media)
+
+        printing.print_overwrite(
+            f"Pages to scan {len(paths)} link scan: {new_media_count} new [{len(known_paths)} known]"
+        )
+
     return new_media_count
 
 
@@ -342,7 +358,7 @@ def web_update(args=None) -> None:
             extractor_config = json.loads(playlist.get("extractor_config") or "{}")
             args_env = arg_utils.override_config(parser, extractor_config, args)
 
-            # TODO: use directory Last-Modified header to skip file trees which don't need to be scanned
+            # TODO: use directory Last-Modified header to skip file trees which don't need to be updated
             new_media = spider(args_env, {playlist["path"]})
 
             if new_media > 0:

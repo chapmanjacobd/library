@@ -305,26 +305,43 @@ def quit_selenium(args):
             pass
 
 
-def download_url(url, output_path=None, output_prefix=None, chunk_size=8 * 1024 * 1024, retry_num=0):
-    session = requests_session()
-    response = session.get(url, stream=True)
-
-    if response.status_code // 100 != 2:  # Not 2xx
-        log.error(f"Error {response.status_code} downloading {url}")
-
-    remote_size = nums.safe_int(response.headers.get("Content-Length"))
-
+def set_output_path(url, output_path, output_prefix, relative, response):
     if output_path is None:
         content_d = response.headers.get("Content-Disposition")
         if content_d:
-            output_path = content_d.split("filename=")[1].replace("/", "-")
+            filename = content_d.split("filename=")[1].replace("/", "-")
         else:
-            output_path = url.split("/")[-1]
+            filename = url.split("/")[-1]
 
-        if output_prefix:
-            output_path = os.path.join(output_prefix / output_path)
+        base_path = "."
+        if relative:
+            parsed_url = urlparse(url)
+            relative_path = parsed_url.netloc + "/" + parsed_url.path.lstrip("/")
+            base_path = os.path.dirname(relative_path)
+
+        output_path = os.path.join(base_path, filename)
         output_path = path_utils.clean_path(output_path.encode())
 
+    if output_prefix:
+        output_path = os.path.join(output_prefix, output_path)
+    return output_path
+
+
+def download_url(
+    url, output_path=None, output_prefix=None, relative=False, chunk_size=8 * 1024 * 1024, retry_num=0, max_retries=10
+):
+    if retry_num > max_retries:
+        raise RuntimeError(f"Max retries exceeded for {url}")
+
+    session = requests_session()
+    r = session.get(url, stream=True)
+
+    if not 200 <= r.status_code < 400:
+        log.error(f"Error {r.status_code} {url}")
+
+    remote_size = nums.safe_int(r.headers.get("Content-Length"))
+
+    output_path = set_output_path(url, output_path, output_prefix, relative, r)
     if output_path == ".":
         log.warning("Skipping directory %s", url)
         return
@@ -343,33 +360,34 @@ def download_url(url, output_path=None, output_prefix=None, chunk_size=8 * 1024 
                 p.unlink()
             else:
                 headers = {"Range": f"bytes={local_size}-"}
-                response = session.get(url, headers=headers, stream=True)
-                if response.status_code != 206:  # HTTP Partial Content
+                r = session.get(url, headers=headers, stream=True)
+                if r.status_code != 206:  # HTTP Partial Content
                     p.unlink()
-                    response = session.get(url, stream=True)
+                    r = session.get(url, stream=True)
         else:
             p.unlink()
 
-    with open(output_path, "ab") as f:
-        try:
-            for chunk in response.iter_content(chunk_size=chunk_size):
+    try:
+        with open(output_path, "ab") as f:
+            for chunk in r.iter_content(chunk_size=chunk_size):
                 if chunk:
                     f.write(chunk)
-        except (requests.exceptions.ChunkedEncodingError, ConnectionError):
-            if not remote_size:
-                raise
 
-    if remote_size:
-        downloaded_size = os.path.getsize(output_path)
-        if downloaded_size < remote_size:
-            if retry_num >= 10:
-                msg = f"Download interrupted ({strings.safe_percent(downloaded_size/remote_size)}) {output_path}"
+        if remote_size:
+            downloaded_size = os.path.getsize(output_path)
+            if downloaded_size < remote_size:
+                msg = f"Incomplete download ({strings.safe_percent(downloaded_size/remote_size)}) {output_path}"
                 raise RuntimeError(msg)
-            else:
-                time.sleep(retry_num)
-                download_url(url, output_path, output_prefix, chunk_size, retry_num=retry_num + 1)
+    except OSError:
+        raise
+    except Exception:
+        retry_num += 1
+        log.info("Retry #%s %s", retry_num, url)
+        time.sleep(retry_num)
+        return download_url(url, output_path, output_prefix, relative, chunk_size, retry_num)
 
-    set_timestamp(response.headers, output_path)
+    set_timestamp(r.headers, output_path)
+    return output_path
 
 
 def get_elements_forward(start, end):
