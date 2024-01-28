@@ -6,6 +6,8 @@ from pathlib import Path
 from shutil import which
 from typing import List, Optional, Set, Tuple, Union
 
+import urllib3
+
 from xklb.utils import consts, file_utils, printing, processes, web
 from xklb.utils.log_utils import log
 
@@ -269,9 +271,12 @@ def head_foot_stream(url, head_len, foot_len):
 
     head_bytes = head_response.raw.read(head_len)
 
-    foot_response = web.session.get(url, stream=True, headers={"Range": f"bytes={-foot_len}"})
+    foot_response = web.session.get(url, stream=True, headers={"Range": f"bytes=-{foot_len}"})
     foot_response.raw.decode_content = True
-    foot_bytes = foot_response.raw.read(foot_len)
+    try:
+        foot_bytes = foot_response.raw.read(foot_len)
+    except urllib3.exceptions.DecodeError:
+        foot_bytes = b""
 
     stream = io.BytesIO(head_bytes + foot_bytes)
     return stream
@@ -333,8 +338,12 @@ def mimetype(path):
                 file_type = "block device"
             elif p.is_char_device():
                 file_type = "char device"
-            elif Path(path).stat().st_size == 0:
-                file_type = "empty file"
+            try:
+                if Path(path).stat().st_size == 0:
+                    file_type = "empty file"
+            except Exception:
+                pass
+
         except FileNotFoundError:
             return
 
@@ -427,12 +436,12 @@ def read_file_to_dataframes(
         "netcdf",
         "application/x-netcdf",
     ):
-        import xarray as xr
+        import xarray as xr  # type: ignore
 
         ds = xr.open_dataset(path)
         dfs = [ds.to_dataframe()]
     elif mimetype in ("zarr",):
-        import xarray as xr
+        import xarray as xr  # type: ignore
 
         ds = xr.open_zarr(path)
         dfs = [ds.to_dataframe()]

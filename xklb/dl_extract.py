@@ -1,7 +1,7 @@
 import argparse, os, sys
 from typing import List, Tuple
 
-from xklb import gdl_backend, tube_backend, usage
+from xklb import db_media, gdl_backend, tube_backend, usage
 from xklb.media import media_printer
 from xklb.utils import arg_utils, consts, db_utils, iterables, nums, objects, printing, processes, sql_utils, web
 from xklb.utils.consts import SC, DBType
@@ -71,6 +71,7 @@ def parse_args():
     parser.add_argument("--subtitle-languages", "--subtitle-language", "--sl", action=arg_utils.ArgparseList)
 
     parser.add_argument("--prefix", default=os.getcwd(), help=argparse.SUPPRESS)
+    parser.add_argument("--relative", action="store_true", help="Replicate website file tree")
     parser.add_argument("--ext")
 
     parser.add_argument("--print", "-p", default="", const="p", nargs="?", help=argparse.SUPPRESS)
@@ -340,7 +341,8 @@ def dl_download(args=None) -> None:
             elif args.profile == DBType.image:
                 gdl_backend.download(args, m)
             elif args.profile == DBType.filesystem:
-                web.download_url(m["path"], output_prefix=args.prefix)
+                local_path = web.download_url(m["path"], output_prefix=args.prefix, relative=args.relative)
+                db_media.download_add(args, m["path"], {}, local_path)
             else:
                 raise NotImplementedError
         except Exception:

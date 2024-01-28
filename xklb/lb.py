@@ -25,6 +25,7 @@ progs = {
     "Update database subcommands": {
         "fsupdate": "Update local media",
         "tubeupdate": "Update online video media",
+        "webupdate": "Update open-directory media",
         "galleryupdate": "Update online gallery media",
         "links_update": "Update a link-scraping database",
         "redditupdate": "Update reddit media",
@@ -223,6 +224,7 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     add_parser(subparsers, "xklb.scripts.search_db.search_db", ["s", "sdb", "search-dbs"])
     add_parser(subparsers, "xklb.scripts.streaming_tab_loader.streaming_tab_loader", ["surf"])
     add_parser(subparsers, "xklb.scripts.web_add.web_add", ["web-dir-add"])
+    add_parser(subparsers, "xklb.scripts.web_update.web_update", ["web-dir-update"])
     add_parser(subparsers, "xklb.search.search", ["sc", "search-captions"])
     add_parser(subparsers, "xklb.site_extract.site_add", ["sa", "sql-site", "site-sql"])
     add_parser(subparsers, "xklb.tabs_actions.tabs", ["tb"])

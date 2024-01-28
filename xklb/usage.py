@@ -1687,6 +1687,8 @@ webadd = """library web-add [(--filesystem) | --video | --audio | --image | --te
 
     Scan open directories
 
+    library download open_dir.db --fs --prefix ~/d/dump/video/ --relative -vv -s factory -p
+
 """
 
 webupdate = """library web-update DATABASE
