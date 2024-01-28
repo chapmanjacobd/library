@@ -235,8 +235,12 @@ def extract_image_metadata_chunk(metadata: List[dict]) -> List[dict]:
         raise
 
     chunk_paths = [d["path"] for d in metadata]
-    with exiftool.ExifToolHelper() as et:
-        exif = et.get_metadata(chunk_paths)
+    try:
+        with exiftool.ExifToolHelper() as et:
+            exif = et.get_metadata(chunk_paths)
+    except exiftool.exceptions.ExifToolExecuteError:
+        log.exception("exifTool failed executing get_metadata %s", metadata)
+        return metadata
 
     exif_enriched = []
     for m, e in zip(metadata, exif):
