@@ -1682,3 +1682,15 @@ media_check = """library media-check [--chunk-size SECONDS] [--gap SECONDS OR 0.
         [ 82.0 ..  91.0] [ 50] ∎∎∎∎∎∎∎∎
         [ 91.0 .. 100.0] [141] ∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎
 """
+
+webadd = """library web-add [(--filesystem) | --video | --audio | --image | --text] DATABASE URL ...
+
+    Scan open directories
+
+"""
+
+webupdate = """library web-update DATABASE
+
+    Update saved open directories
+
+"""

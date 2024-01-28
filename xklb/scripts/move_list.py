@@ -67,6 +67,7 @@ def get_table(args) -> List[dict]:
         from media
         where 1=1
             and coalesce(time_deleted, 0)=0
+            and size > 0
         order by path
         """,
         ),

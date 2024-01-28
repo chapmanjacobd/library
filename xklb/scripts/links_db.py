@@ -108,15 +108,6 @@ def parse_args(**kwargs):
     parser.add_argument("--auto-pager", "--autopager", action="store_true")
     parser.add_argument("--poke", action="store_true")
     parser.add_argument("--chrome", action="store_true")
-
-    parser.add_argument(
-        "--extra-playlist-data",
-        default={},
-        nargs=1,
-        action=arg_utils.ArgparseDict,
-        metavar="KEY=VALUE",
-    )
-
     parser.add_argument("--force", action="store_true")
 
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
@@ -281,20 +272,22 @@ def extractor(args, playlist_path):
                 end_of_playlist = True
                 break
 
-            if a_ref.link == args.stop_link:
+            link, link_text = a_ref
+
+            if link == args.stop_link:
                 end_of_playlist = True
                 break
 
-            if a_ref.link in page_known:
+            if link in page_known:
                 pass
-            elif db_media.exists(args, a_ref.link):
-                page_known.add(a_ref.link)
+            elif db_media.exists(args, link):
+                page_known.add(link)
                 if args.category:
-                    update_category(args, a_ref.link)
-            elif a_ref.link in page_new:
-                page_new[a_ref.link] = strings.combine(page_new[a_ref.link], a_ref.link_text)
+                    update_category(args, link)
+            elif link in page_new:
+                page_new[link] = strings.combine(page_new[link], link_text)
             else:
-                page_new[a_ref.link] = a_ref.link_text
+                page_new[link] = link_text
 
             printing.print_overwrite(f"Page {page_count} link scan: {len(page_new)} new [{len(page_known)} known]")
 

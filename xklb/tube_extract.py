@@ -38,14 +38,7 @@ def parse_args(action, usage) -> argparse.Namespace:
     parser.add_argument("--subs", action="store_true")
     parser.add_argument("--auto-subs", "--autosubs", action="store_true")
     parser.add_argument("--subtitle-languages", "--subtitle-language", "--sl", action=arg_utils.ArgparseList)
-    parser.add_argument("--extra-media-data", default={}, nargs=1, action=arg_utils.ArgparseDict, metavar="KEY=VALUE")
-    parser.add_argument(
-        "--extra-playlist-data",
-        default={},
-        nargs=1,
-        action=arg_utils.ArgparseDict,
-        metavar="KEY=VALUE",
-    )
+
     parser.add_argument("--ignore-errors", "--ignoreerrors", "-i", action="store_true", help=argparse.SUPPRESS)
 
     parser.add_argument("--timeout", "-T", help="Quit after x minutes")

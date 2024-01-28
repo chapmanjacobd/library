@@ -65,7 +65,7 @@ def is_sqlite(path):
 
 def gen_paths(args):
     if args.file:
-        with open(args.file) as f:
+        with open(args.file, "r") as f:
             for line in f:
                 path = line.rstrip("\n")
                 if path.strip():

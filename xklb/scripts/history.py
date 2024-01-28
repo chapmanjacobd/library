@@ -131,7 +131,9 @@ def history() -> None:
 
     if args.facet in WATCHING:
         print(args.facet.title() + ":")
-        tbl = history_fn(args, args.frequency, "time_played", args.hide_deleted, "and coalesce(play_count, 0)=0")
+        tbl = history_fn(
+            args, args.frequency, "time_played", hide_deleted=args.hide_deleted, where="and coalesce(play_count, 0)=0"
+        )
         media_printer.media_printer(args, tbl)
 
         process_search(args, m_columns)
@@ -165,7 +167,9 @@ def history() -> None:
 
     elif args.facet in WATCHED:
         print(args.facet.title() + ":")
-        tbl = history_fn(args, args.frequency, "time_played", args.hide_deleted, "and coalesce(play_count, 0)>0")
+        tbl = history_fn(
+            args, args.frequency, "time_played", hide_deleted=args.hide_deleted, where="and coalesce(play_count, 0)>0"
+        )
         media_printer.media_printer(args, tbl)
 
         process_search(args, m_columns)

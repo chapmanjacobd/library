@@ -134,7 +134,7 @@ def add(args, playlist_path: str, info: dict, check_subpath=False, extractor_key
             delete_subpath_playlists(args, playlist_path)
 
     pl = consolidate(args, objects.dumbcopy(info))
-    playlist = {**pl, "path": playlist_path, **args.extra_playlist_data}
+    playlist = {**pl, "path": playlist_path}
     if extractor_key:
         playlist["extractor_key"] = extractor_key
     return _add(args, objects.dict_filter_bool(playlist))
@@ -240,6 +240,5 @@ def save_undownloadable(args, playlist_path) -> None:
     entry = {
         "path": playlist_path,
         "extractor_config": args.extractor_config,
-        **args.extra_playlist_data,
     }
     _add(args, objects.dict_filter_bool(entry))

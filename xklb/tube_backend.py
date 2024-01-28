@@ -135,8 +135,6 @@ def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True) -> 
                     if db_playlists.media_exists(args, playlist_path, webpath) and not args.ignore_errors:
                         raise ExistingPlaylistVideoReached
 
-                    entry = {**entry, **args.extra_media_data}
-
                     if not info.get("playlist_id") or webpath == playlist_path:
                         log.warning("Importing playlist-less media %s", playlist_path)
                     else:
@@ -475,7 +473,9 @@ def download(args, m) -> None:
 
     if not ydl_log["error"] and info:
         try:
-            info["corruption"] = int(media_check.calculate_corruption(local_path, threads=1) * 100)
+            info["corruption"] = int(
+                media_check.calculate_corruption(local_path, threads=1, full_scan_if_corrupt=True) * 100
+            )
         except RuntimeError:
             info["corruption"] = 50
         if info["corruption"] > 7:

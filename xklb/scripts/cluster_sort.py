@@ -1,4 +1,4 @@
-import argparse, difflib, json, logging, os.path, sys
+import argparse, difflib, json, os.path, sys
 from collections import Counter
 from pathlib import Path
 from typing import Dict, List
@@ -168,7 +168,7 @@ def cluster_dicts(args, media):
 
     clusters = find_clusters(n_clusters, sentence_strings)
 
-    if log.getEffectiveLevel() >= logging.DEBUG:
+    if args.verbose >= consts.LOG_INFO:
         from pandas import DataFrame
 
         eda.print_info(objects.NoneSpace(end_row="inf"), DataFrame(clusters))
