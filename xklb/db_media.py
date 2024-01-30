@@ -318,7 +318,7 @@ def get_dir_media(args, dirs: Collection, include_subdirs=False, limit=2_000) ->
             + ")"
         )
 
-    select_sql = "\n        , ".join(args.select)
+    select_sql = "\n        , ".join(s for s in args.select if s not in ["rank"])
 
     query = f"""WITH m as (
             SELECT
