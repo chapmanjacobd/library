@@ -3,7 +3,7 @@ from os.path import commonprefix
 from pathlib import Path
 
 from xklb import usage
-from xklb.utils import objects, path_utils, processes
+from xklb.utils import arg_utils, file_utils, objects, path_utils, processes
 from xklb.utils.log_utils import log
 
 
@@ -11,6 +11,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library relmv", usage=usage.relmv)
     parser.add_argument("--verbose", "-v", action="count", default=0)
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--ext", "-e", action=arg_utils.ArgparseList)
 
     parser.add_argument("sources", nargs="+", help="one or more source files or directories to move")
     parser.add_argument("dest", help="destination directory")
@@ -72,6 +73,9 @@ def rel_mv() -> None:
     args = parse_args()
 
     dest = Path(args.dest).expanduser().resolve()
+
+    if args.ext:
+        args.sources = [p for source in args.sources for p in file_utils.rglob(source, args.ext)[0]]
     rel_move(args.sources, dest, dry_run=args.dry_run)
 
 
