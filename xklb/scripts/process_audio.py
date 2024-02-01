@@ -47,10 +47,10 @@ def process_path(
         print("No audio stream found:", path)
         return path
 
-    channels = audio_stream["channels"]
-    bitrate = int(audio_stream.get("bit_rate", None) or info["format"]["bit_rate"])
-    source_rate = int(audio_stream["sample_rate"])
-    duration = float(audio_stream.get("duration", None) or info["format"]["duration"])
+    channels = audio_stream.get("channels") or 2
+    bitrate = int(audio_stream.get("bit_rate") or info["format"].get("bit_rate") or 256000)
+    source_rate = int(audio_stream.get("sample_rate") or 44100)
+    duration = float(audio_stream.get("duration") or info["format"].get("duration") or 0)
 
     assert bitrate > 0
     assert channels > 0
