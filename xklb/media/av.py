@@ -256,12 +256,12 @@ def munge_av_tags(args, path) -> dict:
     if media.get("time_deleted"):
         return media
 
-    if args.profile == DBType.video:
+    if objects.is_profile(args, DBType.video):
         video_tags = get_subtitle_tags(
             path, streams, codec_types, scan_subtitles=getattr(args, "scan_subtitles", False)
         )
         media = {**media, **video_tags}
-    elif args.profile == DBType.audio:
+    elif objects.is_profile(args, DBType.audio):
         stream_tags = get_audio_tags(path)
         media = {**media, **stream_tags}
 

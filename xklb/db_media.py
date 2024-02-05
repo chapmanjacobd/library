@@ -238,8 +238,8 @@ def download_add(
     if local_path and Path(local_path).exists():
         local_path = str(Path(local_path).resolve())
         fs_args = argparse.Namespace(
-            profile=args.profile,
-            scan_subtitles=args.profile == DBType.video,
+            profiles=args.profiles,
+            scan_subtitles=DBType.video in args.profiles,
             ocr=False,
             speech_recognition=False,
             delete_unplayable=False,

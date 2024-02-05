@@ -1,7 +1,7 @@
 import argparse, datetime, functools, os, re, tempfile, time, urllib.error, urllib.parse, urllib.request
 from pathlib import Path
 from shutil import which
-from urllib.parse import parse_qs, unquote, urlencode, urljoin, urlparse, urlunparse
+from urllib.parse import parse_qs, parse_qsl, quote, unquote, urlencode, urljoin, urlparse, urlunparse
 
 import requests
 from idna import decode as puny_decode
@@ -541,10 +541,36 @@ def construct_search(engine, s):
 def safe_unquote(url):
     # https://en.wikipedia.org/wiki/Internationalized_Resource_Identifier
     # we aren't writing HTML so we can unquote
+
     try:
-        return unquote(url, errors="strict")
+        parsed_url = urlparse(url)
     except UnicodeDecodeError:
         return url
+
+    def selective_unquote(component, restricted_chars):
+        try:
+            unquoted = unquote(component, errors="strict")
+        except UnicodeDecodeError:
+            return component
+        # re-quote restricted chars
+        return "".join(quote(char, safe="") if char in restricted_chars else char for char in unquoted)
+
+    def unquote_query_params(query):
+        query_pairs = parse_qsl(query, keep_blank_values=True)
+        return "&".join(
+            selective_unquote(key, "=&#") + "=" + selective_unquote(value, "=&#") for key, value in query_pairs
+        )
+
+    unquoted_path = selective_unquote(parsed_url.path, ";?#")
+    unquoted_params = selective_unquote(parsed_url.params, "?#")
+    unquoted_query = unquote_query_params(parsed_url.query)
+    unquoted_fragment = selective_unquote(parsed_url.fragment, "")
+
+    new_url = urlunparse(
+        (parsed_url.scheme, parsed_url.netloc, unquoted_path, unquoted_params, unquoted_query, unquoted_fragment)
+    )
+
+    return new_url
 
 
 def url_decode(href):

@@ -4,7 +4,7 @@ from functools import wraps
 from io import StringIO
 from pathlib import Path
 from shutil import which
-from typing import List, Optional, Set, Tuple, Union
+from typing import Iterable, Set, Tuple, Union
 
 import urllib3
 
@@ -19,7 +19,7 @@ def scan_stats(files, filtered_files, folders):
     )
 
 
-def rglob(base_dir: str, extensions: Optional[List[str]] = None) -> Tuple[Set[str], Set[str], Set[str]]:
+def rglob(base_dir: str, extensions: Union[None, Iterable[str]] = None) -> Tuple[Set[str], Set[str], Set[str]]:
     files = set()
     filtered_files = set()
     folders = set()
@@ -53,28 +53,6 @@ def rglob(base_dir: str, extensions: Optional[List[str]] = None) -> Tuple[Set[st
     log.info("Filtered extensions: %s", filtered_extensions)
 
     return files, filtered_files, folders
-
-
-def get_image_files(path) -> Set[str]:
-    return rglob(path, consts.IMAGE_EXTENSIONS)[0]  # type: ignore
-
-
-def get_audio_files(path) -> Set[str]:
-    return rglob(path, [*consts.VIDEO_EXTENSIONS, *consts.AUDIO_ONLY_EXTENSIONS])[0]
-
-
-def get_video_files(path) -> Set[str]:
-    return rglob(path, consts.VIDEO_EXTENSIONS)[0]  # type: ignore
-
-
-def get_text_files(path, image_recognition=False, speech_recognition=False) -> Set[str]:
-    extensions = [*consts.TEXTRACT_EXTENSIONS]
-    if image_recognition:
-        extensions.extend(consts.OCR_EXTENSIONS)
-    if speech_recognition:
-        extensions.extend(consts.SPEECH_RECOGNITION_EXTENSIONS)
-
-    return rglob(path, extensions)[0]
 
 
 def file_temp_copy(src) -> str:
