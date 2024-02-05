@@ -135,3 +135,11 @@ def json_shelve(filename, default):
 
     except OSError:
         yield default
+
+
+def is_profile(args, profile_target):
+    if getattr(args, "profile", "") == profile_target:
+        return True
+    elif profile_target in getattr(args, "profiles", []):
+        return True
+    return False

@@ -91,8 +91,8 @@ def parse_args(**kwargs):
     profile.add_argument(
         "--audio",
         "-A",
-        action="store_const",
-        dest="profile",
+        action="append_const",
+        dest="profiles",
         const=DBType.audio,
         help="Create audio database",
     )
@@ -100,36 +100,35 @@ def parse_args(**kwargs):
         "--filesystem",
         "--web",
         "-F",
-        action="store_const",
-        dest="profile",
+        action="append_const",
+        dest="profiles",
         const=DBType.filesystem,
         help="Create filesystem database",
     )
     profile.add_argument(
         "--video",
         "-V",
-        action="store_const",
-        dest="profile",
+        action="append_const",
+        dest="profiles",
         const=DBType.video,
         help="Create video database",
     )
     profile.add_argument(
         "--text",
         "-T",
-        action="store_const",
-        dest="profile",
+        action="append_const",
+        dest="profiles",
         const=DBType.text,
         help="Create text database",
     )
     profile.add_argument(
         "--image",
         "-I",
-        action="store_const",
-        dest="profile",
+        action="append_const",
+        dest="profiles",
         const=DBType.image,
         help="Create image database",
     )
-    parser.set_defaults(profile=DBType.filesystem)
     parser.add_argument("--scan-all-files", "-a", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--ext", action=arg_utils.ArgparseList)
 
@@ -155,6 +154,9 @@ def parse_args(**kwargs):
     if "add" in kwargs["prog"]:
         parser.add_argument("paths", nargs="*", action=arg_utils.ArgparseArgsOrStdin, help=argparse.SUPPRESS)
     args = parser.parse_intermixed_args()
+
+    if not args.profiles:
+        args.profiles = [DBType.filesystem]
 
     if args.scroll:
         args.selenium = True
@@ -263,22 +265,22 @@ def spider(args, paths: Set):
 
         for i, m in enumerate(media, start=1):
             printing.print_overwrite(
-                f"Pages to scan {len(paths)} link scan: {new_media_count} new [{len(known_paths)} known]; {args.profile} metadata {i} of {len(media)}"
+                f"Pages to scan {len(paths)} link scan: {new_media_count} new [{len(known_paths)} known]; extra metadata {i} of {len(media)}"
             )
 
             extension = m["path"].rsplit(".", 1)[-1].lower()
-            remote_path = m["path"]
-            if args.profile == DBType.video and extension in consts.VIDEO_EXTENSIONS:
+            remote_path = m["path"]  # for temp file extraction
+            if DBType.video in args.profiles and (extension in consts.VIDEO_EXTENSIONS or args.scan_all_files):
                 m |= av.munge_av_tags(args, m["path"])
-            elif args.profile == DBType.audio and extension in consts.AUDIO_ONLY_EXTENSIONS:
+            if DBType.audio in args.profiles and (extension in consts.AUDIO_ONLY_EXTENSIONS or args.scan_all_files):
                 m |= av.munge_av_tags(args, m["path"])
-            elif args.profile == DBType.text and extension in consts.TEXTRACT_EXTENSIONS:
+            if DBType.text in args.profiles and (extension in consts.TEXTRACT_EXTENSIONS or args.scan_all_files):
                 with web.PartialContent(m["path"]) as temp_file_path:
                     m |= books.munge_book_tags_fast(temp_file_path)
-            elif args.profile == DBType.image and extension in consts.IMAGE_EXTENSIONS:
+            if DBType.image in args.profiles and (extension in consts.IMAGE_EXTENSIONS or args.scan_all_files):
                 with web.PartialContent(m["path"], max_size=32 * 1024) as temp_file_path:
                     m |= books.extract_image_metadata_chunk([{"path": temp_file_path}])[0]
-            m["path"] = remote_path  # required for temp file extraction
+            m["path"] = remote_path  # restore from temp file extraction
 
         if media:
             add_media(args, media)

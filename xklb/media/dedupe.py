@@ -353,7 +353,7 @@ def dedupe_media() -> None:
             """
         You should use `rmlint` instead:
 
-            $ rmlint --progress --merge-directories --partial-hidden --xattr
+            $ rmlint --progress --partial-hidden --rank-by dOma
         """,
         )
         return

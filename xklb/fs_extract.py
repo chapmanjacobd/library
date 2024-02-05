@@ -18,49 +18,48 @@ from xklb.utils.log_utils import log
 def parse_args(action, usage):
     parser = argparse.ArgumentParser(prog="library " + action, usage=usage)
 
-    profile = parser.add_mutually_exclusive_group()
-    profile.add_argument(
+    profiles = parser.add_argument_group()
+    profiles.add_argument(
         "--audio",
         "-A",
-        action="store_const",
-        dest="profile",
+        action="append_const",
+        dest="profiles",
         const=DBType.audio,
-        help="Create audio database",
+        help="Extract audio metadata",
     )
-    profile.add_argument(
+    profiles.add_argument(
         "--filesystem",
         "--fs",
         "-F",
-        action="store_const",
-        dest="profile",
+        action="append_const",
+        dest="profiles",
         const=DBType.filesystem,
-        help="Create filesystem database",
+        help="Extract filesystem metadata",
     )
-    profile.add_argument(
+    profiles.add_argument(
         "--video",
         "-V",
-        action="store_const",
-        dest="profile",
+        action="append_const",
+        dest="profiles",
         const=DBType.video,
-        help="Create video database",
+        help="Extract video metadata",
     )
-    profile.add_argument(
+    profiles.add_argument(
         "--text",
         "-T",
-        action="store_const",
-        dest="profile",
+        action="append_const",
+        dest="profiles",
         const=DBType.text,
-        help="Create text database",
+        help="Extract text metadata",
     )
-    profile.add_argument(
+    profiles.add_argument(
         "--image",
         "-I",
-        action="store_const",
-        dest="profile",
+        action="append_const",
+        dest="profiles",
         const=DBType.image,
-        help="Create image database",
+        help="Extract image metadata",
     )
-    parser.set_defaults(profile=DBType.video)
     parser.add_argument("--scan-all-files", "-a", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--ext", action=arg_utils.ArgparseList)
 
@@ -112,6 +111,9 @@ def parse_args(action, usage):
         parser.add_argument("paths", nargs="+")
     args = parser.parse_intermixed_args()
 
+    if not args.profiles:
+        args.profiles = [DBType.video]
+
     if args.move:
         args.move = str(Path(args.move).expanduser().resolve())
 
@@ -130,7 +132,7 @@ def parse_args(action, usage):
         args.paths = iterables.conform(args.paths)
     log.info(objects.dict_filter_bool(args.__dict__))
 
-    if args.profile in (DBType.audio, DBType.video) and not which("ffprobe"):
+    if not which("ffprobe") and (DBType.audio in args.profiles or DBType.video in args.profiles):
         log.error("ffmpeg is not installed. Install it with your package manager.")
         raise SystemExit(3)
 
@@ -165,13 +167,24 @@ def extract_metadata(mp_args, path) -> Optional[Dict[str, int]]:
         "time_deleted": 0,
     }
 
-    if mp_args.profile in (DBType.audio, DBType.video):
+    ext = path.rsplit(".", 1)[-1].lower()
+
+    if DBType.audio in mp_args.profiles and (
+        ext in (consts.AUDIO_ONLY_EXTENSIONS | consts.VIDEO_EXTENSIONS) or mp_args.scan_all_files
+    ):
+        media |= av.munge_av_tags(mp_args, path)
+    elif DBType.video in mp_args.profiles and (ext in consts.VIDEO_EXTENSIONS or mp_args.scan_all_files):
         media |= av.munge_av_tags(mp_args, path)
 
     if not Path(path).exists():
         return media
 
-    if mp_args.profile == DBType.text:
+    text_exts = consts.TEXTRACT_EXTENSIONS
+    if mp_args.ocr:
+        text_exts |= consts.OCR_EXTENSIONS
+    if mp_args.speech_recognition:
+        text_exts |= consts.SPEECH_RECOGNITION_EXTENSIONS
+    if DBType.text in mp_args.profiles and (ext in text_exts or mp_args.scan_all_files):
         try:
             start = timer()
             if any([mp_args.ocr, mp_args.speech_recognition]):
@@ -188,7 +201,7 @@ def extract_metadata(mp_args, path) -> Optional[Dict[str, int]]:
         media["hash"] = sample_hash.sample_hash_file(path)
 
     if getattr(mp_args, "process", False):
-        if mp_args.profile == DBType.audio and Path(path).suffix not in [".opus", ".mka"]:
+        if DBType.audio in mp_args.profiles and Path(path).suffix not in [".opus", ".mka"]:
             path = media["path"] = process_audio.process_path(
                 path, split_longer_than=2160 if "audiobook" in path.lower() else None
             )
@@ -210,7 +223,7 @@ def clean_up_temp_dirs():
 
 
 def extract_chunk(args, media) -> None:
-    if args.profile == DBType.image:
+    if DBType.image in args.profiles:
         media = books.extract_image_metadata_chunk(media)
 
     if args.scan_subtitles:
@@ -272,27 +285,37 @@ def find_new_files(args, path) -> List[str]:
     if path.is_file():
         scanned_set = set([str(path)])
     else:
-        if args.ext:
-            scanned_set = file_utils.rglob(path, args.ext)[0]
-        elif args.scan_all_files:
-            scanned_set = file_utils.rglob(path)[0]
-        elif args.profile == DBType.filesystem:
+        for s in args.profiles:
+            if getattr(DBType, s, None) is None:
+                msg = f"fs_extract for profile {s}"
+                raise NotImplementedError(msg)
+
+        exts = args.ext
+        if not exts:
+            exts = set()
+            if args.scan_all_files or DBType.filesystem in args.profiles:
+                exts = None
+            else:
+                if DBType.audio in args.profiles:
+                    exts |= consts.VIDEO_EXTENSIONS
+                    exts |= consts.AUDIO_ONLY_EXTENSIONS
+                if DBType.video in args.profiles:
+                    exts |= consts.VIDEO_EXTENSIONS
+
+                if DBType.image in args.profiles:
+                    exts |= consts.IMAGE_EXTENSIONS
+
+                if DBType.text in args.profiles:
+                    exts |= consts.TEXTRACT_EXTENSIONS
+                if args.ocr:
+                    exts |= consts.OCR_EXTENSIONS
+                if args.speech_recognition:
+                    exts |= consts.SPEECH_RECOGNITION_EXTENSIONS
+
+        if DBType.filesystem in args.profiles:
             scanned_set = set.union(*file_utils.rglob(path))
-        elif args.profile == DBType.audio:
-            scanned_set = file_utils.get_audio_files(path)
-        elif args.profile == DBType.video:
-            scanned_set = file_utils.get_video_files(path)
-        elif args.profile == DBType.text:
-            scanned_set = file_utils.get_text_files(
-                path,
-                image_recognition=args.ocr,
-                speech_recognition=args.speech_recognition,
-            )
-        elif args.profile == DBType.image:
-            scanned_set = file_utils.get_image_files(path)
         else:
-            msg = f"fs_extract for profile {args.profile}"
-            raise NotImplementedError(msg)
+            scanned_set = file_utils.rglob(path, exts)[0]
 
     m_columns = db_utils.columns(args, "media")
 
@@ -378,16 +401,16 @@ def scan_path(args, path_str: str) -> int:
         print(f"[{path}] Adding {len(new_files)} new media")
         # log.debug(new_files)
 
-        if args.profile in (DBType.text):
+        if DBType.text in args.profiles:
             batch_count = int(os.cpu_count() or 4)
-        elif args.profile in (DBType.image):
+        elif DBType.image in args.profiles:
             batch_count = consts.SQLITE_PARAM_LIMIT // 20
         else:
             batch_count = consts.SQLITE_PARAM_LIMIT // 100
         chunks_count = math.ceil(len(new_files) / batch_count)
         files_chunked = iterables.chunks(new_files, batch_count)
 
-        if args.profile in threadsafe:
+        if all(s in threadsafe for s in args.profiles):
             pool_fn = ThreadPoolExecutor
         else:
             pool_fn = ProcessPoolExecutor
@@ -414,9 +437,7 @@ def extractor(args, paths) -> None:
 
     log.info("Imported %s paths", new_files)
 
-    if args.profile in [DBType.audio, DBType.video, DBType.text] and (
-        not args.db["media"].detect_fts() or new_files > 100000
-    ):
+    if not args.db["media"].detect_fts() or new_files > 100000:
         db_utils.optimize(args)
 
 
