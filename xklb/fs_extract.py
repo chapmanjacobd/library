@@ -168,12 +168,13 @@ def extract_metadata(mp_args, path) -> Optional[Dict[str, int]]:
     }
 
     ext = path.rsplit(".", 1)[-1].lower()
+    is_scan_all_files = getattr(mp_args, "scan_all_files", False)
 
-    if DBType.audio in mp_args.profiles and (
-        ext in (consts.AUDIO_ONLY_EXTENSIONS | consts.VIDEO_EXTENSIONS) or mp_args.scan_all_files
+    if objects.is_profile(mp_args, DBType.audio) and (
+        ext in (consts.AUDIO_ONLY_EXTENSIONS | consts.VIDEO_EXTENSIONS) or is_scan_all_files
     ):
         media |= av.munge_av_tags(mp_args, path)
-    elif DBType.video in mp_args.profiles and (ext in consts.VIDEO_EXTENSIONS or mp_args.scan_all_files):
+    elif objects.is_profile(mp_args, DBType.video) and (ext in consts.VIDEO_EXTENSIONS or is_scan_all_files):
         media |= av.munge_av_tags(mp_args, path)
 
     if not Path(path).exists():
@@ -184,7 +185,7 @@ def extract_metadata(mp_args, path) -> Optional[Dict[str, int]]:
         text_exts |= consts.OCR_EXTENSIONS
     if mp_args.speech_recognition:
         text_exts |= consts.SPEECH_RECOGNITION_EXTENSIONS
-    if DBType.text in mp_args.profiles and (ext in text_exts or mp_args.scan_all_files):
+    if objects.is_profile(mp_args, DBType.text) and (ext in text_exts or is_scan_all_files):
         try:
             start = timer()
             if any([mp_args.ocr, mp_args.speech_recognition]):
@@ -201,7 +202,7 @@ def extract_metadata(mp_args, path) -> Optional[Dict[str, int]]:
         media["hash"] = sample_hash.sample_hash_file(path)
 
     if getattr(mp_args, "process", False):
-        if DBType.audio in mp_args.profiles and Path(path).suffix not in [".opus", ".mka"]:
+        if objects.is_profile(mp_args, DBType.audio) and Path(path).suffix not in [".opus", ".mka"]:
             path = media["path"] = process_audio.process_path(
                 path, split_longer_than=2160 if "audiobook" in path.lower() else None
             )
@@ -223,7 +224,7 @@ def clean_up_temp_dirs():
 
 
 def extract_chunk(args, media) -> None:
-    if DBType.image in args.profiles:
+    if objects.is_profile(args, DBType.image):
         media = books.extract_image_metadata_chunk(media)
 
     if args.scan_subtitles:
@@ -246,7 +247,7 @@ def extract_chunk(args, media) -> None:
 
         captions.append(caption)
 
-    media = [{"playlist_id": args.playlist_id, **d} for d in media]
+    media = [{"playlists_id": args.playlists_id, **d} for d in media]
     media = iterables.list_dict_filter_bool(media)
     args.db["media"].insert_all(media, pk="id", alter=True, replace=True)
 
@@ -393,7 +394,7 @@ def scan_path(args, path_str: str) -> int:
         ),
         "time_deleted": 0,
     }
-    args.playlist_id = db_playlists.add(args, str(path), info, check_subpath=True)
+    args.playlists_id = db_playlists.add(args, str(path), info, check_subpath=True)
 
     print(f"[{path}] Building file list...")
     new_files = find_new_files(args, path)

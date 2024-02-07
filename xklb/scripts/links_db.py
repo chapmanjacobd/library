@@ -160,7 +160,7 @@ def add_playlist(args, path):
         },
         "time_deleted": 0,
     }
-    args.playlist_id = db_playlists.add(args, str(path), info)
+    args.playlists_id = db_playlists.add(args, str(path), info)
 
 
 def consolidate_media(args, path: str) -> dict:

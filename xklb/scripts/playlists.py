@@ -119,7 +119,7 @@ def delete_playlists(args, playlists) -> None:
             with args.db.conn:
                 cursor = args.db.conn.execute(
                     """DELETE from media where
-                    playlist_id in (
+                    playlists_id in (
                         SELECT id from playlists
                         WHERE path IN ("""
                     + ",".join(["?"] * len(online_media))
@@ -127,7 +127,7 @@ def delete_playlists(args, playlists) -> None:
                     (*online_media,),
                 )
                 deleted_media_count += cursor.rowcount
-    except sqlite3.OperationalError:  # no such column: playlist_id
+    except sqlite3.OperationalError:  # no such column: playlists_id
         pass
 
     local_media = [p.rstrip(os.sep) for p in playlists if not p.startswith("http")]
@@ -146,7 +146,7 @@ def playlists() -> None:
     m_columns = db_utils.columns(args, "media")
     query, bindings = construct_query(args)
 
-    if "playlist_id" in m_columns:
+    if "playlists_id" in m_columns:
         query = f"""
         select
             coalesce(p.path, "Playlist-less media") path
@@ -158,8 +158,8 @@ def playlists() -> None:
             {', sum(m.size) size' if 'size' in m_columns else ''}
             , count(*) count
         from media m
-        join ({query}) p on p.id = m.playlist_id
-        group by m.playlist_id, coalesce(p.path, "Playlist-less media")
+        join ({query}) p on p.id = m.playlists_id
+        group by m.playlists_id, coalesce(p.path, "Playlist-less media")
         order by count, p.path
         """
 

@@ -121,7 +121,7 @@ def download(args, m):
         job = gallery_dl.job.DownloadJob(webpath)
     except gallery_dl.exception.NoExtractorError:
         log.info("[%s]: NoExtractorError", webpath)  # RecoverableError
-        db_media.download_add(args, webpath, error="NoExtractorError")
+        db_media.download_add(args, webpath, m, error="NoExtractorError")
         return
 
     job_status = job.run()
@@ -129,6 +129,7 @@ def download(args, m):
 
     info = getattr(job.pathfmt, "kwdict", None)
     if info:
+        info = {**m, **info}
         info["path"] = webpath
 
     local_path = getattr(job.pathfmt, "path", "") or None
@@ -219,16 +220,16 @@ def get_playlist_metadata(args, playlist_path):
 
         log.debug("webpath == playlist_path" if webpath == playlist_path else "webpath != playlist_path")
 
-        playlist_id = None
+        playlists_id = None
         if is_playlist:
-            playlist_id = db_playlists.add(args, playlist_path, info)
+            playlists_id = db_playlists.add(args, playlist_path, info)
         else:
             log.warning("Importing playlist-less media %s", playlist_path)
 
         if db_media.exists(args, webpath):
             log.warning("Media already exists")
 
-        info = {**info, "playlist_id": playlist_id, "webpath": webpath}
+        info = {**info, "playlists_id": playlists_id, "webpath": webpath}
         db_media.playlist_media_add(
             args,
             playlist_path,

@@ -32,7 +32,7 @@ def get_duplicates(args) -> List[dict]:
             and extractor_id is not null
             and extractor_id != ""
             and coalesce(time_deleted, 0)=0
-            and playlist_id in (
+            and playlists_id in (
                 SELECT id from playlists
                 WHERE extractor_key
                     NOT IN ('Local', 'NBCStations', 'TedTalk', 'ThisAmericanLife', 'InfoQ', 'NFB', 'KickStarter')
@@ -54,7 +54,7 @@ def get_duplicates(args) -> List[dict]:
             and title is null
     ) m2
     JOIN media_fts on m2.id = media_fts.rowid
-    JOIN playlists p2 on p2.id = m2.playlist_id
+    JOIN playlists p2 on p2.id = m2.playlists_id
     WHERE p2.extractor_key = 'Local'
         AND media_fts.path MATCH '"'||m1.extractor_id||'"'
         AND m2.PATH LIKE '%['||m1.extractor_id||']%'

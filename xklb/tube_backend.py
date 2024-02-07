@@ -139,8 +139,7 @@ def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True) -> 
                         log.warning("Importing playlist-less media %s", playlist_path)
                     else:
                         # add sub-playlist
-                        playlist_id = db_playlists.add(args, playlist_path, info, extractor_key=extractor_key)
-                        entry["playlist_id"] = playlist_id
+                        entry["playlists_id"] = db_playlists.add(args, playlist_path, info, extractor_key=extractor_key)
                         log.info("playlists.add2 %s", t.elapsed())
 
                     db_media.playlist_media_add(args, webpath, entry)  # type: ignore
@@ -213,13 +212,13 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Optional[L
                 SELECT
                 id
                 , path
-                , playlist_id
+                , playlists_id
                 FROM media
                 WHERE 1=1
                     AND COALESCE(time_deleted, 0)=0
                     {'and width is null' if 'width' in m_columns else ''}
                     and path not like '%playlist%'
-                    and playlist_id = (select id from playlists where path = ?)
+                    and playlists_id = (select id from playlists where path = ?)
                 ORDER by random()
                 """,
                 [playlist_path],
@@ -228,7 +227,7 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Optional[L
             videos = []
 
         current_video_count = 0
-        for id, path, playlist_id in videos:
+        for id, path, playlists_id in videos:
             entry = ydl.extract_info(path)
             if entry is None:
                 continue
@@ -259,7 +258,7 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Optional[L
                     args.db["captions"].insert_all(captions, alter=True)
 
             entry["id"] = id
-            entry["playlist_id"] = playlist_id
+            entry["playlists_id"] = playlists_id
             entry["chapter_count"] = chapter_count
 
             db_media.playlist_media_add(args, path, entry)
@@ -457,7 +456,9 @@ def download(args, m) -> None:
 
         if info is None:
             log.debug("[%s]: yt-dlp returned no info", webpath)
+            info = m
         else:
+            info = {**m, **info}
             local_path = info.get("local_path", None)
             if args.profile == DBType.audio:
                 local_path = ydl.prepare_filename({**info, "ext": args.ext})

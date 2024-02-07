@@ -217,11 +217,11 @@ def since_last_created(args, playlist_path):
         """
         select max(time_created)
         from (
-            select time_created, playlist_id from reddit_posts
+            select time_created, playlists_id from reddit_posts
             UNION ALL
-            select time_created, playlist_id from media
+            select time_created, playlists_id from media
         )
-        where playlist_id = (select id from playlists where path = ?)
+        where playlists_id = (select id from playlists where path = ?)
     """,
         [playlist_path],
         ignore_errors=["no such column", "no such table"],
