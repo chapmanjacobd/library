@@ -168,9 +168,10 @@ def construct_query(args) -> Tuple[str, dict]:
         ORDER BY RANDOM()
         LIMIT 1
     )"""
-    if "playlist_id" in m_columns:
+    if "playlists_id" in m_columns:
         query = f"""select
                 m.id
+                , m.playlists_id
                 , m.path
                 , p.path playlist_path
                 {', m.title' if 'title' in m_columns else ''}
@@ -184,7 +185,7 @@ def construct_query(args) -> Tuple[str, dict]:
                 {', p.extractor_config' if 'extractor_config' in pl_columns else ''}
                 , p.extractor_key
             FROM media m
-            LEFT JOIN playlists p on p.id = m.playlist_id
+            LEFT JOIN playlists p on p.id = m.playlists_id
             WHERE 1=1
                 {'and COALESCE(m.time_downloaded,0) = 0' if 'time_downloaded' in m_columns else ''}
                 and COALESCE(m.time_deleted,0) = 0
@@ -342,7 +343,7 @@ def dl_download(args=None) -> None:
                 gdl_backend.download(args, m)
             elif args.profile == DBType.filesystem:
                 local_path = web.download_url(m["path"], output_prefix=args.prefix, relative=args.relative)
-                db_media.download_add(args, m["path"], {}, local_path)
+                db_media.download_add(args, m["path"], m, local_path)
             else:
                 raise NotImplementedError
         except Exception:

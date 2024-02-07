@@ -15,7 +15,7 @@ def exists(args, path) -> bool:
     m_columns = db_utils.columns(args, "media")
     try:
         known = args.db.execute(
-            f"select 1 from media where path=? or {'web' if 'webpath' in m_columns else ''}path=?",
+            f"select 1 from media where path=? or {'webpath' if 'webpath' in m_columns else 'path'}=?",
             [str(path), str(path)],
         ).fetchone()
     except sqlite3.OperationalError as e:
@@ -71,7 +71,7 @@ def consolidate(v: dict) -> Optional[dict]:
                 upload_date = None
 
     cv = {}
-    cv["playlist_id"] = v.pop("playlist_id", None)
+    cv["playlists_id"] = v.pop("playlists_id", None)  # not to be confused with yt-dlp playlist_id
     cv["webpath"] = iterables.safe_unpack(
         v.pop("webpath", None),
         v.pop("webpage_url", None),
@@ -238,8 +238,8 @@ def download_add(
     if local_path and Path(local_path).exists():
         local_path = str(Path(local_path).resolve())
         fs_args = argparse.Namespace(
-            profiles=args.profiles,
-            scan_subtitles=DBType.video in args.profiles,
+            profile=args.profile,
+            scan_subtitles=args.profile == DBType.video,
             ocr=False,
             speech_recognition=False,
             delete_unplayable=False,

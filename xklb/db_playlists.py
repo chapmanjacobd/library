@@ -9,11 +9,11 @@ from xklb.utils.log_utils import log
 playlists table
     profile = Type of extractor -- consts.DBType
     extractor_key = Name of the Extractor -- "Local", "Imgur", "YouTube"
-    extractor_playlist_id = ID that the extractor uses to refer to playlists
+    extractor_playlist_id = ID that the extractor uses to refer to playlists (yt-dlp playlist_id)
 
 media table
     extractor_id = ID that the Extractor uses to refer to media
-    playlist_id = Foreign key to playlists table
+    playlists_id = Foreign key to playlists table
 """
 
 
@@ -96,10 +96,10 @@ def exists(args, playlist_path) -> bool:
     return True
 
 
-def get_parentpath_playlist_id(args, playlist_path) -> Optional[int]:
+def get_parentpath_playlists_id(args, playlist_path) -> Optional[int]:
     try:
         known = args.db.pop(
-            "select path from playlists where ? like path || '%' and path != ?",
+            "select id from playlists where ? like path || '%' and path != ?",
             [str(playlist_path), str(playlist_path)],
         )
     except sqlite3.OperationalError as e:
@@ -127,7 +127,7 @@ def delete_subpath_playlists(args, playlist_path) -> Optional[int]:
 def add(args, playlist_path: str, info: dict, check_subpath=False, extractor_key=None) -> int:
     playlist_path = playlist_path.strip()
     if check_subpath:
-        parentpath_playlist_id = get_parentpath_playlist_id(args, playlist_path)
+        parentpath_playlist_id = get_parentpath_playlists_id(args, playlist_path)
         if parentpath_playlist_id:
             return parentpath_playlist_id
         else:
@@ -144,7 +144,7 @@ def media_exists(args, playlist_path, path) -> bool:
     m_columns = db_utils.columns(args, "media")
     try:
         known = args.db.execute(
-            f"select 1 from media where playlist_id in (select id from playlists where path = ?) and (path=? or {'web' if 'webpath' in m_columns else ''}path=?)",
+            f"select 1 from media where playlists_id in (select id from playlists where path = ?) and (path=? or {'webpath' if 'webpath' in m_columns else 'path'}=?)",
             [str(playlist_path), str(path), str(path)],
         ).fetchone()
     except sqlite3.OperationalError as e:

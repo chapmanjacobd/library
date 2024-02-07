@@ -172,7 +172,7 @@ def block(args=None) -> None:
                 f"""UPDATE media
                 SET time_deleted={consts.APPLICATION_START}
                 WHERE path LIKE 'http%'
-                AND playlist_id in (
+                AND playlists_id in (
                     SELECT id from playlists
                     WHERE path IN ("""
                 + ",".join(["?"] * len(playlist_paths))
@@ -185,7 +185,7 @@ def block(args=None) -> None:
                 """SELECT path, size FROM media
                 WHERE coalesce(time_deleted, 0)=0
                 AND time_downloaded > 0
-                AND playlist_id in (
+                AND playlists_id in (
                     SELECT id from playlists
                     WHERE path IN ("""
                 + ",".join(["?"] * len(playlist_paths))
