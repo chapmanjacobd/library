@@ -6,9 +6,14 @@ download = r"""library download [--prefix /mnt/d/] [--safe] [--subs] [--auto-sub
 
         library download dl.db --prefix ~/output/path/root/
 
-    Limit downloads to a specified playlist URLs or substring
+    Limit downloads to a specified playlist URLs or substring (TODO: https://github.com/chapmanjacobd/library/issues/31)
 
         library download dl.db https://www.youtube.com/c/BlenderFoundation/videos
+
+    Limit downloads to a specified video URLs or substring
+
+        library download dl.db --include https://www.youtube.com/watch?v=YE7VzlLtp-4
+        library download dl.db -s https://www.youtube.com/watch?v=YE7VzlLtp-4  # equivalent
 
     Maximizing the variety of subdomains
 

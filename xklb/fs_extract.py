@@ -170,6 +170,9 @@ def extract_metadata(mp_args, path) -> Optional[Dict[str, int]]:
     ext = path.rsplit(".", 1)[-1].lower()
     is_scan_all_files = getattr(mp_args, "scan_all_files", False)
 
+    if not Path(path).exists():
+        return media
+
     if objects.is_profile(mp_args, DBType.audio) and (
         ext in (consts.AUDIO_ONLY_EXTENSIONS | consts.VIDEO_EXTENSIONS) or is_scan_all_files
     ):
@@ -177,7 +180,7 @@ def extract_metadata(mp_args, path) -> Optional[Dict[str, int]]:
     elif objects.is_profile(mp_args, DBType.video) and (ext in consts.VIDEO_EXTENSIONS or is_scan_all_files):
         media |= av.munge_av_tags(mp_args, path)
 
-    if not Path(path).exists():
+    if not Path(path).exists():  # av.munge_av_tags might delete if unplayable or corruption exceeds threshold
         return media
 
     text_exts = consts.TEXTRACT_EXTENSIONS

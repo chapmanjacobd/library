@@ -169,6 +169,16 @@ def construct_query(args) -> Tuple[str, dict]:
         LIMIT 1
     )"""
     if "playlists_id" in m_columns:
+        # TODO: filter out downloads based on args.playlists
+        '''AND playlists_id in (
+                SELECT id from playlists
+                WHERE path IN ("""
+            + ",".join(["?"] * len(playlist_paths))
+            + "))",
+            (*playlist_paths,),
+        '''
+        # TODO --- https://github.com/chapmanjacobd/library/issues/31
+
         query = f"""select
                 m.id
                 , m.playlists_id
