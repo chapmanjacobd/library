@@ -351,6 +351,7 @@ MEDIA_KNOWN_KEYS = (
     "requested_downloads",
     "thumbnails",
     "playlist_count",
+    "playlist_id",
     "playlists_id",
     "playlist_title",
     "playlist_uploader",
