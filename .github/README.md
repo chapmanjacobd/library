@@ -95,7 +95,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.5.001)
+    xk media library subcommands (v2.5.002)
 
     Create database subcommands:
     ╭───────────────┬────────────────────────────────────────────────────╮
@@ -240,7 +240,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
     ╭────────────────────┬────────────────────────────────────────╮
     │ dedupe-db          │ Dedupe SQLITE tables                   │
     ├────────────────────┼────────────────────────────────────────┤
-    │ dedupe             │ Dedupe similar media                   │
+    │ dedupe-media       │ Dedupe similar media                   │
     ├────────────────────┼────────────────────────────────────────┤
     │ merge-online-local │ Merge online and local data            │
     ├────────────────────┼────────────────────────────────────────┤
@@ -1584,9 +1584,14 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
         library download dl.db --prefix ~/output/path/root/
 
-    Limit downloads to a specified playlist URLs or substring
+    Limit downloads to a specified playlist URLs or substring (TODO: https://github.com/chapmanjacobd/library/issues/31)
 
         library download dl.db https://www.youtube.com/c/BlenderFoundation/videos
+
+    Limit downloads to a specified video URLs or substring
+
+        library download dl.db --include https://www.youtube.com/watch?v=YE7VzlLtp-4
+        library download dl.db -s https://www.youtube.com/watch?v=YE7VzlLtp-4  # equivalent
 
     Maximizing the variety of subdomains
 
@@ -2519,11 +2524,11 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 </details>
 
-###### dedupe
+###### dedupe-media
 
 <details><summary>Dedupe similar media</summary>
 
-    $ library dedupe -h
+    $ library dedupe-media -h
     usage: library [--audio | --id | --title | --filesystem] [--only-soft-delete] [--limit LIMIT] DATABASE
 
     Dedupe your files (not to be confused with the dedupe-db subcommand)

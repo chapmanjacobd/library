@@ -83,7 +83,7 @@ progs = {
     },
     "Single database enrichment subcommands": {
         "dedupe_db": "Dedupe SQLITE tables",
-        "dedupe": "Dedupe similar media",
+        "dedupe_media": "Dedupe similar media",
         "merge_online_local": "Merge online and local data",
         "mpv_watchlater": "Import mpv watchlater files to history",
         "reddit_selftext": "Copy selftext links to media table",

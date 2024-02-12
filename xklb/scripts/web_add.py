@@ -1,4 +1,4 @@
-import argparse, json, random, sys, time
+import argparse, json, random, re, sys, time
 from pathlib import Path
 from typing import Set
 from urllib.parse import urlparse
@@ -204,6 +204,22 @@ def add_media(args, media):
     args.db["media"].insert_all(media, pk="id", alter=True, replace=True)
 
 
+def is_web_dir(path):
+    if path.endswith("/"):
+        return True
+
+    patterns = [
+        r"/index\.php\?dir=",
+        r"/index\.php$",
+        r"/index\.html?$",
+    ]
+    for pattern in patterns:
+        if re.search(pattern, path, re.IGNORECASE):
+            return True
+
+    return False
+
+
 def spider(args, paths: Set):
     get_urls = iterables.return_unique(extract_links.get_inner_urls)
 
@@ -220,7 +236,7 @@ def spider(args, paths: Set):
             f"Pages to scan {len(paths)} link scan: {new_media_count} new [{len(known_paths)} known]"
         )
 
-        if path.endswith("/"):
+        if is_web_dir(path):
             for a_ref in get_urls(args, path):
                 if a_ref is None:
                     break
@@ -231,10 +247,9 @@ def spider(args, paths: Set):
 
                 if link in (paths | traversed_paths):
                     continue
-                if not web.is_subpath(path, link):
-                    continue
-                if link.endswith("/"):
-                    paths.add(link)
+                if is_web_dir(link):
+                    if web.is_subpath(path, link):
+                        paths.add(link)
                     continue
 
                 if db_media.exists(args, link):
@@ -295,7 +310,6 @@ def spider(args, paths: Set):
 def add_playlist(args, path):
     info = {
         "hostname": urlparse(path).hostname,
-        "time_created": consts.APPLICATION_START,
         "extractor_key": "WebFolder",
         "extractor_config": {k: v for k, v in args.__dict__.items() if k not in ["db", "database", "verbose", "paths"]},
         "time_deleted": 0,
@@ -325,7 +339,7 @@ def web_add(args=None) -> None:
         try:
             for playlist_path in arg_utils.gen_paths(args):
                 spider(args, {playlist_path})
-                if playlist_path.endswith("/"):
+                if is_web_dir(playlist_path):
                     add_playlist(args, playlist_path)
 
         finally:

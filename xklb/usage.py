@@ -1044,7 +1044,7 @@ copy_play_counts = """library copy-play-counts DEST_DB SOURCE_DB ... [--source-p
 
         library copy-play-counts audio.db phone.db --source-prefix /storage/6E7B-7DCE/d --target-prefix /mnt/d
 """
-dedupe = """library [--audio | --id | --title | --filesystem] [--only-soft-delete] [--limit LIMIT] DATABASE
+dedupe_media = """library [--audio | --id | --title | --filesystem] [--only-soft-delete] [--limit LIMIT] DATABASE
 
     Dedupe your files (not to be confused with the dedupe-db subcommand)
 
