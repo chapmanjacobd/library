@@ -610,7 +610,7 @@ def is_subpath(parent_url, child_url):
     if child.scheme != parent.scheme or child.netloc != parent.netloc:
         return False
 
-    return child.path.startswith(parent.path.rstrip("/") + "/")
+    return child_url.startswith(parent_url)
 
 
 def remove_apache_sorting_params(url):
