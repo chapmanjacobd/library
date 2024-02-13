@@ -603,6 +603,22 @@ def construct_absolute_url(base_url, href):
     return href
 
 
+def is_index(url):
+    if url.endswith("/"):
+        return True
+
+    patterns = [
+        r"/index\.php\?dir=",
+        r"/index\.php$",
+        r"/index\.html?$",
+    ]
+    for pattern in patterns:
+        if re.search(pattern, url, re.IGNORECASE):
+            return True
+
+    return False
+
+
 def is_subpath(parent_url, child_url):
     child = urlparse(child_url)
     parent = urlparse(parent_url)

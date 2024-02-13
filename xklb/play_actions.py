@@ -516,13 +516,16 @@ def process_playqueue(args) -> None:
                 if args.folder_glob:
                     media = [{"path": s} for s in file_utils.fast_glob(p)]
                 elif args.action in SC.watch:
-                    media = [{"path": s} for s in file_utils.get_video_files(p)]
+                    media = [{"path": s} for s in file_utils.rglob(str(p), consts.VIDEO_EXTENSIONS)[0]]
                 elif args.action == SC.listen:
-                    media = [{"path": s} for s in file_utils.get_audio_files(p)]
+                    media = [
+                        {"path": s}
+                        for s in file_utils.rglob(str(p), consts.VIDEO_EXTENSIONS | consts.AUDIO_ONLY_EXTENSIONS)[0]
+                    ]
                 elif args.action in SC.view:
-                    media = [{"path": s} for s in file_utils.get_image_files(p)]
+                    media = [{"path": s} for s in file_utils.rglob(str(p), consts.IMAGE_EXTENSIONS)[0]]
                 elif args.action in SC.read:
-                    media = [{"path": s} for s in file_utils.get_text_files(p)]
+                    media = [{"path": s} for s in file_utils.rglob(str(p), consts.TEXTRACT_EXTENSIONS)[0]]
                 else:
                     media = [{"path": s} for s in file_utils.rglob(str(p))[0]]
             else:

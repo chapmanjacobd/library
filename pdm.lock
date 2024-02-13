@@ -600,7 +600,7 @@ files = [
 
 [[package]]
 name = "dogpile-cache"
-version = "1.3.0"
+version = "1.3.1"
 requires_python = ">=3.8"
 summary = "A caching front-end based on the Dogpile lock."
 dependencies = [
@@ -609,8 +609,8 @@ dependencies = [
     "typing-extensions>=4.0.1; python_version < \"3.11\"",
 ]
 files = [
-    {file = "dogpile.cache-1.3.0-py3-none-any.whl", hash = "sha256:c0d33baeff2b823c12e4aa8a662ce2beaf0297f8f2aca1fc2cb178e8bc4b476d"},
-    {file = "dogpile.cache-1.3.0.tar.gz", hash = "sha256:0a387f1932c071ee8fd971d2ff51f8aba1106c559439a51b8c74a207f40e215d"},
+    {file = "dogpile.cache-1.3.1-py3-none-any.whl", hash = "sha256:8726b474b4609758570479a3460dbaf0ca70fd4e15fb3e8a5f8eaf161eb1578e"},
+    {file = "dogpile.cache-1.3.1.tar.gz", hash = "sha256:47d780a09cb7affe8d056ff97fd5ccc7f249e37ef911beca7e819ef7bf164358"},
 ]
 
 [[package]]
@@ -2053,12 +2053,12 @@ files = [
 
 [[package]]
 name = "setuptools"
-version = "69.0.3"
+version = "69.1.0"
 requires_python = ">=3.8"
 summary = "Easily download, build, install, upgrade, and uninstall Python packages"
 files = [
-    {file = "setuptools-69.0.3-py3-none-any.whl", hash = "sha256:385eb4edd9c9d5c17540511303e39a147ce2fc04bc55289c322b9e5904fe2c05"},
-    {file = "setuptools-69.0.3.tar.gz", hash = "sha256:be1af57fc409f93647f2e8e4573a142ed38724b8cdd389706a867bb4efcf1e78"},
+    {file = "setuptools-69.1.0-py3-none-any.whl", hash = "sha256:c054629b81b946d63a9c6e732bc8b2513a7c3ea645f11d0139a2191d735c60c6"},
+    {file = "setuptools-69.1.0.tar.gz", hash = "sha256:850894c4195f09c4ed30dba56213bf7c3f21d86ed6bdaafb5df5972593bfc401"},
 ]
 
 [[package]]
@@ -2316,12 +2316,12 @@ files = [
 
 [[package]]
 name = "tzdata"
-version = "2023.4"
+version = "2024.1"
 requires_python = ">=2"
 summary = "Provider of IANA time zone data"
 files = [
-    {file = "tzdata-2023.4-py2.py3-none-any.whl", hash = "sha256:aa3ace4329eeacda5b7beb7ea08ece826c28d761cda36e747cfbf97996d39bf3"},
-    {file = "tzdata-2023.4.tar.gz", hash = "sha256:dd54c94f294765522c77399649b4fefd95522479a664a0cec87f41bebc6148c9"},
+    {file = "tzdata-2024.1-py2.py3-none-any.whl", hash = "sha256:9068bc196136463f5245e51efda838afa15aaeca9903f49050dfa2679db4d252"},
+    {file = "tzdata-2024.1.tar.gz", hash = "sha256:2674120f8d891909751c38abcdfd386ac0a5a1127954fbc332af6b5ceae07efd"},
 ]
 
 [[package]]

@@ -1,5 +1,4 @@
-import operator
-import argparse, random, sys
+import argparse, operator, random, sys
 from ast import literal_eval
 from pathlib import Path
 
@@ -220,16 +219,10 @@ def override_config(parser, extractor_config, args):
     args_env = argparse.Namespace(**{**default_args, **extractor_config, **overridden_args})
     return args_env
 
-ops = {
-    '<': operator.lt,
-    '<=': operator.le,
-    '==': operator.eq,
-    '!=': operator.ne,
-    '>=': operator.ge,
-    '>': operator.gt
-}
+
+ops = {"<": operator.lt, "<=": operator.le, "==": operator.eq, "!=": operator.ne, ">=": operator.ge, ">": operator.gt}
+
 
 def cmp(arg1, op, arg2):
     operation = ops.get(op)
     return operation(arg1, arg2)
-
