@@ -13,7 +13,7 @@ from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(prog="library dedupe", usage=usage.dedupe)
+    parser = argparse.ArgumentParser(prog="library dedupe-media", usage=usage.dedupe_media)
 
     profile = parser.add_mutually_exclusive_group()
     profile.add_argument(

@@ -71,7 +71,9 @@ def parse_args():
     parser.add_argument("--subtitle-languages", "--subtitle-language", "--sl", action=arg_utils.ArgparseList)
 
     parser.add_argument("--prefix", default=os.getcwd(), help=argparse.SUPPRESS)
-    parser.add_argument("--relative", action="store_true", help="Replicate website file tree")
+    parser.add_argument(
+        "--no-relative", dest="relative", action="store_false", help="Do not replicate website file tree"
+    )
     parser.add_argument("--ext")
 
     parser.add_argument("--print", "-p", default="", const="p", nargs="?", help=argparse.SUPPRESS)

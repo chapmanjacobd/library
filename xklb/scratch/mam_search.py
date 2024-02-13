@@ -23,7 +23,7 @@ def parse_args():
     parser.add_argument("--musicology", action="store_true")
     parser.add_argument("--radio", action="store_true")
 
-    parser.add_argument("--search-in", default='torrents')
+    parser.add_argument("--search-in", default="torrents")
 
     parser.add_argument("--cookie", required=True)
     parser.add_argument("--cookies", help="path to a Netscape formatted cookies file")
@@ -37,6 +37,7 @@ def parse_args():
     args.db = db_utils.connect(args)
     log.info(objects.dict_filter_bool(args.__dict__))
     return args
+
 
 def get_page(args, query_data):
     import pandas as pd

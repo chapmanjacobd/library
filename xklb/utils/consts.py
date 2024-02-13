@@ -128,7 +128,7 @@ def reddit_frequency(frequency) -> str:
     return mapper[frequency]
 
 
-SKIP_MEDIA_CHECK = [".iso", ".vob"]
+SKIP_MEDIA_CHECK = [".iso", ".img", ".vob"]
 
 SPEECH_RECOGNITION_EXTENSIONS = set("mp3|ogg|wav".split("|"))
 OCR_EXTENSIONS = set("gif|jpg|jpeg|png|tif|tff|tiff".split("|"))
@@ -139,9 +139,9 @@ VIDEO_EXTENSIONS = set(
         "|mac|aptx|aptxhd|aqt|ast|obu|avi|avr|avs|avs2|avs3|bfstm|bcstm|binka"
         "|bit|bmv|brstm|cdg|cdxl|xl|c2|302|daud|str|adp|dav|dss|dts|dtshd|dv"
         "|dif|divx|cdata|eac3|paf|fap|flm|flv|fsb|fwse|g722|722|tco|rco"
-        "|g723_1|g729|genh|gsm|h261|h26l|h264|264|avc|mts|hca|hevc|h265|265|idf"
+        "|g723_1|g729|genh|gsm|h261|h26l|h264|264|avc|mts|m2ts|hca|hevc|h265|265|idf"
         "|ifv|cgi|ipu|sf|ircam|ivr|kux|669|abc|amf|ams|dbm|dmf|dsm|far|it|mdl"
-        "|med|mod|mt2|mtm|okt|psm|ptm|s3m|stm|ult|umx|xm|itgz|itr|itz|iso"
+        "|med|mod|mt2|mtm|okt|psm|ptm|s3m|stm|ult|umx|xm|itgz|itr|itz|iso|img"
         "|mdgz|mdr|mdz|s3gz|s3r|s3z|xmgz|xmr|xmz|669|amf|ams|dbm|digi|dmf"
         "|dsm|dtm|far|gdm|ice|imf|it|j2b|m15|mdl|med|mmcmp|mms|mo3|mod|mptm"
         "|mt2|mtm|nst|okt|ogm|ogv|plm|ppm|psm|pt36|ptm|s3m|sfx|sfx2|st26|stk|stm"
