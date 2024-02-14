@@ -216,8 +216,20 @@ def cluster_dicts(args, media):
         sorted_paths = iterables.flatten(
             s for d in groups for s in d["grouped_paths"] if not bool(media_keyed[s].get("time_deleted"))
         )
+
+    if args.print_groups:
+        print_groups(groups)
+
     media = [media_keyed[p] for p in sorted_paths]
     return media
+
+def print_groups(groups):
+    for group in groups:
+        group["grouped_paths"] = [s.rstrip("\n") for s in group["grouped_paths"]]
+
+    print(json.dumps(groups, indent=4))
+    raise SystemExit(0)
+
 
 
 def cluster_images(paths, n_clusters=None):
@@ -340,10 +352,7 @@ def cluster_sort() -> None:
         groups = [d for d in groups if len(d["grouped_paths"]) == 1]
 
     if args.print_groups:
-        for group in groups:
-            group["grouped_paths"] = [s.rstrip("\n") for s in group["grouped_paths"]]
-
-        print(json.dumps(groups))
+        print_groups(groups)
     elif args.move_groups:
         min_len = len(str(len(groups) + 1))
 
