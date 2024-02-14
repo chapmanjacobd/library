@@ -1,4 +1,4 @@
-import argparse, webbrowser
+import argparse, shlex, webbrowser
 from pathlib import Path
 from time import sleep
 from typing import Tuple
@@ -65,6 +65,9 @@ def parse_args() -> argparse.Namespace:
     if not args.title_prefix:
         args.title_prefix = ["https://www.google.com/search?q=%"]
     args.title_prefix = [s if "%" in s else s + "%" for s in args.title_prefix]
+
+    if args.browser:
+        args.browser = shlex.split(args.browser)
 
     if args.db:
         args.database = args.db
@@ -173,7 +176,7 @@ def construct_links_query(args) -> Tuple[str, dict]:
 
 def play(args, path, url) -> None:
     if args.browser:
-        cmd(*shlex.split(args.browser), url)
+        processes.cmd(*args.browser, url)
     else:
         webbrowser.open(url, 2, autoraise=False)
     history.add(args, [path], time_played=consts.today_stamp(), mark_done=True)
