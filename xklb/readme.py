@@ -155,9 +155,9 @@ To stop playing press Ctrl+C in either the terminal or mpv
 
 ### Organize via separate databases
 
-    library fsadd --audio both.db ./audiobooks/ ./podcasts/
     library fsadd --audio audiobooks.db ./audiobooks/
     library fsadd --audio podcasts.db ./podcasts/ ./another/more/secret/podcasts_folder/
+    library merge-dbs --pk path -t playlists,media both.db audiobooks.db podcasts.db
 
 ## Guides
 
