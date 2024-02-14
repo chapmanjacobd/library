@@ -284,7 +284,13 @@ To stop playing press Ctrl+C in either the terminal or mpv
 
     library fsadd --audio audiobooks.db ./audiobooks/
     library fsadd --audio podcasts.db ./podcasts/ ./another/more/secret/podcasts_folder/
+
+    # merge later if you want
     library merge-dbs --pk path -t playlists,media both.db audiobooks.db podcasts.db
+
+    # or split
+    library merge-dbs --pk path -t playlists,media audiobooks.db both.db -w 'path like "%/audiobooks/%"'
+    library merge-dbs --pk path -t playlists,media podcasts.db both.db -w 'path like "%/podcasts%"'
 
 ## Guides
 
@@ -2367,6 +2373,10 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         library merge-dbs --only-new-rows --pk subreddit,path --only-tables reddit_posts reddit/81_New_Music.db audio.db -v
 
      To skip copying primary-keys from the source table(s) use --business-keys instead of --primary-keys
+
+     Split DBs using --where
+
+         library merge-dbs --pk path specific-site.db big.db -v --only-new-rows -t media,playlists -w 'path like "https://specific-site%"'
 
 
 </details>
