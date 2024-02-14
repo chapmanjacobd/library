@@ -46,6 +46,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--clusters", "--n-clusters", type=int, help="Number of KMeans clusters")
     parser.add_argument("--related", "-R", action="count", default=0, help=argparse.SUPPRESS)
 
+    parser.add_argument("--browser")
     parser.add_argument("--db", "-db")
     parser.add_argument("--verbose", "-v", action="count", default=0)
 
@@ -171,7 +172,10 @@ def construct_links_query(args) -> Tuple[str, dict]:
 
 
 def play(args, path, url) -> None:
-    webbrowser.open(url, 2, autoraise=False)
+    if args.browser:
+        cmd(*shlex.split(args.browser), url)
+    else:
+        webbrowser.open(url, 2, autoraise=False)
     history.add(args, [path], time_played=consts.today_stamp(), mark_done=True)
 
 

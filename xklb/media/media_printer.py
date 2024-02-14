@@ -185,7 +185,7 @@ def media_printer(args, data, units=None, media_len=None) -> None:
     media = iterables.list_dict_filter_bool(media)
 
     if "f" in print_args:
-        if len(media) <= 1000:
+        if len(media) <= 1000 and args.action not in [consts.SC.open_links]:
             media, deleted_paths = filter_deleted(media)
             xklb.db_media.mark_media_deleted(args, deleted_paths)
             if len(media) == 0:
