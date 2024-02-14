@@ -1096,6 +1096,10 @@ merge_dbs = """library merge-dbs DEST_DB SOURCE_DB ... [--only-target-columns] [
         library merge-dbs --only-new-rows --pk subreddit,path --only-tables reddit_posts reddit/81_New_Music.db audio.db -v
 
      To skip copying primary-keys from the source table(s) use --business-keys instead of --primary-keys
+
+     Split DBs using --where
+
+         library merge-dbs --pk path specific-site.db big.db -v --only-new-rows -t media,playlists -w 'path like "https://specific-site%"'
 """
 
 merge_folders = """library merge-folders [--replace] [--skip] [--simulate] SOURCES ... DESTINATION

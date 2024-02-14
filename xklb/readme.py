@@ -157,7 +157,13 @@ To stop playing press Ctrl+C in either the terminal or mpv
 
     library fsadd --audio audiobooks.db ./audiobooks/
     library fsadd --audio podcasts.db ./podcasts/ ./another/more/secret/podcasts_folder/
+
+    # merge later if you want
     library merge-dbs --pk path -t playlists,media both.db audiobooks.db podcasts.db
+
+    # or split
+    library merge-dbs --pk path -t playlists,media audiobooks.db both.db -w 'path like "%/audiobooks/%"'
+    library merge-dbs --pk path -t playlists,media podcasts.db both.db -w 'path like "%/podcasts%"'
 
 ## Guides
 
