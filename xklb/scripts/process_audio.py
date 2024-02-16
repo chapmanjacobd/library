@@ -14,6 +14,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--always-split", action="store_true")
     parser.add_argument("--split-longer-than")
     parser.add_argument("--min-split-segment", default=DEFAULT_MIN_SPLIT)
+    parser.add_argument("--delete-video", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--verbose", "-v", action="count", default=0)
 
@@ -33,6 +34,7 @@ def process_path(
     split_longer_than=None,
     min_split_segment=nums.human_to_seconds(DEFAULT_MIN_SPLIT),
     dry_run=False,
+    delete_video=False,
 ):
     path = Path(path)
     ffprobe_cmd = ["ffprobe", "-v", "error", "-print_format", "json", "-show_format", "-show_streams", path]
@@ -43,6 +45,7 @@ def process_path(
         print("No stream found:", path)
         return path
     audio_stream = next((stream for stream in info["streams"] if stream["codec_type"] == "audio"), None)
+    video_stream = next((stream for stream in info["streams"] if stream["codec_type"] == "video"), None)
     if not audio_stream:
         print("No audio stream found:", path)
         return path
@@ -121,7 +124,10 @@ def process_path(
         print(cmd)
     else:
         subprocess.check_call(cmd, shell=True)
-        if is_split:
+        if video_stream:
+            if delete_video:
+                path.unlink()  # Remove original
+        elif is_split:
             path.unlink()  # Remove original
         else:
             if output_path.stat().st_size > path.stat().st_size:
@@ -144,6 +150,7 @@ def process_audio():
                 always_split=args.always_split,
                 split_longer_than=args.split_longer_than,
                 min_split_segment=args.min_split_segment,
+                delete_video=args.delete_video,
                 dry_run=args.dry_run,
             )
         except Exception:
