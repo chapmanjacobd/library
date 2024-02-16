@@ -88,23 +88,26 @@ def decode_full_scan(path, audio_scan=False, frames="frames", threads=5):
     metadata_duration = ffprobe.duration or 0
 
     if audio_scan or not ffprobe.has_video:
-        with tempfile.NamedTemporaryFile(suffix=".mkv") as temp_output:
-            processes.cmd(
-                "ffmpeg",
-                "-nostdin",
-                "-nostats",
-                "-v",
-                "16",
-                "-i",
-                path,
-                "-acodec",
-                "copy",
-                "-map_metadata",
-                "-1",
-                "-y",
-                temp_output.name,
-            )
-            actual_duration = processes.FFProbe(temp_output.name).duration or 0
+        try:
+            with tempfile.NamedTemporaryFile(suffix=".mkv") as temp_output:
+                processes.cmd(
+                    "ffmpeg",
+                    "-nostdin",
+                    "-nostats",
+                    "-v",
+                    "16",
+                    "-i",
+                    path,
+                    "-acodec",
+                    "copy",
+                    "-map_metadata",
+                    "-1",
+                    "-y",
+                    temp_output.name,
+                )
+                actual_duration = processes.FFProbe(temp_output.name).duration or 0
+        except RuntimeError:
+            actual_duration = 0
     else:
         ffprobe_cmd = [
             "ffprobe",
