@@ -148,6 +148,14 @@ def cluster_paths(paths, n_clusters=None):
     return result
 
 
+def print_groups(groups):
+    for group in groups:
+        group["grouped_paths"] = [s.rstrip("\n") for s in group["grouped_paths"]]
+
+    print(json.dumps(groups, indent=4))
+    raise SystemExit(0)
+
+
 def cluster_dicts(args, media):
     if len(media) < 2:
         return media
@@ -222,14 +230,6 @@ def cluster_dicts(args, media):
 
     media = [media_keyed[p] for p in sorted_paths]
     return media
-
-def print_groups(groups):
-    for group in groups:
-        group["grouped_paths"] = [s.rstrip("\n") for s in group["grouped_paths"]]
-
-    print(json.dumps(groups, indent=4))
-    raise SystemExit(0)
-
 
 
 def cluster_images(paths, n_clusters=None):
