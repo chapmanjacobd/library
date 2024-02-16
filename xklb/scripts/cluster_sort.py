@@ -4,11 +4,11 @@ from pathlib import Path
 from typing import Dict, List
 
 from xklb import usage
+from xklb.data import wordbank
 from xklb.scripts import eda, mcda
 from xklb.utils import consts, db_utils, file_utils, iterables, nums, objects, printing, strings
 from xklb.utils.consts import DBType
 from xklb.utils.log_utils import Timer, log
-
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library cluster-sort", usage=usage.cluster_sort)
@@ -55,6 +55,8 @@ def parse_args() -> argparse.Namespace:
     )
     parser.set_defaults(profile="lines")
 
+    parser.add_argument("--stop-words", "--ignore-words", '--ignore', '-i', nargs='+', action='append')
+
     parser.add_argument("--clusters", "--n-clusters", "-c", type=int, help="Number of KMeans clusters")
     parser.add_argument("--near-duplicates", "--similar-only", action="store_true", help="Re-group by difflib ratio")
     parser.add_argument(
@@ -68,6 +70,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("input_path", nargs="?", type=argparse.FileType("r"), default=sys.stdin)
     parser.add_argument("output_path", nargs="?")
     args = parser.parse_args()
+
+    if args.stop_words is None:
+        args.stop_words = wordbank.stop_words
+    else:
+        args.stop_words = frozenset(*args.stop_words)
 
     log.info(objects.dict_filter_bool(args.__dict__))
     return args
@@ -113,16 +120,16 @@ def group_paths(paths, clusters):
     return result
 
 
-def find_clusters(n_clusters, sentence_strings):
+def find_clusters(n_clusters, sentence_strings, stop_words=None):
     from sklearn.cluster import KMeans
     from sklearn.feature_extraction.text import TfidfVectorizer
 
     try:
-        vectorizer = TfidfVectorizer(min_df=2, strip_accents="unicode", stop_words="english")
+        vectorizer = TfidfVectorizer(min_df=2, strip_accents="unicode", stop_words=stop_words)
         X = vectorizer.fit_transform(sentence_strings)
     except ValueError:
         try:
-            vectorizer = TfidfVectorizer(strip_accents="unicode", stop_words="english")
+            vectorizer = TfidfVectorizer(strip_accents="unicode", stop_words=stop_words)
             X = vectorizer.fit_transform(sentence_strings)
         except ValueError:
             try:
@@ -137,12 +144,12 @@ def find_clusters(n_clusters, sentence_strings):
     return clusters
 
 
-def cluster_paths(paths, n_clusters=None):
+def cluster_paths(paths, n_clusters=None, stop_words=None):
     if len(paths) < 2:
         return paths
 
     sentence_strings = (strings.path_to_sentence(s) for s in paths)
-    clusters = find_clusters(n_clusters, sentence_strings)
+    clusters = find_clusters(n_clusters, sentence_strings, stop_words=stop_words)
     result = group_paths(paths, clusters)
 
     return result
@@ -174,7 +181,7 @@ def cluster_dicts(args, media):
         strings.path_to_sentence(" ".join(str(v) for k, v in d.items() if v and k in search_columns)) for d in media
     )
 
-    clusters = find_clusters(n_clusters, sentence_strings)
+    clusters = find_clusters(n_clusters, sentence_strings, stop_words=getattr(args, 'stop_words', None))
 
     if args.verbose >= consts.LOG_INFO:
         from pandas import DataFrame
@@ -336,7 +343,7 @@ def cluster_sort() -> None:
     args.input_path.close()
 
     if args.profile == "lines":
-        groups = cluster_paths(lines, args.clusters)
+        groups = cluster_paths(lines, args.clusters, args.stop_words)
     elif args.profile == "image":
         groups = cluster_images(lines, args.clusters)
     else:
