@@ -472,7 +472,7 @@ def download(args, m) -> None:
     if args.verbose >= consts.LOG_DEBUG_SQL:
         log.debug("\n".join(ydl_full_log))
 
-    if not ydl_log["error"] and info:
+    if not ydl_log["error"] and info and local_path:
         try:
             info["corruption"] = int(
                 media_check.calculate_corruption(local_path, threads=1, full_scan_if_corrupt=True) * 100
