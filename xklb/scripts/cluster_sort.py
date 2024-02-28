@@ -10,6 +10,7 @@ from xklb.utils import consts, db_utils, file_utils, iterables, nums, objects, p
 from xklb.utils.consts import DBType
 from xklb.utils.log_utils import Timer, log
 
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library cluster-sort", usage=usage.cluster_sort)
 
@@ -55,7 +56,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.set_defaults(profile="lines")
 
-    parser.add_argument("--stop-words", "--ignore-words", '--ignore', '-i', nargs='+', action='append')
+    parser.add_argument("--stop-words", "--ignore-words", "--ignore", "-i", nargs="+", action="append")
 
     parser.add_argument("--clusters", "--n-clusters", "-c", type=int, help="Number of KMeans clusters")
     parser.add_argument("--near-duplicates", "--similar-only", action="store_true", help="Re-group by difflib ratio")
@@ -181,7 +182,7 @@ def cluster_dicts(args, media):
         strings.path_to_sentence(" ".join(str(v) for k, v in d.items() if v and k in search_columns)) for d in media
     )
 
-    clusters = find_clusters(n_clusters, sentence_strings, stop_words=getattr(args, 'stop_words', None))
+    clusters = find_clusters(n_clusters, sentence_strings, stop_words=getattr(args, "stop_words", None))
 
     if args.verbose >= consts.LOG_INFO:
         from pandas import DataFrame
