@@ -347,7 +347,7 @@ def download(args, m) -> None:
     }
 
     if args.verbose >= consts.LOG_DEBUG:
-        func_opts["progress_hooks"] = [lambda d: log.debug(f"downloading {d['_percent_str']} {d['_speed_str']}")]
+        func_opts["progress_hooks"] = [lambda d: log.debug(f"downloading {d['_percent_str']} {d['_speed_str']} {d['downloaded_bytes']} bytes")]
 
     if args.profile != DBType.audio:
         func_opts["subtitlesformat"] = "srt/best"
