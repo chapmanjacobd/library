@@ -18,26 +18,27 @@ from xklb.utils.log_utils import log
 
 
 def watch_chromecast(args, m: dict, subtitles_file=None) -> Optional[subprocess.CompletedProcess]:
-    if "vlc" in args.player:
+    if "vlc" in m["player"]:
+        subtitles = ["--sub-file=" + subtitles_file] if subtitles_file else []
         catt_log = processes.cmd(
             "vlc",
             "--sout",
             "#chromecast",
             f"--sout-chromecast-ip={args.cc_ip}",
             "--demux-filter=demux_chromecast",
-            "--sub-file=" + subtitles_file if subtitles_file else "",
-            *args.player[1:],
+            *subtitles,
+            *m["player"][1:],
             m["path"],
         )
     else:
         if args.action in (SC.watch, SC.listen):
+            subtitles = ["-s", subtitles_file] if subtitles_file else ["--no-subs"]
             catt_log = processes.cmd(
                 "catt",
                 "-d",
                 args.chromecast_device,
                 "cast",
-                "-s",
-                subtitles_file if subtitles_file else consts.FAKE_SUBTITLE,
+                *subtitles,
                 m["path"],
             )
         else:
@@ -90,7 +91,6 @@ def calculate_duration(args, m) -> Tuple[int, int]:
 
 def listen_chromecast(args, m: dict) -> Optional[subprocess.CompletedProcess]:
     Path(consts.CAST_NOW_PLAYING).write_text(m["path"])
-    Path(consts.FAKE_SUBTITLE).touch()
     catt = which("catt") or "catt"
     start, end = calculate_duration(args, m)
 
@@ -101,8 +101,7 @@ def listen_chromecast(args, m: dict) -> Optional[subprocess.CompletedProcess]:
                 "-d",
                 args.chromecast_device,
                 "cast",
-                "-s",
-                consts.FAKE_SUBTITLE,
+                "--no-subs",
                 "--block",
                 "--seek-to",
                 str(start),
@@ -124,8 +123,7 @@ def listen_chromecast(args, m: dict) -> Optional[subprocess.CompletedProcess]:
                 "-d",
                 args.chromecast_device,
                 "cast",
-                "-s",
-                consts.FAKE_SUBTITLE,
+                "--no-subs",
                 "--block",
                 "--seek-to",
                 str(start),
@@ -184,7 +182,7 @@ def transcode(args, path) -> str:
         video_settings = ["-c:v", "copy"]
 
     print("Transcoding", temp_video)
-    processes.cmd_interactive(
+    r = processes.cmd_interactive(
         "ffmpeg",
         "-nostdin",
         "-loglevel",
@@ -205,11 +203,14 @@ def transcode(args, path) -> str:
         temp_video,
     )
 
-    Path(path).unlink()
-    shutil.move(temp_video, transcode_dest)
-    with args.db.conn:
-        args.db.conn.execute("UPDATE media SET path = ? where path = ?", [transcode_dest, path])
-    return transcode_dest
+    if Path(temp_video).exists():
+        Path(path).unlink()
+        shutil.move(temp_video, transcode_dest)
+        with args.db.conn:
+            args.db.conn.execute("UPDATE media SET path = ? where path = ?", [transcode_dest, path])
+        return transcode_dest
+    else:
+        return path
 
 
 def get_browser() -> Optional[str]:
@@ -524,7 +525,7 @@ def single_player(args, m):
     if system() == "Windows" or args.action in (SC.watch):
         r = processes.cmd(*m["player"], m["path"], strict=False)
     else:  # args.action in (SC.listen)
-        r = processes.cmd_interactive(*m["player"], m["path"])
+        r = processes.cmd_interactive(*m["player"], m["path"], strict=False)
 
     if m["player_need_sleep"]:
         try:
