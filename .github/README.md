@@ -95,7 +95,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.5.008)
+    xk media library subcommands (v2.5.009)
 
     Create database subcommands:
     ╭───────────────┬────────────────────────────────────────────────────╮
@@ -1329,6 +1329,9 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         Duration to play (in seconds) while changing the channel
         library watch --interdimensional-cable 40
         library watch -4dtv 40
+        You can open two terminals to replicate AMV Hell somewhat
+        library watch --volume 0 -4dtv 30
+        library listen -4dtv 30
 
         Playback multiple files at once
         library watch --multiple-playback    # one per display; or two if only one display detected
