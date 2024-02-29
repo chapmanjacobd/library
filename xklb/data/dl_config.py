@@ -19,6 +19,7 @@ yt_recoverable_errors = re.compile(
 .*The downloaded file is empty
 .*Invalid data found
 .*fragment 1 not found
+.*Got error: 0 bytes read
 .*HTTP Error 429
 .*HTTP Error 400
 .*HTTP Error 503: Service Unavailable
