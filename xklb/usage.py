@@ -527,6 +527,9 @@ def play(action) -> str:
         Duration to play (in seconds) while changing the channel
         library {action} --interdimensional-cable 40
         library {action} -4dtv 40
+        You can open two terminals to replicate AMV Hell somewhat
+        library watch --volume 0 -4dtv 30
+        library listen -4dtv 30
 
         Playback multiple files at once
         library {action} --multiple-playback    # one per display; or two if only one display detected
