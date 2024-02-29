@@ -140,8 +140,16 @@ def cmd_detach(*command, **kwargs) -> subprocess.CompletedProcess:
     return subprocess.CompletedProcess(command, 0, "Detached command is async")
 
 
-def cmd_interactive(*command) -> subprocess.CompletedProcess:
+def cmd_interactive(*command, strict=True) -> subprocess.CompletedProcess:
     return_code = os.spawnvpe(os.P_WAIT, command[0], command, os.environ)
+
+    if return_code != 0:
+        msg = f"[{shlex.join(command)}] exited {return_code}"
+        if strict:
+            raise RuntimeError(msg)
+        else:
+            log.info(msg)
+
     return subprocess.CompletedProcess(command, return_code)
 
 

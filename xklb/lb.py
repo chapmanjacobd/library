@@ -195,7 +195,7 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     add_parser(subparsers, "xklb.scripts.links_db.links_update")
     add_parser(subparsers, "xklb.scripts.mcda.mcda", ["mcdm", "rank"])
     add_parser(subparsers, "xklb.scripts.merge_dbs.merge_dbs", ["merge-db"])
-    add_parser(subparsers, "xklb.scripts.merge_folders.merge_folders", ["merge-folder"])
+    add_parser(subparsers, "xklb.scripts.merge_folders.merge_folders", ["merge-folder", "mv"])
     add_parser(subparsers, "xklb.scripts.merge_online_local.merge_online_local")
     add_parser(subparsers, "xklb.scripts.mining.extract_links.extract_links", ["links", "links_extract"])
     add_parser(subparsers, "xklb.scripts.mining.extract_text.extract_text", ["text", "text_extract"])
