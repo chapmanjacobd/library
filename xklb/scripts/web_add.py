@@ -248,15 +248,34 @@ def spider(args, paths: Set):
                 else:
                     new_paths[path] = None  # add key to map; title: None
 
-        media = [{"path": k, "title": v} for k, v in new_paths.items()]
+        media = [
+            {
+                "path": k,
+                "title": v,
+                "time_created": consts.APPLICATION_START,
+                "time_deleted": 0,
+            }
+            for k, v in new_paths.items()
+        ]
         new_media_count += len(media)
         for i, m in enumerate(media, start=1):
             printing.print_overwrite(
                 f"Pages to scan {len(paths)} link scan: {new_media_count} new [{len(known_paths)} known]; basic metadata {i} of {len(media)}"
             )
 
-            m |= web.stat(m["path"])
-            m["type"] = file_utils.mimetype(m["path"])
+            if DBType.filesystem in args.profiles:
+                m |= web.stat(m["path"])
+                m["type"] = file_utils.mimetype(m["path"])
+            else:
+                extension = m["path"].rsplit(".", 1)[-1].lower()
+                if (
+                    args.scan_all_files
+                    or (DBType.video in args.profiles and extension in consts.VIDEO_EXTENSIONS)
+                    or (DBType.audio in args.profiles and extension in consts.AUDIO_ONLY_EXTENSIONS)
+                    or (DBType.text in args.profiles and extension in consts.TEXTRACT_EXTENSIONS)
+                    or (DBType.image in args.profiles and extension in consts.IMAGE_EXTENSIONS)
+                ):
+                    m |= web.stat(m["path"])
 
             if getattr(args, "hash", False):
                 # TODO: use head_foot_stream
@@ -268,6 +287,7 @@ def spider(args, paths: Set):
             )
 
             extension = m["path"].rsplit(".", 1)[-1].lower()
+
             remote_path = m["path"]  # for temp file extraction
             if DBType.video in args.profiles and (extension in consts.VIDEO_EXTENSIONS or args.scan_all_files):
                 m |= av.munge_av_tags(args, m["path"])
