@@ -97,7 +97,7 @@ def requests_session(args=argparse.Namespace()):
 def stat(path):
     try:
         r = requests_session().head(path)
-        info = {"time_created": consts.APPLICATION_START, "time_deleted": 0}
+        info = {}
 
         if 200 <= r.status_code < 400:
             if "content-length" in r.headers:
