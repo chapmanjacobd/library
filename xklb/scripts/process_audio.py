@@ -129,6 +129,7 @@ def process_path(
                 path.unlink()  # Remove original
         elif is_split:
             path.unlink()  # Remove original
+            return path.with_suffix(".000.mka")  # TODO: return multiple paths...
         else:
             if output_path.stat().st_size > path.stat().st_size:
                 output_path.unlink()  # Remove transcode
