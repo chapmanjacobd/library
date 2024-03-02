@@ -50,7 +50,6 @@ def tube_opts(args, func_opts=None, playlist_opts: Optional[str] = None) -> dict
         "youtube_include_dash_manifest": False,
         "youtube_include_hls_manifest": False,
         "no_check_certificate": True,
-        "check_formats": False,
         "ignore_no_formats_error": True,
         "skip_playlist_after_errors": 21,
         "clean_infojson": False,
@@ -347,7 +346,9 @@ def download(args, m) -> None:
     }
 
     if args.verbose >= consts.LOG_DEBUG:
-        func_opts["progress_hooks"] = [lambda d: log.debug(f"downloading {d['_percent_str']} {d['_speed_str']} {d['downloaded_bytes']} bytes")]
+        func_opts["progress_hooks"] = [
+            lambda d: log.debug(f"downloading {d['_percent_str']} {d['_speed_str']} {d['downloaded_bytes']} bytes")
+        ]
 
     if args.profile != DBType.audio:
         func_opts["subtitlesformat"] = "srt/best"
