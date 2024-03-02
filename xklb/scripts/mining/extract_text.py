@@ -1,4 +1,5 @@
 import argparse, re
+from pathlib import Path
 
 from bs4 import BeautifulSoup, NavigableString
 
@@ -10,6 +11,7 @@ from xklb.utils.log_utils import log
 def parse_args():
     parser = argparse.ArgumentParser(prog="library extract-text", usage=usage.extract_text)
     parser.add_argument("--skip-links", action="store_true")
+    parser.add_argument("--save", action="store_true")
 
     parser.add_argument("--cookies", help="path to a Netscape formatted cookies file")
     parser.add_argument("--cookies-from-browser", metavar="BROWSER[+KEYRING][:PROFILE][::CONTAINER]")
@@ -99,12 +101,21 @@ def extract_text() -> None:
         web.load_selenium(args)
     try:
         for url in arg_utils.gen_paths(args):
+            output_lines = []
             for s in iterables.return_unique(get_text)(args, url):
                 if s is None:
                     break
 
-                printing.pipe_print(s)
+                if args.save:
+                    output_lines.append(s)
+                else:
+                    printing.pipe_print(s)
 
+            if args.save:
+                save_path = web.url_to_local_path(url)
+                Path(save_path).parent.mkdir(exist_ok=True, parents=True)
+                with open(save_path, "w") as f:
+                    f.writelines(s + "\n" for s in output_lines)
     finally:
         if args.selenium:
             web.quit_selenium(args)

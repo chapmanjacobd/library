@@ -305,7 +305,19 @@ def quit_selenium(args):
             pass
 
 
-def set_output_path(url, output_path, output_prefix, relative, response):
+def url_to_local_path(url):
+    base_path = "."
+    parsed_url = urlparse(url)
+    relative_path = parsed_url.netloc + "/" + parsed_url.path.lstrip("/")
+    base_path = os.path.dirname(relative_path)
+
+    filename = url.split("/")[-1]
+    output_path = os.path.join(base_path, filename)
+    output_path = path_utils.clean_path(output_path.encode())
+    return output_path
+
+
+def gen_output_path_from_response(url, output_path, output_prefix, relative, response):
     if output_path is None:
         content_d = response.headers.get("Content-Disposition")
         if content_d:
@@ -341,7 +353,7 @@ def download_url(
 
     remote_size = nums.safe_int(r.headers.get("Content-Length"))
 
-    output_path = set_output_path(url, output_path, output_prefix, relative, r)
+    output_path = gen_output_path_from_response(url, output_path, output_prefix, relative, r)
     if output_path == ".":
         log.warning("Skipping directory %s", url)
         return
