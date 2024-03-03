@@ -233,7 +233,7 @@ def cluster_dicts(args, media):
             s for d in groups for s in d["grouped_paths"] if not bool(media_keyed[s].get("time_deleted"))
         )
 
-    if args.print_groups:
+    if getattr(args, "print_groups", False):
         print_groups(groups)
 
     media = [media_keyed[p] for p in sorted_paths]
@@ -359,7 +359,7 @@ def cluster_sort() -> None:
     elif args.unique_only:
         groups = [d for d in groups if len(d["grouped_paths"]) == 1]
 
-    if args.print_groups:
+    if getattr(args, "print_groups", False):
         print_groups(groups)
     elif args.move_groups:
         min_len = len(str(len(groups) + 1))

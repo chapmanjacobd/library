@@ -208,12 +208,12 @@ def extract_metadata(mp_args, path) -> Optional[Dict[str, int]]:
         dest_path = bytes(Path(mp_args.move) / Path(path).relative_to(mp_args.playlist_path))
         dest_path = path_utils.clean_path(dest_path)
         file_utils.rename_move_file(path, dest_path)
-        media["path"] = dest_path
+        path = media["path"] = dest_path
 
     if getattr(mp_args, "process", False):
         if objects.is_profile(mp_args, DBType.audio) and Path(path).suffix not in [".opus", ".mka"]:
-            path = media["path"] = process_audio.process_path(
-                path, split_longer_than=2160 if "audiobook" in path.lower() else None
+            path = media["path"] = str(
+                process_audio.process_path(path, split_longer_than=2160 if "audiobook" in path.lower() else None)
             )
 
     return media

@@ -43,6 +43,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--skip")
 
     parser.add_argument("--cluster-sort", "--cluster", "-C", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--print-groups", "--groups", "-g", action="store_true", help="Print groups")
     parser.add_argument("--clusters", "--n-clusters", type=int, help="Number of KMeans clusters")
     parser.add_argument("--related", "-R", action="count", default=0, help=argparse.SUPPRESS)
 
