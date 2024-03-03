@@ -37,6 +37,7 @@ def process_path(
     delete_video=False,
 ):
     path = Path(path)
+    assert path.exists()
     ffprobe_cmd = ["ffprobe", "-v", "error", "-print_format", "json", "-show_format", "-show_streams", path]
     result = subprocess.run(ffprobe_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     info = json.loads(result.stdout)
