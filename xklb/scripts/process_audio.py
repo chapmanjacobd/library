@@ -56,9 +56,13 @@ def process_path(
     source_rate = int(audio_stream.get("sample_rate") or 44100)
     duration = float(audio_stream.get("duration") or info["format"].get("duration") or 0)
 
-    assert bitrate > 0
-    assert channels > 0
-    assert source_rate > 0
+    try:
+        assert bitrate > 0
+        assert channels > 0
+        assert source_rate > 0
+    except AssertionError as e:
+        log.exception("Audio format likely misdetected: %s", path)
+        return path
 
     ff_opts: List[str] = []
     if channels == 1:
