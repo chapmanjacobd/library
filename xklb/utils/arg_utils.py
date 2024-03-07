@@ -159,7 +159,7 @@ def parse_args_sort(args) -> None:
             [
                 args.print,
                 consts.PYTEST_RUNNING,
-                "subtitle_count" in args.where,
+                "subtitle_count" in " ".join(args.where),
                 args.limit != consts.DEFAULT_PLAY_QUEUE,
             ],
         )
