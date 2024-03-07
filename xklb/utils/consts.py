@@ -131,7 +131,7 @@ SKIP_MEDIA_CHECK = [".iso", ".img", ".vob"]
 
 SPEECH_RECOGNITION_EXTENSIONS = set("mp3|ogg|wav".split("|"))
 OCR_EXTENSIONS = set("gif|jpg|jpeg|png|tif|tff|tiff".split("|"))
-AUDIO_ONLY_EXTENSIONS = set("opus|oga|ogg|mp3|mpga|m2a|m4a|flac|wav|wma|aac|aa3|ac3|ape|mid|midi".split("|"))
+AUDIO_ONLY_EXTENSIONS = set("mka|opus|oga|ogg|mp3|mpga|m2a|m4a|flac|wav|wma|aac|aa3|ac3|ape|mid|midi".split("|"))
 VIDEO_EXTENSIONS = set(
     (
         "str|aa|aax|acm|adf|adp|dtk|ads|ss2|adx|aea|afc|aix|al|apl"
@@ -144,7 +144,7 @@ VIDEO_EXTENSIONS = set(
         "|mdgz|mdr|mdz|s3gz|s3r|s3z|xmgz|xmr|xmz|669|amf|ams|dbm|digi|dmf"
         "|dsm|dtm|far|gdm|ice|imf|it|j2b|m15|mdl|med|mmcmp|mms|mo3|mod|mptm"
         "|mt2|mtm|nst|okt|ogm|ogv|plm|ppm|psm|pt36|ptm|s3m|sfx|sfx2|st26|stk|stm"
-        "|stp|ult|umx|wow|xm|xpk|flv|dat|lvf|m4v|mkv|ts|tp|mk3d|mka|mks|webm|mca|mcc"
+        "|stp|ult|umx|wow|xm|xpk|flv|dat|lvf|m4v|mkv|ts|tp|mk3d|webm|mca|mcc"
         "|mjpg|mjpeg|mpg|mpeg|mpo|j2k|mlp|mods|moflex|mov|mp4|3gp|3g2|mj2|psp|m4b"
         "|ism|ismv|isma|f4v|mp2|mpa|mpc|mjpg|mpl2|msf|mtaf|ul|musx|mvi|mxg"
         "|v|nist|sph|nsp|nut|obu|oma|omg|pjs|pvf|yuv|cif|qcif|rgb|rt|rsd|rmvb|rm"
@@ -153,6 +153,7 @@ VIDEO_EXTENSIONS = set(
         "|v210|yuv10|vag|vc1|rcv|vob|viv|vpk|vqf|vql|vqe|wmv|wsd|xmv|xvag|yop|y4m"
     ).split("|")
 )
+SUBTITLE_EXTENSIONS = set("srt|vtt|mks".split("|"))
 TEXTRACT_EXTENSIONS = set(
     "csv|tab|tsv|doc|docx|eml|epub|json|htm|html|msg|odt|pdf|pptx|ps|rtf|txt|log|xlsx|xls".split("|")
 )

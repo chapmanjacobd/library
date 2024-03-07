@@ -35,6 +35,7 @@ def process_path(
     min_split_segment=nums.human_to_seconds(DEFAULT_MIN_SPLIT),
     dry_run=False,
     delete_video=False,
+    delete_broken=False,
 ):
     path = Path(path)
     assert path.exists()
@@ -60,8 +61,11 @@ def process_path(
         assert bitrate > 0
         assert channels > 0
         assert source_rate > 0
-    except AssertionError as e:
-        log.exception("Audio format likely misdetected: %s", path)
+    except AssertionError:
+        log.exception("Broken file or audio format misdetected: %s", path)
+        if delete_broken:
+            path.unlink()
+            return None
         return path
 
     ff_opts: List[str] = []
@@ -128,7 +132,16 @@ def process_path(
     if dry_run:
         print(cmd)
     else:
-        subprocess.check_call(cmd, shell=True)
+        try:
+            subprocess.check_call(cmd, shell=True)
+        except subprocess.CalledProcessError:
+            log.exception("Could not transcode: %s", path)
+            if delete_broken:
+                path.unlink()
+                return None
+            else:
+                raise
+
         if video_stream:
             if delete_video:
                 path.unlink()  # Remove original
