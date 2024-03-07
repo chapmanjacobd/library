@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import List
 
 from xklb import usage
-from xklb.utils import arg_utils, devices, objects, printing
+from xklb.utils import arg_utils, devices, file_utils, objects, printing
 from xklb.utils.log_utils import log
 
 
@@ -70,25 +70,6 @@ def gen_rename_data(destination_folder, destination_files, source_folder, source
     return source_rename_data
 
 
-def same_filesystem(path1, path2):
-    stat1 = os.stat(path1)
-    stat2 = os.stat(path2)
-    return stat1.st_dev == stat2.st_dev
-
-
-def filter_valid_sources(args, destination_folder):
-    valid_sources = []
-    for source in args.sources:
-        if same_filesystem(source, destination_folder):
-            valid_sources.append(source)
-        else:
-            print(f"Skipping {source}. Source not on same filesystem as destination.")
-
-    if not valid_sources:
-        print("No valid sources found. Sources and destination must be on the same filesystem.")
-        raise SystemExit(1)
-
-    return valid_sources
 
 
 def get_clobber(args):
@@ -127,7 +108,10 @@ def apply_merge(args, empty_folder_data, rename_data, clobber):
             else:
                 os.replace(t[1], t[2])
         else:  ## file does not exist in destination already
-            os.renames(t[1], t[2])
+            try:
+                os.renames(t[1], t[2])
+            except Exception:
+                file_utils.rename_move_file(t[1], t[2])
 
     if args.simulate:
         for p in empty_folder_data:
@@ -162,7 +146,6 @@ def merge_folders() -> None:
     print("Destination:")
     destination_folder, destination_glob = args.destination
     destination_folder.mkdir(parents=True, exist_ok=True)
-    args.sources = filter_valid_sources(args, destination_folder)  # TODO: add cross-fs support
     destination_files, destination_folders_dict = existing_stats(destination_folder, destination_glob)
 
     destination_folders = (
