@@ -537,6 +537,27 @@ def play(action) -> str:
         library {action} -m 4 --screen-name eDP # play four media at once on specific screen
         library {action} -m 4 --loop --crop     # play four cropped videos on a loop
         library {action} -m 4 --hstack          # use hstack style
+
+        When using `--multiple-playback` it may help you to set simple focus-under-window rules while using this to prevent keys from accidentally being entered in the wrong mpv window (as new windows are created and capture the cursor focus).
+        You can set and restore your previous mouse focus setting by wrapping the command like this:
+
+            focus-under-mouse
+            library watch ... --multiple-playback 4
+            focus-follows-mouse
+
+        For example in KDE:
+
+            function focus-under-mouse
+                kwriteconfig5 --file kwinrc --group Windows --key FocusPolicy FocusUnderMouse
+                qdbus-qt5 org.kde.KWin /KWin reconfigure
+            end
+
+            function focus-follows-mouse
+                kwriteconfig5 --file kwinrc --group Windows --key FocusPolicy FocusFollowsMouse
+                kwriteconfig5 --file kwinrc --group Windows --key NextFocusPrefersMouse true
+                qdbus-qt5 org.kde.KWin /KWin reconfigure
+            end
+
 """
 
 
@@ -1732,25 +1753,6 @@ webadd = """library web-add [(--filesystem) | --video | --audio | --image | --te
 
             k quit 5
             r quit 6
-
-        NB. It may help you to set simple focus-under-window rules while using this to prevent keys from accidenly being entered in the wrong mpv windows as new ones are created and capture focus. You can restore your previous mouse focus setting by wrapping the command like this:
-
-            focus-under-mouse
-            library watch ...
-            focus-follows-mouse
-
-        For example:
-
-            function focus-under-mouse
-                kwriteconfig5 --file kwinrc --group Windows --key FocusPolicy FocusUnderMouse
-                qdbus-qt5 org.kde.KWin /KWin reconfigure
-            end
-
-            function focus-follows-mouse
-                kwriteconfig5 --file kwinrc --group Windows --key FocusPolicy FocusFollowsMouse
-                kwriteconfig5 --file kwinrc --group Windows --key NextFocusPrefersMouse true
-                qdbus-qt5 org.kde.KWin /KWin reconfigure
-            end
 
     Download checked videos
 
