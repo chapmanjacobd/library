@@ -538,7 +538,7 @@ def play(action) -> str:
         library {action} -m 4 --loop --crop     # play four cropped videos on a loop
         library {action} -m 4 --hstack          # use hstack style
 
-        When using `--multiple-playback` it may help you to set simple focus-under-window rules while using this to prevent keys from accidentally being entered in the wrong mpv window (as new windows are created and capture the cursor focus).
+        When using `--multiple-playback` it may help you to set simple window focus rules while using this to prevent keys from accidentally being entered in the wrong mpv window (as new windows are created and capture the cursor focus).
         You can set and restore your previous mouse focus setting by wrapping the command like this:
 
             focus-under-mouse
