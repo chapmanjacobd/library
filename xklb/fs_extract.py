@@ -212,13 +212,14 @@ def extract_metadata(mp_args, path) -> Optional[Dict[str, int]]:
 
     if getattr(mp_args, "process", False):
         if objects.is_profile(mp_args, DBType.audio) and Path(path).suffix not in [".opus", ".mka"]:
-            path = media["path"] = str(
-                process_audio.process_path(
-                    path,
-                    split_longer_than=2160 if "audiobook" in path.lower() else None,
-                    delete_broken=getattr(mp_args, "delete_unplayable", False),
-                )
+            result = process_audio.process_path(
+                path,
+                split_longer_than=2160 if "audiobook" in path.lower() else None,
+                delete_broken=getattr(mp_args, "delete_unplayable", False),
             )
+            if result is None:
+                return None
+            path = media["path"] = str(result)
 
     return media
 
