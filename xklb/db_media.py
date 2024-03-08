@@ -296,6 +296,8 @@ def filter_args_sql(args, m_columns):
         {'and COALESCE(time_deleted,0) = 0' if 'time_deleted' in m_columns and "deleted" not in (getattr(args, 'sort_groups_by',None) or '') and "time_deleted" not in " ".join(args.where) else ''}
         {'AND (score IS NULL OR score > 7)' if 'score' in m_columns else ''}
         {'AND (upvote_ratio IS NULL OR upvote_ratio > 0.73)' if 'upvote_ratio' in m_columns else ''}
+        {'AND path not like "http%"' if args.local_media_only and 'time_downloaded' not in m_columns else ''}
+        {'AND path like "http%"' if args.online_media_only and 'time_downloaded' not in m_columns else ''}
         {'AND COALESCE(time_downloaded,0) = 0' if args.online_media_only and 'time_downloaded' in m_columns else ''}
         {'AND COALESCE(time_downloaded,1)!= 0 AND path not like "http%"' if args.local_media_only and 'time_downloaded' in m_columns else ''}
     """

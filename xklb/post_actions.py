@@ -141,7 +141,16 @@ def external_action(args, log_action, media_file, player_exit_code, player_proce
     cmd = getattr(args, player_exit_code_cmd, None)
     if cmd:
         log_action(player_exit_code_cmd.upper())
-        if "{}" in cmd:
+        if cmd in ['pass', 'mark-watched']:
+            pass
+        elif cmd in ['soft-delete', 'mark-deleted']:
+            db_media.mark_media_deleted(args, media_file)
+        elif cmd in ['delete']:
+            if media_file.startswith("http"):
+                db_media.mark_media_deleted(args, media_file)
+            else:
+                delete_media(args, media_file)
+        elif "{}" in cmd:
             processes.cmd_detach(media_file if s == "{}" else s for s in shlex.split(cmd))
         else:
             processes.cmd_detach(shlex.split(cmd), media_file)
