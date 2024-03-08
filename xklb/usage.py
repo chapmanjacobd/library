@@ -1699,7 +1699,62 @@ webadd = """library web-add [(--filesystem) | --video | --audio | --image | --te
 
     Scan open directories
 
-    library download open_dir.db --fs --prefix ~/d/dump/video/ --relative -vv -s factory -p
+        library web-add open_dir.db --video http://1.1.1.1/
+
+    Check download size of all videos matching some criteria
+
+        library download --fs open_dir.db --prefix ~/d/dump/video/ -w 'height<720' -E preview -pa
+
+        path         count  download_duration                  size    avg_size
+        ---------  -------  ----------------------------  ---------  ----------
+        Aggregate     5694  2 years, 7 months and 5 days  724.4 GiB   130.3 MiB
+
+    Download all videos matching some criteria
+
+        library download --fs open_dir.db --prefix ~/d/dump/video/ -w 'height<720' -E preview
+
+    Stream directly to mpv
+
+        library watch open_dir.db
+
+    Check videos before downloading
+
+        library watch open_dir.db --online-media-only --loop --exit-code-confirm -i --action ask-keep -m 4  --start 35% --volume=0 -w 'height<720' -E preview
+
+        Assuming you have bound in mpv input.conf a key to 'quit' and another key to 'quit 4', using the ask-keep action will mark a video as deleted when you 'quit 4' and it will mark a video as watched when you 'quit'.
+
+        For example, here I bind "'" to "KEEP" and  "j" to "DELETE"
+
+            ' quit
+            j quit 4
+
+        This is pretty intuitive after you use it a few times but writing this out I realize this might seem a bit complicated and brittle. You could also do something like `--cmd5 'echo {} >> chosen.txt' --cmd6 'echo {} >> rejected.txt'` instead of post-actions like `ask-keep`; this might be a bit more transparent. But you will still need to bind some keys in mpv:
+
+            k quit 5
+            r quit 6
+
+        NB. It may help you to set simple focus-under-window rules while using this to prevent keys from accidenly being entered in the wrong mpv windows as new ones are created and capture focus. You can restore your previous mouse focus setting by wrapping the command like this:
+
+            focus-under-mouse
+            library watch ...
+            focus-follows-mouse
+
+        For example:
+
+            function focus-under-mouse
+                kwriteconfig5 --file kwinrc --group Windows --key FocusPolicy FocusUnderMouse
+                qdbus-qt5 org.kde.KWin /KWin reconfigure
+            end
+
+            function focus-follows-mouse
+                kwriteconfig5 --file kwinrc --group Windows --key FocusPolicy FocusFollowsMouse
+                kwriteconfig5 --file kwinrc --group Windows --key NextFocusPrefersMouse true
+                qdbus-qt5 org.kde.KWin /KWin reconfigure
+            end
+
+    Download checked videos
+
+        library download --fs open_dir.db --prefix ~/d/dump/video/ -w 'id in (select media_id from history)'
 
 """
 
