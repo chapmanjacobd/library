@@ -15,6 +15,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--split-longer-than")
     parser.add_argument("--min-split-segment", default=DEFAULT_MIN_SPLIT)
     parser.add_argument("--delete-video", action="store_true")
+    parser.add_argument("--delete-unplayable", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--verbose", "-v", action="count", default=0)
 
@@ -34,8 +35,8 @@ def process_path(
     split_longer_than=None,
     min_split_segment=nums.human_to_seconds(DEFAULT_MIN_SPLIT),
     dry_run=False,
-    delete_video=False,
     delete_broken=False,
+    delete_video=False,
 ):
     path = Path(path)
     assert path.exists()
@@ -90,8 +91,8 @@ def process_path(
     output_path = path.with_suffix(".mka")
     is_split = always_split or (split_longer_than and duration > split_longer_than)
     if is_split:
-        splits = (
-            subprocess.check_output(
+        try:
+            result = subprocess.check_output(
                 [
                     "ffmpeg",
                     "-v",
@@ -108,10 +109,14 @@ def process_path(
                     "/dev/null",
                 ]
             )
-            .decode()
-            .split("\n")
-        )
+        except subprocess.CalledProcessError:
+            log.exception("Splits could not be identified. Likely broken file: %s", path)
+            if delete_broken:
+                path.unlink()
+                return None
+            raise
 
+        splits = result.decode().split("\n")
         splits = [line.split("=")[1] for line in splits if "lavfi.silence_start" in line]
 
         prev = 0.0
@@ -169,6 +174,7 @@ def process_audio():
                 always_split=args.always_split,
                 split_longer_than=args.split_longer_than,
                 min_split_segment=args.min_split_segment,
+                delete_broken=args.delete_unplayable,
                 delete_video=args.delete_video,
                 dry_run=args.dry_run,
             )
