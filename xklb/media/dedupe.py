@@ -407,7 +407,8 @@ def get_fs_duplicates(args) -> List[dict]:
             hash_results = list(pool.map(sample_compare.full_hash_file, check_paths))
         hash_groups = defaultdict(list)
         for path, hash in zip(check_paths, hash_results):
-            hash_groups[hash].append(path)
+            if hash is not None:
+                hash_groups[hash].append(path)
         for paths in hash_groups.values():
             if len(paths) > 1:
                 keep_path = paths[0]
