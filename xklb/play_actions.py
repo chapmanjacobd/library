@@ -339,7 +339,9 @@ def construct_query(args) -> Tuple[str, dict]:
         limit = 16 * (args.limit or consts.DEFAULT_PLAY_QUEUE)
         where_not_deleted = (
             "where COALESCE(time_deleted,0) = 0"
-            if "time_deleted" in m_columns and "deleted" not in args.sort_groups_by and "time_deleted" not in " ".join(args.where)
+            if "time_deleted" in m_columns
+            and "deleted" not in args.sort_groups_by
+            and "time_deleted" not in " ".join(args.where)
             else ""
         )
         args.filter_sql.append(

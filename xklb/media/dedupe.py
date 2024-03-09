@@ -363,48 +363,48 @@ def get_fs_duplicates(args) -> List[dict]:
 
     size_groups = defaultdict(list)
     for m in media:
-        size_groups[m['size']].append(m)
+        size_groups[m["size"]].append(m)
     size_groups = [l for l in size_groups.values() if len(l) > 1]
 
-    size_paths = [d['path'] for g in size_groups for d in g]
-    media = [d for d in media if d['path'] in size_paths]
+    size_paths = [d["path"] for g in size_groups for d in g]
+    media = [d for d in media if d["path"] in size_paths]
     log.info(
-        'Got %s size matches (%s dup groups). Doing sample-hash comparison...',
+        "Got %s size duplicates (%s groups). Doing sample-hash comparison...",
         len(size_paths),
         len(size_groups),
     )
 
-    sample_hash_paths = [d['path'] for d in media if not d.get('hash')]
+    sample_hash_paths = [d["path"] for d in media if not d.get("hash")]
     with ThreadPoolExecutor(max_workers=20) as pool:
         hash_results = list(pool.map(sample_hash.sample_hash_file, sample_hash_paths))
     for path, hash in zip(sample_hash_paths, hash_results):
         for m in media:
-            if m['path'] == path:
+            if m["path"] == path:
                 if hash is None:
-                    media = [ d for d in media if d['path'] != path ]
+                    media = [d for d in media if d["path"] != path]
                 else:
-                    m['hash'] = hash
+                    m["hash"] = hash
                     args.db["media"].upsert(m, pk=["path"], alter=True)  # save sample-hash back to db
                 break
 
     sample_hash_groups = defaultdict(list)
     for m in media:
-        sample_hash_groups[m['hash']].append(m)
+        sample_hash_groups[m["hash"]].append(m)
     sample_hash_groups = [l for l in sample_hash_groups.values() if len(l) > 1]
 
     log.info(
-        'Got %s sample-hash matches (%s dup groups). Doing full hash comparison...',
+        "Got %s sample-hash duplicates (%s groups). Doing full hash comparison...",
         len(list(iterables.flatten(sample_hash_groups))),
         len(sample_hash_groups),
     )
 
     size_map = {}
     for m in media:
-        size_map[m['path']] = m['size']
+        size_map[m["path"]] = m["size"]
 
     dup_media = []
     for g in sample_hash_groups:
-        check_paths = [d['path'] for d in g]
+        check_paths = [d["path"] for d in g]
         with ThreadPoolExecutor(max_workers=5) as pool:
             hash_results = list(pool.map(sample_compare.full_hash_file, check_paths))
         hash_groups = defaultdict(list)
@@ -414,7 +414,7 @@ def get_fs_duplicates(args) -> List[dict]:
             if len(paths) > 1:
                 keep_path = paths[0]
                 dup_media.extend(
-                    {'keep_path': keep_path, 'duplicate_path': p, 'duplicate_size': size_map[keep_path]}
+                    {"keep_path": keep_path, "duplicate_path": p, "duplicate_size": size_map[keep_path]}
                     for p in paths[1:]
                 )
 
