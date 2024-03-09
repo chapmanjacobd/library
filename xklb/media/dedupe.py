@@ -394,7 +394,7 @@ def get_fs_duplicates(args) -> List[dict]:
         sample_hash_groups[m["hash"]].add(m['path'])
     sample_hash_groups = [l for l in sample_hash_groups.values() if len(l) > 1]
 
-    sample_hash_paths = set.intersection(*sample_hash_groups)
+    sample_hash_paths = set().union(*sample_hash_groups)
     log.info(
         "Got %s sample-hash duplicates (%s groups). Doing full hash comparison...",
         len(sample_hash_paths),
