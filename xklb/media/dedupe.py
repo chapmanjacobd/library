@@ -376,12 +376,12 @@ def get_fs_duplicates(args) -> List[dict]:
 
     path_media_map = {d["path"]: d for d in media}
 
-    sample_hash_paths = [d["path"] for d in media if not d.get("hash")]
-    if sample_hash_paths:
+    need_sample_hash_paths = [d["path"] for d in media if not d.get("hash")]
+    if need_sample_hash_paths:
         with ThreadPoolExecutor(max_workers=20) as pool:
-            hash_results = list(pool.map(sample_hash.sample_hash_file, sample_hash_paths))
+            hash_results = list(pool.map(sample_hash.sample_hash_file, need_sample_hash_paths))
 
-        for path, hash in zip(sample_hash_paths, hash_results):
+        for path, hash in zip(need_sample_hash_paths, hash_results):
             if hash is None:
                 del path_media_map[path]
             else:
@@ -394,9 +394,10 @@ def get_fs_duplicates(args) -> List[dict]:
         sample_hash_groups[m["hash"]].append(m)
     sample_hash_groups = [l for l in sample_hash_groups.values() if len(l) > 1]
 
+    sample_hash_paths = {d["path"] for g in sample_hash_groups for d in g}
     log.info(
         "Got %s sample-hash duplicates (%s groups). Doing full hash comparison...",
-        len(list(iterables.flatten(sample_hash_groups))),
+        len(sample_hash_paths),
         len(sample_hash_groups),
     )
 
