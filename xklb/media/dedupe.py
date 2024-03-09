@@ -348,6 +348,7 @@ def get_fs_duplicates(args) -> List[dict]:
     WHERE 1=1
         and coalesce(m1.time_deleted,0) = 0
         and m1.size > 0
+        {"and type != 'directory'" if 'type' in m_columns else ''}
         {" ".join(args.filter_sql)}
     ORDER BY 1=1
         , length(m1.path)-length(REPLACE(m1.path, '{os.sep}', '')) DESC
