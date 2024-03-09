@@ -389,12 +389,12 @@ def get_fs_duplicates(args) -> List[dict]:
                 args.db["media"].upsert(path_media_map[path], pk=["path"], alter=True)  # save sample-hash back to db
         media = [path_media_map[d['path']] for d in media if d['path'] in path_media_map]
 
-    sample_hash_groups = defaultdict(list)
+    sample_hash_groups = defaultdict(set)
     for m in media:
-        sample_hash_groups[m["hash"]].append(m)
+        sample_hash_groups[m["hash"]].add(m['path'])
     sample_hash_groups = [l for l in sample_hash_groups.values() if len(l) > 1]
 
-    sample_hash_paths = {d["path"] for g in sample_hash_groups for d in g}
+    sample_hash_paths = set.intersection(*sample_hash_groups)
     log.info(
         "Got %s sample-hash duplicates (%s groups). Doing full hash comparison...",
         len(sample_hash_paths),
