@@ -379,10 +379,11 @@ def get_fs_duplicates(args) -> List[dict]:
         for m in media:
             if m['path'] == path:
                 if hash is None:
-                    del m
+                    media = [ d for d in media if d['path'] != m['path'] ]
                 else:
                     m['hash'] = hash
                     args.db["media"].upsert(m, pk=["path"], alter=True)  # save sample-hash back to db
+                break
 
     sample_hash_groups = defaultdict(list)
     for m in media:
