@@ -401,22 +401,25 @@ def get_fs_duplicates(args) -> List[dict]:
         len(sample_hash_groups),
     )
 
+    with ThreadPoolExecutor(max_workers=20) as pool:
+        path_hash_map = {
+            k: v for k, v in zip(sample_hash_paths, pool.map(sample_compare.full_hash_file, sample_hash_paths))
+        }
+
+    full_hash_groups = defaultdict(list)
+    for path, hash in path_hash_map.items():
+        if hash is not None:
+            full_hash_groups[hash].append(path)
+    full_hash_groups = [l for l in full_hash_groups.values() if len(l) > 1]
+
     dup_media = []
-    for g in sample_hash_groups:
-        check_paths = [d["path"] for d in g]
-        with ThreadPoolExecutor(max_workers=5) as pool:
-            hash_results = list(pool.map(sample_compare.full_hash_file, check_paths))
-        hash_groups = defaultdict(list)
-        for path, hash in zip(check_paths, hash_results):
-            if hash is not None:
-                hash_groups[hash].append(path)
-        for paths in hash_groups.values():
-            if len(paths) > 1:
-                keep_path = paths[0]
-                dup_media.extend(
-                    {"keep_path": keep_path, "duplicate_path": p, "duplicate_size": path_media_map[keep_path]['size']}
-                    for p in paths[1:]
-                )
+    for hash_group_paths in full_hash_groups:
+        paths = [d['path'] for d in media if d['path'] in hash_group_paths]  # get the correct order from media
+        keep_path = paths[0]
+        dup_media.extend(
+            {"keep_path": keep_path, "duplicate_path": p, "duplicate_size": path_media_map[keep_path]['size']}
+            for p in paths[1:]
+        )
 
     # TODO: update false-positive sample-hash matches? probably no because then future sample-hash duplicates won't match
 
