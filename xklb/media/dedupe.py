@@ -366,7 +366,7 @@ def get_fs_duplicates(args) -> List[dict]:
         size_groups[m['size']].append(m)
     size_groups = [l for l in size_groups.values() if len(l) > 1]
 
-    size_paths = list(iterables.flatten(size_groups))
+    size_paths = [d['path'] for g in size_groups for d in g]
     media = [d for d in media if d['path'] in size_paths]
     log.info(
         'Got %s size matches (%s dup groups). Doing sample-hash comparison...',
@@ -381,7 +381,7 @@ def get_fs_duplicates(args) -> List[dict]:
         for m in media:
             if m['path'] == path:
                 if hash is None:
-                    media = [ d for d in media if d['path'] != m['path'] ]
+                    media = [ d for d in media if d['path'] != path ]
                 else:
                     m['hash'] = hash
                     args.db["media"].upsert(m, pk=["path"], alter=True)  # save sample-hash back to db
