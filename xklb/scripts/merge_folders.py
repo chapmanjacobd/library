@@ -70,8 +70,6 @@ def gen_rename_data(destination_folder, destination_files, source_folder, source
     return source_rename_data
 
 
-
-
 def get_clobber(args):
     choice = None
     if args.replace:

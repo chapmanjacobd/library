@@ -200,7 +200,7 @@ def extract_metadata(mp_args, path) -> Optional[Dict[str, int]]:
         else:
             log.debug(f"{timer()-start} {path}")
 
-    if getattr(mp_args, "hash", False) and media['type'] != "directory" and media['size'] > 0:
+    if getattr(mp_args, "hash", False) and media["type"] != "directory" and media["size"] > 0:
         media["hash"] = sample_hash.sample_hash_file(path)
 
     if getattr(mp_args, "move", False) and not file_utils.is_file_open(path):
