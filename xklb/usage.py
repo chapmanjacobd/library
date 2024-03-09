@@ -1060,6 +1060,10 @@ cluster_sort = """library cluster-sort [input_path | stdin] [output_path | stdou
         image2.jpg
         image3.jpg' | library cluster-sort --image --move-groups
 
+    Print similar paths
+
+        library fs 0day.db -pa --cluster --print-groups
+
 """
 
 copy_play_counts = """library copy-play-counts DEST_DB SOURCE_DB ... [--source-prefix x] [--target-prefix y]
