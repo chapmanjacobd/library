@@ -1,4 +1,6 @@
 import argparse, os, re, tempfile
+from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
 from pathlib import Path
 from typing import List
@@ -7,6 +9,7 @@ import humanize
 
 from xklb import db_media, usage
 from xklb.media import media_printer
+from xklb.scripts import sample_compare, sample_hash
 from xklb.utils import consts, db_utils, devices, file_utils, iterables, objects, strings
 from xklb.utils.consts import DBType
 from xklb.utils.log_utils import log
@@ -54,6 +57,7 @@ def parse_args() -> argparse.Namespace:
     )
     profile.add_argument(
         "--filesystem",
+        "--fs",
         action="store_const",
         dest="profile",
         const=DBType.filesystem,
@@ -332,6 +336,87 @@ def get_duration_duplicates(args) -> List[dict]:
     return media
 
 
+def get_fs_duplicates(args) -> List[dict]:
+    m_columns = db_utils.columns(args, "media")
+    query = f"""
+    SELECT
+        path
+        , size
+        {', hash' if 'hash' in m_columns else ''}
+    FROM
+        {args.table} m1
+    WHERE 1=1
+        and coalesce(m1.time_deleted,0) = 0
+        and m1.size > 0
+        {" ".join(args.filter_sql)}
+    ORDER BY 1=1
+        , length(m1.path)-length(REPLACE(m1.path, '{os.sep}', '')) DESC
+        , length(m1.path)-length(REPLACE(m1.path, '.', ''))
+        , length(m1.path)
+        , m1.size DESC
+        , m1.time_modified DESC
+        , m1.time_created DESC
+        , m1.duration DESC
+        , m1.path DESC
+    """
+    media = list(args.db.query(query, args.filter_bindings))
+
+    size_groups = defaultdict(list)
+    for m in media:
+        size_groups[m['size']].append(m)
+    size_groups = [l for l in size_groups.values() if len(l) > 1]
+
+    log.info(
+        'Got %s size matches (%s dup groups). Doing sample-hash comparison...',
+        len(list(iterables.flatten(size_groups))),
+        len(size_groups),
+    )
+
+    sample_hash_paths = [d['path'] for d in media if not d.get('hash')]
+    with ThreadPoolExecutor(max_workers=20) as pool:
+        hash_results = list(pool.map(sample_hash.sample_hash_file, sample_hash_paths))
+    for path, hash in zip(sample_hash_paths, hash_results):
+        for m in media:
+            if m['path'] == path:
+                m['hash'] = hash
+                args.db["media"].upsert(m, pk=["path"], alter=True)  # save sample-hash back to db
+
+    sample_hash_groups = defaultdict(list)
+    for m in media:
+        sample_hash_groups[m['hash']].append(m)
+    sample_hash_groups = [l for l in sample_hash_groups.values() if len(l) > 1]
+
+    log.info(
+        'Got %s sample-hash matches (%s dup groups). Doing full hash comparison...',
+        len(list(iterables.flatten(sample_hash_groups))),
+        len(sample_hash_groups),
+    )
+
+    size_map = {}
+    for m in media:
+        size_map[m['path']] = m['size']
+
+    dup_media = []
+    for g in sample_hash_groups:
+        check_paths = [d['path'] for d in g]
+        with ThreadPoolExecutor(max_workers=5) as pool:
+            hash_results = list(pool.map(sample_compare.full_hash_file, check_paths))
+        hash_groups = defaultdict(list)
+        for path, hash in zip(check_paths, hash_results):
+            hash_groups[hash].append(path)
+        for paths in hash_groups.values():
+            if len(paths) > 1:
+                keep_path = paths[0]
+                dup_media.extend(
+                    {'keep_path': keep_path, 'duplicate_path': p, 'duplicate_size': size_map[keep_path]}
+                    for p in paths[1:]
+                )
+
+    # TODO: update false-positive sample-hash matches? probably no because then future sample-hash duplicates won't match
+
+    return dup_media
+
+
 def filter_split_files(paths):
     pattern = r"\.\d{3,5}\."
     return filter(lambda x: not re.search(pattern, x), paths)
@@ -349,14 +434,7 @@ def dedupe_media() -> None:
     elif args.profile == "duration":
         duplicates = get_duration_duplicates(args)
     elif args.profile == DBType.filesystem:
-        print(
-            """
-        You should use `rmlint` instead:
-
-            $ rmlint --progress --partial-hidden --rank-by dOma
-        """,
-        )
-        return
+        duplicates = get_fs_duplicates(args)
     elif args.profile == DBType.image:
         print(
             """
