@@ -11,9 +11,12 @@ from xklb.utils.log_utils import log
 def full_hash_file(path):
     sha256_hash = hashlib.sha256()
 
-    with open(path, "rb") as file:
-        for byte_block in iter(lambda: file.read(1048576), b""):
-            sha256_hash.update(byte_block)
+    try:
+        with open(path, "rb") as file:
+            for byte_block in iter(lambda: file.read(1048576), b""):
+                sha256_hash.update(byte_block)
+    except FileNotFoundError:
+        return None
 
     return sha256_hash.hexdigest()
 
