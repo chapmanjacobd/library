@@ -1744,7 +1744,7 @@ webadd = """library web-add [(--filesystem) | --video | --audio | --image | --te
 
     Check videos before downloading
 
-        library watch open_dir.db --online-media-only --loop --exit-code-confirm -i --action ask-keep -m 4  --start 35% --volume=0 -w 'height<720' -E preview
+        library watch open_dir.db --online-media-only --loop --exit-code-confirm -i --action ask-keep -m 4  --start 35%% --volume=0 -w 'height<720' -E preview
 
         Assuming you have bound in mpv input.conf a key to 'quit' and another key to 'quit 4', using the ask-keep action will mark a video as deleted when you 'quit 4' and it will mark a video as watched when you 'quit'.
 
