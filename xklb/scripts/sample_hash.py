@@ -29,7 +29,11 @@ def threadpool_read(path, segments, chunk_size, max_workers=10):
 
 
 def sample_hash_file(path, threads=1, gap=0.1, chunk_size=None):
-    file_stats = Path(path).stat()
+    try:
+        file_stats = Path(path).stat()
+    except FileNotFoundError:
+        return None
+
     disk_usage = (
         file_stats.st_blocks * 512
     )  # https://github.com/python/cpython/blob/main/Doc/library/os.rst#files-and-directories
