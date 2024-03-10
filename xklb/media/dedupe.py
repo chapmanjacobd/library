@@ -387,11 +387,11 @@ def get_fs_duplicates(args) -> List[dict]:
             else:
                 path_media_map[path]["hash"] = hash
                 args.db["media"].upsert(path_media_map[path], pk=["path"], alter=True)  # save sample-hash back to db
-        media = [path_media_map[d['path']] for d in media if d['path'] in path_media_map]
+        media = [path_media_map[d["path"]] for d in media if d["path"] in path_media_map]
 
     sample_hash_groups = defaultdict(set)
     for m in media:
-        sample_hash_groups[m["hash"]].add(m['path'])
+        sample_hash_groups[m["hash"]].add(m["path"])
     sample_hash_groups = [l for l in sample_hash_groups.values() if len(l) > 1]
 
     sample_hash_paths = set().union(*sample_hash_groups)
@@ -414,10 +414,10 @@ def get_fs_duplicates(args) -> List[dict]:
 
     dup_media = []
     for hash_group_paths in full_hash_groups:
-        paths = [d['path'] for d in media if d['path'] in hash_group_paths]  # get the correct order from media
+        paths = [d["path"] for d in media if d["path"] in hash_group_paths]  # get the correct order from media
         keep_path = paths[0]
         dup_media.extend(
-            {"keep_path": keep_path, "duplicate_path": p, "duplicate_size": path_media_map[keep_path]['size']}
+            {"keep_path": keep_path, "duplicate_path": p, "duplicate_size": path_media_map[keep_path]["size"]}
             for p in paths[1:]
         )
 

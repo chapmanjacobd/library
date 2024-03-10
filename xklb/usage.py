@@ -6,6 +6,10 @@ download = r"""library download [--prefix /mnt/d/] [--safe] [--subs] [--auto-sub
 
         library download dl.db --prefix ~/output/path/root/
 
+    But you can sort; eg. oldest first
+
+        library download dl.db -u m.time_modified,m.time_created
+
     Limit downloads to a specified playlist URLs or substring (TODO: https://github.com/chapmanjacobd/library/issues/31)
 
         library download dl.db https://www.youtube.com/c/BlenderFoundation/videos

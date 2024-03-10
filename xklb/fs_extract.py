@@ -170,6 +170,9 @@ def extract_metadata(mp_args, path) -> Optional[Dict[str, int]]:
     ext = path.rsplit(".", 1)[-1].lower()
     is_scan_all_files = getattr(mp_args, "scan_all_files", False)
 
+    if media["type"] == "directory":
+        return None
+
     if not Path(path).exists():
         return media
 

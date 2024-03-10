@@ -95,7 +95,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.5.013)
+    xk media library subcommands (v2.5.014)
 
     Create database subcommands:
     ╭───────────────┬────────────────────────────────────────────────────╮
@@ -1649,6 +1649,10 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     By default things will download in a random order
 
         library download dl.db --prefix ~/output/path/root/
+
+    But you can sort; eg. oldest first
+
+        library download dl.db -u m.time_modified,m.time_created
 
     Limit downloads to a specified playlist URLs or substring (TODO: https://github.com/chapmanjacobd/library/issues/31)
 
