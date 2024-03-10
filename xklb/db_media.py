@@ -86,7 +86,7 @@ def consolidate(v: dict) -> Optional[dict]:
     duration = v.pop("duration", None)
     cv["duration"] = 0 if not duration else int(duration)
     cv["time_uploaded"] = upload_date
-    cv["time_created"] = consts.now()
+    cv["time_created"] = iterables.safe_unpack(v.pop("time_created", None), consts.now())
     cv["time_modified"] = 0  # this should be 0 if the file has never been downloaded
     cv["time_deleted"] = 0
     cv["time_downloaded"] = 0
@@ -113,7 +113,7 @@ def consolidate(v: dict) -> Optional[dict]:
     )
 
     # extractor_key should only be in playlist table
-    cv["extractor_id"] = v.pop("id", None)
+    cv["extractor_id"] = iterables.safe_unpack(v.pop("extractor_id", None), v.pop("id", None))
     cv["title"] = iterables.safe_unpack(v.pop("title", None), v.get("playlist_title"))
     cv["width"] = v.pop("width", None)
     cv["height"] = v.pop("height", None)
