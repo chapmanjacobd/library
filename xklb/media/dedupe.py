@@ -1,4 +1,4 @@
-import argparse, os, re, tempfile
+import argparse, os, re, shlex, tempfile
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
@@ -10,7 +10,7 @@ import humanize
 from xklb import db_media, usage
 from xklb.media import media_printer
 from xklb.scripts import sample_compare, sample_hash
-from xklb.utils import consts, db_utils, devices, file_utils, iterables, objects, strings
+from xklb.utils import consts, db_utils, devices, file_utils, iterables, objects, processes, strings
 from xklb.utils.consts import DBType
 from xklb.utils.log_utils import log
 
@@ -82,6 +82,7 @@ def parse_args() -> argparse.Namespace:
     profile.set_defaults(profile="audio")
 
     parser.add_argument("--only-soft-delete", action="store_true")
+    parser.add_argument("--dedupe-cmd", help=argparse.SUPPRESS)
     parser.add_argument("--force", "-f", action="store_true")
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", default=100)
     parser.add_argument("--include", "-s", "--search", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
@@ -553,7 +554,12 @@ def dedupe_media() -> None:
         for d in duplicates:
             path = d["duplicate_path"]
             if not path.startswith("http") and not args.only_soft_delete:
-                file_utils.trash(path, detach=False)
+                if args.dedupe_cmd:
+                    processes.cmd(
+                        *shlex.split(args.dedupe_cmd), d["duplicate_path"], d["keep_path"]
+                    )  # follows rmlint interface
+                else:
+                    file_utils.trash(path, detach=False)
             db_media.mark_media_deleted(args, path)
 
 
