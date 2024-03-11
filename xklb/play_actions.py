@@ -521,10 +521,7 @@ def process_playqueue(args) -> None:
                 elif args.action in SC.watch:
                     media = [{"path": s} for s in file_utils.rglob(str(p), consts.VIDEO_EXTENSIONS)[0]]
                 elif args.action == SC.listen:
-                    media = [
-                        {"path": s}
-                        for s in file_utils.rglob(str(p), consts.VIDEO_EXTENSIONS | consts.AUDIO_ONLY_EXTENSIONS)[0]
-                    ]
+                    media = [{"path": s} for s in file_utils.rglob(str(p), consts.AUDIO_ONLY_EXTENSIONS)[0]]
                 elif args.action in SC.view:
                     media = [{"path": s} for s in file_utils.rglob(str(p), consts.IMAGE_EXTENSIONS)[0]]
                 elif args.action in SC.read:

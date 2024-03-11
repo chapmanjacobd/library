@@ -176,9 +176,7 @@ def extract_metadata(mp_args, path) -> Optional[Dict[str, int]]:
     if not Path(path).exists():
         return media
 
-    if objects.is_profile(mp_args, DBType.audio) and (
-        ext in (consts.AUDIO_ONLY_EXTENSIONS | consts.VIDEO_EXTENSIONS) or is_scan_all_files
-    ):
+    if objects.is_profile(mp_args, DBType.audio) and (ext in consts.AUDIO_ONLY_EXTENSIONS or is_scan_all_files):
         media |= av.munge_av_tags(mp_args, path)
     elif objects.is_profile(mp_args, DBType.video) and (ext in consts.VIDEO_EXTENSIONS or is_scan_all_files):
         media |= av.munge_av_tags(mp_args, path)
