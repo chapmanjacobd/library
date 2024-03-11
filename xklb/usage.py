@@ -1203,12 +1203,12 @@ relmv = """library relmv [--dry-run] SOURCE ... DEST
     Move fresh music to your phone every Sunday:
 
         # move last week music back to their source folders
-        library relmv /mnt/d/80_Now_Listening/ /mnt/d/
+        library mv /mnt/d/sync/weekly/ /mnt/d/check/audio/
 
         # move new music for this week
         library relmv (
             library listen audio.db --local-media-only --where 'play_count=0' --random -L 600 -p f
-        ) /mnt/d/80_Now_Listening/
+        ) /mnt/d/sync/weekly/
 """
 
 mv_list = """library mv-list [--limit LIMIT] [--lower LOWER] [--upper UPPER] MOUNT_POINT DATABASE
