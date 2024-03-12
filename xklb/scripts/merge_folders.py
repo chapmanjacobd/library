@@ -100,16 +100,16 @@ def apply_merge(args, empty_folder_data, rename_data, clobber):
             printing.pipe_print("mv", t[1], t[2])
 
     def mv(t):
+        mv_fn = os.renames
         if t[0]:  ## file exists in destination already
+            mv_fn = os.replace
             if not clobber:
                 log.info("[%s]: Skipping due to existing file %s", t[1], t[2])
-            else:
-                os.replace(t[1], t[2])
-        else:  ## file does not exist in destination already
-            try:
-                os.renames(t[1], t[2])
-            except Exception:
-                file_utils.rename_move_file(t[1], t[2])
+                return
+        try:
+            mv_fn(t[1], t[2])
+        except Exception:
+            file_utils.rename_move_file(t[1], t[2])
 
     if args.simulate:
         for p in empty_folder_data:
