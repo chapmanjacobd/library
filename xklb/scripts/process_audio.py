@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import List
 
 from xklb import usage
-from xklb.utils import nums, objects
+from xklb.utils import nums, objects, web
 from xklb.utils.log_utils import log
 
 DEFAULT_MIN_SPLIT = "20s"
@@ -38,8 +38,12 @@ def process_path(
     delete_broken=False,
     delete_video=False,
 ):
+    if path.startswith('http'):
+        output_path = Path(web.url_to_local_path(path)).with_suffix(".mka")
+    else:
+        output_path = Path(path).with_suffix(".mka")
+
     path = Path(path)
-    assert path.exists()
     ffprobe_cmd = ["ffprobe", "-v", "error", "-print_format", "json", "-show_format", "-show_streams", path]
     result = subprocess.run(ffprobe_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     info = json.loads(result.stdout)
@@ -88,7 +92,6 @@ def process_path(
         opus_rate = 16000
     ff_opts.extend([f"-ar {opus_rate}"])
 
-    output_path = path.with_suffix(".mka")
     is_split = always_split or (split_longer_than and duration > split_longer_than)
     if is_split:
         try:
@@ -166,7 +169,8 @@ def process_audio():
     args = parse_args()
 
     for path in args.paths:
-        path = str(Path(path).resolve())
+        if not path.startswith('http'):
+            path = str(Path(path).resolve())
 
         try:
             process_path(
