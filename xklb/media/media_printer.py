@@ -105,6 +105,8 @@ def media_printer(args, data, units=None, media_len=None) -> None:
     if "f" not in print_args and "limit" in getattr(args, "defaults", []):
         media.reverse()
 
+    tables = args.db.table_names()
+
     duration = sum(m.get("duration") or 0 for m in media)
     if "a" in print_args and ("Aggregate" not in media[0].get("path") or ""):
         if "count" in media[0]:
@@ -119,7 +121,7 @@ def media_printer(args, data, units=None, media_len=None) -> None:
             D["duration"] = duration
             D["avg_duration"] = duration / len(media)
 
-        if hasattr(args, "action"):
+        if hasattr(args, "action") and 'history' in tables:
             if action in (SC.download, SC.download_status) and "time_downloaded" in m_columns:
                 D["download_duration"] = cadence_adjusted_items(args, D["count"], time_column="time_downloaded")
             else:
@@ -151,7 +153,7 @@ def media_printer(args, data, units=None, media_len=None) -> None:
             marked = history.add(args, [d["path"] for d in media])
             log.warning(f"Marked {marked} metadata records as watched")
 
-    if "a" not in print_args and action == SC.download_status and "time_downloaded" in m_columns:
+    if "a" not in print_args and 'history' in tables and action == SC.download_status and "time_downloaded" in m_columns:
         for m in media:
             m["download_duration"] = cadence_adjusted_items(
                 args, m["never_downloaded"] + m["retry_queued"], time_column="time_downloaded"
