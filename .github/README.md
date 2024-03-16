@@ -95,7 +95,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.5.014)
+    xk media library subcommands (v2.5.015)
 
     Create database subcommands:
     ╭───────────────┬────────────────────────────────────────────────────╮
@@ -2251,12 +2251,12 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     Move fresh music to your phone every Sunday:
 
         # move last week music back to their source folders
-        library relmv /mnt/d/80_Now_Listening/ /mnt/d/
+        library mv /mnt/d/sync/weekly/ /mnt/d/check/audio/
 
         # move new music for this week
         library relmv (
             library listen audio.db --local-media-only --where 'play_count=0' --random -L 600 -p f
-        ) /mnt/d/80_Now_Listening/
+        ) /mnt/d/sync/weekly/
 
 
 </details>
