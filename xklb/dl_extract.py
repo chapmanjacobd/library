@@ -71,9 +71,6 @@ def parse_args():
     parser.add_argument("--subtitle-languages", "--subtitle-language", "--sl", action=arg_utils.ArgparseList)
 
     parser.add_argument("--prefix", default=os.getcwd(), help=argparse.SUPPRESS)
-    parser.add_argument(
-        "--no-relative", dest="relative", action="store_false", help="Do not replicate website file tree"
-    )
     parser.add_argument("--ext")
 
     parser.add_argument("--print", "-p", default="", const="p", nargs="?", help=argparse.SUPPRESS)
@@ -354,7 +351,7 @@ def dl_download(args=None) -> None:
             elif args.profile == DBType.image:
                 gdl_backend.download(args, m)
             elif args.profile == DBType.filesystem:
-                local_path = web.download_url(m["path"], output_prefix=args.prefix, relative=args.relative)
+                local_path = web.download_url(m["path"], output_prefix=args.prefix)
                 db_media.download_add(args, m["path"], m, local_path)
             else:
                 raise NotImplementedError

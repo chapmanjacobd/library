@@ -38,7 +38,7 @@ def process_path(
     delete_broken=False,
     delete_video=False,
 ):
-    if path.startswith('http'):
+    if path.startswith("http"):
         output_path = Path(web.url_to_local_path(path)).with_suffix(".mka")
     else:
         output_path = Path(path).with_suffix(".mka")
@@ -169,7 +169,7 @@ def process_audio():
     args = parse_args()
 
     for path in args.paths:
-        if not path.startswith('http'):
+        if not path.startswith("http"):
             path = str(Path(path).resolve())
 
         try:

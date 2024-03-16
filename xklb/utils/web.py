@@ -1,4 +1,5 @@
 import argparse, datetime, functools, os, re, tempfile, time, urllib.error, urllib.parse, urllib.request
+from email.message import Message
 from pathlib import Path
 from shutil import which
 from urllib.parse import parse_qs, parse_qsl, quote, unquote, urlencode, urljoin, urlparse, urlunparse
@@ -305,43 +306,94 @@ def quit_selenium(args):
             pass
 
 
-def url_to_local_path(url):
-    base_path = "."
+def safe_unquote(url):
+    # https://en.wikipedia.org/wiki/Internationalized_Resource_Identifier
+    # we aren't writing HTML so we can unquote
+
+    try:
+        parsed_url = urlparse(url)
+    except UnicodeDecodeError:
+        return url
+
+    def selective_unquote(component, restricted_chars):
+        try:
+            unquoted = unquote(component, errors="strict")
+        except UnicodeDecodeError:
+            return component
+        # re-quote restricted chars
+        return "".join(quote(char, safe="") if char in restricted_chars else char for char in unquoted)
+
+    def unquote_query_params(query):
+        query_pairs = parse_qsl(query, keep_blank_values=True)
+        return "&".join(
+            selective_unquote(key, "=&#") + "=" + selective_unquote(value, "=&#") for key, value in query_pairs
+        )
+
+    unquoted_path = selective_unquote(parsed_url.path, ";?#")
+    unquoted_params = selective_unquote(parsed_url.params, "?#")
+    unquoted_query = unquote_query_params(parsed_url.query)
+    unquoted_fragment = selective_unquote(parsed_url.fragment, "")
+
+    new_url = urlunparse(
+        (parsed_url.scheme, parsed_url.netloc, unquoted_path, unquoted_params, unquoted_query, unquoted_fragment)
+    )
+
+    return new_url
+
+
+def url_decode(href):
+    href = safe_unquote(href)
+    up = urlparse(href)
+    if up.netloc:
+        try:
+            href = href.replace(up.netloc, puny_decode(up.netloc), 1)
+        except Exception:
+            pass
+    return href
+
+
+def path_tuple_from_url(url):
+    url = url_decode(url)
     parsed_url = urlparse(url)
-    relative_path = parsed_url.netloc + "/" + parsed_url.path.lstrip("/")
+    relative_path = os.path.join(parsed_url.netloc, parsed_url.path.lstrip("/"))
     base_path = os.path.dirname(relative_path)
+    filename = os.path.basename(parsed_url.path)
+    return base_path, filename
 
-    filename = url.split("/")[-1]
-    output_path = os.path.join(base_path, filename)
+
+def filename_from_content_disposition(response):
+    content_disposition = response.headers.get("Content-Disposition", "")
+    if "filename=" in content_disposition:
+        msg = Message()
+        msg["content-disposition"] = content_disposition
+        filename = msg.get_filename()
+        if filename:
+            return filename
+    return None
+
+
+def url_to_local_path(url, response=None, output_path=None, output_prefix=None):
+    base_path, filename = path_tuple_from_url(url)
+
+    if response:
+        filename_from_site = filename_from_content_disposition(response)
+        if filename_from_site:
+            filename = filename_from_site
+
+    if not output_path:
+        output_path = filename
+        if base_path:
+            output_path = os.path.join(base_path, filename)
+
     output_path = path_utils.clean_path(output_path.encode())
-    return output_path
-
-
-def gen_output_path_from_response(url, output_path, output_prefix, relative, response):
-    if output_path is None:
-        content_d = response.headers.get("Content-Disposition")
-        if content_d:
-            filename = content_d.split("filename=")[1].replace("/", "-")
-        else:
-            filename = url.split("/")[-1]
-
-        base_path = "."
-        if relative:
-            parsed_url = urlparse(url)
-            relative_path = parsed_url.netloc + "/" + parsed_url.path.lstrip("/")
-            base_path = os.path.dirname(relative_path)
-
-        output_path = os.path.join(base_path, filename)
-        output_path = path_utils.clean_path(output_path.encode())
 
     if output_prefix:
         output_path = os.path.join(output_prefix, output_path)
+
     return output_path
 
 
-def download_url(
-    url, output_path=None, output_prefix=None, relative=False, chunk_size=8 * 1024 * 1024, retry_num=0, max_retries=10
-):
+def download_url(url, output_path=None, output_prefix=None, chunk_size=8 * 1024 * 1024, retry_num=0, max_retries=10):
     if retry_num > max_retries:
         raise RuntimeError(f"Max retries exceeded for {url}")
 
@@ -353,7 +405,7 @@ def download_url(
 
     remote_size = nums.safe_int(r.headers.get("Content-Length"))
 
-    output_path = gen_output_path_from_response(url, output_path, output_prefix, relative, r)
+    output_path = url_to_local_path(url, response=r, output_path=output_path, output_prefix=output_prefix)
     if output_path == ".":
         log.warning("Skipping directory %s", url)
         return
@@ -396,7 +448,7 @@ def download_url(
         retry_num += 1
         log.info("Retry #%s %s", retry_num, url)
         time.sleep(retry_num)
-        return download_url(url, output_path, output_prefix, relative, chunk_size, retry_num)
+        return download_url(url, output_path, output_prefix, chunk_size, retry_num)
 
     set_timestamp(r.headers, output_path)
     return output_path
@@ -548,52 +600,6 @@ def infinite_scroll(driver):
 def construct_search(engine, s):
     s = urllib.parse.quote(s, safe="")
     return engine.replace("%", s, 1)
-
-
-def safe_unquote(url):
-    # https://en.wikipedia.org/wiki/Internationalized_Resource_Identifier
-    # we aren't writing HTML so we can unquote
-
-    try:
-        parsed_url = urlparse(url)
-    except UnicodeDecodeError:
-        return url
-
-    def selective_unquote(component, restricted_chars):
-        try:
-            unquoted = unquote(component, errors="strict")
-        except UnicodeDecodeError:
-            return component
-        # re-quote restricted chars
-        return "".join(quote(char, safe="") if char in restricted_chars else char for char in unquoted)
-
-    def unquote_query_params(query):
-        query_pairs = parse_qsl(query, keep_blank_values=True)
-        return "&".join(
-            selective_unquote(key, "=&#") + "=" + selective_unquote(value, "=&#") for key, value in query_pairs
-        )
-
-    unquoted_path = selective_unquote(parsed_url.path, ";?#")
-    unquoted_params = selective_unquote(parsed_url.params, "?#")
-    unquoted_query = unquote_query_params(parsed_url.query)
-    unquoted_fragment = selective_unquote(parsed_url.fragment, "")
-
-    new_url = urlunparse(
-        (parsed_url.scheme, parsed_url.netloc, unquoted_path, unquoted_params, unquoted_query, unquoted_fragment)
-    )
-
-    return new_url
-
-
-def url_decode(href):
-    href = safe_unquote(href)
-    up = urlparse(href)
-    if up.netloc:
-        try:
-            href = href.replace(up.netloc, puny_decode(up.netloc), 1)
-        except Exception:
-            pass
-    return href
 
 
 def construct_absolute_url(base_url, href):

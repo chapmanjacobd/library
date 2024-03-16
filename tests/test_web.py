@@ -1,7 +1,124 @@
+import os.path
+
 import pytest
 from bs4 import BeautifulSoup
 
-from xklb.utils.web import extract_nearby_text, safe_unquote
+from xklb.utils.web import extract_nearby_text, safe_unquote, url_to_local_path
+
+
+def test_url_to_local_path():
+    tests = [
+        ("http://example.com/path/to/resource.html", "example.com/path/to/resource.html"),
+        ("https://another-example.com/a/b/c/d/e/f/g.txt", "another-example.com/a/b/c/d/e/f/g.txt"),
+        ("http://example.com/space%20in%20path/to/resource.html", "example.com/space in path/to/resource.html"),
+        (
+            "https://another-example.com/path/to/special%20characters%21%40%23.txt",
+            "another-example.com/path/to/special characters@23.txt",
+        ),
+        (
+            "http://example.com/interesting%2Fpath%2Fwith%2Fslashes/resource.txt",
+            "example.com/interesting/path/with/slashes/resource.txt",
+        ),
+        (
+            "http://example.com/interesting%2F..%2F..%2F..%2F../../path/resource.txt",
+            "example.com/interesting/_/_/_/_/_/path/resource.txt",
+        ),
+    ]
+
+    for url, expected in tests:
+        result = url_to_local_path(url)
+        assert os.path.normpath(result) == os.path.normpath(expected)
+
+
+class MockResponse:
+    def __init__(self, headers):
+        self.headers = headers
+
+
+@pytest.mark.parametrize(
+    "url, output_path, output_prefix, response_headers, expected",
+    [
+        # Content-Disposition header provides the filename
+        (
+            "http://example.com/path/to/resource",
+            None,
+            None,
+            {"Content-Disposition": 'attachment; filename="downloaded_file.txt"'},
+            "example.com/path/to/downloaded_file.txt",
+        ),
+        (
+            "http://example.com/path/to/resource/",
+            None,
+            None,
+            {"Content-Disposition": 'attachment; filename="downloaded_file.txt"'},
+            "example.com/path/to/resource/downloaded_file.txt",
+        ),
+        # No Content-Disposition, filename derived from URL
+        ("http://example.com/path/to/resource.html", None, None, {}, "example.com/path/to/resource.html"),
+        # output_path provided, other parameters ignored except for output prefix
+        ("http://example.com/t/test.txt", "custom/path/custom_file.txt", None, {}, "custom/path/custom_file.txt"),
+        ("http://example.com/t/test.txt", "custom/path/custom_file.txt", "", {}, "custom/path/custom_file.txt"),
+        (
+            "http://example.com/t/test.txt",
+            "/custom/path/custom_file.txt",
+            "dir/dir2/",
+            {},
+            "/custom/path/custom_file.txt",
+        ),
+        (
+            "http://example.com/t/test.txt",
+            "custom/path/custom_file.txt",
+            "dir/dir2/",
+            {},
+            "dir/dir2/custom/path/custom_file.txt",
+        ),
+        # output_prefix provided, appended to generated output path
+        ("http://example.com/some/resource", None, "/prefix/path", {}, "/prefix/path/example.com/some/resource"),
+        # Illegal characters in filename from Content-Disposition are replaced
+        (
+            "http://example.com/test/",
+            None,
+            None,
+            {"Content-Disposition": 'attachment; filename="../../me.txt"'},
+            "example.com/test/_/_/me.txt",
+        ),
+        (
+            "http://example.com",
+            None,
+            None,
+            {"Content-Disposition": 'attachment; filename="na/me.txt"'},
+            "example.com/na/me.txt",
+        ),
+        (
+            "http://example.com/no-name.txt",
+            None,
+            None,
+            {"Content-Disposition": "attachment"},
+            "example.com/no-name.txt",
+        ),
+        (
+            "http://example.com/no-name.txt",
+            None,
+            None,
+            {"Content-Disposition": 'attachment; filename=""'},
+            "example.com/no-name.txt",
+        ),
+        (
+            "http://example.com/test/",
+            None,
+            None,
+            {
+                "Content-Disposition": 'Content-Disposition: form-data; name="file"; filename="你好.xlsx"; filename*=UTF-8'
+                "%E4%BD%A0%E5%A5%BD.xlsx"
+            },
+            "example.com/test/你好.xlsx",
+        ),
+    ],
+)
+def test_url_to_local_path_with_response(url, output_path, output_prefix, response_headers, expected):
+    response = MockResponse(response_headers)
+    result = url_to_local_path(url, response, output_path, output_prefix)
+    assert result == expected, f"Failed for URL: {url}"
 
 
 @pytest.mark.parametrize(
