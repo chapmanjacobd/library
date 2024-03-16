@@ -111,6 +111,8 @@ def media_printer(args, data, units=None, media_len=None) -> None:
     if "a" in print_args and ("Aggregate" not in media[0].get("path") or ""):
         if "count" in media[0]:
             D = {"path": "Aggregate", "count": sum(d.get("count") or 0 for d in media)}
+        elif "exists" in media[0]:
+            D = {"path": "Aggregate", "count": sum(d.get("exists") or 0 for d in media)}
         elif action == SC.download_status and "never_downloaded" in media[0]:
             potential_downloads = sum(d["never_downloaded"] + d["retry_queued"] for d in media)
             D = {"path": "Aggregate", "count": potential_downloads}
