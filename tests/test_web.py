@@ -1,8 +1,7 @@
-import os.path
-
 import pytest
 from bs4 import BeautifulSoup
 
+from tests.utils import p
 from xklb.utils.web import extract_nearby_text, safe_unquote, url_to_local_path
 
 
@@ -27,7 +26,7 @@ def test_url_to_local_path():
 
     for url, expected in tests:
         result = url_to_local_path(url)
-        assert os.path.normpath(result) == os.path.normpath(expected)
+        assert p(result) == p(expected)
 
 
 class MockResponse:
@@ -118,7 +117,7 @@ class MockResponse:
 def test_url_to_local_path_with_response(url, output_path, output_prefix, response_headers, expected):
     response = MockResponse(response_headers)
     result = url_to_local_path(url, response, output_path, output_prefix)
-    assert result == expected, f"Failed for URL: {url}"
+    assert p(result) == p(expected), f"Failed for URL: {url}"
 
 
 @pytest.mark.parametrize(
