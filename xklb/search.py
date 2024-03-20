@@ -96,29 +96,30 @@ def construct_query(args) -> Tuple[str, dict]:
     args.filter_sql.extend([" and " + w for w in args.where])
 
     table = "captions"
-    if args.db["captions"].detect_fts():
-        if args.include:
-            args.table, search_bindings = db_utils.fts_search_sql(
-                "captions",
-                fts_table=args.db["captions"].detect_fts(),
-                include=args.include,
-                exclude=args.exclude,
-                flexible=args.flexible_search,
-            )
-            args.filter_bindings = {**args.filter_bindings, **search_bindings}
-            c_columns = {**c_columns, "rank": int}
-        elif args.exclude:
-            db_utils.construct_search_bindings(args, ["text"])
+    cols = args.cols or ["path", "text", "time", "title"]
+
+    is_fts = args.db["captions"].detect_fts()
+    if is_fts and args.include:
+        table, search_bindings = db_utils.fts_search_sql(
+            "captions",
+            fts_table=is_fts,
+            include=args.include,
+            exclude=args.exclude,
+            flexible=args.flexible_search,
+        )
+        args.filter_bindings = {**args.filter_bindings, **search_bindings}
+        c_columns = {**c_columns, "rank": int}
+        cols.append("id")
+        cols.append("rank")
     else:
         db_utils.construct_search_bindings(args, ["text"])
 
-    cols = args.cols or ["path", "text", "time", "rank", "title"]
     args.select = [c for c in cols if c in {**c_columns, **m_columns, **{"*": "Any"}}]
 
     select_sql = "\n        , ".join(args.select)
     limit_sql = "LIMIT " + str(args.limit) if args.limit else ""
     query = f"""WITH c as (
-        SELECT id, * FROM {table}
+        SELECT * FROM {table}
         WHERE 1=1
             {db_media.filter_args_sql(args, c_columns)}
     )

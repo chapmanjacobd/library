@@ -185,6 +185,7 @@ def add(args, entry):
 
     tags = entry.pop("tags", None) or ""
     chapters = entry.pop("chapters", None) or []
+    entry.pop("subtitles", None)
     entry.pop("description", None)
 
     media_id = args.db.pop("select id from media where path = ?", [entry["path"]])

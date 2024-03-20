@@ -1,4 +1,4 @@
-import json, sqlite3, sys
+import json, sys
 from copy import deepcopy
 from pathlib import Path
 from types import ModuleType
@@ -178,9 +178,18 @@ def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True) -> 
                 db_playlists.increase_update_delay(args, playlist_path)
 
 
+def yt_subs_config(args):
+    if args.subs:
+        return {"writesubtitles": True, "writeautomaticsub": True}
+    elif args.auto_subs:
+        return {"writesubtitles": False, "writeautomaticsub": True}
+    return {}
+
+
 def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Optional[List[Dict]]:
     yt_dlp = load_module_level_yt_dlp()
 
+    tables = args.db.table_names()
     m_columns = db_utils.columns(args, "media")
 
     with yt_dlp.YoutubeDL(
@@ -188,8 +197,7 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Optional[L
             args,
             func_opts={
                 "subtitlesformat": "srt/best",
-                "writesubtitles": args.subs,
-                "writeautomaticsub": args.auto_subs,
+                **yt_subs_config(args),
                 "subtitleslangs": args.subtitle_languages,
                 "extract_flat": False,
                 "lazy_playlist": False,
@@ -203,27 +211,40 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Optional[L
                 "ignoreerrors": True,
             },
             playlist_opts=playlist_dl_opts,
-        ),
+        )
     ) as ydl:
-        try:
-            videos = args.db.execute(
+        videos = set(
+            args.db.execute(
                 f"""
                 SELECT
-                id
-                , path
-                , playlists_id
+                    id
+                    , path
+                    , null as playlists_id
                 FROM media
-                WHERE 1=1
-                    AND COALESCE(time_deleted, 0)=0
+                WHERE COALESCE(time_deleted, 0)=0
+                    AND path = ?
                     {'and width is null' if 'width' in m_columns else ''}
-                    and path not like '%playlist%'
-                    and playlists_id = (select id from playlists where path = ?)
-                ORDER by random()
                 """,
                 [playlist_path],
             ).fetchall()
-        except sqlite3.OperationalError:
-            videos = []
+        )
+
+        if "playlists" in tables:
+            videos |= set(
+                args.db.execute(
+                    f"""
+                    SELECT
+                        id
+                        , path
+                        , playlists_id
+                    FROM media
+                    WHERE COALESCE(time_deleted, 0)=0
+                        AND playlists_id = (select id from playlists where path = ?)
+                        {'AND width is null' if 'width' in m_columns else ''}
+                    """,
+                    [playlist_path, playlist_path],
+                ).fetchall()
+            )
 
         current_video_count = 0
         for id, path, playlists_id in videos:
@@ -353,8 +374,7 @@ def download(args, m) -> None:
     if args.profile != DBType.audio:
         func_opts["subtitlesformat"] = "srt/best"
         func_opts["subtitleslangs"] = args.subtitle_languages
-        func_opts["writesubtitles"] = args.subs
-        func_opts["writeautomaticsub"] = args.auto_subs
+        func_opts |= yt_subs_config(args)
         func_opts["postprocessors"].append({"key": "FFmpegEmbedSubtitle"})
 
     def yt_cli_to_api(opts):

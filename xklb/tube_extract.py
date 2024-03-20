@@ -108,7 +108,7 @@ def tube_add(args=None) -> None:
 
             tube_backend.get_playlist_metadata(args, path, tube_backend.tube_opts(args))
 
-            if args.extra:
+            if args.extra or args.subs or args.auto_subs:
                 log.warning("[%s]: Getting extra metadata", path)
                 tube_backend.get_extra_metadata(args, path)
 
@@ -136,6 +136,6 @@ def tube_update(args=None) -> None:
             ),
         )
 
-        if args.extra:
+        if args.extra or args.subs or args.auto_subs:
             log.warning("[%s]: Getting extra metadata", d["path"])
             tube_backend.get_extra_metadata(args, d["path"], playlist_dl_opts=d.get("extractor_config", "{}"))
