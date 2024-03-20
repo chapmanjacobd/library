@@ -242,7 +242,7 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Optional[L
                         AND playlists_id = (select id from playlists where path = ?)
                         {'AND width is null' if 'width' in m_columns else ''}
                     """,
-                    [playlist_path, playlist_path],
+                    [playlist_path],
                 ).fetchall()
             )
 
