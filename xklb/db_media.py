@@ -170,7 +170,7 @@ def consolidate(v: dict) -> Optional[dict]:
         if not (k.startswith(("_", "reblogged_")) or k in consts.MEDIA_KNOWN_KEYS or v is None)
     }
     if v != {}:
-        log.info("Extra media data %s", v)
+        log.debug("Extra media data %s", v)
         # breakpoint()
 
     return objects.dict_filter_bool(cv)

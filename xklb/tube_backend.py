@@ -500,10 +500,10 @@ def download(args, m) -> None:
         except RuntimeError:
             info["corruption"] = 50
         if info["corruption"] > 7:
-            log.debug("[%s]: Media check failed (will try again later)", webpath)
+            log.info("[%s]: Media check failed (will try again later)", webpath)
             db_media.download_add(args, webpath, info, local_path, error="Media check failed")
         else:
-            log.debug("[%s]: No news is good news", webpath)
+            log.info("[%s]: No news is good news", webpath)
             db_media.download_add(args, webpath, info, local_path)
     elif any(yt_recoverable_errors.match(line) for line in ydl_full_log):
         log.info("[%s]: Recoverable error matched (will try again later). %s", webpath, ydl_errors)
@@ -512,7 +512,7 @@ def download(args, m) -> None:
         matched_error = [
             m.string for m in iterables.conform([yt_unrecoverable_errors.match(line) for line in ydl_full_log])
         ]
-        log.debug("[%s]: Unrecoverable error matched. %s", webpath, ydl_errors or strings.combine(matched_error))
+        log.info("[%s]: Unrecoverable error matched. %s", webpath, ydl_errors or strings.combine(matched_error))
         db_media.download_add(args, webpath, info, local_path, error=ydl_errors, unrecoverable_error=True)
     elif any(prefix_unrecoverable_errors.match(line) for line in ydl_full_log):
         log.warning("[%s]: Prefix error. %s", webpath, ydl_errors)
