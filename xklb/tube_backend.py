@@ -343,7 +343,7 @@ def download(args, m) -> None:
         "ignoreerrors": ignoreerrors,
         "extractor_args": {"youtube": {"skip": ["authcheck"]}},
         "logger": DictLogger(),
-        "skip_download": bool(consts.PYTEST_RUNNING),
+        "skip_download": False,
         "postprocessors": [{"key": "FFmpegMetadata"}],
         "restrictfilenames": True,
         "extract_flat": False,
@@ -355,7 +355,7 @@ def download(args, m) -> None:
         "retries": 12,
         "retry_sleep_functions": {
             "extractor": lambda n: 0.2 * n,
-            "http": lambda n: 0.1 * (2**n),
+            "http": lambda n: 0.08 * (2**n),
             "fragment": lambda n: 0.04 * (2**n),
         },
         "outtmpl": {
@@ -400,14 +400,13 @@ def download(args, m) -> None:
     if args.small:
         if match_filter_user_config is None:
             match_filters.append("duration >? 59 & duration <? 14399")
-        ydl_opts[
-            "format"
-        ] = "bestvideo[height<=576][filesize<2G]+bestaudio/best[height<=576][filesize<2G]/bestvideo[height<=576]+bestaudio/best[height<=576]/best"
+        ydl_opts["format_sort"] = ["res:576"]
+        ydl_opts["format"] = "bestvideo[filesize<2G]+bestaudio/best[filesize<2G]/bestvideo*+bestaudio/best"
 
     if args.profile == DBType.audio:
         ydl_opts[
             "format"
-        ] = "bestaudio[ext=opus]/bestaudio[ext=webm]/bestaudio[ext=ogg]/bestaudio[ext=oga]/bestaudio/best"
+        ] = "bestaudio[ext=opus]/bestaudio[ext=mka]/bestaudio[ext=webm]/bestaudio[ext=ogg]/bestaudio[ext=oga]/bestaudio/best"
         if args.ext is None:
             args.ext = "opus"
         ydl_opts["postprocessors"].append({"key": "FFmpegExtractAudio", "preferredcodec": args.ext})
