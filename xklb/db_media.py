@@ -185,7 +185,7 @@ def add(args, entry):
 
     tags = entry.pop("tags", None) or ""
     chapters = entry.pop("chapters", None) or []
-    entry.pop("subtitles", None)
+    subtitles = entry.pop("subtitles", None) or []
     entry.pop("description", None)
 
     media_id = args.db.pop("select id from media where path = ?", [entry["path"]])
@@ -205,6 +205,8 @@ def add(args, entry):
         args.db["captions"].insert({"media_id": media_id, "time": 0, "text": tags}, alter=True)
     for chapter in chapters:
         args.db["captions"].insert({"media_id": media_id, **chapter}, alter=True)
+    if len(subtitles) > 0:
+        args.db["captions"].insert_all([{**d, "media_id": media_id} for d in subtitles], alter=True)
 
 
 def playlist_media_add(
@@ -246,7 +248,8 @@ def download_add(
             delete_unplayable=False,
             check_corrupt=False,
         )
-        fs_tags = objects.dict_filter_bool(fs_extract.extract_metadata(fs_args, local_path), keep_0=False) or {}
+        fs_tags = fs_extract.extract_metadata(fs_args, local_path)
+        fs_tags = objects.dict_filter_bool(fs_tags, keep_0=False) or {}
         fs_extract.clean_up_temp_dirs()
     else:
         fs_tags = {"time_modified": consts.now()}
