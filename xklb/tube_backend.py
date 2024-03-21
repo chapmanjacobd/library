@@ -503,7 +503,7 @@ def download(args, m) -> None:
             log.info("[%s]: Media check failed (will try again later)", webpath)
             db_media.download_add(args, webpath, info, local_path, error="Media check failed")
         else:
-            log.info("[%s]: No news is good news", webpath)
+            log.info("[%s]: Downloaded to %s", webpath, local_path)
             db_media.download_add(args, webpath, info, local_path)
     elif any(yt_recoverable_errors.match(line) for line in ydl_full_log):
         log.info("[%s]: Recoverable error matched (will try again later). %s", webpath, ydl_errors)
