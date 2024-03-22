@@ -485,14 +485,14 @@ def download(args, m) -> None:
             else:
                 local_path = ydl.prepare_filename(info)
 
-    ydl_errors = ydl_log["error"] + ydl_log["warning"]
-    ydl_errors = "\n".join([line for line in ydl_errors if not yt_meaningless_errors.match(line)])
     ydl_full_log = ydl_log["error"] + ydl_log["warning"] + ydl_log["info"]
+    ydl_errors = [line for line in ydl_full_log if not yt_meaningless_errors.match(line)]
+    ydl_errors_txt = "\n".join(ydl_errors)
 
     if args.verbose >= consts.LOG_DEBUG_SQL:
         log.debug("\n".join(ydl_full_log))
 
-    if not ydl_log["error"] and info and local_path:
+    if not ydl_log["error"] and info and local_path and Path(local_path).exists():
         try:
             info["corruption"] = int(
                 media_check.calculate_corruption(local_path, threads=1, full_scan_if_corrupt=True) * 100
@@ -505,19 +505,19 @@ def download(args, m) -> None:
         else:
             log.info("[%s]: Downloaded to %s", webpath, local_path)
             db_media.download_add(args, webpath, info, local_path)
-    elif any(yt_recoverable_errors.match(line) for line in ydl_full_log):
-        log.info("[%s]: Recoverable error matched (will try again later). %s", webpath, ydl_errors)
-        db_media.download_add(args, webpath, info, local_path, error=ydl_errors)
-    elif any(yt_unrecoverable_errors.match(line) for line in ydl_full_log):
+    elif any(yt_recoverable_errors.match(line) for line in ydl_errors):
+        log.info("[%s]: Recoverable error matched (will try again later). %s", webpath, ydl_errors_txt)
+        db_media.download_add(args, webpath, info, local_path, error=ydl_errors_txt)
+    elif any(yt_unrecoverable_errors.match(line) for line in ydl_errors):
         matched_error = [
-            m.string for m in iterables.conform([yt_unrecoverable_errors.match(line) for line in ydl_full_log])
+            m.string for m in iterables.conform([yt_unrecoverable_errors.match(line) for line in ydl_errors])
         ]
-        log.info("[%s]: Unrecoverable error matched. %s", webpath, ydl_errors or strings.combine(matched_error))
-        db_media.download_add(args, webpath, info, local_path, error=ydl_errors, unrecoverable_error=True)
-    elif any(prefix_unrecoverable_errors.match(line) for line in ydl_full_log):
-        log.warning("[%s]: Prefix error. %s", webpath, ydl_errors)
+        log.info("[%s]: Unrecoverable error matched. %s", webpath, ydl_errors_txt or strings.combine(matched_error))
+        db_media.download_add(args, webpath, info, local_path, error=ydl_errors_txt, unrecoverable_error=True)
+    elif any(prefix_unrecoverable_errors.match(line) for line in ydl_errors):
+        log.warning("[%s]: Prefix error. %s", webpath, ydl_errors_txt)
         raise SystemExit(28)
     else:
-        if ydl_errors != "":
-            log.error("[%s]: Unknown error. %s", webpath, ydl_errors)
-        db_media.download_add(args, webpath, info, local_path, error=ydl_errors)
+        if ydl_errors_txt != "":
+            log.error("[%s]: Unknown error. %s", webpath, ydl_errors_txt)
+        db_media.download_add(args, webpath, info, local_path, error=ydl_errors_txt)
