@@ -1076,11 +1076,23 @@ copy_play_counts = """library copy-play-counts DEST_DB SOURCE_DB ... [--source-p
 
         library copy-play-counts audio.db phone.db --source-prefix /storage/6E7B-7DCE/d --target-prefix /mnt/d
 """
-dedupe_media = """library [--audio | --id | --title | --filesystem] [--only-soft-delete] [--limit LIMIT] DATABASE
+dedupe_media = """library dedupe-media [--audio | --id | --title | --filesystem] [--only-soft-delete] [--limit LIMIT] DATABASE
 
     Dedupe your files (not to be confused with the dedupe-db subcommand)
 
-    library dedupe video.db / http
+    Exact file matches
+
+        library dedupe-media --fs video.db
+
+    Dedupe based on duration and file basename or dirname similarity
+
+        library dedupe-media video.db --duration --basename -s release_group  # pre-filter with a specific text substring
+        library dedupe-media video.db --duration --basename -u m1.size  # sort such that small files are treated as originals and larger files are deleted
+        library dedupe-media video.db --duration --basename -u 'm1.size desc'  # sort such that large files are treated as originals and smaller files are deleted
+
+    Dedupe online against local media
+
+        library dedupe-media video.db / http
 """
 
 dedupe_db = """library dedupe-dbs DATABASE TABLE --bk BUSINESS_KEYS [--pk PRIMARY_KEYS] [--only-columns COLUMNS]
