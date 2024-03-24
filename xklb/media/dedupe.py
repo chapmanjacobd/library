@@ -85,6 +85,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--dedupe-cmd", help=argparse.SUPPRESS)
     parser.add_argument("--force", "-f", action="store_true")
     parser.add_argument("--similar-name", action="store_true")
+    parser.add_argument("--sort", "-u", nargs="+", help=argparse.SUPPRESS)
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", default=100)
     parser.add_argument("--include", "-s", "--search", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--flexible-search", "--or", "--flex", action="store_true")
@@ -97,6 +98,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("paths", nargs="*")
     args = parser.parse_intermixed_args()
     args.db = db_utils.connect(args)
+
+    args.action = consts.SC.dedupe
+
+    args.sort = "\n        , ".join(filter(bool, args.sort))
+    args.sort = args.sort.replace(",,", ",")
 
     args.filter_sql = []
     args.filter_bindings = {}
@@ -142,7 +148,6 @@ def parse_args() -> argparse.Namespace:
     if not COMPARE_DIRS:
         args.table2 = args.table
 
-    args.action = consts.SC.dedupe
     log.info(objects.dict_filter_bool(args.__dict__))
     return args
 
@@ -199,9 +204,10 @@ def get_music_duplicates(args) -> List[dict]:
         {"and m1.album != ''" if 'album' in m_columns else ''}
         {" ".join(args.filter_sql)}
     ORDER BY 1=1
+        {', m1.audio_count > 0 DESC' if 'audio_count' in m_columns else ''}
+        {', ' + args.sort if args.sort else ''}
         {', m1.video_count > 0 DESC' if 'video_count' in m_columns else ''}
         {', m1.subtitle_count > 0 DESC' if 'subtitle_count' in m_columns else ''}
-        {', m1.audio_count > 0 DESC' if 'audio_count' in m_columns else ''}
         {', m1.uploader IS NOT NULL DESC' if 'uploader' in m_columns else ''}
         , length(m1.path)-length(REPLACE(m1.path, '{os.sep}', '')) DESC
         , length(m1.path)-length(REPLACE(m1.path, '.', ''))
@@ -241,6 +247,8 @@ def get_id_duplicates(args) -> List[dict]:
         {" ".join(args.filter_sql)}
     ORDER BY 1=1
         , m1.video_count > 0 DESC
+        , m1.audio_count > 0 DESC
+        {', ' + args.sort if args.sort else ''}
         {', m1.subtitle_count > 0 DESC' if 'subtitle_count' in m_columns else ''}
         , m1.audio_count DESC
         , length(m1.path)-length(REPLACE(m1.path, '{os.sep}', '')) DESC
@@ -280,9 +288,11 @@ def get_title_duplicates(args) -> List[dict]:
         {" ".join(args.filter_sql)}
     ORDER BY 1=1
         , m1.video_count > 0 DESC
+        , m1.audio_count > 0 DESC
+        {', ' + args.sort if args.sort else ''}
         {', m1.subtitle_count > 0 DESC' if 'subtitle_count' in m_columns else ''}
         , m1.audio_count DESC
-        , m1.uploader IS NOT NULL DESC
+        {', m1.uploader IS NOT NULL DESC' if 'uploader' in m_columns else ''}
         , length(m1.path)-length(REPLACE(m1.path, '{os.sep}', '')) DESC
         , length(m1.path)-length(REPLACE(m1.path, '.', ''))
         , length(m1.path)
@@ -320,9 +330,11 @@ def get_duration_duplicates(args) -> List[dict]:
         {" ".join(args.filter_sql)}
     ORDER BY 1=1
         , m1.video_count > 0 DESC
+        , m1.audio_count > 0 DESC
+        {', ' + args.sort if args.sort else ''}
         {', m1.subtitle_count > 0 DESC' if 'subtitle_count' in m_columns else ''}
         , m1.audio_count DESC
-        , m1.uploader IS NOT NULL DESC
+        {', m1.uploader IS NOT NULL DESC' if 'uploader' in m_columns else ''}
         , length(m1.path)-length(REPLACE(m1.path, '{os.sep}', '')) DESC
         , length(m1.path)-length(REPLACE(m1.path, '.', ''))
         , length(m1.path)
