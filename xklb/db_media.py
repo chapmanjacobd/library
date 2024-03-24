@@ -1,7 +1,7 @@
 import argparse, os, sqlite3
+from collections.abc import Collection
 from datetime import datetime
 from pathlib import Path
-from typing import Collection, Dict, List, Optional
 
 from dateutil import parser
 
@@ -47,7 +47,7 @@ def get_paths(args):
     return known_playlists
 
 
-def consolidate(v: dict) -> Optional[dict]:
+def consolidate(v: dict) -> dict | None:
     if v.get("title") in ("[Deleted video]", "[Private video]"):
         return None
 
@@ -212,7 +212,7 @@ def add(args, entry):
 def playlist_media_add(
     args,
     webpath: str,
-    info: Optional[dict] = None,
+    info: dict | None = None,
     error=None,
     unrecoverable_error=False,
 ) -> None:
@@ -233,7 +233,7 @@ def playlist_media_add(
 def download_add(
     args,
     webpath: str,
-    info: Optional[dict] = None,
+    info: dict | None = None,
     local_path=None,
     error=None,
     unrecoverable_error=False,
@@ -307,7 +307,7 @@ def filter_args_sql(args, m_columns):
     """
 
 
-def get_dir_media(args, dirs: Collection, include_subdirs=False, limit=2_000) -> List[Dict]:
+def get_dir_media(args, dirs: Collection, include_subdirs=False, limit=2_000) -> list[dict]:
     if len(dirs) == 0:
         return processes.no_media_found()
 
@@ -368,10 +368,10 @@ def get_dir_media(args, dirs: Collection, include_subdirs=False, limit=2_000) ->
 
 def get_sibling_media(args, media):
     if args.fetch_siblings in ("always", "all"):
-        dirs = set(str(Path(d["path"]).parent) + os.sep for d in media)
+        dirs = {str(Path(d["path"]).parent) + os.sep for d in media}
         media = get_dir_media(args, dirs)
     elif args.fetch_siblings == "each":
-        parents = set(str(Path(d["path"]).parent) + os.sep for d in media)
+        parents = {str(Path(d["path"]).parent) + os.sep for d in media}
         media = []
         for parent in parents:
             media.extend(get_dir_media(args, [parent], limit=1)[0:1])
@@ -459,7 +459,7 @@ def natsort_media(args, media):
     return media
 
 
-def get_related_media(args, m: Dict) -> List[Dict]:
+def get_related_media(args, m: dict) -> list[dict]:
     m_columns = db_utils.columns(args, "media")
     m_columns.update(rank=int)
 

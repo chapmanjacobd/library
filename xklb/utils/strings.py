@@ -1,6 +1,5 @@
 import html, re
 from copy import deepcopy
-from typing import Optional
 
 from xklb.data import wordbank
 from xklb.utils import iterables, nums
@@ -161,7 +160,7 @@ def strip_enclosing_quotes(s):
 _RE_COMBINE_WHITESPACE = re.compile(r"\s+")
 
 
-def combine(*list_) -> Optional[str]:
+def combine(*list_) -> str | None:
     list_ = iterables.conform(list_)
     if not list_:
         return None
@@ -223,7 +222,7 @@ def last_chars(candidate) -> str:
     return remove_chars
 
 
-def safe_percent(v) -> Optional[str]:
+def safe_percent(v) -> str | None:
     if v in [None, ""]:
         return None
     try:

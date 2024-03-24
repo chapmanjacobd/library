@@ -4,7 +4,7 @@ import sys
 from functools import partial
 from itertools import takewhile
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any
 
 import prawcore
 
@@ -114,7 +114,7 @@ SOFTWARE.
 """
 
 
-def created_since(row, target_sec_utc: Optional[int]) -> bool:
+def created_since(row, target_sec_utc: int | None) -> bool:
     result = (not target_sec_utc) or (row.created_utc >= target_sec_utc)
     return result
 
@@ -131,7 +131,7 @@ def legalize(val):
     return val
 
 
-def _parent_ids_interpreted(dct: Dict[str, Any]) -> Dict[str, Any]:
+def _parent_ids_interpreted(dct: dict[str, Any]) -> dict[str, Any]:
     if not dct.get("parent_id"):
         return dct
 
@@ -144,7 +144,7 @@ def _parent_ids_interpreted(dct: Dict[str, Any]) -> Dict[str, Any]:
     return dct
 
 
-def saveable(item) -> Dict[str, Any]:
+def saveable(item) -> dict[str, Any]:
     result = {k: legalize(v) for k, v in item.__dict__.items() if not k.startswith("_")}
     return _parent_ids_interpreted(result)
 

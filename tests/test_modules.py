@@ -3,7 +3,7 @@ from pathlib import Path
 
 
 def extract_imports(file_path):
-    with open(file_path, "r", encoding="utf-8") as file:
+    with open(file_path, encoding="utf-8") as file:
         try:
             tree = ast.parse(file.read(), filename=file_path)
         except SyntaxError:

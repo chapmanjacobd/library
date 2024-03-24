@@ -1,7 +1,6 @@
 import argparse, json, tempfile
 from copy import deepcopy
 from pathlib import Path
-from typing import List
 
 from xklb import usage
 from xklb.media import media_printer
@@ -29,7 +28,7 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def list_deletions(args) -> List[dict]:
+def list_deletions(args) -> list[dict]:
     query = """
         SELECT
             strftime('%Y-%m-%dT%H:%M:%S', time_deleted, 'unixepoch', 'localtime') as time_deleted
@@ -47,7 +46,7 @@ def list_deletions(args) -> List[dict]:
     return media
 
 
-def get_non_tube_media(args, paths) -> List[dict]:
+def get_non_tube_media(args, paths) -> list[dict]:
     media = []
     paths = iterables.conform(paths)
     if paths:
@@ -64,7 +63,7 @@ def get_non_tube_media(args, paths) -> List[dict]:
     return media
 
 
-def get_deleted_media(args) -> List[dict]:
+def get_deleted_media(args) -> list[dict]:
     if all([args.deleted_at, args.deleted_to]):
         # use timestamps between inclusive, converting from localtime to UTC
         query = """

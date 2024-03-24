@@ -75,7 +75,7 @@ def block(args=None) -> None:
             "Match column does not exist in the media table. You may need to run tubeadd first or check your spelling",
         )
 
-    columns = set(["path", "webpath", args.match_column, "size", "playlist_path", "time_deleted"])
+    columns = {"path", "webpath", args.match_column, "size", "playlist_path", "time_deleted"}
     select_sql = ", ".join(s for s in columns if s in m_columns)
 
     if not args.playlists:

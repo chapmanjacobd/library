@@ -1,6 +1,5 @@
 import argparse, json, os
 from pathlib import Path
-from typing import List
 
 from xklb import usage
 from xklb.utils import arg_utils, devices, file_utils, objects, printing
@@ -152,7 +151,7 @@ def merge_folders() -> None:
 
     all_source_folders = set()
     empty_folder_data: set[Path] = set()
-    rename_data: List[tuple[bool, Path, Path]] = []
+    rename_data: list[tuple[bool, Path, Path]] = []
     clobber = False
     print("Sources:")
     for source in args.sources:

@@ -1,6 +1,5 @@
 import math, re, statistics
 from datetime import timezone
-from typing import Optional
 
 
 def percent(value, total):
@@ -21,7 +20,7 @@ def to_timestamp(dt_object):
     return int(dt_object.replace(tzinfo=timezone.utc).timestamp())
 
 
-def safe_int(s) -> Optional[int]:
+def safe_int(s) -> int | None:
     if not s:
         return None
     try:
@@ -30,7 +29,7 @@ def safe_int(s) -> Optional[int]:
         return None
 
 
-def safe_median(l) -> Optional[float]:
+def safe_median(l) -> float | None:
     if not l:
         return None
     try:

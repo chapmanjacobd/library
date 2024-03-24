@@ -1,6 +1,5 @@
 import os, sqlite3
 from datetime import datetime
-from typing import List, Optional
 
 from xklb.utils import consts, db_utils, iterables, nums, objects
 from xklb.utils.log_utils import log
@@ -96,7 +95,7 @@ def exists(args, playlist_path) -> bool:
     return True
 
 
-def get_parentpath_playlists_id(args, playlist_path) -> Optional[int]:
+def get_parentpath_playlists_id(args, playlist_path) -> int | None:
     try:
         known = args.db.pop(
             "select id from playlists where ? like path || '%' and path != ?",
@@ -108,7 +107,7 @@ def get_parentpath_playlists_id(args, playlist_path) -> Optional[int]:
     return known
 
 
-def delete_subpath_playlists(args, playlist_path) -> Optional[int]:
+def delete_subpath_playlists(args, playlist_path) -> int | None:
     try:
         with args.db.conn:
             args.db.conn.execute(
@@ -211,7 +210,7 @@ def increase_update_delay(args, playlist_path: str) -> None:
             raise e
 
 
-def get_all(args, cols="path, extractor_config", sql_filters=None, order_by="random()") -> List[dict]:
+def get_all(args, cols="path, extractor_config", sql_filters=None, order_by="random()") -> list[dict]:
     pl_columns = db_utils.columns(args, "playlists")
     if sql_filters is None:
         sql_filters = []

@@ -1,6 +1,5 @@
 import argparse, json, shlex, subprocess
 from pathlib import Path
-from typing import List
 
 from xklb import usage
 from xklb.utils import nums, objects, web
@@ -45,7 +44,7 @@ def process_path(
 
     path = Path(path)
     ffprobe_cmd = ["ffprobe", "-v", "error", "-print_format", "json", "-show_format", "-show_streams", path]
-    result = subprocess.run(ffprobe_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    result = subprocess.run(ffprobe_cmd, capture_output=True)
     info = json.loads(result.stdout)
 
     if "streams" not in info:
@@ -73,7 +72,7 @@ def process_path(
             return None
         return path
 
-    ff_opts: List[str] = []
+    ff_opts: list[str] = []
     if channels == 1:
         ff_opts.extend(["-ac 1"])
     else:

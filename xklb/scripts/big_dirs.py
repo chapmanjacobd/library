@@ -1,6 +1,5 @@
 import argparse, os
 from pathlib import Path
-from typing import Dict, List
 
 from xklb import history, usage
 from xklb.media import media_printer
@@ -64,7 +63,7 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def group_files_by_folder(args, media) -> List[Dict]:
+def group_files_by_folder(args, media) -> list[dict]:
     p_media = {}
     for m in media:
         p = m["path"].split(os.sep)
@@ -101,7 +100,7 @@ def group_files_by_folder(args, media) -> List[Dict]:
     return [{**v, "path": k} for k, v in d.items()]
 
 
-def folder_depth(args, folders) -> List[Dict]:
+def folder_depth(args, folders) -> list[dict]:
     d = {}
     for f in folders:
         p = f["path"].split(os.sep)
@@ -130,7 +129,7 @@ def folder_depth(args, folders) -> List[Dict]:
     return [{**v, "path": k} for k, v in d.items()]
 
 
-def get_table(args) -> List[dict]:
+def get_table(args) -> list[dict]:
     m_columns = db_utils.columns(args, "media")
     args.filter_sql = []
     args.filter_bindings = {}
@@ -164,7 +163,7 @@ def get_table(args) -> List[dict]:
     return media
 
 
-def process_big_dirs(args, folders) -> List[Dict]:
+def process_big_dirs(args, folders) -> list[dict]:
     folders = [d for d in folders if d["total"] != d["deleted"]]  # remove folders where all deleted
 
     if args.depth:

@@ -63,8 +63,8 @@ def process_chunks(args):
 
         # TODO: https://github.com/ICRAR/ijson
 
-        tables1 = set(df.name for df in dfs1)
-        tables2 = set(df.name for df in dfs2)
+        tables1 = {df.name for df in dfs1}
+        tables2 = {df.name for df in dfs2}
         common_tables = tables1.intersection(tables2)
         dfs1 = sorted(dfs1, key=lambda df: (df.name in common_tables, df.name), reverse=True)
         dfs2 = sorted(dfs2, key=lambda df: (df.name in common_tables, df.name), reverse=True)

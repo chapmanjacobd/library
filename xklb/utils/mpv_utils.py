@@ -1,6 +1,5 @@
 import hashlib, random, time
 from pathlib import Path
-from typing import Optional
 
 from xklb.utils import nums
 from xklb.utils.log_utils import log
@@ -10,7 +9,7 @@ def path_to_mpv_watchlater_md5(path: str) -> str:
     return hashlib.md5(path.encode("utf-8")).hexdigest().upper()
 
 
-def mpv_watchlater_value(path, key) -> Optional[str]:
+def mpv_watchlater_value(path, key) -> str | None:
     data = Path(path).read_text().splitlines()
     for s in data:
         if s.startswith(key + "="):
@@ -45,9 +44,9 @@ def get_playhead(
     args,
     path: str,
     start_time: float,
-    existing_playhead: Optional[int] = None,
-    media_duration: Optional[int] = None,
-) -> Optional[int]:
+    existing_playhead: int | None = None,
+    media_duration: int | None = None,
+) -> int | None:
     end_time = time.time()
     session_duration = int(end_time - start_time)
     python_playhead = session_duration

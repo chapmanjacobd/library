@@ -1,7 +1,6 @@
 import argparse, shutil, tempfile
 from copy import deepcopy
 from pathlib import Path
-from typing import Dict, List, Tuple
 
 import humanize
 from tabulate import tabulate
@@ -30,7 +29,7 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def group_by_folder(args, media) -> List[Dict]:
+def group_by_folder(args, media) -> list[dict]:
     d = {}
     for m in media:
         if m["path"].startswith("http"):
@@ -57,7 +56,7 @@ def group_by_folder(args, media) -> List[Dict]:
     return [{**v, "path": k} for k, v in d.items()]
 
 
-def get_table(args) -> List[dict]:
+def get_table(args) -> list[dict]:
     media = list(
         args.db.query(
             """
@@ -77,7 +76,7 @@ def get_table(args) -> List[dict]:
     return sorted(folders, key=lambda x: x["size"] / x["count"])
 
 
-def iterate_and_show_options(args, tbl) -> Tuple[List[Dict], List[Dict]]:
+def iterate_and_show_options(args, tbl) -> tuple[list[dict], list[dict]]:
     vew = tbl[-int(args.limit) :] if args.limit else tbl
 
     vew = iterables.list_dict_filter_bool(vew, keep_0=False)

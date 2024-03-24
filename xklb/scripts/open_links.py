@@ -1,7 +1,6 @@
 import argparse, shlex, webbrowser
 from pathlib import Path
 from time import sleep
-from typing import Tuple
 
 from xklb import db_media, history, usage
 from xklb.media import media_printer
@@ -105,7 +104,7 @@ def links_exclude_sql(x) -> str:
 )"""
 
 
-def construct_links_query(args) -> Tuple[str, dict]:
+def construct_links_query(args) -> tuple[str, dict]:
     m_columns = db_utils.columns(args, "media")
 
     args.filter_sql = []

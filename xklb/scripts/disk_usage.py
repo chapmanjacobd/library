@@ -1,6 +1,5 @@
 import argparse, os
 from pathlib import Path
-from typing import Dict, List
 
 from xklb import usage
 from xklb.media import media_printer
@@ -59,7 +58,7 @@ def sort_by(args):
     return lambda x: (x["size"] / (x.get("count") or 1), x["size"], x.get("count") or 1)
 
 
-def get_subset(args, level=None, prefix=None) -> List[Dict]:
+def get_subset(args, level=None, prefix=None) -> list[dict]:
     d = {}
     excluded_files = set()
 
@@ -113,7 +112,7 @@ def load_subset(args):
     return args.cwd, args.subset
 
 
-def get_data(args) -> List[dict]:
+def get_data(args) -> list[dict]:
     m_columns = db_utils.columns(args, "media")
     args.filter_sql = []
     args.filter_bindings = {}

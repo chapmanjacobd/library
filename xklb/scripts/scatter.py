@@ -1,7 +1,6 @@
 import argparse, math, random, sys, tempfile
 from collections import Counter
 from pathlib import Path
-from typing import Dict, List, Tuple, Union
 
 from humanize import naturalsize
 from tabulate import tabulate
@@ -63,7 +62,7 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def get_table(args) -> List[dict]:
+def get_table(args) -> list[dict]:
     m_columns = db_utils.columns(args, "media")
     or_paths = [f"path like :path_{i}" for i, _path in enumerate(args.relative_paths)]
 
@@ -95,7 +94,7 @@ def get_table(args) -> List[dict]:
     return media
 
 
-def get_path_stats(args, data) -> List[Dict]:
+def get_path_stats(args, data) -> list[dict]:
     read_only_mounts = [
         s for s in args.relative_paths if Path(s).is_absolute() and not any(m in s for m in args.targets)
     ]
@@ -127,7 +126,7 @@ def print_path_stats(tbl) -> None:
     print(tabulate(tbl, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False))
 
 
-def rebin_files(args, disk_stats, all_files) -> Tuple[List, List]:
+def rebin_files(args, disk_stats, all_files) -> tuple[list, list]:
     total_size = sum(d["size"] or 0 for d in all_files)
 
     untouched = []
@@ -195,7 +194,7 @@ def rebin_files(args, disk_stats, all_files) -> Tuple[List, List]:
     return untouched, rebinned
 
 
-def get_rel_stats(parents, files) -> List[Dict[str, Union[float, str]]]:
+def get_rel_stats(parents, files) -> list[dict[str, float | str]]:
     mount_space = []
     total_used = 1
     for parent in parents:

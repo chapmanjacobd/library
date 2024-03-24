@@ -3,7 +3,6 @@ from copy import deepcopy
 from io import StringIO
 from numbers import Number
 from pathlib import Path
-from typing import Union
 
 from tabulate import tabulate
 
@@ -65,7 +64,7 @@ def cadence_adjusted_duration(args, duration):
     return int(duration / historical_hourly * 60 * 60)
 
 
-def moved_media(args, moved_files: Union[str, list], base_from, base_to) -> int:
+def moved_media(args, moved_files: str | list, base_from, base_to) -> int:
     moved_files = iterables.conform(moved_files)
     modified_row_count = 0
     if moved_files:

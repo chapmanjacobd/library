@@ -1,5 +1,4 @@
 import argparse, html
-from typing import Set, Tuple
 from urllib.parse import urlparse
 
 from xklb import db_media, usage
@@ -19,7 +18,7 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def get_page_links(path, text) -> Tuple[Set, Set]:
+def get_page_links(path, text) -> tuple[set, set]:
     from bs4 import BeautifulSoup
 
     soup = BeautifulSoup(html.unescape(text), "lxml")

@@ -186,8 +186,7 @@ class GeneratorJob(Job):
 
                 if extr:
                     job = self.__class__(extr, self)
-                    for webpath, info in job.run():
-                        yield (webpath, info)
+                    yield from job.run()
             else:
                 raise TypeError
 

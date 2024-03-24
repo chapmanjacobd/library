@@ -1,6 +1,5 @@
 import re, tempfile
 from pathlib import Path
-from typing import List, Optional
 
 import ffmpeg
 
@@ -13,7 +12,7 @@ IMAGE_SUBTITLE_CODECS = ["dvbsub", "dvdsub", "pgssub", "xsub", "dvb_subtitle", "
 SUBSTATION_OVERRIDE_TAG = re.compile(r"{[^}]*}")
 
 
-def extract_from_video(path, stream_index) -> Optional[str]:
+def extract_from_video(path, stream_index) -> str | None:
     Path(SUB_TEMP_DIR).mkdir(parents=True, exist_ok=True)
     temp_srt = tempfile.mktemp(".srt", dir=SUB_TEMP_DIR)
 
@@ -97,7 +96,7 @@ def is_text_subtitle_stream(s) -> bool:
     return s.get("codec_type") == "subtitle" and s.get("codec_name") not in IMAGE_SUBTITLE_CODECS
 
 
-def externalize_internal_subtitles(path, streams=None) -> List[str]:
+def externalize_internal_subtitles(path, streams=None) -> list[str]:
     if streams is None:
         streams = processes.FFProbe(path).streams
 
@@ -108,7 +107,7 @@ def externalize_internal_subtitles(path, streams=None) -> List[str]:
     return external_paths
 
 
-def get_external(file) -> List[str]:
+def get_external(file) -> list[str]:
     p = Path(file)
 
     subtitles = [
@@ -121,7 +120,7 @@ def get_external(file) -> List[str]:
     return []
 
 
-def get_subtitle_paths(path) -> List[str]:
+def get_subtitle_paths(path) -> list[str]:
     internal_subtitles = externalize_internal_subtitles(path)
     if len(internal_subtitles) > 0:
         return internal_subtitles
@@ -130,7 +129,7 @@ def get_subtitle_paths(path) -> List[str]:
     return external_subtitles
 
 
-def get_sub_index(args, path) -> Optional[int]:
+def get_sub_index(args, path) -> int | None:
     probe = processes.FFProbe(path)
     temp_db = db_utils.connect(args, memory=True)
     temp_db["streams"].insert_all(probe.streams, pk="index")  # type: ignore

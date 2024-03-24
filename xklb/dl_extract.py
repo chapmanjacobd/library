@@ -1,5 +1,4 @@
 import argparse, os, sys
-from typing import List, Tuple
 
 from xklb import db_media, gdl_backend, tube_backend, usage
 from xklb.media import media_printer
@@ -133,7 +132,7 @@ def parse_args():
     return args
 
 
-def construct_query(args) -> Tuple[str, dict]:
+def construct_query(args) -> tuple[str, dict]:
     m_columns = db_utils.columns(args, "media")
     pl_columns = db_utils.columns(args, "playlists")
 
@@ -242,7 +241,7 @@ def construct_query(args) -> Tuple[str, dict]:
     return query, args.filter_bindings
 
 
-def process_downloadqueue(args) -> List[dict]:
+def process_downloadqueue(args) -> list[dict]:
     query, bindings = construct_query(args)
     if args.print:
         media_printer.printer(args, query, bindings)

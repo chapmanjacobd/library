@@ -1,7 +1,6 @@
 import argparse, textwrap
 from copy import deepcopy
 from itertools import groupby
-from typing import Tuple
 
 from xklb import db_media, usage
 from xklb.media import media_player, media_printer
@@ -87,7 +86,7 @@ def printer(args, captions) -> None:
         media_printer.media_printer(args, captions, units="captions")
 
 
-def construct_query(args) -> Tuple[str, dict]:
+def construct_query(args) -> tuple[str, dict]:
     m_columns = db_utils.columns(args, "media")
     c_columns = db_utils.columns(args, "captions")
     args.filter_sql = []

@@ -1,7 +1,8 @@
 import itertools, sqlite3
+from collections.abc import Iterable
 from pathlib import Path
 from textwrap import dedent
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Union
+from typing import TYPE_CHECKING, Any
 
 from xklb.utils import consts, iterables, nums, strings
 from xklb.utils.log_utils import log
@@ -21,7 +22,7 @@ def connect(args, conn=None, **kwargs):
     sqlite3.enable_callback_tracebacks(True)  # noqa: FBT003
 
     class DB(Database):
-        def pop(self, sql: str, params: Optional[Union[Iterable, dict]] = None, ignore_errors=None) -> Optional[Any]:
+        def pop(self, sql: str, params: Iterable | dict | None = None, ignore_errors=None) -> Any | None:
             if ignore_errors is None:
                 ignore_errors = ["no such table"]
             try:
@@ -38,9 +39,9 @@ def connect(args, conn=None, **kwargs):
         def pop_dict(
             self,
             sql: str,
-            params: Optional[Union[Iterable, dict]] = None,
+            params: Iterable | dict | None = None,
             ignore_errors=None,
-        ) -> Optional[Dict]:
+        ) -> dict | None:
             if ignore_errors is None:
                 ignore_errors = ["no such table"]
             try:
@@ -139,7 +140,7 @@ def optimize(args) -> None:
         int_columns = [k for k, v in table_columns.items() if v == int and k not in search_columns + ignore_columns]
         str_columns = [k for k, v in table_columns.items() if v == str and k not in search_columns + ignore_columns]
         if "path" in table_columns:
-            str_columns = list(set([*str_columns, "path"]))
+            str_columns = list({*str_columns, "path"})
 
         optimized_column_order = list(iterables.ordered_set([*int_columns, *(table_config.get("column_order") or [])]))
         compare_order = zip(table_columns, optimized_column_order)
@@ -187,7 +188,7 @@ def optimize(args) -> None:
     db.analyze()
 
 
-def fts_quote(query: List[str]) -> List[str]:
+def fts_quote(query: list[str]) -> list[str]:
     fts_words = [" NOT ", " AND ", " OR ", "*", ":", "NEAR("]
     return [s if any(r in s for r in fts_words) else '"' + s + '"' for s in query]
 

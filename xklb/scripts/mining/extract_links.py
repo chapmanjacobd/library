@@ -204,7 +204,7 @@ def get_inner_urls(args, url):
                 yield from parse_inner_urls(args, url, markup)
     else:
         if args.local_file:
-            with open(url, "r") as f:
+            with open(url) as f:
                 markup = f.read()
             url = "file://" + url
         else:

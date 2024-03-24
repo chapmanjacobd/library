@@ -1,7 +1,6 @@
 import argparse, difflib, json, os.path, sys
 from collections import Counter
 from pathlib import Path
-from typing import Dict, List
 
 from xklb import usage
 from xklb.data import wordbank
@@ -310,11 +309,11 @@ def cluster_images(paths, n_clusters=None):
     return result
 
 
-def filter_near_duplicates(groups: List[Dict]) -> List[Dict]:
+def filter_near_duplicates(groups: list[dict]) -> list[dict]:
     regrouped_data = []
 
     for group in groups:
-        temp_groups: Dict[str, List[str]] = {}
+        temp_groups: dict[str, list[str]] = {}
         for curr in group["grouped_paths"]:
             curr = curr.strip()
             if not curr or curr in ["'", '"']:

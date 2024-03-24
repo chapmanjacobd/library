@@ -1,10 +1,10 @@
 import errno, mimetypes, os, shlex, shutil, tempfile, time
 from collections import Counter
+from collections.abc import Iterable
 from functools import wraps
 from io import StringIO
 from pathlib import Path
 from shutil import which
-from typing import Iterable, Set, Tuple, Union
 
 import urllib3
 
@@ -19,7 +19,7 @@ def scan_stats(files, filtered_files, folders):
     )
 
 
-def rglob(base_dir: str, extensions: Union[None, Iterable[str]] = None) -> Tuple[Set[str], Set[str], Set[str]]:
+def rglob(base_dir: str, extensions: None | Iterable[str] = None) -> tuple[set[str], set[str], set[str]]:
     files = set()
     filtered_files = set()
     folders = set()
@@ -65,7 +65,7 @@ def file_temp_copy(src) -> str:
     return fname
 
 
-def trash(path: Union[Path, str], detach=True) -> None:
+def trash(path: Path | str, detach=True) -> None:
     if Path(path).exists():
         trash_put = which("trash-put") or which("trash")
         if trash_put is not None:
@@ -96,7 +96,7 @@ def is_file_open(path):
                     link = os.readlink(os.path.join(fd_dir, fd))
                     if link.startswith("/") and link == path:
                         open_files.add(link)
-            except (OSError, IOError):
+            except OSError:
                 continue
         return path in open_files
 

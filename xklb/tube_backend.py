@@ -2,7 +2,6 @@ import json, sys
 from copy import deepcopy
 from pathlib import Path
 from types import ModuleType
-from typing import Dict, List, Optional, Tuple
 
 from xklb import db_media, db_playlists
 from xklb.data.dl_config import (
@@ -28,7 +27,7 @@ def load_module_level_yt_dlp() -> ModuleType:
     return yt_dlp
 
 
-def tube_opts(args, func_opts=None, playlist_opts: Optional[str] = None) -> dict:
+def tube_opts(args, func_opts=None, playlist_opts: str | None = None) -> dict:
     if playlist_opts is None or playlist_opts == "":
         playlist_opts = "{}"
     if func_opts is None:
@@ -101,7 +100,7 @@ def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True) -> 
         pass
 
     class AddToArchivePP(yt_dlp.postprocessor.PostProcessor):
-        def run(self, info) -> Tuple[list, dict]:  # pylint: disable=arguments-renamed
+        def run(self, info) -> tuple[list, dict]:  # pylint: disable=arguments-renamed
             global added_media_count
 
             if info:
@@ -186,7 +185,7 @@ def yt_subs_config(args):
     return {}
 
 
-def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Optional[List[Dict]]:
+def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> list[dict] | None:
     yt_dlp = load_module_level_yt_dlp()
 
     tables = args.db.table_names()
@@ -287,7 +286,7 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> Optional[L
             printing.print_overwrite(f"[{playlist_path}] {current_video_count} of {len(videos)} extra metadata fetched")
 
 
-def get_video_metadata(args, playlist_path) -> Optional[Dict]:
+def get_video_metadata(args, playlist_path) -> dict | None:
     yt_dlp = load_module_level_yt_dlp()
 
     with yt_dlp.YoutubeDL(
