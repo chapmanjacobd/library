@@ -95,7 +95,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.5.019)
+    xk media library subcommands (v2.5.020)
 
     Create database subcommands:
     ╭───────────────┬────────────────────────────────────────────────────╮
@@ -2607,11 +2607,23 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 <details><summary>Dedupe similar media</summary>
 
     $ library dedupe-media -h
-    usage: library [--audio | --id | --title | --filesystem] [--only-soft-delete] [--limit LIMIT] DATABASE
+    usage: library dedupe-media [--audio | --id | --title | --filesystem] [--only-soft-delete] [--limit LIMIT] DATABASE
 
     Dedupe your files (not to be confused with the dedupe-db subcommand)
 
-    library dedupe video.db / http
+    Exact file matches
+
+        library dedupe-media --fs video.db
+
+    Dedupe based on duration and file basename or dirname similarity
+
+        library dedupe-media video.db --duration --basename -s release_group  # pre-filter with a specific text substring
+        library dedupe-media video.db --duration --basename -u m1.size  # sort such that small files are treated as originals and larger files are deleted
+        library dedupe-media video.db --duration --basename -u 'm1.size desc'  # sort such that large files are treated as originals and smaller files are deleted
+
+    Dedupe online against local media
+
+        library dedupe-media video.db / http
 
 
 </details>

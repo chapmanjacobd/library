@@ -84,12 +84,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--only-soft-delete", action="store_true")
     parser.add_argument("--dedupe-cmd", help=argparse.SUPPRESS)
     parser.add_argument("--force", "-f", action="store_true")
-    parser.add_argument("--similar-name", action="store_true")
-    parser.add_argument("--sort", "-u", nargs="+", help=argparse.SUPPRESS)
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", default=100)
     parser.add_argument("--include", "-s", "--search", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--flexible-search", "--or", "--flex", action="store_true")
     parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
+    parser.add_argument("--sort", "-u", nargs="+", help=argparse.SUPPRESS)
+    parser.add_argument("--basename", action="store_true")
+    parser.add_argument("--dirname", action="store_true")
+
     parser.add_argument("--print", "-p", default="", const="p", nargs="?")
     parser.add_argument("--cols", "-cols", "-col", nargs="*", help="Include a column when printing")
     parser.add_argument("--verbose", "-v", action="count", default=0)
@@ -529,16 +531,25 @@ def dedupe_media() -> None:
     deletion_candidates = []
     deletion_paths = []
     for d in duplicates:
-        if args.similar_name:
-            if (
-                difflib.SequenceMatcher(
-                    None,
-                    os.path.basename(d["keep_path"]),
-                    os.path.basename(d["duplicate_path"]),
-                ).ratio()
-                < consts.DEFAULT_DIFFLIB_RATIO
-            ):
-                continue
+        if args.dirname and (
+            difflib.SequenceMatcher(
+                None,
+                os.path.dirname(d["keep_path"]),
+                os.path.dirname(d["duplicate_path"]),
+            ).ratio()
+            < consts.DEFAULT_DIFFLIB_RATIO
+        ):
+            continue
+
+        if args.basename and (
+            difflib.SequenceMatcher(
+                None,
+                os.path.basename(d["keep_path"]),
+                os.path.basename(d["duplicate_path"]),
+            ).ratio()
+            < consts.DEFAULT_DIFFLIB_RATIO
+        ):
+            continue
 
         if any(
             [
