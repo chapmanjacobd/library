@@ -89,8 +89,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--flexible-search", "--or", "--flex", action="store_true")
     parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--sort", "-u", nargs="+", help=argparse.SUPPRESS)
+
     parser.add_argument("--basename", action="store_true")
     parser.add_argument("--dirname", action="store_true")
+    parser.add_argument(
+        "--min-similarity-ratio",
+        type=float,
+        default=consts.DEFAULT_DIFFLIB_RATIO,
+        help="Filter out matches with less than this ratio. A sane value is in the range of 0.7~0.9",
+    )
 
     parser.add_argument("--print", "-p", default="", const="p", nargs="?")
     parser.add_argument("--cols", "-cols", "-col", nargs="*", help="Include a column when printing")
@@ -537,7 +544,7 @@ def dedupe_media() -> None:
                 os.path.dirname(d["keep_path"]),
                 os.path.dirname(d["duplicate_path"]),
             ).ratio()
-            < consts.DEFAULT_DIFFLIB_RATIO
+            < args.min_similarity_ratio
         ):
             continue
 
@@ -547,7 +554,7 @@ def dedupe_media() -> None:
                 os.path.basename(d["keep_path"]),
                 os.path.basename(d["duplicate_path"]),
             ).ratio()
-            < consts.DEFAULT_DIFFLIB_RATIO
+            < args.min_similarity_ratio
         ):
             continue
 
