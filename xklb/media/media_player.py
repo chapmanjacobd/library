@@ -6,7 +6,6 @@ from platform import system
 from random import randrange
 from shutil import which
 from time import sleep
-from typing import Dict, List, Optional, Tuple
 
 from xklb import db_media, history
 from xklb.media import subtitle
@@ -17,7 +16,7 @@ from xklb.utils.consts import SC
 from xklb.utils.log_utils import log
 
 
-def watch_chromecast(args, m: dict, subtitles_file=None) -> Optional[subprocess.CompletedProcess]:
+def watch_chromecast(args, m: dict, subtitles_file=None) -> subprocess.CompletedProcess | None:
     if "vlc" in m["player"]:
         subtitles = ["--sub-file=" + subtitles_file] if subtitles_file else []
         catt_log = processes.cmd(
@@ -46,7 +45,7 @@ def watch_chromecast(args, m: dict, subtitles_file=None) -> Optional[subprocess.
     return catt_log
 
 
-def calculate_duration(args, m) -> Tuple[int, int]:
+def calculate_duration(args, m) -> tuple[int, int]:
     start = 0
     end = m.get("duration") or 0
 
@@ -89,7 +88,7 @@ def calculate_duration(args, m) -> Tuple[int, int]:
     return start, end
 
 
-def listen_chromecast(args, m: dict) -> Optional[subprocess.CompletedProcess]:
+def listen_chromecast(args, m: dict) -> subprocess.CompletedProcess | None:
     Path(consts.CAST_NOW_PLAYING).write_text(m["path"])
     catt = which("catt") or "catt"
     start, end = calculate_duration(args, m)
@@ -213,12 +212,12 @@ def transcode(args, path) -> str:
         return path
 
 
-def get_browser() -> Optional[str]:
+def get_browser() -> str | None:
     default_application = processes.cmd("xdg-mime", "query", "default", "text/html").stdout
     return which(default_application.replace(".desktop", ""))
 
 
-def find_xdg_application(media_file) -> Optional[str]:
+def find_xdg_application(media_file) -> str | None:
     if media_file.startswith("http"):
         return get_browser()
 
@@ -227,7 +226,7 @@ def find_xdg_application(media_file) -> Optional[str]:
     return which(default_application.replace(".desktop", ""))
 
 
-def generic_player() -> List[str]:
+def generic_player() -> list[str]:
     if platform.system() == "Linux":
         player = ["xdg-open"]
     elif any(p in platform.system() for p in ("Windows", "_NT-", "MSYS")):
@@ -237,7 +236,7 @@ def generic_player() -> List[str]:
     return player
 
 
-def geom_walk(display, v=1, h=1) -> List[List[int]]:
+def geom_walk(display, v=1, h=1) -> list[list[int]]:
     va = display.width // v
     ha = display.height // h
 
@@ -252,7 +251,7 @@ def geom_walk(display, v=1, h=1) -> List[List[int]]:
     return geoms
 
 
-def grid_stack(display, qty, swap=False) -> List[Tuple]:
+def grid_stack(display, qty, swap=False) -> list[tuple]:
     if qty == 1:
         return [("--fs", f'--screen-name="{display.name}"', f'--fs-screen-name="{display.name}"')]
     else:
@@ -334,7 +333,7 @@ def modify_display_size_for_taskbar(display):
         return display
 
 
-def get_multiple_player_template(args) -> List[Tuple[str, str]]:
+def get_multiple_player_template(args) -> list[tuple[str, str]]:
     import screeninfo
 
     displays = screeninfo.get_monitors()
@@ -370,7 +369,7 @@ def get_multiple_player_template(args) -> List[Tuple[str, str]]:
 
 
 class MediaPrefetcher:
-    def __init__(self, args, media: List[Dict]):
+    def __init__(self, args, media: list[dict]):
         self.args = argparse.Namespace(**{k: v for k, v in args.__dict__.items() if k not in {"db"}})
         self.media = media
         self.media.reverse()
@@ -393,7 +392,7 @@ class MediaPrefetcher:
                 log.debug("prefetch full")
         return self
 
-    def infer_command(self, m) -> Tuple[List[str], bool]:
+    def infer_command(self, m) -> tuple[list[str], bool]:
         args = self.args
 
         player = generic_player()
@@ -469,7 +468,7 @@ class MediaPrefetcher:
         log.debug("player: %s", player)
         return player, player_need_sleep
 
-    def prep_media(self, m: Dict):
+    def prep_media(self, m: dict):
         t = log_utils.Timer()
         self.args.db = db_utils.connect(self.args)
         log.debug("db.connect: %s", t.elapsed())

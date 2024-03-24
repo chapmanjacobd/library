@@ -1,6 +1,5 @@
 import csv, math, os, platform, sys, textwrap
 from datetime import datetime, timedelta
-from typing import Dict, List
 
 import humanize
 
@@ -107,7 +106,7 @@ def path_fill(text, percent=None, width=None):
     return "\n".join(lines)
 
 
-def col_resize(tbl: List[Dict], col: str, width) -> List[Dict]:
+def col_resize(tbl: list[dict], col: str, width) -> list[dict]:
     for idx, _d in enumerate(tbl):
         if tbl[idx].get(col) is not None:
             tbl[idx][col] = path_fill(tbl[idx][col], width=width)
@@ -115,7 +114,7 @@ def col_resize(tbl: List[Dict], col: str, width) -> List[Dict]:
     return tbl
 
 
-def col_resize_percent(tbl: List[Dict], col: str, percent=10) -> List[Dict]:
+def col_resize_percent(tbl: list[dict], col: str, percent=10) -> list[dict]:
     for idx, _d in enumerate(tbl):
         if tbl[idx].get(col) is not None:
             tbl[idx][col] = path_fill(tbl[idx][col], percent=percent)
@@ -123,7 +122,7 @@ def col_resize_percent(tbl: List[Dict], col: str, percent=10) -> List[Dict]:
     return tbl
 
 
-def col_naturaldate(tbl: List[Dict], col: str) -> List[Dict]:
+def col_naturaldate(tbl: list[dict], col: str) -> list[dict]:
     for idx, _d in enumerate(tbl):
         val = tbl[idx].get(col)
         if val is not None:
@@ -136,7 +135,7 @@ def col_naturaldate(tbl: List[Dict], col: str) -> List[Dict]:
     return tbl
 
 
-def col_naturaltime(tbl: List[Dict], col: str) -> List[Dict]:
+def col_naturaltime(tbl: list[dict], col: str) -> list[dict]:
     for idx, _d in enumerate(tbl):
         val = tbl[idx].get(col)
         if val is not None:
@@ -149,7 +148,7 @@ def col_naturaltime(tbl: List[Dict], col: str) -> List[Dict]:
     return tbl
 
 
-def col_naturalsize(tbl: List[Dict], col: str) -> List[Dict]:
+def col_naturalsize(tbl: list[dict], col: str) -> list[dict]:
     for idx, _d in enumerate(tbl):
         if tbl[idx].get(col) is not None:
             if tbl[idx][col] == 0:
@@ -160,7 +159,7 @@ def col_naturalsize(tbl: List[Dict], col: str) -> List[Dict]:
     return tbl
 
 
-def col_duration(tbl: List[Dict], col: str) -> List[Dict]:
+def col_duration(tbl: list[dict], col: str) -> list[dict]:
     for idx, _d in enumerate(tbl):
         if tbl[idx].get(col) is not None:
             tbl[idx][col] = human_duration(tbl[idx][col])
@@ -229,7 +228,7 @@ def seconds_to_hhmmss(seconds):
     return formatted_time
 
 
-def col_hhmmss(tbl: List[Dict], col: str) -> List[Dict]:
+def col_hhmmss(tbl: list[dict], col: str) -> list[dict]:
     for idx, _d in enumerate(tbl):
         if tbl[idx].get(col) is not None:
             tbl[idx][col] = seconds_to_hhmmss(tbl[idx][col])

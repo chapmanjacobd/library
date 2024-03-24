@@ -59,13 +59,13 @@ def is_sqlite(path):
         with open(path, "rb") as f:
             header = f.read(16)
         return header == b"SQLite format 3\000"
-    except IOError:
+    except OSError:
         return False
 
 
 def gen_paths(args):
     if args.file:
-        with open(args.file, "r") as f:
+        with open(args.file) as f:
             for line in f:
                 path = line.rstrip("\n")
                 if path.strip():

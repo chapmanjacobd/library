@@ -1,5 +1,4 @@
 import os, re
-from typing import List
 
 from xklb.utils import iterables, processes, strings
 from xklb.utils.log_utils import log
@@ -225,7 +224,7 @@ def munge_image_tags(m: dict, e: dict) -> dict:
     return m
 
 
-def extract_image_metadata_chunk(metadata: List[dict]) -> List[dict]:
+def extract_image_metadata_chunk(metadata: list[dict]) -> list[dict]:
     try:
         import exiftool
     except ModuleNotFoundError:

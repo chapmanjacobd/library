@@ -5,7 +5,6 @@ from multiprocessing import TimeoutError as mp_TimeoutError
 from pathlib import Path
 from shutil import which
 from timeit import default_timer as timer
-from typing import Dict, List, Optional
 
 from xklb import db_media, db_playlists, usage
 from xklb.media import av, books
@@ -139,7 +138,7 @@ def parse_args(action, usage):
     return args, parser
 
 
-def extract_metadata(mp_args, path) -> Optional[Dict[str, int]]:
+def extract_metadata(mp_args, path) -> dict[str, int] | None:
     try:
         path.encode()
     except UnicodeEncodeError:
@@ -290,9 +289,9 @@ def mark_media_undeleted(args, paths) -> int:
     return modified_row_count
 
 
-def find_new_files(args, path) -> List[str]:
+def find_new_files(args, path) -> list[str]:
     if path.is_file():
-        scanned_set = set([str(path)])
+        scanned_set = {str(path)}
     else:
         for s in args.profiles:
             if getattr(DBType, s, None) is None:

@@ -1,6 +1,5 @@
 import argparse, json, random, sys, time
 from pathlib import Path
-from typing import Set
 from urllib.parse import urlparse
 
 from xklb import db_media, db_playlists, usage
@@ -204,7 +203,7 @@ def add_media(args, media):
     args.db["media"].insert_all(media, pk="id", alter=True, replace=True)
 
 
-def spider(args, paths: Set):
+def spider(args, paths: set):
     get_urls = iterables.return_unique(extract_links.get_inner_urls)
 
     new_media_count = 0

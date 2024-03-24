@@ -1,6 +1,5 @@
 import argparse, sys
 from pathlib import Path
-from typing import List
 
 from xklb import db_media, history, usage
 from xklb.utils import consts, db_utils, iterables, objects, path_utils, strings
@@ -43,7 +42,7 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def get_new_paths(args) -> List[str]:
+def get_new_paths(args) -> list[str]:
     if not args.no_sanitize:
         args.paths = [path_utils.sanitize_url(args, path) for path in args.paths]
 

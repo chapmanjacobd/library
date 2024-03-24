@@ -3,7 +3,6 @@ from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
 from pathlib import Path
-from typing import List
 
 import humanize
 
@@ -161,7 +160,7 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def get_rows(args) -> List[dict]:
+def get_rows(args) -> list[dict]:
     query = f"""
     SELECT
         {', '.join(db_utils.config["media"]["search_columns"])}
@@ -187,7 +186,7 @@ def get_rows(args) -> List[dict]:
     return args.db.query(query, args.filter_bindings)
 
 
-def get_music_duplicates(args) -> List[dict]:
+def get_music_duplicates(args) -> list[dict]:
     m_columns = db_utils.columns(args, "media")
     query = f"""
     SELECT
@@ -233,7 +232,7 @@ def get_music_duplicates(args) -> List[dict]:
     return media
 
 
-def get_id_duplicates(args) -> List[dict]:
+def get_id_duplicates(args) -> list[dict]:
     m_columns = db_utils.columns(args, "media")
     query = f"""
     SELECT
@@ -275,7 +274,7 @@ def get_id_duplicates(args) -> List[dict]:
     return media
 
 
-def get_title_duplicates(args) -> List[dict]:
+def get_title_duplicates(args) -> list[dict]:
     m_columns = db_utils.columns(args, "media")
     query = f"""
     SELECT
@@ -317,7 +316,7 @@ def get_title_duplicates(args) -> List[dict]:
     return media
 
 
-def get_duration_duplicates(args) -> List[dict]:
+def get_duration_duplicates(args) -> list[dict]:
     m_columns = db_utils.columns(args, "media")
     query = f"""
     SELECT
@@ -359,7 +358,7 @@ def get_duration_duplicates(args) -> List[dict]:
     return media
 
 
-def get_fs_duplicates(args) -> List[dict]:
+def get_fs_duplicates(args) -> list[dict]:
     m_columns = db_utils.columns(args, "media")
     query = f"""
     SELECT

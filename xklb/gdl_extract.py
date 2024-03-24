@@ -55,7 +55,7 @@ def parse_args(action, usage) -> argparse.Namespace:
     args.db = db_utils.connect(args)
 
     if hasattr(args, "playlists"):
-        args.playlists = list(set(s.strip() for s in args.playlists))
+        args.playlists = list({s.strip() for s in args.playlists})
         if not args.no_sanitize:
             args.playlists = [path_utils.sanitize_url(args, p) for p in args.playlists]
         args.playlists = iterables.conform(args.playlists)

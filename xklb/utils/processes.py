@@ -1,5 +1,5 @@
 import functools, json, multiprocessing, os, platform, re, shlex, signal, subprocess, sys
-from typing import Dict, NoReturn
+from typing import NoReturn
 
 from xklb.utils import iterables
 from xklb.utils.log_utils import log
@@ -52,7 +52,7 @@ def with_timeout(seconds):  # noqa: ANN201
     return decorator
 
 
-def os_bg_kwargs() -> Dict:
+def os_bg_kwargs() -> dict:
     # prevent ctrl-c from affecting subprocesses first
 
     if hasattr(os, "setpgrp"):

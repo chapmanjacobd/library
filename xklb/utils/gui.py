@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import NoReturn, Tuple
+from typing import NoReturn
 
 base_folder = Path(__file__).resolve().parent
 
@@ -129,7 +129,7 @@ class MrSuperDialogue:
         self.root.wm_attributes("-alpha", 1)
 
     @staticmethod
-    def _get_coord_offset_from_monitor(screeninfo_monitor) -> Tuple[int, int]:
+    def _get_coord_offset_from_monitor(screeninfo_monitor) -> tuple[int, int]:
         # TODO: assuming screeninfo returns monitors in the same order that Tk is expecting it should
         # be possible to figure out where the monitor sits in the framebuffer then add up the preceding
         # monitors to find the pixel offset within the framebuffer for the window to show up in

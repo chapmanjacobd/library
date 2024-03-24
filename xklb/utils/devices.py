@@ -1,5 +1,4 @@
 import argparse, os, platform, random, shutil, sys
-from typing import Dict, List, Union
 
 from xklb.utils.log_utils import log
 
@@ -83,7 +82,7 @@ def set_readline_completion(list_) -> None:
     return
 
 
-def get_mount_stats(src_mounts) -> List[Dict[str, Union[str, int]]]:
+def get_mount_stats(src_mounts) -> list[dict[str, str | int]]:
     mount_space = []
     total_used = 1
     total_free = 1

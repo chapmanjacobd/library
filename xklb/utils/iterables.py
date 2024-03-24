@@ -1,7 +1,7 @@
 import math
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 from functools import wraps
-from typing import Any, Iterator, List, Optional, Union
+from typing import Any
 
 from xklb.utils import objects
 
@@ -16,7 +16,7 @@ def flatten(xs: Iterable) -> Iterator:
             yield x
 
 
-def conform(list_: Union[str, Iterable]) -> List:
+def conform(list_: str | Iterable) -> list:
     if not list_:
         return []
     if not isinstance(list_, list):
@@ -26,7 +26,7 @@ def conform(list_: Union[str, Iterable]) -> List:
     return list_
 
 
-def safe_unpack(*list_, idx=0, keep_0=True) -> Optional[Any]:
+def safe_unpack(*list_, idx=0, keep_0=True) -> Any | None:
     list_ = conform(list_)
     if not list_:
         return None
@@ -38,7 +38,7 @@ def safe_unpack(*list_, idx=0, keep_0=True) -> Optional[Any]:
         return None
 
 
-def safe_pop(list_, idx=-1) -> Optional[Any]:
+def safe_pop(list_, idx=-1) -> Any | None:
     if not list_:
         return None
     return list_[idx]
@@ -62,7 +62,7 @@ def get_list_with_most_items(nested_dict):
     return safe_pop(list_)
 
 
-def safe_sum(*list_, keep_0=False) -> Optional[Any]:
+def safe_sum(*list_, keep_0=False) -> Any | None:
     list_ = conform(list_)
     if not list_:
         return None
@@ -94,16 +94,16 @@ def find_none_keys(list_of_dicts, keep_0=True):
     return none_keys
 
 
-def list_dict_filter_bool(media: List[dict], keep_0=True) -> List[dict]:
+def list_dict_filter_bool(media: list[dict], keep_0=True) -> list[dict]:
     keys_to_remove = find_none_keys(media, keep_0=keep_0)
     return [d for d in [{k: v for k, v in m.items() if k not in keys_to_remove} for m in media] if d]
 
 
-def list_dict_filter_keys(media: List[dict], keys) -> List[dict]:
+def list_dict_filter_keys(media: list[dict], keys) -> list[dict]:
     return [d for d in [objects.dict_filter_keys(d, keys) for d in media] if d]
 
 
-def list_dict_filter_unique(data: List[dict]) -> List[dict]:
+def list_dict_filter_unique(data: list[dict]) -> list[dict]:
     if len(data) == 0:
         return []
 
@@ -116,7 +116,7 @@ def list_dict_filter_unique(data: List[dict]) -> List[dict]:
     return filtered_data
 
 
-def list_dict_unique(data: List[dict], unique_keys: List[str]) -> List[dict]:
+def list_dict_unique(data: list[dict], unique_keys: list[str]) -> list[dict]:
     seen = set()
     list_ = []
     for d in data:

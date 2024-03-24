@@ -1,6 +1,5 @@
 import argparse, os
 from copy import deepcopy
-from typing import List
 
 from xklb import db_media, usage
 from xklb.media import media_printer
@@ -21,7 +20,7 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def get_duplicates(args) -> List[dict]:
+def get_duplicates(args) -> list[dict]:
     query = f"""
     WITH m1 as (
         SELECT

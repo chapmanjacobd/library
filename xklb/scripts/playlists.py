@@ -1,5 +1,4 @@
 import argparse, os, sqlite3
-from typing import Tuple
 
 from xklb import usage
 from xklb.media import media_printer
@@ -54,7 +53,7 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def construct_query(args) -> Tuple[str, dict]:
+def construct_query(args) -> tuple[str, dict]:
     pl_columns = db_utils.columns(args, "playlists")
     args.filter_sql = []
     args.filter_bindings = {}

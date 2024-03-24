@@ -1,6 +1,5 @@
 import argparse, logging, sys
 from time import sleep
-from typing import List
 
 from xklb import usage
 from xklb.media import media_player
@@ -30,7 +29,7 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def list_tabs(args) -> List:
+def list_tabs(args) -> list:
     return args.bt_api.list_tabs([])
 
 

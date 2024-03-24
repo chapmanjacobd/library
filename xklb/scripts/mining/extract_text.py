@@ -76,7 +76,7 @@ def get_text(args, url):
                 yield from parse_text(args, markup)
     else:
         if args.local_file:
-            with open(url, "r") as f:
+            with open(url) as f:
                 markup = f.read()
             url = "file://" + url
         else:

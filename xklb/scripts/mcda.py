@@ -148,7 +148,7 @@ def sort(args, df, values):
     else:
         alternatives = df.select_dtypes("number")
 
-    df = auto_mcda(args, df, alternatives, minimize_cols=set(s.lstrip("-") for s in columns if s.startswith("-")))
+    df = auto_mcda(args, df, alternatives, minimize_cols={s.lstrip("-") for s in columns if s.startswith("-")})
     return df
 
 

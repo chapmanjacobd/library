@@ -1,6 +1,5 @@
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Optional
 
 from xklb.media import media_check, subtitle
 from xklb.utils import consts, file_utils, iterables, nums, objects, processes, strings
@@ -36,7 +35,7 @@ def get_subtitle_tags(path, streams, codec_types, scan_subtitles=False) -> dict:
     return video_tags
 
 
-def parse_tags(mu: Dict, ti: Dict) -> dict:
+def parse_tags(mu: dict, ti: dict) -> dict:
     tags = {
         "mood": strings.combine(
             mu.get("albummood"),
@@ -199,7 +198,7 @@ def munge_av_tags(args, path) -> dict:
 
     streams = probe.streams
 
-    def parse_framerate(string) -> Optional[float]:
+    def parse_framerate(string) -> float | None:
         top, bot = string.split("/")
         bot = float(bot)
         if bot == 0:

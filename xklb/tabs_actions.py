@@ -1,7 +1,6 @@
 import argparse, math, webbrowser
 from pathlib import Path
 from time import sleep
-from typing import Dict, List, Tuple
 
 from xklb import history, usage
 from xklb.media import media_printer
@@ -84,7 +83,7 @@ def tabs_exclude_sql(x) -> str:
 )"""
 
 
-def construct_tabs_query(args) -> Tuple[str, dict]:
+def construct_tabs_query(args) -> tuple[str, dict]:
     args.filter_sql = []
     args.filter_bindings = {}
 
@@ -157,14 +156,14 @@ def construct_tabs_query(args) -> Tuple[str, dict]:
     return query, args.filter_bindings
 
 
-def play(args, m: Dict) -> None:
+def play(args, m: dict) -> None:
     media_file = m["path"]
 
     webbrowser.open(media_file, 2, autoraise=False)
     history.add(args, [media_file], time_played=consts.today_stamp(), mark_done=True)
 
 
-def frequency_filter(counts, media: List[Dict]) -> List[dict]:
+def frequency_filter(counts, media: list[dict]) -> list[dict]:
     mapper = {
         "daily": 1,
         "weekly": 7,

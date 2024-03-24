@@ -1,6 +1,5 @@
 import argparse, os, shlex, sys
 from pathlib import Path
-from typing import Dict, List, Tuple
 
 from xklb import db_media, history, tube_backend, usage
 from xklb.media import media_player, media_printer
@@ -239,7 +238,7 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     return args
 
 
-def construct_query(args) -> Tuple[str, dict]:
+def construct_query(args) -> tuple[str, dict]:
     m_columns = db_utils.columns(args, "media")
 
     args.filter_sql = []
@@ -399,7 +398,7 @@ def construct_query(args) -> Tuple[str, dict]:
     return query, args.filter_bindings
 
 
-def filter_episodic(args, media: List[Dict]) -> List[Dict]:
+def filter_episodic(args, media: list[dict]) -> list[dict]:
     parent_dict = {}
     for m in media:
         path = Path(m["path"])
@@ -424,7 +423,7 @@ def filter_episodic(args, media: List[Dict]) -> List[Dict]:
     return filtered_media
 
 
-def history_sort(args, media) -> List[Dict]:
+def history_sort(args, media) -> list[dict]:
     if "s" in args.partial:  # skip; only play unseen
         previously_watched_paths = [m["path"] for m in media if m["time_first_played"]]
         return [m for m in media if m["path"] not in previously_watched_paths]

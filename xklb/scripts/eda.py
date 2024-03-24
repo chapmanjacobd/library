@@ -1,5 +1,4 @@
 import argparse
-from typing import Dict
 
 from xklb import usage
 from xklb.utils import file_utils, nums
@@ -37,7 +36,7 @@ def parse_args():
     return args
 
 
-def df_column_values(df, column_name) -> Dict:
+def df_column_values(df, column_name) -> dict:
     total = len(df)
 
     null = df[column_name].isnull().sum()

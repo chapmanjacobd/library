@@ -1,7 +1,6 @@
 import json, types
 from contextlib import contextmanager
 from functools import wraps
-from typing import Dict, Optional
 
 from xklb.utils.log_utils import log
 
@@ -92,7 +91,7 @@ def lower_keys(input_dict):
     return output_dict
 
 
-def dict_filter_bool(kwargs, keep_0=True) -> Optional[dict]:
+def dict_filter_bool(kwargs, keep_0=True) -> dict | None:
     if kwargs is None:
         return None
 
@@ -106,7 +105,7 @@ def dict_filter_bool(kwargs, keep_0=True) -> Optional[dict]:
     return filtered_dict
 
 
-def dict_filter_keys(kwargs, keys) -> Optional[dict]:
+def dict_filter_keys(kwargs, keys) -> dict | None:
     filtered_dict = {k: v for k, v in kwargs.items() if k not in keys}
     if len(filtered_dict) == 0:
         return None
@@ -117,7 +116,7 @@ def dumbcopy(d):
     return {i: j.copy() if type(j) == dict else j for i, j in d.items()}
 
 
-def filter_namespace(args, config_opts) -> Optional[Dict]:
+def filter_namespace(args, config_opts) -> dict | None:
     return dict_filter_bool({k: v for k, v in args.__dict__.items() if k in config_opts})
 
 
