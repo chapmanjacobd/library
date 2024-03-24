@@ -322,7 +322,7 @@ def filter_near_duplicates(groups: List[Dict]) -> List[Dict]:
 
             is_duplicate = False
             for prev in temp_groups.keys():
-                if difflib.SequenceMatcher(None, curr, prev).ratio() > 0.73:
+                if difflib.SequenceMatcher(None, curr, prev).ratio() > consts.DEFAULT_DIFFLIB_RATIO:
                     temp_groups[prev].append(curr)
                     is_duplicate = True
                     break

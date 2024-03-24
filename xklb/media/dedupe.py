@@ -1,4 +1,4 @@
-import argparse, os, re, shlex, tempfile
+import argparse, difflib, os, re, shlex, tempfile
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
@@ -84,6 +84,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--only-soft-delete", action="store_true")
     parser.add_argument("--dedupe-cmd", help=argparse.SUPPRESS)
     parser.add_argument("--force", "-f", action="store_true")
+    parser.add_argument("--similar-name", action="store_true")
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", default=100)
     parser.add_argument("--include", "-s", "--search", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--flexible-search", "--or", "--flex", action="store_true")
@@ -516,6 +517,17 @@ def dedupe_media() -> None:
     deletion_candidates = []
     deletion_paths = []
     for d in duplicates:
+        if args.similar_name:
+            if (
+                difflib.SequenceMatcher(
+                    None,
+                    os.path.basename(d["keep_path"]),
+                    os.path.basename(d["duplicate_path"]),
+                ).ratio()
+                < consts.DEFAULT_DIFFLIB_RATIO
+            ):
+                continue
+
         if any(
             [
                 d["keep_path"] in deletion_paths or d["duplicate_path"] in deletion_paths,
