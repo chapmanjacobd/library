@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+from random import randint
 import argparse, sys
 from pathlib import Path
 
@@ -94,6 +96,22 @@ def tabs_add(args=None) -> None:
     for tab in tabs:
         db_media.add(args, tab)
     if not args.allow_immediate:
-        history.add(
-            args, [d["path"] for d in tabs], time_played=consts.today_stamp(), mark_done=True
-        )  # prevent immediately opening
+        # prevent immediately opening
+
+        # pick a random day within the last frequency
+        map_delay = {
+            'weekly': datetime.today() - timedelta(days=7),
+            'monthly': datetime.today() - timedelta(days=30),
+            'quarterly': datetime.today() - timedelta(days=91),
+            'yearly': datetime.today() - timedelta(days=365),
+            'decadally': datetime.today() - timedelta(days=3650)
+        }
+        min_date = map_delay.get(args.frequency) or datetime.today()
+        min_date += timedelta(days=3)  # at least three days away
+
+        min_time = int(min_date.replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
+        max_time = consts.today_stamp()
+
+        for d in tabs:
+            time_played = randint(min_time, max_time)
+            history.add(args, [d["path"]], time_played=time_played, mark_done=True)
