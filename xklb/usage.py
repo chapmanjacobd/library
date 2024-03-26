@@ -1501,7 +1501,8 @@ incremental_diff = """library incremental-diff PATH1 PATH2 [--join-keys JOIN_KEY
 
     Data (PATH1, PATH2) can be two different files of different file formats (CSV, Excel) or it could even be the same file with different tables.
 
-    If files are unsorted you may need to use `--join-keys id,name` to specify ID columns. Rows that have the same ID will then be compared. If you are comparing SQLITE files you may be able to use `--sort id,name` to achieve the same effect.
+    If files are unsorted you may need to use `--join-keys id,name` to specify ID columns. Rows that have the same ID will then be compared.
+    If you are comparing SQLITE files you may be able to use `--sort id,name` to achieve the same effect.
 
     To diff everything at once run with `--batch-size inf`
 """
@@ -1677,23 +1678,28 @@ media_check = """library media-check [--chunk-size SECONDS] [--gap SECONDS OR 0.
 
         library media-check ./video.mp4
 
-    Decode all the frames of each file to evaluate how corrupt it is (very slow; about 150 seconds for an hour-long file)
+    Decode all the frames of each file to evaluate how corrupt it is
+    (scantime is very slow; about 150 seconds for an hour-long file)
 
         library media-check --full-scan ./video.mp4
 
-    Decode all the packets of each file to evaluate how corrupt it is (about one second of each file but only accurate for formats where 1 packet == 1 frame)
+    Decode all the packets of each file to evaluate how corrupt it is
+    (scantime is about one second of each file but only accurate for formats where 1 packet == 1 frame)
 
         library media-check --full-scan --gap 0 ./video.mp4
 
-    Decode all audio of each file to evaluate how corrupt it is (about four seconds per file)
+    Decode all audio of each file to evaluate how corrupt it is
+    (scantime is about four seconds per file)
 
         library media-check --full-scan --audio ./video.mp4
 
-    Decode at least one frame at the start and end of each file to evaluate how corrupt it is (takes about one second per file)
+    Decode at least one frame at the start and end of each file to evaluate how corrupt it is
+    (scantime is about one second per file)
 
         library media-check --chunk-size 5%% --gap 99.9%% ./video.mp4
 
-    Decode 3s every 5%% of a file to evaluate how corrupt it is (takes about three seconds per file)
+    Decode 3s every 5%% of a file to evaluate how corrupt it is
+    (scantime is about three seconds per file)
 
         library media-check --chunk-size 3 --gap 5%% ./video.mp4
 
@@ -1762,17 +1768,22 @@ webadd = """library web-add [(--filesystem) | --video | --audio | --image | --te
 
         library watch open_dir.db --online-media-only --loop --exit-code-confirm -i --action ask-keep -m 4  --start 35%% --volume=0 -w 'height<720' -E preview
 
-        Assuming you have bound in mpv input.conf a key to 'quit' and another key to 'quit 4', using the ask-keep action will mark a video as deleted when you 'quit 4' and it will mark a video as watched when you 'quit'.
+        Assuming you have bound in mpv input.conf a key to 'quit' and another key to 'quit 4',
+        using the ask-keep action will mark a video as deleted when you 'quit 4' and it will mark a video as watched when you 'quit'.
 
         For example, here I bind "'" to "KEEP" and  "j" to "DELETE"
 
             ' quit
             j quit 4
 
-        This is pretty intuitive after you use it a few times but writing this out I realize this might seem a bit complicated and brittle. You could also do something like `--cmd5 'echo {} >> chosen.txt' --cmd6 'echo {} >> rejected.txt'` instead of post-actions like `ask-keep`; this might be a bit more transparent. But you will still need to bind some keys in mpv:
+        This is pretty intuitive after you use it a few times but writing this out I realize this might seem a bit opaque.
+        Instead of using built-in post-actions (example above) you could also do something like
+            `--cmd5 'echo {} >> keep.txt' --cmd6 'echo {} >> rejected.txt'`
 
-            k quit 5
-            r quit 6
+        But you will still bind keys in mpv input.conf:
+
+            k quit 5  # goes to keep.txt
+            r quit 6  # goes to rejected.txt
 
     Download checked videos
 
