@@ -87,6 +87,7 @@ progs = {
         "merge_online_local": "Merge online and local data",
         "mpv_watchlater": "Import mpv watchlater files to history",
         "reddit_selftext": "Copy selftext links to media table",
+        "tabs_shuffle": "Randomize tabs.db a bit",
     },
     "Misc subcommands": {
         "export_text": "Export HTML files from SQLite databases",
@@ -229,6 +230,7 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     add_parser(subparsers, "xklb.site_extract.site_add", ["sa", "sql-site", "site-sql"])
     add_parser(subparsers, "xklb.tabs_actions.tabs", ["tb"])
     add_parser(subparsers, "xklb.tabs_extract.tabs_add")
+    add_parser(subparsers, "xklb.tabs_extract.tabs_shuffle")
     add_parser(subparsers, "xklb.tube_extract.tube_add", ["ta", "dladd", "da"])
     add_parser(subparsers, "xklb.tube_extract.tube_update", ["dlupdate", "tu"])
     add_parser(subparsers, "xklb.utils.devices.mount_stats", ["mu", "mount-usage"])

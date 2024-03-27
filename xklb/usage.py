@@ -905,6 +905,9 @@ tabsadd = r"""library tabsadd [--frequency daily weekly (monthly) quarterly year
 
 """
 
+tabs_shuffle = """library tabs-shuffle DATABASE
+"""
+
 tubeadd = r"""library tubeadd [--safe] [--extra] [--subs] [--auto-subs] DATABASE URLS ...
 
     Create a dl database / add links to an existing database
