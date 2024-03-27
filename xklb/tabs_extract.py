@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from random import randint
 import argparse, sys
 from pathlib import Path
@@ -104,7 +104,7 @@ def tabs_add(args=None) -> None:
             'monthly': datetime.today() - timedelta(days=30),
             'quarterly': datetime.today() - timedelta(days=91),
             'yearly': datetime.today() - timedelta(days=365),
-            'decadally': datetime.today() - timedelta(days=3650)
+            'decadally': datetime.today() - timedelta(days=3650),
         }
         min_date = map_delay.get(args.frequency) or datetime.today()
         min_date += timedelta(days=3)  # at least three days away
@@ -115,3 +115,59 @@ def tabs_add(args=None) -> None:
         for d in tabs:
             time_played = randint(min_time, max_time)
             history.add(args, [d["path"]], time_played=time_played, mark_done=True)
+
+
+def tabs_shuffle() -> None:
+    parser = argparse.ArgumentParser(prog="library tabs-shuffle", usage=usage.tabs_shuffle)
+    parser.add_argument("-v", "--verbose", action="count", default=0)
+    parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
+
+    parser.add_argument("database")
+    args = parser.parse_intermixed_args()
+
+    Path(args.database).touch()
+    args.db = db_utils.connect(args)
+
+    log.info(objects.dict_filter_bool(args.__dict__))
+
+    tabs = list(
+        args.db.query(
+            f"""
+        WITH m as (
+            SELECT
+                media.id
+                , path
+                , frequency
+                , COALESCE(MAX(h.time_played), 0) time_last_played
+                , SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
+                , hostname
+                , category
+            FROM media
+            LEFT JOIN history h on h.media_id = media.id
+            WHERE COALESCE(time_deleted, 0)=0
+            GROUP BY media.id
+        )
+        SELECT
+            id
+            , path
+            , frequency
+            , time_last_played
+        FROM m
+        WHERE time_last_played > 0
+            AND frequency != 'daily'
+        """
+        )
+    )
+
+    for d in tabs:
+        # pick a random day within the same week
+        date_last_played = datetime.fromtimestamp(d['time_last_played'], UTC)
+        min_date = date_last_played - timedelta(days=7)
+
+        min_time = int(min_date.replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
+        max_time = d['time_last_played']
+        time_played = randint(min_time, max_time)
+
+        with args.db.conn:
+            args.db.conn.execute('DELETE from history WHERE media_id = ? and time_played = ?', [d['id'], d['time_last_played']])
+        history.add(args, [d["path"]], time_played=time_played, mark_done=True)
