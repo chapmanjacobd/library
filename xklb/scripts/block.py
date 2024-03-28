@@ -38,8 +38,8 @@ def parse_args():
     parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
     parser.add_argument("--verbose", "-v", action="count", default=0)
 
-    parser.add_argument("database", help=argparse.SUPPRESS)
-    parser.add_argument("playlists", nargs="*", help=argparse.SUPPRESS)
+    parser.add_argument("database")
+    parser.add_argument("playlists", nargs="*")
     args = parser.parse_intermixed_args()
 
     if args.db:

@@ -149,9 +149,9 @@ def parse_args(**kwargs):
     parser.add_argument("--local-file", "--local-html", action="store_true", help="Treat paths as Local HTML files")
     parser.add_argument("--file", "-f", help="File with one URL per line")
 
-    parser.add_argument("database", help=argparse.SUPPRESS)
+    parser.add_argument("database")
     if "add" in kwargs["prog"]:
-        parser.add_argument("paths", nargs="*", action=arg_utils.ArgparseArgsOrStdin, help=argparse.SUPPRESS)
+        parser.add_argument("paths", nargs="*", action=arg_utils.ArgparseArgsOrStdin)
     args = parser.parse_intermixed_args()
 
     if not args.profiles:

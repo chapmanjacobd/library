@@ -100,8 +100,8 @@ def parse_args():
     parser.add_argument("--timeout", "-T", help="Quit after x minutes")
     parser.add_argument("--verbose", "-v", action="count", default=0)
 
-    parser.add_argument("database", help=argparse.SUPPRESS)
-    parser.add_argument("playlists", nargs="*", action=arg_utils.ArgparseArgsOrStdin, help=argparse.SUPPRESS)
+    parser.add_argument("database")
+    parser.add_argument("playlists", nargs="*", action=arg_utils.ArgparseArgsOrStdin)
     args, unk = parser.parse_known_intermixed_args()
     args.defaults = []
 
