@@ -14,15 +14,15 @@ def parse_unknown_args_to_dict(unknown_args):
         if len(values) == 1:
             return nums.safe_int_float_str(values[0])
         else:
-            return ' '.join(values)
+            return " ".join(values)
 
     for arg in unknown_args:
-        if arg.startswith('--') or arg.startswith('-'):
+        if arg.startswith("--") or arg.startswith("-"):
             if key is not None:
                 kwargs[key] = get_val()  # previous values
                 values.clear()
             # Process the new key
-            key = arg.strip('-').replace('-', '_')
+            key = arg.strip("-").replace("-", "_")
         else:
             values.append(arg)
 

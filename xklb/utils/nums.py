@@ -28,6 +28,7 @@ def safe_int(s) -> int | None:
     except Exception:
         return None
 
+
 def safe_int_float_str(s):
     try:
         return int(s)
