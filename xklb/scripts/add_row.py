@@ -2,21 +2,32 @@ import argparse
 from pathlib import Path
 
 from xklb import usage
-from xklb.utils import db_utils
+from xklb.utils import db_utils, nums
 
 
 def parse_unknown_args_to_dict(unknown_args):
     kwargs = {}
-    for i in range(0, len(unknown_args), 2):
-        key = unknown_args[i]
-        if key.startswith("--"):
-            key = key[2:]
-        elif key.startswith("-"):
-            key = key[1:]
+    key = None
+    values = []
 
-        key = key.replace("-", "_")
-        value = unknown_args[i + 1]
-        kwargs[key] = value
+    def get_val():
+        if len(values) == 1:
+            return nums.safe_int_float_str(values[0])
+        else:
+            return ' '.join(values)
+
+    for arg in unknown_args:
+        if arg.startswith('--') or arg.startswith('-'):
+            if key is not None:
+                kwargs[key] = get_val()  # previous values
+                values.clear()
+            # Process the new key
+            key = arg.strip('-').replace('-', '_')
+        else:
+            values.append(arg)
+
+    if len(values) > 0:
+        kwargs[key] = get_val()
 
     return kwargs
 
