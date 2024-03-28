@@ -96,11 +96,9 @@ def tabs_add(args=None) -> None:
     for tab in tabs:
         db_media.add(args, tab)
     if not args.allow_immediate and args.frequency != "daily":
-        # prevent immediately opening
-
-        # pick a random day within the week
+        # prevent immediately opening -- pick a random day within the week
         min_date = datetime.today() - timedelta(days=5)  # at least two days away
-        max_date = datetime.today() + timedelta(days=2)
+        max_date = datetime.today()
 
         min_time = int(min_date.replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
         max_time = int(max_date.replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
