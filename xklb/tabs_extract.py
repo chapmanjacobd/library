@@ -1,5 +1,5 @@
 import argparse, sys
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from random import randint
 
@@ -151,7 +151,7 @@ def tabs_shuffle() -> None:
 
     for d in tabs:
         # pick a random day within the same week
-        date_last_played = datetime.fromtimestamp(d["time_last_played"], UTC)
+        date_last_played = datetime.fromtimestamp(d["time_last_played"])
         min_date = date_last_played - timedelta(days=7)
 
         min_time = int(min_date.replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
