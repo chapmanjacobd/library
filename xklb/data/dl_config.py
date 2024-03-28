@@ -67,34 +67,28 @@ yt_recoverable_errors = re.compile(
 
 yt_meaningless_errors = re.compile(
     "|".join(
-        r"""^\[info\]
-^\[redirect\]
-^\[Merger\]
-^\[dashsegments\]
-^Found
-.*hidden
+        r""".*hidden
 .*timed out
 .*Timeout
 .*Timed
 .*Connection reset
 .*ConnectionReset
 .*Unable to extract
-.*Unauthorized
-.*Forbidden
 .*Traceback
 .*Invalid argument
 .*KeyboardInterrupt
 .*Fatal Python error
 .*list index out of range
 .*Extract.* cookies
-.*File .*, line .*, in
-.*Requested format is not available.
+.*File .*, line .*,
+.*Requested format is not available
 .*This channel does not have
 .*fragment_filename_sanitized
 .*no suitable InfoExtractor for URL
 .*File name too long
 .*No such file or directory
 .*Name or service not known
+.*Extracting URL
 .*: Downloading webpage
 .*: Extracting information
 .*: Requesting header
@@ -145,6 +139,7 @@ yt_unrecoverable_errors = re.compile(
     "|".join(
         r""".*repetitive or misleading metadata
 .*It is not available
+.*does not pass filter
 .*has already been recorded in the archive
 .*ideo.*is private
 .*already ended
@@ -243,7 +238,7 @@ yt_unrecoverable_errors = re.compile(
 .*No video formats found
 .*certificate is not valid
 .*CERTIFICATE_VERIFY_FAILED
-.*HTTP Error 403: Forbidden
+.*Forbidden
 .*code -404
 .*HTTP Error 404
 .*HTTPError 404
