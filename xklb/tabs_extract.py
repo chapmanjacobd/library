@@ -1,5 +1,5 @@
 import argparse, sys
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from pathlib import Path
 from random import randint
 
