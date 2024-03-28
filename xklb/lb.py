@@ -21,6 +21,7 @@ progs = {
         "substack": "Backup substack articles",
         "tildes": "Backup tildes comments and topics",
         "places_import": "Import places of interest (POIs)",
+        "add_row": "Add arbitrary data to SQLITE",
     },
     "Update database subcommands": {
         "fsupdate": "Update local media",
@@ -179,6 +180,7 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     add_parser(subparsers, "xklb.play_actions.watch", ["wt", "tubewatch", "tw", "entries"])
     add_parser(subparsers, "xklb.reddit_extract.reddit_add", ["ra"])
     add_parser(subparsers, "xklb.reddit_extract.reddit_update", ["ru"])
+    add_parser(subparsers, "xklb.scripts.add_row.add_row")
     add_parser(subparsers, "xklb.scripts.big_dirs.big_dirs", ["large-folders"])
     add_parser(subparsers, "xklb.scripts.block.block")
     add_parser(subparsers, "xklb.scripts.christen.christen")

@@ -1,7 +1,7 @@
-from datetime import datetime, timedelta, UTC
-from random import randint
 import argparse, sys
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from random import randint
 
 from xklb import db_media, history, usage
 from xklb.utils import consts, db_utils, iterables, objects, path_utils, strings
@@ -95,22 +95,15 @@ def tabs_add(args=None) -> None:
     tabs = iterables.list_dict_filter_bool([consolidate_url(args, path) for path in get_new_paths(args)])
     for tab in tabs:
         db_media.add(args, tab)
-    if not args.allow_immediate:
+    if not args.allow_immediate and args.frequency != "daily":
         # prevent immediately opening
 
-        # pick a random day within the last frequency
-        map_delay = {
-            'weekly': datetime.today() - timedelta(days=7),
-            'monthly': datetime.today() - timedelta(days=30),
-            'quarterly': datetime.today() - timedelta(days=91),
-            'yearly': datetime.today() - timedelta(days=365),
-            'decadally': datetime.today() - timedelta(days=3650),
-        }
-        min_date = map_delay.get(args.frequency) or datetime.today()
-        min_date += timedelta(days=3)  # at least three days away
+        # pick a random day within the week
+        min_date = datetime.today() - timedelta(days=5)  # at least two days away
+        max_date = datetime.today() + timedelta(days=2)
 
         min_time = int(min_date.replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
-        max_time = consts.today_stamp()
+        max_time = int(max_date.replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
 
         for d in tabs:
             time_played = randint(min_time, max_time)
@@ -120,7 +113,6 @@ def tabs_add(args=None) -> None:
 def tabs_shuffle() -> None:
     parser = argparse.ArgumentParser(prog="library tabs-shuffle", usage=usage.tabs_shuffle)
     parser.add_argument("-v", "--verbose", action="count", default=0)
-    parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
 
     parser.add_argument("database")
     args = parser.parse_intermixed_args()
@@ -161,13 +153,15 @@ def tabs_shuffle() -> None:
 
     for d in tabs:
         # pick a random day within the same week
-        date_last_played = datetime.fromtimestamp(d['time_last_played'], UTC)
+        date_last_played = datetime.fromtimestamp(d["time_last_played"], UTC)
         min_date = date_last_played - timedelta(days=7)
 
         min_time = int(min_date.replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
-        max_time = d['time_last_played']
+        max_time = d["time_last_played"]
         time_played = randint(min_time, max_time)
 
         with args.db.conn:
-            args.db.conn.execute('DELETE from history WHERE media_id = ? and time_played = ?', [d['id'], d['time_last_played']])
+            args.db.conn.execute(
+                "DELETE from history WHERE media_id = ? and time_played = ?", [d["id"], d["time_last_played"]]
+            )
         history.add(args, [d["path"]], time_played=time_played, mark_done=True)

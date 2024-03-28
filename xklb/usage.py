@@ -1799,3 +1799,15 @@ webupdate = """library web-update DATABASE
     Update saved open directories
 
 """
+
+add_row = """library add-row DATABASE [--table-name TABLE_NAME]
+
+    Add a row to sqlite
+
+        library add-row t.db --test_b 1 --test-a 2
+
+        ### media (1 rows)
+        |   test_b |   test_a |
+        |----------|----------|
+        |        1 |        2 |
+"""
