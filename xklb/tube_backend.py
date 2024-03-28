@@ -1,3 +1,4 @@
+from pprint import pprint
 import json, sys
 from copy import deepcopy
 from pathlib import Path
@@ -489,7 +490,6 @@ def download(args, m) -> None:
     ydl_errors_txt = "\n".join(ydl_errors)
 
     if args.verbose >= consts.LOG_DEBUG_SQL:
-        print([yt_meaningless_errors.match(line) for line in ydl_full_log])
         log.debug("\n".join(ydl_full_log))
 
     if not ydl_log["error"] and info and local_path and Path(local_path).exists():
@@ -518,6 +518,6 @@ def download(args, m) -> None:
         log.warning("[%s]: Prefix error. %s", webpath, ydl_errors_txt)
         raise SystemExit(28)
     else:
-        if ydl_errors_txt != "":
-            log.error("[%s]: Unknown error. %s", webpath, ydl_errors_txt)
+        log.error("[%s]: Unknown error. %s", webpath, ydl_errors_txt)
+        pprint([yt_meaningless_errors.match(line) for line in ydl_full_log])
         db_media.download_add(args, webpath, info, local_path, error=ydl_errors_txt)
