@@ -57,7 +57,7 @@ def rel_move(sources, dest, dry_run=False, relative_from=None):
         except OSError as e:
             if e.errno == 18:  # cross-device move
                 log.info("%s ->d %s", abspath, target_dir)
-                processes.cmd_interactive("mv", abspath, target_dir)
+                processes.cmd_interactive("mv", str(abspath), str(target_dir))
                 new_paths.append(new_path)
             elif e.errno == 39:  # target dir not empty
                 log.info("%s ->m %s", abspath, dest)

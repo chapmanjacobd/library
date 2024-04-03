@@ -1,7 +1,7 @@
-from pprint import pprint
 import json, sys
 from copy import deepcopy
 from pathlib import Path
+from pprint import pprint
 from types import ModuleType
 
 from xklb import db_media, db_playlists
