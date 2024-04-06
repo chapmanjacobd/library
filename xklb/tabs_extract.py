@@ -110,6 +110,13 @@ def tabs_add(args=None) -> None:
 
 def tabs_shuffle() -> None:
     parser = argparse.ArgumentParser(prog="library tabs-shuffle", usage=usage.tabs_shuffle)
+    parser.add_argument("--days", "-d", type=int, default=7)
+    parser.add_argument(
+        "--frequency",
+        "-f",
+        type=str.lower,
+        help=f"One of: {', '.join(consts.frequency)} (default: %(default)s)",
+    )
     parser.add_argument("-v", "--verbose", action="count", default=0)
 
     parser.add_argument("database")
@@ -145,6 +152,7 @@ def tabs_shuffle() -> None:
         FROM m
         WHERE time_last_played > 0
             AND frequency != 'daily'
+            {"AND frequency = '" + args.frequency + "'" if args.frequency else ''}
         """
         )
     )
@@ -152,7 +160,7 @@ def tabs_shuffle() -> None:
     for d in tabs:
         # pick a random day within the same week
         date_last_played = datetime.fromtimestamp(d["time_last_played"])
-        min_date = date_last_played - timedelta(days=7)
+        min_date = date_last_played - timedelta(days=args.days)
 
         min_time = int(min_date.replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
         max_time = d["time_last_played"]

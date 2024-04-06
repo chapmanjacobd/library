@@ -906,6 +906,14 @@ tabsadd = r"""library tabsadd [--frequency daily weekly (monthly) quarterly year
 """
 
 tabs_shuffle = """library tabs-shuffle DATABASE
+
+    Moves each tab to a random day-of-the-week by default
+
+    It may also be useful to shuffle monthly tabs, etc. You can accomplish this like so:
+
+        library tabs-shuffle tabs.db -d  31 -f monthly
+        library tabs-shuffle tabs.db -d  90 -f quarterly
+        library tabs-shuffle tabs.db -d 365 -f yearly
 """
 
 tubeadd = r"""library tubeadd [--safe] [--extra] [--subs] [--auto-subs] DATABASE URLS ...
