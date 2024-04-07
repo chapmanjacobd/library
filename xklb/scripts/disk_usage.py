@@ -22,6 +22,8 @@ def parse_args() -> argparse.Namespace:
         help="Only include files of specific sizes (uses the same syntax as fd-find)",
     )
     parser.add_argument("--depth", "-d", default=0, type=int, help="Depth of folders")
+    parser.add_argument("--folders-only", "-td", action="store_true", help="Only print folders")
+    parser.add_argument("--files-only", "-tf", action="store_true", help="Only print files")
     parser.add_argument("--include", "-s", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
     parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
 
@@ -157,6 +159,12 @@ def disk_usage():
 
     num_folders = sum(1 for d in args.subset if d.get("count"))
     num_files = sum(1 for d in args.subset if not d.get("count"))
+
+    if args.folders_only:
+        args.subset = [d for d in args.subset if d.get("count")]
+    elif args.files_only:
+        args.subset = [d for d in args.subset if not d.get("count")]
+
     media_printer.media_printer(
         args,
         args.subset,
