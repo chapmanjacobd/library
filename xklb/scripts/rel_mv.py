@@ -55,15 +55,15 @@ def rel_move(sources, dest, dry_run=False, relative_from=None):
             abspath.rename(new_path)
             new_paths.append(new_path)
         except OSError as e:
-            if e.errno == 18:  # cross-device move
-                log.info("%s ->d %s", abspath, target_dir)
-                processes.cmd_interactive("mv", str(abspath), str(target_dir))
-                new_paths.append(new_path)
+            if e.errno == 2:  # FileNotFoundError
+                log.error("%s not found", abspath)
             elif e.errno == 39:  # target dir not empty
                 log.info("%s ->m %s", abspath, dest)
                 new_paths.extend(rel_move(abspath.glob("*"), dest, dry_run=dry_run))
-            elif e.errno == 2:  # FileNotFoundError
-                log.error("%s not found", abspath)
+            elif e.errno == 18:  # cross-device move
+                log.info("%s ->d %s", abspath, target_dir)
+                processes.cmd_interactive("mv", str(abspath), str(target_dir))
+                new_paths.append(new_path)
             else:
                 raise
     return new_paths
