@@ -91,7 +91,7 @@ def tube_add(args=None) -> None:
             ],
             alter=True,
             ignore=True,
-            pk="path",
+            pk="id",
         )
     elif args.insert_only_playlists:
         args.db["playlists"].insert_all(

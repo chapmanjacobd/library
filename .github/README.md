@@ -95,7 +95,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.5.024)
+    xk media library subcommands (v2.5.025)
 
     Create database subcommands:
     ╭───────────────┬────────────────────────────────────────────────────╮
@@ -2706,6 +2706,14 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     $ library tabs-shuffle -h
     usage: library tabs-shuffle DATABASE
+
+    Moves each tab to a random day-of-the-week by default
+
+    It may also be useful to shuffle monthly tabs, etc. You can accomplish this like so:
+
+        library tabs-shuffle tabs.db -d  31 -f monthly
+        library tabs-shuffle tabs.db -d  90 -f quarterly
+        library tabs-shuffle tabs.db -d 365 -f yearly
 
 
 </details>

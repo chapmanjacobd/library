@@ -486,7 +486,9 @@ def download(args, m) -> None:
                 local_path = ydl.prepare_filename(info)
 
     ydl_full_log = ydl_log["error"] + ydl_log["warning"] + ydl_log["info"]
-    ydl_errors = [line for line in ydl_full_log if not yt_meaningless_errors.match(line)]
+    ydl_errors = [
+        line for log_entry in ydl_full_log for line in log_entry.splitlines() if not yt_meaningless_errors.match(line)
+    ]
     ydl_errors_txt = "\n".join(ydl_errors)
 
     if args.verbose >= consts.LOG_DEBUG_SQL:
