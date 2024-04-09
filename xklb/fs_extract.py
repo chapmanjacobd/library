@@ -8,7 +8,7 @@ from timeit import default_timer as timer
 
 from xklb import db_media, db_playlists, usage
 from xklb.media import av, books
-from xklb.scripts import playlists, process_audio, sample_hash
+from xklb.scripts import playlists, process_audio, process_image, process_video, sample_hash
 from xklb.utils import arg_utils, consts, db_utils, file_utils, iterables, nums, objects, path_utils
 from xklb.utils.consts import SC, DBType
 from xklb.utils.log_utils import log
@@ -73,6 +73,8 @@ def parse_args(action, usage):
     parser.add_argument("--scan-subtitles", "--scan-subtitle", action="store_true", help=argparse.SUPPRESS)
 
     parser.add_argument("--delete-unplayable", action="store_true")
+    parser.add_argument("--delete-no-video", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--delete-no-audio", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--hash", action="store_true")
     parser.add_argument("--process", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--move")
@@ -215,6 +217,24 @@ def extract_metadata(mp_args, path) -> dict[str, int] | None:
                 path,
                 split_longer_than=2160 if "audiobook" in path.lower() else None,
                 delete_broken=getattr(mp_args, "delete_unplayable", False),
+            )
+            if result is None:
+                return None
+            path = media["path"] = str(result)
+        elif objects.is_profile(mp_args, DBType.image) and Path(path).suffix not in [".avif", ".avifs"]:
+            result = process_image.process_path(
+                path,
+                delete_broken=getattr(mp_args, "delete_unplayable", False),
+            )
+            if result is None:
+                return None
+            path = media["path"] = str(result)
+        elif objects.is_profile(mp_args, DBType.video) and Path(path).suffix not in [".av1.mkv"]:
+            result = process_video.process_path(
+                path,
+                delete_broken=getattr(mp_args, "delete_unplayable", False),
+                delete_no_video=getattr(mp_args, "delete_no_video", False),
+                delete_no_audio=getattr(mp_args, "delete_no_audio", False),
             )
             if result is None:
                 return None

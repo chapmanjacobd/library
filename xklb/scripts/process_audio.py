@@ -2,7 +2,7 @@ import argparse, json, shlex, subprocess
 from pathlib import Path
 
 from xklb import usage
-from xklb.utils import nums, objects, web
+from xklb.utils import nums, objects, processes, web
 from xklb.utils.log_utils import log
 
 DEFAULT_MIN_SPLIT = "20s"
@@ -140,7 +140,7 @@ def process_path(
         print(cmd)
     else:
         try:
-            subprocess.check_call(cmd, shell=True)
+            processes.cmd(cmd, shell=True)
         except subprocess.CalledProcessError:
             log.exception("Could not transcode: %s", path)
             if delete_broken:

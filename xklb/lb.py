@@ -92,7 +92,9 @@ progs = {
     },
     "Misc subcommands": {
         "export_text": "Export HTML files from SQLite databases",
-        "process_audio": "Shrink audio by converting to Opus format",
+        "process_audio": "Shrink audio by converting to Opus format (.mka)",
+        "process_image": "Shrink images by converting to AV1 image format (.avif)",
+        "process_video": "Shrink videos by converting to AV1 video format (.av1.mkv)",
         "dedupe_czkawka": "Process czkawka diff output",
         "nouns": "Unstructured text -> compound nouns (stdin)",
     },
@@ -219,6 +221,8 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     add_parser(subparsers, "xklb.scripts.playback_control.playback_stop", ["stop"])
     add_parser(subparsers, "xklb.scripts.playlists.playlists", ["pl", "folders"])
     add_parser(subparsers, "xklb.scripts.process_audio.process_audio")
+    add_parser(subparsers, "xklb.scripts.process_image.process_image")
+    add_parser(subparsers, "xklb.scripts.process_video.process_video")
     add_parser(subparsers, "xklb.scripts.redownload.redownload", ["re-dl", "re-download"])
     add_parser(subparsers, "xklb.scripts.rel_mv.rel_mv", ["relmv", "mv-rel", "mvrel"])
     add_parser(subparsers, "xklb.scripts.sample_hash.sample_hash", ["hash", "hash-file"])

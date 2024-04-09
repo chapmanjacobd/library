@@ -95,7 +95,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.5.025)
+    xk media library subcommands (v2.5.026)
 
     Create database subcommands:
     ╭───────────────┬────────────────────────────────────────────────────╮
@@ -254,15 +254,19 @@ To stop playing press Ctrl+C in either the terminal or mpv
     ╰────────────────────┴────────────────────────────────────────╯
 
     Misc subcommands:
-    ╭────────────────┬─────────────────────────────────────────────╮
-    │ export-text    │ Export HTML files from SQLite databases     │
-    ├────────────────┼─────────────────────────────────────────────┤
-    │ process-audio  │ Shrink audio by converting to Opus format   │
-    ├────────────────┼─────────────────────────────────────────────┤
-    │ dedupe-czkawka │ Process czkawka diff output                 │
-    ├────────────────┼─────────────────────────────────────────────┤
-    │ nouns          │ Unstructured text -> compound nouns (stdin) │
-    ╰────────────────┴─────────────────────────────────────────────╯
+    ╭────────────────┬────────────────────────────────────────────────────────────╮
+    │ export-text    │ Export HTML files from SQLite databases                    │
+    ├────────────────┼────────────────────────────────────────────────────────────┤
+    │ process-audio  │ Shrink audio by converting to Opus format (.mka)           │
+    ├────────────────┼────────────────────────────────────────────────────────────┤
+    │ process-image  │ Shrink images by converting to AV1 image format (.avif)    │
+    ├────────────────┼────────────────────────────────────────────────────────────┤
+    │ process-video  │ Shrink videos by converting to AV1 video format (.av1.mkv) │
+    ├────────────────┼────────────────────────────────────────────────────────────┤
+    │ dedupe-czkawka │ Process czkawka diff output                                │
+    ├────────────────┼────────────────────────────────────────────────────────────┤
+    │ nouns          │ Unstructured text -> compound nouns (stdin)                │
+    ╰────────────────┴────────────────────────────────────────────────────────────╯
 
 
 </details>
@@ -2734,7 +2738,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 ###### process-audio
 
-<details><summary>Shrink audio by converting to Opus format</summary>
+<details><summary>Shrink audio by converting to Opus format (.mka)</summary>
 
     $ library process-audio -h
     usage: library process-audio PATH ... [--always-split] [--split-longer-than DURATION] [--min-split-segment SECONDS] [--dry-run]
@@ -2750,6 +2754,30 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     Use --split-longer-than to _only_ detect silence for files in excess of a specific duration
 
         library process-audio --split-longer-than 36mins audiobook.m4b audiobook2.mp3
+
+
+</details>
+
+###### process-image
+
+<details><summary>Shrink images by converting to AV1 image format (.avif)</summary>
+
+    $ library process-image -h
+    usage: library process-image PATH ...
+
+    Resize images to max 2400x2400px and format AVIF to save space
+
+
+</details>
+
+###### process-video
+
+<details><summary>Shrink videos by converting to AV1 video format (.av1.mkv)</summary>
+
+    $ library process-video -h
+    usage: library process-video PATH ...
+
+    Resize videos to max 1440x960px and AV1/Opus to save space
 
 
 </details>

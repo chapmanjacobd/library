@@ -1,4 +1,5 @@
 import argparse
+from datetime import datetime, timezone
 from pathlib import Path
 
 from xklb.utils import db_utils
@@ -24,3 +25,7 @@ def filter_query_param(r1, r2):
 
 def connect_db_args(db_path):
     return argparse.Namespace(db=db_utils.connect(argparse.Namespace(database=db_path, verbose=0)))
+
+
+def ignore_tz(s):
+    return datetime.fromtimestamp(s, timezone.utc).replace(tzinfo=None).timestamp()
