@@ -108,7 +108,7 @@ def test_divisor_gen():
 
 def test_col_naturaldate():
     assert printing.col_naturaldate([{"t": 0, "t1": 1}], "t") == [{"t": None, "t1": 1}]
-    assert printing.col_naturaldate([{"t": 0, "t1": 86399}], "t1") == [{"t": 0, "t1": "Jan 01 1970"}]
+    assert printing.col_naturaldate([{"t": 0, "t1": utils.ignore_tz(86399)}], "t1") == [{"t": 0, "t1": "Jan 01 1970"}]
 
 
 def test_col_naturalsize():

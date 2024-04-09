@@ -16,6 +16,7 @@ def create_args(test_name):
         verbose=2,
         profile={},
         extractor_config={},
+        download_archive=None,
     )
     args.db = connect(args)
     return args

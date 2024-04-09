@@ -1669,6 +1669,16 @@ process_audio = """library process-audio PATH ... [--always-split] [--split-long
         library process-audio --split-longer-than 36mins audiobook.m4b audiobook2.mp3
 """
 
+process_image = """library process-image PATH ...
+
+    Resize images to max 2400x2400px and format AVIF to save space
+"""
+
+process_video = """library process-video PATH ...
+
+    Resize videos to max 1440x960px and AV1/Opus to save space
+"""
+
 sample_hash = """library sample-hash [--threads 10] [--chunk-size BYTES] [--gap BYTES OR 0.0-1.0*FILESIZE] PATH ...
 
     Calculate hashes for large files by reading only small segments of each file
