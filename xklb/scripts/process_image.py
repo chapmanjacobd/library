@@ -25,11 +25,11 @@ def process_path(path, delete_broken=False):
         output_path = Path(path).with_suffix(".avif")
 
     path = Path(path)
-
     if path == output_path:
         output_path = Path(path).with_suffix(".resized.avif")
         if path == output_path:
-            raise RuntimeError("Input and output files must have different names")
+            log.error("Input and output files must have different names %s", path)
+            return path
 
     try:
         processes.cmd(

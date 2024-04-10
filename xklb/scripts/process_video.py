@@ -38,22 +38,26 @@ def process_path(
         output_path = Path(path).with_suffix(".av1.mkv")
 
     path = Path(path)
+    if path == output_path:
+        log.error("Input and output files must have different names %s", path)
+        return path
+
     ffprobe_cmd = ["ffprobe", "-v", "error", "-print_format", "json", "-show_format", "-show_streams", path]
     result = subprocess.run(ffprobe_cmd, capture_output=True)
     info = json.loads(result.stdout)
 
     if "streams" not in info:
-        print("No stream found:", path)
+        log.error("No media streams found: %s", path)
         return path
     video_stream = next((stream for stream in info["streams"] if stream["codec_type"] == "video"), None)
     audio_stream = next((stream for stream in info["streams"] if stream["codec_type"] == "audio"), None)
     if not video_stream:
-        print("No video stream found:", path)
+        log.warning("No video stream found: %s", path)
         if delete_no_video:
             path.unlink()
             return None
     if not audio_stream:
-        print("No audio stream found:", path)
+        log.warning("No audio stream found: %s", path)
         if delete_no_audio:
             path.unlink()
             return None
