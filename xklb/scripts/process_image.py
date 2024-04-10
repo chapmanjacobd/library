@@ -33,7 +33,7 @@ def process_path(path, delete_broken=False):
 
     try:
         processes.cmd(
-            ["magick", "mogrify", "-define", "preserve-timestamp=true", "-resize", "2400>", "-format", "avif", path]
+            "magick", "mogrify", "-define", "preserve-timestamp=true", "-resize", "2400>", "-format", "avif", str(path)
         )
     except subprocess.CalledProcessError:
         log.exception("Could not transcode: %s", path)

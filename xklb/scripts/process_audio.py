@@ -10,7 +10,7 @@ DEFAULT_MIN_SPLIT = "20s"
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library process-audio", usage=usage.process_audio)
-    parser.add_argument("--always-split", action="store_true")
+    parser.add_argument("--always-split", "--force-split", action="store_true")
     parser.add_argument("--split-longer-than")
     parser.add_argument("--min-split-segment", default=DEFAULT_MIN_SPLIT)
     parser.add_argument("--delete-video", action="store_true")
@@ -43,6 +43,10 @@ def process_path(
         output_path = Path(path).with_suffix(".mka")
 
     path = Path(path)
+    if path == output_path:
+        log.error("Input and output files must have different names %s", path)
+        return path
+
     ffprobe_cmd = ["ffprobe", "-v", "error", "-print_format", "json", "-show_format", "-show_streams", path]
     result = subprocess.run(ffprobe_cmd, capture_output=True)
     info = json.loads(result.stdout)
