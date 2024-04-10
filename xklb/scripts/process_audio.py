@@ -2,17 +2,16 @@ import argparse, json, shlex, subprocess
 from pathlib import Path
 
 from xklb import usage
-from xklb.utils import nums, objects, processes, web
+from xklb.utils import consts, nums, objects, processes, web
 from xklb.utils.log_utils import log
 
-DEFAULT_MIN_SPLIT = "20s"
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library process-audio", usage=usage.process_audio)
     parser.add_argument("--always-split", "--force-split", action="store_true")
     parser.add_argument("--split-longer-than")
-    parser.add_argument("--min-split-segment", default=DEFAULT_MIN_SPLIT)
+    parser.add_argument("--min-split-segment", default=consts.DEFAULT_MIN_SPLIT)
     parser.add_argument("--delete-video", action="store_true")
     parser.add_argument("--delete-unplayable", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
@@ -32,7 +31,7 @@ def process_path(
     path,
     always_split=False,
     split_longer_than=None,
-    min_split_segment=nums.human_to_seconds(DEFAULT_MIN_SPLIT),
+    min_split_segment=nums.human_to_seconds(consts.DEFAULT_MIN_SPLIT),
     dry_run=False,
     delete_broken=False,
     delete_video=False,
@@ -138,6 +137,8 @@ def process_path(
             final_splits = ",".join(final_splits)
             print(f"Splitting {path} at points: {final_splits}")
             ff_opts.extend(["-f segment", f"-segment_times {final_splits}"])
+        else:
+            is_split = False
 
     cmd = f'ffmpeg -nostdin -hide_banner -loglevel warning -y -i {shlex.quote(str(path))} -vn -c:a libopus {" ".join(ff_opts)} -filter:a loudnorm=i=-18:tp=-3:lra=17 {shlex.quote(str(output_path))}'
     if dry_run:
