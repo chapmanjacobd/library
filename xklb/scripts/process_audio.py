@@ -48,12 +48,12 @@ def process_path(
     info = json.loads(result.stdout)
 
     if "streams" not in info:
-        print("No stream found:", path)
+        log.warning("No media streams found: %s", path)
         return path
     audio_stream = next((stream for stream in info["streams"] if stream["codec_type"] == "audio"), None)
     video_stream = next((stream for stream in info["streams"] if stream["codec_type"] == "video"), None)
     if not audio_stream:
-        print("No audio stream found:", path)
+        log.warning("No audio stream found: %s", path)
         return path
 
     channels = audio_stream.get("channels") or 2
