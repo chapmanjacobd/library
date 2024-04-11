@@ -92,9 +92,8 @@ progs = {
     },
     "Misc subcommands": {
         "export_text": "Export HTML files from SQLite databases",
-        "process_audio": "Shrink audio by converting to Opus format (.mka)",
-        "process_image": "Shrink images by converting to AV1 image format (.avif)",
-        "process_video": "Shrink videos by converting to AV1 video format (.av1.mkv)",
+        "process_ffmpeg": "Shrink video/audio to AV1/Opus format (.mkv, .mka)",
+        "process_image": "Shrink images by resizing and AV1 image format (.avif)",
         "dedupe_czkawka": "Process czkawka diff output",
         "nouns": "Unstructured text -> compound nouns (stdin)",
     },
