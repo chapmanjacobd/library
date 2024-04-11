@@ -30,6 +30,11 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
+def get_days(frequency):
+    d = {"weekly": 7, "monthly": 30, "quarterly": 89, "yearly": 364, "decadally": 3640}
+    return d.get(frequency, 7)
+
+
 def get_new_paths(args) -> list[str]:
     if not args.no_sanitize:
         args.paths = [path_utils.sanitize_url(args, path) for path in args.paths]
@@ -83,7 +88,7 @@ def tabs_add(args=None) -> None:
         db_media.add(args, tab)
     if not args.allow_immediate and args.frequency != "daily":
         # prevent immediately opening -- pick a random day within the week
-        min_date = datetime.today() - timedelta(days=5)  # at least two days away
+        min_date = datetime.today() - timedelta(days=get_days(args.frequency) - 2)  # at least two days away
         max_date = datetime.today()
 
         min_time = int(min_date.replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
