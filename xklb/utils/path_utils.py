@@ -69,7 +69,7 @@ def clean_path(b, max_name_len=255, dot_space=False, case_insensitive=False, low
 
         parent = [case_insensitive_r(p) for p in parent]
 
-    fs_limit = max_name_len - len(ext.encode()) - len("...")
+    fs_limit = max_name_len - len(ext.encode()) - len("...") - 1
     if len(stem.encode()) > fs_limit:
         start = stem[: fs_limit // 2]
         end = stem[-fs_limit // 2 :]
