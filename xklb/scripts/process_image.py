@@ -2,6 +2,7 @@ import argparse, subprocess
 from pathlib import Path
 
 from xklb import usage
+from xklb.data import imagemagick_errors
 from xklb.utils import arggroups, objects, path_utils, processes, web
 from xklb.utils.log_utils import log
 
@@ -34,11 +35,31 @@ def process_path(path, delete_unplayable=False):
 
     try:
         processes.cmd(
-            "magick", "mogrify", "-define", "preserve-timestamp=true", "-resize", "2400>", "-format", "avif", str(path)
+            "magick",
+            "mogrify",
+            "-define",
+            "preserve-timestamp=true",
+            "-resize",
+            "2400>",
+            "-format",
+            "avif",
+            str(path),
+            ignore_regexps=[
+                imagemagick_errors.ignore_error,
+                imagemagick_errors.unsupported_error,
+                imagemagick_errors.image_error,
+            ],
         )
-    except subprocess.CalledProcessError:
-        log.exception("Could not transcode: %s", path)
-        if delete_unplayable:
+    except subprocess.CalledProcessError as e:
+        error_log = e.stderr.splitlines()
+        is_unsupported = any(imagemagick_errors.unsupported_error.match(l) for l in error_log)
+        is_image_error = any(imagemagick_errors.image_error.match(l) for l in error_log)
+        is_env_error = any(imagemagick_errors.environment_error.match(l) for l in error_log)
+
+        if is_unsupported:
+            output_path.unlink(missing_ok=True)  # Remove transcode attempt, if any
+            return path
+        elif delete_unplayable and not is_env_error and is_image_error:
             path.unlink()
             return None
         else:

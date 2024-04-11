@@ -2,10 +2,11 @@ import json, sys
 from copy import deepcopy
 from pathlib import Path
 from pprint import pprint
+from subprocess import CalledProcessError
 from types import ModuleType
 
 from xklb import db_media, db_playlists
-from xklb.data.dl_config import (
+from xklb.data.yt_dlp_errors import (
     prefix_unrecoverable_errors,
     yt_meaningless_errors,
     yt_recoverable_errors,
@@ -497,7 +498,7 @@ def download(args, m) -> None:
             info["corruption"] = int(
                 media_check.calculate_corruption(local_path, threads=1, full_scan_if_corrupt=True) * 100
             )
-        except RuntimeError:
+        except (RuntimeError, CalledProcessError):
             info["corruption"] = 50
         if info["corruption"] > 7:
             log.info("[%s]: Media check failed (will try again later)", webpath)

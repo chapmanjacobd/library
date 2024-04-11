@@ -85,7 +85,7 @@ def decode_full_scan(path, audio_scan=False, frames="frames", threads=5):
                     temp_output.name,
                 )
                 actual_duration = processes.FFProbe(temp_output.name).duration or 0
-        except RuntimeError:
+        except subprocess.CalledProcessError:
             actual_duration = 0
     else:
         ffprobe_cmd = [
