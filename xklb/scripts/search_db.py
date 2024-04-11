@@ -2,37 +2,23 @@ import argparse, json
 from pathlib import Path
 
 from xklb import usage
-from xklb.utils import consts, db_utils, objects
+from xklb.utils import arggroups, consts, db_utils, objects
 from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library search-db", usage=usage.search_db)
-    parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
-    parser.add_argument("--verbose", "-v", action="count", default=0)
-    parser.add_argument("--include", "-s", "--search", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
-    parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
-    parser.add_argument("--exact", action="store_true")
-    parser.add_argument("--flexible-search", "--or", "--flex", action="store_true")
-    parser.add_argument(
-        "--delete",
-        "--remove",
-        "--erase",
-        "--rm",
-        "-rm",
-        action="store_true",
-        help="Delete matching rows",
-    )
-    parser.add_argument("--soft-delete", action="store_true", help="Mark matching rows as deleted")
+    arggroups.sql_fs(parser)
+    arggroups.capability_delete(parser)
+    arggroups.debug(parser)
 
-    parser.add_argument("database")
+    arggroups.database(parser)
     parser.add_argument("table")
     parser.add_argument("search", nargs="+")
     args = parser.parse_intermixed_args()
 
     args.include += args.search
-    if args.db:
-        args.database = args.db
+
     Path(args.database).touch()
     args.db = db_utils.connect(args)
 
@@ -82,7 +68,7 @@ def search_db() -> None:
             )
             deleted_count += cursor.rowcount
         print(f"Deleted {deleted_count} rows")
-    elif args.soft_delete:
+    elif args.mark_deleted:
         modified_row_count = 0
         with args.db.conn:
             cursor = args.db.conn.execute(

@@ -3,22 +3,20 @@ from pathlib import Path
 
 from xklb import history, usage
 from xklb.scripts.dedupe_db import dedupe_rows
-from xklb.utils import db_utils, objects
+from xklb.utils import arggroups, db_utils, objects
 from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library copy-play-counts", usage=usage.copy_play_counts)
-    parser.add_argument("database")
-    parser.add_argument("source_dbs", nargs="+")
     parser.add_argument("--source-prefix", default="")
     parser.add_argument("--target-prefix", default="")
-    parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
-    parser.add_argument("--verbose", "-v", action="count", default=0)
+    arggroups.debug(parser)
+
+    arggroups.database(parser)
+    parser.add_argument("source_dbs", nargs="+")
     args = parser.parse_intermixed_args()
 
-    if args.db:
-        args.database = args.db
     Path(args.database).touch()
     args.db = db_utils.connect(args)
     log.info(objects.dict_filter_bool(args.__dict__))

@@ -84,6 +84,12 @@ def requests_session(args=argparse.Namespace()):
         session.mount("http", _get_retry_adapter(http_max_retries))  # also includes https
         session.request = functools.partial(session.request, headers=headers, timeout=(4, 45))  # type: ignore
 
+        if getattr(args, "allow_insecure", False):
+            from urllib3.exceptions import InsecureRequestWarning
+
+            requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)  # type: ignore
+            session.verify = False
+
         if cookie_file or cookies_from_browser:
             from yt_dlp.cookies import load_cookies
 

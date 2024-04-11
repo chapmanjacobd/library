@@ -3,15 +3,15 @@ from os.path import commonprefix
 from pathlib import Path
 
 from xklb import usage
-from xklb.utils import arg_utils, file_utils, objects, path_utils, processes
+from xklb.utils import arggroups, argparse_utils, file_utils, objects, path_utils, processes
 from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library relmv", usage=usage.relmv)
-    parser.add_argument("--verbose", "-v", action="count", default=0)
-    parser.add_argument("--dry-run", action="store_true")
-    parser.add_argument("--ext", "-e", action=arg_utils.ArgparseList)
+    arggroups.capability_simulate(parser)
+    parser.add_argument("--ext", "-e", default=[], action=argparse_utils.ArgparseList)
+    arggroups.debug(parser)
 
     parser.add_argument("sources", nargs="+", help="one or more source files or directories to move")
     parser.add_argument("dest", help="destination directory")
@@ -21,7 +21,7 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def rel_move(sources, dest, dry_run=False, relative_from=None):
+def rel_move(sources, dest, simulate=False, relative_from=None):
     if relative_from:
         relative_from = Path(relative_from).expanduser().resolve()
 
@@ -44,7 +44,7 @@ def rel_move(sources, dest, dry_run=False, relative_from=None):
         target_dir = (dest / relpath).parent
         target_dir = path_utils.dedupe_path_parts(target_dir)
 
-        if dry_run:
+        if simulate:
             log.warning("mv %s %s", shlex.quote(str(abspath)), shlex.quote(str(target_dir)))
             continue
 
@@ -59,7 +59,7 @@ def rel_move(sources, dest, dry_run=False, relative_from=None):
                 log.error("%s not found", abspath)
             elif e.errno == 39:  # target dir not empty
                 log.info("%s ->m %s", abspath, dest)
-                new_paths.extend(rel_move(abspath.glob("*"), dest, dry_run=dry_run))
+                new_paths.extend(rel_move(abspath.glob("*"), dest, simulate=simulate))
             elif e.errno == 18:  # cross-device move
                 log.info("%s ->d %s", abspath, target_dir)
                 processes.cmd_interactive("mv", str(abspath), str(target_dir))
@@ -76,7 +76,7 @@ def rel_mv() -> None:
 
     if args.ext:
         args.sources = [p for source in args.sources for p in file_utils.rglob(source, args.ext)[0]]
-    rel_move(args.sources, dest, dry_run=args.dry_run)
+    rel_move(args.sources, dest, simulate=args.simulate)
 
 
 if __name__ == "__main__":

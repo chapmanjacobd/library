@@ -5,7 +5,7 @@ from pathlib import Path
 from xklb import usage
 from xklb.data import wordbank
 from xklb.scripts import eda, mcda
-from xklb.utils import consts, db_utils, file_utils, iterables, nums, objects, printing, strings
+from xklb.utils import arggroups, consts, db_utils, file_utils, iterables, nums, objects, printing, strings
 from xklb.utils.consts import DBType
 from xklb.utils.log_utils import Timer, log
 
@@ -55,17 +55,9 @@ def parse_args() -> argparse.Namespace:
     )
     parser.set_defaults(profile="lines")
 
-    parser.add_argument("--stop-words", "--ignore-words", "--ignore", "-i", nargs="+", action="append")
-
-    parser.add_argument("--clusters", "--n-clusters", "-c", type=int, help="Number of KMeans clusters")
-    parser.add_argument("--near-duplicates", "--similar-only", action="store_true", help="Re-group by difflib ratio")
-    parser.add_argument(
-        "--unique-only", action="store_true", help="Include only 'unique' lines (not including originals or duplicates)"
-    )
-    parser.add_argument("--exclude-unique", "--no-unique", action="store_true", help="Exclude 'unique' lines")
-    parser.add_argument("--print-groups", "--groups", "-g", action="store_true", help="Print groups")
-    parser.add_argument("--move-groups", "-M", action="store_true", help="Move groups into subfolders")
-    parser.add_argument("--verbose", "-v", action="count", default=0)
+    arggroups.operation_cluster(parser)
+    parser.set_defaults(cluster_sort=True)
+    arggroups.debug(parser)
 
     parser.add_argument("input_path", nargs="?", type=argparse.FileType("r"), default=sys.stdin)
     parser.add_argument("output_path", nargs="?")

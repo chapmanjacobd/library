@@ -2,7 +2,7 @@ import argparse
 from pathlib import Path
 
 from xklb import usage
-from xklb.utils import arg_utils, file_utils, iterables, objects, pd_utils, sql_utils
+from xklb.utils import arggroups, argparse_utils, file_utils, iterables, objects, pd_utils, sql_utils
 from xklb.utils.consts import DEFAULT_FILE_ROWS_READ_LIMIT
 from xklb.utils.log_utils import log
 from xklb.utils.printing import print_df, print_series
@@ -10,19 +10,14 @@ from xklb.utils.printing import print_df, print_series
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Perform MCDA on one or more files", usage=usage.mcda)
-    parser.add_argument("--mimetype", "--filetype")
-    parser.add_argument("--encoding")
-    parser.add_argument("--table-name", "--table", "-t")
-    parser.add_argument("--table-index", type=int)
-    parser.add_argument("--start-row", "--skiprows", type=int, default=None)
-    parser.add_argument("--end-row", "--nrows", "--limit", "-L", default=str(DEFAULT_FILE_ROWS_READ_LIMIT))
+    arggroups.table_like(parser)
     parser.add_argument(
         "--minimize-columns",
         "--minimize-cols",
         "--minimize",
         "--min",
         nargs="*",
-        action=arg_utils.ArgparseList,
+        action=argparse_utils.ArgparseList,
         default=[],
     )
     parser.add_argument(
@@ -30,7 +25,7 @@ def parse_args():
         "--exclude-columns",
         "--ignore-columns",
         nargs="*",
-        action=arg_utils.ArgparseList,
+        action=argparse_utils.ArgparseList,
         default=[],
     )
     parser.add_argument(
@@ -39,7 +34,7 @@ def parse_args():
         "--columns",
         "--cols",
         nargs="*",
-        action=arg_utils.ArgparseList,
+        action=argparse_utils.ArgparseList,
         default=[],
     )
     parser.add_argument("--words-nums-map")
@@ -47,7 +42,7 @@ def parse_args():
     parser.add_argument("--nodata", type=int, default=0)
     parser.add_argument("--clean", action="store_true")
     parser.add_argument("--sort", "-u", default="random()")
-    parser.add_argument("--verbose", "-v", action="count", default=0)
+    arggroups.debug(parser)
 
     parser.add_argument(
         "paths",

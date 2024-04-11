@@ -2,7 +2,7 @@ import argparse, asyncio, queue, sqlite3, threading
 from pathlib import Path
 
 from xklb import usage
-from xklb.utils import db_utils, objects, web
+from xklb.utils import arggroups, db_utils, objects, web
 from xklb.utils.log_utils import log
 
 """
@@ -36,15 +36,11 @@ SOFTWARE.
 def parse_args(prog, usage) -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog, usage)
     parser.add_argument("--oldest", action="store_true")
-
-    parser.add_argument("--verbose", "-v", action="count", default=0)
-    parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
-
-    parser.add_argument("database")
+    arggroups.requests(parser)
+    arggroups.debug(parser)
+    arggroups.database(parser)
     args = parser.parse_args()
 
-    if args.db:
-        args.database = args.db
     Path(args.database).touch()
     args.db = db_utils.connect(args)
     log.info(objects.dict_filter_bool(args.__dict__))

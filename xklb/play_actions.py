@@ -4,7 +4,7 @@ from pathlib import Path
 from xklb import db_media, history, tube_backend, usage
 from xklb.media import media_player, media_printer
 from xklb.scripts import big_dirs, mcda
-from xklb.utils import consts, db_utils, devices, file_utils, iterables, nums, objects, processes, sql_utils
+from xklb.utils import arggroups, consts, db_utils, devices, file_utils, iterables, nums, objects, processes, sql_utils
 from xklb.utils.arg_utils import parse_args_limit, parse_args_sort
 from xklb.utils.consts import SC
 from xklb.utils.log_utils import Timer, log
@@ -15,32 +15,18 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     DEFAULT_PLAYER_ARGS_NO_SUB = ["--speed=1.46"]
 
     parser = argparse.ArgumentParser(prog="library " + action, usage=usage.play(action))
+    arggroups.sql_fs(parser)
+    arggroups.sql_media(parser)
+    arggroups.playback(parser)
+    arggroups.multiple_playback(parser)
+    arggroups.capability_clobber(parser)
+    arggroups.post_actions(parser)
 
-    parser.add_argument("--sort", "-u", nargs="+", help=argparse.SUPPRESS)
-    parser.add_argument("--random", "-r", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--big-dirs", "--bigdirs", "-B", action="count", default=0, help=argparse.SUPPRESS)
-    parser.add_argument("--related", "-R", action="count", default=0, help=argparse.SUPPRESS)
-    parser.add_argument("--cluster-sort", "--cluster", "-C", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--clusters", "--n-clusters", type=int, help="Number of KMeans clusters")
+    arggroups.operation_group_folders(parser)
+    arggroups.operation_cluster(parser)
+    arggroups.operation_related(parser)
     parser.add_argument("--play-in-order", "-O", nargs="?", const="natural_ps", help=argparse.SUPPRESS)
-
-    parser.add_argument("--where", "-w", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
-    parser.add_argument("--ext", "-e", nargs="+", action="extend", default=[])
-    parser.add_argument("--include", "-s", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
-    parser.add_argument("--flexible-search", "--or", "--flex", action="store_true")
-    parser.add_argument("--exclude", "-E", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
-    parser.add_argument("--no-fts", action="store_true")
-
-    parser.add_argument("--created-within", help=argparse.SUPPRESS)
-    parser.add_argument("--created-before", help=argparse.SUPPRESS)
-    parser.add_argument("--changed-within", "--modified-within", help=argparse.SUPPRESS)
-    parser.add_argument("--changed-before", "--modified-before", help=argparse.SUPPRESS)
-    parser.add_argument("--played-within", help=argparse.SUPPRESS)
-    parser.add_argument("--played-before", help=argparse.SUPPRESS)
-    parser.add_argument("--deleted-within", help=argparse.SUPPRESS)
-    parser.add_argument("--deleted-before", help=argparse.SUPPRESS)
-    parser.add_argument("--downloaded-within", help=argparse.SUPPRESS)
-    parser.add_argument("--downloaded-before", help=argparse.SUPPRESS)
 
     parser.add_argument(
         "--chromecast-device",
@@ -51,35 +37,10 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     )
     parser.add_argument("--chromecast", "--cast", "-c", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--cast-with-local", "-wl", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--loop", action="store_true", help=argparse.SUPPRESS)
-
     parser.add_argument("--interdimensional-cable", "-4dtv", type=int, help=argparse.SUPPRESS)
-    parser.add_argument(
-        "--multiple-playback",
-        "-m",
-        default=False,
-        nargs="?",
-        const=consts.DEFAULT_MULTIPLE_PLAYBACK,
-        type=int,
-        help=argparse.SUPPRESS,
-    )
-    parser.add_argument("--screen-name", help=argparse.SUPPRESS)
-    parser.add_argument("--crop", "--zoom", "--stretch", "--fit", "--fill", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--hstack", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--vstack", action="store_true", help=argparse.SUPPRESS)
 
-    parser.add_argument("--portrait", "-portrait", action="store_true", help=argparse.SUPPRESS)
-
-    parser.add_argument("--duration", "-d", action="append", help=argparse.SUPPRESS)
-    parser.add_argument("--size", "-S", action="append", help=argparse.SUPPRESS)
-    parser.add_argument("--duration-from-size", action="append", help=argparse.SUPPRESS)
-
-    parser.add_argument("--print", "-p", default="", const="p", nargs="?", help=argparse.SUPPRESS)
-    parser.add_argument("--cols", "-cols", "-col", nargs="*", help="Include a column when printing")
     parser.add_argument("--moved", nargs=2, help=argparse.SUPPRESS)
 
-    parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", help=argparse.SUPPRESS)
-    parser.add_argument("--skip", "--offset", help=argparse.SUPPRESS)
     parser.add_argument(
         "--partial",
         "-P",
@@ -91,82 +52,32 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
         help=argparse.SUPPRESS,
     )
 
-    parser.add_argument("--pause", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--start", "-vs", help=argparse.SUPPRESS)
-    parser.add_argument("--end", "-ve", help=argparse.SUPPRESS)
-    parser.add_argument("--mpv-socket", help=argparse.SUPPRESS)
     parser.add_argument("--watch-later-directory", default=consts.DEFAULT_MPV_WATCH_LATER, help=argparse.SUPPRESS)
     parser.add_argument("--subtitle-mix", default=consts.DEFAULT_SUBTITLE_MIX, help=argparse.SUPPRESS)
 
-    parser.add_argument("--no-video", "-vn", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--no-audio", "-an", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument(
-        "--no-subtitles",
-        "--no-subtitle",
-        "--no-subs",
-        "--nosubs",
-        "-sn",
-        action="store_true",
-        help=argparse.SUPPRESS,
-    )
-    parser.add_argument("--subtitles", "--subtitle", "--subs", "-sy", action="store_true", help=argparse.SUPPRESS)
-
-    parser.add_argument("--volume", type=float)
-    parser.add_argument("--auto-seek", action="store_true")
-    parser.add_argument("--override-player", "--player", "-player", help=argparse.SUPPRESS)
     parser.add_argument("--player-args-sub", "-player-sub", nargs="*", default=DEFAULT_PLAYER_ARGS_SUB)
     parser.add_argument("--player-args-no-sub", "-player-no-sub", nargs="*", default=DEFAULT_PLAYER_ARGS_NO_SUB)
     parser.add_argument("--transcode", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--transcode-audio", action="store_true", help=argparse.SUPPRESS)
 
-    parser.add_argument("--post-action", "--action", "-k", default="keep", help=argparse.SUPPRESS)
-    parser.add_argument("--exit-code-confirm", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--keep-dir", "--keepdir", default="keep", help=argparse.SUPPRESS)
-    parser.add_argument("--move-replace", action="store_true", help=argparse.SUPPRESS)
     for i in range(0, 255):
         parser.add_argument(f"--cmd{i}", help=argparse.SUPPRESS)
-    parser.add_argument("--gui", action="store_true")
     parser.add_argument("--shallow-organize", default="/mnt/d/", help=argparse.SUPPRESS)
 
-    parser.add_argument("--online-media-only", "--online", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--local-media-only", "--local", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--safe", "-safe", action="store_true", help="Skip generic URLs")
 
     parser.add_argument("--fetch-siblings")
     parser.add_argument("--sibling", "--episode", "--episodes", "--episodic", action="store_true")
     parser.add_argument("--solo", action="store_true")
 
-    parser.add_argument("--sort-groups-by", "--sort-groups")
-    parser.add_argument("--print-groups", "--groups", "-g", action="store_true", help="Print groups")
-    parser.add_argument("--depth", "-D", default=0, type=int, help="Depth of folders")
-    parser.add_argument("--lower", type=int, help="Number of files per folder lower limit")
-    parser.add_argument("--upper", type=int, help="Number of files per folder upper limit")
-    parser.add_argument("--folder-size", "--foldersize", "-Z", action="append", help=argparse.SUPPRESS)
-
     parser.add_argument("--prefetch", type=int, default=3)
     parser.add_argument("--prefix", default="", help=argparse.SUPPRESS)
-    parser.add_argument(
-        "--folder",
-        action="store_true",
-        help="Experimental escape hatch to open folder; breaks a lot of features like post-actions",
-    )
-    parser.add_argument(
-        "--folder-glob",
-        "--folderglob",
-        type=int,
-        default=False,
-        const=10,
-        nargs="?",
-        help="Experimental escape hatch to open a folder glob limited to x number of files; breaks a lot of features like post-actions",
-    )
 
     parser.add_argument("--timeout", "-T", help="Quit after x minutes")
-    parser.add_argument("--db", "-db", help="Override the positional argument database location")
-    parser.add_argument("--ignore-errors", "--ignoreerrors", "-i", action="store_true")
     parser.add_argument("--delete-unplayable", action="store_true")
-    parser.add_argument("--verbose", "-v", action="count", default=0)
+    arggroups.debug(parser)
 
-    parser.add_argument("database")
+    arggroups.database(parser)
     parser.add_argument("search", nargs="*")
     args = parser.parse_intermixed_args()
     args.action = action
@@ -179,8 +90,6 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
         elif os.sep in args.include[0]:
             args.include = [file_utils.resolve_absolute_path(args.include[0])]
 
-    if args.db:
-        args.database = args.db
     args.db = db_utils.connect(args)
 
     if args.mpv_socket is None:
@@ -360,7 +269,7 @@ def construct_query(args) -> tuple[str, dict]:
 
     select_sql = "\n        , ".join(args.select)
     limit_sql = "LIMIT " + str(args.limit) if args.limit else ""
-    offset_sql = f"OFFSET {args.skip}" if args.skip and args.limit else ""
+    offset_sql = f"OFFSET {args.offset}" if args.offset and args.limit else ""
     query = f"""WITH m as (
             SELECT
                 m.id
@@ -465,8 +374,8 @@ def history_sort(args, media) -> list[dict]:
         reverse=reverse_chronology,
     )
 
-    if args.skip:
-        media = media[int(args.skip) :]
+    if args.offset:
+        media = media[int(args.offset) :]
 
     return media
 

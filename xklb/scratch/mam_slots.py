@@ -1,18 +1,18 @@
 import argparse
 
-from xklb.utils import objects, web
+from xklb.utils import arggroups, objects, web
 from xklb.utils.log_utils import log
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--verbose", "-v", action="count", default=0)
     parser.add_argument("--base-url", default="https://www.myanonamouse.net")
     parser.add_argument("--max", type=int, default=150)
 
     parser.add_argument("--cookie", required=True)
-    parser.add_argument("--cookies", help="path to a Netscape formatted cookies file")
-    parser.add_argument("--cookies-from-browser", metavar="BROWSER[+KEYRING][:PROFILE][::CONTAINER]")
+    arggroups.requests(parser)
+    arggroups.debug(parser)
+
     args = parser.parse_args()
 
     log.info(objects.dict_filter_bool(args.__dict__))

@@ -407,9 +407,7 @@ def download(args, m) -> None:
         ydl_opts[
             "format"
         ] = "bestaudio[ext=opus]/bestaudio[ext=mka]/bestaudio[ext=webm]/bestaudio[ext=ogg]/bestaudio[ext=oga]/bestaudio/best"
-        if args.ext is None:
-            args.ext = "opus"
-        ydl_opts["postprocessors"].append({"key": "FFmpegExtractAudio", "preferredcodec": args.ext})
+        ydl_opts["postprocessors"].append({"key": "FFmpegExtractAudio", "preferredcodec": "opus"})
 
     def blocklist_check(info, *pargs, incomplete):
         if getattr(args, "blocklist_rules", False):

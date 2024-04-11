@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any
 import prawcore
 
 from xklb import db_media, db_playlists, usage
-from xklb.utils import consts, db_utils, iterables, objects
+from xklb.utils import arggroups, consts, db_utils, iterables, objects
 from xklb.utils.log_utils import log
 
 PRAW_SETUP_INSTRUCTIONS = r"""
@@ -54,10 +54,8 @@ def parse_args(action, usage) -> argparse.Namespace:
     parser.add_argument("--subreddits", action="store_true")
     parser.add_argument("--redditors", action="store_true")
 
-    parser.add_argument("--verbose", "-v", action="count", default=0)
-    parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
-
-    parser.add_argument("database")
+    arggroups.debug(parser)
+    arggroups.database(parser)
     if action == "redditadd":
         parser.add_argument("paths", nargs="+")
     args = parser.parse_intermixed_args()
@@ -65,8 +63,6 @@ def parse_args(action, usage) -> argparse.Namespace:
     if action == "redditadd":
         args.paths = iterables.conform(args.paths)
 
-    if args.db:
-        args.database = args.db
     Path(args.database).touch()
     args.db = db_utils.connect(args)
 

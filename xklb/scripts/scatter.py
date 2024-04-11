@@ -6,7 +6,7 @@ from humanize import naturalsize
 from tabulate import tabulate
 
 from xklb import usage
-from xklb.utils import consts, db_utils, devices, file_utils, iterables, nums, objects, printing
+from xklb.utils import arggroups, consts, db_utils, devices, file_utils, iterables, nums, objects, printing
 from xklb.utils.log_utils import log
 
 
@@ -21,10 +21,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--policy", "-p")
     parser.add_argument("--group", "-g")
     parser.add_argument("--sort", "-s", default="random()", help="Sort files before moving")
-    parser.add_argument("--verbose", "-v", action="count", default=0)
     parser.add_argument("--targets", "--srcmounts", "-m", help="Colon separated destinations eg. /mnt/d1:/mnt/d2")
+    arggroups.debug(parser)
 
-    parser.add_argument("database")
+    arggroups.database(parser)
     parser.add_argument(
         "relative_paths",
         nargs="+",

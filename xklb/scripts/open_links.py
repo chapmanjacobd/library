@@ -4,7 +4,7 @@ from time import sleep
 
 from xklb import db_media, history, usage
 from xklb.media import media_printer
-from xklb.utils import arg_utils, consts, db_utils, iterables, objects, processes, web
+from xklb.utils import arg_utils, arggroups, consts, db_utils, iterables, objects, processes, web
 from xklb.utils.log_utils import log
 
 
@@ -14,6 +14,8 @@ def parse_args() -> argparse.Namespace:
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         usage=usage.open_links,
     )
+    arggroups.sql_fs(parser)
+
     parser.add_argument("--path", action="store_true")
     parser.add_argument("--title", "-S", action="store_true")
     parser.add_argument("--title-prefix", "--prefix", nargs="+", action="extend")
@@ -21,36 +23,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--online-media-only", "--online", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--local-media-only", "--local", action="store_true", help=argparse.SUPPRESS)
 
-    parser.add_argument("--sort", "-u", nargs="+")
-    parser.add_argument("--where", "-w", nargs="+", action="extend", default=[])
-    parser.add_argument("--include", "-s", "--search", nargs="+", action="extend", default=[])
-    parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[])
-    parser.add_argument("--exact", action="store_true")
-    parser.add_argument("--print", "-p", default="", const="p", nargs="?")
     parser.add_argument("--category", "-c")
-    parser.add_argument("--cols", "-cols", "-col", nargs="*", help="Include a column when printing")
-    parser.add_argument(
-        "--delete",
-        "--remove",
-        "--erase",
-        "--rm",
-        "-rm",
-        action="store_true",
-        help="Delete matching rows",
-    )
-    parser.add_argument("--limit", "-L", "-l", "-n")
-    parser.add_argument("--skip")
+    arggroups.capability_delete(parser)
 
-    parser.add_argument("--cluster-sort", "--cluster", "-C", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--print-groups", "--groups", "-g", action="store_true", help="Print groups")
-    parser.add_argument("--clusters", "--n-clusters", type=int, help="Number of KMeans clusters")
-    parser.add_argument("--related", "-R", action="count", default=0, help=argparse.SUPPRESS)
+    arggroups.operation_cluster(parser)
+    arggroups.operation_related(parser)
 
     parser.add_argument("--browser")
-    parser.add_argument("--db", "-db")
-    parser.add_argument("--verbose", "-v", action="count", default=0)
+    arggroups.debug(parser)
 
-    parser.add_argument("database")
+    arggroups.database(parser)
     parser.add_argument("search", nargs="*")
     args = parser.parse_intermixed_args()
     args.action = consts.SC.open_links
@@ -69,9 +51,6 @@ def parse_args() -> argparse.Namespace:
     if args.browser:
         args.browser = shlex.split(args.browser)
 
-    if args.db:
-        args.database = args.db
-
     if args.sort:
         args.sort = [arg_utils.override_sort(s) for s in args.sort]
         args.sort = " ".join(args.sort)
@@ -82,8 +61,6 @@ def parse_args() -> argparse.Namespace:
     if args.delete:
         args.print += "d"
 
-    if args.db:
-        args.database = args.db
     args.db = db_utils.connect(args)
     log.info(objects.dict_filter_bool(args.__dict__))
 
@@ -133,7 +110,7 @@ def construct_links_query(args) -> tuple[str, dict]:
             args.filter_bindings[f"category"] = "%" + args.category.replace(" ", "%").replace("%%", " ") + "%"
 
     limit_sql = "LIMIT " + str(args.limit) if args.limit and not args.cluster_sort else ""
-    offset_sql = f"OFFSET {args.skip}" if args.skip and limit_sql else ""
+    offset_sql = f"OFFSET {args.offset}" if args.offset and limit_sql else ""
 
     args.select = ["path"]
     if args.cols:

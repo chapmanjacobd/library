@@ -2,16 +2,16 @@ import argparse
 from pathlib import Path
 
 from xklb import history, usage
-from xklb.utils import consts, db_utils, mpv_utils, nums, objects
+from xklb.utils import arggroups, consts, db_utils, mpv_utils, nums, objects
 from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library mpv-watchlater", usage=usage.mpv_watchlater)
     parser.add_argument("--watch-later-directory", default=consts.DEFAULT_MPV_WATCH_LATER, help=argparse.SUPPRESS)
-    parser.add_argument("--verbose", "-v", action="count", default=0)
+    arggroups.debug(parser)
 
-    parser.add_argument("database")
+    arggroups.database(parser)
     args = parser.parse_args()
 
     args.db = db_utils.connect(args)

@@ -2,16 +2,15 @@ import argparse, json, os
 from pathlib import Path
 
 from xklb import usage
-from xklb.utils import arg_utils, devices, file_utils, objects, printing
+from xklb.utils import arg_utils, arggroups, devices, file_utils, objects, printing
 from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library merge-folders", usage=usage.merge_folders)
-    parser.add_argument("--replace", "--delete", action="store_true")
-    parser.add_argument("--skip", "--no-replace", "--no-clobber", action="store_true")
-    parser.add_argument("--simulate", "--dry-run", action="store_true")
-    parser.add_argument("--verbose", "-v", action="count", default=0)
+    arggroups.capability_clobber(parser)
+    arggroups.capability_simulate(parser)
+    arggroups.debug(parser)
 
     parser.add_argument("sources", nargs="+")
     parser.add_argument("destination")
@@ -73,10 +72,10 @@ def get_clobber(args):
     choice = None
     if args.replace:
         choice = "replace"
-    elif args.skip:
-        choice = "skip"
+    elif args.no_replace:
+        choice = "no-replace"
     else:
-        choice = devices.prompt(choices=["replace", "skip", "simulate-replace", "quit"])
+        choice = devices.prompt(choices=["replace", "no-replace", "simulate-replace", "quit"])
 
     if choice == "quit":
         raise SystemExit(130)
@@ -84,7 +83,7 @@ def get_clobber(args):
         args.simulate = True
         choice = "replace"
 
-    assert choice in ["replace", "skip"]
+    assert choice in ["replace", "no-replace"]
     return choice == "replace"
 
 

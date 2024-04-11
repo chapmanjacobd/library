@@ -4,7 +4,7 @@ from pathlib import Path
 
 from xklb import usage
 from xklb.scripts import sample_hash
-from xklb.utils import nums, objects
+from xklb.utils import arggroups, nums, objects
 from xklb.utils.log_utils import log
 
 
@@ -78,20 +78,10 @@ def sample_cmp(*paths, threads=1, gap=0.1, chunk_size=None, ignore_holes=False, 
 
 def sample_compare() -> None:
     parser = argparse.ArgumentParser(prog="library sample-compare", usage=usage.sample_compare)
-    parser.add_argument("--threads", default=1, const=10, nargs="?")
-    parser.add_argument(
-        "--chunk-size",
-        type=int,
-        help="Chunk size in bytes (default is 1%%~0.2%% dependent on file size). If set, recommended to use at least 1048576 (for performance)",
-    )
-    parser.add_argument(
-        "--gap",
-        default="0.1",
-        help="Width between chunks to skip (default 10%%). Values greater than 1 are treated as number of bytes",
-    )
+    arggroups.sample_hash_bytes(parser)
     parser.add_argument("--ignore-holes", "--ignore-sparse", action="store_true")
     parser.add_argument("--skip-full-hash", action="store_true")
-    parser.add_argument("--verbose", "-v", action="count", default=0)
+    arggroups.debug(parser)
 
     parser.add_argument("paths", nargs="+")
     args = parser.parse_args()

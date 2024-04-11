@@ -2,8 +2,6 @@ import json, types
 from contextlib import contextmanager
 from functools import wraps
 
-from xklb.utils.log_utils import log
-
 
 class NoneSpace(types.SimpleNamespace):
     def __getattr__(self, name):
@@ -85,8 +83,6 @@ def lower_keys(input_dict):
     output_dict = {}
     for key, value in input_dict.items():
         lowercase_key = key.lower().strip()
-        if lowercase_key in output_dict:
-            log.info("Overriding key %s: %s -> %s", lowercase_key, output_dict[lowercase_key], value)
         output_dict[lowercase_key] = value
     return output_dict
 

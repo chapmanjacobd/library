@@ -2,13 +2,12 @@ import argparse, json, time
 from pathlib import Path
 from sqlite3 import IntegrityError
 
-from xklb.utils import db_utils, nums, objects, web
+from xklb.utils import arggroups, db_utils, nums, objects, web
 from xklb.utils.log_utils import log
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--verbose", "-v", action="count", default=0)
     parser.add_argument("--base-url", default="https://www.myanonamouse.net")
     parser.add_argument("--no-title", action="store_false")
     parser.add_argument("--no-author", action="store_false")
@@ -26,10 +25,10 @@ def parse_args():
     parser.add_argument("--search-in", default="torrents")
 
     parser.add_argument("--cookie", required=True)
-    parser.add_argument("--cookies", help="path to a Netscape formatted cookies file")
-    parser.add_argument("--cookies-from-browser", metavar="BROWSER[+KEYRING][:PROFILE][::CONTAINER]")
+    arggroups.requests(parser)
+    arggroups.debug(parser)
 
-    parser.add_argument("database")
+    arggroups.database(parser)
     parser.add_argument("search_text", nargs="+")
     args = parser.parse_intermixed_args()
 

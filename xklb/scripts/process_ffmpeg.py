@@ -2,27 +2,17 @@ import argparse, json, shlex, subprocess
 from pathlib import Path
 
 from xklb import usage
-from xklb.utils import consts, nums, objects, processes, web
+from xklb.utils import arggroups, nums, objects, path_utils, processes, web
+from xklb.utils.arg_utils import kwargs_overwrite
 from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(prog="library process-video", usage=usage.process_video)
-    parser.add_argument("--delete-no-video", action="store_true")
-    parser.add_argument("--delete-no-audio", action="store_true")
+    parser = argparse.ArgumentParser(prog="library process-ffmpeg", usage=usage.process_ffmpeg)
+    arggroups.capability_simulate(parser)
+    arggroups.process_ffmpeg(parser)
     parser.add_argument("--delete-unplayable", action="store_true")
-
-    parser.add_argument("--always-split", "--force-split", action="store_true")
-    parser.add_argument("--split-longer-than")
-    parser.add_argument("--min-split-segment", default=consts.DEFAULT_MIN_SPLIT)
-
-    parser.add_argument("--max-height", type=int, default=960)
-    parser.add_argument("--max-width", type=int, default=1440)
-    parser.add_argument("--max-width-buffer", type=float, default=0.2)
-    parser.add_argument("--max-height-buffer", type=float, default=0.2)
-
-    parser.add_argument("--dry-run", action="store_true")
-    parser.add_argument("--verbose", "-v", action="count", default=0)
+    arggroups.debug(parser)
 
     parser.add_argument("paths", nargs="+")
     args = parser.parse_args()
@@ -34,29 +24,13 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def process_path(
-    path,
-    dry_run=False,
-    delete_broken=False,
-    delete_no_video=False,
-    delete_no_audio=False,
-    max_height=960,
-    max_width=1440,
-    max_width_buffer=0.2,
-    max_height_buffer=0.2,
-    always_split=False,
-    split_longer_than=None,
-    min_split_segment=nums.human_to_seconds(consts.DEFAULT_MIN_SPLIT),
-):
-    if path.startswith("http"):
-        output_path = Path(web.url_to_local_path(path)).with_suffix(".av1.mkv")
-    else:
-        output_path = Path(path).with_suffix(".av1.mkv")
+def process_path(args, path, **kwargs):
+    args = kwargs_overwrite(args, kwargs)
+
+    output_path = Path(web.url_to_local_path(path) if path.startswith("http") else path)
+    output_path = Path(path_utils.clean_path(bytes(output_path), max_name_len=251))
 
     path = Path(path)
-    if path == output_path:
-        log.error("Input and output files must have different names %s", path)
-        return path
 
     ffprobe_cmd = ["ffprobe", "-v", "error", "-print_format", "json", "-show_format", "-show_streams", path]
     result = subprocess.run(ffprobe_cmd, capture_output=True)
@@ -69,14 +43,26 @@ def process_path(
     audio_stream = next((stream for stream in info["streams"] if stream["codec_type"] == "audio"), None)
     if not video_stream:
         log.warning("No video stream found: %s", path)
-        if delete_no_video:
+        if args.delete_no_video:
             path.unlink()
             return None
     if not audio_stream:
         log.warning("No audio stream found: %s", path)
-        if delete_no_audio:
+        if args.delete_no_audio:
             path.unlink()
             return None
+
+    if video_stream and not args.audio_only:
+        output_suffix = ".av1.mkv"
+    elif not video_stream and not audio_stream:
+        output_suffix = ".mkv"
+    else:
+        output_suffix = ".mka"
+    output_path = output_path.with_suffix(output_suffix)
+
+    if path == output_path:
+        log.error("Input and output files have the same names %s", path)
+        return path
 
     ff_opts: list[str] = []
 
@@ -86,10 +72,10 @@ def process_path(
         width = int(video_stream.get("width"))
         height = int(video_stream.get("height"))
 
-        if width > (max_width * (1 + max_width_buffer)):
-            ff_opts.extend([f"-vf 'scale=-2:min(iw\\,{max_width})'"])
-        elif height > (max_height * (1 + max_height_buffer)):
-            ff_opts.extend([f"-vf 'scale=-2:min(ih\\,{max_height})'"])
+        if width > (args.max_width * (1 + args.max_width_buffer)):
+            ff_opts.extend([f"-vf 'scale=-2:min(iw\\,{args.max_width})'"])
+        elif height > (args.max_height * (1 + args.max_height_buffer)):
+            ff_opts.extend([f"-vf 'scale=-2:min(ih\\,{args.max_height})'"])
 
     is_split = bool(audio_stream)
     if audio_stream:
@@ -98,7 +84,7 @@ def process_path(
         source_rate = int(audio_stream.get("sample_rate") or 44100)
 
         duration = float(audio_stream.get("duration") or info["format"].get("duration") or 0)
-        is_split = always_split or (split_longer_than and duration > split_longer_than)
+        is_split = args.always_split or (args.split_longer_than and duration > args.split_longer_than)
 
         try:
             assert bitrate > 0
@@ -106,7 +92,7 @@ def process_path(
             assert source_rate > 0
         except AssertionError:
             log.exception("Broken file or audio format misdetected: %s", path)
-            if delete_no_audio:
+            if args.delete_no_audio:
                 path.unlink()
                 return None
         else:
@@ -149,7 +135,7 @@ def process_path(
                 )
             except subprocess.CalledProcessError:
                 log.exception("Splits could not be identified. Likely broken file: %s", path)
-                if delete_broken:
+                if args.delete_broken:
                     path.unlink()
                     return None
                 raise
@@ -161,12 +147,12 @@ def process_path(
             final_splits = []
             for split in splits:
                 split = float(split)
-                if (split - prev) >= min_split_segment:  # type: ignore
+                if (split - prev) >= args.min_split_segment:  # type: ignore
                     final_splits.append(str(split))
                     prev = split
 
             if final_splits:
-                output_path = path.with_suffix(".%03d.mkv")
+                output_path = path.with_suffix(".%03d" + output_suffix)
                 final_splits = ",".join(final_splits)
                 print(f"Splitting {path} at points: {final_splits}")
                 ff_opts.extend(["-f segment", f"-segment_times {final_splits}"])
@@ -174,22 +160,24 @@ def process_path(
                 is_split = False
 
     cmd = f'ffmpeg -nostdin -hide_banner -loglevel warning -y -i {shlex.quote(str(path))} {" ".join(ff_opts)} {shlex.quote(str(output_path))}'
-    if dry_run:
+    if args.simulate:
         print(cmd)
     else:
         try:
             processes.cmd(cmd, shell=True)
         except subprocess.CalledProcessError:
             log.exception("Could not transcode: %s", path)
-            if delete_broken:
+            if args.delete_broken:
                 path.unlink()
                 return None
             else:
                 raise
 
-        if is_split:
+        if video_stream and (not args.audio_only or (args.audio_only and args.no_preserve_video)):
             path.unlink()  # Remove original
-            return path.with_suffix(".000.av1.mkv")  # TODO: return multiple paths...
+        elif is_split:
+            path.unlink()  # Remove original
+            return path.with_suffix(".000" + output_suffix)  # TODO: return multiple paths...
         elif output_path.stat().st_size > path.stat().st_size:
             output_path.unlink()  # Remove transcode
             return path
@@ -198,7 +186,7 @@ def process_path(
     return output_path
 
 
-def process_video():
+def process_ffmpeg():
     args = parse_args()
 
     for path in args.paths:
@@ -206,23 +194,11 @@ def process_video():
             path = str(Path(path).resolve())
 
         try:
-            process_path(
-                path,
-                delete_broken=args.delete_unplayable,
-                delete_no_video=args.delete_no_video,
-                delete_no_audio=args.delete_no_audio,
-                max_height=args.max_height,
-                max_width=args.max_width,
-                max_width_buffer=args.max_width_buffer,
-                max_height_buffer=args.max_height_buffer,
-                always_split=args.always_split,
-                split_longer_than=args.split_longer_than,
-                min_split_segment=args.min_split_segment,
-                dry_run=args.dry_run,
-            )
+            process_path(args, path)
         except Exception:
             print(path)
             raise
 
+
 if __name__ == "__main__":
-    process_video()
+    process_ffmpeg()

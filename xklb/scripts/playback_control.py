@@ -2,7 +2,7 @@ import argparse, platform, textwrap
 from copy import deepcopy
 from pathlib import Path
 
-from xklb.utils import consts, file_utils, iterables, mpv_utils, nums, objects, printing, processes
+from xklb.utils import arggroups, consts, file_utils, iterables, mpv_utils, nums, objects, printing, processes
 from xklb.utils.log_utils import log
 
 
@@ -20,12 +20,11 @@ def parse_args(action) -> argparse.Namespace:
             "--remove",
             "--erase",
             "--rm",
-            "-rm",
             action="store_true",
-            help="Delete currently playing media",
+            help="Delete currently playing media from the filesystem",
         )
 
-    parser.add_argument("--verbose", "-v", action="count", default=0)
+    arggroups.debug(parser)
     args = parser.parse_args()
 
     args.mpv = mpv_utils.connect_mpv(args.mpv_socket)
@@ -52,7 +51,7 @@ def reformat_ffprobe(path):
         return path
 
     codec_types = [s.get("codec_type") for s in probe.streams]
-    audio_count = sum(1 for s in codec_types if s == "audio")
+    audio_count = sum((1 for s in codec_types if s == "audio"))
 
     excluded_keys = [
         "encoder",

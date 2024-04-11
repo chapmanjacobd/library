@@ -1,5 +1,6 @@
 import argparse, os, platform, random, shutil, sys
 
+from xklb.utils import arggroups
 from xklb.utils.log_utils import log
 
 
@@ -42,6 +43,14 @@ def confirm(*args, **kwargs) -> bool:
 
     clear_input()
     return Confirm.ask(*args, **kwargs, default=False)
+
+
+def clobber_confirm(args) -> bool:
+    if getattr(args, "replace", False):
+        return True
+    elif getattr(args, "no_replace", False):
+        return False
+    return confirm("Replace destination file?")
 
 
 def prompt(*args, **kwargs) -> str:
@@ -102,7 +111,7 @@ def get_mount_stats(src_mounts) -> list[dict[str, str | int]]:
 
 def mount_stats() -> None:
     parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument("-v", "--verbose", action="count", default=0)
+    arggroups.debug(parser)
 
     parser.add_argument("mounts", nargs="+")
     args = parser.parse_args()

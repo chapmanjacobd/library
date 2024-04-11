@@ -3,7 +3,7 @@ from pathlib import Path
 
 from xklb import usage
 from xklb.reddit_extract import slim_post_data
-from xklb.utils import db_utils, objects, printing
+from xklb.utils import arggroups, db_utils, objects, printing
 from xklb.utils.log_utils import log
 
 try:
@@ -14,14 +14,11 @@ except ModuleNotFoundError:
 
 def parse_args(action, usage) -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library " + action, usage=usage)
-    parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
-    parser.add_argument("--verbose", "-v", action="count", default=0)
+    arggroups.debug(parser)
 
-    parser.add_argument("database")
+    arggroups.database(parser)
     args = parser.parse_args()
 
-    if args.db:
-        args.database = args.db
     Path(args.database).touch()
     args.db = db_utils.connect(args)
 

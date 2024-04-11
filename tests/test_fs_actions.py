@@ -46,7 +46,7 @@ local_player_flags = [
     # "-p bf",
     # "-p -P",
     # "-p --cols '*' -L inf",
-    "--skip 1",
+    "--offset 1",
     "-s test",
     "test",
     "-s 'path : test'",

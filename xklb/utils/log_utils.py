@@ -5,6 +5,8 @@ from timeit import default_timer
 from IPython.core import ultratb
 from IPython.terminal import debugger
 
+from xklb.utils import arggroups
+
 sys.breakpointhook = debugger.set_trace
 
 
@@ -28,7 +30,7 @@ def run_once(f):  # noqa: ANN201
 @run_once
 def argparse_log() -> logging.Logger:
     parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument("-v", "--verbose", action="count", default=0)
+    arggroups.debug(parser)
     args, _unknown = parser.parse_known_args()
 
     try:

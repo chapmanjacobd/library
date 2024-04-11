@@ -51,7 +51,7 @@ def mv_to_keep_folder(args, media_file: str):
         else:
             log.warning("Source and destination are the same size %s", src_size_str)
         if args.post_action.upper().startswith("ASK_"):
-            if getattr(args, "move_replace", False) or devices.confirm("Replace destination file?"):
+            if devices.clobber_confirm(args):
                 new_path.unlink()
                 new_path = str(shutil.move(media_file, keep_path))
             else:

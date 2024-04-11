@@ -3,7 +3,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 from xklb import usage
-from xklb.utils import nums, objects
+from xklb.utils import arggroups, nums, objects
 from xklb.utils.log_utils import log
 
 
@@ -59,18 +59,8 @@ def sample_hash_file(path, threads=1, gap=0.1, chunk_size=None):
 
 def sample_hash() -> None:
     parser = argparse.ArgumentParser(prog="library sample-hash", usage=usage.sample_hash)
-    parser.add_argument("--threads", default=1, const=10, nargs="?")
-    parser.add_argument(
-        "--chunk-size",
-        type=int,
-        help="Chunk size in bytes (default is 1%%~0.2%% dependent on file size). If set, recommended to use at least 1048576 (for performance)",
-    )
-    parser.add_argument(
-        "--gap",
-        default="0.1",
-        help="Width between chunks to skip (default 10%%). Values greater than 1 are treated as number of bytes",
-    )
-    parser.add_argument("--verbose", "-v", action="count", default=0)
+    arggroups.sample_hash_bytes(parser)
+    arggroups.debug(parser)
 
     parser.add_argument("paths", nargs="+")
     args = parser.parse_args()

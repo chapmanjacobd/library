@@ -4,7 +4,7 @@ from pathlib import Path
 
 from xklb import usage
 from xklb.media import media_printer
-from xklb.utils import consts, db_utils, devices, file_utils, iterables, objects
+from xklb.utils import arggroups, consts, db_utils, devices, file_utils, iterables, objects
 from xklb.utils.log_utils import log
 
 
@@ -14,11 +14,11 @@ def parse_args() -> argparse.Namespace:
         usage=usage.redownload,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("--download-archive", default="~/.local/share/yt_archive.txt")
-    parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", default=100)
-    parser.add_argument("--verbose", "-v", action="count", default=0)
+    parser.add_argument("--download-archive", default=str(Path("~/.local/share/yt_archive.txt").expanduser().resolve()))
+    parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", default="100")
+    arggroups.debug(parser)
 
-    parser.add_argument("database")
+    arggroups.database(parser)
     parser.add_argument("deleted_at", nargs="?")
     parser.add_argument("deleted_to", nargs="?")
     args = parser.parse_args()

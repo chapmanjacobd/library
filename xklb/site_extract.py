@@ -4,26 +4,21 @@ from io import StringIO
 from pathlib import Path
 
 from xklb import usage
-from xklb.utils import arg_utils, consts, db_utils, iterables, objects, web
+from xklb.utils import arg_utils, arggroups, consts, db_utils, iterables, objects, web
 from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library site-add", usage=usage.siteadd)
-    parser.add_argument("--auto-pager", "--autopager", action="store_true")
-    parser.add_argument("--poke", action="store_true")
-    parser.add_argument("--chrome", action="store_true")
+    arggroups.selenium(parser)
+    parser.set_defaults(selenium=True)
+
     parser.add_argument("--local-file", "--local-html", action="store_true", help="Treat paths as Local HTML files")
-    parser.add_argument("--file", "-f", help="File with one URL per line")
-    parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
-    parser.add_argument("--verbose", "-v", action="count", default=0)
 
-    parser.add_argument("database")
-    parser.add_argument("paths", nargs="+")
+    arggroups.debug(parser)
+    arggroups.database(parser)
+    arggroups.paths_or_stdin(parser)
     args = parser.parse_intermixed_args()
-
-    if args.db:
-        args.database = args.db
 
     Path(args.database).touch()
     args.db = db_utils.connect(args)

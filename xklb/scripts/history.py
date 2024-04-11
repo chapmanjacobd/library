@@ -3,7 +3,7 @@ import argparse
 from xklb import usage
 from xklb.history import create
 from xklb.media import media_printer
-from xklb.utils import consts, db_utils, objects, sql_utils, strings
+from xklb.utils import arggroups, consts, db_utils, objects, sql_utils, strings
 from xklb.utils.log_utils import log
 
 
@@ -13,31 +13,11 @@ def parse_args() -> argparse.Namespace:
         usage=usage.history,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument(
-        "--frequency",
-        "--freqency",
-        "-f",
-        metavar="frequency",
-        default="monthly",
-        const="monthly",
-        type=str.lower,
-        nargs="?",
-        help=f"One of: {', '.join(consts.frequency)} (default: %(default)s)",
-    )
 
-    parser.add_argument("--print", "-p", default="p", const="p", nargs="?", help=argparse.SUPPRESS)
-    parser.add_argument("--cols", "-cols", "-col", nargs="*", help="Include a column when printing")
-    parser.add_argument("--sort", "-u", nargs="+", help=argparse.SUPPRESS)
-    parser.add_argument("--where", "-w", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
-    parser.add_argument("--include", "-s", "--search", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
-    parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
-    parser.add_argument("--duration", "-d", action="append", help=argparse.SUPPRESS)
-    parser.add_argument("--limit", "-L", "-l", "-queue", "--queue")
-    parser.add_argument("--hide-deleted", action="store_true")
-    parser.add_argument("--played", "--opened", action="store_true")
-    parser.add_argument("-v", "--verbose", action="count", default=0)
-    parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
+    arggroups.sql_fs(parser)
+    arggroups.sql_media(parser)
 
+    arggroups.frequency(parser)
     parser.add_argument(
         "facet",
         metavar="facet",
@@ -47,14 +27,17 @@ def parse_args() -> argparse.Namespace:
         nargs="?",
         help=f"One of: {', '.join(consts.time_facets)} (default: %(default)s)",
     )
-    parser.add_argument("database")
+    parser.add_argument("--hide-deleted", action="store_true")
+    parser.add_argument("--played", "--opened", action="store_true")
+
+    arggroups.debug(parser)
+
+    arggroups.database(parser)
     args = parser.parse_intermixed_args()
 
     args.facet = strings.partial_startswith(args.facet, consts.time_facets)
     args.frequency = strings.partial_startswith(args.frequency, consts.frequency)
 
-    if args.db:
-        args.database = args.db
     args.db = db_utils.connect(args)
 
     args.action = consts.SC.history

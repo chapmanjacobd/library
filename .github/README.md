@@ -95,7 +95,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.5.027)
+    xk media library subcommands (v2.6.001)
 
     Create database subcommands:
     ╭───────────────┬────────────────────────────────────────────────────╮
@@ -267,6 +267,11 @@ To stop playing press Ctrl+C in either the terminal or mpv
     ├────────────────┼────────────────────────────────────────────────────────────┤
     │ nouns          │ Unstructured text -> compound nouns (stdin)                │
     ╰────────────────┴────────────────────────────────────────────────────────────╯
+
+    Other subcommands:
+    ╭────────────────┬────────────────╮
+    │ process-ffmpeg │ process_ffmpeg │
+    ╰────────────────┴────────────────╯
 
 
 </details>
@@ -1253,7 +1258,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Offset the play queue:
         You can also offset the queue. For example if you want to skip one or ten media:
-        library watch --skip 10        # offset ten from the top of an ordered query
+        library watch --offset 10      # offset ten from the top of an ordered query
 
     Repeat
         library watch                  # listen to 120 random songs (DEFAULT_PLAY_QUEUE)
@@ -2264,7 +2269,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 <details><summary>Merge two or more file trees</summary>
 
     $ library merge-folders -h
-    usage: library merge-folders [--replace] [--skip] [--simulate] SOURCES ... DESTINATION
+    usage: library merge-folders [--replace] [--no-replace] [--simulate] SOURCES ... DESTINATION
 
     Merge multiple folders with the same file tree into a single folder.
 
@@ -2282,7 +2287,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 <details><summary>Move files preserving parent folder hierarchy</summary>
 
     $ library relmv -h
-    usage: library relmv [--dry-run] SOURCE ... DEST
+    usage: library relmv [--simulate] SOURCE ... DEST
 
     Move files/folders without losing hierarchy metadata
 
@@ -2363,7 +2368,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
             Folder list saved to /tmp/tmp7x_75l8. You may want to use the following command to move files to an EMPTY folder target:
 
-                rsync -a --info=progress2 --no-inc-recursive --remove-source-files --files-from=/tmp/tmp7x_75l8 -r --relative -vv --dry-run / jim:/free/real/estate/
+                rsync -a --info=progress2 --no-inc-recursive --remove-source-files --files-from=/tmp/tmp7x_75l8 -r --relative -vv --simulate / jim:/free/real/estate/
 
 
 </details>
@@ -2512,7 +2517,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Rename files to be somewhat normalized
 
-    Default mode is dry-run
+    Default mode is simulate
 
         library christen fs.db
 
@@ -2736,28 +2741,6 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 </details>
 
-###### process-audio
-
-<details><summary>Shrink audio by converting to Opus format (.mka)</summary>
-
-    $ library process-audio -h
-    usage: library process-audio PATH ... [--always-split] [--split-longer-than DURATION] [--min-split-segment SECONDS] [--dry-run]
-
-    Convert audio to Opus. Optionally split up long tracks into multiple files.
-
-        fd -tf -eDTS -eAAC -eWAV -eAIF -eAIFF -eFLAC -eAIFF -eM4A -eMP3 -eOGG -eMP4 -eWMA -j4 -x library process-audio
-
-    Use --always-split to _always_ split files if silence is detected
-
-        library process-audio --always-split audiobook.m4a
-
-    Use --split-longer-than to _only_ detect silence for files in excess of a specific duration
-
-        library process-audio --split-longer-than 36mins audiobook.m4b audiobook2.mp3
-
-
-</details>
-
 ###### process-image
 
 <details><summary>Shrink images by converting to AV1 image format (.avif)</summary>
@@ -2770,14 +2753,28 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 </details>
 
-###### process-video
+### Other subcommands
 
-<details><summary>Shrink videos by converting to AV1 video format (.av1.mkv)</summary>
+###### process-ffmpeg
 
-    $ library process-video -h
-    usage: library process-video PATH ...
+<details><summary>process_ffmpeg</summary>
 
-    Resize videos to max 1440x960px and AV1/Opus to save space
+    $ library process-ffmpeg -h
+    usage: library process-ffmpeg PATH ... [--always-split] [--split-longer-than DURATION] [--min-split-segment SECONDS] [--simulate]
+
+    Resize videos to max 1440x960px AV1 and/or Opus to save space
+
+    Convert audio to Opus. Optionally split up long tracks into multiple files.
+
+        fd -tf -eDTS -eAAC -eWAV -eAIF -eAIFF -eFLAC -eAIFF -eM4A -eMP3 -eOGG -eMP4 -eWMA -j4 -x library process --audio
+
+    Use --always-split to _always_ split files if silence is detected
+
+        library process-audio --always-split audiobook.m4a
+
+    Use --split-longer-than to _only_ detect silence for files in excess of a specific duration
+
+        library process-audio --split-longer-than 36mins audiobook.m4b audiobook2.mp3
 
 
 </details>
