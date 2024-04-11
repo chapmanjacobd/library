@@ -1,6 +1,6 @@
 import argparse, urllib.parse
 
-from xklb.utils import arg_utils, web
+from xklb.utils import arg_utils, arggroups, web
 
 COMMON_SITE_TITLE_SUFFIXES = [
     " | Listen online for free on SoundCloud",
@@ -24,12 +24,11 @@ def fake_title(url):
 
 def markdown_links():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--cookies", help="path to a Netscape formatted cookies file")
-    parser.add_argument("--cookies-from-browser", metavar="BROWSER[+KEYRING][:PROFILE][::CONTAINER]")
-    parser.add_argument("--selenium", "--scroll", action="store_true")
-    parser.add_argument("-v", "--verbose", action="count", default=0)
+    arggroups.requests(parser)
+    arggroups.selenium(parser)
+    arggroups.debug(parser)
 
-    parser.add_argument("paths", nargs="*", default=arg_utils.STDIN_DASH, action=arg_utils.ArgparseArgsOrStdin)
+    arggroups.paths_or_stdin(parser)
     args = parser.parse_args()
 
     import requests
@@ -38,9 +37,7 @@ def markdown_links():
     if args.selenium:
         web.load_selenium(args)
     try:
-        for url in args.paths:
-            url = url.strip()
-
+        for url in arg_utils.gen_paths(args):
             try:
                 if args.selenium:
                     web.selenium_get_page(args, url)

@@ -2,7 +2,7 @@ import argparse, os, sqlite3
 
 from xklb import usage
 from xklb.media import media_printer
-from xklb.utils import consts, db_utils, objects
+from xklb.utils import arggroups, consts, db_utils, objects
 from xklb.utils.log_utils import log
 
 
@@ -12,40 +12,26 @@ def parse_args() -> argparse.Namespace:
         usage.playlists,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("--sort", "-u", nargs="+", help=argparse.SUPPRESS)
-    parser.add_argument("--where", "-w", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
-    parser.add_argument("--include", "-s", "--search", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
-    parser.add_argument("--flexible-search", "--or", "--flex", action="store_true")
-    parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
-    parser.add_argument("--duration", "-d", action="append", help=argparse.SUPPRESS)
-    parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", help=argparse.SUPPRESS)
-    parser.add_argument("--online-media-only", "--online", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--local-media-only", "--local", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--safe", "-safe", action="store_true", help="Skip generic URLs")
-    parser.add_argument("--print", "-p", default="p", const="p", nargs="?", help=argparse.SUPPRESS)
-    parser.add_argument("--cols", "-cols", "-col", nargs="*", help="Include a column when printing")
+
+    arggroups.sql_fs(parser)
+    arggroups.sql_media(parser)
+
     parser.add_argument(
         "--delete",
         "--remove",
-        "--erase",
         "--rm",
-        "-rm",
         action="store_true",
         help="Delete matching playlists and playlist media",
     )
 
-    parser.add_argument("-v", "--verbose", action="count", default=0)
-    parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
+    arggroups.debug(parser)
 
-    parser.add_argument("database")
+    arggroups.database(parser)
     parser.add_argument("search", nargs="*")
     args = parser.parse_intermixed_args()
 
-    if args.search:
-        args.include += args.search
+    args.include += args.search
 
-    if args.db:
-        args.database = args.db
     args.db = db_utils.connect(args)
     log.info(objects.dict_filter_bool(args.__dict__))
 

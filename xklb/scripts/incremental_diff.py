@@ -1,13 +1,15 @@
 import argparse
 
 from xklb import usage
-from xklb.utils import arg_utils, consts, file_utils
+from xklb.utils import arggroups, consts, file_utils
+from xklb.utils.argparse_utils import ArgparseList
 from xklb.utils.log_utils import log
 from xklb.utils.printing import print_df
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Diff two table-like files", usage=usage.incremental_diff)
+    parser.add_argument("--print", "-p", default="p", const="p", nargs="?", help=argparse.SUPPRESS)
     parser.add_argument("--mimetype1", "--filetype1")
     parser.add_argument("--encoding1")
     parser.add_argument("--mimetype2", "--filetype2")
@@ -18,9 +20,9 @@ def parse_args():
     parser.add_argument("--table2-index", type=int)
     parser.add_argument("--start-row", "--skiprows", type=int, default=None)
     parser.add_argument("--batch-size", "--batch-rows", default=str(consts.DEFAULT_FILE_ROWS_READ_LIMIT))
-    parser.add_argument("--join-keys", action=arg_utils.ArgparseList, help="Comma separated join keys")
+    parser.add_argument("--join-keys", action=ArgparseList, help="Comma separated join keys")
     parser.add_argument("--sort", "-u")
-    parser.add_argument("--verbose", "-v", action="count", default=0)
+    arggroups.debug(parser)
 
     parser.add_argument("path1", help="path to dataset 1")
     parser.add_argument("path2", help="path to dataset 2")

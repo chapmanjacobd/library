@@ -1,7 +1,7 @@
 import argparse
 
 from xklb import usage
-from xklb.utils import arg_utils, consts, devices, iterables, printing, strings, web
+from xklb.utils import arg_utils, arggroups, consts, devices, iterables, printing, strings, web
 from xklb.utils.log_utils import log
 
 
@@ -10,94 +10,17 @@ def parse_args():
         prog="library extract-links",
         usage=usage.extract_links,
     )
-    parser.add_argument(
-        "--path-include",
-        "--include-path",
-        "--include",
-        "-s",
-        nargs="*",
-        default=[],
-        help="path substrings for inclusion (all must match to include)",
-    )
-    parser.add_argument(
-        "--text-include",
-        "--include-text",
-        nargs="*",
-        default=[],
-        help="link text substrings for inclusion (all must match to include)",
-    )
-    parser.add_argument(
-        "--after-include",
-        "--include-after",
-        nargs="*",
-        default=[],
-        help="plain text substrings after URL for inclusion (all must match to include)",
-    )
-    parser.add_argument(
-        "--before-include",
-        "--include-before",
-        nargs="*",
-        default=[],
-        help="plain text substrings before URL for inclusion (all must match to include)",
-    )
-    parser.add_argument(
-        "--path-exclude",
-        "--exclude-path",
-        "--exclude",
-        "-E",
-        nargs="*",
-        default=["javascript:", "mailto:", "tel:"],
-        help="path substrings for exclusion (any must match to exclude)",
-    )
-    parser.add_argument(
-        "--text-exclude",
-        "--exclude-text",
-        nargs="*",
-        default=[],
-        help="link text substrings for exclusion (any must match to exclude)",
-    )
-    parser.add_argument(
-        "--after-exclude",
-        "--exclude-after",
-        nargs="*",
-        default=[],
-        help="plain text substrings after URL for exclusion (any must match to exclude)",
-    )
-    parser.add_argument(
-        "--before-exclude",
-        "--exclude-before",
-        nargs="*",
-        default=[],
-        help="plain text substrings before URL for exclusion (any must match to exclude)",
-    )
-
-    parser.add_argument("--strict-include", action="store_true", help="All include args must resolve true")
-    parser.add_argument("--strict-exclude", action="store_true", help="All exclude args must resolve true")
-    parser.add_argument("--case-sensitive", action="store_true", help="Filter with case sensitivity")
-    parser.add_argument(
-        "--no-url-decode",
-        "--skip-url-decode",
-        action="store_true",
-        help="Skip URL-decode for --path-include/--path-exclude",
-    )
+    arggroups.extractor(parser)
+    arggroups.requests(parser)
+    arggroups.selenium(parser)
+    arggroups.filter_links(parser)
 
     parser.add_argument("--print-link-text", "--print-title", action="store_true")
-    parser.add_argument("--cookies", help="path to a Netscape formatted cookies file")
-    parser.add_argument("--cookies-from-browser", metavar="BROWSER[+KEYRING][:PROFILE][::CONTAINER]")
-    parser.add_argument("--selenium", action="store_true")
-    parser.add_argument("--manual", action="store_true", help="Confirm manually in shell before exiting the browser")
-    parser.add_argument("--scroll", action="store_true", help="Scroll down the page; infinite scroll")
-    parser.add_argument("--auto-pager", "--autopager", action="store_true")
-    parser.add_argument("--poke", action="store_true")
-    parser.add_argument("--chrome", action="store_true")
     parser.add_argument("--download", action="store_true", help="Download filtered links")
-    parser.add_argument("--verbose", "-v", action="count", default=0)
-
-    parser.add_argument("--no-extract", "--skip-extract", action="store_true")
     parser.add_argument("--local-file", "--local-html", action="store_true", help="Treat paths as Local HTML files")
-    parser.add_argument("--file", "-f", help="File with one URL per line")
 
-    parser.add_argument("paths", nargs="*")
+    arggroups.debug(parser)
+    arggroups.paths_or_stdin(parser)
     args = parser.parse_args()
 
     if args.scroll:

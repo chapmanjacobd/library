@@ -3,7 +3,7 @@ from pathlib import Path
 
 from xklb import usage
 from xklb.media import media_printer
-from xklb.utils import consts, db_utils, file_utils, nums, objects, processes, sql_utils
+from xklb.utils import arggroups, consts, db_utils, file_utils, nums, objects, processes, sql_utils
 from xklb.utils.log_utils import log
 
 
@@ -13,24 +13,16 @@ def parse_args() -> argparse.Namespace:
         usage=usage.disk_usage,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("--sort-groups-by", "--sort-groups", "--sort", "-u", nargs="+", action="extend")
-    parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", default="4000")
-    parser.add_argument(
-        "--size",
-        "-S",
-        action="append",
-        help="Only include files of specific sizes (uses the same syntax as fd-find)",
-    )
-    parser.add_argument("--depth", "-d", default=0, type=int, help="Depth of folders")
+    arggroups.sql_fs(parser)
+    arggroups.operation_group_folders(parser)
+    parser.set_defaults(limit="4000", depth=0)
+
     parser.add_argument("--folders-only", "-td", action="store_true", help="Only print folders")
     parser.add_argument("--files-only", "-tf", action="store_true", help="Only print files")
-    parser.add_argument("--include", "-s", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
-    parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
 
-    parser.add_argument("--print", "-p", default="", const="p", nargs="?")
-    parser.add_argument("--verbose", "-v", action="count", default=0)
+    arggroups.debug(parser)
 
-    parser.add_argument("database")
+    arggroups.database(parser)
     parser.add_argument("working_directory", nargs="*", default=os.sep)
     args = parser.parse_intermixed_args()
     args.db = db_utils.connect(args)

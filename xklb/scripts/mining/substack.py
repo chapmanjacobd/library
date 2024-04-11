@@ -4,17 +4,16 @@ from pathlib import Path
 from bs4 import BeautifulSoup
 
 from xklb import db_media, usage
-from xklb.utils import db_utils, nums, objects, web
+from xklb.utils import arggroups, db_utils, nums, objects, web
 from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library substack", usage=usage.substack)
-    parser.add_argument("--verbose", "-v", action="count", default=0)
-    parser.add_argument("--cookies", help="path to a Netscape formatted cookies file")
-    parser.add_argument("--cookies-from-browser", metavar="BROWSER[+KEYRING][:PROFILE][::CONTAINER]")
+    arggroups.requests(parser)
+    arggroups.debug(parser)
 
-    parser.add_argument("database")
+    arggroups.database(parser)
     parser.add_argument("paths", nargs="+", help="Substack path to extract article for")
     args = parser.parse_intermixed_args()
 

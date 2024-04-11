@@ -2,16 +2,16 @@ import argparse
 from pathlib import Path
 
 from xklb import usage
-from xklb.utils import db_utils, objects
+from xklb.utils import arggroups, db_utils, objects
 from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library export-text", usage=usage.export_text)
     parser.add_argument("--format", default="html")
-    parser.add_argument("--verbose", "-v", action="count", default=0)
+    arggroups.debug(parser)
 
-    parser.add_argument("database")
+    arggroups.database(parser)
     args = parser.parse_args()
 
     Path(args.database).touch()

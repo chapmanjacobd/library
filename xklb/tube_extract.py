@@ -2,7 +2,7 @@ import argparse, sys
 from pathlib import Path
 
 from xklb import db_media, db_playlists, tube_backend, usage
-from xklb.utils import arg_utils, consts, db_utils, iterables, objects, path_utils, processes
+from xklb.utils import arggroups, argparse_utils, consts, db_utils, iterables, objects, path_utils, processes
 from xklb.utils.consts import SC
 from xklb.utils.log_utils import log
 
@@ -13,49 +13,22 @@ def parse_args(action, usage) -> argparse.Namespace:
         usage=usage,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
+    arggroups.extractor(parser)
+    arggroups.download(parser)
+    arggroups.download_subtitle(parser)
+    parser.set_defaults(download_archive=str(Path("~/.local/share/yt_archive.txt").expanduser().resolve()))
 
-    parser.add_argument(
-        "--extractor-config",
-        "-extractor-config",
-        nargs=1,
-        action=arg_utils.ArgparseDict,
-        default={},
-        metavar="KEY=VALUE",
-        help="Add key/value pairs to override or extend default downloader configuration",
-    )
-    parser.add_argument("--download-archive", default="~/.local/share/yt_archive.txt")
-    parser.add_argument("--safe", "-safe", action="store_true", help="Skip generic URLs")
-    parser.add_argument("--no-sanitize", "-s", action="store_true", help="Don't sanitize some common URL parameters")
-    parser.add_argument("--extra", "-extra", action="store_true", help="Get full metadata (takes a lot longer)")
-    parser.add_argument("--no-optimize", action="store_true", help=argparse.SUPPRESS)
+    arggroups.debug(parser)
 
-    parser.add_argument(
-        "--force",
-        "-f",
-        action="store_true",
-        help="Fetch metadata for paths even if they are already in the media table",
-    )
-    parser.add_argument("--subs", action="store_true")
-    parser.add_argument("--auto-subs", "--autosubs", action="store_true")
-    parser.add_argument("--subtitle-languages", "--subtitle-language", "--sl", action=arg_utils.ArgparseList)
-
-    parser.add_argument("--ignore-errors", "--ignoreerrors", "-i", action="store_true", help=argparse.SUPPRESS)
-
-    parser.add_argument("--timeout", "-T", help="Quit after x minutes")
-    parser.add_argument("--verbose", "-v", action="count", default=0)
-    parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
-
-    parser.add_argument("database")
+    arggroups.database(parser)
     if action == SC.tubeadd:
-        parser.add_argument("--insert-only", action="store_true")
-        parser.add_argument("--insert-only-playlists", action="store_true")
-        parser.add_argument("playlists", nargs="*", default=arg_utils.STDIN_DASH, action=arg_utils.ArgparseArgsOrStdin)
+        parser.add_argument(
+            "playlists", nargs="*", default=argparse_utils.STDIN_DASH, action=argparse_utils.ArgparseArgsOrStdin
+        )
 
     args = parser.parse_intermixed_args()
     args.action = action
 
-    if args.db:
-        args.database = args.db
     if action == SC.tubeadd:
         Path(args.database).touch()
     args.db = db_utils.connect(args)
@@ -120,7 +93,7 @@ def tube_add(args=None) -> None:
                 log.warning("[%s]: Getting extra metadata", path)
                 tube_backend.get_extra_metadata(args, path)
 
-    if not args.no_optimize and not args.db["media"].detect_fts():
+    if not args.db["media"].detect_fts():
         db_utils.optimize(args)
 
 

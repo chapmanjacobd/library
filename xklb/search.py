@@ -4,49 +4,33 @@ from itertools import groupby
 
 from xklb import db_media, usage
 from xklb.media import media_player, media_printer
-from xklb.utils import arg_utils, consts, db_utils, iterables, objects, printing, processes
+from xklb.utils import arg_utils, arggroups, consts, db_utils, iterables, objects, printing, processes
 from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library search", usage=usage.search)
+
+    arggroups.sql_fs(parser)
+    arggroups.sql_media(parser)
+    arggroups.playback(parser)
+    arggroups.post_actions(parser)
+
+    parser.set_defaults(sort=["path", "time"])
+
     parser.add_argument("--open", "--play", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--duration", "-d", action="append", help=argparse.SUPPRESS)
     parser.add_argument("--overlap", type=int, default=8, help=argparse.SUPPRESS)
-    parser.add_argument("--include", "-s", "--search", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
-    parser.add_argument("--flexible-search", "--or", "--flex", action="store_true")
-    parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
-    parser.add_argument("--where", "-w", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
-    parser.add_argument("--sort", "-u", nargs="+", default=["path", "time"], help=argparse.SUPPRESS)
     parser.add_argument("--table", action="store_true")
-    parser.add_argument("--limit", "-L", "-l", help=argparse.SUPPRESS)
 
-    parser.add_argument("--print", "-p", default="p", const="p", nargs="?", help=argparse.SUPPRESS)
-    parser.add_argument("--cols", "-cols", "-col", nargs="*", help="Include a column when printing")
+    parser.set_defaults(print="p")
+
     parser.add_argument("--action", default="search", help=argparse.SUPPRESS)
-    parser.add_argument("--folder", action="store_true", help="Experimental escape hatch to open folder")
-    parser.add_argument(
-        "--folder-glob",
-        "--folderglob",
-        type=int,
-        default=False,
-        const=10,
-        nargs="?",
-        help="Experimental escape hatch to open a folder glob limited to x number of files",
-    )
 
-    parser.add_argument("--ignore-errors", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--online-media-only", "--online", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--local-media-only", "--local", action="store_true", help=argparse.SUPPRESS)
-
-    parser.add_argument("--loop", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--override-player", "--player", "-player", help=argparse.SUPPRESS)
-    parser.add_argument("--verbose", "-v", action="count", default=0)
-    parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
-
-    parser.add_argument("database")
+    arggroups.debug(parser)
+    arggroups.database(parser)
     parser.add_argument("search", nargs="*")
     args = parser.parse_intermixed_args()
+
     args.include += args.search
 
     if args.cols:
@@ -56,8 +40,6 @@ def parse_args() -> argparse.Namespace:
     sort = "\n        , ".join(sort)
     args.sort = sort.replace(",,", ",")
 
-    if args.db:
-        args.database = args.db
     args.db = db_utils.connect(args)
     log.info(objects.dict_filter_bool(args.__dict__))
 

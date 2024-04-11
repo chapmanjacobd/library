@@ -482,7 +482,7 @@ def get_related_media(args, m: dict) -> list[dict]:
 
     select_sql = "\n        , ".join(args.select)
     limit_sql = "LIMIT " + str(args.limit - 1) if args.limit else ""
-    offset_sql = f"OFFSET {args.skip}" if args.skip and limit_sql else ""
+    offset_sql = f"OFFSET {args.offset}" if args.offset and limit_sql else ""
     query = f"""WITH m as (
             SELECT
                 SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count

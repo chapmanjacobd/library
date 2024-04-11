@@ -4,7 +4,7 @@ import humanize
 
 from xklb import post_actions, tube_backend, usage
 from xklb.media import media_printer
-from xklb.utils import consts, db_utils, devices, iterables, objects
+from xklb.utils import arggroups, consts, db_utils, devices, iterables, objects
 from xklb.utils.consts import SC
 from xklb.utils.log_utils import log
 
@@ -15,35 +15,23 @@ def parse_args():
         usage=usage.block,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("--print", "-p", default="", const="p", nargs="?", help=argparse.SUPPRESS)
-    parser.add_argument("--cols", "-cols", "-col", nargs="*", help="Include a column when printing")
-    parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", help=argparse.SUPPRESS)
+    arggroups.sql_fs(parser)
+
     parser.add_argument("--match-column", "-c", default="path", help="Column to block media if text matches")
 
     parser.add_argument("--cluster", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--min-tried", default=0, type=int, help=argparse.SUPPRESS)
     parser.add_argument("--no-confirm", "--yes", "-y", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--force", "-f", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument(
-        "--delete",
-        "--remove",
-        "--erase",
-        "--rm",
-        "-rm",
-        action="store_true",
-        help="Delete matching rows",
-    )
+    arggroups.capability_delete(parser)
     parser.add_argument("--offline", "--no-tube", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--ignore-errors", "--ignoreerrors", "-i", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
-    parser.add_argument("--verbose", "-v", action="count", default=0)
+    arggroups.debug(parser)
 
-    parser.add_argument("database")
+    arggroups.database(parser)
     parser.add_argument("playlists", nargs="*")
     args = parser.parse_intermixed_args()
 
-    if args.db:
-        args.database = args.db
     args.db = db_utils.connect(args)
 
     args.playlists = iterables.conform(args.playlists)

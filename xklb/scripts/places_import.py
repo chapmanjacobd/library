@@ -2,15 +2,15 @@ import argparse
 from pathlib import Path
 
 from xklb import db_media, usage
-from xklb.utils import consts, db_utils, nums, objects
+from xklb.utils import arggroups, consts, db_utils, nums, objects
 from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library places-import", usage=usage.places_import)
-    parser.add_argument("database")
+    arggroups.database(parser)
     parser.add_argument("paths", nargs="+")
-    parser.add_argument("--verbose", "-v", action="count", default=0)
+    arggroups.debug(parser)
     args = parser.parse_intermixed_args()
 
     Path(args.database).touch()

@@ -8,59 +8,15 @@ from timeit import default_timer as timer
 
 from xklb import db_media, db_playlists, usage
 from xklb.media import av, books
-from xklb.scripts import playlists, process_audio, process_image, process_video, sample_hash
-from xklb.utils import arg_utils, consts, db_utils, file_utils, iterables, nums, objects, path_utils
+from xklb.scripts import playlists, process_ffmpeg, process_image, sample_hash
+from xklb.utils import arg_utils, arggroups, consts, db_utils, file_utils, iterables, nums, objects, path_utils
 from xklb.utils.consts import SC, DBType
 from xklb.utils.log_utils import log
 
 
 def parse_args(action, usage):
     parser = argparse.ArgumentParser(prog="library " + action, usage=usage)
-
-    profiles = parser.add_argument_group()
-    profiles.add_argument(
-        "--audio",
-        "-A",
-        action="append_const",
-        dest="profiles",
-        const=DBType.audio,
-        help="Extract audio metadata",
-    )
-    profiles.add_argument(
-        "--filesystem",
-        "--fs",
-        "-F",
-        action="append_const",
-        dest="profiles",
-        const=DBType.filesystem,
-        help="Extract filesystem metadata",
-    )
-    profiles.add_argument(
-        "--video",
-        "-V",
-        action="append_const",
-        dest="profiles",
-        const=DBType.video,
-        help="Extract video metadata",
-    )
-    profiles.add_argument(
-        "--text",
-        "-T",
-        action="append_const",
-        dest="profiles",
-        const=DBType.text,
-        help="Extract text metadata",
-    )
-    profiles.add_argument(
-        "--image",
-        "-I",
-        action="append_const",
-        dest="profiles",
-        const=DBType.image,
-        help="Extract image metadata",
-    )
-    parser.add_argument("--scan-all-files", "-a", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--ext", action=arg_utils.ArgparseList)
+    arggroups.db_profiles(parser)
 
     parser.add_argument(
         "--io-multiplier",
@@ -72,42 +28,23 @@ def parse_args(action, usage):
     parser.add_argument("--speech-recognition", "--speech", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--scan-subtitles", "--scan-subtitle", action="store_true", help=argparse.SUPPRESS)
 
-    parser.add_argument("--delete-unplayable", action="store_true")
-    parser.add_argument("--delete-no-video", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--delete-no-audio", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--hash", action="store_true")
-    parser.add_argument("--process", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--move")
 
+    parser.add_argument("--process", action="store_true", help=argparse.SUPPRESS)
+    arggroups.process_ffmpeg(parser)
+    parser.add_argument("--delete-unplayable", action="store_true")
+
     parser.add_argument("--check-corrupt", "--check-corruption", action="store_true")
-    parser.add_argument(
-        "--chunk-size",
-        type=float,
-        help="Duration to decode per segment (default 0.5 second). If set, recommended to use >0.1 seconds",
-        default=0.5,
-    )
-    parser.add_argument(
-        "--gap",
-        default="0.1",
-        help="Width between chunks to skip (default 10%%). Values greater than 1 are treated as number of seconds",
-    )
-    parser.add_argument(
-        "--delete-corrupt",
-        "--delete-corruption",
-        help="delete media that is more corrupt or equal to this threshold. Values greater than 1 are treated as number of seconds",
-    )
-    parser.add_argument(
-        "--full-scan-if-corrupt",
-        "--full-scan-if-corruption",
-        help="full scan as second pass if initial scan result more corruption or equal to this threshold. Values greater than 1 are treated as number of seconds",
-    )
-    parser.add_argument("--full-scan", action="store_true")
+    arggroups.media_check(parser)
+    parser.set_defaults(gap="0.10")
 
-    parser.add_argument("--force", "-f", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--verbose", "-v", action="count", default=0)
-    parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
+    parser.add_argument(
+        "--force", "-f", action="store_true", help="Mark all subpath files as deleted if no files found"
+    )
+    arggroups.debug(parser)
 
-    parser.add_argument("database")
+    arggroups.database(parser)
     if action == SC.fsadd:
         parser.add_argument("paths", nargs="+")
     args = parser.parse_intermixed_args()
@@ -124,8 +61,9 @@ def parse_args(action, usage):
     if args.full_scan_if_corrupt:
         args.full_scan_if_corrupt = nums.float_from_percent(args.full_scan_if_corrupt)
 
-    if args.db:
-        args.database = args.db
+    args.split_longer_than = nums.human_to_seconds(args.split_longer_than)
+    args.min_split_segment = nums.human_to_seconds(args.min_split_segment)
+
     Path(args.database).touch()
     args.db = db_utils.connect(args)
 
@@ -213,28 +151,23 @@ def extract_metadata(mp_args, path) -> dict[str, int] | None:
 
     if getattr(mp_args, "process", False):
         if objects.is_profile(mp_args, DBType.audio) and Path(path).suffix not in [".opus", ".mka"]:
-            result = process_audio.process_path(
+            result = process_ffmpeg.process_path(
+                mp_args,
                 path,
                 split_longer_than=2160 if "audiobook" in path.lower() else None,
-                delete_broken=getattr(mp_args, "delete_unplayable", False),
             )
+            if result is None:
+                return None
+            path = media["path"] = str(result)
+        elif objects.is_profile(mp_args, DBType.video) and Path(path).suffix not in [".av1.mkv"]:
+            result = process_ffmpeg.process_path(mp_args, path)
             if result is None:
                 return None
             path = media["path"] = str(result)
         elif objects.is_profile(mp_args, DBType.image) and Path(path).suffix not in [".avif", ".avifs"]:
             result = process_image.process_path(
                 path,
-                delete_broken=getattr(mp_args, "delete_unplayable", False),
-            )
-            if result is None:
-                return None
-            path = media["path"] = str(result)
-        elif objects.is_profile(mp_args, DBType.video) and Path(path).suffix not in [".av1.mkv"]:
-            result = process_video.process_path(
-                path,
-                delete_broken=getattr(mp_args, "delete_unplayable", False),
-                delete_no_video=getattr(mp_args, "delete_no_video", False),
-                delete_no_audio=getattr(mp_args, "delete_no_audio", False),
+                delete_unplayable=getattr(mp_args, "delete_unplayable", False),
             )
             if result is None:
                 return None
@@ -386,7 +319,7 @@ def find_new_files(args, path) -> list[str]:
         new_files = list(scanned_set - existing_set)
 
         deleted_files = list(existing_set - scanned_set)
-        if not new_files and len(deleted_files) >= len(existing_set) and not args.force:
+        if not scanned_set and len(deleted_files) >= len(existing_set) and not args.force:
             print(f"[{path}] Path empty or device not mounted. Rerun with -f to mark all subpaths as deleted.")
             return []  # if path not mounted or all files deleted
         deleted_count = db_media.mark_media_deleted(args, deleted_files)

@@ -7,7 +7,7 @@ from screeninfo import get_monitors
 
 from xklb import post_actions
 from xklb.media import media_player
-from xklb.utils import consts, devices, file_utils, iterables, mpv_utils, processes
+from xklb.utils import arggroups, consts, devices, file_utils, iterables, mpv_utils, processes
 from xklb.utils.log_utils import log
 
 left_mpv_socket = str(Path(consts.TEMP_SCRIPT_DIR) / f"mpv_socket_{consts.random_string()}")
@@ -16,24 +16,22 @@ right_mpv_socket = str(Path(consts.TEMP_SCRIPT_DIR) / f"mpv_socket_{consts.rando
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Choose which duplicate to keep by opening both side-by-side in mpv")
+    arggroups.playback(parser)
+    arggroups.capability_clobber(parser)
+    arggroups.post_actions(parser)
+    parser.set_defaults(start="15%", volume="70")
+
     parser.add_argument(
         "--auto-select-min-ratio",
         type=float,
         default=1.0,
         help="Automatically select largest file if files have similar basenames. A sane value is in the range of 0.7~0.9",
     )
-    parser.add_argument("--start", default="15%")
-    parser.add_argument("--volume", default="70", type=float)
-    parser.add_argument("--keep-dir", "--keepdir", help=argparse.SUPPRESS)
-    parser.add_argument("--exit-code-confirm", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--gui", action="store_true")
-    parser.add_argument("--auto-seek", action="store_true")
-    parser.add_argument("--override-player", "--player", "-player", help=argparse.SUPPRESS)
     parser.add_argument("--all-keep", action="store_true")
     parser.add_argument("--all-left", action="store_true")
     parser.add_argument("--all-right", action="store_true")
     parser.add_argument("--all-delete", action="store_true")
-    parser.add_argument("--verbose", "-v", action="count", default=0)
+    arggroups.debug(parser)
 
     parser.add_argument("file_path", help="Path to the text file containing the file list.")
     args = parser.parse_args()

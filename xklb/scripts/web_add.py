@@ -6,152 +6,26 @@ from xklb import db_media, db_playlists, usage
 from xklb.media import av, books
 from xklb.scripts import sample_hash
 from xklb.scripts.mining import extract_links
-from xklb.utils import arg_utils, consts, db_utils, file_utils, iterables, objects, printing, strings, web
+from xklb.utils import arg_utils, arggroups, consts, db_utils, file_utils, iterables, objects, printing, strings, web
 from xklb.utils.consts import SC, DBType
 from xklb.utils.log_utils import log
 
 
 def parse_args(**kwargs):
     parser = argparse.ArgumentParser(**kwargs)
-    parser.add_argument("--no-extract", "--skip-extract", action="store_true")
-
-    parser.add_argument(
-        "--path-include",
-        "--include-path",
-        "--include",
-        "-s",
-        nargs="*",
-        default=[],
-        help="path substrings for inclusion (all must match to include)",
-    )
-    parser.add_argument(
-        "--text-include",
-        "--include-text",
-        nargs="*",
-        default=[],
-        help="link text substrings for inclusion (all must match to include)",
-    )
-    parser.add_argument(
-        "--after-include",
-        "--include-after",
-        nargs="*",
-        default=[],
-        help="plain text substrings after URL for inclusion (all must match to include)",
-    )
-    parser.add_argument(
-        "--before-include",
-        "--include-before",
-        nargs="*",
-        default=[],
-        help="plain text substrings before URL for inclusion (all must match to include)",
-    )
-    parser.add_argument(
-        "--path-exclude",
-        "--exclude-path",
-        "--exclude",
-        "-E",
-        nargs="*",
-        default=["javascript:", "mailto:", "tel:"],
-        help="path substrings for exclusion (any must match to exclude)",
-    )
-    parser.add_argument(
-        "--text-exclude",
-        "--exclude-text",
-        nargs="*",
-        default=[],
-        help="link text substrings for exclusion (any must match to exclude)",
-    )
-    parser.add_argument(
-        "--after-exclude",
-        "--exclude-after",
-        nargs="*",
-        default=[],
-        help="plain text substrings after URL for exclusion (any must match to exclude)",
-    )
-    parser.add_argument(
-        "--before-exclude",
-        "--exclude-before",
-        nargs="*",
-        default=[],
-        help="plain text substrings before URL for exclusion (any must match to exclude)",
-    )
-
-    parser.add_argument("--strict-include", action="store_true", help="All include args must resolve true")
-    parser.add_argument("--strict-exclude", action="store_true", help="All exclude args must resolve true")
-    parser.add_argument("--case-sensitive", action="store_true", help="Filter with case sensitivity")
-    parser.add_argument(
-        "--no-url-decode",
-        "--skip-url-decode",
-        action="store_true",
-        help="Skip URL-decode for --path-include/--path-exclude",
-    )
-
-    profile = parser.add_mutually_exclusive_group()
-    profile.add_argument(
-        "--audio",
-        "-A",
-        action="append_const",
-        dest="profiles",
-        const=DBType.audio,
-        help="Create audio database",
-    )
-    profile.add_argument(
-        "--filesystem",
-        "--web",
-        "-F",
-        action="append_const",
-        dest="profiles",
-        const=DBType.filesystem,
-        help="Create filesystem database",
-    )
-    profile.add_argument(
-        "--video",
-        "-V",
-        action="append_const",
-        dest="profiles",
-        const=DBType.video,
-        help="Create video database",
-    )
-    profile.add_argument(
-        "--text",
-        "-T",
-        action="append_const",
-        dest="profiles",
-        const=DBType.text,
-        help="Create text database",
-    )
-    profile.add_argument(
-        "--image",
-        "-I",
-        action="append_const",
-        dest="profiles",
-        const=DBType.image,
-        help="Create image database",
-    )
-    parser.add_argument("--scan-all-files", "-a", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--ext", action=arg_utils.ArgparseList)
+    arggroups.db_profiles(parser)
+    arggroups.requests(parser)
+    arggroups.selenium(parser)
+    arggroups.filter_links(parser)
+    arggroups.extractor(parser)
 
     parser.add_argument("--hash", action="store_true")
-
-    parser.add_argument("--cookies", help="path to a Netscape formatted cookies file")
-    parser.add_argument("--cookies-from-browser", metavar="BROWSER[+KEYRING][:PROFILE][::CONTAINER]")
-
-    parser.add_argument("--selenium", action="store_true")
-    parser.add_argument("--manual", action="store_true", help="Confirm manually in shell before exiting the browser")
-    parser.add_argument("--scroll", action="store_true", help="Scroll down the page; infinite scroll")
-    parser.add_argument("--auto-pager", "--autopager", action="store_true")
-    parser.add_argument("--poke", action="store_true")
-    parser.add_argument("--chrome", action="store_true")
-
-    parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
-    parser.add_argument("--verbose", "-v", action="count", default=0)
-
     parser.add_argument("--local-file", "--local-html", action="store_true", help="Treat paths as Local HTML files")
-    parser.add_argument("--file", "-f", help="File with one URL per line")
 
-    parser.add_argument("database")
+    arggroups.debug(parser)
+    arggroups.database(parser)
     if "add" in kwargs["prog"]:
-        parser.add_argument("paths", nargs="*", action=arg_utils.ArgparseArgsOrStdin)
+        arggroups.paths_or_stdin(parser)
     args = parser.parse_intermixed_args()
 
     if not args.profiles:
@@ -178,8 +52,6 @@ def parse_args(**kwargs):
         args.paths = [strings.strip_enclosing_quotes(s) for s in iterables.conform(args.paths)]
     log.info(objects.dict_filter_bool(args.__dict__))
 
-    if args.db:
-        args.database = args.db
     Path(args.database).touch()
     args.db = db_utils.connect(args)
 

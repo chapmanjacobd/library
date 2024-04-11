@@ -4,14 +4,13 @@ from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 from xklb import db_media, db_playlists, usage
 from xklb.scripts.mining import extract_links
-from xklb.utils import arg_utils, consts, db_utils, objects, printing, strings, web
+from xklb.utils import arg_utils, arggroups, consts, db_utils, objects, printing, strings, web
 from xklb.utils.log_utils import log
 
 
 def parse_args(**kwargs):
     parser = argparse.ArgumentParser(**kwargs)
     parser.add_argument("--category", "-c", help=argparse.SUPPRESS)
-    parser.add_argument("--no-extract", "--skip-extract", action="store_true")
 
     parser.add_argument("--max-pages", type=int)
     parser.add_argument("--fixed-pages", type=int)
@@ -28,97 +27,18 @@ def parse_args(**kwargs):
     parser.add_argument("--page-step", "--step", "-S", type=int, default=1)
     parser.add_argument("--page-start", "--start-page", "--start", type=int)
 
-    parser.add_argument(
-        "--path-include",
-        "--include-path",
-        "--include",
-        "-s",
-        nargs="*",
-        default=[],
-        help="path substrings for inclusion (all must match to include)",
-    )
-    parser.add_argument(
-        "--text-include",
-        "--include-text",
-        nargs="*",
-        default=[],
-        help="link text substrings for inclusion (all must match to include)",
-    )
-    parser.add_argument(
-        "--after-include",
-        "--include-after",
-        nargs="*",
-        default=[],
-        help="plain text substrings after URL for inclusion (all must match to include)",
-    )
-    parser.add_argument(
-        "--before-include",
-        "--include-before",
-        nargs="*",
-        default=[],
-        help="plain text substrings before URL for inclusion (all must match to include)",
-    )
-    parser.add_argument(
-        "--path-exclude",
-        "--exclude-path",
-        "--exclude",
-        "-E",
-        nargs="*",
-        default=["javascript:", "mailto:", "tel:"],
-        help="path substrings for exclusion (any must match to exclude)",
-    )
-    parser.add_argument(
-        "--text-exclude",
-        "--exclude-text",
-        nargs="*",
-        default=[],
-        help="link text substrings for exclusion (any must match to exclude)",
-    )
-    parser.add_argument(
-        "--after-exclude",
-        "--exclude-after",
-        nargs="*",
-        default=[],
-        help="plain text substrings after URL for exclusion (any must match to exclude)",
-    )
-    parser.add_argument(
-        "--before-exclude",
-        "--exclude-before",
-        nargs="*",
-        default=[],
-        help="plain text substrings before URL for exclusion (any must match to exclude)",
-    )
+    arggroups.filter_links(parser)
 
-    parser.add_argument("--strict-include", action="store_true", help="All include args must resolve true")
-    parser.add_argument("--strict-exclude", action="store_true", help="All exclude args must resolve true")
-    parser.add_argument("--case-sensitive", action="store_true", help="Filter with case sensitivity")
-    parser.add_argument(
-        "--no-url-decode",
-        "--skip-url-decode",
-        action="store_true",
-        help="Skip URL-decode for --path-include/--path-exclude",
-    )
+    arggroups.requests(parser)
+    arggroups.selenium(parser)
 
-    parser.add_argument("--cookies", help="path to a Netscape formatted cookies file")
-    parser.add_argument("--cookies-from-browser", metavar="BROWSER[+KEYRING][:PROFILE][::CONTAINER]")
-
-    parser.add_argument("--selenium", action="store_true")
-    parser.add_argument("--manual", action="store_true", help="Confirm manually in shell before exiting the browser")
-    parser.add_argument("--scroll", action="store_true", help="Scroll down the page; infinite scroll")
-    parser.add_argument("--auto-pager", "--autopager", action="store_true")
-    parser.add_argument("--poke", action="store_true")
-    parser.add_argument("--chrome", action="store_true")
     parser.add_argument("--force", action="store_true")
 
-    parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
-    parser.add_argument("--verbose", "-v", action="count", default=0)
+    arggroups.debug(parser)
 
-    parser.add_argument("--local-file", "--local-html", action="store_true", help="Treat paths as Local HTML files")
-    parser.add_argument("--file", "-f", help="File with one URL per line")
-
-    parser.add_argument("database")
+    arggroups.database(parser)
     if "add" in kwargs["prog"]:
-        parser.add_argument("paths", nargs="*", action=arg_utils.ArgparseArgsOrStdin)
+        arggroups.paths_or_stdin(parser)
     args = parser.parse_intermixed_args()
 
     if args.auto_pager:
@@ -141,8 +61,6 @@ def parse_args(**kwargs):
         args.path_include = [web.url_decode(s) for s in args.path_include]
         args.path_exclude = [web.url_decode(s) for s in args.path_exclude]
 
-    if args.db:
-        args.database = args.db
     Path(args.database).touch()
     args.db = db_utils.connect(args)
 

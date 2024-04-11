@@ -3,7 +3,7 @@ from os import fsdecode
 from pathlib import Path
 
 from xklb import usage
-from xklb.utils import objects, path_utils
+from xklb.utils import arggroups, objects, path_utils
 from xklb.utils.log_utils import log
 
 
@@ -14,7 +14,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--lowercase-folders", action="store_true")
     parser.add_argument("--overwrite", "-f", action="store_true")
     parser.add_argument("--run", "-r", action="store_true")
-    parser.add_argument("--verbose", "-v", action="count", default=0)
+    arggroups.debug(parser)
 
     parser.add_argument("paths", nargs="*")
     args = parser.parse_args()

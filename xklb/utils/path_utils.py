@@ -30,7 +30,7 @@ def trim_path_segments(path, desired_length):
     return str(Path(*segments))
 
 
-def clean_path(b, max_name_len=1024, dot_space=False, case_insensitive=False, lowercase_folders=False) -> str:
+def clean_path(b, max_name_len=255, dot_space=False, case_insensitive=False, lowercase_folders=False) -> str:
     import ftfy
 
     p = b.decode("utf-8", "backslashreplace")
@@ -69,13 +69,13 @@ def clean_path(b, max_name_len=1024, dot_space=False, case_insensitive=False, lo
 
         parent = [case_insensitive_r(p) for p in parent]
 
-    ffmpeg_limit = max_name_len - len(ext.encode()) - len("...")
-    if len(stem.encode()) > ffmpeg_limit:
-        start = stem[: ffmpeg_limit // 2]
-        end = stem[-ffmpeg_limit // 2 :]
-        while len(start.encode()) > ffmpeg_limit // 2:
+    fs_limit = max_name_len - len(ext.encode()) - len("...")
+    if len(stem.encode()) > fs_limit:
+        start = stem[: fs_limit // 2]
+        end = stem[-fs_limit // 2 :]
+        while len(start.encode()) > fs_limit // 2:
             start = start[:-1]
-        while len(end.encode()) > ffmpeg_limit // 2:
+        while len(end.encode()) > fs_limit // 2:
             end = end[1:]
         stem = start + "..." + end
 

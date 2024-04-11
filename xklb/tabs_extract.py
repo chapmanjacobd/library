@@ -4,37 +4,23 @@ from pathlib import Path
 from random import randint
 
 from xklb import db_media, history, usage
-from xklb.utils import consts, db_utils, iterables, objects, path_utils, strings
+from xklb.utils import arggroups, consts, db_utils, iterables, objects, path_utils, strings
 from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library tabsadd", usage=usage.tabsadd)
-    parser.add_argument(
-        "--frequency",
-        "--freqency",
-        "-f",
-        metavar="frequency",
-        default="monthly",
-        const="monthly",
-        type=str.lower,
-        nargs="?",
-        help=f"One of: {', '.join(consts.frequency)} (default: %(default)s)",
-    )
-    parser.add_argument("--category", "-c", help=argparse.SUPPRESS)
-    parser.add_argument("--no-sanitize", "-s", action="store_true", help="Don't sanitize some common URL parameters")
-    parser.add_argument("--allow-immediate", action="store_true")
-    parser.add_argument("-v", "--verbose", action="count", default=0)
-    parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
+    arggroups.extractor(parser)
+    arggroups.frequency(parser)
 
-    parser.add_argument("database")
+    parser.add_argument("--category", "-c", help=argparse.SUPPRESS)
+    parser.add_argument("--allow-immediate", action="store_true")
+    arggroups.debug(parser)
+    arggroups.database(parser)
     parser.add_argument("paths", nargs="+")
     args = parser.parse_intermixed_args()
 
     args.frequency = strings.partial_startswith(args.frequency, consts.frequency)
-
-    if args.db:
-        args.database = args.db
 
     Path(args.database).touch()
     args.db = db_utils.connect(args)
@@ -117,9 +103,9 @@ def tabs_shuffle() -> None:
         type=str.lower,
         help=f"One of: {', '.join(consts.frequency)} (default: %(default)s)",
     )
-    parser.add_argument("-v", "--verbose", action="count", default=0)
+    arggroups.debug(parser)
 
-    parser.add_argument("database")
+    arggroups.database(parser)
     args = parser.parse_intermixed_args()
 
     Path(args.database).touch()
@@ -166,8 +152,8 @@ def tabs_shuffle() -> None:
         max_time = d["time_last_played"]
         time_played = randint(min_time, max_time)
 
-        with args.db.conn:
-            args.db.conn.execute(
+        with args.db.conn:  # type: ignore
+            args.db.conn.execute(  # type: ignore
                 "DELETE from history WHERE media_id = ? and time_played = ?", [d["id"], d["time_last_played"]]
             )
         history.add(args, [d["path"]], time_played=time_played, mark_done=True)

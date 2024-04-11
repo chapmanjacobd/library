@@ -387,7 +387,7 @@ def play(action) -> str:
 
     Offset the play queue:
         You can also offset the queue. For example if you want to skip one or ten media:
-        library {action} --skip 10        # offset ten from the top of an ordered query
+        library {action} --offset 10      # offset ten from the top of an ordered query
 
     Repeat
         library {action}                  # listen to 120 random songs (DEFAULT_PLAY_QUEUE)
@@ -1024,7 +1024,7 @@ christen = """library christen DATABASE [--run]
 
     Rename files to be somewhat normalized
 
-    Default mode is dry-run
+    Default mode is simulate
 
         library christen fs.db
 
@@ -1157,7 +1157,7 @@ merge_dbs = """library merge-dbs DEST_DB SOURCE_DB ... [--only-target-columns] [
          library merge-dbs --pk path specific-site.db big.db -v --only-new-rows -t media,playlists -w 'path like "https://specific-site%"'
 """
 
-merge_folders = """library merge-folders [--replace] [--skip] [--simulate] SOURCES ... DESTINATION
+merge_folders = """library merge-folders [--replace] [--no-replace] [--simulate] SOURCES ... DESTINATION
 
     Merge multiple folders with the same file tree into a single folder.
 
@@ -1219,7 +1219,7 @@ redownload = """library redownload DATABASE
         library redownload city.db 2023-01-26T19:54:42 2023-01-26T20:45:24
 """
 
-relmv = """library relmv [--dry-run] SOURCE ... DEST
+relmv = """library relmv [--simulate] SOURCE ... DEST
 
     Move files/folders without losing hierarchy metadata
 
@@ -1293,7 +1293,7 @@ mv_list = """library mv-list [--limit LIMIT] [--lower LOWER] [--upper UPPER] MOU
 
             Folder list saved to /tmp/tmp7x_75l8. You may want to use the following command to move files to an EMPTY folder target:
 
-                rsync -a --info=progress2 --no-inc-recursive --remove-source-files --files-from=/tmp/tmp7x_75l8 -r --relative -vv --dry-run / jim:/free/real/estate/
+                rsync -a --info=progress2 --no-inc-recursive --remove-source-files --files-from=/tmp/tmp7x_75l8 -r --relative -vv --simulate / jim:/free/real/estate/
 """
 
 scatter = """library scatter [--limit LIMIT] [--policy POLICY] [--sort SORT] --targets TARGETS DATABASE RELATIVE_PATH ...
@@ -1654,11 +1654,13 @@ siteadd = """library site-add DATABASE PATH ... [--auto-pager] [--poke] [--local
     Run with `-vv` to see and interact with the browser
 """
 
-process_audio = """library process-audio PATH ... [--always-split] [--split-longer-than DURATION] [--min-split-segment SECONDS] [--dry-run]
+process_ffmpeg = """library process-ffmpeg PATH ... [--always-split] [--split-longer-than DURATION] [--min-split-segment SECONDS] [--simulate]
+
+    Resize videos to max 1440x960px AV1 and/or Opus to save space
 
     Convert audio to Opus. Optionally split up long tracks into multiple files.
 
-        fd -tf -eDTS -eAAC -eWAV -eAIF -eAIFF -eFLAC -eAIFF -eM4A -eMP3 -eOGG -eMP4 -eWMA -j4 -x library process-audio
+        fd -tf -eDTS -eAAC -eWAV -eAIF -eAIFF -eFLAC -eAIFF -eM4A -eMP3 -eOGG -eMP4 -eWMA -j4 -x library process --audio
 
     Use --always-split to _always_ split files if silence is detected
 
@@ -1672,11 +1674,6 @@ process_audio = """library process-audio PATH ... [--always-split] [--split-long
 process_image = """library process-image PATH ...
 
     Resize images to max 2400x2400px and format AVIF to save space
-"""
-
-process_video = """library process-video PATH ...
-
-    Resize videos to max 1440x960px and AV1/Opus to save space
 """
 
 sample_hash = """library sample-hash [--threads 10] [--chunk-size BYTES] [--gap BYTES OR 0.0-1.0*FILESIZE] PATH ...

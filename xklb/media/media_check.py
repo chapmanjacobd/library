@@ -3,35 +3,14 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 from xklb import usage
-from xklb.utils import consts, file_utils, nums, objects, printing, processes, strings
+from xklb.utils import arggroups, consts, file_utils, nums, objects, printing, processes, strings
 from xklb.utils.log_utils import log
 
 
 def parse_args():
     parser = argparse.ArgumentParser(prog="library media-check", usage=usage.media_check)
-    parser.add_argument("--threads", default=1, const=10, nargs="?")
-    parser.add_argument(
-        "--chunk-size",
-        type=float,
-        help="Chunk size in seconds (default 0.5 second). If set, recommended to use >0.1 seconds",
-        default=0.5,
-    )
-    parser.add_argument(
-        "--gap",
-        default="0.05",
-        help="Width between chunks to skip (default 5%%). Values greater than 1 are treated as number of seconds",
-    )
-    parser.add_argument(
-        "--delete-corrupt",
-        help="delete media that is more corrupt or equal to this threshold. Values greater than 1 are treated as number of seconds",
-    )
-    parser.add_argument(
-        "--full-scan-if-corrupt",
-        help="full scan as second pass if initial scan result more corruption or equal to this threshold. Values greater than 1 are treated as number of seconds",
-    )
-    parser.add_argument("--full-scan", "--full", action="store_true")
-    parser.add_argument("--audio-scan", "--audio", action="store_true")
-    parser.add_argument("--verbose", "-v", action="count", default=0)
+    arggroups.media_check(parser)
+    arggroups.debug(parser)
     parser.add_argument("paths", nargs="+")
     args = parser.parse_args()
 

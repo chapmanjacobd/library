@@ -7,17 +7,16 @@ from bs4 import BeautifulSoup
 from dateutil import parser
 
 from xklb import db_media, usage
-from xklb.utils import db_utils, nums, objects, web
+from xklb.utils import arggroups, db_utils, nums, objects, web
 from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library tildes", usage=usage.tildes)
-    parser.add_argument("--verbose", "-v", action="count", default=0)
-    parser.add_argument("--cookies", help="path to a Netscape formatted cookies file")
-    parser.add_argument("--cookies-from-browser", metavar="BROWSER[+KEYRING][:PROFILE][::CONTAINER]")
+    arggroups.requests(parser)
+    arggroups.debug(parser)
 
-    parser.add_argument("database")
+    arggroups.database(parser)
     parser.add_argument("username", help="Tildes.net user to extract comments for")
     args = parser.parse_intermixed_args()
 

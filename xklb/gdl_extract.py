@@ -2,7 +2,7 @@ import argparse, sys
 from pathlib import Path
 
 from xklb import db_media, db_playlists, gdl_backend, usage
-from xklb.utils import arg_utils, consts, db_utils, iterables, objects, path_utils, processes
+from xklb.utils import arggroups, argparse_utils, consts, db_utils, iterables, objects, path_utils, processes
 from xklb.utils.consts import SC
 from xklb.utils.log_utils import log
 
@@ -13,43 +13,21 @@ def parse_args(action, usage) -> argparse.Namespace:
         usage=usage,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
+    arggroups.extractor(parser)
+    arggroups.download(parser)
+    parser.set_defaults(download_archive=str(Path("~/.local/share/gallerydl.sqlite3").expanduser().resolve()))
 
-    parser.add_argument(
-        "--extractor-config",
-        "-extractor-config",
-        nargs=1,
-        action=arg_utils.ArgparseDict,
-        default={},
-        metavar="KEY=VALUE",
-        help="Add key/value pairs to override or extend default downloader configuration",
-    )
-    parser.add_argument("--download-archive", default="~/.local/share/gallerydl.sqlite3")
-    parser.add_argument("--safe", "-safe", action="store_true", help="Skip generic URLs")
-    parser.add_argument("--no-sanitize", "-s", action="store_true", help="Don't sanitize some common URL parameters")
-    parser.add_argument(
-        "--force",
-        "-f",
-        action="store_true",
-        help="Fetch metadata for paths even if they are already in the media table",
-    )
+    arggroups.debug(parser)
 
-    parser.add_argument("--ignore-errors", "--ignoreerrors", "-i", action="store_true", help=argparse.SUPPRESS)
-
-    parser.add_argument("--timeout", "-T", help="Quit after x minutes")
-    parser.add_argument("--verbose", "-v", action="count", default=0)
-    parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
-
-    parser.add_argument("database")
+    arggroups.database(parser)
     if action == SC.galleryadd:
-        parser.add_argument("--insert-only", action="store_true")
-        parser.add_argument("--insert-only-playlists", action="store_true")
-        parser.add_argument("playlists", nargs="*", default=arg_utils.STDIN_DASH, action=arg_utils.ArgparseArgsOrStdin)
+        parser.add_argument(
+            "playlists", nargs="*", default=argparse_utils.STDIN_DASH, action=argparse_utils.ArgparseArgsOrStdin
+        )
 
     args = parser.parse_intermixed_args()
     args.action = action
 
-    if args.db:
-        args.database = args.db
     if action == SC.galleryadd:
         Path(args.database).touch()
     args.db = db_utils.connect(args)

@@ -4,7 +4,7 @@ from time import sleep
 
 from xklb import history, usage
 from xklb.media import media_printer
-from xklb.utils import arg_utils, consts, db_utils, iterables, objects, processes
+from xklb.utils import arg_utils, arggroups, consts, db_utils, iterables, objects, processes
 from xklb.utils.log_utils import log
 
 
@@ -15,29 +15,11 @@ def parse_args(action) -> argparse.Namespace:
         usage=usage.tabs,
     )
 
-    parser.add_argument("--sort", "-u", nargs="+")
-    parser.add_argument("--where", "-w", nargs="+", action="extend", default=[])
-    parser.add_argument("--include", "-s", "--search", nargs="+", action="extend", default=[])
-    parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[])
-    parser.add_argument("--exact", action="store_true")
-    parser.add_argument("--print", "-p", default="", const="p", nargs="?")
-    parser.add_argument("--cols", "-cols", "-col", nargs="*", help="Include a column when printing")
-    parser.add_argument(
-        "--delete",
-        "--remove",
-        "--erase",
-        "--rm",
-        "-rm",
-        action="store_true",
-        help="Delete matching rows",
-    )
-    parser.add_argument("--limit", "-L", "-l", "-queue", "--queue")
-    parser.add_argument("--skip")
+    arggroups.sql_fs(parser)
+    arggroups.capability_delete(parser)
+    arggroups.debug(parser)
 
-    parser.add_argument("--db", "-db")
-    parser.add_argument("--verbose", "-v", action="count", default=0)
-
-    parser.add_argument("database")
+    arggroups.database(parser)
     parser.add_argument("search", nargs="*")
     args = parser.parse_intermixed_args()
     args.action = action
@@ -45,9 +27,6 @@ def parse_args(action) -> argparse.Namespace:
     args.include += args.search
     if args.include == ["."]:
         args.include = [str(Path().cwd().resolve())]
-
-    if args.db:
-        args.database = args.db
 
     if args.sort:
         args.sort = [arg_utils.override_sort(s) for s in args.sort]
@@ -59,8 +38,6 @@ def parse_args(action) -> argparse.Namespace:
     if args.delete:
         args.print += "d"
 
-    if args.db:
-        args.database = args.db
     args.db = db_utils.connect(args)
     log.info(objects.dict_filter_bool(args.__dict__))
 
@@ -103,7 +80,7 @@ def construct_tabs_query(args) -> tuple[str, dict]:
             args.filter_bindings[f"exclude{idx}"] = "%" + exc.replace(" ", "%").replace("%%", " ") + "%"
 
     LIMIT = "LIMIT " + str(args.limit) if args.limit else ""
-    OFFSET = f"OFFSET {args.skip}" if args.skip else ""
+    OFFSET = f"OFFSET {args.offset}" if args.offset else ""
 
     query = f"""WITH m as (
             SELECT

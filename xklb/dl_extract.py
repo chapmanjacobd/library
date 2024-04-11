@@ -2,7 +2,20 @@ import argparse, os, sys
 
 from xklb import db_media, gdl_backend, tube_backend, usage
 from xklb.media import media_printer
-from xklb.utils import arg_utils, consts, db_utils, iterables, nums, objects, printing, processes, sql_utils, web
+from xklb.utils import (
+    arg_utils,
+    arggroups,
+    argparse_utils,
+    consts,
+    db_utils,
+    iterables,
+    nums,
+    objects,
+    printing,
+    processes,
+    sql_utils,
+    web,
+)
 from xklb.utils.consts import SC, DBType
 from xklb.utils.log_utils import log
 
@@ -13,27 +26,30 @@ def parse_args():
         usage=usage.download,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
+    arggroups.sql_fs(parser)
+    arggroups.sql_media(parser)
+    arggroups.download(parser)
+    arggroups.download_subtitle(parser)
+    arggroups.requests(parser)
 
-    subp_profile = parser.add_mutually_exclusive_group()
-    subp_profile.add_argument(
+    profile = parser.add_mutually_exclusive_group()
+    profile.add_argument(
         "--audio",
-        "--music",
         "-A",
         action="store_const",
         dest="profile",
         const=DBType.audio,
         help="Use audio downloader",
     )
-    subp_profile.add_argument(
+    profile.add_argument(
         "--video",
-        "--movie",
         "-V",
         action="store_const",
         dest="profile",
         const=DBType.video,
         help="Use video downloader",
     )
-    subp_profile.add_argument(
+    profile.add_argument(
         "--image",
         "--photo",
         "-I",
@@ -42,44 +58,19 @@ def parse_args():
         const=DBType.image,
         help="Use image downloader",
     )
-    subp_profile.add_argument(
+    profile.add_argument(
         "--filesystem",
         "--fs",
+        "--web",
         action="store_const",
         dest="profile",
         const=DBType.filesystem,
         help="Use filesystem downloader",
     )
 
-    parser.add_argument(
-        "--extractor-config",
-        "-extractor-config",
-        nargs=1,
-        action=arg_utils.ArgparseDict,
-        default={},
-        metavar="KEY=VALUE",
-        help="Add key/value pairs to override or extend downloader configuration",
-    )
-    parser.add_argument("--download-archive")
-
-    parser.add_argument("--safe", "-safe", action="store_true", help="Skip generic URLs")
     parser.add_argument("--same-domain", action="store_true", help="Choose a random domain to focus on")
 
-    parser.add_argument("--subs", action="store_true")
-    parser.add_argument("--auto-subs", "--autosubs", action="store_true")
-    parser.add_argument("--subtitle-languages", "--subtitle-language", "--sl", action=arg_utils.ArgparseList)
-
     parser.add_argument("--prefix", default=os.getcwd(), help=argparse.SUPPRESS)
-    parser.add_argument("--ext")
-
-    parser.add_argument("--print", "-p", default="", const="p", nargs="?", help=argparse.SUPPRESS)
-    parser.add_argument("--cols", "-cols", "-col", nargs="*", help="Include a column when printing")
-    parser.add_argument("--sort", "-u", nargs="+", help=argparse.SUPPRESS)
-    parser.add_argument("--where", "-w", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
-    parser.add_argument("--include", "-s", "--search", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
-    parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
-    parser.add_argument("--duration", "-d", action="append", help=argparse.SUPPRESS)
-    parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", help=argparse.SUPPRESS)
 
     parser.add_argument("--small", action="store_true", help="Video: Prefer 480p-like")
 
@@ -87,21 +78,10 @@ def parse_args():
     parser.add_argument("--drawings", action="store_true", help="Image: Download PNG")
     parser.add_argument("--gifs", action="store_true", help="Image: Download MP4 and GIFs")
 
-    parser.add_argument(
-        "--retry-delay",
-        "-r",
-        default="14 days",
-        help="Must be specified in SQLITE Modifiers format: N hours, days, months, or years",
-    )
+    arggroups.debug(parser)
 
-    parser.add_argument("--force", "-f", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--ignore-errors", "--ignoreerrors", "-i", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
-    parser.add_argument("--timeout", "-T", help="Quit after x minutes")
-    parser.add_argument("--verbose", "-v", action="count", default=0)
-
-    parser.add_argument("database")
-    parser.add_argument("playlists", nargs="*", action=arg_utils.ArgparseArgsOrStdin)
+    arggroups.database(parser)
+    parser.add_argument("playlists", nargs="*", action=argparse_utils.ArgparseArgsOrStdin)
     args, unk = parser.parse_known_intermixed_args()
     args.defaults = []
 
@@ -113,13 +93,11 @@ def parse_args():
         args.duration = sql_utils.parse_human_to_sql(nums.human_to_seconds, "duration", args.duration)
 
     if not args.profile and not args.print:
-        log.error("Download profile must be specified. Use one of: --video OR --audio OR --image")
+        log.error("Download profile must be specified. Use one of: --video OR --audio OR --image OR --filesystem")
         raise SystemExit(1)
 
     args.playlists = iterables.conform(args.playlists)
 
-    if args.db:
-        args.database = args.db
     args.db = db_utils.connect(args)
 
     args.action = SC.download
@@ -297,6 +275,9 @@ def dl_download(args=None) -> None:
     args.blocklist_rules = []
     if "blocklist" in args.db.table_names():
         args.blocklist_rules = [{d["key"]: d["value"]} for d in args.db["blocklist"].rows]
+
+    if args.profile == DBType.filesystem:
+        web.requests_session(args)  # prepare requests session
 
     media = process_downloadqueue(args)
     for m in media:

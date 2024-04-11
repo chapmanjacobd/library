@@ -4,7 +4,7 @@ from pathlib import Path
 from xklb import history, usage
 from xklb.media import media_printer
 from xklb.scripts import mcda
-from xklb.utils import arg_utils, consts, db_utils, file_utils, nums, objects, sql_utils
+from xklb.utils import arg_utils, arggroups, consts, db_utils, file_utils, nums, objects, sql_utils
 from xklb.utils.log_utils import log
 
 
@@ -14,39 +14,16 @@ def parse_args() -> argparse.Namespace:
         usage=usage.big_dirs,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("--sort-groups-by", "--sort-groups", "--sort-by", "--sort", "-u", nargs="+")
-    parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", default="4000")
-    parser.add_argument("--depth", "-d", default=0, type=int, help="Depth of folders")
-    parser.add_argument("--lower", type=int, default=4, help="Minimum number of files per folder")
-    parser.add_argument("--upper", type=int, help="Maximum number of files per folder")
-    parser.add_argument(
-        "--folder-size",
-        "--foldersize",
-        "-Z",
-        action="append",
-        help="Only include folders of specific sizes (uses the same syntax as fd-find)",
-    )
-    parser.add_argument(
-        "--size",
-        "-S",
-        action="append",
-        help="Only include files of specific sizes (uses the same syntax as fd-find)",
-    )
-    parser.add_argument("--include", "-s", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
-    parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
-    parser.add_argument("--cluster-sort", action="store_true", help="Cluster by filename instead of grouping by folder")
-    parser.add_argument("--clusters", "--n-clusters", "-c", type=int, help="Number of KMeans clusters")
-    parser.add_argument("--print", "-p", default="", const="p", nargs="?")
-    parser.add_argument("--verbose", "-v", action="count", default=0)
+    arggroups.sql_fs(parser)
+    arggroups.operation_cluster(parser)
+    arggroups.operation_group_folders(parser)
+    parser.set_defaults(limit="4000", lower=4, depth=0)
+    arggroups.debug(parser)
 
-    parser.add_argument("database")
+    arggroups.database(parser)
     parser.add_argument("search", nargs="*")
     args = parser.parse_intermixed_args()
     args.db = db_utils.connect(args)
-
-    if args.sort_groups_by:
-        args.sort_groups_by = arg_utils.parse_ambiguous_sort(args.sort_groups_by)
-        args.sort_groups_by = ",".join(args.sort_groups_by)
 
     args.include += args.search
     if args.include == ["."]:
@@ -54,6 +31,10 @@ def parse_args() -> argparse.Namespace:
 
     if len(args.include) == 1 and os.sep in args.include[0]:
         args.include = [file_utils.resolve_absolute_path(args.include[0])]
+
+    if args.sort_groups_by:
+        args.sort_groups_by = arg_utils.parse_ambiguous_sort(args.sort_groups_by)
+        args.sort_groups_by = ",".join(args.sort_groups_by)
 
     if args.size:
         args.size = sql_utils.parse_human_to_sql(nums.human_to_bytes, "size", args.size)

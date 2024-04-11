@@ -2,14 +2,14 @@ import argparse, subprocess
 from pathlib import Path
 
 from xklb import usage
-from xklb.utils import objects, processes, web
+from xklb.utils import arggroups, objects, path_utils, processes, web
 from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library process-image", usage=usage.process_image)
     parser.add_argument("--delete-unplayable", action="store_true")
-    parser.add_argument("--verbose", "-v", action="count", default=0)
+    arggroups.debug(parser)
 
     parser.add_argument("paths", nargs="+")
     args = parser.parse_args()
@@ -18,15 +18,16 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def process_path(path, delete_broken=False):
+def process_path(path, delete_unplayable=False):
     if path.startswith("http"):
-        output_path = Path(web.url_to_local_path(path)).with_suffix(".avif")
+        output_path = Path(web.url_to_local_path(path))
     else:
-        output_path = Path(path).with_suffix(".avif")
+        output_path = Path(path)
+    output_path = Path(path_utils.clean_path(bytes(output_path.with_suffix(".avif"))))
 
     path = Path(path)
     if path == output_path:
-        output_path = Path(path).with_suffix(".resized.avif")
+        output_path = Path(path).with_suffix(".r.avif")
         if path == output_path:
             log.error("Input and output files must have different names %s", path)
             return path
@@ -37,7 +38,7 @@ def process_path(path, delete_broken=False):
         )
     except subprocess.CalledProcessError:
         log.exception("Could not transcode: %s", path)
-        if delete_broken:
+        if delete_unplayable:
             path.unlink()
             return None
         else:
@@ -60,7 +61,7 @@ def process_image():
             path = str(Path(path).resolve())
 
         try:
-            process_path(path, delete_broken=args.delete_unplayable)
+            process_path(path, delete_unplayable=args.delete_unplayable)
         except Exception:
             print(path)
             raise

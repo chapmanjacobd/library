@@ -6,7 +6,7 @@ import humanize
 from tabulate import tabulate
 
 from xklb import usage
-from xklb.utils import consts, db_utils, devices, iterables, objects, printing
+from xklb.utils import arggroups, consts, db_utils, devices, iterables, objects, printing
 from xklb.utils.log_utils import log
 
 
@@ -16,13 +16,13 @@ def parse_args() -> argparse.Namespace:
         usage=usage.mv_list,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", default="25")
-    parser.add_argument("--lower", default=4, type=int, help="Number of files per folder lower limit")
-    parser.add_argument("--upper", default=4000, type=int, help="Number of files per folder upper limit")
-    parser.add_argument("--verbose", "-v", action="count", default=0)
+    arggroups.sql_fs(parser)
+    arggroups.operation_group_folders(parser)
+    parser.set_defaults(limit="25", lower=4, upper=4000)
+    arggroups.debug(parser)
 
     parser.add_argument("mount_point")
-    parser.add_argument("database")
+    arggroups.database(parser)
     args = parser.parse_intermixed_args()
     args.db = db_utils.connect(args)
     log.info(objects.dict_filter_bool(args.__dict__))

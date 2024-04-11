@@ -2,7 +2,7 @@ import argparse
 
 from xklb import dl_extract, tube_backend, usage
 from xklb.media import media_printer
-from xklb.utils import arg_utils, consts, db_utils, objects, sql_utils
+from xklb.utils import arg_utils, arggroups, consts, db_utils, objects, sql_utils
 from xklb.utils.log_utils import log
 
 
@@ -12,31 +12,19 @@ def parse_args() -> argparse.Namespace:
         usage=usage.download_status,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("--print", "-p", default="p", const="p", nargs="?", help=argparse.SUPPRESS)
-    parser.add_argument("--cols", "-cols", "-col", nargs="*", help="Include a column when printing")
-    parser.add_argument("--sort", "-u", nargs="+", help=argparse.SUPPRESS)
-    parser.add_argument("--where", "-w", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
-    parser.add_argument("--include", "-s", "--search", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
-    parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
-    parser.add_argument("--duration", "-d", action="append", help=argparse.SUPPRESS)
-    parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", help=argparse.SUPPRESS)
-    parser.add_argument("--safe", "-safe", action="store_true", help="Skip generic URLs")
-    parser.add_argument(
-        "--retry-delay",
-        "-r",
-        default="14 days",
-        help="Must be specified in SQLITE Modifiers format: N hours, days, months, or years",
-    )
 
-    parser.add_argument("-v", "--verbose", action="count", default=0)
-    parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
+    arggroups.sql_fs(parser)
+    arggroups.sql_media(parser)
 
-    parser.add_argument("database")
+    parser.set_defaults(print="p")
+
+    arggroups.download(parser)
+
+    arggroups.debug(parser)
+    arggroups.database(parser)
     args = parser.parse_args()
     args.defaults = []
 
-    if args.db:
-        args.database = args.db
     args.db = db_utils.connect(args)
     log.info(objects.dict_filter_bool(args.__dict__))
 

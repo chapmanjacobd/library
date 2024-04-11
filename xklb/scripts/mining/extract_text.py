@@ -4,30 +4,21 @@ from pathlib import Path
 from bs4 import BeautifulSoup, NavigableString
 
 from xklb import usage
-from xklb.utils import arg_utils, devices, iterables, printing, strings, web
+from xklb.utils import arg_utils, arggroups, devices, iterables, printing, strings, web
 from xklb.utils.log_utils import log
 
 
 def parse_args():
     parser = argparse.ArgumentParser(prog="library extract-text", usage=usage.extract_text)
+    arggroups.requests(parser)
+    arggroups.selenium(parser)
+
     parser.add_argument("--skip-links", action="store_true")
-    parser.add_argument("--save", action="store_true")
-
-    parser.add_argument("--cookies", help="path to a Netscape formatted cookies file")
-    parser.add_argument("--cookies-from-browser", metavar="BROWSER[+KEYRING][:PROFILE][::CONTAINER]")
-    parser.add_argument("--selenium", action="store_true")
-    parser.add_argument("--manual", action="store_true", help="Confirm manually in shell before exiting the browser")
-    parser.add_argument("--scroll", action="store_true", help="Scroll down the page; infinite scroll")
-    parser.add_argument("--auto-pager", "--autopager", action="store_true")
-    parser.add_argument("--poke", action="store_true")
-    parser.add_argument("--chrome", action="store_true")
-
-    parser.add_argument("--verbose", "-v", action="count", default=0)
-
+    parser.add_argument("--download", "--save", "--write", action="store_true")
     parser.add_argument("--local-file", "--local-html", action="store_true", help="Treat paths as Local HTML files")
-    parser.add_argument("--file", "-f", help="File with one URL per line")
 
-    parser.add_argument("paths", nargs="*")
+    arggroups.debug(parser)
+    arggroups.paths_or_stdin(parser)
     args = parser.parse_args()
 
     if args.scroll:
@@ -106,12 +97,12 @@ def extract_text() -> None:
                 if s is None:
                     break
 
-                if args.save:
+                if args.download:
                     output_lines.append(s)
                 else:
                     printing.pipe_print(s)
 
-            if args.save:
+            if args.download:
                 save_path = web.url_to_local_path(url)
                 Path(save_path).parent.mkdir(exist_ok=True, parents=True)
                 with open(save_path, "w") as f:

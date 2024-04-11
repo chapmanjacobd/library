@@ -9,13 +9,15 @@ import humanize
 from xklb import db_media, usage
 from xklb.media import media_printer
 from xklb.scripts import sample_compare, sample_hash
-from xklb.utils import consts, db_utils, devices, file_utils, iterables, objects, processes, strings
+from xklb.utils import arggroups, consts, db_utils, devices, file_utils, iterables, objects, processes, strings
 from xklb.utils.consts import DBType
 from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library dedupe-media", usage=usage.dedupe_media)
+
+    arggroups.sql_fs(parser)
 
     profile = parser.add_mutually_exclusive_group()
     profile.add_argument(
@@ -80,14 +82,11 @@ def parse_args() -> argparse.Namespace:
     )
     profile.set_defaults(profile="audio")
 
-    parser.add_argument("--only-soft-delete", action="store_true")
+    parser.set_defaults(limit="100")
+
+    parser.add_argument("--no-delete", "--soft-delete", "--mark-deleted", action="store_true")
     parser.add_argument("--dedupe-cmd", help=argparse.SUPPRESS)
     parser.add_argument("--force", "-f", action="store_true")
-    parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", default=100)
-    parser.add_argument("--include", "-s", "--search", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
-    parser.add_argument("--flexible-search", "--or", "--flex", action="store_true")
-    parser.add_argument("--exclude", "-E", "-e", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
-    parser.add_argument("--sort", "-u", nargs="+", help=argparse.SUPPRESS)
 
     parser.add_argument("--basename", action="store_true")
     parser.add_argument("--dirname", action="store_true")
@@ -98,11 +97,9 @@ def parse_args() -> argparse.Namespace:
         help="Filter out matches with less than this ratio. A sane value is in the range of 0.7~0.9",
     )
 
-    parser.add_argument("--print", "-p", default="", const="p", nargs="?")
-    parser.add_argument("--cols", "-cols", "-col", nargs="*", help="Include a column when printing")
-    parser.add_argument("--verbose", "-v", action="count", default=0)
+    arggroups.debug(parser)
 
-    parser.add_argument("database")
+    arggroups.database(parser)
     parser.add_argument("paths", nargs="*")
     args = parser.parse_intermixed_args()
     args.db = db_utils.connect(args)
@@ -594,7 +591,7 @@ def dedupe_media() -> None:
         log.info("Deleting...")
         for d in duplicates:
             path = d["duplicate_path"]
-            if not path.startswith("http") and not args.only_soft_delete:
+            if not path.startswith("http") and not args.no_delete:
                 if args.dedupe_cmd:
                     processes.cmd(
                         *shlex.split(args.dedupe_cmd), d["duplicate_path"], d["keep_path"]

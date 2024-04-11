@@ -85,7 +85,6 @@ yt_meaningless_errors = re.compile(
 .*This channel does not have
 .*fragment_filename_sanitized
 .*no suitable InfoExtractor for URL
-.*File name too long
 .*No such file or directory
 .*Name or service not known
 .*Extracting URL
@@ -253,6 +252,7 @@ prefix_unrecoverable_errors = re.compile(
     "|".join(
         r""".*unable to write data:
 .*No space left on device
+.*File name too long
 .*Transport endpoint is not connected
 .*unable to create directory
 .*Permission denied""".splitlines(),

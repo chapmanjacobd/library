@@ -2,38 +2,41 @@ import argparse
 from pathlib import Path
 
 from xklb import usage
-from xklb.utils import arg_utils, db_utils, objects
+from xklb.utils import arggroups, argparse_utils, db_utils, objects
 from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library merge-dbs", usage=usage.merge_dbs)
 
-    parser.add_argument("--only-tables", "-t", action=arg_utils.ArgparseList, help="Comma separated specific table(s)")
+    parser.add_argument(
+        "--only-tables", "-t", action=argparse_utils.ArgparseList, help="Comma separated specific table(s)"
+    )
 
-    parser.add_argument("--primary-keys", "--pk", action=arg_utils.ArgparseList, help="Comma separated primary keys")
-    parser.add_argument("--business-keys", "--bk", action=arg_utils.ArgparseList, help="Comma separated business keys")
+    parser.add_argument(
+        "--primary-keys", "--pk", action=argparse_utils.ArgparseList, help="Comma separated primary keys"
+    )
+    parser.add_argument(
+        "--business-keys", "--bk", action=argparse_utils.ArgparseList, help="Comma separated business keys"
+    )
 
     parser.add_argument("--upsert", action="store_true")
     parser.add_argument("--ignore", "--only-new-rows", action="store_true")
 
     parser.add_argument("--only-target-columns", action="store_true")
-    parser.add_argument("--skip-columns", action=arg_utils.ArgparseList)
+    parser.add_argument("--skip-columns", action=argparse_utils.ArgparseList)
 
     parser.add_argument("--where", "-w", nargs="+", action="extend", help=argparse.SUPPRESS)
 
-    parser.add_argument("--db", "-db", help=argparse.SUPPRESS)
-    parser.add_argument("--verbose", "-v", action="count", default=0)
+    arggroups.debug(parser)
 
-    parser.add_argument("database")
+    arggroups.database(parser)
     parser.add_argument("source_dbs", nargs="+")
     args = parser.parse_intermixed_args()
 
     if args.where:
         args.where = " and ".join(args.where)
 
-    if args.db:
-        args.database = args.db
     Path(args.database).touch()
     args.db = db_utils.connect(args)
 
