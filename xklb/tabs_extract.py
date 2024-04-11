@@ -57,6 +57,11 @@ def get_new_paths(args) -> list[str]:
     else:
         if existing:
             print(f"Updating frequency for {len(existing)} existing paths")
+            with args.db.conn:  # type: ignore
+                for p in list(existing):
+                    args.db.conn.execute(  # type: ignore
+                        "DELETE from history WHERE media_id = (select id from media where path = ?)", [p]
+                    )
             db_media.mark_media_deleted(args, list(existing))
 
     args.paths = iterables.conform([path.strip() for path in args.paths])
