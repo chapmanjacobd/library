@@ -1,4 +1,4 @@
-import functools, json, multiprocessing, os, platform, re, shlex, signal, subprocess, sys
+import functools, json, multiprocessing, os, platform, shlex, signal, subprocess, sys
 from typing import NoReturn
 
 from xklb.utils import iterables
@@ -64,34 +64,17 @@ def os_bg_kwargs() -> dict:
         return {}
 
 
-def cmd(*command, strict=True, cwd=None, quiet=True, **kwargs) -> subprocess.CompletedProcess:
-    EXP_FILTER = re.compile(
-        "|".join(
-            [
-                r".*Stream #0:0.*Audio: opus, 48000 Hz, .*, fltp",
-                r".*encoder.*",
-                r".*Metadata:",
-                r".*TSRC.*",
-            ],
-        ),
-        re.IGNORECASE,
-    )
+def cmd(*command, strict=True, cwd=None, quiet=True, ignore_regexps=None, **kwargs) -> subprocess.CompletedProcess:
+    def print_std(s, is_success):
+        if ignore_regexps is not None:
+            s = "\n".join(l for l in s.splitlines() if not any(r.match(l) for r in ignore_regexps))
 
-    def filter_output(string):
-        filtered_strings = []
-        for s in string.strip().splitlines():
-            if not EXP_FILTER.match(s):
-                filtered_strings.append(s)
-
-        return "\n".join(iterables.conform(filtered_strings))
-
-    def print_std(r_std):
-        s = filter_output(r_std)
+        s = s.strip()
         if s:
-            if quiet:
-                log.info(s)
+            if quiet and is_success:
+                log.debug(s)
             else:
-                print(s)
+                log.info(s)
         return s
 
     try:
@@ -109,14 +92,13 @@ def cmd(*command, strict=True, cwd=None, quiet=True, **kwargs) -> subprocess.Com
         raise
 
     log.debug(r.args)
-    r.stdout = print_std(r.stdout)
-    r.stderr = print_std(r.stderr)
+    print_std(r.stdout, r.returncode == 0)
+    print_std(r.stderr, r.returncode == 0)
     if r.returncode != 0:
-        msg = f"[{shlex.join(command)}] exited {r.returncode}"
         if strict:
-            raise RuntimeError(msg)
+            raise subprocess.CalledProcessError(r.returncode, shlex.join(command), r.stdout, r.stderr)
         else:
-            log.info(msg)
+            log.info("[%s] exited %s", shlex.join(command), r.returncode)
 
     return r
 

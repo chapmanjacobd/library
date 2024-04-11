@@ -95,7 +95,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.6.001)
+    xk media library subcommands (v2.6.002)
 
     Create database subcommands:
     ╭───────────────┬────────────────────────────────────────────────────╮
@@ -254,24 +254,17 @@ To stop playing press Ctrl+C in either the terminal or mpv
     ╰────────────────────┴────────────────────────────────────────╯
 
     Misc subcommands:
-    ╭────────────────┬────────────────────────────────────────────────────────────╮
-    │ export-text    │ Export HTML files from SQLite databases                    │
-    ├────────────────┼────────────────────────────────────────────────────────────┤
-    │ process-audio  │ Shrink audio by converting to Opus format (.mka)           │
-    ├────────────────┼────────────────────────────────────────────────────────────┤
-    │ process-image  │ Shrink images by converting to AV1 image format (.avif)    │
-    ├────────────────┼────────────────────────────────────────────────────────────┤
-    │ process-video  │ Shrink videos by converting to AV1 video format (.av1.mkv) │
-    ├────────────────┼────────────────────────────────────────────────────────────┤
-    │ dedupe-czkawka │ Process czkawka diff output                                │
-    ├────────────────┼────────────────────────────────────────────────────────────┤
-    │ nouns          │ Unstructured text -> compound nouns (stdin)                │
-    ╰────────────────┴────────────────────────────────────────────────────────────╯
-
-    Other subcommands:
-    ╭────────────────┬────────────────╮
-    │ process-ffmpeg │ process_ffmpeg │
-    ╰────────────────┴────────────────╯
+    ╭────────────────┬────────────────────────────────────────────────────────╮
+    │ export-text    │ Export HTML files from SQLite databases                │
+    ├────────────────┼────────────────────────────────────────────────────────┤
+    │ process-ffmpeg │ Shrink video/audio to AV1/Opus format (.mkv, .mka)     │
+    ├────────────────┼────────────────────────────────────────────────────────┤
+    │ process-image  │ Shrink images by resizing and AV1 image format (.avif) │
+    ├────────────────┼────────────────────────────────────────────────────────┤
+    │ dedupe-czkawka │ Process czkawka diff output                            │
+    ├────────────────┼────────────────────────────────────────────────────────┤
+    │ nouns          │ Unstructured text -> compound nouns (stdin)            │
+    ╰────────────────┴────────────────────────────────────────────────────────╯
 
 
 </details>
@@ -2368,7 +2361,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
             Folder list saved to /tmp/tmp7x_75l8. You may want to use the following command to move files to an EMPTY folder target:
 
-                rsync -a --info=progress2 --no-inc-recursive --remove-source-files --files-from=/tmp/tmp7x_75l8 -r --relative -vv --simulate / jim:/free/real/estate/
+                rsync -a --info=progress2 --no-inc-recursive --remove-source-files --files-from=/tmp/tmp7x_75l8 -r --relative -vv --dry-run / jim:/free/real/estate/
 
 
 </details>
@@ -2741,23 +2734,9 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 </details>
 
-###### process-image
-
-<details><summary>Shrink images by converting to AV1 image format (.avif)</summary>
-
-    $ library process-image -h
-    usage: library process-image PATH ...
-
-    Resize images to max 2400x2400px and format AVIF to save space
-
-
-</details>
-
-### Other subcommands
-
 ###### process-ffmpeg
 
-<details><summary>process_ffmpeg</summary>
+<details><summary>Shrink video/audio to AV1/Opus format (.mkv, .mka)</summary>
 
     $ library process-ffmpeg -h
     usage: library process-ffmpeg PATH ... [--always-split] [--split-longer-than DURATION] [--min-split-segment SECONDS] [--simulate]
@@ -2775,6 +2754,18 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     Use --split-longer-than to _only_ detect silence for files in excess of a specific duration
 
         library process-audio --split-longer-than 36mins audiobook.m4b audiobook2.mp3
+
+
+</details>
+
+###### process-image
+
+<details><summary>Shrink images by resizing and AV1 image format (.avif)</summary>
+
+    $ library process-image -h
+    usage: library process-image PATH ...
+
+    Resize images to max 2400x2400px and format AVIF to save space
 
 
 </details>
