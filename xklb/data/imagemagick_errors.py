@@ -3,7 +3,9 @@ import re
 environment_error = re.compile(
     "|".join(
         r""".*No space left on device
-.*unable to write""".splitlines(),
+.*unable to write
+.*File name too long
+.*unable to open image""".splitlines(),
     )
 )
 
@@ -42,6 +44,7 @@ image_error = re.compile(
 .*Nonstandard
 .*decompress
 .*improper image header
+.*Not .* starts with
 .*IO error during reading
 .*unable to decode image file""".splitlines(),
     ),
