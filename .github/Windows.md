@@ -17,6 +17,11 @@ Then install xklb and enjoy!
 ```fish
 pip install xklb
 lb
+```
+
+Then you will see:
+
+```
 xk media library
 
 local media subcommands:
