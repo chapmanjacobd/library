@@ -136,7 +136,7 @@ OCR_EXTENSIONS = set("gif|jpg|jpeg|png|tif|tff|tiff".split("|"))
 AUDIO_ONLY_EXTENSIONS = set("mka|opus|oga|ogg|mp3|mpga|m2a|m4a|m4b|flac|wav|wma|aac|aa3|ac3|ape|mid|midi".split("|"))
 VIDEO_EXTENSIONS = set(
     (
-        "str|aa|aax|acm|adf|adp|dtk|ads|ss2|adx|aea|afc|aix|al|apl"
+        "str|aa|aax|acm|adf|adp|dtk|ads|ss2|adx|aea|afc|aix|al|apl|avifs|gif|gifv"
         "|mac|aptx|aptxhd|aqt|ast|obu|avi|avr|avs|avs2|avs3|bfstm|bcstm|binka"
         "|bit|bmv|brstm|cdg|cdxl|xl|c2|302|daud|str|adp|dav|dss|dts|dtshd|dv"
         "|dif|divx|cdata|eac3|paf|fap|flm|flv|fsb|fwse|g722|722|tco|rco"
