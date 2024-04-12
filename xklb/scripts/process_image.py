@@ -1,3 +1,4 @@
+import shlex
 import argparse, subprocess
 from pathlib import Path
 
@@ -47,7 +48,7 @@ def process_path(args, path):
     ]
 
     if args.simulate:
-        print(*command)
+        print(shlex.join(command))
         return path
 
     try:
