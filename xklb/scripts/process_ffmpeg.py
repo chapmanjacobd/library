@@ -162,6 +162,7 @@ def process_path(args, path, **kwargs):
     cmd = f'ffmpeg -nostdin -hide_banner -loglevel warning -y -i {shlex.quote(str(path))} {" ".join(ff_opts)} {shlex.quote(str(output_path))}'
     if args.simulate:
         print(cmd)
+        return path
     else:
         try:
             processes.cmd(cmd, shell=True)

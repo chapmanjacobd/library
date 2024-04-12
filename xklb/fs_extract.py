@@ -17,6 +17,7 @@ from xklb.utils.log_utils import log
 def parse_args(action, usage):
     parser = argparse.ArgumentParser(prog="library " + action, usage=usage)
     arggroups.db_profiles(parser)
+    arggroups.capability_simulate(parser)
 
     parser.add_argument(
         "--io-multiplier",
@@ -146,7 +147,7 @@ def extract_metadata(mp_args, path) -> dict[str, int] | None:
     if getattr(mp_args, "move", False) and not file_utils.is_file_open(path):
         dest_path = bytes(Path(mp_args.move) / Path(path).relative_to(mp_args.playlist_path))
         dest_path = path_utils.clean_path(dest_path)
-        file_utils.rename_move_file(path, dest_path)
+        file_utils.rename_move_file(path, dest_path, simulate=mp_args.simulate)
         path = media["path"] = dest_path
 
     if getattr(mp_args, "process", False):
@@ -154,7 +155,7 @@ def extract_metadata(mp_args, path) -> dict[str, int] | None:
             result = process_ffmpeg.process_path(
                 mp_args,
                 path,
-                split_longer_than=2160 if "audiobook" in path.lower() else None,
+                split_longer_than=2160 if mp_args.split_longer_than is None and "audiobook" in path.lower() else None,
             )
             if result is None:
                 return None
@@ -165,10 +166,7 @@ def extract_metadata(mp_args, path) -> dict[str, int] | None:
                 return None
             path = media["path"] = str(result)
         elif objects.is_profile(mp_args, DBType.image) and Path(path).suffix not in [".avif", ".avifs"]:
-            result = process_image.process_path(
-                path,
-                delete_unplayable=getattr(mp_args, "delete_unplayable", False),
-            )
+            result = process_image.process_path(mp_args, path)
             if result is None:
                 return None
             path = media["path"] = str(result)
