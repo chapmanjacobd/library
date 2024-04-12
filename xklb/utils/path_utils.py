@@ -45,16 +45,16 @@ def clean_path(b, max_name_len=255, dot_space=False, case_insensitive=False, low
 
     parent = [strings.clean_string(part) for part in path.parent.parts]
     stem = strings.clean_string(path.stem)
-    log.debug("cleaned %s %s", parent, stem)
+    # log.debug("cleaned %s %s", parent, stem)
 
     parent = [strings.remove_prefixes(part, [" ", "-"]) for part in parent]
-    log.debug("parent_prefixes %s %s", parent, stem)
+    # log.debug("parent_prefixes %s %s", parent, stem)
     parent = [strings.remove_suffixes(part, [" ", "-", "_", "."]) for part in parent]
-    log.debug("parent_suffixes %s %s", parent, stem)
+    # log.debug("parent_suffixes %s %s", parent, stem)
 
     stem = strings.remove_prefixes(stem, [" ", "-"])
     stem = strings.remove_suffixes(stem, [" ", "-", "."])
-    log.debug("stem %s %s", parent, stem)
+    # log.debug("stem %s %s", parent, stem)
 
     parent = ["_" if part == "" else part for part in parent]
     if lowercase_folders:

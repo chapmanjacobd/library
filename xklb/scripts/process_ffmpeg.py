@@ -1,3 +1,4 @@
+import os
 import argparse, json, shlex, subprocess
 from pathlib import Path
 
@@ -31,6 +32,7 @@ def process_path(args, path, **kwargs):
     output_path = Path(path_utils.clean_path(bytes(output_path), max_name_len=251))
 
     path = Path(path)
+    original_stats = path.stat()
 
     ffprobe_cmd = ["ffprobe", "-v", "error", "-print_format", "json", "-show_format", "-show_streams", path]
     result = subprocess.run(ffprobe_cmd, capture_output=True)
@@ -184,6 +186,8 @@ def process_path(args, path, **kwargs):
             return path
         else:
             path.unlink()  # Remove original
+            os.utime(output_path, (original_stats.st_atime, original_stats.st_mtime))
+
     return output_path
 
 
