@@ -137,7 +137,7 @@ def process_path(args, path, **kwargs):
                 )
             except subprocess.CalledProcessError:
                 log.exception("Splits could not be identified. Likely broken file: %s", path)
-                if args.delete_broken:
+                if args.delete_unplayable:
                     path.unlink()
                     return None
                 raise
@@ -170,7 +170,7 @@ def process_path(args, path, **kwargs):
             processes.cmd(cmd, shell=True)
         except subprocess.CalledProcessError:
             log.exception("Could not transcode: %s", path)
-            if args.delete_broken:
+            if args.delete_unplayable:
                 path.unlink()
                 return None
             else:
