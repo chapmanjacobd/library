@@ -9,6 +9,7 @@ from xklb.utils.log_utils import log
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library process-image", usage=usage.process_image)
+    arggroups.capability_simulate(parser)
     parser.add_argument("--delete-unplayable", action="store_true")
     arggroups.debug(parser)
 
