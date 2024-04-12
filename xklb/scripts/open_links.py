@@ -17,7 +17,7 @@ def parse_args() -> argparse.Namespace:
     arggroups.sql_fs(parser)
 
     parser.add_argument("--path", action="store_true")
-    parser.add_argument("--title", "-S", action="store_true")
+    parser.add_argument("--title", action="store_true")
     parser.add_argument("--title-prefix", "--prefix", nargs="+", action="extend")
 
     parser.add_argument("--online-media-only", "--online", action="store_true", help=argparse.SUPPRESS)
