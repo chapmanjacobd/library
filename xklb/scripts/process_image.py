@@ -19,7 +19,7 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def process_path(path, delete_unplayable=False):
+def process_path(args, path):
     if path.startswith("http"):
         output_path = Path(web.url_to_local_path(path))
     else:
@@ -33,17 +33,25 @@ def process_path(path, delete_unplayable=False):
             log.error("Input and output files must have different names %s", path)
             return path
 
+    command = [
+        "magick",
+        "mogrify",
+        "-define",
+        "preserve-timestamp=true",
+        "-resize",
+        "2400>",
+        "-format",
+        "avif",
+        str(path),
+    ]
+
+    if args.simulate:
+        print(*command)
+        return path
+
     try:
         processes.cmd(
-            "magick",
-            "mogrify",
-            "-define",
-            "preserve-timestamp=true",
-            "-resize",
-            "2400>",
-            "-format",
-            "avif",
-            str(path),
+            *command,
             ignore_regexps=[
                 imagemagick_errors.ignore_error,
                 imagemagick_errors.unsupported_error,
@@ -59,7 +67,7 @@ def process_path(path, delete_unplayable=False):
         if is_unsupported:
             output_path.unlink(missing_ok=True)  # Remove transcode attempt, if any
             return path
-        elif delete_unplayable and not is_env_error and is_image_error:
+        elif args.delete_unplayable and not is_env_error and is_image_error:
             path.unlink()
             return None
         else:
@@ -82,7 +90,7 @@ def process_image():
             path = str(Path(path).resolve())
 
         try:
-            process_path(path, delete_unplayable=args.delete_unplayable)
+            process_path(args, path)
         except Exception:
             print(path)
             raise
