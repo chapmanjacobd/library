@@ -1,3 +1,4 @@
+import os
 import shlex
 import argparse, subprocess
 from pathlib import Path
@@ -35,21 +36,13 @@ def process_path(args, path):
             log.error("Input and output files must have different names %s", path)
             return path
 
-    command = [
-        "magick",
-        "mogrify",
-        "-define",
-        "preserve-timestamp=true",
-        "-resize",
-        "2400>",
-        "-format",
-        "avif",
-        str(path),
-    ]
+    command = ["magick", "convert", "-resize", "2400>", str(path), str(output_path)]
 
     if args.simulate:
         print(shlex.join(command))
         return path
+
+    original_stats = path.stat()
 
     try:
         processes.cmd(
@@ -80,6 +73,7 @@ def process_path(args, path):
         return path
     else:
         path.unlink()  # Remove original
+        os.utime(output_path, (original_stats.st_atime, original_stats.st_mtime))
 
     return output_path
 
