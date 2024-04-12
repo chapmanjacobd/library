@@ -2,7 +2,7 @@ import argparse
 from pathlib import Path
 
 from xklb import usage
-from xklb.utils import arggroups, argparse_utils, file_utils, iterables, objects, pd_utils, sql_utils
+from xklb.utils import arggroups, argparse_utils, file_utils, iterables, objects, pd_utils, sql_utils, web
 from xklb.utils.consts import DEFAULT_FILE_ROWS_READ_LIMIT
 from xklb.utils.log_utils import log
 from xklb.utils.printing import print_df, print_series
@@ -259,6 +259,7 @@ def file_mcda(args, path):
 
 def mcda():
     args = parse_args()
+    web.requests_session(args)  # configure session
     for path in args.paths:
         file_mcda(args, path)
 

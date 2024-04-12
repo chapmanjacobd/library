@@ -1,7 +1,7 @@
 import argparse
 
 from xklb import usage
-from xklb.utils import arggroups, consts, file_utils
+from xklb.utils import arggroups, consts, file_utils, web
 from xklb.utils.argparse_utils import ArgparseList
 from xklb.utils.log_utils import log
 from xklb.utils.printing import print_df
@@ -118,6 +118,7 @@ def process_chunks(args):
 
 def incremental_diff():
     args = parse_args()
+    web.requests_session(args)  # configure session
     process_chunks(args)
 
 

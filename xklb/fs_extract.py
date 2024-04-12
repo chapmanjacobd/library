@@ -404,7 +404,6 @@ def fs_add(args=None) -> None:
         sys.argv = ["lb", *args]
 
     args, _parser = parse_args(SC.fsadd, usage.fsadd)
-
     extractor(args, args.paths)
 
 
