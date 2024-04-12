@@ -1,7 +1,7 @@
 import argparse
 
 from xklb import usage
-from xklb.utils import arggroups, file_utils, nums
+from xklb.utils import arggroups, file_utils, nums, web
 from xklb.utils.consts import DEFAULT_FILE_ROWS_READ_LIMIT
 from xklb.utils.log_utils import log
 from xklb.utils.printing import print_df, print_series
@@ -205,6 +205,7 @@ def file_eda(args, path):
 
 def eda():
     args = parse_args()
+    web.requests_session(args)  # configure session
     for path in args.paths:
         file_eda(args, path)
 

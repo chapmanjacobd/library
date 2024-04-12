@@ -197,6 +197,7 @@ def web_add(args=None) -> None:
         sys.argv = ["lb", *args]
 
     args, _parser = parse_args(prog=f"library {SC.webadd}", usage=usage.webadd)
+    web.requests_session(args)  # configure session
 
     if args.no_extract:
         media_new = set()
@@ -230,6 +231,7 @@ def web_update(args=None) -> None:
         sys.argv = ["lb", *args]
 
     args, parser = parse_args(prog=f"library {SC.webupdate}", usage=usage.webupdate)
+    web.requests_session(args)  # configure session
 
     web_playlists = db_playlists.get_all(
         args,

@@ -2,7 +2,6 @@ from collections import OrderedDict
 from pathlib import Path
 
 from xklb.utils import consts, iterables, strings
-from xklb.utils.log_utils import log
 
 
 def random_filename(path) -> str:

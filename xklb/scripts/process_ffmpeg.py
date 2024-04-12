@@ -1,5 +1,4 @@
-import os
-import argparse, json, shlex, subprocess
+import argparse, json, os, shlex, subprocess
 from pathlib import Path
 
 from xklb import usage
