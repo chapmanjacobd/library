@@ -159,7 +159,7 @@ def print_or_download(args, a_ref):
 def extract_links() -> None:
     args = parse_args()
 
-    if args.no_extract:
+    if args.insert_only:
         for url in arg_utils.gen_paths(args):
             url = web.url_decode(url).strip()
             if args.download:

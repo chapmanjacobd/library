@@ -31,6 +31,7 @@ def parse_args(**kwargs):
 
     arggroups.requests(parser)
     arggroups.selenium(parser)
+    arggroups.extractor(parser)
 
     parser.add_argument("--force", action="store_true")
 
@@ -245,7 +246,7 @@ def extractor(args, playlist_path):
 def links_add() -> None:
     args, _parser = parse_args(prog="library links-add", usage=usage.links_add)
 
-    if args.no_extract:
+    if args.insert_only:
         media_new = set()
         media_known = set()
         for p in arg_utils.gen_paths(args):
