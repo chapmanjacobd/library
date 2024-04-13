@@ -496,7 +496,15 @@ def process_playqueue(args) -> None:
     elif args.folder_glob:
         media = ({"path": s} for m in media for s in file_utils.fast_glob(Path(m["path"]).parent, args.folder_glob))
 
-    if args.print:
+    if any(
+        [
+            args.print,
+            args.delete_files,
+            args.delete_rows,
+            args.mark_deleted,
+            args.mark_watched,
+        ]
+    ):
         media_printer.media_printer(args, media)
     else:
         media_player.play_list(args, media)
