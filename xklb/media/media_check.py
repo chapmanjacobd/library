@@ -9,6 +9,7 @@ from xklb.utils.log_utils import log
 
 def parse_args():
     parser = argparse.ArgumentParser(prog="library media-check", usage=usage.media_check)
+    arggroups.capability_delete(parser)
     arggroups.media_check(parser)
     arggroups.debug(parser)
     parser.add_argument("paths", nargs="+")
@@ -191,4 +192,4 @@ def media_check() -> None:
                     log.warning(
                         "Deleting %s corruption %.1f%% exceeded threshold %s", path, corruption * 100, threshold_str
                     )
-                    file_utils.trash(path)
+                    file_utils.trash(args, path)

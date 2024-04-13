@@ -16,7 +16,6 @@ def parse_args(action) -> argparse.Namespace:
     )
 
     arggroups.sql_fs(parser)
-    arggroups.capability_delete(parser)
     arggroups.debug(parser)
 
     arggroups.database(parser)
@@ -34,9 +33,6 @@ def parse_args(action) -> argparse.Namespace:
 
     if args.cols:
         args.cols = list(iterables.flatten([s.split(",") for s in args.cols]))
-
-    if args.delete:
-        args.print += "d"
 
     args.db = db_utils.connect(args)
     log.info(objects.dict_filter_bool(args.__dict__))

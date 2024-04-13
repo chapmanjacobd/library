@@ -24,7 +24,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--local-media-only", "--local", action="store_true", help=argparse.SUPPRESS)
 
     parser.add_argument("--category", "-c")
-    arggroups.capability_delete(parser)
 
     arggroups.operation_cluster(parser)
     arggroups.operation_related(parser)
@@ -57,9 +56,6 @@ def parse_args() -> argparse.Namespace:
 
     if args.cols:
         args.cols = list(iterables.flatten([s.split(",") for s in args.cols]))
-
-    if args.delete:
-        args.print += "d"
 
     args.db = db_utils.connect(args)
     log.info(objects.dict_filter_bool(args.__dict__))

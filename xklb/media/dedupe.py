@@ -597,7 +597,7 @@ def dedupe_media() -> None:
                         *shlex.split(args.dedupe_cmd), d["duplicate_path"], d["keep_path"]
                     )  # follows rmlint interface
                 else:
-                    file_utils.trash(path, detach=False)
+                    file_utils.trash(args, path, detach=False)
             db_media.mark_media_deleted(args, path)
 
 

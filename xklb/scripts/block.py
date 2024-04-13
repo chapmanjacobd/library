@@ -23,7 +23,6 @@ def parse_args():
     parser.add_argument("--min-tried", default=0, type=int, help=argparse.SUPPRESS)
     parser.add_argument("--no-confirm", "--yes", "-y", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--force", "-f", action="store_true", help=argparse.SUPPRESS)
-    arggroups.capability_delete(parser)
     parser.add_argument("--offline", "--no-tube", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--ignore-errors", "--ignoreerrors", "-i", action="store_true", help=argparse.SUPPRESS)
     arggroups.debug(parser)
@@ -195,7 +194,7 @@ def block(args=None) -> None:
     for p in args.playlists:
         p = [p]
         if consts.PYTEST_RUNNING or args.force:
-            if args.delete:
+            if args.delete_rows:
                 remove_from_blocklist(args, p)
             else:
                 add_to_blocklist(args, p)

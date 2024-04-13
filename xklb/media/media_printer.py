@@ -6,7 +6,7 @@ from pathlib import Path
 
 from tabulate import tabulate
 
-from xklb import db_media, history
+from xklb import db_media, history, post_actions
 from xklb.utils import consts, db_utils, iterables, printing, processes, sql_utils, strings
 from xklb.utils.consts import SC
 from xklb.utils.log_utils import log
@@ -143,14 +143,22 @@ def media_printer(args, data, units=None, media_len=None) -> None:
         media = [D]
 
     else:
+        if getattr(args, 'delete_files', False):
+            marked = post_actions.delete_media(args, [d["path"] for d in media])
+            log.warning(f"Deleted {marked} files")
+
+        if getattr(args, 'delete_rows', False) or "d" in print_args:
+            args.db["media"].delete_where('path = ?', [d["path"] for d in media])
+            log.warning(f"Deleted {len(media)} rows")
+
         if "r" in print_args:
             marked = db_media.mark_media_deleted(args, [d["path"] for d in media if not Path(d["path"]).exists()])
             log.warning(f"Marked {marked} metadata records as deleted")
-        elif "d" in print_args:
+        elif getattr(args, 'mark_deleted', False) or "d" in print_args:
             marked = db_media.mark_media_deleted(args, [d["path"] for d in media])
             log.warning(f"Marked {marked} metadata records as deleted")
 
-        if "w" in print_args:
+        if getattr(args, 'mark_watched', False) or "w" in print_args:
             marked = history.add(args, [d["path"] for d in media])
             log.warning(f"Marked {marked} metadata records as watched")
 

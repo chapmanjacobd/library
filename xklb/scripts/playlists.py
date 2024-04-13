@@ -165,5 +165,5 @@ def playlists() -> None:
     playlists = list(args.db.query(query, bindings))
     media_printer.media_printer(args, playlists, units="playlists")
 
-    if args.delete:
+    if args.delete_rows:
         delete_playlists(args, [d["path"] for d in playlists])

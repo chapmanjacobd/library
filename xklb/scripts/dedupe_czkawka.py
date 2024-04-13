@@ -18,6 +18,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Choose which duplicate to keep by opening both side-by-side in mpv")
     arggroups.playback(parser)
     arggroups.capability_clobber(parser)
+    arggroups.capability_delete(parser)
     arggroups.post_actions(parser)
     parser.set_defaults(start="15%", volume="70")
 
@@ -244,7 +245,7 @@ def mv_to_keep_folder(args, d) -> None:
         else:
             print("Source and destination are the same size", humanize.naturalsize(src_size, binary=True))
         if devices.confirm("Replace destination file?"):
-            file_utils.trash(new_path, detach=False)
+            file_utils.trash(args, new_path, detach=False)
             new_path = shutil.move(media_file, keep_path)
 
     log.info(f"{new_path}: new location")
@@ -262,7 +263,7 @@ def group_and_delete(args, groups):
             continue
 
         def delete_dupe(d, detach=is_interactive):
-            file_utils.trash(d["path"], detach=detach)
+            file_utils.trash(args, d["path"], detach=detach)
             log.info(f"{d['path']}: Deleted")
 
         group.sort(key=lambda x: x["size"], reverse=True)

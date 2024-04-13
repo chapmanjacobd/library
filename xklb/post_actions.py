@@ -76,7 +76,7 @@ def delete_media(args, paths) -> int:
         if getattr(args, "prefix", False):
             Path(p).unlink(missing_ok=True)
         else:
-            file_utils.trash(p, detach=len(paths) < 30)
+            file_utils.trash(args, p, detach=len(paths) < 30)
 
     if hasattr(args, "db"):
         return db_media.mark_media_deleted(args, paths)
@@ -145,7 +145,7 @@ def external_action(args, log_action, media_file, player_exit_code, player_proce
             pass
         elif cmd in ["soft-delete", "mark-deleted"]:
             db_media.mark_media_deleted(args, media_file)
-        elif cmd in ["delete"]:
+        elif cmd in ["delete", "delete-files", "delete-file"]:
             if media_file.startswith("http"):
                 db_media.mark_media_deleted(args, media_file)
             else:
