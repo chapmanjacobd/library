@@ -8,6 +8,26 @@ def debug(parser):
     parser.add_argument("--verbose", "-v", action="count", default=0)
 
 
+def capability_soft_delete(parser):
+    parser.add_argument("--mark-deleted", "--soft-delete", action="store_true", help="Mark matching rows as deleted")
+    parser.add_argument("--mark-watched", action="store_true", help="Mark matching rows as watched")
+    parser.add_argument("--delete-rows", action="store_true", help="Delete matching rows")
+
+
+def capability_delete(parser):
+    parser.add_argument(
+        "--override-trash", "--override-rm", "--trash-cmd", default="trash", help="Custom trash command"
+    )
+    parser.add_argument(
+        "--delete-files",
+        "--delete-file",
+        "--trash",
+        "--rm",
+        action="store_true",
+        help="Delete files from filesystem",
+    )
+
+
 def database(parser):
     capability_soft_delete(parser)
     capability_delete(parser)
@@ -184,26 +204,6 @@ def operation_cluster(parser):
 
 def operation_related(parser):
     parser.add_argument("--related", "-R", action="count", default=0, help=argparse.SUPPRESS)
-
-
-def capability_soft_delete(parser):
-    parser.add_argument("--mark-deleted", "--soft-delete", action="store_true", help="Mark matching rows as deleted")
-    parser.add_argument("--mark-watched", action="store_true", help="Mark matching rows as watched")
-    parser.add_argument("--delete-rows", action="store_true", help="Delete matching rows")
-
-
-def capability_delete(parser):
-    parser.add_argument(
-        "--override-trash", "--override-rm", "--trash-cmd", default="trash", help="Custom trash command"
-    )
-    parser.add_argument(
-        "--delete-files",
-        "--delete-file",
-        "--trash",
-        "--rm",
-        action="store_true",
-        help="Delete files from filesystem",
-    )
 
 
 def capability_clobber(parser):
