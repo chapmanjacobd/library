@@ -6,6 +6,8 @@ Manage and curate large media libraries. An index for your archive.
 Primary usage is local filesystem but also supports some virtual constructs like
 tracking online video playlists (eg. YouTube subscriptions) and scheduling browser tabs.
 
+<img align="right" width="300" height="600" src="https://raw.githubusercontent.com/chapmanjacobd/library/main/.github/examples/art.avif" />
+
 ## Install
 
 Linux recommended but [Windows setup instructions](./Windows.md) available.
@@ -13,7 +15,6 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
     pip install xklb
 
 Should also work on Mac OS.
-<img align="right" width="400" src="https://raw.githubusercontent.com/chapmanjacobd/library/main/.github/examples/tubeadd.svg" />
 
 ### External dependencies
 
@@ -129,57 +130,6 @@ To stop playing press Ctrl+C in either the terminal or mpv
     │ add-row       │ Add arbitrary data to SQLITE                       │
     ╰───────────────┴────────────────────────────────────────────────────╯
 
-    Update database subcommands:
-    ╭───────────────┬─────────────────────────────────╮
-    │ fsupdate      │ Update local media              │
-    ├───────────────┼─────────────────────────────────┤
-    │ tubeupdate    │ Update online video media       │
-    ├───────────────┼─────────────────────────────────┤
-    │ webupdate     │ Update open-directory media     │
-    ├───────────────┼─────────────────────────────────┤
-    │ galleryupdate │ Update online gallery media     │
-    ├───────────────┼─────────────────────────────────┤
-    │ links-update  │ Update a link-scraping database │
-    ├───────────────┼─────────────────────────────────┤
-    │ redditupdate  │ Update reddit media             │
-    ╰───────────────┴─────────────────────────────────╯
-
-    Playback subcommands:
-    ╭────────────┬───────────────────────────────────────────────────╮
-    │ watch      │ Watch / Listen                                    │
-    ├────────────┼───────────────────────────────────────────────────┤
-    │ now        │ Show what is currently playing                    │
-    ├────────────┼───────────────────────────────────────────────────┤
-    │ next       │ Play next file and optionally delete current file │
-    ├────────────┼───────────────────────────────────────────────────┤
-    │ stop       │ Stop all playback                                 │
-    ├────────────┼───────────────────────────────────────────────────┤
-    │ pause      │ Pause all playback                                │
-    ├────────────┼───────────────────────────────────────────────────┤
-    │ open-links │ Open links from link dbs                          │
-    ├────────────┼───────────────────────────────────────────────────┤
-    │ surf       │ Auto-load browser tabs in a streaming way (stdin) │
-    ╰────────────┴───────────────────────────────────────────────────╯
-
-    Media database subcommands:
-    ╭─────────────────┬────────────────────────────────╮
-    │ tabs            │ Open your tabs for the day     │
-    ├─────────────────┼────────────────────────────────┤
-    │ block           │ Block a channel                │
-    ├─────────────────┼────────────────────────────────┤
-    │ playlists       │ List stored playlists          │
-    ├─────────────────┼────────────────────────────────┤
-    │ download        │ Download media                 │
-    ├─────────────────┼────────────────────────────────┤
-    │ download-status │ Show download status           │
-    ├─────────────────┼────────────────────────────────┤
-    │ redownload      │ Re-download deleted/lost media │
-    ├─────────────────┼────────────────────────────────┤
-    │ history         │ Show some playback statistics  │
-    ├─────────────────┼────────────────────────────────┤
-    │ search          │ Search captions / subtitles    │
-    ╰─────────────────┴────────────────────────────────╯
-
     Text subcommands:
     ╭────────────────┬─────────────────────────────────────────────╮
     │ cluster-sort   │ Sort text and images by similarity          │
@@ -191,21 +141,6 @@ To stop playing press Ctrl+C in either the terminal or mpv
     │ markdown-links │ Extract titles from lists of web links      │
     ╰────────────────┴─────────────────────────────────────────────╯
 
-    File subcommands:
-    ╭──────────────────┬───────────────────────────────────────────────────────╮
-    │ eda              │ Exploratory Data Analysis on table-like files         │
-    ├──────────────────┼───────────────────────────────────────────────────────┤
-    │ mcda             │ Multi-criteria Ranking for Decision Support           │
-    ├──────────────────┼───────────────────────────────────────────────────────┤
-    │ incremental-diff │ Diff large table-like files in chunks                 │
-    ├──────────────────┼───────────────────────────────────────────────────────┤
-    │ media-check      │ Check video and audio files for corruption via ffmpeg │
-    ├──────────────────┼───────────────────────────────────────────────────────┤
-    │ sample-hash      │ Calculate a hash based on small file segments         │
-    ├──────────────────┼───────────────────────────────────────────────────────┤
-    │ sample-compare   │ Compare files using sample-hash and other shortcuts   │
-    ╰──────────────────┴───────────────────────────────────────────────────────╯
-
     Folder subcommands:
     ╭───────────────┬──────────────────────────────────────────────────╮
     │ merge-folders │ Merge two or more file trees                     │
@@ -216,6 +151,31 @@ To stop playing press Ctrl+C in either the terminal or mpv
     ├───────────────┼──────────────────────────────────────────────────┤
     │ scatter       │ Scatter files between folders or disks           │
     ╰───────────────┴──────────────────────────────────────────────────╯
+
+    File subcommands:
+    ╭────────────────┬─────────────────────────────────────────────────────╮
+    │ sample-hash    │ Calculate a hash based on small file segments       │
+    ├────────────────┼─────────────────────────────────────────────────────┤
+    │ sample-compare │ Compare files using sample-hash and other shortcuts │
+    ╰────────────────┴─────────────────────────────────────────────────────╯
+
+    Tabular data subcommands:
+    ╭──────────────────┬───────────────────────────────────────────────╮
+    │ eda              │ Exploratory Data Analysis on table-like files │
+    ├──────────────────┼───────────────────────────────────────────────┤
+    │ mcda             │ Multi-criteria Ranking for Decision Support   │
+    ├──────────────────┼───────────────────────────────────────────────┤
+    │ incremental-diff │ Diff large table-like files in chunks         │
+    ╰──────────────────┴───────────────────────────────────────────────╯
+
+    Media File subcommands:
+    ╭────────────────┬────────────────────────────────────────────────────────╮
+    │ media-check    │ Check video and audio files for corruption via ffmpeg  │
+    ├────────────────┼────────────────────────────────────────────────────────┤
+    │ process-ffmpeg │ Shrink video/audio to AV1/Opus format (.mkv, .mka)     │
+    ├────────────────┼────────────────────────────────────────────────────────┤
+    │ process-image  │ Shrink images by resizing and AV1 image format (.avif) │
+    ╰────────────────┴────────────────────────────────────────────────────────╯
 
     Multi-database subcommands:
     ╭──────────────────┬────────────────────────╮
@@ -239,7 +199,43 @@ To stop playing press Ctrl+C in either the terminal or mpv
     │ optimize    │ Re-optimize database           │
     ╰─────────────┴────────────────────────────────╯
 
-    Single database enrichment subcommands:
+    Media Database subcommands:
+    ╭─────────────────┬────────────────────────────────╮
+    │ tabs            │ Open your tabs for the day     │
+    ├─────────────────┼────────────────────────────────┤
+    │ block           │ Block a channel                │
+    ├─────────────────┼────────────────────────────────┤
+    │ playlists       │ List stored playlists          │
+    ├─────────────────┼────────────────────────────────┤
+    │ download        │ Download media                 │
+    ├─────────────────┼────────────────────────────────┤
+    │ download-status │ Show download status           │
+    ├─────────────────┼────────────────────────────────┤
+    │ redownload      │ Re-download deleted/lost media │
+    ├─────────────────┼────────────────────────────────┤
+    │ history         │ Show some playback statistics  │
+    ├─────────────────┼────────────────────────────────┤
+    │ search          │ Search captions / subtitles    │
+    ╰─────────────────┴────────────────────────────────╯
+
+    Playback subcommands:
+    ╭────────────┬───────────────────────────────────────────────────╮
+    │ watch      │ Watch / Listen                                    │
+    ├────────────┼───────────────────────────────────────────────────┤
+    │ now        │ Show what is currently playing                    │
+    ├────────────┼───────────────────────────────────────────────────┤
+    │ next       │ Play next file and optionally delete current file │
+    ├────────────┼───────────────────────────────────────────────────┤
+    │ stop       │ Stop all playback                                 │
+    ├────────────┼───────────────────────────────────────────────────┤
+    │ pause      │ Pause all playback                                │
+    ├────────────┼───────────────────────────────────────────────────┤
+    │ open-links │ Open links from link dbs                          │
+    ├────────────┼───────────────────────────────────────────────────┤
+    │ surf       │ Auto-load browser tabs in a streaming way (stdin) │
+    ╰────────────┴───────────────────────────────────────────────────╯
+
+    Database enrichment subcommands:
     ╭────────────────────┬────────────────────────────────────────╮
     │ dedupe-db          │ Dedupe SQLITE tables                   │
     ├────────────────────┼────────────────────────────────────────┤
@@ -254,18 +250,29 @@ To stop playing press Ctrl+C in either the terminal or mpv
     │ tabs-shuffle       │ Randomize tabs.db a bit                │
     ╰────────────────────┴────────────────────────────────────────╯
 
+    Update database subcommands:
+    ╭───────────────┬─────────────────────────────────╮
+    │ fsupdate      │ Update local media              │
+    ├───────────────┼─────────────────────────────────┤
+    │ tubeupdate    │ Update online video media       │
+    ├───────────────┼─────────────────────────────────┤
+    │ webupdate     │ Update open-directory media     │
+    ├───────────────┼─────────────────────────────────┤
+    │ galleryupdate │ Update online gallery media     │
+    ├───────────────┼─────────────────────────────────┤
+    │ links-update  │ Update a link-scraping database │
+    ├───────────────┼─────────────────────────────────┤
+    │ redditupdate  │ Update reddit media             │
+    ╰───────────────┴─────────────────────────────────╯
+
     Misc subcommands:
-    ╭────────────────┬────────────────────────────────────────────────────────╮
-    │ export-text    │ Export HTML files from SQLite databases                │
-    ├────────────────┼────────────────────────────────────────────────────────┤
-    │ process-ffmpeg │ Shrink video/audio to AV1/Opus format (.mkv, .mka)     │
-    ├────────────────┼────────────────────────────────────────────────────────┤
-    │ process-image  │ Shrink images by resizing and AV1 image format (.avif) │
-    ├────────────────┼────────────────────────────────────────────────────────┤
-    │ dedupe-czkawka │ Process czkawka diff output                            │
-    ├────────────────┼────────────────────────────────────────────────────────┤
-    │ nouns          │ Unstructured text -> compound nouns (stdin)            │
-    ╰────────────────┴────────────────────────────────────────────────────────╯
+    ╭────────────────┬─────────────────────────────────────────────╮
+    │ export-text    │ Export HTML files from SQLite databases     │
+    ├────────────────┼─────────────────────────────────────────────┤
+    │ dedupe-czkawka │ Process czkawka diff output                 │
+    ├────────────────┼─────────────────────────────────────────────┤
+    │ nouns          │ Unstructured text -> compound nouns (stdin) │
+    ╰────────────────┴─────────────────────────────────────────────╯
 
 
 </details>
@@ -949,553 +956,718 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 </details>
 
-### Update database subcommands
+### Text subcommands
 
-###### fsupdate
+###### cluster-sort
 
-<details><summary>Update local media</summary>
+<details><summary>Sort text and images by similarity</summary>
 
-    $ library fsupdate -h
-    usage: library fsupdate DATABASE
+    $ library cluster-sort -h
+    usage: library cluster-sort [input_path | stdin] [output_path | stdout]
 
-    Update each path previously saved:
+    Group lines of text into sorted output
 
-        library fsupdate video.db
+        echo 'red apple
+        broccoli
+        yellow
+        green
+        orange apple
+        red apple' | library cluster-sort
 
+        orange apple
+        red apple
+        red apple
+        broccoli
+        green
+        yellow
 
-</details>
+    Show the groupings
 
-###### tubeupdate
+        echo 'red apple
+        broccoli
+        yellow
+        green
+        orange apple
+        red apple' | library cluster-sort --print-groups
 
-<details><summary>Update online video media</summary>
+        [
+            {'grouped_paths': ['orange apple', 'red apple', 'red apple']},
+            {'grouped_paths': ['broccoli', 'green', 'yellow']}
+        ]
 
-    $ library tubeupdate -h
-    usage: library tubeupdate [--audio | --video] DATABASE
+    Auto-sort images into directories
 
-    Fetch the latest videos for every playlist saved in your database
+        echo 'image1.jpg
+        image2.jpg
+        image3.jpg' | library cluster-sort --image --move-groups
 
-        library tubeupdate educational.db
+    Print similar paths
 
-    Fetch extra metadata:
+        library fs 0day.db -pa --cluster --print-groups
 
-        By default tubeupdate will quickly add media.
-        You can run with --extra to fetch more details: (best resolution width, height, subtitle tags, etc)
-
-        library tubeupdate educational.db --extra https://www.youtube.com/channel/UCBsEUcR-ezAuxB2WlfeENvA/videos
-
-    Remove duplicate playlists:
-
-        lb dedupe-db video.db playlists --bk extractor_playlist_id
-
-
-</details>
-
-###### webupdate
-
-<details><summary>Update open-directory media</summary>
-
-    $ library webupdate -h
-    usage: library web-update DATABASE
-
-    Update saved open directories
-
-
-
-</details>
-
-###### galleryupdate
-
-<details><summary>Update online gallery media</summary>
-
-    $ library galleryupdate -h
-    usage: library galleryupdate DATABASE URLS
-
-    Check previously saved gallery_dl URLs for new content
 
 
 </details>
 
-###### links-update
+###### extract-links
 
-<details><summary>Update a link-scraping database</summary>
+<details><summary>Extract inner links from lists of web links</summary>
 
-    $ library links-update -h
-    usage: library links-update DATABASE
+    $ library extract-links -h
+    usage: library extract-links PATH ... [--case-sensitive] [--scroll] [--download] [--verbose] [--local-html] [--file FILE] [--path-include ...] [--text-include ...] [--after-include ...] [--before-include ...] [--path-exclude ...] [--text-exclude ...] [--after-exclude ...] [--before-exclude ...]
 
-    Fetch new links from each path previously saved
+    Extract links from within local HTML fragments, files, or remote pages; filtering on link text and nearby plain-text
 
-        library links-update links.db
+        library links https://en.wikipedia.org/wiki/List_of_bacon_dishes --path-include https://en.wikipedia.org/wiki/ --after-include famous
+        https://en.wikipedia.org/wiki/Omelette
 
+    Read from local clipboard and filter out links based on nearby plain text:
 
-</details>
+        library links --local-html (cb -t text/html | psub) --after-exclude paranormal spooky horror podcast tech fantasy supernatural lecture sport
+        # note: the equivalent BASH-ism is <(xclip -selection clipboard -t text/html)
 
-###### redditupdate
-
-<details><summary>Update reddit media</summary>
-
-    $ library redditupdate -h
-    usage: library redditupdate [--audio | --video] [--lookback N_DAYS] [--praw-site bot1] DATABASE
-
-    Fetch the latest posts for every subreddit/redditor saved in your database
-
-        library redditupdate edu_subreddits.db
+    Run with `-vv` to see the browser
 
 
 </details>
 
-### Playback subcommands
+###### extract-text
 
-###### watch
+<details><summary>Extract human text from lists of web links</summary>
 
-<details><summary>Watch / Listen</summary>
+    $ library extract-text -h
+    usage: library extract-text PATH ... [--skip-links]
 
-    $ library watch -h
-    usage: library watch DATABASE [optional args]
+    Sorting suggestions
 
-    Control playback:
-        To stop playback press Ctrl-C in either the terminal or mpv
+        lb extract-text --skip-links --local-file (cb -t text/html | psub) | lb cs --groups | jq -r '.[] | .grouped_paths | "\n" + join("\n")'
 
-        Create global shortcuts in your desktop environment by sending commands to mpv_socket:
-        echo 'playlist-next force' | socat - /tmp/mpv_socket
 
-    Override the default player (mpv):
-        library does a lot of things to try to automatically use your preferred media player
-        but if it doesn't guess right you can make it explicit:
-        library watch --player "vlc --vlc-opts"
+</details>
 
-    Cast to chromecast groups:
-        library watch --cast --cast-to "Office pair"
-        library watch -ct "Office pair"  # equivalent
-        If you don't know the exact name of your chromecast group run `catt scan`
+### Folder subcommands
 
-    Play media in order (similarly named episodes):
-        library watch --play-in-order
-        library watch -O    # equivalent
+###### merge-folders
 
-        The default sort value is 'natural_ps' which means media will be sorted by parent path
-        and then stem in a natural way (using the integer values within the path). But there are many other options:
+<details><summary>Merge two or more file trees</summary>
 
-        Options:
+    $ library merge-folders -h
+    usage: library merge-folders [--replace] [--no-replace] [--simulate] SOURCES ... DESTINATION
 
-            - reverse: reverse the sort order
-            - compat: treat characters like '⑦' as '7'
+    Merge multiple folders with the same file tree into a single folder.
 
-        Algorithms:
+    https://github.com/chapmanjacobd/journal/blob/main/programming/linux/misconceptions.md#mv-src-vs-mv-src
 
-            - natural: parse numbers as integers
-            - os: sort similar to the OS File Explorer sorts. To improve non-alphanumeric sorting on Mac OS X and Linux it is necessary to install pyicu (perhaps via python3-icu -- https://gitlab.pyicu.org/main/pyicu#installing-pyicu)
-            - path: use natsort "path" algorithm (https://natsort.readthedocs.io/en/stable/api.html#the-ns-enum)
-            - human: use system locale
-            - ignorecase: treat all case as equal
-            - lowercase: sort lowercase first
-            - signed: sort with an understanding of negative numbers
-            - python: sort like default python
+    Trumps are new or replaced files from an earlier source which now conflict with a later source.
+    If you only have one source then the count of trumps will always be zero.
+    The count of conflicts also includes trumps.
 
-        Values:
 
-            - path
-            - parent
-            - stem
-            - title (or any other column value)
-            - ps: parent, stem
-            - pts: parent, title, stem
+</details>
 
-        Use this format: algorithm, value, algorithm_value, or option_algorithm_value.
-        For example:
+###### relmv
 
-            - library watch -O human
-            - library watch -O title
-            - library watch -O human_title
-            - library watch -O reverse_compat_human_title
+<details><summary>Move files preserving parent folder hierarchy</summary>
 
-            - library watch -O path       # path algorithm and parent, stem values (path_ps)
-            - library watch -O path_path  # path algorithm and path values
+    $ library relmv -h
+    usage: library relmv [--simulate] SOURCE ... DEST
 
-        Also, if you are using --random you need to fetch sibling media to play the media in order:
+    Move files/folders without losing hierarchy metadata
 
-            - library watch --random --fetch-siblings each -O          # get the first result per directory
-            - library watch --random --fetch-siblings if-audiobook -O  # get the first result per directory if 'audiobook' is in the path
-            - library watch --random --fetch-siblings always -O        # get 2,000 results per directory
+    Move fresh music to your phone every Sunday:
 
-        If searching by a specific subpath it may be preferable to just sort by path instead
-        library watch d/planet.earth.2024/ -u path
+        # move last week music back to their source folders
+        library mv /mnt/d/sync/weekly/ /mnt/d/check/audio/
 
-        library watch --related  # Similar to -O but uses fts to find similar content
-        library watch -R         # equivalent
-        library watch -RR        # above, plus ignores most filters
+        # move new music for this week
+        library relmv (
+            library listen audio.db --local-media-only --where 'play_count=0' --random -L 600 -p f
+        ) /mnt/d/sync/weekly/
 
-        library watch --cluster  # cluster-sort to put similar-named paths closer together
-        library watch -C         # equivalent
-
-        library watch --big-dirs # Recommended to use with --duration or --depth filters; see `lb big-dirs -h` for more info
-        library watch -B         # equivalent
-
-        All of these options can be used together but it will be a bit slow and the results might be mid-tier
-        as multiple different algorithms create a muddied signal (too many cooks in the kitchen):
-        library watch -RRCO
-
-        You can even sort the items within each cluster by auto-MCDA ~LOL~
-        library watch -B --sort-groups-by 'mcda median_size,-deleted'
-        library watch -C --sort-groups-by 'mcda median_size,-deleted'
-
-    Filter media by file siblings of parent directory:
-        library watch --sibling   # only include files which have more than or equal to one sibling
-        library watch --solo      # only include files which are alone by themselves
-
-        `--sibling` is just a shortcut for `--lower 2`; `--solo` is `--upper 1`
-        library watch --sibling --solo      # you will always get zero records here
-        library watch --lower 2 --upper 1   # equivalent
-
-        You can be more specific via the `--upper` and `--lower` flags
-        library watch --lower 3   # only include files which have three or more siblings
-        library watch --upper 3   # only include files which have fewer than three siblings
-        library watch --lower 3 --upper 3   # only include files which are three siblings inclusive
-        library watch --lower 12 --upper 25 -O  # on my machine this launches My Mister 2018
-
-    Play recent partially-watched videos (requires mpv history):
-        library watch --partial       # play newest first
-
-        library watch --partial old   # play oldest first
-        library watch -P o            # equivalent
-
-        library watch -P p            # sort by percent remaining
-        library watch -P t            # sort by time remaining
-        library watch -P s            # skip partially watched (only show unseen)
-
-        The default time used is "last-viewed" (ie. the most recent time you closed the video)
-        If you want to use the "first-viewed" time (ie. the very first time you opened the video)
-        library watch -P f            # use watch_later file creation time instead of modified time
-
-        You can combine most of these options, though some will be overridden by others.
-        library watch -P fo           # this means "show the oldest videos using the time I first opened them"
-        library watch -P pt           # weighted remaining (percent * time remaining)
-
-    Print instead of play:
-        library watch --print --limit 10  # print the next 10 files
-        library watch -p -L 10  # print the next 10 files
-        library watch -p  # this will print _all_ the media. be cautious about `-p` on an unfiltered set
-
-        Printing modes
-        library watch -p    # print as a table
-        library watch -p a  # print an aggregate report
-        library watch -p b  # print a big-dirs report (see library bigdirs -h for more info)
-        library watch -p f  # print fields (defaults to path; use --cols to change)
-                               # -- useful for piping paths to utilities like xargs or GNU Parallel
-
-        library watch -p d  # mark deleted
-        library watch -p w  # mark watched
-
-        Some printing modes can be combined
-        library watch -p df  # print files for piping into another program and mark them as deleted within the db
-        library watch -p bf  # print fields from big-dirs report
-
-        Check if you have downloaded something before
-        library watch -u duration -p -s 'title'
-
-        Print an aggregate report of deleted media
-        library watch -w time_deleted!=0 -p=a
-        ╒═══════════╤══════════════╤═════════╤═════════╕
-        │ path      │ duration     │ size    │   count │
-        ╞═══════════╪══════════════╪═════════╪═════════╡
-        │ Aggregate │ 14 days, 23  │ 50.6 GB │   29058 │
-        │           │ hours and 42 │         │         │
-        │           │ minutes      │         │         │
-        ╘═══════════╧══════════════╧═════════╧═════════╛
-        Total duration: 14 days, 23 hours and 42 minutes
-
-        Print an aggregate report of media that has no duration information (ie. online or corrupt local media)
-        library watch -w 'duration is null' -p=a
-
-        Print a list of filenames which have below 1280px resolution
-        library watch -w 'width<1280' -p=f
-
-        Print media you have partially viewed with mpv
-        library watch --partial -p
-        library watch -P -p  # equivalent
-        library watch -P -p f --cols path,progress,duration  # print CSV of partially watched files
-        library watch --partial -pa  # print an aggregate report of partially watched files
-
-        View how much time you have watched
-        library watch -w play_count'>'0 -p=a
-
-        See how much video you have
-        library watch video.db -p=a
-        ╒═══════════╤═════════╤═════════╤═════════╕
-        │ path      │   hours │ size    │   count │
-        ╞═══════════╪═════════╪═════════╪═════════╡
-        │ Aggregate │  145769 │ 37.6 TB │  439939 │
-        ╘═══════════╧═════════╧═════════╧═════════╛
-        Total duration: 16 years, 7 months, 19 days, 17 hours and 25 minutes
-
-        View all the columns
-        library watch -p -L 1 --cols '*'
-
-        Open ipython with all of your media
-        library watch -vv -p --cols '*'
-        ipdb> len(media)
-        462219
-
-    Set the play queue size:
-        By default the play queue is 120--long enough that you likely have not noticed
-        but short enough that the program is snappy.
-
-        If you want everything in your play queue you can use the aid of infinity.
-        Pick your poison (these all do effectively the same thing):
-        library watch -L inf
-        library watch -l inf
-        library watch --queue inf
-        library watch -L 999999999999
-
-        You may also want to restrict the play queue.
-        For example, when you only want 1000 random files:
-        library watch -u random -L 1000
-
-    Offset the play queue:
-        You can also offset the queue. For example if you want to skip one or ten media:
-        library watch --offset 10      # offset ten from the top of an ordered query
-
-    Repeat
-        library watch                  # listen to 120 random songs (DEFAULT_PLAY_QUEUE)
-        library watch --limit 5        # listen to FIVE songs
-        library watch -l inf -u random # listen to random songs indefinitely
-        library watch -s infinite      # listen to songs from the band infinite
-
-    Constrain media by search:
-        Audio files have many tags to readily search through so metadata like artist,
-        album, and even mood are included in search.
-        Video files have less consistent metadata and so only paths are included in search.
-        library watch --include happy  # only matches will be included
-        library watch -s happy         # equivalent
-        library watch --exclude sad    # matches will be excluded
-        library watch -E sad           # equivalent
-
-        Search only the path column
-        library watch -O -s 'path : mad max'
-        library watch -O -s 'path : "mad max"' # add "quotes" to be more strict
-
-        Double spaces are parsed as one space
-        library watch -s '  ost'        # will match OST and not ghost
-        library watch -s toy story      # will match '/folder/toy/something/story.mp3'
-        library watch -s 'toy  story'   # will match more strictly '/folder/toy story.mp3'
-
-        You can search without -s but it must directly follow the database due to how argparse works
-        library watch ./your.db searching for something
-
-    Constrain media by arbitrary SQL expressions:
-        library watch --where audio_count = 2  # media which have two audio tracks
-        library watch -w "language = 'eng'"    # media which have an English language tag
-                                                    (this could be audio _or_ subtitle)
-        library watch -w subtitle_count=0      # media that doesn't have subtitles
-
-    Constrain media to duration (in minutes):
-        library watch --duration 20
-        library watch -d 6  # 6 mins ±10 percent (ie. between 5 and 7 mins)
-        library watch -d-6  # less than 6 mins
-        library watch -d+6  # more than 6 mins
-
-        Duration can be specified multiple times:
-        library watch -d+5 -d-7  # should be similar to -d 6
-
-        If you want exact time use `where`
-        library watch --where 'duration=6*60'
-
-    Constrain media to file size (in megabytes):
-        library watch --size 20
-        library watch -S 6  # 6 MB ±10 percent (ie. between 5 and 7 MB)
-        library watch -S-6  # less than 6 MB
-        library watch -S+6  # more than 6 MB
-
-    Constrain media by time_created / time_last_played / time_deleted / time_modified:
-        library watch --created-within '3 days'
-        library watch --created-before '3 years'
-
-    Constrain media by throughput:
-        Bitrate information is not explicitly saved.
-        You can use file size and duration as a proxy for throughput:
-        library watch -w 'size/duration<50000'
-
-    Constrain media to portrait orientation video:
-        library watch --portrait
-        library watch -w 'width<height' # equivalent
-
-    Constrain media to duration of videos which match any size constraints:
-        library watch --duration-from-size +700 -u 'duration desc, size desc'
-
-    Constrain media to online-media or local-media:
-        Not to be confused with only local-media which is not "offline" (ie. one HDD disconnected)
-        library watch --online-media-only
-        library watch --online-media-only -i  # and ignore playback errors (ie. YouTube video deleted)
-        library watch --local-media-only
-
-    Specify media play order:
-        library watch --sort duration   # play shortest media first
-        library watch -u duration desc  # play longest media first
-
-        You can use multiple SQL ORDER BY expressions
-        library watch -u 'subtitle_count > 0 desc' # play media that has at least one subtitle first
-
-        Prioritize large-sized media
-        library watch --sort 'ntile(10000) over (order by size/duration) desc'
-        library watch -u 'ntile(100) over (order by size) desc'
-
-        Sort by count of media with the same-X column (default DESC: most common to least common value)
-        library watch -u same-duration
-        library watch -u same-title
-        library watch -u same-size
-        library watch -u same-width, same-height ASC, same-fps
-        library watch -u same-time_uploaded same-view_count same-upvote_ratio
-
-        No media found when using --random
-        In addition to -u/--sort random, there is also the -r/--random flag.
-        If you have a large database it should be faster than -u random but it comes with a caveat:
-        This flag randomizes via rowid at an earlier stage to boost performance.
-        It is possible that you see "No media found" or a smaller amount of media than correct.
-        You can bypass this by setting --limit. For example:
-        library watch -B --folder-size=+12GiB --folder-size=-100GiB -r -pa
-        path         count      size  duration                        avg_duration      avg_size
-        ---------  -------  --------  ------------------------------  --------------  ----------
-        Aggregate    10000  752.5 GB  4 months, 15 days and 10 hours  20 minutes         75.3 MB
-        (17 seconds)
-        library watch -B --folder-size=+12GiB --folder-size=-100GiB -r -pa -l inf
-        path         count     size  duration                                 avg_duration      avg_size
-        ---------  -------  -------  ---------------------------------------  --------------  ----------
-        Aggregate   140868  10.6 TB  5 years, 2 months, 28 days and 14 hours  20 minutes         75.3 MB
-        (30 seconds)
-
-    Post-actions -- choose what to do after playing:
-        library watch --post-action keep    # do nothing after playing (default)
-        library watch -k delete             # delete file after playing
-        library watch -k softdelete         # mark deleted after playing
-
-        library watch -k ask_keep           # ask whether to keep after playing
-        library watch -k ask_delete         # ask whether to delete after playing
-
-        library watch -k move               # move to "keep" dir after playing
-        library watch -k ask_move           # ask whether to move to "keep" folder
-        The default location of the keep folder is ./keep/ (relative to the played media file)
-        You can change this by explicitly setting an *absolute* `keep-dir` path:
-        library watch -k ask_move --keep-dir /home/my/music/keep/
-
-        library watch -k ask_move_or_delete # ask after each whether to move to "keep" folder or delete
-
-        You can also bind keys in mpv to different exit codes. For example in input.conf:
-            ; quit 5
-
-        And if you run something like:
-            library watch --cmd5 ~/bin/process_audio.py
-            library watch --cmd5 echo  # this will effectively do nothing except skip the normal post-actions via mpv shortcut
-
-        When semicolon is pressed in mpv (it will exit with error code 5) then the applicable player-exit-code command
-        will start with the media file as the first argument; in this case `~/bin/process_audio.py $path`.
-        The command will be daemonized if library exits before it completes.
-
-        To prevent confusion, normal post-actions will be skipped if the exit-code is greater than 4.
-        Exit-codes 0, 1, 2, 3, and 4: the external post-action will run after normal post-actions. Be careful of conflicting player-exit-code command and post-action behavior when using these!
-
-    Experimental options:
-        Duration to play (in seconds) while changing the channel
-        library watch --interdimensional-cable 40
-        library watch -4dtv 40
-        You can open two terminals to replicate AMV Hell somewhat
-        library watch --volume 0 -4dtv 30
-        library listen -4dtv 30
-
-        Playback multiple files at once
-        library watch --multiple-playback    # one per display; or two if only one display detected
-        library watch --multiple-playback 4  # play four media at once, divide by available screens
-        library watch -m 4 --screen-name eDP # play four media at once on specific screen
-        library watch -m 4 --loop --crop     # play four cropped videos on a loop
-        library watch -m 4 --hstack          # use hstack style
-
-        When using `--multiple-playback` it may be helpful to set simple window focus rules to prevent keys from accidentally being entered in the wrong mpv window (as new windows are created and capture the cursor focus).
-        You can set and restore your previous mouse focus setting by wrapping the command like this:
-
-            focus-under-mouse
-            library watch ... --multiple-playback 4
-            focus-follows-mouse
-
-        For example in KDE:
-
-            function focus-under-mouse
-                kwriteconfig5 --file kwinrc --group Windows --key FocusPolicy FocusUnderMouse
-                qdbus-qt5 org.kde.KWin /KWin reconfigure
-            end
-
-            function focus-follows-mouse
-                kwriteconfig5 --file kwinrc --group Windows --key FocusPolicy FocusFollowsMouse
-                kwriteconfig5 --file kwinrc --group Windows --key NextFocusPrefersMouse true
-                qdbus-qt5 org.kde.KWin /KWin reconfigure
-            end
+
+</details>
+
+###### mv-list
+
+<details><summary>Find specific folders to move to different disks</summary>
+
+    $ library mv-list -h
+    usage: library mv-list [--limit LIMIT] [--lower LOWER] [--upper UPPER] MOUNT_POINT DATABASE
+
+    Free up space on a specific disk. Find candidates for moving data to a different mount point
+
+
+    The program takes a mount point and a xklb database file. If you don't have a database file you can create one like this:
+
+        library fsadd --filesystem d.db ~/d/
+
+    But this should definitely also work with xklb audio and video databases:
+
+        library mv-list /mnt/d/ video.db
+
+    The program will print a table with a sorted list of folders which are good candidates for moving.
+    Candidates are determined by how many files are in the folder (so you don't spend hours waiting for folders with millions of tiny files to copy over).
+    The default is 4 to 4000--but it can be adjusted via the --lower and --upper flags.
+
+        ...
+        ├──────────┼─────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+        │ 4.0 GB   │       7 │ /mnt/d/71_Mealtime_Videos/unsorted/Miguel_4K/                                                                 │
+        ├──────────┼─────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+        │ 5.7 GB   │      10 │ /mnt/d/71_Mealtime_Videos/unsorted/Bollywood_Premium/                                                         │
+        ├──────────┼─────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+        │ 2.3 GB   │       4 │ /mnt/d/71_Mealtime_Videos/chief_wiggum/                                                                       │
+        ╘══════════╧═════════╧═══════════════════════════════════════════════════════════════════════════════════════════════════════════════╛
+        6702 other folders not shown
+
+        ██╗███╗░░██╗░██████╗████████╗██████╗░██╗░░░██╗░█████╗░████████╗██╗░█████╗░███╗░░██╗░██████╗
+        ██║████╗░██║██╔════╝╚══██╔══╝██╔══██╗██║░░░██║██╔══██╗╚══██╔══╝██║██╔══██╗████╗░██║██╔════╝
+        ██║██╔██╗██║╚█████╗░░░░██║░░░██████╔╝██║░░░██║██║░░╚═╝░░░██║░░░██║██║░░██║██╔██╗██║╚█████╗░
+        ██║██║╚████║░╚═══██╗░░░██║░░░██╔══██╗██║░░░██║██║░░██╗░░░██║░░░██║██║░░██║██║╚████║░╚═══██╗
+        ██║██║░╚███║██████╔╝░░░██║░░░██║░░██║╚██████╔╝╚█████╔╝░░░██║░░░██║╚█████╔╝██║░╚███║██████╔╝
+        ╚═╝╚═╝░░╚══╝╚═════╝░░░░╚═╝░░░╚═╝░░╚═╝░╚═════╝░░╚════╝░░░░╚═╝░░░╚═╝░╚════╝░╚═╝░░╚══╝╚═════╝░
+
+        Type "done" when finished
+        Type "more" to see more files
+        Paste a folder (and press enter) to toggle selection
+        Type "*" to select all files in the most recently printed table
+
+    Then it will give you a prompt:
+
+        Paste a path:
+
+    Wherein you can copy and paste paths you want to move from the table and the program will keep track for you.
+
+        Paste a path: /mnt/d/75_MovieQueue/720p/s11/
+        26 selected paths: 162.1 GB ; future free space: 486.9 GB
+
+    You can also press the up arrow or paste it again to remove it from the list:
+
+        Paste a path: /mnt/d/75_MovieQueue/720p/s11/
+        25 selected paths: 159.9 GB ; future free space: 484.7 GB
+
+    After you are done selecting folders you can press ctrl-d and it will save the list to a tmp file:
+
+        Paste a path: done
+
+            Folder list saved to /tmp/tmp7x_75l8. You may want to use the following command to move files to an EMPTY folder target:
+
+                rsync -a --info=progress2 --no-inc-recursive --remove-source-files --files-from=/tmp/tmp7x_75l8 -r --relative -vv --dry-run / jim:/free/real/estate/
+
+
+</details>
+
+###### scatter
+
+<details><summary>Scatter files between folders or disks</summary>
+
+    $ library scatter -h
+    usage: library scatter [--limit LIMIT] [--policy POLICY] [--sort SORT] --targets TARGETS DATABASE RELATIVE_PATH ...
+
+    Balance files across filesystem folder trees or multiple devices (mostly useful for mergerfs)
+
+    Scatter filesystem folder trees (without mountpoints; limited functionality; good for balancing fs inodes)
+
+        library scatter scatter.db /test/{0,1,2,3,4,5,6,7,8,9}
+
+    Reduce number of files per folder (creates more folders)
+
+        library scatter scatter.db --max-files-per-folder 16000 /test/{0,1,2,3,4,5,6,7,8,9}
+
+    Multi-device re-bin: balance by size
+
+        library scatter -m /mnt/d1:/mnt/d2:/mnt/d3:/mnt/d4/:/mnt/d5:/mnt/d6:/mnt/d7 fs.db subfolder/of/mergerfs/mnt
+        Current path distribution:
+        ╒═════════╤══════════════╤══════════════╤═══════════════╤════════════════╤═════════════════╤════════════════╕
+        │ mount   │   file_count │ total_size   │ median_size   │ time_created   │ time_modified   │ time_downloaded│
+        ╞═════════╪══════════════╪══════════════╪═══════════════╪════════════════╪═════════════════╪════════════════╡
+        │ /mnt/d1 │        12793 │ 169.5 GB     │ 4.5 MB        │ Jan 27         │ Jul 19 2022     │ Jan 31         │
+        ├─────────┼──────────────┼──────────────┼───────────────┼────────────────┼─────────────────┼────────────────┤
+        │ /mnt/d2 │        13226 │ 177.9 GB     │ 4.7 MB        │ Jan 27         │ Jul 19 2022     │ Jan 31         │
+        ├─────────┼──────────────┼──────────────┼───────────────┼────────────────┼─────────────────┼────────────────┤
+        │ /mnt/d3 │            1 │ 717.6 kB     │ 717.6 kB      │ Jan 31         │ Jul 18 2022     │ yesterday      │
+        ├─────────┼──────────────┼──────────────┼───────────────┼────────────────┼─────────────────┼────────────────┤
+        │ /mnt/d4 │           82 │ 1.5 GB       │ 12.5 MB       │ Jan 31         │ Apr 22 2022     │ yesterday      │
+        ╘═════════╧══════════════╧══════════════╧═══════════════╧════════════════╧═════════════════╧════════════════╛
+
+        Simulated path distribution:
+        5845 files should be moved
+        20257 files should not be moved
+        ╒═════════╤══════════════╤══════════════╤═══════════════╤════════════════╤═════════════════╤════════════════╕
+        │ mount   │   file_count │ total_size   │ median_size   │ time_created   │ time_modified   │ time_downloaded│
+        ╞═════════╪══════════════╪══════════════╪═══════════════╪════════════════╪═════════════════╪════════════════╡
+        │ /mnt/d1 │         9989 │ 46.0 GB      │ 2.4 MB        │ Jan 27         │ Jul 19 2022     │ Jan 31         │
+        ├─────────┼──────────────┼──────────────┼───────────────┼────────────────┼─────────────────┼────────────────┤
+        │ /mnt/d2 │        10185 │ 46.0 GB      │ 2.4 MB        │ Jan 27         │ Jul 19 2022     │ Jan 31         │
+        ├─────────┼──────────────┼──────────────┼───────────────┼────────────────┼─────────────────┼────────────────┤
+        │ /mnt/d3 │         1186 │ 53.6 GB      │ 30.8 MB       │ Jan 27         │ Apr 07 2022     │ Jan 31         │
+        ├─────────┼──────────────┼──────────────┼───────────────┼────────────────┼─────────────────┼────────────────┤
+        │ /mnt/d4 │         1216 │ 49.5 GB      │ 29.5 MB       │ Jan 27         │ Apr 07 2022     │ Jan 31         │
+        ├─────────┼──────────────┼──────────────┼───────────────┼────────────────┼─────────────────┼────────────────┤
+        │ /mnt/d5 │         1146 │ 53.0 GB      │ 30.9 MB       │ Jan 27         │ Apr 07 2022     │ Jan 31         │
+        ├─────────┼──────────────┼──────────────┼───────────────┼────────────────┼─────────────────┼────────────────┤
+        │ /mnt/d6 │         1198 │ 48.8 GB      │ 30.6 MB       │ Jan 27         │ Apr 07 2022     │ Jan 31         │
+        ├─────────┼──────────────┼──────────────┼───────────────┼────────────────┼─────────────────┼────────────────┤
+        │ /mnt/d7 │         1182 │ 52.0 GB      │ 30.9 MB       │ Jan 27         │ Apr 07 2022     │ Jan 31         │
+        ╘═════════╧══════════════╧══════════════╧═══════════════╧════════════════╧═════════════════╧════════════════╛
+        ### Move 1182 files to /mnt/d7 with this command: ###
+        rsync -aE --xattrs --info=progress2 --remove-source-files --files-from=/tmp/tmpmr1628ij / /mnt/d7
+        ### Move 1198 files to /mnt/d6 with this command: ###
+        rsync -aE --xattrs --info=progress2 --remove-source-files --files-from=/tmp/tmp9yd75f6j / /mnt/d6
+        ### Move 1146 files to /mnt/d5 with this command: ###
+        rsync -aE --xattrs --info=progress2 --remove-source-files --files-from=/tmp/tmpfrj141jj / /mnt/d5
+        ### Move 1185 files to /mnt/d3 with this command: ###
+        rsync -aE --xattrs --info=progress2 --remove-source-files --files-from=/tmp/tmpqh2euc8n / /mnt/d3
+        ### Move 1134 files to /mnt/d4 with this command: ###
+        rsync -aE --xattrs --info=progress2 --remove-source-files --files-from=/tmp/tmphzb0gj92 / /mnt/d4
+
+    Multi-device re-bin: balance device inodes for specific subfolder
+
+        library scatter -m /mnt/d1:/mnt/d2 fs.db subfolder --group count --sort 'size desc'
+
+    Multi-device re-bin: only consider the most recent 100 files
+
+        library scatter -m /mnt/d1:/mnt/d2 -l 100 -s 'time_modified desc' fs.db /
+
+    Multi-device re-bin: empty out a disk (/mnt/d2) into many other disks (/mnt/d1, /mnt/d3, and /mnt/d4)
+
+        library scatter fs.db -m /mnt/d1:/mnt/d3:/mnt/d4 /mnt/d2
+
+
+</details>
+
+### File subcommands
+
+###### sample-hash
+
+<details><summary>Calculate a hash based on small file segments</summary>
+
+    $ library sample-hash -h
+    usage: library sample-hash [--threads 10] [--chunk-size BYTES] [--gap BYTES OR 0.0-1.0*FILESIZE] PATH ...
+
+    Calculate hashes for large files by reading only small segments of each file
+
+        library sample-hash ./my_file.mkv
+
+    The threads flag seems to be faster for rotational media but slower on SSDs
+
+
+</details>
+
+###### sample-compare
+
+<details><summary>Compare files using sample-hash and other shortcuts</summary>
+
+    $ library sample-compare -h
+    usage: library sample-hash [--threads 10] [--chunk-size BYTES] [--gap BYTES OR 0.0-1.0*FILESIZE] PATH ...
+
+    Convenience subcommand to compare multiple files using sample-hash
+
+
+</details>
+
+### Tabular data subcommands
+
+###### eda
+
+<details><summary>Exploratory Data Analysis on table-like files</summary>
+
+    $ library eda -h
+    usage: library eda PATH ... [--table TABLE] [--start-row START_ROW] [--end-row END_ROW] [--repl]
+
+    Perform Exploratory Data Analysis (EDA) on one or more files
+
+    Only 20,000 rows per file are loaded for performance purposes. Set `--end-row inf` to read all the rows and/or run out of RAM.
+
+
+</details>
+
+###### mcda
+
+<details><summary>Multi-criteria Ranking for Decision Support</summary>
+
+    $ library mcda -h
+    usage: library mcda PATH ... [--table TABLE] [--start-row START_ROW] [--end-row END_ROW]
+
+    Perform Multiple Criteria Decision Analysis (MCDA) on one or more files
+
+    Only 20,000 rows per file are loaded for performance purposes. Set `--end-row inf` to read all the rows and/or run out of RAM.
+
+    $ library mcda ~/storage.csv --minimize price --ignore warranty
+
+        ### Goals
+        #### Maximize
+        - size
+        #### Minimize
+        - price
+
+        |    |   price |   size |   warranty |   TOPSIS |      MABAC |   SPOTIS |   BORDA |
+        |----|---------|--------|------------|----------|------------|----------|---------|
+        |  0 |     359 |     36 |          5 | 0.769153 |  0.348907  | 0.230847 | 7.65109 |
+        |  1 |     453 |     40 |          2 | 0.419921 |  0.0124531 | 0.567301 | 8.00032 |
+        |  2 |     519 |     44 |          2 | 0.230847 | -0.189399  | 0.769153 | 8.1894  |
+
+    $ library mcda ~/storage.csv --ignore warranty
+
+        ### Goals
+        #### Maximize
+        - price
+        - size
+
+        |    |   price |   size |   warranty |   TOPSIS |     MABAC |   SPOTIS |   BORDA |
+        |----|---------|--------|------------|----------|-----------|----------|---------|
+        |  2 |     519 |     44 |          2 | 1        |  0.536587 | 0        | 7.46341 |
+        |  1 |     453 |     40 |          2 | 0.580079 |  0.103888 | 0.432699 | 7.88333 |
+        |  0 |     359 |     36 |          5 | 0        | -0.463413 | 1        | 8.46341 |
+
+    $ library mcda ~/storage.csv --minimize price --ignore warranty
+
+        ### Goals
+        #### Maximize
+        - size
+        #### Minimize
+        - price
+
+        |    |   price |   size |   warranty |   TOPSIS |      MABAC |   SPOTIS |   BORDA |
+        |----|---------|--------|------------|----------|------------|----------|---------|
+        |  0 |     359 |     36 |          5 | 0.769153 |  0.348907  | 0.230847 | 7.65109 |
+        |  1 |     453 |     40 |          2 | 0.419921 |  0.0124531 | 0.567301 | 8.00032 |
+        |  2 |     519 |     44 |          2 | 0.230847 | -0.189399  | 0.769153 | 8.1894  |
+
+    It also works with HTTP/GCS/S3 URLs:
+
+    $ library mcda https://en.wikipedia.org/wiki/List_of_Academy_Award-winning_films --clean --minimize Year
+
+        ### Goals
+
+        #### Maximize
+
+        - Nominations
+        - Awards
+
+        #### Minimize
+
+        - Year
+
+        |      | Film                                                                    |   Year |   Awards |   Nominations |      TOPSIS |    MABAC |      SPOTIS |   BORDA |
+        |------|-------------------------------------------------------------------------|--------|----------|---------------|-------------|----------|-------------|---------|
+        |  378 | Titanic                                                                 |   1997 |       11 |            14 | 0.999993    | 1.38014  | 4.85378e-06 | 4116.62 |
+        |  868 | Ben-Hur                                                                 |   1959 |       11 |            12 | 0.902148    | 1.30871  | 0.0714303   | 4116.72 |
+        |  296 | The Lord of the Rings: The Return of the King                           |   2003 |       11 |            11 | 0.8558      | 1.27299  | 0.107147    | 4116.76 |
+        | 1341 | West Side Story                                                         |   1961 |       10 |            11 | 0.837716    | 1.22754  | 0.152599    | 4116.78 |
+        |  389 | The English Patient                                                     |   1996 |        9 |            12 | 0.836725    | 1.2178   | 0.162341    | 4116.78 |
+        | 1007 | Gone with the Wind                                                      |   1939 |        8 |            13 | 0.807086    | 1.20806  | 0.172078    | 4116.81 |
+        |  990 | From Here to Eternity                                                   |   1953 |        8 |            13 | 0.807086    | 1.20806  | 0.172079    | 4116.81 |
+        | 1167 | On the Waterfront                                                       |   1954 |        8 |            12 | 0.785       | 1.17235  | 0.207793    | 4116.83 |
+        | 1145 | My Fair Lady                                                            |   1964 |        8 |            12 | 0.785       | 1.17235  | 0.207793    | 4116.83 |
+        |  591 | Gandhi                                                                  |   1982 |        8 |            11 | 0.755312    | 1.13663  | 0.243509    | 4116.86 |
+
+
+</details>
+
+###### incremental-diff
+
+<details><summary>Diff large table-like files in chunks</summary>
+
+    $ library incremental-diff -h
+    usage: library incremental-diff PATH1 PATH2 [--join-keys JOIN_KEYS] [--table1 TABLE1] [--table2 TABLE2] [--table1-index TABLE1_INDEX] [--table2-index TABLE2_INDEX] [--start-row START_ROW] [--batch-size BATCH_SIZE]
+
+    See data differences in an incremental way to quickly see how two different files differ.
+
+    Data (PATH1, PATH2) can be two different files of different file formats (CSV, Excel) or it could even be the same file with different tables.
+
+    If files are unsorted you may need to use `--join-keys id,name` to specify ID columns. Rows that have the same ID will then be compared.
+    If you are comparing SQLITE files you may be able to use `--sort id,name` to achieve the same effect.
+
+    To diff everything at once run with `--batch-size inf`
+
+
+</details>
+
+### Media File subcommands
+
+###### media-check
+
+<details><summary>Check video and audio files for corruption via ffmpeg</summary>
+
+    $ library media-check -h
+    usage: library media-check [--chunk-size SECONDS] [--gap SECONDS OR 0.0-1.0*DURATION] [--delete-corrupt >0-100] [--full-scan] [--audio-scan] PATH ...
+
+    Defaults to decode 0.5 second per 10% of each file
+
+        library media-check ./video.mp4
+
+    Decode all the frames of each file to evaluate how corrupt it is
+    (scantime is very slow; about 150 seconds for an hour-long file)
+
+        library media-check --full-scan ./video.mp4
+
+    Decode all the packets of each file to evaluate how corrupt it is
+    (scantime is about one second of each file but only accurate for formats where 1 packet == 1 frame)
+
+        library media-check --full-scan --gap 0 ./video.mp4
+
+    Decode all audio of each file to evaluate how corrupt it is
+    (scantime is about four seconds per file)
+
+        library media-check --full-scan --audio ./video.mp4
+
+    Decode at least one frame at the start and end of each file to evaluate how corrupt it is
+    (scantime is about one second per file)
+
+        library media-check --chunk-size 5% --gap 99.9% ./video.mp4
+
+    Decode 3s every 5% of a file to evaluate how corrupt it is
+    (scantime is about three seconds per file)
+
+        library media-check --chunk-size 3 --gap 5% ./video.mp4
+
+    Delete the file if 20 percent or more of checks fail
+
+        library media-check --delete-corrupt 20% ./video.mp4
+
+    To scan a large folder use `fsadd`. I recommend something like this two-stage approach:
+
+        library fsadd --delete-unplayable --check-corrupt --chunk-size 5% tmp.db ./video/ ./folders/
+        library media-check (library fs tmp.db -w 'corruption>15' -pf) --full-scan --delete-corrupt 25%
+
+    The above can now be done in one command via `--full-scan-if-corrupt`:
+
+        library fsadd --delete-unplayable --check-corrupt --chunk-size 5% tmp.db ./video/ ./folders/ --full-scan-if-corrupt 15% --delete-corrupt 25%
+
+    Corruption stats
+
+        library fs tmp.db -w 'corruption>15' -pa
+        path         count  duration             avg_duration         size    avg_size
+        ---------  -------  -------------------  --------------  ---------  ----------
+        Aggregate      907  15 days and 9 hours  24 minutes      130.6 GiB   147.4 MiB
+
+    Corruption graph
+
+        sqlite --raw-lines tmp.db 'select corruption from media' | lowcharts hist --min 10 --intervals 10
+
+        Samples = 931; Min = 10.0; Max = 100.0
+        Average = 39.1; Variance = 1053.103; STD = 32.452
+        each ∎ represents a count of 6
+        [ 10.0 ..  19.0] [561] ∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎
+        [ 19.0 ..  28.0] [ 69] ∎∎∎∎∎∎∎∎∎∎∎
+        [ 28.0 ..  37.0] [ 33] ∎∎∎∎∎
+        [ 37.0 ..  46.0] [ 18] ∎∎∎
+        [ 46.0 ..  55.0] [ 14] ∎∎
+        [ 55.0 ..  64.0] [ 12] ∎∎
+        [ 64.0 ..  73.0] [ 15] ∎∎
+        [ 73.0 ..  82.0] [ 18] ∎∎∎
+        [ 82.0 ..  91.0] [ 50] ∎∎∎∎∎∎∎∎
+        [ 91.0 .. 100.0] [141] ∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎
+
+
+</details>
+
+###### process-ffmpeg
+
+<details><summary>Shrink video/audio to AV1/Opus format (.mkv, .mka)</summary>
+
+    $ library process-ffmpeg -h
+    usage: library process-ffmpeg PATH ... [--always-split] [--split-longer-than DURATION] [--min-split-segment SECONDS] [--simulate]
+
+    Resize videos to max 1440x960px AV1 and/or Opus to save space
+
+    Convert audio to Opus. Optionally split up long tracks into multiple files.
+
+        fd -tf -eDTS -eAAC -eWAV -eAIF -eAIFF -eFLAC -eAIFF -eM4A -eMP3 -eOGG -eMP4 -eWMA -j4 -x library process --audio
+
+    Use --always-split to _always_ split files if silence is detected
+
+        library process-audio --always-split audiobook.m4a
+
+    Use --split-longer-than to _only_ detect silence for files in excess of a specific duration
+
+        library process-audio --split-longer-than 36mins audiobook.m4b audiobook2.mp3
+
+
+</details>
+
+###### process-image
+
+<details><summary>Shrink images by resizing and AV1 image format (.avif)</summary>
+
+    $ library process-image -h
+    usage: library process-image PATH ...
+
+    Resize images to max 2400x2400px and format AVIF to save space
+
+
+</details>
+
+### Multi-database subcommands
+
+###### merge-dbs
+
+<details><summary>Merge SQLITE databases</summary>
+
+    $ library merge-dbs -h
+    usage: library merge-dbs DEST_DB SOURCE_DB ... [--only-target-columns] [--only-new-rows] [--upsert] [--pk PK ...] [--table TABLE ...]
+
+    Merge-DBs will insert new rows from source dbs to target db, table by table. If primary key(s) are provided,
+    and there is an existing row with the same PK, the default action is to delete the existing row and insert the new row
+    replacing all existing fields.
+
+    Upsert mode will update each matching PK row such that if a source row has a NULL field and
+    the destination row has a value then the value will be preserved instead of changed to the source row's NULL value.
+
+    Ignore mode (--only-new-rows) will insert only rows which don't already exist in the destination db
+
+    Test first by using temp databases as the destination db.
+    Try out different modes / flags until you are satisfied with the behavior of the program
+
+        library merge-dbs --pk path (mktemp --suffix .db) tv.db movies.db
+
+    Merge database data and tables
+
+        library merge-dbs --upsert --pk path video.db tv.db movies.db
+        library merge-dbs --only-target-columns --only-new-rows --table media,playlists --pk path --skip-column id audio-fts.db audio.db
+
+        library merge-dbs --pk id --only-tables subreddits reddit/81_New_Music.db audio.db
+        library merge-dbs --only-new-rows --pk subreddit,path --only-tables reddit_posts reddit/81_New_Music.db audio.db -v
+
+     To skip copying primary-keys from the source table(s) use --business-keys instead of --primary-keys
+
+     Split DBs using --where
+
+         library merge-dbs --pk path specific-site.db big.db -v --only-new-rows -t media,playlists -w 'path like "https://specific-site%"'
+
+
+</details>
+
+###### copy-play-counts
+
+<details><summary>Copy play history</summary>
+
+    $ library copy-play-counts -h
+    usage: library copy-play-counts DEST_DB SOURCE_DB ... [--source-prefix x] [--target-prefix y]
+
+    Copy play count information between databases
+
+        library copy-play-counts audio.db phone.db --source-prefix /storage/6E7B-7DCE/d --target-prefix /mnt/d
+
+
+</details>
+
+### Filesystem Database subcommands
+
+###### christen
+
+<details><summary>Clean filenames</summary>
+
+    $ library christen -h
+    usage: library christen DATABASE [--run]
+
+    Rename files to be somewhat normalized
+
+    Default mode is simulate
+
+        library christen fs.db
+
+    To actually do stuff use the run flag
+
+        library christen audio.db --run
+
+    You can optionally replace all the spaces in your filenames with dots
+
+        library christen --dot-space video.db
+
+
+</details>
+
+###### disk-usage
+
+<details><summary>Show disk usage</summary>
+
+    $ library disk-usage -h
+    usage: library disk-usage DATABASE [--sort-groups-by size | count] [--depth DEPTH] [PATH / SUBSTRING SEARCH]
+
+    Only include files smaller than 1kib
+
+        library disk-usage du.db --size=-1Ki
+        lb du du.db -S-1Ki
+        | path                                  |      size |   count |
+        |---------------------------------------|-----------|---------|
+        | /home/xk/github/xk/lb/__pycache__/    | 620 Bytes |       1 |
+        | /home/xk/github/xk/lb/.github/        |    1.7 kB |       4 |
+        | /home/xk/github/xk/lb/__pypackages__/ |    1.4 MB |    3519 |
+        | /home/xk/github/xk/lb/xklb/           |    4.4 kB |      12 |
+        | /home/xk/github/xk/lb/tests/          |    3.2 kB |       9 |
+        | /home/xk/github/xk/lb/.git/           |  782.4 kB |    2276 |
+        | /home/xk/github/xk/lb/.pytest_cache/  |    1.5 kB |       5 |
+        | /home/xk/github/xk/lb/.ruff_cache/    |   19.5 kB |     100 |
+        | /home/xk/github/xk/lb/.gitattributes  | 119 Bytes |         |
+        | /home/xk/github/xk/lb/.mypy_cache/    | 280 Bytes |       4 |
+        | /home/xk/github/xk/lb/.pdm-python     |  15 Bytes |         |
+
+    Only include files with a specific depth
+
+        library disk-usage du.db --depth 19
+        lb du du.db -d 19
+        | path                                                                                                                                                                |     size |
+        |---------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|
+        | /home/xk/github/xk/lb/__pypackages__/3.11/lib/jedi/third_party/typeshed/third_party/2and3/requests/packages/urllib3/packages/ssl_match_hostname/__init__.pyi        | 88 Bytes |
+        | /home/xk/github/xk/lb/__pypackages__/3.11/lib/jedi/third_party/typeshed/third_party/2and3/requests/packages/urllib3/packages/ssl_match_hostname/_implementation.pyi | 81 Bytes |
 
 
 
 </details>
 
-###### open-links
+###### big-dirs
 
-<details><summary>Open links from link dbs</summary>
+<details><summary>Show large folders</summary>
 
-    $ library open-links -h
-    usage: library open-links DATABASE [search] [--title] [--title-prefix TITLE_PREFIX]
+    $ library big-dirs -h
+    usage: library big-dirs DATABASE [--limit (4000)] [--depth (0)] [--sort-groups-by deleted | played] [--size=+5MB]
 
-    Open links from a links db
+    See what folders take up space
 
-        wget https://github.com/chapmanjacobd/library/raw/main/example_dbs/music.korea.ln.db
-        library open-links music.korea.ln.db
+        library big-dirs video.db
+        library big-dirs audio.db
+        library big-dirs fs.db
 
-    Only open links once
+    lb big-dirs video.db --folder-size=+10G --lower 400 --upper 14000
 
-        library open-links ln.db -w 'time_modified=0'
+    lb big-dirs video.db --depth 5
+    lb big-dirs video.db --depth 7
 
-    Print a preview instead of opening tabs
+    You can even sort by auto-MCDA ~LOL~
 
-        library open-links ln.db -p
-        library open-links ln.db --cols time_modified -p
-
-    Delete rows
-
-        Make sure you have the right search query
-        library open-links ln.db "query" -p -L inf
-        library open-links ln.db "query" -pa  # view total
-
-        library open-links ln.db "query" -pd  # mark as deleted
-
-    Custom search engine
-
-        library open-links ln.db --title --prefix 'https://duckduckgo.com/?q='
-
-    Skip local media
-
-        library open-links dl.db --online
-        library open-links dl.db -w 'path like "http%"'  # equivalent
-
+    lb big-dirs video.db -u 'mcda median_size,-deleted'
 
 
 </details>
 
-###### surf
+###### search-db
 
-<details><summary>Auto-load browser tabs in a streaming way (stdin)</summary>
+<details><summary>Search a SQLITE database</summary>
 
-    $ library surf -h
-    usage: library surf [--count COUNT] [--target-hosts TARGET_HOSTS] < stdin
+    $ library search-db -h
+    usage: library search-db DATABASE TABLE SEARCH ... [--delete-rows]
 
-    Streaming tab loader: press ctrl+c to stop.
-
-    Open tabs from a line-delimited file:
-
-        cat tabs.txt | library surf -n 5
-
-    You will likely want to use this setting in `about:config`
-
-        browser.tabs.loadDivertedInBackground = True
-
-    If you prefer GUI, check out https://unli.xyz/tabsender/
+    Search all columns in a SQLITE table. If the table does not exist, uses the table which startswith (if only one match)
 
 
 </details>
 
-### Media database subcommands
+###### optimize
+
+<details><summary>Re-optimize database</summary>
+
+    $ library optimize -h
+    usage: library optimize DATABASE [--force]
+
+    Optimize library databases
+
+    The force flag is usually unnecessary and it can take much longer
+
+
+</details>
+
+### Media Database subcommands
 
 ###### tabs
 
@@ -1972,678 +2144,459 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 </details>
 
-### Text subcommands
+### Playback subcommands
 
-###### cluster-sort
+###### watch
 
-<details><summary>Sort text and images by similarity</summary>
+<details><summary>Watch / Listen</summary>
 
-    $ library cluster-sort -h
-    usage: library cluster-sort [input_path | stdin] [output_path | stdout]
+    $ library watch -h
+    usage: library watch DATABASE [optional args]
 
-    Group lines of text into sorted output
+    Control playback:
+        To stop playback press Ctrl-C in either the terminal or mpv
 
-        echo 'red apple
-        broccoli
-        yellow
-        green
-        orange apple
-        red apple' | library cluster-sort
+        Create global shortcuts in your desktop environment by sending commands to mpv_socket:
+        echo 'playlist-next force' | socat - /tmp/mpv_socket
 
-        orange apple
-        red apple
-        red apple
-        broccoli
-        green
-        yellow
+    Override the default player (mpv):
+        library does a lot of things to try to automatically use your preferred media player
+        but if it doesn't guess right you can make it explicit:
+        library watch --player "vlc --vlc-opts"
 
-    Show the groupings
+    Cast to chromecast groups:
+        library watch --cast --cast-to "Office pair"
+        library watch -ct "Office pair"  # equivalent
+        If you don't know the exact name of your chromecast group run `catt scan`
 
-        echo 'red apple
-        broccoli
-        yellow
-        green
-        orange apple
-        red apple' | library cluster-sort --print-groups
+    Play media in order (similarly named episodes):
+        library watch --play-in-order
+        library watch -O    # equivalent
 
-        [
-            {'grouped_paths': ['orange apple', 'red apple', 'red apple']},
-            {'grouped_paths': ['broccoli', 'green', 'yellow']}
-        ]
+        The default sort value is 'natural_ps' which means media will be sorted by parent path
+        and then stem in a natural way (using the integer values within the path). But there are many other options:
 
-    Auto-sort images into directories
+        Options:
 
-        echo 'image1.jpg
-        image2.jpg
-        image3.jpg' | library cluster-sort --image --move-groups
+            - reverse: reverse the sort order
+            - compat: treat characters like '⑦' as '7'
 
-    Print similar paths
+        Algorithms:
 
-        library fs 0day.db -pa --cluster --print-groups
+            - natural: parse numbers as integers
+            - os: sort similar to the OS File Explorer sorts. To improve non-alphanumeric sorting on Mac OS X and Linux it is necessary to install pyicu (perhaps via python3-icu -- https://gitlab.pyicu.org/main/pyicu#installing-pyicu)
+            - path: use natsort "path" algorithm (https://natsort.readthedocs.io/en/stable/api.html#the-ns-enum)
+            - human: use system locale
+            - ignorecase: treat all case as equal
+            - lowercase: sort lowercase first
+            - signed: sort with an understanding of negative numbers
+            - python: sort like default python
+
+        Values:
+
+            - path
+            - parent
+            - stem
+            - title (or any other column value)
+            - ps: parent, stem
+            - pts: parent, title, stem
+
+        Use this format: algorithm, value, algorithm_value, or option_algorithm_value.
+        For example:
+
+            - library watch -O human
+            - library watch -O title
+            - library watch -O human_title
+            - library watch -O reverse_compat_human_title
+
+            - library watch -O path       # path algorithm and parent, stem values (path_ps)
+            - library watch -O path_path  # path algorithm and path values
+
+        Also, if you are using --random you need to fetch sibling media to play the media in order:
+
+            - library watch --random --fetch-siblings each -O          # get the first result per directory
+            - library watch --random --fetch-siblings if-audiobook -O  # get the first result per directory if 'audiobook' is in the path
+            - library watch --random --fetch-siblings always -O        # get 2,000 results per directory
+
+        If searching by a specific subpath it may be preferable to just sort by path instead
+        library watch d/planet.earth.2024/ -u path
+
+        library watch --related  # Similar to -O but uses fts to find similar content
+        library watch -R         # equivalent
+        library watch -RR        # above, plus ignores most filters
+
+        library watch --cluster  # cluster-sort to put similar-named paths closer together
+        library watch -C         # equivalent
+
+        library watch --big-dirs # Recommended to use with --duration or --depth filters; see `lb big-dirs -h` for more info
+        library watch -B         # equivalent
+
+        All of these options can be used together but it will be a bit slow and the results might be mid-tier
+        as multiple different algorithms create a muddied signal (too many cooks in the kitchen):
+        library watch -RRCO
+
+        You can even sort the items within each cluster by auto-MCDA ~LOL~
+        library watch -B --sort-groups-by 'mcda median_size,-deleted'
+        library watch -C --sort-groups-by 'mcda median_size,-deleted'
+
+    Filter media by file siblings of parent directory:
+        library watch --sibling   # only include files which have more than or equal to one sibling
+        library watch --solo      # only include files which are alone by themselves
+
+        `--sibling` is just a shortcut for `--lower 2`; `--solo` is `--upper 1`
+        library watch --sibling --solo      # you will always get zero records here
+        library watch --lower 2 --upper 1   # equivalent
+
+        You can be more specific via the `--upper` and `--lower` flags
+        library watch --lower 3   # only include files which have three or more siblings
+        library watch --upper 3   # only include files which have fewer than three siblings
+        library watch --lower 3 --upper 3   # only include files which are three siblings inclusive
+        library watch --lower 12 --upper 25 -O  # on my machine this launches My Mister 2018
+
+    Play recent partially-watched videos (requires mpv history):
+        library watch --partial       # play newest first
+
+        library watch --partial old   # play oldest first
+        library watch -P o            # equivalent
+
+        library watch -P p            # sort by percent remaining
+        library watch -P t            # sort by time remaining
+        library watch -P s            # skip partially watched (only show unseen)
+
+        The default time used is "last-viewed" (ie. the most recent time you closed the video)
+        If you want to use the "first-viewed" time (ie. the very first time you opened the video)
+        library watch -P f            # use watch_later file creation time instead of modified time
+
+        You can combine most of these options, though some will be overridden by others.
+        library watch -P fo           # this means "show the oldest videos using the time I first opened them"
+        library watch -P pt           # weighted remaining (percent * time remaining)
+
+    Print instead of play:
+        library watch --print --limit 10  # print the next 10 files
+        library watch -p -L 10  # print the next 10 files
+        library watch -p  # this will print _all_ the media. be cautious about `-p` on an unfiltered set
+
+        Printing modes
+        library watch -p    # print as a table
+        library watch -p a  # print an aggregate report
+        library watch -p b  # print a big-dirs report (see library bigdirs -h for more info)
+        library watch -p f  # print fields (defaults to path; use --cols to change)
+                               # -- useful for piping paths to utilities like xargs or GNU Parallel
+
+        library watch -p d  # mark deleted
+        library watch -p w  # mark watched
+
+        Some printing modes can be combined
+        library watch -p df  # print files for piping into another program and mark them as deleted within the db
+        library watch -p bf  # print fields from big-dirs report
+
+        Check if you have downloaded something before
+        library watch -u duration -p -s 'title'
+
+        Print an aggregate report of deleted media
+        library watch -w time_deleted!=0 -p=a
+        ╒═══════════╤══════════════╤═════════╤═════════╕
+        │ path      │ duration     │ size    │   count │
+        ╞═══════════╪══════════════╪═════════╪═════════╡
+        │ Aggregate │ 14 days, 23  │ 50.6 GB │   29058 │
+        │           │ hours and 42 │         │         │
+        │           │ minutes      │         │         │
+        ╘═══════════╧══════════════╧═════════╧═════════╛
+        Total duration: 14 days, 23 hours and 42 minutes
+
+        Print an aggregate report of media that has no duration information (ie. online or corrupt local media)
+        library watch -w 'duration is null' -p=a
+
+        Print a list of filenames which have below 1280px resolution
+        library watch -w 'width<1280' -p=f
+
+        Print media you have partially viewed with mpv
+        library watch --partial -p
+        library watch -P -p  # equivalent
+        library watch -P -p f --cols path,progress,duration  # print CSV of partially watched files
+        library watch --partial -pa  # print an aggregate report of partially watched files
+
+        View how much time you have watched
+        library watch -w play_count'>'0 -p=a
+
+        See how much video you have
+        library watch video.db -p=a
+        ╒═══════════╤═════════╤═════════╤═════════╕
+        │ path      │   hours │ size    │   count │
+        ╞═══════════╪═════════╪═════════╪═════════╡
+        │ Aggregate │  145769 │ 37.6 TB │  439939 │
+        ╘═══════════╧═════════╧═════════╧═════════╛
+        Total duration: 16 years, 7 months, 19 days, 17 hours and 25 minutes
+
+        View all the columns
+        library watch -p -L 1 --cols '*'
+
+        Open ipython with all of your media
+        library watch -vv -p --cols '*'
+        ipdb> len(media)
+        462219
+
+    Set the play queue size:
+        By default the play queue is 120--long enough that you likely have not noticed
+        but short enough that the program is snappy.
+
+        If you want everything in your play queue you can use the aid of infinity.
+        Pick your poison (these all do effectively the same thing):
+        library watch -L inf
+        library watch -l inf
+        library watch --queue inf
+        library watch -L 999999999999
+
+        You may also want to restrict the play queue.
+        For example, when you only want 1000 random files:
+        library watch -u random -L 1000
+
+    Offset the play queue:
+        You can also offset the queue. For example if you want to skip one or ten media:
+        library watch --offset 10      # offset ten from the top of an ordered query
+
+    Repeat
+        library watch                  # listen to 120 random songs (DEFAULT_PLAY_QUEUE)
+        library watch --limit 5        # listen to FIVE songs
+        library watch -l inf -u random # listen to random songs indefinitely
+        library watch -s infinite      # listen to songs from the band infinite
+
+    Constrain media by search:
+        Audio files have many tags to readily search through so metadata like artist,
+        album, and even mood are included in search.
+        Video files have less consistent metadata and so only paths are included in search.
+        library watch --include happy  # only matches will be included
+        library watch -s happy         # equivalent
+        library watch --exclude sad    # matches will be excluded
+        library watch -E sad           # equivalent
+
+        Search only the path column
+        library watch -O -s 'path : mad max'
+        library watch -O -s 'path : "mad max"' # add "quotes" to be more strict
+
+        Double spaces are parsed as one space
+        library watch -s '  ost'        # will match OST and not ghost
+        library watch -s toy story      # will match '/folder/toy/something/story.mp3'
+        library watch -s 'toy  story'   # will match more strictly '/folder/toy story.mp3'
+
+        You can search without -s but it must directly follow the database due to how argparse works
+        library watch ./your.db searching for something
+
+    Constrain media by arbitrary SQL expressions:
+        library watch --where audio_count = 2  # media which have two audio tracks
+        library watch -w "language = 'eng'"    # media which have an English language tag
+                                                    (this could be audio _or_ subtitle)
+        library watch -w subtitle_count=0      # media that doesn't have subtitles
+
+    Constrain media to duration (in minutes):
+        library watch --duration 20
+        library watch -d 6  # 6 mins ±10 percent (ie. between 5 and 7 mins)
+        library watch -d-6  # less than 6 mins
+        library watch -d+6  # more than 6 mins
+
+        Duration can be specified multiple times:
+        library watch -d+5 -d-7  # should be similar to -d 6
+
+        If you want exact time use `where`
+        library watch --where 'duration=6*60'
+
+    Constrain media to file size (in megabytes):
+        library watch --size 20
+        library watch -S 6  # 6 MB ±10 percent (ie. between 5 and 7 MB)
+        library watch -S-6  # less than 6 MB
+        library watch -S+6  # more than 6 MB
+
+    Constrain media by time_created / time_last_played / time_deleted / time_modified:
+        library watch --created-within '3 days'
+        library watch --created-before '3 years'
+
+    Constrain media by throughput:
+        Bitrate information is not explicitly saved.
+        You can use file size and duration as a proxy for throughput:
+        library watch -w 'size/duration<50000'
+
+    Constrain media to portrait orientation video:
+        library watch --portrait
+        library watch -w 'width<height' # equivalent
+
+    Constrain media to duration of videos which match any size constraints:
+        library watch --duration-from-size +700 -u 'duration desc, size desc'
+
+    Constrain media to online-media or local-media:
+        Not to be confused with only local-media which is not "offline" (ie. one HDD disconnected)
+        library watch --online-media-only
+        library watch --online-media-only -i  # and ignore playback errors (ie. YouTube video deleted)
+        library watch --local-media-only
+
+    Specify media play order:
+        library watch --sort duration   # play shortest media first
+        library watch -u duration desc  # play longest media first
+
+        You can use multiple SQL ORDER BY expressions
+        library watch -u 'subtitle_count > 0 desc' # play media that has at least one subtitle first
+
+        Prioritize large-sized media
+        library watch --sort 'ntile(10000) over (order by size/duration) desc'
+        library watch -u 'ntile(100) over (order by size) desc'
+
+        Sort by count of media with the same-X column (default DESC: most common to least common value)
+        library watch -u same-duration
+        library watch -u same-title
+        library watch -u same-size
+        library watch -u same-width, same-height ASC, same-fps
+        library watch -u same-time_uploaded same-view_count same-upvote_ratio
+
+        No media found when using --random
+        In addition to -u/--sort random, there is also the -r/--random flag.
+        If you have a large database it should be faster than -u random but it comes with a caveat:
+        This flag randomizes via rowid at an earlier stage to boost performance.
+        It is possible that you see "No media found" or a smaller amount of media than correct.
+        You can bypass this by setting --limit. For example:
+        library watch -B --folder-size=+12GiB --folder-size=-100GiB -r -pa
+        path         count      size  duration                        avg_duration      avg_size
+        ---------  -------  --------  ------------------------------  --------------  ----------
+        Aggregate    10000  752.5 GB  4 months, 15 days and 10 hours  20 minutes         75.3 MB
+        (17 seconds)
+        library watch -B --folder-size=+12GiB --folder-size=-100GiB -r -pa -l inf
+        path         count     size  duration                                 avg_duration      avg_size
+        ---------  -------  -------  ---------------------------------------  --------------  ----------
+        Aggregate   140868  10.6 TB  5 years, 2 months, 28 days and 14 hours  20 minutes         75.3 MB
+        (30 seconds)
+
+    Post-actions -- choose what to do after playing:
+        library watch --post-action keep    # do nothing after playing (default)
+        library watch -k delete             # delete file after playing
+        library watch -k softdelete         # mark deleted after playing
+
+        library watch -k ask_keep           # ask whether to keep after playing
+        library watch -k ask_delete         # ask whether to delete after playing
+
+        library watch -k move               # move to "keep" dir after playing
+        library watch -k ask_move           # ask whether to move to "keep" folder
+        The default location of the keep folder is ./keep/ (relative to the played media file)
+        You can change this by explicitly setting an *absolute* `keep-dir` path:
+        library watch -k ask_move --keep-dir /home/my/music/keep/
+
+        library watch -k ask_move_or_delete # ask after each whether to move to "keep" folder or delete
+
+        You can also bind keys in mpv to different exit codes. For example in input.conf:
+            ; quit 5
+
+        And if you run something like:
+            library watch --cmd5 ~/bin/process_audio.py
+            library watch --cmd5 echo  # this will effectively do nothing except skip the normal post-actions via mpv shortcut
+
+        When semicolon is pressed in mpv (it will exit with error code 5) then the applicable player-exit-code command
+        will start with the media file as the first argument; in this case `~/bin/process_audio.py $path`.
+        The command will be daemonized if library exits before it completes.
+
+        To prevent confusion, normal post-actions will be skipped if the exit-code is greater than 4.
+        Exit-codes 0, 1, 2, 3, and 4: the external post-action will run after normal post-actions. Be careful of conflicting player-exit-code command and post-action behavior when using these!
+
+    Experimental options:
+        Duration to play (in seconds) while changing the channel
+        library watch --interdimensional-cable 40
+        library watch -4dtv 40
+        You can open two terminals to replicate AMV Hell somewhat
+        library watch --volume 0 -4dtv 30
+        library listen -4dtv 30
+
+        Playback multiple files at once
+        library watch --multiple-playback    # one per display; or two if only one display detected
+        library watch --multiple-playback 4  # play four media at once, divide by available screens
+        library watch -m 4 --screen-name eDP # play four media at once on specific screen
+        library watch -m 4 --loop --crop     # play four cropped videos on a loop
+        library watch -m 4 --hstack          # use hstack style
+
+        When using `--multiple-playback` it may be helpful to set simple window focus rules to prevent keys from accidentally being entered in the wrong mpv window (as new windows are created and capture the cursor focus).
+        You can set and restore your previous mouse focus setting by wrapping the command like this:
+
+            focus-under-mouse
+            library watch ... --multiple-playback 4
+            focus-follows-mouse
+
+        For example in KDE:
+
+            function focus-under-mouse
+                kwriteconfig5 --file kwinrc --group Windows --key FocusPolicy FocusUnderMouse
+                qdbus-qt5 org.kde.KWin /KWin reconfigure
+            end
+
+            function focus-follows-mouse
+                kwriteconfig5 --file kwinrc --group Windows --key FocusPolicy FocusFollowsMouse
+                kwriteconfig5 --file kwinrc --group Windows --key NextFocusPrefersMouse true
+                qdbus-qt5 org.kde.KWin /KWin reconfigure
+            end
 
 
 
 </details>
 
-###### extract-links
+###### open-links
 
-<details><summary>Extract inner links from lists of web links</summary>
+<details><summary>Open links from link dbs</summary>
 
-    $ library extract-links -h
-    usage: library extract-links PATH ... [--case-sensitive] [--scroll] [--download] [--verbose] [--local-html] [--file FILE] [--path-include ...] [--text-include ...] [--after-include ...] [--before-include ...] [--path-exclude ...] [--text-exclude ...] [--after-exclude ...] [--before-exclude ...]
+    $ library open-links -h
+    usage: library open-links DATABASE [search] [--title] [--title-prefix TITLE_PREFIX]
 
-    Extract links from within local HTML fragments, files, or remote pages; filtering on link text and nearby plain-text
+    Open links from a links db
 
-        library links https://en.wikipedia.org/wiki/List_of_bacon_dishes --path-include https://en.wikipedia.org/wiki/ --after-include famous
-        https://en.wikipedia.org/wiki/Omelette
+        wget https://github.com/chapmanjacobd/library/raw/main/example_dbs/music.korea.ln.db
+        library open-links music.korea.ln.db
 
-    Read from local clipboard and filter out links based on nearby plain text:
+    Only open links once
 
-        library links --local-html (cb -t text/html | psub) --after-exclude paranormal spooky horror podcast tech fantasy supernatural lecture sport
-        # note: the equivalent BASH-ism is <(xclip -selection clipboard -t text/html)
+        library open-links ln.db -w 'time_modified=0'
 
-    Run with `-vv` to see the browser
+    Print a preview instead of opening tabs
 
+        library open-links ln.db -p
+        library open-links ln.db --cols time_modified -p
 
-</details>
+    Delete rows
 
-###### extract-text
+        Make sure you have the right search query
+        library open-links ln.db "query" -p -L inf
+        library open-links ln.db "query" -pa  # view total
 
-<details><summary>Extract human text from lists of web links</summary>
+        library open-links ln.db "query" -pd  # mark as deleted
 
-    $ library extract-text -h
-    usage: library extract-text PATH ... [--skip-links]
+    Custom search engine
 
-    Sorting suggestions
+        library open-links ln.db --title --prefix 'https://duckduckgo.com/?q='
 
-        lb extract-text --skip-links --local-file (cb -t text/html | psub) | lb cs --groups | jq -r '.[] | .grouped_paths | "\n" + join("\n")'
+    Skip local media
 
+        library open-links dl.db --online
+        library open-links dl.db -w 'path like "http%"'  # equivalent
 
-</details>
-
-### File subcommands
-
-###### eda
-
-<details><summary>Exploratory Data Analysis on table-like files</summary>
-
-    $ library eda -h
-    usage: library eda PATH ... [--table TABLE] [--start-row START_ROW] [--end-row END_ROW] [--repl]
-
-    Perform Exploratory Data Analysis (EDA) on one or more files
-
-    Only 20,000 rows per file are loaded for performance purposes. Set `--end-row inf` to read all the rows and/or run out of RAM.
 
 
 </details>
 
-###### mcda
+###### surf
 
-<details><summary>Multi-criteria Ranking for Decision Support</summary>
+<details><summary>Auto-load browser tabs in a streaming way (stdin)</summary>
 
-    $ library mcda -h
-    usage: library mcda PATH ... [--table TABLE] [--start-row START_ROW] [--end-row END_ROW]
+    $ library surf -h
+    usage: library surf [--count COUNT] [--target-hosts TARGET_HOSTS] < stdin
 
-    Perform Multiple Criteria Decision Analysis (MCDA) on one or more files
+    Streaming tab loader: press ctrl+c to stop.
 
-    Only 20,000 rows per file are loaded for performance purposes. Set `--end-row inf` to read all the rows and/or run out of RAM.
+    Open tabs from a line-delimited file:
 
-    $ library mcda ~/storage.csv --minimize price --ignore warranty
+        cat tabs.txt | library surf -n 5
 
-        ### Goals
-        #### Maximize
-        - size
-        #### Minimize
-        - price
+    You will likely want to use this setting in `about:config`
 
-        |    |   price |   size |   warranty |   TOPSIS |      MABAC |   SPOTIS |   BORDA |
-        |----|---------|--------|------------|----------|------------|----------|---------|
-        |  0 |     359 |     36 |          5 | 0.769153 |  0.348907  | 0.230847 | 7.65109 |
-        |  1 |     453 |     40 |          2 | 0.419921 |  0.0124531 | 0.567301 | 8.00032 |
-        |  2 |     519 |     44 |          2 | 0.230847 | -0.189399  | 0.769153 | 8.1894  |
+        browser.tabs.loadDivertedInBackground = True
 
-    $ library mcda ~/storage.csv --ignore warranty
-
-        ### Goals
-        #### Maximize
-        - price
-        - size
-
-        |    |   price |   size |   warranty |   TOPSIS |     MABAC |   SPOTIS |   BORDA |
-        |----|---------|--------|------------|----------|-----------|----------|---------|
-        |  2 |     519 |     44 |          2 | 1        |  0.536587 | 0        | 7.46341 |
-        |  1 |     453 |     40 |          2 | 0.580079 |  0.103888 | 0.432699 | 7.88333 |
-        |  0 |     359 |     36 |          5 | 0        | -0.463413 | 1        | 8.46341 |
-
-    $ library mcda ~/storage.csv --minimize price --ignore warranty
-
-        ### Goals
-        #### Maximize
-        - size
-        #### Minimize
-        - price
-
-        |    |   price |   size |   warranty |   TOPSIS |      MABAC |   SPOTIS |   BORDA |
-        |----|---------|--------|------------|----------|------------|----------|---------|
-        |  0 |     359 |     36 |          5 | 0.769153 |  0.348907  | 0.230847 | 7.65109 |
-        |  1 |     453 |     40 |          2 | 0.419921 |  0.0124531 | 0.567301 | 8.00032 |
-        |  2 |     519 |     44 |          2 | 0.230847 | -0.189399  | 0.769153 | 8.1894  |
-
-    It also works with HTTP/GCS/S3 URLs:
-
-    $ library mcda https://en.wikipedia.org/wiki/List_of_Academy_Award-winning_films --clean --minimize Year
-
-        ### Goals
-
-        #### Maximize
-
-        - Nominations
-        - Awards
-
-        #### Minimize
-
-        - Year
-
-        |      | Film                                                                    |   Year |   Awards |   Nominations |      TOPSIS |    MABAC |      SPOTIS |   BORDA |
-        |------|-------------------------------------------------------------------------|--------|----------|---------------|-------------|----------|-------------|---------|
-        |  378 | Titanic                                                                 |   1997 |       11 |            14 | 0.999993    | 1.38014  | 4.85378e-06 | 4116.62 |
-        |  868 | Ben-Hur                                                                 |   1959 |       11 |            12 | 0.902148    | 1.30871  | 0.0714303   | 4116.72 |
-        |  296 | The Lord of the Rings: The Return of the King                           |   2003 |       11 |            11 | 0.8558      | 1.27299  | 0.107147    | 4116.76 |
-        | 1341 | West Side Story                                                         |   1961 |       10 |            11 | 0.837716    | 1.22754  | 0.152599    | 4116.78 |
-        |  389 | The English Patient                                                     |   1996 |        9 |            12 | 0.836725    | 1.2178   | 0.162341    | 4116.78 |
-        | 1007 | Gone with the Wind                                                      |   1939 |        8 |            13 | 0.807086    | 1.20806  | 0.172078    | 4116.81 |
-        |  990 | From Here to Eternity                                                   |   1953 |        8 |            13 | 0.807086    | 1.20806  | 0.172079    | 4116.81 |
-        | 1167 | On the Waterfront                                                       |   1954 |        8 |            12 | 0.785       | 1.17235  | 0.207793    | 4116.83 |
-        | 1145 | My Fair Lady                                                            |   1964 |        8 |            12 | 0.785       | 1.17235  | 0.207793    | 4116.83 |
-        |  591 | Gandhi                                                                  |   1982 |        8 |            11 | 0.755312    | 1.13663  | 0.243509    | 4116.86 |
+    If you prefer GUI, check out https://unli.xyz/tabsender/
 
 
 </details>
 
-###### incremental-diff
-
-<details><summary>Diff large table-like files in chunks</summary>
-
-    $ library incremental-diff -h
-    usage: library incremental-diff PATH1 PATH2 [--join-keys JOIN_KEYS] [--table1 TABLE1] [--table2 TABLE2] [--table1-index TABLE1_INDEX] [--table2-index TABLE2_INDEX] [--start-row START_ROW] [--batch-size BATCH_SIZE]
-
-    See data differences in an incremental way to quickly see how two different files differ.
-
-    Data (PATH1, PATH2) can be two different files of different file formats (CSV, Excel) or it could even be the same file with different tables.
-
-    If files are unsorted you may need to use `--join-keys id,name` to specify ID columns. Rows that have the same ID will then be compared.
-    If you are comparing SQLITE files you may be able to use `--sort id,name` to achieve the same effect.
-
-    To diff everything at once run with `--batch-size inf`
-
-
-</details>
-
-###### media-check
-
-<details><summary>Check video and audio files for corruption via ffmpeg</summary>
-
-    $ library media-check -h
-    usage: library media-check [--chunk-size SECONDS] [--gap SECONDS OR 0.0-1.0*DURATION] [--delete-corrupt >0-100] [--full-scan] [--audio-scan] PATH ...
-
-    Defaults to decode 0.5 second per 10% of each file
-
-        library media-check ./video.mp4
-
-    Decode all the frames of each file to evaluate how corrupt it is
-    (scantime is very slow; about 150 seconds for an hour-long file)
-
-        library media-check --full-scan ./video.mp4
-
-    Decode all the packets of each file to evaluate how corrupt it is
-    (scantime is about one second of each file but only accurate for formats where 1 packet == 1 frame)
-
-        library media-check --full-scan --gap 0 ./video.mp4
-
-    Decode all audio of each file to evaluate how corrupt it is
-    (scantime is about four seconds per file)
-
-        library media-check --full-scan --audio ./video.mp4
-
-    Decode at least one frame at the start and end of each file to evaluate how corrupt it is
-    (scantime is about one second per file)
-
-        library media-check --chunk-size 5% --gap 99.9% ./video.mp4
-
-    Decode 3s every 5% of a file to evaluate how corrupt it is
-    (scantime is about three seconds per file)
-
-        library media-check --chunk-size 3 --gap 5% ./video.mp4
-
-    Delete the file if 20 percent or more of checks fail
-
-        library media-check --delete-corrupt 20% ./video.mp4
-
-    To scan a large folder use `fsadd`. I recommend something like this two-stage approach:
-
-        library fsadd --delete-unplayable --check-corrupt --chunk-size 5% tmp.db ./video/ ./folders/
-        library media-check (library fs tmp.db -w 'corruption>15' -pf) --full-scan --delete-corrupt 25%
-
-    The above can now be done in one command via `--full-scan-if-corrupt`:
-
-        library fsadd --delete-unplayable --check-corrupt --chunk-size 5% tmp.db ./video/ ./folders/ --full-scan-if-corrupt 15% --delete-corrupt 25%
-
-    Corruption stats
-
-        library fs tmp.db -w 'corruption>15' -pa
-        path         count  duration             avg_duration         size    avg_size
-        ---------  -------  -------------------  --------------  ---------  ----------
-        Aggregate      907  15 days and 9 hours  24 minutes      130.6 GiB   147.4 MiB
-
-    Corruption graph
-
-        sqlite --raw-lines tmp.db 'select corruption from media' | lowcharts hist --min 10 --intervals 10
-
-        Samples = 931; Min = 10.0; Max = 100.0
-        Average = 39.1; Variance = 1053.103; STD = 32.452
-        each ∎ represents a count of 6
-        [ 10.0 ..  19.0] [561] ∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎
-        [ 19.0 ..  28.0] [ 69] ∎∎∎∎∎∎∎∎∎∎∎
-        [ 28.0 ..  37.0] [ 33] ∎∎∎∎∎
-        [ 37.0 ..  46.0] [ 18] ∎∎∎
-        [ 46.0 ..  55.0] [ 14] ∎∎
-        [ 55.0 ..  64.0] [ 12] ∎∎
-        [ 64.0 ..  73.0] [ 15] ∎∎
-        [ 73.0 ..  82.0] [ 18] ∎∎∎
-        [ 82.0 ..  91.0] [ 50] ∎∎∎∎∎∎∎∎
-        [ 91.0 .. 100.0] [141] ∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎
-
-
-</details>
-
-###### sample-hash
-
-<details><summary>Calculate a hash based on small file segments</summary>
-
-    $ library sample-hash -h
-    usage: library sample-hash [--threads 10] [--chunk-size BYTES] [--gap BYTES OR 0.0-1.0*FILESIZE] PATH ...
-
-    Calculate hashes for large files by reading only small segments of each file
-
-        library sample-hash ./my_file.mkv
-
-    The threads flag seems to be faster for rotational media but slower on SSDs
-
-
-</details>
-
-###### sample-compare
-
-<details><summary>Compare files using sample-hash and other shortcuts</summary>
-
-    $ library sample-compare -h
-    usage: library sample-hash [--threads 10] [--chunk-size BYTES] [--gap BYTES OR 0.0-1.0*FILESIZE] PATH ...
-
-    Convenience subcommand to compare multiple files using sample-hash
-
-
-</details>
-
-### Folder subcommands
-
-###### merge-folders
-
-<details><summary>Merge two or more file trees</summary>
-
-    $ library merge-folders -h
-    usage: library merge-folders [--replace] [--no-replace] [--simulate] SOURCES ... DESTINATION
-
-    Merge multiple folders with the same file tree into a single folder.
-
-    https://github.com/chapmanjacobd/journal/blob/main/programming/linux/misconceptions.md#mv-src-vs-mv-src
-
-    Trumps are new or replaced files from an earlier source which now conflict with a later source.
-    If you only have one source then the count of trumps will always be zero.
-    The count of conflicts also includes trumps.
-
-
-</details>
-
-###### relmv
-
-<details><summary>Move files preserving parent folder hierarchy</summary>
-
-    $ library relmv -h
-    usage: library relmv [--simulate] SOURCE ... DEST
-
-    Move files/folders without losing hierarchy metadata
-
-    Move fresh music to your phone every Sunday:
-
-        # move last week music back to their source folders
-        library mv /mnt/d/sync/weekly/ /mnt/d/check/audio/
-
-        # move new music for this week
-        library relmv (
-            library listen audio.db --local-media-only --where 'play_count=0' --random -L 600 -p f
-        ) /mnt/d/sync/weekly/
-
-
-</details>
-
-###### mv-list
-
-<details><summary>Find specific folders to move to different disks</summary>
-
-    $ library mv-list -h
-    usage: library mv-list [--limit LIMIT] [--lower LOWER] [--upper UPPER] MOUNT_POINT DATABASE
-
-    Free up space on a specific disk. Find candidates for moving data to a different mount point
-
-
-    The program takes a mount point and a xklb database file. If you don't have a database file you can create one like this:
-
-        library fsadd --filesystem d.db ~/d/
-
-    But this should definitely also work with xklb audio and video databases:
-
-        library mv-list /mnt/d/ video.db
-
-    The program will print a table with a sorted list of folders which are good candidates for moving.
-    Candidates are determined by how many files are in the folder (so you don't spend hours waiting for folders with millions of tiny files to copy over).
-    The default is 4 to 4000--but it can be adjusted via the --lower and --upper flags.
-
-        ...
-        ├──────────┼─────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-        │ 4.0 GB   │       7 │ /mnt/d/71_Mealtime_Videos/unsorted/Miguel_4K/                                                                 │
-        ├──────────┼─────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-        │ 5.7 GB   │      10 │ /mnt/d/71_Mealtime_Videos/unsorted/Bollywood_Premium/                                                         │
-        ├──────────┼─────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-        │ 2.3 GB   │       4 │ /mnt/d/71_Mealtime_Videos/chief_wiggum/                                                                       │
-        ╘══════════╧═════════╧═══════════════════════════════════════════════════════════════════════════════════════════════════════════════╛
-        6702 other folders not shown
-
-        ██╗███╗░░██╗░██████╗████████╗██████╗░██╗░░░██╗░█████╗░████████╗██╗░█████╗░███╗░░██╗░██████╗
-        ██║████╗░██║██╔════╝╚══██╔══╝██╔══██╗██║░░░██║██╔══██╗╚══██╔══╝██║██╔══██╗████╗░██║██╔════╝
-        ██║██╔██╗██║╚█████╗░░░░██║░░░██████╔╝██║░░░██║██║░░╚═╝░░░██║░░░██║██║░░██║██╔██╗██║╚█████╗░
-        ██║██║╚████║░╚═══██╗░░░██║░░░██╔══██╗██║░░░██║██║░░██╗░░░██║░░░██║██║░░██║██║╚████║░╚═══██╗
-        ██║██║░╚███║██████╔╝░░░██║░░░██║░░██║╚██████╔╝╚█████╔╝░░░██║░░░██║╚█████╔╝██║░╚███║██████╔╝
-        ╚═╝╚═╝░░╚══╝╚═════╝░░░░╚═╝░░░╚═╝░░╚═╝░╚═════╝░░╚════╝░░░░╚═╝░░░╚═╝░╚════╝░╚═╝░░╚══╝╚═════╝░
-
-        Type "done" when finished
-        Type "more" to see more files
-        Paste a folder (and press enter) to toggle selection
-        Type "*" to select all files in the most recently printed table
-
-    Then it will give you a prompt:
-
-        Paste a path:
-
-    Wherein you can copy and paste paths you want to move from the table and the program will keep track for you.
-
-        Paste a path: /mnt/d/75_MovieQueue/720p/s11/
-        26 selected paths: 162.1 GB ; future free space: 486.9 GB
-
-    You can also press the up arrow or paste it again to remove it from the list:
-
-        Paste a path: /mnt/d/75_MovieQueue/720p/s11/
-        25 selected paths: 159.9 GB ; future free space: 484.7 GB
-
-    After you are done selecting folders you can press ctrl-d and it will save the list to a tmp file:
-
-        Paste a path: done
-
-            Folder list saved to /tmp/tmp7x_75l8. You may want to use the following command to move files to an EMPTY folder target:
-
-                rsync -a --info=progress2 --no-inc-recursive --remove-source-files --files-from=/tmp/tmp7x_75l8 -r --relative -vv --dry-run / jim:/free/real/estate/
-
-
-</details>
-
-###### scatter
-
-<details><summary>Scatter files between folders or disks</summary>
-
-    $ library scatter -h
-    usage: library scatter [--limit LIMIT] [--policy POLICY] [--sort SORT] --targets TARGETS DATABASE RELATIVE_PATH ...
-
-    Balance files across filesystem folder trees or multiple devices (mostly useful for mergerfs)
-
-    Scatter filesystem folder trees (without mountpoints; limited functionality; good for balancing fs inodes)
-
-        library scatter scatter.db /test/{0,1,2,3,4,5,6,7,8,9}
-
-    Reduce number of files per folder (creates more folders)
-
-        library scatter scatter.db --max-files-per-folder 16000 /test/{0,1,2,3,4,5,6,7,8,9}
-
-    Multi-device re-bin: balance by size
-
-        library scatter -m /mnt/d1:/mnt/d2:/mnt/d3:/mnt/d4/:/mnt/d5:/mnt/d6:/mnt/d7 fs.db subfolder/of/mergerfs/mnt
-        Current path distribution:
-        ╒═════════╤══════════════╤══════════════╤═══════════════╤════════════════╤═════════════════╤════════════════╕
-        │ mount   │   file_count │ total_size   │ median_size   │ time_created   │ time_modified   │ time_downloaded│
-        ╞═════════╪══════════════╪══════════════╪═══════════════╪════════════════╪═════════════════╪════════════════╡
-        │ /mnt/d1 │        12793 │ 169.5 GB     │ 4.5 MB        │ Jan 27         │ Jul 19 2022     │ Jan 31         │
-        ├─────────┼──────────────┼──────────────┼───────────────┼────────────────┼─────────────────┼────────────────┤
-        │ /mnt/d2 │        13226 │ 177.9 GB     │ 4.7 MB        │ Jan 27         │ Jul 19 2022     │ Jan 31         │
-        ├─────────┼──────────────┼──────────────┼───────────────┼────────────────┼─────────────────┼────────────────┤
-        │ /mnt/d3 │            1 │ 717.6 kB     │ 717.6 kB      │ Jan 31         │ Jul 18 2022     │ yesterday      │
-        ├─────────┼──────────────┼──────────────┼───────────────┼────────────────┼─────────────────┼────────────────┤
-        │ /mnt/d4 │           82 │ 1.5 GB       │ 12.5 MB       │ Jan 31         │ Apr 22 2022     │ yesterday      │
-        ╘═════════╧══════════════╧══════════════╧═══════════════╧════════════════╧═════════════════╧════════════════╛
-
-        Simulated path distribution:
-        5845 files should be moved
-        20257 files should not be moved
-        ╒═════════╤══════════════╤══════════════╤═══════════════╤════════════════╤═════════════════╤════════════════╕
-        │ mount   │   file_count │ total_size   │ median_size   │ time_created   │ time_modified   │ time_downloaded│
-        ╞═════════╪══════════════╪══════════════╪═══════════════╪════════════════╪═════════════════╪════════════════╡
-        │ /mnt/d1 │         9989 │ 46.0 GB      │ 2.4 MB        │ Jan 27         │ Jul 19 2022     │ Jan 31         │
-        ├─────────┼──────────────┼──────────────┼───────────────┼────────────────┼─────────────────┼────────────────┤
-        │ /mnt/d2 │        10185 │ 46.0 GB      │ 2.4 MB        │ Jan 27         │ Jul 19 2022     │ Jan 31         │
-        ├─────────┼──────────────┼──────────────┼───────────────┼────────────────┼─────────────────┼────────────────┤
-        │ /mnt/d3 │         1186 │ 53.6 GB      │ 30.8 MB       │ Jan 27         │ Apr 07 2022     │ Jan 31         │
-        ├─────────┼──────────────┼──────────────┼───────────────┼────────────────┼─────────────────┼────────────────┤
-        │ /mnt/d4 │         1216 │ 49.5 GB      │ 29.5 MB       │ Jan 27         │ Apr 07 2022     │ Jan 31         │
-        ├─────────┼──────────────┼──────────────┼───────────────┼────────────────┼─────────────────┼────────────────┤
-        │ /mnt/d5 │         1146 │ 53.0 GB      │ 30.9 MB       │ Jan 27         │ Apr 07 2022     │ Jan 31         │
-        ├─────────┼──────────────┼──────────────┼───────────────┼────────────────┼─────────────────┼────────────────┤
-        │ /mnt/d6 │         1198 │ 48.8 GB      │ 30.6 MB       │ Jan 27         │ Apr 07 2022     │ Jan 31         │
-        ├─────────┼──────────────┼──────────────┼───────────────┼────────────────┼─────────────────┼────────────────┤
-        │ /mnt/d7 │         1182 │ 52.0 GB      │ 30.9 MB       │ Jan 27         │ Apr 07 2022     │ Jan 31         │
-        ╘═════════╧══════════════╧══════════════╧═══════════════╧════════════════╧═════════════════╧════════════════╛
-        ### Move 1182 files to /mnt/d7 with this command: ###
-        rsync -aE --xattrs --info=progress2 --remove-source-files --files-from=/tmp/tmpmr1628ij / /mnt/d7
-        ### Move 1198 files to /mnt/d6 with this command: ###
-        rsync -aE --xattrs --info=progress2 --remove-source-files --files-from=/tmp/tmp9yd75f6j / /mnt/d6
-        ### Move 1146 files to /mnt/d5 with this command: ###
-        rsync -aE --xattrs --info=progress2 --remove-source-files --files-from=/tmp/tmpfrj141jj / /mnt/d5
-        ### Move 1185 files to /mnt/d3 with this command: ###
-        rsync -aE --xattrs --info=progress2 --remove-source-files --files-from=/tmp/tmpqh2euc8n / /mnt/d3
-        ### Move 1134 files to /mnt/d4 with this command: ###
-        rsync -aE --xattrs --info=progress2 --remove-source-files --files-from=/tmp/tmphzb0gj92 / /mnt/d4
-
-    Multi-device re-bin: balance device inodes for specific subfolder
-
-        library scatter -m /mnt/d1:/mnt/d2 fs.db subfolder --group count --sort 'size desc'
-
-    Multi-device re-bin: only consider the most recent 100 files
-
-        library scatter -m /mnt/d1:/mnt/d2 -l 100 -s 'time_modified desc' fs.db /
-
-    Multi-device re-bin: empty out a disk (/mnt/d2) into many other disks (/mnt/d1, /mnt/d3, and /mnt/d4)
-
-        library scatter fs.db -m /mnt/d1:/mnt/d3:/mnt/d4 /mnt/d2
-
-
-</details>
-
-### Multi-database subcommands
-
-###### merge-dbs
-
-<details><summary>Merge SQLITE databases</summary>
-
-    $ library merge-dbs -h
-    usage: library merge-dbs DEST_DB SOURCE_DB ... [--only-target-columns] [--only-new-rows] [--upsert] [--pk PK ...] [--table TABLE ...]
-
-    Merge-DBs will insert new rows from source dbs to target db, table by table. If primary key(s) are provided,
-    and there is an existing row with the same PK, the default action is to delete the existing row and insert the new row
-    replacing all existing fields.
-
-    Upsert mode will update each matching PK row such that if a source row has a NULL field and
-    the destination row has a value then the value will be preserved instead of changed to the source row's NULL value.
-
-    Ignore mode (--only-new-rows) will insert only rows which don't already exist in the destination db
-
-    Test first by using temp databases as the destination db.
-    Try out different modes / flags until you are satisfied with the behavior of the program
-
-        library merge-dbs --pk path (mktemp --suffix .db) tv.db movies.db
-
-    Merge database data and tables
-
-        library merge-dbs --upsert --pk path video.db tv.db movies.db
-        library merge-dbs --only-target-columns --only-new-rows --table media,playlists --pk path --skip-column id audio-fts.db audio.db
-
-        library merge-dbs --pk id --only-tables subreddits reddit/81_New_Music.db audio.db
-        library merge-dbs --only-new-rows --pk subreddit,path --only-tables reddit_posts reddit/81_New_Music.db audio.db -v
-
-     To skip copying primary-keys from the source table(s) use --business-keys instead of --primary-keys
-
-     Split DBs using --where
-
-         library merge-dbs --pk path specific-site.db big.db -v --only-new-rows -t media,playlists -w 'path like "https://specific-site%"'
-
-
-</details>
-
-###### copy-play-counts
-
-<details><summary>Copy play history</summary>
-
-    $ library copy-play-counts -h
-    usage: library copy-play-counts DEST_DB SOURCE_DB ... [--source-prefix x] [--target-prefix y]
-
-    Copy play count information between databases
-
-        library copy-play-counts audio.db phone.db --source-prefix /storage/6E7B-7DCE/d --target-prefix /mnt/d
-
-
-</details>
-
-### Filesystem Database subcommands
-
-###### christen
-
-<details><summary>Clean filenames</summary>
-
-    $ library christen -h
-    usage: library christen DATABASE [--run]
-
-    Rename files to be somewhat normalized
-
-    Default mode is simulate
-
-        library christen fs.db
-
-    To actually do stuff use the run flag
-
-        library christen audio.db --run
-
-    You can optionally replace all the spaces in your filenames with dots
-
-        library christen --dot-space video.db
-
-
-</details>
-
-###### disk-usage
-
-<details><summary>Show disk usage</summary>
-
-    $ library disk-usage -h
-    usage: library disk-usage DATABASE [--sort-groups-by size | count] [--depth DEPTH] [PATH / SUBSTRING SEARCH]
-
-    Only include files smaller than 1kib
-
-        library disk-usage du.db --size=-1Ki
-        lb du du.db -S-1Ki
-        | path                                  |      size |   count |
-        |---------------------------------------|-----------|---------|
-        | /home/xk/github/xk/lb/__pycache__/    | 620 Bytes |       1 |
-        | /home/xk/github/xk/lb/.github/        |    1.7 kB |       4 |
-        | /home/xk/github/xk/lb/__pypackages__/ |    1.4 MB |    3519 |
-        | /home/xk/github/xk/lb/xklb/           |    4.4 kB |      12 |
-        | /home/xk/github/xk/lb/tests/          |    3.2 kB |       9 |
-        | /home/xk/github/xk/lb/.git/           |  782.4 kB |    2276 |
-        | /home/xk/github/xk/lb/.pytest_cache/  |    1.5 kB |       5 |
-        | /home/xk/github/xk/lb/.ruff_cache/    |   19.5 kB |     100 |
-        | /home/xk/github/xk/lb/.gitattributes  | 119 Bytes |         |
-        | /home/xk/github/xk/lb/.mypy_cache/    | 280 Bytes |       4 |
-        | /home/xk/github/xk/lb/.pdm-python     |  15 Bytes |         |
-
-    Only include files with a specific depth
-
-        library disk-usage du.db --depth 19
-        lb du du.db -d 19
-        | path                                                                                                                                                                |     size |
-        |---------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|
-        | /home/xk/github/xk/lb/__pypackages__/3.11/lib/jedi/third_party/typeshed/third_party/2and3/requests/packages/urllib3/packages/ssl_match_hostname/__init__.pyi        | 88 Bytes |
-        | /home/xk/github/xk/lb/__pypackages__/3.11/lib/jedi/third_party/typeshed/third_party/2and3/requests/packages/urllib3/packages/ssl_match_hostname/_implementation.pyi | 81 Bytes |
-
-
-
-</details>
-
-###### big-dirs
-
-<details><summary>Show large folders</summary>
-
-    $ library big-dirs -h
-    usage: library big-dirs DATABASE [--limit (4000)] [--depth (0)] [--sort-groups-by deleted | played] [--size=+5MB]
-
-    See what folders take up space
-
-        library big-dirs video.db
-        library big-dirs audio.db
-        library big-dirs fs.db
-
-    lb big-dirs video.db --folder-size=+10G --lower 400 --upper 14000
-
-    lb big-dirs video.db --depth 5
-    lb big-dirs video.db --depth 7
-
-    You can even sort by auto-MCDA ~LOL~
-
-    lb big-dirs video.db -u 'mcda median_size,-deleted'
-
-
-</details>
-
-###### search-db
-
-<details><summary>Search a SQLITE database</summary>
-
-    $ library search-db -h
-    usage: library search-db DATABASE TABLE SEARCH ... [--delete-rows]
-
-    Search all columns in a SQLITE table. If the table does not exist, uses the table which startswith (if only one match)
-
-
-</details>
-
-###### optimize
-
-<details><summary>Re-optimize database</summary>
-
-    $ library optimize -h
-    usage: library optimize DATABASE [--force]
-
-    Optimize library databases
-
-    The force flag is usually unnecessary and it can take much longer
-
-
-</details>
-
-### Single database enrichment subcommands
+### Database enrichment subcommands
 
 ###### dedupe-db
 
@@ -2749,6 +2702,100 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 </details>
 
+### Update database subcommands
+
+###### fsupdate
+
+<details><summary>Update local media</summary>
+
+    $ library fsupdate -h
+    usage: library fsupdate DATABASE
+
+    Update each path previously saved:
+
+        library fsupdate video.db
+
+
+</details>
+
+###### tubeupdate
+
+<details><summary>Update online video media</summary>
+
+    $ library tubeupdate -h
+    usage: library tubeupdate [--audio | --video] DATABASE
+
+    Fetch the latest videos for every playlist saved in your database
+
+        library tubeupdate educational.db
+
+    Fetch extra metadata:
+
+        By default tubeupdate will quickly add media.
+        You can run with --extra to fetch more details: (best resolution width, height, subtitle tags, etc)
+
+        library tubeupdate educational.db --extra https://www.youtube.com/channel/UCBsEUcR-ezAuxB2WlfeENvA/videos
+
+    Remove duplicate playlists:
+
+        lb dedupe-db video.db playlists --bk extractor_playlist_id
+
+
+</details>
+
+###### webupdate
+
+<details><summary>Update open-directory media</summary>
+
+    $ library webupdate -h
+    usage: library web-update DATABASE
+
+    Update saved open directories
+
+
+
+</details>
+
+###### galleryupdate
+
+<details><summary>Update online gallery media</summary>
+
+    $ library galleryupdate -h
+    usage: library galleryupdate DATABASE URLS
+
+    Check previously saved gallery_dl URLs for new content
+
+
+</details>
+
+###### links-update
+
+<details><summary>Update a link-scraping database</summary>
+
+    $ library links-update -h
+    usage: library links-update DATABASE
+
+    Fetch new links from each path previously saved
+
+        library links-update links.db
+
+
+</details>
+
+###### redditupdate
+
+<details><summary>Update reddit media</summary>
+
+    $ library redditupdate -h
+    usage: library redditupdate [--audio | --video] [--lookback N_DAYS] [--praw-site bot1] DATABASE
+
+    Fetch the latest posts for every subreddit/redditor saved in your database
+
+        library redditupdate edu_subreddits.db
+
+
+</details>
+
 ### Misc subcommands
 
 ###### export-text
@@ -2759,42 +2806,6 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     usage: library export-text DATABASE
 
     Generate HTML files from SQLite databases
-
-
-</details>
-
-###### process-ffmpeg
-
-<details><summary>Shrink video/audio to AV1/Opus format (.mkv, .mka)</summary>
-
-    $ library process-ffmpeg -h
-    usage: library process-ffmpeg PATH ... [--always-split] [--split-longer-than DURATION] [--min-split-segment SECONDS] [--simulate]
-
-    Resize videos to max 1440x960px AV1 and/or Opus to save space
-
-    Convert audio to Opus. Optionally split up long tracks into multiple files.
-
-        fd -tf -eDTS -eAAC -eWAV -eAIF -eAIFF -eFLAC -eAIFF -eM4A -eMP3 -eOGG -eMP4 -eWMA -j4 -x library process --audio
-
-    Use --always-split to _always_ split files if silence is detected
-
-        library process-audio --always-split audiobook.m4a
-
-    Use --split-longer-than to _only_ detect silence for files in excess of a specific duration
-
-        library process-audio --split-longer-than 36mins audiobook.m4b audiobook2.mp3
-
-
-</details>
-
-###### process-image
-
-<details><summary>Shrink images by resizing and AV1 image format (.avif)</summary>
-
-    $ library process-image -h
-    usage: library process-image PATH ...
-
-    Resize images to max 2400x2400px and format AVIF to save space
 
 
 </details>
