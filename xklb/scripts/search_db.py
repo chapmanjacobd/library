@@ -58,7 +58,7 @@ def search_db() -> None:
     columns = args.db[args.table].columns_dict
     db_utils.construct_search_bindings(args, columns)
 
-    if args.delete_rows:
+    if args.delete_rows:  # TODO: replace with media_printer?
         deleted_count = 0
         with args.db.conn:
             cursor = args.db.conn.execute(

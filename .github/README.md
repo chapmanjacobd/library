@@ -95,7 +95,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.6.004)
+    xk media library subcommands (v2.6.005)
 
     Create database subcommands:
     ╭───────────────┬────────────────────────────────────────────────────╮
@@ -1542,7 +1542,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Delete URLs
 
-        library tb -p -s cyber
+        library tabs -p -s cyber
         ╒═══════════════════════════════════════╤═════════════╤══════════════╕
         │ path                                  │ frequency   │ time_valid   │
         ╞═══════════════════════════════════════╪═════════════╪══════════════╡
@@ -1554,9 +1554,9 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         ├───────────────────────────────────────┼─────────────┼──────────────┤
         │ https://www.reddit.com/r/cyberDeck/   │ yearly      │ Sep 05 2023  │
         ╘═══════════════════════════════════════╧═════════════╧══════════════╛
-        library tb -p -w "path='https://www.reddit.com/r/cyberDeck/'" --delete
+        library tabs -p -w "path='https://www.reddit.com/r/cyberDeck/'" --delete-rows
         Removed 1 metadata records
-        library tb -p -s cyber
+        library tabs -p -s cyber
         ╒═══════════════════════════════════════╤═════════════╤══════════════╕
         │ path                                  │ frequency   │ time_valid   │
         ╞═══════════════════════════════════════╪═════════════╪══════════════╡
@@ -1626,7 +1626,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 <details><summary>List stored playlists</summary>
 
     $ library playlists -h
-    usage: library playlists DATABASE [--delete ...]
+    usage: library playlists DATABASE
 
     List of Playlists
 
@@ -1661,7 +1661,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         https://www.youtube.com/playlist?list=PL7gXS9DcOm5-O0Fc1z79M72BsrHByda3n
 
     Remove a playlist/channel and all linked videos:
-        library playlists --remove https://vimeo.com/canal180
+        library playlists --delete-rows https://vimeo.com/canal180
 
 
 
@@ -2621,7 +2621,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 <details><summary>Search a SQLITE database</summary>
 
     $ library search-db -h
-    usage: library search-db DATABASE TABLE SEARCH ... [--delete]
+    usage: library search-db DATABASE TABLE SEARCH ... [--delete-rows]
 
     Search all columns in a SQLITE table. If the table does not exist, uses the table which startswith (if only one match)
 

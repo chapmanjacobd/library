@@ -742,7 +742,7 @@ history = """library history [--frequency daily weekly (monthly) yearly] [--limi
 
 """
 
-playlists = """library playlists DATABASE [--delete ...]
+playlists = """library playlists DATABASE
 
     List of Playlists
 
@@ -777,7 +777,7 @@ playlists = """library playlists DATABASE [--delete ...]
         https://www.youtube.com/playlist?list=PL7gXS9DcOm5-O0Fc1z79M72BsrHByda3n
 
     Remove a playlist/channel and all linked videos:
-        library playlists --remove https://vimeo.com/canal180
+        library playlists --delete-rows https://vimeo.com/canal180
 
 """
 
@@ -859,7 +859,7 @@ tabs = """library tabs DATABASE
 
     Delete URLs
 
-        library tb -p -s cyber
+        library tabs -p -s cyber
         ╒═══════════════════════════════════════╤═════════════╤══════════════╕
         │ path                                  │ frequency   │ time_valid   │
         ╞═══════════════════════════════════════╪═════════════╪══════════════╡
@@ -871,9 +871,9 @@ tabs = """library tabs DATABASE
         ├───────────────────────────────────────┼─────────────┼──────────────┤
         │ https://www.reddit.com/r/cyberDeck/   │ yearly      │ Sep 05 2023  │
         ╘═══════════════════════════════════════╧═════════════╧══════════════╛
-        library tb -p -w "path='https://www.reddit.com/r/cyberDeck/'" --delete
+        library tabs -p -w "path='https://www.reddit.com/r/cyberDeck/'" --delete-rows
         Removed 1 metadata records
-        library tb -p -s cyber
+        library tabs -p -s cyber
         ╒═══════════════════════════════════════╤═════════════╤══════════════╕
         │ path                                  │ frequency   │ time_valid   │
         ╞═══════════════════════════════════════╪═════════════╪══════════════╡
@@ -1121,7 +1121,7 @@ dedupe_db = """library dedupe-dbs DATABASE TABLE --bk BUSINESS_KEYS [--pk PRIMAR
     If your duplicate rows contain exactly the same data in all the columns you can run with --skip-upsert to save a lot of time
 """
 
-search_db = """library search-db DATABASE TABLE SEARCH ... [--delete]
+search_db = """library search-db DATABASE TABLE SEARCH ... [--delete-rows]
 
     Search all columns in a SQLITE table. If the table does not exist, uses the table which startswith (if only one match)
 """
