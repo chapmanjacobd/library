@@ -199,7 +199,7 @@ def web_add(args=None) -> None:
     args, _parser = parse_args(prog=f"library {SC.webadd}", usage=usage.webadd)
     web.requests_session(args)  # configure session
 
-    if args.no_extract:
+    if args.insert_only:
         media_new = set()
         media_known = set()
         for p in arg_utils.gen_paths(args):
