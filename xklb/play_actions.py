@@ -64,7 +64,8 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
         parser.add_argument(f"--cmd{i}", help=argparse.SUPPRESS)
     parser.add_argument("--shallow-organize", default="/mnt/d/", help=argparse.SUPPRESS)
 
-    parser.add_argument("--safe", "-safe", action="store_true", help="Skip generic URLs")
+    parser.add_argument("--safe", action="store_true", help="Skip generic URLs")
+    parser.add_argument("--refresh", "--rescan", action="store_true")
 
     parser.add_argument("--fetch-siblings")
     parser.add_argument("--sibling", "--episode", "--episodes", "--episodic", action="store_true")
@@ -483,6 +484,12 @@ def process_playqueue(args) -> None:
 
         media = cluster_dicts(args, media)
         log.debug("cluster-sort: %s", t.elapsed())
+
+    if getattr(args, 'refresh', False):
+        marked = db_media.mark_media_deleted(args, [d["path"] for d in media if not Path(d["path"]).exists()])
+        log.warning(f"Marked {marked} metadata records as deleted")
+        args.refresh = False
+        return process_playqueue(args)
 
     if args.folder:
         media = ({**m, "path": str(Path(m["path"]).parent)} for m in media)

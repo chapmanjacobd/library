@@ -65,9 +65,9 @@ def file_temp_copy(src) -> str:
     return fname
 
 
-def trash(path: Path | str, detach=True) -> None:
+def trash(args, path: Path | str, detach=True) -> None:
     if Path(path).exists():
-        trash_put = which("trash-put") or which("trash")
+        trash_put = which(args.override_trash)
         if trash_put is not None:
             if not detach:
                 processes.cmd(trash_put, path, strict=False)

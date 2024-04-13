@@ -11,18 +11,11 @@ def parse_args(action) -> argparse.Namespace:
         prog=f"library {action}",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
+    if action == "next":
+        arggroups.capability_delete(parser)
+
     parser.add_argument("--mpv-socket", default=consts.DEFAULT_MPV_LISTEN_SOCKET)
     parser.add_argument("--chromecast-device", "--cast-to", "-t")
-
-    if action == "next":
-        parser.add_argument(
-            "--delete",
-            "--remove",
-            "--erase",
-            "--rm",
-            action="store_true",
-            help="Delete currently playing media from the filesystem",
-        )
 
     arggroups.debug(parser)
     args = parser.parse_args()
@@ -318,11 +311,11 @@ def playback_next() -> None:
     if playing["catt"] or not any(playing.values()):
         Path(consts.CAST_NOW_PLAYING).unlink(missing_ok=True)
         catt_stop(args)
-        if args.delete:
-            file_utils.trash(playing["catt"])
+        if args.delete_files:
+            file_utils.trash(args, playing["catt"])
 
     if playing["mpv"]:
         args.mpv.command("playlist_next", "force")
         args.mpv.terminate()
-        if args.delete:
-            file_utils.trash(playing["mpv"])
+        if args.delete_files:
+            file_utils.trash(args, playing["mpv"])

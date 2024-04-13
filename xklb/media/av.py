@@ -118,7 +118,7 @@ def munge_av_tags(args, path) -> dict:
         log.error(f"Failed reading header. {path}")
         log.debug(e)
         if getattr(args, "delete_unplayable", False) and not file_utils.is_file_open(path):
-            file_utils.trash(path, detach=False)
+            file_utils.trash(args, path, detach=False)
             media["time_deleted"] = consts.APPLICATION_START
         media["error"] = "Metadata check failed"
         return media
@@ -165,7 +165,7 @@ def munge_av_tags(args, path) -> dict:
                 else (args.delete_corrupt + "s")
             )
             log.warning("Deleting %s corruption %.1f%% exceeded threshold %s", path, corruption * 100, threshold_str)
-            file_utils.trash(path, detach=False)
+            file_utils.trash(args, path, detach=False)
             media["time_deleted"] = consts.APPLICATION_START
             media["error"] = "Media check failed"
 

@@ -9,7 +9,6 @@ from xklb.utils.log_utils import log
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library search-db", usage=usage.search_db)
     arggroups.sql_fs(parser)
-    arggroups.capability_delete(parser)
     arggroups.debug(parser)
 
     arggroups.database(parser)
@@ -59,7 +58,7 @@ def search_db() -> None:
     columns = args.db[args.table].columns_dict
     db_utils.construct_search_bindings(args, columns)
 
-    if args.delete:
+    if args.delete_rows:
         deleted_count = 0
         with args.db.conn:
             cursor = args.db.conn.execute(
