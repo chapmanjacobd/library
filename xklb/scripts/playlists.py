@@ -15,15 +15,6 @@ def parse_args() -> argparse.Namespace:
 
     arggroups.sql_fs(parser)
     arggroups.sql_media(parser)
-
-    parser.add_argument(
-        "--delete",
-        "--remove",
-        "--rm",
-        action="store_true",
-        help="Delete matching playlists and playlist media",
-    )
-
     arggroups.debug(parser)
 
     arggroups.database(parser)
