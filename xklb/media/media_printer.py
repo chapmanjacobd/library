@@ -143,6 +143,7 @@ def media_printer(args, data, units=None, media_len=None) -> None:
         media = [D]
 
     else:
+        # NOTE: when changing/moving this code be sure to preserve the behavior that -pa does not run the code
         if getattr(args, "delete_files", False):
             marked = post_actions.delete_media(args, [d["path"] for d in media])
             log.warning(f"Deleted {marked} files")
@@ -229,6 +230,8 @@ def media_printer(args, data, units=None, media_len=None) -> None:
         print(json.dumps(media, indent=3))
     elif "c" in print_args:
         printing.write_csv_to_stdout(media)
+    elif "n" in print_args:
+        pass
     else:
         tbl = deepcopy(media)
         tbl = [{k: f"{v:.4f}" if isinstance(v, float) else v for k, v in d.items()} for d in tbl]
