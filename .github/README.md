@@ -2,8 +2,6 @@
 
 A wise philosopher once told me: "the future is [autotainment](https://www.youtube.com/watch?v=F9sZFrsjPp0)".
 
-<img align="right" width="400" src="https://raw.githubusercontent.com/chapmanjacobd/library/main/.github/examples/tubeadd.svg" />
-
 Manage and curate large media libraries. An index for your archive.
 Primary usage is local filesystem but also supports some virtual constructs like
 tracking online video playlists (eg. YouTube subscriptions) and scheduling browser tabs.
@@ -15,6 +13,7 @@ Linux recommended but [Windows setup instructions](./Windows.md) available.
     pip install xklb
 
 Should also work on Mac OS.
+<img align="right" width="400" src="https://raw.githubusercontent.com/chapmanjacobd/library/main/.github/examples/tubeadd.svg" />
 
 ### External dependencies
 
