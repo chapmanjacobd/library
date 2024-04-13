@@ -485,7 +485,7 @@ def process_playqueue(args) -> None:
         media = cluster_dicts(args, media)
         log.debug("cluster-sort: %s", t.elapsed())
 
-    if getattr(args, 'refresh', False):
+    if getattr(args, "refresh", False):
         marked = db_media.mark_media_deleted(args, [d["path"] for d in media if not Path(d["path"]).exists()])
         log.warning(f"Marked {marked} metadata records as deleted")
         args.refresh = False

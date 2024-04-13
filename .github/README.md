@@ -95,7 +95,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.6.003)
+    xk media library subcommands (v2.6.004)
 
     Create database subcommands:
     ╭───────────────┬────────────────────────────────────────────────────╮
