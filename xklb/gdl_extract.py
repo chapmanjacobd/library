@@ -20,7 +20,7 @@ def parse_args(action, usage) -> argparse.Namespace:
     arggroups.debug(parser)
 
     arggroups.database(parser)
-    if action == SC.galleryadd:
+    if action == SC.gallery_add:
         parser.add_argument(
             "playlists", nargs="*", default=argparse_utils.STDIN_DASH, action=argparse_utils.ArgparseArgsOrStdin
         )
@@ -28,7 +28,7 @@ def parse_args(action, usage) -> argparse.Namespace:
     args = parser.parse_intermixed_args()
     args.action = action
 
-    if action == SC.galleryadd:
+    if action == SC.gallery_add:
         Path(args.database).touch()
     args.db = db_utils.connect(args)
 
@@ -49,7 +49,7 @@ def gallery_add(args=None) -> None:
     if args:
         sys.argv = ["galleryadd", *args]
 
-    args = parse_args(SC.galleryadd, usage=usage.galleryadd)
+    args = parse_args(SC.gallery_add, usage=usage.gallery_add)
 
     if args.insert_only:
         args.db["media"].insert_all(
@@ -89,7 +89,7 @@ def gallery_update(args=None) -> None:
     if args:
         sys.argv = ["galleryupdate", *args]
 
-    args = parse_args(SC.galleryupdate, usage=usage.galleryupdate)
+    args = parse_args(SC.gallery_update, usage=usage.gallery_update)
 
     gdl_playlists = db_playlists.get_all(
         args,

@@ -25,7 +25,7 @@ def parse_args() -> argparse.Namespace:
         default="watched",
         const="watched",
         nargs="?",
-        help=f"One of: {', '.join(consts.time_facets)} (default: %(default)s)",
+        help=f"One of: {', '.join(consts.time_facets)}",
     )
     parser.add_argument("--hide-deleted", action="store_true")
     parser.add_argument("--played", "--opened", action="store_true")

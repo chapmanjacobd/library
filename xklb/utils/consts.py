@@ -91,15 +91,15 @@ class DBType:
 
 
 class SC:
-    fsadd = "fs-add"
-    fsupdate = "fs-update"
+    fs_add = "fs-add"
+    fs_update = "fs-update"
     watch = "watch"
     listen = "listen"
     filesystem = "filesystem"
-    tubeadd = "tube-add"
-    tubeupdate = "tube-update"
-    galleryadd = "gallery-add"
-    galleryupdate = "gallery-update"
+    tube_add = "tube-add"
+    tube_update = "tube-update"
+    gallery_add = "gallery-add"
+    gallery_update = "gallery-update"
     tabs = "tabs"
     open_links = "open-links"
     read = "read"
@@ -110,11 +110,11 @@ class SC:
     download_status = "download-status"
     search = "search"
     history = "history"
-    bigdirs = "big-dirs"
-    diskusage = "disk-usage"
-    dedupe = "dedupe"
-    webadd = "web-add"
-    webupdate = "web-update"
+    big_dirs = "big-dirs"
+    disk_usage = "disk-usage"
+    dedupe_media = "dedupe"
+    web_add = "web-add"
+    web_update = "web-update"
 
 
 def reddit_frequency(frequency) -> str:

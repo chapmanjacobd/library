@@ -32,8 +32,8 @@ def parse_unknown_args_to_dict(unknown_args):
     return kwargs
 
 
-def add_row():
-    parser = argparse.ArgumentParser(description="Add arbitrary rows to a SQLITE db", usage=usage.add_row)
+def row_add():
+    parser = argparse.ArgumentParser(description="Add arbitrary rows to a SQLITE db", usage=usage.row_add)
     parser.add_argument("--table-name", "--table", "-t", default="media")
     arggroups.debug(parser)
 

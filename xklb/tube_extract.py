@@ -21,7 +21,7 @@ def parse_args(action, usage) -> argparse.Namespace:
     arggroups.debug(parser)
 
     arggroups.database(parser)
-    if action == SC.tubeadd:
+    if action == SC.tube_add:
         parser.add_argument(
             "playlists", nargs="*", default=argparse_utils.STDIN_DASH, action=argparse_utils.ArgparseArgsOrStdin
         )
@@ -29,7 +29,7 @@ def parse_args(action, usage) -> argparse.Namespace:
     args = parser.parse_intermixed_args()
     args.action = action
 
-    if action == SC.tubeadd:
+    if action == SC.tube_add:
         Path(args.database).touch()
     args.db = db_utils.connect(args)
 
@@ -49,7 +49,7 @@ def tube_add(args=None) -> None:
     if args:
         sys.argv = ["tubeadd", *args]
 
-    args = parse_args(SC.tubeadd, usage=usage.tubeadd)
+    args = parse_args(SC.tube_add, usage=usage.tube_add)
 
     if args.insert_only:
         args.db["media"].insert_all(
@@ -101,7 +101,7 @@ def tube_update(args=None) -> None:
     if args:
         sys.argv = ["tubeupdate", *args]
 
-    args = parse_args(SC.tubeupdate, usage=usage.tubeupdate)
+    args = parse_args(SC.tube_update, usage=usage.tube_update)
     tube_playlists = db_playlists.get_all(
         args,
         sql_filters=["AND extractor_key NOT IN ('Local', 'reddit_praw_redditor', 'reddit_praw_subreddit')"],

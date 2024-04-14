@@ -8,7 +8,7 @@ REGEX_SENTENCE_ENDS = re.compile(r";|,|\.|\*|\n|\t")
 
 def munge_book_tags(path) -> dict:
     try:
-        import textract
+        import textract # type: ignore
     except ModuleNotFoundError:
         print(
             "textract is required for text database creation: pip install textract; sudo dnf install libxml2-devel libxslt-devel antiword unrtf poppler-utils tesseract sox-plugins-nonfree sox libjpeg-devel swig",

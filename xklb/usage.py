@@ -90,7 +90,7 @@ block = r"""library block DATABASE URLS ...
         ...
 """
 
-fsadd = """library fsadd [(--video) | --audio | --image |  --text | --filesystem] DATABASE PATH ...
+fs_add = """library fs-add [(--video) | --audio | --image |  --text | --filesystem] DATABASE PATH ...
 
     The default database type is video:
         library fsadd tv.db ./tv/
@@ -139,7 +139,7 @@ fsadd = """library fsadd [(--video) | --audio | --image |  --text | --filesystem
         This will run destination paths through `library christen` and move files relative to the added folder root
 """
 
-fsupdate = """library fsupdate DATABASE
+fs_update = """library fs-update DATABASE
 
     Update each path previously saved:
 
@@ -151,7 +151,7 @@ places_import = """library places-import DATABASE PATH ...
     Load POIs from Google Maps Google Takeout
 """
 
-hnadd = """library hnadd [--oldest] DATABASE
+hn_add = """library hn-add [--oldest] DATABASE
 
     Fetch latest stories first:
 
@@ -566,7 +566,7 @@ def play(action) -> str:
 watch = play("watch")
 
 
-redditadd = """library redditadd [--lookback N_DAYS] [--praw-site bot1] DATABASE URLS ...
+reddit_add = """library reddit-add [--lookback N_DAYS] [--praw-site bot1] DATABASE URLS ...
 
     Fetch data for redditors and reddits:
 
@@ -586,7 +586,7 @@ redditadd = """library redditadd [--lookback N_DAYS] [--praw-site bot1] DATABASE
     You can find more info here: https://github.com/chapmanjacobd/reddit_mining#how-was-this-made
 """
 
-redditupdate = """library redditupdate [--audio | --video] [--lookback N_DAYS] [--praw-site bot1] DATABASE
+reddit_update = """library reddit-update [--audio | --video] [--lookback N_DAYS] [--praw-site bot1] DATABASE
 
     Fetch the latest posts for every subreddit/redditor saved in your database
 
@@ -883,7 +883,7 @@ tabs = """library tabs DATABASE
         ╘═══════════════════════════════════════╧═════════════╧══════════════╛
 """
 
-tabsadd = r"""library tabsadd [--frequency daily weekly (monthly) quarterly yearly] [--no-sanitize] DATABASE URLS ...
+tabs_add = r"""library tabs-add [--frequency daily weekly (monthly) quarterly yearly] [--no-sanitize] DATABASE URLS ...
 
     Adding one URL:
 
@@ -914,7 +914,7 @@ tabs_shuffle = """library tabs-shuffle DATABASE
         library tabs-shuffle tabs.db -d 365 -f yearly
 """
 
-tubeadd = r"""library tubeadd [--safe] [--extra] [--subs] [--auto-subs] DATABASE URLS ...
+tube_add = r"""library tube-add [--safe] [--extra] [--subs] [--auto-subs] DATABASE URLS ...
 
     Create a dl database / add links to an existing database
 
@@ -934,10 +934,10 @@ tubeadd = r"""library tubeadd [--safe] [--extra] [--subs] [--auto-subs] DATABASE
         If you plan on using `library download` then it doesn't make sense to use `--extra`.
         Downloading will add the extra metadata automatically to the database.
         You can always fetch more metadata later via tubeupdate:
-        library tubeupdate tw.db --extra
+        library tube-update tw.db --extra
 """
 
-tubeupdate = """library tubeupdate [--audio | --video] DATABASE
+tube_update = """library tube-update [--audio | --video] DATABASE
 
     Fetch the latest videos for every playlist saved in your database
 
@@ -955,7 +955,7 @@ tubeupdate = """library tubeupdate [--audio | --video] DATABASE
         lb dedupe-db video.db playlists --bk extractor_playlist_id
 """
 
-galleryadd = """library galleryadd DATABASE URLS
+gallery_add = """library gallery-add DATABASE URLS
 
     Add gallery_dl URLs to download later or periodically update
 
@@ -964,7 +964,7 @@ galleryadd = """library galleryadd DATABASE URLS
         cat ./my-favorite-manhwa.txt | library galleryadd your.db --insert-only -
 """
 
-galleryupdate = """library galleryupdate DATABASE URLS
+gallery_update = """library gallery-update DATABASE URLS
 
     Check previously saved gallery_dl URLs for new content
 """
@@ -1104,6 +1104,13 @@ dedupe_media = """library dedupe-media [--audio | --id | --title | --filesystem]
         library dedupe-media video.db / http
 """
 
+dedupe_czkawka = """library dedupe-czkawka [--volume VOLUME] [--auto-seek] [--ignore-errors] [--folder] [--folder-glob [FOLDER_GLOB]] [--replace] [--no-replace] [--override-trash OVERRIDE_TRASH] [--delete-files] [--gui]
+               [--auto-select-min-ratio AUTO_SELECT_MIN_RATIO] [--all-keep] [--all-left] [--all-right] [--all-delete] [--verbose]
+               czkawka_dupes_output_path
+
+    Choose which duplicate to keep by opening both side-by-side in mpv
+"""
+
 dedupe_db = """library dedupe-dbs DATABASE TABLE --bk BUSINESS_KEYS [--pk PRIMARY_KEYS] [--only-columns COLUMNS]
 
     Dedupe your database (not to be confused with the dedupe subcommand)
@@ -1152,7 +1159,7 @@ merge_dbs = """library merge-dbs DEST_DB SOURCE_DB ... [--only-target-columns] [
 
      Split DBs using --where
 
-         library merge-dbs --pk path specific-site.db big.db -v --only-new-rows -t media,playlists -w 'path like "https://specific-site%"'
+         library merge-dbs --pk path specific-site.db big.db -v --only-new-rows -t media,playlists -w 'path like "https://specific-site%%"'
 """
 
 merge_folders = """library merge-folders [--replace] [--no-replace] [--simulate] SOURCES ... DESTINATION
@@ -1671,7 +1678,7 @@ extract_text = r"""library extract-text PATH ... [--skip-links]
         lb extract-text --skip-links --local-file (cb -t text/html | psub) | lb cs --groups | jq -r '.[] | .grouped_paths | "\n" + join("\n")'
 """
 
-siteadd = """library site-add DATABASE PATH ... [--auto-pager] [--poke] [--local-html] [--file FILE]
+site_add = """library site-add DATABASE PATH ... [--auto-pager] [--poke] [--local-html] [--file FILE]
 
     Extract data from website requests to a database
 
@@ -1711,7 +1718,7 @@ sample_hash = """library sample-hash [--threads 10] [--chunk-size BYTES] [--gap 
     The threads flag seems to be faster for rotational media but slower on SSDs
 """
 
-sample_compare = """library sample-hash [--threads 10] [--chunk-size BYTES] [--gap BYTES OR 0.0-1.0*FILESIZE] PATH ...
+sample_compare = """library sample-compare [--threads 10] [--chunk-size BYTES] [--gap BYTES OR 0.0-1.0*FILESIZE] PATH ...
 
     Convenience subcommand to compare multiple files using sample-hash
 """
@@ -1758,7 +1765,7 @@ media_check = """library media-check [--chunk-size SECONDS] [--gap SECONDS OR 0.
 
     The above can now be done in one command via `--full-scan-if-corrupt`:
 
-        library fsadd --delete-unplayable --check-corrupt --chunk-size 5%% tmp.db ./video/ ./folders/ --full-scan-if-corrupt 15% --delete-corrupt 25%
+        library fsadd --delete-unplayable --check-corrupt --chunk-size 5%% tmp.db ./video/ ./folders/ --full-scan-if-corrupt 15%% --delete-corrupt 25%%
 
     Corruption stats
 
@@ -1786,7 +1793,7 @@ media_check = """library media-check [--chunk-size SECONDS] [--gap SECONDS OR 0.
         [ 91.0 .. 100.0] [141] ∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎
 """
 
-webadd = """library web-add [(--filesystem) | --video | --audio | --image | --text] DATABASE URL ...
+web_add = """library web-add [(--filesystem) | --video | --audio | --image | --text] DATABASE URL ...
 
     Scan open directories
 
@@ -1835,20 +1842,40 @@ webadd = """library web-add [(--filesystem) | --video | --audio | --image | --te
 
 """
 
-webupdate = """library web-update DATABASE
+web_update = """library web-update DATABASE
 
     Update saved open directories
 
 """
 
-add_row = """library add-row DATABASE [--table-name TABLE_NAME]
+row_add = """library row-add DATABASE [--table-name TABLE_NAME]
 
     Add a row to sqlite
 
-        library add-row t.db --test_b 1 --test-a 2
+        library row-add t.db --test_b 1 --test-a 2
 
         ### media (1 rows)
         |   test_b |   test_a |
         |----------|----------|
         |        1 |        2 |
+"""
+
+markdown_links="""usage: library markdown-links URL ... [--cookies COOKIES] [--cookies-from-browser BROWSER[+KEYRING][:PROFILE][::CONTAINER]] [--firefox] [--chrome] [--allow-insecure] [--scroll] [--manual] [--auto-pager] [--poke] [--file FILE]
+
+    Convert URLs into Markdown links with page titles filled in
+
+        $ lb markdown-links https://www.youtube.com/watch?v=IgZDDW-NXDE
+        [Work For Peace](https://www.youtube.com/watch?v=IgZDDW-NXDE)
+"""
+
+mount_stats="""library mount-stats MOUNTPOINT ...
+
+    Print relative use and free for multiple mount points
+"""
+
+nouns = """library nouns (stdin)
+
+    Extract compound nouns and phrases from unstructured mixed HTML plain text
+
+        xsv select text hn_comment_202210242109.csv | library nouns | sort | uniq -c | sort --numeric-sort
 """

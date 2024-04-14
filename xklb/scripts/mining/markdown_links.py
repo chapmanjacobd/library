@@ -1,5 +1,6 @@
 import argparse, urllib.parse
 
+from xklb import usage
 from xklb.utils import arg_utils, arggroups, web
 
 COMMON_SITE_TITLE_SUFFIXES = [
@@ -23,7 +24,7 @@ def fake_title(url):
 
 
 def markdown_links():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(usage=usage.markdown_links)
     arggroups.requests(parser)
     arggroups.selenium(parser)
     arggroups.debug(parser)

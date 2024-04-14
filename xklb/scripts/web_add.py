@@ -196,7 +196,7 @@ def web_add(args=None) -> None:
     if args:
         sys.argv = ["lb", *args]
 
-    args, _parser = parse_args(prog=f"library {SC.webadd}", usage=usage.webadd)
+    args, _parser = parse_args(prog=f"library {SC.web_add}", usage=usage.web_add)
     web.requests_session(args)  # configure session
 
     if args.insert_only:
@@ -230,7 +230,7 @@ def web_update(args=None) -> None:
     if args:
         sys.argv = ["lb", *args]
 
-    args, parser = parse_args(prog=f"library {SC.webupdate}", usage=usage.webupdate)
+    args, parser = parse_args(prog=f"library {SC.web_update}", usage=usage.web_update)
     web.requests_session(args)  # configure session
 
     web_playlists = db_playlists.get_all(

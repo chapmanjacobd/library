@@ -1,15 +1,13 @@
+import argparse
 import sys
 from html.parser import HTMLParser
 from io import StringIO
 
+from xklb import usage
 from xklb.data import wordbank
-from xklb.utils import printing
+from xklb.utils import arggroups, printing
 
-"""
-extract compound nouns and phrases from unstructured mixed HTML plain text
 
-xsv select text hn_comment_202210242109.csv | library nouns | sort | uniq -c | sort --numeric-sort
-"""
 
 
 class MLStripper(HTMLParser):
@@ -65,5 +63,9 @@ def line_processor(txt) -> None:
 
 
 def nouns() -> None:
+    parser = argparse.ArgumentParser(usage.nouns)
+    arggroups.debug(parser)
+    args = parser.parse_args()
+
     for line in sys.stdin:
         line_processor(line)

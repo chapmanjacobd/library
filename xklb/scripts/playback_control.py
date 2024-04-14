@@ -290,7 +290,7 @@ def playback_stop() -> None:
 
 
 def playback_pause() -> None:
-    args = parse_args("next")
+    args = parse_args("pause")
     playing = _now_playing(args)
 
     if playing["catt"]:

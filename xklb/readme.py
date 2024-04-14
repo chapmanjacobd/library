@@ -121,7 +121,7 @@ Or in BASH:
 Tubeupdate will go through the list of added playlists and fetch metadata for
 any videos not previously seen.
 
-    library tubeupdate tube.db
+    library tube-update tube.db
 
 ### 2. Watch / Listen from websites
 

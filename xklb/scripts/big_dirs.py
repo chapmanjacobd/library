@@ -39,7 +39,7 @@ def parse_args() -> argparse.Namespace:
     if args.size:
         args.size = sql_utils.parse_human_to_sql(nums.human_to_bytes, "size", args.size)
 
-    args.action = consts.SC.bigdirs
+    args.action = consts.SC.big_dirs
     log.info(objects.dict_filter_bool(args.__dict__))
     return args
 

@@ -20,7 +20,6 @@ def capability_delete(parser):
     )
     parser.add_argument(
         "--delete-files",
-        "--delete-file",
         "--trash",
         "--rm",
         action="store_true",
