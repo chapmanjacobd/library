@@ -48,7 +48,7 @@ def sql_fs(parser):
 
     parser.add_argument("--limit", "--queue", "--count", "-n", "-L", "-l")
     parser.add_argument("--offset", help=argparse.SUPPRESS)
-    parser.add_argument("--sort", "-u", nargs="+")
+    parser.add_argument("--sort", "-u", nargs="+", default=[])
     parser.add_argument("--random", "-r", action="store_true")
 
     parser.add_argument("--where", "-w", nargs="+", action="extend", default=[])
