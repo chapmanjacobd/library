@@ -4,8 +4,9 @@ import pandas, pytest  # noqa: pandas needs to be imported before freezegun beca
 from freezegun import freeze_time
 
 from tests.utils import connect_db_args
-from xklb import history, tabs_actions
+from xklb import history
 from xklb.lb import library as lb
+from xklb.playback import tabs_open
 from xklb.utils import consts
 
 TEST_URL = "https://unli.xyz/proliferation/verbs.html"
@@ -16,21 +17,21 @@ def test_frequency_filter():
     weekly_row = {"path": TEST_URL, "frequency": "weekly", "time_valid": 86101}
     monthly_row = {"path": TEST_URL, "frequency": "monthly", "time_valid": 86101}
 
-    assert tabs_actions.frequency_filter([], [daily_row]) == []
-    assert tabs_actions.frequency_filter([("monthly", 1)], [daily_row]) == []
-    assert tabs_actions.frequency_filter([("daily", 1)], [daily_row]) == [daily_row]
-    assert tabs_actions.frequency_filter([("monthly", 1), ("daily", 1)], [monthly_row, weekly_row, daily_row]) == [
+    assert tabs_open.frequency_filter([], [daily_row]) == []
+    assert tabs_open.frequency_filter([("monthly", 1)], [daily_row]) == []
+    assert tabs_open.frequency_filter([("daily", 1)], [daily_row]) == [daily_row]
+    assert tabs_open.frequency_filter([("monthly", 1), ("daily", 1)], [monthly_row, weekly_row, daily_row]) == [
         monthly_row,
         daily_row,
     ]
-    assert tabs_actions.frequency_filter([("daily", 50)], [daily_row] * 50) == [daily_row] * 50
-    assert tabs_actions.frequency_filter([("weekly", 50)], [weekly_row] * 50) == [weekly_row] * 8
-    assert tabs_actions.frequency_filter([("monthly", 250)], [monthly_row] * 10) == [monthly_row] * 9
-    assert tabs_actions.frequency_filter([("monthly", 250)], [monthly_row] * 9) == [monthly_row] * 9
-    assert tabs_actions.frequency_filter([("monthly", 250)], [monthly_row] * 8) == [monthly_row] * 8
+    assert tabs_open.frequency_filter([("daily", 50)], [daily_row] * 50) == [daily_row] * 50
+    assert tabs_open.frequency_filter([("weekly", 50)], [weekly_row] * 50) == [weekly_row] * 8
+    assert tabs_open.frequency_filter([("monthly", 250)], [monthly_row] * 10) == [monthly_row] * 9
+    assert tabs_open.frequency_filter([("monthly", 250)], [monthly_row] * 9) == [monthly_row] * 9
+    assert tabs_open.frequency_filter([("monthly", 250)], [monthly_row] * 8) == [monthly_row] * 8
 
 
-@mock.patch("xklb.tabs_actions.open_tabs")
+@mock.patch("xklb.playback.tabs_open.tabs_open")
 def test_simple(play_mocked, temp_db):
     db1 = temp_db()
     with freeze_time("1970-01-01 00:00:01") as clock:
@@ -56,7 +57,7 @@ def test_simple(play_mocked, temp_db):
         assert out[0]["time_valid"] == 1209300
 
 
-@mock.patch("xklb.tabs_actions.play")
+@mock.patch("xklb.playback.tabs_open.play")
 def test_immediate(play_mocked, temp_db):
     db1 = temp_db()
     with freeze_time("1970-02-01 00:00:00") as clock:

@@ -3,7 +3,7 @@ import argparse
 import pytest
 
 from tests import utils
-from xklb.media.media_player import MediaPrefetcher
+from xklb.playback.media_player import MediaPrefetcher
 from xklb.utils import consts
 
 

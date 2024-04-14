@@ -1,6 +1,6 @@
 from types import SimpleNamespace
 
-from xklb import tube_backend
+from xklb.createdb import tube_backend
 
 
 def test_safe_mode():

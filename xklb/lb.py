@@ -16,7 +16,6 @@ progs = {
         "links_add": "Create a link-scraping database",
         "site_add": "Auto-scrape website data to SQLITE",
         "reddit_add": "Create a reddit database; Add subreddits",
-        "pushshift": "Convert pushshift data to reddit.db format (stdin)",
         "hn_add": "Create / Update a Hacker News database",
         "substack": "Backup substack articles",
         "tildes": "Backup tildes comments and topics",
@@ -28,6 +27,7 @@ progs = {
         "extract_links": "Extract inner links from lists of web links",
         "extract_text": "Extract human text from lists of web links",
         "markdown_links": "Extract titles from lists of web links",
+        "nouns": "Unstructured text -> compound nouns (stdin)",
     },
     "Folder subcommands": {
         "merge_folders": "Merge two or more file trees",
@@ -59,10 +59,8 @@ progs = {
         "mount_stats": "Show some relative mount stats",
         "big_dirs": "Show large folders",
         "search_db": "Search a SQLITE database",
-        "optimize": "Re-optimize database",
     },
     "Media Database subcommands": {
-        "tabs": "Open your tabs for the day",
         "block": "Block a channel",
         "playlists": "List stored playlists",
         "download": "Download media",
@@ -70,6 +68,7 @@ progs = {
         "redownload": "Re-download deleted/lost media",
         "history": "Show some playback statistics",
         "search": "Search captions / subtitles",
+        "optimize": "Re-optimize database",
     },
     "Playback subcommands": {
         "watch": "Watch / Listen",
@@ -77,7 +76,8 @@ progs = {
         "next": "Play next file and optionally delete current file",
         "stop": "Stop all playback",
         "pause": "Pause all playback",
-        "open_links": "Open links from link dbs",
+        "tabs_open": "Open your tabs for the day",
+        "links_open": "Open links from link dbs",
         "surf": "Auto-load browser tabs in a streaming way (stdin)",
     },
     "Database enrichment subcommands": {
@@ -87,6 +87,7 @@ progs = {
         "mpv_watchlater": "Import mpv watchlater files to history",
         "reddit_selftext": "Copy selftext links to media table",
         "tabs_shuffle": "Randomize tabs.db a bit",
+        "pushshift": "Convert pushshift data to reddit.db format (stdin)",
     },
     "Update database subcommands": {
         "fs_update": "Update local media",
@@ -99,7 +100,6 @@ progs = {
     "Misc subcommands": {
         "export_text": "Export HTML files from SQLite databases",
         "dedupe_czkawka": "Process czkawka diff output",
-        "nouns": "Unstructured text -> compound nouns (stdin)",
     },
 }
 
@@ -170,78 +170,78 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
         set_func(subp, module_name, function_name)
         return subp
 
-    add_parser(subparsers, "xklb.dl_extract.dl_download", ["dl", "download"])
-    add_parser(subparsers, "xklb.fs_extract.fs_add", ["x", "extract"])
-    add_parser(subparsers, "xklb.fs_extract.fs_update", ["xu"])
-    add_parser(subparsers, "xklb.gdl_extract.gallery_add", ["gdl-add", "ga"])
-    add_parser(subparsers, "xklb.gdl_extract.gallery_update", ["gdl-update", "gu"])
-    add_parser(subparsers, "xklb.hn_extract.hacker_news_add", ["hn-add"])
-    add_parser(subparsers, "xklb.media.dedupe.dedupe_media")
-    add_parser(subparsers, "xklb.media.media_check.media_check")
-    add_parser(subparsers, "xklb.play_actions.filesystem", ["fs", "open"])
-    add_parser(subparsers, "xklb.play_actions.listen", ["lt", "tubelisten", "tl"])
-    add_parser(subparsers, "xklb.play_actions.read", ["books", "docs"])
-    add_parser(subparsers, "xklb.play_actions.view", ["image", "see", "look"])
-    add_parser(subparsers, "xklb.play_actions.watch", ["wt", "tubewatch", "tw", "entries"])
-    add_parser(subparsers, "xklb.reddit_extract.reddit_add", ["ra"])
-    add_parser(subparsers, "xklb.reddit_extract.reddit_update", ["ru"])
-    add_parser(subparsers, "xklb.scripts.row_add.row_add", ['add_row'])
-    add_parser(subparsers, "xklb.scripts.big_dirs.big_dirs", ["large-folders"])
-    add_parser(subparsers, "xklb.scripts.block.block")
-    add_parser(subparsers, "xklb.scripts.christen.christen")
-    add_parser(subparsers, "xklb.scripts.cluster_sort.cluster_sort", ["cs"])
-    add_parser(subparsers, "xklb.scripts.copy_play_counts.copy_play_counts")
-    add_parser(subparsers, "xklb.scripts.dedupe_czkawka.czkawka_dedupe", ["dedupe-czkawka"])
-    add_parser(subparsers, "xklb.scripts.dedupe_db.dedupe_db", ["dedupe-dbs"])
-    add_parser(subparsers, "xklb.scripts.disk_usage.disk_usage", ["du", "usage"])
-    add_parser(subparsers, "xklb.scripts.download_status.download_status", ["ds", "dl-status"])
-    add_parser(subparsers, "xklb.scripts.eda.eda", ["preview"])
-    add_parser(subparsers, "xklb.scripts.export_text.export_text")
-    add_parser(subparsers, "xklb.scripts.history.history", ["hi", "log"])
-    add_parser(subparsers, "xklb.scripts.incremental_diff.incremental_diff")
-    add_parser(subparsers, "xklb.scripts.links_db.links_add", ["links-db"])
-    add_parser(subparsers, "xklb.scripts.links_db.links_update")
-    add_parser(subparsers, "xklb.scripts.mcda.mcda", ["mcdm", "rank"])
-    add_parser(subparsers, "xklb.scripts.merge_dbs.merge_dbs", ["merge-db"])
-    add_parser(subparsers, "xklb.scripts.merge_folders.merge_folders", ["merge-folder", "mv"])
-    add_parser(subparsers, "xklb.scripts.merge_online_local.merge_online_local")
-    add_parser(subparsers, "xklb.scripts.mining.extract_links.extract_links", ["links", "links_extract"])
-    add_parser(subparsers, "xklb.scripts.mining.extract_text.extract_text", ["text", "text_extract"])
-    add_parser(subparsers, "xklb.scripts.mining.markdown_links.markdown_links", ["markdown-urls"])
-    add_parser(subparsers, "xklb.scripts.mining.mpv_watchlater.mpv_watchlater")
-    add_parser(subparsers, "xklb.scripts.mining.nouns.nouns", ["nouns"])
-    add_parser(subparsers, "xklb.scripts.mining.pushshift.pushshift_extract", ["pushshift"])
-    add_parser(subparsers, "xklb.scripts.mining.reddit_selftext.reddit_selftext")
-    add_parser(subparsers, "xklb.scripts.mining.substack.substack")
-    add_parser(subparsers, "xklb.scripts.mining.tildes.tildes")
-    add_parser(subparsers, "xklb.scripts.move_list.move_list", ["mv-list"])
-    add_parser(subparsers, "xklb.scripts.mount_stats.mount_stats", ["mu", "mount-usage"])
-    add_parser(subparsers, "xklb.scripts.open_links.open_links", ["links-open"])
-    add_parser(subparsers, "xklb.scripts.optimize_db.optimize_db", ["optimize"])
-    add_parser(subparsers, "xklb.scripts.places_import.places_import")
-    add_parser(subparsers, "xklb.scripts.playback_control.playback_next", ["next"])
-    add_parser(subparsers, "xklb.scripts.playback_control.playback_now", ["now"])
-    add_parser(subparsers, "xklb.scripts.playback_control.playback_pause", ["pause", "play"])
-    add_parser(subparsers, "xklb.scripts.playback_control.playback_stop", ["stop"])
-    add_parser(subparsers, "xklb.scripts.playlists.playlists", ["pl", "folders"])
-    add_parser(subparsers, "xklb.scripts.process_ffmpeg.process_ffmpeg", ["process-video", "process-audio"])
-    add_parser(subparsers, "xklb.scripts.process_image.process_image")
-    add_parser(subparsers, "xklb.scripts.redownload.redownload", ["re-dl", "re-download"])
-    add_parser(subparsers, "xklb.scripts.rel_mv.rel_mv", ["relmv", "mv-rel", "mvrel"])
-    add_parser(subparsers, "xklb.scripts.sample_hash.sample_hash", ["hash", "hash-file"])
-    add_parser(subparsers, "xklb.scripts.sample_compare.sample_compare", ["cmp"])
-    add_parser(subparsers, "xklb.scripts.scatter.scatter")
-    add_parser(subparsers, "xklb.scripts.search_db.search_db", ["s", "sdb", "search-dbs"])
-    add_parser(subparsers, "xklb.scripts.streaming_tab_loader.streaming_tab_loader", ["surf"])
-    add_parser(subparsers, "xklb.scripts.web_add.web_add", ["web-dir-add"])
-    add_parser(subparsers, "xklb.scripts.web_add.web_update", ["web-dir-update"])
-    add_parser(subparsers, "xklb.search.search", ["sc", "search-captions"])
-    add_parser(subparsers, "xklb.site_extract.site_add", ["sa", "sql-site", "site-sql"])
-    add_parser(subparsers, "xklb.tabs_actions.tabs", ["tb"])
-    add_parser(subparsers, "xklb.tabs_extract.tabs_add")
-    add_parser(subparsers, "xklb.tabs_extract.tabs_shuffle")
-    add_parser(subparsers, "xklb.tube_extract.tube_add", ["ta", "dladd", "da"])
-    add_parser(subparsers, "xklb.tube_extract.tube_update", ["dlupdate", "tu"])
+    add_parser(subparsers, "xklb.createdb.fs_add.fs_add", ["x", "extract"])
+    add_parser(subparsers, "xklb.createdb.fs_add.fs_update", ["xu"])
+    add_parser(subparsers, "xklb.createdb.gallery_add.gallery_add", ["gdl-add", "ga"])
+    add_parser(subparsers, "xklb.createdb.gallery_add.gallery_update", ["gdl-update", "gu"])
+    add_parser(subparsers, "xklb.createdb.hn_add.hacker_news_add", ["hn-add"])
+    add_parser(subparsers, "xklb.createdb.links_add.links_add", ["links-db"])
+    add_parser(subparsers, "xklb.createdb.links_add.links_update")
+    add_parser(subparsers, "xklb.createdb.places_import.places_import")
+    add_parser(subparsers, "xklb.createdb.reddit_add.reddit_add", ["ra"])
+    add_parser(subparsers, "xklb.createdb.reddit_add.reddit_update", ["ru"])
+    add_parser(subparsers, "xklb.createdb.row_add.row_add", ["add_row"])
+    add_parser(subparsers, "xklb.createdb.site_add.site_add", ["sa", "sql-site", "site-sql"])
+    add_parser(subparsers, "xklb.createdb.substack.substack")
+    add_parser(subparsers, "xklb.createdb.tabs_add.tabs_add")
+    add_parser(subparsers, "xklb.createdb.tabs_add.tabs_shuffle")
+    add_parser(subparsers, "xklb.createdb.tildes.tildes")
+    add_parser(subparsers, "xklb.createdb.tube_add.tube_add", ["ta", "dladd", "da"])
+    add_parser(subparsers, "xklb.createdb.tube_add.tube_update", ["dlupdate", "tu"])
+    add_parser(subparsers, "xklb.createdb.web_add.web_add", ["web-dir-add"])
+    add_parser(subparsers, "xklb.createdb.web_add.web_update", ["web-dir-update"])
+    add_parser(subparsers, "xklb.editdb.dedupe_db.dedupe_db", ["dedupe-dbs"])
+    add_parser(subparsers, "xklb.editdb.dedupe_media.dedupe_media")
+    add_parser(subparsers, "xklb.editdb.merge_online_local.merge_online_local")
+    add_parser(subparsers, "xklb.editdb.mpv_watchlater.mpv_watchlater")
+    add_parser(subparsers, "xklb.editdb.pushshift.pushshift_extract", ["pushshift"])
+    add_parser(subparsers, "xklb.editdb.reddit_selftext.reddit_selftext")
+    add_parser(subparsers, "xklb.files.sample_compare.sample_compare", ["cmp"])
+    add_parser(subparsers, "xklb.files.sample_hash.sample_hash", ["hash", "hash-file"])
+    add_parser(subparsers, "xklb.folders.merge_folders.merge_folders", ["merge-folder", "mv"])
+    add_parser(subparsers, "xklb.folders.move_list.move_list", ["mv-list"])
+    add_parser(subparsers, "xklb.folders.rel_mv.rel_mv", ["relmv", "mv-rel", "mvrel"])
+    add_parser(subparsers, "xklb.folders.scatter.scatter")
+    add_parser(subparsers, "xklb.fsdb.big_dirs.big_dirs", ["large-folders"])
+    add_parser(subparsers, "xklb.fsdb.christen.christen")
+    add_parser(subparsers, "xklb.fsdb.disk_usage.disk_usage", ["du", "usage"])
+    add_parser(subparsers, "xklb.fsdb.mount_stats.mount_stats", ["mu", "mount-usage"])
+    add_parser(subparsers, "xklb.fsdb.search_db.search_db", ["s", "sdb", "search-dbs"])
+    add_parser(subparsers, "xklb.mediadb.block.block")
+    add_parser(subparsers, "xklb.mediadb.download.dl_download", ["dl", "download"])
+    add_parser(subparsers, "xklb.mediadb.download_status.download_status", ["ds", "dl-status"])
+    add_parser(subparsers, "xklb.mediadb.history.history", ["hi", "log"])
+    add_parser(subparsers, "xklb.mediadb.optimize_db.optimize_db", ["optimize"])
+    add_parser(subparsers, "xklb.mediadb.playlists.playlists", ["pl", "folders"])
+    add_parser(subparsers, "xklb.mediadb.redownload.redownload", ["re-dl", "re-download"])
+    add_parser(subparsers, "xklb.mediadb.search.search", ["sc", "search-captions"])
+    add_parser(subparsers, "xklb.mediafiles.media_check.media_check")
+    add_parser(subparsers, "xklb.mediafiles.process_ffmpeg.process_ffmpeg", ["process-video", "process-audio"])
+    add_parser(subparsers, "xklb.mediafiles.process_image.process_image")
+    add_parser(subparsers, "xklb.misc.dedupe_czkawka.czkawka_dedupe", ["dedupe-czkawka"])
+    add_parser(subparsers, "xklb.misc.export_text.export_text")
+    add_parser(subparsers, "xklb.multidb.copy_play_counts.copy_play_counts")
+    add_parser(subparsers, "xklb.multidb.merge_dbs.merge_dbs", ["merge-db"])
+    add_parser(subparsers, "xklb.playback.links_open.links_open", ["open-links"])
+    add_parser(subparsers, "xklb.playback.play_actions.filesystem", ["fs", "open"])
+    add_parser(subparsers, "xklb.playback.play_actions.listen", ["lt", "tubelisten", "tl"])
+    add_parser(subparsers, "xklb.playback.play_actions.read", ["books", "docs"])
+    add_parser(subparsers, "xklb.playback.play_actions.view", ["image", "see", "look"])
+    add_parser(subparsers, "xklb.playback.play_actions.watch", ["wt", "tubewatch", "tw", "entries"])
+    add_parser(subparsers, "xklb.playback.playback_control.playback_next", ["next"])
+    add_parser(subparsers, "xklb.playback.playback_control.playback_now", ["now"])
+    add_parser(subparsers, "xklb.playback.playback_control.playback_pause", ["pause", "play"])
+    add_parser(subparsers, "xklb.playback.playback_control.playback_stop", ["stop"])
+    add_parser(subparsers, "xklb.playback.surf.streaming_tab_loader", ["surf"])
+    add_parser(subparsers, "xklb.playback.tabs_open.tabs_open", ["tb", "tabs", "open_tabs"])
+    add_parser(subparsers, "xklb.tablefiles.eda.eda", ["preview"])
+    add_parser(subparsers, "xklb.tablefiles.incremental_diff.incremental_diff")
+    add_parser(subparsers, "xklb.tablefiles.mcda.mcda", ["mcdm", "rank"])
+    add_parser(subparsers, "xklb.text.cluster_sort.cluster_sort", ["cs"])
+    add_parser(subparsers, "xklb.text.extract_links.extract_links", ["links", "links_extract"])
+    add_parser(subparsers, "xklb.text.extract_text.extract_text", ["text", "text_extract"])
+    add_parser(subparsers, "xklb.text.markdown_links.markdown_links", ["markdown-urls"])
+    add_parser(subparsers, "xklb.text.nouns.nouns", ["nouns"])
 
     parser.add_argument("--version", "-V", action="store_true")
 

@@ -84,7 +84,7 @@ Or in BASH:
 Tubeupdate will go through the list of added playlists and fetch metadata for
 any videos not previously seen.
 
-    library tubeupdate tube.db
+    library tube-update tube.db
 
 ### 2. Watch / Listen from websites
 
@@ -97,38 +97,36 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.6.007)
+    xk media library subcommands (v2.6.008)
 
     Create database subcommands:
-    ╭───────────────┬────────────────────────────────────────────────────╮
-    │ fsadd         │ Add local media                                    │
-    ├───────────────┼────────────────────────────────────────────────────┤
-    │ tubeadd       │ Add online video media (yt-dlp)                    │
-    ├───────────────┼────────────────────────────────────────────────────┤
-    │ webadd        │ Add open-directory media                           │
-    ├───────────────┼────────────────────────────────────────────────────┤
-    │ galleryadd    │ Add online gallery media (gallery-dl)              │
-    ├───────────────┼────────────────────────────────────────────────────┤
-    │ tabsadd       │ Create a tabs database; Add URLs                   │
-    ├───────────────┼────────────────────────────────────────────────────┤
-    │ links-add     │ Create a link-scraping database                    │
-    ├───────────────┼────────────────────────────────────────────────────┤
-    │ siteadd       │ Auto-scrape website data to SQLITE                 │
-    ├───────────────┼────────────────────────────────────────────────────┤
-    │ redditadd     │ Create a reddit database; Add subreddits           │
-    ├───────────────┼────────────────────────────────────────────────────┤
-    │ pushshift     │ Convert pushshift data to reddit.db format (stdin) │
-    ├───────────────┼────────────────────────────────────────────────────┤
-    │ hnadd         │ Create / Update a Hacker News database             │
-    ├───────────────┼────────────────────────────────────────────────────┤
-    │ substack      │ Backup substack articles                           │
-    ├───────────────┼────────────────────────────────────────────────────┤
-    │ tildes        │ Backup tildes comments and topics                  │
-    ├───────────────┼────────────────────────────────────────────────────┤
-    │ places-import │ Import places of interest (POIs)                   │
-    ├───────────────┼────────────────────────────────────────────────────┤
-    │ add-row       │ Add arbitrary data to SQLITE                       │
-    ╰───────────────┴────────────────────────────────────────────────────╯
+    ╭───────────────┬──────────────────────────────────────────╮
+    │ fs-add        │ Add local media                          │
+    ├───────────────┼──────────────────────────────────────────┤
+    │ tube-add      │ Add online video media (yt-dlp)          │
+    ├───────────────┼──────────────────────────────────────────┤
+    │ web-add       │ Add open-directory media                 │
+    ├───────────────┼──────────────────────────────────────────┤
+    │ gallery-add   │ Add online gallery media (gallery-dl)    │
+    ├───────────────┼──────────────────────────────────────────┤
+    │ tabs-add      │ Create a tabs database; Add URLs         │
+    ├───────────────┼──────────────────────────────────────────┤
+    │ links-add     │ Create a link-scraping database          │
+    ├───────────────┼──────────────────────────────────────────┤
+    │ site-add      │ Auto-scrape website data to SQLITE       │
+    ├───────────────┼──────────────────────────────────────────┤
+    │ reddit-add    │ Create a reddit database; Add subreddits │
+    ├───────────────┼──────────────────────────────────────────┤
+    │ hn-add        │ Create / Update a Hacker News database   │
+    ├───────────────┼──────────────────────────────────────────┤
+    │ substack      │ Backup substack articles                 │
+    ├───────────────┼──────────────────────────────────────────┤
+    │ tildes        │ Backup tildes comments and topics        │
+    ├───────────────┼──────────────────────────────────────────┤
+    │ places-import │ Import places of interest (POIs)         │
+    ├───────────────┼──────────────────────────────────────────┤
+    │ row-add       │ Add arbitrary data to SQLITE             │
+    ╰───────────────┴──────────────────────────────────────────╯
 
     Text subcommands:
     ╭────────────────┬─────────────────────────────────────────────╮
@@ -139,6 +137,8 @@ To stop playing press Ctrl+C in either the terminal or mpv
     │ extract-text   │ Extract human text from lists of web links  │
     ├────────────────┼─────────────────────────────────────────────┤
     │ markdown-links │ Extract titles from lists of web links      │
+    ├────────────────┼─────────────────────────────────────────────┤
+    │ nouns          │ Unstructured text -> compound nouns (stdin) │
     ╰────────────────┴─────────────────────────────────────────────╯
 
     Folder subcommands:
@@ -195,14 +195,10 @@ To stop playing press Ctrl+C in either the terminal or mpv
     │ big-dirs    │ Show large folders             │
     ├─────────────┼────────────────────────────────┤
     │ search-db   │ Search a SQLITE database       │
-    ├─────────────┼────────────────────────────────┤
-    │ optimize    │ Re-optimize database           │
     ╰─────────────┴────────────────────────────────╯
 
     Media Database subcommands:
     ╭─────────────────┬────────────────────────────────╮
-    │ tabs            │ Open your tabs for the day     │
-    ├─────────────────┼────────────────────────────────┤
     │ block           │ Block a channel                │
     ├─────────────────┼────────────────────────────────┤
     │ playlists       │ List stored playlists          │
@@ -216,6 +212,8 @@ To stop playing press Ctrl+C in either the terminal or mpv
     │ history         │ Show some playback statistics  │
     ├─────────────────┼────────────────────────────────┤
     │ search          │ Search captions / subtitles    │
+    ├─────────────────┼────────────────────────────────┤
+    │ optimize        │ Re-optimize database           │
     ╰─────────────────┴────────────────────────────────╯
 
     Playback subcommands:
@@ -230,49 +228,51 @@ To stop playing press Ctrl+C in either the terminal or mpv
     ├────────────┼───────────────────────────────────────────────────┤
     │ pause      │ Pause all playback                                │
     ├────────────┼───────────────────────────────────────────────────┤
-    │ open-links │ Open links from link dbs                          │
+    │ tabs-open  │ Open your tabs for the day                        │
+    ├────────────┼───────────────────────────────────────────────────┤
+    │ links-open │ Open links from link dbs                          │
     ├────────────┼───────────────────────────────────────────────────┤
     │ surf       │ Auto-load browser tabs in a streaming way (stdin) │
     ╰────────────┴───────────────────────────────────────────────────╯
 
     Database enrichment subcommands:
-    ╭────────────────────┬────────────────────────────────────────╮
-    │ dedupe-db          │ Dedupe SQLITE tables                   │
-    ├────────────────────┼────────────────────────────────────────┤
-    │ dedupe-media       │ Dedupe similar media                   │
-    ├────────────────────┼────────────────────────────────────────┤
-    │ merge-online-local │ Merge online and local data            │
-    ├────────────────────┼────────────────────────────────────────┤
-    │ mpv-watchlater     │ Import mpv watchlater files to history │
-    ├────────────────────┼────────────────────────────────────────┤
-    │ reddit-selftext    │ Copy selftext links to media table     │
-    ├────────────────────┼────────────────────────────────────────┤
-    │ tabs-shuffle       │ Randomize tabs.db a bit                │
-    ╰────────────────────┴────────────────────────────────────────╯
+    ╭────────────────────┬────────────────────────────────────────────────────╮
+    │ dedupe-db          │ Dedupe SQLITE tables                               │
+    ├────────────────────┼────────────────────────────────────────────────────┤
+    │ dedupe-media       │ Dedupe similar media                               │
+    ├────────────────────┼────────────────────────────────────────────────────┤
+    │ merge-online-local │ Merge online and local data                        │
+    ├────────────────────┼────────────────────────────────────────────────────┤
+    │ mpv-watchlater     │ Import mpv watchlater files to history             │
+    ├────────────────────┼────────────────────────────────────────────────────┤
+    │ reddit-selftext    │ Copy selftext links to media table                 │
+    ├────────────────────┼────────────────────────────────────────────────────┤
+    │ tabs-shuffle       │ Randomize tabs.db a bit                            │
+    ├────────────────────┼────────────────────────────────────────────────────┤
+    │ pushshift          │ Convert pushshift data to reddit.db format (stdin) │
+    ╰────────────────────┴────────────────────────────────────────────────────╯
 
     Update database subcommands:
-    ╭───────────────┬─────────────────────────────────╮
-    │ fsupdate      │ Update local media              │
-    ├───────────────┼─────────────────────────────────┤
-    │ tubeupdate    │ Update online video media       │
-    ├───────────────┼─────────────────────────────────┤
-    │ webupdate     │ Update open-directory media     │
-    ├───────────────┼─────────────────────────────────┤
-    │ galleryupdate │ Update online gallery media     │
-    ├───────────────┼─────────────────────────────────┤
-    │ links-update  │ Update a link-scraping database │
-    ├───────────────┼─────────────────────────────────┤
-    │ redditupdate  │ Update reddit media             │
-    ╰───────────────┴─────────────────────────────────╯
+    ╭────────────────┬─────────────────────────────────╮
+    │ fs-update      │ Update local media              │
+    ├────────────────┼─────────────────────────────────┤
+    │ tube-update    │ Update online video media       │
+    ├────────────────┼─────────────────────────────────┤
+    │ web-update     │ Update open-directory media     │
+    ├────────────────┼─────────────────────────────────┤
+    │ gallery-update │ Update online gallery media     │
+    ├────────────────┼─────────────────────────────────┤
+    │ links-update   │ Update a link-scraping database │
+    ├────────────────┼─────────────────────────────────┤
+    │ reddit-update  │ Update reddit media             │
+    ╰────────────────┴─────────────────────────────────╯
 
     Misc subcommands:
-    ╭────────────────┬─────────────────────────────────────────────╮
-    │ export-text    │ Export HTML files from SQLite databases     │
-    ├────────────────┼─────────────────────────────────────────────┤
-    │ dedupe-czkawka │ Process czkawka diff output                 │
-    ├────────────────┼─────────────────────────────────────────────┤
-    │ nouns          │ Unstructured text -> compound nouns (stdin) │
-    ╰────────────────┴─────────────────────────────────────────────╯
+    ╭────────────────┬─────────────────────────────────────────╮
+    │ export-text    │ Export HTML files from SQLite databases │
+    ├────────────────┼─────────────────────────────────────────┤
+    │ dedupe-czkawka │ Process czkawka diff output             │
+    ╰────────────────┴─────────────────────────────────────────╯
 
 
 </details>
@@ -515,12 +515,12 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 ### Create database subcommands
 
-###### fsadd
+###### fs-add
 
 <details><summary>Add local media</summary>
 
-    $ library fsadd -h
-    usage: library fsadd [(--video) | --audio | --image |  --text | --filesystem] DATABASE PATH ...
+    $ library fs-add -h
+    usage: library fs-add [(--video) | --audio | --image |  --text | --filesystem] DATABASE PATH ...
 
     The default database type is video:
         library fsadd tv.db ./tv/
@@ -571,12 +571,12 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 </details>
 
-###### tubeadd
+###### tube-add
 
 <details><summary>Add online video media (yt-dlp)</summary>
 
-    $ library tubeadd -h
-    usage: library tubeadd [--safe] [--extra] [--subs] [--auto-subs] DATABASE URLS ...
+    $ library tube-add -h
+    usage: library tube-add [--safe] [--extra] [--subs] [--auto-subs] DATABASE URLS ...
 
     Create a dl database / add links to an existing database
 
@@ -596,16 +596,16 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         If you plan on using `library download` then it doesn't make sense to use `--extra`.
         Downloading will add the extra metadata automatically to the database.
         You can always fetch more metadata later via tubeupdate:
-        library tubeupdate tw.db --extra
+        library tube-update tw.db --extra
 
 
 </details>
 
-###### webadd
+###### web-add
 
 <details><summary>Add open-directory media</summary>
 
-    $ library webadd -h
+    $ library web-add -h
     usage: library web-add [(--filesystem) | --video | --audio | --image | --text] DATABASE URL ...
 
     Scan open directories
@@ -657,12 +657,12 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 </details>
 
-###### galleryadd
+###### gallery-add
 
 <details><summary>Add online gallery media (gallery-dl)</summary>
 
-    $ library galleryadd -h
-    usage: library galleryadd DATABASE URLS
+    $ library gallery-add -h
+    usage: library gallery-add DATABASE URLS
 
     Add gallery_dl URLs to download later or periodically update
 
@@ -673,12 +673,12 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 </details>
 
-###### tabsadd
+###### tabs-add
 
 <details><summary>Create a tabs database; Add URLs</summary>
 
-    $ library tabsadd -h
-    usage: library tabsadd [--frequency daily weekly (monthly) quarterly yearly] [--no-sanitize] DATABASE URLS ...
+    $ library tabs-add -h
+    usage: library tabs-add [--frequency daily weekly (monthly) quarterly yearly] [--no-sanitize] DATABASE URLS ...
 
     Adding one URL:
 
@@ -804,11 +804,11 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 </details>
 
-###### siteadd
+###### site-add
 
 <details><summary>Auto-scrape website data to SQLITE</summary>
 
-    $ library siteadd -h
+    $ library site-add -h
     usage: library site-add DATABASE PATH ... [--auto-pager] [--poke] [--local-html] [--file FILE]
 
     Extract data from website requests to a database
@@ -820,12 +820,12 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 </details>
 
-###### redditadd
+###### reddit-add
 
 <details><summary>Create a reddit database; Add subreddits</summary>
 
-    $ library redditadd -h
-    usage: library redditadd [--lookback N_DAYS] [--praw-site bot1] DATABASE URLS ...
+    $ library reddit-add -h
+    usage: library reddit-add [--lookback N_DAYS] [--praw-site bot1] DATABASE URLS ...
 
     Fetch data for redditors and reddits:
 
@@ -847,37 +847,12 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 </details>
 
-###### pushshift
-
-<details><summary>Convert pushshift data to reddit.db format (stdin)</summary>
-
-    $ library pushshift -h
-    usage: library pushshift DATABASE < stdin
-
-    Download data (about 600GB jsonl.zst; 6TB uncompressed)
-
-        wget -e robots=off -r -k -A zst https://files.pushshift.io/reddit/submissions/
-
-    Load data from files via unzstd
-
-        unzstd --memory=2048MB --stdout RS_2005-07.zst | library pushshift pushshift.db
-
-    Or multiple (output is about 1.5TB SQLITE fts-searchable):
-
-        for f in psaw/files.pushshift.io/reddit/submissions/*.zst
-            echo "unzstd --memory=2048MB --stdout $f | library pushshift (basename $f).db"
-            library optimize (basename $f).db
-        end | parallel -j5
-
-
-</details>
-
-###### hnadd
+###### hn-add
 
 <details><summary>Create / Update a Hacker News database</summary>
 
-    $ library hnadd -h
-    usage: library hnadd [--oldest] DATABASE
+    $ library hn-add -h
+    usage: library hn-add [--oldest] DATABASE
 
     Fetch latest stories first:
 
@@ -937,16 +912,16 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 </details>
 
-###### add-row
+###### row-add
 
 <details><summary>Add arbitrary data to SQLITE</summary>
 
-    $ library add-row -h
-    usage: library add-row DATABASE [--table-name TABLE_NAME]
+    $ library row-add -h
+    usage: library row-add DATABASE [--table-name TABLE_NAME]
 
     Add a row to sqlite
 
-        library add-row t.db --test_b 1 --test-a 2
+        library row-add t.db --test_b 1 --test-a 2
 
         ### media (1 rows)
         |   test_b |   test_a |
@@ -1041,6 +1016,35 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     Sorting suggestions
 
         lb extract-text --skip-links --local-file (cb -t text/html | psub) | lb cs --groups | jq -r '.[] | .grouped_paths | "\n" + join("\n")'
+
+
+</details>
+
+###### markdown-links
+
+<details><summary>Extract titles from lists of web links</summary>
+
+    $ library markdown-links -h
+    usage: usage: library markdown-links URL ... [--cookies COOKIES] [--cookies-from-browser BROWSER[+KEYRING][:PROFILE][::CONTAINER]] [--firefox] [--chrome] [--allow-insecure] [--scroll] [--manual] [--auto-pager] [--poke] [--file FILE]
+
+    Convert URLs into Markdown links with page titles filled in
+
+        $ lb markdown-links https://www.youtube.com/watch?v=IgZDDW-NXDE
+        [Work For Peace](https://www.youtube.com/watch?v=IgZDDW-NXDE)
+
+
+</details>
+
+###### nouns
+
+<details><summary>Unstructured text -> compound nouns (stdin)</summary>
+
+    $ library nouns -h
+    usage: library nouns (stdin)
+
+    Extract compound nouns and phrases from unstructured mixed HTML plain text
+
+        xsv select text hn_comment_202210242109.csv | library nouns | sort | uniq -c | sort --numeric-sort
 
 
 </details>
@@ -1258,7 +1262,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 <details><summary>Compare files using sample-hash and other shortcuts</summary>
 
     $ library sample-compare -h
-    usage: library sample-hash [--threads 10] [--chunk-size BYTES] [--gap BYTES OR 0.0-1.0*FILESIZE] PATH ...
+    usage: library sample-compare [--threads 10] [--chunk-size BYTES] [--gap BYTES OR 0.0-1.0*FILESIZE] PATH ...
 
     Convenience subcommand to compare multiple files using sample-hash
 
@@ -1616,6 +1620,18 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 </details>
 
+###### mount-stats
+
+<details><summary>Show some relative mount stats</summary>
+
+    $ library mount-stats -h
+    usage: library mount-stats MOUNTPOINT ...
+
+    Print relative use and free for multiple mount points
+
+
+</details>
+
 ###### big-dirs
 
 <details><summary>Show large folders</summary>
@@ -1653,95 +1669,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 </details>
 
-###### optimize
-
-<details><summary>Re-optimize database</summary>
-
-    $ library optimize -h
-    usage: library optimize DATABASE [--force]
-
-    Optimize library databases
-
-    The force flag is usually unnecessary and it can take much longer
-
-
-</details>
-
 ### Media Database subcommands
-
-###### tabs
-
-<details><summary>Open your tabs for the day</summary>
-
-    $ library tabs -h
-    usage: library tabs DATABASE
-
-    Tabs is meant to run **once per day**. Here is how you would configure it with `crontab`:
-
-        45 9 * * * DISPLAY=:0 library tabs /home/my/tabs.db
-
-    If things aren't working you can use `at` to simulate a similar environment as `cron`
-
-        echo 'fish -c "export DISPLAY=:0 && library tabs /full/path/to/tabs.db"' | at NOW
-
-    You can also invoke tabs manually:
-
-        library tabs -L 1  # open one tab
-
-    Print URLs
-
-        library tabs -w "frequency='yearly'" -p
-        ╒════════════════════════════════════════════════════════════════╤═════════════╤══════════════╕
-        │ path                                                           │ frequency   │ time_valid   │
-        ╞════════════════════════════════════════════════════════════════╪═════════════╪══════════════╡
-        │ https://old.reddit.com/r/Autonomia/top/?sort=top&t=year        │ yearly      │ Dec 31 1970  │
-        ├────────────────────────────────────────────────────────────────┼─────────────┼──────────────┤
-        │ https://old.reddit.com/r/Cyberpunk/top/?sort=top&t=year        │ yearly      │ Dec 31 1970  │
-        ├────────────────────────────────────────────────────────────────┼─────────────┼──────────────┤
-        │ https://old.reddit.com/r/ExperiencedDevs/top/?sort=top&t=year  │ yearly      │ Dec 31 1970  │
-
-        ...
-
-        ╘════════════════════════════════════════════════════════════════╧═════════════╧══════════════╛
-
-    View how many yearly tabs you have:
-
-        library tabs -w "frequency='yearly'" -p a
-        ╒═══════════╤═════════╕
-        │ path      │   count │
-        ╞═══════════╪═════════╡
-        │ Aggregate │     134 │
-        ╘═══════════╧═════════╛
-
-    Delete URLs
-
-        library tabs -p -s cyber
-        ╒═══════════════════════════════════════╤═════════════╤══════════════╕
-        │ path                                  │ frequency   │ time_valid   │
-        ╞═══════════════════════════════════════╪═════════════╪══════════════╡
-        │ https://old.reddit.com/r/cyberDeck/to │ yearly      │ Dec 31 1970  │
-        │ p/?sort=top&t=year                    │             │              │
-        ├───────────────────────────────────────┼─────────────┼──────────────┤
-        │ https://old.reddit.com/r/Cyberpunk/to │ yearly      │ Aug 29 2023  │
-        │ p/?sort=top&t=year                    │             │              │
-        ├───────────────────────────────────────┼─────────────┼──────────────┤
-        │ https://www.reddit.com/r/cyberDeck/   │ yearly      │ Sep 05 2023  │
-        ╘═══════════════════════════════════════╧═════════════╧══════════════╛
-        library tabs -p -w "path='https://www.reddit.com/r/cyberDeck/'" --delete-rows
-        Removed 1 metadata records
-        library tabs -p -s cyber
-        ╒═══════════════════════════════════════╤═════════════╤══════════════╕
-        │ path                                  │ frequency   │ time_valid   │
-        ╞═══════════════════════════════════════╪═════════════╪══════════════╡
-        │ https://old.reddit.com/r/cyberDeck/to │ yearly      │ Dec 31 1970  │
-        │ p/?sort=top&t=year                    │             │              │
-        ├───────────────────────────────────────┼─────────────┼──────────────┤
-        │ https://old.reddit.com/r/Cyberpunk/to │ yearly      │ Aug 29 2023  │
-        │ p/?sort=top&t=year                    │             │              │
-        ╘═══════════════════════════════════════╧═════════════╧══════════════╛
-
-
-</details>
 
 ###### block
 
@@ -2144,6 +2072,20 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 </details>
 
+###### optimize
+
+<details><summary>Re-optimize database</summary>
+
+    $ library optimize -h
+    usage: library optimize DATABASE [--force]
+
+    Optimize library databases
+
+    The force flag is usually unnecessary and it can take much longer
+
+
+</details>
+
 ### Playback subcommands
 
 ###### watch
@@ -2160,8 +2102,6 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         echo 'playlist-next force' | socat - /tmp/mpv_socket
 
     Override the default player (mpv):
-        library does a lot of things to try to automatically use your preferred media player
-        but if it doesn't guess right you can make it explicit:
         library watch --player "vlc --vlc-opts"
 
     Cast to chromecast groups:
@@ -2532,12 +2472,86 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 </details>
 
-###### open-links
+###### tabs-open
+
+<details><summary>Open your tabs for the day</summary>
+
+    $ library tabs-open -h
+    usage: library tabs-open DATABASE
+
+    Tabs is meant to run **once per day**. Here is how you would configure it with `crontab`:
+
+        45 9 * * * DISPLAY=:0 library tabs /home/my/tabs.db
+
+    If things aren't working you can use `at` to simulate a similar environment as `cron`
+
+        echo 'fish -c "export DISPLAY=:0 && library tabs /full/path/to/tabs.db"' | at NOW
+
+    You can also invoke tabs manually:
+
+        library tabs -L 1  # open one tab
+
+    Print URLs
+
+        library tabs -w "frequency='yearly'" -p
+        ╒════════════════════════════════════════════════════════════════╤═════════════╤══════════════╕
+        │ path                                                           │ frequency   │ time_valid   │
+        ╞════════════════════════════════════════════════════════════════╪═════════════╪══════════════╡
+        │ https://old.reddit.com/r/Autonomia/top/?sort=top&t=year        │ yearly      │ Dec 31 1970  │
+        ├────────────────────────────────────────────────────────────────┼─────────────┼──────────────┤
+        │ https://old.reddit.com/r/Cyberpunk/top/?sort=top&t=year        │ yearly      │ Dec 31 1970  │
+        ├────────────────────────────────────────────────────────────────┼─────────────┼──────────────┤
+        │ https://old.reddit.com/r/ExperiencedDevs/top/?sort=top&t=year  │ yearly      │ Dec 31 1970  │
+
+        ...
+
+        ╘════════════════════════════════════════════════════════════════╧═════════════╧══════════════╛
+
+    View how many yearly tabs you have:
+
+        library tabs -w "frequency='yearly'" -p a
+        ╒═══════════╤═════════╕
+        │ path      │   count │
+        ╞═══════════╪═════════╡
+        │ Aggregate │     134 │
+        ╘═══════════╧═════════╛
+
+    Delete URLs
+
+        library tabs -p -s cyber
+        ╒═══════════════════════════════════════╤═════════════╤══════════════╕
+        │ path                                  │ frequency   │ time_valid   │
+        ╞═══════════════════════════════════════╪═════════════╪══════════════╡
+        │ https://old.reddit.com/r/cyberDeck/to │ yearly      │ Dec 31 1970  │
+        │ p/?sort=top&t=year                    │             │              │
+        ├───────────────────────────────────────┼─────────────┼──────────────┤
+        │ https://old.reddit.com/r/Cyberpunk/to │ yearly      │ Aug 29 2023  │
+        │ p/?sort=top&t=year                    │             │              │
+        ├───────────────────────────────────────┼─────────────┼──────────────┤
+        │ https://www.reddit.com/r/cyberDeck/   │ yearly      │ Sep 05 2023  │
+        ╘═══════════════════════════════════════╧═════════════╧══════════════╛
+        library tabs -p -w "path='https://www.reddit.com/r/cyberDeck/'" --delete-rows
+        Removed 1 metadata records
+        library tabs -p -s cyber
+        ╒═══════════════════════════════════════╤═════════════╤══════════════╕
+        │ path                                  │ frequency   │ time_valid   │
+        ╞═══════════════════════════════════════╪═════════════╪══════════════╡
+        │ https://old.reddit.com/r/cyberDeck/to │ yearly      │ Dec 31 1970  │
+        │ p/?sort=top&t=year                    │             │              │
+        ├───────────────────────────────────────┼─────────────┼──────────────┤
+        │ https://old.reddit.com/r/Cyberpunk/to │ yearly      │ Aug 29 2023  │
+        │ p/?sort=top&t=year                    │             │              │
+        ╘═══════════════════════════════════════╧═════════════╧══════════════╛
+
+
+</details>
+
+###### links-open
 
 <details><summary>Open links from link dbs</summary>
 
-    $ library open-links -h
-    usage: library open-links DATABASE [search] [--title] [--title-prefix TITLE_PREFIX]
+    $ library links-open -h
+    usage: library links-open DATABASE [search] [--title] [--title-prefix TITLE_PREFIX]
 
     Open links from a links db
 
@@ -2702,14 +2716,39 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 </details>
 
+###### pushshift
+
+<details><summary>Convert pushshift data to reddit.db format (stdin)</summary>
+
+    $ library pushshift -h
+    usage: library pushshift DATABASE < stdin
+
+    Download data (about 600GB jsonl.zst; 6TB uncompressed)
+
+        wget -e robots=off -r -k -A zst https://files.pushshift.io/reddit/submissions/
+
+    Load data from files via unzstd
+
+        unzstd --memory=2048MB --stdout RS_2005-07.zst | library pushshift pushshift.db
+
+    Or multiple (output is about 1.5TB SQLITE fts-searchable):
+
+        for f in psaw/files.pushshift.io/reddit/submissions/*.zst
+            echo "unzstd --memory=2048MB --stdout $f | library pushshift (basename $f).db"
+            library optimize (basename $f).db
+        end | parallel -j5
+
+
+</details>
+
 ### Update database subcommands
 
-###### fsupdate
+###### fs-update
 
 <details><summary>Update local media</summary>
 
-    $ library fsupdate -h
-    usage: library fsupdate DATABASE
+    $ library fs-update -h
+    usage: library fs-update DATABASE
 
     Update each path previously saved:
 
@@ -2718,12 +2757,12 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 </details>
 
-###### tubeupdate
+###### tube-update
 
 <details><summary>Update online video media</summary>
 
-    $ library tubeupdate -h
-    usage: library tubeupdate [--audio | --video] DATABASE
+    $ library tube-update -h
+    usage: library tube-update [--audio | --video] DATABASE
 
     Fetch the latest videos for every playlist saved in your database
 
@@ -2743,11 +2782,11 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 </details>
 
-###### webupdate
+###### web-update
 
 <details><summary>Update open-directory media</summary>
 
-    $ library webupdate -h
+    $ library web-update -h
     usage: library web-update DATABASE
 
     Update saved open directories
@@ -2756,12 +2795,12 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 </details>
 
-###### galleryupdate
+###### gallery-update
 
 <details><summary>Update online gallery media</summary>
 
-    $ library galleryupdate -h
-    usage: library galleryupdate DATABASE URLS
+    $ library gallery-update -h
+    usage: library gallery-update DATABASE URLS
 
     Check previously saved gallery_dl URLs for new content
 
@@ -2782,12 +2821,12 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 </details>
 
-###### redditupdate
+###### reddit-update
 
 <details><summary>Update reddit media</summary>
 
-    $ library redditupdate -h
-    usage: library redditupdate [--audio | --video] [--lookback N_DAYS] [--praw-site bot1] DATABASE
+    $ library reddit-update -h
+    usage: library reddit-update [--audio | --video] [--lookback N_DAYS] [--praw-site bot1] DATABASE
 
     Fetch the latest posts for every subreddit/redditor saved in your database
 
@@ -2806,6 +2845,20 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     usage: library export-text DATABASE
 
     Generate HTML files from SQLite databases
+
+
+</details>
+
+###### dedupe-czkawka
+
+<details><summary>Process czkawka diff output</summary>
+
+    $ library dedupe-czkawka -h
+    usage: library dedupe-czkawka [--volume VOLUME] [--auto-seek] [--ignore-errors] [--folder] [--folder-glob [FOLDER_GLOB]] [--replace] [--no-replace] [--override-trash OVERRIDE_TRASH] [--delete-files] [--gui]
+               [--auto-select-min-ratio AUTO_SELECT_MIN_RATIO] [--all-keep] [--all-left] [--all-right] [--all-delete] [--verbose]
+               czkawka_dupes_output_path
+
+    Choose which duplicate to keep by opening both side-by-side in mpv
 
 
 </details>

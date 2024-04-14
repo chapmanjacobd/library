@@ -1,6 +1,6 @@
 from unittest import skip
 
-from xklb.media import media_check
+from xklb.mediafiles import media_check
 from xklb.utils import nums
 
 

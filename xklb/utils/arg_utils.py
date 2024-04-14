@@ -144,7 +144,7 @@ def parse_args_limit(args):
                 args.limit = consts.DEFAULT_PLAY_QUEUE
             elif args.action in (SC.view):
                 args.limit = consts.DEFAULT_PLAY_QUEUE * 4
-            elif args.action in (SC.open_links):
+            elif args.action in (SC.links_open):
                 args.limit = consts.MANY_LINKS - 1
             elif args.action in (SC.download):
                 args.limit = consts.DEFAULT_PLAY_QUEUE * 60

@@ -2,8 +2,9 @@ import sys
 
 import pytest
 
-from xklb.lb import library as lb, progs
-from xklb.utils.log_utils import log
+from xklb.lb import library as lb
+from xklb.lb import progs
+
 
 def test_lb_help(capsys):
     sys.argv = ["lb"]
@@ -22,8 +23,6 @@ def test_duplicate_args(capsys):
     for _, category_progs in progs.items():
         for subcommand, _ in category_progs.items():
             with pytest.raises(SystemExit):
-                lb([subcommand, '-h'])
+                lb([subcommand, "-h"])
             captured = capsys.readouterr().out.replace("\n", "")
             assert f'usage: library {subcommand.replace("_", "-")}' in captured
-
-            log.info(len(captured))

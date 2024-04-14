@@ -816,7 +816,7 @@ download_status = """library download-status DATABASE
         library download-status video.db --safe
 """
 
-tabs = """library tabs DATABASE
+tabs_open = """library tabs-open DATABASE
 
     Tabs is meant to run **once per day**. Here is how you would configure it with `crontab`:
 
@@ -1373,7 +1373,7 @@ scatter = """library scatter [--limit LIMIT] [--policy POLICY] [--sort SORT] --t
         library scatter fs.db -m /mnt/d1:/mnt/d3:/mnt/d4 /mnt/d2
 """
 
-open_links = """library open-links DATABASE [search] [--title] [--title-prefix TITLE_PREFIX]
+links_open = """library links-open DATABASE [search] [--title] [--title-prefix TITLE_PREFIX]
 
     Open links from a links db
 
@@ -1860,7 +1860,7 @@ row_add = """library row-add DATABASE [--table-name TABLE_NAME]
         |        1 |        2 |
 """
 
-markdown_links="""usage: library markdown-links URL ... [--cookies COOKIES] [--cookies-from-browser BROWSER[+KEYRING][:PROFILE][::CONTAINER]] [--firefox] [--chrome] [--allow-insecure] [--scroll] [--manual] [--auto-pager] [--poke] [--file FILE]
+markdown_links = """usage: library markdown-links URL ... [--cookies COOKIES] [--cookies-from-browser BROWSER[+KEYRING][:PROFILE][::CONTAINER]] [--firefox] [--chrome] [--allow-insecure] [--scroll] [--manual] [--auto-pager] [--poke] [--file FILE]
 
     Convert URLs into Markdown links with page titles filled in
 
@@ -1868,7 +1868,7 @@ markdown_links="""usage: library markdown-links URL ... [--cookies COOKIES] [--c
         [Work For Peace](https://www.youtube.com/watch?v=IgZDDW-NXDE)
 """
 
-mount_stats="""library mount-stats MOUNTPOINT ...
+mount_stats = """library mount-stats MOUNTPOINT ...
 
     Print relative use and free for multiple mount points
 """

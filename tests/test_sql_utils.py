@@ -1,6 +1,6 @@
 from types import SimpleNamespace
 
-from xklb.scripts import mcda
+from xklb.tablefiles import mcda
 from xklb.utils.sql_utils import sort_like_sql
 
 data = [

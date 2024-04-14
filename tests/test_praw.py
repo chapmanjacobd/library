@@ -3,9 +3,9 @@ from argparse import Namespace
 from types import SimpleNamespace
 from unittest import mock, skip
 
+from xklb.createdb.reddit_add import reddit_add, reddit_update
 from xklb.lb import library as lb
 from xklb.play_actions import watch
-from xklb.reddit_extract import reddit_add, reddit_update
 from xklb.utils.db_utils import connect
 
 reddit_db = ["tests/data/reddit.db"]
@@ -17,7 +17,7 @@ class TestReddit(unittest.TestCase):
         reddit_add([*reddit_db, "--limit", "10", "https://old.reddit.com/user/BuonaparteII/"])
         reddit_add([*reddit_db, "--limit", "1", "https://old.reddit.com/r/pytest/"])
 
-    @mock.patch("xklb.media.media_player.single_player", return_value=SimpleNamespace(returncode=0))
+    @mock.patch("xklb.playback.media_player.single_player", return_value=SimpleNamespace(returncode=0))
     def test_lb_fs(self, play_mocked):
         sys.argv = ["wt", *reddit_db]
         watch()
