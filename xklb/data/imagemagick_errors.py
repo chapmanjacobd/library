@@ -21,6 +21,7 @@ unsupported_error = re.compile(
         r""".*unsupported
 .* not supported
 .* password
+.* no images defined
 .* bad magic number
 .*can not handle
 .* count
