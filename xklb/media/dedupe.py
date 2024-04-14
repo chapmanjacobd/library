@@ -84,7 +84,6 @@ def parse_args() -> argparse.Namespace:
 
     parser.set_defaults(limit="100")
 
-    parser.add_argument("--no-delete", "--soft-delete", "--mark-deleted", action="store_true")
     parser.add_argument("--dedupe-cmd", help=argparse.SUPPRESS)
     parser.add_argument("--force", "-f", action="store_true")
 
@@ -591,13 +590,14 @@ def dedupe_media() -> None:
         log.info("Deleting...")
         for d in duplicates:
             path = d["duplicate_path"]
-            if not path.startswith("http") and not args.no_delete:
-                if args.dedupe_cmd:
-                    processes.cmd(
-                        *shlex.split(args.dedupe_cmd), d["duplicate_path"], d["keep_path"]
-                    )  # follows rmlint interface
-                else:
-                    file_utils.trash(args, path, detach=False)
+            if path.startswith("http"):
+                pass
+            elif args.dedupe_cmd:
+                processes.cmd(
+                    *shlex.split(args.dedupe_cmd), d["duplicate_path"], d["keep_path"]
+                )  # follows rmlint interface
+            else:
+                file_utils.trash(args, path, detach=False)
             db_media.mark_media_deleted(args, path)
 
 
