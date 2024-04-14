@@ -194,8 +194,6 @@ def play(action) -> str:
         echo 'playlist-next force' | socat - /tmp/mpv_socket
 
     Override the default player (mpv):
-        library does a lot of things to try to automatically use your preferred media player
-        but if it doesn't guess right you can make it explicit:
         library {action} --player "vlc --vlc-opts"
 
     Cast to chromecast groups:

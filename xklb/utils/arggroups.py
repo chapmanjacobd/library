@@ -43,17 +43,17 @@ def paths_or_stdin(parser):
 
 
 def sql_fs(parser):
-    parser.add_argument("--print", "-p", default="", const="p", nargs="?", help=argparse.SUPPRESS)
+    parser.add_argument("--print", "-p", default="", const="p", nargs="?")
     parser.add_argument("--cols", "--col", nargs="*", help="Include specific column(s) when printing")
 
-    parser.add_argument("--limit", "--queue", "--count", "-n", "-L", "-l", help=argparse.SUPPRESS)
+    parser.add_argument("--limit", "--queue", "--count", "-n", "-L", "-l")
     parser.add_argument("--offset", help=argparse.SUPPRESS)
-    parser.add_argument("--sort", "-u", nargs="+", help=argparse.SUPPRESS)
-    parser.add_argument("--random", "-r", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--sort", "-u", nargs="+")
+    parser.add_argument("--random", "-r", action="store_true")
 
-    parser.add_argument("--where", "-w", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
-    parser.add_argument("--include", "--search", "-s", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
-    parser.add_argument("--exclude", "-E", nargs="+", action="extend", default=[], help=argparse.SUPPRESS)
+    parser.add_argument("--where", "-w", nargs="+", action="extend", default=[])
+    parser.add_argument("--include", "--search", "-s", nargs="+", action="extend", default=[])
+    parser.add_argument("--exclude", "-E", nargs="+", action="extend", default=[])
     parser.add_argument("--exact", action="store_true")
     parser.add_argument("--flexible-search", "--or", "--flex", action="store_true")
     parser.add_argument("--no-fts", action="store_true")
@@ -67,12 +67,12 @@ def sql_fs(parser):
         help="Only include files of specific sizes (uses the same syntax as fd-find)",
     )
 
-    parser.add_argument("--created-within", help=argparse.SUPPRESS)
-    parser.add_argument("--created-before", help=argparse.SUPPRESS)
-    parser.add_argument("--changed-within", "--modified-within", help=argparse.SUPPRESS)
-    parser.add_argument("--changed-before", "--modified-before", help=argparse.SUPPRESS)
-    parser.add_argument("--deleted-within", help=argparse.SUPPRESS)
-    parser.add_argument("--deleted-before", help=argparse.SUPPRESS)
+    parser.add_argument("--created-within")
+    parser.add_argument("--created-before")
+    parser.add_argument("--changed-within", "--modified-within")
+    parser.add_argument("--changed-before", "--modified-before")
+    parser.add_argument("--deleted-within")
+    parser.add_argument("--deleted-before")
     parser.add_argument("--downloaded-within", help=argparse.SUPPRESS)
     parser.add_argument("--downloaded-before", help=argparse.SUPPRESS)
     parser.add_argument("--played-within", help=argparse.SUPPRESS)
@@ -80,11 +80,11 @@ def sql_fs(parser):
 
 
 def sql_media(parser):
-    parser.add_argument("--online-media-only", "--online", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--local-media-only", "--local", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--online-media-only", "--online", action="store_true")
+    parser.add_argument("--local-media-only", "--local", action="store_true")
 
-    parser.add_argument("--no-video", "-vn", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--no-audio", "-an", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--no-video", "-vn", action="store_true")
+    parser.add_argument("--no-audio", "-an", action="store_true")
     parser.add_argument(
         "--no-subtitles",
         "--no-subtitle",
@@ -94,26 +94,26 @@ def sql_media(parser):
         action="store_true",
         help=argparse.SUPPRESS,
     )
-    parser.add_argument("--subtitles", "--subtitle", "-sy", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--subtitles", "--subtitle", "-sy", action="store_true")
 
-    parser.add_argument("--duration", "-d", action="append", help=argparse.SUPPRESS)
+    parser.add_argument("--duration", "-d", action="append")
     parser.add_argument("--duration-from-size", action="append", help=argparse.SUPPRESS)
 
-    parser.add_argument("--portrait", "-portrait", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--portrait", action="store_true")
 
 
 def playback(parser):
-    parser.add_argument("--crop", "--zoom", "--stretch", "--fit", "--fill", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--loop", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--pause", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--start", "-vs", help=argparse.SUPPRESS)
-    parser.add_argument("--end", "-ve", help=argparse.SUPPRESS)
+    parser.add_argument("--crop", "--zoom", "--stretch", "--fit", "--fill", action="store_true")
+    parser.add_argument("--loop", action="store_true")
+    parser.add_argument("--pause", action="store_true")
+    parser.add_argument("--start", "-vs")
+    parser.add_argument("--end", "-ve")
     parser.add_argument("--volume", type=float)
 
-    parser.add_argument("--mpv-socket", help=argparse.SUPPRESS)
+    parser.add_argument("--mpv-socket")
     parser.add_argument("--auto-seek", action="store_true")
 
-    parser.add_argument("--override-player", "--player", help=argparse.SUPPRESS)
+    parser.add_argument("--override-player", "--player")
     parser.add_argument(
         "--ignore-errors",
         "--ignoreerrors",
@@ -135,10 +135,10 @@ def playback(parser):
 
 
 def post_actions(parser):
-    parser.add_argument("--exit-code-confirm", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--exit-code-confirm", action="store_true")
     parser.add_argument("--gui", action="store_true")
-    parser.add_argument("--keep-dir", "--keepdir", help=argparse.SUPPRESS)
-    parser.add_argument("--post-action", "--action", "-k", default="keep", help=argparse.SUPPRESS)
+    parser.add_argument("--keep-dir", "--keepdir")
+    parser.add_argument("--post-action", "--action", "-k", default="keep")
 
 
 def multiple_playback(parser):
@@ -149,11 +149,10 @@ def multiple_playback(parser):
         nargs="?",
         const=consts.DEFAULT_MULTIPLE_PLAYBACK,
         type=int,
-        help=argparse.SUPPRESS,
     )
-    parser.add_argument("--screen-name", help=argparse.SUPPRESS)
-    parser.add_argument("--hstack", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--vstack", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--screen-name")
+    parser.add_argument("--hstack", action="store_true")
+    parser.add_argument("--vstack", action="store_true")
 
 
 def extractor(parser):
@@ -203,7 +202,7 @@ def operation_cluster(parser):
 
 
 def operation_related(parser):
-    parser.add_argument("--related", "-R", action="count", default=0, help=argparse.SUPPRESS)
+    parser.add_argument("--related", "-R", action="count", default=0)
 
 
 def capability_clobber(parser):
