@@ -10,8 +10,7 @@ from xklb import db_media, db_playlists, usage
 from xklb.createdb import av
 from xklb.files import sample_hash
 from xklb.mediadb import playlists
-from xklb.mediafiles.process_ffmpeg import process_ffmpeg
-from xklb.mediafiles.process_image import process_image
+from xklb.mediafiles import process_ffmpeg, process_image
 from xklb.utils import (
     arg_utils,
     arggroups,

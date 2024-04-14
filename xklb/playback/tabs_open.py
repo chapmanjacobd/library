@@ -160,7 +160,7 @@ def tabs_open() -> None:
 
     query, bindings = construct_tabs_query(args)
 
-    if args.print:
+    if args.print or args.delete_rows or args.mark_deleted or args.mark_watched:
         media_printer.printer(args, query, bindings)
         return
 
