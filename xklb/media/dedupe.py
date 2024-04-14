@@ -18,6 +18,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="library dedupe-media", usage=usage.dedupe_media)
 
     arggroups.sql_fs(parser)
+    arggroups.sql_media(parser)
 
     profile = parser.add_mutually_exclusive_group()
     profile.add_argument(
@@ -59,6 +60,7 @@ def parse_args() -> argparse.Namespace:
     profile.add_argument(
         "--filesystem",
         "--fs",
+        "--hash",
         action="store_const",
         dest="profile",
         const=DBType.filesystem,
