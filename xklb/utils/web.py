@@ -234,7 +234,7 @@ def load_selenium(args, wire=False):
     else:
         from selenium import webdriver
 
-    xvfb = None
+    xvfb = None  # three states
     if args.verbose < consts.LOG_DEBUG and not getattr(args, "manual", False):
         xvfb = False
         try:
@@ -246,7 +246,9 @@ def load_selenium(args, wire=False):
         except Exception:
             pass
 
-    if which("firefox") and not getattr(args, "chrome", False):
+    if (which("firefox") or which("firefox.exe") or getattr(args, "firefox", False)) and not getattr(
+        args, "chrome", False
+    ):
         from selenium.webdriver.firefox.options import Options
         from selenium.webdriver.firefox.service import Service
 

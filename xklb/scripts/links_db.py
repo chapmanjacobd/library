@@ -27,6 +27,8 @@ def parse_args(**kwargs):
     parser.add_argument("--page-step", "--step", "-S", type=int, default=1)
     parser.add_argument("--page-start", "--start-page", "--start", type=int)
 
+    parser.add_argument("--local-file", "--local-html", action="store_true", help="Treat paths as Local HTML files")
+
     arggroups.filter_links(parser)
 
     arggroups.requests(parser)

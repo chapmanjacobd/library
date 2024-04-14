@@ -356,7 +356,8 @@ def requests(parser):
 
 
 def selenium(parser):
-    parser.add_argument("--selenium", "--js", "--firefox", action="store_true")
+    parser.add_argument("--selenium", "--js", action="store_true")
+    parser.add_argument("--firefox", action="store_true")
     parser.add_argument("--chrome", action="store_true")
     parser.add_argument("--scroll", action="store_true", help="Scroll down the page; infinite scroll")
     parser.add_argument("--manual", action="store_true", help="Confirm manually in shell before exiting the browser")
