@@ -3,7 +3,7 @@ from unittest import mock
 from xklb.lb import library as lb
 
 
-@mock.patch("xklb.media.media_printer.media_printer")
+@mock.patch("xklb.media_printer.media_printer")
 def test_fsupdate_parentpath_first(mocked, temp_db):
     db1 = temp_db()
     lb(["fsadd", db1, "tests/"])
@@ -15,7 +15,7 @@ def test_fsupdate_parentpath_first(mocked, temp_db):
     assert out[0]["path"].endswith("tests")
 
 
-@mock.patch("xklb.media.media_printer.media_printer")
+@mock.patch("xklb.media_printer.media_printer")
 def test_fsupdate_subpath_first(mocked, temp_db):
     db1 = temp_db()
     lb(["fsadd", db1, "tests/data/"])
@@ -27,7 +27,7 @@ def test_fsupdate_subpath_first(mocked, temp_db):
     assert out[0]["path"].endswith("tests")
 
 
-@mock.patch("xklb.media.media_printer.media_printer")
+@mock.patch("xklb.media_printer.media_printer")
 def test_fsupdate_multi(mocked, temp_db):
     db1 = temp_db()
     lb(["fsadd", "--fs", db1, "tests/data/", "tests/scripts/"])

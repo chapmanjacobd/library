@@ -5,7 +5,7 @@ from unittest import mock
 import pytest
 
 from tests import utils
-from xklb.scripts import scatter
+from xklb.folders import scatter
 from xklb.utils import consts, db_utils, iterables, mpv_utils, nums, objects, path_utils, printing, sql_utils, strings
 
 

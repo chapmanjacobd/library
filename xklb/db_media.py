@@ -5,7 +5,7 @@ from pathlib import Path
 
 from dateutil import parser
 
-from xklb import fs_extract
+from xklb.createdb import fs_add
 from xklb.utils import consts, db_utils, iterables, nums, objects, processes, strings
 from xklb.utils.consts import DBType
 from xklb.utils.log_utils import log
@@ -248,9 +248,9 @@ def download_add(
             delete_unplayable=False,
             check_corrupt=False,
         )
-        fs_tags = fs_extract.extract_metadata(fs_args, local_path)
+        fs_tags = fs_add.extract_metadata(fs_args, local_path)
         fs_tags = objects.dict_filter_bool(fs_tags, keep_0=False) or {}
-        fs_extract.clean_up_temp_dirs()
+        fs_add.clean_up_temp_dirs()
     else:
         fs_tags = {"time_modified": consts.now()}
 

@@ -2,8 +2,8 @@ import sys
 from types import SimpleNamespace
 from unittest import mock
 
-from xklb.dl_extract import dl_download
 from xklb.lb import library as lb
+from xklb.mediadb.download import dl_download
 from xklb.play_actions import watch
 from xklb.tube_extract import tube_add, tube_update
 
@@ -42,7 +42,7 @@ def test_tw_print(capsys):
 
 
 class TestTube:
-    @mock.patch("xklb.media.media_player.single_player", return_value=SimpleNamespace(returncode=0))
+    @mock.patch("xklb.playback.media_player.single_player", return_value=SimpleNamespace(returncode=0))
     def test_lb_fs(self, play_mocked):
         for SC in ("tubewatch", "tw"):
             lb([SC, tube_db])
@@ -60,28 +60,28 @@ class TestTube:
         assert out["title"] == "Most Epic Video About Nothing"
         assert out["size"] == 4797012
 
-    @mock.patch("xklb.media.media_player.single_player", return_value=SimpleNamespace(returncode=0))
+    @mock.patch("xklb.playback.media_player.single_player", return_value=SimpleNamespace(returncode=0))
     def test_tw_search(self, play_mocked):
         sys.argv = ["tw", tube_db, "-s", "nothing"]
         watch()
         out = play_mocked.call_args[0][1]
         assert out is not None
 
-    @mock.patch("xklb.media.media_player.single_player", return_value=SimpleNamespace(returncode=0))
+    @mock.patch("xklb.playback.media_player.single_player", return_value=SimpleNamespace(returncode=0))
     def test_tw_sort(self, play_mocked):
         sys.argv = ["tw", tube_db, "-u", "duration"]
         watch()
         out = play_mocked.call_args[0][1]
         assert out is not None
 
-    @mock.patch("xklb.media.media_player.single_player", return_value=SimpleNamespace(returncode=0))
+    @mock.patch("xklb.playback.media_player.single_player", return_value=SimpleNamespace(returncode=0))
     def test_tw_size(self, play_mocked):
         sys.argv = ["tw", tube_db, "--size", "+1"]  # more than 1MB
         watch()
         out = play_mocked.call_args[0][1]
         assert out is not None
 
-    @mock.patch("xklb.tube_backend.get_playlist_metadata")
+    @mock.patch("xklb.createdb.tube_backend.get_playlist_metadata")
     def test_tubeupdate(self, play_mocked):
         tube_update([tube_db, "--extractor-config", "TEST2=4 TEST3=3"])
         assert play_mocked.call_args is None
@@ -93,8 +93,8 @@ class TestTube:
         assert out["TEST2"] == "4"
         assert out["TEST3"] == "3"
 
-    @mock.patch("xklb.tube_backend.download")
-    @mock.patch("xklb.tube_backend.get_playlist_metadata")
+    @mock.patch("xklb.createdb.tube_backend.download")
+    @mock.patch("xklb.createdb.tube_backend.get_playlist_metadata")
     def test_tube_dl_conversion(self, get_playlist_metadata, download):
         PLAYLIST_URL = "https://youtube.com/playlist?list=PLVoczRgDnXDLWV1UJ_tO70VT_ON0tuEdm"
         PLAYLIST_VIDEO_URL = "https://www.youtube.com/watch?v=QoXubRvB6tQ"

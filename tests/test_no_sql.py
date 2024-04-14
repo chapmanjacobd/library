@@ -1,4 +1,4 @@
-from xklb.site_extract import nosql_to_sql
+from xklb.createdb.site_add import nosql_to_sql
 
 
 def test_tables():

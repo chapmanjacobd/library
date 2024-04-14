@@ -106,5 +106,3 @@ def get_mount_stats(src_mounts) -> list[dict[str, str | int]]:
         {"mount": mount, "used": used / total_used, "free": free / total_free, "total": total / grand_total}
         for mount, used, free, total in mount_space
     ]
-
-

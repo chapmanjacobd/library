@@ -2,7 +2,7 @@ import argparse, time
 from pathlib import Path
 from urllib.parse import urljoin
 
-from xklb.media import media_check
+from xklb.mediafiles import media_check
 from xklb.utils import arggroups, file_utils, path_utils, processes, web
 
 
