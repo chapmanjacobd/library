@@ -1,6 +1,5 @@
-import argparse, os, platform, random, shutil, sys
+import os, platform, random, shutil, sys
 
-from xklb.utils import arggroups
 from xklb.utils.log_utils import log
 
 
@@ -109,19 +108,3 @@ def get_mount_stats(src_mounts) -> list[dict[str, str | int]]:
     ]
 
 
-def mount_stats() -> None:
-    parser = argparse.ArgumentParser(add_help=False)
-    arggroups.debug(parser)
-
-    parser.add_argument("mounts", nargs="+")
-    args = parser.parse_args()
-
-    space = get_mount_stats(args.mounts)
-
-    print("Relative disk dependence:")
-    for d in space:
-        print(f"{d['mount']}: {'#' * int(d['used'] * 80)} {d['used']:.1%}")
-
-    print("\nRelative free space:")
-    for d in space:
-        print(f"{d['mount']}: {'#' * int(d['free'] * 80)} {d['free']:.1%}")

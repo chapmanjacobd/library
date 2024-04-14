@@ -8,20 +8,20 @@ from xklb.utils.log_utils import log
 
 progs = {
     "Create database subcommands": {
-        "fsadd": "Add local media",
-        "tubeadd": "Add online video media (yt-dlp)",
-        "webadd": "Add open-directory media",
-        "galleryadd": "Add online gallery media (gallery-dl)",
-        "tabsadd": "Create a tabs database; Add URLs",
+        "fs_add": "Add local media",
+        "tube_add": "Add online video media (yt-dlp)",
+        "web_add": "Add open-directory media",
+        "gallery_add": "Add online gallery media (gallery-dl)",
+        "tabs_add": "Create a tabs database; Add URLs",
         "links_add": "Create a link-scraping database",
-        "siteadd": "Auto-scrape website data to SQLITE",
-        "redditadd": "Create a reddit database; Add subreddits",
+        "site_add": "Auto-scrape website data to SQLITE",
+        "reddit_add": "Create a reddit database; Add subreddits",
         "pushshift": "Convert pushshift data to reddit.db format (stdin)",
-        "hnadd": "Create / Update a Hacker News database",
+        "hn_add": "Create / Update a Hacker News database",
         "substack": "Backup substack articles",
         "tildes": "Backup tildes comments and topics",
         "places_import": "Import places of interest (POIs)",
-        "add_row": "Add arbitrary data to SQLITE",
+        "row_add": "Add arbitrary data to SQLITE",
     },
     "Text subcommands": {
         "cluster_sort": "Sort text and images by similarity",
@@ -89,12 +89,12 @@ progs = {
         "tabs_shuffle": "Randomize tabs.db a bit",
     },
     "Update database subcommands": {
-        "fsupdate": "Update local media",
-        "tubeupdate": "Update online video media",
-        "webupdate": "Update open-directory media",
-        "galleryupdate": "Update online gallery media",
+        "fs_update": "Update local media",
+        "tube_update": "Update online video media",
+        "web_update": "Update open-directory media",
+        "gallery_update": "Update online gallery media",
         "links_update": "Update a link-scraping database",
-        "redditupdate": "Update reddit media",
+        "reddit_update": "Update reddit media",
     },
     "Misc subcommands": {
         "export_text": "Export HTML files from SQLite databases",
@@ -185,7 +185,7 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     add_parser(subparsers, "xklb.play_actions.watch", ["wt", "tubewatch", "tw", "entries"])
     add_parser(subparsers, "xklb.reddit_extract.reddit_add", ["ra"])
     add_parser(subparsers, "xklb.reddit_extract.reddit_update", ["ru"])
-    add_parser(subparsers, "xklb.scripts.add_row.add_row")
+    add_parser(subparsers, "xklb.scripts.row_add.row_add", ['add_row'])
     add_parser(subparsers, "xklb.scripts.big_dirs.big_dirs", ["large-folders"])
     add_parser(subparsers, "xklb.scripts.block.block")
     add_parser(subparsers, "xklb.scripts.christen.christen")
@@ -215,6 +215,7 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     add_parser(subparsers, "xklb.scripts.mining.substack.substack")
     add_parser(subparsers, "xklb.scripts.mining.tildes.tildes")
     add_parser(subparsers, "xklb.scripts.move_list.move_list", ["mv-list"])
+    add_parser(subparsers, "xklb.scripts.mount_stats.mount_stats", ["mu", "mount-usage"])
     add_parser(subparsers, "xklb.scripts.open_links.open_links", ["links-open"])
     add_parser(subparsers, "xklb.scripts.optimize_db.optimize_db", ["optimize"])
     add_parser(subparsers, "xklb.scripts.places_import.places_import")
@@ -233,7 +234,7 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     add_parser(subparsers, "xklb.scripts.search_db.search_db", ["s", "sdb", "search-dbs"])
     add_parser(subparsers, "xklb.scripts.streaming_tab_loader.streaming_tab_loader", ["surf"])
     add_parser(subparsers, "xklb.scripts.web_add.web_add", ["web-dir-add"])
-    add_parser(subparsers, "xklb.scripts.web_update.web_update", ["web-dir-update"])
+    add_parser(subparsers, "xklb.scripts.web_add.web_update", ["web-dir-update"])
     add_parser(subparsers, "xklb.search.search", ["sc", "search-captions"])
     add_parser(subparsers, "xklb.site_extract.site_add", ["sa", "sql-site", "site-sql"])
     add_parser(subparsers, "xklb.tabs_actions.tabs", ["tb"])
@@ -241,7 +242,6 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     add_parser(subparsers, "xklb.tabs_extract.tabs_shuffle")
     add_parser(subparsers, "xklb.tube_extract.tube_add", ["ta", "dladd", "da"])
     add_parser(subparsers, "xklb.tube_extract.tube_update", ["dlupdate", "tu"])
-    add_parser(subparsers, "xklb.utils.devices.mount_stats", ["mu", "mount-usage"])
 
     parser.add_argument("--version", "-V", action="store_true")
 

@@ -9,7 +9,7 @@ from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(prog="library tabsadd", usage=usage.tabsadd)
+    parser = argparse.ArgumentParser(prog="library tabs-add", usage=usage.tabs_add)
     arggroups.extractor(parser)
     arggroups.frequency(parser)
 

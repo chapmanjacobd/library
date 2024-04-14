@@ -5,7 +5,7 @@ from pathlib import Path
 import humanize
 from screeninfo import get_monitors
 
-from xklb import post_actions
+from xklb import post_actions, usage
 from xklb.media import media_player
 from xklb.utils import arggroups, consts, devices, file_utils, iterables, mpv_utils, processes
 from xklb.utils.log_utils import log
@@ -15,7 +15,7 @@ right_mpv_socket = str(Path(consts.TEMP_SCRIPT_DIR) / f"mpv_socket_{consts.rando
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Choose which duplicate to keep by opening both side-by-side in mpv")
+    parser = argparse.ArgumentParser(usage.dedupe_czkawka)
     arggroups.playback(parser)
     arggroups.capability_clobber(parser)
     arggroups.capability_delete(parser)

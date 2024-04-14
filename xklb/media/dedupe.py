@@ -103,7 +103,7 @@ def parse_args() -> argparse.Namespace:
     args = parser.parse_intermixed_args()
     args.db = db_utils.connect(args)
 
-    args.action = consts.SC.dedupe
+    args.action = consts.SC.dedupe_media
 
     args.sort = "\n        , ".join(filter(bool, args.sort))
     args.sort = args.sort.replace(",,", ",")

@@ -24,12 +24,11 @@ def parse_args() -> argparse.Namespace:
 
     parser.set_defaults(print="p")
 
-    parser.add_argument("--action", default="search", help=argparse.SUPPRESS)
-
     arggroups.debug(parser)
     arggroups.database(parser)
     parser.add_argument("search", nargs="*")
     args = parser.parse_intermixed_args()
+    args.action = 'search'
 
     args.include += args.search
 

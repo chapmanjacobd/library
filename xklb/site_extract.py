@@ -9,7 +9,7 @@ from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(prog="library site-add", usage=usage.siteadd)
+    parser = argparse.ArgumentParser(prog="library site-add", usage=usage.site_add)
     arggroups.selenium(parser)
     parser.set_defaults(selenium=True)
 

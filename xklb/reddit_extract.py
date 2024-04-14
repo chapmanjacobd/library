@@ -295,7 +295,7 @@ def reddit_add(args=None) -> None:
     if args:
         sys.argv = ["lb", *args]
 
-    args = parse_args("redditadd", usage=usage.redditadd)
+    args = parse_args("reddit_add", usage=usage.reddit_add)
 
     for path in args.paths:
         path = path.lower()
@@ -352,7 +352,7 @@ def reddit_update(args=None) -> None:
     if args:
         sys.argv = ["lb", *args]
 
-    args = parse_args("redditupdate", usage=usage.redditupdate)
+    args = parse_args("reddit-update", usage=usage.reddit_update)
     reddit_playlists = db_playlists.get_all(
         args,
         "extractor_key, path, extractor_playlist_id, extractor_config",

@@ -46,7 +46,7 @@ def parse_args(action, usage):
     arggroups.debug(parser)
 
     arggroups.database(parser)
-    if action == SC.fsadd:
+    if action == SC.fs_add:
         parser.add_argument("paths", nargs="+")
     args = parser.parse_intermixed_args()
 
@@ -403,7 +403,7 @@ def fs_add(args=None) -> None:
     if args:
         sys.argv = ["lb", *args]
 
-    args, _parser = parse_args(SC.fsadd, usage.fsadd)
+    args, _parser = parse_args(SC.fs_add, usage.fs_add)
     extractor(args, args.paths)
 
 
@@ -411,7 +411,7 @@ def fs_update(args=None) -> None:
     if args:
         sys.argv = ["lb", *args]
 
-    args, parser = parse_args(SC.fsupdate, usage.fsupdate)
+    args, parser = parse_args(SC.fs_update, usage.fs_update)
 
     fs_playlists = list(
         args.db.query(

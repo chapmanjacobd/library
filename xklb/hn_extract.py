@@ -103,7 +103,7 @@ async def run(args, db_queue):
 
 
 def hacker_news_add() -> None:
-    args = parse_args(prog="library hnadd", usage=usage.hnadd)
+    args = parse_args(prog="library hnadd", usage=usage.hn_add)
     try:
         import aiohttp
     except ModuleNotFoundError:

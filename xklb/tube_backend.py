@@ -172,7 +172,7 @@ def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True) -> 
         if added_media_count > count_before_extract:
             sys.stdout.write("\n")
 
-        if args.action == consts.SC.tubeupdate:
+        if args.action == consts.SC.tube_update:
             if added_media_count > count_before_extract:
                 db_playlists.decrease_update_delay(args, playlist_path)
             else:
