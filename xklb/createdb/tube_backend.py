@@ -521,5 +521,5 @@ def download(args, m) -> None:
         raise SystemExit(28)
     else:
         log.error("[%s]: Unknown error. %s", webpath, ydl_errors_txt)
-        pprint([yt_meaningless_errors.match(line) for line in ydl_full_log])
+        pprint(ydl_full_log)
         db_media.download_add(args, webpath, info, local_path, error=ydl_errors_txt)
