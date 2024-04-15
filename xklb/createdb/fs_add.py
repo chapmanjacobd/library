@@ -228,7 +228,12 @@ def pop_substring_keys(e, key_substring):
 
 
 def munge_image_tags(m: dict, e: dict) -> dict:
-    chroma_subsample = int((e.pop("File:YCbCrSubSampling", None) or "0").replace(" ", ""))
+    chroma_subsample = nums.safe_int(
+        iterables.safe_unpack(
+            e.pop("File:YCbCrSubSampling", None),
+            *pop_substring_keys(e, "YCbCrSubSampling"),
+        )
+    )
     if chroma_subsample == 0:
         chroma_subsample = None
 
@@ -313,6 +318,11 @@ def munge_image_tags(m: dict, e: dict) -> dict:
     }
 
     for s in (
+        "Offset",
+        "Pattern",
+        "SubSampling",
+        "Zoom",
+        "Gain",
         "FileNumber",
         "RedEye",
         "Conditional",
