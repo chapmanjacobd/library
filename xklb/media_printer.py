@@ -6,7 +6,7 @@ from pathlib import Path
 
 from tabulate import tabulate
 
-from xklb import history
+from xklb.mediadb import db_history
 from xklb.mediadb import db_media
 from xklb.playback import post_actions
 from xklb.utils import consts, db_utils, iterables, printing, processes, sql_utils, strings
@@ -164,7 +164,7 @@ def media_printer(args, data, units=None, media_len=None) -> None:
             log.warning(f"Marked {marked} metadata records as deleted")
 
         if getattr(args, "mark_watched", False) or "w" in print_args:
-            marked = history.add(args, [d["path"] for d in media])
+            marked = db_history.add(args, [d["path"] for d in media])
             log.warning(f"Marked {marked} metadata records as watched")
 
     if (

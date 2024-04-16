@@ -721,10 +721,10 @@ history = """library history [--frequency daily weekly (monthly) yearly] [--limi
     Delete history
 
         Delete two hours of history
-        $ library history web_add.image.db --played-within '2 hours' --delete-rows
+        $ library history web_add.image.db --played-within '2 hours' -L inf --delete-rows
 
         Delete all history
-        $ library history web_add.image.db --delete-rows
+        $ library history web_add.image.db -L inf --delete-rows
 
     See also: library stats -h
 """

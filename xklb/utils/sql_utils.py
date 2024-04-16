@@ -216,6 +216,12 @@ def filter_time_played(args):
         played_within = nums.sql_human_time(played_within)
         sql.append(f"and h.time_played >= cast(STRFTIME('%s', datetime( 'now', '-{played_within}')) as int)")
 
+    return " ".join(sql)
+
+
+def filter_play_count(args):
+    sql = []
+
     if getattr(args, "completed", False):
         sql.append("and coalesce(play_count, 0)>0")
     if getattr(args, "in_progress", False):
@@ -224,7 +230,7 @@ def filter_time_played(args):
     return " ".join(sql)
 
 
-def historical_usage(args, freq="monthly", time_column="time_played", hide_deleted=False, where=None):
+def historical_usage(args, freq="monthly", time_column="time_played", hide_deleted=False):
     freq_label, freq_sql = frequency_time_to_sql(freq, time_column)
     m_columns = args.db["media"].columns_dict
     h_columns = args.db["history"].columns_dict
@@ -251,7 +257,8 @@ def historical_usage(args, freq="monthly", time_column="time_played", hide_delet
             {', AVG(size) AS avg_size' if 'size' in m_columns else ''}
             , count(*) as count
         FROM m
-        WHERE {time_column}>0 {where or ''}
+        WHERE {time_column}>0
+            {filter_play_count(args)}
         GROUP BY {freq_label}
     """
 

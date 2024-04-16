@@ -4,7 +4,7 @@ import pandas, pytest  # noqa: pandas needs to be imported before freezegun beca
 from freezegun import freeze_time
 
 from tests.utils import connect_db_args
-from xklb import history
+from xklb.mediadb import db_history
 from xklb.lb import library as lb
 from xklb.playback import tabs_open
 from xklb.utils import consts
@@ -47,7 +47,7 @@ def test_simple(play_mocked, temp_db):
         assert out["time_valid"] > 100000
 
         args = connect_db_args(db1)
-        history.add(args, [TEST_URL], time_played=consts.today_stamp(), mark_done=True)
+        db_history.add(args, [TEST_URL], time_played=consts.today_stamp(), mark_done=True)
         with pytest.raises(SystemExit):  # it should not be available until the week after
             lb(["tabs", db1])
 
@@ -72,7 +72,7 @@ def test_immediate(play_mocked, temp_db):
         }
 
         args = connect_db_args(db1)
-        history.add(args, [TEST_URL], time_played=consts.today_stamp(), mark_done=True)
+        db_history.add(args, [TEST_URL], time_played=consts.today_stamp(), mark_done=True)
         with pytest.raises(SystemExit):  # it should not be available until the month after
             lb(["tabs", db1])
 

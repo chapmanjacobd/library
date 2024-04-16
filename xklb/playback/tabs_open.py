@@ -2,7 +2,8 @@ import argparse, math, webbrowser
 from pathlib import Path
 from time import sleep
 
-from xklb import history, media_printer, usage
+from xklb import media_printer, usage
+from xklb.mediadb import db_history
 from xklb.utils import arg_utils, arggroups, consts, db_utils, iterables, objects, processes
 from xklb.utils.log_utils import log
 
@@ -132,7 +133,7 @@ def play(args, m: dict) -> None:
     media_file = m["path"]
 
     webbrowser.open(media_file, 2, autoraise=False)
-    history.add(args, [media_file], time_played=consts.today_stamp(), mark_done=True)
+    db_history.add(args, [media_file], time_played=consts.today_stamp(), mark_done=True)
 
 
 def frequency_filter(counts, media: list[dict]) -> list[dict]:
@@ -156,7 +157,7 @@ def frequency_filter(counts, media: list[dict]) -> list[dict]:
 
 def tabs_open() -> None:
     args = parse_args(consts.SC.tabs_open)
-    history.create(args)
+    db_history.create(args)
 
     query, bindings = construct_tabs_query(args)
 

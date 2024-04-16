@@ -1,8 +1,9 @@
 import argparse
 from pathlib import Path
 
-from xklb import history, usage
+from xklb import usage
 from xklb.editdb import dedupe_db
+from xklb.mediadb import db_history
 from xklb.utils import arggroups, db_utils, objects
 from xklb.utils.log_utils import log
 
@@ -50,7 +51,7 @@ def copy_play_count(args, source_db) -> None:
     log.info(len(copy_counts))
     for d in copy_counts:
         renamed_path = d["path"].replace(args.source_prefix, args.target_prefix, 1)
-        history.add(
+        db_history.add(
             args,
             [renamed_path],
             time_played=d.get("time_played"),
@@ -61,7 +62,7 @@ def copy_play_count(args, source_db) -> None:
 
 def copy_play_counts() -> None:
     args = parse_args()
-    history.create(args)
+    db_history.create(args)
     for s_db in args.source_dbs:
         copy_play_count(args, s_db)
     dedupe_db.dedupe_rows(args, "history", ["id"], ["media_id", "time_played"])
