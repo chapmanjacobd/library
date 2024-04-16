@@ -6,7 +6,8 @@ from time import sleep
 from bs4 import BeautifulSoup
 from dateutil import parser
 
-from xklb import db_media, usage
+from xklb import usage
+from xklb.mediadb import db_media
 from xklb.utils import arggroups, db_utils, nums, objects, web
 from xklb.utils.log_utils import log
 

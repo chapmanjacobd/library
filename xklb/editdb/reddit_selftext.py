@@ -1,7 +1,8 @@
 import argparse, html
 from urllib.parse import urlparse
 
-from xklb import db_media, usage
+from xklb import usage
+from xklb.mediadb import db_media
 from xklb.utils import arggroups, db_utils, log_utils, objects
 from xklb.utils.log_utils import log
 

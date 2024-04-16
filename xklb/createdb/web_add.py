@@ -2,9 +2,10 @@ import argparse, json, random, sys, time
 from pathlib import Path
 from urllib.parse import urlparse
 
-from xklb import db_media, db_playlists, usage
+from xklb import usage
 from xklb.createdb import av, fs_add
 from xklb.files import sample_hash
+from xklb.mediadb import db_media, db_playlists
 from xklb.text import extract_links
 from xklb.utils import arg_utils, arggroups, consts, db_utils, file_utils, iterables, objects, printing, strings, web
 from xklb.utils.consts import SC, DBType

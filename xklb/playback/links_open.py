@@ -2,7 +2,8 @@ import argparse, shlex, webbrowser
 from pathlib import Path
 from time import sleep
 
-from xklb import db_media, history, media_printer, usage
+from xklb import history, media_printer, usage
+from xklb.mediadb import db_media
 from xklb.utils import arg_utils, arggroups, consts, db_utils, iterables, objects, processes, web
 from xklb.utils.log_utils import log
 

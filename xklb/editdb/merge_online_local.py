@@ -1,7 +1,8 @@
 import argparse, os
 from copy import deepcopy
 
-from xklb import db_media, media_printer, usage
+from xklb import media_printer, usage
+from xklb.mediadb import db_media
 from xklb.utils import arggroups, consts, db_utils, devices, objects
 from xklb.utils.log_utils import log
 

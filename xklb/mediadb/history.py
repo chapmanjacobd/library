@@ -92,8 +92,8 @@ def recent_media(args, time_column):
 
 
 def remove_duplicate_data(tbl):
-    if all(d["play_count"] == 1 for d in tbl):
-        for d in tbl:
+    for d in tbl:
+        if d["play_count"] == 1:
             del d["time_first_played"]
 
 

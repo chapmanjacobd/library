@@ -1,8 +1,9 @@
 import argparse, sys
 from pathlib import Path
 
-from xklb import db_media, db_playlists, usage
+from xklb import usage
 from xklb.createdb import gallery_backend
+from xklb.mediadb import db_media, db_playlists
 from xklb.utils import arggroups, argparse_utils, consts, db_utils, iterables, objects, path_utils, processes
 from xklb.utils.consts import SC
 from xklb.utils.log_utils import log

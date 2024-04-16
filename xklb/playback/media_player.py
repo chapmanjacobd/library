@@ -7,8 +7,9 @@ from random import randrange
 from shutil import which
 from time import sleep
 
-from xklb import db_media, history
+from xklb import history
 from xklb.createdb import subtitle
+from xklb.mediadb import db_media
 from xklb.playback import playback_control, post_actions
 from xklb.utils import consts, db_utils, devices, iterables, log_utils, mpv_utils, path_utils, processes
 from xklb.utils.consts import SC

@@ -1,9 +1,10 @@
 import argparse, os, shlex, sys
 from pathlib import Path
 
-from xklb import db_media, history, media_printer, usage
+from xklb import history, media_printer, usage
 from xklb.createdb import tube_backend
 from xklb.fsdb import big_dirs
+from xklb.mediadb import db_media
 from xklb.playback import media_player
 from xklb.tablefiles import mcda
 from xklb.utils import arggroups, consts, db_utils, devices, file_utils, iterables, nums, objects, processes, sql_utils

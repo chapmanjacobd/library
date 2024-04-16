@@ -8,7 +8,8 @@ from typing import TYPE_CHECKING, Any
 
 import prawcore
 
-from xklb import db_media, db_playlists, usage
+from xklb import usage
+from xklb.mediadb import db_media, db_playlists
 from xklb.utils import arggroups, consts, db_utils, iterables, objects
 from xklb.utils.log_utils import log
 

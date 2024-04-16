@@ -1,7 +1,8 @@
 import argparse
 from pathlib import Path
 
-from xklb import db_media, usage
+from xklb import usage
+from xklb.mediadb import db_media
 from xklb.utils import arggroups, consts, db_utils, nums, objects
 from xklb.utils.log_utils import log
 
