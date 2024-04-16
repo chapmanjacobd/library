@@ -149,8 +149,10 @@ def media_printer(args, data, units=None, media_len=None) -> None:
             marked = post_actions.delete_media(args, [d["path"] for d in media])
             log.warning(f"Deleted {marked} files")
 
-        if getattr(args, "delete_rows", False) or "d" in print_args:
-            args.db["media"].delete_where("path = ?", [d["path"] for d in media])
+        if getattr(args, "delete_rows", False) or "D" in print_args:
+            with args.db.conn:
+                for d in media:
+                    args.db["media"].delete_where("path = ?", [d["path"]])
             log.warning(f"Deleted {len(media)} rows")
 
         if "r" in print_args:

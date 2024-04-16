@@ -49,7 +49,8 @@ def add_to_blocklist(args, p):
 
 def remove_from_blocklist(args, p):
     p = p.pop()
-    args.db["blocklist"].delete([args.match_column, p])
+    with args.db.conn:
+        args.db["blocklist"].delete([args.match_column, p])
 
 
 def block(args=None) -> None:
