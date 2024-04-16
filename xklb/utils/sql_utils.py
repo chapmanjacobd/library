@@ -1,6 +1,6 @@
 import re
 
-from xklb.utils import db_utils
+from xklb.utils import db_utils, nums
 from xklb.utils.log_utils import log
 
 
@@ -205,6 +205,25 @@ def historical_usage_items(args, freq="monthly", time_column="time_modified", hi
     return list(args.db.query(query))
 
 
+def filter_time_played(args):
+    sql = []
+    played_before = args.played_before or args.created_before
+    played_within = args.played_within or args.created_within
+    if played_before:
+        played_before = nums.sql_human_time(played_before)
+        sql.append(f"and h.time_played < cast(STRFTIME('%s', datetime( 'now', '-{played_before}')) as int)")
+    if played_within:
+        played_within = nums.sql_human_time(played_within)
+        sql.append(f"and h.time_played >= cast(STRFTIME('%s', datetime( 'now', '-{played_within}')) as int)")
+
+    if getattr(args, "completed", False):
+        sql.append("and coalesce(play_count, 0)>0")
+    if getattr(args, "in_progress", False):
+        sql.append("and coalesce(play_count, 0)=0")
+
+    return " ".join(sql)
+
+
 def historical_usage(args, freq="monthly", time_column="time_played", hide_deleted=False, where=None):
     freq_label, freq_sql = frequency_time_to_sql(freq, time_column)
     m_columns = args.db["media"].columns_dict
@@ -220,6 +239,7 @@ def historical_usage(args, freq="monthly", time_column="time_played", hide_delet
             FROM media m
             JOIN history h on h.media_id = m.id
             WHERE 1=1
+            {filter_time_played(args)}
             {"AND COALESCE(time_deleted, 0)=0" if hide_deleted else ""}
             GROUP BY m.id, m.path
         )

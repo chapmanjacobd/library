@@ -1,3 +1,90 @@
+stats = """library stats DATABASE TIME_COLUMN
+
+    View watched stats
+
+        $ library stats video.db --completed
+        Finished watching:
+        ╒═══════════════╤═════════════════════════════════╤════════════════╤════════════╤════════════╕
+        │ time_period   │ duration_sum                    │ duration_avg   │ size_sum   │ size_avg   │
+        ╞═══════════════╪═════════════════════════════════╪════════════════╪════════════╪════════════╡
+        │ 2022-11       │ 4 days, 16 hours and 20 minutes │ 55.23 minutes  │ 26.3 GB    │ 215.9 MB   │
+        ├───────────────┼─────────────────────────────────┼────────────────┼────────────┼────────────┤
+        │ 2022-12       │ 23 hours and 20.03 minutes      │ 35.88 minutes  │ 8.3 GB     │ 213.8 MB   │
+        ├───────────────┼─────────────────────────────────┼────────────────┼────────────┼────────────┤
+        │ 2023-01       │ 17 hours and 3.32 minutes       │ 15.27 minutes  │ 14.3 GB    │ 214.1 MB   │
+        ├───────────────┼─────────────────────────────────┼────────────────┼────────────┼────────────┤
+        │ 2023-02       │ 4 days, 5 hours and 60 minutes  │ 23.17 minutes  │ 148.3 GB   │ 561.6 MB   │
+        ├───────────────┼─────────────────────────────────┼────────────────┼────────────┼────────────┤
+        │ 2023-03       │ 2 days, 18 hours and 18 minutes │ 11.20 minutes  │ 118.1 GB   │ 332.8 MB   │
+        ├───────────────┼─────────────────────────────────┼────────────────┼────────────┼────────────┤
+        │ 2023-05       │ 5 days, 5 hours and 4 minutes   │ 45.75 minutes  │ 152.9 GB   │ 932.1 MB   │
+        ╘═══════════════╧═════════════════════════════════╧════════════════╧════════════╧════════════╛
+
+    View download stats
+
+        $ library stats video.db time_downloaded --frequency daily
+        Downloaded media:
+        day         total_duration                          avg_duration                total_size    avg_size    count
+        ----------  --------------------------------------  ------------------------  ------------  ----------  -------
+        2023-08-11  1 month, 7 days and 8 hours             17 minutes                    192.2 GB     58.3 MB     3296
+        2023-08-12  18 days and 15 hours                    17 minutes                     89.7 GB     56.4 MB     1590
+        2023-08-14  13 days and 1 hours                     22 minutes                    111.2 GB    127.2 MB      874
+        2023-08-15  13 days and 6 hours                     17 minutes                    140.0 GB    126.7 MB     1105
+        2023-08-17  2 months, 8 days and 8 hours            19 minutes                    380.4 GB     72.6 MB     5243
+        2023-08-18  2 months, 30 days and 18 hours          17 minutes                    501.9 GB     63.3 MB     7926
+        2023-08-19  2 months, 6 days and 19 hours           19 minutes                    578.1 GB    110.6 MB     5229
+        2023-08-20  3 days and 9 hours                      6 minutes and 57 seconds       14.5 GB     20.7 MB      700
+        2023-08-21  4 days and 3 hours                      12 minutes                     18.0 GB     36.3 MB      495
+        2023-08-22  10 days and 8 hours                     17 minutes                     82.1 GB     91.7 MB      895
+        2023-08-23  19 days and 9 hours                     22 minutes                     93.7 GB     74.7 MB     1254
+
+        See also: library stats video.db time_downloaded -f daily --hide-deleted
+
+    View deleted stats
+
+        $ library stats video.db time_deleted
+        Deleted media:
+        ╒═══════════════╤════════════════════════════════════════════╤════════════════╤════════════╤════════════╕
+        │ time_period   │ duration_sum                               │ duration_avg   │ size_sum   │ size_avg   │
+        ╞═══════════════╪════════════════════════════════════════════╪════════════════╪════════════╪════════════╡
+        │ 2023-04       │ 1 year, 10 months, 3 days and 8 hours      │ 4.47 minutes   │ 1.6 TB     │ 7.4 MB     │
+        ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
+        │ 2023-05       │ 9 months, 26 days, 20 hours and 34 minutes │ 30.35 minutes  │ 1.1 TB     │ 73.7 MB    │
+        ╘═══════════════╧════════════════════════════════════════════╧════════════════╧════════════╧════════════╛
+        ╒════════════════════════════════════════════════════════════════════════════════════════════════════════════╤═══════════════╤══════════════════╤════════════════╕
+        │ title_path                                                                                                 │ duration      │   subtitle_count │ time_deleted   │
+        ╞════════════════════════════════════════════════════════════════════════════════════════════════════════════╪═══════════════╪══════════════════╪════════════════╡
+        │ Terminus (1987)                                                                                            │ 1 hour and    │                0 │ yesterday      │
+        │ /mnt/d/70_Now_Watching/Terminus_1987.mp4                                                                   │ 15.55 minutes │                  │                │
+        ├────────────────────────────────────────────────────────────────────────────────────────────────────────────┼───────────────┼──────────────────┼────────────────┤
+        │ Commodore 64 Longplay [062] The Transformers (EU) /mnt/d/71_Mealtime_Videos/Youtube/World_of_Longplays/Com │ 24.77 minutes │                2 │ yesterday      │
+        │ modore_64_Longplay_062_The_Transformers_EU_[1RRX7Kykb38].webm                                              │               │                  │                │
+        ...
+
+
+    View time_modified stats
+
+        $ library stats example_dbs/web_add.image.db time_modified -f year
+        Time_Modified media:
+        year      total_size    avg_size    count
+        ------  ------------  ----------  -------
+        2010         4.4 MiB     1.5 MiB        3
+        2011       136.2 MiB    68.1 MiB        2
+        2013         1.6 GiB    10.7 MiB      154
+        2014         4.6 GiB    25.2 MiB      187
+        2015         4.3 GiB    26.5 MiB      167
+        2016         5.1 GiB    46.8 MiB      112
+        2017         4.8 GiB    51.7 MiB       95
+        2018         5.3 GiB    97.9 MiB       55
+        2019         1.3 GiB    46.5 MiB       29
+        2020        25.7 GiB   113.5 MiB      232
+        2021        25.6 GiB    96.5 MiB      272
+        2022        14.6 GiB    82.7 MiB      181
+        2023        24.3 GiB    72.5 MiB      343
+        2024        17.3 GiB   104.8 MiB      169
+        14 media
+"""
+
 download = r"""library download [--prefix /mnt/d/] [--safe] [--subs] [--auto-subs] [--small] DATABASE --video | --audio | --photos
 
     Files will be saved to <lb download prefix>/<extractor>/. If prefix is not specified the current working directory will be used
@@ -615,129 +702,31 @@ search = """library search DATABASE QUERY
 
 history = """library history [--frequency daily weekly (monthly) yearly] [--limit LIMIT] DATABASE [(all) watching watched created modified deleted]
 
-    Explore history through different facets
+    View playback history
 
-        library history video.db watched
-        Finished watching:
-        ╒═══════════════╤═════════════════════════════════╤════════════════╤════════════╤════════════╕
-        │ time_period   │ duration_sum                    │ duration_avg   │ size_sum   │ size_avg   │
-        ╞═══════════════╪═════════════════════════════════╪════════════════╪════════════╪════════════╡
-        │ 2022-11       │ 4 days, 16 hours and 20 minutes │ 55.23 minutes  │ 26.3 GB    │ 215.9 MB   │
-        ├───────────────┼─────────────────────────────────┼────────────────┼────────────┼────────────┤
-        │ 2022-12       │ 23 hours and 20.03 minutes      │ 35.88 minutes  │ 8.3 GB     │ 213.8 MB   │
-        ├───────────────┼─────────────────────────────────┼────────────────┼────────────┼────────────┤
-        │ 2023-01       │ 17 hours and 3.32 minutes       │ 15.27 minutes  │ 14.3 GB    │ 214.1 MB   │
-        ├───────────────┼─────────────────────────────────┼────────────────┼────────────┼────────────┤
-        │ 2023-02       │ 4 days, 5 hours and 60 minutes  │ 23.17 minutes  │ 148.3 GB   │ 561.6 MB   │
-        ├───────────────┼─────────────────────────────────┼────────────────┼────────────┼────────────┤
-        │ 2023-03       │ 2 days, 18 hours and 18 minutes │ 11.20 minutes  │ 118.1 GB   │ 332.8 MB   │
-        ├───────────────┼─────────────────────────────────┼────────────────┼────────────┼────────────┤
-        │ 2023-05       │ 5 days, 5 hours and 4 minutes   │ 45.75 minutes  │ 152.9 GB   │ 932.1 MB   │
-        ╘═══════════════╧═════════════════════════════════╧════════════════╧════════════╧════════════╛
+        $ library history web_add.image.db
+        In progress:
+        play_count  time_last_played    playhead    path                                     title
+        ------------  ------------------  ----------  ---------------------------------------  -----------
+                0  today, 20:48        2 seconds   https://siliconpr0n.org/map/COPYING.txt  COPYING.txt
 
-    library history video.db created --frequency yearly
-        Created media:
-        ╒═══════════════╤════════════════════════════════════════════╤════════════════╤════════════╤════════════╕
-        │   time_period │ duration_sum                               │ duration_avg   │ size_sum   │ size_avg   │
-        ╞═══════════════╪════════════════════════════════════════════╪════════════════╪════════════╪════════════╡
-        │          2005 │ 9.78 minutes                               │ 1.95 minutes   │ 16.9 MB    │ 3.4 MB     │
-        ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
-        │          2006 │ 7 hours and 10.67 minutes                  │ 5 minutes      │ 891.1 MB   │ 10.4 MB    │
-        ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
-        │          2007 │ 1 day, 17 hours and 33 minutes             │ 8.55 minutes   │ 5.9 GB     │ 20.3 MB    │
-        ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
-        │          2008 │ 5 days, 16 hours and 10 minutes            │ 17.02 minutes  │ 20.7 GB    │ 43.1 MB    │
-        ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
-        │          2009 │ 24 days, 2 hours and 56 minutes            │ 33.68 minutes  │ 108.4 GB   │ 105.2 MB   │
-        ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
-        │          2010 │ 1 month, 1 days and 1 minutes              │ 35.52 minutes  │ 124.2 GB   │ 95.7 MB    │
-        ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
-        │          2011 │ 2 months, 14 days, 1 hour and 22 minutes   │ 55.93 minutes  │ 222.0 GB   │ 114.9 MB   │
-        ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
-        │          2012 │ 2 months, 22 days, 19 hours and 17 minutes │ 45.50 minutes  │ 343.6 GB   │ 129.6 MB   │
-        ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
-        │          2013 │ 3 months, 11 days, 21 hours and 48 minutes │ 42.72 minutes  │ 461.1 GB   │ 131.7 MB   │
-        ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
-        │          2014 │ 3 months, 7 days, 10 hours and 22 minutes  │ 46.80 minutes  │ 529.6 GB   │ 173.1 MB   │
-        ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
-        │          2015 │ 2 months, 21 days, 23 hours and 36 minutes │ 36.73 minutes  │ 452.7 GB   │ 139.2 MB   │
-        ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
-        │          2016 │ 3 months, 26 days, 7 hours and 59 minutes  │ 39.48 minutes  │ 603.4 GB   │ 139.9 MB   │
-        ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
-        │          2017 │ 3 months, 10 days, 2 hours and 19 minutes  │ 31.78 minutes  │ 543.5 GB   │ 117.5 MB   │
-        ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
-        │          2018 │ 3 months, 21 days, 20 hours and 56 minutes │ 30.98 minutes  │ 607.5 GB   │ 114.8 MB   │
-        ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
-        │          2019 │ 5 months, 23 days, 2 hours and 30 minutes  │ 35.77 minutes  │ 919.7 GB   │ 129.7 MB   │
-        ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
-        │          2020 │ 7 months, 16 days, 10 hours and 58 minutes │ 26.15 minutes  │ 1.2 TB     │ 93.9 MB    │
-        ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
-        │          2021 │ 7 months, 21 days, 9 hours and 40 minutes  │ 39.93 minutes  │ 1.3 TB     │ 149.9 MB   │
-        ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
-        │          2022 │ 17 years, 3 months, 0 days and 21 hours    │ 19.62 minutes  │ 35.8 TB    │ 77.5 MB    │
-        ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
-        │          2023 │ 15 years, 3 months, 24 days and 1 hours    │ 17.57 minutes  │ 27.6 TB    │ 60.2 MB    │
-        ╘═══════════════╧════════════════════════════════════════════╧════════════════╧════════════╧════════════╛
-        ╒════════════════════════════════════════════════════════════════════════════════════════════╤═══════════════╤════════════════╕
-        │ title_path                                                                                 │ duration      │ time_created   │
-        ╞════════════════════════════════════════════════════════════════════════════════════════════╪═══════════════╪════════════════╡
-        │ [Eng Sub] TVB Drama | The King Of Snooker 桌球天王 07/20 | Adam Cheng | 2009 #Chinesedrama │ 43.85 minutes │ yesterday      │
-        │ https://www.youtube.com/watch?v=zntYD1yLrG8                                                │               │                │
-        ├────────────────────────────────────────────────────────────────────────────────────────────┼───────────────┼────────────────┤
-        │ [Eng Sub] TVB Drama | The King Of Snooker 桌球天王 08/20 | Adam Cheng | 2009 #Chinesedrama │ 43.63 minutes │ yesterday      │
-        │ https://www.youtube.com/watch?v=zQnSfoWrh-4                                                │               │                │
-        ├────────────────────────────────────────────────────────────────────────────────────────────┼───────────────┼────────────────┤
-        │ [Eng Sub] TVB Drama | The King Of Snooker 桌球天王 06/20 | Adam Cheng | 2009 #Chinesedrama │ 43.60 minutes │ yesterday      │
-        │ https://www.youtube.com/watch?v=Qiax1kFyGWU                                                │               │                │
-        ├────────────────────────────────────────────────────────────────────────────────────────────┼───────────────┼────────────────┤
-        │ [Eng Sub] TVB Drama | The King Of Snooker 桌球天王 04/20 | Adam Cheng | 2009 #Chinesedrama │ 43.45 minutes │ yesterday      │
-        │ https://www.youtube.com/watch?v=NT9C3PRrlTA                                                │               │                │
-        ├────────────────────────────────────────────────────────────────────────────────────────────┼───────────────┼────────────────┤
-        │ [Eng Sub] TVB Drama | The King Of Snooker 桌球天王 02/20 | Adam Cheng | 2009 #Chinesedrama │ 43.63 minutes │ yesterday      │
-        │ https://www.youtube.com/watch?v=MjpCiTawlTE                                                │               │                │
-        ╘════════════════════════════════════════════════════════════════════════════════════════════╧═══════════════╧════════════════╛
+    Show only completed history
 
-    View download stats
+        $ library history web_add.image.db --completed
 
-        library history video.db --freqency daily downloaded
-        Downloaded media:
-        day         total_duration                          avg_duration                total_size    avg_size    count
-        ----------  --------------------------------------  ------------------------  ------------  ----------  -------
-        2023-08-11  1 month, 7 days and 8 hours             17 minutes                    192.2 GB     58.3 MB     3296
-        2023-08-12  18 days and 15 hours                    17 minutes                     89.7 GB     56.4 MB     1590
-        2023-08-14  13 days and 1 hours                     22 minutes                    111.2 GB    127.2 MB      874
-        2023-08-15  13 days and 6 hours                     17 minutes                    140.0 GB    126.7 MB     1105
-        2023-08-17  2 months, 8 days and 8 hours            19 minutes                    380.4 GB     72.6 MB     5243
-        2023-08-18  2 months, 30 days and 18 hours          17 minutes                    501.9 GB     63.3 MB     7926
-        2023-08-19  2 months, 6 days and 19 hours           19 minutes                    578.1 GB    110.6 MB     5229
-        2023-08-20  3 days and 9 hours                      6 minutes and 57 seconds       14.5 GB     20.7 MB      700
-        2023-08-21  4 days and 3 hours                      12 minutes                     18.0 GB     36.3 MB      495
-        2023-08-22  10 days and 8 hours                     17 minutes                     82.1 GB     91.7 MB      895
-        2023-08-23  19 days and 9 hours                     22 minutes                     93.7 GB     74.7 MB     1254
+    Show only completed history
 
-        See also: library history video.db --freqency daily downloaded --hide-deleted
+        $ library history web_add.image.db --in-progress
 
-    View deleted stats
+    Delete history
 
-        library history video.db deleted
-        Deleted media:
-        ╒═══════════════╤════════════════════════════════════════════╤════════════════╤════════════╤════════════╕
-        │ time_period   │ duration_sum                               │ duration_avg   │ size_sum   │ size_avg   │
-        ╞═══════════════╪════════════════════════════════════════════╪════════════════╪════════════╪════════════╡
-        │ 2023-04       │ 1 year, 10 months, 3 days and 8 hours      │ 4.47 minutes   │ 1.6 TB     │ 7.4 MB     │
-        ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
-        │ 2023-05       │ 9 months, 26 days, 20 hours and 34 minutes │ 30.35 minutes  │ 1.1 TB     │ 73.7 MB    │
-        ╘═══════════════╧════════════════════════════════════════════╧════════════════╧════════════╧════════════╛
-        ╒════════════════════════════════════════════════════════════════════════════════════════════════════════════╤═══════════════╤══════════════════╤════════════════╕
-        │ title_path                                                                                                 │ duration      │   subtitle_count │ time_deleted   │
-        ╞════════════════════════════════════════════════════════════════════════════════════════════════════════════╪═══════════════╪══════════════════╪════════════════╡
-        │ Terminus (1987)                                                                                            │ 1 hour and    │                0 │ yesterday      │
-        │ /mnt/d/70_Now_Watching/Terminus_1987.mp4                                                                   │ 15.55 minutes │                  │                │
-        ├────────────────────────────────────────────────────────────────────────────────────────────────────────────┼───────────────┼──────────────────┼────────────────┤
-        │ Commodore 64 Longplay [062] The Transformers (EU) /mnt/d/71_Mealtime_Videos/Youtube/World_of_Longplays/Com │ 24.77 minutes │                2 │ yesterday      │
-        │ modore_64_Longplay_062_The_Transformers_EU_[1RRX7Kykb38].webm                                              │               │                  │                │
-        ...
+        Delete two hours of history
+        $ library history web_add.image.db --played-within '2 hours' --delete-rows
 
+        Delete all history
+        $ library history web_add.image.db --delete-rows
+
+    See also: library stats -h
 """
 
 playlists = """library playlists DATABASE
@@ -1839,6 +1828,23 @@ web_add = """library web-add [(--filesystem) | --video | --audio | --image | --t
     Download checked videos
 
         library download --fs open_dir.db --prefix ~/d/dump/video/ -w 'id in (select media_id from history)'
+
+    View most recent files
+
+        library fs example_dbs/web_add.image.db -u time_modified desc --cols path,width,height,size,time_modified -p -l 10
+        path                                                                                                                      width    height       size  time_modified
+        ----------------------------------------------------------------------------------------------------------------------  -------  --------  ---------  -----------------
+        https://siliconpr0n.org/map/infineon/m7690-b1/single/infineon_m7690-b1_infosecdj_mz_nikon20x.jpg                           7066     10513   16.4 MiB  2 days ago, 20:54
+        https://siliconpr0n.org/map/starchip/scf384g/single/starchip_scf384g_infosecdj_mz_nikon20x.jpg                            10804     10730   19.2 MiB  2 days ago, 15:31
+        https://siliconpr0n.org/map/hp/2hpt20065-1-68k-core/single/hp_2hpt20065-1-68k-core_marmontel_mz_ms50x-1.25.jpg            28966     26816  192.2 MiB  4 days ago, 15:05
+        https://siliconpr0n.org/map/hp/2hpt20065-1-68k-core/single/hp_2hpt20065-1-68k-core_marmontel_mz_ms20x-1.25.jpg            11840     10978   49.2 MiB  4 days ago, 15:04
+        https://siliconpr0n.org/map/hp/2hpt20065-1/single/hp_2hpt20065-1_marmontel_mz_ms10x-1.25.jpg                              16457     14255  101.4 MiB  4 days ago, 15:03
+        https://siliconpr0n.org/map/pervasive/e2213ps01e1/single/pervasive_e2213ps01e1_azonenberg_back_roi1_mit10x_rotated.jpg    18880     61836  136.8 MiB  6 days ago, 16:00
+        https://siliconpr0n.org/map/pervasive/e2213ps01e/single/pervasive_e2213ps01e_azonenberg_back_mit5x_rotated.jpg            62208     30736  216.5 MiB  6 days ago, 15:57
+        https://siliconpr0n.org/map/amd/am2964bpc/single/amd_am2964bpc_infosecdj_mz_lmplan10x.jpg                                 12809     11727   39.8 MiB  6 days ago, 10:28
+        https://siliconpr0n.org/map/unknown/ks1804ir1/single/unknown_ks1804ir1_infosecdj_mz_lmplan10x.jpg                          6508      6707    8.4 MiB  6 days ago, 08:04
+        https://siliconpr0n.org/map/amd/am2960dc-b/single/amd_am2960dc-b_infosecdj_mz_lmplan10x.jpg                               16434     15035   64.9 MiB  7 days ago, 19:01
+        10 media (limited by --limit 10)
 
 """
 

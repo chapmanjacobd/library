@@ -66,7 +66,8 @@ progs = {
         "download": "Download media",
         "download_status": "Show download status",
         "redownload": "Re-download deleted/lost media",
-        "history": "Show some playback statistics",
+        "history": "Show and manage playback history",
+        "stats": "Show some event statistics (created, deleted, watched, etc)",
         "search": "Search captions / subtitles",
         "optimize": "Re-optimize database",
     },
@@ -211,6 +212,7 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     add_parser(subparsers, "xklb.mediadb.download.dl_download", ["dl", "download"])
     add_parser(subparsers, "xklb.mediadb.download_status.download_status", ["ds", "dl-status"])
     add_parser(subparsers, "xklb.mediadb.history.history", ["hi", "log"])
+    add_parser(subparsers, "xklb.mediadb.stats.stats")
     add_parser(subparsers, "xklb.mediadb.optimize_db.optimize_db", ["optimize"])
     add_parser(subparsers, "xklb.mediadb.playlists.playlists", ["pl", "folders"])
     add_parser(subparsers, "xklb.mediadb.redownload.redownload", ["re-dl", "re-download"])
