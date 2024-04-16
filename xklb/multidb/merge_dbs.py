@@ -34,9 +34,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("source_dbs", nargs="+")
     args = parser.parse_intermixed_args()
 
-    if args.where:
-        args.where = " and ".join(args.where)
-
     Path(args.database).touch()
     args.db = db_utils.connect(args)
 
@@ -77,7 +74,7 @@ def merge_db(args, source_db) -> None:
                 log.info("[%s]: Using %s as primary key(s)", table, ", ".join(source_table_pks))
                 kwargs["pk"] = source_table_pks
 
-        data = s_db[table].rows_where(where=args.where)
+        data = s_db[table].rows_where(where=" and ".join(args.where) if args.where else None)
         data = ({k: v for k, v in d.items() if k in selected_columns} for d in data)
         with args.db.conn:
             args.db[table].insert_all(

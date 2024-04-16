@@ -5,7 +5,6 @@ from pprint import pprint
 from subprocess import CalledProcessError
 from types import ModuleType
 
-from xklb.mediadb import db_playlists
 from xklb.createdb import subtitle
 from xklb.data.yt_dlp_errors import (
     prefix_unrecoverable_errors,
@@ -13,7 +12,7 @@ from xklb.data.yt_dlp_errors import (
     yt_recoverable_errors,
     yt_unrecoverable_errors,
 )
-from xklb.mediadb import db_media
+from xklb.mediadb import db_media, db_playlists
 from xklb.mediafiles import media_check
 from xklb.utils import consts, db_utils, iterables, objects, path_utils, printing, sql_utils, strings
 from xklb.utils.consts import DBType

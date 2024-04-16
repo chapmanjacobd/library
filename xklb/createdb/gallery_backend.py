@@ -8,8 +8,7 @@ from gallery_dl.extractor.message import Message
 from gallery_dl.job import Job
 from gallery_dl.util import build_duration_func
 
-from xklb.mediadb import db_playlists
-from xklb.mediadb import db_media
+from xklb.mediadb import db_media, db_playlists
 from xklb.utils import consts, printing, strings
 from xklb.utils.log_utils import log
 

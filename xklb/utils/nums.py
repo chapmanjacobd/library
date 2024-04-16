@@ -71,6 +71,12 @@ def human_to_bytes(input_str) -> int:
     return int(float(value) * unit_multiplier)
 
 
+def sql_human_time(s):
+    if s.isdigit():
+        return s + " minutes"
+    return s.replace("mins", "minutes").replace("secs", "seconds")
+
+
 def human_to_seconds(input_str):
     if input_str is None:
         return None

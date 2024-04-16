@@ -250,7 +250,11 @@ def media_printer(args, data, units=None, media_len=None) -> None:
         if len(media) > 1:
             print(
                 f"{media_len or len(media)} {units}"
-                + (f" (limited by --limit {args.limit})" if args.limit and int(args.limit) <= len(media) else ""),
+                + (
+                    f" (limited by --limit {args.limit})"
+                    if args.limit and int(args.limit) <= len(media) and len(tbl) <= int(args.limit)
+                    else ""
+                ),
             )
 
         if duration > 0:
