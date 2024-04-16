@@ -2,8 +2,8 @@ import argparse, shlex, webbrowser
 from pathlib import Path
 from time import sleep
 
-from xklb import history, media_printer, usage
-from xklb.mediadb import db_media
+from xklb import media_printer, usage
+from xklb.mediadb import db_history, db_media
 from xklb.utils import arg_utils, arggroups, consts, db_utils, iterables, objects, processes, web
 from xklb.utils.log_utils import log
 
@@ -152,7 +152,7 @@ def play(args, path, url) -> None:
         processes.cmd(*args.browser, url)
     else:
         webbrowser.open(url, 2, autoraise=False)
-    history.add(args, [path], time_played=consts.today_stamp(), mark_done=True)
+    db_history.add(args, [path], time_played=consts.today_stamp(), mark_done=True)
 
 
 def make_souffle(args, media):
@@ -181,7 +181,7 @@ def make_souffle(args, media):
 
 def links_open() -> None:
     args = parse_args()
-    history.create(args)
+    db_history.create(args)
 
     query, bindings = construct_links_query(args)
     media = list(args.db.query(query, bindings))

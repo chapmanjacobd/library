@@ -17,8 +17,7 @@ def parse_args() -> argparse.Namespace:
 
     arggroups.frequency(parser)
     parser.add_argument("--hide-deleted", action="store_true")
-    parser.add_argument("--completed", "--played", "--watched", "--listened", action="store_true")
-
+    arggroups.history(parser)
     arggroups.debug(parser)
 
     arggroups.database(parser)

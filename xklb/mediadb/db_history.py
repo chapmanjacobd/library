@@ -26,3 +26,13 @@ def add(args, paths=None, media_ids=None, time_played=None, playhead=None, mark_
         if media_id
     ]
     args.db["history"].insert_all(iterables.list_dict_filter_bool(rows), pk="id", alter=True)
+
+
+def remove(args, paths=None, media_ids=None):
+    media_ids = media_ids or []
+    if paths:
+        media_ids.extend([args.db.pop("SELECT id from media WHERE path = ?", [path]) for path in paths])
+
+    with args.db.conn:
+        for media_id in media_ids:
+            args.db.conn.execute("DELETE from history WHERE media_id = ?", [media_id])

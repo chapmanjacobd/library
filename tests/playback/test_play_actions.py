@@ -6,7 +6,7 @@ from unittest import mock
 import pytest
 
 from tests.utils import connect_db_args
-from xklb import history
+from xklb.mediadb import db_history
 from xklb.createdb.fs_add import fs_add
 from xklb.lb import library as lb
 from xklb.mediadb import db_media
@@ -154,7 +154,7 @@ class TestFs(unittest.TestCase):
         t_db = str(Path(temp_dir.name, "test.db"))
         fs_add([t_db, "tests/data/"])
         args = connect_db_args(t_db)
-        history.add(args, [str(Path("tests/data/test.mp4").resolve())])
+        db_history.add(args, [str(Path("tests/data/test.mp4").resolve())])
         db_media.mark_media_deleted(args, [str(Path("tests/data/test.mp4").resolve())])
         fs_add([t_db, "tests/data/"])
         d = args.db.pop_dict("select * from media where path like '%test.mp4'")

@@ -1,7 +1,8 @@
 import argparse
 from pathlib import Path
 
-from xklb import history, usage
+from xklb import usage
+from xklb.mediadb import db_history
 from xklb.utils import arggroups, consts, db_utils, mpv_utils, nums, objects
 from xklb.utils.log_utils import log
 
@@ -36,9 +37,9 @@ def scan_and_import(args, media) -> None:
 
     # create two records if first played and last played time are different
     for m in previously_watched:
-        history.add(args, media_ids=[m["id"]], time_played=m["time_first_played"], playhead=m["playhead"])
+        db_history.add(args, media_ids=[m["id"]], time_played=m["time_first_played"], playhead=m["playhead"])
         if m["time_first_played"] != m["time_last_played"]:
-            history.add(args, media_ids=[m["id"]], time_played=m["time_last_played"], playhead=m["playhead"])
+            db_history.add(args, media_ids=[m["id"]], time_played=m["time_last_played"], playhead=m["playhead"])
 
 
 def mpv_watchlater():

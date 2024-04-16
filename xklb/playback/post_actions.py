@@ -3,7 +3,7 @@ from pathlib import Path
 
 import humanize
 
-from xklb import history
+from xklb.mediadb import db_history
 from xklb.mediadb import db_media
 from xklb.utils import devices, file_utils, iterables, processes
 from xklb.utils.log_utils import log
@@ -173,7 +173,7 @@ def post_act(
     player_exit_code = getattr(player_process, "returncode", None) or 0
 
     if record_history and player_exit_code == 0:
-        history.add(args, [media_file], mark_done=True)
+        db_history.add(args, [media_file], mark_done=True)
 
     if 0 < player_exit_code < 5 and not args.ignore_errors:
         if args.delete_unplayable and player_exit_code == 2:  #  https://mpv.io/manual/master/#exit-codes

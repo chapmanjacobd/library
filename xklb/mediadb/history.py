@@ -1,7 +1,8 @@
 import argparse
 
 from xklb import media_printer, usage
-from xklb.history import create
+from xklb.mediadb import db_history
+from xklb.mediadb.db_history import create
 from xklb.utils import arggroups, consts, db_utils, objects, sql_utils
 from xklb.utils.log_utils import log
 
@@ -17,9 +18,7 @@ def parse_args() -> argparse.Namespace:
     arggroups.sql_media(parser)
 
     parser.add_argument("--hide-deleted", action="store_true")
-    parser.add_argument("--completed", "--played", "--watched", "--listened", action="store_true")
-    parser.add_argument("--in-progress", "--playing", "--watching", "--listening", action="store_true")
-
+    arggroups.history(parser)
     arggroups.debug(parser)
 
     arggroups.database(parser)
@@ -58,28 +57,6 @@ def process_search(args, m_columns):
         )
 
 
-def recent_media(args, time_column):
-    m_columns = db_utils.columns(args, "media")
-    process_search(args, m_columns)
-
-    query = f"""
-    SELECT
-        path
-        {', title' if 'title' in m_columns else ''}
-        {', duration' if 'duration' in m_columns else ''}
-        {', subtitle_count' if 'subtitle_count' in m_columns else ''}
-        , {time_column}
-    FROM {args.table} m
-    {'JOIN history h on h.media_id = m.id' if time_column == 'time_played' else ''}
-    WHERE 1=1
-      AND coalesce({time_column}, 0)>0
-    {'AND COALESCE(time_deleted, 0)=0' if args.hide_deleted else ""}
-    ORDER BY {time_column} desc
-    LIMIT {args.limit or 5}
-    """
-    return list(args.db.query(query, args.filter_bindings))
-
-
 def historical_media(args, m_columns):
     process_search(args, m_columns)
     query = f"""WITH m as (
@@ -103,6 +80,7 @@ def historical_media(args, m_columns):
         FROM m
         WHERE 1=1
             {" ".join([" and " + w for w in args.where])}
+            {sql_utils.filter_play_count(args)}
         ORDER BY time_last_played desc {', path' if args.completed else ', playhead desc' }
         LIMIT {args.limit or 5}
     """
@@ -121,10 +99,22 @@ def history() -> None:
     m_columns = args.db["media"].columns_dict
     create(args)
 
-    print("Completed:" if args.completed else "In progress:")
+    if args.completed:
+        print("Completed:")
+    elif args.in_progress:
+        print("In progress:")
+    else:
+        print("History:")
 
     tbl = historical_media(args, m_columns)
     remove_duplicate_data(tbl)
+
+    if args.delete_rows:
+        with args.db.conn:
+            args.db.conn.execute("DELETE from history WHERE media_id NOT IN (SELECT id FROM media)")
+        db_history.remove(args, paths=[d['path'] for d in tbl])
+
+    args.delete_rows = False
     media_printer.media_printer(args, tbl)
 
 

@@ -1,7 +1,8 @@
 import argparse, os
 from pathlib import Path
 
-from xklb import history, media_printer, usage
+from xklb import media_printer, usage
+from xklb.mediadb import db_history
 from xklb.tablefiles import mcda
 from xklb.utils import arg_utils, arggroups, consts, db_utils, file_utils, nums, objects, sql_utils
 from xklb.utils.log_utils import log
@@ -157,7 +158,7 @@ def process_big_dirs(args, folders) -> list[dict]:
 
 def big_dirs() -> None:
     args = parse_args()
-    history.create(args)
+    db_history.create(args)
 
     media = get_table(args)
     if args.cluster_sort and len(media) > 2:

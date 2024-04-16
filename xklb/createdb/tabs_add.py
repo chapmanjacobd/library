@@ -3,8 +3,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from random import randint
 
-from xklb import history, usage
-from xklb.mediadb import db_media
+from xklb import usage
+from xklb.mediadb import db_history, db_media
 from xklb.utils import arggroups, consts, db_utils, iterables, objects, path_utils, strings
 from xklb.utils.log_utils import log
 
@@ -102,7 +102,7 @@ def tabs_add(args=None) -> None:
 
         for d in tabs:
             time_played = randint(min_time, max_time)
-            history.add(args, [d["path"]], time_played=time_played, mark_done=True)
+            db_history.add(args, [d["path"]], time_played=time_played, mark_done=True)
 
 
 def tabs_shuffle() -> None:
@@ -167,4 +167,4 @@ def tabs_shuffle() -> None:
             args.db.conn.execute(  # type: ignore
                 "DELETE from history WHERE media_id = ? and time_played = ?", [d["id"], d["time_last_played"]]
             )
-        history.add(args, [d["path"]], time_played=time_played, mark_done=True)
+        db_history.add(args, [d["path"]], time_played=time_played, mark_done=True)

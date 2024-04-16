@@ -7,7 +7,7 @@ from random import randrange
 from shutil import which
 from time import sleep
 
-from xklb import history
+from xklb.mediadb import db_history
 from xklb.createdb import subtitle
 from xklb.mediadb import db_media
 from xklb.playback import playback_control, post_actions
@@ -666,7 +666,7 @@ def play(args, m, media_len) -> None:
         )
         log.debug("save_playhead %s", playhead)
         if playhead:
-            history.add(args, [m["original_path"]], playhead=playhead)
+            db_history.add(args, [m["original_path"]], playhead=playhead)
 
 
 def play_list(args, media):
