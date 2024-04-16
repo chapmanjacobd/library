@@ -6,10 +6,10 @@ from pathlib import Path
 from shutil import which
 from timeit import default_timer as timer
 
-from xklb import db_media, db_playlists, usage
+from xklb import usage
 from xklb.createdb import av
 from xklb.files import sample_hash
-from xklb.mediadb import playlists
+from xklb.mediadb import db_media, db_playlists, playlists
 from xklb.mediafiles import process_ffmpeg, process_image
 from xklb.utils import (
     arg_utils,

@@ -151,7 +151,7 @@ def merge_folders() -> None:
     all_source_folders = set()
     empty_folder_data: set[Path] = set()
     rename_data: list[tuple[bool, Path, Path]] = []
-    clobber = False
+    clobber = False  # default nothing to clobber; no confirmation prompt
     print("Sources:")
     for source in args.sources:
         source_folder, source_glob = arg_utils.split_folder_glob(source)

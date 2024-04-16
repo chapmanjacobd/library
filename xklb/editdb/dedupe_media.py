@@ -6,8 +6,9 @@ from pathlib import Path
 
 import humanize
 
-from xklb import db_media, media_printer, usage
+from xklb import media_printer, usage
 from xklb.files import sample_compare, sample_hash
+from xklb.mediadb import db_media
 from xklb.utils import arggroups, consts, db_utils, devices, file_utils, iterables, objects, processes, strings
 from xklb.utils.consts import DBType
 from xklb.utils.log_utils import log

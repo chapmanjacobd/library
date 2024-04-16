@@ -2,7 +2,8 @@ import argparse, json, random, time
 from pathlib import Path
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
-from xklb import db_media, db_playlists, usage
+from xklb import usage
+from xklb.mediadb import db_media, db_playlists
 from xklb.text import extract_links
 from xklb.utils import arg_utils, arggroups, consts, db_utils, objects, printing, strings, web
 from xklb.utils.log_utils import log

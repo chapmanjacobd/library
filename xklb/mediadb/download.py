@@ -1,7 +1,8 @@
 import argparse, os, sys
 
-from xklb import db_media, media_printer, usage
+from xklb import media_printer, usage
 from xklb.createdb import gallery_backend, tube_backend
+from xklb.mediadb import db_media
 from xklb.utils import (
     arg_utils,
     arggroups,

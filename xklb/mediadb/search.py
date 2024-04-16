@@ -2,7 +2,8 @@ import argparse, textwrap
 from copy import deepcopy
 from itertools import groupby
 
-from xklb import db_media, media_printer, usage
+from xklb import media_printer, usage
+from xklb.mediadb import db_media
 from xklb.playback import media_player
 from xklb.utils import arg_utils, arggroups, consts, db_utils, iterables, objects, printing, processes
 from xklb.utils.log_utils import log

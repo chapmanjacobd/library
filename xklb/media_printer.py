@@ -6,7 +6,8 @@ from pathlib import Path
 
 from tabulate import tabulate
 
-from xklb import db_media, history
+from xklb import history
+from xklb.mediadb import db_media
 from xklb.playback import post_actions
 from xklb.utils import consts, db_utils, iterables, printing, processes, sql_utils, strings
 from xklb.utils.consts import SC

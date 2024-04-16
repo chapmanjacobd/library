@@ -3,7 +3,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from random import randint
 
-from xklb import db_media, history, usage
+from xklb import history, usage
+from xklb.mediadb import db_media
 from xklb.utils import arggroups, consts, db_utils, iterables, objects, path_utils, strings
 from xklb.utils.log_utils import log
 
