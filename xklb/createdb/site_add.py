@@ -14,6 +14,7 @@ def parse_args() -> argparse.Namespace:
     parser.set_defaults(selenium=True)
 
     parser.add_argument("--local-file", "--local-html", action="store_true", help="Treat paths as Local HTML files")
+    parser.add_argument("--extract-html", action="store_true", help="Extract data from HTML")
 
     arggroups.debug(parser)
     arggroups.database(parser)
@@ -125,6 +126,29 @@ def attach_interceptors(args):
 
             body = json.loads(body)
             tables = nosql_to_sql(body)
+            if args.verbose > 2:
+                breakpoint()
+
+            tables = db_utils.add_missing_table_names(args, tables)
+            db_thread = db_utils.connect(argparse.Namespace(database=args.database, verbose=args.verbose))
+            for d in tables:
+                db_thread[d["table_name"]].insert_all(iterables.list_dict_filter_bool(d["data"]), alter=True)  # type: ignore
+
+        if (
+            args.extract_html
+            and response
+            and response.status_code // 100 == 2  # HTTP 2xx
+            and "Content-Type" in response.headers
+            and response.headers["Content-Type"].startswith(("text/html",))
+        ):
+            body = decode(response.body, response.headers.get("Content-Encoding", "identity"))
+            body = body.decode()
+
+            import xmltodict
+
+            o = xmltodict.parse(body)
+            tables = nosql_to_sql(o)
+
             if args.verbose > 2:
                 breakpoint()
 
