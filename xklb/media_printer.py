@@ -215,18 +215,18 @@ def media_printer(args, data, units=None, media_len=None) -> None:
         if not cols:
             cols = ["path"]
 
-        selected_cols = [{k: d.get(k, None) for k in cols} for d in media]
-        virtual_csv = StringIO()
-        wr = csv.writer(virtual_csv, quoting=csv.QUOTE_NONE)
-        wr = csv.DictWriter(virtual_csv, fieldnames=cols)
-        wr.writerows(selected_cols)
-
-        virtual_csv.seek(0)
-        if getattr(args, "moved", False):
-            for line in virtual_csv.readlines():
-                printing.pipe_print(line.strip().replace(args.moved[0], "", 1))
-            moved_media(args, [d["path"] for d in media], *args.moved)
+        if len(cols) == 1:
+            for d in media:
+                v = d.get(cols[0])
+                printing.pipe_print(v)
         else:
+            selected_cols = [{k: d.get(k, None) for k in cols} for d in media]
+            virtual_csv = StringIO()
+            wr = csv.writer(virtual_csv, quoting=csv.QUOTE_NONE)
+            wr = csv.DictWriter(virtual_csv, fieldnames=cols)
+            wr.writerows(selected_cols)
+
+            virtual_csv.seek(0)
             for line in virtual_csv.readlines():
                 printing.pipe_print(line.strip())
 
