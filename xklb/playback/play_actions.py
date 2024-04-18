@@ -42,8 +42,6 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     parser.add_argument("--cast-with-local", "-wl", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--interdimensional-cable", "-4dtv", type=int, help=argparse.SUPPRESS)
 
-    parser.add_argument("--moved", nargs=2, help=argparse.SUPPRESS)
-
     parser.add_argument(
         "--partial",
         "-P",
