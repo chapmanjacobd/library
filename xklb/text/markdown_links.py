@@ -46,7 +46,7 @@ def markdown_links():
                 else:
                     html_text = web.requests_session(args).get(url).text
 
-                soup = BeautifulSoup(html_text, "html.parser")
+                soup = BeautifulSoup(html_text, "lxml")
                 title = soup.title.text.strip() if soup.title else url
             except requests.exceptions.RequestException as e:
                 title = fake_title(url)

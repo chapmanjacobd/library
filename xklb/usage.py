@@ -1674,7 +1674,7 @@ site_add = """library site-add DATABASE PATH ... [--auto-pager] [--poke] [--loca
         library siteadd jobs.st.db --poke https://hk.jobsdb.com/hk/search-jobs/python/
 
     Requires selenium-wire
-    Requires xmltodict when using --extract-html
+    Requires xmltodict when using --extract-xml
 
         pip install selenium-wire xmltodict
 

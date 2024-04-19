@@ -93,7 +93,7 @@ def is_desired_url(args, a_element, link, link_text) -> bool:
 def parse_inner_urls(args, url, markup):
     from bs4 import BeautifulSoup
 
-    soup = BeautifulSoup(markup, "html.parser")
+    soup = BeautifulSoup(markup, "lxml")
 
     for a_ref in soup.findAll(href=True):
         log.debug(a_ref)

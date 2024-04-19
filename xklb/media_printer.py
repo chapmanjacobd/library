@@ -6,8 +6,7 @@ from pathlib import Path
 
 from tabulate import tabulate
 
-from xklb.mediadb import db_history
-from xklb.mediadb import db_media
+from xklb.mediadb import db_history, db_media
 from xklb.playback import post_actions
 from xklb.utils import consts, db_utils, iterables, printing, processes, sql_utils, strings
 from xklb.utils.consts import SC
@@ -216,9 +215,7 @@ def media_printer(args, data, units=None, media_len=None) -> None:
             cols = ["path"]
 
         if len(cols) == 1:
-            for d in media:
-                v = d.get(cols[0])
-                printing.pipe_print(v)
+            printing.pipe_lines(d.get(cols[0]) for d in media)
         else:
             selected_cols = [{k: d.get(k, None) for k in cols} for d in media]
             virtual_csv = StringIO()

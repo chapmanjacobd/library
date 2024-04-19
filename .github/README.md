@@ -97,7 +97,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.6.010)
+    xk media library subcommands (v2.6.011)
 
     Create database subcommands:
     ╭───────────────┬──────────────────────────────────────────╮
@@ -833,6 +833,11 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     Extract data from website requests to a database
 
         library siteadd jobs.st.db --poke https://hk.jobsdb.com/hk/search-jobs/python/
+
+    Requires selenium-wire
+    Requires xmltodict when using --extract-xml
+
+        pip install selenium-wire xmltodict
 
     Run with `-vv` to see and interact with the browser
 
@@ -1956,10 +1961,10 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     Delete history
 
         Delete two hours of history
-        $ library history web_add.image.db --played-within '2 hours' --delete-rows
+        $ library history web_add.image.db --played-within '2 hours' -L inf --delete-rows
 
         Delete all history
-        $ library history web_add.image.db --delete-rows
+        $ library history web_add.image.db -L inf --delete-rows
 
     See also: library stats -h
 

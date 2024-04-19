@@ -3,8 +3,7 @@ from pathlib import Path
 
 import humanize
 
-from xklb.mediadb import db_history
-from xklb.mediadb import db_media
+from xklb.mediadb import db_history, db_media
 from xklb.utils import devices, file_utils, iterables, processes
 from xklb.utils.log_utils import log
 

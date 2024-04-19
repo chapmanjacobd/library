@@ -36,7 +36,7 @@ def un_paragraph(item):
 
 
 def parse_text(args, html_content):
-    soup = BeautifulSoup(html_content, "html.parser")
+    soup = BeautifulSoup(html_content, "lxml")
     for item in soup.find_all():
         if item.name in ["meta"]:
             continue

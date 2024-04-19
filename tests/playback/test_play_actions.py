@@ -6,10 +6,9 @@ from unittest import mock
 import pytest
 
 from tests.utils import connect_db_args
-from xklb.mediadb import db_history
 from xklb.createdb.fs_add import fs_add
 from xklb.lb import library as lb
-from xklb.mediadb import db_media
+from xklb.mediadb import db_history, db_media
 from xklb.playback.play_actions import watch as wt
 from xklb.utils.log_utils import log
 
