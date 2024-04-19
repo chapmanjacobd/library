@@ -512,7 +512,7 @@ def download(args, m) -> None:
         db_media.download_add(args, webpath, info, local_path, error=ydl_errors_txt)
     elif any(yt_unrecoverable_errors.match(line) for line in ydl_errors):
         matched_error = [
-            m.string for m in iterables.conform([yt_unrecoverable_errors.match(line) for line in ydl_errors])
+            m.string for m in iterables.conform([line for line in ydl_errors if yt_unrecoverable_errors.match(line)])
         ]
         log.info("[%s]: Unrecoverable error matched. %s", webpath, ydl_errors_txt or strings.combine(matched_error))
         db_media.download_add(args, webpath, info, local_path, error=ydl_errors_txt, unrecoverable_error=True)

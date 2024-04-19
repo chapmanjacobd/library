@@ -112,7 +112,7 @@ def history() -> None:
     if args.delete_rows:
         with args.db.conn:
             args.db.conn.execute("DELETE from history WHERE media_id NOT IN (SELECT id FROM media)")
-        db_history.remove(args, paths=[d['path'] for d in tbl])
+        db_history.remove(args, paths=[d["path"] for d in tbl])
 
     args.delete_rows = False
     media_printer.media_printer(args, tbl)

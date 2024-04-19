@@ -12,7 +12,7 @@ def kebab_camel_snake(col):
 
 
 def columns_snake_case(df):
-    df.columns = [kebab_camel_snake(x) for x in df.columns]
+    df.columns = [kebab_camel_snake(x) if isinstance(x, str) else x for x in df.columns]
     return df
 
 

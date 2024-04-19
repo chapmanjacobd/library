@@ -28,7 +28,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def save_page(args, text):
-    soup = BeautifulSoup(text, "html.parser")
+    soup = BeautifulSoup(text, "lxml")
 
     comment_elements = soup.find_all("article", class_="comment")
     for comment_element in comment_elements:

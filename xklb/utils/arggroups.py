@@ -463,6 +463,7 @@ def frequency(parser):
         help=f"One of: {', '.join(consts.frequency)} (default: %(default)s)",
     )
 
+
 def history(parser):
     history = parser.add_mutually_exclusive_group()
     history.add_argument("--completed", "--played", "--watched", "--listened", action="store_true")

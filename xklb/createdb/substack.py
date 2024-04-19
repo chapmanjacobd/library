@@ -27,7 +27,7 @@ def parse_args() -> argparse.Namespace:
 def save_page(args, url):
     response = web.get(args, url)
     if response:
-        soup = BeautifulSoup(response.text, "html.parser")
+        soup = BeautifulSoup(response.text, "lxml")
         web.download_embeds(args, soup)
 
         try:

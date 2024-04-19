@@ -16,7 +16,7 @@ def try_get_head_link(path):
 
     try:
         response = requests.get(path)
-        soup = BeautifulSoup(response.text, "html.parser")
+        soup = BeautifulSoup(response.text, "lxml")
         link = soup.find("link", type="application/rss+xml")
         if link:
             return link.get("href")  # type: ignore
@@ -30,7 +30,7 @@ def try_get_link_endswith(path):
 
     try:
         response = requests.get(path)
-        soup = BeautifulSoup(response.text, "html.parser")
+        soup = BeautifulSoup(response.text, "lxml")
         link = soup.find("a", href=lambda href: href and (href.endswith((".rss", ".xml"))))  # type: ignore
         if link:
             return link.get("href")  # type: ignore

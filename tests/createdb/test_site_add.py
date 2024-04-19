@@ -1,4 +1,64 @@
-from xklb.createdb.site_add import nosql_to_sql
+import pytest
+
+from xklb.createdb.site_add import html_to_dict, nosql_to_sql
+
+
+@pytest.mark.parametrize(
+    "html, expected_dict, expected_tables",
+    [
+        (
+            "<lunch><ol><li>Pork Dumplings</li><li>HK Milk Tea</li><li>Hot Soy Milk</li></ol></dinner>",
+            {
+                "html": {
+                    "body": {
+                        "lunch": {
+                            "ol": {
+                                "li": [{"text": "Pork Dumplings"}, {"text": "HK Milk Tea"}, {"text": "Hot Soy Milk"}]
+                            }
+                        }
+                    }
+                }
+            },
+            [
+                {
+                    "table_name": "li",
+                    "data": [{"text": "Pork Dumplings"}, {"text": "HK Milk Tea"}, {"text": "Hot Soy Milk"}],
+                }
+            ],
+        ),
+        (
+            """<div title="hover text">Test</div>""",
+            {"html": {"body": {"div": {"title": "hover text", "text": "Test"}}}},
+            [{"table_name": None, "data": [{"div_title": "hover text", "div_text": "Test"}]}],
+        ),
+        ("<div></div>", {}, []),
+        (
+            '<a href="https://www.unli.xyz/">link text</a>',
+            {"html": {"body": {"a": {"href": "https://www.unli.xyz/", "text": "link text"}}}},
+            [{"table_name": None, "data": [{"a_href": "https://www.unli.xyz/", "a_text": "link text"}]}],
+        ),
+        (
+            """<!DOCTYPE html><html><body><h1>Heading</h1><div><div><p>paragraph</p></div></div></body></html>""",
+            {"html": {"body": {"h1": {"text": "Heading"}, "div": {"div": {"p": {"text": "paragraph"}}}}}},
+            [{"table_name": None, "data": [{"h1_text": "Heading", "p_text": "paragraph"}]}],
+        ),
+        (
+            """<html><head><title>Title text</title></head></html>""",
+            {"html": {"head": {"title": {"text": "Title text"}}}},
+            [{"table_name": None, "data": [{"text": "Title text"}]}],
+        ),
+        (
+            '<img src="relative_image_url.avif" alt="alt text">',
+            {"html": {"body": {"img": {"src": "relative_image_url.avif", "alt": "alt text"}}}},
+            [{"table_name": None, "data": [{"img_src": "relative_image_url.avif", "img_alt": "alt text"}]}],
+        ),
+    ],
+)
+def test_html_to_dict(html, expected_dict, expected_tables):
+    output = html_to_dict(html)
+    assert output == expected_dict
+    output = nosql_to_sql(output)
+    assert output == expected_tables
 
 
 def test_tables():

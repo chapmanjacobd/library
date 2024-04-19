@@ -160,7 +160,7 @@ html = """
 </html>
 """
 
-soup = BeautifulSoup(html, "html.parser")
+soup = BeautifulSoup(html, "lxml")
 
 
 def test_extract_nearby_text():
@@ -179,7 +179,7 @@ def test_extract_nearby_text2():
     <ul class="dotul twocolul"><li><a href="https://fourble.co.uk/podcast/systemau">#systemau</a> - Archive of the Australian Linux-leaning tech podcast</li><li><a href="https://fourble.co.uk/podcast/24cast">24cast</a>
     """
 
-    soup = BeautifulSoup(html, "html.parser")
+    soup = BeautifulSoup(html, "lxml")
 
     before, after = extract_nearby_text(soup.find("a", href="https://fourble.co.uk/podcast/systemau"))
     assert (before, after) == ("", "- Archive of the Australian Linux-leaning tech podcast")
