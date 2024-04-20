@@ -175,6 +175,10 @@ def process_path(args, path, **kwargs):
             else:
                 raise
 
+        if not Path(output_path).exists() or output_path.stat().st_size == 0:
+            output_path.unlink()  # Remove transcode
+            return path
+
         if video_stream and (not args.audio_only or (args.audio_only and args.no_preserve_video)):
             path.unlink()  # Remove original
         elif is_split:

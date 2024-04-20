@@ -151,7 +151,7 @@ def extract_metadata(mp_args, path) -> dict[str, int] | None:
     if media["type"] == "directory":
         return None
 
-    if not Path(path).exists():
+    if media['size'] == 0 or not Path(path).exists():
         return media
 
     if objects.is_profile(mp_args, DBType.audio) and (ext in consts.AUDIO_ONLY_EXTENSIONS or is_scan_all_files):
