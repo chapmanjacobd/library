@@ -1,7 +1,7 @@
-from shutil import which
 import argparse, fractions, json, os, shlex, subprocess, tempfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
+from shutil import which
 
 from xklb import usage
 from xklb.utils import arggroups, consts, file_utils, nums, objects, printing, processes, strings
@@ -27,7 +27,7 @@ def parse_args():
 
 
 def decode_quick_scan(path, scans, scan_duration=3):
-    assert which('ffmpeg')
+    assert which("ffmpeg")
 
     def decode(scan):
         proc = processes.cmd(

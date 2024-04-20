@@ -31,7 +31,6 @@ def take(gen, num=5):
         yield value
 
 
-
 def flatten_dict(nested_dict, parent_key="", sep="_", passthrough_keys=None):
     if passthrough_keys is None:
         passthrough_keys = []
