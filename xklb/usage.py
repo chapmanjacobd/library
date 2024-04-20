@@ -1360,6 +1360,9 @@ scatter = """library scatter [--limit LIMIT] [--policy POLICY] [--sort SORT] --t
     Multi-device re-bin: empty out a disk (/mnt/d2) into many other disks (/mnt/d1, /mnt/d3, and /mnt/d4)
 
         library scatter fs.db -m /mnt/d1:/mnt/d3:/mnt/d4 /mnt/d2
+
+    This tool is intended for local use. If transferring many small files across the network something like
+    [fpart](https://github.com/martymac/fpart) or [fpsync](https://www.fpart.org/fpsync/) will be better.
 """
 
 links_open = """library links-open DATABASE [search] [--title] [--title-prefix TITLE_PREFIX]
