@@ -1,3 +1,4 @@
+from shutil import which
 import argparse, fractions, json, os, shlex, subprocess, tempfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
@@ -26,6 +27,8 @@ def parse_args():
 
 
 def decode_quick_scan(path, scans, scan_duration=3):
+    assert which('ffmpeg')
+
     def decode(scan):
         proc = processes.cmd(
             "ffmpeg",
@@ -57,7 +60,7 @@ def decode_quick_scan(path, scans, scan_duration=3):
     for future in futures:
         try:
             future.result()
-        except RuntimeError:
+        except (RuntimeError, subprocess.CalledProcessError):
             fail_count += 1
 
     return fail_count / len(scans)
