@@ -215,7 +215,7 @@ def media_printer(args, data, units=None, media_len=None) -> None:
             cols = ["path"]
 
         if len(cols) == 1:
-            printing.pipe_lines(d.get(cols[0]) for d in media)
+            printing.pipe_lines(d.get(cols[0], '') + '\n' for d in media)
         else:
             selected_cols = [{k: d.get(k, None) for k in cols} for d in media]
             virtual_csv = StringIO()
