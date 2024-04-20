@@ -63,18 +63,6 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def links_include_sql(x) -> str:
-    return f"""and (
-    path like :include{x}
-    OR title like :include{x}
-)"""
-
-
-def links_exclude_sql(x) -> str:
-    return f"""and (
-    path not like :exclude{x}
-    AND title not like :exclude{x}
-)"""
 
 
 def construct_links_query(args) -> tuple[str, dict]:
@@ -86,13 +74,21 @@ def construct_links_query(args) -> tuple[str, dict]:
     args.filter_sql.extend([" and " + w for w in args.where])
 
     for idx, inc in enumerate(args.include):
-        args.filter_sql.append(links_include_sql(idx))
+        args.filter_sql.append(f"""and (
+                path like :include{idx}
+                {f'OR title like :include{idx}' if 'title' in m_columns else ''}
+            )"""
+        )
         if args.exact:
             args.filter_bindings[f"include{idx}"] = inc
         else:
             args.filter_bindings[f"include{idx}"] = "%" + inc.replace(" ", "%").replace("%%", " ") + "%"
     for idx, exc in enumerate(args.exclude):
-        args.filter_sql.append(links_exclude_sql(idx))
+        args.filter_sql.append(f"""and (
+                path not like :exclude{idx}
+                {f'AND title not like :exclude{idx}' if 'title' in m_columns else ''}
+            )"""
+        )
         if args.exact:
             args.filter_bindings[f"exclude{idx}"] = exc
         else:
