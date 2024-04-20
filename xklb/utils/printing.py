@@ -25,7 +25,7 @@ def pipe_print(*args) -> None:
 
 def pipe_lines(x) -> None:
     try:
-        sys.stdout.writelines(x)
+        sys.stdout.writelines(x)  # must include line endings
     except BrokenPipeError:
         sys.stdout = None
         sys.exit(141)

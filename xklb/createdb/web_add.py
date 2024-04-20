@@ -77,6 +77,7 @@ def add_media(args, media):
 
 
 def spider(args, paths: set):
+    original_paths = paths.copy()
     get_urls = iterables.return_unique(extract_links.get_inner_urls)
 
     new_media_count = 0
@@ -92,7 +93,7 @@ def spider(args, paths: set):
             f"Pages to scan {len(paths)} link scan: {new_media_count} new [{len(known_paths)} known]"
         )
 
-        if web.is_index(path):
+        if web.is_index(path) or path in original_paths:
             for a_ref in get_urls(args, path):
                 if a_ref is None:
                     break
