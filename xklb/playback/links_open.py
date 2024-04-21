@@ -6,6 +6,7 @@ from xklb import media_printer, usage
 from xklb.mediadb import db_history, db_media
 from xklb.utils import arg_utils, arggroups, consts, db_utils, iterables, objects, processes, web
 from xklb.utils.log_utils import log
+from xklb.utils.printing import pipe_print
 
 
 def parse_args() -> argparse.Namespace:
@@ -145,7 +146,10 @@ def construct_links_query(args) -> tuple[str, dict]:
 
 def play(args, path, url) -> None:
     if args.browser:
-        processes.cmd(*args.browser, url)
+        if args.browser in ['echo', 'print']:
+            pipe_print(url)
+        else:
+            processes.cmd(*args.browser, url)
     else:
         webbrowser.open(url, 2, autoraise=False)
     db_history.add(args, [path], time_played=consts.APPLICATION_START, mark_done=True)
