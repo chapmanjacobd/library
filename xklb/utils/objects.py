@@ -90,9 +90,10 @@ def rename_key(d, from_key, to_key):
 
 
 def lower_keys(d):
-    for key in d.keys():
+    for key in list(d.keys()):
         lower_key = key.lower().strip()
-        rename_key(d, key, lower_key)
+        if key != lower_key:
+            rename_key(d, key, lower_key)
     return d
 
 
