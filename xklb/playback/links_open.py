@@ -146,7 +146,7 @@ def construct_links_query(args) -> tuple[str, dict]:
 
 def play(args, path, url) -> None:
     if args.browser:
-        if args.browser in ['echo', 'print']:
+        if args.browser in ["echo", "print"]:
             pipe_print(url)
         else:
             processes.cmd(*args.browser, url)
