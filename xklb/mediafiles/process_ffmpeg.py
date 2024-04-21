@@ -160,6 +160,10 @@ def process_path(args, path, **kwargs):
             else:
                 is_split = False
 
+    if path.parent != output_path.parent:
+        log.warning('Output folder will be different due to path cleaning: %s', output_path.parent)
+        output_path.parent.mkdir(exist_ok=True, parents=True)
+
     cmd = f'ffmpeg -nostdin -hide_banner -loglevel warning -y -i {shlex.quote(str(path))} {" ".join(ff_opts)} {shlex.quote(str(output_path))}'
     if args.simulate:
         print(cmd)

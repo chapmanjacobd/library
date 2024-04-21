@@ -34,6 +34,10 @@ def process_path(args, path):
             log.error("Input and output files must have different names %s", path)
             return path
 
+    if path.parent != output_path.parent:
+        log.warning('Output folder will be different due to path cleaning: %s', output_path.parent)
+        output_path.parent.mkdir(exist_ok=True, parents=True)
+
     command = ["magick", "convert", "-resize", "2400>", str(path), str(output_path)]
 
     if args.simulate:
