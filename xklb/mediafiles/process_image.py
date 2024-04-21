@@ -66,6 +66,11 @@ def process_path(args, path):
         else:
             raise
 
+
+    if not Path(output_path).exists() or output_path.stat().st_size == 0:
+        output_path.unlink()  # Remove transcode
+        return path
+
     if output_path.stat().st_size > path.stat().st_size:
         output_path.unlink()  # Remove transcode
         return path

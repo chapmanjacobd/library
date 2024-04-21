@@ -83,13 +83,16 @@ def recursive_flattener(func, obj):
     else:
         return obj
 
+def rename_key(d, from_key, to_key):
+    d[to_key] = d.pop(from_key)
+    return d
 
-def lower_keys(input_dict):
-    output_dict = {}
-    for key, value in input_dict.items():
-        lowercase_key = key.lower().strip()
-        output_dict[lowercase_key] = value
-    return output_dict
+
+def lower_keys(d):
+    for key in d.keys():
+        lower_key = key.lower().strip()
+        rename_key(d, key, lower_key)
+    return d
 
 
 def dict_filter_bool(kwargs, keep_0=True) -> dict | None:
