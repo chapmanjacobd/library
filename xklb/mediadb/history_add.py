@@ -27,27 +27,26 @@ def parse_args(**kwargs):
 def history_add() -> None:
     args = parse_args(prog="library history-add", usage=usage.history_add)
 
-    if args.insert_only:
-        history_exists = set()
-        history_new = set()
-        media_unknown = set()
-        for p in arg_utils.gen_paths(args):
-            media_id = args.db.pop("select id from media where path = ?", [p])
-            if media_id is None:
-                media_unknown.add(p)
-                if not args.force:
-                    continue
+    history_exists = set()
+    history_new = set()
+    media_unknown = set()
+    for p in arg_utils.gen_paths(args):
+        media_id = args.db.pop("select id from media where path = ?", [p])
+        if media_id is None:
+            media_unknown.add(p)
+            if not args.force:
+                continue
 
-            if db_history.exists(args, media_id):
-                history_exists.add(p)
-            else:
-                history_new.add(p)
+        if db_history.exists(args, media_id):
+            history_exists.add(p)
+        else:
+            history_new.add(p)
 
-            db_history.add(args, media_ids=[media_id], time_played=consts.APPLICATION_START, mark_done=True)
+        db_history.add(args, media_ids=[media_id], time_played=consts.APPLICATION_START, mark_done=True)
 
-            printing.print_overwrite(
-                f"History: {len(history_new)} new [{len(history_exists)} known {len(media_unknown)} skipped]"
-            )
+        printing.print_overwrite(
+            f"History: {len(history_new)} new [{len(history_exists)} known {len(media_unknown)} skipped]"
+        )
 
 
 if __name__ == "__main__":
