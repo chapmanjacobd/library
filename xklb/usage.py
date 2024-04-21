@@ -700,6 +700,17 @@ search = """library search DATABASE QUERY
         library search fts.db 'two words' --open
 """
 
+history_add = """library history DATABASE PATH ...
+
+    Add history
+
+        $ library history-add links.db $urls $paths
+        $ library history-add links.db (cb)
+
+    Items that don't already exist in the database will be counted under "skipped"
+
+"""
+
 history = """library history [--frequency daily weekly (monthly) yearly] [--limit LIMIT] DATABASE [(all) watching watched created modified deleted]
 
     View playback history
@@ -727,6 +738,7 @@ history = """library history [--frequency daily weekly (monthly) yearly] [--limi
         $ library history web_add.image.db -L inf --delete-rows
 
     See also: library stats -h
+              library history-add -h
 """
 
 playlists = """library playlists DATABASE
