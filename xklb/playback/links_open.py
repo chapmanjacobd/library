@@ -63,8 +63,6 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-
-
 def construct_links_query(args) -> tuple[str, dict]:
     m_columns = db_utils.columns(args, "media")
 
@@ -74,7 +72,8 @@ def construct_links_query(args) -> tuple[str, dict]:
     args.filter_sql.extend([" and " + w for w in args.where])
 
     for idx, inc in enumerate(args.include):
-        args.filter_sql.append(f"""and (
+        args.filter_sql.append(
+            f"""and (
                 path like :include{idx}
                 {f'OR title like :include{idx}' if 'title' in m_columns else ''}
             )"""
@@ -84,7 +83,8 @@ def construct_links_query(args) -> tuple[str, dict]:
         else:
             args.filter_bindings[f"include{idx}"] = "%" + inc.replace(" ", "%").replace("%%", " ") + "%"
     for idx, exc in enumerate(args.exclude):
-        args.filter_sql.append(f"""and (
+        args.filter_sql.append(
+            f"""and (
                 path not like :exclude{idx}
                 {f'AND title not like :exclude{idx}' if 'title' in m_columns else ''}
             )"""
