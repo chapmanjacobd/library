@@ -83,6 +83,7 @@ def recursive_flattener(func, obj):
     else:
         return obj
 
+
 def rename_key(d, from_key, to_key):
     d[to_key] = d.pop(from_key)
     return d

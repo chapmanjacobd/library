@@ -35,7 +35,7 @@ def process_path(args, path):
             return path
 
     if path.parent != output_path.parent:
-        log.warning('Output folder will be different due to path cleaning: %s', output_path.parent)
+        log.warning("Output folder will be different due to path cleaning: %s", output_path.parent)
         output_path.parent.mkdir(exist_ok=True, parents=True)
 
     command = ["magick", "convert", "-resize", "2400>", str(path), str(output_path)]
@@ -69,7 +69,6 @@ def process_path(args, path):
             return None
         else:
             raise
-
 
     if not Path(output_path).exists() or output_path.stat().st_size == 0:
         output_path.unlink()  # Remove transcode
