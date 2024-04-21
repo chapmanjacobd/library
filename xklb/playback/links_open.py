@@ -148,7 +148,7 @@ def play(args, path, url) -> None:
         processes.cmd(*args.browser, url)
     else:
         webbrowser.open(url, 2, autoraise=False)
-    db_history.add(args, [path], time_played=consts.today_stamp(), mark_done=True)
+    db_history.add(args, [path], time_played=consts.APPLICATION_START, mark_done=True)
 
 
 def make_souffle(args, media):
