@@ -346,8 +346,8 @@ def get_dir_media(args, dirs: Collection, include_subdirs=False, limit=2_000) ->
         FROM m
         ORDER BY play_count
             , m.path LIKE "http%"
-            {'' if 'sort' in args.defaults else ', ' + args.sort}
             , path
+            {'' if 'sort' in args.defaults else ', ' + args.sort}
         LIMIT {limit}
     """
 
@@ -357,6 +357,7 @@ def get_dir_media(args, dirs: Collection, include_subdirs=False, limit=2_000) ->
     bindings = {**bindings, **{k: v for k, v in args.filter_bindings.items() if k.startswith("FTS")}}
 
     media = list(args.db.query(query, bindings))
+    raise
     log.debug("len(dir_media) = %s", len(media))
     if len(media) == 0:
         log.debug("dir_media dirs %s", dirs)
