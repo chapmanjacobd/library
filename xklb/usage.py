@@ -700,7 +700,7 @@ search = """library search DATABASE QUERY
         library search fts.db 'two words' --open
 """
 
-history_add = """library history DATABASE PATH ...
+history_add = """library history-add DATABASE PATH ...
 
     Add history
 

@@ -97,7 +97,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.6.015)
+    xk media library subcommands (v2.6.016)
 
     Create database subcommands:
     ╭───────────────┬──────────────────────────────────────────╮
@@ -1982,7 +1982,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 <details><summary>Add history from paths</summary>
 
     $ library history-add -h
-    usage: library history DATABASE PATH ...
+    usage: library history-add DATABASE PATH ...
 
     Add history
 
