@@ -97,7 +97,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.6.014)
+    xk media library subcommands (v2.6.015)
 
     Create database subcommands:
     ╭───────────────┬──────────────────────────────────────────╮
@@ -210,6 +210,8 @@ To stop playing press Ctrl+C in either the terminal or mpv
     │ redownload      │ Re-download deleted/lost media                              │
     ├─────────────────┼─────────────────────────────────────────────────────────────┤
     │ history         │ Show and manage playback history                            │
+    ├─────────────────┼─────────────────────────────────────────────────────────────┤
+    │ history-add     │ Add history from paths                                      │
     ├─────────────────┼─────────────────────────────────────────────────────────────┤
     │ stats           │ Show some event statistics (created, deleted, watched, etc) │
     ├─────────────────┼─────────────────────────────────────────────────────────────┤
@@ -1970,6 +1972,25 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         $ library history web_add.image.db -L inf --delete-rows
 
     See also: library stats -h
+              library history-add -h
+
+
+</details>
+
+###### history-add
+
+<details><summary>Add history from paths</summary>
+
+    $ library history-add -h
+    usage: library history DATABASE PATH ...
+
+    Add history
+
+        $ library history-add links.db $urls $paths
+        $ library history-add links.db (cb)
+
+    Items that don't already exist in the database will be counted under "skipped"
+
 
 
 </details>
