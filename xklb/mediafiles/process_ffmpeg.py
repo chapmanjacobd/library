@@ -179,15 +179,15 @@ def process_path(args, path, **kwargs):
             else:
                 raise
 
+        if is_split:
+            output_path = output_path.with_name(output_path.name.replace(".%03d",".000"))  # TODO: support / return multiple paths...
+
         if not Path(output_path).exists() or output_path.stat().st_size == 0:
             output_path.unlink()  # Remove transcode
             return path
 
         if video_stream and (not args.audio_only or (args.audio_only and args.no_preserve_video)):
             path.unlink()  # Remove original
-        elif is_split:
-            path.unlink()  # Remove original
-            return path.with_suffix(".000" + output_suffix)  # TODO: return multiple paths...
         elif output_path.stat().st_size > path.stat().st_size:
             output_path.unlink()  # Remove transcode
             return path
