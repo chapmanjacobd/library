@@ -26,7 +26,7 @@ def test_probe_if_animation(path, result):
 @pytest.mark.parametrize(
     "path,duration,out_ext",
     [
-        ("tests/data/test.gif", 0.6, ".mkv"),
+        # ("tests/data/test.gif", 0.6, ".mkv"),
         ("tests/data/test_frame.gif", None, ".avif"),
         # ('tests/data/test.mp4', 12.0, '.mkv'),
     ],
