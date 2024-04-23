@@ -1,7 +1,7 @@
 import functools, json, multiprocessing, os, platform, shlex, signal, subprocess, sys
 from typing import NoReturn
 
-from xklb.utils import iterables
+from xklb.utils import consts, iterables
 from xklb.utils.log_utils import log
 
 
@@ -73,6 +73,8 @@ def cmd(*command, strict=True, cwd=None, quiet=True, ignore_regexps=None, **kwar
         if s:
             if quiet and is_success:
                 log.debug(s)
+            elif consts.PYTEST_RUNNING:
+                log.warning(s)
             else:
                 log.info(s)
         return s

@@ -103,15 +103,15 @@ def process_path(args, path, **kwargs):
     ff_opts: list[str] = []
 
     if video_stream:
-        ff_opts.extend(["-c:v libsvtav1", "-preset 8 -crf 44"])
+        ff_opts.extend(["-c:v", "libsvtav1", "-preset", "8", "-crf", "44"])
 
         width = int(video_stream.get("width"))
         height = int(video_stream.get("height"))
 
         if width > (args.max_width * (1 + args.max_width_buffer)):
-            ff_opts.extend([f"-vf 'scale=-2:min(iw\\,{args.max_width})'"])
+            ff_opts.extend(["-vf", "scale=-2:min(iw\\,{args.max_width})"])
         elif height > (args.max_height * (1 + args.max_height_buffer)):
-            ff_opts.extend([f"-vf 'scale=-2:min(ih\\,{args.max_height})'"])
+            ff_opts.extend(["-vf", "scale=-2:min(ih\\,{args.max_height})"])
         # TODO: Source Width,Height must be even for YUV_420 colorspace
 
     is_split = bool(audio_stream)
@@ -134,14 +134,14 @@ def process_path(args, path, **kwargs):
                 return None
         else:
             if channels == 1:
-                ff_opts.extend(["-ac 1"])
+                ff_opts.extend(["-ac", "1"])
             else:
-                ff_opts.extend(["-ac 2"])
+                ff_opts.extend(["-ac", "2"])
 
             if bitrate >= 256000:
-                ff_opts.extend(["-b:a 128k"])
+                ff_opts.extend(["-b:a", "128k"])
             else:
-                ff_opts.extend(["-b:a 64k", "-frame_duration 40"])
+                ff_opts.extend(["-b:a", "64k", "-frame_duration", "40"])
 
             if source_rate >= 44100:
                 opus_rate = 48000
@@ -149,7 +149,7 @@ def process_path(args, path, **kwargs):
                 opus_rate = 24000
             else:
                 opus_rate = 16000
-            ff_opts.extend(["-c:a libopus", f"-ar {opus_rate}", "-filter:a loudnorm=i=-18:tp=-3:lra=17"])
+            ff_opts.extend(["-c:a", "libopus", "-ar", str(opus_rate), "-filter:a", "loudnorm=i=-18:tp=-3:lra=17"])
 
         if is_split:
             try:
@@ -192,7 +192,7 @@ def process_path(args, path, **kwargs):
                 output_path = path.with_suffix(".%03d" + output_suffix)
                 final_splits = ",".join(final_splits)
                 print(f"Splitting {path} at points: {final_splits}")
-                ff_opts.extend(["-f segment", f"-segment_times {final_splits}"])
+                ff_opts.extend(["-f", "segment", "-segment_times", final_splits])
             else:
                 is_split = False
 
@@ -200,13 +200,25 @@ def process_path(args, path, **kwargs):
         log.warning("Output folder will be different due to path cleaning: %s", output_path.parent)
         output_path.parent.mkdir(exist_ok=True, parents=True)
 
-    cmd = f'ffmpeg -nostdin -hide_banner -loglevel warning -y -i {shlex.quote(str(path))} {" ".join(ff_opts)} {shlex.quote(str(output_path))}'
+    command = [
+        "ffmpeg",
+        "-nostdin",
+        "-hide_banner",
+        "-loglevel",
+        "warning",
+        "-y",
+        "-i",
+        str(path),
+        *ff_opts,
+        str(output_path),
+    ]
+
     if args.simulate:
-        print(cmd)
+        print(shlex.join(command))
         return path
     else:
         try:
-            processes.cmd(cmd, shell=True)
+            processes.cmd(*command)
         except subprocess.CalledProcessError:
             log.exception("Could not transcode: %s", path)
             if args.delete_unplayable:
