@@ -1,5 +1,6 @@
 import shutil, tempfile
 from pathlib import Path
+from shutil import which
 
 import pytest
 
@@ -21,7 +22,7 @@ def test_probe_if_animation(path, result):
     assert is_animation_from_probe(probe) is result
 
 
-@pytest.skip("requires imagemagick")
+@pytest.mark.skipif(not which("magick"), reason="requires magick")
 @pytest.mark.parametrize(
     "path,duration,out_ext",
     [
