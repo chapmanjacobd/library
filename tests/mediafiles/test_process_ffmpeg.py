@@ -21,6 +21,7 @@ def test_probe_if_animation(path, result):
     assert is_animation_from_probe(probe) is result
 
 
+@pytest.skip("requires imagemagick")
 @pytest.mark.parametrize(
     "path,duration,out_ext",
     [
