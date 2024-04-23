@@ -36,3 +36,11 @@ def connect_db_args(db_path):
 
 def ignore_tz(s):
     return datetime.fromtimestamp(s, timezone.utc).replace(tzinfo=None).timestamp()
+
+
+def get_default_args(*funcs):
+    parser = argparse.ArgumentParser()
+    for func in funcs:
+        func(parser)
+    defaults = {action.dest: action.default for action in parser._actions}
+    return defaults

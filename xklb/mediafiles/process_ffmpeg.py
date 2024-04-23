@@ -1,7 +1,8 @@
-import argparse, json, os, shlex, subprocess
+import argparse, os, shlex, subprocess
 from pathlib import Path
 
 from xklb import usage
+from xklb.mediafiles import process_image
 from xklb.utils import arggroups, nums, objects, path_utils, processes, web
 from xklb.utils.arg_utils import kwargs_overwrite
 from xklb.utils.log_utils import log
@@ -24,24 +25,58 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def process_path(args, path, **kwargs):
-    args = kwargs_overwrite(args, kwargs)
+def is_animation_from_probe(probe) -> bool:
+    if probe.audio_streams:
+        return True
+    for stream in probe.video_streams:
+        frames = nums.safe_int(stream["nb_frames"])
+        if frames is None:
+            r = processes.cmd(
+                "ffprobe",
+                "-nostdin",
+                "-v",
+                "error",
+                "-count_frames",
+                "-select_streams",
+                "v:0",
+                "-show_entries",
+                "stream=nb_read_frames",
+                "-of",
+                "default=nokey=1:noprint_wrappers=1",
+                probe.path,
+            )
+            frames = nums.safe_int(r.stdout)
+            if frames is None:
+                raise RuntimeError
 
-    output_path = Path(web.url_to_local_path(path) if path.startswith("http") else path)
+        if frames > 1:
+            return True
+
+    return False
+
+
+def process_path(args, path, **kwargs):
+    if kwargs:
+        args = kwargs_overwrite(args, kwargs)
+
+    output_path = Path(web.url_to_local_path(path) if str(path).startswith("http") else path)
     output_path = Path(path_utils.clean_path(bytes(output_path), max_name_len=251))
 
     path = Path(path)
     original_stats = path.stat()
+    probe = processes.FFProbe(path)
 
-    ffprobe_cmd = ["ffprobe", "-v", "error", "-print_format", "json", "-show_format", "-show_streams", path]
-    result = subprocess.run(ffprobe_cmd, capture_output=True)
-    info = json.loads(result.stdout)
-
-    if "streams" not in info:
+    if not probe.streams:
         log.error("No media streams found: %s", path)
         return path
-    video_stream = next((stream for stream in info["streams"] if stream["codec_type"] == "video"), None)
-    audio_stream = next((stream for stream in info["streams"] if stream["codec_type"] == "audio"), None)
+
+    if path.suffix.lower() in (".gif", ".png", ".apng", ".webp", ".avif", ".avifs", ".flif", ".mng"):
+        is_animation = is_animation_from_probe(probe)
+        if not is_animation:
+            return process_image.process_path(args, path)
+
+    video_stream = next((s for s in probe.video_streams), None)
+    audio_stream = next((s for s in probe.audio_streams), None)
     if not video_stream:
         log.warning("No video stream found: %s", path)
         if args.delete_no_video:
@@ -77,14 +112,15 @@ def process_path(args, path, **kwargs):
             ff_opts.extend([f"-vf 'scale=-2:min(iw\\,{args.max_width})'"])
         elif height > (args.max_height * (1 + args.max_height_buffer)):
             ff_opts.extend([f"-vf 'scale=-2:min(ih\\,{args.max_height})'"])
+        # TODO: Source Width,Height must be even for YUV_420 colorspace
 
     is_split = bool(audio_stream)
     if audio_stream:
         channels = audio_stream.get("channels") or 2
-        bitrate = int(audio_stream.get("bit_rate") or info["format"].get("bit_rate") or 256000)
+        bitrate = int(audio_stream.get("bit_rate") or probe.format.get("bit_rate") or 256000)
         source_rate = int(audio_stream.get("sample_rate") or 44100)
 
-        duration = float(audio_stream.get("duration") or info["format"].get("duration") or 0)
+        duration = float(audio_stream.get("duration") or probe.format.get("duration") or 0)
         is_split = args.always_split or (args.split_longer_than and duration > args.split_longer_than)
 
         try:
@@ -180,7 +216,9 @@ def process_path(args, path, **kwargs):
                 raise
 
         if is_split:
-            output_path = output_path.with_name(output_path.name.replace(".%03d",".000"))  # TODO: support / return multiple paths...
+            output_path = output_path.with_name(
+                output_path.name.replace(".%03d", ".000")
+            )  # TODO: support / return multiple paths...
 
         if not Path(output_path).exists() or output_path.stat().st_size == 0:
             output_path.unlink()  # Remove transcode

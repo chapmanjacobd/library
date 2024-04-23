@@ -176,6 +176,8 @@ class FFProbe:
                 raise UnplayableFile(out, err)
         d = json.loads(out.decode("utf-8"))
 
+        self.path = path
+
         self.streams = d.get("streams")
         self.chapters = d.get("chapters")
         self.format = d.get("format")

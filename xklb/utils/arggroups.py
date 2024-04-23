@@ -229,6 +229,9 @@ def process_ffmpeg(parser):
     parser.add_argument("--audio-only", "-vn", action="store_true", help="Only extract audio")
     parser.add_argument("--no-preserve-video", action="store_true")
 
+    parser.add_argument("--max-image-height", type=int, default=2400)
+    parser.add_argument("--max-image-width", type=int, default=2400)
+
 
 def download(parser):
     parser.add_argument(

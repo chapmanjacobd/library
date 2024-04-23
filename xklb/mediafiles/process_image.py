@@ -12,8 +12,8 @@ def parse_args() -> argparse.Namespace:
     arggroups.capability_simulate(parser)
     parser.add_argument("--delete-unplayable", action="store_true")
 
-    parser.add_argument("--max-height", type=int, default=2400)
-    parser.add_argument("--max-width", type=int, default=2400)
+    parser.add_argument("--max-image-height", type=int, default=2400)
+    parser.add_argument("--max-image-width", type=int, default=2400)
     arggroups.debug(parser)
 
     parser.add_argument("paths", nargs="+")
@@ -24,7 +24,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def process_path(args, path):
-    if path.startswith("http"):
+    if str(path).startswith("http"):
         output_path = Path(web.url_to_local_path(path))
     else:
         output_path = Path(path)
@@ -41,7 +41,14 @@ def process_path(args, path):
         log.warning("Output folder will be different due to path cleaning: %s", output_path.parent)
         output_path.parent.mkdir(exist_ok=True, parents=True)
 
-    command = ["magick", "convert", "-resize", f"{args.max_width}x{args.max_height}>", str(path), str(output_path)]
+    command = [
+        "magick",
+        "convert",
+        "-resize",
+        f"{args.max_image_width}x{args.max_image_height}>",
+        str(path),
+        str(output_path),
+    ]
 
     if args.simulate:
         print(shlex.join(command))
