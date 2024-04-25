@@ -87,7 +87,7 @@ stats = """library stats DATABASE TIME_COLUMN
 
 download = r"""library download [--prefix /mnt/d/] [--safe] [--subs] [--auto-subs] [--small] DATABASE --video | --audio | --photos
 
-    Files will be saved to <lb download prefix>/<extractor>/. If prefix is not specified the current working directory will be used
+    Files will be saved to <lb download prefix>/<extractor>/. The default prefix is the current working directory.
 
     By default things will download in a random order
 
@@ -131,6 +131,8 @@ download = r"""library download [--prefix /mnt/d/] [--safe] [--subs] [--auto-sub
         ├────────────┼──────────────────┼────────────────────┼──────────┤
         │ Youtube    │ 7.68 minutes     │                 99 │        1 │
         ╘════════════╧══════════════════╧════════════════════╧══════════╛
+
+    Broadcatching absolution
 """
 
 block = r"""library block DATABASE URLS ...

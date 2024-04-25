@@ -121,7 +121,7 @@ def playback(parser):
         help="After a playback error continue to the next track instead of exiting",
     )
 
-    parser.add_argument("--folder", action="store_true", help="Experimental escape hatch to open folder")
+    parser.add_argument("--folders", "--folder", action="store_true", help="Experimental escape hatch to open folder")
     parser.add_argument(
         "--folder-glob",
         "--folderglob",
