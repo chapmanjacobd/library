@@ -1,4 +1,4 @@
-import argparse, platform, shutil, subprocess, threading, time
+import argparse, os, platform, shutil, subprocess, threading, time
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -401,6 +401,9 @@ class MediaPrefetcher:
             player = [*args.override_player]
             player_need_sleep = False
 
+        elif getattr(args, "folders", False):
+            player_need_sleep = True
+
         elif args.action in (SC.read):
             if system() == "Linux":
                 player_path = find_xdg_application(m["path"])
@@ -486,8 +489,12 @@ class MediaPrefetcher:
                 m["path"] = m["original_path"] = transcode(self.args, m["path"])
                 log.debug("transcode: %s", t.elapsed())
 
-        m["now_playing"] = playback_control.now_playing(m["path"])
+        if self.args.folders:
+            m["now_playing"] = m["path"]
+        else:
+            m["now_playing"] = playback_control.now_playing(m["path"])
         log.debug("playback_control: %s", t.elapsed())
+
         m["player"], m["player_need_sleep"] = self.infer_command(m)
         log.debug("player.parse: %s", t.elapsed())
 
@@ -520,14 +527,27 @@ class MediaPrefetcher:
 
 
 def single_player(args, m):
-    if system() == "Windows" or args.action in (SC.watch):
-        r = processes.cmd(*m["player"], m["path"], strict=False)
-    else:  # args.action in (SC.listen)
-        r = processes.cmd_interactive(*m["player"], m["path"], strict=False)
+    is_windows = system() == "Windows"
+
+    if args.folders:
+        if args.override_player:
+            r = processes.cmd(*m["player"], m["path"], strict=False)
+        elif is_windows:
+            os.startfile(m["path"])  # type: ignore
+        elif which("open"):
+            r = processes.cmd("open", m["path"], strict=False)
+        else:
+            r = processes.cmd("xdg-open", m["path"], strict=False)
+    else:
+        if is_windows or args.action in (SC.watch):
+            r = processes.cmd(*m["player"], m["path"], strict=False)
+        else:  # args.action in (SC.listen)
+            r = processes.cmd_interactive(*m["player"], m["path"], strict=False)
 
     if m["player_need_sleep"]:
         try:
-            devices.confirm("Continue?")
+            if not devices.confirm("Continue?"):
+                raise SystemExit(0)
         except Exception:
             log.exception("Could not open prompt")
             delay = 10  # TODO: idk

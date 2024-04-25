@@ -393,7 +393,7 @@ def process_playqueue(args) -> None:
             args.fetch_siblings,
             args.related,
             args.cluster_sort,
-            args.folder,
+            args.folders,
             args.folder_glob,
         ],
     ):
@@ -487,8 +487,15 @@ def process_playqueue(args) -> None:
         args.refresh = False
         return process_playqueue(args)
 
-    if args.folder:
-        media = ({**m, "path": str(Path(m["path"]).parent)} for m in media)
+    if args.folders:
+        unique_folders = set()
+        media_unique_folders = []
+        for m in media:
+            folder_path = str(Path(m["path"]).parent)
+            if folder_path not in unique_folders:
+                unique_folders.add(folder_path)
+                media_unique_folders.append({**m, "path": folder_path})
+        media = media_unique_folders
     elif args.folder_glob:
         media = ({"path": s} for m in media for s in file_utils.fast_glob(Path(m["path"]).parent, args.folder_glob))
 
