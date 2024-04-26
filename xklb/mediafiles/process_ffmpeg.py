@@ -236,14 +236,23 @@ def process_path(args, path, **kwargs):
             output_path.unlink()  # Remove transcode
             return path
 
-        if video_stream and (not args.audio_only or (args.audio_only and args.no_preserve_video)):
-            path.unlink()  # Remove original
-        elif output_path.stat().st_size > path.stat().st_size:
-            output_path.unlink()  # Remove transcode
+        delete_original = True
+        delete_transcode = False
+
+        if video_stream and args.audio_only and not args.no_preserve_video:
+            delete_original = False
+
+        if output_path.stat().st_size > path.stat().st_size:
+            delete_original = False
+            delete_transcode = True
+
+        if delete_transcode:
+            output_path.unlink()
             return path
-        else:
-            path.unlink()  # Remove original
-            os.utime(output_path, (original_stats.st_atime, original_stats.st_mtime))
+        elif delete_original:
+            path.unlink()
+
+        os.utime(output_path, (original_stats.st_atime, original_stats.st_mtime))
 
     return output_path
 
