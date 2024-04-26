@@ -307,92 +307,6 @@ def filter_args_sql(args, m_columns):
     """
 
 
-def get_dir_media(args, dirs: Collection, include_subdirs=False, limit=2_000) -> list[dict]:
-    if len(dirs) == 0:
-        return processes.no_media_found()
-
-    m_columns = db_utils.columns(args, "media")
-
-    if include_subdirs:
-        filter_paths = "AND (" + " OR ".join([f"path LIKE :subpath{i}" for i in range(len(dirs))]) + ")"
-    else:
-        filter_paths = (
-            "AND ("
-            + " OR ".join(
-                [f"(path LIKE :subpath{i} and path not like :subpath{i} || '%{os.sep}%')" for i in range(len(dirs))]
-            )
-            + ")"
-        )
-
-    select_sql = "\n        , ".join(s for s in args.select if s not in ["rank"])
-
-    query = f"""WITH m as (
-            SELECT
-                SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
-                , MIN(h.time_played) time_first_played
-                , MAX(h.time_played) time_last_played
-                , FIRST_VALUE(h.playhead) OVER (PARTITION BY h.media_id ORDER BY h.time_played DESC) playhead
-                , {select_sql}
-                , m.*
-            FROM media m
-            LEFT JOIN history h on h.media_id = m.id
-            WHERE 1=1
-                and m.id in (select id from {args.table})
-                {filter_args_sql(args, m_columns)}
-                {filter_paths}
-            GROUP BY m.id, m.path
-        )
-        SELECT *
-        FROM m
-        ORDER BY play_count
-            , m.path LIKE "http%"
-            , path
-            {'' if 'sort' in args.defaults else ', ' + args.sort}
-        LIMIT {limit}
-    """
-
-    subpath_params = {f"subpath{i}": value + "%" for i, value in enumerate(dirs)}
-
-    bindings = {**subpath_params}
-    bindings = {**bindings, **{k: v for k, v in args.filter_bindings.items() if k.startswith("FTS")}}
-
-    media = list(args.db.query(query, bindings))
-    log.debug("len(dir_media) = %s", len(media))
-    if len(media) == 0:
-        log.debug("dir_media dirs %s", dirs)
-    else:
-        log.debug("get_dir_media[0] %s", media[0:1])
-
-    return media
-
-
-def get_sibling_media(args, media):
-    if args.fetch_siblings in ("always", "all"):
-        dirs = {str(Path(d["path"]).parent) + os.sep for d in media}
-        media = get_dir_media(args, dirs)
-    elif args.fetch_siblings == "each":
-        parents = {str(Path(d["path"]).parent) + os.sep for d in media}
-        media = []
-        for parent in parents:
-            media.extend(get_dir_media(args, [parent], limit=1)[0:1])
-    elif args.fetch_siblings == "if-audiobook":
-        new_media = []
-        seen = set()
-        for d in media:
-            if "audiobook" in d["path"].lower():
-                parent = str(Path(d["path"]).parent) + os.sep
-                if parent not in seen:
-                    seen.add(parent)
-                    new_media.extend(get_dir_media(args, [parent], limit=1)[0:1])
-            else:
-                new_media.append(d)
-        media = new_media
-
-    # TODO: all-if>10, each-if=10 --lower --upper functionality could be replicated here
-
-    return media
-
-
 def natsort_media(args, media):
     from natsort import natsorted, ns, os_sorted
 
@@ -456,6 +370,102 @@ def natsort_media(args, media):
         media = natsorted(media, key=func_sort_key(alg), alg=NS_OPTS | ns.DEFAULT, reverse=reverse)
 
     log.debug("natsort[0] %s", media[0:1])
+    return media
+
+
+def get_dir_media(args, dirs: Collection, include_subdirs=False, limit=2_000) -> list[dict]:
+    if len(dirs) == 0:
+        return processes.no_media_found()
+
+    m_columns = db_utils.columns(args, "media")
+
+    if include_subdirs:
+        filter_paths = "AND (" + " OR ".join([f"path LIKE :subpath{i}" for i in range(len(dirs))]) + ")"
+    else:
+        filter_paths = (
+            "AND ("
+            + " OR ".join(
+                [f"(path LIKE :subpath{i} and path not like :subpath{i} || '%{os.sep}%')" for i in range(len(dirs))]
+            )
+            + ")"
+        )
+
+    select_sql = "\n        , ".join(s for s in args.select if s not in ["rank"])
+
+    query = f"""WITH m as (
+            SELECT
+                SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
+                , MIN(h.time_played) time_first_played
+                , MAX(h.time_played) time_last_played
+                , FIRST_VALUE(h.playhead) OVER (PARTITION BY h.media_id ORDER BY h.time_played DESC) playhead
+                , {select_sql}
+                , m.*
+            FROM media m
+            LEFT JOIN history h on h.media_id = m.id
+            WHERE 1=1
+                and m.id in (select id from {args.table})
+                {filter_args_sql(args, m_columns)}
+                {filter_paths}
+            GROUP BY m.id, m.path
+        )
+        SELECT *
+        FROM m
+        ORDER BY play_count
+            , m.path LIKE "http%"
+            , path
+            {'' if 'sort' in args.defaults else ', ' + args.sort}
+        LIMIT {limit}
+    """
+
+    subpath_params = {f"subpath{i}": value + "%" for i, value in enumerate(dirs)}
+
+    bindings = {**subpath_params}
+    bindings = {**bindings, **{k: v for k, v in args.filter_bindings.items() if k.startswith("FTS")}}
+
+    media = list(args.db.query(query, bindings))
+    log.debug("len(dir_media) = %s", len(media))
+    if len(media) == 0:
+        log.debug("dir_media dirs %s", dirs)
+    else:
+        log.debug("get_dir_media[0] %s", media[0:1])
+
+    return media
+
+
+def get_next_dir_media(args, folder):
+    if args.play_in_order:
+        media = get_dir_media(args, [folder], limit=100)
+        media = natsort_media(args, media)
+        m = media[0:1]
+    else:
+        m = get_dir_media(args, [folder], limit=1)[0:1]
+    return m
+
+
+def get_sibling_media(args, media):
+    if args.fetch_siblings in ("always", "all"):
+        dirs = {str(Path(d["path"]).parent) + os.sep for d in media}
+        media = get_dir_media(args, dirs)
+    elif args.fetch_siblings == "each":
+        parents = {str(Path(d["path"]).parent) + os.sep for d in media}
+        media = []
+        for parent in parents:
+            media.extend(get_next_dir_media(args, parent))
+    elif args.fetch_siblings == "if-audiobook":
+        new_media = []
+        seen = set()
+        for d in media:
+            if "audiobook" in d["path"].lower():
+                parent = str(Path(d["path"]).parent) + os.sep
+                if parent not in seen:
+                    seen.add(parent)
+                    new_media.extend(get_next_dir_media(args, parent))
+            else:
+                new_media.append(d)
+        media = new_media
+
+    # TODO: all-if>10, each-if=10 --lower --upper functionality could be replicated here
+
     return media
 
 
