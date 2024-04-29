@@ -1306,8 +1306,6 @@ mv_list = """library mv-list [--limit LIMIT] [--lower LOWER] [--upper UPPER] MOU
 
 scatter = """library scatter [--limit LIMIT] [--policy POLICY] [--sort SORT] --targets TARGETS DATABASE RELATIVE_PATH ...
 
-    Balance files across filesystem folder trees or multiple devices (mostly useful for mergerfs)
-
     Scatter filesystem folder trees (without mountpoints; limited functionality; good for balancing fs inodes)
 
         library scatter scatter.db /test/{0,1,2,3,4,5,6,7,8,9}
@@ -1315,6 +1313,8 @@ scatter = """library scatter [--limit LIMIT] [--policy POLICY] [--sort SORT] --t
     Reduce number of files per folder (creates more folders)
 
         library scatter scatter.db --max-files-per-folder 16000 /test/{0,1,2,3,4,5,6,7,8,9}
+
+    Balance files across filesystem folder trees or multiple devices (mostly useful for mergerfs)
 
     Multi-device re-bin: balance by size
 
