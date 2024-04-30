@@ -6,6 +6,7 @@ from random import randint
 from xklb import usage
 from xklb.mediadb import db_history, db_media
 from xklb.utils import arggroups, consts, db_utils, iterables, objects, path_utils, strings
+from xklb.utils.arg_utils import gen_paths
 from xklb.utils.log_utils import log
 
 
@@ -18,7 +19,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--allow-immediate", action="store_true")
     arggroups.debug(parser)
     arggroups.database(parser)
-    parser.add_argument("paths", nargs="+")
+    arggroups.paths_or_stdin(parser)
     args = parser.parse_intermixed_args()
 
     args.frequency = strings.partial_startswith(args.frequency, consts.frequency)
@@ -88,6 +89,7 @@ def tabs_add(args=None) -> None:
     if args:
         sys.argv = ["lb", *args]
     args = parse_args()
+    args.paths = list(gen_paths(args))
 
     tabs = iterables.list_dict_filter_bool([consolidate_url(args, path) for path in get_new_paths(args)])
     for tab in tabs:

@@ -4,7 +4,7 @@ from pathlib import Path
 from xklb import usage
 from xklb.mediafiles import process_image
 from xklb.utils import arggroups, nums, objects, path_utils, processes, web
-from xklb.utils.arg_utils import kwargs_overwrite
+from xklb.utils.arg_utils import gen_paths, kwargs_overwrite
 from xklb.utils.log_utils import log
 
 
@@ -15,7 +15,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--delete-unplayable", action="store_true")
     arggroups.debug(parser)
 
-    parser.add_argument("paths", nargs="+")
+    arggroups.paths_or_stdin(parser)
     args = parser.parse_args()
 
     args.split_longer_than = nums.human_to_seconds(args.split_longer_than)
@@ -260,7 +260,7 @@ def process_path(args, path, **kwargs):
 def process_ffmpeg():
     args = parse_args()
 
-    for path in args.paths:
+    for path in gen_paths(args):
         if not path.startswith("http"):
             path = str(Path(path).resolve())
 

@@ -5,7 +5,24 @@ from pathlib import Path
 from xklb import usage
 from xklb.files import sample_hash
 from xklb.utils import arggroups, nums, objects
+from xklb.utils.arg_utils import gen_paths
 from xklb.utils.log_utils import log
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(prog="library sample-compare", usage=usage.sample_compare)
+    arggroups.sample_hash_bytes(parser)
+    parser.add_argument("--ignore-holes", "--ignore-sparse", action="store_true")
+    parser.add_argument("--skip-full-hash", action="store_true")
+    arggroups.debug(parser)
+
+    arggroups.paths_or_stdin(parser)
+    args = parser.parse_args()
+
+    args.gap = nums.float_from_percent(args.gap)
+
+    log.info(objects.dict_filter_bool(args.__dict__))
+    return args
 
 
 def full_hash_file(path):
@@ -77,19 +94,9 @@ def sample_cmp(*paths, threads=1, gap=0.1, chunk_size=None, ignore_holes=False, 
 
 
 def sample_compare() -> None:
-    parser = argparse.ArgumentParser(prog="library sample-compare", usage=usage.sample_compare)
-    arggroups.sample_hash_bytes(parser)
-    parser.add_argument("--ignore-holes", "--ignore-sparse", action="store_true")
-    parser.add_argument("--skip-full-hash", action="store_true")
-    arggroups.debug(parser)
+    args = parse_args()
 
-    parser.add_argument("paths", nargs="+")
-    args = parser.parse_args()
-
-    args.gap = nums.float_from_percent(args.gap)
-
-    log.info(objects.dict_filter_bool(args.__dict__))
-
+    args.paths = list(gen_paths(args))
     is_equal = sample_cmp(
         *args.paths,
         threads=args.threads,
