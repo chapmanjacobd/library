@@ -35,6 +35,8 @@ def rglob(base_dir: str, extensions: None | Iterable[str] = None) -> tuple[set[s
                 if entry.is_dir(follow_symlinks=False):
                     folders.add(entry.path)
                     stack.append(entry.path)
+                elif entry.is_symlink():
+                    pass
                 else:
                     if extensions is None:
                         files.add(entry.path)

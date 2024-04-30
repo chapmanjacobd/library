@@ -7,7 +7,7 @@ from tabulate import tabulate
 from xklb import usage
 from xklb.fsdb import big_dirs
 from xklb.text import cluster_sort
-from xklb.utils import arg_utils, arggroups, consts, nums, objects, path_utils, printing, strings
+from xklb.utils import arg_utils, arggroups, consts, nums, objects, path_utils, printing, sql_utils, strings
 from xklb.utils.log_utils import log
 
 
@@ -140,6 +140,9 @@ def similar_folders():
     args = parse_args()
     media = list(arg_utils.gen_d(args))
     media = big_dirs.group_files_by_parent(args, media)
+    if args.folder_size:
+        args.folder_size = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.folder_size)
+        media = [d for d in media if args.folder_size(d["size"])]
 
     if args.filter_sizes or args.filter_counts:
         clusters = cluster_by_size(args, media)
