@@ -1,7 +1,8 @@
-import argparse, time
+import time
 from pathlib import Path
 
 from xklb.utils import consts, mpv_utils
+from xklb.utils.objects import NoneSpace
 
 
 def test_mpv_md5():
@@ -12,7 +13,7 @@ def test_mpv_md5():
 
 
 def test_get_playhead():
-    args = argparse.Namespace(
+    args = NoneSpace(
         mpv_socket=consts.DEFAULT_MPV_LISTEN_SOCKET,
         watch_later_directory=consts.DEFAULT_MPV_WATCH_LATER,
     )

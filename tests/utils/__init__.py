@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from xklb.utils import db_utils
+from xklb.utils.objects import NoneSpace
 
 
 def take5():
@@ -31,7 +32,7 @@ def filter_query_param(r1, r2):
 
 
 def connect_db_args(db_path):
-    return argparse.Namespace(db=db_utils.connect(argparse.Namespace(database=db_path, verbose=0)))
+    return NoneSpace(db=db_utils.connect(NoneSpace(database=db_path, verbose=0)))
 
 
 def ignore_tz(s):

@@ -1,9 +1,9 @@
-import argparse
 from pathlib import Path
 from unittest import skip
 
 from xklb.createdb import gallery_backend
 from xklb.utils.db_utils import connect
+from xklb.utils.objects import NoneSpace
 
 
 def create_args(test_name):
@@ -11,19 +11,13 @@ def create_args(test_name):
     Path(db_path).unlink(missing_ok=True)
     Path(db_path).touch()
 
-    args = argparse.Namespace(
-        database=db_path,
-        verbose=2,
-        profile={},
-        extractor_config={},
-        download_archive=None,
-    )
+    args = NoneSpace(database=db_path, verbose=2)
     args.db = connect(args)
     return args
 
 
 def test_safe_mode():
-    args = argparse.Namespace(download_archive=None, prefix=None)
+    args = NoneSpace()
     assert gallery_backend.is_supported(args, "https://i.redd.it/gdlcqo5xvpwa1.png")
     assert gallery_backend.is_supported(args, "https://www.reddit.com/gallery/145863a")
     assert gallery_backend.is_supported(args, "https://old.reddit.com/r/lego/comments/145863a/spaceship_moc/")
