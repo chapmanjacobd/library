@@ -39,7 +39,6 @@ def paths_or_stdin(parser):
         "--paths-from-text",
         "--files",
         "--file",
-        "-f",
         action="store_true",
         help="Read paths from line-delimited file(s)",
     )
@@ -267,7 +266,6 @@ def download(parser):
     )
     parser.add_argument(
         "--force",
-        "-f",
         action="store_true",
         help="Fetch metadata for paths even if they are already in the media table",
     )
