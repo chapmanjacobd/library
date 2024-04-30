@@ -1,6 +1,7 @@
 import os, platform, shutil, subprocess, threading, time
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
+from copy import copy
 from pathlib import Path
 from platform import system
 from random import randrange
@@ -369,7 +370,9 @@ def get_multiple_player_template(args) -> list[tuple[str, str]]:
 
 class MediaPrefetcher:
     def __init__(self, args, media: list[dict]):
-        self.args = args
+        threadsafe_args = copy(args)
+        threadsafe_args.db = None
+        self.args = threadsafe_args
         self.media = media
         self.media.reverse()
         self.remaining = len(media)
