@@ -1,9 +1,9 @@
 import argparse, shutil
-from os import fsdecode
+from os import fsdecode, fsencode
 from pathlib import Path
 
 from xklb import usage
-from xklb.utils import arggroups, objects, path_utils
+from xklb.utils import arggroups, file_utils, objects, path_utils
 from xklb.utils.log_utils import log
 
 
@@ -12,11 +12,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--dot-space", action="store_true")
     parser.add_argument("--case-insensitive", action="store_true")
     parser.add_argument("--lowercase-folders", action="store_true")
-    parser.add_argument("--overwrite", "-f", action="store_true")
+    parser.add_argument("--overwrite", "--force", action="store_true")
     parser.add_argument("--run", "-r", action="store_true")
     arggroups.debug(parser)
 
-    parser.add_argument("paths", nargs="*")
+    arggroups.paths_or_stdin(parser)
     args = parser.parse_args()
 
     log.info(objects.dict_filter_bool(args.__dict__))
@@ -69,7 +69,9 @@ def christen() -> None:
     for path in args.paths:
         base = Path(path).resolve()
         log.info("[%s]: Processing subfolders...", base)
-        subpaths = sorted((bytes(p.relative_to(base)) for p in base.rglob("*")), key=len, reverse=True)
+        subpaths = sorted(
+            (fsencode(p) for p in file_utils.rglob(str(base), args.ext or None)[0]), key=len, reverse=True
+        )
         for p in subpaths:
             rename_path(args, base, p)
 

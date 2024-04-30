@@ -28,7 +28,7 @@ def rglob(base_dir: str, extensions: None | Iterable[str] = None) -> tuple[set[s
         current_dir = stack.pop()
         try:
             scanned_dir = os.scandir(current_dir)
-        except FileNotFoundError:
+        except (FileNotFoundError, PermissionError):
             pass
         else:
             for entry in scanned_dir:

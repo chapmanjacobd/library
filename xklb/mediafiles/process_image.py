@@ -4,6 +4,7 @@ from pathlib import Path
 from xklb import usage
 from xklb.data import imagemagick_errors
 from xklb.utils import arggroups, objects, path_utils, processes, web
+from xklb.utils.arg_utils import gen_paths
 from xklb.utils.log_utils import log
 
 
@@ -16,7 +17,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-image-width", type=int, default=2400)
     arggroups.debug(parser)
 
-    parser.add_argument("paths", nargs="+")
+    arggroups.paths_or_stdin(parser)
     args = parser.parse_args()
 
     log.info(objects.dict_filter_bool(args.__dict__))
@@ -97,7 +98,7 @@ def process_path(args, path):
 def process_image():
     args = parse_args()
 
-    for path in args.paths:
+    for path in gen_paths(args):
         if not path.startswith("http"):
             path = str(Path(path).resolve())
 

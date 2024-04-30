@@ -5,6 +5,7 @@ from shutil import which
 
 from xklb import usage
 from xklb.utils import arggroups, consts, file_utils, nums, objects, printing, processes, strings
+from xklb.utils.arg_utils import gen_paths
 from xklb.utils.log_utils import log
 
 
@@ -13,7 +14,8 @@ def parse_args():
     arggroups.capability_delete(parser)
     arggroups.media_check(parser)
     arggroups.debug(parser)
-    parser.add_argument("paths", nargs="+")
+
+    arggroups.paths_or_stdin(parser)
     args = parser.parse_args()
 
     args.gap = nums.float_from_percent(args.gap)
@@ -161,6 +163,7 @@ def calculate_corruption(
 
 def media_check() -> None:
     args = parse_args()
+    args.paths = list(gen_paths(args))
 
     with ThreadPoolExecutor(max_workers=1 if args.verbose >= consts.LOG_DEBUG else 4) as pool:
         future_to_path = {

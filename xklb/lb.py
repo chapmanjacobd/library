@@ -41,7 +41,7 @@ progs = {
         "christen": "Clean file paths",
         "sample_hash": "Calculate a hash based on small file segments",
         "sample_compare": "Compare files using sample-hash and other shortcuts",
-        "similar_files": "Find similar files based on filename",
+        "similar_files": "Find similar files based on filename and size",
     },
     "Tabular data subcommands": {
         "eda": "Exploratory Data Analysis on table-like files",

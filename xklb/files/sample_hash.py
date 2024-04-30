@@ -4,7 +4,22 @@ from pathlib import Path
 
 from xklb import usage
 from xklb.utils import arggroups, nums, objects
+from xklb.utils.arg_utils import gen_paths
 from xklb.utils.log_utils import log
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(prog="library sample-hash", usage=usage.sample_hash)
+    arggroups.sample_hash_bytes(parser)
+    arggroups.debug(parser)
+
+    arggroups.paths_or_stdin(parser)
+    args = parser.parse_args()
+
+    args.gap = nums.float_from_percent(args.gap)
+
+    log.info(objects.dict_filter_bool(args.__dict__))
+    return args
 
 
 def single_thread_read(path, segments, chunk_size):
@@ -58,21 +73,12 @@ def sample_hash_file(path, threads=1, gap=0.1, chunk_size=None):
 
 
 def sample_hash() -> None:
-    parser = argparse.ArgumentParser(prog="library sample-hash", usage=usage.sample_hash)
-    arggroups.sample_hash_bytes(parser)
-    arggroups.debug(parser)
-
-    parser.add_argument("paths", nargs="+")
-    args = parser.parse_args()
-
-    args.gap = nums.float_from_percent(args.gap)
-
-    log.info(objects.dict_filter_bool(args.__dict__))
+    args = parse_args()
 
     with ThreadPoolExecutor(max_workers=4) as pool:
         future_to_path = {
             pool.submit(sample_hash_file, path, threads=args.threads, gap=args.gap, chunk_size=args.chunk_size): path
-            for path in args.paths
+            for path in gen_paths(args)
         }
         for future in as_completed(future_to_path):
             path = future_to_path[future]

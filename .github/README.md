@@ -97,7 +97,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.7.005)
+    xk media library subcommands (v2.7.006)
 
     Create database subcommands:
     ╭───────────────┬──────────────────────────────────────────╮
@@ -164,7 +164,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
     ├────────────────┼─────────────────────────────────────────────────────┤
     │ sample-compare │ Compare files using sample-hash and other shortcuts │
     ├────────────────┼─────────────────────────────────────────────────────┤
-    │ similar-files  │ Find similar files based on filename                │
+    │ similar-files  │ Find similar files based on filename and size       │
     ╰────────────────┴─────────────────────────────────────────────────────╯
 
     Tabular data subcommands:
@@ -1381,7 +1381,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 ###### similar-files
 
-<details><summary>Find similar files based on filename</summary>
+<details><summary>Find similar files based on filename and size</summary>
 
     $ library similar-files -h
     usage: library similar-files PATH ...
