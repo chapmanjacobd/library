@@ -17,24 +17,28 @@ session = None
 def _get_retry_adapter(max_retries):
     import requests.adapters
 
-    retries = requests.adapters.Retry(
+    retry = requests.adapters.Retry(
         total=max_retries,
         connect=max_retries,
         read=max_retries,
-        status=2,
-        redirect=False,  # don't fail on redirect
-        backoff_factor=5,
+        status=max_retries // 2,
+        other=1,
+        redirect=4,
+        raise_on_redirect=False,
+        backoff_factor=3,
         status_forcelist=[
+            104,
             413,
             429,
             500,
             502,
             503,
             504,
+            522,
         ],
     )
 
-    return requests.adapters.HTTPAdapter(max_retries=retries)
+    return requests.adapters.HTTPAdapter(max_retries=retry)
 
 
 def parse_cookies_from_browser(input_str):
@@ -76,13 +80,14 @@ def requests_session(args=argparse.Namespace()):
     if session is None:
         import requests
 
-        http_max_retries = getattr(args, "http_max_retries", None) or 5
+        http_max_retries = getattr(args, "http_max_retries", None) or 8
         cookie_file = getattr(args, "cookies", None)
         cookies_from_browser = getattr(args, "cookies_from_browser", None)
 
         session = requests.Session()
-        session.mount("http", _get_retry_adapter(http_max_retries))  # also includes https
-        session.request = functools.partial(session.request, headers=headers, timeout=(4, 45))  # type: ignore
+        session.mount("http://", _get_retry_adapter(http_max_retries))
+        session.mount("https://", _get_retry_adapter(http_max_retries))
+        session.request = functools.partial(session.request, headers=headers, timeout=(5, 45))  # type: ignore
 
         if getattr(args, "allow_insecure", False):
             from urllib3.exceptions import InsecureRequestWarning
