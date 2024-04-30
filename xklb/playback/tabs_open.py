@@ -14,7 +14,6 @@ def parse_args(action) -> argparse.Namespace:
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         usage=usage.tabs_open,
     )
-
     arggroups.sql_fs(parser)
     arggroups.debug(parser)
 
