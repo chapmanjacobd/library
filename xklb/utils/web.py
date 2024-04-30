@@ -676,3 +676,26 @@ def remove_apache_sorting_params(url):
     )
 
     return new_url
+
+
+def is_html(url, max_size=15 * 1024 * 1024):
+    r = requests_session().get(url, stream=True)
+
+    content_length = r.headers.get("Content-Length")
+    if content_length and int(content_length) > max_size:
+        return False
+
+    content_type = r.headers.get("Content-Type")
+    if content_type and not any(
+        s in content_type for s in ("text/html", "text/xhtml", "text/xml", "application/xml", "application/xhtml+xml")
+    ):
+        return False
+
+    try:
+        chunk = next(r.iter_content(max_size + 1))  # one more byte than max_size
+        if len(chunk) > max_size:
+            return False
+    except (requests.RequestException, StopIteration):
+        return False
+
+    return True  # if ambiguous, return True

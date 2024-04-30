@@ -1021,21 +1021,21 @@ disk_usage = """library disk-usage DATABASE [--sort-groups-by size | count] [--d
 
 """
 
-christen = """library christen DATABASE [--run]
+christen = """library christen [--run]
 
     Rename files to be somewhat normalized
 
     Default mode is simulate
 
-        library christen fs.db
+        library christen ~/messy/
 
     To actually do stuff use the run flag
 
-        library christen audio.db --run
+        library christen . --run
 
     You can optionally replace all the spaces in your filenames with dots
 
-        library christen --dot-space video.db
+        library christen --dot-space
 """
 
 cluster_sort = """library cluster-sort [input_path | stdin] [output_path | stdout]
@@ -1906,4 +1906,43 @@ nouns = """library nouns (stdin)
     Extract compound nouns and phrases from unstructured mixed HTML plain text
 
         xsv select text hn_comment_202210242109.csv | library nouns | sort | uniq -c | sort --numeric-sort
+"""
+
+similar_files = """library similar-files PATH ...
+
+    Print similar files based on filenames
+"""
+
+similar_folders = """library similar-folders PATH ...
+
+    Find similar folders based on foldernames, similar size, and similar number of files
+
+        $ library similar-folders ~/d/
+
+        group /home/xk/d/dump/datasets/*vector          total_size    median_size      files
+        ----------------------------------------------  ------------  -------------  -------
+        /home/xk/d/dump/datasets/vector/output/         1.8 GiB       89.5 KiB          1980
+        /home/xk/d/dump/datasets/vector/output2/        1.8 GiB       89.5 KiB          1979
+
+    Find similar folders based on ONLY foldernames, using the full path
+
+        $ library similar-folders --no-filter-sizes --no-filter-counts --full-path ~/d/
+
+    Find similar folders based on ONLY number of files
+
+        $ library similar-folders --no-filter-names --no-filter-sizes ~/d/
+
+    Find similar folders based on ONLY median size
+
+        $ library similar-folders --no-filter-names --no-filter-counts ~/d/
+
+    Find similar folders based on ONLY total size
+
+        $ library similar-folders --no-filter-names --no-filter-counts --total-size ~/d/
+
+    Print only paths
+
+        $ library similar-folders ~/d/ -pf
+        /home/xk/d/dump/datasets/vector/output/
+        /home/xk/d/dump/datasets/vector/output2/
 """

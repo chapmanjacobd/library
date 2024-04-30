@@ -97,7 +97,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.6.022)
+    xk media library subcommands (v2.6.023)
 
     Create database subcommands:
     ╭───────────────┬──────────────────────────────────────────╮
@@ -142,21 +142,29 @@ To stop playing press Ctrl+C in either the terminal or mpv
     ╰────────────────┴─────────────────────────────────────────────╯
 
     Folder subcommands:
-    ╭───────────────┬──────────────────────────────────────────────────╮
-    │ merge-folders │ Merge two or more file trees                     │
-    ├───────────────┼──────────────────────────────────────────────────┤
-    │ relmv         │ Move files preserving parent folder hierarchy    │
-    ├───────────────┼──────────────────────────────────────────────────┤
-    │ mv-list       │ Find specific folders to move to different disks │
-    ├───────────────┼──────────────────────────────────────────────────┤
-    │ scatter       │ Scatter files between folders or disks           │
-    ╰───────────────┴──────────────────────────────────────────────────╯
+    ╭─────────────────┬────────────────────────────────────────────────────────────╮
+    │ merge-folders   │ Merge two or more file trees                               │
+    ├─────────────────┼────────────────────────────────────────────────────────────┤
+    │ relmv           │ Move files preserving parent folder hierarchy              │
+    ├─────────────────┼────────────────────────────────────────────────────────────┤
+    │ mv-list         │ Find specific folders to move to different disks           │
+    ├─────────────────┼────────────────────────────────────────────────────────────┤
+    │ scatter         │ Scatter files between folders or disks                     │
+    ├─────────────────┼────────────────────────────────────────────────────────────┤
+    │ mount-stats     │ Show some relative mount stats                             │
+    ├─────────────────┼────────────────────────────────────────────────────────────┤
+    │ similar-folders │ Find similar folders based on folder name, size, and count │
+    ╰─────────────────┴────────────────────────────────────────────────────────────╯
 
     File subcommands:
     ╭────────────────┬─────────────────────────────────────────────────────╮
+    │ christen       │ Clean file paths                                    │
+    ├────────────────┼─────────────────────────────────────────────────────┤
     │ sample-hash    │ Calculate a hash based on small file segments       │
     ├────────────────┼─────────────────────────────────────────────────────┤
     │ sample-compare │ Compare files using sample-hash and other shortcuts │
+    ├────────────────┼─────────────────────────────────────────────────────┤
+    │ similar-files  │ Find similar files based on filename                │
     ╰────────────────┴─────────────────────────────────────────────────────╯
 
     Tabular data subcommands:
@@ -185,17 +193,13 @@ To stop playing press Ctrl+C in either the terminal or mpv
     ╰──────────────────┴────────────────────────╯
 
     Filesystem Database subcommands:
-    ╭─────────────┬────────────────────────────────╮
-    │ christen    │ Clean filenames                │
-    ├─────────────┼────────────────────────────────┤
-    │ disk-usage  │ Show disk usage                │
-    ├─────────────┼────────────────────────────────┤
-    │ mount-stats │ Show some relative mount stats │
-    ├─────────────┼────────────────────────────────┤
-    │ big-dirs    │ Show large folders             │
-    ├─────────────┼────────────────────────────────┤
-    │ search-db   │ Search a SQLITE database       │
-    ╰─────────────┴────────────────────────────────╯
+    ╭────────────┬──────────────────────────╮
+    │ disk-usage │ Show disk usage          │
+    ├────────────┼──────────────────────────┤
+    │ big-dirs   │ Show large folders       │
+    ├────────────┼──────────────────────────┤
+    │ search-db  │ Search a SQLITE database │
+    ╰────────────┴──────────────────────────╯
 
     Media Database subcommands:
     ╭─────────────────┬─────────────────────────────────────────────────────────────╮
@@ -1193,8 +1197,6 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     $ library scatter -h
     usage: library scatter [--limit LIMIT] [--policy POLICY] [--sort SORT] --targets TARGETS DATABASE RELATIVE_PATH ...
 
-    Balance files across filesystem folder trees or multiple devices (mostly useful for mergerfs)
-
     Scatter filesystem folder trees (without mountpoints; limited functionality; good for balancing fs inodes)
 
         library scatter scatter.db /test/{0,1,2,3,4,5,6,7,8,9}
@@ -1202,6 +1204,8 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     Reduce number of files per folder (creates more folders)
 
         library scatter scatter.db --max-files-per-folder 16000 /test/{0,1,2,3,4,5,6,7,8,9}
+
+    Balance files across filesystem folder trees or multiple devices (mostly useful for mergerfs)
 
     Multi-device re-bin: balance by size
 
@@ -1268,7 +1272,84 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 </details>
 
+###### mount-stats
+
+<details><summary>Show some relative mount stats</summary>
+
+    $ library mount-stats -h
+    usage: library mount-stats MOUNTPOINT ...
+
+    Print relative use and free for multiple mount points
+
+
+</details>
+
+###### similar-folders
+
+<details><summary>Find similar folders based on folder name, size, and count</summary>
+
+    $ library similar-folders -h
+    usage: library similar-folders PATH ...
+
+    Find similar folders based on foldernames, similar size, and similar number of files
+
+        $ library similar-folders ~/d/
+
+        group /home/xk/d/dump/datasets/*vector          total_size    median_size      files
+        ----------------------------------------------  ------------  -------------  -------
+        /home/xk/d/dump/datasets/vector/output/         1.8 GiB       89.5 KiB          1980
+        /home/xk/d/dump/datasets/vector/output2/        1.8 GiB       89.5 KiB          1979
+
+    Find similar folders based on ONLY foldernames, using the full path
+
+        $ library similar-folders --no-filter-sizes --no-filter-counts --full-path ~/d/
+
+    Find similar folders based on ONLY number of files
+
+        $ library similar-folders --no-filter-names --no-filter-sizes ~/d/
+
+    Find similar folders based on ONLY median size
+
+        $ library similar-folders --no-filter-names --no-filter-counts ~/d/
+
+    Find similar folders based on ONLY total size
+
+        $ library similar-folders --no-filter-names --no-filter-counts --total-size ~/d/
+
+    Print only paths
+
+        $ library similar-folders ~/d/ -pf
+        /home/xk/d/dump/datasets/vector/output/
+        /home/xk/d/dump/datasets/vector/output2/
+
+
+</details>
+
 ### File subcommands
+
+###### christen
+
+<details><summary>Clean file paths</summary>
+
+    $ library christen -h
+    usage: library christen [--run]
+
+    Rename files to be somewhat normalized
+
+    Default mode is simulate
+
+        library christen ~/messy/
+
+    To actually do stuff use the run flag
+
+        library christen . --run
+
+    You can optionally replace all the spaces in your filenames with dots
+
+        library christen --dot-space
+
+
+</details>
 
 ###### sample-hash
 
@@ -1294,6 +1375,18 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     usage: library sample-compare [--threads 10] [--chunk-size BYTES] [--gap BYTES OR 0.0-1.0*FILESIZE] PATH ...
 
     Convenience subcommand to compare multiple files using sample-hash
+
+
+</details>
+
+###### similar-files
+
+<details><summary>Find similar files based on filename</summary>
+
+    $ library similar-files -h
+    usage: library similar-files PATH ...
+
+    Print similar files based on filenames
 
 
 </details>
@@ -1587,30 +1680,6 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 ### Filesystem Database subcommands
 
-###### christen
-
-<details><summary>Clean filenames</summary>
-
-    $ library christen -h
-    usage: library christen DATABASE [--run]
-
-    Rename files to be somewhat normalized
-
-    Default mode is simulate
-
-        library christen fs.db
-
-    To actually do stuff use the run flag
-
-        library christen audio.db --run
-
-    You can optionally replace all the spaces in your filenames with dots
-
-        library christen --dot-space video.db
-
-
-</details>
-
 ###### disk-usage
 
 <details><summary>Show disk usage</summary>
@@ -1645,18 +1714,6 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         | /home/xk/github/xk/lb/__pypackages__/3.11/lib/jedi/third_party/typeshed/third_party/2and3/requests/packages/urllib3/packages/ssl_match_hostname/__init__.pyi        | 88 Bytes |
         | /home/xk/github/xk/lb/__pypackages__/3.11/lib/jedi/third_party/typeshed/third_party/2and3/requests/packages/urllib3/packages/ssl_match_hostname/_implementation.pyi | 81 Bytes |
 
-
-
-</details>
-
-###### mount-stats
-
-<details><summary>Show some relative mount stats</summary>
-
-    $ library mount-stats -h
-    usage: library mount-stats MOUNTPOINT ...
-
-    Print relative use and free for multiple mount points
 
 
 </details>
@@ -1804,7 +1861,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     $ library download -h
     usage: library download [--prefix /mnt/d/] [--safe] [--subs] [--auto-subs] [--small] DATABASE --video | --audio | --photos
 
-    Files will be saved to <lb download prefix>/<extractor>/. If prefix is not specified the current working directory will be used
+    Files will be saved to <lb download prefix>/<extractor>/. The default prefix is the current working directory.
 
     By default things will download in a random order
 
@@ -1848,6 +1905,8 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         ├────────────┼──────────────────┼────────────────────┼──────────┤
         │ Youtube    │ 7.68 minutes     │                 99 │        1 │
         ╘════════════╧══════════════════╧════════════════════╧══════════╛
+
+    Broadcatching absolution
 
 
 </details>

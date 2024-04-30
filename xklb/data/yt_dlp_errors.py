@@ -22,7 +22,7 @@ yt_recoverable_errors = re.compile(
 .*Got error: 0 bytes read
 .*HTTP Error 429
 .*HTTP Error 400
-.*HTTP Error 503: Service Unavailable
+.*HTTP Error 503
 .*Origin Error
 .*API is not granting access
 .*Did not get any data blocks

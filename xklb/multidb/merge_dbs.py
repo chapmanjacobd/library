@@ -1,4 +1,4 @@
-import argparse
+import argparse, sqlite3
 from pathlib import Path
 
 from xklb import usage
@@ -45,7 +45,7 @@ def parse_args() -> argparse.Namespace:
 def merge_db(args, source_db) -> None:
     source_db = str(Path(source_db).resolve())
 
-    s_db = db_utils.connect(argparse.Namespace(database=source_db, verbose=args.verbose))
+    s_db = db_utils.connect(args, conn=sqlite3.connect(args.database))
     for table in [s for s in s_db.table_names() if "_fts" not in s and not s.startswith("sqlite_")]:
         if args.only_tables and table not in args.only_tables:
             log.info("[%s]: Skipping %s", source_db, table)

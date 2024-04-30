@@ -448,7 +448,7 @@ def process_playqueue(args) -> None:
 
     if args.big_dirs:
         media_keyed = {d["path"]: d for d in media}
-        folders = big_dirs.group_files_by_folder(args, media)
+        folders = big_dirs.group_files_by_parents(args, media)
         dirs = big_dirs.process_big_dirs(args, folders)
         dirs = mcda.group_sort_by(args, dirs)
         log.debug("process_bigdirs: %s", t.elapsed())

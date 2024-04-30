@@ -1,4 +1,5 @@
 import argparse, os
+from collections import defaultdict
 from pathlib import Path
 
 from xklb import media_printer, usage
@@ -44,10 +45,12 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def group_files_by_folder(args, media) -> list[dict]:
+def group_files_by_parents(args, media) -> list[dict]:
     p_media = {}
+    min_parts = 10
     for m in media:
         p = m["path"].split(os.sep)
+        min_parts = min(min_parts, len(p))
         while len(p) >= 2:
             p.pop()
             parent = os.sep.join(p) + os.sep
@@ -56,6 +59,39 @@ def group_files_by_folder(args, media) -> list[dict]:
                 p_media[parent] = []
             else:
                 p_media[parent].append(m)
+
+    d = {}
+    for parent, media in list(p_media.items()):
+        d[parent] = {
+            "size": sum(m.get("size") or 0 for m in media if not bool(m.get("time_deleted"))),
+            "median_size": nums.safe_median(m.get("size") or 0 for m in media if not bool(m.get("time_deleted"))),
+            "total": len(media),
+            "exists": sum(not bool(m.get("time_deleted")) for m in media),
+            "deleted": sum(bool(m.get("time_deleted")) for m in media),
+            "deleted_size": sum(m.get("size") or 0 for m in media if bool(m.get("time_deleted"))),
+            "played": sum(bool(m.get("time_last_played")) for m in media),
+        }
+
+    for parent, _ in list(d.items()):
+        if len(parent.split(os.sep)) < min_parts:
+            d.pop(parent)
+
+    for path, pdict in list(d.items()):
+        if pdict["exists"] == 0:
+            d.pop(path)
+        elif not args.depth:
+            if args.lower and pdict["exists"] < args.lower:
+                d.pop(path)
+            elif args.upper and pdict["exists"] > args.upper:
+                d.pop(path)
+
+    return [{**v, "path": k} for k, v in d.items()]
+
+
+def group_files_by_parent(args, media) -> list[dict]:
+    p_media = defaultdict(list)
+    for m in media:
+        p_media[str(Path(m["path"]).parent)].append(m)
 
     d = {}
     for parent, media in list(p_media.items()):
@@ -125,19 +161,19 @@ def get_table(args) -> list[dict]:
     media = list(
         args.db.query(
             f"""
-        SELECT
-            path
-            , size
-            {', time_deleted' if 'time_deleted' in m_columns else ''}
-            , MAX(h.time_played) time_played
-        FROM media m
-        LEFT JOIN history h on h.media_id = m.id
-        WHERE 1=1
-            {'and time_downloaded > 0' if 'time_downloaded' in m_columns else ''}
-            {" ".join(args.filter_sql)}
-        GROUP BY m.id
-        ORDER BY path
-        """,
+            SELECT
+                path
+                , size
+                {', time_deleted' if 'time_deleted' in m_columns else ''}
+                , MAX(h.time_played) time_played
+            FROM media m
+            LEFT JOIN history h on h.media_id = m.id
+            WHERE 1=1
+                {'and time_downloaded > 0' if 'time_downloaded' in m_columns else ''}
+                {" ".join(args.filter_sql)}
+            GROUP BY m.id
+            ORDER BY path
+            """,
             args.filter_bindings,
         ),
     )
@@ -165,12 +201,12 @@ def big_dirs() -> None:
         from xklb.text.cluster_sort import cluster_paths
 
         groups = cluster_paths([d["path"] for d in media], n_clusters=getattr(args, "clusters", None))
-        groups = sorted(groups, key=lambda d: (-len(d["grouped_paths"]), -len(d["common_prefix"])))
+        groups = sorted(groups, key=lambda d: (-len(d["grouped_paths"]), -len(d["common_path"])))
 
         media_keyed = {d["path"]: d for d in media}
         folders = [
             {
-                "path": group["common_prefix"],
+                "path": group["common_path"],
                 "total": len(group["grouped_paths"]),
                 "played": sum(bool(media_keyed[s].get("time_played")) for s in group["grouped_paths"]),
                 "exists": sum(not bool(media_keyed[s].get("time_deleted")) for s in group["grouped_paths"]),
@@ -193,8 +229,10 @@ def big_dirs() -> None:
             }
             for group in groups
         ]
+    elif args.parents:
+        folders = group_files_by_parents(args, media)
     else:
-        folders = group_files_by_folder(args, media)
+        folders = group_files_by_parent(args, media)
 
     folders = mcda.group_sort_by(args, folders)
     media = process_big_dirs(args, folders)
