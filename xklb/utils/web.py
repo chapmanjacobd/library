@@ -15,9 +15,9 @@ session = None
 
 
 def _get_retry_adapter(max_retries):
-    import requests.adapters, urllib3.util.retry
+    import requests.adapters
 
-    retries = urllib3.util.retry.Retry(
+    retries = requests.adapters.Retry(
         total=max_retries,
         connect=max_retries,
         read=max_retries,

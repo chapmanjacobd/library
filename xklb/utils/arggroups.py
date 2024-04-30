@@ -359,6 +359,7 @@ def requests(parser):
     parser.add_argument("--cookies", help="path to a Netscape formatted cookies file")
     parser.add_argument("--cookies-from-browser", metavar="BROWSER[+KEYRING][:PROFILE][::CONTAINER]")
     parser.add_argument("--allow-insecure", "--allow-untrusted", "--disable-tls", action="store_true")
+    parser.add_argument("--http-max-retries", "--https-max-retries", type=int)
 
 
 def selenium(parser):

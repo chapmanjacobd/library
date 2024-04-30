@@ -120,7 +120,8 @@ def usage() -> str:
         subcommands_list.append(textwrap.indent(category_progs_text, "    "))
         subcommands_list.append("\n")
 
-    return f"""xk media library subcommands (v{__version__})
+    subcommands = list(iterables.flatten((v.keys() for k,v in progs.items())))
+    return f"""library (v{__version__}; {len(subcommands)} subcommands)
 {''.join(subcommands_list)}"""
 
 
