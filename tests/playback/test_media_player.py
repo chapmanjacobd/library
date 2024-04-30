@@ -20,6 +20,10 @@ def test_prefetch(media):
     args = NoneSpace(
         prefetch=2,
         database=":memory:",
+        prefix="",
+        transcode=False,
+        transcode_audio=False,
+        folders=False,
         action=consts.SC.watch,
         verbose=2,
     )
