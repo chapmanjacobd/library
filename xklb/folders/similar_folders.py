@@ -203,4 +203,4 @@ def similar_folders():
             print()
 
     if not args.only_originals and not args.only_duplicates:
-        print(len(groups), 'groups found')
+        print(len(groups), "groups found")
