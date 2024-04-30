@@ -41,7 +41,8 @@ class ArgparseDict(argparse.Action):
 class ArgparseArgsOrStdin(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         if values == STDIN_DASH:
-            print("Reading from stdin...", file=sys.stderr)
+            prog = ' '.join((parser.usage or '').split(' ', maxsplit=3)[0:2])
+            print(f"{prog}: Reading from stdin...", file=sys.stderr)
             lines = sys.stdin.readlines()
             if not lines or (len(lines) == 1 and lines[0].strip() == ""):
                 lines = None

@@ -64,6 +64,6 @@ def nouns() -> None:
     arggroups.debug(parser)
     args = parser.parse_args()
 
-    print("Reading from stdin...", file=sys.stderr)
+    print("library nouns: Reading from stdin...", file=sys.stderr)
     for line in sys.stdin:
         line_processor(line)

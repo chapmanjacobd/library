@@ -47,7 +47,7 @@ def pushshift_extract(args=None) -> None:
     count = 0
     reddit_posts = []
     media = []
-    print("Reading from stdin...", file=sys.stderr)
+    print("library pushshift: Reading from stdin...", file=sys.stderr)
     for line in sys.stdin:
         line = line.rstrip("\n")
         if line in ["", '""', "\n"]:
