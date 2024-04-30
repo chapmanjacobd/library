@@ -25,7 +25,7 @@ def gen_paths(args):
     elif args.paths_from_dbs or args.titles_from_dbs:
         for path in args.paths:
             if is_sqlite(path):
-                s_db = db_utils.connect(args, conn=sqlite3.connect(args.database))
+                s_db = db_utils.connect(args, conn=sqlite3.connect(path))
                 m_columns = s_db["media"].columns_dict
                 yield from (
                     d["path"]
@@ -35,7 +35,7 @@ def gen_paths(args):
                         {'title AS path' if args.titles_from_dbs else 'path'}
                     FROM media
                     WHERE 1=1
-                    {'and COALESCE(m.time_deleted,0) = 0' if 'time_deleted' in m_columns else ''}
+                    {'and COALESCE(time_deleted,0) = 0' if 'time_deleted' in m_columns else ''}
                     """
                     )
                 )
@@ -76,7 +76,7 @@ def gen_d(args):
     elif args.paths_from_dbs or args.titles_from_dbs:
         for path in args.paths:
             if is_sqlite(path):
-                s_db = db_utils.connect(args, conn=sqlite3.connect(args.database))
+                s_db = db_utils.connect(args, conn=sqlite3.connect(path))
                 m_columns = s_db["media"].columns_dict
                 yield from s_db.query(
                     f"""
@@ -86,7 +86,7 @@ def gen_d(args):
                         {', title' if 'title' in m_columns else ''}
                     FROM media
                     WHERE 1=1
-                    {'and COALESCE(m.time_deleted,0) = 0' if 'time_deleted' in m_columns else ''}
+                    {'and COALESCE(time_deleted,0) = 0' if 'time_deleted' in m_columns else ''}
                     """
                 )
             else:
