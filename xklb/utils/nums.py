@@ -16,6 +16,13 @@ def float_from_percent(s: str):
     return v
 
 
+def percentage_difference(value1, value2):
+    try:
+        return abs((value1 - value2) / ((value1 + value2) / 2)) * 100
+    except ZeroDivisionError:
+        return 100.0
+
+
 def to_timestamp(dt_object):
     return int(dt_object.replace(tzinfo=timezone.utc).timestamp())
 

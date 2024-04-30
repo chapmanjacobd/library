@@ -57,6 +57,10 @@ def connect(args, conn=None, **kwargs):
         db = DB(tracer=tracer if args.verbose >= consts.LOG_DEBUG_SQL else None, **kwargs)  # type: ignore
         return db
 
+    db_override = getattr(args, "db", None)
+    if db_override and isinstance(db_override, str):
+        args.database = db_override
+
     if not Path(args.database).exists() and ":memory:" not in args.database:
         log.error(f"Database file '{args.database}' does not exist. Create one with lb fsadd, tubeadd, or tabsadd.")
         raise SystemExit(1)

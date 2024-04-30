@@ -1,11 +1,10 @@
 import argparse, difflib, json, os.path, sys
-from collections import Counter
 from pathlib import Path
 
 from xklb import usage
 from xklb.data import wordbank
 from xklb.tablefiles import eda, mcda
-from xklb.utils import arggroups, consts, db_utils, file_utils, iterables, nums, objects, printing, strings
+from xklb.utils import arggroups, consts, db_utils, file_utils, iterables, nums, objects, path_utils, printing, strings
 from xklb.utils.consts import DBType
 from xklb.utils.log_utils import Timer, log
 
@@ -84,30 +83,13 @@ def map_cluster_to_paths(paths, clusters):
     return grouped_strings
 
 
-def group_paths(paths, clusters):
+def map_and_name(paths, clusters):
     grouped_strings = map_cluster_to_paths(paths, clusters)
 
     result = []
     for _cluster_id, paths in grouped_strings.items():
         paths = sorted(paths)
-        common_prefix = os.path.commonprefix(paths)
-
-        suffix_words = []
-        for path in paths:
-            suffix = path[len(common_prefix) :]
-            words = list(iterables.ordered_set(strings.path_to_sentence(suffix).split()))
-            suffix_words.extend(words)
-
-        word_counts = Counter(suffix_words)
-        common_words = [w for w, c in word_counts.items() if c > int(len(paths) * 0.6) and len(w) > 1]
-
-        # join but preserve order
-        suffix = "*".join(s for s in iterables.ordered_set(suffix_words) if s in common_words)
-
-        metadata = {
-            "common_prefix": common_prefix.strip() + "*" + suffix,
-            "grouped_paths": paths,
-        }
+        metadata = {"common_path": path_utils.common_path(paths), "grouped_paths": paths}
         result.append(metadata)
     return result
 
@@ -142,7 +124,7 @@ def cluster_paths(paths, n_clusters=None, stop_words=None):
 
     sentence_strings = (strings.path_to_sentence(s) for s in paths)
     clusters = find_clusters(n_clusters, sentence_strings, stop_words=stop_words)
-    result = group_paths(paths, clusters)
+    result = map_and_name(paths, clusters)
 
     return result
 
@@ -180,8 +162,8 @@ def cluster_dicts(args, media):
 
         eda.print_info(objects.NoneSpace(end_row="inf"), DataFrame(clusters))
 
-    groups = group_paths(paths, clusters)
-    groups = sorted(groups, key=lambda d: (-len(d["grouped_paths"]), -len(d["common_prefix"])))
+    groups = map_and_name(paths, clusters)
+    groups = sorted(groups, key=lambda d: (-len(d["grouped_paths"]), -len(d["common_path"])))
 
     if getattr(args, "sort_groups_by", None) is not None:
         if args.sort_groups_by in ("duration", "duration desc"):
@@ -291,10 +273,7 @@ def cluster_images(paths, n_clusters=None):
     result = []
     for _cluster_id, paths in grouped_strings.items():
         common_prefix = os.path.commonprefix(paths)
-        metadata = {
-            "common_prefix": common_prefix,
-            "grouped_paths": sorted(paths),
-        }
+        metadata = {"common_path": common_prefix, "grouped_paths": sorted(paths)}
         result.append(metadata)
     log.info("common_prefix %s", t.elapsed())
 
@@ -322,8 +301,8 @@ def filter_near_duplicates(groups: list[dict]) -> list[dict]:
 
         sorted_temp_groups = sorted(temp_groups.items(), key=lambda t: len(t[1]))
         for new_group_idx, (path, similar_paths) in enumerate(sorted_temp_groups):
-            new_group_name = group["common_prefix"] + f"#{new_group_idx}"
-            regrouped_data.append({"common_prefix": new_group_name, "grouped_paths": [path] + similar_paths})
+            new_group_name = group["common_path"] + f"#{new_group_idx}"
+            regrouped_data.append({"common_path": new_group_name, "grouped_paths": [path] + similar_paths})
 
     return regrouped_data
 
@@ -340,7 +319,7 @@ def cluster_sort() -> None:
         groups = cluster_images(lines, args.clusters)
     else:
         raise NotImplementedError
-    groups = sorted(groups, key=lambda d: (len(d["grouped_paths"]), -len(d["common_prefix"])))
+    groups = sorted(groups, key=lambda d: (len(d["grouped_paths"]), -len(d["common_path"])))
 
     if args.near_duplicates:
         groups = filter_near_duplicates(groups)

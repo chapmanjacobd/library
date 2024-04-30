@@ -14,6 +14,7 @@ from xklb.mediafiles import process_ffmpeg, process_image
 from xklb.utils import (
     arg_utils,
     arggroups,
+    argparse_utils,
     consts,
     db_utils,
     file_utils,
@@ -34,6 +35,7 @@ def parse_args(action, usage):
     parser = argparse.ArgumentParser(prog="library " + action, usage=usage)
     arggroups.db_profiles(parser)
     arggroups.capability_simulate(parser)
+    parser.add_argument("--ext", "-e", default=[], action=argparse_utils.ArgparseList)
 
     parser.add_argument(
         "--io-multiplier",

@@ -93,7 +93,7 @@ def spider(args, paths: set):
             f"Pages to scan {len(paths)} link scan: {new_media_count} new [{len(known_paths)} known]"
         )
 
-        if web.is_index(path) or path in original_paths:
+        if path in original_paths or web.is_index(path) or web.is_html(path):
             for a_ref in get_urls(args, path):
                 if a_ref is None:
                     break

@@ -34,10 +34,14 @@ progs = {
         "relmv": "Move files preserving parent folder hierarchy",
         "mv_list": "Find specific folders to move to different disks",
         "scatter": "Scatter files between folders or disks",
+        "mount_stats": "Show some relative mount stats",
+        "similar_folders": "Find similar folders based on folder name, size, and count",
     },
     "File subcommands": {
+        "christen": "Clean file paths",
         "sample_hash": "Calculate a hash based on small file segments",
         "sample_compare": "Compare files using sample-hash and other shortcuts",
+        "similar_files": "Find similar files based on filename",
     },
     "Tabular data subcommands": {
         "eda": "Exploratory Data Analysis on table-like files",
@@ -54,9 +58,7 @@ progs = {
         "copy_play_counts": "Copy play history",
     },
     "Filesystem Database subcommands": {
-        "christen": "Clean filenames",
         "disk_usage": "Show disk usage",
-        "mount_stats": "Show some relative mount stats",
         "big_dirs": "Show large folders",
         "search_db": "Search a SQLITE database",
     },
@@ -198,16 +200,18 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     add_parser(subparsers, "xklb.editdb.mpv_watchlater.mpv_watchlater")
     add_parser(subparsers, "xklb.editdb.pushshift.pushshift_extract", ["pushshift"])
     add_parser(subparsers, "xklb.editdb.reddit_selftext.reddit_selftext")
+    add_parser(subparsers, "xklb.files.christen.christen")
     add_parser(subparsers, "xklb.files.sample_compare.sample_compare", ["cmp"])
     add_parser(subparsers, "xklb.files.sample_hash.sample_hash", ["hash", "hash-file"])
+    add_parser(subparsers, "xklb.files.similar_files.similar_files")
     add_parser(subparsers, "xklb.folders.merge_folders.merge_folders", ["merge-folder", "mv"])
     add_parser(subparsers, "xklb.folders.move_list.move_list", ["mv-list"])
     add_parser(subparsers, "xklb.folders.rel_mv.rel_mv", ["relmv", "mv-rel", "mvrel"])
     add_parser(subparsers, "xklb.folders.scatter.scatter")
+    add_parser(subparsers, "xklb.folders.similar_folders.similar_folders")
+    add_parser(subparsers, "xklb.folders.mount_stats.mount_stats", ["mu", "mount-usage"])
     add_parser(subparsers, "xklb.fsdb.big_dirs.big_dirs", ["large-folders"])
-    add_parser(subparsers, "xklb.fsdb.christen.christen")
     add_parser(subparsers, "xklb.fsdb.disk_usage.disk_usage", ["du", "usage"])
-    add_parser(subparsers, "xklb.fsdb.mount_stats.mount_stats", ["mu", "mount-usage"])
     add_parser(subparsers, "xklb.fsdb.search_db.search_db", ["s", "sdb", "search-dbs"])
     add_parser(subparsers, "xklb.mediadb.block.block")
     add_parser(subparsers, "xklb.mediadb.download.dl_download", ["dl", "download"])

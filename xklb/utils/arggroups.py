@@ -30,15 +30,25 @@ def capability_delete(parser):
 def database(parser):
     capability_soft_delete(parser)
     capability_delete(parser)
-    parser.add_argument("--db", "-db", dest="database", help="Positional argument override")
+    parser.add_argument("--db", "-db", help="Positional argument override")
     parser.add_argument("database")
 
 
 def paths_or_stdin(parser):
-    parser.add_argument("--file", "-f", help="File with one URL per line")
+    parser.add_argument(
+        "--paths-from-text",
+        "--files",
+        "--file",
+        "-f",
+        action="store_true",
+        help="Read paths from line-delimited file(s)",
+    )
+    parser.add_argument("--paths-from-dbs", "--fsdbs", "--fsdb", action="store_true", help="Read paths from db(s)")
+    parser.add_argument("--titles-from-dbs", action="store_true", help="Read titles from db(s) instead of paths")
     parser.add_argument(
         "paths", nargs="*", default=argparse_utils.STDIN_DASH, action=argparse_utils.ArgparseArgsOrStdin
     )
+    parser.add_argument("--ext", "-e", default=[], action=argparse_utils.ArgparseList)
 
 
 def sql_fs(parser):
@@ -175,6 +185,7 @@ def operation_group_folders(parser):
 
     parser.add_argument("--sort-groups-by", "--sort-groups", "--sort-by", nargs="+")
     parser.add_argument("--depth", "-D", type=int, help="Depth of folders")
+    parser.add_argument("--parents", action="store_true")
 
     parser.add_argument(
         "--folder-size",
@@ -451,7 +462,6 @@ def db_profiles(parser):
         help="Extract image metadata",
     )
     parser.add_argument("--scan-all-files", "-a", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--ext", "-e", default=[], action=argparse_utils.ArgparseList)
 
 
 def frequency(parser):

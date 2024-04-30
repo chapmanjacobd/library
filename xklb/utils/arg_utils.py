@@ -1,7 +1,7 @@
-import argparse, operator, random
+import argparse, operator, random, sqlite3
 from pathlib import Path
 
-from xklb.utils import arggroups, consts, db_utils, iterables
+from xklb.utils import arggroups, consts, db_utils, file_utils, iterables
 from xklb.utils.consts import SC
 
 
@@ -15,16 +15,95 @@ def is_sqlite(path):
 
 
 def gen_paths(args):
-    if args.file:
-        with open(args.file) as f:
-            for line in f:
-                path = line.rstrip("\n")
-                if path.strip():
+    if args.paths_from_text:
+        for path in args.paths:
+            with open(path) as f:
+                for line in f:
+                    line = line.rstrip("\n")
+                    if line.strip():
+                        yield line
+    elif args.paths_from_dbs or args.titles_from_dbs:
+        for path in args.paths:
+            if is_sqlite(path):
+                s_db = db_utils.connect(args, conn=sqlite3.connect(args.database))
+                m_columns = s_db["media"].columns_dict
+                yield from (
+                    d["path"]
+                    for d in s_db.query(
+                        f"""
+                    SELECT
+                        {'title AS path' if args.titles_from_dbs else 'path'}
+                    FROM media
+                    WHERE 1=1
+                    {'and COALESCE(m.time_deleted,0) = 0' if 'time_deleted' in m_columns else ''}
+                    """
+                    )
+                )
+            else:
+                print("Skipping non-SQLite file:", path)
+    else:
+        is_large = len(args.paths) > 1000
+        for path in args.paths:
+            if path.strip():
+                if is_large:
                     yield path
+                else:
+                    p = Path(path)
+                    if p.is_dir():
+                        yield from file_utils.rglob(str(p), args.ext or None)[0]
+                    else:
+                        yield path
+
+
+def d_from_path(path):
+    try:
+        stat = Path(path).stat()
+        return {"path": str(path), "size": stat.st_size}
+    except FileNotFoundError:
+        print("Skipping non-existent file:", path)
+
+
+def gen_d(args):
+    if args.paths_from_text:
+        for path in args.paths:
+            with open(path) as f:
+                for line in f:
+                    line = line.rstrip("\n")
+                    if line.strip():
+                        d = d_from_path(line)
+                        if d:
+                            yield d
+    elif args.paths_from_dbs or args.titles_from_dbs:
+        for path in args.paths:
+            if is_sqlite(path):
+                s_db = db_utils.connect(args, conn=sqlite3.connect(args.database))
+                m_columns = s_db["media"].columns_dict
+                yield from s_db.query(
+                    f"""
+                    SELECT
+                        path
+                        {', size' if 'size' in m_columns else ''}
+                        {', title' if 'title' in m_columns else ''}
+                    FROM media
+                    WHERE 1=1
+                    {'and COALESCE(m.time_deleted,0) = 0' if 'time_deleted' in m_columns else ''}
+                    """
+                )
+            else:
+                print("Skipping non-SQLite file:", path)
     else:
         for path in args.paths:
             if path.strip():
-                yield path
+                p = Path(path)
+                if p.is_dir():
+                    for sp in file_utils.rglob(str(p), args.ext or None)[0]:
+                        d = d_from_path(sp)
+                        if d:
+                            yield d
+                else:
+                    d = d_from_path(p)
+                    if d:
+                        yield d
 
 
 def stdarg():
@@ -103,18 +182,20 @@ def parse_args_sort(args) -> None:
         "audio_count > 0 desc" if "audio_count" in m_columns else None,
         'm.path like "http%"',
         "width < height desc" if "width" in m_columns and getattr(args, "portrait", False) else None,
-        f"subtitle_count {subtitle_count} desc"
-        if "subtitle_count" in m_columns
-        and args.action == SC.watch
-        and not any(
-            [
-                args.print,
-                consts.PYTEST_RUNNING,
-                "subtitle_count" in " ".join(args.where),
-                args.limit != consts.DEFAULT_PLAY_QUEUE,
-            ],
-        )
-        else None,
+        (
+            f"subtitle_count {subtitle_count} desc"
+            if "subtitle_count" in m_columns
+            and args.action == SC.watch
+            and not any(
+                [
+                    args.print,
+                    consts.PYTEST_RUNNING,
+                    "subtitle_count" in " ".join(args.where),
+                    args.limit != consts.DEFAULT_PLAY_QUEUE,
+                ],
+            )
+            else None
+        ),
         *(args.sort or []),
         "duration desc" if args.action in (SC.listen, SC.watch) and args.include else None,
         "size desc" if args.action in (SC.listen, SC.watch) and args.include else None,

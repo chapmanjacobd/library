@@ -1,4 +1,5 @@
-from collections import OrderedDict
+import os.path
+from collections import Counter, OrderedDict
 from pathlib import Path
 
 from xklb.utils import consts, iterables, strings
@@ -103,3 +104,22 @@ def sanitize_url(args, path: str) -> str:
 
 def dedupe_path_parts(p):
     return Path(*OrderedDict.fromkeys(Path(p).parts).keys())
+
+
+def common_path(paths):
+    common_prefix = os.path.commonprefix(paths)
+
+    suffix_words = []
+    for path in paths:
+        suffix = path[len(common_prefix) :]
+        words = list(iterables.ordered_set(strings.path_to_sentence(suffix).split()))
+        suffix_words.extend(words)
+
+    word_counts = Counter(suffix_words)
+    common_words = [w for w, c in word_counts.items() if c > int(len(paths) * 0.6) and len(w) > 1]
+
+    # join but preserve order
+    suffix = "*".join(s for s in iterables.ordered_set(suffix_words) if s in common_words)
+
+    common_path = common_prefix.strip() + "*" + suffix
+    return common_path
