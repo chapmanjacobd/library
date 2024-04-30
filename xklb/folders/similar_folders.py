@@ -21,7 +21,9 @@ def parse_args():
     parser.add_argument("--only-duplicates", action="store_true")
     parser.add_argument("--only-originals", action="store_true")
 
-    parser.add_argument("--full-path", action="store_true", help="Use full path instead of just the parent folder name")
+    parser.add_argument(
+        "--full-path", action="store_true", help="Cluster using full path instead of just the parent folder name"
+    )
     parser.add_argument("--estimated-duplicates", "--dupes", type=float)
 
     parser.add_argument("--total-sizes", action="store_true", help="Compare total size instead of median size")
@@ -148,9 +150,10 @@ def similar_folders():
         log.info("Filtered out %s single-folder groups", len(single_folder_groups))
         log.debug(single_folder_groups)
 
-    if args.filter_names:
-        media = [d for group in groups for d in group["grouped_paths"]]
+        if args.filter_names:
+            media = [d for group in groups for d in group["grouped_paths"]]
 
+    if args.filter_names:
         groups = cluster_folders(args, media)
         groups = sorted(groups, key=lambda d: (-len(d["grouped_paths"]), -len(d["common_path"])))
         log.info("Name clustering sorted %s folders into %s groups", len(media), len(groups))

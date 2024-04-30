@@ -1910,7 +1910,17 @@ nouns = """library nouns (stdin)
 
 similar_files = """library similar-files PATH ...
 
-    Print similar files based on filenames
+    Find similar files using filenames and size
+
+        $ library similar-files ~/d/
+
+    Find similar files based on ONLY foldernames, using the full path
+
+        $ library similar-files --no-filter-sizes --full-path ~/d/
+
+    Find similar files based on ONLY size
+
+        $ library similar-files --no-filter-names ~/d/
 """
 
 similar_folders = """library similar-folders PATH ...
