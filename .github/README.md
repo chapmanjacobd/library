@@ -97,7 +97,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    xk media library subcommands (v2.7.007)
+    xk media library subcommands (v2.7.008)
 
     Create database subcommands:
     ╭───────────────┬──────────────────────────────────────────╮
@@ -1316,6 +1316,10 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
         $ library similar-folders --no-filter-names --no-filter-counts --total-size ~/d/
 
+    Read paths from dbs
+
+        $ library similar-folders --dbs db1.db db2.db
+
     Print only paths
 
         $ library similar-folders ~/d/ -pf
@@ -1397,6 +1401,11 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     Find similar files based on ONLY size
 
         $ library similar-files --no-filter-names ~/d/
+
+    Read paths from dbs
+
+        $ library similar-files --dbs db1.db db2.db
+
 
 
 </details>
