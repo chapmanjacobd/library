@@ -1386,7 +1386,17 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     $ library similar-files -h
     usage: library similar-files PATH ...
 
-    Print similar files based on filenames
+    Find similar files using filenames and size
+
+        $ library similar-files ~/d/
+
+    Find similar files based on ONLY foldernames, using the full path
+
+        $ library similar-files --no-filter-sizes --full-path ~/d/
+
+    Find similar files based on ONLY size
+
+        $ library similar-files --no-filter-names ~/d/
 
 
 </details>

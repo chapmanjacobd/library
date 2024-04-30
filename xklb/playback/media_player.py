@@ -1,4 +1,4 @@
-import argparse, os, platform, shutil, subprocess, threading, time
+import os, platform, shutil, subprocess, threading, time
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -369,7 +369,7 @@ def get_multiple_player_template(args) -> list[tuple[str, str]]:
 
 class MediaPrefetcher:
     def __init__(self, args, media: list[dict]):
-        self.args = argparse.Namespace(**{k: v for k, v in args.__dict__.items() if k not in {"db"}})
+        self.args = args
         self.media = media
         self.media.reverse()
         self.remaining = len(media)
@@ -423,7 +423,8 @@ class MediaPrefetcher:
                 elif args.action in (SC.watch):
                     player.extend(["--force-window=yes", "--really-quiet=yes"])
 
-                if getattr(args, "multiple_playback", 1) < 2:
+                multiple_playback = getattr(args, "multiple_playback", None)
+                if multiple_playback and multiple_playback < 2:
                     player.extend(["--fullscreen=yes"])
 
                 if getattr(args, "loop", False):
