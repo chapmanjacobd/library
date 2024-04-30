@@ -1921,6 +1921,11 @@ similar_files = """library similar-files PATH ...
     Find similar files based on ONLY size
 
         $ library similar-files --no-filter-names ~/d/
+
+    Read paths from dbs
+
+        $ library similar-files --dbs db1.db db2.db
+
 """
 
 similar_folders = """library similar-folders PATH ...
@@ -1949,6 +1954,10 @@ similar_folders = """library similar-folders PATH ...
     Find similar folders based on ONLY total size
 
         $ library similar-folders --no-filter-names --no-filter-counts --total-size ~/d/
+
+    Read paths from dbs
+
+        $ library similar-folders --dbs db1.db db2.db
 
     Print only paths
 
