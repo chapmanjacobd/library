@@ -1,10 +1,9 @@
-import argparse
-
 import pytest
 
 from tests import utils
 from xklb.playback.media_player import MediaPrefetcher
 from xklb.utils import consts
+from xklb.utils.objects import NoneSpace
 
 
 @pytest.fixture
@@ -18,14 +17,10 @@ def media():
 
 
 def test_prefetch(media):
-    args = argparse.Namespace(
+    args = NoneSpace(
         prefetch=2,
         database=":memory:",
-        play_in_order=0,
-        transcode=False,
-        transcode_audio=False,
         action=consts.SC.watch,
-        prefix="",
         verbose=2,
     )
     prep = MediaPrefetcher(args, media)
