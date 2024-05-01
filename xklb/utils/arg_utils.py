@@ -86,7 +86,8 @@ def gen_d(args):
                         {', title' if 'title' in m_columns else ''}
                     FROM media
                     WHERE 1=1
-                    {'and COALESCE(time_deleted,0) = 0' if 'time_deleted' in m_columns else ''}
+                    {'AND COALESCE(time_deleted,0) = 0' if 'time_deleted' in m_columns else ''}
+                    {'AND size is NOT NULL' if 'size' in m_columns else ''}
                     """
                 )
             else:
