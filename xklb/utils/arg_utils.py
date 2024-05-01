@@ -90,6 +90,7 @@ def gen_d(args):
                     {'AND size is NOT NULL' if 'size' in m_columns else ''}
                     """
                 )
+                # fs_sql, media_sql
             else:
                 print("Skipping non-SQLite file:", path)
     else:

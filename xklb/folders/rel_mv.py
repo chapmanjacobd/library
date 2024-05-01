@@ -21,6 +21,30 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
+def gen_rel_path(source, dest: Path, relative_from=None):
+    if relative_from:
+        relative_from = Path(relative_from).expanduser().resolve()
+
+    abspath = Path(source).expanduser().resolve()
+
+    if relative_from:
+        relpath = str(abspath.relative_to(relative_from))
+    else:
+        rel_prefix = commonprefix([abspath, dest])
+        try:
+            relpath = str(abspath.relative_to(rel_prefix))
+        except ValueError:
+            try:
+                relpath = str(abspath.relative_to(Path(rel_prefix).parent))
+            except ValueError:
+                relpath = str(source)
+
+    target_dir = (dest / relpath).parent
+    target_dir = path_utils.dedupe_path_parts(target_dir)
+    new_path = target_dir / abspath.name
+    return new_path
+
+
 def rel_move(sources, dest, simulate=False, relative_from=None):
     if relative_from:
         relative_from = Path(relative_from).expanduser().resolve()

@@ -9,6 +9,7 @@ from timeit import default_timer as timer
 from xklb import usage
 from xklb.createdb import av
 from xklb.files import sample_hash
+from xklb.folders import rel_mv
 from xklb.mediadb import db_media, db_playlists, playlists
 from xklb.mediafiles import process_ffmpeg, process_image
 from xklb.utils import (
@@ -72,7 +73,7 @@ def parse_args(action, usage):
         args.profiles = [DBType.video]
 
     if args.move:
-        args.move = str(Path(args.move).expanduser().resolve())
+        args.move = Path(args.move).expanduser().resolve()
 
     args.gap = nums.float_from_percent(args.gap)
     if args.delete_corrupt:
@@ -185,8 +186,8 @@ def extract_metadata(mp_args, path) -> dict[str, int] | None:
         media["hash"] = sample_hash.sample_hash_file(path)
 
     if getattr(mp_args, "move", False) and not file_utils.is_file_open(path):
-        dest_path = bytes(Path(mp_args.move) / Path(path).relative_to(mp_args.playlist_path))
-        dest_path = path_utils.clean_path(dest_path)
+        dest_path = rel_mv.gen_rel_path(path, mp_args.move)
+        dest_path = path_utils.clean_path(bytes(dest_path))
         file_utils.rename_move_file(path, dest_path, simulate=mp_args.simulate)
         path = media["path"] = dest_path
 
