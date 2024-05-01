@@ -222,7 +222,7 @@ Or with `systemd`:
     Type=simple
     RemainAfterExit=no
     Environment="DISPLAY=:0"
-    ExecStart="/usr/bin/fish" "-c" "lb tabs /home/xk/lb/tabs.db"
+    ExecStart=library tabs /home/my/tabs.db
 
     tee ~/.config/systemd/user/tabs.timer
     [Unit]
