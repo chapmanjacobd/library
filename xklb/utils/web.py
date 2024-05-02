@@ -502,7 +502,8 @@ def save_html_table(args, html_file):
         # extract URLs into their own columns
         for col in df.columns:
             if df[col].dtype == "object":
-                df[[col, col + "_url"]] = pd.DataFrame(df[col].tolist(), index=df.index)
+                df[[col, f"{col}_url"]] = pd.DataFrame(df[col].tolist(), index=df.index)
+        df.columns = df.columns.astype(str)
         df = df.dropna(axis=1, how="all")  # drop empty columns
 
         df = pd_utils.convert_dtypes(df)
