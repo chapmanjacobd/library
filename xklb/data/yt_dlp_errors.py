@@ -67,11 +67,7 @@ yt_recoverable_errors = re.compile(
 
 yt_meaningless_errors = re.compile(
     "|".join(
-        r""".*hidden
-.*timed out
-.*Timeout
-.*Timed
-.*Connection reset
+        r""".*Connection reset
 .*ConnectionReset
 .*Unable to extract
 .*Traceback
@@ -127,7 +123,6 @@ yt_meaningless_errors = re.compile(
 .*matching opening tag for closing p tag not found
 .*the JSON object must be str, bytes or bytearray, not dict
 .*list indices must be integers
-.*The read operation timed out
 .*Unable to download JSON metadata
 .*Unable to recognize playlist.
 .*Premieres in""".splitlines(),
@@ -249,7 +244,7 @@ yt_unrecoverable_errors = re.compile(
 )
 
 
-prefix_unrecoverable_errors = re.compile(
+environment_errors = re.compile(
     "|".join(
         r""".*unable to write data:
 .*No space left on device

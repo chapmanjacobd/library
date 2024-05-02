@@ -38,7 +38,7 @@ def paths_or_stdin(parser):
     parser.add_argument(
         "--paths-from-text", "--files", action="store_true", help="Read paths from line-delimited file(s)"
     )
-    parser.add_argument("--paths-from-dbs", "--fsdbs", "--dbs", action="store_true", help="Read paths from db(s)")
+    parser.add_argument("--paths-from-dbs", "--dbs", action="store_true", help="Read paths from db(s)")
     parser.add_argument("--titles-from-dbs", action="store_true", help="Read titles from db(s) instead of paths")
     parser.add_argument("--ext", "-e", default=[], action=argparse_utils.ArgparseList)
     parser.add_argument(

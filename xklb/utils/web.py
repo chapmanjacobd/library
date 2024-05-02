@@ -26,6 +26,8 @@ def _get_retry_adapter(max_retries):
         redirect=4,
         raise_on_redirect=False,
         backoff_factor=3,
+        backoff_jitter=2,
+        backoff_max=22 * 60,
         status_forcelist=[
             104,
             413,

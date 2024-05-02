@@ -118,6 +118,13 @@ class SC:
     web_update = "web-update"
 
 
+class DLStatus:
+    SUCCESS = "SUCCESS"
+    RECOVERABLE_ERROR = "RECOVERABLE_ERROR"
+    UNRECOVERABLE_ERROR = "UNRECOVERABLE_ERROR"
+    UNKNOWN_ERROR = "UNKNOWN_ERROR"
+
+
 def reddit_frequency(frequency) -> str:
     mapper = {
         "daily": "day",

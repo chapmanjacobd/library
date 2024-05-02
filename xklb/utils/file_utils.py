@@ -1,6 +1,5 @@
 import errno, mimetypes, os, shlex, shutil, tempfile, time
 from collections import Counter
-from collections.abc import Iterable
 from functools import wraps
 from io import StringIO
 from pathlib import Path
@@ -19,7 +18,10 @@ def scan_stats(files, filtered_files, folders):
     )
 
 
-def rglob(base_dir: str, extensions: None | Iterable[str] = None) -> tuple[set[str], set[str], set[str]]:
+def rglob(
+    base_dir: str | Path,
+    extensions=None,  # None | Iterable[str]
+) -> tuple[set[str], set[str], set[str]]:
     files = set()
     filtered_files = set()
     folders = set()
@@ -60,7 +62,7 @@ def rglob(base_dir: str, extensions: None | Iterable[str] = None) -> tuple[set[s
 def file_temp_copy(src) -> str:
     fo_dest = tempfile.NamedTemporaryFile(delete=False)
     with open(src, "r+b") as fo_src:
-        shutil.copyfileobj(fo_src, fo_dest)
+        shutil.copyfileobj(fo_src, fo_dest.file)
     fo_dest.seek(0)
     fname = fo_dest.name
     fo_dest.close()

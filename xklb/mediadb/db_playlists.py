@@ -136,7 +136,7 @@ def add(args, playlist_path: str, info: dict, check_subpath=False, extractor_key
     playlist = {**pl, "path": playlist_path}
     if extractor_key:
         playlist["extractor_key"] = extractor_key
-    return _add(args, objects.dict_filter_bool(playlist))
+    return _add(args, objects.dict_filter_bool(playlist) or {})
 
 
 def media_exists(args, playlist_path, path) -> bool:
@@ -240,4 +240,4 @@ def save_undownloadable(args, playlist_path) -> None:
         "path": playlist_path,
         "extractor_config": args.extractor_config,
     }
-    _add(args, objects.dict_filter_bool(entry))
+    _add(args, objects.dict_filter_bool(entry) or {})

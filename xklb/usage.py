@@ -1838,8 +1838,9 @@ web_add = """library web-add [(--filesystem) | --video | --audio | --image | --t
             ' quit
             j quit 4
 
-        This is pretty intuitive after you use it a few times but writing this out I realize this might seem a bit opaque.
-        Instead of using built-in post-actions (example above) you could also do something like
+        This is pretty intuitive after you use it a few times but another option is to
+        define your own post-actions:
+
             `--cmd5 'echo {} >> keep.txt' --cmd6 'echo {} >> rejected.txt'`
 
         But you will still bind keys in mpv input.conf:
