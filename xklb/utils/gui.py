@@ -9,6 +9,8 @@ class MrSuperDialogue:
         from tkinter import PhotoImage, Tk
         from tkinter.ttk import Button, Frame, Label, Style
 
+        self.action = None
+
         def raise_error(_self, *_args):
             raise  # pylint: disable=misplaced-bare-raise
 

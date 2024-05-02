@@ -120,7 +120,7 @@ munge_book_tags_fast = processes.with_timeout(70)(munge_book_tags)
 munge_book_tags_slow = processes.with_timeout(350)(munge_book_tags)
 
 
-def extract_metadata(mp_args, path) -> dict[str, int] | None:
+def extract_metadata(mp_args, path) -> dict[str, str | int | None] | None:
     try:
         path.encode()
     except UnicodeEncodeError:

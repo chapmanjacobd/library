@@ -7,7 +7,20 @@ from xklb.createdb import av, fs_add
 from xklb.files import sample_hash
 from xklb.mediadb import db_media, db_playlists
 from xklb.text import extract_links
-from xklb.utils import arg_utils, arggroups, consts, db_utils, file_utils, iterables, objects, printing, strings, web
+from xklb.utils import (
+    arg_utils,
+    arggroups,
+    consts,
+    db_utils,
+    file_utils,
+    iterables,
+    nums,
+    objects,
+    printing,
+    sql_utils,
+    strings,
+    web,
+)
 from xklb.utils.consts import SC, DBType
 from xklb.utils.log_utils import log
 
@@ -20,6 +33,12 @@ def parse_args(**kwargs):
     arggroups.filter_links(parser)
     arggroups.extractor(parser)
 
+    parser.add_argument(
+        "--size",
+        "-S",
+        action="append",
+        help="Only grab extended metadata for files of specific sizes (uses the same syntax as fd-find)",
+    )
     parser.add_argument("--hash", action="store_true")
     parser.add_argument("--local-file", "--local-html", action="store_true", help="Treat paths as Local HTML files")
 
@@ -153,6 +172,10 @@ def spider(args, paths: set):
             if getattr(args, "hash", False):
                 # TODO: use head_foot_stream
                 m["hash"] = sample_hash.sample_hash_file(path)
+
+        if args.size:
+            size_fn = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.size)
+            media = [d for d in media if ((d.get("size") or 0) == 0) or size_fn(d["size"])]
 
         for i, m in enumerate(media, start=1):
             printing.print_overwrite(

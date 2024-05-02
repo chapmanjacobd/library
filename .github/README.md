@@ -97,7 +97,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v2.7.009; 72 subcommands)
+    library (v2.7.010; 72 subcommands)
 
     Create database subcommands:
     ╭───────────────┬──────────────────────────────────────────╮
@@ -369,7 +369,7 @@ Or with `systemd`:
     Type=simple
     RemainAfterExit=no
     Environment="DISPLAY=:0"
-    ExecStart="/usr/bin/fish" "-c" "lb tabs /home/xk/lb/tabs.db"
+    ExecStart=library tabs /home/my/tabs.db
 
     tee ~/.config/systemd/user/tabs.timer
     [Unit]
@@ -648,8 +648,9 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
             ' quit
             j quit 4
 
-        This is pretty intuitive after you use it a few times but writing this out I realize this might seem a bit opaque.
-        Instead of using built-in post-actions (example above) you could also do something like
+        This is pretty intuitive after you use it a few times but another option is to
+        define your own post-actions:
+
             `--cmd5 'echo {} >> keep.txt' --cmd6 'echo {} >> rejected.txt'`
 
         But you will still bind keys in mpv input.conf:

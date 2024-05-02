@@ -190,7 +190,7 @@ Type "*" to select all files in the most recently printed table
     if selected_paths:
         temp_file = Path(tempfile.mktemp())
         with temp_file.open("w") as f:
-            f.writelines("\n".join(selected_paths))
+            f.writelines(l + "\n" for l in selected_paths)
 
         print(
             f"""

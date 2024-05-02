@@ -90,7 +90,7 @@ def set_readline_completion(list_) -> None:
     return
 
 
-def get_mount_stats(src_mounts) -> list[dict[str, str | int]]:
+def get_mount_stats(src_mounts) -> list[dict[str, int | float]]:
     mount_space = []
     total_used = 1
     total_free = 1
