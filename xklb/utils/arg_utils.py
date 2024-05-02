@@ -1,7 +1,7 @@
 import argparse, operator, random, sqlite3
 from pathlib import Path
 
-from xklb.utils import arggroups, consts, db_utils, file_utils, iterables, sql_utils
+from xklb.utils import arggroups, consts, db_utils, file_utils, iterables
 from xklb.utils.consts import SC
 
 
@@ -76,8 +76,20 @@ def gen_d(args):
     elif args.paths_from_dbs or args.titles_from_dbs:
         for path in args.paths:
             if is_sqlite(path):
-                args.db = db_utils.connect(args, conn=sqlite3.connect(path))
-                yield from args.db.query(sql_utils.fs_sql(args))
+                sdb = db_utils.connect(args, conn=sqlite3.connect(path))
+                m_columns = sdb["media"].columns_dict
+                yield from sdb.query(
+                    f"""
+                    SELECT
+                        path
+                        {', size' if 'size' in m_columns else ''}
+                        {', title' if 'title' in m_columns else ''}
+                    FROM media
+                    WHERE 1=1
+                    {'AND COALESCE(time_deleted,0) = 0' if 'time_deleted' in m_columns else ''}
+                    {'AND size is NOT NULL' if 'size' in m_columns else ''}
+                    """
+                )
             else:
                 print("Skipping non-SQLite file:", path)
     else:

@@ -3,42 +3,6 @@ import re
 from xklb.utils import db_utils, nums
 from xklb.utils.log_utils import log
 
-cols = {"fs": ["path", "size", "title"], "media": ["duration"]}
-
-
-def fs_sql(args, db=None):
-    if db is None:
-        db = args.db
-    m_columns = db["media"].columns_dict
-
-    return f"""
-        SELECT
-            path
-            {', size' if 'size' in m_columns else ''}
-            {', title' if 'title' in m_columns else ''}
-        FROM media
-        WHERE 1=1
-        {'AND COALESCE(time_deleted,0) = 0' if 'time_deleted' in m_columns else ''}
-        {'AND size is NOT NULL' if 'size' in m_columns else ''}
-    """
-
-
-def media_sql(args, db=None):
-    if db is None:
-        db = args.db
-    m_columns = db["media"].columns_dict
-
-    return f"""
-        SELECT
-            path
-            {', size' if 'size' in m_columns else ''}
-            {', title' if 'title' in m_columns else ''}
-        FROM media
-        WHERE 1=1
-        {'AND COALESCE(time_deleted,0) = 0' if 'time_deleted' in m_columns else ''}
-        {'AND size is NOT NULL' if 'size' in m_columns else ''}
-    """
-
 
 def compare_block_strings(value, media_value):
     if value is None and media_value is None:
