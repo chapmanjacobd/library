@@ -24,6 +24,7 @@ def parse_args():
 
     parser.add_argument("--search-in", default="torrents")
 
+    parser.add_argument("--force", action="store_true")
     parser.add_argument("--cookie", required=True)
     arggroups.requests(parser)
     arggroups.debug(parser)
@@ -83,7 +84,8 @@ def save_to_db(args, data):
             args.db["media"].insert(objects.dict_filter_bool(d), pk="id", alter=True)
         except IntegrityError:
             log.error("Reached existing id")
-            raise SystemExit(0)
+            if not args.force:
+                raise SystemExit(0)
 
 
 def mam_search():
