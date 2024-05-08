@@ -30,7 +30,6 @@ def parse_args():
 
     arggroups.paths_or_stdin(parser)
     args = parser.parse_args()
-    args.action = consts.SC.similar_files
     arggroups.args_post(args, parser)
 
     if not args.filter_sizes:

@@ -17,6 +17,17 @@ from xklb.utils.consts import DEFAULT_FILE_ROWS_READ_LIMIT, DBType
 from xklb.utils.log_utils import log
 
 
+def get_caller_name():
+    import inspect
+
+    frame = inspect.currentframe()
+    while frame:
+        frame = frame.f_back
+        if frame.f_code.co_name == "parse_args":
+            frame = frame.f_back
+            return frame.f_code.co_name
+
+
 def args_post(args, parser, create_db=False):
     args.defaults = [k for k, v in args.__dict__.items() if parser.get_default(k) == v]
     settings = {k: v for k, v in args.__dict__.items() if k not in ["database", "verbose", "defaults"] + args.defaults}
@@ -27,6 +38,8 @@ def args_post(args, parser, create_db=False):
     log_args = objects.dict_filter_bool(settings)
     if log_args:
         log.info({k: textwrap.shorten(str(v), 140) for k, v in log_args.items()})
+
+    args.action = get_caller_name()
 
     if create_db:
         Path(args.database).touch()

@@ -3,7 +3,7 @@ import argparse
 from xklb import media_printer, usage
 from xklb.mediadb import db_history
 from xklb.mediadb.db_history import create
-from xklb.utils import arggroups, argparse_utils, consts, sqlgroups
+from xklb.utils import arggroups, argparse_utils, sqlgroups
 
 
 def parse_args() -> argparse.Namespace:
@@ -21,7 +21,6 @@ def parse_args() -> argparse.Namespace:
 
     arggroups.database(parser)
     args = parser.parse_intermixed_args()
-    args.action = consts.SC.history
     arggroups.args_post(args, parser)
 
     arggroups.sql_fs_post(args)

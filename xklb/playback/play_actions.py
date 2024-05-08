@@ -74,7 +74,7 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     arggroups.database(parser)
     parser.add_argument("search", nargs="*")
     args = parser.parse_intermixed_args()
-    args.action = action
+    arggroups.args_post(args, parser)
 
     arggroups.sql_fs_post(args)
     arggroups.playback_post(args)
@@ -97,7 +97,6 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
         args.cc = CattDevice(args.chromecast_device, lazy=True)
         args.cc_ip = devices.get_ip_of_chromecast(args.chromecast_device)
 
-    arggroups.args_post(args, parser)
     args.sock = None
     return args
 

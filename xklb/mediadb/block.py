@@ -6,7 +6,6 @@ from xklb import media_printer, usage
 from xklb.createdb import tube_backend
 from xklb.playback import post_actions
 from xklb.utils import arg_utils, arggroups, argparse_utils, consts, db_utils, devices, iterables
-from xklb.utils.consts import SC
 from xklb.utils.log_utils import log
 
 
@@ -33,7 +32,6 @@ def parse_args():
     parser.set_defaults(path=None)
 
     args = parser.parse_intermixed_args()
-    args.action = SC.block
     arggroups.args_post(args, parser)
 
     arggroups.extractor_post(args)

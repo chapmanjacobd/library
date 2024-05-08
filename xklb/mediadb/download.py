@@ -15,7 +15,7 @@ from xklb.utils import (
     sql_utils,
     web,
 )
-from xklb.utils.consts import SC, DBType
+from xklb.utils.consts import DBType
 from xklb.utils.log_utils import log
 from xklb.utils.sqlgroups import construct_download_query
 
@@ -81,7 +81,6 @@ def parse_args():
     parser.set_defaults(paths=None)
 
     args, unk = parser.parse_known_intermixed_args()
-    args.action = SC.download
     arggroups.args_post(args, parser)
 
     if unk and not args.profile in (DBType.video, DBType.audio):

@@ -26,12 +26,9 @@ def parse_args(action, usage) -> argparse.Namespace:
         arggroups.paths_or_stdin(parser)
 
     args = parser.parse_intermixed_args()
-    args.action = action
-    args.profile = consts.DBType.image
+    arggroups.args_post(args, parser, create_db=action == SC.gallery_add)
 
     arggroups.extractor_post(args)
-
-    arggroups.args_post(args, parser, create_db=action == SC.gallery_add)
     return args
 
 
