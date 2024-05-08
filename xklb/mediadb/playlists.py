@@ -1,7 +1,7 @@
 import argparse, os, sqlite3
 
 from xklb import media_printer, usage
-from xklb.utils import arggroups, argparse_utils, consts, db_utils
+from xklb.utils import arggroups, argparse_utils, db_utils
 from xklb.utils.sqlgroups import construct_playlists_query
 
 
@@ -19,7 +19,6 @@ def parse_args() -> argparse.Namespace:
     arggroups.database(parser)
     parser.add_argument("search", nargs="*")
     args = parser.parse_intermixed_args()
-    args.action = consts.SC.playlists
     arggroups.args_post(args, parser)
 
     arggroups.sql_fs_post(args)

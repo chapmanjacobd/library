@@ -42,7 +42,6 @@ def parse_args():
 
     arggroups.paths_or_stdin(parser)
     args = parser.parse_args()
-    args.action = consts.SC.similar_folders
     arggroups.args_post(args, parser)
 
     arggroups.group_folders_post(args)

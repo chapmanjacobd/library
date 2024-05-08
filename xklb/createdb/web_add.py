@@ -45,7 +45,7 @@ def parse_args(action, **kwargs):
     if "add" in action:
         arggroups.paths_or_stdin(parser)
     args = parser.parse_intermixed_args()
-    args.action = action
+    arggroups.args_post(args, parser, create_db=action == consts.SC.web_add)
 
     if not args.profiles:
         args.profiles = [DBType.filesystem]
@@ -60,7 +60,6 @@ def parse_args(action, **kwargs):
     arggroups.filter_links_post(args)
     arggroups.selenium_post(args)
 
-    arggroups.args_post(args, parser, create_db=action == consts.SC.web_add)
     return args
 
 

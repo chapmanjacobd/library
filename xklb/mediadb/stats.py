@@ -30,7 +30,6 @@ def parse_args() -> argparse.Namespace:
         help=f"One of: {', '.join(consts.time_facets)}",
     )
     args = parser.parse_intermixed_args()
-    args.action = consts.SC.stats
     arggroups.args_post(args, parser)
 
     m_columns = db_utils.columns(args, "media")

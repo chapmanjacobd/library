@@ -97,7 +97,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v2.8.001; 72 subcommands)
+    library (v2.8.002; 72 subcommands)
 
     Create database subcommands:
     ╭───────────────┬──────────────────────────────────────────╮
@@ -1747,18 +1747,28 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     See what folders take up space
 
-        library big-dirs video.db
-        library big-dirs audio.db
-        library big-dirs fs.db
+        library big-dirs ./video/
 
-    lb big-dirs video.db --folder-size=+10G --lower 400 --upper 14000
+    Filter folders by size
 
-    lb big-dirs video.db --depth 5
-    lb big-dirs video.db --depth 7
+        lb big-dirs ./video/ -FS+10GB -FS-200GB
+
+    Filter folders by count
+
+        lb big-dirs ./video/ -FC+300 -FC-5000
+
+    Filter folders by depth
+
+        lb big-dirs ./video/ --depth 5
+        lb big-dirs ./video/ -D 7
+
+    Load from fs database
+
+        $ lb fs video.db --cols path,duration,size,time_deleted --to-json | lb big-dirs --from-json
 
     You can even sort by auto-MCDA ~LOL~
 
-    lb big-dirs video.db -u 'mcda median_size,-deleted'
+    lb big-dirs ./video/ -u 'mcda median_size,-deleted'
 
 
 </details>
@@ -1891,9 +1901,9 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
         library download dl.db -u m.time_modified,m.time_created
 
-    Limit downloads to a specified playlist URLs or substring (TODO: https://github.com/chapmanjacobd/library/issues/31)
+    Limit downloads to a specified playlist URLs
 
-        library download dl.db https://www.youtube.com/c/BlenderFoundation/videos
+        library fs video.db --to-json --playlists https://www.youtube.com/c/BlenderFoundation/videos | library download --video video.db --from-json -
 
     Limit downloads to a specified video URLs or substring
 

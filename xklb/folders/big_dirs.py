@@ -4,7 +4,7 @@ from pathlib import Path
 
 from xklb import media_printer, usage
 from xklb.tablefiles import mcda
-from xklb.utils import arg_utils, arggroups, argparse_utils, consts, file_utils, iterables, nums
+from xklb.utils import arg_utils, arggroups, argparse_utils, file_utils, iterables, nums
 
 
 def parse_args() -> argparse.Namespace:
@@ -21,7 +21,6 @@ def parse_args() -> argparse.Namespace:
     arggroups.paths_or_stdin(parser)
     parser.add_argument("search", nargs="*")
     args = parser.parse_intermixed_args()
-    args.action = consts.SC.big_dirs
     arggroups.args_post(args, parser)
 
     arggroups.group_folders_post(args)
