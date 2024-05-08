@@ -102,8 +102,8 @@ class SC:
     gallery_update = "gallery-update"
     tabs_open = "tabs-open"
     links_open = "links-open"
-    links_add = 'links-add'
-    links_update = 'links-update'
+    links_add = "links-add"
+    links_update = "links-update"
     read = "read"
     view = "view"
     download = "download"

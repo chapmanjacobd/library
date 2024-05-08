@@ -15,8 +15,8 @@ def parse_args() -> argparse.Namespace:
 
     arggroups.database(parser)
     args = parser.parse_args()
-
     arggroups.args_post(args, parser)
+
     return args
 
 

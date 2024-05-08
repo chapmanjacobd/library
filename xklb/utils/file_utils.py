@@ -492,3 +492,16 @@ def read_file_to_dataframes(
             df.name = str(table_index)
 
     return dfs
+
+
+def get_filesize(d):
+    try:
+        stat = Path(d["path"]).stat()
+        d["size"] = stat.st_size
+        d["time_deleted"] = 0
+    except FileNotFoundError:
+        d["size"] = None
+        if "time_deleted" not in d:
+            d["time_deleted"] = consts.APPLICATION_START
+
+    return d

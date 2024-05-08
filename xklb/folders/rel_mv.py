@@ -10,14 +10,13 @@ from xklb.utils.log_utils import log
 def parse_args() -> argparse.Namespace:
     parser = argparse_utils.ArgumentParser(prog="library relmv", usage=usage.relmv)
     arggroups.simulate(parser)
-    parser.add_argument("--ext", "-e", default=[], action=argparse_utils.ArgparseList)
     arggroups.debug(parser)
 
     parser.add_argument("sources", nargs="+", help="one or more source files or directories to move")
     parser.add_argument("dest", help="destination directory")
     args = parser.parse_args()
-
     arggroups.args_post(args, parser)
+
     return args
 
 

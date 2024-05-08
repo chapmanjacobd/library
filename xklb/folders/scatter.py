@@ -18,9 +18,9 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue")
     parser.add_argument("--max-files-per-folder", "--max-files-per-directory", type=int)
-    parser.add_argument("--policy", "-p")
-    parser.add_argument("--group", "-g")
-    parser.add_argument("--sort", "-s", default="random()", help="Sort files before moving")
+    parser.add_argument("--policy")
+    parser.add_argument("--group")
+    parser.add_argument("--sort", default="random()", help="Sort files before moving")
     parser.add_argument("--targets", "--srcmounts", "-m", help="Colon separated destinations eg. /mnt/d1:/mnt/d2")
     arggroups.debug(parser)
 
@@ -31,6 +31,7 @@ def parse_args() -> argparse.Namespace:
         help="Paths to scatter; if using -m any path substring is valid (relative to the root of your mergerfs mount)",
     )
     args = parser.parse_intermixed_args()
+    arggroups.args_post(args, parser)
 
     if args.targets:
         args.targets = [m.rstrip("\\/") for m in args.targets.split(":")]
@@ -57,7 +58,6 @@ def parse_args() -> argparse.Namespace:
     args.relative_paths = file_utils.resolve_absolute_paths(args.relative_paths)
     args.targets = file_utils.resolve_absolute_paths(args.targets)
 
-    arggroups.args_post(args, parser)
     return args
 
 

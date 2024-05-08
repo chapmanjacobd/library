@@ -68,10 +68,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("input_path", nargs="?", type=argparse.FileType("r"), default=sys.stdin)
     parser.add_argument("output_path", nargs="?")
     args = parser.parse_args()
-
-
-
     arggroups.args_post(args, parser)
+
     return args
 
 
@@ -105,7 +103,7 @@ def find_clusters(n_clusters, sentence_strings, stop_words=None):
     if stop_words is None:
         from xklb.data import wordbank
 
-        stop_words =wordbank.stop_words
+        stop_words = wordbank.stop_words
 
     try:
         vectorizer = TfidfVectorizer(min_df=2, strip_accents="unicode", stop_words=stop_words)

@@ -113,7 +113,6 @@ def tabs_shuffle() -> None:
 
     arggroups.database(parser)
     args = parser.parse_intermixed_args()
-
     arggroups.args_post(args, parser)
 
     tabs = list(

@@ -23,11 +23,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("search", nargs="*", default=os.sep)
     args = parser.parse_intermixed_args()
     args.action = consts.SC.disk_usage
+    arggroups.args_post(args, parser)
 
     arggroups.sql_fs_post(args)
     arggroups.group_folders_post(args)
 
-    arggroups.args_post(args, parser)
     return args
 
 

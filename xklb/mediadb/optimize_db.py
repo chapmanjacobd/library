@@ -10,7 +10,6 @@ def optimize_db() -> None:
 
     arggroups.database(parser)
     args = parser.parse_args()
-
     arggroups.args_post(args, parser)
 
     db_utils.optimize(args)

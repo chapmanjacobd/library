@@ -1,4 +1,4 @@
-import argparse, os
+import argparse, os, textwrap
 from pathlib import Path
 
 from xklb.utils import (
@@ -18,14 +18,15 @@ from xklb.utils.log_utils import log
 
 
 def args_post(args, parser, create_db=False):
-    log.info(objects.dict_filter_bool(args.__dict__))
-
     args.defaults = [k for k, v in args.__dict__.items() if parser.get_default(k) == v]
+    settings = {k: v for k, v in args.__dict__.items() if k not in ["database", "verbose", "defaults"] + args.defaults}
     args.extractor_config = {
-        k: v
-        for k, v in args.__dict__.items()
-        if k not in ["db", "database", "verbose", "paths", "actions", "backfill_pages", "defaults"] + args.defaults
-    } | (getattr(args, 'extractor_config', None) or {})
+        k: v for k, v in settings.items() if k not in ["db", "paths", "actions", "backfill_pages"]
+    } | (getattr(args, "extractor_config", None) or {})
+
+    log_args = objects.dict_filter_bool(settings)
+    if log_args:
+        log.info({k: textwrap.shorten(str(v), 140) for k, v in log_args.items()})
 
     if create_db:
         Path(args.database).touch()
@@ -37,9 +38,19 @@ def args_post(args, parser, create_db=False):
         processes.timeout(args.timeout)
 
 
-def debug(parser):
+def printing(parser):
+    printing = parser.add_argument_group("Printing")
+    printing.add_argument("--print", "-p", default="", const="p", nargs="?")
+    printing.add_argument("--to-json", action="store_true", help="Write JSONL to stdout")
+    printing.add_argument("--cols", "--columns", nargs="*", help="Include specific column(s) when printing")
+
+
+def debug(parent_parser):
+    parser = parent_parser.add_argument_group("Global options")
     parser.add_argument("--verbose", "-v", action="count", default=0)
     parser.add_argument("--timeout", "-T", help="Quit after x minutes")
+    parser.add_argument("--ext", "-e", default=[], action=argparse_utils.ArgparseList, help="Filter by file extension")
+    printing(parent_parser)
 
 
 def capability_soft_delete(parent_parser):
@@ -88,13 +99,12 @@ def paths_or_stdin(parent_parser):
 
 def sql_fs(parent_parser):
     parse_fs = parent_parser.add_argument_group("FileSystemDB SQL")
-    parse_fs.add_argument("--print", "-p", default="", const="p", nargs="?")
-    parse_fs.add_argument("--cols", "--col", nargs="*", help="Include specific column(s) when printing")
-
     parse_fs.add_argument("--limit", "--queue", "-n", "-L", "-l")
     parse_fs.add_argument("--offset")
     parse_fs.add_argument("--sort", "-u", nargs="+", default=[])
     parse_fs.add_argument("--random", "-r", action="store_true")
+
+    parse_fs.add_argument("--playlists", nargs="+", action="extend", default=[])
 
     parse_fs.add_argument("--where", "-w", nargs="+", action="extend", default=[])
     parse_fs.add_argument("--include", "--search", "-s", nargs="+", action="extend", default=[])
@@ -102,8 +112,6 @@ def sql_fs(parent_parser):
     parse_fs.add_argument("--exact", action="store_true")
     parse_fs.add_argument("--flexible-search", "--or", "--flex", action="store_true")
     parse_fs.add_argument("--fts", action=argparse.BooleanOptionalAction, default=True)
-
-    parse_fs.add_argument("--ext", "-e", default=[], action=argparse_utils.ArgparseList)
 
     parse_fs.add_argument("--online-media-only", "--online", action="store_true")
     parse_fs.add_argument("--local-media-only", "--local", action="store_true")
@@ -148,6 +156,9 @@ def sql_fs(parent_parser):
 
 
 def sql_fs_post(args) -> None:
+    if args.to_json:
+        args.print = "p"
+
     args.include += getattr(args, "search", [])
     if len(args.include) == 1:
         if args.include == ["."]:
@@ -156,15 +167,17 @@ def sql_fs_post(args) -> None:
             args.include[0] = file_utils.resolve_absolute_path(args.include[0])
 
     arg_utils.parse_args_limit(args)
-    arg_utils.parse_args_sort(args)
+
+    pl_columns = db_utils.columns(args, "playlists")
+    args.playlists_sort, args.playlists_select = arg_utils.parse_args_sort(args, pl_columns)
+    m_columns = db_utils.columns(args, "media")
+    args.sort, args.select = arg_utils.parse_args_sort(args, m_columns)
 
     if args.sizes:
         args.sizes = sql_utils.parse_human_to_sql(nums.human_to_bytes, "size", args.sizes)
 
     if args.cols:
         args.cols = list(iterables.flatten([s.split(",") for s in args.cols]))
-
-    m_columns = db_utils.columns(args, "media")
 
     args.filter_sql = []
     args.aggregate_filter_sql = []
@@ -181,7 +194,7 @@ def sql_fs_post(args) -> None:
         and "deleted" not in (getattr(args, "sort_groups_by", None) or "")
         and "time_deleted" not in " ".join(args.where)
     ):
-        args.filter_sql.append("AND COALESCE(time_deleted,0) = 0")
+        args.filter_sql.append("AND COALESCE(m.time_deleted,0) = 0")
 
     if args.local_media_only:
         args.filter_sql.append('AND path not LIKE "http%"')
@@ -369,13 +382,14 @@ def extractor_post(args):
         args.paths = iterables.conform(args.paths)
 
 
-
 def group_folders(parent_parser):
     parser = parent_parser.add_argument_group("Group Folders")
     parser.add_argument("--big-dirs", "--bigdirs", "-B", action="count", default=0)
 
-    parser.add_argument("--sibling", "--episode", "--episodic", action="store_true", help="Shorthand for -FC>1")
-    parser.add_argument("--solo", action="store_true", help="Shorthand for -FC=1")
+    parser.add_argument(
+        "--sibling", "--episode", "--episodic", action="store_true", help="Shorthand for --folder-counts '>1'"
+    )
+    parser.add_argument("--solo", action="store_true", help="Shorthand for --folder-counts=1")
 
     parser.add_argument("--sort-groups-by", "--sort-groups", "--sort-by", nargs="+")
     parser.add_argument("--depth", "-D", type=int, help="Depth of folders")
@@ -434,15 +448,15 @@ def cluster(parent_parser):
     parser.add_argument("--exclude-unique", "--no-unique", action="store_true", help="Exclude 'unique' lines")
 
 
-
 def related(parser):
     parser.add_argument("--related", "-R", action="count", default=0)
 
 
 def clobber(parent_parser):
     parser = parent_parser.add_argument_group("Replace Files")
-    parser.add_argument("--replace", "--clobber", action=argparse.BooleanOptionalAction, help="Overwrite files on path conflict")
-
+    parser.add_argument(
+        "--replace", "--clobber", action=argparse.BooleanOptionalAction, help="Overwrite files on path conflict"
+    )
 
 
 def simulate(parser):
@@ -488,7 +502,7 @@ def download(parent_parser):
         help="Add key/value pairs to override or extend default extractor/downloader configuration",
     )
     parser.add_argument("--download-archive")
-    parser.add_argument("--extract-audio-ext", default='opus')
+    parser.add_argument("--extract-audio-ext", default="opus")
 
     parser.add_argument("--ignore-errors", "--ignoreerrors", "-i", action="store_true")
     parser.add_argument("--safe", action="store_true", help="Skip generic URLs")

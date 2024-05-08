@@ -176,7 +176,14 @@ class PartialContent:
 
     def __enter__(self):
         response = requests_session().get(self.url, stream=True)
-        response.raise_for_status()
+
+        code = response.status_code
+        if code == 404:
+            log.warning("HTTP404 Not Found: %s", self.url)
+            return None
+        else:
+            response.raise_for_status()
+
         self.temp_file = tempfile.NamedTemporaryFile(delete=False)
 
         for chunk in response.iter_content(chunk_size=65536):

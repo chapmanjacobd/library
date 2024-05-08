@@ -1,4 +1,5 @@
 import argparse
+
 import humanize
 from tabulate import tabulate
 
@@ -22,14 +23,15 @@ def parse_args():
     parser.add_argument("--durations-delta", "--duration-delta", type=float, default=10.0)
     parser.add_argument("--sizes-delta", "--size-delta", type=float, default=10.0)
 
-    parser.add_argument("--filter-names", action=argparse.BooleanOptionalAction, default=False)
-    parser.add_argument("--filter-sizes", action=argparse.BooleanOptionalAction, default=False)
-    parser.add_argument("--filter-durations", action=argparse.BooleanOptionalAction, default=False)
+    parser.add_argument("--filter-names", action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument("--filter-sizes", action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument("--filter-durations", action=argparse.BooleanOptionalAction, default=True)
     arggroups.debug(parser)
 
     arggroups.paths_or_stdin(parser)
     args = parser.parse_args()
     args.action = consts.SC.similar_files
+    arggroups.args_post(args, parser)
 
     if not args.filter_sizes:
         args.sizes_delta = 200.0
@@ -40,7 +42,6 @@ def parse_args():
         print("Nothing to do")
         raise NotImplementedError
 
-    arggroups.args_post(args, parser)
     return args
 
 
@@ -103,10 +104,11 @@ def similar_files():
     args = parse_args()
     media = list(arg_utils.gen_d(args))
 
+    groups: list[dict] = []
     if args.filter_sizes or args.filter_durations:
         clusters = cluster_by_size(args, media)
         groups = map_and_name(media, clusters)
-        log.info("file size/count clustering sorted %s files into %s groups", len(media), len(groups))
+        log.info("file size/duration clustering sorted %s files into %s groups", len(media), len(groups))
         single_file_groups = [d for d in groups if len(d["grouped_paths"]) == 1]
         groups = [d for d in groups if len(d["grouped_paths"]) > 1]
         log.info("Filtered out %s single-file groups", len(single_file_groups))
@@ -123,7 +125,7 @@ def similar_files():
         if args.filter_sizes or args.filter_durations:
             prev_count = len(groups)
             groups = filter_groups_by_size(args, groups)  # effectively a second pass
-            log.info("(2nd pass) group size/count filtering removed %s groups", prev_count - len(groups))
+            log.info("(2nd pass) group size/duration filtering removed %s groups", prev_count - len(groups))
 
     if not args.only_originals and not args.only_duplicates:
         print("Duplicate groups:")

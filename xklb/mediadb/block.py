@@ -16,7 +16,6 @@ def parse_args():
         usage=usage.block,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    arggroups.sql_fs(parser)
     arggroups.extractor(parser)
     arggroups.cluster(parser)
 
@@ -35,12 +34,10 @@ def parse_args():
 
     args = parser.parse_intermixed_args()
     args.action = SC.block
+    arggroups.args_post(args, parser)
 
-    arggroups.sql_fs_post(args)
     arggroups.extractor_post(args)
 
-
-    arggroups.args_post(args, parser)
     return args
 
 

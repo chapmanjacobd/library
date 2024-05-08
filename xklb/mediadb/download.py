@@ -82,6 +82,7 @@ def parse_args():
 
     args, unk = parser.parse_known_intermixed_args()
     args.action = SC.download
+    arggroups.args_post(args, parser)
 
     if unk and not args.profile in (DBType.video, DBType.audio):
         parser.error(f"unrecognized arguments: {' '.join(unk)}")
@@ -92,8 +93,6 @@ def parse_args():
         raise SystemExit(1)
 
     arggroups.sql_fs_post(args)
-
-    arggroups.args_post(args, parser)
     return args
 
 

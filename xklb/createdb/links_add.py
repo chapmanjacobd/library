@@ -63,7 +63,7 @@ def add_playlist(args, path):
         "extractor_config": args.extractor_config,
         "time_deleted": 0,
     }
-    args.playlists_id = db_playlists.add(args, str(path), info)
+    return db_playlists.add(args, str(path), info)
 
 
 def consolidate_media(args, path: str) -> dict:
@@ -248,7 +248,7 @@ def links_add() -> None:
         try:
             playlist_count = 0
             for playlist_path in arg_utils.gen_paths(args):
-                add_playlist(args, playlist_path)
+                args.playlists_id = add_playlist(args, playlist_path)
                 extractor(args, playlist_path)
 
                 if playlist_count > 3:

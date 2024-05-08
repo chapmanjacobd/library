@@ -20,12 +20,12 @@ def parse_args():
     arggroups.debug(parser)
     arggroups.paths_or_stdin(parser)
     args = parser.parse_args()
+    arggroups.args_post(args, parser)
 
     arggroups.extractor_post(args)
     arggroups.filter_links_post(args)
     arggroups.selenium_post(args)
 
-    arggroups.args_post(args, parser)
     return args
 
 

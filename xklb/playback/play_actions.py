@@ -3,7 +3,7 @@ from pathlib import Path
 
 from xklb import media_printer, usage
 from xklb.createdb import tube_backend
-from xklb.fsdb import big_dirs
+from xklb.folders import big_dirs
 from xklb.mediadb import db_history, db_media
 from xklb.playback import media_player
 from xklb.tablefiles import mcda
@@ -81,7 +81,6 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     arggroups.post_actions_post(args)
     arggroups.multiple_playback_post(args)
     arggroups.group_folders_post(args)
-
 
     if args.mpv_socket is None:
         if args.action in (SC.listen,):
@@ -174,6 +173,28 @@ def history_sort(args, media) -> list[dict]:
     return media
 
 
+def file_or_folder_media(args, paths):
+    media = []
+    for path in paths:
+        p = Path(path).resolve()
+        if p.is_file():
+            media.extend([{"path": str(p)}])
+        elif p.is_dir():
+            if args.folder_glob:
+                media.extend([{"path": s} for s in file_utils.fast_glob(p)])
+            elif args.action in SC.watch:
+                media.extend([{"path": s} for s in file_utils.rglob(str(p), consts.VIDEO_EXTENSIONS)[0]])
+            elif args.action == SC.listen:
+                media.extend([{"path": s} for s in file_utils.rglob(str(p), consts.AUDIO_ONLY_EXTENSIONS)[0]])
+            elif args.action in SC.view:
+                media.extend([{"path": s} for s in file_utils.rglob(str(p), consts.IMAGE_EXTENSIONS)[0]])
+            elif args.action in SC.read:
+                media.extend([{"path": s} for s in file_utils.rglob(str(p), consts.TEXTRACT_EXTENSIONS)[0]])
+            else:
+                media.extend([{"path": s} for s in file_utils.rglob(str(p))[0]])
+    return media
+
+
 def process_playqueue(args) -> None:
     if args.action == SC.filesystem:
         query, bindings = sqlgroups.fs_sql(args)
@@ -188,6 +209,7 @@ def process_playqueue(args) -> None:
             args.folder_counts,
             args.safe,
             args.play_in_order,
+            args.playlists,
             args.big_dirs,
             args.fetch_siblings,
             args.related,
@@ -200,7 +222,10 @@ def process_playqueue(args) -> None:
         return
 
     t = Timer()
-    media = list(args.db.query(query, bindings))
+    if args.playlists:
+        media = db_media.get_playlist_media(args, args.playlists)
+    else:
+        media = list(args.db.query(query, bindings))
     log.debug("query: %s", t.elapsed())
 
     if args.fetch_siblings:
@@ -215,26 +240,16 @@ def process_playqueue(args) -> None:
         log.debug("utils.filter_episodic: %s", t.elapsed())
 
     if not media:
-        if args.include:
-            p = Path(" ".join(args.include)).resolve()
-            if p.is_file():
-                media = [{"path": str(p)}]
-            elif p.is_dir():
-                if args.folder_glob:
-                    media = [{"path": s} for s in file_utils.fast_glob(p)]
-                elif args.action in SC.watch:
-                    media = [{"path": s} for s in file_utils.rglob(str(p), consts.VIDEO_EXTENSIONS)[0]]
-                elif args.action == SC.listen:
-                    media = [{"path": s} for s in file_utils.rglob(str(p), consts.AUDIO_ONLY_EXTENSIONS)[0]]
-                elif args.action in SC.view:
-                    media = [{"path": s} for s in file_utils.rglob(str(p), consts.IMAGE_EXTENSIONS)[0]]
-                elif args.action in SC.read:
-                    media = [{"path": s} for s in file_utils.rglob(str(p), consts.TEXTRACT_EXTENSIONS)[0]]
-                else:
-                    media = [{"path": s} for s in file_utils.rglob(str(p))[0]]
-            else:
-                processes.no_media_found()
-        else:
+        if not args.include:
+            processes.no_media_found()
+
+        path = " ".join(args.include)
+        media = db_media.get_playlist_media(args, [path])
+        if not media:
+            media = db_media.get_dir_media(args, [path])
+        if not media:
+            media = file_or_folder_media(args, [path])
+        if not media:
             processes.no_media_found()
 
     if args.safe:

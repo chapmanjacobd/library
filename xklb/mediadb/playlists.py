@@ -20,10 +20,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("search", nargs="*")
     args = parser.parse_intermixed_args()
     args.action = consts.SC.playlists
+    arggroups.args_post(args, parser)
 
     arggroups.sql_fs_post(args)
 
-    arggroups.args_post(args, parser)
     return args
 
 
@@ -83,7 +83,7 @@ def playlists() -> None:
             {', sum(m.size) size' if 'size' in m_columns else ''}
             , count(*) count
         from media m
-        join ({query}) p on p.id = m.playlists_id
+        LEFT JOIN ({query}) p on p.id = m.playlists_id
         group by m.playlists_id, coalesce(p.path, "Playlist-less media")
         order by count, p.path
         """

@@ -22,10 +22,10 @@ def parse_args() -> argparse.Namespace:
     arggroups.database(parser)
     args = parser.parse_intermixed_args()
     args.action = consts.SC.history
+    arggroups.args_post(args, parser)
 
     arggroups.sql_fs_post(args)
 
-    arggroups.args_post(args, parser)
     return args
 
 

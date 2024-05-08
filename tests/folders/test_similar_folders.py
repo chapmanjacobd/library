@@ -4,6 +4,7 @@ from xklb.utils.objects import NoneSpace
 
 args = NoneSpace(sizes_delta=5, counts_delta=5, durations_delta=5, total_sizes=True, total_durations=True)
 
+
 def test_is_same_group():
     m0 = {"exists": 100, "size": 100, "duration": 5}
     assert similar_folders.is_same_group(args, m0, {"exists": 96, "size": 100, "duration": 5})

@@ -1,7 +1,7 @@
 import argparse, json, operator, random
 from pathlib import Path
 
-from xklb.utils import consts, db_utils, file_utils, iterables
+from xklb.utils import consts, file_utils, iterables
 from xklb.utils.consts import SC
 
 
@@ -61,7 +61,7 @@ def gen_d(args):
                             else:
                                 raise TypeError
                         else:
-                            yield {'path': line}
+                            yield {"path": line}
     elif args.from_json:
         for path in args.paths:
             json_data = json.loads(path)
@@ -77,9 +77,9 @@ def gen_d(args):
                 p = Path(path)
                 if p.is_dir():
                     for sp in file_utils.rglob(str(p), args.ext or None)[0]:
-                        yield {'path': sp}
+                        yield {"path": sp}
                 else:
-                    yield {'path': path}
+                    yield {"path": path}
 
 
 def override_sort(sort_expression: str) -> str:
@@ -111,12 +111,12 @@ def parse_ambiguous_sort(sort):
     return combined_sort
 
 
-def parse_args_sort(args) -> None:
+def parse_args_sort(args, columns, table_prefix="m.") -> tuple[str, list[str]]:
+    sort_list = []
+    select_list = []
     if args.sort:
         combined_sort = parse_ambiguous_sort(args.sort)
 
-        sort_list = []
-        select_list = []
         for s in combined_sort:
             if s.startswith("same-"):
                 var = s[len("same-") :]
@@ -131,11 +131,6 @@ def parse_args_sort(args) -> None:
             else:
                 sort_list.append(s)
 
-        args.sort = sort_list
-        args.select = select_list
-
-    m_columns = db_utils.columns(args, "media")
-
     # switching between videos with and without subs is annoying
     subtitle_count = "=0"
     if random.random() < getattr(args, "subtitle_mix", consts.DEFAULT_SUBTITLE_MIX):
@@ -144,14 +139,14 @@ def parse_args_sort(args) -> None:
 
     sorts = [
         "random" if getattr(args, "random", False) else None,
-        "rank" if args.sort and "rank" in args.sort else None,
-        "video_count > 0 desc" if "video_count" in m_columns and args.action == SC.watch else None,
-        "audio_count > 0 desc" if "audio_count" in m_columns else None,
-        'm.path like "http%"',
-        "width < height desc" if "width" in m_columns and getattr(args, "portrait", False) else None,
+        "rank" if sort_list and "rank" in sort_list else None,
+        "video_count > 0 desc" if "video_count" in columns and args.action == SC.watch else None,
+        "audio_count > 0 desc" if "audio_count" in columns else None,
+        table_prefix + 'path like "http%"',
+        "width < height desc" if "width" in columns and getattr(args, "portrait", False) else None,
         (
             f"subtitle_count {subtitle_count} desc"
-            if "subtitle_count" in m_columns
+            if "subtitle_count" in columns
             and args.action == SC.watch
             and not any(
                 [
@@ -163,18 +158,18 @@ def parse_args_sort(args) -> None:
             )
             else None
         ),
-        *(args.sort or []),
+        *(sort_list or []),
         "duration desc" if args.action in (SC.listen, SC.watch) and args.include else None,
         "size desc" if args.action in (SC.listen, SC.watch) and args.include else None,
         "play_count" if args.action in (SC.listen, SC.watch) else None,
-        "m.title IS NOT NULL desc" if "title" in m_columns else None,
-        "m.path",
+        table_prefix + "title IS NOT NULL desc" if "title" in columns else None,
+        table_prefix + "path",
     ]
 
     sort = list(filter(bool, sorts))
     sort = [override_sort(s) for s in sort]
     sort = ",".join(sort)
-    args.sort = sort.replace(",,", ",")
+    return sort.replace(",,", ","), select_list
 
 
 def parse_args_limit(args):
@@ -213,9 +208,11 @@ def split_folder_glob(s):
 
 
 def override_config(args, extractor_config):
-    defaults = args.get('defaults')
+    defaults = args.get("defaults")
     overridden_args = {k: v for k, v in args.__dict__.items() if defaults.get(k) != v}
-    args_env = argparse.Namespace(**{**defaults, **(extractor_config.get('extractor_config') or {}), **extractor_config, **overridden_args})
+    args_env = argparse.Namespace(
+        **{**defaults, **(extractor_config.get("extractor_config") or {}), **extractor_config, **overridden_args}
+    )
     return args_env
 
 

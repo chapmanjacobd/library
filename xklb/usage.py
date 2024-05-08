@@ -360,6 +360,9 @@ def play(action) -> str:
         library {action} -B --sort-groups-by 'mcda median_size,-deleted'
         library {action} -C --sort-groups-by 'mcda median_size,-deleted'
 
+    Filter media by playlist:
+        library {action} --playlists URL1 URL2
+
     Filter media by file siblings of parent directory:
         library {action} --sibling   # only include files which have more than or equal to one sibling
         library {action} --solo      # only include files which are alone by themselves
@@ -1925,7 +1928,7 @@ similar_files = """library similar-files PATH ...
 
     Read paths from dbs
 
-        $ library similar-files --dbs db1.db db2.db
+        $ lb fs audio.db --cols path,duration,size,time_deleted --to-json | lb similar-files --from-json -v
 
 """
 
@@ -1958,7 +1961,7 @@ similar_folders = """library similar-folders PATH ...
 
     Read paths from dbs
 
-        $ library similar-folders --dbs db1.db db2.db
+        $ lb fs audio.db --cols path,duration,size,time_deleted --to-json | lb similar-folders --from-json -v
 
     Print only paths
 

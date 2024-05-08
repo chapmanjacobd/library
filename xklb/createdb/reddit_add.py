@@ -332,7 +332,9 @@ def reddit_add(args=None) -> None:
                 {
                     "path": path,
                     "extractor_playlist_id": name,
-                    "extractor_config": objects.filter_namespace(args.extractor_config, ["limit", "lookback", "praw_site"]),
+                    "extractor_config": objects.filter_namespace(
+                        args.extractor_config, ["limit", "lookback", "praw_site"]
+                    ),
                     "extractor_key": extractor_key,
                     "time_modified": consts.now(),
                     "time_deleted": 0,

@@ -29,8 +29,6 @@ def parse_args():
     parser.add_argument(
         "--columns-include",
         "--include-columns",
-        "--columns",
-        "--cols",
         nargs="*",
         action=argparse_utils.ArgparseList,
         default=[],
@@ -49,13 +47,13 @@ def parse_args():
         help="path to one or more files",
     )
     args = parser.parse_args()
+    arggroups.args_post(args, parser)
 
     if args.words_nums_map:
         Path(args.words_nums_map).touch()
 
     arggroups.table_like_post(args)
 
-    arggroups.args_post(args, parser)
     return args
 
 

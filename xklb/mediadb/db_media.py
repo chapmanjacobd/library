@@ -365,8 +365,6 @@ def get_dir_media(args, dirs: Collection, include_subdirs=False, limit=2_000) ->
     if len(dirs) == 0:
         return processes.no_media_found()
 
-    m_columns = db_utils.columns(args, "media")
-
     if include_subdirs:
         filter_paths = "AND (" + " OR ".join([f"path LIKE :subpath{i}" for i in range(len(dirs))]) + ")"
     else:
@@ -387,7 +385,6 @@ def get_dir_media(args, dirs: Collection, include_subdirs=False, limit=2_000) ->
                 , MAX(h.time_played) time_last_played
                 , FIRST_VALUE(h.playhead) OVER (PARTITION BY h.media_id ORDER BY h.time_played DESC) playhead
                 , {select_sql}
-                , m.*
             FROM media m
             LEFT JOIN history h on h.media_id = m.id
             WHERE 1=1
@@ -415,6 +412,50 @@ def get_dir_media(args, dirs: Collection, include_subdirs=False, limit=2_000) ->
         log.debug("dir_media dirs %s", dirs)
     else:
         log.debug("get_dir_media[0] %s", media[0:1])
+
+    return media
+
+
+def get_playlist_media(args, playlist_paths) -> list[dict]:
+    select_sql = "\n        , ".join(s for s in args.select if s not in ["rank"])
+
+    playlists_subquery = (
+        """AND playlists_id in (
+        SELECT id from playlists
+        WHERE path IN ("""
+        + ",".join(f":playlist{i}" for i, _ in enumerate(playlist_paths))
+        + "))"
+    )
+    playlists_params = {f"playlist{i}": value for i, value in enumerate(playlist_paths)}
+
+    query = f"""WITH m as (
+            SELECT
+                SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
+                , MIN(h.time_played) time_first_played
+                , MAX(h.time_played) time_last_played
+                , FIRST_VALUE(h.playhead) OVER (PARTITION BY h.media_id ORDER BY h.time_played DESC) playhead
+                , {select_sql}
+            FROM media m
+            LEFT JOIN history h on h.media_id = m.id
+            WHERE 1=1
+                and m.id in (select id from {args.table})
+                {playlists_subquery}
+                {" ".join(args.filter_sql)}
+            GROUP BY m.id, m.path
+        )
+        SELECT *
+        FROM m
+        ORDER BY play_count
+            , path
+            {'' if 'sort' in args.defaults else ', ' + args.sort}
+        {sql_utils.limit_sql(args)}
+    """
+
+    bindings = {**playlists_params}
+    bindings = {**bindings, **{k: v for k, v in args.filter_bindings.items() if k.startswith("FTS")}}
+
+    media = list(args.db.query(query, bindings))
+    log.debug("len(playlist_media) = %s", len(media))
 
     return media
 

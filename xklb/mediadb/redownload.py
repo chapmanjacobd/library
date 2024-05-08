@@ -20,8 +20,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("deleted_at", nargs="?")
     parser.add_argument("deleted_to", nargs="?")
     args = parser.parse_args()
-
     arggroups.args_post(args, parser)
+
     return args
 
 
