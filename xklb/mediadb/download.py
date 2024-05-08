@@ -96,18 +96,6 @@ def parse_args():
     return args
 
 
-def process_downloadqueue(args) -> list[dict]:
-    query, bindings = construct_download_query(args)
-    if args.print:
-        media_printer.printer(args, query, bindings)
-        return []
-
-    media = list(args.db.query(query, bindings))
-    if not media:
-        processes.no_media_found()
-    return media
-
-
 def mark_download_attempt(args, paths) -> int:
     paths = iterables.conform(paths)
 
@@ -158,7 +146,15 @@ def dl_download(args=None) -> None:
 
     media = list(arg_utils.gen_d(args))
     if not media:
-        media = process_downloadqueue(args)
+        query, bindings = construct_download_query(args)
+        media = list(args.db.query(query, bindings))
+
+    if not media:
+        processes.no_media_found()
+
+    if args.print:
+        media_printer.media_printer(args, media)
+        return
 
     for m in media:
         if args.blocklist_rules and sql_utils.is_blocked_dict_like_sql(m, args.blocklist_rules):

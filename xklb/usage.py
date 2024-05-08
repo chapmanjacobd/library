@@ -97,9 +97,9 @@ download = r"""library download [--prefix /mnt/d/] [--safe] [--subs] [--auto-sub
 
         library download dl.db -u m.time_modified,m.time_created
 
-    Limit downloads to a specified playlist URLs or substring (TODO: https://github.com/chapmanjacobd/library/issues/31)
+    Limit downloads to a specified playlist URLs
 
-        library download dl.db https://www.youtube.com/c/BlenderFoundation/videos
+        library fs video.db --to-json --playlists https://www.youtube.com/c/BlenderFoundation/videos | library download --video video.db --from-json -
 
     Limit downloads to a specified video URLs or substring
 
