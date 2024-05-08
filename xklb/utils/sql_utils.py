@@ -1,6 +1,6 @@
 import re
 
-from xklb.utils import db_utils, nums
+from xklb.utils import consts, db_utils, nums
 from xklb.utils.log_utils import log
 
 
@@ -111,46 +111,58 @@ def sort_like_sql(order_bys):
     return get_key
 
 
+def human_to_sql_part(human_to_x, var, size):
+    if size.startswith(">"):
+        return f"and {var} > {human_to_x(size.lstrip('>'))} "
+    elif size.startswith("<"):
+        return f"and {var} < {human_to_x(size.lstrip('<'))} "
+    elif size.startswith("+"):
+        return f"and {var} >= {human_to_x(size.lstrip('+'))} "
+    elif size.startswith("-"):
+        return f"and {human_to_x(size.lstrip('-'))} >= {var} "
+    elif "%" in size:
+        size, percent = size.split("%")
+        size = human_to_x(size)
+        percent = float(percent)
+        return f"and {int(size + (size / percent))} >= {var} and {var} >= {int(size - (size / percent))} "
+    else:
+        return f"and {human_to_x(size)} = {var} "
+
+
 def parse_human_to_sql(human_to_x, var, sizes) -> str:
     size_rules = ""
-
     for size in sizes:
-        if ">" in size:
-            size_rules += f"and {var} > {human_to_x(size.lstrip('>'))} "
-        elif "<" in size:
-            size_rules += f"and {var} < {human_to_x(size.lstrip('<'))} "
-        elif "+" in size:
-            size_rules += f"and {var} >= {human_to_x(size.lstrip('+'))} "
-        elif "-" in size:
-            size_rules += f"and {human_to_x(size.lstrip('-'))} >= {var} "
-        else:
-            # approximate size rule +-10%
-            size_bytes = human_to_x(size)
-            size_rules += (
-                f"and {int(size_bytes + (size_bytes /10))} >= {var} and {var} >= {int(size_bytes - (size_bytes /10))} "
-            )
+        size_rules += human_to_sql_part(human_to_x, var, size)
+
     return size_rules
 
 
+def human_to_lambda_part(var, human_to_x, size):
+    if size.startswith(">"):
+        return var > human_to_x(size.lstrip(">"))
+    elif size.startswith("<"):
+        return var < human_to_x(size.lstrip("<"))
+    elif size.startswith("+"):
+        return var >= human_to_x(size.lstrip("+"))
+    elif size.startswith("-"):
+        return human_to_x(size.lstrip("-")) >= var
+    elif "%" in size:
+        size, percent = size.split("%")
+        size = human_to_x(size)
+        percent = float(percent)
+        return int(size + (size / percent)) >= var >= int(size - (size / percent))
+    else:
+        return var == human_to_x(size)
+
+
 def parse_human_to_lambda(human_to_x, sizes):
-    return lambda var: all(
-        (
-            (var > human_to_x(size.lstrip(">")))
-            if ">" in size
-            else (var < human_to_x(size.lstrip("<")))
-            if "<" in size
-            else (var >= human_to_x(size.lstrip("+")))
-            if "+" in size
-            else (human_to_x(size.lstrip("-")) >= var)
-            if "-" in size
-            else (
-                int(human_to_x(size) + (human_to_x(size) / 10))
-                >= var
-                >= int(human_to_x(size) - (human_to_x(size) / 10))
-            )
-        )
-        for size in sizes
-    )
+    if not sizes:
+        return None
+
+    def check_all_sizes(var):
+        return all(human_to_lambda_part(var, human_to_x, size) for size in sizes)
+
+    return check_all_sizes
 
 
 def frequency_time_to_sql(freq, time_column):
@@ -184,7 +196,9 @@ def frequency_time_to_sql(freq, time_column):
     return freq_label, freq_sql
 
 
-def historical_usage_items(args, freq="monthly", time_column="time_modified", hide_deleted=False, where=None):
+def historical_usage_items(
+    args, freq="monthly", time_column="time_modified", hide_deleted=False, only_deleted=False, where=None
+):
     m_columns = db_utils.columns(args, "media")
 
     freq_label, freq_sql = frequency_time_to_sql(freq, time_column)
@@ -199,6 +213,7 @@ def historical_usage_items(args, freq="monthly", time_column="time_modified", hi
         WHERE coalesce({freq_label}, 0)>0
             and {time_column}>0 {where or ''}
             {"AND COALESCE(time_deleted, 0)=0" if hide_deleted else ""}
+            {"AND COALESCE(time_deleted, 0)>0" if only_deleted else ""}
         GROUP BY {freq_label}
     """
 
@@ -230,7 +245,7 @@ def filter_play_count(args):
     return " ".join(sql)
 
 
-def historical_usage(args, freq="monthly", time_column="time_played", hide_deleted=False):
+def historical_usage(args, freq="monthly", time_column="time_played", hide_deleted=False, only_deleted=False):
     freq_label, freq_sql = frequency_time_to_sql(freq, time_column)
     m_columns = args.db["media"].columns_dict
     h_columns = args.db["history"].columns_dict
@@ -247,6 +262,7 @@ def historical_usage(args, freq="monthly", time_column="time_played", hide_delet
             WHERE 1=1
             {filter_time_played(args)}
             {"AND COALESCE(time_deleted, 0)=0" if hide_deleted else ""}
+            {"AND COALESCE(time_deleted, 0)>0" if only_deleted else ""}
             GROUP BY m.id, m.path
         )
         SELECT
@@ -263,3 +279,91 @@ def historical_usage(args, freq="monthly", time_column="time_played", hide_delet
     """
 
     return list(args.db.query(query))
+
+
+def limit_sql(args, limit_adj=0):
+    sql = f"LIMIT {args.limit + limit_adj}" if args.limit else ""
+    offset_sql = f"OFFSET {args.offset}" if args.offset and args.limit else ""
+    sql = f"{sql} {offset_sql}"
+    return sql
+
+
+def fts_quote(query: list[str]) -> list[str]:
+    fts_words = [" NOT ", " AND ", " OR ", "*", ":", "NEAR("]
+    return [s if any(r in s for r in fts_words) else '"' + s + '"' for s in query]
+
+
+def fts_search_sql(table, fts_table, include, exclude=None, flexible=False):
+    param_key = "FTS" + consts.random_string()
+    table = f"""(
+    with original as (select rowid, * from [{table}])
+    select
+        [original].*
+        , [{fts_table}].rank
+    from
+        [original]
+        join [{fts_table}] on [original].rowid = [{fts_table}].rowid
+    where
+        [{fts_table}] match :{param_key}
+    )
+    """
+    if flexible:
+        param_value = " OR ".join(fts_quote(include))
+    else:
+        param_value = " AND ".join(fts_quote(include))
+    if exclude:
+        param_value += " NOT " + " NOT ".join(fts_quote(exclude))
+
+    bound_parameters = {param_key: param_value}
+    return table, bound_parameters
+
+
+def construct_search_bindings(args, columns) -> None:
+    incl = ":include{0}"
+    includes = "(" + " OR ".join([f"{col} LIKE {incl}" for col in columns]) + ")"
+    includes_sql_parts = []
+    for idx, inc in enumerate(args.include):
+        includes_sql_parts.append(includes.format(idx))
+        if getattr(args, "exact", False):
+            args.filter_bindings[f"include{idx}"] = inc
+        else:
+            args.filter_bindings[f"include{idx}"] = "%" + inc.replace(" ", "%").replace("%%", " ") + "%"
+    join_op = " OR " if getattr(args, "flexible_search", False) else " AND "
+    if len(includes_sql_parts) > 0:
+        args.filter_sql.append("AND (" + join_op.join(includes_sql_parts) + ")")
+
+    excl = ":exclude{0}"
+    excludes = "AND (" + " AND ".join([f"COALESCE({col},'') NOT LIKE {excl}" for col in columns]) + ")"
+    for idx, exc in enumerate(args.exclude):
+        args.filter_sql.append(excludes.format(idx))
+        if getattr(args, "exact", False):
+            args.filter_bindings[f"exclude{idx}"] = exc
+        else:
+            args.filter_bindings[f"exclude{idx}"] = "%" + exc.replace(" ", "%").replace("%%", " ") + "%"
+
+
+def search_filter(args, m_columns):
+    args.table = "media"
+    if args.db["media"].detect_fts() and args.fts:
+        if args.include:
+            args.table, search_bindings = fts_search_sql(
+                "media",
+                fts_table=args.db["media"].detect_fts(),
+                include=args.include,
+                exclude=args.exclude,
+                flexible=args.flexible_search,
+            )
+            args.filter_bindings = {**args.filter_bindings, **search_bindings}
+            m_columns = {**m_columns, "rank": int}
+        elif args.exclude:
+            construct_search_bindings(
+                args,
+                [f"m.{k}" for k in m_columns if k in db_utils.config["media"]["search_columns"] if k in m_columns],
+            )
+    else:
+        construct_search_bindings(
+            args,
+            [f"m.{k}" for k in m_columns if k in db_utils.config["media"]["search_columns"] if k in m_columns],
+        )
+
+    return m_columns

@@ -3,13 +3,13 @@ from os.path import commonprefix
 from pathlib import Path
 
 from xklb import usage
-from xklb.utils import arggroups, argparse_utils, file_utils, objects, path_utils, processes
+from xklb.utils import arggroups, argparse_utils, file_utils, path_utils, processes
 from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(prog="library relmv", usage=usage.relmv)
-    arggroups.capability_simulate(parser)
+    parser = argparse_utils.ArgumentParser(prog="library relmv", usage=usage.relmv)
+    arggroups.simulate(parser)
     parser.add_argument("--ext", "-e", default=[], action=argparse_utils.ArgparseList)
     arggroups.debug(parser)
 
@@ -17,7 +17,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("dest", help="destination directory")
     args = parser.parse_args()
 
-    log.info(objects.dict_filter_bool(args.__dict__))
+    arggroups.args_post(args, parser)
     return args
 
 
@@ -98,9 +98,10 @@ def rel_mv() -> None:
 
     dest = Path(args.dest).expanduser().resolve()
 
+    sources = args.sources
     if args.ext:
-        args.sources = [p for source in args.sources for p in file_utils.rglob(source, args.ext)[0]]
-    rel_move(args.sources, dest, simulate=args.simulate)
+        sources = [p for source in sources for p in file_utils.rglob(source, args.ext)[0]]
+    rel_move(sources, dest, simulate=args.simulate)
 
 
 if __name__ == "__main__":

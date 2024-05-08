@@ -3,12 +3,12 @@ from os import fsdecode, fsencode
 from pathlib import Path
 
 from xklb import usage
-from xklb.utils import arggroups, file_utils, objects, path_utils
+from xklb.utils import arggroups, argparse_utils, file_utils, path_utils
 from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(prog="library christen", usage=usage.christen)
+    parser = argparse_utils.ArgumentParser(prog="library christen", usage=usage.christen)
     parser.add_argument("--dot-space", action="store_true")
     parser.add_argument("--case-insensitive", action="store_true")
     parser.add_argument("--lowercase-folders", action="store_true")
@@ -19,7 +19,7 @@ def parse_args() -> argparse.Namespace:
     arggroups.paths_or_stdin(parser)
     args = parser.parse_args()
 
-    log.info(objects.dict_filter_bool(args.__dict__))
+    arggroups.args_post(args, parser)
     return args
 
 

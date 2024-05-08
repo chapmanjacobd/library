@@ -16,6 +16,7 @@ def create_args(test_name):
     return args
 
 
+@skip("inconsistent between gallery-dl versions")
 def test_safe_mode():
     args = NoneSpace()
     assert gallery_backend.is_supported(args, "https://i.redd.it/gdlcqo5xvpwa1.png")

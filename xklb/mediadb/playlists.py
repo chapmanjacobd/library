@@ -1,80 +1,30 @@
 import argparse, os, sqlite3
 
 from xklb import media_printer, usage
-from xklb.utils import arggroups, consts, db_utils, objects
-from xklb.utils.log_utils import log
+from xklb.utils import arggroups, argparse_utils, consts, db_utils
+from xklb.utils.sqlgroups import construct_playlists_query
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
+    parser = argparse_utils.ArgumentParser(
         "library playlists",
         usage.playlists,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
     arggroups.sql_fs(parser)
-    arggroups.sql_media(parser)
+
     arggroups.debug(parser)
 
     arggroups.database(parser)
     parser.add_argument("search", nargs="*")
     args = parser.parse_intermixed_args()
-
-    args.include += args.search
-
-    args.db = db_utils.connect(args)
-    log.info(objects.dict_filter_bool(args.__dict__))
-
     args.action = consts.SC.playlists
+
+    arggroups.sql_fs_post(args)
+
+    arggroups.args_post(args, parser)
     return args
-
-
-def construct_query(args) -> tuple[str, dict]:
-    pl_columns = db_utils.columns(args, "playlists")
-    args.filter_sql = []
-    args.filter_bindings = {}
-
-    args.filter_sql.extend([" and " + w for w in args.where])
-
-    args.table = "playlists"
-    if args.db["playlists"].detect_fts():
-        if args.include:
-            args.table, search_bindings = db_utils.fts_search_sql(
-                "playlists",
-                fts_table=args.db["playlists"].detect_fts(),
-                include=args.include,
-                exclude=args.exclude,
-                flexible=args.flexible_search,
-            )
-            args.filter_bindings = {**args.filter_bindings, **search_bindings}
-        elif args.exclude:
-            db_utils.construct_search_bindings(
-                args,
-                [f"{k}" for k in pl_columns if k in db_utils.config["media"]["search_columns"]],
-            )
-    else:
-        db_utils.construct_search_bindings(
-            args,
-            [f"{k}" for k in pl_columns if k in db_utils.config["media"]["search_columns"]],
-        )
-
-    LIMIT = "LIMIT " + str(args.limit) if args.limit else ""
-    query = f"""SELECT
-        *
-    FROM {args.table} m
-    WHERE 1=1
-        and COALESCE(time_deleted,0) = 0
-        {" ".join(args.filter_sql)}
-        {'AND extractor_key != "Local"' if args.online_media_only else ''}
-        {'AND extractor_key = "Local"' if args.local_media_only else ''}
-    ORDER BY 1=1
-        {', ' + args.sort if args.sort else ''}
-        , path
-        , random()
-    {LIMIT}
-    """
-
-    return query, args.filter_bindings
 
 
 def delete_playlists(args, playlists) -> None:
@@ -119,7 +69,7 @@ def playlists() -> None:
 
     pl_columns = db_utils.columns(args, "playlists")
     m_columns = db_utils.columns(args, "media")
-    query, bindings = construct_query(args)
+    query, bindings = construct_playlists_query(args)
 
     if "playlists_id" in m_columns:
         query = f"""

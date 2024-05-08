@@ -3,12 +3,12 @@ from time import sleep
 
 from xklb import usage
 from xklb.playback import media_player
-from xklb.utils import arggroups, db_utils, objects, processes
+from xklb.utils import arggroups, argparse_utils, processes
 from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
+    parser = argparse_utils.ArgumentParser(
         prog="library surf",
         usage=usage.surf,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -21,11 +21,10 @@ def parse_args() -> argparse.Namespace:
     args = parser.parse_args()
 
     if args.database:
-        args.db = db_utils.connect(args)
         log.error("Currently only stdin is supported")
         raise NotImplementedError
 
-    log.info(objects.dict_filter_bool(args.__dict__))
+    arggroups.args_post(args, parser)
     return args
 
 

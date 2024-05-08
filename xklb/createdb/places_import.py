@@ -3,21 +3,17 @@ from pathlib import Path
 
 from xklb import usage
 from xklb.mediadb import db_media
-from xklb.utils import arggroups, consts, db_utils, nums, objects
-from xklb.utils.log_utils import log
+from xklb.utils import arggroups, argparse_utils, consts, nums, objects
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(prog="library places-import", usage=usage.places_import)
+    parser = argparse_utils.ArgumentParser(prog="library places-import", usage=usage.places_import)
     arggroups.database(parser)
     parser.add_argument("paths", nargs="+")
     arggroups.debug(parser)
     args = parser.parse_intermixed_args()
 
-    Path(args.database).touch()
-    args.db = db_utils.connect(args)
-
-    log.info(objects.dict_filter_bool(args.__dict__))
+    arggroups.args_post(args, parser, create_db=True)
     return args
 
 

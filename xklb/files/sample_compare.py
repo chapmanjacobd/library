@@ -1,16 +1,16 @@
-import argparse, hashlib
+import hashlib
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from xklb import usage
 from xklb.files import sample_hash
-from xklb.utils import arggroups, nums, objects
+from xklb.utils import arggroups, argparse_utils
 from xklb.utils.arg_utils import gen_paths
 from xklb.utils.log_utils import log
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(prog="library sample-compare", usage=usage.sample_compare)
+    parser = argparse_utils.ArgumentParser(prog="library sample-compare", usage=usage.sample_compare)
     arggroups.sample_hash_bytes(parser)
     parser.add_argument("--ignore-holes", "--ignore-sparse", action="store_true")
     parser.add_argument("--skip-full-hash", action="store_true")
@@ -19,9 +19,9 @@ def parse_args():
     arggroups.paths_or_stdin(parser)
     args = parser.parse_args()
 
-    args.gap = nums.float_from_percent(args.gap)
+    arggroups.sample_hash_bytes_post(args)
 
-    log.info(objects.dict_filter_bool(args.__dict__))
+    arggroups.args_post(args, parser)
     return args
 
 
@@ -96,9 +96,9 @@ def sample_cmp(*paths, threads=1, gap=0.1, chunk_size=None, ignore_holes=False, 
 def sample_compare() -> None:
     args = parse_args()
 
-    args.paths = list(gen_paths(args))
+    paths = list(gen_paths(args))
     is_equal = sample_cmp(
-        *args.paths,
+        *paths,
         threads=args.threads,
         gap=args.gap,
         chunk_size=args.chunk_size,

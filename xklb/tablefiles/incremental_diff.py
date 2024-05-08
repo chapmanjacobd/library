@@ -1,14 +1,14 @@
 import argparse
 
 from xklb import usage
-from xklb.utils import arggroups, consts, file_utils, web
+from xklb.utils import arggroups, argparse_utils, consts, file_utils, web
 from xklb.utils.argparse_utils import ArgparseList
 from xklb.utils.log_utils import log
 from xklb.utils.printing import print_df
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Diff two table-like files", usage=usage.incremental_diff)
+    parser = argparse_utils.ArgumentParser(description="Diff two table-like files", usage=usage.incremental_diff)
     parser.add_argument("--print", "-p", default="p", const="p", nargs="?", help=argparse.SUPPRESS)
     parser.add_argument("--mimetype1", "--filetype1")
     parser.add_argument("--encoding1")
@@ -35,6 +35,7 @@ def parse_args():
     else:
         args.batch_size = int(args.batch_size)
 
+    arggroups.args_post(args, parser)
     return args
 
 

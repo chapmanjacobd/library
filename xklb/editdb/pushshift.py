@@ -1,9 +1,8 @@
 import argparse, sys
-from pathlib import Path
 
 from xklb import usage
 from xklb.createdb.reddit_add import slim_post_data
-from xklb.utils import arggroups, db_utils, objects, printing
+from xklb.utils import arggroups, argparse_utils, objects, printing
 from xklb.utils.log_utils import log
 
 try:
@@ -13,17 +12,13 @@ except ModuleNotFoundError:
 
 
 def parse_args(action, usage) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(prog="library " + action, usage=usage)
+    parser = argparse_utils.ArgumentParser(prog="library " + action, usage=usage)
     arggroups.debug(parser)
 
     arggroups.database(parser)
     args = parser.parse_args()
 
-    Path(args.database).touch()
-    args.db = db_utils.connect(args)
-
-    log.info(objects.dict_filter_bool(args.__dict__))
-
+    arggroups.args_post(args, parser, create_db=True)
     return args
 
 

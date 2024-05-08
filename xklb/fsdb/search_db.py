@@ -1,13 +1,11 @@
 import argparse, json
-from pathlib import Path
 
 from xklb import usage
-from xklb.utils import arggroups, consts, db_utils, objects
-from xklb.utils.log_utils import log
+from xklb.utils import arggroups, argparse_utils, consts, sql_utils
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(prog="library search-db", usage=usage.search_db)
+    parser = argparse_utils.ArgumentParser(prog="library search-db", usage=usage.search_db)
     arggroups.sql_fs(parser)
     arggroups.debug(parser)
 
@@ -16,13 +14,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("search", nargs="+")
     args = parser.parse_intermixed_args()
 
-    args.include += args.search
+    arggroups.sql_fs_post(args)
 
-    Path(args.database).touch()
-    args.db = db_utils.connect(args)
-
-    log.info(objects.dict_filter_bool(args.__dict__))
-
+    arggroups.args_post(args, parser, create_db=True)
     return args
 
 
@@ -56,7 +50,7 @@ def search_db() -> None:
     args.filter_bindings = {}
 
     columns = args.db[args.table].columns_dict
-    db_utils.construct_search_bindings(args, columns)
+    sql_utils.construct_search_bindings(args, columns)
 
     if args.delete_rows:  # TODO: replace with media_printer?
         deleted_count = 0

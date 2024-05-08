@@ -1,15 +1,14 @@
 import argparse
-from pathlib import Path
 
 from xklb import usage
 from xklb.editdb import dedupe_db
 from xklb.mediadb import db_history
-from xklb.utils import arggroups, db_utils, objects
+from xklb.utils import arggroups, argparse_utils, db_utils
 from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(prog="library copy-play-counts", usage=usage.copy_play_counts)
+    parser = argparse_utils.ArgumentParser(prog="library copy-play-counts", usage=usage.copy_play_counts)
     parser.add_argument("--source-prefix", default="")
     parser.add_argument("--target-prefix", default="")
     arggroups.debug(parser)
@@ -18,10 +17,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("source_dbs", nargs="+")
     args = parser.parse_intermixed_args()
 
-    Path(args.database).touch()
-    args.db = db_utils.connect(args)
-    log.info(objects.dict_filter_bool(args.__dict__))
-
+    arggroups.args_post(args, parser, create_db=True)
     return args
 
 

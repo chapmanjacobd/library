@@ -1,11 +1,8 @@
-import argparse
-
-from xklb.utils import arggroups, objects, web
-from xklb.utils.log_utils import log
+from xklb.utils import arggroups, argparse_utils, web
 
 
 def parse_args():
-    parser = argparse.ArgumentParser()
+    parser = argparse_utils.ArgumentParser()
     parser.add_argument("--base-url", default="https://www.myanonamouse.net")
     parser.add_argument("--max", type=int, default=150)
 
@@ -15,7 +12,7 @@ def parse_args():
 
     args = parser.parse_args()
 
-    log.info(objects.dict_filter_bool(args.__dict__))
+    arggroups.args_post(args, parser)
     return args
 
 

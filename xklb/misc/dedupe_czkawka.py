@@ -1,4 +1,4 @@
-import argparse, difflib, os, re, shlex, shutil, subprocess, sys, time
+import difflib, os, re, shlex, shutil, subprocess, sys, time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -7,7 +7,7 @@ from screeninfo import get_monitors
 
 from xklb import usage
 from xklb.playback import media_player, post_actions
-from xklb.utils import arggroups, consts, devices, file_utils, iterables, mpv_utils, processes
+from xklb.utils import arggroups, argparse_utils, consts, devices, file_utils, iterables, mpv_utils, processes
 from xklb.utils.log_utils import log
 
 left_mpv_socket = str(Path(consts.TEMP_SCRIPT_DIR) / f"mpv_socket_{consts.random_string()}")
@@ -15,9 +15,9 @@ right_mpv_socket = str(Path(consts.TEMP_SCRIPT_DIR) / f"mpv_socket_{consts.rando
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(usage.dedupe_czkawka)
+    parser = argparse_utils.ArgumentParser(usage.dedupe_czkawka)
     arggroups.playback(parser)
-    arggroups.capability_clobber(parser)
+    arggroups.clobber(parser)
     arggroups.capability_delete(parser)
     arggroups.post_actions(parser)
     parser.set_defaults(start="15%", volume="70")
@@ -36,6 +36,11 @@ def parse_args():
 
     parser.add_argument("file_path", help="Path to the text file containing the file list.")
     args = parser.parse_args()
+
+    arggroups.playback_post(args)
+    arggroups.post_actions_post(args)
+
+    arggroups.args_post(args, parser)
     return args
 
 

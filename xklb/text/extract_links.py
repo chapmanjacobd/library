@@ -1,12 +1,10 @@
-import argparse
-
 from xklb import usage
-from xklb.utils import arg_utils, arggroups, consts, devices, iterables, printing, strings, web
+from xklb.utils import arg_utils, arggroups, argparse_utils, consts, devices, iterables, printing, strings, web
 from xklb.utils.log_utils import log
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(
+    parser = argparse_utils.ArgumentParser(
         prog="library extract-links",
         usage=usage.extract_links,
     )
@@ -23,23 +21,11 @@ def parse_args():
     arggroups.paths_or_stdin(parser)
     args = parser.parse_args()
 
-    if args.scroll:
-        args.selenium = True
+    arggroups.extractor_post(args)
+    arggroups.filter_links_post(args)
+    arggroups.selenium_post(args)
 
-    if not args.case_sensitive:
-        args.before_include = [s.lower() for s in args.before_include]
-        args.path_include = [s.lower() for s in args.path_include]
-        args.text_include = [s.lower() for s in args.text_include]
-        args.after_include = [s.lower() for s in args.after_include]
-        args.before_exclude = [s.lower() for s in args.before_exclude]
-        args.path_exclude = [s.lower() for s in args.path_exclude]
-        args.text_exclude = [s.lower() for s in args.text_exclude]
-        args.after_exclude = [s.lower() for s in args.after_exclude]
-
-    if not args.no_url_decode:
-        args.path_include = [web.url_decode(s) for s in args.path_include]
-        args.path_exclude = [web.url_decode(s) for s in args.path_exclude]
-
+    arggroups.args_post(args, parser)
     return args
 
 
@@ -126,7 +112,7 @@ def get_inner_urls(args, url):
             for markup in web.infinite_scroll(args.driver):
                 yield from parse_inner_urls(args, url, markup)
     else:
-        if args.local_file:
+        if args.local_html:
             with open(url) as f:
                 markup = f.read()
             url = "file://" + url

@@ -1,6 +1,5 @@
 import argparse
 from datetime import datetime
-from pathlib import Path
 from time import sleep
 
 from bs4 import BeautifulSoup
@@ -8,12 +7,11 @@ from dateutil import parser
 
 from xklb import usage
 from xklb.mediadb import db_media
-from xklb.utils import arggroups, db_utils, nums, objects, web
-from xklb.utils.log_utils import log
+from xklb.utils import arggroups, argparse_utils, nums, web
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(prog="library tildes", usage=usage.tildes)
+    parser = argparse_utils.ArgumentParser(prog="library tildes", usage=usage.tildes)
     arggroups.requests(parser)
     arggroups.debug(parser)
 
@@ -21,9 +19,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("username", help="Tildes.net user to extract comments for")
     args = parser.parse_intermixed_args()
 
-    Path(args.database).touch()
-    args.db = db_utils.connect(args)
-    log.info(objects.dict_filter_bool(args.__dict__))
+    arggroups.args_post(args, parser, create_db=True)
     return args
 
 

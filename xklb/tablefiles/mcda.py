@@ -1,15 +1,13 @@
-import argparse
 from pathlib import Path
 
 from xklb import usage
 from xklb.utils import arggroups, argparse_utils, file_utils, iterables, objects, pd_utils, sql_utils, web
 from xklb.utils.consts import DEFAULT_FILE_ROWS_READ_LIMIT
-from xklb.utils.log_utils import log
 from xklb.utils.printing import print_df, print_series
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Perform MCDA on one or more files", usage=usage.mcda)
+    parser = argparse_utils.ArgumentParser(description="Perform MCDA on one or more files", usage=usage.mcda)
     arggroups.table_like(parser)
     parser.add_argument(
         "--minimize-columns",
@@ -52,15 +50,12 @@ def parse_args():
     )
     args = parser.parse_args()
 
-    if args.end_row.lower() in ("inf", "none", "all"):
-        args.end_row = None
-    else:
-        args.end_row = int(args.end_row)
-
     if args.words_nums_map:
         Path(args.words_nums_map).touch()
 
-    log.info(objects.dict_filter_bool(args.__dict__))
+    arggroups.table_like_post(args)
+
+    arggroups.args_post(args, parser)
     return args
 
 
@@ -149,7 +144,7 @@ def sort(args, df, values):
 
 def group_sort_by(args, folders):
     if args.sort_groups_by is None:
-        sort_func = lambda x: x["size"] / x["exists"]
+        sort_func = lambda x: (0, x["size"] / x["exists"]) if x["exists"] else (1, x["size"] / x["total"])
     elif args.sort_groups_by.startswith("mcda "):
         import pandas as pd
 
@@ -160,9 +155,9 @@ def group_sort_by(args, folders):
         return df.drop(columns=["TOPSIS", "MABAC", "SPOTIS", "BORDA"]).to_dict(orient="records")
     else:
         if args.sort_groups_by == "played_ratio":
-            sort_func = lambda x: x["played"] / x["deleted"] if x["deleted"] else 0
+            sort_func = lambda x: (0, x["played"] / x["deleted"]) if x["deleted"] else (1, x["played"] / x["total"])
         elif args.sort_groups_by == "deleted_ratio":
-            sort_func = lambda x: x["deleted"] / x["played"] if x["played"] else 0
+            sort_func = lambda x: (0, x["deleted"] / x["played"]) if x["played"] else (1, x["deleted"] / x["total"])
         else:
             sort_func = sql_utils.sort_like_sql(args.sort_groups_by)
 

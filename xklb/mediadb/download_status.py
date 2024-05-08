@@ -2,20 +2,17 @@ import argparse
 
 from xklb import media_printer, usage
 from xklb.createdb import tube_backend
-from xklb.mediadb import download
-from xklb.utils import arg_utils, arggroups, consts, db_utils, objects, sql_utils
-from xklb.utils.log_utils import log
+from xklb.utils import arggroups, argparse_utils, consts, db_utils, sql_utils, sqlgroups
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
+    parser = argparse_utils.ArgumentParser(
         "library download-status",
         usage=usage.download_status,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
     arggroups.sql_fs(parser)
-    arggroups.sql_media(parser)
 
     parser.set_defaults(print="p")
 
@@ -24,20 +21,18 @@ def parse_args() -> argparse.Namespace:
     arggroups.debug(parser)
     arggroups.database(parser)
     args = parser.parse_args()
-    args.defaults = []
-
-    args.db = db_utils.connect(args)
-    log.info(objects.dict_filter_bool(args.__dict__))
-
     args.action = consts.SC.download_status
+
+    arggroups.sql_fs_post(args)
+
+    arggroups.args_post(args, parser)
     return args
 
 
 def download_status() -> None:
     args = parse_args()
-    arg_utils.parse_args_sort(args)
 
-    query, bindings = download.construct_query(args)
+    query, bindings = sqlgroups.construct_download_query(args)
 
     count_paths = ""
     if "time_modified" in query:

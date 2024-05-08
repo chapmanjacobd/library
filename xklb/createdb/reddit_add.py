@@ -3,14 +3,13 @@ import datetime as dt
 import sys
 from functools import partial
 from itertools import takewhile
-from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import prawcore
 
 from xklb import usage
 from xklb.mediadb import db_media, db_playlists
-from xklb.utils import arggroups, consts, db_utils, iterables, objects
+from xklb.utils import arggroups, argparse_utils, consts, db_utils, iterables, objects
 from xklb.utils.log_utils import log
 
 PRAW_SETUP_INSTRUCTIONS = r"""
@@ -42,7 +41,7 @@ if TYPE_CHECKING:
 
 
 def parse_args(action, usage) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
+    parser = argparse_utils.ArgumentParser(
         prog="library " + action,
         usage=usage,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -64,9 +63,6 @@ def parse_args(action, usage) -> argparse.Namespace:
     if action == "redditadd":
         args.paths = iterables.conform(args.paths)
 
-    Path(args.database).touch()
-    args.db = db_utils.connect(args)
-
     try:
         import praw
 
@@ -75,8 +71,7 @@ def parse_args(action, usage) -> argparse.Namespace:
         print(PRAW_SETUP_INSTRUCTIONS)
         raise SystemExit(e) from e
 
-    log.info(objects.dict_filter_bool(args.__dict__))
-
+    arggroups.args_post(args, parser, create_db=True)
     return args
 
 
@@ -337,7 +332,7 @@ def reddit_add(args=None) -> None:
                 {
                     "path": path,
                     "extractor_playlist_id": name,
-                    "extractor_config": objects.filter_namespace(args, ["limit", "lookback", "praw_site"]),
+                    "extractor_config": objects.filter_namespace(args.extractor_config, ["limit", "lookback", "praw_site"]),
                     "extractor_key": extractor_key,
                     "time_modified": consts.now(),
                     "time_deleted": 0,

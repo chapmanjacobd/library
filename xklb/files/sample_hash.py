@@ -1,24 +1,24 @@
-import argparse, hashlib, shlex
+import hashlib, shlex
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 from xklb import usage
-from xklb.utils import arggroups, nums, objects
+from xklb.utils import arggroups, argparse_utils, nums
 from xklb.utils.arg_utils import gen_paths
 from xklb.utils.log_utils import log
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(prog="library sample-hash", usage=usage.sample_hash)
+    parser = argparse_utils.ArgumentParser(prog="library sample-hash", usage=usage.sample_hash)
     arggroups.sample_hash_bytes(parser)
     arggroups.debug(parser)
 
     arggroups.paths_or_stdin(parser)
     args = parser.parse_args()
 
-    args.gap = nums.float_from_percent(args.gap)
+    arggroups.sample_hash_bytes_post(args)
 
-    log.info(objects.dict_filter_bool(args.__dict__))
+    arggroups.args_post(args, parser)
     return args
 
 

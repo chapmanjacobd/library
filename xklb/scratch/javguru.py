@@ -1,13 +1,13 @@
-import argparse, time
+import time
 from pathlib import Path
 from urllib.parse import urljoin
 
 from xklb.mediafiles import media_check
-from xklb.utils import arggroups, file_utils, path_utils, processes, web
+from xklb.utils import arggroups, argparse_utils, file_utils, path_utils, processes, web
 
 
 def jav_guru() -> None:
-    parser = argparse.ArgumentParser()
+    parser = argparse_utils.ArgumentParser()
     parser.add_argument("--chrome", action="store_true")
     parser.add_argument("--small", action="store_true")
     arggroups.debug(parser)

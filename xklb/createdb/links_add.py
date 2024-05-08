@@ -1,16 +1,15 @@
 import argparse, json, random, time
-from pathlib import Path
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 from xklb import usage
 from xklb.mediadb import db_media, db_playlists
 from xklb.text import extract_links
-from xklb.utils import arg_utils, arggroups, consts, db_utils, objects, printing, strings, web
+from xklb.utils import arg_utils, arggroups, argparse_utils, consts, db_utils, objects, printing, strings, web
 from xklb.utils.log_utils import log
 
 
-def parse_args(**kwargs):
-    parser = argparse.ArgumentParser(**kwargs)
+def parse_args(action, **kwargs):
+    parser = argparse_utils.ArgumentParser(**kwargs)
     parser.add_argument("--category", "-c", help=argparse.SUPPRESS)
 
     parser.add_argument("--max-pages", type=int)
@@ -25,7 +24,7 @@ def parse_args(**kwargs):
 
     parser.add_argument("--page-replace")
     parser.add_argument("--page-key", default="page")
-    parser.add_argument("--page-step", "--step", "-S", type=int, default=1)
+    parser.add_argument("--page-step", "--step", type=int, default=1)
     parser.add_argument("--page-start", "--start-page", "--start", type=int)
 
     parser.add_argument("--local-file", "--local-html", action="store_true", help="Treat paths as Local HTML files")
@@ -41,35 +40,19 @@ def parse_args(**kwargs):
     arggroups.debug(parser)
 
     arggroups.database(parser)
-    if "add" in kwargs["prog"]:
+    if "add" in action:
         arggroups.paths_or_stdin(parser)
     args = parser.parse_intermixed_args()
 
     if args.auto_pager:
         args.fixed_pages = 1
 
-    if args.scroll:
-        args.selenium = True
+    arggroups.extractor_post(args)
+    arggroups.filter_links_post(args)
+    arggroups.selenium_post(args)
 
-    if not args.case_sensitive:
-        args.before_include = [s.lower() for s in args.before_include]
-        args.path_include = [s.lower() for s in args.path_include]
-        args.text_include = [s.lower() for s in args.text_include]
-        args.after_include = [s.lower() for s in args.after_include]
-        args.before_exclude = [s.lower() for s in args.before_exclude]
-        args.path_exclude = [s.lower() for s in args.path_exclude]
-        args.text_exclude = [s.lower() for s in args.text_exclude]
-        args.after_exclude = [s.lower() for s in args.after_exclude]
-
-    if not args.no_url_decode:
-        args.path_include = [web.url_decode(s) for s in args.path_include]
-        args.path_exclude = [web.url_decode(s) for s in args.path_exclude]
-
-    Path(args.database).touch()
-    args.db = db_utils.connect(args)
-
-    log.info(objects.dict_filter_bool(args.__dict__))
-    return args, parser
+    arggroups.args_post(args, parser, create_db=True)
+    return args
 
 
 def add_playlist(args, path):
@@ -77,9 +60,7 @@ def add_playlist(args, path):
         "hostname": urlparse(path).hostname,
         "category": getattr(args, "category", None) or "Uncategorized",
         "time_created": consts.APPLICATION_START,
-        "extractor_config": {
-            k: v for k, v in args.__dict__.items() if k not in ["db", "database", "verbose", "paths", "backfill_pages"]
-        },
+        "extractor_config": args.extractor_config,
         "time_deleted": 0,
     }
     args.playlists_id = db_playlists.add(args, str(path), info)
@@ -247,7 +228,7 @@ def extractor(args, playlist_path):
 
 
 def links_add() -> None:
-    args, _parser = parse_args(prog="library links-add", usage=usage.links_add)
+    args = parse_args(consts.SC.links_add, usage=usage.links_add)
 
     if args.insert_only:
         media_new = set()
@@ -283,7 +264,7 @@ def links_add() -> None:
 
 
 def links_update() -> None:
-    args, parser = parse_args(prog="library links-update", usage=usage.links_update)
+    args = parse_args(consts.SC.links_update, usage=usage.links_update)
 
     link_playlists = db_playlists.get_all(
         args,
@@ -300,7 +281,7 @@ def links_update() -> None:
         playlist_count = 0
         for playlist in link_playlists:
             extractor_config = json.loads(playlist.get("extractor_config") or "{}")
-            args_env = arg_utils.override_config(parser, extractor_config, args)
+            args_env = arg_utils.override_config(args, extractor_config)
 
             new_media = extractor(args_env, playlist["path"])
 

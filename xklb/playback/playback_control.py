@@ -2,12 +2,23 @@ import argparse, platform, textwrap
 from copy import deepcopy
 from pathlib import Path
 
-from xklb.utils import arggroups, consts, file_utils, iterables, mpv_utils, nums, objects, printing, processes
+from xklb.utils import (
+    arggroups,
+    argparse_utils,
+    consts,
+    file_utils,
+    iterables,
+    mpv_utils,
+    nums,
+    objects,
+    printing,
+    processes,
+)
 from xklb.utils.log_utils import log
 
 
 def parse_args(action) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
+    parser = argparse_utils.ArgumentParser(
         prog=f"library {action}",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
@@ -22,8 +33,7 @@ def parse_args(action) -> argparse.Namespace:
 
     args.mpv = mpv_utils.connect_mpv(args.mpv_socket)
 
-    log.info(objects.dict_filter_bool(args.__dict__))
-
+    arggroups.args_post(args, parser)
     return args
 
 

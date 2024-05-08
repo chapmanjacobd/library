@@ -3,7 +3,7 @@ import argparse, importlib, sys, textwrap
 from tabulate import tabulate
 
 from xklb import __version__
-from xklb.utils import iterables
+from xklb.utils import argparse_utils, iterables
 from xklb.utils.log_utils import log
 
 progs = {
@@ -131,7 +131,7 @@ def print_help(parser) -> None:
 
 
 def create_subcommands_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
+    parser = argparse_utils.ArgumentParser(
         prog="lb",
         description="xk media library",
         epilog="Report bugs here: https://github.com/chapmanjacobd/library/issues/new/choose",

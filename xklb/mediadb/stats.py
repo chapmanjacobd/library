@@ -1,22 +1,21 @@
 import argparse
 
 from xklb import media_printer, usage
-from xklb.utils import arggroups, consts, db_utils, objects, sql_utils, strings
-from xklb.utils.log_utils import log
+from xklb.utils import arggroups, argparse_utils, consts, db_utils, sql_utils
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
+    parser = argparse_utils.ArgumentParser(
         "library stats",
         usage=usage.stats,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
     arggroups.sql_fs(parser)
-    arggroups.sql_media(parser)
 
     arggroups.frequency(parser)
     parser.add_argument("--hide-deleted", action="store_true")
+    parser.add_argument("--only-deleted", "--deleted", action="store_true")
     arggroups.history(parser)
     arggroups.debug(parser)
 
@@ -31,43 +30,17 @@ def parse_args() -> argparse.Namespace:
         help=f"One of: {', '.join(consts.time_facets)}",
     )
     args = parser.parse_intermixed_args()
-
-    args.db = db_utils.connect(args)
+    args.action = consts.SC.stats
 
     m_columns = db_utils.columns(args, "media")
     if args.facet not in m_columns:
         args.facet = "time_played"
-    args.frequency = strings.partial_startswith(args.frequency, consts.frequency)
 
-    args.action = consts.SC.stats
-    log.info(objects.dict_filter_bool(args.__dict__))
+    arggroups.sql_fs_post(args)
+    arggroups.frequency_post(args)
 
-    args.filter_bindings = {}
-
+    arggroups.args_post(args, parser)
     return args
-
-
-def process_search(args, m_columns):
-    args.table = "media"
-    if args.db["media"].detect_fts():
-        if args.include:
-            args.table, search_bindings = db_utils.fts_search_sql(
-                "media",
-                fts_table=args.db["media"].detect_fts(),
-                include=args.include,
-                exclude=args.exclude,
-            )
-            args.filter_bindings = search_bindings
-        elif args.exclude:
-            db_utils.construct_search_bindings(
-                args,
-                [f"m.{k}" for k in m_columns if k in db_utils.config["media"]["search_columns"]],
-            )
-    else:
-        db_utils.construct_search_bindings(
-            args,
-            [f"m.{k}" for k in m_columns if k in db_utils.config["media"]["search_columns"]],
-        )
 
 
 def stats() -> None:
@@ -75,9 +48,9 @@ def stats() -> None:
 
     print(f"{args.facet.title()} media:")
     if args.facet == "time_played" or args.completed:
-        tbl = sql_utils.historical_usage(args, args.frequency, args.facet, args.hide_deleted)
+        tbl = sql_utils.historical_usage(args, args.frequency, args.facet, args.hide_deleted, args.only_deleted)
     else:
-        tbl = sql_utils.historical_usage_items(args, args.frequency, args.facet, args.hide_deleted)
+        tbl = sql_utils.historical_usage_items(args, args.frequency, args.facet, args.hide_deleted, args.only_deleted)
     media_printer.media_printer(args, tbl, units=args.frequency)
 
 

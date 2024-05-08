@@ -1,10 +1,10 @@
-import argparse, sys
+import sys
 from html.parser import HTMLParser
 from io import StringIO
 
 from xklb import usage
 from xklb.data import wordbank
-from xklb.utils import arggroups, printing
+from xklb.utils import arggroups, argparse_utils, printing
 
 
 class MLStripper(HTMLParser):
@@ -60,9 +60,10 @@ def line_processor(txt) -> None:
 
 
 def nouns() -> None:
-    parser = argparse.ArgumentParser(usage.nouns)
+    parser = argparse_utils.ArgumentParser(usage.nouns)
     arggroups.debug(parser)
     args = parser.parse_args()
+    arggroups.args_post(args, parser)
 
     print("library nouns: Reading from stdin...", file=sys.stderr)
     for line in sys.stdin:

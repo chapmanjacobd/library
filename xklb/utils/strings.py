@@ -1,8 +1,9 @@
-import html, re
+import html, re, textwrap
 from copy import deepcopy
+from itertools import zip_longest
 
 from xklb.data import wordbank
-from xklb.utils import iterables, nums
+from xklb.utils import consts, iterables, nums
 from xklb.utils.log_utils import log
 
 
@@ -229,3 +230,22 @@ def safe_percent(v) -> str | None:
         return f"{v:.2%}"
     except Exception:
         return None
+
+
+def format_two_columns(text1, text2, width1=30, width2=70, left_gutter=2, middle_gutter=2, right_gutter=3):
+    terminal_width = min(consts.TERMINAL_SIZE.columns, 100) - (left_gutter + middle_gutter + right_gutter)
+    if text2:
+        width1 = int(terminal_width * (width1 / (width1 + width2)))
+        width2 = int(terminal_width * (width2 / (width1 + width2)))
+    else:
+        width1 = terminal_width
+
+    wrapped_text1 = textwrap.wrap(text1, width=width1)
+    wrapped_text2 = textwrap.wrap(text2, width=width2)
+
+    formatted_lines = [
+        f"{' ' * left_gutter}{line1:<{width1}}{' ' * middle_gutter}{line2:<{width2}}{' ' * right_gutter}".rstrip()
+        for line1, line2 in zip_longest(wrapped_text1, wrapped_text2, fillvalue="")
+    ]
+
+    return "\n".join(formatted_lines) + "\n"

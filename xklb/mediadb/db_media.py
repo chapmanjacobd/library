@@ -6,7 +6,7 @@ from pathlib import Path
 from dateutil import parser
 
 from xklb.createdb import fs_add
-from xklb.utils import consts, db_utils, iterables, nums, objects, processes, strings
+from xklb.utils import consts, db_utils, iterables, nums, objects, processes, sql_utils, strings
 from xklb.utils.consts import DBType
 from xklb.utils.log_utils import log
 
@@ -293,38 +293,26 @@ def mark_media_deleted(args, paths) -> int:
     return modified_row_count
 
 
-def filter_args_sql(args, m_columns):
-    return f"""
-        {'and path like "http%"' if getattr(args, 'safe', False) else ''}
-        {f'and path not like "{args.keep_dir}%"' if getattr(args, 'keep_dir', False) and Path(args.keep_dir).exists() else ''}
-        {'and COALESCE(time_deleted,0) = 0' if 'time_deleted' in m_columns and "deleted" not in (getattr(args, 'sort_groups_by',None) or '') and "time_deleted" not in " ".join(args.where) else ''}
-        {'AND (score IS NULL OR score > 7)' if 'score' in m_columns else ''}
-        {'AND (upvote_ratio IS NULL OR upvote_ratio > 0.73)' if 'upvote_ratio' in m_columns else ''}
-        {'AND path not like "http%"' if args.local_media_only and 'time_downloaded' not in m_columns else ''}
-        {'AND path like "http%"' if args.online_media_only and 'time_downloaded' not in m_columns else ''}
-        {'AND COALESCE(time_downloaded,0) = 0' if args.online_media_only and 'time_downloaded' in m_columns else ''}
-        {'AND COALESCE(time_downloaded,1)!= 0 AND path not like "http%"' if args.local_media_only and 'time_downloaded' in m_columns else ''}
-    """
-
-
 def natsort_media(args, media):
     from natsort import natsorted, ns, os_sorted
 
+    config = args.play_in_order
+
     reverse = False
-    if args.play_in_order.startswith("reverse_"):
-        args.play_in_order = args.play_in_order.replace("reverse_", "", 1)
+    if config.startswith("reverse_"):
+        config = config.replace("reverse_", "", 1)
         reverse = True
 
     compat = False
     for opt in ("compat_", "nfkd_"):
-        if args.play_in_order.startswith(opt):
-            args.play_in_order = args.play_in_order.replace(opt, "", 1)
+        if config.startswith(opt):
+            config = config.replace(opt, "", 1)
             compat = True
 
-    if "_" in args.play_in_order:
-        alg, sort_key = args.play_in_order.split("_", 1)
+    if "_" in config:
+        alg, sort_key = config.split("_", 1)
     else:
-        alg, sort_key = args.play_in_order, "ps"
+        alg, sort_key = config, "ps"
 
     def func_sort_key(sort_key):
         def fn_key(d):
@@ -404,7 +392,6 @@ def get_dir_media(args, dirs: Collection, include_subdirs=False, limit=2_000) ->
             LEFT JOIN history h on h.media_id = m.id
             WHERE 1=1
                 and m.id in (select id from {args.table})
-                {filter_args_sql(args, m_columns)}
                 {filter_paths}
             GROUP BY m.id, m.path
         )
@@ -481,7 +468,7 @@ def get_related_media(args, m: dict) -> list[dict]:
     )
     args.include = sorted(words, key=len, reverse=True)[:100]
     log.info("related_words: %s", args.include)
-    args.table, search_bindings = db_utils.fts_search_sql(
+    args.table, search_bindings = sql_utils.fts_search_sql(
         "media",
         fts_table=args.db["media"].detect_fts(),
         include=args.include,
@@ -490,9 +477,8 @@ def get_related_media(args, m: dict) -> list[dict]:
     )
     args.filter_bindings = {**args.filter_bindings, **search_bindings}
 
-    select_sql = "\n        , ".join(args.select)
-    limit_sql = "LIMIT " + str(args.limit - 1) if args.limit else ""
-    offset_sql = f"OFFSET {args.offset}" if args.offset and limit_sql else ""
+    select_sql = "\n        , ".join(s for s in args.select if s not in ["rank"])
+
     query = f"""WITH m as (
             SELECT
                 SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
@@ -505,7 +491,6 @@ def get_related_media(args, m: dict) -> list[dict]:
             LEFT JOIN history h on h.media_id = m.id
             WHERE 1=1
                 and path != :path
-                {filter_args_sql(args, m_columns)}
             GROUP BY m.id, m.path
         )
         SELECT *
@@ -516,7 +501,7 @@ def get_related_media(args, m: dict) -> list[dict]:
             , m.path like "http%"
             , {'rank' if 'sort' in args.defaults else f'ntile(1000) over (order by rank)' + (f', {args.sort}' if args.sort else '')}
             , path
-        {limit_sql} {offset_sql}
+        {sql_utils.limit_sql(args, limit_adj=-1)}
     """
 
     bindings = {"path": m["path"]}

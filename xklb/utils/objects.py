@@ -31,6 +31,33 @@ def take(gen, num=5):
         yield value
 
 
+def gen_is_empty(generator):
+    try:
+        item = next(generator)
+
+        def g2():
+            yield item
+            yield from generator
+
+        return g2(), False
+    except StopIteration:
+        return (_ for _ in []), True
+
+
+def gen_len(gen, max_length=100):
+    items = []
+    for count, item in enumerate(gen, start=1):
+        items.append(item)
+        if count >= max_length:
+            break
+
+    def new_generator():
+        yield from items
+        yield from gen
+
+    return new_generator(), count
+
+
 def flatten_dict(nested_dict, parent_key="", sep="_", passthrough_keys=None):
     if passthrough_keys is None:
         passthrough_keys = []

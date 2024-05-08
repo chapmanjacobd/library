@@ -1,18 +1,17 @@
 import argparse, json
 from collections import defaultdict
 from io import StringIO
-from pathlib import Path
 
 from bs4 import BeautifulSoup, element
 
 from xklb import usage
 from xklb.text import extract_text
-from xklb.utils import arg_utils, arggroups, consts, db_utils, iterables, objects, web
+from xklb.utils import arg_utils, arggroups, argparse_utils, consts, db_utils, iterables, objects, web
 from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(prog="library site-add", usage=usage.site_add)
+    parser = argparse_utils.ArgumentParser(prog="library site-add", usage=usage.site_add)
     arggroups.selenium(parser)
     parser.set_defaults(selenium=True)
 
@@ -28,11 +27,9 @@ def parse_args() -> argparse.Namespace:
     arggroups.paths_or_stdin(parser)
     args = parser.parse_intermixed_args()
 
-    Path(args.database).touch()
-    args.db = db_utils.connect(args)
+    arggroups.selenium_post(args)
 
-    log.info(objects.dict_filter_bool(args.__dict__))
-
+    arggroups.args_post(args, parser, create_db=True)
     return args
 
 
@@ -273,7 +270,7 @@ def attach_interceptors(args):
 
 
 def load_page(args, path):
-    if args.local_file:
+    if args.local_html:
         path = "file://" + path
 
     from selenium.common.exceptions import WebDriverException

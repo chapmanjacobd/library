@@ -3,25 +3,23 @@ from pathlib import Path
 
 from xklb import usage
 from xklb.mediafiles import process_image
-from xklb.utils import arggroups, nums, objects, path_utils, processes, web
+from xklb.utils import arggroups, argparse_utils, nums, path_utils, processes, web
 from xklb.utils.arg_utils import gen_paths, kwargs_overwrite
 from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(prog="library process-ffmpeg", usage=usage.process_ffmpeg)
-    arggroups.capability_simulate(parser)
+    parser = argparse_utils.ArgumentParser(prog="library process-ffmpeg", usage=usage.process_ffmpeg)
+    arggroups.simulate(parser)
     arggroups.process_ffmpeg(parser)
-    parser.add_argument("--delete-unplayable", action="store_true")
     arggroups.debug(parser)
 
     arggroups.paths_or_stdin(parser)
     args = parser.parse_args()
 
-    args.split_longer_than = nums.human_to_seconds(args.split_longer_than)
-    args.min_split_segment = nums.human_to_seconds(args.min_split_segment)
+    arggroups.process_ffmpeg_post(args)
 
-    log.info(objects.dict_filter_bool(args.__dict__))
+    arggroups.args_post(args, parser)
     return args
 
 
@@ -109,10 +107,9 @@ def process_path(args, path, **kwargs):
         height = int(video_stream.get("height"))
 
         if width > (args.max_width * (1 + args.max_width_buffer)):
-            ff_opts.extend(["-vf", "scale=-2:min(iw\\,{args.max_width})"])
+            ff_opts.extend(["-vf", f"scale={args.max_width}:-2"])
         elif height > (args.max_height * (1 + args.max_height_buffer)):
-            ff_opts.extend(["-vf", "scale=-2:min(ih\\,{args.max_height})"])
-        # TODO: Source Width,Height must be even for YUV_420 colorspace
+            ff_opts.extend(["-vf", f"scale=-2:{args.max_height}"])
 
     is_split = bool(audio_stream)
     if audio_stream:

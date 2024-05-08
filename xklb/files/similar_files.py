@@ -1,48 +1,56 @@
 import argparse
-
 import humanize
 from tabulate import tabulate
 
 from xklb import usage
 from xklb.folders.similar_folders import cluster_folders, map_and_name
-from xklb.utils import arg_utils, arggroups, consts, nums, objects, printing
+from xklb.utils import arg_utils, arggroups, argparse_utils, consts, nums, printing
 from xklb.utils.log_utils import log
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(usage=usage.similar_files)
-    arggroups.operation_cluster(parser)
+    parser = argparse_utils.ArgumentParser(usage=usage.similar_files)
+    arggroups.cluster(parser)
 
-    parser.add_argument("--print", "-p", default="", const="p", nargs="?")
-    parser.add_argument("--small", "--reverse", "-r", action="store_true")
+    parser.add_argument("--small", "--reverse", action="store_true")
     parser.add_argument("--only-duplicates", action="store_true")
     parser.add_argument("--only-originals", action="store_true")
 
     parser.add_argument("--full-path", action="store_true", help="Cluster using full path instead of only file name")
     parser.add_argument("--estimated-duplicates", "--dupes", type=float)
 
+    parser.add_argument("--durations-delta", "--duration-delta", type=float, default=10.0)
     parser.add_argument("--sizes-delta", "--size-delta", type=float, default=10.0)
 
-    parser.add_argument("--no-filter-names", dest="filter_names", action="store_false")
-    parser.add_argument("--no-filter-sizes", dest="filter_sizes", action="store_false")
+    parser.add_argument("--filter-names", action=argparse.BooleanOptionalAction, default=False)
+    parser.add_argument("--filter-sizes", action=argparse.BooleanOptionalAction, default=False)
+    parser.add_argument("--filter-durations", action=argparse.BooleanOptionalAction, default=False)
     arggroups.debug(parser)
 
     arggroups.paths_or_stdin(parser)
     args = parser.parse_args()
+    args.action = consts.SC.similar_files
 
     if not args.filter_sizes:
         args.sizes_delta = 200.0
+    if not args.filter_durations:
+        args.durations_delta = 200.0
 
-    if not args.filter_names and not args.filter_sizes:
+    if not args.filter_names and not args.filter_sizes and not args.filter_durations:
         print("Nothing to do")
         raise NotImplementedError
 
-    log.info(objects.dict_filter_bool(args.__dict__))
+    arggroups.args_post(args, parser)
     return args
 
 
 def is_same_size_group(args, m0, m):
     size_diff = nums.percentage_difference(m0["size"], m["size"])
+
+    if "duration" in m:
+        duration_diff = nums.percentage_difference(m0["duration"], m["duration"])
+        return size_diff < args.sizes_delta and duration_diff < args.durations_delta
+
     return size_diff < args.sizes_delta
 
 
@@ -95,7 +103,7 @@ def similar_files():
     args = parse_args()
     media = list(arg_utils.gen_d(args))
 
-    if args.filter_sizes:
+    if args.filter_sizes or args.filter_durations:
         clusters = cluster_by_size(args, media)
         groups = map_and_name(media, clusters)
         log.info("file size/count clustering sorted %s files into %s groups", len(media), len(groups))
@@ -112,7 +120,7 @@ def similar_files():
         groups = sorted(groups, key=lambda d: (-len(d["grouped_paths"]), -len(d["common_path"])))
         log.info("Name clustering sorted %s files into %s groups", len(media), len(groups))
 
-        if args.filter_sizes:
+        if args.filter_sizes or args.filter_durations:
             prev_count = len(groups)
             groups = filter_groups_by_size(args, groups)  # effectively a second pass
             log.info("(2nd pass) group size/count filtering removed %s groups", prev_count - len(groups))
@@ -139,6 +147,7 @@ def similar_files():
                         {
                             f'group {group["common_path"]}': d["path"],
                             "size": humanize.naturalsize(d["size"], binary=True),
+                            "duration": printing.human_duration(d["duration"]),
                         }
                         for d in media
                     ],

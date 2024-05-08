@@ -1,16 +1,27 @@
-import argparse, difflib, json, os.path, sys
+import argparse, difflib, json, sys
 from pathlib import Path
 
 from xklb import usage
-from xklb.data import wordbank
 from xklb.tablefiles import eda, mcda
-from xklb.utils import arggroups, consts, db_utils, file_utils, iterables, nums, objects, path_utils, printing, strings
+from xklb.utils import (
+    arggroups,
+    argparse_utils,
+    consts,
+    db_utils,
+    file_utils,
+    iterables,
+    nums,
+    objects,
+    path_utils,
+    printing,
+    strings,
+)
 from xklb.utils.consts import DBType
 from xklb.utils.log_utils import Timer, log
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(prog="library cluster-sort", usage=usage.cluster_sort)
+    parser = argparse_utils.ArgumentParser(prog="library cluster-sort", usage=usage.cluster_sort)
 
     profile = parser.add_mutually_exclusive_group()
     profile.add_argument(
@@ -22,7 +33,6 @@ def parse_args() -> argparse.Namespace:
     )
     profile.add_argument(
         "--image",
-        "-I",
         action="store_const",
         dest="profile",
         const=DBType.image,
@@ -30,7 +40,6 @@ def parse_args() -> argparse.Namespace:
     )
     profile.add_argument(
         "--audio",
-        "-A",
         action="store_const",
         dest="profile",
         const=DBType.audio,
@@ -38,7 +47,6 @@ def parse_args() -> argparse.Namespace:
     )
     profile.add_argument(
         "--video",
-        "-V",
         action="store_const",
         dest="profile",
         const=DBType.video,
@@ -46,7 +54,6 @@ def parse_args() -> argparse.Namespace:
     )
     profile.add_argument(
         "--text",
-        "-T",
         action="store_const",
         dest="profile",
         const=DBType.text,
@@ -54,7 +61,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.set_defaults(profile="lines")
 
-    arggroups.operation_cluster(parser)
+    arggroups.cluster(parser)
     parser.set_defaults(cluster_sort=True)
     arggroups.debug(parser)
 
@@ -62,12 +69,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("output_path", nargs="?")
     args = parser.parse_args()
 
-    if args.stop_words is None:
-        args.stop_words = wordbank.stop_words
-    else:
-        args.stop_words = frozenset(*args.stop_words)
 
-    log.info(objects.dict_filter_bool(args.__dict__))
+
+    arggroups.args_post(args, parser)
     return args
 
 
@@ -98,6 +102,11 @@ def find_clusters(n_clusters, sentence_strings, stop_words=None):
     from sklearn.cluster import KMeans
     from sklearn.feature_extraction.text import TfidfVectorizer
 
+    if stop_words is None:
+        from xklb.data import wordbank
+
+        stop_words =wordbank.stop_words
+
     try:
         vectorizer = TfidfVectorizer(min_df=2, strip_accents="unicode", stop_words=stop_words)
         X = vectorizer.fit_transform(sentence_strings)
@@ -119,7 +128,7 @@ def find_clusters(n_clusters, sentence_strings, stop_words=None):
 
 
 def cluster_paths(paths, n_clusters=None, stop_words=None):
-    if len(paths) < 2:
+    if len(paths) < 3:
         return paths
 
     sentence_strings = (strings.path_to_sentence(s) for s in paths)
@@ -138,7 +147,7 @@ def print_groups(groups):
 
 
 def cluster_dicts(args, media):
-    if len(media) < 2:
+    if len(media) < 3:
         return media
 
     n_clusters = getattr(args, "clusters", None)
@@ -165,7 +174,7 @@ def cluster_dicts(args, media):
     groups = map_and_name(paths, clusters)
     groups = sorted(groups, key=lambda d: (-len(d["grouped_paths"]), -len(d["common_path"])))
 
-    if getattr(args, "sort_groups_by", None) is not None:
+    if getattr(args, "sort_groups_by", None):
         if args.sort_groups_by in ("duration", "duration desc"):
             sorted_paths = iterables.flatten(
                 sorted(d["grouped_paths"], key=lambda p: media_keyed[p]["duration"], reverse=" desc" in args.sort)
