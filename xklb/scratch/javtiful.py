@@ -1,12 +1,12 @@
-import argparse, time
+import time
 from pathlib import Path
 
 from xklb.mediafiles import media_check
-from xklb.utils import arggroups, file_utils, path_utils, processes, web
+from xklb.utils import arggroups, argparse_utils, file_utils, path_utils, processes, web
 
 
 def javtiful() -> None:
-    parser = argparse.ArgumentParser()
+    parser = argparse_utils.ArgumentParser()
     parser.add_argument("--chrome", action="store_true")
     arggroups.debug(parser)
 

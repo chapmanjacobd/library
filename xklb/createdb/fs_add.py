@@ -33,9 +33,9 @@ REGEX_SENTENCE_ENDS = re.compile(r";|,|\.|\*|\n|\t")
 
 
 def parse_args(action, usage):
-    parser = argparse.ArgumentParser(prog="library " + action, usage=usage)
+    parser = argparse_utils.ArgumentParser(prog="library " + action, usage=usage)
     arggroups.db_profiles(parser)
-    arggroups.capability_simulate(parser)
+    arggroups.simulate(parser)
     parser.add_argument("--ext", "-e", default=[], action=argparse_utils.ArgparseList)
 
     parser.add_argument(
@@ -53,7 +53,6 @@ def parse_args(action, usage):
 
     parser.add_argument("--process", action="store_true", help=argparse.SUPPRESS)
     arggroups.process_ffmpeg(parser)
-    parser.add_argument("--delete-unplayable", action="store_true")
 
     parser.add_argument("--check-corrupt", "--check-corruption", action="store_true")
     arggroups.media_check(parser)
@@ -75,27 +74,18 @@ def parse_args(action, usage):
     if args.move:
         args.move = Path(args.move).expanduser().resolve()
 
-    args.gap = nums.float_from_percent(args.gap)
-    if args.delete_corrupt:
-        args.delete_corrupt = nums.float_from_percent(args.delete_corrupt)
-    if args.full_scan_if_corrupt:
-        args.full_scan_if_corrupt = nums.float_from_percent(args.full_scan_if_corrupt)
-
-    args.split_longer_than = nums.human_to_seconds(args.split_longer_than)
-    args.min_split_segment = nums.human_to_seconds(args.min_split_segment)
-
-    Path(args.database).touch()
-    args.db = db_utils.connect(args)
-
     if hasattr(args, "paths"):
         args.paths = iterables.conform(args.paths)
-    log.info(objects.dict_filter_bool(args.__dict__))
 
     if not which("ffprobe") and (DBType.audio in args.profiles or DBType.video in args.profiles):
         log.error("ffmpeg is not installed. Install it with your package manager.")
         raise SystemExit(3)
 
-    return args, parser
+    arggroups.process_ffmpeg_post(args)
+    arggroups.media_check_post(args)
+
+    arggroups.args_post(args, parser, create_db=action == SC.fs_add)
+    return args
 
 
 def munge_book_tags(path) -> dict:
@@ -303,7 +293,6 @@ def munge_image_tags(m: dict, e: dict) -> dict:
         "exiftool_warning": strings.combine(*pop_substring_keys(e, "ExifTool:Warning")),
         "tags": strings.combine(
             *pop_substring_keys(e, "Headline"),
-            *pop_substring_keys(e, "Title"),
             *pop_substring_keys(e, "ImageDescription"),
             *pop_substring_keys(e, "Caption"),
             *pop_substring_keys(e, "Artist"),
@@ -519,9 +508,7 @@ def scan_path(args, path_str: str) -> int:
 
     info = {
         "extractor_key": "Local",
-        "extractor_config": objects.dict_filter_bool(
-            {k: v for k, v in args.__dict__.items() if k not in ["db", "database", "verbose", "force", "paths"]}
-        ),
+        "extractor_config": args.extractor_config,
         "time_deleted": 0,
     }
     args.playlists_id = db_playlists.add(args, str(path), info, check_subpath=True)
@@ -576,7 +563,7 @@ def fs_add(args=None) -> None:
     if args:
         sys.argv = ["lb", *args]
 
-    args, _parser = parse_args(SC.fs_add, usage.fs_add)
+    args = parse_args(SC.fs_add, usage.fs_add)
     extractor(args, args.paths)
 
 
@@ -584,7 +571,7 @@ def fs_update(args=None) -> None:
     if args:
         sys.argv = ["lb", *args]
 
-    args, parser = parse_args(SC.fs_update, usage.fs_update)
+    args = parse_args(SC.fs_update, usage.fs_update)
 
     fs_playlists = list(
         args.db.query(
@@ -601,6 +588,6 @@ def fs_update(args=None) -> None:
 
     for playlist in fs_playlists:
         extractor_config = json.loads(playlist.get("extractor_config") or "{}")
-        args_env = arg_utils.override_config(parser, extractor_config, args)
+        args_env = arg_utils.override_config(args, extractor_config)
 
         extractor(args_env, [playlist["path"]])

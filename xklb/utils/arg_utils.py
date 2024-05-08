@@ -1,46 +1,36 @@
-import argparse, operator, random, sqlite3
+import argparse, json, operator, random
 from pathlib import Path
 
-from xklb.utils import arggroups, consts, db_utils, file_utils, iterables
+from xklb.utils import consts, db_utils, file_utils, iterables
 from xklb.utils.consts import SC
 
 
-def is_sqlite(path):
-    try:
-        with open(path, "rb") as f:
-            header = f.read(16)
-        return header == b"SQLite format 3\000"
-    except OSError:
-        return False
-
-
 def gen_paths(args):
-    if args.paths_from_text:
+    if args.from_file:
         for path in args.paths:
-            with open(path) as f:
+            with open(path, "r") as f:
                 for line in f:
                     line = line.rstrip("\n")
                     if line.strip():
-                        yield line
-    elif args.paths_from_dbs or args.titles_from_dbs:
+                        if args.from_json:
+                            json_data = json.loads(line)
+                            if isinstance(json_data, list):
+                                yield from (d["path"] for d in json_data)
+                            elif isinstance(json_data, dict):
+                                yield json_data["path"]
+                            else:
+                                raise TypeError
+                        else:
+                            yield line
+    elif args.from_json:
         for path in args.paths:
-            if is_sqlite(path):
-                s_db = db_utils.connect(args, conn=sqlite3.connect(path))
-                m_columns = s_db["media"].columns_dict
-                yield from (
-                    d["path"]
-                    for d in s_db.query(
-                        f"""
-                    SELECT
-                        {'title AS path' if args.titles_from_dbs else 'path'}
-                    FROM media
-                    WHERE 1=1
-                    {'and COALESCE(time_deleted,0) = 0' if 'time_deleted' in m_columns else ''}
-                    """
-                    )
-                )
+            json_data = json.loads(path)
+            if isinstance(json_data, list):
+                yield from (d["path"] for d in json_data)
+            elif isinstance(json_data, dict):
+                yield json_data["path"]
             else:
-                print("Skipping non-SQLite file:", path)
+                raise TypeError
     else:
         is_large = len(args.paths) > 1000
         for path in args.paths:
@@ -55,63 +45,41 @@ def gen_paths(args):
                         yield path
 
 
-def d_from_path(path):
-    try:
-        stat = Path(path).stat()
-        return {"path": str(path), "size": stat.st_size}
-    except FileNotFoundError:
-        print("Skipping non-existent file:", path)
-
-
 def gen_d(args):
-    if args.paths_from_text:
+    if args.from_file:
         for path in args.paths:
             with open(path) as f:
                 for line in f:
                     line = line.rstrip("\n")
                     if line.strip():
-                        d = d_from_path(line)
-                        if d:
-                            yield d
-    elif args.paths_from_dbs or args.titles_from_dbs:
+                        if args.from_json:
+                            json_data = json.loads(line)
+                            if isinstance(json_data, list):
+                                yield from json_data
+                            elif isinstance(json_data, dict):
+                                yield json_data
+                            else:
+                                raise TypeError
+                        else:
+                            yield {'path': line}
+    elif args.from_json:
         for path in args.paths:
-            if is_sqlite(path):
-                sdb = db_utils.connect(args, conn=sqlite3.connect(path))
-                m_columns = sdb["media"].columns_dict
-                yield from sdb.query(
-                    f"""
-                    SELECT
-                        path
-                        {', size' if 'size' in m_columns else ''}
-                        {', title' if 'title' in m_columns else ''}
-                    FROM media
-                    WHERE 1=1
-                    {'AND COALESCE(time_deleted,0) = 0' if 'time_deleted' in m_columns else ''}
-                    {'AND size is NOT NULL' if 'size' in m_columns else ''}
-                    """
-                )
+            json_data = json.loads(path)
+            if isinstance(json_data, list):
+                yield from json_data
+            elif isinstance(json_data, dict):
+                yield json_data
             else:
-                print("Skipping non-SQLite file:", path)
+                raise TypeError
     else:
         for path in args.paths:
             if path.strip():
                 p = Path(path)
                 if p.is_dir():
                     for sp in file_utils.rglob(str(p), args.ext or None)[0]:
-                        d = d_from_path(sp)
-                        if d:
-                            yield d
+                        yield {'path': sp}
                 else:
-                    d = d_from_path(p)
-                    if d:
-                        yield d
-
-
-def stdarg():
-    parser = argparse.ArgumentParser()
-    arggroups.paths_or_stdin(parser)
-    args = parser.parse_args()
-    return gen_paths(args)
+                    yield {'path': path}
 
 
 def override_sort(sort_expression: str) -> str:
@@ -165,8 +133,6 @@ def parse_args_sort(args) -> None:
 
         args.sort = sort_list
         args.select = select_list
-    elif not args.sort and hasattr(args, "defaults"):
-        args.defaults.append("sort")
 
     m_columns = db_utils.columns(args, "media")
 
@@ -203,18 +169,16 @@ def parse_args_sort(args) -> None:
         "play_count" if args.action in (SC.listen, SC.watch) else None,
         "m.title IS NOT NULL desc" if "title" in m_columns else None,
         "m.path",
-        "random",
     ]
 
     sort = list(filter(bool, sorts))
     sort = [override_sort(s) for s in sort]
-    sort = "\n        , ".join(sort)
+    sort = ",".join(sort)
     args.sort = sort.replace(",,", ",")
 
 
 def parse_args_limit(args):
     if not args.limit:
-        args.defaults.append("limit")
         if not any(
             [
                 args.print and len(args.print.replace("p", "")) > 0,
@@ -248,10 +212,10 @@ def split_folder_glob(s):
     return p.parent, p.name
 
 
-def override_config(parser, extractor_config, args):
-    default_args = {key: parser.get_default(key) for key in vars(args)}
-    overridden_args = {k: v for k, v in args.__dict__.items() if default_args.get(k) != v}
-    args_env = argparse.Namespace(**{**default_args, **extractor_config, **overridden_args})
+def override_config(args, extractor_config):
+    defaults = args.get('defaults')
+    overridden_args = {k: v for k, v in args.__dict__.items() if defaults.get(k) != v}
+    args_env = argparse.Namespace(**{**defaults, **(extractor_config.get('extractor_config') or {}), **extractor_config, **overridden_args})
     return args_env
 
 

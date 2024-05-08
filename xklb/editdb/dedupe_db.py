@@ -1,13 +1,12 @@
 import argparse
-from pathlib import Path
 
 from xklb import usage
-from xklb.utils import arggroups, argparse_utils, db_utils, objects
+from xklb.utils import arggroups, argparse_utils
 from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(prog="library dedupe-dbs", usage=usage.dedupe_db)
+    parser = argparse_utils.ArgumentParser(prog="library dedupe-dbs", usage=usage.dedupe_db)
     parser.add_argument("--skip-upsert", action="store_true")
     parser.add_argument("--skip-0", action="store_true")
     parser.add_argument(
@@ -29,11 +28,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("table")
     args = parser.parse_intermixed_args()
 
-    Path(args.database).touch()
-    args.db = db_utils.connect(args)
-
-    log.info(objects.dict_filter_bool(args.__dict__))
-
+    arggroups.args_post(args, parser, create_db=True)
     return args
 
 

@@ -1,8 +1,7 @@
-import argparse
 from datetime import datetime, timezone
 from pathlib import Path
 
-from xklb.utils import db_utils
+from xklb.utils import argparse_utils, db_utils
 from xklb.utils.objects import NoneSpace
 
 
@@ -40,7 +39,7 @@ def ignore_tz(s):
 
 
 def get_default_args(*funcs):
-    parser = argparse.ArgumentParser()
+    parser = argparse_utils.ArgumentParser()
     for func in funcs:
         func(parser)
     defaults = {action.dest: action.default for action in parser._actions}

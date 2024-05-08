@@ -9,13 +9,24 @@ import humanize
 from xklb import media_printer, usage
 from xklb.files import sample_compare, sample_hash
 from xklb.mediadb import db_media
-from xklb.utils import arggroups, consts, db_utils, devices, file_utils, iterables, objects, processes, strings
+from xklb.utils import (
+    arggroups,
+    argparse_utils,
+    consts,
+    db_utils,
+    devices,
+    file_utils,
+    iterables,
+    processes,
+    sql_utils,
+    strings,
+)
 from xklb.utils.consts import DBType
 from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(prog="library dedupe-media", usage=usage.dedupe_media)
+    parser = argparse_utils.ArgumentParser(prog="library dedupe-media", usage=usage.dedupe_media)
     arggroups.sql_fs(parser)
 
     profile = parser.add_mutually_exclusive_group()
@@ -42,18 +53,11 @@ def parse_args() -> argparse.Namespace:
         help="Dedupe database by title",
     )
     profile.add_argument(
-        "--duration",
+        "--same-duration",
         action="store_const",
         dest="profile",
         const="duration",
         help="Dedupe database by duration (caution obviously)",
-    )
-    profile.add_argument(
-        "--fts",
-        action="store_const",
-        dest="profile",
-        const="fts",
-        help=argparse.SUPPRESS,
     )
     profile.add_argument(
         "--filesystem",
@@ -101,12 +105,9 @@ def parse_args() -> argparse.Namespace:
     arggroups.database(parser)
     parser.add_argument("paths", nargs="*")
     args = parser.parse_intermixed_args()
-    args.db = db_utils.connect(args)
-
     args.action = consts.SC.dedupe_media
 
-    args.sort = "\n        , ".join(filter(bool, args.sort))
-    args.sort = args.sort.replace(",,", ",")
+    arggroups.sql_fs_post(args)
 
     args.filter_sql = []
     args.filter_bindings = {}
@@ -116,7 +117,7 @@ def parse_args() -> argparse.Namespace:
         COMPARE_DIRS = True
         if len(args.include) == 2:
             include2 = args.include.pop()
-            args.table2, search_bindings = db_utils.fts_search_sql(
+            args.table2, search_bindings = sql_utils.fts_search_sql(
                 "media",
                 fts_table=args.db["media"].detect_fts(),  # type: ignore
                 include=include2,
@@ -132,7 +133,7 @@ def parse_args() -> argparse.Namespace:
 
     args.table = "media"
     if args.db["media"].detect_fts() and args.include:  # type: ignore
-        args.table, search_bindings = db_utils.fts_search_sql(
+        args.table, search_bindings = sql_utils.fts_search_sql(
             "media",
             fts_table=args.db["media"].detect_fts(),  # type: ignore
             include=args.include,
@@ -152,14 +153,16 @@ def parse_args() -> argparse.Namespace:
     if not COMPARE_DIRS:
         args.table2 = args.table
 
-    log.info(objects.dict_filter_bool(args.__dict__))
+    arggroups.args_post(args, parser)
     return args
 
 
-def get_rows(args) -> list[dict]:
+def get_rows(args, m_columns) -> list[dict]:
+    m_columns = sql_utils.search_filter(args, m_columns)
+
     query = f"""
     SELECT
-        {', '.join(db_utils.config["media"]["search_columns"])}
+        {', '.join(s for s in db_utils.config["media"]["search_columns"] if s in m_columns)}
     FROM
         {args.table}
     WHERE 1=1
@@ -184,6 +187,8 @@ def get_rows(args) -> list[dict]:
 
 def get_music_duplicates(args) -> list[dict]:
     m_columns = db_utils.columns(args, "media")
+    m_columns = sql_utils.search_filter(args, m_columns)
+
     query = f"""
     SELECT
         m1.path keep_path
@@ -230,6 +235,8 @@ def get_music_duplicates(args) -> list[dict]:
 
 def get_id_duplicates(args) -> list[dict]:
     m_columns = db_utils.columns(args, "media")
+    m_columns = sql_utils.search_filter(args, m_columns)
+
     query = f"""
     SELECT
         m1.path keep_path
@@ -272,6 +279,8 @@ def get_id_duplicates(args) -> list[dict]:
 
 def get_title_duplicates(args) -> list[dict]:
     m_columns = db_utils.columns(args, "media")
+    m_columns = sql_utils.search_filter(args, m_columns)
+
     query = f"""
     SELECT
         m1.path keep_path
@@ -314,6 +323,8 @@ def get_title_duplicates(args) -> list[dict]:
 
 def get_duration_duplicates(args) -> list[dict]:
     m_columns = db_utils.columns(args, "media")
+    m_columns = sql_utils.search_filter(args, m_columns)
+
     query = f"""
     SELECT
         m1.path keep_path
@@ -356,6 +367,8 @@ def get_duration_duplicates(args) -> list[dict]:
 
 def get_fs_duplicates(args) -> list[dict]:
     m_columns = db_utils.columns(args, "media")
+    m_columns = sql_utils.search_filter(args, m_columns)
+
     query = f"""
     SELECT
         path
@@ -476,56 +489,6 @@ def dedupe_media() -> None:
             $ cbird -p.dht 1 -similar -select-result -sort-rev resolution -chop -nuke  # similar photos
         """,
         )
-        return
-    elif args.profile == "fts":
-        m_columns = db_utils.columns(args, "media")
-        m_columns.update(rank=int)
-        fts_table = args.db["media"].detect_fts()
-
-        rows = get_rows(args)
-        for row in rows:
-            words = set(
-                iterables.conform(strings.extract_words(Path(v).stem if k == "path" else v) for k, v in row.items()),
-            )
-            table, search_bindings = db_utils.fts_search_sql(
-                "media",
-                fts_table=fts_table,
-                include=sorted(words, key=len, reverse=True)[:100],
-                exclude=args.exclude,
-                flexible=False,
-            )
-
-            query = f"""
-                SELECT path
-                FROM {table} m
-                WHERE path in (select path from {args.table})
-                ORDER BY
-                    video_count > 0 DESC
-                    {', subtitle_count > 0 DESC' if 'subtitle_count' in m_columns else ''}
-                    , audio_count DESC
-                    , length(path)-length(REPLACE(path, '{os.sep}', '')) DESC
-                    , length(path)-length(REPLACE(path, '.', ''))
-                    , length(path)
-                    , size DESC
-                    , time_modified DESC
-                    , time_created DESC
-                    , duration DESC
-                    , path DESC
-                    , path
-                {"LIMIT " + str(args.limit) if args.limit else ""}
-                """
-
-            related_media = set(
-                filter_split_files(
-                    d["path"] for d in args.db.query(query, {**args.filter_bindings, **search_bindings})
-                ),
-            )
-            if len(related_media) > 1:
-                print("Found", len(related_media) - 1, "duplicates")
-                print(related_media)
-
-                breakpoint()  # TODO: get this working...
-
         return
     else:
         raise NotImplementedError

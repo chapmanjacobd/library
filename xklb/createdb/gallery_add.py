@@ -4,13 +4,13 @@ from pathlib import Path
 from xklb import usage
 from xklb.createdb import gallery_backend
 from xklb.mediadb import db_media, db_playlists
-from xklb.utils import arggroups, argparse_utils, consts, db_utils, iterables, objects, path_utils, processes
+from xklb.utils import arg_utils, arggroups, argparse_utils, consts, db_utils
 from xklb.utils.consts import SC
 from xklb.utils.log_utils import log
 
 
 def parse_args(action, usage) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
+    parser = argparse_utils.ArgumentParser(
         prog="library " + action,
         usage=usage,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -23,27 +23,15 @@ def parse_args(action, usage) -> argparse.Namespace:
 
     arggroups.database(parser)
     if action == SC.gallery_add:
-        parser.add_argument(
-            "playlists", nargs="*", default=argparse_utils.STDIN_DASH, action=argparse_utils.ArgparseArgsOrStdin
-        )
+        arggroups.paths_or_stdin(parser)
 
     args = parser.parse_intermixed_args()
     args.action = action
-
-    if action == SC.gallery_add:
-        Path(args.database).touch()
-    args.db = db_utils.connect(args)
-
-    if hasattr(args, "playlists"):
-        args.playlists = list({s.strip() for s in args.playlists})
-        if not args.no_sanitize:
-            args.playlists = [path_utils.sanitize_url(args, p) for p in args.playlists]
-        args.playlists = iterables.conform(args.playlists)
-
-    processes.timeout(args.timeout)
-
     args.profile = consts.DBType.image
-    log.info(objects.dict_filter_bool(args.__dict__))
+
+    arggroups.extractor_post(args)
+
+    arggroups.args_post(args, parser, create_db=action == SC.gallery_add)
     return args
 
 
@@ -52,27 +40,29 @@ def gallery_add(args=None) -> None:
         sys.argv = ["galleryadd", *args]
 
     args = parse_args(SC.gallery_add, usage=usage.gallery_add)
+    paths = arg_utils.gen_paths(args)
 
     if args.insert_only:
         args.db["media"].insert_all(
-            [{"path": p, "time_created": consts.APPLICATION_START} for p in args.playlists],
+            [{"path": p, "time_created": consts.APPLICATION_START} for p in paths],
             alter=True,
             ignore=True,
             pk="path",
         )
     elif args.insert_only_playlists:
         args.db["playlists"].insert_all(
-            [{"path": p, "time_created": consts.APPLICATION_START} for p in args.playlists],
+            [{"path": p, "time_created": consts.APPLICATION_START} for p in paths],
             alter=True,
             ignore=True,
             pk="path",
         )
     else:
+        paths = list(paths)
         known_playlists = set()
-        if not args.force and len(args.playlists) > 9:
+        if not args.force and len(paths) > 9:
             known_playlists = db_media.get_paths(args)
 
-        for path in args.playlists:
+        for path in paths:
             if path in known_playlists:
                 log.info("[%s]: Already added. Skipping!", path)
                 continue

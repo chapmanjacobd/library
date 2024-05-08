@@ -3,20 +3,20 @@ from copy import deepcopy
 
 from xklb import media_printer, usage
 from xklb.mediadb import db_media
-from xklb.utils import arggroups, consts, db_utils, devices, objects
+from xklb.utils import arggroups, argparse_utils, consts, devices, objects
 from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(prog="library merge-online-local", usage=usage.merge_online_local)
+    parser = argparse_utils.ArgumentParser(prog="library merge-online-local", usage=usage.merge_online_local)
     parser.add_argument("--no-confirm", "--yes", "-y", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", default="100")
     arggroups.debug(parser)
 
     arggroups.database(parser)
     args = parser.parse_args()
-    args.db = db_utils.connect(args)
-    log.info(objects.dict_filter_bool(args.__dict__))
+
+    arggroups.args_post(args, parser)
     return args
 
 

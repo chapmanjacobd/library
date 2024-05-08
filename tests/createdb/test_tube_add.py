@@ -83,15 +83,15 @@ class TestTube:
 
     @mock.patch("xklb.createdb.tube_backend.get_playlist_metadata")
     def test_tubeupdate(self, play_mocked):
-        tube_update([tube_db, "--extractor-config", "TEST2=4 TEST3=3"])
+        tube_update([tube_db, "--extractor-config", "TEST2=3 TEST3=1"])
         assert play_mocked.call_args is None
 
-        tube_update([tube_db, "--extractor-config", "TEST2=4 TEST3=3", "--force"])
+        tube_update([tube_db, "--extractor-config", "TEST2=4 TEST3=2", "--force"])
         out = play_mocked.call_args[0][2]
         assert out is not None
         assert out["TEST1"] == "1"
         assert out["TEST2"] == "4"
-        assert out["TEST3"] == "3"
+        assert out["TEST3"] == "2"
 
     @mock.patch("xklb.createdb.tube_backend.download")
     @mock.patch("xklb.createdb.tube_backend.get_playlist_metadata")

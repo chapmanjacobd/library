@@ -70,7 +70,7 @@ prepositions = (
     "without",
 )
 
-stop_words = (
+stop_words = [
     '"',
     "-",
     "'ll",
@@ -245,8 +245,6 @@ stop_words = (
     "but",
     "bx",
     "by",
-    "c'mon",
-    "c's",
     "c",
     "C",
     "c1",
@@ -943,7 +941,6 @@ stop_words = (
     "region",
     "related",
     "relatively",
-    "research-articl",
     "research",
     "respectively",
     "resulted",
@@ -1371,4 +1368,4 @@ stop_words = (
     "zero",
     "zi",
     "zz",
-)
+]

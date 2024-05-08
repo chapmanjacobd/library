@@ -1,16 +1,14 @@
 import argparse
-from pathlib import Path
 
 from bs4 import BeautifulSoup
 
 from xklb import usage
 from xklb.mediadb import db_media
-from xklb.utils import arggroups, db_utils, nums, objects, web
-from xklb.utils.log_utils import log
+from xklb.utils import arggroups, argparse_utils, nums, web
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(prog="library substack", usage=usage.substack)
+    parser = argparse_utils.ArgumentParser(prog="library substack", usage=usage.substack)
     arggroups.requests(parser)
     arggroups.debug(parser)
 
@@ -18,9 +16,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("paths", nargs="+", help="Substack path to extract article for")
     args = parser.parse_intermixed_args()
 
-    Path(args.database).touch()
-    args.db = db_utils.connect(args)
-    log.info(objects.dict_filter_bool(args.__dict__))
+    arggroups.args_post(args, parser, create_db=True)
     return args
 
 

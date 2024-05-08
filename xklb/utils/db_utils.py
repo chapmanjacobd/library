@@ -82,11 +82,12 @@ def columns(args, table_name):
 
 config = {
     "playlists": {
+        "search_columns": ["path", "title"],
         "column_order": ["id", "path", "extractor_key"],
         "ignore_columns": ["extractor_playlist_id"],
     },
     "media": {
-        "search_columns": ["path", "title", "mood", "genre", "description", "artist", "album"],
+        "search_columns": ["path", "title", "mood", "genre", "description", "artist", "album", "category", "frequency"],
         "column_order": ["id", "path", "webpath", "extractor_id"],
         "ignore_columns": ["extractor_id"],
     },
@@ -118,9 +119,6 @@ config = {
 
 
 def optimize(args) -> None:
-    if not hasattr(args, "force"):
-        args.force = False
-
     log.info("\nOptimizing database")
 
     db: Database = args.db
@@ -128,7 +126,7 @@ def optimize(args) -> None:
     for table in config:
         if table not in db.table_names():
             continue
-        if args.force:
+        if getattr(args, "force", False):
             try:
                 db[table].disable_fts()  # type: ignore
             except Exception as e:
@@ -154,7 +152,7 @@ def optimize(args) -> None:
             db[table].transform(column_order=optimized_column_order)  # type: ignore
             was_transformed = True
 
-        if args.force:
+        if getattr(args, "force", False):
             indexes = db[table].indexes  # type: ignore
             for index in indexes:
                 if index.unique == 1:
@@ -190,60 +188,6 @@ def optimize(args) -> None:
     db.vacuum()
     log.info("Running ANALYZE")
     db.analyze()
-
-
-def fts_quote(query: list[str]) -> list[str]:
-    fts_words = [" NOT ", " AND ", " OR ", "*", ":", "NEAR("]
-    return [s if any(r in s for r in fts_words) else '"' + s + '"' for s in query]
-
-
-def fts_search_sql(table, fts_table, include, exclude=None, flexible=False):
-    param_key = "FTS" + consts.random_string()
-    table = f"""(
-    with original as (select rowid, * from [{table}])
-    select
-        [original].*
-        , [{fts_table}].rank
-    from
-        [original]
-        join [{fts_table}] on [original].rowid = [{fts_table}].rowid
-    where
-        [{fts_table}] match :{param_key}
-    )
-    """
-    if flexible:
-        param_value = " OR ".join(fts_quote(include))
-    else:
-        param_value = " AND ".join(fts_quote(include))
-    if exclude:
-        param_value += " NOT " + " NOT ".join(fts_quote(exclude))
-
-    bound_parameters = {param_key: param_value}
-    return table, bound_parameters
-
-
-def construct_search_bindings(args, columns) -> None:
-    incl = ":include{0}"
-    includes = "(" + " OR ".join([f"{col} LIKE {incl}" for col in columns]) + ")"
-    includes_sql_parts = []
-    for idx, inc in enumerate(args.include):
-        includes_sql_parts.append(includes.format(idx))
-        if getattr(args, "exact", False):
-            args.filter_bindings[f"include{idx}"] = inc
-        else:
-            args.filter_bindings[f"include{idx}"] = "%" + inc.replace(" ", "%").replace("%%", " ") + "%"
-    join_op = " OR " if getattr(args, "flexible_search", False) else " AND "
-    if len(includes_sql_parts) > 0:
-        args.filter_sql.append("AND (" + join_op.join(includes_sql_parts) + ")")
-
-    excl = ":exclude{0}"
-    excludes = "AND (" + " AND ".join([f"COALESCE({col},'') NOT LIKE {excl}" for col in columns]) + ")"
-    for idx, exc in enumerate(args.exclude):
-        args.filter_sql.append(excludes.format(idx))
-        if getattr(args, "exact", False):
-            args.filter_bindings[f"exclude{idx}"] = exc
-        else:
-            args.filter_bindings[f"exclude{idx}"] = "%" + exc.replace(" ", "%").replace("%%", " ") + "%"
 
 
 def linear_interpolation(x, x1, y1, x2, y2):

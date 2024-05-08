@@ -1,16 +1,16 @@
-import argparse, fractions, json, os, shlex, subprocess, tempfile
+import fractions, json, os, shlex, subprocess, tempfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from shutil import which
 
 from xklb import usage
-from xklb.utils import arggroups, consts, file_utils, nums, objects, printing, processes, strings
+from xklb.utils import arggroups, argparse_utils, consts, file_utils, nums, printing, processes, strings
 from xklb.utils.arg_utils import gen_paths
 from xklb.utils.log_utils import log
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(prog="library media-check", usage=usage.media_check)
+    parser = argparse_utils.ArgumentParser(prog="library media-check", usage=usage.media_check)
     arggroups.capability_delete(parser)
     arggroups.media_check(parser)
     arggroups.debug(parser)
@@ -18,13 +18,9 @@ def parse_args():
     arggroups.paths_or_stdin(parser)
     args = parser.parse_args()
 
-    args.gap = nums.float_from_percent(args.gap)
-    if args.delete_corrupt:
-        args.delete_corrupt = nums.float_from_percent(args.delete_corrupt)
-    if args.full_scan_if_corrupt:
-        args.full_scan_if_corrupt = nums.float_from_percent(args.full_scan_if_corrupt)
+    arggroups.media_check_post(args)
 
-    log.info(objects.dict_filter_bool(args.__dict__))
+    arggroups.args_post(args, parser)
     return args
 
 
@@ -127,7 +123,7 @@ def decode_full_scan(path, audio_scan=False, frames="frames", threads=5):
 
     if difference > 0.1:
         log.info(
-            f"Metadata {printing.seconds_to_hhmmss(metadata_duration).strip()} does not match actual duration {printing.seconds_to_hhmmss(actual_duration).strip()} (diff {difference:.2f}s)\t{path}",
+            f"Metadata {printing.seconds_to_hhmmss(metadata_duration).strip()} does not match actual duration {printing.seconds_to_hhmmss(actual_duration).strip()} (diff {difference:.2f}s): {path}",
         )
 
     return corruption
@@ -163,7 +159,7 @@ def calculate_corruption(
 
 def media_check() -> None:
     args = parse_args()
-    args.paths = list(gen_paths(args))
+    paths = list(gen_paths(args))
 
     with ThreadPoolExecutor(max_workers=1 if args.verbose >= consts.LOG_DEBUG else 4) as pool:
         future_to_path = {
@@ -176,7 +172,7 @@ def media_check() -> None:
                 audio_scan=args.audio_scan,
                 threads=args.threads,
             ): path
-            for path in args.paths
+            for path in paths
             if Path(path).suffix.lower() not in consts.SKIP_MEDIA_CHECK
         }
         for future in as_completed(future_to_path):

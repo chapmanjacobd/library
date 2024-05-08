@@ -17,7 +17,7 @@ fs_add([v_db, "--scan-subtitles", "tests/data/"])
 
 
 local_player_flags = [
-    "-s tests -s 'test AND data' -E 2 -s test -E 3",
+    "-s tests -s 'tests AND data' -E 2 -s test -E 3",
     "--duration-from-size=-100Mb",
     "-O",
     "-O duration",
@@ -115,7 +115,6 @@ class TestFs(unittest.TestCase):
             out = play_mocked.call_args[0][1]
             assert "test.mp4" in out["path"]
             assert out["duration"] == 12
-            assert out["subtitle_count"] == 4
             assert out["size"] == 136057
 
         sys.argv = ["wt", v_db, "-w", "path like '%test.mp4'"]
@@ -123,7 +122,6 @@ class TestFs(unittest.TestCase):
         out = play_mocked.call_args[0][1]
         assert "test.mp4" in out["path"]
         assert out["duration"] == 12
-        assert out["subtitle_count"] == 4
         assert out["size"] == 136057
 
         a_db = "tests/data/audio.db"

@@ -1,5 +1,4 @@
-import argparse, json, random, sys, time
-from pathlib import Path
+import concurrent.futures, json, random, sys, time
 from urllib.parse import urlparse
 
 from xklb import usage
@@ -10,12 +9,12 @@ from xklb.text import extract_links
 from xklb.utils import (
     arg_utils,
     arggroups,
+    argparse_utils,
     consts,
     db_utils,
     file_utils,
     iterables,
     nums,
-    objects,
     printing,
     sql_utils,
     strings,
@@ -25,58 +24,44 @@ from xklb.utils.consts import SC, DBType
 from xklb.utils.log_utils import log
 
 
-def parse_args(**kwargs):
-    parser = argparse.ArgumentParser(**kwargs)
+def parse_args(action, **kwargs):
+    parser = argparse_utils.ArgumentParser(**kwargs)
     arggroups.db_profiles(parser)
     arggroups.requests(parser)
     arggroups.selenium(parser)
     arggroups.filter_links(parser)
     arggroups.extractor(parser)
 
+    parser.add_argument("--hash", action="store_true")
+    parser.add_argument("--local-html", "--local-file", action="store_true", help="Treat paths as Local HTML files")
     parser.add_argument(
-        "--size",
-        "-S",
+        "--sizes",
         action="append",
         help="Only grab extended metadata for files of specific sizes (uses the same syntax as fd-find)",
     )
-    parser.add_argument("--hash", action="store_true")
-    parser.add_argument("--local-file", "--local-html", action="store_true", help="Treat paths as Local HTML files")
 
     arggroups.debug(parser)
     arggroups.database(parser)
-    if "add" in kwargs["prog"]:
+    if "add" in action:
         arggroups.paths_or_stdin(parser)
     args = parser.parse_intermixed_args()
+    args.action = action
 
     if not args.profiles:
         args.profiles = [DBType.filesystem]
 
-    if args.scroll:
-        args.selenium = True
-
-    if not args.case_sensitive:
-        args.before_include = [s.lower() for s in args.before_include]
-        args.path_include = [s.lower() for s in args.path_include]
-        args.text_include = [s.lower() for s in args.text_include]
-        args.after_include = [s.lower() for s in args.after_include]
-        args.before_exclude = [s.lower() for s in args.before_exclude]
-        args.path_exclude = [s.lower() for s in args.path_exclude]
-        args.text_exclude = [s.lower() for s in args.text_exclude]
-        args.after_exclude = [s.lower() for s in args.after_exclude]
-
-    if not args.no_url_decode:
-        args.path_include = [web.url_decode(s) for s in args.path_include]
-        args.path_exclude = [web.url_decode(s) for s in args.path_exclude]
+    if args.sizes:
+        args.sizes = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.sizes)
 
     if hasattr(args, "paths"):
         args.paths = [strings.strip_enclosing_quotes(s) for s in iterables.conform(args.paths)]
-    log.info(objects.dict_filter_bool(args.__dict__))
 
-    Path(args.database).touch()
-    args.db = db_utils.connect(args)
+    arggroups.extractor_post(args)
+    arggroups.filter_links_post(args)
+    arggroups.selenium_post(args)
 
-    log.info(objects.dict_filter_bool(args.__dict__))
-    return args, parser
+    arggroups.args_post(args, parser, create_db=action == consts.SC.web_add)
+    return args
 
 
 def consolidate_media(args, path: str) -> dict:
@@ -93,6 +78,47 @@ def add_media(args, media):
 
     media = iterables.list_dict_filter_bool(media)
     args.db["media"].insert_all(media, pk="id", alter=True, replace=True)
+
+
+def add_extra_metadata(args, m):
+    extension = m["path"].rsplit(".", 1)[-1].lower()
+
+    remote_path = m["path"]  # for temp file extraction
+    if DBType.video in args.profiles and (extension in consts.VIDEO_EXTENSIONS or args.scan_all_files):
+        m |= av.munge_av_tags(args, m["path"])
+    if DBType.audio in args.profiles and (extension in consts.AUDIO_ONLY_EXTENSIONS or args.scan_all_files):
+        m |= av.munge_av_tags(args, m["path"])
+    if DBType.text in args.profiles and (extension in consts.TEXTRACT_EXTENSIONS or args.scan_all_files):
+        with web.PartialContent(m["path"]) as temp_file_path:
+            m |= fs_add.munge_book_tags_fast(temp_file_path)
+    if DBType.image in args.profiles and (extension in consts.IMAGE_EXTENSIONS or args.scan_all_files):
+        with web.PartialContent(m["path"], max_size=32 * 1024) as temp_file_path:
+            m |= fs_add.extract_image_metadata_chunk([{"path": temp_file_path}])[0]
+    m["path"] = remote_path  # restore from temp file extraction
+
+    return m
+
+
+def add_basic_metadata(args, m):
+    if DBType.filesystem in args.profiles:
+        m |= web.stat(m["path"])
+        m["type"] = file_utils.mimetype(m["path"])
+    else:
+        extension = m["path"].rsplit(".", 1)[-1].lower()
+        if (
+            args.scan_all_files
+            or (DBType.video in args.profiles and extension in consts.VIDEO_EXTENSIONS)
+            or (DBType.audio in args.profiles and extension in consts.AUDIO_ONLY_EXTENSIONS)
+            or (DBType.text in args.profiles and extension in consts.TEXTRACT_EXTENSIONS)
+            or (DBType.image in args.profiles and extension in consts.IMAGE_EXTENSIONS)
+        ):
+            m |= web.stat(m["path"])
+
+    if getattr(args, "hash", False):
+        # TODO: use head_foot_stream
+        m["hash"] = sample_hash.sample_hash_file(m["path"])
+
+    return m
 
 
 def spider(args, paths: set):
@@ -150,52 +176,32 @@ def spider(args, paths: set):
             for k, v in new_paths.items()
         ]
         new_media_count += len(media)
-        for i, m in enumerate(media, start=1):
-            printing.print_overwrite(
-                f"Pages to scan {len(paths)} link scan: {new_media_count} new [{len(known_paths)} known]; basic metadata {i} of {len(media)}"
-            )
 
-            if DBType.filesystem in args.profiles:
-                m |= web.stat(m["path"])
-                m["type"] = file_utils.mimetype(m["path"])
-            else:
-                extension = m["path"].rsplit(".", 1)[-1].lower()
-                if (
-                    args.scan_all_files
-                    or (DBType.video in args.profiles and extension in consts.VIDEO_EXTENSIONS)
-                    or (DBType.audio in args.profiles and extension in consts.AUDIO_ONLY_EXTENSIONS)
-                    or (DBType.text in args.profiles and extension in consts.TEXTRACT_EXTENSIONS)
-                    or (DBType.image in args.profiles and extension in consts.IMAGE_EXTENSIONS)
-                ):
-                    m |= web.stat(m["path"])
+        with concurrent.futures.ThreadPoolExecutor(max_workers=args.threads) as executor:
+            gen_media = (f.result() for f in [executor.submit(add_basic_metadata, args, m) for m in media])
+            for i, m in enumerate(gen_media):
+                media[i] = m
+                printing.print_overwrite(
+                    f"Pages to scan {len(paths)} link scan: {new_media_count} new [{len(known_paths)} known]; basic metadata {i + 1} of {len(media)}"
+                )
 
-            if getattr(args, "hash", False):
-                # TODO: use head_foot_stream
-                m["hash"] = sample_hash.sample_hash_file(path)
+        if args.sizes:
+            basic_media, extra_media = [], []
+            for d in media:
+                if d.get("size") is None or args.sizes(d["size"]):
+                    extra_media.append(d)
+                else:
+                    basic_media.append(d)
+            if basic_media:
+                add_media(args, basic_media)
 
-        if args.size:
-            size_fn = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.size)
-            media = [d for d in media if ((d.get("size") or 0) == 0) or size_fn(d["size"])]
-
-        for i, m in enumerate(media, start=1):
-            printing.print_overwrite(
-                f"Pages to scan {len(paths)} link scan: {new_media_count} new [{len(known_paths)} known]; extra metadata {i} of {len(media)}"
-            )
-
-            extension = m["path"].rsplit(".", 1)[-1].lower()
-
-            remote_path = m["path"]  # for temp file extraction
-            if DBType.video in args.profiles and (extension in consts.VIDEO_EXTENSIONS or args.scan_all_files):
-                m |= av.munge_av_tags(args, m["path"])
-            if DBType.audio in args.profiles and (extension in consts.AUDIO_ONLY_EXTENSIONS or args.scan_all_files):
-                m |= av.munge_av_tags(args, m["path"])
-            if DBType.text in args.profiles and (extension in consts.TEXTRACT_EXTENSIONS or args.scan_all_files):
-                with web.PartialContent(m["path"]) as temp_file_path:
-                    m |= fs_add.munge_book_tags_fast(temp_file_path)
-            if DBType.image in args.profiles and (extension in consts.IMAGE_EXTENSIONS or args.scan_all_files):
-                with web.PartialContent(m["path"], max_size=32 * 1024) as temp_file_path:
-                    m |= fs_add.extract_image_metadata_chunk([{"path": temp_file_path}])[0]
-            m["path"] = remote_path  # restore from temp file extraction
+        with concurrent.futures.ThreadPoolExecutor(max_workers=args.threads) as executor:
+            gen_media = (f.result() for f in [executor.submit(add_extra_metadata, args, m) for m in media])
+            for i, m in enumerate(gen_media):
+                media[i] = m
+                printing.print_overwrite(
+                    f"Pages to scan {len(paths)} link scan: {new_media_count} new [{len(known_paths)} known]; extra metadata {i + 1} of {len(media)}"
+                )
 
         if media:
             add_media(args, media)
@@ -211,7 +217,7 @@ def add_playlist(args, path):
     info = {
         "hostname": urlparse(path).hostname,
         "extractor_key": "WebFolder",
-        "extractor_config": {k: v for k, v in args.__dict__.items() if k not in ["db", "database", "verbose", "paths"]},
+        "extractor_config": args.extractor_config,
         "time_deleted": 0,
     }
     db_playlists.add(args, str(path), info)
@@ -221,7 +227,7 @@ def web_add(args=None) -> None:
     if args:
         sys.argv = ["lb", *args]
 
-    args, _parser = parse_args(prog=f"library {SC.web_add}", usage=usage.web_add)
+    args = parse_args(consts.SC.web_add, usage=usage.web_add)
     web.requests_session(args)  # configure session
 
     if args.insert_only:
@@ -255,7 +261,7 @@ def web_update(args=None) -> None:
     if args:
         sys.argv = ["lb", *args]
 
-    args, parser = parse_args(prog=f"library {SC.web_update}", usage=usage.web_update)
+    args = parse_args(consts.SC.web_add, usage=usage.web_update)
     web.requests_session(args)  # configure session
 
     web_playlists = db_playlists.get_all(
@@ -274,7 +280,7 @@ def web_update(args=None) -> None:
         playlist_count = 0
         for playlist in web_playlists:
             extractor_config = json.loads(playlist.get("extractor_config") or "{}")
-            args_env = arg_utils.override_config(parser, extractor_config, args)
+            args_env = arg_utils.override_config(args, extractor_config)
 
             # TODO: use directory Last-Modified header to skip file trees which don't need to be updated
             new_media = spider(args_env, {playlist["path"]})

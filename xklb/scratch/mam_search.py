@@ -1,26 +1,26 @@
-import argparse, json, time
-from pathlib import Path
+import argparse
+import json, time
 from sqlite3 import IntegrityError
 
-from xklb.utils import arggroups, db_utils, nums, objects, web
+from xklb.utils import arggroups, argparse_utils, nums, objects, web
 from xklb.utils.log_utils import log
 
 
 def parse_args():
-    parser = argparse.ArgumentParser()
+    parser = argparse_utils.ArgumentParser()
     parser.add_argument("--base-url", default="https://www.myanonamouse.net")
-    parser.add_argument("--no-title", action="store_false")
-    parser.add_argument("--no-author", action="store_false")
-    parser.add_argument("--narrator", action="store_true")
-    parser.add_argument("--series", action="store_true")
-    parser.add_argument("--description", action="store_true")
+    parser.add_argument("--title", action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument("--author", action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument("--narrator", action=argparse.BooleanOptionalAction, default=False)
+    parser.add_argument("--series", action=argparse.BooleanOptionalAction, default=False)
+    parser.add_argument("--description", action=argparse.BooleanOptionalAction, default=False)
 
-    parser.add_argument("--books", action="store_true")
-    parser.add_argument("--audiobooks", action="store_true")
-    parser.add_argument("--comics", action="store_true")
-    parser.add_argument("--cookbooks", action="store_true")
-    parser.add_argument("--musicology", action="store_true")
-    parser.add_argument("--radio", action="store_true")
+    parser.add_argument("--books", action=argparse.BooleanOptionalAction, default=False)
+    parser.add_argument("--audiobooks", action=argparse.BooleanOptionalAction, default=False)
+    parser.add_argument("--comics", action=argparse.BooleanOptionalAction, default=False)
+    parser.add_argument("--cookbooks", action=argparse.BooleanOptionalAction, default=False)
+    parser.add_argument("--musicology", action=argparse.BooleanOptionalAction, default=False)
+    parser.add_argument("--radio", action=argparse.BooleanOptionalAction, default=False)
 
     parser.add_argument("--search-in", default="torrents")
 
@@ -33,9 +33,7 @@ def parse_args():
     parser.add_argument("search_text", nargs="+")
     args = parser.parse_intermixed_args()
 
-    Path(args.database).touch()
-    args.db = db_utils.connect(args)
-    log.info(objects.dict_filter_bool(args.__dict__))
+    arggroups.args_post(args, parser, create_db=True)
     return args
 
 
@@ -96,8 +94,8 @@ def mam_search():
             "text": " ".join(args.search_text),
             "browse_lang": [1, 44],
             "srchIn": {
-                "title": args.no_title,
-                "author": args.no_author,
+                "title": args.title,
+                "author": args.author,
                 "narrator": args.narrator,
                 "series": args.series,
                 "description": args.description,

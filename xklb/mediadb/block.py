@@ -5,22 +5,23 @@ import humanize
 from xklb import media_printer, usage
 from xklb.createdb import tube_backend
 from xklb.playback import post_actions
-from xklb.utils import arggroups, consts, db_utils, devices, iterables, objects
+from xklb.utils import arg_utils, arggroups, argparse_utils, consts, db_utils, devices, iterables
 from xklb.utils.consts import SC
 from xklb.utils.log_utils import log
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(
+    parser = argparse_utils.ArgumentParser(
         prog="library block",
         usage=usage.block,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     arggroups.sql_fs(parser)
+    arggroups.extractor(parser)
+    arggroups.cluster(parser)
 
     parser.add_argument("--match-column", "-c", default="path", help="Column to block media if text matches")
 
-    parser.add_argument("--cluster", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--min-tried", default=0, type=int, help=argparse.SUPPRESS)
     parser.add_argument("--no-confirm", "--yes", "-y", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--force", "-f", action="store_true", help=argparse.SUPPRESS)
@@ -29,16 +30,17 @@ def parse_args():
     arggroups.debug(parser)
 
     arggroups.database(parser)
-    parser.add_argument("playlists", nargs="*")
+    arggroups.paths_or_stdin(parser)
+    parser.set_defaults(path=None)
+
     args = parser.parse_intermixed_args()
-
-    args.db = db_utils.connect(args)
-
-    args.playlists = iterables.conform(args.playlists)
-
     args.action = SC.block
-    log.info(objects.dict_filter_bool(args.__dict__))
 
+    arggroups.sql_fs_post(args)
+    arggroups.extractor_post(args)
+
+
+    arggroups.args_post(args, parser)
     return args
 
 
@@ -65,9 +67,10 @@ def block(args=None) -> None:
         )
 
     columns = {"path", "webpath", args.match_column, "size", "playlist_path", "time_deleted"}
-    select_sql = ", ".join(s for s in columns if s in m_columns)
 
-    if not args.playlists:
+    paths = list(arg_utils.gen_paths(args))
+
+    if not paths:
         if "blocklist" in args.db.table_names():
             deleted_count = 0
             blocklist = [(d["key"], d["value"]) for d in args.db["blocklist"].rows if d["key"] in m_columns]
@@ -143,7 +146,7 @@ def block(args=None) -> None:
         return
 
     if args.match_column == "playlist_path":
-        playlist_paths = list(args.playlists)
+        playlist_paths = list(paths)
         for p in playlist_paths:
             add_to_blocklist(args, [p])
 
@@ -192,8 +195,10 @@ def block(args=None) -> None:
                 post_actions.delete_media(args, paths_to_delete)
         return
 
+    select_sql = ", ".join(s for s in columns if s in m_columns)
+
     unmatched_playlists = []
-    for p in args.playlists:
+    for p in paths:
         p = [p]
         if consts.PYTEST_RUNNING or args.force:
             if args.delete_rows:
@@ -245,7 +250,7 @@ def block(args=None) -> None:
             unmatched_playlists.append(p)
             continue
 
-        if args.cluster:
+        if args.cluster_sort:
             from xklb.text.cluster_sort import cluster_dicts
 
             matching_media = list(reversed(cluster_dicts(args, matching_media)))

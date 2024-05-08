@@ -2,12 +2,12 @@ import argparse, sqlite3
 from pathlib import Path
 
 from xklb import usage
-from xklb.utils import arggroups, argparse_utils, db_utils, objects
+from xklb.utils import arggroups, argparse_utils, db_utils
 from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(prog="library merge-dbs", usage=usage.merge_dbs)
+    parser = argparse_utils.ArgumentParser(prog="library merge-dbs", usage=usage.merge_dbs)
 
     parser.add_argument(
         "--only-tables", "-t", action=argparse_utils.ArgparseList, help="Comma separated specific table(s)"
@@ -34,11 +34,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("source_dbs", nargs="+")
     args = parser.parse_intermixed_args()
 
-    Path(args.database).touch()
-    args.db = db_utils.connect(args)
-
-    log.info(objects.dict_filter_bool(args.__dict__))
-
+    arggroups.args_post(args, parser, create_db=True)
     return args
 
 
@@ -53,23 +49,25 @@ def merge_db(args, source_db) -> None:
         else:
             log.info("[%s]: %s", source_db, table)
 
+        skip_columns = args.skip_columns
+        primary_keys = args.primary_keys
         if args.business_keys:
-            if not args.primary_keys:
-                args.primary_keys = list(o.name for o in args.db[table].columns if o.is_pk)
+            if not primary_keys:
+                primary_keys = list(o.name for o in args.db[table].columns if o.is_pk)
 
-            args.skip_columns = [*(args.skip_columns or []), *args.primary_keys]
+            skip_columns = [*(args.skip_columns or []), *primary_keys]
 
         selected_columns = s_db[table].columns_dict
         if args.only_target_columns:
             target_columns = args.db[table].columns_dict
             selected_columns = [s for s in selected_columns if s in target_columns]
-        if args.skip_columns:
-            selected_columns = [s for s in selected_columns if s not in args.skip_columns]
+        if skip_columns:
+            selected_columns = [s for s in selected_columns if s not in skip_columns]
 
         log.info("[%s]: %s", table, selected_columns)
         kwargs = {}
-        if args.business_keys or args.primary_keys:
-            source_table_pks = [s for s in (args.business_keys or args.primary_keys) if s in selected_columns]
+        if args.business_keys or primary_keys:
+            source_table_pks = [s for s in (args.business_keys or primary_keys) if s in selected_columns]
             if source_table_pks:
                 log.info("[%s]: Using %s as primary key(s)", table, ", ".join(source_table_pks))
                 kwargs["pk"] = source_table_pks

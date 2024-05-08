@@ -10,8 +10,6 @@ from xklb.utils import (
     consts,
     db_utils,
     iterables,
-    nums,
-    objects,
     printing,
     processes,
     sql_utils,
@@ -19,16 +17,17 @@ from xklb.utils import (
 )
 from xklb.utils.consts import SC, DBType
 from xklb.utils.log_utils import log
+from xklb.utils.sqlgroups import construct_download_query
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(
+    parser = argparse_utils.ArgumentParser(
         prog="library download",
         usage=usage.download,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     arggroups.sql_fs(parser)
-    arggroups.sql_media(parser)
+
     arggroups.download(parser)
     arggroups.download_subtitle(parser)
     arggroups.requests(parser)
@@ -36,7 +35,6 @@ def parse_args():
     profile = parser.add_mutually_exclusive_group()
     profile.add_argument(
         "--audio",
-        "-A",
         action="store_const",
         dest="profile",
         const=DBType.audio,
@@ -44,7 +42,6 @@ def parse_args():
     )
     profile.add_argument(
         "--video",
-        "-V",
         action="store_const",
         dest="profile",
         const=DBType.video,
@@ -53,7 +50,6 @@ def parse_args():
     profile.add_argument(
         "--image",
         "--photo",
-        "-I",
         action="store_const",
         dest="profile",
         const=DBType.image,
@@ -78,150 +74,31 @@ def parse_args():
     parser.add_argument("--photos", action="store_true", help="Image: Download JPG and WEBP")
     parser.add_argument("--drawings", action="store_true", help="Image: Download PNG")
     parser.add_argument("--gifs", action="store_true", help="Image: Download MP4 and GIFs")
-
     arggroups.debug(parser)
 
     arggroups.database(parser)
-    parser.add_argument("playlists", nargs="*", action=argparse_utils.ArgparseArgsOrStdin)
+    arggroups.paths_or_stdin(parser)
+    parser.set_defaults(paths=None)
+
     args, unk = parser.parse_known_intermixed_args()
-    args.defaults = []
+    args.action = SC.download
 
     if unk and not args.profile in (DBType.video, DBType.audio):
         parser.error(f"unrecognized arguments: {' '.join(unk)}")
     args.unk = unk
 
-    if args.duration:
-        args.duration = sql_utils.parse_human_to_sql(nums.human_to_seconds, "duration", args.duration)
-
     if not args.profile and not args.print:
         log.error("Download profile must be specified. Use one of: --video OR --audio OR --image OR --filesystem")
         raise SystemExit(1)
 
-    args.playlists = iterables.conform(args.playlists)
+    arggroups.sql_fs_post(args)
 
-    args.db = db_utils.connect(args)
-
-    args.action = SC.download
-    arg_utils.parse_args_sort(args)
-    arg_utils.parse_args_limit(args)
-
-    processes.timeout(args.timeout)
-
-    log.info(objects.dict_filter_bool(args.__dict__))
+    arggroups.args_post(args, parser)
     return args
 
 
-def construct_query(args) -> tuple[str, dict]:
-    m_columns = db_utils.columns(args, "media")
-    pl_columns = db_utils.columns(args, "playlists")
-
-    args.filter_sql = []
-    args.filter_bindings = {}
-
-    if args.duration:
-        args.filter_sql.append(" and duration IS NOT NULL " + args.duration)
-
-    args.filter_sql.extend([" and " + w for w in args.where])
-
-    db_utils.construct_search_bindings(
-        args,
-        [f"m.{k}" for k in m_columns if k in db_utils.config["media"]["search_columns"]],
-    )
-
-    if args.action == SC.download and "time_modified" in m_columns:
-        args.filter_sql.append(
-            f"""and cast(STRFTIME('%s',
-            datetime( COALESCE(m.time_modified,0), 'unixepoch', '+{args.retry_delay}')
-            ) as int) < STRFTIME('%s', datetime()) """,
-        )
-
-    LIMIT = "LIMIT " + str(args.limit) if args.limit else ""
-    same_subdomain = """AND m.path like (
-        SELECT '%' || SUBSTR(path, INSTR(path, '//') + 2, INSTR( SUBSTR(path, INSTR(path, '//') + 2), '/') - 1) || '%'
-        FROM media
-        WHERE 1=1
-            AND COALESCE(time_downloaded,0) = 0
-            AND COALESCE(time_deleted,0) = 0
-        ORDER BY RANDOM()
-        LIMIT 1
-    )"""
-    if "playlists_id" in m_columns:
-        # TODO: filter out downloads based on args.playlists
-        '''AND playlists_id in (
-            SELECT id from playlists
-            WHERE path IN ("""
-        + ",".join(["?"] * len(playlist_paths))
-        + "))",
-        (*playlist_paths,),
-        '''
-        # TODO --- https://github.com/chapmanjacobd/library/issues/31
-
-        query = f"""select
-                m.id
-                , m.playlists_id
-                , m.path
-                , p.path playlist_path
-                {', m.title' if 'title' in m_columns else ''}
-                {', m.duration' if 'duration' in m_columns else ''}
-                , m.time_created
-                {', m.size' if 'size' in m_columns else ''}
-                {', m.time_modified' if 'time_modified' in m_columns else ''}
-                {', m.time_downloaded' if 'time_downloaded' in m_columns else ''}
-                {', m.time_deleted' if 'time_deleted' in m_columns else ''}
-                {', m.error' if 'error' in m_columns and args.verbose >= consts.LOG_DEBUG else ''}
-                {', p.extractor_config' if 'extractor_config' in pl_columns else ''}
-                , p.extractor_key
-            FROM media m
-            LEFT JOIN playlists p on p.id = m.playlists_id
-            WHERE 1=1
-                {'and COALESCE(m.time_downloaded,0) = 0' if 'time_downloaded' in m_columns else ''}
-                and COALESCE(m.time_deleted,0) = 0
-                {'and COALESCE(p.time_deleted, 0) = 0' if 'time_deleted' in pl_columns else ''}
-                and m.path like "http%"
-                {same_subdomain if getattr(args, 'same_domain', False) else ''}
-                {'AND (score IS NULL OR score > 7)' if 'score' in m_columns else ''}
-                {'AND (upvote_ratio IS NULL OR upvote_ratio > 0.73)' if 'upvote_ratio' in m_columns else ''}
-                {" ".join(args.filter_sql)}
-            ORDER BY 1=1
-                , COALESCE(m.time_modified, 0) = 0 DESC
-                {', p.extractor_key IS NOT NULL DESC' if 'sort' in args.defaults else ''}
-                {', m.error IS NULL DESC' if 'error' in m_columns else ''}
-                {', random()' if 'sort' in args.defaults else ', ' + args.sort}
-            {LIMIT}
-        """
-    else:
-        query = f"""select
-                m.path
-                {', m.title' if 'title' in m_columns else ''}
-                {', m.duration' if 'duration' in m_columns else ''}
-                {', m.time_created' if 'time_created' in m_columns else ''}
-                {', m.size' if 'size' in m_columns else ''}
-                {', m.time_modified' if 'time_modified' in m_columns else ''}
-                {', m.time_downloaded' if 'time_downloaded' in m_columns else ''}
-                {', m.time_deleted' if 'time_deleted' in m_columns else ''}
-                {', m.error' if 'error' in m_columns and args.verbose >= consts.LOG_DEBUG else ''}
-                , 'Playlist-less media' as extractor_key
-            FROM media m
-            WHERE 1=1
-                {'and COALESCE(m.time_downloaded,0) = 0' if 'time_downloaded' in m_columns else ''}
-                {'and COALESCE(m.time_deleted,0) = 0' if 'time_deleted' in m_columns else ''}
-                and m.path like "http%"
-                {same_subdomain if getattr(args, 'same_domain', '') else ''}
-                {'AND (score IS NULL OR score > 7)' if 'score' in m_columns else ''}
-                {'AND (upvote_ratio IS NULL OR upvote_ratio > 0.73)' if 'upvote_ratio' in m_columns else ''}
-                {" ".join(args.filter_sql)}
-            ORDER BY 1=1
-                , COALESCE(m.time_modified, 0) = 0 DESC
-                {', m.error IS NULL DESC' if 'error' in m_columns else ''}
-                {', random()' if 'sort' in args.defaults else ', ' + args.sort}
-        {LIMIT}
-        """
-
-    return query, args.filter_bindings
-
-
 def process_downloadqueue(args) -> list[dict]:
-    query, bindings = construct_query(args)
+    query, bindings = construct_download_query(args)
     if args.print:
         media_printer.printer(args, query, bindings)
         return []
@@ -280,7 +157,10 @@ def dl_download(args=None) -> None:
     if args.profile == DBType.filesystem:
         web.requests_session(args)  # prepare requests session
 
-    media = process_downloadqueue(args)
+    media = list(arg_utils.gen_d(args))
+    if not media:
+        media = process_downloadqueue(args)
+
     for m in media:
         if args.blocklist_rules and sql_utils.is_blocked_dict_like_sql(m, args.blocklist_rules):
             mark_download_attempt(args, [m["path"]])

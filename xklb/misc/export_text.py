@@ -1,22 +1,18 @@
 import argparse
-from pathlib import Path
 
 from xklb import usage
-from xklb.utils import arggroups, db_utils, objects
-from xklb.utils.log_utils import log
+from xklb.utils import arggroups, argparse_utils
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(prog="library export-text", usage=usage.export_text)
+    parser = argparse_utils.ArgumentParser(prog="library export-text", usage=usage.export_text)
     parser.add_argument("--format", default="html")
     arggroups.debug(parser)
 
     arggroups.database(parser)
     args = parser.parse_args()
 
-    Path(args.database).touch()
-    args.db = db_utils.connect(args)
-    log.info(objects.dict_filter_bool(args.__dict__))
+    arggroups.args_post(args, parser, create_db=True)
     return args
 
 

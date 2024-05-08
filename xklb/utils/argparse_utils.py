@@ -2,6 +2,7 @@ import argparse, sys
 from ast import literal_eval
 
 from xklb.utils.iterables import flatten
+from xklb.utils.strings import format_two_columns
 
 STDIN_DASH = ["-"]
 
@@ -51,3 +52,58 @@ class ArgparseArgsOrStdin(argparse.Action):
         else:
             lines = values
         setattr(namespace, self.dest, lines)
+
+
+class CustomHelpFormatter(argparse.HelpFormatter):
+    def _format_action(self, action):
+        help_text = self._expand_help(action) if action.help else ""
+
+        if help_text == "show this help message and exit":
+            return ""  # not very useful self-referential humor
+
+        subactions = []
+        for subaction in self._iter_indented_subactions(action):
+            subactions.append(self._format_action(subaction))
+
+        opts = action.option_strings
+        if not opts and not help_text:
+            return ""
+        elif not opts:  # positional with help text
+            opts = [action.dest.upper()]
+
+        if len(opts) == 1:
+            left = opts[0]
+        elif opts[1].startswith("--no-"):  #  argparse.BooleanOptionalAction
+            left = f"{opts[0]} / {opts[1]}"
+        elif opts[-1].startswith("--"):
+            left = opts[0]
+        else:
+            left = f"{opts[0]} ({opts[-1]})"
+
+        left += " " + self._format_args(action, "VALUE") + "\n"
+
+        return "".join(subactions) + format_two_columns(left, help_text)
+
+
+class ArgumentParser(argparse.ArgumentParser):
+    def __init__(self, *args, **kwargs):
+        kwargs["formatter_class"] = lambda prog: CustomHelpFormatter(prog, max_help_position=40)
+        super().__init__(*args, **kwargs)
+
+
+def suppress_destinations(parser, destinations):
+    for action in parser._actions:
+        if action.dest in destinations:
+            action.help = argparse.SUPPRESS
+
+
+def arggroup_destinations(functions):
+    temp_parser = ArgumentParser(add_help=False)
+    for func in functions:
+        func(temp_parser)
+    return set(o.dest for o in temp_parser._actions)
+
+
+def suppress_arggroups(parser, functions):
+    destinations = arggroup_destinations(functions)
+    suppress_destinations(parser, destinations)

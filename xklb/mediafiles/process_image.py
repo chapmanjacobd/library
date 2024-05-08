@@ -3,14 +3,14 @@ from pathlib import Path
 
 from xklb import usage
 from xklb.data import imagemagick_errors
-from xklb.utils import arggroups, objects, path_utils, processes, web
+from xklb.utils import arggroups, argparse_utils, path_utils, processes, web
 from xklb.utils.arg_utils import gen_paths
 from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(prog="library process-image", usage=usage.process_image)
-    arggroups.capability_simulate(parser)
+    parser = argparse_utils.ArgumentParser(prog="library process-image", usage=usage.process_image)
+    arggroups.simulate(parser)
     parser.add_argument("--delete-unplayable", action="store_true")
 
     parser.add_argument("--max-image-height", type=int, default=2400)
@@ -20,7 +20,7 @@ def parse_args() -> argparse.Namespace:
     arggroups.paths_or_stdin(parser)
     args = parser.parse_args()
 
-    log.info(objects.dict_filter_bool(args.__dict__))
+    arggroups.args_post(args, parser)
     return args
 
 

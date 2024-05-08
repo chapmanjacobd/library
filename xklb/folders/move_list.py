@@ -6,26 +6,29 @@ import humanize
 from tabulate import tabulate
 
 from xklb import usage
-from xklb.utils import arggroups, consts, db_utils, devices, iterables, objects, printing
-from xklb.utils.log_utils import log
+from xklb.utils import arggroups, argparse_utils, consts, devices, iterables, printing, sqlgroups
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
+    parser = argparse_utils.ArgumentParser(
         prog="library mv-list",
         usage=usage.mv_list,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     arggroups.sql_fs(parser)
-    arggroups.operation_group_folders(parser)
+    arggroups.group_folders(parser)
     parser.set_defaults(limit="25", lower=4, upper=4000)
     arggroups.debug(parser)
 
-    parser.add_argument("mount_point")
+    parser.add_argument("target_mount_point")
     arggroups.database(parser)
+    parser.add_argument("search", nargs="*")
     args = parser.parse_intermixed_args()
-    args.db = db_utils.connect(args)
-    log.info(objects.dict_filter_bool(args.__dict__))
+
+    arggroups.sql_fs_post(args)
+    arggroups.group_folders_post(args)
+
+    arggroups.args_post(args, parser)
     return args
 
 
@@ -49,28 +52,16 @@ def group_by_folder(args, media) -> list[dict]:
                     "count": 1,
                 }
 
-    for path, pdict in list(d.items()):
-        if any([pdict["count"] < args.lower, pdict["count"] > args.upper]):
-            d.pop(path)
+    if args.folder_counts:
+        for path, pdict in list(d.items()):
+            if not args.folder_counts(pdict["count"]):
+                d.pop(path)
 
     return [{**v, "path": k} for k, v in d.items()]
 
 
 def get_table(args) -> list[dict]:
-    media = list(
-        args.db.query(
-            """
-        select
-            path
-            , size
-        from media
-        where 1=1
-            and coalesce(time_deleted, 0)=0
-            and size > 0
-        order by path
-        """,
-        ),
-    )
+    media = list(args.db.query(*sqlgroups.fs_sql(args)))
 
     folders = group_by_folder(args, media)
     return sorted(folders, key=lambda x: x["size"] / x["count"])
@@ -111,9 +102,9 @@ def mark_media_deleted_like(args, paths) -> int:
 
 def move_list() -> None:
     args = parse_args()
-    _total, _used, free = shutil.disk_usage(args.mount_point)
+    _total, _used, free = shutil.disk_usage(args.target_mount_point)
 
-    print("Current free space:", humanize.naturalsize(free))
+    print("Current free space in target:", humanize.naturalsize(free))
 
     data = get_table(args)
 

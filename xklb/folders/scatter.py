@@ -6,12 +6,12 @@ from humanize import naturalsize
 from tabulate import tabulate
 
 from xklb import usage
-from xklb.utils import arggroups, consts, db_utils, devices, file_utils, iterables, nums, objects, printing
+from xklb.utils import arggroups, argparse_utils, consts, db_utils, devices, file_utils, iterables, nums, printing
 from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
+    parser = argparse_utils.ArgumentParser(
         prog="library scatter",
         usage=usage.scatter,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -31,7 +31,6 @@ def parse_args() -> argparse.Namespace:
         help="Paths to scatter; if using -m any path substring is valid (relative to the root of your mergerfs mount)",
     )
     args = parser.parse_intermixed_args()
-    args.db = db_utils.connect(args)
 
     if args.targets:
         args.targets = [m.rstrip("\\/") for m in args.targets.split(":")]
@@ -58,7 +57,7 @@ def parse_args() -> argparse.Namespace:
     args.relative_paths = file_utils.resolve_absolute_paths(args.relative_paths)
     args.targets = file_utils.resolve_absolute_paths(args.targets)
 
-    log.info(objects.dict_filter_bool(args.__dict__))
+    arggroups.args_post(args, parser)
     return args
 
 

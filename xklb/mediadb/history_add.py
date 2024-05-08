@@ -1,14 +1,10 @@
-import argparse
-from pathlib import Path
-
 from xklb import usage
 from xklb.mediadb import db_history
-from xklb.utils import arg_utils, arggroups, consts, db_utils, objects, printing
-from xklb.utils.log_utils import log
+from xklb.utils import arg_utils, arggroups, argparse_utils, consts, printing
 
 
 def parse_args(**kwargs):
-    parser = argparse.ArgumentParser(**kwargs)
+    parser = argparse_utils.ArgumentParser(**kwargs)
     arggroups.extractor(parser)
 
     arggroups.debug(parser)
@@ -17,10 +13,9 @@ def parse_args(**kwargs):
     arggroups.paths_or_stdin(parser)
     args = parser.parse_intermixed_args()
 
-    Path(args.database).touch()
-    args.db = db_utils.connect(args)
+    arggroups.extractor_post(args)
 
-    log.info(objects.dict_filter_bool(args.__dict__))
+    arggroups.args_post(args, parser, create_db=True)
     return args
 
 

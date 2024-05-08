@@ -1,12 +1,27 @@
-import argparse, urllib.parse
+import urllib.parse
 
 from xklb import usage
-from xklb.utils import arg_utils, arggroups, web
+from xklb.utils import arg_utils, arggroups, argparse_utils, web
 
 COMMON_SITE_TITLE_SUFFIXES = [
     " | Listen online for free on SoundCloud",
     " - YouTube",
 ]
+
+
+def parse_args():
+    parser = argparse_utils.ArgumentParser(usage=usage.markdown_links)
+    arggroups.requests(parser)
+    arggroups.selenium(parser)
+    arggroups.debug(parser)
+
+    arggroups.paths_or_stdin(parser)
+    args = parser.parse_args()
+
+    arggroups.selenium_post(args)
+
+    arggroups.args_post(args, parser)
+    return args
 
 
 def fake_title(url):
@@ -24,13 +39,7 @@ def fake_title(url):
 
 
 def markdown_links():
-    parser = argparse.ArgumentParser(usage=usage.markdown_links)
-    arggroups.requests(parser)
-    arggroups.selenium(parser)
-    arggroups.debug(parser)
-
-    arggroups.paths_or_stdin(parser)
-    args = parser.parse_args()
+    args = parse_args()
 
     import requests
     from bs4 import BeautifulSoup

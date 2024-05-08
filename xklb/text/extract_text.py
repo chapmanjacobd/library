@@ -1,15 +1,15 @@
-import argparse, re
+import re
 from pathlib import Path
 
 from bs4 import BeautifulSoup, NavigableString
 
 from xklb import usage
-from xklb.utils import arg_utils, arggroups, devices, iterables, printing, strings, web
+from xklb.utils import arg_utils, arggroups, argparse_utils, devices, iterables, printing, strings, web
 from xklb.utils.log_utils import log
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(prog="library extract-text", usage=usage.extract_text)
+    parser = argparse_utils.ArgumentParser(prog="library extract-text", usage=usage.extract_text)
     arggroups.requests(parser)
     arggroups.selenium(parser)
 
@@ -21,9 +21,9 @@ def parse_args():
     arggroups.paths_or_stdin(parser)
     args = parser.parse_args()
 
-    if args.scroll:
-        args.selenium = True
+    arggroups.selenium_post(args)
 
+    arggroups.args_post(args, parser)
     return args
 
 
@@ -66,7 +66,7 @@ def get_text(args, url):
             for markup in web.infinite_scroll(args.driver):
                 yield from parse_text(args, markup)
     else:
-        if args.local_file:
+        if args.local_html:
             with open(url) as f:
                 markup = f.read()
             url = "file://" + url

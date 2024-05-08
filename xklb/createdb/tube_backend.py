@@ -14,7 +14,7 @@ from xklb.data.yt_dlp_errors import (
 )
 from xklb.mediadb import db_media, db_playlists
 from xklb.mediafiles import media_check
-from xklb.utils import consts, db_utils, iterables, objects, path_utils, printing, sql_utils, strings
+from xklb.utils import consts, db_utils, iterables, objects, printing, sql_utils, strings
 from xklb.utils.consts import DBType, DLStatus
 from xklb.utils.log_utils import Timer, log
 
@@ -73,9 +73,6 @@ def tube_opts(args, func_opts=None, playlist_opts: str | None = None) -> dict:
         all_opts.update(ignoreerrors=True)
 
     log.debug(objects.dict_filter_bool(all_opts))
-
-    if hasattr(args, "playlists") and args.playlists and hasattr(args, "no_sanitize") and not args.no_sanitize:
-        args.playlists = [path_utils.sanitize_url(args, path) for path in args.playlists]
 
     return all_opts
 
@@ -436,13 +433,14 @@ def download(args, m) -> None:
         ydl_opts[
             "format"
         ] = "bestaudio[ext=opus]/bestaudio[ext=mka]/bestaudio[ext=webm]/bestaudio[ext=ogg]/bestaudio[ext=oga]/bestaudio/best"
-        ydl_opts["postprocessors"].append({"key": "FFmpegExtractAudio", "preferredcodec": "opus"})
+        ydl_opts["postprocessors"].append({"key": "FFmpegExtractAudio", "preferredcodec": args.extract_audio_ext})
 
     def blocklist_check(info, *pargs, incomplete):
         if getattr(args, "blocklist_rules", False):
             media_entry = db_media.consolidate(deepcopy(info))
             if sql_utils.is_blocked_dict_like_sql(media_entry or {}, args.blocklist_rules):
                 raise yt_dlp.utils.RejectedVideoReached("Video matched library blocklist")
+
         ytdlp_match_filter = yt_dlp.utils.match_filter_func(" & ".join(match_filters).split(" | "))
         return ytdlp_match_filter(info, *pargs, incomplete)
 
@@ -508,7 +506,7 @@ def download(args, m) -> None:
             info = {**m, **info}
             local_path = info.get("local_path", None)
             if args.profile == DBType.audio:
-                local_path = ydl.prepare_filename({**info, "ext": args.ext})
+                local_path = ydl.prepare_filename({**info, "ext": args.extract_audio_ext})
             else:
                 local_path = ydl.prepare_filename(info)
 

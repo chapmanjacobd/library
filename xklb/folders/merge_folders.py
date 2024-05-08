@@ -2,14 +2,14 @@ import argparse, json, os
 from pathlib import Path
 
 from xklb import usage
-from xklb.utils import arg_utils, arggroups, devices, file_utils, objects, printing
+from xklb.utils import arg_utils, arggroups, argparse_utils, devices, file_utils, printing
 from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(prog="library merge-folders", usage=usage.merge_folders)
-    arggroups.capability_clobber(parser)
-    arggroups.capability_simulate(parser)
+    parser = argparse_utils.ArgumentParser(prog="library merge-folders", usage=usage.merge_folders)
+    arggroups.clobber(parser)
+    arggroups.simulate(parser)
     arggroups.debug(parser)
 
     parser.add_argument("sources", nargs="+")
@@ -18,7 +18,7 @@ def parse_args() -> argparse.Namespace:
 
     args.destination = arg_utils.split_folder_glob(args.destination)
 
-    log.info(objects.dict_filter_bool(args.__dict__))
+    arggroups.args_post(args, parser)
     return args
 
 
@@ -70,10 +70,8 @@ def gen_rename_data(destination_folder, destination_files, source_folder, source
 
 def get_clobber(args):
     choice = None
-    if args.replace:
-        choice = "replace"
-    elif args.no_replace:
-        choice = "no-replace"
+    if args.replace is not None:
+        choice = "replace" if args.replace else "no-replace"
     else:
         choice = devices.prompt(choices=["replace", "no-replace", "simulate-replace", "quit"])
 

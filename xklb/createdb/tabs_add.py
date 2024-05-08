@@ -1,17 +1,16 @@
 import argparse, sys
 from datetime import datetime, timedelta
-from pathlib import Path
 from random import randint
 
 from xklb import usage
 from xklb.mediadb import db_history, db_media
-from xklb.utils import arggroups, consts, db_utils, iterables, objects, path_utils, strings
+from xklb.utils import arggroups, argparse_utils, consts, iterables
 from xklb.utils.arg_utils import gen_paths
 from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(prog="library tabs-add", usage=usage.tabs_add)
+    parser = argparse_utils.ArgumentParser(prog="library tabs-add", usage=usage.tabs_add)
     arggroups.extractor(parser)
     arggroups.frequency(parser)
 
@@ -22,13 +21,10 @@ def parse_args() -> argparse.Namespace:
     arggroups.paths_or_stdin(parser)
     args = parser.parse_intermixed_args()
 
-    args.frequency = strings.partial_startswith(args.frequency, consts.frequency)
+    arggroups.extractor_post(args)
+    arggroups.frequency_post(args)
 
-    Path(args.database).touch()
-    args.db = db_utils.connect(args)
-
-    log.info(objects.dict_filter_bool(args.__dict__))
-
+    arggroups.args_post(args, parser, create_db=True)
     return args
 
 
@@ -37,19 +33,16 @@ def get_days(frequency):
     return d.get(frequency, 7)
 
 
-def get_new_paths(args) -> list[str]:
-    if not args.no_sanitize:
-        args.paths = [path_utils.sanitize_url(args, path) for path in args.paths]
-
+def get_new_paths(args, paths) -> list[str]:
     if args.category is None:
         qb = (
-            "select path from media where path in (" + ",".join(["?"] * len(args.paths)) + ")",
-            (*args.paths,),
+            "select path from media where path in (" + ",".join(["?"] * len(paths)) + ")",
+            (*paths,),
         )
     else:
         qb = (
-            "select path from media where category = ? and path in (" + ",".join(["?"] * len(args.paths)) + ")",
-            (args.category, *args.paths),
+            "select path from media where category = ? and path in (" + ",".join(["?"] * len(paths)) + ")",
+            (args.category, *paths),
         )
 
     try:
@@ -66,8 +59,8 @@ def get_new_paths(args) -> list[str]:
                     )
             db_media.mark_media_deleted(args, list(existing))
 
-    args.paths = iterables.conform([path.strip() for path in args.paths])
-    return args.paths
+    paths = iterables.conform([path.strip() for path in paths])
+    return paths
 
 
 def consolidate_url(args, path: str) -> dict:
@@ -89,9 +82,9 @@ def tabs_add(args=None) -> None:
     if args:
         sys.argv = ["lb", *args]
     args = parse_args()
-    args.paths = list(gen_paths(args))
+    paths = list(gen_paths(args))
 
-    tabs = iterables.list_dict_filter_bool([consolidate_url(args, path) for path in get_new_paths(args)])
+    tabs = iterables.list_dict_filter_bool([consolidate_url(args, path) for path in get_new_paths(args, paths)])
     for tab in tabs:
         db_media.add(args, tab)
     if not args.allow_immediate and args.frequency != "daily":
@@ -108,7 +101,7 @@ def tabs_add(args=None) -> None:
 
 
 def tabs_shuffle() -> None:
-    parser = argparse.ArgumentParser(prog="library tabs-shuffle", usage=usage.tabs_shuffle)
+    parser = argparse_utils.ArgumentParser(prog="library tabs-shuffle", usage=usage.tabs_shuffle)
     parser.add_argument("--days", "-d", type=int, default=7)
     parser.add_argument(
         "--frequency",
@@ -121,10 +114,7 @@ def tabs_shuffle() -> None:
     arggroups.database(parser)
     args = parser.parse_intermixed_args()
 
-    Path(args.database).touch()
-    args.db = db_utils.connect(args)
-
-    log.info(objects.dict_filter_bool(args.__dict__))
+    arggroups.args_post(args, parser)
 
     tabs = list(
         args.db.query(

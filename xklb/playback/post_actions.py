@@ -1,4 +1,4 @@
-import re, shlex, shutil
+import shlex, shutil
 from pathlib import Path
 
 import humanize
@@ -19,10 +19,7 @@ except ModuleNotFoundError:
 def mv_to_keep_folder(args, media_file: str):
     keep_path = Path(args.keep_dir)
     if not keep_path.is_absolute():
-        kp = re.match(args.shallow_organize + "(.*?)/", media_file)
-        if kp:
-            keep_path = Path(kp[0], f"{args.keep_dir}/")
-        elif Path(media_file).parent.match(f"*/{args.keep_dir}/*"):
+        if Path(media_file).parent.match(f"*/{args.keep_dir}/*"):
             return media_file
         else:
             keep_path = Path(media_file).parent / f"{args.keep_dir}/"

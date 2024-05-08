@@ -51,8 +51,12 @@ def test_parse_size():
     expected_result = "and 10485760 >= size "
     assert result == expected_result
 
-    result = sql_utils.parse_human_to_sql(nums.human_to_bytes, "size", ["100KB"])
+    result = sql_utils.parse_human_to_sql(nums.human_to_bytes, "size", ["100KB%10"])
     expected_result = "and 112640 >= size and size >= 92160 "
+
+    result = sql_utils.parse_human_to_sql(nums.human_to_bytes, "size", ["100KB"])
+    expected_result = "and 102400 = size "
+
     assert result == expected_result
 
 
@@ -73,8 +77,12 @@ def test_parse_duration():
     expected_result = "and 30 >= duration "
     assert result == expected_result
 
-    result = sql_utils.parse_human_to_sql(nums.human_to_seconds, "duration", ["1min"])
+    result = sql_utils.parse_human_to_sql(nums.human_to_seconds, "duration", ["1min%10"])
     expected_result = "and 66 >= duration and duration >= 54 "
+
+    result = sql_utils.parse_human_to_sql(nums.human_to_seconds, "duration", ["1min"])
+    expected_result = "and 60 = duration "
+
     assert result == expected_result
 
 

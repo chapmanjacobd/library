@@ -3,12 +3,11 @@ from copy import deepcopy
 from pathlib import Path
 
 from xklb import media_printer, usage
-from xklb.utils import arggroups, consts, db_utils, devices, file_utils, iterables, objects
-from xklb.utils.log_utils import log
+from xklb.utils import arggroups, argparse_utils, consts, db_utils, devices, file_utils, iterables
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
+    parser = argparse_utils.ArgumentParser(
         prog="library redownload",
         usage=usage.redownload,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -22,8 +21,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("deleted_to", nargs="?")
     args = parser.parse_args()
 
-    args.db = db_utils.connect(args)
-    log.info(objects.dict_filter_bool(args.__dict__))
+    arggroups.args_post(args, parser)
     return args
 
 

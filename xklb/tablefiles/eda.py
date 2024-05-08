@@ -1,14 +1,14 @@
 import argparse
 
 from xklb import usage
-from xklb.utils import arggroups, file_utils, nums, web
+from xklb.utils import arggroups, argparse_utils, file_utils, nums, web
 from xklb.utils.consts import DEFAULT_FILE_ROWS_READ_LIMIT
 from xklb.utils.log_utils import log
 from xklb.utils.printing import print_df, print_series
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Perform EDA on one or more files", usage=usage.eda)
+    parser = argparse_utils.ArgumentParser(description="Perform EDA on one or more files", usage=usage.eda)
     parser.add_argument("--print", "-p", default="p", const="p", nargs="?", help=argparse.SUPPRESS)
 
     parser.add_argument("--groupby", "--group-by", "-g", action="store_true")
@@ -26,11 +26,9 @@ def parse_args():
     )
     args = parser.parse_args()
 
-    if args.end_row.lower() in ("inf", "none", "all"):
-        args.end_row = None
-    else:
-        args.end_row = int(args.end_row)
+    arggroups.table_like_post(args)
 
+    arggroups.args_post(args, parser)
     return args
 
 
