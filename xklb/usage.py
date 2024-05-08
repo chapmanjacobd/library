@@ -979,18 +979,28 @@ big_dirs = """library big-dirs DATABASE [--limit (4000)] [--depth (0)] [--sort-g
 
     See what folders take up space
 
-        library big-dirs video.db
-        library big-dirs audio.db
-        library big-dirs fs.db
+        library big-dirs ./video/
 
-    lb big-dirs video.db --folder-size=+10G --lower 400 --upper 14000
+    Filter folders by size
 
-    lb big-dirs video.db --depth 5
-    lb big-dirs video.db --depth 7
+        lb big-dirs ./video/ -FS+10GB -FS-200GB
+
+    Filter folders by count
+
+        lb big-dirs ./video/ -FC+300 -FC-5000
+
+    Filter folders by depth
+
+        lb big-dirs ./video/ --depth 5
+        lb big-dirs ./video/ -D 7
+
+    Load from fs database
+
+        $ lb fs video.db --cols path,duration,size,time_deleted --to-json | lb big-dirs --from-json
 
     You can even sort by auto-MCDA ~LOL~
 
-    lb big-dirs video.db -u 'mcda median_size,-deleted'
+    lb big-dirs ./video/ -u 'mcda median_size,-deleted'
 """
 
 disk_usage = """library disk-usage DATABASE [--sort-groups-by size | count] [--depth DEPTH] [PATH / SUBSTRING SEARCH]
