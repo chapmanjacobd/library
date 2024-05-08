@@ -1,5 +1,3 @@
-import argparse
-
 from xklb import usage
 from xklb.utils import arggroups, argparse_utils, consts, file_utils, web
 from xklb.utils.argparse_utils import ArgparseList
@@ -9,7 +7,6 @@ from xklb.utils.printing import print_df
 
 def parse_args():
     parser = argparse_utils.ArgumentParser(description="Diff two table-like files", usage=usage.incremental_diff)
-    parser.add_argument("--print", "-p", default="p", const="p", nargs="?", help=argparse.SUPPRESS)
     parser.add_argument("--mimetype1", "--filetype1")
     parser.add_argument("--encoding1")
     parser.add_argument("--mimetype2", "--filetype2")
@@ -27,6 +24,7 @@ def parse_args():
     parser.add_argument("path1", help="path to dataset 1")
     parser.add_argument("path2", help="path to dataset 2")
     args = parser.parse_intermixed_args()
+    arggroups.args_post(args, parser)
 
     # TODO: add an option to load from df2 where ids (select ids from df1)
 
@@ -35,7 +33,6 @@ def parse_args():
     else:
         args.batch_size = int(args.batch_size)
 
-    arggroups.args_post(args, parser)
     return args
 
 

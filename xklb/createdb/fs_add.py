@@ -36,7 +36,6 @@ def parse_args(action, usage):
     parser = argparse_utils.ArgumentParser(prog="library " + action, usage=usage)
     arggroups.db_profiles(parser)
     arggroups.simulate(parser)
-    parser.add_argument("--ext", "-e", default=[], action=argparse_utils.ArgparseList)
 
     parser.add_argument(
         "--io-multiplier",
@@ -293,6 +292,7 @@ def munge_image_tags(m: dict, e: dict) -> dict:
         "exiftool_warning": strings.combine(*pop_substring_keys(e, "ExifTool:Warning")),
         "tags": strings.combine(
             *pop_substring_keys(e, "Headline"),
+            *pop_substring_keys(e, "Title"),
             *pop_substring_keys(e, "ImageDescription"),
             *pop_substring_keys(e, "Caption"),
             *pop_substring_keys(e, "Artist"),
@@ -367,8 +367,8 @@ def extract_chunk(args, media) -> None:
 
         captions.append(caption)
 
-    media = [{"playlists_id": args.playlists_id, **d} for d in media]
     media = iterables.list_dict_filter_bool(media)
+    media = [{"playlists_id": args.playlists_id, **d} for d in media]
     args.db["media"].insert_all(media, pk="id", alter=True, replace=True)
 
     for d in captions:

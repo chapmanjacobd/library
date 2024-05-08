@@ -97,7 +97,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v2.7.014; 72 subcommands)
+    library (v2.8.001; 72 subcommands)
 
     Create database subcommands:
     ╭───────────────┬──────────────────────────────────────────╮
@@ -1319,7 +1319,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Read paths from dbs
 
-        $ library similar-folders --dbs db1.db db2.db
+        $ lb fs audio.db --cols path,duration,size,time_deleted --to-json | lb similar-folders --from-json -v
 
     Print only paths
 
@@ -1405,7 +1405,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Read paths from dbs
 
-        $ library similar-files --dbs db1.db db2.db
+        $ lb fs audio.db --cols path,duration,size,time_deleted --to-json | lb similar-files --from-json -v
 
 
 
@@ -2301,6 +2301,9 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         You can even sort the items within each cluster by auto-MCDA ~LOL~
         library watch -B --sort-groups-by 'mcda median_size,-deleted'
         library watch -C --sort-groups-by 'mcda median_size,-deleted'
+
+    Filter media by playlist:
+        library watch --playlists URL1 URL2
 
     Filter media by file siblings of parent directory:
         library watch --sibling   # only include files which have more than or equal to one sibling

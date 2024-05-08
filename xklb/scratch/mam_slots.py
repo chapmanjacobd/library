@@ -11,8 +11,8 @@ def parse_args():
     arggroups.debug(parser)
 
     args = parser.parse_args()
-
     arggroups.args_post(args, parser)
+
     return args
 
 

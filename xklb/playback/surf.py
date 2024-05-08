@@ -19,12 +19,12 @@ def parse_args() -> argparse.Namespace:
 
     arggroups.database(parser)
     args = parser.parse_args()
+    arggroups.args_post(args, parser)
 
     if args.database:
         log.error("Currently only stdin is supported")
         raise NotImplementedError
 
-    arggroups.args_post(args, parser)
     return args
 
 

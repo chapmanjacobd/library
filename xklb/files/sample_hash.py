@@ -15,10 +15,10 @@ def parse_args():
 
     arggroups.paths_or_stdin(parser)
     args = parser.parse_args()
+    arggroups.args_post(args, parser)
 
     arggroups.sample_hash_bytes_post(args)
 
-    arggroups.args_post(args, parser)
     return args
 
 

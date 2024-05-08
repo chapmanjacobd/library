@@ -85,6 +85,14 @@ def moved_media(args, moved_files: str | list, base_from, base_to) -> int:
     return modified_row_count
 
 
+def should_align_right(k, v):
+    if k.endswith(("size", "ratio")) or k.startswith("percent"):
+        return True
+    if isinstance(v, (int, float)):
+        return True
+    return None
+
+
 def media_printer(args, data, units=None, media_len=None) -> None:
     if units is None:
         units = "media"
@@ -105,7 +113,10 @@ def media_printer(args, data, units=None, media_len=None) -> None:
     if "f" not in print_args and "limit" in getattr(args, "defaults", []):
         media.reverse()
 
-    tables = args.db.table_names()
+    try:
+        tables = args.db.table_names()
+    except AttributeError:
+        tables = []
 
     duration = sum(m.get("duration") or 0 for m in media)
     if "a" in print_args and ("Aggregate" not in media[0].get("path") or ""):
@@ -177,34 +188,31 @@ def media_printer(args, data, units=None, media_len=None) -> None:
                 args, m["never_downloaded"] + m["retry_queued"], time_column="time_downloaded"
             )  # TODO where= p.extractor_key, or try to use SQL
 
-    for k, v in list(media[0].items()):
-        if k.endswith("size"):
-            printing.col_naturalsize(media, k)
-        elif k.endswith("duration") or k in ("playhead",):
-            printing.col_duration(media, k)
-        elif k.startswith("time_") or "_time_" in k:
-            printing.col_naturaltime(media, k)
-        elif k == "title_path":
-            media = [{"title_path": "\n".join(iterables.concat(d["title"], d["path"])), **d} for d in media]
-            media = [{k: v for k, v in d.items() if k not in ("title", "path")} for d in media]
-        elif k.startswith("percent") or k.endswith("ratio"):
-            for d in media:
-                d[k] = strings.safe_percent(d[k])
-        # elif isinstance(v, (int, float)):
-        #     for d in media:
-        #         if d[k] is not None:
-        #             d[k] = f'{d[k]:n}'  # TODO add locale comma separators
-
-    def should_align_right(k, v):
-        if k.endswith(("size", "ratio")) or k.startswith("percent"):
-            return True
-        if isinstance(v, (int, float)):
-            return True
-        return None
+    if not any([args.to_json, "f" in print_args]):
+        for k, v in list(media[0].items()):
+            if k.endswith("size"):
+                printing.col_naturalsize(media, k)
+            elif k.endswith("duration") or k in ("playhead",):
+                printing.col_duration(media, k)
+            elif k.startswith("time_") or "_time_" in k:
+                printing.col_naturaltime(media, k)
+            elif k == "title_path":
+                media = [{"title_path": "\n".join(iterables.concat(d["title"], d["path"])), **d} for d in media]
+                media = [{k: v for k, v in d.items() if k not in ("title", "path")} for d in media]
+            elif k.startswith("percent") or k.endswith("ratio"):
+                for d in media:
+                    d[k] = strings.safe_percent(d[k])
+            # elif isinstance(v, (int, float)):
+            #     for d in media:
+            #         if d[k] is not None:
+            #             d[k] = f'{d[k]:n}'  # TODO add locale comma separators
 
     media = iterables.list_dict_filter_bool(media)
 
-    if "f" in print_args:
+    if args.to_json:
+        printing.pipe_lines(json.dumps(m) + "\n" for m in media)
+
+    elif "f" in print_args:
         if len(media) <= 1000 and getattr(args, "action", "") not in [consts.SC.links_open]:
             media, deleted_paths = filter_deleted(media)
             db_media.mark_media_deleted(args, deleted_paths)

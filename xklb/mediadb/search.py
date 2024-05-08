@@ -30,12 +30,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("search", nargs="*")
     args = parser.parse_intermixed_args()
     args.action = "search"
+    arggroups.args_post(args, parser)
 
     arggroups.sql_fs_post(args)
     arggroups.playback_post(args)
     arggroups.post_actions_post(args)
 
-    arggroups.args_post(args, parser)
     return args
 
 

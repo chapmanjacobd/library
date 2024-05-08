@@ -17,6 +17,9 @@ def float_from_percent(s: str):
 
 
 def percentage_difference(value1, value2):
+    value1 = value1 or 0
+    value2 = value2 or 0
+
     try:
         return abs((value1 - value2) / ((value1 + value2) / 2)) * 100
     except ZeroDivisionError:

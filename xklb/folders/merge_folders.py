@@ -15,10 +15,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("sources", nargs="+")
     parser.add_argument("destination")
     args = parser.parse_intermixed_args()
+    arggroups.args_post(args, parser)
 
     args.destination = arg_utils.split_folder_glob(args.destination)
 
-    arggroups.args_post(args, parser)
     return args
 
 

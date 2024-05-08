@@ -1,5 +1,4 @@
-import argparse
-import json, time
+import argparse, json, time
 from sqlite3 import IntegrityError
 
 from xklb.utils import arggroups, argparse_utils, nums, objects, web

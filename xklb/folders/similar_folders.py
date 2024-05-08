@@ -5,9 +5,9 @@ import humanize
 from tabulate import tabulate
 
 from xklb import usage
-from xklb.fsdb import big_dirs
+from xklb.folders import big_dirs
 from xklb.text import cluster_sort
-from xklb.utils import arg_utils, arggroups, argparse_utils, consts, nums, path_utils, printing, strings
+from xklb.utils import arg_utils, arggroups, argparse_utils, consts, file_utils, nums, path_utils, printing, strings
 from xklb.utils.log_utils import log
 
 
@@ -33,16 +33,17 @@ def parse_args():
     parser.add_argument("--counts-delta", "--count-delta", type=float, default=3.0)
     parser.add_argument("--durations-delta", "--duration-delta", type=float, default=5.0)
 
-    parser.add_argument("--filter-names", action=argparse.BooleanOptionalAction, default=False)
-    parser.add_argument("--filter-sizes", action=argparse.BooleanOptionalAction, default=False)
-    parser.add_argument("--filter-durations", action=argparse.BooleanOptionalAction, default=False)
-    parser.add_argument("--filter-counts", action=argparse.BooleanOptionalAction, default=False)
+    parser.add_argument("--filter-names", action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument("--filter-sizes", action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument("--filter-durations", action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument("--filter-counts", action=argparse.BooleanOptionalAction, default=True)
 
     arggroups.debug(parser)
 
     arggroups.paths_or_stdin(parser)
     args = parser.parse_args()
     args.action = consts.SC.similar_folders
+    arggroups.args_post(args, parser)
 
     arggroups.group_folders_post(args)
 
@@ -60,8 +61,6 @@ def parse_args():
     arggroups.sql_fs_post(args)
     arggroups.group_folders_post(args)
 
-
-    arggroups.args_post(args, parser)
     return args
 
 
@@ -156,22 +155,10 @@ def filter_groups_by_numbers(args, groups):
     return groups
 
 
-def get_filesize(d):
-    try:
-        stat = Path(d['path']).stat()
-        d['size'] = stat.st_size
-        d['time_deleted'] = 0
-    except FileNotFoundError:
-        d['size'] = None
-        if 'time_deleted' not in d:
-            d['time_deleted'] = consts.APPLICATION_START
-
-    return d
-
 def similar_folders():
     args = parse_args()
     media = arg_utils.gen_d(args)
-    media = [d if 'size' in d else get_filesize(d) for d in media]
+    media = [d if "size" in d else file_utils.get_filesize(d) for d in media]
     media = big_dirs.group_files_by_parent(args, media)
     if args.folder_sizes:
         media = [d for d in media if args.folder_sizes(d["size"])]
@@ -179,7 +166,7 @@ def similar_folders():
     if args.filter_sizes or args.filter_counts or args.filter_durations:
         clusters = cluster_by_numbers(args, media)
         groups = map_and_name(media, clusters)
-        log.info("Folder size/count clustering sorted %s folders into %s groups", len(media), len(groups))
+        log.info("Folder size/duration/count clustering sorted %s folders into %s groups", len(media), len(groups))
         single_folder_groups = [d for d in groups if len(d["grouped_paths"]) == 1]
         groups = [d for d in groups if len(d["grouped_paths"]) > 1]
         log.info("Filtered out %s single-folder groups", len(single_folder_groups))
@@ -196,7 +183,7 @@ def similar_folders():
         if args.filter_sizes or args.filter_counts or args.filter_durations:
             prev_count = len(groups)
             groups = filter_groups_by_numbers(args, groups)  # effectively a second pass
-            log.info("(2nd pass) group size/count filtering removed %s groups", prev_count - len(groups))
+            log.info("(2nd pass) group size/duration/count filtering removed %s groups", prev_count - len(groups))
 
     if not args.only_originals and not args.only_duplicates:
         print("Duplicate groups:")

@@ -146,7 +146,7 @@ def construct_links_query(args) -> tuple[str, dict]:
                 , COALESCE(MAX(h.time_played), 0) time_last_played
                 , SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
                 , time_deleted
-            FROM media
+            FROM media m
             LEFT JOIN history h on h.media_id = media.id
             WHERE 1=1
                 {" ".join(args.filter_sql)}
@@ -183,11 +183,11 @@ def construct_tabs_query(args) -> tuple[str, dict]:
                 , time_deleted
                 , hostname
                 , category
-            FROM media
-            LEFT JOIN history h on h.media_id = media.id
+            FROM media m
+            LEFT JOIN history h on h.media_id = m.id
             WHERE 1=1
                 {" ".join(args.filter_sql)}
-            GROUP BY media.id
+            GROUP BY m.id
         )
         SELECT path
         , frequency
@@ -256,7 +256,7 @@ def construct_captions_search_query(args) -> tuple[str, dict]:
     select_sql = "\n        , ".join(args.select)
     limit_sql = "LIMIT " + str(args.limit) if args.limit else ""
     query = f"""WITH c as (
-        SELECT * FROM {table}
+        SELECT * FROM {table} m
         WHERE 1=1
             {" ".join(args.filter_sql)}
     )
@@ -299,16 +299,14 @@ def construct_playlists_query(args) -> tuple[str, dict]:
             [k for k in pl_columns if k in db_utils.config["playlists"]["search_columns"] if k in pl_columns],
         )
 
-    query = f"""SELECT
-        *
+    query = f"""SELECT *
     FROM {args.table} m
     WHERE 1=1
-        and COALESCE(time_deleted,0) = 0
         {" ".join(args.filter_sql)}
         {'AND extractor_key != "Local"' if args.online_media_only else ''}
         {'AND extractor_key = "Local"' if args.local_media_only else ''}
     ORDER BY 1=1
-        {', ' + args.sort if args.sort else ''}
+        {', ' + args.playlists_sort if args.playlists_sort else ''}
         , path
         , random()
     {sql_utils.limit_sql(args)}
@@ -334,8 +332,8 @@ def construct_download_query(args) -> tuple[str, dict]:
         SELECT '%' || SUBSTR(path, INSTR(path, '//') + 2, INSTR( SUBSTR(path, INSTR(path, '//') + 2), '/') - 1) || '%'
         FROM media
         WHERE 1=1
-            AND COALESCE(time_downloaded,0) = 0
-            AND COALESCE(time_deleted,0) = 0
+            AND COALESCE(m.time_downloaded,0) = 0
+            AND COALESCE(m.time_deleted,0) = 0
         ORDER BY RANDOM()
         LIMIT 1
     )"""
@@ -359,7 +357,6 @@ def construct_download_query(args) -> tuple[str, dict]:
             LEFT JOIN playlists p on p.id = m.playlists_id
             WHERE 1=1
                 {'and COALESCE(m.time_downloaded,0) = 0' if 'time_downloaded' in m_columns else ''}
-                and COALESCE(m.time_deleted,0) = 0
                 {'and COALESCE(p.time_deleted, 0) = 0' if 'time_deleted' in pl_columns else ''}
                 and m.path like "http%"
                 {same_subdomain if getattr(args, 'same_domain', False) else ''}

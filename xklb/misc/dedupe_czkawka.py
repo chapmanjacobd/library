@@ -36,11 +36,11 @@ def parse_args():
 
     parser.add_argument("file_path", help="Path to the text file containing the file list.")
     args = parser.parse_args()
+    arggroups.args_post(args, parser)
 
     arggroups.playback_post(args)
     arggroups.post_actions_post(args)
 
-    arggroups.args_post(args, parser)
     return args
 
 

@@ -9,18 +9,7 @@ import humanize
 from xklb import media_printer, usage
 from xklb.files import sample_compare, sample_hash
 from xklb.mediadb import db_media
-from xklb.utils import (
-    arggroups,
-    argparse_utils,
-    consts,
-    db_utils,
-    devices,
-    file_utils,
-    iterables,
-    processes,
-    sql_utils,
-    strings,
-)
+from xklb.utils import arggroups, argparse_utils, consts, db_utils, devices, file_utils, processes, sql_utils
 from xklb.utils.consts import DBType
 from xklb.utils.log_utils import log
 
@@ -106,6 +95,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("paths", nargs="*")
     args = parser.parse_intermixed_args()
     args.action = consts.SC.dedupe_media
+    arggroups.args_post(args, parser)
 
     arggroups.sql_fs_post(args)
 
@@ -153,7 +143,6 @@ def parse_args() -> argparse.Namespace:
     if not COMPARE_DIRS:
         args.table2 = args.table
 
-    arggroups.args_post(args, parser)
     return args
 
 

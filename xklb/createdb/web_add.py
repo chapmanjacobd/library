@@ -20,7 +20,7 @@ from xklb.utils import (
     strings,
     web,
 )
-from xklb.utils.consts import SC, DBType
+from xklb.utils.consts import DBType
 from xklb.utils.log_utils import log
 
 
@@ -66,16 +66,14 @@ def parse_args(action, **kwargs):
 
 def consolidate_media(args, path: str) -> dict:
     return {
-        "path": path,
+        "playlists_id": args.playlists_id,
         "time_created": consts.APPLICATION_START,
         "time_deleted": 0,
+        "path": path,
     }
 
 
 def add_media(args, media):
-    if isinstance(media[0], str):
-        media = [consolidate_media(args, s) for s in media]
-
     media = iterables.list_dict_filter_bool(media)
     args.db["media"].insert_all(media, pk="id", alter=True, replace=True)
 
@@ -166,15 +164,7 @@ def spider(args, paths: set):
                 else:
                     new_paths[path] = None  # add key to map; title: None
 
-        media = [
-            {
-                "path": k,
-                "title": v,
-                "time_created": consts.APPLICATION_START,
-                "time_deleted": 0,
-            }
-            for k, v in new_paths.items()
-        ]
+        media = [consolidate_media(args, k) | {"title": v} for k, v in new_paths.items()]
         new_media_count += len(media)
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=args.threads) as executor:
@@ -220,7 +210,7 @@ def add_playlist(args, path):
         "extractor_config": args.extractor_config,
         "time_deleted": 0,
     }
-    db_playlists.add(args, str(path), info)
+    return db_playlists.add(args, str(path), info)
 
 
 def web_add(args=None) -> None:
@@ -237,7 +227,7 @@ def web_add(args=None) -> None:
             if db_media.exists(args, p):
                 media_known.add(p)
             else:
-                add_media(args, [p])
+                add_media(args, [consolidate_media(args, p)])
                 media_new.add(p)
             printing.print_overwrite(f"Link import: {len(media_new)} new [{len(media_known)} known]")
     else:
@@ -245,9 +235,8 @@ def web_add(args=None) -> None:
             web.load_selenium(args)
         try:
             for playlist_path in arg_utils.gen_paths(args):
+                args.playlists_id = add_playlist(args, playlist_path)
                 spider(args, {playlist_path})
-                if web.is_index(playlist_path):
-                    add_playlist(args, playlist_path)
 
         finally:
             if args.selenium:

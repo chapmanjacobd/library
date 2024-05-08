@@ -211,7 +211,7 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     add_parser(subparsers, "xklb.folders.scatter.scatter")
     add_parser(subparsers, "xklb.folders.similar_folders.similar_folders")
     add_parser(subparsers, "xklb.folders.mount_stats.mount_stats", ["mu", "mount-usage"])
-    add_parser(subparsers, "xklb.fsdb.big_dirs.big_dirs", ["large-folders"])
+    add_parser(subparsers, "xklb.folders.big_dirs.big_dirs", ["large-folders"])
     add_parser(subparsers, "xklb.fsdb.disk_usage.disk_usage", ["du", "usage"])
     add_parser(subparsers, "xklb.fsdb.search_db.search_db", ["s", "sdb", "search-dbs"])
     add_parser(subparsers, "xklb.mediadb.block.block")

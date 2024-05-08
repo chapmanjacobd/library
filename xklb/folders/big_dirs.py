@@ -4,7 +4,7 @@ from pathlib import Path
 
 from xklb import media_printer, usage
 from xklb.tablefiles import mcda
-from xklb.utils import arg_utils, arggroups, argparse_utils, consts, nums
+from xklb.utils import arg_utils, arggroups, argparse_utils, consts, file_utils, iterables, nums
 
 
 def parse_args() -> argparse.Namespace:
@@ -13,22 +13,19 @@ def parse_args() -> argparse.Namespace:
         usage=usage.big_dirs,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    arggroups.sql_fs(parser)
     arggroups.cluster(parser)
     arggroups.group_folders(parser)
     parser.set_defaults(limit="4000", lower=4, depth=0)
     arggroups.debug(parser)
 
-    arggroups.database(parser)
+    arggroups.paths_or_stdin(parser)
     parser.add_argument("search", nargs="*")
     args = parser.parse_intermixed_args()
     args.action = consts.SC.big_dirs
+    arggroups.args_post(args, parser)
 
-    arggroups.sql_fs_post(args)
     arggroups.group_folders_post(args)
 
-
-    arggroups.args_post(args, parser)
     return args
 
 
@@ -155,6 +152,7 @@ def big_dirs() -> None:
     args = parse_args()
 
     media = list(arg_utils.gen_d(args))
+    media = [d if "size" in d else file_utils.get_filesize(d) for d in media]
     if args.cluster_sort and len(media) > 2:
         from xklb.text.cluster_sort import cluster_paths
 
@@ -207,6 +205,7 @@ def big_dirs() -> None:
 
     if args.limit:
         media = media[-int(args.limit) :]
+    media = iterables.list_dict_filter_bool(media, keep_0=False)
     media_printer.media_printer(args, media, units="folders")
 
 

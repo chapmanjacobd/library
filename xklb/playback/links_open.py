@@ -31,9 +31,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("search", nargs="*")
     args = parser.parse_intermixed_args()
     args.action = consts.SC.links_open
+    arggroups.args_post(args, parser)
 
     arggroups.sql_fs_post(args)
-
 
     if not args.title_prefix:
         args.title_prefix = ["https://www.google.com/search?q=%"]
@@ -42,7 +42,6 @@ def parse_args() -> argparse.Namespace:
     if args.browser:
         args.browser = shlex.split(args.browser)
 
-    arggroups.args_post(args, parser)
     return args
 
 

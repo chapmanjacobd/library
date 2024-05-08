@@ -30,10 +30,10 @@ def parse_args(action) -> argparse.Namespace:
 
     arggroups.debug(parser)
     args = parser.parse_args()
+    arggroups.args_post(args, parser)
 
     args.mpv = mpv_utils.connect_mpv(args.mpv_socket)
 
-    arggroups.args_post(args, parser)
     return args
 
 
