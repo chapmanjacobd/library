@@ -8,7 +8,7 @@ from xklb.utils.log_utils import log
 from xklb.utils.sqlgroups import construct_tabs_query
 
 
-def parse_args(action) -> argparse.Namespace:
+def parse_args() -> argparse.Namespace:
     parser = argparse_utils.ArgumentParser(
         prog="library tabs",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -54,7 +54,7 @@ def frequency_filter(counts, media: list[dict]) -> list[dict]:
 
 
 def tabs_open() -> None:
-    args = parse_args(consts.SC.tabs_open)
+    args = parse_args()
     db_history.create(args)
 
     query, bindings = construct_tabs_query(args)

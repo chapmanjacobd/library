@@ -23,7 +23,10 @@ def get_caller_name():
     frame = inspect.currentframe()
     while frame:
         frame = frame.f_back
-        if frame.f_code.co_name == "parse_args":
+
+        if frame is None:
+            return 'No parse_args()'
+        elif frame.f_code.co_name == "parse_args":
             frame = frame.f_back
             return frame.f_code.co_name
 
