@@ -3,7 +3,6 @@ from collections import Counter
 from pathlib import Path
 
 from humanize import naturalsize
-from tabulate import tabulate
 
 from xklb import usage
 from xklb.utils import arggroups, argparse_utils, consts, db_utils, devices, file_utils, iterables, nums, printing

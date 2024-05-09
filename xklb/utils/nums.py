@@ -59,6 +59,7 @@ def safe_median(l) -> float | None:
     except statistics.StatisticsError:
         return None
 
+
 def safe_mean(l) -> float | None:
     if not l:
         return None

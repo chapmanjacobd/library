@@ -48,7 +48,7 @@ def gen_paths(args):
 def gen_d(args):
     if args.from_file:
         for path in args.paths:
-            with open(path, 'r') as f:
+            with open(path, "r") as f:
                 for line in f:
                     line = line.rstrip("\n")
                     if line.strip():

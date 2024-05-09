@@ -1,11 +1,10 @@
 import argparse
 
 import humanize
-from tabulate import tabulate
 
 from xklb import usage
 from xklb.folders.similar_folders import cluster_folders, map_and_name
-from xklb.utils import arg_utils, arggroups, argparse_utils, consts, file_utils, nums, printing
+from xklb.utils import arg_utils, arggroups, argparse_utils, file_utils, nums, printing
 from xklb.utils.log_utils import log
 
 
