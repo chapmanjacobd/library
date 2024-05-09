@@ -256,6 +256,7 @@ def sql_fs_post(args) -> None:
         )
 
     if getattr(args, "keep_dir", False) and Path(args.keep_dir).exists():
+        args.keep_dir = Path(args.keep_dir).expanduser().resolve()
         args.filter_sql.append(f'and path not like "{args.keep_dir}%"')
 
     if args.no_video:
@@ -341,9 +342,6 @@ def post_actions(parent_parser):
 
 
 def post_actions_post(args):
-    if args.keep_dir:
-        args.keep_dir = Path(args.keep_dir).expanduser().resolve()
-
     if args.post_action:
         args.post_action = args.post_action.replace("-", "_")
 
@@ -426,7 +424,7 @@ def group_folders(parent_parser):
         action="append",
         help="Number of files per folder",
     )
-    parser.add_argument("--folders-count", action="append", help="TODO: Number of folders per folder")
+    parser.add_argument("--folders-counts", action="append", help="Only include folders with specific number of subfolders")
 
 
 def group_folders_post(args) -> None:
@@ -439,6 +437,8 @@ def group_folders_post(args) -> None:
         args.folder_sizes = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.folder_sizes)
     if args.folder_counts:
         args.folder_counts = sql_utils.parse_human_to_lambda(int, args.folder_counts)
+    if args.folders_counts:
+        args.folders_counts = sql_utils.parse_human_to_lambda(int, args.folders_counts)
 
     if args.sort_groups_by:
         args.sort_groups_by = arg_utils.parse_ambiguous_sort(args.sort_groups_by)

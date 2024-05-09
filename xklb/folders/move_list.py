@@ -73,7 +73,7 @@ def iterate_and_show_options(args, tbl) -> tuple[list[dict], list[dict]]:
     vew = iterables.list_dict_filter_bool(vew, keep_0=False)
     vew = printing.col_resize_percent(vew, "path", 60)
     vew = printing.col_naturalsize(vew, "size")
-    print(tabulate(vew, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False))
+    printing.table(tbl)
     print(len(tbl) - len(vew), "other folders not shown")
 
     if args.limit:

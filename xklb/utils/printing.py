@@ -2,6 +2,7 @@ import csv, math, os, platform, sys, textwrap
 from datetime import datetime, timedelta
 
 import humanize
+from tabulate import tabulate
 
 from xklb.utils import consts
 
@@ -14,6 +15,13 @@ def print_overwrite(*text):
     else:
         print(text)
 
+
+def table(tbl, *args, **kwargs) -> None:
+    try:
+        print(tabulate(tbl, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False, *args, **kwargs))
+    except BrokenPipeError:
+        sys.stdout = None
+        sys.exit(141)
 
 def pipe_print(*args) -> None:
     try:

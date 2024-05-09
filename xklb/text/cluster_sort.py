@@ -188,7 +188,7 @@ def cluster_dicts(args, media):
                         if not bool(media_keyed[s].get("time_deleted"))
                     ),
                     "median_size": nums.safe_median(
-                        media_keyed[s].get("size") or 0
+                        media_keyed[s].get("size")
                         for s in group["grouped_paths"]
                         if not bool(media_keyed[s].get("time_deleted"))
                     ),

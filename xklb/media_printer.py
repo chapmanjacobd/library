@@ -250,7 +250,7 @@ def media_printer(args, data, units=None, media_len=None) -> None:
             printing.col_resize(tbl, k, v)
 
         colalign = ["right" if should_align_right(k, v) else "left" for k, v in tbl[0].items()]
-        print(tabulate(tbl, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False, colalign=colalign))
+        printing.table(tbl, colalign=colalign)
 
         if len(media) > 1:
             print(

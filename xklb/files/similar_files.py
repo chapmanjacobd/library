@@ -5,7 +5,7 @@ from tabulate import tabulate
 
 from xklb import usage
 from xklb.folders.similar_folders import cluster_folders, map_and_name
-from xklb.utils import arg_utils, arggroups, argparse_utils, consts, nums, printing
+from xklb.utils import arg_utils, arggroups, argparse_utils, consts, file_utils, nums, printing
 from xklb.utils.log_utils import log
 
 
@@ -32,11 +32,6 @@ def parse_args():
     args = parser.parse_args()
     arggroups.args_post(args, parser)
 
-    if not args.filter_sizes:
-        args.sizes_delta = 200.0
-    if not args.filter_durations:
-        args.durations_delta = 200.0
-
     if not args.filter_names and not args.filter_sizes and not args.filter_durations:
         print("Nothing to do")
         raise NotImplementedError
@@ -45,13 +40,17 @@ def parse_args():
 
 
 def is_same_size_group(args, m0, m):
-    size_diff = nums.percentage_difference(m0["size"], m["size"])
+    bools = []
 
-    if "duration" in m:
+    if args.filter_sizes:
+        size_diff = nums.percentage_difference(m0["size"], m["size"])
+        bools.append(size_diff < args.sizes_delta)
+
+    if args.filter_durations and m.get("duration"):
         duration_diff = nums.percentage_difference(m0["duration"], m["duration"])
-        return size_diff < args.sizes_delta and duration_diff < args.durations_delta
+        bools.append(duration_diff < args.durations_delta)
 
-    return size_diff < args.sizes_delta
+    return all(bools)
 
 
 def cluster_by_size(args, media):
@@ -102,6 +101,7 @@ def filter_groups_by_size(args, groups):
 def similar_files():
     args = parse_args()
     media = list(arg_utils.gen_d(args))
+    media = [d if "size" in d else file_utils.get_filesize(d) for d in media]
 
     groups: list[dict] = []
     if args.filter_sizes or args.filter_durations:
@@ -142,20 +142,15 @@ def similar_files():
             for d in media:
                 printing.pipe_print(d["path"])
         else:
-            print(
-                tabulate(
-                    [
-                        {
-                            f'group {group["common_path"]}': d["path"],
-                            "size": humanize.naturalsize(d["size"], binary=True),
-                            "duration": printing.human_duration(d["duration"]),
-                        }
-                        for d in media
-                    ],
-                    tablefmt=consts.TABULATE_STYLE,
-                    headers="keys",
-                    showindex=False,
-                )
+            printing.table(
+                [
+                    {
+                        f'group {group["common_path"]}': d["path"],
+                        "size": humanize.naturalsize(d["size"], binary=True),
+                        "duration": printing.human_duration(d.get("duration")),
+                    }
+                    for d in media
+                ]
             )
 
         if not args.only_originals and not args.only_duplicates:
