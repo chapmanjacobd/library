@@ -22,7 +22,7 @@ def media_select_sql(args, m_columns):
 
 def fs_sql(args) -> tuple[str, dict]:
     m_columns = db_utils.columns(args, "media")
-    m_columns = sql_utils.search_filter(args, m_columns)
+    args.table, m_columns = sql_utils.search_filter(args, m_columns)
 
     query = f"""
         SELECT
@@ -40,7 +40,7 @@ def fs_sql(args) -> tuple[str, dict]:
 
 
 def perf_randomize_using_ids(args, m_columns):
-    if args.table == "media" and args.random and not args.print and args.limit in args.defaults:
+    if args.random and not args.include and not args.print and args.limit in args.defaults:
         limit = 16 * (args.limit or consts.DEFAULT_PLAY_QUEUE)
         where_not_deleted = (
             "where COALESCE(time_deleted,0) = 0"
@@ -56,7 +56,7 @@ def perf_randomize_using_ids(args, m_columns):
 
 def media_sql(args) -> tuple[str, dict]:
     m_columns = db_utils.columns(args, "media")
-    m_columns = sql_utils.search_filter(args, m_columns)
+    args.table, m_columns = sql_utils.search_filter(args, m_columns)
 
     perf_randomize_using_ids(args, m_columns)
 
@@ -99,7 +99,7 @@ def media_sql(args) -> tuple[str, dict]:
 
 def historical_media(args):
     m_columns = args.db["media"].columns_dict
-    m_columns = sql_utils.search_filter(args, m_columns)
+    args.table, m_columns = sql_utils.search_filter(args, m_columns)
 
     query = f"""WITH m as (
             SELECT
@@ -131,7 +131,7 @@ def historical_media(args):
 
 def construct_links_query(args) -> tuple[str, dict]:
     m_columns = db_utils.columns(args, "media")
-    m_columns = sql_utils.search_filter(args, m_columns)
+    args.table, m_columns = sql_utils.search_filter(args, m_columns)
 
     args.select = ["path"]
     if args.cols:
@@ -146,7 +146,7 @@ def construct_links_query(args) -> tuple[str, dict]:
                 , COALESCE(MAX(h.time_played), 0) time_last_played
                 , SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
                 , time_deleted
-            FROM media m
+            FROM {args.table} m
             LEFT JOIN history h on h.media_id = m.id
             WHERE 1=1
                 {" ".join(args.filter_sql)}
@@ -172,7 +172,7 @@ def construct_links_query(args) -> tuple[str, dict]:
 
 def construct_tabs_query(args) -> tuple[str, dict]:
     m_columns = db_utils.columns(args, "media")
-    m_columns = sql_utils.search_filter(args, m_columns)
+    args.table, m_columns = sql_utils.search_filter(args, m_columns)
 
     query = f"""WITH m as (
             SELECT
@@ -183,7 +183,7 @@ def construct_tabs_query(args) -> tuple[str, dict]:
                 , time_deleted
                 , hostname
                 , category
-            FROM media m
+            FROM {args.table} m
             LEFT JOIN history h on h.media_id = m.id
             WHERE 1=1
                 {" ".join(args.filter_sql)}
@@ -230,7 +230,7 @@ def construct_captions_search_query(args) -> tuple[str, dict]:
     m_columns = db_utils.columns(args, "media")
     c_columns = db_utils.columns(args, "captions")
 
-    m_columns = sql_utils.search_filter(args, m_columns)
+    m_table, m_columns = sql_utils.search_filter(args, m_columns)
 
     table = "captions"
     cols = args.cols or ["path", "text", "time", "title"]
@@ -263,7 +263,7 @@ def construct_captions_search_query(args) -> tuple[str, dict]:
     SELECT
         {select_sql}
     FROM c
-    JOIN media m on m.id = c.media_id
+    JOIN {m_table} m on m.id = c.media_id
     WHERE 1=1
         {" ".join(args.aggregate_filter_sql)}
     ORDER BY 1=1
@@ -277,10 +277,10 @@ def construct_captions_search_query(args) -> tuple[str, dict]:
 def construct_playlists_query(args) -> tuple[str, dict]:
     pl_columns = db_utils.columns(args, "playlists")
 
-    args.table = "playlists"
+    pl_table = "playlists"
     if args.db["playlists"].detect_fts():
         if args.include:
-            args.table, search_bindings = sql_utils.fts_search_sql(
+            pl_table, search_bindings = sql_utils.fts_search_sql(
                 "playlists",
                 fts_table=args.db["playlists"].detect_fts(),
                 include=args.include,
@@ -300,7 +300,7 @@ def construct_playlists_query(args) -> tuple[str, dict]:
         )
 
     query = f"""SELECT *
-    FROM {args.table} m
+    FROM {pl_table} m
     WHERE 1=1
         {" ".join(args.filter_sql)}
         {'AND extractor_key != "Local"' if args.online_media_only else ''}
@@ -319,7 +319,7 @@ def construct_download_query(args) -> tuple[str, dict]:
     m_columns = db_utils.columns(args, "media")
     pl_columns = db_utils.columns(args, "playlists")
 
-    m_columns = sql_utils.search_filter(args, m_columns)
+    args.table, m_columns = sql_utils.search_filter(args, m_columns)
 
     if args.action == SC.download and "time_modified" in m_columns:
         args.filter_sql.append(
@@ -353,7 +353,7 @@ def construct_download_query(args) -> tuple[str, dict]:
                 {', m.error' if 'error' in m_columns and args.verbose >= consts.LOG_DEBUG else ''}
                 {', p.extractor_config' if 'extractor_config' in pl_columns else ''}
                 , p.extractor_key
-            FROM media m
+            FROM {args.table} m
             LEFT JOIN playlists p on p.id = m.playlists_id
             WHERE 1=1
                 {'and COALESCE(m.time_downloaded,0) = 0' if 'time_downloaded' in m_columns else ''}
@@ -382,7 +382,7 @@ def construct_download_query(args) -> tuple[str, dict]:
                 {', m.time_deleted' if 'time_deleted' in m_columns else ''}
                 {', m.error' if 'error' in m_columns and args.verbose >= consts.LOG_DEBUG else ''}
                 , 'Playlist-less media' as extractor_key
-            FROM media m
+            FROM {args.table} m
             WHERE 1=1
                 {'and COALESCE(m.time_downloaded,0) = 0' if 'time_downloaded' in m_columns else ''}
                 {'and COALESCE(m.time_deleted,0) = 0' if 'time_deleted' in m_columns else ''}

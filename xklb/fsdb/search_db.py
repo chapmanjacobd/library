@@ -10,7 +10,7 @@ def parse_args() -> argparse.Namespace:
     arggroups.debug(parser)
 
     arggroups.database(parser)
-    parser.add_argument("table")
+    parser.add_argument("search_table")
     parser.add_argument("search", nargs="+")
     args = parser.parse_intermixed_args()
 
@@ -21,8 +21,8 @@ def parse_args() -> argparse.Namespace:
 
 
 def get_table_name(args):
-    if args.table in args.db.table_names():
-        return args.table
+    if args.search_table in args.db.table_names():
+        return args.search_table
 
     valid_tables = []
     for s in args.db.table_names():
@@ -32,31 +32,31 @@ def get_table_name(args):
 
     matching_tables = []
     for s in valid_tables:
-        if s.startswith(args.table):
+        if s.startswith(args.search_table):
             matching_tables.append(s)
 
     if len(matching_tables) == 1:
         return matching_tables[0]
 
-    msg = f"Table {args.table} does not exist in {args.database}"
+    msg = f"Table {args.search_table} does not exist in {args.database}"
     raise ValueError(msg)
 
 
 def search_db() -> None:
     args = parse_args()
-    args.table = get_table_name(args)
+    args.search_table = get_table_name(args)
 
     args.filter_sql = []
     args.filter_bindings = {}
 
-    columns = args.db[args.table].columns_dict
+    columns = args.db[args.search_table].columns_dict
     sql_utils.construct_search_bindings(args, columns)
 
     if args.delete_rows:  # TODO: replace with media_printer?
         deleted_count = 0
         with args.db.conn:
             cursor = args.db.conn.execute(
-                f"DELETE FROM {args.table} WHERE 1=1 " + " ".join(args.filter_sql),
+                f"DELETE FROM {args.search_table} WHERE 1=1 " + " ".join(args.filter_sql),
                 args.filter_bindings,
             )
             deleted_count += cursor.rowcount
@@ -65,7 +65,7 @@ def search_db() -> None:
         modified_row_count = 0
         with args.db.conn:
             cursor = args.db.conn.execute(
-                f"UPDATE {args.table} SET time_deleted={consts.APPLICATION_START} WHERE 1=1 "
+                f"UPDATE {args.search_table} SET time_deleted={consts.APPLICATION_START} WHERE 1=1 "
                 + " ".join(args.filter_sql),
                 args.filter_bindings,
             )
@@ -73,7 +73,7 @@ def search_db() -> None:
         print(f"Marked {modified_row_count} rows as deleted")
     else:
         for row in args.db.execute_returning_dicts(
-            f"SELECT * FROM {args.table} WHERE 1=1 " + " ".join(args.filter_sql),
+            f"SELECT * FROM {args.search_table} WHERE 1=1 " + " ".join(args.filter_sql),
             args.filter_bindings,
         ):
             print(json.dumps(row))

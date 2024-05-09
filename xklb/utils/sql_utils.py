@@ -343,10 +343,10 @@ def construct_search_bindings(args, columns) -> None:
 
 
 def search_filter(args, m_columns):
-    args.table = "media"
+    table = "media"
     if args.db["media"].detect_fts() and args.fts:
         if args.include:
-            args.table, search_bindings = fts_search_sql(
+            table, search_bindings = fts_search_sql(
                 "media",
                 fts_table=args.db["media"].detect_fts(),
                 include=args.include,
@@ -366,4 +366,4 @@ def search_filter(args, m_columns):
             [f"m.{k}" for k in m_columns if k in db_utils.config["media"]["search_columns"] if k in m_columns],
         )
 
-    return m_columns
+    return table, m_columns

@@ -146,7 +146,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def get_rows(args, m_columns) -> list[dict]:
-    m_columns = sql_utils.search_filter(args, m_columns)
+    args.table, m_columns = sql_utils.search_filter(args, m_columns)
 
     query = f"""
     SELECT
@@ -175,7 +175,7 @@ def get_rows(args, m_columns) -> list[dict]:
 
 def get_music_duplicates(args) -> list[dict]:
     m_columns = db_utils.columns(args, "media")
-    m_columns = sql_utils.search_filter(args, m_columns)
+    args.table, m_columns = sql_utils.search_filter(args, m_columns)
 
     query = f"""
     SELECT
@@ -223,7 +223,7 @@ def get_music_duplicates(args) -> list[dict]:
 
 def get_id_duplicates(args) -> list[dict]:
     m_columns = db_utils.columns(args, "media")
-    m_columns = sql_utils.search_filter(args, m_columns)
+    args.table, m_columns = sql_utils.search_filter(args, m_columns)
 
     query = f"""
     SELECT
@@ -267,7 +267,7 @@ def get_id_duplicates(args) -> list[dict]:
 
 def get_title_duplicates(args) -> list[dict]:
     m_columns = db_utils.columns(args, "media")
-    m_columns = sql_utils.search_filter(args, m_columns)
+    args.table, m_columns = sql_utils.search_filter(args, m_columns)
 
     query = f"""
     SELECT
@@ -311,7 +311,7 @@ def get_title_duplicates(args) -> list[dict]:
 
 def get_duration_duplicates(args) -> list[dict]:
     m_columns = db_utils.columns(args, "media")
-    m_columns = sql_utils.search_filter(args, m_columns)
+    args.table, m_columns = sql_utils.search_filter(args, m_columns)
 
     query = f"""
     SELECT
@@ -355,7 +355,7 @@ def get_duration_duplicates(args) -> list[dict]:
 
 def get_fs_duplicates(args) -> list[dict]:
     m_columns = db_utils.columns(args, "media")
-    m_columns = sql_utils.search_filter(args, m_columns)
+    args.table, m_columns = sql_utils.search_filter(args, m_columns)
 
     query = f"""
     SELECT

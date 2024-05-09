@@ -25,7 +25,7 @@ def parse_args() -> argparse.Namespace:
     arggroups.debug(parser)
 
     arggroups.database(parser)
-    parser.add_argument("table")
+    parser.add_argument("target_table")
     args = parser.parse_intermixed_args()
 
     arggroups.args_post(args, parser, create_db=True)
@@ -50,9 +50,9 @@ def dedupe_db() -> None:
     args = parse_args()
 
     upsert_columns = args.only_columns
-    target_columns = args.db[args.table].columns_dict
+    target_columns = args.db[args.target_table].columns_dict
     if not args.primary_keys:
-        args.primary_keys = list(o.name for o in args.db[args.table].columns if o.is_pk)
+        args.primary_keys = list(o.name for o in args.db[args.target_table].columns if o.is_pk)
     if not upsert_columns:
         upsert_columns = [s for s in target_columns if s not in args.primary_keys + args.business_keys]
 
@@ -75,11 +75,11 @@ def dedupe_db() -> None:
                 args.db.query(
                     f"""
                     SELECT {','.join([*args.business_keys, col])}
-                    FROM {args.table}
+                    FROM {args.target_table}
                     WHERE {f'NULLIF({col}, 0)' if args.skip_0 else col} IS NOT NULL
                     AND ({','.join(args.business_keys)}) IN (
                         SELECT {','.join(args.business_keys)}
-                        FROM {args.table}
+                        FROM {args.target_table}
                         WHERE {col} IS NULL
                     )
                     ORDER BY {','.join(args.primary_keys)}
@@ -94,11 +94,11 @@ def dedupe_db() -> None:
                     return " AND ".join([f"{key} = {args.db.quote(row[key])}" for key in args.business_keys])
 
                 def gen_update_sql(row):
-                    return f"UPDATE {args.table} SET {col} = {args.db.quote(row[col])} WHERE {gen_where_sql(row)};"
+                    return f"UPDATE {args.target_table} SET {col} = {args.db.quote(row[col])} WHERE {gen_where_sql(row)};"
 
                 args.db.conn.executescript("\n".join([gen_update_sql(row) for row in data]))
 
-    dedupe_rows(args, args.table, primary_keys=args.primary_keys, business_keys=args.business_keys)
+    dedupe_rows(args, args.target_table, primary_keys=args.primary_keys, business_keys=args.business_keys)
 
 
 if __name__ == "__main__":
