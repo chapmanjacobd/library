@@ -424,7 +424,9 @@ def group_folders(parent_parser):
         action="append",
         help="Number of files per folder",
     )
-    parser.add_argument("--folders-counts", action="append", help="Only include folders with specific number of subfolders")
+    parser.add_argument(
+        "--folders-counts", action="append", help="Only include folders with specific number of subfolders"
+    )
 
 
 def group_folders_post(args) -> None:

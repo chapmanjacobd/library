@@ -24,12 +24,13 @@ def parse_args() -> argparse.Namespace:
     arggroups.args_post(args, parser)
 
     if not any([args.folders_counts, args.folder_counts, args.folder_sizes]):
-        args.folder_counts = ['+3', '-3000']
-        args.folder_sizes = ['+30MiB']
+        args.folder_counts = ["+3", "-3000"]
+        args.folder_sizes = ["+30MiB"]
 
     arggroups.group_folders_post(args)
 
     return args
+
 
 def group_files_by_parents(args, media) -> list[dict]:
     p_media = {}
@@ -52,9 +53,7 @@ def group_files_by_parents(args, media) -> list[dict]:
             "size": sum(m.get("size") or 0 for m in media if not bool(m.get("time_deleted"))),
             "median_size": nums.safe_median(m.get("size") for m in media if not bool(m.get("time_deleted"))),
             "duration": sum(m.get("duration") or 0 for m in media if not bool(m.get("time_deleted"))),
-            "median_duration": nums.safe_median(
-                m.get("duration") for m in media if not bool(m.get("time_deleted"))
-            ),
+            "median_duration": nums.safe_median(m.get("duration") for m in media if not bool(m.get("time_deleted"))),
             "total": len(media),
             "exists": sum(not bool(m.get("time_deleted")) for m in media),
             "deleted": sum(bool(m.get("time_deleted")) for m in media),
@@ -81,9 +80,7 @@ def group_files_by_parent(args, media) -> list[dict]:
             "size": sum(m.get("size") or 0 for m in media if not bool(m.get("time_deleted"))),
             "median_size": nums.safe_median(m.get("size") for m in media if not bool(m.get("time_deleted"))),
             "duration": sum(m.get("duration") or 0 for m in media if not bool(m.get("time_deleted"))),
-            "median_duration": nums.safe_median(
-                m.get("duration") for m in media if not bool(m.get("time_deleted"))
-            ),
+            "median_duration": nums.safe_median(m.get("duration") for m in media if not bool(m.get("time_deleted"))),
             "total": len(media),
             "exists": sum(not bool(m.get("time_deleted")) for m in media),
             "deleted": sum(bool(m.get("time_deleted")) for m in media),

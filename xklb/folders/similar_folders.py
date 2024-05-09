@@ -2,12 +2,11 @@ import argparse
 from pathlib import Path
 
 import humanize
-from tabulate import tabulate
 
 from xklb import usage
 from xklb.folders import big_dirs
 from xklb.text import cluster_sort
-from xklb.utils import arg_utils, arggroups, argparse_utils, consts, file_utils, nums, path_utils, printing, strings
+from xklb.utils import arg_utils, arggroups, argparse_utils, file_utils, nums, path_utils, printing, strings
 from xklb.utils.log_utils import log
 
 
@@ -51,7 +50,7 @@ def parse_args():
         raise NotImplementedError
 
     if args.filter_counts and not any([args.folders_counts, args.folder_counts, args.folder_sizes]):
-        args.folder_counts = ['+2']
+        args.folder_counts = ["+2"]
 
     arggroups.group_folders_post(args)
 

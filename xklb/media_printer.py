@@ -4,8 +4,6 @@ from io import StringIO
 from numbers import Number
 from pathlib import Path
 
-from tabulate import tabulate
-
 from xklb.mediadb import db_history, db_media
 from xklb.playback import post_actions
 from xklb.utils import consts, db_utils, iterables, printing, processes, sql_utils, strings

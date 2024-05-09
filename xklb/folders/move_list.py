@@ -3,7 +3,6 @@ from copy import deepcopy
 from pathlib import Path
 
 import humanize
-from tabulate import tabulate
 
 from xklb import usage
 from xklb.utils import arggroups, argparse_utils, consts, devices, iterables, printing, sqlgroups

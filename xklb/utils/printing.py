@@ -23,6 +23,7 @@ def table(tbl, *args, **kwargs) -> None:
         sys.stdout = None
         sys.exit(141)
 
+
 def pipe_print(*args) -> None:
     try:
         print(*args, flush=True)
