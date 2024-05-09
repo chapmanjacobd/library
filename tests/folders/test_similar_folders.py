@@ -2,7 +2,16 @@ from xklb.files import similar_files
 from xklb.folders import similar_folders
 from xklb.utils.objects import NoneSpace
 
-args = NoneSpace(sizes_delta=5, counts_delta=5, durations_delta=5, total_sizes=True, total_durations=True)
+args = NoneSpace(
+    sizes_delta=5,
+    counts_delta=5,
+    durations_delta=5,
+    total_sizes=True,
+    total_durations=True,
+    filter_counts=True,
+    filter_durations=True,
+    filter_sizes=True,
+)
 
 
 def test_is_same_group():
