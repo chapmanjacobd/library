@@ -94,7 +94,9 @@ def dedupe_db() -> None:
                     return " AND ".join([f"{key} = {args.db.quote(row[key])}" for key in args.business_keys])
 
                 def gen_update_sql(row):
-                    return f"UPDATE {args.target_table} SET {col} = {args.db.quote(row[col])} WHERE {gen_where_sql(row)};"
+                    return (
+                        f"UPDATE {args.target_table} SET {col} = {args.db.quote(row[col])} WHERE {gen_where_sql(row)};"
+                    )
 
                 args.db.conn.executescript("\n".join([gen_update_sql(row) for row in data]))
 
