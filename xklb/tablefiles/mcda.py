@@ -142,7 +142,7 @@ def sort(args, df, values):
 
 def group_sort_by(args, folders):
     if args.sort_groups_by is None:
-        sort_func = lambda x: (0, x["size"] / x["exists"]) if x["exists"] else (1, x["size"] / x["total"])
+        sort_func = lambda x: (0, -x["size"] / x["exists"]) if x["exists"] else (1, -x["size"] / x["total"])
     elif args.sort_groups_by.startswith("mcda "):
         import pandas as pd
 

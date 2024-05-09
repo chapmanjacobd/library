@@ -46,18 +46,13 @@ def parse_args():
 
     arggroups.group_folders_post(args)
 
-    if not args.filter_counts:
-        args.counts_delta = 200.0
-    if not args.filter_sizes:
-        args.sizes_delta = 200.0
-    if not args.filter_durations:
-        args.duration_delta = 200.0
-
     if not args.filter_names and not args.filter_counts and not args.filter_sizes and not args.filter_durations:
         print("Nothing to do")
         raise NotImplementedError
 
-    arggroups.sql_fs_post(args)
+    if args.filter_counts and not any([args.folders_counts, args.folder_counts, args.folder_sizes]):
+        args.folder_counts = ['+2']
+
     arggroups.group_folders_post(args)
 
     return args
@@ -95,18 +90,29 @@ def cluster_folders(args, media):
 
 
 def is_same_group(args, m0, m):
-    count_diff = nums.percentage_difference(m0["exists"], m["exists"])
-    if args.total_sizes:
-        size_diff = nums.percentage_difference(m0["size"], m["size"])
-    else:
-        size_diff = nums.percentage_difference(m0["median_size"], m["median_size"])
+    bools = []
 
-    if args.total_durations:
-        duration_diff = nums.percentage_difference(m0["duration"], m["duration"])
-    else:
-        duration_diff = nums.percentage_difference(m0["median_duration"], m["median_duration"])
+    if args.filter_counts:
+        count_diff = nums.percentage_difference(m0["exists"], m["exists"])
+        bools.append(count_diff < args.counts_delta)
 
-    return size_diff < args.sizes_delta and count_diff < args.counts_delta and duration_diff < args.durations_delta
+    if args.filter_sizes:
+        if args.total_sizes:
+            size_diff = nums.percentage_difference(m0["size"], m["size"])
+        else:
+            size_diff = nums.percentage_difference(m0["median_size"], m["median_size"])
+
+        bools.append(size_diff < args.sizes_delta)
+
+    if args.filter_durations and m.get("duration"):
+        if args.total_durations:
+            duration_diff = nums.percentage_difference(m0["duration"], m["duration"])
+        else:
+            duration_diff = nums.percentage_difference(m0["median_duration"], m["median_duration"])
+
+        bools.append(duration_diff < args.durations_delta)
+
+    return all(bools)
 
 
 def cluster_by_numbers(args, media):
@@ -159,8 +165,7 @@ def similar_folders():
     media = arg_utils.gen_d(args)
     media = [d if "size" in d else file_utils.get_filesize(d) for d in media]
     media = big_dirs.group_files_by_parent(args, media)
-    if args.folder_sizes:
-        media = [d for d in media if args.folder_sizes(d["size"])]
+    media = big_dirs.process_big_dirs(args, media)
 
     if args.filter_sizes or args.filter_counts or args.filter_durations:
         clusters = cluster_by_numbers(args, media)
@@ -169,7 +174,6 @@ def similar_folders():
         single_folder_groups = [d for d in groups if len(d["grouped_paths"]) == 1]
         groups = [d for d in groups if len(d["grouped_paths"]) > 1]
         log.info("Filtered out %s single-folder groups", len(single_folder_groups))
-        log.debug(single_folder_groups)
 
         if args.filter_names:
             media = [d for group in groups for d in group["grouped_paths"]]
@@ -200,24 +204,19 @@ def similar_folders():
             for d in media:
                 printing.pipe_print(d["path"])
         else:
-            print(
-                tabulate(
-                    [
-                        {
-                            f'group {group["common_path"]}': d["path"],
-                            "total_size": humanize.naturalsize(d["size"], binary=True),
-                            "median_size": humanize.naturalsize(d["median_size"], binary=True),
-                            "total_duration": printing.human_duration(d["duration"]),
-                            "median_duration": printing.human_duration(d["median_duration"]),
-                            "median_size": humanize.naturalsize(d["median_size"], binary=True),
-                            "files": d["exists"],
-                        }
-                        for d in media
-                    ],
-                    tablefmt=consts.TABULATE_STYLE,
-                    headers="keys",
-                    showindex=False,
-                )
+            printing.table(
+                [
+                    {
+                        f'group {group["common_path"]}': d["path"],
+                        "total_size": humanize.naturalsize(d["size"], binary=True),
+                        "median_size": humanize.naturalsize(d["median_size"], binary=True),
+                        "total_duration": printing.human_duration(d.get("duration")),
+                        "median_duration": printing.human_duration(d.get("median_duration")),
+                        "median_size": humanize.naturalsize(d.get("median_size"), binary=True),
+                        "files": d["exists"],
+                    }
+                    for d in media
+                ]
             )
 
         if not args.only_originals and not args.only_duplicates:

@@ -1,5 +1,5 @@
 import argparse, os
-from collections import defaultdict
+from collections import Counter, defaultdict
 from pathlib import Path
 
 from xklb import media_printer, usage
@@ -15,7 +15,7 @@ def parse_args() -> argparse.Namespace:
     )
     arggroups.cluster(parser)
     arggroups.group_folders(parser)
-    parser.set_defaults(limit="4000", lower=4, depth=0)
+    parser.set_defaults(limit="4000", depth=0)
     arggroups.debug(parser)
 
     arggroups.paths_or_stdin(parser)
@@ -23,21 +23,13 @@ def parse_args() -> argparse.Namespace:
     args = parser.parse_intermixed_args()
     arggroups.args_post(args, parser)
 
+    if not any([args.folders_counts, args.folder_counts, args.folder_sizes]):
+        args.folder_counts = ['+3', '-3000']
+        args.folder_sizes = ['+30MiB']
+
     arggroups.group_folders_post(args)
 
     return args
-
-
-def filter_deleted(args, d):
-    for path, pdict in list(d.items()):
-        if pdict["exists"] == 0:
-            d.pop(path)
-
-    if args.folder_counts and not args.depth:
-        for path, pdict in list(d.items()):
-            if not args.folder_counts(pdict["exists"]):
-                d.pop(path)
-
 
 def group_files_by_parents(args, media) -> list[dict]:
     p_media = {}
@@ -58,10 +50,10 @@ def group_files_by_parents(args, media) -> list[dict]:
     for parent, media in list(p_media.items()):
         d[parent] = {
             "size": sum(m.get("size") or 0 for m in media if not bool(m.get("time_deleted"))),
-            "median_size": nums.safe_median(m.get("size") or 0 for m in media if not bool(m.get("time_deleted"))),
+            "median_size": nums.safe_median(m.get("size") for m in media if not bool(m.get("time_deleted"))),
             "duration": sum(m.get("duration") or 0 for m in media if not bool(m.get("time_deleted"))),
             "median_duration": nums.safe_median(
-                m.get("duration") or 0 for m in media if not bool(m.get("time_deleted"))
+                m.get("duration") for m in media if not bool(m.get("time_deleted"))
             ),
             "total": len(media),
             "exists": sum(not bool(m.get("time_deleted")) for m in media),
@@ -75,8 +67,6 @@ def group_files_by_parents(args, media) -> list[dict]:
         if len(parent.split(os.sep)) < min_parts:
             d.pop(parent)
 
-    filter_deleted(args, d)
-
     return [{**v, "path": k} for k, v in d.items()]
 
 
@@ -89,10 +79,10 @@ def group_files_by_parent(args, media) -> list[dict]:
     for parent, media in list(p_media.items()):
         d[parent] = {
             "size": sum(m.get("size") or 0 for m in media if not bool(m.get("time_deleted"))),
-            "median_size": nums.safe_median(m.get("size") or 0 for m in media if not bool(m.get("time_deleted"))),
+            "median_size": nums.safe_median(m.get("size") for m in media if not bool(m.get("time_deleted"))),
             "duration": sum(m.get("duration") or 0 for m in media if not bool(m.get("time_deleted"))),
             "median_duration": nums.safe_median(
-                m.get("duration") or 0 for m in media if not bool(m.get("time_deleted"))
+                m.get("duration") for m in media if not bool(m.get("time_deleted"))
             ),
             "total": len(media),
             "exists": sum(not bool(m.get("time_deleted")) for m in media),
@@ -102,12 +92,14 @@ def group_files_by_parent(args, media) -> list[dict]:
             "played": sum(bool(m.get("time_last_played")) for m in media),
         }
 
-    filter_deleted(args, d)
+    parent_counts = Counter(str(Path(p).parent) for p in d.keys())
+    for parent, data in d.items():
+        data["folders"] = parent_counts[parent]
 
     return [{**v, "path": k} for k, v in d.items()]
 
 
-def folder_depth(args, folders) -> list[dict]:
+def reaggregate_at_depth(args, folders) -> list[dict]:
     d = {}
     for f in folders:
         p = f["path"].split(os.sep)
@@ -125,13 +117,9 @@ def folder_depth(args, folders) -> list[dict]:
             d[parent]["exists"] += f["exists"]
             d[parent]["deleted"] += f["deleted"]
             d[parent]["played"] += f["played"]
+            d[parent]["folders"] += f["folders"]
         else:
             d[parent] = f
-
-    if args.folder_counts:
-        for path, pdict in list(d.items()):
-            if not args.folder_counts(pdict["exists"]):
-                d.pop(path)
 
     return [{**v, "path": k} for k, v in d.items()]
 
@@ -140,9 +128,14 @@ def process_big_dirs(args, folders) -> list[dict]:
     folders = [d for d in folders if d["total"] != d["deleted"]]  # remove folders where all deleted
 
     if args.depth:
-        folders = folder_depth(args, folders)
+        folders = reaggregate_at_depth(args, folders)
+
     if args.folder_sizes:
         folders = [d for d in folders if args.folder_sizes(d["size"])]
+    if args.folder_counts:
+        folders = [d for d in folders if args.folder_counts(d["exists"])]
+    if args.folders_counts:
+        folders = [d for d in folders if args.folders_counts(d["folders"])]
 
     return folders
 
@@ -177,7 +170,7 @@ def big_dirs() -> None:
                     if not bool(media_keyed[s].get("time_deleted"))
                 ),
                 "median_size": nums.safe_median(
-                    media_keyed[s].get("size") or 0
+                    media_keyed[s].get("size")
                     for s in group["grouped_paths"]
                     if not bool(media_keyed[s].get("time_deleted"))
                 ),
@@ -187,7 +180,7 @@ def big_dirs() -> None:
                     if not bool(media_keyed[s].get("time_deleted"))
                 ),
                 "median_duration": nums.safe_median(
-                    media_keyed[s].get("duration") or 0
+                    media_keyed[s].get("duration")
                     for s in group["grouped_paths"]
                     if not bool(media_keyed[s].get("time_deleted"))
                 ),

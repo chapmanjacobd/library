@@ -122,7 +122,7 @@ def print_path_stats(tbl) -> None:
     for t in consts.EPOCH_COLUMNS:
         printing.col_naturaldate(tbl, t)
 
-    print(tabulate(tbl, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False))
+    printing.table(tbl)
 
 
 def rebin_files(args, disk_stats, all_files) -> tuple[list, list]:
@@ -251,7 +251,7 @@ def scatter() -> None:
                 break
         tbl = printing.col_resize_percent(tbl, "existing_path", 20)
         tbl = printing.col_resize_percent(tbl, "new_path", 20)
-        print(tabulate(tbl, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False))
+        printing.table(tbl)
         print(len(rebinned), "files would be moved (only 10 shown)")
         print(len(untouched), "files would not be moved")
         file_utils.move_files_bash(rebinned)

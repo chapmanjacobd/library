@@ -31,8 +31,12 @@ def mv_to_keep_folder(args, media_file: str):
     except shutil.Error as e:
         if "already exists" not in str(e):
             raise
+
         p = Path(media_file)
         new_path = Path(keep_path) / p.name
+
+        if media_file == keep_path:
+            raise shutil.SameFileError
 
         src_size = p.stat().st_size
         dst_size = new_path.stat().st_size
