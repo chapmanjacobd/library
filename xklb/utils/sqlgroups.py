@@ -147,10 +147,10 @@ def construct_links_query(args) -> tuple[str, dict]:
                 , SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
                 , time_deleted
             FROM media m
-            LEFT JOIN history h on h.media_id = media.id
+            LEFT JOIN history h on h.media_id = m.id
             WHERE 1=1
                 {" ".join(args.filter_sql)}
-            GROUP BY media.id
+            GROUP BY m.id
         )
         SELECT
         {', '.join(args.select) if args.select else ''}
