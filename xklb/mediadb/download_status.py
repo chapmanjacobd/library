@@ -20,6 +20,8 @@ def parse_args() -> argparse.Namespace:
 
     arggroups.debug(parser)
     arggroups.database(parser)
+
+    parser.set_defaults(fts=False)
     args = parser.parse_args()
     arggroups.args_post(args, parser)
 

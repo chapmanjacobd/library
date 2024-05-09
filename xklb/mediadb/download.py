@@ -78,7 +78,7 @@ def parse_args():
 
     arggroups.database(parser)
     arggroups.paths_or_stdin(parser)
-    parser.set_defaults(paths=None)
+    parser.set_defaults(paths=None, fts=False)
 
     args, unk = parser.parse_known_intermixed_args()
     arggroups.args_post(args, parser)
