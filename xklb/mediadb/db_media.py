@@ -448,7 +448,7 @@ def get_playlist_media(args, playlist_paths) -> list[dict]:
         ORDER BY play_count
             , path
             {'' if 'sort' in args.defaults else ', ' + args.sort}
-        {sql_utils.limit_sql(args)}
+        {sql_utils.limit_sql(args.limit, args.offset)}
     """
 
     bindings = {**playlists_params}
@@ -543,7 +543,7 @@ def get_related_media(args, m: dict) -> list[dict]:
             , m.path like "http%"
             , {'rank' if 'sort' in args.defaults else f'ntile(1000) over (order by rank)' + (f', {args.sort}' if args.sort else '')}
             , path
-        {sql_utils.limit_sql(args, limit_adj=-1)}
+        {sql_utils.limit_sql(args.limit, args.offset, limit_adj=-1)}
     """
 
     bindings = {"path": m["path"]}

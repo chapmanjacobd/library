@@ -28,7 +28,7 @@ def get_caller_name():
             return "No parse_args()"
         elif frame.f_code.co_name == "parse_args":
             frame = frame.f_back
-            return frame.f_code.co_name
+            return frame.f_code.co_name  # type: ignore
 
 
 def args_post(args, parser, create_db=False):

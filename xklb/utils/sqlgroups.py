@@ -20,7 +20,7 @@ def media_select_sql(args, m_columns):
     return select_sql
 
 
-def fs_sql(args) -> tuple[str, dict]:
+def fs_sql(args, limit) -> tuple[str, dict]:
     m_columns = db_utils.columns(args, "media")
     args.table, m_columns = sql_utils.search_filter(args, m_columns)
 
@@ -33,7 +33,7 @@ def fs_sql(args) -> tuple[str, dict]:
             {" ".join(args.aggregate_filter_sql)}
         ORDER BY 1=1
             {', ' + args.sort if args.sort else ''}
-        {sql_utils.limit_sql(args)}
+        {sql_utils.limit_sql(limit, args.offset)}
     """
 
     return query, args.filter_bindings
@@ -87,7 +87,7 @@ def media_sql(args) -> tuple[str, dict]:
             {" ".join(args.aggregate_filter_sql)}
         ORDER BY 1=1
             {', ' + args.sort if args.sort else ''}
-        {sql_utils.limit_sql(args)}
+        {sql_utils.limit_sql(args.limit, args.offset)}
     """
 
     args.filter_sql = [
@@ -164,7 +164,7 @@ def construct_links_query(args) -> tuple[str, dict]:
         {', ROW_NUMBER() OVER ( PARTITION BY hostname )' if 'hostname' in m_columns else ''}
         {', ROW_NUMBER() OVER ( PARTITION BY category )' if 'category' in m_columns else ''}
         , random()
-    {sql_utils.limit_sql(args)}
+    {sql_utils.limit_sql(args.limit, args.offset)}
     """
 
     return query, args.filter_bindings
@@ -220,7 +220,7 @@ def construct_tabs_query(args) -> tuple[str, dict]:
             , category
         ) -- prefer to spread hostname, category over time
         , random()
-    {sql_utils.limit_sql(args)}
+    {sql_utils.limit_sql(args.limit, args.offset)}
     """
 
     return query, args.filter_bindings
@@ -309,7 +309,7 @@ def construct_playlists_query(args) -> tuple[str, dict]:
         {', ' + args.playlists_sort if args.playlists_sort else ''}
         , path
         , random()
-    {sql_utils.limit_sql(args)}
+    {sql_utils.limit_sql(args.limit, args.offset)}
     """
 
     return query, args.filter_bindings
@@ -368,7 +368,7 @@ def construct_download_query(args) -> tuple[str, dict]:
                 {', p.extractor_key IS NOT NULL DESC' if 'sort' in args.defaults else ''}
                 {', m.error IS NULL DESC' if 'error' in m_columns else ''}
                 {', random()' if 'sort' in args.defaults else ', ' + args.sort}
-            {sql_utils.limit_sql(args)}
+            {sql_utils.limit_sql(args.limit, args.offset)}
         """
     else:
         query = f"""select
@@ -395,7 +395,7 @@ def construct_download_query(args) -> tuple[str, dict]:
                 , COALESCE(m.time_modified, 0) = 0 DESC
                 {', m.error IS NULL DESC' if 'error' in m_columns else ''}
                 {', random()' if 'sort' in args.defaults else ', ' + args.sort}
-        {sql_utils.limit_sql(args)}
+        {sql_utils.limit_sql(args.limit, args.offset)}
         """
 
     return query, args.filter_bindings

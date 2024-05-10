@@ -20,7 +20,7 @@ def parse_args() -> argparse.Namespace:
     arggroups.debug(parser)
 
     arggroups.database(parser)
-    parser.add_argument("search", nargs="*", default=os.sep)
+    parser.add_argument("search", nargs="*")
     args = parser.parse_intermixed_args()
     arggroups.args_post(args, parser)
 
@@ -91,7 +91,7 @@ def load_subset(args):
 
 
 def get_data(args) -> list[dict]:
-    media = list(args.db.query(*sqlgroups.fs_sql(args)))
+    media = list(args.db.query(*sqlgroups.fs_sql(args, limit=None)))
 
     if not media:
         processes.no_media_found()

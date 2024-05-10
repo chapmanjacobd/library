@@ -196,7 +196,7 @@ def file_or_folder_media(args, paths):
 
 def process_playqueue(args) -> None:
     if args.action == SC.filesystem:
-        query, bindings = sqlgroups.fs_sql(args)
+        query, bindings = sqlgroups.fs_sql(args, args.limit)
     else:
         db_history.create(args)
         query, bindings = sqlgroups.media_sql(args)
