@@ -1,4 +1,4 @@
-import argparse, math, random, sys, tempfile
+import argparse, math, os, random, sys, tempfile
 from collections import Counter
 from pathlib import Path
 
@@ -26,7 +26,7 @@ def parse_args() -> argparse.Namespace:
     arggroups.database(parser)
     parser.add_argument(
         "relative_paths",
-        nargs="+",
+        nargs="*",
         help="Paths to scatter; if using -m any path substring is valid (relative to the root of your mergerfs mount)",
     )
     args = parser.parse_intermixed_args()
@@ -63,6 +63,7 @@ def parse_args() -> argparse.Namespace:
 def get_table(args) -> list[dict]:
     m_columns = db_utils.columns(args, "media")
     or_paths = [f"path like :path_{i}" for i, _path in enumerate(args.relative_paths)]
+    or_paths_sql = f"and ({' or '.join(or_paths)})"
 
     media = list(
         args.db.query(
@@ -78,13 +79,17 @@ def get_table(args) -> list[dict]:
             and coalesce(time_deleted, 0)=0
             and path not like "http%"
             {'and coalesce(is_dir, 0)=0' if 'is_dir' in m_columns else ""}
-            and ({' or '.join(or_paths)})
+            {or_paths_sql if args.relative_paths else ''}
         order by {args.sort}
         {'limit :limit' if args.limit else ''}
         """,
             {
                 "limit": args.limit,
-                **{f"path_{i}": f"%{path}%" for i, path in enumerate(args.relative_paths) if args.relative_paths},
+                **{
+                    f"path_{i}": f"{path}%" if path.startswith(os.sep) else f"%{path}%"
+                    for i, path in enumerate(args.relative_paths)
+                    if args.relative_paths
+                },
             },
         ),
     )
@@ -96,6 +101,9 @@ def get_path_stats(args, data) -> list[dict]:
     read_only_mounts = [
         s for s in args.relative_paths if Path(s).is_absolute() and not any(m in s for m in args.targets)
     ]
+    if read_only_mounts:
+        log.info("Treating as depletion targets: %s", read_only_mounts)
+
     result = []
     for srcmount in args.targets + read_only_mounts:
         disk_files = [d for d in data if d["path"].startswith(srcmount)]
