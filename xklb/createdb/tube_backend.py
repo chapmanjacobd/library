@@ -214,8 +214,7 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> list[dict]
     ) as ydl:
         videos = set(
             args.db.execute(
-                f"""
-                SELECT
+                f"""SELECT
                     id
                     , path
                     , null as playlists_id
@@ -231,8 +230,7 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> list[dict]
         if "playlists" in tables:
             videos |= set(
                 args.db.execute(
-                    f"""
-                    SELECT
+                    f"""SELECT
                         id
                         , path
                         , playlists_id
