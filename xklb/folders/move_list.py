@@ -60,7 +60,7 @@ def group_by_folder(args, media) -> list[dict]:
 
 
 def get_table(args) -> list[dict]:
-    media = list(args.db.query(*sqlgroups.fs_sql(args)))
+    media = list(args.db.query(*sqlgroups.fs_sql(args, limit=None)))
 
     folders = group_by_folder(args, media)
     return sorted(folders, key=lambda x: x["size"] / x["count"])

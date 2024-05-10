@@ -281,9 +281,9 @@ def historical_usage(args, freq="monthly", time_column="time_played", hide_delet
     return list(args.db.query(query))
 
 
-def limit_sql(args, limit_adj=0):
-    sql = f"LIMIT {args.limit + limit_adj}" if args.limit else ""
-    offset_sql = f"OFFSET {args.offset}" if args.offset and args.limit else ""
+def limit_sql(limit, offset, limit_adj=0):
+    sql = f"LIMIT {limit + limit_adj}" if limit else ""
+    offset_sql = f"OFFSET {offset}" if offset and limit else ""
     sql = f"{sql} {offset_sql}"
     return sql
 
