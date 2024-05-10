@@ -66,6 +66,7 @@ def parse_args(action, usage):
     if action == SC.fs_add:
         parser.add_argument("paths", nargs="+")
     args = parser.parse_intermixed_args()
+    arggroups.args_post(args, parser, create_db=action == SC.fs_add)
 
     if not args.profiles:
         args.profiles = [DBType.video]
@@ -83,7 +84,6 @@ def parse_args(action, usage):
     arggroups.process_ffmpeg_post(args)
     arggroups.media_check_post(args)
 
-    arggroups.args_post(args, parser, create_db=action == SC.fs_add)
     return args
 
 

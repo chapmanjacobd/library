@@ -18,8 +18,8 @@ def parse_args() -> argparse.Namespace:
     arggroups.database(parser)
     parser.add_argument("username", help="Tildes.net user to extract comments for")
     args = parser.parse_intermixed_args()
-
     arggroups.args_post(args, parser, create_db=True)
+
     return args
 
 

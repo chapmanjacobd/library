@@ -43,6 +43,7 @@ def parse_args(action, **kwargs):
     if "add" in action:
         arggroups.paths_or_stdin(parser)
     args = parser.parse_intermixed_args()
+    arggroups.args_post(args, parser, create_db=True)
 
     if args.auto_pager:
         args.fixed_pages = 1
@@ -51,7 +52,6 @@ def parse_args(action, **kwargs):
     arggroups.filter_links_post(args)
     arggroups.selenium_post(args)
 
-    arggroups.args_post(args, parser, create_db=True)
     return args
 
 

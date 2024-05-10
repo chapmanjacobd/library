@@ -17,8 +17,8 @@ def parse_args(action, usage) -> argparse.Namespace:
 
     arggroups.database(parser)
     args = parser.parse_args()
-
     arggroups.args_post(args, parser, create_db=True)
+
     return args
 
 
