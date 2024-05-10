@@ -364,7 +364,7 @@ def construct_download_query(args) -> tuple[str, dict]:
                 {'AND (upvote_ratio IS NULL OR upvote_ratio > 0.73)' if 'upvote_ratio' in m_columns else ''}
                 {" ".join(args.filter_sql)}
             ORDER BY 1=1
-                , COALESCE(m.time_modified, 0) = 0 DESC
+                {', COALESCE(m.time_modified, 0) = 0 DESC' if 'time_modified' in m_columns else ''}
                 {', p.extractor_key IS NOT NULL DESC' if 'sort' in args.defaults else ''}
                 {', m.error IS NULL DESC' if 'error' in m_columns else ''}
                 {', random()' if 'sort' in args.defaults else ', ' + args.sort}
@@ -392,7 +392,7 @@ def construct_download_query(args) -> tuple[str, dict]:
                 {'AND (upvote_ratio IS NULL OR upvote_ratio > 0.73)' if 'upvote_ratio' in m_columns else ''}
                 {" ".join(args.filter_sql)}
             ORDER BY 1=1
-                , COALESCE(m.time_modified, 0) = 0 DESC
+                {', COALESCE(m.time_modified, 0) = 0 DESC' if 'time_modified' in m_columns else ''}
                 {', m.error IS NULL DESC' if 'error' in m_columns else ''}
                 {', random()' if 'sort' in args.defaults else ', ' + args.sort}
         {sql_utils.limit_sql(args.limit, args.offset)}
