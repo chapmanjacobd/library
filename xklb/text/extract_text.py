@@ -14,10 +14,8 @@ def parse_args():
     arggroups.selenium(parser)
 
     parser.add_argument("--local-html", action="store_true", help="Treat paths as Local HTML files")
-
     parser.add_argument("--skip-links", action="store_true")
     parser.add_argument("--download", "--save", "--write", action="store_true")
-    parser.add_argument("--local-file", "--local-html", action="store_true", help="Treat paths as Local HTML files")
 
     arggroups.debug(parser)
     arggroups.paths_or_stdin(parser)
