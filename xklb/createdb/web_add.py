@@ -33,7 +33,6 @@ def parse_args(action, **kwargs):
     arggroups.extractor(parser)
 
     parser.add_argument("--hash", action="store_true")
-    parser.add_argument("--local-html", "--local-file", action="store_true", help="Treat paths as Local HTML files")
     parser.add_argument(
         "--sizes",
         action="append",

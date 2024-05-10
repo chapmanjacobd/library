@@ -15,7 +15,6 @@ def parse_args():
 
     parser.add_argument("--print-link-text", "--print-title", action="store_true")
     parser.add_argument("--download", action="store_true", help="Download filtered links")
-    parser.add_argument("--local-file", "--local-html", action="store_true", help="Treat paths as Local HTML files")
 
     arggroups.debug(parser)
     arggroups.paths_or_stdin(parser)

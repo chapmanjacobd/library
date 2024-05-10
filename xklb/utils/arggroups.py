@@ -629,6 +629,7 @@ def filter_links(parent_parser):
         action="store_true",
         help="Skip URL-decode for --path-include/--path-exclude",
     )
+    parser.add_argument("--local-html", action="store_true", help="Treat paths as Local HTML files")
 
 
 def filter_links_post(args):
