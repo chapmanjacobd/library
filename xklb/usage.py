@@ -1694,7 +1694,7 @@ extract_text = r"""library extract-text PATH ... [--skip-links]
 
     Sorting suggestions
 
-        lb extract-text --skip-links --local-file (cb -t text/html | psub) | lb cs --groups | jq -r '.[] | .grouped_paths | "\n" + join("\n")'
+        lb extract-text --skip-links --local-html (cb -t text/html | psub) | lb cs --groups | jq -r '.[] | .grouped_paths | "\n" + join("\n")'
 """
 
 site_add = """library site-add DATABASE PATH ... [--auto-pager] [--poke] [--local-html] [--file FILE]
