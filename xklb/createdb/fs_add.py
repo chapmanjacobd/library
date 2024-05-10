@@ -23,6 +23,7 @@ from xklb.utils import (
     nums,
     objects,
     path_utils,
+    printing,
     processes,
     strings,
 )
@@ -536,7 +537,7 @@ def scan_path(args, path_str: str) -> int:
         with pool_fn(n_jobs) as parallel:
             for idx, chunk_paths in enumerate(files_chunked):
                 percent = ((batch_count * idx) + len(chunk_paths)) / len(new_files) * 100
-                print(f"[{path}] Extracting metadata {percent:3.1f}% (chunk {idx + 1} of {chunks_count})")
+                printing.print_overwrite(f"[{path}] Extracting metadata {percent:3.1f}% (chunk {idx + 1} of {chunks_count})")
 
                 mp_args = argparse.Namespace(
                     playlist_path=path, **{k: v for k, v in args.__dict__.items() if k not in {"db"}}
@@ -544,6 +545,7 @@ def scan_path(args, path_str: str) -> int:
                 metadata = parallel.map(partial(extract_metadata, mp_args), chunk_paths)
                 metadata = list(filter(None, metadata))
                 extract_chunk(args, metadata)
+            print()
 
     return len(new_files)
 
