@@ -6,7 +6,7 @@ from pathlib import Path
 
 from xklb.mediadb import db_history, db_media
 from xklb.playback import post_actions
-from xklb.utils import consts, db_utils, iterables, printing, processes, sql_utils, strings
+from xklb.utils import consts, db_utils, iterables, nums, printing, processes, sql_utils, strings
 from xklb.utils.consts import SC
 from xklb.utils.log_utils import log
 
@@ -116,7 +116,7 @@ def media_printer(args, data, units=None, media_len=None) -> None:
     except AttributeError:
         tables = []
 
-    duration = sum(m.get("duration") or 0 for m in media)
+    total_duration = sum(m.get("duration") or 0 for m in media)
     if "a" in print_args and ("Aggregate" not in media[0].get("path") or ""):
         if "count" in media[0]:
             D = {"path": "Aggregate", "count": sum(d.get("count") or 0 for d in media)}
@@ -129,27 +129,27 @@ def media_printer(args, data, units=None, media_len=None) -> None:
             D = {"path": "Aggregate", "count": len(media)}
 
         if "duration" in media[0] and action not in (SC.download_status):
-            D["duration"] = duration
-            D["avg_duration"] = duration / len(media)
+            D["duration"] = total_duration
+            D["avg_duration"] = nums.safe_mean(m.get("duration") for m in media)
 
         if hasattr(args, "action") and "history" in tables:
             if action in (SC.download, SC.download_status) and "time_downloaded" in m_columns:
                 D["download_duration"] = cadence_adjusted_items(args, D["count"], time_column="time_downloaded")
             else:
-                if duration > 0:
-                    D["cadence_adj_duration"] = cadence_adjusted_duration(args, duration)
+                if total_duration > 0:
+                    D["cadence_adj_duration"] = cadence_adjusted_duration(args, total_duration)
                 else:
                     D["cadence_adj_duration"] = cadence_adjusted_items(args, D["count"])
 
         if "size" in media[0]:
             D["size"] = sum((d.get("size") or 0) for d in media)
-            D["avg_size"] = sum((d.get("size") or 0) for d in media) / len(media)
+            D["avg_size"] = nums.safe_mean(d.get("size") for d in media)
 
         if cols:
             for c in cols:
                 if isinstance(media[0][c], Number):
                     D[f"sum_{c}"] = sum((d[c] or 0) for d in media)
-                    D[f"avg_{c}"] = sum((d[c] or 0) for d in media) / len(media)
+                    D[f"avg_{c}"] = nums.safe_mean(d[c] for d in media)
         media = [D]
 
     else:
@@ -260,10 +260,10 @@ def media_printer(args, data, units=None, media_len=None) -> None:
                 ),
             )
 
-        if duration > 0:
-            duration = printing.human_duration(duration)
+        if total_duration > 0:
+            total_duration = printing.human_duration(total_duration)
             if "a" not in print_args:
-                print("Total duration:", duration)
+                print("Total duration:", total_duration)
 
 
 def printer(args, query, bindings, units=None) -> None:
