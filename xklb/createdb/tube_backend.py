@@ -369,7 +369,6 @@ def download(args, m) -> None:
         "logger": DictLogger(),
         "skip_download": False,
         "postprocessors": [{"key": "FFmpegMetadata"}],
-        "restrictfilenames": True,
         "extract_flat": False,
         "lazy_playlist": True,
         "noplaylist": True,
