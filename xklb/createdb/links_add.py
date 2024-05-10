@@ -59,6 +59,7 @@ def add_playlist(args, path):
         "category": getattr(args, "category", None) or "Uncategorized",
         "time_created": consts.APPLICATION_START,
         "extractor_config": args.extractor_config,
+        "time_modified": 0,
         "time_deleted": 0,
     }
     return db_playlists.add(args, str(path), info)
@@ -69,6 +70,7 @@ def consolidate_media(args, path: str) -> dict:
         "path": path,
         "category": getattr(args, "category", None) or "Uncategorized",
         "time_created": consts.APPLICATION_START,
+        "time_modified": 0,
         "time_deleted": 0,
     }
 
