@@ -30,6 +30,7 @@ def parse_args(action, usage) -> argparse.Namespace:
     arggroups.args_post(args, parser, create_db=action == SC.tube_add)
 
     arggroups.extractor_post(args)
+
     return args
 
 

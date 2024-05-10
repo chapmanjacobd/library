@@ -31,8 +31,8 @@ def parse_args():
     arggroups.database(parser)
     parser.add_argument("search_text", nargs="+")
     args = parser.parse_intermixed_args()
-
     arggroups.args_post(args, parser, create_db=True)
+
     return args
 
 

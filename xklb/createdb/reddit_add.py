@@ -59,6 +59,7 @@ def parse_args(action, usage) -> argparse.Namespace:
     if action == "redditadd":
         parser.add_argument("paths", nargs="+")
     args = parser.parse_intermixed_args()
+    arggroups.args_post(args, parser, create_db=True)
 
     if action == "redditadd":
         args.paths = iterables.conform(args.paths)
@@ -71,7 +72,6 @@ def parse_args(action, usage) -> argparse.Namespace:
         print(PRAW_SETUP_INSTRUCTIONS)
         raise SystemExit(e) from e
 
-    arggroups.args_post(args, parser, create_db=True)
     return args
 
 

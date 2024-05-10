@@ -15,8 +15,8 @@ def parse_args() -> argparse.Namespace:
     arggroups.database(parser)
     parser.add_argument("paths", nargs="+", help="Substack path to extract article for")
     args = parser.parse_intermixed_args()
-
     arggroups.args_post(args, parser, create_db=True)
+
     return args
 
 
