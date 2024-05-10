@@ -32,7 +32,7 @@ yt_recoverable_errors = re.compile(
 .*user.*not allowed
 .*Private subreddit
 .*Upgrade now
-.*read operation timed out
+.*timed out
 .*Could not connect
 .*restricted
 .*Media check failed
@@ -174,7 +174,6 @@ yt_unrecoverable_errors = re.compile(
 .*This video is DRM protected
 .*This video is protected by a password
 .*This video requires payment to watch.
-.*Unable to download webpage
 .*dashboard-only post
 .*The policy key provided does not permit this account or video
 .*live stream recording
