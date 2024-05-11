@@ -498,9 +498,8 @@ def download(args, m) -> None:
             info = {**m, **info}
             temp_path = info.get("local_path", None)
             if args.profile == DBType.audio:
-                temp_path = ydl.prepare_filename({**info, "ext": args.extract_audio_ext})
-            else:
-                temp_path = ydl.prepare_filename(info)
+                info = {**info, "ext": args.extract_audio_ext}
+            temp_path = ydl.prepare_filename(info)
 
             local_path = ydl.prepare_filename(
                 info,
