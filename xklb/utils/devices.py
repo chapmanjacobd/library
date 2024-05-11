@@ -1,7 +1,5 @@
 import os, platform, random, shutil, sys
 
-from xklb.utils import arggroups, argparse_utils
-from xklb.utils.arg_utils import gen_paths
 from xklb.utils.log_utils import log
 
 
@@ -108,10 +106,3 @@ def get_mount_stats(src_mounts) -> list[dict[str, int | float]]:
         {"mount": mount, "used": used / total_used, "free": free / total_free, "total": total / grand_total}
         for mount, used, free, total in mount_space
     ]
-
-
-def stdarg():
-    parser = argparse_utils.ArgumentParser()
-    arggroups.paths_or_stdin(parser)
-    args = parser.parse_args()
-    return gen_paths(args)
