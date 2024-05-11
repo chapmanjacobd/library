@@ -1,4 +1,4 @@
-import json, sys
+import json, os, sys
 from copy import deepcopy
 from pathlib import Path
 from pprint import pprint
@@ -14,7 +14,7 @@ from xklb.data.yt_dlp_errors import (
 )
 from xklb.mediadb import db_media, db_playlists
 from xklb.mediafiles import media_check
-from xklb.utils import consts, db_utils, iterables, objects, printing, sql_utils, strings
+from xklb.utils import consts, db_utils, file_utils, iterables, objects, path_utils, printing, sql_utils, strings
 from xklb.utils.consts import DBType, DLStatus
 from xklb.utils.log_utils import Timer, log
 
@@ -381,12 +381,7 @@ def download(args, m) -> None:
             "http": lambda n: 0.08 * (2**n),
             "fragment": lambda n: 0.04 * (2**n),
         },
-        "outtmpl": {
-            "default": out_dir("%(uploader,uploader_id)s/%(title).170B_%(view_count)3.2D_[%(id).64B].%(ext)s"),
-            "chapter": out_dir(
-                "%(uploader,uploader_id)s/%(title).170B_%(section_number)03d_%(section_title).80B_%(view_count)3.2D_[%(id).64B].%(ext)s",
-            ),
-        },
+        "outtmpl": out_dir("%(id).220b.%(ext)s"),
     }
 
     if args.verbose >= consts.LOG_DEBUG:
@@ -457,7 +452,7 @@ def download(args, m) -> None:
             ydl_opts["download_archive"] = str(download_archive)
 
     webpath = m["path"]
-    local_path = None
+    temp_path = None
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         try:
             info = ydl.extract_info(webpath, download=True)
@@ -501,11 +496,24 @@ def download(args, m) -> None:
             info = m
         else:
             info = {**m, **info}
-            local_path = info.get("local_path", None)
+            temp_path = info.get("local_path", None)
             if args.profile == DBType.audio:
-                local_path = ydl.prepare_filename({**info, "ext": args.extract_audio_ext})
+                temp_path = ydl.prepare_filename({**info, "ext": args.extract_audio_ext})
             else:
-                local_path = ydl.prepare_filename(info)
+                temp_path = ydl.prepare_filename(info)
+
+            local_path = ydl.prepare_filename(
+                info,
+                outtmpl={
+                    "default": out_dir("%(uploader,uploader_id)s/%(title).170B_%(view_count)3.2D_[%(id).64B].%(ext)s"),
+                    "chapter": out_dir(
+                        "%(uploader,uploader_id)s/%(title).170B_%(section_number)03d_%(section_title).80B_%(view_count)3.2D_[%(id).64B].%(ext)s"
+                    ),
+                },
+            )
+            local_path = path_utils.clean_path(bytes(local_path))
+            os.makedirs(Path(local_path).parent, exist_ok=True)
+            file_utils.rename_move_file(temp_path, local_path)
 
     download_status = DLStatus.SUCCESS
     media_check_failed = False
