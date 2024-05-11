@@ -511,7 +511,6 @@ def download(args, m) -> None:
                 },
             )
             local_path = path_utils.clean_path(bytes(local_path))
-            os.makedirs(Path(local_path).parent, exist_ok=True)
             file_utils.rename_move_file(temp_path, local_path)
 
     download_status = DLStatus.SUCCESS
