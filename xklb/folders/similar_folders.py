@@ -43,8 +43,6 @@ def parse_args():
     args = parser.parse_args()
     arggroups.args_post(args, parser)
 
-    arggroups.group_folders_post(args)
-
     if not args.filter_names and not args.filter_counts and not args.filter_sizes and not args.filter_durations:
         print("Nothing to do")
         raise NotImplementedError
