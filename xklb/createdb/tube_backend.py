@@ -455,7 +455,7 @@ def download(args, m) -> None:
             ydl_opts["download_archive"] = str(download_archive)
 
     webpath = m["path"]
-    temp_path = None
+    temp_path, local_path = None, None
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         try:
             info = ydl.extract_info(webpath, download=True)
