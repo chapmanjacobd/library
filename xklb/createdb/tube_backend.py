@@ -512,7 +512,7 @@ def download(args, m) -> None:
                     else "%(uploader,uploader_id)s/%(title).170B_%(view_count)3.2D_[%(id).64B].%(ext)s"
                 ),
             )
-            local_path = path_utils.clean_path(bytes(local_path))
+            local_path = path_utils.clean_path(local_path.encode())
             file_utils.rename_move_file(temp_path, local_path)
 
     download_status = DLStatus.SUCCESS
