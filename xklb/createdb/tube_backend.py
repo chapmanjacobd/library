@@ -1,4 +1,4 @@
-import json, os, sys
+import json, sys
 from copy import deepcopy
 from pathlib import Path
 from pprint import pprint
@@ -382,8 +382,8 @@ def download(args, m) -> None:
             "fragment": lambda n: 0.04 * (2**n),
         },
         "outtmpl": {
-            'default': out_dir("%(id).220B.%(ext)s"),
-            'chapter': out_dir("%(id).220B.%(section_number)03d.%(ext)s"),
+            "default": out_dir("%(id).220B.%(ext)s"),
+            "chapter": out_dir("%(id).220B.%(section_number)03d.%(ext)s"),
         },
     }
 
@@ -425,9 +425,9 @@ def download(args, m) -> None:
         ydl_opts["format"] = "bestvideo[filesize<2G]+bestaudio/best[filesize<2G]/bestvideo*+bestaudio/best"
 
     if args.profile == DBType.audio:
-        ydl_opts["format"] = (
-            "bestaudio[ext=opus]/bestaudio[ext=mka]/bestaudio[ext=webm]/bestaudio[ext=ogg]/bestaudio[ext=oga]/bestaudio/best"
-        )
+        ydl_opts[
+            "format"
+        ] = "bestaudio[ext=opus]/bestaudio[ext=mka]/bestaudio[ext=webm]/bestaudio[ext=ogg]/bestaudio[ext=oga]/bestaudio/best"
         ydl_opts["postprocessors"].append({"key": "FFmpegExtractAudio", "preferredcodec": args.extract_audio_ext})
 
     def blocklist_check(info, *pargs, incomplete):
@@ -508,12 +508,13 @@ def download(args, m) -> None:
                 info,
                 outtmpl=out_dir(
                     "%(uploader,uploader_id)s/%(title).170B_%(section_number)03d_%(section_title).80B_%(view_count)3.2D_[%(id).64B].%(ext)s"
-                    if 'section_number' in info
+                    if "section_number" in info
                     else "%(uploader,uploader_id)s/%(title).170B_%(view_count)3.2D_[%(id).64B].%(ext)s"
                 ),
             )
             local_path = path_utils.clean_path(local_path.encode())
-            file_utils.rename_move_file(temp_path, local_path)
+            if Path(temp_path).exists():  # media might already be in download archive or download error
+                file_utils.rename_move_file(temp_path, local_path)
 
     download_status = DLStatus.SUCCESS
     media_check_failed = False

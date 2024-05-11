@@ -1,7 +1,5 @@
-import shlex, shutil
+import shlex
 from pathlib import Path
-
-import humanize
 
 from xklb.mediadb import db_history, db_media
 from xklb.utils import devices, file_utils, iterables, processes
@@ -26,39 +24,7 @@ def mv_to_keep_folder(args, media_file: str):
 
     keep_path.mkdir(exist_ok=True)
 
-    try:
-        new_path = shutil.move(media_file, keep_path)
-    except shutil.Error as e:
-        if "already exists" not in str(e):
-            raise
-
-        p = Path(media_file)
-        new_path = Path(keep_path) / p.name
-
-        if media_file == keep_path:
-            raise shutil.SameFileError
-
-        src_size = p.stat().st_size
-        dst_size = new_path.stat().st_size
-
-        src_size_str = humanize.naturalsize(src_size, binary=True)
-        dst_size_str = humanize.naturalsize(dst_size, binary=True)
-        diff_size_str = humanize.naturalsize(src_size - dst_size, binary=True)
-
-        if src_size > dst_size:
-            log.warning("Source (%s) is larger than destination (%s) %s", src_size_str, dst_size_str, diff_size_str)
-        elif src_size < dst_size:
-            log.warning("Source (%s) is smaller than destination (%s) %s", src_size_str, dst_size_str, diff_size_str)
-        else:
-            log.warning("Source and destination are the same size %s", src_size_str)
-        if args.post_action.upper().startswith("ASK_"):
-            if devices.clobber_confirm(args):
-                new_path.unlink()
-                new_path = str(shutil.move(media_file, keep_path))
-            else:
-                return media_file
-        else:
-            raise
+    new_path = file_utils.ask_overwrite_mv(args, media_file, keep_path)
 
     if hasattr(args, "db"):
         with args.db.conn:
