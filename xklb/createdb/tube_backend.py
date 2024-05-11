@@ -382,9 +382,9 @@ def download(args, m) -> None:
             "fragment": lambda n: 0.04 * (2**n),
         },
         "outtmpl": {
-            "default": out_dir("%(uploader,uploader_id)s/%(title).180B_%(view_count)3.2D_[%(id).64B].%(ext)s"),
+            "default": out_dir("%(uploader,uploader_id)s/%(title).170B_%(view_count)3.2D_[%(id).64B].%(ext)s"),
             "chapter": out_dir(
-                "%(uploader,uploader_id)s/%(title).180B_%(section_number)03d_%(section_title).80B_%(view_count)3.2D_[%(id).64B].%(ext)s",
+                "%(uploader,uploader_id)s/%(title).170B_%(section_number)03d_%(section_title).80B_%(view_count)3.2D_[%(id).64B].%(ext)s",
             ),
         },
     }
