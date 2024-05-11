@@ -381,7 +381,10 @@ def download(args, m) -> None:
             "http": lambda n: 0.08 * (2**n),
             "fragment": lambda n: 0.04 * (2**n),
         },
-        "outtmpl": out_dir("%(id).220b.%(ext)s"),
+        "outtmpl": {
+            'default': out_dir("%(id).220b.%(ext)s"),
+            'chapter': out_dir("%(id).220b.%(section_number)03d.%(ext)s"),
+        },
     }
 
     if args.verbose >= consts.LOG_DEBUG:
@@ -422,9 +425,9 @@ def download(args, m) -> None:
         ydl_opts["format"] = "bestvideo[filesize<2G]+bestaudio/best[filesize<2G]/bestvideo*+bestaudio/best"
 
     if args.profile == DBType.audio:
-        ydl_opts[
-            "format"
-        ] = "bestaudio[ext=opus]/bestaudio[ext=mka]/bestaudio[ext=webm]/bestaudio[ext=ogg]/bestaudio[ext=oga]/bestaudio/best"
+        ydl_opts["format"] = (
+            "bestaudio[ext=opus]/bestaudio[ext=mka]/bestaudio[ext=webm]/bestaudio[ext=ogg]/bestaudio[ext=oga]/bestaudio/best"
+        )
         ydl_opts["postprocessors"].append({"key": "FFmpegExtractAudio", "preferredcodec": args.extract_audio_ext})
 
     def blocklist_check(info, *pargs, incomplete):
