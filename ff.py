@@ -39,7 +39,7 @@ def decode_iframes(args):
             str(len(args.iframes)),
             '-c:v',
             'rawvideo',
-            # '-pixel_format', 'rgb24',
+            '-pixel_format', 'rgb24',
             '-f',
             'image2pipe',
             '-',
