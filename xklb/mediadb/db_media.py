@@ -390,6 +390,7 @@ def get_dir_media(args, dirs: Collection, include_subdirs=False, limit=2_000) ->
             WHERE 1=1
                 and m.id in (select id from {args.table})
                 {filter_paths}
+                {" ".join(args.filter_sql)}
             GROUP BY m.id, m.path
         )
         SELECT *
@@ -532,13 +533,13 @@ def get_related_media(args, m: dict) -> list[dict]:
             LEFT JOIN history h on h.media_id = m.id
             WHERE 1=1
                 and path != :path
-                {'' if args.related >= consts.RELATED_NO_FILTER else (" ".join(args.filter_sql) or '')}
+                {'' if args.related >= consts.RELATED_NO_FILTER else " ".join(args.filter_sql)}
             GROUP BY m.id, m.path
         )
         SELECT *
         FROM m
         WHERE 1=1
-            {'' if args.related >= consts.RELATED_NO_FILTER else (" ".join(args.aggregate_filter_sql) or '')}
+            {'' if args.related >= consts.RELATED_NO_FILTER else " ".join(args.aggregate_filter_sql)}
         ORDER BY play_count
             , m.path like "http%"
             , {'rank' if 'sort' in args.defaults else f'ntile(1000) over (order by rank)' + (f', {args.sort}' if args.sort else '')}
