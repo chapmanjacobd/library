@@ -159,9 +159,10 @@ def parse_args_sort(args, columns, table_prefix="m.") -> tuple[str, list[str]]:
             else None
         ),
         *(sort_list or []),
+        "play_count" if args.action in (SC.listen, SC.watch) else None,
+        "time_last_played" if args.action in (SC.listen, SC.watch) else None,
         "duration desc" if args.action in (SC.listen, SC.watch) and args.include else None,
         "size desc" if args.action in (SC.listen, SC.watch) and args.include else None,
-        "play_count" if args.action in (SC.listen, SC.watch) else None,
         table_prefix + "title IS NOT NULL desc" if "title" in columns else None,
         table_prefix + "path",
     ]
