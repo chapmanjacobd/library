@@ -32,8 +32,12 @@ def get_caller_name():
 
 
 def args_post(args, parser, create_db=False):
-    args.defaults = {k:v for k, v in args.__dict__.items() if parser.get_default(k) == v}
-    settings = {k: v for k, v in args.__dict__.items() if k not in ["database", "verbose", "defaults"] + list(args.defaults.keys())}
+    args.defaults = {k: v for k, v in args.__dict__.items() if parser.get_default(k) == v}
+    settings = {
+        k: v
+        for k, v in args.__dict__.items()
+        if k not in ["database", "verbose", "defaults"] + list(args.defaults.keys())
+    }
     args.extractor_config = {
         k: v for k, v in settings.items() if k not in ["db", "paths", "actions", "backfill_pages"]
     } | (getattr(args, "extractor_config", None) or {})
