@@ -209,7 +209,7 @@ def split_folder_glob(s):
 
 
 def override_config(args, extractor_config):
-    defaults = args.get("defaults")
+    defaults = getattr(args, "defaults", None) or {}
     overridden_args = {k: v for k, v in args.__dict__.items() if defaults.get(k) != v}
     args_env = argparse.Namespace(
         **{**defaults, **(extractor_config.get("extractor_config") or {}), **extractor_config, **overridden_args}
