@@ -14,7 +14,7 @@ def parse_args() -> argparse.Namespace:
     arggroups.extractor(parser)
     arggroups.frequency(parser)
 
-    parser.add_argument("--category", "-c", help=argparse.SUPPRESS)
+    parser.add_argument("--category", "-c")
     parser.add_argument("--allow-immediate", action="store_true")
     arggroups.debug(parser)
     arggroups.database(parser)

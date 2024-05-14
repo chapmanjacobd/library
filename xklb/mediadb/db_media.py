@@ -1,12 +1,9 @@
 import argparse, os, sqlite3
 from collections.abc import Collection
-from datetime import datetime
 from pathlib import Path
 
-from dateutil import parser
-
 from xklb.createdb import fs_add
-from xklb.utils import consts, db_utils, iterables, nums, objects, processes, sql_utils, strings
+from xklb.utils import consts, date_utils, db_utils, iterables, objects, processes, sql_utils, strings
 from xklb.utils.consts import DBType
 from xklb.utils.log_utils import log
 
@@ -53,22 +50,7 @@ def consolidate(v: dict) -> dict | None:
 
     v = objects.flatten_dict(v, passthrough_keys=["automatic_captions", "http_headers", "subtitles"])
 
-    upload_date = iterables.safe_unpack(
-        v.pop("upload_date", None),
-        v.pop("release_date", None),
-        v.pop("date", None),
-        v.pop("created_at", None),
-        v.pop("published", None),
-        v.pop("updated", None),
-    )
-    if upload_date:
-        if isinstance(upload_date, datetime):
-            upload_date = nums.to_timestamp(upload_date)
-        else:
-            try:
-                upload_date = nums.to_timestamp(parser.parse(upload_date))
-            except Exception:
-                upload_date = None
+    upload_date = date_utils.tube_date(v)
 
     cv = {}
     cv["playlists_id"] = v.pop("playlists_id", None)  # not to be confused with yt-dlp playlist_id

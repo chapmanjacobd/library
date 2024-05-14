@@ -9,7 +9,7 @@ def mount_stats() -> None:
     parser = argparse_utils.ArgumentParser(usage=usage.mount_stats)
     arggroups.debug(parser)
 
-    parser.add_argument("mounts", nargs="+")
+    parser.add_argument("mounts", nargs="+", action=argparse_utils.ArgparseArgsOrStdin)
     args = parser.parse_args()
     arggroups.args_post(args, parser)
 

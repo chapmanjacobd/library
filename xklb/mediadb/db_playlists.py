@@ -1,7 +1,6 @@
 import os, sqlite3
-from datetime import datetime
 
-from xklb.utils import consts, db_utils, iterables, nums, objects
+from xklb.utils import consts, date_utils, db_utils, iterables, objects
 from xklb.utils.log_utils import log
 
 """
@@ -17,13 +16,7 @@ media table
 
 
 def consolidate(args, v: dict) -> dict:
-    release_date = v.pop("release_date", None)
-    upload_date = v.pop("upload_date", None) or release_date
-    if upload_date:
-        try:
-            upload_date = nums.to_timestamp(datetime.strptime(upload_date, "%Y%m%d"))
-        except Exception:
-            upload_date = None
+    upload_date = date_utils.tube_date(v)
 
     cv = {}
     cv["profile"] = iterables.safe_unpack(getattr(args, "profile", None), v.pop("profile", None))

@@ -62,13 +62,13 @@ def printing(parser):
     printing = parser.add_argument_group("Printing")
     printing.add_argument("--print", "-p", default="", const="p", nargs="?")
     printing.add_argument("--to-json", action="store_true", help="Write JSONL to stdout")
-    printing.add_argument("--cols", "--columns", nargs="*", help="Include specific column(s) when printing")
+    printing.add_argument("--cols", "--columns", nargs="+", help="Include specific column(s) when printing")
 
 
 def debug(parent_parser):
     parser = parent_parser.add_argument_group("Global options")
     parser.add_argument("--verbose", "-v", action="count", default=0)
-    parser.add_argument("--timeout", "-T", help="Quit after x minutes")
+    parser.add_argument("--timeout", "-T", metavar="TIME", help="Quit after x minutes")
     parser.add_argument("--ext", "-e", default=[], action=argparse_utils.ArgparseList, help="Filter by file extension")
     printing(parent_parser)
 
@@ -162,7 +162,6 @@ def sql_fs(parent_parser):
         "--nosubs",
         "-sn",
         action="store_true",
-        help=argparse.SUPPRESS,
     )
     parse_media.add_argument("--subtitles", "--subtitle", "-sy", action="store_true")
 
@@ -319,7 +318,9 @@ def playback(parent_parser):
     )
 
     parser.add_argument("--prefetch", type=int, default=3)
-    parser.add_argument("--prefix", default="", help=argparse.SUPPRESS)
+    parser.add_argument(
+        "--prefix", default="", help="Add a prefix for file paths; eg. SSHFS mount makes paths different from normal"
+    )
 
     parser.add_argument("--folders", "--folder", action="store_true", help="Experimental escape hatch to open folder")
     parser.add_argument(

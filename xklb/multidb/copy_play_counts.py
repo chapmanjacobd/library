@@ -14,7 +14,7 @@ def parse_args() -> argparse.Namespace:
     arggroups.debug(parser)
 
     arggroups.database(parser)
-    parser.add_argument("source_dbs", nargs="+")
+    parser.add_argument("source_dbs", nargs="+", action=argparse_utils.ArgparseArgsOrStdin)
     args = parser.parse_intermixed_args()
     arggroups.args_post(args, parser, create_db=True)
 

@@ -11,7 +11,7 @@ def parse_args() -> argparse.Namespace:
 
     arggroups.database(parser)
     parser.add_argument("search_table")
-    parser.add_argument("search", nargs="+")
+    parser.add_argument("search", nargs="+", action=argparse_utils.ArgparseArgsOrStdin)
     args = parser.parse_intermixed_args()
     arggroups.args_post(args, parser, create_db=True)
 

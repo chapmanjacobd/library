@@ -14,61 +14,7 @@ from xklb.utils.log_utils import log
 
 v_db = "tests/data/video.db"
 fs_add([v_db, "--scan-subtitles", "tests/data/"])
-
-
-local_player_flags = [
-    "-s tests -s 'tests AND data' -E 2 -s test -E 3",
-    "--duration-from-size=-100Mb",
-    "-O",
-    "-O duration",
-    "-O locale_duration",
-    "-O reverse_path_path",
-    "-R",
-    "-RR",
-    "-C",
-    # "-B",
-    # "-B -pa",
-    "-RCO",
-    "--sibling",
-    # "--solo",
-    "-P o",
-    "-P p",
-    "-P t",
-    # "-P s",
-    "-P f",
-    "-P fo",
-    "-P pt",
-    # "-p",
-    # "-pa",
-    # "-pb",
-    # "-pf",
-    # "-p df",
-    # "-p bf",
-    # "-p -P",
-    # "-p --cols '*' -L inf",
-    "--offset 1",
-    "-s test",
-    "test",
-    "-s 'path : test'",
-    "-w audio_count=1",
-    "-w subtitle_count=1",
-    "-d+0 -d-10",
-    "-d=-1",
-    "-S+0 -S-10",
-    "-S=-1Mi",
-    "-u duration",
-    "--portrait",
-    # "--online-media-only",
-    "--local-media-only",
-    "-w 'size/duration<50000'",
-    "-w time_deleted=0",
-    "--downloaded-within '2 days'",
-    "-w 'playhead is NULL'",
-    "--played-within '3 days'",
-    "-w 'play_count>0'",
-    "-w 'time_played>0'",
-    "-w 'done>0'",
-]
+lb(["linksdb", v_db, "--insert-only", "https://test"])
 
 
 def test_wt_help(capsys):
@@ -164,9 +110,127 @@ class TestFs(unittest.TestCase):
 
 
 @mock.patch("xklb.playback.media_player.play", return_value=SimpleNamespace(returncode=0))
-@pytest.mark.parametrize("flags", local_player_flags)
-def test_wt_flags(play_mocked, flags):
-    sys.argv = ["wt", v_db, *shlex.split(flags)]
-    wt()
-    out = play_mocked.call_args[0][1]
-    assert out is not None, f"Test failed for {flags}"
+@pytest.mark.parametrize(
+    "flags",
+    [
+        "-s tests -s 'tests AND data' -E 2 -s test -E 3",
+        "--duration-from-size=-100Mb",
+        "-O",
+        "-O duration",
+        "-O locale_duration",
+        "-O reverse_path_path",
+        "-R",
+        "-RR",
+        "-C",
+        "-RCO",
+        "--sibling",
+        "--offset 1",
+        "-s test",
+        "test",
+        "-s 'path : test'",
+        "-w audio_count=1",
+        "-w subtitle_count=1",
+        "-d+0 -d-10",
+        "-d=-1",
+        "-S+0 -S-10",
+        "-S=-1Mi",
+        "-u duration",
+        "--portrait",
+        "--online-media-only",
+        "--local-media-only",
+        "-w 'size/duration<50000'",
+        "-w time_deleted=0",
+        "--downloaded-within '2 days'",
+        "-w 'playhead is NULL'",
+        "--played-within '3 days'",
+        "-w 'play_count>0'",
+        "-w 'time_played>0'",
+        "-w 'done>0'",
+        "-w 'play_count=0'",
+        "--local",
+        "-u random",
+        "--fetch-siblings if-audiobook",
+        "-L 1",
+        "--upper 16",
+        "--lower 4",
+    ],
+)
+def test_fs_flags(play_mocked, flags):
+    for subcommand in ["fs", "media"]:
+        lb([subcommand, v_db, *shlex.split(flags)])
+        out = play_mocked.call_args[0][1]
+        assert out is not None, f"Test failed for {flags}"
+
+
+@mock.patch("xklb.playback.media_player.play", return_value=SimpleNamespace(returncode=0))
+@pytest.mark.parametrize(
+    "flags",
+    [
+        "--duration-from-size=-100Mb",
+        "-O",
+        "-O duration",
+        "-O locale_duration",
+        "-O reverse_path_path",
+        "-R",
+        "-RR",
+        "-C",
+        "-B",
+        "-B -pa",
+        "-RCO",
+        "--sibling",
+        "--solo",
+        "--offset 1",
+        "-s test",
+        "test",
+        "-s 'path : test'",
+        "-w audio_count=1",
+        "-w subtitle_count=1",
+        "-d+0 -d-10",
+        "-d=-1",
+        "-S+0 -S-10",
+        "-S=-1Mi",
+        "-u duration",
+        "--portrait",
+        "-w 'size/duration<50000'",
+        "-w time_deleted=0",
+        "--downloaded-within '2 days'",
+        "-w 'playhead is NULL'",
+        "--played-within '3 days'",
+        "-w 'play_count>0'",
+        "-w 'time_played>0'",
+        "-w 'done>0'",
+    ],
+)
+def test_media_flags(play_mocked, flags):
+    for subcommand in ["media", "wt"]:
+        lb([subcommand, v_db, *shlex.split(flags)])
+        out = play_mocked.call_args[0][1]
+        assert out is not None, f"Test failed for {flags}"
+
+
+@mock.patch("xklb.playback.media_printer.media_printer", return_value=SimpleNamespace(returncode=0))
+@pytest.mark.parametrize(
+    "flags",
+    [
+        "-P o",
+        "-P p",
+        "-P t",
+        "-P s",
+        "-P f",
+        "-P fo",
+        "-P pt",
+        "-p",
+        "-pa",
+        "-pb",
+        "-pf",
+        "-p df",
+        "-p bf",
+        "-p -P",
+        "-p --cols '*' -L inf",
+    ],
+)
+def test_print_flags(print_mocked, flags):
+    for subcommand in ["fs", "media"]:
+        lb([subcommand, v_db, *shlex.split(flags)])
+        out = print_mocked.call_args[0][1]
+        assert out is not None, f"Test failed for {flags}"

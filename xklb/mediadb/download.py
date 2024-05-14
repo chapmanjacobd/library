@@ -67,7 +67,7 @@ def parse_args():
 
     parser.add_argument("--same-domain", action="store_true", help="Choose a random domain to focus on")
 
-    parser.add_argument("--prefix", default=os.getcwd(), help=argparse.SUPPRESS)
+    parser.add_argument("--prefix", default=os.getcwd())
 
     parser.add_argument("--small", action="store_true", help="Video: Prefer 480p-like")
 

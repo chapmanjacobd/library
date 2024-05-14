@@ -57,7 +57,7 @@ def parse_args(action, usage) -> argparse.Namespace:
     arggroups.debug(parser)
     arggroups.database(parser)
     if action == "redditadd":
-        parser.add_argument("paths", nargs="+")
+        arggroups.paths_or_stdin(parser)
     args = parser.parse_intermixed_args()
     arggroups.args_post(args, parser, create_db=True)
 

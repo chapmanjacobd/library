@@ -12,7 +12,12 @@ def parse_args() -> argparse.Namespace:
     arggroups.simulate(parser)
     arggroups.debug(parser)
 
-    parser.add_argument("sources", nargs="+", help="one or more source files or directories to move")
+    parser.add_argument(
+        "sources",
+        nargs="+",
+        action=argparse_utils.ArgparseArgsOrStdin,
+        help="one or more source files or directories to move",
+    )
     parser.add_argument("dest", help="destination directory")
     args = parser.parse_args()
     arggroups.args_post(args, parser)

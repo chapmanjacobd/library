@@ -44,14 +44,14 @@ def parse_args(action, usage):
         default=1.0,
         help="Especially useful for text, image, filesystem db types",
     )
-    parser.add_argument("--ocr", "--OCR", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--speech-recognition", "--speech", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--scan-subtitles", "--scan-subtitle", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--ocr", "--OCR", action="store_true")
+    parser.add_argument("--speech-recognition", "--speech", action="store_true")
+    parser.add_argument("--scan-subtitles", "--scan-subtitle", action="store_true")
 
     parser.add_argument("--hash", action="store_true")
     parser.add_argument("--move")
 
-    parser.add_argument("--process", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--process", action="store_true")
     arggroups.process_ffmpeg(parser)
 
     parser.add_argument("--check-corrupt", "--check-corruption", action="store_true")
@@ -65,7 +65,7 @@ def parse_args(action, usage):
 
     arggroups.database(parser)
     if action == SC.fs_add:
-        parser.add_argument("paths", nargs="+")
+        arggroups.paths_or_stdin(parser)
     args = parser.parse_intermixed_args()
     arggroups.args_post(args, parser, create_db=action == SC.fs_add)
 

@@ -140,7 +140,7 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers()
 
     # this needs to stay inside the function because if create_subcommands_parser() is called twice and if known_subcommands is preserved then the results won't be the same
-    known_subcommands = ["fs", "du", "search", "links"]
+    known_subcommands = ["fs", "media", "du", "search", "links"]
 
     def consecutive_prefixes(s):
         prefixes = [s[:j] for j in range(5, len(s)) if s[:j] and s[:j] not in known_subcommands]
@@ -232,6 +232,7 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     add_parser(subparsers, "xklb.multidb.copy_play_counts.copy_play_counts")
     add_parser(subparsers, "xklb.multidb.merge_dbs.merge_dbs", ["merge-db"])
     add_parser(subparsers, "xklb.playback.links_open.links_open", ["open-links"])
+    add_parser(subparsers, "xklb.playback.play_actions.media")
     add_parser(subparsers, "xklb.playback.play_actions.filesystem", ["fs", "open"])
     add_parser(subparsers, "xklb.playback.play_actions.listen", ["lt", "tubelisten", "tl"])
     add_parser(subparsers, "xklb.playback.play_actions.read", ["books", "docs"])

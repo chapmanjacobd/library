@@ -12,7 +12,7 @@ def parse_args() -> argparse.Namespace:
     arggroups.simulate(parser)
     arggroups.debug(parser)
 
-    parser.add_argument("sources", nargs="+")
+    parser.add_argument("sources", nargs="+", action=argparse_utils.ArgparseArgsOrStdin)
     parser.add_argument("destination")
     args = parser.parse_intermixed_args()
     arggroups.args_post(args, parser)
