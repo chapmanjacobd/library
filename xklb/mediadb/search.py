@@ -19,8 +19,8 @@ def parse_args() -> argparse.Namespace:
 
     parser.set_defaults(sort=["path", "time"])
 
-    parser.add_argument("--open", "--play", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--overlap", type=int, default=8, help=argparse.SUPPRESS)
+    parser.add_argument("--open", "--play", action="store_true")
+    parser.add_argument("--overlap", type=int, default=8)
     parser.add_argument("--table", action="store_true")
 
     parser.set_defaults(print="p")

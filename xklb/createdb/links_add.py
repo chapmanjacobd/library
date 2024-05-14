@@ -1,4 +1,4 @@
-import argparse, json, random, time
+import json, random, time
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 from xklb import usage
@@ -10,7 +10,7 @@ from xklb.utils.log_utils import log
 
 def parse_args(action, **kwargs):
     parser = argparse_utils.ArgumentParser(**kwargs)
-    parser.add_argument("--category", "-c", help=argparse.SUPPRESS)
+    parser.add_argument("--category", "-c")
 
     parser.add_argument("--max-pages", type=int)
     parser.add_argument("--fixed-pages", type=int)

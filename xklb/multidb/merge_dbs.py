@@ -26,7 +26,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--only-target-columns", action="store_true")
     parser.add_argument("--skip-columns", action=argparse_utils.ArgparseList)
 
-    parser.add_argument("--where", "-w", nargs="+", action="extend", help=argparse.SUPPRESS)
+    parser.add_argument("--where", "-w", nargs="+", action="extend")
 
     arggroups.debug(parser)
 

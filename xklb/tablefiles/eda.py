@@ -19,6 +19,7 @@ def parse_args():
         "paths",
         metavar="path",
         nargs="+",
+        action=argparse_utils.ArgparseArgsOrStdin,
         help="path to one or more files",
     )
     args = parser.parse_args()

@@ -8,9 +8,10 @@ from xklb.utils import arggroups, argparse_utils, consts, nums, objects
 
 def parse_args() -> argparse.Namespace:
     parser = argparse_utils.ArgumentParser(prog="library places-import", usage=usage.places_import)
-    arggroups.database(parser)
-    parser.add_argument("paths", nargs="+")
     arggroups.debug(parser)
+
+    arggroups.database(parser)
+    arggroups.paths_or_stdin(parser)
     args = parser.parse_intermixed_args()
     arggroups.args_post(args, parser, create_db=True)
 

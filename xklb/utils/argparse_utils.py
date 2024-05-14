@@ -1,4 +1,4 @@
-import argparse, sys
+import argparse, json, shlex, sys
 from ast import literal_eval
 
 from xklb.utils.iterables import flatten
@@ -54,7 +54,45 @@ class ArgparseArgsOrStdin(argparse.Action):
         setattr(namespace, self.dest, lines)
 
 
+def type_to_str(t):
+    type_dict = {
+        int: "Integer",
+        float: "Float",
+        bool: "Boolean",
+        str: "String",
+        list: "List",
+        tuple: "Tuple",
+        dict: "Dictionary",
+        set: "Set",
+    }
+    return type_dict.get(t, "Value").upper()
+
+
+def default_to_str(obj):
+    if isinstance(obj, (list, tuple, set)):
+        if len(obj) == 0:
+            return None
+        else:
+            return '"' + ", ".join(shlex.quote(s) for s in obj) + '"'
+    elif isinstance(obj, dict):
+        return json.dumps(obj)
+    if isinstance(obj, str):
+        return '"' + str(obj) + '"'
+    else:
+        return str(obj)
+
+
 class CustomHelpFormatter(argparse.HelpFormatter):
+    def _format_args(self, action, default_metavar):
+        get_metavar = self._metavar_formatter(action, default_metavar)
+        if action.nargs == argparse.ZERO_OR_MORE:
+            result = "[%s ...]" % get_metavar(1)
+        elif action.nargs == argparse.ONE_OR_MORE:
+            result = "%s ..." % get_metavar(1)
+        else:
+            result = super()._format_args(action, default_metavar)
+        return result
+
     def _format_action(self, action):
         help_text = self._expand_help(action) if action.help else ""
 
@@ -73,14 +111,39 @@ class CustomHelpFormatter(argparse.HelpFormatter):
 
         if len(opts) == 1:
             left = opts[0]
-        elif opts[1].startswith("--no-"):  #  argparse.BooleanOptionalAction
+        elif isinstance(action, argparse.BooleanOptionalAction):
             left = f"{opts[0]} / {opts[1]}"
         elif opts[-1].startswith("--"):
             left = opts[0]
         else:
             left = f"{opts[0]} ({opts[-1]})"
 
-        left += " " + self._format_args(action, "VALUE") + "\n"
+        left += " " + self._format_args(action, type_to_str(action.type or str))
+        left += "\n"
+
+        default = ""
+        if action.default is not None:
+            if isinstance(action, argparse.BooleanOptionalAction):
+                if action.default:
+                    default = opts[0]
+                else:
+                    default = opts[1]
+            elif isinstance(action, (argparse._StoreTrueAction, argparse._StoreFalseAction)):
+                pass
+            elif action.default == "":
+                pass
+            else:
+                default = default_to_str(action.default)
+
+        extra = f"default: {default}" if action.default else ""
+        if not isinstance(action, (argparse._StoreTrueAction, argparse._StoreFalseAction)) and action.const:
+            extra += f"const: {action.const}"
+
+        extra = extra.rstrip()
+        if extra:
+            if help_text:
+                help_text += " "
+            help_text += f"({extra})"
 
         return "".join(subactions) + format_two_columns(left, help_text)
 

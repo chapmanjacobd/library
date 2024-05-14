@@ -42,7 +42,10 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
 
     probabling = parser.add_argument_group("Probability")
     probabling.add_argument(
-        "--subtitle-mix", default=consts.DEFAULT_SUBTITLE_MIX, help="Probability to play no-subtitle content"
+        "--subtitle-mix",
+        type=float,
+        default=consts.DEFAULT_SUBTITLE_MIX,
+        help="Probability to play no-subtitle content",
     )
     probabling.add_argument("--interdimensional-cable", "-4dtv", type=int)
 
@@ -57,8 +60,8 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     chromecast.add_argument("--cast-with-local", "-wl", action="store_true")
 
     player = parser.add_argument_group("Player")
-    player.add_argument("--player-args-sub", "-player-sub", nargs="*", default=DEFAULT_PLAYER_ARGS_SUB)
-    player.add_argument("--player-args-no-sub", "-player-no-sub", nargs="*", default=DEFAULT_PLAYER_ARGS_NO_SUB)
+    player.add_argument("--player-args-sub", "--player-sub", nargs="*", default=DEFAULT_PLAYER_ARGS_SUB)
+    player.add_argument("--player-args-no-sub", "--player-no-sub", nargs="*", default=DEFAULT_PLAYER_ARGS_NO_SUB)
     player.add_argument("--transcode", action="store_true")
     player.add_argument("--transcode-audio", action="store_true")
     player.add_argument("--watch-later-directory", default=consts.DEFAULT_MPV_WATCH_LATER)
@@ -326,6 +329,16 @@ def process_playqueue(args) -> None:
         media_player.play_list(args, media)
 
 
+def filesystem() -> None:
+    args = parse_args(SC.filesystem)
+    process_playqueue(args)
+
+
+def media() -> None:
+    args = parse_args(SC.media)
+    process_playqueue(args)
+
+
 def watch() -> None:
     args = parse_args(SC.watch, default_chromecast="Living Room TV")
     process_playqueue(args)
@@ -333,11 +346,6 @@ def watch() -> None:
 
 def listen() -> None:
     args = parse_args(SC.listen, default_chromecast="Xylo and Orchestra")
-    process_playqueue(args)
-
-
-def filesystem() -> None:
-    args = parse_args(SC.filesystem)
     process_playqueue(args)
 
 

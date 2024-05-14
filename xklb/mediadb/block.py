@@ -20,11 +20,11 @@ def parse_args():
 
     parser.add_argument("--match-column", "-c", default="path", help="Column to block media if text matches")
 
-    parser.add_argument("--min-tried", default=0, type=int, help=argparse.SUPPRESS)
-    parser.add_argument("--no-confirm", "--yes", "-y", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--force", "-f", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--offline", "--no-tube", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--ignore-errors", "--ignoreerrors", "-i", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--min-tried", default=0, type=int)
+    parser.add_argument("--no-confirm", "--yes", "-y", action="store_true")
+    parser.add_argument("--force", "-f", action="store_true")
+    parser.add_argument("--offline", "--no-tube", action="store_true")
+    parser.add_argument("--ignore-errors", "--ignoreerrors", "-i", action="store_true")
     arggroups.debug(parser)
 
     arggroups.database(parser)

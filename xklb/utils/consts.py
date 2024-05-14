@@ -93,9 +93,10 @@ class DBType:
 class SC:
     fs_add = "fs-add"
     fs_update = "fs-update"
+    filesystem = "filesystem"
+    media = "media"
     watch = "watch"
     listen = "listen"
-    filesystem = "filesystem"
     tube_add = "tube-add"
     tube_update = "tube-update"
     gallery_add = "gallery-add"
