@@ -1,6 +1,7 @@
 import argparse, os
 
-from xklb import media_printer, usage
+from xklb import usage
+from xklb.playback import media_printer
 from xklb.utils import arggroups, argparse_utils, processes, sqlgroups
 
 
@@ -113,6 +114,8 @@ def disk_usage():
         args.subset = [d for d in args.subset if d.get("count")]
     elif args.files_only:
         args.subset = [d for d in args.subset if not d.get("count")]
+
+    args.subset = args.subset[: args.limit]
 
     media_printer.media_printer(
         args,

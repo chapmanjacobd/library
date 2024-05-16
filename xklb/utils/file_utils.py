@@ -1,5 +1,6 @@
 import errno, mimetypes, os, shlex, shutil, tempfile, time
 from collections import Counter
+from fnmatch import fnmatch
 from functools import wraps
 from io import StringIO
 from pathlib import Path
@@ -11,19 +12,21 @@ from xklb.utils import consts, devices, file_utils, printing, processes, web
 from xklb.utils.log_utils import log
 
 
-def scan_stats(files, filtered_files, folders):
+def scan_stats(files:int, filtered_files:int, folders:int, filtered_folders:int):
     return (
-        f"""Files: {len(files)}{f" [{len(filtered_files)} ignored]" if filtered_files else ''}"""
-        f" Folders: {len(folders)}"
+        f"""Files: {files}{f" [{filtered_files} ignored]" if filtered_files else ''}"""
+        f" Folders: {folders}{f" [{filtered_folders} ignored]" if filtered_folders else ''}"
     )
 
 
 def rglob(
     base_dir: str | Path,
     extensions=None,  # None | Iterable[str]
+    exclude=None,  # None | Iterable[str]
 ) -> tuple[set[str], set[str], set[str]]:
     files = set()
     filtered_files = set()
+    filtered_folders = set()
     folders = set()
     stack = [base_dir]
     while stack:
@@ -35,8 +38,11 @@ def rglob(
         else:
             for entry in scanned_dir:
                 if entry.is_dir(follow_symlinks=False):
-                    folders.add(entry.path)
-                    stack.append(entry.path)
+                    if any(entry.name == pattern or fnmatch(entry.path, pattern) for pattern in exclude or []):
+                        filtered_folders.add(entry.path)
+                    else:
+                        folders.add(entry.path)
+                        stack.append(entry.path)
                 elif entry.is_symlink():
                     pass
                 else:
@@ -49,9 +55,9 @@ def rglob(
                         else:
                             filtered_files.add(entry.path)
 
-            printing.print_overwrite(f"[{base_dir}] {scan_stats(files, filtered_files, folders)}")
+            printing.print_overwrite(f"[{base_dir}] {scan_stats(len(files), len(filtered_files), len(folders), len(filtered_folders))}")
 
-    print(f"\r[{base_dir}] {scan_stats(files, filtered_files, folders)}")
+    print(f"\r[{base_dir}] {scan_stats(len(files), len(filtered_files), len(folders), len(filtered_folders))}")
 
     filtered_extensions = Counter(Path(s).suffix for s in filtered_files)
     log.info("Filtered extensions: %s", filtered_extensions)

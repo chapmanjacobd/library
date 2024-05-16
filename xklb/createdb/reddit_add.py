@@ -46,7 +46,6 @@ def parse_args(action, usage) -> argparse.Namespace:
         usage=usage,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("--force", "-f", action="store_true")
     parser.add_argument("--limit", default=1000, type=int)
     parser.add_argument("--lookback", default=4, type=int, help="Number of days to look back")
     parser.add_argument("--praw-site", default="bot1")
@@ -54,6 +53,7 @@ def parse_args(action, usage) -> argparse.Namespace:
     parser.add_argument("--subreddits", action="store_true")
     parser.add_argument("--redditors", action="store_true")
 
+    parser.add_argument("--force", "-f", action="store_true")
     arggroups.debug(parser)
     arggroups.database(parser)
     if action == "redditadd":

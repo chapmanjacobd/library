@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 from pathlib import Path
 
+from xklb.lb import library as lb
 from xklb.utils import argparse_utils, db_utils
 from xklb.utils.objects import NoneSpace
 
@@ -44,3 +45,9 @@ def get_default_args(*funcs):
         func(parser)
     defaults = {action.dest: action.default for action in parser._actions}
     return defaults
+
+
+v_db = "tests/data/video.db"
+if not Path(v_db).exists():
+    lb(["fs_add", v_db, "--scan-subtitles", "tests/data/", "-E", "Youtube"])
+    lb(["linksdb", v_db, "--insert-only", "https://test"])

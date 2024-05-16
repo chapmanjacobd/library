@@ -38,6 +38,8 @@ def parse_args(action, usage):
     arggroups.db_profiles(parser)
     arggroups.simulate(parser)
 
+    parser.add_argument("--exclude", "-E", nargs="+", action="extend", default=[])
+
     parser.add_argument(
         "--io-multiplier",
         type=float,
@@ -49,7 +51,6 @@ def parse_args(action, usage):
     parser.add_argument("--scan-subtitles", "--scan-subtitle", action="store_true")
 
     parser.add_argument("--hash", action="store_true")
-    parser.add_argument("--move")
 
     parser.add_argument("--process", action="store_true")
     arggroups.process_ffmpeg(parser)
@@ -61,6 +62,8 @@ def parse_args(action, usage):
     parser.add_argument(
         "--force", "-f", action="store_true", help="Mark all subpath files as deleted if no files found"
     )
+    parser.add_argument("--move")
+
     arggroups.debug(parser)
 
     arggroups.database(parser)
@@ -433,10 +436,7 @@ def find_new_files(args, path) -> list[str]:
                 if args.speech_recognition:
                     exts |= consts.SPEECH_RECOGNITION_EXTENSIONS
 
-        if DBType.filesystem in args.profiles:
-            scanned_set = set.union(*file_utils.rglob(path))
-        else:
-            scanned_set = file_utils.rglob(path, exts)[0]
+        scanned_set = file_utils.rglob(path, exts or None, args.exclude)[0]
 
     m_columns = db_utils.columns(args, "media")
 

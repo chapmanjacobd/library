@@ -2,8 +2,8 @@ import argparse, textwrap
 from copy import deepcopy
 from itertools import groupby
 
-from xklb import media_printer, usage
-from xklb.playback import media_player
+from xklb import usage
+from xklb.playback import media_player, media_printer
 from xklb.utils import arggroups, argparse_utils, consts, iterables, printing, processes
 from xklb.utils.log_utils import log
 from xklb.utils.sqlgroups import construct_captions_search_query

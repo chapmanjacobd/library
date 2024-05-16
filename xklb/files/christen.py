@@ -16,6 +16,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--run", "-r", action="store_true")
     arggroups.debug(parser)
 
+    parser.add_argument("--exclude", "-E", nargs="+", action="extend", default=[])
+
     arggroups.paths_or_stdin(parser)
     args = parser.parse_args()
     arggroups.args_post(args, parser)
@@ -70,7 +72,7 @@ def christen() -> None:
         base = Path(path).resolve()
         log.info("[%s]: Processing subfolders...", base)
         subpaths = sorted(
-            (fsencode(p) for p in file_utils.rglob(str(base), args.ext or None)[0]), key=len, reverse=True
+            (fsencode(p) for p in file_utils.rglob(str(base), args.ext or None, args.exclude)[0]), key=len, reverse=True
         )
         for p in subpaths:
             rename_path(args, base, p)

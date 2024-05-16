@@ -1,11 +1,11 @@
 import argparse, os
 from pathlib import Path
 
-from xklb import media_printer, usage
+from xklb import usage
 from xklb.createdb import tube_backend
 from xklb.folders import big_dirs
 from xklb.mediadb import db_history, db_media
-from xklb.playback import media_player
+from xklb.playback import media_player, media_printer
 from xklb.tablefiles import mcda
 from xklb.utils import arggroups, argparse_utils, consts, devices, file_utils, processes, sqlgroups
 from xklb.utils.consts import SC
@@ -50,21 +50,21 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     probabling.add_argument("--interdimensional-cable", "-4dtv", type=int)
 
     chromecast = parser.add_argument_group("Chromecast")
+    chromecast.add_argument("--chromecast", "--cast", "-c", action="store_true")
     chromecast.add_argument(
         "--chromecast-device",
         "--cast-to",
         "-t",
         default=default_chromecast or "",
     )
-    chromecast.add_argument("--chromecast", "--cast", "-c", action="store_true")
     chromecast.add_argument("--cast-with-local", "-wl", action="store_true")
 
     player = parser.add_argument_group("Player")
     player.add_argument("--player-args-sub", "--player-sub", nargs="*", default=DEFAULT_PLAYER_ARGS_SUB)
     player.add_argument("--player-args-no-sub", "--player-no-sub", nargs="*", default=DEFAULT_PLAYER_ARGS_NO_SUB)
+    player.add_argument("--watch-later-directory", default=consts.DEFAULT_MPV_WATCH_LATER)
     player.add_argument("--transcode", action="store_true")
     player.add_argument("--transcode-audio", action="store_true")
-    player.add_argument("--watch-later-directory", default=consts.DEFAULT_MPV_WATCH_LATER)
 
     for i in range(0, 255):
         parser.add_argument(f"--cmd{i}", help=argparse.SUPPRESS)
@@ -163,11 +163,7 @@ def history_sort(args, media) -> list[dict]:
     if args.print:
         reverse_chronology = not reverse_chronology
 
-    media = sorted(
-        media,
-        key=key,
-        reverse=reverse_chronology,
-    )
+    media = sorted(media, key=key, reverse=reverse_chronology)
 
     if args.offset:
         media = media[int(args.offset) :]
@@ -185,23 +181,28 @@ def file_or_folder_media(args, paths):
             if args.folder_glob:
                 media.extend([{"path": s} for s in file_utils.fast_glob(p)])
             elif args.action in SC.watch:
-                media.extend([{"path": s} for s in file_utils.rglob(str(p), consts.VIDEO_EXTENSIONS)[0]])
+                media.extend([{"path": s} for s in file_utils.rglob(str(p), consts.VIDEO_EXTENSIONS, args.exclude)[0]])
             elif args.action == SC.listen:
-                media.extend([{"path": s} for s in file_utils.rglob(str(p), consts.AUDIO_ONLY_EXTENSIONS)[0]])
+                media.extend(
+                    [{"path": s} for s in file_utils.rglob(str(p), consts.AUDIO_ONLY_EXTENSIONS, args.exclude)[0]]
+                )
             elif args.action in SC.view:
-                media.extend([{"path": s} for s in file_utils.rglob(str(p), consts.IMAGE_EXTENSIONS)[0]])
+                media.extend([{"path": s} for s in file_utils.rglob(str(p), consts.IMAGE_EXTENSIONS, args.exclude)[0]])
             elif args.action in SC.read:
-                media.extend([{"path": s} for s in file_utils.rglob(str(p), consts.TEXTRACT_EXTENSIONS)[0]])
+                media.extend(
+                    [{"path": s} for s in file_utils.rglob(str(p), consts.TEXTRACT_EXTENSIONS, args.exclude)[0]]
+                )
             else:
-                media.extend([{"path": s} for s in file_utils.rglob(str(p))[0]])
+                media.extend([{"path": s} for s in file_utils.rglob(str(p), exclude=args.exclude)[0]])
     return media
 
 
 def process_playqueue(args) -> None:
+    db_history.create(args)
+
     if args.action == SC.filesystem:
         query, bindings = sqlgroups.fs_sql(args, args.limit)
     else:
-        db_history.create(args)
         query, bindings = sqlgroups.media_sql(args)
 
     if args.print and not any(

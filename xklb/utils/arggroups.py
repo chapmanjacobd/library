@@ -153,6 +153,7 @@ def sql_fs(parent_parser):
     parse_fs.add_argument("--downloaded-before")
 
     parse_media = parent_parser.add_argument_group("MediaDB SQL")
+    parse_media.add_argument("--portrait", action="store_true")
     parse_media.add_argument("--no-video", "-vn", action="store_true")
     parse_media.add_argument("--no-audio", "-an", action="store_true")
     parse_media.add_argument(
@@ -170,8 +171,6 @@ def sql_fs(parent_parser):
 
     parse_media.add_argument("--duration", "-d", action="append")
     parse_media.add_argument("--duration-from-size", action="append")
-
-    parse_media.add_argument("--portrait", action="store_true")
 
 
 def sql_fs_post(args) -> None:
@@ -367,6 +366,7 @@ def multiple_playback(parent_parser):
     parser.add_argument("--screen-name")
     parser.add_argument("--hstack", action="store_true")
     parser.add_argument("--vstack", action="store_true")
+    parser.add_argument("--fullscreen", "--fs", action=argparse.BooleanOptionalAction, default=True)
 
 
 def multiple_playback_post(args):
@@ -459,7 +459,7 @@ def cluster(parent_parser):
     parser = parent_parser.add_argument_group("Cluster")
     parser.add_argument("--cluster-sort", "--cluster", "-C", action="store_true", help="Cluster by filename TF-IDF")
     parser.add_argument("--clusters", "--n-clusters", type=int, help="Number of KMeans clusters")
-    parser.add_argument("--stop-words", "--ignore-words", nargs="+", action="append")
+    parser.add_argument("--stop-words", "--ignore-words", nargs="+", action="extend")
 
     parser.add_argument("--print-groups", "--groups", "-g", action="store_true", help="Print groups")
     parser.add_argument("--move-groups", "-M", action="store_true", help="Move groups into subfolders")

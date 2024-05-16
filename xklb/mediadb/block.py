@@ -2,9 +2,9 @@ import argparse, sys
 
 import humanize
 
-from xklb import media_printer, usage
+from xklb import usage
 from xklb.createdb import tube_backend
-from xklb.playback import post_actions
+from xklb.playback import media_printer, post_actions
 from xklb.utils import arg_utils, arggroups, argparse_utils, consts, db_utils, devices, iterables
 from xklb.utils.log_utils import log
 

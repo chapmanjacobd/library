@@ -1,8 +1,9 @@
 import argparse, shlex, webbrowser
 from time import sleep
 
-from xklb import media_printer, usage
+from xklb import usage
 from xklb.mediadb import db_history, db_media
+from xklb.playback import media_printer
 from xklb.utils import arggroups, argparse_utils, consts, processes, sqlgroups, web
 from xklb.utils.printing import pipe_print
 
@@ -85,7 +86,7 @@ def links_open() -> None:
     args = parse_args()
     db_history.create(args)
 
-    query, bindings = sqlgroups.construct_links_query(args)
+    query, bindings = sqlgroups.construct_links_query(args, None if args.cluster_sort else args.limit)
     media = list(args.db.query(query, bindings))
 
     if args.related >= consts.RELATED:
@@ -94,8 +95,9 @@ def links_open() -> None:
     if args.cluster_sort:
         from xklb.text.cluster_sort import cluster_dicts
 
-        media = cluster_dicts(args, media)[: args.limit]
+        media = cluster_dicts(args, media)
 
+    media = media[: args.limit]
     media = make_souffle(args, media)
 
     if args.print:

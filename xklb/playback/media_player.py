@@ -426,7 +426,10 @@ class MediaPrefetcher:
 
                 multiple_playback = getattr(args, "multiple_playback", None)
                 if multiple_playback and multiple_playback < 2:
-                    player.extend(["--fullscreen=yes"])
+                    if args.fullscreen:
+                        player.extend(["--fullscreen=yes"])
+                    else:
+                        player.extend(["--fullscreen=no"])
 
                 if getattr(args, "loop", False):
                     player.extend(["--loop-file=inf"])

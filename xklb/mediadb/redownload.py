@@ -2,7 +2,8 @@ import argparse, json, tempfile
 from copy import deepcopy
 from pathlib import Path
 
-from xklb import media_printer, usage
+from xklb import usage
+from xklb.playback import media_printer
 from xklb.utils import arggroups, argparse_utils, consts, db_utils, devices, file_utils, iterables
 
 

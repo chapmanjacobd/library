@@ -1,6 +1,7 @@
 import argparse, os, sqlite3
 
-from xklb import media_printer, usage
+from xklb import usage
+from xklb.playback import media_printer
 from xklb.utils import arggroups, argparse_utils, db_utils
 from xklb.utils.sqlgroups import construct_playlists_query
 
