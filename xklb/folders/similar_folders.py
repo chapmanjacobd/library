@@ -14,6 +14,7 @@ def parse_args():
     parser = argparse_utils.ArgumentParser(usage=usage.similar_folders)
     arggroups.group_folders(parser)
     arggroups.cluster(parser)
+    parser.add_argument("--estimated-duplicates", "--dupes", type=float)
 
     parser.add_argument("--small", "--reverse", action="store_true")
     parser.add_argument("--only-duplicates", action="store_true")
@@ -22,8 +23,6 @@ def parse_args():
     parser.add_argument(
         "--full-path", action="store_true", help="Cluster using full path instead of just the parent folder name"
     )
-    parser.add_argument("--estimated-duplicates", "--dupes", type=float)
-
     parser.add_argument("--total-sizes", action="store_true", help="Compare total size instead of median size")
     parser.add_argument(
         "--total-durations", action="store_true", help="Compare total duration instead of median duration"

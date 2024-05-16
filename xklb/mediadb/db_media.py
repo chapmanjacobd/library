@@ -358,7 +358,7 @@ def get_dir_media(args, dirs: Collection, include_subdirs=False, limit=2_000) ->
             + ")"
         )
 
-    select_sql = "\n        , ".join(s for s in args.select if s not in ["rank"])
+    select_sql = "\n        , ".join(s for s in args.select)
 
     query = f"""WITH m as (
             SELECT
@@ -366,7 +366,7 @@ def get_dir_media(args, dirs: Collection, include_subdirs=False, limit=2_000) ->
                 , MIN(h.time_played) time_first_played
                 , MAX(h.time_played) time_last_played
                 , FIRST_VALUE(h.playhead) OVER (PARTITION BY h.media_id ORDER BY h.time_played DESC) playhead
-                , {select_sql}
+                , *
             FROM media m
             LEFT JOIN history h on h.media_id = m.id
             WHERE 1=1
@@ -375,8 +375,10 @@ def get_dir_media(args, dirs: Collection, include_subdirs=False, limit=2_000) ->
                 {" ".join(args.filter_sql)}
             GROUP BY m.id, m.path
         )
-        SELECT *
+        SELECT {select_sql}
         FROM m
+        WHERE 1=1
+            {" ".join(args.aggregate_filter_sql)}
         ORDER BY play_count
             , m.path LIKE "http%"
             , path
@@ -400,7 +402,7 @@ def get_dir_media(args, dirs: Collection, include_subdirs=False, limit=2_000) ->
 
 
 def get_playlist_media(args, playlist_paths) -> list[dict]:
-    select_sql = "\n        , ".join(s for s in args.select if s not in ["rank"])
+    select_sql = "\n        , ".join(s for s in args.select)
 
     playlists_subquery = (
         """AND playlists_id in (
@@ -409,7 +411,7 @@ def get_playlist_media(args, playlist_paths) -> list[dict]:
         + ",".join(f":playlist{i}" for i, _ in enumerate(playlist_paths))
         + "))"
     )
-    playlists_params = {f"playlist{i}": value for i, value in enumerate(playlist_paths)}
+    playlists_params = {f"playlist{i}": str(Path(p).resolve()) for i, p in enumerate(playlist_paths)}
 
     query = f"""WITH m as (
             SELECT
@@ -417,7 +419,7 @@ def get_playlist_media(args, playlist_paths) -> list[dict]:
                 , MIN(h.time_played) time_first_played
                 , MAX(h.time_played) time_last_played
                 , FIRST_VALUE(h.playhead) OVER (PARTITION BY h.media_id ORDER BY h.time_played DESC) playhead
-                , {select_sql}
+                , *
             FROM media m
             LEFT JOIN history h on h.media_id = m.id
             WHERE 1=1
@@ -426,8 +428,10 @@ def get_playlist_media(args, playlist_paths) -> list[dict]:
                 {" ".join(args.filter_sql)}
             GROUP BY m.id, m.path
         )
-        SELECT *
+        SELECT {select_sql}
         FROM m
+        WHERE 1=1
+            {" ".join(args.aggregate_filter_sql)}
         ORDER BY play_count
             , path
             {'' if 'sort' in args.defaults else ', ' + args.sort}
@@ -501,7 +505,7 @@ def get_related_media(args, m: dict) -> list[dict]:
     )
     args.filter_bindings = {**args.filter_bindings, **search_bindings}
 
-    select_sql = "\n        , ".join(s for s in args.select if s not in ["rank"])
+    select_sql = "\n        , ".join(s for s in args.select)
 
     query = f"""WITH m as (
             SELECT
@@ -509,7 +513,7 @@ def get_related_media(args, m: dict) -> list[dict]:
                 , MIN(h.time_played) time_first_played
                 , MAX(h.time_played) time_last_played
                 , FIRST_VALUE(h.playhead) OVER (PARTITION BY h.media_id ORDER BY h.time_played DESC) playhead
-                , {select_sql}
+                , *
                 , rank
             FROM {args.table} m
             LEFT JOIN history h on h.media_id = m.id
@@ -518,7 +522,7 @@ def get_related_media(args, m: dict) -> list[dict]:
                 {'' if args.related >= consts.RELATED_NO_FILTER else " ".join(args.filter_sql)}
             GROUP BY m.id, m.path
         )
-        SELECT *
+        SELECT {select_sql}
         FROM m
         WHERE 1=1
             {'' if args.related >= consts.RELATED_NO_FILTER else " ".join(args.aggregate_filter_sql)}

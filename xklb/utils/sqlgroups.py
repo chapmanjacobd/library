@@ -129,7 +129,7 @@ def historical_media(args):
     return query, args.filter_bindings
 
 
-def construct_links_query(args) -> tuple[str, dict]:
+def construct_links_query(args, limit) -> tuple[str, dict]:
     m_columns = db_utils.columns(args, "media")
     args.table, m_columns = sql_utils.search_filter(args, m_columns)
 
@@ -164,7 +164,7 @@ def construct_links_query(args) -> tuple[str, dict]:
         {', ROW_NUMBER() OVER ( PARTITION BY hostname )' if 'hostname' in m_columns else ''}
         {', ROW_NUMBER() OVER ( PARTITION BY category )' if 'category' in m_columns else ''}
         , random()
-    {sql_utils.limit_sql(args.limit, args.offset)}
+    {sql_utils.limit_sql(limit, args.offset)}
     """
 
     return query, args.filter_bindings

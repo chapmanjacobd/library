@@ -40,7 +40,7 @@ def gen_paths(args):
                 else:
                     p = Path(path)
                     if p.is_dir():
-                        yield from file_utils.rglob(str(p), args.ext or None)[0]
+                        yield from file_utils.rglob(str(p), args.ext or None, getattr(args, "exclude", None))[0]
                     else:
                         yield path
 
@@ -76,7 +76,7 @@ def gen_d(args):
             if path.strip():
                 p = Path(path)
                 if p.is_dir():
-                    for sp in file_utils.rglob(str(p), args.ext or None)[0]:
+                    for sp in file_utils.rglob(str(p), args.ext or None, getattr(args, "exclude", None))[0]:
                         yield {"path": sp}
                 else:
                     yield {"path": path}

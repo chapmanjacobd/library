@@ -3,30 +3,30 @@ authors = [
   {name = "Jacob Chapman", email = "7908073+chapmanjacobd@users.noreply.github.com"},
 ]
 dependencies = [
-    "beautifulsoup4>=4.10.0",  # https://git.launchpad.net/beautifulsoup/commit/?id=34e0ce8a9dd43ada1c55b50a156fbce63b1e2ebb
-    "lxml",
-    "catt",
-    "feedparser",
-    "ffmpeg-python",
-    "ftfy",
-    "gallery-dl",
-    "humanize",
-    "ipython",
-    "Markdown",
-    "mutagen",
-    "natsort",
-    "praw",
-    "puremagic",
-    "pysubs2",
-    "python-dateutil",
-    "python-mpv-jsonipc",
-    "regex",
-    "rich",
-    "screeninfo",
-    "sqlite-utils",
-    "tabulate",
-    "tinytag",
-    "yt-dlp",
+  "beautifulsoup4>=4.10.0", # https://git.launchpad.net/beautifulsoup/commit/?id=34e0ce8a9dd43ada1c55b50a156fbce63b1e2ebb
+  "lxml",
+  "catt",
+  "feedparser",
+  "ffmpeg-python",
+  "ftfy",
+  "gallery-dl",
+  "humanize",
+  "ipython",
+  "Markdown",
+  "mutagen",
+  "natsort",
+  "praw",
+  "puremagic",
+  "pysubs2",
+  "python-dateutil",
+  "python-mpv-jsonipc",
+  "regex",
+  "rich",
+  "screeninfo",
+  "sqlite-utils",
+  "tabulate",
+  "tinytag",
+  "yt-dlp",
 ]
 description = "xk library"
 dynamic = ["version"]
@@ -47,13 +47,9 @@ deluxe = [
   "selenium-wire",
   "subliminal",
 ]
-fat = [
-  "brotab",
-  "orjson",
-  "textract",
-]
 dev = ["black", "isort", "ssort"]
-test = ["ruff", "pytest", "freezegun"]
+fat = ["brotab", "orjson", "textract"]
+test = ["ruff", "pytest", "freezegun", "pyfakefs"]
 
 [project.urls]
 documentation = "https://github.com/chapmanjacobd/library#usage"
@@ -170,7 +166,6 @@ addopts = "--pdbcls=IPython.terminal.debugger:TerminalPdb --ignore=tests/data --
 testpaths = ["tests"]
 
 [tool.pyright]
-typeCheckingMode = "basic"
 exclude = [
   "**/__pycache__",
   ".*cache",
@@ -178,3 +173,4 @@ exclude = [
   ".git",
 ]
 reportMissingImports = true
+typeCheckingMode = "basic"

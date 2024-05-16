@@ -1,8 +1,9 @@
 import argparse, os, sys
 
-from xklb import media_printer, usage
+from xklb import usage
 from xklb.createdb import gallery_backend, tube_backend
 from xklb.mediadb import db_media
+from xklb.playback import media_printer
 from xklb.utils import (
     arg_utils,
     arggroups,
@@ -65,9 +66,9 @@ def parse_args():
         help="Use filesystem downloader",
     )
 
-    parser.add_argument("--same-domain", action="store_true", help="Choose a random domain to focus on")
-
     parser.add_argument("--prefix", default=os.getcwd())
+
+    parser.add_argument("--same-domain", action="store_true", help="Choose a random domain to focus on")
 
     parser.add_argument("--small", action="store_true", help="Video: Prefer 480p-like")
 

@@ -1,7 +1,8 @@
 import argparse
 
-from xklb import media_printer, usage
+from xklb import usage
 from xklb.createdb import tube_backend
+from xklb.playback import media_printer
 from xklb.utils import arggroups, argparse_utils, consts, db_utils, sql_utils, sqlgroups
 
 

@@ -1,8 +1,9 @@
 import argparse, math, webbrowser
 from time import sleep
 
-from xklb import media_printer, usage
+from xklb import usage
 from xklb.mediadb import db_history
+from xklb.playback import media_printer
 from xklb.utils import arggroups, argparse_utils, consts, processes
 from xklb.utils.log_utils import log
 from xklb.utils.sqlgroups import construct_tabs_query

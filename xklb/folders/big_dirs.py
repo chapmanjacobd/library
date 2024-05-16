@@ -2,7 +2,8 @@ import argparse, os
 from collections import Counter, defaultdict
 from pathlib import Path
 
-from xklb import media_printer, usage
+from xklb import usage
+from xklb.playback import media_printer
 from xklb.tablefiles import mcda
 from xklb.utils import arg_utils, arggroups, argparse_utils, file_utils, iterables, nums
 
@@ -65,6 +66,10 @@ def group_files_by_parents(args, media) -> list[dict]:
     for parent, _ in list(d.items()):
         if len(parent.split(os.sep)) < min_parts:
             d.pop(parent)
+
+    parent_counts = Counter(str(Path(p).parent) for p in d.keys())
+    for parent, data in d.items():
+        data["folders"] = parent_counts[parent]
 
     return [{**v, "path": k} for k, v in d.items()]
 
@@ -140,7 +145,7 @@ def process_big_dirs(args, folders) -> list[dict]:
 def big_dirs() -> None:
     args = parse_args()
 
-    media = list(arg_utils.gen_d(args))
+    media: list[dict] = list(arg_utils.gen_d(args))
     media = [d if "size" in d else file_utils.get_filesize(d) for d in media]
     if args.cluster_sort and len(media) > 2:
         from xklb.text.cluster_sort import cluster_paths

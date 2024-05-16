@@ -1,234 +1,156 @@
-import shlex, sys, tempfile, unittest
+import shlex
+from argparse import ArgumentParser
 from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
 
 import pytest
 
-from tests.utils import connect_db_args
-from xklb.createdb.fs_add import fs_add
+from tests.utils import v_db
 from xklb.lb import library as lb
-from xklb.mediadb import db_history, db_media
-from xklb.playback.play_actions import watch as wt
-from xklb.utils.log_utils import log
+from xklb.utils import arggroups
 
-v_db = "tests/data/video.db"
-fs_add([v_db, "--scan-subtitles", "tests/data/"])
-lb(["linksdb", v_db, "--insert-only", "https://test"])
-
-
-def test_wt_help(capsys):
-    wt_help_text = "usage:,where,sort,--duration".split(",")
-
-    sys.argv = ["wt", "-h"]
-    with pytest.raises(SystemExit):
-        wt()
-    captured = capsys.readouterr().out.replace("\n", "")
-    for help_text in wt_help_text:
-        assert help_text in captured
-
-    with pytest.raises(SystemExit):
-        lb(["wt", "-h"])
-    captured = capsys.readouterr().out.replace("\n", "")
-    for help_text in wt_help_text:
-        assert help_text in captured
-
-
-def test_wt_print(capsys):
-    for lb_command in [
-        ["wt", v_db, "-p"],
-        ["pl", v_db],
-    ]:
-        lb(lb_command)
-        captured = capsys.readouterr().out.replace("\n", "")
-        assert "Agg" not in captured, f"Test failed for {lb_command}"
-
-    for lb_command in [
-        ["wt", v_db, "-p", "a"],
-        ["wt", v_db, "-pa"],
-        ["pl", v_db, "-pa"],
-    ]:
-        lb(lb_command)
-        captured = capsys.readouterr().out.replace("\n", "")
-        assert ("Agg" in captured) or ("extractor_key" in captured), f"Test failed for {lb_command}"
+fs_flags = [
+    ("--limit 1", 1, "corrupt.mp4"),
+    ("-L 1", 1, "corrupt.mp4"),
+    ("--offset 1", 4, "test.mp4"),
+    ("--random", 5, ""),
+    ("-u random", 5, ""),
+    ("-u size", 5, "corrupt.mp4"),
+    ("-s test", 5, "corrupt.mp4"),
+    ("-s tests -s 'tests AND data' -E 2 -s test -E 3", 4, "corrupt.mp4"),
+    ("test --exact", 5, "corrupt.mp4"),
+    ("test --flex", 5, "corrupt.mp4"),
+    ("test --no-fts", 5, "corrupt.mp4"),
+    ("--created-within '1 day'", 1, "https://test"),
+    ("--created-before '1 day'", 4, "corrupt.mp4"),
+    ("--modified-within '1 second'", 0, ""),
+    ("--modified-before '1 second'", 5, "corrupt.mp4"),
+    ("--deleted-within '1 day'", 0, ""),
+    ("--deleted-before '1 day'", 5, "corrupt.mp4"),
+    ("--downloaded-within '1 day'", 4, "corrupt.mp4"),
+    ("--downloaded-before '1 day'", 0, ""),
+    ("--playlists tests/data/", 4, ""),
+    ("--online-media-only", 1, "https://test"),
+    ("--local-media-only", 4, "corrupt.mp4"),
+    ("-S+0 -S-10", 4, "corrupt.mp4"),
+    ("-S=-1Mi", 4, "corrupt.mp4"),
+    ("-w 'size/size<50000'", 4, "corrupt.mp4"),
+]
 
 
-class TestFs(unittest.TestCase):
-    @mock.patch("xklb.playback.media_player.single_player", return_value=SimpleNamespace(returncode=0))
-    def test_lb_fs(self, play_mocked):
-        for SC in ("watch", "wt"):
-            lb([SC, v_db, "-w", "path like '%test.mp4'"])
-            out = play_mocked.call_args[0][1]
-            assert "test.mp4" in out["path"]
-            assert out["duration"] == 12
-            assert out["size"] == 136057
+media_flags = [
+    ("-d+0 -d-10", 3, "corrupt.mp4"),
+    ("-d=-1", 3, "corrupt.mp4"),
+    ("-u duration", 5, "corrupt.mp4"),
+    ("--portrait", 5, "corrupt.mp4"),
+    ("--no-audio", 2, "test.gif"),
+    ("--no-subtitles", 1, "test_frame.gif"),
+    ("--no-video", 0, ""),
+    ("--subtitles", 3, "corrupt.mp4"),
+    ("--played-within '3 days'", 0, ""),
+    ("--played-before '1 day'", 0, ""),
+    ("--duration-from-size=-100Mb", 3, "corrupt.mp4"),
+    ("--fetch-siblings if-audiobook", 5, "corrupt.mp4"),
+    ("--partial n", 5, "corrupt.mp4"),
+    ("-P f", 5, "corrupt.mp4"),
+    ("-P fo", 5, "corrupt.mp4"),
+    ("-P o", 5, "corrupt.mp4"),
+    ("-P p", 5, "corrupt.mp4"),
+    ("-P pt", 5, "corrupt.mp4"),
+    ("-P s", 5, "corrupt.mp4"),
+    ("-P t", 5, "corrupt.mp4"),
+    ("-B --folders-counts=-1", 4, "corrupt.mp4"),
+    ("-B --folder-counts=-16", 4, "corrupt.mp4"),
+    ("-B --folder-sizes=-5MB", 4, "corrupt.mp4"),
+    ("-B --sibling", 4, "corrupt.mp4"),
+    ("-B --solo", 0, ""),
+    ("-B --sort-groups-by size", 4, "corrupt.mp4"),
+    ("-B --parents", 4, "corrupt.mp4"),
+    ("-C --n-clusters 3 --stop-words xklb", 5, "test.gif"),
+    ("-C --near-duplicates", 5, "corrupt.mp4"),
+    ("-O duration", 5, "test.gif"),
+    ("-O locale_duration", 5, "test.gif"),
+    ("-O locale_size", 5, "test_frame.gif"),
+    ("-O reverse_path_path", 5, "https://test"),
+    ("-O size", 5, "test_frame.gif"),
+    ("-O", 5, "corrupt.mp4"),
+    ("-R", 4, "corrupt.mp4"),
+    ("-RCO", 4, "test.gif"),
+    ("-RR", 4, "corrupt.mp4"),
+    ("-w 'done>0'", 0, ""),
+    ("-w 'play_count=0'", 5, "corrupt.mp4"),
+    ("-w 'play_count>0'", 0, ""),
+    ("-w 'playhead is NULL'", 5, "corrupt.mp4"),
+    ("-w 'time_played>0'", 0, ""),
+    ("-w audio_count=1", 2, "corrupt.mp4"),
+    ("-w subtitle_count=1", 1, "corrupt.mp4"),
+    ("-w time_deleted=0", 5, "corrupt.mp4"),
+]
 
-        sys.argv = ["wt", v_db, "-w", "path like '%test.mp4'"]
-        wt()
-        out = play_mocked.call_args[0][1]
-        assert "test.mp4" in out["path"]
-        assert out["duration"] == 12
-        assert out["size"] == 136057
-
-        a_db = "tests/data/audio.db"
-        fs_add([a_db, "--audio", "tests/data/"])
-        lb(["listen", a_db])
-        out = play_mocked.call_args[0][1]
-        assert "test" in out["path"]
-
-    @mock.patch("xklb.playback.media_player.single_player", return_value=SimpleNamespace(returncode=0))
-    def test_wt_sort(self, play_mocked):
-        sys.argv = ["wt", v_db, "-u", "duration"]
-        wt()
-        out = play_mocked.call_args[0][1]
-        assert out is not None
-
-    @mock.patch("xklb.playback.media_player.single_player", return_value=SimpleNamespace(returncode=0))
-    def test_wt_size(self, play_mocked):
-        sys.argv = ["wt", v_db, "--size", "-1"]  # less than 1MB
-        wt()
-        out = play_mocked.call_args[0][1]
-        assert out is not None
-
-    @mock.patch("xklb.playback.media_player.single_player", return_value=SimpleNamespace(returncode=0))
-    def test_undelete(self, _play_mocked):
-        temp_dir = tempfile.TemporaryDirectory()
-
-        t_db = str(Path(temp_dir.name, "test.db"))
-        fs_add([t_db, "tests/data/"])
-        args = connect_db_args(t_db)
-        db_history.add(args, [str(Path("tests/data/test.mp4").resolve())])
-        db_media.mark_media_deleted(args, [str(Path("tests/data/test.mp4").resolve())])
-        fs_add([t_db, "tests/data/"])
-        d = args.db.pop_dict("select * from media where path like '%test.mp4'")
-        assert d["time_deleted"] == 0
-
-        try:
-            temp_dir.cleanup()
-        except Exception as e:
-            log.debug(e)
+temp_parser = ArgumentParser(add_help=False)
+arggroups.sql_fs(temp_parser)
+opts = temp_parser._actions
 
 
-@mock.patch("xklb.playback.media_player.play", return_value=SimpleNamespace(returncode=0))
-@pytest.mark.parametrize(
-    "flags",
-    [
-        "-s tests -s 'tests AND data' -E 2 -s test -E 3",
-        "--duration-from-size=-100Mb",
-        "-O",
-        "-O duration",
-        "-O locale_duration",
-        "-O reverse_path_path",
-        "-R",
-        "-RR",
-        "-C",
-        "-RCO",
-        "--sibling",
-        "--offset 1",
-        "-s test",
-        "test",
-        "-s 'path : test'",
-        "-w audio_count=1",
-        "-w subtitle_count=1",
-        "-d+0 -d-10",
-        "-d=-1",
-        "-S+0 -S-10",
-        "-S=-1Mi",
-        "-u duration",
-        "--portrait",
-        "--online-media-only",
-        "--local-media-only",
-        "-w 'size/duration<50000'",
-        "-w time_deleted=0",
-        "--downloaded-within '2 days'",
-        "-w 'playhead is NULL'",
-        "--played-within '3 days'",
-        "-w 'play_count>0'",
-        "-w 'time_played>0'",
-        "-w 'done>0'",
-        "-w 'play_count=0'",
-        "--local",
-        "-u random",
-        "--fetch-siblings if-audiobook",
-        "-L 1",
-        "--upper 16",
-        "--lower 4",
-    ],
-)
-def test_fs_flags(play_mocked, flags):
+@pytest.mark.parametrize("o", opts)
+def test_flags_covered(o):
+    assert any(s in xs for s in o.option_strings for xs in [t[0] for t in fs_flags] + [t[0] for t in media_flags]), (
+        "Option %s is not covered" % o.option_strings
+    )
+
+
+@mock.patch("xklb.playback.media_player.play_list", return_value=SimpleNamespace(returncode=0))
+@pytest.mark.parametrize("flags,count,first", fs_flags)
+def test_fs_flags(play_mocked, flags, count, first):
     for subcommand in ["fs", "media"]:
-        lb([subcommand, v_db, *shlex.split(flags)])
-        out = play_mocked.call_args[0][1]
-        assert out is not None, f"Test failed for {flags}"
+        if count == 0:
+            with pytest.raises(SystemExit):
+                lb([subcommand, v_db, *shlex.split(flags)])
+        else:
+            lb([subcommand, v_db, *shlex.split(flags)])
+            out = play_mocked.call_args[0][1]
+
+            assert len(out) == count
+            if first:
+                p = out[0]["path"]
+                p = p if first.startswith("http") else Path(p).name
+                assert p == first, "%s does not match %s" % (p, first)
 
 
-@mock.patch("xklb.playback.media_player.play", return_value=SimpleNamespace(returncode=0))
-@pytest.mark.parametrize(
-    "flags",
-    [
-        "--duration-from-size=-100Mb",
-        "-O",
-        "-O duration",
-        "-O locale_duration",
-        "-O reverse_path_path",
-        "-R",
-        "-RR",
-        "-C",
-        "-B",
-        "-B -pa",
-        "-RCO",
-        "--sibling",
-        "--solo",
-        "--offset 1",
-        "-s test",
-        "test",
-        "-s 'path : test'",
-        "-w audio_count=1",
-        "-w subtitle_count=1",
-        "-d+0 -d-10",
-        "-d=-1",
-        "-S+0 -S-10",
-        "-S=-1Mi",
-        "-u duration",
-        "--portrait",
-        "-w 'size/duration<50000'",
-        "-w time_deleted=0",
-        "--downloaded-within '2 days'",
-        "-w 'playhead is NULL'",
-        "--played-within '3 days'",
-        "-w 'play_count>0'",
-        "-w 'time_played>0'",
-        "-w 'done>0'",
-    ],
-)
-def test_media_flags(play_mocked, flags):
+@mock.patch("xklb.playback.media_player.play_list", return_value=SimpleNamespace(returncode=0))
+@pytest.mark.parametrize("flags,count,first", media_flags)
+def test_media_flags(play_mocked, flags, count, first):
     for subcommand in ["media", "wt"]:
-        lb([subcommand, v_db, *shlex.split(flags)])
-        out = play_mocked.call_args[0][1]
-        assert out is not None, f"Test failed for {flags}"
+        if count == 0:
+            with pytest.raises(SystemExit):
+                lb([subcommand, v_db, *shlex.split(flags)])
+        else:
+            lb([subcommand, v_db, *shlex.split(flags)])
+            out = play_mocked.call_args[0][1]
+
+            assert len(out) == count
+            if first:
+                p = out[0]["path"]
+                p = p if first.startswith("http") else Path(p).name
+                assert p == first, "%s does not match %s" % (p, first)
+
+
+printing_flags = [
+    "-p",
+    "-B -pa",
+    "-pa",
+    "-pb",
+    "-pf",
+    "-p df",
+    "-p bf",
+    "-p -P",
+    "-p --cols '*' -L inf",
+]
 
 
 @mock.patch("xklb.playback.media_printer.media_printer", return_value=SimpleNamespace(returncode=0))
-@pytest.mark.parametrize(
-    "flags",
-    [
-        "-P o",
-        "-P p",
-        "-P t",
-        "-P s",
-        "-P f",
-        "-P fo",
-        "-P pt",
-        "-p",
-        "-pa",
-        "-pb",
-        "-pf",
-        "-p df",
-        "-p bf",
-        "-p -P",
-        "-p --cols '*' -L inf",
-    ],
-)
+@pytest.mark.parametrize("flags", printing_flags)
 def test_print_flags(print_mocked, flags):
     for subcommand in ["fs", "media"]:
         lb([subcommand, v_db, *shlex.split(flags)])
