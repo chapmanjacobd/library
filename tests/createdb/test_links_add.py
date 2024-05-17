@@ -12,7 +12,8 @@ def test_links_add(temp_db):
             "--page-key=skip",
             "--page-start=0",
             "--page-step=25",
-            "--path-include=/pdf/" "--max-pages=2",
+            "--path-include=/pdf/",
+            "--max-pages=2",
         ]
     )
 

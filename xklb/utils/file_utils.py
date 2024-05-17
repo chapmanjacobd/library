@@ -12,10 +12,10 @@ from xklb.utils import consts, devices, file_utils, printing, processes, web
 from xklb.utils.log_utils import log
 
 
-def scan_stats(files:int, filtered_files:int, folders:int, filtered_folders:int):
+def scan_stats(files: int, filtered_files: int, folders: int, filtered_folders: int):
     return (
-        f"""Files: {files}{f" [{filtered_files} ignored]" if filtered_files else ''}"""
-        f" Folders: {folders}{f" [{filtered_folders} ignored]" if filtered_folders else ''}"
+        f"""Files: {files}{f' [{filtered_files} ignored]' if filtered_files else ''}"""
+        f""" Folders: {folders}{f' [{filtered_folders} ignored]' if filtered_folders else ''}"""
     )
 
 
@@ -55,7 +55,9 @@ def rglob(
                         else:
                             filtered_files.add(entry.path)
 
-            printing.print_overwrite(f"[{base_dir}] {scan_stats(len(files), len(filtered_files), len(folders), len(filtered_folders))}")
+            printing.print_overwrite(
+                f"[{base_dir}] {scan_stats(len(files), len(filtered_files), len(folders), len(filtered_folders))}"
+            )
 
     print(f"\r[{base_dir}] {scan_stats(len(files), len(filtered_files), len(folders), len(filtered_folders))}")
 

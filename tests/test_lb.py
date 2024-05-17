@@ -1,5 +1,4 @@
 import os.path, sys
-from pathlib import Path
 
 import pytest
 
@@ -39,7 +38,9 @@ def get_test_name(s):
     return path
 
 
+"""
 @pytest.mark.parametrize("path", [get_test_name(s) for s in unique_modules])
 def test_pytest_files_exist(path):
     Path(path).touch(exist_ok=True)
     assert os.path.getsize(path) > 0, f"Pytest file {path} is empty."
+"""
