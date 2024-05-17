@@ -97,7 +97,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v2.8.010; 72 subcommands)
+    library (v2.8.011; 72 subcommands)
 
     Create database subcommands:
     ╭───────────────┬──────────────────────────────────────────╮
@@ -2791,7 +2791,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Dedupe online against local media
 
-        library dedupe-media video.db / http
+        library dedupe-media --compare-dirs video.db / http
 
 
 </details>
