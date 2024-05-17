@@ -1117,7 +1117,7 @@ dedupe_media = """library dedupe-media [--audio | --id | --title | --filesystem]
 
     Dedupe online against local media
 
-        library dedupe-media video.db / http
+        library dedupe-media --compare-dirs video.db / http
 """
 
 dedupe_czkawka = """library dedupe-czkawka [--volume VOLUME] [--auto-seek] [--ignore-errors] [--folder] [--folder-glob [FOLDER_GLOB]] [--replace] [--no-replace] [--override-trash OVERRIDE_TRASH] [--delete-files] [--gui]

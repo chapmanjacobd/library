@@ -1,6 +1,6 @@
-from pathlib import Path
-import sys, unittest
+import unittest
 from argparse import Namespace
+from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock, skip
 
@@ -13,8 +13,8 @@ reddit_db = "tests/data/reddit.db"
 @skip("Requires reddit auth")
 class TestReddit(unittest.TestCase):
     if not Path(reddit_db).exists():
-        lb(['reddit_add', reddit_db, "https://old.reddit.com/user/BuonaparteII/", "--limit", "10"])
-        lb(['reddit_add', reddit_db, "https://old.reddit.com/r/pytest/", "--limit", "1"])
+        lb(["reddit_add", reddit_db, "https://old.reddit.com/user/BuonaparteII/", "--limit", "10"])
+        lb(["reddit_add", reddit_db, "https://old.reddit.com/r/pytest/", "--limit", "1"])
 
     @mock.patch("xklb.playback.media_player.single_player", return_value=SimpleNamespace(returncode=0))
     def test_lb_fs(self, play_mocked):
@@ -23,7 +23,7 @@ class TestReddit(unittest.TestCase):
         assert len(out) > 0
 
     def test_redditupdate(self):
-        lb(['reddit_update', reddit_db, "--lookback", "2", "--limit", "2"])
+        lb(["reddit_update", reddit_db, "--lookback", "2", "--limit", "2"])
         db = connect(Namespace(database=reddit_db, verbose=2))
 
         playlists = list(db["playlists"].rows)

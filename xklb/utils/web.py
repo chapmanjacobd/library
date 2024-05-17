@@ -729,6 +729,7 @@ def fake_title(url):
 
     return title.strip()
 
+
 def get_title(args, url):
     import requests.exceptions
     from bs4 import BeautifulSoup

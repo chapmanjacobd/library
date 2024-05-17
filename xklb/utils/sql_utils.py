@@ -318,31 +318,33 @@ def fts_search_sql(table, fts_table, include, exclude=None, flexible=False):
     return table, bound_parameters
 
 
-def construct_search_bindings(args, columns) -> None:
-    incl = ":include{0}"
+def construct_search_bindings(args, columns, include=None) -> None:
+    param_key = consts.random_string()
+
+    incl = ":" + param_key + "include{0}"
     includes = "(" + " OR ".join([f"{col} LIKE {incl}" for col in columns]) + ")"
     includes_sql_parts = []
-    for idx, inc in enumerate(args.include):
+    for idx, inc in enumerate(include or args.include):
         includes_sql_parts.append(includes.format(idx))
         if getattr(args, "exact", False):
-            args.filter_bindings[f"include{idx}"] = inc
+            args.filter_bindings[f"{param_key}include{idx}"] = inc
         else:
-            args.filter_bindings[f"include{idx}"] = "%" + inc.replace(" ", "%").replace("%%", " ") + "%"
+            args.filter_bindings[f"{param_key}include{idx}"] = "%" + inc.replace(" ", "%").replace("%%", " ") + "%"
     join_op = " OR " if getattr(args, "flexible_search", False) else " AND "
     if len(includes_sql_parts) > 0:
         args.filter_sql.append("AND (" + join_op.join(includes_sql_parts) + ")")
 
-    excl = ":exclude{0}"
+    excl = ":" + param_key + "exclude{0}"
     excludes = "AND (" + " AND ".join([f"COALESCE({col},'') NOT LIKE {excl}" for col in columns]) + ")"
     for idx, exc in enumerate(args.exclude):
         args.filter_sql.append(excludes.format(idx))
         if getattr(args, "exact", False):
-            args.filter_bindings[f"exclude{idx}"] = exc
+            args.filter_bindings[f"{param_key}exclude{idx}"] = exc
         else:
-            args.filter_bindings[f"exclude{idx}"] = "%" + exc.replace(" ", "%").replace("%%", " ") + "%"
+            args.filter_bindings[f"{param_key}exclude{idx}"] = "%" + exc.replace(" ", "%").replace("%%", " ") + "%"
 
 
-def search_filter(args, m_columns):
+def search_filter(args, m_columns, table_prefix="m."):
     table = "media"
     if args.db["media"].detect_fts() and args.fts:
         if args.include:
@@ -358,12 +360,22 @@ def search_filter(args, m_columns):
         elif args.exclude:
             construct_search_bindings(
                 args,
-                [f"m.{k}" for k in m_columns if k in db_utils.config["media"]["search_columns"] if k in m_columns],
+                [
+                    f"{table_prefix}{k}"
+                    for k in m_columns
+                    if k in db_utils.config["media"]["search_columns"]
+                    if k in m_columns
+                ],
             )
     else:
         construct_search_bindings(
             args,
-            [f"m.{k}" for k in m_columns if k in db_utils.config["media"]["search_columns"] if k in m_columns],
+            [
+                f"{table_prefix}{k}"
+                for k in m_columns
+                if k in db_utils.config["media"]["search_columns"]
+                if k in m_columns
+            ],
         )
 
     return table, m_columns
