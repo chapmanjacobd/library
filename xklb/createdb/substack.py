@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 
 from xklb import usage
 from xklb.mediadb import db_media
-from xklb.utils import arggroups, argparse_utils, nums, web
+from xklb.utils import arggroups, argparse_utils, consts, nums, web
 
 
 def parse_args() -> argparse.Namespace:
@@ -24,7 +24,8 @@ def save_page(args, url):
     response = web.get(args, url)
     if response:
         soup = BeautifulSoup(response.text, "lxml")
-        web.download_embeds(args, soup)
+        if not consts.PYTEST_RUNNING:
+            web.download_embeds(args, soup)
 
         try:
             subtitle = soup.select_one("h3.subtitle").getText()  # type: ignore

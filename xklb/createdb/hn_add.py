@@ -35,6 +35,7 @@ SOFTWARE.
 def parse_args(prog, usage) -> argparse.Namespace:
     parser = argparse_utils.ArgumentParser(prog, usage)
     parser.add_argument("--oldest", action="store_true")
+    parser.add_argument("--max-id", type=int)
     arggroups.requests(parser)
     arggroups.debug(parser)
     arggroups.database(parser)
@@ -109,8 +110,10 @@ def hacker_news_add() -> None:
     args.db.enable_wal()
 
     max_item_id = (
-        web.requests_session(args).get("https://hacker-news.firebaseio.com/v0/maxitem.json", timeout=120).json()
+        args.max_id
+        or web.requests_session(args).get("https://hacker-news.firebaseio.com/v0/maxitem.json", timeout=120).json()
     )
+
     tables = args.db.table_names()
     r = list(
         args.db.query(

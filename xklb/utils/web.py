@@ -7,7 +7,7 @@ from urllib.parse import parse_qs, parse_qsl, quote, unquote, urlencode, urljoin
 import requests
 from idna import decode as puny_decode
 
-from xklb.utils import consts, db_utils, iterables, nums, path_utils, pd_utils, strings
+from xklb.utils import consts, db_utils, iterables, nums, path_utils, pd_utils, strings, web
 from xklb.utils.log_utils import clamp_index, log
 
 headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:121.0) Gecko/20100101 Firefox/121.0"}
@@ -714,3 +714,34 @@ def is_html(url, max_size=15 * 1024 * 1024):
         return False
 
     return True  # if ambiguous, return True
+
+
+def fake_title(url):
+    p = urllib.parse.urlparse(url)
+    title = f"{p.netloc} {p.path} {p.params} {p.query}: {p.fragment}"
+
+    if title.startswith("www."):
+        title = title[4:]
+
+    title = title.replace("/", " ")
+    title = title.replace("?", " ")
+    title = title.replace("#", ": ")
+
+    return title.strip()
+
+def get_title(args, url):
+    import requests.exceptions
+    from bs4 import BeautifulSoup
+
+    try:
+        if args.selenium:
+            web.selenium_get_page(args, url)
+            html_text = args.driver.page_source
+        else:
+            html_text = web.requests_session(args).get(url).text
+
+        soup = BeautifulSoup(html_text, "lxml")
+        title = soup.title.text.strip() if soup.title else url
+    except requests.exceptions.RequestException as e:
+        title = fake_title(url)
+    return title

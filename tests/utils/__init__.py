@@ -31,7 +31,7 @@ def filter_query_param(r1, r2):
     return query1 == query2
 
 
-def connect_db_args(db_path):
+def connect_db_args(db_path) -> NoneSpace:
     return NoneSpace(db=db_utils.connect(NoneSpace(database=db_path, verbose=0)))
 
 
@@ -51,3 +51,16 @@ v_db = "tests/data/video.db"
 if not Path(v_db).exists():
     lb(["fs_add", v_db, "--scan-subtitles", "tests/data/", "-E", "Youtube"])
     lb(["linksdb", v_db, "--insert-only", "https://test"])
+
+tube_db = "tests/data/tube.db"
+if not Path(tube_db).exists():
+    lb(
+        [
+            "tube_add",
+            tube_db,
+            "--extra",
+            "--extractor-config",
+            "TEST1=1 TEST2=2",
+            "https://youtube.com/playlist?list=PLVoczRgDnXDLWV1UJ_tO70VT_ON0tuEdm",
+        ]
+    )
