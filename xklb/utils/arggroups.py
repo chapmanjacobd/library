@@ -173,7 +173,7 @@ def sql_fs(parent_parser):
     parse_media.add_argument("--duration-from-size", action="append")
 
 
-def sql_fs_post(args) -> None:
+def sql_fs_post(args, table_prefix="m.") -> None:
     if args.to_json:
         args.print = "p"
 
@@ -212,7 +212,7 @@ def sql_fs_post(args) -> None:
         and "deleted" not in (getattr(args, "sort_groups_by", None) or "")
         and "time_deleted" not in " ".join(args.where)
     ):
-        args.filter_sql.append("AND COALESCE(m.time_deleted,0) = 0")
+        args.filter_sql.append(f"AND COALESCE({table_prefix}time_deleted,0) = 0")
 
     if args.local_media_only:
         args.filter_sql.append('AND path not LIKE "http%"')

@@ -1,8 +1,8 @@
 from types import SimpleNamespace
 from unittest import mock
 
-from xklb.lb import library as lb
 from tests.utils import tube_db
+from xklb.lb import library as lb
 
 
 def test_tw_print(capsys):
@@ -29,7 +29,7 @@ def test_tw_print(capsys):
 
 @mock.patch("xklb.playback.media_player.single_player", return_value=SimpleNamespace(returncode=0))
 def test_lb_fs(play_mocked):
-    lb(['wt', tube_db])
+    lb(["wt", tube_db])
     out = play_mocked.call_args[0][1]
     assert "https://www.youtube.com/watch?v=QoXubRvB6tQ" in out["path"]
     assert out["duration"] == 28
@@ -39,31 +39,31 @@ def test_lb_fs(play_mocked):
 
 @mock.patch("xklb.playback.media_player.single_player", return_value=SimpleNamespace(returncode=0))
 def test_tw_search(play_mocked):
-    lb(['wt', tube_db, "-s", "nothing"])
+    lb(["wt", tube_db, "-s", "nothing"])
     out = play_mocked.call_args[0][1]
     assert out is not None
 
 
 @mock.patch("xklb.playback.media_player.single_player", return_value=SimpleNamespace(returncode=0))
 def test_tw_sort(play_mocked):
-    lb(['wt', tube_db, "-u", "duration"])
+    lb(["wt", tube_db, "-u", "duration"])
     out = play_mocked.call_args[0][1]
     assert out is not None
 
 
 @mock.patch("xklb.playback.media_player.single_player", return_value=SimpleNamespace(returncode=0))
 def test_tw_size(play_mocked):
-    lb(['wt', tube_db, "--size", "+1MB"])
+    lb(["wt", tube_db, "--size", "+1MB"])
     out = play_mocked.call_args[0][1]
     assert out is not None
 
 
 @mock.patch("xklb.createdb.tube_backend.get_playlist_metadata")
 def test_tubeupdate(play_mocked):
-    lb(['tube-update', tube_db, "--extractor-config", "TEST2=3 TEST3=1"])
+    lb(["tube-update", tube_db, "--extractor-config", "TEST2=3 TEST3=1"])
     assert play_mocked.call_args is None
 
-    lb(['tube-update', tube_db, "--extractor-config", "TEST2=4 TEST3=2", "--force"])
+    lb(["tube-update", tube_db, "--extractor-config", "TEST2=4 TEST3=2", "--force"])
     out = play_mocked.call_args[0][2]
     assert out is not None
     assert out["TEST1"] == "1"
@@ -78,11 +78,11 @@ def test_tube_dl_conversion(get_playlist_metadata, download):
     PLAYLIST_VIDEO_URL = "https://www.youtube.com/watch?v=QoXubRvB6tQ"
     STORAGE_PREFIX = "tests/data/"
 
-    lb(['tube_add', tube_db, PLAYLIST_URL])
-    lb(['tube_add', tube_db, "--force", PLAYLIST_URL])
+    lb(["tube_add", tube_db, PLAYLIST_URL])
+    lb(["tube_add", tube_db, "--force", PLAYLIST_URL])
     out = get_playlist_metadata.call_args[0][1]
     assert out == PLAYLIST_URL
 
-    lb(['download', tube_db, "--prefix", STORAGE_PREFIX, "--video"])
+    lb(["download", tube_db, "--prefix", STORAGE_PREFIX, "--video"])
     out = download.call_args[0]
     assert out[1]["path"] == PLAYLIST_VIDEO_URL

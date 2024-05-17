@@ -1,4 +1,3 @@
-
 from xklb import usage
 from xklb.utils import arg_utils, arggroups, argparse_utils, web
 
@@ -46,6 +45,7 @@ def markdown_links():
     finally:
         if args.selenium:
             web.quit_selenium(args)
+
 
 if __name__ == "__main__":
     markdown_links()
