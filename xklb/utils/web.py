@@ -735,7 +735,11 @@ def get_title(args, url):
     from bs4 import BeautifulSoup
 
     try:
-        if args.selenium:
+        if getattr(args, 'local_html', False):
+            with open(url) as f:
+                html_text = f.read()
+            url = "file://" + url
+        elif args.selenium:
             web.selenium_get_page(args, url)
             html_text = args.driver.page_source
         else:

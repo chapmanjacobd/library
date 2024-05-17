@@ -367,7 +367,8 @@ def get_dir_media(args, dirs: Collection, include_subdirs=False, limit=2_000) ->
                 , MAX(h.time_played) time_last_played
                 , FIRST_VALUE(h.playhead) OVER (PARTITION BY h.media_id ORDER BY h.time_played DESC) playhead
                 , *
-            FROM media m
+                {', rank' if 'rank' in select_sql else ''}
+            FROM {args.table} m
             LEFT JOIN history h on h.media_id = m.id
             WHERE 1=1
                 and m.id in (select id from {args.table})
@@ -420,7 +421,8 @@ def get_playlist_media(args, playlist_paths) -> list[dict]:
                 , MAX(h.time_played) time_last_played
                 , FIRST_VALUE(h.playhead) OVER (PARTITION BY h.media_id ORDER BY h.time_played DESC) playhead
                 , *
-            FROM media m
+                {', rank' if 'rank' in select_sql else ''}
+            FROM {args.table} m
             LEFT JOIN history h on h.media_id = m.id
             WHERE 1=1
                 and m.id in (select id from {args.table})
@@ -458,7 +460,7 @@ def get_next_dir_media(args, folder):
 
 
 def get_sibling_media(args, media):
-    if args.fetch_siblings in ("always", "all"):
+    if args.fetch_siblings in ("all", "always"):
         dirs = {str(Path(d["path"]).parent) + os.sep for d in media}
         media = get_dir_media(args, dirs)
     elif args.fetch_siblings == "each":
@@ -514,7 +516,7 @@ def get_related_media(args, m: dict) -> list[dict]:
                 , MAX(h.time_played) time_last_played
                 , FIRST_VALUE(h.playhead) OVER (PARTITION BY h.media_id ORDER BY h.time_played DESC) playhead
                 , *
-                , rank
+                {', rank' if 'rank' in select_sql else ''}
             FROM {args.table} m
             LEFT JOIN history h on h.media_id = m.id
             WHERE 1=1

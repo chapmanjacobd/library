@@ -15,7 +15,7 @@ def parse_args() -> argparse.Namespace:
     arggroups.selenium(parser)
     parser.set_defaults(selenium=True)
 
-    parser.add_argument("--local-file", "--local-html", action="store_true", help="Treat paths as Local HTML files")
+    parser.add_argument("--local-html", action="store_true", help="Treat paths as Local HTML files")
     parser.add_argument(
         "--extract-html-table", action="store_true", help="Extract data from HTML tables within the page"
     )
