@@ -56,12 +56,12 @@ def parse_args(action, usage) -> argparse.Namespace:
     parser.add_argument("--force", "-f", action="store_true")
     arggroups.debug(parser)
     arggroups.database(parser)
-    if action == "redditadd":
+    if action == consts.SC.reddit_add:
         arggroups.paths_or_stdin(parser)
     args = parser.parse_intermixed_args()
-    arggroups.args_post(args, parser, create_db=True)
+    arggroups.args_post(args, parser, create_db=action == consts.SC.reddit_add)
 
-    if action == "redditadd":
+    if action == consts.SC.reddit_add:
         args.paths = iterables.conform(args.paths)
 
     try:
@@ -291,7 +291,7 @@ def reddit_add(args=None) -> None:
     if args:
         sys.argv = ["lb", *args]
 
-    args = parse_args("reddit_add", usage=usage.reddit_add)
+    args = parse_args(consts.SC.reddit_add, usage=usage.reddit_add)
 
     for path in args.paths:
         path = path.lower()
@@ -332,9 +332,7 @@ def reddit_add(args=None) -> None:
                 {
                     "path": path,
                     "extractor_playlist_id": name,
-                    "extractor_config": objects.filter_namespace(
-                        args.extractor_config, ["limit", "lookback", "praw_site"]
-                    ),
+                    "extractor_config": args.extractor_config,
                     "extractor_key": extractor_key,
                     "time_modified": consts.now(),
                     "time_deleted": 0,
@@ -350,7 +348,7 @@ def reddit_update(args=None) -> None:
     if args:
         sys.argv = ["lb", *args]
 
-    args = parse_args("reddit-update", usage=usage.reddit_update)
+    args = parse_args(consts.SC.reddit_update, usage=usage.reddit_update)
     reddit_playlists = db_playlists.get_all(
         args,
         "extractor_key, path, extractor_playlist_id, extractor_config",

@@ -1,7 +1,7 @@
 import functools, json, multiprocessing, os, platform, shlex, signal, subprocess, sys
 from typing import NoReturn
 
-from xklb.utils import consts, iterables
+from xklb.utils import consts, iterables, nums
 from xklb.utils.log_utils import log
 
 
@@ -24,16 +24,15 @@ def player_exit(completed_process) -> NoReturn:
     raise SystemExit(completed_process.returncode)
 
 
-def timeout(minutes) -> None:
-    if minutes and float(minutes) > 0:
-        seconds = int(float(minutes) * 60)
+def timeout(time_str) -> None:
+    seconds = nums.human_to_seconds(time_str) or 0
 
-        def exit_timeout(_signal, _frame):
-            print(f"\nReached timeout... ({seconds}s)")
-            raise SystemExit(124)
+    def exit_timeout(_signal, _frame):
+        print(f"\nReached timeout... ({seconds}s)")
+        raise SystemExit(124)
 
-        signal.signal(signal.SIGALRM, exit_timeout)
-        signal.alarm(seconds)
+    signal.signal(signal.SIGALRM, exit_timeout)
+    signal.alarm(seconds)
 
 
 def with_timeout(seconds):  # noqa: ANN201

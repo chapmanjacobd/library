@@ -99,6 +99,8 @@ class SC:
     listen = "listen"
     tube_add = "tube-add"
     tube_update = "tube-update"
+    reddit_add = "reddit-add"
+    reddit_update = "reddit-update"
     gallery_add = "gallery-add"
     gallery_update = "gallery-update"
     tabs_open = "tabs-open"

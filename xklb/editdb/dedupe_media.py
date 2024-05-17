@@ -10,7 +10,7 @@ from xklb import usage
 from xklb.files import sample_compare, sample_hash
 from xklb.mediadb import db_media
 from xklb.playback import media_printer
-from xklb.utils import arggroups, argparse_utils, consts, db_utils, devices, file_utils, processes, sql_utils
+from xklb.utils import arg_utils, arggroups, argparse_utils, consts, db_utils, devices, file_utils, processes, sql_utils
 from xklb.utils.consts import DBType
 from xklb.utils.log_utils import log
 
@@ -74,7 +74,6 @@ def parse_args() -> argparse.Namespace:
         help=argparse.SUPPRESS,
         # "Dedupe image database",
     )
-    profile.set_defaults(profile="audio")
 
     parser.set_defaults(limit="100")
 
@@ -203,7 +202,7 @@ def get_music_duplicates(args) -> list[dict]:
         {" ".join(args.filter_sql)}
     ORDER BY 1=1
         {', m1.audio_count > 0 DESC' if 'audio_count' in m_columns else ''}
-        {', ' + args.sort if args.sort else ''}
+        {', ' + args.sort.replace('m.', 'm1.') if args.sort else ''}
         {', m1.video_count > 0 DESC' if 'video_count' in m_columns else ''}
         {', m1.subtitle_count > 0 DESC' if 'subtitle_count' in m_columns else ''}
         {', m1.uploader IS NOT NULL DESC' if 'uploader' in m_columns else ''}
@@ -248,7 +247,7 @@ def get_id_duplicates(args) -> list[dict]:
     ORDER BY 1=1
         , m1.video_count > 0 DESC
         , m1.audio_count > 0 DESC
-        {', ' + args.sort if args.sort else ''}
+        {', ' + args.sort.replace('m.', 'm1.') if args.sort else ''}
         {', m1.subtitle_count > 0 DESC' if 'subtitle_count' in m_columns else ''}
         , m1.audio_count DESC
         , length(m1.path)-length(REPLACE(m1.path, '{os.sep}', '')) DESC
@@ -291,7 +290,7 @@ def get_title_duplicates(args) -> list[dict]:
     ORDER BY 1=1
         , m1.video_count > 0 DESC
         , m1.audio_count > 0 DESC
-        {', ' + args.sort if args.sort else ''}
+        {', ' + args.sort.replace('m.', 'm1.') if args.sort else ''}
         {', m1.subtitle_count > 0 DESC' if 'subtitle_count' in m_columns else ''}
         , m1.audio_count DESC
         {', m1.uploader IS NOT NULL DESC' if 'uploader' in m_columns else ''}
@@ -335,7 +334,7 @@ def get_duration_duplicates(args) -> list[dict]:
     ORDER BY 1=1
         , m1.video_count > 0 DESC
         , m1.audio_count > 0 DESC
-        {', ' + args.sort if args.sort else ''}
+        {', ' + args.sort.replace('m.', 'm1.') if args.sort else ''}
         {', m1.subtitle_count > 0 DESC' if 'subtitle_count' in m_columns else ''}
         , m1.audio_count DESC
         {', m1.uploader IS NOT NULL DESC' if 'uploader' in m_columns else ''}
@@ -480,7 +479,7 @@ def dedupe_media() -> None:
         )
         return
     else:
-        raise NotImplementedError
+        raise argparse.ArgumentError(args.profile, 'Profile not set. Use --audio OR --id OR --title OR --filesystem')
 
     deletion_candidates = []
     deletion_paths = []
@@ -509,7 +508,7 @@ def dedupe_media() -> None:
             [
                 d["keep_path"] in deletion_paths or d["duplicate_path"] in deletion_paths,
                 d["keep_path"] == d["duplicate_path"],
-                not Path(d["keep_path"]).resolve().exists(),
+                not (consts.PYTEST_RUNNING or Path(d["keep_path"]).resolve().exists()),
             ],
         ):
             continue
@@ -520,6 +519,10 @@ def dedupe_media() -> None:
 
     if not duplicates:
         log.error("No duplicates found")
+        raise SystemExit(1)
+    if consts.PYTEST_RUNNING:
+        for d in duplicates:
+            db_media.mark_media_deleted(args, d["duplicate_path"])
         return
 
     tbl = deepcopy(duplicates)

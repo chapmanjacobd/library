@@ -1,5 +1,6 @@
 from xklb import usage
 from xklb.utils import arggroups, argparse_utils, nums
+from xklb.utils.log_utils import log
 
 
 def parse_utils():
@@ -44,4 +45,7 @@ def row_add():
     args, unknown_args = parse_utils()
 
     kwargs = parse_unknown_args_to_dict(unknown_args)
+    if not kwargs:
+        log.error("No data given via arguments")
+        raise SystemExit(2)
     args.db[args.table_name].insert(kwargs, alter=True)
