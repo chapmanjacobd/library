@@ -1,6 +1,5 @@
 import unittest
 from argparse import Namespace
-from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock, skip
 
@@ -12,7 +11,7 @@ reddit_db = "tests/data/reddit.db"
 
 @skip("Requires reddit auth")
 class TestReddit(unittest.TestCase):
-    if not Path(reddit_db).exists():
+    def setUp(self):
         lb(["reddit_add", reddit_db, "https://old.reddit.com/user/BuonaparteII/", "--limit", "10"])
         lb(["reddit_add", reddit_db, "https://old.reddit.com/r/pytest/", "--limit", "1"])
 
