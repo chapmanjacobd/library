@@ -10,6 +10,7 @@ COMMON_SITE_TITLE_SUFFIXES = [
 def parse_args():
     parser = argparse_utils.ArgumentParser(usage=usage.markdown_links)
     arggroups.requests(parser)
+    parser.add_argument("--local-html", action="store_true", help="Treat paths as Local HTML files")
     arggroups.selenium(parser)
     arggroups.debug(parser)
 

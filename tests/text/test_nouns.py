@@ -13,9 +13,9 @@ def mock_stdin(monkeypatch):
 
 def test_lb_nouns(mock_stdin, capsys):
     lb(["nouns"])
-    captured = capsys.readouterr()
+    captured = capsys.readouterr().out
     assert (
-        captured.out
+        captured
         == """sample
 text
 compound
