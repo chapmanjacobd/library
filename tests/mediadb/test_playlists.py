@@ -4,15 +4,15 @@ from xklb.lb import library as lb
 
 def test_playlists(capsys):
     lb(["playlists", tube_db])
-    captured = capsys.readouterr().out
+    captured = capsys.readouterr().out.replace("\n", "")
     assert "duration" in captured
 
     lb(["playlists", tube_db, "test playlist"])
-    captured = capsys.readouterr().out
+    captured = capsys.readouterr().out.replace("\n", "")
     assert "test playlist" in captured
 
     lb(["playlists", tube_db, "-pa"])
-    captured = capsys.readouterr().out
+    captured = capsys.readouterr().out.replace("\n", "")
     assert "Aggregate of playlists" in captured
     assert "playlists_count" in captured
     assert "media_count" in captured

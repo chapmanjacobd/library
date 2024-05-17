@@ -14,12 +14,12 @@ def test_lb_help(capsys):
     sys.argv = ["lb"]
     with pytest.raises(SystemExit):
         lb(None)
-    captured = capsys.readouterr().out
+    captured = capsys.readouterr().out.replace("\n", "")
     assert "subcommands" in captured
 
     with pytest.raises(SystemExit):
         lb(["-h"])
-    captured = capsys.readouterr().out
+    captured = capsys.readouterr().out.replace("\n", "")
     assert "subcommands" in captured
 
 
