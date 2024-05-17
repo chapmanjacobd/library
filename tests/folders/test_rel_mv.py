@@ -6,7 +6,8 @@ from pyfakefs.fake_filesystem import OSType
 from xklb.folders.rel_mv import gen_rel_path, relative_from_path, shortest_relative_from_path
 
 
-def test_relative_from_path():
+def test_relative_from_path(fs):
+    fs.os = OSType.LINUX
     assert relative_from_path("/path/test/file.txt", "/path/") == Path("test/file.txt")
     assert relative_from_path("/path/test/file.txt", "path/") == Path("test/file.txt")
     assert relative_from_path("/path/test/file.txt", "/test/") == Path("path/test/file.txt")
@@ -27,7 +28,9 @@ def test_relative_from_path_windows(fs):
     assert relative_from_path(r"C:\path\test\file.txt", "..\\..\\") == Path("file.txt")
 
 
-def test_shortest_relative_from_path():
+def test_shortest_relative_from_path(fs):
+    fs.os = OSType.LINUX
+
     relative_from_list = ["/path/to", "/another/path", "/yet/another/path", "../test/"]
 
     assert shortest_relative_from_path("/path/test/file.txt", ["/path/", "../test/"]) == Path("file.txt")
