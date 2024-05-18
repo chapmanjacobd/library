@@ -735,7 +735,7 @@ def get_title(args, url):
     from bs4 import BeautifulSoup
 
     try:
-        if getattr(args, 'local_html', False):
+        if getattr(args, "local_html", False):
             with open(url) as f:
                 html_text = f.read()
             url = "file://" + url
