@@ -1,9 +1,7 @@
-import os
 import tempfile
-from unittest.mock import patch, MagicMock
-import pytest
 
 from xklb.lb import library as lb
+
 
 def test_text_local_html(capsys):
     with tempfile.NamedTemporaryFile(suffix=".html", delete=False) as temp_html:
@@ -13,4 +11,4 @@ def test_text_local_html(capsys):
         lb(["extract-text", "--local-html", temp_html.name])
 
     captured = capsys.readouterr().out.replace("\n", "")
-    assert captured == 'Real TitleContent'
+    assert captured == "Real TitleContent"
