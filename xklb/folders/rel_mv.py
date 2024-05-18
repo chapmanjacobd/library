@@ -107,7 +107,7 @@ def shortest_relative_from_path(abspath, relative_from_list):
     return shortest_path or abspath
 
 
-def rel_move(sources, dest, simulate=False, relative_from=None, relpath=None):
+def rel_move(sources, dest, simulate=False, relative_from=None):
     if relative_from:
         relative_from = [Path(s).expanduser().resolve() for s in relative_from]
 
@@ -115,9 +115,7 @@ def rel_move(sources, dest, simulate=False, relative_from=None, relpath=None):
     for source in sources:
         abspath = Path(source).expanduser().resolve()
 
-        if relpath:
-            pass
-        elif relative_from:
+        if relative_from:
             relpath = str(shortest_relative_from_path(abspath, relative_from))
         else:
             rel_prefix = commonprefix([abspath, dest])
@@ -147,12 +145,12 @@ def rel_move(sources, dest, simulate=False, relative_from=None, relpath=None):
                 log.error("%s not found", abspath)
             elif e.errno == 39:  # target dir not empty
                 log.info("%s ->m %s", abspath, new_path)
-                new_paths.extend(rel_move(abspath.glob("*"), dest, simulate=simulate, relpath=relpath))
+                new_paths.extend(rel_move(abspath.glob("*"), dest, simulate=simulate, relative_from=relative_from))
             elif e.errno == 18:  # cross-device move
                 log.debug("%s ->d %s", abspath, target_dir)
                 if Path(new_path).is_dir():
                     log.info("%s ->dm %s", abspath, new_path)
-                    new_paths.extend(rel_move(abspath.glob("*"), dest, simulate=simulate, relpath=relpath))
+                    new_paths.extend(rel_move(abspath.glob("*"), dest, simulate=simulate, relative_from=relative_from))
                 else:
                     shutil.move(str(abspath), str(new_path))  # fallback to shutil
                     new_paths.append(new_path)
