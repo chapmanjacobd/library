@@ -1,4 +1,4 @@
-import sys, tempfile, unittest
+import tempfile, unittest
 from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
@@ -11,7 +11,6 @@ from xklb.createdb.fs_add import fs_add
 from xklb.lb import library as lb
 from xklb.mediadb import db_history, db_media
 from xklb.playback.media_player import MediaPrefetcher
-from xklb.playback.play_actions import watch as wt
 from xklb.utils import consts
 from xklb.utils.log_utils import log
 from xklb.utils.objects import NoneSpace
@@ -80,13 +79,6 @@ def test_prefetch(media):
 def test_wt_help(capsys):
     wt_help_text = "usage:,where,sort,--duration".split(",")
 
-    sys.argv = ["wt", "-h"]
-    with pytest.raises(SystemExit):
-        wt()
-    captured = capsys.readouterr().out.replace("\n", "")
-    for help_text in wt_help_text:
-        assert help_text in captured
-
     with pytest.raises(SystemExit):
         lb(["wt", "-h"])
     captured = capsys.readouterr().out.replace("\n", "")
@@ -123,8 +115,7 @@ class TestFs(unittest.TestCase):
             assert out["duration"] == 12
             assert out["size"] == 136057
 
-        sys.argv = ["wt", v_db, "-w", "path like '%test.mp4'"]
-        wt()
+        lb(["wt", v_db, "-w", "path like '%test.mp4'"])
         out = play_mocked.call_args[0][1]
         assert "test.mp4" in out["path"]
         assert out["duration"] == 12
@@ -138,15 +129,13 @@ class TestFs(unittest.TestCase):
 
     @mock.patch("xklb.playback.media_player.single_player", return_value=SimpleNamespace(returncode=0))
     def test_wt_sort(self, play_mocked):
-        sys.argv = ["wt", v_db, "-u", "duration"]
-        wt()
+        lb(["wt", v_db, "-u", "duration"])
         out = play_mocked.call_args[0][1]
         assert out is not None
 
     @mock.patch("xklb.playback.media_player.single_player", return_value=SimpleNamespace(returncode=0))
     def test_wt_size(self, play_mocked):
-        sys.argv = ["wt", v_db, "--size", "-1"]  # less than 1MB
-        wt()
+        lb(["wt", v_db, "--size", "-1"])  # less than 1MB
         out = play_mocked.call_args[0][1]
         assert out is not None
 

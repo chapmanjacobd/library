@@ -1,4 +1,5 @@
 import shlex
+from argparse import ArgumentParser
 from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
@@ -7,6 +8,7 @@ import pytest
 
 from tests.utils import v_db
 from xklb.lb import library as lb
+from xklb.utils import arggroups
 
 fs_flags = [
     ("--modified-within '1 second'", 0, ""),
@@ -14,11 +16,11 @@ fs_flags = [
     ("--downloaded-before '1 day'", 0, ""),
     ("--limit 1", 1, "corrupt.mp4"),
     ("-L 1", 1, "corrupt.mp4"),
-    # ("--created-within '1 day'", 1, "https://test"),
     ("--online-media-only", 1, "https://test"),
     ("--offset 1", 4, "test.mp4"),
     ("-s tests -s 'tests AND data' -E 2 -s test -E 3", 4, "corrupt.mp4"),
-    # ("--created-before '1 day'", 4, "corrupt.mp4"),
+    ("--created-within '30 years'", 5, "corrupt.mp4"),
+    ("--created-before '1 second'", 5, "corrupt.mp4"),
     ("--downloaded-within '1 day'", 4, "corrupt.mp4"),
     ("--playlists tests/data/", 4, ""),
     ("--local-media-only", 4, "corrupt.mp4"),
@@ -39,21 +41,21 @@ fs_flags = [
 
 media_flags = [
     ("--no-video", 0, ""),
-    # ("--played-within '3 days'", 0, ""),
-    # ("--played-before '1 day'", 0, ""),
     ("-B --solo", 0, ""),
-    # ("-w 'play_count>0'", 0, ""),
-    # ("-w 'time_played>0'", 0, ""),
-    # ("-w 'done>0'", 0, ""),
-    ("-p -P", 0, ""),
-    ("--partial n", 0, ""),
-    # ("-P f", 0, ""),
-    # ("-P fo", 0, ""),
-    ("-P o", 0, ""),
-    ("-P p", 0, ""),
-    ("-P pt", 0, ""),
-    # ("-P s", 0, ""),
-    ("-P t", 0, ""),
+    ("-P s", 0, ""),  # test_media_player must run first  # TODO: move to new function to test before / after
+    ("-w 'play_count=0'", 0, ""),
+    ("--partial n", 5, "corrupt.mp4"),
+    ("-P f", 5, "test"),
+    ("-P fo", 5, "test.mp4"),
+    ("-P o", 5, "corrupt.mp4"),
+    ("-P p", 5, "corrupt.mp4"),
+    ("-P pt", 5, "corrupt.mp4"),
+    ("-P t", 5, "corrupt.mp4"),
+    ("-w 'play_count>0'", 5, "corrupt.mp4"),
+    ("-w 'time_played>0'", 5, "corrupt.mp4"),
+    ("-w 'done>0'", 5, "corrupt.mp4"),
+    ("--played-within '3 days'", 5, "corrupt.mp4"),
+    ("--played-before '10 years'", 0, ""),
     ("--no-subtitles", 1, "test_frame.gif"),
     ("-w subtitle_count=1", 1, "corrupt.mp4"),
     ("--fetch-siblings each", 1, "corrupt.mp4"),
@@ -84,12 +86,10 @@ media_flags = [
     ("-O reverse_path_path", 5, "https://test"),
     ("-O size", 5, "test_frame.gif"),
     ("-O", 5, "corrupt.mp4"),
-    # ("-w 'play_count=0'", 5, "corrupt.mp4"),
     ("-w 'playhead is NULL'", 5, "corrupt.mp4"),
     ("-w time_deleted=0", 5, "corrupt.mp4"),
 ]
 
-"""
 temp_parser = ArgumentParser(add_help=False)
 arggroups.sql_fs(temp_parser)
 opts = temp_parser._actions
@@ -100,7 +100,6 @@ def test_flags_covered(o):
     assert any(s in xs for s in o.option_strings for xs in [t[0] for t in fs_flags] + [t[0] for t in media_flags]), (
         "Option %s is not covered" % o.option_strings
     )
-"""
 
 
 @mock.patch("xklb.playback.media_player.play_list", return_value=SimpleNamespace(returncode=0))

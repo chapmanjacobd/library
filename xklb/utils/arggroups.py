@@ -535,16 +535,16 @@ def sql_fs_post(args, table_prefix="m.") -> None:
 
     if args.played_within:
         args.aggregate_filter_sql.append(
-            f"and time_last_played >= cast(STRFTIME('%s', datetime( 'now', '-{nums.sql_human_time(args.played_within)}')) as int)",
+            f"and time_last_played >= cast(STRFTIME('%s', datetime( 'now', '-{nums.sql_human_time(args.played_within)}')) as int) ",
         )
     if args.played_before:
         args.aggregate_filter_sql.append(
-            f"and time_last_played < cast(STRFTIME('%s', datetime( 'now', '-{nums.sql_human_time(args.played_before)}')) as int)",
+            f"and time_last_played < cast(STRFTIME('%s', datetime( 'now', '-{nums.sql_human_time(args.played_before)}')) as int) ",
         )
 
     if args.partial:
         args.aggregate_filter_sql.append(
-            "AND COALESCE(time_first_played,0) = 0" if "s" in args.partial else "AND time_first_played>0"
+            "AND COALESCE(time_first_played,0) = 0 " if "s" in args.partial else "AND time_first_played>0 "
         )
 
     if args.duration:
