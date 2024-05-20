@@ -2,6 +2,8 @@ import argparse, errno, os.path, shlex, shutil
 from os.path import commonprefix
 from pathlib import Path
 
+from rich import inspect
+
 from xklb import usage
 from xklb.utils import arggroups, argparse_utils, file_utils, path_utils
 from xklb.utils.log_utils import log
@@ -149,7 +151,9 @@ def rel_move(sources, dest, simulate=False, relative_from=None, replace=False):
         except OSError as e:
             if e.errno == errno.ENOENT:  # FileNotFoundError
                 log.error("%s not found", abspath)
-            elif e.errno == errno.ENOTEMPTY or e.errno == errno.EREMOTE or e.errno == errno.EIO:  # target dir not empty
+            elif (
+                e.errno == errno.ENOTEMPTY or e.errno == errno.EREMOTE or getattr(e, "winerror", False) == 5
+            ):  # target dir not empty
                 log.info("%s ->m %s", abspath, new_path)
                 new_paths.extend(
                     rel_move(abspath.glob("*"), dest, simulate=simulate, relative_from=relative_from, replace=replace)
@@ -167,6 +171,7 @@ def rel_move(sources, dest, simulate=False, relative_from=None, replace=False):
                     shutil.move(str(abspath), str(new_path))  # fallback to shutil
                     new_paths.append(new_path)
             else:
+                inspect(e)
                 raise
 
     return new_paths
