@@ -44,7 +44,8 @@ def args_post(args, parser, create_db=False):
 
     log_args = objects.dict_filter_bool(settings)
     if log_args:
-        log.info({k: textwrap.shorten(str(v), 140) for k, v in log_args.items()})
+        max_v = 140
+        log.info({k: v if len(str(v)) < max_v else textwrap.shorten(str(v), max_v) for k, v in log_args.items()})
 
     args.action = get_caller_name()
 
@@ -60,24 +61,82 @@ def args_post(args, parser, create_db=False):
 
 def printing(parser):
     printing = parser.add_argument_group("Printing")
-    printing.add_argument("--print", "-p", default="", const="p", nargs="?")
+    printing.add_argument(
+        "--print",
+        "-p",
+        default="",
+        const="p",
+        nargs="?",
+        help="""Print instead of play
+
+Printing modes
+-p    # print as a table
+-p a  # print an aggregate report
+-p b  # print a big-dirs report (see library bigdirs -h for more info)
+-p f  # print fields (defaults to path; useful for piping to utilities like xargs or GNU Parallel)
+-p d  # mark deleted
+-p w  # mark watched
+
+When a printing mode is explicitly set then all rows will be fetched unless --limit is explicitly set
+
+Some printing modes can be combined
+    -p df  # print fields for piping into another program and mark as deleted
+    -p bf  # print fields from big-dirs report
+
+Print an aggregate report of deleted media
+    -w time_deleted!=0 -pa
+    path         count  duration               size
+    ---------  -------  ------------------  -------
+    Aggregate      337  2 days and 5 hours  1.6 GiB
+
+Print an aggregate report of media that has no duration information (ie. online media or corrupt local media)
+-w 'duration is null' -pa
+
+Print a list of filenames which have below 1280px resolution
+-w 'width<1280' -pf
+
+View how much time you have played
+-w play_count'>'0 -pa
+
+View all the columns
+-p -L 1 --cols '*'
+
+Open ipython with all of your media
+-vv -p --cols '*'
+ipdb> len(media)
+462219""",
+    )
     printing.add_argument("--to-json", action="store_true", help="Write JSONL to stdout")
     printing.add_argument("--cols", "--columns", nargs="+", help="Include specific column(s) when printing")
 
 
 def debug(parent_parser):
     parser = parent_parser.add_argument_group("Global options")
-    parser.add_argument("--verbose", "-v", action="count", default=0)
+    parser.add_argument(
+        "--verbose",
+        "-v",
+        action="count",
+        default=0,
+        help="""Control the level of logging verbosity
+-v     # info
+-vv    # debug
+-vvv   # debug, with SQL query printing
+-vvvv  # debug, with external libraries logging""",
+    )
     parser.add_argument("--timeout", "-T", metavar="TIME", help="Quit after x minutes")
-    parser.add_argument("--ext", "-e", default=[], action=argparse_utils.ArgparseList, help="Filter by file extension")
+    parser.add_argument(
+        "--ext", "-e", default=[], action=argparse_utils.ArgparseList, help="Include only specific file extensions"
+    )
     printing(parent_parser)
 
 
 def capability_soft_delete(parent_parser):
     parser = parent_parser.add_argument_group("Modify Metadata")
-    parser.add_argument("--mark-deleted", "--soft-delete", action="store_true", help="Mark matching rows as deleted")
+    parser.add_argument(
+        "--mark-deleted", "--soft-delete", action="store_true", help="Mark matching rows as deleted (soft-delete)"
+    )
     parser.add_argument("--mark-watched", action="store_true", help="Mark matching rows as watched")
-    parser.add_argument("--delete-rows", action="store_true", help="Delete matching rows")
+    parser.add_argument("--delete-rows", action="store_true", help="Delete matching rows from database table")
 
 
 def capability_delete(parent_parser):
@@ -90,7 +149,7 @@ def capability_delete(parent_parser):
         "--trash",
         "--rm",
         action="store_true",
-        help="Delete files from filesystem",
+        help="Delete matching files from filesystem",
     )
 
 
@@ -119,43 +178,185 @@ def paths_or_stdin(parent_parser):
 
 def sql_fs(parent_parser):
     parse_fs = parent_parser.add_argument_group("FileSystemDB SQL")
-    parse_fs.add_argument("--limit", "--queue", "-n", "-L", "-l")
-    parse_fs.add_argument("--offset")
-    parse_fs.add_argument("--sort", "-u", nargs="+", default=[])
-    parse_fs.add_argument("--random", "-r", action="store_true")
+    parse_fs.add_argument(
+        "--limit",
+        "--queue",
+        "-n",
+        "-l",
+        "-L",
+        help="""Set play queue size
+-L inf  # no limit
+-L 10   # 10 files
+(default: 120 media, 480 images, 7 links, 7200 downloads)""",
+    )
+    parse_fs.add_argument(
+        "--offset",
+        help="""Skip files which would have been in the queue
+--offset 10  # skip 10 files""",
+    )
+    parse_fs.add_argument(
+        "--sort",
+        "-u",
+        nargs="+",
+        default=[],
+        help="""Choose media play order
+--sort duration   # play shortest media first
+-u duration desc  # play longest media first
 
-    parse_fs.add_argument("--playlists", nargs="+", action="extend", default=[])
+You can use multiple SQL ORDER BY expressions
+-u 'subtitle_count > 0 desc' # play media that has at least one subtitle first
 
-    parse_fs.add_argument("--where", "-w", nargs="+", action="extend", default=[])
-    parse_fs.add_argument("--include", "--search", "-s", nargs="+", action="extend", default=[])
-    parse_fs.add_argument("--exclude", "-E", nargs="+", action="extend", default=[])
-    parse_fs.add_argument("--exact", action="store_true")
-    parse_fs.add_argument("--flexible-search", "--or", "--flex", action="store_true")
-    parse_fs.add_argument("--fts", action=argparse.BooleanOptionalAction, default=True)
+Prioritize large-sized media
+--sort 'ntile(10000) over (order by size/duration) desc'
+-u 'ntile(100) over (order by size) desc'
 
-    parse_fs.add_argument("--online-media-only", "--online", action="store_true")
-    parse_fs.add_argument("--local-media-only", "--local", action="store_true")
+Sort by count of media with the same-X column (default DESC: most common to least common value)
+-u same-duration
+-u same-title
+-u same-size
+-u same-width, same-height ASC, same-fps
+-u same-time_uploaded same-view_count same-upvote_ratio""",
+    )
+    parse_fs.add_argument(
+        "--random",
+        "-r",
+        action="store_true",
+        help="Sort by random and use performance hacks to make SQLite faster for large databases",
+    )
+
+    parse_fs.add_argument("--playlists", nargs="+", action="extend", default=[], help="Include media by playlist URLs")
+
+    parse_fs.add_argument(
+        "--where",
+        "-w",
+        nargs="+",
+        action="extend",
+        default=[],
+        help="""Constrain media by arbitrary SQL expressions
+--where audio_count = 2  # media which have two audio tracks
+-w "language = 'eng'"    # media which have an English language tag (this could be audio _or_ subtitle)
+-w subtitle_count=0      # media that doesn't have subtitles""",
+    )
+    parse_fs.add_argument("--fts", action=argparse.BooleanOptionalAction, default=True, help="Full Text Search mode")
+    parse_fs.add_argument(
+        "--include",
+        "--search",
+        "-s",
+        nargs="+",
+        action="extend",
+        default=[],
+        help="""Include files via search
+-s happy  # path, title, or tags must match "happy"
+
+In --fts mode (default):
+
+Use fts syntax to search specific columns:
+-s 'path : mad max'
+-s "path : 'mad max'" # add "quotes" to be more strict
+
+In --no-fts mode:
+
+Use --where to search specific columns:
+--no-fts -w 'path like "%%happy%%"'
+
+Double spaces are equal to one space:
+--no-fts -s "  ost"        # will match OST and not ghost
+--no-fts -s toy story      # will match '/folder/toy/something/story.mp3'
+--no-fts -s "toy  story"   # will match more strictly '/folder/toy story.mp3'""",
+    )
+    parse_fs.add_argument(
+        "--exclude",
+        "-E",
+        nargs="+",
+        action="extend",
+        default=[],
+        help="""Exclude files via search
+-E sad  # path, title, or tags must not match "sad"
+-w 'path not like "%%sad%%"'""",
+    )
+    parse_fs.add_argument(
+        "--exact",
+        action="store_true",
+        help="""Not useful except when searching paths and excluding subpaths
+-s https://files/2024/ --exact  # when you want to match the folder but not its contents""",
+    )
+    parse_fs.add_argument(
+        "--flexible-search",
+        "--or",
+        "--flex",
+        action="store_true",
+        help="""Allow results which match only one search term
+-s one two --or  # results will include /one/file.mkv and /two/file.mka
+-s one two       # results will only include /one/two.mkv""",
+    )
+
+    parse_fs.add_argument("--online-media-only", "--online", action="store_true", help="Exclude local media")
+    parse_fs.add_argument("--local-media-only", "--local", action="store_true", help="Exclude online media")
 
     parse_fs.add_argument(
         "--sizes",
         "-S",
         action="append",
-        help="Only include files of specific sizes (uses the same syntax as fd-find)",
+        help="""Constrain media to file size (uses the same syntax as fd-find)
+-d 6           # 6 MB exactly
+-d-6           # less than 6 MB
+-d+6           # more than 6 MB
+-d 6%%10       # 6 MB ±10 percent (between 5 and 7 MB)
+-d+5GB -d-7GB  # between 5 and 7 GB""",
     )
 
-    parse_fs.add_argument("--created-within")
-    parse_fs.add_argument("--created-before")
-    parse_fs.add_argument("--changed-within", "--modified-within")
-    parse_fs.add_argument("--changed-before", "--modified-before")
-    parse_fs.add_argument("--deleted-within")
-    parse_fs.add_argument("--deleted-before")
-    parse_fs.add_argument("--downloaded-within")
-    parse_fs.add_argument("--downloaded-before")
+    parse_fs.add_argument(
+        "--created-within",
+        help="""Constrain media by time_created (newer than)
+--created-within '3 days'""",
+    )
+    parse_fs.add_argument(
+        "--created-before",
+        help="""Constrain media by time_created (older than)
+--created-before '3 years'""",
+    )
+    parse_fs.add_argument(
+        "--changed-within",
+        "--modified-within",
+        help="""Constrain media by time_modified (newer than)
+--changed-within '3 days'""",
+    )
+    parse_fs.add_argument(
+        "--changed-before",
+        "--modified-before",
+        help="""Constrain media by time_modified (older than)
+--changed-before '3 years'""",
+    )
+    parse_fs.add_argument(
+        "--deleted-within",
+        help="""Constrain media by time_deleted (newer than)
+--deleted-within '3 days'""",
+    )
+    parse_fs.add_argument(
+        "--deleted-before",
+        help="""Constrain media by time_deleted (older than)
+--deleted-before '3 years'""",
+    )
+    parse_fs.add_argument(
+        "--downloaded-within",
+        help="""Constrain media by time_downloaded (newer than)
+--downloaded-within '3 days'""",
+    )
+    parse_fs.add_argument(
+        "--downloaded-before",
+        help="""Constrain media by time_downloaded (older than)
+--downloaded-before '3 years'""",
+    )
 
     parse_media = parent_parser.add_argument_group("MediaDB SQL")
-    parse_media.add_argument("--portrait", action="store_true")
-    parse_media.add_argument("--no-video", "-vn", action="store_true")
-    parse_media.add_argument("--no-audio", "-an", action="store_true")
+    parse_media.add_argument(
+        "--portrait",
+        action="store_true",
+        help="""Constrain media to portrait orientation video
+-w 'width<height' # equivalent""",
+    )
+    parse_media.add_argument("--no-video", "-vn", action="store_true", help="Exclude media which have videos streams")
+    parse_media.add_argument("--no-audio", "-an", action="store_true", help="Exclude media which have audio streams")
     parse_media.add_argument(
         "--no-subtitles",
         "--no-subtitle",
@@ -163,14 +364,71 @@ def sql_fs(parent_parser):
         "--nosubs",
         "-sn",
         action="store_true",
+        help="Exclude media which have subtitle streams",
     )
-    parse_media.add_argument("--subtitles", "--subtitle", "-sy", action="store_true")
+    parse_media.add_argument(
+        "--subtitles", "--subtitle", "-sy", action="store_true", help="Include only media which have subtitle streams"
+    )
 
-    parse_media.add_argument("--played-within")
-    parse_media.add_argument("--played-before")
+    parse_media.add_argument(
+        "--played-within",
+        help="""Constrain media by time_last_played (newer than)
+--played-within '3 days'""",
+    )
+    parse_media.add_argument(
+        "--played-before",
+        help="""Constrain media by time_last_played (older than)
+--played-before '3 years'""",
+    )
 
-    parse_media.add_argument("--duration", "-d", action="append")
-    parse_media.add_argument("--duration-from-size", action="append")
+    parse_media.add_argument(
+        "--partial",
+        "-P",
+        "--previous",
+        "--recent",
+        default=False,
+        const="n",
+        nargs="?",
+        help="""Play recent partially-watched videos
+--partial       # play newest first
+--partial old   # play oldest first
+-P o            # equivalent
+
+-P p            # sort by percent remaining
+-P t            # sort by time remaining
+-P s            # skip partially watched (only show unseen)
+
+The default time used is "last-viewed" (ie. the most recent time you closed the video)
+If you want to use the "first-viewed" time (ie. the very first time you opened the video)
+-P f            # use watch_later file creation time instead of modified time
+
+You can combine most of these options, though some will override others
+-P fo           # using the time you first played, play the oldest videos first
+-P pt           # weighted remaining (percent * time remaining)
+
+Print media you have partially viewed with mpv
+--partial -p
+-P -p          # equivalent
+--partial -pa  # print an aggregate report of partially watched files""",
+    )
+
+    parse_media.add_argument(
+        "--duration",
+        "-d",
+        action="append",
+        help="""Constrain media to duration
+-d 6       # 6 mins exactly
+-d-6       # less than 6 mins
+-d+6       # more than 6 mins
+-d 6%%10    # 6 mins ±10 percent (between 5 and 7 mins)
+-d+5 -d-7  # between 5 and 7 mins""",
+    )
+    parse_media.add_argument(
+        "--duration-from-size",
+        action="append",
+        help="""Constrain media to duration of videos which match any size constraints
+--duration-from-size +3300MB -u 'duration desc, size desc'""",
+    )
 
 
 def sql_fs_post(args, table_prefix="m.") -> None:
@@ -282,6 +540,11 @@ def sql_fs_post(args, table_prefix="m.") -> None:
             f"and time_last_played < cast(STRFTIME('%s', datetime( 'now', '-{nums.sql_human_time(args.played_before)}')) as int)",
         )
 
+    if args.partial:
+        args.aggregate_filter_sql.append(
+            "AND COALESCE(time_first_played,0) = 0" if "s" in args.partial else "AND time_first_played>0"
+        )
+
     if args.duration:
         args.duration = sql_utils.parse_human_to_sql(nums.human_to_seconds, "duration", args.duration)
         args.filter_sql.append(" and duration IS NOT NULL " + args.duration)
@@ -297,26 +560,70 @@ def sql_fs_post(args, table_prefix="m.") -> None:
 
 def playback(parent_parser):
     parser = parent_parser.add_argument_group("Playback")
-    parser.add_argument("--crop", "--zoom", "--stretch", "--fit", "--fill", action="store_true")
-    parser.add_argument("--loop", action="store_true")
-    parser.add_argument("--pause", action="store_true")
-    parser.add_argument("--start", "-vs")
-    parser.add_argument("--end", "-ve")
-    parser.add_argument("--volume", type=float)
+    parser.add_argument(
+        "--crop",
+        "--zoom",
+        "--stretch",
+        "--fit",
+        "--fill",
+        action="store_true",
+        help="Crop video to fill window (useful with multiple-playback)",
+    )
+    parser.add_argument(
+        "--loop",
+        action="store_true",
+        help="Loop media after reaching end (useful for curation activities like multiple-playback)",
+    )
+    parser.add_argument("--pause", action="store_true", help="Start media paused")
+    parser.add_argument(
+        "--start",
+        "-vs",
+        help="""Start media at a specific time
+--start 35%%  # start media playback at the time of 35%% of duration; wadsworth constant""",
+    )
+    parser.add_argument(
+        "--end",
+        "-ve",
+        help="""Stop media at a specific time
+--end 60%%  # stop media playback at the time of 60%% of duration; avogadro constant""",
+    )
+    parser.add_argument("--volume", type=float, help="Set volume level before playing")
 
-    parser.add_argument("--mpv-socket")
-    parser.add_argument("--auto-seek", action="store_true")
+    parser.add_argument("--mpv-socket", help="Use a custom mpv socket location")
+    parser.add_argument(
+        "--auto-seek",
+        action="store_true",
+        help="""Seek playback automatically
+Experimental; does not work with --multiple-playback
+--auto-seek --player='mpv --pause=yes --loop=yes --start=35%%'
 
-    parser.add_argument("--override-player", "--player")
+DEPRECIATED: do instead:
+function repeatdelay
+    while $argv[2..-1]
+        and sleep $argv[1]
+    end
+end
+repeatdelay 1.1 xdotool key o
+where 'o' is a key that seeks the amount you want in mpv""",
+    )
+
+    parser.add_argument(
+        "--override-player",
+        "--player",
+        help='''Use a specific player
+--player "vlc --vlc-opts"''',
+    )
     parser.add_argument(
         "--ignore-errors",
         "--ignoreerrors",
         "-i",
         action="store_true",
-        help="After a playback error continue to the next track instead of exiting",
+        help="Continue to the next track after a playback error (eg. YouTube video deleted)",
     )
 
-    parser.add_argument("--prefetch", type=int, default=3)
+    parser.add_argument(
+        "--prefetch", type=int, default=3, help="Prepare for playback by reading some file metadata before it is needed"
+    )
     parser.add_argument(
         "--prefix", default="", help="Add a prefix for file paths; eg. SSHFS mount makes paths different from normal"
     )
@@ -342,10 +649,48 @@ def playback_post(args):
 
 def post_actions(parent_parser):
     parser = parent_parser.add_argument_group("Post-Playback Actions")
-    parser.add_argument("--exit-code-confirm", action="store_true")
-    parser.add_argument("--gui", action="store_true")
-    parser.add_argument("--keep-dir", "--keepdir")
-    parser.add_argument("--post-action", "--action", "-k", default="keep")
+    parser.add_argument(
+        "--exit-code-confirm",
+        action="store_true",
+        help="Use exit code bifurcation (exit 0=yes vs exit 1=no) instead of asking confirmation for a post-action in the CLI or GUI",
+    )
+    parser.add_argument("--gui", action="store_true", help="Ask post-action confirmation in a GUI")
+    parser.add_argument("--keep-dir", "--keepdir", help='ask_move: move "kept" files to this special folder')
+    parser.add_argument(
+        "--post-action",
+        "--action",
+        "-k",
+        default="keep",
+        help="""Post-actions -- choose what to do after playing
+--post-action keep    # do nothing after playing (default)
+-k delete             # delete file after playing
+-k softdelete         # mark deleted after playing
+
+-k ask_keep           # ask whether to keep after playing
+-k ask_delete         # ask whether to delete after playing
+
+-k move               # move to "keep" dir after playing
+-k ask_move           # ask whether to move to "keep" folder
+The default location of the keep folder is ./keep/ (relative to the played media file)
+You can change this by explicitly setting an *absolute* `keep-dir` path:
+-k ask_move --keep-dir /home/my/music/keep/
+
+-k ask_move_or_delete # ask after each whether to move to "keep" folder or delete
+
+You can also bind keys in mpv to different exit codes. For example in input.conf:
+    ; quit 5
+
+And if you run something like:
+    --cmd5 ~/bin/process_audio.py
+    --cmd5 echo  # this will effectively do nothing except skip the normal post-actions via mpv shortcut
+
+When semicolon is pressed in mpv (it will exit with error code 5) then the applicable player-exit-code command
+will start with the media file as the first argument; in this case `~/bin/process_audio.py $path`.
+The command will be daemonized if library exits before it completes.
+
+To prevent confusion, normal post-actions will be skipped if the exit-code is greater than 4.
+Exit-codes 0, 1, 2, 3, and 4: the external post-action will run after normal post-actions. Be careful of conflicting player-exit-code command and post-action behavior when using these!""",
+    )
 
 
 def post_actions_post(args):
@@ -362,11 +707,39 @@ def multiple_playback(parent_parser):
         nargs="?",
         const=consts.DEFAULT_MULTIPLE_PLAYBACK,
         type=int,
+        help="""Play multiple files at the same time
+--multiple-playback    # one per display; or two if only one display detected
+--multiple-playback 4  # play four media at once, divide by available screens
+-m 4 --screen-name eDP # play four media at once on specific screen
+-m 4 --loop --crop     # play four cropped videos on a loop
+-m 4 --hstack          # use hstack style
+
+When using `--multiple-playback` it may be helpful to set simple window focus rules to prevent keys from accidentally being entered in the wrong mpv window (as new windows are created and capture the cursor focus).
+You can set and restore your previous mouse focus setting by wrapping the command like this:
+
+    focus-under-mouse
+    library watch ... --multiple-playback 4
+    focus-follows-mouse
+
+For example in KDE:
+
+    function focus-under-mouse
+        kwriteconfig5 --file kwinrc --group Windows --key FocusPolicy FocusUnderMouse
+        qdbus-qt5 org.kde.KWin /KWin reconfigure
+    end
+
+    function focus-follows-mouse
+        kwriteconfig5 --file kwinrc --group Windows --key FocusPolicy FocusFollowsMouse
+        kwriteconfig5 --file kwinrc --group Windows --key NextFocusPrefersMouse true
+        qdbus-qt5 org.kde.KWin /KWin reconfigure
+    end""",
     )
-    parser.add_argument("--screen-name")
-    parser.add_argument("--hstack", action="store_true")
-    parser.add_argument("--vstack", action="store_true")
-    parser.add_argument("--fullscreen", "--fs", action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument("--screen-name", help="Playback on a specific display")
+    parser.add_argument("--hstack", action="store_true", help="Force videos to stack horizontally")
+    parser.add_argument("--vstack", action="store_true", help="Force videos to stack vertically")
+    parser.add_argument(
+        "--fullscreen", "--fs", action=argparse.BooleanOptionalAction, default=True, help="Open videos in fullscreen"
+    )
 
 
 def multiple_playback_post(args):
@@ -378,7 +751,7 @@ def extractor(parent_parser):
     parser = parent_parser.add_argument_group("Extractor")
     parser.add_argument("--no-sanitize", action="store_true", help="Don't sanitize some common URL parameters")
     parser.add_argument(
-        "--insert-only", "--no-extract", "--skip-extract", action="store_true"
+        "--insert-only", "--no-extract", "--skip-extract", action="store_true", help="Insert paths into media table"
     )  # TODO: move to its own subcommand
     parser.add_argument(
         "--insert-only-playlists",
@@ -386,9 +759,10 @@ def extractor(parent_parser):
         "--no-extract-playlists",
         "--skip-extract-playlists",
         action="store_true",
+        help="Insert paths into playlists table",
     )
     parser.add_argument("--extra", action="store_true", help="Get full metadata (takes a lot longer)")
-    parser.add_argument("--threads", type=int, default=4)
+    parser.add_argument("--threads", type=int, default=4, help="Load x files in parallel")
 
 
 def extractor_post(args):
@@ -403,16 +777,32 @@ def extractor_post(args):
 
 def group_folders(parent_parser):
     parser = parent_parser.add_argument_group("Group Folders")
-    parser.add_argument("--big-dirs", "--bigdirs", "-B", action="count", default=0)
+    parser.add_argument(
+        "--big-dirs",
+        "--bigdirs",
+        "-B",
+        action="count",
+        default=0,
+        help="""Group media by folders
+Recommended to use with -L inf and --duration or --depth filters; see `lb big-dirs -h` for more info""",
+    )
 
     parser.add_argument(
         "--sibling", "--episode", "--episodic", action="store_true", help="Shorthand for --folder-counts '>1'"
     )
     parser.add_argument("--solo", action="store_true", help="Shorthand for --folder-counts=1")
 
-    parser.add_argument("--sort-groups-by", "--sort-groups", "--sort-by", nargs="+")
-    parser.add_argument("--depth", "-D", type=int, help="Depth of folders")
-    parser.add_argument("--parents", action="store_true")
+    parser.add_argument(
+        "--sort-groups-by",
+        "--sort-groups",
+        "--sort-by",
+        nargs="+",
+        help="""
+
+--sort-groups-by 'mcda median_size,-deleted'  # sort by auto-MCDA""",
+    )
+    parser.add_argument("--depth", "-D", type=int, help="Folder depth of files")
+    parser.add_argument("--parents", action="store_true", help="Include recursive sub-files in folder statistics")
 
     parser.add_argument(
         "--folder-sizes",
@@ -430,11 +820,18 @@ def group_folders(parent_parser):
         "--episodes",
         "-FC",
         action="append",
-        help="Number of files per folder",
+        help="""Number of files per folder
+
+-FC=-3  # fewer than 3 siblings
+-FC=+3  # more than 3 siblings
+
+-FC=3  # exactly three siblings inclusive
+-FC=+3 -FC=-3  # exactly three siblings inclusive
+
+-FC=+12 -FC=-25  # between 12 and 25 files
+-FC=5%%20  # 5 siblings ±20%% (4 to 6 siblings)""",
     )
-    parser.add_argument(
-        "--folders-counts", action="append", help="Only include folders with specific number of subfolders"
-    )
+    parser.add_argument("--folders-counts", action="append", help="Number of folders per folder")
 
 
 def group_folders_post(args) -> None:
@@ -459,7 +856,15 @@ def cluster(parent_parser):
     parser = parent_parser.add_argument_group("Cluster")
     parser.add_argument("--cluster-sort", "--cluster", "-C", action="store_true", help="Cluster by filename TF-IDF")
     parser.add_argument("--clusters", "--n-clusters", type=int, help="Number of KMeans clusters")
-    parser.add_argument("--stop-words", "--ignore-words", nargs="+", action="extend")
+    parser.add_argument(
+        "--stop-words",
+        "--ignore-words",
+        nargs="+",
+        action="extend",
+        help="""Override the default "stop-word" list to ignore specific words
+--stop-words the fox jumps over the moon
+--stop-words (cat stop_words.txt)""",
+    )
 
     parser.add_argument("--print-groups", "--groups", "-g", action="store_true", help="Print groups")
     parser.add_argument("--move-groups", "-M", action="store_true", help="Move groups into subfolders")
@@ -472,38 +877,86 @@ def cluster(parent_parser):
 
 
 def related(parser):
-    parser.add_argument("--related", "-R", action="count", default=0)
+    parser.add_argument(
+        "--related",
+        "-R",
+        action="count",
+        default=0,
+        help="""Find related media by searching the first row
+
+--related  # Use fts to find similar content
+-R         # equivalent
+-RR        # above, plus ignores most filters""",
+    )
 
 
 def clobber(parent_parser):
     parser = parent_parser.add_argument_group("Replace Files")
     parser.add_argument(
-        "--replace", "--clobber", action=argparse.BooleanOptionalAction, help="Overwrite files on path conflict"
+        "--replace",
+        "--clobber",
+        action=argparse.BooleanOptionalAction,
+        help="Overwrite files on path conflict (default: ask to confirm)",
     )
 
 
 def simulate(parser):
-    parser.add_argument("--simulate", "--dry-run", action="store_true")
+    parser.add_argument("--simulate", "--dry-run", action="store_true", help="Pretend to work")
 
 
 def process_ffmpeg(parent_parser):
     parser = parent_parser.add_argument_group("FFMPEG Processing")
-    parser.add_argument("--delete-unplayable", action="store_true")
+    parser.add_argument(
+        "--delete-unplayable", action="store_true", help="Delete from disk any media which does not open with ffprobe"
+    )
 
-    parser.add_argument("--delete-no-video", action="store_true")
-    parser.add_argument("--delete-no-audio", action="store_true")
+    parser.add_argument(
+        "--delete-no-video", action="store_true", help="Delete files with no video instead of extracting audio"
+    )
+    parser.add_argument(
+        "--delete-no-audio", action="store_true", help="Delete files with no audio instead of transcoding video"
+    )
 
     parser.add_argument("--max-height", type=int, default=960)
     parser.add_argument("--max-width", type=int, default=1440)
-    parser.add_argument("--max-width-buffer", type=float, default=0.2)
-    parser.add_argument("--max-height-buffer", type=float, default=0.2)
+    parser.add_argument(
+        "--max-width-buffer",
+        type=float,
+        default=0.2,
+        help="""Don't resize videos if their width is within a certain percentage of the max-width
+--max-width-buffer 0.1  # within 10%% (if --max-width=1440 then anything smaller than 1584px video will be transcoded but not resized)""",
+    )
+    parser.add_argument(
+        "--max-height-buffer",
+        type=float,
+        default=0.2,
+        help="""Don't resize videos if their height is within a certain percentage of the max-height
+--max-height-buffer 0.1  # within 10%% (if --max-height=960 then anything shorter than 1056px video will be transcoded but not resized)""",
+    )
 
-    parser.add_argument("--always-split", "--force-split", action="store_true")
-    parser.add_argument("--split-longer-than")
-    parser.add_argument("--min-split-segment", default=consts.DEFAULT_MIN_SPLIT)
+    parser.add_argument(
+        "--always-split",
+        "--force-split",
+        action="store_true",
+        help="Split all video/audio files using silence in audio track",
+    )
+    parser.add_argument(
+        "--split-longer-than",
+        help="""Only split on silence for files longer than a specific duration
+--split-longer-than 37mins""",
+    )
+    parser.add_argument(
+        "--min-split-segment",
+        default=consts.DEFAULT_MIN_SPLIT,
+        help="Combine segments that are smaller than this length of time",
+    )
 
     parser.add_argument("--audio-only", action="store_true", help="Only extract audio")
-    parser.add_argument("--no-preserve-video", action="store_true")
+    parser.add_argument(
+        "--no-preserve-video",
+        action="store_true",
+        help="If using --audio-only delete source files even if they have video streams",
+    )
 
     parser.add_argument("--max-image-height", type=int, default=2400)
     parser.add_argument("--max-image-width", type=int, default=2400)
@@ -524,11 +977,22 @@ def download(parent_parser):
         metavar="KEY=VALUE",
         help="Add key/value pairs to override or extend default extractor/downloader configuration",
     )
-    parser.add_argument("--download-archive")
-    parser.add_argument("--extract-audio-ext", default="opus")
+    parser.add_argument("--download-archive", help="yt-dlp download archive location (--video,--audio only)")
+    parser.add_argument(
+        "--extract-audio-ext",
+        default="opus",
+        help="""Custom file extension to convert to after download
+--extract-audio-ext mp3""",
+    )
 
-    parser.add_argument("--ignore-errors", "--ignoreerrors", "-i", action="store_true")
-    parser.add_argument("--safe", action="store_true", help="Skip generic URLs")
+    parser.add_argument(
+        "--ignore-errors",
+        "--ignoreerrors",
+        "-i",
+        action="store_true",
+        help="Ignore some types of download errors (do not use this blindly!)",
+    )
+    parser.add_argument("--safe", action="store_true", help="Download only from known domains; skip generic URLs")
 
     parser.add_argument(
         "--retry-delay",
@@ -544,19 +1008,41 @@ def download(parent_parser):
 
 def download_subtitle(parent_parser):
     parser = parent_parser.add_argument_group("Subtitle Download")
-    parser.add_argument("--subs", action="store_true")
-    parser.add_argument("--auto-subs", "--autosubs", action="store_true")
-    parser.add_argument("--subtitle-languages", "--subtitle-language", "--sl", action=argparse_utils.ArgparseList)
+    parser.add_argument("--subs", action="store_true", help="Download and embed subtitles")
+    parser.add_argument("--auto-subs", "--autosubs", action="store_true", help="Prefer machine-translated subtitles")
+    parser.add_argument(
+        "--subtitle-languages",
+        "--subtitle-language",
+        "--sl",
+        action=argparse_utils.ArgparseList,
+        help="Download specific subtitle languages",
+    )
 
 
 def table_like(parent_parser):
     parser = parent_parser.add_argument_group("Table-like")
-    parser.add_argument("--mimetype", "--filetype")
-    parser.add_argument("--encoding")
-    parser.add_argument("--table-name", "--table", "-t")
-    parser.add_argument("--table-index", type=int)
-    parser.add_argument("--start-row", "--skiprows", type=int, default=None)
-    parser.add_argument("--end-row", "--nrows", "--limit", "-L", default=str(DEFAULT_FILE_ROWS_READ_LIMIT))
+    parser.add_argument(
+        "--mimetype",
+        "--filetype",
+        help="""Treat given files as having a specific file type
+--filetype csv""",
+    )
+    parser.add_argument(
+        "--encoding",
+        help="""Treat given files as having a specific encoding
+--encoding utf8""",
+    )
+    parser.add_argument("--table-name", "--table", "-t", help="Load a specific table by name")
+    parser.add_argument("--table-index", type=int, help="Load a specific table by index")
+    parser.add_argument("--start-row", "--skiprows", type=int, default=None, help="Skip reading x rows")
+    parser.add_argument(
+        "--end-row",
+        "--nrows",
+        "--limit",
+        "-L",
+        default=str(DEFAULT_FILE_ROWS_READ_LIMIT),
+        help="Stop reading after x rows",
+    )
 
 
 def table_like_post(args):
@@ -657,21 +1143,36 @@ def filter_links_post(args):
 
 def requests(parent_parser):
     parser = parent_parser.add_argument_group("Requests")
+    parser.add_argument(
+        "--cookies-from-browser",
+        metavar="BROWSER[+KEYRING][:PROFILE][::CONTAINER]",
+        help="""Load cookies from your browser
+--cookies-from-browser firefox
+--cookies-from-browser chrome
+(uses the same syntax as yt-dlp)""",
+    )
     parser.add_argument("--cookies", help="path to a Netscape formatted cookies file")
-    parser.add_argument("--cookies-from-browser", metavar="BROWSER[+KEYRING][:PROFILE][::CONTAINER]")
-    parser.add_argument("--allow-insecure", "--allow-untrusted", "--disable-tls", action="store_true")
-    parser.add_argument("--http-max-retries", "--https-max-retries", type=int)
+    parser.add_argument(
+        "--allow-insecure",
+        "--allow-untrusted",
+        "--disable-tls",
+        action="store_true",
+        help='Allow loading data from non-TLS, non-"https" servers',
+    )
+    parser.add_argument("--http-max-retries", "--https-max-retries", type=int, default=8, help="Use x retries")
 
 
 def selenium(parent_parser):
     parser = parent_parser.add_argument_group("Selenium")
-    parser.add_argument("--selenium", "--js", action="store_true")
-    parser.add_argument("--firefox", action="store_true")
-    parser.add_argument("--chrome", action="store_true")
+    parser.add_argument("--selenium", "--js", action="store_true", help="Use selenium")
+    parser.add_argument("--firefox", action="store_true", help="Use selenium with firefox")
+    parser.add_argument("--chrome", action="store_true", help="Use selenium with chromium etc")
     parser.add_argument("--scroll", action="store_true", help="Scroll down the page; infinite scroll")
     parser.add_argument("--manual", action="store_true", help="Confirm manually in shell before exiting the browser")
-    parser.add_argument("--auto-pager", "--autopager", action="store_true")
-    parser.add_argument("--poke", action="store_true")
+    parser.add_argument(
+        "--auto-pager", "--autopager", action="store_true", help="Use an auto-pager plugin to load additional pages"
+    )
+    parser.add_argument("--poke", action="store_true", help="Find a filled-in search box and press enter in it")
 
 
 def selenium_post(args):
@@ -681,7 +1182,7 @@ def selenium_post(args):
 
 def sample_hash_bytes(parent_parser):
     parser = parent_parser.add_argument_group("Sample Hash")
-    parser.add_argument("--threads", default=1, const=10, nargs="?")
+    parser.add_argument("--threads", default=1, const=10, nargs="?", help="Load x files in parallel")
     parser.add_argument(
         "--chunk-size",
         type=int,
@@ -700,7 +1201,7 @@ def sample_hash_bytes_post(args):
 
 def media_check(parent_parser):
     parser = parent_parser.add_argument_group("Media Check")
-    parser.add_argument("--threads", default=1, const=10, nargs="?")
+    parser.add_argument("--threads", default=1, const=10, nargs="?", help="Load x files in parallel")
     parser.add_argument(
         "--chunk-size",
         type=float,
@@ -722,8 +1223,8 @@ def media_check(parent_parser):
         "--full-scan-if-corruption",
         help="Full scan as second pass if initial scan result more corruption or equal to this threshold. Values greater than 1 are treated as number of seconds",
     )
-    parser.add_argument("--full-scan", action="store_true")
-    parser.add_argument("--audio-scan", action="store_true")
+    parser.add_argument("--full-scan", action="store_true", help="Decode the full media file")
+    parser.add_argument("--audio-scan", action="store_true", help="Count errors in audio track only")
 
 
 def media_check_post(args):
@@ -797,5 +1298,19 @@ def frequency_post(args):
 def history(parser):
     parser = parser.add_argument_group("History")
     history = parser.add_mutually_exclusive_group()
-    history.add_argument("--completed", "--played", "--watched", "--listened", action="store_true")
-    history.add_argument("--in-progress", "--playing", "--watching", "--listening", action="store_true")
+    history.add_argument(
+        "--completed",
+        "--played",
+        "--watched",
+        "--listened",
+        action="store_true",
+        help="Exclude partially watched media",
+    )
+    history.add_argument(
+        "--in-progress",
+        "--playing",
+        "--watching",
+        "--listening",
+        action="store_true",
+        help="Exclude completely watched media",
+    )

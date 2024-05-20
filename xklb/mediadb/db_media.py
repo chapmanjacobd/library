@@ -376,7 +376,12 @@ def get_dir_media(args, dirs: Collection, include_subdirs=False, limit=2_000) ->
                 {" ".join(args.filter_sql)}
             GROUP BY m.id, m.path
         )
-        SELECT {select_sql}
+        SELECT
+            {select_sql}
+            , play_count
+            , time_first_played
+            , time_last_played
+            , playhead
         FROM m
         WHERE 1=1
             {" ".join(args.aggregate_filter_sql)}
@@ -430,7 +435,12 @@ def get_playlist_media(args, playlist_paths) -> list[dict]:
                 {" ".join(args.filter_sql)}
             GROUP BY m.id, m.path
         )
-        SELECT {select_sql}
+        SELECT
+            {select_sql}
+            , play_count
+            , time_first_played
+            , time_last_played
+            , playhead
         FROM m
         WHERE 1=1
             {" ".join(args.aggregate_filter_sql)}
@@ -481,7 +491,7 @@ def get_sibling_media(args, media):
                 new_media.append(d)
         media = new_media
 
-    # TODO: all-if>10, each-if=10 --lower --upper functionality could be replicated here
+    # TODO: all-if>10, each-if=10 --folder-counts functionality could be replicated here
 
     return media
 
@@ -524,7 +534,12 @@ def get_related_media(args, m: dict) -> list[dict]:
                 {'' if args.related >= consts.RELATED_NO_FILTER else " ".join(args.filter_sql)}
             GROUP BY m.id, m.path
         )
-        SELECT {select_sql}
+        SELECT
+            {select_sql}
+            , play_count
+            , time_first_played
+            , time_last_played
+            , playhead
         FROM m
         WHERE 1=1
             {'' if args.related >= consts.RELATED_NO_FILTER else " ".join(args.aggregate_filter_sql)}

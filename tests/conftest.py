@@ -1,7 +1,29 @@
-import os, shutil, tempfile
+import os, shutil, sys, tempfile
+from io import StringIO
 from pathlib import Path
 
 import pytest
+
+
+class MockStdin:
+    def __init__(self, input_text):
+        self.input_text = input_text
+        self.original_stdin = None
+
+    def __enter__(self):
+        self.original_stdin = sys.stdin
+        sys.stdin = StringIO(self.input_text)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        sys.stdin = self.original_stdin
+
+
+@pytest.fixture
+def mock_stdin():
+    def _mock_stdin(input_text):
+        return MockStdin(input_text)
+
+    return _mock_stdin
 
 
 def create_file_tree(parent_dir, tree):
@@ -48,7 +70,7 @@ def generate_file_tree_dict(temp_dir):
         for item in directory.iterdir():
             if item.is_file():
                 with item.open() as file:
-                    tree_dict[item.name] = file.read()
+                    tree_dict[item.name] = (item.stat().st_ino, file.read())
             elif item.is_dir():
                 tree_dict[item.name] = _generate_tree_dict(item)
         return tree_dict

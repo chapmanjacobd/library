@@ -97,7 +97,6 @@ config = {
             "artist",
             "album",
             "category",
-            "frequency",
         ],
         "column_order": ["id", "path", "webpath", "extractor_id"],
         "ignore_columns": ["extractor_id"],

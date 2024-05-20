@@ -69,7 +69,9 @@ def type_to_str(t):
 
 
 def default_to_str(obj):
-    if isinstance(obj, (list, tuple, set)):
+    if obj is None:
+        return None
+    elif isinstance(obj, (list, tuple, set)):
         if len(obj) == 0:
             return None
         else:
@@ -82,7 +84,7 @@ def default_to_str(obj):
         return str(obj)
 
 
-class CustomHelpFormatter(argparse.HelpFormatter):
+class CustomHelpFormatter(argparse.RawTextHelpFormatter):
     def _format_args(self, action, default_metavar):
         get_metavar = self._metavar_formatter(action, default_metavar)
         if action.nargs == argparse.ZERO_OR_MORE:
@@ -92,6 +94,22 @@ class CustomHelpFormatter(argparse.HelpFormatter):
         else:
             result = super()._format_args(action, default_metavar)
         return result
+
+    def _format_default(self, action, opts):
+        default = ""
+        if action.default is not None:
+            if isinstance(action, argparse.BooleanOptionalAction):
+                if action.default:
+                    default = opts[0]
+                else:
+                    default = opts[1]
+            elif isinstance(action, (argparse._StoreTrueAction, argparse._StoreFalseAction)):
+                pass
+            elif action.default == "":
+                pass
+            else:
+                default = default_to_str(action.default)
+        return default
 
     def _format_action(self, action):
         help_text = self._expand_help(action) if action.help else ""
@@ -118,26 +136,18 @@ class CustomHelpFormatter(argparse.HelpFormatter):
         else:
             left = f"{opts[0]} ({opts[-1]})"
 
-        left += " " + self._format_args(action, type_to_str(action.type or str))
+        left += "\n  " + self._format_args(action, type_to_str(action.type or str))
         left += "\n"
 
-        default = ""
-        if action.default is not None:
-            if isinstance(action, argparse.BooleanOptionalAction):
-                if action.default:
-                    default = opts[0]
-                else:
-                    default = opts[1]
-            elif isinstance(action, (argparse._StoreTrueAction, argparse._StoreFalseAction)):
-                pass
-            elif action.default == "":
-                pass
-            else:
-                default = default_to_str(action.default)
+        default = self._format_default(action, opts)
+        const = default_to_str(action.const)
 
-        extra = f"default: {default}" if action.default else ""
-        if not isinstance(action, (argparse._StoreTrueAction, argparse._StoreFalseAction)) and action.const:
-            extra += f"const: {action.const}"
+        extra = []
+        if default:
+            extra.append(f"default: {default}")
+        if not isinstance(action, (argparse._StoreTrueAction, argparse._StoreFalseAction)) and const:
+            extra.append(f"const: {const}")
+        extra = "; ".join(extra)
 
         extra = extra.rstrip()
         if extra:

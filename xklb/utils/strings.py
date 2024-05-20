@@ -232,16 +232,27 @@ def safe_percent(v) -> str | None:
         return None
 
 
-def format_two_columns(text1, text2, width1=30, width2=70, left_gutter=2, middle_gutter=2, right_gutter=3):
-    terminal_width = min(consts.TERMINAL_SIZE.columns, 100) - (left_gutter + middle_gutter + right_gutter)
+def format_two_columns(text1, text2, width1=25, width2=75, left_gutter=2, middle_gutter=2, right_gutter=3):
+    terminal_width = min(consts.TERMINAL_SIZE.columns, 120) - (left_gutter + middle_gutter + right_gutter)
     if text2:
         width1 = int(terminal_width * (width1 / (width1 + width2)))
         width2 = int(terminal_width * (width2 / (width1 + width2)))
     else:
         width1 = terminal_width
 
-    wrapped_text1 = textwrap.wrap(text1, width=width1)
-    wrapped_text2 = textwrap.wrap(text2, width=width2)
+    wrapped_text1 = []
+    for t in text1.strip().split("\n"):
+        if len(t) <= width1:
+            wrapped_text1.append(t)
+        else:
+            wrapped_text1.extend(textwrap.wrap(t, width=width1, break_on_hyphens=False))
+
+    wrapped_text2 = []
+    for t in text2.split("\n"):
+        if len(t) <= width2:
+            wrapped_text2.append(t)
+        else:
+            wrapped_text2.extend(textwrap.wrap(t, width=width2, break_on_hyphens=False))
 
     formatted_lines = [
         f"{' ' * left_gutter}{line1:<{width1}}{' ' * middle_gutter}{line2:<{width2}}{' ' * right_gutter}".rstrip()

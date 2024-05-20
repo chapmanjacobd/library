@@ -40,12 +40,7 @@ def parse_args(action, usage):
 
     parser.add_argument("--exclude", "-E", nargs="+", action="extend", default=[])
 
-    parser.add_argument(
-        "--io-multiplier",
-        type=float,
-        default=1.0,
-        help="Especially useful for text, image, filesystem db types",
-    )
+    parser.add_argument("--threads", type=int, default=-1, help="Load x files in parallel")
     parser.add_argument("--ocr", "--OCR", action="store_true")
     parser.add_argument("--speech-recognition", "--speech", action="store_true")
     parser.add_argument("--scan-subtitles", "--scan-subtitle", action="store_true")
@@ -502,8 +497,8 @@ def scan_path(args, path_str: str) -> int:
     n_jobs = None
     if args.verbose >= consts.LOG_DEBUG:
         n_jobs = 1
-    elif args.io_multiplier != 1.0:
-        n_jobs = max(1, int(max(os.cpu_count() or 4, 4) * args.io_multiplier))
+    elif args.threads != -1:
+        n_jobs = args.threads
 
     threadsafe = [DBType.audio, DBType.video, DBType.filesystem]
 
