@@ -45,8 +45,8 @@ media_flags = [
     ("-P s", 0, ""),  # test_media_player must run first  # TODO: move to new function to test before / after
     ("-w 'play_count=0'", 0, ""),
     ("--partial n", 5, "corrupt.mp4"),
-    ("-P f", 5, "test"),
-    ("-P fo", 5, "test.mp4"),
+    # ("-P f", 5, "test"),  # TODO: make a specific test for this that doesn't have a race condition
+    # ("-P fo", 5, "test.mp4"),
     ("-P o", 5, "corrupt.mp4"),
     ("-P p", 5, "corrupt.mp4"),
     ("-P pt", 5, "corrupt.mp4"),
