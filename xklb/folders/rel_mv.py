@@ -1,4 +1,4 @@
-import argparse, os.path, shlex, shutil
+import argparse, errno, os.path, shlex, shutil
 from os.path import commonprefix
 from pathlib import Path
 
@@ -147,14 +147,14 @@ def rel_move(sources, dest, simulate=False, relative_from=None, replace=False):
         except FileExistsError:
             log.error("%s ->x %s already exists", abspath, new_path)
         except OSError as e:
-            if e.errno == 2:  # FileNotFoundError
+            if e.errno == errno.ENOENT:  # FileNotFoundError
                 log.error("%s not found", abspath)
-            elif e.errno == 39:  # target dir not empty
+            elif e.errno == errno.ENOTEMPTY or e.errno == errno.EREMOTE or e.errno == errno.EIO:  # target dir not empty
                 log.info("%s ->m %s", abspath, new_path)
                 new_paths.extend(
                     rel_move(abspath.glob("*"), dest, simulate=simulate, relative_from=relative_from, replace=replace)
                 )
-            elif e.errno == 18:  # cross-device move
+            elif e.errno == errno.EXDEV:  # cross-device move
                 log.debug("%s ->d %s", abspath, target_dir)
                 if Path(new_path).is_dir():
                     log.info("%s ->dm %s", abspath, new_path)
