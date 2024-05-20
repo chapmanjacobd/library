@@ -362,7 +362,7 @@ def process_playqueue(args) -> None:
 
     if args.big_dirs:
         media_keyed = {d["path"]: d for d in media}
-        folders = big_dirs.group_files_by_parent(args, media)
+        folders = big_dirs.group_files_by_parents(args, media)
         dirs = big_dirs.process_big_dirs(args, folders)
         dirs = mcda.group_sort_by(args, dirs)
         log.debug("process_bigdirs: %s", t.elapsed())
@@ -413,6 +413,8 @@ def process_playqueue(args) -> None:
     elif args.folder_glob:
         media = ({"path": s} for m in media for s in file_utils.fast_glob(Path(m["path"]).parent, args.folder_glob))
 
+    if not media:
+        processes.no_media_found()
     if any(
         [
             args.print,
