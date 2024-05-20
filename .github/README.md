@@ -97,7 +97,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v2.8.027; 72 subcommands)
+    library (v2.8.028; 72 subcommands)
 
     Create database subcommands:
     ╭───────────────┬──────────────────────────────────────────╮
@@ -2122,7 +2122,8 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
         Or use `lb next` or `lb stop`
 
-        Or create global shortcuts in your desktop environment by sending commands to mpv_socket:
+        Or create global shortcuts in your desktop environment by
+        sending commands to mpv_socket:
         echo 'playlist-next force' | socat - /tmp/mpv_socket
 
     Constrain media by throughput:
@@ -2130,6 +2131,29 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         You can use file size and duration as a proxy for throughput:
         -w 'size/duration<50000'
 
+    Print an aggregate report of deleted media
+        -w time_deleted!=0 -pa
+        path         count  duration               size
+        ---------  -------  ------------------  -------
+        Aggregate      337  2 days and 5 hours  1.6 GiB
+
+    Print an aggregate report of media that has no duration information (ie.
+    online media or corrupt local media)
+        -w 'duration is null' -pa
+
+    Print a list of filenames which have below 1280px resolution
+        -w 'width<1280' -pf
+
+    View how much time you have played
+        -w play_count'>'0 -pa
+
+    View all the columns
+        -p -L 1 --cols '*'
+
+    Open ipython with all of your media
+        -vv -p --cols '*'
+        ipdb> len(media)
+        462219
 
 
 </details>

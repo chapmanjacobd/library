@@ -80,31 +80,8 @@ Printing modes
 When a printing mode is explicitly set then all rows will be fetched unless --limit is explicitly set
 
 Some printing modes can be combined
-    -p df  # print fields for piping into another program and mark as deleted
-    -p bf  # print fields from big-dirs report
-
-Print an aggregate report of deleted media
-    -w time_deleted!=0 -pa
-    path         count  duration               size
-    ---------  -------  ------------------  -------
-    Aggregate      337  2 days and 5 hours  1.6 GiB
-
-Print an aggregate report of media that has no duration information (ie. online media or corrupt local media)
--w 'duration is null' -pa
-
-Print a list of filenames which have below 1280px resolution
--w 'width<1280' -pf
-
-View how much time you have played
--w play_count'>'0 -pa
-
-View all the columns
--p -L 1 --cols '*'
-
-Open ipython with all of your media
--vv -p --cols '*'
-ipdb> len(media)
-462219""",
+-p df  # print fields for piping into another program and mark as deleted
+-p bf  # print fields from big-dirs report""",
     )
     printing.add_argument("--to-json", action="store_true", help="Write JSONL to stdout")
     printing.add_argument("--cols", "--columns", nargs="+", help="Include specific column(s) when printing")
@@ -883,8 +860,7 @@ def related(parser):
         "-R",
         action="count",
         default=0,
-        help="""Find related media by searching the first row
-
+        help="""Find media related to the first result
 --related  # Use fts to find similar content
 -R         # equivalent
 -RR        # above, plus ignores most filters""",
