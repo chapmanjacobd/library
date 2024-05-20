@@ -2,8 +2,6 @@ import argparse, errno, os.path, shlex, shutil
 from os.path import commonprefix
 from pathlib import Path
 
-from rich import inspect
-
 from xklb import usage
 from xklb.utils import arggroups, argparse_utils, file_utils, path_utils
 from xklb.utils.log_utils import log
@@ -141,37 +139,31 @@ def rel_move(sources, dest, simulate=False, relative_from=None, replace=False):
         new_path = target_dir / abspath.name
         log.info("%s -> %s", abspath, target_dir)
         try:
-            if replace:
-                os.replace(abspath, new_path)
-            else:
-                file_utils.rename_no_replace(abspath, new_path)
-            new_paths.append(new_path)
-        except FileExistsError:
-            log.error("%s ->x %s already exists", abspath, new_path)
-        except OSError as e:
-            if e.errno == errno.ENOENT:  # FileNotFoundError
-                log.error("%s not found", abspath)
-            elif (
-                e.errno == errno.ENOTEMPTY or e.errno == errno.EREMOTE or getattr(e, "winerror", False) == 5
-            ):  # target dir not empty
-                log.info("%s ->m %s", abspath, new_path)
-                new_paths.extend(
-                    rel_move(abspath.glob("*"), dest, simulate=simulate, relative_from=relative_from, replace=replace)
-                )
-            elif e.errno == errno.EXDEV:  # cross-device move
-                log.debug("%s ->d %s", abspath, target_dir)
-                if Path(new_path).is_dir():
-                    log.info("%s ->dm %s", abspath, new_path)
+            if os.path.exists(new_path):
+                if os.path.isdir(new_path):
+                    log.info("%s ->m %s", abspath, new_path)
                     new_paths.extend(
                         rel_move(
                             abspath.glob("*"), dest, simulate=simulate, relative_from=relative_from, replace=replace
                         )
                     )
                 else:
-                    shutil.move(str(abspath), str(new_path))  # fallback to shutil
-                    new_paths.append(new_path)
+                    if replace:
+                        os.replace(abspath, new_path)
+                        new_paths.append(new_path)
+                    else:
+                        log.error("%s ->x %s already exists", abspath, new_path)
             else:
-                inspect(e)
+                os.rename(abspath, new_path)
+                new_paths.append(new_path)
+        except OSError as e:
+            if e.errno == errno.ENOENT:  # FileNotFoundError
+                log.error("%s not found", abspath)
+            elif e.errno == errno.EXDEV:  # cross-device move
+                log.debug("%s ->d %s", abspath, target_dir)
+                shutil.move(str(abspath), str(new_path))  # fallback to shutil
+                new_paths.append(new_path)
+            else:
                 raise
 
     return new_paths
