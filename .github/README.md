@@ -97,7 +97,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v2.8.018; 72 subcommands)
+    library (v2.8.019; 72 subcommands)
 
     Create database subcommands:
     ╭───────────────┬──────────────────────────────────────────╮
@@ -567,9 +567,9 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         [/mnt/d/Youtube] Building file list...
         [/mnt/d/Youtube] Marking 28932 orphaned metadata records as deleted
 
-    If you run out of RAM, for example scanning large VR videos, you can lower the number of threads via --io-multiplier
+    If you run out of RAM, for example scanning large VR videos, you can lower the number of threads via --threads
 
-        library fsadd vr.db --delete-unplayable --check-corrupt --full-scan-if-corrupt 15% --delete-corrupt 20% ./vr/ --io-multiplier 0.2
+        library fsadd vr.db --delete-unplayable --check-corrupt --full-scan-if-corrupt 15% --delete-corrupt 20% ./vr/ --threads 3
 
     Move files on import
 
@@ -1143,16 +1143,6 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     The program will print a table with a sorted list of folders which are good candidates for moving.
     Candidates are determined by how many files are in the folder (so you don't spend hours waiting for folders with millions of tiny files to copy over).
     The default is 4 to 4000--but it can be adjusted via the --lower and --upper flags.
-
-        ...
-        ├──────────┼─────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-        │ 4.0 GB   │       7 │ /mnt/d/71_Mealtime_Videos/unsorted/Miguel_4K/                                                                 │
-        ├──────────┼─────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-        │ 5.7 GB   │      10 │ /mnt/d/71_Mealtime_Videos/unsorted/Bollywood_Premium/                                                         │
-        ├──────────┼─────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-        │ 2.3 GB   │       4 │ /mnt/d/71_Mealtime_Videos/chief_wiggum/                                                                       │
-        ╘══════════╧═════════╧═══════════════════════════════════════════════════════════════════════════════════════════════════════════════╛
-        6702 other folders not shown
 
         ██╗███╗░░██╗░██████╗████████╗██████╗░██╗░░░██╗░█████╗░████████╗██╗░█████╗░███╗░░██╗░██████╗
         ██║████╗░██║██╔════╝╚══██╔══╝██╔══██╗██║░░░██║██╔══██╗╚══██╔══╝██║██╔══██╗████╗░██║██╔════╝
@@ -1848,11 +1838,6 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     List of Playlists
 
         library playlists
-        ╒══════════╤════════════════════╤══════════════════════════════════════════════════════════════════════════╕
-        │ extractor_key   │ title              │ path                                                                     │
-        ╞══════════╪════════════════════╪══════════════════════════════════════════════════════════════════════════╡
-        │ Youtube  │ Highlights of Life │ https://www.youtube.com/playlist?list=PL7gXS9DcOm5-O0Fc1z79M72BsrHByda3n │
-        ╘══════════╧════════════════════╧══════════════════════════════════════════════════════════════════════════╛
 
     Search playlists
 
@@ -1864,13 +1849,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     Aggregate Report of Videos in each Playlist
 
         library playlists -p a
-        ╒══════════╤════════════════════╤══════════════════════════════════════════════════════════════════════════╤═══════════════╤═════════╕
-        │ extractor_key   │ title              │ path                                                                     │ duration      │   count │
-        ╞══════════╪════════════════════╪══════════════════════════════════════════════════════════════════════════╪═══════════════╪═════════╡
-        │ Youtube  │ Highlights of Life │ https://www.youtube.com/playlist?list=PL7gXS9DcOm5-O0Fc1z79M72BsrHByda3n │ 53.28 minutes │      15 │
-        ╘══════════╧════════════════════╧══════════════════════════════════════════════════════════════════════════╧═══════════════╧═════════╛
-        1 playlist
-        Total duration: 53.28 minutes
+
 
     Print only playlist urls:
         Useful for piping to other utilities like xargs or GNU Parallel.
@@ -1925,16 +1904,6 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     Print download queue groups
 
         library download-status audio.db
-        ╒════════════╤══════════════════╤════════════════════╤══════════╕
-        │ extractor_key     │ duration         │   never_downloaded │   errors │
-        ╞════════════╪══════════════════╪════════════════════╪══════════╡
-        │ Soundcloud │                  │                 10 │        0 │
-        ├────────────┼──────────────────┼────────────────────┼──────────┤
-        │ Youtube    │ 10 days, 4 hours │                  1 │     2555 │
-        │            │ and 20 minutes   │                    │          │
-        ├────────────┼──────────────────┼────────────────────┼──────────┤
-        │ Youtube    │ 7.68 minutes     │                 99 │        1 │
-        ╘════════════╧══════════════════╧════════════════════╧══════════╛
 
     Broadcatching absolution
 
@@ -1951,32 +1920,6 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     Print download queue groups
 
         library download-status video.db
-        ╒═════════════╤══════════════════╤════════════════════╤══════════╕
-        │ extractor_key      │ duration         │   never_downloaded │   errors │
-        ╞═════════════╪══════════════════╪════════════════════╪══════════╡
-        │ Youtube     │ 3 hours and 2.07 │                 76 │        0 │
-        │             │ minutes          │                    │          │
-        ├─────────────┼──────────────────┼────────────────────┼──────────┤
-        │ Dailymotion │                  │                 53 │        0 │
-        ├─────────────┼──────────────────┼────────────────────┼──────────┤
-        │ Youtube     │ 1 day, 18 hours  │                 30 │        0 │
-        │             │ and 6 minutes    │                    │          │
-        ├─────────────┼──────────────────┼────────────────────┼──────────┤
-        │ Dailymotion │                  │                186 │      198 │
-        ├─────────────┼──────────────────┼────────────────────┼──────────┤
-        │ Youtube     │ 1 hour and 52.18 │                  1 │        0 │
-        │             │ minutes          │                    │          │
-        ├─────────────┼──────────────────┼────────────────────┼──────────┤
-        │ Vimeo       │                  │                253 │       49 │
-        ├─────────────┼──────────────────┼────────────────────┼──────────┤
-        │ Youtube     │ 2 years, 4       │              51676 │      197 │
-        │             │ months, 15 days  │                    │          │
-        │             │ and 6 hours      │                    │          │
-        ├─────────────┼──────────────────┼────────────────────┼──────────┤
-        │ Youtube     │ 4 months, 23     │               2686 │        7 │
-        │             │ days, 19 hours   │                    │          │
-        │             │ and 33 minutes   │                    │          │
-        ╘═════════════╧══════════════════╧════════════════════╧══════════╛
 
     Simulate --safe flag
 
@@ -2015,12 +1958,6 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     Mark videos as candidates for download via specific deletion timestamp:
 
         library redownload city.db 2023-01-26T19:54:42
-        ╒══════════╤════════════════╤═════════════════╤═══════════════════╤═════════╤══════════╤═══════╤══════════════════╤════════════════════════════════════════════════════════════════════════════════════════════════════════╕
-        │ size     │ time_created   │ time_modified   │ time_downloaded   │   width │   height │   fps │ duration         │ path                                                                                                   │
-        ╞══════════╪════════════════╪═════════════════╪═══════════════════╪═════════╪══════════╪═══════╪══════════════════╪════════════════════════════════════════════════════════════════════════════════════════════════════════╡
-        │ 697.7 MB │ Apr 13 2022    │ Mar 11 2022     │ Oct 19            │    1920 │     1080 │    30 │ 21.22 minutes    │ /mnt/d/76_CityVideos/PRAIA DE BARRA DE JANGADA CANDEIAS JABOATÃO                                       │
-        │          │                │                 │                   │         │          │       │                  │ RECIFE PE BRASIL AVENIDA BERNARDO VIEIRA DE MELO-4Lx3hheMPmg.mp4
-        ...
 
     ...or between two timestamps inclusive:
 
@@ -2094,64 +2031,16 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     View watched stats
 
         $ library stats video.db --completed
-        Finished watching:
-        ╒═══════════════╤═════════════════════════════════╤════════════════╤════════════╤════════════╕
-        │ time_period   │ duration_sum                    │ duration_avg   │ size_sum   │ size_avg   │
-        ╞═══════════════╪═════════════════════════════════╪════════════════╪════════════╪════════════╡
-        │ 2022-11       │ 4 days, 16 hours and 20 minutes │ 55.23 minutes  │ 26.3 GB    │ 215.9 MB   │
-        ├───────────────┼─────────────────────────────────┼────────────────┼────────────┼────────────┤
-        │ 2022-12       │ 23 hours and 20.03 minutes      │ 35.88 minutes  │ 8.3 GB     │ 213.8 MB   │
-        ├───────────────┼─────────────────────────────────┼────────────────┼────────────┼────────────┤
-        │ 2023-01       │ 17 hours and 3.32 minutes       │ 15.27 minutes  │ 14.3 GB    │ 214.1 MB   │
-        ├───────────────┼─────────────────────────────────┼────────────────┼────────────┼────────────┤
-        │ 2023-02       │ 4 days, 5 hours and 60 minutes  │ 23.17 minutes  │ 148.3 GB   │ 561.6 MB   │
-        ├───────────────┼─────────────────────────────────┼────────────────┼────────────┼────────────┤
-        │ 2023-03       │ 2 days, 18 hours and 18 minutes │ 11.20 minutes  │ 118.1 GB   │ 332.8 MB   │
-        ├───────────────┼─────────────────────────────────┼────────────────┼────────────┼────────────┤
-        │ 2023-05       │ 5 days, 5 hours and 4 minutes   │ 45.75 minutes  │ 152.9 GB   │ 932.1 MB   │
-        ╘═══════════════╧═════════════════════════════════╧════════════════╧════════════╧════════════╛
 
     View download stats
 
         $ library stats video.db time_downloaded --frequency daily
-        Downloaded media:
-        day         total_duration                          avg_duration                total_size    avg_size    count
-        ----------  --------------------------------------  ------------------------  ------------  ----------  -------
-        2023-08-11  1 month, 7 days and 8 hours             17 minutes                    192.2 GB     58.3 MB     3296
-        2023-08-12  18 days and 15 hours                    17 minutes                     89.7 GB     56.4 MB     1590
-        2023-08-14  13 days and 1 hours                     22 minutes                    111.2 GB    127.2 MB      874
-        2023-08-15  13 days and 6 hours                     17 minutes                    140.0 GB    126.7 MB     1105
-        2023-08-17  2 months, 8 days and 8 hours            19 minutes                    380.4 GB     72.6 MB     5243
-        2023-08-18  2 months, 30 days and 18 hours          17 minutes                    501.9 GB     63.3 MB     7926
-        2023-08-19  2 months, 6 days and 19 hours           19 minutes                    578.1 GB    110.6 MB     5229
-        2023-08-20  3 days and 9 hours                      6 minutes and 57 seconds       14.5 GB     20.7 MB      700
-        2023-08-21  4 days and 3 hours                      12 minutes                     18.0 GB     36.3 MB      495
-        2023-08-22  10 days and 8 hours                     17 minutes                     82.1 GB     91.7 MB      895
-        2023-08-23  19 days and 9 hours                     22 minutes                     93.7 GB     74.7 MB     1254
 
         See also: library stats video.db time_downloaded -f daily --hide-deleted
 
     View deleted stats
 
         $ library stats video.db time_deleted
-        Deleted media:
-        ╒═══════════════╤════════════════════════════════════════════╤════════════════╤════════════╤════════════╕
-        │ time_period   │ duration_sum                               │ duration_avg   │ size_sum   │ size_avg   │
-        ╞═══════════════╪════════════════════════════════════════════╪════════════════╪════════════╪════════════╡
-        │ 2023-04       │ 1 year, 10 months, 3 days and 8 hours      │ 4.47 minutes   │ 1.6 TB     │ 7.4 MB     │
-        ├───────────────┼────────────────────────────────────────────┼────────────────┼────────────┼────────────┤
-        │ 2023-05       │ 9 months, 26 days, 20 hours and 34 minutes │ 30.35 minutes  │ 1.1 TB     │ 73.7 MB    │
-        ╘═══════════════╧════════════════════════════════════════════╧════════════════╧════════════╧════════════╛
-        ╒════════════════════════════════════════════════════════════════════════════════════════════════════════════╤═══════════════╤══════════════════╤════════════════╕
-        │ title_path                                                                                                 │ duration      │   subtitle_count │ time_deleted   │
-        ╞════════════════════════════════════════════════════════════════════════════════════════════════════════════╪═══════════════╪══════════════════╪════════════════╡
-        │ Terminus (1987)                                                                                            │ 1 hour and    │                0 │ yesterday      │
-        │ /mnt/d/70_Now_Watching/Terminus_1987.mp4                                                                   │ 15.55 minutes │                  │                │
-        ├────────────────────────────────────────────────────────────────────────────────────────────────────────────┼───────────────┼──────────────────┼────────────────┤
-        │ Commodore 64 Longplay [062] The Transformers (EU) /mnt/d/71_Mealtime_Videos/Youtube/World_of_Longplays/Com │ 24.77 minutes │                2 │ yesterday      │
-        │ modore_64_Longplay_062_The_Transformers_EU_[1RRX7Kykb38].webm                                              │               │                  │                │
-        ...
-
 
     View time_modified stats
 
@@ -2231,378 +2120,15 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     Control playback:
         To stop playback press Ctrl-C in either the terminal or mpv
 
-        Create global shortcuts in your desktop environment by sending commands to mpv_socket:
+        Or use `lb next` or `lb stop`
+
+        Or create global shortcuts in your desktop environment by sending commands to mpv_socket:
         echo 'playlist-next force' | socat - /tmp/mpv_socket
-
-    Override the default player (mpv):
-        library watch --player "vlc --vlc-opts"
-
-    Cast to chromecast groups:
-        library watch --cast --cast-to "Office pair"
-        library watch -ct "Office pair"  # equivalent
-        If you don't know the exact name of your chromecast group run `catt scan`
-
-    Play media in order (similarly named episodes):
-        library watch --play-in-order
-        library watch -O    # equivalent
-
-        The default sort value is 'natural_ps' which means media will be sorted by parent path
-        and then stem in a natural way (using the integer values within the path). But there are many other options:
-
-        Options:
-
-            - reverse: reverse the sort order
-            - compat: treat characters like '⑦' as '7'
-
-        Algorithms:
-
-            - natural: parse numbers as integers
-            - os: sort similar to the OS File Explorer sorts. To improve non-alphanumeric sorting on Mac OS X and Linux it is necessary to install pyicu (perhaps via python3-icu -- https://gitlab.pyicu.org/main/pyicu#installing-pyicu)
-            - path: use natsort "path" algorithm (https://natsort.readthedocs.io/en/stable/api.html#the-ns-enum)
-            - human: use system locale
-            - ignorecase: treat all case as equal
-            - lowercase: sort lowercase first
-            - signed: sort with an understanding of negative numbers
-            - python: sort like default python
-
-        Values:
-
-            - path
-            - parent
-            - stem
-            - title (or any other column value)
-            - ps: parent, stem
-            - pts: parent, title, stem
-
-        Use this format: algorithm, value, algorithm_value, or option_algorithm_value.
-        For example:
-
-            - library watch -O human
-            - library watch -O title
-            - library watch -O human_title
-            - library watch -O reverse_compat_human_title
-
-            - library watch -O path       # path algorithm and parent, stem values (path_ps)
-            - library watch -O path_path  # path algorithm and path values
-
-        Also, if you are using --random you need to fetch sibling media to play the media in order:
-
-            - library watch --random --fetch-siblings each -O          # get the first result per directory
-            - library watch --random --fetch-siblings if-audiobook -O  # get the first result per directory if 'audiobook' is in the path
-            - library watch --random --fetch-siblings always -O        # get 2,000 results per directory
-
-        If searching by a specific subpath it may be preferable to just sort by path instead
-        library watch d/planet.earth.2024/ -u path
-
-        library watch --related  # Similar to -O but uses fts to find similar content
-        library watch -R         # equivalent
-        library watch -RR        # above, plus ignores most filters
-
-        library watch --cluster  # cluster-sort to put similar-named paths closer together
-        library watch -C         # equivalent
-
-        library watch --big-dirs # Recommended to use with --duration or --depth filters; see `lb big-dirs -h` for more info
-        library watch -B         # equivalent
-
-        All of these options can be used together but it will be a bit slow and the results might be mid-tier
-        as multiple different algorithms create a muddied signal (too many cooks in the kitchen):
-        library watch -RRCO
-
-        You can even sort the items within each cluster by auto-MCDA ~LOL~
-        library watch -B --sort-groups-by 'mcda median_size,-deleted'
-        library watch -C --sort-groups-by 'mcda median_size,-deleted'
-
-    Filter media by playlist:
-        library watch --playlists URL1 URL2
-
-    Filter media by file siblings of parent directory:
-        library watch --sibling   # only include files which have more than or equal to one sibling
-        library watch --solo      # only include files which are alone by themselves
-
-        `--sibling` is just a shortcut for `--lower 2`; `--solo` is `--upper 1`
-        library watch --sibling --solo      # you will always get zero records here
-        library watch --lower 2 --upper 1   # equivalent
-
-        You can be more specific via the `--upper` and `--lower` flags
-        library watch --lower 3   # only include files which have three or more siblings
-        library watch --upper 3   # only include files which have fewer than three siblings
-        library watch --lower 3 --upper 3   # only include files which are three siblings inclusive
-        library watch --lower 12 --upper 25 -O  # on my machine this launches My Mister 2018
-
-    Play recent partially-watched videos (requires mpv history):
-        library watch --partial       # play newest first
-
-        library watch --partial old   # play oldest first
-        library watch -P o            # equivalent
-
-        library watch -P p            # sort by percent remaining
-        library watch -P t            # sort by time remaining
-        library watch -P s            # skip partially watched (only show unseen)
-
-        The default time used is "last-viewed" (ie. the most recent time you closed the video)
-        If you want to use the "first-viewed" time (ie. the very first time you opened the video)
-        library watch -P f            # use watch_later file creation time instead of modified time
-
-        You can combine most of these options, though some will be overridden by others.
-        library watch -P fo           # this means "show the oldest videos using the time I first opened them"
-        library watch -P pt           # weighted remaining (percent * time remaining)
-
-    Print instead of play:
-        library watch --print --limit 10  # print the next 10 files
-        library watch -p -L 10  # print the next 10 files
-        library watch -p  # this will print _all_ the media. be cautious about `-p` on an unfiltered set
-
-        Printing modes
-        library watch -p    # print as a table
-        library watch -p a  # print an aggregate report
-        library watch -p b  # print a big-dirs report (see library bigdirs -h for more info)
-        library watch -p f  # print fields (defaults to path; use --cols to change)
-                               # -- useful for piping paths to utilities like xargs or GNU Parallel
-
-        library watch -p d  # mark deleted
-        library watch -p w  # mark watched
-
-        Some printing modes can be combined
-        library watch -p df  # print files for piping into another program and mark them as deleted within the db
-        library watch -p bf  # print fields from big-dirs report
-
-        Check if you have downloaded something before
-        library watch -u duration -p -s 'title'
-
-        Print an aggregate report of deleted media
-        library watch -w time_deleted!=0 -p=a
-        ╒═══════════╤══════════════╤═════════╤═════════╕
-        │ path      │ duration     │ size    │   count │
-        ╞═══════════╪══════════════╪═════════╪═════════╡
-        │ Aggregate │ 14 days, 23  │ 50.6 GB │   29058 │
-        │           │ hours and 42 │         │         │
-        │           │ minutes      │         │         │
-        ╘═══════════╧══════════════╧═════════╧═════════╛
-        Total duration: 14 days, 23 hours and 42 minutes
-
-        Print an aggregate report of media that has no duration information (ie. online or corrupt local media)
-        library watch -w 'duration is null' -p=a
-
-        Print a list of filenames which have below 1280px resolution
-        library watch -w 'width<1280' -p=f
-
-        Print media you have partially viewed with mpv
-        library watch --partial -p
-        library watch -P -p  # equivalent
-        library watch -P -p f --cols path,progress,duration  # print CSV of partially watched files
-        library watch --partial -pa  # print an aggregate report of partially watched files
-
-        View how much time you have watched
-        library watch -w play_count'>'0 -p=a
-
-        See how much video you have
-        library watch video.db -p=a
-        ╒═══════════╤═════════╤═════════╤═════════╕
-        │ path      │   hours │ size    │   count │
-        ╞═══════════╪═════════╪═════════╪═════════╡
-        │ Aggregate │  145769 │ 37.6 TB │  439939 │
-        ╘═══════════╧═════════╧═════════╧═════════╛
-        Total duration: 16 years, 7 months, 19 days, 17 hours and 25 minutes
-
-        View all the columns
-        library watch -p -L 1 --cols '*'
-
-        Open ipython with all of your media
-        library watch -vv -p --cols '*'
-        ipdb> len(media)
-        462219
-
-    Set the play queue size:
-        By default the play queue is 120--long enough that you likely have not noticed
-        but short enough that the program is snappy.
-
-        If you want everything in your play queue you can use the aid of infinity.
-        Pick your poison (these all do effectively the same thing):
-        library watch -L inf
-        library watch -l inf
-        library watch --queue inf
-        library watch -L 999999999999
-
-        You may also want to restrict the play queue.
-        For example, when you only want 1000 random files:
-        library watch -u random -L 1000
-
-    Offset the play queue:
-        You can also offset the queue. For example if you want to skip one or ten media:
-        library watch --offset 10      # offset ten from the top of an ordered query
-
-    Repeat
-        library watch                  # listen to 120 random songs (DEFAULT_PLAY_QUEUE)
-        library watch --limit 5        # listen to FIVE songs
-        library watch -l inf -u random # listen to random songs indefinitely
-        library watch -s infinite      # listen to songs from the band infinite
-
-    Constrain media by search:
-        Audio files have many tags to readily search through so metadata like artist,
-        album, and even mood are included in search.
-        Video files have less consistent metadata and so only paths are included in search.
-        library watch --include happy  # only matches will be included
-        library watch -s happy         # equivalent
-        library watch --exclude sad    # matches will be excluded
-        library watch -E sad           # equivalent
-
-        Search only the path column
-        library watch -O -s 'path : mad max'
-        library watch -O -s 'path : "mad max"' # add "quotes" to be more strict
-
-        Double spaces are parsed as one space
-        library watch -s '  ost'        # will match OST and not ghost
-        library watch -s toy story      # will match '/folder/toy/something/story.mp3'
-        library watch -s 'toy  story'   # will match more strictly '/folder/toy story.mp3'
-
-        You can search without -s but it must directly follow the database due to how argparse works
-        library watch ./your.db searching for something
-
-    Constrain media by arbitrary SQL expressions:
-        library watch --where audio_count = 2  # media which have two audio tracks
-        library watch -w "language = 'eng'"    # media which have an English language tag
-                                                    (this could be audio _or_ subtitle)
-        library watch -w subtitle_count=0      # media that doesn't have subtitles
-
-    Constrain media to duration (in minutes):
-        library watch --duration 20
-        library watch -d 6  # 6 mins ±10 percent (ie. between 5 and 7 mins)
-        library watch -d-6  # less than 6 mins
-        library watch -d+6  # more than 6 mins
-
-        Duration can be specified multiple times:
-        library watch -d+5 -d-7  # should be similar to -d 6
-
-        If you want exact time use `where`
-        library watch --where 'duration=6*60'
-
-    Constrain media to file size (in megabytes):
-        library watch --size 20
-        library watch -S 6  # 6 MB ±10 percent (ie. between 5 and 7 MB)
-        library watch -S-6  # less than 6 MB
-        library watch -S+6  # more than 6 MB
-
-    Constrain media by time_created / time_last_played / time_deleted / time_modified:
-        library watch --created-within '3 days'
-        library watch --created-before '3 years'
 
     Constrain media by throughput:
         Bitrate information is not explicitly saved.
         You can use file size and duration as a proxy for throughput:
-        library watch -w 'size/duration<50000'
-
-    Constrain media to portrait orientation video:
-        library watch --portrait
-        library watch -w 'width<height' # equivalent
-
-    Constrain media to duration of videos which match any size constraints:
-        library watch --duration-from-size +700 -u 'duration desc, size desc'
-
-    Constrain media to online-media or local-media:
-        Not to be confused with only local-media which is not "offline" (ie. one HDD disconnected)
-        library watch --online-media-only
-        library watch --online-media-only -i  # and ignore playback errors (ie. YouTube video deleted)
-        library watch --local-media-only
-
-    Specify media play order:
-        library watch --sort duration   # play shortest media first
-        library watch -u duration desc  # play longest media first
-
-        You can use multiple SQL ORDER BY expressions
-        library watch -u 'subtitle_count > 0 desc' # play media that has at least one subtitle first
-
-        Prioritize large-sized media
-        library watch --sort 'ntile(10000) over (order by size/duration) desc'
-        library watch -u 'ntile(100) over (order by size) desc'
-
-        Sort by count of media with the same-X column (default DESC: most common to least common value)
-        library watch -u same-duration
-        library watch -u same-title
-        library watch -u same-size
-        library watch -u same-width, same-height ASC, same-fps
-        library watch -u same-time_uploaded same-view_count same-upvote_ratio
-
-        No media found when using --random
-        In addition to -u/--sort random, there is also the -r/--random flag.
-        If you have a large database it should be faster than -u random but it comes with a caveat:
-        This flag randomizes via rowid at an earlier stage to boost performance.
-        It is possible that you see "No media found" or a smaller amount of media than correct.
-        You can bypass this by setting --limit. For example:
-        library watch -B --folder-size=+12GiB --folder-size=-100GiB -r -pa
-        path         count      size  duration                        avg_duration      avg_size
-        ---------  -------  --------  ------------------------------  --------------  ----------
-        Aggregate    10000  752.5 GB  4 months, 15 days and 10 hours  20 minutes         75.3 MB
-        (17 seconds)
-        library watch -B --folder-size=+12GiB --folder-size=-100GiB -r -pa -l inf
-        path         count     size  duration                                 avg_duration      avg_size
-        ---------  -------  -------  ---------------------------------------  --------------  ----------
-        Aggregate   140868  10.6 TB  5 years, 2 months, 28 days and 14 hours  20 minutes         75.3 MB
-        (30 seconds)
-
-    Post-actions -- choose what to do after playing:
-        library watch --post-action keep    # do nothing after playing (default)
-        library watch -k delete             # delete file after playing
-        library watch -k softdelete         # mark deleted after playing
-
-        library watch -k ask_keep           # ask whether to keep after playing
-        library watch -k ask_delete         # ask whether to delete after playing
-
-        library watch -k move               # move to "keep" dir after playing
-        library watch -k ask_move           # ask whether to move to "keep" folder
-        The default location of the keep folder is ./keep/ (relative to the played media file)
-        You can change this by explicitly setting an *absolute* `keep-dir` path:
-        library watch -k ask_move --keep-dir /home/my/music/keep/
-
-        library watch -k ask_move_or_delete # ask after each whether to move to "keep" folder or delete
-
-        You can also bind keys in mpv to different exit codes. For example in input.conf:
-            ; quit 5
-
-        And if you run something like:
-            library watch --cmd5 ~/bin/process_audio.py
-            library watch --cmd5 echo  # this will effectively do nothing except skip the normal post-actions via mpv shortcut
-
-        When semicolon is pressed in mpv (it will exit with error code 5) then the applicable player-exit-code command
-        will start with the media file as the first argument; in this case `~/bin/process_audio.py $path`.
-        The command will be daemonized if library exits before it completes.
-
-        To prevent confusion, normal post-actions will be skipped if the exit-code is greater than 4.
-        Exit-codes 0, 1, 2, 3, and 4: the external post-action will run after normal post-actions. Be careful of conflicting player-exit-code command and post-action behavior when using these!
-
-    Experimental options:
-        Duration to play (in seconds) while changing the channel
-        library watch --interdimensional-cable 40
-        library watch -4dtv 40
-        You can open two terminals to replicate AMV Hell somewhat
-        library watch --volume 0 -4dtv 30
-        library listen -4dtv 30
-
-        Playback multiple files at once
-        library watch --multiple-playback    # one per display; or two if only one display detected
-        library watch --multiple-playback 4  # play four media at once, divide by available screens
-        library watch -m 4 --screen-name eDP # play four media at once on specific screen
-        library watch -m 4 --loop --crop     # play four cropped videos on a loop
-        library watch -m 4 --hstack          # use hstack style
-
-        When using `--multiple-playback` it may be helpful to set simple window focus rules to prevent keys from accidentally being entered in the wrong mpv window (as new windows are created and capture the cursor focus).
-        You can set and restore your previous mouse focus setting by wrapping the command like this:
-
-            focus-under-mouse
-            library watch ... --multiple-playback 4
-            focus-follows-mouse
-
-        For example in KDE:
-
-            function focus-under-mouse
-                kwriteconfig5 --file kwinrc --group Windows --key FocusPolicy FocusUnderMouse
-                qdbus-qt5 org.kde.KWin /KWin reconfigure
-            end
-
-            function focus-follows-mouse
-                kwriteconfig5 --file kwinrc --group Windows --key FocusPolicy FocusFollowsMouse
-                kwriteconfig5 --file kwinrc --group Windows --key NextFocusPrefersMouse true
-                qdbus-qt5 org.kde.KWin /KWin reconfigure
-            end
+        -w 'size/duration<50000'
 
 
 
@@ -2630,27 +2156,10 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     Print URLs
 
         library tabs -w "frequency='yearly'" -p
-        ╒════════════════════════════════════════════════════════════════╤═════════════╤══════════════╕
-        │ path                                                           │ frequency   │ time_valid   │
-        ╞════════════════════════════════════════════════════════════════╪═════════════╪══════════════╡
-        │ https://old.reddit.com/r/Autonomia/top/?sort=top&t=year        │ yearly      │ Dec 31 1970  │
-        ├────────────────────────────────────────────────────────────────┼─────────────┼──────────────┤
-        │ https://old.reddit.com/r/Cyberpunk/top/?sort=top&t=year        │ yearly      │ Dec 31 1970  │
-        ├────────────────────────────────────────────────────────────────┼─────────────┼──────────────┤
-        │ https://old.reddit.com/r/ExperiencedDevs/top/?sort=top&t=year  │ yearly      │ Dec 31 1970  │
-
-        ...
-
-        ╘════════════════════════════════════════════════════════════════╧═════════════╧══════════════╛
 
     View how many yearly tabs you have:
 
         library tabs -w "frequency='yearly'" -p a
-        ╒═══════════╤═════════╕
-        │ path      │   count │
-        ╞═══════════╪═════════╡
-        │ Aggregate │     134 │
-        ╘═══════════╧═════════╛
 
     Delete URLs
 
@@ -2666,8 +2175,10 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         ├───────────────────────────────────────┼─────────────┼──────────────┤
         │ https://www.reddit.com/r/cyberDeck/   │ yearly      │ Sep 05 2023  │
         ╘═══════════════════════════════════════╧═════════════╧══════════════╛
+
         library tabs -p -w "path='https://www.reddit.com/r/cyberDeck/'" --delete-rows
         Removed 1 metadata records
+
         library tabs -p -s cyber
         ╒═══════════════════════════════════════╤═════════════╤══════════════╕
         │ path                                  │ frequency   │ time_valid   │

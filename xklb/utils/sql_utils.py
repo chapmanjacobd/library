@@ -124,7 +124,9 @@ def human_to_sql_part(human_to_x, var, size):
         size, percent = size.split("%")
         size = human_to_x(size)
         percent = float(percent)
-        return f"and {int(size + (size / percent))} >= {var} and {var} >= {int(size - (size / percent))} "
+        lower_bound = int(size - (size * (percent / 100)))
+        upper_bound = int(size + (size * (percent / 100)))
+        return f"and {lower_bound} <= {var} and {var} <= {upper_bound}"
     else:
         return f"and {human_to_x(size)} = {var} "
 
@@ -149,8 +151,9 @@ def human_to_lambda_part(var, human_to_x, size):
     elif "%" in size:
         size, percent = size.split("%")
         size = human_to_x(size)
-        percent = float(percent)
-        return int(size + (size / percent)) >= var >= int(size - (size / percent))
+        lower_bound = int(size - (size * (percent / 100)))
+        upper_bound = int(size + (size * (percent / 100)))
+        return f"and {lower_bound} <= {var} and {var} <= {upper_bound}"
     else:
         return var == human_to_x(size)
 

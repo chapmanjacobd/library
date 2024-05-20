@@ -28,16 +28,67 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     arggroups.related(parser)
 
     ordering = parser.add_argument_group("Ordering")
-    ordering.add_argument("--play-in-order", "-O", nargs="?", const="natural_ps")
-    ordering.add_argument("--fetch-siblings")
     ordering.add_argument(
-        "--partial",
-        "-P",
-        "--previous",
-        "--recent",
-        default=False,
-        const="n",
+        "--play-in-order",
+        "-O",
         nargs="?",
+        const="natural_ps",
+        help="""Play media in order (for similarly named episodes)
+
+-O [option]_[algorithm]_[field]
+-O [algorithm]_[field]
+-O [algorithm]
+(-O [field] if fieldname does not match an algorithm name)
+
+Options:
+
+    - reverse: reverse the sort order
+    - compat: treat characters like '⑦' as '7'
+
+Algorithms:
+
+    - natural: parse numbers as integers
+    - os: sort similar to the OS File Explorer sorts. To improve non-alphanumeric sorting on Mac OS X and Linux it is necessary to install pyicu (perhaps via python3-icu -- https://gitlab.pyicu.org/main/pyicu#installing-pyicu)
+    - path: use natsort "path" algorithm (https://natsort.readthedocs.io/en/stable/api.html#the-ns-enum)
+    - human: use system locale
+    - ignorecase: treat all case as equal
+    - lowercase: sort lowercase first
+    - signed: sort with an understanding of negative numbers
+    - python: sort like default python
+
+Fields:
+
+    - path
+    - parent
+    - stem
+    - title (or any other column field)
+    - ps: parent, stem
+    - pts: parent, title, stem
+
+Examples:
+
+-O             # natural algorithm and (parent, stem) fields
+-O natural_ps  # natural algorithm and (parent, stem) fields
+
+-O title       # natural algorithm (default algorithm) and title field
+-O path        # path algorithm and (parent, stem) fields (default field)
+
+-O path_ps     # path algorithm and (parent, stem) fields
+-O path_path   # path algorithm and path field
+
+If you prefer SQLite's ordering you can do this instead of -O
+-s d/planet.earth.2024/ -u path
+""",
+    )
+    ordering.add_argument(
+        "--fetch-siblings",
+        help="""If using --random you need to fetch sibling media to play the media in order:
+
+--fetch-siblings each             # get the first result per directory, SQLite ordering
+--fetch-siblings each -O          # get the first result per directory
+--fetch-siblings if-audiobook -O  # get the first result per directory if 'audiobook' is in the path
+--fetch-siblings always -O        # get 2,000 results per directory
+""",
     )
 
     probabling = parser.add_argument_group("Probability")
@@ -47,36 +98,81 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
         default=consts.DEFAULT_SUBTITLE_MIX,
         help="Probability to play no-subtitle content",
     )
-    probabling.add_argument("--interdimensional-cable", "-4dtv", type=int)
+    probabling.add_argument(
+        "--interdimensional-cable",
+        "-4dtv",
+        type=int,
+        help="""Duration to play (in seconds) while changing the channel
+--interdimensional-cable 40
+-4dtv 40
+You can open two terminals to replicate AMV Hell somewhat
+library watch --volume 0 -4dtv 30
+library listen -4dtv 30
+""",
+    )
 
     chromecast = parser.add_argument_group("Chromecast")
-    chromecast.add_argument("--chromecast", "--cast", "-c", action="store_true")
+    chromecast.add_argument("--chromecast", "--cast", "-c", action="store_true", help="Cast to chromecast groups")
     chromecast.add_argument(
         "--chromecast-device",
         "--cast-to",
         "-t",
         default=default_chromecast or "",
+        help="""--cast --cast-to "Office pair"
+-ct "Office pair"  # equivalent
+
+If you don't know the exact name of your chromecast group run `catt scan`
+""",
     )
-    chromecast.add_argument("--cast-with-local", "-wl", action="store_true")
+    chromecast.add_argument(
+        "--cast-with-local", "-wl", action="store_true", help="Play music locally at the same time as chromecast"
+    )
 
     player = parser.add_argument_group("Player")
-    player.add_argument("--player-args-sub", "--player-sub", nargs="*", default=DEFAULT_PLAYER_ARGS_SUB)
-    player.add_argument("--player-args-no-sub", "--player-no-sub", nargs="*", default=DEFAULT_PLAYER_ARGS_NO_SUB)
-    player.add_argument("--watch-later-directory", default=consts.DEFAULT_MPV_WATCH_LATER)
-    player.add_argument("--transcode", action="store_true")
-    player.add_argument("--transcode-audio", action="store_true")
+    player.add_argument(
+        "--player-args-sub",
+        "--player-sub",
+        nargs="*",
+        default=DEFAULT_PLAYER_ARGS_SUB,
+        help="Player arguments for videos with subtitles",
+    )
+    player.add_argument(
+        "--player-args-no-sub",
+        "--player-no-sub",
+        nargs="*",
+        default=DEFAULT_PLAYER_ARGS_NO_SUB,
+        help="Player arguments for videos without subtitles",
+    )
+    player.add_argument(
+        "--watch-later-directory", default=consts.DEFAULT_MPV_WATCH_LATER, help="Location of mpv watch-later directory"
+    )
+    player.add_argument(
+        "--transcode",
+        action="store_true",
+        help="Attempt to transcode to a format that will work with chromecast or other players better",
+    )
+    player.add_argument(
+        "--transcode-audio",
+        action="store_true",
+        help="Attempt to transcode to a format that will work with chromecast or other players better leaving any video streams AS-IS",
+    )
 
     for i in range(0, 255):
         parser.add_argument(f"--cmd{i}", help=argparse.SUPPRESS)
 
     parser.add_argument("--safe", action="store_true", help="Skip generic URLs")
     parser.add_argument("--refresh", action="store_true", help="Check for deleted files before starting playqueue")
-    parser.add_argument("--delete-unplayable", action="store_true")
+    parser.add_argument(
+        "--delete-unplayable", action="store_true", help="Delete from disk any media which does not open successfully"
+    )
     arggroups.debug(parser)
 
     arggroups.database(parser)
     parser.add_argument("search", nargs="*")
     args = parser.parse_intermixed_args()
+    for i in range(0, 255):
+        if getattr(args, f"cmd{i}") is None:
+            delattr(args, f"cmd{i}")
     arggroups.args_post(args, parser)
 
     arggroups.sql_fs_post(args)
@@ -226,6 +322,7 @@ def process_playqueue(args) -> None:
 
     t = Timer()
     if args.playlists:
+        args.playlists = [p if p.startswith("http") else str(Path(p).resolve()) for p in args.playlists]
         media = db_media.get_playlist_media(args, args.playlists)
     else:
         media = list(args.db.query(query, bindings))
@@ -265,7 +362,7 @@ def process_playqueue(args) -> None:
 
     if args.big_dirs:
         media_keyed = {d["path"]: d for d in media}
-        folders = big_dirs.group_files_by_parents(args, media)
+        folders = big_dirs.group_files_by_parent(args, media)
         dirs = big_dirs.process_big_dirs(args, folders)
         dirs = mcda.group_sort_by(args, dirs)
         log.debug("process_bigdirs: %s", t.elapsed())

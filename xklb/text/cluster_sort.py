@@ -141,7 +141,6 @@ def print_groups(groups):
         group["grouped_paths"] = [s.rstrip("\n") for s in group["grouped_paths"]]
 
     print(json.dumps(groups, indent=4))
-    raise SystemExit(0)
 
 
 def cluster_dicts(args, media):
@@ -221,7 +220,6 @@ def cluster_dicts(args, media):
 
 
 def cluster_images(paths, n_clusters=None):
-    paths = [s.rstrip("\n") for s in paths]
     t = Timer()
 
     import os
@@ -320,6 +318,8 @@ def cluster_sort() -> None:
     lines = args.input_path.readlines()
     args.input_path.close()
 
+    lines = [s.rstrip("\n") for s in lines]
+
     if args.profile == "lines":
         groups = cluster_paths(lines, args.clusters, args.stop_words)
     elif args.profile == "image":
@@ -338,6 +338,7 @@ def cluster_sort() -> None:
 
     if getattr(args, "print_groups", False):
         print_groups(groups)
+        return
     elif args.move_groups:
         min_len = len(str(len(groups) + 1))
 
@@ -362,7 +363,7 @@ def cluster_sort() -> None:
                 paths = [s.rstrip("\n") for s in group["grouped_paths"]]
                 file_utils.move_files([(p, str(Path(p).parent / str(i).zfill(min_len) / Path(p).name)) for p in paths])
     else:
-        lines = iterables.flatten(d["grouped_paths"] for d in groups)
+        lines = (p + "\n" for d in groups for p in d["grouped_paths"])
         if args.output_path:
             with open(args.output_path, "w") as output_fd:
                 output_fd.writelines(lines)

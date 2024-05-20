@@ -154,8 +154,6 @@ def rel_move(sources, dest, simulate=False, relative_from=None):
                 else:
                     shutil.move(str(abspath), str(new_path))  # fallback to shutil
                     new_paths.append(new_path)
-            else:
-                raise
 
     return new_paths
 
