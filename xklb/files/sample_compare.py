@@ -99,7 +99,7 @@ def sample_compare() -> None:
     paths = list(gen_paths(args))
     is_equal = sample_cmp(
         *paths,
-        threads=args.threads,
+        threads=args.same_file_threads,
         gap=args.gap,
         chunk_size=args.chunk_size,
         ignore_holes=args.ignore_holes,

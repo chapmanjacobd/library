@@ -31,6 +31,7 @@ def parse_args(action, **kwargs):
     arggroups.selenium(parser)
     arggroups.filter_links(parser)
     arggroups.extractor(parser)
+    parser.set_defaults(threads=4)
 
     parser.add_argument("--hash", action="store_true")
     parser.add_argument(

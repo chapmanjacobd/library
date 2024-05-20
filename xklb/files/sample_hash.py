@@ -77,7 +77,9 @@ def sample_hash() -> None:
 
     with ThreadPoolExecutor(max_workers=4) as pool:
         future_to_path = {
-            pool.submit(sample_hash_file, path, threads=args.threads, gap=args.gap, chunk_size=args.chunk_size): path
+            pool.submit(
+                sample_hash_file, path, threads=args.same_file_threads, gap=args.gap, chunk_size=args.chunk_size
+            ): path
             for path in gen_paths(args)
         }
         for future in as_completed(future_to_path):
