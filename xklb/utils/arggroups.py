@@ -124,8 +124,8 @@ def debug(parent_parser):
 -vvvv  # debug, with external libraries logging""",
     )
     parser.add_argument("--timeout", "-T", metavar="TIME", help="Quit after x minutes")
-    parser.add_argument("--threads", type=int, default=-1, help="Load x files in parallel")
-    parser.add_argument("--same-file-threads", type=int, default=-1, help="Read the same file x times in parallel")
+    parser.add_argument("--threads", type=int, help="Load x files in parallel")
+    parser.add_argument("--same-file-threads", type=int, help="Read the same file x times in parallel")
     parser.add_argument(
         "--ext", "-e", default=[], action=argparse_utils.ArgparseList, help="Include only specific file extensions"
     )
