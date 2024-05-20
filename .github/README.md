@@ -97,7 +97,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v2.8.019; 72 subcommands)
+    library (v2.8.020; 72 subcommands)
 
     Create database subcommands:
     ╭───────────────┬──────────────────────────────────────────╮
@@ -1351,7 +1351,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 <details><summary>Calculate a hash based on small file segments</summary>
 
     $ library sample-hash -h
-    usage: library sample-hash [--threads 10] [--chunk-size BYTES] [--gap BYTES OR 0.0-1.0*FILESIZE] PATH ...
+    usage: library sample-hash [--same-file-threads 1] [--chunk-size BYTES] [--gap BYTES OR 0.0-1.0*FILESIZE] PATH ...
 
     Calculate hashes for large files by reading only small segments of each file
 
@@ -1367,7 +1367,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 <details><summary>Compare files using sample-hash and other shortcuts</summary>
 
     $ library sample-compare -h
-    usage: library sample-compare [--threads 10] [--chunk-size BYTES] [--gap BYTES OR 0.0-1.0*FILESIZE] PATH ...
+    usage: library sample-compare [--same-file-threads 1] [--chunk-size BYTES] [--gap BYTES OR 0.0-1.0*FILESIZE] PATH ...
 
     Convenience subcommand to compare multiple files using sample-hash
 

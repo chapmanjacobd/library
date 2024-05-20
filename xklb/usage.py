@@ -1242,7 +1242,7 @@ process_image = """library process-image PATH ...
     Resize images to max 2400x2400px and format AVIF to save space
 """
 
-sample_hash = """library sample-hash [--threads 10] [--chunk-size BYTES] [--gap BYTES OR 0.0-1.0*FILESIZE] PATH ...
+sample_hash = """library sample-hash [--same-file-threads 1] [--chunk-size BYTES] [--gap BYTES OR 0.0-1.0*FILESIZE] PATH ...
 
     Calculate hashes for large files by reading only small segments of each file
 
@@ -1251,7 +1251,7 @@ sample_hash = """library sample-hash [--threads 10] [--chunk-size BYTES] [--gap 
     The threads flag seems to be faster for rotational media but slower on SSDs
 """
 
-sample_compare = """library sample-compare [--threads 10] [--chunk-size BYTES] [--gap BYTES OR 0.0-1.0*FILESIZE] PATH ...
+sample_compare = """library sample-compare [--same-file-threads 1] [--chunk-size BYTES] [--gap BYTES OR 0.0-1.0*FILESIZE] PATH ...
 
     Convenience subcommand to compare multiple files using sample-hash
 """

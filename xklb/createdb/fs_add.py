@@ -40,7 +40,6 @@ def parse_args(action, usage):
 
     parser.add_argument("--exclude", "-E", nargs="+", action="extend", default=[])
 
-    parser.add_argument("--threads", type=int, default=-1, help="Load x files in parallel")
     parser.add_argument("--ocr", "--OCR", action="store_true")
     parser.add_argument("--speech-recognition", "--speech", action="store_true")
     parser.add_argument("--scan-subtitles", "--scan-subtitle", action="store_true")

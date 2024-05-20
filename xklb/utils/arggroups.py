@@ -124,6 +124,7 @@ def debug(parent_parser):
 -vvvv  # debug, with external libraries logging""",
     )
     parser.add_argument("--timeout", "-T", metavar="TIME", help="Quit after x minutes")
+    parser.add_argument("--same-file-threads", type=int, default=-1, help="Read the same file x times in parallel")
     parser.add_argument(
         "--ext", "-e", default=[], action=argparse_utils.ArgparseList, help="Include only specific file extensions"
     )
@@ -762,7 +763,6 @@ def extractor(parent_parser):
         help="Insert paths into playlists table",
     )
     parser.add_argument("--extra", action="store_true", help="Get full metadata (takes a lot longer)")
-    parser.add_argument("--threads", type=int, default=4, help="Load x files in parallel")
 
 
 def extractor_post(args):
@@ -1182,7 +1182,6 @@ def selenium_post(args):
 
 def sample_hash_bytes(parent_parser):
     parser = parent_parser.add_argument_group("Sample Hash")
-    parser.add_argument("--threads", default=1, const=10, nargs="?", help="Load x files in parallel")
     parser.add_argument(
         "--chunk-size",
         type=int,
@@ -1201,7 +1200,6 @@ def sample_hash_bytes_post(args):
 
 def media_check(parent_parser):
     parser = parent_parser.add_argument_group("Media Check")
-    parser.add_argument("--threads", default=1, const=10, nargs="?", help="Load x files in parallel")
     parser.add_argument(
         "--chunk-size",
         type=float,
