@@ -10,6 +10,7 @@ from xklb.utils.log_utils import log
 def parse_args() -> argparse.Namespace:
     parser = argparse_utils.ArgumentParser(prog="library relmv", usage=usage.relmv)
     arggroups.simulate(parser)
+    arggroups.clobber(parser)
     arggroups.debug(parser)
 
     parser.add_argument(
@@ -107,7 +108,7 @@ def shortest_relative_from_path(abspath, relative_from_list):
     return shortest_path or abspath
 
 
-def rel_move(sources, dest, simulate=False, relative_from=None):
+def rel_move(sources, dest, simulate=False, relative_from=None, replace=False):
     if relative_from:
         relative_from = [Path(s).expanduser().resolve() for s in relative_from]
 
@@ -136,24 +137,37 @@ def rel_move(sources, dest, simulate=False, relative_from=None):
 
         target_dir.mkdir(parents=True, exist_ok=True)
         new_path = target_dir / abspath.name
+        log.info("%s -> %s", abspath, target_dir)
         try:
-            log.info("%s -> %s", abspath, target_dir)
-            abspath.rename(new_path)
+            if replace:
+                os.replace(abspath, new_path)
+            else:
+                file_utils.rename_no_replace(abspath, new_path)
             new_paths.append(new_path)
+        except FileExistsError:
+            log.error("%s ->x %s already exists", abspath, new_path)
         except OSError as e:
             if e.errno == 2:  # FileNotFoundError
                 log.error("%s not found", abspath)
             elif e.errno == 39:  # target dir not empty
                 log.info("%s ->m %s", abspath, new_path)
-                new_paths.extend(rel_move(abspath.glob("*"), dest, simulate=simulate, relative_from=relative_from))
+                new_paths.extend(
+                    rel_move(abspath.glob("*"), dest, simulate=simulate, relative_from=relative_from, replace=replace)
+                )
             elif e.errno == 18:  # cross-device move
                 log.debug("%s ->d %s", abspath, target_dir)
                 if Path(new_path).is_dir():
                     log.info("%s ->dm %s", abspath, new_path)
-                    new_paths.extend(rel_move(abspath.glob("*"), dest, simulate=simulate, relative_from=relative_from))
+                    new_paths.extend(
+                        rel_move(
+                            abspath.glob("*"), dest, simulate=simulate, relative_from=relative_from, replace=replace
+                        )
+                    )
                 else:
                     shutil.move(str(abspath), str(new_path))  # fallback to shutil
                     new_paths.append(new_path)
+            else:
+                raise
 
     return new_paths
 
@@ -166,7 +180,7 @@ def rel_mv() -> None:
     sources = args.sources
     if args.ext:
         sources = [p for source in sources for p in file_utils.rglob(source, args.ext, args.exclude)[0]]
-    rel_move(sources, dest, simulate=args.simulate, relative_from=args.relative_from)
+    rel_move(sources, dest, simulate=args.simulate, relative_from=args.relative_from, replace=args.replace)
 
 
 if __name__ == "__main__":

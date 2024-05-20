@@ -37,13 +37,25 @@ def test_two_simple_folders(temp_file_tree):
     assert generate_file_tree_dict(target) == {Path(src1).name: src1_inodes} | {Path(src2).name: src2_inodes}
 
 
+def test_dupe_no_replace(temp_file_tree):
+    src1 = temp_file_tree(simple_file_tree | {"file4.txt": "5"})
+    target = temp_file_tree({Path(src1).name: simple_file_tree})
+
+    src1_inodes = generate_file_tree_dict(src1)
+    target_inodes = generate_file_tree_dict(target)
+    lb(["rel-mv", "--no-replace", src1, target])
+
+    assert generate_file_tree_dict(src1) == src1_inodes
+    assert generate_file_tree_dict(target) == target_inodes
+
+
 def test_dupe_replace(temp_file_tree):
     src1 = temp_file_tree(simple_file_tree | {"file4.txt": "5"})
     target = temp_file_tree({Path(src1).name: simple_file_tree})
 
     src1_inodes = generate_file_tree_dict(src1)
     target_inodes = generate_file_tree_dict(target)
-    lb(["rel-mv", src1, target])
+    lb(["rel-mv", "--replace", src1, target])
 
     assert generate_file_tree_dict(src1) == {"folder1": {"subfolder1": {}}, "folder2": {}}
     assert generate_file_tree_dict(target) == target_inodes | {Path(src1).name: src1_inodes}

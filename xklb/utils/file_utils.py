@@ -197,6 +197,13 @@ def ask_overwrite_mv(args, media_file, keep_path):
             raise
 
 
+def rename_no_replace(src, dst):
+    if os.path.exists(dst):
+        if not os.path.isdir(dst):
+            raise FileExistsError(f"The destination file {dst} already exists.")
+    os.rename(src, dst)
+
+
 def rename_move_file(source_file, destination_file, simulate=False):
     if simulate:
         print("mv", source_file, destination_file)
