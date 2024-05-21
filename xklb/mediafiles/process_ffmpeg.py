@@ -1,4 +1,4 @@
-import argparse, os, shlex, subprocess
+import argparse, os, shlex, subprocess, sys
 from pathlib import Path
 
 from xklb import usage
@@ -266,6 +266,11 @@ def process_ffmpeg():
         except Exception:
             print(path)
             raise
+
+
+def process_audio():
+    sys.argv += ["--audio-only"]
+    process_ffmpeg()
 
 
 if __name__ == "__main__":

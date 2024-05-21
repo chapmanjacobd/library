@@ -97,7 +97,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v2.8.028; 72 subcommands)
+    library (v2.8.029; 74 subcommands)
 
     Create database subcommands:
     ╭───────────────┬──────────────────────────────────────────╮
@@ -129,17 +129,19 @@ To stop playing press Ctrl+C in either the terminal or mpv
     ╰───────────────┴──────────────────────────────────────────╯
 
     Text subcommands:
-    ╭────────────────┬─────────────────────────────────────────────╮
-    │ cluster-sort   │ Sort text and images by similarity          │
-    ├────────────────┼─────────────────────────────────────────────┤
-    │ extract-links  │ Extract inner links from lists of web links │
-    ├────────────────┼─────────────────────────────────────────────┤
-    │ extract-text   │ Extract human text from lists of web links  │
-    ├────────────────┼─────────────────────────────────────────────┤
-    │ markdown-links │ Extract titles from lists of web links      │
-    ├────────────────┼─────────────────────────────────────────────┤
-    │ nouns          │ Unstructured text -> compound nouns (stdin) │
-    ╰────────────────┴─────────────────────────────────────────────╯
+    ╭────────────────┬──────────────────────────────────────────────╮
+    │ cluster-sort   │ Sort text and images by similarity           │
+    ├────────────────┼──────────────────────────────────────────────┤
+    │ extract-links  │ Extract inner links from lists of web links  │
+    ├────────────────┼──────────────────────────────────────────────┤
+    │ extract-text   │ Extract human text from lists of web links   │
+    ├────────────────┼──────────────────────────────────────────────┤
+    │ markdown-links │ Extract titles from lists of web links       │
+    ├────────────────┼──────────────────────────────────────────────┤
+    │ nouns          │ Unstructured text -> compound nouns (stdin)  │
+    ├────────────────┼──────────────────────────────────────────────┤
+    │ dates          │ Unstructured text -> timestamps, dates, time │
+    ╰────────────────┴──────────────────────────────────────────────╯
 
     Folder subcommands:
     ╭─────────────────┬────────────────────────────────────────────────────────────╮
@@ -172,6 +174,8 @@ To stop playing press Ctrl+C in either the terminal or mpv
     │ eda              │ Exploratory Data Analysis on table-like files │
     ├──────────────────┼───────────────────────────────────────────────┤
     │ mcda             │ Multi-criteria Ranking for Decision Support   │
+    ├──────────────────┼───────────────────────────────────────────────┤
+    │ markdown-tables  │ Print markdown tables from table-like files   │
     ├──────────────────┼───────────────────────────────────────────────┤
     │ incremental-diff │ Diff large table-like files in chunks         │
     ╰──────────────────┴───────────────────────────────────────────────╯
@@ -1080,6 +1084,25 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 </details>
 
+###### dates
+
+<details><summary>Unstructured text -> timestamps, dates, time</summary>
+
+    $ library dates -h
+    usage: library dates ARGS_OR_STDIN
+
+    Parse dates
+
+        library dates 'October 2017'
+        2017-10-01
+
+    Parse times
+        library dates --time 'October 2017 3pm'
+        2017-10-01T15:00:00
+
+
+</details>
+
 ### Folder subcommands
 
 ###### merge-folders
@@ -1496,6 +1519,20 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         | 1167 | On the Waterfront                                                       |   1954 |        8 |            12 | 0.785       | 1.17235  | 0.207793    | 4116.83 |
         | 1145 | My Fair Lady                                                            |   1964 |        8 |            12 | 0.785       | 1.17235  | 0.207793    | 4116.83 |
         |  591 | Gandhi                                                                  |   1982 |        8 |            11 | 0.755312    | 1.13663  | 0.243509    | 4116.86 |
+
+
+</details>
+
+###### markdown-tables
+
+<details><summary>Print markdown tables from table-like files</summary>
+
+    $ library markdown-tables -h
+    usage: library markdown-tables PATH ... [--table TABLE] [--start-row START_ROW] [--end-row END_ROW]
+
+    Print tables from files as markdown
+
+    Only 20,000 rows per file are loaded for performance purposes. Set `--end-row inf` to read all the rows and/or run out of RAM.
 
 
 </details>
@@ -2125,11 +2162,6 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         Or create global shortcuts in your desktop environment by
         sending commands to mpv_socket:
         echo 'playlist-next force' | socat - /tmp/mpv_socket
-
-    Constrain media by throughput:
-        Bitrate information is not explicitly saved.
-        You can use file size and duration as a proxy for throughput:
-        -w 'size/duration<50000'
 
     Print an aggregate report of deleted media
         -w time_deleted!=0 -pa

@@ -28,6 +28,7 @@ progs = {
         "extract_text": "Extract human text from lists of web links",
         "markdown_links": "Extract titles from lists of web links",
         "nouns": "Unstructured text -> compound nouns (stdin)",
+        "dates": "Unstructured text -> timestamps, dates, time",
     },
     "Folder subcommands": {
         "merge_folders": "Merge two or more file trees",
@@ -182,7 +183,8 @@ modules = {
     "xklb.mediadb.redownload.redownload": ["re-dl", "re-download"],
     "xklb.mediadb.search.search": ["sc", "search-captions"],
     "xklb.mediafiles.media_check.media_check": [],
-    "xklb.mediafiles.process_ffmpeg.process_ffmpeg": ["process-video", "process-audio"],
+    "xklb.mediafiles.process_ffmpeg.process_ffmpeg": ["process-video"],
+    "xklb.mediafiles.process_ffmpeg.process_audio": ["process-audio"],
     "xklb.mediafiles.process_image.process_image": [],
     "xklb.misc.dedupe_czkawka.czkawka_dedupe": ["dedupe-czkawka"],
     "xklb.misc.export_text.export_text": [],
@@ -203,13 +205,15 @@ modules = {
     "xklb.playback.tabs_open.tabs_open": ["tb", "tabs", "open_tabs"],
     "xklb.tablefiles.eda.eda": ["preview"],
     "xklb.tablefiles.incremental_diff.incremental_diff": [],
-    "xklb.tablefiles.markdown_tables.markdown_tables": [],
+    "xklb.tablefiles.markdown_tables.markdown_tables": ["tables"],
     "xklb.tablefiles.mcda.mcda": ["mcdm", "rank"],
     "xklb.text.cluster_sort.cluster_sort": ["cs"],
     "xklb.text.extract_links.extract_links": ["links", "links_extract"],
     "xklb.text.extract_text.extract_text": ["text", "text_extract"],
     "xklb.text.markdown_links.markdown_links": ["markdown-urls"],
-    "xklb.text.nouns.nouns": ["nouns"],
+    "xklb.text.nouns.nouns": ["noun"],
+    "xklb.text.dates.dates": ["date"],
+    "xklb.text.dates.times": ["time"],
 }
 
 
