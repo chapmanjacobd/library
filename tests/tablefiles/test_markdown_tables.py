@@ -21,4 +21,4 @@ from xklb.lb import library as lb
 def test_lb_markdown_tables(args, stdout, capsys):
     lb(["markdown-tables", *args])
     captured = capsys.readouterr().out
-    assert stdout in captured
+    assert all(l in captured for l in stdout)

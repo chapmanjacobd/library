@@ -24,4 +24,4 @@ from xklb.lb import library as lb
 def test_lb_incremental_diff(args, stdout, capsys):
     lb(["incremental-diff", *args])
     captured = capsys.readouterr().out
-    assert stdout in captured
+    assert all(l in captured for l in stdout)
