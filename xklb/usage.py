@@ -11,9 +11,11 @@ def play(action) -> str:
         echo 'playlist-next force' | socat - /tmp/mpv_socket
 
     Constrain media by throughput:
-        Bitrate information is not explicitly saved.
-        You can use file size and duration as a proxy for throughput:
-        -w 'size/duration<50000'
+        Bitrate information is not explicitly saved. But you can add a column like this:
+        sqlite3 video.db 'alter table media add column bitrate as (size*8/duration) VIRTUAL'
+        or -w 'size*8/duration<400000'          # bitrate
+        or -w 'size*8/1000/duration<400'        # Kbps
+        or -w 'size*8/1000000/duration<0.4'     # Mbps
 
     Print an aggregate report of deleted media
         -w time_deleted!=0 -pa

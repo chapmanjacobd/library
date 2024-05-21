@@ -98,6 +98,7 @@ def override_sort(sort_expression: str) -> str:
         .replace("random", "random()")
         .replace("priorityfast", "ntile(1000) over (order by size) desc, duration")
         .replace("priority", "ntile(1000) over (order by size/duration) desc")
+        .replace("bitrate", "size/duration desc")
     )
 
 

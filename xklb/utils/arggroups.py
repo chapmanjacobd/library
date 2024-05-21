@@ -276,12 +276,23 @@ Double spaces are equal to one space:
         "--sizes",
         "-S",
         action="append",
-        help="""Constrain media to file size (uses the same syntax as fd-find)
--d 6           # 6 MB exactly
--d-6           # less than 6 MB
--d+6           # more than 6 MB
--d 6%%10       # 6 MB ±10 percent (between 5 and 7 MB)
--d+5GB -d-7GB  # between 5 and 7 GB""",
+        help="""Constrain media to file sizes (uses the same syntax as fd-find)
+-S 6           # 6 MB exactly (not likely)
+-S-6           # less than 6 MB
+-S+6           # more than 6 MB
+-S 6%%10       # 6 MB ±10 percent (between 5 and 7 MB)
+-S+5GB -S-7GB  # between 5 and 7 GB""",
+    )
+    parse_fs.add_argument(
+        "--bitrates",
+        "-b",
+        action="append",
+        help="""Constrain media to bitrates
+-b 6           # 6 Mbps exactly (not likely)
+-b-6           # less than 6 Mbps
+-b+6           # more than 6 Mbps
+-b 6%%10       # 6 Mbps ±10 percent (between 5 and 7 Mbps)
+-b+50KB -b-700KB  # between 50 and 700 kbit/s""",
     )
 
     parse_fs.add_argument(
@@ -430,6 +441,8 @@ def sql_fs_post(args, table_prefix="m.") -> None:
 
     if args.sizes:
         args.sizes = sql_utils.parse_human_to_sql(nums.human_to_bytes, "size", args.sizes)
+    if args.bitrates:
+        args.bitrates = sql_utils.parse_human_to_sql(nums.human_to_bits, "size*8/duration", args.bitrates)
 
     if args.cols:
         args.cols = list(iterables.flatten([s.split(",") for s in args.cols]))
@@ -463,6 +476,8 @@ def sql_fs_post(args, table_prefix="m.") -> None:
 
     if args.sizes:
         args.filter_sql.append(" and size IS NOT NULL " + args.sizes)
+    if args.bitrates:
+        args.filter_sql.append(" and size IS NOT NULL " + args.bitrates)
 
     if args.created_within:
         args.filter_sql.append(
