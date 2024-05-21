@@ -61,6 +61,8 @@ def args_post(args, parser, create_db=False):
 
 def printing(parser):
     printing = parser.add_argument_group("Printing")
+    printing.add_argument("--to-json", action="store_true", help="Write JSONL to stdout")
+    printing.add_argument("--cols", "--columns", nargs="+", help="Include specific column(s) when printing")
     printing.add_argument(
         "--print",
         "-p",
@@ -83,8 +85,6 @@ Some printing modes can be combined
 -p df  # print fields for piping into another program and mark as deleted
 -p bf  # print fields from big-dirs report""",
     )
-    printing.add_argument("--to-json", action="store_true", help="Write JSONL to stdout")
-    printing.add_argument("--cols", "--columns", nargs="+", help="Include specific column(s) when printing")
 
 
 def debug(parent_parser):
@@ -1034,6 +1034,13 @@ def table_like(parent_parser):
         "-L",
         default=str(DEFAULT_FILE_ROWS_READ_LIMIT),
         help="Stop reading after x rows",
+    )
+    parser.add_argument(
+        "--join-tables",
+        "--concat",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Concat all detected tables",
     )
 
 
