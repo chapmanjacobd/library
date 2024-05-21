@@ -18,6 +18,13 @@ jobs:
         with:
           python-version: "3.10"
 
+      - uses: actions/cache@v2
+        with:
+          path: ~/.cache/pdm
+          key: ${{ runner.os }}-pdm-${{ hashFiles('**/pdm.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pdm-
+
       - uses: FedericoCarboni/setup-ffmpeg@v3
 
       - name: Install pdm
@@ -51,6 +58,13 @@ jobs:
         with:
           python-version: ${{ matrix.nv.py }}
 
+      - uses: actions/cache@v2
+        with:
+          path: ~/.cache/pdm
+          key: ${{ runner.os }}-pdm-${{ hashFiles('**/pdm.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pdm-
+
       - uses: FedericoCarboni/setup-ffmpeg@v3
 
       - name: Install Dependencies
@@ -76,6 +90,13 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.10"
+
+      - uses: actions/cache@v2
+        with:
+          path: ~/.cache/pdm
+          key: ${{ runner.os }}-pdm-${{ hashFiles('**/pdm.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pdm-
 
       - name: Install pdm
         run: python -m pip install pdm

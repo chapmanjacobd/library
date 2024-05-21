@@ -2,7 +2,6 @@ import sys
 
 from xklb import usage
 from xklb.utils import arggroups, argparse_utils, file_utils, web
-from xklb.utils.printing import print_df
 
 
 def parse_args():
@@ -46,7 +45,9 @@ def file_markdown(args, path):
             df.to_json(sys.stdout, orient="records", lines=True)
         else:
             print(f"## {path}:{df.name}")
-            print_df(df)
+            print()
+            print(df.to_markdown(tablefmt="github", index=False))
+            print()
 
 
 def markdown_tables():

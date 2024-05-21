@@ -1450,6 +1450,18 @@ mount_stats = """library mount-stats MOUNTPOINT ...
     Print relative use and free for multiple mount points
 """
 
+dates = """library dates ARGS_OR_STDIN
+
+    Parse dates
+
+        library dates 'October 2017'
+        2017-10-01
+
+    Parse times
+        library dates --time 'October 2017 3pm'
+        2017-10-01T15:00:00
+"""
+
 nouns = """library nouns (stdin)
 
     Extract compound nouns and phrases from unstructured mixed HTML plain text
