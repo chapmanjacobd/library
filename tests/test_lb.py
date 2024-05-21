@@ -34,7 +34,7 @@ def test_usage(capsys, subcommand):
 
 
 def get_test_name(s):
-    path = s.replace("xklb.", "tests.", 1).replace(".", "/")
+    path = s.replace("xklb.", "tests.", 1).replace(".", os.sep)
     parent, name = os.path.split(path)
     path = os.path.join(parent, "test_" + name + ".py")
     return path
@@ -43,7 +43,7 @@ def get_test_name(s):
 @pytest.mark.parametrize("path", [get_test_name(s) for s in unique_modules])
 def test_pytest_files_exist(path):
     Path(path).touch(exist_ok=True)
-    if path not in (
+    if p(path) not in (
         p("tests/files/test_christen.py"),
         p("tests/files/test_sample_compare.py"),
         p("tests/files/test_sample_hash.py"),
