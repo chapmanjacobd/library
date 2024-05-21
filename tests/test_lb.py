@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pytest
 
+from tests.utils import p
 from xklb.lb import library as lb
 from xklb.lb import modules, progs
 from xklb.utils import iterables
@@ -43,29 +44,28 @@ def get_test_name(s):
 def test_pytest_files_exist(path):
     Path(path).touch(exist_ok=True)
     if path not in (
-        "tests/files/test_christen.py",
-        "tests/files/test_sample_compare.py",
-        "tests/files/test_sample_hash.py",
-        "tests/files/test_similar_files.py",
-        "tests/folders/test_big_dirs.py",
-        "tests/folders/test_mount_stats.py",
-        "tests/folders/test_move_list.py",
-        "tests/fsdb/test_disk_usage.py",
-        "tests/fsdb/test_search_db.py",
-        "tests/mediadb/test_block.py",
-        "tests/mediadb/test_download_status.py",
-        "tests/mediadb/test_history_add.py",
-        "tests/mediadb/test_history.py",
-        "tests/mediadb/test_optimize_db.py",
-        "tests/mediadb/test_redownload.py",
-        "tests/mediadb/test_search.py",
-        "tests/mediadb/test_stats.py",
-        "tests/misc/test_dedupe_czkawka.py",
-        "tests/misc/test_export_text.py",
-        "tests/multidb/test_copy_play_counts.py",
-        "tests/multidb/test_merge_dbs.py",
-        "tests/playback/test_playback_control.py",
-        "tests/playback/test_surf.py",
-        "tests/tablefiles/test_incremental_diff.py",  # TODO: remove one line when you see this
+        p("tests/files/test_christen.py"),
+        p("tests/files/test_sample_compare.py"),
+        p("tests/files/test_sample_hash.py"),
+        p("tests/files/test_similar_files.py"),
+        p("tests/folders/test_big_dirs.py"),
+        p("tests/folders/test_mount_stats.py"),
+        p("tests/folders/test_move_list.py"),
+        p("tests/fsdb/test_disk_usage.py"),
+        p("tests/fsdb/test_search_db.py"),
+        p("tests/mediadb/test_block.py"),
+        p("tests/mediadb/test_download_status.py"),
+        p("tests/mediadb/test_history_add.py"),
+        p("tests/mediadb/test_history.py"),
+        p("tests/mediadb/test_optimize_db.py"),
+        p("tests/mediadb/test_redownload.py"),
+        p("tests/mediadb/test_search.py"),
+        p("tests/mediadb/test_stats.py"),
+        p("tests/misc/test_dedupe_czkawka.py"),
+        p("tests/misc/test_export_text.py"),
+        p("tests/multidb/test_copy_play_counts.py"),
+        p("tests/multidb/test_merge_dbs.py"),
+        p("tests/playback/test_playback_control.py"),
+        p("tests/playback/test_surf.py"),  # TODO: remove one line when you see this
     ):
         assert os.path.getsize(path) > 0, f"Pytest file {path} is empty."

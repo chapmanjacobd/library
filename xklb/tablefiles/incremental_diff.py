@@ -91,9 +91,7 @@ def process_chunks(args):
 
             if len(df_diff) > 0:
                 print(f"## Diff {args.path1}:{df1.name} and {args.path2}:{df2.name}")
-                print()
                 print_df(df_diff)
-                print()
             del df1
             del df2
 
