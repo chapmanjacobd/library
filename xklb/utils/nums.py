@@ -69,25 +69,23 @@ def safe_mean(l) -> float | None:
         return None
 
 
-def human_to_bytes(input_str) -> int:
-    byte_map = {"b": 1, "kb": 1024, "mb": 1024**2, "gb": 1024**3, "tb": 1024**4, "pb": 1024**5}
+def human_to_bytes(input_str, binary=True) -> int:
+    k = 1024 if binary else 1000
+    byte_map = {"b": 1, "k": k, "m": k**2, "g": k**3, "t": k**4, "p": k**5}
 
     input_str = input_str.strip().lower()
 
     value = re.findall(r"\d+\.?\d*", input_str)[0]
     unit = re.findall(r"[a-z]+", input_str, re.IGNORECASE)
 
-    if unit:
-        unit = unit[0]
-        unit = "".join(unit.split("i"))
+    unit = unit[0][0] if unit else "m"
 
-        if not unit.endswith("b"):  # handle cases like 'k'
-            unit += "b"
-    else:
-        unit = "mb"
-
-    unit_multiplier = byte_map.get(unit, 1024**2)  # default to MB
+    unit_multiplier = byte_map.get(unit, k**2)  # default to MB / MBit
     return int(float(value) * unit_multiplier)
+
+
+def human_to_bits(input_str):
+    return human_to_bytes(input_str, binary=False)
 
 
 def sql_human_time(s):
