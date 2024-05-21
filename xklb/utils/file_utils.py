@@ -422,7 +422,15 @@ def retry_with_different_encodings(func):
 
 @retry_with_different_encodings
 def read_file_to_dataframes(
-    path, table_name=None, table_index=None, start_row=None, end_row=None, order_by=None, encoding=None, mimetype=None
+    path,
+    table_name=None,
+    table_index=None,
+    start_row=None,
+    end_row=None,
+    order_by=None,
+    encoding=None,
+    mimetype=None,
+    join_tables=False,
 ):
     import pandas as pd
 
@@ -532,11 +540,30 @@ def read_file_to_dataframes(
         dfs = [pd.read_feather(path)]
     elif mimetype in ("orc",):
         dfs = [pd.read_orc(path)]
+    elif "pdf" in mimetype:
+        import camelot
+
+        dfs = []
+        for t in camelot.read_pdf(path, pages="all", suppress_stdout=False):
+            df = t.df
+            if start_row:
+                df = df.iloc[start_row:]
+            if end_row:
+                df = df.iloc[:end_row]
+            if isinstance(df.columns, pd.RangeIndex):
+                new_column_names = df.iloc[0]
+                df = df.iloc[1:]
+                df.columns = new_column_names
+            df.columns = [" ".join(col.replace("\n", "").split()) for col in df.columns]
+            dfs.append(df)
     elif "xml" in mimetype:
         dfs = [pd.read_xml(path, encoding=encoding or "utf-8")]
     else:
         msg = f"{path}: Unsupported file type: {mimetype}"
         raise ValueError(msg)
+
+    if join_tables:
+        dfs = [pd.concat(dfs, axis=0, ignore_index=True)]
 
     for table_index, df in enumerate(dfs):
         if not hasattr(df, "name"):

@@ -10,13 +10,6 @@ def play(action) -> str:
         sending commands to mpv_socket:
         echo 'playlist-next force' | socat - /tmp/mpv_socket
 
-    Constrain media by throughput:
-        Bitrate information is not explicitly saved. But you can add a column like this:
-        sqlite3 video.db 'alter table media add column bitrate as (size*8/duration) VIRTUAL'
-        or -w 'size*8/duration<400000'          # bitrate
-        or -w 'size*8/1000/duration<400'        # Kbps
-        or -w 'size*8/1000000/duration<0.4'     # Mbps
-
     Print an aggregate report of deleted media
         -w time_deleted!=0 -pa
         path         count  duration               size
@@ -1013,6 +1006,13 @@ export_text = """library export-text DATABASE
 eda = """library eda PATH ... [--table TABLE] [--start-row START_ROW] [--end-row END_ROW] [--repl]
 
     Perform Exploratory Data Analysis (EDA) on one or more files
+
+    Only 20,000 rows per file are loaded for performance purposes. Set `--end-row inf` to read all the rows and/or run out of RAM.
+"""
+
+markdown_tables = """library markdown-tables PATH ... [--table TABLE] [--start-row START_ROW] [--end-row END_ROW]
+
+    Print tables from files as markdown
 
     Only 20,000 rows per file are loaded for performance purposes. Set `--end-row inf` to read all the rows and/or run out of RAM.
 """

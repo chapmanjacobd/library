@@ -48,7 +48,7 @@ deluxe = [
   "subliminal",
 ]
 dev = ["black", "isort", "ssort"]
-fat = ["brotab", "orjson", "textract"]
+fat = ["brotab", "orjson", "textract", "pypdf_table_extraction", "ghostscript"]
 test = ["ruff", "pytest", "freezegun", "pyfakefs"]
 
 [project.urls]

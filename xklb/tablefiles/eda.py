@@ -190,6 +190,7 @@ def file_eda(args, path):
         order_by=args.sort,
         encoding=args.encoding,
         mimetype=args.mimetype,
+        join_tables=args.join_tables,
     )
     if getattr(args, "repl", False):
         breakpoint()
