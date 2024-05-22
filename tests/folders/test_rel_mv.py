@@ -45,7 +45,11 @@ def test_dupe_no_replace(temp_file_tree):
     target_inodes = generate_file_tree_dict(target)
     lb(["rel-mv", "--no-replace", src1, target])
 
-    assert generate_file_tree_dict(src1) == src1_inodes
+    assert generate_file_tree_dict(src1) == {
+        "folder1": {"subfolder1": {}},
+        "folder2": {},
+        "file4.txt": src1_inodes["file4.txt"],
+    }
     assert generate_file_tree_dict(target) == target_inodes
 
 

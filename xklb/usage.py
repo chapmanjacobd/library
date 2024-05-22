@@ -845,6 +845,11 @@ mv_list = """library mv-list [--limit LIMIT] [--lower LOWER] [--upper UPPER] MOU
                 rsync -a --info=progress2 --no-inc-recursive --remove-source-files --files-from=/tmp/tmp7x_75l8 -r --relative -vv --dry-run / jim:/free/real/estate/
 """
 
+mergerfs_cp = """library mergerfs-cp SOURCE ... DEST [--simulate] [--replace | --no-replace] [--ext EXT]
+
+Copy files with reflink and handle mergerfs mounts.
+"""
+
 scatter = """library scatter [--limit LIMIT] [--policy POLICY] [--sort SORT] --targets TARGETS DATABASE RELATIVE_PATH ...
 
     Scatter filesystem folder trees (without mountpoints; limited functionality; good for balancing fs inodes)
