@@ -72,6 +72,7 @@ def mcp_file(args, source, destination):
         original_path = os.path.join(srcmount, relative_to_mount)
         if os.path.exists(original_path):
             found_file = True
+            destination = os.path.join(srcmount, os.path.relpath(destination, args.mergerfs_mount))
 
             src_dest = [original_path, destination]
             if args.simulate:
@@ -104,7 +105,8 @@ def mergerfs_cp():
     args.mergerfs_mount = get_destination_mount(args.destination)
     args.srcmounts = get_srcmounts(args.mergerfs_mount)
 
-    for source in args.paths:
+    sources = (os.path.realpath(s) + ("/" if s.endswith("/") else "") for s in args.paths)  # preserve trailing slash
+    for source in sources:
         if os.path.isdir(source):
             for p in file_utils.rglob(source, args.ext or None)[0]:
                 cp_dest = args.destination
