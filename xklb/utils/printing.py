@@ -8,7 +8,9 @@ from xklb.utils import consts
 
 
 def print_overwrite(*text):
-    if os.name == "posix":
+    if consts.PYTEST_RUNNING:
+        pass
+    elif os.name == "posix":
         print("\r" + text[0], *text[1:], end="\033[K", flush=True)
     elif platform.system() == "Windows":
         print("\r" + text[0], *text[1:], end="", flush=True)

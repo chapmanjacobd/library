@@ -19,7 +19,7 @@ def parse_args() -> argparse.Namespace:
     parser.set_defaults(limit="4000", depth=0)
     arggroups.debug(parser)
 
-    arggroups.paths_or_stdin(parser)
+    arggroups.paths_or_stdin(parser, destination=True)
     parser.add_argument("search", nargs="*")
     args = parser.parse_intermixed_args()
     arggroups.args_post(args, parser)
