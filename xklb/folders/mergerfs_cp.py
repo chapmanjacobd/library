@@ -87,7 +87,7 @@ def mcp_file(args, source, destination):
                 print(*cmd_args)
             else:
                 os.makedirs(os.path.dirname(destination), exist_ok=True)
-                processes.cmd(*cmd_args)
+                processes.cmd(*cmd_args, strict=False, quiet=False, error_verbosity=2)
 
     if not found_file:
         print(f"Could not find srcmount of {source}")

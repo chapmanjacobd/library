@@ -63,7 +63,9 @@ def os_bg_kwargs() -> dict:
         return {}
 
 
-def cmd(*command, strict=True, cwd=None, quiet=True, ignore_regexps=None, **kwargs) -> subprocess.CompletedProcess:
+def cmd(
+    *command, strict=True, cwd=None, quiet=True, error_verbosity=1, ignore_regexps=None, **kwargs
+) -> subprocess.CompletedProcess:
     def print_std(s, is_success):
         if ignore_regexps is not None:
             s = "\n".join(l for l in s.splitlines() if not any(r.match(l) for r in ignore_regexps))
@@ -74,8 +76,12 @@ def cmd(*command, strict=True, cwd=None, quiet=True, ignore_regexps=None, **kwar
                 log.debug(s)
             elif consts.PYTEST_RUNNING:
                 log.warning(s)
-            else:
+            elif error_verbosity == 0:
+                log.debug(s)
+            elif error_verbosity == 1:
                 log.info(s)
+            else:
+                log.warning(s)
         return s
 
     try:
@@ -98,8 +104,12 @@ def cmd(*command, strict=True, cwd=None, quiet=True, ignore_regexps=None, **kwar
     if r.returncode != 0:
         if strict:
             raise subprocess.CalledProcessError(r.returncode, shlex.join(command), r.stdout, r.stderr)
-        else:
+        elif error_verbosity == 0:
+            log.debug("[%s] exited %s", shlex.join(command), r.returncode)
+        elif error_verbosity == 1:
             log.info("[%s] exited %s", shlex.join(command), r.returncode)
+        else:
+            log.warning("[%s] exited %s", shlex.join(command), r.returncode)
 
     return r
 
