@@ -15,13 +15,14 @@
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-import argparse, os
+import os
 
-from xklb.utils import arggroups, consts, file_utils, processes
+from xklb import usage
+from xklb.utils import arggroups, argparse_utils, consts, file_utils, processes
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Copy files with reflink and handle mergerfs mounts.")
+    parser = argparse_utils.ArgumentParser(usage=usage.mergerfs_cp)
     parser.add_argument("--simulate", "--dry-run", action="store_true", help="Dry run")
     arggroups.clobber(parser)
     arggroups.debug(parser)

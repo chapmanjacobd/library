@@ -33,8 +33,9 @@ progs = {
     "Folder subcommands": {
         "merge_folders": "Merge two or more file trees",
         "relmv": "Move files preserving parent folder hierarchy",
-        "mv_list": "Find specific folders to move to different disks",
+        "mergerfs_cp": "cp files with reflink on mergerfs",
         "scatter": "Scatter files between folders or disks",
+        "mv_list": "Find specific folders to move to different disks",
         "mount_stats": "Show some relative mount stats",
         "similar_folders": "Find similar folders based on folder name, size, and count",
     },
