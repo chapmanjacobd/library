@@ -165,6 +165,7 @@ modules = {
     "xklb.files.similar_files.similar_files": [],
     "xklb.folders.merge_folders.merge_folders": ["merge-folder", "mv"],
     "xklb.folders.move_list.move_list": ["mv-list"],
+    "xklb.folders.mergerfs_cp.mergerfs_cp": ["cp-mergerfs", "mcp"],
     "xklb.folders.rel_mv.rel_mv": ["relmv", "mv-rel", "mvrel"],
     "xklb.folders.scatter.scatter": [],
     "xklb.folders.similar_folders.similar_folders": [],
