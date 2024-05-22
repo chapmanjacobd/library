@@ -22,6 +22,20 @@ import xattr
 from xklb.utils import arggroups, argparse_utils, consts, processes
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(description="Copy files with reflink and handle mergerfs mounts.")
+    parser.add_argument("--simulate", "--dry-run", action="store_true", help="Dry run")
+    parser.add_argument("--rel-mv", action="store_true", help="Use relative path")
+    arggroups.clobber(parser)
+    arggroups.debug(parser)
+
+    parser.add_argument("sources", nargs="+", action=argparse_utils.ArgparseArgsOrStdin, help="Source paths to copy")
+    parser.add_argument("destination", help="Destination directory")
+    args = parser.parse_args()
+    arggroups.args_post(args, parser)
+    return args
+
+
 def get_mergerfs_mounts():
     mounts = []
     with open("/proc/self/mountinfo", "r") as f:
@@ -52,16 +66,7 @@ def get_destination_mount(destination):
 
 
 def mergerfs_cp():
-    parser = argparse.ArgumentParser(description="Copy files with reflink and handle mergerfs mounts.")
-    parser.add_argument("--simulate", "--dry-run", action="store_true", help="Dry run")
-    parser.add_argument("--rel-mv", action="store_true", help="Use relative path")
-    arggroups.clobber(parser)
-    arggroups.debug(parser)
-
-    parser.add_argument("sources", nargs="+", action=argparse_utils.ArgparseArgsOrStdin, help="Source paths to copy")
-    parser.add_argument("destination", help="Destination directory")
-    args = parser.parse_args()
-    arggroups.args_post(args, parser)
+    args = parse_args()
 
     args.sources = [os.path.realpath(s) for s in args.sources]
     args.destination = os.path.realpath(args.destination)
