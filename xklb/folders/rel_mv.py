@@ -3,7 +3,8 @@ from os.path import commonprefix
 from pathlib import Path
 
 from xklb import usage
-from xklb.utils import arggroups, argparse_utils, file_utils, path_utils
+from xklb.files import sample_compare
+from xklb.utils import arggroups, argparse_utils, devices, file_utils, path_utils
 from xklb.utils.log_utils import log
 
 
@@ -152,7 +153,26 @@ def rel_move(sources, dest, simulate=False, relative_from=None, replace=False):
                         os.replace(abspath, new_path)
                         new_paths.append(new_path)
                     else:
-                        log.error("%s ->x %s already exists", abspath, new_path)
+                        src_stat = os.stat(abspath)
+                        dst_stat = os.stat(new_path)
+                        is_src_smaller = src_stat.st_size < dst_stat.st_size
+                        if os.path.samestat(src_stat, dst_stat):
+                            log.error("%s ->x %s same file", abspath, new_path)
+                        elif dst_stat.st_size == 0:
+                            os.replace(abspath, new_path)
+                        elif src_stat.st_size != dst_stat.st_size:
+                            log.error(
+                                "%s ->x %s source file is %s than dest file conflict",
+                                abspath,
+                                new_path,
+                                "smaller" if is_src_smaller else "larger",
+                            )
+                            if devices.confirm("Replace destination?"):
+                                os.replace(abspath, new_path)
+                        elif sample_compare.sample_cmp(abspath, new_path):
+                            os.unlink(abspath)
+                        else:
+                            log.error("%s ->x %s already exists", abspath, new_path)
             else:
                 os.rename(abspath, new_path)
                 new_paths.append(new_path)

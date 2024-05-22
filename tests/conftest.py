@@ -64,13 +64,13 @@ def temp_db(request):
     return _create_temp_db
 
 
-def generate_file_tree_dict(temp_dir):
+def generate_file_tree_dict(temp_dir, inodes=True):
     def _generate_tree_dict(directory):
         tree_dict = {}
         for item in directory.iterdir():
             if item.is_file():
                 with item.open() as file:
-                    tree_dict[item.name] = (item.stat().st_ino, file.read())
+                    tree_dict[item.name] = (item.stat().st_ino if inodes else 0, file.read())
             elif item.is_dir():
                 tree_dict[item.name] = _generate_tree_dict(item)
         return tree_dict
