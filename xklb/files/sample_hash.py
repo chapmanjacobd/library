@@ -3,7 +3,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 from xklb import usage
-from xklb.utils import arggroups, argparse_utils, nums
+from xklb.utils import arggroups, argparse_utils, consts, nums
 from xklb.utils.arg_utils import gen_paths
 from xklb.utils.log_utils import log
 
@@ -49,11 +49,12 @@ def sample_hash_file(path, threads=1, gap=0.1, chunk_size=None):
     except FileNotFoundError:
         return None
 
-    disk_usage = (
-        file_stats.st_blocks * 512
-    )  # https://github.com/python/cpython/blob/main/Doc/library/os.rst#files-and-directories
-    if file_stats.st_size > disk_usage:
-        log.warning(f"File has holes %s", path)
+    if consts.NOT_WINDOWS:
+        disk_usage = (
+            file_stats.st_blocks * 512
+        )  # https://github.com/python/cpython/blob/main/Doc/library/os.rst#files-and-directories
+        if file_stats.st_size > disk_usage:
+            log.warning(f"File has holes %s", path)
 
     if chunk_size is None:
         chunk_size = int(nums.linear_interpolation(file_stats.st_size, [(26214400, 262144), (52428800000, 10485760)]))

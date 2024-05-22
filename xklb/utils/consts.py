@@ -69,6 +69,10 @@ MOBILE_TERMINAL = TERMINAL_SIZE.columns < 80
 TABULATE_STYLE = "simple"
 DEFAULT_DIFFLIB_RATIO = 0.73
 DEFAULT_MIN_SPLIT = "20s"
+IS_LINUX = sys.platform == "linux"
+IS_MAC = sys.platform == "darwin"
+IS_WINDOWS = os.name == "nt" or sys.platform in ("win32", "cygwin", "msys")
+NOT_WINDOWS = os.name == "posix"
 
 EPOCH_COLUMNS = (
     "time_downloaded",  # APPLICATION_START time local file known to exist / time scanned

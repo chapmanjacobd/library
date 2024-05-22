@@ -1,4 +1,4 @@
-import os, platform, shutil, subprocess, threading, time
+import os, shutil, subprocess, threading, time
 from argparse import Namespace
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
@@ -227,9 +227,9 @@ def find_xdg_application(media_file) -> str | None:
 
 
 def generic_player() -> list[str]:
-    if platform.system() == "Linux":
+    if consts.IS_LINUX:
         player = ["xdg-open"]
-    elif any(p in platform.system() for p in ("Windows", "_NT-", "MSYS")):
+    elif consts.IS_WINDOWS:
         player = ["cygstart"] if shutil.which("cygstart") else ["start", ""]
     else:
         player = ["open"]
@@ -295,7 +295,7 @@ def is_hstack(args, display) -> bool:
 
 def modify_display_size_for_taskbar(display):
     try:
-        if platform.system() == "Windows":
+        if consts.IS_WINDOWS:
             import win32gui  # type: ignore
 
             taskbar_window_handle = win32gui.FindWindow("Shell_TrayWnd", None)
@@ -310,7 +310,7 @@ def modify_display_size_for_taskbar(display):
             display.height = work_area[3] - work_area[1]
             display.width = work_area[2] - work_area[0]
 
-        elif platform.system() == "Linux":
+        elif consts.IS_LINUX:
             xprop_output = subprocess.check_output("xprop -root _NET_WORKAREA".split()).decode().strip()
             work_area = [int(x) for x in xprop_output.split(" = ")[1].split(",")]
 
@@ -318,7 +318,7 @@ def modify_display_size_for_taskbar(display):
             display.height = work_area[3] - work_area[1]
             display.width = work_area[2] - work_area[0]
 
-        elif platform.system() == "Darwin":
+        elif consts.IS_MAC:
             dock_height = int(subprocess.check_output(["defaults", "read", "com.apple.dock", "tilesize"]).strip())
             dock_position = (
                 subprocess.check_output(["defaults", "read", "com.apple.dock", "orientation"]).decode().strip()

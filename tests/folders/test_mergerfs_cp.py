@@ -5,12 +5,15 @@ import pytest
 
 from tests.conftest import generate_file_tree_dict
 from xklb.lb import library as lb
+from xklb.utils import consts
 
 simple_file_tree = {
     "folder1": {"file1.txt": "1", "subfolder1": {"file2.txt": "2"}},
     "folder2": {"file3.txt": "3"},
     "file4.txt": "4",
 }
+
+pytestmark = pytest.mark.skipif(not consts.IS_LINUX, reason="Skip Windows / Mac")
 
 
 @pytest.fixture(autouse=True)

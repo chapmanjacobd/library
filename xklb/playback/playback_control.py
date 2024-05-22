@@ -1,4 +1,4 @@
-import argparse, platform, textwrap
+import argparse, textwrap
 from copy import deepcopy
 from pathlib import Path
 
@@ -277,7 +277,7 @@ def catt_pause(args) -> None:
 
 
 def kill_process(name) -> None:
-    if any(p in platform.system() for p in ("Windows", "_NT-", "MSYS")):
+    if consts.IS_WINDOWS:
         processes.cmd("taskkill", "/f", "/im", name, strict=False)
     else:
         processes.cmd("pkill", "-f", name, strict=False)

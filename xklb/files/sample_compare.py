@@ -4,7 +4,7 @@ from pathlib import Path
 
 from xklb import usage
 from xklb.files import sample_hash
-from xklb.utils import arggroups, argparse_utils
+from xklb.utils import arggroups, argparse_utils, consts
 from xklb.utils.arg_utils import gen_paths
 from xklb.utils.log_utils import log
 
@@ -57,7 +57,7 @@ def sample_cmp(*paths, threads=1, gap=0.1, chunk_size=None, ignore_holes=False, 
         log.error("File apparent-sizes do not match:\n%s", paths_str)
         return False
 
-    if not ignore_holes:
+    if not ignore_holes and consts.NOT_WINDOWS:
         sizes = [stat_res.st_blocks for stat_res in path_stats.values()]
         if not all(size == sizes[0] for size in sizes):
             sorted_paths = sorted(path_stats.items(), key=lambda x: x[1].st_blocks)

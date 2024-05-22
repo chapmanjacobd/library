@@ -1,5 +1,6 @@
-import os, platform, random, shutil, sys
+import os, random, shutil, sys
 
+from xklb.utils import consts
 from xklb.utils.log_utils import log
 
 
@@ -16,16 +17,16 @@ def get_ip_of_chromecast(device_name) -> str:
 
 
 def clear_input() -> None:
-    if platform.system() == "Linux":
+    if consts.IS_LINUX:
         from termios import TCIFLUSH, tcflush
 
         tcflush(sys.stdin, TCIFLUSH)
-    elif platform.system() == "Darwin":
+    elif consts.IS_MAC:
         import select
 
         while select.select([sys.stdin], [], [], 0.01) == ([sys.stdin], [], []):
             sys.stdin.read(1)
-    elif platform.system() == "Windows":
+    elif consts.IS_WINDOWS:
         if getattr(clear_input, "kbhit", None) is None:
             from msvcrt import getch, kbhit  # type: ignore
 
