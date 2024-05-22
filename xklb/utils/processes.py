@@ -24,6 +24,11 @@ def player_exit(completed_process) -> NoReturn:
     raise SystemExit(completed_process.returncode)
 
 
+def exit_error(msg) -> NoReturn:
+    log.error("ERROR: " + msg)
+    raise SystemExit(1)
+
+
 def timeout(time_str) -> None:
     seconds = nums.human_to_seconds(time_str) or 0
 

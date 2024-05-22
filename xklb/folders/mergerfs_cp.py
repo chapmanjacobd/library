@@ -86,7 +86,7 @@ def mcp_file(args, source, destination):
 
 
 def cp_args(args):
-    cmd_args = ["cp", "-r"]
+    cmd_args = ["cp"]
     if args.replace is None:
         cmd_args.append("--interactive")
     elif args.replace is False:
@@ -103,6 +103,8 @@ def mergerfs_cp():
     args.cp_args = cp_args(args)
     args.destination = os.path.realpath(args.destination)
     args.mergerfs_mount = get_destination_mount(args.destination)
+    if args.mergerfs_mount == "":
+        processes.exit_error("Could not detect any mergerfs mounts")
     args.srcmounts = get_srcmounts(args.mergerfs_mount)
 
     sources = (os.path.realpath(s) + ("/" if s.endswith("/") else "") for s in args.paths)  # preserve trailing slash
