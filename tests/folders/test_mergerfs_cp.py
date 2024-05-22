@@ -68,6 +68,7 @@ def test_dupe_no_replace(temp_file_tree):
     src1_inodes = generate_file_tree_dict(src1, inodes=False)
     target_inodes = generate_file_tree_dict(target, inodes=False)
     lb(["mergerfs-cp", "--no-replace", os.path.join(src1, "file4.txt"), target])
+    lb(["mergerfs-cp", "--no-replace", src1 + os.sep, target])
 
     assert generate_file_tree_dict(src1, inodes=False) == src1_inodes
     assert generate_file_tree_dict(target, inodes=False) == target_inodes
@@ -85,25 +86,32 @@ def test_dupe_replace(temp_file_tree):
     assert generate_file_tree_dict(target, inodes=False) == target_inodes | {Path(src1).name: src1_inodes}
 
 
-def test_folder_conflict_replace(temp_file_tree):
-    src1 = temp_file_tree({"file1": "5"})
-    target = temp_file_tree({"file1": {"file1": "5"}})
+def test_dupe_replace_tree(temp_file_tree):
+    src1 = temp_file_tree(simple_file_tree | {"file4.txt": "5"})
+    target = temp_file_tree(simple_file_tree)
 
     src1_inodes = generate_file_tree_dict(src1, inodes=False)
     target_inodes = generate_file_tree_dict(target, inodes=False)
-    lb(["mergerfs-cp", src1, target])
+    lb(["mergerfs-cp", "--replace", src1 + os.sep, target])
 
     assert generate_file_tree_dict(src1, inodes=False) == src1_inodes
-    assert generate_file_tree_dict(target, inodes=False) == target_inodes | {Path(src1).name: src1_inodes}
+    assert generate_file_tree_dict(target, inodes=False) == target_inodes | src1_inodes
+
+
+def test_folder_conflict_replace(temp_file_tree):
+    src1 = temp_file_tree({"file1": "5"})
+    target = temp_file_tree({"file1": {"file1": "4"}})
+
+    src1_inodes = generate_file_tree_dict(src1, inodes=False)
+    target_inodes = generate_file_tree_dict(target, inodes=False)
+    lb(["mergerfs-cp", "--replace", src1 + os.sep, target])
+
+    assert generate_file_tree_dict(src1, inodes=False) == src1_inodes
+    assert generate_file_tree_dict(target, inodes=False) == {"file1": src1_inodes}
 
 
 def test_file_conflict_replace(temp_file_tree):
     src1 = temp_file_tree({"file1": {"file1": "5"}})
     target = temp_file_tree({"file1": "5"})
-
-    src1_inodes = generate_file_tree_dict(src1, inodes=False)
-    target_inodes = generate_file_tree_dict(target, inodes=False)
-    lb(["mergerfs-cp", src1, target])
-
-    assert generate_file_tree_dict(src1, inodes=False) == src1_inodes
-    assert generate_file_tree_dict(target, inodes=False) == target_inodes | {Path(src1).name: src1_inodes}
+    with pytest.raises(FileExistsError):
+        lb(["mergerfs-cp", "--replace", src1 + os.sep, target])
