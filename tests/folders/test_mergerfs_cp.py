@@ -33,6 +33,17 @@ def test_simple_file(temp_file_tree):
     assert generate_file_tree_dict(target, inodes=False) == {Path(src1).name: src1_inodes}
 
 
+def test_simple_tree(temp_file_tree):
+    file_tree = {"file4.txt": "4"}
+    src1 = temp_file_tree(file_tree)
+    src1_inodes = generate_file_tree_dict(src1, inodes=False)
+
+    target = temp_file_tree({})
+    lb(["mergerfs-cp", src1 + os.sep, target])
+
+    assert generate_file_tree_dict(target, inodes=False) == src1_inodes
+
+
 def test_two_simple_folders(temp_file_tree):
     src1 = temp_file_tree(simple_file_tree)
     src2 = temp_file_tree(simple_file_tree)

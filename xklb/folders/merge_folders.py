@@ -2,7 +2,7 @@ import argparse, json, os
 from pathlib import Path
 
 from xklb import usage
-from xklb.utils import arg_utils, arggroups, argparse_utils, devices, file_utils, printing
+from xklb.utils import arg_utils, arggroups, argparse_utils, consts, devices, file_utils, printing
 from xklb.utils.log_utils import log
 
 
@@ -46,11 +46,12 @@ def existing_stats(root_folder, root_glob):
     # assert all(list(p.glob('*')) != [] for p in folder_folders)
     # assert all(list(p.glob('*')) == [] for p in empty_folders)
 
-    print(
-        f"\r[{prefix}] Files: {len(files)} "
-        f"Folders: [{len(file_folders)} from files, {len(folder_folders)} from folders, {len(empty_folders)} empty]",
-        flush=True,
-    )
+    if not consts.PYTEST_RUNNING:
+        print(
+            f"\r[{prefix}] Files: {len(files)} "
+            f"Folders: [{len(file_folders)} from files, {len(folder_folders)} from folders, {len(empty_folders)} empty]",
+            flush=True,
+        )
 
     return files, {"file": file_folders, "folder": folder_folders, "empty": empty_folders}
 

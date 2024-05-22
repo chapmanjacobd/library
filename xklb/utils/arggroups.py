@@ -140,7 +140,7 @@ def database(parent_parser):
     parser.add_argument("database")
 
 
-def paths_or_stdin(parent_parser):
+def paths_or_stdin(parent_parser, destination=False):
     parser = parent_parser.add_argument_group("Paths")
     parser.add_argument(
         "--from-file",
@@ -150,9 +150,12 @@ def paths_or_stdin(parent_parser):
         help="Read paths from line-delimited file(s)",
     )
     parser.add_argument("--from-json", "--json", action="store_true", help="Read JSON or JSONL from stdin")
-    parser.add_argument(
-        "paths", nargs="*", default=argparse_utils.STDIN_DASH, action=argparse_utils.ArgparseArgsOrStdin
-    )
+    if destination:
+        parser.add_argument("paths", nargs="+", action=argparse_utils.ArgparseArgsOrStdin)
+    else:
+        parser.add_argument(
+            "paths", nargs="*", default=argparse_utils.STDIN_DASH, action=argparse_utils.ArgparseArgsOrStdin
+        )
 
 
 def sql_fs(parent_parser):
