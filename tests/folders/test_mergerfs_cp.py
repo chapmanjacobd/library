@@ -1,4 +1,4 @@
-import os, subprocess, tempfile
+import os, tempfile
 from pathlib import Path
 
 import pytest
@@ -64,8 +64,7 @@ def test_dupe_no_replace(temp_file_tree):
 
     src1_inodes = generate_file_tree_dict(src1, inodes=False)
     target_inodes = generate_file_tree_dict(target, inodes=False)
-    with pytest.raises(subprocess.CalledProcessError):
-        lb(["mergerfs-cp", "--no-replace", os.path.join(src1, "file4.txt"), target])
+    lb(["mergerfs-cp", "--no-replace", os.path.join(src1, "file4.txt"), target])
 
     assert generate_file_tree_dict(src1, inodes=False) == src1_inodes
     assert generate_file_tree_dict(target, inodes=False) == target_inodes

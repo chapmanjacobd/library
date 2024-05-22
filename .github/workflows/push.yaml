@@ -18,7 +18,7 @@ jobs:
         with:
           python-version: "3.10"
 
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: ~/.cache/pdm
           key: ${{ runner.os }}-pdm-${{ hashFiles('**/pdm.lock') }}
@@ -58,7 +58,7 @@ jobs:
         with:
           python-version: ${{ matrix.nv.py }}
 
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: ~/.cache/pdm
           key: ${{ runner.os }}-pdm-${{ hashFiles('**/pdm.lock') }}
@@ -91,7 +91,7 @@ jobs:
         with:
           python-version: "3.10"
 
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: ~/.cache/pdm
           key: ${{ runner.os }}-pdm-${{ hashFiles('**/pdm.lock') }}
