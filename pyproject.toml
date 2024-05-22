@@ -46,6 +46,7 @@ deluxe = [
   "scikit-learn",
   "selenium-wire",
   "subliminal",
+  "xattr",
 ]
 dev = ["black", "isort", "ssort"]
 fat = ["brotab", "orjson", "textract", "pypdf_table_extraction", "ghostscript"]
