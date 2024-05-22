@@ -73,29 +73,33 @@ def mcp_file(args, source, destination):
         if os.path.exists(original_path):
             found_file = True
 
-            cmd_args = ["cp", "-r"]
-            if args.replace is None:
-                cmd_args.append("--interactive")
-            elif args.replace is False:
-                cmd_args.append("--no-clobber")
-
-            if not consts.PYTEST_RUNNING:
-                cmd_args.append("--reflink=always")
-            cmd_args += [original_path, destination]
-
+            src_dest = [original_path, destination]
             if args.simulate:
-                print(*cmd_args)
+                print(*args.cp_args, *src_dest)
             else:
                 os.makedirs(os.path.dirname(destination), exist_ok=True)
-                processes.cmd(*cmd_args, strict=False, quiet=False, error_verbosity=2)
+                processes.cmd(*args.cp_args, *src_dest, strict=False, quiet=False, error_verbosity=2)
 
     if not found_file:
         print(f"Could not find srcmount of {source}")
 
 
+def cp_args(args):
+    cmd_args = ["cp", "-r"]
+    if args.replace is None:
+        cmd_args.append("--interactive")
+    elif args.replace is False:
+        cmd_args.append("--no-clobber")
+
+    if not consts.PYTEST_RUNNING:
+        cmd_args.append("--reflink=always")
+    return cmd_args
+
+
 def mergerfs_cp():
     args = parse_args()
 
+    args.cp_args = cp_args(args)
     args.destination = os.path.realpath(args.destination)
     args.mergerfs_mount = get_destination_mount(args.destination)
     args.srcmounts = get_srcmounts(args.mergerfs_mount)
