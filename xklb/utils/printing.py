@@ -1,4 +1,4 @@
-import csv, math, os, platform, sys, textwrap
+import csv, math, os, sys, textwrap
 from datetime import datetime, timedelta
 
 import humanize
@@ -12,7 +12,7 @@ def print_overwrite(*text):
         pass
     elif os.name == "posix":
         print("\r" + text[0], *text[1:], end="\033[K", flush=True)
-    elif platform.system() == "Windows":
+    elif consts.IS_WINDOWS:
         print("\r" + text[0], *text[1:], end="", flush=True)
     else:
         print(text)

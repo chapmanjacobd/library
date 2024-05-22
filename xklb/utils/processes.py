@@ -1,4 +1,4 @@
-import functools, json, multiprocessing, os, platform, shlex, signal, subprocess, sys
+import functools, json, multiprocessing, os, shlex, signal, subprocess, sys
 from typing import NoReturn
 
 from xklb.utils import consts, iterables, nums
@@ -152,7 +152,7 @@ def Pclose(process) -> subprocess.CompletedProcess:  # noqa: N802
     except subprocess.TimeoutExpired as exc:
         log.debug("subprocess.TimeoutExpired")
         process.kill()
-        if platform.system() == "Windows":
+        if consts.IS_WINDOWS:
             exc.stdout, exc.stderr = process.communicate()
         else:
             process.wait()
