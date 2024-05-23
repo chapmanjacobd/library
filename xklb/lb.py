@@ -29,6 +29,7 @@ progs = {
         "markdown_links": "Extract titles from lists of web links",
         "nouns": "Unstructured text -> compound nouns (stdin)",
         "dates": "Unstructured text -> timestamps, dates, time",
+        "json_keys_rename": "Rename JSON keys by substring match",
     },
     "Folder subcommands": {
         "merge_folders": "Merge two or more file trees",
@@ -216,6 +217,7 @@ modules = {
     "xklb.text.nouns.nouns": ["noun"],
     "xklb.text.dates.dates": ["date"],
     "xklb.text.dates.times": ["time"],
+    "xklb.text.json_keys_rename.json_keys_rename": [],
 }
 
 

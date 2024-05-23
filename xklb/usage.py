@@ -1531,3 +1531,11 @@ similar_folders = """library similar-folders PATH ...
         /home/xk/d/dump/datasets/vector/output/
         /home/xk/d/dump/datasets/vector/output2/
 """
+
+json_keys_rename = """lb json-keys-rename --new-key 'old key substring' (stdin)
+
+    Rename/filter keys in JSON
+
+        echo '{"The Place of Birthings": "Yo Mama", "extra": "key"}' | lb json-keys-rename --country 'place of birth'
+        {"country": "Yo Mama"}
+"""
