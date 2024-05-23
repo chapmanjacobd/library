@@ -544,8 +544,9 @@ def read_file_to_dataframes(
     elif "pdf" in mimetype:
         import camelot
 
+        camelot_path = web.url_encode(path)  # camelot does not like spaces in URLs...
         dfs = []
-        for t in camelot.read_pdf(path, pages="all", suppress_stdout=False):
+        for t in camelot.read_pdf(camelot_path, pages="all", suppress_stdout=False):  # type: ignore
             df = t.df
             if start_row:
                 df = df.iloc[start_row:]

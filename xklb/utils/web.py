@@ -6,6 +6,7 @@ from urllib.parse import parse_qs, parse_qsl, quote, unquote, urlencode, urljoin
 
 import requests
 from idna import decode as puny_decode
+from idna import encode as puny_encode
 
 from xklb.utils import consts, db_utils, iterables, nums, path_utils, pd_utils, strings, web
 from xklb.utils.log_utils import clamp_index, log
@@ -369,6 +370,46 @@ def url_decode(href):
     if up.netloc:
         try:
             href = href.replace(up.netloc, puny_decode(up.netloc), 1)
+        except Exception:
+            pass
+    return href
+
+
+def safe_quote(url):
+    try:
+        parsed_url = urlparse(url)
+    except UnicodeDecodeError:
+        return url
+
+    def selective_quote(component, restricted_chars):
+        try:
+            quoted = quote(component, errors="strict")
+        except UnicodeDecodeError:
+            return component
+        return "".join(quote(char, safe="%") if char in restricted_chars else char for char in quoted)
+
+    def quote_query_params(query):
+        query_pairs = parse_qsl(query, keep_blank_values=True)
+        return "&".join(selective_quote(key, "=&#") + "=" + selective_quote(value, "=&#") for key, value in query_pairs)
+
+    quoted_path = selective_quote(parsed_url.path, ";?#")
+    quoted_params = selective_quote(parsed_url.params, "?#")
+    quoted_query = quote_query_params(parsed_url.query)
+    quoted_fragment = selective_quote(parsed_url.fragment, "")
+
+    new_url = urlunparse(
+        (parsed_url.scheme, parsed_url.netloc, quoted_path, quoted_params, quoted_query, quoted_fragment)
+    )
+
+    return new_url
+
+
+def url_encode(href):
+    href = safe_quote(href)
+    up = urlparse(href)
+    if up.netloc:
+        try:
+            href = href.replace(up.netloc, puny_encode(up.netloc).decode(), 1)
         except Exception:
             pass
     return href
