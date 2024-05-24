@@ -7,4 +7,4 @@ def test_stdin(mock_stdin, capsys):
     ):
         lb(["json-keys-rename", "--country", "place of birth", "--visa-type", "visa class", "--count", "issuances"])
     captured = capsys.readouterr().out
-    assert captured == '{"country": "Bangladesh", "visa_type": "F43", "count": "2"}'
+    assert captured == '{"country": "Bangladesh", "visa_type": "F43", "count": "2"}\n'
