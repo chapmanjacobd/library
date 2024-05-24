@@ -1532,7 +1532,7 @@ similar_folders = """library similar-folders PATH ...
         /home/xk/d/dump/datasets/vector/output2/
 """
 
-json_keys_rename = """lb json-keys-rename --new-key 'old key substring' (stdin)
+json_keys_rename = """library json-keys-rename --new-key 'old key substring' (stdin)
 
     Rename/filter keys in JSON
 

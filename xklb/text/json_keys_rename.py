@@ -1,7 +1,7 @@
-import json
-import sys
+import json, sys
+
 from xklb import usage
-from xklb.utils import arg_utils, arggroups, argparse_utils, nums, printing, processes
+from xklb.utils import arggroups, argparse_utils, nums, printing, processes
 from xklb.utils.log_utils import log
 
 
@@ -40,6 +40,7 @@ def parse_unknown_args_to_dict(unknown_args):
 
     return kwargs
 
+
 def rename_keys(json_data, key_mapping):
     key_mapping = {old_key: new_key for new_key, old_key in key_mapping.items()}  # swap keys
     keys_to_rename = list(key_mapping.keys())
@@ -54,6 +55,7 @@ def rename_keys(json_data, key_mapping):
 
     return new_data
 
+
 def gen_d(line):
     json_data = json.loads(line)
     if isinstance(json_data, list):
@@ -62,6 +64,7 @@ def gen_d(line):
         yield json_data
     else:
         raise TypeError
+
 
 def json_keys_rename():
     args, unknown_args = parse_utils()
@@ -74,7 +77,7 @@ def json_keys_rename():
     print(f"json-keys-rename: Reading from stdin...", file=sys.stderr)
     lines = sys.stdin.readlines()
     if not lines or (len(lines) == 1 and lines[0].strip() == ""):
-        processes.exit_error('No data passed in')
+        processes.exit_error("No data passed in")
     else:
         lines = [s.strip() for s in lines]
 
