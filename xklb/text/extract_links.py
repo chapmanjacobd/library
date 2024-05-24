@@ -135,6 +135,8 @@ def print_or_download(args, a_ref):
     if args.download:
         web.download_url(link)
     else:
+        if not args.no_url_decode:
+            link = web.url_decode(link).strip()
         if args.print_link_text:
             printing.pipe_print(f"{link}\t{link_text}")
         else:
@@ -146,7 +148,8 @@ def extract_links() -> None:
 
     if args.insert_only:
         for url in arg_utils.gen_paths(args):
-            url = web.url_decode(url).strip()
+            if not args.no_url_decode:
+                url = web.url_decode(url).strip()
             if args.download:
                 web.download_url(url)
             else:

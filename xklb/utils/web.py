@@ -667,21 +667,13 @@ def construct_search(engine, s):
 
 
 def construct_absolute_url(base_url, href):
-    href = safe_unquote(href)
-
     up = urlparse(href)
     if up.scheme and up.scheme not in ("https", "http", "ftp"):
         return href
 
     if not up.netloc:
-        href = urljoin(base_url, href)
+        href = urljoin(base_url + "/", href)
 
-    up = urlparse(href)
-    if up.netloc:
-        try:
-            href = href.replace(up.netloc, puny_decode(up.netloc), 1)
-        except Exception:
-            pass
     return href
 
 
