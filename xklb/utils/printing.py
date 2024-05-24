@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 import humanize
 from tabulate import tabulate
 
-from xklb.utils import consts
+from xklb.utils import consts, web
 
 
 def print_overwrite(*text):
@@ -174,6 +174,16 @@ def col_duration(tbl: list[dict], col: str) -> list[dict]:
     for idx, _d in enumerate(tbl):
         if tbl[idx].get(col) is not None:
             tbl[idx][col] = human_duration(tbl[idx][col])
+    return tbl
+
+
+def col_unquote_url(tbl: list[dict], col: str) -> list[dict]:
+    for idx, _d in enumerate(tbl):
+        val = tbl[idx].get(col)
+        if val is not None:
+            if val.startswith("http"):
+                tbl[idx][col] = web.safe_unquote(val)
+
     return tbl
 
 

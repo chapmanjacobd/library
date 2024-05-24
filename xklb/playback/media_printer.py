@@ -194,6 +194,8 @@ def media_printer(args, data, units=None, media_len=None) -> None:
                 printing.col_duration(media, k)
             elif k.startswith("time_") or "_time_" in k:
                 printing.col_naturaltime(media, k)
+            elif k == "path" and not getattr(args, "no_url_decode", False):
+                printing.col_unquote_url(media, k)
             elif k == "title_path":
                 media = [{"title_path": "\n".join(iterables.concat(d["title"], d["path"])), **d} for d in media]
                 media = [{k: v for k, v in d.items() if k not in ("title", "path")} for d in media]
