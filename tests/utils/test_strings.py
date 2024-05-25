@@ -82,6 +82,20 @@ class TimecodeTestCase(unittest.TestCase):
         assert not strings.is_timecode_like("hello there")
 
 
+def test_from_timestamp_seconds():
+    assert strings.from_timestamp_seconds(":30") == 30.0
+    assert strings.from_timestamp_seconds("0:30") == 30.0
+    assert strings.from_timestamp_seconds("00:30") == 30.0
+    assert strings.from_timestamp_seconds("1:") == 60.0
+    assert strings.from_timestamp_seconds("1::") == 3600.0
+    assert strings.from_timestamp_seconds("::1") == 1.0
+    assert strings.from_timestamp_seconds(":1") == 1.0
+    assert strings.from_timestamp_seconds("00:01:35") == 95.0
+    assert strings.from_timestamp_seconds("00:00:00.001") == pytest.approx(0.001)
+    assert strings.from_timestamp_seconds("01:00:00") == 3600.0
+    assert strings.from_timestamp_seconds("01:00:00.1") == pytest.approx(3600.1)
+
+
 class TestFindUnambiguousMatch(unittest.TestCase):
     def test_matching_string(self):
         my_string = "daily"

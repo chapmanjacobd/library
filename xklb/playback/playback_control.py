@@ -13,6 +13,7 @@ from xklb.utils import (
     objects,
     printing,
     processes,
+    strings,
 )
 from xklb.utils.log_utils import log
 
@@ -24,6 +25,8 @@ def parse_args(action) -> argparse.Namespace:
     )
     if action == "next":
         arggroups.capability_delete(parser)
+    if action == "seek":
+        parser.add_argument("time")
 
     parser.add_argument("--mpv-socket", default=consts.DEFAULT_MPV_LISTEN_SOCKET)
     parser.add_argument("--chromecast-device", "--cast-to", "-t")
@@ -330,18 +333,38 @@ def playback_next() -> None:
         if args.delete_files:
             file_utils.trash(args, playing["mpv"])
 
-def playback_ffwd() -> None:
-    args = parse_args("ffwd")
 
+def playback_seek() -> None:
+    args = parse_args("seek")
 
-    s = args.time_str
-    if s.startswith("+"):                                                 s = s[1:]
+    playing = _now_playing(args)
 
-    seconds =  if ":" in s else float(s)
+    s = args.time
+    is_relative = False
+    is_negative = False
+    if s.startswith("-"):
+        is_negative = True
+    if s.startswith(("+", "-")):
+        is_relative = True
+        s = s[1:]
+    if ":" not in s:
+        is_relative = True
 
-    if playing["catt"]:
-        # catt_ffwd(args)
+    seconds = strings.from_timestamp_seconds(s) if ":" in s else float(s)
+    if is_negative:
+        seconds = -seconds
 
     if playing["mpv"]:
-        args.mpv.command("", "force")
+        args.mpv.command("seek", seconds, "relative" if is_relative else "absolute")
+        args.mpv.terminate()
 
+    if playing["catt"]:
+        catt_device = []
+        if args.chromecast_device:
+            catt_device = ["-d", args.chromecast_device]
+        if is_relative and is_negative:
+            processes.cmd("catt", *catt_device, "rewind", str(int(seconds)))
+        elif is_relative:
+            processes.cmd("catt", *catt_device, "ffwd", str(int(seconds)))
+        else:
+            processes.cmd("catt", *catt_device, "seek", str(int(seconds)))

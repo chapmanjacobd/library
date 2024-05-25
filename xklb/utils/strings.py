@@ -1,7 +1,6 @@
 import html, re, textwrap
 from copy import deepcopy
 from itertools import zip_longest
-from datetime import datetime
 
 from xklb.data import wordbank
 from xklb.utils import consts, iterables, nums
@@ -176,18 +175,13 @@ def combine(*list_) -> str | None:
     return ";".join(no_duplicates)
 
 
-def from_timestamp_seconds(s):
-    parts = s.split(".")
-    if len(parts) == 2:
-        # If there's a dot, the last part is the milliseconds
-        timestamp_str, milliseconds_str = parts
-        milliseconds = float(milliseconds_str)
-    else:
-        timestamp_str = parts[0]
-        milliseconds = 0.0
-    timestamp = datetime.strptime(timestamp_str, "%H:%M:%S")
-    seconds = timestamp.hour * 3600 + timestamp.minute * 60 + timestamp.second + milliseconds
-    return seconds
+def from_timestamp_seconds(s: str):
+    parts = s.split(":")
+    while len(parts) < 3:
+        parts.insert(0, "00")
+
+    hours, minutes, seconds = parts
+    return int(hours or "0") * 3600 + int(minutes or "0") * 60 + float(seconds or "0")
 
 
 def is_timecode_like(text):

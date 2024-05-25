@@ -82,6 +82,7 @@ progs = {
         "watch": "Watch / Listen",
         "now": "Show what is currently playing",
         "next": "Play next file and optionally delete current file",
+        "seek": "Set playback to a certain time, fast-forward or rewind",
         "stop": "Stop all playback",
         "pause": "Pause all playback",
         "tabs_open": "Open your tabs for the day",
@@ -204,6 +205,7 @@ modules = {
     "xklb.playback.playback_control.playback_now": ["now"],
     "xklb.playback.playback_control.playback_pause": ["pause", "play"],
     "xklb.playback.playback_control.playback_stop": ["stop"],
+    "xklb.playback.playback_control.playback_seek": ["ffwd", "rewind", "seek"],  # TODO: make rewind negative...
     "xklb.playback.surf.streaming_tab_loader": ["surf"],
     "xklb.playback.tabs_open.tabs_open": ["tb", "tabs", "open_tabs"],
     "xklb.tablefiles.eda.eda": ["preview"],
