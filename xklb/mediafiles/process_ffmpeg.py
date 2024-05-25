@@ -73,7 +73,10 @@ def process_path(args, path, **kwargs):
         if not is_animation:
             return process_image.process_path(args, path)
 
-    video_stream = next((s for s in probe.video_streams), None)
+    def is_album_art(s):
+        return s.get('disposition', {}).get('attached_pic', 0) == 1
+
+    video_stream = next((s for s in probe.video_streams if not is_album_art(s)), None)
     audio_stream = next((s for s in probe.audio_streams), None)
     if not video_stream:
         log.warning("No video stream found: %s", path)
