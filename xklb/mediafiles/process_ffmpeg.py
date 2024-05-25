@@ -74,7 +74,7 @@ def process_path(args, path, **kwargs):
             return process_image.process_path(args, path)
 
     def is_album_art(s):
-        return s.get('disposition', {}).get('attached_pic', 0) == 1
+        return s.get("disposition", {}).get("attached_pic", 0) == 1
 
     video_stream = next((s for s in probe.video_streams if not is_album_art(s)), None)
     audio_stream = next((s for s in probe.audio_streams), None)

@@ -97,7 +97,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v2.8.042; 76 subcommands)
+    library (v2.8.043; 77 subcommands)
 
     Create database subcommands:
     ╭───────────────┬──────────────────────────────────────────╮
@@ -233,23 +233,25 @@ To stop playing press Ctrl+C in either the terminal or mpv
     ╰─────────────────┴─────────────────────────────────────────────────────────────╯
 
     Playback subcommands:
-    ╭────────────┬───────────────────────────────────────────────────╮
-    │ watch      │ Watch / Listen                                    │
-    ├────────────┼───────────────────────────────────────────────────┤
-    │ now        │ Show what is currently playing                    │
-    ├────────────┼───────────────────────────────────────────────────┤
-    │ next       │ Play next file and optionally delete current file │
-    ├────────────┼───────────────────────────────────────────────────┤
-    │ stop       │ Stop all playback                                 │
-    ├────────────┼───────────────────────────────────────────────────┤
-    │ pause      │ Pause all playback                                │
-    ├────────────┼───────────────────────────────────────────────────┤
-    │ tabs-open  │ Open your tabs for the day                        │
-    ├────────────┼───────────────────────────────────────────────────┤
-    │ links-open │ Open links from link dbs                          │
-    ├────────────┼───────────────────────────────────────────────────┤
-    │ surf       │ Auto-load browser tabs in a streaming way (stdin) │
-    ╰────────────┴───────────────────────────────────────────────────╯
+    ╭────────────┬────────────────────────────────────────────────────────╮
+    │ watch      │ Watch / Listen                                         │
+    ├────────────┼────────────────────────────────────────────────────────┤
+    │ now        │ Show what is currently playing                         │
+    ├────────────┼────────────────────────────────────────────────────────┤
+    │ next       │ Play next file and optionally delete current file      │
+    ├────────────┼────────────────────────────────────────────────────────┤
+    │ seek       │ Set playback to a certain time, fast-forward or rewind │
+    ├────────────┼────────────────────────────────────────────────────────┤
+    │ stop       │ Stop all playback                                      │
+    ├────────────┼────────────────────────────────────────────────────────┤
+    │ pause      │ Pause all playback                                     │
+    ├────────────┼────────────────────────────────────────────────────────┤
+    │ tabs-open  │ Open your tabs for the day                             │
+    ├────────────┼────────────────────────────────────────────────────────┤
+    │ links-open │ Open links from link dbs                               │
+    ├────────────┼────────────────────────────────────────────────────────┤
+    │ surf       │ Auto-load browser tabs in a streaming way (stdin)      │
+    ╰────────────┴────────────────────────────────────────────────────────╯
 
     Database enrichment subcommands:
     ╭────────────────────┬────────────────────────────────────────────────────╮
