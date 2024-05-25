@@ -505,9 +505,10 @@ def download_url(url, output_path=None, output_prefix=None, chunk_size=8 * 1024 
             if downloaded_size < remote_size:
                 msg = f"Incomplete download ({strings.safe_percent(downloaded_size/remote_size)}) {output_path}"
                 raise RuntimeError(msg)
-    except OSError:
-        raise
-    except Exception:
+    except Exception as e:
+        if isinstance(e, OSError):
+            if e.errno in consts.EnvironmentErrors:
+                raise
         retry_num += 1
         log.info("Retry #%s %s", retry_num, url)
         time.sleep(retry_num)

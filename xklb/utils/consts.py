@@ -1,4 +1,4 @@
-import os, random, re, shutil, string, sys
+import errno, os, random, re, shutil, string, sys
 from datetime import datetime, timezone
 from pathlib import Path
 from tempfile import gettempdir
@@ -127,6 +127,19 @@ class SC:
     dedupe_media = "dedupe"
     web_add = "web-add"
     web_update = "web-update"
+
+
+EnvironmentErrors = (
+    errno.ENOSPC,
+    errno.ENOENT,
+    errno.EIO,
+    errno.EROFS,
+    errno.ESPIPE,
+    errno.EMFILE,
+    errno.EPIPE,
+    errno.ENAMETOOLONG,
+    errno.ENOTEMPTY,
+)
 
 
 class DLStatus:
