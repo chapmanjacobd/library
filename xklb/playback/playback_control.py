@@ -329,3 +329,19 @@ def playback_next() -> None:
         args.mpv.terminate()
         if args.delete_files:
             file_utils.trash(args, playing["mpv"])
+
+def playback_ffwd() -> None:
+    args = parse_args("ffwd")
+
+
+    s = args.time_str
+    if s.startswith("+"):                                                 s = s[1:]
+
+    seconds =  if ":" in s else float(s)
+
+    if playing["catt"]:
+        # catt_ffwd(args)
+
+    if playing["mpv"]:
+        args.mpv.command("", "force")
+
