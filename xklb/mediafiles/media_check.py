@@ -63,7 +63,7 @@ def decode_quick_scan(path, scans, scan_duration=3):
     return fail_count / len(scans)
 
 
-def decode_full_scan(path, audio_scan=False, frames="frames", threads=5):
+def decode_full_scan(path, audio_scan=False, frames="frames", threads=None):
     ffprobe = processes.FFProbe(path)
     metadata_duration = ffprobe.duration or 0
 
@@ -99,7 +99,7 @@ def decode_full_scan(path, audio_scan=False, frames="frames", threads=5):
             "-of",
             "json",
             "-threads",
-            str(threads),
+            str(threads or 5),
             "-v",
             "0",
             path,
@@ -169,7 +169,7 @@ def media_check() -> None:
                 gap=args.gap,
                 full_scan=args.full_scan,
                 audio_scan=args.audio_scan,
-                threads=args.threads,
+                threads=args.threads or 5,
             ): path
             for path in paths
             if Path(path).suffix.lower() not in consts.SKIP_MEDIA_CHECK
