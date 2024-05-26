@@ -2,6 +2,7 @@ import argparse, os, shlex, subprocess, sys
 from pathlib import Path
 
 from xklb import usage
+from xklb.createdb.av import is_album_art
 from xklb.mediafiles import process_image
 from xklb.utils import arggroups, argparse_utils, nums, path_utils, processes, web
 from xklb.utils.arg_utils import gen_paths, kwargs_overwrite
@@ -73,9 +74,7 @@ def process_path(args, path, **kwargs):
         if not is_animation:
             return process_image.process_path(args, path)
 
-    def is_album_art(s):
-        return s.get("disposition", {}).get("attached_pic", 0) == 1
-
+    album_art_stream = next((s for s in probe.video_streams if is_album_art(s)), None)
     video_stream = next((s for s in probe.video_streams if not is_album_art(s)), None)
     audio_stream = next((s for s in probe.audio_streams), None)
     if not video_stream:
@@ -113,6 +112,9 @@ def process_path(args, path, **kwargs):
             ff_opts.extend(["-vf", f"scale={args.max_width}:-2"])
         elif height > (args.max_height * (1 + args.max_height_buffer)):
             ff_opts.extend(["-vf", f"scale=-2:{args.max_height}"])
+
+    elif album_art_stream:
+        ff_opts.extend(['-c:v', 'copy'])
 
     is_split = bool(audio_stream)
     if audio_stream:
