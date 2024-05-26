@@ -8,6 +8,9 @@ from xklb.utils.consts import DBType
 from xklb.utils.log_utils import log
 
 
+def is_album_art(s):
+    return s.get("disposition", {}).get("attached_pic", 0) == 1
+
 def get_subtitle_tags(path, streams, codec_types, scan_subtitles=False) -> dict:
     attachment_count = sum(1 for s in codec_types if s == "attachment")
     internal_subtitles_count = sum(1 for s in codec_types if s == "subtitle")
@@ -226,7 +229,8 @@ def munge_av_tags(args, path) -> dict:
         [t.get("language") for t in stream_tags if t.get("language") not in (None, "und", "unk")],
     )
 
-    video_count = sum(1 for s in codec_types if s == "video")
+    album_art_count = sum(1 for s in codec_types if s == "video" if is_album_art(s))
+    video_count = sum(1 for s in codec_types if s == "video" if not is_album_art(s))
     audio_count = sum(1 for s in codec_types if s == "audio")
 
     chapters = probe.chapters or []
@@ -240,6 +244,7 @@ def munge_av_tags(args, path) -> dict:
 
     media = {
         **media,
+        "album_art_count": album_art_count,
         "video_count": video_count,
         "audio_count": audio_count,
         "chapter_count": chapter_count,
