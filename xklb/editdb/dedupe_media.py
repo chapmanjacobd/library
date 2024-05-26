@@ -328,7 +328,7 @@ def get_fs_duplicates(args) -> list[dict]:
 
     path_media_map = {d["path"]: d for d in media}
 
-    need_sample_hash_paths = [d["path"] for d in media if not d.get("hash")]
+    need_sample_hash_paths = [d["path"] for d in media if not d.get("hash") and d["path"] is not None]
     if need_sample_hash_paths:
         with ThreadPoolExecutor(max_workers=20) as pool:
             hash_results = list(pool.map(sample_hash.sample_hash_file, need_sample_hash_paths))
