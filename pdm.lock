@@ -1833,12 +1833,12 @@ files = [
 
 [[package]]
 name = "pysubs2"
-version = "1.7.1"
+version = "1.7.2"
 requires_python = ">=3.8"
 summary = "A library for editing subtitle files"
 files = [
-    {file = "pysubs2-1.7.1-py3-none-any.whl", hash = "sha256:b0077a0889f6e12a580844c0a810f27cc4a574f2842784ad500915e8380c9b75"},
-    {file = "pysubs2-1.7.1.tar.gz", hash = "sha256:94ec117bf96efae21a9810838aca35134de8600b49a6e445a1933b2a3e037240"},
+    {file = "pysubs2-1.7.2-py3-none-any.whl", hash = "sha256:f6de61539df485f8d4ad0c5b737f2dc1f2a9c65afcbe93177ebff25815163865"},
+    {file = "pysubs2-1.7.2.tar.gz", hash = "sha256:b708904269cb252dbc51de75a372e04ab00c368939bb8220f7b0f940d978725e"},
 ]
 
 [[package]]
@@ -2648,7 +2648,7 @@ files = [
 
 [[package]]
 name = "yt-dlp"
-version = "2024.4.9"
+version = "2024.5.26"
 requires_python = ">=3.8"
 summary = "A feature-rich command-line audio/video downloader"
 dependencies = [
@@ -2662,8 +2662,8 @@ dependencies = [
     "websockets>=12.0",
 ]
 files = [
-    {file = "yt_dlp-2024.4.9-py3-none-any.whl", hash = "sha256:d6ff6798bd114cc48763564fcb2f296464ec1604f731e69b07a8814c89b170a2"},
-    {file = "yt_dlp-2024.4.9.tar.gz", hash = "sha256:7ee90572b4d313b582b99c89e4eccf779b57ff54edc331873c6b3fba77faa8b0"},
+    {file = "yt_dlp-2024.5.26-py3-none-any.whl", hash = "sha256:884deab9e38b2c67a39b0e39b820d860c5d46d9d5d6f7c883b73ff70bd891d7c"},
+    {file = "yt_dlp-2024.5.26.tar.gz", hash = "sha256:ae9bef603f9da76115f863750598d3afbd60bcd808234efc28be393d7e83369b"},
 ]
 
 [[package]]
