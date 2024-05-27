@@ -1,6 +1,8 @@
 from datetime import datetime
 from pathlib import Path
 
+from yt_dlp.utils import traverse_obj
+
 from xklb.createdb import subtitle
 from xklb.mediafiles import media_check
 from xklb.utils import consts, file_utils, iterables, nums, objects, processes, strings
@@ -9,7 +11,7 @@ from xklb.utils.log_utils import log
 
 
 def is_album_art(s):
-    return s.get("disposition", {}).get("attached_pic", 0) == 1
+    return traverse_obj(s, "disposition", "attached_pic") == 1
 
 
 def get_subtitle_tags(path, streams, codec_types, scan_subtitles=False) -> dict:
