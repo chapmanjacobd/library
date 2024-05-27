@@ -159,6 +159,8 @@ To stop playing press Ctrl+C in either the terminal or mpv
     ├─────────────────┼────────────────────────────────────────────────────────────┤
     │ mount-stats     │ Show some relative mount stats                             │
     ├─────────────────┼────────────────────────────────────────────────────────────┤
+    │ big-dirs        │ Show large folders                                         │
+    ├─────────────────┼────────────────────────────────────────────────────────────┤
     │ similar-folders │ Find similar folders based on folder name, size, and count │
     ╰─────────────────┴────────────────────────────────────────────────────────────╯
 
@@ -203,8 +205,6 @@ To stop playing press Ctrl+C in either the terminal or mpv
     Filesystem Database subcommands:
     ╭────────────┬──────────────────────────╮
     │ disk-usage │ Show disk usage          │
-    ├────────────┼──────────────────────────┤
-    │ big-dirs   │ Show large folders       │
     ├────────────┼──────────────────────────┤
     │ search-db  │ Search a SQLITE database │
     ╰────────────┴──────────────────────────╯
@@ -1331,6 +1331,44 @@ Copy files with reflink and handle mergerfs mounts.
 
 </details>
 
+###### big-dirs
+
+<details><summary>Show large folders</summary>
+
+    $ library big-dirs -h
+    usage: library big-dirs PATH ... [--limit (4000)] [--depth (0)] [--sort-groups-by deleted | played]
+
+    See what folders take up space
+
+        library big-dirs ./video/
+
+    Filter folders by size
+
+        lb big-dirs ./video/ -FS+10GB -FS-200GB
+
+    Filter folders by count
+
+        lb big-dirs ./video/ -FC+300 -FC-5000
+
+    Filter folders by depth
+
+        lb big-dirs ./video/ --depth 5
+        lb big-dirs ./video/ -D 7
+
+    Load from fs database
+
+        $ lb fs video.db --cols path,duration,size,time_deleted --to-json | lb big-dirs --from-json
+
+        Only include files between 1MiB and 5MiB
+        $ lb fs video.db -S+1M -S-5M --cols path,duration,size,time_deleted --to-json | lb big-dirs --from-json
+
+    You can even sort by auto-MCDA ~LOL~
+
+    lb big-dirs ./video/ -u 'mcda median_size,-deleted'
+
+
+</details>
+
 ###### similar-folders
 
 <details><summary>Find similar folders based on folder name, size, and count</summary>
@@ -1794,41 +1832,6 @@ Copy files with reflink and handle mergerfs mounts.
         | /home/xk/github/xk/lb/__pypackages__/3.11/lib/jedi/third_party/typeshed/third_party/2and3/requests/packages/urllib3/packages/ssl_match_hostname/__init__.pyi        | 88 Bytes |
         | /home/xk/github/xk/lb/__pypackages__/3.11/lib/jedi/third_party/typeshed/third_party/2and3/requests/packages/urllib3/packages/ssl_match_hostname/_implementation.pyi | 81 Bytes |
 
-
-
-</details>
-
-###### big-dirs
-
-<details><summary>Show large folders</summary>
-
-    $ library big-dirs -h
-    usage: library big-dirs DATABASE [--limit (4000)] [--depth (0)] [--sort-groups-by deleted | played] [--size=+5MB]
-
-    See what folders take up space
-
-        library big-dirs ./video/
-
-    Filter folders by size
-
-        lb big-dirs ./video/ -FS+10GB -FS-200GB
-
-    Filter folders by count
-
-        lb big-dirs ./video/ -FC+300 -FC-5000
-
-    Filter folders by depth
-
-        lb big-dirs ./video/ --depth 5
-        lb big-dirs ./video/ -D 7
-
-    Load from fs database
-
-        $ lb fs video.db --cols path,duration,size,time_deleted --to-json | lb big-dirs --from-json
-
-    You can even sort by auto-MCDA ~LOL~
-
-    lb big-dirs ./video/ -u 'mcda median_size,-deleted'
 
 
 </details>

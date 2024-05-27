@@ -11,6 +11,7 @@ from xklb.utils.log_utils import log
 def is_album_art(s):
     return s.get("disposition", {}).get("attached_pic", 0) == 1
 
+
 def get_subtitle_tags(path, streams, codec_types, scan_subtitles=False) -> dict:
     attachment_count = sum(1 for s in codec_types if s == "attachment")
     internal_subtitles_count = sum(1 for s in codec_types if s == "subtitle")

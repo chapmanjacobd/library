@@ -519,7 +519,7 @@ gallery_update = """library gallery-update DATABASE URLS
     Check previously saved gallery_dl URLs for new content
 """
 
-big_dirs = """library big-dirs DATABASE [--limit (4000)] [--depth (0)] [--sort-groups-by deleted | played] [--size=+5MB]
+big_dirs = """library big-dirs PATH ... [--limit (4000)] [--depth (0)] [--sort-groups-by deleted | played]
 
     See what folders take up space
 
@@ -541,6 +541,9 @@ big_dirs = """library big-dirs DATABASE [--limit (4000)] [--depth (0)] [--sort-g
     Load from fs database
 
         $ lb fs video.db --cols path,duration,size,time_deleted --to-json | lb big-dirs --from-json
+
+        Only include files between 1MiB and 5MiB
+        $ lb fs video.db -S+1M -S-5M --cols path,duration,size,time_deleted --to-json | lb big-dirs --from-json
 
     You can even sort by auto-MCDA ~LOL~
 

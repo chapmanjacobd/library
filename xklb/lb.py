@@ -38,6 +38,7 @@ progs = {
         "scatter": "Scatter files between folders or disks",
         "mv_list": "Find specific folders to move to different disks",
         "mount_stats": "Show some relative mount stats",
+        "big_dirs": "Show large folders",
         "similar_folders": "Find similar folders based on folder name, size, and count",
     },
     "File subcommands": {
@@ -63,7 +64,6 @@ progs = {
     },
     "Filesystem Database subcommands": {
         "disk_usage": "Show disk usage",
-        "big_dirs": "Show large folders",
         "search_db": "Search a SQLITE database",
     },
     "Media Database subcommands": {
