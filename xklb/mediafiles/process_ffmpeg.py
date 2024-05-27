@@ -114,7 +114,7 @@ def process_path(args, path, **kwargs):
             ff_opts.extend(["-vf", f"scale=-2:{args.max_height}"])
 
     elif album_art_stream:
-        ff_opts.extend(['-c:v', 'copy'])
+        ff_opts.extend(["-c:v", "copy"])
 
     is_split = bool(audio_stream)
     if audio_stream:
