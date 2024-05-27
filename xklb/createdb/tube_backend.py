@@ -518,7 +518,7 @@ def download(args, m) -> None:
 
     download_status = DLStatus.SUCCESS
     media_check_failed = False
-    if not ydl_log["error"] and info and local_path and Path(local_path).exists():
+    if info and local_path and Path(local_path).exists():
         log.info("[%s]: Downloaded to %s", webpath, local_path)
         try:
             info["corruption"] = int(

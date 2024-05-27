@@ -123,6 +123,7 @@ yt_meaningless_errors = re.compile(
 .*matching opening tag for closing p tag not found
 .*the JSON object must be str, bytes or bytearray, not dict
 .*list indices must be integers
+.*Ignoring playliststart and playlistend because playlistitems was given
 .*Unable to download JSON metadata
 .*Unable to recognize playlist.
 .*Premieres in""".splitlines(),
