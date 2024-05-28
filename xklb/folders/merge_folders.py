@@ -2,7 +2,7 @@ import argparse, json, os
 from pathlib import Path
 
 from xklb import usage
-from xklb.utils import arg_utils, arggroups, argparse_utils, consts, devices, file_utils, printing
+from xklb.utils import arg_utils, arggroups, argparse_utils, consts, devices, file_utils, path_utils, printing
 from xklb.utils.log_utils import log
 
 
@@ -200,11 +200,8 @@ def merge_folders() -> None:
 
     apply_merge(args, empty_folder_data, rename_data, clobber=clobber)
 
-    for f in sorted((str(p) for p in all_source_folders), key=len, reverse=True):
-        try:
-            os.removedirs(f)
-        except OSError:
-            pass
+    for source in args.sources:
+        path_utils.bfs_removedirs(source)
 
 
 if __name__ == "__main__":

@@ -781,7 +781,7 @@ redownload = """library redownload DATABASE
         library redownload city.db 2023-01-26T19:54:42 2023-01-26T20:45:24
 """
 
-relmv = """library relmv [--simulate] SOURCE ... DEST
+rel_mv = """library rel-mv [--simulate] SOURCE ... DEST
 
     Move files/folders without losing hierarchy metadata
 
@@ -847,6 +847,15 @@ mv_list = """library mv-list [--limit LIMIT] [--lower LOWER] [--upper UPPER] MOU
 
                 rsync -a --info=progress2 --no-inc-recursive --remove-source-files --files-from=/tmp/tmp7x_75l8 -r --relative -vv --dry-run / jim:/free/real/estate/
 """
+
+merge_mv = """library merge-mv SOURCE ... DEST [--simulate] [--replace | --no-replace] [--ext EXT]
+
+Move files BSD-style
+
+    library merge-mv folder1  folder2/  # folder1 will go inside folder2
+    library merge-mv folder1/ folder2/  # folder1 will be merged with folder2
+"""
+
 
 mergerfs_cp = """library mergerfs-cp SOURCE ... DEST [--simulate] [--replace | --no-replace] [--ext EXT]
 
