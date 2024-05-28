@@ -97,7 +97,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v2.8.047; 78 subcommands)
+    library (v2.8.048; 78 subcommands)
 
     Create database subcommands:
     ╭───────────────┬──────────────────────────────────────────╮
@@ -1139,6 +1139,9 @@ Move files BSD-style
 
     library merge-mv folder1  folder2/  # folder1 will go inside folder2
     library merge-mv folder1/ folder2/  # folder1 will be merged with folder2
+
+With --replace, source files with the same name as subfolders will be moved within target subfolders
+but files in the destination with the same name as source subfolders will be overwritten by the folders
 
 
 </details>

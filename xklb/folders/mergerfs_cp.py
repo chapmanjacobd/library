@@ -107,7 +107,9 @@ def mergerfs_cp():
         processes.exit_error("Could not detect any mergerfs mounts")
     args.srcmounts = get_srcmounts(args.mergerfs_mount)
 
-    sources = (os.path.realpath(s) + ("/" if s.endswith("/") else "") for s in args.paths)  # preserve trailing slash
+    sources = (
+        os.path.realpath(s) + (os.sep if s.endswith(os.sep) else "") for s in args.paths
+    )  # preserve trailing slash
     for source in sources:
         if os.path.isdir(source):
             for p in file_utils.rglob(source, args.ext or None)[0]:
