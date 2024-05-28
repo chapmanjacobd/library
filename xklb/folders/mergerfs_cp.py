@@ -116,11 +116,12 @@ def mergerfs_cp():
                 cp_dest = args.destination
                 if not source.endswith(os.sep):  # use BSD behavior
                     cp_dest = os.path.join(cp_dest, os.path.basename(source))
-                cp_dest = os.path.join(cp_dest, os.path.dirname(os.path.relpath(p, source)), os.path.basename(p))
+                cp_dest = os.path.join(cp_dest, os.path.relpath(p, source))
 
                 mcp_file(args, p, cp_dest)
         else:
-            mcp_file(args, source, args.destination)
+            cp_dest = os.path.join(args.destination, os.path.basename(source))
+            mcp_file(args, source, cp_dest)
 
 
 if __name__ == "__main__":

@@ -97,7 +97,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v2.8.048; 78 subcommands)
+    library (v2.8.049; 78 subcommands)
 
     Create database subcommands:
     ╭───────────────┬──────────────────────────────────────────╮
@@ -1135,13 +1135,15 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     $ library merge-mv -h
     usage: library merge-mv SOURCE ... DEST [--simulate] [--replace | --no-replace] [--ext EXT]
 
-Move files BSD-style
+    Move files BSD-style
 
-    library merge-mv folder1  folder2/  # folder1 will go inside folder2
-    library merge-mv folder1/ folder2/  # folder1 will be merged with folder2
+        library merge-mv folder1  folder2/  # folder1 will go inside folder2
+        library merge-mv folder1/ folder2/  # folder1 will be merged with folder2
 
-With --replace, source files with the same name as subfolders will be moved within target subfolders
-but files in the destination with the same name as source subfolders will be overwritten by the folders
+    With --replace, source files with the same name as subfolders will be moved within target subfolders
+    but files in the destination with the same name as source subfolders will be overwritten by the folders
+
+    nb. This tool, like other lb subcommands, only works on files. Empty folders will not be moved/copied to the destination
 
 
 </details>
@@ -1193,7 +1195,16 @@ but files in the destination with the same name as source subfolders will be ove
     $ library mergerfs-cp -h
     usage: library mergerfs-cp SOURCE ... DEST [--simulate] [--replace | --no-replace] [--ext EXT]
 
-Copy files with reflink and handle mergerfs mounts.
+    Copy files with reflink and handle mergerfs mounts
+
+        $ lb mergerfs-cp --dry-run d/files* d/folder2/
+        cp --interactive --reflink=always /mnt/d9/files1.txt /mnt/d9/folder2/files1.txt
+        ...
+
+        $ btrfs fi du /mnt/d3/files1.txt /mnt/d3/folder2/files1.txt
+            Total   Exclusive  Set shared  Filename
+        12.57GiB       0.00B    12.57GiB  /mnt/d3/files1.txt
+        12.57GiB       0.00B    12.57GiB  /mnt/d3/folder2/files1.txt
 
 
 </details>
