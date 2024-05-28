@@ -513,8 +513,10 @@ def download(args, m) -> None:
                 ),
             )
             local_path = path_utils.clean_path(local_path.encode())
-            if Path(temp_path).exists():  # media might already be in download archive or download error
+            if Path(temp_path).exists():  # may be download error
                 file_utils.rename_move_file(temp_path, local_path)
+            elif Path(local_path).exists():  # media might already be in download archive
+                local_path = temp_path
 
     download_status = DLStatus.SUCCESS
     media_check_failed = False

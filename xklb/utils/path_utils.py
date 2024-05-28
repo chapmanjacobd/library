@@ -123,3 +123,11 @@ def common_path(paths):
 
     common_path = common_prefix.strip() + "*" + suffix
     return common_path
+
+
+def bfs_removedirs(root_dir):
+    for dirpath, _, _ in os.walk(root_dir, topdown=False):
+        try:
+            os.rmdir(dirpath)
+        except OSError:
+            pass
