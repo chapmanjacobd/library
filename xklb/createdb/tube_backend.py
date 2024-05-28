@@ -382,8 +382,8 @@ def download(args, m) -> None:
             "fragment": lambda n: 0.04 * (2**n),
         },
         "outtmpl": {
-            "default": out_dir("%(id).220B.%(ext)s"),
-            "chapter": out_dir("%(id).220B.%(section_number)03d.%(ext)s"),
+            "default": out_dir("%(uploader,uploader_id)s/%(id).220B.%(ext)s"),
+            "chapter": out_dir("%(uploader,uploader_id)s/%(id).220B.%(section_number)03d.%(ext)s"),
         },
     }
 
