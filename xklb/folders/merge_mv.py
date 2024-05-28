@@ -31,6 +31,13 @@ def mcp_file(args, source, destination):
                 except IsADirectoryError:
                     # attempting to replace directory with file of same name: move the file inside folder instead
                     destination = os.path.join(destination, os.path.basename(destination))
+                except PermissionError:
+                    if os.path.isdir(destination):
+                        # Mac OS IsADirectoryError is a PermissionError
+                        destination = os.path.join(destination, os.path.basename(destination))
+                    else:
+                        print("PermissionError: skipping", source, "could not delete", destination)
+                        return
             elif args.replace is False:
                 print("not replacing", destination)
                 return
@@ -65,7 +72,9 @@ def merge_mv():
     args.cp_args = cp_args(args)
     args.destination = os.path.realpath(args.destination)
 
-    sources = (os.path.realpath(s) + ("/" if s.endswith("/") else "") for s in args.paths)  # preserve trailing slash
+    sources = (
+        os.path.realpath(s) + (os.sep if s.endswith(os.sep) else "") for s in args.paths
+    )  # preserve trailing slash
     for source in sources:
         if os.path.isdir(source):
             for p in file_utils.rglob(source, args.ext or None)[0]:
