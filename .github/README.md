@@ -97,7 +97,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v2.8.046; 77 subcommands)
+    library (v2.8.047; 78 subcommands)
 
     Create database subcommands:
     ╭───────────────┬──────────────────────────────────────────╮
@@ -146,23 +146,25 @@ To stop playing press Ctrl+C in either the terminal or mpv
     ╰──────────────────┴──────────────────────────────────────────────╯
 
     Folder subcommands:
-    ╭─────────────────┬────────────────────────────────────────────────────────────╮
-    │ merge-folders   │ Merge two or more file trees                               │
-    ├─────────────────┼────────────────────────────────────────────────────────────┤
-    │ relmv           │ Move files preserving parent folder hierarchy              │
-    ├─────────────────┼────────────────────────────────────────────────────────────┤
-    │ mergerfs-cp     │ cp files with reflink on mergerfs                          │
-    ├─────────────────┼────────────────────────────────────────────────────────────┤
-    │ scatter         │ Scatter files between folders or disks                     │
-    ├─────────────────┼────────────────────────────────────────────────────────────┤
-    │ mv-list         │ Find specific folders to move to different disks           │
-    ├─────────────────┼────────────────────────────────────────────────────────────┤
-    │ mount-stats     │ Show some relative mount stats                             │
-    ├─────────────────┼────────────────────────────────────────────────────────────┤
-    │ big-dirs        │ Show large folders                                         │
-    ├─────────────────┼────────────────────────────────────────────────────────────┤
-    │ similar-folders │ Find similar folders based on folder name, size, and count │
-    ╰─────────────────┴────────────────────────────────────────────────────────────╯
+    ╭─────────────────┬─────────────────────────────────────────────────────────────────────╮
+    │ merge-mv        │ Move files and merge folders in BSD/rsync style, rename if possible │
+    ├─────────────────┼─────────────────────────────────────────────────────────────────────┤
+    │ merge-folders   │ Merge two or more file trees, check for conflicts before merging    │
+    ├─────────────────┼─────────────────────────────────────────────────────────────────────┤
+    │ rel-mv          │ Move files preserving parent folder hierarchy                       │
+    ├─────────────────┼─────────────────────────────────────────────────────────────────────┤
+    │ mergerfs-cp     │ cp files with reflink on mergerfs                                   │
+    ├─────────────────┼─────────────────────────────────────────────────────────────────────┤
+    │ scatter         │ Scatter files between folders or disks                              │
+    ├─────────────────┼─────────────────────────────────────────────────────────────────────┤
+    │ mv-list         │ Find specific folders to move to different disks                    │
+    ├─────────────────┼─────────────────────────────────────────────────────────────────────┤
+    │ mount-stats     │ Show some relative mount stats                                      │
+    ├─────────────────┼─────────────────────────────────────────────────────────────────────┤
+    │ big-dirs        │ Show large folders                                                  │
+    ├─────────────────┼─────────────────────────────────────────────────────────────────────┤
+    │ similar-folders │ Find similar folders based on folder name, size, and count          │
+    ╰─────────────────┴─────────────────────────────────────────────────────────────────────╯
 
     File subcommands:
     ╭────────────────┬─────────────────────────────────────────────────────╮
@@ -1126,9 +1128,24 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 ### Folder subcommands
 
+###### merge-mv
+
+<details><summary>Move files and merge folders in BSD/rsync style, rename if possible</summary>
+
+    $ library merge-mv -h
+    usage: library merge-mv SOURCE ... DEST [--simulate] [--replace | --no-replace] [--ext EXT]
+
+Move files BSD-style
+
+    library merge-mv folder1  folder2/  # folder1 will go inside folder2
+    library merge-mv folder1/ folder2/  # folder1 will be merged with folder2
+
+
+</details>
+
 ###### merge-folders
 
-<details><summary>Merge two or more file trees</summary>
+<details><summary>Merge two or more file trees, check for conflicts before merging</summary>
 
     $ library merge-folders -h
     usage: library merge-folders [--replace] [--no-replace] [--simulate] SOURCES ... DESTINATION
@@ -1144,12 +1161,12 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 </details>
 
-###### relmv
+###### rel-mv
 
 <details><summary>Move files preserving parent folder hierarchy</summary>
 
-    $ library relmv -h
-    usage: library relmv [--simulate] SOURCE ... DEST
+    $ library rel-mv -h
+    usage: library rel-mv [--simulate] SOURCE ... DEST
 
     Move files/folders without losing hierarchy metadata
 
