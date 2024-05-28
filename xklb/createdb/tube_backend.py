@@ -203,9 +203,7 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> list[dict]
                 "check_formats": False,
                 "skip_download": True,
                 "outtmpl": {
-                    "default": str(
-                        Path(f"{consts.SUB_TEMP_DIR}/%(id).60B.%(ext)s"),
-                    ),
+                    "default": out_dir("/%(id).60B.%(ext)s"),
                 },
                 "ignoreerrors": True,
             },
