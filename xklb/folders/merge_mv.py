@@ -1,13 +1,13 @@
 import os, shutil, sys
 
 from xklb import usage
-from xklb.utils import arggroups, argparse_utils, devices, file_utils
-from xklb.utils.path_utils import bfs_removedirs
+from xklb.utils import arggroups, argparse_utils, devices, file_utils, path_utils
+from xklb.utils.log_utils import log
 
 
 def parse_args():
     parser = argparse_utils.ArgumentParser(usage=usage.merge_mv)
-    parser.add_argument("--copy", "--cp", "-c", action="store_true", help="Copy files")
+    parser.add_argument("--copy", "--cp", "-c", action="store_true", help="Copy instead of move")
     parser.add_argument("--simulate", "--dry-run", action="store_true", help="Dry run")
     arggroups.clobber(parser)
     arggroups.debug(parser)
@@ -19,11 +19,15 @@ def parse_args():
     return args
 
 
-def mcp_file(args, source, destination):
+def mmv_file(args, source, destination):
     src_dest = [source, destination]
     if args.simulate:
         print(*args.cp_args, *src_dest)
     else:
+        if source == destination:
+            log.info("Destination is the same as source %s", destination)
+            return
+
         if os.path.exists(destination):
             if args.replace is True:
                 try:
@@ -36,16 +40,16 @@ def mcp_file(args, source, destination):
                         # Mac OS IsADirectoryError is a PermissionError
                         destination = os.path.join(destination, os.path.basename(destination))
                     else:
-                        print("PermissionError: skipping", source, "could not delete", destination)
+                        log.error("PermissionError: skipping %s could not delete %s", source, destination)
                         return
             elif args.replace is False:
-                print("not replacing", destination)
+                log.warning("not replacing %s", destination)
                 return
             elif args.replace is None:
                 if devices.confirm("Overwrite file? %s" % destination):
                     os.unlink(destination)
                 else:
-                    print("not replacing", destination)
+                    log.warning("not replacing %s", destination)
                     return
         else:
             os.makedirs(os.path.dirname(destination), exist_ok=True)
@@ -81,12 +85,15 @@ def merge_mv():
                 cp_dest = args.destination
                 if not source.endswith(os.sep):  # use BSD behavior
                     cp_dest = os.path.join(cp_dest, os.path.basename(source))
-                cp_dest = os.path.join(cp_dest, os.path.dirname(os.path.relpath(p, source)), os.path.basename(p))
+                cp_dest = os.path.join(cp_dest, os.path.relpath(p, source))
 
-                mcp_file(args, p, cp_dest)
-            bfs_removedirs(source)
+                mmv_file(args, p, cp_dest)
+
+            if not args.copy:
+                path_utils.bfs_removedirs(source)
         else:
-            mcp_file(args, source, args.destination)
+            cp_dest = os.path.join(args.destination, os.path.basename(source))
+            mmv_file(args, source, cp_dest)
 
 
 def merge_cp():
