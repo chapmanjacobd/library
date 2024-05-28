@@ -1,7 +1,8 @@
+import shutil
 import os, sys
 
 from xklb import usage
-from xklb.utils import arggroups, argparse_utils, file_utils, processes
+from xklb.utils import arggroups, argparse_utils, devices, file_utils, processes
 from xklb.utils.path_utils import bfs_removedirs
 
 
@@ -24,8 +25,29 @@ def mcp_file(args, source, destination):
     if args.simulate:
         print(*args.cp_args, *src_dest)
     else:
-        os.makedirs(os.path.dirname(destination), exist_ok=True)
-        processes.cmd(*args.cp_args, *src_dest, strict=False, quiet=False, error_verbosity=2)
+        if os.path.exists(destination):
+            if args.replace is True:
+                try:
+                    os.unlink(destination)
+                except IsADirectoryError:
+                    # attempting to replace directory with file of same name: move the file inside folder instead
+                    destination = os.path.join(destination, os.path.basename(destination))
+            elif args.replace is False:
+                print('not replacing', destination)
+                return
+            elif args.replace is None:
+                if devices.confirm('Overwrite file? %s' % destination):
+                    os.unlink(destination)
+                else:
+                    print('not replacing', destination)
+                    return
+        else:
+            os.makedirs(os.path.dirname(destination), exist_ok=True)
+
+        if args.copy:
+            shutil.copy2(source, destination)
+        else:
+            file_utils.rename_move_file(source, destination)
 
 
 def cp_args(args):
