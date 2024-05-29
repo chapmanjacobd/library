@@ -49,7 +49,15 @@ def search_db() -> None:
     args.filter_bindings = {}
 
     columns = args.db[args.search_table].columns_dict
-    sql_utils.construct_search_bindings(args, columns)
+    search_sql, search_bindings = sql_utils.construct_search_bindings(
+        include=args.include,
+        exclude=args.exclude,
+        columns=columns,
+        exact=args.exact,
+        flexible_search=args.flexible_search,
+    )
+    args.filter_sql.extend(search_sql)
+    args.filter_bindings = {**args.filter_bindings, **search_bindings}
 
     if args.delete_rows:  # TODO: replace with media_printer?
         deleted_count = 0

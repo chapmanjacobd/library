@@ -248,8 +248,16 @@ def construct_captions_search_query(args) -> tuple[str, dict]:
         c_columns = {**c_columns, "rank": int}
         cols.append("id")
         cols.append("rank")
-    else:
-        sql_utils.construct_search_bindings(args, ["text"])
+        search_sql = []
+    else:  # only exclude or no-fts
+        search_sql, search_bindings = sql_utils.construct_search_bindings(
+            include=args.search_captions,
+            exclude=args.exclude,
+            columns=['text'],
+            exact=args.exact,
+            flexible_search=args.flexible_search,
+        )
+        args.filter_bindings = {**args.filter_bindings, **search_bindings}
 
     args.select = [c for c in cols if c in {**c_columns, **m_columns, **{"*": "Any"}}]
 
@@ -258,7 +266,7 @@ def construct_captions_search_query(args) -> tuple[str, dict]:
     query = f"""WITH c as (
         SELECT * FROM {table} m
         WHERE 1=1
-            {" ".join(s for s in args.filter_sql if 'time_deleted' not in s)}
+            {" ".join(search_sql)}
     )
     SELECT
         {select_sql}
@@ -278,26 +286,25 @@ def construct_playlists_query(args) -> tuple[str, dict]:
     pl_columns = db_utils.columns(args, "playlists")
 
     pl_table = "playlists"
-    if args.db["playlists"].detect_fts():
-        if args.include:
-            pl_table, search_bindings = sql_utils.fts_search_sql(
-                "playlists",
-                fts_table=args.db["playlists"].detect_fts(),
-                include=args.include,
-                exclude=args.exclude,
-                flexible=args.flexible_search,
-            )
-            args.filter_bindings = {**args.filter_bindings, **search_bindings}
-        elif args.exclude:
-            sql_utils.construct_search_bindings(
-                args,
-                [k for k in pl_columns if k in db_utils.config["playlists"]["search_columns"] if k in pl_columns],
-            )
-    else:
-        sql_utils.construct_search_bindings(
-            args,
-            [k for k in pl_columns if k in db_utils.config["playlists"]["search_columns"] if k in pl_columns],
+    if args.db["playlists"].detect_fts() and args.include:
+        pl_table, search_bindings = sql_utils.fts_search_sql(
+            "playlists",
+            fts_table=args.db["playlists"].detect_fts(),
+            include=args.include,
+            exclude=args.exclude,
+            flexible=args.flexible_search,
         )
+        args.filter_bindings = {**args.filter_bindings, **search_bindings}
+    else:  # only exclude or no-fts
+        search_sql, search_bindings = sql_utils.construct_search_bindings(
+            include=args.include,
+            exclude=args.exclude,
+            columns=[k for k in pl_columns if k in db_utils.config["playlists"]["search_columns"] if k in pl_columns],
+            exact=args.exact,
+            flexible_search=args.flexible_search,
+        )
+        args.filter_sql.extend(search_sql)
+        args.filter_bindings = {**args.filter_bindings, **search_bindings}
 
     query = f"""SELECT *
     FROM {pl_table} m
