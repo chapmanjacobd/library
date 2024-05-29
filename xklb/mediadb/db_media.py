@@ -50,7 +50,7 @@ def consolidate(v: dict) -> dict | None:
 
     v = objects.flatten_dict(v, passthrough_keys=["automatic_captions", "http_headers", "subtitles"])
 
-    upload_date = date_utils.tube_date(v)
+    upload_time = date_utils.tube_date(v)
 
     cv = {}
     cv["playlists_id"] = v.pop("playlists_id", None)  # not to be confused with yt-dlp playlist_id
@@ -67,7 +67,7 @@ def consolidate(v: dict) -> dict | None:
     cv["size"] = 0 if not size_bytes else int(size_bytes)
     duration = v.pop("duration", None)
     cv["duration"] = 0 if not duration else int(duration)
-    cv["time_uploaded"] = upload_date
+    cv["time_uploaded"] = upload_time
     cv["time_created"] = iterables.safe_unpack(v.pop("time_created", None), consts.now())
     cv["time_modified"] = 0  # this should be 0 if the file has never been downloaded
     cv["time_deleted"] = 0
