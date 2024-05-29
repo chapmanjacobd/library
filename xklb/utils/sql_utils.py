@@ -321,64 +321,63 @@ def fts_search_sql(table, fts_table, include, exclude=None, flexible=False):
     return table, bound_parameters
 
 
-def construct_search_bindings(args, columns, include=None) -> None:
+def construct_search_bindings(include, exclude, columns, exact=False, flexible_search=False):
     param_key = consts.random_string()
+
+    sql = []
+    bindings = {}
 
     incl = ":" + param_key + "include{0}"
     includes = "(" + " OR ".join([f"{col} LIKE {incl}" for col in columns]) + ")"
     includes_sql_parts = []
-    for idx, inc in enumerate(include or args.include):
+    for idx, inc in enumerate(include):
         includes_sql_parts.append(includes.format(idx))
-        if getattr(args, "exact", False):
-            args.filter_bindings[f"{param_key}include{idx}"] = inc
+        if exact:
+            bindings[f"{param_key}include{idx}"] = inc
         else:
-            args.filter_bindings[f"{param_key}include{idx}"] = "%" + inc.replace(" ", "%").replace("%%", " ") + "%"
-    join_op = " OR " if getattr(args, "flexible_search", False) else " AND "
+            bindings[f"{param_key}include{idx}"] = "%" + inc.replace(" ", "%").replace("%%", " ") + "%"
+    join_op = " OR " if flexible_search else " AND "
     if len(includes_sql_parts) > 0:
-        args.filter_sql.append("AND (" + join_op.join(includes_sql_parts) + ")")
+        sql.append("AND (" + join_op.join(includes_sql_parts) + ")")
 
     excl = ":" + param_key + "exclude{0}"
     excludes = "AND (" + " AND ".join([f"COALESCE({col},'') NOT LIKE {excl}" for col in columns]) + ")"
-    for idx, exc in enumerate(args.exclude):
-        args.filter_sql.append(excludes.format(idx))
-        if getattr(args, "exact", False):
-            args.filter_bindings[f"{param_key}exclude{idx}"] = exc
+    for idx, exc in enumerate(exclude):
+        sql.append(excludes.format(idx))
+        if exact:
+            bindings[f"{param_key}exclude{idx}"] = exc
         else:
-            args.filter_bindings[f"{param_key}exclude{idx}"] = "%" + exc.replace(" ", "%").replace("%%", " ") + "%"
+            bindings[f"{param_key}exclude{idx}"] = "%" + exc.replace(" ", "%").replace("%%", " ") + "%"
+
+    return sql, bindings
 
 
 def search_filter(args, m_columns, table_prefix="m."):
     table = "media"
-    if args.db["media"].detect_fts() and args.fts:
-        if args.include:
-            table, search_bindings = fts_search_sql(
-                "media",
-                fts_table=args.db["media"].detect_fts(),
-                include=args.include,
-                exclude=args.exclude,
-                flexible=args.flexible_search,
-            )
-            args.filter_bindings = {**args.filter_bindings, **search_bindings}
-            m_columns = {**m_columns, "rank": int}
-        elif args.exclude:
-            construct_search_bindings(
-                args,
-                [
-                    f"{table_prefix}{k}"
-                    for k in m_columns
-                    if k in db_utils.config["media"]["search_columns"]
-                    if k in m_columns
-                ],
-            )
-    else:
-        construct_search_bindings(
-            args,
-            [
+    if args.db["media"].detect_fts() and args.fts and args.include:
+        table, search_bindings = fts_search_sql(
+            "media",
+            fts_table=args.db["media"].detect_fts(),
+            include=args.include,
+            exclude=args.exclude,
+            flexible=args.flexible_search,
+        )
+        args.filter_bindings = {**args.filter_bindings, **search_bindings}
+        m_columns = {**m_columns, "rank": int}
+    else:  # only exclude or no-fts
+        search_sql, search_bindings = construct_search_bindings(
+            include=args.include,
+            exclude=args.exclude,
+            columns=[
                 f"{table_prefix}{k}"
                 for k in m_columns
                 if k in db_utils.config["media"]["search_columns"]
                 if k in m_columns
             ],
+            exact=args.exact,
+            flexible_search=args.flexible_search,
         )
+        args.filter_sql.extend(search_sql)
+        args.filter_bindings = {**args.filter_bindings, **search_bindings}
 
     return table, m_columns

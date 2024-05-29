@@ -103,11 +103,15 @@ def parse_args() -> argparse.Namespace:
     m_columns = db_utils.columns(args, "media")
     if args.compare_dirs:
         args.table2 = "media"
-        sql_utils.construct_search_bindings(
-            args,
-            [f"m2.{k}" for k in m_columns if k in db_utils.config["media"]["search_columns"] if k in m_columns],
+        search_sql, search_bindings = sql_utils.construct_search_bindings(
             include=[args.include.pop()],
+            exclude=args.exclude,
+            columns=[f"m2.{k}" for k in m_columns if k in db_utils.config["media"]["search_columns"] if k in m_columns],
+            exact=args.exact,
+            flexible_search=args.flexible_search,
         )
+        args.filter_sql.extend(search_sql)
+        args.filter_bindings = {**args.filter_bindings, **search_bindings}
     else:
         args.table2, _ = sql_utils.search_filter(args, m_columns, table_prefix="m2.")
     args.table, _ = sql_utils.search_filter(args, m_columns, table_prefix="m1.")
