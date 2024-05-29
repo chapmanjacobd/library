@@ -236,11 +236,11 @@ def construct_captions_search_query(args) -> tuple[str, dict]:
     cols = args.cols or ["path", "text", "time", "title"]
 
     is_fts = args.db["captions"].detect_fts()
-    if is_fts and args.include:
+    if is_fts and args.search_captions:
         table, search_bindings = sql_utils.fts_search_sql(
             "captions",
             fts_table=is_fts,
-            include=args.include,
+            include=args.search_captions,
             exclude=args.exclude,
             flexible=args.flexible_search,
         )
@@ -258,7 +258,7 @@ def construct_captions_search_query(args) -> tuple[str, dict]:
     query = f"""WITH c as (
         SELECT * FROM {table} m
         WHERE 1=1
-            {" ".join(args.filter_sql)}
+            {" ".join(s for s in args.filter_sql if 'time_deleted' not in s)}
     )
     SELECT
         {select_sql}

@@ -8,6 +8,7 @@ from xklb.utils import iterables, nums
 def tube_date(v):
     upload_date = iterables.safe_unpack(
         v.pop("release_date", None),
+        v.pop("timestamp", None),
         v.pop("upload_date", None),
         v.pop("date", None),
         v.pop("created_at", None),
@@ -15,6 +16,9 @@ def tube_date(v):
         v.pop("updated", None),
     )
     if upload_date:
+        if isinstance(upload_date, int) and upload_date > 30000000:
+            return upload_date
+
         if isinstance(upload_date, datetime.datetime):
             upload_date = nums.to_timestamp(upload_date)
         else:
