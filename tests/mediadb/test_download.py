@@ -1,3 +1,5 @@
+import os
+from unittest import skip
 from tests.utils import connect_db_args
 from xklb.createdb.tube_add import tube_add
 from xklb.lb import library as lb
@@ -7,7 +9,7 @@ STORAGE_PREFIX = "tests/data/"
 
 dl_db = "tests/data/dl.db"
 
-
+@skip("network")
 def test_yt():
     tube_add([dl_db, URL])
     lb(
@@ -16,7 +18,7 @@ def test_yt():
             dl_db,
             "--video",
             f"--prefix={STORAGE_PREFIX}",
-            "--no-write-thumbnail",  # TODO: test that yt-dlp option is forwarded
+            "--write-thumbnail",
             "--force",
             "--subs",
             "-s",
@@ -28,3 +30,7 @@ def test_yt():
 
     captions = list(args.db.query("select * from captions"))
     assert {"media_id": 2, "time": 3, "text": "For more information contact phihag@phihag.de"} in captions
+
+    video_id = "BaW_jenozKc"
+    thumbnail_path = os.path.join(STORAGE_PREFIX, "Youtube", "Philipp Hagemeister", f"{video_id}.jpg")
+    assert os.path.exists(thumbnail_path), "Thumbnail file does not exist"
