@@ -1,8 +1,8 @@
 import unittest
 from unittest.mock import patch
 
-
 from xklb.utils import consts, db_utils, sql_utils
+
 
 def test_includes():
     with patch.object(consts, "random_string", return_value=""):
@@ -19,12 +19,8 @@ def test_includes():
 def test_exact_match():
     with patch.object(consts, "random_string", return_value=""):
         search_sql, search_bindings = sql_utils.construct_search_bindings(
-            include=["test"],
-            exclude=[],
-            columns=["col1"],
-            exact = True
+            include=["test"], exclude=[], columns=["col1"], exact=True
         )
-
 
     assert "col1 LIKE :include0" in search_sql[0]
     assert search_bindings["include0"] == "test"
@@ -38,22 +34,15 @@ def test_excludes():
             columns=["col1", "col2"],
         )
 
-
-    assert (
-        "AND (COALESCE(col1,'') NOT LIKE :exclude0 AND COALESCE(col2,'') NOT LIKE :exclude0)" in search_sql[0]
-    )
+    assert "AND (COALESCE(col1,'') NOT LIKE :exclude0 AND COALESCE(col2,'') NOT LIKE :exclude0)" in search_sql[0]
     assert search_bindings["exclude0"] == "%test%"
 
 
 def test_exact_exclude():
     with patch.object(consts, "random_string", return_value=""):
         search_sql, search_bindings = sql_utils.construct_search_bindings(
-            include=[],
-            exclude=["test"],
-            columns=["col1"],
-            exact=True
+            include=[], exclude=["test"], columns=["col1"], exact=True
         )
-
 
     assert "AND (COALESCE(col1,'') NOT LIKE :exclude0)" in search_sql[0]
     assert search_bindings["exclude0"] == "test"

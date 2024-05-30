@@ -13,6 +13,8 @@ def parse_args() -> argparse.Namespace:
     parser = argparse_utils.ArgumentParser(prog="library process-ffmpeg", usage=usage.process_ffmpeg)
     arggroups.simulate(parser)
     arggroups.process_ffmpeg(parser)
+    parser.add_argument("--preset", default="7")
+    parser.add_argument("--crf", default="40")
     arggroups.debug(parser)
 
     arggroups.paths_or_stdin(parser)
@@ -103,7 +105,7 @@ def process_path(args, path, **kwargs):
     ff_opts: list[str] = []
 
     if video_stream:
-        ff_opts.extend(["-c:v", "libsvtav1", "-preset", "8", "-crf", "44"])
+        ff_opts.extend(["-c:v", "libsvtav1", "-preset", args.preset, "-crf", args.crf])
 
         width = int(video_stream.get("width"))
         height = int(video_stream.get("height"))
