@@ -743,6 +743,9 @@ def multiple_playback_post(args):
     if args.multiple_playback > 1:
         args.gui = True
 
+        if "fullscreen" in args.defaults:
+            args.fullscreen = False
+
 
 def extractor(parent_parser):
     parser = parent_parser.add_argument_group("Extractor")
