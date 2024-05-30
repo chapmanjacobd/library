@@ -79,6 +79,7 @@ def process_path(args, path, **kwargs):
     album_art_stream = next((s for s in probe.video_streams if is_album_art(s)), None)
     video_stream = next((s for s in probe.video_streams if not is_album_art(s)), None)
     audio_stream = next((s for s in probe.audio_streams), None)
+    subtitle_stream = next((s for s in probe.subtitle_streams), None)
     if not video_stream:
         log.warning("No video stream found: %s", path)
         if args.delete_no_video:
@@ -200,6 +201,9 @@ def process_path(args, path, **kwargs):
             else:
                 is_split = False
 
+    if subtitle_stream:
+        ff_opts.extend(["-c:s", "copy"])
+
     if path.parent != output_path.parent:
         log.warning("Output folder will be different due to path cleaning: %s", output_path.parent)
         output_path.parent.mkdir(exist_ok=True, parents=True)
@@ -213,7 +217,13 @@ def process_path(args, path, **kwargs):
         "-y",
         "-i",
         str(path),
+        "-movflags",
+        "use_metadata_tags",
         *ff_opts,
+        "-map",
+        "0",
+        "-map_metadata",
+        "0",
         str(output_path),
     ]
 
