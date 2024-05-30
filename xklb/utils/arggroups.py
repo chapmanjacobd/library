@@ -571,6 +571,9 @@ def playback(parent_parser):
         action="store_true",
         help="Loop media after reaching end (useful for curation activities like multiple-playback)",
     )
+    parser.add_argument(
+        "--fullscreen", "--fs", action=argparse.BooleanOptionalAction, default=True, help="Open videos in fullscreen"
+    )
     parser.add_argument("--pause", action="store_true", help="Start media paused")
     parser.add_argument(
         "--start",
@@ -734,9 +737,6 @@ For example in KDE:
     parser.add_argument("--screen-name", help="Playback on a specific display")
     parser.add_argument("--hstack", action="store_true", help="Force videos to stack horizontally")
     parser.add_argument("--vstack", action="store_true", help="Force videos to stack vertically")
-    parser.add_argument(
-        "--fullscreen", "--fs", action=argparse.BooleanOptionalAction, default=True, help="Open videos in fullscreen"
-    )
 
 
 def multiple_playback_post(args):
