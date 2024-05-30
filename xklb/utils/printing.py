@@ -8,7 +8,7 @@ from xklb.utils import consts, web
 
 
 def print_overwrite(*text):
-    if consts.PYTEST_RUNNING:
+    if consts.PYTEST_RUNNING or not sys.stdout.isatty():
         pass
     elif os.name == "posix":
         print("\r" + text[0], *text[1:], end="\033[K", flush=True)
