@@ -253,7 +253,7 @@ def construct_captions_search_query(args) -> tuple[str, dict]:
         search_sql, search_bindings = sql_utils.construct_search_bindings(
             include=args.search_captions,
             exclude=args.exclude,
-            columns=['text'],
+            columns=["text"],
             exact=args.exact,
             flexible_search=args.flexible_search,
         )
