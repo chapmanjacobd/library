@@ -24,8 +24,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--table", action="store_true")
 
     parser.set_defaults(print="p")
-
     arggroups.debug(parser)
+
     arggroups.database(parser)
     parser.add_argument("search_captions", nargs="*")
     args = parser.parse_intermixed_args()
