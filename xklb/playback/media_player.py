@@ -424,12 +424,10 @@ class MediaPrefetcher:
                 elif args.action in (SC.watch):
                     player.extend(["--force-window=yes", "--really-quiet=yes"])
 
-                multiple_playback = getattr(args, "multiple_playback", None)
-                if multiple_playback and multiple_playback < 2:
-                    if args.fullscreen:
-                        player.extend(["--fullscreen=yes"])
-                    else:
-                        player.extend(["--fullscreen=no"])
+                if args.fullscreen:
+                    player.extend(["--fullscreen=yes"])
+                else:
+                    player.extend(["--fullscreen=no"])
 
                 if getattr(args, "loop", False):
                     player.extend(["--loop-file=inf"])
