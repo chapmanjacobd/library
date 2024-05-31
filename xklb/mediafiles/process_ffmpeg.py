@@ -65,7 +65,13 @@ def process_path(args, path, **kwargs):
 
     path = Path(path)
     original_stats = path.stat()
-    probe = processes.FFProbe(path)
+    try:
+        probe = processes.FFProbe(path)
+    except processes.UnplayableFile:
+        if args.delete_unplayable:
+            path.unlink()
+            return None
+        raise
 
     if not probe.streams:
         log.error("No media streams found: %s", path)
