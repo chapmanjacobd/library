@@ -1,5 +1,5 @@
 import os
-from unittest import skip
+
 from tests.utils import connect_db_args
 from xklb.createdb.tube_add import tube_add
 from xklb.lb import library as lb
@@ -8,6 +8,7 @@ URL = "https://www.youtube.com/watch?v=BaW_jenozKc"
 STORAGE_PREFIX = "tests/data/"
 
 dl_db = "tests/data/dl.db"
+
 
 def test_yt():
     tube_add([dl_db, URL])

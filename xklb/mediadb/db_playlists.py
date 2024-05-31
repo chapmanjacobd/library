@@ -16,11 +16,11 @@ media table
 
 
 def consolidate(args, v: dict) -> dict:
-    upload_date = date_utils.tube_date(v)
+    upload_time = date_utils.tube_date(v)
 
     cv = {}
     cv["profile"] = iterables.safe_unpack(getattr(args, "profile", None), v.pop("profile", None))
-    cv["time_uploaded"] = upload_date
+    cv["time_uploaded"] = upload_time
     cv["time_modified"] = consts.now()
     cv["time_deleted"] = 0
 

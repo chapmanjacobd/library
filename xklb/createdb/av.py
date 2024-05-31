@@ -181,9 +181,9 @@ def munge_av_tags(args, path) -> dict:
         upload_date = tags.get("DATE")
         if upload_date:
             try:
-                upload_date = nums.to_timestamp(datetime.strptime(upload_date, "%Y%m%d"))
+                upload_time = nums.to_timestamp(datetime.strptime(upload_date, "%Y%m%d"))
             except Exception:
-                upload_date = None
+                upload_time = None
 
         tags = objects.dict_filter_bool(
             {
@@ -196,7 +196,7 @@ def munge_av_tags(args, path) -> dict:
                     tags.get("COMMENT"),
                     tags.get("comment"),
                 ),
-                "time_uploaded": upload_date,
+                "time_uploaded": upload_time,
             },
         )
 
