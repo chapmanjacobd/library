@@ -179,11 +179,12 @@ def munge_av_tags(args, path) -> dict:
     tags = format_.pop("tags", None)
     if tags:
         upload_date = tags.get("DATE")
+        upload_time = None
         if upload_date:
             try:
                 upload_time = nums.to_timestamp(datetime.strptime(upload_date, "%Y%m%d"))
             except Exception:
-                upload_time = None
+                pass
 
         tags = objects.dict_filter_bool(
             {
