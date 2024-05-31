@@ -184,6 +184,7 @@ def transcode(args, path) -> str:
     r = processes.cmd_interactive(
         "ffmpeg",
         "-nostdin",
+        "-hide_banner",
         "-loglevel",
         "error",
         "-stats",
