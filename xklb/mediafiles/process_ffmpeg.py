@@ -231,6 +231,7 @@ def process_path(args, path, **kwargs):
         "0",
         "-map_metadata",
         "0",
+        "-dn",
         str(output_path),
     ]
 
