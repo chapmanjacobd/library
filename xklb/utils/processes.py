@@ -176,7 +176,17 @@ class UnplayableFile(RuntimeError):
 
 class FFProbe:
     def __init__(self, path, *args):
-        args = ["ffprobe", "-hide_banner", "-show_format", "-show_streams", "-show_chapters", "-of", "json", *args, path]
+        args = [
+            "ffprobe",
+            "-hide_banner",
+            "-show_format",
+            "-show_streams",
+            "-show_chapters",
+            "-of",
+            "json",
+            *args,
+            path,
+        ]
         p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         out, err = p.communicate()
