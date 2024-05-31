@@ -167,6 +167,7 @@ def process_path(args, path, **kwargs):
                 result = subprocess.check_output(
                     [
                         "ffmpeg",
+                        "-hide_banner",
                         "-v",
                         "warning",
                         "-i",

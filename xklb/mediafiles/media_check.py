@@ -30,6 +30,7 @@ def decode_quick_scan(path, scans, scan_duration=3):
         proc = processes.cmd(
             "ffmpeg",
             "-nostdin",
+            "-hide_banner",
             "-nostats",
             "-xerror",
             "-v",
@@ -73,6 +74,7 @@ def decode_full_scan(path, audio_scan=False, frames="frames", threads=None):
                 processes.cmd(
                     "ffmpeg",
                     "-nostdin",
+                    "-hide_banner",
                     "-nostats",
                     "-v",
                     "16",
