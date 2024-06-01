@@ -23,10 +23,21 @@ def parse_args():
     return args
 
 
-def decode_quick_scan(path, scans, scan_duration=3):
+def decode_quick_scan(path, scans, scan_duration=3, audio_scan=False):
     assert which("ffmpeg")
 
     def decode(scan):
+        opts = []
+        if audio_scan:
+            opts += [
+                '-map',
+                '0:a',
+                "-c:a",
+                "copy",
+                "-map_metadata",
+                "-1",
+            ]
+
         proc = processes.cmd(
             "ffmpeg",
             "-nostdin",
@@ -43,6 +54,7 @@ def decode_quick_scan(path, scans, scan_duration=3):
             path,
             "-t",
             str(scan_duration),
+            *opts,
             "-f",
             "null",
             os.devnull,
@@ -80,7 +92,9 @@ def decode_full_scan(path, audio_scan=False, frames="frames", threads=None):
                     "16",
                     "-i",
                     path,
-                    "-acodec",
+                    '-map',
+                    '0:a',
+                    "-c:a",
                     "copy",
                     "-map_metadata",
                     "-1",
@@ -152,7 +166,12 @@ def calculate_corruption(
         duration = nums.safe_int(processes.FFProbe(path).duration)
         if duration in [None, 0]:
             return 0.5
-        corruption = decode_quick_scan(path, nums.calculate_segments(duration, chunk_size, gap), chunk_size)
+        corruption = decode_quick_scan(
+            path,
+            scans=nums.calculate_segments(duration, chunk_size, gap),
+            scan_duration=chunk_size,
+            audio_scan=audio_scan,
+        )
         if corruption_threshold_exceeded(full_scan_if_corrupt, corruption, duration):
             corruption = decode_full_scan(path, audio_scan=audio_scan, threads=threads)
     return corruption

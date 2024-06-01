@@ -164,7 +164,7 @@ def transcode(args, path) -> str:
         maps = ["-map", "0:v", "-map", "0:a", "-map", "0:" + str(sub_index), "-scodec", "webvtt"]
 
     video_settings = [
-        "-vcodec",
+        "-c:v",
         "h264",
         "-preset",
         "fast",
@@ -192,7 +192,7 @@ def transcode(args, path) -> str:
         path,
         *maps,
         *video_settings,
-        "-acodec",
+        "-c:a",
         "libopus",
         "-ac",
         "2",
