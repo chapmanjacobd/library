@@ -63,23 +63,24 @@ def process_path(args, path):
             ignore_regexps=[
                 imagemagick_errors.ignore_error,
                 imagemagick_errors.unsupported_error,
-                imagemagick_errors.image_error,
+                imagemagick_errors.file_error,
             ],
         )
     except subprocess.CalledProcessError as e:
         error_log = e.stderr.splitlines()
         is_unsupported = any(imagemagick_errors.unsupported_error.match(l) for l in error_log)
-        is_image_error = any(imagemagick_errors.image_error.match(l) for l in error_log)
+        is_file_error = any(imagemagick_errors.file_error.match(l) for l in error_log)
         is_env_error = any(imagemagick_errors.environment_error.match(l) for l in error_log)
 
-        if is_unsupported:
+        if is_env_error:
+            raise
+        elif is_unsupported:
             output_path.unlink(missing_ok=True)  # Remove transcode attempt, if any
             return path
-        elif args.delete_unplayable and not is_env_error and is_image_error:
-            path.unlink()
+        elif is_file_error:
+            if args.delete_unplayable:
+                path.unlink()
             return None
-        else:
-            raise
 
     if not Path(output_path).exists() or output_path.stat().st_size == 0:
         output_path.unlink()  # Remove transcode

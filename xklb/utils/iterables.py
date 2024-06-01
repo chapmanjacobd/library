@@ -44,6 +44,15 @@ def safe_pop(list_, idx=-1) -> Any | None:
     return list_[idx]
 
 
+def safe_len(list_) -> Any | None:
+    if not list_:
+        return 0
+    try:
+        return len(list_)
+    except Exception:
+        return len(str(list_))
+
+
 def get_all_lists(nested_dict):
     list_ = []
 
