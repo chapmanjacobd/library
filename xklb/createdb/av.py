@@ -146,7 +146,7 @@ def munge_av_tags(args, path) -> dict:
     format_.pop("start_time", None)
     format_.pop("filename", None)
 
-    duration = format_.pop("duration", None)
+    duration = probe.duration
 
     corruption = None
     if getattr(args, "check_corrupt", False) and Path(path).suffix.lower() not in consts.SKIP_MEDIA_CHECK:

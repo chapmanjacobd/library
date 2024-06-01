@@ -39,6 +39,15 @@ def safe_int(s) -> int | None:
         return None
 
 
+def safe_float(s) -> float | None:
+    if not s:
+        return None
+    try:
+        return float(s)
+    except Exception:
+        return None
+
+
 def safe_int_float_str(s):
     try:
         return int(s)
