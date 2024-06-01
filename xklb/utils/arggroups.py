@@ -961,6 +961,8 @@ def process_ffmpeg(parent_parser):
     parser.add_argument("--max-image-height", type=int, default=2400)
     parser.add_argument("--max-image-width", type=int, default=2400)
 
+    parser.add_argument("--preset", default="7")
+    parser.add_argument("--crf", default="40")
 
 def process_ffmpeg_post(args):
     args.split_longer_than = nums.human_to_seconds(args.split_longer_than)

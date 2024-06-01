@@ -14,8 +14,6 @@ def parse_args() -> argparse.Namespace:
     parser = argparse_utils.ArgumentParser(prog="library process-ffmpeg", usage=usage.process_ffmpeg)
     arggroups.simulate(parser)
     arggroups.process_ffmpeg(parser)
-    parser.add_argument("--preset", default="7")
-    parser.add_argument("--crf", default="40")
     arggroups.debug(parser)
 
     arggroups.paths_or_stdin(parser)
