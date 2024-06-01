@@ -241,3 +241,12 @@ class FFProbe:
             self.duration = float(self.format["duration"])
         except Exception:
             pass
+
+        if self.duration and self.duration > 0:
+            start = nums.safe_float(self.format.get("start_time")) or 0
+            if start > 0:
+                end = nums.safe_float(self.format.get("end_time")) or 0
+                if end > 0:
+                    self.duration = start - end
+                else:
+                    self.duration -= start

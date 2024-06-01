@@ -187,7 +187,7 @@ def reformat_ffprobe(path):
     if url:
         formatted_output += f"     URL: {url}\n"
 
-    duration = nums.safe_int(probe.format.get("duration")) or 0
+    duration = nums.safe_int(probe.duration) or 0
     if duration > 0:
         start = nums.safe_int(probe.format.get("start_time")) or 0
         if start > 0:
