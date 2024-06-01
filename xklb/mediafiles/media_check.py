@@ -30,8 +30,8 @@ def decode_quick_scan(path, scans, scan_duration=3, audio_scan=False):
         opts = []
         if audio_scan:
             opts += [
-                '-map',
-                '0:a',
+                "-map",
+                "0:a",
                 "-c:a",
                 "copy",
                 "-map_metadata",
@@ -92,8 +92,8 @@ def decode_full_scan(path, audio_scan=False, frames="frames", threads=None):
                     "16",
                     "-i",
                     path,
-                    '-map',
-                    '0:a',
+                    "-map",
+                    "0:a",
                     "-c:a",
                     "copy",
                     "-map_metadata",

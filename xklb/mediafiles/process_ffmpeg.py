@@ -3,6 +3,7 @@ from pathlib import Path
 
 from xklb import usage
 from xklb.createdb.av import is_album_art
+from xklb.data import ffmpeg_errors
 from xklb.mediafiles import process_image
 from xklb.utils import arggroups, argparse_utils, nums, path_utils, processes, web
 from xklb.utils.arg_utils import gen_paths, kwargs_overwrite
@@ -122,8 +123,12 @@ def process_path(args, path, **kwargs):
         elif height > (args.max_height * (1 + args.max_height_buffer)):
             ff_opts.extend(["-vf", f"scale=-2:{args.max_height}"])
 
+        for s in probe.video_streams:
+            if not is_album_art(s):
+                ff_opts.extend(["-map", f'0:{s["index"]}'])
+
     elif album_art_stream:
-        ff_opts.extend(["-c:v", "copy"])
+        ff_opts.extend(["-c:v", "copy", "-map", "0:v"])
 
     is_split = bool(audio_stream)
     if audio_stream:
@@ -207,9 +212,10 @@ def process_path(args, path, **kwargs):
                 ff_opts.extend(["-f", "segment", "-segment_times", final_splits])
             else:
                 is_split = False
+        ff_opts.extend(["-map", "0:a"])
 
     if subtitle_stream:
-        ff_opts.extend(["-c:s", "copy"])
+        ff_opts.extend(["-c:s", "copy", "-map", "0:s"])
 
     if path.parent != output_path.parent:
         log.warning("Output folder will be different due to path cleaning: %s", output_path.parent)
@@ -227,8 +233,6 @@ def process_path(args, path, **kwargs):
         "-movflags",
         "use_metadata_tags",
         *ff_opts,
-        "-map",
-        "0",
         "-map_metadata",
         "0",
         "-dn",
@@ -241,9 +245,16 @@ def process_path(args, path, **kwargs):
     else:
         try:
             processes.cmd(*command)
-        except subprocess.CalledProcessError:
-            log.exception("Could not transcode: %s", path)
-            if args.delete_unplayable:
+        except subprocess.CalledProcessError as e:
+            error_log = e.stderr.splitlines()
+            is_unsupported = any(ffmpeg_errors.unsupported_error.match(l) for l in error_log)
+            is_file_error = any(ffmpeg_errors.file_error.match(l) for l in error_log)
+            is_env_error = any(ffmpeg_errors.environment_error.match(l) for l in error_log)
+
+            if is_unsupported:
+                output_path.unlink(missing_ok=True)  # Remove transcode attempt, if any
+                return path
+            elif args.delete_unplayable and not is_env_error and is_file_error:
                 path.unlink()
                 return None
             else:

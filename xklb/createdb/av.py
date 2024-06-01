@@ -11,7 +11,7 @@ from xklb.utils.log_utils import log
 
 
 def is_album_art(s):
-    return traverse_obj(s, "disposition", "attached_pic") == 1
+    return traverse_obj(s, ["disposition", "attached_pic"]) == 1
 
 
 def get_subtitle_tags(path, streams, codec_types, scan_subtitles=False) -> dict:
