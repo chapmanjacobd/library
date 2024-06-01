@@ -32,6 +32,8 @@ def get_caller_name():
 
 
 def args_post(args, parser, create_db=False):
+    args.ext = [s.lower() for s in args.ext]
+
     args.defaults = {k: v for k, v in args.__dict__.items() if parser.get_default(k) == v}
     settings = {
         k: v
