@@ -32,7 +32,7 @@ unsupported_error = re.compile(
     flags=re.IGNORECASE,
 )
 
-image_error = re.compile(
+file_error = re.compile(
     "|".join(
         r""".*insufficient image data in file
 .*Not enough data

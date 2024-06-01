@@ -1,11 +1,14 @@
 import argparse, json, operator, random
 from pathlib import Path
 
-from xklb.utils import consts, file_utils, iterables
+from xklb.utils import consts, file_utils, iterables, processes
 from xklb.utils.consts import SC
 
 
 def gen_paths(args):
+    if args.paths is None:
+        processes.exit_error("No paths passed in")
+
     if args.from_file:
         for path in args.paths:
             with open(path, "r") as f:
@@ -46,6 +49,9 @@ def gen_paths(args):
 
 
 def gen_d(args):
+    if args.paths is None:
+        processes.exit_error("No data passed in")
+
     if args.from_file:
         for path in args.paths:
             with open(path, "r") as f:

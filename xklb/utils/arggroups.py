@@ -47,7 +47,14 @@ def args_post(args, parser, create_db=False):
     log_args = objects.dict_filter_bool(settings)
     if log_args:
         max_v = 140
-        log.info({k: v if len(str(v)) < max_v else textwrap.shorten(str(v), max_v) for k, v in log_args.items()})
+        log.info(
+            {
+                k: v
+                if len(str(v)) < max_v
+                else textwrap.shorten(str(v), max_v, placeholder=f"[{iterables.safe_len(v)} items]")
+                for k, v in log_args.items()
+            }
+        )
 
     args.action = get_caller_name()
 
