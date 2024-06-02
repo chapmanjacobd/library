@@ -391,6 +391,17 @@ tabs_open = """library tabs-open DATABASE
 
         echo 'fish -c "export DISPLAY=:0 && library tabs /full/path/to/tabs.db"' | at NOW
 
+    Also, if you're just testing things out be aware that `tabs-add` assumes that you visited the
+    website right before adding it; eg. if you use `tabs-add --frequency yearly` today the tab won't
+    open until one year from now (at most). You can override this default:
+
+        library tabs-add --allow-immediate ...
+
+    To re-"play" some tabs, delete some history
+
+        library history ~/lb/tabs.db --played-within '1 day' -L inf -p --delete-rows
+        library tabs ~/lb/tabs.db
+
     You can also invoke tabs manually:
 
         library tabs -L 1  # open one tab
