@@ -7,7 +7,7 @@ from xklb.folders import big_dirs
 from xklb.mediadb import db_history, db_media
 from xklb.playback import media_player, media_printer
 from xklb.tablefiles import mcda
-from xklb.utils import arggroups, argparse_utils, consts, devices, file_utils, processes, sqlgroups
+from xklb.utils import arggroups, argparse_utils, consts, devices, file_utils, iterables, processes, sqlgroups
 from xklb.utils.consts import SC
 from xklb.utils.log_utils import Timer, log
 
@@ -293,6 +293,13 @@ def file_or_folder_media(args, paths):
     return media
 
 
+def folder_media(args, media):
+    media = big_dirs.group_files_by_parent(args, media)
+    media = big_dirs.process_big_dirs(args, media)
+    media = iterables.list_dict_filter_bool(media, keep_0=False)
+    return media
+
+
 def process_playqueue(args) -> None:
     db_history.create(args)
 
@@ -386,6 +393,17 @@ def process_playqueue(args) -> None:
         media = history_sort(args, media)
         log.debug("utils.history_sort: %s", t.elapsed())
 
+    if getattr(args, "refresh", False):
+        marked = db_media.mark_media_deleted(args, [d["path"] for d in media if not Path(d["path"]).exists()])
+        if marked > 0:
+            log.warning(f"Marked {marked} metadata records as deleted")
+            args.refresh = False
+            return process_playqueue(args)
+    elif args.folders:
+        media = folder_media(args, media)
+    elif args.folder_glob:
+        media = ({"path": s} for m in media for s in file_utils.fast_glob(Path(m["path"]).parent, args.folder_glob))
+
     if args.play_in_order:
         media = db_media.natsort_media(args, media)
 
@@ -394,24 +412,6 @@ def process_playqueue(args) -> None:
 
         media = cluster_dicts(args, media)
         log.debug("cluster-sort: %s", t.elapsed())
-
-    if getattr(args, "refresh", False):
-        marked = db_media.mark_media_deleted(args, [d["path"] for d in media if not Path(d["path"]).exists()])
-        log.warning(f"Marked {marked} metadata records as deleted")
-        args.refresh = False
-        return process_playqueue(args)
-
-    if args.folders:
-        unique_folders = set()
-        media_unique_folders = []
-        for m in media:
-            folder_path = str(Path(m["path"]).parent)
-            if folder_path not in unique_folders:
-                unique_folders.add(folder_path)
-                media_unique_folders.append({**m, "path": folder_path})
-        media = media_unique_folders
-    elif args.folder_glob:
-        media = ({"path": s} for m in media for s in file_utils.fast_glob(Path(m["path"]).parent, args.folder_glob))
 
     if not media:
         processes.no_media_found()

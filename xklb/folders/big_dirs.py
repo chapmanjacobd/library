@@ -82,23 +82,23 @@ def group_files_by_parent(args, media) -> list[dict]:
     d = {}
     for parent, media in list(p_media.items()):
         d[parent] = {
-            "size": sum(m.get("size") or 0 for m in media if not bool(m.get("time_deleted"))),
-            "median_size": nums.safe_median(m.get("size") for m in media if not bool(m.get("time_deleted"))),
+            "total": len(media),
             "duration": sum(m.get("duration") or 0 for m in media if not bool(m.get("time_deleted"))),
             "median_duration": nums.safe_median(m.get("duration") for m in media if not bool(m.get("time_deleted"))),
-            "total": len(media),
+            "size": sum(m.get("size") or 0 for m in media if not bool(m.get("time_deleted"))),
+            "median_size": nums.safe_median(m.get("size") for m in media if not bool(m.get("time_deleted"))),
+            "played": sum(bool(m.get("time_last_played")) for m in media),
             "exists": sum(not bool(m.get("time_deleted")) for m in media),
             "deleted": sum(bool(m.get("time_deleted")) for m in media),
             "deleted_size": sum(m.get("size") or 0 for m in media if bool(m.get("time_deleted"))),
             "deleted_duration": sum(m.get("duration") or 0 for m in media if bool(m.get("time_deleted"))),
-            "played": sum(bool(m.get("time_last_played")) for m in media),
         }
 
     parent_counts = Counter(str(Path(p).parent) for p in d.keys())
     for parent, data in d.items():
         data["folders"] = parent_counts[parent]
 
-    return [{**v, "path": k} for k, v in d.items()]
+    return [{"path": k, **v} for k, v in d.items()]
 
 
 def reaggregate_at_depth(args, folders) -> list[dict]:

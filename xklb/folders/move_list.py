@@ -67,13 +67,13 @@ def get_table(args) -> list[dict]:
 
 
 def iterate_and_show_options(args, tbl) -> tuple[list[dict], list[dict]]:
-    vew = tbl[-int(args.limit) :] if args.limit else tbl
+    view = tbl[-int(args.limit) :] if args.limit else tbl
 
-    vew = iterables.list_dict_filter_bool(vew, keep_0=False)
-    vew = printing.col_resize_percent(vew, "path", 60)
-    vew = printing.col_naturalsize(vew, "size")
+    view = iterables.list_dict_filter_bool(view, keep_0=False)
+    view = printing.col_resize_percent(view, "path", 60)
+    view = printing.col_naturalsize(view, "size")
     printing.table(tbl)
-    print(len(tbl) - len(vew), "other folders not shown")
+    print(len(tbl) - len(view), "other folders not shown")
 
     if args.limit:
         return tbl[-int(args.limit) :], tbl[: -int(args.limit)]
