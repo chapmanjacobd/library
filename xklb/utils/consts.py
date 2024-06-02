@@ -340,6 +340,7 @@ MEDIA_KNOWN_KEYS = (
     "playlist_index",
     "display_id",
     "fulltitle",
+    "duration",
     "duration_string",
     "format",
     "format_id",

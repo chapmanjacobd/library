@@ -124,7 +124,7 @@ def historical_media(args):
             {" ".join([" and " + w for w in args.where])}
             {sql_utils.filter_play_count(args)}
         ORDER BY time_last_played desc {', path' if args.completed else ', playhead desc' }
-        LIMIT {args.limit or 5}
+        {sql_utils.limit_sql(args.limit, args.offset)}
     """
     return query, args.filter_bindings
 
