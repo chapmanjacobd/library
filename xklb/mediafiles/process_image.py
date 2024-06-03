@@ -55,7 +55,11 @@ def process_path(args, path):
         print(shlex.join(command))
         return path
 
-    original_stats = path.stat()
+    try:
+        original_stats = path.stat()
+    except FileNotFoundError:
+        log.error('File not found: %s', path)
+        return None
 
     try:
         processes.cmd(

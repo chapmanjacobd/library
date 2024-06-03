@@ -120,7 +120,10 @@ def mergerfs_cp():
 
                 mcp_file(args, p, cp_dest)
         else:
-            cp_dest = os.path.join(args.destination, os.path.basename(source))
+            cp_dest = args.destination
+            if not args.destination.endswith(os.path.basename(source)):
+                cp_dest = os.path.join(args.destination, os.path.basename(source))
+
             mcp_file(args, source, cp_dest)
 
 

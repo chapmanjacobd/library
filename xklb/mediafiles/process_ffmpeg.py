@@ -63,7 +63,13 @@ def process_path(args, path, **kwargs):
     output_path = Path(path_utils.clean_path(bytes(output_path), max_name_len=251))
 
     path = Path(path)
-    original_stats = path.stat()
+
+    try:
+        original_stats = path.stat()
+    except FileNotFoundError:
+        log.error('File not found: %s', path)
+        return None
+
     try:
         probe = processes.FFProbe(path)
     except processes.UnplayableFile:
