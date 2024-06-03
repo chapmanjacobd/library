@@ -97,6 +97,7 @@ def test_file_replace(temp_file_tree):
     assert generate_file_tree_dict(src1, inodes=False) == src1_inodes
     assert generate_file_tree_dict(target, inodes=False) == target_inodes | src1_inodes
 
+
 def test_file_replace_file(temp_file_tree):
     src1 = temp_file_tree(simple_file_tree | {"file4.txt": "5"})
     target = temp_file_tree(simple_file_tree)

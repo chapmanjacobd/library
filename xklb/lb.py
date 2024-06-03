@@ -30,6 +30,7 @@ progs = {
         "nouns": "Unstructured text -> compound nouns (stdin)",
         "dates": "Unstructured text -> timestamps, dates, time",
         "json_keys_rename": "Rename JSON keys by substring match",
+        "combinations": "Enumerate possible combinations",
     },
     "Folder subcommands": {
         "merge_mv": "Copy files and merge folders in BSD/rsync style",
@@ -224,6 +225,7 @@ modules = {
     "xklb.text.dates.dates": ["date"],
     "xklb.text.dates.times": ["time"],
     "xklb.text.json_keys_rename.json_keys_rename": [],
+    "xklb.text.combinations.combinations": ["combos"],
 }
 
 

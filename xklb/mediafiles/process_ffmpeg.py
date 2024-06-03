@@ -67,7 +67,7 @@ def process_path(args, path, **kwargs):
     try:
         original_stats = path.stat()
     except FileNotFoundError:
-        log.error('File not found: %s', path)
+        log.error("File not found: %s", path)
         return None
 
     try:

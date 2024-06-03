@@ -131,3 +131,7 @@ def bfs_removedirs(root_dir):
             os.rmdir(dirpath)
         except OSError:
             pass
+
+
+def is_folder_dest(source, dest):
+    return dest.endswith(os.sep) or not dest.endswith(os.path.basename(source))

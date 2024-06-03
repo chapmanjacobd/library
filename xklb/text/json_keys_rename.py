@@ -1,7 +1,7 @@
 import json, sys
 
 from xklb import usage
-from xklb.utils import arggroups, argparse_utils, nums, printing, processes
+from xklb.utils import arg_utils, arggroups, argparse_utils, printing, processes
 from xklb.utils.log_utils import log
 
 
@@ -12,33 +12,6 @@ def parse_utils():
     args, unknown_args = parser.parse_known_args()
     arggroups.args_post(args, parser)
     return args, unknown_args
-
-
-def parse_unknown_args_to_dict(unknown_args):
-    kwargs = {}
-    key = None
-    values = []
-
-    def get_val():
-        if len(values) == 1:
-            return nums.safe_int_float_str(values[0])
-        else:
-            return " ".join(values)
-
-    for arg in unknown_args:
-        if arg.startswith("--") or arg.startswith("-"):
-            if key is not None:
-                kwargs[key] = get_val()  # previous values
-                values.clear()
-            # Process the new key
-            key = arg.strip("-").replace("-", "_")
-        else:
-            values.append(arg)
-
-    if len(values) > 0:
-        kwargs[key] = get_val()
-
-    return kwargs
 
 
 def rename_keys(json_data, key_mapping):
@@ -69,7 +42,7 @@ def gen_d(line):
 def json_keys_rename():
     args, unknown_args = parse_utils()
 
-    key_mapping = parse_unknown_args_to_dict(unknown_args)
+    key_mapping = arg_utils.dict_from_unknown_args(unknown_args)
     if not key_mapping:
         log.error("No data given via arguments")
         raise SystemExit(2)

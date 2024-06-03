@@ -1,7 +1,8 @@
 import argparse, json, operator, random
+from collections import defaultdict
 from pathlib import Path
 
-from xklb.utils import consts, file_utils, iterables, processes
+from xklb.utils import consts, file_utils, iterables, nums, processes
 from xklb.utils.consts import SC
 
 
@@ -238,3 +239,43 @@ ops = {"<": operator.lt, "<=": operator.le, "==": operator.eq, "!=": operator.ne
 def cmp(arg1, op, arg2):
     operation = ops.get(op)
     return operation(arg1, arg2)  # type: ignore
+
+
+def dict_from_unknown_args(unknown_args):
+    kwargs = {}
+    key = None
+    values = []
+
+    def get_val():
+        if len(values) == 1:
+            return nums.safe_int_float_str(values[0])
+        else:
+            return " ".join(values)
+
+    for arg in unknown_args:
+        if arg.startswith("-"):
+            if key is not None:
+                kwargs[key] = get_val()  # previous values
+                values.clear()
+            # Process the new key
+            key = arg.strip("-").replace("-", "_")
+        else:
+            values.append(arg)
+
+    if len(values) > 0:
+        kwargs[key] = get_val()
+
+    return kwargs
+
+
+def dict_of_lists_from_unknown_args(unknown_args):
+    result = defaultdict(list)
+    for i in range(len(unknown_args)):
+        key = unknown_args[i]
+
+        if key.startswith("-"):
+            key = key.strip("-")
+            if not unknown_args[i + 1].startswith("-"):
+                result[key].append(unknown_args[i + 1])
+
+    return result
