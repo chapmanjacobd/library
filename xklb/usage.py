@@ -1467,7 +1467,20 @@ web_update = """library web-update DATABASE
 
 """
 
-row_add = """library row-add DATABASE [--table-name TABLE_NAME]
+combinations = """library combinations --PROPERTY OPTION
+
+    Enumerate the possible combinations of things that have multiple properties with more than one options
+
+        library combinations --prop1 opt1 --prop1 opt2 --prop2 A --prop2 B
+
+        {"prop1": "opt1", "prop2": "A"}
+        {"prop1": "opt1", "prop2": "B"}
+        {"prop1": "opt2", "prop2": "A"}
+        {"prop1": "opt2", "prop2": "B"}
+"""
+
+
+row_add = """library row-add DATABASE [--table-name TABLE_NAME] --COLUMN-NAME VALUE
 
     Add a row to sqlite
 

@@ -18,7 +18,7 @@
 import os
 
 from xklb import usage
-from xklb.utils import arggroups, argparse_utils, consts, file_utils, processes
+from xklb.utils import arggroups, argparse_utils, consts, file_utils, path_utils, processes
 
 
 def parse_args():
@@ -121,7 +121,7 @@ def mergerfs_cp():
                 mcp_file(args, p, cp_dest)
         else:
             cp_dest = args.destination
-            if not args.destination.endswith(os.path.basename(source)):
+            if path_utils.is_folder_dest(source, cp_dest):
                 cp_dest = os.path.join(args.destination, os.path.basename(source))
 
             mcp_file(args, source, cp_dest)

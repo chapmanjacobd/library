@@ -1,4 +1,4 @@
-import json, types
+import itertools, json, types
 from contextlib import contextmanager
 from functools import wraps
 
@@ -175,3 +175,7 @@ def is_profile(args, profile_target):
     elif profile_target in getattr(args, "profiles", []):
         return True
     return False
+
+
+def product(**kwargs):
+    return (dict(zip(kwargs.keys(), x)) for x in itertools.product(*kwargs.values()))
