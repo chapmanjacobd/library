@@ -92,7 +92,10 @@ def merge_mv():
             if not args.copy:
                 path_utils.bfs_removedirs(source)
         else:
-            cp_dest = os.path.join(args.destination, os.path.basename(source))
+            cp_dest = args.destination
+            if not args.destination.endswith(os.path.basename(source)):
+                cp_dest = os.path.join(args.destination, os.path.basename(source))
+
             mmv_file(args, source, cp_dest)
 
 

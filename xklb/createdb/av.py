@@ -145,6 +145,7 @@ def munge_av_tags(args, path) -> dict:
     format_.pop("probe_score", None)
     format_.pop("start_time", None)
     format_.pop("filename", None)
+    format_.pop("duration", None)
 
     duration = probe.duration
 
