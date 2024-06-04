@@ -1,7 +1,6 @@
 from datetime import datetime
 from pathlib import Path
 
-from yt_dlp.utils import traverse_obj
 
 from xklb.createdb import subtitle
 from xklb.mediafiles import media_check
@@ -10,13 +9,9 @@ from xklb.utils.consts import DBType
 from xklb.utils.log_utils import log
 
 
-def is_album_art(s):
-    return traverse_obj(s, ["disposition", "attached_pic"]) == 1
-
-
-def get_subtitle_tags(path, streams, codec_types, scan_subtitles=False) -> dict:
-    attachment_count = sum(1 for s in codec_types if s == "attachment")
-    internal_subtitles_count = sum(1 for s in codec_types if s == "subtitle")
+def get_subtitle_tags(path, streams, scan_subtitles=False) -> dict:
+    attachment_count = sum(1 for s in streams if s.get("codec_type") == "attachment")
+    internal_subtitles_count = sum(1 for s in streams if s.get("codec_type") == "subtitle")
 
     subtitles = []
     if scan_subtitles:
@@ -228,15 +223,19 @@ def munge_av_tags(args, path) -> dict:
     )
     width = iterables.safe_unpack([s.get("width") for s in streams])
     height = iterables.safe_unpack([s.get("height") for s in streams])
-    codec_types = [s.get("codec_type") for s in streams]
+
     stream_tags = [s.get("tags") for s in streams if s.get("tags") is not None]
     language = strings.combine(
         [t.get("language") for t in stream_tags if t.get("language") not in (None, "und", "unk")],
     )
 
-    album_art_count = sum(1 for s in codec_types if s == "video" if is_album_art(s))
-    video_count = sum(1 for s in codec_types if s == "video" if not is_album_art(s))
-    audio_count = sum(1 for s in codec_types if s == "audio")
+    album_art_count = len(probe.album_art_streams)
+    video_count = len(probe.video_streams)
+    audio_count = len(probe.audio_streams)
+
+    video_types = ','.join(iterables.ordered_set(s.get('codec_name') for s in probe.video_streams))
+    audio_types = ','.join(iterables.ordered_set(s.get('codec_name') for s in probe.audio_streams))
+    subtitle_types = ','.join(iterables.ordered_set(s.get('codec_name') for s in probe.subtitle_streams))
 
     chapters = probe.chapters or []
     chapter_count = len(chapters)
@@ -249,6 +248,9 @@ def munge_av_tags(args, path) -> dict:
 
     media = {
         **media,
+        "video_types": video_types,
+        "audio_types": audio_types,
+        "subtitle_types": subtitle_types,
         "album_art_count": album_art_count,
         "video_count": video_count,
         "audio_count": audio_count,
@@ -267,9 +269,7 @@ def munge_av_tags(args, path) -> dict:
         return media
 
     if objects.is_profile(args, DBType.video):
-        video_tags = get_subtitle_tags(
-            path, streams, codec_types, scan_subtitles=getattr(args, "scan_subtitles", False)
-        )
+        video_tags = get_subtitle_tags(path, streams, scan_subtitles=getattr(args, "scan_subtitles", False))
         media = {**media, **video_tags}
     elif objects.is_profile(args, DBType.audio):
         stream_tags = get_audio_tags(path)

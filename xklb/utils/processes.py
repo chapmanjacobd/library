@@ -173,6 +173,10 @@ def Pclose(process) -> subprocess.CompletedProcess:  # noqa: N802
 class UnplayableFile(RuntimeError):
     pass
 
+def is_album_art(s):
+    from yt_dlp.utils import traverse_obj
+
+    return traverse_obj(s, ["disposition", "attached_pic"]) == 1
 
 class FFProbe:
     def __init__(self, path, *args):
@@ -211,19 +215,23 @@ class FFProbe:
         self.video_streams = []
         self.audio_streams = []
         self.subtitle_streams = []
+        self.album_art_streams = []
         self.other_streams = []
 
-        for stream in self.streams:
-            if "codec_type" not in stream:
+        for s in self.streams:
+            if "codec_type" not in s:
                 continue
-            elif stream["codec_type"] == "video":
-                self.video_streams.append(stream)
-            elif stream["codec_type"] == "audio":
-                self.audio_streams.append(stream)
-            elif stream["codec_type"] == "subtitle":
-                self.subtitle_streams.append(stream)
+            elif s["codec_type"] == "video":
+                if is_album_art(s):
+                    self.album_art_streams.append(s)
+                else:
+                    self.video_streams.append(s)
+            elif s["codec_type"] == "audio":
+                self.audio_streams.append(s)
+            elif s["codec_type"] == "subtitle":
+                self.subtitle_streams.append(s)
             else:
-                self.other_streams.append(stream)
+                self.other_streams.append(s)
 
         self.has_video = len(self.video_streams) > 0
         self.has_audio = len(self.audio_streams) > 0
