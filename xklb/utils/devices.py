@@ -1,5 +1,7 @@
 import os, random, shutil, sys
 
+import humanize
+
 from xklb.utils import consts
 from xklb.utils.log_utils import log
 
@@ -38,19 +40,40 @@ def clear_input() -> None:
             clear_input.getch()
 
 
+class InteractivePrompt(Exception):
+    pass
+
+
 def confirm(*args, **kwargs) -> bool:
     from rich.prompt import Confirm
+
+    if consts.PYTEST_RUNNING:
+        raise InteractivePrompt
 
     clear_input()
     return Confirm.ask(*args, **kwargs, default=False)
 
 
-def clobber_confirm(args) -> bool:
-    if getattr(args, "replace", False):
-        return True
-    elif getattr(args, "no_replace", False):
-        return False
-    return confirm("Replace destination file?")
+def clobber_confirm(src, dst, replace=None) -> bool:
+    if replace is not None:
+        return replace
+
+    src_size = os.stat(src).st_size
+    dst_size = os.stat(dst).st_size
+
+    src_size_str = humanize.naturalsize(src_size, binary=True)
+    if src_size == dst_size:
+        # TODO: silently overwrite if hashes match
+        log.warning("Source and destination are the same size: %s", src_size_str)
+    else:
+        dst_size_str = humanize.naturalsize(dst_size, binary=True)
+        diff_size_str = humanize.naturalsize(abs(src_size - dst_size), binary=True)
+        if src_size > dst_size:
+            log.warning("Source (%s) is %s larger than destination (%s)", src_size_str, dst_size_str, diff_size_str)
+        elif src_size < dst_size:
+            log.warning("Source (%s) is %s smaller than destination (%s)", src_size_str, dst_size_str, diff_size_str)
+
+    return confirm("Replace destination file? %s" % dst)
 
 
 def prompt(*args, **kwargs) -> str:

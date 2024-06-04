@@ -19,6 +19,10 @@ def parse_args():
     return args
 
 
+class FolderExistsError(Exception):
+    pass
+
+
 def mmv_file(args, source, destination):
     src_dest = [source, destination]
     if args.simulate:
@@ -29,30 +33,34 @@ def mmv_file(args, source, destination):
             return
 
         if os.path.exists(destination):
-            if args.replace is True:
-                try:
-                    os.unlink(destination)
-                except IsADirectoryError:
-                    # attempting to replace directory with file of same name: move the file inside folder instead
-                    destination = os.path.join(destination, os.path.basename(destination))
-                except PermissionError:
-                    if os.path.isdir(destination):
-                        # Mac OS IsADirectoryError is a PermissionError
-                        destination = os.path.join(destination, os.path.basename(destination))
-                    else:
-                        log.error("PermissionError: skipping %s could not delete %s", source, destination)
-                        return
-            elif args.replace is False:
-                log.warning("not replacing %s", destination)
+            if os.path.isdir(destination):
+                # cannot replace directory with file of same name: move the file inside folder instead
+                destination = os.path.join(destination, os.path.basename(destination))
+
+        if os.path.exists(destination):
+            if os.path.isdir(destination):
+                raise FolderExistsError
+            if devices.clobber_confirm(source, destination):
+                os.unlink(destination)
+            else:
+                log.warning("not replacing file %s", destination)
                 return
-            elif args.replace is None:
-                if devices.confirm("Overwrite file? %s" % destination):
-                    os.unlink(destination)
-                else:
-                    log.warning("not replacing %s", destination)
-                    return
         else:
-            os.makedirs(os.path.dirname(destination), exist_ok=True)
+            parent_dir = os.path.dirname(destination)
+            try:
+                os.makedirs(parent_dir, exist_ok=True)
+            except NotADirectoryError:
+                # a file exists instead of a folder _somewhere_ in the path hierarchy
+                while not os.path.exists(parent_dir):
+                    parent_dir = os.path.dirname(parent_dir)  # we keep going up until we find a valid file
+
+                log.warning("NotADirectoryError: A file exists instead of a folder %s", parent_dir)
+                if devices.clobber_confirm(source, parent_dir):
+                    os.unlink(parent_dir)
+                else:
+                    log.warning("not replacing file %s", parent_dir)
+                    return
+                os.makedirs(os.path.dirname(destination), exist_ok=True)  # use original destination parent
 
         if args.copy:
             shutil.copy2(source, destination)
