@@ -2,10 +2,9 @@ import argparse, os, shlex, subprocess, sys
 from pathlib import Path
 
 from xklb import usage
-from xklb.createdb.av import is_album_art
 from xklb.data import ffmpeg_errors
 from xklb.mediafiles import process_image
-from xklb.utils import arggroups, argparse_utils, nums, path_utils, processes, web
+from xklb.utils import arggroups, argparse_utils, consts, nums, path_utils, processes, web
 from xklb.utils.arg_utils import gen_paths, kwargs_overwrite
 from xklb.utils.log_utils import log
 
@@ -87,10 +86,10 @@ def process_path(args, path, **kwargs):
         if not is_animation:
             return process_image.process_path(args, path)
 
-    album_art_stream = next((s for s in probe.video_streams if is_album_art(s)), None)
-    video_stream = next((s for s in probe.video_streams if not is_album_art(s)), None)
+    video_stream = next((s for s in probe.video_streams), None)
     audio_stream = next((s for s in probe.audio_streams), None)
     subtitle_stream = next((s for s in probe.subtitle_streams), None)
+    album_art_stream = next((s for s in probe.album_art_streams), None)
     if not video_stream:
         log.warning("No video stream found: %s", path)
         if args.delete_no_video:
@@ -102,12 +101,19 @@ def process_path(args, path, **kwargs):
             path.unlink()
             return None
 
+    if video_stream and video_stream["codec_name"] == "av1":
+        log.info("Video is already AV1: %s", path)
+        return path
+    elif (not video_stream or args.audio_only) and audio_stream and audio_stream["codec_name"] == "opus":
+        log.info("Audio is already Opus: %s", path)
+        return path
+
     if video_stream and not args.audio_only:
         output_suffix = ".av1.mkv"
-    elif not video_stream and not audio_stream:
-        output_suffix = ".mkv"
-    else:
+    elif audio_stream:
         output_suffix = ".mka"
+    else:
+        output_suffix = ".mkv"
     output_path = output_path.with_suffix(output_suffix)
 
     if path == output_path:
@@ -141,8 +147,7 @@ def process_path(args, path, **kwargs):
             ff_opts.extend(["-vf", f"scale=-2:{args.max_height}"])
 
         for s in probe.video_streams:
-            if not is_album_art(s):
-                ff_opts.extend(["-map", f'0:{s["index"]}'])
+            ff_opts.extend(["-map", f'0:{s["index"]}'])
 
     elif album_art_stream:
         ff_opts.extend(["-c:v", "copy", "-map", "0:v"])
@@ -232,7 +237,7 @@ def process_path(args, path, **kwargs):
         ff_opts.extend(["-map", "0:a"])
 
     if subtitle_stream:
-        ff_opts.extend(["-c:s", "copy", "-map", "0:s"])
+        ff_opts.extend(["-c:s", "copy", "-map", "0:s"])  # ,'-map','0:t?'
 
     if path.parent != output_path.parent:
         log.warning("Output folder will be different due to path cleaning: %s", output_path.parent)
@@ -241,9 +246,11 @@ def process_path(args, path, **kwargs):
     command = [
         "ffmpeg",
         "-nostdin",
-        "-hide_banner",
-        "-loglevel",
-        "warning",
+        *(
+            ["-v", "9", "-loglevel", "99"]
+            if args.verbose > consts.LOG_DEBUG_SQL
+            else ["-hide_banner", "-loglevel", "warning"]
+        ),
         "-y",
         "-i",
         str(path),

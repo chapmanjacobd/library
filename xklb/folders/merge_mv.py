@@ -49,12 +49,12 @@ def mmv_file(args, source, destination):
             parent_dir = os.path.dirname(destination)
             try:
                 os.makedirs(parent_dir, exist_ok=True)
-            except NotADirectoryError:
-                # a file exists instead of a folder _somewhere_ in the path hierarchy
+            except (FileExistsError, NotADirectoryError):
+                # NotADirectoryError: a file exists _somewhere_ in the path hierarchy
                 while not os.path.exists(parent_dir):
                     parent_dir = os.path.dirname(parent_dir)  # we keep going up until we find a valid file
 
-                log.warning("NotADirectoryError: A file exists instead of a folder %s", parent_dir)
+                log.warning("FileExistsError: A file exists instead of a folder %s", parent_dir)
                 if devices.clobber_confirm(source, parent_dir):
                     os.unlink(parent_dir)
                 else:
