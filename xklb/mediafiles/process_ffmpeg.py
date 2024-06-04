@@ -117,7 +117,20 @@ def process_path(args, path, **kwargs):
     ff_opts: list[str] = []
 
     if video_stream:
-        ff_opts.extend(["-c:v", "libsvtav1", "-preset", args.preset, "-crf", args.crf])
+        ff_opts.extend(
+            [
+                "-c:v",
+                "libsvtav1",
+                "-preset",
+                args.preset,
+                "-crf",
+                args.crf,
+                "-pix_fmt",
+                "yuv420p10le",
+                "-svtav1-params",
+                "tune=0:enable-overlays=1",
+            ]
+        )
 
         width = int(video_stream.get("width"))
         height = int(video_stream.get("height"))
@@ -240,6 +253,8 @@ def process_path(args, path, **kwargs):
         "-map_metadata",
         "0",
         "-dn",
+        "-max_interleave_delta",
+        "0",
         str(output_path),
     ]
 

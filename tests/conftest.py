@@ -76,6 +76,9 @@ def generate_file_tree_dict(temp_dir, inodes=True):
         return tree_dict
 
     base_path = Path(temp_dir)
+    if base_path.is_file():
+        return {base_path.name: (base_path.stat().st_ino if inodes else 0, base_path.read_text())}
+
     return _generate_tree_dict(base_path)
 
 
