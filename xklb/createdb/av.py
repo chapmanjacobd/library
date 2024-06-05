@@ -1,7 +1,6 @@
 from datetime import datetime
 from pathlib import Path
 
-
 from xklb.createdb import subtitle
 from xklb.mediafiles import media_check
 from xklb.utils import consts, file_utils, iterables, nums, objects, processes, strings
@@ -233,9 +232,9 @@ def munge_av_tags(args, path) -> dict:
     video_count = len(probe.video_streams)
     audio_count = len(probe.audio_streams)
 
-    video_types = ','.join(iterables.ordered_set(s.get('codec_name') for s in probe.video_streams))
-    audio_types = ','.join(iterables.ordered_set(s.get('codec_name') for s in probe.audio_streams))
-    subtitle_types = ','.join(iterables.ordered_set(s.get('codec_name') for s in probe.subtitle_streams))
+    video_types = ",".join(iterables.ordered_set(s.get("codec_name") for s in probe.video_streams))
+    audio_types = ",".join(iterables.ordered_set(s.get("codec_name") for s in probe.audio_streams))
+    subtitle_types = ",".join(iterables.ordered_set(s.get("codec_name") for s in probe.subtitle_streams))
 
     chapters = probe.chapters or []
     chapter_count = len(chapters)

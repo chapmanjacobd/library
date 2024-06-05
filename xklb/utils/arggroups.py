@@ -580,9 +580,7 @@ def playback(parent_parser):
         action="store_true",
         help="Loop media after reaching end (useful for curation activities like multiple-playback)",
     )
-    parser.add_argument(
-        "--fullscreen", "--fs", action=argparse.BooleanOptionalAction, help="Open videos in fullscreen"
-    )
+    parser.add_argument("--fullscreen", "--fs", action=argparse.BooleanOptionalAction, help="Open videos in fullscreen")
     parser.add_argument("--pause", action="store_true", help="Start media paused")
     parser.add_argument(
         "--start",

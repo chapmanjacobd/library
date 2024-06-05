@@ -427,7 +427,7 @@ class MediaPrefetcher:
 
                 if args.fullscreen:
                     player.extend(["--fullscreen=yes"])
-                else:
+                elif args.fullscreen is False:
                     player.extend(["--fullscreen=no"])
 
                 if getattr(args, "loop", False):

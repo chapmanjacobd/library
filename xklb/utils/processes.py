@@ -173,10 +173,12 @@ def Pclose(process) -> subprocess.CompletedProcess:  # noqa: N802
 class UnplayableFile(RuntimeError):
     pass
 
+
 def is_album_art(s):
     from yt_dlp.utils import traverse_obj
 
     return traverse_obj(s, ["disposition", "attached_pic"]) == 1
+
 
 class FFProbe:
     def __init__(self, path, *args):
