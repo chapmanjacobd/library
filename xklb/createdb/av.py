@@ -231,10 +231,12 @@ def munge_av_tags(args, path) -> dict:
     album_art_count = len(probe.album_art_streams)
     video_count = len(probe.video_streams)
     audio_count = len(probe.audio_streams)
+    other_count = len(probe.other_streams)
 
-    video_types = ",".join(iterables.ordered_set(s.get("codec_name") for s in probe.video_streams))
-    audio_types = ",".join(iterables.ordered_set(s.get("codec_name") for s in probe.audio_streams))
-    subtitle_types = ",".join(iterables.ordered_set(s.get("codec_name") for s in probe.subtitle_streams))
+    video_codecs = ",".join(iterables.ordered_set(s.get("codec_name") for s in probe.video_streams))
+    audio_codecs = ",".join(iterables.ordered_set(s.get("codec_name") for s in probe.audio_streams))
+    subtitle_codecs = ",".join(iterables.ordered_set(s.get("codec_name") for s in probe.subtitle_streams))
+    other_codecs = ",".join(iterables.ordered_set(s.get("codec_name") for s in probe.other_streams))
 
     chapters = probe.chapters or []
     chapter_count = len(chapters)
@@ -247,13 +249,15 @@ def munge_av_tags(args, path) -> dict:
 
     media = {
         **media,
-        "video_types": video_types,
-        "audio_types": audio_types,
-        "subtitle_types": subtitle_types,
+        "video_codecs": video_codecs,
+        "audio_codecs": audio_codecs,
+        "subtitle_codecs": subtitle_codecs,
+        "other_codecs": other_codecs,
         "album_art_count": album_art_count,
         "video_count": video_count,
         "audio_count": audio_count,
         "chapter_count": chapter_count,
+        "other_count": other_count,
         "width": width,
         "height": height,
         "fps": fps,
