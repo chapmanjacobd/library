@@ -10,7 +10,6 @@ from xklb.utils.log_utils import log
 
 def parse_args() -> argparse.Namespace:
     parser = argparse_utils.ArgumentParser(usage=usage.rel_mv)
-    arggroups.simulate(parser)
     arggroups.clobber(parser)
     arggroups.debug(parser)
 

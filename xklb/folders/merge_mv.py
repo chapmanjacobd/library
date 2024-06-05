@@ -23,10 +23,16 @@ class FolderExistsError(Exception):
     pass
 
 
-def mmv_file(args, source, destination):
+def mmv_file(args, source, destination, copy=False):
     src_dest = [source, destination]
     if args.simulate:
-        print(*args.cp_args, *src_dest)
+        cmd_args = ["cp" if copy else "mv"]
+        if args.replace is None:
+            cmd_args.append("--interactive")
+        elif args.replace is False:
+            cmd_args.append("--no-clobber")
+
+        print(*cmd_args, *src_dest)
     else:
         if source == destination:
             log.info("Destination is the same as source %s", destination)
@@ -64,26 +70,18 @@ def mmv_file(args, source, destination):
                     log.warning("not replacing file %s", parent_dir)
                     return
 
-        if args.copy:
+        if copy:
             shutil.copy2(source, destination)
         else:
             file_utils.rename_move_file(source, destination)
 
+    return destination
 
-def cp_args(args):
-    cmd_args = ["cp" if args.copy else "mv"]
-    if args.replace is None:
-        cmd_args.append("--interactive")
-    elif args.replace is False:
-        cmd_args.append("--no-clobber")
-
-    return cmd_args
 
 
 def merge_mv():
     args = parse_args()
 
-    args.cp_args = cp_args(args)
     args.destination = os.path.realpath(args.destination)
 
     sources = (
@@ -97,7 +95,7 @@ def merge_mv():
                     cp_dest = os.path.join(cp_dest, os.path.basename(source))
                 cp_dest = os.path.join(cp_dest, os.path.relpath(p, source))
 
-                mmv_file(args, p, cp_dest)
+                mmv_file(args, p, cp_dest, copy=args.copy)
 
             if not args.copy:
                 path_utils.bfs_removedirs(source)
@@ -106,7 +104,7 @@ def merge_mv():
             if path_utils.is_folder_dest(source, cp_dest):
                 cp_dest = os.path.join(args.destination, os.path.basename(source))
 
-            mmv_file(args, source, cp_dest)
+            mmv_file(args, source, cp_dest, copy=args.copy)
 
 
 def merge_cp():

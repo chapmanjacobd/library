@@ -21,6 +21,7 @@ from xklb import usage
 from xklb.utils import arggroups, argparse_utils, consts, devices, file_utils, path_utils, processes
 from xklb.utils.log_utils import log
 
+
 def parse_args():
     parser = argparse_utils.ArgumentParser(usage=usage.mergerfs_cp)
     parser.add_argument("--simulate", "--dry-run", action="store_true", help="Dry run")

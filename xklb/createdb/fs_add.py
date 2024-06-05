@@ -36,7 +36,6 @@ REGEX_SENTENCE_ENDS = re.compile(r";|,|\.|\*|\n|\t")
 def parse_args(action, usage):
     parser = argparse_utils.ArgumentParser(prog="library " + action, usage=usage)
     arggroups.db_profiles(parser)
-    arggroups.simulate(parser)
 
     parser.add_argument("--exclude", "-E", nargs="+", action="extend", default=[])
 
