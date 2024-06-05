@@ -28,7 +28,7 @@ def mv_to_keep_folder(args, src: str) -> str:
     keep_path.mkdir(exist_ok=True)
 
     dest = str(keep_path / p.name)
-    dest = merge_mv.mmv_file(args, src, dest)
+    dest = merge_mv.mmv_folders(args, merge_mv.mmv_file, [src], dest)
     if dest:
         if hasattr(args, "db"):
             with args.db.conn:

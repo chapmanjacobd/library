@@ -15,7 +15,7 @@ simple_file_tree = {
 
 
 @pytest.mark.parametrize("subcommand", ["merge-cp", "merge-mv"])
-@pytest.mark.parametrize("src_type", ["folder", "folder_bsd", "file", "not_exist"])
+@pytest.mark.parametrize("src_type", ["folder", "folder_bsd", "file", "file_bsd", "not_exist"])
 @pytest.mark.parametrize("dest_type", ["not_exist", "folder_merge", "clobber_file", "clobber_folder"])
 @pytest.mark.parametrize("clobber", ["interactive", "no_replace", "replace"])
 def test_merge(subcommand, src_type, dest_type, clobber, temp_file_tree):
@@ -24,7 +24,7 @@ def test_merge(subcommand, src_type, dest_type, clobber, temp_file_tree):
 
     if src_type == "not_exist":
         src1 = temp_file_tree({})
-    elif src_type == "file":
+    elif src_type in ("file", "file_bsd"):
         src1 = temp_file_tree({"file4.txt": "5"}) + os.sep + "file4.txt"
     else:  # folder, folder_bsd
         src1 = temp_file_tree(simple_file_tree | {"file4.txt": "5"})
@@ -44,18 +44,20 @@ def test_merge(subcommand, src_type, dest_type, clobber, temp_file_tree):
     dest_inodes = generate_file_tree_dict(dest, inodes=False)
 
     cmd = [subcommand]
-    cmd += [src1, dest]
+    if src_type == "file_bsd":
+        cmd += ["--parent"]
     if clobber == "replace":
         cmd += ["--replace"]
     elif clobber == "no_replace":
         cmd += ["--no-replace"]
+    cmd += [src1, dest]
 
     if (
         clobber == "interactive"
         and src_type != "not_exist"
         and dest_type != "not_exist"
         and dest_type != "clobber_folder"
-        and (src_type, dest_type) not in [("folder_bsd", "folder_merge")]
+        and (src_type, dest_type) not in [("folder_bsd", "folder_merge"), ("file_bsd", "folder_merge")]
     ):
         with pytest.raises(devices.InteractivePrompt):
             lb(cmd)
@@ -65,7 +67,7 @@ def test_merge(subcommand, src_type, dest_type, clobber, temp_file_tree):
 
     if subcommand == "merge-cp":
         assert generate_file_tree_dict(src1, inodes=False) == src1_inodes
-    elif clobber != "no_replace":
+    elif clobber == "replace":
         assert not Path(src1).exists()
 
     target_inodes = generate_file_tree_dict(dest, inodes=False)
@@ -73,11 +75,15 @@ def test_merge(subcommand, src_type, dest_type, clobber, temp_file_tree):
         assert target_inodes == dest_inodes
     elif src_type == "folder_bsd" and dest_type == "not_exist":
         assert target_inodes == {Path(src1).name: src1_inodes}
+    elif src_type == "file_bsd" and dest_type == "not_exist":
+        assert target_inodes == {Path(src1).parent.name: src1_inodes}
     elif dest_type in ("not_exist",):
         assert target_inodes == src1_inodes
 
     elif src_type == "folder_bsd" and dest_type == "folder_merge":
         assert target_inodes == dest_inodes | {Path(src1).name: src1_inodes}
+    elif src_type == "file_bsd" and dest_type == "folder_merge":
+        assert target_inodes == dest_inodes | {Path(src1).parent.name: src1_inodes}
 
     elif dest_type == "folder_merge" and clobber == "replace":
         assert target_inodes == dest_inodes | src1_inodes
@@ -90,6 +96,8 @@ def test_merge(subcommand, src_type, dest_type, clobber, temp_file_tree):
 
     elif src_type == "folder_bsd" and dest_type == "clobber_file" and clobber == "replace":
         assert target_inodes == {Path(src1).name: src1_inodes}
+    elif src_type == "file_bsd" and dest_type == "clobber_file" and clobber == "replace":
+        assert target_inodes == {Path(src1).parent.name: src1_inodes}
     elif dest_type == "clobber_file" and clobber == "replace":
         assert target_inodes == src1_inodes
     elif dest_type == "clobber_file":

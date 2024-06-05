@@ -135,3 +135,7 @@ def bfs_removedirs(root_dir):
 
 def is_folder_dest(source, dest):
     return dest.endswith(os.sep) or not dest.endswith(os.path.basename(source))
+
+
+def parent(s):
+    return os.path.basename(os.path.dirname(s))

@@ -49,9 +49,11 @@ def args_post(args, parser, create_db=False):
         max_v = 140
         log.info(
             {
-                k: v
-                if len(str(v)) < max_v
-                else textwrap.shorten(str(v), max_v, placeholder=f"[{iterables.safe_len(v)} items]")
+                k: (
+                    v
+                    if len(str(v)) < max_v
+                    else textwrap.shorten(str(v), max_v, placeholder=f"[{iterables.safe_len(v)} items]")
+                )
                 for k, v in log_args.items()
             }
         )
@@ -902,8 +904,12 @@ def clobber(parent_parser):
         action=argparse.BooleanOptionalAction,
         help="Overwrite files on path conflict (default: ask to confirm)",
     )
-
-
+    parser.add_argument("--replace-same-size", action="store_true", help="Replace only if same size")
+    parser.add_argument("--replace-same-hash", action="store_true", help="Replace only if same SHA256 hash")
+    parser.add_argument("--rename-on-conflict", action="store_true", help="Rename to '_1'.ext instead of replace")
+    parser.add_argument(
+        "--parent", "--bsd", action=argparse.BooleanOptionalAction, help="Include parent (dirname); BSD trailing slash"
+    )
 
 
 def process_ffmpeg(parent_parser):

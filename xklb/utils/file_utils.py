@@ -549,3 +549,14 @@ def get_filesize(d):
             d["time_deleted"] = consts.APPLICATION_START
 
     return d
+
+
+def alt_name(file_path):
+    file_path = Path(file_path)
+    alternative_path = file_path
+    counter = 1
+    while alternative_path.exists():
+        new_name = f"{file_path.stem}_{counter}{file_path.suffix}"
+        alternative_path = file_path.with_name(new_name)
+        counter += 1
+    return str(alternative_path)
