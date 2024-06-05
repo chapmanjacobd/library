@@ -50,8 +50,9 @@ def mmv_file(args, source, destination):
             parent_dir = os.path.dirname(destination)
             try:
                 os.makedirs(parent_dir, exist_ok=True)
-            except (FileExistsError, NotADirectoryError):
+            except (FileExistsError, NotADirectoryError, FileNotFoundError):
                 # NotADirectoryError: a file exists _somewhere_ in the path hierarchy
+                # Windows gives FileNotFoundError instead
                 while not os.path.exists(parent_dir):
                     parent_dir = os.path.dirname(parent_dir)  # we keep going up until we find a valid file
 
