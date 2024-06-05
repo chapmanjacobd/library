@@ -18,8 +18,8 @@
 import os
 
 from xklb import usage
-from xklb.utils import arggroups, argparse_utils, consts, file_utils, path_utils, processes
-
+from xklb.utils import arggroups, argparse_utils, consts, devices, file_utils, path_utils, processes
+from xklb.utils.log_utils import log
 
 def parse_args():
     parser = argparse_utils.ArgumentParser(usage=usage.mergerfs_cp)
@@ -65,24 +65,57 @@ def get_destination_mount(destination):
     return lcp
 
 
-def mcp_file(args, source, destination):
+def mcp_file(args, merger_fs_src, destination):
     found_file = False
     for srcmount in args.srcmounts:
-        relative_to_mount = os.path.relpath(source, args.mergerfs_mount)
-        original_path = os.path.join(srcmount, relative_to_mount)
-        if os.path.exists(original_path):
+        relative_to_mount = os.path.relpath(merger_fs_src, args.mergerfs_mount)
+        source = os.path.join(srcmount, relative_to_mount)
+        if os.path.exists(source):
             found_file = True
             destination = os.path.join(srcmount, os.path.relpath(destination, args.mergerfs_mount))
 
-            src_dest = [original_path, destination]
+            src_dest = [source, destination]
             if args.simulate:
                 print(*args.cp_args, *src_dest)
             else:
-                os.makedirs(os.path.dirname(destination), exist_ok=True)
+                if source == destination:
+                    log.info("Destination is the same as source %s", destination)
+                    return
+
+                if os.path.exists(destination):
+                    if os.path.isdir(destination):
+                        # cannot replace directory with file of same name: move the file inside the folder instead
+                        destination = os.path.join(destination, os.path.basename(destination))
+                        return mcp_file(args, merger_fs_src, destination)
+
+                if os.path.exists(destination):
+                    if devices.clobber_confirm(source, destination, args.replace):
+                        os.unlink(destination)
+                    else:
+                        log.warning("not replacing file %s", destination)
+                        return
+                else:
+                    parent_dir = os.path.dirname(destination)
+                    try:
+                        os.makedirs(parent_dir, exist_ok=True)
+                    except (FileExistsError, NotADirectoryError, FileNotFoundError):
+                        # NotADirectoryError: a file exists _somewhere_ in the path hierarchy
+                        # Windows gives FileNotFoundError instead
+                        while not os.path.exists(parent_dir):
+                            parent_dir = os.path.dirname(parent_dir)  # we keep going up until we find a valid file
+
+                        log.warning("FileExistsError: A file exists instead of a folder %s", parent_dir)
+                        if devices.clobber_confirm(source, parent_dir, args.replace):
+                            os.unlink(parent_dir)
+                            os.makedirs(os.path.dirname(destination), exist_ok=True)  # use original destination parent
+                        else:
+                            log.warning("not replacing file %s", parent_dir)
+                            return
+
                 processes.cmd(*args.cp_args, *src_dest, strict=False, quiet=False, error_verbosity=2)
 
     if not found_file:
-        print(f"Could not find srcmount of {source}")
+        print(f"Could not find srcmount of {merger_fs_src}")
 
 
 def cp_args(args):
