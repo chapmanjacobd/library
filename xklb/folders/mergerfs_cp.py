@@ -18,13 +18,13 @@
 import os
 
 from xklb import usage
-from xklb.utils import arggroups, argparse_utils, consts, devices, file_utils, path_utils, processes
+from xklb.folders import merge_mv
+from xklb.utils import arggroups, argparse_utils, consts, devices, processes
 from xklb.utils.log_utils import log
 
 
 def parse_args():
     parser = argparse_utils.ArgumentParser(usage=usage.mergerfs_cp)
-    parser.add_argument("--simulate", "--dry-run", action="store_true", help="Dry run")
     arggroups.clobber(parser)
     arggroups.debug(parser)
 
@@ -66,7 +66,7 @@ def get_destination_mount(destination):
     return lcp
 
 
-def mcp_file(args, merger_fs_src, destination):
+def mergerfs_cp_file(args, merger_fs_src, destination):
     found_file = False
     for srcmount in args.srcmounts:
         relative_to_mount = os.path.relpath(merger_fs_src, args.mergerfs_mount)
@@ -87,13 +87,11 @@ def mcp_file(args, merger_fs_src, destination):
                     if os.path.isdir(destination):
                         # cannot replace directory with file of same name: move the file inside the folder instead
                         destination = os.path.join(destination, os.path.basename(destination))
-                        return mcp_file(args, merger_fs_src, destination)
+                        return mergerfs_cp_file(args, merger_fs_src, destination)
 
                 if os.path.exists(destination):
-                    if devices.clobber_confirm(source, destination, args.replace):
-                        os.unlink(destination)
-                    else:
-                        log.warning("not replacing file %s", destination)
+                    destination = devices.clobber(args, source, destination)
+                    if destination is None:
                         return
                 else:
                     parent_dir = os.path.dirname(destination)
@@ -106,12 +104,10 @@ def mcp_file(args, merger_fs_src, destination):
                             parent_dir = os.path.dirname(parent_dir)  # we keep going up until we find a valid file
 
                         log.warning("FileExistsError: A file exists instead of a folder %s", parent_dir)
-                        if devices.clobber_confirm(source, parent_dir, args.replace):
-                            os.unlink(parent_dir)
-                            os.makedirs(os.path.dirname(destination), exist_ok=True)  # use original destination parent
-                        else:
-                            log.warning("not replacing file %s", parent_dir)
+                        parent_dir = devices.clobber(args, source, parent_dir, allow_renames=False)
+                        if parent_dir is None:
                             return
+                        os.makedirs(os.path.dirname(destination), exist_ok=True)  # use original destination parent
 
                 processes.cmd(*args.cp_args, *src_dest, strict=False, quiet=False, error_verbosity=2)
 
@@ -135,30 +131,12 @@ def mergerfs_cp():
     args = parse_args()
 
     args.cp_args = cp_args(args)
-    args.destination = os.path.realpath(args.destination)
     args.mergerfs_mount = get_destination_mount(args.destination)
     if args.mergerfs_mount == "":
         processes.exit_error("Could not detect any mergerfs mounts")
     args.srcmounts = get_srcmounts(args.mergerfs_mount)
 
-    sources = (
-        os.path.realpath(s) + (os.sep if s.endswith(os.sep) else "") for s in args.paths
-    )  # preserve trailing slash
-    for source in sources:
-        if os.path.isdir(source):
-            for p in file_utils.rglob(source, args.ext or None)[0]:
-                cp_dest = args.destination
-                if not source.endswith(os.sep):  # use BSD behavior
-                    cp_dest = os.path.join(cp_dest, os.path.basename(source))
-                cp_dest = os.path.join(cp_dest, os.path.relpath(p, source))
-
-                mcp_file(args, p, cp_dest)
-        else:
-            cp_dest = args.destination
-            if path_utils.is_folder_dest(source, cp_dest):
-                cp_dest = os.path.join(args.destination, os.path.basename(source))
-
-            mcp_file(args, source, cp_dest)
+    merge_mv.mmv_folders(args, mergerfs_cp_file, args.paths, args.destination)
 
 
 if __name__ == "__main__":

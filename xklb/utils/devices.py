@@ -2,7 +2,8 @@ import os, random, shutil, sys
 
 import humanize
 
-from xklb.utils import consts
+from xklb.files import sample_compare
+from xklb.utils import consts, file_utils
 from xklb.utils.log_utils import log
 
 
@@ -54,26 +55,45 @@ def confirm(*args, **kwargs) -> bool:
     return Confirm.ask(*args, **kwargs, default=False)
 
 
-def clobber_confirm(src, dst, replace=None) -> bool:
-    if replace is not None:
-        return replace
+def clobber(args, src, dst, allow_renames=True) -> str | None:
+    replace = args.replace
 
-    src_size = os.stat(src).st_size
-    dst_size = os.stat(dst).st_size
+    if replace is None:
+        src_size = os.stat(src).st_size
+        dst_size = os.stat(dst).st_size
 
-    src_size_str = humanize.naturalsize(src_size, binary=True)
-    if src_size == dst_size:
-        # TODO: silently overwrite if hashes match
-        log.warning("Source and destination are the same size: %s", src_size_str)
+        src_size_str = humanize.naturalsize(src_size, binary=True)
+        if src_size == dst_size:
+            if args.replace_same_size:
+                replace = True
+            elif args.replace_same_hash:
+                if sample_compare.sample_cmp(src, dst):
+                    replace = True
+            else:
+                log.warning("Source and destination are the same size: %s", src_size_str)
+        else:
+            dst_size_str = humanize.naturalsize(dst_size, binary=True)
+            diff_size_str = humanize.naturalsize(abs(src_size - dst_size), binary=True)
+            if src_size > dst_size:
+                log.warning("Source (%s) is %s larger than destination (%s)", src_size_str, dst_size_str, diff_size_str)
+            elif src_size < dst_size:
+                log.warning(
+                    "Source (%s) is %s smaller than destination (%s)", src_size_str, dst_size_str, diff_size_str
+                )
+
+    if replace is None:
+        replace = confirm("Replace destination file? %s" % dst)
+
+    if replace is False:
+        log.warning("not replacing file %s", dst)
+        return
+
+    if allow_renames and args.rename_on_conflict:
+        dst = file_utils.alt_name(dst)
     else:
-        dst_size_str = humanize.naturalsize(dst_size, binary=True)
-        diff_size_str = humanize.naturalsize(abs(src_size - dst_size), binary=True)
-        if src_size > dst_size:
-            log.warning("Source (%s) is %s larger than destination (%s)", src_size_str, dst_size_str, diff_size_str)
-        elif src_size < dst_size:
-            log.warning("Source (%s) is %s smaller than destination (%s)", src_size_str, dst_size_str, diff_size_str)
+        os.unlink(dst)
 
-    return confirm("Replace destination file? %s" % dst)
+    return dst
 
 
 def prompt(*args, **kwargs) -> str:

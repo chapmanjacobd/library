@@ -10,7 +10,17 @@ from xklb import usage
 from xklb.files import sample_compare, sample_hash
 from xklb.mediadb import db_media
 from xklb.playback import media_printer
-from xklb.utils import arggroups, argparse_utils, consts, db_utils, devices, file_utils, processes, sql_utils
+from xklb.utils import (
+    arggroups,
+    argparse_utils,
+    consts,
+    db_utils,
+    devices,
+    file_utils,
+    path_utils,
+    processes,
+    sql_utils,
+)
 from xklb.utils.consts import DBType
 from xklb.utils.log_utils import log
 
@@ -426,8 +436,8 @@ def dedupe_media() -> None:
         if args.dirname and (
             difflib.SequenceMatcher(
                 None,
-                os.path.dirname(d["keep_path"]),
-                os.path.dirname(d["duplicate_path"]),
+                path_utils.parent(d["keep_path"]),
+                path_utils.parent(d["duplicate_path"]),
             ).ratio()
             < args.min_similarity_ratio
         ):
