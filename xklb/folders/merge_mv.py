@@ -34,13 +34,14 @@ def mmv_file(args, source, destination):
 
         if os.path.exists(destination):
             if os.path.isdir(destination):
-                # cannot replace directory with file of same name: move the file inside folder instead
+                # cannot replace directory with file of same name: move the file inside the folder instead
                 destination = os.path.join(destination, os.path.basename(destination))
+                return mmv_file(args, source, destination)
 
         if os.path.exists(destination):
             if os.path.isdir(destination):
                 raise FolderExistsError
-            if devices.clobber_confirm(source, destination):
+            if devices.clobber_confirm(source, destination, args.replace):
                 os.unlink(destination)
             else:
                 log.warning("not replacing file %s", destination)
@@ -55,12 +56,12 @@ def mmv_file(args, source, destination):
                     parent_dir = os.path.dirname(parent_dir)  # we keep going up until we find a valid file
 
                 log.warning("FileExistsError: A file exists instead of a folder %s", parent_dir)
-                if devices.clobber_confirm(source, parent_dir):
+                if devices.clobber_confirm(source, parent_dir, args.replace):
                     os.unlink(parent_dir)
+                    os.makedirs(os.path.dirname(destination), exist_ok=True)  # use original destination parent
                 else:
                     log.warning("not replacing file %s", parent_dir)
                     return
-                os.makedirs(os.path.dirname(destination), exist_ok=True)  # use original destination parent
 
         if args.copy:
             shutil.copy2(source, destination)

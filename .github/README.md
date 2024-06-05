@@ -97,7 +97,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v2.8.053; 78 subcommands)
+    library (v2.8.054; 79 subcommands)
 
     Create database subcommands:
     ╭───────────────┬──────────────────────────────────────────╮
@@ -143,6 +143,8 @@ To stop playing press Ctrl+C in either the terminal or mpv
     │ dates            │ Unstructured text -> timestamps, dates, time │
     ├──────────────────┼──────────────────────────────────────────────┤
     │ json-keys-rename │ Rename JSON keys by substring match          │
+    ├──────────────────┼──────────────────────────────────────────────┤
+    │ combinations     │ Enumerate possible combinations              │
     ╰──────────────────┴──────────────────────────────────────────────╯
 
     Folder subcommands:
@@ -960,7 +962,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 <details><summary>Add arbitrary data to SQLITE</summary>
 
     $ library row-add -h
-    usage: library row-add DATABASE [--table-name TABLE_NAME]
+    usage: library row-add DATABASE [--table-name TABLE_NAME] --COLUMN-NAME VALUE
 
     Add a row to sqlite
 
@@ -1122,6 +1124,25 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
         echo '{"The Place of Birthings": "Yo Mama", "extra": "key"}' | lb json-keys-rename --country 'place of birth'
         {"country": "Yo Mama"}
+
+
+</details>
+
+###### combinations
+
+<details><summary>Enumerate possible combinations</summary>
+
+    $ library combinations -h
+    usage: library combinations --PROPERTY OPTION
+
+    Enumerate the possible combinations of things that have multiple properties with more than one options
+
+        library combinations --prop1 opt1 --prop1 opt2 --prop2 A --prop2 B
+
+        {"prop1": "opt1", "prop2": "A"}
+        {"prop1": "opt1", "prop2": "B"}
+        {"prop1": "opt2", "prop2": "A"}
+        {"prop1": "opt2", "prop2": "B"}
 
 
 </details>
@@ -2271,6 +2292,17 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     If things aren't working you can use `at` to simulate a similar environment as `cron`
 
         echo 'fish -c "export DISPLAY=:0 && library tabs /full/path/to/tabs.db"' | at NOW
+
+    Also, if you're just testing things out be aware that `tabs-add` assumes that you visited the
+    website right before adding it; eg. if you use `tabs-add --frequency yearly` today the tab won't
+    open until one year from now (at most). You can override this default:
+
+        library tabs-add --allow-immediate ...
+
+    To re-"play" some tabs, delete some history
+
+        library history ~/lb/tabs.db --played-within '1 day' -L inf -p --delete-rows
+        library tabs ~/lb/tabs.db
 
     You can also invoke tabs manually:
 
