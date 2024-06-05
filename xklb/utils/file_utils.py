@@ -8,7 +8,7 @@ from shutil import which
 
 import urllib3
 
-from xklb.utils import consts, devices, file_utils, printing, processes, web
+from xklb.utils import consts, file_utils, printing, processes, web
 from xklb.utils.log_utils import log
 
 
@@ -160,29 +160,6 @@ def fast_glob(path_dir, limit=100):
                 if len(files) == limit:
                     break
     return sorted(files)
-
-
-def ask_overwrite_mv(args, media_file, keep_path):
-    try:
-        new_path = shutil.move(media_file, keep_path)
-    except shutil.Error as e:
-        if "already exists" not in str(e):
-            raise
-
-        p = Path(media_file)
-        new_path = Path(keep_path) / p.name
-
-        if media_file == keep_path:
-            raise shutil.SameFileError
-
-        if args.post_action.upper().startswith("ASK_"):
-            if devices.clobber_confirm(media_file, keep_path, getattr(args, "replace", None)):
-                new_path.unlink()
-                new_path = str(shutil.move(media_file, keep_path))
-            else:
-                return media_file
-        else:
-            raise
 
 
 def rename_no_replace(src, dst):

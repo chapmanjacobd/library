@@ -115,6 +115,7 @@ def debug(parent_parser):
     parser.add_argument(
         "--ext", "-e", default=[], action=argparse_utils.ArgparseList, help="Include only specific file extensions"
     )
+    parser.add_argument("--simulate", "--dry-run", action="store_true")
     printing(parent_parser)
 
 
@@ -677,19 +678,17 @@ def post_actions(parent_parser):
 -k ask_delete         # ask whether to delete after playing
 
 -k move               # move to "keep" dir after playing
--k ask_move           # ask whether to move to "keep" folder
-The default location of the keep folder is ./keep/ (relative to the played media file)
-You can change this by explicitly setting an *absolute* `keep-dir` path:
--k ask_move --keep-dir /home/my/music/keep/
-
+-k ask_move           # ask whether to move to "keep" folder --keep-dir "/home/my/music/keep/"
+                        (default: './keep/' -- relative to the played media file)
 -k ask_move_or_delete # ask after each whether to move to "keep" folder or delete
 
 You can also bind keys in mpv to different exit codes. For example in input.conf:
     ; quit 5
 
 And if you run something like:
-    --cmd5 ~/bin/process_audio.py
-    --cmd5 echo  # this will effectively do nothing except skip the normal post-actions via mpv shortcut
+    --cmd5 ~/bin/process_audio.py {} # this runs the command as a daemon replacing {} with the media file
+    --cmd5 echo                      # this does nothing except skip normal post-actions
+    --cmd130 exit_multiple_playback  # this will close all videos, even if --ignore-errors is set
 
 When semicolon is pressed in mpv (it will exit with error code 5) then the applicable player-exit-code command
 will start with the media file as the first argument; in this case `~/bin/process_audio.py $path`.
@@ -905,8 +904,6 @@ def clobber(parent_parser):
     )
 
 
-def simulate(parser):
-    parser.add_argument("--simulate", "--dry-run", action="store_true", help="Pretend to work")
 
 
 def process_ffmpeg(parent_parser):

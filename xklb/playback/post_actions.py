@@ -1,6 +1,7 @@
-import shlex
+import os, shlex
 from pathlib import Path
 
+from xklb.folders import merge_mv
 from xklb.mediadb import db_history, db_media
 from xklb.utils import devices, file_utils, iterables, processes
 from xklb.utils.log_utils import log
@@ -14,24 +15,27 @@ except ModuleNotFoundError:
     gui = None
 
 
-def mv_to_keep_folder(args, media_file: str):
+def mv_to_keep_folder(args, src: str) -> str:
     keep_path = Path(args.keep_dir)
+    p = Path(src)
     if not keep_path.is_absolute():
-        if Path(media_file).parent.match(f"*/{args.keep_dir}/*"):
-            return media_file
+        if p.parent.match(f"*{os.sep}{args.keep_dir}{os.sep}*"):
+            # file already in a matching keep_dir
+            return src
         else:
-            keep_path = Path(media_file).parent / f"{args.keep_dir}/"
+            keep_path = p.parent / args.keep_dir
 
     keep_path.mkdir(exist_ok=True)
 
-    new_path = file_utils.ask_overwrite_mv(args, media_file, keep_path)
+    dest = str(keep_path / p.name)
+    dest = merge_mv.mmv_file(args, src, dest)
+    if dest:
+        if hasattr(args, "db"):
+            with args.db.conn:
+                args.db.conn.execute("DELETE FROM media where path = ?", [dest])
+                args.db.conn.execute("UPDATE media set path = ? where path = ?", [dest, src])
 
-    if hasattr(args, "db"):
-        with args.db.conn:
-            args.db.conn.execute("DELETE FROM media where path = ?", [new_path])
-            args.db.conn.execute("UPDATE media set path = ? where path = ?", [new_path, media_file])
-
-    return new_path
+    return dest or src
 
 
 def delete_media(args, paths) -> int:
@@ -67,7 +71,7 @@ class AskAction:
     ASK_MOVE_OR_DELETE = (Action.MOVE, Action.DELETE)
 
 
-def normal_action(args, media_file, action, handle_ask_action=None):
+def normal_action(args, media_file: str, action, handle_ask_action=None):
     def handle_delete_action():
         if media_file.startswith("http"):
             db_media.mark_media_deleted(args, media_file)
@@ -117,6 +121,8 @@ def external_action(args, log_action, media_file, player_exit_code, player_proce
                 db_media.mark_media_deleted(args, media_file)
             else:
                 delete_media(args, media_file)
+        elif cmd == "exit_multiple_playback":
+            processes.player_exit(player_process)
         elif "{}" in cmd:
             processes.cmd_detach(media_file if s == "{}" else s for s in shlex.split(cmd))
         else:

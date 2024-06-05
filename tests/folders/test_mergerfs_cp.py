@@ -5,7 +5,7 @@ import pytest
 
 from tests.conftest import generate_file_tree_dict
 from xklb.lb import library as lb
-from xklb.utils import consts, devices
+from xklb.utils import consts
 
 simple_file_tree = {
     "folder1": {"file1.txt": "1", "file4.txt": {"file2.txt": "2"}},
@@ -53,7 +53,7 @@ def test_merge(src_type, dest_type, clobber, temp_file_tree):
     src1_inodes = generate_file_tree_dict(src1, inodes=False)
     dest_inodes = generate_file_tree_dict(dest, inodes=False)
 
-    cmd = ['mergerfs-cp']
+    cmd = ["mergerfs-cp"]
     cmd += [src1, dest]
     if clobber == "replace":
         cmd += ["--replace"]
@@ -93,7 +93,6 @@ def test_merge(src_type, dest_type, clobber, temp_file_tree):
 
     else:
         raise NotImplementedError
-
 
 
 def test_dupe_no_replace(temp_file_tree):

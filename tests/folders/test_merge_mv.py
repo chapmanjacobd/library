@@ -103,13 +103,13 @@ def test_merge(subcommand, src_type, dest_type, clobber, temp_file_tree):
 def test_merge_two_simple_folders(subcommand, temp_file_tree):
     src1 = temp_file_tree(simple_file_tree)
     src2 = temp_file_tree(simple_file_tree | {"file4.txt": "5"})
-    src1_inodes = generate_file_tree_dict(src1, inodes=subcommand == 'merge-mv')
-    src2_inodes = generate_file_tree_dict(src2, inodes=subcommand == 'merge-mv')
+    src1_inodes = generate_file_tree_dict(src1, inodes=subcommand == "merge-mv")
+    src2_inodes = generate_file_tree_dict(src2, inodes=subcommand == "merge-mv")
 
     target = temp_file_tree({})
     lb([subcommand, src1, src2, target])
 
-    if subcommand == 'merge-cp':
+    if subcommand == "merge-cp":
         assert generate_file_tree_dict(src1, inodes=False) == src1_inodes
         assert generate_file_tree_dict(src2, inodes=False) == src2_inodes
     else:
@@ -117,7 +117,7 @@ def test_merge_two_simple_folders(subcommand, temp_file_tree):
         assert not os.path.exists(src2)
 
     expected = {Path(src1).name: src1_inodes} | {Path(src2).name: src2_inodes}
-    assert generate_file_tree_dict(target, inodes=subcommand == 'merge-mv') == expected
+    assert generate_file_tree_dict(target, inodes=subcommand == "merge-mv") == expected
 
 
 @pytest.mark.parametrize("subcommand", ["merge-mv", "merge-cp"])
