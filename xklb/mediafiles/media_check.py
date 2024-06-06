@@ -115,7 +115,7 @@ def decode_full_scan(path, audio_scan=False, frames="frames", threads=None):
             "-of",
             "json",
             "-threads",
-            str(threads or 5),
+            str(threads or 2),
             "-v",
             "0",
             path,
@@ -155,7 +155,7 @@ def corruption_threshold_exceeded(threshold, corruption, duration):
 
 
 def calculate_corruption(
-    path, chunk_size=1, gap=0.1, full_scan=False, full_scan_if_corrupt=False, audio_scan=False, threads=5
+    path, chunk_size=1, gap=0.1, full_scan=False, full_scan_if_corrupt=False, audio_scan=False, threads=2
 ):
     if full_scan:
         if gap == 0:
@@ -190,7 +190,7 @@ def media_check() -> None:
                 gap=args.gap,
                 full_scan=args.full_scan,
                 audio_scan=args.audio_scan,
-                threads=args.threads or 5,
+                threads=args.threads or 3,
             ): path
             for path in paths
             if Path(path).suffix.lower() not in consts.SKIP_MEDIA_CHECK
