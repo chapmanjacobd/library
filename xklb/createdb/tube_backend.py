@@ -61,6 +61,7 @@ def tube_opts(args, func_opts=None, playlist_opts: str | None = None) -> dict:
     all_opts = {
         **default_opts,
         **func_opts,
+        "cookies_from_browser": args.cookies_from_browser,
         **json.loads(playlist_opts),
         **cli_opts,
     }
