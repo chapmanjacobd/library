@@ -136,11 +136,10 @@ def post_act(
     args, media_file: str, media_len=0, record_history=True, geom_data=None, player_process=None, action=None
 ) -> None:
     def log_action(confirmed_action):
-        if geom_data is not None:  # multiplexing needs more context than normal
-            if args.exit_code_confirm and media_len > 0:
-                log.warning("%s: %s (%s remaining)", confirmed_action, media_file, media_len)
-            else:
-                log.warning("%s: %s", confirmed_action, media_file)
+        if args.exit_code_confirm and media_len > 0:
+            log.warning("%s: %s (%s remaining)", confirmed_action, media_file, media_len)
+        else:
+            log.warning("%s: %s", confirmed_action, media_file)
 
     player_exit_code = getattr(player_process, "returncode", None) or 0
 
