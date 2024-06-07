@@ -14,6 +14,7 @@ def parse_args():
     arggroups.capability_delete(parser)
     arggroups.media_check(parser)
     arggroups.debug(parser)
+    parser.set_defaults(same_file_threads=2, threads=4)
 
     arggroups.paths_or_stdin(parser)
     args = parser.parse_args()
@@ -115,7 +116,7 @@ def decode_full_scan(path, audio_scan=False, frames="frames", threads=None):
             "-of",
             "json",
             "-threads",
-            str(threads or 2),
+            str(threads),
             "-v",
             "0",
             path,
@@ -155,7 +156,7 @@ def corruption_threshold_exceeded(threshold, corruption, duration):
 
 
 def calculate_corruption(
-    path, chunk_size=1, gap=0.1, full_scan=False, full_scan_if_corrupt=False, audio_scan=False, threads=2
+    path, chunk_size=1, gap=0.1, full_scan=False, full_scan_if_corrupt=False, audio_scan=False, threads=1
 ):
     if full_scan:
         if gap == 0:
@@ -181,7 +182,7 @@ def media_check() -> None:
     args = parse_args()
     paths = list(gen_paths(args))
 
-    with ThreadPoolExecutor(max_workers=1 if args.verbose >= consts.LOG_DEBUG else 4) as pool:
+    with ThreadPoolExecutor(max_workers=1 if args.verbose >= consts.LOG_DEBUG else args.threads) as pool:
         future_to_path = {
             pool.submit(
                 calculate_corruption,
@@ -190,7 +191,7 @@ def media_check() -> None:
                 gap=args.gap,
                 full_scan=args.full_scan,
                 audio_scan=args.audio_scan,
-                threads=args.threads or 3,
+                threads=args.same_file_threads,
             ): path
             for path in paths
             if Path(path).suffix.lower() not in consts.SKIP_MEDIA_CHECK
