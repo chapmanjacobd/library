@@ -122,37 +122,42 @@ def process_path(args, path, **kwargs):
     ff_opts: list[str] = []
 
     if video_stream:
-        ff_opts.extend(
-            [
-                "-c:v",
-                "libsvtav1",
-                "-preset",
-                args.preset,
-                "-crf",
-                args.crf,
-                "-pix_fmt",
-                "yuv420p10le",
-                "-svtav1-params",
-                "tune=0:enable-overlays=1",
-            ]
-        )
-
-        width = int(video_stream.get("width"))
-        height = int(video_stream.get("height"))
-
-        if width > (args.max_width * (1 + args.max_width_buffer)):
-            ff_opts.extend(["-vf", f"scale={args.max_width}:-2"])
-        elif height > (args.max_height * (1 + args.max_height_buffer)):
-            ff_opts.extend(["-vf", f"scale=-2:{args.max_height}"])
-
         for s in probe.video_streams:
             ff_opts.extend(["-map", f'0:{s["index"]}'])
 
+        if args.keyframes:
+            ff_opts.extend(["-c:v", "copy", "-bsf:v", "noise=drop=not(key)"])
+        else:
+            ff_opts.extend(
+                [
+                    "-c:v",
+                    "libsvtav1",
+                    "-preset",
+                    args.preset,
+                    "-crf",
+                    args.crf,
+                    "-pix_fmt",
+                    "yuv420p10le",
+                    "-svtav1-params",
+                    "tune=0:enable-overlays=1",
+                ]
+            )
+
+            width = int(video_stream.get("width"))
+            height = int(video_stream.get("height"))
+
+            if width > (args.max_width * (1 + args.max_width_buffer)):
+                ff_opts.extend(["-vf", f"scale={args.max_width}:-2"])
+            elif height > (args.max_height * (1 + args.max_height_buffer)):
+                ff_opts.extend(["-vf", f"scale=-2:{args.max_height}"])
+
     elif album_art_stream:
-        ff_opts.extend(["-c:v", "copy", "-map", "0:v"])
+        ff_opts.extend(["-map", "0:v", "-c:v", "copy"])
 
     is_split = bool(audio_stream)
     if audio_stream:
+        ff_opts.extend(["-map", "0:a"])
+
         channels = audio_stream.get("channels") or 2
         bitrate = int(audio_stream.get("bit_rate") or probe.format.get("bit_rate") or 256000)
         source_rate = int(audio_stream.get("sample_rate") or 44100)
@@ -233,10 +238,9 @@ def process_path(args, path, **kwargs):
                 ff_opts.extend(["-f", "segment", "-segment_times", final_splits])
             else:
                 is_split = False
-        ff_opts.extend(["-map", "0:a"])
 
     if subtitle_stream:
-        ff_opts.extend(["-c:s", "copy", "-map", "0:s"])  # ,'-map','0:t?'
+        ff_opts.extend(["-map", "0:s", "-c:s", "copy"])  # ,'-map','0:t?'
 
     if path.parent != output_path.parent:
         log.warning("Output folder will be different due to path cleaning: %s", output_path.parent)

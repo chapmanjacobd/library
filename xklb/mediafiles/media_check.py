@@ -145,8 +145,11 @@ def decode_full_scan(path, audio_scan=False, frames="frames", threads=None):
     return corruption
 
 
-def corruption_threshold_exceeded(threshold, corruption, duration):
+def corruption_threshold_exceeded(threshold: bool | float, corruption, duration):
     if threshold:
+        if threshold is True:
+            threshold = 0.15
+
         if 1 > threshold > 0:
             if corruption >= threshold:
                 return True
@@ -156,7 +159,7 @@ def corruption_threshold_exceeded(threshold, corruption, duration):
 
 
 def calculate_corruption(
-    path, chunk_size=1, gap=0.1, full_scan=False, full_scan_if_corrupt=False, audio_scan=False, threads=1
+    path, chunk_size=1, gap=0.1, full_scan=False, full_scan_if_corrupt: bool | float=False, audio_scan=False, threads=1
 ):
     if full_scan:
         if gap == 0:
@@ -190,6 +193,7 @@ def media_check() -> None:
                 chunk_size=args.chunk_size,
                 gap=args.gap,
                 full_scan=args.full_scan,
+                full_scan_if_corrupt=args.full_scan_if_corrupt,
                 audio_scan=args.audio_scan,
                 threads=args.same_file_threads,
             ): path
