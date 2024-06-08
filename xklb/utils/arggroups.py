@@ -959,6 +959,7 @@ def process_ffmpeg(parent_parser):
         help="Combine segments that are smaller than this length of time",
     )
 
+    parser.add_argument("--keyframes", action="store_true", help="Only keep keyframes")
     parser.add_argument("--audio-only", action="store_true", help="Only extract audio")
     parser.add_argument(
         "--no-preserve-video",

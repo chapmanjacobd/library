@@ -3,6 +3,7 @@ import re
 environment_error = re.compile(
     "|".join(
         r""".*No space left on device
+.*Transport endpoint is not connected
 .*File name too long""".splitlines(),
     )
 )

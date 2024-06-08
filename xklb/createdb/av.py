@@ -105,6 +105,16 @@ def get_audio_tags(f) -> dict:
     return stream_tags
 
 
+def collect_codecs(streams):
+    from yt_dlp.utils import traverse_obj
+
+    return ",".join(
+        iterables.ordered_set(
+            iterables.conform(s.get("codec_name") or traverse_obj(s, ["tags", "mimetype"]) for s in streams)
+        )
+    )
+
+
 def munge_av_tags(args, path) -> dict:
     media = {}
     try:
@@ -233,10 +243,10 @@ def munge_av_tags(args, path) -> dict:
     audio_count = len(probe.audio_streams)
     other_count = len(probe.other_streams)
 
-    video_codecs = ",".join(iterables.ordered_set(s.get("codec_name") for s in probe.video_streams))
-    audio_codecs = ",".join(iterables.ordered_set(s.get("codec_name") for s in probe.audio_streams))
-    subtitle_codecs = ",".join(iterables.ordered_set(s.get("codec_name") for s in probe.subtitle_streams))
-    other_codecs = ",".join(iterables.ordered_set(s.get("codec_name") for s in probe.other_streams))
+    video_codecs = collect_codecs(probe.video_streams)
+    audio_codecs = collect_codecs(probe.audio_streams)
+    subtitle_codecs = collect_codecs(probe.subtitle_streams)
+    other_codecs = collect_codecs(probe.other_streams)
 
     chapters = probe.chapters or []
     chapter_count = len(chapters)
