@@ -128,6 +128,11 @@ def media_printer(args, data, units=None, media_len=None) -> None:
         else:
             D = {"path": "Aggregate", "count": len(media)}
 
+        if "exists" in media[0]:
+            D["avg_exists"] = int(nums.safe_mean(m.get("exists") for m in media) or 0)
+        if "deleted" in media[0]:
+            D["avg_deleted"] = int(nums.safe_mean(m.get("deleted") for m in media) or 0)
+
         if "duration" in media[0] and action not in (SC.download_status):
             D["duration"] = total_duration
             D["avg_duration"] = nums.safe_mean(m.get("duration") for m in media)
