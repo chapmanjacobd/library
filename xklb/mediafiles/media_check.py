@@ -159,7 +159,13 @@ def corruption_threshold_exceeded(threshold: bool | float, corruption, duration)
 
 
 def calculate_corruption(
-    path, chunk_size=1, gap=0.1, full_scan=False, full_scan_if_corrupt: bool | float=False, audio_scan=False, threads=1
+    path,
+    chunk_size=1,
+    gap=0.1,
+    full_scan=False,
+    full_scan_if_corrupt: bool | float = False,
+    audio_scan=False,
+    threads=1,
 ):
     if full_scan:
         if gap == 0:

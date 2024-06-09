@@ -505,19 +505,22 @@ def download(args, m) -> None:
                 info = {**info, "ext": args.extract_audio_ext}
             temp_path = ydl.prepare_filename(info)
 
-            local_path = ydl.prepare_filename(
-                info,
-                outtmpl=out_dir(
-                    "%(uploader,uploader_id)s/%(title).170B_%(section_number)03d_%(section_title).80B_%(view_count)3.2D_[%(id).64B].%(ext)s"
-                    if "section_number" in info
-                    else "%(uploader,uploader_id)s/%(title).170B_%(view_count)3.2D_[%(id).64B].%(ext)s"
-                ),
-            )
-            local_path = path_utils.clean_path(local_path.encode())
-            if Path(temp_path).exists():  # may be download error
-                file_utils.rename_move_file(temp_path, local_path)
-            elif Path(local_path).exists():  # media might already be in download archive
+            if "outtmpl" in extra_args:
                 local_path = temp_path
+            else:
+                local_path = ydl.prepare_filename(
+                    info,
+                    outtmpl=out_dir(
+                        "%(uploader,uploader_id)s/%(title).170B_%(section_number)03d_%(section_title).80B_%(view_count)3.2D_[%(id).64B].%(ext)s"
+                        if "section_number" in info
+                        else "%(uploader,uploader_id)s/%(title).170B_%(view_count)3.2D_[%(id).64B].%(ext)s"
+                    ),
+                )
+                local_path = path_utils.clean_path(local_path.encode())
+                if Path(temp_path).exists():  # may be download error
+                    file_utils.rename_move_file(temp_path, local_path)
+                elif Path(local_path).exists():  # media might already be in download archive
+                    local_path = temp_path
 
     download_status = DLStatus.SUCCESS
     media_check_failed = False
