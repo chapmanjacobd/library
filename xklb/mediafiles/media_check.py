@@ -116,7 +116,7 @@ def decode_full_scan(path, audio_scan=False, frames="frames", threads=None):
             "-of",
             "json",
             "-threads",
-            str(threads),
+            str(threads or 1),
             "-v",
             "0",
             path,
