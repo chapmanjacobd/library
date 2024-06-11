@@ -179,3 +179,7 @@ def is_profile(args, profile_target):
 
 def product(**kwargs):
     return (dict(zip(kwargs.keys(), x)) for x in itertools.product(*kwargs.values()))
+
+
+def class_enum(o):
+    return [v for k, v in o.__dict__.items() if k and not k.startswith("__") and v]

@@ -3,7 +3,7 @@ import os, random, shutil, sys
 import humanize
 
 from xklb.files import sample_compare
-from xklb.utils import consts, file_utils
+from xklb.utils import arggroups, consts, file_utils
 from xklb.utils.log_utils import log
 
 
@@ -55,45 +55,183 @@ def confirm(*args, **kwargs) -> bool:
     return Confirm.ask(*args, **kwargs, default=False)
 
 
-def clobber(args, src, dst, allow_renames=True) -> str | None:
-    replace = args.replace
+def preserve_root(p):
+    assert p != os.sep
+    drive, realpath = os.path.splitdrive(p)
+    assert realpath
+    assert os.path.normpath(p) != os.path.normpath(drive)
 
-    if replace is None:
-        src_size = os.stat(src).st_size
-        dst_size = os.stat(dst).st_size
 
-        src_size_str = humanize.naturalsize(src_size, binary=True)
-        if src_size == dst_size:
-            if args.replace_same_size:
-                replace = True
-            elif args.replace_same_hash:
-                if sample_compare.sample_cmp(src, dst):
-                    replace = True
-            else:
-                log.warning("Source and destination are the same size: %s", src_size_str)
-        else:
-            dst_size_str = humanize.naturalsize(dst_size, binary=True)
-            diff_size_str = humanize.naturalsize(abs(src_size - dst_size), binary=True)
-            if src_size > dst_size:
-                log.warning("Source (%s) is %s larger than destination (%s)", src_size_str, dst_size_str, diff_size_str)
-            elif src_size < dst_size:
-                log.warning(
-                    "Source (%s) is %s smaller than destination (%s)", src_size_str, dst_size_str, diff_size_str
-                )
-
-    if replace is None:
-        replace = confirm("Replace destination file? %s" % dst)
-
-    if replace is False:
-        log.warning("not replacing file %s", dst)
-        return
-
-    if allow_renames and args.rename_on_conflict:
-        dst = file_utils.alt_name(dst)
+def rename(args, src, dst):
+    if args.simulate:
+        print("rename", src, dst)
     else:
-        os.unlink(dst)
+        os.rename(src, dst)
 
-    return dst
+
+def unlink(args, p):
+    if args.simulate:
+        print("unlink", p)
+    else:
+        os.unlink(p)
+
+
+def rmtree(args, p):
+    if args.simulate:
+        print("rmtree", p)
+    elif os.path.isdir(p):
+        shutil.rmtree(p)
+    else:
+        os.unlink(p)
+
+
+def log_size_diff(src_size, dst_size):
+    src_size_str = humanize.naturalsize(src_size, binary=True)
+    dst_size_str = humanize.naturalsize(dst_size, binary=True)
+    diff_size_str = humanize.naturalsize(abs(src_size - dst_size), binary=True)
+    if src_size == dst_size:
+        print(f"Source and destination are the same size: {src_size_str}")
+    elif src_size > dst_size:
+        print(f"Source ({src_size_str}) is {dst_size_str} larger than destination ({diff_size_str})")
+    elif src_size < dst_size:
+        print(f"Source ({src_size_str}) is {dst_size_str} smaller than destination ({diff_size_str})")
+
+
+def clobber(args, source, destination) -> tuple[str | None, str]:
+    if source == destination:
+        log.info("Destination is the same as source\t%s", destination)
+        return None, destination
+
+    orig_destination = destination
+
+    if os.path.exists(destination):
+        if os.path.isdir(destination):
+            log.info("File Over Folder conflict\t%s\t%s", source, destination)
+            match args.file_over_folder:
+                case arggroups.FileOverFolder.SKIP:
+                    source = None
+                case arggroups.FileOverFolder.RENAME_SRC:
+                    destination = file_utils.alt_name(destination)
+                case arggroups.FileOverFolder.RENAME_DEST:
+                    existing_rename = file_utils.alt_name(destination)
+                    rename(args, destination, existing_rename)
+                case arggroups.FileOverFolder.DELETE_SRC:
+                    unlink(args, source)
+                    source = None
+                case arggroups.FileOverFolder.DELETE_DEST:
+                    rmtree(args, destination)
+                case arggroups.FileOverFolder.MERGE:
+                    while os.path.exists(destination):  # until we find an open slot
+                        destination = os.path.join(destination, os.path.basename(destination))  # down
+                    if not os.path.isdir(os.path.dirname(destination)):  # go back one if it is a file
+                        destination = os.path.dirname(destination)  # up
+
+        else:
+            log.info("File Over File conflict\t%s\t%s", source, destination)
+            src_size = os.stat(source).st_size
+            dst_size = os.stat(destination).st_size
+
+            for s in args.file_over_file:
+                log.debug(s)
+                match s:
+                    case arggroups.FileOverFileOptional.DELETE_DEST_HASH:
+                        if sample_compare.sample_cmp(source, destination, ignore_holes=True):
+                            unlink(args, destination)
+                            break
+                    case arggroups.FileOverFileOptional.DELETE_DEST_SIZE:
+                        if src_size == dst_size:
+                            unlink(args, destination)
+                            break
+                    case arggroups.FileOverFileOptional.DELETE_DEST_LARGER:
+                        if src_size < dst_size:
+                            unlink(args, destination)
+                            break
+                    case arggroups.FileOverFileOptional.DELETE_DEST_SMALLER:
+                        if src_size > dst_size:
+                            unlink(args, destination)
+                            break
+                    case arggroups.FileOverFileOptional.DELETE_SRC_HASH:
+                        if sample_compare.sample_cmp(source, destination, ignore_holes=True):
+                            unlink(args, source)
+                            source = None
+                            break
+                    case arggroups.FileOverFileOptional.DELETE_SRC_SIZE:
+                        if src_size == dst_size:
+                            unlink(args, source)
+                            source = None
+                            break
+                    case arggroups.FileOverFileOptional.DELETE_SRC_LARGER:
+                        if src_size > dst_size:
+                            unlink(args, source)
+                            source = None
+                            break
+                    case arggroups.FileOverFileOptional.DELETE_SRC_SMALLER:
+                        if src_size < dst_size:
+                            unlink(args, source)
+                            source = None
+                            break
+                    case arggroups.FileOverFile.SKIP:
+                        source = None
+                    case arggroups.FileOverFile.DELETE_DEST:
+                        unlink(args, destination)
+                    case arggroups.FileOverFile.DELETE_DEST_ASK:
+                        print(source)
+                        print("  -->", destination)
+                        log_size_diff(src_size, dst_size)
+                        if confirm("Replace destination file?"):
+                            unlink(args, destination)
+                    case arggroups.FileOverFile.RENAME_SRC:
+                        destination = file_utils.alt_name(destination)
+                    case arggroups.FileOverFile.RENAME_DEST:
+                        existing_rename = file_utils.alt_name(destination)
+                        os.rename(destination, existing_rename)
+                    case arggroups.FileOverFile.DELETE_SRC:
+                        unlink(args, source)
+                        source = None
+
+    else:
+        parent_dir = os.path.dirname(destination)
+        try:
+            os.makedirs(parent_dir, exist_ok=True)
+        except (
+            FileExistsError,
+            NotADirectoryError,  # a file exists _somewhere_ in the path hierarchy
+            FileNotFoundError,  # Windows
+        ):
+            parent_file = parent_dir
+            while not os.path.exists(parent_file):  # until we find the file conflict
+                parent_file = os.path.dirname(parent_file)  # up
+            preserve_root(parent_file)
+
+            log.warning("Folder Over File conflict %s\t%s", source, parent_file)
+            match args.folder_over_file:
+                case arggroups.FolderOverFile.SKIP:
+                    source = None
+                case arggroups.FolderOverFile.DELETE_SRC:
+                    rmtree(args, source)
+                    source = None
+                case arggroups.FolderOverFile.DELETE_DEST:
+                    unlink(args, parent_file)
+                case arggroups.FolderOverFile.RENAME_DEST | arggroups.FolderOverFile.MERGE:
+                    existing_rename = file_utils.alt_name(parent_file)
+                    rename(args, parent_file, existing_rename)
+                    if args.folder_over_file == arggroups.FolderOverFile.MERGE:
+                        os.makedirs(parent_dir, exist_ok=True)  # there can't be more than one blocking file
+                        while os.path.exists(parent_file):  # until we find an open file slot
+                            parent_file = os.path.join(parent_file, os.path.basename(parent_file))  # down
+                        if not os.path.isdir(os.path.dirname(parent_file)):  # go back one if it is a file
+                            parent_file = os.path.dirname(parent_file)  # up
+                        rename(args, existing_rename, parent_file)  # temporary rename to final dest
+
+            if source:
+                os.makedirs(parent_dir, exist_ok=True)  # original destination parent
+        else:
+            log.debug("Nothing to clobber %s\t%s", source, destination)
+
+    if destination != orig_destination:
+        log.info("re-targeted %s -> %s", orig_destination, destination)
+
+    return source, destination
 
 
 def prompt(*args, **kwargs) -> str:

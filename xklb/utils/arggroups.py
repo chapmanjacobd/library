@@ -896,19 +896,143 @@ def related(parser):
     )
 
 
+class FileOverFileOptional:
+    DELETE_DEST_HASH = "delete-dest-hash"
+    DELETE_DEST_SIZE = "delete-dest-size"
+    DELETE_DEST_LARGER = "delete-dest-larger"
+    DELETE_DEST_SMALLER = "delete-dest-smaller"
+    DELETE_SRC_HASH = "delete-src-hash"
+    DELETE_SRC_SIZE = "delete-src-size"
+    DELETE_SRC_LARGER = "delete-src-larger"
+    DELETE_SRC_SMALLER = "delete-src-smaller"
+
+
+class FileOverFile:
+    SKIP = "skip"
+    RENAME_SRC = "rename-src"
+    RENAME_DEST = "rename-dest"
+    DELETE_SRC = "delete-src"
+    DELETE_DEST = "delete-dest"
+    DELETE_DEST_ASK = "delete-dest-ask"
+
+
+class FileOverFolder:
+    SKIP = "skip"
+    RENAME_SRC = "rename-src"
+    RENAME_DEST = "rename-dest"
+    DELETE_SRC = "delete-src"
+    DELETE_DEST = "delete-dest"
+    MERGE = "merge"
+
+
+class FolderOverFile:
+    SKIP = "skip"
+    RENAME_DEST = "rename-dest"
+    DELETE_SRC = "delete-src"
+    DELETE_DEST = "delete-dest"
+    MERGE = "merge"
+
+
+def file_over_file(value):
+    parts = value.split()
+    if not parts:
+        raise argparse.ArgumentTypeError("--file-over-file should have one or more parts separated by a space")
+
+    required_opts = objects.class_enum(FileOverFile)
+    optional_opts = objects.class_enum(FileOverFileOptional)
+
+    optionals, required = parts[:-1], parts[-1]
+
+    for opt in optionals:
+        if opt not in optional_opts:
+            raise argparse.ArgumentTypeError(
+                f"Invalid optional conflict resolution option. Choose ZERO OR MORE: {', '.join(optional_opts)}"
+            )
+
+    if required not in required_opts:
+        raise argparse.ArgumentTypeError(
+            f"Invalid required conflict resolution option. Choose ONE: {', '.join(required_opts)}"
+        )
+
+    return parts
+
+
 def clobber(parent_parser):
     parser = parent_parser.add_argument_group("Replace Files")
+    parser.add_argument("--bsd", "--rsync", action="store_true", help="BSD trailing slash behavior")
+    parser.add_argument("--parent", action="store_true", help="Include parent (dirname) when merging")
     parser.add_argument(
-        "--replace",
-        "--clobber",
-        action=argparse.BooleanOptionalAction,
-        help="Overwrite files on path conflict (default: ask to confirm)",
+        "--file-over-file",
+        type=file_over_file,
+        metavar="[action-if ...] fallback",
+        default="delete-src-hash rename-src",
+        help="""Specify the conflict resolution strategy for file on file clobbering
+
+In this scenario you have a file with the same name as a file in the target directory:
+
+file1.zip (existing file)
+file1.zip (new file)
+
+Choose ZERO OR MORE of the following options:
+  delete-dest-hash     will delete the existing file if the SHA-256 hash matches
+  delete-dest-size     will delete the existing file if the file size matches
+  delete-dest-larger   will delete the existing file if it is larger
+  delete-dest-smaller  will delete the existing file if it is smaller
+
+  If you trust your target is more recent than the source(s):
+  delete-src-hash      will delete the src file if the SHA-256 file hash matches
+  delete-src-size      will delete the src file if the file size matches
+  delete-src-larger    will delete the src file if it is larger
+  delete-src-smaller   will delete the src file if it is smaller
+
+Choose ONE of the following required fallback options:
+  skip             will skip the src file
+  rename-dest      will rename the existing file to file1_1.zip
+  delete-dest      will delete the existing file
+  delete-dest-ask  will delete the existing file if confirmed for the specific file
+
+  If you trust your target is more recent than the source(s):
+  rename-src       will rename the src file to file1_1.zip
+  delete-src       will delete the src file
+
+If you use both an delete-src* option and an delete-dest* option then both src and dest could be deleted!""",
     )
-    parser.add_argument("--replace-same-size", action="store_true", help="Replace only if same size")
-    parser.add_argument("--replace-same-hash", action="store_true", help="Replace only if same SHA256 hash")
-    parser.add_argument("--rename-on-conflict", action="store_true", help="Rename to '_1'.ext instead of replace")
     parser.add_argument(
-        "--parent", "--bsd", action=argparse.BooleanOptionalAction, help="Include parent (dirname); BSD trailing slash"
+        "--file-over-folder",
+        choices=objects.class_enum(FileOverFolder),
+        default="merge",
+        help="""Specify the conflict resolution strategy for file on folder clobbering
+
+In this scenario you have a file with the same name as a folder in the target directory:
+
+folder1.zip/ (existing folder)
+folder1.zip  (new file)
+
+Choose ONE of the following options:
+  skip         will skip the src file
+  rename-src   will rename the src file to folder1_1.zip
+  rename-dest  will rename the existing folder to folder1_1.zip/
+  delete-src   will delete the src file
+  delete-dest  will delete the existing folder tree
+  merge        will move the src file to folder1.zip/folder1.zip""",
+    )
+    parser.add_argument(
+        "--folder-over-file",
+        choices=objects.class_enum(FolderOverFile),
+        default="merge",
+        help="""Specify the conflict resolution strategy for folder on file clobbering
+
+In this scenario you have a file with the same name as a folder somewhere in the target folder hierarchy:
+
+en.wikipedia.org/wiki                       (existing file)
+en.wikipedia.org/wiki/Telescopes/index.html (new folder + files)
+
+Choose ONE  the following options:
+  skip         will skip the src files within wiki/
+  rename-dest  will rename the existing file to wiki_1
+  delete-src   will delete the src folder tree
+  delete-dest  will delete the existing file
+  merge        will move the existing file to en.wikipedia.org/wiki/wiki""",
     )
 
 
