@@ -97,7 +97,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v2.8.059; 79 subcommands)
+    library (v2.8.060; 79 subcommands)
 
     Create database subcommands:
     ╭───────────────┬──────────────────────────────────────────╮
@@ -1154,22 +1154,23 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 <details><summary>Move files and merge folders in BSD/rsync style, rename if possible</summary>
 
     $ library merge-mv -h
-    usage: library merge-mv SOURCE ... DEST [--simulate] [--replace | --no-replace] [--ext EXT]
+    usage: library merge-mv SOURCE ... DEST [--simulate] [--ext EXT]
 
-    Move folders BSD-style
+    By default it won't matter if source folders end with slash or not
 
-        library merge-mv folder1  folder2/  # folder1 will be moved to folder2/folder1/
+        library merge-mv folder1  folder2/  # folder1 will be merged with folder2/
         library merge-mv folder1/ folder2/  # folder1 will be merged with folder2/
 
-    With --no-parent, it won't matter if source folders end with slash or not
+    Move folders BSD-style where slash on each source argument determines if it is to be merged with or placed within the destination
 
-        library merge-mv --no-parent folder1  folder2/  # folder1 will be merged with folder2/
-        library merge-mv --no-parent folder1/ folder2/  # folder1 will be merged with folder2/
-        library merge-mv --no-bsd    folder1/ folder2/  # --no-bsd is the same as --no-parent
+        library merge-mv --bsd folder1/ folder2/  # folder1 will be merged with folder2/
+        library merge-mv --bsd folder1  folder2/  # folder1 will be moved to folder2/folder1/
 
-    Move files BSD-style
+    Or always include the parent folders when merging:
 
-        library merge-mv --parent file1.txt folder2/  # file1 will be moved to folder2/file1_parent_folder/file1.txt
+        library merge-mv --parent folder1  folder2/  # folder1 will be moved to folder2/folder1/
+        library merge-mv --parent folder1/ folder2/  # folder1 will be moved to folder2/folder1/
+        library merge-mv --parent file1.txt folder2/ # file1 will be moved to folder2/file1_parent_folder/file1.txt
 
     nb. This tool, like other lb subcommands, only works on files. Empty folders will not be created on the destination
 
@@ -1221,7 +1222,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 <details><summary>cp files with reflink on mergerfs</summary>
 
     $ library mergerfs-cp -h
-    usage: library mergerfs-cp SOURCE ... DEST [--simulate] [--replace | --no-replace] [--ext EXT]
+    usage: library mergerfs-cp SOURCE ... DEST [--simulate] [--ext EXT]
 
     Copy files with reflink and handle mergerfs mounts
 

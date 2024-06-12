@@ -53,9 +53,9 @@ def test_merge(src_type, dest_type, temp_file_tree):
     dest_inodes = generate_file_tree_dict(dest, inodes=False)
 
     cmd = ["mergerfs-cp"]
-    cmd += ['--file-over-file', 'delete-dest']
-    if src_type == 'folder_bsd':
-        cmd += ['--bsd']
+    cmd += ["--file-over-file", "delete-dest"]
+    if src_type == "folder_bsd":
+        cmd += ["--bsd"]
     cmd += [src1, dest]
     lb(cmd)
 
@@ -69,7 +69,7 @@ def test_merge(src_type, dest_type, temp_file_tree):
     elif dest_type in ("not_exist",):
         assert target_inodes == src1_inodes
 
-    elif src_type == "folder_bsd" and dest_type in [ "folder_merge", "clobber_file"]:
+    elif src_type == "folder_bsd" and dest_type in ["folder_merge", "clobber_file"]:
         assert target_inodes == dest_inodes | {Path(src1).name: src1_inodes}
 
     elif dest_type == "folder_merge":
@@ -79,7 +79,7 @@ def test_merge(src_type, dest_type, temp_file_tree):
         dest_inodes["file4.txt"] = dest_inodes["file4.txt"] | src1_inodes  # type: ignore
         assert target_inodes == dest_inodes
 
-    elif src_type in ['folder', 'file'] and dest_type == "clobber_file":
+    elif src_type in ["folder", "file"] and dest_type == "clobber_file":
         assert target_inodes == src1_inodes
 
     elif dest_type == "clobber_file":
@@ -95,7 +95,7 @@ def test_dupe_replace(temp_file_tree):
 
     src1_inodes = generate_file_tree_dict(src1, inodes=False)
     target_inodes = generate_file_tree_dict(target, inodes=False)
-    lb(["mergerfs-cp", '--parent', src1, target])
+    lb(["mergerfs-cp", "--parent", src1, target])
 
     assert generate_file_tree_dict(src1, inodes=False) == src1_inodes
     assert generate_file_tree_dict(target, inodes=False) == target_inodes | {Path(src1).name: src1_inodes}
@@ -107,7 +107,7 @@ def test_file_replace(temp_file_tree):
 
     src1_inodes = generate_file_tree_dict(src1, inodes=False)
     target_inodes = generate_file_tree_dict(target, inodes=False)
-    lb(["mergerfs-cp",'--file-over-file', 'delete-dest', os.path.join(src1, "file4.txt"), target])
+    lb(["mergerfs-cp", "--file-over-file", "delete-dest", os.path.join(src1, "file4.txt"), target])
 
     assert generate_file_tree_dict(src1, inodes=False) == src1_inodes
     assert generate_file_tree_dict(target, inodes=False) == target_inodes | src1_inodes
@@ -119,7 +119,15 @@ def test_file_replace_file(temp_file_tree):
 
     src1_inodes = generate_file_tree_dict(src1, inodes=False)
     target_inodes = generate_file_tree_dict(target, inodes=False)
-    lb(["mergerfs-cp",'--file-over-file', 'delete-dest', os.path.join(src1, "file4.txt"), os.path.join(target, "file4.txt")])
+    lb(
+        [
+            "mergerfs-cp",
+            "--file-over-file",
+            "delete-dest",
+            os.path.join(src1, "file4.txt"),
+            os.path.join(target, "file4.txt"),
+        ]
+    )
 
     assert generate_file_tree_dict(src1, inodes=False) == src1_inodes
     assert generate_file_tree_dict(target, inodes=False) == target_inodes | src1_inodes
@@ -131,7 +139,7 @@ def test_dupe_replace_tree(temp_file_tree):
 
     src1_inodes = generate_file_tree_dict(src1, inodes=False)
     dest_inodes = generate_file_tree_dict(dest, inodes=False)
-    lb(["mergerfs-cp",'--file-over-file', 'delete-dest', src1 + os.sep, dest])
+    lb(["mergerfs-cp", "--file-over-file", "delete-dest", src1 + os.sep, dest])
 
     assert generate_file_tree_dict(src1, inodes=False) == src1_inodes
     assert generate_file_tree_dict(dest, inodes=False) == dest_inodes | src1_inodes
@@ -146,4 +154,4 @@ def test_folder_conflict_replace(temp_file_tree):
     lb(["mergerfs-cp", src1 + os.sep, target])
 
     assert generate_file_tree_dict(src1, inodes=False) == src1_inodes
-    assert generate_file_tree_dict(target, inodes=False) == {'file1': {'file1_1': (0, '4'), 'file1': (0, '5')}}
+    assert generate_file_tree_dict(target, inodes=False) == {"file1": {"file1_1": (0, "4"), "file1": (0, "5")}}
