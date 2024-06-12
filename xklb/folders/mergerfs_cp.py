@@ -20,13 +20,12 @@ import os
 from xklb import usage
 from xklb.folders import merge_mv
 from xklb.utils import arggroups, argparse_utils, consts, devices, processes
-from xklb.utils.log_utils import log
 
 
 def parse_args():
     parser = argparse_utils.ArgumentParser(usage=usage.mergerfs_cp)
     arggroups.clobber(parser)
-    parser.set_defaults(file_over_file='delete-dest-hash rename-dest')
+    parser.set_defaults(file_over_file="delete-dest-hash rename-dest")
     arggroups.debug(parser)
 
     arggroups.paths_or_stdin(parser, destination=True)

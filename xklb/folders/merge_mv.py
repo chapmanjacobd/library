@@ -48,7 +48,9 @@ def mmv_folders(args, mv_fn, sources, destination):
 
     for source in sources:
         if os.path.isdir(source):
-            for p in sorted(file_utils.rglob(source, args.ext or None)[0], key=lambda s: (s.count(os.sep), len(s), s), reverse=False):
+            for p in sorted(
+                file_utils.rglob(source, args.ext or None)[0], key=lambda s: (s.count(os.sep), len(s), s), reverse=False
+            ):
                 file_dest = destination
                 if args.parent or (args.bsd and not source.endswith(os.sep)):  # use BSD behavior
                     file_dest = os.path.join(file_dest, os.path.basename(source))
