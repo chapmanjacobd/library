@@ -27,6 +27,7 @@ def parse_args():
     arggroups.clobber(parser)
     parser.set_defaults(file_over_file="delete-dest-hash rename-dest")
     arggroups.debug(parser)
+    parser.set_defaults(threads=1)
 
     arggroups.paths_or_stdin(parser, destination=True)
     parser.add_argument("destination", help="Destination directory")

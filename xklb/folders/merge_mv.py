@@ -1,4 +1,4 @@
-import os, shutil, sys
+import concurrent.futures, os, shutil, sys
 
 from xklb import usage
 from xklb.utils import arggroups, argparse_utils, devices, file_utils, path_utils
@@ -9,16 +9,13 @@ def parse_args():
     parser.add_argument("--copy", "--cp", "-c", action="store_true", help="Copy instead of move")
     arggroups.clobber(parser)
     arggroups.debug(parser)
+    parser.set_defaults(threads=1)
 
     arggroups.paths_or_stdin(parser, destination=True)
     parser.add_argument("destination", help="Destination directory")
     args = parser.parse_args()
     arggroups.args_post(args, parser)
     return args
-
-
-class FolderExistsError(Exception):
-    pass
 
 
 def mmv_file(args, source, destination):
@@ -37,6 +34,27 @@ def mcp_file(args, source, destination):
         shutil.copy2(source, destination)
 
 
+def gen_src_dest(args, sources, destination):
+    for source in sources:
+        if os.path.isdir(source):
+            for p in file_utils.rglob_gen(source, args.ext or None):
+                file_dest = destination
+                if args.parent or (args.bsd and not source.endswith(os.sep)):  # use BSD behavior
+                    file_dest = os.path.join(file_dest, os.path.basename(source))
+                file_dest = os.path.join(file_dest, os.path.relpath(p, source))
+
+                yield p, file_dest
+
+        else:
+            file_dest = destination
+            if args.parent:
+                file_dest = os.path.join(file_dest, path_utils.parent(source))
+            if path_utils.is_folder_dest(source, file_dest):
+                file_dest = os.path.join(file_dest, os.path.basename(source))
+
+            yield source, file_dest
+
+
 def mmv_folders(args, mv_fn, sources, destination):
     destination = os.path.realpath(destination)
 
@@ -46,30 +64,16 @@ def mmv_folders(args, mv_fn, sources, destination):
     else:
         sources = (os.path.realpath(s) for s in sources)
 
-    for source in sources:
-        if os.path.isdir(source):
-            for p in sorted(
-                file_utils.rglob(source, args.ext or None)[0], key=lambda s: (s.count(os.sep), len(s), s), reverse=False
-            ):
-                file_dest = destination
-                if args.parent or (args.bsd and not source.endswith(os.sep)):  # use BSD behavior
-                    file_dest = os.path.join(file_dest, os.path.basename(source))
-                file_dest = os.path.join(file_dest, os.path.relpath(p, source))
+    def move_file(src, dest):
+        src, dest = devices.clobber(args, src, dest)
+        if src:
+            mv_fn(args, src, dest)
 
-                p, file_dest = devices.clobber(args, p, file_dest)
-                if p:
-                    mv_fn(args, p, file_dest)
-
-        else:
-            file_dest = destination
-            if args.parent:
-                file_dest = os.path.join(file_dest, path_utils.parent(source))
-            if path_utils.is_folder_dest(source, file_dest):
-                file_dest = os.path.join(file_dest, os.path.basename(source))
-
-            source, file_dest = devices.clobber(args, source, file_dest)
-            if source:
-                mv_fn(args, source, file_dest)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as ex:
+        for f in concurrent.futures.as_completed(
+            [ex.submit(move_file, src, dest) for src, dest in gen_src_dest(args, sources, destination)]
+        ):
+            f.result()
 
 
 def merge_mv():
