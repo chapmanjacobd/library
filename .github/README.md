@@ -97,7 +97,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v2.8.062; 79 subcommands)
+    library (v2.8.063; 79 subcommands)
 
     Create database subcommands:
     ╭───────────────┬──────────────────────────────────────────╮
@@ -1809,7 +1809,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 <details><summary>Merge SQLITE databases</summary>
 
     $ library merge-dbs -h
-    usage: library merge-dbs DEST_DB SOURCE_DB ... [--only-target-columns] [--only-new-rows] [--upsert] [--pk PK ...] [--table TABLE ...]
+    usage: library merge-dbs SOURCE_DB ... DEST_DB [--only-target-columns] [--only-new-rows] [--upsert] [--pk PK ...] [--table TABLE ...]
 
     Merge-DBs will insert new rows from source dbs to target db, table by table. If primary key(s) are provided,
     and there is an existing row with the same PK, the default action is to delete the existing row and insert the new row
@@ -1823,21 +1823,21 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     Test first by using temp databases as the destination db.
     Try out different modes / flags until you are satisfied with the behavior of the program
 
-        library merge-dbs --pk path (mktemp --suffix .db) tv.db movies.db
+        library merge-dbs --pk path tv.db movies.db (mktemp --suffix .db)
 
     Merge database data and tables
 
-        library merge-dbs --upsert --pk path video.db tv.db movies.db
+        library merge-dbs --upsert --pk path tv.db movies.db video.db
         library merge-dbs --only-target-columns --only-new-rows --table media,playlists --pk path --skip-column id audio-fts.db audio.db
 
-        library merge-dbs --pk id --only-tables subreddits reddit/81_New_Music.db audio.db
-        library merge-dbs --only-new-rows --pk subreddit,path --only-tables reddit_posts reddit/81_New_Music.db audio.db -v
+        library merge-dbs --pk id --only-tables subreddits audio.db reddit/81_New_Music.db
+        library merge-dbs --only-new-rows --pk subreddit,path --only-tables reddit_posts audio.db reddit/81_New_Music.db -v
 
      To skip copying primary-keys from the source table(s) use --business-keys instead of --primary-keys
 
      Split DBs using --where
 
-         library merge-dbs --pk path specific-site.db big.db -v --only-new-rows -t media,playlists -w 'path like "https://specific-site%"'
+         library merge-dbs --pk path big.db specific-site.db -v --only-new-rows -t media,playlists -w 'path like "https://specific-site%"'
 
 
 </details>
@@ -1847,11 +1847,11 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 <details><summary>Copy play history</summary>
 
     $ library copy-play-counts -h
-    usage: library copy-play-counts DEST_DB SOURCE_DB ... [--source-prefix x] [--target-prefix y]
+    usage: library copy-play-counts SOURCE_DB ... DEST_DB [--source-prefix x] [--target-prefix y]
 
     Copy play count information between databases
 
-        library copy-play-counts audio.db phone.db --source-prefix /storage/6E7B-7DCE/d --target-prefix /mnt/d
+        library copy-play-counts phone.db audio.db --source-prefix /storage/6E7B-7DCE/d --target-prefix /mnt/d
 
 
 </details>
@@ -2703,7 +2703,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 You can expand all by running this in your browser console:
 
 ```js
-(() => { const readmeDiv = document.getElementById("readme"); const detailsElements = readmeDiv.getElementsByTagName("details"); for (let i = 0; i < detailsElements.length; i++) { detailsElements[i].setAttribute("open", "true"); } })();
+(() => { const readmeDiv = document.querySelector("article"); const detailsElements = readmeDiv.getElementsByTagName("details"); for (let i = 0; i < detailsElements.length; i++) { detailsElements[i].setAttribute("open", "true"); } })();
 ```
 
 
