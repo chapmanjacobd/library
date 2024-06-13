@@ -125,10 +125,9 @@ def clobber(args, source, destination) -> tuple[str | None, str]:
                 case arggroups.FileOverFolder.DELETE_DEST:
                     rmtree(args, destination)
                 case arggroups.FileOverFolder.MERGE:
-                    while os.path.exists(destination):  # until we find an open slot
-                        destination = os.path.join(destination, os.path.basename(destination))  # down
-                    if not os.path.isdir(os.path.dirname(destination)):  # go back one if file-like
-                        destination = os.path.dirname(destination)  # up
+                    destination = os.path.join(destination, os.path.basename(destination))  # down
+                    log.info("re-targeted %s -> %s", orig_destination, destination)
+                    return clobber(args, source, destination)
 
         else:
             log.info("File Over File conflict\t%s\t%s", source, destination)
@@ -228,6 +227,7 @@ def clobber(args, source, destination) -> tuple[str | None, str]:
                         parent_file = os.path.join(parent_file, os.path.basename(parent_file))  # down
                     rename(args, temp_rename, parent_file)  # temporary rename to final dest
                     if destination == parent_file:
+                        log.info("re-targeted %s -> %s", orig_destination, destination)
                         return clobber(args, source, destination)
 
             if source:
