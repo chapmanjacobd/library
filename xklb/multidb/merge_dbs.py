@@ -30,8 +30,8 @@ def parse_args() -> argparse.Namespace:
 
     arggroups.debug(parser)
 
-    arggroups.database(parser)
     parser.add_argument("source_dbs", nargs="+")
+    arggroups.database(parser)
     args = parser.parse_intermixed_args()
     arggroups.args_post(args, parser, create_db=True)
 
@@ -41,7 +41,7 @@ def parse_args() -> argparse.Namespace:
 def merge_db(args, source_db) -> None:
     source_db = str(Path(source_db).resolve())
 
-    s_db = db_utils.connect(args, conn=sqlite3.connect(args.database))
+    s_db = db_utils.connect(args, conn=sqlite3.connect(source_db))
     for table in [s for s in s_db.table_names() if "_fts" not in s and not s.startswith("sqlite_")]:
         if args.only_tables and table not in args.only_tables:
             log.info("[%s]: Skipping %s", source_db, table)
@@ -72,7 +72,7 @@ def merge_db(args, source_db) -> None:
                 log.info("[%s]: Using %s as primary key(s)", table, ", ".join(source_table_pks))
                 kwargs["pk"] = source_table_pks
 
-        data = s_db[table].rows_where(where=" and ".join(args.where) if args.where else None)
+        data = s_db[table].rows_where(where=" AND ".join(args.where) if args.where else None)
         data = ({k: v for k, v in d.items() if k in selected_columns} for d in data)
         with args.db.conn:
             args.db[table].insert_all(
