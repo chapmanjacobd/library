@@ -861,17 +861,17 @@ mv_list = """library mv-list [--limit LIMIT] [--lower LOWER] [--upper UPPER] MOU
 
 merge_mv = """library merge-mv SOURCE ... DEST [--simulate] [--ext EXT]
 
-    By default it won't matter if source folders end with slash or not
+    By default it won't matter if source folders end with a path separator or not
 
         library merge-mv folder1  folder2/  # folder1 will be merged with folder2/
         library merge-mv folder1/ folder2/  # folder1 will be merged with folder2/
 
-    Move folders BSD-style where slash on each source argument determines if it is to be merged with or placed within the destination
+    --bsd mode: an ending path separator determines if each source is to be placed within or merged with the destination
 
         library merge-mv --bsd folder1/ folder2/  # folder1 will be merged with folder2/
         library merge-mv --bsd folder1  folder2/  # folder1 will be moved to folder2/folder1/
 
-    Or always include the parent folders when merging:
+    --parent mode: always include the parent folder name when merging
 
         library merge-mv --parent folder1  folder2/  # folder1 will be moved to folder2/folder1/
         library merge-mv --parent folder1/ folder2/  # folder1 will be moved to folder2/folder1/

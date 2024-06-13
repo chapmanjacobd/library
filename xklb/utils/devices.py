@@ -123,7 +123,7 @@ def clobber(args, source, destination) -> tuple[str | None, str]:
                 case arggroups.FileOverFolder.MERGE:
                     while os.path.exists(destination):  # until we find an open slot
                         destination = os.path.join(destination, os.path.basename(destination))  # down
-                    if not os.path.isdir(os.path.dirname(destination)):  # go back one if it is a file
+                    if not os.path.isdir(os.path.dirname(destination)):  # go back one if file-like
                         destination = os.path.dirname(destination)  # up
 
         else:
@@ -219,8 +219,6 @@ def clobber(args, source, destination) -> tuple[str | None, str]:
                         os.makedirs(parent_dir, exist_ok=True)  # there can't be more than one blocking file
                         while os.path.exists(parent_file):  # until we find an open file slot
                             parent_file = os.path.join(parent_file, os.path.basename(parent_file))  # down
-                        if not os.path.isdir(os.path.dirname(parent_file)):  # go back one if it is a file
-                            parent_file = os.path.dirname(parent_file)  # up
                         rename(args, existing_rename, parent_file)  # temporary rename to final dest
 
             if source:
