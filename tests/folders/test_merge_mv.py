@@ -194,6 +194,10 @@ def test_merge(mode, src_type, dest_type, temp_file_tree):
         assert target_inodes == dest_inodes
     elif src_type == "file" and dest_type == "clobber_file":
         assert target_inodes == {"file4.txt": (0, "5")}
+    elif dest_type == "clobber_file" and mode == "--file-over-file skip":
+        assert target_inodes == src1_inodes | {"file4.txt": (0, "4")}
+    elif dest_type == "clobber_file" and mode == '--file-over-file "delete-dest-hash rename-src"':
+        assert target_inodes == src1_inodes | {"file4.txt": (0, "4"), "file4_1.txt": (0, "5")}
     elif dest_type == "clobber_file":
         assert target_inodes == src1_inodes | {"file4.txt": (0, "5")}
 

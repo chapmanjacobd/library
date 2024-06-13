@@ -66,6 +66,7 @@ def rename(args, src, dst):
     if args.simulate:
         print("rename", src, dst)
     else:
+        log.debug("rename\t%s\t%s", src, dst)
         os.rename(src, dst)
 
 
@@ -73,6 +74,7 @@ def unlink(args, p):
     if args.simulate:
         print("unlink", p)
     else:
+        log.debug("unlink\t%s", p)
         os.unlink(p)
 
 
@@ -80,8 +82,10 @@ def rmtree(args, p):
     if args.simulate:
         print("rmtree", p)
     elif os.path.isdir(p):
+        log.debug("rmtree\t%s", p)
         shutil.rmtree(p)
     else:
+        log.debug("unlink\t%s", p)
         os.unlink(p)
 
 
@@ -184,7 +188,7 @@ def clobber(args, source, destination) -> tuple[str | None, str]:
                         destination = file_utils.alt_name(destination)
                     case arggroups.FileOverFile.RENAME_DEST:
                         existing_rename = file_utils.alt_name(destination)
-                        os.rename(destination, existing_rename)
+                        rename(args, destination, existing_rename)
                     case arggroups.FileOverFile.DELETE_SRC:
                         unlink(args, source)
                         source = None
@@ -212,14 +216,19 @@ def clobber(args, source, destination) -> tuple[str | None, str]:
                     source = None
                 case arggroups.FolderOverFile.DELETE_DEST:
                     unlink(args, parent_file)
-                case arggroups.FolderOverFile.RENAME_DEST | arggroups.FolderOverFile.MERGE:
+                case arggroups.FolderOverFile.RENAME_DEST:
                     existing_rename = file_utils.alt_name(parent_file)
                     rename(args, parent_file, existing_rename)
-                    if args.folder_over_file == arggroups.FolderOverFile.MERGE:
-                        os.makedirs(parent_dir, exist_ok=True)  # there can't be more than one blocking file
-                        while os.path.exists(parent_file):  # until we find an open file slot
-                            parent_file = os.path.join(parent_file, os.path.basename(parent_file))  # down
-                        rename(args, existing_rename, parent_file)  # temporary rename to final dest
+                case arggroups.FolderOverFile.MERGE:
+                    temp_rename = file_utils.alt_name(parent_file)
+                    rename(args, parent_file, temp_rename)
+                    os.makedirs(parent_dir, exist_ok=True)  # there can't be more than one blocking file
+
+                    while os.path.exists(parent_file):  # until we find an open file slot
+                        parent_file = os.path.join(parent_file, os.path.basename(parent_file))  # down
+                    rename(args, temp_rename, parent_file)  # temporary rename to final dest
+                    if destination == parent_file:
+                        return clobber(args, source, destination)
 
             if source:
                 os.makedirs(parent_dir, exist_ok=True)  # original destination parent
