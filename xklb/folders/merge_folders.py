@@ -8,7 +8,12 @@ from xklb.utils.log_utils import log
 
 def parse_args() -> argparse.Namespace:
     parser = argparse_utils.ArgumentParser(prog="library merge-folders", usage=usage.merge_folders)
-    arggroups.clobber(parser)
+    parser.add_argument(
+        "--replace",
+        "--clobber",
+        action=argparse.BooleanOptionalAction,
+        help="Overwrite files on path conflict (default: ask to confirm)",
+    )
     arggroups.debug(parser)
 
     parser.add_argument("sources", nargs="+", action=argparse_utils.ArgparseArgsOrStdin)

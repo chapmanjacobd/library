@@ -97,7 +97,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v2.8.060; 79 subcommands)
+    library (v2.8.061; 79 subcommands)
 
     Create database subcommands:
     ╭───────────────┬──────────────────────────────────────────╮
@@ -1156,17 +1156,17 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     $ library merge-mv -h
     usage: library merge-mv SOURCE ... DEST [--simulate] [--ext EXT]
 
-    By default it won't matter if source folders end with slash or not
+    By default it won't matter if source folders end with a path separator or not
 
         library merge-mv folder1  folder2/  # folder1 will be merged with folder2/
         library merge-mv folder1/ folder2/  # folder1 will be merged with folder2/
 
-    Move folders BSD-style where slash on each source argument determines if it is to be merged with or placed within the destination
+    --bsd mode: an ending path separator determines if each source is to be placed within or merged with the destination
 
         library merge-mv --bsd folder1/ folder2/  # folder1 will be merged with folder2/
         library merge-mv --bsd folder1  folder2/  # folder1 will be moved to folder2/folder1/
 
-    Or always include the parent folders when merging:
+    --parent mode: always include the parent folder name when merging
 
         library merge-mv --parent folder1  folder2/  # folder1 will be moved to folder2/folder1/
         library merge-mv --parent folder1/ folder2/  # folder1 will be moved to folder2/folder1/
