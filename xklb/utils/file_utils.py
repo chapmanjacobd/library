@@ -68,6 +68,38 @@ def rglob(
     return files, filtered_files, folders
 
 
+def rglob_gen(
+    base_dir: str | Path,
+    extensions=None,  # None | Iterable[str]
+    exclude=None,  # None | Iterable[str]
+):
+    folders = set()
+    stack = [base_dir]
+    while stack:
+        current_dir = stack.pop()
+        try:
+            scanned_dir = os.scandir(current_dir)
+        except (FileNotFoundError, PermissionError):
+            pass
+        else:
+            for entry in scanned_dir:
+                if entry.is_dir(follow_symlinks=False):
+                    if any(entry.name == pattern or fnmatch(entry.path, pattern) for pattern in exclude or []):
+                        pass
+                    else:
+                        folders.add(entry.path)
+                        stack.append(entry.path)
+                elif entry.is_symlink():
+                    pass
+                else:
+                    if extensions is None:
+                        yield entry.path
+                    else:
+                        extension = entry.path.rsplit(".", 1)[-1].lower()
+                        if extension in extensions:
+                            yield entry.path
+
+
 def file_temp_copy(src) -> str:
     fo_dest = tempfile.NamedTemporaryFile(delete=False)
     with open(src, "r+b") as fo_src:
