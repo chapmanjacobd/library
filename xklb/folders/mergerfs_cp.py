@@ -19,7 +19,7 @@ import os
 
 from xklb import usage
 from xklb.folders import merge_mv
-from xklb.utils import arggroups, argparse_utils, consts, devices, processes
+from xklb.utils import arggroups, argparse_utils, consts, processes
 
 
 def parse_args():
@@ -27,7 +27,6 @@ def parse_args():
     arggroups.clobber(parser)
     parser.set_defaults(file_over_file="delete-dest-hash rename-dest")
     arggroups.debug(parser)
-    parser.set_defaults(threads=1)
 
     arggroups.paths_or_stdin(parser, destination=True)
     parser.add_argument("destination", help="Destination directory")
@@ -75,10 +74,7 @@ def mergerfs_cp_file(args, merger_fs_src, destination):
         if os.path.exists(source):
             found_file = True
             destination = os.path.join(srcmount, os.path.relpath(destination, args.mergerfs_mount))
-
-            source, destination = devices.clobber(args, source, destination)
-            if source:
-                processes.cmd(*args.cp_args, source, destination, strict=False, quiet=False, error_verbosity=2)
+            processes.cmd(*args.cp_args, source, destination, strict=False, quiet=False, error_verbosity=2)
 
     if not found_file:
         print(f"Could not find srcmount of {merger_fs_src}")

@@ -1500,7 +1500,7 @@ row_add = """library row-add DATABASE [--table-name TABLE_NAME] --COLUMN-NAME VA
         |        1 |        2 |
 """
 
-markdown_links = """usage: library markdown-links URL ... [--cookies COOKIES] [--cookies-from-browser BROWSER[+KEYRING][:PROFILE][::CONTAINER]] [--firefox] [--chrome] [--allow-insecure] [--scroll] [--manual] [--auto-pager] [--poke] [--file FILE]
+markdown_links = """library markdown-links URL ... [--cookies COOKIES] [--cookies-from-browser BROWSER[+KEYRING][:PROFILE][::CONTAINER]] [--firefox] [--chrome] [--allow-insecure] [--scroll] [--manual] [--auto-pager] [--poke] [--file FILE]
 
     Convert URLs into Markdown links with page titles filled in
 
