@@ -90,7 +90,8 @@ def process_path(args, path, **kwargs):
     subtitle_stream = next((s for s in probe.subtitle_streams), None)
     album_art_stream = next((s for s in probe.album_art_streams), None)
     if not video_stream:
-        log.warning("No video stream found: %s", path)
+        if not args.audio_only:
+            log.warning("No video stream found: %s", path)
         if args.delete_no_video:
             path.unlink()
             return None

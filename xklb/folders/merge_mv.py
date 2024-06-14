@@ -9,7 +9,6 @@ def parse_args():
     parser.add_argument("--copy", "--cp", "-c", action="store_true", help="Copy instead of move")
     arggroups.clobber(parser)
     arggroups.debug(parser)
-    parser.set_defaults(threads=1)
 
     arggroups.paths_or_stdin(parser, destination=True)
     parser.add_argument("destination", help="Destination directory")
@@ -43,7 +42,9 @@ def gen_src_dest(args, sources, destination):
                     file_dest = os.path.join(file_dest, os.path.basename(source))
                 file_dest = os.path.join(file_dest, os.path.relpath(p, source))
 
-                yield p, file_dest
+                src, dest = devices.clobber(args, p, file_dest)
+                if src:
+                    yield src, dest
 
         else:
             file_dest = destination
@@ -52,7 +53,9 @@ def gen_src_dest(args, sources, destination):
             if path_utils.is_folder_dest(source, file_dest):
                 file_dest = os.path.join(file_dest, os.path.basename(source))
 
-            yield source, file_dest
+            src, dest = devices.clobber(args, source, file_dest)
+            if src:
+                yield src, dest
 
 
 def mmv_folders(args, mv_fn, sources, destination):
@@ -64,15 +67,8 @@ def mmv_folders(args, mv_fn, sources, destination):
     else:
         sources = (os.path.realpath(s) for s in sources)
 
-    def move_file(src, dest):
-        src, dest = devices.clobber(args, src, dest)
-        if src:
-            mv_fn(args, src, dest)
-
-    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as ex:
-        for f in concurrent.futures.as_completed(
-            [ex.submit(move_file, src, dest) for src, dest in gen_src_dest(args, sources, destination)]
-        ):
+    with concurrent.futures.ThreadPoolExecutor(max_workers=args.threads) as ex:
+        for f in (ex.submit(mv_fn, args, src, dest) for src, dest in gen_src_dest(args, sources, destination)):
             f.result()
 
 
