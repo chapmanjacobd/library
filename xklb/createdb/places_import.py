@@ -7,7 +7,7 @@ from xklb.utils import arggroups, argparse_utils, consts, nums, objects
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(prog="library places-import", usage=usage.places_import)
+    parser = argparse_utils.ArgumentParser(usage=usage.places_import)
     arggroups.debug(parser)
 
     arggroups.database(parser)

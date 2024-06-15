@@ -32,8 +32,8 @@ SOFTWARE.
 """
 
 
-def parse_args(prog, usage) -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(prog, usage)
+def parse_args(usage) -> argparse.Namespace:
+    parser = argparse_utils.ArgumentParser(usage)
     parser.add_argument("--oldest", action="store_true")
     parser.add_argument("--max-id", type=int)
     arggroups.requests(parser)
@@ -100,7 +100,7 @@ async def run(args, db_queue):
 
 
 def hacker_news_add() -> None:
-    args = parse_args(prog="library hnadd", usage=usage.hn_add)
+    args = parse_args(usage=usage.hn_add)
     try:
         import aiohttp
     except ModuleNotFoundError:

@@ -2,6 +2,7 @@ import argparse, textwrap
 from copy import deepcopy
 from pathlib import Path
 
+from xklb import usage
 from xklb.utils import (
     arggroups,
     argparse_utils,
@@ -18,14 +19,11 @@ from xklb.utils import (
 from xklb.utils.log_utils import log
 
 
-def parse_args(action) -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(
-        prog=f"library {action}",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-    )
-    if action == "next":
+def parse_args(usage) -> argparse.Namespace:
+    parser = argparse_utils.ArgumentParser(usage=usage)
+    if parser.prog == "library next":
         arggroups.capability_delete(parser)
-    if action == "seek":
+    if parser.prog == "library seek":
         parser.add_argument("time")
 
     parser.add_argument("--mpv-socket", default=consts.DEFAULT_MPV_LISTEN_SOCKET)
@@ -244,7 +242,7 @@ def source_now_playing(playing, source) -> str:
 
 
 def playback_now() -> None:
-    args = parse_args("now")
+    args = parse_args(usage.now)
     playing = _now_playing(args)
 
     if playing["mpv"] and playing["catt"]:
@@ -287,7 +285,7 @@ def kill_process(name) -> None:
 
 
 def playback_stop() -> None:
-    args = parse_args("stop")
+    args = parse_args(usage.stop)
 
     playing = _now_playing(args)
     if playing["mpv"]:
@@ -303,7 +301,7 @@ def playback_stop() -> None:
 
 
 def playback_pause() -> None:
-    args = parse_args("pause")
+    args = parse_args(usage.pause)
     playing = _now_playing(args)
 
     if playing["catt"]:
@@ -315,7 +313,7 @@ def playback_pause() -> None:
 
 
 def playback_next() -> None:
-    args = parse_args("next")
+    args = parse_args(usage.next)
 
     playing = _now_playing(args)
 
@@ -335,7 +333,7 @@ def playback_next() -> None:
 
 
 def playback_seek() -> None:
-    args = parse_args("seek")
+    args = parse_args(usage.seek)
 
     playing = _now_playing(args)
 

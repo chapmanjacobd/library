@@ -11,7 +11,7 @@ from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(prog="library site-add", usage=usage.site_add)
+    parser = argparse_utils.ArgumentParser(usage=usage.site_add)
     arggroups.selenium(parser)
     parser.set_defaults(selenium=True)
 

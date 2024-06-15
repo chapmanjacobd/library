@@ -9,11 +9,7 @@ from xklb.utils import arggroups, argparse_utils, consts, devices, iterables, pr
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(
-        prog="library mv-list",
-        usage=usage.mv_list,
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-    )
+    parser = argparse_utils.ArgumentParser(usage=usage.mv_list)
     arggroups.sql_fs(parser)
     arggroups.group_folders(parser)
     parser.set_defaults(limit="25", lower=4, upper=4000)

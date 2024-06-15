@@ -10,7 +10,7 @@ from xklb.utils.log_utils import log
 
 
 def parse_args():
-    parser = argparse_utils.ArgumentParser(prog="library sample-compare", usage=usage.sample_compare)
+    parser = argparse_utils.ArgumentParser(usage=usage.sample_compare)
     arggroups.sample_hash_bytes(parser)
     parser.add_argument("--ignore-holes", "--ignore-sparse", action="store_true")
     parser.add_argument("--skip-full-hash", action="store_true")

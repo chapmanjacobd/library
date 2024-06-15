@@ -9,11 +9,7 @@ from xklb.utils import arg_utils, arggroups, argparse_utils, file_utils, iterabl
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(
-        prog="library big_dirs",
-        usage=usage.big_dirs,
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-    )
+    parser = argparse_utils.ArgumentParser(usage=usage.big_dirs)
     arggroups.cluster(parser)
     arggroups.group_folders(parser)
     parser.set_defaults(limit="4000", depth=0)

@@ -1,4 +1,4 @@
-import argparse, os, sys
+import os, sys
 
 from xklb import usage
 from xklb.createdb import gallery_backend, tube_backend
@@ -22,11 +22,7 @@ from xklb.utils.sqlgroups import construct_download_query
 
 
 def parse_args():
-    parser = argparse_utils.ArgumentParser(
-        prog="library download",
-        usage=usage.download,
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-    )
+    parser = argparse_utils.ArgumentParser(usage=usage.download)
     arggroups.sql_fs(parser)
 
     arggroups.download(parser)

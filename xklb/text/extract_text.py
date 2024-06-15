@@ -9,7 +9,7 @@ from xklb.utils.log_utils import log
 
 
 def parse_args():
-    parser = argparse_utils.ArgumentParser(prog="library extract-text", usage=usage.extract_text)
+    parser = argparse_utils.ArgumentParser(usage=usage.extract_text)
     arggroups.requests(parser)
     arggroups.selenium(parser)
 

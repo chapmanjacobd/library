@@ -8,7 +8,7 @@ from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(prog="library copy-play-counts", usage=usage.copy_play_counts)
+    parser = argparse_utils.ArgumentParser(usage=usage.copy_play_counts)
     parser.add_argument("--source-prefix", default="")
     parser.add_argument("--target-prefix", default="")
     arggroups.debug(parser)

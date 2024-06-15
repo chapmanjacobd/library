@@ -21,7 +21,7 @@ from xklb.utils.log_utils import Timer, log
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(prog="library cluster-sort", usage=usage.cluster_sort)
+    parser = argparse_utils.ArgumentParser(usage=usage.cluster_sort)
 
     profile = parser.add_mutually_exclusive_group()
     profile.add_argument(

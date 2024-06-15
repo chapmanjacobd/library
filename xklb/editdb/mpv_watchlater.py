@@ -7,7 +7,7 @@ from xklb.utils import arggroups, argparse_utils, consts, mpv_utils, nums
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(prog="library mpv-watchlater", usage=usage.mpv_watchlater)
+    parser = argparse_utils.ArgumentParser(usage=usage.mpv_watchlater)
     parser.add_argument("--watch-later-directory", default=consts.DEFAULT_MPV_WATCH_LATER)
     arggroups.debug(parser)
 

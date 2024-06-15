@@ -10,7 +10,7 @@ from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(prog="library process-ffmpeg", usage=usage.process_ffmpeg)
+    parser = argparse_utils.ArgumentParser(usage=usage.process_ffmpeg)
     arggroups.process_ffmpeg(parser)
     arggroups.debug(parser)
 

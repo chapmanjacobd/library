@@ -10,11 +10,7 @@ from xklb.utils.sqlgroups import construct_tabs_query
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(
-        prog="library tabs",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        usage=usage.tabs_open,
-    )
+    parser = argparse_utils.ArgumentParser(usage=usage.tabs_open)
 
     arggroups.sql_fs(parser)
     arggroups.debug(parser)

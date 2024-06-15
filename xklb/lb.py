@@ -231,7 +231,7 @@ modules = {
 
 def create_subcommands_parser() -> argparse.ArgumentParser:
     parser = argparse_utils.ArgumentParser(
-        prog="lb",
+        prog="library",
         description="xk media library",
         epilog="Report bugs here: https://github.com/chapmanjacobd/library/issues/new/choose",
         add_help=False,

@@ -7,11 +7,7 @@ from xklb.utils.sqlgroups import construct_playlists_query
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(
-        "library playlists",
-        usage.playlists,
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-    )
+    parser = argparse_utils.ArgumentParser(usage=usage.playlists)
 
     arggroups.sql_fs(parser)
 

@@ -11,8 +11,8 @@ except ModuleNotFoundError:
     import json as orjson
 
 
-def parse_args(action, usage) -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(prog="library " + action, usage=usage)
+def parse_args(usage) -> argparse.Namespace:
+    parser = argparse_utils.ArgumentParser(usage=usage)
     arggroups.debug(parser)
 
     arggroups.database(parser)
@@ -35,7 +35,7 @@ def pushshift_extract(args=None) -> None:
     if args:
         sys.argv = ["lb", *args]
 
-    args = parse_args("pushshift", usage=usage.pushshift)
+    args = parse_args(usage=usage.pushshift)
 
     args.db.enable_wal()
 

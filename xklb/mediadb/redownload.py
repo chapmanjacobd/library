@@ -8,11 +8,7 @@ from xklb.utils import arggroups, argparse_utils, consts, db_utils, devices, fil
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(
-        prog="library redownload",
-        usage=usage.redownload,
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-    )
+    parser = argparse_utils.ArgumentParser(usage=usage.redownload)
     parser.add_argument("--download-archive", default=str(Path("~/.local/share/yt_archive.txt").expanduser().resolve()))
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", default="100")
     arggroups.debug(parser)

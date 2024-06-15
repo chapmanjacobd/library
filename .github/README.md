@@ -322,11 +322,11 @@ To stop playing press Ctrl+C in either the terminal or mpv
     library fsadd --audio podcasts.db ./podcasts/ ./another/more/secret/podcasts_folder/
 
     # merge later if you want
-    library merge-dbs --pk path -t playlists,media both.db audiobooks.db podcasts.db
+    library merge-dbs --pk path -t playlists,media audiobooks.db podcasts.db both.db
 
     # or split
-    library merge-dbs --pk path -t playlists,media audiobooks.db both.db -w 'path like "%/audiobooks/%"'
-    library merge-dbs --pk path -t playlists,media podcasts.db both.db -w 'path like "%/podcasts%"'
+    library merge-dbs --pk path -t playlists,media both.db audiobooks.db -w 'path like "%/audiobooks/%"'
+    library merge-dbs --pk path -t playlists,media both.db podcasts.db -w 'path like "%/podcasts%"'
 
 ## Guides
 
@@ -1070,7 +1070,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 <details><summary>Extract titles from lists of web links</summary>
 
     $ library markdown-links -h
-    usage: usage: library markdown-links URL ... [--cookies COOKIES] [--cookies-from-browser BROWSER[+KEYRING][:PROFILE][::CONTAINER]] [--firefox] [--chrome] [--allow-insecure] [--scroll] [--manual] [--auto-pager] [--poke] [--file FILE]
+    usage: library markdown-links URL ... [--cookies COOKIES] [--cookies-from-browser BROWSER[+KEYRING][:PROFILE][::CONTAINER]] [--firefox] [--chrome] [--allow-insecure] [--scroll] [--manual] [--auto-pager] [--poke] [--file FILE]
 
     Convert URLs into Markdown links with page titles filled in
 
@@ -2282,6 +2282,78 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         -vv -p --cols '*'
         ipdb> len(media)
         462219
+
+
+</details>
+
+###### now
+
+<details><summary>Show what is currently playing</summary>
+
+    $ library now -h
+    usage: library now
+
+    Print now playing
+
+
+</details>
+
+###### next
+
+<details><summary>Play next file and optionally delete current file</summary>
+
+    $ library next -h
+    usage: library next
+
+    Go to the next track in the playqueue, optionally delete the currently playing media
+
+
+</details>
+
+###### seek
+
+<details><summary>Set playback to a certain time, fast-forward or rewind</summary>
+
+    $ library seek -h
+    usage: library seek
+
+    Seek to an exact time
+
+        library seek 5:30     # 5 minutes, 30 seconds
+        library seek 5:30:00  # 5 hours, 30 minutes
+
+    Seek forward or backward a relative duration
+
+        library seek +5:00    # 5 minutes forward
+        library seek +5:      # 5 minutes forward
+        library seek +5       # 5 seconds forward
+        library seek 5        # 5 seconds forward
+
+        library seek -5       # 5 seconds backward
+
+
+</details>
+
+###### stop
+
+<details><summary>Stop all playback</summary>
+
+    $ library stop -h
+    usage: library stop
+
+    Stop playback (close mpv, turn off chromecast, etc)
+
+
+</details>
+
+###### pause
+
+<details><summary>Pause all playback</summary>
+
+    $ library pause -h
+    usage: library pause
+
+    Pause playback (pause mpv, pause chromecast, etc)
 
 
 </details>
