@@ -16,7 +16,7 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     DEFAULT_PLAYER_ARGS_SUB = ["--speed=1"]
     DEFAULT_PLAYER_ARGS_NO_SUB = ["--speed=1.46"]
 
-    parser = argparse_utils.ArgumentParser(prog="library " + action, usage=usage.play(action))
+    parser = argparse_utils.ArgumentParser(usage=usage.play(action))
     arggroups.sql_fs(parser)
     arggroups.playback(parser)
     arggroups.post_actions(parser)

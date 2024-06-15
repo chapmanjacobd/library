@@ -7,7 +7,7 @@ from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(prog="library merge-folders", usage=usage.merge_folders)
+    parser = argparse_utils.ArgumentParser(usage=usage.merge_folders)
     parser.add_argument(
         "--replace",
         "--clobber",

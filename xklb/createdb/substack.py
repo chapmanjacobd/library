@@ -8,7 +8,7 @@ from xklb.utils import arggroups, argparse_utils, consts, nums, web
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(prog="library substack", usage=usage.substack)
+    parser = argparse_utils.ArgumentParser(usage=usage.substack)
     arggroups.requests(parser)
     arggroups.debug(parser)
 

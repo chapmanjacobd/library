@@ -1,4 +1,4 @@
-import argparse, sys
+import sys
 
 import humanize
 
@@ -10,11 +10,7 @@ from xklb.utils.log_utils import log
 
 
 def parse_args():
-    parser = argparse_utils.ArgumentParser(
-        prog="library block",
-        usage=usage.block,
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-    )
+    parser = argparse_utils.ArgumentParser(usage=usage.block)
     arggroups.extractor(parser)
     arggroups.cluster(parser)
 

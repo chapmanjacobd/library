@@ -7,11 +7,7 @@ from xklb.utils import arggroups, argparse_utils, consts, db_utils, sql_utils, s
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(
-        "library download-status",
-        usage=usage.download_status,
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-    )
+    parser = argparse_utils.ArgumentParser(usage=usage.download_status)
 
     arggroups.sql_fs(parser)
 

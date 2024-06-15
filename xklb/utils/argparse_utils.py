@@ -42,8 +42,7 @@ class ArgparseDict(argparse.Action):
 class ArgparseArgsOrStdin(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         if values == STDIN_DASH:
-            prog = " ".join((parser.usage or "").split(" ", maxsplit=3)[0:2])
-            print(f"{prog}: Reading from stdin...", file=sys.stderr)
+            print(f"{parser.prog}: Reading from stdin...", file=sys.stderr)
             lines = sys.stdin.readlines()
             if not lines or (len(lines) == 1 and lines[0].strip() == ""):
                 lines = None
@@ -184,6 +183,7 @@ class CustomHelpFormatter(argparse.RawTextHelpFormatter):
 
 class ArgumentParser(argparse.ArgumentParser):
     def __init__(self, *args, **kwargs):
+        kwargs["prog"] = " ".join((kwargs.get("usage") or "").split(" ", maxsplit=3)[0:2]).strip() or None
         kwargs["formatter_class"] = lambda prog: CustomHelpFormatter(prog, max_help_position=40)
         super().__init__(*args, **kwargs)
 

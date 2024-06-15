@@ -9,7 +9,7 @@ from xklb.utils.log_utils import log
 
 
 def parse_args():
-    parser = argparse_utils.ArgumentParser(prog="library sample-hash", usage=usage.sample_hash)
+    parser = argparse_utils.ArgumentParser(usage=usage.sample_hash)
     arggroups.sample_hash_bytes(parser)
     arggroups.debug(parser)
 

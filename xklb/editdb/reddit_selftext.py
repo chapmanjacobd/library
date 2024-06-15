@@ -8,7 +8,7 @@ from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(prog="library reddit-selftext", usage=usage.reddit_selftext)
+    parser = argparse_utils.ArgumentParser(usage=usage.reddit_selftext)
     arggroups.debug(parser)
 
     arggroups.database(parser)

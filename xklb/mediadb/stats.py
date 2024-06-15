@@ -6,11 +6,7 @@ from xklb.utils import arggroups, argparse_utils, consts, db_utils, sql_utils
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(
-        "library stats",
-        usage=usage.stats,
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-    )
+    parser = argparse_utils.ArgumentParser(usage=usage.stats)
 
     arggroups.sql_fs(parser)
 

@@ -20,7 +20,7 @@ def parse_args(**kwargs):
 
 
 def history_add() -> None:
-    args = parse_args(prog="library history-add", usage=usage.history_add)
+    args = parse_args(usage=usage.history_add)
 
     history_exists = set()
     history_new = set()

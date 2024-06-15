@@ -6,7 +6,7 @@ from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(prog="library dedupe-dbs", usage=usage.dedupe_db)
+    parser = argparse_utils.ArgumentParser(usage=usage.dedupe_db)
     parser.add_argument("--skip-upsert", action="store_true")
     parser.add_argument("--skip-0", action="store_true")
     parser.add_argument(

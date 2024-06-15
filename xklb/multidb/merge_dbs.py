@@ -7,7 +7,7 @@ from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(prog="library merge-dbs", usage=usage.merge_dbs)
+    parser = argparse_utils.ArgumentParser(usage=usage.merge_dbs)
 
     parser.add_argument(
         "--only-tables", "-t", action=argparse_utils.ArgparseList, help="Comma separated specific table(s)"

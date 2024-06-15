@@ -11,7 +11,7 @@ from xklb.utils import arggroups, argparse_utils, nums, web
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(prog="library tildes", usage=usage.tildes)
+    parser = argparse_utils.ArgumentParser(usage=usage.tildes)
     arggroups.requests(parser)
     arggroups.debug(parser)
 

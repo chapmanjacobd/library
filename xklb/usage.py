@@ -1597,3 +1597,40 @@ json_keys_rename = """library json-keys-rename --new-key 'old key substring' (st
         echo '{"The Place of Birthings": "Yo Mama", "extra": "key"}' | lb json-keys-rename --country 'place of birth'
         {"country": "Yo Mama"}
 """
+
+now = """library now
+
+    Print now playing
+"""
+
+stop = """library stop
+
+    Stop playback (close mpv, turn off chromecast, etc)
+"""
+
+pause = """library pause
+
+    Pause playback (pause mpv, pause chromecast, etc)
+"""
+
+next = """library next
+
+    Go to the next track in the playqueue, optionally delete the currently playing media
+"""
+
+seek = """library seek
+
+    Seek to an exact time
+
+        library seek 5:30     # 5 minutes, 30 seconds
+        library seek 5:30:00  # 5 hours, 30 minutes
+
+    Seek forward or backward a relative duration
+
+        library seek +5:00    # 5 minutes forward
+        library seek +5:      # 5 minutes forward
+        library seek +5       # 5 seconds forward
+        library seek 5        # 5 seconds forward
+
+        library seek -5       # 5 seconds backward
+"""

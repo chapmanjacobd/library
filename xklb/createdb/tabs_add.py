@@ -10,7 +10,7 @@ from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(prog="library tabs-add", usage=usage.tabs_add)
+    parser = argparse_utils.ArgumentParser(usage=usage.tabs_add)
     arggroups.extractor(parser)
     arggroups.frequency(parser)
 
@@ -101,7 +101,7 @@ def tabs_add(args=None) -> None:
 
 
 def tabs_shuffle() -> None:
-    parser = argparse_utils.ArgumentParser(prog="library tabs-shuffle", usage=usage.tabs_shuffle)
+    parser = argparse_utils.ArgumentParser(usage=usage.tabs_shuffle)
     parser.add_argument("--days", "-d", type=int, default=7)
     parser.add_argument(
         "--frequency",

@@ -10,11 +10,7 @@ from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(
-        prog="library scatter",
-        usage=usage.scatter,
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-    )
+    parser = argparse_utils.ArgumentParser(usage=usage.scatter)
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue")
     parser.add_argument("--max-files-per-folder", "--max-files-per-directory", type=int)
     parser.add_argument("--policy")

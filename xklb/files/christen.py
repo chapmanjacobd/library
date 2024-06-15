@@ -8,7 +8,7 @@ from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(prog="library christen", usage=usage.christen)
+    parser = argparse_utils.ArgumentParser(usage=usage.christen)
     parser.add_argument("--dot-space", action="store_true")
     parser.add_argument("--case-insensitive", action="store_true")
     parser.add_argument("--lowercase-folders", action="store_true")

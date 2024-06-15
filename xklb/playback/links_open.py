@@ -9,11 +9,7 @@ from xklb.utils.printing import pipe_print
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(
-        prog="library open-links",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        usage=usage.links_open,
-    )
+    parser = argparse_utils.ArgumentParser(usage=usage.links_open)
     arggroups.sql_fs(parser)
 
     parser.add_argument("--path", action="store_true")

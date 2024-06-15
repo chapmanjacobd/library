@@ -9,7 +9,7 @@ from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(prog="library process-image", usage=usage.process_image)
+    parser = argparse_utils.ArgumentParser(usage=usage.process_image)
     parser.add_argument("--delete-unplayable", action="store_true")
     parser.add_argument("--max-image-height", type=int, default=2400)
     parser.add_argument("--max-image-width", type=int, default=2400)

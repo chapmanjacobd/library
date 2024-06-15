@@ -10,7 +10,7 @@ from xklb.utils.log_utils import log
 
 
 def parse_args():
-    parser = argparse_utils.ArgumentParser(prog="library media-check", usage=usage.media_check)
+    parser = argparse_utils.ArgumentParser(usage=usage.media_check)
     arggroups.capability_delete(parser)
     arggroups.media_check(parser)
     arggroups.debug(parser)

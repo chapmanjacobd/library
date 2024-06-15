@@ -4,10 +4,7 @@ from xklb.utils.log_utils import log
 
 
 def parse_args():
-    parser = argparse_utils.ArgumentParser(
-        prog="library extract-links",
-        usage=usage.extract_links,
-    )
+    parser = argparse_utils.ArgumentParser(usage=usage.extract_links)
     arggroups.extractor(parser)
     arggroups.requests(parser)
     arggroups.selenium(parser)

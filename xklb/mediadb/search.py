@@ -10,7 +10,7 @@ from xklb.utils.sqlgroups import construct_captions_search_query
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(prog="library search", usage=usage.search)
+    parser = argparse_utils.ArgumentParser(usage=usage.search)
 
     arggroups.sql_fs(parser)
 

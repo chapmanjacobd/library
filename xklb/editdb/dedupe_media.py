@@ -26,7 +26,7 @@ from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(prog="library dedupe-media", usage=usage.dedupe_media)
+    parser = argparse_utils.ArgumentParser(usage=usage.dedupe_media)
     arggroups.sql_fs(parser)
 
     profile = parser.add_mutually_exclusive_group()

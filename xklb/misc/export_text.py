@@ -5,7 +5,7 @@ from xklb.utils import arggroups, argparse_utils
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(prog="library export-text", usage=usage.export_text)
+    parser = argparse_utils.ArgumentParser(usage=usage.export_text)
     parser.add_argument("--format", default="html")
     arggroups.debug(parser)
 

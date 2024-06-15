@@ -5,7 +5,7 @@ from xklb.utils import arggroups, argparse_utils, consts, sql_utils
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(prog="library search-db", usage=usage.search_db)
+    parser = argparse_utils.ArgumentParser(usage=usage.search_db)
     arggroups.sql_fs(parser)
     arggroups.debug(parser)
 

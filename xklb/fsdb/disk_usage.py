@@ -6,11 +6,7 @@ from xklb.utils import arggroups, argparse_utils, processes, sqlgroups
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(
-        prog="library disk_usage",
-        usage=usage.disk_usage,
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-    )
+    parser = argparse_utils.ArgumentParser(usage=usage.disk_usage)
     arggroups.sql_fs(parser)
     arggroups.group_folders(parser)
     parser.set_defaults(limit="4000", depth=0)

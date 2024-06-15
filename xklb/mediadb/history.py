@@ -8,11 +8,7 @@ from xklb.utils import arggroups, argparse_utils, sqlgroups
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(
-        "library history",
-        usage=usage.history,
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-    )
+    parser = argparse_utils.ArgumentParser(usage=usage.history)
 
     arggroups.sql_fs(parser)
 
