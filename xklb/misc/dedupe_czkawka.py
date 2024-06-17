@@ -15,7 +15,7 @@ right_mpv_socket = str(Path(consts.TEMP_SCRIPT_DIR) / f"mpv_socket_{consts.rando
 
 
 def parse_args():
-    parser = argparse_utils.ArgumentParser(usage.dedupe_czkawka)
+    parser = argparse_utils.ArgumentParser(usage=usage.dedupe_czkawka)
     arggroups.playback(parser)
     arggroups.clobber(parser)
     arggroups.capability_delete(parser)
