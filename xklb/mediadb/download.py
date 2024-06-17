@@ -3,7 +3,9 @@ import os, sys
 from xklb import usage
 from xklb.createdb import gallery_backend, tube_backend
 from xklb.mediadb import db_media
+from xklb.mediafiles import process_ffmpeg, process_image
 from xklb.playback import media_printer
+from xklb.text import extract_links
 from xklb.utils import (
     arg_utils,
     arggroups,
@@ -28,6 +30,8 @@ def parse_args():
     arggroups.download(parser)
     arggroups.download_subtitle(parser)
     arggroups.requests(parser)
+    arggroups.selenium(parser)
+    arggroups.filter_links(parser)
 
     profile = parser.add_mutually_exclusive_group()
     profile.add_argument(
@@ -71,6 +75,12 @@ def parse_args():
     parser.add_argument("--photos", action="store_true", help="Image: Download JPG and WEBP")
     parser.add_argument("--drawings", action="store_true", help="Image: Download PNG")
     parser.add_argument("--gifs", action="store_true", help="Image: Download MP4 and GIFs")
+
+    parser.add_argument("--links", action="store_true")
+
+    parser.add_argument("--process-image", action="store_true")
+    parser.add_argument("--process-ffmpeg", "--process-video", "--process-audio", action="store_true")
+    arggroups.process_ffmpeg(parser)
     arggroups.debug(parser)
 
     arggroups.database(parser)
@@ -89,6 +99,9 @@ def parse_args():
         raise SystemExit(1)
 
     arggroups.sql_fs_post(args)
+    arggroups.filter_links_post(args)
+    arggroups.selenium_post(args)
+    arggroups.process_ffmpeg_post(args)
     return args
 
 
@@ -152,6 +165,7 @@ def dl_download(args=None) -> None:
         media_printer.media_printer(args, media)
         return
 
+    get_inner_urls = iterables.return_unique(extract_links.get_inner_urls)
     for m in media:
         if args.blocklist_rules and sql_utils.is_blocked_dict_like_sql(m, args.blocklist_rules):
             mark_download_attempt(args, [m["path"]])
@@ -203,8 +217,29 @@ def dl_download(args=None) -> None:
             elif args.profile == DBType.image:
                 gallery_backend.download(args, m)
             elif args.profile == DBType.filesystem:
-                local_path = web.download_url(m["path"], output_prefix=args.prefix)
-                db_media.download_add(args, m["path"], m, local_path)
+                original_path = m["path"]
+
+                dl_paths = [original_path]
+                if args.links:
+                    dl_paths = []
+                    for t in get_inner_urls(args, original_path):
+                        if t:
+                            link, text = t
+                            dl_paths.append(link)
+
+                for dl_path in dl_paths:
+                    local_path = web.download_url(dl_path, output_prefix=args.prefix)
+
+                    if args.process_ffmpeg:
+                        result = process_ffmpeg.process_path(args, local_path)
+                        if result is not None:
+                            local_path = str(result)
+                    elif args.process_image:
+                        result = process_image.process_path(args, local_path)
+                        if result is not None:
+                            local_path = str(result)
+
+                    db_media.download_add(args, original_path, m, local_path)
             else:
                 raise NotImplementedError
         except Exception:

@@ -67,6 +67,7 @@ def add_playlist(args, path):
 
 def consolidate_media(args, path: str) -> dict:
     return {
+        "playlists_id": getattr(args, "playlists_id", None),
         "path": path,
         "category": getattr(args, "category", None) or "Uncategorized",
         "time_created": consts.APPLICATION_START,
@@ -87,6 +88,7 @@ def add_media(args, variadic):
                     "title": strings.strip_enclosing_quotes(path_or_dict["title"]),
                 }
             )
+
         db_media.add(args, d)
 
 
