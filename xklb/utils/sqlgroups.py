@@ -350,6 +350,7 @@ def construct_download_query(args) -> tuple[str, dict]:
                 , m.playlists_id
                 , m.path
                 , p.path playlist_path
+                {', m.category' if 'category' in m_columns else ''}
                 {', m.title' if 'title' in m_columns else ''}
                 {', m.duration' if 'duration' in m_columns else ''}
                 , m.time_created
@@ -380,6 +381,7 @@ def construct_download_query(args) -> tuple[str, dict]:
     else:
         query = f"""select
                 m.path
+                {', m.category' if 'category' in m_columns else ''}
                 {', m.title' if 'title' in m_columns else ''}
                 {', m.duration' if 'duration' in m_columns else ''}
                 {', m.time_created' if 'time_created' in m_columns else ''}

@@ -10,7 +10,6 @@ def parse_args():
     arggroups.selenium(parser)
     arggroups.filter_links(parser)
 
-    parser.add_argument("--print-link-text", "--print-title", action="store_true")
     parser.add_argument("--download", action="store_true", help="Download filtered links")
 
     arggroups.debug(parser)
@@ -134,7 +133,7 @@ def print_or_download(args, a_ref):
     else:
         if not args.no_url_decode:
             link = web.url_decode(link).strip()
-        if args.print_link_text:
+        if args.verbose >= consts.LOG_DEBUG:
             printing.pipe_print(f"{link}\t{link_text}")
         else:
             printing.pipe_print(link)
