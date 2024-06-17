@@ -5,9 +5,7 @@ from xklb.utils import arggroups, argparse_utils, file_utils, web
 
 
 def parse_args():
-    parser = argparse_utils.ArgumentParser(
-        description="Print tables from one or more files as markdown", usage=usage.markdown_tables
-    )
+    parser = argparse_utils.ArgumentParser(usage=usage.markdown_tables)
     arggroups.table_like(parser)
     parser.add_argument("--sort", "-u", default="random()")
     arggroups.debug(parser)

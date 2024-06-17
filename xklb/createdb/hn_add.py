@@ -33,7 +33,7 @@ SOFTWARE.
 
 
 def parse_args(usage) -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(usage)
+    parser = argparse_utils.ArgumentParser(usage=usage)
     parser.add_argument("--oldest", action="store_true")
     parser.add_argument("--max-id", type=int)
     arggroups.requests(parser)

@@ -60,7 +60,7 @@ def line_processor(txt) -> None:
 
 
 def nouns() -> None:
-    parser = argparse_utils.ArgumentParser(usage.nouns)
+    parser = argparse_utils.ArgumentParser(usage=usage.nouns)
     arggroups.debug(parser)
     args = parser.parse_args()
     arggroups.args_post(args, parser)
