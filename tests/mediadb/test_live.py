@@ -7,7 +7,7 @@ from xklb.lb import library as lb
 URL = "https://www.youtube.com/watch?v=W5ZLFBZkE34"
 STORAGE_PREFIX = "tests/data/"
 
-dl_db = "tests/data/dl.db"
+dl_db = "tests/data/live.db"
 
 
 def test_yt():
