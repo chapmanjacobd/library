@@ -70,6 +70,8 @@ def parse_args():
 
     parser.add_argument("--same-domain", action="store_true", help="Choose a random domain to focus on")
 
+    parser.add_argument("--live", action="store_true", help="Video: Allow live streams to be downloaded")
+
     parser.add_argument("--small", action="store_true", help="Video: Prefer 480p-like")
 
     parser.add_argument("--photos", action="store_true", help="Image: Download JPG and WEBP")
