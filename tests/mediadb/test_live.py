@@ -30,10 +30,11 @@ def test_yt():
     args = connect_db_args(dl_db)
 
     captions = list(args.db.query("select * from captions"))
-    assert {"media_id": 2, "time": 3, "text": "For more information contact phihag@phihag.de"} in captions
+    assert {"media_id": 2, "time": 2, "text": "okay hello um so welcome to um today's"} in captions
 
-    thumbnail_path = os.path.join(STORAGE_PREFIX, "Youtube", "Sugar Labs", "Learn： How to git involved with Sugar Labs this summer_45.00_[W5ZLFBZkE34].webp")
+    video_id = "W5ZLFBZkE34"
+    thumbnail_path = os.path.join(STORAGE_PREFIX, "Youtube", "Sugar Labs", f"{video_id}.webp")
     assert os.path.exists(thumbnail_path), "Thumbnail file does not exist"
 
-    video_path = os.path.join(STORAGE_PREFIX, "Youtube", "Sugar Labs", "Learn： How to git involved with Sugar Labs this summer_45.00_[W5ZLFBZkE34].mp4")
+    video_path = os.path.join(STORAGE_PREFIX, "Youtube", "Sugar Labs", "Learn How to git involved with Sugar Labs this summer_48.00_[W5ZLFBZkE34].mkv")
     assert os.path.exists(video_path), "Video file does not exist"
