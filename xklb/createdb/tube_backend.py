@@ -414,10 +414,12 @@ def download(args, m) -> None:
         playlist_opts=m.get("extractor_config", "{}"),
     )
 
+    match_filters = []
     match_filter_user_config = ydl_opts.get("match_filter")
-    match_filters = ["live_status=?not_live"]
-    if match_filter_user_config is not None:
-        match_filters.append(match_filter_user_config)
+    if match_filter_user_config:
+        if not args.live:
+            match_filters.append("live_status=?not_live")
+            match_filters.extend(match_filter_user_config)
 
     if args.small:
         if match_filter_user_config is None:
@@ -437,8 +439,9 @@ def download(args, m) -> None:
             if sql_utils.is_blocked_dict_like_sql(media_entry or {}, args.blocklist_rules):
                 raise yt_dlp.utils.RejectedVideoReached("Video matched library blocklist")
 
-        ytdlp_match_filter = yt_dlp.utils.match_filter_func(" & ".join(match_filters).split(" | "))
-        return ytdlp_match_filter(info, *pargs, incomplete)
+        if match_filters:
+            ytdlp_match_filter = yt_dlp.utils.match_filter_func(" & ".join(match_filters).split(" | "))
+            return ytdlp_match_filter(info, *pargs, incomplete)
 
     ydl_opts["match_filter"] = blocklist_check
 
