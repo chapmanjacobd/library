@@ -416,10 +416,11 @@ def download(args, m) -> None:
 
     match_filters = []
     match_filter_user_config = ydl_opts.get("match_filter")
-    if match_filter_user_config:
-        if not args.live:
-            match_filters.append("live_status=?not_live")
-            match_filters.extend(match_filter_user_config)
+    if match_filter_user_config is not None:
+        match_filters.append(match_filter_user_config)
+
+    if not args.live:
+        match_filters.append("live_status=?not_live")
 
     if args.small:
         if match_filter_user_config is None:

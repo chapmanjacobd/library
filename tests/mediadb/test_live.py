@@ -5,36 +5,45 @@ from xklb.createdb.tube_add import tube_add
 from xklb.lb import library as lb
 
 URL = "https://www.youtube.com/watch?v=W5ZLFBZkE34"
-STORAGE_PREFIX = "tests/data/"
+STORAGE_PREFIX = "tests/data"
 
 dl_db = "tests/data/live.db"
 
 @skip("network")
-def test_yt():
+def test_live_skip():
     tube_add([dl_db, URL])
     lb(
         [
             "dl",
             dl_db,
             "--video",
-            f"--prefix={STORAGE_PREFIX}",
-            "--write-thumbnail",
-            "--force",
-            "--subs",
-            "--live",
-            "-s",
+            "-o",
+            f"{STORAGE_PREFIX}/%(id)s.%(ext)s",
             URL,
         ]
     )
 
     args = connect_db_args(dl_db)
 
-    captions = list(args.db.query("select * from captions"))
-    assert {"media_id": 2, "time": 2, "text": "okay hello um so welcome to um today's"} in captions
+    video_path = os.path.join(STORAGE_PREFIX, "W5ZLFBZkE34.mkv")
+    assert not os.path.exists(video_path), "Video file exists"
 
-    video_id = "W5ZLFBZkE34"
-    thumbnail_path = os.path.join(STORAGE_PREFIX, "Youtube", "Sugar Labs", f"{video_id}.webp")
-    assert os.path.exists(thumbnail_path), "Thumbnail file does not exist"
+@skip("network")
+def test_live():
+    tube_add([dl_db, URL])
+    lb(
+        [
+            "dl",
+            dl_db,
+            "--video",
+            "-o",
+            f"{STORAGE_PREFIX}/%(id)s.%(ext)s",
+            "--live",
+            URL,
+        ]
+    )
 
-    video_path = os.path.join(STORAGE_PREFIX, "Youtube", "Sugar Labs", "Learn How to git involved with Sugar Labs this summer_48.00_[W5ZLFBZkE34].mkv")
+    args = connect_db_args(dl_db)
+
+    video_path = os.path.join(STORAGE_PREFIX, "W5ZLFBZkE34.mkv")
     assert os.path.exists(video_path), "Video file does not exist"
