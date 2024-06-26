@@ -9,7 +9,7 @@ STORAGE_PREFIX = "tests/data/"
 
 dl_db = "tests/data/live.db"
 
-
+@skip("network")
 def test_yt():
     tube_add([dl_db, URL])
     lb(
