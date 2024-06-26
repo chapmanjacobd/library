@@ -1,5 +1,6 @@
 import os
 from unittest import skip
+
 from tests.utils import connect_db_args
 from xklb.createdb.tube_add import tube_add
 from xklb.lb import library as lb
@@ -8,6 +9,7 @@ URL = "https://www.youtube.com/watch?v=W5ZLFBZkE34"
 STORAGE_PREFIX = "tests/data"
 
 dl_db = "tests/data/live.db"
+
 
 @skip("network")
 def test_live_skip():
@@ -27,6 +29,7 @@ def test_live_skip():
 
     video_path = os.path.join(STORAGE_PREFIX, "W5ZLFBZkE34.mkv")
     assert not os.path.exists(video_path), "Video file exists"
+
 
 @skip("network")
 def test_live():
