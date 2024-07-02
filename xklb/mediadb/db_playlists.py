@@ -40,6 +40,8 @@ def consolidate(args, v: dict) -> dict:
     cv["uploader"] = iterables.safe_unpack(
         v.pop("playlist_uploader_id", None),
         v.pop("playlist_uploader", None),
+        v.pop("playlist_channel_id", None),
+        v.pop("playlist_channel", None),
         v.pop("channel_id", None),
         v.pop("uploader_url", None),
         v.pop("channel_url", None),

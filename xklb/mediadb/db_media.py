@@ -125,6 +125,8 @@ def consolidate(v: dict) -> dict | None:
         v.pop("uuid", None),
         v.pop("playlist_uploader_id", None),
         v.pop("playlist_uploader", None),
+        v.pop("playlist_channel_id", None),
+        v.pop("playlist_channel", None),
     )
 
     cv["view_count"] = iterables.safe_unpack(
