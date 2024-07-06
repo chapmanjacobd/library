@@ -531,7 +531,7 @@ def scan_path(args, path_str: str) -> int:
             for idx, chunk_paths in enumerate(files_chunked):
                 percent = ((batch_count * idx) + len(chunk_paths)) / len(new_files) * 100
                 printing.print_overwrite(
-                    f"[{path}] Extracting metadata {percent:3.1f}% (chunk {idx + 1} of {chunks_count})"
+                    f"[{path}] Extracting metadata chunk {idx + 1} of {chunks_count} ({percent:3.1f}%)"
                 )
 
                 mp_args = argparse.Namespace(

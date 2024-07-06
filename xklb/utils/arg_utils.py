@@ -146,6 +146,7 @@ def parse_args_sort(args, columns, table_prefix="m.") -> tuple[str, list[str]]:
         subtitle_count = ">0"
 
     sorts = [
+        "play_count" if "play_count" in sort_list else None,
         "random" if getattr(args, "random", False) else None,
         "rank" if sort_list and "rank" in sort_list else None,
         "video_count > 0 desc" if "video_count" in columns and args.action == SC.watch else None,
@@ -167,8 +168,7 @@ def parse_args_sort(args, columns, table_prefix="m.") -> tuple[str, list[str]]:
             else None
         ),
         *(sort_list or []),
-        "play_count" if args.action in (SC.media, SC.listen, SC.watch) else None,
-        "time_last_played" if args.action in (SC.media, SC.listen, SC.watch) else None,
+        "play_count, playhead desc, time_last_played" if args.action in (SC.media, SC.listen, SC.watch) else None,
         "duration desc" if args.action in (SC.media, SC.listen, SC.watch) and args.include else None,
         "size desc" if args.action in (SC.media, SC.listen, SC.watch) and args.include else None,
         table_prefix + "title IS NOT NULL desc" if "title" in columns else None,
