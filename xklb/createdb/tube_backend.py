@@ -367,6 +367,7 @@ def download(args, m) -> None:
     func_opts = {
         "ignoreerrors": ignoreerrors,
         "extractor_args": {"youtube": {"skip": ["authcheck"]}},
+        "check_formats": "selected",
         "logger": DictLogger(),
         "skip_download": False,
         "postprocessors": [{"key": "FFmpegMetadata"}],

@@ -394,7 +394,9 @@ def process_playqueue(args) -> None:
         log.debug("utils.history_sort: %s", t.elapsed())
 
     if getattr(args, "refresh", False):
-        marked = db_media.mark_media_deleted(args, [d["path"] for d in media if d and d["path"] and not Path(d["path"]).exists()])
+        marked = db_media.mark_media_deleted(
+            args, [d["path"] for d in media if d and d["path"] and not Path(d["path"]).exists()]
+        )
         if marked > 0:
             log.warning(f"Marked {marked} metadata records as deleted")
             args.refresh = False
