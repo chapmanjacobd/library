@@ -77,13 +77,7 @@ def christen() -> None:
         for p in subpaths:
             rename_path(args, base, p)
 
-    print(
-        r"""
-    You may want to run bfs to remove nested empty folders:
-
-        yes | bfs -type d -exec bfs -f {} -not -type d -exit 1 \; -prune -ok bfs -f {} -type d -delete \;
-        """,
-    )
+        path_utils.bfs_removedirs(base)
 
 
 if __name__ == "__main__":
