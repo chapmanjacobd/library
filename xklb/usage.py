@@ -1195,9 +1195,9 @@ links_add = r"""library links-add DATABASE PATH ... [--case-sensitive] [--cookie
         - Set `--fixed-pages` to _always_ fetch the desired number of pages
 
         If the website is supported by --auto-pager data is fetched twice when using page iteration.
-        As such, page iteration (--max-pages, --fixed-pages, etc) is disabled when using `--auto-pager`.
+        As such, manual page iteration (--max-pages, --fixed-pages, etc) is disabled when using `--auto-pager`.
 
-        You can set unset --fixed-pages for all the playlists in your database by running this command:
+        You can unset --fixed-pages for all the playlists in your database by running this command:
         sqlite your.db "UPDATE playlists SET extractor_config = json_replace(extractor_config, '$.fixed_pages', null)"
 
     To use "&p=1" instead of "&page=1"

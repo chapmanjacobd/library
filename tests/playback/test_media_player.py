@@ -36,6 +36,7 @@ def test_prefetch(media):
         folders=False,
         action=consts.SC.watch,
         verbose=2,
+        fullscreen=None,
     )
     prep = MediaPrefetcher(args, media)
 
