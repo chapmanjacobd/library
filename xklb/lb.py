@@ -49,6 +49,7 @@ progs = {
         "sample_hash": "Calculate a hash based on small file segments",
         "sample_compare": "Compare files using sample-hash and other shortcuts",
         "similar_files": "Find similar files based on filename and size",
+        "llm_map": "Run LLMs across multiple files",
     },
     "Tabular data subcommands": {
         "eda": "Exploratory Data Analysis on table-like files",
@@ -169,6 +170,7 @@ modules = {
     "xklb.files.sample_compare.sample_compare": ["cmp"],
     "xklb.files.sample_hash.sample_hash": ["hash", "hash-file"],
     "xklb.files.similar_files.similar_files": [],
+    "xklb.files.llm_map.llm_map": [],
     "xklb.folders.merge_folders.merge_folders": ["merge-folder"],
     "xklb.folders.move_list.move_list": ["mv-list"],
     "xklb.folders.merge_mv.merge_mv": ["mv"],
