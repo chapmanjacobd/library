@@ -1634,3 +1634,16 @@ seek = """library seek
 
         library seek -5       # 5 seconds backward
 """
+
+llm_map = """library llm-map LLAMA_FILE [paths ...] [--llama-args LLAMA_ARGS] [--prompt STR] [--text [INT]] [--rename]
+
+    Run a llamafile with a prompt including path names and file contents
+
+    Rename files based on file contents
+
+        library llm-map ./gemma2.llamafile ~/Downloads/booka.pdf --rename --text
+
+        cat llm_map_renames.csv
+        Path,Output
+        /home/xk/Downloads/booka.pdf,/home/xk/Downloads/Mining_Massive_Datasets.pdf
+"""

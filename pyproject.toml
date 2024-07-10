@@ -49,7 +49,7 @@ deluxe = [
   "xattr",
 ]
 dev = ["black", "isort", "ssort"]
-fat = ["brotab", "orjson", "textract", "pypdf_table_extraction", "opencv-python", "ghostscript"]
+fat = ["brotab", "orjson", "textract-py3==2.0.1", "pypdf_table_extraction", "opencv-python", "ghostscript"]
 test = ["ruff", "pytest", "freezegun", "pyfakefs"]
 
 [project.urls]
