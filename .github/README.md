@@ -97,7 +97,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v2.8.067; 79 subcommands)
+    library (v2.8.068; 80 subcommands)
 
     Create database subcommands:
     ╭───────────────┬──────────────────────────────────────────╮
@@ -177,6 +177,8 @@ To stop playing press Ctrl+C in either the terminal or mpv
     │ sample-compare │ Compare files using sample-hash and other shortcuts │
     ├────────────────┼─────────────────────────────────────────────────────┤
     │ similar-files  │ Find similar files based on filename and size       │
+    ├────────────────┼─────────────────────────────────────────────────────┤
+    │ llm-map        │ Run LLMs across multiple files                      │
     ╰────────────────┴─────────────────────────────────────────────────────╯
 
     Tabular data subcommands:
@@ -770,9 +772,9 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         - Set `--fixed-pages` to _always_ fetch the desired number of pages
 
         If the website is supported by --auto-pager data is fetched twice when using page iteration.
-        As such, page iteration (--max-pages, --fixed-pages, etc) is disabled when using `--auto-pager`.
+        As such, manual page iteration (--max-pages, --fixed-pages, etc) is disabled when using `--auto-pager`.
 
-        You can set unset --fixed-pages for all the playlists in your database by running this command:
+        You can unset --fixed-pages for all the playlists in your database by running this command:
         sqlite your.db "UPDATE playlists SET extractor_config = json_replace(extractor_config, '$.fixed_pages', null)"
 
     To use "&p=1" instead of "&page=1"
@@ -1551,6 +1553,34 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
         $ lb fs audio.db --cols path,duration,size,time_deleted --to-json | lb similar-files --from-json -v
 
+
+
+</details>
+
+###### llm-map
+
+<details><summary>Run LLMs across multiple files</summary>
+
+    $ library llm-map -h
+    usage: library llm-map LLAMA_FILE [paths ...] [--llama-args LLAMA_ARGS] [--prompt STR] [--text [INT]] [--rename]
+
+    Run a llamafile with a prompt including path names and file contents
+
+    Rename files based on file contents
+
+        library llm-map ./gemma2.llamafile ~/Downloads/booka.pdf --rename --text
+
+        cat llm_map_renames.csv
+        Path,Output
+        /home/xk/Downloads/booka.pdf,/home/xk/Downloads/Mining_Massive_Datasets.pdf
+
+    You can run a GGUF file with this:
+
+        wget https://github.com/Mozilla-Ocho/llamafile/releases/download/0.8.9/llamafile-0.8.9
+        chmod +x ~/Downloads/llamafile-0.8.9
+        mv ~/Downloads/llamafile-0.8.9 ~/.local/bin/llamafile  # move it somewhere in your $PATH
+
+        library llm-map --model ~/Downloads/llava-v1.5-7b-Q4_K.gguf --image-model ~/Downloads/llava-v1.5-7b-mmproj-Q4_0.gguf --prompt 'what do you see?' ~/Downloads/comp_*.jpg
 
 
 </details>

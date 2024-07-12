@@ -10,22 +10,25 @@ from xklb.utils.arg_utils import gen_paths
 
 def parse_args():
     parser = argparse_utils.ArgumentParser(usage=usage.llm_map)
-    parser.add_argument("--prompt", '-q', "--custom-prompt", help="Use a custom prompt")
+    parser.add_argument("--prompt", "-q", "--custom-prompt", help="Use a custom prompt")
     parser.add_argument(
         "--text", type=int, nargs="?", const=1500, help="Pass text file contents of each file to the LLM"
     )
-    parser.add_argument("--images", action="store_true", help="Treat paths as image files")
     parser.add_argument("--rename", action="store_true", help="Use rename prompt")
     parser.add_argument("--output", help="The output CSV file to save the results.")
     arggroups.debug(parser)
 
     parser.add_argument(
-        '--model',
-        '-m',
+        "--model",
+        "-m",
         "--llamafile",
         help="The path to the llamafile to run. If llamafile is in your PATH then you can also specify a GGUF file.",
     )
-    parser.add_argument('--image-model', '--mmproj', help="The path to the LLaVA vision GGUF model.")
+    parser.add_argument(
+        "--image-model",
+        "--mmproj",
+        help="The path to the LLaVA vision GGUF model. When specified, paths will be treated as image files",
+    )
     parser.add_argument(
         "--llama-args", "--custom-args", type=shlex.split, default=[], help="Use custom llamafile arguments"
     )
@@ -43,14 +46,14 @@ def parse_args():
         else:
             raise NotImplementedError
 
-    args.exe = which('llamafile')
+    args.exe = which("llamafile")
     if args.exe:
-        args.llama_args += ['-m', args.model]
+        args.llama_args += ["-m", args.model]
     else:
         args.exe = args.model
 
     if args.image_model:
-        args.llama_args += ['--mmproj', args.image_model]
+        args.llama_args += ["--mmproj", args.image_model]
 
     if args.output is None:
         args.output = f"llm_map_{args.prompt}.csv"
@@ -78,15 +81,15 @@ def llm_map():
         prompt = args.prompt
 
         replacements = {
-            '{path}': "Existing path: " + path,
-            '{abspath}': "Existing path: " + str(Path(path).absolute()),
-            '{name}': "Existing filename: " + Path(path).name,
-            '{stem}': "Existing filename: " + Path(path).stem,
+            "{path}": "Existing path: " + path,
+            "{abspath}": "Existing path: " + str(Path(path).absolute()),
+            "{name}": "Existing filename: " + Path(path).name,
+            "{stem}": "Existing filename: " + Path(path).stem,
         }
         for k, v in replacements.items():
-            prompt.replace(k, '\n' + v + '\n')
+            prompt.replace(k, "\n" + v + "\n")
 
-        if args.images:
+        if args.image_model:
             args.llama_args += ["--image", str(Path(path).absolute())]
         elif args.text:
             file_contents = fs_add.munge_book_tags_fast(path)

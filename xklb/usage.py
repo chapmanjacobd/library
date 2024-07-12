@@ -1646,4 +1646,12 @@ llm_map = """library llm-map LLAMA_FILE [paths ...] [--llama-args LLAMA_ARGS] [-
         cat llm_map_renames.csv
         Path,Output
         /home/xk/Downloads/booka.pdf,/home/xk/Downloads/Mining_Massive_Datasets.pdf
+
+    You can run a GGUF file with this:
+
+        wget https://github.com/Mozilla-Ocho/llamafile/releases/download/0.8.9/llamafile-0.8.9
+        chmod +x ~/Downloads/llamafile-0.8.9
+        mv ~/Downloads/llamafile-0.8.9 ~/.local/bin/llamafile  # move it somewhere in your $PATH
+
+        library llm-map --model ~/Downloads/llava-v1.5-7b-Q4_K.gguf --image-model ~/Downloads/llava-v1.5-7b-mmproj-Q4_0.gguf --prompt 'what do you see?' ~/Downloads/comp_*.jpg
 """
