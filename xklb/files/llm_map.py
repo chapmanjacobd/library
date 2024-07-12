@@ -6,6 +6,7 @@ from xklb import usage
 from xklb.createdb import fs_add
 from xklb.utils import arggroups, argparse_utils, path_utils
 from xklb.utils.arg_utils import gen_paths
+from xklb.utils.log_utils import log
 
 
 def parse_args():
@@ -39,7 +40,7 @@ def parse_args():
 
     if args.prompt is None:
         if args.rename:
-            args.prompt = "Suggest a clean filename following Chicago Manual of Style. When possible, include the year written and any authors names. Use spaces, commas, dashes, and underscores appropriately. Only give me a filename and nothing else. {name}"
+            args.prompt = "{name}Suggest an alternative, clean, filename based on the title and contents. Include the copyright year and any authors names in the format of SUBJECT.LASTNAME.YEAR.TITLE. Only say the filename and nothing else."
             args.llama_args += ["-n", "18"]
             if args.output is None:
                 args.output = f"llm_map_renames.csv"
@@ -62,6 +63,7 @@ def parse_args():
 
 
 def run_llama_with_prompt(args, prompt):
+    log.info(prompt)
     try:
         cmd = [args.exe, "--silent-prompt", *args.llama_args, "-p", prompt]
         result = subprocess.run(cmd, capture_output=True, text=True, check=True)
@@ -87,7 +89,7 @@ def llm_map():
             "{stem}": "Existing filename: " + Path(path).stem,
         }
         for k, v in replacements.items():
-            prompt.replace(k, "\n" + v + "\n")
+            prompt = prompt.replace(k, "\n" + v + "\n\n")
 
         if args.image_model:
             args.llama_args += ["--image", str(Path(path).absolute())]
@@ -97,17 +99,19 @@ def llm_map():
                 file_contents = file_contents.get("tags")
             if file_contents:
                 extract = file_contents[: args.text].replace(";", "\n")
-                prompt += "\n" + "File contents: " + extract + "\n"
+                prompt = "File contents:\n" + extract + "\n\n" + prompt
 
         output = run_llama_with_prompt(args, prompt)
-        if output is not None:
-            if args.rename:
+        if output and args.rename:
+            output = output.replace('\\', '').replace('/','')
+            if output:
                 output = path_utils.clean_path(bytes(Path(path).with_name(output)))
 
                 ext = Path(path).suffix
                 if not output.endswith(ext):
                     output += ext
 
+        if output:
             results.append([path, output])
 
     df = pd.DataFrame(results, columns=["path", "output"])
