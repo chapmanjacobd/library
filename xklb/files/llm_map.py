@@ -1,5 +1,6 @@
 import shlex, subprocess
 from pathlib import Path
+from shutil import which
 
 from xklb import usage
 from xklb.createdb import fs_add
@@ -9,16 +10,26 @@ from xklb.utils.arg_utils import gen_paths
 
 def parse_args():
     parser = argparse_utils.ArgumentParser(usage=usage.llm_map)
-    parser.add_argument("--llama-args", "--custom-args", default="", help="Use custom llamafile arguments")
-    parser.add_argument("--prompt", "--custom-prompt", help="Use a custom prompt")
+    parser.add_argument("--prompt", '-q', "--custom-prompt", help="Use a custom prompt")
     parser.add_argument(
         "--text", type=int, nargs="?", const=1500, help="Pass text file contents of each file to the LLM"
     )
+    parser.add_argument("--images", action="store_true", help="Treat paths as image files")
     parser.add_argument("--rename", action="store_true", help="Use rename prompt")
     parser.add_argument("--output", help="The output CSV file to save the results.")
     arggroups.debug(parser)
 
-    parser.add_argument("llamafile", help="The path to the llamafile to run.")
+    parser.add_argument(
+        '--model',
+        '-m',
+        "--llamafile",
+        help="The path to the llamafile to run. If llamafile is in your PATH then you can also specify a GGUF file.",
+    )
+    parser.add_argument('--image-model', '--mmproj', help="The path to the LLaVA vision GGUF model.")
+    parser.add_argument(
+        "--llama-args", "--custom-args", type=shlex.split, default=[], help="Use custom llamafile arguments"
+    )
+
     arggroups.paths_or_stdin(parser)
     args = parser.parse_args()
     arggroups.args_post(args, parser)
@@ -26,11 +37,20 @@ def parse_args():
     if args.prompt is None:
         if args.rename:
             args.prompt = "Suggest a clean filename following Chicago Manual of Style. When possible, include the year written and any authors names. Use spaces, commas, dashes, and underscores appropriately. Only give me a filename and nothing else. {name}"
-            args.llama_args = "-n 18"
+            args.llama_args += ["-n", "18"]
             if args.output is None:
                 args.output = f"llm_map_renames.csv"
         else:
             raise NotImplementedError
+
+    args.exe = which('llamafile')
+    if args.exe:
+        args.llama_args += ['-m', args.model]
+    else:
+        args.exe = args.model
+
+    if args.image_model:
+        args.llama_args += ['--mmproj', args.image_model]
 
     if args.output is None:
         args.output = f"llm_map_{args.prompt}.csv"
@@ -40,15 +60,11 @@ def parse_args():
 
 def run_llama_with_prompt(args, prompt):
     try:
-        result = subprocess.run(
-            [args.llamafile, "--silent-prompt", *shlex.split(args.llama_args), "-p", prompt],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
+        cmd = [args.exe, "--silent-prompt", *args.llama_args, "-p", prompt]
+        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
         return result.stdout.strip()
     except subprocess.CalledProcessError as e:
-        print(f"Error running {args.llamafile} for {prompt}: {e.stderr}")
+        print(f"Error running {cmd} for {prompt}: {e.stderr}")
         return None
 
 
@@ -67,10 +83,12 @@ def llm_map():
             '{name}': "Existing filename: " + Path(path).name,
             '{stem}': "Existing filename: " + Path(path).stem,
         }
-        for k,v in replacements.items():
+        for k, v in replacements.items():
             prompt.replace(k, '\n' + v + '\n')
 
-        if args.text:
+        if args.images:
+            args.llama_args += ["--image", str(Path(path).absolute())]
+        elif args.text:
             file_contents = fs_add.munge_book_tags_fast(path)
             if file_contents:
                 file_contents = file_contents.get("tags")
