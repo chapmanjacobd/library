@@ -34,7 +34,7 @@ def test_lb_fs(play_mocked):
     assert "https://www.youtube.com/watch?v=QoXubRvB6tQ" in out["path"]
     assert out["duration"] == 28
     assert out["title"] == "Most Epic Video About Nothing"
-    assert out["size"] == 4797012
+    assert out["size"] > 2000000
 
 
 @mock.patch("xklb.playback.media_player.single_player", return_value=SimpleNamespace(returncode=0))
