@@ -5,7 +5,7 @@
 groups = ["default", "deluxe", "test"]
 strategy = ["cross_platform"]
 lock_version = "4.4.2"
-content_hash = "sha256:9e98c9681b87776c7866dcc47e3923a00324c68aeef946e684e9452925b5bf2a"
+content_hash = "sha256:a0c0e9e68ea5d1514a4ca312662263f0b0f488643688c39082304e07a827bf37"
 
 [[package]]
 name = "aiohttp"
@@ -853,12 +853,12 @@ files = [
 
 [[package]]
 name = "humanize"
-version = "4.9.0"
+version = "4.10.0"
 requires_python = ">=3.8"
 summary = "Python humanize utilities"
 files = [
-    {file = "humanize-4.9.0-py3-none-any.whl", hash = "sha256:ce284a76d5b1377fd8836733b983bfb0b76f1aa1c090de2566fcf008d7f6ab16"},
-    {file = "humanize-4.9.0.tar.gz", hash = "sha256:582a265c931c683a7e9b8ed9559089dea7edcf6cc95be39a3cbc2c5d5ac2bcfa"},
+    {file = "humanize-4.10.0-py3-none-any.whl", hash = "sha256:39e7ccb96923e732b5c2e27aeaa3b10a8dfeeba3eb965ba7b74a3eb0e30040a6"},
+    {file = "humanize-4.10.0.tar.gz", hash = "sha256:06b6eb0293e4b85e8d385397c5868926820db32b9b654b932f57fa41c23c9978"},
 ]
 
 [[package]]
@@ -1583,11 +1583,11 @@ files = [
 
 [[package]]
 name = "puremagic"
-version = "1.25"
+version = "1.26"
 summary = "Pure python implementation of magic file detection"
 files = [
-    {file = "puremagic-1.25-py3-none-any.whl", hash = "sha256:b8f8731263505f19949002bb4b5506fe19b57d98582f3218fccb4bdd0124fd2d"},
-    {file = "puremagic-1.25.tar.gz", hash = "sha256:671c801158376c5f4a43c805edf7ef87d59337e243b03a8ce23d151a7a0e9c4d"},
+    {file = "puremagic-1.26-py3-none-any.whl", hash = "sha256:2fb5ebffeae21a1f94b0db6fde20e1dcd0b7705d915eb02ae4a0f990f1e88209"},
+    {file = "puremagic-1.26.tar.gz", hash = "sha256:ea875d3fdd6a29134bdd035cdfeca177fed575b6bdd68acd86f83ca284edc027"},
 ]
 
 [[package]]
@@ -2667,7 +2667,7 @@ files = [
 
 [[package]]
 name = "yt-dlp"
-version = "2024.7.2"
+version = "2024.7.9"
 requires_python = ">=3.8"
 summary = "A feature-rich command-line audio/video downloader"
 dependencies = [
@@ -2681,8 +2681,8 @@ dependencies = [
     "websockets>=12.0",
 ]
 files = [
-    {file = "yt_dlp-2024.7.2-py3-none-any.whl", hash = "sha256:4f76b48244c783e6ac06e8d7627bcf62cbeb4f6d79ba7e3cfc8249e680d4e691"},
-    {file = "yt_dlp-2024.7.2.tar.gz", hash = "sha256:2b0c86b579d4a044eaf3c4b00e3d7b24d82e6e26869fa11c288ea4395b387f41"},
+    {file = "yt_dlp-2024.7.9-py3-none-any.whl", hash = "sha256:b50a595abde523b5cc84d788f97e69c642503bd673ba740f709ebf65b5ec6592"},
+    {file = "yt_dlp-2024.7.9.tar.gz", hash = "sha256:e19f00f9e55e90bca1c94bcaf809aa33e51634be9f0de2df84a72d3206934f94"},
 ]
 
 [[package]]

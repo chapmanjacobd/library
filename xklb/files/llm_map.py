@@ -96,7 +96,7 @@ def llm_map():
             if file_contents:
                 file_contents = file_contents.get("tags")
             if file_contents:
-                prompt += f"\nFile contents: {file_contents[:args.text].replace(';', '\n')}\n"
+                prompt += "\n" + f"File contents: {file_contents[:args.text].replace(';', '\n')}" + "\n"
 
         output = run_llama_with_prompt(args, prompt)
         if output is not None:

@@ -48,6 +48,7 @@ def test_pytest_files_exist(path):
         p("tests/files/test_sample_compare.py"),
         p("tests/files/test_sample_hash.py"),
         p("tests/files/test_similar_files.py"),
+        p("tests/files/test_llm_map.py"),
         p("tests/folders/test_big_dirs.py"),
         p("tests/folders/test_mount_stats.py"),
         p("tests/folders/test_move_list.py"),
