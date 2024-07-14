@@ -83,7 +83,7 @@ def add_extra_metadata(args, m):
     remote_path = m["path"]  # for temp file extraction
     if DBType.video in args.profiles and (extension in consts.VIDEO_EXTENSIONS or args.scan_all_files):
         m |= av.munge_av_tags(args, m["path"])
-    if DBType.audio in args.profiles and (extension in consts.AUDIO_ONLY_EXTENSIONS or args.scan_all_files):
+    if DBType.audio in args.profiles and extension in consts.AUDIO_ONLY_EXTENSIONS:
         m |= av.munge_av_tags(args, m["path"])
     if DBType.text in args.profiles and (extension in consts.TEXTRACT_EXTENSIONS or args.scan_all_files):
         with web.PartialContent(m["path"]) as temp_file_path:
