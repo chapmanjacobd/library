@@ -218,6 +218,7 @@ def historical_usage_items(
             {"AND COALESCE(time_deleted, 0)=0" if hide_deleted else ""}
             {"AND COALESCE(time_deleted, 0)>0" if only_deleted else ""}
         GROUP BY {freq_label}
+        ORDER BY {freq_label} desc
     """
 
     return list(args.db.query(query))
@@ -279,6 +280,7 @@ def historical_usage(args, freq="monthly", time_column="time_played", hide_delet
         WHERE {time_column}>0
             {filter_play_count(args)}
         GROUP BY {freq_label}
+        ORDER BY {freq_label} desc
     """
 
     return list(args.db.query(query))

@@ -47,6 +47,34 @@ def _now_playing(args) -> dict:
     return media
 
 
+def from_duration_to_duration_str(duration, segment_start, segment_end):
+    if segment_start > duration and segment_end == 0:
+        segment_end = segment_start + duration
+
+    # TODO: this could probably be simplified to:
+    # duration, end, start = sorted(...)
+    if segment_start > segment_end > 0 and segment_start + segment_end > duration:
+        segment_start, segment_end = segment_end, segment_start
+
+    if segment_start or segment_end:
+        if segment_end > 0:
+            segment_duration = segment_start - segment_end
+        else:
+            segment_duration = duration - segment_start  # segment muxer copies original duration
+
+        start_str = printing.seconds_to_hhmmss(segment_start).strip()
+        end_str = printing.seconds_to_hhmmss(segment_end or duration).strip()
+        duration_str = printing.seconds_to_hhmmss(segment_duration).strip()
+
+        duration_str = f"Duration: {duration_str}"
+        duration_str += f" ({start_str} to {end_str})"
+    else:
+        duration_str = printing.seconds_to_hhmmss(duration).strip()
+        duration_str = f"Duration: {duration_str}"
+
+    return duration_str
+
+
 def reformat_ffprobe(path):
     try:
         probe = processes.FFProbe(path)
@@ -187,24 +215,12 @@ def reformat_ffprobe(path):
 
     duration = nums.safe_int(probe.duration) or 0
     if duration > 0:
-        start = nums.safe_int(probe.format.get("start_time")) or 0
-        if start > 0:
-            total_duration = duration
-            end = nums.safe_int(probe.format.get("end_time")) or 0
-            if end > 0:
-                duration = start - end
-            else:
-                duration -= start
-
-            start_str = printing.seconds_to_hhmmss(start).strip()
-            end_str = printing.seconds_to_hhmmss(end or total_duration).strip()
-            duration_str = printing.seconds_to_hhmmss(duration).strip()
-
-            formatted_output += f"Duration: {duration_str}"
-            formatted_output += f" ({start_str} to {end_str})\n"
-        else:
-            duration_str = printing.seconds_to_hhmmss(duration).strip()
-            formatted_output += f"Duration: {duration_str}\n"
+        duration_str = from_duration_to_duration_str(
+            duration,
+            segment_start=nums.safe_int(probe.format.get("start_time")) or 0,
+            segment_end=nums.safe_int(probe.format.get("end_time")) or 0,
+        )
+        formatted_output += duration_str + "\n"
 
     # print(cmd("ffprobe", "-hide_banner", "-loglevel", "info", path).stderr)
     return textwrap.indent(formatted_output, "    ")

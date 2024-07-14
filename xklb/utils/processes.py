@@ -186,7 +186,7 @@ class FFProbe:
             "ffprobe",
             "-hide_banner",
             "-rw_timeout",
-            "80000000",
+            "100000000",
             "-timeout",
             "45000000",
             "-show_format",
