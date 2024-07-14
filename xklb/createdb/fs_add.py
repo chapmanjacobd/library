@@ -378,27 +378,6 @@ def extract_chunk(args, media) -> None:
             args.db["captions"].insert({**d["caption_t0"], "media_id": media_id}, alter=True)
 
 
-def mark_media_undeleted(args, paths) -> int:
-    paths = iterables.conform(paths)
-
-    modified_row_count = 0
-    if paths:
-        df_chunked = iterables.chunks(paths, consts.SQLITE_PARAM_LIMIT)
-        for chunk_paths in df_chunked:
-            with args.db.conn:
-                cursor = args.db.conn.execute(
-                    """update media
-                    set time_deleted=0
-                    where path in ("""
-                    + ",".join(["?"] * len(chunk_paths))
-                    + ")",
-                    (*chunk_paths,),
-                )
-                modified_row_count += cursor.rowcount
-
-    return modified_row_count
-
-
 def find_new_files(args, path) -> list[str]:
     if path.is_file():
         scanned_set = {str(path)}
@@ -449,7 +428,7 @@ def find_new_files(args, path) -> list[str]:
         log.debug(e)
     else:
         undeleted_files = list(deleted_set.intersection(scanned_set))
-        undeleted_count = mark_media_undeleted(args, undeleted_files)
+        undeleted_count = db_media.mark_media_undeleted(args, undeleted_files)
         if undeleted_count > 0:
             print(f"[{path}] Marking", undeleted_count, "metadata records as undeleted")
 

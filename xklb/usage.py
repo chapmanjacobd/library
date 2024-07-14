@@ -1655,3 +1655,8 @@ llm_map = """library llm-map LLAMA_FILE [paths ...] [--llama-args LLAMA_ARGS] [-
 
         library llm-map --model ~/Downloads/llava-v1.5-7b-Q4_K.gguf --image-model ~/Downloads/llava-v1.5-7b-mmproj-Q4_0.gguf --prompt 'what do you see?' ~/Downloads/comp_*.jpg
 """
+
+nicotine = """library nicotine-import DATABASE PATH ...
+
+    Load records from Nicotine+ File Lists
+"""
