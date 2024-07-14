@@ -3,7 +3,7 @@ from collections.abc import Collection
 from pathlib import Path
 
 from xklb.createdb import fs_add
-from xklb.utils import consts, date_utils, db_utils, iterables, objects, processes, sql_utils, strings
+from xklb.utils import consts, date_utils, db_utils, iterables, log_utils, objects, processes, sql_utils, strings
 from xklb.utils.consts import DBType
 from xklb.utils.log_utils import log
 
@@ -193,6 +193,84 @@ def add(args, entry):
         args.db["captions"].insert_all([{**d, "media_id": media_id} for d in subtitles], alter=True)
 
 
+def mark_media_undeleted(args, paths) -> int:
+    paths = iterables.conform(paths)
+
+    modified_row_count = 0
+    if paths:
+        df_chunked = iterables.chunks(paths, consts.SQLITE_PARAM_LIMIT)
+        for chunk_paths in df_chunked:
+            with args.db.conn:
+                cursor = args.db.conn.execute(
+                    """update media
+                    set time_deleted=0
+                    where path in ("""
+                    + ",".join(["?"] * len(chunk_paths))
+                    + ")",
+                    (*chunk_paths,),
+                )
+                modified_row_count += cursor.rowcount
+
+    return modified_row_count
+
+
+def mark_media_deleted(args, paths) -> int:
+    paths = iterables.conform(paths)
+
+    modified_row_count = 0
+    if paths:
+        df_chunked = iterables.chunks(paths, consts.SQLITE_PARAM_LIMIT)
+        for chunk_paths in df_chunked:
+            with args.db.conn:
+                cursor = args.db.conn.execute(
+                    f"""update media
+                    set time_deleted={consts.APPLICATION_START}
+                    where path in ("""
+                    + ",".join(["?"] * len(chunk_paths))
+                    + ")",
+                    (*chunk_paths,),
+                )
+                modified_row_count += cursor.rowcount
+
+    return modified_row_count
+
+
+def update_media(args, media):
+    t = log_utils.Timer()
+    scanned_set = {d["path"] for d in media}
+
+    try:
+        deleted_set = {d["path"] for d in args.db.query("select path from media where time_deleted > 0")}
+    except Exception as e:
+        log.debug(e)
+    else:
+        undeleted_files = list(deleted_set.intersection(scanned_set))
+        undeleted_count = mark_media_undeleted(args, undeleted_files)
+        if undeleted_count > 0:
+            print("Marking", undeleted_count, "metadata records as undeleted")
+    log.debug("undelete: %s", t.elapsed())
+
+    try:
+        existing_set = {d["path"] for d in args.db.query("select path from media WHERE coalesce(time_deleted, 0) = 0")}
+    except Exception as e:
+        log.debug(e)
+        new_files = scanned_set
+    else:
+        new_files = scanned_set - existing_set
+
+        deleted_files = list(existing_set - scanned_set)
+        if not scanned_set and len(deleted_files) >= len(existing_set) and not args.force:
+            print("No media scanned.")
+            return []
+        deleted_count = mark_media_deleted(args, deleted_files)
+        if deleted_count > 0:
+            print(f"Marking", deleted_count, "orphaned metadata records as deleted")
+        log.debug("mark_deleted: %s", t.elapsed())
+
+    new_media = [d for d in media if d["path"] in new_files]
+    args.db["media"].insert_all(new_media, pk="id", alter=True, replace=True)
+
+
 def playlist_media_add(
     args,
     webpath: str,
@@ -254,27 +332,6 @@ def download_add(
     if entry["path"] != webpath and (unrecoverable_error or not error):
         with args.db.conn:
             args.db.conn.execute("DELETE from media WHERE path = ?", [webpath])
-
-
-def mark_media_deleted(args, paths) -> int:
-    paths = iterables.conform(paths)
-
-    modified_row_count = 0
-    if paths:
-        df_chunked = iterables.chunks(paths, consts.SQLITE_PARAM_LIMIT)
-        for chunk_paths in df_chunked:
-            with args.db.conn:
-                cursor = args.db.conn.execute(
-                    f"""update media
-                    set time_deleted={consts.APPLICATION_START}
-                    where path in ("""
-                    + ",".join(["?"] * len(chunk_paths))
-                    + ")",
-                    (*chunk_paths,),
-                )
-                modified_row_count += cursor.rowcount
-
-    return modified_row_count
 
 
 def natsort_media(args, media):

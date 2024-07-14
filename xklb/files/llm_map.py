@@ -103,7 +103,7 @@ def llm_map():
 
         output = run_llama_with_prompt(args, prompt)
         if output and args.rename:
-            output = output.replace('\\', '').replace('/','')
+            output = output.replace("\\", "").replace("/", "")
             if output:
                 output = path_utils.clean_path(bytes(Path(path).with_name(output)))
 
