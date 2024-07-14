@@ -31,7 +31,7 @@ def sort_by(args):
     if args.sort_groups_by:
         return lambda x: x.get(args.sort_groups_by.replace(" desc", "")) or 0
 
-    return lambda x: (x["size"] / (x.get("count") or 1), x["size"], x.get("count") or 1)
+    return lambda x: (x["size"] or 0 / (x.get("count") or 1), x["size"] or 0, x.get("count") or 1)
 
 
 def get_subset(args, level=None, prefix=None) -> list[dict]:
@@ -72,18 +72,17 @@ def get_subset(args, level=None, prefix=None) -> list[dict]:
 
 
 def load_subset(args):
-    level = args.depth
     if args.depth == 0:
         while len(args.subset) < 2:
-            level += 1
-            args.subset = get_subset(args, level=level, prefix=args.cwd)
+            args.depth += 1
+            args.subset = get_subset(args, level=args.depth, prefix=args.cwd)
     else:
-        args.subset = get_subset(args, level=level, prefix=args.cwd)
+        args.subset = get_subset(args, level=args.depth, prefix=args.cwd)
 
     if not args.subset:
         processes.no_media_found()
 
-    args.cwd = os.sep.join(args.subset[0]["path"].split(os.sep)[: level - 1]) + os.sep
+    args.cwd = os.sep.join(args.subset[0]["path"].split(os.sep)[: args.depth - 1]) + os.sep
     return args.cwd, args.subset
 
 
@@ -116,7 +115,7 @@ def disk_usage():
     media_printer.media_printer(
         args,
         args.subset,
-        units=f"paths at current depth ({num_folders} folders, {num_files} files)",
+        units=f"paths at depth {args.depth} ({num_folders} folders, {num_files} files)",
     )
 
 
