@@ -1656,7 +1656,20 @@ llm_map = """library llm-map LLAMA_FILE [paths ...] [--llama-args LLAMA_ARGS] [-
         library llm-map --model ~/Downloads/llava-v1.5-7b-Q4_K.gguf --image-model ~/Downloads/llava-v1.5-7b-mmproj-Q4_0.gguf --prompt 'what do you see?' ~/Downloads/comp_*.jpg
 """
 
-nicotine = """library nicotine-import DATABASE PATH ...
+nicotine_import = """library nicotine-import DATABASE PATH ...
 
     Load records from Nicotine+ File Lists
+
+        library nicotine-import ~/lb/soulseek.db /home/xk/.local/share/nicotine/usershares/*
+
+    By default we track deletions when only one file list is specified
+
+        library nicotine-import ~/lb/soulseek.db /home/xk/.local/share/nicotine/usershares/user1
+        Marking 508387 orphaned metadata records as deleted
+
+        library nicotine-import ~/lb/soulseek.db /home/xk/.local/share/nicotine/usershares/user2
+        Marking 31862 metadata records as undeleted
+        Marking 216495 orphaned metadata records as deleted
+
+        If this is undesirable, pass the `--no-track-deleted` flag
 """
