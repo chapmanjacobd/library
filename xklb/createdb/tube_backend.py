@@ -426,7 +426,7 @@ def download(args, m) -> None:
     if args.small:
         if match_filter_user_config is None:
             match_filters.append("duration >? 59 & duration <? 14399")
-        ydl_opts["format_sort"] = ["res:576"]
+        ydl_opts["format_sort"] = ["res:576", "channels:2"]
         ydl_opts[
             "format"
         ] = "(bestvideo[filesize<2G]+bestaudio/best[filesize<2G]/bestvideo*+bestaudio/best)[format_id!$=-drc][dynamic_range!^=HDR]/bestvideo[filesize<2G]+bestaudio/best[filesize<2G]/bestvideo*+bestaudio/best"
