@@ -7,7 +7,8 @@ from xklb.utils import arggroups, argparse_utils
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse_utils.ArgumentParser(usage=usage.nicotine)
+    parser = argparse_utils.ArgumentParser(usage=usage.nicotine_import)
+    parser.add_argument("--track-deleted", default=True, action=argparse.BooleanOptionalAction)
     arggroups.debug(parser)
 
     arggroups.database(parser)
@@ -44,4 +45,4 @@ def nicotine_import() -> None:
         data = from_nicotine_file_list_to_records(data)
         data = [d | {"time_created": time_created, "time_deleted": 0} for d in data]
 
-        db_media.update_media(args, data)
+        db_media.update_media(args, data, mark_deleted=args.track_deleted and len(args.paths) == 1)

@@ -235,7 +235,7 @@ def mark_media_deleted(args, paths) -> int:
     return modified_row_count
 
 
-def update_media(args, media):
+def update_media(args, media, mark_deleted=True):
     t = log_utils.Timer()
     scanned_set = {d["path"] for d in media}
 
@@ -258,14 +258,15 @@ def update_media(args, media):
     else:
         new_files = scanned_set - existing_set
 
-        deleted_files = list(existing_set - scanned_set)
-        if not scanned_set and len(deleted_files) >= len(existing_set) and not args.force:
-            print("No media scanned.")
-            return []
-        deleted_count = mark_media_deleted(args, deleted_files)
-        if deleted_count > 0:
-            print(f"Marking", deleted_count, "orphaned metadata records as deleted")
-        log.debug("mark_deleted: %s", t.elapsed())
+        if mark_deleted:
+            deleted_files = list(existing_set - scanned_set)
+            if not scanned_set and len(deleted_files) >= len(existing_set) and not args.force:
+                print("No media scanned.")
+                return []
+            deleted_count = mark_media_deleted(args, deleted_files)
+            if deleted_count > 0:
+                print(f"Marking", deleted_count, "orphaned metadata records as deleted")
+            log.debug("mark_deleted: %s", t.elapsed())
 
     new_media = [d for d in media if d["path"] in new_files]
     args.db["media"].insert_all(new_media, pk="id", alter=True, replace=True)
