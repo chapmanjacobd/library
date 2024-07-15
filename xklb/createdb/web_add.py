@@ -118,8 +118,8 @@ def add_basic_metadata(args, m):
     return m
 
 
-def spider(args, paths: set):
-    original_paths = paths.copy()
+def spider(args, paths: list):
+    original_paths = set(*paths)
     get_urls = iterables.return_unique(extract_links.get_inner_urls)
 
     new_media_count = 0
@@ -136,7 +136,9 @@ def spider(args, paths: set):
         )
 
         if path in original_paths or web.is_index(path) or web.is_html(path):
-            for a_ref in get_urls(args, path):
+            urls = list(get_urls(args, path))
+            random.shuffle(urls)
+            for a_ref in urls:
                 if a_ref is None:
                     break
 
@@ -144,11 +146,11 @@ def spider(args, paths: set):
 
                 link = web.remove_apache_sorting_params(link)
 
-                if link in (paths | traversed_paths):
+                if link in traversed_paths or link in paths:
                     continue
                 if web.is_index(link):
                     if web.is_subpath(path, link):
-                        paths.add(link)
+                        paths.append(link)
                     continue
 
                 if db_media.exists(args, link):
@@ -157,7 +159,7 @@ def spider(args, paths: set):
                 else:
                     new_paths[link] = link_text
         else:
-            if path not in (paths | traversed_paths):
+            if not (path in traversed_paths or path in paths):
                 if db_media.exists(args, path):
                     known_paths.add(path)
                 else:
@@ -235,7 +237,7 @@ def web_add(args=None) -> None:
         try:
             for playlist_path in arg_utils.gen_paths(args):
                 args.playlists_id = add_playlist(args, playlist_path)
-                spider(args, {playlist_path})
+                spider(args, [playlist_path])
 
         finally:
             if args.selenium:
@@ -271,7 +273,7 @@ def web_update(args=None) -> None:
             args_env = arg_utils.override_config(args, extractor_config)
 
             # TODO: use directory Last-Modified header to skip file trees which don't need to be updated
-            new_media = spider(args_env, {playlist["path"]})
+            new_media = spider(args_env, [playlist["path"]])
 
             if new_media > 0:
                 db_playlists.decrease_update_delay(args, playlist["path"])
