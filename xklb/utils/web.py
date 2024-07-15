@@ -15,7 +15,7 @@ headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:121.0) Gecko/201001
 session = None
 
 
-def _get_retry_adapter(max_retries):
+def _get_retry_adapter(max_retries, same_host_threads):
     import requests.adapters
 
     retry = requests.adapters.Retry(
@@ -41,7 +41,7 @@ def _get_retry_adapter(max_retries):
         ],
     )
 
-    return requests.adapters.HTTPAdapter(max_retries=retry)
+    return requests.adapters.HTTPAdapter(max_retries=retry, pool_maxsize=same_host_threads, pool_block=True)
 
 
 def parse_cookies_from_browser(input_str):
@@ -83,13 +83,14 @@ def requests_session(args=argparse.Namespace()):
     if session is None:
         import requests
 
+        same_host_threads = getattr(args, "threads", None) or 10
         http_max_retries = getattr(args, "http_max_retries", None) or 8
         cookie_file = getattr(args, "cookies", None)
         cookies_from_browser = getattr(args, "cookies_from_browser", None)
 
         session = requests.Session()
-        session.mount("http://", _get_retry_adapter(http_max_retries))
-        session.mount("https://", _get_retry_adapter(http_max_retries))
+        session.mount("http://", _get_retry_adapter(http_max_retries, same_host_threads))
+        session.mount("https://", _get_retry_adapter(http_max_retries, same_host_threads))
         session.request = functools.partial(session.request, headers=headers, timeout=(5, 45))  # type: ignore
 
         if getattr(args, "allow_insecure", False):
