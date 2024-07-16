@@ -31,7 +31,7 @@ def sort_by(args):
     if args.sort_groups_by:
         return lambda x: x.get(args.sort_groups_by.replace(" desc", "")) or 0
 
-    return lambda x: (x["size"] or 0 / (x.get("count") or 1), x["size"] or 0, x.get("count") or 1)
+    return lambda x: (x.get("size") or 0 / (x.get("count") or 1), x.get("size") or 0, x.get("count") or 1)
 
 
 def get_subset(args, level=None, prefix=None) -> list[dict]:

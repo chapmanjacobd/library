@@ -29,17 +29,17 @@ def is_desired_url(args, a_element, link, link_text) -> bool:
     exclude_cond = all if args.strict_exclude else any
 
     if args.path_include and not include_cond(inc in link for inc in args.path_include):
-        log.debug("path-include: %s", link)
+        log.debug("no match path-include: %s", link)
         return False
     if args.path_exclude and exclude_cond(ex in link for ex in args.path_exclude):
-        log.debug("path-exclude: %s", link)
+        log.debug("matched path-exclude: %s", link)
         return False
 
     if args.text_exclude and exclude_cond(ex in link_text for ex in args.text_exclude):
-        log.debug("text-exclude: %s", link_text)
+        log.debug("matched text-exclude: %s", link_text)
         return False
     if args.text_include and not include_cond(inc in link_text for inc in args.text_include):
-        log.debug("text-include: %s", link_text)
+        log.debug("no match text-include: %s", link_text)
         return False
 
     if args.before_exclude or args.before_include or args.after_exclude or args.after_include:
@@ -48,24 +48,24 @@ def is_desired_url(args, a_element, link, link_text) -> bool:
         after_text = after if args.case_sensitive else after.lower()
 
         if args.before_exclude and exclude_cond(ex in before_text for ex in args.before_exclude):
-            log.debug("before-exclude: %s", before_text)
+            log.debug("matched before-exclude: %s", before_text)
             return False
         if args.after_exclude and exclude_cond(ex in after_text for ex in args.after_exclude):
-            log.debug("after-exclude: %s", after_text)
+            log.debug("matched after-exclude: %s", after_text)
             return False
         if args.before_include and not include_cond(inc in before_text for inc in args.before_include):
-            log.debug("before-include: %s", before_text)
+            log.debug("no match before-include: %s", before_text)
             return False
         if args.after_include and not include_cond(inc in after_text for inc in args.after_include):
-            log.debug("after-include: %s", after_text)
+            log.debug("no match after-include: %s", after_text)
             return False
 
-        if args.before_exclude or args.before_include:
+        if args.before_exclude or args.before_include:  # just logging
             log.info("  before: %s", before_text)
-        if args.after_exclude or args.after_include:
+        if args.after_exclude or args.after_include:  # just logging
             log.info("  after: %s", after_text)
 
-    if args.text_exclude or args.text_include:
+    if args.text_exclude or args.text_include:  # just logging
         log.info("  text: `%s`", link_text.strip())
 
     return True
