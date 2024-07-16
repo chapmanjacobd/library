@@ -39,7 +39,25 @@ def decode_quick_scan(path, scans, scan_duration=3, audio_scan=False):
                 "-1",
             ]
 
-        proc = processes.cmd(
+        cmd = []
+        if which("systemd-run"):
+            cmd += [
+                "systemd-run",
+                "--user",
+                "-p",
+                "MemoryMax=4G",
+                "-p",
+                "MemorySwapMax=1G",
+                "--pty",
+                "--pipe",
+                "--same-dir",
+                "--wait",
+                "--collect",
+                "--service-type=exec",
+                "--quiet",
+                "--",
+            ]
+        cmd += [
             "ffmpeg",
             "-nostdin",
             "-hide_banner",
@@ -59,7 +77,9 @@ def decode_quick_scan(path, scans, scan_duration=3, audio_scan=False):
             "-f",
             "null",
             os.devnull,
-        )
+        ]
+
+        proc = processes.cmd(*cmd)
         # I wonder if something like this would be faster: -map 0:v:0 -filter:v "select=eq(pict_type\,I)" -frames:v 1
         if proc.stderr != "":
             raise RuntimeError
