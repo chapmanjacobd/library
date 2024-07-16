@@ -17,6 +17,7 @@ from xklb.mediafiles import media_check
 from xklb.utils import consts, db_utils, file_utils, iterables, objects, path_utils, printing, sql_utils, strings
 from xklb.utils.consts import DBType, DLStatus
 from xklb.utils.log_utils import Timer, log
+from xklb.utils.processes import FFProbe
 
 yt_dlp = None
 yt_archive = set()
@@ -492,15 +493,6 @@ def download(args, m) -> None:
             else:
                 log.warning(webpath)
                 raise
-        else:
-            if len(yt_archive) > 0 and info is not None:
-                archive_id = ydl._make_archive_id(info)
-                if archive_id is None:
-                    log.info("archive_id not found %s", info)
-                else:
-                    yt_archive.add(archive_id)
-                    with yt_dlp.utils.locked_file(str(download_archive), "a", encoding="utf-8") as archive_file:
-                        archive_file.write(archive_id + "\n")
 
         if info is None:
             log.debug("[%s]: yt-dlp returned no info", webpath)
@@ -534,6 +526,11 @@ def download(args, m) -> None:
     if info and local_path and Path(local_path).exists():
         log.info("[%s]: Downloaded to %s", webpath, local_path)
         try:
+            if args.profile == DBType.audio:
+                dl_probe = FFProbe(local_path)
+                if not dl_probe.has_audio:
+                    raise RuntimeError
+
             info["corruption"] = int(
                 media_check.calculate_corruption(local_path, threads=1, full_scan_if_corrupt=True) * 100
             )
@@ -548,6 +545,15 @@ def download(args, m) -> None:
         log.info("[%s]: Media check failed", local_path)
         download_status = DLStatus.RECOVERABLE_ERROR
         ydl_errors_txt = "Media check failed\n" + ydl_errors_txt
+    else:
+        if len(yt_archive) > 0 and info is not None:
+            archive_id = ydl._make_archive_id(info)
+            if archive_id is None:
+                log.info("archive_id not found %s", info)
+            else:
+                yt_archive.add(archive_id)
+                with yt_dlp.utils.locked_file(str(download_archive), "a", encoding="utf-8") as archive_file:
+                    archive_file.write(archive_id + "\n")
 
     db_media.download_add(
         args,
