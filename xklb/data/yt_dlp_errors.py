@@ -24,6 +24,7 @@ yt_recoverable_errors = re.compile(
 .*HTTP Error 400
 .*HTTP Error 503
 .*Origin Error
+.*Failed to resolve
 .*API is not granting access
 .*Did not get any data blocks
 .*Too Many Requests

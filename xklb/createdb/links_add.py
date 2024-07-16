@@ -130,7 +130,11 @@ def set_page(input_string, page_key, page_number):
 
 
 def count_pages(args, page_limit):
-    page_start = 1 if args.page_start is None else args.page_start
+    if args.page_start is None:
+        page_start = 1 if args.page_step == 1 else 0
+    else:
+        page_start = args.page_start
+
     if page_limit:
         yield from range(page_start, page_start + (page_limit * args.page_step), args.page_step)
     else:
@@ -162,7 +166,7 @@ def extractor(args, playlist_path):
         if page_count > 3:
             time.sleep(random.uniform(0.3, 4.55))
 
-        if page_limit == 1 and args.page_start is None:
+        if (page_limit == 1 and args.page_start is None) or (page_value == (args.page_start or 0) == 0):
             page_path = playlist_path
         elif args.page_replace:
             page_path = playlist_path.replace(args.page_replace, str(page_value))

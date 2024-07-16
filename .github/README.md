@@ -97,36 +97,38 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v2.8.070; 80 subcommands)
+    library (v2.8.071; 81 subcommands)
 
     Create database subcommands:
-    ╭───────────────┬──────────────────────────────────────────╮
-    │ fs-add        │ Add local media                          │
-    ├───────────────┼──────────────────────────────────────────┤
-    │ tube-add      │ Add online video media (yt-dlp)          │
-    ├───────────────┼──────────────────────────────────────────┤
-    │ web-add       │ Add open-directory media                 │
-    ├───────────────┼──────────────────────────────────────────┤
-    │ gallery-add   │ Add online gallery media (gallery-dl)    │
-    ├───────────────┼──────────────────────────────────────────┤
-    │ tabs-add      │ Create a tabs database; Add URLs         │
-    ├───────────────┼──────────────────────────────────────────┤
-    │ links-add     │ Create a link-scraping database          │
-    ├───────────────┼──────────────────────────────────────────┤
-    │ site-add      │ Auto-scrape website data to SQLITE       │
-    ├───────────────┼──────────────────────────────────────────┤
-    │ reddit-add    │ Create a reddit database; Add subreddits │
-    ├───────────────┼──────────────────────────────────────────┤
-    │ hn-add        │ Create / Update a Hacker News database   │
-    ├───────────────┼──────────────────────────────────────────┤
-    │ substack      │ Backup substack articles                 │
-    ├───────────────┼──────────────────────────────────────────┤
-    │ tildes        │ Backup tildes comments and topics        │
-    ├───────────────┼──────────────────────────────────────────┤
-    │ places-import │ Import places of interest (POIs)         │
-    ├───────────────┼──────────────────────────────────────────┤
-    │ row-add       │ Add arbitrary data to SQLITE             │
-    ╰───────────────┴──────────────────────────────────────────╯
+    ╭─────────────────┬──────────────────────────────────────────╮
+    │ fs-add          │ Add local media                          │
+    ├─────────────────┼──────────────────────────────────────────┤
+    │ tube-add        │ Add online video media (yt-dlp)          │
+    ├─────────────────┼──────────────────────────────────────────┤
+    │ web-add         │ Add open-directory media                 │
+    ├─────────────────┼──────────────────────────────────────────┤
+    │ gallery-add     │ Add online gallery media (gallery-dl)    │
+    ├─────────────────┼──────────────────────────────────────────┤
+    │ tabs-add        │ Create a tabs database; Add URLs         │
+    ├─────────────────┼──────────────────────────────────────────┤
+    │ links-add       │ Create a link-scraping database          │
+    ├─────────────────┼──────────────────────────────────────────┤
+    │ site-add        │ Auto-scrape website data to SQLITE       │
+    ├─────────────────┼──────────────────────────────────────────┤
+    │ reddit-add      │ Create a reddit database; Add subreddits │
+    ├─────────────────┼──────────────────────────────────────────┤
+    │ hn-add          │ Create / Update a Hacker News database   │
+    ├─────────────────┼──────────────────────────────────────────┤
+    │ substack        │ Backup substack articles                 │
+    ├─────────────────┼──────────────────────────────────────────┤
+    │ tildes          │ Backup tildes comments and topics        │
+    ├─────────────────┼──────────────────────────────────────────┤
+    │ nicotine-import │ Import paths from nicotine+              │
+    ├─────────────────┼──────────────────────────────────────────┤
+    │ places-import   │ Import places of interest (POIs)         │
+    ├─────────────────┼──────────────────────────────────────────┤
+    │ row-add         │ Add arbitrary data to SQLITE             │
+    ╰─────────────────┴──────────────────────────────────────────╯
 
     Text subcommands:
     ╭──────────────────┬──────────────────────────────────────────────╮
@@ -943,6 +945,31 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     Without cookies you are limited to the first page. You can use cookies like this:
         https://github.com/rotemdan/ExportCookies
         library tildes tildes.net.db xk3 --cookies ~/Downloads/cookies-tildes-net.txt
+
+
+</details>
+
+###### nicotine-import
+
+<details><summary>Import paths from nicotine+</summary>
+
+    $ library nicotine-import -h
+    usage: library nicotine-import DATABASE PATH ...
+
+    Load records from Nicotine+ File Lists
+
+        library nicotine-import ~/lb/soulseek.db /home/xk/.local/share/nicotine/usershares/*
+
+    By default we track deletions when only one file list is specified
+
+        library nicotine-import ~/lb/soulseek.db /home/xk/.local/share/nicotine/usershares/user1
+        Marking 508387 orphaned metadata records as deleted
+
+        library nicotine-import ~/lb/soulseek.db /home/xk/.local/share/nicotine/usershares/user2
+        Marking 31862 metadata records as undeleted
+        Marking 216495 orphaned metadata records as deleted
+
+        If this is undesirable, pass the `--no-track-deleted` flag
 
 
 </details>
