@@ -80,8 +80,7 @@ def parse_args():
 
     parser.add_argument("--links", action="store_true")
 
-    parser.add_argument("--process-image", action="store_true")
-    parser.add_argument("--process-ffmpeg", "--process-video", "--process-audio", action="store_true")
+    parser.add_argument("--process", action="store_true")
     arggroups.process_ffmpeg(parser)
     arggroups.debug(parser)
 
@@ -133,6 +132,7 @@ def download(args=None) -> None:
         sys.argv = ["lb", *args]
 
     args = parse_args()
+
     m_columns = db_utils.columns(args, "media")
 
     if "limit" in args.defaults and "media" in args.db.table_names() and "webpath" in m_columns:
@@ -230,18 +230,26 @@ def download(args=None) -> None:
                             dl_paths.append(link)
 
                 for dl_path in dl_paths:
-                    local_path = web.download_url(dl_path, output_prefix=args.prefix)
+                    error = None
+                    try:
+                        local_path = web.download_url(dl_path, output_prefix=args.prefix)
+                    except Exception as e:
+                        if not args.ignore_errors:
+                            raise
+                        local_path = None
+                        error = str(e)
 
-                    if args.process_ffmpeg:
-                        result = process_ffmpeg.process_path(args, local_path)
+                    if local_path and args.process:
+                        extension = local_path.rsplit(".", 1)[-1].lower()
+                        if extension in consts.AUDIO_ONLY_EXTENSIONS | consts.VIDEO_EXTENSIONS:
+                            result = process_ffmpeg.process_path(args, local_path)
+                        elif extension in consts.IMAGE_EXTENSIONS:
+                            result = process_image.process_path(args, local_path)
+
                         if result is not None:
                             local_path = str(result)
-                    elif args.process_image:
-                        result = process_image.process_path(args, local_path)
-                        if result is not None:
-                            local_path = str(result)
 
-                    db_media.download_add(args, original_path, m, local_path)
+                    db_media.download_add(args, original_path, m, local_path, error=error)
             else:
                 raise NotImplementedError
         except Exception:
