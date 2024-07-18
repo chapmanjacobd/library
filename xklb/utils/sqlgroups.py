@@ -328,7 +328,7 @@ def construct_download_query(args) -> tuple[str, dict]:
 
     args.table, m_columns = sql_utils.search_filter(args, m_columns)
 
-    if args.action == SC.download and "time_modified" in m_columns:
+    if "time_modified" in m_columns and args.action != SC.download_status:
         args.filter_sql.append(
             f"""and cast(STRFTIME('%s',
             datetime( COALESCE(m.time_modified,0), 'unixepoch', '+{args.retry_delay}')
