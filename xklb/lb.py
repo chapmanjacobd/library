@@ -186,7 +186,7 @@ modules = {
     "xklb.fsdb.disk_usage.disk_usage": ["du", "usage"],
     "xklb.fsdb.search_db.search_db": ["s", "sdb", "search-dbs"],
     "xklb.mediadb.block.block": [],
-    "xklb.mediadb.download.dl_download": ["dl", "download"],
+    "xklb.mediadb.download.download": ["dl"],
     "xklb.mediadb.download_status.download_status": ["ds", "dl-status"],
     "xklb.mediadb.history.history": ["hi", "log"],
     "xklb.mediadb.history_add.history_add": ["add-history"],

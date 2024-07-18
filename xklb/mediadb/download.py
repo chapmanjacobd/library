@@ -128,7 +128,7 @@ def mark_download_attempt(args, paths) -> int:
     return modified_row_count
 
 
-def dl_download(args=None) -> None:
+def download(args=None) -> None:
     if args:
         sys.argv = ["lb", *args]
 
