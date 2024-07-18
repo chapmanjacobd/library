@@ -21,7 +21,7 @@ def _get_retry_adapter(max_retries, same_host_threads):
     retry = requests.adapters.Retry(
         total=max_retries,
         connect=max_retries,
-        read=max_retries,
+        read=max_retries // 3,
         status=max_retries // 2,
         other=1,
         redirect=4,
