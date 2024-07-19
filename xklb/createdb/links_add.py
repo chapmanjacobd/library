@@ -12,20 +12,100 @@ def parse_args(action, **kwargs):
     parser = argparse_utils.ArgumentParser(**kwargs)
     parser.add_argument("--category", "-c")
 
-    parser.add_argument("--max-pages", type=int)
-    parser.add_argument("--fixed-pages", type=int)
-    parser.add_argument("--backfill-pages", "--backfill", type=int)
+    paging_parser = parser.add_argument_group("Paging")
+    paging_parser.add_argument("--max-pages", type=int, help="Set a max number of pages to get")
+    paging_parser.add_argument(
+        "--fixed-pages",
+        type=int,
+        help="""Force a specific number of pages
 
-    parser.add_argument("--stop-pages-no-match", "--stop-no-match", type=int, default=4)
-    parser.add_argument("--stop-pages-no-new", "--stop-no-new", type=int, default=10)
-    parser.add_argument("--stop-new", type=int)
-    parser.add_argument("--stop-known", type=int)
-    parser.add_argument("--stop-link")
+Overrides --max-pages and --stop-known but you can still stop early via --stop-link ie. 429 page
 
-    parser.add_argument("--page-replace")
-    parser.add_argument("--page-key", default="page")
-    parser.add_argument("--page-step", "--step", type=int, default=1)
-    parser.add_argument("--page-start", "--start-page", "--start", type=int)
+If `--fixed-pages` is 1 and --start-page is not set then the URL will not be modified.
+
+library links-add --fixed-pages=1
+Loading page https://site/path
+
+library links-add --fixed-pages=1 --page-start 99
+Loading page https://site/path?page=99""",
+    )
+    paging_parser.add_argument(
+        "--backfill-pages",
+        "--backfill",
+        type=int,
+        help="""Similar to --fixed-pages but only for the first run
+
+- Set `--backfill-pages` to the desired number of pages for the first run
+- Set `--fixed-pages` to _always_ fetch the desired number of pages (remembered when using linksupdate)
+
+If the website is supported by --auto-pager data is fetched twice when using page iteration.
+As such, manual page iteration (--max-pages, --fixed-pages, etc) is disabled when using `--auto-pager`.
+
+You can unset --fixed-pages for all the playlists in your database by running this command:
+sqlite your.db "UPDATE playlists SET extractor_config = json_replace(extractor_config, '$.fixed_pages', null)"
+""",
+    )
+    paging_parser.add_argument(
+        "--page-step",
+        "--step",
+        type=int,
+        default=1,
+        help="""Use -1 for reverse paging
+
+Some pages don't count page numbers but instead count items like messages or forum posts. You can iterate through like this:
+
+library links-add --page-key start --page-start 0 --page-step 50
+
+which translates to
+&start=0    first page
+&start=50   second page
+&start=100  third page""",
+    )
+    paging_parser.add_argument("--page-start", "--start-page", "--start", type=int, help="Page number to start from")
+
+    paging_parser.add_argument(
+        "--page-key",
+        default="page",
+        help="""By default the script will attempt to modify each given URL with a specific query parameter, "&page=1".
+Override like so:
+library links-add --page-key p  # "&p=1"
+
+Some websites use paths instead of query parameters. In this case the URL provided must include the matching page folder:
+library links-add --page-key page https://website/page/1/
+library links-add --page-key article https://website/article/1/
+""",
+    )
+    paging_parser.add_argument(
+        "--page-replace",
+        help="""If you have more complicated needs you can replace the page number with a named variable:
+library links-add --page-replace NUMBER https://site/with/complex-NUMBER
+library links-add --page-replace NUMBER https://website/page/2?page=NUMBER
+library links-add --page-replace NUMBER https://website/page/NUMBER?page=2
+""",
+    )
+
+    paging_parser.add_argument(
+        "--stop-pages-no-match",
+        "--stop-no-match",
+        type=int,
+        default=4,
+        help="""Some websites don't give an error when you try to access pages which don't exist.
+To compensate for this the script will only continue fetching pages until there are neither new nor known links for four pages.""",
+    )
+    paging_parser.add_argument(
+        "--stop-pages-no-new",
+        "--stop-no-new",
+        type=int,
+        default=10,
+        help="""After encountering ten pages with no new links we stop""",
+    )
+    paging_parser.add_argument(
+        "--stop-new", type=int, help="Stop fetching pages when encountering fewer than or equal to N new links"
+    )
+    paging_parser.add_argument(
+        "--stop-known", type=int, help="Stop fetching pages when encountering more than N known links"
+    )
+    paging_parser.add_argument("--stop-link", help="Stop fetching pages when hitting a specific link")
 
     arggroups.filter_links(parser)
 
@@ -176,13 +256,7 @@ def extractor(args, playlist_path):
         log.info("Loading page %s", page_path)
         page_known = set()
         page_new = {}
-        for a_ref in extract_links.get_inner_urls(args, page_path):
-            if a_ref is None:
-                end_of_playlist = True
-                break
-
-            link, link_text = a_ref
-
+        for link, link_text in extract_links.get_inner_urls(args, page_path):
             if link == args.stop_link:
                 end_of_playlist = True
                 break

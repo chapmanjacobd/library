@@ -112,7 +112,11 @@ def get_inner_urls(args, url):
                 markup = f.read()
             url = "file://" + url
         else:
-            r = web.requests_session(args).get(url, timeout=120)
+            try:
+                r = web.requests_session(args).get(url, timeout=120)
+            except Exception:
+                log.exception("Could not get a valid response from the server")
+                raise StopIteration
             if r.status_code == 404:
                 log.warning("404 Not Found Error: %s", url)
                 is_error = True
@@ -123,7 +127,7 @@ def get_inner_urls(args, url):
         yield from parse_inner_urls(args, url, markup)
 
     if is_error:
-        yield None
+        raise StopIteration
 
 
 def print_or_download(args, a_ref):
@@ -157,9 +161,6 @@ def extract_links() -> None:
     try:
         for url in arg_utils.gen_paths(args):
             for a_ref in iterables.return_unique(get_inner_urls)(args, url):
-                if a_ref is None:
-                    break
-
                 print_or_download(args, a_ref)
 
     finally:

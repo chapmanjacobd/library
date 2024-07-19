@@ -74,13 +74,13 @@ def parse_args():
 
     parser.add_argument("--small", action="store_true", help="Video: Prefer 480p-like")
 
-    parser.add_argument("--photos", action="store_true", help="Image: Download JPG and WEBP")
-    parser.add_argument("--drawings", action="store_true", help="Image: Download PNG")
-    parser.add_argument("--gifs", action="store_true", help="Image: Download MP4 and GIFs")
+    parser.add_argument("--photos", action="store_true", help="Image: Only download JPG and WEBP")
+    parser.add_argument("--drawings", action="store_true", help="Image: Only download PNG")
+    parser.add_argument("--gifs", action="store_true", help="Image: Only download MP4 and GIFs")
 
-    parser.add_argument("--links", action="store_true")
+    parser.add_argument("--links", action="store_true", help="Download media linked within pages")
 
-    parser.add_argument("--process", action="store_true")
+    parser.add_argument("--process", action="store_true", help="Transcode images to AVIF and video/audio to AV1/Opus")
     arggroups.process_ffmpeg(parser)
     arggroups.debug(parser)
 
@@ -224,10 +224,8 @@ def download(args=None) -> None:
                 dl_paths = [original_path]
                 if args.links:
                     dl_paths = []
-                    for t in get_inner_urls(args, original_path):
-                        if t:
-                            link, text = t
-                            dl_paths.append(link)
+                    for link, text in get_inner_urls(args, original_path):
+                        dl_paths.append(link)
 
                 for dl_path in dl_paths:
                     error = None

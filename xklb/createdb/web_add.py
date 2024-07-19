@@ -120,7 +120,7 @@ def add_basic_metadata(args, m):
 
 def spider(args, paths: list):
     original_paths = set(*paths)
-    get_urls = iterables.return_unique(extract_links.get_inner_urls)
+    get_inner_urls = iterables.return_unique(extract_links.get_inner_urls)
 
     new_media_count = 0
     known_paths = set()
@@ -136,14 +136,9 @@ def spider(args, paths: list):
         )
 
         if path in original_paths or web.is_index(path) or web.is_html(path):
-            urls = list(get_urls(args, path))
+            urls = list(get_inner_urls(args, path))
             random.shuffle(urls)
-            for a_ref in urls:
-                if a_ref is None:
-                    break
-
-                link, link_text = a_ref
-
+            for link, link_text in urls:
                 link = web.remove_apache_sorting_params(link)
 
                 if link in traversed_paths or link in paths:
