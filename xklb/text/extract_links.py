@@ -76,22 +76,21 @@ def parse_inner_urls(args, url, markup):
 
     soup = BeautifulSoup(markup, "lxml")
 
-    for a_ref in soup.findAll(href=True):
-        log.debug(a_ref)
+    for tag in soup.find_all(True):
+        for attr_name, attr_value in tag.attrs.items():
+            if attr_name not in ("href", "src", "data-src"):
+                continue
 
-        href = a_ref["href"].strip()
-        if (len(href) > 1) and href[0] != "#":
-            link = web.construct_absolute_url(url, href).strip()
-            link_text = strings.remove_consecutive_whitespace(a_ref.text.strip())
+            attr_value = str(attr_value).strip()
+            if attr_value and attr_value[0] != "#":
+                link = web.construct_absolute_url(url, attr_value).strip()
+                link_text = strings.remove_consecutive_whitespace(tag.text.strip())
 
-            link_lower = link if args.case_sensitive else link.lower()
-            link_text_lower = link_text if args.case_sensitive else link_text.lower()
+                link_lower = link if args.case_sensitive else link.lower()
+                link_text_lower = link_text if args.case_sensitive else link_text.lower()
 
-            if is_desired_url(args, a_ref, link_lower, link_text_lower):
-                yield (link, strings.strip_enclosing_quotes(link_text))
-
-        if args.verbose > consts.LOG_DEBUG_SQL:
-            breakpoint()
+                if is_desired_url(args, tag, link_lower, link_text_lower):
+                    yield (link, strings.strip_enclosing_quotes(link_text))
 
 
 def get_inner_urls(args, url):
