@@ -83,7 +83,7 @@ def parse_inner_urls(args, url, markup):
 
             attr_value = str(attr_value).strip()
             if attr_value and attr_value[0] != "#":
-                link = web.construct_absolute_url(url, attr_value).strip()
+                link = web.construct_absolute_url(url, attr_value)
                 link_text = strings.remove_consecutive_whitespace(tag.text.strip())
 
                 link_lower = link if args.case_sensitive else link.lower()
