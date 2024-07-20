@@ -115,7 +115,13 @@ def debug(parent_parser):
     parser.add_argument("--threads", type=int, help="Load x files in parallel")
     parser.add_argument("--same-file-threads", type=int, help="Read the same file x times in parallel")
     parser.add_argument(
-        "--ext", "-e", default=[], action=argparse_utils.ArgparseList, help="Include only specific file extensions"
+        "--ext",
+        "--exts",
+        "--extensions",
+        "-e",
+        default=[],
+        action=argparse_utils.ArgparseList,
+        help="Include only specific file extensions",
     )
     parser.add_argument("--simulate", "--dry-run", action="store_true")
     printing(parent_parser)

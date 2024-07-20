@@ -60,7 +60,7 @@ def get_text(args, url):
         text = fs_add.munge_book_tags_fast(url)
         if text:
             yield text.get("tags").replace(";", "\n")
-        raise StopIteration
+        return None
 
     if args.selenium:
         web.selenium_get_page(args, url)
@@ -82,7 +82,7 @@ def get_text(args, url):
                 r = web.requests_session(args).get(url, timeout=120)
             except Exception:
                 log.exception("Could not get a valid response from the server")
-                raise StopIteration
+                return None
             if r.status_code == 404:
                 log.warning("404 Not Found Error: %s", url)
                 is_error = True
@@ -93,7 +93,7 @@ def get_text(args, url):
         yield from parse_text(args, markup)
 
     if is_error:
-        raise StopIteration
+        return None
 
 
 def extract_text() -> None:

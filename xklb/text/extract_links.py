@@ -116,7 +116,7 @@ def get_inner_urls(args, url):
                 r = web.requests_session(args).get(url, timeout=120)
             except Exception:
                 log.exception("Could not get a valid response from the server")
-                raise StopIteration
+                return None
             if r.status_code == 404:
                 log.warning("404 Not Found Error: %s", url)
                 is_error = True
@@ -127,7 +127,7 @@ def get_inner_urls(args, url):
         yield from parse_inner_urls(args, url, markup)
 
     if is_error:
-        raise StopIteration
+        return None
 
 
 def print_or_download(args, a_ref):
