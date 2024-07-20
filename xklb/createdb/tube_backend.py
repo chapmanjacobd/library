@@ -56,7 +56,7 @@ def tube_opts(args, func_opts=None, playlist_opts: str | None = None) -> dict:
         "ignore_no_formats_error": True,
         "skip_playlist_after_errors": 21,
         "clean_infojson": False,
-        "playlistend": 20000,
+        "playlistend": consts.DEFAULT_PLAYLIST_LIMIT,
     }
 
     all_opts = {

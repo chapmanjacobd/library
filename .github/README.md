@@ -548,35 +548,44 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     $ library fs-add -h
     usage: library fs-add [(--video) | --audio | --image |  --text | --filesystem] DATABASE PATH ...
 
-    The default database type is video:
+    The default database type is video
+
         library fsadd tv.db ./tv/
         library fsadd --video tv.db ./tv/  # equivalent
 
-    You can also create audio databases. Both audio and video use ffmpeg to read metadata:
+    You can also create audio databases. Both audio and video use ffmpeg to read metadata
+
         library fsadd --audio audio.db ./music/
 
-    Image uses ExifTool:
+    Image uses ExifTool
+
         library fsadd --image image.db ./photos/
 
-    Text will try to read files and save the contents into a searchable database:
+    Text will try to read files and save the contents into a searchable database
+
         library fsadd --text text.db ./documents_and_books/
 
-    Create a text database and scan with OCR and speech-recognition:
+    Create a text database and scan with OCR and speech-recognition
+
         library fsadd --text --ocr --speech-recognition ocr.db ./receipts_and_messages/
 
-    Create a video database and read internal/external subtitle files into a searchable database:
+    Create a video database and read internal/external subtitle files into a searchable database
+
         library fsadd --scan-subtitles tv.search.db ./tv/ ./movies/
 
-    Decode media to check for corruption (slow):
+    Decode media to check for corruption (slow)
+
         library fsadd --check-corrupt
         # See media-check command for full options
 
-    Normally only relevant filetypes are included. You can scan all files with this flag:
+    Normally only relevant filetypes are included. You can scan all files with this flag
+
         library fsadd --scan-all-files mixed.db ./tv-and-maybe-audio-only-files/
-        # I use that with this to keep my folders organized:
+        # I use that with this to keep my folders organized
         library watch -w 'video_count=0 and audio_count>=1' -pf mixed.db | parallel mv {} ~/d/82_Audiobooks/
 
     Remove path roots with --force
+
         library fsadd audio.db /mnt/d/Youtube/
         [/mnt/d/Youtube] Path does not exist
 
@@ -602,7 +611,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 <details><summary>Add online video media (yt-dlp)</summary>
 
     $ library tube-add -h
-    usage: library tube-add [--safe] [--extra] [--subs] [--auto-subs] DATABASE URLS ...
+    usage: library tube-add [--safe] [--extra] [--subs] [--auto-subs] DATABASE URL ...
 
     Create a dl database / add links to an existing database
 
@@ -616,12 +625,12 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
         library tubeadd --force reddit.db (sqlite-utils --raw-lines reddit.db 'select path from media')
 
-    Fetch extra metadata:
+    Fetch extra metadata
 
         By default tubeadd will quickly add media at the expense of less metadata.
         If you plan on using `library download` then it doesn't make sense to use `--extra`.
         Downloading will add the extra metadata automatically to the database.
-        You can always fetch more metadata later via tubeupdate:
+        You can always fetch more metadata later via tubeupdate
         library tube-update tw.db --extra
 
 
@@ -654,50 +663,6 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
         library watch open_dir.db
 
-    Check videos before downloading
-
-        library watch open_dir.db --online-media-only --loop --exit-code-confirm -i --action ask-keep -m 4  --start 35% --volume=0 -w 'height<720' -E preview
-
-        Assuming you have bound in mpv input.conf a key to 'quit' and another key to 'quit 4',
-        using the ask-keep action will mark a video as deleted when you 'quit 4' and it will mark a video as watched when you 'quit'.
-
-        For example, here I bind "'" to "KEEP" and  "j" to "DELETE"
-
-            ' quit
-            j quit 4
-
-        This is pretty intuitive after you use it a few times but another option is to
-        define your own post-actions:
-
-            `--cmd5 'echo {} >> keep.txt' --cmd6 'echo {} >> rejected.txt'`
-
-        But you will still bind keys in mpv input.conf:
-
-            k quit 5  # goes to keep.txt
-            r quit 6  # goes to rejected.txt
-
-    Download checked videos
-
-        library download --fs open_dir.db --prefix ~/d/dump/video/ -w 'id in (select media_id from history)'
-
-    View most recent files
-
-        library fs example_dbs/web_add.image.db -u time_modified desc --cols path,width,height,size,time_modified -p -l 10
-        path                                                                                                                      width    height       size  time_modified
-        ----------------------------------------------------------------------------------------------------------------------  -------  --------  ---------  -----------------
-        https://siliconpr0n.org/map/infineon/m7690-b1/single/infineon_m7690-b1_infosecdj_mz_nikon20x.jpg                           7066     10513   16.4 MiB  2 days ago, 20:54
-        https://siliconpr0n.org/map/starchip/scf384g/single/starchip_scf384g_infosecdj_mz_nikon20x.jpg                            10804     10730   19.2 MiB  2 days ago, 15:31
-        https://siliconpr0n.org/map/hp/2hpt20065-1-68k-core/single/hp_2hpt20065-1-68k-core_marmontel_mz_ms50x-1.25.jpg            28966     26816  192.2 MiB  4 days ago, 15:05
-        https://siliconpr0n.org/map/hp/2hpt20065-1-68k-core/single/hp_2hpt20065-1-68k-core_marmontel_mz_ms20x-1.25.jpg            11840     10978   49.2 MiB  4 days ago, 15:04
-        https://siliconpr0n.org/map/hp/2hpt20065-1/single/hp_2hpt20065-1_marmontel_mz_ms10x-1.25.jpg                              16457     14255  101.4 MiB  4 days ago, 15:03
-        https://siliconpr0n.org/map/pervasive/e2213ps01e1/single/pervasive_e2213ps01e1_azonenberg_back_roi1_mit10x_rotated.jpg    18880     61836  136.8 MiB  6 days ago, 16:00
-        https://siliconpr0n.org/map/pervasive/e2213ps01e/single/pervasive_e2213ps01e_azonenberg_back_mit5x_rotated.jpg            62208     30736  216.5 MiB  6 days ago, 15:57
-        https://siliconpr0n.org/map/amd/am2964bpc/single/amd_am2964bpc_infosecdj_mz_lmplan10x.jpg                                 12809     11727   39.8 MiB  6 days ago, 10:28
-        https://siliconpr0n.org/map/unknown/ks1804ir1/single/unknown_ks1804ir1_infosecdj_mz_lmplan10x.jpg                          6508      6707    8.4 MiB  6 days ago, 08:04
-        https://siliconpr0n.org/map/amd/am2960dc-b/single/amd_am2960dc-b_infosecdj_mz_lmplan10x.jpg                               16434     15035   64.9 MiB  7 days ago, 19:01
-        10 media (limited by --limit 10)
-
-
 
 </details>
 
@@ -706,7 +671,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 <details><summary>Add online gallery media (gallery-dl)</summary>
 
     $ library gallery-add -h
-    usage: library gallery-add DATABASE URLS
+    usage: library gallery-add DATABASE URL ...
 
     Add gallery_dl URLs to download later or periodically update
 
@@ -722,21 +687,21 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 <details><summary>Create a tabs database; Add URLs</summary>
 
     $ library tabs-add -h
-    usage: library tabs-add [--frequency daily weekly (monthly) quarterly yearly] [--no-sanitize] DATABASE URLS ...
+    usage: library tabs-add [--frequency daily weekly (monthly) quarterly yearly] [--no-sanitize] DATABASE URL ...
 
-    Adding one URL:
+    Adding one URL
 
         library tabsadd -f daily tabs.db https://wiby.me/surprise/
 
         Depending on your shell you may need to escape the URL (add quotes)
 
-        If you use Fish shell know that you can enable features to make pasting easier:
+        If you use Fish shell know that you can enable features to make pasting easier
             set -U fish_features stderr-nocaret qmark-noglob regex-easyesc ampersand-nobg-in-token
 
-        Also I recommend turning Ctrl+Backspace into a super-backspace for repeating similar commands with long args:
+        Also I recommend turning Ctrl+Backspace into a super-backspace for repeating similar commands with long args
             echo 'bind \b backward-kill-bigword' >> ~/.config/fish/config.fish
 
-    Importing from a line-delimitated file:
+    Importing from a line-delimitated file
 
         library tabsadd -f yearly -c reddit tabs.db (cat ~/mc/yearly-subreddit.cron)
 
@@ -757,89 +722,22 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
         library links-add --path-include /video/
 
-    Defaults to stop fetching
-
-        After encountering ten pages with no new links:
-        library links-add --stop-pages-no-new 10
-
-        Some websites don't give an error when you try to access pages which don't exist.
-        To compensate for this the script will only continue fetching pages until there are both no new nor known links for four pages:
-        library links-add --stop-pages-no-match 4
-
-    Backfill fixed number of pages
-
-        You can disable automatic stopping by any of the following:
-
-        - Set `--backfill-pages` to the desired number of pages for the first run
-        - Set `--fixed-pages` to _always_ fetch the desired number of pages
-
-        If the website is supported by --auto-pager data is fetched twice when using page iteration.
-        As such, manual page iteration (--max-pages, --fixed-pages, etc) is disabled when using `--auto-pager`.
-
-        You can unset --fixed-pages for all the playlists in your database by running this command:
-        sqlite your.db "UPDATE playlists SET extractor_config = json_replace(extractor_config, '$.fixed_pages', null)"
-
-    To use "&p=1" instead of "&page=1"
-
-        library links-add --page-key p
-
-        By default the script will attempt to modify each given URL with "&page=1".
-
-    Single page
-
-        If `--fixed-pages` is 1 and --start-page is not set then the URL will not be modified.
-
-        library links-add --fixed-pages=1
-        Loading page https://site/path
-
-        library links-add --fixed-pages=1 --page-start 99
-        Loading page https://site/path?page=99
-
-    Reverse chronological paging
-
-        library links-add --max-pages 10
-        library links-add --fixed-pages (overrides --max-pages and --stop-known but you can still stop early via --stop-link ie. 429 page)
-
-    Chronological paging
-
-        library links-add --page-start 100 --page-step 1
-
-        library links-add --page-start 100 --page-step=-1 --fixed-pages=5  # go backwards
-
-        # TODO: store previous page id (max of sliding window)
-
-    Jump pages
-
-        Some pages don't count page numbers but instead count items like messages or forum posts. You can iterate through like this:
-
-        library links-add --page-key start --page-start 0 --page-step 50
-
-        which translates to
-        &start=0    first page
-        &start=50   second page
-        &start=100  third page
-
-    Page folders
-
-        Some websites use paths instead of query parameters. In this case make sure the URL provided includes that information with a matching --page-key
-
-        library links-add --page-key page https://website/page/1/
-        library links-add --page-key article https://website/article/1/
-
     Import links from args
 
         library links-add --no-extract links.db (cb)
 
     Import lines from stdin
 
-        cb | lb linksdb example_dbs/links.db --skip-extract -
+        cb | library linksdb example_dbs/links.db --skip-extract -
 
-    Other Examples
+    How I use it
 
         library links-add links.db https://video/site/ --path-include /video/
 
         library links-add links.db https://loginsite/ --path-include /article/ --cookies-from-browser firefox
         library links-add links.db https://loginsite/ --path-include /article/ --cookies-from-browser chrome
+
+        cb -t text/html | xidel -s - -e '//@title' | unique | lb linksdb ~/mc/music.db -c p1 --skip-extract -
 
         library links-add --path-include viewtopic.php --cookies-from-browser firefox \
         --page-key start --page-start 0 --page-step 50 --fixed-pages 14 --stop-pages-no-match 1 \
@@ -874,17 +772,17 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 <details><summary>Create a reddit database; Add subreddits</summary>
 
     $ library reddit-add -h
-    usage: library reddit-add [--lookback N_DAYS] [--praw-site bot1] DATABASE URLS ...
+    usage: library reddit-add [--lookback N_DAYS] [--praw-site bot1] DATABASE URL ...
 
-    Fetch data for redditors and reddits:
+    Fetch data for redditors and reddits
 
         library redditadd interesting.db https://old.reddit.com/r/coolgithubprojects/ https://old.reddit.com/user/Diastro
 
-    If you have a file with a list of subreddits you can do this:
+    If you have a file with a list of subreddits you can do this
 
         library redditadd 96_Weird_History.db --subreddits (cat ~/mc/96_Weird_History-reddit.txt)
 
-    Likewise for redditors:
+    Likewise for redditors
 
         library redditadd shadow_banned.db --redditors (cat ~/mc/shadow_banned.txt)
 
@@ -903,7 +801,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     $ library hn-add -h
     usage: library hn-add [--oldest] DATABASE
 
-    Fetch latest stories first:
+    Fetch latest stories first
 
         library hnadd hn.db -v
         Fetching 154873 items (33212696 to 33367569)
@@ -912,7 +810,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         Saving comment 33367564
         ...
 
-    Fetch oldest stories first:
+    Fetch oldest stories first
 
         library hnadd --oldest hn.db
 
@@ -942,7 +840,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
         library tildes tildes.net.db xk3
 
-    Without cookies you are limited to the first page. You can use cookies like this:
+    Without cookies you are limited to the first page. You can use cookies like this
         https://github.com/rotemdan/ExportCookies
         library tildes tildes.net.db xk3 --cookies ~/Downloads/cookies-tildes-net.txt
 
@@ -1063,19 +961,23 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 <details><summary>Extract inner links from lists of web links</summary>
 
     $ library extract-links -h
-    usage: library extract-links PATH ... [--case-sensitive] [--scroll] [--download] [--verbose] [--local-html] [--file FILE] [--path-include ...] [--text-include ...] [--after-include ...] [--before-include ...] [--path-exclude ...] [--text-exclude ...] [--after-exclude ...] [--before-exclude ...]
+    usage: library extract-links PATH ... [--case-sensitive] [--scroll] [--download] [--local-html] [--file FILE]
 
     Extract links from within local HTML fragments, files, or remote pages; filtering on link text and nearby plain-text
 
         library links https://en.wikipedia.org/wiki/List_of_bacon_dishes --path-include https://en.wikipedia.org/wiki/ --after-include famous
         https://en.wikipedia.org/wiki/Omelette
 
-    Read from local clipboard and filter out links based on nearby plain text:
+    Read from local clipboard and filter out links based on nearby plain text
 
         library links --local-html (cb -t text/html | psub) --after-exclude paranormal spooky horror podcast tech fantasy supernatural lecture sport
         # note: the equivalent BASH-ism is <(xclip -selection clipboard -t text/html)
 
-    Run with `-vv` to see the browser
+    Use --selenium for sites require JavaScript
+
+        library links --selenium https://archive.org/search?query=subject%3A%22Archive.org+Census%22 --path-include census
+
+        Run with `-vv` to see the browser that normally loads in the background
 
 
 </details>
@@ -1089,7 +991,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Sorting suggestions
 
-        lb extract-text --skip-links --local-html (cb -t text/html | psub) | lb cs --groups | jq -r '.[] | .grouped_paths | "\n" + join("\n")'
+        library extract-text --skip-links --local-html (cb -t text/html | psub) | library cs --groups | jq -r '.[] | .grouped_paths | "\n" + join("\n")'
 
 
 </details>
@@ -1103,7 +1005,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Convert URLs into Markdown links with page titles filled in
 
-        $ lb markdown-links https://www.youtube.com/watch?v=IgZDDW-NXDE
+        library markdown-links https://www.youtube.com/watch?v=IgZDDW-NXDE
         [Work For Peace](https://www.youtube.com/watch?v=IgZDDW-NXDE)
 
 
@@ -1151,7 +1053,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Rename/filter keys in JSON
 
-        echo '{"The Place of Birthings": "Yo Mama", "extra": "key"}' | lb json-keys-rename --country 'place of birth'
+        echo '{"The Place of Birthings": "Yo Mama", "extra": "key"}' | library json-keys-rename --country 'place of birth'
         {"country": "Yo Mama"}
 
 
@@ -1201,7 +1103,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         library merge-mv --parent folder1/ folder2/  # folder1 will be moved to folder2/folder1/
         library merge-mv --parent file1.txt folder2/ # file1 will be moved to folder2/file1_parent_folder/file1.txt
 
-    nb. This tool, like other lb subcommands, only works on files. Empty folders will not be created on the destination
+    nb. This tool, like other library subcommands, only works on files. Empty folders will not be created on the destination
 
 
 </details>
@@ -1233,7 +1135,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Move files/folders without losing hierarchy metadata
 
-    Move fresh music to your phone every Sunday:
+    Move fresh music to your phone every Sunday
 
         # move last week music back to their source folders
         library mv /mnt/d/sync/weekly/ /mnt/d/check/audio/
@@ -1255,11 +1157,11 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Copy files with reflink and handle mergerfs mounts
 
-        $ lb mergerfs-cp --dry-run d/files* d/folder2/
+        library mergerfs-cp --dry-run d/files* d/folder2/
         cp --interactive --reflink=always /mnt/d9/files1.txt /mnt/d9/folder2/files1.txt
         ...
 
-        $ btrfs fi du /mnt/d3/files1.txt /mnt/d3/folder2/files1.txt
+        btrfs fi du /mnt/d3/files1.txt /mnt/d3/folder2/files1.txt
             Total   Exclusive  Set shared  Filename
         12.57GiB       0.00B    12.57GiB  /mnt/d3/files1.txt
         12.57GiB       0.00B    12.57GiB  /mnt/d3/folder2/files1.txt
@@ -1359,11 +1261,11 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     Free up space on a specific disk. Find candidates for moving data to a different mount point
 
 
-    The program takes a mount point and a xklb database file. If you don't have a database file you can create one like this:
+    The program takes a mount point and a xklb database file. If you don't have a database file you can create one like this
 
         library fsadd --filesystem d.db ~/d/
 
-    But this should definitely also work with xklb audio and video databases:
+    But this should definitely also work with xklb audio and video databases
 
         library mv-list /mnt/d/ video.db
 
@@ -1383,7 +1285,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         Paste a folder (and press enter) to toggle selection
         Type "*" to select all files in the most recently printed table
 
-    Then it will give you a prompt:
+    Then it will give you a prompt
 
         Paste a path:
 
@@ -1392,12 +1294,12 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         Paste a path: /mnt/d/75_MovieQueue/720p/s11/
         26 selected paths: 162.1 GB ; future free space: 486.9 GB
 
-    You can also press the up arrow or paste it again to remove it from the list:
+    You can also press the up arrow or paste it again to remove it from the list
 
         Paste a path: /mnt/d/75_MovieQueue/720p/s11/
         25 selected paths: 159.9 GB ; future free space: 484.7 GB
 
-    After you are done selecting folders you can press ctrl-d and it will save the list to a tmp file:
+    After you are done selecting folders you can press ctrl-d and it will save the list to a tmp file
 
         Paste a path: done
 
@@ -1417,6 +1319,29 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Print relative use and free for multiple mount points
 
+        lb mu (fd -td -d1 'd[0-9]+$' /mnt)
+        Relative disk dependence:
+        /mnt/d1: ###### 8.1%
+        /mnt/d2: ######### 12.2%
+        /mnt/d3: ######### 12.2%
+        /mnt/d4: ####### 9.5%
+        /mnt/d5: ####### 9.5%
+        /mnt/d6: ######### 12.2%
+        /mnt/d7: ######### 12.2%
+        /mnt/d8: ######### 12.2%
+        /mnt/d9: ######### 12.2%
+
+        Relative free space:
+        /mnt/d1: ##### 6.9%
+        /mnt/d2: ########### 13.8%
+        /mnt/d3: ######## 10.4%
+        /mnt/d4: ######## 10.5%
+        /mnt/d5: ###### 8.7%
+        /mnt/d6: ######### 11.8%
+        /mnt/d7: ######### 11.9%
+        /mnt/d8: ######### 12.2%
+        /mnt/d9: ########### 13.8%
+
 
 </details>
 
@@ -1433,27 +1358,27 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Filter folders by size
 
-        lb big-dirs ./video/ -FS+10GB -FS-200GB
+        library big-dirs ./video/ -FS+10GB -FS-200GB
 
     Filter folders by count
 
-        lb big-dirs ./video/ -FC+300 -FC-5000
+        library big-dirs ./video/ -FC+300 -FC-5000
 
     Filter folders by depth
 
-        lb big-dirs ./video/ --depth 5
-        lb big-dirs ./video/ -D 7
+        library big-dirs ./video/ --depth 5
+        library big-dirs ./video/ -D 7
 
     Load from fs database
 
-        $ lb fs video.db --cols path,duration,size,time_deleted --to-json | lb big-dirs --from-json
+        library fs video.db --cols path,duration,size,time_deleted --to-json | library big-dirs --from-json
 
         Only include files between 1MiB and 5MiB
-        $ lb fs video.db -S+1M -S-5M --cols path,duration,size,time_deleted --to-json | lb big-dirs --from-json
+        library fs video.db -S+1M -S-5M --cols path,duration,size,time_deleted --to-json | library big-dirs --from-json
 
     You can even sort by auto-MCDA ~LOL~
 
-    lb big-dirs ./video/ -u 'mcda median_size,-deleted'
+    library big-dirs ./video/ -u 'mcda median_size,-deleted'
 
 
 </details>
@@ -1467,7 +1392,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Find similar folders based on foldernames, similar size, and similar number of files
 
-        $ library similar-folders ~/d/
+        library similar-folders ~/d/
 
         group /home/xk/d/dump/datasets/*vector          total_size    median_size      files
         ----------------------------------------------  ------------  -------------  -------
@@ -1476,29 +1401,32 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Find similar folders based on ONLY foldernames, using the full path
 
-        $ library similar-folders --no-filter-sizes --no-filter-counts --full-path ~/d/
+        library similar-folders --no-filter-sizes --no-filter-counts --full-path ~/d/
 
     Find similar folders based on ONLY number of files
 
-        $ library similar-folders --no-filter-names --no-filter-sizes ~/d/
+        library similar-folders --no-filter-names --no-filter-sizes ~/d/
 
     Find similar folders based on ONLY median size
 
-        $ library similar-folders --no-filter-names --no-filter-counts ~/d/
+        library similar-folders --no-filter-names --no-filter-counts ~/d/
 
     Find similar folders based on ONLY total size
 
-        $ library similar-folders --no-filter-names --no-filter-counts --total-size ~/d/
+        library similar-folders --no-filter-names --no-filter-counts --total-size ~/d/
 
     Read paths from dbs
 
-        $ lb fs audio.db --cols path,duration,size,time_deleted --to-json | lb similar-folders --from-json -v
+        library fs audio.db --cols path,duration,size,time_deleted --to-json | library similar-folders --from-json -v
 
     Print only paths
 
-        $ library similar-folders ~/d/ -pf
+        library similar-folders ~/d/ -pf
         /home/xk/d/dump/datasets/vector/output/
         /home/xk/d/dump/datasets/vector/output2/
+
+    How I use it
+        library fs video.db --cols path,duration,size,time_deleted --to-json | library similar-folders --from-json -FS=+8G --no-filter-sizes
 
 
 </details>
@@ -1566,20 +1494,22 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Find similar files using filenames and size
 
-        $ library similar-files ~/d/
+        library similar-files ~/d/
 
     Find similar files based on ONLY foldernames, using the full path
 
-        $ library similar-files --no-filter-sizes --full-path ~/d/
+        library similar-files --no-filter-sizes --full-path ~/d/
 
     Find similar files based on ONLY size
 
-        $ library similar-files --no-filter-names ~/d/
+        library similar-files --no-filter-names ~/d/
 
     Read paths from dbs
 
-        $ lb fs audio.db --cols path,duration,size,time_deleted --to-json | lb similar-files --from-json -v
+        library fs audio.db --cols path,duration,size,time_deleted --to-json | library similar-files --from-json -v
 
+    How I use it
+        library similar-files --no-filter-size --estimated-duplicates 3 .
 
 
 </details>
@@ -1601,7 +1531,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         Path,Output
         /home/xk/Downloads/booka.pdf,/home/xk/Downloads/Mining_Massive_Datasets.pdf
 
-    You can run a GGUF file with this:
+    Using GGUF files
 
         wget https://github.com/Mozilla-Ocho/llamafile/releases/download/0.8.9/llamafile-0.8.9
         chmod +x ~/Downloads/llamafile-0.8.9
@@ -1619,11 +1549,11 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 <details><summary>Exploratory Data Analysis on table-like files</summary>
 
     $ library eda -h
-    usage: library eda PATH ... [--table TABLE] [--start-row START_ROW] [--end-row END_ROW] [--repl]
+    usage: library eda PATH ... [--table STR] [--end-row INT] [--repl]
 
     Perform Exploratory Data Analysis (EDA) on one or more files
 
-    Only 20,000 rows per file are loaded for performance purposes. Set `--end-row inf` to read all the rows and/or run out of RAM.
+    Only 500,000 rows per file are loaded for performance purposes. Set `--end-row inf` to read all the rows and/or run out of RAM.
 
 
 </details>
@@ -1633,13 +1563,13 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 <details><summary>Multi-criteria Ranking for Decision Support</summary>
 
     $ library mcda -h
-    usage: library mcda PATH ... [--table TABLE] [--start-row START_ROW] [--end-row END_ROW]
+    usage: library mcda PATH ... [--table STR] [--end-row INT]
 
     Perform Multiple Criteria Decision Analysis (MCDA) on one or more files
 
-    Only 20,000 rows per file are loaded for performance purposes. Set `--end-row inf` to read all the rows and/or run out of RAM.
+    Only 500,000 rows per file are loaded for performance purposes. Set `--end-row inf` to read all the rows and/or run out of RAM.
 
-    $ library mcda ~/storage.csv --minimize price --ignore warranty
+    library mcda ~/storage.csv --minimize price --ignore warranty
 
         ### Goals
         #### Maximize
@@ -1653,7 +1583,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         |  1 |     453 |     40 |          2 | 0.419921 |  0.0124531 | 0.567301 | 8.00032 |
         |  2 |     519 |     44 |          2 | 0.230847 | -0.189399  | 0.769153 | 8.1894  |
 
-    $ library mcda ~/storage.csv --ignore warranty
+    library mcda ~/storage.csv --ignore warranty
 
         ### Goals
         #### Maximize
@@ -1666,7 +1596,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         |  1 |     453 |     40 |          2 | 0.580079 |  0.103888 | 0.432699 | 7.88333 |
         |  0 |     359 |     36 |          5 | 0        | -0.463413 | 1        | 8.46341 |
 
-    $ library mcda ~/storage.csv --minimize price --ignore warranty
+    library mcda ~/storage.csv --minimize price --ignore warranty
 
         ### Goals
         #### Maximize
@@ -1680,9 +1610,9 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         |  1 |     453 |     40 |          2 | 0.419921 |  0.0124531 | 0.567301 | 8.00032 |
         |  2 |     519 |     44 |          2 | 0.230847 | -0.189399  | 0.769153 | 8.1894  |
 
-    It also works with HTTP/GCS/S3 URLs:
+    It also works with HTTP/GCS/S3 URLs
 
-    $ library mcda https://en.wikipedia.org/wiki/List_of_Academy_Award-winning_films --clean --minimize Year
+    library mcda https://en.wikipedia.org/wiki/List_of_Academy_Award-winning_films --clean --minimize Year
 
         ### Goals
 
@@ -1716,11 +1646,11 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 <details><summary>Print markdown tables from table-like files</summary>
 
     $ library markdown-tables -h
-    usage: library markdown-tables PATH ... [--table TABLE] [--start-row START_ROW] [--end-row END_ROW]
+    usage: library markdown-tables PATH ... [--table STR] [--end-row INT]
 
     Print tables from files as markdown
 
-    Only 20,000 rows per file are loaded for performance purposes. Set `--end-row inf` to read all the rows and/or run out of RAM.
+    Only 500,000 rows per file are loaded for performance purposes. Set `--end-row inf` to read all the rows and/or run out of RAM.
 
 
 </details>
@@ -1786,12 +1716,12 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
         library media-check --delete-corrupt 20% ./video.mp4
 
-    To scan a large folder use `fsadd`. I recommend something like this two-stage approach:
+    To scan a large folder use `fsadd`. I recommend something like this two-stage approach
 
         library fsadd --delete-unplayable --check-corrupt --chunk-size 5% tmp.db ./video/ ./folders/
         library media-check (library fs tmp.db -w 'corruption>15' -pf) --full-scan --delete-corrupt 25%
 
-    The above can now be done in one command via `--full-scan-if-corrupt`:
+    The above can now be done in one command via `--full-scan-if-corrupt`
 
         library fsadd --delete-unplayable --check-corrupt --chunk-size 5% tmp.db ./video/ ./folders/ --full-scan-if-corrupt 15% --delete-corrupt 25%
 
@@ -1925,7 +1855,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     Only include files smaller than 1kib
 
         library disk-usage du.db --size=-1Ki
-        lb du du.db -S-1Ki
+        library du du.db -S-1Ki
         | path                                  |      size |   count |
         |---------------------------------------|-----------|---------|
         | /home/xk/github/xk/lb/__pycache__/    | 620 Bytes |       1 |
@@ -1943,7 +1873,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     Only include files with a specific depth
 
         library disk-usage du.db --depth 19
-        lb du du.db -d 19
+        library du du.db -d 19
         | path                                                                                                                                                                |     size |
         |---------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|
         | /home/xk/github/xk/lb/__pypackages__/3.11/lib/jedi/third_party/typeshed/third_party/2and3/requests/packages/urllib3/packages/ssl_match_hostname/__init__.pyi        | 88 Bytes |
@@ -1972,7 +1902,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 <details><summary>Block a channel</summary>
 
     $ library block -h
-    usage: library block DATABASE URLS ...
+    usage: library block DATABASE URL ...
 
     Blocklist specific URLs (eg. YouTube channels, etc)
 
@@ -1991,7 +1921,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         library block dl.db --match-column title "% bitcoin%"
         library block dl.db --force --match-column uploader Zeducation
 
-    Display subdomains (similar to `lb download-status`)
+    Display subdomains (similar to `library download-status`)
 
         library block audio.db
         subdomain              count    new_links    tried  percent_tried      successful  percent_successful      failed  percent_failed
@@ -2007,7 +1937,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Find some words to block based on frequency / recency of downloaded media
 
-        library watch dl.db -u time_downloaded desc -L 10000 -pf | lb nouns | sort | uniq -c | sort -g
+        library watch dl.db -u time_downloaded desc -L 10000 -pf | library nouns | sort | uniq -c | sort -g
         ...
         183 ArchiveOrg
         187 Documentary
@@ -2041,12 +1971,14 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         library playlists -p a
 
 
-    Print only playlist urls:
+    Print only playlist urls
+
         Useful for piping to other utilities like xargs or GNU Parallel.
         library playlists -p f
         https://www.youtube.com/playlist?list=PL7gXS9DcOm5-O0Fc1z79M72BsrHByda3n
 
-    Remove a playlist/channel and all linked videos:
+    Remove a playlist/channel and all linked videos
+
         library playlists --delete-rows https://vimeo.com/canal180
 
 
@@ -2058,9 +1990,9 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 <details><summary>Download media</summary>
 
     $ library download -h
-    usage: library download [--prefix /mnt/d/] [--safe] [--subs] [--auto-subs] [--small] DATABASE --video | --audio | --photos
+    usage: library download DATABASE [--prefix /mnt/d/] --video [--subs] [--auto-subs] [--small] | --audio | --photos [--safe]
 
-    Files will be saved to <lb download prefix>/<extractor>/. The default prefix is the current working directory.
+    Files will be saved to <prefix>/<extractor>/. The default prefix is the current working directory.
 
     By default things will download in a random order
 
@@ -2095,7 +2027,31 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
         library download-status audio.db
 
-    Broadcatching absolution
+    Check videos before downloading
+
+        library watch open_dir.db --online-media-only --loop --exit-code-confirm -i --action ask-keep -m 4  --start 35% --volume=0 -w 'height<720' -E preview
+
+        Assuming you have bound in mpv input.conf a key to 'quit' and another key to 'quit 4',
+        using the ask-keep action will mark a video as deleted when you 'quit 4' and it will mark a video as watched when you 'quit'.
+
+        For example, here I bind "'" to "KEEP" and  "j" to "DELETE"
+
+            ' quit
+            j quit 4
+
+        This is pretty intuitive after you use it a few times but another option is to
+        define your own post-actions
+
+            `--cmd5 'echo {} >> keep.txt' --cmd6 'echo {} >> rejected.txt'`
+
+        But you will still bind keys in mpv input.conf
+
+            k quit 5  # goes to keep.txt
+            r quit 6  # goes to rejected.txt
+
+    Download checked videos
+
+        library download --fs open_dir.db --prefix ~/d/dump/video/ -w 'id in (select media_id from history)'
 
 
 </details>
@@ -2130,7 +2086,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     is still accessible from the same URL, this script can help to redownload
     everything that was scanned-as-deleted between two timestamps.
 
-    List deletions:
+    List deletions
 
         library redownload news.db
         Deletions:
@@ -2145,11 +2101,11 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         ╘═════════════════════╧═════════╛
         Showing most recent 3 deletions. Use -l to change this limit
 
-    Mark videos as candidates for download via specific deletion timestamp:
+    Mark videos as candidates for download via specific deletion timestamp
 
         library redownload city.db 2023-01-26T19:54:42
 
-    ...or between two timestamps inclusive:
+    ...or between two timestamps inclusive
 
         library redownload city.db 2023-01-26T19:54:42 2023-01-26T20:45:24
 
@@ -2165,7 +2121,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     View playback history
 
-        $ library history web_add.image.db
+        library history web_add.image.db
         In progress:
         play_count  time_last_played    playhead    path                                     title
         ------------  ------------------  ----------  ---------------------------------------  -----------
@@ -2173,19 +2129,19 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Show only completed history
 
-        $ library history web_add.image.db --completed
+        library history web_add.image.db --completed
 
     Show only completed history
 
-        $ library history web_add.image.db --in-progress
+        library history web_add.image.db --in-progress
 
     Delete history
 
         Delete two hours of history
-        $ library history web_add.image.db --played-within '2 hours' -L inf --delete-rows
+        library history web_add.image.db --played-within '2 hours' -L inf --delete-rows
 
         Delete all history
-        $ library history web_add.image.db -L inf --delete-rows
+        library history web_add.image.db -L inf --delete-rows
 
     See also: library stats -h
               library history-add -h
@@ -2202,11 +2158,10 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Add history
 
-        $ library history-add links.db $urls $paths
-        $ library history-add links.db (cb)
+        library history-add links.db $urls $paths
+        library history-add links.db (cb)
 
     Items that don't already exist in the database will be counted under "skipped"
-
 
 
 </details>
@@ -2220,21 +2175,21 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     View watched stats
 
-        $ library stats video.db --completed
+        library stats video.db --completed
 
     View download stats
 
-        $ library stats video.db time_downloaded --frequency daily
+        library stats video.db time_downloaded --frequency daily
 
         See also: library stats video.db time_downloaded -f daily --hide-deleted
 
     View deleted stats
 
-        $ library stats video.db time_deleted
+        library stats video.db time_deleted
 
     View time_modified stats
 
-        $ library stats example_dbs/web_add.image.db time_modified -f year
+        library stats example_dbs/web_add.image.db time_modified -f year
         Time_Modified media:
         year      total_size    avg_size    count
         ------  ------------  ----------  -------
@@ -2307,38 +2262,75 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     $ library watch -h
     usage: library watch DATABASE [optional args]
 
-    Control playback:
+    Control playback
+
         To stop playback press Ctrl-C in either the terminal or mpv
 
         Or use `lb next` or `lb stop`
 
-        Or create global shortcuts in your desktop environment by
-        sending commands to mpv_socket:
-        echo 'playlist-next force' | socat - /tmp/mpv_socket
+        Or create global shortcuts in your desktop environment by sending commands to mpv_socket
+        echo 'playlist-next force' | socat - /run/user/1000/mpv_socket  # library listen default
+        echo 'playlist-next force' | socat - /home/xk/.config/mpv/socket  # library watch default
 
     Print an aggregate report of deleted media
-        -w time_deleted!=0 -pa
+
+        library fs -w time_deleted!=0 -pa
         path         count  duration               size
         ---------  -------  ------------------  -------
         Aggregate      337  2 days and 5 hours  1.6 GiB
 
     Print an aggregate report of media that has no duration information (ie.
     online media or corrupt local media)
-        -w 'duration is null' -pa
+
+        library watch -w 'duration is null' -pa
 
     Print a list of filenames which have below 1280px resolution
-        -w 'width<1280' -pf
+
+        library watch -w 'width<1280' -pf
 
     View how much time you have played
-        -w play_count'>'0 -pa
+
+        library watch -w play_count'>'0 -pa
 
     View all the columns
-        -p -L 1 --cols '*'
+
+        library watch -p -L 1 --cols '*'
 
     Open ipython with all of your media
-        -vv -p --cols '*'
+
+        library watch -vv -p --cols '*'
         ipdb> len(media)
         462219
+
+    View most recent files
+
+        library watch example_dbs/web_add.image.db -u time_modified desc --cols path,width,height,size,time_modified -p -l 10
+        path                                                                                                                      width    height       size  time_modified
+        ----------------------------------------------------------------------------------------------------------------------  -------  --------  ---------  -----------------
+        https://siliconpr0n.org/map/infineon/m7690-b1/single/infineon_m7690-b1_infosecdj_mz_nikon20x.jpg                           7066     10513   16.4 MiB  2 days ago, 20:54
+        https://siliconpr0n.org/map/starchip/scf384g/single/starchip_scf384g_infosecdj_mz_nikon20x.jpg                            10804     10730   19.2 MiB  2 days ago, 15:31
+        https://siliconpr0n.org/map/hp/2hpt20065-1-68k-core/single/hp_2hpt20065-1-68k-core_marmontel_mz_ms50x-1.25.jpg            28966     26816  192.2 MiB  4 days ago, 15:05
+        https://siliconpr0n.org/map/hp/2hpt20065-1-68k-core/single/hp_2hpt20065-1-68k-core_marmontel_mz_ms20x-1.25.jpg            11840     10978   49.2 MiB  4 days ago, 15:04
+        https://siliconpr0n.org/map/hp/2hpt20065-1/single/hp_2hpt20065-1_marmontel_mz_ms10x-1.25.jpg                              16457     14255  101.4 MiB  4 days ago, 15:03
+        https://siliconpr0n.org/map/pervasive/e2213ps01e1/single/pervasive_e2213ps01e1_azonenberg_back_roi1_mit10x_rotated.jpg    18880     61836  136.8 MiB  6 days ago, 16:00
+        https://siliconpr0n.org/map/pervasive/e2213ps01e/single/pervasive_e2213ps01e_azonenberg_back_mit5x_rotated.jpg            62208     30736  216.5 MiB  6 days ago, 15:57
+        https://siliconpr0n.org/map/amd/am2964bpc/single/amd_am2964bpc_infosecdj_mz_lmplan10x.jpg                                 12809     11727   39.8 MiB  6 days ago, 10:28
+        https://siliconpr0n.org/map/unknown/ks1804ir1/single/unknown_ks1804ir1_infosecdj_mz_lmplan10x.jpg                          6508      6707    8.4 MiB  6 days ago, 08:04
+        https://siliconpr0n.org/map/amd/am2960dc-b/single/amd_am2960dc-b_infosecdj_mz_lmplan10x.jpg                               16434     15035   64.9 MiB  7 days ago, 19:01
+        10 media (limited by --limit 10)
+
+    How I use it
+
+        lb lt ~/lb/audio.db --local-media-only -k delete-if-audiobook -w play_count=0 --fetch-siblings each
+        lb wt ~/lb/video.db --local-media-only -k delete --cmd5 'echo skip'
+
+        When sorting videos
+        focus_under_mouse
+        lb wt ~/lb/sort.db --action ask_move_or_delete --keep-dir /home/xk/d/library/video/ --loop --exit-code-confirm -i --cmd130 exit_multiple_playback --cmd5 'library process-audio --no-preserve-video' --cmd6 'mv {} /mnt/d/library/vr/' -m 4 --start 35% --volume=0 -u size desc
+        focus_follows_mouse
+
+        On-the-go mobile smartphone mode (Android)
+        repeat lb wt ~/lb/video.db --player termux-open -L1 --refresh --action ask_move_or_delete --keep-dir ~/sync/video/keep/ --portrait -u duration desc
 
 
 </details>
@@ -2422,7 +2414,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     $ library tabs-open -h
     usage: library tabs-open DATABASE
 
-    Tabs is meant to run **once per day**. Here is how you would configure it with `crontab`:
+    Tabs is meant to run **once per day**. Here is how you would configure it with `crontab`
 
         45 9 * * * DISPLAY=:0 library tabs /home/my/tabs.db
 
@@ -2432,7 +2424,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Also, if you're just testing things out be aware that `tabs-add` assumes that you visited the
     website right before adding it; eg. if you use `tabs-add --frequency yearly` today the tab won't
-    open until one year from now (at most). You can override this default:
+    open until one year from now (at most). You can override this default
 
         library tabs-add --allow-immediate ...
 
@@ -2441,7 +2433,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         library history ~/lb/tabs.db --played-within '1 day' -L inf -p --delete-rows
         library tabs ~/lb/tabs.db
 
-    You can also invoke tabs manually:
+    You can also invoke tabs manually
 
         library tabs -L 1  # open one tab
 
@@ -2449,7 +2441,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
         library tabs -w "frequency='yearly'" -p
 
-    View how many yearly tabs you have:
+    View how many yearly tabs you have
 
         library tabs -w "frequency='yearly'" -p a
 
@@ -2536,7 +2528,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Streaming tab loader: press ctrl+c to stop.
 
-    Open tabs from a line-delimited file:
+    Open tabs from a line-delimited file
 
         cat tabs.txt | library surf -n 5
 
@@ -2646,7 +2638,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Moves each tab to a random day-of-the-week by default
 
-    It may also be useful to shuffle monthly tabs, etc. You can accomplish this like so:
+    It may also be useful to shuffle monthly tabs, etc. You can accomplish this like so
 
         library tabs-shuffle tabs.db -d  31 -f monthly
         library tabs-shuffle tabs.db -d  90 -f quarterly
@@ -2670,7 +2662,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
         unzstd --memory=2048MB --stdout RS_2005-07.zst | library pushshift pushshift.db
 
-    Or multiple (output is about 1.5TB SQLITE fts-searchable):
+    Or multiple (output is about 1.5TB SQLITE fts-searchable)
 
         for f in psaw/files.pushshift.io/reddit/submissions/*.zst
             echo "unzstd --memory=2048MB --stdout $f | library pushshift (basename $f).db"
@@ -2689,7 +2681,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     $ library fs-update -h
     usage: library fs-update DATABASE
 
-    Update each path previously saved:
+    Update each path previously saved
 
         library fsupdate video.db
 
@@ -2707,16 +2699,16 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
         library tubeupdate educational.db
 
-    Fetch extra metadata:
+    Fetch extra metadata
 
         By default tubeupdate will quickly add media.
         You can run with --extra to fetch more details: (best resolution width, height, subtitle tags, etc)
 
         library tubeupdate educational.db --extra https://www.youtube.com/channel/UCBsEUcR-ezAuxB2WlfeENvA/videos
 
-    Remove duplicate playlists:
+    Remove duplicate playlists
 
-        lb dedupe-db video.db playlists --bk extractor_playlist_id
+        library dedupe-db video.db playlists --bk extractor_playlist_id
 
 
 </details>
@@ -2731,7 +2723,6 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     Update saved open directories
 
 
-
 </details>
 
 ###### gallery-update
@@ -2739,7 +2730,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 <details><summary>Update online gallery media</summary>
 
     $ library gallery-update -h
-    usage: library gallery-update DATABASE URLS
+    usage: library gallery-update DATABASE
 
     Check previously saved gallery_dl URLs for new content
 

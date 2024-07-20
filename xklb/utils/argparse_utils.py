@@ -134,6 +134,12 @@ class CustomHelpFormatter(argparse.RawTextHelpFormatter):
                 default = default_to_str(action.default)
         return default
 
+    def _format_usage(self, usage, actions, groups, prefix):
+        if usage is None:
+            return super()._format_usage(usage, actions, groups, prefix)
+
+        return "usage: %s\n\n" % usage
+
     def _format_action(self, action):
         help_text = self._expand_help(action) if action.help else ""
 
@@ -174,6 +180,7 @@ class CustomHelpFormatter(argparse.RawTextHelpFormatter):
 
         extra = extra.rstrip()
         if extra:
+            help_text = help_text or ""
             if help_text:
                 help_text += " "
             help_text += f"({extra})"
