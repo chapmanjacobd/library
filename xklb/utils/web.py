@@ -674,7 +674,10 @@ def construct_absolute_url(base_url, href):
         return href
 
     if not up.netloc:
-        href = urljoin(base_url + "/", href)
+        if not base_url.endswith("/") and not href.startswith("/"):
+            base_url += "/"
+
+        href = urljoin(base_url, href)
 
     if href.startswith("//"):
         href = "https:" + href

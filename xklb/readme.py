@@ -57,7 +57,7 @@ Should also work on Mac OS.
 
 Required: `ffmpeg`
 
-Some features work better with: `mpv`, `firefox`, `fish`
+Some features work better with: `mpv`, `fd-find`, `fish`
 
 ## Getting started
 
