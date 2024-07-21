@@ -1,5 +1,3 @@
-import argparse
-
 import humanize
 
 from xklb import usage
@@ -22,15 +20,16 @@ def parse_args():
     parser.add_argument("--durations-delta", "--duration-delta", type=float, default=10.0)
     parser.add_argument("--sizes-delta", "--size-delta", type=float, default=10.0)
 
-    parser.add_argument("--filter-names", action=argparse.BooleanOptionalAction, default=True)
-    parser.add_argument("--filter-sizes", action=argparse.BooleanOptionalAction, default=True)
-    parser.add_argument("--filter-durations", action=argparse.BooleanOptionalAction, default=True)
+    similar_parser = parser.add_argument_group("Similar Files")
+    arggroups.similar_files(similar_parser)
+
     arggroups.debug(parser)
 
     arggroups.paths_or_stdin(parser)
     args = parser.parse_args()
     arggroups.args_post(args, parser)
 
+    arggroups.similar_files_post(args)
     if not args.filter_names and not args.filter_sizes and not args.filter_durations:
         print("Nothing to do")
         raise NotImplementedError

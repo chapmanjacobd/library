@@ -865,6 +865,27 @@ def group_folders_post(args) -> None:
         args.sort_groups_by = ",".join(args.sort_groups_by)
 
 
+def similar_files(parent_parser):
+    parent_parser.add_argument("--filter-names", action="store_true")
+    parent_parser.add_argument("--filter-sizes", action="store_true")
+    parent_parser.add_argument("--filter-durations", action="store_true")
+
+
+def similar_files_post(args) -> None:
+    if not any([args.filter_names, args.filter_sizes, args.filter_durations]):
+        args.filter_names, args.filter_sizes, args.filter_durations = True, True, True
+
+
+def similar_folders(parent_parser):
+    similar_files(parent_parser)
+    parent_parser.add_argument("--filter-counts", action="store_true")
+
+
+def similar_folders_post(args) -> None:
+    if not any([args.filter_names, args.filter_sizes, args.filter_durations, args.filter_counts]):
+        args.filter_names, args.filter_sizes, args.filter_durations, args.filter_counts = True, True, True, True
+
+
 def cluster(parent_parser):
     parser = parent_parser.add_argument_group("Cluster")
     parser.add_argument("--cluster-sort", "--cluster", "-C", action="store_true", help="Cluster by filename TF-IDF")
@@ -1270,9 +1291,15 @@ def filter_links(parent_parser):
         help="Skip URL-decode for --path-include/--path-exclude",
     )
     parser.add_argument("--local-html", action="store_true", help="Treat paths as Local HTML files")
+    parser.add_argument("--href", action="store_true", help="Include href values")
+    parser.add_argument("--src", action="store_true", help="Include src values")
+    parser.add_argument("--data-src", action="store_true", help="Include data-src values")
 
 
 def filter_links_post(args):
+    if not any([args.href, args.src, args.data_src]):
+        args.href, args.src, args.data_src = True, True, True
+
     if not args.case_sensitive:
         args.before_include = [s.lower() for s in args.before_include]
         args.path_include = [s.lower() for s in args.path_include]

@@ -1528,18 +1528,18 @@ similar_files = """library similar-files PATH ...
 
     Find similar files based on ONLY foldernames, using the full path
 
-        library similar-files --no-filter-sizes --full-path ~/d/
+        library similar-files --filter-names --full-path ~/d/
 
     Find similar files based on ONLY size
 
-        library similar-files --no-filter-names ~/d/
+        library similar-files --filter-sizes ~/d/
 
     Read paths from dbs
 
         library fs audio.db --cols path,duration,size,time_deleted --to-json | library similar-files --from-json -v
 
     How I use it
-        library similar-files --no-filter-size --estimated-duplicates 3 .
+        library similar-files --filter-names --filter-durations --estimated-duplicates 3 .
 """
 
 similar_folders = """library similar-folders PATH ...
@@ -1555,19 +1555,19 @@ similar_folders = """library similar-folders PATH ...
 
     Find similar folders based on ONLY foldernames, using the full path
 
-        library similar-folders --no-filter-sizes --no-filter-counts --full-path ~/d/
+        library similar-folders --filter-names --full-path ~/d/
 
     Find similar folders based on ONLY number of files
 
-        library similar-folders --no-filter-names --no-filter-sizes ~/d/
+        library similar-folders --filter-counts ~/d/
 
     Find similar folders based on ONLY median size
 
-        library similar-folders --no-filter-names --no-filter-counts ~/d/
+        library similar-folders --filter-sizes ~/d/
 
     Find similar folders based on ONLY total size
 
-        library similar-folders --no-filter-names --no-filter-counts --total-size ~/d/
+        library similar-folders --filter-sizes --total-size ~/d/
 
     Read paths from dbs
 
@@ -1580,7 +1580,7 @@ similar_folders = """library similar-folders PATH ...
         /home/xk/d/dump/datasets/vector/output2/
 
     How I use it
-        library fs video.db --cols path,duration,size,time_deleted --to-json | library similar-folders --from-json -FS=+8G --no-filter-sizes
+        library fs video.db --cols path,duration,size,time_deleted --to-json | library similar-folders --from-json -FS=+8G --filter-names --filter-counts --filter-durations
 """
 
 json_keys_rename = """library json-keys-rename --new-key 'old key substring' (stdin)
