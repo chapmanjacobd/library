@@ -1,4 +1,3 @@
-import argparse
 from pathlib import Path
 
 import humanize
@@ -31,10 +30,8 @@ def parse_args():
     parser.add_argument("--counts-delta", "--count-delta", type=float, default=3.0)
     parser.add_argument("--durations-delta", "--duration-delta", type=float, default=5.0)
 
-    parser.add_argument("--filter-names", action=argparse.BooleanOptionalAction, default=True)
-    parser.add_argument("--filter-sizes", action=argparse.BooleanOptionalAction, default=True)
-    parser.add_argument("--filter-durations", action=argparse.BooleanOptionalAction, default=True)
-    parser.add_argument("--filter-counts", action=argparse.BooleanOptionalAction, default=True)
+    similar_parser = parser.add_argument_group("Similar Folders")
+    arggroups.similar_folders(similar_parser)
 
     arggroups.debug(parser)
 
@@ -50,6 +47,7 @@ def parse_args():
         args.folder_counts = ["+2"]
 
     arggroups.group_folders_post(args)
+    arggroups.similar_folders_post(args)
 
     return args
 

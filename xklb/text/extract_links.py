@@ -76,9 +76,17 @@ def parse_inner_urls(args, url, markup):
 
     soup = BeautifulSoup(markup, "lxml")
 
+    link_attrs = set()
+    if args.href:
+        link_attrs.add("href")
+    if args.src:
+        link_attrs.add("src")
+    if args.data_src:
+        link_attrs.add("data-src")
+
     for tag in soup.find_all(True):
         for attr_name, attr_value in tag.attrs.items():
-            if attr_name not in ("href", "src", "data-src"):
+            if attr_name not in link_attrs:
                 continue
 
             attr_value = str(attr_value).strip()
