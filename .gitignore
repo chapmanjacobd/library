@@ -13,6 +13,7 @@ __pycache__/
 *.bak
 *.jpg
 *.JPG
+*.JPEG
 *.jpeg
 *.png
 *.csv
