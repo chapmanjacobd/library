@@ -39,8 +39,11 @@ from xklb.createdb.site_add import html_to_dict, nosql_to_sql
         ),
         (
             """<!DOCTYPE html><html><body><h1>Heading</h1><div><div><p>paragraph</p></div></div></body></html>""",
-            {"html": {"body": {"h1": {"text": "Heading"}, "div": {"div": {"p": {"text": "paragraph"}}}}}},
-            [{"table_name": None, "data": [{"h1_text": "Heading", "p_text": "paragraph"}]}],
+            {
+                "html": {"body": {"h1": {"text": "Heading"}, "div": {"div": {"p": {"text": "paragraph"}}}}},
+                "text": "html",
+            },
+            [{"table_name": None, "data": [{"h1_text": "Heading", "p_text": "paragraph", "text": "html"}]}],
         ),
         (
             """<html><head><title>Title text</title></head></html>""",

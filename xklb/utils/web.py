@@ -521,10 +521,11 @@ def download_url(url, output_path=None, output_prefix=None, chunk_size=8 * 1024 
 
 def get_elements_forward(start, end):
     elements = []
-    current = start.next_element
-    while current and current != end:
-        elements.append(current)
-        current = current.next_element
+    current_tag = start.next_sibling
+    while current_tag and current_tag != end:
+        if isinstance(current_tag, bs4.NavigableString):
+            elements.append(current_tag)
+        current_tag = current_tag.next_element
     return elements
 
 
@@ -560,7 +561,7 @@ def tags_with_text(soup, delimit_fn):
                 current_tag = current_tag.previous_element
             before_text.reverse()
 
-        current_tag = tag.next_element
+        current_tag = tag.next_sibling
         while current_tag and (i == len(tags) - 1 or current_tag != tags[i + 1]):
             if isinstance(current_tag, bs4.NavigableString):
                 text = strings.un_paragraph(current_tag.get_text()).strip()
