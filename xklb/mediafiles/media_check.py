@@ -41,9 +41,10 @@ def decode_quick_scan(path, scans, scan_duration=3, audio_scan=False):
 
         cmd = []
         if which("systemd-run"):
+            cmd += ["systemd-run"]
+            if not 'SUDO_UID' in os.environ:  # ok..
+                cmd += ["--user"]
             cmd += [
-                "systemd-run",
-                "--user",
                 "-p",
                 "MemoryMax=4G",
                 "-p",

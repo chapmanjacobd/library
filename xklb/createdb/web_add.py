@@ -59,6 +59,7 @@ def parse_args(action, **kwargs):
 
     arggroups.extractor_post(args)
     arggroups.filter_links_post(args)
+    web.requests_session(args)  # prepare requests session
     arggroups.selenium_post(args)
 
     return args
@@ -215,7 +216,6 @@ def web_add(args=None) -> None:
         sys.argv = ["lb", *args]
 
     args = parse_args(consts.SC.web_add, usage=usage.web_add)
-    web.requests_session(args)  # configure session
 
     if args.insert_only:
         media_new = set()
@@ -248,7 +248,6 @@ def web_update(args=None) -> None:
         sys.argv = ["lb", *args]
 
     args = parse_args(consts.SC.web_add, usage=usage.web_update)
-    web.requests_session(args)  # configure session
 
     web_playlists = db_playlists.get_all(
         args,

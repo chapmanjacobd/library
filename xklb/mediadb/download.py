@@ -101,6 +101,7 @@ def parse_args():
 
     arggroups.sql_fs_post(args)
     arggroups.filter_links_post(args)
+    web.requests_session(args)  # prepare requests session
     arggroups.selenium_post(args)
     arggroups.process_ffmpeg_post(args)
     return args
@@ -136,24 +137,20 @@ def download(args=None) -> None:
     m_columns = db_utils.columns(args, "media")
 
     if "limit" in args.defaults and "media" in args.db.table_names() and "webpath" in m_columns:
-        if args.db.pop("SELECT 1 from media WHERE webpath is NULL and path in (select webpath from media) LIMIT 1"):
+        if args.db.pop("SELECT 1 from media WHERE webpath is NULL and path in (SELECT webpath FROM media) LIMIT 1"):
             with args.db.conn:
                 args.db.conn.execute(
                     """
-                    DELETE from media WHERE webpath is NULL
-                    AND path in (
-                        select webpath from media
-                        WHERE error IS NULL OR error != 'Media check failed'
-                    )
+                    DELETE from media WHERE path in (
+                        SELECT webpath FROM media
+                        WHERE error IS NULL OR error NOT LIKE 'Media check failed%'
+                    ) AND webpath is NULL
                     """
                 )
 
     args.blocklist_rules = []
     if "blocklist" in args.db.table_names():
         args.blocklist_rules = [{d["key"]: d["value"]} for d in args.db["blocklist"].rows]
-
-    if args.profile == DBType.filesystem:
-        web.requests_session(args)  # prepare requests session
 
     media = list(arg_utils.gen_d(args))
     if not media:

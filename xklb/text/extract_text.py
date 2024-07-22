@@ -22,6 +22,7 @@ def parse_args():
     args = parser.parse_args()
     arggroups.args_post(args, parser)
 
+    web.requests_session(args)  # prepare requests session
     arggroups.selenium_post(args)
 
     return args
@@ -71,7 +72,7 @@ def get_text(args, url):
             url = "file://" + url
         else:
             try:
-                r = web.requests_session(args).get(url, timeout=120)
+                r = web.session.get(url, timeout=120)
             except Exception:
                 log.exception("Could not get a valid response from the server")
                 return None

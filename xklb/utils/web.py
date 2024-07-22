@@ -15,8 +15,12 @@ headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:121.0) Gecko/201001
 session = None
 
 
-def _get_retry_adapter(max_retries, same_host_threads):
+def _get_retry_adapter(args):
     import requests.adapters
+
+    same_host_threads = getattr(args, "threads", None) or 10
+    max_retries = getattr(args, "http_max_retries", 8)
+    max_redirects = getattr(args, "http_max_redirects", 4)
 
     retry = requests.adapters.Retry(
         total=max_retries,
@@ -24,8 +28,8 @@ def _get_retry_adapter(max_retries, same_host_threads):
         read=max_retries // 3,
         status=max_retries // 2,
         other=1,
-        redirect=4,
-        raise_on_redirect=False,
+        redirect=max_redirects,
+        raise_on_redirect=max_redirects<=0,
         backoff_factor=3,
         backoff_jitter=2,
         backoff_max=22 * 60,
@@ -83,15 +87,17 @@ def requests_session(args=argparse.Namespace()):
     if session is None:
         import requests
 
-        same_host_threads = getattr(args, "threads", None) or 10
-        http_max_retries = getattr(args, "http_max_retries", None) or 8
         cookie_file = getattr(args, "cookies", None)
         cookies_from_browser = getattr(args, "cookies_from_browser", None)
 
+        max_redirects = getattr(args, "http_max_redirects", 4)
+
         session = requests.Session()
-        session.mount("http://", _get_retry_adapter(http_max_retries, same_host_threads))
-        session.mount("https://", _get_retry_adapter(http_max_retries, same_host_threads))
+        session.mount("http://", _get_retry_adapter(args))
+        session.mount("https://", _get_retry_adapter(args))
         session.request = functools.partial(session.request, headers=headers, timeout=(5, 45))  # type: ignore
+        if max_redirects == 0:
+            session.get = functools.partial(session.get, allow_redirects=False)  # type: ignore
 
         if getattr(args, "allow_insecure", False):
             from urllib3.exceptions import InsecureRequestWarning
@@ -177,22 +183,23 @@ class PartialContent:
         self.temp_file = None
 
     def __enter__(self):
-        response = requests_session().get(self.url, stream=True)
+        assert session is not None
 
-        code = response.status_code
-        if code == 404:
-            log.warning("HTTP404 Not Found: %s", self.url)
-            return None
-        else:
-            response.raise_for_status()
-
-        self.temp_file = tempfile.NamedTemporaryFile(delete=False)
-
-        for chunk in response.iter_content(chunk_size=65536):
-            if self.temp_file.tell() < self.max_size:
-                self.temp_file.write(chunk)
+        with session.get(self.url, stream=True) as r:
+            code = r.status_code
+            if code == 404:
+                log.warning("HTTP404 Not Found: %s", self.url)
+                return None
             else:
-                break
+                r.raise_for_status()
+
+            self.temp_file = tempfile.NamedTemporaryFile(delete=False)
+
+            for chunk in r.iter_content(chunk_size=65536):
+                if self.temp_file.tell() < self.max_size:
+                    self.temp_file.write(chunk)
+                else:
+                    break
 
         self.temp_file.close()
         return self.temp_file.name
@@ -458,64 +465,70 @@ def url_to_local_path(url, response=None, output_path=None, output_prefix=None):
 
 
 def download_url(url, output_path=None, output_prefix=None, chunk_size=8 * 1024 * 1024, retry_num=0, max_retries=10):
+    global session
+    if session is None:
+        log.warning("Creating new web.session")
+        session = requests_session()
+
     if retry_num > max_retries:
         raise RuntimeError(f"Max retries exceeded for {url}")
 
-    session = requests_session()
-    r = session.get(url, stream=True)
+    log.debug('%s retry %s', url, retry_num)
+    with session.get(url, stream=True) as r:
+        if not 200 <= r.status_code < 400:
+            log.error(f"Error {r.status_code} {url}")
 
-    if not 200 <= r.status_code < 400:
-        log.error(f"Error {r.status_code} {url}")
+        remote_size = nums.safe_int(r.headers.get("Content-Length"))
 
-    remote_size = nums.safe_int(r.headers.get("Content-Length"))
-
-    output_path = url_to_local_path(url, response=r, output_path=output_path, output_prefix=output_prefix)
-    if output_path == ".":
-        log.warning("Skipping directory %s", url)
-        return
-    else:
-        log.info("Saving %s to %s", url, output_path)
-
-    p = Path(output_path)
-    p.parent.mkdir(parents=True, exist_ok=True)
-    if p.exists():
-        if remote_size:
-            local_size = p.stat().st_size
-            if local_size == remote_size:
-                log.warning(f"Download skipped. File with same size already exists: {output_path}")
-                return
-            elif local_size < 5242880:  # TODO: check if first few kilobytes match what already exists locally...
-                p.unlink()
-            else:
-                headers = {"Range": f"bytes={local_size}-"}
-                r = session.get(url, headers=headers, stream=True)
-                if r.status_code != 206:  # HTTP Partial Content
-                    p.unlink()
-                    r = session.get(url, stream=True)
+        output_path = url_to_local_path(url, response=r, output_path=output_path, output_prefix=output_prefix)
+        if output_path == ".":
+            log.warning("Skipping directory %s", url)
+            return
         else:
-            p.unlink()
+            log.info("Saving %s to %s", url, output_path)
 
-    try:
-        with open(output_path, "ab") as f:
-            for chunk in r.iter_content(chunk_size=chunk_size):
-                if chunk:
-                    f.write(chunk)
+        p = Path(output_path)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        if p.exists():
+            if remote_size:
+                local_size = p.stat().st_size
+                if local_size == remote_size:
+                    log.warning(f"Download skipped. File with same size already exists: {output_path}")
+                    return
+                elif local_size < 5242880:  # TODO: check if first few kilobytes match what already exists locally...
+                    p.unlink()
+                else:
+                    headers = {"Range": f"bytes={local_size}-"}
+                    r.close()
+                    r = session.get(url, headers=headers, stream=True)
+                    if r.status_code != 206:  # HTTP Partial Content
+                        p.unlink()
+                        r.close()
+                        r = session.get(url, stream=True)
+            else:
+                p.unlink()
 
-        if remote_size:
-            downloaded_size = os.path.getsize(output_path)
-            if downloaded_size < remote_size:
-                msg = f"Incomplete download ({strings.safe_percent(downloaded_size/remote_size)}) {output_path}"
-                raise RuntimeError(msg)
-    except Exception as e:
-        if isinstance(e, OSError):
-            if e.errno in consts.EnvironmentErrors:
-                raise
-        retry_num += 1
-        log.info("Retry #%s %s", retry_num, url)
-        time.sleep(retry_num)
-        return download_url(url, output_path, output_prefix, chunk_size, retry_num)
+        try:
+            with open(output_path, "ab") as f:
+                for chunk in r.iter_content(chunk_size=chunk_size):
+                    if chunk:
+                        f.write(chunk)
 
-    set_timestamp(r.headers, output_path)
+            if remote_size:
+                downloaded_size = os.path.getsize(output_path)
+                if downloaded_size < remote_size:
+                    msg = f"Incomplete download ({strings.safe_percent(downloaded_size/remote_size)}) {output_path}"
+                    raise RuntimeError(msg)
+        except Exception as e:
+            if isinstance(e, OSError):
+                if e.errno in consts.EnvironmentErrors:
+                    raise
+            retry_num += 1
+            log.info("Retry #%s %s", retry_num, url)
+            time.sleep(retry_num)
+            return download_url(url, output_path, output_prefix, chunk_size, retry_num)
+
+        set_timestamp(r.headers, output_path)
     return output_path
 
 
@@ -562,7 +575,7 @@ def tags_with_text(soup, delimit_fn):
             before_text.reverse()
 
         current_tag = tag.next_sibling
-        while current_tag and (i == len(tags) - 1 or current_tag != tags[i + 1]):
+        while current_tag and (i == len(tags) - 1 or current_tag != tags[i + 1]):  # end tag or until next tag
             if isinstance(current_tag, bs4.NavigableString):
                 text = strings.un_paragraph(current_tag.get_text()).strip()
                 if text and text not in after_text:
@@ -767,9 +780,8 @@ def remove_apache_sorting_params(url):
 
 
 def is_html(url, max_size=15 * 1024 * 1024):
-    r = requests_session().get(url, stream=True)
-
-    content_length = r.headers.get("Content-Length")
+    with requests_session().get(url, stream=True) as r:
+        content_length = r.headers.get("Content-Length")
     if content_length and int(content_length) > max_size:
         return False
 
@@ -816,7 +828,7 @@ def get_title(args, url):
             web.selenium_get_page(args, url)
             html_text = args.driver.page_source
         else:
-            html_text = web.requests_session(args).get(url).text
+            html_text = web.session.get(url).text
 
         soup = BeautifulSoup(html_text, "lxml")
         title = soup.title.text.strip() if soup.title else url

@@ -18,6 +18,7 @@ def parse_args():
     args = parser.parse_args()
     arggroups.args_post(args, parser)
 
+    web.requests_session(args)  # prepare requests session
     arggroups.selenium_post(args)
 
     return args
