@@ -15,6 +15,7 @@ from xklb.utils import (
     file_utils,
     iterables,
     nums,
+    objects,
     printing,
     sql_utils,
     strings,
@@ -120,7 +121,7 @@ def add_basic_metadata(args, m):
 
 def spider(args, paths: list):
     original_paths = set(*paths)
-    get_inner_urls = iterables.return_unique(extract_links.get_inner_urls)
+    get_inner_urls = iterables.return_unique(extract_links.get_inner_urls, lambda d: d.values())
 
     new_media_count = 0
     known_paths = set()
@@ -136,10 +137,10 @@ def spider(args, paths: list):
         )
 
         if path in original_paths or web.is_index(path) or web.is_html(path):
-            urls = list(get_inner_urls(args, path))
-            random.shuffle(urls)
-            for link, link_text in urls:
-                link = web.remove_apache_sorting_params(link)
+            link_dicts = list(get_inner_urls(args, path))
+            random.shuffle(link_dicts)
+            for link_dict in link_dicts:
+                link = web.remove_apache_sorting_params(link_dict.pop("link"))
 
                 if link in traversed_paths or link in paths:
                     continue
@@ -152,15 +153,15 @@ def spider(args, paths: list):
                     known_paths.add(link)
                     continue
                 else:
-                    new_paths[link] = link_text
-        else:
+                    new_paths[link] = objects.merge_dict_values_str(new_paths.get(link) or {}, link_dict)
+        else:  # not HTML page
             if not (path in traversed_paths or path in paths):
                 if db_media.exists(args, path):
                     known_paths.add(path)
                 else:
                     new_paths[path] = None  # add key to map; title: None
 
-        media = [consolidate_media(args, k) | {"title": v} for k, v in new_paths.items()]
+        media = [consolidate_media(args, k) | (v or {}) for k, v in new_paths.items()]
         new_media_count += len(media)
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=args.threads) as executor:

@@ -183,3 +183,22 @@ def product(**kwargs):
 
 def class_enum(o):
     return [v for k, v in o.__dict__.items() if k and not k.startswith("__") and v]
+
+
+def merge_dict_values_str(dict1, dict2):
+    merged_dict = {}
+
+    for key in set(dict1.keys()) | set(dict2.keys()):
+        value1 = dict1.get(key, "")
+        value2 = dict2.get(key, "")
+
+        if value1.startswith(value2):
+            merged_value = value1
+        elif value2.startswith(value1):
+            merged_value = value2
+        else:
+            merged_value = value1 + value2
+
+        merged_dict[key] = merged_value
+
+    return merged_dict

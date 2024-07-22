@@ -162,12 +162,8 @@ def add_media(args, variadic):
             path = strings.strip_enclosing_quotes(path_or_dict)
             d = objects.dict_filter_bool(consolidate_media(args, path))
         else:
-            d = objects.dict_filter_bool(
-                {
-                    **consolidate_media(args, strings.strip_enclosing_quotes(path_or_dict["path"])),
-                    "title": strings.strip_enclosing_quotes(path_or_dict["title"]),
-                }
-            )
+            d = consolidate_media(args, strings.strip_enclosing_quotes(path_or_dict.pop("path")))
+            d = objects.dict_filter_bool({**d, **path_or_dict})
 
         db_media.add(args, d)
 
@@ -256,7 +252,9 @@ def extractor(args, playlist_path):
         log.info("Loading page %s", page_path)
         page_known = set()
         page_new = {}
-        for link, link_text in extract_links.get_inner_urls(args, page_path):
+        for link_dict in extract_links.get_inner_urls(args, page_path):
+            link = link_dict.pop("link")
+
             if link == args.stop_link:
                 end_of_playlist = True
                 break
@@ -267,10 +265,8 @@ def extractor(args, playlist_path):
                 page_known.add(link)
                 if args.category:
                     update_category(args, link)
-            elif link in page_new:
-                page_new[link] = strings.combine(page_new[link], link_text)
             else:
-                page_new[link] = link_text
+                page_new[link] = objects.merge_dict_values_str(page_new.get(link) or {}, link_dict)
 
             printing.print_overwrite(f"Page {page_count} link scan: {len(page_new)} new [{len(page_known)} known]")
 
@@ -281,7 +277,7 @@ def extractor(args, playlist_path):
                     end_of_playlist = True
                     break
 
-        add_media(args, [{"path": k, "title": v} for k, v in page_new.items()])
+        add_media(args, [{"path": k, **v} for k, v in page_new.items()])
 
         new_media |= set(page_new.keys())
         known_media |= page_known

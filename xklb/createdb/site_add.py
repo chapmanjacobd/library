@@ -5,8 +5,7 @@ from io import StringIO
 from bs4 import BeautifulSoup, element
 
 from xklb import usage
-from xklb.text import extract_text
-from xklb.utils import arg_utils, arggroups, argparse_utils, consts, db_utils, iterables, objects, web
+from xklb.utils import arg_utils, arggroups, argparse_utils, consts, db_utils, iterables, objects, strings, web
 from xklb.utils.log_utils import log
 
 
@@ -166,7 +165,7 @@ def soup_tree(o) -> dict | str | None:
             element.TemplateString,
         ),
     ):
-        text = extract_text.un_paragraph(o)
+        text = strings.un_paragraph(o)
         if text:
             return text
         return None

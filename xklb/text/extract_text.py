@@ -1,4 +1,3 @@
-import re
 from pathlib import Path
 
 from bs4 import BeautifulSoup, NavigableString
@@ -28,16 +27,9 @@ def parse_args():
     return args
 
 
-def un_paragraph(item):
-    s = strings.remove_consecutive_whitespace(item.get_text(strip=True))
-    s = re.sub(r"[“”‘’]", "'", s)
-    s = re.sub(r"[‛‟„]", '"', s)
-    s = re.sub(r"[…]", "...", s)
-    return s
-
-
 def parse_text(args, html_content):
     soup = BeautifulSoup(html_content, "lxml")
+
     for item in soup.find_all():
         if item.name in ["meta"]:
             continue
@@ -49,9 +41,9 @@ def parse_text(args, html_content):
 
                 if parent_name == "a":
                     if not args.skip_links:
-                        yield un_paragraph(descendant)
+                        yield strings.un_paragraph(descendant.get_text(strip=True))
                 else:
-                    yield un_paragraph(descendant)
+                    yield strings.un_paragraph(descendant.get_text(strip=True))
 
 
 def get_text(args, url):

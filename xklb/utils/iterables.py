@@ -159,15 +159,16 @@ def ordered_set(items):
             seen.add(item)
 
 
-def return_unique(gen_func):
+def return_unique(gen_func, ext_fn=None):
     seen = set()
 
     @wraps(gen_func)
     def wrapper(*args, **kwargs):
         for item in gen_func(*args, **kwargs):
-            if item in seen:
+            t = item if ext_fn is None else ext_fn(item)
+            if t in seen:
                 continue
-            seen.add(item)
+            seen.add(t)
             yield item
 
     return wrapper

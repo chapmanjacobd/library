@@ -538,14 +538,16 @@ def download(args, m) -> None:
             info["corruption"] = 50
         if info["corruption"] > 7:
             media_check_failed = True
-    else:
+
+    if not (info and local_path and Path(local_path).exists()) or media_check_failed:
         download_status, ydl_errors_txt = log_error(ydl_log, webpath)
 
     if media_check_failed:
         log.info("[%s]: Media check failed", local_path)
         download_status = DLStatus.RECOVERABLE_ERROR
         ydl_errors_txt = "Media check failed\n" + ydl_errors_txt
-    else:
+
+    if download_status == DLStatus.SUCCESS:
         if len(yt_archive) > 0 and info is not None:
             archive_id = ydl._make_archive_id(info)
             if archive_id is None:
