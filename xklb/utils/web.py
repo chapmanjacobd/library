@@ -4,7 +4,7 @@ from pathlib import Path
 from shutil import which
 from urllib.parse import parse_qs, parse_qsl, quote, unquote, urlencode, urljoin, urlparse, urlunparse
 
-import requests
+import bs4, requests
 from idna import decode as puny_decode
 from idna import encode as puny_encode
 
@@ -521,16 +521,16 @@ def download_url(url, output_path=None, output_prefix=None, chunk_size=8 * 1024 
 
 def get_elements_forward(start, end):
     elements = []
-    current = start.next_sibling
+    current = start.next_element
     while current and current != end:
         elements.append(current)
-        current = current.next_sibling
+        current = current.next_element
     return elements
 
 
-def extract_nearby_text(a_element):
-    prev_a = a_element.find_previous("a")
-    next_a = a_element.find_next("a")
+def extract_nearby_text(a_element, delimiter):
+    prev_a = a_element.find_previous(delimiter)
+    next_a = a_element.find_next(delimiter)
 
     before = ""
     if prev_a:
@@ -541,6 +541,37 @@ def extract_nearby_text(a_element):
         after = " ".join(s.get_text(strip=True) for s in get_elements_forward(a_element, next_a))
 
     return before, after
+
+
+def tags_with_text(soup, delimit_fn):
+    tags = soup.find_all(delimit_fn)
+
+    for i, tag in enumerate(tags):
+        before_text = []
+        after_text = []
+
+        if i == 0:
+            current_tag = tag.previous_element
+            while current_tag and current_tag != tag:
+                if isinstance(current_tag, bs4.NavigableString):
+                    text = strings.un_paragraph(current_tag.get_text()).strip()
+                    if text and text not in before_text:
+                        before_text.append(text)
+                current_tag = current_tag.previous_element
+            before_text.reverse()
+
+        current_tag = tag.next_element
+        while current_tag and (i == len(tags) - 1 or current_tag != tags[i + 1]):
+            if isinstance(current_tag, bs4.NavigableString):
+                text = strings.un_paragraph(current_tag.get_text()).strip()
+                if text and text not in after_text:
+                    after_text.append(text)
+            current_tag = current_tag.next_element
+
+        tag.before_text = "\n".join(before_text).strip()
+        tag.after_text = "\n".join(after_text).strip()
+
+    return tags
 
 
 def save_html_table(args, html_file):

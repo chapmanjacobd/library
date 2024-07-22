@@ -167,7 +167,7 @@ def download(args=None) -> None:
         media_printer.media_printer(args, media)
         return
 
-    get_inner_urls = iterables.return_unique(extract_links.get_inner_urls)
+    get_inner_urls = iterables.return_unique(extract_links.get_inner_urls, lambda d: d["link"])
     for m in media:
         if args.blocklist_rules and sql_utils.is_blocked_dict_like_sql(m, args.blocklist_rules):
             mark_download_attempt(args, [m["path"]])
@@ -224,8 +224,8 @@ def download(args=None) -> None:
                 dl_paths = [original_path]
                 if args.links:
                     dl_paths = []
-                    for link, text in get_inner_urls(args, original_path):
-                        dl_paths.append(link)
+                    for link_dict in get_inner_urls(args, original_path):
+                        dl_paths.append(link_dict["link"])
 
                 for dl_path in dl_paths:
                     error = None

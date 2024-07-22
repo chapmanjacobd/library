@@ -951,7 +951,7 @@ merge_mv = """library merge-mv SOURCE ... DEST [--simulate] [--ext EXT]
         library merge-mv --parent folder1/ folder2/  # folder1 will be moved to folder2/folder1/
         library merge-mv --parent file1.txt folder2/ # file1 will be moved to folder2/file1_parent_folder/file1.txt
 
-    nb. This tool, like other library subcommands, only works on files. Empty folders will not be created on the destination
+    nb. This tool, like other library subcommands, only works on files. Empty folders will not be moved to the destination
 """
 
 

@@ -25,6 +25,47 @@ def remove_consecutive_whitespace(s) -> str:
     return " ".join(s.split())  # spaces, tabs, and newlines
 
 
+def remove_excessive_linebreaks(text):
+    text = text.replace("\r\n", "\n")
+
+    # Remove any whitespace that surrounds newlines
+    text = re.sub(r"[ \t]*\n[ \t]*", "\n", text)
+
+    # three or more linebreaks become two
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text
+
+
+@repeat_until_same
+def strip_enclosing_quotes(s):
+    if s is None or len(s) < 2:
+        return s
+
+    for q in ['"', "'", "＇", '"', "‛", "‟", "＂", "‚", "〞", "〝", "〟", "„", "⹂", "❟", "❜", "❛", "❝", "❞"]:
+        if s[0] == q and s[-1] == q:
+            return s[1:-1]
+
+    ls = ["‘", "“", "❮", "‹", "«"]
+    rs = ["’", "”", "❯", "›", "»"]
+    for l, r in zip(ls, rs):
+        if s[0] == l and s[-1] == r:
+            return s[1:-1]
+    for r, l in zip(ls, rs):
+        if s[0] == l and s[-1] == r:
+            return s[1:-1]
+
+    return s
+
+
+def un_paragraph(item):
+    s = remove_consecutive_whitespace(item)
+    s = re.sub(r"[“”‘’]", "'", s)
+    s = re.sub(r"[‛‟„]", '"', s)
+    s = re.sub(r"[…]", "...", s)
+    s = strip_enclosing_quotes(s)
+    return s
+
+
 def remove_consecutive(s, char=" ") -> str:
     return re.sub("\\" + char + "+", char, s)
 
@@ -135,27 +176,6 @@ def remove_text_inside_brackets(text: str, brackets="()[]") -> str:  # thanks @j
             if not any(count):  # outside brackets
                 saved_chars.append(character)
     return "".join(saved_chars)
-
-
-@repeat_until_same
-def strip_enclosing_quotes(s):
-    if s is None or len(s) < 2:
-        return s
-
-    for q in ['"', "'", "＇", '"', "‛", "‟", "＂", "‚", "〞", "〝", "〟", "„", "⹂", "❟", "❜", "❛", "❝", "❞"]:
-        if s[0] == q and s[-1] == q:
-            return s[1:-1]
-
-    ls = ["‘", "“", "❮", "‹", "«"]
-    rs = ["’", "”", "❯", "›", "»"]
-    for l, r in zip(ls, rs):
-        if s[0] == l and s[-1] == r:
-            return s[1:-1]
-    for r, l in zip(ls, rs):
-        if s[0] == l and s[-1] == r:
-            return s[1:-1]
-
-    return s
 
 
 _RE_COMBINE_WHITESPACE = re.compile(r"\s+")

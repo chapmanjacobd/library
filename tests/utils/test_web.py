@@ -201,13 +201,13 @@ soup = BeautifulSoup(html, "lxml")
 
 
 def test_extract_nearby_text():
-    before, after = extract_nearby_text(soup.find("a", href="link1"))
+    before, after = extract_nearby_text(soup.find("a", href="link1"), "a")
     assert (before, after) == ("", "Some text between the links.")
 
-    before, after = extract_nearby_text(soup.find("a", href="link2"))
+    before, after = extract_nearby_text(soup.find("a", href="link2"), "a")
     assert (before, after) == ("Some text between the links.", "")
 
-    before, after = extract_nearby_text(soup.find("a", href="link3"))
+    before, after = extract_nearby_text(soup.find("a", href="link3"), "a")
     assert (before, after) == ("", "")
 
 
@@ -218,5 +218,5 @@ def test_extract_nearby_text2():
 
     soup = BeautifulSoup(html, "lxml")
 
-    before, after = extract_nearby_text(soup.find("a", href="https://fourble.co.uk/podcast/systemau"))
+    before, after = extract_nearby_text(soup.find("a", href="https://fourble.co.uk/podcast/systemau"), "a")
     assert (before, after) == ("", "- Archive of the Australian Linux-leaning tech podcast")
