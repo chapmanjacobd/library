@@ -97,7 +97,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v2.8.072; 81 subcommands)
+    library (v2.9.001; 81 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -1103,7 +1103,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         library merge-mv --parent folder1/ folder2/  # folder1 will be moved to folder2/folder1/
         library merge-mv --parent file1.txt folder2/ # file1 will be moved to folder2/file1_parent_folder/file1.txt
 
-    nb. This tool, like other library subcommands, only works on files. Empty folders will not be created on the destination
+    nb. This tool, like other library subcommands, only works on files. Empty folders will not be moved to the destination
 
 
 </details>
