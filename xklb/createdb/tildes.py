@@ -20,6 +20,7 @@ def parse_args() -> argparse.Namespace:
     args = parser.parse_intermixed_args()
     arggroups.args_post(args, parser, create_db=True)
 
+    web.requests_session(args)  # prepare requests session
     return args
 
 

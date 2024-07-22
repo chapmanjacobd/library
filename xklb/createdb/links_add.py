@@ -128,6 +128,7 @@ To compensate for this the script will only continue fetching pages until there 
 
     arggroups.extractor_post(args)
     arggroups.filter_links_post(args)
+    web.requests_session(args)  # prepare requests session
     arggroups.selenium_post(args)
 
     return args

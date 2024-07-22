@@ -42,6 +42,7 @@ def parse_args(usage) -> argparse.Namespace:
     args = parser.parse_args()
     arggroups.args_post(args, parser, create_db=True)
 
+    web.requests_session(args)  # prepare requests session
     return args
 
 
@@ -111,7 +112,7 @@ def hacker_news_add() -> None:
 
     max_item_id = (
         args.max_id
-        or web.requests_session(args).get("https://hacker-news.firebaseio.com/v0/maxitem.json", timeout=120).json()
+        or web.session.get("https://hacker-news.firebaseio.com/v0/maxitem.json", timeout=120).json()
     )
 
     tables = args.db.table_names()

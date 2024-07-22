@@ -33,13 +33,14 @@ def parse_args():
     args = parser.parse_intermixed_args()
     arggroups.args_post(args, parser, create_db=True)
 
+    web.requests_session(args)  # prepare requests session
     return args
 
 
 def get_page(args, query_data):
     import pandas as pd
 
-    response = web.requests_session(args).post(
+    response = web.session.post(
         f"{args.base_url}/tor/js/loadSearchJSONbasic.php",
         headers={"Content-Type": "application/json"},
         cookies={"mam_id": args.cookie} if args.cookie else None,

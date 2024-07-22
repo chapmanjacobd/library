@@ -13,11 +13,12 @@ def parse_args():
     args = parser.parse_args()
     arggroups.args_post(args, parser)
 
+    web.requests_session(args)  # prepare requests session
     return args
 
 
 def get_unsat(args):
-    response = web.requests_session(args).get(
+    response = web.session.get(
         f"{args.base_url}/jsonLoad.php?snatch_summary",
         headers={"Content-Type": "application/json"},
         cookies={"mam_id": args.cookie} if args.cookie else None,
