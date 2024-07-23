@@ -2,7 +2,6 @@ import difflib, os, re, shlex, shutil, subprocess, sys, time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-import humanize
 from screeninfo import get_monitors
 
 from xklb import usage

@@ -1,7 +1,5 @@
 import os, random, shutil, sys
 
-import humanize
-
 from xklb.files import sample_compare
 from xklb.utils import arggroups, consts, file_utils, strings
 from xklb.utils.log_utils import log
