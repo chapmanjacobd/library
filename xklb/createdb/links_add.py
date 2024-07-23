@@ -143,7 +143,7 @@ def add_playlist(args, path):
         "time_modified": 0,
         "time_deleted": 0,
     }
-    return db_playlists.add(args, str(path), info, extractor_key='LinksDB')
+    return db_playlists.add(args, str(path), info, extractor_key="LinksDB")
 
 
 def consolidate_media(args, path: str) -> dict:

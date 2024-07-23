@@ -1,7 +1,5 @@
 import sys
 
-import humanize
-
 from xklb import usage
 from xklb.createdb import tube_backend
 from xklb.playback import media_printer, post_actions

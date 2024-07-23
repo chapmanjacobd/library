@@ -97,7 +97,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v2.9.002; 81 subcommands)
+    library (v2.9.003; 81 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -2271,6 +2271,10 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         Or create global shortcuts in your desktop environment by sending commands to mpv_socket
         echo 'playlist-next force' | socat - /run/user/1000/mpv_socket  # library listen default
         echo 'playlist-next force' | socat - /home/xk/.config/mpv/socket  # library watch default
+
+        If you prefer you can also send mpv the playlist, but this is incompatible with post-actions
+        mpv --playlist=(lb wt videos.db --ext mp4 -l 50 -p fw | psub)  # fish shell, mark 50 videos as watched
+        mpv --playlist=<(lb wt videos.db --ext mp4 -p f)  # BASH, all videos
 
     Print an aggregate report of deleted media
 

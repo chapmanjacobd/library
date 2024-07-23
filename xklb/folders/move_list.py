@@ -2,8 +2,6 @@ import argparse, shutil, tempfile
 from copy import deepcopy
 from pathlib import Path
 
-import humanize
-
 from xklb import usage
 from xklb.utils import arggroups, argparse_utils, consts, devices, iterables, printing, sqlgroups, strings
 
@@ -170,7 +168,7 @@ Type "*" to select all files in the most recently printed table
             "selected paths:",
             strings.file_size(selected_paths_size),
             "; future free space:",
-            strings.file_size(selected_paths_size + free)
+            strings.file_size(selected_paths_size + free),
         )
 
     if selected_paths:

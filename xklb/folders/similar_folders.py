@@ -1,7 +1,5 @@
 from pathlib import Path
 
-import humanize
-
 from xklb import usage
 from xklb.folders import big_dirs
 from xklb.text import cluster_sort

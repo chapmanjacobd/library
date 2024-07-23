@@ -29,7 +29,7 @@ def _get_retry_adapter(args):
         status=max_retries // 2,
         other=1,
         redirect=max_redirects,
-        raise_on_redirect=max_redirects<=0,
+        raise_on_redirect=max_redirects <= 0,
         backoff_factor=3,
         backoff_jitter=2,
         backoff_max=22 * 60,
@@ -473,7 +473,7 @@ def download_url(url, output_path=None, output_prefix=None, chunk_size=8 * 1024 
     if retry_num > max_retries:
         raise RuntimeError(f"Max retries exceeded for {url}")
 
-    log.debug('%s retry %s', url, retry_num)
+    log.debug("%s retry %s", url, retry_num)
     with session.get(url, stream=True) as r:
         if not 200 <= r.status_code < 400:
             log.error(f"Error {r.status_code} {url}")
@@ -498,7 +498,9 @@ def download_url(url, output_path=None, output_prefix=None, chunk_size=8 * 1024 
                 elif local_size < 5242880:  # TODO: check if first few kilobytes match what already exists locally...
                     p.unlink()
                 else:
-                    log.warning(f"Download resuming from {strings.file_size(local_size)} ({strings.safe_percent(local_size/remote_size)}): {output_path}")
+                    log.warning(
+                        f"Download resuming from {strings.file_size(local_size)} ({strings.safe_percent(local_size/remote_size)}): {output_path}"
+                    )
                     headers = {"Range": f"bytes={local_size}-"}
                     r.close()
                     r = session.get(url, headers=headers, stream=True)

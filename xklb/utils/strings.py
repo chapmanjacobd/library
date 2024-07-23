@@ -1,7 +1,6 @@
-from datetime import datetime, timedelta
-import math
-import html, re, textwrap
+import html, math, re, textwrap
 from copy import deepcopy
+from datetime import datetime, timedelta
 from itertools import zip_longest
 
 import humanize
@@ -293,6 +292,7 @@ def format_two_columns(text1, text2, width1=25, width2=75, left_gutter=2, middle
     ]
 
     return "\n".join(formatted_lines) + "\n"
+
 
 def file_size(n):
     return humanize.naturalsize(n, binary=True)

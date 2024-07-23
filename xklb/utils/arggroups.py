@@ -1336,7 +1336,14 @@ def requests(parent_parser):
         help='Allow loading data from non-TLS, non-"https" servers',
     )
     parser.add_argument("--http-max-retries", "--max-retries", "--retries", type=int, default=8, help="Use N retries")
-    parser.add_argument("--http-max-redirects", "--max-redirects", "--redirects", type=int, default=4, help="Allow N redirects (also counted as a retry)")
+    parser.add_argument(
+        "--http-max-redirects",
+        "--max-redirects",
+        "--redirects",
+        type=int,
+        default=4,
+        help="Allow N redirects (also counted as a retry)",
+    )
 
 
 def selenium(parent_parser):

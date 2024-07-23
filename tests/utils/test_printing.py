@@ -16,7 +16,6 @@ def test_col_naturalsize():
     assert printing.col_filesize([{"t": 946684800, "t1": 1}], "t") == [{"t": "902.8 MiB", "t1": 1}]
 
 
-
 def test_col_duration():
     assert printing.col_duration([{"t": 0, "t1": 1}], "t") == [{"t": "", "t1": 1}]
     assert printing.col_duration([{"t": 946684800, "t1": 1}], "t") == [{"t": "30 years and 7 days", "t1": 1}]

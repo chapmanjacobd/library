@@ -111,8 +111,7 @@ def hacker_news_add() -> None:
     args.db.enable_wal()
 
     max_item_id = (
-        args.max_id
-        or web.session.get("https://hacker-news.firebaseio.com/v0/maxitem.json", timeout=120).json()
+        args.max_id or web.session.get("https://hacker-news.firebaseio.com/v0/maxitem.json", timeout=120).json()
     )
 
     tables = args.db.table_names()
