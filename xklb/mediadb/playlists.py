@@ -73,7 +73,7 @@ def playlists() -> None:
         query = f"""
         select
             coalesce(p.path, "Playlist-less media") path
-            , p.extractor_key
+            {', p.extractor_key' if 'extractor_key' in pl_columns else ", 'Playlist-less media' as extractor_key"}
             {', p.title' if 'title' in pl_columns else ''}
             {', p.time_deleted' if 'time_deleted' in pl_columns else ''}
             {', count(*) FILTER(WHERE play_count>0) play_count' if 'play_count' in m_columns else ''}

@@ -1,6 +1,10 @@
+from datetime import datetime, timedelta
+import math
 import html, re, textwrap
 from copy import deepcopy
 from itertools import zip_longest
+
+import humanize
 
 from xklb.data import wordbank
 from xklb.utils import consts, iterables, nums
@@ -289,3 +293,53 @@ def format_two_columns(text1, text2, width1=25, width2=75, left_gutter=2, middle
     ]
 
     return "\n".join(formatted_lines) + "\n"
+
+def file_size(n):
+    return humanize.naturalsize(n, binary=True)
+
+
+def duration(seconds) -> str:
+    if seconds is None or math.isnan(seconds) or seconds == 0:
+        return ""
+
+    test = humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="minutes", format="%0.0f")
+
+    PRECISION_YEARS = 3
+    if len(test.split(",")) >= PRECISION_YEARS:
+        return humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="hours", format="%0.0f")
+
+    PRECISION_MONTHS = 2
+    if len(test.split(",")) >= PRECISION_MONTHS:
+        return humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="hours", format="%0.0f")
+
+    if int(seconds) > 10 * 60:
+        return humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="minutes", format="%0.0f")
+
+    return humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="seconds", format="%0.0f")
+
+
+def relative_datetime(seconds) -> str:
+    if seconds is None or math.isnan(seconds) or seconds == 0:
+        return ""
+
+    now = datetime.now()
+    midnight_today = now.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    dt = datetime.fromtimestamp(seconds)
+    delta = datetime.today() - dt
+    delta_days = (abs(delta.days) - 1) if delta.days < 0 else delta.days
+
+    if dt >= midnight_today:
+        if delta_days == 0:
+            return dt.strftime("today, %H:%M")
+        elif delta_days == 1:
+            return dt.strftime("tomorrow, %H:%M")
+        elif delta_days < 46:
+            return dt.strftime(f"in {delta_days} days, %H:%M")
+
+    elif dt >= midnight_today - timedelta(days=1):
+        return dt.strftime("yesterday, %H:%M")
+    elif delta_days < 46:
+        return dt.strftime(f"{delta_days} days ago, %H:%M")
+
+    return dt.strftime("%Y-%m-%d %H:%M")

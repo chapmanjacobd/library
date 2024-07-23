@@ -51,7 +51,7 @@ def get_text(args, url):
     is_error = False
     if not args.local_html and not url.startswith("http") and Path(url).is_file():
         text = fs_add.munge_book_tags_fast(url)
-        if text:
+        if text and text.get("tags"):
             yield text.get("tags").replace(";", "\n")
         return None
 

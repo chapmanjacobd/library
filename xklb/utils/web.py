@@ -494,10 +494,11 @@ def download_url(url, output_path=None, output_prefix=None, chunk_size=8 * 1024 
                 local_size = p.stat().st_size
                 if local_size == remote_size:
                     log.warning(f"Download skipped. File with same size already exists: {output_path}")
-                    return
+                    return output_path
                 elif local_size < 5242880:  # TODO: check if first few kilobytes match what already exists locally...
                     p.unlink()
                 else:
+                    log.warning(f"Download resuming from {strings.file_size(local_size)} ({strings.safe_percent(local_size/remote_size)}): {output_path}")
                     headers = {"Range": f"bytes={local_size}-"}
                     r.close()
                     r = session.get(url, headers=headers, stream=True)

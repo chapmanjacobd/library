@@ -5,7 +5,7 @@ import humanize
 from xklb import usage
 from xklb.createdb import tube_backend
 from xklb.playback import media_printer, post_actions
-from xklb.utils import arg_utils, arggroups, argparse_utils, consts, db_utils, devices, iterables
+from xklb.utils import arg_utils, arggroups, argparse_utils, consts, db_utils, devices, iterables, strings
 from xklb.utils.log_utils import log
 
 
@@ -181,7 +181,7 @@ def block(args=None) -> None:
         if paths_to_delete:
             print(paths_to_delete)
             if devices.confirm(
-                f"Would you like to delete these {len(paths_to_delete)} local files ({humanize.naturalsize(total_size, binary=True)})?",
+                f"Would you like to delete these {len(paths_to_delete)} local files ({strings.file_size(total_size)})?",
             ):
                 post_actions.delete_media(args, paths_to_delete)
         return
@@ -265,7 +265,7 @@ def block(args=None) -> None:
             total_size = sum(d["size"] or 0 for d in matching_media if (d["time_deleted"] or 0) == 0)
             print("\n".join(local_paths_to_delete))
             if devices.confirm(
-                f"Would you like to delete these {len(local_paths_to_delete)} local files ({humanize.naturalsize(total_size, binary=True)})?",
+                f"Would you like to delete these {len(local_paths_to_delete)} local files ({strings.file_size(total_size)})?",
             ):
                 post_actions.delete_media(args, local_paths_to_delete)
 

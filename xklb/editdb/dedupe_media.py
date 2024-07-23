@@ -4,8 +4,6 @@ from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
 from pathlib import Path
 
-import humanize
-
 from xklb import usage
 from xklb.files import sample_compare, sample_hash
 from xklb.mediadb import db_media
@@ -20,6 +18,7 @@ from xklb.utils import (
     path_utils,
     processes,
     sql_utils,
+    strings,
 )
 from xklb.utils.consts import DBType
 from xklb.utils.log_utils import log
@@ -491,7 +490,7 @@ def dedupe_media() -> None:
         log.info("Skipping CSV export because pandas is not installed")
 
     duplicates_size = sum(filter(None, [d["duplicate_size"] for d in duplicates]))
-    print(f"Approx. space savings: {humanize.naturalsize(duplicates_size // 2, binary=True)}")
+    print(f"Approx. space savings: {strings.file_size(duplicates_size // 2)}")
 
     if duplicates and (args.force or devices.confirm("Delete duplicates?")):  # type: ignore
         log.info("Deleting...")

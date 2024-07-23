@@ -13,7 +13,7 @@ from xklb.utils import (
     consts,
     db_utils,
     iterables,
-    printing,
+    strings,
     processes,
     sql_utils,
     web,
@@ -196,7 +196,7 @@ def download(args=None) -> None:
                     log.info(
                         "[%s]: Download marked deleted (%s ago). Skipping!",
                         m["path"],
-                        printing.human_duration(consts.now() - d["time_deleted"]),
+                        strings.duration(consts.now() - d["time_deleted"]),
                     )
                     mark_download_attempt(args, [m["path"]])
                     continue
@@ -204,7 +204,7 @@ def download(args=None) -> None:
                     log.info(
                         "[%s]: Download already attempted recently (%s ago). Skipping!",
                         m["path"],
-                        printing.human_duration(consts.now() - d["time_modified"]),
+                        strings.duration(consts.now() - d["time_modified"]),
                     )
                     continue
 
