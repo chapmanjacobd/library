@@ -29,7 +29,7 @@ def test_yt():
     args = connect_db_args(dl_db)
 
     captions = list(args.db.query("select * from captions"))
-    assert {"media_id": 2, "time": 3, "text": "For more information contact phihag@phihag.de"} in captions
+    assert {"media_id": 1, "time": 3, "text": "For more information contact phihag@phihag.de"} in captions
 
     video_id = "BaW_jenozKc"
     thumbnail_path = os.path.join(STORAGE_PREFIX, "Youtube", "Philipp Hagemeister", f"{video_id}.jpg")
