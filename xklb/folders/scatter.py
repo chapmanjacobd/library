@@ -120,8 +120,8 @@ def get_path_stats(args, data) -> list[dict]:
 
 def print_path_stats(tbl) -> None:
     tbl = iterables.list_dict_filter_bool(tbl, keep_0=False)
-    tbl = printing.col_naturalsize(tbl, "total_size")
-    tbl = printing.col_naturalsize(tbl, "median_size")
+    tbl = printing.col_filesize(tbl, "total_size")
+    tbl = printing.col_filesize(tbl, "median_size")
     for t in consts.EPOCH_COLUMNS:
         printing.col_naturaldate(tbl, t)
 

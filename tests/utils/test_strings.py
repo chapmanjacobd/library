@@ -131,3 +131,7 @@ class TestFindUnambiguousMatch(unittest.TestCase):
 
         with pytest.raises(ValueError):
             strings.partial_startswith(my_string, my_list)
+
+def test_human_time():
+    assert strings.duration(0) == ""
+    assert strings.duration(946684800) == "30 years and 7 days"

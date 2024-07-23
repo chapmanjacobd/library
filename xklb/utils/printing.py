@@ -1,10 +1,11 @@
 import csv, math, os, sys, textwrap
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import humanize
 from tabulate import tabulate
 
 from xklb.utils import consts, web
+from xklb.utils.strings import duration, file_size, relative_datetime
 
 
 def print_overwrite(*text):
@@ -47,53 +48,6 @@ def write_csv_to_stdout(data):
     writer = csv.DictWriter(sys.stdout, fieldnames=fieldnames)
     writer.writeheader()
     writer.writerows(data)
-
-
-def human_duration(seconds) -> str:
-    if seconds is None or math.isnan(seconds) or seconds == 0:
-        return ""
-
-    test = humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="minutes", format="%0.0f")
-
-    PRECISION_YEARS = 3
-    if len(test.split(",")) >= PRECISION_YEARS:
-        return humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="hours", format="%0.0f")
-
-    PRECISION_MONTHS = 2
-    if len(test.split(",")) >= PRECISION_MONTHS:
-        return humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="hours", format="%0.0f")
-
-    if int(seconds) > 10 * 60:
-        return humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="minutes", format="%0.0f")
-
-    return humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="seconds", format="%0.0f")
-
-
-def human_time(seconds) -> str:
-    if seconds is None or math.isnan(seconds) or seconds == 0:
-        return ""
-
-    now = datetime.now()
-    midnight_today = now.replace(hour=0, minute=0, second=0, microsecond=0)
-
-    dt = datetime.fromtimestamp(seconds)
-    delta = datetime.today() - dt
-    delta_days = (abs(delta.days) - 1) if delta.days < 0 else delta.days
-
-    if dt >= midnight_today:
-        if delta_days == 0:
-            return dt.strftime("today, %H:%M")
-        elif delta_days == 1:
-            return dt.strftime("tomorrow, %H:%M")
-        elif delta_days < 46:
-            return dt.strftime(f"in {delta_days} days, %H:%M")
-
-    elif dt >= midnight_today - timedelta(days=1):
-        return dt.strftime("yesterday, %H:%M")
-    elif delta_days < 46:
-        return dt.strftime(f"{delta_days} days ago, %H:%M")
-
-    return dt.strftime("%Y-%m-%d %H:%M")
 
 
 def path_fill(text, percent=None, width=None):
@@ -154,18 +108,18 @@ def col_naturaltime(tbl: list[dict], col: str) -> list[dict]:
             if val == 0:
                 tbl[idx][col] = None
             else:
-                tbl[idx][col] = human_time(val)
+                tbl[idx][col] = relative_datetime(val)
 
     return tbl
 
 
-def col_naturalsize(tbl: list[dict], col: str) -> list[dict]:
+def col_filesize(tbl: list[dict], col: str) -> list[dict]:
     for idx, _d in enumerate(tbl):
         if tbl[idx].get(col) is not None:
             if tbl[idx][col] == 0:
                 tbl[idx][col] = None
             else:
-                tbl[idx][col] = humanize.naturalsize(tbl[idx][col], binary=True)
+                tbl[idx][col] = file_size(tbl[idx][col])
 
     return tbl
 
@@ -173,7 +127,7 @@ def col_naturalsize(tbl: list[dict], col: str) -> list[dict]:
 def col_duration(tbl: list[dict], col: str) -> list[dict]:
     for idx, _d in enumerate(tbl):
         if tbl[idx].get(col) is not None:
-            tbl[idx][col] = human_duration(tbl[idx][col])
+            tbl[idx][col] = duration(tbl[idx][col])
     return tbl
 
 

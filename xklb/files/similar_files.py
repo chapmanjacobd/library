@@ -2,8 +2,9 @@ import humanize
 
 from xklb import usage
 from xklb.folders.similar_folders import cluster_folders, map_and_name
-from xklb.utils import arg_utils, arggroups, argparse_utils, file_utils, nums, printing
+from xklb.utils import arg_utils, arggroups, argparse_utils, file_utils, nums, printing, strings
 from xklb.utils.log_utils import log
+
 
 
 def parse_args():
@@ -144,8 +145,8 @@ def similar_files():
                 [
                     {
                         f'group {group["common_path"]}': d["path"],
-                        "size": humanize.naturalsize(d["size"], binary=True),
-                        "duration": printing.human_duration(d.get("duration")),
+                        "size": strings.file_size(d["size"]),
+                        "duration": strings.duration(d.get("duration")),
                     }
                     for d in media
                 ]

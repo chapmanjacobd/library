@@ -173,6 +173,9 @@ def add(args, entry):
     entry.pop("description", None)
 
     media_id = args.db.pop("select id from media where path = ?", [entry["path"]])
+    if not media_id and 'webpath' in entry and not entry.get('errors'):
+        media_id = args.db.pop("select id from media where path = ?", [entry["webpath"]])
+
     try:
         if media_id:
             entry["id"] = media_id

@@ -194,7 +194,7 @@ def media_printer(args, data, units=None, media_len=None) -> None:
     if not any([args.to_json, "f" in print_args]):
         for k, v in list(media[0].items()):
             if k.endswith("size"):
-                printing.col_naturalsize(media, k)
+                printing.col_filesize(media, k)
             elif k.endswith("duration") or k in ("playhead",):
                 printing.col_duration(media, k)
             elif k.startswith("time_") or "_time_" in k:
@@ -268,7 +268,7 @@ def media_printer(args, data, units=None, media_len=None) -> None:
             )
 
         if total_duration > 0:
-            total_duration = printing.human_duration(total_duration)
+            total_duration = strings.duration(total_duration)
             if "a" not in print_args:
                 print("Total duration:", total_duration)
 

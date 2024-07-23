@@ -14,6 +14,10 @@ def play(action) -> str:
         echo 'playlist-next force' | socat - {consts.DEFAULT_MPV_LISTEN_SOCKET}  # library listen default
         echo 'playlist-next force' | socat - {consts.DEFAULT_MPV_WATCH_SOCKET}  # library watch default
 
+        If you prefer you can also send mpv the playlist, but this is incompatible with post-actions
+        mpv --playlist=(lb wt videos.db --ext mp4 -l 50 -p fw | psub)  # fish shell, mark 50 videos as watched
+        mpv --playlist=<(lb wt videos.db --ext mp4 -p f)  # BASH, all videos
+
     Print an aggregate report of deleted media
 
         library fs -w time_deleted!=0 -pa

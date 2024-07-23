@@ -5,7 +5,7 @@ from pathlib import Path
 import humanize
 
 from xklb import usage
-from xklb.utils import arggroups, argparse_utils, consts, devices, iterables, printing, sqlgroups
+from xklb.utils import arggroups, argparse_utils, consts, devices, iterables, printing, sqlgroups, strings
 
 
 def parse_args() -> argparse.Namespace:
@@ -67,7 +67,7 @@ def iterate_and_show_options(args, tbl) -> tuple[list[dict], list[dict]]:
 
     view = iterables.list_dict_filter_bool(view, keep_0=False)
     view = printing.col_resize_percent(view, "path", 60)
-    view = printing.col_naturalsize(view, "size")
+    view = printing.col_filesize(view, "size")
     printing.table(tbl)
     print(len(tbl) - len(view), "other folders not shown")
 
@@ -99,7 +99,7 @@ def move_list() -> None:
     args = parse_args()
     _total, _used, free = shutil.disk_usage(args.target_mount_point)
 
-    print("Current free space in target:", humanize.naturalsize(free))
+    print("Current free space in target:", strings.file_size(free))
 
     data = get_table(args)
 
@@ -168,9 +168,9 @@ Type "*" to select all files in the most recently printed table
         print(
             len(selected_paths),
             "selected paths:",
-            humanize.naturalsize(selected_paths_size, binary=True),
+            strings.file_size(selected_paths_size),
             "; future free space:",
-            humanize.naturalsize(selected_paths_size + free, binary=True),
+            strings.file_size(selected_paths_size + free)
         )
 
     if selected_paths:

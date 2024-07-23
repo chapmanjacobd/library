@@ -202,11 +202,11 @@ def similar_folders():
                 [
                     {
                         f'group {group["common_path"]}': d["path"],
-                        "total_size": humanize.naturalsize(d["size"], binary=True),
-                        "median_size": humanize.naturalsize(d["median_size"], binary=True),
-                        "total_duration": printing.human_duration(d.get("duration")),
-                        "median_duration": printing.human_duration(d.get("median_duration")),
-                        "median_size": humanize.naturalsize(d.get("median_size"), binary=True),
+                        "total_size": strings.file_size(d["size"]),
+                        "median_size": strings.file_size(d["median_size"]),
+                        "total_duration": strings.duration(d.get("duration")),
+                        "median_duration": strings.duration(d.get("median_duration")),
+                        "median_size": strings.file_size(d.get("median_size")),
                         "files": d["exists"],
                     }
                     for d in media

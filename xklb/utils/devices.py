@@ -3,7 +3,7 @@ import os, random, shutil, sys
 import humanize
 
 from xklb.files import sample_compare
-from xklb.utils import arggroups, consts, file_utils
+from xklb.utils import arggroups, consts, file_utils, strings
 from xklb.utils.log_utils import log
 
 
@@ -90,9 +90,9 @@ def rmtree(args, p):
 
 
 def log_size_diff(src_size, dst_size):
-    src_size_str = humanize.naturalsize(src_size, binary=True)
-    dst_size_str = humanize.naturalsize(dst_size, binary=True)
-    diff_size_str = humanize.naturalsize(abs(src_size - dst_size), binary=True)
+    src_size_str = strings.file_size(src_size)
+    dst_size_str = strings.file_size(dst_size)
+    diff_size_str = strings.file_size(abs(src_size - dst_size))
     if src_size == dst_size:
         print(f"Source and destination are the same size: {src_size_str}")
     elif src_size > dst_size:

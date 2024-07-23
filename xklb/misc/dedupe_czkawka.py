@@ -7,7 +7,7 @@ from screeninfo import get_monitors
 
 from xklb import usage
 from xklb.playback import media_player, post_actions
-from xklb.utils import arggroups, argparse_utils, consts, devices, file_utils, iterables, mpv_utils, processes
+from xklb.utils import arggroups, argparse_utils, consts, devices, file_utils, iterables, mpv_utils, processes, strings
 from xklb.utils.log_utils import log
 
 left_mpv_socket = str(Path(consts.TEMP_SCRIPT_DIR) / f"mpv_socket_{consts.random_string()}")
@@ -241,14 +241,14 @@ def mv_to_keep_folder(args, d) -> None:
 
         src_size = d["size"]
         dst_size = new_path.stat().st_size
-        diff_size = humanize.naturalsize(src_size - dst_size, binary=True)
+        diff_size = strings.file_size(src_size - dst_size)
 
         if src_size > dst_size:
             print("Source is larger than destination", diff_size)
         elif src_size < dst_size:
             print("Source is smaller than destination", diff_size)
         else:
-            print("Source and destination are the same size", humanize.naturalsize(src_size, binary=True))
+            print("Source and destination are the same size", strings.file_size(src_size))
         if devices.confirm("Replace destination file?"):
             file_utils.trash(args, new_path, detach=False)
             new_path = shutil.move(media_file, keep_path)
@@ -291,8 +291,8 @@ def group_and_delete(args, groups):
                 left = right
                 continue
 
-            print(left["path"], humanize.naturalsize(left["size"], binary=True))
-            print(right["path"], humanize.naturalsize(right["size"], binary=True))
+            print(left["path"], strings.file_size(left["size"]))
+            print(right["path"], strings.file_size(right["size"]))
 
             if args.auto_select_min_ratio < 1.0:
                 similar_ratio = difflib.SequenceMatcher(
