@@ -97,7 +97,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v2.9.004; 81 subcommands)
+    library (v2.9.005; 81 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -785,6 +785,10 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     Likewise for redditors
 
         library redditadd shadow_banned.db --redditors (cat ~/mc/shadow_banned.txt)
+
+    To remove entries (for example when you get 404s)
+
+        library search-db reddit.db playlists --or --exact subreddit1 subreddit2 --soft-delete
 
     Note that reddit's API is limited to 1000 posts and it usually doesn't go back very far historically.
     Also, it may be the case that reddit's API (praw) will stop working in the near future. For both of these problems

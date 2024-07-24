@@ -345,6 +345,10 @@ reddit_add = """library reddit-add [--lookback N_DAYS] [--praw-site bot1] DATABA
 
         library redditadd shadow_banned.db --redditors (cat ~/mc/shadow_banned.txt)
 
+    To remove entries (for example when you get 404s)
+
+        library search-db reddit.db playlists --or --exact subreddit1 subreddit2 --soft-delete
+
     Note that reddit's API is limited to 1000 posts and it usually doesn't go back very far historically.
     Also, it may be the case that reddit's API (praw) will stop working in the near future. For both of these problems
     my suggestion is to use pushshift data.

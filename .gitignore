@@ -16,6 +16,7 @@ __pycache__/
 *.JPEG
 *.jpeg
 *.webp
+*.heic
 *.png
 *.csv
 *.json
