@@ -107,14 +107,15 @@ def cmd(
     print_std(r.stdout, r.returncode == 0)
     print_std(r.stderr, r.returncode == 0)
     if r.returncode != 0:
-        if strict:
-            raise subprocess.CalledProcessError(r.returncode, shlex.join(command), r.stdout, r.stderr)
-        elif error_verbosity == 0:
+        if error_verbosity == 0:
             log.debug("[%s] exited %s", shlex.join(command), r.returncode)
         elif error_verbosity == 1:
             log.info("[%s] exited %s", shlex.join(command), r.returncode)
         else:
             log.warning("[%s] exited %s", shlex.join(command), r.returncode)
+
+        if strict:
+            raise subprocess.CalledProcessError(r.returncode, shlex.join(command), r.stdout, r.stderr)
 
     return r
 
