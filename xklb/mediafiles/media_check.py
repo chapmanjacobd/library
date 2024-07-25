@@ -143,9 +143,8 @@ def decode_full_scan(path, audio_scan=False, frames="frames", threads=None):
             path,
         ]
 
-        ffprobe_frames = subprocess.Popen(ffprobe_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        output, err = ffprobe_frames.communicate()
-        data = json.loads(output)["streams"][0]
+        r_frames = processes.cmd(*ffprobe_cmd)
+        data = json.loads(r_frames.stdout)["streams"][0]
 
         r_frame_rate = fractions.Fraction(data["r_frame_rate"])
         nb_frames = int(data.get(f"nb_read_{frames}") or 0)
