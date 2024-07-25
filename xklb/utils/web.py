@@ -477,6 +477,8 @@ def download_url(url, output_path=None, output_prefix=None, chunk_size=8 * 1024 
     with session.get(url, stream=True) as r:
         if not 200 <= r.status_code < 400:
             log.error(f"Error {r.status_code} {url}")
+            if r.status_code == 404:
+                raise RuntimeError("404 Not Found")
 
         remote_size = nums.safe_int(r.headers.get("Content-Length"))
 

@@ -228,9 +228,7 @@ def download(args=None) -> None:
                     error = None
                     try:
                         local_path = web.download_url(dl_path, output_prefix=args.prefix)
-                    except Exception as e:
-                        if not args.ignore_errors:
-                            raise
+                    except RuntimeError as e:
                         local_path = None
                         error = str(e)
 

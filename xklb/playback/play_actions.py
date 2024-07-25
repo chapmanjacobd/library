@@ -161,7 +161,9 @@ If you don't know the exact name of your chromecast group run `catt scan`
         parser.add_argument(f"--cmd{i}", help=argparse.SUPPRESS)
 
     parser.add_argument("--safe", action="store_true", help="Skip generic URLs")
-    parser.add_argument("--refresh", action="store_true", help="Check for deleted files before starting playqueue")
+    parser.add_argument(
+        "--refresh", "--exists", action="store_true", help="Check for deleted files before starting playqueue"
+    )
     parser.add_argument(
         "--delete-unplayable", action="store_true", help="Delete from disk any media which does not open successfully"
     )
@@ -319,6 +321,7 @@ def process_playqueue(args) -> None:
             args.big_dirs,
             args.fetch_siblings,
             args.related,
+            args.refresh,
             args.cluster_sort,
             args.folders,
             args.folder_glob,
