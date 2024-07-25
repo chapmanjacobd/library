@@ -350,7 +350,9 @@ def links_update() -> None:
         """,
     )
 
-    selenium_needed = any([json.loads(d.get("extractor_config") or "{}").get("selenium") for d in link_playlists])
+    selenium_needed = args.selenium or any(
+        [json.loads(d.get("extractor_config") or "{}").get("selenium") for d in link_playlists]
+    )
     if selenium_needed:
         web.load_selenium(args)
 

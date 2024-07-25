@@ -1,4 +1,5 @@
 import json
+from contextlib import suppress
 
 from xklb import usage
 from xklb.utils import arg_utils, arggroups, argparse_utils, consts, devices, iterables, printing, strings, web
@@ -159,7 +160,8 @@ def get_inner_urls(args, url):
 def print_or_download(args, d):
     link = d["link"]
     if args.download:
-        web.download_url(link)
+        with suppress(RuntimeError):
+            web.download_url(link)
     else:
         if not args.no_url_decode:
             link = web.url_decode(link).strip()
@@ -177,7 +179,8 @@ def extract_links() -> None:
             if not args.no_url_decode:
                 url = web.url_decode(url).strip()
             if args.download:
-                web.download_url(url)
+                with suppress(RuntimeError):
+                    web.download_url(url)
             else:
                 printing.pipe_print(url)
         return
