@@ -302,8 +302,12 @@ def download_add(
     info: dict | None = None,
     local_path=None,
     error=None,
-    unrecoverable_error=False,
+    mark_deleted=False,
+    delete_webpath_entry=None,
 ) -> None:
+    if delete_webpath_entry is None:
+        delete_webpath_entry = mark_deleted or not error
+
     if local_path and Path(local_path).exists():
         local_path = str(Path(local_path).resolve())
         fs_args = argparse.Namespace(
@@ -327,13 +331,14 @@ def download_add(
 
     entry = {
         **consolidated_entry,
-        "time_deleted": consts.APPLICATION_START if unrecoverable_error else 0,
+        "time_deleted": consts.APPLICATION_START if mark_deleted else 0,
         **fs_tags,
         "webpath": webpath,
         "error": error,
     }
     add(args, entry)
-    if entry["path"] != webpath and (unrecoverable_error or not error):
+
+    if delete_webpath_entry and entry["path"] != webpath:
         with args.db.conn:
             args.db.conn.execute("DELETE from media WHERE path = ?", [webpath])
 

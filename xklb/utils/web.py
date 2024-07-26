@@ -161,7 +161,7 @@ def get(args, url, skip_404=True, ignore_errors=False, ignore_429=False, **kwarg
             return response
         elif code == 404:
             if skip_404:
-                log.warning("HTTP404 Not Found: %s", url)
+                log.warning("404 Not Found: %s", url)
                 return None
             else:
                 raise FileNotFoundError
@@ -188,7 +188,7 @@ class PartialContent:
         with session.get(self.url, stream=True) as r:
             code = r.status_code
             if code == 404:
-                log.warning("HTTP404 Not Found: %s", self.url)
+                log.warning("404 Not Found: %s", self.url)
                 return None
             else:
                 r.raise_for_status()
@@ -478,7 +478,7 @@ def download_url(url, output_path=None, output_prefix=None, chunk_size=8 * 1024 
         if not 200 <= r.status_code < 400:
             log.error(f"Error {r.status_code} {url}")
             if r.status_code == 404:
-                raise RuntimeError("404 Not Found")
+                raise RuntimeError("HTTPNotFoundError")
 
         remote_size = nums.safe_int(r.headers.get("Content-Length"))
 

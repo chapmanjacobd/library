@@ -139,7 +139,7 @@ def download(args, m):
         info,
         local_path=local_path,
         error=strings.combine(errors),
-        unrecoverable_error="HTTPNotFoundError" in errors,
+        mark_deleted="HTTPNotFoundError" in errors,
     )
 
 
