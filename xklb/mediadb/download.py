@@ -224,7 +224,8 @@ def download(args=None) -> None:
                     for link_dict in get_inner_urls(args, original_path):
                         dl_paths.append(link_dict["link"])
 
-                for dl_path in dl_paths:
+                any_error = False
+                for i, dl_path in enumerate(dl_paths):
                     error = None
                     try:
                         local_path = web.download_url(dl_path, output_prefix=args.prefix)
@@ -242,7 +243,21 @@ def download(args=None) -> None:
                         if result is not None:
                             local_path = str(result)
 
-                    db_media.download_add(args, original_path, m, local_path, error=error)
+                    is_not_found = error is not None and "HTTPNotFoundError" in error
+                    if error is not None and "HTTPNotFoundError" not in error:
+                        any_error = True
+
+                    db_media.download_add(
+                        args,
+                        original_path,
+                        m,
+                        local_path,
+                        error=error,
+                        mark_deleted=is_not_found,
+                        delete_webpath_entry=(
+                            not any_error if i == len(dl_paths) - 1 else False
+                        ),  # only check if last download link
+                    )
             else:
                 raise NotImplementedError
         except Exception:

@@ -563,5 +563,5 @@ def download(args, m) -> None:
         info,
         local_path,
         error=None if download_status == DLStatus.SUCCESS else ydl_errors_txt,
-        unrecoverable_error=download_status == DLStatus.UNRECOVERABLE_ERROR,
+        mark_deleted=download_status == DLStatus.UNRECOVERABLE_ERROR,
     )
