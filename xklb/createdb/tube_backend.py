@@ -116,7 +116,7 @@ def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True) -> 
                         if not info.get("playlist_id") or webpath == playlist_path:
                             log.warning("Importing playlist-less media %s", playlist_path)
                         db_playlists.add(args, playlist_path, info, extractor_key=extractor_key)
-                        log.info("playlists.add %s", t.elapsed())
+                        log.debug("playlists.add %s", t.elapsed())
 
                     if args.ignore_errors:
                         if webpath in playlists_of_playlists and not playlist_root:
@@ -126,7 +126,7 @@ def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True) -> 
                             raise ExistingPlaylistVideoReached  # prevent infinite bug
 
                     get_playlist_metadata(args, webpath, ydl_opts, playlist_root=False)
-                    log.info("get_playlist_metadata %s", t.elapsed())
+                    log.debug("get_playlist_metadata %s", t.elapsed())
                     playlists_of_playlists.add(webpath)
                     return [], info
 
@@ -140,10 +140,10 @@ def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True) -> 
                     else:
                         # add sub-playlist
                         entry["playlists_id"] = db_playlists.add(args, playlist_path, info, extractor_key=extractor_key)
-                        log.info("playlists.add2 %s", t.elapsed())
+                        log.debug("playlists.add2 %s", t.elapsed())
 
                     db_media.playlist_media_add(args, webpath, entry)  # type: ignore
-                    log.info("media.playlist_media_add %s", t.elapsed())
+                    log.debug("media.playlist_media_add %s", t.elapsed())
 
                     added_media_count += 1
                     if added_media_count > 1:
@@ -154,11 +154,11 @@ def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True) -> 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.add_post_processor(AddToArchivePP(), when="pre_process")
 
-        log.info("yt-dlp initialized %s", t.elapsed())
+        log.debug("yt-dlp initialized %s", t.elapsed())
         count_before_extract = added_media_count
         try:
             pl = ydl.extract_info(playlist_path, download=False, process=True)
-            log.info("ydl.extract_info done %s", t.elapsed())
+            log.debug("ydl.extract_info done %s", t.elapsed())
         except yt_dlp.DownloadError:
             log.error("[%s] DownloadError skipping", playlist_path)
             return
@@ -466,7 +466,7 @@ def download(args, m) -> None:
     webpath = m["path"]
     temp_path, local_path = None, None
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        log.info("[yt-dlp]: Downloading %s", webpath)
+        log.debug("[yt-dlp]: Downloading %s", webpath)
         try:
             info = ydl.extract_info(webpath, download=True)
         except (

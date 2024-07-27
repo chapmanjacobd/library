@@ -122,7 +122,7 @@ def parse_inner_urls(args, url, markup):
 
 
 def get_inner_urls(args, url):
-    log.info("Loading links from %s", url)
+    log.debug("Loading links from %s", url)
 
     is_error = False
     if args.selenium:

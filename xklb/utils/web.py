@@ -474,7 +474,7 @@ def post_download(args):
     min_sleep_interval = getattr(args, "sleep_interval") or 0
     sleep_interval = random.uniform(min_sleep_interval, getattr(args, "max_sleep_interval") or min_sleep_interval)
     if sleep_interval > 0:
-        log.info("[download] Sleeping %s seconds ...", sleep_interval)
+        log.debug("[download] Sleeping %s seconds ...", sleep_interval)
         time.sleep(sleep_interval)
 
 
@@ -499,8 +499,6 @@ def download_url(args, url, output_path=None, retry_num=0):
         if output_path == ".":
             log.warning("Skipping directory %s", url)
             return
-        else:
-            log.info("Writing %s to %s", url, output_path)
 
         p = Path(output_path)
         p.parent.mkdir(parents=True, exist_ok=True)
@@ -508,14 +506,14 @@ def download_url(args, url, output_path=None, retry_num=0):
             if remote_size:
                 local_size = p.stat().st_size
                 if local_size == remote_size:
-                    log.warning(f"Download skipped. File with same size already exists: {output_path}")
+                    log.warning(f"Skipped download. File with same size already exists: {output_path}")
                     post_download(args)
                     return output_path
                 elif local_size < 5242880:  # TODO: check if first few kilobytes match what already exists locally...
                     p.unlink()
                 else:
                     log.warning(
-                        f"Download resuming from {strings.file_size(local_size)} ({strings.safe_percent(local_size/remote_size)}): {output_path}"
+                        f"Resuming download. {strings.file_size(local_size)} => {strings.file_size(remote_size)} ({strings.safe_percent(local_size/remote_size)}): {output_path}"
                     )
                     headers = {"Range": f"bytes={local_size}-"}
                     r.close()
@@ -526,6 +524,8 @@ def download_url(args, url, output_path=None, retry_num=0):
                         r = session.get(url, stream=True)
             else:
                 p.unlink()
+        else:
+            log.info("Writing %s \n\tto %s", url, output_path)
 
         try:
             with open(output_path, "ab") as f:
@@ -545,7 +545,7 @@ def download_url(args, url, output_path=None, retry_num=0):
                 if e.errno in consts.EnvironmentErrors:
                     raise
             retry_num += 1
-            log.info("Retry #%s %s", retry_num, url)
+            log.debug("Retry #%s %s", retry_num, url)
             time.sleep(retry_num)
             return download_url(args, url, output_path, retry_num)
 
@@ -843,7 +843,7 @@ def fake_title(url):
 def sleep(args, min=0):
     sleep_interval = getattr(args, "sleep_interval_requests") or min
     if sleep_interval > 0:
-        log.info("Sleeping %s seconds ...", sleep_interval)
+        log.debug("Sleeping %s seconds ...", sleep_interval)
         time.sleep(sleep_interval)
 
 
