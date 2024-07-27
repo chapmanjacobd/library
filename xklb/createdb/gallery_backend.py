@@ -117,7 +117,7 @@ def download(args, m):
 
     webpath = m["path"]
 
-    log.info("[gallery-dl]: Downloading %s", webpath)
+    log.debug("[gallery-dl]: Downloading %s", webpath)
     try:
         job = gallery_dl.job.DownloadJob(webpath)
     except gallery_dl.exception.NoExtractorError:
