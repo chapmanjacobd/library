@@ -1,4 +1,4 @@
-import argparse, json, time
+import argparse, json
 from sqlite3 import IntegrityError
 
 from xklb.utils import arggroups, argparse_utils, nums, objects, web
@@ -245,7 +245,7 @@ def mam_search():
 
         save_to_db(args, data)
 
-        time.sleep(1)
+        web.sleep(args, min=1)
 
 
 if __name__ == "__main__":

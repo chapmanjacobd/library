@@ -85,7 +85,7 @@ def parse_gdl_job_status(job_status, path, ignore_errors=False):
         # or by reading gallery_dl log stream
         error = "HTTPError"
         if job_status & 8:
-            error = "HTTPNotFoundError"
+            error = "HTTPNotFound"
         errors.append(error)
         log.debug("[%s]: Unrecoverable error %s. %s", path, error, strings.combine(errors))
 
@@ -117,6 +117,7 @@ def download(args, m):
 
     webpath = m["path"]
 
+    log.info("[gallery-dl]: Downloading %s", webpath)
     try:
         job = gallery_dl.job.DownloadJob(webpath)
     except gallery_dl.exception.NoExtractorError:
@@ -139,7 +140,7 @@ def download(args, m):
         info,
         local_path=local_path,
         error=strings.combine(errors),
-        mark_deleted="HTTPNotFoundError" in errors,
+        mark_deleted="HTTPNotFound" in errors,
     )
 
 
@@ -234,7 +235,7 @@ def get_playlist_metadata(args, playlist_path):
             playlist_path,
             info,
             error=strings.combine(errors),
-            unrecoverable_error="HTTPNotFoundError" in errors,
+            unrecoverable_error="HTTPNotFound" in errors,
         )
 
         added_media_count += 1

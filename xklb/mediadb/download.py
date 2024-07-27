@@ -228,7 +228,7 @@ def download(args=None) -> None:
                 for i, dl_path in enumerate(dl_paths):
                     error = None
                     try:
-                        local_path = web.download_url(dl_path, output_prefix=args.prefix)
+                        local_path = web.download_url(args, dl_path)
                     except RuntimeError as e:
                         local_path = None
                         error = str(e)
@@ -243,8 +243,8 @@ def download(args=None) -> None:
                         if result is not None:
                             local_path = str(result)
 
-                    is_not_found = error is not None and "HTTPNotFoundError" in error
-                    if error is not None and "HTTPNotFoundError" not in error:
+                    is_not_found = error is not None and "HTTPNotFound" in error
+                    if error is not None and "HTTPNotFound" not in error:
                         any_error = True
 
                     db_media.download_add(

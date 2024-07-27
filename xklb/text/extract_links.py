@@ -122,6 +122,8 @@ def parse_inner_urls(args, url, markup):
 
 
 def get_inner_urls(args, url):
+    log.info("Loading links from %s", url)
+
     is_error = False
     if args.selenium:
         web.selenium_get_page(args, url)
@@ -142,7 +144,7 @@ def get_inner_urls(args, url):
             try:
                 r = web.session.get(url, timeout=120)
             except Exception as e:
-                if 'too many 429 error' in str(e):
+                if "too many 429 error" in str(e):
                     raise
                 log.exception("Could not get a valid response from the server")
                 return None
@@ -155,6 +157,8 @@ def get_inner_urls(args, url):
 
         yield from parse_inner_urls(args, url, markup)
 
+    web.sleep(args)
+
     if is_error:
         return None
 
@@ -163,7 +167,7 @@ def print_or_download(args, d):
     link = d["link"]
     if args.download:
         with suppress(RuntimeError):
-            web.download_url(link)
+            web.download_url(args, link)
     else:
         if not args.no_url_decode:
             link = web.url_decode(link).strip()
@@ -182,7 +186,7 @@ def extract_links() -> None:
                 url = web.url_decode(url).strip()
             if args.download:
                 with suppress(RuntimeError):
-                    web.download_url(url)
+                    web.download_url(args, url)
             else:
                 printing.pipe_print(url)
         return

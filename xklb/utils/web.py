@@ -1,4 +1,4 @@
-import argparse, datetime, functools, os, re, tempfile, time, urllib.error, urllib.parse, urllib.request
+import argparse, datetime, functools, os, random, re, tempfile, time, urllib.error, urllib.parse, urllib.request
 from email.message import Message
 from pathlib import Path
 from shutil import which
@@ -8,7 +8,8 @@ import bs4, requests
 from idna import decode as puny_decode
 from idna import encode as puny_encode
 
-from xklb.utils import consts, db_utils, iterables, nums, path_utils, pd_utils, strings, web
+from xklb.data.http_errors import HTTPTooManyRequests, raise_for_status
+from xklb.utils import consts, db_utils, iterables, nums, path_utils, pd_utils, strings
 from xklb.utils.log_utils import clamp_index, log
 
 session = None
@@ -18,17 +19,17 @@ def _get_retry_adapter(args):
     import requests.adapters
 
     same_host_threads = getattr(args, "threads", None) or 10
-    max_retries = getattr(args, "http_max_retries", 8)
-    max_redirects = getattr(args, "http_max_redirects", 4)
+    http_retries = getattr(args, "http_retries", 8)
+    http_max_redirects = getattr(args, "http_max_redirects", 4)
 
     retry = requests.adapters.Retry(
-        total=max_retries,
-        connect=max_retries,
-        read=max_retries // 3,
-        status=max_retries // 2,
+        total=http_retries,
+        connect=http_retries,
+        read=http_retries // 3,
+        status=http_retries // 2,
         other=1,
-        redirect=max_redirects,
-        raise_on_redirect=max_redirects <= 0,
+        redirect=http_max_redirects,
+        raise_on_redirect=http_max_redirects <= 0,
         backoff_factor=3,
         backoff_jitter=2,
         backoff_max=22 * 60,
@@ -246,7 +247,7 @@ def set_timestamp(headers, path):
 
 
 def load_selenium(args, wire=False):
-    if getattr(args, 'driver', False):
+    if getattr(args, "driver", False):
         return
 
     if wire:
@@ -468,35 +469,38 @@ def url_to_local_path(url, response=None, output_path=None, output_prefix=None):
 
     return output_path
 
-class HTTPTooManyRequests(EnvironmentError):
-    pass
 
-def download_url(url, output_path=None, output_prefix=None, chunk_size=8 * 1024 * 1024, retry_num=0, max_retries=10):
+def post_download(args):
+    min_sleep_interval = getattr(args, "sleep_interval") or 0
+    sleep_interval = random.uniform(min_sleep_interval, getattr(args, "max_sleep_interval") or min_sleep_interval)
+    if sleep_interval > 0:
+        log.info("[download] Sleeping %s seconds ...", sleep_interval)
+        time.sleep(sleep_interval)
+
+
+def download_url(args, url, output_path=None, retry_num=0):
     global session
     if session is None:
         log.warning("Creating new web.session")
         session = requests_session()
 
-    if retry_num > max_retries:
+    if retry_num > args.http_download_retries:
         raise RuntimeError(f"Max retries exceeded for {url}")
 
-    log.debug("%s retry %s", url, retry_num)
+    log.debug("Downloading file %s retry %s", url, retry_num)
     with session.get(url, stream=True) as r:
         if not 200 <= r.status_code < 400:
             log.error(f"Error {r.status_code} {url}")
-            if r.status_code == 404:
-                raise RuntimeError("HTTPNotFoundError")
-            elif r.status_code == 429:
-                raise HTTPTooManyRequests
+            raise_for_status(r.status_code)
 
         remote_size = nums.safe_int(r.headers.get("Content-Length"))
 
-        output_path = url_to_local_path(url, response=r, output_path=output_path, output_prefix=output_prefix)
+        output_path = url_to_local_path(url, response=r, output_path=output_path, output_prefix=args.prefix)
         if output_path == ".":
             log.warning("Skipping directory %s", url)
             return
         else:
-            log.info("Saving %s to %s", url, output_path)
+            log.info("Writing %s to %s", url, output_path)
 
         p = Path(output_path)
         p.parent.mkdir(parents=True, exist_ok=True)
@@ -505,6 +509,7 @@ def download_url(url, output_path=None, output_prefix=None, chunk_size=8 * 1024 
                 local_size = p.stat().st_size
                 if local_size == remote_size:
                     log.warning(f"Download skipped. File with same size already exists: {output_path}")
+                    post_download(args)
                     return output_path
                 elif local_size < 5242880:  # TODO: check if first few kilobytes match what already exists locally...
                     p.unlink()
@@ -524,7 +529,7 @@ def download_url(url, output_path=None, output_prefix=None, chunk_size=8 * 1024 
 
         try:
             with open(output_path, "ab") as f:
-                for chunk in r.iter_content(chunk_size=chunk_size):
+                for chunk in r.iter_content(chunk_size=args.download_chunk_size):
                     if chunk:
                         f.write(chunk)
 
@@ -542,9 +547,11 @@ def download_url(url, output_path=None, output_prefix=None, chunk_size=8 * 1024 
             retry_num += 1
             log.info("Retry #%s %s", retry_num, url)
             time.sleep(retry_num)
-            return download_url(url, output_path, output_prefix, chunk_size, retry_num)
+            return download_url(args, url, output_path, retry_num)
 
         set_timestamp(r.headers, output_path)
+
+    post_download(args)
     return output_path
 
 
@@ -833,7 +840,19 @@ def fake_title(url):
     return title.strip()
 
 
+def sleep(args, min=0):
+    sleep_interval = getattr(args, "sleep_interval_requests") or min
+    if sleep_interval > 0:
+        log.info("Sleeping %s seconds ...", sleep_interval)
+        time.sleep(sleep_interval)
+
+
 def get_title(args, url):
+    global session
+    if session is None:
+        log.warning("Creating new web.session")
+        session = requests_session()
+
     import requests.exceptions
     from bs4 import BeautifulSoup
 
@@ -843,13 +862,16 @@ def get_title(args, url):
                 html_text = f.read()
             url = "file://" + url
         elif args.selenium:
-            web.selenium_get_page(args, url)
+            selenium_get_page(args, url)
             html_text = args.driver.page_source
         else:
-            html_text = web.session.get(url).text
+            html_text = session.get(url).text
 
         soup = BeautifulSoup(html_text, "lxml")
         title = soup.title.text.strip() if soup.title else url
     except requests.exceptions.RequestException as e:
         title = fake_title(url)
+
+    sleep(args)
+
     return title
