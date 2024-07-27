@@ -11,7 +11,6 @@ from idna import encode as puny_encode
 from xklb.utils import consts, db_utils, iterables, nums, path_utils, pd_utils, strings, web
 from xklb.utils.log_utils import clamp_index, log
 
-headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:121.0) Gecko/20100101 Firefox/121.0"}
 session = None
 
 
@@ -84,6 +83,8 @@ def parse_cookies_from_browser(input_str):
 def requests_session(args=argparse.Namespace()):
     global session  # TODO: maybe run_once similar to log_utils.log
 
+    from yt_dlp.utils.networking import std_headers
+
     if session is None:
         import requests
 
@@ -95,9 +96,10 @@ def requests_session(args=argparse.Namespace()):
         session = requests.Session()
         session.mount("http://", _get_retry_adapter(args))
         session.mount("https://", _get_retry_adapter(args))
-        session.request = functools.partial(session.request, headers=headers, timeout=(5, 45))  # type: ignore
-        if max_redirects == 0:
-            session.get = functools.partial(session.get, allow_redirects=False)  # type: ignore
+
+        std_params = dict(headers=std_headers, timeout=(8, 45), allow_redirects=max_redirects > 0)
+        session.request = functools.partial(session.request, **std_params)
+        session.get = functools.partial(session.get, **std_params)
 
         if getattr(args, "allow_insecure", False):
             from urllib3.exceptions import InsecureRequestWarning
@@ -244,6 +246,9 @@ def set_timestamp(headers, path):
 
 
 def load_selenium(args, wire=False):
+    if getattr(args, 'driver', False):
+        return
+
     if wire:
         import logging
 
@@ -463,6 +468,8 @@ def url_to_local_path(url, response=None, output_path=None, output_prefix=None):
 
     return output_path
 
+class HTTPTooManyRequests(EnvironmentError):
+    pass
 
 def download_url(url, output_path=None, output_prefix=None, chunk_size=8 * 1024 * 1024, retry_num=0, max_retries=10):
     global session
@@ -479,6 +486,8 @@ def download_url(url, output_path=None, output_prefix=None, chunk_size=8 * 1024 
             log.error(f"Error {r.status_code} {url}")
             if r.status_code == 404:
                 raise RuntimeError("HTTPNotFoundError")
+            elif r.status_code == 429:
+                raise HTTPTooManyRequests
 
         remote_size = nums.safe_int(r.headers.get("Content-Length"))
 
@@ -525,6 +534,8 @@ def download_url(url, output_path=None, output_prefix=None, chunk_size=8 * 1024 
                     msg = f"Incomplete download ({strings.safe_percent(downloaded_size/remote_size)}) {output_path}"
                     raise RuntimeError(msg)
         except Exception as e:
+            if isinstance(e, HTTPTooManyRequests):
+                raise
             if isinstance(e, OSError):
                 if e.errno in consts.EnvironmentErrors:
                     raise
@@ -676,8 +687,10 @@ def scroll_down(driver):
 
 
 def extract_html(url) -> str:
+    from yt_dlp.utils.networking import std_headers
+
     session = requests_session()
-    r = session.get(url, timeout=120, headers=headers)
+    r = session.get(url, timeout=120, headers=std_headers)
     r.raise_for_status()
     markup = r.text
     return markup

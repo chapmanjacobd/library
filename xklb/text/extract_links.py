@@ -98,7 +98,7 @@ def parse_inner_urls(args, url, markup):
     if args.src:
         link_attrs.add("src")
     if args.data_src:
-        link_attrs.add("data-src")
+        link_attrs.update({"data-src", "data-url", "data-original"})
 
     delimit_fn = lambda el: any(el.has_attr(s) for s in link_attrs)
     tags = web.tags_with_text(soup, delimit_fn)
@@ -141,7 +141,9 @@ def get_inner_urls(args, url):
         else:
             try:
                 r = web.session.get(url, timeout=120)
-            except Exception:
+            except Exception as e:
+                if 'too many 429 error' in str(e):
+                    raise
                 log.exception("Could not get a valid response from the server")
                 return None
             if r.status_code == 404:
