@@ -12,6 +12,7 @@ from xklb.utils import (
     objects,
     processes,
     sql_utils,
+    web,
 )
 from xklb.utils.consts import DEFAULT_FILE_ROWS_READ_LIMIT, DBType
 from xklb.utils.log_utils import log
@@ -1362,7 +1363,8 @@ def selenium(parent_parser):
 def selenium_post(args):
     if args.scroll or args.firefox or args.chrome or args.auto_pager or args.poke:
         args.selenium = True
-
+    if args.selenium:
+        web.load_selenium(args)
 
 def sample_hash_bytes(parent_parser):
     parser = parent_parser.add_argument_group("Sample Hash")
