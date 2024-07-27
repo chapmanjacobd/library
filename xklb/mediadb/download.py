@@ -224,6 +224,10 @@ def download(args=None) -> None:
                     for link_dict in get_inner_urls(args, original_path):
                         dl_paths.append(link_dict["link"])
 
+                if not dl_paths:
+                    log.info("No relevant links in page. Recording download attempt: %s", original_path)
+                    db_media.download_add(args, original_path, error="No relevant links in page")
+
                 any_error = False
                 for i, dl_path in enumerate(dl_paths):
                     error = None
