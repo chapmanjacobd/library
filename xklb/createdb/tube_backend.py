@@ -466,6 +466,7 @@ def download(args, m) -> None:
     webpath = m["path"]
     temp_path, local_path = None, None
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        log.info("[yt-dlp]: Downloading %s", webpath)
         try:
             info = ydl.extract_info(webpath, download=True)
         except (

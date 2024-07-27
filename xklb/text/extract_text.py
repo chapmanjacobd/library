@@ -85,6 +85,8 @@ def get_text(args, url):
 
         yield from parse_text(args, markup)
 
+    web.sleep(args)
+
     if is_error:
         return None
 

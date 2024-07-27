@@ -1336,7 +1336,11 @@ def requests(parent_parser):
         action="store_true",
         help='Allow loading data from non-TLS, non-"https" servers',
     )
-    parser.add_argument("--http-max-retries", "--max-retries", "--retries", type=int, default=8, help="Use N retries")
+    parser.add_argument(
+        "--http-retries", "--http-max-retries", "--retries", type=int, default=8, help="Use N retries for requests"
+    )
+    parser.add_argument("--http-download-retries", type=int, default=10, help="Use N retries for downloads")
+    parser.add_argument("--download-chunk-size", type=nums.human_to_bytes, default="8MB")
     parser.add_argument(
         "--http-max-redirects",
         "--max-redirects",
@@ -1344,6 +1348,30 @@ def requests(parent_parser):
         type=int,
         default=4,
         help="Allow N redirects (also counted as a retry)",
+    )
+    parser.add_argument(
+        "--sleep-requests",
+        metavar="SECONDS",
+        dest="sleep_interval_requests",
+        type=float,
+        help="Number of seconds to sleep between requests during data extraction",
+    )
+    parser.add_argument(
+        "--sleep-interval",
+        "--min-sleep-interval",
+        metavar="SECONDS",
+        type=float,
+        help=(
+            "Number of seconds to sleep before each download. "
+            "This is the minimum time to sleep when used along with --max-sleep-interval "
+            "(Alias: --min-sleep-interval)"
+        ),
+    )
+    parser.add_argument(
+        "--max-sleep-interval",
+        metavar="SECONDS",
+        type=float,
+        help="Maximum number of seconds to sleep. Can only be used along with --min-sleep-interval",
     )
 
 
@@ -1365,6 +1393,7 @@ def selenium_post(args):
         args.selenium = True
     if args.selenium:
         web.load_selenium(args)
+
 
 def sample_hash_bytes(parent_parser):
     parser = parent_parser.add_argument_group("Sample Hash")

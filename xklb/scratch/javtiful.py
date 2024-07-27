@@ -42,7 +42,7 @@ def javtiful() -> None:
         finally:
             web.quit_selenium(args)
 
-        web.download_url(master_playlist_url, output_path)
+        web.download_url(args, master_playlist_url, output_path)
 
         local_probe = processes.FFProbe(output_path)
         assert local_probe.has_audio

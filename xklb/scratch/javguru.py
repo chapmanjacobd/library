@@ -116,7 +116,7 @@ def jav_guru() -> None:
                 Path(output_path).unlink()
 
         if provider == "ST":
-            web.download_url(master_playlist_url, output_path)  # type: ignore
+            web.download_url(args, master_playlist_url, output_path)  # type: ignore
         elif provider == "TV":
             processes.cmd(
                 "ffmpeg",
