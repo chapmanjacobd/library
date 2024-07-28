@@ -258,14 +258,10 @@ def media_printer(args, data, units=None, media_len=None) -> None:
         printing.table(tbl, colalign=colalign)
 
         if len(media) > 1:
-            print(
-                f"{media_len or len(media)} {units}"
-                + (
-                    f" (limited by --limit {args.limit})"
-                    if args.limit and int(args.limit) <= len(media) and len(tbl) <= int(args.limit)
-                    else ""
-                ),
-            )
+            print(f"{media_len or len(media)} {units}")
+            limit = getattr(args, 'limit', None)
+            if limit and int(limit) <= len(media) and len(tbl) <= int(limit):
+                print(f" (limited by --limit {limit})")
 
         if total_duration > 0:
             total_duration = strings.duration(total_duration)

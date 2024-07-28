@@ -1,6 +1,7 @@
 import sys
 
 from xklb import usage
+from xklb.playback import media_printer
 from xklb.utils import arggroups, argparse_utils, file_utils, web
 
 
@@ -41,6 +42,8 @@ def file_markdown(args, path):
             breakpoint()
         if args.to_json:
             df.to_json(sys.stdout, orient="records", lines=True)
+        elif args.print:
+            media_printer.media_printer(args, df.to_dict(orient="records"))
         else:
             print(f"## {path}:{df.name}")
             print()

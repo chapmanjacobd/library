@@ -67,6 +67,7 @@ def connect(args, conn=None, **kwargs):
 
     db = DB(conn or args.database, tracer=tracer if args.verbose >= consts.LOG_DEBUG_SQL else None, **kwargs)  # type: ignore
     with db.conn:  # type: ignore
+        db.conn.execute("PRAGMA threads = 4")  # type: ignore
         db.conn.execute("PRAGMA main.cache_size = 8000")  # type: ignore
 
     db.enable_wal()
