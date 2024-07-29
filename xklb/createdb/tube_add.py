@@ -71,7 +71,7 @@ def tube_add(args=None) -> None:
                 continue
 
             if path in known_playlists:
-                log.info("[%s]: Already added. Skipping!", path)
+                log.info("[%s]: Known already. Skipping!", path)
                 continue
 
             tube_backend.get_playlist_metadata(args, path, tube_backend.tube_opts(args))

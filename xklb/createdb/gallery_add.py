@@ -57,7 +57,7 @@ def gallery_add(args=None) -> None:
 
         for path in paths:
             if path in known_playlists:
-                log.info("[%s]: Already added. Skipping!", path)
+                log.info("[%s]: Known already. Skipping!", path)
                 continue
 
             if args.safe and not gallery_backend.is_supported(args, path):

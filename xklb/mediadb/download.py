@@ -194,7 +194,7 @@ def download(args=None) -> None:
             if d:
                 if d["time_deleted"]:
                     log.info(
-                        "[%s]: Download marked deleted (%s ago). Skipping!",
+                        "[%s]: Download was marked as deleted %s ago. Skipping!",
                         m["path"],
                         strings.duration(consts.now() - d["time_deleted"]),
                     )
@@ -202,7 +202,7 @@ def download(args=None) -> None:
                     continue
                 elif d["time_modified"]:
                     log.info(
-                        "[%s]: Download already attempted recently (%s ago). Skipping!",
+                        "[%s]: Download already attempted %s ago. Skipping!",
                         m["path"],
                         strings.duration(consts.now() - d["time_modified"]),
                     )
