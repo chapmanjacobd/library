@@ -492,7 +492,9 @@ def scan_path(args, path_str: str) -> int:
         print(f"[{path}] Adding {len(new_files)} new media")
         # log.debug(new_files)
 
-        if DBType.text in args.profiles:
+        if getattr(args, "process", False) and n_jobs:
+            batch_count = n_jobs
+        elif DBType.text in args.profiles:
             batch_count = int(os.cpu_count() or 4)
         elif DBType.image in args.profiles:
             batch_count = consts.SQLITE_PARAM_LIMIT // 20

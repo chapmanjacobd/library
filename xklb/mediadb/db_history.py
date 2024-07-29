@@ -43,6 +43,7 @@ def add(args, paths=None, media_ids=None, time_played=None, playhead=None, mark_
         if media_id
     ]
     args.db["history"].insert_all(iterables.list_dict_filter_bool(rows), pk="id", alter=True)
+    return len(media_ids)
 
 
 def remove(args, paths=None, media_ids=None):

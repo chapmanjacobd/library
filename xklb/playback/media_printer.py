@@ -116,6 +116,27 @@ def media_printer(args, data, units=None, media_len=None) -> None:
     except AttributeError:
         tables = []
 
+    if getattr(args, "delete_files", False):
+        marked = post_actions.delete_media(args, [d["path"] for d in media])
+        log.warning(f"Deleted {marked} files")
+
+    if getattr(args, "delete_rows", False) or "D" in print_args:
+        with args.db.conn:
+            for d in media:
+                args.db["media"].delete_where("path = ?", [d["path"]])
+        log.warning(f"Deleted {len(media)} rows")
+
+    if "r" in print_args:
+        marked = db_media.mark_media_deleted(args, [d["path"] for d in media if not Path(d["path"]).exists()])
+        log.warning(f"Marked {marked} metadata records as deleted")
+    elif getattr(args, "mark_deleted", False) or "d" in print_args:
+        marked = db_media.mark_media_deleted(args, [d["path"] for d in media])
+        log.warning(f"Marked {marked} metadata records as deleted")
+
+    if getattr(args, "mark_watched", False) or "w" in print_args:
+        marked = db_history.add(args, [d["path"] for d in media], mark_done=True)
+        log.warning(f"Marked {marked} metadata records as watched")
+
     total_duration = sum(m.get("duration") or 0 for m in media)
     if "a" in print_args and ("Aggregate" not in media[0].get("path") or ""):
         if "count" in media[0]:
@@ -156,29 +177,6 @@ def media_printer(args, data, units=None, media_len=None) -> None:
                     D[f"sum_{c}"] = sum((d[c] or 0) for d in media)
                     D[f"avg_{c}"] = nums.safe_mean(d[c] for d in media)
         media = [D]
-
-    else:
-        # NOTE: when changing/moving this code be sure to preserve the behavior that -pa does not run the code
-        if getattr(args, "delete_files", False):
-            marked = post_actions.delete_media(args, [d["path"] for d in media])
-            log.warning(f"Deleted {marked} files")
-
-        if getattr(args, "delete_rows", False) or "D" in print_args:
-            with args.db.conn:
-                for d in media:
-                    args.db["media"].delete_where("path = ?", [d["path"]])
-            log.warning(f"Deleted {len(media)} rows")
-
-        if "r" in print_args:
-            marked = db_media.mark_media_deleted(args, [d["path"] for d in media if not Path(d["path"]).exists()])
-            log.warning(f"Marked {marked} metadata records as deleted")
-        elif getattr(args, "mark_deleted", False) or "d" in print_args:
-            marked = db_media.mark_media_deleted(args, [d["path"] for d in media])
-            log.warning(f"Marked {marked} metadata records as deleted")
-
-        if getattr(args, "mark_watched", False) or "w" in print_args:
-            marked = db_history.add(args, [d["path"] for d in media])
-            log.warning(f"Marked {marked} metadata records as watched")
 
     if (
         "a" not in print_args
