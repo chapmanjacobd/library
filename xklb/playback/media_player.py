@@ -381,6 +381,7 @@ class MediaPrefetcher:
     def fetch(self):
         if self.media:
             with ThreadPoolExecutor(max_workers=1) as executor:
+                fill_count = 0
                 while self.media and len(self.futures) < max(1, self.args.prefetch):
                     m = self.media.pop()
                     if m["path"] in self.ignore_paths:
@@ -389,8 +390,8 @@ class MediaPrefetcher:
                     future = executor.submit(self.prep_media, m)  # if self.args.prefetch > 1 else []
                     self.ignore_paths.add(m["path"])
                     self.futures.append(future)
-                    log.debug("fill prefetch")
-                log.debug("prefetch full")
+                    fill_count += 1
+                log.debug("prefetch full (inserted %s)", fill_count)
         return self
 
     def infer_command(self, m) -> tuple[list[str], bool]:
@@ -477,7 +478,6 @@ class MediaPrefetcher:
     def prep_media(self, m: dict):
         t = log_utils.Timer()
         self.args.db = db_utils.connect(self.args)
-        log.debug("db.connect: %s", t.elapsed())
 
         m["original_path"] = m["path"]
         if not m["path"].startswith("http"):

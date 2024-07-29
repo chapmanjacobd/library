@@ -5,8 +5,6 @@ from timeit import default_timer
 from IPython.core import ultratb
 from IPython.terminal import debugger
 
-sys.breakpointhook = debugger.set_trace
-
 
 def clamp_index(arr, idx):
     return arr[min(max(idx, 0), len(arr) - 1)]
@@ -32,7 +30,10 @@ def argparse_log() -> logging.Logger:
     args, _unknown = parser.parse_known_args()
 
     try:
-        if args.verbose > 0 and os.getpgrp() == os.tcgetpgrp(sys.stdout.fileno()):
+        has_stdin = os.getpgrp() == os.tcgetpgrp(sys.stdin.fileno())
+        has_stdout = os.getpgrp() == os.tcgetpgrp(sys.stdout.fileno())
+        if args.verbose > 0 and has_stdin and has_stdout:
+            sys.breakpointhook = debugger.set_trace
             sys.excepthook = ultratb.FormattedTB(
                 mode="Verbose" if args.verbose > 1 else "Context",
                 color_scheme="Neutral",
