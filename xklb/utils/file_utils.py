@@ -513,6 +513,14 @@ def read_file_to_dataframes(
     ):
         dfs = [pd.read_csv(path, nrows=end_row, skiprows=start_row or 0, encoding=encoding)]
     elif mimetype in (
+        "plain",
+        "plaintext",
+        "wsv",
+        "text/wsv",
+        "text/whitespace-separated-values",
+    ):
+        dfs = [pd.read_csv(path, delim_whitespace=True, nrows=end_row, skiprows=start_row or 0, encoding=encoding)]
+    elif mimetype in (
         "tsv",
         "text/tsv",
         "text/tab-separated-values",
