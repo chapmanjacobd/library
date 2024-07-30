@@ -78,7 +78,9 @@ def print_info(args, df):
         print_df(df.head(6))
 
     print("### Summary statistics")
-    print_df(df.describe())
+    summary_stats = df.describe()
+    summary_stats = pd.concat([summary_stats, df.select_dtypes("number").agg(['sum', 'skew', 'kurt'])])
+    print_df(summary_stats)
 
     converted = df.convert_dtypes()
     same_dtypes = []
