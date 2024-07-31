@@ -27,6 +27,7 @@ def run_once(f):  # noqa: ANN201
 def argparse_log() -> logging.Logger:
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--verbose", "-v", action="count", default=0)
+    parser.add_argument("--no-pdb", action="store_true")
     args, _unknown = parser.parse_known_args()
 
     try:
@@ -34,12 +35,13 @@ def argparse_log() -> logging.Logger:
         has_stdout = os.getpgrp() == os.tcgetpgrp(sys.stdout.fileno())
         if args.verbose > 0 and has_stdin and has_stdout:
             sys.breakpointhook = debugger.set_trace
-            sys.excepthook = ultratb.FormattedTB(
-                mode="Verbose" if args.verbose > 1 else "Context",
-                color_scheme="Neutral",
-                call_pdb=True,
-                debugger_cls=debugger.TerminalPdb,
-            )
+            if not args.no_pdb:
+                sys.excepthook = ultratb.FormattedTB(
+                    mode="Verbose" if args.verbose > 1 else "Context",
+                    color_scheme="Neutral",
+                    call_pdb=True,
+                    debugger_cls=debugger.TerminalPdb,
+                )
     except Exception:
         pass
 

@@ -100,6 +100,8 @@ def parse_inner_urls(args, url, markup):
     if args.data_src:
         link_attrs.update({"data-src", "data-url", "data-original"})
 
+    url_renames = args.url_renames.items()
+
     delimit_fn = lambda el: any(el.has_attr(s) for s in link_attrs)
     tags = web.tags_with_text(soup, delimit_fn)
     for tag in tags:
@@ -113,6 +115,9 @@ def parse_inner_urls(args, url, markup):
                 link_text = strings.remove_consecutive_whitespace(tag.text.strip())
 
                 if is_desired_url(args, link, link_text, tag.before_text, tag.after_text):
+                    for k, v in url_renames:
+                        link = link.replace(k, v)
+
                     yield {
                         "link": link,
                         "link_text": strings.strip_enclosing_quotes(link_text),

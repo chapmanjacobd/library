@@ -488,7 +488,8 @@ def download_url(args, url, output_path=None, retry_num=0):
         raise RuntimeError(f"Max retries exceeded for {url}")
 
     log.debug("Downloading file %s retry %s", url, retry_num)
-    with session.get(url, stream=True) as r:
+    try:
+        r = session.get(url, stream=True)
         if not 200 <= r.status_code < 400:
             log.error(f"Error {r.status_code} {url}")
             raise_for_status(r.status_code)
@@ -516,11 +517,11 @@ def download_url(args, url, output_path=None, retry_num=0):
                         f"Resuming download. {strings.file_size(local_size)} => {strings.file_size(remote_size)} ({strings.safe_percent(local_size/remote_size)}): {output_path}"
                     )
                     headers = {"Range": f"bytes={local_size}-"}
-                    r.close()
+                    r.close()  # close previous session before opening a new one
                     r = session.get(url, headers=headers, stream=True)
                     if r.status_code != 206:  # HTTP Partial Content
                         p.unlink()
-                        r.close()
+                        r.close()  # close previous session before opening a new one
                         r = session.get(url, stream=True)
             else:
                 p.unlink()
@@ -539,6 +540,7 @@ def download_url(args, url, output_path=None, retry_num=0):
                     msg = f"Incomplete download ({strings.safe_percent(downloaded_size/remote_size)}) {output_path}"
                     raise RuntimeError(msg)
         except Exception as e:
+            r.close()
             if isinstance(e, HTTPTooManyRequests):
                 raise
             if isinstance(e, OSError):
@@ -550,6 +552,8 @@ def download_url(args, url, output_path=None, retry_num=0):
             return download_url(args, url, output_path, retry_num)
 
         set_timestamp(r.headers, output_path)
+    finally:
+        r.close()
 
     post_download(args)
     return output_path
