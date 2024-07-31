@@ -31,11 +31,21 @@ def get_caller_name():
             frame = frame.f_back
             return frame.f_code.co_name  # type: ignore
 
+def get_argparse_defaults(parser):
+    defaults = {}
+    for action in parser._actions:
+        if not action.required and action.default is not None and action.dest != "help":
+            default = action.default
+            if action.type is not None:
+                default = action.type(default)
+            defaults[action.dest] = default
+    return defaults
 
 def args_post(args, parser, create_db=False):
     args.ext = [s.lower() for s in args.ext]
 
-    args.defaults = {k: v for k, v in args.__dict__.items() if parser.get_default(k) == v}
+    parser_defaults = get_argparse_defaults(parser)
+    args.defaults = {k: v for k, v in args.__dict__.items() if parser_defaults.get(k, None) == v}
     settings = {
         k: v
         for k, v in args.__dict__.items()
@@ -114,6 +124,7 @@ def debug(parent_parser):
 -vvv   # debug, with SQL query printing
 -vvvv  # debug, with external libraries logging""",
     )
+    parser.add_argument("--no-pdb", action="store_true", help="Exit immediately on error. Never launch debugger")
     parser.add_argument("--timeout", "-T", metavar="TIME", help="Quit after x minutes")
     parser.add_argument("--threads", type=int, help="Load x files in parallel")
     parser.add_argument("--same-file-threads", type=int, help="Read the same file x times in parallel")
@@ -1292,6 +1303,15 @@ def filter_links(parent_parser):
         "--skip-url-decode",
         action="store_true",
         help="Skip URL-decode for --path-include/--path-exclude",
+    )
+    parser.add_argument(
+        "--url-renames",
+        "--url-replaces",
+        nargs=1,
+        action=argparse_utils.ArgparseDict,
+        default={},
+        metavar="KEY=VALUE",
+        help="Add key/value pairs for renaming: old_name=new_name",
     )
     parser.add_argument("--local-html", action="store_true", help="Treat paths as Local HTML files")
     parser.add_argument("--href", action="store_true", help="Include href values")

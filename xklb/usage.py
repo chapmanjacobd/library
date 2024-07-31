@@ -761,7 +761,7 @@ dedupe_media = """library dedupe-media [--audio | --id | --title | --filesystem]
 """
 
 dedupe_czkawka = """library dedupe-czkawka [--volume VOLUME] [--auto-seek] [--ignore-errors] [--folder] [--folder-glob [FOLDER_GLOB]] [--replace] [--no-replace] [--override-trash OVERRIDE_TRASH] [--delete-files] [--gui]
-               [--auto-select-min-ratio AUTO_SELECT_MIN_RATIO] [--all-keep] [--all-left] [--all-right] [--all-delete] [--verbose]
+               [--auto-select-min-ratio AUTO_SELECT_MIN_RATIO] [--all-keep] [--all-left] [--all-right] [--all-delete]
                czkawka_dupes_output_path
 
     Choose which duplicate to keep by opening both side-by-side in mpv
