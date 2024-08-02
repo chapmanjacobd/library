@@ -173,7 +173,10 @@ def extract_metadata(mp_args, path) -> dict[str, str | int | None] | None:
 
     if getattr(mp_args, "move", False) and not file_utils.is_file_open(path):
         dest_path = rel_mv.gen_rel_path(path, mp_args.move)
-        dest_path = path_utils.clean_path(bytes(dest_path))
+        if getattr(mp_args, "clean_path", True):
+            dest_path = path_utils.clean_path(bytes(dest_path))
+        else:
+            dest_path = str(dest_path)
         file_utils.rename_move_file(path, dest_path, simulate=mp_args.simulate)
         path = media["path"] = dest_path
 

@@ -4,7 +4,7 @@ from pathlib import Path
 from xklb import usage
 from xklb.data import ffmpeg_errors
 from xklb.mediafiles import process_image
-from xklb.utils import arggroups, argparse_utils, consts, nums, path_utils, processes, web
+from xklb.utils import arggroups, argparse_utils, consts, devices, nums, path_utils, processes, web
 from xklb.utils.arg_utils import gen_paths, kwargs_overwrite
 from xklb.utils.log_utils import log
 
@@ -58,7 +58,8 @@ def process_path(args, path, **kwargs):
         args = kwargs_overwrite(args, kwargs)
 
     output_path = Path(web.url_to_local_path(path) if str(path).startswith("http") else path)
-    output_path = Path(path_utils.clean_path(bytes(output_path), max_name_len=251))
+    if args.clean_path:
+        output_path = Path(path_utils.clean_path(bytes(output_path), max_name_len=251))
 
     path = Path(path)
 
@@ -116,9 +117,11 @@ def process_path(args, path, **kwargs):
         output_suffix = ".mkv"
     output_path = output_path.with_suffix(output_suffix)
 
-    if path == output_path:
-        log.error("Input and output files have the same names %s", path)
-        return path
+    path, output_path = devices.clobber(args, path, output_path)
+    if path is None:
+        return output_path
+    path = Path(path)
+    output_path = Path(output_path)
 
     ff_opts: list[str] = []
 
@@ -298,11 +301,13 @@ def process_path(args, path, **kwargs):
                 output_path.name.replace(".%03d", ".000")
             )  # TODO: support / return multiple paths...
 
-        if not Path(output_path).exists() or output_path.stat().st_size == 0:
+        if not output_path.exists():
+            return path
+        if output_path.stat().st_size == 0:
             output_path.unlink()  # Remove transcode
             return path
 
-        delete_original = True
+        delete_original = args.delete_original
         delete_transcode = False
 
         if video_stream and args.audio_only and not args.no_preserve_video:
@@ -319,7 +324,6 @@ def process_path(args, path, **kwargs):
             path.unlink()
 
         os.utime(output_path, (original_stats.st_atime, original_stats.st_mtime))
-
     return output_path
 
 

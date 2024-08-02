@@ -3,7 +3,7 @@ from pathlib import Path
 
 from xklb import usage
 from xklb.data import imagemagick_errors
-from xklb.utils import arggroups, argparse_utils, path_utils, processes, web
+from xklb.utils import arggroups, argparse_utils, devices, path_utils, processes, web
 from xklb.utils.arg_utils import gen_paths
 from xklb.utils.log_utils import log
 
@@ -13,6 +13,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--delete-unplayable", action="store_true")
     parser.add_argument("--max-image-height", type=int, default=2400)
     parser.add_argument("--max-image-width", type=int, default=2400)
+    parser.add_argument(
+        "--delete-original", action=argparse.BooleanOptionalAction, default=True, help="Delete source files"
+    )
+    parser.add_argument("--clean-path", action=argparse.BooleanOptionalAction, default=True, help="Clean output path")
+    arggroups.clobber(parser)
     arggroups.debug(parser)
 
     arggroups.paths_or_stdin(parser)
@@ -24,17 +29,19 @@ def parse_args() -> argparse.Namespace:
 
 def process_path(args, path):
     if str(path).startswith("http"):
-        output_path = Path(web.url_to_local_path(path))
+        output_path = web.url_to_local_path(path)
     else:
-        output_path = Path(path)
-    output_path = Path(path_utils.clean_path(bytes(output_path.with_suffix(".avif"))))
+        output_path = path
 
+    output_path = Path(output_path).with_suffix(".avif")
+    if args.clean_path:
+        output_path = path_utils.clean_path(bytes(output_path))
+
+    path, output_path = devices.clobber(args, path, output_path)
+    if path is None:
+        return output_path
     path = Path(path)
-    if path == output_path:
-        output_path = Path(path).with_suffix(".r.avif")
-        if path == output_path:
-            log.error("Input and output files must have different names %s", path)
-            return path
+    output_path = Path(output_path)
 
     if path.parent != output_path.parent:
         log.warning("Output folder will be different due to path cleaning: %s", output_path.parent)
@@ -92,7 +99,8 @@ def process_path(args, path):
         output_path.unlink()  # Remove transcode
         return path
     else:
-        path.unlink()  # Remove original
+        if args.delete_original:
+            path.unlink()  # Remove original
         os.utime(output_path, (original_stats.st_atime, original_stats.st_mtime))
 
     return output_path

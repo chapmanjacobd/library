@@ -31,6 +31,7 @@ def get_caller_name():
             frame = frame.f_back
             return frame.f_code.co_name  # type: ignore
 
+
 def get_argparse_defaults(parser):
     defaults = {}
     for action in parser._actions:
@@ -40,6 +41,7 @@ def get_argparse_defaults(parser):
                 default = action.type(default)
             defaults[action.dest] = default
     return defaults
+
 
 def args_post(args, parser, create_db=False):
     args.ext = [s.lower() for s in args.ext]
@@ -166,11 +168,10 @@ def capability_delete(parent_parser):
 
 def database(parent_parser):
     parser = parent_parser.add_argument_group("Database")
-    capability_soft_delete(parent_parser)
-    capability_delete(parent_parser)
     parser.add_argument("--db", "-db", help="Positional argument override")
     parser.add_argument("database")
-
+    capability_soft_delete(parent_parser)
+    capability_delete(parent_parser)
 
 def paths_or_stdin(parent_parser, destination=False):
     parser = parent_parser.add_argument_group("Paths")
@@ -1012,7 +1013,7 @@ def clobber(parent_parser):
 In this scenario you have a file with the same name as a file in the target directory:
 
 file1.zip (existing file)
-file1.zip (new file)
+file1.zip (incoming file)
 
 Choose ZERO OR MORE of the following options:
   delete-dest-hash     will delete the existing file if the SHA-256 hash matches
@@ -1021,22 +1022,22 @@ Choose ZERO OR MORE of the following options:
   delete-dest-smaller  will delete the existing file if it is smaller
 
   If you trust your target is more recent than the source(s):
-  delete-src-hash      will delete the src file if the SHA-256 file hash matches
-  delete-src-size      will delete the src file if the file size matches
-  delete-src-larger    will delete the src file if it is larger
-  delete-src-smaller   will delete the src file if it is smaller
+  delete-src-hash      will delete the incoming file if the SHA-256 file hash matches
+  delete-src-size      will delete the incoming file if the file size matches
+  delete-src-larger    will delete the incoming file if it is larger
+  delete-src-smaller   will delete the incoming file if it is smaller
 
 Choose ONE of the following required fallback options:
-  skip             will skip the src file
+  skip             will skip the incoming file
   rename-dest      will rename the existing file to file1_1.zip
   delete-dest      will delete the existing file
   delete-dest-ask  will delete the existing file if confirmed for the specific file
 
   If you trust your target is more recent than the source(s):
-  rename-src       will rename the src file to file1_1.zip
-  delete-src       will delete the src file
+  rename-src       will rename the incoming file to file1_1.zip
+  delete-src       will delete the incoming file
 
-If you use both an delete-src* option and an delete-dest* option then both src and dest could be deleted!""",
+If you use both an delete-src* option and an delete-dest* option then BOTH src and dest could be deleted!""",
     )
     parser.add_argument(
         "--file-over-folder",
@@ -1047,15 +1048,15 @@ If you use both an delete-src* option and an delete-dest* option then both src a
 In this scenario you have a file with the same name as a folder in the target directory:
 
 folder1.zip/ (existing folder)
-folder1.zip  (new file)
+folder1.zip  (incoming file)
 
 Choose ONE of the following options:
-  skip         will skip the src file
-  rename-src   will rename the src file to folder1_1.zip
+  skip         will skip the incoming file
+  rename-src   will rename the incoming file to folder1_1.zip
   rename-dest  will rename the existing folder to folder1_1.zip/
-  delete-src   will delete the src file
+  delete-src   will delete the incoming file
   delete-dest  will delete the existing folder tree
-  merge        will move the src file to folder1.zip/folder1.zip""",
+  merge        will move the incoming file to folder1.zip/folder1.zip""",
     )
     parser.add_argument(
         "--folder-over-file",
@@ -1066,12 +1067,12 @@ Choose ONE of the following options:
 In this scenario you have a file with the same name as a folder somewhere in the target folder hierarchy:
 
 en.wikipedia.org/wiki                       (existing file)
-en.wikipedia.org/wiki/Telescopes/index.html (new folder + files)
+en.wikipedia.org/wiki/Telescopes/index.html (incoming folder + files)
 
 Choose ONE  the following options:
-  skip         will skip the src files within wiki/
+  skip         will skip the incoming files within wiki/
   rename-dest  will rename the existing file to wiki_1
-  delete-src   will delete the src folder tree
+  delete-src   will delete the incoming folder tree
   delete-dest  will delete the existing file
   merge        will move the existing file to en.wikipedia.org/wiki/wiki""",
     )
@@ -1084,11 +1085,15 @@ def process_ffmpeg(parent_parser):
     )
 
     parser.add_argument(
-        "--delete-no-video", action="store_true", help="Delete files with no video instead of extracting audio"
+        "--delete-no-video", action="store_true", help="Delete files with no video instead of transcoding audio"
     )
     parser.add_argument(
         "--delete-no-audio", action="store_true", help="Delete files with no audio instead of transcoding video"
     )
+    parser.add_argument(
+        "--delete-original", action=argparse.BooleanOptionalAction, default=True, help="Delete source files"
+    )
+    parser.add_argument("--clean-path", action=argparse.BooleanOptionalAction, default=True, help="Clean output path")
 
     parser.add_argument("--max-height", type=int, default=960)
     parser.add_argument("--max-width", type=int, default=1440)
@@ -1137,6 +1142,7 @@ def process_ffmpeg(parent_parser):
 
     parser.add_argument("--preset", default="7")
     parser.add_argument("--crf", default="40")
+    clobber(parent_parser)
 
 
 def process_ffmpeg_post(args):
