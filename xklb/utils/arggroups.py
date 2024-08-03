@@ -1188,6 +1188,7 @@ def download(parent_parser):
         action="store_true",
         help="Fetch metadata for paths even if they are already in the media table",
     )
+    parser.add_argument("--prefix", default=os.getcwd())
 
 
 def download_subtitle(parent_parser):

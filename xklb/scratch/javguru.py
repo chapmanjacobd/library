@@ -8,12 +8,14 @@ from xklb.utils import arggroups, argparse_utils, file_utils, path_utils, proces
 
 def jav_guru() -> None:
     parser = argparse_utils.ArgumentParser()
-    parser.add_argument("--chrome", action="store_true")
+    arggroups.selenium(parser)
+    arggroups.download(parser)
     parser.add_argument("--small", action="store_true")
     arggroups.debug(parser)
 
     parser.add_argument("path", help="JAV.GURU URL")
     args = parser.parse_args()
+    arggroups.selenium_post(args)
 
     from selenium.common.exceptions import NoSuchElementException
     from selenium.webdriver.common.by import By
