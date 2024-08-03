@@ -817,7 +817,7 @@ Recommended to use with -L inf and --duration or --depth filters; see `lb big-di
     )
 
     parser.add_argument(
-        "--sibling", "--episode", "--episodic", action="store_true", help="Shorthand for --folder-counts '>1'"
+        "--episode", "--episodic", action="store_true", help="Shorthand for --folder-counts '>1'"
     )
     parser.add_argument("--solo", action="store_true", help="Shorthand for --folder-counts=1")
 
@@ -866,7 +866,7 @@ Recommended to use with -L inf and --duration or --depth filters; see `lb big-di
 def group_folders_post(args) -> None:
     if args.solo:
         args.folder_counts = ["1"]
-    if args.sibling:
+    if args.episode:
         args.folder_counts = ["+2"]
 
     if args.folder_sizes:
