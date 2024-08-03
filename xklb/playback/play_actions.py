@@ -82,6 +82,8 @@ If you prefer SQLite's ordering you can do this instead of -O
     )
     ordering.add_argument(
         "--fetch-siblings",
+        "--siblings",
+        "-o",
         help="""If using --random you need to fetch sibling media to play the media in order:
 
 --fetch-siblings each             # get the first result per directory, SQLite ordering
