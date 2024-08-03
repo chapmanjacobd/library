@@ -7,11 +7,13 @@ from xklb.utils import arggroups, argparse_utils, file_utils, path_utils, proces
 
 def javtiful() -> None:
     parser = argparse_utils.ArgumentParser()
-    parser.add_argument("--chrome", action="store_true")
+    arggroups.selenium(parser)
+    arggroups.download(parser)
     arggroups.debug(parser)
 
     parser.add_argument("path")
     args = parser.parse_args()
+    arggroups.selenium_post(args)
 
     from selenium.webdriver.common.by import By
 

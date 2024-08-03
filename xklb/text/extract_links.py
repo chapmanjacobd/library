@@ -14,6 +14,7 @@ def parse_args():
     arggroups.filter_links(parser)
 
     parser.add_argument("--download", action="store_true", help="Download filtered links")
+    arggroups.download(parser)
 
     arggroups.debug(parser)
     arggroups.paths_or_stdin(parser)

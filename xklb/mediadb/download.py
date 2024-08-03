@@ -66,8 +66,6 @@ def parse_args():
         help="Use filesystem downloader",
     )
 
-    parser.add_argument("--prefix", default=os.getcwd())
-
     parser.add_argument("--same-domain", action="store_true", help="Choose a random domain to focus on")
 
     parser.add_argument("--live", action="store_true", help="Video: Allow live streams to be downloaded")
