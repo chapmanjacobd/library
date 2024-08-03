@@ -173,6 +173,7 @@ def database(parent_parser):
     capability_soft_delete(parent_parser)
     capability_delete(parent_parser)
 
+
 def paths_or_stdin(parent_parser, destination=False):
     parser = parent_parser.add_argument_group("Paths")
     parser.add_argument(
