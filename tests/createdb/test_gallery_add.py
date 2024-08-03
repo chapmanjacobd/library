@@ -37,46 +37,14 @@ def test_get_playlist_metadata_imgur_single():
     assert data[0]["webpath"] == "https://imgur.com/0gybAXR"
 
 
-@skip("imgur is 429")
-def test_get_playlist_metadata_imgur_album():
-    args = create_args("playlist_metadata_imgur_album")
-    out = gallery_backend.get_playlist_metadata(args, "https://imgur.com/t/album/jc19AA5")
-    assert out == 2
-    media = list(args.db.query("select * from media"))
-    assert len(media) == 2
-    playlists = list(args.db.query("select * from playlists"))
-    assert len(playlists) == 1
-
-
-def test_get_playlist_metadata_blogspot_album():
-    args = create_args("get_playlist_metadata_blogspot_album")
+def test_get_playlist_metadata_wikimedia_album():
+    args = create_args("get_playlist_metadata_wikimedia_album")
     out = gallery_backend.get_playlist_metadata(
         args,
-        "http://dyanasmen.blogspot.com/2008/10/frumoasele-jucatoare-de-la-wimbledon.html",
+        "https://commons.wikimedia.org/wiki/Category:Album_1_Uruguay,_Argentina,_Chile,_and_Peru,_1920-1921_:_includes_photographs_of_Wetmore,_James_Lee_Peters,_and_Wilfrid_B._Alexander",
     )
-    assert out == 4
+    assert out == 79
     media = list(args.db.query("select * from media"))
-    assert len(media) == 4
+    assert len(media) == 79
     playlists = list(args.db.query("select * from playlists"))
     assert len(playlists) == 1
-
-
-@skip("tumblr is obake")
-def test_get_playlist_metadata_tumblr_single():
-    args = create_args("playlist_metadata_tumblr_single")
-    out = gallery_backend.get_playlist_metadata(
-        args,
-        "https://66.media.tumblr.com/7f87be573a76ccb4899ed24b24dc1328/tumblr_ny1nxrqkni1tse85no1_1280.jpg",
-    )
-    assert out == 1
-    media = list(args.db.query("select * from media"))
-    assert len(media) == 1
-
-
-@skip("tumblr is obake")
-def test_get_playlist_metadata_tumblr_album():
-    args = create_args("playlist_metadata_tumblr_album")
-    out = gallery_backend.get_playlist_metadata(args, "https://www.tumblr.com/toricoriot/719481863148830720/fairy")
-    assert out == 6
-    media = list(args.db.query("select * from media"))
-    assert len(media) == 6
