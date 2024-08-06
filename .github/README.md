@@ -97,7 +97,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v2.9.012; 82 subcommands)
+    library (v2.9.013; 82 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
