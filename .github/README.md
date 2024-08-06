@@ -97,7 +97,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v2.9.011; 81 subcommands)
+    library (v2.9.012; 82 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -190,6 +190,8 @@ To stop playing press Ctrl+C in either the terminal or mpv
     │ mcda             │ Multi-criteria Ranking for Decision Support   │
     ├──────────────────┼───────────────────────────────────────────────┤
     │ markdown-tables  │ Print markdown tables from table-like files   │
+    ├──────────────────┼───────────────────────────────────────────────┤
+    │ columns          │ Print columns of table-like files             │
     ├──────────────────┼───────────────────────────────────────────────┤
     │ incremental-diff │ Diff large table-like files in chunks         │
     ╰──────────────────┴───────────────────────────────────────────────╯
@@ -1655,6 +1657,26 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     Print tables from files as markdown
 
     Only 500,000 rows per file are loaded for performance purposes. Set `--end-row inf` to read all the rows and/or run out of RAM.
+
+
+</details>
+
+###### columns
+
+<details><summary>Print columns of table-like files</summary>
+
+    $ library columns -h
+    usage: library columns PATH ... [--table STR] [--start-row INT]
+
+    Print columns from table-like files
+
+    Only print column names
+
+        library columns https://en.wikipedia.org/wiki/List_of_Academy_Award-winning_films --cols name --table-index 0
+        Film
+        Year
+        Awards
+        Nominations
 
 
 </details>

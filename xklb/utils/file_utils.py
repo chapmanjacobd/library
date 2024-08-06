@@ -455,8 +455,8 @@ def read_file_to_dataframes(
                 for s in db.table_names() + db.view_names()
                 if not any(["_fts_" in s, s.endswith("_fts"), s.startswith("sqlite_")])
             ]
-            if table_index:
-                tables = [table_index]
+            if table_index is not None:
+                tables = [tables[table_index]]
 
         dfs = []
         for table in tables:
@@ -571,9 +571,13 @@ def read_file_to_dataframes(
     if join_tables:
         dfs = [pd.concat(dfs, axis=0, ignore_index=True)]
 
-    for table_index, df in enumerate(dfs):
+    for table_index_as_name, df in enumerate(dfs):
         if not hasattr(df, "name"):
-            df.name = str(table_index)
+            df.name = str(table_index_as_name)
+
+    if mimetype not in ("sqlite", "sqlite3", "sqlite database file"):
+        if table_index is not None:
+            dfs = [dfs[table_index]]
 
     return dfs
 

@@ -1,4 +1,4 @@
-import os, sys
+import sys
 
 from xklb import usage
 from xklb.createdb import gallery_backend, tube_backend
