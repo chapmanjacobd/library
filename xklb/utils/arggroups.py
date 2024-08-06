@@ -816,9 +816,7 @@ def group_folders(parent_parser):
 Recommended to use with -L inf and --duration or --depth filters; see `lb big-dirs -h` for more info""",
     )
 
-    parser.add_argument(
-        "--episode", "--episodic", action="store_true", help="Shorthand for --folder-counts '>1'"
-    )
+    parser.add_argument("--episode", "--episodic", action="store_true", help="Shorthand for --folder-counts '>1'")
     parser.add_argument("--solo", action="store_true", help="Shorthand for --folder-counts=1")
 
     parser.add_argument(

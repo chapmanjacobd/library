@@ -56,6 +56,7 @@ progs = {
         "eda": "Exploratory Data Analysis on table-like files",
         "mcda": "Multi-criteria Ranking for Decision Support",
         "markdown_tables": "Print markdown tables from table-like files",
+        "columns": "Print columns of table-like files",
         "incremental_diff": "Diff large table-like files in chunks",
     },
     "Media File subcommands": {
@@ -219,6 +220,7 @@ modules = {
     "xklb.playback.tabs_open.tabs_open": ["tb", "tabs", "open_tabs"],
     "xklb.tablefiles.eda.eda": ["preview"],
     "xklb.tablefiles.incremental_diff.incremental_diff": [],
+    "xklb.tablefiles.columns.columns": [],
     "xklb.tablefiles.markdown_tables.markdown_tables": ["tables"],
     "xklb.tablefiles.mcda.mcda": ["mcdm", "rank"],
     "xklb.text.cluster_sort.cluster_sort": ["cs"],

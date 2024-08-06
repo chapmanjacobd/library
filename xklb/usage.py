@@ -1149,6 +1149,19 @@ markdown_tables = """library markdown-tables PATH ... [--table STR] [--end-row I
     Only 500,000 rows per file are loaded for performance purposes. Set `--end-row inf` to read all the rows and/or run out of RAM.
 """
 
+columns = """library columns PATH ... [--table STR] [--start-row INT]
+
+    Print columns from table-like files
+
+    Only print column names
+
+        library columns https://en.wikipedia.org/wiki/List_of_Academy_Award-winning_films --cols name --table-index 0
+        Film
+        Year
+        Awards
+        Nominations
+"""
+
 mcda = """library mcda PATH ... [--table STR] [--end-row INT]
 
     Perform Multiple Criteria Decision Analysis (MCDA) on one or more files
