@@ -69,7 +69,7 @@ media_flags = [
     ("-B --folders-counts=-4", 4, "corrupt.mp4"),
     ("-B --folder-counts=-16", 4, "corrupt.mp4"),
     ("-B --folder-sizes=-5MB", 4, "corrupt.mp4"),
-    ("-B --sibling", 4, "corrupt.mp4"),
+    ("-B --episode", 4, "corrupt.mp4"),
     ("-R", 4, "corrupt.mp4"),
     ("-RCO", 4, "test.gif"),
     ("-RR", 4, "corrupt.mp4"),
