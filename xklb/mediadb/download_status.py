@@ -8,9 +8,7 @@ from xklb.utils import arggroups, argparse_utils, consts, db_utils, sql_utils, s
 
 def parse_args() -> argparse.Namespace:
     parser = argparse_utils.ArgumentParser(usage=usage.download_status)
-
     arggroups.sql_fs(parser)
-
     parser.set_defaults(print="p")
 
     arggroups.download(parser)
@@ -29,31 +27,28 @@ def parse_args() -> argparse.Namespace:
 def download_status() -> None:
     args = parse_args()
 
-    query, bindings = sqlgroups.construct_download_query(args)
+    query, bindings = sqlgroups.construct_download_query(args, dl_status=True)
+
+    not_downloaded = 'path like "http%" and COALESCE(time_downloaded, 0) = 0'
+    retry_time = f"cast(STRFTIME('%s', datetime( time_modified, 'unixepoch', '+{args.retry_delay}')) as int)"
 
     count_paths = ""
     if "time_modified" in query:
-        if args.safe:
-            args.db.register_function(tube_backend.is_supported, deterministic=True)
-            count_paths += f", count(*) FILTER(WHERE time_modified>0 and cast(STRFTIME('%s', datetime( time_modified, 'unixepoch', '+{args.retry_delay}')) as int) < STRFTIME('%s', datetime()) and is_supported(path)) retry_queued"
-            count_paths += (
-                ", count(*) FILTER(WHERE COALESCE(time_modified, 0) = 0 and is_supported(path)) never_downloaded"
-            )
-            count_paths += f", count(*) FILTER(WHERE cast(STRFTIME('%s', datetime( time_modified, 'unixepoch', '+{args.retry_delay}')) as int) >= STRFTIME('%s', datetime()) and is_supported(path)) failed_recently"
-        else:
-            count_paths += f", count(*) FILTER(WHERE time_modified>0 and cast(STRFTIME('%s', datetime( time_modified, 'unixepoch', '+{args.retry_delay}')) as int) < STRFTIME('%s', datetime())) retry_queued"
-            count_paths += ", count(*) FILTER(WHERE COALESCE(time_modified, 0) = 0) never_downloaded"
-            count_paths += f", count(*) FILTER(WHERE cast(STRFTIME('%s', datetime( time_modified, 'unixepoch', '+{args.retry_delay}')) as int) >= STRFTIME('%s', datetime())) failed_recently"
+        count_paths += f"""
+            , count(*) FILTER(WHERE {not_downloaded} and time_modified>0 and {retry_time} < STRFTIME('%s', datetime())) retry_queued
+            , count(*) FILTER(WHERE {not_downloaded} and COALESCE(time_modified, 0) = 0) never_attempted
+            , count(*) FILTER(WHERE time_downloaded > 0) downloaded
+            , count(*) FILTER(WHERE {not_downloaded} and time_modified>0 and {retry_time} >= STRFTIME('%s', datetime())) failed_recently
+            """
+    if "download_attempts" in query:
+        count_paths += f", count(*) FILTER(WHERE {not_downloaded} and download_attempts > {args.download_retries}) retries_exceeded"
 
     query = f"""select
         COALESCE(extractor_key, 'Playlist-less media') extractor_key
         {count_paths}
     from ({query})
-    where 1=1
-        and COALESCE(time_downloaded, 0) = 0
-        and COALESCE(time_deleted, 0) = 0
     group by extractor_key
-    order by never_downloaded DESC"""
+    order by never_attempted DESC, retry_queued DESC, extractor_key"""
 
     media = list(args.db.query(query, bindings))
 
@@ -73,10 +68,11 @@ def download_status() -> None:
         """
         errors = list(args.db.query(query))
 
+        small_group = errors[:20][-1]["count"]
         common_errors = []
         other_errors = []
         for error in errors:
-            if error["count"] < errors[:5][-1]["count"]:
+            if error["count"] < small_group:
                 other_errors.append(error)
             else:
                 common_errors.append(error)

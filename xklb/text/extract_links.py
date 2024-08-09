@@ -15,6 +15,7 @@ def parse_args():
 
     parser.add_argument("--download", action="store_true", help="Download filtered links")
     arggroups.download(parser)
+    parser.set_defaults(profile=consts.DBType.filesystem)
 
     arggroups.debug(parser)
     arggroups.paths_or_stdin(parser)

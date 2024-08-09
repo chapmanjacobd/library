@@ -33,39 +33,6 @@ def parse_args():
     arggroups.selenium(parser)
     arggroups.filter_links(parser)
 
-    profile = parser.add_mutually_exclusive_group()
-    profile.add_argument(
-        "--audio",
-        action="store_const",
-        dest="profile",
-        const=DBType.audio,
-        help="Use audio downloader",
-    )
-    profile.add_argument(
-        "--video",
-        action="store_const",
-        dest="profile",
-        const=DBType.video,
-        help="Use video downloader",
-    )
-    profile.add_argument(
-        "--image",
-        "--photo",
-        action="store_const",
-        dest="profile",
-        const=DBType.image,
-        help="Use image downloader",
-    )
-    profile.add_argument(
-        "--filesystem",
-        "--fs",
-        "--web",
-        action="store_const",
-        dest="profile",
-        const=DBType.filesystem,
-        help="Use filesystem downloader",
-    )
-
     parser.add_argument("--same-domain", action="store_true", help="Choose a random domain to focus on")
 
     parser.add_argument("--live", action="store_true", help="Video: Allow live streams to be downloaded")
@@ -105,25 +72,10 @@ def parse_args():
     return args
 
 
-def mark_download_attempt(args, paths) -> int:
-    paths = iterables.conform(paths)
-
-    modified_row_count = 0
-    if paths:
-        df_chunked = iterables.chunks(paths, consts.SQLITE_PARAM_LIMIT)
-        for chunk_paths in df_chunked:
-            with args.db.conn:
-                cursor = args.db.conn.execute(
-                    f"""update media
-                    set time_modified={consts.now()}
-                    where path in ("""
-                    + ",".join(["?"] * len(chunk_paths))
-                    + ")",
-                    (*chunk_paths,),
-                )
-                modified_row_count += cursor.rowcount
-
-    return modified_row_count
+def mark_download_attempt(args, m):
+    m["time_modified"] = consts.now()
+    m["download_attempts"] = (m.get("download_attempts") or 0) + 1
+    db_media.add(args, m)
 
 
 def download(args=None) -> None:
@@ -165,15 +117,15 @@ def download(args=None) -> None:
     get_inner_urls = iterables.return_unique(extract_links.get_inner_urls, lambda d: d["link"])
     for m in media:
         if args.blocklist_rules and sql_utils.is_blocked_dict_like_sql(m, args.blocklist_rules):
-            mark_download_attempt(args, [m["path"]])
+            mark_download_attempt(args, m)
             continue
 
         if args.safe:
             if (args.profile in (DBType.audio, DBType.video) and not tube_backend.is_supported(m["path"])) or (
-                args.profile in (DBType.image) and not gallery_backend.is_supported(args, m["path"])
+                args.profile in (DBType.image,) and not gallery_backend.is_supported(args, m["path"])
             ):
                 log.info("[%s]: Skipping unsupported URL (safe_mode)", m["path"])
-                mark_download_attempt(args, [m["path"]])
+                mark_download_attempt(args, m)
                 continue
 
         # check if download already attempted recently by another process
@@ -196,7 +148,7 @@ def download(args=None) -> None:
                         m["path"],
                         strings.duration(consts.now() - d["time_deleted"]),
                     )
-                    mark_download_attempt(args, [m["path"]])
+                    mark_download_attempt(args, m)
                     continue
                 elif d["time_modified"]:
                     log.info(
@@ -262,6 +214,9 @@ def download(args=None) -> None:
                     )
             else:
                 raise NotImplementedError
+
         except Exception:
             print("db:", args.database)
             raise
+        else:
+            mark_download_attempt(args, m)

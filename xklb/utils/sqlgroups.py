@@ -1,7 +1,8 @@
 import sys
 
+from xklb.createdb import gallery_backend, tube_backend
 from xklb.utils import consts, db_utils, sql_utils
-from xklb.utils.consts import SC
+from xklb.utils.consts import SC, DBType
 
 
 def media_select_sql(args, m_columns):
@@ -322,13 +323,22 @@ def construct_playlists_query(args) -> tuple[str, dict]:
     return query, args.filter_bindings
 
 
-def construct_download_query(args) -> tuple[str, dict]:
+def construct_download_query(args, dl_status=False) -> tuple[str, dict]:
     m_columns = db_utils.columns(args, "media")
     pl_columns = db_utils.columns(args, "playlists")
 
     args.table, m_columns = sql_utils.search_filter(args, m_columns)
+    if args.safe:
+        if args.profile in (DBType.audio, DBType.video):
+            is_supported = tube_backend.is_supported
+        elif args.profile in (DBType.image,):
+            is_supported = gallery_backend.is_supported
+        else:
+            raise NotImplementedError
 
-    if "time_modified" in m_columns and args.action != SC.download_status:
+        args.db.register_function(is_supported, deterministic=True)
+
+    if "time_modified" in m_columns and not dl_status:
         args.filter_sql.append(
             f"""and cast(STRFTIME('%s',
             datetime( COALESCE(m.time_modified,0), 'unixepoch', '+{args.retry_delay}')
@@ -344,67 +354,43 @@ def construct_download_query(args) -> tuple[str, dict]:
         ORDER BY RANDOM()
         LIMIT 1
     )"""
-    if "playlists_id" in m_columns:
-        query = f"""select
-                m.id
-                , m.playlists_id
-                , m.path
-                , p.path playlist_path
-                {', m.category' if 'category' in m_columns else ''}
-                {', m.title' if 'title' in m_columns else ''}
-                {', m.duration' if 'duration' in m_columns else ''}
-                , m.time_created
-                {', m.size' if 'size' in m_columns else ''}
-                {', m.time_modified' if 'time_modified' in m_columns else ''}
-                {', m.time_downloaded' if 'time_downloaded' in m_columns else ''}
-                {', m.time_deleted' if 'time_deleted' in m_columns else ''}
-                {', m.error' if 'error' in m_columns and args.verbose >= consts.LOG_DEBUG else ''}
-                {', p.extractor_config' if 'extractor_config' in pl_columns else ''}
-                {', p.extractor_key' if 'extractor_key' in pl_columns else ", 'Playlist-less media' as extractor_key"}
-            FROM {args.table} m
-            LEFT JOIN playlists p on p.id = m.playlists_id
-            WHERE 1=1
-                {'and COALESCE(m.time_downloaded,0) = 0' if 'time_downloaded' in m_columns else ''}
-                {'and COALESCE(p.time_deleted, 0) = 0' if 'time_deleted' in pl_columns else ''}
-                and m.path like "http%"
-                {same_subdomain if getattr(args, 'same_domain', False) else ''}
-                {'AND (score IS NULL OR score > 7)' if 'score' in m_columns else ''}
-                {'AND (upvote_ratio IS NULL OR upvote_ratio > 0.73)' if 'upvote_ratio' in m_columns else ''}
-                {" ".join(args.filter_sql)}
-            ORDER BY 1=1
-                {', COALESCE(m.time_modified, 0) = 0 DESC' if 'time_modified' in m_columns else ''}
-                {', p.extractor_key IS NOT NULL DESC' if 'extractor_key' in pl_columns and 'sort' in args.defaults else ''}
-                {', m.error IS NULL DESC' if 'error' in m_columns else ''}
-                {', random()' if 'sort' in args.defaults else ', ' + args.sort}
-            {sql_utils.limit_sql(args.limit, args.offset)}
-        """
-    else:
-        query = f"""select
-                m.path
-                {', m.category' if 'category' in m_columns else ''}
-                {', m.title' if 'title' in m_columns else ''}
-                {', m.duration' if 'duration' in m_columns else ''}
-                {', m.time_created' if 'time_created' in m_columns else ''}
-                {', m.size' if 'size' in m_columns else ''}
-                {', m.time_modified' if 'time_modified' in m_columns else ''}
-                {', m.time_downloaded' if 'time_downloaded' in m_columns else ''}
-                {', m.time_deleted' if 'time_deleted' in m_columns else ''}
-                {', m.error' if 'error' in m_columns and args.verbose >= consts.LOG_DEBUG else ''}
-                , 'Playlist-less media' as extractor_key
-            FROM {args.table} m
-            WHERE 1=1
-                {'and COALESCE(m.time_downloaded,0) = 0' if 'time_downloaded' in m_columns else ''}
-                {'and COALESCE(m.time_deleted,0) = 0' if 'time_deleted' in m_columns else ''}
-                and m.path like "http%"
-                {same_subdomain if getattr(args, 'same_domain', '') else ''}
-                {'AND (score IS NULL OR score > 7)' if 'score' in m_columns else ''}
-                {'AND (upvote_ratio IS NULL OR upvote_ratio > 0.73)' if 'upvote_ratio' in m_columns else ''}
-                {" ".join(args.filter_sql)}
-            ORDER BY 1=1
-                {', COALESCE(m.time_modified, 0) = 0 DESC' if 'time_modified' in m_columns else ''}
-                {', m.error IS NULL DESC' if 'error' in m_columns else ''}
-                {', random()' if 'sort' in args.defaults else ', ' + args.sort}
+
+    is_media_playlist = "playlists_id" in m_columns and 'id' in pl_columns
+    query = f"""select
+            m.id
+            , m.playlists_id
+            , m.path
+            {', p.path playlist_path' if is_media_playlist else ''}
+            {', m.category' if 'category' in m_columns else ''}
+            {', m.title' if 'title' in m_columns else ''}
+            {', m.duration' if 'duration' in m_columns else ''}
+            , m.time_created
+            {', m.size' if 'size' in m_columns else ''}
+            {', m.time_modified' if 'time_modified' in m_columns else ''}
+            {', m.download_attempts' if 'download_attempts' in m_columns else ''}
+            {', m.time_downloaded' if 'time_downloaded' in m_columns else ''}
+            {', m.time_deleted' if 'time_deleted' in m_columns else ''}
+            {', m.error' if 'error' in m_columns and args.verbose >= consts.LOG_DEBUG else ''}
+            {', p.extractor_config' if 'extractor_config' in pl_columns else ''}
+            {', p.extractor_key' if 'extractor_key' in pl_columns else ", 'Playlist-less media' as extractor_key"}
+        FROM {args.table} m
+        {'LEFT JOIN playlists p on p.id = m.playlists_id' if is_media_playlist else ''}
+        WHERE 1=1
+            {'and COALESCE(m.time_downloaded,0) = 0' if 'time_downloaded' in m_columns and not dl_status else ''}
+            {f'and COALESCE(m.download_attempts,0) <= {args.download_retries}' if 'download_attempts' in m_columns and not dl_status else ''}
+            {'and COALESCE(p.time_deleted, 0) = 0' if is_media_playlist and 'time_deleted' in pl_columns and not "time_deleted" in " ".join(args.where) else ''}
+            {'and m.path like "http%"' if not dl_status else ''}
+            {same_subdomain if getattr(args, 'same_domain', False) else ''}
+            {'AND (score IS NULL OR score > 7)' if 'score' in m_columns else ''}
+            {'AND (upvote_ratio IS NULL OR upvote_ratio > 0.73)' if 'upvote_ratio' in m_columns else ''}
+            {'AND is_supported(path)' if args.safe else ''}
+            {" ".join(args.filter_sql)}
+        ORDER BY 1=1
+            {', COALESCE(m.time_modified, 0) = 0 DESC' if 'time_modified' in m_columns else ''}
+            {', p.extractor_key IS NOT NULL DESC' if is_media_playlist and 'extractor_key' in pl_columns and 'sort' in args.defaults else ''}
+            {', m.error IS NULL DESC' if 'error' in m_columns else ''}
+            {', random()' if 'sort' in args.defaults else ', ' + args.sort}
         {sql_utils.limit_sql(args.limit, args.offset)}
-        """
+    """
 
     return query, args.filter_bindings

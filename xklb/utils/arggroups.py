@@ -494,10 +494,8 @@ def sql_fs_post(args, table_prefix="m.") -> None:
 
     args.filter_sql.extend(f" AND path like '%.{ext}'" for ext in args.ext)
 
-    if (
-        "time_deleted" in m_columns
-        and "deleted" not in (getattr(args, "sort_groups_by", None) or "")
-        and "time_deleted" not in " ".join(args.where)
+    if "time_deleted" in m_columns and not (
+        "deleted" in (getattr(args, "sort_groups_by", None) or "") or "time_deleted" in " ".join(args.where)
     ):
         args.filter_sql.append(f"AND COALESCE({table_prefix}time_deleted,0) = 0")
 
@@ -1182,11 +1180,52 @@ def download(parent_parser):
         help="Must be specified in SQLITE Modifiers format: N seconds, minutes, hours, days, months, or years",
     )
     parser.add_argument(
+        "--download-retries",
+        "--download-attempts",
+        type=int,
+        default=5,
+        help="Skip links that have failed more than N times",
+    )
+    parser.add_argument(
         "--force",
         action="store_true",
         help="Fetch metadata for paths even if they are already in the media table",
     )
     parser.add_argument("--prefix", default=os.getcwd())
+
+    profile = parser.add_mutually_exclusive_group()
+    profile.add_argument(
+        "--audio",
+        action="store_const",
+        dest="profile",
+        const=DBType.audio,
+        help="Use audio downloader",
+    )
+    profile.add_argument(
+        "--video",
+        action="store_const",
+        dest="profile",
+        const=DBType.video,
+        help="Use video downloader",
+    )
+    profile.add_argument(
+        "--image",
+        "--photo",
+        action="store_const",
+        dest="profile",
+        const=DBType.image,
+        help="Use image downloader",
+    )
+    profile.add_argument(
+        "--filesystem",
+        "--fs",
+        "--web",
+        action="store_const",
+        dest="profile",
+        const=DBType.filesystem,
+        help="Use filesystem downloader",
+    )
+    profile.set_defaults(profile=DBType.video)
 
 
 def download_subtitle(parent_parser):
