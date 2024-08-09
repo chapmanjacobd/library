@@ -143,8 +143,8 @@ def media_printer(args, data, units=None, media_len=None) -> None:
             D = {"path": "Aggregate", "count": sum(d.get("count") or 0 for d in media)}
         elif "exists" in media[0]:
             D = {"path": "Aggregate", "count": sum(d.get("exists") or 0 for d in media)}
-        elif action == SC.download_status and "never_downloaded" in media[0]:
-            potential_downloads = sum(d["never_downloaded"] + d["retry_queued"] for d in media)
+        elif action == SC.download_status and "never_attempted" in media[0]:
+            potential_downloads = sum(d["never_attempted"] + d["retry_queued"] for d in media)
             D = {"path": "Aggregate", "count": potential_downloads}
         else:
             D = {"path": "Aggregate", "count": len(media)}
@@ -186,7 +186,7 @@ def media_printer(args, data, units=None, media_len=None) -> None:
     ):
         for m in media:
             m["download_duration"] = cadence_adjusted_items(
-                args, m["never_downloaded"] + m["retry_queued"], time_column="time_downloaded"
+                args, m["never_attempted"] + m["retry_queued"], time_column="time_downloaded"
             )  # TODO where= p.extractor_key, or try to use SQL
 
     if not any([args.to_json, "f" in print_args]):

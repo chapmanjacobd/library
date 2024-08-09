@@ -1182,33 +1182,6 @@ mcda = """library mcda PATH ... [--table STR] [--end-row INT]
         |  1 |     453 |     40 |          2 | 0.419921 |  0.0124531 | 0.567301 | 8.00032 |
         |  2 |     519 |     44 |          2 | 0.230847 | -0.189399  | 0.769153 | 8.1894  |
 
-    library mcda ~/storage.csv --ignore warranty
-
-        ### Goals
-        #### Maximize
-        - price
-        - size
-
-        |    |   price |   size |   warranty |   TOPSIS |     MABAC |   SPOTIS |   BORDA |
-        |----|---------|--------|------------|----------|-----------|----------|---------|
-        |  2 |     519 |     44 |          2 | 1        |  0.536587 | 0        | 7.46341 |
-        |  1 |     453 |     40 |          2 | 0.580079 |  0.103888 | 0.432699 | 7.88333 |
-        |  0 |     359 |     36 |          5 | 0        | -0.463413 | 1        | 8.46341 |
-
-    library mcda ~/storage.csv --minimize price --ignore warranty
-
-        ### Goals
-        #### Maximize
-        - size
-        #### Minimize
-        - price
-
-        |    |   price |   size |   warranty |   TOPSIS |      MABAC |   SPOTIS |   BORDA |
-        |----|---------|--------|------------|----------|------------|----------|---------|
-        |  0 |     359 |     36 |          5 | 0.769153 |  0.348907  | 0.230847 | 7.65109 |
-        |  1 |     453 |     40 |          2 | 0.419921 |  0.0124531 | 0.567301 | 8.00032 |
-        |  2 |     519 |     44 |          2 | 0.230847 | -0.189399  | 0.769153 | 8.1894  |
-
     It also works with HTTP/GCS/S3 URLs
 
     library mcda https://en.wikipedia.org/wiki/List_of_Academy_Award-winning_films --clean --minimize Year
