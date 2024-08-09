@@ -1181,6 +1181,7 @@ def download(parent_parser):
         default="14 days",
         help="Must be specified in SQLITE Modifiers format: N seconds, minutes, hours, days, months, or years",
     )
+    parser.add_argument("--download-retries", "--download-attempts", type=int, default=5, help="Skip links that have failed more than N times")
     parser.add_argument(
         "--force",
         action="store_true",

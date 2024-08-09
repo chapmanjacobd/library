@@ -105,25 +105,10 @@ def parse_args():
     return args
 
 
-def mark_download_attempt(args, paths) -> int:
-    paths = iterables.conform(paths)
-
-    modified_row_count = 0
-    if paths:
-        df_chunked = iterables.chunks(paths, consts.SQLITE_PARAM_LIMIT)
-        for chunk_paths in df_chunked:
-            with args.db.conn:
-                cursor = args.db.conn.execute(
-                    f"""update media
-                    set time_modified={consts.now()}
-                    where path in ("""
-                    + ",".join(["?"] * len(chunk_paths))
-                    + ")",
-                    (*chunk_paths,),
-                )
-                modified_row_count += cursor.rowcount
-
-    return modified_row_count
+def mark_download_attempt(args, m):
+    m["time_modified"] = consts.now()
+    m["download_attempts"] = (m.get("download_attempts") or 0) + 1
+    db_media.add(args, m)
 
 
 def download(args=None) -> None:
@@ -165,7 +150,7 @@ def download(args=None) -> None:
     get_inner_urls = iterables.return_unique(extract_links.get_inner_urls, lambda d: d["link"])
     for m in media:
         if args.blocklist_rules and sql_utils.is_blocked_dict_like_sql(m, args.blocklist_rules):
-            mark_download_attempt(args, [m["path"]])
+            mark_download_attempt(args, m)
             continue
 
         if args.safe:
@@ -173,7 +158,7 @@ def download(args=None) -> None:
                 args.profile in (DBType.image) and not gallery_backend.is_supported(args, m["path"])
             ):
                 log.info("[%s]: Skipping unsupported URL (safe_mode)", m["path"])
-                mark_download_attempt(args, [m["path"]])
+                mark_download_attempt(args, m)
                 continue
 
         # check if download already attempted recently by another process
@@ -196,7 +181,7 @@ def download(args=None) -> None:
                         m["path"],
                         strings.duration(consts.now() - d["time_deleted"]),
                     )
-                    mark_download_attempt(args, [m["path"]])
+                    mark_download_attempt(args, m)
                     continue
                 elif d["time_modified"]:
                     log.info(
@@ -205,6 +190,8 @@ def download(args=None) -> None:
                         strings.duration(consts.now() - d["time_modified"]),
                     )
                     continue
+
+        mark_download_attempt(args, m)
 
         try:
             log.debug(m)

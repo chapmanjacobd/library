@@ -365,6 +365,7 @@ def construct_download_query(args) -> tuple[str, dict]:
             LEFT JOIN playlists p on p.id = m.playlists_id
             WHERE 1=1
                 {'and COALESCE(m.time_downloaded,0) = 0' if 'time_downloaded' in m_columns else ''}
+                {f'and COALESCE(m.download_attempts,0) <= {args.download_retries}' if 'download_attempts' in m_columns else ''}
                 {'and COALESCE(p.time_deleted, 0) = 0' if 'time_deleted' in pl_columns else ''}
                 and m.path like "http%"
                 {same_subdomain if getattr(args, 'same_domain', False) else ''}
@@ -394,6 +395,7 @@ def construct_download_query(args) -> tuple[str, dict]:
             FROM {args.table} m
             WHERE 1=1
                 {'and COALESCE(m.time_downloaded,0) = 0' if 'time_downloaded' in m_columns else ''}
+                {f'and COALESCE(m.download_attempts,0) <= {args.download_retries}' if 'download_attempts' in m_columns else ''}
                 {'and COALESCE(m.time_deleted,0) = 0' if 'time_deleted' in m_columns else ''}
                 and m.path like "http%"
                 {same_subdomain if getattr(args, 'same_domain', '') else ''}

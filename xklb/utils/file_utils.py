@@ -548,7 +548,7 @@ def read_file_to_dataframes(
     elif "pdf" in mimetype:
         import camelot
 
-        if ' ' in path:
+        if " " in path:
             path = web.url_encode(path)  # camelot does not like spaces in URLs...
 
         dfs = []
