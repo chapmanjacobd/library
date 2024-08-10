@@ -71,9 +71,10 @@ def test_tubeupdate(play_mocked):
     assert out["TEST3"] == "2"
 
 
+@mock.patch("xklb.mediadb.download.mark_download_attempt")
 @mock.patch("xklb.createdb.tube_backend.download")
 @mock.patch("xklb.createdb.tube_backend.get_playlist_metadata")
-def test_tube_dl_conversion(get_playlist_metadata, download):
+def test_tube_dl_conversion(get_playlist_metadata, tube_download, mark_download_attempt):
     PLAYLIST_URL = "https://youtube.com/playlist?list=PLVoczRgDnXDLWV1UJ_tO70VT_ON0tuEdm"
     PLAYLIST_VIDEO_URL = "https://www.youtube.com/watch?v=QoXubRvB6tQ"
     STORAGE_PREFIX = "tests/data/"
@@ -84,5 +85,6 @@ def test_tube_dl_conversion(get_playlist_metadata, download):
     assert out == PLAYLIST_URL
 
     lb(["download", tube_db, "--prefix", STORAGE_PREFIX, "--video"])
-    out = download.call_args[0]
+    mark_download_attempt.assert_called_once()
+    out = tube_download.call_args[0]
     assert out[1]["path"] == PLAYLIST_VIDEO_URL

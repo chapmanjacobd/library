@@ -117,7 +117,6 @@ def download(args=None) -> None:
     get_inner_urls = iterables.return_unique(extract_links.get_inner_urls, lambda d: d["link"])
     for m in media:
         if args.blocklist_rules and sql_utils.is_blocked_dict_like_sql(m, args.blocklist_rules):
-            mark_download_attempt(args, m)
             continue
 
         if args.safe:
@@ -125,7 +124,6 @@ def download(args=None) -> None:
                 args.profile in (DBType.image,) and not gallery_backend.is_supported(args, m["path"])
             ):
                 log.info("[%s]: Skipping unsupported URL (safe_mode)", m["path"])
-                mark_download_attempt(args, m)
                 continue
 
         # check if download already attempted recently by another process
@@ -148,7 +146,6 @@ def download(args=None) -> None:
                         m["path"],
                         strings.duration(consts.now() - d["time_deleted"]),
                     )
-                    mark_download_attempt(args, m)
                     continue
                 elif d["time_modified"]:
                     log.info(
@@ -158,7 +155,7 @@ def download(args=None) -> None:
                     )
                     continue
 
-        try:
+        try:  # attempt to download
             log.debug(m)
 
             if args.profile in (DBType.audio, DBType.video):

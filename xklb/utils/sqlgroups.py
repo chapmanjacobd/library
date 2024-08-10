@@ -358,7 +358,7 @@ def construct_download_query(args, dl_status=False) -> tuple[str, dict]:
     is_media_playlist = "playlists_id" in m_columns and "id" in pl_columns
     query = f"""select
             m.id
-            , m.playlists_id
+            {', m.playlists_id' if "playlists_id" in m_columns else ''}
             , m.path
             {', p.path playlist_path' if is_media_playlist else ''}
             {', m.category' if 'category' in m_columns else ''}
