@@ -29,15 +29,16 @@ def download_status() -> None:
     query, bindings = sqlgroups.construct_download_query(args, dl_status=True)
 
     not_downloaded = 'path like "http%" and COALESCE(time_downloaded, 0) = 0'
+    can_download = f"download_attempts <= {args.download_retries}" if "download_attempts" in query else "1=1"
     retry_time = f"cast(STRFTIME('%s', datetime( time_modified, 'unixepoch', '+{args.retry_delay}')) as int)"
 
     count_paths = ""
     if "time_modified" in query:
         count_paths += f"""
-            , count(*) FILTER(WHERE {not_downloaded} and time_modified>0 and {retry_time} < STRFTIME('%s', datetime())) retry_queued
-            , count(*) FILTER(WHERE {not_downloaded} and COALESCE(time_modified, 0) = 0) never_attempted
+            , count(*) FILTER(WHERE {can_download} and {not_downloaded} and time_modified>0 and {retry_time} < STRFTIME('%s', datetime())) retry_queued
+            , count(*) FILTER(WHERE {can_download} and {not_downloaded} and COALESCE(time_modified, 0) = 0) never_attempted
             , count(*) FILTER(WHERE time_downloaded > 0) downloaded
-            , count(*) FILTER(WHERE {not_downloaded} and time_modified>0 and {retry_time} >= STRFTIME('%s', datetime())) failed_recently
+            , count(*) FILTER(WHERE {can_download} and {not_downloaded} and time_modified>0 and {retry_time} >= STRFTIME('%s', datetime())) failed_recently
             """
     if "download_attempts" in query:
         count_paths += f", count(*) FILTER(WHERE {not_downloaded} and download_attempts > {args.download_retries}) retries_exceeded"
