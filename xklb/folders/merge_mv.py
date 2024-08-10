@@ -4,7 +4,7 @@ from xklb import usage
 from xklb.utils import arggroups, argparse_utils, devices, file_utils, path_utils
 
 
-def parse_args():
+def parse_args(defaults_override=None):
     parser = argparse_utils.ArgumentParser(usage=usage.merge_mv)
     parser.add_argument("--copy", "--cp", "-c", action="store_true", help="Copy instead of move")
     arggroups.clobber(parser)
@@ -12,6 +12,8 @@ def parse_args():
 
     arggroups.paths_or_stdin(parser, destination=True)
     parser.add_argument("destination", help="Destination directory")
+
+    parser.set_defaults(**(defaults_override or {}))
     args = parser.parse_args()
     arggroups.args_post(args, parser)
     return args
@@ -72,8 +74,8 @@ def mmv_folders(args, mv_fn, sources, destination):
             f.result()
 
 
-def merge_mv():
-    args = parse_args()
+def merge_mv(defaults_override=None):
+    args = parse_args(defaults_override)
 
     if args.copy:
         mmv_folders(args, mcp_file, args.paths, args.destination)
@@ -85,5 +87,4 @@ def merge_mv():
 
 
 def merge_cp():
-    sys.argv += ["--copy"]
-    merge_mv()
+    merge_mv({"copy": True})

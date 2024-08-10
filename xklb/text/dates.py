@@ -1,4 +1,4 @@
-import datetime, sys
+import datetime
 
 from dateutil.parser import parse
 
@@ -6,7 +6,7 @@ from xklb import usage
 from xklb.utils import arggroups, argparse_utils
 
 
-def dates():
+def dates(defaults_override=None):
     parser = argparse_utils.ArgumentParser(usage=usage.dates)
     parser.add_argument("--timestamp", "--time", action="store_true", help="Parse the input as timestamp")
     parser.add_argument("--time-only", action="store_true", help="Parse the input as time")
@@ -37,6 +37,8 @@ YDM  09/08/07
     parser.add_argument(
         "dates", nargs="*", default=argparse_utils.STDIN_DASH, action=argparse_utils.ArgparseArgsOrStdin
     )
+
+    parser.set_defaults(**(defaults_override or {}))
     args = parser.parse_args()
     arggroups.args_post(args, parser)
 
@@ -75,5 +77,4 @@ YDM  09/08/07
 
 
 def times():
-    sys.argv += ["--timestamp"]
-    dates()
+    dates({"timestamp": True})

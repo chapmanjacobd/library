@@ -9,12 +9,14 @@ from xklb.utils.arg_utils import gen_paths, kwargs_overwrite
 from xklb.utils.log_utils import log
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(defaults_override=None) -> argparse.Namespace:
     parser = argparse_utils.ArgumentParser(usage=usage.process_ffmpeg)
     arggroups.process_ffmpeg(parser)
     arggroups.debug(parser)
 
     arggroups.paths_or_stdin(parser)
+
+    parser.set_defaults(**(defaults_override or {}))
     args = parser.parse_args()
     arggroups.args_post(args, parser)
 
@@ -327,8 +329,8 @@ def process_path(args, path, **kwargs):
     return output_path
 
 
-def process_ffmpeg():
-    args = parse_args()
+def process_ffmpeg(defaults_override=None):
+    args = parse_args(defaults_override)
 
     for path in gen_paths(args):
         if not path.startswith("http"):
@@ -342,8 +344,7 @@ def process_ffmpeg():
 
 
 def process_audio():
-    sys.argv += ["--audio-only"]
-    process_ffmpeg()
+    process_ffmpeg({"audio_only": True})
 
 
 if __name__ == "__main__":
