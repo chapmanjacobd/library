@@ -171,22 +171,27 @@ def add(args, entry):
     chapters = entry.pop("chapters", None) or []
     subtitles = entry.pop("subtitles", None) or []
     entry.pop("description", None)
+    entry = objects.dict_filter_bool(entry)
+    if entry is None:
+        return
 
-    media_id = args.db.pop("select id from media where path = ?", [entry["path"]])
-    if not media_id and "webpath" in entry and not entry.get("error"):
-        media_id = args.db.pop("select id from media where path = ?", [entry["webpath"]])
-
-    try:
-        if media_id:
-            entry["id"] = media_id
-
-            args.db["media"].upsert(objects.dict_filter_bool(entry), pk="id", alter=True)
-        else:
-            args.db["media"].insert(objects.dict_filter_bool(entry), pk="id", alter=True)
-            media_id = args.db.pop("select id from media where path = ?", [entry["path"]])
-    except sqlite3.IntegrityError:
-        log.error("media_id %s: %s", media_id, entry)
-        raise
+    with args.db.conn:
+        existing_record = args.db.pop_dict("select * from media where path = ?", [entry["path"]])
+        if not existing_record and "webpath" in entry and not entry.get("error"):
+            existing_record = args.db.pop_dict(
+                "select * from media where path = ?", [entry["webpath"]]
+            )  # replace remote with local
+        media_id = None
+        if existing_record:
+            media_id = existing_record["id"]
+            entry = existing_record | entry
+        try:
+            args.db["media"].insert(entry, pk="id", alter=True, replace=True)
+        except sqlite3.IntegrityError:
+            log.error("media_id %s: %s", media_id, entry)
+            raise
+    if media_id is None:
+        media_id = args.db.pop("select id from media where path = ?", [entry["path"]])
 
     if tags:
         args.db["captions"].insert({"media_id": media_id, "time": 0, "text": tags}, alter=True)
@@ -463,7 +468,7 @@ def get_dir_media(args, dirs: Collection, include_subdirs=False, limit=2_000) ->
     subpath_params = {f"subpath{i}": value + "%" for i, value in enumerate(dirs)}
 
     bindings = {**subpath_params}
-    bindings = {**bindings, **{k: v for k, v in args.filter_bindings.items() if k.startswith("FTS")}}
+    bindings = {**bindings, **{k: v for k, v in args.filter_bindings.items() if k.startswith("S_")}}
 
     media = list(args.db.query(query, bindings))
     log.debug("len(dir_media) = %s", len(media))
@@ -519,7 +524,7 @@ def get_playlist_media(args, playlist_paths) -> list[dict]:
     """
 
     bindings = {**playlists_params}
-    bindings = {**bindings, **{k: v for k, v in args.filter_bindings.items() if k.startswith("FTS")}}
+    bindings = {**bindings, **{k: v for k, v in args.filter_bindings.items() if k.startswith("S_")}}
 
     media = list(args.db.query(query, bindings))
     log.debug("len(playlist_media) = %s", len(media))
@@ -620,7 +625,7 @@ def get_related_media(args, m: dict) -> list[dict]:
 
     bindings = {"path": m["path"]}
     if args.related >= consts.RELATED_NO_FILTER:
-        bindings = {**bindings, **{k: v for k, v in args.filter_bindings.items() if k.startswith("FTS")}}
+        bindings = {**bindings, **{k: v for k, v in args.filter_bindings.items() if k.startswith("S_")}}
     else:
         bindings = {**bindings, **args.filter_bindings}
 

@@ -1,4 +1,4 @@
-import concurrent.futures, os, shutil, sys
+import concurrent.futures, os, shutil
 
 from xklb import usage
 from xklb.utils import arggroups, argparse_utils, devices, file_utils, path_utils

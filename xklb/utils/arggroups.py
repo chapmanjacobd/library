@@ -305,6 +305,11 @@ Double spaces are equal to one space:
 -s one two --or  # results will include /one/file.mkv and /two/file.mka
 -s one two       # results will only include /one/two.mkv""",
     )
+    parse_fs.add_argument(
+        "--no-url-encode-search",
+        action="store_true",
+        help="Skip URL-encode for --include/--exclude",
+    )
 
     parse_fs.add_argument("--online-media-only", "--online", action="store_true", help="Exclude local media")
     parse_fs.add_argument("--local-media-only", "--local", action="store_true", help="Exclude online media")
@@ -468,6 +473,12 @@ def sql_fs_post(args, table_prefix="m.") -> None:
             args.include = [str(Path().cwd().resolve())]
         elif os.sep in args.include[0]:
             args.include[0] = file_utils.resolve_absolute_path(args.include[0])
+
+    if not args.no_url_encode_search:
+        from xklb.utils.web import url_encode
+
+        args.include = [url_encode(s) if s.startswith("http") else s for s in args.include]
+        args.exclude = [url_encode(s) if s.startswith("http") else s for s in args.exclude]
 
     arg_utils.parse_args_limit(args)
 
@@ -1344,10 +1355,10 @@ def filter_links(parent_parser):
     parser.add_argument("--strict-exclude", action="store_true", help="All exclude args must resolve true")
     parser.add_argument("--case-sensitive", action="store_true", help="Filter with case sensitivity")
     parser.add_argument(
-        "--no-url-decode",
-        "--skip-url-decode",
+        "--no-url-encode",
+        "--skip-url-encode",
         action="store_true",
-        help="Skip URL-decode for --path-include/--path-exclude",
+        help="Skip URL-encode for --path-include/--path-exclude",
     )
     parser.add_argument(
         "--url-renames",
@@ -1378,11 +1389,11 @@ def filter_links_post(args):
         args.text_exclude = [s.lower() for s in args.text_exclude]
         args.after_exclude = [s.lower() for s in args.after_exclude]
 
-    if not args.no_url_decode:
-        from xklb.utils.web import url_decode
+    if not args.no_url_encode:
+        from xklb.utils.web import url_encode
 
-        args.path_include = [url_decode(s) for s in args.path_include]
-        args.path_exclude = [url_decode(s) for s in args.path_exclude]
+        args.path_include = [url_encode(s) for s in args.path_include]
+        args.path_exclude = [url_encode(s) for s in args.path_exclude]
 
 
 def requests(parent_parser):

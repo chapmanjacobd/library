@@ -299,7 +299,7 @@ def fts_quote(query: list[str]) -> list[str]:
 
 
 def fts_search_sql(table, fts_table, include, exclude=None, flexible=False):
-    param_key = "FTS" + consts.random_string()
+    param_key = "S_FTS_" + consts.random_string()
     table = f"""(
     with original as (select rowid, * from [{table}])
     select
@@ -324,7 +324,7 @@ def fts_search_sql(table, fts_table, include, exclude=None, flexible=False):
 
 
 def construct_search_bindings(include, exclude, columns, exact=False, flexible_search=False):
-    param_key = consts.random_string()
+    param_key = "S_" + consts.random_string()
 
     sql = []
     bindings = {}
