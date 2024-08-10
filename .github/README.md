@@ -97,7 +97,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v2.9.016; 82 subcommands)
+    library (v2.9.017; 82 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -731,6 +731,13 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     Import lines from stdin
 
         cb | library linksdb example_dbs/links.db --skip-extract -
+
+    IRIs vs URLs
+
+        XKLB should:
+            - print paths as unquoted UTF-8 IRIs (by default)
+            - accept either IRIs or URLs as input with optional flags to make parsing/searching explicitly use one or the other
+            - save paths to the database "AS-IS"
 
     How I use it
 

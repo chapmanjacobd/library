@@ -111,6 +111,12 @@ Some printing modes can be combined
 -p df  # print fields for piping into another program and mark as deleted
 -p bf  # print fields from big-dirs report""",
     )
+    parser.add_argument(
+        "--no-url-decode",
+        "--skip-url-decode",
+        action="store_true",
+        help="Skip URL-decoding/unquoting when printing URLs",
+    )
 
 
 def debug(parent_parser):
@@ -789,6 +795,11 @@ def multiple_playback_post(args):
 def extractor(parent_parser):
     parser = parent_parser.add_argument_group("Extractor")
     parser.add_argument("--no-sanitize", action="store_true", help="Don't sanitize some common URL parameters")
+    parser.add_argument(
+        "--url-encode",
+        action="store_true",
+        help="Convert UTF-8 IRIs (RFC 3987) to ASCII percent-encoded URLs (RFC 1738)",
+    )
     parser.add_argument(
         "--insert-only", "--no-extract", "--skip-extract", action="store_true", help="Insert paths into media table"
     )  # TODO: move to its own subcommand
