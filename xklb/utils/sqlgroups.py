@@ -371,8 +371,8 @@ def construct_download_query(args, dl_status=False) -> tuple[str, dict]:
             {', m.time_downloaded' if 'time_downloaded' in m_columns else ''}
             {', m.time_deleted' if 'time_deleted' in m_columns else ''}
             {', m.error' if 'error' in m_columns and args.verbose >= consts.LOG_DEBUG else ''}
-            {', p.extractor_config' if 'extractor_config' in pl_columns else ''}
-            {', p.extractor_key' if 'extractor_key' in pl_columns else ", 'Playlist-less media' as extractor_key"}
+            {', p.extractor_config' if is_media_playlist and 'extractor_config' in pl_columns else ''}
+            {', p.extractor_key' if is_media_playlist and 'extractor_key' in pl_columns else ", 'Playlist-less media' as extractor_key"}
         FROM {args.table} m
         {'LEFT JOIN playlists p on p.id = m.playlists_id' if is_media_playlist else ''}
         WHERE 1=1
@@ -387,9 +387,10 @@ def construct_download_query(args, dl_status=False) -> tuple[str, dict]:
             {" ".join(args.filter_sql)}
         ORDER BY 1=1
             {', COALESCE(m.time_modified, 0) = 0 DESC' if 'time_modified' in m_columns else ''}
-            {', p.extractor_key IS NOT NULL DESC' if is_media_playlist and 'extractor_key' in pl_columns and 'sort' in args.defaults else ''}
             {', m.error IS NULL DESC' if 'error' in m_columns else ''}
-            {', random()' if 'sort' in args.defaults else ', ' + args.sort}
+            {', ' + args.sort if 'sort' not in args.defaults else ''}
+            {', p.extractor_key IS NOT NULL DESC' if is_media_playlist and 'extractor_key' in pl_columns and 'sort' in args.defaults else ''}
+            , random()
         {sql_utils.limit_sql(args.limit, args.offset)}
     """
 

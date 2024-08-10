@@ -10,7 +10,7 @@ def test_playlists(capsys):
 
 
 def test_playlists2(capsys):
-    lb(["playlists", v_db, "tests/data"])
+    lb(["playlists", v_db, "data"])
     captured = capsys.readouterr().out.replace("\n", "")
     assert len(captured) > 200
 
