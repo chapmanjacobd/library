@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from xklb.lb import library as lb
-from xklb.utils import argparse_utils, db_utils
+from xklb.utils import argparse_utils, consts, db_utils
 from xklb.utils.objects import NoneSpace
 
 
@@ -53,7 +53,7 @@ if not Path(v_db).exists():
     lb(["linksdb", v_db, "--insert-only", "https://test/?tags%5B%5D="])
 
 tube_db = "tests/data/tube.db"
-if not Path(tube_db).exists():
+if not consts.VOLKSWAGEN and not Path(tube_db).exists():
     lb(
         [
             "tube_add",

@@ -5,6 +5,7 @@ import pytest
 from tests.utils import connect_db_args
 from xklb.createdb.tube_add import tube_add
 from xklb.lb import library as lb
+from xklb.utils import consts
 
 URL = "https://www.youtube.com/watch?v=BaW_jenozKc"
 STORAGE_PREFIX = "tests/data/"
@@ -12,7 +13,7 @@ STORAGE_PREFIX = "tests/data/"
 dl_db = "tests/data/dl.db"
 
 
-@pytest.mark.skipif("CI" in os.environ, reason="This helps protect our community")
+@pytest.mark.skipif(consts.VOLKSWAGEN, reason="This helps protect our community")
 def test_yt():
     tube_add([dl_db, URL])
     lb(
