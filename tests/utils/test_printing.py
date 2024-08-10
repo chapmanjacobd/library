@@ -1,7 +1,31 @@
 import unittest
 
 from tests import utils
+from tests.utils import v_db
+from xklb.lb import library as lb
 from xklb.utils import printing
+
+
+def test_tw_print(capsys):
+    for lb_command in [
+        ["tw", v_db, "-p"],
+        ["dl", v_db, "-p"],
+        ["pl", v_db],
+        ["ds", v_db],
+    ]:
+        lb(lb_command)
+        captured = capsys.readouterr().out.replace("\n", "")
+        assert "Aggregate" not in captured
+
+    for lb_command in [
+        ["tw", v_db, "-p", "a"],
+        ["tw", v_db, "-pa"],
+        ["pl", v_db, "-pa"],
+        ["dl", v_db, "-p", "a"],
+    ]:
+        lb(lb_command)
+        captured = capsys.readouterr().out.replace("\n", "")
+        assert ("Aggregate" in captured) or ("extractor_key" in captured)
 
 
 def test_col_naturaldate():
