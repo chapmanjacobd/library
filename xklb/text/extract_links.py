@@ -189,8 +189,8 @@ def extract_links() -> None:
 
     if args.insert_only:
         for url in arg_utils.gen_paths(args):
-            if not args.no_url_decode:
-                url = web.url_decode(url).strip()
+            if args.url_encode:
+                url = web.url_encode(url).strip()
             if args.download:
                 with suppress(RuntimeError):
                     web.download_url(args, url)

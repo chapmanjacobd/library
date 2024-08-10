@@ -1258,6 +1258,13 @@ links_add = r"""library links-add DATABASE PATH ... [--case-sensitive] [--cookie
 
         cb | library linksdb example_dbs/links.db --skip-extract -
 
+    IRIs vs URLs
+
+        XKLB should:
+            - print paths as unquoted UTF-8 IRIs (by default)
+            - accept either IRIs or URLs as input with optional flags to make parsing/searching explicitly use one or the other
+            - save paths to the database "AS-IS"
+
     How I use it
 
         library links-add links.db https://video/site/ --path-include /video/

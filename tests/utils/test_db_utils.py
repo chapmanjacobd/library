@@ -12,8 +12,8 @@ def test_includes():
             columns=["col1", "col2"],
         )
 
-    assert "col1 LIKE :include0 OR col2 LIKE :include0" in search_sql[0]
-    assert search_bindings["include0"] == "%test%"
+    assert "col1 LIKE :S_include0 OR col2 LIKE :S_include0" in search_sql[0]
+    assert search_bindings["S_include0"] == "%test%"
 
 
 def test_exact_match():
@@ -22,8 +22,8 @@ def test_exact_match():
             include=["test"], exclude=[], columns=["col1"], exact=True
         )
 
-    assert "col1 LIKE :include0" in search_sql[0]
-    assert search_bindings["include0"] == "test"
+    assert "col1 LIKE :S_include0" in search_sql[0]
+    assert search_bindings["S_include0"] == "test"
 
 
 def test_excludes():
@@ -34,8 +34,8 @@ def test_excludes():
             columns=["col1", "col2"],
         )
 
-    assert "AND (COALESCE(col1,'') NOT LIKE :exclude0 AND COALESCE(col2,'') NOT LIKE :exclude0)" in search_sql[0]
-    assert search_bindings["exclude0"] == "%test%"
+    assert "AND (COALESCE(col1,'') NOT LIKE :S_exclude0 AND COALESCE(col2,'') NOT LIKE :S_exclude0)" in search_sql[0]
+    assert search_bindings["S_exclude0"] == "%test%"
 
 
 def test_exact_exclude():
@@ -44,8 +44,8 @@ def test_exact_exclude():
             include=[], exclude=["test"], columns=["col1"], exact=True
         )
 
-    assert "AND (COALESCE(col1,'') NOT LIKE :exclude0)" in search_sql[0]
-    assert search_bindings["exclude0"] == "test"
+    assert "AND (COALESCE(col1,'') NOT LIKE :S_exclude0)" in search_sql[0]
+    assert search_bindings["S_exclude0"] == "test"
 
 
 class TestMostSimilarSchema(unittest.TestCase):
