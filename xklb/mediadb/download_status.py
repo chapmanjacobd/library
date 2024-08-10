@@ -37,7 +37,7 @@ def download_status() -> None:
         count_paths += f"""
             , count(*) FILTER(WHERE {can_download} and {not_downloaded} and time_modified>0 and {retry_time} < STRFTIME('%s', datetime())) retry_queued
             , count(*) FILTER(WHERE {can_download} and {not_downloaded} and COALESCE(time_modified, 0) = 0) never_attempted
-            , count(*) FILTER(WHERE time_downloaded > 0) downloaded
+            , count(*) FILTER(WHERE time_downloaded > 0 and cast(STRFTIME('%s', datetime( time_downloaded, 'unixepoch', '+{args.retry_delay}')) as int) >= STRFTIME('%s', datetime())) downloaded_recently
             , count(*) FILTER(WHERE {can_download} and {not_downloaded} and time_modified>0 and {retry_time} >= STRFTIME('%s', datetime())) failed_recently
             """
     if "download_attempts" in query:
