@@ -15,7 +15,7 @@ def test_tw_print(capsys):
     ]:
         lb(lb_command)
         captured = capsys.readouterr().out.replace("\n", "")
-        assert "Aggregate" not in captured
+        assert "Agg" not in captured
 
     for lb_command in [
         ["tw", v_db, "-p", "a"],
@@ -25,7 +25,7 @@ def test_tw_print(capsys):
     ]:
         lb(lb_command)
         captured = capsys.readouterr().out.replace("\n", "")
-        assert ("Aggregate" in captured) or ("extractor_key" in captured)
+        assert ("Agg" in captured) or ("extractor_key" in captured)
 
 
 def test_col_naturaldate():

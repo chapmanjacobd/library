@@ -47,6 +47,26 @@ def get_default_args(*funcs):
     return defaults
 
 
+links_db = "tests/data/links.db"
+if not Path(links_db).exists():
+    lb(
+        [
+            "links-add",
+            links_db,
+            "-c=p1",
+            "--insert-only",
+            "https://site0",
+            "https://site1",
+            "https://site2",
+            "https://site3",
+            "https://site4",
+            "https://site5",
+            "https://site6",
+            "https://site7",
+            "https://site8",
+        ],
+    )
+
 v_db = "tests/data/video.db"
 if not Path(v_db).exists():
     lb(["fs_add", v_db, "--scan-subtitles", "tests/data/", "-E", "Youtube"])

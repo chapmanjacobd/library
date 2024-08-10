@@ -1,25 +1,7 @@
 from unittest import mock
 
+from tests.utils import links_db
 from xklb.lb import library as lb
-
-links_db = "tests/data/links.db"
-lb(
-    [
-        "links-add",
-        links_db,
-        "-c=p1",
-        "--insert-only",
-        "https://site0",
-        "https://site1",
-        "https://site2",
-        "https://site3",
-        "https://site4",
-        "https://site5",
-        "https://site6",
-        "https://site7",
-        "https://site8",
-    ],
-)
 
 
 @mock.patch("xklb.playback.links_open.make_souffle")

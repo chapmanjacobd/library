@@ -64,7 +64,6 @@ def test_pytest_files_exist(path):
         p("tests/misc/test_dedupe_czkawka.py"),
         p("tests/misc/test_export_text.py"),
         p("tests/multidb/test_copy_play_counts.py"),
-        p("tests/multidb/test_merge_dbs.py"),
         p("tests/playback/test_playback_control.py"),
         p("tests/playback/test_surf.py"),  # TODO: remove one line when you see this
     ):
