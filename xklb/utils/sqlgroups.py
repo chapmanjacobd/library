@@ -355,7 +355,7 @@ def construct_download_query(args, dl_status=False) -> tuple[str, dict]:
         LIMIT 1
     )"""
 
-    is_media_playlist = "playlists_id" in m_columns and 'id' in pl_columns
+    is_media_playlist = "playlists_id" in m_columns and "id" in pl_columns
     query = f"""select
             m.id
             , m.playlists_id
