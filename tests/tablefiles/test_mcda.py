@@ -1,6 +1,6 @@
 import pytest
 
-from xklb.lb import library as lb
+from xklb.__main__ import library as lb
 from xklb.tablefiles import mcda
 from xklb.utils.objects import NoneSpace
 from xklb.utils.sql_utils import sort_like_sql

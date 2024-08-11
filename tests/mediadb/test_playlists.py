@@ -1,5 +1,5 @@
 from tests.utils import v_db
-from xklb.lb import library as lb
+from xklb.__main__ import library as lb
 
 
 def test_playlists(capsys):

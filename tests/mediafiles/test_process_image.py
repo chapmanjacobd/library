@@ -5,7 +5,7 @@ from shutil import which
 import pytest
 
 from tests.utils import get_default_args
-from xklb.lb import library as lb
+from xklb.__main__ import library as lb
 from xklb.mediafiles.process_image import process_path
 from xklb.utils import arggroups, objects, processes
 

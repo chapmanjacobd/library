@@ -4,8 +4,8 @@ from pathlib import Path
 import pytest
 
 from tests.utils import p
-from xklb.lb import library as lb
-from xklb.lb import modules, progs
+from xklb.__main__ import library as lb
+from xklb.__main__ import modules, progs
 from xklb.utils import iterables
 
 subcommands = list(iterables.flatten((v.keys() for _, v in progs.items())))

@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 
 from tests.conftest import generate_file_tree_dict
-from xklb.lb import library as lb
+from xklb.__main__ import library as lb
 from xklb.utils import arggroups, devices, objects
 
 

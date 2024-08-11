@@ -12,6 +12,7 @@ def parse_args():
     parser = argparse_utils.ArgumentParser(usage=usage.sample_hash)
     arggroups.sample_hash_bytes(parser)
     arggroups.debug(parser)
+    parser.set_defaults(same_file_threads=8)
 
     arggroups.paths_or_stdin(parser)
     args = parser.parse_args()

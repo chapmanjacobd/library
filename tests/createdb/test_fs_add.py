@@ -1,6 +1,6 @@
 from unittest import mock
 
-from xklb.lb import library as lb
+from xklb.__main__ import library as lb
 
 
 @mock.patch("xklb.playback.media_printer.media_printer")

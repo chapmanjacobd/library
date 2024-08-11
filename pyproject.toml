@@ -58,8 +58,8 @@ homepage = "https://github.com/chapmanjacobd/library#readme"
 repository = "https://github.com/chapmanjacobd/library/"
 
 [project.scripts]
-lb = "xklb.lb:library"
-library = "xklb.lb:library"
+lb = "xklb.__main__:library"
+library = "xklb.__main__:library"
 
 [tool.pdm]
 version = {source = "file", path = "xklb/__init__.py"}

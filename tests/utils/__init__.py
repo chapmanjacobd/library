@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from pathlib import Path
 
-from xklb.lb import library as lb
+from xklb.__main__ import library as lb
 from xklb.utils import argparse_utils, consts, db_utils
 from xklb.utils.objects import NoneSpace
 
