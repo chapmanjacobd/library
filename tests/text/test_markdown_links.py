@@ -1,6 +1,6 @@
 import tempfile
 
-from xklb.lb import library as lb
+from xklb.__main__ import library as lb
 
 
 def test_markdown_links_local_html(capsys):

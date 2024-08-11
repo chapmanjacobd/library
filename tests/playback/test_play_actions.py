@@ -7,7 +7,7 @@ from unittest import mock
 import pytest
 
 from tests.utils import v_db
-from xklb.lb import library as lb
+from xklb.__main__ import library as lb
 from xklb.utils import arggroups
 
 fs_flags = [

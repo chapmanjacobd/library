@@ -1,13 +1,13 @@
-from xklb import lb, usage
+from xklb import __main__, usage
 
 all_progs = [s for s in dir(usage) if not s.startswith("_") and isinstance(getattr(usage, s), str)]
-categorized_progs = [key for d in lb.progs.values() for key in d if isinstance(key, str)]
+categorized_progs = [key for d in __main__.progs.values() for key in d if isinstance(key, str)]
 other_progs = [s for s in all_progs if s not in categorized_progs]
 if len(other_progs) > 0:
-    lb.progs["Other subcommands"] = {s: s for s in other_progs}
+    __main__.progs["Other subcommands"] = {s: s for s in other_progs}
 
 usage_details_md = []
-for category, category_progs in lb.progs.items():
+for category, category_progs in __main__.progs.items():
     usage_details_md.append(f"\n### {category}\n")
 
     for prog, prog_description in category_progs.items():
@@ -134,7 +134,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    {lb.usage()}
+    {__main__.usage()}
 
 </details>
 

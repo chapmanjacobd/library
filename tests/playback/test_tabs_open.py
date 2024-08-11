@@ -4,7 +4,7 @@ import pandas, pytest  # noqa: pandas needs to be imported before freezegun beca
 from freezegun import freeze_time
 
 from tests.utils import connect_db_args
-from xklb.lb import library as lb
+from xklb.__main__ import library as lb
 from xklb.mediadb import db_history
 from xklb.playback import tabs_open
 from xklb.utils import consts

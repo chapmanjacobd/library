@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from tests.conftest import generate_file_tree_dict
-from xklb.lb import library as lb
+from xklb.__main__ import library as lb
 
 simple_file_tree = {
     "folder1": {"file1.txt": "1", "subfolder1": {"file2.txt": "2"}},

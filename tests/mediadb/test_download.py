@@ -4,7 +4,7 @@ import pytest
 
 from tests.utils import connect_db_args
 from xklb.createdb.tube_add import tube_add
-from xklb.lb import library as lb
+from xklb.__main__ import library as lb
 from xklb.utils import consts
 
 URL = "https://www.youtube.com/watch?v=BaW_jenozKc"

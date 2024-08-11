@@ -15,6 +15,7 @@ def parse_args():
     parser.add_argument("--ignore-holes", "--ignore-sparse", action="store_true")
     parser.add_argument("--skip-full-hash", action="store_true")
     arggroups.debug(parser)
+    parser.set_defaults(same_file_threads=4)
 
     arggroups.paths_or_stdin(parser)
     args = parser.parse_args()

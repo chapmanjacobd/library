@@ -2,7 +2,7 @@ import unittest
 
 from tests import utils
 from tests.utils import v_db
-from xklb.lb import library as lb
+from xklb.__main__ import library as lb
 from xklb.utils import printing
 
 

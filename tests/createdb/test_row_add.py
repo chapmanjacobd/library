@@ -1,7 +1,7 @@
 import pytest
 
 from tests.utils import connect_db_args
-from xklb.lb import library as lb
+from xklb.__main__ import library as lb
 
 
 def test_lb_row_add_success(temp_db):

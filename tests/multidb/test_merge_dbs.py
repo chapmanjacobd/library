@@ -1,5 +1,5 @@
 from tests.utils import connect_db_args, links_db, v_db
-from xklb.lb import library as lb
+from xklb.__main__ import library as lb
 
 
 def test_merge(temp_db):
