@@ -1,5 +1,3 @@
-__version__ = "2.9.021"
-
 import xklb.__main__
 
 if __name__ == "__main__":

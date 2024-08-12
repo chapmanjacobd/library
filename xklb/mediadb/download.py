@@ -72,7 +72,6 @@ def parse_args():
     return args
 
 
-
 def download(args=None) -> None:
     if args:
         sys.argv = ["lb", *args]
