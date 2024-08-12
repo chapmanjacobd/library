@@ -1,11 +1,11 @@
-import os
-import argparse, importlib, sys, textwrap
+import argparse, importlib, os, sys, textwrap
 
 from tabulate import tabulate
 
-from xklb import __version__
 from xklb.utils import argparse_utils, iterables
 from xklb.utils.log_utils import log
+
+__version__ = "2.9.022"
 
 progs = {
     "Create database subcommands": {

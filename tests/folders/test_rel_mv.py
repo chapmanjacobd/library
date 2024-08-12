@@ -4,8 +4,8 @@ import pytest
 from pyfakefs.fake_filesystem import OSType
 
 from tests.conftest import generate_file_tree_dict
-from xklb.folders.rel_mv import gen_rel_path, relative_from_path, shortest_relative_from_path
 from xklb.__main__ import library as lb
+from xklb.folders.rel_mv import gen_rel_path, relative_from_path, shortest_relative_from_path
 
 simple_file_tree = {
     "folder1": {"file1.txt": "1", "subfolder1": {"file2.txt": "2"}},

@@ -349,6 +349,7 @@ def download_add(
         with args.db.conn:
             args.db.conn.execute("DELETE from media WHERE path = ?", [webpath])
 
+
 def natsort_media(args, media):
     from natsort import natsorted, ns, os_sorted
 
