@@ -340,13 +340,14 @@ def download_add(
         **fs_tags,
         "webpath": webpath,
         "error": error,
+        "time_modified": consts.now(),
+        "download_attempts": (info.get("download_attempts") or 0) + 1,
     }
     add(args, entry)
 
     if delete_webpath_entry and entry["path"] != webpath:
         with args.db.conn:
             args.db.conn.execute("DELETE from media WHERE path = ?", [webpath])
-
 
 def natsort_media(args, media):
     from natsort import natsorted, ns, os_sorted
