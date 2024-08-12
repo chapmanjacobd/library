@@ -1,8 +1,9 @@
 import argparse
+from collections import defaultdict
 
 from xklb import usage
 from xklb.playback import media_printer
-from xklb.utils import arggroups, argparse_utils, consts, db_utils, sql_utils, sqlgroups
+from xklb.utils import arggroups, argparse_utils, consts, db_utils, nums, sql_utils, sqlgroups
 
 
 def parse_args() -> argparse.Namespace:
@@ -27,34 +28,47 @@ def download_status() -> None:
     args = parse_args()
 
     query, bindings = sqlgroups.construct_download_query(args, dl_status=True)
-
-    not_downloaded = 'path like "http%" and COALESCE(time_downloaded, 0) = 0'
-    can_download = f"download_attempts <= {args.download_retries}" if "download_attempts" in query else "1=1"
-    retry_time = f"cast(STRFTIME('%s', datetime( time_modified, 'unixepoch', '+{args.retry_delay}')) as int)"
-
-    count_paths = ""
-    if "time_modified" in query:
-        count_paths += f"""
-            , count(*) FILTER(WHERE {can_download} and {not_downloaded} and time_modified>0 and {retry_time} < STRFTIME('%s', datetime())) retry_queued
-            , count(*) FILTER(WHERE {can_download} and {not_downloaded} and COALESCE(time_modified, 0) = 0) never_attempted
-            , count(*) FILTER(WHERE time_downloaded > 0 and cast(STRFTIME('%s', datetime( time_downloaded, 'unixepoch', '+{args.retry_delay}')) as int) >= STRFTIME('%s', datetime())) downloaded_recently
-            , count(*) FILTER(WHERE {can_download} and {not_downloaded} and time_modified>0 and {retry_time} >= STRFTIME('%s', datetime())) failed_recently
-            """
-    if "download_attempts" in query:
-        count_paths += f", count(*) FILTER(WHERE {not_downloaded} and download_attempts > {args.download_retries}) retries_exceeded"
-
-    query = f"""select
-        COALESCE(extractor_key, 'Playlist-less media') extractor_key
-        {count_paths}
-    from ({query})
-    group by extractor_key
-    order by never_attempted DESC, retry_queued DESC, extractor_key"""
-
     media = list(args.db.query(query, bindings))
 
     if "blocklist" in args.db.table_names():
         blocklist_rules = [{d["key"]: d["value"]} for d in args.db["blocklist"].rows]
         media = sql_utils.block_dicts_like_sql(media, blocklist_rules)
+
+    extractor_stats = defaultdict(
+        lambda: {
+            'retry_queued': 0,
+            'never_attempted': 0,
+            'downloaded_recently': 0,
+            'failed_recently': 0,
+            'retries_exceeded': 0,
+        }
+    )
+
+    retry_delay = nums.human_to_seconds(args.retry_delay)
+
+    for m in media:
+        extractor_key = m.get('extractor_key', 'Playlist-less media')
+
+        if 'download_attempts' in m and m['download_attempts'] > args.download_retries:
+            extractor_stats[extractor_key]['retries_exceeded'] += 1
+        elif (m.get('time_downloaded') or 0) > 0 or (
+            not m['path'].startswith('http') and m['webpath'].startswith('http')
+        ):
+            if (m['time_downloaded'] + retry_delay) >= consts.APPLICATION_START:
+                extractor_stats[extractor_key]['downloaded_recently'] += 1
+        elif m['path'].startswith('http'):
+            if 'time_modified' in m:
+                if m['time_modified'] > 0 and (m['time_modified'] + retry_delay) < consts.APPLICATION_START:
+                    extractor_stats[extractor_key]['retry_queued'] += 1
+                elif m['time_modified'] > 0 and (m['time_modified'] + retry_delay) >= consts.APPLICATION_START:
+                    extractor_stats[extractor_key]['failed_recently'] += 1
+                else:  # time_modified == 0
+                    extractor_stats[extractor_key]['never_attempted'] += 1
+            else:
+                extractor_stats[extractor_key]['never_attempted'] += 1
+
+    media = [{'extractor_key': extractor_key, **d} for extractor_key, d in extractor_stats.items()]
+    media = sorted(media, key=lambda x: (-x['never_attempted'], -x['retry_queued'], x['extractor_key']))
 
     media_printer.media_printer(args, media, units="extractors")
 

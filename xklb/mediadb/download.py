@@ -72,11 +72,6 @@ def parse_args():
     return args
 
 
-def mark_download_attempt(args, m):
-    m["time_modified"] = consts.now()
-    m["download_attempts"] = (m.get("download_attempts") or 0) + 1
-    db_media.add(args, m)
-
 
 def download(args=None) -> None:
     if args:
@@ -207,7 +202,7 @@ def download(args=None) -> None:
                         mark_deleted=is_not_found,
                         delete_webpath_entry=(
                             not any_error if i == len(dl_paths) - 1 else False
-                        ),  # only check if last download link
+                        ),  # only check after last download link was saved
                     )
             else:
                 raise NotImplementedError
@@ -215,5 +210,3 @@ def download(args=None) -> None:
         except Exception:
             print("db:", args.database)
             raise
-        else:
-            mark_download_attempt(args, m)
