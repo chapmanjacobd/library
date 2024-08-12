@@ -28,47 +28,43 @@ def download_status() -> None:
     args = parse_args()
 
     query, bindings = sqlgroups.construct_download_query(args, dl_status=True)
-    media = list(args.db.query(query, bindings))
-
-    if "blocklist" in args.db.table_names():
-        blocklist_rules = [{d["key"]: d["value"]} for d in args.db["blocklist"].rows]
-        media = sql_utils.block_dicts_like_sql(media, blocklist_rules)
+    media = args.db.query(query, bindings)
 
     extractor_stats = defaultdict(
         lambda: {
-            'retry_queued': 0,
-            'never_attempted': 0,
-            'downloaded_recently': 0,
-            'failed_recently': 0,
-            'retries_exceeded': 0,
+            "retry_queued": 0,
+            "never_attempted": 0,
+            "downloaded_recently": 0,
+            "failed_recently": 0,
+            "retries_exceeded": 0,
         }
     )
 
     retry_delay = nums.human_to_seconds(args.retry_delay)
 
     for m in media:
-        extractor_key = m.get('extractor_key', 'Playlist-less media')
+        extractor_key = m.get("extractor_key", "Playlist-less media")
 
-        if 'download_attempts' in m and m['download_attempts'] > args.download_retries:
-            extractor_stats[extractor_key]['retries_exceeded'] += 1
-        elif (m.get('time_downloaded') or 0) > 0 or (
-            not m['path'].startswith('http') and m['webpath'].startswith('http')
+        if "download_attempts" in m and (m["download_attempts"] or 0) > args.download_retries:
+            extractor_stats[extractor_key]["retries_exceeded"] += 1
+        elif (m.get("time_downloaded") or 0) > 0 or (
+            not m["path"].startswith("http") and (m.get("webpath") or '').startswith("http")
         ):
-            if (m['time_downloaded'] + retry_delay) >= consts.APPLICATION_START:
-                extractor_stats[extractor_key]['downloaded_recently'] += 1
-        elif m['path'].startswith('http'):
-            if 'time_modified' in m:
-                if m['time_modified'] > 0 and (m['time_modified'] + retry_delay) < consts.APPLICATION_START:
-                    extractor_stats[extractor_key]['retry_queued'] += 1
-                elif m['time_modified'] > 0 and (m['time_modified'] + retry_delay) >= consts.APPLICATION_START:
-                    extractor_stats[extractor_key]['failed_recently'] += 1
+            if (m["time_downloaded"] + retry_delay) >= consts.APPLICATION_START:
+                extractor_stats[extractor_key]["downloaded_recently"] += 1
+        elif m["path"].startswith("http"):
+            if "time_modified" in m:
+                if (m["time_modified"] or 0) > 0 and (m["time_modified"] + retry_delay) < consts.APPLICATION_START:
+                    extractor_stats[extractor_key]["retry_queued"] += 1
+                elif (m["time_modified"] or 0) > 0 and (m["time_modified"] + retry_delay) >= consts.APPLICATION_START:
+                    extractor_stats[extractor_key]["failed_recently"] += 1
                 else:  # time_modified == 0
-                    extractor_stats[extractor_key]['never_attempted'] += 1
+                    extractor_stats[extractor_key]["never_attempted"] += 1
             else:
-                extractor_stats[extractor_key]['never_attempted'] += 1
+                extractor_stats[extractor_key]["never_attempted"] += 1
 
-    media = [{'extractor_key': extractor_key, **d} for extractor_key, d in extractor_stats.items()]
-    media = sorted(media, key=lambda x: (-x['never_attempted'], -x['retry_queued'], x['extractor_key']))
+    media = [{"extractor_key": extractor_key, **d} for extractor_key, d in extractor_stats.items()]
+    media = sorted(media, key=lambda x: (-x["never_attempted"], -x["retry_queued"], x["extractor_key"]))
 
     media_printer.media_printer(args, media, units="extractors")
 

@@ -7,8 +7,8 @@ import pytest
 
 from tests import utils
 from tests.utils import connect_db_args, v_db
-from xklb.createdb.fs_add import fs_add
 from xklb.__main__ import library as lb
+from xklb.createdb.fs_add import fs_add
 from xklb.mediadb import db_history, db_media
 from xklb.playback.media_player import MediaPrefetcher
 from xklb.utils import consts
