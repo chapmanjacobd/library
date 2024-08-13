@@ -496,7 +496,7 @@ class MediaPrefetcher:
         if self.args.folders:
             m["now_playing"] = m["path"]
         else:
-            m["now_playing"] = playback_control.now_playing(m["path"])
+            m["now_playing"] = playback_control.now_playing(m["path"]) + "\n"
         log.debug("playback_control: %s", t.elapsed())
 
         m["player"], m["player_need_sleep"] = self.infer_command(m)

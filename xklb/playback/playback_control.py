@@ -220,7 +220,7 @@ def reformat_ffprobe(path):
             segment_start=nums.safe_int(probe.format.get("start_time")) or 0,
             segment_end=nums.safe_int(probe.format.get("end_time")) or 0,
         )
-        formatted_output += duration_str + "\n"
+        formatted_output += duration_str
 
     # print(cmd("ffprobe", "-hide_banner", "-loglevel", "info", path).stderr)
     return textwrap.indent(formatted_output, "    ")
@@ -269,6 +269,8 @@ def playback_now() -> None:
     elif playing["mpv"]:
         path = playing["mpv"]
         print(now_playing(path))
+        time_pos = printing.seconds_to_hhmmss(args.mpv.command("get_property", "time-pos")).strip()
+        print(f"    Playhead: {time_pos}\n")
         args.mpv.terminate()
 
     elif playing["catt"]:
