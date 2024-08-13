@@ -3,7 +3,7 @@ from collections import defaultdict
 
 from xklb import usage
 from xklb.playback import media_printer
-from xklb.utils import arggroups, argparse_utils, consts, db_utils, nums, sql_utils, sqlgroups
+from xklb.utils import arggroups, argparse_utils, consts, db_utils, nums, sqlgroups
 
 
 def parse_args() -> argparse.Namespace:
@@ -48,7 +48,7 @@ def download_status() -> None:
         if "download_attempts" in m and (m["download_attempts"] or 0) > args.download_retries:
             extractor_stats[extractor_key]["retries_exceeded"] += 1
         elif (m.get("time_downloaded") or 0) > 0 or (
-            not m["path"].startswith("http") and (m.get("webpath") or '').startswith("http")
+            not m["path"].startswith("http") and (m.get("webpath") or "").startswith("http")
         ):
             if (m["time_downloaded"] + retry_delay) >= consts.APPLICATION_START:
                 extractor_stats[extractor_key]["downloaded_recently"] += 1
