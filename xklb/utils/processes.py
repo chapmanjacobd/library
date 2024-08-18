@@ -30,14 +30,30 @@ def exit_error(msg) -> NoReturn:
 
 
 def timeout(time_str) -> None:
-    seconds = nums.human_to_seconds(time_str) or 0
+    max_seconds = nums.human_to_seconds(time_str) or 0
 
     def exit_timeout(_signal, _frame):
-        print(f"\nReached timeout... ({seconds}s)")
+        print(f"\nReached timeout... ({max_seconds}s)")
         raise SystemExit(124)
 
     signal.signal(signal.SIGALRM, exit_timeout)
-    signal.alarm(seconds)
+    signal.alarm(max_seconds)
+
+
+sizeout_max = None
+sizeout_total = 0
+
+def sizeout(max_size: str, next_size: int) -> None:
+    global sizeout_max
+    global sizeout_total
+
+    if sizeout_max is None:
+        sizeout_max = nums.human_to_bytes(max_size)
+
+    sizeout_total += next_size
+    if sizeout_total > sizeout_max:
+        print(f"\nReached sizeout... ({max_size})")
+        raise SystemExit(124)
 
 
 def with_timeout(seconds):  # noqa: ANN201

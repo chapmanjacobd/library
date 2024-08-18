@@ -4,7 +4,7 @@ from pathlib import Path
 
 from xklb import usage
 from xklb.files import sample_compare
-from xklb.utils import arggroups, argparse_utils, devices, file_utils, path_utils
+from xklb.utils import arggroups, argparse_utils, devices, file_utils, path_utils, processes
 from xklb.utils.log_utils import log
 
 
@@ -15,6 +15,9 @@ def parse_args() -> argparse.Namespace:
         "--clobber",
         action=argparse.BooleanOptionalAction,
         help="Overwrite files on path conflict (default: ask to confirm)",
+    )
+    parser.add_argument(
+        "--modify-depth", "-Dm", "-mD", action=argparse_utils.ArgparseSlice, help="Trim path parts from each source"
     )
     arggroups.debug(parser)
 
@@ -113,13 +116,18 @@ def shortest_relative_from_path(abspath, relative_from_list):
     return shortest_path or abspath
 
 
-def rel_move(sources, dest, simulate=False, relative_from=None, replace=False, modify_depth=None):
+def rel_move(args, sources, dest, relative_from=None):
+    if relative_from is None:
+        relative_from = args.relative_from
     if relative_from:
         relative_from = [Path(s).expanduser().resolve() for s in relative_from]
 
     new_paths = []
     for source in sources:
         abspath = Path(source).expanduser().resolve()
+
+        if args.timeout_size:
+            processes.sizeout(args.timeout_size, Path(source).stat().st_size)
 
         if relative_from:
             relpath = str(shortest_relative_from_path(abspath, relative_from))
@@ -133,15 +141,15 @@ def rel_move(sources, dest, simulate=False, relative_from=None, replace=False, m
                 except ValueError:
                     relpath = str(source)
 
-        if modify_depth:
+        if args.modify_depth:
             rel_p = Path(relpath)
-            parts = rel_p.parent.parts[modify_depth]
+            parts = rel_p.parent.parts[args.modify_depth]
             relpath = os.path.join(*parts, rel_p.name)
 
         target_dir = (dest / relpath).parent
         target_dir = path_utils.dedupe_path_parts(target_dir)
 
-        if simulate:
+        if args.simulate:
             log.warning("mv %s %s", shlex.quote(str(abspath)), shlex.quote(str(target_dir)))
             continue
 
@@ -152,13 +160,9 @@ def rel_move(sources, dest, simulate=False, relative_from=None, replace=False, m
             if os.path.exists(new_path):
                 if os.path.isdir(new_path):
                     log.info("%s ->m %s", abspath, new_path)
-                    new_paths.extend(
-                        rel_move(
-                            abspath.glob("*"), dest, simulate=simulate, relative_from=relative_from, replace=replace, modify_depth=modify_depth
-                        )
-                    )
+                    new_paths.extend(rel_move(args, abspath.glob("*"), dest))
                 else:
-                    if replace:
+                    if args.replace:
                         os.replace(abspath, new_path)
                         new_paths.append(new_path)
                     else:
@@ -206,7 +210,7 @@ def rel_mv() -> None:
     sources = args.sources
     if args.ext:
         sources = [p for source in sources for p in file_utils.rglob(source, args.ext, args.exclude)[0]]
-    rel_move(sources, dest, simulate=args.simulate, relative_from=args.relative_from, replace=args.replace, modify_depth=args.modify_depth)
+    rel_move(args, sources, dest)
 
 
 if __name__ == "__main__":

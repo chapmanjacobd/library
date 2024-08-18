@@ -2,13 +2,15 @@ import concurrent.futures, os, shutil
 from pathlib import Path
 
 from xklb import usage
-from xklb.utils import arggroups, argparse_utils, devices, file_utils, path_utils
+from xklb.utils import arggroups, argparse_utils, devices, file_utils, path_utils, processes
 
 
 def parse_args(defaults_override=None):
     parser = argparse_utils.ArgumentParser(usage=usage.merge_mv)
     parser.add_argument("--copy", "--cp", "-c", action="store_true", help="Copy instead of move")
-    parser.add_argument("--modify-depth", "-Dm", "-mD", action=argparse_utils.ArgparseSlice, help="Trim path parts from each source")
+    parser.add_argument(
+        "--modify-depth", "-Dm", "-mD", action=argparse_utils.ArgparseSlice, help="Trim path parts from each source"
+    )
     arggroups.clobber(parser)
     arggroups.debug(parser)
 
@@ -41,6 +43,9 @@ def gen_src_dest(args, sources, destination):
     for source in sources:
         if os.path.isdir(source):
             for p in file_utils.rglob_gen(source, args.ext or None):
+                if args.timeout_size:
+                    processes.sizeout(args.timeout_size, Path(p).stat().st_size)
+
                 file_dest = destination
                 if args.parent or (args.bsd and not source.endswith(os.sep)):  # use BSD behavior
                     file_dest = os.path.join(file_dest, os.path.basename(source))
@@ -57,7 +62,10 @@ def gen_src_dest(args, sources, destination):
                 if src:
                     yield src, dest
 
-        else:
+        else:  # source is a file
+            if args.timeout_size:
+                processes.sizeout(args.timeout_size, Path(source).stat().st_size)
+
             file_dest = destination
             if args.parent:
                 file_dest = os.path.join(file_dest, path_utils.parent(source))

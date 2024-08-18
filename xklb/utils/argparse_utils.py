@@ -18,19 +18,20 @@ class ArgparseList(argparse.Action):
 
         setattr(namespace, self.dest, items)
 
+
 class ArgparseSlice(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         if not isinstance(values, str):
             raise TypeError
 
-        if ':' in values:
-            parts = values.split(':')
+        if ":" in values:
+            parts = values.split(":")
             if len(parts) > 3:
                 raise ValueError
 
-            start = ''
-            stop = ''
-            step = ''
+            start = ""
+            stop = ""
+            step = ""
             if len(parts) >= 1:
                 start = parts[0]
             if len(parts) >= 2:

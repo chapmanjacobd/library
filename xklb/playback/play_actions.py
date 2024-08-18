@@ -7,7 +7,7 @@ from xklb.folders import big_dirs
 from xklb.mediadb import db_history, db_media
 from xklb.playback import media_player, media_printer
 from xklb.tablefiles import mcda
-from xklb.utils import arggroups, argparse_utils, consts, devices, file_utils, iterables, processes, sqlgroups
+from xklb.utils import arggroups, argparse_utils, consts, devices, file_utils, iterables, nums, processes, sqlgroups
 from xklb.utils.consts import SC
 from xklb.utils.log_utils import Timer, log
 
@@ -304,6 +304,16 @@ def folder_media(args, media):
     return media
 
 
+def filter_total_size(media, max_size):
+    total_size = 0
+    for m in media:
+        if total_size + m["size"] <= max_size:
+            total_size += m["size"]
+            yield m
+        else:
+            break
+
+
 def process_playqueue(args) -> None:
     db_history.create(args)
 
@@ -311,26 +321,6 @@ def process_playqueue(args) -> None:
         query, bindings = sqlgroups.fs_sql(args, args.limit)
     else:
         query, bindings = sqlgroups.media_sql(args)
-
-    if args.print and not any(
-        [
-            args.partial,
-            args.folder_sizes,
-            args.folder_counts,
-            args.safe,
-            args.play_in_order,
-            args.playlists,
-            args.big_dirs,
-            args.fetch_siblings,
-            args.related,
-            args.refresh,
-            args.cluster_sort,
-            args.folders,
-            args.folder_glob,
-        ],
-    ):
-        media_printer.printer(args, query, bindings)
-        return
 
     t = Timer()
     if args.playlists:
@@ -419,6 +409,10 @@ def process_playqueue(args) -> None:
 
         media = cluster_dicts(args, media)
         log.debug("cluster-sort: %s", t.elapsed())
+
+    if args.timeout_size:
+        max_size = nums.human_to_bytes(args.timeout_size)
+        media = filter_total_size(media, max_size)
 
     if not media:
         processes.no_media_found()
