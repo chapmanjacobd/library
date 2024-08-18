@@ -97,7 +97,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v2.9.022; 82 subcommands)
+    library (v2.9.024; 82 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -487,6 +487,16 @@ end
 
     pip install datasette
     datasette tv.db
+
+</details>
+
+### Pipe to [fzf](https://github.com/junegunn/fzf)
+
+<details><summary>Choose a video to play</summary>
+
+You can use fzf in a subshell to choose a specific video from 1000 random options
+
+    library watch ~/lb/video.db (library watch ~/lb/video.db -pf --random -L 1000 | fzf)
 
 </details>
 
@@ -2827,6 +2837,10 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
                    \________/======
                    / ( || ) \\
+
+
+    TypeError: Retry.__init__() got an unexpected keyword argument 'backoff_jitter'
+    pip install --upgrade --ignore-installed urllib3 requests
 
 </details>
 

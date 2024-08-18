@@ -43,6 +43,7 @@ def timeout(time_str) -> None:
 sizeout_max = None
 sizeout_total = 0
 
+
 def sizeout(max_size: str, next_size: int) -> None:
     global sizeout_max
     global sizeout_total
