@@ -37,6 +37,7 @@ def parse_args(action, **kwargs):
     parser.add_argument("--hash", action="store_true")
     parser.add_argument(
         "--sizes",
+        "--size",
         action="append",
         help="Only grab extended metadata for files of specific sizes (uses the same syntax as fd-find)",
     )
