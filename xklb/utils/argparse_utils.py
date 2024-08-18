@@ -18,6 +18,32 @@ class ArgparseList(argparse.Action):
 
         setattr(namespace, self.dest, items)
 
+class ArgparseSlice(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        if not isinstance(values, str):
+            raise TypeError
+
+        if ':' in values:
+            parts = values.split(':')
+            if len(parts) > 3:
+                raise ValueError
+
+            start = ''
+            stop = ''
+            step = ''
+            if len(parts) >= 1:
+                start = parts[0]
+            if len(parts) >= 2:
+                stop = parts[1]
+            if len(parts) == 3:
+                step = parts[2]
+
+            slice_obj = slice(int(start) if start else None, int(stop) if stop else None, int(step) if step else None)
+        else:
+            slice_obj = slice(int(values), None)
+
+        setattr(namespace, self.dest, slice_obj)
+
 
 class ArgparseDict(argparse.Action):
     def __call__(self, parser, args, values, option_string=None):

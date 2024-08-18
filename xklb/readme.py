@@ -323,6 +323,16 @@ end
 
 </details>
 
+### Pipe to [fzf](https://github.com/junegunn/fzf)
+
+<details><summary>Choose a video to play</summary>
+
+You can use fzf in a subshell to choose a specific video from 1000 random options
+
+    library watch ~/lb/video.db (library watch ~/lb/video.db -pf --random -L 1000 | fzf)
+
+</details>
+
 ### Pipe to [mnamer](https://github.com/jkwill87/mnamer)
 
 <details><summary>Rename poorly named files</summary>
@@ -398,6 +408,10 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
                    \________/======
                    / ( || ) \\
+
+
+    TypeError: Retry.__init__() got an unexpected keyword argument 'backoff_jitter'
+    pip install --upgrade --ignore-installed urllib3 requests
 
 </details>
 
