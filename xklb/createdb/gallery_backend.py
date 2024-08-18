@@ -87,7 +87,7 @@ def parse_gdl_job_status(job_status, path, ignore_errors=False):
         if job_status & 8:
             error = "HTTPNotFound"
         errors.append(error)
-        log.debug("[%s]: Unrecoverable error %s. %s", path, error, strings.combine(errors))
+        log.debug("[%s]: Unrecoverable error %s", path, strings.combine(errors))
 
     if job_status & 128:
         errors.append("OSOrJSONDecodeError")

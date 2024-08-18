@@ -133,9 +133,10 @@ def debug(parent_parser):
 -vvvv  # debug, with external libraries logging""",
     )
     parser.add_argument("--no-pdb", action="store_true", help="Exit immediately on error. Never launch debugger")
-    parser.add_argument("--timeout", "-T", metavar="TIME", help="Quit after x minutes")
-    parser.add_argument("--threads", type=int, help="Load x files in parallel")
-    parser.add_argument("--same-file-threads", type=int, default=1, help="Read the same file x times in parallel")
+    parser.add_argument("--timeout", "-T", metavar="TIME", help="Quit after N minutes")
+    parser.add_argument("--timeout-size", "-TS", metavar="SIZE", help="Quit after processing N bytes")
+    parser.add_argument("--threads", type=int, help="Load N files in parallel")
+    parser.add_argument("--same-file-threads", type=int, default=1, help="Read the same file N times in parallel")
     parser.add_argument(
         "--ext",
         "--exts",
@@ -683,7 +684,7 @@ where 'o' is a key that seeks the amount you want in mpv""",
         default=False,
         const=10,
         nargs="?",
-        help="Experimental escape hatch to open a folder glob limited to x number of files",
+        help="Experimental escape hatch to open a folder glob limited to N files",
     )
 
 
@@ -1278,14 +1279,14 @@ def table_like(parent_parser):
     )
     parser.add_argument("--table-name", "--table", "-t", help="Load a specific table by name")
     parser.add_argument("--table-index", type=int, help="Load a specific table by index")
-    parser.add_argument("--start-row", "--skiprows", type=int, default=None, help="Skip reading x rows")
+    parser.add_argument("--start-row", "--skiprows", type=int, default=None, help="Skip reading N rows")
     parser.add_argument(
         "--end-row",
         "--nrows",
         "--limit",
         "-L",
         default=str(DEFAULT_FILE_ROWS_READ_LIMIT),
-        help="Stop reading after x rows",
+        help="Stop reading after N rows",
     )
     parser.add_argument(
         "--join-tables",

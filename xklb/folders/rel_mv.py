@@ -113,7 +113,7 @@ def shortest_relative_from_path(abspath, relative_from_list):
     return shortest_path or abspath
 
 
-def rel_move(sources, dest, simulate=False, relative_from=None, replace=False):
+def rel_move(sources, dest, simulate=False, relative_from=None, replace=False, modify_depth=None):
     if relative_from:
         relative_from = [Path(s).expanduser().resolve() for s in relative_from]
 
@@ -133,6 +133,11 @@ def rel_move(sources, dest, simulate=False, relative_from=None, replace=False):
                 except ValueError:
                     relpath = str(source)
 
+        if modify_depth:
+            rel_p = Path(relpath)
+            parts = rel_p.parent.parts[modify_depth]
+            relpath = os.path.join(*parts, rel_p.name)
+
         target_dir = (dest / relpath).parent
         target_dir = path_utils.dedupe_path_parts(target_dir)
 
@@ -149,7 +154,7 @@ def rel_move(sources, dest, simulate=False, relative_from=None, replace=False):
                     log.info("%s ->m %s", abspath, new_path)
                     new_paths.extend(
                         rel_move(
-                            abspath.glob("*"), dest, simulate=simulate, relative_from=relative_from, replace=replace
+                            abspath.glob("*"), dest, simulate=simulate, relative_from=relative_from, replace=replace, modify_depth=modify_depth
                         )
                     )
                 else:
@@ -201,7 +206,7 @@ def rel_mv() -> None:
     sources = args.sources
     if args.ext:
         sources = [p for source in sources for p in file_utils.rglob(source, args.ext, args.exclude)[0]]
-    rel_move(sources, dest, simulate=args.simulate, relative_from=args.relative_from, replace=args.replace)
+    rel_move(sources, dest, simulate=args.simulate, relative_from=args.relative_from, replace=args.replace, modify_depth=args.modify_depth)
 
 
 if __name__ == "__main__":

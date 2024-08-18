@@ -1,4 +1,5 @@
 import concurrent.futures, os, shutil
+from pathlib import Path
 
 from xklb import usage
 from xklb.utils import arggroups, argparse_utils, devices, file_utils, path_utils
@@ -7,6 +8,7 @@ from xklb.utils import arggroups, argparse_utils, devices, file_utils, path_util
 def parse_args(defaults_override=None):
     parser = argparse_utils.ArgumentParser(usage=usage.merge_mv)
     parser.add_argument("--copy", "--cp", "-c", action="store_true", help="Copy instead of move")
+    parser.add_argument("--modify-depth", "-Dm", "-mD", action=argparse_utils.ArgparseSlice, help="Trim path parts from each source")
     arggroups.clobber(parser)
     arggroups.debug(parser)
 
@@ -42,7 +44,14 @@ def gen_src_dest(args, sources, destination):
                 file_dest = destination
                 if args.parent or (args.bsd and not source.endswith(os.sep)):  # use BSD behavior
                     file_dest = os.path.join(file_dest, os.path.basename(source))
-                file_dest = os.path.join(file_dest, os.path.relpath(p, source))
+
+                relpath = os.path.relpath(p, source)
+                if args.modify_depth:
+                    rel_p = Path(relpath)
+                    parts = rel_p.parent.parts[args.modify_depth]
+                    relpath = os.path.join(*parts, rel_p.name)
+
+                file_dest = os.path.join(file_dest, relpath)
 
                 src, dest = devices.clobber(args, p, file_dest)
                 if src:
