@@ -323,6 +323,7 @@ Double spaces are equal to one space:
 
     parse_fs.add_argument(
         "--sizes",
+        "--size",
         "-S",
         action="append",
         help="""Constrain media to file sizes (uses the same syntax as fd-find)
