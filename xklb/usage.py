@@ -1419,6 +1419,10 @@ web_add = """library web-add [(--filesystem) | --video | --audio | --image | --t
 
         library web-add open_dir.db --video http://1.1.1.1/
 
+    Re-scan using a different profile
+
+        library media v.db -w 'size is null' --ext wmv,3gp,mp4 -pf | library web-add --media --force --video v.db -
+
     Check download size of all videos matching some criteria
 
         library download --fs open_dir.db --prefix ~/d/dump/video/ -w 'height<720' -E preview -pa
