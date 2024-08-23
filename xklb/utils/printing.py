@@ -212,7 +212,7 @@ def col_hhmmss(tbl: list[dict], col: str) -> list[dict]:
 
 def print_df(df):
     print()
-    print(df.to_markdown(tablefmt="github"))
+    print(df.fillna("<NA>").to_markdown(tablefmt="github"))
     print()
 
 

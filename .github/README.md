@@ -97,7 +97,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v2.9.027; 82 subcommands)
+    library (v2.9.028; 82 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -658,6 +658,10 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     Scan open directories
 
         library web-add open_dir.db --video http://1.1.1.1/
+
+    Re-scan using a different profile
+
+        library media v.db -w 'size is null' --ext wmv,3gp,mp4 -pf | library web-add --media --force --video v.db -
 
     Check download size of all videos matching some criteria
 
