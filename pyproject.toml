@@ -32,7 +32,7 @@ dynamic = ["version"]
 license = {file = ".github/LICENSE"}
 name = "xklb"
 readme = ".github/README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 
 [project.optional-dependencies]
 deluxe = [
