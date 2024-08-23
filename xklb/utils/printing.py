@@ -211,6 +211,8 @@ def col_hhmmss(tbl: list[dict], col: str) -> list[dict]:
 
 
 def print_df(df):
+    for col in df.select_dtypes(include=["category"]).columns:
+        df[col] = df[col].astype("str")
     print()
     print(df.fillna("<NA>").to_markdown(tablefmt="github"))
     print()
