@@ -74,12 +74,14 @@ def parse_args(action, **kwargs):
 
 
 def consolidate_media(args, path: str) -> dict:
-    return {
-        "playlists_id": args.playlists_id,
+    d = {
         "time_created": consts.APPLICATION_START,
         "time_deleted": 0,
         "path": path,
     }
+    if getattr(args, "playlists_id", None):
+        d["playlists_id"] = args.playlists_id
+    return d
 
 
 def add_media(args, media):
@@ -129,7 +131,7 @@ def add_basic_metadata(args, m):
 
 
 def spider(args, paths: list):
-    original_paths = set(*paths)
+    original_paths = set(paths)
     get_inner_urls = iterables.return_unique(extract_links.get_inner_urls, lambda d: d.values())
 
     new_media_count = 0
@@ -146,12 +148,19 @@ def spider(args, paths: list):
         )
 
         if args.media:
-            if args.force:
-                new_paths[path] = None  # add key to map; title: None
-            elif db_media.exists(args, path):
-                known_paths.add(path)
-            else:
-                new_paths[path] = None  # add key to map; title: None
+            paths.append(path)
+            for _ in range(args.threads * 5):  # batch
+                if len(paths) == 0:
+                    continue
+                path = paths.pop()
+
+                if args.force:
+                    new_paths[path] = None  # add key to map; title: None
+                elif db_media.exists(args, path):
+                    known_paths.add(path)
+                else:
+                    new_paths[path] = None  # add key to map; title: None
+
         elif path in original_paths or web.is_index(path) or web.is_html(path):
             link_dicts = list(get_inner_urls(args, path))
             random.shuffle(link_dicts)
@@ -247,9 +256,12 @@ def web_add(args=None) -> None:
         if args.selenium:
             web.load_selenium(args)
         try:
-            for playlist_path in arg_utils.gen_paths(args):
-                args.playlists_id = add_playlist(args, playlist_path)
-                spider(args, [playlist_path])
+            if args.media:
+                spider(args, list(arg_utils.gen_paths(args)))
+            else:
+                for playlist_path in arg_utils.gen_paths(args):
+                    args.playlists_id = add_playlist(args, playlist_path)
+                    spider(args, [playlist_path])
 
         finally:
             if args.selenium:
