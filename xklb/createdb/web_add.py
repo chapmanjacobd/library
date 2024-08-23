@@ -34,6 +34,13 @@ def parse_args(action, **kwargs):
     arggroups.extractor(parser)
     parser.set_defaults(threads=4)
 
+    parser.add_argument(
+        "--media",
+        "--no-html",
+        action="store_true",
+        help="Scan given links as media directly instead of parsing as web pages",
+    )
+    parser.add_argument("--force", "-f", action="store_true")
     parser.add_argument("--hash", action="store_true")
     parser.add_argument(
         "--sizes",
@@ -76,8 +83,8 @@ def consolidate_media(args, path: str) -> dict:
 
 
 def add_media(args, media):
-    media = iterables.list_dict_filter_bool(media)
-    args.db["media"].insert_all(media, pk="id", alter=True, replace=True)
+    for m in media:
+        db_media.add(args, m)
 
 
 def add_extra_metadata(args, m):
@@ -85,9 +92,9 @@ def add_extra_metadata(args, m):
 
     remote_path = m["path"]  # for temp file extraction
     if DBType.video in args.profiles and (extension in consts.VIDEO_EXTENSIONS or args.scan_all_files):
-        m |= av.munge_av_tags(args, m["path"])
+        m = av.munge_av_tags(args, m)
     if DBType.audio in args.profiles and extension in consts.AUDIO_ONLY_EXTENSIONS:
-        m |= av.munge_av_tags(args, m["path"])
+        m = av.munge_av_tags(args, m)
     if DBType.text in args.profiles and (extension in consts.TEXTRACT_EXTENSIONS or args.scan_all_files):
         with web.PartialContent(m["path"]) as temp_file_path:
             m |= fs_add.munge_book_tags_fast(temp_file_path)
@@ -138,7 +145,14 @@ def spider(args, paths: list):
             f"Pages to scan {len(paths)} link scan: {new_media_count} new [{len(known_paths)} known]"
         )
 
-        if path in original_paths or web.is_index(path) or web.is_html(path):
+        if args.media:
+            if args.force:
+                new_paths[path] = None  # add key to map; title: None
+            elif db_media.exists(args, path):
+                known_paths.add(path)
+            else:
+                new_paths[path] = None  # add key to map; title: None
+        elif path in original_paths or web.is_index(path) or web.is_html(path):
             link_dicts = list(get_inner_urls(args, path))
             random.shuffle(link_dicts)
             for link_dict in link_dicts:
@@ -157,7 +171,9 @@ def spider(args, paths: list):
                 else:
                     new_paths[link] = objects.merge_dict_values_str(new_paths.get(link) or {}, link_dict)
         else:  # not HTML page
-            if not (path in traversed_paths or path in paths):
+            if path in traversed_paths or path in paths:
+                pass
+            else:
                 if db_media.exists(args, path):
                     known_paths.add(path)
                 else:
@@ -173,27 +189,26 @@ def spider(args, paths: list):
                 printing.print_overwrite(
                     f"Pages to scan {len(paths)} link scan: {new_media_count} new [{len(known_paths)} known]; basic metadata {i + 1} of {len(media)}"
                 )
+        if media:
+            add_media(args, media)
 
         if args.sizes:
-            basic_media, extra_media = [], []
+            extra_metadata = []
             for d in media:
                 if d.get("size") is None or args.sizes(d["size"]):
-                    extra_media.append(d)
-                else:
-                    basic_media.append(d)
-            if basic_media:
-                add_media(args, basic_media)
+                    extra_metadata.append(d)
+        else:
+            extra_metadata = media
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=args.threads) as executor:
-            gen_media = (f.result() for f in [executor.submit(add_extra_metadata, args, m) for m in media])
+            gen_media = (f.result() for f in [executor.submit(add_extra_metadata, args, m) for m in extra_metadata])
             for i, m in enumerate(gen_media):
-                media[i] = m
+                extra_metadata[i] = m
                 printing.print_overwrite(
                     f"Pages to scan {len(paths)} link scan: {new_media_count} new [{len(known_paths)} known]; extra metadata {i + 1} of {len(media)}"
                 )
-
-        if media:
-            add_media(args, media)
+        if extra_metadata:
+            add_media(args, extra_metadata)
 
         printing.print_overwrite(
             f"Pages to scan {len(paths)} link scan: {new_media_count} new [{len(known_paths)} known]"

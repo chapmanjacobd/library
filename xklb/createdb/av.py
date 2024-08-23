@@ -115,8 +115,8 @@ def collect_codecs(streams):
     )
 
 
-def munge_av_tags(args, path) -> dict:
-    media = {}
+def munge_av_tags(args, media) -> dict:
+    path = media["path"]
     try:
         probe = processes.FFProbe(path)
     except (KeyboardInterrupt, SystemExit) as sys_exit:
@@ -140,8 +140,8 @@ def munge_av_tags(args, path) -> dict:
         return media
 
     format_ = probe.format
-    format_.pop("size", None)
-    format_.pop("bit_rate", None)
+    size = format_.pop("size", None)
+    bitrate_bps = format_.pop("bit_rate", None)
     format_.pop("format_name", None)
     format_.pop("format_long_name", None)
     format_.pop("nb_programs", None)
@@ -150,8 +150,15 @@ def munge_av_tags(args, path) -> dict:
     format_.pop("start_time", None)
     format_.pop("filename", None)
     format_.pop("duration", None)
-
     duration = probe.duration
+
+    if not media.get("size"):
+        if size:
+            media["size"] = size
+        elif bitrate_bps and duration:
+            total_bits = duration * float(bitrate_bps)
+            total_bytes = total_bits / 8
+            media["size"] = total_bytes
 
     corruption = None
     if getattr(args, "check_corrupt", False) and Path(path).suffix.lower() not in consts.SKIP_MEDIA_CHECK:

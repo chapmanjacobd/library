@@ -125,11 +125,11 @@ def stat(path):
         info = {}
 
         if 200 <= r.status_code < 400:
-            if "content-length" in r.headers:
-                info["size"] = int(r.headers["content-length"])
+            if "Content-Length" in r.headers:
+                info["size"] = int(r.headers["Content-Length"])
 
-            if "last-modified" in r.headers:
-                last_modified = r.headers["last-modified"]
+            if "Last-Modified" in r.headers:
+                last_modified = r.headers["Last-Modified"]
                 info["time_modified"] = int(
                     datetime.datetime.strptime(last_modified, "%a, %d %b %Y %H:%M:%S GMT").timestamp()
                 )
