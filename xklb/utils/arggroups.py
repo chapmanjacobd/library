@@ -511,7 +511,9 @@ def sql_fs_post(args, table_prefix="m.") -> None:
     args.filter_sql.extend(" AND " + w for w in args.where if not any(a in w for a in aggregate_filter_columns))
     args.aggregate_filter_sql.extend(" AND " + w for w in args.where if any(a in w for a in aggregate_filter_columns))
 
-    args.filter_sql.extend(f" AND path like '%.{ext}'" for ext in args.ext)
+    if args.ext:
+        or_conditions = [f"path like '%.{ext}'" for ext in args.ext]
+        args.filter_sql.append(f" AND ({' OR '.join(or_conditions)})")
 
     if "time_deleted" in m_columns and not (
         "deleted" in (getattr(args, "sort_groups_by", None) or "") or "time_deleted" in " ".join(args.where)

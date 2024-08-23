@@ -77,10 +77,12 @@ def print_info(args, df):
     else:
         print_df(df.head(6))
 
-    print("### Summary statistics")
-    summary_stats = df.describe()
-    summary_stats = pd.concat([summary_stats, df.select_dtypes("number").agg(["sum", "skew", "kurt"])])
-    print_df(summary_stats)
+    number_df = df.convert_dtypes().select_dtypes("number")
+    if not number_df.empty:
+        print("### Summary statistics")
+        summary_stats = number_df.describe()
+        summary_stats = pd.concat([summary_stats, number_df.agg(["sum", "skew", "kurt"])])
+        print_df(summary_stats)
 
     converted = df.convert_dtypes()
     same_dtypes = []
