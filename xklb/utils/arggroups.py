@@ -395,7 +395,7 @@ Double spaces are equal to one space:
         help="""Constrain media to portrait orientation video
 -w 'width<height' # equivalent""",
     )
-    parse_media.add_argument("--no-video", "-vn", action="store_true", help="Exclude media which have videos streams")
+    parse_media.add_argument("--no-video", "-vn", action="store_true", help="Exclude media which have video streams")
     parse_media.add_argument("--no-audio", "-an", action="store_true", help="Exclude media which have audio streams")
     parse_media.add_argument(
         "--no-subtitles",
@@ -771,6 +771,8 @@ You can set and restore your previous mouse focus setting by wrapping the comman
     focus-follows-mouse
 
 For example in KDE:
+
+    I recommend setting focus stealing protection to "High" in KWin for mpv
 
     function focus-under-mouse
         kwriteconfig5 --file kwinrc --group Windows --key FocusPolicy FocusUnderMouse
