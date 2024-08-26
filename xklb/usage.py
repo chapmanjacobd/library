@@ -1506,17 +1506,29 @@ mount_stats = r"""library mount-stats MOUNTPOINT ...
         /mnt/d9: ########### 13.8%
 """
 
+timestamps = """library timestamps ARGS_OR_STDIN
+
+    Parse timestamps
+        library timestamps 'October 2017 3pm'
+        2017-10-01T15:00:00
+"""
+
+
 dates = """library dates ARGS_OR_STDIN
 
     Parse dates
 
         library dates 'October 2017'
         2017-10-01
+"""
+
+times = """library times ARGS_OR_STDIN
 
     Parse times
-        library dates --time 'October 2017 3pm'
-        2017-10-01T15:00:00
+        library times 'October 2017 3pm'
+        15:00:00
 """
+
 
 nouns = """library nouns (stdin)
 
