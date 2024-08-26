@@ -97,7 +97,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v2.9.031; 82 subcommands)
+    library (v2.9.032; 84 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -131,23 +131,27 @@ To stop playing press Ctrl+C in either the terminal or mpv
     ╰─────────────────┴──────────────────────────────────────────╯
 
     Text subcommands:
-    ╭──────────────────┬──────────────────────────────────────────────╮
-    │ cluster-sort     │ Sort text and images by similarity           │
-    ├──────────────────┼──────────────────────────────────────────────┤
-    │ extract-links    │ Extract inner links from lists of web links  │
-    ├──────────────────┼──────────────────────────────────────────────┤
-    │ extract-text     │ Extract human text from lists of web links   │
-    ├──────────────────┼──────────────────────────────────────────────┤
-    │ markdown-links   │ Extract titles from lists of web links       │
-    ├──────────────────┼──────────────────────────────────────────────┤
-    │ nouns            │ Unstructured text -> compound nouns (stdin)  │
-    ├──────────────────┼──────────────────────────────────────────────┤
-    │ dates            │ Unstructured text -> timestamps, dates, time │
-    ├──────────────────┼──────────────────────────────────────────────┤
-    │ json-keys-rename │ Rename JSON keys by substring match          │
-    ├──────────────────┼──────────────────────────────────────────────┤
-    │ combinations     │ Enumerate possible combinations              │
-    ╰──────────────────┴──────────────────────────────────────────────╯
+    ╭──────────────────┬─────────────────────────────────────────────╮
+    │ cluster-sort     │ Sort text and images by similarity          │
+    ├──────────────────┼─────────────────────────────────────────────┤
+    │ extract-links    │ Extract inner links from lists of web links │
+    ├──────────────────┼─────────────────────────────────────────────┤
+    │ extract-text     │ Extract human text from lists of web links  │
+    ├──────────────────┼─────────────────────────────────────────────┤
+    │ markdown-links   │ Extract titles from lists of web links      │
+    ├──────────────────┼─────────────────────────────────────────────┤
+    │ nouns            │ Unstructured text -> compound nouns (stdin) │
+    ├──────────────────┼─────────────────────────────────────────────┤
+    │ dates            │ Unstructured text -> dates                  │
+    ├──────────────────┼─────────────────────────────────────────────┤
+    │ times            │ Unstructured text -> times                  │
+    ├──────────────────┼─────────────────────────────────────────────┤
+    │ timestamps       │ Unstructured text -> timestamps             │
+    ├──────────────────┼─────────────────────────────────────────────┤
+    │ json-keys-rename │ Rename JSON keys by substring match         │
+    ├──────────────────┼─────────────────────────────────────────────┤
+    │ combinations     │ Enumerate possible combinations             │
+    ╰──────────────────┴─────────────────────────────────────────────╯
 
     Folder subcommands:
     ╭─────────────────┬─────────────────────────────────────────────────────────────────────╮
@@ -1054,7 +1058,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 ###### dates
 
-<details><summary>Unstructured text -> timestamps, dates, time</summary>
+<details><summary>Unstructured text -> dates</summary>
 
     $ library dates -h
     usage: library dates ARGS_OR_STDIN
