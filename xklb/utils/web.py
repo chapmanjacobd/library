@@ -553,7 +553,8 @@ def download_url(args, url, output_path=None, retry_num=0):
 
         set_timestamp(r.headers, output_path)
     finally:
-        r.close()
+        if "r" in locals():  # prevent UnboundLocalError
+            r.close()
 
     post_download(args)
     return output_path
