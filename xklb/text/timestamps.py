@@ -89,7 +89,7 @@ YDM  09/08/07
 
     for date_str in args.dates:
         if args.from_unix:
-            date = datetime.datetime.fromtimestamp(nums.safe_float(date_str), tz=from_tzinfo)  # type: ignore
+            date = datetime.datetime.fromtimestamp(nums.safe_float(date_str))
         else:
             date = parse(
                 date_str,
@@ -127,16 +127,7 @@ YDM  09/08/07
             else:
                 raise NotImplementedError
         else:
-            if isinstance(date, datetime.datetime):
-                if date.tzinfo == datetime.timezone.utc:
-                    date = date.replace(tzinfo=None)
-                print(date.isoformat())
-            elif isinstance(date, datetime.date):
-                print(date.isoformat())
-            elif isinstance(date, datetime.time):
-                print(date.isoformat())
-            else:
-                raise NotImplementedError
+            print(date.isoformat())
 
 
 def times():
