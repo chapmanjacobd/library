@@ -97,7 +97,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v2.9.033; 84 subcommands)
+    library (v2.9.034; 84 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -1068,8 +1068,32 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         library dates 'October 2017'
         2017-10-01
 
+
+</details>
+
+###### times
+
+<details><summary>Unstructured text -> times</summary>
+
+    $ library times -h
+    usage: library times ARGS_OR_STDIN
+
     Parse times
-        library dates --time 'October 2017 3pm'
+        library times 'October 2017 3pm'
+        15:00:00
+
+
+</details>
+
+###### timestamps
+
+<details><summary>Unstructured text -> timestamps</summary>
+
+    $ library timestamps -h
+    usage: library timestamps ARGS_OR_STDIN
+
+    Parse timestamps
+        library timestamps 'October 2017 3pm'
         2017-10-01T15:00:00
 
 

@@ -323,11 +323,11 @@ def relative_datetime(seconds) -> str:
     if seconds is None or math.isnan(seconds) or seconds == 0:
         return ""
 
-    now = datetime.now()
+    now = datetime.now(tz=tz.utc).astimezone()
     midnight_today = now.replace(hour=0, minute=0, second=0, microsecond=0)
 
     dt = datetime.fromtimestamp(seconds, tz=tz.utc).astimezone()
-    delta = datetime.today() - dt
+    delta = datetime.today().astimezone() - dt
     delta_days = (abs(delta.days) - 1) if delta.days < 0 else delta.days
 
     if dt >= midnight_today:
