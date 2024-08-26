@@ -3,7 +3,7 @@ import datetime
 from dateutil.parser import parse
 
 from xklb import usage
-from xklb.utils import arggroups, argparse_utils, nums
+from xklb.utils import arggroups, argparse_utils, nums, strings
 
 
 def print_timestamp(n):
@@ -14,6 +14,7 @@ def print_timestamp(n):
 def timestamps(defaults_override=None):
     parser = argparse_utils.ArgumentParser(usage=usage.dates)
     parser.add_argument("--from-unix", "--unix", "-u", action="store_true", help="Parse from UNIX time")
+    parser.add_argument("--from-timezone", "--from-tz", "-fz", help="Convert from timezone")
 
     parser.add_argument(
         "--month-day-year",
@@ -44,6 +45,8 @@ YDM  09/08/07
         "--to-time-only", "--time-only", "--time", "-t", action="store_true", help="Format the output as only times"
     )
     parser.add_argument("--to-unix", "-U", action="store_true", help="Format as UNIX time")
+    parser.add_argument("--to-timezone", "--to-tz", "-tz", help="Convert to timezone")
+    parser.add_argument("--print-timezone", "-TZ", action="store_true", help="Format with timezone")
 
     arggroups.debug(parser)
 
@@ -70,9 +73,23 @@ YDM  09/08/07
         day_first = True
         year_first = True
 
+    if args.from_timezone:
+        from_tzinfo = strings.timezone(args.from_timezone)
+    elif args.from_unix:
+        from_tzinfo = datetime.timezone.utc
+    else:
+        from_tzinfo = datetime.datetime.now().astimezone().tzinfo
+
+    if args.to_timezone:
+        to_tzinfo = strings.timezone(args.to_timezone)
+    elif args.to_unix:
+        to_tzinfo = datetime.timezone.utc
+    else:
+        to_tzinfo = datetime.datetime.now().astimezone().tzinfo
+
     for date_str in args.dates:
         if args.from_unix:
-            date = datetime.datetime.fromtimestamp(nums.safe_float(date_str), tz=datetime.timezone.utc)  # type: ignore
+            date = datetime.datetime.fromtimestamp(nums.safe_float(date_str), tz=from_tzinfo)  # type: ignore
         else:
             date = parse(
                 date_str,
@@ -82,7 +99,15 @@ YDM  09/08/07
                 yearfirst=year_first,
             )
 
+        if from_tzinfo:
+            date = date.replace(tzinfo=from_tzinfo)
+        if to_tzinfo:
+            date = date.astimezone(tz=to_tzinfo)
+
         tzinfo = date.tzinfo
+        if not args.print_timezone:
+            date = date.replace(tzinfo=None)
+
         if args.to_time_only:
             date = date.time()
         elif args.to_date_only:

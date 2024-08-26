@@ -215,7 +215,9 @@ def since_last_created(args, playlist_path):
         ignore_errors=["no such column", "no such table"],
     )
     if latest_post_utc:
-        get_since = dt.datetime.fromtimestamp(latest_post_utc) - dt.timedelta(days=args.lookback)
+        get_since = dt.datetime.fromtimestamp(latest_post_utc, tz=dt.timezone.utc).astimezone() - dt.timedelta(
+            days=args.lookback
+        )
         get_since = int(get_since.timestamp())
         log.info("[%s]: Getting posts since timestamp %s", playlist_path, get_since)
     else:

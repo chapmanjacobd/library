@@ -1,5 +1,5 @@
 import csv, math, os, sys, textwrap
-from datetime import datetime
+from datetime import datetime, timezone
 
 import humanize
 from tabulate import tabulate
@@ -95,7 +95,7 @@ def col_naturaldate(tbl: list[dict], col: str) -> list[dict]:
             if val == 0:
                 tbl[idx][col] = None
             else:
-                tbl[idx][col] = humanize.naturaldate(datetime.fromtimestamp(val))
+                tbl[idx][col] = humanize.naturaldate(datetime.fromtimestamp(val, tz=timezone.utc).astimezone())
 
     return tbl
 

@@ -1,5 +1,4 @@
 import math, re, statistics
-from datetime import timezone
 
 
 def percent(value, total):
@@ -27,7 +26,7 @@ def percentage_difference(value1, value2):
 
 
 def to_timestamp(dt_object):
-    return int(dt_object.replace(tzinfo=timezone.utc).timestamp())
+    return int(dt_object.timestamp())
 
 
 def safe_int(s) -> int | None:
