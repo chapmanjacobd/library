@@ -11,8 +11,8 @@ def print_timestamp(n):
     print(n if nonzero_denominator else int(n))
 
 
-def timestamps(defaults_override=None):
-    parser = argparse_utils.ArgumentParser(usage=usage.dates)
+def timestamps(defaults_override=None, usage_override=None):
+    parser = argparse_utils.ArgumentParser(usage=usage_override or usage.timestamps)
     parser.add_argument("--from-unix", "--unix", "-u", action="store_true", help="Parse from UNIX time")
     parser.add_argument("--from-timezone", "--from-tz", "-fz", help="Convert from timezone")
 
@@ -89,7 +89,7 @@ YDM  09/08/07
 
     for date_str in args.dates:
         if args.from_unix:
-            date = datetime.datetime.fromtimestamp(nums.safe_float(date_str))
+            date = datetime.datetime.fromtimestamp(nums.safe_float(date_str), tz=datetime.timezone.utc) # type: ignore
         else:
             date = parse(
                 date_str,
@@ -131,8 +131,8 @@ YDM  09/08/07
 
 
 def times():
-    timestamps({"to_time_only": True})
+    timestamps({"to_time_only": True}, usage_override=usage.times)
 
 
 def dates():
-    timestamps({"to_date_only": True})
+    timestamps({"to_date_only": True}, usage_override=usage.dates)
