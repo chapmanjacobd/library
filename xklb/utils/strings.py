@@ -1,6 +1,7 @@
-import html, math, re, textwrap
+import html, math, re, sys, textwrap
 from copy import deepcopy
 from datetime import datetime, timedelta
+from datetime import timezone as tz
 from itertools import zip_longest
 
 import humanize
@@ -325,7 +326,7 @@ def relative_datetime(seconds) -> str:
     now = datetime.now()
     midnight_today = now.replace(hour=0, minute=0, second=0, microsecond=0)
 
-    dt = datetime.fromtimestamp(seconds)
+    dt = datetime.fromtimestamp(seconds, tz=tz.utc).astimezone()
     delta = datetime.today() - dt
     delta_days = (abs(delta.days) - 1) if delta.days < 0 else delta.days
 
@@ -343,3 +344,19 @@ def relative_datetime(seconds) -> str:
         return dt.strftime(f"{delta_days} days ago, %H:%M")
 
     return dt.strftime("%Y-%m-%d %H:%M")
+
+
+def timezone(s):
+    import zoneinfo
+
+    try:
+        return zoneinfo.ZoneInfo(s)
+    except zoneinfo.ZoneInfoNotFoundError:
+        for zone in sorted(zoneinfo.available_timezones()):
+            print(zone)
+
+        print(
+            f"ZoneInfoNotFoundError: No time zone found with key {s}. Try one of the above! (on Windows you might need to pip install tzdata)",
+            file=sys.stderr,
+        )
+        raise SystemExit(3)

@@ -9,7 +9,7 @@ def now():
 
 
 def today_stamp():
-    return int(datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
+    return int(datetime.now(tz=timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
 
 
 def random_string() -> str:

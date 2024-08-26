@@ -1,5 +1,5 @@
 import argparse, sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from random import randint
 
 from xklb import usage
@@ -147,7 +147,7 @@ def tabs_shuffle() -> None:
 
     for d in tabs:
         # pick a random day within the same week
-        date_last_played = datetime.fromtimestamp(d["time_last_played"])
+        date_last_played = datetime.fromtimestamp(d["time_last_played"], tz=timezone.utc).astimezone()
         min_date = date_last_played - timedelta(days=args.days)
 
         min_time = int(min_date.replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
