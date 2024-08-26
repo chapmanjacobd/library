@@ -181,7 +181,7 @@ def database(parent_parser):
     capability_delete(parent_parser)
 
 
-def paths_or_stdin(parent_parser, destination=False):
+def paths_or_stdin(parent_parser, required=True, destination=False):
     parser = parent_parser.add_argument_group("Paths")
     parser.add_argument(
         "--from-file",
@@ -195,7 +195,10 @@ def paths_or_stdin(parent_parser, destination=False):
         parser.add_argument("paths", nargs="+", action=argparse_utils.ArgparseArgsOrStdin)
     else:
         parser.add_argument(
-            "paths", nargs="*", default=argparse_utils.STDIN_DASH, action=argparse_utils.ArgparseArgsOrStdin
+            "paths",
+            nargs="*",
+            default=argparse_utils.STDIN_DASH if required else None,
+            action=argparse_utils.ArgparseArgsOrStdin,
         )
 
 

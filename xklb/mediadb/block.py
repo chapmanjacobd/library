@@ -22,8 +22,7 @@ def parse_args():
     arggroups.debug(parser)
 
     arggroups.database(parser)
-    arggroups.paths_or_stdin(parser)
-    parser.set_defaults(path=None)
+    arggroups.paths_or_stdin(parser, required=False)
 
     args = parser.parse_intermixed_args()
     arggroups.args_post(args, parser)
