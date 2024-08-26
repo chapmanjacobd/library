@@ -89,7 +89,7 @@ YDM  09/08/07
 
     for date_str in args.dates:
         if args.from_unix:
-            date = datetime.datetime.fromtimestamp(nums.safe_float(date_str), tz=datetime.timezone.utc) # type: ignore
+            date = datetime.datetime.fromtimestamp(nums.safe_float(date_str), tz=datetime.timezone.utc)  # type: ignore
         else:
             date = parse(
                 date_str,
