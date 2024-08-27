@@ -1,6 +1,8 @@
 import json, random, time
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
+import requests
+
 from xklb import usage
 from xklb.mediadb import db_media, db_playlists
 from xklb.text import extract_links
@@ -253,30 +255,33 @@ def extractor(args, playlist_path):
         log.info("Loading page %s", page_path)
         page_known = set()
         page_new = {}
-        for link_dict in extract_links.get_inner_urls(args, page_path):
-            link = link_dict.pop("link")
+        try:
+            for link_dict in extract_links.get_inner_urls(args, page_path):
+                link = link_dict.pop("link")
 
-            if link == args.stop_link:
-                end_of_playlist = True
-                break
-
-            if link in page_known:
-                pass
-            elif db_media.exists(args, link):
-                page_known.add(link)
-                if args.category:
-                    update_category(args, link)
-            else:
-                page_new[link] = objects.merge_dict_values_str(page_new.get(link) or {}, link_dict)
-
-            printing.print_overwrite(f"Page {page_count} link scan: {len(page_new)} new [{len(page_known)} known]")
-
-            if not (args.backfill_pages or args.fixed_pages):
-                if (args.stop_known and len(page_known) > args.stop_known) or (
-                    args.stop_new and args.stop_new >= len(page_new)
-                ):
+                if link == args.stop_link:
                     end_of_playlist = True
                     break
+
+                if link in page_known:
+                    pass
+                elif db_media.exists(args, link):
+                    page_known.add(link)
+                    if args.category:
+                        update_category(args, link)
+                else:
+                    page_new[link] = objects.merge_dict_values_str(page_new.get(link) or {}, link_dict)
+
+                printing.print_overwrite(f"Page {page_count} link scan: {len(page_new)} new [{len(page_known)} known]")
+
+                if not (args.backfill_pages or args.fixed_pages):
+                    if (args.stop_known and len(page_known) > args.stop_known) or (
+                        args.stop_new and args.stop_new >= len(page_new)
+                    ):
+                        end_of_playlist = True
+                        break
+        except requests.HTTPError as e:
+            log.error(e)
 
         add_media(args, [{"path": k, **v} for k, v in page_new.items()])
 

@@ -1,6 +1,8 @@
 import concurrent.futures, json, random, sys, time
 from urllib.parse import urlparse
 
+import requests
+
 from xklb import usage
 from xklb.createdb import av, fs_add
 from xklb.files import sample_hash
@@ -162,7 +164,12 @@ def spider(args, paths: list):
                     new_paths[path] = None  # add key to map; title: None
 
         elif path in original_paths or web.is_index(path) or web.is_html(path):
-            link_dicts = list(get_inner_urls(args, path))
+            try:
+                link_dicts = list(get_inner_urls(args, path))
+            except requests.HTTPError as e:
+                log.error(e)
+                continue
+
             random.shuffle(link_dicts)
             for link_dict in link_dicts:
                 link = web.remove_apache_sorting_params(link_dict.pop("link"))

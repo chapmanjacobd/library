@@ -5,6 +5,42 @@ from pathlib import Path
 import pytest
 
 
+def safe_name(val):
+    return (
+        str(val)
+        .strip()
+        .strip("-")
+        .replace(":", ".")
+        .replace("-", "_")
+        .replace("/", ".")
+        .replace("\\", ".")
+        .replace(" ", "_")
+        .replace("\n", "\\n")
+    )
+
+
+def pytest_make_parametrize_id(config, val, argname):
+    if isinstance(val, list):
+        val = "_".join(safe_name(v) for v in val if safe_name(v) != argname)
+    else:
+        val = safe_name(val)
+
+    return f"{argname}={val}"
+
+
+def pytest_collection_modifyitems(config, items):
+    for item in items:
+        item._nodeid = item.nodeid.replace("-", " ")
+
+
+@pytest.fixture
+def assert_unchanged(data_regression, request):
+    def assert_unchanged(captured):
+        data_regression.check(captured, basename=request.node.name.replace("-", " "))
+
+    return assert_unchanged
+
+
 class MockStdin:
     def __init__(self, input_text):
         self.input_text = input_text
