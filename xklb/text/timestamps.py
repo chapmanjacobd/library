@@ -4,6 +4,7 @@ from dateutil.parser import parse
 
 from xklb import usage
 from xklb.utils import arggroups, argparse_utils, nums, strings
+from xklb.utils.log_utils import log
 
 
 def print_timestamp(n):
@@ -76,16 +77,16 @@ YDM  09/08/07
     if args.from_timezone:
         from_tzinfo = strings.timezone(args.from_timezone)
     elif args.from_unix:
-        from_tzinfo = datetime.timezone.utc
+        from_tzinfo = datetime.timezone.utc  # this is needed to set the initial timezone
     else:
-        from_tzinfo = datetime.datetime.now().astimezone().tzinfo
+        from_tzinfo = None  # localtime
 
     if args.to_timezone:
         to_tzinfo = strings.timezone(args.to_timezone)
     elif args.to_unix:
-        to_tzinfo = datetime.timezone.utc
+        to_tzinfo = datetime.timezone.utc  # not really necessary but you can see the symmetry
     else:
-        to_tzinfo = datetime.datetime.now().astimezone().tzinfo
+        to_tzinfo = None  # localtime
 
     for date_str in args.dates:
         if args.from_unix:
@@ -99,34 +100,39 @@ YDM  09/08/07
                 yearfirst=year_first,
             )
 
-        if from_tzinfo:
-            date = date.replace(tzinfo=from_tzinfo)
-        if to_tzinfo:
-            date = date.astimezone(tz=to_tzinfo)
-
-        tzinfo = date.tzinfo
-        if not args.print_timezone:
-            date = date.replace(tzinfo=None)
-
-        if args.to_time_only:
-            date = date.time()
-        elif args.to_date_only:
-            date = date.date()
+        log.debug("%s\t%s", date, date.tzinfo)
+        date = date.replace(tzinfo=from_tzinfo)  # naive datetime => timezone-aware datetime
+        log.debug("%s\t%s", date, date.tzinfo)
+        date = date.astimezone(tz=to_tzinfo)
+        log.debug("%s\t%s", date, date.tzinfo)
 
         if args.to_unix:
-            if isinstance(date, datetime.datetime):
-                print_timestamp(date.timestamp())
-            elif isinstance(date, datetime.date):
+            if args.to_time_only:  # datetime.time
+                date = date.time()
+                print_timestamp(date.hour * 3600 + date.minute * 60 + date.second + date.microsecond / 1e6)
+            elif args.to_date_only:  # datetime.date
                 print_timestamp(
                     datetime.datetime(
-                        year=date.year, month=date.month, day=date.day, hour=0, minute=0, microsecond=0, tzinfo=tzinfo
+                        year=date.year,
+                        month=date.month,
+                        day=date.day,
+                        hour=0,
+                        minute=0,
+                        microsecond=0,
+                        tzinfo=date.tzinfo,
                     ).timestamp()
                 )
-            elif isinstance(date, datetime.time):
-                print_timestamp(date.hour * 3600 + date.minute * 60 + date.second + date.microsecond / 1e6)
-            else:
-                raise NotImplementedError
+            else:  # datetime.datetime
+                print_timestamp(date.timestamp())
         else:
+            if not args.print_timezone:
+                date = date.replace(tzinfo=None)
+
+            if args.to_time_only:
+                date = date.time()
+            elif args.to_date_only:
+                date = date.date()
+
             print(date.isoformat())
 
 

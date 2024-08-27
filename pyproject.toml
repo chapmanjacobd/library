@@ -50,7 +50,7 @@ deluxe = [
 ]
 dev = ["black", "isort", "ssort"]
 fat = ["brotab", "orjson", "textract-py3==2.0.1", "pypdf_table_extraction", "opencv-python", "ghostscript"]
-test = ["ruff", "pytest", "freezegun", "pyfakefs"]
+test = ["ruff", "pytest", "pytest-regressions", "freezegun", "pyfakefs"]
 
 [project.urls]
 documentation = "https://github.com/chapmanjacobd/library#usage"

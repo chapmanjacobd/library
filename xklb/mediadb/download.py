@@ -1,5 +1,7 @@
 import sys
 
+import requests
+
 from xklb import usage
 from xklb.createdb import gallery_backend, tube_backend
 from xklb.mediadb import db_media
@@ -162,12 +164,26 @@ def download(args=None) -> None:
                 dl_paths = [original_path]
                 if args.links:
                     dl_paths = []
-                    for link_dict in get_inner_urls(args, original_path):
-                        dl_paths.append(link_dict["link"])
+                    try:
+                        for link_dict in get_inner_urls(args, original_path):
+                            dl_paths.append(link_dict["link"])
+                    except requests.HTTPError as e:
+                        log.warning(
+                            "HTTPError %s. Recording download attempt: %s", e.response.status_code, original_path
+                        )
+                        db_media.download_add(
+                            args,
+                            webpath=original_path,
+                            info=m,
+                            error=str(e),
+                            mark_deleted=e.response.status_code == 404,
+                            delete_webpath_entry=False,
+                        )
+                        continue
 
                 if not dl_paths:
                     log.info("No relevant links in page. Recording download attempt: %s", original_path)
-                    db_media.download_add(args, original_path, error="No relevant links in page")
+                    db_media.download_add(args, original_path, m, error="No relevant links in page")
 
                 any_error = False
                 for i, dl_path in enumerate(dl_paths):
@@ -194,9 +210,9 @@ def download(args=None) -> None:
 
                     db_media.download_add(
                         args,
-                        original_path,
-                        m,
-                        local_path,
+                        webpath=original_path,
+                        info=m,
+                        local_path=local_path,
                         error=error,
                         mark_deleted=is_not_found,
                         delete_webpath_entry=(
