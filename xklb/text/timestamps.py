@@ -91,6 +91,8 @@ YDM  09/08/07
     for date_str in args.dates:
         if args.from_unix:
             date = datetime.datetime.fromtimestamp(nums.safe_float(date_str), tz=datetime.timezone.utc)  # type: ignore
+            date = date.replace(tzinfo=from_tzinfo)
+            log.debug("%s\t%s", date, date.tzinfo)
         else:
             date = parse(
                 date_str,
@@ -99,16 +101,16 @@ YDM  09/08/07
                 dayfirst=day_first,
                 yearfirst=year_first,
             )
+            log.debug("%s\t%s", date, date.tzinfo)
+            if date.tzinfo is None:
+                date = date.replace(tzinfo=from_tzinfo)  # naive datetime => timezone-aware datetime
+                log.debug("%s\t%s", date, date.tzinfo)
 
-        log.debug("%s\t%s", date, date.tzinfo)
-        date = date.replace(tzinfo=from_tzinfo)  # naive datetime => timezone-aware datetime
-        log.debug("%s\t%s", date, date.tzinfo)
         date = date.astimezone(tz=to_tzinfo)
         log.debug("%s\t%s", date, date.tzinfo)
 
         if args.to_unix:
             if args.to_time_only:  # datetime.time
-                date = date.time()
                 print_timestamp(date.hour * 3600 + date.minute * 60 + date.second + date.microsecond / 1e6)
             elif args.to_date_only:  # datetime.date
                 print_timestamp(
