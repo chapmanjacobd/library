@@ -59,12 +59,10 @@ def test_pytest_files_exist(path):
         p("tests/mediadb/test_history.py"),
         p("tests/mediadb/test_optimize_db.py"),
         p("tests/mediadb/test_redownload.py"),
-        p("tests/mediadb/test_search.py"),
-        p("tests/mediadb/test_stats.py"),
-        p("tests/misc/test_dedupe_czkawka.py"),
-        p("tests/misc/test_export_text.py"),
         p("tests/multidb/test_copy_play_counts.py"),
         p("tests/playback/test_playback_control.py"),
         p("tests/playback/test_surf.py"),  # TODO: remove one line when you see this
+        p("tests/misc/test_export_text.py"),
+        p("tests/misc/test_dedupe_czkawka.py"),
     ):
         assert os.path.getsize(path) > 0, f"Pytest file {path} is empty."

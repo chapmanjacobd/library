@@ -70,7 +70,11 @@ def merge_captions(args, captions):
         key=lambda x: x["path"],
     ):  # group by only does contiguous items with the same key
         group = list(group)
-        merged_group = {"path": path, "title": group[0]["title"], "time": group[0]["time"], "end": get_end(group[0]), "text": group[0]["text"]}  # type: ignore
+        merged_group = {
+            **group[0],
+            "path": path,
+            "end": get_end(group[0]),
+        }  # type: ignore
         for i in range(1, len(group)):
             end = get_end(group[i])
 
