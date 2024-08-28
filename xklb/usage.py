@@ -785,6 +785,24 @@ dedupe_db = """library dedupe-dbs DATABASE TABLE --bk BUSINESS_KEYS [--pk PRIMAR
 search_db = """library search-db DATABASE TABLE SEARCH ... [--delete-rows]
 
     Search all columns in a SQLITE table. If the table does not exist, uses the table which startswith (if only one match)
+
+        library sdb tests/data/video.db media test.gif --to-json | jq
+        {
+            "id": 4,
+            "playlists_id": 1,
+            "size": 2145,
+            "time_created": 1713852795,
+            "time_modified": 1713852795,
+            "time_downloaded": 1723276940,
+            "video_count": 1,
+            "width": 82,
+            "height": 82,
+            "subtitle_count": 4,
+            "path": "/home/xk/github/xk/lb/tests/data/test.gif",
+            "type": "image/gif",
+            "video_codecs": "gif",
+            "fps": 10.0
+        }
 """
 
 merge_dbs = """library merge-dbs SOURCE_DB ... DEST_DB [--only-target-columns] [--only-new-rows] [--upsert] [--pk PK ...] [--table TABLE ...]

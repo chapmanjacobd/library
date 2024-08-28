@@ -52,7 +52,6 @@ def test_pytest_files_exist(path):
         p("tests/folders/test_mount_stats.py"),
         p("tests/folders/test_move_list.py"),
         p("tests/fsdb/test_disk_usage.py"),
-        p("tests/fsdb/test_search_db.py"),
         p("tests/mediadb/test_block.py"),
         p("tests/mediadb/test_download_status.py"),
         p("tests/mediadb/test_history_add.py"),
