@@ -46,7 +46,6 @@ def test_pytest_files_exist(path):
     if p(path) not in (
         p("tests/files/test_christen.py"),
         p("tests/files/test_sample_compare.py"),
-        p("tests/files/test_sample_hash.py"),
         p("tests/files/test_similar_files.py"),
         p("tests/folders/test_big_dirs.py"),
         p("tests/folders/test_mount_stats.py"),
