@@ -179,11 +179,14 @@ def download(args=None) -> None:
                             mark_deleted=e.response.status_code == 404,
                             delete_webpath_entry=False,
                         )
+                        web.post_download(args)
                         continue
 
                 if not dl_paths:
                     log.info("No relevant links in page. Recording download attempt: %s", original_path)
                     db_media.download_add(args, original_path, m, error="No relevant links in page")
+                    web.post_download(args)
+                    continue
 
                 any_error = False
                 for i, dl_path in enumerate(dl_paths):
