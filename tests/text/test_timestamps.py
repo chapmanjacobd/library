@@ -8,7 +8,7 @@ from xklb.__main__ import library as lb
 @pytest.mark.parametrize("tz", [["-tz", "America/New_York"], ["-tz", "America/Chicago"]])
 @pytest.mark.parametrize("s", [[], ["-d"], ["-t"]])
 @pytest.mark.parametrize("f", [[], ["-TZ"]])
-def test_lb_timestamps_tz_utc(assert_unchanged, p, fz, tz, s, f, capsys):
+def test_lb_timestamps_tz(assert_unchanged, p, fz, tz, s, f, capsys):
     lb(["timestamps"] + p + fz + tz + s + f)
     captured = capsys.readouterr().out.strip()
     assert_unchanged(captured)
