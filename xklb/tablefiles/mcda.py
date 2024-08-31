@@ -243,10 +243,15 @@ def file_mcda(args, path):
         order_by=args.sort,
         encoding=args.encoding,
         mimetype=args.mimetype,
+        join_tables=args.join_tables,
+        transpose=args.transpose,
     )
 
     for df in dfs:
-        print(f"## {path}:{df.name}")
+        if args.table_name == "stdin":
+            print(f"## stdin:{df.name}")
+        else:
+            print(f"## {path}:{df.name}")
         df = pd_utils.convert_dtypes(df, clean=args.clean)
         print_info(args, df)
 

@@ -428,6 +428,7 @@ def read_file_to_dataframes(
     encoding=None,
     mimetype=None,
     join_tables=False,
+    transpose=False,
 ):
     import pandas as pd
 
@@ -570,6 +571,10 @@ def read_file_to_dataframes(
         msg = f"{path}: Unsupported file type: {mimetype}"
         raise ValueError(msg)
 
+    if mimetype not in ("sqlite", "sqlite3", "sqlite database file"):
+        if table_index is not None:
+            dfs = [dfs[table_index]]
+
     if join_tables:
         dfs = [pd.concat(dfs, axis=0, ignore_index=True)]
 
@@ -577,9 +582,16 @@ def read_file_to_dataframes(
         if not hasattr(df, "name"):
             df.name = str(table_index_as_name)
 
-    if mimetype not in ("sqlite", "sqlite3", "sqlite database file"):
-        if table_index is not None:
-            dfs = [dfs[table_index]]
+    if transpose:
+
+        def t(df):
+            df_name = df.name
+            df.loc[-1] = df.columns
+            df = df.sort_index().reset_index(drop=True).T
+            df.name = df_name
+            return df
+
+        dfs = [t(df) for df in dfs]
 
     return dfs
 
