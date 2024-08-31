@@ -35,8 +35,8 @@ def pytest_collection_modifyitems(config, items):
 
 @pytest.fixture
 def assert_unchanged(data_regression, request):
-    def assert_unchanged(captured):
-        data_regression.check(captured, basename=request.node.name.replace("-", " "))
+    def assert_unchanged(captured, basename=None):
+        data_regression.check(captured, basename=basename if basename else request.node.name.replace("-", " "))
 
     return assert_unchanged
 

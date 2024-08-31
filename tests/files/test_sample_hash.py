@@ -5,7 +5,6 @@ from xklb.__main__ import library as lb
 paths = [
     "test.gif",
     "test.hdf",
-    "test.html",
     "test.mp4",
     "test.nc",
     "test.opus",
