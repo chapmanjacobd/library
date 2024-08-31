@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from xklb import usage
 from xklb.mediadb import db_history
 from xklb.utils import arg_utils, arggroups, argparse_utils, consts, printing
@@ -26,6 +28,8 @@ def history_add() -> None:
     history_new = set()
     media_unknown = set()
     for p in arg_utils.gen_paths(args):
+        if Path(p).exists():
+            p = str(Path(p).resolve())
         media_id = args.db.pop("select id from media where path = ?", [p])
         if media_id is None:
             media_unknown.add(p)

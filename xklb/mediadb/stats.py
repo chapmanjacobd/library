@@ -1,6 +1,7 @@
 import argparse
 
 from xklb import usage
+from xklb.mediadb import db_history
 from xklb.playback import media_printer
 from xklb.utils import arggroups, argparse_utils, consts, db_utils, sql_utils
 
@@ -41,6 +42,7 @@ def parse_args() -> argparse.Namespace:
 
 def stats() -> None:
     args = parse_args()
+    db_history.create(args)
 
     print(f"{args.facet.title()} media:")
     if args.facet == "time_played" or args.completed:

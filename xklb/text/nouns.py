@@ -1,4 +1,4 @@
-import itertools, pickle, sys
+import itertools, pickle
 from functools import wraps
 from html.parser import HTMLParser
 from io import StringIO
@@ -9,6 +9,35 @@ import regex
 from xklb import usage
 from xklb.data import wordbank
 from xklb.utils import arggroups, argparse_utils, iterables, printing
+
+
+def parse_args():
+    parser = argparse_utils.ArgumentParser(usage=usage.nouns)
+    parser.add_argument("--html-strip", "--strip-html", action="store_true", help="Strip HTML tags")
+    parser.add_argument("--unique", "-u", action="store_true", help="Deduplicate output")
+    parser.add_argument("--all", "-a", action="store_true", help="Show all output, even non-dictionary words")
+    parser.add_argument(
+        "--prepend",
+        default=False,
+        const="1",
+        nargs="?",
+        help="Characters to prepend to outputs. Numbers are A-Z combinatorial",
+    )
+    parser.add_argument(
+        "--append",
+        default=False,
+        const="1",
+        nargs="?",
+        help="Characters to append to outputs. Numbers are A-Z combinatorial",
+    )
+    arggroups.debug(parser)
+
+    arggroups.paths_or_stdin(parser)
+    args = parser.parse_args()
+    arggroups.args_post(args, parser)
+
+    return args
+
 
 RE_NOUNS_SPLIT = regex.compile(
     r"(?= [a-z]|(?<!\b[A-Z][a-z]*) (?=[A-Z]))|[.?!,\/#$%\^&\*;:{}=\-_`~()]|\,|\'|\"|\^|‘|’|“|”|\n| -| :| _",
@@ -51,8 +80,7 @@ def printer(part) -> None:
     printing.pipe_print(part)
 
 
-def line_processor(txt):
-    txt = strip_tags(txt)
+def line_splitter(txt):
     parts = RE_NOUNS_SPLIT.split(txt)
     return [s.strip() for s in parts if s.strip()]
 
@@ -91,28 +119,7 @@ def check_dictionary(gen_func):
 
 
 def nouns() -> None:
-    parser = argparse_utils.ArgumentParser(usage=usage.nouns)
-    parser.add_argument("--unique", "-u", action="store_true", help="Deduplicate output")
-    parser.add_argument("--all", "-a", action="store_true", help="Show all output, even non-dictionary words")
-    parser.add_argument(
-        "--prepend",
-        default=False,
-        const="1",
-        nargs="?",
-        help="Characters to prepend to outputs. Numbers are A-Z combinatorial",
-    )
-    parser.add_argument(
-        "--append",
-        default=False,
-        const="1",
-        nargs="?",
-        help="Characters to append to outputs. Numbers are A-Z combinatorial",
-    )
-    arggroups.debug(parser)
-    args = parser.parse_args()
-    arggroups.args_post(args, parser)
-
-    print("library nouns: Reading from stdin...", file=sys.stderr)
+    args = parse_args()
 
     def part_processor(args, parts):
         for part in parts:
@@ -136,8 +143,11 @@ def nouns() -> None:
     if not args.all:
         part_processor = check_dictionary(part_processor)
 
-    for line in sys.stdin:
-        parts = line_processor(line)
+    for line in args.paths:
+        if args.html_strip:
+            txt = strip_tags(txt)
+
+        parts = line_splitter(line)
         parts = part_processor(args, parts)
         for part in parts:
             printer(part)
