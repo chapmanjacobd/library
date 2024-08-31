@@ -8,6 +8,8 @@ tracking online video playlists (eg. YouTube subscriptions) and scheduling brows
 
 <img align="right" width="300" height="600" src="https://raw.githubusercontent.com/chapmanjacobd/library/main/.github/examples/art.avif" />
 
+[![Downloads](https://static.pepy.tech/badge/xklb)](https://pepy.tech/project/xklb)
+
 ## Install
 
 Linux recommended but [Windows setup instructions](./Windows.md) available.
@@ -97,7 +99,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v2.9.036; 84 subcommands)
+    library (v2.9.037; 84 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -1939,6 +1941,24 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     usage: library search-db DATABASE TABLE SEARCH ... [--delete-rows]
 
     Search all columns in a SQLITE table. If the table does not exist, uses the table which startswith (if only one match)
+
+        library sdb tests/data/video.db media test.gif --to-json | jq
+        {
+            "id": 4,
+            "playlists_id": 1,
+            "size": 2145,
+            "time_created": 1713852795,
+            "time_modified": 1713852795,
+            "time_downloaded": 1723276940,
+            "video_count": 1,
+            "width": 82,
+            "height": 82,
+            "subtitle_count": 4,
+            "path": "/home/xk/github/xk/lb/tests/data/test.gif",
+            "type": "image/gif",
+            "video_codecs": "gif",
+            "fps": 10.0
+        }
 
 
 </details>
