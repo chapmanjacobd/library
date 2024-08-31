@@ -57,6 +57,7 @@ def perf_randomize_using_ids(args, m_columns):
 
 def media_sql(args) -> tuple[str, dict]:
     m_columns = db_utils.columns(args, "media")
+    h_columns = db_utils.columns(args, "history")
     args.table, m_columns = sql_utils.search_filter(args, m_columns)
 
     perf_randomize_using_ids(args, m_columns)
@@ -69,7 +70,7 @@ def media_sql(args) -> tuple[str, dict]:
                 , SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
                 , MIN(h.time_played) time_first_played
                 , MAX(h.time_played) time_last_played
-                , FIRST_VALUE(h.playhead) OVER (PARTITION BY h.media_id ORDER BY h.time_played DESC) playhead
+                {', FIRST_VALUE(h.playhead) OVER (PARTITION BY h.media_id ORDER BY h.time_played DESC) playhead' if 'playhead' in h_columns else ''}
                 , *
             FROM {args.table} m
             LEFT JOIN history h on h.media_id = m.id

@@ -684,7 +684,7 @@ def play(args, m, media_len) -> None:
             args,
             m["original_path"],
             start_time,
-            existing_playhead=m.get("playhead"),
+            existing_playhead=m.get("playhead") or 0,
             media_duration=m.get("duration"),
         )
         log.debug("save_playhead %s", playhead)

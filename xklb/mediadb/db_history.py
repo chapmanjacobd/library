@@ -36,7 +36,7 @@ def add(args, paths=None, media_ids=None, time_played=None, playhead=None, mark_
         {
             "media_id": media_id,
             "time_played": time_played or consts.now(),
-            "playhead": playhead,
+            "playhead": playhead or 0,
             "done": mark_done,
         }
         for media_id in media_ids

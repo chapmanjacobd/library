@@ -27,7 +27,7 @@ def scan_and_import(args, media) -> None:
             **(md5s.get(p.stem) or {}),
             "time_first_played": int(p.stat().st_ctime),
             "time_last_played": int(p.stat().st_mtime),
-            "playhead": nums.safe_int(mpv_utils.mpv_watchlater_value(p, "start")),
+            "playhead": nums.safe_int(mpv_utils.mpv_watchlater_value(p, "start")) or 0,
         }
         for p in paths
         if md5s.get(p.stem)

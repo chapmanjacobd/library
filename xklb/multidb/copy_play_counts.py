@@ -51,7 +51,7 @@ def copy_play_count(args, source_db) -> None:
             args,
             [renamed_path],
             time_played=d.get("time_played"),
-            playhead=d.get("playhead"),
+            playhead=d.get("playhead") or 0,
             mark_done=d["done"],
         )
 
