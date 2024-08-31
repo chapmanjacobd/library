@@ -45,6 +45,8 @@ tracking online video playlists (eg. YouTube subscriptions) and scheduling brows
 
 <img align="right" width="300" height="600" src="https://raw.githubusercontent.com/chapmanjacobd/library/main/.github/examples/art.avif" />
 
+[![Downloads](https://static.pepy.tech/badge/xklb)](https://pepy.tech/project/xklb)
+
 ## Install
 
 Linux recommended but [Windows setup instructions](./Windows.md) available.

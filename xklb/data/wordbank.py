@@ -70,7 +70,7 @@ prepositions = (
     "without",
 )
 
-stop_words = [
+stop_words = (
     '"',
     "-",
     "'ll",
@@ -1368,4 +1368,4 @@ stop_words = [
     "zero",
     "zi",
     "zz",
-]
+)
