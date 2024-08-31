@@ -1,5 +1,12 @@
-downloaded_recently: 0
-failed_recently: 0
-never_attempted: 1
-retries_exceeded: 0
-retry_queued: 0
+- downloaded_recently: 4
+  extractor_key: Local
+  failed_recently: 0
+  never_attempted: 0
+  retries_exceeded: 0
+  retry_queued: 0
+- downloaded_recently: 0
+  extractor_key: null
+  failed_recently: 0
+  never_attempted: 1
+  retries_exceeded: 0
+  retry_queued: 0

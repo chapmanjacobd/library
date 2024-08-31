@@ -229,7 +229,7 @@ def download_embeds(args, soup):
 def find_date(soup):
     import dateutil.parser
 
-    for text in soup.find_all(text=True):
+    for text in soup.find_all(string=True):
         try:
             date = dateutil.parser.parse(text)
             return date

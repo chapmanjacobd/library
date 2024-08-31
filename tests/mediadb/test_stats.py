@@ -1,9 +1,12 @@
+from pathlib import Path
+
 from tests.utils import v_db
 from xklb.__main__ import library as lb
 
 
 def test_stats(capsys):
+    lb(["history-add", v_db, str(Path("tests/data/test.gif"))])
     lb(["stats", v_db])
-    captured = capsys.readouterr().out.replace("\n", "")
-    assert "duration" in captured
-    assert len(captured) > 150
+    captured = capsys.readouterr().out
+    assert "total_size" in captured.replace("\n", "")
+    assert len(captured) > 100

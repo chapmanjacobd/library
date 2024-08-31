@@ -31,7 +31,7 @@ def save_page(args, text):
     for comment_element in comment_elements:
         edited_time_element = comment_element.find("time", class_="comment-edited-time")
         score_element = comment_element.find("div", class_="comment-votes")
-        parent_path_element = comment_element.find("a", class_="comment-nav-link", text="Parent")
+        parent_path_element = comment_element.find("a", class_="comment-nav-link", string="Parent")
         comment = {
             "path": "https://tildes.net" + comment_element.find("a", class_="comment-nav-link")["href"],
             "parent_path": "https://tildes.net" + parent_path_element["href"] if parent_path_element else None,
@@ -115,7 +115,7 @@ def save_page(args, text):
     if main_element:
         pagination = main_element.find("div", class_="pagination")  # type: ignore
         if pagination:
-            next_a = pagination.find("a", text="Next")  # type: ignore
+            next_a = pagination.find("a", string="Next")  # type: ignore
             if next_a:
                 next_page_url = next_a["href"]  # type: ignore
                 sleep(1)
