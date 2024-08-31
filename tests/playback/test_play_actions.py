@@ -63,7 +63,7 @@ media_flags = [
     ("--no-subtitles", 1, "test_frame.gif"),
     ("-w subtitle_count=1", 1, "corrupt.mp4"),
     ("--fetch-siblings each", 1, "corrupt.mp4"),
-    ("--no-audio", 2, "test.gif"),
+    ("--no-audio", 2, "test_frame.gif"),
     ("-w audio_count=1", 2, "corrupt.mp4"),
     ("-d+0 -d-10", 3, "corrupt.mp4"),
     ("-d=-1", 3, "corrupt.mp4"),
@@ -90,7 +90,7 @@ media_flags = [
     ("-O reverse_path_path", 5, "https://test/?tags%5B%5D="),
     ("-O size", 5, "test_frame.gif"),
     ("-O", 5, "corrupt.mp4"),
-    ("-w 'playhead is NULL'", 5, "corrupt.mp4"),
+    ("-w 'playhead=0'", 5, "corrupt.mp4"),
     ("-w time_deleted=0", 5, "corrupt.mp4"),
 ]
 

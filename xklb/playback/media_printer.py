@@ -60,6 +60,9 @@ def cadence_adjusted_duration(args, duration):
         except IndexError:
             return None
 
+    if historical_hourly == 0:
+        return None
+
     return int(duration / historical_hourly * 60 * 60)
 
 
