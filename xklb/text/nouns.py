@@ -95,36 +95,44 @@ def generate_strings(length):
                 yield prefix + char
 
 
-def gen_or_str(append):
-    append_gen = []
-    if append:
-        if append.isnumeric():
-            append_gen = generate_strings(int(append))
-        else:
-            append_gen = [append]
-    return append_gen
-
-
-def check_dictionary(gen_func):
-    with (Path(__file__).parent / ".." / "data" / "dictionary.pkl").open("rb") as f:
-        dictionary = pickle.load(f)
-
-    @wraps(gen_func)
-    def wrapper(*args, **kwargs):
-        for item in gen_func(*args, **kwargs):
-            if item in dictionary:
-                yield item
-
-    return wrapper
-
-
 def nouns() -> None:
     args = parse_args()
 
+    if not args.all:
+        with (Path(__file__).parent / ".." / "data" / "dictionary.pkl").open("rb") as f:
+            dictionary = pickle.load(f)
+
     def part_processor(args, parts):
         for part in parts:
-            prepend_gen = gen_or_str(args.prepend)
-            append_gen = gen_or_str(args.append)
+            append_gen = []
+            if args.append:
+                if args.append.isnumeric():
+                    append = int(args.append)
+                    if args.all:
+                        append_gen = generate_strings(append)
+                    else:
+                        append_gen = sorted(
+                            s.split(part, 1)[1]
+                            for s in dictionary
+                            if s.startswith(part) and len(s) == len(part) + append
+                        )
+                else:
+                    append_gen = [args.append]
+
+            prepend_gen = []
+            if args.prepend:
+                if args.prepend.isnumeric():
+                    prepend = int(args.prepend)
+                    if args.all:
+                        prepend_gen = generate_strings(prepend)
+                    else:
+                        prepend_gen = sorted(
+                            s.rsplit(part, 1)[0]
+                            for s in dictionary
+                            if s.endswith(part) and len(s) == len(part) + prepend
+                        )
+                else:
+                    prepend_gen = [args.prepend]
 
             if prepend_gen and append_gen:
                 for pre, post in itertools.product(prepend_gen, append_gen):
@@ -141,7 +149,13 @@ def nouns() -> None:
     if args.unique:
         part_processor = iterables.return_unique(part_processor)
     if not args.all:
-        part_processor = check_dictionary(part_processor)
+        part_processor_fn = part_processor
+        @wraps(part_processor_fn)
+        def check_dictionary(*args, **kwargs):
+            for item in part_processor_fn(*args, **kwargs):
+                if item in dictionary:
+                    yield item
+        part_processor = check_dictionary
 
     for line in args.paths:
         if args.html_strip:
