@@ -150,11 +150,13 @@ def nouns() -> None:
         part_processor = iterables.return_unique(part_processor)
     if not args.all:
         part_processor_fn = part_processor
+
         @wraps(part_processor_fn)
         def check_dictionary(*args, **kwargs):
             for item in part_processor_fn(*args, **kwargs):
                 if item in dictionary:
                     yield item
+
         part_processor = check_dictionary
 
     for line in args.paths:

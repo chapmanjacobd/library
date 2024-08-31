@@ -195,12 +195,16 @@ def file_eda(args, path):
         encoding=args.encoding,
         mimetype=args.mimetype,
         join_tables=args.join_tables,
+        transpose=args.transpose,
     )
     if getattr(args, "repl", False):
         breakpoint()
 
     for df in dfs:
-        print(f"## {path}:{df.name}")
+        if args.table_name == "stdin":
+            print(f"## stdin:{df.name}")
+        else:
+            print(f"## {path}:{df.name}")
         print_info(args, df)
 
 

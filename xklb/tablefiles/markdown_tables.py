@@ -11,13 +11,7 @@ def parse_args():
     parser.add_argument("--sort", "-u", default="random()")
     arggroups.debug(parser)
 
-    parser.add_argument(
-        "paths",
-        metavar="path",
-        nargs="+",
-        action=argparse_utils.ArgparseArgsOrStdin,
-        help="path to one or more files",
-    )
+    arggroups.paths_or_stdin(parser)
     args = parser.parse_args()
     arggroups.args_post(args, parser)
 
@@ -37,6 +31,7 @@ def file_markdown(args, path):
         encoding=args.encoding,
         mimetype=args.mimetype,
         join_tables=args.join_tables,
+        transpose=args.transpose,
     ):
         if getattr(args, "repl", False):
             breakpoint()
@@ -45,7 +40,10 @@ def file_markdown(args, path):
         elif args.print:
             media_printer.media_printer(args, df.to_dict(orient="records"))
         else:
-            print(f"## {path}:{df.name}")
+            if args.table_name == "stdin":
+                print(f"## stdin:{df.name}")
+            else:
+                print(f"## {path}:{df.name}")
             print()
             print(df.to_markdown(tablefmt="github", index=False))
             print()

@@ -41,6 +41,7 @@ def file_columns(args, path):
         encoding=args.encoding,
         mimetype=args.mimetype,
         join_tables=args.join_tables,
+        transpose=args.transpose,
     ):
         df_name = df.name
 

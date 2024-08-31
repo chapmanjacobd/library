@@ -1277,6 +1277,8 @@ def table_like(parent_parser):
     parser.add_argument(
         "--mimetype",
         "--filetype",
+        "--file-type",
+        "--type",
         help="""Treat given files as having a specific file type
 --filetype csv""",
     )
@@ -1303,6 +1305,7 @@ def table_like(parent_parser):
         default=False,
         help="Concat all detected tables",
     )
+    parser.add_argument("--transpose", action="store_true", help="Swap X and Y axis. Move columns to rows.")
 
 
 def table_like_post(args):
@@ -1310,6 +1313,15 @@ def table_like_post(args):
         args.end_row = None
     else:
         args.end_row = int(args.end_row)
+
+    if args.paths is None:
+        processes.exit_error("No paths passed in")
+
+    if args.from_json:
+        args.mimetype = "jsonl"
+        args.join_tables = True
+        args.table_name = "stdin"
+        args.paths = ["\n".join(args.paths)]
 
 
 def filter_links(parent_parser):

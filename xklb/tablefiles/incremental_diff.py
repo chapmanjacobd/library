@@ -49,6 +49,8 @@ def process_chunks(args):
             order_by=args.sort,
             encoding=args.encoding1,
             mimetype=args.mimetype1,
+            join_tables=args.join_tables,
+            transpose=args.transpose,
         )
         dfs2 = file_utils.read_file_to_dataframes(
             args.path2,
@@ -59,6 +61,8 @@ def process_chunks(args):
             order_by=args.sort,
             encoding=args.encoding2,
             mimetype=args.mimetype2,
+            join_tables=args.join_tables,
+            transpose=args.transpose,
         )
 
         # TODO: https://github.com/ICRAR/ijson
