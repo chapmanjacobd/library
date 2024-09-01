@@ -478,8 +478,8 @@ def url_to_local_path(url, response=None, output_path=None, output_prefix=None):
 
 
 def post_download(args):
-    min_sleep_interval = getattr(args, "sleep_interval") or 0
-    sleep_interval = random.uniform(min_sleep_interval, getattr(args, "max_sleep_interval") or min_sleep_interval)
+    min_sleep_interval = getattr(args, "sleep_interval", None) or 0
+    sleep_interval = random.uniform(min_sleep_interval, getattr(args, "max_sleep_interval", None) or min_sleep_interval)
     if sleep_interval > 0:
         log.debug("[download] Sleeping %s seconds ...", sleep_interval)
         time.sleep(sleep_interval)
@@ -853,7 +853,7 @@ def fake_title(url):
 
 
 def sleep(args, min=0):
-    sleep_interval = getattr(args, "sleep_interval_requests") or min
+    sleep_interval = getattr(args, "sleep_interval_requests", None) or min
     if sleep_interval > 0:
         log.debug("Sleeping %s seconds ...", sleep_interval)
         time.sleep(sleep_interval)
