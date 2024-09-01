@@ -3,6 +3,7 @@ from email.message import Message
 from pathlib import Path
 from shutil import which
 from urllib.parse import parse_qs, parse_qsl, quote, unquote, urlencode, urljoin, urlparse, urlunparse
+from zoneinfo import ZoneInfo
 
 import bs4, requests
 from idna import decode as puny_decode
@@ -134,7 +135,9 @@ def stat(path):
             if "Last-Modified" in r.headers:
                 last_modified = r.headers["Last-Modified"]
                 info["time_modified"] = int(
-                    datetime.datetime.strptime(last_modified, "%a, %d %b %Y %H:%M:%S GMT").timestamp()
+                    datetime.datetime.strptime(last_modified, "%a, %d %b %Y %H:%M:%S GMT")
+                    .replace(tzinfo=ZoneInfo("GMT"))
+                    .timestamp()
                 )
 
         elif r.status_code == 404:
@@ -243,7 +246,11 @@ def find_date(soup):
 
 def set_timestamp(headers, path):
     if "Last-Modified" in headers:
-        modified_time = datetime.datetime.strptime(headers["Last-Modified"], "%a, %d %b %Y %H:%M:%S GMT")
+        modified_time = (
+            datetime.datetime.strptime(headers["Last-Modified"], "%a, %d %b %Y %H:%M:%S GMT")
+            .replace(tzinfo=ZoneInfo("GMT"))
+            .astimezone()
+        )
         mtime = time.mktime(modified_time.timetuple())
         atime = time.time()
         os.utime(path, (atime, mtime))
@@ -848,8 +855,8 @@ def fake_title(url):
     return title.strip()
 
 
-def sleep(args, min=0):
-    sleep_interval = getattr(args, "sleep_interval_requests", None) or min
+def sleep(args, secs=0):
+    sleep_interval = getattr(args, "sleep_interval_requests", None) or secs
     if sleep_interval > 0:
         log.debug("Sleeping %s seconds ...", sleep_interval)
         time.sleep(sleep_interval)
