@@ -29,19 +29,18 @@ def watch_chromecast(args, m: dict, subtitles_file=None) -> subprocess.Completed
             *m["player"][1:],
             m["path"],
         )
+    elif args.action in (SC.watch, SC.listen):
+        subtitles = ["-s", subtitles_file] if subtitles_file else ["--no-subs"]
+        catt_log = processes.cmd(
+            "catt",
+            "-d",
+            args.chromecast_device,
+            "cast",
+            *subtitles,
+            m["path"],
+        )
     else:
-        if args.action in (SC.watch, SC.listen):
-            subtitles = ["-s", subtitles_file] if subtitles_file else ["--no-subs"]
-            catt_log = processes.cmd(
-                "catt",
-                "-d",
-                args.chromecast_device,
-                "cast",
-                *subtitles,
-                m["path"],
-            )
-        else:
-            catt_log = args.cc.play_url(m["path"], resolve=True, block=True)
+        catt_log = args.cc.play_url(m["path"], resolve=True, block=True)
     return catt_log
 
 
@@ -113,21 +112,20 @@ def listen_chromecast(args, m: dict) -> subprocess.CompletedProcess | None:
         processes.cmd_interactive(*m["player"], "--", m["path"])
         catt_log = processes.Pclose(cast_process)  # wait for chromecast to stop (you can tell any chromecast to pause)
         sleep(3.0)  # give chromecast some time to breathe
-    else:
-        if m["path"].startswith("http"):
-            catt_log = args.cc.play_url(m["path"], resolve=True, block=True)
-        else:  #  local file
-            catt_log = processes.cmd(
-                catt,
-                "-d",
-                args.chromecast_device,
-                "cast",
-                "--no-subs",
-                "--block",
-                "--seek-to",
-                str(start),
-                m["path"],
-            )
+    elif m["path"].startswith("http"):
+        catt_log = args.cc.play_url(m["path"], resolve=True, block=True)
+    else:  #  local file
+        catt_log = processes.cmd(
+            catt,
+            "-d",
+            args.chromecast_device,
+            "cast",
+            "--no-subs",
+            "--block",
+            "--seek-to",
+            str(start),
+            m["path"],
+        )
 
     return catt_log
 
@@ -542,11 +540,10 @@ def single_player(args, m):
             r = processes.cmd("open", m["path"], strict=False)
         else:
             r = processes.cmd("xdg-open", m["path"], strict=False)
-    else:
-        if is_windows or args.action in (SC.watch):
-            r = processes.cmd(*m["player"], m["path"], strict=False)
-        else:  # args.action in (SC.listen)
-            r = processes.cmd_interactive(*m["player"], m["path"], strict=False)
+    elif is_windows or args.action in (SC.watch):
+        r = processes.cmd(*m["player"], m["path"], strict=False)
+    else:  # args.action in (SC.listen)
+        r = processes.cmd_interactive(*m["player"], m["path"], strict=False)
 
     if m["player_need_sleep"]:
         try:

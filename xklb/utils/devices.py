@@ -128,10 +128,21 @@ def clobber(args, source, destination) -> tuple[str | None, str]:
                     return clobber(args, source, destination)
 
         else:
-            log.info("File Over File conflict\t%s\t%s", source, destination)
-            src_size = os.stat(source).st_size
-            dst_size = os.stat(destination).st_size
+            src_stat = os.stat(source)
+            dst_stat = os.stat(destination)
+            if os.path.samestat(src_stat, dst_stat):
+                log.info("Destination is the same as source\t%s", destination)
+                return None, destination
 
+            src_size = src_stat.st_size
+            dst_size = dst_stat.st_size
+
+            if dst_size == 0:
+                log.debug("Overwriting empty file destination %s\t%s", source, destination)
+                unlink(args, destination)
+                return source, destination
+
+            log.info("File Over File conflict\t%s\t%s", source, destination)
             for s in args.file_over_file:
                 log.debug(s)
                 match s:

@@ -303,16 +303,15 @@ def reddit_add(args=None) -> None:
         elif redditor_matches:
             extractor_key = "reddit_praw_redditor"
             name = iterables.conform(redditor_matches.groups()).pop()
+        elif args.subreddits:
+            extractor_key = "reddit_praw_subreddit"
+            path = f"https://old.reddit.com/r/{name}/"
+        elif args.redditors:
+            extractor_key = "reddit_praw_redditor"
+            path = f"https://old.reddit.com/user/{name}/"
         else:
-            if args.subreddits:
-                extractor_key = "reddit_praw_subreddit"
-                path = f"https://old.reddit.com/r/{name}/"
-            elif args.redditors:
-                extractor_key = "reddit_praw_redditor"
-                path = f"https://old.reddit.com/user/{name}/"
-            else:
-                log.error(f"[{path}]: Skipping unknown URL")
-                continue
+            log.error(f"[{path}]: Skipping unknown URL")
+            continue
 
         if db_playlists.get_id(args, path) is None:
             try:

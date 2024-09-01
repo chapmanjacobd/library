@@ -161,31 +161,30 @@ def rel_move(args, sources, dest, relative_from=None):
                 if os.path.isdir(new_path):
                     log.info("%s ->m %s", abspath, new_path)
                     new_paths.extend(rel_move(args, abspath.glob("*"), dest))
+                elif args.replace:
+                    os.replace(abspath, new_path)
+                    new_paths.append(new_path)
                 else:
-                    if args.replace:
+                    src_stat = os.stat(abspath)
+                    dst_stat = os.stat(new_path)
+                    is_src_smaller = src_stat.st_size < dst_stat.st_size
+                    if os.path.samestat(src_stat, dst_stat):
+                        log.error("%s ->x %s same file", abspath, new_path)
+                    elif dst_stat.st_size == 0:
                         os.replace(abspath, new_path)
-                        new_paths.append(new_path)
-                    else:
-                        src_stat = os.stat(abspath)
-                        dst_stat = os.stat(new_path)
-                        is_src_smaller = src_stat.st_size < dst_stat.st_size
-                        if os.path.samestat(src_stat, dst_stat):
-                            log.error("%s ->x %s same file", abspath, new_path)
-                        elif dst_stat.st_size == 0:
+                    elif src_stat.st_size != dst_stat.st_size:
+                        log.error(
+                            "CONFLICT: %s ->x %s source file is %s than destination file",
+                            abspath,
+                            new_path,
+                            "smaller" if is_src_smaller else "larger",
+                        )
+                        if devices.confirm("Replace destination?"):
                             os.replace(abspath, new_path)
-                        elif src_stat.st_size != dst_stat.st_size:
-                            log.error(
-                                "%s ->x %s source file is %s than dest file conflict",
-                                abspath,
-                                new_path,
-                                "smaller" if is_src_smaller else "larger",
-                            )
-                            if devices.confirm("Replace destination?"):
-                                os.replace(abspath, new_path)
-                        elif sample_compare.sample_cmp(abspath, new_path):
-                            os.unlink(abspath)
-                        else:
-                            log.error("%s ->x %s already exists", abspath, new_path)
+                    elif sample_compare.sample_cmp(abspath, new_path):
+                        os.unlink(abspath)
+                    else:
+                        log.error("%s ->x %s already exists", abspath, new_path)
             else:
                 os.rename(abspath, new_path)
                 new_paths.append(new_path)
