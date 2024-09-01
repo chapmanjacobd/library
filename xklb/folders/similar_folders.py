@@ -54,7 +54,7 @@ def map_and_name(media, clusters):
     bound_dicts = cluster_sort.map_cluster_to_paths(media, clusters)
 
     result = []
-    for _cluster_id, dicts in bound_dicts.items():
+    for dicts in bound_dicts.values():
         paths = sorted(d["path"] for d in dicts)
         common_path = path_utils.common_path(paths)
         metadata = {"common_path": common_path, "grouped_paths": dicts}

@@ -89,7 +89,7 @@ def map_and_name(paths, clusters):
     grouped_strings = map_cluster_to_paths(paths, clusters)
 
     result = []
-    for _cluster_id, paths in grouped_strings.items():
+    for paths in grouped_strings.values():
         paths = sorted(paths)
         metadata = {"common_path": path_utils.common_path(paths), "grouped_paths": paths}
         result.append(metadata)
@@ -276,7 +276,7 @@ def cluster_images(paths, n_clusters=None):
     log.info("grouped_strings %s", t.elapsed())
 
     result = []
-    for _cluster_id, paths in grouped_strings.items():
+    for paths in grouped_strings.values():
         common_prefix = os.path.commonprefix(paths)
         metadata = {"common_path": common_prefix, "grouped_paths": sorted(paths)}
         result.append(metadata)
