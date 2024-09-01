@@ -97,6 +97,9 @@ profile = "black"
 "tests/*" = ["ANN201", "PLR2004"]
 
 [tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
 unfixable = ["F841"]
 
 ignore = [
@@ -107,6 +110,7 @@ ignore = [
   "ANN204",
   "BLE001",
   "C400",
+  "COM812",
   "C401",
   "C405",
   "C901",
@@ -156,11 +160,9 @@ ignore = [
   "TRY300",
   "TRY301",
 ]
-line-length = 120
 select = ["ALL"]
 # Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
-show-fixes = true
 
 [tool.pytest.ini_options]
 addopts = "--pdbcls=IPython.terminal.debugger:TerminalPdb --ignore=tests/data --capture=tee-sys --log-cli-level=ERROR"

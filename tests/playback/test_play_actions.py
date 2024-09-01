@@ -102,7 +102,7 @@ def test_flags_covered(o):
 
 
 @mock.patch("xklb.playback.media_player.play_list", return_value=SimpleNamespace(returncode=0))
-@pytest.mark.parametrize("flags,count,first", fs_flags)
+@pytest.mark.parametrize(("flags", "count", "first"), fs_flags)
 def test_fs_flags(play_mocked, flags, count, first):
     for subcommand in ["fs", "media"]:
         if count == 0:
@@ -120,7 +120,7 @@ def test_fs_flags(play_mocked, flags, count, first):
 
 
 @mock.patch("xklb.playback.media_player.play_list", return_value=SimpleNamespace(returncode=0))
-@pytest.mark.parametrize("flags,count,first", media_flags)
+@pytest.mark.parametrize(("flags", "count", "first"), media_flags)
 def test_media_flags(play_mocked, flags, count, first):
     for subcommand in ["media", "wt"]:
         if count == 0:

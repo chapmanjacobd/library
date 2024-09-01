@@ -8,7 +8,7 @@ simple = '{"A": 1, "B": 3, "C": 5}\n{"A": 2, "B": 4, "C": 6}'
 
 
 @pytest.mark.parametrize(
-    "args,stdout",
+    ('args', 'stdout'),
     [
         (
             ["tests/data/test.xml"],

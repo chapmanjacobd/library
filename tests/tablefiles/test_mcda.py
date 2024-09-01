@@ -78,7 +78,7 @@ def test_sort_like_sql():
 
 
 @pytest.mark.parametrize(
-    "args,stdout",
+    ("args", "stdout"),
     [
         (
             ["tests/data/test.xml"],

@@ -35,7 +35,7 @@ class MockResponse:
 
 
 @pytest.mark.parametrize(
-    "url, output_path, output_prefix, response_headers, expected",
+    ("url", "output_path", "output_prefix", "response_headers", "expected"),
     [
         # Content-Disposition header provides the filename
         (
@@ -144,7 +144,7 @@ unquote_results = [
 ]
 
 
-@pytest.mark.parametrize("test_input,expected", unquote_results)
+@pytest.mark.parametrize(("test_input", "expected"), unquote_results)
 def test_safe_unquote(test_input, expected):
     assert safe_unquote(test_input) == expected
 
@@ -181,7 +181,7 @@ quote_results = [
 ]
 
 
-@pytest.mark.parametrize("test_input, expected", quote_results)
+@pytest.mark.parametrize(("test_input", "expected"), quote_results)
 def test_safe_quote(test_input, expected):
     assert url_encode(test_input) == expected
 

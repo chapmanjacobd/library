@@ -4,7 +4,7 @@ from xklb.playback.playback_control import from_duration_to_duration_str
 
 
 @pytest.mark.parametrize(
-    "duration, segment_start, segment_end, expected",
+    ("duration", "segment_start", "segment_end", "expected"),
     [
         (0, 0, 0, "Duration: 0:00"),
         (360, 1000, 0, "Duration: 6:00 (16:40 to 22:40)"),

@@ -10,7 +10,7 @@ from xklb.utils import arggroups, objects, processes
 
 
 @pytest.mark.parametrize(
-    "path,result",
+    ("path", "result"),
     [
         ("tests/data/test.gif", True),
         ("tests/data/test.mp4", True),
@@ -24,7 +24,7 @@ def test_probe_if_animation(path, result):
 
 @pytest.mark.skipif(not which("magick"), reason="requires magick")
 @pytest.mark.parametrize(
-    "path,duration,out_ext",
+    ("path", "duration", "out_ext"),
     [
         # ("tests/data/test.gif", 0.6, ".mkv"),
         ("tests/data/test_frame.gif", None, ".avif"),
