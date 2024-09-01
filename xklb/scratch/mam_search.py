@@ -249,7 +249,7 @@ def mam_search():
 
         save_to_db(args, data)
 
-        web.sleep(args, min=1)
+        web.sleep(args, secs=1)
 
 
 if __name__ == "__main__":

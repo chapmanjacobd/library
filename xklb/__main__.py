@@ -233,7 +233,7 @@ modules = {
     "xklb.text.nouns.nouns": ["noun"],
     "xklb.text.timestamps.dates": ["date"],
     "xklb.text.timestamps.times": ["time"],
-    "xklb.text.timestamps.timestamps": ["timestamp"],
+    "xklb.text.timestamps.timestamps": ["timestamp", "datetime"],
     "xklb.text.json_keys_rename.json_keys_rename": [],
     "xklb.text.combinations.combinations": ["combos"],
 }
