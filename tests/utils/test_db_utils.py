@@ -56,7 +56,7 @@ class TestMostSimilarSchema(unittest.TestCase):
         }
         keys = ["id", "name", "age"]
         result = db_utils.most_similar_schema(keys, existing_tables)
-        self.assertEqual(result, "table1")
+        assert result == "table1"
 
     def test_partial_match(self):
         existing_tables = {
@@ -65,7 +65,7 @@ class TestMostSimilarSchema(unittest.TestCase):
         }
         keys = ["id", "name", "address", "age"]
         result = db_utils.most_similar_schema(keys, existing_tables)
-        self.assertEqual(result, "table1")
+        assert result == "table1"
 
     def test_no_match(self):
         existing_tables = {
@@ -74,7 +74,7 @@ class TestMostSimilarSchema(unittest.TestCase):
         }
         keys = ["salary", "position", "department"]
         result = db_utils.most_similar_schema(keys, existing_tables)
-        self.assertIsNone(result)
+        assert result is None
 
     def test_empty_input(self):
         existing_tables = {
@@ -83,4 +83,4 @@ class TestMostSimilarSchema(unittest.TestCase):
         }
         keys = []
         result = db_utils.most_similar_schema(keys, existing_tables)
-        self.assertIsNone(result)
+        assert result is None

@@ -78,7 +78,7 @@ def sample_cmp(*paths, threads=1, gap=0.1, chunk_size=None, ignore_holes=False, 
     sorted_paths = sorted(paths_dict.items(), key=lambda x: x[1])
     paths_str = "\n".join([f"{hash}\t{path}" for path, hash in sorted_paths])
 
-    hashes = [hash for hash in paths_dict.values()]
+    hashes = list(paths_dict.values())
     is_equal = all(hash == hashes[0] for hash in hashes)
     if is_equal:
         if skip_full_hash:

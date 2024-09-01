@@ -292,7 +292,7 @@ def web_update(args=None) -> None:
         """,
     )
 
-    selenium_needed = any([json.loads(d.get("extractor_config") or "{}").get("selenium") for d in web_playlists])
+    selenium_needed = any(json.loads(d.get("extractor_config") or "{}").get("selenium") for d in web_playlists)
     if selenium_needed:
         web.load_selenium(args)
 

@@ -343,7 +343,7 @@ def load_selenium(args, wire=False):
 
 def quit_selenium(args):
     args.driver.quit()
-    if consts.LOG_DEBUG > args.verbose and not getattr(args, "manual", False):
+    if args.verbose < consts.LOG_DEBUG and not getattr(args, "manual", False):
         try:
             args.driver_display.stop()
         except Exception:
