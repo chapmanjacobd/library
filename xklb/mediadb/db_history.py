@@ -7,7 +7,7 @@ from xklb.utils.log_utils import log
 def exists(args, media_id) -> bool:
     try:
         known = args.db.execute(
-            f"select 1 from history where media_id=?",
+            "select 1 from history where media_id=?",
             [media_id],
         ).fetchone()
     except sqlite3.OperationalError as e:

@@ -47,7 +47,7 @@ def json_keys_rename():
         log.error("No data given via arguments")
         raise SystemExit(2)
 
-    print(f"json-keys-rename: Reading from stdin...", file=sys.stderr)
+    print("json-keys-rename: Reading from stdin...", file=sys.stderr)
     lines = sys.stdin.readlines()
     if not lines or (len(lines) == 1 and lines[0].strip() == ""):
         processes.exit_error("No data passed in")

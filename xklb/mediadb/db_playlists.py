@@ -106,7 +106,7 @@ def delete_subpath_playlists(args, playlist_path) -> int | None:
     try:
         with args.db.conn:
             args.db.conn.execute(
-                f"""
+                """
                 DELETE from playlists
                 WHERE COALESCE(time_deleted, 0)=0
                     AND path LIKE ?

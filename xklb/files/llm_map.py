@@ -43,7 +43,7 @@ def parse_args():
             args.prompt = "{name}Suggest an alternative, clean, filename based on the title and contents. Include the copyright year and any authors names in the format of SUBJECT.LASTNAME.YEAR.TITLE. Only say the filename and nothing else."
             args.llama_args += ["-n", "18"]
             if args.output is None:
-                args.output = f"llm_map_renames.csv"
+                args.output = "llm_map_renames.csv"
         else:
             raise NotImplementedError
 
