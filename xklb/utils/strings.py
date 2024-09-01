@@ -9,6 +9,8 @@ import humanize
 from xklb.data import wordbank
 from xklb.utils import consts, iterables, nums
 from xklb.utils.log_utils import log
+import functools
+import operator
 
 
 def repeat_until_same(fn):  # noqa: ANN201
@@ -190,8 +192,8 @@ def combine(*list_) -> str | None:
     if not list_:
         return None
 
-    no_comma = sum((str(s).split(",") for s in list_), [])
-    no_semicolon = sum((s.split(";") for s in no_comma), [])
+    no_comma = functools.reduce(operator.iadd, (str(s).split(",") for s in list_), [])
+    no_semicolon = functools.reduce(operator.iadd, (s.split(";") for s in no_comma), [])
     no_double_space = [_RE_COMBINE_WHITESPACE.sub(" ", s).strip() for s in no_semicolon]
     no_unknown = [x for x in no_double_space if x.lower() not in ("unknown", "none", "und", "")]
 

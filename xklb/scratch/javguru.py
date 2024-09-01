@@ -96,7 +96,7 @@ def jav_guru() -> None:
                 "Referer: https://emturbovid.com/",
             )
 
-            video_streams = [s for s in remote_probe.video_streams]
+            video_streams = list(remote_probe.video_streams)
             if args.small:
                 video_streams = [s for s in video_streams if s["height"] <= 720]
             video_streams.sort(key=lambda s: s["height"], reverse=True)
