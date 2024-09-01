@@ -92,7 +92,7 @@ group_by_package = true
 line_length = 120
 profile = "black"
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
 "tests/*" = ["ANN201", "PLR2004"]
 
@@ -103,6 +103,8 @@ line-length = 120
 unfixable = ["F841"]
 
 ignore = [
+  "UP038",
+  "UP017",
   "ANN001",
   "ANN002",
   "ANN003",
