@@ -507,7 +507,7 @@ def download_url(args, url, output_path=None, retry_num=0):
         output_path = url_to_local_path(url, response=r, output_path=output_path, output_prefix=args.prefix)
         if output_path == ".":
             log.warning("Skipping directory %s", url)
-            return
+            return None
 
         p = Path(output_path)
         p.parent.mkdir(parents=True, exist_ok=True)

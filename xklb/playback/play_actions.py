@@ -426,8 +426,10 @@ def process_playqueue(args) -> None:
         ]
     ):
         media_printer.media_printer(args, media)
+        return None
     else:
         media_player.play_list(args, media)
+        return None
 
 
 def filesystem() -> None:

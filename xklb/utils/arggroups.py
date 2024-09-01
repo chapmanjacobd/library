@@ -30,6 +30,7 @@ def get_caller_name():
         elif frame.f_code.co_name == "parse_args":
             frame = frame.f_back
             return frame.f_code.co_name  # type: ignore
+    return None
 
 
 def get_argparse_defaults(parser):
