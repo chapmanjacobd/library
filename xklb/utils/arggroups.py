@@ -349,6 +349,12 @@ Double spaces are equal to one space:
     )
 
     parse_fs.add_argument(
+        "--hide-deleted", action=argparse.BooleanOptionalAction, default=True, help="Exclude deleted files from results"
+    )
+    parse_fs.add_argument(
+        "--only-deleted", "--deleted", action="store_true", help="Include only deleted files in results"
+    )
+    parse_fs.add_argument(
         "--created-within",
         help="""Constrain media by time_created (newer than)
 --created-within '3 days'""",
@@ -518,11 +524,6 @@ def sql_fs_post(args, table_prefix="m.") -> None:
         or_conditions = [f"path like '%.{ext}'" for ext in args.ext]
         args.filter_sql.append(f" AND ({' OR '.join(or_conditions)})")
 
-    if "time_deleted" in m_columns and not (
-        "deleted" in (getattr(args, "sort_groups_by", None) or "") or "time_deleted" in " ".join(args.where)
-    ):
-        args.filter_sql.append(f"AND COALESCE({table_prefix}time_deleted,0) = 0")
-
     if args.local_media_only:
         args.filter_sql.append('AND path not LIKE "http%"')
         if "time_downloaded" in m_columns:
@@ -609,6 +610,21 @@ def sql_fs_post(args, table_prefix="m.") -> None:
             + args.duration_from_size
             + ")",
         )
+
+    if args.only_deleted:
+        args.hide_deleted = False  # --deleted overrides the --hide-deleted default
+
+    if "time_deleted" not in m_columns:
+        args.hide_deleted = False
+        args.only_deleted = False
+
+    if "deleted" in (getattr(args, "sort_groups_by", None) or "") or "time_deleted" in " ".join(args.filter_sql):
+        args.hide_deleted = False
+
+    if args.only_deleted:
+        args.filter_sql.append(f"AND COALESCE({table_prefix}time_deleted,0) > 0")
+    elif args.hide_deleted:
+        args.filter_sql.append(f"AND COALESCE({table_prefix}time_deleted,0) = 0")
 
 
 def playback(parent_parser):

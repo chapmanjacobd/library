@@ -2,13 +2,12 @@ from pathlib import Path
 
 from xklb import usage
 from xklb.mediadb import db_history
-from xklb.utils import arg_utils, arggroups, argparse_utils, consts, printing
+from xklb.utils import arg_utils, arggroups, argparse_utils, consts
 
 
 def parse_args(**kwargs):
     parser = argparse_utils.ArgumentParser(**kwargs)
     arggroups.extractor(parser)
-
     arggroups.debug(parser)
 
     arggroups.database(parser)
@@ -33,8 +32,7 @@ def history_add() -> None:
         media_id = args.db.pop("select id from media where path = ?", [p])
         if media_id is None:
             media_unknown.add(p)
-            if not args.force:
-                continue
+            continue
 
         if db_history.exists(args, media_id):
             history_exists.add(p)
@@ -43,9 +41,7 @@ def history_add() -> None:
 
         db_history.add(args, media_ids=[media_id], time_played=consts.APPLICATION_START, mark_done=True)
 
-        printing.print_overwrite(
-            f"History: {len(history_new)} new [{len(history_exists)} known {len(media_unknown)} skipped]"
-        )
+    print(f"History: {len(history_new)} new [{len(history_exists)} known {len(media_unknown)} skipped]")
 
 
 if __name__ == "__main__":

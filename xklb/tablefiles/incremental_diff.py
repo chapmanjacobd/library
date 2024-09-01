@@ -1,3 +1,5 @@
+import argparse
+
 from xklb import usage
 from xklb.utils import arggroups, argparse_utils, consts, file_utils, web
 from xklb.utils.argparse_utils import ArgparseList
@@ -18,6 +20,14 @@ def parse_args():
     parser.add_argument("--start-row", "--skiprows", type=int, default=None)
     parser.add_argument("--batch-size", "--batch-rows", default=str(consts.DEFAULT_FILE_ROWS_READ_LIMIT))
     parser.add_argument("--join-keys", action=ArgparseList, help="Comma separated join keys")
+    parser.add_argument(
+        "--join-tables",
+        "--concat",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Concat all detected tables",
+    )
+    parser.add_argument("--transpose", action="store_true", help="Swap X and Y axis. Move columns to rows.")
     parser.add_argument("--sort", "-u")
     arggroups.debug(parser)
 

@@ -40,13 +40,7 @@ def parse_args():
     parser.add_argument("--sort", "-u", default="random()")
     arggroups.debug(parser)
 
-    parser.add_argument(
-        "paths",
-        metavar="path",
-        nargs="+",
-        action=argparse_utils.ArgparseArgsOrStdin,
-        help="path to one or more files",
-    )
+    arggroups.paths_or_stdin(parser)
     args = parser.parse_args()
     arggroups.args_post(args, parser)
 

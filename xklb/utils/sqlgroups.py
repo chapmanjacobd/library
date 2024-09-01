@@ -40,16 +40,10 @@ def fs_sql(args, limit) -> tuple[str, dict]:
     return query, args.filter_bindings
 
 
-def perf_randomize_using_ids(args, m_columns):
+def perf_randomize_using_ids(args):
     if args.random and not args.include and not args.print and args.limit in args.defaults:
         limit = 16 * (args.limit or consts.DEFAULT_PLAY_QUEUE)
-        where_not_deleted = (
-            "where COALESCE(time_deleted,0) = 0"
-            if "time_deleted" in m_columns
-            and "deleted" not in args.sort_groups_by
-            and "time_deleted" not in " ".join(args.where)
-            else ""
-        )
+        where_not_deleted = "where COALESCE(time_deleted,0) = 0" if args.hide_deleted else ""
         args.filter_sql.append(
             f"and m.id in (select id from media {where_not_deleted} order by random() limit {limit})",
         )
@@ -60,7 +54,7 @@ def media_sql(args) -> tuple[str, dict]:
     h_columns = db_utils.columns(args, "history")
     args.table, m_columns = sql_utils.search_filter(args, m_columns)
 
-    perf_randomize_using_ids(args, m_columns)
+    perf_randomize_using_ids(args)
 
     select_sql = media_select_sql(args, m_columns)
 
@@ -118,6 +112,7 @@ def historical_media(args):
             WHERE 1=1
             {sql_utils.filter_time_played(args)}
             {'AND COALESCE(time_deleted, 0)=0' if args.hide_deleted else ""}
+            {"AND COALESCE(time_deleted, 0)>0" if args.only_deleted else ""}
             GROUP BY m.id, m.path
         )
         SELECT *
@@ -379,7 +374,7 @@ def construct_download_query(args, dl_status=False) -> tuple[str, dict]:
         WHERE 1=1
             {'and COALESCE(m.time_downloaded,0) = 0' if 'time_downloaded' in m_columns and not dl_status else ''}
             {f'and COALESCE(m.download_attempts,0) <= {args.download_retries}' if 'download_attempts' in m_columns and not dl_status else ''}
-            {'and COALESCE(p.time_deleted, 0) = 0' if is_media_playlist and 'time_deleted' in pl_columns and not "time_deleted" in " ".join(args.where) else ''}
+            {'and COALESCE(p.time_deleted, 0) = 0' if is_media_playlist and 'time_deleted' in pl_columns and not "time_deleted" in " ".join(args.filter_sql) else ''}
             {'and m.path like "http%"' if not dl_status else ''}
             {same_subdomain if getattr(args, 'same_domain', False) else ''}
             {'AND (score IS NULL OR score > 7)' if 'score' in m_columns else ''}

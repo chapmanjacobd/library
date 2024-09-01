@@ -6,13 +6,16 @@ from unittest import mock
 
 import pytest
 
-from tests.utils import v_db
+from tests.playback.test_play_history import history_flags
+from tests.utils import connect_db_args, v_db
 from xklb.__main__ import library as lb
+from xklb.mediadb import db_history
 from xklb.utils import arggroups
 
 fs_flags = [
     ("--modified-within '1 second'", 0, ""),
     ("--deleted-within '1 day'", 0, ""),
+    ("--deleted", 0, ""),
     ("--downloaded-before '1 day'", 0, ""),
     ("--limit 1", 1, "corrupt.mp4"),
     ("-L 1", 1, "corrupt.mp4"),
@@ -40,30 +43,17 @@ fs_flags = [
     ("test --no-fts", 5, "corrupt.mp4"),
     ("--modified-before '1 second'", 5, "corrupt.mp4"),
     ("--deleted-before '1 day'", 5, "corrupt.mp4"),
+    ("--hide-deleted", 5, "corrupt.mp4"),
+    ("--no-hide-deleted", 5, "corrupt.mp4"),
 ]
-
 
 media_flags = [
     ("--no-video", 0, ""),
     ("-B --solo", 0, ""),
-    ("-P s", 0, ""),  # test_media_player must run first  # TODO: move to new function to test before / after
-    ("-w 'play_count=0'", 0, ""),
-    # ("-P f", 5, "test"),  # TODO: make a specific test for this that doesn't have a race condition
-    # ("-P fo", 5, "test.mp4"),
-    # ("-P n", 5, "test.mp4"),
-    ("--partial o", 5, "corrupt.mp4"),
-    ("-P p", 5, "corrupt.mp4"),
-    ("-P pt", 5, "corrupt.mp4"),
-    ("-P t", 5, "corrupt.mp4"),
-    ("-w 'play_count>0'", 5, "corrupt.mp4"),
-    ("-w 'time_played>0'", 5, "corrupt.mp4"),
-    ("-w 'done>0'", 5, "corrupt.mp4"),
-    ("--played-within '3 days'", 5, "corrupt.mp4"),
-    ("--played-before '10 years'", 0, ""),
     ("--no-subtitles", 1, "test_frame.gif"),
     ("-w subtitle_count=1", 1, "corrupt.mp4"),
     ("--fetch-siblings each", 1, "corrupt.mp4"),
-    ("--no-audio", 2, "test_frame.gif"),
+    ("--no-audio", 2, "test.gif"),
     ("-w audio_count=1", 2, "corrupt.mp4"),
     ("-d+0 -d-10", 3, "corrupt.mp4"),
     ("-d=-1", 3, "corrupt.mp4"),
@@ -90,9 +80,12 @@ media_flags = [
     ("-O reverse_path_path", 5, "https://test/?tags%5B%5D="),
     ("-O size", 5, "test_frame.gif"),
     ("-O", 5, "corrupt.mp4"),
-    ("-w 'playhead=0'", 5, "corrupt.mp4"),
     ("-w time_deleted=0", 5, "corrupt.mp4"),
 ]
+
+args = connect_db_args(v_db)
+db_history.create(args)
+
 
 temp_parser = ArgumentParser(add_help=False)
 arggroups.sql_fs(temp_parser)
@@ -101,9 +94,11 @@ opts = temp_parser._actions
 
 @pytest.mark.parametrize("o", opts)
 def test_flags_covered(o):
-    assert any(s in xs for s in o.option_strings for xs in [t[0] for t in fs_flags] + [t[0] for t in media_flags]), (
-        "Option %s is not covered" % o.option_strings
-    )
+    assert any(
+        s in xs
+        for s in o.option_strings
+        for xs in [t[0] for t in fs_flags] + [t[0] for t in media_flags] + [t[0] for t in history_flags]
+    ), ("Option %s is not covered" % o.option_strings)
 
 
 @mock.patch("xklb.playback.media_player.play_list", return_value=SimpleNamespace(returncode=0))
@@ -114,7 +109,7 @@ def test_fs_flags(play_mocked, flags, count, first):
             with pytest.raises(SystemExit):
                 lb([subcommand, v_db, *shlex.split(flags)])
         else:
-            lb([subcommand, v_db, *shlex.split(flags)])
+            lb([subcommand, v_db, *shlex.split(flags), "-u", "path"])
             out = play_mocked.call_args[0][1]
 
             assert len(out) == count
@@ -132,7 +127,7 @@ def test_media_flags(play_mocked, flags, count, first):
             with pytest.raises(SystemExit):
                 lb([subcommand, v_db, *shlex.split(flags)])
         else:
-            lb([subcommand, v_db, *shlex.split(flags)])
+            lb([subcommand, v_db, *shlex.split(flags), "-u", "path"])
             out = play_mocked.call_args[0][1]
 
             assert len(out) == count
