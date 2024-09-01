@@ -195,10 +195,9 @@ def fast_glob(path_dir, limit=100):
 
 
 def rename_no_replace(src, dst):
-    if os.path.exists(dst):
-        if not os.path.isdir(dst):
-            msg = f"The destination file {dst} already exists."
-            raise FileExistsError(msg)
+    if os.path.exists(dst) and not os.path.isdir(dst):
+        msg = f"The destination file {dst} already exists."
+        raise FileExistsError(msg)
     os.rename(src, dst)
 
 
@@ -572,9 +571,8 @@ def read_file_to_dataframes(
         msg = f"{path}: Unsupported file type: {mimetype}"
         raise ValueError(msg)
 
-    if mimetype not in ("sqlite", "sqlite3", "sqlite database file"):
-        if table_index is not None:
-            dfs = [dfs[table_index]]
+    if mimetype not in ("sqlite", "sqlite3", "sqlite database file") and table_index is not None:
+        dfs = [dfs[table_index]]
 
     if join_tables:
         dfs = [pd.concat(dfs, axis=0, ignore_index=True)]

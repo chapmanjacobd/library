@@ -551,9 +551,8 @@ def download_url(args, url, output_path=None, retry_num=0):
             r.close()
             if isinstance(e, HTTPTooManyRequests):
                 raise
-            if isinstance(e, OSError):
-                if e.errno in consts.EnvironmentErrors:
-                    raise
+            if isinstance(e, OSError) and e.errno in consts.EnvironmentErrors:
+                raise
             retry_num += 1
             log.debug("Retry #%s %s", retry_num, url)
             time.sleep(retry_num)

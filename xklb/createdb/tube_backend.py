@@ -548,15 +548,14 @@ def download(args, m) -> None:
         download_status = DLStatus.RECOVERABLE_ERROR
         ydl_errors_txt = "Media check failed\n" + ydl_errors_txt
 
-    if download_status == DLStatus.SUCCESS:
-        if len(yt_archive) > 0 and info is not None:
-            archive_id = ydl._make_archive_id(info)
-            if archive_id is None:
-                log.info("archive_id not found %s", info)
-            else:
-                yt_archive.add(archive_id)
-                with yt_dlp.utils.locked_file(str(download_archive), "a", encoding="utf-8") as archive_file:
-                    archive_file.write(archive_id + "\n")
+    if download_status == DLStatus.SUCCESS and len(yt_archive) > 0 and info is not None:
+        archive_id = ydl._make_archive_id(info)
+        if archive_id is None:
+            log.info("archive_id not found %s", info)
+        else:
+            yt_archive.add(archive_id)
+            with yt_dlp.utils.locked_file(str(download_archive), "a", encoding="utf-8") as archive_file:
+                archive_file.write(archive_id + "\n")
 
     db_media.download_add(
         args,

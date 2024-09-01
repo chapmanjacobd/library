@@ -460,9 +460,8 @@ def dedupe_media() -> None:
         ):
             continue
 
-        if not consts.PYTEST_RUNNING:
-            if not Path(d["keep_path"]).resolve().exists():
-                continue
+        if not consts.PYTEST_RUNNING and not Path(d["keep_path"]).resolve().exists():
+            continue
 
         deletion_paths.append(d["duplicate_path"])
         deletion_candidates.append(d)
