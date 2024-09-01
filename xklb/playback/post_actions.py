@@ -29,11 +29,10 @@ def mv_to_keep_folder(args, src: str) -> str:
 
     dest = str(keep_path / p.name)
     dest = merge_mv.mmv_folders(args, merge_mv.mmv_file, [src], dest)
-    if dest:
-        if hasattr(args, "db"):
-            with args.db.conn:
-                args.db.conn.execute("DELETE FROM media where path = ?", [dest])
-                args.db.conn.execute("UPDATE media set path = ? where path = ?", [dest, src])
+    if dest and hasattr(args, "db"):
+        with args.db.conn:
+            args.db.conn.execute("DELETE FROM media where path = ?", [dest])
+            args.db.conn.execute("UPDATE media set path = ? where path = ?", [dest, src])
 
     return dest or src
 
