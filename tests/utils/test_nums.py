@@ -4,7 +4,7 @@ from xklb.utils import nums, sql_utils
 
 
 @pytest.mark.parametrize(
-    "human,b",
+    ("human", "b"),
     [
         ("30", 31457280),
         ("30b", 30),
@@ -24,7 +24,7 @@ def test_human_to_bytes(human, b):
 
 
 @pytest.mark.parametrize(
-    "human,b",
+    ("human", "b"),
     [
         ("30", 30000000),
         ("30bits", 30),
@@ -62,7 +62,7 @@ def test_human_to_seconds():
 
 
 @pytest.mark.parametrize(
-    "input_sizes,s",
+    ("input_sizes", "s"),
     [
         (["<10MB"], "and size < 10485760 "),
         ([">100KB", "<10MB"], "and size > 102400 and size < 10485760 "),

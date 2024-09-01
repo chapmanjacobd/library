@@ -4,7 +4,7 @@ from xklb.__main__ import library as lb
 
 
 @pytest.mark.parametrize(
-    "args,stdout",
+    ("args", "stdout"),
     [
         (
             ["--batch-size=inf", "tests/data/test.xml", "tests/data/test2.xml"],

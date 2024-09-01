@@ -25,7 +25,7 @@ def test_lb_timestamps_tz_unix(assert_unchanged, p, fz, s, f, capsys):
 
 
 @pytest.mark.parametrize(
-    "args,stdout",
+    ("args", "stdout"),
     [
         (["October 2007 "], "2007-10-01\n"),
         (["October 2007 ", "01/20/04"], "2007-10-01\n2004-01-20\n"),

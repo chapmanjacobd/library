@@ -61,7 +61,7 @@ flags = [
 ]  # list(itertools.product(['--bk=path', '', '--bk=title', '--bk=path,title'], ['--pk=path', '', '--pk=title', '--pk=path,title']))
 
 
-@pytest.mark.parametrize("flags,expected", flags)
+@pytest.mark.parametrize(("flags", "expected"), flags)
 def test_dedupe(db1, flags, expected):
     lb(["dedupe-dbs", db1, "media", *flags.split(" ")])
 

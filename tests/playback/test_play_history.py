@@ -32,7 +32,7 @@ history_flags = [
 
 
 @mock.patch("xklb.playback.media_player.play_list", return_value=SimpleNamespace(returncode=0))
-@pytest.mark.parametrize("flags,count,first", history_flags)
+@pytest.mark.parametrize(("flags", "count", "first"), history_flags)
 def test_history_flags(play_mocked, flags, count, first):
     if count == 0:
         with pytest.raises(SystemExit):

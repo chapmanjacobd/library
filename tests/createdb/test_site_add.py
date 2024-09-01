@@ -4,7 +4,7 @@ from xklb.createdb.site_add import html_to_dict, nosql_to_sql
 
 
 @pytest.mark.parametrize(
-    "html, expected_dict, expected_tables",
+    ("html", "expected_dict", "expected_tables"),
     [
         (
             "<lunch><ol><li>Pork Dumplings</li><li>HK Milk Tea</li><li>Hot Soy Milk</li></ol></dinner>",

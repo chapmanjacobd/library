@@ -85,7 +85,7 @@ flags = [
 ]
 
 
-@pytest.mark.parametrize("flags,deleted", flags)
+@pytest.mark.parametrize(("flags", "deleted"), flags)
 def test_dedupe(db1, flags, deleted):
     lb(["dedupe-media", db1, *flags.split(" ")])
 
