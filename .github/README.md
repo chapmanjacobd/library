@@ -99,7 +99,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v2.9.042; 84 subcommands)
+    library (v2.9.043; 84 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -1676,11 +1676,48 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 <details><summary>Print markdown tables from table-like files</summary>
 
     $ library markdown-tables -h
-    usage: library markdown-tables PATH ... [--table STR] [--end-row INT]
+    usage: library markdown-tables PATH ... [--table STR] [--end-row INT] [--transpose] [--filetype]
 
     Print tables from files as markdown
 
     Only 500,000 rows per file are loaded for performance purposes. Set `--end-row inf` to read all the rows and/or run out of RAM.
+
+    Examples:
+
+    lb sdb example_dbs/cities.db places chic | lb table --from-json --transpose
+
+    ## stdin:0
+
+    | 0                       | 1          | 2                        | 3                        | 4                        | 5          |
+    |-------------------------|------------|--------------------------|--------------------------|--------------------------|------------|
+    | title                   | Chiclayo   | Chicago                  | Chico                    | Apalachicola             | Chicoutimi |
+    | state                   | Lambayeque | Illinois                 | California               | Florida                  | Québec     |
+    | country                 | Peru       | United States of America | United States of America | United States of America | Canada     |
+    | u                       | PE         | US                       | US                       | US                       | CA         |
+    | latitude                | -6.7629    | 41.8319                  | 39.7286                  | 29.7256                  | 48.4333    |
+    | longitude               | -79.8366   | -87.752                  | -121.8364                | -84.9925                 | -71.0667   |
+    | size                    | 22184      | 19571                    | 40437                    | 35467                    | 28951      |
+    | interesting_avg         | 141        | 1129                     | 156                      | 119                      | 175        |
+    | interesting_spread      | 1754       | 26919                    | 2025                     | 1297                     | 3196       |
+    | boring_avg              | 349        | 4332                     | 136                      | 382                      | 628        |
+    | boring_spread           | 4186       | 24220                    | 2000                     | 2432                     | 3920       |
+    | pop_avg                 | 7530       | 12906                    | 1350                     | 378                      | 3038       |
+    | pop_spread              | 80471      | 80825                    | 24196                    | 1634                     | 15249      |
+    | food_avg                | 28         | 18                       | 8                        | 7                        | 8          |
+    | food_spread             | 153        | 417                      | 51                       | 27                       | 26         |
+    | urban_avg               | 60         | 38                       | 11                       | 2                        | 22         |
+    | urban_spread            | 80         | 99                       | 45                       | 2                        | 71         |
+    | forest_avg              | 11         | 55                       | 82                       | 77                       | 72         |
+    | forest_spread           | 27         | 155                      | 264                      | 186                      | 203        |
+    | aqi_avg                 | 9          | 11                       | 5                        | 7                        | 2          |
+    | aqi_max                 | 23         | 14                       | 11                       | 9                        | 6          |
+    | coastline_avg           | 0          | 0                        | 0                        | 23                       | 26         |
+    | slope_avg               | 1542       | 420                      | 3532                     | 248                      | 2071       |
+    | public_transport_avg    | 8          | 34                       | 1                        | 1                        | 2          |
+    | public_transport_spread | 24         | 303                      | 9                        | 1                        | 7          |
+    | hotel_count             | 56         | 259                      | 75                       | 2561                     |            |
+    | airport_code            | CIX,LOH    | CMI,MDW,MKG              | RDD,SMF                  | ECP,TLH                  | YBG        |
+    | wifi                    | 37505      | 177564                   | 171754                   | 195347                   | 150669     |
 
 
 </details>

@@ -1033,15 +1033,11 @@ def file_over_file(value):
     for opt in optionals:
         if opt not in optional_opts:
             msg = f"Invalid optional conflict resolution option. Choose ZERO OR MORE: {', '.join(optional_opts)}"
-            raise argparse.ArgumentTypeError(
-                msg
-            )
+            raise argparse.ArgumentTypeError(msg)
 
     if required not in required_opts:
         msg = f"Invalid required conflict resolution option. Choose ONE: {', '.join(required_opts)}"
-        raise argparse.ArgumentTypeError(
-            msg
-        )
+        raise argparse.ArgumentTypeError(msg)
 
     return parts
 

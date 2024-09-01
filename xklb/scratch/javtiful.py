@@ -1,9 +1,8 @@
-import time
+import sys, time
 from pathlib import Path
 
 from xklb.mediafiles import media_check
 from xklb.utils import arggroups, argparse_utils, file_utils, path_utils, processes, web
-import sys
 
 
 def javtiful() -> None:

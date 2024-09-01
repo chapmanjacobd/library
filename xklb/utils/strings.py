@@ -1,4 +1,4 @@
-import html, math, re, sys, textwrap
+import functools, html, math, operator, re, sys, textwrap
 from copy import deepcopy
 from datetime import datetime, timedelta
 from datetime import timezone as tz
@@ -9,8 +9,6 @@ import humanize
 from xklb.data import wordbank
 from xklb.utils import consts, iterables, nums
 from xklb.utils.log_utils import log
-import functools
-import operator
 
 
 def repeat_until_same(fn):  # noqa: ANN201
