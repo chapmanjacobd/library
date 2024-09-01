@@ -45,15 +45,14 @@ def rglob(
                         stack.append(entry.path)
                 elif entry.is_symlink():
                     pass
+                elif extensions is None:
+                    files.add(entry.path)
                 else:
-                    if extensions is None:
+                    extension = entry.path.rsplit(".", 1)[-1].lower()
+                    if extension in extensions:
                         files.add(entry.path)
                     else:
-                        extension = entry.path.rsplit(".", 1)[-1].lower()
-                        if extension in extensions:
-                            files.add(entry.path)
-                        else:
-                            filtered_files.add(entry.path)
+                        filtered_files.add(entry.path)
 
             printing.print_overwrite(
                 f"[{base_dir}] {scan_stats(len(files), len(filtered_files), len(folders), len(filtered_folders))}"
@@ -91,13 +90,12 @@ def rglob_gen(
                         stack.append(entry.path)
                 elif entry.is_symlink():
                     pass
+                elif extensions is None:
+                    yield entry.path
                 else:
-                    if extensions is None:
+                    extension = entry.path.rsplit(".", 1)[-1].lower()
+                    if extension in extensions:
                         yield entry.path
-                    else:
-                        extension = entry.path.rsplit(".", 1)[-1].lower()
-                        if extension in extensions:
-                            yield entry.path
 
 
 def file_temp_copy(src) -> str:

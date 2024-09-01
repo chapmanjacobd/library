@@ -121,9 +121,8 @@ def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True) -> 
                     if args.ignore_errors:
                         if webpath in playlists_of_playlists and not playlist_root:
                             raise ExistingPlaylistVideoReached  # prevent infinite bug
-                    else:
-                        if webpath in playlists_of_playlists:
-                            raise ExistingPlaylistVideoReached  # prevent infinite bug
+                    elif webpath in playlists_of_playlists:
+                        raise ExistingPlaylistVideoReached  # prevent infinite bug
 
                     get_playlist_metadata(args, webpath, ydl_opts, playlist_root=False)
                     log.debug("get_playlist_metadata %s", t.elapsed())

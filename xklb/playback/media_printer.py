@@ -164,11 +164,10 @@ def media_printer(args, data, units=None, media_len=None) -> None:
         if hasattr(args, "action") and "history" in tables:
             if action in (SC.download, SC.download_status) and "time_downloaded" in m_columns:
                 D["download_duration"] = cadence_adjusted_items(args, D["count"], time_column="time_downloaded")
+            elif total_duration > 0:
+                D["cadence_adj_duration"] = cadence_adjusted_duration(args, total_duration)
             else:
-                if total_duration > 0:
-                    D["cadence_adj_duration"] = cadence_adjusted_duration(args, total_duration)
-                else:
-                    D["cadence_adj_duration"] = cadence_adjusted_items(args, D["count"])
+                D["cadence_adj_duration"] = cadence_adjusted_items(args, D["count"])
 
         if "size" in media[0]:
             D["size"] = sum((d.get("size") or 0) for d in media)

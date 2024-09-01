@@ -126,9 +126,8 @@ def external_action(args, log_action, media_file, player_exit_code, player_proce
             processes.cmd_detach(media_file if s == "{}" else s for s in shlex.split(cmd))
         else:
             processes.cmd_detach(shlex.split(cmd), media_file)
-    else:
-        if player_exit_code > 0 and not args.ignore_errors and not (args.delete_unplayable and player_exit_code == 2):
-            processes.player_exit(player_process)
+    elif player_exit_code > 0 and not args.ignore_errors and not (args.delete_unplayable and player_exit_code == 2):
+        processes.player_exit(player_process)
 
 
 def post_act(

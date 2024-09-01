@@ -152,16 +152,14 @@ def linear_interpolation(x, data_points, clip=True) -> float:
             return data_points[0][1]
         elif x > data_points[n - 1][0]:
             return data_points[n - 1][1]
-    else:
-        # If x is outside the range of provided data points, use the trend
-        if x < data_points[0][0]:
-            x1, y1 = data_points[0]
-            x2, y2 = data_points[1]
-            return y1 + ((x - x1) / (x2 - x1)) * (y2 - y1)
-        elif x > data_points[n - 1][0]:
-            x1, y1 = data_points[n - 2]
-            x2, y2 = data_points[n - 1]
-            return y1 + ((x - x1) / (x2 - x1)) * (y2 - y1)
+    elif x < data_points[0][0]:
+        x1, y1 = data_points[0]
+        x2, y2 = data_points[1]
+        return y1 + ((x - x1) / (x2 - x1)) * (y2 - y1)
+    elif x > data_points[n - 1][0]:
+        x1, y1 = data_points[n - 2]
+        x2, y2 = data_points[n - 1]
+        return y1 + ((x - x1) / (x2 - x1)) * (y2 - y1)
 
     # perform linear interpolation
     for i in range(n - 1):

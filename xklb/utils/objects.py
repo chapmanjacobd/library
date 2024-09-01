@@ -80,11 +80,10 @@ def flatten_grandparents(nested_dict, parent="", sep="_"):
 
         if new_key in flattened_dict:
             flattened_dict.update(nested_dict)
+        elif isinstance(v, dict):
+            flattened_dict.update(flatten_grandparents(v, new_key, sep))
         else:
-            if isinstance(v, dict):
-                flattened_dict.update(flatten_grandparents(v, new_key, sep))
-            else:
-                flattened_dict[new_key] = v
+            flattened_dict[new_key] = v
 
     return flattened_dict
 

@@ -142,13 +142,12 @@ def soup_tree(o) -> dict | str | None:
                 else:
                     raise NotImplementedError
 
+            elif isinstance(val, (dict, str)):
+                transformed[key_name] = val
+            elif isinstance(val, list):
+                transformed[key_name] = []
             else:
-                if isinstance(val, (dict, str)):
-                    transformed[key_name] = val
-                elif isinstance(val, list):
-                    transformed[key_name] = []
-                else:
-                    raise NotImplementedError
+                raise NotImplementedError
 
         return transformed
 

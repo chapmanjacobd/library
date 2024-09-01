@@ -149,19 +149,18 @@ def group_sort_by(args, folders):
         values = args.sort_groups_by.replace("mcda ", "", 1)
         df = sort(args, folders, values)
         return df.drop(columns=["TOPSIS", "MABAC", "SPOTIS", "BORDA"]).to_dict(orient="records")
+    elif args.sort_groups_by == "played_ratio":
+
+        def sort_func(x):
+            return (0, x["played"] / x["deleted"]) if x["deleted"] else (1, x["played"] / x["total"])
+
+    elif args.sort_groups_by == "deleted_ratio":
+
+        def sort_func(x):
+            return (0, x["deleted"] / x["played"]) if x["played"] else (1, x["deleted"] / x["total"])
+
     else:
-        if args.sort_groups_by == "played_ratio":
-
-            def sort_func(x):
-                return (0, x["played"] / x["deleted"]) if x["deleted"] else (1, x["played"] / x["total"])
-
-        elif args.sort_groups_by == "deleted_ratio":
-
-            def sort_func(x):
-                return (0, x["deleted"] / x["played"]) if x["played"] else (1, x["deleted"] / x["total"])
-
-        else:
-            sort_func = sql_utils.sort_like_sql(args.sort_groups_by)
+        sort_func = sql_utils.sort_like_sql(args.sort_groups_by)
 
     return sorted(folders, key=sort_func)
 

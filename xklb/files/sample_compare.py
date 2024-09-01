@@ -83,11 +83,10 @@ def sample_cmp(*paths, threads=1, gap=0.1, chunk_size=None, ignore_holes=False, 
     if is_equal:
         if skip_full_hash:
             log.info("Files might be equal:\n%s", paths_str)
+        elif full_hash_compare(paths):
+            log.info("Files are equal:\n%s", paths_str)
         else:
-            if full_hash_compare(paths):
-                log.info("Files are equal:\n%s", paths_str)
-            else:
-                log.info("Files are similar but NOT equal:\n%s", paths_str)
+            log.info("Files are similar but NOT equal:\n%s", paths_str)
     else:
         log.error("Files are not equal:\n%s", paths_str)
 

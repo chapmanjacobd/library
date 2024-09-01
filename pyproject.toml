@@ -101,27 +101,20 @@ line-length = 120
 
 [tool.ruff.lint]
 unfixable = ["F841"]
-
 ignore = [
-  "UP038",
-  "UP017",
-  "UP031",
-  "B905",
-  "PT001",
-  "SIM118",
-  "UP015",
-  "E713",
   "ANN001",
   "ANN002",
   "ANN003",
   "ANN101",
+  "ANN201",
   "ANN204",
+  "B905",
   "BLE001",
   "C400",
-  "COM812",
   "C401",
   "C405",
   "C901",
+  "COM812",
   "D100",
   "D101",
   "D102",
@@ -132,6 +125,7 @@ ignore = [
   "D212",
   "E401",
   "E501",
+  "E713",
   "EM101",
   "ERA001",
   "F401",
@@ -143,6 +137,7 @@ ignore = [
   "PLR0913",
   "PLW0603",
   "PLW2901",
+  "PT001",
   "PTH109",
   "PTH123",
   "Q000",
@@ -162,11 +157,16 @@ ignore = [
   "SIM108",
   "SIM110",
   "SIM114",
+  "SIM118",
   "T100",
   "T201",
   "TRY003",
   "TRY300",
   "TRY301",
+  "UP015",
+  "UP017",
+  "UP031",
+  "UP038",
 ]
 select = ["ALL"]
 # Allow unused variables when underscore-prefixed.
