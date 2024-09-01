@@ -387,7 +387,7 @@ def mimetype(path):
                 pass
 
         except FileNotFoundError:
-            return
+            return None
 
     return file_type
 

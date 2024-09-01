@@ -37,7 +37,7 @@ def jav_guru() -> None:
     def process_url(line):
         url = line.rstrip("\n")
         if url in ["", '""', "\n"]:
-            return
+            return None
 
         web.load_selenium(args)
         try:
@@ -155,6 +155,7 @@ def jav_guru() -> None:
         corruption = media_check.calculate_corruption(output_path)
         if corruption > 0.1:
             exit(3)
+        return None
 
     process_url(args.path)
     file_utils.tempdir_unlink("*.xpi")

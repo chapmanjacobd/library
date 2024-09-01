@@ -509,13 +509,13 @@ class MediaPrefetcher:
         while m is None:
             if not self.futures:
                 self.remaining = 0
-                return
+                return None
 
             f = self.futures.popleft()
             f = f.result()
             if f is None:
                 self.remaining = 0
-                return
+                return None
             elif f == {}:
                 self.fetch()
                 continue

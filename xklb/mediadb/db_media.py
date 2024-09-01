@@ -278,6 +278,7 @@ def update_media(args, media, mark_deleted=True):
 
     new_media = [d for d in media if d["path"] in new_files]
     args.db["media"].insert_all(new_media, pk="id", alter=True, replace=True)
+    return None
 
 
 def playlist_media_add(

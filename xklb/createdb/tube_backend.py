@@ -447,6 +447,7 @@ def download(args, m) -> None:
         if match_filters:
             ytdlp_match_filter = yt_dlp.utils.match_filter_func(" & ".join(match_filters).split(" | "))
             return ytdlp_match_filter(info, *pargs, incomplete)
+        return None
 
     ydl_opts["match_filter"] = blocklist_check
 
