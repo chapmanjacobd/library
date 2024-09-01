@@ -263,7 +263,7 @@ def load_selenium(args, wire=False):
         from seleniumwire import webdriver
 
         log_levels = [logging.ERROR, logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG]
-        for logger_name, logger in logging.root.manager.loggerDict.items():
+        for logger_name in logging.root.manager.loggerDict.keys():
             if logger_name.startswith("selenium"):
                 logging.getLogger(logger_name).setLevel(clamp_index(log_levels, args.verbose - 1))
 
