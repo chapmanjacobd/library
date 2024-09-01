@@ -137,7 +137,8 @@ def sort(args, df, values):
 
 def group_sort_by(args, folders):
     if args.sort_groups_by is None:
-        sort_func = lambda x: (0, -x["size"] / x["exists"]) if x["exists"] else (1, -x["size"] / x["total"])
+        def sort_func(x):
+            return (0, -x["size"] / x["exists"]) if x["exists"] else (1, -x["size"] / x["total"])
     elif args.sort_groups_by.startswith("mcda "):
         import pandas as pd
 
@@ -148,9 +149,11 @@ def group_sort_by(args, folders):
         return df.drop(columns=["TOPSIS", "MABAC", "SPOTIS", "BORDA"]).to_dict(orient="records")
     else:
         if args.sort_groups_by == "played_ratio":
-            sort_func = lambda x: (0, x["played"] / x["deleted"]) if x["deleted"] else (1, x["played"] / x["total"])
+            def sort_func(x):
+                return (0, x["played"] / x["deleted"]) if x["deleted"] else (1, x["played"] / x["total"])
         elif args.sort_groups_by == "deleted_ratio":
-            sort_func = lambda x: (0, x["deleted"] / x["played"]) if x["played"] else (1, x["deleted"] / x["total"])
+            def sort_func(x):
+                return (0, x["deleted"] / x["played"]) if x["played"] else (1, x["deleted"] / x["total"])
         else:
             sort_func = sql_utils.sort_like_sql(args.sort_groups_by)
 

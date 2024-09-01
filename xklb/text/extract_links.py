@@ -104,7 +104,8 @@ def parse_inner_urls(args, url, markup):
 
     url_renames = args.url_renames.items()
 
-    delimit_fn = lambda el: any(el.has_attr(s) for s in link_attrs)
+    def delimit_fn(el):
+        return any(el.has_attr(s) for s in link_attrs)
     tags = web.tags_with_text(soup, delimit_fn)
     for tag in tags:
         for attr_name, attr_value in tag.attrs.items():
