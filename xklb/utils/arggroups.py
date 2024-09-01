@@ -1035,7 +1035,7 @@ def clobber(parent_parser):
         "--file-over-file",
         type=file_over_file,
         metavar="[action-if ...] fallback",
-        default="delete-src-hash rename-src",
+        default="delete-src-hash rename-dest",
         help="""Specify the conflict resolution strategy for file on file clobbering
 
 In this scenario you have a file with the same name as a file in the target directory:
@@ -1097,7 +1097,7 @@ In this scenario you have a file with the same name as a folder somewhere in the
 en.wikipedia.org/wiki                       (existing file)
 en.wikipedia.org/wiki/Telescopes/index.html (incoming folder + files)
 
-Choose ONE  the following options:
+Choose ONE of the following options:
   skip         will skip the incoming files within wiki/
   rename-dest  will rename the existing file to wiki_1
   delete-src   will delete the incoming folder tree
@@ -1489,7 +1489,7 @@ def selenium(parent_parser):
     parser = parent_parser.add_argument_group("Selenium")
     parser.add_argument("--selenium", "--js", action="store_true", help="Use selenium")
     parser.add_argument("--firefox", action="store_true", help="Use selenium with firefox")
-    parser.add_argument("--chrome", action="store_true", help="Use selenium with chromium etc")
+    parser.add_argument("--chrome", action="store_true", help="Use selenium with chrome")
     parser.add_argument("--scroll", action="store_true", help="Scroll down the page; infinite scroll")
     parser.add_argument("--manual", action="store_true", help="Confirm manually in shell before exiting the browser")
     parser.add_argument(
