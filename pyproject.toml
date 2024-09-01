@@ -105,6 +105,9 @@ unfixable = ["F841"]
 ignore = [
   "UP038",
   "UP017",
+  "UP031",
+  "B905",
+  "PT001",
   "ANN001",
   "ANN002",
   "ANN003",
