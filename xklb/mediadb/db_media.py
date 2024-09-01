@@ -273,7 +273,7 @@ def update_media(args, media, mark_deleted=True):
                 return []
             deleted_count = mark_media_deleted(args, deleted_files)
             if deleted_count > 0:
-                print(f"Marking", deleted_count, "orphaned metadata records as deleted")
+                print("Marking", deleted_count, "orphaned metadata records as deleted")
             log.debug("mark_deleted: %s", t.elapsed())
 
     new_media = [d for d in media if d["path"] in new_files]
@@ -620,7 +620,7 @@ def get_related_media(args, m: dict) -> list[dict]:
             {'' if args.related >= consts.RELATED_NO_FILTER else " ".join(args.aggregate_filter_sql)}
         ORDER BY play_count
             , m.path like "http%"
-            , {'rank' if 'sort' in args.defaults else f'ntile(1000) over (order by rank)' + (f', {args.sort}' if args.sort else '')}
+            , {'rank' if 'sort' in args.defaults else 'ntile(1000) over (order by rank)' + (f', {args.sort}' if args.sort else '')}
             , path
         {sql_utils.limit_sql(args.limit, args.offset, limit_adj=-1)}
     """
