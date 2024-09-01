@@ -32,11 +32,11 @@ def download_status() -> None:
 
     extractor_stats = defaultdict(
         lambda: {
-            "retry_queued": 0,
             "never_attempted": 0,
-            "downloaded_recently": 0,
             "failed_recently": 0,
+            "retry_queued": 0,
             "retries_exceeded": 0,
+            "downloaded_recently": 0,
         }
     )
 
