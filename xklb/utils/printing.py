@@ -1,5 +1,6 @@
 import csv, math, os, sys, textwrap
 from datetime import datetime, timezone
+from typing import Callable
 
 import humanize
 from tabulate import tabulate
@@ -71,74 +72,62 @@ def path_fill(text, percent=None, width=None):
     return "\n".join(lines)
 
 
-def col_resize(tbl: list[dict], col: str, width) -> list[dict]:
-    for idx, _d in enumerate(tbl):
-        if tbl[idx].get(col) is not None:
-            tbl[idx][col] = path_fill(tbl[idx][col], width=width)
+def transform_column(transform_func: Callable):
+    def transform(tbl: list[dict], col: str, **kwargs) -> list[dict]:
+        for d in tbl:
+            if d[col] is not None:
+                d[col] = transform_func(d[col], **kwargs)
+        return tbl
 
-    return tbl
-
-
-def col_resize_percent(tbl: list[dict], col: str, percent=10) -> list[dict]:
-    for idx, _d in enumerate(tbl):
-        if tbl[idx].get(col) is not None:
-            tbl[idx][col] = path_fill(tbl[idx][col], percent=percent)
-
-    return tbl
+    return transform
 
 
-def col_naturaldate(tbl: list[dict], col: str) -> list[dict]:
-    for idx, _d in enumerate(tbl):
-        val = tbl[idx].get(col)
-        if val is not None:
-            val = int(val)
-            if val == 0:
-                tbl[idx][col] = None
-            else:
-                tbl[idx][col] = humanize.naturaldate(datetime.fromtimestamp(val, tz=timezone.utc).astimezone())
+def transform_column_0null(transform_func: Callable):
+    def transform(tbl: list[dict], col: str, **kwargs) -> list[dict]:
+        for d in tbl:
+            if d[col] is not None:
+                if int(d[col]) == 0:
+                    d[col] = None
+                else:
+                    d[col] = transform_func(d[col], **kwargs)
+        return tbl
 
-    return tbl
-
-
-def col_naturaltime(tbl: list[dict], col: str) -> list[dict]:
-    for idx, _d in enumerate(tbl):
-        val = tbl[idx].get(col)
-        if val is not None:
-            val = int(val)
-            if val == 0:
-                tbl[idx][col] = None
-            else:
-                tbl[idx][col] = relative_datetime(val)
-
-    return tbl
+    return transform
 
 
-def col_filesize(tbl: list[dict], col: str) -> list[dict]:
-    for idx, _d in enumerate(tbl):
-        if tbl[idx].get(col) is not None:
-            if tbl[idx][col] == 0:
-                tbl[idx][col] = None
-            else:
-                tbl[idx][col] = file_size(tbl[idx][col])
+def seconds_to_hhmmss(seconds):
+    if seconds < 0:
+        seconds = abs(seconds)
+    seconds = int(seconds)
 
-    return tbl
+    hours = seconds // 3600
+    minutes = (seconds % 3600) // 60
+    seconds = seconds % 60
 
+    formatted_time = f"{hours:>2}:{minutes:02d}:{seconds:02d}"
+    if hours == 0:
+        formatted_time = f"   {minutes:>2}:{seconds:02d}"
 
-def col_duration(tbl: list[dict], col: str) -> list[dict]:
-    for idx, _d in enumerate(tbl):
-        if tbl[idx].get(col) is not None:
-            tbl[idx][col] = duration(tbl[idx][col])
-    return tbl
+    return formatted_time
 
 
-def col_unquote_url(tbl: list[dict], col: str) -> list[dict]:
-    for idx, _d in enumerate(tbl):
-        val = tbl[idx].get(col)
-        if val is not None:
-            if val.startswith("http"):
-                tbl[idx][col] = web.safe_unquote(val)
+def unquote_url(val: str) -> str:
+    if val.startswith("http"):
+        val = web.safe_unquote(val)
+    return val
 
-    return tbl
+
+col_duration = transform_column(duration)
+col_hhmmss = transform_column(seconds_to_hhmmss)
+col_unquote_url = transform_column(unquote_url)
+col_resize = transform_column(path_fill)
+col_resize_percent = transform_column(path_fill)
+
+col_filesize = transform_column_0null(file_size)
+col_naturaldate = transform_column_0null(
+    lambda val: humanize.naturaldate(datetime.fromtimestamp(val, tz=timezone.utc).astimezone())
+)
+col_naturaltime = transform_column_0null(relative_datetime)
 
 
 def wrap_paragraphs(text, width=80):
@@ -185,29 +174,6 @@ def calculate_max_col_widths(data):
                 max_col_widths[key] = max(max_col_widths.get(key) or 0, max_value_length)
 
     return max_col_widths
-
-
-def seconds_to_hhmmss(seconds):
-    if seconds < 0:
-        seconds = abs(seconds)
-    seconds = int(seconds)
-
-    hours = seconds // 3600
-    minutes = (seconds % 3600) // 60
-    seconds = seconds % 60
-
-    formatted_time = f"{hours:>2}:{minutes:02d}:{seconds:02d}"
-    if hours == 0:
-        formatted_time = f"   {minutes:>2}:{seconds:02d}"
-
-    return formatted_time
-
-
-def col_hhmmss(tbl: list[dict], col: str) -> list[dict]:
-    for idx, _d in enumerate(tbl):
-        if tbl[idx].get(col) is not None:
-            tbl[idx][col] = seconds_to_hhmmss(tbl[idx][col])
-    return tbl
 
 
 def print_df(df):

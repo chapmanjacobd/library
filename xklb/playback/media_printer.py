@@ -257,7 +257,7 @@ def media_printer(args, data, units=None, media_len=None) -> None:
         max_col_widths = printing.calculate_max_col_widths(tbl)
         adjusted_widths = printing.distribute_excess_width(max_col_widths)
         for k, v in adjusted_widths.items():
-            printing.col_resize(tbl, k, v)
+            printing.col_resize(tbl, k, width=v)
 
         colalign = ["right" if should_align_right(k, v) else "left" for k, v in tbl[0].items()]
         printing.table(tbl, colalign=colalign)
