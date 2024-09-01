@@ -63,9 +63,10 @@ def get_page(args, query_data):
     df = df.drop(columns=["cat", "language", "category", "main_cat", "browseflags", "comments", "owner", "leechers"])
 
     safe_json = objects.fallback(json.loads, {})
-    dict_values_str = lambda d: ", ".join(d.values())
-    dict_values_str = lambda d: ", ".join(d.values())
-    dict_values_list = lambda d: list(d.values())
+    def dict_values_str(d):
+        return ", ".join(d.values())
+    def dict_values_list(d):
+        return list(d.values())
     df["author_info"] = df["author_info"].apply(safe_json).apply(dict_values_str)
     df["narrator_info"] = df["narrator_info"].apply(safe_json).apply(dict_values_str)
     df["series_info"] = df["series_info"].apply(safe_json).apply(dict_values_list)
