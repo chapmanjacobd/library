@@ -63,20 +63,27 @@ def parse_cookies_from_browser(input_str):
         input_str,
     )
     if mobj is None:
-        raise ValueError(f"invalid cookies from browser arguments: {input_str}")
+        msg = f"invalid cookies from browser arguments: {input_str}"
+        raise ValueError(msg)
     browser_name, keyring, profile, container = mobj.group("name", "keyring", "profile", "container")
     browser_name = browser_name.lower()
     if browser_name not in SUPPORTED_BROWSERS:
-        raise ValueError(
+        msg = (
             f'unsupported browser specified for cookies: "{browser_name}". '
             f'Supported browsers are: {", ".join(sorted(SUPPORTED_BROWSERS))}'
+        )
+        raise ValueError(
+            msg
         )
     if keyring is not None:
         keyring = keyring.upper()
         if keyring not in SUPPORTED_KEYRINGS:
-            raise ValueError(
+            msg = (
                 f'unsupported keyring specified for cookies: "{keyring}". '
                 f'Supported keyrings are: {", ".join(sorted(SUPPORTED_KEYRINGS))}'
+            )
+            raise ValueError(
+                msg
             )
     return (browser_name, profile, keyring, container)
 
@@ -485,7 +492,8 @@ def download_url(args, url, output_path=None, retry_num=0):
         session = requests_session()
 
     if retry_num > args.http_download_retries:
-        raise RuntimeError(f"Max retries exceeded for {url}")
+        msg = f"Max retries exceeded for {url}"
+        raise RuntimeError(msg)
 
     log.debug("Downloading file %s retry %s", url, retry_num)
     try:

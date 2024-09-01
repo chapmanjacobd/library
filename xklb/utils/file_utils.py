@@ -197,7 +197,8 @@ def fast_glob(path_dir, limit=100):
 def rename_no_replace(src, dst):
     if os.path.exists(dst):
         if not os.path.isdir(dst):
-            raise FileExistsError(f"The destination file {dst} already exists.")
+            msg = f"The destination file {dst} already exists."
+            raise FileExistsError(msg)
     os.rename(src, dst)
 
 

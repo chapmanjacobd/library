@@ -16,6 +16,8 @@ def raise_for_status(status_code):
     elif status_code in (404,):
         raise UnrecoverableError("HTTP404: HTTPNotFound")
     elif 400 <= status_code < 500:
-        raise RecoverableError(f"HTTP{status_code}")
+        msg = f"HTTP{status_code}"
+        raise RecoverableError(msg)
     elif 500 <= status_code < 600:
-        raise RecoverableError(f"HTTP{status_code}")
+        msg = f"HTTP{status_code}"
+        raise RecoverableError(msg)
