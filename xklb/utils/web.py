@@ -72,9 +72,7 @@ def parse_cookies_from_browser(input_str):
             f'unsupported browser specified for cookies: "{browser_name}". '
             f'Supported browsers are: {", ".join(sorted(SUPPORTED_BROWSERS))}'
         )
-        raise ValueError(
-            msg
-        )
+        raise ValueError(msg)
     if keyring is not None:
         keyring = keyring.upper()
         if keyring not in SUPPORTED_KEYRINGS:
@@ -82,9 +80,7 @@ def parse_cookies_from_browser(input_str):
                 f'unsupported keyring specified for cookies: "{keyring}". '
                 f'Supported keyrings are: {", ".join(sorted(SUPPORTED_KEYRINGS))}'
             )
-            raise ValueError(
-                msg
-            )
+            raise ValueError(msg)
     return (browser_name, profile, keyring, container)
 
 

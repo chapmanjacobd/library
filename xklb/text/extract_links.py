@@ -106,6 +106,7 @@ def parse_inner_urls(args, url, markup):
 
     def delimit_fn(el):
         return any(el.has_attr(s) for s in link_attrs)
+
     tags = web.tags_with_text(soup, delimit_fn)
     for tag in tags:
         for attr_name, attr_value in tag.attrs.items():
