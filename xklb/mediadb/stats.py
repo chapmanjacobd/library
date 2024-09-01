@@ -8,12 +8,8 @@ from xklb.utils import arggroups, argparse_utils, consts, db_utils, sql_utils
 
 def parse_args() -> argparse.Namespace:
     parser = argparse_utils.ArgumentParser(usage=usage.stats)
-
     arggroups.sql_fs(parser)
-
     arggroups.frequency(parser)
-    parser.add_argument("--hide-deleted", action="store_true")
-    parser.add_argument("--only-deleted", "--deleted", action="store_true")
     arggroups.history(parser)
     arggroups.debug(parser)
 

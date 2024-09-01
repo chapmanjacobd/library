@@ -9,10 +9,7 @@ from xklb.utils import arggroups, argparse_utils, sqlgroups
 
 def parse_args() -> argparse.Namespace:
     parser = argparse_utils.ArgumentParser(usage=usage.history)
-
     arggroups.sql_fs(parser)
-
-    parser.add_argument("--hide-deleted", action="store_true")
     arggroups.history(parser)
     arggroups.debug(parser)
 

@@ -72,6 +72,7 @@ if not Path(v_db).exists():
     lb(["fs_add", v_db, "--scan-subtitles", "tests/data/", "-E", "Youtube"])
     lb(["linksdb", v_db, "--insert-only", "https://test/?tags%5B%5D="])
 
+
 tube_db = "tests/data/tube.db"
 if not consts.VOLKSWAGEN and not Path(tube_db).exists():
     lb(
