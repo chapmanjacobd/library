@@ -1,4 +1,5 @@
 import re
+from contextlib import suppress
 
 
 def kebab_camel_snake(col):
@@ -18,11 +19,10 @@ def columns_snake_case(df):
 
 def convert_dtypes(df, clean=False):
     for col in df.columns:
-        try:
+        with suppress(Exception):
             if clean:
                 df[col] = df[col].str.replace(r"\[.*|\(.*|\/.*", "", regex=True)
             df.loc[:, col] = df[col].str.replace(",", "").astype(float)
-        except Exception:
-            continue  # column was not numeric after all (•́⍜•̀), skip
+
     df = df.convert_dtypes()
     return df

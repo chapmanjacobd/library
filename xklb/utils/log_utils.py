@@ -1,5 +1,4 @@
 import argparse, logging, os, sys
-from functools import wraps
 from timeit import default_timer
 
 from IPython.core import ultratb
@@ -10,20 +9,6 @@ def clamp_index(arr, idx):
     return arr[min(max(idx, 0), len(arr) - 1)]
 
 
-def run_once(f):  # noqa: ANN201
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        if not f.has_run:
-            result = f(*args, **kwargs)
-            f.has_run = True
-            return result
-        return None
-
-    f.has_run = False
-    return wrapper
-
-
-@run_once
 def argparse_log() -> logging.Logger:
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--verbose", "-v", action="count", default=0)
@@ -33,17 +18,18 @@ def argparse_log() -> logging.Logger:
     try:
         has_stdin = os.getpgrp() == os.tcgetpgrp(sys.stdin.fileno())
         has_stdout = os.getpgrp() == os.tcgetpgrp(sys.stdout.fileno())
-        if args.verbose > 0 and has_stdin and has_stdout:
-            sys.breakpointhook = debugger.set_trace
-            if not args.no_pdb:
-                sys.excepthook = ultratb.FormattedTB(
-                    mode="Verbose" if args.verbose > 1 else "Context",
-                    color_scheme="Neutral",
-                    call_pdb=True,
-                    debugger_cls=debugger.TerminalPdb,
-                )
     except Exception:
-        pass
+        has_stdin, has_stdout = False, False
+
+    if args.verbose > 0 and has_stdin and has_stdout:
+        sys.breakpointhook = debugger.set_trace
+        if not args.no_pdb:
+            sys.excepthook = ultratb.FormattedTB(
+                mode="Verbose" if args.verbose > 1 else "Context",
+                color_scheme="Neutral",
+                call_pdb=True,
+                debugger_cls=debugger.TerminalPdb,
+            )
 
     log_levels = [logging.WARNING, logging.INFO, logging.DEBUG]
 

@@ -383,35 +383,48 @@ def extract_chunk(args, media) -> None:
 
 def find_new_files(args, path) -> list[str]:
     if path.is_file():
-        scanned_set = {str(path)}
-    else:
-        for s in args.profiles:
-            if getattr(DBType, s, None) is None:
-                msg = f"fs_extract for profile {s}"
-                raise NotImplementedError(msg)
-
-        exts = args.ext
-        if not exts:
-            exts = set()
-            if args.scan_all_files or DBType.filesystem in args.profiles:
-                exts = None
+        if db_media.exists(args, path):
+            try:
+                time_deleted = args.db.pop(
+                    f"""select time_deleted from media where path = ?""",
+                    [str(path)],
+                )
+            except Exception as e:
+                log.debug(e)
             else:
-                if DBType.audio in args.profiles:
-                    exts |= consts.AUDIO_ONLY_EXTENSIONS
-                if DBType.video in args.profiles:
-                    exts |= consts.VIDEO_EXTENSIONS
+                if time_deleted > 0:
+                    undeleted_count = db_media.mark_media_undeleted(args, [path])
+                    if undeleted_count > 0:
+                        print(f"[{path}] Marking as undeleted")
+        return [path]
 
-                if DBType.image in args.profiles:
-                    exts |= consts.IMAGE_EXTENSIONS
+    for s in args.profiles:
+        if getattr(DBType, s, None) is None:
+            msg = f"fs_extract for profile {s}"
+            raise NotImplementedError(msg)
 
-                if DBType.text in args.profiles:
-                    exts |= consts.TEXTRACT_EXTENSIONS
-                if args.ocr:
-                    exts |= consts.OCR_EXTENSIONS
-                if args.speech_recognition:
-                    exts |= consts.SPEECH_RECOGNITION_EXTENSIONS
+    exts = args.ext
+    if not exts:
+        exts = set()
+        if args.scan_all_files or DBType.filesystem in args.profiles:
+            exts = None
+        else:
+            if DBType.audio in args.profiles:
+                exts |= consts.AUDIO_ONLY_EXTENSIONS
+            if DBType.video in args.profiles:
+                exts |= consts.VIDEO_EXTENSIONS
 
-        scanned_set = file_utils.rglob(path, exts or None, args.exclude)[0]
+            if DBType.image in args.profiles:
+                exts |= consts.IMAGE_EXTENSIONS
+
+            if DBType.text in args.profiles:
+                exts |= consts.TEXTRACT_EXTENSIONS
+            if args.ocr:
+                exts |= consts.OCR_EXTENSIONS
+            if args.speech_recognition:
+                exts |= consts.SPEECH_RECOGNITION_EXTENSIONS
+
+    scanned_set = file_utils.rglob(path, exts or None, args.exclude)[0]
 
     m_columns = db_utils.columns(args, "media")
 
@@ -422,9 +435,10 @@ def find_new_files(args, path) -> list[str]:
                 f"""select path from media
                 where 1=1
                     and time_deleted > 0
-                    and path like '{path}%'
+                    and path like ?
                     {'AND time_downloaded > 0' if 'time_downloaded' in m_columns else ''}
                 """,
+                [str(path) + os.sep + "%"],
             )
         }
     except Exception as e:
@@ -445,7 +459,7 @@ def find_new_files(args, path) -> list[str]:
                     and coalesce(time_deleted, 0) = 0
                     {'AND time_downloaded > 0' if 'time_downloaded' in m_columns else ''}
                 """,
-                [str(path) + "%"],
+                [str(path) + os.sep + "%"],
             )
         }
     except Exception as e:

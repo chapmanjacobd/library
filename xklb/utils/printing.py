@@ -1,6 +1,6 @@
 import csv, math, os, sys, textwrap
+from collections.abc import Callable
 from datetime import datetime, timezone
-from typing import Callable
 
 import humanize
 from tabulate import tabulate
@@ -20,9 +20,9 @@ def print_overwrite(*text):
         print(text)
 
 
-def table(tbl, *args, **kwargs) -> None:
+def table(tbl, **kwargs) -> None:
     try:
-        print(tabulate(tbl, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False, *args, **kwargs))
+        print(tabulate(tbl, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False, **kwargs))
     except BrokenPipeError:
         sys.stdout = None
         sys.exit(141)

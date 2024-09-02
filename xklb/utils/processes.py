@@ -1,4 +1,5 @@
 import functools, json, multiprocessing, os, shlex, signal, subprocess, sys
+from contextlib import suppress
 from typing import NoReturn
 
 from xklb.utils import consts, iterables, nums
@@ -90,7 +91,7 @@ def cmd(
 ) -> subprocess.CompletedProcess:
     def print_std(s, is_success):
         if ignore_regexps is not None:
-            s = "\n".join(l for l in s.splitlines() if not any(r.match(l) for r in ignore_regexps))
+            s = "\n".join(line for line in s.splitlines() if not any(r.match(line) for r in ignore_regexps))
 
         s = s.strip()
         if s:
@@ -261,18 +262,14 @@ class FFProbe:
         self.has_audio = len(self.audio_streams) > 0
 
         self.duration = None
-        try:
+        with suppress(IndexError, KeyError):
             self.duration = float(self.audio_streams[0]["duration"])
-        except Exception:
-            pass
-        try:
-            self.duration = float(self.video_streams[0]["duration"])
-        except Exception:
-            pass
-        try:
-            self.duration = float(self.format["duration"])
-        except Exception:
-            pass
+        if self.duration is None:
+            with suppress(IndexError, KeyError):
+                self.duration = float(self.video_streams[0]["duration"])
+        if self.duration is None:
+            with suppress(KeyError):
+                self.duration = float(self.format["duration"])
 
         if self.duration and self.duration > 0:
             start = nums.safe_float(self.format.get("start_time")) or 0
