@@ -1,4 +1,5 @@
 import argparse, datetime, functools, os, random, re, tempfile, time, urllib.error, urllib.parse, urllib.request
+from contextlib import suppress
 from email.message import Message
 from pathlib import Path
 from shutil import which
@@ -86,7 +87,7 @@ def parse_cookies_from_browser(input_str):
 
 
 def requests_session(args=argparse.Namespace()):
-    global session  # TODO: maybe run_once similar to log_utils.log
+    global session
 
     from yt_dlp.utils.networking import std_headers
 
@@ -102,7 +103,7 @@ def requests_session(args=argparse.Namespace()):
         session.mount("http://", _get_retry_adapter(args))
         session.mount("https://", _get_retry_adapter(args))
 
-        std_params = dict(headers=std_headers, timeout=(8, 45), allow_redirects=max_redirects > 0)
+        std_params = {"headers": std_headers, "timeout": (8, 45), "allow_redirects": max_redirects > 0}
         session.request = functools.partial(session.request, **std_params)
         session.get = functools.partial(session.get, **std_params)
 
@@ -276,14 +277,12 @@ def load_selenium(args, wire=False):
     xvfb = None  # three states
     if args.verbose < consts.LOG_DEBUG and not getattr(args, "manual", False):
         xvfb = False
-        try:
+        with suppress(Exception):
             from pyvirtualdisplay.display import Display
 
             args.driver_display = Display(visible=False, size=(1280, 720))
             args.driver_display.start()
             xvfb = True
-        except Exception:
-            pass
 
     if (which("firefox") or which("firefox.exe") or getattr(args, "firefox", False)) and not getattr(
         args, "chrome", False
@@ -347,10 +346,8 @@ def load_selenium(args, wire=False):
 def quit_selenium(args):
     args.driver.quit()
     if args.verbose < consts.LOG_DEBUG and not getattr(args, "manual", False):
-        try:
+        with suppress(Exception):
             args.driver_display.stop()
-        except Exception:
-            pass
 
 
 def safe_unquote(url):
@@ -392,10 +389,8 @@ def url_decode(href):
     href = safe_unquote(href)
     up = urlparse(href)
     if up.netloc:
-        try:
+        with suppress(Exception):
             href = href.replace(up.netloc, puny_decode(up.netloc), 1)
-        except Exception:
-            pass
     return href
 
 
@@ -432,10 +427,8 @@ def url_encode(href):
     href = safe_quote(href)
     up = urlparse(href)
     if up.netloc:
-        try:
+        with suppress(Exception):
             href = href.replace(up.netloc, puny_encode(up.netloc).decode(), 1)
-        except Exception:
-            pass
     return href
 
 

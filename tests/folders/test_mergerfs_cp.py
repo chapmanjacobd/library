@@ -17,7 +17,7 @@ pytestmark = pytest.mark.skipif(not consts.IS_LINUX, reason="Skip Windows / Mac"
 
 
 @pytest.fixture(autouse=True)
-def mock_get_mergerfs_mounts(monkeypatch):
+def _mock_get_mergerfs_mounts(monkeypatch):
     from xklb.folders import mergerfs_cp
 
     temp_dir = tempfile.gettempdir()

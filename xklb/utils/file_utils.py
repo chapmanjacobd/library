@@ -382,7 +382,7 @@ def mimetype(path):
                 if Path(path).stat().st_size == 0:
                     file_type = "empty file"
             except Exception:
-                pass
+                return None
 
         except FileNotFoundError:
             return None

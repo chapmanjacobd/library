@@ -196,7 +196,7 @@ def munge_av_tags(args, media) -> dict:
             try:
                 upload_time = nums.to_timestamp(datetime.strptime(upload_date, "%Y%m%d"))
             except Exception:
-                pass
+                upload_time = None
 
         tags = objects.dict_filter_bool(
             {
