@@ -23,7 +23,11 @@ def rglob(
     base_dir: str | Path,
     extensions=None,  # None | Iterable[str]
     exclude=None,  # None | Iterable[str]
+    include=None,  # None | Iterable[str]
 ) -> tuple[set[str], set[str], set[str]]:
+    if extensions:
+        extensions = tuple(s if s.startswith('.') else f".{s}" for s in extensions)
+
     files = set()
     filtered_files = set()
     filtered_folders = set()
@@ -38,21 +42,31 @@ def rglob(
         else:
             for entry in scanned_dir:
                 if entry.is_dir(follow_symlinks=False):
-                    if any(entry.name == pattern or fnmatch(entry.path, pattern) for pattern in exclude or []):
+                    if exclude and any(entry.name == pattern or fnmatch(entry.path, pattern) for pattern in exclude):
                         filtered_folders.add(entry.path)
-                    else:
-                        folders.add(entry.path)
-                        stack.append(entry.path)
+                        continue
+                    if include and not any(
+                        entry.name == pattern or fnmatch(entry.path, pattern) for pattern in include
+                    ):
+                        filtered_folders.add(entry.path)
+                        continue
+                    folders.add(entry.path)
+                    stack.append(entry.path)
                 elif entry.is_symlink():
-                    pass
-                elif extensions is None:
-                    files.add(entry.path)
-                else:
-                    extension = entry.path.rsplit(".", 1)[-1].lower()
-                    if extension in extensions:
-                        files.add(entry.path)
-                    else:
+                    continue
+                else:  # file or close enough
+                    if extensions and not entry.path.lower().endswith(extensions):
                         filtered_files.add(entry.path)
+                        continue
+                    if include and not any(
+                        entry.name == pattern or fnmatch(entry.path, pattern) for pattern in include
+                    ):
+                        filtered_files.add(entry.path)
+                        continue
+                    if exclude and any(entry.name == pattern or fnmatch(entry.path, pattern) for pattern in exclude):
+                        filtered_files.add(entry.path)
+                        continue
+                    files.add(entry.path)
 
             printing.print_overwrite(
                 f"[{base_dir}] {scan_stats(len(files), len(filtered_files), len(folders), len(filtered_folders))}"
@@ -71,7 +85,11 @@ def rglob_gen(
     base_dir: str | Path,
     extensions=None,  # None | Iterable[str]
     exclude=None,  # None | Iterable[str]
+    include=None,  # None | Iterable[str]
 ):
+    if extensions:
+        extensions = tuple(s if s.startswith('.') else f".{s}" for s in extensions)
+
     folders = set()
     stack = [base_dir]
     while stack:
@@ -83,19 +101,26 @@ def rglob_gen(
         else:
             for entry in scanned_dir:
                 if entry.is_dir(follow_symlinks=False):
-                    if any(entry.name == pattern or fnmatch(entry.path, pattern) for pattern in exclude or []):
-                        pass
-                    else:
-                        folders.add(entry.path)
-                        stack.append(entry.path)
+                    if exclude and any(entry.name == pattern or fnmatch(entry.path, pattern) for pattern in exclude):
+                        continue
+                    if include and not any(
+                        entry.name == pattern or fnmatch(entry.path, pattern) for pattern in include
+                    ):
+                        continue
+                    folders.add(entry.path)
+                    stack.append(entry.path)
                 elif entry.is_symlink():
-                    pass
-                elif extensions is None:
+                    continue
+                else:  # file or close enough
+                    if extensions and not entry.path.lower().endswith(extensions):
+                        continue
+                    if include and not any(
+                        entry.name == pattern or fnmatch(entry.path, pattern) for pattern in include
+                    ):
+                        continue
+                    if exclude and any(entry.name == pattern or fnmatch(entry.path, pattern) for pattern in exclude):
+                        continue
                     yield entry.path
-                else:
-                    extension = entry.path.rsplit(".", 1)[-1].lower()
-                    if extension in extensions:
-                        yield entry.path
 
 
 def file_temp_copy(src) -> str:
