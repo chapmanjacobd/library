@@ -1,3 +1,4 @@
+from contextlib import suppress
 import concurrent.futures, os, shutil
 from pathlib import Path
 
@@ -23,11 +24,43 @@ def parse_args(defaults_override=None):
     return args
 
 
+PENDING_COUNT = 0
+PENDING_SIZE = 0
 MOVED_COUNT = 0
 MOVED_SIZE = 0
 
 
-def track_processed_files(func):
+def print_stats(args):
+    action = "Copied" if args.copy else "Moved"
+    file_plural = lambda x: "files" if x > 1 else "file"
+    pr = print if args.simulate else printing.print_overwrite
+
+    count_percent = (MOVED_COUNT / PENDING_COUNT) * 100 if PENDING_COUNT > 0 else 0
+    size_percent = (MOVED_SIZE / PENDING_SIZE) * 100 if PENDING_SIZE > 0 else 0
+
+    pr(
+        f"{action} {MOVED_COUNT} {file_plural(MOVED_COUNT)} ({strings.file_size(MOVED_SIZE)}) "
+        f"({count_percent:.2f}% of {PENDING_COUNT} {file_plural(PENDING_COUNT)}, "
+        f"{size_percent:.2f}% of {strings.file_size(PENDING_SIZE)})"
+    )
+
+def track_pending(gen_func):
+    def wrapper(*args, **kwargs):
+        if args[0].verbose == 0:
+            yield from gen_func(*args, **kwargs)
+        else:
+            global PENDING_COUNT, PENDING_SIZE
+            for src, dest in gen_func(*args, **kwargs):
+                PENDING_COUNT += 1
+                with suppress(FileNotFoundError):
+                    PENDING_SIZE += Path(src).stat().st_size
+                print_stats(args[0])
+                yield src, dest
+
+    return wrapper
+
+
+def track_moved(func):
     def wrapper(*args, **kwargs):
         if args[0].verbose == 0:
             func(*args, **kwargs)
@@ -35,22 +68,20 @@ def track_processed_files(func):
             global MOVED_COUNT, MOVED_SIZE
             try:
                 file_size = Path(args[1]).stat().st_size
-            except Exception:
+            except FileNotFoundError:
                 file_size = 0
 
             try:
                 func(*args, **kwargs)
-                MOVED_SIZE += file_size
                 MOVED_COUNT += 1
+                MOVED_SIZE += file_size
             finally:
-                action = "Copied" if func.__name__ == "mcp_file" else "Moved"
-                pr = print if args[0].simulate else printing.print_overwrite
-                pr(f"{action} {MOVED_COUNT} files ({strings.file_size(MOVED_SIZE)})")
+                print_stats(args[0])
 
     return wrapper
 
 
-@track_processed_files
+@track_moved
 def mmv_file(args, source, destination):
     if args.simulate:
         print(source)
@@ -59,7 +90,7 @@ def mmv_file(args, source, destination):
         file_utils.rename_move_file(source, destination)
 
 
-@track_processed_files
+@track_moved
 def mcp_file(args, source, destination):
     if args.simulate:
         print(source)
@@ -68,6 +99,7 @@ def mcp_file(args, source, destination):
         shutil.copy2(source, destination)
 
 
+@track_pending
 def gen_src_dest(args, sources, destination):
     for source in sources:
         if os.path.isdir(source):
