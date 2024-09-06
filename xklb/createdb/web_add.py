@@ -209,10 +209,7 @@ def spider(args, paths: list):
             add_media(args, media)
 
         if args.sizes:
-            extra_metadata = []
-            for d in media:
-                if d.get("size") is None or args.sizes(d["size"]):
-                    extra_metadata.append(d)
+            extra_metadata = [d for d in media if d.get("size") is None or args.sizes(d["size"])]
         else:
             extra_metadata = media
 
