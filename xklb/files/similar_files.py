@@ -82,7 +82,7 @@ def filter_group_by_size(args, group):
             output.append(m)
 
     if output:
-        group["grouped_paths"] = [m0] + output
+        group["grouped_paths"] = [m0, *output]
         return group
     else:
         return None

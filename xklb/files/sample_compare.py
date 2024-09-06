@@ -76,10 +76,10 @@ def sample_cmp(*paths, threads=1, gap=0.1, chunk_size=None, ignore_holes=False, 
         paths_dict[path] = future.result()
 
     sorted_paths = sorted(paths_dict.items(), key=lambda x: x[1])
-    paths_str = "\n".join([f"{hash}\t{path}" for path, hash in sorted_paths])
+    paths_str = "\n".join([f"{file_hash}\t{path}" for path, file_hash in sorted_paths])
 
     hashes = list(paths_dict.values())
-    is_equal = all(hash == hashes[0] for hash in hashes)
+    is_equal = all(s == hashes[0] for s in hashes)
     if is_equal:
         if skip_full_hash:
             log.info("Files might be equal:\n%s", paths_str)

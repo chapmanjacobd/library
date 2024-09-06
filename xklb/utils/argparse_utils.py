@@ -127,7 +127,7 @@ class CustomHelpFormatter(argparse.RawTextHelpFormatter):
         else:
             result = default_metavar
 
-        def format(tuple_size):
+        def format(tuple_size):  # noqa: A001
             if isinstance(result, tuple):
                 return result
             else:

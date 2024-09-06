@@ -1678,7 +1678,7 @@ pause = """library pause
     Pause playback (pause mpv, pause chromecast, etc)
 """
 
-next = """library next
+lb_next = """library next
 
     Go to the next track in the playqueue, optionally delete the currently playing media
 """
