@@ -26,7 +26,7 @@ def rglob(
     include=None,  # None | Iterable[str]
 ) -> tuple[set[str], set[str], set[str]]:
     if extensions:
-        extensions = tuple(s if s.startswith('.') else f".{s}" for s in extensions)
+        extensions = tuple(s if s.startswith(".") else f".{s}" for s in extensions)
 
     files = set()
     filtered_files = set()
@@ -88,7 +88,7 @@ def rglob_gen(
     include=None,  # None | Iterable[str]
 ):
     if extensions:
-        extensions = tuple(s if s.startswith('.') else f".{s}" for s in extensions)
+        extensions = tuple(s if s.startswith(".") else f".{s}" for s in extensions)
 
     folders = set()
     stack = [base_dir]
