@@ -212,11 +212,7 @@ def clean_up_temp_dirs():
 
 
 def pop_substring_keys(e, key_substring):
-    values = []
-    for k in list(e.keys()):
-        if key_substring in k:
-            values.append(e.pop(k))
-    return values
+    return [e.pop(k) for k in list(e.keys()) if key_substring in k]
 
 
 def munge_image_tags(m: dict, e: dict) -> dict:

@@ -173,9 +173,7 @@ class CustomHelpFormatter(argparse.RawTextHelpFormatter):
         if help_text == "show this help message and exit":
             return ""  # not very useful self-referential humor
 
-        subactions = []
-        for subaction in self._iter_indented_subactions(action):
-            subactions.append(self._format_action(subaction))
+        subactions = [self._format_action(subaction) for subaction in self._iter_indented_subactions(action)]
 
         opts = action.option_strings
         if not opts and not help_text:

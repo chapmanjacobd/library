@@ -229,9 +229,7 @@ def partial_startswith(original_string, startswith_match_list):
 
     candidate = deepcopy(original_string)
     while len(matching_strings) == 0 and len(candidate) > 0:
-        for s in startswith_match_list:
-            if s.startswith(candidate):
-                matching_strings.append(s)
+        matching_strings = [s for s in startswith_match_list if s.startswith(candidate)]
 
         if len(matching_strings) == 0:
             candidate = candidate[:-1]  # remove the last char
