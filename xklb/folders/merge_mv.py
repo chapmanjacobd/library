@@ -2,7 +2,7 @@ import concurrent.futures, os, shutil
 from pathlib import Path
 
 from xklb import usage
-from xklb.utils import arggroups, argparse_utils, devices, file_utils, path_utils, processes
+from xklb.utils import arggroups, argparse_utils, devices, file_utils, path_utils, printing, processes, strings
 
 
 def parse_args(defaults_override=None):
@@ -23,6 +23,34 @@ def parse_args(defaults_override=None):
     return args
 
 
+MOVED_COUNT = 0
+MOVED_SIZE = 0
+
+
+def track_processed_files(func):
+    def wrapper(*args, **kwargs):
+        if args[0].verbose == 0:
+            func(*args, **kwargs)
+        else:
+            global MOVED_COUNT, MOVED_SIZE
+            try:
+                file_size = Path(args[1]).stat().st_size
+            except Exception:
+                file_size = 0
+
+            try:
+                func(*args, **kwargs)
+                MOVED_SIZE += file_size
+                MOVED_COUNT += 1
+            finally:
+                action = "Copied" if func.__name__ == "mcp_file" else "Moved"
+                pr = print if args[0].simulate else printing.print_overwrite
+                pr(f"{action} {MOVED_COUNT} files ({strings.file_size(MOVED_SIZE)})")
+
+    return wrapper
+
+
+@track_processed_files
 def mmv_file(args, source, destination):
     if args.simulate:
         print(source)
@@ -31,6 +59,7 @@ def mmv_file(args, source, destination):
         file_utils.rename_move_file(source, destination)
 
 
+@track_processed_files
 def mcp_file(args, source, destination):
     if args.simulate:
         print(source)
