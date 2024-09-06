@@ -13,9 +13,9 @@ def print_overwrite(*text):
     if consts.PYTEST_RUNNING or not sys.stdout.isatty():
         pass
     elif os.name == "posix":
-        print("\r" + text[0], *text[1:], end="\033[K", flush=True)
+        print("\r" + text[0], *text[1:], end="\033[K", flush=False)
     elif consts.IS_WINDOWS:
-        print("\r" + text[0], *text[1:], end="", flush=True)
+        print("\r" + text[0], *text[1:], end="", flush=False)
     else:
         print(text)
 

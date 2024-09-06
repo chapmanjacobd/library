@@ -27,12 +27,22 @@ MOVED_COUNT = 0
 MOVED_SIZE = 0
 
 
-def print_stats(args):
-    action = "Copied" if args.copy else "Moved"
+def print_stats(args, dest_path=None, file_size=None):
+    action = "copied" if args.copy else "moved"
     file_plural = lambda x: "files" if x > 1 else "file"
     pr = print if args.simulate else printing.print_overwrite
 
-    pr(f"{action} {MOVED_COUNT} {file_plural(MOVED_COUNT)} ({strings.file_size(MOVED_SIZE)})")
+    pr(
+        ' '.join(
+            [
+                str(MOVED_COUNT),
+                file_plural(MOVED_COUNT),
+                action,
+                f"({strings.file_size(MOVED_SIZE)})",
+                *(['Current file:', dest_path, f"({strings.file_size(file_size)})"] if dest_path else []),
+            ]
+        )
+    )
 
 
 def track_moved(func):
@@ -46,6 +56,8 @@ def track_moved(func):
             except FileNotFoundError:
                 file_size = 0
 
+            if not args[0].simulate:
+                print_stats(args[0], args[2], file_size)
             try:
                 func(*args, **kwargs)
                 MOVED_SIZE += file_size
