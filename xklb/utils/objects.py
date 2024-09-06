@@ -27,7 +27,7 @@ def last_item(gen):
 
 
 def take(gen, num=5):
-    for value, _ in zip(gen, range(num)):
+    for value, _ in zip(gen, range(num), strict=False):
         yield value
 
 
@@ -177,7 +177,7 @@ def is_profile(args, profile_target):
 
 
 def product(**kwargs):
-    return (dict(zip(kwargs.keys(), x)) for x in itertools.product(*kwargs.values()))
+    return (dict(zip(kwargs.keys(), x, strict=False)) for x in itertools.product(*kwargs.values()))
 
 
 def class_enum(o):
