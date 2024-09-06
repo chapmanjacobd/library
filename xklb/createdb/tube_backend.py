@@ -245,7 +245,7 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> list[dict]
             )
 
         current_video_count = 0
-        for id, path, playlists_id in videos:
+        for media_id, path, playlists_id in videos:
             entry = ydl.extract_info(path)
             if entry is None:
                 continue
@@ -254,7 +254,7 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> list[dict]
             chapter_count = len(chapters)
             if chapter_count > 0:
                 chapters = [
-                    {"media_id": id, "time": int(float(d["start_time"])), "text": d.get("title")}
+                    {"media_id": media_id, "time": int(float(d["start_time"])), "text": d.get("title")}
                     for d in chapters
                     if d.get("title") and not strings.is_generic_title(d)
                 ]
@@ -271,11 +271,11 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> list[dict]
                     except UnicodeDecodeError:
                         log.warning(f"[{path}] Could not decode subtitle {subtitle_path}")
                     else:
-                        captions.extend([{"media_id": id, **d} for d in file_captions])
+                        captions.extend([{"media_id": media_id, **d} for d in file_captions])
                 if len(captions) > 0:
                     args.db["captions"].insert_all(captions, alter=True)
 
-            entry["id"] = id
+            entry["id"] = media_id
             entry["playlists_id"] = playlists_id
             entry["chapter_count"] = chapter_count
 

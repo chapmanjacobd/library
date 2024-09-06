@@ -13,7 +13,7 @@ paths = [
 
 def test_sample_hash(assert_unchanged, capsys):
     def run(p):
-        lb(["sample-hash"] + [os.path.join("tests/data", p)])
+        lb(["sample-hash", os.path.join("tests/data", p)])
         return capsys.readouterr().out.strip()
 
     captured = {p: run(p).split("\t")[0] for p in paths}

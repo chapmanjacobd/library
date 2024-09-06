@@ -9,7 +9,7 @@ from xklb.__main__ import library as lb
 @pytest.mark.parametrize("s", [[], ["-d"], ["-t"]])
 @pytest.mark.parametrize("f", [[], ["-TZ"]])
 def test_lb_timestamps_tz(assert_unchanged, p, fz, tz, s, f, capsys):
-    lb(["timestamps"] + p + fz + tz + s + f)
+    lb(["timestamps", *p, *fz, *tz, *s, *f])
     captured = capsys.readouterr().out.strip()
     assert_unchanged(captured)
 
@@ -19,7 +19,7 @@ def test_lb_timestamps_tz(assert_unchanged, p, fz, tz, s, f, capsys):
 @pytest.mark.parametrize("s", [[], ["-d"], ["-t"]])
 @pytest.mark.parametrize("f", [["-U"]])
 def test_lb_timestamps_tz_unix(assert_unchanged, p, fz, s, f, capsys):
-    lb(["timestamps"] + p + fz + s + f)
+    lb(["timestamps", *p, *fz, *s, *f])
     captured = capsys.readouterr().out.strip()
     assert_unchanged(captured)
 

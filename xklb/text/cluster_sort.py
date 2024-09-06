@@ -307,7 +307,7 @@ def filter_near_duplicates(groups: list[dict]) -> list[dict]:
         sorted_temp_groups = sorted(temp_groups.items(), key=lambda t: len(t[1]))
         for new_group_idx, (path, similar_paths) in enumerate(sorted_temp_groups):
             new_group_name = group["common_path"] + f"#{new_group_idx}"
-            regrouped_data.append({"common_path": new_group_name, "grouped_paths": [path] + similar_paths})
+            regrouped_data.append({"common_path": new_group_name, "grouped_paths": [path, *similar_paths]})
 
     return regrouped_data
 

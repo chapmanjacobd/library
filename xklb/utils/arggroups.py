@@ -52,7 +52,7 @@ def args_post(args, parser, create_db=False):
     settings = {
         k: v
         for k, v in args.__dict__.items()
-        if k not in ["database", "verbose", "defaults"] + list(args.defaults.keys())
+        if k not in ["database", "verbose", "defaults", *list(args.defaults.keys())]
     }
     args.extractor_config = {
         k: v for k, v in settings.items() if k not in ["db", "paths", "actions", "backfill_pages"]

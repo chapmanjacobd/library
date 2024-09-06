@@ -271,10 +271,10 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
         name = function_name.replace("_", "-")
 
         aliases += [
-            s.replace("-", "") for s in [name] + aliases if "-" in s and s.replace("-", "") not in known_subcommands
+            s.replace("-", "") for s in [name, *aliases] if "-" in s and s.replace("-", "") not in known_subcommands
         ]
         aliases += [
-            s.replace("-", "_") for s in [name] + aliases if "-" in s and s.replace("-", "_") not in known_subcommands
+            s.replace("-", "_") for s in [name, *aliases] if "-" in s and s.replace("-", "_") not in known_subcommands
         ]
         known_subcommands.extend([name, *aliases])
 

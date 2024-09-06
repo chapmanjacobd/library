@@ -361,25 +361,25 @@ def process_playqueue(args) -> None:
     if args.big_dirs:
         media_keyed = {d["path"]: d for d in media}
         folders = big_dirs.group_files_by_parents(args, media)
-        dirs = big_dirs.process_big_dirs(args, folders)
-        dirs = mcda.group_sort_by(args, dirs)
+        folders = big_dirs.process_big_dirs(args, folders)
+        folders = mcda.group_sort_by(args, folders)
         log.debug("process_bigdirs: %s", t.elapsed())
-        dirs = list(reversed([d["path"] for d in dirs]))
+        folders = list(reversed([d["path"] for d in folders]))
         if "limit" in args.defaults:
-            media = db_media.get_dir_media(args, dirs)
+            media = db_media.get_dir_media(args, folders)
             log.debug("get_dir_media: %s", t.elapsed())
         else:
             media = []
             media_set = set()
-            for dir in dirs:
-                if len(dir) == 1:
+            for folder in folders:
+                if len(folder) == 1:
                     continue
 
                 for key in media_keyed:
                     if key in media_set:
                         continue
 
-                    if os.sep not in key.replace(dir, "") and key.startswith(dir):
+                    if os.sep not in key.replace(folder, "") and key.startswith(folder):
                         media_set.add(key)
                         media.append(media_keyed[key])
             log.debug("double for loop compare_block_strings: %s", t.elapsed())

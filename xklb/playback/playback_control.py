@@ -331,7 +331,7 @@ def playback_pause() -> None:
 
 
 def playback_next() -> None:
-    args = parse_args(usage.next)
+    args = parse_args(usage.lb_next)
 
     playing = _now_playing(args)
 
