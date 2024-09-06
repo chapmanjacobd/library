@@ -51,10 +51,10 @@ def strip_enclosing_quotes(s):
 
     ls = ["‘", "“", "❮", "‹", "«"]
     rs = ["’", "”", "❯", "›", "»"]
-    for l, r in zip(ls, rs):
+    for l, r in zip(ls, rs, strict=False):
         if s[0] == l and s[-1] == r:
             return s[1:-1]
-    for r, l in zip(ls, rs):
+    for r, l in zip(ls, rs, strict=False):
         if s[0] == l and s[-1] == r:
             return s[1:-1]
 

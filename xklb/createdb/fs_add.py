@@ -330,7 +330,7 @@ def extract_image_metadata_chunk(metadata: list[dict]) -> list[dict]:
         return metadata
 
     exif_enriched = []
-    for m, e in zip(metadata, exif):
+    for m, e in zip(metadata, exif, strict=True):
         assert m["path"] == e.pop("SourceFile")
 
         try:

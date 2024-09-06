@@ -107,7 +107,7 @@ def auto_mcda(args, df, alternatives, minimize_cols):
         weights = w.entropy_weights(alternatives_np)
         pref = method(alternatives_np, weights, goal_directions)
         votes.append(pref)
-    votes_df = pd.DataFrame(zip(*votes), columns=method_names)
+    votes_df = pd.DataFrame(zip(*votes, strict=False), columns=method_names)
     borda_points = borda(votes_df, weights=[1] * len(votes))
     borda_df = pd.DataFrame({"BORDA": borda_points}, index=df.index)
 
