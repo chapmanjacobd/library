@@ -303,21 +303,18 @@ def process_path(args, path, **kwargs):
                 output_path.name.replace(".%03d", ".000")
             )  # TODO: support / return multiple paths...
 
-        if not output_path.exists():
-            return path
-        if output_path.stat().st_size == 0:
-            output_path.unlink()  # Remove transcode
-            return path
-
         delete_original = args.delete_original
         delete_transcode = False
 
-        if video_stream and args.audio_only and not args.no_preserve_video:
+        if not output_path.exists():
+            return path
+
+        if reject_transcode(probe, original_stats, output_path):
+            delete_transcode = True
             delete_original = False
 
-        if output_path.stat().st_size > path.stat().st_size:
+        if video_stream and args.audio_only and not args.no_preserve_video:
             delete_original = False
-            delete_transcode = True
 
         if delete_transcode:
             output_path.unlink()
@@ -328,6 +325,22 @@ def process_path(args, path, **kwargs):
         os.utime(output_path, (original_stats.st_atime, original_stats.st_mtime))
     return output_path
 
+def reject_transcode(probe, original_stats, output_path):
+    output_stats = output_path.stat()
+    if output_stats.st_size == 0:
+        return True
+    else:
+        try:
+            transcode_probe = processes.FFProbe(output_path)
+        except processes.UnplayableFile:
+            return True
+        else:
+            if nums.percentage_difference(probe.duration, transcode_probe.duration) > 5.0:
+                return True
+            elif output_stats.st_size > original_stats.st_size:
+                return True
+
+    return False
 
 def process_ffmpeg(defaults_override=None):
     args = parse_args(defaults_override)
