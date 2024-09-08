@@ -145,7 +145,7 @@ def human_to_lambda_part(var, human_to_x, size):
     elif size.startswith("<"):
         return var < human_to_x(size.lstrip("<"))
     elif size.startswith("+"):
-        return var >= human_to_x(size.lstrip("+"))
+        return var > human_to_x(size.lstrip("+"))
     elif size.startswith("-"):
         return human_to_x(size.lstrip("-")) >= var
     elif "%" in size:
