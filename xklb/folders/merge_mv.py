@@ -2,7 +2,7 @@ import concurrent.futures, os, shutil
 from pathlib import Path
 
 from xklb import usage
-from xklb.utils import arggroups, argparse_utils, devices, file_utils, path_utils, printing, processes, strings
+from xklb.utils import arggroups, argparse_utils, devices, file_utils, nums, path_utils, printing, processes, sql_utils, strings
 
 
 def parse_args(defaults_override=None):
@@ -10,6 +10,18 @@ def parse_args(defaults_override=None):
     parser.add_argument("--copy", "--cp", "-c", action="store_true", help="Copy instead of move")
     parser.add_argument(
         "--modify-depth", "-Dm", "-mD", action=argparse_utils.ArgparseSlice, help="Trim path parts from each source"
+    )
+    parser.add_argument(
+        "--sizes",
+        "--size",
+        "-S",
+        action="append",
+        help="""Constrain media to file sizes (uses the same syntax as fd-find)
+-S 6           # 6 MB exactly (not likely)
+-S-6           # less than 6 MB
+-S+6           # more than 6 MB
+-S 6%%10       # 6 MB ±10 percent (between 5 and 7 MB)
+-S+5GB -S-7GB  # between 5 and 7 GB""",
     )
     arggroups.clobber(parser)
     arggroups.debug(parser)
@@ -20,6 +32,9 @@ def parse_args(defaults_override=None):
     parser.set_defaults(**(defaults_override or {}))
     args = parser.parse_args()
     arggroups.args_post(args, parser)
+
+    if args.sizes:
+        args.sizes = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.sizes)
     return args
 
 
@@ -85,13 +100,21 @@ def mcp_file(args, source, destination):
     else:
         shutil.copy2(source, destination)
 
+def filter_src(args, path):
+    stat = os.stat(path)
+    if args.sizes and not args.sizes(stat.st_size):
+        return False
+    if args.timeout_size:
+        processes.sizeout(args.timeout_size, stat.st_size)
+        # will exit on failure
+    return True
 
 def gen_src_dest(args, sources, destination):
     for source in sources:
         if os.path.isdir(source):
             for p in file_utils.rglob_gen(source, args.ext or None):
-                if args.timeout_size:
-                    processes.sizeout(args.timeout_size, Path(p).stat().st_size)
+                if filter_src(args, p) is False:
+                    continue
 
                 file_dest = destination
                 if args.parent or (args.bsd and not source.endswith(os.sep)):  # use BSD behavior
@@ -110,8 +133,8 @@ def gen_src_dest(args, sources, destination):
                     yield src, dest
 
         else:  # source is a file
-            if args.timeout_size:
-                processes.sizeout(args.timeout_size, Path(source).stat().st_size)
+            if filter_src(args, source) is False:
+                continue
 
             file_dest = destination
             if args.parent:
