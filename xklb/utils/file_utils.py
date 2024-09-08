@@ -217,6 +217,20 @@ def fast_glob(path_dir, limit=100):
     return sorted(files)
 
 
+def copy_file(source_file, destination_file, simulate=False):
+    if simulate:
+        print("cp", source_file, destination_file)
+    else:
+        try:
+            shutil.copy2(source_file, destination_file)
+        except OSError as e:
+            if e.errno in (errno.ENOENT, errno.EXDEV):
+                os.makedirs(os.path.dirname(destination_file), exist_ok=True)
+                shutil.copy2(source_file, destination_file)  # try again
+            else:
+                raise
+
+
 def rename_no_replace(src, dst):
     if os.path.exists(dst) and not os.path.isdir(dst):
         msg = f"The destination file {dst} already exists."

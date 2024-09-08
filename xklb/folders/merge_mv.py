@@ -2,7 +2,18 @@ import concurrent.futures, os, shutil
 from pathlib import Path
 
 from xklb import usage
-from xklb.utils import arggroups, argparse_utils, devices, file_utils, nums, path_utils, printing, processes, sql_utils, strings
+from xklb.utils import (
+    arggroups,
+    argparse_utils,
+    devices,
+    file_utils,
+    nums,
+    path_utils,
+    printing,
+    processes,
+    sql_utils,
+    strings,
+)
 
 
 def parse_args(defaults_override=None):
@@ -43,21 +54,22 @@ MOVED_SIZE = 0
 
 
 def print_stats(args, dest_path=None, file_size=None):
-    action = "copied" if args.copy else "moved"
     file_plural = lambda x: "files" if x > 1 else "file"
     pr = print if args.simulate else printing.print_overwrite
 
-    pr(
-        ' '.join(
-            [
-                str(MOVED_COUNT),
-                file_plural(MOVED_COUNT),
-                action,
-                f"({strings.file_size(MOVED_SIZE)})",
-                *(['Current file:', dest_path, f"({strings.file_size(file_size)})"] if dest_path else []),
-            ]
-        )
-    )
+    msg = [
+        str(MOVED_COUNT),
+        " ",
+        file_plural(MOVED_COUNT),
+        " ",
+        "copied" if args.copy else "moved",
+        " ",
+        f"({strings.file_size(MOVED_SIZE)})",
+    ]
+    if dest_path:
+        msg.append(f"; {dest_path} ({strings.file_size(file_size)})")
+
+    pr("".join(msg))
 
 
 def track_moved(func):
@@ -100,6 +112,7 @@ def mcp_file(args, source, destination):
     else:
         shutil.copy2(source, destination)
 
+
 def filter_src(args, path):
     stat = os.stat(path)
     if args.sizes and not args.sizes(stat.st_size):
@@ -108,6 +121,7 @@ def filter_src(args, path):
         processes.sizeout(args.timeout_size, stat.st_size)
         # will exit on failure
     return True
+
 
 def gen_src_dest(args, sources, destination):
     for source in sources:

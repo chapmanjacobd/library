@@ -55,6 +55,7 @@ def parse_args(action, usage):
     parser.add_argument(
         "--force", "-f", action="store_true", help="Mark all subpath files as deleted if no files found"
     )
+    parser.add_argument("--copy")
     parser.add_argument("--move")
 
     arggroups.debug(parser)
@@ -68,6 +69,8 @@ def parse_args(action, usage):
     if not args.profiles:
         args.profiles = [DBType.video]
 
+    if args.copy:
+        args.copy = Path(args.copy).expanduser().resolve()
     if args.move:
         args.move = Path(args.move).expanduser().resolve()
 
@@ -170,6 +173,15 @@ def extract_metadata(mp_args, path) -> dict[str, str | int | None] | None:
 
     if getattr(mp_args, "hash", False) and media["type"] != "directory" and media["size"] > 0:
         media["hash"] = sample_hash.sample_hash_file(path)
+
+    if getattr(mp_args, "copy", False) and not file_utils.is_file_open(path):
+        dest_path = rel_mv.gen_rel_path(path, mp_args.copy)
+        if getattr(mp_args, "clean_path", True):
+            dest_path = path_utils.clean_path(bytes(dest_path))
+        else:
+            dest_path = str(dest_path)
+        file_utils.copy_file(path, dest_path, simulate=mp_args.simulate)
+        path = media["path"] = dest_path
 
     if getattr(mp_args, "move", False) and not file_utils.is_file_open(path):
         dest_path = rel_mv.gen_rel_path(path, mp_args.move)
