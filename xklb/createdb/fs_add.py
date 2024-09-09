@@ -537,7 +537,7 @@ def scan_path(args, path_str: str) -> int:
         with pool_fn(n_jobs) as parallel:
             for idx, chunk_paths in enumerate(files_chunked):
                 percent = (idx + 1) / chunks_count * 100
-                eta = printing.eta(idx + 1, chunks_count, start_time=start_time) if chunks_count > 2 else ''
+                eta = printing.eta(idx + 1, chunks_count, start_time=start_time) if chunks_count > 2 else ""
                 printing.print_overwrite(
                     f"[{path}] Extracting metadata chunk {idx + 1} of {chunks_count} ({percent:3.1f}%) {eta}"
                 )
