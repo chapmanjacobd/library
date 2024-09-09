@@ -533,11 +533,13 @@ def scan_path(args, path_str: str) -> int:
         else:
             pool_fn = ProcessPoolExecutor
 
+        start_time = consts.now()
         with pool_fn(n_jobs) as parallel:
             for idx, chunk_paths in enumerate(files_chunked):
-                percent = ((batch_count * idx) + len(chunk_paths)) / len(new_files) * 100
+                percent = (idx + 1) / chunks_count * 100
+                eta = printing.eta(idx + 1, chunks_count, start_time=start_time) if chunks_count > 2 else ''
                 printing.print_overwrite(
-                    f"[{path}] Extracting metadata chunk {idx + 1} of {chunks_count} ({percent:3.1f}%)"
+                    f"[{path}] Extracting metadata chunk {idx + 1} of {chunks_count} ({percent:3.1f}%) {eta}"
                 )
 
                 mp_args = argparse.Namespace(
