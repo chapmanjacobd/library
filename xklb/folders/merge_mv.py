@@ -19,21 +19,7 @@ from xklb.utils import (
 def parse_args(defaults_override=None):
     parser = argparse_utils.ArgumentParser(usage=usage.merge_mv)
     parser.add_argument("--copy", "--cp", "-c", action="store_true", help="Copy instead of move")
-    parser.add_argument(
-        "--modify-depth", "-Dm", "-mD", action=argparse_utils.ArgparseSlice, help="Trim path parts from each source"
-    )
-    parser.add_argument(
-        "--sizes",
-        "--size",
-        "-S",
-        action="append",
-        help="""Constrain media to file sizes (uses the same syntax as fd-find)
--S 6           # 6 MB exactly (not likely)
--S-6           # less than 6 MB
--S+6           # more than 6 MB
--S 6%%10       # 6 MB ±10 percent (between 5 and 7 MB)
--S+5GB -S-7GB  # between 5 and 7 GB""",
-    )
+    arggroups.mmv_folders(parser)
     arggroups.clobber(parser)
     arggroups.debug(parser)
 

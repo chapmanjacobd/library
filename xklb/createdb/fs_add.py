@@ -391,11 +391,12 @@ def extract_chunk(args, media) -> None:
 
 def find_new_files(args, path) -> list[str]:
     if path.is_file():
+        path = str(path)
         if db_media.exists(args, path):
             try:
                 time_deleted = args.db.pop(
                     f"""select time_deleted from media where path = ?""",
-                    [str(path)],
+                    [path],
                 )
             except Exception as e:
                 log.debug(e)

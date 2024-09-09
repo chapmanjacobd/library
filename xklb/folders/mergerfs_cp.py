@@ -24,9 +24,7 @@ from xklb.utils import arggroups, argparse_utils, consts, processes
 
 def parse_args():
     parser = argparse_utils.ArgumentParser(usage=usage.mergerfs_cp)
-    parser.add_argument(
-        "--modify-depth", "-Dm", "-mD", action=argparse_utils.ArgparseSlice, help="Trim path parts from each source"
-    )
+    arggroups.mmv_folders(parser)
     arggroups.clobber(parser)
     parser.set_defaults(file_over_file="delete-dest-hash rename-dest")
     arggroups.debug(parser)
