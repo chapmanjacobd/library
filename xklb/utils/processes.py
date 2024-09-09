@@ -262,14 +262,14 @@ class FFProbe:
         self.has_audio = len(self.audio_streams) > 0
 
         self.duration = None
-        with suppress(IndexError, KeyError):
-            self.duration = float(self.audio_streams[0]["duration"])
+        with suppress(KeyError):
+            self.duration = float(self.format["duration"])
+        if self.duration is None:
+            with suppress(IndexError, KeyError):
+                self.duration = float(self.audio_streams[0]["duration"])
         if self.duration is None:
             with suppress(IndexError, KeyError):
                 self.duration = float(self.video_streams[0]["duration"])
-        if self.duration is None:
-            with suppress(KeyError):
-                self.duration = float(self.format["duration"])
 
         if self.duration and self.duration > 0:
             start = nums.safe_float(self.format.get("start_time")) or 0
