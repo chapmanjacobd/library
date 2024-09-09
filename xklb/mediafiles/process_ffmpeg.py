@@ -55,6 +55,24 @@ def is_animation_from_probe(probe) -> bool:
     return False
 
 
+def reject_transcode(probe, original_stats, output_path):
+    output_stats = output_path.stat()
+    if output_stats.st_size == 0:
+        return True
+    else:
+        try:
+            transcode_probe = processes.FFProbe(output_path)
+        except processes.UnplayableFile:
+            return True
+        else:
+            if nums.percentage_difference(probe.duration, transcode_probe.duration) > 5.0:
+                return True
+            elif output_stats.st_size > original_stats.st_size:
+                return True
+
+    return False
+
+
 def process_path(args, path, **kwargs):
     if kwargs:
         args = kwargs_overwrite(args, kwargs)
@@ -325,22 +343,6 @@ def process_path(args, path, **kwargs):
         os.utime(output_path, (original_stats.st_atime, original_stats.st_mtime))
     return output_path
 
-def reject_transcode(probe, original_stats, output_path):
-    output_stats = output_path.stat()
-    if output_stats.st_size == 0:
-        return True
-    else:
-        try:
-            transcode_probe = processes.FFProbe(output_path)
-        except processes.UnplayableFile:
-            return True
-        else:
-            if nums.percentage_difference(probe.duration, transcode_probe.duration) > 5.0:
-                return True
-            elif output_stats.st_size > original_stats.st_size:
-                return True
-
-    return False
 
 def process_ffmpeg(defaults_override=None):
     args = parse_args(defaults_override)

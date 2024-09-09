@@ -1,4 +1,4 @@
-import csv, math, os, sys, textwrap
+import csv, math, os, sys, textwrap, time
 from collections.abc import Callable
 from datetime import datetime, timezone
 
@@ -42,6 +42,17 @@ def pipe_lines(x) -> None:
     except BrokenPipeError:
         sys.stdout = None
         sys.exit(141)
+
+
+def eta(cur_iter, max_iter, start_time=None):
+    if start_time is None:
+        start_time = consts.APPLICATION_START
+
+    elapsed = time.time() - start_time
+    estimated = (elapsed / max(cur_iter, 1)) * (max_iter)
+
+    finish_time = start_time + estimated
+    return "ETA: " + relative_datetime(finish_time)
 
 
 def write_csv_to_stdout(data):
