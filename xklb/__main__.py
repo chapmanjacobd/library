@@ -5,7 +5,7 @@ from tabulate import tabulate
 from xklb.utils import argparse_utils, iterables
 from xklb.utils.log_utils import log
 
-__version__ = "2.9.050"
+__version__ = "2.9.051"
 
 progs = {
     "Create database subcommands": {
@@ -66,7 +66,7 @@ progs = {
     "Media File subcommands": {
         "media_check": "Check video and audio files for corruption via ffmpeg",
         "process_ffmpeg": "Shrink video/audio to AV1/Opus format (.mkv, .mka)",
-        "process_image": "Shrink images by resizing and AV1 image format (.avif)",
+        "process_image": "Shrink images to AV1 image format (.avif)",
     },
     "Multi-database subcommands": {
         "merge_dbs": "Merge SQLite databases",
