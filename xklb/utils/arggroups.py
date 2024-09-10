@@ -1241,7 +1241,7 @@ def download(parent_parser):
     parser.add_argument(
         "--retry-delay",
         default="14 days",
-        help="Must be specified in SQLITE Modifiers format: N seconds, minutes, hours, days, months, or years",
+        help="Must be specified in SQLite Modifiers format: N seconds, minutes, hours, days, months, or years",
     )
     parser.add_argument(
         "--download-retries",
