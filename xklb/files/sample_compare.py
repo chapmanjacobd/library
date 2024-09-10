@@ -18,7 +18,7 @@ def parse_args():
     parser.set_defaults(same_file_threads=4)
 
     arggroups.paths_or_stdin(parser)
-    args = parser.parse_args()
+    args = parser.parse_intermixed_args()
     arggroups.args_post(args, parser)
 
     arggroups.sample_hash_bytes_post(args)

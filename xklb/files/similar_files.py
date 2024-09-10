@@ -24,7 +24,7 @@ def parse_args():
     arggroups.debug(parser)
 
     arggroups.paths_or_stdin(parser)
-    args = parser.parse_args()
+    args = parser.parse_intermixed_args()
     arggroups.args_post(args, parser)
 
     arggroups.similar_files_post(args)

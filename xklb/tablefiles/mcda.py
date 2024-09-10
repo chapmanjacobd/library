@@ -41,7 +41,7 @@ def parse_args():
     arggroups.debug(parser)
 
     arggroups.paths_or_stdin(parser)
-    args = parser.parse_args()
+    args = parser.parse_intermixed_args()
     arggroups.args_post(args, parser)
 
     if args.words_nums_map:
@@ -160,7 +160,7 @@ def group_sort_by(args, folders):
             return (0, x["deleted"] / x["played"]) if x["played"] else (1, x["deleted"] / x["total"])
 
     else:
-        sort_func = sql_utils.sort_like_sql(args.sort_groups_by)
+        sort_func = sql_utils.sort_like_sql(args.sort_groups_by)  # type: ignore
 
     return sorted(folders, key=sort_func)
 

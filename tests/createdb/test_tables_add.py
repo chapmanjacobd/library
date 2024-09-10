@@ -10,14 +10,14 @@ def test_tables_add_stdin(mock_stdin, temp_db, assert_unchanged):
         lb(["tables-add", db1, "--from-json"])
 
     args = connect_db_args(db1)
-    result = list(args.db.query("select * from media"))
+    result = list(args.db.query("select * from stdin"))
     assert_unchanged(result)
 
 
 def test_tables_add_file(temp_db, assert_unchanged):
     db1 = temp_db()
-    lb(["tables-add", db1, "tests/data/test.xml"])
+    lb(["tables-add", "--table-rename", "t123", db1, "tests/data/test.xml"])
 
     args = connect_db_args(db1)
-    result = list(args.db.query("select * from media"))
+    result = list(args.db.query("select * from t123"))
     assert_unchanged(result)
