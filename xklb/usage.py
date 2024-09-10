@@ -784,7 +784,7 @@ dedupe_db = """library dedupe-dbs DATABASE TABLE --bk BUSINESS_KEYS [--pk PRIMAR
 
 search_db = """library search-db DATABASE TABLE SEARCH ... [--delete-rows]
 
-    Search all columns in a SQLITE table. If the table does not exist, uses the table which startswith (if only one match)
+    Search all columns in a SQLite table. If the table does not exist, uses the table which startswith (if only one match)
 
         library sdb tests/data/video.db media test.gif --to-json | jq
         {
@@ -1130,7 +1130,7 @@ pushshift = """library pushshift DATABASE < stdin
 
         unzstd --memory=2048MB --stdout RS_2005-07.zst | library pushshift pushshift.db
 
-    Or multiple (output is about 1.5TB SQLITE fts-searchable)
+    Or multiple (output is about 1.5TB SQLite fts-searchable)
 
         for f in psaw/files.pushshift.io/reddit/submissions/*.zst
             echo "unzstd --memory=2048MB --stdout $f | library pushshift (basename $f).db"
@@ -1151,6 +1151,11 @@ mpv_watchlater = """library mpv-watchlater DATABASE [--watch-later-directory ~/.
 export_text = """library export-text DATABASE
 
     Generate HTML files from SQLite databases
+"""
+
+tables_add = """library tables-add DATABASE PATH ... [--table STR] [--end-row INT]
+
+    Insert data from one or more files into a SQLite database
 """
 
 eda = """library eda PATH ... [--table STR] [--end-row INT] [--repl]
@@ -1273,7 +1278,7 @@ incremental_diff = """library incremental-diff PATH1 PATH2 [--join-keys JOIN_KEY
     Data (PATH1, PATH2) can be two different files of different file formats (CSV, Excel) or it could even be the same file with different tables.
 
     If files are unsorted you may need to use `--join-keys id,name` to specify ID columns. Rows that have the same ID will then be compared.
-    If you are comparing SQLITE files you may be able to use `--sort id,name` to achieve the same effect.
+    If you are comparing SQLite files you may be able to use `--sort id,name` to achieve the same effect.
 
     To diff everything at once run with `--batch-size inf`
 """

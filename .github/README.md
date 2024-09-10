@@ -99,7 +99,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v2.9.045; 85 subcommands)
+    library (v2.9.046; 86 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -115,7 +115,9 @@ To stop playing press Ctrl+C in either the terminal or mpv
     ├─────────────────┼──────────────────────────────────────────┤
     │ links-add       │ Create a link-scraping database          │
     ├─────────────────┼──────────────────────────────────────────┤
-    │ site-add        │ Auto-scrape website data to SQLITE       │
+    │ site-add        │ Auto-scrape website data to SQLite       │
+    ├─────────────────┼──────────────────────────────────────────┤
+    │ tables-add      │ Add table-like data to SQLite            │
     ├─────────────────┼──────────────────────────────────────────┤
     │ reddit-add      │ Create a reddit database; Add subreddits │
     ├─────────────────┼──────────────────────────────────────────┤
@@ -129,7 +131,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
     ├─────────────────┼──────────────────────────────────────────┤
     │ places-import   │ Import places of interest (POIs)         │
     ├─────────────────┼──────────────────────────────────────────┤
-    │ row-add         │ Add arbitrary data to SQLITE             │
+    │ row-add         │ Add arbitrary data to SQLite             │
     ╰─────────────────┴──────────────────────────────────────────╯
 
     Text subcommands:
@@ -213,7 +215,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 
     Multi-database subcommands:
     ╭──────────────────┬────────────────────────╮
-    │ merge-dbs        │ Merge SQLITE databases │
+    │ merge-dbs        │ Merge SQLite databases │
     ├──────────────────┼────────────────────────┤
     │ copy-play-counts │ Copy play history      │
     ╰──────────────────┴────────────────────────╯
@@ -222,7 +224,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
     ╭────────────┬──────────────────────────╮
     │ disk-usage │ Show disk usage          │
     ├────────────┼──────────────────────────┤
-    │ search-db  │ Search a SQLITE database │
+    │ search-db  │ Search a SQLite database │
     ╰────────────┴──────────────────────────╯
 
     Media Database subcommands:
@@ -271,7 +273,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 
     Database enrichment subcommands:
     ╭────────────────────┬────────────────────────────────────────────────────╮
-    │ dedupe-db          │ Dedupe SQLITE tables                               │
+    │ dedupe-db          │ Dedupe SQLite tables                               │
     ├────────────────────┼────────────────────────────────────────────────────┤
     │ dedupe-media       │ Dedupe similar media                               │
     ├────────────────────┼────────────────────────────────────────────────────┤
@@ -782,7 +784,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 ###### site-add
 
-<details><summary>Auto-scrape website data to SQLITE</summary>
+<details><summary>Auto-scrape website data to SQLite</summary>
 
     $ library site-add -h
     usage: library site-add DATABASE PATH ... [--auto-pager] [--poke] [--local-html] [--file FILE]
@@ -797,6 +799,18 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         pip install selenium-wire xmltodict
 
     Run with `-vv` to see and interact with the browser
+
+
+</details>
+
+###### tables-add
+
+<details><summary>Add table-like data to SQLite</summary>
+
+    $ library tables-add -h
+    usage: library tables-add DATABASE PATH ... [--table STR] [--end-row INT]
+
+    Insert data from one or more files into a SQLite database
 
 
 </details>
@@ -924,7 +938,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 ###### row-add
 
-<details><summary>Add arbitrary data to SQLITE</summary>
+<details><summary>Add arbitrary data to SQLite</summary>
 
     $ library row-add -h
     usage: library row-add DATABASE [--table-name TABLE_NAME] --COLUMN-NAME VALUE
@@ -1759,7 +1773,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     Data (PATH1, PATH2) can be two different files of different file formats (CSV, Excel) or it could even be the same file with different tables.
 
     If files are unsorted you may need to use `--join-keys id,name` to specify ID columns. Rows that have the same ID will then be compared.
-    If you are comparing SQLITE files you may be able to use `--sort id,name` to achieve the same effect.
+    If you are comparing SQLite files you may be able to use `--sort id,name` to achieve the same effect.
 
     To diff everything at once run with `--batch-size inf`
 
@@ -1885,7 +1899,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 ###### merge-dbs
 
-<details><summary>Merge SQLITE databases</summary>
+<details><summary>Merge SQLite databases</summary>
 
     $ library merge-dbs -h
     usage: library merge-dbs SOURCE_DB ... DEST_DB [--only-target-columns] [--only-new-rows] [--upsert] [--pk PK ...] [--table TABLE ...]
@@ -1977,12 +1991,12 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 ###### search-db
 
-<details><summary>Search a SQLITE database</summary>
+<details><summary>Search a SQLite database</summary>
 
     $ library search-db -h
     usage: library search-db DATABASE TABLE SEARCH ... [--delete-rows]
 
-    Search all columns in a SQLITE table. If the table does not exist, uses the table which startswith (if only one match)
+    Search all columns in a SQLite table. If the table does not exist, uses the table which startswith (if only one match)
 
         library sdb tests/data/video.db media test.gif --to-json | jq
         {
@@ -2647,7 +2661,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 ###### dedupe-db
 
-<details><summary>Dedupe SQLITE tables</summary>
+<details><summary>Dedupe SQLite tables</summary>
 
     $ library dedupe-db -h
     usage: library dedupe-dbs DATABASE TABLE --bk BUSINESS_KEYS [--pk PRIMARY_KEYS] [--only-columns COLUMNS]
@@ -2764,7 +2778,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
         unzstd --memory=2048MB --stdout RS_2005-07.zst | library pushshift pushshift.db
 
-    Or multiple (output is about 1.5TB SQLITE fts-searchable)
+    Or multiple (output is about 1.5TB SQLite fts-searchable)
 
         for f in psaw/files.pushshift.io/reddit/submissions/*.zst
             echo "unzstd --memory=2048MB --stdout $f | library pushshift (basename $f).db"

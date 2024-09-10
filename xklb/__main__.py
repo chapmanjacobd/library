@@ -5,7 +5,7 @@ from tabulate import tabulate
 from xklb.utils import argparse_utils, iterables
 from xklb.utils.log_utils import log
 
-__version__ = "2.9.045"
+__version__ = "2.9.046"
 
 progs = {
     "Create database subcommands": {
@@ -15,14 +15,15 @@ progs = {
         "gallery_add": "Add online gallery media (gallery-dl)",
         "tabs_add": "Create a tabs database; Add URLs",
         "links_add": "Create a link-scraping database",
-        "site_add": "Auto-scrape website data to SQLITE",
+        "site_add": "Auto-scrape website data to SQLite",
+        "tables_add": "Add table-like data to SQLite",
         "reddit_add": "Create a reddit database; Add subreddits",
         "hn_add": "Create / Update a Hacker News database",
         "substack": "Backup substack articles",
         "tildes": "Backup tildes comments and topics",
         "nicotine_import": "Import paths from nicotine+",
         "places_import": "Import places of interest (POIs)",
-        "row_add": "Add arbitrary data to SQLITE",
+        "row_add": "Add arbitrary data to SQLite",
     },
     "Text subcommands": {
         "cluster_sort": "Sort text and images by similarity",
@@ -68,12 +69,12 @@ progs = {
         "process_image": "Shrink images by resizing and AV1 image format (.avif)",
     },
     "Multi-database subcommands": {
-        "merge_dbs": "Merge SQLITE databases",
+        "merge_dbs": "Merge SQLite databases",
         "copy_play_counts": "Copy play history",
     },
     "Filesystem Database subcommands": {
         "disk_usage": "Show disk usage",
-        "search_db": "Search a SQLITE database",
+        "search_db": "Search a SQLite database",
     },
     "Media Database subcommands": {
         "block": "Block a channel",
@@ -99,7 +100,7 @@ progs = {
         "surf": "Auto-load browser tabs in a streaming way (stdin)",
     },
     "Database enrichment subcommands": {
-        "dedupe_db": "Dedupe SQLITE tables",
+        "dedupe_db": "Dedupe SQLite tables",
         "dedupe_media": "Dedupe similar media",
         "merge_online_local": "Merge online and local data",
         "mpv_watchlater": "Import mpv watchlater files to history",
@@ -159,6 +160,7 @@ modules = {
     "xklb.createdb.row_add.row_add": ["add_row"],
     "xklb.createdb.site_add.site_add": ["sa", "sql-site", "site-sql"],
     "xklb.createdb.substack.substack": [],
+    "xklb.createdb.tables_add.tables_add": ["table-add"],
     "xklb.createdb.tabs_add.tabs_add": [],
     "xklb.createdb.tabs_add.tabs_shuffle": [],
     "xklb.createdb.tildes.tildes": [],
@@ -249,7 +251,7 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers()
 
     # this needs to stay inside the function to prevent side-effects during testing
-    known_subcommands = ["fs", "media", "open", "tabs", "du", "search", "links"]
+    known_subcommands = ["fs", "media", "open", "tables", "tabs", "du", "search", "links"]
 
     def consecutive_prefixes(s):
         prefixes = [s[:j] for j in range(5, len(s)) if s[:j] and s[:j] not in known_subcommands]

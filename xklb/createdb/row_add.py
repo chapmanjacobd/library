@@ -4,7 +4,7 @@ from xklb.utils.log_utils import log
 
 
 def parse_utils():
-    parser = argparse_utils.ArgumentParser(description="Add arbitrary rows to a SQLITE db", usage=usage.row_add)
+    parser = argparse_utils.ArgumentParser(description="Add arbitrary rows to a SQLite db", usage=usage.row_add)
     parser.add_argument("--table-name", "--table", "-t", default="media")
     arggroups.debug(parser)
 
