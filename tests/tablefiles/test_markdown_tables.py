@@ -40,3 +40,9 @@ def test_lb_markdown_tables_transpose(mock_stdin, assert_unchanged, capsys):
         lb(["markdown-tables", "--from-json", "--transpose", "--to-json"])
     captured = capsys.readouterr().out
     assert_unchanged([json.loads(s) for s in captured.splitlines()])
+
+
+def test_lb_markdown_tables_skip_header(assert_unchanged, capsys):
+    lb(["markdown-tables", "--skip-header", "--start-row=1", "--to-json", "tests/data/test.xlsx"])
+    captured = capsys.readouterr().out
+    assert_unchanged([json.loads(s) for s in captured.splitlines()])

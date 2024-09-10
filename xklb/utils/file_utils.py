@@ -466,6 +466,7 @@ def read_file_to_dataframes(
     mimetype=None,
     join_tables=False,
     transpose=False,
+    skip_headers=False,
 ):
     import pandas as pd
 
@@ -508,7 +509,13 @@ def read_file_to_dataframes(
         "excel spreadsheet subheader",
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     ):
-        excel_data = pd.read_excel(path, sheet_name=table_name or table_index, nrows=end_row, skiprows=start_row)
+        excel_data = pd.read_excel(
+            path,
+            sheet_name=table_name or table_index,
+            nrows=end_row,
+            skiprows=start_row,
+            header=None if skip_headers else 0,
+        )
         dfs = []
         if isinstance(excel_data, pd.DataFrame):
             worksheet_names = excel_data.index.levels[0]  # type: ignore
@@ -549,7 +556,11 @@ def read_file_to_dataframes(
         "csv",
         "text/csv",
     ):
-        dfs = [pd.read_csv(path, nrows=end_row, skiprows=start_row or 0, encoding=encoding)]
+        dfs = [
+            pd.read_csv(
+                path, nrows=end_row, skiprows=start_row or 0, encoding=encoding, header=None if skip_headers else 0
+            )
+        ]
     elif mimetype in (
         "plain",
         "plaintext",
@@ -557,13 +568,31 @@ def read_file_to_dataframes(
         "text/wsv",
         "text/whitespace-separated-values",
     ):
-        dfs = [pd.read_csv(path, delim_whitespace=True, nrows=end_row, skiprows=start_row or 0, encoding=encoding)]
+        dfs = [
+            pd.read_csv(
+                path,
+                delim_whitespace=True,
+                nrows=end_row,
+                skiprows=start_row or 0,
+                encoding=encoding,
+                header=None if skip_headers else 0,
+            )
+        ]
     elif mimetype in (
         "tsv",
         "text/tsv",
         "text/tab-separated-values",
     ):
-        dfs = [pd.read_csv(path, delimiter="\t", nrows=end_row, skiprows=start_row or 0, encoding=encoding)]
+        dfs = [
+            pd.read_csv(
+                path,
+                delimiter="\t",
+                nrows=end_row,
+                skiprows=start_row or 0,
+                encoding=encoding,
+                header=None if skip_headers else 0,
+            )
+        ]
     elif mimetype in ("parq", "parquet", "application/parquet"):
         dfs = [pd.read_parquet(path)]
     elif mimetype in ("pkl", "pickle", "application/octet-stream"):
@@ -617,6 +646,9 @@ def read_file_to_dataframes(
     for table_index_as_name, df in enumerate(dfs):
         if not hasattr(df, "name"):
             df.name = str(table_index_as_name)
+
+    if skip_headers:
+        df.columns = [f"column{i}" for i in range(len(df.columns))]
 
     if transpose:
 
