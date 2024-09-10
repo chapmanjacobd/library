@@ -39,3 +39,13 @@ def rename_duplicate_columns(df):
     df.columns = cols
 
     return df
+
+
+def available_name(df, column_name):
+    while column_name in df.columns:
+        if "_" in column_name:
+            base_name, suffix = column_name.rsplit("_", 1)
+            column_name = f"{base_name}_{int(suffix) + 1}"
+        else:
+            column_name = f"{column_name}_1"
+    return column_name

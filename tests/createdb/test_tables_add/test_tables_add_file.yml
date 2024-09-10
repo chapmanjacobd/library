@@ -2,7 +2,9 @@
   B: 3
   C: 5
   index: 0
+  source_path: tests/data/test.xml
 - A: 2
   B: 4
   C: 6
   index: 1
+  source_path: tests/data/test.xml
