@@ -1320,8 +1320,9 @@ def table_like(parent_parser):
         help="""Treat given files as having a specific encoding
 --encoding utf8""",
     )
-    parser.add_argument("--table-name", "--table", "-t", help="Load a specific table by name")
-    parser.add_argument("--table-index", type=int, help="Load a specific table by index")
+    parser.add_argument("--table-name", "--table", "-t", help="Load from a specific table by name")
+    parser.add_argument("--table-index", type=int, help="Load from a specific table by index")
+    parser.add_argument("--table-rename", "--rename-table", "--as-table-name", help="Load to specific table by name")
     parser.add_argument("--start-row", "--skiprows", type=int, default=None, help="Skip reading N rows")
     parser.add_argument(
         "--end-row",

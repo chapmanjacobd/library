@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from xklb import usage
 from xklb.utils import arggroups, argparse_utils, file_utils, web
 from xklb.utils.log_utils import log
@@ -26,7 +28,7 @@ def parse_args():
 
     arggroups.database(parser)
     arggroups.paths_or_stdin(parser)
-    args = parser.parse_args()
+    args = parser.parse_intermixed_args()
     arggroups.args_post(args, parser, create_db=True)
 
     arggroups.table_like_post(args)
@@ -35,7 +37,7 @@ def parse_args():
 
 
 def table_add(args, path):
-    for df in file_utils.read_file_to_dataframes(
+    dfs = file_utils.read_file_to_dataframes(
         path,
         table_name=args.table_name,
         table_index=args.table_index,
@@ -46,9 +48,16 @@ def table_add(args, path):
         mimetype=args.mimetype,
         join_tables=args.join_tables,
         transpose=args.transpose,
-    ):
-        if df.name == "0":
-            table = "media"
+    )
+    for i, df in enumerate(dfs):
+        if args.table_rename:
+            table = args.table_rename.replace("%n", df.name).replace("%i", str(i))
+        elif args.table_name == "stdin":
+            table = "stdin"
+        elif df.name.isnumeric():
+            table = Path(path).stem
+            if len(dfs) > 1:
+                table += df.name
         else:
             table = df.name
         log.info("[%s]: %s", path, table)

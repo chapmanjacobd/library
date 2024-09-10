@@ -17,7 +17,7 @@ def parse_args(defaults_override=None) -> argparse.Namespace:
     arggroups.paths_or_stdin(parser)
 
     parser.set_defaults(**(defaults_override or {}))
-    args = parser.parse_args()
+    args = parser.parse_intermixed_args()
     arggroups.args_post(args, parser)
 
     arggroups.process_ffmpeg_post(args)
