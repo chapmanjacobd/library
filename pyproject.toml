@@ -4,13 +4,12 @@ authors = [
 ]
 dependencies = [
   "beautifulsoup4>=4.10.0", # https://git.launchpad.net/beautifulsoup/commit/?id=34e0ce8a9dd43ada1c55b50a156fbce63b1e2ebb
-  "lxml",
-  "feedparser",
   "ffmpeg-python",
   "ftfy",
   "gallery-dl",
   "humanize",
   "ipython",
+  "lxml",
   "Markdown",
   "mutagen",
   "natsort",
@@ -35,11 +34,14 @@ readme = ".github/README.md"
 requires-python = ">=3.11"
 
 [project.optional-dependencies]
+dev = ["black", "isort", "ssort"]
+test = ["ruff", "pytest", "pytest-regressions", "freezegun", "pyfakefs"]
 deluxe = [
-  "annoy",
   "aiohttp",
+  "annoy",
   "catt",
   "geopandas",
+  "openpyxl",
   "PyExifTool",
   "pymcdm",
   "pyvirtualdisplay",
@@ -48,9 +50,14 @@ deluxe = [
   "subliminal",
   "xattr",
 ]
-dev = ["black", "isort", "ssort"]
-fat = ["brotab", "orjson", "textract-py3==2.0.1", "pypdf_table_extraction", "opencv-python", "ghostscript"]
-test = ["ruff", "pytest", "pytest-regressions", "freezegun", "pyfakefs"]
+fat = [
+  "brotab",
+  "ghostscript",
+  "opencv-python",
+  "orjson",
+  "pypdf_table_extraction",
+  "textract-py3==2.0.1",
+]
 
 [project.urls]
 documentation = "https://github.com/chapmanjacobd/library#usage"
