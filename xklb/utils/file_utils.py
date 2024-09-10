@@ -640,15 +640,16 @@ def read_file_to_dataframes(
     if mimetype not in ("sqlite", "sqlite3", "sqlite database file") and table_index is not None:
         dfs = [dfs[table_index]]
 
+    if skip_headers:
+        for df in dfs:
+            df.columns = [f"column{i}" for i in range(len(df.columns))]
+
     if join_tables:
         dfs = [pd.concat(dfs, axis=0, ignore_index=True)]
 
     for table_index_as_name, df in enumerate(dfs):
         if not hasattr(df, "name"):
             df.name = str(table_index_as_name)
-
-    if skip_headers:
-        df.columns = [f"column{i}" for i in range(len(df.columns))]
 
     if transpose:
 
