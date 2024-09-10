@@ -32,6 +32,7 @@ def file_markdown(args, path):
         mimetype=args.mimetype,
         join_tables=args.join_tables,
         transpose=args.transpose,
+        skip_headers=args.skip_headers,
     ):
         if getattr(args, "repl", False):
             breakpoint()

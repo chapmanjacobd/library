@@ -47,6 +47,7 @@ def table_add(args, path):
         mimetype=args.mimetype,
         join_tables=args.join_tables,
         transpose=args.transpose,
+        skip_headers=args.skip_headers,
     )
     for i, df in enumerate(dfs):
         if args.table_rename:

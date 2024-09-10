@@ -1323,6 +1323,7 @@ def table_like(parent_parser):
     parser.add_argument("--table-name", "--table", "-t", help="Load from a specific table by name")
     parser.add_argument("--table-index", type=int, help="Load from a specific table by index")
     parser.add_argument("--table-rename", "--rename-table", "--as-table-name", help="Load to specific table by name")
+    parser.add_argument("--skip-headers", "--ignore-headers", action="store_true")
     parser.add_argument("--start-row", "--skiprows", type=int, default=None, help="Skip reading N rows")
     parser.add_argument(
         "--end-row",
