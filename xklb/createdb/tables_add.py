@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from xklb import usage
-from xklb.utils import arggroups, argparse_utils, file_utils, web
+from xklb.utils import arggroups, argparse_utils, file_utils, pd_utils, web
 from xklb.utils.log_utils import log
 
 
@@ -23,7 +23,6 @@ def parse_args():
 
     parser.add_argument("--only-target-columns", action="store_true")
     parser.add_argument("--skip-columns", action=argparse_utils.ArgparseList)
-
     arggroups.debug(parser)
 
     arggroups.database(parser)
@@ -61,6 +60,9 @@ def table_add(args, path):
         else:
             table = df.name
         log.info("[%s]: %s", path, table)
+
+        df = pd_utils.rename_duplicate_columns(df)
+        df[pd_utils.available_name(df, "source_path")] = "stdin" if args.table_name == "stdin" else path
 
         skip_columns = args.skip_columns
         primary_keys = args.primary_keys
