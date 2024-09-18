@@ -85,6 +85,9 @@ def args_post(args, parser, create_db=False):
     if getattr(args, "timeout", False):
         processes.timeout(args.timeout)
 
+    if getattr(args, "cols", False):
+        args.cols = list(iterables.flatten([s.split(",") for s in args.cols]))
+
 
 def printing(parser):
     printing = parser.add_argument_group("Printing")
@@ -509,9 +512,6 @@ def sql_fs_post(args, table_prefix="m.") -> None:
         args.sizes = sql_utils.parse_human_to_sql(nums.human_to_bytes, "size", args.sizes)
     if args.bitrates:
         args.bitrates = sql_utils.parse_human_to_sql(nums.human_to_bits, "size*8/duration", args.bitrates)
-
-    if args.cols:
-        args.cols = list(iterables.flatten([s.split(",") for s in args.cols]))
 
     args.filter_sql = []
     args.aggregate_filter_sql = []
@@ -1245,7 +1245,9 @@ def download(parent_parser):
     )
     parser.add_argument(
         "--download-retries",
+        "--max-download-retries",
         "--download-attempts",
+        "--max-download-attempts",
         type=int,
         default=5,
         help="Skip links that have failed more than N times",

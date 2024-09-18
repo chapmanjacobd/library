@@ -5,7 +5,7 @@ from tabulate import tabulate
 from xklb.utils import argparse_utils, iterables
 from xklb.utils.log_utils import log
 
-__version__ = "2.9.051"
+__version__ = "2.9.052"
 
 progs = {
     "Create database subcommands": {
@@ -27,6 +27,7 @@ progs = {
     },
     "Text subcommands": {
         "cluster_sort": "Sort text and images by similarity",
+        "regex_sort": "Sort text by regex split and corpus comparison",
         "extract_links": "Extract inner links from lists of web links",
         "extract_text": "Extract human text from lists of web links",
         "markdown_links": "Extract titles from lists of web links",
@@ -229,6 +230,7 @@ modules = {
     "xklb.tablefiles.markdown_tables.markdown_tables": ["tables"],
     "xklb.tablefiles.mcda.mcda": ["mcdm", "rank"],
     "xklb.text.cluster_sort.cluster_sort": ["cs"],
+    "xklb.text.regex_sort.regex_sort": ["rs", "resort"],
     "xklb.text.extract_links.extract_links": ["links", "links_extract"],
     "xklb.text.extract_text.extract_text": ["text", "text_extract"],
     "xklb.text.markdown_links.markdown_links": ["markdown-urls"],

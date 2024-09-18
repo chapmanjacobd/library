@@ -185,6 +185,13 @@ def add(args, entry):
         if existing_record:
             media_id = existing_record["id"]
             entry = existing_record | entry
+            if existing_record.get("time_created"):
+                entry["time_created"] = existing_record["time_created"]
+            if existing_record.get("download_attempts"):
+                if entry.get("download_attempts"):
+                    entry["download_attempts"] += existing_record["download_attempts"]
+                else:
+                    entry["download_attempts"] = existing_record["download_attempts"]
         try:
             args.db["media"].insert(entry, pk="id", alter=True, replace=True)
         except sqlite3.IntegrityError:
