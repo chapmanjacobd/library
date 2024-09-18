@@ -34,6 +34,11 @@ def file_markdown(args, path):
         transpose=args.transpose,
         skip_headers=args.skip_headers,
     ):
+        if args.cols:
+            df_name = df.name
+            df = df[args.cols]
+            df.name = df_name
+
         if getattr(args, "repl", False):
             breakpoint()
         if args.to_json:

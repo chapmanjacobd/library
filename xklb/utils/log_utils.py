@@ -50,6 +50,15 @@ def argparse_log() -> logging.Logger:
 log = argparse_log()
 
 
+def gen_logging(name, original_generator):
+    for x in original_generator:
+        if name is not None:
+            log.debug(f"{name}: {x}")
+        else:
+            log.debug(x)
+        yield x
+
+
 class Timer:
     def __init__(self):
         self.reset()

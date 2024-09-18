@@ -127,10 +127,12 @@ def download(args=None) -> None:
         if not args.force and "time_modified" in m_columns:
             d = args.db.pop_dict(
                 f"""
-                SELECT time_modified, time_deleted from media m
-                WHERE 1=1
-                AND path=?
-                AND (time_modified > {str(previous_time_attempted)} OR time_deleted > 0)
+                SELECT
+                    time_modified
+                    , time_deleted
+                    {", download_attempts" if 'download_attempts' in m_columns else ', 0 as download_attempts'}
+                FROM media
+                WHERE path=?
                 """,
                 [m["path"]],
             )
@@ -143,11 +145,17 @@ def download(args=None) -> None:
                         strings.duration(consts.now() - d["time_deleted"]),
                     )
                     continue
-                elif d["time_modified"]:
+                elif d["time_modified"] > int(previous_time_attempted):
                     log.info(
                         "[%s]: Download already attempted %s ago. Skipping!",
                         m["path"],
                         strings.duration(consts.now() - d["time_modified"]),
+                    )
+                    continue
+                elif d["download_attempts"] > args.download_retries:
+                    log.info(
+                        "[%s]: Download attempts exceed download retries limit. Skipping!",
+                        m["path"],
                     )
                     continue
 

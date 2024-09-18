@@ -121,7 +121,7 @@ def extract_metadata(mp_args, path) -> dict[str, str | int | None] | None:
     except FileNotFoundError:
         return None
     except OSError:
-        log.exception("OSError: possible filesystem corruption; check dmesg. %s", path)
+        log.exception("OSError: possible disk error; check dmesg. %s", path)
         return None
     except Exception as e:
         log.error(f"%s {path}", e)

@@ -39,6 +39,12 @@ def rglob(
             scanned_dir = os.scandir(current_dir)
         except (FileNotFoundError, PermissionError):
             pass
+        except OSError as e:
+            if e.errno == 23:  # Too many open files
+                raise e
+            elif e.errno == 5:  # Input/output error
+                log.exception("Input/output error: check dmesg. Skipping folder %s", current_dir)
+            raise
         else:
             for entry in scanned_dir:
                 if entry.is_dir(follow_symlinks=False):
@@ -98,6 +104,12 @@ def rglob_gen(
             scanned_dir = os.scandir(current_dir)
         except (FileNotFoundError, PermissionError):
             pass
+        except OSError as e:
+            if e.errno == 23:  # Too many open files
+                raise e
+            elif e.errno == 5:  # Input/output error
+                log.exception("Input/output error: check dmesg. Skipping folder %s", current_dir)
+            raise
         else:
             for entry in scanned_dir:
                 if entry.is_dir(follow_symlinks=False):
@@ -549,9 +561,9 @@ def read_file_to_dataframes(
         "json",
         "application/json",
     ):
-        dfs = [pd.read_json(path, encoding=encoding)]
+        dfs = [pd.read_json(StringIO(path), encoding=encoding)]
     elif mimetype in ("jsonl", "json lines", "geojson lines"):
-        dfs = [pd.read_json(path, nrows=end_row, lines=True, encoding=encoding)]
+        dfs = [pd.read_json(StringIO(path), nrows=end_row, lines=True, encoding=encoding)]
     elif mimetype in (
         "csv",
         "text/csv",

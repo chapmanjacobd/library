@@ -735,6 +735,61 @@ cluster_sort = """library cluster-sort [input_path | stdin] [output_path | stdou
 
 """
 
+regex_sort = r"""library regex-sort [input_path | stdin] [output_path | stdout]
+
+    regex-sort is effectively a text-processing pipeline with the following steps:
+
+    line_splitter -- split lines into "words"
+        --regex
+            words \b\w\w+\b
+            delimiter _
+            digits \b\d+\b
+            chunk .{3}
+        --wordllama semantic text splitting?
+
+    word_selector -- use corpus statistics to filter lines
+        --dup    (include lines with duplicate words)
+        --unique (include lines with non-duplicate words)
+
+    word_sorter -- sort words within each line
+        --word-sort
+            skip (no sort)
+            len (sort words by length)
+            natsort
+            dup    (promote duplicate words)
+            unique (promote non-duplicate words)
+
+    line_aggregator -- control how data is interpreted by the line_sorter
+        --agg
+            count (count of words in line)
+            join (join line words)
+            avg_len max_len min_len
+            avg_dup (number of unique duplicate (within corpus) words in line / total unique words in line)
+            max_dup (highest number of unique duplicate words in line)
+            max_unique (highest number of unique non-duplicate words in line)
+
+    line_sorter (combine multiple sort score criteria)
+        --line-sort
+            natsort (default)
+            sum
+            avg
+            mcda
+            tfidf
+                kmeans  (lb clustersort)
+            wordllama
+                kmeans
+
+    Examples:
+
+        --line-sort dup,natsort --regex .{3} -v
+        (0, ((' Ja',), ('Sva',), ('aye',), ('lba',), ('n M',), ('rd ',)))  # Svalbard and Jan Mayen
+        (0, ((' La',), ('Sri',), ('nka',)))  # Sri Lanka
+        (0, ((' Ma',), ('San',), ('rin',)))  # San Marino
+        (0, ((' Ri',), ('Pue',), ('rto',)))  # Puerto Rico
+        (0, (('And',), ('orr',)))  # Andorra
+        (0, (('Arm',), ('eni',)))  # Armenia
+"""
+
 copy_play_counts = """library copy-play-counts SOURCE_DB ... DEST_DB [--source-prefix x] [--target-prefix y]
 
     Copy play count information between databases
@@ -1382,11 +1437,20 @@ process_ffmpeg = """library process-ffmpeg PATH ... [--always-split] [--split-lo
     Use --split-longer-than to _only_ detect silence for files in excess of a specific duration
 
         library process-audio --split-longer-than 36mins audiobook.m4b audiobook2.mp3
+
+    Calculate how much space you could save via process-ffmpeg by running something like this:
+
+        numfmt --to=iec (sqlite-utils --no-headers --raw-lines ~/lb/video.db "select sum(size)-sum(duration*100000) from media where time_deleted=0 and video_count>=1 and video_codecs != 'av1' and size/duration > 100000")
+        numfmt --to=iec (sqlite-utils --no-headers --raw-lines ~/lb/audio.db "select sum(size)-sum(duration*18000) from media where time_deleted=0 and video_count=0 and audio_count>=1 and audio_codecs != 'opus' and size/duration > 18000")
 """
 
 process_image = """library process-image PATH ...
 
     Resize images to max 2400x2400px and format AVIF to save space
+
+    Calculate how much space you could save via process-image by running something like this:
+
+        numfmt --to=iec (sqlite-utils --no-headers --raw-lines image.db "select sum(size)-sum(100000) from media where time_deleted=0 and type like 'image/%' and type != 'image/avif' and size > 100000")
 """
 
 sample_hash = """library sample-hash [--same-file-threads 1] [--chunk-size BYTES] [--gap BYTES OR 0.0-1.0*FILESIZE] PATH ...
