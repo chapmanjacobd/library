@@ -574,8 +574,23 @@ def read_file_to_dataframes(
             )
         ]
     elif mimetype in (
-        "plain",
+        "lines",
+        "text/plain",
         "plaintext",
+        "plain",
+    ):
+        dfs = [
+            pd.read_csv(
+                path,
+                names=["text"],
+                sep="\r",  # just something to keep the parser busy
+                nrows=end_row,
+                skiprows=start_row or 0,
+                encoding=encoding,
+                header=None if skip_headers else 0,
+            )
+        ]
+    elif mimetype in (
         "wsv",
         "text/wsv",
         "text/whitespace-separated-values",

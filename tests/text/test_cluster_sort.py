@@ -45,7 +45,7 @@ red apple"""
     ]
 
 
-def test_lb_cs_near_duplicates(mock_stdin, capsys):
+def test_lb_cs_duplicates(mock_stdin, capsys):
     with mock_stdin(
         """red apple
 broccoli
@@ -54,7 +54,7 @@ green
 orange apple
 red apple"""
     ):
-        lb(["cluster-sort", "--near-duplicates", "--print-groups"])
+        lb(["cluster-sort", "--duplicates", "--print-groups"])
     captured = capsys.readouterr().out
     assert json.loads(captured) == [
         {"common_path": "*apple*red#0", "grouped_paths": ["orange apple", "red apple", "red apple"]},
