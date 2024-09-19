@@ -24,8 +24,10 @@ LineSortOpt = Literal[
     "sum",
     "unique",
     "allunique",
+    "alluniques",
     "dup",
     "alldup",
+    "alldups",
     "dupmax",
     "dupavg",
     "dupmin",
@@ -42,7 +44,7 @@ LineSortOpt = Literal[
 LINE_SORTS_OPTS = typing.get_args(LineSortOpt)
 
 REGEXS_DEFAULT = [r"\b\w\w+\b"]
-WORD_SORTS_DEFAULT = ["-unique", "-len", "-count", "alpha"]
+WORD_SORTS_DEFAULT = ["-dup", "count", "-len", "-count", "alpha"]
 LINE_SORTS_DEFAULT = ["-allunique", "alpha", "alldup", "dupmode", "line"]
 
 
@@ -218,9 +220,13 @@ def line_sorter(NS_OPTS, line_sorts: list[LineSortOpt], corpus_stats: Counter, w
             elif s == "unique":
                 val = sum((corpus_stats.get(word) or 0) == 1 for word in words)
             elif s == "alldup":
-                val = all((corpus_stats.get(word) or 0) > 1 for word in words)
+                val = len(words) >= 1 and all((corpus_stats.get(word) or 0) > 1 for word in words)
             elif s == "allunique":
-                val = all((corpus_stats.get(word) or 0) == 1 for word in words)
+                val = len(words) >= 1 and all((corpus_stats.get(word) or 0) == 1 for word in words)
+            elif s == "alldups":
+                val = len(words) > 1 and all((corpus_stats.get(word) or 0) > 1 for word in words)
+            elif s == "alluniques":
+                val = len(words) > 1 and all((corpus_stats.get(word) or 0) == 1 for word in words)
             elif s == "sum":
                 val = sum(corpus_stats.get(word) or 0 for word in words)
             elif s == "dupmax":

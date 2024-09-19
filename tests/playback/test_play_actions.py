@@ -73,7 +73,7 @@ media_flags = [
     ("--portrait", 5, "corrupt.mp4"),
     ("--fetch-siblings if-audiobook", 5, "corrupt.mp4"),
     ("-C --n-clusters 3 --stop-words xklb", 5, "test.gif"),
-    ("-C --near-duplicates", 5, "corrupt.mp4"),
+    ("-C --duplicates", 5, "corrupt.mp4"),
     ("-O duration", 5, "test.gif"),
     ("-O locale_duration", 5, "test.gif"),
     ("-O locale_size", 5, "test_frame.gif"),
