@@ -99,7 +99,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v2.9.052; 87 subcommands)
+    library (v2.9.053; 87 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -1061,7 +1061,11 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Examples:
 
-        --line-sort dup,natsort --regex .{3} -v
+        If your data has a lot of repeating rows it will help to sort by dup count:
+            --line-sort dup,natsort
+
+        You can use any matching regex to produce sorting words:
+            --regex '.{3}' --line-sort dup,natsort -v
         (0, ((' Ja',), ('Sva',), ('aye',), ('lba',), ('n M',), ('rd ',)))  # Svalbard and Jan Mayen
         (0, ((' La',), ('Sri',), ('nka',)))  # Sri Lanka
         (0, ((' Ma',), ('San',), ('rin',)))  # San Marino

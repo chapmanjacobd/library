@@ -328,12 +328,12 @@ def cluster_sort() -> None:
         raise NotImplementedError
     groups = sorted(groups, key=lambda d: (len(d["grouped_paths"]), -len(d["common_path"])))
 
-    if args.near_duplicates:
+    if args.duplicates is True:
         groups = filter_near_duplicates(groups)
 
-    if args.exclude_unique:
+    if args.unique is False:
         groups = [d for d in groups if len(d["grouped_paths"]) > 1]
-    elif args.unique_only:
+    elif args.unique is True:
         groups = [d for d in groups if len(d["grouped_paths"]) == 1]
 
     if getattr(args, "print_groups", False):
