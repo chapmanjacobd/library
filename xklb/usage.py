@@ -781,7 +781,11 @@ regex_sort = r"""library regex-sort [input_path | stdin] [output_path | stdout]
 
     Examples:
 
-        --line-sort dup,natsort --regex .{3} -v
+        If your data has a lot of repeating rows it will help to sort by dup count:
+            --line-sort dup,natsort
+
+        You can use any matching regex to produce sorting words:
+            --regex '.{3}' --line-sort dup,natsort -v
         (0, ((' Ja',), ('Sva',), ('aye',), ('lba',), ('n M',), ('rd ',)))  # Svalbard and Jan Mayen
         (0, ((' La',), ('Sri',), ('nka',)))  # Sri Lanka
         (0, ((' Ma',), ('San',), ('rin',)))  # San Marino

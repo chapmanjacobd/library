@@ -201,3 +201,17 @@ def merge_dict_values_str(dict1, dict2):
         merged_dict[key] = merged_value
 
     return merged_dict
+
+
+class Reversor:
+    def __init__(self, obj):
+        self.obj = obj
+
+    def __lt__(self, other):
+        return other.obj < self.obj
+
+    def __eq__(self, other):
+        return other.obj == self.obj
+
+    def __repr__(self):
+        return f"Reverse({self.obj})"

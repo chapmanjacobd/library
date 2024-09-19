@@ -1,7 +1,9 @@
 import re
 
 from xklb.utils import consts, db_utils, nums
+from xklb.utils.iterables import divide_sequence
 from xklb.utils.log_utils import log
+from xklb.utils.objects import Reversor
 
 
 def compare_block_strings(value, media_value):
@@ -62,29 +64,8 @@ def allow_dicts_like_sql(media, allowlist):
     return allowed_media
 
 
-def divide_sequence(arr):
-    result = arr[0]
-    if result == 0:
-        return float("inf")
-    elif 0 in arr:
-        return float("-inf")
-    for i in range(1, len(arr)):
-        result = result / arr[i]
-    return result
-
-
 def sort_like_sql(order_bys):
     order_bys = [s.strip() for s in order_bys.split(",")]
-
-    class Reversor:
-        def __init__(self, obj):
-            self.obj = obj
-
-        def __eq__(self, other):
-            return other.obj == self.obj
-
-        def __lt__(self, other):
-            return other.obj < self.obj
 
     def get_key(d):
         key = []

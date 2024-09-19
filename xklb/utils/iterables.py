@@ -201,3 +201,14 @@ def multi_split(string, delimiters):
                 stack.insert(i + j, _substring)
 
     return stack
+
+
+def divide_sequence(arr):
+    result = arr[0]
+    if result == 0:
+        return float("inf")
+    elif 0 in arr:
+        return float("-inf")
+    for i in range(1, len(arr)):
+        result = result / arr[i]
+    return result

@@ -981,11 +981,8 @@ def cluster(parent_parser):
     parser.add_argument("--print-groups", "--groups", "-g", action="store_true", help="Print groups")
     parser.add_argument("--move-groups", "-M", action="store_true", help="Move groups into subfolders")
 
-    parser.add_argument("--near-duplicates", "--similar-only", action="store_true", help="Re-group by difflib ratio")
-    parser.add_argument(
-        "--unique-only", action="store_true", help="Include only 'unique' lines (not including originals or duplicates)"
-    )
-    parser.add_argument("--exclude-unique", "--no-unique", action="store_true", help="Exclude 'unique' lines")
+    parser.add_argument("--duplicates", "--dups", action=argparse.BooleanOptionalAction)
+    parser.add_argument("--unique", "--uniq", "-U", action=argparse.BooleanOptionalAction)
 
 
 def related(parser):
