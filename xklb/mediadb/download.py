@@ -152,7 +152,7 @@ def download(args=None) -> None:
                         strings.duration(consts.now() - d["time_modified"]),
                     )
                     continue
-                elif d["download_attempts"] > args.download_retries:
+                elif d["download_attempts"] and d["download_attempts"] > args.download_retries:
                     log.info(
                         "[%s]: Download attempts exceed download retries limit. Skipping!",
                         m["path"],

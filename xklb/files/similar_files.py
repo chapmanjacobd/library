@@ -6,7 +6,8 @@ from xklb.utils.log_utils import log
 
 def parse_args():
     parser = argparse_utils.ArgumentParser(usage=usage.similar_files)
-    arggroups.cluster(parser)
+    arggroups.text_filtering(parser)
+    arggroups.cluster_sort(parser)
 
     parser.add_argument("--small", "--reverse", action="store_true")
     parser.add_argument("--only-duplicates", action="store_true")

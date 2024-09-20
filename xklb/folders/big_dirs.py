@@ -10,7 +10,8 @@ from xklb.utils import arg_utils, arggroups, argparse_utils, file_utils, iterabl
 
 def parse_args() -> argparse.Namespace:
     parser = argparse_utils.ArgumentParser(usage=usage.big_dirs)
-    arggroups.cluster(parser)
+    arggroups.text_filtering(parser)
+    arggroups.cluster_sort(parser)
     arggroups.group_folders(parser)
     parser.set_defaults(limit="4000", depth=0)
     arggroups.debug(parser)
@@ -146,7 +147,7 @@ def big_dirs() -> None:
     if args.cluster_sort and len(media) > 2:
         from xklb.text.cluster_sort import cluster_paths
 
-        groups = cluster_paths([d["path"] for d in media], n_clusters=getattr(args, "clusters", None))
+        groups = cluster_paths(args, [d["path"] for d in media])
         groups = sorted(groups, key=lambda d: (-len(d["grouped_paths"]), -len(d["common_path"])))
 
         media_keyed = {d["path"]: d for d in media}

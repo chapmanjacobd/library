@@ -1,4 +1,4 @@
-import argparse, os, textwrap
+import argparse, os, re, textwrap, typing
 from pathlib import Path
 
 from xklb.utils import (
@@ -964,10 +964,8 @@ def similar_folders_post(args) -> None:
         args.filter_names, args.filter_sizes, args.filter_durations, args.filter_counts = True, True, True, True
 
 
-def cluster(parent_parser):
-    parser = parent_parser.add_argument_group("Cluster")
-    parser.add_argument("--cluster-sort", "--cluster", "-C", action="store_true", help="Cluster by filename TF-IDF")
-    parser.add_argument("--clusters", "--n-clusters", type=int, help="Number of KMeans clusters")
+def text_filtering(parent_parser):
+    parser = parent_parser.add_argument_group("Text filtering")
     parser.add_argument(
         "--stop-words",
         "--ignore-words",
@@ -978,11 +976,118 @@ def cluster(parent_parser):
 --stop-words (cat stop_words.txt)""",
     )
 
+    parser.add_argument("--duplicates", "--dups", action=argparse.BooleanOptionalAction)
+    parser.add_argument("--unique", "--uniq", "-U", action=argparse.BooleanOptionalAction)
+
+
+def cluster_sort(parent_parser):
+    parser = parent_parser.add_argument_group("Cluster-sort")
+    parser.add_argument(
+        "--cluster-sort", "--cluster", "-C", "-cs", action="store_true", help="Sort by clusters of words"
+    )
+    parser.add_argument("--clusters", "--n-clusters", type=int, help="Number of KMeans clusters")
+    parser.add_argument(
+        "--wordllama",
+        nargs="?",
+        action=argparse_utils.ArgparseDict,
+        const="config=l3_supercat dim=64",
+        help="Use wordllama instead of TF-IDF",
+    )
+
     parser.add_argument("--print-groups", "--groups", "-g", action="store_true", help="Print groups")
     parser.add_argument("--move-groups", "-M", action="store_true", help="Move groups into subfolders")
 
-    parser.add_argument("--duplicates", "--dups", action=argparse.BooleanOptionalAction)
-    parser.add_argument("--unique", "--uniq", "-U", action=argparse.BooleanOptionalAction)
+
+WORD_SORTS_OPTS = typing.get_args(consts.WordSortOpt)
+LINE_SORTS_OPTS = typing.get_args(consts.LineSortOpt)
+
+REGEXS_DEFAULT = [r"\b\w\w+\b"]
+WORD_SORTS_DEFAULT = ["-dup", "count", "-len", "-count", "alpha"]
+LINE_SORTS_DEFAULT = ["-allunique", "alpha", "alldup", "dupmode", "line"]
+
+
+def regex_sort(parent_parser):
+    parser = parent_parser.add_argument_group("Regex-sort")
+    parser.add_argument("--regex-sort", "-rs", action="store_true", help="Sort by splitting lines and sorting words")
+    parser.add_argument("--regexs", "-re", action=argparse_utils.ArgparseList)
+    parser.add_argument(
+        "--word-sorts",
+        "-ws",
+        "-wu",
+        action=argparse_utils.ArgparseList,
+        help=f"""Specify the word sorting strategy to use within each line
+
+Choose ONE OR MORE of the following options:
+  skip     skip word sorting
+  len      length of word
+  unique   word is a unique in corpus (boolean)
+  dup      word is a duplicate in corpus (boolean)
+  count    count of word in corpus
+  alpha    python alphabetic sorting
+
+  natural  natsort default sorting (numbers as integers)
+  signed   natsort signed numbers sorting (for negative numbers)
+  path     natsort path sorting (https://natsort.readthedocs.io/en/stable/api.html#the-ns-enum)
+  locale   natsort system locale sorting
+  os       natsort OS File Explorer sorting. To improve non-alphanumeric sorting on Mac OS X and Linux it is necessary to install pyicu (perhaps via python3-icu -- https://gitlab.pyicu.org/main/pyicu#installing-pyicu)
+
+(default: {', '.join(WORD_SORTS_DEFAULT)})""",
+    )
+    parser.add_argument(
+        "--line-sorts",
+        "-ls",
+        "-lu",
+        action=argparse_utils.ArgparseList,
+        help=f"""Specify the line sorting strategy to use on the text-processed words (after regex, word-sort, etc)
+
+Choose ONE OR MORE of the following options:
+  skip       skip line sorting
+  line       the original line (python alphabetic sorting)
+  len        length of line
+  count      count of words in line
+
+  dup        count of duplicate in corpus words (sum of boolean)
+  unique     count of unique in corpus words (sum of boolean)
+  alldup     all line-words are duplicate in corpus words (boolean)
+  allunique  all line-words are unique in corpus words (boolean)
+
+  sum        count of all uses of line-words (within corpus)
+  dupmax     highest line-word corpus usage
+  dupmin     lowest line-word corpus usage
+  dupavg     average line-word corpus usage
+  dupmedian  median line-word corpus usage
+  dupmode    mode (most repeated value) line-word corpus usage
+
+  alpha    python alphabetic sorting
+  natural  natsort default sorting (numbers as integers)
+  ...      the other natsort options specified in --word-sort are also allowed
+
+(default: {', '.join(LINE_SORTS_DEFAULT)})""",
+    )
+    parser.add_argument("--compat", action="store_true", help="Use natsort compat mode. Treats characters like ⑦ as 7")
+
+
+def regex_sort_post(args):
+    if not args.regexs:
+        args.regexs = REGEXS_DEFAULT
+    args.regexs = [re.compile(s) for s in args.regexs]
+
+    if not args.word_sorts:
+        args.word_sorts = WORD_SORTS_DEFAULT
+    if not args.line_sorts:
+        args.line_sorts = LINE_SORTS_DEFAULT
+
+    for option in args.word_sorts:
+        if option.lstrip("-") not in WORD_SORTS_OPTS:
+            raise ValueError(
+                f"--word-sort option '{option}' does not exist. Choose one or more: {', '.join(WORD_SORTS_OPTS)}"
+            )
+
+    for option in args.line_sorts:
+        if option.lstrip("-") not in LINE_SORTS_OPTS:
+            raise ValueError(
+                f"--line-sort option '{option}' does not exist. Choose one or more: {', '.join(LINE_SORTS_OPTS)}"
+            )
 
 
 def related(parser):

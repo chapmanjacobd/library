@@ -61,7 +61,8 @@ def parse_args() -> argparse.Namespace:
     )
     parser.set_defaults(profile="lines")
 
-    arggroups.cluster(parser)
+    arggroups.text_filtering(parser)
+    arggroups.cluster_sort(parser)
     parser.set_defaults(cluster_sort=True)
     arggroups.debug(parser)
 
@@ -96,11 +97,26 @@ def map_and_name(paths, clusters):
     return result
 
 
-def find_clusters(n_clusters, sentence_strings, stop_words=None):
+def find_clusters(args, sentence_strings):
+    if args.wordllama:
+        from wordllama import WordLlama
+
+        wl = WordLlama.load(**args.wordllama)
+
+        sentence_strings = list(sentence_strings)
+        clusters, loss = wl.cluster(
+            sentence_strings,
+            k=args.clusters or int(len(sentence_strings) ** 0.5),
+            max_iterations=10,
+            tolerance=1e-4,
+        )
+        log.info("final loss (inertia): %s", loss)
+        return clusters
+
     from sklearn.cluster import KMeans
     from sklearn.feature_extraction.text import TfidfVectorizer
 
-    if stop_words is None:
+    if args.stop_words is None:
         from xklb.data import wordbank
 
         stop_words = wordbank.stop_words
@@ -120,17 +136,17 @@ def find_clusters(n_clusters, sentence_strings, stop_words=None):
                 vectorizer = TfidfVectorizer(analyzer="char_wb")
                 X = vectorizer.fit_transform(sentence_strings)
 
-    clusterizer = KMeans(n_clusters=n_clusters or int(X.shape[0] ** 0.5), random_state=0, n_init=10).fit(X)
+    clusterizer = KMeans(n_clusters=args.clusters or int(X.shape[0] ** 0.5), random_state=0, n_init=10).fit(X)
     clusters = clusterizer.labels_
     return clusters
 
 
-def cluster_paths(paths, n_clusters=None, stop_words=None):
+def cluster_paths(args, paths):
     if len(paths) < 3:
         return paths
 
     sentence_strings = (strings.path_to_sentence(s) for s in paths)
-    clusters = find_clusters(n_clusters, sentence_strings, stop_words=stop_words)
+    clusters = find_clusters(args, sentence_strings)
     result = map_and_name(paths, clusters)
 
     return result
@@ -143,11 +159,10 @@ def print_groups(groups):
     print(json.dumps(groups, indent=4))
 
 
-def cluster_dicts(args, media):
+def sort_dicts(args, media):
     if len(media) < 3:
         return media
 
-    n_clusters = getattr(args, "clusters", None)
     search_columns = {
         col
         for _table, table_config in db_utils.config.items()
@@ -161,7 +176,7 @@ def cluster_dicts(args, media):
         strings.path_to_sentence(" ".join(str(v) for k, v in d.items() if v and k in search_columns)) for d in media
     )
 
-    clusters = find_clusters(n_clusters, sentence_strings, stop_words=getattr(args, "stop_words", None))
+    clusters = find_clusters(args, sentence_strings)
 
     if args.verbose >= consts.LOG_INFO:
         from pandas import DataFrame
@@ -321,7 +336,7 @@ def cluster_sort() -> None:
     lines = [s.rstrip("\n") for s in lines]
 
     if args.profile == "lines":
-        groups = cluster_paths(lines, args.clusters, args.stop_words)
+        groups = cluster_paths(args, lines)
     elif args.profile == "image":
         groups = cluster_images(lines, args.clusters)
     else:

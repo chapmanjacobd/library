@@ -2,6 +2,7 @@ import errno, os, random, re, shutil, string, sys
 from datetime import datetime, timezone
 from pathlib import Path
 from tempfile import gettempdir
+from typing import Literal
 
 
 def now():
@@ -439,4 +440,34 @@ COMMON_ENCODINGS = [
     "utf-16-be",
     "utf-32-le",
     "utf-32-be",
+]
+
+WordSortOpt = Literal[
+    "skip", "len", "count", "dup", "unique", "alpha", "natural", "natsort", "path", "locale", "signed", "os"
+]
+
+LineSortOpt = Literal[
+    "skip",
+    "line",
+    "count",
+    "len",
+    "sum",
+    "unique",
+    "allunique",
+    "alluniques",
+    "dup",
+    "alldup",
+    "alldups",
+    "dupmax",
+    "dupavg",
+    "dupmin",
+    "dupmedian",
+    "dupmode",
+    "alpha",
+    "natural",
+    "natsort",
+    "path",
+    "locale",
+    "signed",
+    "os",
 ]
