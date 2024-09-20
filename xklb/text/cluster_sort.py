@@ -120,13 +120,15 @@ def find_clusters(args, sentence_strings):
         from xklb.data import wordbank
 
         stop_words = wordbank.stop_words
+    else:
+        stop_words = set(args.stop_words)
 
     try:
-        vectorizer = TfidfVectorizer(min_df=2, strip_accents="unicode", stop_words=stop_words)
+        vectorizer = TfidfVectorizer(min_df=2, strip_accents="unicode", stop_words=stop_words)  # type: ignore
         X = vectorizer.fit_transform(sentence_strings)
     except ValueError:
         try:
-            vectorizer = TfidfVectorizer(strip_accents="unicode", stop_words=stop_words)
+            vectorizer = TfidfVectorizer(strip_accents="unicode", stop_words=stop_words)  # type: ignore
             X = vectorizer.fit_transform(sentence_strings)
         except ValueError:
             try:
