@@ -10,7 +10,9 @@ from xklb.utils.log_utils import log
 def parse_args():
     parser = argparse_utils.ArgumentParser(usage=usage.block)
     arggroups.extractor(parser)
-    arggroups.cluster(parser)
+    arggroups.text_filtering(parser)
+    arggroups.cluster_sort(parser)
+    arggroups.regex_sort(parser)
 
     parser.add_argument("--match-column", "-c", default="path", help="Column to block media if text matches")
 
@@ -28,6 +30,7 @@ def parse_args():
     arggroups.args_post(args, parser)
 
     arggroups.extractor_post(args)
+    arggroups.regex_sort_post(args)
 
     return args
 
@@ -238,10 +241,14 @@ def block(args=None) -> None:
             unmatched_playlists.append(p)
             continue
 
-        if args.cluster_sort:
-            from xklb.text.cluster_sort import cluster_dicts
+        if args.regex_sort:
+            from xklb.text import regex_sort
 
-            matching_media = list(reversed(cluster_dicts(args, matching_media)))
+            matching_media = list(reversed(regex_sort.sort_dicts(args, matching_media)))
+        elif args.cluster_sort:
+            from xklb.text import cluster_sort
+
+            matching_media = list(reversed(cluster_sort.sort_dicts(args, matching_media)))
 
         media_printer.media_printer(args, matching_media)
         if args.no_confirm or devices.confirm("Add to blocklist?"):

@@ -18,7 +18,9 @@ def parse_args() -> argparse.Namespace:
 
     parser.add_argument("--category", "-c")
 
-    arggroups.cluster(parser)
+    arggroups.text_filtering(parser)
+    arggroups.cluster_sort(parser)
+    arggroups.regex_sort(parser)
     arggroups.related(parser)
 
     parser.add_argument("--browser")
@@ -32,6 +34,7 @@ def parse_args() -> argparse.Namespace:
     arggroups.args_post(args, parser)
 
     arggroups.sql_fs_post(args)
+    arggroups.regex_sort_post(args)
 
     if not args.title_prefix:
         args.title_prefix = ["https://www.google.com/search?q=%"]
@@ -82,18 +85,31 @@ def links_open() -> None:
     args = parse_args()
     db_history.create(args)
 
-    query, bindings = sqlgroups.construct_links_query(args, None if args.cluster_sort else args.limit)
+    is_whole_db_query = any(
+        [
+            args.cluster_sort,
+            args.regex_sort,
+            "a" in args.print,
+        ]
+    )
+
+    query, bindings = sqlgroups.construct_links_query(args, limit=None if is_whole_db_query else args.limit)
     media = list(args.db.query(query, bindings))
 
     if args.related >= consts.RELATED:
         media = db_media.get_related_media(args, media[0])
 
-    if args.cluster_sort:
-        from xklb.text.cluster_sort import cluster_dicts
+    if args.regex_sort:
+        from xklb.text import regex_sort
 
-        media = cluster_dicts(args, media)
+        media = regex_sort.sort_dicts(args, media)
+    elif args.cluster_sort:
+        from xklb.text import cluster_sort
 
-    media = media[: args.limit]
+        media = cluster_sort.sort_dicts(args, media)
+
+    if not is_whole_db_query:
+        media = media[: args.limit]
     media = make_souffle(args, media)
 
     if args.print:

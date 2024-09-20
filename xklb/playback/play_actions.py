@@ -24,7 +24,9 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     arggroups.clobber(parser)
 
     arggroups.group_folders(parser)
-    arggroups.cluster(parser)
+    arggroups.text_filtering(parser)
+    arggroups.cluster_sort(parser)
+    arggroups.regex_sort(parser)
     arggroups.related(parser)
 
     ordering = parser.add_argument_group("Ordering")
@@ -184,6 +186,7 @@ If you don't know the exact name of your chromecast group run `catt scan`
     arggroups.post_actions_post(args)
     arggroups.multiple_playback_post(args)
     arggroups.group_folders_post(args)
+    arggroups.regex_sort_post(args)
 
     if args.mpv_socket is None:
         if args.action in (SC.listen,):
@@ -404,10 +407,15 @@ def process_playqueue(args) -> None:
     if args.play_in_order:
         media = db_media.natsort_media(args, media)
 
-    if args.cluster_sort:
-        from xklb.text.cluster_sort import cluster_dicts
+    if args.regex_sort:
+        from xklb.text import regex_sort
 
-        media = cluster_dicts(args, media)
+        media = regex_sort.sort_dicts(args, media)
+        log.debug("regex-sort: %s", t.elapsed())
+    elif args.cluster_sort:
+        from xklb.text import cluster_sort
+
+        media = cluster_sort.sort_dicts(args, media)
         log.debug("cluster-sort: %s", t.elapsed())
 
     if args.timeout_size:

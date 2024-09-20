@@ -1,6 +1,7 @@
 import argparse, json, shlex, sys
 from ast import literal_eval
 
+from xklb.utils import nums
 from xklb.utils.iterables import flatten
 from xklb.utils.strings import format_two_columns
 
@@ -50,13 +51,16 @@ class ArgparseDict(argparse.Action):
     def __call__(self, parser, args, values, option_string=None):
         try:
             d = {}
-            k_eq_v = list(flatten([val.split(" ") for val in values]))
+            k_eq_v = list(values.split(" "))
             for s in k_eq_v:
                 k, v = s.split("=", 1)
+                v_strip = v.strip()
                 if any(sym in v for sym in (" [", " {")):
                     d[k] = literal_eval(v)
-                elif v.strip() in ("True", "False"):
-                    d[k] = bool(v.strip())
+                elif v_strip in ("True", "False"):
+                    d[k] = bool(v_strip)
+                elif v_strip.isnumeric():
+                    d[k] = nums.safe_int_float_str(v_strip)
                 else:
                     d[k] = v
 

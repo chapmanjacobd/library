@@ -1,6 +1,9 @@
 import json
 
+import pytest
+
 from xklb.__main__ import library as lb
+from xklb.utils import consts
 
 
 def test_lb_cs_lines(mock_stdin, capsys):
@@ -61,4 +64,22 @@ red apple"""
         {"common_path": "*#0", "grouped_paths": ["broccoli"]},
         {"common_path": "*#1", "grouped_paths": ["green"]},
         {"common_path": "*#2", "grouped_paths": ["yellow"]},
+    ]
+
+
+@pytest.mark.skipif(consts.VOLKSWAGEN, reason="optional dep")
+def test_lb_cs_wordllama(mock_stdin, capsys):
+    with mock_stdin(
+        """red apple
+broccoli
+yellow
+green
+orange apple
+red apple"""
+    ):
+        lb(["cluster-sort", "--print-groups", "--wordllama"])
+    captured = capsys.readouterr().out
+    assert json.loads(captured) == [
+        {"common_path": "*apple*red", "grouped_paths": ["orange apple", "red apple", "red apple"]},
+        {"common_path": "*", "grouped_paths": ["broccoli", "green", "yellow"]},
     ]

@@ -10,7 +10,8 @@ from xklb.utils.log_utils import log
 def parse_args():
     parser = argparse_utils.ArgumentParser(usage=usage.similar_folders)
     arggroups.group_folders(parser)
-    arggroups.cluster(parser)
+    arggroups.text_filtering(parser)
+    arggroups.cluster_sort(parser)
     parser.add_argument("--estimated-duplicates", "--dupes", type=float)
 
     parser.add_argument("--small", "--reverse", action="store_true")
@@ -66,16 +67,15 @@ def cluster_folders(args, media):
     if len(media) < 2:
         return media
 
-    n_clusters = args.clusters
     if args.estimated_duplicates:
-        n_clusters = int(len(media) / args.estimated_duplicates)
+        args.clusters = int(len(media) / args.estimated_duplicates)
 
     if args.full_path:
         sentence_strings = (strings.path_to_sentence(d["path"]) for d in media)
     else:
         sentence_strings = (strings.path_to_sentence(Path(d["path"]).name) for d in media)
 
-    clusters = cluster_sort.find_clusters(n_clusters, sentence_strings, stop_words=args.stop_words)
+    clusters = cluster_sort.find_clusters(args, sentence_strings)
     groups = map_and_name(media, clusters)
 
     return groups

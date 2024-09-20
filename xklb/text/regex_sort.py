@@ -1,142 +1,28 @@
-import argparse, statistics, typing
+import argparse, statistics
 from collections import Counter
-from typing import Literal
 
 import natsort
 import regex as re
 from natsort import ns
 
 from xklb import usage
-from xklb.utils import arggroups, argparse_utils, consts, iterables, printing, processes
+from xklb.utils import arggroups, argparse_utils, consts, db_utils, iterables, printing, processes, strings
 from xklb.utils.log_utils import log
 from xklb.utils.objects import Reversor
-
-WordSortOpt = Literal[
-    "skip", "len", "count", "dup", "unique", "alpha", "natural", "natsort", "path", "locale", "signed", "os"
-]
-WORD_SORTS_OPTS = typing.get_args(WordSortOpt)
-
-LineSortOpt = Literal[
-    "skip",
-    "line",
-    "count",
-    "len",
-    "sum",
-    "unique",
-    "allunique",
-    "alluniques",
-    "dup",
-    "alldup",
-    "alldups",
-    "dupmax",
-    "dupavg",
-    "dupmin",
-    "dupmedian",
-    "dupmode",
-    "alpha",
-    "natural",
-    "natsort",
-    "path",
-    "locale",
-    "signed",
-    "os",
-]
-LINE_SORTS_OPTS = typing.get_args(LineSortOpt)
-
-REGEXS_DEFAULT = [r"\b\w\w+\b"]
-WORD_SORTS_DEFAULT = ["-dup", "count", "-len", "-count", "alpha"]
-LINE_SORTS_DEFAULT = ["-allunique", "alpha", "alldup", "dupmode", "line"]
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse_utils.ArgumentParser(usage=usage.regex_sort)
-    parser.add_argument("--regexs", "-re", action=argparse_utils.ArgparseList)
-    parser.add_argument(
-        "--word-sorts",
-        "-ws",
-        "-wu",
-        action=argparse_utils.ArgparseList,
-        help=f"""Specify the word sorting strategy to use within each line
-
-Choose ONE OR MORE of the following options:
-  skip     skip word sorting
-  len      length of word
-  unique   word is a unique in corpus (boolean)
-  dup      word is a duplicate in corpus (boolean)
-  count    count of word in corpus
-  alpha    python alphabetic sorting
-
-  natural  natsort default sorting (numbers as integers)
-  signed   natsort signed numbers sorting (for negative numbers)
-  path     natsort path sorting (https://natsort.readthedocs.io/en/stable/api.html#the-ns-enum)
-  locale   natsort system locale sorting
-  os       natsort OS File Explorer sorting. To improve non-alphanumeric sorting on Mac OS X and Linux it is necessary to install pyicu (perhaps via python3-icu -- https://gitlab.pyicu.org/main/pyicu#installing-pyicu)
-
-(default: {', '.join(WORD_SORTS_DEFAULT)})""",
-    )
-    parser.add_argument(
-        "--line-sorts",
-        "-ls",
-        "-lu",
-        "-u",
-        action=argparse_utils.ArgparseList,
-        help=f"""Specify the line sorting strategy to use on the text-processed words (after regex, word-sort, etc)
-
-Choose ONE OR MORE of the following options:
-  skip       skip line sorting
-  line       the original line (python alphabetic sorting)
-  len        length of line
-  count      count of words in line
-
-  dup        count of duplicate in corpus words (sum of boolean)
-  unique     count of unique in corpus words (sum of boolean)
-  alldup     all line-words are duplicate in corpus words (boolean)
-  allunique  all line-words are unique in corpus words (boolean)
-
-  sum        count of all uses of line-words (within corpus)
-  dupmax     highest line-word corpus usage
-  dupmin     lowest line-word corpus usage
-  dupavg     average line-word corpus usage
-  dupmedian  median line-word corpus usage
-  dupmode    mode (most repeated value) line-word corpus usage
-
-  alpha    python alphabetic sorting
-  natural  natsort default sorting (numbers as integers)
-  ...      the other natsort options specified in --word-sort are also allowed
-
-(default: {', '.join(LINE_SORTS_DEFAULT)})""",
-    )
-    parser.add_argument("--compat", action="store_true", help="Use natsort compat mode. Treats characters like ⑦ as 7")
-    arggroups.cluster(parser)
+    arggroups.text_filtering(parser)
+    arggroups.regex_sort(parser)
     arggroups.debug(parser)
 
     parser.add_argument("input_path", nargs="?", type=argparse.FileType("r"), default="-")
     parser.add_argument("output_path", nargs="?")
     args = parser.parse_args()
 
-    if not args.regexs:
-        args.regexs = REGEXS_DEFAULT
-    args.regexs = [re.compile(s) for s in args.regexs]
-
-    if not args.word_sorts:
-        args.word_sorts = WORD_SORTS_DEFAULT
-    if not args.line_sorts:
-        args.line_sorts = LINE_SORTS_DEFAULT
-
+    arggroups.regex_sort_post(args)
     arggroups.args_post(args, parser)
-
-    for option in args.word_sorts:
-        if option.lstrip("-") not in WORD_SORTS_OPTS:
-            raise ValueError(
-                f"--word-sort option '{option}' does not exist. Choose one or more: {', '.join(WORD_SORTS_OPTS)}"
-            )
-
-    for option in args.line_sorts:
-        if option.lstrip("-") not in LINE_SORTS_OPTS:
-            raise ValueError(
-                f"--line-sort option '{option}' does not exist. Choose one or more: {', '.join(LINE_SORTS_OPTS)}"
-            )
-
     return args
 
 
@@ -150,7 +36,7 @@ def line_splitter(regexs: list[re.Pattern], l: str) -> list[str]:
     return words
 
 
-def word_sorter(NS_OPTS, word_sorts: list[WordSortOpt], corpus_stats: Counter, l: list[str]):
+def word_sorter(NS_OPTS, word_sorts: list[consts.WordSortOpt], corpus_stats: Counter, l: list[str]):
     def generate_custom_key(word):
         key_parts = []
         for s in word_sorts:
@@ -198,7 +84,9 @@ def word_sorter(NS_OPTS, word_sorts: list[WordSortOpt], corpus_stats: Counter, l
     return words
 
 
-def line_sorter(NS_OPTS, line_sorts: list[LineSortOpt], corpus_stats: Counter, words: list[str], original_line: str):
+def line_sorter(
+    NS_OPTS, line_sorts: list[consts.LineSortOpt], corpus_stats: Counter, words: list[str], original_line: str
+):
     def generate_custom_key(words):
         key_parts = []
         for s in line_sorts:
@@ -357,10 +245,29 @@ def text_processor(args, lines):
     )
     sorted_z = sorted(zip(lines, corpus, line_sort_key, strict=True), key=lambda y: y[2])
     if args.verbose >= consts.LOG_INFO:
-        lines = [repr(x[2]) + "\t" + repr(x[1]) + "  # " + x[0] for x in sorted_z]
-    else:
-        lines = [x[0] for x in sorted_z]
+        log.info([repr(x[2]) + "\t" + repr(x[1]) + "  # " + x[0] for x in sorted_z])
+
+    lines = [x[0] for x in sorted_z]
     return lines
+
+
+def sort_dicts(args, media):
+    search_columns = {
+        col
+        for _table, table_config in db_utils.config.items()
+        if "search_columns" in table_config
+        for col in table_config["search_columns"]
+    }
+
+    sentence_strings = list(
+        strings.path_to_sentence(" ".join(str(v) for k, v in d.items() if v and k in search_columns)) for d in media
+    )
+    media_keyed = {line: d for line, d in zip(sentence_strings, media, strict=True)}
+
+    lines = text_processor(args, sentence_strings)
+
+    media = [media_keyed[p] for p in lines]
+    return media
 
 
 def regex_sort() -> None:

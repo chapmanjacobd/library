@@ -55,6 +55,7 @@ fat = [
   "ghostscript",
   "opencv-python",
   "orjson",
+  "wordllama",
   "pypdf_table_extraction",
   "textract-py3==2.0.1",
 ]
