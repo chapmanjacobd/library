@@ -988,13 +988,12 @@ def cluster_sort(parent_parser):
     parser.add_argument("--clusters", "--n-clusters", type=int, help="Number of KMeans clusters")
     parser.add_argument(
         "--wordllama",
+        metavar="KEY=VALUE",
         action=argparse_utils.ArgparseDict,
-        default=dict(config='l3_supercat', dim=64),
+        default=dict(config="l3_supercat", dim=64),
         help="Configure wordllama",
     )
-    parser.add_argument(
-        "--tfidf", action="store_true", help="Use TF-IDF+kmeans instead of wordllama"
-    )
+    parser.add_argument("--tfidf", action="store_true", help="Use TF-IDF+kmeans instead of wordllama")
 
     parser.add_argument("--print-groups", "--groups", "-g", action="store_true", help="Print groups")
     parser.add_argument("--move-groups", "-M", action="store_true", help="Move groups into subfolders")
@@ -1319,7 +1318,6 @@ def download(parent_parser):
     parser = parent_parser.add_argument_group("Download")
     parser.add_argument(
         "--extractor-config",
-        nargs=1,
         action=argparse_utils.ArgparseDict,
         default={},
         metavar="KEY=VALUE",
@@ -1536,7 +1534,6 @@ def filter_links(parent_parser):
     parser.add_argument(
         "--url-renames",
         "--url-replaces",
-        nargs=1,
         action=argparse_utils.ArgparseDict,
         default={},
         metavar="KEY=VALUE",

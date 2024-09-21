@@ -1,4 +1,4 @@
-import functools, json, multiprocessing, os, shlex, signal, subprocess, sys
+import functools, importlib, json, multiprocessing, os, shlex, signal, subprocess, sys
 from contextlib import suppress
 from typing import NoReturn
 
@@ -187,6 +187,37 @@ def Pclose(process) -> subprocess.CompletedProcess:  # noqa: N802
         raise
     return_code = process.poll()
     return subprocess.CompletedProcess(process.args, return_code, stdout, stderr)
+
+
+def load_or_install_modules(module_list):
+    for modules in module_list:
+        loaded = False
+        for module_name in modules:
+            try:
+                importlib.import_module(module_name)
+            except ImportError:
+                pass
+            else:
+                loaded = True
+                break
+
+        if not loaded:
+            for module_name in modules:
+                try:
+                    subprocess.check_call([sys.executable, "-m", "pip", "install", module_name])
+                except subprocess.CalledProcessError:
+                    pass
+                else:
+                    try:
+                        importlib.import_module(module_name)
+                    except ImportError:
+                        pass
+                    else:
+                        loaded = True
+                        break
+
+        if not loaded:
+            print(f"None of the python packages {modules} could be imported or installed")
 
 
 class UnplayableFile(RuntimeError):

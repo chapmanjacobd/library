@@ -1,9 +1,6 @@
 import json
 
-import pytest
-
 from xklb.__main__ import library as lb
-from xklb.utils import consts
 
 
 def test_lb_cs_lines(mock_stdin, capsys):
@@ -29,6 +26,7 @@ yellow
 """
     )
 
+
 def test_lb_cs_wordllama_groups(mock_stdin, capsys):
     with mock_stdin(
         """red apple
@@ -44,6 +42,7 @@ red apple"""
         {"common_path": "*apple*red", "grouped_paths": ["orange apple", "red apple", "red apple"]},
         {"common_path": "*", "grouped_paths": ["broccoli", "green", "yellow"]},
     ]
+
 
 def test_lb_cs_tfidf_groups(mock_stdin, capsys):
     with mock_stdin(
