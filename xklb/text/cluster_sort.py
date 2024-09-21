@@ -102,7 +102,14 @@ def find_clusters(args, sentence_strings):
     if args.verbose >= consts.LOG_INFO:
         sentence_strings = log_utils.gen_logging('sentence_strings', sentence_strings)
 
-    if args.tfidf:
+    use_sklearn = args.tfidf
+    if not use_sklearn:
+        try:
+            from wordllama import WordLlama
+        except ModuleNotFoundError:
+            use_sklearn = True
+
+    if use_sklearn:
         from sklearn.cluster import KMeans
         from sklearn.feature_extraction.text import TfidfVectorizer
 
