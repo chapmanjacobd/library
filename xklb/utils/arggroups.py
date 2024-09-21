@@ -988,10 +988,12 @@ def cluster_sort(parent_parser):
     parser.add_argument("--clusters", "--n-clusters", type=int, help="Number of KMeans clusters")
     parser.add_argument(
         "--wordllama",
-        nargs="?",
         action=argparse_utils.ArgparseDict,
-        const="config=l3_supercat dim=64",
-        help="Use wordllama instead of TF-IDF",
+        default=dict(config='l3_supercat', dim=64),
+        help="Configure wordllama",
+    )
+    parser.add_argument(
+        "--tfidf", action="store_true", help="Use TF-IDF+kmeans instead of wordllama"
     )
 
     parser.add_argument("--print-groups", "--groups", "-g", action="store_true", help="Print groups")

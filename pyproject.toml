@@ -48,6 +48,7 @@ deluxe = [
   "scikit-learn",
   "selenium-wire",
   "subliminal",
+  "wordllama>=0.2.7.post0",
   "xattr",
 ]
 fat = [
@@ -55,7 +56,6 @@ fat = [
   "ghostscript",
   "opencv-python",
   "orjson",
-  "wordllama",
   "pypdf_table_extraction",
   "textract-py3==2.0.1",
 ]
