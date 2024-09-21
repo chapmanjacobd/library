@@ -109,6 +109,27 @@ def find_clusters(args, sentence_strings):
         except ModuleNotFoundError:
             use_sklearn = True
 
+    if not use_sklearn:
+        from wordllama import WordLlama
+
+        wl = WordLlama.load(**args.wordllama)
+
+        sentence_strings = list(sentence_strings)
+        try:
+            clusters, loss = wl.cluster(
+                sentence_strings,
+                k=args.clusters or int(len(sentence_strings) ** 0.5),
+                n_init=10,
+                max_iterations=300,
+                tolerance=1e-4,
+                random_state=0 if consts.PYTEST_RUNNING else None,
+            )
+        except AttributeError:  # best_labels.tolist when best_labels is None
+            use_sklearn = True
+        else:
+            log.info("final loss (inertia): %s", loss)
+            return clusters
+
     if use_sklearn:
         from sklearn.cluster import KMeans
         from sklearn.feature_extraction.text import TfidfVectorizer
@@ -135,23 +156,14 @@ def find_clusters(args, sentence_strings):
                     vectorizer = TfidfVectorizer(analyzer="char_wb")
                     X = vectorizer.fit_transform(sentence_strings)
 
-        clusterizer = KMeans(n_clusters=args.clusters or int(X.shape[0] ** 0.5), random_state=0, n_init=10).fit(X)
-        clusters = clusterizer.labels_
-        return clusters
-    else:
-        from wordllama import WordLlama
-
-        wl = WordLlama.load(**args.wordllama)
-
-        sentence_strings = list(sentence_strings)
-        clusters, loss = wl.cluster(
-            sentence_strings,
-            k=args.clusters or int(len(sentence_strings) ** 0.5),
-            max_iterations=300,
-            tolerance=1e-4,
+        clusterizer = KMeans(
+            n_clusters=args.clusters or int(X.shape[0] ** 0.5),
+            n_init=10,
+            max_iter=300,
+            tol=1e-4,
             random_state=0 if consts.PYTEST_RUNNING else None,
-        )
-        log.info("final loss (inertia): %s", loss)
+        ).fit(X)
+        clusters = clusterizer.labels_
         return clusters
 
 
