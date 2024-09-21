@@ -100,7 +100,10 @@ def mcp_file(args, source, destination):
 
 
 def filter_src(args, path):
-    stat = os.stat(path)
+    try:
+        stat = os.stat(path)
+    except FileNotFoundError:
+        return False
     if args.sizes and not args.sizes(stat.st_size):
         return False
     if args.timeout_size:
