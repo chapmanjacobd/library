@@ -13,6 +13,7 @@ from xklb.utils import (
     nums,
     objects,
     path_utils,
+    log_utils,
     printing,
     strings,
 )
@@ -98,7 +99,39 @@ def map_and_name(paths, clusters):
 
 
 def find_clusters(args, sentence_strings):
-    if args.wordllama:
+    if args.verbose >= consts.LOG_INFO:
+        sentence_strings = log_utils.gen_logging('sentence_strings', sentence_strings)
+
+    if args.tfidf:
+        from sklearn.cluster import KMeans
+        from sklearn.feature_extraction.text import TfidfVectorizer
+
+        if args.stop_words is None:
+            from xklb.data import wordbank
+
+            stop_words = wordbank.stop_words
+        else:
+            stop_words = set(args.stop_words)
+
+        try:
+            vectorizer = TfidfVectorizer(min_df=2, strip_accents="unicode", stop_words=stop_words)  # type: ignore
+            X = vectorizer.fit_transform(sentence_strings)
+        except ValueError:
+            try:
+                vectorizer = TfidfVectorizer(strip_accents="unicode", stop_words=stop_words)  # type: ignore
+                X = vectorizer.fit_transform(sentence_strings)
+            except ValueError:
+                try:
+                    vectorizer = TfidfVectorizer()
+                    X = vectorizer.fit_transform(sentence_strings)
+                except ValueError:
+                    vectorizer = TfidfVectorizer(analyzer="char_wb")
+                    X = vectorizer.fit_transform(sentence_strings)
+
+        clusterizer = KMeans(n_clusters=args.clusters or int(X.shape[0] ** 0.5), random_state=0, n_init=10).fit(X)
+        clusters = clusterizer.labels_
+        return clusters
+    else:
         from wordllama import WordLlama
 
         wl = WordLlama.load(**args.wordllama)
@@ -107,40 +140,13 @@ def find_clusters(args, sentence_strings):
         clusters, loss = wl.cluster(
             sentence_strings,
             k=args.clusters or int(len(sentence_strings) ** 0.5),
-            max_iterations=10,
+            max_iterations=300,
             tolerance=1e-4,
+            random_state=0 if consts.PYTEST_RUNNING else None
         )
         log.info("final loss (inertia): %s", loss)
         return clusters
 
-    from sklearn.cluster import KMeans
-    from sklearn.feature_extraction.text import TfidfVectorizer
-
-    if args.stop_words is None:
-        from xklb.data import wordbank
-
-        stop_words = wordbank.stop_words
-    else:
-        stop_words = set(args.stop_words)
-
-    try:
-        vectorizer = TfidfVectorizer(min_df=2, strip_accents="unicode", stop_words=stop_words)  # type: ignore
-        X = vectorizer.fit_transform(sentence_strings)
-    except ValueError:
-        try:
-            vectorizer = TfidfVectorizer(strip_accents="unicode", stop_words=stop_words)  # type: ignore
-            X = vectorizer.fit_transform(sentence_strings)
-        except ValueError:
-            try:
-                vectorizer = TfidfVectorizer()
-                X = vectorizer.fit_transform(sentence_strings)
-            except ValueError:
-                vectorizer = TfidfVectorizer(analyzer="char_wb")
-                X = vectorizer.fit_transform(sentence_strings)
-
-    clusterizer = KMeans(n_clusters=args.clusters or int(X.shape[0] ** 0.5), random_state=0, n_init=10).fit(X)
-    clusters = clusterizer.labels_
-    return clusters
 
 
 def cluster_paths(args, paths):
