@@ -10,10 +10,10 @@ from xklb.utils import (
     db_utils,
     file_utils,
     iterables,
+    log_utils,
     nums,
     objects,
     path_utils,
-    log_utils,
     printing,
     strings,
 )
@@ -100,7 +100,7 @@ def map_and_name(paths, clusters):
 
 def find_clusters(args, sentence_strings):
     if args.verbose >= consts.LOG_INFO:
-        sentence_strings = log_utils.gen_logging('sentence_strings', sentence_strings)
+        sentence_strings = log_utils.gen_logging("sentence_strings", sentence_strings)
 
     use_sklearn = args.tfidf
     if not use_sklearn:
@@ -149,11 +149,10 @@ def find_clusters(args, sentence_strings):
             k=args.clusters or int(len(sentence_strings) ** 0.5),
             max_iterations=300,
             tolerance=1e-4,
-            random_state=0 if consts.PYTEST_RUNNING else None
+            random_state=0 if consts.PYTEST_RUNNING else None,
         )
         log.info("final loss (inertia): %s", loss)
         return clusters
-
 
 
 def cluster_paths(args, paths):
