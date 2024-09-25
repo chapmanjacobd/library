@@ -1165,8 +1165,6 @@ def file_over_file(value):
 
 def clobber(parent_parser):
     parser = parent_parser.add_argument_group("Replace Files")
-    parser.add_argument("--bsd", "--rsync", action="store_true", help="BSD trailing slash behavior")
-    parser.add_argument("--parent", action="store_true", help="Include parent (dirname) when merging")
     parser.add_argument(
         "--file-over-file",
         type=file_over_file,
@@ -1240,6 +1238,8 @@ Choose ONE of the following options:
   delete-dest  will delete the existing file
   merge        will move the existing file to en.wikipedia.org/wiki/wiki""",
     )
+    parser.add_argument("--bsd", "--rsync", action="store_true", help="BSD/rsync trailing slash behavior")
+    parser.add_argument("--parent", action="store_true", help="Include parent (dirname) when merging")
 
 
 def process_ffmpeg(parent_parser):

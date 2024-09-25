@@ -99,8 +99,10 @@ def map_and_name(paths, clusters):
 
 
 def find_clusters(args, sentence_strings):
-    if args.verbose >= consts.LOG_INFO:
+    if args.verbose >= consts.LOG_DEBUG:
         sentence_strings = log_utils.gen_logging("sentence_strings", sentence_strings)
+
+    sentence_strings = list(sentence_strings)
 
     use_sklearn = args.tfidf
     if not use_sklearn:
@@ -110,29 +112,32 @@ def find_clusters(args, sentence_strings):
             use_sklearn = True
 
     if not use_sklearn:
+        import numpy as np
         from wordllama import WordLlama
 
         wl = WordLlama.load(**args.wordllama)
 
-        sentence_strings = list(sentence_strings)
         try:
+            min_iter = 3 * (args.wordllama['dim'] // 64)
             clusters, loss = wl.cluster(
                 sentence_strings,
                 k=args.clusters or int(len(sentence_strings) ** 0.5),
-                n_init=10,
-                max_iterations=300,
-                tolerance=1e-4,
-                random_state=0 if consts.PYTEST_RUNNING else None,
+                n_init=min_iter,
+                min_iterations=min_iter,
+                max_iterations=min_iter * 2,
+                tolerance=1e-3,
+                random_state=np.random.RandomState(0) if consts.PYTEST_RUNNING else None,
             )
         except AttributeError:  # best_labels.tolist when best_labels is None
             use_sklearn = True
         else:
-            log.info("final loss (inertia): %s", loss)
+            log.info("final inertia: %s", loss)
             return clusters
 
     if use_sklearn:
         from sklearn.cluster import KMeans
         from sklearn.feature_extraction.text import TfidfVectorizer
+        from sklearn.metrics import pairwise_distances_argmin_min
 
         if args.stop_words is None:
             from xklb.data import wordbank
@@ -159,11 +164,18 @@ def find_clusters(args, sentence_strings):
         clusterizer = KMeans(
             n_clusters=args.clusters or int(X.shape[0] ** 0.5),
             n_init=10,
-            max_iter=300,
-            tol=1e-4,
+            max_iter=8,
+            tol=1e-3,
             random_state=0 if consts.PYTEST_RUNNING else None,
         ).fit(X)
         clusters = clusterizer.labels_
+
+        if args.verbose >= consts.LOG_INFO:
+            closest, _ = pairwise_distances_argmin_min(clusterizer.cluster_centers_, X, metric='cosine')
+            log.info("\nCluster Centers (Representative Sentences):")
+            for i, idx in enumerate(closest):
+                log.info(f"Cluster {i+1}: {sentence_strings[idx]}")
+
         return clusters
 
 
@@ -359,7 +371,7 @@ def cluster_sort() -> None:
     lines = args.input_path.readlines()
     args.input_path.close()
 
-    lines = [s.rstrip("\n") for s in lines]
+    lines = [s.rstrip("\n") for s in lines if s.strip()]
 
     if args.profile == "lines":
         groups = cluster_paths(args, lines)

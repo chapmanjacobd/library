@@ -177,4 +177,4 @@ def merge_mv(defaults_override=None):
 
 
 def merge_cp():
-    merge_mv({"copy": True})
+    merge_mv({"copy": True, "file_over_file": "rename-dest"})
