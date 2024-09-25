@@ -212,3 +212,15 @@ def divide_sequence(arr):
     for i in range(1, len(arr)):
         result = result / arr[i]
     return result
+
+def zipkw(**kwargs):
+    keys = list(kwargs.keys())
+    values = list(kwargs.values())
+
+    # Ensure all lists are of the same length
+    lengths = [len(v) for v in values]
+    if len(set(lengths)) != 1:
+        raise ValueError("All keyword argument lists must be of the same length")
+
+    for combination in zip(*values):
+        yield dict(zip(keys, combination))
