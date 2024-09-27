@@ -104,6 +104,10 @@ def clobber(args, source, destination) -> tuple[str | None, str]:
         log.info("Destination is the same as source\t%s", destination)
         return None, destination
 
+    if getattr(args, "skip_open", False) and file_utils.is_file_open(source):
+        log.info("Source already has an open file handler\t%s", destination)
+        return None, destination
+
     orig_destination = destination
 
     if os.path.exists(destination):

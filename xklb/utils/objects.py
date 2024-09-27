@@ -203,7 +203,7 @@ def merge_dict_values_str(dict1, dict2):
     return merged_dict
 
 
-class Reversor:
+class Reverser:
     def __init__(self, obj):
         self.obj = obj
 

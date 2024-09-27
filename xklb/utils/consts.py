@@ -443,7 +443,22 @@ COMMON_ENCODINGS = [
 ]
 
 WordSortOpt = Literal[
-    "skip", "len", "count", "dup", "unique", "alpha", "natural", "natsort", "path", "locale", "signed", "os"
+    "skip",
+    "len",
+    "count",
+    "dup",
+    "unique",
+    "index",
+    "lastindex",
+    "linecount",
+    "alpha",
+    "natural",
+    "natsort",
+    "path",
+    "locale",
+    "signed",
+    "os",
+    "mcda",
 ]
 
 LineSortOpt = Literal[
@@ -470,4 +485,5 @@ LineSortOpt = Literal[
     "locale",
     "signed",
     "os",
+    "mcda",
 ]

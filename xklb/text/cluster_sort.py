@@ -118,7 +118,7 @@ def find_clusters(args, sentence_strings):
         wl = WordLlama.load(**args.wordllama)
 
         try:
-            min_iter = 3 * (args.wordllama['dim'] // 64)
+            min_iter = 3 * (args.wordllama["dim"] // 64)
             clusters, loss = wl.cluster(
                 sentence_strings,
                 k=args.clusters or int(len(sentence_strings) ** 0.5),
@@ -171,7 +171,7 @@ def find_clusters(args, sentence_strings):
         clusters = clusterizer.labels_
 
         if args.verbose >= consts.LOG_INFO:
-            closest, _ = pairwise_distances_argmin_min(clusterizer.cluster_centers_, X, metric='cosine')
+            closest, _ = pairwise_distances_argmin_min(clusterizer.cluster_centers_, X, metric="cosine")
             log.info("\nCluster Centers (Representative Sentences):")
             for i, idx in enumerate(closest):
                 log.info(f"Cluster {i+1}: {sentence_strings[idx]}")
