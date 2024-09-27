@@ -88,6 +88,14 @@ def args_post(args, parser, create_db=False):
     if getattr(args, "cols", False):
         args.cols = list(iterables.flatten([s.split(",") for s in args.cols]))
 
+    if "mcda" in args.defaults:
+        try:
+            pass
+        except ModuleNotFoundError:
+            args.mcda = False
+        else:
+            args.mcda = True
+
 
 def printing(parser):
     printing = parser.add_argument_group("Printing")
@@ -1003,8 +1011,8 @@ WORD_SORTS_OPTS = typing.get_args(consts.WordSortOpt)
 LINE_SORTS_OPTS = typing.get_args(consts.LineSortOpt)
 
 REGEXS_DEFAULT = [r"\b\w\w+\b"]
-WORD_SORTS_DEFAULT = ["-dup", "count", "-len", "-count", "alpha"]
-LINE_SORTS_DEFAULT = ["-allunique", "alpha", "alldup", "dupmode", "line"]
+WORD_SORTS_DEFAULT = ["-dup", "mcda", "count", "-len", "-lastindex", "alpha"]
+LINE_SORTS_DEFAULT = ["-allunique", "alpha", "mcda", "alldup", "dupmode", "line"]
 
 
 def regex_sort(parent_parser):
@@ -1019,18 +1027,23 @@ def regex_sort(parent_parser):
         help=f"""Specify the word sorting strategy to use within each line
 
 Choose ONE OR MORE of the following options:
-  skip     skip word sorting
-  len      length of word
-  unique   word is a unique in corpus (boolean)
-  dup      word is a duplicate in corpus (boolean)
-  count    count of word in corpus
-  alpha    python alphabetic sorting
+  skip       skip word sorting
+  len        length of word
+  unique     word is a unique in corpus (boolean)
+  dup        word is a duplicate in corpus (boolean)
+  count      count of same word in corpus
+  linecount  count of same word in line
+  index      index of word in line (first occurrence)
+  lastindex  index of word in line (last occurrence)
+  alpha      python alphabetic sorting
 
-  natural  natsort default sorting (numbers as integers)
-  signed   natsort signed numbers sorting (for negative numbers)
-  path     natsort path sorting (https://natsort.readthedocs.io/en/stable/api.html#the-ns-enum)
-  locale   natsort system locale sorting
-  os       natsort OS File Explorer sorting. To improve non-alphanumeric sorting on Mac OS X and Linux it is necessary to install pyicu (perhaps via python3-icu -- https://gitlab.pyicu.org/main/pyicu#installing-pyicu)
+  natural    natsort default sorting (numbers as integers)
+  signed     natsort signed numbers sorting (for negative numbers)
+  path       natsort path sorting (https://natsort.readthedocs.io/en/stable/api.html#the-ns-enum)
+  locale     natsort system locale sorting
+  os         natsort OS File Explorer sorting. To improve non-alphanumeric sorting on Mac OS X and Linux it is necessary to install pyicu (perhaps via python3-icu -- https://gitlab.pyicu.org/main/pyicu#installing-pyicu)
+
+  mcda       all line_sort arguments after "mcda" will be consumed by MCDA and sorted by equal-weight
 
 (default: {', '.join(WORD_SORTS_DEFAULT)})""",
     )
@@ -1063,9 +1076,12 @@ Choose ONE OR MORE of the following options:
   natural  natsort default sorting (numbers as integers)
   ...      the other natsort options specified in --word-sort are also allowed
 
+  mcda       all line_sort arguments after "mcda" will be consumed by MCDA and sorted by equal-weight
+
 (default: {', '.join(LINE_SORTS_DEFAULT)})""",
     )
     parser.add_argument("--compat", action="store_true", help="Use natsort compat mode. Treats characters like ⑦ as 7")
+    # parser.add_argument("--mcda", action=argparse.BooleanOptionalAction, help="Use MCDA for multi-sort")
 
 
 def regex_sort_post(args):
@@ -1237,6 +1253,9 @@ Choose ONE of the following options:
   delete-src   will delete the incoming folder tree
   delete-dest  will delete the existing file
   merge        will move the existing file to en.wikipedia.org/wiki/wiki""",
+    )
+    parser.add_argument(
+        "--skip-open", action="store_true", help="Skip source files that are already open in another process"
     )
     parser.add_argument("--bsd", "--rsync", action="store_true", help="BSD/rsync trailing slash behavior")
     parser.add_argument("--parent", action="store_true", help="Include parent (dirname) when merging")

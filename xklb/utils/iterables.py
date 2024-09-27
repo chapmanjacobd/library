@@ -213,6 +213,7 @@ def divide_sequence(arr):
         result = result / arr[i]
     return result
 
+
 def zipkw(**kwargs):
     keys = list(kwargs.keys())
     values = list(kwargs.values())

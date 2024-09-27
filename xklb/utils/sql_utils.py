@@ -3,7 +3,7 @@ import re
 from xklb.utils import consts, db_utils, nums
 from xklb.utils.iterables import divide_sequence
 from xklb.utils.log_utils import log
-from xklb.utils.objects import Reversor
+from xklb.utils.objects import Reverser
 
 
 def compare_block_strings(value, media_value):
@@ -85,7 +85,7 @@ def sort_like_sql(order_bys):
             else:
                 val = d[order]
 
-            key.append(Reversor(val) if reverse else val)
+            key.append(Reverser(val) if reverse else val)
 
         return tuple(key)
 

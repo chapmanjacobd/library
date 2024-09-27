@@ -1,14 +1,16 @@
 import argparse, statistics
 from collections import Counter
+from functools import partial
 
 import natsort
 import regex as re
 from natsort import ns
 
 from xklb import usage
+from xklb.tablefiles import mcda
 from xklb.utils import arggroups, argparse_utils, consts, db_utils, iterables, printing, processes, strings
 from xklb.utils.log_utils import log
-from xklb.utils.objects import Reversor
+from xklb.utils.objects import Reverser
 
 
 def parse_args() -> argparse.Namespace:
@@ -36,8 +38,11 @@ def line_splitter(regexs: list[re.Pattern], l: str) -> list[str]:
     return words
 
 
-def word_sorter(NS_OPTS, word_sorts: list[consts.WordSortOpt], corpus_stats: Counter, l: list[str]):
-    def generate_custom_key(word):
+def word_sorter(args, NS_OPTS, word_sorts: list[consts.WordSortOpt], corpus_stats: Counter, l: list[str]):
+    if "lastindex" in word_sorts or "-lastindex" in word_sorts:
+        rl = list(reversed(l))
+
+    def gen_word_key(word_sorts, word):
         key_parts = []
         for s in word_sorts:
             reverse = False
@@ -55,6 +60,12 @@ def word_sorter(NS_OPTS, word_sorts: list[consts.WordSortOpt], corpus_stats: Cou
                 val = (corpus_stats.get(word) or 0) > 1
             elif s == "unique":
                 val = (corpus_stats.get(word) or 0) == 1
+            elif s == "index":
+                val = l.index(word)
+            elif s == "lastindex":
+                val = rl.index(word)
+            elif s == "linecount":
+                val = l.count(word)
 
             elif s in ("alpha", "python"):
                 val = word
@@ -71,23 +82,37 @@ def word_sorter(NS_OPTS, word_sorts: list[consts.WordSortOpt], corpus_stats: Cou
             else:
                 raise NotImplementedError
 
-            key_parts.append(Reversor(val) if reverse else val)
+            key_parts.append(Reverser(val) if reverse else val)
+
+        log.debug("word_sorter xs: %s", key_parts)
         return tuple(key_parts)
 
-    # return list(zip(*[generate_custom_key(xs) for xs in l]))
+    try:
+        split_index = word_sorts.index("mcda")
+    except ValueError:
+        words = sorted(l, key=partial(gen_word_key, word_sorts))
+    else:
+        # Split the list into two parts
+        before_mcda = word_sorts[:split_index]
+        after_mcda = word_sorts[split_index + 1 :]  # remove "mcda" from word_sorts
 
-    for xs in l:
-        log.debug("word_sorter xs: %s", generate_custom_key(xs))
+        rank = mcda.mcda_sorted(args, keys=[gen_word_key(after_mcda, xs) for xs in l])
+        log.info("word_sorter mcda: %s", [l[i] for i in rank["original_index"]])
+        words = sorted(l, key=lambda word: gen_word_key(before_mcda, word) + (rank["original_index"][l.index(word)],))
 
-    words = sorted(l, key=generate_custom_key)
     log.debug(f"word_sorter: {words}")
     return words
 
 
 def line_sorter(
-    NS_OPTS, line_sorts: list[consts.LineSortOpt], corpus_stats: Counter, words: list[str], original_line: str
+    args,
+    NS_OPTS,
+    line_sorts: list[consts.LineSortOpt],
+    corpus_stats: Counter,
+    original_lines: list[str],
+    corpus: list[list[str]],
 ):
-    def generate_custom_key(words):
+    def gen_line_key(line_sorts, original_line, words):
         key_parts = []
         for s in line_sorts:
             reverse = False
@@ -149,10 +174,38 @@ def line_sorter(
             else:
                 raise NotImplementedError
 
-            key_parts.append(Reversor(val) if reverse else val)
+            key_parts.append(Reverser(val) if reverse else val)
         return tuple(key_parts)
 
-    return generate_custom_key(words)
+    try:
+        split_index = line_sorts.index("mcda")
+    except ValueError:
+        before_mcda = line_sorts
+        after_mcda = []
+    else:
+        before_mcda = line_sorts[:split_index]
+        after_mcda = line_sorts[split_index + 1 :]  # remove "mcda" from line_sorts
+
+    mcda_index = None
+    if after_mcda:
+        keys = [
+            gen_line_key(after_mcda, original_line, words)
+            for words, original_line in zip(corpus, original_lines, strict=True)
+        ]
+        rank = mcda.mcda_sorted(args, keys)
+        mcda_index = rank["original_index"]
+
+    line_sort_keys: list[tuple[tuple, str]] = []
+    for line_idx, (words, original_line) in enumerate(zip(corpus, original_lines, strict=True)):
+        line_sort_key = gen_line_key(before_mcda, original_line, words)
+        if mcda_index is not None:
+            line_sort_key += (mcda_index[line_idx],)
+        log.info(repr(line_sort_key) + "\t" + repr(words))
+        line_sort_keys.append((line_sort_key, original_line))
+
+    sorted_z = sorted(line_sort_keys, key=lambda y: y[0])
+    lines = [x[1] for x in sorted_z]
+    return lines
 
 
 def prepare_corpus(corpus):
@@ -202,6 +255,9 @@ def text_processor(args, lines):
 
     corpus = []
     for l in lines:
+        l = l.replace("http://", "", 1)
+        l = l.replace("https://", "", 1)
+
         words = line_splitter(args.regexs, l)
         log.debug(f"line_splitter:    {words}")
 
@@ -236,18 +292,10 @@ def text_processor(args, lines):
     log.info(f"              {avg_dup_count_per_word=:.2f} {avg_dup_count_per_line=:.2f}")
     log.info(f"              {avg_unique_count_per_word=:.2f} {avg_unique_count_per_line=:.2f}")
 
-    corpus = [word_sorter(NS_OPTS, args.word_sorts, corpus_stats, l) for l in corpus]
+    corpus = [word_sorter(args, NS_OPTS, args.word_sorts, corpus_stats, l) for l in corpus]
 
     # get original lines but sorted
-    line_sort_key = (
-        line_sorter(NS_OPTS, args.line_sorts, corpus_stats, words, line)
-        for line, words in zip(lines, corpus, strict=True)
-    )
-    sorted_z = sorted(zip(lines, corpus, line_sort_key, strict=True), key=lambda y: y[2])
-    if args.verbose >= consts.LOG_INFO:
-        log.info([repr(x[2]) + "\t" + repr(x[1]) + "  # " + x[0] for x in sorted_z])
-
-    lines = [x[0] for x in sorted_z]
+    lines = line_sorter(args, NS_OPTS, args.line_sorts, corpus_stats, lines, corpus)
     return lines
 
 

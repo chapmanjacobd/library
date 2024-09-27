@@ -91,16 +91,16 @@ def borda(df, weights):
     return borda_points
 
 
-def auto_mcda(args, df, alternatives, minimize_cols):
+def auto_mcda(args, alternatives, minimize_cols, df=None):
     import numpy as np
     import pandas as pd
     from pymcdm import weights as w
-    from pymcdm.methods import MABAC, SPOTIS, TOPSIS
+    from pymcdm.methods import MABAC, TOPSIS
 
     goal_directions = np.array([-1 if col in minimize_cols else 1 for col in alternatives.columns])
     alternatives_np = alternatives.fillna(getattr(args, "nodata", None) or 0).to_numpy()
-    methods = [TOPSIS(), MABAC(), SPOTIS(SPOTIS.make_bounds(alternatives_np))]
-    method_names = ["TOPSIS", "MABAC", "SPOTIS"]
+    methods = [TOPSIS(), MABAC()]
+    method_names = ["TOPSIS", "MABAC"]
     votes = []
     for method in methods:
         # TODO: --weights flag to override
@@ -109,60 +109,20 @@ def auto_mcda(args, df, alternatives, minimize_cols):
         votes.append(pref)
     votes_df = pd.DataFrame(zip(*votes, strict=False), columns=method_names)
     borda_points = borda(votes_df, weights=[1] * len(votes))
-    borda_df = pd.DataFrame({"BORDA": borda_points}, index=df.index)
+    borda_df = pd.DataFrame({"BORDA": borda_points}, index=votes_df.index)
 
     # TODO: PCA option and warning if a criterion accounts for less than 3% of variance
 
-    df = pd.concat((df, votes_df, borda_df), axis=1)
+    dfs = []
+    if df:
+        dfs.append(df)
+    dfs.extend((votes_df, borda_df))
+    df = pd.concat(dfs, axis=1)
+    df["original_index"] = df.index
     df = df.sort_values(getattr(args, "mcda_method", None) or "TOPSIS", ascending=False)
+    df = df.reset_index(drop=True)
+    df["sorted_index"] = df.index
     return df
-
-
-def sort(args, df, values):
-    columns = []
-    if isinstance(values, str):
-        columns.extend(values.split(","))
-    else:
-        columns.extend(iterables.flatten(s.split(",") for s in values))
-
-    if columns:
-        included_columns = [s.lstrip("-") for s in columns]
-        alternatives = df[included_columns]
-    else:
-        alternatives = df.select_dtypes("number")
-
-    df = auto_mcda(args, df, alternatives, minimize_cols={s.lstrip("-") for s in columns if s.startswith("-")})
-    return df
-
-
-def group_sort_by(args, folders):
-    if args.sort_groups_by is None:
-
-        def sort_func(x):
-            return (0, -x["size"] / x["exists"]) if x["exists"] else (1, -x["size"] / x["total"])
-
-    elif args.sort_groups_by.startswith("mcda "):
-        import pandas as pd
-
-        if not isinstance(folders, pd.DataFrame):
-            folders = pd.DataFrame(folders)
-        values = args.sort_groups_by.replace("mcda ", "", 1)
-        df = sort(args, folders, values)
-        return df.drop(columns=["TOPSIS", "MABAC", "SPOTIS", "BORDA"]).to_dict(orient="records")
-    elif args.sort_groups_by == "played_ratio":
-
-        def sort_func(x):
-            return (0, x["played"] / x["deleted"]) if x["deleted"] else (1, x["played"] / x["total"])
-
-    elif args.sort_groups_by == "deleted_ratio":
-
-        def sort_func(x):
-            return (0, x["deleted"] / x["played"]) if x["played"] else (1, x["deleted"] / x["total"])
-
-    else:
-        sort_func = sql_utils.sort_like_sql(args.sort_groups_by)  # type: ignore
-
-    return sorted(folders, key=sort_func)
 
 
 def print_info(args, df):
@@ -231,7 +191,7 @@ def print_info(args, df):
     comet = COMET(cvalues, expert_function)
     """
 
-    data = auto_mcda(args, df, alternatives, minimize_cols)
+    data = auto_mcda(args, alternatives, minimize_cols, df=df)
     print_df(data)
 
 
@@ -264,6 +224,66 @@ def mcda():
     web.requests_session(args)  # configure session
     for path in args.paths:
         file_mcda(args, path)
+
+
+def mcda_sorted(args, keys: list[tuple]):
+    import pandas as pd
+
+    def get_ranks(series):
+        return series.rank(method="dense").astype(int)
+
+    # log.debug("mcda_sorted key: %s", keys)
+    alternatives = pd.DataFrame(keys).apply(get_ranks)
+
+    df = auto_mcda(args, alternatives, minimize_cols=alternatives.columns)
+    return df
+
+
+def sort(args, df, values):
+    columns = []
+    if isinstance(values, str):
+        columns.extend(values.split(","))
+    else:
+        columns.extend(iterables.flatten(s.split(",") for s in values))
+
+    if columns:
+        included_columns = [s.lstrip("-") for s in columns]
+        alternatives = df[included_columns]
+    else:
+        alternatives = df.select_dtypes("number")
+
+    df = auto_mcda(args, alternatives, minimize_cols={s.lstrip("-") for s in columns if s.startswith("-")}, df=df)
+    return df
+
+
+def group_sort_by(args, folders):
+    if args.sort_groups_by is None:
+
+        def sort_func(x):
+            return (0, -x["size"] / x["exists"]) if x["exists"] else (1, -x["size"] / x["total"])
+
+    elif args.sort_groups_by.startswith("mcda "):
+        import pandas as pd
+
+        if not isinstance(folders, pd.DataFrame):
+            folders = pd.DataFrame(folders)
+        values = args.sort_groups_by.replace("mcda ", "", 1)
+        df = sort(args, folders, values)
+        return df.drop(columns=["TOPSIS", "MABAC", "SPOTIS", "BORDA"]).to_dict(orient="records")
+    elif args.sort_groups_by == "played_ratio":
+
+        def sort_func(x):
+            return (0, x["played"] / x["deleted"]) if x["deleted"] else (1, x["played"] / x["total"])
+
+    elif args.sort_groups_by == "deleted_ratio":
+
+        def sort_func(x):
+            return (0, x["deleted"] / x["played"]) if x["played"] else (1, x["deleted"] / x["total"])
+
+    else:
+        sort_func = sql_utils.sort_like_sql(args.sort_groups_by)  # type: ignore
+
+    return sorted(folders, key=sort_func)
 
 
 if __name__ == "__main__":
