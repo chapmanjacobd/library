@@ -1754,7 +1754,7 @@ pause = """library pause
 next = """library next
 
     Go to the next track in the playqueue, optionally delete the currently playing media
-"""
+"""  # noqa: A001
 
 seek = """library seek
 
