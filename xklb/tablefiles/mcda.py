@@ -114,7 +114,7 @@ def auto_mcda(args, alternatives, minimize_cols, df=None):
     # TODO: PCA option and warning if a criterion accounts for less than 3% of variance
 
     dfs = []
-    if df:
+    if df is not None:
         dfs.append(df)
     dfs.extend((votes_df, borda_df))
     df = pd.concat(dfs, axis=1)
@@ -253,6 +253,7 @@ def sort(args, df, values):
         alternatives = df.select_dtypes("number")
 
     df = auto_mcda(args, alternatives, minimize_cols={s.lstrip("-") for s in columns if s.startswith("-")}, df=df)
+    df = df.drop(columns=["original_index", "sorted_index"])
     return df
 
 
@@ -269,7 +270,7 @@ def group_sort_by(args, folders):
             folders = pd.DataFrame(folders)
         values = args.sort_groups_by.replace("mcda ", "", 1)
         df = sort(args, folders, values)
-        return df.drop(columns=["TOPSIS", "MABAC", "SPOTIS", "BORDA"]).to_dict(orient="records")
+        return df.drop(columns=["TOPSIS", "MABAC", "BORDA"]).to_dict(orient="records")
     elif args.sort_groups_by == "played_ratio":
 
         def sort_func(x):
