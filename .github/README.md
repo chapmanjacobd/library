@@ -99,7 +99,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v2.9.058; 87 subcommands)
+    library (v2.9.059; 86 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -311,11 +311,6 @@ To stop playing press Ctrl+C in either the terminal or mpv
     ├────────────────┼─────────────────────────────────────────┤
     │ dedupe-czkawka │ Process czkawka diff output             │
     ╰────────────────┴─────────────────────────────────────────╯
-
-    Other subcommands:
-    ╭─────────┬─────────╮
-    │ lb-next │ lb_next │
-    ╰─────────┴─────────╯
 
 
 </details>
@@ -2552,6 +2547,18 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 </details>
 
+###### next
+
+<details><summary>Play next file and optionally delete current file</summary>
+
+    $ library next -h
+    usage: library next
+
+    Go to the next track in the playqueue, optionally delete the currently playing media
+
+
+</details>
+
 ###### seek
 
 <details><summary>Set playback to a certain time, fast-forward or rewind</summary>
@@ -2982,20 +2989,6 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
                czkawka_dupes_output_path
 
     Choose which duplicate to keep by opening both side-by-side in mpv
-
-
-</details>
-
-### Other subcommands
-
-###### lb-next
-
-<details><summary>lb_next</summary>
-
-    $ library lb-next -h
-    usage: library next
-
-    Go to the next track in the playqueue, optionally delete the currently playing media
 
 
 </details>
