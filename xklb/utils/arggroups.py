@@ -88,14 +88,6 @@ def args_post(args, parser, create_db=False):
     if getattr(args, "cols", False):
         args.cols = list(iterables.flatten([s.split(",") for s in args.cols]))
 
-    if "mcda" in args.defaults:
-        try:
-            pass
-        except ModuleNotFoundError:
-            args.mcda = False
-        else:
-            args.mcda = True
-
 
 def printing(parser):
     printing = parser.add_argument_group("Printing")
@@ -1013,6 +1005,12 @@ LINE_SORTS_OPTS = typing.get_args(consts.LineSortOpt)
 REGEXS_DEFAULT = [r"\b\w\w+\b"]
 WORD_SORTS_DEFAULT = ["-dup", "mcda", "count", "-len", "-lastindex", "alpha"]
 LINE_SORTS_DEFAULT = ["-allunique", "alpha", "mcda", "alldup", "dupmode", "line"]
+
+try:
+    import pandas as pd  # noqa
+except ModuleNotFoundError:
+    WORD_SORTS_DEFAULT.remove("mcda")
+    LINE_SORTS_DEFAULT.remove("mcda")
 
 
 def regex_sort(parent_parser):
