@@ -94,29 +94,39 @@ def borda(df, weights):
 def auto_mcda(args, alternatives, minimize_cols, df=None):
     import numpy as np
     import pandas as pd
-    from pymcdm import weights as w
-    from pymcdm.methods import MABAC, TOPSIS
 
-    goal_directions = np.array([-1 if col in minimize_cols else 1 for col in alternatives.columns])
-    alternatives_np = alternatives.fillna(getattr(args, "nodata", None) or 0).to_numpy()
-    methods = [TOPSIS(), MABAC()]
-    method_names = ["TOPSIS", "MABAC"]
-    votes = []
-    for method in methods:
-        # TODO: --weights flag to override
+    if len(alternatives) > 1:
+        from pymcdm import weights as w
+        from pymcdm.methods import MABAC, TOPSIS
+
+        goal_directions = np.array([-1 if col in minimize_cols else 1 for col in alternatives.columns])
+        alternatives_np = alternatives.fillna(getattr(args, "nodata", None) or 0).to_numpy()
         weights = w.entropy_weights(alternatives_np)
-        pref = method(alternatives_np, weights, goal_directions)
-        votes.append(pref)
-    votes_df = pd.DataFrame(zip(*votes, strict=False), columns=method_names)
-    borda_points = borda(votes_df, weights=[1] * len(votes))
-    borda_df = pd.DataFrame({"BORDA": borda_points}, index=votes_df.index)
 
-    # TODO: PCA option and warning if a criterion accounts for less than 3% of variance
+        methods = [TOPSIS(), MABAC()]
+        method_names = ["TOPSIS", "MABAC"]
+        votes = []
+        for method in methods:
+            # TODO: --weights flag to override
+            pref = method(alternatives_np, weights, goal_directions)
+            votes.append(pref)
+        votes_df = pd.DataFrame(zip(*votes, strict=False), columns=method_names)
+        borda_points = borda(votes_df, weights=[1] * len(votes))
+        borda_df = pd.DataFrame({"BORDA": borda_points}, index=votes_df.index)
+        votes_df = pd.concat((votes_df, borda_df), axis=1)
+
+        # TODO: PCA option and warning if a criterion accounts for less than 3% of variance
+    else:
+        votes_df = pd.DataFrame({
+            "TOPSIS": [0.5],
+            "MABAC": [0.5],
+            "BORDA": [0.5]
+        })
 
     dfs = []
     if df is not None:
         dfs.append(df)
-    dfs.extend((votes_df, borda_df))
+    dfs.extend((votes_df,))
     df = pd.concat(dfs, axis=1)
     df["original_index"] = df.index
     df = df.sort_values(getattr(args, "mcda_method", None) or "TOPSIS", ascending=False)
