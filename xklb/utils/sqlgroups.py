@@ -171,7 +171,7 @@ def construct_tabs_query(args) -> tuple[str, dict]:
     m_columns = db_utils.columns(args, "media")
     args.table, m_columns = sql_utils.search_filter(args, m_columns)
 
-    query = f"""WITH m as (
+    query = f"""WITH media_history as (
             SELECT
                 path
                 , frequency
@@ -185,22 +185,46 @@ def construct_tabs_query(args) -> tuple[str, dict]:
             WHERE 1=1
                 {" ".join(args.filter_sql)}
             GROUP BY m.id
+        ), time_valid_tabs as (
+            SELECT
+                CASE
+                    WHEN frequency = 'daily' THEN cast(STRFTIME('%s', datetime( time_last_played, 'unixepoch', '+1 Day', '-5 minutes' )) as int)
+                    WHEN frequency = 'weekly' THEN cast(STRFTIME('%s', datetime( time_last_played, 'unixepoch', '+7 Days', '-5 minutes' )) as int)
+                    WHEN frequency = 'monthly' THEN cast(STRFTIME('%s', datetime( time_last_played, 'unixepoch', '+1 Month', '-5 minutes' )) as int)
+                    WHEN frequency = 'quarterly' THEN cast(STRFTIME('%s', datetime( time_last_played, 'unixepoch', '+3 Months', '-5 minutes' )) as int)
+                    WHEN frequency = 'yearly' THEN cast(STRFTIME('%s', datetime( time_last_played, 'unixepoch', '+1 Year', '-5 minutes' )) as int)
+                END time_valid
+                , m.*
+                {', ' + ', '.join(args.cols) if args.cols else ''}
+            FROM media_history m
+            WHERE 1=1
+                {" ".join(args.aggregate_filter_sql)}
+                {f"and time_valid < {consts.today_stamp()}" if not args.print else ''}
         )
-        SELECT path
+    SELECT
+        path
         , frequency
         {", time_last_played" if args.print else ''}
-        , CASE
-            WHEN frequency = 'daily' THEN cast(STRFTIME('%s', datetime( time_last_played, 'unixepoch', '+1 Day', '-5 minutes' )) as int)
-            WHEN frequency = 'weekly' THEN cast(STRFTIME('%s', datetime( time_last_played, 'unixepoch', '+7 Days', '-5 minutes' )) as int)
-            WHEN frequency = 'monthly' THEN cast(STRFTIME('%s', datetime( time_last_played, 'unixepoch', '+1 Month', '-5 minutes' )) as int)
-            WHEN frequency = 'quarterly' THEN cast(STRFTIME('%s', datetime( time_last_played, 'unixepoch', '+3 Months', '-5 minutes' )) as int)
-            WHEN frequency = 'yearly' THEN cast(STRFTIME('%s', datetime( time_last_played, 'unixepoch', '+1 Year', '-5 minutes' )) as int)
-        END time_valid
+        , time_valid
         {', ' + ', '.join(args.cols) if args.cols else ''}
-    FROM m
+    FROM (
+        SELECT ROW_NUMBER() OVER (
+                PARTITION BY hostname
+                ORDER BY 1=1
+                    {', ' + args.sort if args.sort not in args.defaults else ''}
+                    {', time_last_played, time_valid, path' if args.print else ''}
+                    , play_count
+                    , frequency = 'daily' desc
+                    , frequency = 'weekly' desc
+                    , frequency = 'monthly' desc
+                    , frequency = 'quarterly' desc
+                    , frequency = 'yearly' desc
+            ) hostname_rank
+            , m.*
+        FROM time_valid_tabs m
+        ) m
     WHERE 1=1
-        {" ".join(args.aggregate_filter_sql)}
-        {f"and time_valid < {consts.today_stamp()}" if not args.print else ''}
+        {'and hostname_rank <= ' + str(args.max_same_domain) if args.max_same_domain else ''}
     ORDER BY 1=1
         {', ' + args.sort if args.sort not in args.defaults else ''}
         {', time_last_played, time_valid, path' if args.print else ''}
