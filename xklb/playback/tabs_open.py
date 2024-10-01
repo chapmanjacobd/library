@@ -13,9 +13,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse_utils.ArgumentParser(usage=usage.tabs_open)
 
     arggroups.sql_fs(parser)
-    parser.add_argument(
-        "--max-same-domain", type=int, help="Limit to N tabs per domain"
-    )
+    parser.add_argument("--max-same-domain", type=int, help="Limit to N tabs per domain")
     arggroups.debug(parser)
 
     arggroups.database(parser)
