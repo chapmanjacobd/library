@@ -108,9 +108,10 @@ def links_open() -> None:
 
         media = cluster_sort.sort_dicts(args, media)
 
-    if not is_whole_db_query:
-        media = media[: args.limit]
-    media = make_souffle(args, media)
+    if not "a" in args.print:
+        if is_whole_db_query:
+            media = media[: args.limit]
+        media = make_souffle(args, media)
 
     if args.print:
         media_printer.media_printer(args, media)
