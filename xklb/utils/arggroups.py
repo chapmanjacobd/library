@@ -1006,6 +1006,7 @@ REGEXS_DEFAULT = [r"\b\w\w+\b"]
 WORD_SORTS_DEFAULT = ["-dup", "count", "-len", "-lastindex", "alpha"]
 LINE_SORTS_DEFAULT = ["-allunique", "alpha", "alldup", "dupmode", "line"]
 
+
 def regex_sort(parent_parser):
     parser = parent_parser.add_argument_group("Regex-sort")
     parser.add_argument("--regex-sort", "-rs", action="store_true", help="Sort by splitting lines and sorting words")

@@ -117,11 +117,7 @@ def auto_mcda(args, alternatives, minimize_cols, df=None):
 
         # TODO: PCA option and warning if a criterion accounts for less than 3% of variance
     else:
-        votes_df = pd.DataFrame({
-            "TOPSIS": [0.5],
-            "MABAC": [0.5],
-            "BORDA": [0.5]
-        })
+        votes_df = pd.DataFrame({"TOPSIS": [0.5], "MABAC": [0.5], "BORDA": [0.5]})
 
     dfs = []
     if df is not None:
