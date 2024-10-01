@@ -97,7 +97,7 @@ def word_sorter(args, NS_OPTS, word_sorts: list[consts.WordSortOpt], corpus_stat
         after_mcda = word_sorts[split_index + 1 :]  # remove "mcda" from word_sorts
 
         rank = mcda.mcda_sorted(args, keys=[gen_word_key(after_mcda, xs) for xs in l])
-        log.info("word_sorter mcda: %s", [l[i] for i in rank["original_index"]])
+        log.debug("word_sorter mcda: %s", [l[i] for i in rank["original_index"]])
         words = sorted(l, key=lambda word: gen_word_key(before_mcda, word) + (rank["original_index"][l.index(word)],))
 
     log.debug(f"word_sorter: {words}")
@@ -200,7 +200,7 @@ def line_sorter(
         line_sort_key = gen_line_key(before_mcda, original_line, words)
         if mcda_index is not None:
             line_sort_key += (mcda_index[line_idx],)
-        log.info(repr(line_sort_key) + "\t" + repr(words))
+        log.debug(repr(line_sort_key) + "\t" + repr(words))
         line_sort_keys.append((line_sort_key, original_line))
 
     sorted_z = sorted(line_sort_keys, key=lambda y: y[0])

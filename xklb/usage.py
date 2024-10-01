@@ -739,45 +739,9 @@ regex_sort = r"""library regex-sort [input_path | stdin] [output_path | stdout]
 
     regex-sort is effectively a text-processing pipeline with the following steps:
 
-    line_splitter -- split lines into "words"
-        --regex
-            words \b\w\w+\b
-            delimiter _
-            digits \b\d+\b
-            chunk .{3}
-        --wordllama semantic text splitting?
-
-    word_selector -- use corpus statistics to filter lines
-        --dup    (include lines with duplicate words)
-        --unique (include lines with non-duplicate words)
-
-    word_sorter -- sort words within each line
-        --word-sort
-            skip (no sort)
-            len (sort words by length)
-            natsort
-            dup    (promote duplicate words)
-            unique (promote non-duplicate words)
-
-    line_aggregator -- control how data is interpreted by the line_sorter
-        --agg
-            count (count of words in line)
-            join (join line words)
-            avg_len max_len min_len
-            avg_dup (number of unique duplicate (within corpus) words in line / total unique words in line)
-            max_dup (highest number of unique duplicate words in line)
-            max_unique (highest number of unique non-duplicate words in line)
-
-    line_sorter (combine multiple sort score criteria)
-        --line-sort
-            natsort (default)
-            sum
-            avg
-            mcda
-            tfidf
-                kmeans  (lb clustersort)
-            wordllama
-                kmeans
+    line_splitter -- split lines into "words" (--regex)
+    word_sorter -- sort words within each line (--word-sort)
+    line_sorter -- sort lines (--line-sort)
 
     Examples:
 
@@ -785,13 +749,21 @@ regex_sort = r"""library regex-sort [input_path | stdin] [output_path | stdout]
             --line-sort dup,natsort
 
         You can use any matching regex to produce sorting words:
+            --regex \b\w\w+\b  # word boundaries (default)
+            --regex \b\d+\b    # digits
+            --regex '.{3}'     # char counts
+
             --regex '.{3}' --line-sort dup,natsort -v
-        (0, ((' Ja',), ('Sva',), ('aye',), ('lba',), ('n M',), ('rd ',)))  # Svalbard and Jan Mayen
-        (0, ((' La',), ('Sri',), ('nka',)))  # Sri Lanka
-        (0, ((' Ma',), ('San',), ('rin',)))  # San Marino
-        (0, ((' Ri',), ('Pue',), ('rto',)))  # Puerto Rico
-        (0, (('And',), ('orr',)))  # Andorra
-        (0, (('Arm',), ('eni',)))  # Armenia
+            (0, ((' Ja',), ('Sva',), ('aye',), ('lba',), ('n M',), ('rd ',)))  # Svalbard and Jan Mayen
+            (0, ((' La',), ('Sri',), ('nka',)))  # Sri Lanka
+            (0, ((' Ma',), ('San',), ('rin',)))  # San Marino
+            (0, ((' Ri',), ('Pue',), ('rto',)))  # Puerto Rico
+            (0, (('And',), ('orr',)))  # Andorra
+            (0, (('Arm',), ('eni',)))  # Armenia
+
+        You can use 'mcda' as a strategy for ranking multiple sort score criteria:
+            --word-sorts '-dup, mcda, count, -len, -lastindex, alpha' \\  # count, -len, -lastindex, alpha are weighted by entropy
+            --line-sorts '-allunique, alpha, mcda, alldup, dupmode, line'  # alldup, dupmode, line are weighted by entropy
 """
 
 copy_play_counts = """library copy-play-counts SOURCE_DB ... DEST_DB [--source-prefix x] [--target-prefix y]

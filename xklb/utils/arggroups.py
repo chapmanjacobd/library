@@ -1003,15 +1003,8 @@ WORD_SORTS_OPTS = typing.get_args(consts.WordSortOpt)
 LINE_SORTS_OPTS = typing.get_args(consts.LineSortOpt)
 
 REGEXS_DEFAULT = [r"\b\w\w+\b"]
-WORD_SORTS_DEFAULT = ["-dup", "mcda", "count", "-len", "-lastindex", "alpha"]
-LINE_SORTS_DEFAULT = ["-allunique", "alpha", "mcda", "alldup", "dupmode", "line"]
-
-try:
-    import pandas as pd  # noqa
-except ModuleNotFoundError:
-    WORD_SORTS_DEFAULT.remove("mcda")
-    LINE_SORTS_DEFAULT.remove("mcda")
-
+WORD_SORTS_DEFAULT = ["-dup", "count", "-len", "-lastindex", "alpha"]
+LINE_SORTS_DEFAULT = ["-allunique", "alpha", "alldup", "dupmode", "line"]
 
 def regex_sort(parent_parser):
     parser = parent_parser.add_argument_group("Regex-sort")
