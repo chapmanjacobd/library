@@ -208,32 +208,38 @@ def construct_tabs_query(args) -> tuple[str, dict]:
         , time_valid
         {', ' + ', '.join(args.cols) if args.cols else ''}
     FROM (
-        SELECT ROW_NUMBER() OVER (
-                PARTITION BY hostname
+        SELECT
+            CASE WHEN frequency = 'daily' THEN 1
+            ELSE ROW_NUMBER() OVER (
+                PARTITION BY hostname, frequency = 'daily'
                 ORDER BY 1=1
-                    {', ' + args.sort if args.sort not in args.defaults else ''}
-                    {', time_last_played, time_valid, path' if args.print else ''}
-                    , play_count
+                    {', time_last_played desc, time_valid desc, path' if args.print else ''}
                     , frequency = 'daily' desc
                     , frequency = 'weekly' desc
                     , frequency = 'monthly' desc
                     , frequency = 'quarterly' desc
-                    , frequency = 'yearly' desc
-            ) hostname_rank
+                    , frequency = 'yearly' DESC
+                    , play_count
+                    , time_valid
+                    , time_last_played
+            )
+            END hostname_rank
             , m.*
         FROM time_valid_tabs m
         ) m
     WHERE 1=1
         {'and hostname_rank <= ' + str(args.max_same_domain) if args.max_same_domain else ''}
     ORDER BY 1=1
-        {', ' + args.sort if args.sort not in args.defaults else ''}
-        {', time_last_played, time_valid, path' if args.print else ''}
-        , play_count
+        {', time_last_played desc, time_valid desc, path' if args.print else ''}
         , frequency = 'daily' desc
         , frequency = 'weekly' desc
         , frequency = 'monthly' desc
         , frequency = 'quarterly' desc
-        , frequency = 'yearly' desc
+        , frequency = 'yearly' DESC
+        , play_count
+        , time_valid
+        , time_last_played
+        {', ' + args.sort if args.sort not in args.defaults else ''}
         , ROW_NUMBER() OVER ( PARTITION BY
             play_count
             , frequency
