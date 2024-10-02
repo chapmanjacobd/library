@@ -67,15 +67,17 @@ def tabs_open() -> None:
     if not media:
         processes.no_media_found()
 
-    m_columns = db_utils.columns(args, 'media')
-    counts = args.db.execute(f"""
+    m_columns = db_utils.columns(args, "media")
+    counts = args.db.execute(
+        f"""
         SELECT
             frequency, count(*)
         FROM media
         WHERE 1=1
             {"and COALESCE(time_deleted,0)=0" if 'time_deleted' in m_columns else ''}
         GROUP BY 1
-    """).fetchall()
+    """
+    ).fetchall()
     media = frequency_filter(counts, media)
 
     for m in media:
