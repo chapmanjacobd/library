@@ -4,7 +4,7 @@ from time import sleep
 from xklb import usage
 from xklb.mediadb import db_history
 from xklb.playback import media_printer
-from xklb.utils import arggroups, argparse_utils, consts, processes
+from xklb.utils import arggroups, argparse_utils, consts, db_utils, processes
 from xklb.utils.log_utils import log
 from xklb.utils.sqlgroups import construct_tabs_query
 
@@ -67,7 +67,15 @@ def tabs_open() -> None:
     if not media:
         processes.no_media_found()
 
-    counts = args.db.execute("select frequency, count(*) from media group by 1").fetchall()
+    m_columns = db_utils.columns(args, 'media')
+    counts = args.db.execute(f"""
+        SELECT
+            frequency, count(*)
+        FROM media
+        WHERE 1=1
+            {"and COALESCE(time_deleted,0)=0" if 'time_deleted' in m_columns else ''}
+        GROUP BY 1
+    """).fetchall()
     media = frequency_filter(counts, media)
 
     for m in media:
