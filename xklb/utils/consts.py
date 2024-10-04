@@ -9,8 +9,16 @@ def now():
     return int(datetime.now(tz=timezone.utc).timestamp())
 
 
+PYTEST_RUNNING = "pytest" in sys.modules
+
+
 def today_stamp():
-    return int(datetime.now(tz=timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
+    if PYTEST_RUNNING:
+        dt = datetime.now(tz=timezone.utc)
+    else:
+        dt = datetime.now().astimezone()
+
+    return int(dt.replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
 
 
 def random_string() -> str:
@@ -51,7 +59,6 @@ DEFAULT_PLAY_QUEUE = 120
 DEFAULT_MULTIPLE_PLAYBACK = -1
 DEFAULT_SUBTITLE_MIX = 0.35
 MANY_LINKS = 8
-PYTEST_RUNNING = "pytest" in sys.modules
 VOLKSWAGEN = "CI" in os.environ
 REGEX_ANSI_ESCAPE = re.compile(r"(?:\x1B[@-_]|[\x80-\x9F])[0-?]*[ -/]*[@-~]")
 REGEX_SUBREDDIT = re.compile("|".join([r".*reddit\.com/r/(.*?)/.*", r".*redd\.it/r/(.*?)/.*"]))

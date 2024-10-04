@@ -110,7 +110,7 @@ def external_action(args, log_action, media_file, player_exit_code, player_proce
     player_exit_code_cmd = f"cmd{player_exit_code}"
     cmd = getattr(args, player_exit_code_cmd, None)
     if cmd:
-        log_action(player_exit_code_cmd.upper())
+        log_action(player_exit_code_cmd.upper() + " " + cmd)
         if cmd in ["pass", "mark-watched"]:
             pass
         elif cmd in ["soft-delete", "mark-deleted"]:
