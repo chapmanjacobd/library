@@ -1,4 +1,4 @@
-import concurrent.futures, os, shutil
+import argparse, concurrent.futures, os, shutil
 from pathlib import Path
 
 from xklb import usage
@@ -18,7 +18,7 @@ from xklb.utils import (
 
 def parse_args(defaults_override=None):
     parser = argparse_utils.ArgumentParser(usage=usage.merge_mv)
-    parser.add_argument("--copy", "--cp", "-c", action="store_true", help="Copy instead of move")
+    parser.add_argument("--copy", "--cp", "-c", action="store_true", help=argparse.SUPPRESS)
     arggroups.mmv_folders(parser)
     arggroups.clobber(parser)
     arggroups.debug(parser)

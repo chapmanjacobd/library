@@ -13,7 +13,18 @@ def parse_args() -> argparse.Namespace:
     arggroups.text_filtering(parser)
     arggroups.cluster_sort(parser)
     arggroups.group_folders(parser)
-    parser.set_defaults(limit="4000", depth=0)
+    parser.add_argument(
+        "--limit",
+        "--queue",
+        "-n",
+        "-l",
+        "-L",
+        default="4000",
+        help="""Set aggregate limit
+-L inf  # no limit
+-L 10   # 10 big folders""",
+    )
+    parser.set_defaults(depth=0)
     arggroups.debug(parser)
 
     arggroups.paths_or_stdin(parser, destination=True)
