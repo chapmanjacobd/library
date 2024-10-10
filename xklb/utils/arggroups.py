@@ -1552,13 +1552,14 @@ def filter_links(parent_parser):
     )
     parser.add_argument("--local-html", action="store_true", help="Treat paths as Local HTML files")
     parser.add_argument("--href", action="store_true", help="Include href values")
+    parser.add_argument("--url", action="store_true", help="Include url values")
     parser.add_argument("--src", action="store_true", help="Include src values")
     parser.add_argument("--data-src", action="store_true", help="Include data-src values")
 
 
 def filter_links_post(args):
-    if not any([args.href, args.src, args.data_src]):
-        args.href, args.src, args.data_src = True, True, True
+    if not any([args.href, args.url, args.src, args.data_src]):
+        args.href, args.url, args.src, args.data_src = True, True, True, True
 
     if not args.case_sensitive:
         args.before_include = [s.lower() for s in args.before_include]
