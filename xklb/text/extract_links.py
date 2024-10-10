@@ -99,6 +99,8 @@ def parse_inner_urls(args, url, markup):
         link_attrs.add("href")
     if args.src:
         link_attrs.add("src")
+    if args.url:
+        link_attrs.add("url")
     if args.data_src:
         link_attrs.update({"data-src", "data-url", "data-original"})
 
