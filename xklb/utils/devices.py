@@ -314,9 +314,9 @@ def get_mount_stats(src_mounts) -> list[dict[str, int | float]]:
 
 def browse(browser, urls):
     for url in urls:
-        if not browser or "".join(browser) in ["echo", "print"]:
+        if not browser or browser in ["echo", "print"]:
             print(url)
-        elif "".join(browser) in ["default"]:
+        elif browser in ["default"]:
             browsing_success = webbrowser.open(url, new=2, autoraise=False)
             if browsing_success is False:
                 log.info("Problem opening %s", url)

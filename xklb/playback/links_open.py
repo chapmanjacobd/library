@@ -68,6 +68,13 @@ def make_souffle(args, media):
     return pan
 
 
+def play(args, media):
+    links = [m["url"] for m in media]
+    paths = [m["path"] for m in media]
+    devices.browse(args.browser, links)
+    db_history.add(args, paths, time_played=consts.APPLICATION_START, mark_done=True)
+
+
 def links_open() -> None:
     args = parse_args()
     db_history.create(args)
@@ -107,7 +114,4 @@ def links_open() -> None:
     if not media:
         processes.no_media_found()
 
-    links = [m["url"] for m in media]
-    paths = [m["path"] for m in media]
-    devices.browse(args.browser, links)
-    db_history.add(args, paths, time_played=consts.APPLICATION_START, mark_done=True)
+    play(args, media)
