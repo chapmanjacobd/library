@@ -353,26 +353,39 @@ def get_file_encoding(path):
     return encoding
 
 
-def head_foot_stream(url, head_len, foot_len):
-    import io
-
-    head_response = web.session.get(url, stream=True)
+def head_stream(url, head_len):
+    head_response = web.session.get(url, stream=True, timeout=1)
     head_response.raw.decode_content = True
     head_response.raise_for_status()
 
-    head_bytes = head_response.raw.read(head_len)
+    return head_response.raw.read(head_len)
 
-    foot_response = web.session.get(url, stream=True, headers={"Range": f"bytes=-{foot_len}"})
+
+def foot_stream(url, foot_len):
+    foot_response = web.session.get(url, stream=True, headers={"Range": f"bytes=-{foot_len}"}, timeout=1)
     foot_response.raw.decode_content = True
+
+    return foot_response.raw.read(foot_len)
+
+
+def head_foot_stream(url, head_len, foot_len):
+    import io
+
     try:
-        foot_bytes = foot_response.raw.read(foot_len)
-    except urllib3.exceptions.DecodeError:
+        head_bytes = head_stream(url, head_len)
+    except TimeoutError:
+        head_bytes = b""
+
+    try:
+        foot_bytes = foot_stream(url, foot_len)
+    except (TimeoutError, urllib3.exceptions.DecodeError):
         foot_bytes = b""
 
     stream = io.BytesIO(head_bytes + foot_bytes)
     return stream
 
 
+@processes.with_timeout_thread(max(consts.REQUESTS_TIMEOUT) + 5)
 def mimetype(path):
     import puremagic
 

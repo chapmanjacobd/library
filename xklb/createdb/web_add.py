@@ -1,4 +1,5 @@
 import concurrent.futures, json, random, sys, time
+from contextlib import suppress
 from urllib.parse import urlparse
 
 import requests
@@ -112,8 +113,10 @@ def add_extra_metadata(args, m):
 
 def add_basic_metadata(args, m):
     if DBType.filesystem in args.profiles:
-        m |= web.stat(m["path"])
-        m["type"] = file_utils.mimetype(m["path"])
+        with suppress(TimeoutError):
+            m |= web.stat(m["path"])
+        with suppress(TimeoutError):
+            m["type"] = file_utils.mimetype(m["path"])
     else:
         extension = m["path"].rsplit(".", 1)[-1].lower()
         if (
@@ -123,7 +126,8 @@ def add_basic_metadata(args, m):
             or (DBType.text in args.profiles and extension in consts.TEXTRACT_EXTENSIONS)
             or (DBType.image in args.profiles and extension in consts.IMAGE_EXTENSIONS)
         ):
-            m |= web.stat(m["path"])
+            with suppress(TimeoutError):
+                m |= web.stat(m["path"])
 
     if getattr(args, "hash", False):
         # TODO: use head_foot_stream

@@ -83,6 +83,7 @@ IS_LINUX = sys.platform == "linux"
 IS_MAC = sys.platform == "darwin"
 IS_WINDOWS = os.name == "nt" or sys.platform in ("win32", "cygwin", "msys")
 NOT_WINDOWS = os.name == "posix"
+REQUESTS_TIMEOUT = (8, 45)
 
 EPOCH_COLUMNS = (
     "time_downloaded",  # APPLICATION_START time local file known to exist / time scanned

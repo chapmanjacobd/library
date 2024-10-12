@@ -11,7 +11,7 @@ from idna import decode as puny_decode
 from idna import encode as puny_encode
 
 from xklb.data.http_errors import HTTPTooManyRequests, raise_for_status
-from xklb.utils import consts, db_utils, iterables, nums, path_utils, pd_utils, strings
+from xklb.utils import consts, db_utils, iterables, nums, path_utils, pd_utils, processes, strings
 from xklb.utils.log_utils import clamp_index, log
 
 session = None
@@ -103,7 +103,7 @@ def requests_session(args=argparse.Namespace()):
         session.mount("http://", _get_retry_adapter(args))
         session.mount("https://", _get_retry_adapter(args))
 
-        std_params = {"headers": std_headers, "timeout": (8, 45), "allow_redirects": max_redirects > 0}
+        std_params = {"headers": std_headers, "timeout": consts.REQUESTS_TIMEOUT, "allow_redirects": max_redirects > 0}
         session.request = functools.partial(session.request, **std_params)
         session.get = functools.partial(session.get, **std_params)
 
@@ -124,6 +124,7 @@ def requests_session(args=argparse.Namespace()):
     return session
 
 
+@processes.with_timeout_thread(max(consts.REQUESTS_TIMEOUT) + 5)
 def stat(path):
     try:
         r = requests_session().head(path)
