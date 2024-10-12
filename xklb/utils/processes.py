@@ -1,4 +1,4 @@
-import functools, importlib, json, multiprocessing, os, shlex, signal, subprocess, sys
+import functools, importlib, json, multiprocessing, os, shlex, signal, subprocess, sys, threading
 from contextlib import suppress
 from typing import NoReturn
 
@@ -68,6 +68,32 @@ def with_timeout(seconds):  # noqa: ANN201
                 return async_result.get(seconds)
             finally:
                 pool.close()
+
+        return inner
+
+    return decorator
+
+
+def with_timeout_thread(seconds):  # noqa: ANN201
+    def decorator(decorated):
+        @functools.wraps(decorated)
+        def inner(*args, **kwargs):
+            event = threading.Event()  # task completed
+
+            result = None
+
+            def target():
+                nonlocal result
+                result = decorated(*args, **kwargs)
+                event.set()
+
+            thread = threading.Thread(target=target)
+            thread.start()
+
+            if event.wait(seconds):
+                return result
+            else:
+                raise TimeoutError
 
         return inner
 
