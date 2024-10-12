@@ -1,11 +1,9 @@
-import argparse, shlex, webbrowser
-from time import sleep
+import argparse, shlex
 
 from xklb import usage
 from xklb.mediadb import db_history, db_media
 from xklb.playback import media_printer
-from xklb.utils import arggroups, argparse_utils, consts, processes, sqlgroups, web
-from xklb.utils.printing import pipe_print
+from xklb.utils import arggroups, argparse_utils, consts, devices, processes, sqlgroups, web
 
 
 def parse_args() -> argparse.Namespace:
@@ -23,7 +21,7 @@ def parse_args() -> argparse.Namespace:
     arggroups.regex_sort(parser)
     arggroups.related(parser)
 
-    parser.add_argument("--browser")
+    parser.add_argument("--browser", nargs="?", const="default")
     arggroups.debug(parser)
 
     arggroups.database(parser)
@@ -44,17 +42,6 @@ def parse_args() -> argparse.Namespace:
         args.browser = shlex.split(args.browser)
 
     return args
-
-
-def play(args, path, url) -> None:
-    if args.browser:
-        if "".join(args.browser) in ["echo", "print"]:
-            pipe_print(url)
-        else:
-            processes.cmd(*args.browser, url)
-    else:
-        webbrowser.open(url, 2, autoraise=False)
-    db_history.add(args, [path], time_played=consts.APPLICATION_START, mark_done=True)
 
 
 def make_souffle(args, media):
@@ -120,9 +107,7 @@ def links_open() -> None:
     if not media:
         processes.no_media_found()
 
-    for m in media:
-        play(args, m["path"], m["url"])
-
-        sleep(0.1)
-        if len(media) >= consts.MANY_LINKS:
-            sleep(0.7)
+    links = [m["url"] for m in media]
+    paths = [m["path"] for m in media]
+    devices.browse(args.browser, links)
+    db_history.add(args, paths, time_played=consts.APPLICATION_START, mark_done=True)

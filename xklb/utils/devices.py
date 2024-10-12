@@ -1,8 +1,10 @@
-import os, random, shutil, sys
+import os, random, shlex, shutil, sys, time, webbrowser
 
 from xklb.files import sample_compare
-from xklb.utils import arggroups, consts, file_utils, strings
+from xklb.utils import arggroups, consts, file_utils, processes, strings
 from xklb.utils.log_utils import log
+
+webbrowser.register("termux-open-url '%s'", None)
 
 
 def get_ip_of_chromecast(device_name) -> str:
@@ -308,3 +310,18 @@ def get_mount_stats(src_mounts) -> list[dict[str, int | float]]:
         {"mount": mount, "used": used / total_used, "free": free / total_free, "total": total / grand_total}
         for mount, used, free, total in mount_space
     ]
+
+
+def browse(browser, urls):
+    for url in urls:
+        if not browser or "".join(browser) in ["echo", "print"]:
+            print(url)
+        elif "".join(browser) in ["default"]:
+            browsing_success = webbrowser.open(url, new=2, autoraise=False)
+            if browsing_success is False:
+                log.info("Problem opening %s", url)
+        else:
+            processes.cmd_detach(*shlex.split(browser), url)
+
+        if len(urls) >= consts.MANY_LINKS:
+            time.sleep(1.5)
