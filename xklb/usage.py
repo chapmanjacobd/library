@@ -1783,3 +1783,24 @@ nicotine_import = """library nicotine-import DATABASE PATH ...
 
         If this is undesirable, pass the `--no-track-deleted` flag
 """
+
+expand_links = """library expand-links SEARCH_URLS QUERY ...
+
+    Expand search URLs with multiple queries
+
+        library expand-links -s https://www.google.com/search?q=%s -s https://duckduckgo.com/?q=%s xklb
+        https://www.google.com/search?q=xklb
+        https://duckduckgo.com/?q=xklb
+
+        library expand-links -s https://www.walmart.com/search?q=%s -s https://www.target.com/s?searchTerm=%s "Dr. Pepper" pepcidine
+        https://www.walmart.com/search?q=Dr%20Pepper
+        https://www.target.com/s?searchTerm=Dr%20Pepper
+        https://www.walmart.com/search?q=pepcidine
+        https://www.target.com/s?searchTerm=pepcidine
+
+    Open in browser
+
+        library expand-links ... --browser
+        library expand-links ... --browser chrome
+
+"""

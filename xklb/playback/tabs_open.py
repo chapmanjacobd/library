@@ -1,10 +1,9 @@
-import argparse, math, webbrowser
-from time import sleep
+import argparse, math
 
 from xklb import usage
 from xklb.mediadb import db_history
 from xklb.playback import media_printer
-from xklb.utils import arggroups, argparse_utils, consts, db_utils, processes
+from xklb.utils import arggroups, argparse_utils, consts, db_utils, devices, processes
 from xklb.utils.log_utils import log
 from xklb.utils.sqlgroups import construct_tabs_query
 
@@ -14,6 +13,7 @@ def parse_args() -> argparse.Namespace:
 
     arggroups.sql_fs(parser)
     parser.add_argument("--max-same-domain", type=int, help="Limit to N tabs per domain")
+    parser.add_argument("--browser", nargs="?", const="default")
     arggroups.debug(parser)
 
     arggroups.database(parser)
@@ -25,13 +25,6 @@ def parse_args() -> argparse.Namespace:
 
     arggroups.sql_fs_post(args)
     return args
-
-
-def play(args, m: dict) -> None:
-    media_file = m["path"]
-
-    webbrowser.open(media_file, 2, autoraise=False)
-    db_history.add(args, [media_file], time_played=consts.today_stamp(), mark_done=True)
 
 
 def frequency_filter(counts, media: list[dict]) -> list[dict]:
@@ -80,7 +73,6 @@ def tabs_open() -> None:
     ).fetchall()
     media = frequency_filter(counts, media)
 
-    for m in media:
-        play(args, m)
-        if len(media) >= consts.MANY_LINKS:
-            sleep(0.3)
+    links = [m["path"] for m in media]
+    devices.browse(args.browser or "default", links)
+    db_history.add(args, links, time_played=consts.today_stamp(), mark_done=True)
