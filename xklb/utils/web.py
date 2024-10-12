@@ -196,24 +196,30 @@ class PartialContent:
     def __enter__(self):
         assert session is not None
 
-        with session.get(self.url, stream=True) as r:
-            code = r.status_code
-            if code == 404:
-                log.warning("404 Not Found: %s", self.url)
-                return None
-            else:
-                r.raise_for_status()
-
-            self.temp_file = tempfile.NamedTemporaryFile(delete=False)
-
-            for chunk in r.iter_content(chunk_size=65536):
-                if self.temp_file.tell() < self.max_size:
-                    self.temp_file.write(chunk)
+        try:
+            with (
+                processes.timeout_thread(max(consts.REQUESTS_TIMEOUT) + 5),
+                session.get(self.url, stream=True) as r,
+            ):
+                code = r.status_code
+                if code == 404:
+                    log.warning("404 Not Found: %s", self.url)
+                    return None
                 else:
-                    break
+                    r.raise_for_status()
 
-        self.temp_file.close()
-        return self.temp_file.name
+                self.temp_file = tempfile.NamedTemporaryFile(delete=False)
+
+                for chunk in r.iter_content(chunk_size=65536):
+                    if self.temp_file.tell() < self.max_size:
+                        self.temp_file.write(chunk)
+                    else:
+                        break
+
+            self.temp_file.close()
+            return self.temp_file.name
+        except TimeoutError:
+            return None
 
     def __exit__(self, exc_type, exc_value, traceback):
         if self.temp_file:
