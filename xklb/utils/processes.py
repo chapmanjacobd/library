@@ -1,4 +1,4 @@
-import functools, importlib, json, multiprocessing, os, shlex, signal, subprocess, sys, threading
+import contextlib, functools, importlib, json, multiprocessing, os, shlex, signal, subprocess, sys, threading
 from contextlib import suppress
 from typing import NoReturn
 
@@ -98,6 +98,27 @@ def with_timeout_thread(seconds):  # noqa: ANN201
         return inner
 
     return decorator
+
+
+@contextlib.contextmanager
+def timeout_thread(seconds):
+    event = threading.Event()  # task completed
+    result = None
+
+    def target(func, *args, **kwargs):
+        nonlocal result
+        result = func(*args, **kwargs)
+        event.set()
+
+    def run(func, *args, **kwargs):
+        thread = threading.Thread(target=target, args=(func, *args), kwargs=kwargs)
+        thread.start()
+        if event.wait(seconds):
+            return result
+        else:
+            raise TimeoutError
+
+    yield run
 
 
 def os_bg_kwargs() -> dict:
