@@ -46,6 +46,12 @@ def frequency_filter(counts, media: list[dict]) -> list[dict]:
     return filtered_media
 
 
+def play(args, media):
+    links = [m["path"] for m in media]
+    devices.browse(args.browser or "default", links)
+    db_history.add(args, links, time_played=consts.today_stamp(), mark_done=True)
+
+
 def tabs_open() -> None:
     args = parse_args()
     db_history.create(args)
@@ -73,6 +79,4 @@ def tabs_open() -> None:
     ).fetchall()
     media = frequency_filter(counts, media)
 
-    links = [m["path"] for m in media]
-    devices.browse(args.browser or "default", links)
-    db_history.add(args, links, time_played=consts.today_stamp(), mark_done=True)
+    play(args, media)

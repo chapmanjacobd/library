@@ -43,7 +43,7 @@ def test_simple(play_mocked, temp_db):
 
         clock.move_to("1970-01-08 00:00:00")
         lb(["tabs", db1])
-        out = play_mocked.call_args[0][1]
+        out = play_mocked.call_args[0][1][0]
         assert out["time_valid"] > 100000
 
         args = connect_db_args(db1)
@@ -53,7 +53,7 @@ def test_simple(play_mocked, temp_db):
 
         clock.move_to("1970-01-15 00:00:00")
         lb(["tabs", db1])
-        out = play_mocked.call_args[0][1]
+        out = play_mocked.call_args[0][1][0]
         assert out["time_valid"] == 1209300
 
 
@@ -64,7 +64,7 @@ def test_immediate(play_mocked, temp_db):
         lb(["tabsadd", db1, "--allow-immediate", TEST_URL])
 
         lb(["tabs", db1])
-        out = play_mocked.call_args[0][1]
+        out = play_mocked.call_args[0][1][0]
         assert out == {
             "path": TEST_URL,
             "frequency": "monthly",
@@ -78,7 +78,7 @@ def test_immediate(play_mocked, temp_db):
 
         clock.move_to("1970-03-01 00:00:00")
         lb(["tabs", db1])
-        out = play_mocked.call_args[0][1]
+        out = play_mocked.call_args[0][1][0]
         assert out == {
             "path": TEST_URL,
             "frequency": "monthly",

@@ -18,9 +18,6 @@ def parse_args(args):
     args = parser.parse_intermixed_args()
     arggroups.args_post(args, parser)
 
-    if "".join(args.browser) in ["echo", "print"]:
-        args.browser = None
-
     return args
 
 
@@ -40,4 +37,4 @@ def expand_links(args=None):
 
             links.append(search_url.replace("%s", encoded_query))
 
-    devices.browse(args.browser or "print", links)
+    devices.browse(args.browser, links)
