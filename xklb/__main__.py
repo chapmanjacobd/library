@@ -5,7 +5,7 @@ from tabulate import tabulate
 from xklb.utils import argparse_utils, iterables
 from xklb.utils.log_utils import log
 
-__version__ = "2.9.063"
+__version__ = "2.9.064"
 
 progs = {
     "Create database subcommands": {
