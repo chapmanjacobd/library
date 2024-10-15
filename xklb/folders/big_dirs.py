@@ -5,29 +5,20 @@ from pathlib import Path
 from xklb import usage
 from xklb.playback import media_printer
 from xklb.tablefiles import mcda
-from xklb.utils import arg_utils, arggroups, argparse_utils, file_utils, iterables, nums
+from xklb.utils import arg_utils, arggroups, argparse_utils, file_utils, iterables, nums, sqlgroups
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse_utils.ArgumentParser(usage=usage.big_dirs)
+    arggroups.sql_fs(parser)
+
     arggroups.text_filtering(parser)
     arggroups.cluster_sort(parser)
     arggroups.group_folders(parser)
-    parser.add_argument(
-        "--limit",
-        "--queue",
-        "-n",
-        "-l",
-        "-L",
-        default="4000",
-        help="""Set aggregate limit
--L inf  # no limit
--L 10   # 10 big folders""",
-    )
     parser.set_defaults(depth=0)
     arggroups.debug(parser)
 
-    arggroups.paths_or_stdin(parser, destination=True)
+    arggroups.database_or_paths(parser, destination=True)
     parser.add_argument("search", nargs="*")
     args = parser.parse_intermixed_args()
     arggroups.args_post(args, parser)
@@ -36,6 +27,7 @@ def parse_args() -> argparse.Namespace:
         args.folder_counts = ["+3", "-3000"]
         args.folder_sizes = ["+30MiB"]
 
+    arggroups.sql_fs_post(args)
     arggroups.group_folders_post(args)
 
     return args
@@ -150,11 +142,19 @@ def process_big_dirs(args, folders) -> list[dict]:
     return folders
 
 
+def collect_media(args) -> list[dict]:
+    if args.database:
+        media = list(args.db.query(*sqlgroups.fs_sql(args, args.limit)))
+    else:
+        media = arg_utils.gen_d(args)
+        media = [d if "size" in d else file_utils.get_filesize(d) for d in media]
+    return media
+
+
 def big_dirs() -> None:
     args = parse_args()
+    media = collect_media(args)
 
-    media: list[dict] = list(arg_utils.gen_d(args))
-    media = [d if "size" in d else file_utils.get_filesize(d) for d in media]
     if args.cluster_sort and len(media) > 2:
         from xklb.text.cluster_sort import cluster_paths
 
