@@ -314,15 +314,6 @@ fi
         print(rf"PARALLEL_SHELL=sh parallel --colsep '\t' -a {temp.name} -j 20 {move_sh_path}")
 
 
-def is_sqlite(path):
-    try:
-        with open(path, "rb") as f:
-            header = f.read(16)
-        return header == b"SQLite format 3\000"
-    except OSError:
-        return False
-
-
 def get_file_encoding(path):
     import chardet
 

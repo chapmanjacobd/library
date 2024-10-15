@@ -187,14 +187,8 @@ def database(parent_parser):
 
 def paths_or_stdin(parent_parser, required=True, destination=False):
     parser = parent_parser.add_argument_group("Paths")
-    parser.add_argument(
-        "--from-file",
-        "--from-text",
-        "--file",
-        action="store_true",
-        help="Read paths from line-delimited file(s)",
-    )
     parser.add_argument("--from-json", "--json", action="store_true", help="Read JSON or JSONL from stdin")
+
     if destination:
         parser.add_argument("paths", nargs="+", action=argparse_utils.ArgparseArgsOrStdin)
     else:
@@ -203,6 +197,27 @@ def paths_or_stdin(parent_parser, required=True, destination=False):
             nargs="*",
             default=argparse_utils.STDIN_DASH if required else None,
             action=argparse_utils.ArgparseArgsOrStdin,
+        )
+
+
+def database_or_paths(parent_parser, required=True, destination=False):
+    parser = parent_parser.add_argument_group("Database")
+    parser.add_argument("--db", "-db", help="Positional argument override")
+    capability_soft_delete(parent_parser)
+    capability_delete(parent_parser)
+
+    parser = parent_parser.add_argument_group("Paths")
+    parser.add_argument("--from-json", "--json", action="store_true", help="Read JSON or JSONL from stdin")
+
+    if destination:
+        parser.add_argument("paths", nargs="+", action=argparse_utils.ArgparseDBOrPaths, metavar="DB_OR_PATH")
+    else:
+        parser.add_argument(
+            "paths",
+            nargs="*",
+            default=argparse_utils.STDIN_DASH if required else None,
+            action=argparse_utils.ArgparseDBOrPaths,
+            metavar="DB_OR_PATH",
         )
 
 

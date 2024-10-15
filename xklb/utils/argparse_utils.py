@@ -84,6 +84,35 @@ class ArgparseArgsOrStdin(argparse.Action):
         setattr(namespace, self.dest, lines)
 
 
+def is_sqlite(path):
+    try:
+        with open(path, "rb") as f:
+            header = f.read(16)
+        return header == b"SQLite format 3\000"
+    except OSError:
+        return False
+
+
+class ArgparseDBOrPaths(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        database = None
+        paths = None
+        if values == STDIN_DASH:
+            print(f"{parser.prog}: Reading from stdin...", file=sys.stderr)
+            paths = sys.stdin.readlines()
+            if not paths or (len(paths) == 1 and paths[0].strip() == ""):
+                paths = None
+            else:
+                paths = [s.strip() for s in paths]
+        elif values is not None and len(values) == 1 and is_sqlite(values[0]):
+            database = values[0]
+            paths = None
+        else:
+            paths = values
+        setattr(namespace, "database", database)
+        setattr(namespace, self.dest, paths)
+
+
 def type_to_str(t):
     type_dict = {
         int: "Integer",
