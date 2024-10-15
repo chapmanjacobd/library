@@ -106,9 +106,13 @@ def filter_src(args, path):
         return False
     if args.sizes and not args.sizes(stat.st_size):
         return False
+
     if args.timeout_size:
-        processes.sizeout(args.timeout_size, stat.st_size)
-        # will exit on failure
+        processes.sizeout(args.timeout_size, stat.st_size)  # will exit on failure
+    elif args.limit and MOVED_COUNT >= args.limit:
+        print(f"\nReached file moved limit... ({args.limit})")
+        raise SystemExit(124)
+
     return True
 
 
