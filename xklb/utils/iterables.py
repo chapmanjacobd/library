@@ -8,7 +8,9 @@ from xklb.utils import objects
 
 def flatten(xs: Iterable) -> Iterator:
     for x in xs:
-        if isinstance(x, Iterable) and not isinstance(x, (str, bytes)):
+        if isinstance(x, dict):
+            yield x
+        elif isinstance(x, Iterable) and not isinstance(x, (str, bytes)):
             yield from flatten(x)
         elif isinstance(x, bytes):
             yield x.decode("utf-8")

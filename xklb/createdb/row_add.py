@@ -1,16 +1,29 @@
+from pathlib import Path
+
 from xklb import usage
-from xklb.utils import arg_utils, arggroups, argparse_utils
+from xklb.utils import arg_utils, arggroups, argparse_utils, db_utils
 from xklb.utils.log_utils import log
 
 
 def parse_utils():
     parser = argparse_utils.ArgumentParser(description="Add arbitrary rows to a SQLite db", usage=usage.row_add)
     parser.add_argument("--table-name", "--table", "-t", default="media")
-    arggroups.debug(parser)
+    parser.add_argument(
+        "--verbose",
+        "-v",
+        action="count",
+        default=0,
+        help="""Control the level of logging verbosity
+-v     # info
+-vv    # debug
+-vvv   # debug, with SQL query printing
+-vvvv  # debug, with external libraries logging""",
+    )
 
     arggroups.database(parser)
     args, unknown_args = parser.parse_known_args()
-    arggroups.args_post(args, parser, create_db=True)
+    Path(args.database).touch()
+    args.db = db_utils.connect(args)
     return args, unknown_args
 
 

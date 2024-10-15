@@ -3,7 +3,7 @@ from pathlib import Path
 from shutil import which
 
 from xklb import usage
-from xklb.createdb import fs_add
+from xklb.createdb import fs_add_metadata
 from xklb.utils import arggroups, argparse_utils, path_utils
 from xklb.utils.arg_utils import gen_paths
 from xklb.utils.log_utils import log
@@ -94,7 +94,7 @@ def llm_map():
         if args.image_model:
             args.llama_args += ["--image", str(Path(path).absolute())]
         elif args.text:
-            file_contents = fs_add.munge_book_tags_fast(path)
+            file_contents = fs_add_metadata.munge_book_tags_fast(path)
             if file_contents:
                 file_contents = file_contents.get("tags")
             if file_contents:

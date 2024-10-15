@@ -3,7 +3,7 @@ from pathlib import Path
 
 import ffmpeg
 
-from xklb.utils import db_utils, iterables, processes, strings
+from xklb.utils import consts, db_utils, iterables, processes, strings
 from xklb.utils.consts import SUB_TEMP_DIR
 from xklb.utils.log_utils import log
 
@@ -145,3 +145,10 @@ def get_sub_index(args, path) -> int | None:
         [*IMAGE_SUBTITLE_CODECS],
     )
     return subtitle_index
+
+
+def clean_up_temp_dirs():
+    temp_subs_path = Path(consts.SUB_TEMP_DIR)
+    if temp_subs_path.exists():
+        for p in temp_subs_path.glob("*.srt"):
+            p.unlink()

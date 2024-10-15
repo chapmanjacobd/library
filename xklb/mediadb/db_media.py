@@ -2,7 +2,8 @@ import argparse, os, sqlite3
 from collections.abc import Collection
 from pathlib import Path
 
-from xklb.createdb import fs_add
+from xklb.createdb import fs_add_metadata
+from xklb.createdb.subtitle import clean_up_temp_dirs
 from xklb.utils import consts, date_utils, db_utils, iterables, log_utils, objects, processes, sql_utils, strings
 from xklb.utils.consts import DBType
 from xklb.utils.log_utils import log
@@ -329,9 +330,9 @@ def download_add(
             delete_unplayable=False,
             check_corrupt=False,
         )
-        fs_tags = fs_add.extract_metadata(fs_args, local_path)
+        fs_tags = fs_add_metadata.extract_metadata(fs_args, local_path)
         fs_tags = objects.dict_filter_bool(fs_tags, keep_0=False) or {}
-        fs_add.clean_up_temp_dirs()
+        clean_up_temp_dirs()
     else:
         fs_tags = {"time_modified": consts.now()}
 

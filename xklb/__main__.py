@@ -67,6 +67,7 @@ progs = {
     },
     "Media File subcommands": {
         "media_check": "Check video and audio files for corruption via ffmpeg",
+        "process_media": "Estimate and execute potential disk space savings",
         "process_ffmpeg": "Shrink video/audio to AV1/Opus format (.mkv, .mka)",
         "process_image": "Shrink images to AV1 image format (.avif)",
     },
@@ -203,7 +204,8 @@ modules = {
     "xklb.mediadb.playlists.playlists": ["pl", "folders"],
     "xklb.mediadb.redownload.redownload": ["re-dl", "re-download"],
     "xklb.mediadb.search.search": ["sc", "search-captions"],
-    "xklb.mediafiles.media_check.media_check": [],
+    "xklb.mediafiles.media_check.media_check": ["check_media"],
+    "xklb.mediafiles.process_media.process_media": ["shrink"],
     "xklb.mediafiles.process_ffmpeg.process_ffmpeg": ["process-video"],
     "xklb.mediafiles.process_ffmpeg.process_audio": ["process-audio"],
     "xklb.mediafiles.process_image.process_image": [],

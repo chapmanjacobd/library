@@ -86,7 +86,7 @@ def path_fill(text, percent=None, width=None):
 def transform_column(transform_func: Callable):
     def transform(tbl: list[dict], col: str, **kwargs) -> list[dict]:
         for d in tbl:
-            if d[col] is not None:
+            if col in d and d[col] is not None:
                 d[col] = transform_func(d[col], **kwargs)
         return tbl
 
@@ -96,7 +96,7 @@ def transform_column(transform_func: Callable):
 def transform_column_0null(transform_func: Callable):
     def transform(tbl: list[dict], col: str, **kwargs) -> list[dict]:
         for d in tbl:
-            if d[col] is not None:
+            if col in d and d[col] is not None:
                 if int(d[col]) == 0:
                     d[col] = None
                 else:

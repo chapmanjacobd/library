@@ -1,3 +1,4 @@
+import math
 from datetime import datetime
 from pathlib import Path
 
@@ -159,7 +160,7 @@ def munge_av_tags(args, media) -> dict:
             media["size"] = size
         elif bitrate_bps and duration:
             total_bits = duration * float(bitrate_bps)
-            total_bytes = total_bits / 8
+            total_bytes = math.ceil(total_bits / 8)
             media["size"] = total_bytes
 
     corruption = None
