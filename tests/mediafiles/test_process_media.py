@@ -11,5 +11,5 @@ def test_shrink(temp_db, capsys):
     with pytest.raises(devices.InteractivePrompt):
         lb(["shrink", db1, "-s", "test.mp4"])
     captured = capsys.readouterr().out
-    assert "Video mp4" in captured.replace("\n", "")
+    assert "Video: mp4" in captured.replace("\n", "")
     assert len(captured) > 150
