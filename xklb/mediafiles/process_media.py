@@ -58,7 +58,7 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def collect_media(args):
+def collect_media(args) -> list[dict]:
     if args.database:
         db_history.create(args)
 
