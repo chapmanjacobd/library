@@ -4,10 +4,12 @@ from xklb import usage
 from xklb.mediadb import db_history
 from xklb.mediafiles import process_ffmpeg, process_image
 from xklb.utils import (
+    arg_utils,
     arggroups,
     argparse_utils,
     consts,
     devices,
+    file_utils,
     iterables,
     nums,
     printing,
@@ -46,7 +48,7 @@ def parse_args() -> argparse.Namespace:
     arggroups.process_ffmpeg(parser)
     arggroups.debug(parser)
 
-    arggroups.database(parser)
+    arggroups.database_or_paths(parser)
     args = parser.parse_intermixed_args()
     arggroups.args_post(args, parser)
 
@@ -54,6 +56,20 @@ def parse_args() -> argparse.Namespace:
     arggroups.process_ffmpeg_post(args)
 
     return args
+
+
+def collect_media(args):
+    if args.database:
+        db_history.create(args)
+
+        try:
+            media = list(args.db.query(*sqlgroups.media_sql(args)))
+        except sqlite3.OperationalError:
+            media = list(args.db.query(*sqlgroups.fs_sql(args, args.limit)))
+    else:
+        media = arg_utils.gen_d(args)
+        media = [d if "size" in d else file_utils.get_filesize(d) for d in media]
+    return media
 
 
 def check_shrink(args, m) -> list:
@@ -135,12 +151,7 @@ def check_shrink(args, m) -> list:
 
 def process_media() -> None:
     args = parse_args()
-    db_history.create(args)
-
-    try:
-        media = list(args.db.query(*sqlgroups.media_sql(args)))
-    except sqlite3.OperationalError:
-        media = list(args.db.query(*sqlgroups.fs_sql(args, args.limit)))
+    media = collect_media(args)
 
     media = iterables.conform(check_shrink(args, m) for m in media)
     media = sorted(media, key=lambda d: d["savings"] / d["processing_time"], reverse=True)

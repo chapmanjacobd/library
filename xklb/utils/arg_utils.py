@@ -10,23 +10,7 @@ def gen_paths(args):
     if args.paths is None:
         processes.exit_error("No paths passed in")
 
-    if args.from_file:
-        for path in args.paths:
-            with open(path, "r") as f:
-                for line in f:
-                    line = line.rstrip("\n")
-                    if line.strip():
-                        if args.from_json:
-                            json_data = json.loads(line)
-                            if isinstance(json_data, list):
-                                yield from (d["path"] for d in json_data)
-                            elif isinstance(json_data, dict):
-                                yield json_data["path"]
-                            else:
-                                raise TypeError
-                        else:
-                            yield line
-    elif args.from_json:
+    if args.from_json:
         for path in args.paths:
             json_data = json.loads(path)
             if isinstance(json_data, list):
@@ -36,40 +20,20 @@ def gen_paths(args):
             else:
                 raise TypeError
     else:
-        is_large = len(args.paths) > 1000
         for path in args.paths:
             if path.strip():
-                if is_large:
-                    yield path
+                p = Path(path)
+                if p.is_dir():
+                    yield from file_utils.rglob(str(p), args.ext or None, getattr(args, "exclude", None))[0]
                 else:
-                    p = Path(path)
-                    if p.is_dir():
-                        yield from file_utils.rglob(str(p), args.ext or None, getattr(args, "exclude", None))[0]
-                    else:
-                        yield path
+                    yield path
 
 
 def gen_d(args):
     if args.paths is None:
         processes.exit_error("No data passed in")
 
-    if args.from_file:
-        for path in args.paths:
-            with open(path, "r") as f:
-                for line in f:
-                    line = line.rstrip("\n")
-                    if line.strip():
-                        if args.from_json:
-                            json_data = json.loads(line)
-                            if isinstance(json_data, list):
-                                yield from json_data
-                            elif isinstance(json_data, dict):
-                                yield json_data
-                            else:
-                                raise TypeError
-                        else:
-                            yield {"path": line}
-    elif args.from_json:
+    if args.from_json:
         for path in args.paths:
             json_data = json.loads(path)
             if isinstance(json_data, list):
