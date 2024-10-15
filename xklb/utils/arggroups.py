@@ -644,6 +644,7 @@ def mmv_folders(parser):
 -S 6%%10       # 6 MB ±10 percent (between 5 and 7 MB)
 -S+5GB -S-7GB  # between 5 and 7 GB""",
     )
+    parser.add_argument("--limit", "-n", "-l", "-L", type=int, help="Limit number of files transferred")
 
 
 def playback(parent_parser):
