@@ -217,7 +217,7 @@ IMAGE_EXTENSIONS = set(
         "|flv|insv|inx|swf|wma|wmv|exif|eip|psp|pspimage"
     ).split("|")
 )
-
+ARCHIVE_EXTENSIONS = set("zip|rar|cbz|cbr|tar|exe|7z|r00|iso|img|001".split("|"))
 
 time_facets = [
     "watching",

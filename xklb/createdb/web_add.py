@@ -4,8 +4,9 @@ from urllib.parse import urlparse
 
 import requests
 
+import xklb.createdb.fs_add_metadata
 from xklb import usage
-from xklb.createdb import av, fs_add
+from xklb.createdb import av
 from xklb.files import sample_hash
 from xklb.mediadb import db_media, db_playlists
 from xklb.text import extract_links
@@ -102,10 +103,10 @@ def add_extra_metadata(args, m):
         m = av.munge_av_tags(args, m)
     if DBType.text in args.profiles and (extension in consts.TEXTRACT_EXTENSIONS or args.scan_all_files):
         with web.PartialContent(m["path"]) as temp_file_path:
-            m |= fs_add.munge_book_tags_fast(temp_file_path)
+            m |= xklb.createdb.fs_add_metadata.munge_book_tags_fast(temp_file_path)
     if DBType.image in args.profiles and (extension in consts.IMAGE_EXTENSIONS or args.scan_all_files):
         with web.PartialContent(m["path"], max_size=32 * 1024) as temp_file_path:
-            m |= fs_add.extract_image_metadata_chunk([{"path": temp_file_path}])[0]
+            m |= xklb.createdb.fs_add_metadata.extract_image_metadata_chunk([{"path": temp_file_path}])[0]
     m["path"] = remote_path  # restore from temp file extraction
 
     return m

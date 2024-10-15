@@ -1,5 +1,7 @@
 import contextlib, functools, importlib, json, multiprocessing, os, shlex, signal, subprocess, sys, threading
 from contextlib import suppress
+from pathlib import Path
+from shutil import which
 from typing import NoReturn
 
 from xklb.utils import consts, iterables, nums
@@ -357,3 +359,68 @@ class FFProbe:
                     self.duration = start - end
                 else:
                     self.duration -= start
+
+
+def unar_out_path(archive_path):
+    output_path = str(Path(archive_path).with_suffix(""))
+    if output_path.endswith(tuple(f".{ext}" for ext in consts.ARCHIVE_EXTENSIONS)):
+        output_path = str(Path(output_path).with_suffix(""))
+    return output_path
+
+
+def lsar(archive_path):
+    if not which("lsar"):
+        log.error("[%s]: The 'lsar' command is not available. Install 'unar' to check archives", archive_path)
+        return []
+
+    lsar_output = subprocess.run(["lsar", "-json", archive_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    try:
+        lsar_json = json.loads(lsar_output.stdout)
+    except json.JSONDecodeError:
+        log.warning("%s: Error parsing lsar output as JSON: %s", archive_path, lsar_output)
+        return []
+
+    if lsar_json.get("lsarError"):
+        log.warning("%s: lsar error %s", archive_path, lsar_json["lsarError"])
+
+    lsar_contents = lsar_json.get("lsarContents", [])
+    if len(lsar_contents) == 0:
+        log.info("%s: archive empty", archive_path)
+        return []
+
+    ar_size = os.stat(archive_path).st_size
+    unar_out = unar_out_path(archive_path)
+    archive_info_list = []
+    for entry in lsar_contents:
+        archive_info_list.append(
+            {
+                "archive_path": archive_path,
+                "path": os.path.join(unar_out, entry.get("XADFileName")),
+                "compressed_size": entry.get("XADCompressedSize") or ar_size // len(lsar_contents),
+                "size": entry.get("XADFileSize"),
+            }
+        )
+
+    return archive_info_list
+
+
+def unar_delete(archive_path):
+    output_path = unar_out_path(archive_path)
+    if not os.path.exists(output_path):
+        os.makedirs(output_path)
+
+    original_stats = os.stat(archive_path)
+    cmd("unar", "-quiet", "-force-rename", "-no-directory", "-output-directory", output_path, archive_path)
+    os.utime(output_path, (original_stats.st_atime, original_stats.st_mtime))
+
+    lsar_json = cmd("lsar", "-json", archive_path).stdout
+    lsar_output = json.loads(lsar_json)
+    part_files = lsar_output["lsarProperties"]["XADVolumes"]
+
+    try:
+        for part_file in part_files:
+            part_file_path = os.path.join(os.path.dirname(archive_path), part_file)
+            os.unlink(part_file_path)
+    except Exception as e:
+        print(f"Error deleting files: {e}")

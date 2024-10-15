@@ -3,7 +3,7 @@ from pathlib import Path
 from bs4 import BeautifulSoup, NavigableString
 
 from xklb import usage
-from xklb.createdb import fs_add
+from xklb.createdb import fs_add_metadata
 from xklb.utils import arg_utils, arggroups, argparse_utils, devices, iterables, printing, strings, web
 from xklb.utils.log_utils import log
 
@@ -50,7 +50,7 @@ def parse_text(args, html_content):
 def get_text(args, url):
     is_error = False
     if not args.local_html and not url.startswith("http") and Path(url).is_file():
-        text = fs_add.munge_book_tags_fast(url)
+        text = fs_add_metadata.munge_book_tags_fast(url)
         if text:
             tags = text.get("tags")
             if tags:

@@ -7,7 +7,7 @@ def percent(value, total):
     return (value / total) * 100
 
 
-def float_from_percent(s: str):
+def float_from_percent(s: str) -> float:
     if s.endswith("%"):
         v = float(s.rstrip("%")) / 100
     else:
@@ -92,7 +92,7 @@ def human_to_bytes(input_str, binary=True) -> int:
     return int(float(value) * unit_multiplier)
 
 
-def human_to_bits(input_str):
+def human_to_bits(input_str) -> int:
     return human_to_bytes(input_str, binary=False)
 
 

@@ -115,7 +115,7 @@ Some printing modes can be combined
 -p df  # print fields for piping into another program and mark as deleted
 -p bf  # print fields from big-dirs report""",
     )
-    parser.add_argument(
+    printing.add_argument(
         "--no-url-decode",
         "--skip-url-decode",
         action="store_true",

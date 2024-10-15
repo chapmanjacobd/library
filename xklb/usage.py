@@ -1804,3 +1804,8 @@ expand_links = """library expand-links SEARCH_URLS QUERY ...
         library expand-links ... --browser chrome
 
 """
+
+process_media = """library process-media DATABASE
+
+Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
+"""
