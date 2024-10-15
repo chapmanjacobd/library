@@ -50,6 +50,6 @@ def test_tubeupdate(play_mocked):
     lb(["tube-update", tube_db, "--extractor-config", "TEST2=4 TEST3=2", "--force"])
     out = play_mocked.call_args[0][2]
     assert out is not None
-    assert out["TEST1"] == "1"
-    assert out["TEST2"] == "4"
-    assert out["TEST3"] == "2"
+    assert out["TEST1"] == 1
+    assert out["TEST2"] == 4
+    assert out["TEST3"] == 2

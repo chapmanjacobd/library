@@ -99,7 +99,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v2.9.065; 87 subcommands)
+    library (v2.9.066; 88 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -211,6 +211,8 @@ To stop playing press Ctrl+C in either the terminal or mpv
     Media File subcommands:
     ╭────────────────┬───────────────────────────────────────────────────────╮
     │ media-check    │ Check video and audio files for corruption via ffmpeg │
+    ├────────────────┼───────────────────────────────────────────────────────┤
+    │ process-media  │ Estimate and execute potential disk space savings     │
     ├────────────────┼───────────────────────────────────────────────────────┤
     │ process-ffmpeg │ Shrink video/audio to AV1/Opus format (.mkv, .mka)    │
     ├────────────────┼───────────────────────────────────────────────────────┤
@@ -1920,6 +1922,18 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         [ 73.0 ..  82.0] [ 18] ∎∎∎
         [ 82.0 ..  91.0] [ 50] ∎∎∎∎∎∎∎∎
         [ 91.0 .. 100.0] [141] ∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎
+
+
+</details>
+
+###### process-media
+
+<details><summary>Estimate and execute potential disk space savings</summary>
+
+    $ library process-media -h
+    usage: library process-media DATABASE
+
+Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
 
 </details>
