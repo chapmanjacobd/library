@@ -135,9 +135,9 @@ def post_act(
 ) -> None:
     def log_action(confirmed_action):
         if args.exit_code_confirm and media_len > 0:
-            log.warning("%s: %s (%s remaining)", confirmed_action, media_file, media_len)
+            log.warning("[%s]: %s (%s remaining)", confirmed_action, media_file, media_len)
         else:
-            log.warning("%s: %s", confirmed_action, media_file)
+            log.warning("[%s]: %s", confirmed_action, media_file)
 
     player_exit_code = getattr(player_process, "returncode", None) or 0
 

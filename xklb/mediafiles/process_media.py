@@ -30,6 +30,9 @@ def parse_args() -> argparse.Namespace:
     )
     arggroups.history(parser)
 
+    parser.add_argument("--valid", action=argparse.BooleanOptionalAction, default=True, help='Attempt to process files with valid metadata')
+    parser.add_argument("--invalid", action=argparse.BooleanOptionalAction, default=False, help='Attempt to process files with invalid metadata')
+
     parser.add_argument("--min-savings-video", type=nums.float_from_percent, default="3%")
     parser.add_argument("--min-savings-audio", type=nums.float_from_percent, default="10%")
     parser.add_argument("--min-savings-image", type=nums.float_from_percent, default="15%")
@@ -79,27 +82,39 @@ def check_shrink(args, m) -> list:
         (filetype and (filetype.startswith("audio/") or " audio" in filetype))
         or m["ext"] in consts.AUDIO_ONLY_EXTENSIONS
     ) and (m.get("video_count") or 0) == 0:
+        m["media_type"] = "Audio"
+
         if m.get("compressed_size"):
             m["duration"] = 3 * 60
 
         if "duration" not in m:
             probe = processes.FFProbe(m["path"])
             m["duration"] = probe.duration
-        if m["duration"] is None:
+        if m["duration"] is None or not m["duration"] > 0:
+            log.debug("[%s]: Invalid duration", m['path'])
+            if args.invalid:
+                m["future_size"] = int(m['size'] * 0.8)
+                m["savings"] = 0
+                m["processing_time"] = 0
+                return [m]
+            else:
+                return []
+        if not args.valid:
             return []
+
         if (m.get("audio_codecs") or "") == "opus":
+            log.debug("[%s]: Already opus",  m['path'])
             return []
 
         future_size = int(m["duration"] * (args.target_audio_bitrate / 8))
         should_shrink_buffer = int(future_size * args.min_savings_audio)
         can_shrink = m["size"] > (future_size + should_shrink_buffer)
         if can_shrink:
-            m["media_type"] = "Audio"
             m["future_size"] = future_size
             m["savings"] = (m.get("compressed_size") or m["size"]) - future_size
             m["processing_time"] = math.ceil(m["duration"] / args.transcoding_audio_rate)
             return [m]
-        log.debug("Skipping %s", m)
+        log.debug("[%s]: Skipping small file",  m['path'])
     elif (
         (filetype and (filetype.startswith("image/") or " image" in filetype)) or m["ext"] in consts.IMAGE_EXTENSIONS
     ) and (m.get("duration") or 0) == 0:
@@ -112,31 +127,42 @@ def check_shrink(args, m) -> list:
             m["savings"] = (m.get("compressed_size") or m["size"]) - future_size
             m["processing_time"] = args.transcoding_image_time
             return [m]
-        log.debug("Skipping %s", m)
+        log.debug("[%s]: Skipping small file",  m['path'])
     elif (
         (filetype and (filetype.startswith("video/") or " video" in filetype)) or m["ext"] in consts.VIDEO_EXTENSIONS
     ) and (m.get("video_count") or 1) >= 1:
+        m["media_type"] = "Video"
+
         if m.get("compressed_size"):
             m["duration"] = 20 * 60
 
         if "duration" not in m:
             probe = processes.FFProbe(m["path"])
             m["duration"] = probe.duration
-        if m["duration"] is None:
+        if m["duration"] is None or not m["duration"] > 0:
+            log.debug("[%s]: Invalid duration", m['path'])
+            if args.invalid:
+                m["future_size"] = int(m['size'] * 0.8)
+                m["savings"] = 0
+                m["processing_time"] = 0
+                return [m]
+            else:
+                return []
+        if not args.valid:
             return []
         if (m.get("video_codecs") or "") == "av1":
+            log.debug("[%s]: Already AV1",  m['path'])
             return []
 
         future_size = int(m["duration"] * (args.target_video_bitrate / 8))
         should_shrink_buffer = int(future_size * args.min_savings_video)
         can_shrink = m["size"] > (future_size + should_shrink_buffer)
         if can_shrink:
-            m["media_type"] = "Video"
             m["future_size"] = future_size
             m["savings"] = (m.get("compressed_size") or m["size"]) - future_size
             m["processing_time"] = math.ceil(m["duration"] / args.transcoding_video_rate)
             return [m]
-        log.debug("Skipping %s", m)
+        log.debug("[%s]: Skipping small file",  m['path'])
     elif (filetype and (filetype.startswith("archive/") or filetype.endswith("+zip") or " archive" in filetype)) or m[
         "ext"
     ] in consts.ARCHIVE_EXTENSIONS:
@@ -145,7 +171,7 @@ def check_shrink(args, m) -> list:
     else:
         # TODO: pdf => avif
         # TODO: mobi, azw3, pdf => epub
-        log.warning("[%s]: Skipping: Unknown filetype %s", m["path"], filetype)
+        log.warning("[%s]: Skipping unknown filetype %s", m["path"], filetype)
     return []
 
 
@@ -154,7 +180,7 @@ def process_media() -> None:
     media = collect_media(args)
 
     media = iterables.conform(check_shrink(args, m) for m in media)
-    media = sorted(media, key=lambda d: d["savings"] / d["processing_time"], reverse=True)
+    media = sorted(media, key=lambda d: d["savings"] / (d["processing_time"] or args.transcoding_image_time), reverse=True)
 
     if not media:
         processes.no_media_found()
@@ -184,14 +210,14 @@ def process_media() -> None:
     if "processing_time" in summary[0]:
         processing_time = sum([m["processing_time"] for m in summary])
 
+    summary = sorted(summary, key=lambda d: d["savings"], reverse=True)
     summary = iterables.list_dict_filter_bool(summary, keep_0=False)
-    sum_ext = sorted(summary, key=lambda d: d["savings"], reverse=True)
 
     for t in ["processing_time"]:
         summary = printing.col_duration(summary, t)
     for t in ["current_size", "future_size", "compressed_size", "savings"]:
         summary = printing.col_filesize(summary, t)
-    printing.table(sum_ext)
+    printing.table(summary)
     print()
 
     print("Estimated processing time:", strings.duration(processing_time))
@@ -214,11 +240,11 @@ def process_media() -> None:
                     else:
                         processes.unar_delete(m["archive_path"])
                 if not os.path.exists(m["path"]):
-                    log.error("%s: FileNotFoundError from archive %s", m["path"], m["archive_path"])
+                    log.error("[%s]: FileNotFoundError from archive %s", m["path"], m["archive_path"])
                     continue
             else:
                 if not os.path.exists(m["path"]):
-                    log.error("%s: FileNotFoundError", m["path"])
+                    log.error("[%s]: FileNotFoundError", m["path"])
                     m["time_deleted"] = consts.APPLICATION_START
                     continue
 
@@ -240,15 +266,16 @@ def process_media() -> None:
 
                 new_free_space += (m.get("compressed_size") or m["size"]) - m["new_size"]
 
-        with args.db.conn:
-            for m in media:
-                if m.get("time_deleted"):
-                    args.db.conn.execute(
-                        "UPDATE media set time_deleted = ? where path = ?", [m["time_deleted"], m["path"]]
-                    )
-                elif m.get("new_path") and m.get("new_path") != m["path"]:
-                    args.db.conn.execute("DELETE FROM media where path = ?", [m["new_path"]])
-                    args.db.conn.execute("UPDATE media set path = ? where path = ?", [m["new_path"], m["path"]])
-                    args.db.conn.execute(
-                        "UPDATE media SET path = ?, size = ? WHERE path = ?", [m["new_path"], m["new_size"], m["path"]]
-                    )
+        if args.database:
+            with args.db.conn:
+                for m in media:
+                    if m.get("time_deleted"):
+                        args.db.conn.execute(
+                            "UPDATE media set time_deleted = ? where path = ?", [m["time_deleted"], m["path"]]
+                        )
+                    elif m.get("new_path") and m.get("new_path") != m["path"]:
+                        args.db.conn.execute("DELETE FROM media where path = ?", [m["new_path"]])
+                        args.db.conn.execute("UPDATE media set path = ? where path = ?", [m["new_path"], m["path"]])
+                        args.db.conn.execute(
+                            "UPDATE media SET path = ?, size = ? WHERE path = ?", [m["new_path"], m["new_size"], m["path"]]
+                        )

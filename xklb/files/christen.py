@@ -56,7 +56,7 @@ def rename_path(args, base, b) -> None:
             except FileExistsError:
                 log.warning("Destination file already exists: %s", fixed)
             except shutil.Error as e:
-                log.warning("%s: %s", e, printable_p)
+                log.warning("[%s]: %s", e, printable_p)
             else:
                 log.info(fixed)
         else:

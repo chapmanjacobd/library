@@ -102,6 +102,9 @@ def log_size_diff(src_size, dst_size):
 
 
 def clobber(args, source, destination) -> tuple[str | None, str]:
+    source = os.path.abspath(source)
+    destination = os.path.abspath(destination)
+
     if source == destination:
         log.info("Destination is the same as source\t%s", destination)
         return None, destination
