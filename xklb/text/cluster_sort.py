@@ -219,7 +219,7 @@ def sort_dicts(args, media):
     if args.verbose >= consts.LOG_INFO:
         from pandas import DataFrame
 
-        eda.print_info(objects.NoneSpace(end_row="inf"), DataFrame(clusters))
+        eda.print_info(objects.NoneSpace(end_row="inf"), {"clusters": DataFrame(clusters)})
 
     groups = map_and_name(paths, clusters)
     groups = sorted(groups, key=lambda d: (-len(d["grouped_paths"]), -len(d["common_path"])))

@@ -77,20 +77,20 @@ def process_chunks(args):
 
         # TODO: https://github.com/ICRAR/ijson
 
-        tables1 = {df.name for df in dfs1}
-        tables2 = {df.name for df in dfs2}
+        tables1 = {df.df_name for df in dfs1}
+        tables2 = {df.df_name for df in dfs2}
         common_tables = tables1.intersection(tables2)
-        dfs1 = sorted(dfs1, key=lambda df: (df.name in common_tables, df.name), reverse=True)
-        dfs2 = sorted(dfs2, key=lambda df: (df.name in common_tables, df.name), reverse=True)
+        dfs1 = sorted(dfs1, key=lambda df: (df.df_name in common_tables, df.df_name), reverse=True)
+        dfs2 = sorted(dfs2, key=lambda df: (df.df_name in common_tables, df.df_name), reverse=True)
 
         empty_dfs = set()
         for df_idx in range(len(dfs1)):
-            df1 = dfs1[df_idx]
-            df2 = dfs2[df_idx]
+            df1 = dfs1[df_idx].df
+            df2 = dfs2[df_idx].df
 
             # drop cols with all nulls to allow merging "X" and object columns
-            df1.drop(columns=df1.columns[df1.isnull().all()], inplace=True)  # inplace to preserve df.name
-            df2.drop(columns=df2.columns[df2.isnull().all()], inplace=True)  # inplace to preserve df.name
+            df1 = df1.drop(columns=df1.columns[df1.isnull().all()])
+            df2 = df2.drop(columns=df2.columns[df2.isnull().all()])
 
             if df1.empty and df2.empty:
                 empty_dfs.add(df_idx)

@@ -49,17 +49,17 @@ def table_add(args, path):
         transpose=args.transpose,
         skip_headers=args.skip_headers,
     )
-    for i, df in enumerate(dfs):
+    for i, (df_name, df) in enumerate(dfs):
         if args.table_rename:
-            table = args.table_rename.replace("%n", df.name).replace("%i", str(i))
+            table = args.table_rename.replace("%n", df_name).replace("%i", str(i))
         elif args.table_name == "stdin":
             table = "stdin"
-        elif df.name.isnumeric():
+        elif df_name.isnumeric():
             table = Path(path).stem
             if len(dfs) > 1:
-                table += df.name
+                table += df_name
         else:
-            table = df.name
+            table = df_name
         log.info("[%s]: %s", path, table)
 
         df = pd_utils.rename_duplicate_columns(df)

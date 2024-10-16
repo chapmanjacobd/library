@@ -12,7 +12,6 @@ def parse_args():
     arggroups.table_like(parser)
 
     parser.add_argument("--sort", "-u", default="random()")
-    parser.add_argument("--repl", "-r", action="store_true")
     arggroups.debug(parser)
 
     arggroups.paths_or_stdin(parser)
@@ -45,11 +44,13 @@ def df_column_values(df, column_name) -> dict:
     }
 
 
-def print_info(args, df):
+def print_info(args, dft):
     import pandas as pd
 
+    df_name, df = dft
+
     if df.shape == (0, 0):
-        print(f"Table [{df.name}] empty")
+        print(f"Table [{df_name}] empty")
         return
 
     if args.end_row is None:
@@ -195,12 +196,12 @@ def file_eda(args, path):
     if getattr(args, "repl", False):
         breakpoint()
 
-    for df in dfs:
+    for df_name, df in dfs:
         if args.table_name == "stdin":
-            print(f"## stdin:{df.name}")
+            print(f"## stdin:{df_name}")
         else:
-            print(f"## {path}:{df.name}")
-        print_info(args, df)
+            print(f"## {path}:{df_name}")
+        print_info(args, {df_name: df})
 
 
 def eda():

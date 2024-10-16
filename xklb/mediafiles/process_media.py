@@ -30,15 +30,35 @@ def parse_args() -> argparse.Namespace:
     )
     arggroups.history(parser)
 
-    parser.add_argument("--valid", action=argparse.BooleanOptionalAction, default=True, help='Attempt to process files with valid metadata')
-    parser.add_argument("--invalid", action=argparse.BooleanOptionalAction, default=False, help='Attempt to process files with invalid metadata')
+    parser.add_argument(
+        "--valid",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Attempt to process files with valid metadata",
+    )
+    parser.add_argument(
+        "--invalid",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Attempt to process files with invalid metadata",
+    )
 
     parser.add_argument("--min-savings-video", type=nums.float_from_percent, default="3%")
     parser.add_argument("--min-savings-audio", type=nums.float_from_percent, default="10%")
     parser.add_argument("--min-savings-image", type=nums.float_from_percent, default="15%")
 
-    parser.add_argument("--source-audio-bitrate", type=nums.human_to_bits, default="256kbps", help='Used to estimate duration when files are invalid or inside of archives')
-    parser.add_argument("--source-video-bitrate", type=nums.human_to_bits, default="1400kbps", help='Used to estimate duration when files are invalid or inside of archives')
+    parser.add_argument(
+        "--source-audio-bitrate",
+        type=nums.human_to_bits,
+        default="256kbps",
+        help="Used to estimate duration when files are invalid or inside of archives",
+    )
+    parser.add_argument(
+        "--source-video-bitrate",
+        type=nums.human_to_bits,
+        default="1400kbps",
+        help="Used to estimate duration when files are invalid or inside of archives",
+    )
 
     parser.add_argument("--target-audio-bitrate", type=nums.human_to_bits, default="144kbps")
     parser.add_argument("--target-video-bitrate", type=nums.human_to_bits, default="800kbps")
@@ -95,12 +115,12 @@ def check_shrink(args, m) -> list:
             probe = processes.FFProbe(m["path"])
             m["duration"] = probe.duration
         if m["duration"] is None or not m["duration"] > 0:
-            log.debug("[%s]: Invalid duration", m['path'])
+            log.debug("[%s]: Invalid duration", m["path"])
             m["duration"] = m["size"] / args.source_audio_bitrate * 8
             is_invalid = True
 
         if (m.get("audio_codecs") or "") == "opus":
-            log.debug("[%s]: Already opus",  m['path'])
+            log.debug("[%s]: Already opus", m["path"])
             return []
 
         future_size = int(m["duration"] * (args.target_audio_bitrate / 8))
@@ -117,7 +137,7 @@ def check_shrink(args, m) -> list:
         elif args.valid and can_shrink:
             return [m]
         else:
-            log.debug("[%s]: Skipping small file",  m['path'])
+            log.debug("[%s]: Skipping small file", m["path"])
     elif (
         (filetype and (filetype.startswith("image/") or " image" in filetype)) or m["ext"] in consts.IMAGE_EXTENSIONS
     ) and (m.get("duration") or 0) == 0:
@@ -132,7 +152,7 @@ def check_shrink(args, m) -> list:
 
         if can_shrink:
             return [m]
-        log.debug("[%s]: Skipping small file",  m['path'])
+        log.debug("[%s]: Skipping small file", m["path"])
     elif (
         (filetype and (filetype.startswith("video/") or " video" in filetype)) or m["ext"] in consts.VIDEO_EXTENSIONS
     ) and (m.get("video_count") or 1) >= 1:
@@ -146,12 +166,12 @@ def check_shrink(args, m) -> list:
             probe = processes.FFProbe(m["path"])
             m["duration"] = probe.duration
         if m["duration"] is None or not m["duration"] > 0:
-            log.debug("[%s]: Invalid duration", m['path'])
+            log.debug("[%s]: Invalid duration", m["path"])
             m["duration"] = m["size"] / args.source_video_bitrate * 8
             is_invalid = True
 
         if (m.get("video_codecs") or "") == "av1":
-            log.debug("[%s]: Already AV1",  m['path'])
+            log.debug("[%s]: Already AV1", m["path"])
             return []
 
         future_size = int(m["duration"] * (args.target_video_bitrate / 8))
@@ -168,7 +188,7 @@ def check_shrink(args, m) -> list:
         elif args.valid and can_shrink:
             return [m]
         else:
-            log.debug("[%s]: Skipping small file",  m['path'])
+            log.debug("[%s]: Skipping small file", m["path"])
     elif (filetype and (filetype.startswith("archive/") or filetype.endswith("+zip") or " archive" in filetype)) or m[
         "ext"
     ] in consts.ARCHIVE_EXTENSIONS:
@@ -186,7 +206,9 @@ def process_media() -> None:
     media = collect_media(args)
 
     media = iterables.conform(check_shrink(args, m) for m in media)
-    media = sorted(media, key=lambda d: d["savings"] / (d["processing_time"] or args.transcoding_image_time), reverse=True)
+    media = sorted(
+        media, key=lambda d: d["savings"] / (d["processing_time"] or args.transcoding_image_time), reverse=True
+    )
 
     if not media:
         processes.no_media_found()
@@ -283,5 +305,6 @@ def process_media() -> None:
                         args.db.conn.execute("DELETE FROM media where path = ?", [m["new_path"]])
                         args.db.conn.execute("UPDATE media set path = ? where path = ?", [m["new_path"], m["path"]])
                         args.db.conn.execute(
-                            "UPDATE media SET path = ?, size = ? WHERE path = ?", [m["new_path"], m["new_size"], m["path"]]
+                            "UPDATE media SET path = ?, size = ? WHERE path = ?",
+                            [m["new_path"], m["new_size"], m["path"]],
                         )
