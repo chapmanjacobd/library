@@ -672,6 +672,17 @@ disk_usage = """library disk-usage DATABASE [--sort-groups-by size | count] [--d
         | /home/xk/github/xk/lb/__pypackages__/3.11/lib/jedi/third_party/typeshed/third_party/2and3/requests/packages/urllib3/packages/ssl_match_hostname/__init__.pyi        | 88 Bytes |
         | /home/xk/github/xk/lb/__pypackages__/3.11/lib/jedi/third_party/typeshed/third_party/2and3/requests/packages/urllib3/packages/ssl_match_hostname/_implementation.pyi | 81 Bytes |
 
+    Group by extension
+
+        library exts du.db
+        library disk-usage du.db --group-by-extension
+        path        size    count
+        ------  --------  -------
+        avi      1.8 GiB        5
+        webm    14.3 GiB       47
+        mkv     49.2 GiB      159
+        mp4     86.7 GiB      613
+        4 file extensions
 """
 
 christen = """library christen [--run]

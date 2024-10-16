@@ -197,6 +197,7 @@ def check_shrink(args, m) -> list:
     else:
         # TODO: pdf => avif
         # TODO: mobi, azw3, pdf => epub
+        # TODO: csv, json => parquet
         log.warning("[%s]: Skipping unknown filetype %s", m["path"], filetype)
     return []
 

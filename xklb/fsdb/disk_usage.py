@@ -5,7 +5,7 @@ from xklb.playback import media_printer
 from xklb.utils import arggroups, argparse_utils, processes, sqlgroups
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(defaults_override=None):
     parser = argparse_utils.ArgumentParser(usage=usage.disk_usage)
     arggroups.sql_fs(parser)
     arggroups.group_folders(parser)
@@ -14,10 +14,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--folders-only", "-td", action="store_true", help="Only print folders")
     parser.add_argument("--files-only", "-tf", action="store_true", help="Only print files")
 
+    parser.add_argument("--group-by-extensions", action="store_true", help="Print statistics about file extensions")
+
     arggroups.debug(parser)
 
     arggroups.database(parser)
     parser.add_argument("search", nargs="*")
+    parser.set_defaults(**(defaults_override or {}))
     args = parser.parse_intermixed_args()
     arggroups.args_post(args, parser)
 
@@ -46,19 +49,26 @@ def get_subset(args, level=None, prefix=None) -> list[dict]:
         if level is not None and len(p) == level and not m["path"].endswith(os.sep):
             d[m["path"]] = m
 
-        while len(p) >= 2:
-            p.pop()
-            if p == [""]:
-                continue
+        if args.group_by_extensions:
+            ext = os.path.splitext(m["path"])[1].lower().lstrip(".")
+            if ext not in d:
+                d[ext] = {"size": 0, "count": 0}
+            d[ext]["size"] += m.get("size") or 0
+            d[ext]["count"] += 1
+        else:
+            while len(p) >= 2:
+                p.pop()
+                if p == [""]:
+                    continue
 
-            parent = os.sep.join(p) + os.sep
-            if level is not None and len(p) != level:
-                excluded_files.add(parent)
+                parent = os.sep.join(p) + os.sep
+                if level is not None and len(p) != level:
+                    excluded_files.add(parent)
 
-            if parent not in d:
-                d[parent] = {"size": 0, "count": 0}
-            d[parent]["size"] += m.get("size") or 0
-            d[parent]["count"] += 1
+                if parent not in d:
+                    d[parent] = {"size": 0, "count": 0}
+                d[parent]["size"] += m.get("size") or 0
+                d[parent]["count"] += 1
 
     reverse = True
     if args.sort_groups_by and " desc" in args.sort_groups_by:
@@ -72,7 +82,7 @@ def get_subset(args, level=None, prefix=None) -> list[dict]:
 
 
 def load_subset(args):
-    if args.depth == 0:
+    if not args.group_by_extensions and args.depth == 0:
         while len(args.subset) < 2:
             args.depth += 1
             args.subset = get_subset(args, level=args.depth, prefix=args.cwd)
@@ -94,8 +104,8 @@ def get_data(args) -> list[dict]:
     return media
 
 
-def disk_usage():
-    args = parse_args()
+def disk_usage(defaults_override=None):
+    args = parse_args(defaults_override)
     args.data = get_data(args)
     args.subset = []
     args.cwd = None
@@ -115,8 +125,16 @@ def disk_usage():
     media_printer.media_printer(
         args,
         args.subset,
-        units=f"paths at depth {args.depth} ({num_folders} folders, {num_files} files)",
+        units=(
+            f"file extensions"
+            if args.group_by_extensions
+            else f"paths at depth {args.depth} ({num_folders} folders, {num_files} files)"
+        ),
     )
+
+
+def extensions():
+    disk_usage({"group_by_extensions": True})
 
 
 if __name__ == "__main__":

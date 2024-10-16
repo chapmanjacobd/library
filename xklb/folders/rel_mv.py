@@ -159,7 +159,6 @@ def rel_move(args, sources, dest, relative_from=None):
             relpath = os.path.join(*parts, rel_p.name)
 
         target_dir = (dest / relpath).parent
-        target_dir = path_utils.dedupe_path_parts(target_dir)
 
         if args.simulate:
             log.warning("mv %s %s", shlex.quote(str(abspath)), shlex.quote(str(target_dir)))
