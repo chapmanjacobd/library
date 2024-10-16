@@ -193,6 +193,7 @@ modules = {
     "xklb.folders.mount_stats.mount_stats": ["mu", "mount-usage"],
     "xklb.folders.big_dirs.big_dirs": ["large-folders"],
     "xklb.fsdb.disk_usage.disk_usage": ["du", "usage"],
+    "xklb.fsdb.disk_usage.extensions": ["exts"],
     "xklb.fsdb.search_db.search_db": ["s", "sdb", "search-dbs"],
     "xklb.mediadb.block.block": [],
     "xklb.mediadb.download.download": ["dl"],
