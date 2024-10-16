@@ -37,6 +37,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--min-savings-audio", type=nums.float_from_percent, default="10%")
     parser.add_argument("--min-savings-image", type=nums.float_from_percent, default="15%")
 
+    parser.add_argument("--source-audio-bitrate", type=nums.human_to_bits, default="256kbps", help='Used to estimate duration when files are invalid or inside of archives')
+    parser.add_argument("--source-video-bitrate", type=nums.human_to_bits, default="1400kbps", help='Used to estimate duration when files are invalid or inside of archives')
+
     parser.add_argument("--target-audio-bitrate", type=nums.human_to_bits, default="144kbps")
     parser.add_argument("--target-video-bitrate", type=nums.human_to_bits, default="800kbps")
     parser.add_argument("--target-image-size", type=nums.human_to_bytes, default="250KiB")
@@ -82,25 +85,19 @@ def check_shrink(args, m) -> list:
         (filetype and (filetype.startswith("audio/") or " audio" in filetype))
         or m["ext"] in consts.AUDIO_ONLY_EXTENSIONS
     ) and (m.get("video_count") or 0) == 0:
+        is_invalid = False
         m["media_type"] = "Audio"
 
         if m.get("compressed_size"):
-            m["duration"] = 3 * 60
+            m["duration"] = m["size"] / args.source_audio_bitrate * 8
 
         if "duration" not in m:
             probe = processes.FFProbe(m["path"])
             m["duration"] = probe.duration
         if m["duration"] is None or not m["duration"] > 0:
             log.debug("[%s]: Invalid duration", m['path'])
-            if args.invalid:
-                m["future_size"] = int(m['size'] * 0.8)
-                m["savings"] = 0
-                m["processing_time"] = 0
-                return [m]
-            else:
-                return []
-        if not args.valid:
-            return []
+            m["duration"] = m["size"] / args.source_audio_bitrate * 8
+            is_invalid = True
 
         if (m.get("audio_codecs") or "") == "opus":
             log.debug("[%s]: Already opus",  m['path'])
@@ -108,61 +105,70 @@ def check_shrink(args, m) -> list:
 
         future_size = int(m["duration"] * (args.target_audio_bitrate / 8))
         should_shrink_buffer = int(future_size * args.min_savings_audio)
+
+        m["future_size"] = future_size
+        m["savings"] = (m.get("compressed_size") or m["size"]) - future_size
+        m["processing_time"] = math.ceil(m["duration"] / args.transcoding_audio_rate)
+
         can_shrink = m["size"] > (future_size + should_shrink_buffer)
-        if can_shrink:
-            m["future_size"] = future_size
-            m["savings"] = (m.get("compressed_size") or m["size"]) - future_size
-            m["processing_time"] = math.ceil(m["duration"] / args.transcoding_audio_rate)
+
+        if is_invalid and args.invalid:
             return [m]
-        log.debug("[%s]: Skipping small file",  m['path'])
+        elif args.valid and can_shrink:
+            return [m]
+        else:
+            log.debug("[%s]: Skipping small file",  m['path'])
     elif (
         (filetype and (filetype.startswith("image/") or " image" in filetype)) or m["ext"] in consts.IMAGE_EXTENSIONS
     ) and (m.get("duration") or 0) == 0:
         future_size = args.target_image_size
         should_shrink_buffer = int(future_size * args.min_savings_image)
         can_shrink = m["size"] > (future_size + should_shrink_buffer)
+
+        m["media_type"] = "Image"
+        m["future_size"] = future_size
+        m["savings"] = (m.get("compressed_size") or m["size"]) - future_size
+        m["processing_time"] = args.transcoding_image_time
+
         if can_shrink:
-            m["media_type"] = "Image"
-            m["future_size"] = future_size
-            m["savings"] = (m.get("compressed_size") or m["size"]) - future_size
-            m["processing_time"] = args.transcoding_image_time
             return [m]
         log.debug("[%s]: Skipping small file",  m['path'])
     elif (
         (filetype and (filetype.startswith("video/") or " video" in filetype)) or m["ext"] in consts.VIDEO_EXTENSIONS
     ) and (m.get("video_count") or 1) >= 1:
+        is_invalid = False
         m["media_type"] = "Video"
 
         if m.get("compressed_size"):
-            m["duration"] = 20 * 60
+            m["duration"] = m["size"] / args.source_video_bitrate * 8
 
         if "duration" not in m:
             probe = processes.FFProbe(m["path"])
             m["duration"] = probe.duration
         if m["duration"] is None or not m["duration"] > 0:
             log.debug("[%s]: Invalid duration", m['path'])
-            if args.invalid:
-                m["future_size"] = int(m['size'] * 0.8)
-                m["savings"] = 0
-                m["processing_time"] = 0
-                return [m]
-            else:
-                return []
-        if not args.valid:
-            return []
+            m["duration"] = m["size"] / args.source_video_bitrate * 8
+            is_invalid = True
+
         if (m.get("video_codecs") or "") == "av1":
             log.debug("[%s]: Already AV1",  m['path'])
             return []
 
         future_size = int(m["duration"] * (args.target_video_bitrate / 8))
         should_shrink_buffer = int(future_size * args.min_savings_video)
+
+        m["future_size"] = future_size
+        m["savings"] = (m.get("compressed_size") or m["size"]) - future_size
+        m["processing_time"] = math.ceil(m["duration"] / args.transcoding_video_rate)
+
         can_shrink = m["size"] > (future_size + should_shrink_buffer)
-        if can_shrink:
-            m["future_size"] = future_size
-            m["savings"] = (m.get("compressed_size") or m["size"]) - future_size
-            m["processing_time"] = math.ceil(m["duration"] / args.transcoding_video_rate)
+
+        if is_invalid and args.invalid:
             return [m]
-        log.debug("[%s]: Skipping small file",  m['path'])
+        elif args.valid and can_shrink:
+            return [m]
+        else:
+            log.debug("[%s]: Skipping small file",  m['path'])
     elif (filetype and (filetype.startswith("archive/") or filetype.endswith("+zip") or " archive" in filetype)) or m[
         "ext"
     ] in consts.ARCHIVE_EXTENSIONS:

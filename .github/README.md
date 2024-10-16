@@ -1931,7 +1931,20 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 <details><summary>Estimate and execute potential disk space savings</summary>
 
     $ library process-media -h
-    usage: library process-media DATABASE
+    usage: library process-media DATABASE_OR_PATH
+
+    Running fsadd first to create a video database will be faster because it runs many files in parallel
+
+        library fsadd --video video.db ~/Videos/
+        library process-media video.db
+
+    But using media folder/file paths directly is also supported
+
+        library process-media ~/Videos/
+
+    Find invalid media to attempt to transcode or delete
+
+        library process-media --invalid --no-valid --delete-unplayable video.db
 
 Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
