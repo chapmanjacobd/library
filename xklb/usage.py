@@ -1805,7 +1805,20 @@ expand_links = """library expand-links SEARCH_URLS QUERY ...
 
 """
 
-process_media = """library process-media DATABASE
+process_media = """library process-media DATABASE_OR_PATH
+
+    Running fsadd first to create a video database will be faster because it runs many files in parallel
+
+        library fsadd --video video.db ~/Videos/
+        library process-media video.db
+
+    But using media folder/file paths directly is also supported
+
+        library process-media ~/Videos/
+
+    Find invalid media to attempt to transcode or delete
+
+        library process-media --invalid --no-valid --delete-unplayable video.db
 
 Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 """
