@@ -378,15 +378,15 @@ def lsar(archive_path):
     try:
         lsar_json = json.loads(lsar_output.stdout)
     except json.JSONDecodeError:
-        log.warning("%s: Error parsing lsar output as JSON: %s", archive_path, lsar_output)
+        log.warning("[%s]: Error parsing lsar output as JSON: %s", archive_path, lsar_output)
         return []
 
     if lsar_json.get("lsarError"):
-        log.warning("%s: lsar error %s", archive_path, lsar_json["lsarError"])
+        log.warning("[%s]: lsar error %s", archive_path, lsar_json["lsarError"])
 
     lsar_contents = lsar_json.get("lsarContents", [])
     if len(lsar_contents) == 0:
-        log.info("%s: archive empty", archive_path)
+        log.info("[%s]: archive empty", archive_path)
         return []
 
     ar_size = os.stat(archive_path).st_size
