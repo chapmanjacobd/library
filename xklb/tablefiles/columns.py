@@ -25,7 +25,7 @@ def parse_args():
 def file_columns(args, path):
     import pandas as pd
 
-    for df in file_utils.read_file_to_dataframes(
+    for df_name, df in file_utils.read_file_to_dataframes(
         path,
         table_name=args.table_name,
         table_index=args.table_index,
@@ -38,8 +38,6 @@ def file_columns(args, path):
         transpose=args.transpose,
         skip_headers=args.skip_headers,
     ):
-        df_name = df.name
-
         if (df.dtypes == "object").all():
             df = df.convert_dtypes()
         dc = [(col, df.dtypes[col]) for col in df.columns]

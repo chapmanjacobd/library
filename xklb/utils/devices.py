@@ -209,7 +209,7 @@ def clobber(args, source, destination) -> tuple[str | None, str]:
 
     else:
         parent_dir = os.path.dirname(destination)
-        if parent_dir == '':  # relative file
+        if parent_dir == "":  # relative file
             return source, destination
 
         try:
@@ -222,8 +222,8 @@ def clobber(args, source, destination) -> tuple[str | None, str]:
             parent_file = parent_dir
             while not os.path.exists(parent_file):  # until we find the file conflict
                 parent_file = os.path.dirname(parent_file)  # up
-                if parent_file == '':
-                    log.info('Ran out of path from %s', parent_dir)
+                if parent_file == "":
+                    log.info("Ran out of path from %s", parent_dir)
                     raise
 
             preserve_root(parent_file)

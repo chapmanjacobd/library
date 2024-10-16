@@ -3,12 +3,14 @@ import sys
 from xklb import usage
 from xklb.playback import media_printer
 from xklb.utils import arggroups, argparse_utils, file_utils, web
+from xklb.utils.log_utils import check_stdio
 
 
 def parse_args():
     parser = argparse_utils.ArgumentParser(usage=usage.markdown_tables)
     arggroups.table_like(parser)
     parser.add_argument("--sort", "-u", default="random()")
+    parser.add_argument("--to-parquet", action="store_true", help="Write to Parquet")
     arggroups.debug(parser)
 
     arggroups.paths_or_stdin(parser)
@@ -21,7 +23,7 @@ def parse_args():
 
 
 def file_markdown(args, path):
-    for df in file_utils.read_file_to_dataframes(
+    for df_name, df in file_utils.read_file_to_dataframes(
         path,
         table_name=args.table_name,
         table_index=args.table_index,
@@ -35,21 +37,26 @@ def file_markdown(args, path):
         skip_headers=args.skip_headers,
     ):
         if args.cols:
-            df_name = df.name
             df = df[args.cols]
-            df.name = df_name
 
         if getattr(args, "repl", False):
             breakpoint()
         if args.to_json:
             df.to_json(sys.stdout, orient="records", lines=True)
+        elif args.to_parquet:
+            _has_stdin, has_stdout = check_stdio()
+            if has_stdout:
+                output_path = (args.table_name or df_name) + ".parquet"
+                df.to_parquet(output_path, index=None, compression="zstd")
+            else:
+                sys.stdout.buffer.write(df.to_parquet(index=None, compression="zstd"))
         elif args.print:
             media_printer.media_printer(args, df.to_dict(orient="records"))
         else:
             if args.table_name == "stdin":
-                print(f"## stdin:{df.name}")
+                print(f"## stdin:{df_name}")
             else:
-                print(f"## {path}:{df.name}")
+                print(f"## {path}:{df_name}")
             print()
             print(df.to_markdown(tablefmt="github", index=False))
             print()

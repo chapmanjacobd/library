@@ -5,6 +5,15 @@ from IPython.core import ultratb
 from IPython.terminal import debugger
 
 
+def check_stdio():
+    try:
+        has_stdin = os.getpgrp() == os.tcgetpgrp(sys.stdin.fileno())
+        has_stdout = os.getpgrp() == os.tcgetpgrp(sys.stdout.fileno())
+    except Exception:
+        has_stdin, has_stdout = False, False
+    return has_stdin, has_stdout
+
+
 def clamp_index(arr, idx):
     return arr[min(max(idx, 0), len(arr) - 1)]
 
@@ -15,11 +24,7 @@ def argparse_log() -> logging.Logger:
     parser.add_argument("--no-pdb", action="store_true")
     args, _unknown = parser.parse_known_args()
 
-    try:
-        has_stdin = os.getpgrp() == os.tcgetpgrp(sys.stdin.fileno())
-        has_stdout = os.getpgrp() == os.tcgetpgrp(sys.stdout.fileno())
-    except Exception:
-        has_stdin, has_stdout = False, False
+    has_stdin, has_stdout = check_stdio()
 
     if args.verbose > 0 and has_stdin and has_stdout:
         sys.breakpointhook = debugger.set_trace

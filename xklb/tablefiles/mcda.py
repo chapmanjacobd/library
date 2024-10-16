@@ -131,9 +131,11 @@ def auto_mcda(args, alternatives, minimize_cols, df=None):
     return df
 
 
-def print_info(args, df):
+def print_info(args, dft):
+    df_name, df = dft
+
     if df.shape == (0, 0):
-        print(f"Table [{df.name}] empty")
+        print(f"Table [{df_name}] empty")
         return
 
     if args.end_row is None:
@@ -216,11 +218,11 @@ def file_mcda(args, path):
         skip_headers=args.skip_headers,
     )
 
-    for df in dfs:
+    for df_name, df in dfs:
         if args.table_name == "stdin":
-            print(f"## stdin:{df.name}")
+            print(f"## stdin:{df_name}")
         else:
-            print(f"## {path}:{df.name}")
+            print(f"## {path}:{df_name}")
         df = pd_utils.convert_dtypes(df, clean=args.clean)
         print_info(args, df)
 

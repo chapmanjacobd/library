@@ -1472,6 +1472,7 @@ def table_like(parent_parser):
         help="Concat all detected tables",
     )
     parser.add_argument("--transpose", action="store_true", help="Swap X and Y axis. Move columns to rows.")
+    parser.add_argument("--repl", "-r", action="store_true")
 
 
 def table_like_post(args):

@@ -230,7 +230,7 @@ modules = {
     "xklb.tablefiles.eda.eda": ["preview"],
     "xklb.tablefiles.incremental_diff.incremental_diff": [],
     "xklb.tablefiles.columns.columns": [],
-    "xklb.tablefiles.markdown_tables.markdown_tables": ["tables"],
+    "xklb.tablefiles.markdown_tables.markdown_tables": ["tables", "table"],
     "xklb.tablefiles.mcda.mcda": ["mcdm", "rank"],
     "xklb.text.cluster_sort.cluster_sort": ["cs"],
     "xklb.text.regex_sort.regex_sort": ["rs", "resort"],
@@ -257,7 +257,7 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers()
 
     # this needs to stay inside the function to prevent side-effects during testing
-    known_subcommands = ["fs", "media", "open", "tables", "tabs", "du", "search", "links"]
+    known_subcommands = ["fs", "media", "open", "table", "tables", "tabs", "du", "search", "links"]
 
     def consecutive_prefixes(s):
         prefixes = [s[:j] for j in range(5, len(s)) if s[:j] and s[:j] not in known_subcommands]

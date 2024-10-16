@@ -1,5 +1,5 @@
 import errno, mimetypes, os, shlex, shutil, tempfile, time
-from collections import Counter
+from collections import Counter, namedtuple
 from fnmatch import fnmatch
 from functools import wraps
 from io import StringIO
@@ -470,6 +470,9 @@ def retry_with_different_encodings(func):
     return wrapper
 
 
+NDF = namedtuple("NamedDataFrame", ["df_name", "df"])
+
+
 @retry_with_different_encodings
 def read_file_to_dataframes(
     path,
@@ -483,7 +486,7 @@ def read_file_to_dataframes(
     join_tables=False,
     transpose=False,
     skip_headers=False,
-):
+) -> list[NDF]:
     import pandas as pd
 
     if mimetype is None:
@@ -495,6 +498,8 @@ def read_file_to_dataframes(
     if mimetype is None:
         msg = f"{path}: File type could not be determined. Pass in --filetype"
         raise ValueError(msg)
+
+    dfs: list[NDF] = []
 
     if mimetype in ("sqlite", "sqlite3", "sqlite database file"):
         import pandas as pd
@@ -513,11 +518,9 @@ def read_file_to_dataframes(
             if table_index is not None:
                 tables = [tables[table_index]]
 
-        dfs = []
         for table in tables:
             df = pd.DataFrame(db[table].rows_where(offset=start_row, limit=end_row, order_by=order_by))
-            df.name = table
-            dfs.append(df)
+            dfs.append(NDF(table, df))
         db.close()
     elif mimetype in (
         "excel",
@@ -532,17 +535,15 @@ def read_file_to_dataframes(
             skiprows=start_row,
             header=None if skip_headers else 0,
         )
-        dfs = []
+
         if isinstance(excel_data, pd.DataFrame):
             worksheet_names = excel_data.index.levels[0]  # type: ignore
             for name in worksheet_names:
                 df = excel_data.loc[name]
-                df.name = name
-                dfs.append(df)
+                dfs.append(NDF(name, df))
         else:
             for worksheet_name, df in excel_data.items():
-                df.name = worksheet_name
-                dfs.append(df)
+                dfs.append(NDF(worksheet_name, df))
     elif mimetype in (
         "netcdf",
         "application/x-netcdf",
@@ -550,84 +551,87 @@ def read_file_to_dataframes(
         import xarray as xr  # type: ignore
 
         ds = xr.open_dataset(path)
-        dfs = [ds.to_dataframe()]
+        df = ds.to_dataframe()
+        dfs.append(NDF(None, df))
     elif mimetype in ("zarr",):
         import xarray as xr  # type: ignore
 
         ds = xr.open_zarr(path)
-        dfs = [ds.to_dataframe()]
+        df = ds.to_dataframe()
+        dfs.append(NDF(None, df))
     elif mimetype in (
         "hdf",
         "application/x-hdf",
     ):
-        dfs = [pd.read_hdf(path, start=start_row, stop=end_row)]
+        df = pd.read_hdf(path, start=start_row, stop=end_row)
+        dfs.append(NDF(None, df))
     elif mimetype in (
         "json",
         "application/json",
     ):
-        dfs = [pd.read_json(StringIO(path), encoding=encoding)]
+        df = pd.read_json(path, encoding=encoding)
+        dfs.append(NDF(None, df))
     elif mimetype in ("jsonl", "json lines", "geojson lines"):
-        dfs = [pd.read_json(StringIO(path), nrows=end_row, lines=True, encoding=encoding)]
+        df = pd.read_json(StringIO(path), nrows=end_row, lines=True, encoding=encoding)
+        dfs.append(NDF(None, df))
     elif mimetype in (
         "csv",
         "text/csv",
     ):
-        dfs = [
-            pd.read_csv(
-                path, nrows=end_row, skiprows=start_row or 0, encoding=encoding, header=None if skip_headers else 0
-            )
-        ]
+        df = pd.read_csv(
+            path, nrows=end_row, skiprows=start_row or 0, encoding=encoding, header=None if skip_headers else 0
+        )
+        dfs.append(NDF(None, df))
     elif mimetype in (
         "lines",
         "text/plain",
         "plaintext",
         "plain",
     ):
-        dfs = [
-            pd.read_csv(
-                path,
-                names=["text"],
-                sep="\r",  # just something to keep the parser busy
-                nrows=end_row,
-                skiprows=start_row or 0,
-                encoding=encoding,
-                header=None if skip_headers else 0,
-            )
-        ]
+        df = pd.read_csv(
+            path,
+            names=["text"],
+            sep="\r",  # just something to keep the parser busy
+            nrows=end_row,
+            skiprows=start_row or 0,
+            encoding=encoding,
+            header=None if skip_headers else 0,
+        )
+        dfs.append(NDF(None, df))
     elif mimetype in (
         "wsv",
         "text/wsv",
         "text/whitespace-separated-values",
     ):
-        dfs = [
-            pd.read_csv(
-                path,
-                delim_whitespace=True,
-                nrows=end_row,
-                skiprows=start_row or 0,
-                encoding=encoding,
-                header=None if skip_headers else 0,
-            )
-        ]
+        df = pd.read_csv(
+            path,
+            delim_whitespace=True,
+            nrows=end_row,
+            skiprows=start_row or 0,
+            encoding=encoding,
+            header=None if skip_headers else 0,
+        )
+        dfs.append(NDF(None, df))
     elif mimetype in (
         "tsv",
         "text/tsv",
         "text/tab-separated-values",
     ):
-        dfs = [
-            pd.read_csv(
-                path,
-                delimiter="\t",
-                nrows=end_row,
-                skiprows=start_row or 0,
-                encoding=encoding,
-                header=None if skip_headers else 0,
-            )
-        ]
+        df = pd.read_csv(
+            path,
+            delimiter="\t",
+            nrows=end_row,
+            skiprows=start_row or 0,
+            encoding=encoding,
+            header=None if skip_headers else 0,
+        )
+        dfs.append(NDF(None, df))
     elif mimetype in ("parq", "parquet", "application/parquet"):
-        dfs = [pd.read_parquet(path)]
+        df = pd.read_parquet(path)
+        dfs.append(NDF(None, df))
     elif mimetype in ("pkl", "pickle", "application/octet-stream"):
-        dfs = [pd.read_pickle(path)]
+        df = pd.read_pickle(path)
+        dfs.append(NDF(None, df))
     elif mimetype in (
         "html",
         "htm",
@@ -636,20 +640,22 @@ def read_file_to_dataframes(
     ):
         if path.startswith("http"):
             path = StringIO(web.extract_html(path))
-        dfs = pd.read_html(path, skiprows=start_row, encoding=encoding)
+        dfs.extend(NDF(None, df) for df in pd.read_html(path, skiprows=start_row, encoding=encoding))
     elif mimetype in ("stata",):
-        dfs = [pd.read_stata(path)]
+        df = pd.read_stata(path)
+        dfs.append(NDF(None, df))
     elif mimetype in ("feather",):
-        dfs = [pd.read_feather(path)]
+        df = pd.read_feather(path)
+        dfs.append(NDF(None, df))
     elif mimetype in ("orc",):
-        dfs = [pd.read_orc(path)]
+        df = pd.read_orc(path)
+        dfs.append(NDF(None, df))
     elif "pdf" in mimetype:
         import camelot
 
         if " " in path:
             path = web.url_encode(path)  # camelot does not like spaces in URLs...
 
-        dfs = []
         for t in camelot.read_pdf(path, pages="all", suppress_stdout=False):  # type: ignore
             df = t.df
             if start_row:
@@ -663,7 +669,8 @@ def read_file_to_dataframes(
             df.columns = [" ".join(col.replace("\n", "").split()) for col in df.columns]
             dfs.append(df)
     elif "xml" in mimetype:
-        dfs = [pd.read_xml(path, encoding=encoding or "utf-8")]
+        df = pd.read_xml(path, encoding=encoding or "utf-8")
+        dfs.append(NDF(None, df))
     else:
         msg = f"{path}: Unsupported file type: {mimetype}"
         raise ValueError(msg)
@@ -672,26 +679,22 @@ def read_file_to_dataframes(
         dfs = [dfs[table_index]]
 
     if skip_headers:
-        for df in dfs:
+        for df_name, df in dfs:
             df.columns = [f"column{i}" for i in range(len(df.columns))]
 
     if join_tables:
-        dfs = [pd.concat(dfs, axis=0, ignore_index=True)]
+        dfs = [NDF(dfs[0].df_name, pd.concat([t.df for t in dfs], axis=0, ignore_index=True))]
 
-    for table_index_as_name, df in enumerate(dfs):
-        if not hasattr(df, "name"):
-            df.name = str(table_index_as_name)
+    dfs = [NDF(t.df_name if t.df_name else str(table_index_as_name), t.df) for table_index_as_name, t in enumerate(dfs)]
 
     if transpose:
 
-        def t(df):
-            df_name = df.name
+        def transpose_df(df):
             df.loc[-1] = df.columns
             df = df.sort_index().reset_index(drop=True).T
-            df.name = df_name
             return df
 
-        dfs = [t(df) for df in dfs]
+        dfs = [NDF(t.df_name, transpose_df(t.df)) for t in dfs]
 
     return dfs
 
