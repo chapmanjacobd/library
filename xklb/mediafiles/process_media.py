@@ -277,35 +277,43 @@ def process_media() -> None:
                     m["time_deleted"] = consts.APPLICATION_START
                     continue
 
-            new_path = None
-            if m["media_type"] in ("Audio", "Video"):
-                if args.simulate:
+            if args.simulate:
+                if m["media_type"] in ("Audio", "Video"):
                     log.info("FFMPEG processing %s", m["path"])
-                else:
-                    new_path = process_ffmpeg.process_path(args, m["path"])
-            elif m["media_type"] == "Image":
-                if args.simulate:
+                elif m["media_type"] == "Image":
                     log.info("ImageMagick processing %s", m["path"])
                 else:
+                    raise NotImplementedError
+
+                new_free_space += (m.get("compressed_size") or m["size"]) - m["future_size"]
+            else:
+                if m["media_type"] in ("Audio", "Video"):
+                    new_path = process_ffmpeg.process_path(args, m["path"])
+                elif m["media_type"] == "Image":
                     new_path = process_image.process_path(args, m["path"])
+                else:
+                    raise NotImplementedError
 
-            if new_path is not None:
-                m["new_path"] = str(new_path)
-                m["new_size"] = os.stat(new_path).st_size
+                if new_path is None:
+                    m["time_deleted"] = consts.APPLICATION_START
 
-                new_free_space += (m.get("compressed_size") or m["size"]) - m["new_size"]
+                    new_free_space += (m.get("compressed_size") or m["size"])
+                else:
+                    m["new_path"] = str(new_path)
+                    m["new_size"] = os.stat(new_path).st_size
 
-        if args.database:
-            with args.db.conn:
-                for m in media:
-                    if m.get("time_deleted"):
-                        args.db.conn.execute(
-                            "UPDATE media set time_deleted = ? where path = ?", [m["time_deleted"], m["path"]]
-                        )
-                    elif m.get("new_path") and m.get("new_path") != m["path"]:
-                        args.db.conn.execute("DELETE FROM media where path = ?", [m["new_path"]])
-                        args.db.conn.execute("UPDATE media set path = ? where path = ?", [m["new_path"], m["path"]])
-                        args.db.conn.execute(
-                            "UPDATE media SET path = ?, size = ? WHERE path = ?",
-                            [m["new_path"], m["new_size"], m["path"]],
-                        )
+                    new_free_space += (m.get("compressed_size") or m["size"]) - m["new_size"]
+
+                if args.database:
+                    with args.db.conn:
+                        if m.get("time_deleted"):
+                            args.db.conn.execute(
+                                "UPDATE media set time_deleted = ? where path = ?", [m["time_deleted"], m["path"]]
+                            )
+                        elif m.get("new_path") and m.get("new_path") != m["path"]:
+                            args.db.conn.execute("DELETE FROM media where path = ?", [m["new_path"]])
+                            args.db.conn.execute("UPDATE media set path = ? where path = ?", [m["new_path"], m["path"]])
+                            args.db.conn.execute(
+                                "UPDATE media SET path = ?, size = ? WHERE path = ?",
+                                [m["new_path"], m["new_size"], m["path"]],
+                            )

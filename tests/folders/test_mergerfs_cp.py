@@ -44,10 +44,12 @@ def test_merge(src_type, dest_type, temp_file_tree):
         dest = temp_file_tree({})
     else:
         dest = temp_file_tree(simple_file_tree)
-        if dest_type == "clobber_file":
-            dest = os.path.join(dest, "file4.txt")
-        elif dest_type == "clobber_folder":
-            dest = os.path.join(dest, "folder1")
+
+    dest_arg = dest
+    if dest_type == "clobber_file":
+        dest_arg = os.path.join(dest, "file4.txt")
+    elif dest_type == "clobber_folder":
+        dest_arg = os.path.join(dest, "folder1")
 
     src1_inodes = generate_file_tree_dict(src1, inodes=False)
     dest_inodes = generate_file_tree_dict(dest, inodes=False)
@@ -56,7 +58,9 @@ def test_merge(src_type, dest_type, temp_file_tree):
     cmd += ["--file-over-file", "delete-dest"]
     if src_type == "folder_bsd":
         cmd += ["--bsd"]
-    cmd += [src1, dest]
+    if dest_type == "clobber_file":
+        cmd += ["--dest-file"]
+    cmd += [src1, dest_arg]
     lb(cmd)
 
     assert generate_file_tree_dict(src1, inodes=False) == src1_inodes
@@ -69,18 +73,25 @@ def test_merge(src_type, dest_type, temp_file_tree):
     elif dest_type in ("not_exist",):
         assert target_inodes == src1_inodes
 
-    elif src_type == "folder_bsd" and dest_type in ["folder_merge", "clobber_file"]:
+    elif src_type == "folder_bsd" and dest_type == "folder_merge":
         assert target_inodes == dest_inodes | {Path(src1).name: src1_inodes}
+
+    elif src_type == "folder_bsd" and dest_type == "clobber_file":
+        assert target_inodes == dest_inodes | {'file4.txt': {Path(src1).name: src1_inodes, 'file4.txt': dest_inodes['file4.txt']}}
 
     elif dest_type == "folder_merge":
         assert target_inodes == dest_inodes | src1_inodes
 
     elif dest_type == "clobber_folder":
-        dest_inodes["file4.txt"] = dest_inodes["file4.txt"] | src1_inodes  # type: ignore
+        dest_inodes['folder1']["file4.txt"] = src1_inodes | dest_inodes['folder1']["file4.txt"]  # type: ignore
         assert target_inodes == dest_inodes
 
-    elif src_type in ["folder", "file"] and dest_type == "clobber_file":
-        assert target_inodes == src1_inodes
+    elif src_type in "file" and dest_type == "clobber_file":
+        assert target_inodes == dest_inodes | src1_inodes
+
+    elif src_type in "folder" and dest_type == "clobber_file":
+        dest_inodes["file4.txt"] = src1_inodes  # type: ignore
+        assert target_inodes == dest_inodes
 
     elif dest_type == "clobber_file":
         assert target_inodes == dest_inodes

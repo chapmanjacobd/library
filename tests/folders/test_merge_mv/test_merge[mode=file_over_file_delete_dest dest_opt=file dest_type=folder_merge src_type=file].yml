@@ -1,0 +1,18 @@
+dest:
+- 0
+- '5'
+file4.txt:
+- 0
+- '4'
+folder1:
+  file1.txt:
+  - 0
+  - '1'
+  file4.txt:
+    file2.txt:
+    - 0
+    - '2'
+folder2:
+  .hidden:
+  - 0
+  - '3'

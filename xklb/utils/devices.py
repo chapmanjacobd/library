@@ -1,7 +1,7 @@
 import os, random, shlex, shutil, sys, time, webbrowser
 
 from xklb.files import sample_compare
-from xklb.utils import arggroups, consts, file_utils, processes, strings
+from xklb.utils import arggroups, consts, file_utils, path_utils, processes, strings
 from xklb.utils.log_utils import log
 
 webbrowser.register("termux-open-url '%s'", None)
@@ -129,7 +129,7 @@ def clobber(args, source, destination) -> tuple[str | None, str]:
                 case arggroups.FileOverFolder.DELETE_DEST:
                     rmtree(args, destination)
                 case arggroups.FileOverFolder.MERGE:
-                    destination = os.path.join(destination, os.path.basename(destination))  # down
+                    destination = os.path.join(destination, path_utils.basename(destination))  # down
                     log.info("re-targeted %s -> %s", orig_destination, destination)
                     return clobber(args, source, destination)
 
@@ -247,8 +247,12 @@ def clobber(args, source, destination) -> tuple[str | None, str]:
 
                     while os.path.exists(parent_file):  # until we find an open file slot
                         parent_file = os.path.join(parent_file, os.path.basename(parent_file))  # down
+
+                    if source == os.path.commonpath([source, destination]):
+                        # file was a conflict with destination path but let the caller rename it
+                        return temp_rename, parent_file
                     rename(args, temp_rename, parent_file)  # temporary rename to final dest
-                    if destination == parent_file:
+                    if destination == parent_file:  # TODO: falsify
                         log.info("re-targeted %s -> %s", orig_destination, destination)
                         return clobber(args, source, destination)
 

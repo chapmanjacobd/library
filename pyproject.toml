@@ -189,7 +189,7 @@ select = ["ALL"]
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 [tool.pytest.ini_options]
-addopts = "--pdbcls=IPython.terminal.debugger:TerminalPdb --ignore=tests/data --capture=tee-sys --log-cli-level=ERROR"
+addopts = "--pdbcls=IPython.terminal.debugger:TerminalPdb --ignore=tests/data --capture=tee-sys --capture=no --log-cli-level=ERROR"
 testpaths = ["tests"]
 
 [tool.pyright]

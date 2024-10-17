@@ -444,7 +444,7 @@ def path_tuple_from_url(url):
     parsed_url = urlparse(url)
     relative_path = os.path.join(parsed_url.netloc, parsed_url.path.lstrip("/"))
     base_path = os.path.dirname(relative_path)
-    filename = os.path.basename(parsed_url.path)
+    filename = path_utils.basename(parsed_url.path)
     return base_path, filename
 
 
