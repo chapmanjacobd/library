@@ -106,7 +106,7 @@ def dedupe_path_parts(p):
     return Path(*OrderedDict.fromkeys(Path(p).parts).keys())
 
 
-def common_path(paths):
+def common_path_full(paths):
     common_prefix = os.path.commonprefix(paths)
 
     suffix_words = []
@@ -132,10 +132,20 @@ def bfs_removedirs(root_dir):
         except OSError:
             pass
 
-
-def is_folder_dest(source, dest):
-    return dest.endswith(os.sep) or not dest.endswith(os.path.basename(source))
-
-
 def parent(s):
     return os.path.basename(os.path.dirname(s))
+
+
+def basename(path):
+    """A basename() variant which first strips the trailing slash, if present.
+    Thus we always get the last component of the path, even for directories.
+
+    e.g.
+    >>> os.path.basename('/bar/foo')
+    'foo'
+    >>> os.path.basename('/bar/foo/')
+    ''
+    """
+    path = os.fspath(path)
+    sep = os.path.sep + (os.path.altsep or '')
+    return os.path.basename(path.rstrip(sep))

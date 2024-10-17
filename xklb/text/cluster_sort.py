@@ -93,7 +93,7 @@ def map_and_name(paths, clusters):
     result = []
     for paths in grouped_strings.values():
         paths = sorted(paths)
-        metadata = {"common_path": path_utils.common_path(paths), "grouped_paths": paths}
+        metadata = {"common_path": path_utils.common_path_full(paths), "grouped_paths": paths}
         result.append(metadata)
     return result
 

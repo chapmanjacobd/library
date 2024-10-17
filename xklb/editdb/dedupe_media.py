@@ -445,8 +445,8 @@ def dedupe_media() -> None:
         if args.basename and (
             difflib.SequenceMatcher(
                 None,
-                os.path.basename(d["keep_path"]),
-                os.path.basename(d["duplicate_path"]),
+                path_utils.basename(d["keep_path"]),
+                path_utils.basename(d["duplicate_path"]),
             ).ratio()
             < args.min_similarity_ratio
         ):

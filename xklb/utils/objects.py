@@ -215,3 +215,15 @@ class Reverser:
 
     def __repr__(self):
         return f"Reverse({self.obj})"
+
+def replace_key_in_dict(d, old_key, new_key):
+    if isinstance(d, dict):
+        new_dict = {}
+        for k, v in d.items():
+            new_key_to_use = new_key if k == old_key else k
+            new_dict[new_key_to_use] = replace_key_in_dict(v, old_key, new_key)
+        return new_dict
+    elif isinstance(d, list):
+        return [replace_key_in_dict(item, old_key, new_key) for item in d]
+    else:
+        return d

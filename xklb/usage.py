@@ -934,20 +934,6 @@ redownload = """library redownload DATABASE
         library redownload city.db 2023-01-26T19:54:42 2023-01-26T20:45:24
 """
 
-rel_mv = """library rel-mv [--simulate] SOURCE ... DEST
-
-    Move files/folders without losing hierarchy metadata
-
-    Move fresh music to your phone every Sunday
-
-        # move last week music back to their source folders
-        library mv /mnt/d/sync/weekly/ /mnt/d/check/audio/
-
-        # move new music for this week
-        library relmv (
-            library listen audio.db --local-media-only --where 'play_count=0' --random -L 600 -p f
-        ) /mnt/d/sync/weekly/
-"""
 
 mv_list = """library mv-list [--limit LIMIT] [--lower LOWER] [--upper UPPER] MOUNT_POINT DATABASE
 
@@ -1003,6 +989,12 @@ mv_list = """library mv-list [--limit LIMIT] [--lower LOWER] [--upper UPPER] MOU
 
 merge_mv = """library merge-mv SOURCE ... DEST [--simulate] [--ext EXT]
 
+    merging-move: combine file trees
+
+    The destination is ALWAYS a folder by default (`--dest-folder`).
+    Use `--dest-bsd` to mimick BSD/GNU default `mv` behavior
+    Use `--dest-file` to mimick BSD/GNU `mv --no-target-directory`
+
     By default it won't matter if source folders end with a path separator or not
 
         library merge-mv folder1  folder2/  # folder1 will be merged with folder2/
@@ -1020,10 +1012,25 @@ merge_mv = """library merge-mv SOURCE ... DEST [--simulate] [--ext EXT]
         library merge-mv --parent file1.txt folder2/ # file1 will be moved to folder2/file1_parent_folder/file1.txt
 
     nb. This tool, like other library subcommands, only works on files. Empty folders will not be moved to the destination
+
+    Move files/folders without losing hierarchy metadata with --relative or relmv
+
+        Move fresh music to your phone every Sunday
+
+        # move last week music back to their source folders
+        library mv /mnt/d/sync/weekly/ /
+
+        # move new music for this week
+        library relmv (
+            library listen audio.db --local-media-only --where 'play_count=0' --random -L 600 -p f
+        ) /mnt/d/sync/weekly/
 """
 
 
 mergerfs_cp = """library mergerfs-cp SOURCE ... DEST [--simulate] [--ext EXT]
+
+    This command mirrors the behavior of BSD with regard to destination files and folders.
+    To force the destination to always be a folder, similar to `library mv`, use `--destination-folder`
 
     Copy files with reflink and handle mergerfs mounts
 

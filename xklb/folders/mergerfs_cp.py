@@ -25,14 +25,18 @@ from xklb.utils import arggroups, argparse_utils, consts, processes
 def parse_args():
     parser = argparse_utils.ArgumentParser(usage=usage.mergerfs_cp)
     arggroups.mmv_folders(parser)
+
     arggroups.clobber(parser)
-    parser.set_defaults(file_over_file="delete-dest-hash rename-dest")
+    parser.set_defaults(file_over_file="rename-dest")
+
     arggroups.debug(parser)
 
     arggroups.paths_or_stdin(parser, destination=True)
     parser.add_argument("destination", help="Destination directory")
     args = parser.parse_args()
     arggroups.args_post(args, parser)
+
+    arggroups.mmv_folders_post(args)
     return args
 
 

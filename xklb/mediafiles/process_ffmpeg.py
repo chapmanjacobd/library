@@ -55,24 +55,6 @@ def is_animation_from_probe(probe) -> bool:
     return False
 
 
-def reject_transcode(probe, original_stats, output_path):
-    output_stats = output_path.stat()
-    if output_stats.st_size == 0:
-        return True
-    else:
-        try:
-            transcode_probe = processes.FFProbe(output_path)
-        except processes.UnplayableFile:
-            return True
-        else:
-            if nums.percentage_difference(probe.duration, transcode_probe.duration) > 5.0:
-                return True
-            elif output_stats.st_size > original_stats.st_size:
-                return True
-
-    return False
-
-
 def process_path(args, path, **kwargs):
     if kwargs:
         args = kwargs_overwrite(args, kwargs)
@@ -99,6 +81,9 @@ def process_path(args, path, **kwargs):
 
     if not probe.streams:
         log.error("No media streams found: %s", path)
+        if args.delete_unplayable:
+            path.unlink()
+            return None
         return path
 
     if path.suffix.lower() in (".gif", ".png", ".apng", ".webp", ".avif", ".avifs", ".flif", ".mng"):
@@ -238,30 +223,27 @@ def process_path(args, path, **kwargs):
                     ]
                 )
             except subprocess.CalledProcessError:
-                log.exception("Splits could not be identified. Likely broken file: %s", path)
-                if args.delete_unplayable:
-                    path.unlink()
-                    return None
-                raise
-
-            splits = result.decode().split("\n")
-            splits = [line.split("=")[1] for line in splits if "lavfi.silence_start" in line]
-
-            prev = 0.0
-            final_splits = []
-            for split in splits:
-                split = float(split)
-                if (split - prev) >= args.min_split_segment:  # type: ignore
-                    final_splits.append(str(split))
-                    prev = split
-
-            if final_splits:
-                output_path = path.with_suffix(".%03d" + output_suffix)
-                final_splits = ",".join(final_splits)
-                print(f"Splitting {path} at points: {final_splits}")
-                ff_opts.extend(["-f", "segment", "-segment_times", final_splits])
-            else:
+                log.error("Splits could not be identified. Likely broken file: %s", path)
                 is_split = False
+            else:
+                splits = result.decode().split("\n")
+                splits = [line.split("=")[1] for line in splits if "lavfi.silence_start" in line]
+
+                prev = 0.0
+                final_splits = []
+                for split in splits:
+                    split = float(split)
+                    if (split - prev) >= args.min_split_segment:  # type: ignore
+                        final_splits.append(str(split))
+                        prev = split
+
+                if final_splits:
+                    output_path = path.with_suffix(".%03d" + output_suffix)
+                    final_splits = ",".join(final_splits)
+                    print(f"Splitting {path} at points: {final_splits}")
+                    ff_opts.extend(["-f", "segment", "-segment_times", final_splits])
+                else:
+                    is_split = False
 
     if subtitle_stream:
         ff_opts.extend(["-map", "0:s", "-c:s", "copy"])  # ,'-map','0:t?'
@@ -309,7 +291,10 @@ def process_path(args, path, **kwargs):
             elif is_file_error:
                 if args.delete_unplayable:
                     path.unlink()
-                return None
+                    if output_path.exists():
+                        return output_path
+                    else:
+                        return None
             elif is_unsupported:
                 output_path.unlink(missing_ok=True)  # Remove transcode attempt, if any
                 return path
@@ -327,10 +312,33 @@ def process_path(args, path, **kwargs):
         if not output_path.exists():
             return path
 
-        if reject_transcode(probe, original_stats, output_path):
-            delete_transcode = True
-            delete_original = False
+        output_stats = output_path.stat()
 
+        # Never set delete_original to True. That setting comes from args and it is default True
+        transcode_invalid = False
+        if output_stats.st_size == 0:
+            transcode_invalid = True
+        elif output_stats.st_size > original_stats.st_size:
+            delete_original = False
+            delete_transcode = True
+        else:
+            try:
+                transcode_probe = processes.FFProbe(output_path)
+            except processes.UnplayableFile:
+                transcode_invalid = True
+            else:
+                if not probe.streams:
+                    transcode_invalid = True
+                elif not probe.duration:
+                    transcode_invalid = True
+                elif nums.percentage_difference(probe.duration, transcode_probe.duration) > 5.0:
+                    transcode_invalid = True
+        if transcode_invalid:
+            if args.delete_unplayable:
+                delete_transcode = False
+            else:
+                delete_original = False
+                delete_transcode = True
         if video_stream and args.audio_only and not args.no_preserve_video:
             delete_original = False
 
