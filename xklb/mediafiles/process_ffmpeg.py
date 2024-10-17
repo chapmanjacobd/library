@@ -238,30 +238,27 @@ def process_path(args, path, **kwargs):
                     ]
                 )
             except subprocess.CalledProcessError:
-                log.exception("Splits could not be identified. Likely broken file: %s", path)
-                if args.delete_unplayable:
-                    path.unlink()
-                    return None
-                raise
-
-            splits = result.decode().split("\n")
-            splits = [line.split("=")[1] for line in splits if "lavfi.silence_start" in line]
-
-            prev = 0.0
-            final_splits = []
-            for split in splits:
-                split = float(split)
-                if (split - prev) >= args.min_split_segment:  # type: ignore
-                    final_splits.append(str(split))
-                    prev = split
-
-            if final_splits:
-                output_path = path.with_suffix(".%03d" + output_suffix)
-                final_splits = ",".join(final_splits)
-                print(f"Splitting {path} at points: {final_splits}")
-                ff_opts.extend(["-f", "segment", "-segment_times", final_splits])
-            else:
+                log.error("Splits could not be identified. Likely broken file: %s", path)
                 is_split = False
+            else:
+                splits = result.decode().split("\n")
+                splits = [line.split("=")[1] for line in splits if "lavfi.silence_start" in line]
+
+                prev = 0.0
+                final_splits = []
+                for split in splits:
+                    split = float(split)
+                    if (split - prev) >= args.min_split_segment:  # type: ignore
+                        final_splits.append(str(split))
+                        prev = split
+
+                if final_splits:
+                    output_path = path.with_suffix(".%03d" + output_suffix)
+                    final_splits = ",".join(final_splits)
+                    print(f"Splitting {path} at points: {final_splits}")
+                    ff_opts.extend(["-f", "segment", "-segment_times", final_splits])
+                else:
+                    is_split = False
 
     if subtitle_stream:
         ff_opts.extend(["-map", "0:s", "-c:s", "copy"])  # ,'-map','0:t?'
@@ -309,7 +306,10 @@ def process_path(args, path, **kwargs):
             elif is_file_error:
                 if args.delete_unplayable:
                     path.unlink()
-                return None
+                    if output_path.exists():
+                        return output_path
+                    else:
+                        return None
             elif is_unsupported:
                 output_path.unlink(missing_ok=True)  # Remove transcode attempt, if any
                 return path

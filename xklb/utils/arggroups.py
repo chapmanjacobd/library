@@ -643,7 +643,8 @@ def sql_fs_post(args, table_prefix="m.") -> None:
         args.filter_sql.append(f"AND COALESCE({table_prefix}time_deleted,0) = 0")
 
 
-def mmv_folders(parser):
+def mmv_folders(parent_parser):
+    parser = parent_parser.add_argument_group("Folders")
     parser.add_argument(
         "--modify-depth", "-Dm", "-mD", action=argparse_utils.ArgparseSlice, help="Trim path parts from each source"
     )
@@ -660,6 +661,29 @@ def mmv_folders(parser):
 -S+5GB -S-7GB  # between 5 and 7 GB""",
     )
     parser.add_argument("--limit", "-n", "-l", "-L", type=int, help="Limit number of files transferred")
+    parser.add_argument(
+        "--relative", "--rel", action='store_true', help="Shortcut: --relative-to=/"
+    )
+    parser.add_argument(
+        "--relative-to", "--relative-from", help="""Preserve directory hierarchy
+library relmv /src/d1/ /mnt/d1/ /mnt/dest/
+/src/d1/          /mnt/d1/           /mnt/dest
+/mnt/dest/        /mnt/dest/         (without --relative or --relative-to)
+/mnt/dest/src/d1/ /mnt/dest/mnt/d1/  --relative-to=/ (all directory hierarchy)
+/mnt/dest/src/d1/ /mnt/dest/d1/      --relative-to=: (exclude commonpath)
+/mnt/dest/src/d1/ /mnt/dest/         --relative-to=/mnt/d1"""
+    )
+
+def mmv_folders_post(args):
+    if args.sizes:
+        args.sizes = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.sizes)
+
+    if args.relative_to and args.relative_to.startswith(':'):
+        pass
+    elif args.relative_to:
+        args.relative_to = str(Path(args.relative_to).expanduser().resolve())
+    elif args.relative:
+        args.relative_to = '/'
 
 
 def playback(parent_parser):

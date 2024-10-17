@@ -33,6 +33,8 @@ def parse_args():
     parser.add_argument("destination", help="Destination directory")
     args = parser.parse_args()
     arggroups.args_post(args, parser)
+
+    arggroups.mmv_folders_post(args)
     return args
 
 

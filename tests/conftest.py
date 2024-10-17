@@ -28,11 +28,6 @@ def pytest_make_parametrize_id(config, val, argname):
     return f"{argname}={val}"
 
 
-def pytest_collection_modifyitems(config, items):
-    for item in items:
-        item._nodeid = item.nodeid.replace("-", " ")
-
-
 @pytest.fixture
 def assert_unchanged(data_regression, request):
     def assert_unchanged(captured, basename=None):

@@ -934,20 +934,6 @@ redownload = """library redownload DATABASE
         library redownload city.db 2023-01-26T19:54:42 2023-01-26T20:45:24
 """
 
-rel_mv = """library rel-mv [--simulate] SOURCE ... DEST
-
-    Move files/folders without losing hierarchy metadata
-
-    Move fresh music to your phone every Sunday
-
-        # move last week music back to their source folders
-        library mv /mnt/d/sync/weekly/ /mnt/d/check/audio/
-
-        # move new music for this week
-        library relmv (
-            library listen audio.db --local-media-only --where 'play_count=0' --random -L 600 -p f
-        ) /mnt/d/sync/weekly/
-"""
 
 mv_list = """library mv-list [--limit LIMIT] [--lower LOWER] [--upper UPPER] MOUNT_POINT DATABASE
 
@@ -1020,6 +1006,18 @@ merge_mv = """library merge-mv SOURCE ... DEST [--simulate] [--ext EXT]
         library merge-mv --parent file1.txt folder2/ # file1 will be moved to folder2/file1_parent_folder/file1.txt
 
     nb. This tool, like other library subcommands, only works on files. Empty folders will not be moved to the destination
+
+    Move files/folders without losing hierarchy metadata with --relative or relmv
+
+        Move fresh music to your phone every Sunday
+
+        # move last week music back to their source folders
+        library mv /mnt/d/sync/weekly/ /
+
+        # move new music for this week
+        library relmv (
+            library listen audio.db --local-media-only --where 'play_count=0' --random -L 600 -p f
+        ) /mnt/d/sync/weekly/
 """
 
 
