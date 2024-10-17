@@ -1,3 +1,5 @@
+*.pdf
+*.epub
 /.mutmut-cache
 /tests/data/Youtube/
 /TODO
