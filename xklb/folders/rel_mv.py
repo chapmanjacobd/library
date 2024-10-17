@@ -53,26 +53,18 @@ def parse_args() -> argparse.Namespace:
 
 
 def gen_rel_path(source, dest: Path, relative_from=None):
-    if relative_from:
-        relative_from = Path(relative_from).expanduser().resolve()
-
     abspath = Path(source).expanduser().resolve()
 
+    rel = commonprefix([abspath, dest])
     if relative_from:
-        relpath = str(abspath.relative_to(relative_from))
-    else:
-        rel_prefix = commonprefix([abspath, dest])
-        try:
-            relpath = str(abspath.relative_to(rel_prefix))
-        except ValueError:
-            try:
-                relpath = str(abspath.relative_to(Path(rel_prefix).parent))
-            except ValueError:
-                relpath = str(source)
+        if str(relative_from).startswith(":"):
+            rel = Path(rel, str(relative_from).lstrip(":").lstrip(os.sep)).resolve()
+        else:
+            rel = Path(relative_from).expanduser().resolve()
 
-    target_dir = (dest / relpath).parent
-    target_dir = path_utils.dedupe_path_parts(target_dir)
-    new_path = target_dir / abspath.name
+    relpath = str(abspath.relative_to(rel))
+
+    new_path = dest / relpath
     return new_path
 
 
@@ -116,6 +108,8 @@ def shortest_relative_from_path(abspath, relative_from_list):
     shortest_path = None
     shortest_path_length = float("inf")
     for relative_from in relative_from_list:
+        if relative_from.startswith(':'):
+            return relative_from
         try:
             relative_path = relative_from_path(abspath, relative_from)
         except ValueError:
@@ -132,7 +126,7 @@ def rel_move(args, sources, dest, relative_from=None):
     if relative_from is None:
         relative_from = args.relative_from
     if relative_from:
-        relative_from = [Path(s).expanduser().resolve() for s in relative_from]
+        relative_from = [Path(s).expanduser().resolve() for s in relative_from if not s.startswith(':')]
 
     new_paths = []
     for source in sources:
