@@ -11,17 +11,21 @@ def safe_name(val):
         .strip()
         .strip("-")
         .replace(":", ".")
-        .replace("-", "_")
         .replace("/", ".")
         .replace("\\", ".")
+        .replace("[", ".")
+        .replace("]", ".")
+        .replace('"', ".")
+        .replace("'", ".")
+        .replace("-", "_")
         .replace(" ", "_")
         .replace("\n", "\\n")
     )
 
 
 def pytest_make_parametrize_id(config, val, argname):
-    if isinstance(val, list):
-        val = "_".join(safe_name(v) for v in val if safe_name(v) != argname)
+    if isinstance(val, (list, tuple)):
+        val = "".join(safe_name(v) for v in val if safe_name(v) != argname)
     else:
         val = safe_name(val)
 
