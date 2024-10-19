@@ -87,6 +87,8 @@ def process_chunks(args):
         for df_idx in range(len(dfs1)):
             df1 = dfs1[df_idx].df
             df2 = dfs2[df_idx].df
+            df1_name = dfs1[df_idx].df_name
+            df2_name = dfs2[df_idx].df_name
 
             # drop cols with all nulls to allow merging "X" and object columns
             df1 = df1.drop(columns=df1.columns[df1.isnull().all()])
@@ -104,7 +106,7 @@ def process_chunks(args):
             df_diff = df_diff[df_diff["_merge"] != "both"]
 
             if len(df_diff) > 0:
-                print(f"## Diff {args.path1}:{df1.name} and {args.path2}:{df2.name}")
+                print(f"## Diff {args.path1}:{df1_name} and {args.path2}:{df2_name}")
                 print_df(df_diff)
             del df1
             del df2
