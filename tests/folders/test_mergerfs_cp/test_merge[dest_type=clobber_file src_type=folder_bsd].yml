@@ -1,16 +1,27 @@
-file4.txt:
-  file4.txt: '4'
-  src1:
-    file4.txt: '5'
-    folder1:
-      file1.txt: '1'
-      file4.txt:
-        file2.txt: '2'
-    folder2:
-      .hidden: '3'
-folder1:
-  file1.txt: '1'
+command: mergerfs-cp --file-over-file delete-dest --bsd --dest-file src1:folder_bsd
+  dest:clobber_file
+dest_after:
   file4.txt:
-    file2.txt: '2'
-folder2:
-  .hidden: '3'
+    file4.txt: '4'
+    src1:
+      file4.txt: '5'
+      folder1:
+        file1.txt: '1'
+        file4.txt:
+          file2.txt: '2'
+      folder2:
+        .hidden: '3'
+  folder1:
+    file1.txt: '1'
+    file4.txt:
+      file2.txt: '2'
+  folder2:
+    .hidden: '3'
+dest_before:
+  file4.txt: '4'
+  folder1:
+    file1.txt: '1'
+    file4.txt:
+      file2.txt: '2'
+  folder2:
+    .hidden: '3'
