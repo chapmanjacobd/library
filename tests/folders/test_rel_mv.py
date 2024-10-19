@@ -23,7 +23,7 @@ def test_simple_file(temp_file_tree):
     target = temp_file_tree({})
     lb(["rel-mv", src1, target])
 
-    assert generate_file_tree_dict(target) == path_utils.build_nested_dict(
+    assert generate_file_tree_dict(target) == path_utils.build_nested_dir_dict(
         consts.TEMP_DIR, {Path(src1).name: src1_inodes}
     )
 
@@ -37,7 +37,7 @@ def test_two_simple_folders_root(temp_file_tree):
     target = temp_file_tree({})
     lb(["rel-mv", src1, src2, target])
 
-    assert generate_file_tree_dict(target) == path_utils.build_nested_dict(
+    assert generate_file_tree_dict(target) == path_utils.build_nested_dir_dict(
         consts.TEMP_DIR, {Path(src1).name: src1_inodes} | {Path(src2).name: src2_inodes}
     )
 

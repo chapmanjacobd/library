@@ -123,9 +123,9 @@ def gen_rel_path(source, dest, relative_to):
         relpath = str(abspath.relative_to(rel))
         log.debug("abspath %s relative to %s = %s", abspath, rel, relpath)
     except ValueError:
-        if abspath.drive and abspath.drive.endswith(":"):  # Windows Drives
+        if abspath.drive.endswith(":"):  # Windows Drives
             relpath = str(Path(abspath.drive.strip(":")) / abspath.relative_to(abspath.drive + "\\"))
-        elif abspath.drive.startswith("\\\\"):  # Handle UNC paths
+        elif abspath.drive.startswith("\\\\"):  # UNC paths
             server_share = abspath.parts[0]
             relpath = str(Path(server_share.lstrip("\\").replace("\\", "/")) / "/".join(abspath.parts[1:]))
         else:

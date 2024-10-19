@@ -152,8 +152,16 @@ def basename(path):
     return os.path.basename(path.rstrip(sep))
 
 
-def build_nested_dict(path_str, nested_value):
-    segments = path_str.strip(os.sep).split(os.sep)
+def build_nested_dir_dict(path_str, nested_value):
+    p = Path(path_str)
+    if p.drive.endswith(":"):  # Windows Drives
+        drive = Path(p.drive.strip(":"))
+        segments = (drive, *p.parts[1:])
+    elif p.drive.startswith("\\\\"):  # UNC paths
+        server_share = p.parts[0]
+        segments = (*server_share.lstrip("\\").split("\\"), *p.parts[1:])
+    else:
+        segments = p.parts[1:]
 
     def _build_dict(segments):
         if not segments:
