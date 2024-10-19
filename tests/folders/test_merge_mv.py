@@ -5,10 +5,9 @@ import pytest
 
 from tests.conftest import generate_file_tree_dict
 from xklb.__main__ import library as lb
-from xklb.utils import arggroups, devices, objects, path_utils
-from xklb.utils import consts
+from xklb.utils import arggroups, consts, devices, objects, path_utils
 
-TEMP_DIR = consts.TEMP_DIR.lstrip('/')
+TEMP_DIR = consts.TEMP_DIR.lstrip("/")
 
 
 @pytest.mark.parametrize("file_over_file", objects.class_enum(arggroups.FileOverFile))
@@ -165,10 +164,14 @@ def test_merge(assert_unchanged, src_type, dest_type, dest_opt, mode, temp_file_
     cmd += [src1_arg, dest_arg]
     lb(cmd)
 
+    if os.path.exists(src1):
+        src1_inodes = generate_file_tree_dict(src1, inodes=False)
+    else:
+        src1_inodes = {}
     target_inodes = generate_file_tree_dict(dest, inodes=False)
     target_inodes = objects.replace_key_in_dict(target_inodes, path_utils.basename(src1), "src1")
     target_inodes = objects.replace_key_in_dict(target_inodes, path_utils.basename(dest), "dest")
-    assert_unchanged(target_inodes)
+    assert_unchanged({"src": src1_inodes, "dest": target_inodes})
 
 
 @pytest.mark.parametrize("subcommand", ["merge-mv", "merge-cp"])
@@ -220,10 +223,10 @@ def test_simulate_mkdirs(temp_file_tree):
 
     assert generate_file_tree_dict(src1) == src1_inodes
     assert generate_file_tree_dict(dest) == {
-        'folder1': {
-            'file4.txt': {},
+        "folder1": {
+            "file4.txt": {},
         },
-        'folder2': {},
+        "folder2": {},
     }
 
 
@@ -252,10 +255,10 @@ def test_filter_file(temp_file_tree):
 @pytest.mark.parametrize("subcommand", ["merge-mv", "merge-cp"])
 def test_same_file(subcommand, temp_file_tree):
     src1 = temp_file_tree({"file4.txt": "4"}) + os.sep + "file4.txt"
-    src1_inodes = generate_file_tree_dict(src1, inodes=subcommand=='merge-mv')
+    src1_inodes = generate_file_tree_dict(src1, inodes=subcommand == "merge-mv")
 
     lb([subcommand, src1, src1])
-    assert generate_file_tree_dict(src1, inodes=subcommand=='merge-mv') == src1_inodes
+    assert generate_file_tree_dict(src1, inodes=subcommand == "merge-mv") == src1_inodes
 
 
 @pytest.mark.parametrize("subcommand", ["merge-mv", "merge-cp"])
@@ -265,25 +268,6 @@ def test_same_folder(subcommand, temp_file_tree):
 
     lb([subcommand, src1 + os.sep, src1 + os.sep])
     assert generate_file_tree_dict(src1) == src1_inodes
-
-
-@pytest.mark.parametrize("src", ['FILE', 'FOLDER'])
-@pytest.mark.parametrize("use_parent", [True, False])
-@pytest.mark.parametrize(
-    "relative_to", [':', '/', os.sep, 'TEMP_DIR', 'SRC_FILE', 'SRC_FOLDER', 'SRC_PARENT', 'TARGET']
-)
-def test_relmv(temp_file_tree, src, use_parent, relative_to):
-    src1, src1_inodes, target = relmv_run(temp_file_tree, src, use_parent, relative_to)
-
-    expected_results = {Path(TEMP_DIR).name: {Path(src1).name: src1_inodes}}
-    if relative_to in (':','TEMP_DIR'):
-        expected_results = {Path(src1).name: src1_inodes}
-    if relative_to in ('SRC_FOLDER',):
-        expected_results = src1_inodes
-    if src == 'FILE' and  relative_to == 'SRC_FILE':
-        expected_results = {Path(target).name: src1_inodes['file4.txt']}
-
-    assert generate_file_tree_dict(target) == expected_results
 
 
 def relmv_run(temp_file_tree, src, use_parent, relative_to):
@@ -300,18 +284,18 @@ def relmv_run(temp_file_tree, src, use_parent, relative_to):
         command += ["--parent"]
 
     command += ["--relative-to"]
-    if relative_to == 'TEMP_DIR':
+    if relative_to == "TEMP_DIR":
         command += [consts.TEMP_DIR]
-    elif relative_to == 'SRC_FILE':
+    elif relative_to == "SRC_FILE":
         command += [src1_file]
-    elif relative_to == 'SRC_FOLDER':
+    elif relative_to == "SRC_FOLDER":
         command += [src1]
-    elif relative_to == 'TARGET':
+    elif relative_to == "TARGET":
         command += [target]
     else:
         command += [relative_to]
 
-    if src == 'FILE':
+    if src == "FILE":
         command += [src1_file]
     else:
         command += [src1]
@@ -319,3 +303,22 @@ def relmv_run(temp_file_tree, src, use_parent, relative_to):
     command += [target]
     lb(command)
     return src1, src1_inodes, target
+
+
+@pytest.mark.parametrize("src", ["FILE", "FOLDER"])
+@pytest.mark.parametrize("use_parent", [True, False])
+@pytest.mark.parametrize(
+    "relative_to", [":", "/", os.sep, "TEMP_DIR", "SRC_FILE", "SRC_FOLDER", "SRC_PARENT", "TARGET"]
+)
+def test_relmv(temp_file_tree, src, use_parent, relative_to):
+    src1, src1_inodes, target = relmv_run(temp_file_tree, src, use_parent, relative_to)
+
+    expected_results = {Path(TEMP_DIR).name: {Path(src1).name: src1_inodes}}
+    if relative_to in (":", "TEMP_DIR"):
+        expected_results = {Path(src1).name: src1_inodes}
+    if relative_to in ("SRC_FOLDER",):
+        expected_results = src1_inodes
+    if src == "FILE" and relative_to == "SRC_FILE":
+        expected_results = {Path(target).name: src1_inodes["file4.txt"]}
+
+    assert generate_file_tree_dict(target) == expected_results

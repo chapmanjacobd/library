@@ -99,7 +99,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v2.9.066; 88 subcommands)
+    library (v2.9.067; 87 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -166,8 +166,6 @@ To stop playing press Ctrl+C in either the terminal or mpv
     │ merge-mv        │ Move files and merge folders in BSD/rsync style, rename if possible │
     ├─────────────────┼─────────────────────────────────────────────────────────────────────┤
     │ merge-folders   │ Merge two or more file trees, check for conflicts before merging    │
-    ├─────────────────┼─────────────────────────────────────────────────────────────────────┤
-    │ rel-mv          │ Move files preserving parent folder hierarchy                       │
     ├─────────────────┼─────────────────────────────────────────────────────────────────────┤
     │ mergerfs-cp     │ cp files with reflink on mergerfs                                   │
     ├─────────────────┼─────────────────────────────────────────────────────────────────────┤
@@ -1230,6 +1228,12 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     $ library merge-mv -h
     usage: library merge-mv SOURCE ... DEST [--simulate] [--ext EXT]
 
+    merging-move: combine file trees
+
+    The destination is ALWAYS a folder by default (`--dest-folder`).
+    Use `--dest-bsd` to mimick BSD/GNU default `mv` behavior
+    Use `--dest-file` to mimick BSD/GNU `mv --no-target-directory`
+
     By default it won't matter if source folders end with a path separator or not
 
         library merge-mv folder1  folder2/  # folder1 will be merged with folder2/
@@ -1247,6 +1251,18 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         library merge-mv --parent file1.txt folder2/ # file1 will be moved to folder2/file1_parent_folder/file1.txt
 
     nb. This tool, like other library subcommands, only works on files. Empty folders will not be moved to the destination
+
+    Move files/folders without losing hierarchy metadata with --relative or relmv
+
+        Move fresh music to your phone every Sunday
+
+        # move last week music back to their source folders
+        library mv /mnt/d/sync/weekly/ /
+
+        # move new music for this week
+        library relmv (
+            library listen audio.db --local-media-only --where 'play_count=0' --random -L 600 -p f
+        ) /mnt/d/sync/weekly/
 
 
 </details>
@@ -1269,34 +1285,15 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
 </details>
 
-###### rel-mv
-
-<details><summary>Move files preserving parent folder hierarchy</summary>
-
-    $ library rel-mv -h
-    usage: library rel-mv [--simulate] SOURCE ... DEST
-
-    Move files/folders without losing hierarchy metadata
-
-    Move fresh music to your phone every Sunday
-
-        # move last week music back to their source folders
-        library mv /mnt/d/sync/weekly/ /mnt/d/check/audio/
-
-        # move new music for this week
-        library relmv (
-            library listen audio.db --local-media-only --where 'play_count=0' --random -L 600 -p f
-        ) /mnt/d/sync/weekly/
-
-
-</details>
-
 ###### mergerfs-cp
 
 <details><summary>cp files with reflink on mergerfs</summary>
 
     $ library mergerfs-cp -h
     usage: library mergerfs-cp SOURCE ... DEST [--simulate] [--ext EXT]
+
+    This command mirrors the behavior of BSD with regard to destination files and folders.
+    To force the destination to always be a folder, similar to `library mv`, use `--destination-folder`
 
     Copy files with reflink and handle mergerfs mounts
 
@@ -2086,6 +2083,17 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
         | /home/xk/github/xk/lb/__pypackages__/3.11/lib/jedi/third_party/typeshed/third_party/2and3/requests/packages/urllib3/packages/ssl_match_hostname/__init__.pyi        | 88 Bytes |
         | /home/xk/github/xk/lb/__pypackages__/3.11/lib/jedi/third_party/typeshed/third_party/2and3/requests/packages/urllib3/packages/ssl_match_hostname/_implementation.pyi | 81 Bytes |
 
+    Group by extension
+
+        library exts du.db
+        library disk-usage du.db --group-by-extension
+        path        size    count
+        ------  --------  -------
+        avi      1.8 GiB        5
+        webm    14.3 GiB       47
+        mkv     49.2 GiB      159
+        mp4     86.7 GiB      613
+        4 file extensions
 
 
 </details>

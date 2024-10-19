@@ -2,14 +2,13 @@ import os
 from pathlib import Path
 
 import pytest
-from pyfakefs.fake_filesystem import OSType
 
 from tests.conftest import generate_file_tree_dict
 from xklb.__main__ import library as lb
 from xklb.folders.merge_mv import gen_rel_path
 from xklb.utils import consts
 
-TEMP_DIR = consts.TEMP_DIR.lstrip('/')
+TEMP_DIR = consts.TEMP_DIR.lstrip("/")
 
 simple_file_tree = {
     "folder1": {"file1.txt": "1", "subfolder1": {"file2.txt": "2"}},
@@ -38,7 +37,10 @@ def test_two_simple_folders_root(temp_file_tree):
     target = temp_file_tree({})
     lb(["rel-mv", src1, src2, target])
 
-    assert generate_file_tree_dict(target) == {TEMP_DIR: {Path(src1).name: src1_inodes} | {Path(src2).name: src2_inodes}}
+    assert generate_file_tree_dict(target) == {
+        TEMP_DIR: {Path(src1).name: src1_inodes} | {Path(src2).name: src2_inodes}
+    }
+
 
 def test_two_simple_folders_commonpath(temp_file_tree):
     src1 = temp_file_tree(simple_file_tree)
@@ -61,9 +63,8 @@ def test_dupe_delete_same(temp_file_tree):
     lb(["rel-mv", "--relative-to=:", "--file-over-file=delete-src-hash skip", src1, target])
 
     assert generate_file_tree_dict(target) == target_inodes
-    assert generate_file_tree_dict(src1) == {
-        "file4.txt": src1_inodes["file4.txt"]
-    }
+    assert generate_file_tree_dict(src1) == {"file4.txt": src1_inodes["file4.txt"]}
+
 
 def test_dupe_skip(temp_file_tree):
     src1 = temp_file_tree(simple_file_tree | {"file4.txt": "5"})
@@ -127,7 +128,7 @@ def test_gen_rel_path(test_dirs):
     source = source_dir / "file.txt"
     source.touch()
 
-    result = gen_rel_path(source, dest_dir, ':')
+    result = gen_rel_path(source, dest_dir, ":")
     expected = os.path.join(dest_dir, "source", "file.txt")
     assert result == expected
 
@@ -138,8 +139,8 @@ def test_gen_rel_path_from_subdir(test_dirs):
     source.parent.mkdir(exist_ok=True)
     source.touch()
 
-    result = gen_rel_path(source, dest_dir, ':')
-    expected = os.path.join(dest_dir, "source","subdir","file.txt")
+    result = gen_rel_path(source, dest_dir, ":")
+    expected = os.path.join(dest_dir, "source", "subdir", "file.txt")
     assert result == expected
 
 
@@ -164,5 +165,5 @@ def test_gen_rel_path_relative_deep(test_dirs):
     source.touch()
 
     result = gen_rel_path(source, dest_dir, relative_to=relative_to)
-    expected = os.path.join(dest_dir, "t2","t3","file.txt")
+    expected = os.path.join(dest_dir, "t2", "t3", "file.txt")
     assert result == expected

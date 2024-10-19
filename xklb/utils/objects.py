@@ -216,6 +216,7 @@ class Reverser:
     def __repr__(self):
         return f"Reverse({self.obj})"
 
+
 def replace_key_in_dict(d, old_key, new_key):
     if isinstance(d, dict):
         new_dict = {}

@@ -252,7 +252,7 @@ def clobber(args, source, destination) -> tuple[str | None, str]:
                         # file was a conflict with destination path but let the caller rename it
                         return temp_rename, parent_file
                     rename(args, temp_rename, parent_file)  # temporary rename to final dest
-                    if destination == parent_file:  # TODO: falsify
+                    if destination == parent_file:
                         log.info("re-targeted %s -> %s", orig_destination, destination)
                         return clobber(args, source, destination)
 

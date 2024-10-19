@@ -1,3 +1,5 @@
-file4.txt:
-- 0
-- '5'
+dest:
+  file4.txt:
+  - 0
+  - '5'
+src: {}

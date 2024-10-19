@@ -106,7 +106,7 @@ def extract_metadata(mp_args, path) -> dict[str, str | int | None] | None:
         media["hash"] = sample_hash.sample_hash_file(path)
 
     if getattr(mp_args, "copy", False) and not file_utils.is_file_open(path):
-        dest_path = merge_mv.gen_rel_path(path, mp_args.copy, ':')
+        dest_path = merge_mv.gen_rel_path(path, mp_args.copy, ":")
         if getattr(mp_args, "clean_path", True):
             dest_path = path_utils.clean_path(bytes(dest_path))
         else:
@@ -115,7 +115,7 @@ def extract_metadata(mp_args, path) -> dict[str, str | int | None] | None:
         path = media["path"] = dest_path
 
     if getattr(mp_args, "move", False) and not file_utils.is_file_open(path):
-        dest_path = merge_mv.gen_rel_path(path, mp_args.move, ':')
+        dest_path = merge_mv.gen_rel_path(path, mp_args.move, ":")
         if getattr(mp_args, "clean_path", True):
             dest_path = path_utils.clean_path(bytes(dest_path))
         else:
