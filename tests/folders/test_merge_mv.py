@@ -1,4 +1,4 @@
-import os, shlex
+import os
 from pathlib import Path
 
 import pytest
@@ -114,15 +114,8 @@ simple_file_tree = {
 @pytest.mark.parametrize("src_type", ["folder", "bsd", "file", "parent", "not_exist"])
 @pytest.mark.parametrize("dest_type", ["not_exist", "folder_merge", "clobber_folder", "clobber_file"])
 @pytest.mark.parametrize("dest_opt", ["folder", "bsd", "file"])
-@pytest.mark.parametrize(
-    "mode",
-    [
-        '--file-over-file "delete-dest-hash rename-src"',
-        "--file-over-file delete-dest",
-        "--file-over-file skip",
-    ],
-)
-def test_merge(assert_unchanged, src_type, dest_type, dest_opt, mode, temp_file_tree):
+@pytest.mark.parametrize("file_over_file_mode", ["delete-dest-hash rename-src", "delete-dest", "skip"])
+def test_merge(assert_unchanged, src_type, dest_type, dest_opt, file_over_file_mode, temp_file_tree):
     if src_type == "not_exist":
         src1 = temp_file_tree({})
     elif src_type in ("file", "parent"):
@@ -147,9 +140,7 @@ def test_merge(assert_unchanged, src_type, dest_type, dest_opt, mode, temp_file_
     elif dest_type == "clobber_folder":
         dest_arg = os.path.join(dest, "folder1")
 
-    cmd = ["merge-mv"]
-    if mode:
-        cmd += shlex.split(mode)
+    cmd = ["merge-mv", "--file-over-file", file_over_file_mode]
     if src_type == "parent":
         cmd += ["--parent"]
     if src_type == "bsd":
