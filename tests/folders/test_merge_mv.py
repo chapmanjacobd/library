@@ -318,7 +318,7 @@ def relmv_run(temp_file_tree, src, use_parent, relative_to):
 def test_relmv(temp_file_tree, src, use_parent, relative_to):
     src1, src1_inodes, target = relmv_run(temp_file_tree, src, use_parent, relative_to)
 
-    expected_results = path_utils.build_nested_dict(consts.TEMP_DIR, {Path(src1).name: src1_inodes})
+    expected_results = path_utils.build_nested_dir_dict(consts.TEMP_DIR, {Path(src1).name: src1_inodes})
     if relative_to in (":", "TEMP_DIR"):
         expected_results = {Path(src1).name: src1_inodes}
     if relative_to in ("SRC_FOLDER",):
