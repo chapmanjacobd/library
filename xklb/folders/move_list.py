@@ -1,4 +1,4 @@
-import argparse, shutil, tempfile
+import argparse, os, shutil, tempfile
 from copy import deepcopy
 from pathlib import Path
 
@@ -31,10 +31,10 @@ def group_by_folder(args, media) -> list[dict]:
         if m["path"].startswith("http"):
             continue
 
-        p = m["path"].split("/")
+        p = m["path"].split(os.sep)
         while len(p) >= 3:
             p.pop()
-            parent = "/".join(p) + "/"
+            parent = os.sep.join(p) + os.sep
 
             if d.get(parent):
                 d[parent]["size"] += m["size"]
@@ -64,7 +64,7 @@ def iterate_and_show_options(args, tbl) -> tuple[list[dict], list[dict]]:
     view = tbl[-int(args.limit) :] if args.limit else tbl
 
     view = iterables.list_dict_filter_bool(view, keep_0=False)
-    view = printing.col_resize_percent(view, "path", 60)
+    view = printing.col_resize_percent(view, "path", width=60)
     view = printing.col_filesize(view, "size")
     printing.table(tbl)
     print(len(tbl) - len(view), "other folders not shown")

@@ -1,2 +1,5 @@
-dest: {}
-src: {}
+command: merge-mv --file-over-file skip --dest-bsd src1 dest
+dest_after: {}
+dest_before: {}
+src1_after: {}
+src1_before: {}

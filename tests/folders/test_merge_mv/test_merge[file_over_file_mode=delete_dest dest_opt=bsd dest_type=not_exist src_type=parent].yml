@@ -1,6 +1,8 @@
-dest:
+command: merge-mv --file-over-file delete-dest --parent --dest-bsd src1 dest
+dest_after:
   src1:
-    file4.txt:
-    - 0
-    - '5'
-src: {}
+    file4.txt: '5'
+dest_before: {}
+src1_after: {}
+src1_before:
+  file4.txt: '5'

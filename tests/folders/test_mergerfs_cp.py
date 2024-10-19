@@ -60,8 +60,7 @@ def test_merge(assert_unchanged, src_type, dest_type, temp_file_tree):
         cmd += ["--bsd"]
     if dest_type == "clobber_file":
         cmd += ["--dest-file"]
-    cmd += [src1_arg, dest_arg]
-    lb(cmd)
+    lb([*cmd, src1_arg, dest_arg])
 
     assert generate_file_tree_dict(src1, inodes=False) == src1_inodes
 
@@ -136,4 +135,4 @@ def test_folder_conflict_replace(temp_file_tree):
     lb(["mergerfs-cp", src1 + os.sep, target])
 
     assert generate_file_tree_dict(src1, inodes=False) == src1_inodes
-    assert generate_file_tree_dict(target, inodes=False) == {"file1": {"file1_1": (0, "4"), "file1": (0, "5")}}
+    assert generate_file_tree_dict(target, inodes=False) == {"file1": {"file1_1": "4", "file1": "5"}}

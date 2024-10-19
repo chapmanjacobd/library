@@ -252,8 +252,8 @@ def scatter() -> None:
             tbl.append({"existing_path": existing_path, "new_path": new_path})
             if len(tbl) > 10:
                 break
-        tbl = printing.col_resize_percent(tbl, "existing_path", 20)
-        tbl = printing.col_resize_percent(tbl, "new_path", 20)
+        tbl = printing.col_resize_percent(tbl, "existing_path", width=20)
+        tbl = printing.col_resize_percent(tbl, "new_path", width=20)
         printing.table(tbl)
         print(len(rebinned), "files would be moved (only 10 shown)")
         print(len(untouched), "files would not be moved")

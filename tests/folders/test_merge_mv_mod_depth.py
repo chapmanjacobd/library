@@ -23,24 +23,24 @@ def test_file_over_file_mod_start(file_over_file, temp_file_tree):
 
     target_inodes = generate_file_tree_dict(dest, inodes=False)
     if file_over_file == arggroups.FileOverFile.SKIP:
-        assert target_inodes == {"file4.txt": (0, "4"), "file2.txt": (0, "5"), "folder2": {"file3.txt": (0, "5")}}
+        assert target_inodes == {"file4.txt": "4", "file2.txt": "5", "folder2": {"file3.txt": "5"}}
     elif file_over_file == arggroups.FileOverFile.DELETE_SRC:
-        assert target_inodes == {"file4.txt": (0, "4"), "file2.txt": (0, "5"), "folder2": {"file3.txt": (0, "5")}}
+        assert target_inodes == {"file4.txt": "4", "file2.txt": "5", "folder2": {"file3.txt": "5"}}
     elif file_over_file == arggroups.FileOverFile.DELETE_DEST:
-        assert target_inodes == {"file4.txt": (0, "5"), "file2.txt": (0, "5"), "folder2": {"file3.txt": (0, "5")}}
+        assert target_inodes == {"file4.txt": "5", "file2.txt": "5", "folder2": {"file3.txt": "5"}}
     elif file_over_file == arggroups.FileOverFile.RENAME_SRC:
         assert target_inodes == {
-            "file4.txt": (0, "4"),
-            "file4_1.txt": (0, "5"),
-            "file2.txt": (0, "5"),
-            "folder2": {"file3.txt": (0, "5")},
+            "file4.txt": "4",
+            "file4_1.txt": "5",
+            "file2.txt": "5",
+            "folder2": {"file3.txt": "5"},
         }
     elif file_over_file == arggroups.FileOverFile.RENAME_DEST:
         assert target_inodes == {
-            "file4_1.txt": (0, "4"),
-            "file4.txt": (0, "5"),
-            "file2.txt": (0, "5"),
-            "folder2": {"file3.txt": (0, "5")},
+            "file4_1.txt": "4",
+            "file4.txt": "5",
+            "file2.txt": "5",
+            "folder2": {"file3.txt": "5"},
         }
     else:
         raise NotImplementedError
@@ -64,22 +64,22 @@ def test_file_over_file_mod_end(file_over_file, temp_file_tree):
 
     target_inodes = generate_file_tree_dict(dest, inodes=False)
     if file_over_file == arggroups.FileOverFile.SKIP:
-        assert target_inodes == {"file4.txt": (0, "4"), "folder1": {"file2.txt": (0, "5"), "file3.txt": (0, "5")}}
+        assert target_inodes == {"file4.txt": "4", "folder1": {"file2.txt": "5", "file3.txt": "5"}}
     elif file_over_file == arggroups.FileOverFile.DELETE_SRC:
-        assert target_inodes == {"file4.txt": (0, "4"), "folder1": {"file2.txt": (0, "5"), "file3.txt": (0, "5")}}
+        assert target_inodes == {"file4.txt": "4", "folder1": {"file2.txt": "5", "file3.txt": "5"}}
     elif file_over_file == arggroups.FileOverFile.DELETE_DEST:
-        assert target_inodes == {"file4.txt": (0, "5"), "folder1": {"file2.txt": (0, "5"), "file3.txt": (0, "5")}}
+        assert target_inodes == {"file4.txt": "5", "folder1": {"file2.txt": "5", "file3.txt": "5"}}
     elif file_over_file == arggroups.FileOverFile.RENAME_SRC:
         assert target_inodes == {
-            "file4.txt": (0, "4"),
-            "file4_1.txt": (0, "5"),
-            "folder1": {"file2.txt": (0, "5"), "file3.txt": (0, "5")},
+            "file4.txt": "4",
+            "file4_1.txt": "5",
+            "folder1": {"file2.txt": "5", "file3.txt": "5"},
         }
     elif file_over_file == arggroups.FileOverFile.RENAME_DEST:
         assert target_inodes == {
-            "file4_1.txt": (0, "4"),
-            "file4.txt": (0, "5"),
-            "folder1": {"file2.txt": (0, "5"), "file3.txt": (0, "5")},
+            "file4_1.txt": "4",
+            "file4.txt": "5",
+            "folder1": {"file2.txt": "5", "file3.txt": "5"},
         }
     else:
         raise NotImplementedError
@@ -104,35 +104,35 @@ def test_file_over_file_mod_rev(file_over_file, temp_file_tree):
     target_inodes = generate_file_tree_dict(dest, inodes=False)
     if file_over_file == arggroups.FileOverFile.SKIP:
         assert target_inodes == {
-            "file4.txt": (0, "4"),
-            "folder1": {"file2.txt": (0, "5")},
-            "folder2": {"folder1": {"file3.txt": (0, "5")}},
+            "file4.txt": "4",
+            "folder1": {"file2.txt": "5"},
+            "folder2": {"folder1": {"file3.txt": "5"}},
         }
     elif file_over_file == arggroups.FileOverFile.DELETE_SRC:
         assert target_inodes == {
-            "file4.txt": (0, "4"),
-            "folder1": {"file2.txt": (0, "5")},
-            "folder2": {"folder1": {"file3.txt": (0, "5")}},
+            "file4.txt": "4",
+            "folder1": {"file2.txt": "5"},
+            "folder2": {"folder1": {"file3.txt": "5"}},
         }
     elif file_over_file == arggroups.FileOverFile.DELETE_DEST:
         assert target_inodes == {
-            "file4.txt": (0, "5"),
-            "folder1": {"file2.txt": (0, "5")},
-            "folder2": {"folder1": {"file3.txt": (0, "5")}},
+            "file4.txt": "5",
+            "folder1": {"file2.txt": "5"},
+            "folder2": {"folder1": {"file3.txt": "5"}},
         }
     elif file_over_file == arggroups.FileOverFile.RENAME_SRC:
         assert target_inodes == {
-            "file4.txt": (0, "4"),
-            "file4_1.txt": (0, "5"),
-            "folder1": {"file2.txt": (0, "5")},
-            "folder2": {"folder1": {"file3.txt": (0, "5")}},
+            "file4.txt": "4",
+            "file4_1.txt": "5",
+            "folder1": {"file2.txt": "5"},
+            "folder2": {"folder1": {"file3.txt": "5"}},
         }
     elif file_over_file == arggroups.FileOverFile.RENAME_DEST:
         assert target_inodes == {
-            "file4_1.txt": (0, "4"),
-            "file4.txt": (0, "5"),
-            "folder1": {"file2.txt": (0, "5")},
-            "folder2": {"folder1": {"file3.txt": (0, "5")}},
+            "file4_1.txt": "4",
+            "file4.txt": "5",
+            "folder1": {"file2.txt": "5"},
+            "folder2": {"folder1": {"file3.txt": "5"}},
         }
     else:
         raise NotImplementedError
@@ -160,8 +160,8 @@ def test_folder_over_file(folder_over_file, temp_file_tree):
     elif folder_over_file == arggroups.FolderOverFile.DELETE_DEST:
         assert target_inodes == src1_inodes["f1"]
     elif folder_over_file == arggroups.FolderOverFile.RENAME_DEST:
-        assert target_inodes == {"f1_1": (0, "1"), "f1": {"file2": (0, "2")}}
+        assert target_inodes == {"f1_1": "1", "f1": {"file2": "2"}}
     elif folder_over_file == arggroups.FolderOverFile.MERGE:
-        assert target_inodes == {"f1": {"f1": (0, "1"), "file2": (0, "2")}}
+        assert target_inodes == {"f1": {"f1": "1", "file2": "2"}}
     else:
         raise NotImplementedError
