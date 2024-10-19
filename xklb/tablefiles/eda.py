@@ -196,12 +196,14 @@ def file_eda(args, path):
     if getattr(args, "repl", False):
         breakpoint()
 
-    for df_name, df in dfs:
+    for dft in dfs:
+        df_name, df = dft
+
         if args.table_name == "stdin":
             print(f"## stdin:{df_name}")
         else:
             print(f"## {path}:{df_name}")
-        print_info(args, {df_name: df})
+        print_info(args, dft)
 
 
 def eda():
