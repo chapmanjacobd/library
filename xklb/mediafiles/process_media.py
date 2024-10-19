@@ -297,7 +297,7 @@ def process_media() -> None:
                 if new_path is None:
                     m["time_deleted"] = consts.APPLICATION_START
 
-                    new_free_space += (m.get("compressed_size") or m["size"])
+                    new_free_space += m.get("compressed_size") or m["size"]
                 else:
                     m["new_path"] = str(new_path)
                     m["new_size"] = os.stat(new_path).st_size

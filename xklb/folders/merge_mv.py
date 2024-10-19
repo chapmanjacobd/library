@@ -2,18 +2,7 @@ import argparse, concurrent.futures, os, shutil
 from pathlib import Path
 
 from xklb import usage
-from xklb.utils import (
-    arggroups,
-    argparse_utils,
-    devices,
-    file_utils,
-    nums,
-    path_utils,
-    printing,
-    processes,
-    sql_utils,
-    strings,
-)
+from xklb.utils import arggroups, argparse_utils, devices, file_utils, path_utils, printing, processes, strings
 from xklb.utils.log_utils import log
 
 
@@ -91,7 +80,7 @@ def mmv_file(args, source, destination):
         print("-->", destination)
     else:
         file_utils.rename_move_file(source, destination)
-        log.debug('moved %s\t%s', source, destination)
+        log.debug("moved %s\t%s", source, destination)
 
 
 @track_moved
@@ -101,7 +90,7 @@ def mcp_file(args, source, destination):
         print("==>", destination)
     else:
         out = shutil.copy2(source, destination)
-        log.debug('copied %s\t%s', source, out)
+        log.debug("copied %s\t%s", source, out)
 
 
 def filter_src(args, path):
@@ -132,13 +121,13 @@ def gen_rel_path(source, dest, relative_to):
 
     try:
         relpath = str(abspath.relative_to(rel))
-        log.debug('abspath %s relative to %s = %s', abspath, rel, relpath)
+        log.debug("abspath %s relative to %s = %s", abspath, rel, relpath)
     except ValueError:
-        relpath = str(abspath.relative_to('/'))
-        log.debug('ValueError using abspath %s', relpath)
+        relpath = str(abspath.relative_to("/"))
+        log.debug("ValueError using abspath %s", relpath)
 
     source_destination = str(Path(dest) / relpath)
-    log.debug('source destination %s', source_destination)
+    log.debug("source destination %s", source_destination)
 
     return source_destination
 
@@ -155,7 +144,7 @@ def gen_src_dest(args, sources, destination, shortcut_allowed=False):
             if not args.relative_to:
                 if args.parent or (args.bsd and not source.endswith(os.sep)):  # use BSD behavior
                     folder_dest = os.path.join(folder_dest, path_utils.basename(source))
-                    log.debug('folder parent %s', folder_dest)
+                    log.debug("folder parent %s", folder_dest)
 
             # if no conflict, use shortcut
             if all(
@@ -168,59 +157,58 @@ def gen_src_dest(args, sources, destination, shortcut_allowed=False):
                     not os.path.exists(folder_dest),
                 ]
             ):
-                log.debug('taking shortcut')
+                log.debug("taking shortcut")
                 try:
                     parent = os.path.dirname(folder_dest)
                     if not os.path.exists(parent):
-                        log.debug('taking shortcut: making dirs')
+                        log.debug("taking shortcut: making dirs")
                         os.makedirs(parent)
                     os.rename(source, folder_dest)
                 except OSError:
-                    log.debug('taking shortcut: failed')
-                    pass
+                    log.debug("taking shortcut: failed")
                 else:
-                    log.debug('taking shortcut: success')
+                    log.debug("taking shortcut: success")
                     continue
             # merge source folder with conflict folder/file
             for p in file_utils.rglob_gen(source, args.ext or None):
                 if filter_src(args, p) is False:
-                    log.debug('rglob-file skipped %s', p)
+                    log.debug("rglob-file skipped %s", p)
                     continue
 
                 relpath = os.path.relpath(p, source)
-                log.debug('rglob-file relpath %s', relpath)
+                log.debug("rglob-file relpath %s", relpath)
                 if args.modify_depth:
                     rel_p = Path(relpath)
                     parts = rel_p.parent.parts[args.modify_depth]
                     relpath = os.path.join(*parts, rel_p.name)
-                    log.debug('rglob-file modify_depth %s %s', parts, relpath)
+                    log.debug("rglob-file modify_depth %s %s", parts, relpath)
 
                 file_dest = os.path.join(folder_dest, relpath)
-                log.debug('rglob-file file_dest %s', file_dest)
+                log.debug("rglob-file file_dest %s", file_dest)
 
                 src, dest = devices.clobber(args, p, file_dest)
                 if src:
                     yield src, dest
         else:  # source is a file
             if filter_src(args, source) is False:
-                log.debug('rglob-file skipped %s', source)
+                log.debug("rglob-file skipped %s", source)
                 continue
 
             file_dest = source_destination
             if not args.relative_to:
                 if args.parent:
                     file_dest = os.path.join(file_dest, path_utils.parent(source))
-                    log.debug('file parent %s', file_dest)
+                    log.debug("file parent %s", file_dest)
 
                 if args.dest_file:
                     append_basename = False
                 elif args.dest_folder:
                     append_basename = True
                 else:  # args.dest_bsd
-                    append_basename = (destination.endswith(os.sep) or os.path.isdir(destination))
+                    append_basename = destination.endswith(os.sep) or os.path.isdir(destination)
                 if append_basename:
                     file_dest = os.path.join(file_dest, path_utils.basename(source))
-                    log.debug('file append basename %s', file_dest)
+                    log.debug("file append basename %s", file_dest)
 
             src, dest = devices.clobber(args, source, file_dest)
             if src:

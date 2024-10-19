@@ -1,4 +1,4 @@
-import argparse, os
+import os
 
 from xklb import usage
 from xklb.playback import media_printer

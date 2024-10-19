@@ -661,36 +661,49 @@ def mmv_folders(parent_parser):
 -S+5GB -S-7GB  # between 5 and 7 GB""",
     )
     parser.add_argument("--limit", "-n", "-l", "-L", type=int, help="Limit number of files transferred")
+    parser.add_argument("--relative", "--rel", action="store_true", help="Shortcut: --relative-to=/")
     parser.add_argument(
-        "--relative", "--rel", action='store_true', help="Shortcut: --relative-to=/"
-    )
-    parser.add_argument(
-        "--relative-to", "--relative-from", help="""Preserve directory hierarchy
+        "--relative-to",
+        "--relative-from",
+        help="""Preserve directory hierarchy
 library relmv /src/d1/ /mnt/d1/ /mnt/dest/
 /src/d1/          /mnt/d1/           /mnt/dest
 /mnt/dest/        /mnt/dest/         (without --relative or --relative-to)
 /mnt/dest/src/d1/ /mnt/dest/mnt/d1/  --relative-to=/ (all directory hierarchy)
 /mnt/dest/src/d1/ /mnt/dest/d1/      --relative-to=: (exclude commonpath)
-/mnt/dest/src/d1/ /mnt/dest/         --relative-to=/mnt/d1"""
+/mnt/dest/src/d1/ /mnt/dest/         --relative-to=/mnt/d1""",
     )
     parser.add_argument("--bsd", "--rsync", action="store_true", help="BSD/rsync trailing slash behavior")
     parser.add_argument("--parent", action="store_true", help="Include parent (dirname) when merging")
 
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--dest-bsd", "--bsd-dest", "--dest", action="store_true", help="Destination-is-a-dest mode")
-    group.add_argument("--dest-file", "--destination-file", "--no-target-directory", action="store_true", help="Destination-is-a-file mode")
-    group.add_argument("--dest-folder", "--destination-folder", "--target-directory", action="store_true", help="Destination-is-a-folder mode")
+    group.add_argument(
+        "--dest-file",
+        "--destination-file",
+        "--no-target-directory",
+        action="store_true",
+        help="Destination-is-a-file mode",
+    )
+    group.add_argument(
+        "--dest-folder",
+        "--destination-folder",
+        "--target-directory",
+        action="store_true",
+        help="Destination-is-a-folder mode",
+    )
+
 
 def mmv_folders_post(args):
     if args.sizes:
         args.sizes = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.sizes)
 
-    if args.relative_to and args.relative_to.startswith(':'):
+    if args.relative_to and args.relative_to.startswith(":"):
         pass
     elif args.relative_to:
         args.relative_to = str(Path(args.relative_to).expanduser().resolve())
     elif args.relative:
-        args.relative_to = '/'
+        args.relative_to = "/"
 
 
 def playback(parent_parser):
@@ -1296,6 +1309,7 @@ Choose ONE of the following options:
     parser.add_argument(
         "--skip-open", action="store_true", help="Skip source files that are already open in another process"
     )
+
 
 def process_ffmpeg(parent_parser):
     parser = parent_parser.add_argument_group("FFMPEG Processing")

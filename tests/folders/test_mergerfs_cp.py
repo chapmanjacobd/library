@@ -5,7 +5,7 @@ import pytest
 
 from tests.conftest import generate_file_tree_dict
 from xklb.__main__ import library as lb
-from xklb.utils import consts
+from xklb.utils import consts, objects, path_utils
 
 simple_file_tree = {
     "folder1": {"file1.txt": "1", "file4.txt": {"file2.txt": "2"}},
@@ -27,18 +27,19 @@ def _mock_get_mergerfs_mounts(monkeypatch):
 
 @pytest.mark.parametrize("src_type", ["folder", "folder_bsd", "file", "not_exist"])
 @pytest.mark.parametrize("dest_type", ["not_exist", "folder_merge", "clobber_file", "clobber_folder"])
-def test_merge(src_type, dest_type, temp_file_tree):
-    if dest_type == "clobber_folder" and src_type != "file":
-        return  # not useful to test
-
+def test_merge(assert_unchanged, src_type, dest_type, temp_file_tree):
     if src_type == "not_exist":
         src1 = temp_file_tree({})
-    elif src_type == "file":
-        src1 = temp_file_tree({"file4.txt": "5"}) + os.sep + "file4.txt"
-    else:  # folder, folder_bsd
+    elif src_type in ("file", "parent"):
+        src1 = temp_file_tree({"file4.txt": "5"})
+    else:  # folder, bsd
         src1 = temp_file_tree(simple_file_tree | {"file4.txt": "5"})
-        if src_type == "folder":
-            src1 = src1 + os.sep
+
+    src1_arg = src1
+    if src_type in ("file", "parent"):
+        src1_arg = src1 + os.sep + "file4.txt"
+    elif src_type == "folder":
+        src1_arg = src1 + os.sep
 
     if dest_type == "not_exist":
         dest = temp_file_tree({})
@@ -52,7 +53,6 @@ def test_merge(src_type, dest_type, temp_file_tree):
         dest_arg = os.path.join(dest, "folder1")
 
     src1_inodes = generate_file_tree_dict(src1, inodes=False)
-    dest_inodes = generate_file_tree_dict(dest, inodes=False)
 
     cmd = ["mergerfs-cp"]
     cmd += ["--file-over-file", "delete-dest"]
@@ -60,44 +60,15 @@ def test_merge(src_type, dest_type, temp_file_tree):
         cmd += ["--bsd"]
     if dest_type == "clobber_file":
         cmd += ["--dest-file"]
-    cmd += [src1, dest_arg]
+    cmd += [src1_arg, dest_arg]
     lb(cmd)
 
     assert generate_file_tree_dict(src1, inodes=False) == src1_inodes
 
     target_inodes = generate_file_tree_dict(dest, inodes=False)
-    if src_type == "not_exist":
-        assert target_inodes == dest_inodes
-    elif src_type == "folder_bsd" and dest_type == "not_exist":
-        assert target_inodes == {Path(src1).name: src1_inodes}
-    elif dest_type in ("not_exist",):
-        assert target_inodes == src1_inodes
-
-    elif src_type == "folder_bsd" and dest_type == "folder_merge":
-        assert target_inodes == dest_inodes | {Path(src1).name: src1_inodes}
-
-    elif src_type == "folder_bsd" and dest_type == "clobber_file":
-        assert target_inodes == dest_inodes | {'file4.txt': {Path(src1).name: src1_inodes, 'file4.txt': dest_inodes['file4.txt']}}
-
-    elif dest_type == "folder_merge":
-        assert target_inodes == dest_inodes | src1_inodes
-
-    elif dest_type == "clobber_folder":
-        dest_inodes['folder1']["file4.txt"] = src1_inodes | dest_inodes['folder1']["file4.txt"]  # type: ignore
-        assert target_inodes == dest_inodes
-
-    elif src_type in "file" and dest_type == "clobber_file":
-        assert target_inodes == dest_inodes | src1_inodes
-
-    elif src_type in "folder" and dest_type == "clobber_file":
-        dest_inodes["file4.txt"] = src1_inodes  # type: ignore
-        assert target_inodes == dest_inodes
-
-    elif dest_type == "clobber_file":
-        assert target_inodes == dest_inodes
-
-    else:
-        raise NotImplementedError
+    target_inodes = objects.replace_key_in_dict(target_inodes, path_utils.basename(src1), "src1")
+    target_inodes = objects.replace_key_in_dict(target_inodes, path_utils.basename(dest), "dest")
+    assert_unchanged(target_inodes)
 
 
 def test_dupe_replace(temp_file_tree):

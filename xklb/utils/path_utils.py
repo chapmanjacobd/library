@@ -132,6 +132,7 @@ def bfs_removedirs(root_dir):
         except OSError:
             pass
 
+
 def parent(s):
     return os.path.basename(os.path.dirname(s))
 
@@ -147,5 +148,5 @@ def basename(path):
     ''
     """
     path = os.fspath(path)
-    sep = os.path.sep + (os.path.altsep or '')
+    sep = os.path.sep + (os.path.altsep or "")
     return os.path.basename(path.rstrip(sep))
