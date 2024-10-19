@@ -25,7 +25,7 @@ def safe_name(val):
 
 def pytest_make_parametrize_id(config, val, argname):
     if isinstance(val, (list, tuple)):
-        val = "".join(safe_name(v) for v in val if safe_name(v) != argname)
+        val = ".".join(safe_name(v) for v in val if safe_name(v) != argname)
     else:
         val = safe_name(val)
 
