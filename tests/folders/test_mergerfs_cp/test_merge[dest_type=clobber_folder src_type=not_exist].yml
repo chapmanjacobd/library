@@ -1,7 +1,17 @@
-file4.txt: '4'
-folder1:
-  file1.txt: '1'
-  file4.txt:
-    file2.txt: '2'
-folder2:
-  .hidden: '3'
+command: mergerfs-cp --file-over-file delete-dest src1:not_exist dest:clobber_folder
+dest_after:
+  file4.txt: '4'
+  folder1:
+    file1.txt: '1'
+    file4.txt:
+      file2.txt: '2'
+  folder2:
+    .hidden: '3'
+dest_before:
+  file4.txt: '4'
+  folder1:
+    file1.txt: '1'
+    file4.txt:
+      file2.txt: '2'
+  folder2:
+    .hidden: '3'

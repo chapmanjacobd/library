@@ -1,4 +1,5 @@
-command: merge-mv --file-over-file delete-dest-hash rename-src --dest-file src1 dest
+command: merge-mv --file-over-file delete-dest-hash rename-src --dest-file src1:file
+  dest:folder_merge
 dest_after:
   dest: '5'
   file4.txt: '4'

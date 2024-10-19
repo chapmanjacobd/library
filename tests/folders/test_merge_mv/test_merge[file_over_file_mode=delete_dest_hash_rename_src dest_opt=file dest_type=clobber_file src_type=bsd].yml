@@ -1,5 +1,5 @@
-command: merge-mv --file-over-file delete-dest-hash rename-src --bsd --dest-file src1
-  dest
+command: merge-mv --file-over-file delete-dest-hash rename-src --bsd --dest-file src1:bsd
+  dest:clobber_file
 dest_after:
   file4.txt:
     file4.txt: '4'

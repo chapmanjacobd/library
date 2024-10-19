@@ -53,6 +53,8 @@ def test_merge(assert_unchanged, src_type, dest_type, temp_file_tree):
         dest_arg = os.path.join(dest, "folder1")
 
     src1_inodes = generate_file_tree_dict(src1, inodes=False)
+    dest_before = generate_file_tree_dict(dest, inodes=False)
+    dest_before = objects.replace_key_in_dict(dest_before, path_utils.basename(dest), "dest")
 
     cmd = ["mergerfs-cp"]
     cmd += ["--file-over-file", "delete-dest"]
@@ -64,10 +66,18 @@ def test_merge(assert_unchanged, src_type, dest_type, temp_file_tree):
 
     assert generate_file_tree_dict(src1, inodes=False) == src1_inodes
 
-    target_inodes = generate_file_tree_dict(dest, inodes=False)
-    target_inodes = objects.replace_key_in_dict(target_inodes, path_utils.basename(src1), "src1")
-    target_inodes = objects.replace_key_in_dict(target_inodes, path_utils.basename(dest), "dest")
-    assert_unchanged(target_inodes)
+    dest_after = generate_file_tree_dict(dest, inodes=False)
+    dest_after = objects.replace_keys_in_dict(
+        dest_after, {path_utils.basename(src1): "src1", path_utils.basename(dest): "dest"}
+    )
+
+    assert_unchanged(
+        {
+            "dest_before": dest_before,
+            "command": " ".join([*cmd, f"src1:{src_type}", f"dest:{dest_type}"]),
+            "dest_after": dest_after,
+        }
+    )
 
 
 def test_dupe_replace(temp_file_tree):

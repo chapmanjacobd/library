@@ -1,4 +1,4 @@
-command: merge-mv --file-over-file skip --bsd --dest-folder src1 dest
+command: merge-mv --file-over-file skip --bsd --dest-folder src1:bsd dest:not_exist
 dest_after:
   src1:
     file4.txt: '5'

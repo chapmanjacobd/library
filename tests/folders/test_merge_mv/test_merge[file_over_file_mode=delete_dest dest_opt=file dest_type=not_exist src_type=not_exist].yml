@@ -1,4 +1,4 @@
-command: merge-mv --file-over-file delete-dest --dest-file src1 dest
+command: merge-mv --file-over-file delete-dest --dest-file src1:not_exist dest:not_exist
 dest_after: {}
 dest_before: {}
 src1_after: {}

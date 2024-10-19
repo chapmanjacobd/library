@@ -1,5 +1,5 @@
 command: merge-mv --file-over-file delete-dest-hash rename-src --parent --dest-bsd
-  src1 dest
+  src1:parent dest:not_exist
 dest_after:
   src1:
     file4.txt: '5'

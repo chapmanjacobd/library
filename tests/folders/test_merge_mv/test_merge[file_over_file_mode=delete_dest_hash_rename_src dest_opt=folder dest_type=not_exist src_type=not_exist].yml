@@ -1,5 +1,5 @@
-command: merge-mv --file-over-file delete-dest-hash rename-src --dest-folder src1
-  dest
+command: merge-mv --file-over-file delete-dest-hash rename-src --dest-folder src1:not_exist
+  dest:not_exist
 dest_after: {}
 dest_before: {}
 src1_after: {}

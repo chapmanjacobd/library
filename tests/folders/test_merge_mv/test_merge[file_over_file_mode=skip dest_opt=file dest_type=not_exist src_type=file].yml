@@ -1,4 +1,4 @@
-command: merge-mv --file-over-file skip --dest-file src1 dest
+command: merge-mv --file-over-file skip --dest-file src1:file dest:not_exist
 dest_after:
   dest: '5'
 dest_before: {}
