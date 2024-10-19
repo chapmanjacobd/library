@@ -228,3 +228,9 @@ def replace_key_in_dict(d, old_key, new_key):
         return [replace_key_in_dict(item, old_key, new_key) for item in d]
     else:
         return d
+
+
+def replace_keys_in_dict(d, replacements):
+    for k, v in replacements.items():
+        d = replace_key_in_dict(d, k, v)
+    return d

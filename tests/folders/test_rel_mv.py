@@ -6,9 +6,7 @@ import pytest
 from tests.conftest import generate_file_tree_dict
 from xklb.__main__ import library as lb
 from xklb.folders.merge_mv import gen_rel_path
-from xklb.utils import consts
-
-TEMP_DIR = consts.TEMP_DIR.lstrip("/")
+from xklb.utils import consts, path_utils
 
 simple_file_tree = {
     "folder1": {"file1.txt": "1", "subfolder1": {"file2.txt": "2"}},
@@ -25,7 +23,9 @@ def test_simple_file(temp_file_tree):
     target = temp_file_tree({})
     lb(["rel-mv", src1, target])
 
-    assert generate_file_tree_dict(target) == {TEMP_DIR: {Path(src1).name: src1_inodes}}
+    assert generate_file_tree_dict(target) == path_utils.build_nested_dict(
+        consts.TEMP_DIR, {Path(src1).name: src1_inodes}
+    )
 
 
 def test_two_simple_folders_root(temp_file_tree):
@@ -37,9 +37,9 @@ def test_two_simple_folders_root(temp_file_tree):
     target = temp_file_tree({})
     lb(["rel-mv", src1, src2, target])
 
-    assert generate_file_tree_dict(target) == {
-        TEMP_DIR: {Path(src1).name: src1_inodes} | {Path(src2).name: src2_inodes}
-    }
+    assert generate_file_tree_dict(target) == path_utils.build_nested_dict(
+        consts.TEMP_DIR, {Path(src1).name: src1_inodes} | {Path(src2).name: src2_inodes}
+    )
 
 
 def test_two_simple_folders_commonpath(temp_file_tree):

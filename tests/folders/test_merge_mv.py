@@ -7,8 +7,6 @@ from tests.conftest import generate_file_tree_dict
 from xklb.__main__ import library as lb
 from xklb.utils import arggroups, consts, devices, objects, path_utils
 
-TEMP_DIR = consts.TEMP_DIR.lstrip("/")
-
 
 @pytest.mark.parametrize("file_over_file", objects.class_enum(arggroups.FileOverFile))
 def test_file_over_file(file_over_file, temp_file_tree):
@@ -37,9 +35,9 @@ def test_file_over_file(file_over_file, temp_file_tree):
     elif file_over_file == arggroups.FileOverFile.DELETE_DEST:
         assert target_inodes == src1_inodes
     elif file_over_file == arggroups.FileOverFile.RENAME_SRC:
-        assert target_inodes == {"file4.txt": (0, "4"), "file4_1.txt": (0, "5")}
+        assert target_inodes == {"file4.txt": "4", "file4_1.txt": "5"}
     elif file_over_file == arggroups.FileOverFile.RENAME_DEST:
-        assert target_inodes == {"file4_1.txt": (0, "4"), "file4.txt": (0, "5")}
+        assert target_inodes == {"file4_1.txt": "4", "file4.txt": "5"}
     else:
         raise NotImplementedError
 
@@ -66,11 +64,11 @@ def test_file_over_folder(file_over_folder, temp_file_tree):
     elif file_over_folder == arggroups.FileOverFolder.DELETE_DEST:
         assert target_inodes == src1_inodes
     elif file_over_folder == arggroups.FileOverFolder.RENAME_SRC:
-        assert target_inodes == {"f1": {"file2": (0, "2")}, "f1_1": (0, "1")}
+        assert target_inodes == {"f1": {"file2": "2"}, "f1_1": "1"}
     elif file_over_folder == arggroups.FileOverFolder.RENAME_DEST:
-        assert target_inodes == {"f1_1": {"file2": (0, "2")}, "f1": (0, "1")}
+        assert target_inodes == {"f1_1": {"file2": "2"}, "f1": "1"}
     elif file_over_folder == arggroups.FileOverFolder.MERGE:
-        assert target_inodes == {"f1": {"file2": (0, "2"), "f1": (0, "1")}}
+        assert target_inodes == {"f1": {"file2": "2", "f1": "1"}}
     else:
         raise NotImplementedError
 
@@ -97,9 +95,9 @@ def test_folder_over_file(folder_over_file, temp_file_tree):
     elif folder_over_file == arggroups.FolderOverFile.DELETE_DEST:
         assert target_inodes == src1_inodes
     elif folder_over_file == arggroups.FolderOverFile.RENAME_DEST:
-        assert target_inodes == {"f1_1": (0, "1"), "f1": {"file2": (0, "2")}}
+        assert target_inodes == {"f1_1": "1", "f1": {"file2": "2"}}
     elif folder_over_file == arggroups.FolderOverFile.MERGE:
-        assert target_inodes == {"f1": {"f1": (0, "1"), "file2": (0, "2")}}
+        assert target_inodes == {"f1": {"f1": "1", "file2": "2"}}
     else:
         raise NotImplementedError
 
@@ -152,17 +150,33 @@ def test_merge(assert_unchanged, src_type, dest_type, dest_opt, file_over_file_m
         cmd += ["--dest-bsd"]
     elif dest_opt == "file":
         cmd += ["--dest-file"]
-    cmd += [src1_arg, dest_arg]
-    lb(cmd)
+
+    src1_before = generate_file_tree_dict(src1, inodes=False)
+    src1_before = objects.replace_key_in_dict(src1_before, path_utils.basename(src1), "src1")
+    dest_before = generate_file_tree_dict(dest, inodes=False)
+    dest_before = objects.replace_key_in_dict(dest_before, path_utils.basename(dest), "dest")
+
+    lb([*cmd, src1_arg, dest_arg])
 
     if os.path.exists(src1):
-        src1_inodes = generate_file_tree_dict(src1, inodes=False)
+        src1_after = generate_file_tree_dict(src1, inodes=False)
     else:
-        src1_inodes = {}
-    target_inodes = generate_file_tree_dict(dest, inodes=False)
-    target_inodes = objects.replace_key_in_dict(target_inodes, path_utils.basename(src1), "src1")
-    target_inodes = objects.replace_key_in_dict(target_inodes, path_utils.basename(dest), "dest")
-    assert_unchanged({"src": src1_inodes, "dest": target_inodes})
+        src1_after = {}
+    src1_after = objects.replace_key_in_dict(src1_after, path_utils.basename(src1), "src1")
+    dest_after = generate_file_tree_dict(dest, inodes=False)
+    dest_after = objects.replace_keys_in_dict(
+        dest_after, {path_utils.basename(src1): "src1", path_utils.basename(dest): "dest"}
+    )
+
+    assert_unchanged(
+        {
+            "src1_before": src1_before,
+            "dest_before": dest_before,
+            "command": " ".join([*cmd, "src1", "dest"]),
+            "src1_after": src1_after,
+            "dest_after": dest_after,
+        }
+    )
 
 
 @pytest.mark.parametrize("subcommand", ["merge-mv", "merge-cp"])
@@ -304,7 +318,7 @@ def relmv_run(temp_file_tree, src, use_parent, relative_to):
 def test_relmv(temp_file_tree, src, use_parent, relative_to):
     src1, src1_inodes, target = relmv_run(temp_file_tree, src, use_parent, relative_to)
 
-    expected_results = {Path(TEMP_DIR).name: {Path(src1).name: src1_inodes}}
+    expected_results = path_utils.build_nested_dict(consts.TEMP_DIR, {Path(src1).name: src1_inodes})
     if relative_to in (":", "TEMP_DIR"):
         expected_results = {Path(src1).name: src1_inodes}
     if relative_to in ("SRC_FOLDER",):

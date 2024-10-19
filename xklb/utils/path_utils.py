@@ -150,3 +150,14 @@ def basename(path):
     path = os.fspath(path)
     sep = os.path.sep + (os.path.altsep or "")
     return os.path.basename(path.rstrip(sep))
+
+
+def build_nested_dict(path_str, nested_value):
+    segments = path_str.strip(os.sep).split(os.sep)
+
+    def _build_dict(segments):
+        if not segments:
+            return nested_value
+        return {segments[0]: _build_dict(segments[1:])}
+
+    return _build_dict(segments)

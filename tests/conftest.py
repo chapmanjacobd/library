@@ -105,14 +105,17 @@ def generate_file_tree_dict(temp_dir, inodes=True):
         for item in directory.iterdir():
             if item.is_file():
                 with item.open() as file:
-                    tree_dict[item.name] = (item.stat().st_ino if inodes else 0, file.read())
+                    if inodes:
+                        tree_dict[item.name] = (item.stat().st_ino, file.read())
+                    else:
+                        tree_dict[item.name] = file.read()
             elif item.is_dir():
                 tree_dict[item.name] = _generate_tree_dict(item)
         return tree_dict
 
     base_path = Path(temp_dir)
     if base_path.is_file():
-        return {base_path.name: (base_path.stat().st_ino if inodes else 0, base_path.read_text())}
+        return {base_path.name: (base_path.stat().st_ino, base_path.read_text()) if inodes else base_path.read_text()}
 
     return _generate_tree_dict(base_path)
 

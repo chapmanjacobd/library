@@ -1,17 +1,19 @@
-dest:
-  file4.txt:
-  - 0
-  - '4'
+command: merge-mv --file-over-file delete-dest-hash rename-src --dest-file src1 dest
+dest_after:
+  file4.txt: '4'
   folder1:
-    file1.txt:
-    - 0
-    - '1'
+    file1.txt: '1'
     file4.txt:
-      file2.txt:
-      - 0
-      - '2'
+      file2.txt: '2'
   folder2:
-    .hidden:
-    - 0
-    - '3'
-src: {}
+    .hidden: '3'
+dest_before:
+  file4.txt: '4'
+  folder1:
+    file1.txt: '1'
+    file4.txt:
+      file2.txt: '2'
+  folder2:
+    .hidden: '3'
+src1_after: {}
+src1_before: {}
