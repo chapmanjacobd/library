@@ -74,7 +74,13 @@ def test_merge(assert_unchanged, src_type, dest_type, temp_file_tree):
     assert_unchanged(
         {
             "dest_before": dest_before,
-            "command": " ".join([*cmd, f"src1:{src_type}", f"dest:{dest_type}"]),
+            "command": " ".join(
+                [
+                    *cmd,
+                    f"{src1_arg.replace(src1, "/src1")}:{src_type}",
+                    f"{dest_arg.replace(dest, "/dest")}:{dest_type}",
+                ]
+            ),
             "dest_after": dest_after,
         }
     )

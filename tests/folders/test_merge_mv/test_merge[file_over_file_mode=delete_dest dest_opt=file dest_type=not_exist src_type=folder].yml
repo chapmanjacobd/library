@@ -1,4 +1,4 @@
-command: merge-mv --file-over-file delete-dest --dest-file src1:folder dest:not_exist
+command: merge-mv --file-over-file delete-dest --dest-file /src1/:folder /dest:not_exist
 dest_after:
   file4.txt: '5'
   folder1:

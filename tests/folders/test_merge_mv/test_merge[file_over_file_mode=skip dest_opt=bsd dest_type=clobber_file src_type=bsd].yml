@@ -1,4 +1,4 @@
-command: merge-mv --file-over-file skip --bsd --dest-bsd src1:bsd dest:clobber_file
+command: merge-mv --file-over-file skip --bsd --dest-bsd /src1:bsd /dest/file4.txt:clobber_file
 dest_after:
   file4.txt:
     file4.txt: '4'
