@@ -10,13 +10,13 @@ def safe_name(val):
         str(val)
         .strip()
         .strip("-")
-        .replace(":", ".")
-        .replace("/", ".")
-        .replace("\\", ".")
-        .replace("[", ".")
-        .replace("]", ".")
-        .replace('"', ".")
-        .replace("'", ".")
+        .replace(":", "")
+        .replace("/", "")
+        .replace("\\", "")
+        .replace("[", "")
+        .replace("]", "")
+        .replace('"', "")
+        .replace("'", "")
         .replace("-", "_")
         .replace(" ", "_")
         .replace("\n", "\\n")
@@ -33,9 +33,18 @@ def pytest_make_parametrize_id(config, val, argname):
 
 
 @pytest.fixture
+def original_datadir(request) -> Path:
+    data_dir = Path(os.path.splitext(request.module.__file__)[0])
+    data_dir /= request.function.__name__
+    if hasattr(request.node, "callspec"):
+        data_dir /= " ".join([f"{k}={safe_name(v)}" for k, v in request.node.callspec.params.items()])
+    return data_dir
+
+
+@pytest.fixture
 def assert_unchanged(data_regression, request):
     def assert_unchanged(captured, basename=None):
-        data_regression.check(captured, basename=basename if basename else request.node.name.replace("-", " "))
+        data_regression.check(captured, basename=basename if basename else "data")
 
     return assert_unchanged
 
