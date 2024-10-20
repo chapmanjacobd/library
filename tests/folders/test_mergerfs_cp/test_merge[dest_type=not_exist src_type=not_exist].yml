@@ -1,3 +1,3 @@
-command: mergerfs-cp --file-over-file delete-dest src1:not_exist dest:not_exist
+command: mergerfs-cp --file-over-file delete-dest /src1:not_exist /dest:not_exist
 dest_after: {}
 dest_before: {}

@@ -172,7 +172,13 @@ def test_merge(assert_unchanged, src_type, dest_type, dest_opt, file_over_file_m
         {
             "src1_before": src1_before,
             "dest_before": dest_before,
-            "command": " ".join([*cmd, f"src1:{src_type}", f"dest:{dest_type}"]),
+            "command": " ".join(
+                [
+                    *cmd,
+                    f"{src1_arg.replace(src1, "/src1")}:{src_type}",
+                    f"{dest_arg.replace(dest, "/dest")}:{dest_type}",
+                ]
+            ),
             "src1_after": src1_after,
             "dest_after": dest_after,
         }

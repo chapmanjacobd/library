@@ -155,7 +155,7 @@ def basename(path):
 def build_nested_dir_dict(path_str, nested_value):
     p = Path(path_str)
     if p.drive.endswith(":"):  # Windows Drives
-        drive = str(Path(p.drive.strip(":")))
+        drive = p.drive.strip(":")
         segments = (drive, *p.parts[1:])
     elif p.drive.startswith("\\\\"):  # UNC paths
         server_share = p.parts[0]

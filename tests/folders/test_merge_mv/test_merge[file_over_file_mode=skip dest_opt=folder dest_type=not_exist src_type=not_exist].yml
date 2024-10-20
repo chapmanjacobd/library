@@ -1,4 +1,4 @@
-command: merge-mv --file-over-file skip --dest-folder src1:not_exist dest:not_exist
+command: merge-mv --file-over-file skip --dest-folder /src1:not_exist /dest:not_exist
 dest_after: {}
 dest_before: {}
 src1_after: {}

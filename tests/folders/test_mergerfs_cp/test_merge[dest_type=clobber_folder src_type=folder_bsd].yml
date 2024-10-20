@@ -1,4 +1,4 @@
-command: mergerfs-cp --file-over-file delete-dest --bsd src1:folder_bsd dest:clobber_folder
+command: mergerfs-cp --file-over-file delete-dest --bsd /src1:folder_bsd /dest/folder1:clobber_folder
 dest_after:
   file4.txt: '4'
   folder1:
