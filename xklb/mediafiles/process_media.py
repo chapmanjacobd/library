@@ -1,4 +1,5 @@
 import argparse, math, os, sqlite3
+from contextlib import suppress
 
 from xklb import usage
 from xklb.mediadb import db_history
@@ -301,6 +302,8 @@ def process_media() -> None:
                 else:
                     m["new_path"] = str(new_path)
                     m["new_size"] = os.stat(new_path).st_size
+                    with suppress(processes.UnplayableFile):
+                        m["duration"] = processes.FFProbe(new_path).duration
 
                     new_free_space += (m.get("compressed_size") or m["size"]) - m["new_size"]
 
@@ -312,8 +315,7 @@ def process_media() -> None:
                             )
                         elif m.get("new_path") and m.get("new_path") != m["path"]:
                             args.db.conn.execute("DELETE FROM media where path = ?", [m["new_path"]])
-                            args.db.conn.execute("UPDATE media set path = ? where path = ?", [m["new_path"], m["path"]])
                             args.db.conn.execute(
-                                "UPDATE media SET path = ?, size = ? WHERE path = ?",
-                                [m["new_path"], m["new_size"], m["path"]],
+                                "UPDATE media SET path = ?, size = ?, duration = ? WHERE path = ?",
+                                [m["new_path"], m["new_size"], m["duration"], m["path"]],
                             )
