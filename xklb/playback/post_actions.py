@@ -3,7 +3,7 @@ from pathlib import Path
 
 from xklb.folders import merge_mv
 from xklb.mediadb import db_history, db_media
-from xklb.utils import devices, file_utils, iterables, processes
+from xklb.utils import devices, file_utils, iterables, path_utils, processes
 from xklb.utils.log_utils import log
 
 try:
@@ -27,11 +27,20 @@ def mv_to_keep_folder(args, src: str) -> str:
 
     keep_path.mkdir(exist_ok=True)
 
-    dest = str(keep_path / p.name)
-    dest = merge_mv.mmv_folders(args, merge_mv.mmv_file, [src], dest)
+    dest = merge_mv.gen_rel_path(src, keep_path, ":")
+    if getattr(args, "clean_path", True):
+        dest = path_utils.clean_path(os.fsencode(dest))
+    else:
+        dest = str(dest)
+
+    if src == dest:
+        return src
+
+    file_utils.rename_move_file(src, dest, simulate=args.simulate)
+
     if dest and hasattr(args, "db"):
         with args.db.conn:
-            args.db.conn.execute("DELETE FROM media where path = ?", [dest])
+            args.db.conn.execute("DELETE FROM media where path = ?", [dest])  # remove any existing records
             args.db.conn.execute("UPDATE media set path = ? where path = ?", [dest, src])
 
     return dest or src

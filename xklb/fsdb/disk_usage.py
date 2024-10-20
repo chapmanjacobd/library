@@ -2,12 +2,13 @@ import os
 
 from xklb import usage
 from xklb.playback import media_printer
-from xklb.utils import arggroups, argparse_utils, processes, sqlgroups
+from xklb.utils import arg_utils, arggroups, argparse_utils, file_utils, processes, sqlgroups
 
 
 def parse_args(defaults_override=None):
     parser = argparse_utils.ArgumentParser(usage=usage.disk_usage)
     arggroups.sql_fs(parser)
+    parser.set_defaults(local_media_only=True, hide_deleted=True)
     arggroups.group_folders(parser)
     parser.set_defaults(limit="4000", depth=0)
 
@@ -18,8 +19,7 @@ def parse_args(defaults_override=None):
 
     arggroups.debug(parser)
 
-    arggroups.database(parser)
-    parser.add_argument("search", nargs="*")
+    arggroups.database_or_paths(parser)
     parser.set_defaults(**(defaults_override or {}))
     args = parser.parse_intermixed_args()
     arggroups.args_post(args, parser)
@@ -97,7 +97,12 @@ def load_subset(args):
 
 
 def get_data(args) -> list[dict]:
-    media = list(args.db.query(*sqlgroups.fs_sql(args, limit=None)))
+    if args.database:
+        media = list(args.db.query(*sqlgroups.fs_sql(args, limit=None)))
+    else:
+        args.paths = [p for p in args.paths if os.path.exists(p)]
+        media = arg_utils.gen_d(args)
+        media = [d if "size" in d else file_utils.get_filesize(d) for d in media]
 
     if not media:
         processes.no_media_found()

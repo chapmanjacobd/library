@@ -1,5 +1,5 @@
 import argparse, math, os, sqlite3
-from contextlib import suppress
+from contextlib import contextmanager, suppress
 
 from xklb import usage
 from xklb.mediadb import db_history
@@ -44,7 +44,7 @@ def parse_args() -> argparse.Namespace:
         help="Attempt to process files with invalid metadata",
     )
 
-    parser.add_argument("--min-savings-video", type=nums.float_from_percent, default="3%")
+    parser.add_argument("--min-savings-video", type=nums.float_from_percent, default="5%")
     parser.add_argument("--min-savings-audio", type=nums.float_from_percent, default="10%")
     parser.add_argument("--min-savings-image", type=nums.float_from_percent, default="15%")
 
@@ -61,16 +61,16 @@ def parse_args() -> argparse.Namespace:
         help="Used to estimate duration when files are invalid or inside of archives",
     )
 
-    parser.add_argument("--target-audio-bitrate", type=nums.human_to_bits, default="144kbps")
+    parser.add_argument("--target-audio-bitrate", type=nums.human_to_bits, default="128kbps")
     parser.add_argument("--target-video-bitrate", type=nums.human_to_bits, default="800kbps")
-    parser.add_argument("--target-image-size", type=nums.human_to_bytes, default="250KiB")
+    parser.add_argument("--target-image-size", type=nums.human_to_bytes, default="30KiB")
     parser.add_argument(
         "--transcoding-video-rate", type=float, default=1.8, help="Ratio of duration eg. 4x realtime speed"
     )
     parser.add_argument(
         "--transcoding-audio-rate", type=float, default=70, help="Ratio of duration eg. 100x realtime speed"
     )
-    parser.add_argument("--transcoding-image-time", type=float, default=2.5, metavar="SECONDS")
+    parser.add_argument("--transcoding-image-time", type=float, default=1.5, metavar="SECONDS")
 
     arggroups.process_ffmpeg(parser)
     arggroups.debug(parser)
@@ -276,6 +276,11 @@ def process_media() -> None:
                 if not os.path.exists(m["path"]):
                     log.error("[%s]: FileNotFoundError", m["path"])
                     m["time_deleted"] = consts.APPLICATION_START
+                    if args.database:
+                        with suppress(sqlite3.OperationalError), args.db.conn:
+                            args.db.conn.execute(
+                                "UPDATE media set time_deleted = ? where path = ?", [m["time_deleted"], m["path"]]
+                        )
                     continue
 
             if args.simulate:
@@ -297,8 +302,8 @@ def process_media() -> None:
 
                 if new_path is None:
                     m["time_deleted"] = consts.APPLICATION_START
-
-                    new_free_space += m.get("compressed_size") or m["size"]
+                elif new_path == m['path']:
+                    continue
                 else:
                     m["new_path"] = str(new_path)
                     m["new_size"] = os.stat(new_path).st_size
@@ -308,7 +313,7 @@ def process_media() -> None:
                     new_free_space += (m.get("compressed_size") or m["size"]) - m["new_size"]
 
                 if args.database:
-                    with args.db.conn:
+                    with suppress(sqlite3.OperationalError), args.db.conn:
                         if m.get("time_deleted"):
                             args.db.conn.execute(
                                 "UPDATE media set time_deleted = ? where path = ?", [m["time_deleted"], m["path"]]

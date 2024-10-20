@@ -3,7 +3,7 @@ from pathlib import Path
 
 from xklb import usage
 from xklb.data import imagemagick_errors
-from xklb.utils import arggroups, argparse_utils, devices, path_utils, processes, web
+from xklb.utils import arggroups, argparse_utils, consts, devices, path_utils, processes, web
 from xklb.utils.arg_utils import gen_paths
 from xklb.utils.log_utils import log
 
@@ -109,7 +109,7 @@ def process_path(args, path):
 def process_image():
     args = parse_args()
 
-    for path in gen_paths(args):
+    for path in gen_paths(args, consts.IMAGE_EXTENSIONS):
         if not path.startswith("http"):
             path = str(Path(path).resolve())
 
