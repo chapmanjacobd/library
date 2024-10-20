@@ -77,8 +77,8 @@ def test_merge(assert_unchanged, src_type, dest_type, temp_file_tree):
             "command": " ".join(
                 [
                     *cmd,
-                    f"{src1_arg.replace(src1, '/src1')}:{src_type}",
-                    f"{dest_arg.replace(dest, '/dest')}:{dest_type}",
+                    f"{src1_arg.replace(src1, '/src1').replace(os.sep,'/')}:{src_type}",
+                    f"{dest_arg.replace(dest, '/dest').replace(os.sep,'/')}:{dest_type}",
                 ]
             ),
             "dest_after": dest_after,
