@@ -355,7 +355,7 @@ def process_path(args, path, **kwargs):
 def process_ffmpeg(defaults_override=None):
     args = parse_args(defaults_override)
 
-    for path in gen_paths(args):
+    for path in gen_paths(args, consts.AUDIO_ONLY_EXTENSIONS | consts.VIDEO_EXTENSIONS):
         if not path.startswith("http"):
             path = str(Path(path).resolve())
 

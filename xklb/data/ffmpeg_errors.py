@@ -20,6 +20,7 @@ unsupported_error = re.compile(
     "|".join(
         r""".*at least one.* received no packets
 .*does not contain any stream
+.*not implemented
 .*Unsupported codec""".splitlines(),
     ),
     flags=re.IGNORECASE,

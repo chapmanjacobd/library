@@ -6,7 +6,7 @@ from xklb.utils import consts, file_utils, iterables, nums, processes
 from xklb.utils.consts import SC
 
 
-def gen_paths(args):
+def gen_paths(args, default_exts=None):
     if args.paths is None:
         processes.exit_error("No paths passed in")
 
@@ -24,12 +24,12 @@ def gen_paths(args):
             if path.strip():
                 p = Path(path)
                 if p.is_dir():
-                    yield from file_utils.rglob(str(p), args.ext or None, getattr(args, "exclude", None))[0]
+                    yield from file_utils.rglob(str(p), args.ext or default_exts, getattr(args, "exclude", None))[0]
                 else:
                     yield path
 
 
-def gen_d(args):
+def gen_d(args, default_exts=None):
     if args.paths is None:
         processes.exit_error("No data passed in")
 
@@ -47,7 +47,7 @@ def gen_d(args):
             if path.strip():
                 p = Path(path)
                 if p.is_dir():
-                    for sp in file_utils.rglob(str(p), args.ext or None, getattr(args, "exclude", None))[0]:
+                    for sp in file_utils.rglob(str(p), args.ext or default_exts, getattr(args, "exclude", None))[0]:
                         yield {"path": sp}
                 else:
                     yield {"path": path}
