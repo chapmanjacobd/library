@@ -1,4 +1,4 @@
-import argparse, datetime, functools, os, random, re, tempfile, time, urllib.error, urllib.parse, urllib.request
+import argparse, datetime, functools, os, pathlib, posixpath, random, re, tempfile, time, urllib.error, urllib.parse, urllib.request
 from contextlib import suppress
 from email.message import Message
 from pathlib import Path
@@ -122,35 +122,6 @@ def requests_session(args=argparse.Namespace()):
             session.cookies = cookie_jar  # type: ignore
 
     return session
-
-
-@processes.with_timeout_thread(max(consts.REQUESTS_TIMEOUT) + 5)
-def stat(path):
-    try:
-        r = requests_session().head(path)
-        info = {}
-
-        if 200 <= r.status_code < 400:
-            if "Content-Length" in r.headers:
-                info["size"] = int(r.headers["Content-Length"])
-
-            if "Last-Modified" in r.headers:
-                last_modified = r.headers["Last-Modified"]
-                info["time_modified"] = int(
-                    datetime.datetime.strptime(last_modified, "%a, %d %b %Y %H:%M:%S GMT")
-                    .replace(tzinfo=ZoneInfo("GMT"))
-                    .timestamp()
-                )
-
-        elif r.status_code == 404:
-            info["time_deleted"] = consts.now()
-        else:
-            r.raise_for_status()
-
-        return info
-    except requests.RequestException as e:
-        log.exception("%s could not get metadata", path)
-        return {}
 
 
 def get(args, url, skip_404=True, ignore_errors=False, ignore_429=False, **kwargs):
@@ -357,6 +328,14 @@ def quit_selenium(args):
             args.driver_display.stop()
 
 
+def post_download(args):
+    min_sleep_interval = getattr(args, "sleep_interval", None) or 0
+    sleep_interval = random.uniform(min_sleep_interval, getattr(args, "max_sleep_interval", None) or min_sleep_interval)
+    if sleep_interval > 0:
+        log.debug("[download] Sleeping %s seconds ...", sleep_interval)
+        time.sleep(sleep_interval)
+
+
 def safe_unquote(url):
     # https://en.wikipedia.org/wiki/Internationalized_Resource_Identifier
     # we aren't writing HTML so we can unquote
@@ -401,51 +380,13 @@ def url_decode(href):
     return href
 
 
-def safe_quote(url):
-    try:
-        parsed_url = urlparse(url)
-    except UnicodeDecodeError:
-        return url
-
-    def selective_quote(component, restricted_chars):
-        try:
-            quoted = quote(component, errors="strict")
-        except UnicodeDecodeError:
-            return component
-        return "".join(quote(char, safe="%") if char in restricted_chars else char for char in quoted)
-
-    def quote_query_params(query):
-        query_pairs = parse_qsl(query, keep_blank_values=True)
-        return "&".join(selective_quote(key, "=&#") + "=" + selective_quote(value, "=&#") for key, value in query_pairs)
-
-    quoted_path = selective_quote(parsed_url.path, ";?#")
-    quoted_params = selective_quote(parsed_url.params, "?#")
-    quoted_query = quote_query_params(parsed_url.query)
-    quoted_fragment = selective_quote(parsed_url.fragment, "")
-
-    new_url = urlunparse(
-        (parsed_url.scheme, parsed_url.netloc, quoted_path, quoted_params, quoted_query, quoted_fragment)
-    )
-
-    return new_url
-
-
-def url_encode(href):
-    href = safe_quote(href)
-    up = urlparse(href)
-    if up.netloc:
-        with suppress(Exception):
-            href = href.replace(up.netloc, puny_encode(up.netloc).decode(), 1)
-    return href
-
-
 def path_tuple_from_url(url):
     url = url_decode(url)
     parsed_url = urlparse(url)
     relative_path = os.path.join(parsed_url.netloc, parsed_url.path.lstrip("/"))
-    base_path = os.path.dirname(relative_path)
+    parent_path = os.path.dirname(relative_path)
     filename = path_utils.basename(parsed_url.path)
-    return base_path, filename
+    return parent_path, filename
 
 
 def filename_from_content_disposition(response):
@@ -460,7 +401,7 @@ def filename_from_content_disposition(response):
 
 
 def url_to_local_path(url, response=None, output_path=None, output_prefix=None):
-    base_path, filename = path_tuple_from_url(url)
+    dir_path, filename = path_tuple_from_url(url)
 
     if response:
         filename_from_site = filename_from_content_disposition(response)
@@ -469,8 +410,8 @@ def url_to_local_path(url, response=None, output_path=None, output_prefix=None):
 
     if not output_path:
         output_path = filename
-        if base_path:
-            output_path = os.path.join(base_path, filename)
+        if dir_path:
+            output_path = os.path.join(dir_path, filename)
 
     output_path = path_utils.clean_path(output_path.encode())
 
@@ -478,14 +419,6 @@ def url_to_local_path(url, response=None, output_path=None, output_prefix=None):
         output_path = os.path.join(output_prefix, output_path)
 
     return output_path
-
-
-def post_download(args):
-    min_sleep_interval = getattr(args, "sleep_interval", None) or 0
-    sleep_interval = random.uniform(min_sleep_interval, getattr(args, "max_sleep_interval", None) or min_sleep_interval)
-    if sleep_interval > 0:
-        log.debug("[download] Sleeping %s seconds ...", sleep_interval)
-        time.sleep(sleep_interval)
 
 
 def download_url(args, url, output_path=None, retry_num=0):
@@ -786,16 +719,6 @@ def is_index(url):
     return False
 
 
-def is_subpath(parent_url, child_url):
-    child = urlparse(child_url)
-    parent = urlparse(parent_url)
-
-    if child.scheme != parent.scheme or child.netloc != parent.netloc:
-        return False
-
-    return child_url.startswith(parent_url)
-
-
 def remove_apache_sorting_params(url):
     parsed_url = urlparse(url)
     query_params = parse_qs(parsed_url.query)
@@ -817,6 +740,61 @@ def remove_apache_sorting_params(url):
     )
 
     return new_url
+
+
+def sleep(args, secs=0):
+    sleep_interval = getattr(args, "sleep_interval_requests", None) or secs
+    if sleep_interval > 0:
+        log.debug("Sleeping %s seconds ...", sleep_interval)
+        time.sleep(sleep_interval)
+
+
+def safe_quote(url):
+    try:
+        parsed_url = urlparse(url)
+    except UnicodeDecodeError:
+        return url
+
+    def selective_quote(component, restricted_chars):
+        try:
+            quoted = quote(component, errors="strict")
+        except UnicodeDecodeError:
+            return component
+        return "".join(quote(char, safe="%") if char in restricted_chars else char for char in quoted)
+
+    def quote_query_params(query):
+        query_pairs = parse_qsl(query, keep_blank_values=True)
+        return "&".join(selective_quote(key, "=&#") + "=" + selective_quote(value, "=&#") for key, value in query_pairs)
+
+    quoted_path = selective_quote(parsed_url.path, ";?#")
+    quoted_params = selective_quote(parsed_url.params, "?#")
+    quoted_query = quote_query_params(parsed_url.query)
+    quoted_fragment = selective_quote(parsed_url.fragment, "")
+
+    new_url = urlunparse(
+        (parsed_url.scheme, parsed_url.netloc, quoted_path, quoted_params, quoted_query, quoted_fragment)
+    )
+
+    return new_url
+
+
+def url_encode(href):
+    href = safe_quote(href)
+    up = urlparse(href)
+    if up.netloc:
+        with suppress(Exception):
+            href = href.replace(up.netloc, puny_encode(up.netloc).decode(), 1)
+    return href
+
+
+def is_subpath(parent_url, child_url):
+    child = urlparse(child_url)
+    parent = urlparse(parent_url)
+
+    if child.scheme != parent.scheme or child.netloc != parent.netloc:
+        return False
+
+    return child_url.startswith(parent_url)
 
 
 def is_html(url, max_size=15 * 1024 * 1024):
@@ -855,13 +833,6 @@ def fake_title(url):
     return title.strip()
 
 
-def sleep(args, secs=0):
-    sleep_interval = getattr(args, "sleep_interval_requests", None) or secs
-    if sleep_interval > 0:
-        log.debug("Sleeping %s seconds ...", sleep_interval)
-        time.sleep(sleep_interval)
-
-
 def get_title(args, url):
     global session
     if session is None:
@@ -890,3 +861,119 @@ def get_title(args, url):
     sleep(args)
 
     return title
+
+
+class _Flavour:
+    def __getattr__(self, name):
+        return getattr(posixpath, name)
+
+
+class _UrlFlavour(_Flavour):
+    has_drv = False
+    pathmod = posixpath
+    is_supported = True
+
+    def splitroot(self, part):
+        res = urlparse(part)
+        return (
+            res.scheme + "://" if res.scheme else "",
+            res.netloc + "/" if res.netloc else "",
+            urlunparse(("", "", res.path, res.params, res.query, res.fragment)),
+        )
+
+
+class WebStatResult:
+    def __init__(self, response):
+        self.st_size = nums.safe_int(response.headers.get("Content-Length")) or 0
+        self.st_atime = consts.now()
+        self.st_mtime = (
+            nums.safe_int(
+                datetime.datetime.strptime(
+                    response.headers.get("Last-Modified"), "%a, %d %b %Y %H:%M:%S %Z"
+                ).timestamp()
+                if response.headers.get("Last-Modified")
+                else None
+            )
+            or consts.now()
+        )
+
+
+class WebPath(pathlib.PurePath):
+    __slots__ = ()
+    _flavour = _UrlFlavour()
+
+    def __new__(cls, *args):
+        if args and isinstance(args[0], str) and not args[0].startswith("http"):
+            return pathlib.Path(*args)
+        return super().__new__(cls, *args)
+
+    @processes.with_timeout_thread(max(consts.REQUESTS_TIMEOUT) + 5)
+    def head(self, follow_symlinks=True):
+        if self._head:
+            return self._head
+
+        global session
+        if session is None:
+            log.warning("Creating new web.session")
+            session = requests_session()
+
+        self._head = session.head(str(self), allow_redirects=follow_symlinks)
+        return self._head
+
+    def stat(self, follow_symlinks=True):
+        r = self.head(follow_symlinks=follow_symlinks)
+
+        if 200 <= r.status_code < 400:
+            pass
+        elif r.status_code == 404:
+            raise FileNotFoundError
+        else:
+            r.raise_for_status()
+
+        return WebStatResult(r)
+
+    def exists(self, *, follow_symlinks=True):
+        try:
+            self.stat(follow_symlinks=follow_symlinks)
+        except FileNotFoundError:
+            return False
+        return True
+
+    def unlink(self):
+        pass
+
+    def as_posix(self) -> str:
+        return os.path.join(*path_tuple_from_url(str(self)))
+
+    def remote_name(self):
+        return filename_from_content_disposition(self.head())
+
+
+@processes.with_timeout_thread(max(consts.REQUESTS_TIMEOUT) + 5)
+def stat(url, follow_symlinks=True):
+    global session
+    if session is None:
+        log.warning("Creating new web.session")
+        session = requests_session()
+
+    r = session.head(url, allow_redirects=follow_symlinks)
+
+    if 200 <= r.status_code < 400:
+        pass
+    elif r.status_code == 404:
+        raise FileNotFoundError
+    else:
+        r.raise_for_status()
+
+    return WebStatResult(r)
+
+
+def gen_output_path(args, path, target_extension):
+    output_path = Path(url_to_local_path(path) if str(path).startswith("http") else path)
+    if args.clean_path:
+        before = output_path
+        output_path = Path(path_utils.clean_path(os.fsencode(output_path), max_name_len=255 - len(target_extension)))
+        if before != output_path:
+            log.warning("Output folder will be different due to path cleaning: %s", Path(output_path).parent)
+    output_path = Path(output_path).with_suffix(target_extension)
+    return output_path

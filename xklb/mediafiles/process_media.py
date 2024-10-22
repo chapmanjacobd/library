@@ -1,9 +1,9 @@
 import argparse, math, os, sqlite3
-from contextlib import contextmanager, suppress
+from contextlib import suppress
 
 from xklb import usage
 from xklb.mediadb import db_history
-from xklb.mediafiles import process_ffmpeg, process_image
+from xklb.mediafiles import process_ffmpeg, process_image, process_text
 from xklb.utils import (
     arg_utils,
     arggroups,
@@ -13,6 +13,7 @@ from xklb.utils import (
     file_utils,
     iterables,
     nums,
+    path_utils,
     printing,
     processes,
     sqlgroups,
@@ -73,6 +74,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--transcoding-image-time", type=float, default=1.5, metavar="SECONDS")
 
     arggroups.process_ffmpeg(parser)
+    arggroups.clobber(parser)
     arggroups.debug(parser)
 
     arggroups.database_or_paths(parser)
@@ -94,7 +96,13 @@ def collect_media(args) -> list[dict]:
         except sqlite3.OperationalError:
             media = list(args.db.query(*sqlgroups.fs_sql(args, args.limit)))
     else:
-        media = arg_utils.gen_d(args)
+        media = arg_utils.gen_d(
+            args,
+            consts.AUDIO_ONLY_EXTENSIONS
+            | consts.VIDEO_EXTENSIONS
+            | consts.IMAGE_EXTENSIONS - set(("avif",))
+            | consts.CALIBRE_EXTENSIONS,
+        )
         media = [d if "size" in d else file_utils.get_filesize(d) for d in media]
     return media
 
@@ -113,8 +121,11 @@ def check_shrink(args, m) -> list:
             m["duration"] = m["size"] / args.source_audio_bitrate * 8
 
         if "duration" not in m:
-            probe = processes.FFProbe(m["path"])
-            m["duration"] = probe.duration
+            try:
+                probe = processes.FFProbe(m["path"])
+                m["duration"] = probe.duration
+            except processes.UnplayableFile:
+                m["duration"] = None
         if m["duration"] is None or not m["duration"] > 0:
             log.debug("[%s]: Invalid duration", m["path"])
             m["duration"] = m["size"] / args.source_audio_bitrate * 8
@@ -142,6 +153,10 @@ def check_shrink(args, m) -> list:
     elif (
         (filetype and (filetype.startswith("image/") or " image" in filetype)) or m["ext"] in consts.IMAGE_EXTENSIONS
     ) and (m.get("duration") or 0) == 0:
+        if m["ext"] == "avif":
+            log.debug("Skipping existing AVIF")
+            return []
+
         future_size = args.target_image_size
         should_shrink_buffer = int(future_size * args.min_savings_image)
         can_shrink = m["size"] > (future_size + should_shrink_buffer)
@@ -164,8 +179,11 @@ def check_shrink(args, m) -> list:
             m["duration"] = m["size"] / args.source_video_bitrate * 8
 
         if "duration" not in m:
-            probe = processes.FFProbe(m["path"])
-            m["duration"] = probe.duration
+            try:
+                probe = processes.FFProbe(m["path"])
+                m["duration"] = probe.duration
+            except processes.UnplayableFile:
+                m["duration"] = None
         if m["duration"] is None or not m["duration"] > 0:
             log.debug("[%s]: Invalid duration", m["path"])
             m["duration"] = m["size"] / args.source_video_bitrate * 8
@@ -190,14 +208,25 @@ def check_shrink(args, m) -> list:
             return [m]
         else:
             log.debug("[%s]: Skipping small file", m["path"])
+    elif m["ext"] in consts.CALIBRE_EXTENSIONS:
+        future_size = args.target_image_size * 50
+        should_shrink_buffer = int(future_size * args.min_savings_image)
+        can_shrink = m["size"] > (future_size + should_shrink_buffer)
+
+        m["media_type"] = "Text"
+        m["future_size"] = future_size
+        m["savings"] = (m.get("compresseos.stat(new_path).st_sized_size") or m["size"]) - future_size
+        m["processing_time"] = args.transcoding_image_time * 12
+        if can_shrink:
+            return [m]
+        else:
+            log.debug("[%s]: Skipping small file", m["path"])
     elif (filetype and (filetype.startswith("archive/") or filetype.endswith("+zip") or " archive" in filetype)) or m[
         "ext"
     ] in consts.ARCHIVE_EXTENSIONS:
         contents = processes.lsar(m["path"])
         return [check_shrink(args, d) for d in contents]
     else:
-        # TODO: pdf => avif
-        # TODO: mobi, azw3, pdf => epub
         # TODO: csv, json => parquet
         log.warning("[%s]: Skipping unknown filetype %s", m["path"], filetype)
     return []
@@ -223,12 +252,14 @@ def process_media() -> None:
 
         if media_key not in summary:
             summary[media_key] = {
+                "count": 0,
                 "compressed_size": 0,
                 "current_size": 0,
                 "future_size": 0,
                 "savings": 0,
                 "processing_time": 0,
             }
+        summary[media_key]["count"] += 1
         summary[media_key]["current_size"] += m["size"]
         summary[media_key]["future_size"] += m["future_size"]
         summary[media_key]["savings"] += m["savings"]
@@ -280,7 +311,7 @@ def process_media() -> None:
                         with suppress(sqlite3.OperationalError), args.db.conn:
                             args.db.conn.execute(
                                 "UPDATE media set time_deleted = ? where path = ?", [m["time_deleted"], m["path"]]
-                        )
+                            )
                     continue
 
             if args.simulate:
@@ -288,6 +319,8 @@ def process_media() -> None:
                     log.info("FFMPEG processing %s", m["path"])
                 elif m["media_type"] == "Image":
                     log.info("ImageMagick processing %s", m["path"])
+                elif m["media_type"] == "Text":
+                    log.info("Calibre processing %s", m["path"])
                 else:
                     raise NotImplementedError
 
@@ -297,18 +330,34 @@ def process_media() -> None:
                     new_path = process_ffmpeg.process_path(args, m["path"])
                 elif m["media_type"] == "Image":
                     new_path = process_image.process_path(args, m["path"])
+                elif m["media_type"] == "Text":
+                    new_path = process_text.process_path(args, m["path"])
                 else:
                     raise NotImplementedError
 
                 if new_path is None:
                     m["time_deleted"] = consts.APPLICATION_START
-                elif new_path == m['path']:
+                elif new_path == m["path"]:
                     continue
                 else:
-                    m["new_path"] = str(new_path)
-                    m["new_size"] = os.stat(new_path).st_size
-                    with suppress(processes.UnplayableFile):
-                        m["duration"] = processes.FFProbe(new_path).duration
+                    if m["media_type"] in ("Audio", "Video", "Image"):
+                        m["new_path"] = str(new_path)
+                        m["new_size"] = os.stat(new_path).st_size
+                    elif m["media_type"] in ("Text",):
+                        m["new_path"] = str(new_path)
+                        for p in [
+                            os.path.join(new_path, "index.html"),
+                            os.path.join(new_path, "OEBPS"),
+                        ]:
+                            if os.path.exists(p):
+                                m["new_path"] = p
+                                break
+
+                        m["new_size"] = path_utils.folder_size(new_path)
+
+                    if m["media_type"] in ("Audio", "Video"):
+                        with suppress(processes.UnplayableFile):
+                            m["duration"] = processes.FFProbe(new_path).duration
 
                     new_free_space += (m.get("compressed_size") or m["size"]) - m["new_size"]
 

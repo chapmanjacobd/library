@@ -68,6 +68,7 @@ progs = {
         "process_media": "Estimate and execute potential disk space savings",
         "process_ffmpeg": "Shrink video/audio to AV1/Opus format (.mkv, .mka)",
         "process_image": "Shrink images to AV1 image format (.avif)",
+        "process_text": "Shrink documents to HTML+AV1 image format (requires Calibre)",
     },
     "Multi-database subcommands": {
         "merge_dbs": "Merge SQLite databases",
@@ -206,9 +207,10 @@ modules = {
     "xklb.mediadb.search.search": ["sc", "search-captions"],
     "xklb.mediafiles.media_check.media_check": ["check_media"],
     "xklb.mediafiles.process_media.process_media": ["shrink"],
-    "xklb.mediafiles.process_ffmpeg.process_ffmpeg": ["process-video"],
-    "xklb.mediafiles.process_ffmpeg.process_audio": ["process-audio"],
-    "xklb.mediafiles.process_image.process_image": [],
+    "xklb.mediafiles.process_ffmpeg.process_ffmpeg": ["process-video", "video-process"],
+    "xklb.mediafiles.process_ffmpeg.process_audio": ["audio-process"],
+    "xklb.mediafiles.process_image.process_image": ["image-process"],
+    "xklb.mediafiles.process_text.process_text": ["text-process"],
     "xklb.misc.dedupe_czkawka.czkawka_dedupe": ["dedupe-czkawka"],
     "xklb.misc.export_text.export_text": [],
     "xklb.multidb.copy_play_counts.copy_play_counts": [],
@@ -218,7 +220,7 @@ modules = {
     "xklb.playback.play_actions.filesystem": ["fs", "open"],
     "xklb.playback.play_actions.listen": ["lt", "tubelisten", "tl"],
     "xklb.playback.play_actions.read": ["books", "docs"],
-    "xklb.playback.play_actions.view": ["image", "see", "look"],
+    "xklb.playback.play_actions.view": ["images", "see", "look"],
     "xklb.playback.play_actions.watch": ["wt", "tubewatch", "tw", "entries"],
     "xklb.playback.playback_control.playback_next": ["next"],
     "xklb.playback.playback_control.playback_now": ["now"],
@@ -257,7 +259,7 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers()
 
     # this needs to stay inside the function to prevent side-effects during testing
-    known_subcommands = ["fs", "media", "open", "table", "tables", "tabs", "du", "search", "links"]
+    known_subcommands = ["fs", "media", "open", "table", "tables", "tabs", "du", "search", "links", "images"]
 
     def consecutive_prefixes(s):
         prefixes = [s[:j] for j in range(5, len(s)) if s[:j] and s[:j] not in known_subcommands]

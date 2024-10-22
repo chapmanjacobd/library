@@ -188,6 +188,10 @@ def clobber(args, source, destination) -> tuple[str | None, str]:
                             unlink(args, source)
                             source = None
                             break
+                    case arggroups.FileOverFileOptional.SKIP_HASH:
+                        if sample_compare.sample_cmp(source, destination, ignore_holes=True):
+                            source = None
+                            break
                     case arggroups.FileOverFile.SKIP:
                         source = None
                     case arggroups.FileOverFile.DELETE_DEST:

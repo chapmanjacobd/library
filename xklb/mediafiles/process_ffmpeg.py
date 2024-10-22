@@ -4,13 +4,15 @@ from pathlib import Path
 from xklb import usage
 from xklb.data import ffmpeg_errors
 from xklb.mediafiles import process_image
-from xklb.utils import arggroups, argparse_utils, consts, devices, nums, path_utils, processes, web
-from xklb.utils.arg_utils import gen_paths, kwargs_overwrite
+from xklb.utils import arggroups, argparse_utils, consts, devices, nums, processes, web
+from xklb.utils.arg_utils import args_override, gen_paths
 from xklb.utils.log_utils import log
+from xklb.utils.web import WebPath
 
 
 def parse_args(defaults_override=None) -> argparse.Namespace:
     parser = argparse_utils.ArgumentParser(usage=usage.process_ffmpeg)
+    arggroups.clobber(parser)
     arggroups.process_ffmpeg(parser)
     arggroups.debug(parser)
 
@@ -57,13 +59,22 @@ def is_animation_from_probe(probe) -> bool:
 
 def process_path(args, path, **kwargs):
     if kwargs:
-        args = kwargs_overwrite(args, kwargs)
+        args = args_override(args, kwargs)
 
-    output_path = Path(web.url_to_local_path(path) if str(path).startswith("http") else path)
-    if args.clean_path:
-        output_path = Path(path_utils.clean_path(bytes(output_path), max_name_len=251))
+    output_path = web.gen_output_path(args, path, target_extension=".av1.mkv")
 
-    path = Path(path)
+    path, output_path = devices.clobber(args, path, output_path)
+    if path is None:
+        return output_path
+
+    path = WebPath(path)
+    output_path = Path(output_path)
+
+    output_path.parent.mkdir(exist_ok=True, parents=True)
+
+    if args.simulate and consts.PYTEST_RUNNING:
+        print("ffmpeg", path, output_path)
+        return path
 
     try:
         original_stats = path.stat()
@@ -248,9 +259,9 @@ def process_path(args, path, **kwargs):
     if subtitle_stream:
         ff_opts.extend(["-map", "0:s", "-c:s", "copy"])  # ,'-map','0:t?'
 
+    output_path.parent.mkdir(exist_ok=True, parents=True)
     if path.parent != output_path.parent:
         log.warning("Output folder will be different due to path cleaning: %s", output_path.parent)
-        output_path.parent.mkdir(exist_ok=True, parents=True)
 
     command = [
         "ffmpeg",
@@ -277,78 +288,78 @@ def process_path(args, path, **kwargs):
     if args.simulate:
         print(shlex.join(command))
         return path
+
+    try:
+        processes.cmd(*command)
+    except subprocess.CalledProcessError as e:
+        error_log = e.stderr.splitlines()
+        is_unsupported = any(ffmpeg_errors.unsupported_error.match(l) for l in error_log)
+        is_file_error = any(ffmpeg_errors.file_error.match(l) for l in error_log)
+        is_env_error = any(ffmpeg_errors.environment_error.match(l) for l in error_log)
+
+        if is_env_error:
+            raise
+        elif is_file_error:
+            if args.delete_unplayable:
+                path.unlink()
+                if output_path.exists():
+                    return output_path
+                else:
+                    return None
+        elif is_unsupported:
+            output_path.unlink(missing_ok=True)  # Remove transcode attempt, if any
+            return path
+        else:
+            raise
+
+    if is_split:
+        output_path = output_path.with_name(
+            output_path.name.replace(".%03d", ".000")
+        )  # TODO: support / return multiple paths...
+
+    delete_original = args.delete_original
+    delete_transcode = False
+
+    if not output_path.exists():
+        return path
+
+    output_stats = output_path.stat()
+
+    # Never set delete_original to True. That setting comes from args and it is default True
+    transcode_invalid = False
+    if output_stats.st_size == 0:
+        transcode_invalid = True
+    elif output_stats.st_size > original_stats.st_size:
+        delete_original = False
+        delete_transcode = True
     else:
         try:
-            processes.cmd(*command)
-        except subprocess.CalledProcessError as e:
-            error_log = e.stderr.splitlines()
-            is_unsupported = any(ffmpeg_errors.unsupported_error.match(l) for l in error_log)
-            is_file_error = any(ffmpeg_errors.file_error.match(l) for l in error_log)
-            is_env_error = any(ffmpeg_errors.environment_error.match(l) for l in error_log)
-
-            if is_env_error:
-                raise
-            elif is_file_error:
-                if args.delete_unplayable:
-                    path.unlink()
-                    if output_path.exists():
-                        return output_path
-                    else:
-                        return None
-            elif is_unsupported:
-                output_path.unlink(missing_ok=True)  # Remove transcode attempt, if any
-                return path
-            else:
-                raise
-
-        if is_split:
-            output_path = output_path.with_name(
-                output_path.name.replace(".%03d", ".000")
-            )  # TODO: support / return multiple paths...
-
-        delete_original = args.delete_original
-        delete_transcode = False
-
-        if not output_path.exists():
-            return path
-
-        output_stats = output_path.stat()
-
-        # Never set delete_original to True. That setting comes from args and it is default True
-        transcode_invalid = False
-        if output_stats.st_size == 0:
+            transcode_probe = processes.FFProbe(output_path)
+        except processes.UnplayableFile:
             transcode_invalid = True
-        elif output_stats.st_size > original_stats.st_size:
+        else:
+            if not probe.streams:
+                transcode_invalid = True
+            elif not probe.duration:
+                transcode_invalid = True
+            elif nums.percentage_difference(probe.duration, transcode_probe.duration) > 5.0:
+                transcode_invalid = True
+    if transcode_invalid:
+        if args.delete_unplayable:
+            delete_transcode = False
+        else:
             delete_original = False
             delete_transcode = True
-        else:
-            try:
-                transcode_probe = processes.FFProbe(output_path)
-            except processes.UnplayableFile:
-                transcode_invalid = True
-            else:
-                if not probe.streams:
-                    transcode_invalid = True
-                elif not probe.duration:
-                    transcode_invalid = True
-                elif nums.percentage_difference(probe.duration, transcode_probe.duration) > 5.0:
-                    transcode_invalid = True
-        if transcode_invalid:
-            if args.delete_unplayable:
-                delete_transcode = False
-            else:
-                delete_original = False
-                delete_transcode = True
-        if video_stream and args.audio_only and not args.no_preserve_video:
-            delete_original = False
+    if video_stream and args.audio_only and not args.no_preserve_video:
+        delete_original = False
 
-        if delete_transcode:
-            output_path.unlink()
-            return path
-        elif delete_original:
-            path.unlink()
+    if delete_transcode:
+        output_path.unlink()
+        return path
+    elif delete_original:
+        path.unlink()
 
-        os.utime(output_path, (original_stats.st_atime, original_stats.st_mtime))
+    os.utime(output_path, (original_stats.st_atime, original_stats.st_mtime))
     return output_path
 
 

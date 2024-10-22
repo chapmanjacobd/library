@@ -1173,6 +1173,7 @@ def related(parser):
 
 
 class FileOverFileOptional:
+    SKIP_HASH = "skip-hash"
     DELETE_DEST_HASH = "delete-dest-hash"
     DELETE_DEST_SIZE = "delete-dest-size"
     DELETE_DEST_LARGER = "delete-dest-larger"
@@ -1246,6 +1247,7 @@ file1.zip (existing file)
 file1.zip (incoming file)
 
 Choose ZERO OR MORE of the following options:
+  skip-hash            will skip the incoming file if the SHA-256 hash matches
   delete-dest-hash     will delete the existing file if the SHA-256 hash matches
   delete-dest-size     will delete the existing file if the file size matches
   delete-dest-larger   will delete the existing file if it is larger
@@ -1375,7 +1377,6 @@ def process_ffmpeg(parent_parser):
 
     parser.add_argument("--preset", default="7")
     parser.add_argument("--crf", default="40")
-    clobber(parent_parser)
 
 
 def process_ffmpeg_post(args):
@@ -1412,7 +1413,7 @@ def download(parent_parser):
     parser.add_argument(
         "--retry-delay",
         default="14 days",
-        help="Must be specified in SQLite Modifiers format: N seconds, minutes, hours, days, months, or years",
+        help="Must be specified in SQLite Time Modifiers format: N seconds, minutes, hours, days, months, or years",
     )
     parser.add_argument(
         "--download-retries",
@@ -1421,8 +1422,10 @@ def download(parent_parser):
         "--max-download-attempts",
         type=int,
         default=5,
-        help="Skip links that have failed more than N times",
+        help="Skip links that have failed more than N times (ie. previous sessions, requires DB)",
     )
+    parser.add_argument("--http-download-retries", type=int, default=10, help="Use N retries for downloads (current session)")
+    parser.add_argument("--download-chunk-size", type=nums.human_to_bytes, default="8MB")
     parser.add_argument(
         "--force",
         action="store_true",
@@ -1658,8 +1661,6 @@ def requests(parent_parser):
     parser.add_argument(
         "--http-retries", "--http-max-retries", "--retries", type=int, default=8, help="Use N retries for requests"
     )
-    parser.add_argument("--http-download-retries", type=int, default=10, help="Use N retries for downloads")
-    parser.add_argument("--download-chunk-size", type=nums.human_to_bytes, default="8MB")
     parser.add_argument(
         "--http-max-redirects",
         "--max-redirects",

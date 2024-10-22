@@ -27,7 +27,7 @@ def parse_args():
     arggroups.mmv_folders(parser)
 
     arggroups.clobber(parser)
-    parser.set_defaults(file_over_file="rename-dest")
+    parser.set_defaults(file_over_file="skip-hash rename-dest")
 
     arggroups.debug(parser)
 

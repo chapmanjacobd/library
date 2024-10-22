@@ -26,6 +26,7 @@ def parse_args(action, usage):
     parser.add_argument("--hash", action="store_true")
 
     parser.add_argument("--process", action="store_true")
+    arggroups.clobber(parser)
     arggroups.process_ffmpeg(parser)
 
     parser.add_argument("--check-corrupt", "--check-corruption", action="store_true")

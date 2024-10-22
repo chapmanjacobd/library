@@ -24,7 +24,7 @@ dependencies = [
   "sqlite-utils",
   "tabulate",
   "tinytag",
-  "yt-dlp",
+  "yt-dlp[default]",
 ]
 description = "xk library"
 dynamic = ["version"]
