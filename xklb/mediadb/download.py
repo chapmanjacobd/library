@@ -48,6 +48,7 @@ def parse_args():
     parser.add_argument("--links", action="store_true", help="Download media linked within pages")
 
     parser.add_argument("--process", action="store_true", help="Transcode images to AVIF and video/audio to AV1/Opus")
+    arggroups.clobber(parser)
     arggroups.process_ffmpeg(parser)
     arggroups.debug(parser)
 

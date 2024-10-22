@@ -4,7 +4,7 @@ from pathlib import Path
 from shutil import which
 from typing import NoReturn
 
-from xklb.utils import consts, iterables, nums
+from xklb.utils import consts, iterables, nums, path_utils
 from xklb.utils.log_utils import log
 
 
@@ -412,7 +412,7 @@ def unar_delete(archive_path):
 
     original_stats = os.stat(archive_path)
     cmd("unar", "-quiet", "-force-rename", "-no-directory", "-output-directory", output_path, archive_path)
-    os.utime(output_path, (original_stats.st_atime, original_stats.st_mtime))
+    path_utils.folder_utime(output_path, (original_stats.st_atime, original_stats.st_mtime))
 
     lsar_json = cmd("lsar", "-json", archive_path).stdout
     lsar_output = json.loads(lsar_json)

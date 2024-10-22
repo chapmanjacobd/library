@@ -251,7 +251,7 @@ def merge_mv(defaults_override=None):
 
 
 def merge_cp():
-    merge_mv({"copy": True, "file_over_file": "rename-dest"})
+    merge_mv({"copy": True, "file_over_file": "skip-hash rename-dest"})
 
 
 def rel_mv():
@@ -259,4 +259,4 @@ def rel_mv():
 
 
 def rel_cp():
-    merge_mv({"relative": True, "copy": True, "file_over_file": "rename-dest"})
+    merge_mv({"relative": True, "copy": True, "file_over_file": "skip-hash rename-dest"})

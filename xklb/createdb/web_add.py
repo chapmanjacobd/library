@@ -114,7 +114,13 @@ def add_extra_metadata(args, m):
 def add_basic_metadata(args, m):
     if DBType.filesystem in args.profiles:
         with suppress(TimeoutError):
-            m |= web.stat(m["path"])
+            try:
+                web_stats = web.stat(m["path"])
+                if web_stats:
+                    m["size"] = web_stats.st_size
+                    m["time_modified"] = web_stats.st_mtime
+            except FileNotFoundError:
+                m["time_deleted"] = consts.now()
         with suppress(TimeoutError):
             m["type"] = file_utils.mimetype(m["path"])
     else:
@@ -127,7 +133,13 @@ def add_basic_metadata(args, m):
             or (DBType.image in args.profiles and extension in consts.IMAGE_EXTENSIONS)
         ):
             with suppress(TimeoutError):
-                m |= web.stat(m["path"])
+                try:
+                    web_stats = web.stat(m["path"])
+                    if web_stats:
+                        m["size"] = web_stats.st_size
+                        m["time_modified"] = web_stats.st_mtime
+                except FileNotFoundError:
+                    m["time_deleted"] = consts.now()
 
     if getattr(args, "hash", False):
         # TODO: use head_foot_stream

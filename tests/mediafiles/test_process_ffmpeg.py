@@ -5,6 +5,7 @@ from shutil import which
 import pytest
 
 from tests.utils import get_default_args
+from xklb.__main__ import library as lb
 from xklb.mediafiles.process_ffmpeg import is_animation_from_probe, process_path
 from xklb.utils import arggroups, objects, processes
 
@@ -22,6 +23,13 @@ def test_probe_if_animation(path, result):
     assert is_animation_from_probe(probe) is result
 
 
+def test_web_url(capsys):
+    url = "http://example.com/test.m4v"
+    lb(["process-ffmpeg", "--simulate", url])
+    captured = capsys.readouterr().out
+    assert url in captured
+
+
 @pytest.mark.skipif(not which("magick"), reason="requires magick")
 @pytest.mark.parametrize(
     ("path", "duration", "out_ext"),
@@ -35,7 +43,7 @@ def test_process_ffmpeg(path, duration, out_ext):
     temp_dir = tempfile.TemporaryDirectory()
     input_path = shutil.copy(path, temp_dir.name)
 
-    args = objects.NoneSpace(**get_default_args(arggroups.process_ffmpeg))
+    args = objects.NoneSpace(**get_default_args(arggroups.clobber, arggroups.process_ffmpeg))
     output_path = process_path(args, input_path)
 
     assert Path(output_path).suffix == out_ext

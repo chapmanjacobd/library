@@ -1,5 +1,6 @@
 import argparse, json, operator, random
 from collections import defaultdict
+from copy import copy
 from pathlib import Path
 
 from xklb.utils import consts, file_utils, iterables, nums, processes
@@ -191,8 +192,8 @@ def override_config(args, extractor_config):
     return args_env
 
 
-def kwargs_overwrite(namespace, kwargs):
-    namespace_dict = vars(namespace)
+def args_override(namespace, kwargs):
+    namespace_dict = copy(namespace.__dict__)
     namespace_dict.update(kwargs)
     return argparse.Namespace(**namespace_dict)
 

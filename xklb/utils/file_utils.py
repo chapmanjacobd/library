@@ -24,6 +24,7 @@ def rglob(
     extensions=None,  # None | Iterable[str]
     exclude=None,  # None | Iterable[str]
     include=None,  # None | Iterable[str]
+    quiet=False,
 ) -> tuple[set[str], set[str], set[str]]:
     if extensions:
         extensions = tuple(s if s.startswith(".") else f".{s}" for s in extensions)
@@ -74,11 +75,12 @@ def rglob(
                         continue
                     files.add(entry.path)
 
-            printing.print_overwrite(
-                f"[{base_dir}] {scan_stats(len(files), len(filtered_files), len(folders), len(filtered_folders))}"
-            )
+            if not quiet:
+                printing.print_overwrite(
+                    f"[{base_dir}] {scan_stats(len(files), len(filtered_files), len(folders), len(filtered_folders))}"
+                )
 
-    if not consts.PYTEST_RUNNING:
+    if not consts.PYTEST_RUNNING and not quiet:
         print(f"\r[{base_dir}] {scan_stats(len(files), len(filtered_files), len(folders), len(filtered_folders))}")
 
     filtered_extensions = Counter(Path(s).suffix for s in filtered_files)

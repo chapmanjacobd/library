@@ -169,3 +169,37 @@ def build_nested_dir_dict(path_str, nested_value):
         return {segments[0]: _build_dict(segments[1:])}
 
     return _build_dict(segments)
+
+
+def is_empty_folder(path):
+    folder = Path(path)
+
+    if not any(folder.iterdir()):
+        return True
+
+    for file_path in folder.rglob("*"):
+        if file_path.is_file() and file_path.stat().st_size != 0:
+            return False
+
+    return True
+
+
+def folder_size(path):
+    folder = Path(path)
+
+    size = 0
+    for file_path in folder.rglob("*"):
+        if file_path.is_file():
+            size += file_path.stat().st_size
+
+    return size
+
+
+def folder_utime(folder_path, times: tuple[int, int] | tuple[float, float]):
+    folder = Path(folder_path)
+
+    os.utime(folder, times)
+
+    for file_path in folder.rglob("*"):
+        if file_path.is_file():
+            os.utime(file_path, times)

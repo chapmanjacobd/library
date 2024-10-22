@@ -217,15 +217,14 @@ IMAGE_EXTENSIONS = set(
         "|flv|insv|inx|swf|wma|wmv|exif|eip|psp|pspimage"
     ).split("|")
 )
-ARCHIVE_EXTENSIONS = set("zip|rar|cbz|cbr|tar|exe|7z|r00|iso|img|001".split("|"))
-PANDOC_EXTENSIONS = set(
-    "creole|dbk|xml|opml|xhtml|html|docx|dokuwiki|twiki|vimwiki|tikiwiki|epub|fb2|mediawiki|odt|rst|rtf|odt".split("|")
-)
+ARCHIVE_EXTENSIONS = set("zip|rar|cbz|cbr|cb7|tar|exe|7z|r00|iso|img|001".split("|"))
 CALIBRE_EXTENSIONS = set(
     (
-        "azw|azw3|azw4|cbz|cbr|cb7|cbc|chm|djvu|docx|epub|fb2|fbz|html|htmlz"
-        "|lit|lrf|mobi|odt|pdf|prc|pdb|pml|rb|rtf|snb|tcr|txt|txtz"
+        "azw|azw3|azw4|cbc|chm|djvu|docx|epub|fb2|fbz|htmlz|lit|lrf|mobi|odt|pdf|prc|pdb|pml|rb|rtf|snb|tcr|md|txtz"
     ).split("|")
+)
+PLAIN_EXTENSIONS = set(
+    ("xml|opf|html|xhtml|txt|text|md|markdown|css|js|json|csv|yaml|toml|ini|rst|cfg|conf").split("|")
 )
 
 time_facets = [

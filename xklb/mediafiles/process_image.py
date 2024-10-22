@@ -3,9 +3,10 @@ from pathlib import Path
 
 from xklb import usage
 from xklb.data import imagemagick_errors
-from xklb.utils import arggroups, argparse_utils, consts, devices, path_utils, processes, web
+from xklb.utils import arggroups, argparse_utils, consts, devices, processes, web
 from xklb.utils.arg_utils import gen_paths
 from xklb.utils.log_utils import log
+from xklb.utils.web import WebPath
 
 
 def parse_args() -> argparse.Namespace:
@@ -28,31 +29,24 @@ def parse_args() -> argparse.Namespace:
 
 
 def process_path(args, path):
-    if str(path).startswith("http"):
-        output_path = web.url_to_local_path(path)
-    else:
-        output_path = path
-
-    output_path = Path(output_path).with_suffix(".avif")
-    if args.clean_path:
-        output_path = path_utils.clean_path(bytes(output_path))
+    output_path = web.gen_output_path(args, path, target_extension=".avif")
 
     path, output_path = devices.clobber(args, path, output_path)
     if path is None:
         return output_path
-    path = Path(path)
+
+    path = WebPath(path)
     output_path = Path(output_path)
 
+    output_path.parent.mkdir(exist_ok=True, parents=True)
     if path.parent != output_path.parent:
         log.warning("Output folder will be different due to path cleaning: %s", output_path.parent)
-        output_path.parent.mkdir(exist_ok=True, parents=True)
 
     command = [
         "magick",
-        "convert",
+        str(path),
         "-resize",
         f"{args.max_image_width}x{args.max_image_height}>",
-        str(path),
         str(output_path),
     ]
 
@@ -95,7 +89,7 @@ def process_path(args, path):
         output_path.unlink()  # Remove transcode
         return path
 
-    if output_path.stat().st_size > path.stat().st_size:
+    if original_stats.st_size > 0 and output_path.stat().st_size > original_stats.st_size:
         output_path.unlink()  # Remove transcode
         return path
     else:

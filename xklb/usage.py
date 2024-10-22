@@ -1447,6 +1447,13 @@ process_image = """library process-image PATH ...
         numfmt --to=iec (sqlite-utils --no-headers --raw-lines image.db "select sum(size)-sum(100000) from media where time_deleted=0 and type like 'image/%' and type != 'image/avif' and size > 100000")
 """
 
+process_text = """library process-text PATH ...
+
+    Repackage documents (PDF, ePub, etc) into HTML+AVIF to save space
+
+    Requires Calibre
+"""
+
 sample_hash = """library sample-hash [--same-file-threads 1] [--chunk-size BYTES] [--gap BYTES OR 0.0-1.0*FILESIZE] PATH ...
 
     Calculate hashes for large files by reading only small segments of each file
