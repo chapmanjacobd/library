@@ -99,7 +99,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v3.0.011; 87 subcommands)
+    library (v3.0.012; 88 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -207,15 +207,17 @@ To stop playing press Ctrl+C in either the terminal or mpv
     ╰──────────────────┴───────────────────────────────────────────────╯
 
     Media File subcommands:
-    ╭────────────────┬───────────────────────────────────────────────────────╮
-    │ media-check    │ Check video and audio files for corruption via ffmpeg │
-    ├────────────────┼───────────────────────────────────────────────────────┤
-    │ process-media  │ Estimate and execute potential disk space savings     │
-    ├────────────────┼───────────────────────────────────────────────────────┤
-    │ process-ffmpeg │ Shrink video/audio to AV1/Opus format (.mkv, .mka)    │
-    ├────────────────┼───────────────────────────────────────────────────────┤
-    │ process-image  │ Shrink images to AV1 image format (.avif)             │
-    ╰────────────────┴───────────────────────────────────────────────────────╯
+    ╭────────────────┬──────────────────────────────────────────────────────────────╮
+    │ media-check    │ Check video and audio files for corruption via ffmpeg        │
+    ├────────────────┼──────────────────────────────────────────────────────────────┤
+    │ process-media  │ Estimate and execute potential disk space savings            │
+    ├────────────────┼──────────────────────────────────────────────────────────────┤
+    │ process-ffmpeg │ Shrink video/audio to AV1/Opus format (.mkv, .mka)           │
+    ├────────────────┼──────────────────────────────────────────────────────────────┤
+    │ process-image  │ Shrink images to AV1 image format (.avif)                    │
+    ├────────────────┼──────────────────────────────────────────────────────────────┤
+    │ process-text   │ Shrink documents to HTML+AV1 image format (requires Calibre) │
+    ╰────────────────┴──────────────────────────────────────────────────────────────╯
 
     Multi-database subcommands:
     ╭──────────────────┬────────────────────────╮
@@ -1989,6 +1991,20 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
     Calculate how much space you could save via process-image by running something like this:
 
         numfmt --to=iec (sqlite-utils --no-headers --raw-lines image.db "select sum(size)-sum(100000) from media where time_deleted=0 and type like 'image/%' and type != 'image/avif' and size > 100000")
+
+
+</details>
+
+###### process-text
+
+<details><summary>Shrink documents to HTML+AV1 image format (requires Calibre)</summary>
+
+    $ library process-text -h
+    usage: library process-text PATH ...
+
+    Repackage documents (PDF, ePub, etc) into HTML+AVIF to save space
+
+    Requires Calibre
 
 
 </details>

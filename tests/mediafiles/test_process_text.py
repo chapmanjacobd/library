@@ -4,7 +4,7 @@ from shutil import which
 import pytest
 
 from xklb.__main__ import library as lb
-from xklb.utils import nums, path_utils, strings
+from xklb.utils import nums, path_utils
 
 
 @pytest.mark.skipif(not which("calibre"), reason="requires calibre")
@@ -19,7 +19,7 @@ def test_process_text_too_small():
         ]
     )
 
-    assert path_utils.folder_size(temp_dir.name) < nums.human_to_bytes('163Ki')
+    assert path_utils.folder_size(temp_dir.name) < nums.human_to_bytes("163Ki")
     # TODO: add test for large enough source file
 
     try:
