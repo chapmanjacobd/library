@@ -1,8 +1,10 @@
+import pathlib
+
 import pytest
 from bs4 import BeautifulSoup
 
 from tests.utils import p
-from xklb.utils.web import extract_nearby_text, safe_unquote, url_encode, url_to_local_path
+from xklb.utils.web import WebPath, extract_nearby_text, safe_unquote, url_encode, url_to_local_path
 
 
 def test_url_to_local_path():
@@ -220,3 +222,32 @@ def test_extract_nearby_text2():
 
     before, after = extract_nearby_text(soup.find("a", href="https://fourble.co.uk/podcast/systemau"), "a")
     assert (before, after) == ("", "- Archive of the Australian Linux-leaning tech podcast")
+
+
+def test_parent_property():
+    local_path = WebPath("some/local/path")
+    assert isinstance(local_path, pathlib.Path)
+    assert str(local_path.parent) == "some/local"
+
+    root_path = WebPath("/")
+    assert isinstance(root_path, pathlib.Path)
+    assert str(root_path.parent) == "/"
+
+    web_path = WebPath("http://example.com/some/path")
+    assert isinstance(web_path, WebPath)
+    assert str(web_path.parent) == "http://example.com/some"
+
+    web_path = WebPath("http://example.com/some/")
+    assert isinstance(web_path, WebPath)
+    assert str(web_path.parent) == "http://example.com"
+
+    web_path = WebPath("https://<netloc>/<path1>/<path2>;<params>?<query1>&<query2>#<fragment1>&<fragment2>")
+    assert isinstance(web_path, WebPath)
+    assert str(web_path.parent) == "https://<netloc>/<path1>/<path2>;<params>?<query1>&<query2>#<fragment1>"
+    assert str(web_path.parent.parent) == "https://<netloc>/<path1>/<path2>;<params>?<query1>&<query2>"
+    assert str(web_path.parent.parent.parent) == "https://<netloc>/<path1>/<path2>;<params>?<query1>"
+    assert str(web_path.parent.parent.parent.parent) == "https://<netloc>/<path1>/<path2>;<params>"
+    assert str(web_path.parent.parent.parent.parent.parent) == "https://<netloc>/<path1>/<path2>"
+    assert str(web_path.parent.parent.parent.parent.parent.parent) == "https://<netloc>/<path1>"
+    assert str(web_path.parent.parent.parent.parent.parent.parent.parent) == "https://<netloc>"
+    assert str(web_path.parent.parent.parent.parent.parent.parent.parent.parent) == "https://<netloc>"

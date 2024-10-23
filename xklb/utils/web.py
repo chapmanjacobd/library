@@ -881,28 +881,49 @@ class WebStatResult:
 
 class WebPath:
     def __new__(cls, *args):
-        if args and isinstance(args[0], str) and not args[0].startswith("http"):
-            return pathlib.Path(*args)
-        return object.__new__(cls)
+        if args and str(args[0]).startswith("http"):
+            return object.__new__(cls)
+        return pathlib.Path(*args)
 
     def __init__(self, path):
-        self._path = path
+        self._path = str(path)
 
     @property
     def parent(self):
-        parts = str(self).rsplit("/", 1)
-        if len(parts) == 1:
-            return WebPath(".")
-        return WebPath(parts[0])
+        scheme, netloc, path, params, query, fragment = urlparse(str(self))
+
+        if fragment:
+            fragments = fragment.rstrip("&").rsplit("&", 1)
+            fragment = "" if len(fragments) == 1 else fragments[0]
+        elif query:
+            queries = query.rstrip("&").rsplit("&", 1)
+            query = "" if len(queries) == 1 else queries[0]
+        elif params:
+            parameters = params.rstrip("&").rsplit("&", 1)
+            params = "" if len(parameters) == 1 else parameters[0]
+        elif path:
+            paths = path.rstrip("/").rsplit("/", 1)
+            path = "" if len(paths) == 1 else paths[0]
+
+        return WebPath(urlunparse((scheme, netloc, path, params, query, fragment)))
 
     @property
     def parts(self):
         res = urlparse(str(self))
-        return (
-            res.scheme + "://" if res.scheme else "",
-            res.netloc + "/" if res.netloc else "",
-            urlunparse(("", "", res.path, res.params, res.query, res.fragment)),
-        )
+        parts = []
+        if res.scheme:
+            parts += [res.scheme]
+        if res.netloc:
+            parts += [res.netloc]
+        if res.path:
+            parts += "/".split(res.path)
+        if res.params:
+            parts += "&".split(res.params)
+        if res.query:
+            parts += "&".split(res.query)
+        if res.fragment:
+            parts += "&".split(res.fragment)
+        return tuple(parts)
 
     @processes.with_timeout_thread(max(consts.REQUESTS_TIMEOUT) + 5)
     def head(self, follow_symlinks=True):
