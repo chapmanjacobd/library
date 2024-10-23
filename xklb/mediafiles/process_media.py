@@ -1,5 +1,6 @@
 import argparse, math, os, sqlite3
 from contextlib import suppress
+from shutil import which
 
 from xklb import usage
 from xklb.mediadb import db_history
@@ -88,21 +89,32 @@ def parse_args() -> argparse.Namespace:
 
 
 def collect_media(args) -> list[dict]:
+    FFMPEG_INSTALLED = which("ffmpeg") or which("ffmpeg.exe")
+    IM7_INSTALLED = which("magick")
+    CALIBRE_INSTALLED = which("ebook-convert")
+    UNAR_INSTALLED = which("lsar")
+
+    default_exts = (
+        (consts.AUDIO_ONLY_EXTENSIONS if FFMPEG_INSTALLED else set())
+        | (consts.VIDEO_EXTENSIONS if FFMPEG_INSTALLED else set())
+        | (consts.IMAGE_EXTENSIONS - set(("avif",)) if IM7_INSTALLED else set())
+        | (consts.CALIBRE_EXTENSIONS if CALIBRE_INSTALLED else set())
+        | (consts.ARCHIVE_EXTENSIONS if UNAR_INSTALLED else set())
+    )
+
     if args.database:
         db_history.create(args)
+
+        if not args.ext:
+            or_conditions = [f"path like '%.{ext}'" for ext in default_exts]
+            args.filter_sql.append(f" AND ({' OR '.join(or_conditions)})")
 
         try:
             media = list(args.db.query(*sqlgroups.media_sql(args)))
         except sqlite3.OperationalError:
             media = list(args.db.query(*sqlgroups.fs_sql(args, args.limit)))
     else:
-        media = arg_utils.gen_d(
-            args,
-            consts.AUDIO_ONLY_EXTENSIONS
-            | consts.VIDEO_EXTENSIONS
-            | consts.IMAGE_EXTENSIONS - set(("avif",))
-            | consts.CALIBRE_EXTENSIONS,
-        )
+        media = arg_utils.gen_d(args, default_exts)
         media = [d if "size" in d else file_utils.get_filesize(d) for d in media]
     return media
 
@@ -215,7 +227,7 @@ def check_shrink(args, m) -> list:
 
         m["media_type"] = "Text"
         m["future_size"] = future_size
-        m["savings"] = (m.get("compresseos.stat(new_path).st_sized_size") or m["size"]) - future_size
+        m["savings"] = (m.get("compressed_size") or m["size"]) - future_size
         m["processing_time"] = args.transcoding_image_time * 12
         if can_shrink:
             return [m]
@@ -228,7 +240,11 @@ def check_shrink(args, m) -> list:
         return [check_shrink(args, d) for d in contents]
     else:
         # TODO: csv, json => parquet
-        log.warning("[%s]: Skipping unknown filetype %s", m["path"], filetype)
+
+        if m.get("compressed_size"):
+            log.warning("[%s]: Skipping unknown filetype %s from archive", m["path"], m["ext"])
+        else:
+            log.warning("[%s]: Skipping unknown filetype %s %s", m["path"], m["ext"], filetype)
     return []
 
 

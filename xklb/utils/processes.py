@@ -385,6 +385,7 @@ def lsar(archive_path):
         log.warning("[%s]: lsar error %s", archive_path, lsar_json["lsarError"])
 
     lsar_contents = lsar_json.get("lsarContents", [])
+    lsar_contents = [d for d in lsar_contents if not d.get("XADIsDirectory")]
     if len(lsar_contents) == 0:
         log.info("[%s]: archive empty", archive_path)
         return []
