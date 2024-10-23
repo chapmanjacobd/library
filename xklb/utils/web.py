@@ -1,4 +1,4 @@
-import argparse, datetime, functools, os, pathlib, posixpath, random, re, tempfile, time, urllib.error, urllib.parse, urllib.request
+import argparse, datetime, functools, os, pathlib, random, re, tempfile, time, urllib.error, urllib.parse, urllib.request
 from contextlib import suppress
 from email.message import Message
 from pathlib import Path
@@ -863,25 +863,6 @@ def get_title(args, url):
     return title
 
 
-class _Flavour:
-    def __getattr__(self, name):
-        return getattr(posixpath, name)
-
-
-class _UrlFlavour(_Flavour):
-    has_drv = False
-    pathmod = posixpath
-    is_supported = True
-
-    def splitroot(self, part):
-        res = urlparse(part)
-        return (
-            res.scheme + "://" if res.scheme else "",
-            res.netloc + "/" if res.netloc else "",
-            urlunparse(("", "", res.path, res.params, res.query, res.fragment)),
-        )
-
-
 class WebStatResult:
     def __init__(self, response):
         self.st_size = nums.safe_int(response.headers.get("Content-Length")) or 0
@@ -898,14 +879,30 @@ class WebStatResult:
         )
 
 
-class WebPath(pathlib.PurePath):
-    __slots__ = ()
-    _flavour = _UrlFlavour()
-
+class WebPath:
     def __new__(cls, *args):
         if args and isinstance(args[0], str) and not args[0].startswith("http"):
             return pathlib.Path(*args)
-        return super().__new__(cls, *args)
+        return object.__new__(cls)
+
+    def __init__(self, path):
+        self._path = path
+
+    @property
+    def parent(self):
+        parts = str(self).rsplit("/", 1)
+        if len(parts) == 1:
+            return WebPath(".")
+        return WebPath(parts[0])
+
+    @property
+    def parts(self):
+        res = urlparse(str(self))
+        return (
+            res.scheme + "://" if res.scheme else "",
+            res.netloc + "/" if res.netloc else "",
+            urlunparse(("", "", res.path, res.params, res.query, res.fragment)),
+        )
 
     @processes.with_timeout_thread(max(consts.REQUESTS_TIMEOUT) + 5)
     def head(self, follow_symlinks=True):
@@ -947,6 +944,12 @@ class WebPath(pathlib.PurePath):
 
     def remote_name(self):
         return filename_from_content_disposition(self.head())
+
+    def __truediv__(self, other):
+        return WebPath(f"{str(self)}/{str(other)}")
+
+    def __str__(self):
+        return self._path
 
 
 @processes.with_timeout_thread(max(consts.REQUESTS_TIMEOUT) + 5)

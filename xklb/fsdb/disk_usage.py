@@ -8,7 +8,7 @@ from xklb.utils import arg_utils, arggroups, argparse_utils, file_utils, process
 def parse_args(defaults_override=None):
     parser = argparse_utils.ArgumentParser(usage=usage.disk_usage)
     arggroups.sql_fs(parser)
-    parser.set_defaults(local_media_only=True, hide_deleted=True)
+    parser.set_defaults(hide_deleted=True)
     arggroups.group_folders(parser)
     parser.set_defaults(limit="4000", depth=0)
 
