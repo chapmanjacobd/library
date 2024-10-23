@@ -1424,7 +1424,9 @@ def download(parent_parser):
         default=5,
         help="Skip links that have failed more than N times (ie. previous sessions, requires DB)",
     )
-    parser.add_argument("--http-download-retries", type=int, default=10, help="Use N retries for downloads (current session)")
+    parser.add_argument(
+        "--http-download-retries", type=int, default=10, help="Use N retries for downloads (current session)"
+    )
     parser.add_argument("--download-chunk-size", type=nums.human_to_bytes, default="8MB")
     parser.add_argument(
         "--force",
