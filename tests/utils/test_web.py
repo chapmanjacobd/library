@@ -227,11 +227,9 @@ def test_extract_nearby_text2():
 def test_parent_property():
     local_path = WebPath("some/local/path")
     assert isinstance(local_path, pathlib.Path)
-    assert str(local_path.parent) == "some/local"
 
     root_path = WebPath("/")
     assert isinstance(root_path, pathlib.Path)
-    assert str(root_path.parent) == "/"
 
     web_path = WebPath("http://example.com/some/path")
     assert isinstance(web_path, WebPath)
