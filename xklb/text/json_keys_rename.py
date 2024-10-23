@@ -1,7 +1,7 @@
 import json, sys
 
 from xklb import usage
-from xklb.utils import arg_utils, arggroups, argparse_utils, printing, processes
+from xklb.utils import arg_utils, arggroups, argparse_utils, printing, processes, strings
 from xklb.utils.log_utils import log
 
 
@@ -30,7 +30,7 @@ def rename_keys(json_data, key_mapping):
 
 
 def gen_d(line):
-    json_data = json.loads(line)
+    json_data = strings.safe_json_loads(line)
     if isinstance(json_data, list):
         yield from json_data
     elif isinstance(json_data, dict):

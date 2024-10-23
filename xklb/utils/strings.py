@@ -1,4 +1,4 @@
-import functools, html, math, operator, re, sys, textwrap
+import functools, html, json, math, operator, re, sys, textwrap
 from copy import deepcopy
 from datetime import datetime, timedelta
 from datetime import timezone as tz
@@ -9,6 +9,22 @@ import humanize
 from xklb.data import wordbank
 from xklb.utils import consts, iterables, nums
 from xklb.utils.log_utils import log
+
+
+def safe_json_loads(s):
+    if isinstance(s, bytes):
+        return safe_json_loads(s.decode("utf-8", errors="replace"))
+    try:
+        return json.loads(s)
+    except json.JSONDecodeError:
+        # try replacing control chars
+        return json.loads(re.sub(r"[\x00-\x1f\x7f-\x9f]", "", s))
+
+
+def safe_json_load(path):
+    with open(path, "rb") as file:
+        binary_data = file.read()
+    return safe_json_loads(binary_data.decode("utf-8", errors="replace"))
 
 
 def repeat_until_same(fn):  # noqa: ANN201

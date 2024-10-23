@@ -1,9 +1,9 @@
-import argparse, json, operator, random
+import argparse, operator, random
 from collections import defaultdict
 from copy import copy
 from pathlib import Path
 
-from xklb.utils import consts, file_utils, iterables, nums, processes
+from xklb.utils import consts, file_utils, iterables, nums, processes, strings
 from xklb.utils.consts import SC
 
 
@@ -13,7 +13,7 @@ def gen_paths(args, default_exts=None):
 
     if args.from_json:
         for path in args.paths:
-            json_data = json.loads(path)
+            json_data = strings.safe_json_loads(path)
             if isinstance(json_data, list):
                 yield from (d["path"] for d in json_data)
             elif isinstance(json_data, dict):
@@ -36,7 +36,7 @@ def gen_d(args, default_exts=None):
 
     if args.from_json:
         for path in args.paths:
-            json_data = json.loads(path)
+            json_data = strings.safe_json_loads(path)
             if isinstance(json_data, list):
                 yield from json_data
             elif isinstance(json_data, dict):

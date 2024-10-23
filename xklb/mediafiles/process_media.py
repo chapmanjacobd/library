@@ -2,6 +2,8 @@ import argparse, math, os, sqlite3
 from contextlib import suppress
 from shutil import which
 
+import concurrent.futures
+
 from xklb import usage
 from xklb.mediadb import db_history
 from xklb.mediafiles import process_ffmpeg, process_image, process_text
@@ -252,7 +254,11 @@ def process_media() -> None:
     args = parse_args()
     media = collect_media(args)
 
-    media = iterables.conform(check_shrink(args, m) for m in media)
+    mp_args = argparse.Namespace(**{k: v for k, v in args.__dict__.items() if k not in {"db"}})
+    with concurrent.futures.ThreadPoolExecutor() as executor:  # mostly for lsar but also ffprobe
+        futures = {executor.submit(check_shrink, mp_args, m) for m in media}
+    media = iterables.conform(v.result() for v in futures)
+
     media = sorted(
         media, key=lambda d: d["savings"] / (d["processing_time"] or args.transcoding_image_time), reverse=True
     )
@@ -387,5 +393,5 @@ def process_media() -> None:
                             args.db.conn.execute("DELETE FROM media where path = ?", [m["new_path"]])
                             args.db.conn.execute(
                                 "UPDATE media SET path = ?, size = ?, duration = ? WHERE path = ?",
-                                [m["new_path"], m["new_size"], m["duration"], m["path"]],
+                                [m["new_path"], m["new_size"], m.get("duration"), m["path"]],
                             )

@@ -4,7 +4,7 @@ from pathlib import Path
 from shutil import which
 from typing import NoReturn
 
-from xklb.utils import consts, iterables, nums, path_utils
+from xklb.utils import consts, iterables, nums, path_utils, strings
 from xklb.utils.log_utils import log
 
 
@@ -309,7 +309,7 @@ class FFProbe:
                 raise OSError
             else:
                 raise UnplayableFile(out, err)
-        d = json.loads(out.decode("utf-8"))
+        d = strings.safe_json_loads(out.decode("utf-8"))
 
         self.path = path
 
@@ -373,10 +373,12 @@ def lsar(archive_path):
         log.error("[%s]: The 'lsar' command is not available. Install 'unar' to check archives", archive_path)
         return []
 
-    lsar_output = subprocess.run(["lsar", "-json", archive_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
     try:
-        lsar_json = json.loads(lsar_output.stdout)
+        lsar_output = cmd("lsar", "-json", archive_path, error_verbosity=2)
+    except subprocess.CalledProcessError:
+        return []
+    try:
+        lsar_json = strings.safe_json_loads(lsar_output.stdout)
     except json.JSONDecodeError:
         log.warning("[%s]: Error parsing lsar output as JSON: %s", archive_path, lsar_output)
         return []
@@ -415,9 +417,14 @@ def unar_delete(archive_path):
     cmd("unar", "-quiet", "-force-rename", "-no-directory", "-output-directory", output_path, archive_path)
     path_utils.folder_utime(output_path, (original_stats.st_atime, original_stats.st_mtime))
 
-    lsar_json = cmd("lsar", "-json", archive_path).stdout
-    lsar_output = json.loads(lsar_json)
-    part_files = lsar_output["lsarProperties"]["XADVolumes"]
+    lsar_output = cmd("lsar", "-json", archive_path)
+    try:
+        lsar_json = strings.safe_json_loads(lsar_output.stdout)
+    except json.JSONDecodeError:
+        log.warning("[%s]: Error parsing lsar output as JSON: %s", archive_path, lsar_output)
+        return
+
+    part_files = lsar_json["lsarProperties"]["XADVolumes"]
 
     try:
         for part_file in part_files:
