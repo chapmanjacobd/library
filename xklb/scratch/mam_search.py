@@ -1,7 +1,7 @@
-import argparse, json
+import argparse
 from sqlite3 import IntegrityError
 
-from xklb.utils import arggroups, argparse_utils, nums, objects, web
+from xklb.utils import arggroups, argparse_utils, nums, objects, strings, web
 from xklb.utils.log_utils import log
 
 
@@ -62,7 +62,7 @@ def get_page(args, query_data):
     df = pd.DataFrame(data)
     df = df.drop(columns=["cat", "language", "category", "main_cat", "browseflags", "comments", "owner", "leechers"])
 
-    safe_json = objects.fallback(json.loads, {})
+    safe_json = objects.fallback(strings.safe_json_loads, {})
 
     def dict_values_str(d):
         return ", ".join(d.values())

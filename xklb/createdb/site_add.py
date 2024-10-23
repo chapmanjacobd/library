@@ -1,4 +1,4 @@
-import argparse, json
+import argparse
 from collections import defaultdict
 from io import StringIO
 
@@ -220,7 +220,7 @@ def attach_interceptors(args):
             if any(s in body for s in ["searchKeywords"]):
                 return
 
-            body = json.loads(body)
+            body = strings.safe_json_loads(body)
             tables = nosql_to_sql(body)
 
         elif args.extract_html and response.headers["Content-Type"].startswith(("text/html",)):
