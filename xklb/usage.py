@@ -1845,5 +1845,11 @@ process_media = """library process-media DATABASE_OR_PATH
 
         library process-media --invalid --no-valid --delete-unplayable video.db
 
+    If not installed, related file extensions will be skipped during scan:
+
+        - FFmpeg is required for shrinking video and audio
+        - ImageMagick is required for shrinking images
+        - Calibre is required for shrinking eBooks
+
 Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 """

@@ -154,6 +154,10 @@ def process_path(args, path):
 def process_text():
     args = parse_args()
 
+    if not shutil.which("ebook-convert"):
+        print("Calibre is required for process-text")
+        raise SystemExit(1)
+
     for path in gen_paths(args, consts.CALIBRE_EXTENSIONS):
         if not path.startswith("http"):
             path = str(Path(path).resolve())

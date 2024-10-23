@@ -888,6 +888,9 @@ class WebPath:
     def __init__(self, path):
         self._path = str(path)
 
+    def __fspath__(self):
+        return str(self)
+
     @property
     def parent(self):
         scheme, netloc, path, params, query, fragment = urlparse(str(self))
