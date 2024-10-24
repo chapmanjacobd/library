@@ -217,7 +217,14 @@ IMAGE_EXTENSIONS = set(
         "|flv|insv|inx|swf|wma|wmv|exif|eip|psp|pspimage"
     ).split("|")
 )
-ARCHIVE_EXTENSIONS = set("zip|rar|cbz|cbr|cb7|tar|exe|7z|r00|iso|img|001".split("|"))
+ARCHIVE_EXTENSIONS = set(
+    (
+        "0|1|01|001|0001|7z|ace|alz|alzip|arc|arj|b5i|b6i|bin|bz2|cab|cb7|cbr|cbz|ccd|cdr|cif"
+        "|cpio|daa|deb|dmg|exe|gi|gz|img|iso|lha|lzh|lzma|lzo|mdf|msi|nrg|nsi|nsis"
+        "|p01|pak|pdi|r00|rar|rpm|sit|sitx|tar|bz2|gz|xz|Z|taz|tbz2|tgz|toast|txz"
+        "|tz|udf|uif|vcd|wim|xar|xz|z|zip|zipx|zoo|zst"
+    ).split("|")
+)
 CALIBRE_EXTENSIONS = set(
     (
         "azw|azw3|azw4|cbc|chm|djvu|docx|epub|fb2|fbz|htmlz|lit|lrf|mobi|odt|pdf|prc|pdb|pml|rb|rtf|snb|tcr|md|txtz"

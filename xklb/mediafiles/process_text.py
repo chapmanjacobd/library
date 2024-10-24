@@ -28,6 +28,15 @@ def parse_args() -> argparse.Namespace:
 
     return args
 
+def get_calibre_version():
+    result = processes.cmd('ebook-convert', '--version')
+
+    version_string = result.stdout
+    version_part = version_string.split('(')[1].split(')')[0].split()[1]
+
+    major, minor, patch = map(int, version_part.split('.'))
+
+    return (major, minor, patch)
 
 def update_references(path, replacements):
     try:
@@ -101,6 +110,9 @@ def process_path(args, path):
         # '--linearize-tables',
     ]
 
+    if get_calibre_version() >= (7, 19, 0):
+        command += ['--pdf-engine', 'pdftohtml']
+
     if args.simulate:
         print(shlex.join(command))
         return path
@@ -108,7 +120,8 @@ def process_path(args, path):
     try:
         processes.cmd(*command)
     except subprocess.CalledProcessError:
-        raise
+        log.exception('[%s]: Calibre failed to process book. Skipping...', str(path))
+        return path
 
     if not output_path.exists() or path_utils.is_empty_folder(output_path):
         output_path.unlink()  # Remove transcode
