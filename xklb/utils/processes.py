@@ -369,6 +369,8 @@ def unar_out_path(archive_path):
 
 
 def lsar(archive_path):
+    # TODO: seems a little slow. maybe compare perf with 7z or https://github.com/wummel/patool
+
     if not which("lsar"):
         log.error("[%s]: The 'lsar' command is not available. Install 'unar' to check archives", archive_path)
         return []
