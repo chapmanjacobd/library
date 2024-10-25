@@ -1,8 +1,6 @@
-import argparse, math, os, sqlite3
+import argparse, concurrent.futures, math, os, sqlite3
 from contextlib import suppress
 from shutil import which
-
-import concurrent.futures
 
 from xklb import usage
 from xklb.mediadb import db_history
@@ -78,6 +76,7 @@ def parse_args() -> argparse.Namespace:
 
     arggroups.process_ffmpeg(parser)
     arggroups.clobber(parser)
+    arggroups.ocrmypdf(parser)
     arggroups.debug(parser)
 
     arggroups.database_or_paths(parser)
@@ -86,6 +85,7 @@ def parse_args() -> argparse.Namespace:
 
     arggroups.sql_fs_post(args)
     arggroups.process_ffmpeg_post(args)
+    arggroups.ocrmypdf_post(args)
 
     return args
 

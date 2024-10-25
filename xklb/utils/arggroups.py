@@ -1,5 +1,6 @@
 import argparse, os, re, textwrap, typing
 from pathlib import Path
+from shutil import which
 
 from xklb.utils import (
     arg_utils,
@@ -1849,3 +1850,38 @@ def history(parser):
         action="store_true",
         help="Exclude completely watched media",
     )
+
+
+def ocrmypdf(parent_parser):
+    parser = parent_parser.add_argument_group("OCRMyPDF")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--no-ocr", action="store_true", help="Skip OCR")
+    mode.add_argument(
+        "--force-ocr",
+        action="store_true",
+        help="Rasterize any text or vector objects on each page, apply OCR, and "
+        "save the rastered output (this rewrites the PDF)",
+    )
+    mode.add_argument(
+        "--skip-text",
+        action="store_true",
+        help="Skip OCR on any pages that already contain text, but include the "
+        "page in final output; useful for PDFs that contain a mix of "
+        "images, text pages, and/or previously OCRed pages",
+    )
+    mode.add_argument(
+        "--redo-ocr",
+        action="store_true",
+        help="Attempt to detect and remove the hidden OCR layer from files that "
+        "were previously OCRed with OCRmyPDF or another program. Apply OCR "
+        "to text found in raster images. Existing visible text objects will "
+        "not be changed. If there is no existing OCR, OCR will be added.",
+    )
+
+
+def ocrmypdf_post(args):
+    if not any([args.no_ocr, args.force_ocr, args.skip_text, args.redo_ocr]):
+        if which("tesseract") and which("gs"):
+            args.skip_text = True
+        else:
+            args.no_ocr = True

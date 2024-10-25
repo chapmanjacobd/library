@@ -44,6 +44,7 @@ deluxe = [
   "openpyxl",
   "PyExifTool",
   "pymcdm",
+  "ocrmypdf",
   "pyvirtualdisplay",
   "scikit-learn",
   "selenium-wire",
