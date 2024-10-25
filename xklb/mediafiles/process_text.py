@@ -18,6 +18,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--clean-path", action=argparse.BooleanOptionalAction, default=True, help="Clean output path")
     arggroups.clobber(parser)
+    arggroups.ocrmypdf(parser)
     arggroups.requests(parser)
     arggroups.download(parser)
     arggroups.debug(parser)
@@ -26,17 +27,20 @@ def parse_args() -> argparse.Namespace:
     args = parser.parse_intermixed_args()
     arggroups.args_post(args, parser)
 
+    arggroups.ocrmypdf_post(args)
     return args
 
+
 def get_calibre_version():
-    result = processes.cmd('ebook-convert', '--version')
+    result = processes.cmd("ebook-convert", "--version")
 
     version_string = result.stdout
-    version_part = version_string.split('(')[1].split(')')[0].split()[1]
+    version_part = version_string.split("(")[1].split(")")[0].split()[1]
 
-    major, minor, patch = map(int, version_part.split('.'))
+    major, minor, patch = map(int, version_part.split("."))
 
     return (major, minor, patch)
+
 
 def update_references(path, replacements):
     try:
@@ -63,6 +67,44 @@ def process_path(args, path):
     ext = os.path.splitext(path)[1].lower().lstrip(".")
     if ext not in consts.CALIBRE_EXTENSIONS:
         return path
+
+    if ext in consts.OCRMYPDF_EXTENSIONS and not args.no_ocr:
+        import ocrmypdf, ocrmypdf.exceptions
+
+        if not ocrmypdf.pdfa.file_claims_pdfa(Path(path))["pass"]:
+            try:
+                kwargs = {}
+
+                TESSERACT_LANGUAGE = os.getenv("TESSERACT_LANGUAGE")
+                if TESSERACT_LANGUAGE:
+                    kwargs["language"] = TESSERACT_LANGUAGE.split(",")
+
+                if args.skip_text:
+                    kwargs["skip_text"] = True
+                elif args.redo_ocr:
+                    kwargs["redo_ocr"] = True
+                elif args.force_ocr:
+                    kwargs["force_ocr"] = True
+
+                pdf_path = path
+                if ext != "pdf":
+                    pdf_path += ".pdf"
+                    _, pdf_path = devices.clobber(args, path, pdf_path)
+                result = ocrmypdf.ocr(path, pdf_path, **kwargs)
+                log.debug(result)
+            except ocrmypdf.exceptions.EncryptedPdfError:
+                log.info("[%s]: Skipped PDF OCR because it is encrypted", path)
+            except ocrmypdf.exceptions.DigitalSignatureError:
+                log.info("[%s]: Skipped PDF because it has a digital signature", path)
+            except (ocrmypdf.exceptions.TaggedPDFError, ocrmypdf.exceptions.PriorOcrFoundError):
+                log.info("[%s]: Skipped PDF because it already contained text", path)
+            except Exception as e:
+                log.warning("[%s]: Could not run OCR. %s", path, e)
+            else:
+                if os.path.exists(pdf_path):
+                    if not os.path.samefile(path, pdf_path) and args.delete_original:
+                        os.unlink(path)
+                    path = pdf_path
 
     p = Path(path)
     output_path = p.parent
@@ -111,7 +153,7 @@ def process_path(args, path):
     ]
 
     if get_calibre_version() >= (7, 19, 0):
-        command += ['--pdf-engine', 'pdftohtml']
+        command += ["--pdf-engine", "pdftohtml"]
 
     if args.simulate:
         print(shlex.join(command))
@@ -120,7 +162,7 @@ def process_path(args, path):
     try:
         processes.cmd(*command)
     except subprocess.CalledProcessError:
-        log.exception('[%s]: Calibre failed to process book. Skipping...', str(path))
+        log.exception("[%s]: Calibre failed to process book. Skipping...", str(path))
         return path
 
     if not output_path.exists() or path_utils.is_empty_folder(output_path):
@@ -171,7 +213,7 @@ def process_text():
         print("Calibre is required for process-text")
         raise SystemExit(1)
 
-    for path in gen_paths(args, consts.CALIBRE_EXTENSIONS):
+    for path in gen_paths(args, consts.CALIBRE_EXTENSIONS | consts.OCRMYPDF_EXTENSIONS):
         if not path.startswith("http"):
             path = str(Path(path).resolve())
 

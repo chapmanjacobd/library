@@ -1,8 +1,6 @@
-import argparse, math, os, sqlite3
+import argparse, concurrent.futures, math, os, sqlite3
 from contextlib import suppress
 from shutil import which
-
-import concurrent.futures
 
 from xklb import usage
 from xklb.mediadb import db_history
@@ -76,8 +74,11 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--transcoding-image-time", type=float, default=1.5, metavar="SECONDS")
 
+    parser.add_argument("--no-confirm", "--yes", "-y", action="store_true")
+
     arggroups.process_ffmpeg(parser)
     arggroups.clobber(parser)
+    arggroups.ocrmypdf(parser)
     arggroups.debug(parser)
 
     arggroups.database_or_paths(parser)
@@ -86,6 +87,7 @@ def parse_args() -> argparse.Namespace:
 
     arggroups.sql_fs_post(args)
     arggroups.process_ffmpeg_post(args)
+    arggroups.ocrmypdf_post(args)
 
     return args
 
@@ -307,7 +309,7 @@ def process_media() -> None:
     print("Estimated savings:", strings.file_size(savings))
 
     new_free_space = 0
-    if devices.confirm(f"Proceed?"):
+    if args.no_confirm or devices.confirm(f"Proceed?"):
         for m in media:
             log.info(
                 "%s freed. Processing %s (%s)",

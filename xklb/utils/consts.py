@@ -176,6 +176,7 @@ SKIP_MEDIA_CHECK = [".iso", ".img", ".vob"]
 
 SPEECH_RECOGNITION_EXTENSIONS = set("mp3|ogg|wav".split("|"))
 OCR_EXTENSIONS = set("gif|jpg|jpeg|png|tif|tff|tiff".split("|"))
+OCRMYPDF_EXTENSIONS = set("gif|jpg|jpeg|png|tif|tff|tiff|pdf".split("|"))
 AUDIO_ONLY_EXTENSIONS = set(
     "mka|opus|oga|ogg|mp3|mpga|m2a|m4a|m4b|flac|wav|aif|aiff|wma|aac|aa3|ac3|ape|mid|midi".split("|")
 )

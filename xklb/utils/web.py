@@ -421,7 +421,7 @@ def url_to_local_path(url, response=None, output_path=None, output_prefix=None):
     return output_path
 
 
-def download_url(args, url, output_path=None, retry_num=0):
+def download_url(args, url: str, output_path=None, retry_num=0) -> str | None:
     global session
     if session is None:
         log.warning("Creating new web.session")
