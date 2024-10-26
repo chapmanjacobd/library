@@ -302,10 +302,6 @@ def process_path(args, path, **kwargs):
         elif is_file_error:
             if args.delete_unplayable:
                 path.unlink()
-                if output_path.exists():
-                    return output_path
-                else:
-                    return None
         elif is_unsupported:
             output_path.unlink(missing_ok=True)  # Remove transcode attempt, if any
             return path
@@ -321,7 +317,7 @@ def process_path(args, path, **kwargs):
     delete_transcode = False
 
     if not output_path.exists():
-        return path
+        return path if path.exists() else None
 
     output_stats = output_path.stat()
 

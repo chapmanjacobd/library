@@ -28,6 +28,7 @@ unsupported_error = re.compile(
 file_error = re.compile(
     "|".join(
         r""".*Error on decrunching
+.*Wrong checksum
 .*Error on unpacking
 .*Archive is corrupted""".splitlines(),
     ),
