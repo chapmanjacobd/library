@@ -27,11 +27,20 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def convert_to_png(input_path):
-    if path_utils.ext(input_path) in consts.PIL_EXTENSIONS:
-        return input_path
-    else:  # consts.IMAGE_EXTENSIONS - consts.PIL_EXTENSIONS
-        return subprocess.run(["magick", input_path, "jpg:-"], stdout=subprocess.PIPE, check=True).stdout
+DEFAULT_EXTENSIONS = (consts.IMAGE_EXTENSIONS | consts.PIL_EXTENSIONS) - {"pdf"}
+
+
+def gen_pillow_compats(input_paths):
+    for input_path in input_paths:
+        if path_utils.ext(input_path) in consts.PIL_EXTENSIONS:
+            if os.path.getsize(input_path) == 0:
+                log.warning("[%s]: skipping empty file", input_path)
+            else:
+                yield input_path
+        else:  # consts.IMAGE_EXTENSIONS - consts.PIL_EXTENSIONS
+            data = subprocess.run(["magick", input_path, "jpg:-"], stdout=subprocess.PIPE, check=True).stdout
+            if data:
+                yield data
 
 
 def convert_to_image_pdf(args, image_paths, pdf_path):
@@ -43,10 +52,9 @@ def convert_to_image_pdf(args, image_paths, pdf_path):
     log.debug("Converting %s images to PDF %s", len(image_paths), pdf_path)
 
     with open(pdf_path, "wb") as f:
-        png_paths = [convert_to_png(s) for s in image_paths]
-        img2pdf.convert(*png_paths, outputstream=f, rotation=img2pdf.Rotation.ifvalid)
+        img2pdf.convert(*list(gen_pillow_compats(image_paths)), outputstream=f, rotation=img2pdf.Rotation.ifvalid)
 
-    if args.delete_original:
+    if args.delete_original and os.path.exists(pdf_path):
         for image_path in image_paths:
             os.unlink(image_path)
 
@@ -86,15 +94,24 @@ def gen_arg_groups(args):
     individual_files = []
     for path in local_paths:
         if os.path.isdir(path):
-            yield file_utils.rglob(
-                str(path), args.ext or consts.IMAGE_EXTENSIONS | consts.PIL_EXTENSIONS, getattr(args, "exclude", None)
+            dir_image_paths = file_utils.rglob(
+                str(path), args.ext or DEFAULT_EXTENSIONS, getattr(args, "exclude", None)
             )[0]
+            if dir_image_paths:
+                yield dir_image_paths
+            else:
+                log.warning("No images found in %s", path)
         elif path_utils.ext(path) in consts.ARCHIVE_EXTENSIONS:
             archive_dir = processes.unar_delete(path)
-            yield file_utils.rglob(str(archive_dir), consts.IMAGE_EXTENSIONS, quiet=True)[0]
+            archive_image_paths = file_utils.rglob(str(archive_dir), DEFAULT_EXTENSIONS, quiet=True)[0]
+            if archive_image_paths:
+                yield archive_image_paths
+            else:
+                log.warning("No images found from extracted archive in %s", archive_dir)
         else:
             individual_files.append(path)
-    yield individual_files
+    if individual_files:
+        yield individual_files
 
 
 def images_to_pdf():

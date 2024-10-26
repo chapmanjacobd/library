@@ -91,9 +91,10 @@ def process_path(args, path):
                 path.unlink()
             return None
 
-    if not Path(output_path).exists() or output_path.stat().st_size == 0:
+    if output_path.stat().st_size == 0:
         output_path.unlink()  # Remove transcode
-        return path
+    if not output_path.exists():
+        return path if path.exists else None
 
     if original_stats.st_size > 0 and output_path.stat().st_size > original_stats.st_size:
         output_path.unlink()  # Remove transcode

@@ -94,7 +94,7 @@ def convert_to_text_pdf(args, path):
         log.warning("[%s]: Could not run OCR. %s", path, e)
     else:
         if os.path.exists(pdf_path):
-            if not os.path.samefile(path, pdf_path) and args.delete_original:
+            if args.delete_original and not os.path.samefile(path, pdf_path):
                 os.unlink(path)
             path = pdf_path
 

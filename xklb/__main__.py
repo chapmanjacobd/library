@@ -70,7 +70,7 @@ progs = {
         "process_image": "Shrink images to AV1 image format (.avif)",
         "process_text": "Shrink documents to HTML+AV1 image format (requires Calibre)",
         "images_to_pdf": "Convert folders of images into image PDFs",
-        "pdf_edit": "Apply brightness, contrast, sharpness, and OCR adjustments to PDFs",
+        "pdf_edit": "Apply brightness, contrast, saturation, and sharpness adjustments to PDFs",
     },
     "Multi-database subcommands": {
         "merge_dbs": "Merge SQLite databases",
@@ -292,7 +292,7 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
         ]
         known_subcommands.extend([name, *aliases])
 
-        aliases += consecutive_prefixes(name) + iterables.conform([consecutive_prefixes(a) for a in aliases])
+        # aliases += consecutive_prefixes(name) + iterables.conform([consecutive_prefixes(a) for a in aliases])
         subp = subparsers.add_parser(name, aliases=aliases, add_help=False)
 
         set_func(subp, module_name, function_name)

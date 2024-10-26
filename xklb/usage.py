@@ -1877,6 +1877,6 @@ pdf_edit = """library pdf-edit PATH ...
 
     Increase or decrease brightness, contrast, color contrast, and sharpness
 
-        library pdfedit --brightness 105 --contrast 120 --color-contrast 80 --sharpness 110 scan001.pdf
+        library pdfedit --brightness 105 --contrast 120 --saturation 80 --sharpness 110 scan001.pdf
         library pdfedit -b 105 -c 120 -C 80 -s 110 scan001.pdf
 """
