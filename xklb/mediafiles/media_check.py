@@ -1,10 +1,9 @@
 import fractions, os, shlex, subprocess, tempfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from pathlib import Path
 from shutil import which
 
 from xklb import usage
-from xklb.utils import arggroups, argparse_utils, consts, file_utils, nums, printing, processes, strings
+from xklb.utils import arggroups, argparse_utils, consts, file_utils, nums, path_utils, printing, processes, strings
 from xklb.utils.arg_utils import gen_paths
 from xklb.utils.log_utils import log
 
@@ -224,7 +223,7 @@ def media_check() -> None:
                 threads=args.same_file_threads,
             ): path
             for path in paths
-            if Path(path).suffix.lower() not in consts.SKIP_MEDIA_CHECK
+            if path_utils.ext(path) not in consts.SKIP_MEDIA_CHECK
         }
         for future in as_completed(future_to_path):
             path = future_to_path[future]

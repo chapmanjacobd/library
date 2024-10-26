@@ -172,7 +172,7 @@ def reddit_frequency(frequency) -> str:
     return mapper[frequency]
 
 
-SKIP_MEDIA_CHECK = [".iso", ".img", ".vob"]
+SKIP_MEDIA_CHECK = ["iso", "img", "vob"]
 
 SPEECH_RECOGNITION_EXTENSIONS = set("mp3|ogg|wav".split("|"))
 OCR_EXTENSIONS = set("gif|jpg|jpeg|png|tif|tff|tiff".split("|"))
@@ -218,18 +218,26 @@ IMAGE_EXTENSIONS = set(
         "|flv|insv|inx|swf|wma|wmv|exif|eip|psp|pspimage"
     ).split("|")
 )
+PIL_EXTENSIONS = set(
+    (
+        "apng|blp|bmp|bufr|bw|cur|dcx|dds|dib|emf|eps|fit|fits|flc|fli|fpx|ftc"
+        "|ftex|ftu|gbr|gd|gif|grib|h5|hdf|icb|icns|ico|iim|im|imt|iptc|j2c|j2k"
+        "|jfif|jp2|jpc|jpe|jpeg|jpf|jpg|jpx|mcidas|mic|mpeg|mpg|mpo|msp|naa|palm"
+        "|pbm|pcd|pcx|pdf|pfm|pgm|pixar|png|pnm|ppm|ps|psd|pxr|qoi|ras|rgb|rgba"
+        "|sgi|spi|spider|sun|tga|tif|tiff|vda|vst|wal|webp|wmf|xbm|xpm"
+    ).split("|")
+)
+IMAGE_ANIMATION_EXTENSIONS = set(("gif|png|apng|webp|avif|avifs|flif|mng").split("|"))
 ARCHIVE_EXTENSIONS = set(
     (
-        "0|1|01|001|0001|7z|ace|alz|alzip|arc|arj|b5i|b6i|bin|bz2|cab|cb7|cbr|cbz|ccd|cdr|cif"
+        "0|1|01|001|0001|7z|ace|alz|alzip|arc|arj|b5i|b6i|bin|bz2|cab|ccd|cdr|cif"
         "|cpio|daa|deb|dmg|exe|gi|gz|img|iso|lha|lzh|lzma|lzo|mdf|msi|nrg|nsi|nsis"
         "|p01|pak|pdi|r00|rar|rpm|sit|sitx|tar|bz2|gz|xz|Z|taz|tbz2|tgz|toast|txz"
-        "|tz|udf|uif|vcd|wim|xar|xz|z|zip|zipx|zoo|zst"
+        "|tz|udf|uif|vcd|wim|xar|xz|z|zip|zipx|zoo|zst|cb7|cbr|cbz|cbt|cba"
     ).split("|")
 )
 CALIBRE_EXTENSIONS = set(
-    (
-        "azw|azw3|azw4|cbc|chm|djvu|docx|epub|fb2|fbz|htmlz|lit|lrf|mobi|odt|pdf|prc|pdb|pml|rb|rtf|snb|tcr|md|txtz"
-    ).split("|")
+    ("azw|azw3|azw4|cbc|chm|docx|epub|fb2|fbz|htmlz|lit|lrf|mobi|odt|pdf|prc|pdb|pml|rb|rtf|snb|tcr|md|txtz").split("|")
 )
 PLAIN_EXTENSIONS = set(
     ("xml|opf|html|xhtml|txt|text|md|markdown|css|js|json|csv|yaml|toml|ini|rst|cfg|conf").split("|")
