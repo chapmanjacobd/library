@@ -133,6 +133,10 @@ def bfs_removedirs(root_dir):
             pass
 
 
+def ext(path):
+    return str(path).rsplit(".", 1)[-1].lower()
+
+
 def parent(s):
     return os.path.basename(os.path.dirname(s))
 

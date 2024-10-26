@@ -124,7 +124,7 @@ def collect_media(args) -> list[dict]:
 
 
 def check_shrink(args, m) -> list:
-    m["ext"] = os.path.splitext(m["path"])[1].lower().lstrip(".")
+    m["ext"] = path_utils.ext(m["path"])
     filetype = (m.get("type") or "").lower()
     if (
         (filetype and (filetype.startswith("audio/") or " audio" in filetype))
@@ -308,6 +308,7 @@ def process_media() -> None:
     print("Estimated processing time:", strings.duration(processing_time))
     print("Estimated savings:", strings.file_size(savings))
 
+    uncompressed_archives = set()
     new_free_space = 0
     if args.no_confirm or devices.confirm(f"Proceed?"):
         for m in media:
@@ -320,10 +321,15 @@ def process_media() -> None:
 
             if m.get("compressed_size"):
                 if os.path.exists(m["archive_path"]):
+                    if m["archive_path"] in uncompressed_archives:
+                        continue
+                    uncompressed_archives.add(m["archive_path"])
+
                     if args.simulate:
                         log.info("Unarchiving %s", m["archive_path"])
                     else:
                         processes.unar_delete(m["archive_path"])
+
                 if not os.path.exists(m["path"]):
                     log.error("[%s]: FileNotFoundError from archive %s", m["path"], m["archive_path"])
                     continue

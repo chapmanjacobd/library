@@ -3,7 +3,7 @@ from pathlib import Path
 
 import ffmpeg
 
-from xklb.utils import consts, db_utils, iterables, processes, strings
+from xklb.utils import consts, db_utils, iterables, path_utils, processes, strings
 from xklb.utils.consts import SUB_TEMP_DIR
 from xklb.utils.log_utils import log
 
@@ -83,7 +83,7 @@ def read_sub_unsafe(path):
 
 
 def read_sub(path):
-    if Path(path).suffix.lower() != ".srt":
+    if path_utils.ext(path) != "srt":
         path = convert_to_srt(path)
 
     try:

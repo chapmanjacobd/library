@@ -1853,3 +1853,30 @@ process_media = """library process-media DATABASE_OR_PATH
 
 Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 """
+
+images_to_pdf = """library images-to-pdf PATH ...
+
+    Convert groups of images to PDF
+
+        library images-to-pdf folder_with_images/
+        library images-to-pdf page00*.jpg
+        library images-to-pdf page00*.avif  # many file formats supported
+
+    Convert comics (CBZ, CBR) to PDF
+
+        library images-to-pdf my_ebook.cbr
+        library images-to-pdf https://site/my_ebook.cbz
+"""
+
+pdf_edit = """library pdf-edit PATH ...
+
+    Increase brightness
+
+        library pdfedit --brightness 120 scan001.pdf --output-path brighter_scan.pdf
+        library pdfedit -b 120 scan001.pdf -o brighter_scan.pdf
+
+    Increase or decrease brightness, contrast, color contrast, and sharpness
+
+        library pdfedit --brightness 105 --contrast 120 --color-contrast 80 --sharpness 110 scan001.pdf
+        library pdfedit -b 105 -c 120 -C 80 -s 110 scan001.pdf
+"""

@@ -3,7 +3,7 @@ from pathlib import Path
 
 from xklb import usage
 from xklb.data import imagemagick_errors
-from xklb.utils import arggroups, argparse_utils, consts, devices, processes, web
+from xklb.utils import arggroups, argparse_utils, consts, devices, file_utils, path_utils, processes, web
 from xklb.utils.arg_utils import gen_paths
 from xklb.utils.log_utils import log
 from xklb.utils.web import WebPath
@@ -31,6 +31,18 @@ def parse_args() -> argparse.Namespace:
 def process_path(args, path):
     output_path = web.gen_output_path(args, path, target_extension=".avif")
 
+    ext = path_utils.ext(path)
+
+    if ext in consts.ARCHIVE_EXTENSIONS:
+        if args.simulate:
+            log.info("Extracting images %s", path)
+        else:
+            archive_dir = processes.unar_delete(path)
+            image_paths = file_utils.rglob(str(archive_dir), consts.IMAGE_EXTENSIONS, quiet=True)[0]
+            for p in image_paths:
+                process_path(args, p)
+            return archive_dir
+
     path, output_path = devices.clobber(args, path, output_path)
     if path is None:
         return output_path
@@ -42,13 +54,7 @@ def process_path(args, path):
     if path.parent != output_path.parent:
         log.warning("Output folder will be different due to path cleaning: %s", output_path.parent)
 
-    command = [
-        "magick",
-        str(path),
-        "-resize",
-        f"{args.max_image_width}x{args.max_image_height}>",
-        str(output_path),
-    ]
+    command = ["magick", str(path), "-resize", f"{args.max_image_width}x{args.max_image_height}>", str(output_path)]
 
     if args.simulate:
         print(shlex.join(command))
@@ -103,7 +109,7 @@ def process_path(args, path):
 def process_image():
     args = parse_args()
 
-    for path in gen_paths(args, consts.IMAGE_EXTENSIONS):
+    for path in gen_paths(args, consts.IMAGE_EXTENSIONS | consts.ARCHIVE_EXTENSIONS):
         if not path.startswith("http"):
             path = str(Path(path).resolve())
 

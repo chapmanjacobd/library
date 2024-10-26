@@ -57,54 +57,77 @@ def update_references(path, replacements):
         log.exception("Error occurred while updating references %s", path)
 
 
+def convert_to_text_pdf(args, path):
+    import ocrmypdf, ocrmypdf.exceptions
+
+    ext = path_utils.ext(path)
+
+    pdf_path = path
+    if ext != "pdf":
+        pdf_path = str(Path(pdf_path).with_suffix(".pdf"))
+        _, pdf_path = devices.clobber(args, path, pdf_path)
+
+    try:
+        kwargs = {}
+
+        kwargs["optimize"] = 0
+        kwargs["output_type"] = "pdf"
+        kwargs["fast_web_view"] = 999999
+
+        TESSERACT_LANGUAGE = os.getenv("TESSERACT_LANGUAGE")
+        if TESSERACT_LANGUAGE:
+            kwargs["language"] = TESSERACT_LANGUAGE.split(",")
+
+        kwargs["skip_text"] = args.skip_text
+        kwargs["redo_ocr"] = args.redo_ocr
+        kwargs["force_ocr"] = args.force_ocr
+
+        result = ocrmypdf.ocr(path, pdf_path, **kwargs)
+        log.debug(result)
+    except ocrmypdf.exceptions.EncryptedPdfError:
+        log.info("[%s]: Skipped PDF OCR because it is encrypted", path)
+    except ocrmypdf.exceptions.DigitalSignatureError:
+        log.info("[%s]: Skipped PDF because it has a digital signature", path)
+    except (ocrmypdf.exceptions.TaggedPDFError, ocrmypdf.exceptions.PriorOcrFoundError):
+        log.info("[%s]: Skipped PDF because it already contained text", path)
+    except Exception as e:
+        log.warning("[%s]: Could not run OCR. %s", path, e)
+    else:
+        if os.path.exists(pdf_path):
+            if not os.path.samefile(path, pdf_path) and args.delete_original:
+                os.unlink(path)
+            path = pdf_path
+
+    return path
+
+
 def process_path(args, path):
     if str(path).startswith("http"):
-        path = web.download_url(args, path)
+        if args.simulate:
+            log.info("Downloading %s", path)
+        else:
+            path = web.download_url(args, path)
         if path is None:
             log.error("Could not save URL %s", path)
             return None
 
-    ext = os.path.splitext(path)[1].lower().lstrip(".")
-    if ext not in consts.CALIBRE_EXTENSIONS:
-        return path
+    path = Path(path).resolve()
+
+    ext = path_utils.ext(path)
 
     if ext in consts.OCRMYPDF_EXTENSIONS and not args.no_ocr:
-        import ocrmypdf, ocrmypdf.exceptions
+        import ocrmypdf
 
-        if not ocrmypdf.pdfa.file_claims_pdfa(Path(path))["pass"]:
-            try:
-                kwargs = {}
+        if args.simulate:
+            log.info("Running OCR on %s", path)
+        else:
+            if not ocrmypdf.pdfa.file_claims_pdfa(Path(path))["pass"]:
+                path = convert_to_text_pdf(args, path)
 
-                TESSERACT_LANGUAGE = os.getenv("TESSERACT_LANGUAGE")
-                if TESSERACT_LANGUAGE:
-                    kwargs["language"] = TESSERACT_LANGUAGE.split(",")
+    ext = path_utils.ext(path)
 
-                if args.skip_text:
-                    kwargs["skip_text"] = True
-                elif args.redo_ocr:
-                    kwargs["redo_ocr"] = True
-                elif args.force_ocr:
-                    kwargs["force_ocr"] = True
-
-                pdf_path = path
-                if ext != "pdf":
-                    pdf_path += ".pdf"
-                    _, pdf_path = devices.clobber(args, path, pdf_path)
-                result = ocrmypdf.ocr(path, pdf_path, **kwargs)
-                log.debug(result)
-            except ocrmypdf.exceptions.EncryptedPdfError:
-                log.info("[%s]: Skipped PDF OCR because it is encrypted", path)
-            except ocrmypdf.exceptions.DigitalSignatureError:
-                log.info("[%s]: Skipped PDF because it has a digital signature", path)
-            except (ocrmypdf.exceptions.TaggedPDFError, ocrmypdf.exceptions.PriorOcrFoundError):
-                log.info("[%s]: Skipped PDF because it already contained text", path)
-            except Exception as e:
-                log.warning("[%s]: Could not run OCR. %s", path, e)
-            else:
-                if os.path.exists(pdf_path):
-                    if not os.path.samefile(path, pdf_path) and args.delete_original:
-                        os.unlink(path)
-                    path = pdf_path
+    if ext not in consts.CALIBRE_EXTENSIONS:
+        return path
 
     p = Path(path)
     output_path = p.parent
@@ -128,13 +151,7 @@ def process_path(args, path):
     if path.parent != output_path.parent:
         log.warning("Output folder will be different due to path cleaning: %s", output_path.parent)
 
-    try:
-        original_stats = path.stat()
-    except FileNotFoundError:
-        log.error("File not found: %s", path)
-        return None
-
-    # TODO: add .doc support with libre-office https://help.libreoffice.org/latest/en-US/text/shared/guide/convertfilters.html
+    # TODO: add .doc support with antiword or libre-office https://help.libreoffice.org/latest/en-US/text/shared/guide/convertfilters.html
 
     command = [
         "ebook-convert",
@@ -158,6 +175,12 @@ def process_path(args, path):
     if args.simulate:
         print(shlex.join(command))
         return path
+
+    try:
+        original_stats = path.stat()
+    except FileNotFoundError:
+        log.error("File not found: %s", path)
+        return None
 
     try:
         processes.cmd(*command)
@@ -214,9 +237,6 @@ def process_text():
         raise SystemExit(1)
 
     for path in gen_paths(args, consts.CALIBRE_EXTENSIONS | consts.OCRMYPDF_EXTENSIONS):
-        if not path.startswith("http"):
-            path = str(Path(path).resolve())
-
         try:
             process_path(args, path)
         except Exception:

@@ -99,7 +99,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v3.0.015; 88 subcommands)
+    library (v3.0.016; 90 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -207,17 +207,21 @@ To stop playing press Ctrl+C in either the terminal or mpv
     ╰──────────────────┴───────────────────────────────────────────────╯
 
     Media File subcommands:
-    ╭────────────────┬──────────────────────────────────────────────────────────────╮
-    │ media-check    │ Check video and audio files for corruption via ffmpeg        │
-    ├────────────────┼──────────────────────────────────────────────────────────────┤
-    │ process-media  │ Estimate and execute potential disk space savings            │
-    ├────────────────┼──────────────────────────────────────────────────────────────┤
-    │ process-ffmpeg │ Shrink video/audio to AV1/Opus format (.mkv, .mka)           │
-    ├────────────────┼──────────────────────────────────────────────────────────────┤
-    │ process-image  │ Shrink images to AV1 image format (.avif)                    │
-    ├────────────────┼──────────────────────────────────────────────────────────────┤
-    │ process-text   │ Shrink documents to HTML+AV1 image format (requires Calibre) │
-    ╰────────────────┴──────────────────────────────────────────────────────────────╯
+    ╭────────────────┬────────────────────────────────────────────────────────────────────╮
+    │ media-check    │ Check video and audio files for corruption via ffmpeg              │
+    ├────────────────┼────────────────────────────────────────────────────────────────────┤
+    │ process-media  │ Estimate and execute potential disk space savings                  │
+    ├────────────────┼────────────────────────────────────────────────────────────────────┤
+    │ process-ffmpeg │ Shrink video/audio to AV1/Opus format (.mkv, .mka)                 │
+    ├────────────────┼────────────────────────────────────────────────────────────────────┤
+    │ process-image  │ Shrink images to AV1 image format (.avif)                          │
+    ├────────────────┼────────────────────────────────────────────────────────────────────┤
+    │ process-text   │ Shrink documents to HTML+AV1 image format (requires Calibre)       │
+    ├────────────────┼────────────────────────────────────────────────────────────────────┤
+    │ images-to-pdf  │ Convert folders of images into image PDFs                          │
+    ├────────────────┼────────────────────────────────────────────────────────────────────┤
+    │ pdf-edit       │ Apply brightness, contrast, sharpness, and OCR adjustments to PDFs │
+    ╰────────────────┴────────────────────────────────────────────────────────────────────╯
 
     Multi-database subcommands:
     ╭──────────────────┬────────────────────────╮
@@ -1945,6 +1949,12 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
         library process-media --invalid --no-valid --delete-unplayable video.db
 
+    If not installed, related file extensions will be skipped during scan:
+
+        - FFmpeg is required for shrinking video and audio
+        - ImageMagick is required for shrinking images
+        - Calibre is required for shrinking eBooks
+
 Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
 
@@ -2005,6 +2015,47 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
     Repackage documents (PDF, ePub, etc) into HTML+AVIF to save space
 
     Requires Calibre
+
+
+</details>
+
+###### images-to-pdf
+
+<details><summary>Convert folders of images into image PDFs</summary>
+
+    $ library images-to-pdf -h
+    usage: library images-to-pdf PATH ...
+
+    Convert groups of images to PDF
+
+        library images-to-pdf folder_with_images/
+        library images-to-pdf page00*.jpg
+        library images-to-pdf page00*.avif  # many file formats supported
+
+    Convert comics (CBZ, CBR) to PDF
+
+        library images-to-pdf my_ebook.cbr
+        library images-to-pdf https://site/my_ebook.cbz
+
+
+</details>
+
+###### pdf-edit
+
+<details><summary>Apply brightness, contrast, sharpness, and OCR adjustments to PDFs</summary>
+
+    $ library pdf-edit -h
+    usage: library pdf-edit PATH ...
+
+    Increase brightness
+
+        library pdfedit --brightness 120 scan001.pdf --output-path brighter_scan.pdf
+        library pdfedit -b 120 scan001.pdf -o brighter_scan.pdf
+
+    Increase or decrease brightness, contrast, color contrast, and sharpness
+
+        library pdfedit --brightness 105 --contrast 120 --color-contrast 80 --sharpness 110 scan001.pdf
+        library pdfedit -b 105 -c 120 -C 80 -s 110 scan001.pdf
 
 
 </details>

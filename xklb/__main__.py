@@ -5,7 +5,7 @@ from tabulate import tabulate
 from xklb.utils import argparse_utils, iterables
 from xklb.utils.log_utils import log
 
-__version__ = "3.0.015"
+__version__ = "3.0.016"
 
 progs = {
     "Create database subcommands": {
@@ -69,6 +69,8 @@ progs = {
         "process_ffmpeg": "Shrink video/audio to AV1/Opus format (.mkv, .mka)",
         "process_image": "Shrink images to AV1 image format (.avif)",
         "process_text": "Shrink documents to HTML+AV1 image format (requires Calibre)",
+        "images_to_pdf": "Convert folders of images into image PDFs",
+        "pdf_edit": "Apply brightness, contrast, sharpness, and OCR adjustments to PDFs",
     },
     "Multi-database subcommands": {
         "merge_dbs": "Merge SQLite databases",
@@ -211,6 +213,8 @@ modules = {
     "xklb.mediafiles.process_ffmpeg.process_audio": ["audio-process"],
     "xklb.mediafiles.process_image.process_image": ["image-process"],
     "xklb.mediafiles.process_text.process_text": ["text-process"],
+    "xklb.mediafiles.images_to_pdf.images_to_pdf": ["images2pdf"],
+    "xklb.mediafiles.pdf_edit.pdf_edit": [],
     "xklb.misc.dedupe_czkawka.czkawka_dedupe": ["dedupe-czkawka"],
     "xklb.misc.export_text.export_text": [],
     "xklb.multidb.copy_play_counts.copy_play_counts": [],

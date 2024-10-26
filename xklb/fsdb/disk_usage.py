@@ -2,7 +2,7 @@ import os
 
 from xklb import usage
 from xklb.playback import media_printer
-from xklb.utils import arg_utils, arggroups, argparse_utils, file_utils, processes, sqlgroups
+from xklb.utils import arg_utils, arggroups, argparse_utils, file_utils, path_utils, processes, sqlgroups
 
 
 def parse_args(defaults_override=None):
@@ -50,7 +50,7 @@ def get_subset(args, level=None, prefix=None) -> list[dict]:
             d[m["path"]] = m
 
         if args.group_by_extensions:
-            ext = os.path.splitext(m["path"])[1].lower().lstrip(".")
+            ext = path_utils.ext(m["path"])
             if ext not in d:
                 d[ext] = {"size": 0, "count": 0}
             d[ext]["size"] += m.get("size") or 0

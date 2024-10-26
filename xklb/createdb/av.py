@@ -1,10 +1,9 @@
 import math
 from datetime import datetime
-from pathlib import Path
 
 from xklb.createdb import subtitle
 from xklb.mediafiles import media_check
-from xklb.utils import consts, file_utils, iterables, nums, objects, processes, strings
+from xklb.utils import consts, file_utils, iterables, nums, objects, path_utils, processes, strings
 from xklb.utils.consts import DBType
 from xklb.utils.log_utils import log
 
@@ -164,7 +163,7 @@ def munge_av_tags(args, media) -> dict:
             media["size"] = total_bytes
 
     corruption = None
-    if getattr(args, "check_corrupt", False) and Path(path).suffix.lower() not in consts.SKIP_MEDIA_CHECK:
+    if getattr(args, "check_corrupt", False) and path_utils.ext(path) not in consts.SKIP_MEDIA_CHECK:
         try:
             corruption = media_check.calculate_corruption(
                 path,

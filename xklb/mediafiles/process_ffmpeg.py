@@ -4,7 +4,7 @@ from pathlib import Path
 from xklb import usage
 from xklb.data import ffmpeg_errors
 from xklb.mediafiles import process_image
-from xklb.utils import arggroups, argparse_utils, consts, devices, nums, processes, web
+from xklb.utils import arggroups, argparse_utils, consts, devices, nums, path_utils, processes, web
 from xklb.utils.arg_utils import args_override, gen_paths
 from xklb.utils.log_utils import log
 from xklb.utils.web import WebPath
@@ -97,7 +97,7 @@ def process_path(args, path, **kwargs):
             return None
         return path
 
-    if path.suffix.lower() in (".gif", ".png", ".apng", ".webp", ".avif", ".avifs", ".flif", ".mng"):
+    if path_utils.ext(path) in consts.IMAGE_ANIMATION_EXTENSIONS:
         is_animation = is_animation_from_probe(probe)
         if not is_animation:
             return process_image.process_path(args, path)

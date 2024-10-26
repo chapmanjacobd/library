@@ -4,6 +4,7 @@ from pathlib import Path
 from shutil import which
 from typing import NoReturn
 
+from xklb.data import unar_errors
 from xklb.utils import consts, iterables, nums, path_utils, strings
 from xklb.utils.log_utils import log
 
@@ -415,22 +416,45 @@ def unar_delete(archive_path):
     if not os.path.exists(output_path):
         os.makedirs(output_path)
 
-    original_stats = os.stat(archive_path)
-    cmd("unar", "-quiet", "-force-rename", "-no-directory", "-output-directory", output_path, archive_path)
-    path_utils.folder_utime(output_path, (original_stats.st_atime, original_stats.st_mtime))
-
     lsar_output = cmd("lsar", "-json", archive_path)
     try:
         lsar_json = strings.safe_json_loads(lsar_output.stdout)
     except json.JSONDecodeError:
         log.warning("[%s]: Error parsing lsar output as JSON: %s", archive_path, lsar_output)
         return
-
     part_files = lsar_json["lsarProperties"]["XADVolumes"]
+
+    original_stats = os.stat(archive_path)
+
+    try:
+        cmd("unar", "-quiet", "-force-rename", "-no-directory", "-output-directory", output_path, archive_path)
+    except subprocess.CalledProcessError as e:
+        error_log = e.stderr.splitlines()
+        is_unsupported = any(unar_errors.unsupported_error.match(l) for l in error_log)
+        is_file_error = any(unar_errors.file_error.match(l) for l in error_log)
+        is_env_error = any(unar_errors.environment_error.match(l) for l in error_log)
+
+        if is_env_error:
+            raise
+        elif is_unsupported:
+            log.error(
+                "[%s]: Skipping unsupported archive. %s",
+                archive_path,
+                e.stderr.replace("Use the -p option to provide one.", "Use unar -p to extract."),
+            )
+            return
+        elif is_file_error:
+            pass  # delete archive
+        else:
+            raise
+
+    path_utils.folder_utime(output_path, (original_stats.st_atime, original_stats.st_mtime))
 
     try:
         for part_file in part_files:
             part_file_path = os.path.join(os.path.dirname(archive_path), part_file)
             os.unlink(part_file_path)
     except Exception as e:
-        print(f"Error deleting files: {e}")
+        log.warning("Error deleting files: %s %s", e, part_files)
+
+    return output_path
