@@ -99,7 +99,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v3.0.016; 90 subcommands)
+    library (v3.0.017; 90 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -207,21 +207,21 @@ To stop playing press Ctrl+C in either the terminal or mpv
     ╰──────────────────┴───────────────────────────────────────────────╯
 
     Media File subcommands:
-    ╭────────────────┬────────────────────────────────────────────────────────────────────╮
-    │ media-check    │ Check video and audio files for corruption via ffmpeg              │
-    ├────────────────┼────────────────────────────────────────────────────────────────────┤
-    │ process-media  │ Estimate and execute potential disk space savings                  │
-    ├────────────────┼────────────────────────────────────────────────────────────────────┤
-    │ process-ffmpeg │ Shrink video/audio to AV1/Opus format (.mkv, .mka)                 │
-    ├────────────────┼────────────────────────────────────────────────────────────────────┤
-    │ process-image  │ Shrink images to AV1 image format (.avif)                          │
-    ├────────────────┼────────────────────────────────────────────────────────────────────┤
-    │ process-text   │ Shrink documents to HTML+AV1 image format (requires Calibre)       │
-    ├────────────────┼────────────────────────────────────────────────────────────────────┤
-    │ images-to-pdf  │ Convert folders of images into image PDFs                          │
-    ├────────────────┼────────────────────────────────────────────────────────────────────┤
-    │ pdf-edit       │ Apply brightness, contrast, sharpness, and OCR adjustments to PDFs │
-    ╰────────────────┴────────────────────────────────────────────────────────────────────╯
+    ╭────────────────┬───────────────────────────────────────────────────────────────────────────╮
+    │ media-check    │ Check video and audio files for corruption via ffmpeg                     │
+    ├────────────────┼───────────────────────────────────────────────────────────────────────────┤
+    │ process-media  │ Estimate and execute potential disk space savings                         │
+    ├────────────────┼───────────────────────────────────────────────────────────────────────────┤
+    │ process-ffmpeg │ Shrink video/audio to AV1/Opus format (.mkv, .mka)                        │
+    ├────────────────┼───────────────────────────────────────────────────────────────────────────┤
+    │ process-image  │ Shrink images to AV1 image format (.avif)                                 │
+    ├────────────────┼───────────────────────────────────────────────────────────────────────────┤
+    │ process-text   │ Shrink documents to HTML+AV1 image format (requires Calibre)              │
+    ├────────────────┼───────────────────────────────────────────────────────────────────────────┤
+    │ images-to-pdf  │ Convert folders of images into image PDFs                                 │
+    ├────────────────┼───────────────────────────────────────────────────────────────────────────┤
+    │ pdf-edit       │ Apply brightness, contrast, saturation, and sharpness adjustments to PDFs │
+    ╰────────────────┴───────────────────────────────────────────────────────────────────────────╯
 
     Multi-database subcommands:
     ╭──────────────────┬────────────────────────╮
@@ -2042,7 +2042,7 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
 ###### pdf-edit
 
-<details><summary>Apply brightness, contrast, sharpness, and OCR adjustments to PDFs</summary>
+<details><summary>Apply brightness, contrast, saturation, and sharpness adjustments to PDFs</summary>
 
     $ library pdf-edit -h
     usage: library pdf-edit PATH ...
@@ -2054,7 +2054,7 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
     Increase or decrease brightness, contrast, color contrast, and sharpness
 
-        library pdfedit --brightness 105 --contrast 120 --color-contrast 80 --sharpness 110 scan001.pdf
+        library pdfedit --brightness 105 --contrast 120 --saturation 80 --sharpness 110 scan001.pdf
         library pdfedit -b 105 -c 120 -C 80 -s 110 scan001.pdf
 
 
