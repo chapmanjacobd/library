@@ -69,7 +69,7 @@ def process_path(args, input_path):
         if args.autolevels:
             params.append("A")
         if args.autocontrast:
-            params.append(f"AC{", ".join(args.autocontrast)}")
+            params.append(f"AC{', '.join(args.autocontrast)}")
             if not args.autotone:
                 params.append("nT")
 
