@@ -22,9 +22,9 @@ def parse_args():
         "-AC",
         nargs="?",
         const="0.001",
-        help="""--autocontrast 5 means trim 5% of values from the bottom and top of the histogram.
---autocontrast 1,4 means trim 1% of values from the bottom and 4% from the top of the histogram
---autocontrast 4,1 means trim 4% of values from the bottom and 1% from the top of the histogram""",
+        help="""--autocontrast 5 means trim 5%% of values from the bottom and top of the histogram.
+--autocontrast 1,4 means trim 1%% of values from the bottom and 4%% from the top of the histogram
+--autocontrast 4,1 means trim 4%% of values from the bottom and 1%% from the top of the histogram""",
     )
     parser.add_argument(
         "--autotone",

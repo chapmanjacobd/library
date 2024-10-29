@@ -27,7 +27,7 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-DEFAULT_EXTENSIONS = (consts.IMAGE_EXTENSIONS | consts.PIL_EXTENSIONS) - {"pdf"}
+DEFAULT_EXTENSIONS = (consts.IMAGE_EXTENSIONS | consts.PIL_EXTENSIONS) - {"pdf"}  # type: ignore
 
 
 def gen_pillow_compats(input_paths):
