@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import List
 
 from xklb import usage
-from xklb.utils import arg_utils, arggroups, argparse_utils
+from xklb.utils import arg_utils, arggroups, argparse_utils, devices
 
 
 def parse_args():
@@ -47,6 +47,7 @@ def parse_args():
     parser.add_argument("--ocr", action=argparse.BooleanOptionalAction, default=True)
 
     parser.add_argument("--output-path", "-o", help="Output PDF file (optional)")
+    arggroups.clobber(parser)
     arggroups.debug(parser)
 
     arggroups.paths_or_stdin(parser)
@@ -124,6 +125,9 @@ def process_path(args, input_path):
         out_img_bytes = io.BytesIO()
         img.save(out_img_bytes, format="JPEG")
         output_images.append(out_img_bytes.getvalue())
+
+    if input_path != output_path:
+        _, output_path = devices.clobber(args, input_path, output_path)
 
     print(f"Saving {output_path}")
 
