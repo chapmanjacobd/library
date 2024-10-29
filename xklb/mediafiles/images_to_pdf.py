@@ -1,4 +1,4 @@
-import argparse, os, subprocess
+import argparse, datetime, os, subprocess
 from pathlib import Path
 
 from natsort import natsorted
@@ -46,13 +46,23 @@ def gen_pillow_compats(input_paths):
 def convert_to_image_pdf(args, image_paths, pdf_path):
     import img2pdf
 
+    image_stats = os.stat(image_paths[0])
+    creation_date = datetime.datetime.fromtimestamp(image_stats.st_ctime).strftime("%Y-%m-%dT%H:%M:%S")
+    modified_date = datetime.datetime.fromtimestamp(image_stats.st_mtime).strftime("%Y-%m-%dT%H:%M:%S")
+
     # TODO: save to temp location and clobber after
     _, pdf_path = devices.clobber(args, image_paths[0], pdf_path)
 
     log.debug("Converting %s images to PDF %s", len(image_paths), pdf_path)
 
     with open(pdf_path, "wb") as f:
-        img2pdf.convert(*list(gen_pillow_compats(image_paths)), outputstream=f, rotation=img2pdf.Rotation.ifvalid)
+        img2pdf.convert(
+            *list(gen_pillow_compats(image_paths)),
+            outputstream=f,
+            rotation=img2pdf.Rotation.ifvalid,
+            creationdate=creation_date,
+            moddate=modified_date,
+        )
 
     if args.delete_original and os.path.exists(pdf_path):
         for image_path in image_paths:

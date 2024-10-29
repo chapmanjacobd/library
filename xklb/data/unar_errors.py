@@ -29,6 +29,7 @@ file_error = re.compile(
     "|".join(
         r""".*Error on decrunching
 .*Wrong checksum
+.*Attempted to read more data than was available
 .*Error on unpacking
 .*Archive is corrupted""".splitlines(),
     ),
