@@ -27,3 +27,7 @@ def tube_date(v):
             except Exception:
                 upload_date = None
     return upload_date
+
+
+def utc_from_local_timestamp(n):
+    return datetime.datetime.fromtimestamp(n).astimezone().astimezone(datetime.timezone.utc)

@@ -1885,3 +1885,71 @@ def ocrmypdf_post(args):
             args.skip_text = True
         else:
             args.no_ocr = True
+
+
+def build_actions(unknown_args, df_columns):
+    import matplotlib.pyplot as plt
+
+    actions = []
+    i = 0
+    while i < len(unknown_args):
+        method_name = unknown_args[i]
+        attr = getattr(plt, method_name, None)
+        if callable(attr):
+            cols = []
+            pargs = []
+            kwargs = {}
+            i += 1
+            while i < len(unknown_args):
+                if unknown_args[i] in df_columns:
+                    cols.append(unknown_args[i])
+                elif "=" in unknown_args[i]:
+                    k, v = unknown_args[i].split("=")
+                    kwargs[k] = v
+                else:  # current element is a positional method value
+                    pargs.append(unknown_args[i])
+
+                i += 1
+                # check if the next element is another plt method
+                if i < len(unknown_args) and callable(getattr(plt, unknown_args[i], None)):
+                    break
+
+            actions.append((method_name, cols, pargs, kwargs))
+
+        else:
+            log.warning("Unknown argument %s at position %s", method_name, i)
+            i += 1
+
+    return actions
+
+
+def matplotlib_post(args, unknown_args):
+    import matplotlib.pyplot as plt
+
+    def plot_fn(df):
+        actions = build_actions(unknown_args or ["plot", *df.columns], df.columns)
+
+        for method_name, cols, pargs, kwargs in actions:
+            method = getattr(plt, method_name)
+
+            if cols:
+                if len(cols) == 1:
+                    if cols == ["index"]:
+                        df["level_0"] = df["index"]
+                    df["index"] = range(len(df))
+                    cols = ["index", *cols]
+
+                # the first column is x-axis and the rest are y-axes
+                x_col = cols[0]
+                y_cols = cols[1:]
+
+                for y_col in y_cols:
+                    log.debug("Running plt.%s(df[%s], df[%s], %s, %s)", method_name, x_col, y_col, pargs, kwargs)
+                    method(df[x_col], df[y_col], *pargs, **kwargs)
+            else:
+                log.debug("Running plt.%s(%s, %s)", method_name, pargs, kwargs)
+                method(*pargs, **kwargs)
+
+        return plt
+
+    args.plot_fn = plot_fn

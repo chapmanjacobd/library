@@ -127,7 +127,7 @@ def process_path(args, input_path):
         output_images.append(out_img_bytes.getvalue())
 
     if input_path != output_path:
-        _, output_path = devices.clobber(args, input_path, output_path)
+        output_path = devices.clobber_new_file(args, output_path)
 
     print(f"Saving {output_path}")
 

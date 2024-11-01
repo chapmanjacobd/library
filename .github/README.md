@@ -99,7 +99,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v3.0.019; 90 subcommands)
+    library (v3.0.020; 91 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -194,17 +194,19 @@ To stop playing press Ctrl+C in either the terminal or mpv
     ╰────────────────┴─────────────────────────────────────────────────────╯
 
     Tabular data subcommands:
-    ╭──────────────────┬───────────────────────────────────────────────╮
-    │ eda              │ Exploratory Data Analysis on table-like files │
-    ├──────────────────┼───────────────────────────────────────────────┤
-    │ mcda             │ Multi-criteria Ranking for Decision Support   │
-    ├──────────────────┼───────────────────────────────────────────────┤
-    │ markdown-tables  │ Print markdown tables from table-like files   │
-    ├──────────────────┼───────────────────────────────────────────────┤
-    │ columns          │ Print columns of table-like files             │
-    ├──────────────────┼───────────────────────────────────────────────┤
-    │ incremental-diff │ Diff large table-like files in chunks         │
-    ╰──────────────────┴───────────────────────────────────────────────╯
+    ╭──────────────────┬──────────────────────────────────────────────────────╮
+    │ eda              │ Exploratory Data Analysis on table-like files        │
+    ├──────────────────┼──────────────────────────────────────────────────────┤
+    │ mcda             │ Multi-criteria Ranking for Decision Support          │
+    ├──────────────────┼──────────────────────────────────────────────────────┤
+    │ plot             │ Plot table-like files. A CLI interface to matplotlib │
+    ├──────────────────┼──────────────────────────────────────────────────────┤
+    │ markdown-tables  │ Print markdown tables from table-like files          │
+    ├──────────────────┼──────────────────────────────────────────────────────┤
+    │ columns          │ Print columns of table-like files                    │
+    ├──────────────────┼──────────────────────────────────────────────────────┤
+    │ incremental-diff │ Diff large table-like files in chunks                │
+    ╰──────────────────┴──────────────────────────────────────────────────────╯
 
     Media File subcommands:
     ╭────────────────┬───────────────────────────────────────────────────────────────────────────╮
@@ -1756,6 +1758,20 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         | 1167 | On the Waterfront                                                       |   1954 |        8 |            12 | 0.785       | 1.17235  | 0.207793    | 4116.83 |
         | 1145 | My Fair Lady                                                            |   1964 |        8 |            12 | 0.785       | 1.17235  | 0.207793    | 4116.83 |
         |  591 | Gandhi                                                                  |   1982 |        8 |            11 | 0.755312    | 1.13663  | 0.243509    | 4116.86 |
+
+
+</details>
+
+###### plot
+
+<details><summary>Plot table-like files. A CLI interface to matplotlib</summary>
+
+    $ library plot -h
+    usage: library plot PATH ... [--table STR] [--end-row INT]
+
+    Plot one or more files
+
+    Only 500,000 rows per file are loaded for performance purposes. Set `--end-row inf` to read all the rows and/or run out of RAM.
 
 
 </details>

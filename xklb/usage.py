@@ -1214,6 +1214,13 @@ eda = """library eda PATH ... [--table STR] [--end-row INT] [--repl]
     Only 500,000 rows per file are loaded for performance purposes. Set `--end-row inf` to read all the rows and/or run out of RAM.
 """
 
+plot = """library plot PATH ... [--table STR] [--end-row INT]
+
+    Plot one or more files
+
+    Only 500,000 rows per file are loaded for performance purposes. Set `--end-row inf` to read all the rows and/or run out of RAM.
+"""
+
 markdown_tables = """library markdown-tables PATH ... [--table STR] [--end-row INT] [--transpose] [--filetype]
 
     Print tables from files as markdown
