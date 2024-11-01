@@ -7,7 +7,7 @@ from xklb.__main__ import library as lb
     ("args", "stdout"),
     [
         (
-            ["tests/data/test.xml"],
+            ["--no-show-kitty", "--no-show-external", "tests/data/test.xml"],
             """## tests/data/test.xml:0
 
 """,
