@@ -1,10 +1,11 @@
-import argparse, datetime, os, subprocess
+import argparse, os, subprocess
 from pathlib import Path
 
 from natsort import natsorted
 
 from xklb import usage
 from xklb.utils import arggroups, argparse_utils, consts, devices, file_utils, path_utils, processes, web
+from xklb.utils.date_utils import utc_from_local_timestamp
 from xklb.utils.log_utils import log
 
 
@@ -47,11 +48,10 @@ def convert_to_image_pdf(args, image_paths, pdf_path):
     import img2pdf
 
     image_stats = os.stat(image_paths[0])
-    creation_date = datetime.datetime.fromtimestamp(image_stats.st_ctime).strftime("%Y-%m-%dT%H:%M:%S")
-    modified_date = datetime.datetime.fromtimestamp(image_stats.st_mtime).strftime("%Y-%m-%dT%H:%M:%S")
+    creation_date = utc_from_local_timestamp(image_stats.st_ctime).strftime("%Y-%m-%dT%H:%M:%S")
+    modified_date = utc_from_local_timestamp(image_stats.st_mtime).strftime("%Y-%m-%dT%H:%M:%S")
 
-    # TODO: save to temp location and clobber after
-    _, pdf_path = devices.clobber(args, image_paths[0], pdf_path)
+    pdf_path = devices.clobber_new_file(args, pdf_path)
 
     log.debug("Converting %s images to PDF %s", len(image_paths), pdf_path)
 

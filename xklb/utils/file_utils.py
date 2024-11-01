@@ -655,7 +655,7 @@ def read_file_to_dataframes(
     elif "pdf" in mimetype:
         import camelot
 
-        if " " in path:
+        if path.startswith(("http://", "https://", "ftp://")) and " " in path:
             path = web.url_encode(path)  # camelot does not like spaces in URLs...
 
         for t in camelot.read_pdf(path, pages="all", suppress_stdout=False):  # type: ignore
@@ -669,7 +669,7 @@ def read_file_to_dataframes(
                 df = df.iloc[1:]
                 df.columns = new_column_names
             df.columns = [" ".join(col.replace("\n", "").split()) for col in df.columns]
-            dfs.append(df)
+            dfs.append(NDF(None, df))
     elif "xml" in mimetype:
         df = pd.read_xml(path, encoding=encoding or "utf-8")
         dfs.append(NDF(None, df))

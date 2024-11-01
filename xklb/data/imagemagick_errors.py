@@ -44,6 +44,7 @@ file_error = re.compile(
 .*size exceeds expected dimensions
 .*Nonstandard
 .*decompress
+.*No such file or directory
 .*improper image header
 .*Not .* starts with
 .*IO error during reading

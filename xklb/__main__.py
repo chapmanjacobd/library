@@ -5,7 +5,7 @@ from tabulate import tabulate
 from xklb.utils import argparse_utils, iterables
 from xklb.utils.log_utils import log
 
-__version__ = "3.0.019"
+__version__ = "3.0.020"
 
 progs = {
     "Create database subcommands": {
@@ -59,6 +59,7 @@ progs = {
     "Tabular data subcommands": {
         "eda": "Exploratory Data Analysis on table-like files",
         "mcda": "Multi-criteria Ranking for Decision Support",
+        "plot": "Plot table-like files. A CLI interface to matplotlib",
         "markdown_tables": "Print markdown tables from table-like files",
         "columns": "Print columns of table-like files",
         "incremental_diff": "Diff large table-like files in chunks",
@@ -238,6 +239,7 @@ modules = {
     "xklb.tablefiles.columns.columns": [],
     "xklb.tablefiles.markdown_tables.markdown_tables": ["tables", "table"],
     "xklb.tablefiles.mcda.mcda": ["mcdm", "rank"],
+    "xklb.tablefiles.plot.plot": ["chart", "graph"],
     "xklb.text.cluster_sort.cluster_sort": ["cs"],
     "xklb.text.regex_sort.regex_sort": ["rs", "resort"],
     "xklb.text.extract_links.extract_links": ["links", "links_extract"],

@@ -65,7 +65,7 @@ def convert_to_text_pdf(args, path):
     pdf_path = path
     if ext != "pdf":
         pdf_path = str(Path(pdf_path).with_suffix(".pdf"))
-        _, pdf_path = devices.clobber(args, path, pdf_path)
+        pdf_path = devices.clobber_new_file(args, pdf_path)
 
     try:
         kwargs = {}
