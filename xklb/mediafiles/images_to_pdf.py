@@ -48,8 +48,8 @@ def convert_to_image_pdf(args, image_paths, pdf_path):
     import img2pdf
 
     image_stats = os.stat(image_paths[0])
-    creation_date = utc_from_local_timestamp(image_stats.st_ctime).strftime("%Y-%m-%dT%H:%M:%S")
-    modified_date = utc_from_local_timestamp(image_stats.st_mtime).strftime("%Y-%m-%dT%H:%M:%S")
+    creation_date = utc_from_local_timestamp(image_stats.st_ctime)
+    modified_date = utc_from_local_timestamp(image_stats.st_mtime)
 
     pdf_path = devices.clobber_new_file(args, pdf_path)
 
