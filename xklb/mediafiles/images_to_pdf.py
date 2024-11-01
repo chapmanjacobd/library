@@ -12,7 +12,7 @@ from xklb.utils.log_utils import log
 def parse_args() -> argparse.Namespace:
     parser = argparse_utils.ArgumentParser(usage=usage.images_to_pdf)
     parser.add_argument(
-        "--delete-original", action=argparse.BooleanOptionalAction, default=False, help="Delete source files"
+        "--delete-original", action=argparse.BooleanOptionalAction, default=False, help="Delete source images"
     )
 
     parser.add_argument("--output-path", "-o", help="Output PDF file (optional)")

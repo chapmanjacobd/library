@@ -35,7 +35,7 @@ requires-python = ">=3.11"
 
 [project.optional-dependencies]
 dev = ["black", "isort", "ssort"]
-test = ["ruff", "pytest", "pytest-regressions", "freezegun", "pyfakefs"]
+test = ["ruff", "pytest", "pytest-regressions", "freezegun", "pandas", "pyfakefs"]
 deluxe = [
   "aiohttp",
   "annoy",

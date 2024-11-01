@@ -64,7 +64,7 @@ def download_status() -> None:
                 extractor_stats[extractor_key]["never_attempted"] += 1
 
     media = [{"extractor_key": extractor_key, **d} for extractor_key, d in extractor_stats.items()]
-    media = sorted(media, key=lambda x: (-x["never_attempted"], -x["retry_queued"], x["extractor_key"]))
+    media = sorted(media, key=lambda x: (-x["never_attempted"], -x["retry_queued"], x["extractor_key"] or 0))
 
     media_printer.media_printer(args, media, units="extractors")
 

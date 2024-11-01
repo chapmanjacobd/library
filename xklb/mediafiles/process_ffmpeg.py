@@ -313,7 +313,7 @@ def process_path(args, path, **kwargs):
             output_path.name.replace(".%03d", ".000")
         )  # TODO: support / return multiple paths...
 
-    delete_original = args.delete_original
+    delete_larger = args.delete_larger
     delete_transcode = False
 
     if not output_path.exists():
@@ -321,12 +321,12 @@ def process_path(args, path, **kwargs):
 
     output_stats = output_path.stat()
 
-    # Never set delete_original to True. That setting comes from args and it is default True
+    # Never set delete_larger to True. That setting comes from args and it is default True
     transcode_invalid = False
     if output_stats.st_size == 0:
         transcode_invalid = True
-    elif output_stats.st_size > original_stats.st_size:
-        delete_original = False
+    elif delete_larger and output_stats.st_size > original_stats.st_size:
+        delete_larger = False
         delete_transcode = True
     else:
         try:
@@ -344,15 +344,15 @@ def process_path(args, path, **kwargs):
         if args.delete_unplayable:
             delete_transcode = False
         else:
-            delete_original = False
+            delete_larger = False
             delete_transcode = True
     if video_stream and args.audio_only and not args.no_preserve_video:
-        delete_original = False
+        delete_larger = False
 
     if delete_transcode:
         output_path.unlink()
         return path
-    elif delete_original:
+    elif delete_larger:
         path.unlink()
 
     os.utime(output_path, (original_stats.st_atime, original_stats.st_mtime))
