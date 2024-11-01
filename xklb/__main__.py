@@ -5,7 +5,7 @@ from tabulate import tabulate
 from xklb.utils import argparse_utils, iterables
 from xklb.utils.log_utils import log
 
-__version__ = "3.0.020"
+__version__ = "3.0.021"
 
 progs = {
     "Create database subcommands": {
@@ -239,7 +239,7 @@ modules = {
     "xklb.tablefiles.columns.columns": [],
     "xklb.tablefiles.markdown_tables.markdown_tables": ["tables", "table"],
     "xklb.tablefiles.mcda.mcda": ["mcdm", "rank"],
-    "xklb.tablefiles.plot.plot": ["chart", "graph"],
+    "xklb.tablefiles.plot.plot": ["plots", "chart", "graph"],
     "xklb.text.cluster_sort.cluster_sort": ["cs"],
     "xklb.text.regex_sort.regex_sort": ["rs", "resort"],
     "xklb.text.extract_links.extract_links": ["links", "links_extract"],
