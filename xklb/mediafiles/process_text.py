@@ -14,7 +14,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-image-height", type=int, default=2400)
     parser.add_argument("--max-image-width", type=int, default=2400)
     parser.add_argument(
-        "--delete-original", action=argparse.BooleanOptionalAction, default=True, help="Delete source files"
+        "--delete-larger", "--delete-original", action=argparse.BooleanOptionalAction, default=True, help="Delete larger of transcode or original files"
     )
     parser.add_argument("--clean-path", action=argparse.BooleanOptionalAction, default=True, help="Clean output path")
     arggroups.clobber(parser)
@@ -94,7 +94,7 @@ def convert_to_text_pdf(args, path):
         log.warning("[%s]: Could not run OCR. %s", path, e)
     else:
         if os.path.exists(pdf_path):
-            if args.delete_original and not os.path.samefile(path, pdf_path):
+            if args.delete_larger and not os.path.samefile(path, pdf_path):
                 os.unlink(path)
             path = pdf_path
 
@@ -201,7 +201,7 @@ def process_path(args, path):
     image_paths = file_utils.rglob(str(output_path), consts.IMAGE_EXTENSIONS, quiet=True)[0]
 
     mp_image_args = argparse.Namespace(
-        **{k: v for k, v in args.__dict__.items() if k not in {"db"}} | {"delete_original": True}
+        **{k: v for k, v in args.__dict__.items() if k not in {"db"}} | {"delete_larger": True}
     )
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = {
@@ -218,11 +218,11 @@ def process_path(args, path):
         update_references(text_path, replacements)
 
     # compare final output size
-    if path_utils.folder_size(output_path) > original_stats.st_size:
+    if args.delete_larger and path_utils.folder_size(output_path) > original_stats.st_size:
         devices.rmtree(args, output_path)  # Remove transcode
         return path
 
-    if args.delete_original:
+    if args.delete_larger:
         path.unlink()  # Remove original
     path_utils.folder_utime(output_path, (original_stats.st_atime, original_stats.st_mtime))
 

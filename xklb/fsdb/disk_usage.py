@@ -100,7 +100,8 @@ def get_data(args) -> list[dict]:
     if args.database:
         media = list(args.db.query(*sqlgroups.fs_sql(args, limit=None)))
     else:
-        args.paths = [p for p in args.paths if os.path.exists(p)]
+        if args.hide_deleted:
+            args.paths = [p for p in args.paths if os.path.exists(p)]
         media = arg_utils.gen_d(args)
         media = [d if "size" in d else file_utils.get_filesize(d) for d in media]
 

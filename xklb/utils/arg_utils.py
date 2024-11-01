@@ -1,10 +1,12 @@
-import argparse, operator, random
+import argparse, operator, os.path, random
 from collections import defaultdict
 from copy import copy
 from pathlib import Path
+from typing import Generator
 
 from xklb.utils import consts, file_utils, iterables, nums, processes, strings
 from xklb.utils.consts import SC
+from xklb.utils.log_utils import log
 
 
 def gen_paths(args, default_exts=None):
@@ -15,7 +17,8 @@ def gen_paths(args, default_exts=None):
         for path in args.paths:
             json_data = strings.safe_json_loads(path)
             if isinstance(json_data, list):
-                yield from (d["path"] for d in json_data)
+                for d in json_data:
+                    yield d["path"]
             elif isinstance(json_data, dict):
                 yield json_data["path"]
             else:
@@ -26,6 +29,11 @@ def gen_paths(args, default_exts=None):
                 p = Path(path)
                 if p.is_dir():
                     yield from file_utils.rglob(str(p), args.ext or default_exts, getattr(args, "exclude", None))[0]
+                elif args.hide_deleted:
+                    if os.path.exists(p):
+                        yield path
+                    else:
+                        log.info("Skipping non-existent file %s", path)
                 else:
                     yield path
 
@@ -38,9 +46,18 @@ def gen_d(args, default_exts=None):
         for path in args.paths:
             json_data = strings.safe_json_loads(path)
             if isinstance(json_data, list):
-                yield from json_data
+                for json_item in json_data:
+                    if args.hide_deleted:
+                        if os.path.exists(json_item["path"]):
+                            yield json_item
+                    else:
+                        yield json_item
             elif isinstance(json_data, dict):
-                yield json_data
+                if args.hide_deleted:
+                    if os.path.exists(json_data["path"]):
+                        yield json_data
+                else:
+                    yield json_data
             else:
                 raise TypeError
     else:
@@ -50,6 +67,11 @@ def gen_d(args, default_exts=None):
                 if p.is_dir():
                     for sp in file_utils.rglob(str(p), args.ext or default_exts, getattr(args, "exclude", None))[0]:
                         yield {"path": sp}
+                elif args.hide_deleted:
+                    if os.path.exists(p):
+                        yield {"path": path}
+                    else:
+                        log.info("Skipping non-existent file %s", path)
                 else:
                     yield {"path": path}
 
