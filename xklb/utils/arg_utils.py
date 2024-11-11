@@ -29,7 +29,7 @@ def gen_paths(args, default_exts=None):
                 p = Path(path)
                 if p.is_dir():
                     yield from file_utils.rglob(str(p), args.ext or default_exts, getattr(args, "exclude", None))[0]
-                elif args.hide_deleted:
+                elif getattr(args, 'hide_deleted', False):
                     if os.path.exists(p):
                         yield path
                     else:
@@ -47,13 +47,13 @@ def gen_d(args, default_exts=None):
             json_data = strings.safe_json_loads(path)
             if isinstance(json_data, list):
                 for json_item in json_data:
-                    if args.hide_deleted:
+                    if getattr(args, 'hide_deleted', False):
                         if os.path.exists(json_item["path"]):
                             yield json_item
                     else:
                         yield json_item
             elif isinstance(json_data, dict):
-                if args.hide_deleted:
+                if getattr(args, 'hide_deleted', False):
                     if os.path.exists(json_data["path"]):
                         yield json_data
                 else:
@@ -67,7 +67,7 @@ def gen_d(args, default_exts=None):
                 if p.is_dir():
                     for sp in file_utils.rglob(str(p), args.ext or default_exts, getattr(args, "exclude", None))[0]:
                         yield {"path": sp}
-                elif args.hide_deleted:
+                elif getattr(args, 'hide_deleted', False):
                     if os.path.exists(p):
                         yield {"path": path}
                     else:
