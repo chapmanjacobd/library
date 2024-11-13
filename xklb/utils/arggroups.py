@@ -1327,7 +1327,11 @@ def process_ffmpeg(parent_parser):
         "--delete-no-audio", action="store_true", help="Delete files with no audio instead of transcoding video"
     )
     parser.add_argument(
-        "--delete-larger", "--delete-original", action=argparse.BooleanOptionalAction, default=True, help="Delete larger of transcode or original files"
+        "--delete-larger",
+        "--delete-original",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Delete larger of transcode or original files",
     )
     parser.add_argument("--clean-path", action=argparse.BooleanOptionalAction, default=True, help="Clean output path")
 

@@ -15,9 +15,19 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-image-height", type=int, default=2400)
     parser.add_argument("--max-image-width", type=int, default=2400)
     parser.add_argument(
-        "--delete-larger", "--delete-original", action=argparse.BooleanOptionalAction, default=True, help="Delete larger of transcode or original files"
+        "--delete-larger",
+        "--delete-original",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Delete larger of transcode or original files",
     )
     parser.add_argument("--clean-path", action=argparse.BooleanOptionalAction, default=True, help="Clean output path")
+    parser.add_argument(
+        "--hide-deleted",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Exclude non-existent files from processing",
+    )
     arggroups.clobber(parser)
     arggroups.debug(parser)
 
