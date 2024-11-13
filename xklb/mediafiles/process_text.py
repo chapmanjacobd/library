@@ -125,8 +125,13 @@ def process_path(args, path):
         if args.simulate:
             log.info("Running OCR on %s", path)
         else:
-            if not ocrmypdf.pdfa.file_claims_pdfa(Path(path))["pass"]:
-                path = convert_to_text_pdf(args, path)
+            import pikepdf
+
+            try:
+                if not ocrmypdf.pdfa.file_claims_pdfa(Path(path))["pass"]:
+                    path = convert_to_text_pdf(args, path)
+            except pikepdf.PdfError:
+                log.exception("[%s]: could not open as PDF", path)
 
     ext = path_utils.ext(path)
 
@@ -173,7 +178,7 @@ def process_path(args, path):
         # '--linearize-tables',
     ]
 
-    if get_calibre_version() >= (7, 19, 0):
+    if ext == "pdf" and get_calibre_version() >= (7, 19, 0):
         command += ["--pdf-engine", "pdftohtml"]
 
     if args.simulate:

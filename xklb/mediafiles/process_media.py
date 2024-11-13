@@ -389,7 +389,8 @@ def process_media() -> None:
                         with suppress(processes.UnplayableFile):
                             m["duration"] = processes.FFProbe(new_path).duration
 
-                    new_free_space += (m.get("compressed_size") or m["size"]) - m["new_size"]
+                    if not os.path.exists(m["path"]):
+                        new_free_space += (m.get("compressed_size") or m["size"]) - m["new_size"]
 
                 if args.database:
                     with suppress(sqlite3.OperationalError), args.db.conn:
