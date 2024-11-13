@@ -189,9 +189,9 @@ def optimize(args) -> None:
                     fts_columns,
                     create_triggers=True,
                     replace=True,
-                    tokenize="trigram"
-                    if sqlite3.sqlite_version_info >= (3, 34, 0)
-                    else 'unicode61 "tokenchars=_."',  # https://www.sqlite.org/releaselog/3_34_0.html
+                    tokenize=(
+                        "trigram" if sqlite3.sqlite_version_info >= (3, 34, 0) else 'unicode61 "tokenchars=_."'
+                    ),  # https://www.sqlite.org/releaselog/3_34_0.html
                 )
             else:
                 with db.conn:  # type: ignore
