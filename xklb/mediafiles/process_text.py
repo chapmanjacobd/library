@@ -22,6 +22,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--clean-path", action=argparse.BooleanOptionalAction, default=True, help="Clean output path")
     arggroups.clobber(parser)
+    parser.set_defaults(file_over_file="delete-dest")
     arggroups.ocrmypdf(parser)
     arggroups.requests(parser)
     arggroups.download(parser)

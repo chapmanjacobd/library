@@ -78,6 +78,7 @@ def parse_args() -> argparse.Namespace:
 
     arggroups.process_ffmpeg(parser)
     arggroups.clobber(parser)
+    parser.set_defaults(file_over_file="delete-dest")
     arggroups.ocrmypdf(parser)
     arggroups.debug(parser)
 
