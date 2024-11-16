@@ -29,6 +29,7 @@ def parse_args() -> argparse.Namespace:
         help="Exclude non-existent files from processing",
     )
     arggroups.clobber(parser)
+    parser.set_defaults(file_over_file="delete-dest")
     arggroups.debug(parser)
 
     arggroups.paths_or_stdin(parser)
