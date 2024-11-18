@@ -260,7 +260,7 @@ def process_path(args, path, **kwargs):
                     is_split = False
 
     if subtitle_stream:
-        ff_opts.extend(["-map", "0:s", "-c:s", "copy"])  # ,'-map','0:t?'
+        ff_opts.extend(["-map", "0:s"])  # timecode ,'-map','0:t?'
 
     output_path.parent.mkdir(exist_ok=True, parents=True)
     if path.parent != output_path.parent:
@@ -281,6 +281,8 @@ def process_path(args, path, **kwargs):
         "use_metadata_tags",
         *ff_opts,
         "-map_metadata",
+        "0",
+        "-map_chapters",
         "0",
         "-dn",
         "-max_interleave_delta",
