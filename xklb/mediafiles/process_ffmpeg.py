@@ -164,15 +164,39 @@ def process_path(args, path, **kwargs):
                 ]
             )
 
+            video_filters = []
+            if probe.fps and probe.fps > 240:
+                log.info("fps>240 is not supported by AV1 and it seems suspect. Ignoring metadata %s", path)
+                frames = nums.safe_int(
+                    processes.cmd(
+                        "ffprobe",
+                        "-v",
+                        "fatal",
+                        "-select_streams",
+                        "v:0",
+                        "-count_frames",
+                        "-show_entries",
+                        "stream=nb_read_frames",
+                        "-of",
+                        "default=noprint_wrappers=1:nokey=1",
+                        path,
+                    ).stdout
+                )
+                if frames and probe.duration:
+                    actual_fps = frames / probe.duration
+                    video_filters.append(f"fps={actual_fps}")
+
             width = int(video_stream.get("width"))
             height = int(video_stream.get("height"))
 
             if width > (args.max_width * (1 + args.max_width_buffer)):
-                ff_opts.extend(["-vf", f"scale={args.max_width}:-2"])
+                video_filters.append(f"scale={args.max_width}:-2")
             elif height > (args.max_height * (1 + args.max_height_buffer)):
-                ff_opts.extend(["-vf", f"scale=-2:{args.max_height}"])
+                video_filters.append(f"scale=-2:{args.max_height}")
             else:  # make sure input raster is even for YUV_420 colorspace
-                ff_opts.extend(["-vf", "pad='if(mod(iw,2),iw+1,iw)':'if(mod(ih,2),ih+1,ih)'"])
+                video_filters.append("pad='if(mod(iw,2),iw+1,iw)':'if(mod(ih,2),ih+1,ih)'")
+
+            ff_opts.extend(["-vf", ",".join(video_filters)])
 
     elif album_art_stream:
         ff_opts.extend(["-map", "0:v", "-c:v", "copy"])
@@ -214,7 +238,7 @@ def process_path(args, path, **kwargs):
                 opus_rate = 24000
             else:
                 opus_rate = 16000
-            ff_opts.extend(["-c:a", "libopus", "-ar", str(opus_rate), "-filter:a", "loudnorm=i=-18:tp=-3:lra=17"])
+            ff_opts.extend(["-c:a", "libopus", "-ar", str(opus_rate), "-af", "loudnorm=i=-18:tp=-3:lra=17"])
 
         if is_split:
             try:

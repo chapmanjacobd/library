@@ -220,25 +220,6 @@ def munge_av_tags(args, media) -> dict:
 
     streams = probe.streams
 
-    def parse_framerate(string) -> float | None:
-        top, bot = string.split("/")
-        bot = float(bot)
-        if bot == 0:
-            return None
-        return float(top) / bot
-
-    fps = iterables.safe_unpack(
-        [
-            parse_framerate(s.get("avg_frame_rate"))
-            for s in streams
-            if s.get("avg_frame_rate") is not None and "/0" not in s.get("avg_frame_rate")
-        ]
-        + [
-            parse_framerate(s.get("r_frame_rate"))
-            for s in streams
-            if s.get("r_frame_rate") is not None and "/0" not in s.get("r_frame_rate")
-        ],
-    )
     width = iterables.safe_unpack([s.get("width") for s in streams])
     height = iterables.safe_unpack([s.get("height") for s in streams])
 
@@ -279,7 +260,7 @@ def munge_av_tags(args, media) -> dict:
         "other_count": other_count,
         "width": width,
         "height": height,
-        "fps": fps,
+        "fps": probe.fps,
         "duration": nums.safe_int(duration),
         "language": language,
         "corruption": None if corruption is None else int(corruption * 100),
