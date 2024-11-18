@@ -361,6 +361,27 @@ class FFProbe:
                 else:
                     self.duration -= start
 
+        self.fps = iterables.safe_unpack(
+            [
+                self.parse_framerate(s.get("avg_frame_rate"))
+                for s in self.streams
+                if s.get("avg_frame_rate") is not None and "/0" not in s.get("avg_frame_rate")
+            ]
+            + [
+                self.parse_framerate(s.get("r_frame_rate"))
+                for s in self.streams
+                if s.get("r_frame_rate") is not None and "/0" not in s.get("r_frame_rate")
+            ],
+        )
+
+    @staticmethod
+    def parse_framerate(string) -> float | None:
+        top, bot = string.split("/")
+        bot = float(bot)
+        if bot == 0:
+            return None
+        return float(top) / bot
+
 
 def unar_out_path(archive_path):
     output_path = str(Path(archive_path).with_suffix(""))
