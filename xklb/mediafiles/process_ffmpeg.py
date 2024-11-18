@@ -62,7 +62,7 @@ def process_path(args, path, **kwargs):
     if kwargs:
         args = args_override(args, kwargs)
 
-    output_path = web.gen_output_path(args, path, target_extension=".av1.mkv")
+    output_path = web.gen_output_path(args, path, target_extension=".XXXXXXX")  # max target ext len
 
     path, output_path = devices.clobber(args, path, output_path)
     if path is None:
@@ -171,6 +171,8 @@ def process_path(args, path, **kwargs):
                 ff_opts.extend(["-vf", f"scale={args.max_width}:-2"])
             elif height > (args.max_height * (1 + args.max_height_buffer)):
                 ff_opts.extend(["-vf", f"scale=-2:{args.max_height}"])
+            else:  # make sure input raster is even for YUV_420 colorspace
+                ff_opts.extend(["-vf", "pad='if(mod(iw,2),iw+1,iw)':'if(mod(ih,2),ih+1,ih)':(ow-iw)/2:(oh-ih)/2:black"])
 
     elif album_art_stream:
         ff_opts.extend(["-map", "0:v", "-c:v", "copy"])
