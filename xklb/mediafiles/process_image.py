@@ -102,18 +102,19 @@ def process_path(args, path):
                 path.unlink()
             return None
 
-    if output_path.stat().st_size == 0:
-        output_path.unlink()  # Remove transcode
     if not output_path.exists():
         return path if path.exists else None
 
-    if original_stats.st_size > 0 and args.delete_larger and output_path.stat().st_size > original_stats.st_size:
+    output_stats = output_path.stat()
+    if output_stats.st_size == 0 or (
+        args.delete_larger and output_stats.st_size > original_stats.st_size
+    ):
         output_path.unlink()  # Remove transcode
         return path
-    else:
-        if args.delete_larger:
-            path.unlink()  # Remove original
-        os.utime(output_path, (original_stats.st_atime, original_stats.st_mtime))
+
+    if args.delete_larger:
+        path.unlink()  # Remove original
+    os.utime(output_path, (original_stats.st_atime, original_stats.st_mtime))
 
     return output_path
 
