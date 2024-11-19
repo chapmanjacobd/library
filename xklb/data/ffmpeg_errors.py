@@ -16,6 +16,13 @@ ignore_error = re.compile(
     )
 )
 
+unsupported_subtitle_error = re.compile(
+    "|".join(
+        r""".*Subtitle codec.*not supported""".splitlines(),
+    ),
+    flags=re.IGNORECASE,
+)
+
 unsupported_error = re.compile(
     "|".join(
         r""".*at least one.* received no packets

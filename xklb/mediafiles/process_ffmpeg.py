@@ -310,6 +310,7 @@ def process_path(args, path, include_timecode=False, subtitle_streams_unsupporte
         "-movflags",
         "use_metadata_tags",
         *ff_opts,
+        # "-copy_unknown",
         "-map_metadata",
         "0",
         "-map_chapters",
@@ -328,6 +329,7 @@ def process_path(args, path, include_timecode=False, subtitle_streams_unsupporte
         processes.cmd(*command)
     except subprocess.CalledProcessError as e:
         error_log = e.stderr.splitlines()
+        is_unsupported_subtitle = any(ffmpeg_errors.unsupported_subtitle_error.match(l) for l in error_log)
         is_unsupported = any(ffmpeg_errors.unsupported_error.match(l) for l in error_log)
         is_file_error = any(ffmpeg_errors.file_error.match(l) for l in error_log)
         is_env_error = any(ffmpeg_errors.environment_error.match(l) for l in error_log)
@@ -337,8 +339,7 @@ def process_path(args, path, include_timecode=False, subtitle_streams_unsupporte
         elif is_file_error:
             if args.delete_unplayable:
                 path.unlink()
-        elif subtitle_stream and is_unsupported and not subtitle_streams_unsupported:
-            # TODO: match against specific subtitle unsupported errors
+        elif is_unsupported_subtitle and not subtitle_streams_unsupported:
             output_path.unlink(missing_ok=True)  # Remove transcode attempt, if any
             return process_path(
                 args, path, include_timecode=include_timecode, subtitle_streams_unsupported=True, **kwargs
