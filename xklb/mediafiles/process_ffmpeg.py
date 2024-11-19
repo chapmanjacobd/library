@@ -58,7 +58,7 @@ def is_animation_from_probe(probe) -> bool:
     return False
 
 
-def process_path(args, path, **kwargs):
+def process_path(args, path, include_timecode=False, subtitle_streams_unsupported=False, **kwargs):
     if kwargs:
         args = args_override(args, kwargs)
 
@@ -284,7 +284,13 @@ def process_path(args, path, **kwargs):
                     is_split = False
 
     if subtitle_stream:
-        ff_opts.extend(["-map", "0:s"])  # timecode ,'-map','0:t?'
+        if subtitle_streams_unsupported:
+            ff_opts.extend(["-map", "0:s"])
+        else:
+            ff_opts.extend(["-map", "0:s", "-c:s", "copy"])
+
+    if include_timecode:
+        ff_opts.extend(["-map", "0:t"])
 
     output_path.parent.mkdir(exist_ok=True, parents=True)
     if path.parent != output_path.parent:
@@ -331,6 +337,12 @@ def process_path(args, path, **kwargs):
         elif is_file_error:
             if args.delete_unplayable:
                 path.unlink()
+        elif subtitle_stream and is_unsupported and not subtitle_streams_unsupported:
+            # TODO: match against specific subtitle unsupported errors
+            output_path.unlink(missing_ok=True)  # Remove transcode attempt, if any
+            return process_path(
+                args, path, include_timecode=include_timecode, subtitle_streams_unsupported=True, **kwargs
+            )
         elif is_unsupported:
             output_path.unlink(missing_ok=True)  # Remove transcode attempt, if any
             return path
