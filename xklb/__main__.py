@@ -24,6 +24,7 @@ progs = {
         "nicotine_import": "Import paths from nicotine+",
         "places_import": "Import places of interest (POIs)",
         "row_add": "Add arbitrary data to SQLite",
+        "computer_add": "Add computer info to SQLite",
     },
     "Text subcommands": {
         "cluster_sort": "Sort text and images by similarity",
@@ -151,6 +152,7 @@ def print_help(parser) -> None:
 
 
 modules = {
+    "xklb.createdb.computer_add.computer_add": ["pc-add", "ssh-add"],
     "xklb.createdb.fs_add.fs_add": ["x", "extract"],
     "xklb.createdb.fs_add.fs_update": ["xu"],
     "xklb.createdb.gallery_add.gallery_add": ["gdl-add", "ga"],
