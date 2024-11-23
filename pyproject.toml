@@ -44,6 +44,7 @@ deluxe = [
   "img2pdf",
   "ocrmypdf",
   "openpyxl",
+  "paramiko",
   "pdf2image",
   "pillow",
   "PyExifTool",

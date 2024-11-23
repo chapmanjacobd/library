@@ -27,6 +27,7 @@ unsupported_error = re.compile(
     "|".join(
         r""".*at least one.* received no packets
 .*does not contain any stream
+.*Subtitle encoding currently only possible from text to text or bitmap to bitmap
 .*not implemented
 .*Unsupported codec""".splitlines(),
     ),
