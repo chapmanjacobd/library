@@ -693,6 +693,15 @@ library relmv /src/d1/ /mnt/d1/ /mnt/dest/
         action="store_true",
         help="Destination-is-a-folder mode",
     )
+    parser.add_argument(
+        "--exclude",
+        "-E",
+        nargs="+",
+        action="extend",
+        default=[],
+        help="""Exclude files via search
+-E '*/.tmp/*' -E '*sad*'  # path must not match /.tmp/ or sad """,
+    )
 
 
 def mmv_folders_post(args):
