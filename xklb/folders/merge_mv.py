@@ -1,5 +1,6 @@
 import argparse, concurrent.futures, os, shutil
 from pathlib import Path
+from fnmatch import fnmatch
 
 from xklb import usage
 from xklb.utils import arggroups, argparse_utils, devices, file_utils, path_utils, printing, processes, strings
@@ -99,6 +100,9 @@ def filter_src(args, path):
     except FileNotFoundError:
         return False
     if args.sizes and not args.sizes(stat.st_size):
+        return False
+
+    if any(fnmatch(path, s) for s in args.exclude):
         return False
 
     if args.timeout_size:
