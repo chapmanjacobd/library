@@ -2,6 +2,8 @@ import argparse, concurrent.futures, math, os, sqlite3
 from contextlib import suppress
 from shutil import which
 
+from pathlib import Path
+
 from xklb import usage
 from xklb.mediadb import db_history
 from xklb.mediafiles import process_ffmpeg, process_image, process_text
@@ -75,6 +77,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--transcoding-image-time", type=float, default=1.5, metavar="SECONDS")
 
     parser.add_argument("--no-confirm", "--yes", "-y", action="store_true")
+    parser.add_argument("--continue-from", help="Skip media until specific file path is seen")
 
     arggroups.process_ffmpeg(parser)
     arggroups.clobber(parser)
@@ -143,6 +146,9 @@ def check_shrink(args, m) -> list:
                 m["duration"] = probe.duration
             except processes.UnplayableFile:
                 m["duration"] = None
+                if args.delete_unplayable:
+                    Path(m["path"]).unlink(missing_ok=True)
+                    return []
         if m["duration"] is None or not m["duration"] > 0:
             log.debug("[%s]: Invalid duration", m["path"])
             m["duration"] = m["size"] / args.source_audio_bitrate * 8
@@ -201,6 +207,9 @@ def check_shrink(args, m) -> list:
                 m["duration"] = probe.duration
             except processes.UnplayableFile:
                 m["duration"] = None
+                if args.delete_unplayable:
+                    Path(m["path"]).unlink(missing_ok=True)
+                    return []
         if m["duration"] is None or not m["duration"] > 0:
             log.debug("[%s]: Invalid duration", m["path"])
             m["duration"] = m["size"] / args.source_video_bitrate * 8
@@ -265,6 +274,16 @@ def process_media() -> None:
     media = sorted(
         media, key=lambda d: d["savings"] / (d["processing_time"] or args.transcoding_image_time), reverse=True
     )
+
+    if args.continue_from:
+        seen_continue_from = False
+        new_media = []
+        for m in media:
+            if args.continue_from in m['path']:
+                seen_continue_from = True
+            if seen_continue_from:
+                new_media.append(m)
+        media = new_media
 
     if not media:
         processes.no_media_found()
@@ -387,8 +406,12 @@ def process_media() -> None:
                         m["new_size"] = path_utils.folder_size(new_path)
 
                     if m["media_type"] in ("Audio", "Video"):
-                        with suppress(processes.UnplayableFile):
+                        try:
                             m["duration"] = processes.FFProbe(new_path).duration
+                        except processes.UnplayableFile:
+                            if args.delete_unplayable:
+                                Path(new_path).unlink(missing_ok=True)
+                                continue
 
                     if not os.path.exists(m["path"]):
                         new_free_space += (m.get("compressed_size") or m["size"]) - m["new_size"]
