@@ -360,6 +360,8 @@ def process_path(args, path, include_timecode=False, subtitle_streams_unsupporte
 
     if not output_path.exists():
         return path if path.exists() else None
+    elif not path.exists():
+        return output_path
 
     output_stats = output_path.stat()
 
