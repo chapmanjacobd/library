@@ -337,8 +337,7 @@ def process_path(args, path, include_timecode=False, subtitle_streams_unsupporte
         if is_env_error:
             raise
         elif is_file_error:
-            if args.delete_unplayable:
-                path.unlink()
+            pass
         elif is_unsupported_subtitle and not subtitle_streams_unsupported:
             output_path.unlink(missing_ok=True)  # Remove transcode attempt, if any
             return process_path(
@@ -382,6 +381,8 @@ def process_path(args, path, include_timecode=False, subtitle_streams_unsupporte
                 transcode_invalid = True
             elif not probe.duration:
                 transcode_invalid = True
+            elif args.delete_unplayable and is_file_error:
+                pass  # if the original file is broken but the transcode is somewhat valid, don't compare duration
             elif nums.percentage_difference(probe.duration, transcode_probe.duration) > 5.0:
                 transcode_invalid = True
     if transcode_invalid:

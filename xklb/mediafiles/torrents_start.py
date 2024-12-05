@@ -1,0 +1,135 @@
+import getpass, logging, shutil, time
+from contextlib import suppress
+from pathlib import Path
+from time import sleep
+
+import qbittorrentapi
+from torrentool.api import Torrent
+
+from xklb.createdb.torrents_add import get_tracker
+from xklb.utils import arggroups, argparse_utils, processes
+from xklb.utils.file_utils import trash
+from xklb.utils.log_utils import log
+
+
+def parse_args():
+    parser = argparse_utils.ArgumentParser()
+    arggroups.qBittorrent(parser)
+    arggroups.capability_delete(parser)
+    arggroups.debug(parser)
+
+    arggroups.paths_or_stdin(parser)
+    args = parser.parse_args()
+    arggroups.args_post(args, parser)
+    return args
+
+
+def wait_torrent_loaded(qbt_client, info_hash):
+    while True:
+        try:
+            qbt_client.torrents_properties(info_hash)
+        except qbittorrentapi.NotFound404Error:
+            log.info("Waiting for torrent to load in qBittorrent")
+            sleep(0.2)
+        else:
+            break
+
+
+def start_qBittorrent(args):
+    qbt_client = qbittorrentapi.Client(
+        host=args.host,
+        port=args.port,
+        username=args.username,
+        password=args.password,
+    )
+
+    with suppress(Exception):
+        qbt_client.auth_log_in()
+        return qbt_client
+
+    if shutil.which("qbittorrent-nox"):
+        username = getpass.getuser()
+        processes.cmd("sudo", "systemctl", "start", f"qbittorrent-nox@{username}.service")
+    else:
+        processes.cmd("setsid", "-f", "qbittorrent")
+
+    log.info("Waiting for qBittorrent web UI to load")
+
+    max_attempts = 2500  # ~20 minutes
+    attempt = 0
+    while attempt < max_attempts:
+        try:
+            qbt_client.auth_log_in()
+            log.debug("qBittorrent web UI ready")
+            break
+        except qbittorrentapi.LoginFailed as e:
+            logging.warning(f"Authentication failed. Check your qBit settings, --username, and --password: {e}")
+            break  # stop if authentication failing
+        except (qbittorrentapi.APIConnectionError, ConnectionRefusedError):
+            time.sleep(0.5)
+            attempt += 1
+    else:
+        logging.error("Failed to connect to qBittorrent web UI")
+        raise ConnectionError("qBittorrent web UI not available")
+
+    return qbt_client
+
+
+def torrents_start():
+    args = parse_args()
+
+    qbt_client = start_qBittorrent(args)
+
+    if args.dl_limit:  # type: ignore
+        current_count = qbt_client.torrents_count()
+        max_active_uploads = current_count + 5000
+
+        qbt_client.app_set_preferences(
+            {
+                "preallocate_all": True,
+                "dl_limit": args.dl_limit,
+                "up_limit": args.up_limit,
+                "max_active_downloads": 1,
+                "max_active_uploads": max_active_uploads,
+                "max_active_torrents": max_active_uploads + 1,
+                "max_active_checking_torrents": 3,
+                "slow_torrent_inactive_timer": 80,
+                # divide by 10 but also some bps -> kbps BS
+                "slow_torrent_dl_rate_threshold": (args.dl_limit) // 10000,  # type: ignore
+                "slow_torrent_ul_rate_threshold": (args.up_limit or args.dl_limit) // 10000,  # type: ignore
+            }
+        )
+
+    if args.temp_drive and Path(args.temp_drive).is_absolute():
+        temp_prefix = Path(args.temp_drive)
+    else:
+        temp_prefix = Path(args.download_drive)
+    temp_prefix /= args.temp_prefix
+    download_prefix = Path(args.download_drive) / args.download_prefix
+
+    for path in args.paths:
+        torrent = Torrent.from_file(path)
+        info_hash = torrent.info_hash
+
+        download_path = download_prefix
+        temp_path = temp_prefix
+        if args.tracker_dirnames:
+            tracker = get_tracker(torrent)
+            download_path /= tracker
+            temp_path /= tracker
+
+        qbt_client.torrents_add(
+            torrent_files=path,
+            download_path=temp_path,
+            save_path=download_path,
+            tags=["xklb"],
+            use_auto_torrent_management=False,
+            is_paused=False,
+            add_to_top_of_queue=False,
+        )
+
+        wait_torrent_loaded(qbt_client, info_hash)
+        qbt_client.torrents_start(info_hash)
+
+        if args.delete_torrent:
+            trash(args, path)

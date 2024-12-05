@@ -24,7 +24,8 @@ progs = {
         "nicotine_import": "Import paths from nicotine+",
         "places_import": "Import places of interest (POIs)",
         "row_add": "Add arbitrary data to SQLite",
-        "computer_add": "Add computer info to SQLite",
+        "computers_add": "Add computer info to SQLite",
+        "torrents_add": "Add torrent info to SQLite",
     },
     "Text subcommands": {
         "cluster_sort": "Sort text and images by similarity",
@@ -73,10 +74,13 @@ progs = {
         "process_text": "Shrink documents to HTML+AV1 image format (requires Calibre)",
         "images_to_pdf": "Convert folders of images into image PDFs",
         "pdf_edit": "Apply brightness, contrast, saturation, and sharpness adjustments to PDFs",
+        "torrents_start": "Start torrents (qBittorrent-nox)",
+        "torrents_stop": "Stop torrents (qBittorrent-nox)",
     },
     "Multi-database subcommands": {
         "merge_dbs": "Merge SQLite databases",
         "copy_play_counts": "Copy play history",
+        "allocate_torrents": "Use computers.db and torrents.db to allocate torrents",
     },
     "Filesystem Database subcommands": {
         "disk_usage": "Show disk usage",
@@ -121,6 +125,7 @@ progs = {
         "gallery_update": "Update online gallery media",
         "links_update": "Update a link-scraping database",
         "reddit_update": "Update reddit media",
+        "computers_update": "Update computer stats",
     },
     "Misc subcommands": {
         "export_text": "Export HTML files from SQLite databases",
@@ -152,9 +157,10 @@ def print_help(parser) -> None:
 
 
 modules = {
-    "xklb.createdb.computer_add.computer_add": ["pc-add", "ssh-add"],
-    "xklb.createdb.fs_add.fs_add": ["x", "extract"],
-    "xklb.createdb.fs_add.fs_update": ["xu"],
+    "xklb.createdb.computers_add.computers_add": ["computer-add", "pc-add", "ssh-add"],
+    "xklb.createdb.computers_add.computers_update": ["computer-update", "pc-update", "ssh-update"],
+    "xklb.createdb.fs_add.fs_add": ["filesystem-add", "x", "extract"],
+    "xklb.createdb.fs_add.fs_update": ["filesystem-update", "xu"],
     "xklb.createdb.gallery_add.gallery_add": ["gdl-add", "ga"],
     "xklb.createdb.gallery_add.gallery_update": ["gdl-update", "gu"],
     "xklb.createdb.hn_add.hacker_news_add": ["hn-add"],
@@ -171,6 +177,7 @@ modules = {
     "xklb.createdb.tabs_add.tabs_add": [],
     "xklb.createdb.tabs_add.tabs_shuffle": [],
     "xklb.createdb.tildes.tildes": [],
+    "xklb.createdb.torrents_add.torrents_add": ["torrent-add"],
     "xklb.createdb.tube_add.tube_add": ["ta", "dladd", "da"],
     "xklb.createdb.tube_add.tube_update": ["dlupdate", "tu"],
     "xklb.createdb.web_add.web_add": ["web-dir-add"],
@@ -218,10 +225,13 @@ modules = {
     "xklb.mediafiles.process_text.process_text": ["text-process"],
     "xklb.mediafiles.images_to_pdf.images_to_pdf": ["images2pdf"],
     "xklb.mediafiles.pdf_edit.pdf_edit": [],
+    "xklb.mediafiles.torrents_start.torrents_start": ["torrent-start"],
+    "xklb.mediafiles.torrents_stop.torrents_stop": ["torrent-stop"],
     "xklb.misc.dedupe_czkawka.czkawka_dedupe": ["dedupe-czkawka"],
     "xklb.misc.export_text.export_text": [],
     "xklb.multidb.copy_play_counts.copy_play_counts": [],
     "xklb.multidb.merge_dbs.merge_dbs": ["merge-db"],
+    "xklb.multidb.allocate_torrents.allocate_torrents": [],
     "xklb.playback.links_open.links_open": ["open-links"],
     "xklb.playback.play_actions.media": [],
     "xklb.playback.play_actions.filesystem": ["fs", "open"],

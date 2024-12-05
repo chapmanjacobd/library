@@ -138,6 +138,8 @@ class SC:
     dedupe_media = "dedupe"
     web_add = "web-add"
     web_update = "web-update"
+    computers_add = "computers-add"
+    computers_update = "computers-update"
 
 
 EnvironmentErrors = (
@@ -208,14 +210,14 @@ TEXTRACT_EXTENSIONS = set(
 IMAGE_EXTENSIONS = set(
     (
         "ai|ait|png|jng|mng|arq|arw|cr2|cs1|dcp|dng|eps|epsf|ps|erf|exv|fff"
-        "|gpr|hdp|wdp|jxr|iiq|insp|jpeg|jpg|jpe|mef|mie|mos|mpo|mrw|nef|nrw|orf"
-        "|ori|pef|psd|psb|psdt|raf|raw|rw2|rwl|sr2|srw|thm|tiff|tif|x3f|flif|gif"
-        "|icc|icm|avif|heic|heif|hif|jp2|jpf|jpm|jpx|j2c|j2k|jpc|3fr|btf|dcr|k25"
+        "|gpr|hdp|wdp|jxr|iiq|insp|jpeg|jpg|jpe|mef|mie|mos|mrw|nef|nrw|orf"
+        "|ori|pef|psd|psb|psdt|raf|raw|rw2|rwl|sr2|srw|thm|tiff|tif|x3f|flif"
+        "|icc|icm|avif|heic|heif|hif|jp2|jpf|jpm|jpx|j2c|jpc|3fr|btf|dcr|k25"
         "|kdc|miff|mif|rwz|srf|xcf|bpg|doc|dot|fla|fpx|max|ppt|pps|pot|vsd|xls"
-        "|xlt|pict|pct|360|aax|dvb|f4a|f4b|f4p|f4v|lrv|m4b"
+        "|xlt|pict|pct|360|dvb|f4a|f4b|f4p|lrv|m4b"
         "|m4p|qt|mqv|qtif|qti|qif|cr3|crm|jxl|crw|ciff|ind|indd|indt"
-        "|nksc|vrd|xmp|la|ofr|pac|riff|rif|wav|webp|wv|asf|divx|djvu|djv|dvr-ms"
-        "|flv|insv|inx|swf|wma|wmv|exif|eip|psp|pspimage"
+        "|nksc|vrd|xmp|la|ofr|pac|riff|rif|wav|webp|wv|asf|djvu|djv|dvr-ms"
+        "|insv|inx|swf|wma|exif|eip|pspimage"
     ).split("|")
 )
 PIL_EXTENSIONS = set(

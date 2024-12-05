@@ -40,6 +40,25 @@ def fs_sql(args, limit) -> tuple[str, dict]:
     return query, args.filter_bindings
 
 
+def playlists_fs_sql(args, limit) -> tuple[str, dict]:
+    pl_columns = db_utils.columns(args, "playlists")
+    args.table, pl_columns = sql_utils.search_filter(args, pl_columns, table="playlists")
+
+    query = f"""
+        SELECT
+            m.*
+        FROM {args.table} m
+        WHERE 1=1
+            {" ".join(args.filter_sql)}
+            {" ".join(args.aggregate_filter_sql)}
+        ORDER BY 1=1
+            {', ' + args.sort if args.sort else ''}
+        {sql_utils.limit_sql(limit, args.offset)}
+    """
+
+    return query, args.filter_bindings
+
+
 def perf_randomize_using_ids(args):
     if args.random and not args.include and not args.print and args.limit in args.defaults:
         limit = 16 * (args.limit or consts.DEFAULT_PLAY_QUEUE)

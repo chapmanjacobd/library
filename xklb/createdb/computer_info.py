@@ -52,7 +52,7 @@ uptime_info = get_uptime_info()
 
 
 def get_system_name():
-    ignore_text = ['To Be Filled By O.E.M.']
+    ignore_text = ["To Be Filled By O.E.M."]
     info_strings = []
 
     if IS_LINUX:
@@ -217,21 +217,45 @@ def get_mem_info():
     }
 
 
+def find_mount_point(path):
+    if not os.path.islink(path):
+        path = os.path.abspath(path)
+    elif os.path.islink(path) and os.path.lexists(os.readlink(path)):
+        path = os.path.realpath(path)
+
+    while not os.path.ismount(path):
+        path = os.path.dirname(path)
+        if os.path.islink(path) and os.path.lexists(os.readlink(path)):
+            path = os.path.realpath(path)
+    return path
+
+
+def dev_name(path):
+    dev = os.stat(path).st_dev
+    major, minor = os.major(dev), os.minor(dev)
+    link = os.readlink(f"/sys/dev/block/{major}:{minor}")
+    device = os.path.basename(link)
+    return device
+
+
 def get_mounts():
     disk_io = psutil.disk_io_counters(perdisk=True)
 
     mounts = {}
     for partition in psutil.disk_partitions():
-        if partition.mountpoint == os.sep or partition.mountpoint.startswith(("/boot",)):
+        if partition.mountpoint in [os.sep, "/var", "/etc", "/usr"] or partition.mountpoint.startswith(
+            ("/boot", "/sysroot")
+        ):
             continue
 
         try:
             usage = psutil.disk_usage(partition.mountpoint)
         except PermissionError:  # CD-ROM, etc
+            print(f"PermissionError: Skipping {partition.mountpoint}", file=sys.stderr)
             continue
         else:
             mapped_device = (
-                os.path.realpath(partition.device) if partition.device.startswith('/dev/mapper/') else partition.device
+                os.path.realpath(partition.device) if partition.device.startswith("/dev/mapper/") else partition.device
             )
             device_key = mapped_device.replace("\\", "/").split("/")[-1]  # without /dev/ prefix
             io = disk_io[device_key]

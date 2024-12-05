@@ -253,12 +253,6 @@ class ArgumentParser(argparse.ArgumentParser):
         super().__init__(*args, **kwargs)
 
 
-def suppress_destinations(parser, destinations):
-    for action in parser._actions:
-        if action.dest in destinations:
-            action.help = argparse.SUPPRESS
-
-
 def arggroup_destinations(functions):
     temp_parser = ArgumentParser(add_help=False)
     for func in functions:
@@ -268,4 +262,34 @@ def arggroup_destinations(functions):
 
 def suppress_arggroups(parser, functions):
     destinations = arggroup_destinations(functions)
-    suppress_destinations(parser, destinations)
+
+    for action in parser._actions:
+        if action.dest in destinations:
+            action.help = argparse.SUPPRESS
+
+
+def forward_arggroups(args, *arggroups, **overrides):
+    forward_args = []
+    destinations = arggroup_destinations(arggroups)
+    for key in destinations:
+        argk = f"--{key.replace('_', '-')}"
+        argv = getattr(args, key, None)
+
+        if key in overrides:
+            forward_args.append(argk)
+            forward_args.append(str(overrides[key]))
+        elif argv is None:
+            pass  # nothing to send...
+        elif isinstance(argv, bool):
+            forward_args.append(argk)
+            # flags have no values
+        else:
+            forward_args.append(argk)
+            forward_args.append(str(argv))
+
+    for key, value in overrides.items():
+        if key not in destinations:
+            msg = f"Override {key} not found in provided arggroups"
+            raise ValueError(msg)
+
+    return forward_args

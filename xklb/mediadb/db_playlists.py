@@ -102,6 +102,48 @@ def get_parentpath_playlists_id(args, playlist_path) -> int | None:
     return known
 
 
+def mark_media_deleted(args, playlist_paths) -> int:
+    playlist_paths = iterables.conform(playlist_paths)
+
+    deleted_playlist_count = 0
+    deleted_media_count = 0
+    if playlist_paths:
+        df_chunked = iterables.chunks(playlist_paths, consts.SQLITE_PARAM_LIMIT)
+        for chunk_paths in df_chunked:
+            with args.db.conn:
+                cursor = args.db.conn.execute(
+                    f"""update playlists
+                    set time_deleted={consts.APPLICATION_START}
+                    where path in ("""
+                    + ",".join(["?"] * len(chunk_paths))
+                    + ")",
+                    (*chunk_paths,),
+                )
+                deleted_playlist_count += cursor.rowcount
+
+        try:
+            df_chunked = iterables.chunks(playlist_paths, consts.SQLITE_PARAM_LIMIT)
+            for chunk_paths in df_chunked:
+                with args.db.conn:
+                    cursor = args.db.conn.execute(
+                        f"""UPDATE media
+                        SET time_deleted={consts.APPLICATION_START}
+                        WHERE playlists_id in (
+                            SELECT id from playlists
+                            WHERE path IN ("""
+                        + ",".join(["?"] * len(chunk_paths))
+                        + "))",
+                        (*chunk_paths,),
+                    )
+                    deleted_media_count += cursor.rowcount
+        except sqlite3.OperationalError:  # no such column: playlists_id
+            pass
+
+    log.info(f"Deleted {deleted_playlist_count} playlists ({deleted_media_count} media records)")
+
+    return deleted_playlist_count
+
+
 def delete_subpath_playlists(args, playlist_path) -> int | None:
     try:
         with args.db.conn:

@@ -83,7 +83,7 @@ def columns(args, table_name):
 
 config = {
     "playlists": {
-        "search_columns": ["path", "title"],
+        "search_columns": ["path", "title", "tracker", "author", "comment"],
         "column_order": ["id", "path", "extractor_key"],
         "ignore_columns": ["extractor_playlist_id"],
     },

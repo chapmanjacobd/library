@@ -336,12 +336,11 @@ def construct_search_bindings(include, exclude, columns, exact=False, flexible_s
     return sql, bindings
 
 
-def search_filter(args, m_columns, table_prefix="m."):
-    table = "media"
-    if args.db["media"].detect_fts() and args.fts and args.include:
+def search_filter(args, m_columns, table="media", table_prefix="m."):
+    if args.db[table].detect_fts() and args.fts and args.include:
         table, search_bindings = fts_search_sql(
-            "media",
-            fts_table=args.db["media"].detect_fts(),
+            table,
+            fts_table=args.db[table].detect_fts(),
             include=args.include,
             exclude=args.exclude,
             flexible=args.flexible_search,
@@ -355,7 +354,7 @@ def search_filter(args, m_columns, table_prefix="m."):
             columns=[
                 f"{table_prefix}{k}"
                 for k in m_columns
-                if k in db_utils.config["media"]["search_columns"]
+                if k in db_utils.config[table]["search_columns"]
                 if k in m_columns
             ],
             exact=args.exact,

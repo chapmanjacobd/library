@@ -1,4 +1,4 @@
-import csv, math, os, sys, textwrap, time
+import csv, math, sys, textwrap, time
 from collections.abc import Callable
 from datetime import datetime, timezone
 
@@ -9,15 +9,15 @@ from xklb.utils import consts, web
 from xklb.utils.strings import duration, file_size, relative_datetime
 
 
-def print_overwrite(*text):
+def print_overwrite(*text, **kwargs):
     if consts.PYTEST_RUNNING or not sys.stdout.isatty():
         pass
-    elif os.name == "posix":
-        print("\r" + text[0], *text[1:], end="\033[K", flush=False)
+    elif consts.IS_LINUX or consts.IS_MAC:
+        print("\r" + text[0], *text[1:], end="\033[K", **kwargs)
     elif consts.IS_WINDOWS:
-        print("\r" + text[0], *text[1:], end="", flush=False)
+        print("\r" + text[0], *text[1:], end="", **kwargs)
     else:
-        print(text)
+        print(text, **kwargs)
 
 
 def table(tbl, **kwargs) -> None:

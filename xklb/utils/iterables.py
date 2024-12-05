@@ -140,6 +140,21 @@ def list_dict_unique(data: list[dict], unique_keys: list[str]) -> list[dict]:
     return list_
 
 
+def count_category(list_of_dicts, key_name):
+    category_counts = {}
+    for item in list_of_dicts:
+        category = item.get(key_name)
+        if category is not None:
+            category_counts[category] = category_counts.get(category, 0) + 1
+
+    for item in list_of_dicts:
+        category = item.get(key_name)
+        if category is not None and category in category_counts:
+            item[f"{key_name}_count"] = category_counts[category]
+
+    return list_of_dicts
+
+
 def chunks(lst, n) -> Iterator:
     for i in range(0, len(lst), n):
         yield lst[i : i + n]

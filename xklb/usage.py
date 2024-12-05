@@ -1887,3 +1887,34 @@ pdf_edit = """library pdf-edit PATH ...
         library pdfedit --brightness 105 --contrast 120 --saturation 80 --sharpness 110 scan001.pdf
         library pdfedit -b 105 -c 120 -C 80 -s 110 scan001.pdf
 """
+
+computers_add = """library computer-add DATABASE HOSTNAME ...
+
+    Create a SQLite database of SSH-able computers and their disks (nodes are playlists, node disks are media)
+
+        library computer-add local.db blan gworky nocap zendl gak pakon
+        library computer-add remote.db jp.tensile-fortress.ts.net hk kr mx uk ca
+"""
+
+computers_update = """library computer-update DATABASE PATH ...
+
+    Update computer stats
+"""
+
+torrents_add = """library torrents-add DATABASE PATH ...
+
+    Create a SQLite database of torrent file data (torrents are playlists, referenced files are media)
+
+        library torrents-add torrents.db ~/.local/data/qbittorrent/queue/
+"""
+
+allocate_torrents = """library allocate-torrents
+
+    Use a Computer DB and a Torrent DB to allocate and deplete global free space
+
+        library allocate-torrents computers.db torrents.db -v
+
+    Filter to specific words or tracker
+
+        library allocate-torrents computers.db torrents.db -s specific words or tracker
+"""
