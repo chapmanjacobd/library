@@ -10,7 +10,6 @@ from xklb.utils.log_utils import log
 
 def parse_args() -> argparse.Namespace:
     parser = argparse_utils.ArgumentParser(usage=usage.merge_online_local)
-    parser.add_argument("--no-confirm", "--yes", "-y", action="store_true")
     parser.add_argument("--limit", "-L", "-l", "-queue", "--queue", default="100")
     arggroups.debug(parser)
 

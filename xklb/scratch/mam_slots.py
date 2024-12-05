@@ -5,6 +5,7 @@ def parse_args():
     parser = argparse_utils.ArgumentParser()
     parser.add_argument("--base-url", default="https://www.myanonamouse.net")
     parser.add_argument("--max", type=int, default=150)
+    parser.add_argument("--account-max", type=int, default=150)
 
     parser.add_argument("--cookie", required=True)
     arggroups.requests(parser)
@@ -35,7 +36,8 @@ def mam_slots():
 
     try:
         unsat = get_unsat(args)
-        print(args.max - unsat)
+        avail = args.account_max - unsat
+        print(min(args.max, avail))
     except Exception:
         if args.verbose == 0:
             print(0)

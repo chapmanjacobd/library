@@ -13,6 +13,7 @@ def parse_args():
     parser.add_argument("--narrator", action=argparse.BooleanOptionalAction, default=False)
     parser.add_argument("--series", action=argparse.BooleanOptionalAction, default=False)
     parser.add_argument("--description", action=argparse.BooleanOptionalAction, default=False)
+    parser.add_argument("--tags", action=argparse.BooleanOptionalAction, default=False)
 
     parser.add_argument("--books", action=argparse.BooleanOptionalAction, default=False)
     parser.add_argument("--audiobooks", action=argparse.BooleanOptionalAction, default=False)
@@ -103,6 +104,7 @@ def mam_search():
                 "narrator": args.narrator,
                 "series": args.series,
                 "description": args.description,
+                "tags": args.tags,
             },
             "searchType": "all",  # fl-VIP, fl, VIP, all
             "searchIn": args.search_in,

@@ -1,8 +1,7 @@
 import argparse, concurrent.futures, math, os, sqlite3
 from contextlib import suppress
-from shutil import which
-
 from pathlib import Path
+from shutil import which
 
 from xklb import usage
 from xklb.mediadb import db_history
@@ -76,7 +75,6 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--transcoding-image-time", type=float, default=1.5, metavar="SECONDS")
 
-    parser.add_argument("--no-confirm", "--yes", "-y", action="store_true")
     parser.add_argument("--continue-from", help="Skip media until specific file path is seen")
 
     arggroups.process_ffmpeg(parser)
@@ -279,7 +277,7 @@ def process_media() -> None:
         seen_continue_from = False
         new_media = []
         for m in media:
-            if args.continue_from in m['path']:
+            if args.continue_from in m["path"]:
                 seen_continue_from = True
             if seen_continue_from:
                 new_media.append(m)

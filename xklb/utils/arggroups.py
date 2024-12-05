@@ -152,6 +152,7 @@ def debug(parent_parser):
         help="Include only specific file extensions",
     )
     parser.add_argument("--simulate", "--dry-run", action="store_true")
+    parser.add_argument("--no-confirm", "--yes", "-y", action="store_true")
     printing(parent_parser)
 
 
@@ -1966,3 +1967,33 @@ def matplotlib_post(args, unknown_args):
         return plt
 
     args.plot_fn = plot_fn
+
+
+def qBittorrent(parent_parser):
+    parser = parent_parser.add_argument_group("qBittorrent")
+    parser.add_argument("--host", default="localhost", help="qBittorrent WebUI host")
+    parser.add_argument("--port", type=int, default=8080, help="qBittorrent WebUI port")
+    parser.add_argument("--username", help="qBittorrent WebUI username")
+    parser.add_argument("--password", help="qBittorrent WebUI password")
+
+    parser.add_argument(
+        "--dl-limit",
+        "--download-limit",
+        type=nums.human_to_bytes,
+        help="Download limit. If set then a few additional global preferences will also be changed",
+    )
+    parser.add_argument("--up-limit", "--upload-limit", type=nums.human_to_bytes, help="Upload limit")
+
+    parser.add_argument("--download-drive", help="Download drive")
+    parser.add_argument("--download-prefix", default="seeding", help="Download root")
+    parser.add_argument("--temp-drive", help="Temporary download drive")
+    parser.add_argument("--temp-prefix", default="downloading", help="Temporary download root")
+    parser.add_argument(
+        "--tracker-dirnames",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Add the tracker name as a subfolder of the download root",
+    )
+    parser.add_argument(
+        "--delete-torrent", action=argparse.BooleanOptionalAction, default=True, help="Delete torrent file after adding"
+    )

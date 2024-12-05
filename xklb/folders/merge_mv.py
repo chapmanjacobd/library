@@ -1,6 +1,6 @@
 import argparse, concurrent.futures, os, shutil
-from pathlib import Path
 from fnmatch import fnmatch
+from pathlib import Path
 
 from xklb import usage
 from xklb.utils import arggroups, argparse_utils, devices, file_utils, path_utils, printing, processes, strings
