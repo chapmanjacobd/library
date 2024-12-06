@@ -1,4 +1,4 @@
-import csv, math, sys, textwrap, time
+import csv, itertools, math, sys, textwrap, time
 from collections.abc import Callable
 from datetime import datetime, timezone
 
@@ -26,6 +26,31 @@ def table(tbl, **kwargs) -> None:
     except BrokenPipeError:
         sys.stdout = None
         sys.exit(141)
+
+
+def extended_view(iterable):
+    print_index = True
+    if isinstance(iterable, dict):
+        print_index = False
+        iterable = [iterable]
+
+    if hasattr(iterable, "__iter__") and not hasattr(iterable, "__len__"):  # generator
+        try:
+            first_item = next(iter(iterable))
+        except StopIteration:
+            return  # if the generator is empty, return early
+        iterable = itertools.chain([first_item], iterable)
+        max_key_length = max(len(key) for key in first_item.keys())
+    else:
+        max_key_length = max(len(key) for item in iterable for key in item.keys())
+
+    for index, item in enumerate(iterable, start=1):
+        if print_index:
+            print(f"-[ RECORD {index} ]-------------------------------------------------------------")
+        for key, value in item.items():
+            formatted_key = f"{key.ljust(max_key_length)} |"
+            print(formatted_key, value)
+        print()
 
 
 def pipe_print(*args) -> None:

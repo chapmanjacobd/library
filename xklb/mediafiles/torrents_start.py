@@ -1,10 +1,10 @@
-import getpass, logging, shutil, time
+import getpass, hashlib, logging, shutil, time
 from contextlib import suppress
 from pathlib import Path
 from time import sleep
 
 import qbittorrentapi
-from torrentool.api import Torrent
+from torrentool.api import Bencode, Torrent
 
 from xklb.createdb.torrents_add import get_tracker
 from xklb.utils import arggroups, argparse_utils, processes
@@ -24,15 +24,24 @@ def parse_args():
     return args
 
 
-def wait_torrent_loaded(qbt_client, info_hash):
-    while True:
-        try:
-            qbt_client.torrents_properties(info_hash)
-        except qbittorrentapi.NotFound404Error:
-            log.info("Waiting for torrent to load in qBittorrent")
-            sleep(0.2)
-        else:
-            break
+def wait_torrent_loaded(qbt_client, torrent):
+    v1_info_hash = hashlib.sha1(Bencode.encode(torrent._struct.get("info"))).hexdigest()
+    v2_info_hash = hashlib.sha256(Bencode.encode(torrent._struct.get("info"))).hexdigest()
+
+    attempts = 120
+    attempt = 0
+    while attempt < attempts:
+        with suppress(qbittorrentapi.NotFound404Error):
+            qbt_client.torrents_properties(v1_info_hash)
+            return v1_info_hash
+
+        with suppress(qbittorrentapi.NotFound404Error):
+            qbt_client.torrents_properties(v2_info_hash)
+            return v2_info_hash
+
+        attempt += 1
+        log.info("Waiting for torrent to load in qBittorrent")
+        sleep(1)
 
 
 def start_qBittorrent(args):
@@ -109,7 +118,6 @@ def torrents_start():
 
     for path in args.paths:
         torrent = Torrent.from_file(path)
-        info_hash = torrent.info_hash
 
         download_path = download_prefix
         temp_path = temp_prefix
@@ -124,11 +132,11 @@ def torrents_start():
             save_path=download_path,
             tags=["xklb"],
             use_auto_torrent_management=False,
-            is_paused=False,
+            is_stopped=False,
             add_to_top_of_queue=False,
         )
 
-        wait_torrent_loaded(qbt_client, info_hash)
+        info_hash = wait_torrent_loaded(qbt_client, torrent)
         qbt_client.torrents_start(info_hash)
 
         if args.delete_torrent:

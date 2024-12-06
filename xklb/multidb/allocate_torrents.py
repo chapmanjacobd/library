@@ -101,9 +101,9 @@ def allocate_torrents():
     torrents = torrents[: args.limit]
 
     for disk in disks:
-        if disk["mountpoint"] == "/home":
+        if disk["mountpoint"] in ("/home", "/var/home"):
             user = getpass.getuser()
-            disk["mountpoint"] = f"/home/{user}"
+            disk["mountpoint"] = f"{disk["mountpoint"]}/{user}"
 
         available_space = disk["free"] - args.min_free_space
         disk["downloads"] = list(gen_torrent_matches(torrents, available_space))
@@ -111,23 +111,6 @@ def allocate_torrents():
     # TODO: use nvme download_dir
     # but better to chunk one drive at a time because temp download _moving_ can occur
     # at the same time as nvme save_path saving. maybe 2x buffer could work
-
-    printing.table(
-        [
-            {
-                "host": d["host"],
-                "path": d["mountpoint"],
-                "total_size": humanize.naturalsize(d["total"]),
-                "download_count": len(d["downloads"]),
-                "unique_trackers": len(set(t["tracker"] for t in d["downloads"])),
-                "before_free": strings.file_size(d["free"]),
-                "download_size": strings.file_size(sum(t["size"] for t in d["downloads"])),
-                "after_free": strings.file_size(d["free"] - sum(t["size"] for t in d["downloads"])),
-            }
-            for d in disks
-        ]
-    )
-    print()
 
     for d in disks:
         print(d["host"], d["mountpoint"])
@@ -146,6 +129,23 @@ def allocate_torrents():
             ]
         )
         print()
+
+    printing.table(
+        [
+            {
+                "host": d["host"],
+                "path": d["mountpoint"],
+                "total_size": humanize.naturalsize(d["total"]),
+                "download_count": len(d["downloads"]),
+                "unique_trackers": len(set(t["tracker"] for t in d["downloads"])),
+                "before_free": strings.file_size(d["free"]),
+                "download_size": strings.file_size(sum(t["size"] for t in d["downloads"])),
+                "after_free": strings.file_size(d["free"] - sum(t["size"] for t in d["downloads"])),
+            }
+            for d in disks
+        ]
+    )
+    print()
 
     if not args.print and (args.no_confirm or devices.confirm("Allocate and start downloads?")):
         for d in disks:
@@ -171,7 +171,7 @@ def allocate_torrents():
                     ),
                     *torrent_files,
                     local_files=torrent_files,
-                    cwd="lb",  # debug
+                    # cwd="lb",  # debug
                 )
 
             if args.delete_torrent:
