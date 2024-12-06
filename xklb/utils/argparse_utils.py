@@ -253,15 +253,16 @@ class ArgumentParser(argparse.ArgumentParser):
         super().__init__(*args, **kwargs)
 
 
-def arggroup_destinations(functions):
+def arggroup_parser(functions):
     temp_parser = ArgumentParser(add_help=False)
     for func in functions:
         func(temp_parser)
-    return set(o.dest for o in temp_parser._actions)
+    return {a.dest: a for a in temp_parser._actions}
 
 
 def suppress_arggroups(parser, functions):
-    destinations = arggroup_destinations(functions)
+    actions = arggroup_parser(functions)
+    destinations = set(actions.keys())
 
     for action in parser._actions:
         if action.dest in destinations:
@@ -270,21 +271,28 @@ def suppress_arggroups(parser, functions):
 
 def forward_arggroups(args, *arggroups, **overrides):
     forward_args = []
-    destinations = arggroup_destinations(arggroups)
+    actions = arggroup_parser(arggroups)
+    destinations = set(actions.keys())
+
     for key in destinations:
-        argk = f"--{key.replace('_', '-')}"
         argv = getattr(args, key, None)
 
         if key in overrides:
-            forward_args.append(argk)
+            forward_args.append(f"--{key.replace('_', '-')}")
             forward_args.append(str(overrides[key]))
         elif argv is None:
             pass  # nothing to send...
         elif isinstance(argv, bool):
-            forward_args.append(argk)
-            # flags have no values
+            if isinstance(actions[key], argparse.BooleanOptionalAction):
+                if argv:
+                    forward_args.append(f"--{key.replace('_', '-')}")
+                else:
+                    forward_args.append(f"--no-{key.replace('_', '-')}")
+            elif argv:
+                forward_args.append(f"--{key.replace('_', '-')}")
+                # flags have no values
         else:
-            forward_args.append(argk)
+            forward_args.append(f"--{key.replace('_', '-')}")
             forward_args.append(str(argv))
 
     for key, value in overrides.items():

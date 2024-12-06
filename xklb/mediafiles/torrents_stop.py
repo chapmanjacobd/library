@@ -1,8 +1,6 @@
 import argparse, os
 from datetime import datetime
 
-import qbittorrentapi
-
 from xklb.mediafiles.torrents_start import start_qBittorrent
 from xklb.utils import arggroups
 
