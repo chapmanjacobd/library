@@ -325,6 +325,7 @@ def process_path(args, path, include_timecode=False, subtitle_streams_unsupporte
         print(shlex.join(command))
         return path
 
+    is_file_error = False
     try:
         processes.cmd(*command)
     except subprocess.CalledProcessError as e:
@@ -383,6 +384,8 @@ def process_path(args, path, include_timecode=False, subtitle_streams_unsupporte
                 transcode_invalid = True
             elif args.delete_unplayable and is_file_error:
                 pass  # if the original file is broken but the transcode is somewhat valid, don't compare duration
+            elif path_utils.ext(path).lower() in consts.SKIP_MEDIA_CHECK:
+                pass  # duration metadata for these source formats is usually incorrect
             elif nums.percentage_difference(probe.duration, transcode_probe.duration) > 5.0:
                 transcode_invalid = True
     if transcode_invalid:

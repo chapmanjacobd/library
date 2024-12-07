@@ -51,6 +51,7 @@ def confirm(*args, **kwargs) -> bool:
     if consts.PYTEST_RUNNING:
         raise InteractivePrompt
 
+    sys.stdout.flush()
     clear_input()
     return Confirm.ask(*args, **kwargs, default=False)
 
