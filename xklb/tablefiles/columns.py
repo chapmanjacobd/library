@@ -66,7 +66,3 @@ def columns():
     web.requests_session(args)  # configure session
     for path in args.paths:
         file_columns(args, path)
-
-
-if __name__ == "__main__":
-    columns()

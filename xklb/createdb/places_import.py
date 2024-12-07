@@ -60,7 +60,3 @@ def places_import() -> None:
         data = df.to_dict(orient="records")
         for d in data:
             db_media.add(args, objects.dict_filter_bool(d))
-
-
-if __name__ == "__main__":
-    places_import()

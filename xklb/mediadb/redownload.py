@@ -147,7 +147,3 @@ def redownload() -> None:
                 "records not recognized as tube media, which you will need to redownload manually. Exported to this temp file:",
                 out_path,
             )
-
-
-if __name__ == "__main__":
-    redownload()

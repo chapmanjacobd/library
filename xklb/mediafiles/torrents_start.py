@@ -3,9 +3,6 @@ from contextlib import suppress
 from pathlib import Path
 from time import sleep
 
-import qbittorrentapi
-from torrentool.api import Bencode, Torrent
-
 from xklb import usage
 from xklb.createdb.torrents_add import get_tracker
 from xklb.utils import arggroups, argparse_utils, processes
@@ -26,6 +23,9 @@ def parse_args():
 
 
 def wait_torrent_loaded(qbt_client, torrent):
+    import qbittorrentapi
+    from torrentool.api import Bencode
+
     v1_info_hash = hashlib.sha1(Bencode.encode(torrent._struct.get("info"))).hexdigest()
     v2_info_hash = hashlib.sha256(Bencode.encode(torrent._struct.get("info"))).hexdigest()
 
@@ -46,6 +46,8 @@ def wait_torrent_loaded(qbt_client, torrent):
 
 
 def start_qBittorrent(args):
+    import qbittorrentapi
+
     qbt_client = qbittorrentapi.Client(
         host=args.host,
         port=args.port,
@@ -87,6 +89,8 @@ def start_qBittorrent(args):
 
 def torrents_start():
     args = parse_args()
+
+    from torrentool.api import Torrent
 
     qbt_client = start_qBittorrent(args)
 

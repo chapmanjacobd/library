@@ -131,7 +131,3 @@ def tildes():
     response = web.get(args, f"https://tildes.net/user/{args.username}")
     if response:
         save_page(args, response.text)
-
-
-if __name__ == "__main__":
-    tildes()

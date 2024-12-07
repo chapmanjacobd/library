@@ -420,7 +420,3 @@ def process_ffmpeg(defaults_override=None):
 
 def process_audio():
     process_ffmpeg({"audio_only": True})
-
-
-if __name__ == "__main__":
-    process_ffmpeg()

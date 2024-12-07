@@ -122,7 +122,3 @@ def search() -> None:
                         raise SystemExit(r.returncode)
     else:
         printer(args, merged_captions)
-
-
-if __name__ == "__main__":
-    search()

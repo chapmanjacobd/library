@@ -89,7 +89,3 @@ def merge_dbs() -> None:
     args = parse_args()
     for s_db in args.source_dbs:
         merge_db(args, s_db)
-
-
-if __name__ == "__main__":
-    merge_dbs()

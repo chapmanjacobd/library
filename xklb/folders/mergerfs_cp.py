@@ -104,7 +104,3 @@ def mergerfs_cp():
     args.srcmounts = get_srcmounts(args.mergerfs_mount)
 
     merge_mv.mmv_folders(args, mergerfs_cp_file, args.paths, args.destination)
-
-
-if __name__ == "__main__":
-    mergerfs_cp()

@@ -1,8 +1,6 @@
 import concurrent.futures, os, statistics
 from pathlib import Path
 
-from torrentool.api import Torrent
-
 from xklb import usage
 from xklb.mediadb import db_playlists
 from xklb.utils import arg_utils, arggroups, argparse_utils, consts, db_utils, iterables, nums, objects, printing
@@ -22,7 +20,7 @@ def parse_args():
     return args
 
 
-def get_tracker(torrent: Torrent):
+def get_tracker(torrent):
     if torrent.announce_urls is None:
         return torrent.source
 
@@ -36,6 +34,8 @@ def get_tracker(torrent: Torrent):
 
 
 def extract_metadata(path):
+    from torrentool.api import Torrent
+
     torrent = Torrent.from_file(path)
 
     file_sizes = [f.length for f in torrent.files]

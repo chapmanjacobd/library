@@ -211,7 +211,3 @@ def eda():
     web.requests_session(args)  # configure session
     for path in args.paths:
         file_eda(args, path)
-
-
-if __name__ == "__main__":
-    eda()

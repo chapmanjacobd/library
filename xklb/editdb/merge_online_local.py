@@ -106,7 +106,3 @@ def merge_online_local() -> None:
             merged.append(webpath)
 
         print(len(merged), "merged")
-
-
-if __name__ == "__main__":
-    merge_online_local()

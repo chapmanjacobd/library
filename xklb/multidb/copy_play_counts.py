@@ -62,7 +62,3 @@ def copy_play_counts() -> None:
     for s_db in args.source_dbs:
         copy_play_count(args, s_db)
     dedupe_db.dedupe_rows(args, "history", ["id"], ["media_id", "time_played"])
-
-
-if __name__ == "__main__":
-    copy_play_counts()

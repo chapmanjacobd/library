@@ -42,7 +42,3 @@ def history_add() -> None:
         db_history.add(args, media_ids=[media_id], time_played=consts.APPLICATION_START, mark_done=True)
 
     print(f"History: {len(history_new)} new [{len(history_exists)} known {len(media_unknown)} skipped]")
-
-
-if __name__ == "__main__":
-    history_add()

@@ -46,7 +46,3 @@ def stats() -> None:
     else:
         tbl = sql_utils.historical_usage_items(args, args.frequency, args.facet, args.hide_deleted, args.only_deleted)
     media_printer.media_printer(args, tbl, units=args.frequency)
-
-
-if __name__ == "__main__":
-    stats()

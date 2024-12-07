@@ -381,7 +381,3 @@ def links_update() -> None:
     finally:
         if selenium_needed:
             web.quit_selenium(args)
-
-
-if __name__ == "__main__":
-    links_add()

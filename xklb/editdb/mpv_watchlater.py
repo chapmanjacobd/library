@@ -51,7 +51,3 @@ def mpv_watchlater():
         ),
     )
     scan_and_import(args, media)
-
-
-if __name__ == "__main__":
-    mpv_watchlater()

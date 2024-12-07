@@ -141,7 +141,3 @@ def disk_usage(defaults_override=None):
 
 def extensions():
     disk_usage({"group_by_extensions": True})
-
-
-if __name__ == "__main__":
-    disk_usage()

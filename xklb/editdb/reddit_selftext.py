@@ -65,7 +65,3 @@ def reddit_selftext() -> None:
 
         for e_link in external_links:
             db_media.add(args, {**d, "path": e_link, "webpage": d["path"]})
-
-
-if __name__ == "__main__":
-    reddit_selftext()

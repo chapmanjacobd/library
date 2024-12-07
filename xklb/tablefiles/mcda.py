@@ -294,7 +294,3 @@ def group_sort_by(args, folders):
         sort_func = sql_utils.sort_like_sql(args.sort_groups_by)  # type: ignore
 
     return sorted(folders, key=sort_func)
-
-
-if __name__ == "__main__":
-    mcda()

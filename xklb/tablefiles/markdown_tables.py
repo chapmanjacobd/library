@@ -67,7 +67,3 @@ def markdown_tables():
     web.requests_session(args)  # configure session
     for path in args.paths:
         file_markdown(args, path)
-
-
-if __name__ == "__main__":
-    markdown_tables()

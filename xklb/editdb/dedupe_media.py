@@ -504,7 +504,3 @@ def dedupe_media() -> None:
             else:
                 file_utils.trash(args, path, detach=False)
             db_media.mark_media_deleted(args, path)
-
-
-if __name__ == "__main__":
-    dedupe_media()
