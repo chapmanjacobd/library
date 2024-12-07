@@ -15,6 +15,7 @@ def parse_args():
     parser.add_argument("--description", action=argparse.BooleanOptionalAction, default=False)
     parser.add_argument("--tags", action=argparse.BooleanOptionalAction, default=False)
 
+    parser.add_argument("--categories", "--category", type=int, nargs='+')
     parser.add_argument("--books", action=argparse.BooleanOptionalAction, default=False)
     parser.add_argument("--audiobooks", action=argparse.BooleanOptionalAction, default=False)
     parser.add_argument("--comics", action=argparse.BooleanOptionalAction, default=False)
@@ -97,7 +98,7 @@ def mam_search():
     query_data = {
         "tor": {
             "text": " ".join(args.search_text),
-            "browse_lang": [1, 44],
+            "browse_lang": [1, 2, 44, 47],
             "srchIn": {
                 "title": args.title,
                 "author": args.author,
@@ -109,7 +110,7 @@ def mam_search():
             "searchType": "all",  # fl-VIP, fl, VIP, all
             "searchIn": args.search_in,
             "browseFlagsHideVsShow": 0,
-            "cat": [],
+            "cat": args.categories or [],
             "sortType": "dateDesc",
             "startNumber": 0,
             "minSeeders": 0,
