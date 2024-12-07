@@ -99,7 +99,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v3.0.027; 91 subcommands)
+    library (v3.0.028; 99 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -132,6 +132,10 @@ To stop playing press Ctrl+C in either the terminal or mpv
     │ places-import   │ Import places of interest (POIs)         │
     ├─────────────────┼──────────────────────────────────────────┤
     │ row-add         │ Add arbitrary data to SQLite             │
+    ├─────────────────┼──────────────────────────────────────────┤
+    │ computers-add   │ Add computer info to SQLite              │
+    ├─────────────────┼──────────────────────────────────────────┤
+    │ torrents-add    │ Add torrent info to SQLite               │
     ╰─────────────────┴──────────────────────────────────────────╯
 
     Text subcommands:
@@ -209,28 +213,36 @@ To stop playing press Ctrl+C in either the terminal or mpv
     ╰──────────────────┴──────────────────────────────────────────────────────╯
 
     Media File subcommands:
-    ╭────────────────┬───────────────────────────────────────────────────────────────────────────╮
-    │ media-check    │ Check video and audio files for corruption via ffmpeg                     │
-    ├────────────────┼───────────────────────────────────────────────────────────────────────────┤
-    │ process-media  │ Estimate and execute potential disk space savings                         │
-    ├────────────────┼───────────────────────────────────────────────────────────────────────────┤
-    │ process-ffmpeg │ Shrink video/audio to AV1/Opus format (.mkv, .mka)                        │
-    ├────────────────┼───────────────────────────────────────────────────────────────────────────┤
-    │ process-image  │ Shrink images to AV1 image format (.avif)                                 │
-    ├────────────────┼───────────────────────────────────────────────────────────────────────────┤
-    │ process-text   │ Shrink documents to HTML+AV1 image format (requires Calibre)              │
-    ├────────────────┼───────────────────────────────────────────────────────────────────────────┤
-    │ images-to-pdf  │ Convert folders of images into image PDFs                                 │
-    ├────────────────┼───────────────────────────────────────────────────────────────────────────┤
-    │ pdf-edit       │ Apply brightness, contrast, saturation, and sharpness adjustments to PDFs │
-    ╰────────────────┴───────────────────────────────────────────────────────────────────────────╯
+    ╭──────────────────────────┬───────────────────────────────────────────────────────────────────────────╮
+    │ media-check              │ Check video and audio files for corruption via ffmpeg                     │
+    ├──────────────────────────┼───────────────────────────────────────────────────────────────────────────┤
+    │ process-media            │ Estimate and execute potential disk space savings                         │
+    ├──────────────────────────┼───────────────────────────────────────────────────────────────────────────┤
+    │ process-ffmpeg           │ Shrink video/audio to AV1/Opus format (.mkv, .mka)                        │
+    ├──────────────────────────┼───────────────────────────────────────────────────────────────────────────┤
+    │ process-image            │ Shrink images to AV1 image format (.avif)                                 │
+    ├──────────────────────────┼───────────────────────────────────────────────────────────────────────────┤
+    │ process-text             │ Shrink documents to HTML+AV1 image format (requires Calibre)              │
+    ├──────────────────────────┼───────────────────────────────────────────────────────────────────────────┤
+    │ images-to-pdf            │ Convert folders of images into image PDFs                                 │
+    ├──────────────────────────┼───────────────────────────────────────────────────────────────────────────┤
+    │ pdf-edit                 │ Apply brightness, contrast, saturation, and sharpness adjustments to PDFs │
+    ├──────────────────────────┼───────────────────────────────────────────────────────────────────────────┤
+    │ torrents-start           │ Start torrents (qBittorrent-nox)                                          │
+    ├──────────────────────────┼───────────────────────────────────────────────────────────────────────────┤
+    │ torrents-stop            │ Stop seeding torrents (qBittorrent-nox)                                   │
+    ├──────────────────────────┼───────────────────────────────────────────────────────────────────────────┤
+    │ torrents-stop-incomplete │ Stop downloading torrents (qBittorrent-nox)                               │
+    ╰──────────────────────────┴───────────────────────────────────────────────────────────────────────────╯
 
     Multi-database subcommands:
-    ╭──────────────────┬────────────────────────╮
-    │ merge-dbs        │ Merge SQLite databases │
-    ├──────────────────┼────────────────────────┤
-    │ copy-play-counts │ Copy play history      │
-    ╰──────────────────┴────────────────────────╯
+    ╭───────────────────┬───────────────────────────────────────────────────────╮
+    │ merge-dbs         │ Merge SQLite databases                                │
+    ├───────────────────┼───────────────────────────────────────────────────────┤
+    │ copy-play-counts  │ Copy play history                                     │
+    ├───────────────────┼───────────────────────────────────────────────────────┤
+    │ allocate-torrents │ Use computers.db and torrents.db to allocate torrents │
+    ╰───────────────────┴───────────────────────────────────────────────────────╯
 
     Filesystem Database subcommands:
     ╭────────────┬──────────────────────────╮
@@ -263,25 +275,27 @@ To stop playing press Ctrl+C in either the terminal or mpv
     ╰─────────────────┴─────────────────────────────────────────────────────────────╯
 
     Playback subcommands:
-    ╭────────────┬────────────────────────────────────────────────────────╮
-    │ watch      │ Watch / Listen                                         │
-    ├────────────┼────────────────────────────────────────────────────────┤
-    │ now        │ Show what is currently playing                         │
-    ├────────────┼────────────────────────────────────────────────────────┤
-    │ next       │ Play next file and optionally delete current file      │
-    ├────────────┼────────────────────────────────────────────────────────┤
-    │ seek       │ Set playback to a certain time, fast-forward or rewind │
-    ├────────────┼────────────────────────────────────────────────────────┤
-    │ stop       │ Stop all playback                                      │
-    ├────────────┼────────────────────────────────────────────────────────┤
-    │ pause      │ Pause all playback                                     │
-    ├────────────┼────────────────────────────────────────────────────────┤
-    │ tabs-open  │ Open your tabs for the day                             │
-    ├────────────┼────────────────────────────────────────────────────────┤
-    │ links-open │ Open links from link dbs                               │
-    ├────────────┼────────────────────────────────────────────────────────┤
-    │ surf       │ Auto-load browser tabs in a streaming way (stdin)      │
-    ╰────────────┴────────────────────────────────────────────────────────╯
+    ╭───────────────┬────────────────────────────────────────────────────────╮
+    │ watch         │ Watch / Listen                                         │
+    ├───────────────┼────────────────────────────────────────────────────────┤
+    │ now           │ Show what is currently playing                         │
+    ├───────────────┼────────────────────────────────────────────────────────┤
+    │ next          │ Play next file and optionally delete current file      │
+    ├───────────────┼────────────────────────────────────────────────────────┤
+    │ seek          │ Set playback to a certain time, fast-forward or rewind │
+    ├───────────────┼────────────────────────────────────────────────────────┤
+    │ stop          │ Stop all playback                                      │
+    ├───────────────┼────────────────────────────────────────────────────────┤
+    │ pause         │ Pause all playback                                     │
+    ├───────────────┼────────────────────────────────────────────────────────┤
+    │ tabs-open     │ Open your tabs for the day                             │
+    ├───────────────┼────────────────────────────────────────────────────────┤
+    │ links-open    │ Open links from link dbs                               │
+    ├───────────────┼────────────────────────────────────────────────────────┤
+    │ surf          │ Auto-load browser tabs in a streaming way (stdin)      │
+    ├───────────────┼────────────────────────────────────────────────────────┤
+    │ torrents-info │ List torrents (qBittorrent-nox)                        │
+    ╰───────────────┴────────────────────────────────────────────────────────╯
 
     Database enrichment subcommands:
     ╭────────────────────┬────────────────────────────────────────────────────╮
@@ -301,19 +315,21 @@ To stop playing press Ctrl+C in either the terminal or mpv
     ╰────────────────────┴────────────────────────────────────────────────────╯
 
     Update database subcommands:
-    ╭────────────────┬─────────────────────────────────╮
-    │ fs-update      │ Update local media              │
-    ├────────────────┼─────────────────────────────────┤
-    │ tube-update    │ Update online video media       │
-    ├────────────────┼─────────────────────────────────┤
-    │ web-update     │ Update open-directory media     │
-    ├────────────────┼─────────────────────────────────┤
-    │ gallery-update │ Update online gallery media     │
-    ├────────────────┼─────────────────────────────────┤
-    │ links-update   │ Update a link-scraping database │
-    ├────────────────┼─────────────────────────────────┤
-    │ reddit-update  │ Update reddit media             │
-    ╰────────────────┴─────────────────────────────────╯
+    ╭──────────────────┬─────────────────────────────────╮
+    │ fs-update        │ Update local media              │
+    ├──────────────────┼─────────────────────────────────┤
+    │ tube-update      │ Update online video media       │
+    ├──────────────────┼─────────────────────────────────┤
+    │ web-update       │ Update open-directory media     │
+    ├──────────────────┼─────────────────────────────────┤
+    │ gallery-update   │ Update online gallery media     │
+    ├──────────────────┼─────────────────────────────────┤
+    │ links-update     │ Update a link-scraping database │
+    ├──────────────────┼─────────────────────────────────┤
+    │ reddit-update    │ Update reddit media             │
+    ├──────────────────┼─────────────────────────────────┤
+    │ computers-update │ Update computer stats           │
+    ╰──────────────────┴─────────────────────────────────╯
 
     Misc subcommands:
     ╭────────────────┬─────────────────────────────────────────╮
@@ -958,6 +974,35 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         |   test_b |   test_a |
         |----------|----------|
         |        1 |        2 |
+
+
+</details>
+
+###### computers-add
+
+<details><summary>Add computer info to SQLite</summary>
+
+    $ library computers-add -h
+    usage: library computers-add DATABASE HOSTNAME ...
+
+    Create a SQLite database of SSH-able computers and their disks (nodes are playlists, node disks are media)
+
+        library computer-add local.db blan gworky nocap zendl gak pakon
+        library computer-add remote.db jp.tensile-fortress.ts.net hk kr mx uk ca
+
+
+</details>
+
+###### torrents-add
+
+<details><summary>Add torrent info to SQLite</summary>
+
+    $ library torrents-add -h
+    usage: library torrents-add DATABASE PATH ...
+
+    Create a SQLite database of torrent file data (torrents are playlists, referenced files are media)
+
+        library torrents-add torrents.db ~/.local/data/qbittorrent/queue/
 
 
 </details>
@@ -2076,6 +2121,66 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
 </details>
 
+###### torrents-start
+
+<details><summary>Start torrents (qBittorrent-nox)</summary>
+
+    $ library torrents-start -h
+    usage: library torrents-start [--prefix /mnt/d/] PATH ...
+
+    Start torrent files in qBittorrent-nox
+
+
+</details>
+
+###### torrents-stop
+
+<details><summary>Stop seeding torrents (qBittorrent-nox)</summary>
+
+    $ library torrents-stop -h
+    usage: library torrents-stop
+
+    Stop torrents in qBittorrent-nox with the following defaults:
+      - >180 days active seeding
+      - >90 days since last peer
+      - >3 current seeders
+      - >5MiB size
+
+    These defaults can be overridden like so:
+
+        library torrents-stop --min-seeders 3 --min-days-stalled-seed 10 --min-days-seeding 14
+
+    When --mark-deleted is provided, the torrents are tagged with 'delete' in qBittorrent
+    When --delete-rows is provided, the metadata is removed from qBittorrent
+    When --delete-files is provided, the downloaded files are deleted
+
+
+</details>
+
+###### torrents-stop-incomplete
+
+<details><summary>Stop downloading torrents (qBittorrent-nox)</summary>
+
+    $ library torrents-stop-incomplete -h
+    usage: library torrents-stop-incomplete
+
+    Stop torrents in qBittorrent-nox with the following defaults:
+      - >90 days since last seen complete (or never)
+      - >60 days active downloading
+      - >30 days since last peer (or never)
+
+    These defaults can be overridden like so:
+
+        library torrents-stop --min-days-downloading 7
+
+    When --mark-deleted is provided, the torrents are tagged with 'delete' in qBittorrent
+    When --delete-rows is provided, the metadata is removed from qBittorrent
+    When --delete-files is provided, all downloaded files are deleted.
+    By default, salvage is provided to files which have more than 73% progress.
+
+
+</details>
+
 ### Multi-database subcommands
 
 ###### merge-dbs
@@ -2126,6 +2231,24 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
     Copy play count information between databases
 
         library copy-play-counts phone.db audio.db --source-prefix /storage/6E7B-7DCE/d --target-prefix /mnt/d
+
+
+</details>
+
+###### allocate-torrents
+
+<details><summary>Use computers.db and torrents.db to allocate torrents</summary>
+
+    $ library allocate-torrents -h
+    usage: library allocate-torrents
+
+    Use a Computer DB and a Torrent DB to allocate and deplete global free space
+
+        library allocate-torrents computers.db torrents.db -v
+
+    Filter to specific words or tracker
+
+        library allocate-torrents computers.db torrents.db -s specific words or tracker
 
 
 </details>
@@ -2861,6 +2984,32 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
 </details>
 
+###### torrents-info
+
+<details><summary>List torrents (qBittorrent-nox)</summary>
+
+    $ library torrents-info -h
+    usage: library torrents-info
+
+    Print stats
+
+        library torrents-info
+
+    Search for specific torrent
+
+        library torrents-info query
+
+    Search for specific file
+
+        library torrents-info query -v --file-search query2
+
+    When --mark-deleted is provided, the torrents are tagged with 'delete' in qBittorrent
+    When --delete-rows is provided, the metadata is removed from qBittorrent
+    When --delete-files is provided, the downloaded files are deleted
+
+
+</details>
+
 ### Database enrichment subcommands
 
 ###### dedupe-db
@@ -3081,6 +3230,18 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
     Fetch the latest posts for every subreddit/redditor saved in your database
 
         library redditupdate edu_subreddits.db
+
+
+</details>
+
+###### computers-update
+
+<details><summary>Update computer stats</summary>
+
+    $ library computers-update -h
+    usage: library computers-update DATABASE PATH ...
+
+    Update computer stats
 
 
 </details>
