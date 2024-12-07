@@ -1982,7 +1982,7 @@ def qBittorrent(parent_parser):
         type=nums.human_to_bytes,
         help="Download limit. If set then a few additional global preferences will also be changed",
     )
-    parser.add_argument("--up-limit", "--upload-limit", type=nums.human_to_bytes, help="Upload limit")
+    parser.add_argument("--up-limit", "--ul-limit", "--upload-limit", type=nums.human_to_bytes, help="Upload limit")
 
     parser.add_argument("--download-drive", "--prefix", default=str(Path.cwd()), help="Download drive")
     parser.add_argument("--download-prefix", default="seeding", help="Download root")

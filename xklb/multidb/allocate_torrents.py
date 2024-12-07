@@ -104,7 +104,7 @@ def allocate_torrents():
     for disk in disks:
         if disk["mountpoint"] in ("/home", "/var/home"):
             user = getpass.getuser()
-            disk["mountpoint"] = f"{disk["mountpoint"]}/{user}"
+            disk["mountpoint"] = f"{disk['mountpoint']}/{user}"
 
         available_space = disk["free"] - args.min_free_space
         disk["downloads"] = list(gen_torrent_matches(torrents, available_space))
