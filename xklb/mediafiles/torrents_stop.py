@@ -1,65 +1,105 @@
-import argparse, os
-from datetime import datetime
+import argparse, os, shutil
+from pathlib import Path
 
+from xklb import usage
 from xklb.mediafiles.torrents_start import start_qBittorrent
-from xklb.utils import arggroups
+from xklb.utils import arggroups, consts, devices, iterables, nums, path_utils, printing
+from xklb.utils.log_utils import log
 
-# TODO: to stop and add the delete tag to torrents
-# qbt_client.torrents_info()
 
-# default exclude:
+def parse_args():
+    parser = argparse.ArgumentParser(usage=usage.torrents_stop)
+    arggroups.qBittorrent(parser)
+    arggroups.capability_soft_delete(parser)
+    arggroups.capability_delete(parser)
+    arggroups.debug(parser)
 
-#   3 or less seeders
-#   less than 180 days
-#   inactive seeding less than 30 days
-#   size less than 5MiB
+    parser.add_argument("--min-size", type=nums.human_to_bytes, default="5MiB", help="Minimum download size")
+    parser.add_argument("--min-days-stalled-seed", type=int, default=45, help="Minimum days since last activity")
+    parser.add_argument("--min-seeders", type=int, default=5, help="Minimum current seeders")
+    parser.add_argument("--min-days-seeding", type=int, default=180, help="Minimum days seed time")
 
-# move files to to_process dir and start shrink
+    parser.add_argument("--move", help="Directory to move folders/files")
+
+    args = parser.parse_args()
+    return args
+
+
+def filter_seeding(args, torrents):
+    filtered_torrents = {}
+    for t in torrents:
+        if t.total_size <= args.min_size:
+            status = "small_size"
+        elif (consts.now() - t.last_activity) <= (86400 * args.min_days_stalled_seed):
+            status = "recent_activity"
+        elif t.num_complete <= args.min_seeders:
+            status = "few_seeders"
+        elif t.time_active <= (86400 * args.min_days_seeding):
+            status = "insufficient_seed_time"
+        else:
+            status = "ready"
+        filtered_torrents.setdefault(status, []).append(t)
+    return filtered_torrents
 
 
 def torrents_stop():
-    parser = argparse.ArgumentParser()
-    arggroups.qBittorrent(parser)
-
-    parser.add_argument("--process-prefix", default="/path/to/to_process", help="Directory to move processed files")
-    parser.add_argument("--min_seeders", type=int, default=3, help="Minimum number of seeders")
-    parser.add_argument("--min_age_days", type=int, default=180, help="Minimum age in days")
-    parser.add_argument("--min_active_seeding_days", type=int, default=30, help="Minimum active seeding time in days")
-    parser.add_argument(
-        "--min_size_bytes", type=int, default=5 * 1024 * 1024, help="Minimum size in bytes (5 MiB by default)"
-    )
-    args = parser.parse_args()
+    args = parse_args()
 
     qbt_client = start_qBittorrent(args)
 
     torrents = qbt_client.torrents_info()
+    torrents = sorted(torrents, key=lambda t: -t.added_on)
+
+    states = ["queuedUP", "forcedUP", "stalledUP", "uploading"]
+    seeding = [t for t in torrents if t.state in states]
+
+    seeding_results = filter_seeding(args, seeding)
+    printing.table(
+        [
+            {
+                "seeding_status": status.replace("_", " ").title(),
+                "count": len(torrents),
+            }
+            for status, torrents in seeding_results.items()
+        ]
+    )
+    print()
+
+    torrents = seeding_results.get("ready")
+    if not torrents:
+        return
+    torrent_hashes = [t.hash for t in torrents]
+
+    if not (args.no_confirm or devices.confirm("Continue?")):
+        return
+
+    qbt_client.torrents_stop(torrent_hashes=torrent_hashes)
+
+    if args.mark_deleted:
+        qbt_client.torrents_add_tags(tags="xklb-delete", torrent_hashes=torrent_hashes)
+    elif args.delete_files:
+        qbt_client.torrents_delete(delete_files=True, torrent_hashes=torrent_hashes)
+        return  # nothing else can be done
 
     for torrent in torrents:
-        if torrent.num_complete <= args.min_seeders:
-            continue
+        if args.move and os.path.exists(torrent.content_path):
+            new_path = Path(args.move)
+            if not new_path.is_absolute():
+                new_path = Path(path_utils.mountpoint(torrent.content_path)) / new_path
 
-        added_on = datetime.fromtimestamp(torrent.added_on)
-        if (datetime.now() - added_on).days < args.min_age_days:
-            continue
+            if args.tracker_dirnames:
+                tracker = torrent.tracker
+                if not tracker:
+                    tracker = iterables.safe_unpack(
+                        tr.url for tr in qbt_client.torrents_trackers(torrent.hash) if tr.url.startswith("http")
+                    )
+                if tracker:
+                    domain = path_utils.domain_from_url(tracker)
+                    new_path /= domain
 
-        if torrent.seeding_time < args.min_active_seeding_days * 24 * 60 * 60:  # Convert days to seconds
-            continue
+            new_path.mkdir(parents=True, exist_ok=True)
+            log.info("Moving %s to %s", torrent.content_path, new_path)
+            shutil.move(torrent.content_path, new_path)
 
-        if torrent.size < args.min_size_bytes:
-            continue
-
-        qbt_client.torrents_pause(torrent_hashes=torrent.hash)
-        qbt_client.torrents_add_tags(tags="processing", torrent_hashes=torrent.hash)
-
-        # Move files to to_process directory
-        save_path = torrent.save_path
-        torrent_name = torrent.name
-        new_path = os.path.join(args.to_process_dir, torrent_name)
-
-        if os.path.exists(save_path):
-            os.makedirs(args.to_process_dir, exist_ok=True)
-            os.rename(save_path, new_path)
-
-        # Start the shrink process (assuming a function or command to start shrink)
-        # Example: start_shrink_process(new_path)
-        print(f"Moved and started shrink process for {torrent_name}")
+        if args.delete_rows:
+            qbt_client.torrents_delete(delete_files=False, torrent_hashes=torrent.hash)

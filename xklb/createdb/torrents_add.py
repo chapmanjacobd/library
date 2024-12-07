@@ -1,6 +1,5 @@
 import concurrent.futures, os, statistics
 from pathlib import Path
-from urllib.parse import urlparse
 
 from torrentool.api import Torrent
 
@@ -8,6 +7,7 @@ from xklb import usage
 from xklb.mediadb import db_playlists
 from xklb.utils import arg_utils, arggroups, argparse_utils, consts, db_utils, iterables, nums, objects, printing
 from xklb.utils.log_utils import log
+from xklb.utils.path_utils import domain_from_url
 
 
 def parse_args():
@@ -29,8 +29,7 @@ def get_tracker(torrent: Torrent):
     log.debug(torrent.announce_urls)
 
     for tracker in iterables.flatten(torrent.announce_urls):
-        url = urlparse(tracker)
-        domain = ".".join(url.netloc.rsplit(":")[0].rsplit(".", 2)[-2:]).lower()
+        domain = domain_from_url(tracker)
         return domain
 
     return torrent.source

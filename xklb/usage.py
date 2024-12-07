@@ -1888,7 +1888,7 @@ pdf_edit = """library pdf-edit PATH ...
         library pdfedit -b 105 -c 120 -C 80 -s 110 scan001.pdf
 """
 
-computers_add = """library computer-add DATABASE HOSTNAME ...
+computers_add = """library computers-add DATABASE HOSTNAME ...
 
     Create a SQLite database of SSH-able computers and their disks (nodes are playlists, node disks are media)
 
@@ -1896,7 +1896,7 @@ computers_add = """library computer-add DATABASE HOSTNAME ...
         library computer-add remote.db jp.tensile-fortress.ts.net hk kr mx uk ca
 """
 
-computers_update = """library computer-update DATABASE PATH ...
+computers_update = """library computers-update DATABASE PATH ...
 
     Update computer stats
 """
@@ -1906,6 +1906,66 @@ torrents_add = """library torrents-add DATABASE PATH ...
     Create a SQLite database of torrent file data (torrents are playlists, referenced files are media)
 
         library torrents-add torrents.db ~/.local/data/qbittorrent/queue/
+"""
+
+
+torrents_start = """library torrents-start [--prefix /mnt/d/] PATH ...
+
+    Start torrent files in qBittorrent-nox
+"""
+
+torrents_info = """library torrents-info
+
+    Print stats
+
+        library torrents-info
+
+    Search for specific torrent
+
+        library torrents-info query
+
+    Search for specific file
+
+        library torrents-info query -v --file-search query2
+
+    When --mark-deleted is provided, the torrents are tagged with 'delete' in qBittorrent
+    When --delete-rows is provided, the metadata is removed from qBittorrent
+    When --delete-files is provided, the downloaded files are deleted
+"""
+
+
+torrents_stop = """library torrents-stop
+
+    Stop torrents in qBittorrent-nox with the following defaults:
+      - >180 days active seeding
+      - >90 days since last peer
+      - >3 current seeders
+      - >5MiB size
+
+    These defaults can be overridden like so:
+
+        library torrents-stop --min-seeders 3 --min-days-stalled-seed 10 --min-days-seeding 14
+
+    When --mark-deleted is provided, the torrents are tagged with 'delete' in qBittorrent
+    When --delete-rows is provided, the metadata is removed from qBittorrent
+    When --delete-files is provided, the downloaded files are deleted
+"""
+
+torrents_stop_incomplete = """library torrents-stop-incomplete
+
+    Stop torrents in qBittorrent-nox with the following defaults:
+      - >90 days since last seen complete (or never)
+      - >60 days active downloading
+      - >30 days since last peer (or never)
+
+    These defaults can be overridden like so:
+
+        library torrents-stop --min-days-downloading 7
+
+    When --mark-deleted is provided, the torrents are tagged with 'delete' in qBittorrent
+    When --delete-rows is provided, the metadata is removed from qBittorrent
+    When --delete-files is provided, all downloaded files are deleted.
+    By default, salvage is provided to files which have more than 73%% progress.
 """
 
 allocate_torrents = """library allocate-torrents

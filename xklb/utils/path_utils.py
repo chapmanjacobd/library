@@ -1,6 +1,7 @@
 import os.path
 from collections import Counter, OrderedDict
 from pathlib import Path
+from urllib.parse import urlparse
 
 from xklb.utils import consts, iterables, strings
 
@@ -207,3 +208,23 @@ def folder_utime(folder_path, times: tuple[int, int] | tuple[float, float]):
     for file_path in folder.rglob("*"):
         if file_path.is_file():
             os.utime(file_path, times)
+
+
+def domain_from_url(tracker):
+    url = urlparse(tracker)
+    domain = ".".join(url.netloc.rsplit(":")[0].rsplit(".", 2)[-2:]).lower()
+    return domain
+
+
+def mountpoint(path):
+    path = os.path.abspath(path)
+
+    path_dev = os.stat(path).st_dev
+    while path != os.path.dirname(path):
+        parent = os.path.dirname(path)  # go up
+
+        if os.stat(parent).st_dev != path_dev:
+            return path
+        path = parent
+
+    raise RuntimeError("Could not find drive / mountpoint")

@@ -2,6 +2,7 @@ import functools, html, json, math, operator, re, sys, textwrap
 from copy import deepcopy
 from datetime import datetime, timedelta
 from datetime import timezone as tz
+from fnmatch import fnmatch
 from itertools import zip_longest
 
 import humanize
@@ -374,3 +375,22 @@ def timezone(s):
             file=sys.stderr,
         )
         raise SystemExit(3)
+
+
+def glob_match(search_terms, texts):
+    if isinstance(search_terms, str):
+        search_terms = [search_terms]
+    if isinstance(texts, str):
+        texts = [texts]
+
+    search_pattern = "*" + "*".join(s.casefold() for s in search_terms) + "*"
+
+    for text in texts:
+        if not text:
+            continue
+
+        text = str(text).casefold()
+        if fnmatch(text, search_pattern):
+            return True
+
+    return False
