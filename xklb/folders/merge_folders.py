@@ -206,7 +206,3 @@ def merge_folders() -> None:
 
     for source in args.sources:
         path_utils.bfs_removedirs(source)
-
-
-if __name__ == "__main__":
-    merge_folders()

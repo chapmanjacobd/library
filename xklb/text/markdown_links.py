@@ -47,7 +47,3 @@ def markdown_links():
     finally:
         if args.selenium:
             web.quit_selenium(args)
-
-
-if __name__ == "__main__":
-    markdown_links()

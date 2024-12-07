@@ -187,7 +187,3 @@ Type "*" to select all files in the most recently printed table
 
         if devices.confirm(f"Mark as deleted in {args.database}?"):  # type: ignore
             mark_media_deleted_like(args, list(selected_paths))
-
-
-if __name__ == "__main__":
-    move_list()

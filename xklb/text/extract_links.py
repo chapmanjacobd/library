@@ -215,7 +215,3 @@ def extract_links() -> None:
     finally:
         if args.selenium:
             web.quit_selenium(args)
-
-
-if __name__ == "__main__":
-    extract_links()

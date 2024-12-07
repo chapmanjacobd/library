@@ -84,7 +84,3 @@ def search_db() -> None:
             args.filter_bindings,
         ):
             print(json.dumps(row))
-
-
-if __name__ == "__main__":
-    search_db()

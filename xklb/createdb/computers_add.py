@@ -1,8 +1,6 @@
 import concurrent.futures, json, os
 from pathlib import Path
 
-import paramiko
-
 from xklb import usage
 from xklb.mediadb import db_playlists
 from xklb.utils import arggroups, argparse_utils, consts, db_utils, objects, remote_processes
@@ -22,6 +20,8 @@ def parse_args(action, usage):
 
 
 def gather_system_info(hostname):
+    import paramiko
+
     with paramiko.SSHClient() as ssh:
         ssh.load_system_host_keys()
         ssh.set_missing_host_key_policy(paramiko.WarningPolicy())

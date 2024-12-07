@@ -101,7 +101,3 @@ def dedupe_db() -> None:
                 args.db.conn.executescript("\n".join([gen_update_sql(row) for row in data]))
 
     dedupe_rows(args, args.target_table, primary_keys=args.primary_keys, business_keys=args.business_keys)
-
-
-if __name__ == "__main__":
-    dedupe_db()

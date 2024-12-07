@@ -2,7 +2,6 @@ import getpass, os, sqlite3
 
 import humanize
 import pandas as pd
-import paramiko
 
 from xklb import usage
 from xklb.tablefiles import mcda
@@ -58,6 +57,8 @@ def gen_torrent_matches(torrents, available_space):
 
 def allocate_torrents():
     args = parse_args()
+
+    import paramiko
 
     computer_db = db_utils.connect(args, conn=sqlite3.connect(args.computer_database))
 

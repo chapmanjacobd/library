@@ -106,7 +106,3 @@ def tables_add():
     web.requests_session(args)  # configure session
     for path in args.paths:
         table_add(args, path)
-
-
-if __name__ == "__main__":
-    tables_add()

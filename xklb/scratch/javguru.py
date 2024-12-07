@@ -1,4 +1,4 @@
-import sys, time
+import sys, time, warnings
 from pathlib import Path
 from urllib.parse import urljoin
 
@@ -7,6 +7,13 @@ from xklb.utils import arggroups, argparse_utils, file_utils, path_utils, proces
 
 
 def jav_guru() -> None:
+    warnings.warn(
+        "This subcommand will likely be removed in future versions--"
+        "Unless enough people complain or a generous benefactor appears",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
     parser = argparse_utils.ArgumentParser()
     arggroups.selenium(parser)
     arggroups.download(parser)

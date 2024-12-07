@@ -48,7 +48,3 @@ def history() -> None:
         db_history.remove(args, paths=[d["path"] for d in tbl])
     args.delete_rows = False
     media_printer.media_printer(args, tbl)
-
-
-if __name__ == "__main__":
-    history()

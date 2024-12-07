@@ -49,7 +49,3 @@ def substack():
     args = parse_args()
     for path in args.paths:
         save_page(args, path)
-
-
-if __name__ == "__main__":
-    substack()

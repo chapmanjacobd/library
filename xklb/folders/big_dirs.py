@@ -211,7 +211,3 @@ def big_dirs() -> None:
         media = media[-int(args.limit) :]
     media = iterables.list_dict_filter_bool(media, keep_0=False)
     media_printer.media_printer(args, media, units="folders")
-
-
-if __name__ == "__main__":
-    big_dirs()

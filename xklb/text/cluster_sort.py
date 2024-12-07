@@ -422,7 +422,3 @@ def cluster_sort() -> None:
                 output_fd.writelines(lines)
         else:
             printing.pipe_lines(lines)
-
-
-if __name__ == "__main__":
-    cluster_sort()

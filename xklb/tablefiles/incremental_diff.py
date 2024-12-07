@@ -132,7 +132,3 @@ def incremental_diff():
     args = parse_args()
     web.requests_session(args)  # configure session
     process_chunks(args)
-
-
-if __name__ == "__main__":
-    incremental_diff()

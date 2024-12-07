@@ -42,7 +42,3 @@ def media_to_files(args):
 def export_text():
     args = parse_args()
     media_to_files(args)
-
-
-if __name__ == "__main__":
-    export_text()

@@ -129,7 +129,3 @@ def process_image():
         except Exception:
             print(path)
             raise
-
-
-if __name__ == "__main__":
-    process_image()

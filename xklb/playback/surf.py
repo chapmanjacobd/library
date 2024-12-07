@@ -1,4 +1,4 @@
-import argparse, logging, sys
+import argparse, logging, sys, warnings
 from time import sleep
 
 from xklb import usage
@@ -8,6 +8,13 @@ from xklb.utils.log_utils import log
 
 
 def parse_args() -> argparse.Namespace:
+    warnings.warn(
+        "This subcommand will likely be removed in future versions--"
+        "Unless enough people complain or a generous benefactor appears",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
     parser = argparse_utils.ArgumentParser(usage=usage.surf)
     parser.add_argument("--count", "-n", default=2, type=int)
     parser.add_argument("--target-hosts", "--target", default=None, help="Target hosts IP:Port")

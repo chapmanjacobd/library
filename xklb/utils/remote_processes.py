@@ -2,14 +2,12 @@ import os, select, shlex, socketserver, subprocess, threading
 from contextlib import suppress
 from pathlib import Path
 
-import paramiko
-
 from xklb.utils import consts, remote_processes
 from xklb.utils.log_utils import log
 
 
 def cmd(
-    ssh: paramiko.SSHClient,
+    ssh,  # paramiko.SSHClient
     *command,
     local_files=None,
     cleanup_local_files=True,

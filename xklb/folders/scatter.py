@@ -307,7 +307,3 @@ def scatter() -> None:
             f"""### Move {len(dest_disk_files)} files to {disk_stat['mount']}: ###
 rsync -aE --xattrs --info=progress2 --remove-source-files --files-from={temp_file} / {disk_stat['mount']}""",
         )
-
-
-if __name__ == "__main__":
-    scatter()

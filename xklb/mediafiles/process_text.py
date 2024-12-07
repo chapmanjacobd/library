@@ -252,7 +252,3 @@ def process_text():
         except Exception:
             print(path)
             raise
-
-
-if __name__ == "__main__":
-    process_text()

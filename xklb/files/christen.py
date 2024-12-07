@@ -78,7 +78,3 @@ def christen() -> None:
             rename_path(args, base, p)
 
         path_utils.bfs_removedirs(base)
-
-
-if __name__ == "__main__":
-    christen()

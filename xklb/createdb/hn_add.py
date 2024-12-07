@@ -156,7 +156,3 @@ def hacker_news_add() -> None:
         db_thread.join()
 
         log.info("Imported %s rows", gap["diff"])
-
-
-if __name__ == "__main__":
-    hacker_news_add()
