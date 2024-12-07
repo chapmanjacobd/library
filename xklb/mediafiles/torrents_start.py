@@ -6,6 +6,7 @@ from time import sleep
 import qbittorrentapi
 from torrentool.api import Bencode, Torrent
 
+from xklb import usage
 from xklb.createdb.torrents_add import get_tracker
 from xklb.utils import arggroups, argparse_utils, processes
 from xklb.utils.file_utils import trash
@@ -13,7 +14,7 @@ from xklb.utils.log_utils import log
 
 
 def parse_args():
-    parser = argparse_utils.ArgumentParser()
+    parser = argparse_utils.ArgumentParser(usage=usage.torrents_start)
     arggroups.qBittorrent(parser)
     arggroups.capability_delete(parser)
     arggroups.debug(parser)

@@ -1984,7 +1984,7 @@ def qBittorrent(parent_parser):
     )
     parser.add_argument("--up-limit", "--upload-limit", type=nums.human_to_bytes, help="Upload limit")
 
-    parser.add_argument("--download-drive", help="Download drive")
+    parser.add_argument("--download-drive", "--prefix", default=str(Path.cwd()), help="Download drive")
     parser.add_argument("--download-prefix", default="seeding", help="Download root")
     parser.add_argument("--temp-drive", help="Temporary download drive")
     parser.add_argument("--temp-prefix", default="downloading", help="Temporary download root")

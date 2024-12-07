@@ -75,7 +75,8 @@ progs = {
         "images_to_pdf": "Convert folders of images into image PDFs",
         "pdf_edit": "Apply brightness, contrast, saturation, and sharpness adjustments to PDFs",
         "torrents_start": "Start torrents (qBittorrent-nox)",
-        "torrents_stop": "Stop torrents (qBittorrent-nox)",
+        "torrents_stop": "Stop seeding torrents (qBittorrent-nox)",
+        "torrents_stop_incomplete": "Stop downloading torrents (qBittorrent-nox)",
     },
     "Multi-database subcommands": {
         "merge_dbs": "Merge SQLite databases",
@@ -108,6 +109,7 @@ progs = {
         "tabs_open": "Open your tabs for the day",
         "links_open": "Open links from link dbs",
         "surf": "Auto-load browser tabs in a streaming way (stdin)",
+        "torrents_info": "List torrents (qBittorrent-nox)",
     },
     "Database enrichment subcommands": {
         "dedupe_db": "Dedupe SQLite tables",
@@ -227,6 +229,7 @@ modules = {
     "xklb.mediafiles.pdf_edit.pdf_edit": [],
     "xklb.mediafiles.torrents_start.torrents_start": ["torrent-start"],
     "xklb.mediafiles.torrents_stop.torrents_stop": ["torrent-stop"],
+    "xklb.mediafiles.torrents_stop_incomplete.torrents_stop_incomplete": ["torrent-stop-incomplete"],
     "xklb.misc.dedupe_czkawka.czkawka_dedupe": ["dedupe-czkawka"],
     "xklb.misc.export_text.export_text": [],
     "xklb.multidb.copy_play_counts.copy_play_counts": [],
@@ -242,10 +245,11 @@ modules = {
     "xklb.playback.playback_control.playback_next": ["next"],
     "xklb.playback.playback_control.playback_now": ["now"],
     "xklb.playback.playback_control.playback_pause": ["pause", "play"],
-    "xklb.playback.playback_control.playback_stop": ["stop"],
     "xklb.playback.playback_control.playback_seek": ["ffwd", "rewind", "seek"],  # TODO: make rewind negative...
+    "xklb.playback.playback_control.playback_stop": ["stop"],
     "xklb.playback.surf.streaming_tab_loader": ["surf"],
     "xklb.playback.tabs_open.tabs_open": ["tb", "tabs", "open_tabs"],
+    "xklb.playback.torrents_info.torrents_info": ["torrent-info", "torrents", "torrent"],
     "xklb.tablefiles.eda.eda": ["preview"],
     "xklb.tablefiles.incremental_diff.incremental_diff": [],
     "xklb.tablefiles.columns.columns": [],
@@ -277,7 +281,20 @@ def create_subcommands_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers()
 
     # this needs to stay inside the function to prevent side-effects during testing
-    known_subcommands = ["fs", "media", "open", "table", "tables", "tabs", "du", "search", "links", "images"]
+    known_subcommands = [
+        "fs",
+        "media",
+        "open",
+        "table",
+        "tables",
+        "tabs",
+        "du",
+        "search",
+        "links",
+        "images",
+        "torrents",
+        "torrent",
+    ]
 
     def consecutive_prefixes(s):
         prefixes = [s[:j] for j in range(5, len(s)) if s[:j] and s[:j] not in known_subcommands]
@@ -325,7 +342,12 @@ parser = create_subcommands_parser()
 
 def library(args=None) -> None:
     if args:
-        sys.argv = ["lb", *args]
+        original_argv = sys.argv
+        try:
+            sys.argv = ["lb", *args]
+            return library()
+        finally:
+            sys.argv = original_argv
 
     parser.exit_on_error = False  # type: ignore
     try:
