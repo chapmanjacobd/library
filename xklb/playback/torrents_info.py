@@ -34,14 +34,25 @@ def torrents_info():
             processes.no_media_found()
 
         torrents = sorted(torrents, key=lambda t: -t.time_active)
-        printing.extended_view(torrents)
-        if args.verbose >= consts.LOG_INFO:
-            for torrent in torrents:
-                files = torrent.files
-                if args.file_search:
-                    files = [f for f in torrent.files if strings.glob_match(args.file_search, [f.name])]
+        for torrent in torrents:
+            printing.extended_view(torrent)
 
+            files = torrent.files
+            if args.file_search:
+                files = [f for f in torrent.files if strings.glob_match(args.file_search, [f.name])]
+
+            if args.verbose >= consts.LOG_INFO:
                 printing.extended_view(files)
+
+            if len(torrent.files) == 1:
+                print("1 file")
+            elif args.file_search:
+                print(len(files), "files of", len(torrent.files), "matched")
+            else:
+                print(len(torrent.files), "total files")
+            print()
+
+        print(len(torrents), "matched torrents")
 
         torrent_hashes = [t.hash for t in torrents]
         if args.mark_deleted:
@@ -93,8 +104,9 @@ def torrents_info():
                     for t in torrents
                 ]
             )
-    printing.table(tbl)
-    print()
+    if tbl:
+        printing.table(tbl)
+        print()
 
     tbl = []
     for state in interesting_states:
@@ -120,8 +132,9 @@ def torrents_info():
                     for t in torrents
                 ]
             )
-    printing.table(tbl)
-    print()
+    if tbl:
+        printing.table(tbl)
+        print()
 
     categories = []
     for state, torrents in torrents_by_state.items():
