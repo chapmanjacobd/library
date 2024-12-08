@@ -15,7 +15,7 @@ def parse_args():
     parser.add_argument("--description", action=argparse.BooleanOptionalAction, default=False)
     parser.add_argument("--tags", action=argparse.BooleanOptionalAction, default=False)
 
-    parser.add_argument("--categories", "--category", type=int, nargs='+')
+    parser.add_argument("--categories", "--category", type=int, nargs="+")
     parser.add_argument("--books", action=argparse.BooleanOptionalAction, default=False)
     parser.add_argument("--audiobooks", action=argparse.BooleanOptionalAction, default=False)
     parser.add_argument("--comics", action=argparse.BooleanOptionalAction, default=False)

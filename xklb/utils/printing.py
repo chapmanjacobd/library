@@ -50,7 +50,8 @@ def extended_view(iterable):
         for key, value in item.items():
             formatted_key = f"{key.ljust(max_key_length)} |"
             print(formatted_key, value)
-        print()
+        if print_index:
+            print()
 
 
 def pipe_print(*args) -> None:
