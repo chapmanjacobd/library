@@ -79,6 +79,8 @@ def torrents_add():
     try:
         pl_columns = db_utils.columns(args, "playlists")
 
+        known_hashes = {d["info_hash"] for d in args.db.query("select info_hash from playlists")}
+
         existing_set = {
             d["path"]
             for d in args.db.query(
@@ -114,6 +116,15 @@ def torrents_add():
                 if args.verbose >= consts.LOG_DEBUG:
                     raise
             else:
+                if torrent_info["info_hash"] in known_hashes and not args.force:
+                    log.info(
+                        "[%s]: Skipping known info_hash %s. Use --force to override",
+                        torrent_info["path"],
+                        torrent_info["info_hash"],
+                    )
+                    continue
+                known_hashes.add(torrent_info["info_hash"])
+
                 percent = (idx + 1) / num_paths * 100
                 eta = printing.eta(idx + 1, num_paths, start_time=start_time) if num_paths > 2 else ""
                 printing.print_overwrite(

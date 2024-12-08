@@ -61,7 +61,7 @@ def start_qBittorrent(args):
 
     if shutil.which("qbittorrent-nox"):
         username = getpass.getuser()
-        processes.cmd("sudo", "systemctl", "start", f"qbittorrent-nox@{username}.service")
+        processes.cmd("sudo", "systemctl", "enable", "--now", f"qbittorrent-nox@{username}.service")
     else:
         processes.cmd("setsid", "-f", "qbittorrent")
 

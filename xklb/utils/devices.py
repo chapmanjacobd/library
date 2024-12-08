@@ -1,4 +1,4 @@
-import os, random, shlex, shutil, sys, time, webbrowser
+import os, random, shlex, shutil, subprocess, sys, time, webbrowser
 
 from xklb.files import sample_compare
 from xklb.utils import arggroups, consts, file_utils, path_utils, processes, strings
@@ -460,3 +460,12 @@ def browse(browser, urls):
 
         if len(urls) >= consts.MANY_LINKS:
             time.sleep(1.5)
+
+
+def cb(data=None):
+    if data is None:
+        result = subprocess.run(["cb"], stdout=subprocess.PIPE)
+        return result.stdout.decode("utf-8")
+    else:
+        process = subprocess.Popen(["cb"], stdin=subprocess.PIPE)
+        process.communicate(input=data.encode("utf-8"))
