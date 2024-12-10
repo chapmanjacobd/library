@@ -47,7 +47,7 @@ def torrents_stop():
 
     qbt_client = start_qBittorrent(args)
 
-    torrents = qbt_client.torrents_info()
+    torrents = qbt_client.torrents_info(tag="xklb")
     torrents = sorted(torrents, key=lambda t: -t.added_on)
 
     states = ["queuedUP", "forcedUP", "stalledUP", "uploading"]
