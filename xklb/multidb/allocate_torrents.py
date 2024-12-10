@@ -8,6 +8,7 @@ from xklb.tablefiles import mcda
 from xklb.utils import (
     arggroups,
     argparse_utils,
+    consts,
     db_utils,
     devices,
     iterables,
@@ -19,7 +20,6 @@ from xklb.utils import (
     strings,
 )
 from xklb.utils.file_utils import trash
-from xklb.utils.log_utils import log
 
 
 def parse_args():
@@ -82,17 +82,15 @@ def allocate_torrents():
             },
         )
     )
-    log.info(
-        "%s disks matched. %s available space",
-        len(disks),
-        strings.file_size(sum(d["free"] - args.min_free_space for d in disks)),
-    )
+    total_available = sum(d["free"] - args.min_free_space for d in disks)
+    print(f"{len(disks)} disks matched. {strings.file_size(total_available)} available space")
 
     args.filter_sql.append("and size < :download_size")
     args.filter_bindings["download_size"] = disks[-1]["free"] - args.min_free_space
 
     torrents = list(args.db.query(*sqlgroups.playlists_fs_sql(args, limit=None)))
-    log.info("%s torrents. %s total space", len(torrents), strings.file_size(sum(d["size"] for d in torrents)))
+    total_size = sum(d["size"] for d in torrents)
+    print(f"{len(torrents)} undownloaded torrents. {strings.file_size(total_size)} total space")
     iterables.count_category(torrents, "tracker")
 
     if not torrents:
@@ -113,23 +111,24 @@ def allocate_torrents():
     # but better to chunk one drive at a time because temp download _moving_ can occur
     # at the same time as nvme save_path saving. maybe 2x buffer could work
 
-    for d in disks:
-        print(d["host"], d["mountpoint"])
-        printing.table(
-            [
-                {
-                    "title": t["title"],
-                    "time_uploaded": strings.relative_datetime(t["time_uploaded"]),
-                    "time_created": strings.relative_datetime(t["time_created"]),
-                    "size": strings.file_size(t["size"]),
-                    "file_count": t["file_count"],
-                    "comment": t["comment"],
-                    "tracker": t["tracker"],
-                }
-                for t in d["downloads"]
-            ]
-        )
-        print()
+    if args.verbose >= consts.LOG_INFO:
+        for d in disks:
+            print(d["host"], d["mountpoint"])
+            printing.table(
+                [
+                    {
+                        "title": t["title"],
+                        "time_uploaded": strings.relative_datetime(t["time_uploaded"]),
+                        "time_created": strings.relative_datetime(t["time_created"]),
+                        "size": strings.file_size(t["size"]),
+                        "file_count": t["file_count"],
+                        "comment": t["comment"],
+                        "tracker": t["tracker"],
+                    }
+                    for t in d["downloads"]
+                ]
+            )
+            print()
 
     printing.table(
         [
@@ -147,6 +146,9 @@ def allocate_torrents():
         ]
     )
     print()
+
+    total_size = sum(d["size"] for d in torrents)
+    print(f"{len(torrents)} torrents allocated ({strings.file_size(total_size)})")
 
     if not args.print and (args.no_confirm or devices.confirm("Allocate and start downloads?")):
         for d in disks:
@@ -177,4 +179,4 @@ def allocate_torrents():
 
             if args.delete_torrent:
                 for path in torrent_files:
-                    trash(args, path)
+                    trash(args, path, detach=False)
