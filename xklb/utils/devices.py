@@ -193,6 +193,18 @@ def clobber(args, source, destination) -> tuple[str | None, str]:
                         if sample_compare.sample_cmp(source, destination, ignore_holes=True):
                             source = None
                             break
+                    case arggroups.FileOverFileOptional.SKIP_SIZE:
+                        if src_size == dst_size:
+                            source = None
+                            break
+                    case arggroups.FileOverFileOptional.SKIP_LARGER:
+                        if src_size > dst_size:
+                            source = None
+                            break
+                    case arggroups.FileOverFileOptional.SKIP_SMALLER:
+                        if src_size < dst_size:
+                            source = None
+                            break
                     case arggroups.FileOverFile.SKIP:
                         source = None
                     case arggroups.FileOverFile.DELETE_DEST:
@@ -326,6 +338,12 @@ def clobber_new_file(args, destination) -> str:
                     case arggroups.FileOverFileOptional.DELETE_SRC_SMALLER:
                         pass
                     case arggroups.FileOverFileOptional.SKIP_HASH:
+                        pass
+                    case arggroups.FileOverFileOptional.SKIP_SIZE:
+                        pass
+                    case arggroups.FileOverFileOptional.SKIP_LARGER:
+                        pass
+                    case arggroups.FileOverFileOptional.SKIP_SMALLER:
                         pass
 
                     case arggroups.FileOverFile.DELETE_DEST:

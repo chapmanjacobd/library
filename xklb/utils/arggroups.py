@@ -1185,6 +1185,9 @@ def related(parser):
 
 class FileOverFileOptional:
     SKIP_HASH = "skip-hash"
+    SKIP_SIZE = "skip-size"
+    SKIP_LARGER = "skip-larger"
+    SKIP_SMALLER = "skip-smaller"
     DELETE_DEST_HASH = "delete-dest-hash"
     DELETE_DEST_SIZE = "delete-dest-size"
     DELETE_DEST_LARGER = "delete-dest-larger"
@@ -1258,7 +1261,6 @@ file1.zip (existing file)
 file1.zip (incoming file)
 
 Choose ZERO OR MORE of the following options:
-  skip-hash            will skip the incoming file if the SHA-256 hash matches
   delete-dest-hash     will delete the existing file if the SHA-256 hash matches
   delete-dest-size     will delete the existing file if the file size matches
   delete-dest-larger   will delete the existing file if it is larger
@@ -1269,6 +1271,11 @@ Choose ZERO OR MORE of the following options:
   delete-src-size      will delete the incoming file if the file size matches
   delete-src-larger    will delete the incoming file if it is larger
   delete-src-smaller   will delete the incoming file if it is smaller
+  Useful for `lb cp`:
+  skip-hash            will skip the incoming file if the SHA-256 hash matches
+  skip-size            will skip the incoming file if the size matches
+  skip-larger          will skip the incoming file if it is larger
+  skip-smaller         will skip the incoming file if it is smaller
 
 Choose ONE of the following required fallback options:
   skip             will skip the incoming file
