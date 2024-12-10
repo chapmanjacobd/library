@@ -20,6 +20,7 @@ from xklb.utils import (
     strings,
 )
 from xklb.utils.file_utils import trash
+from xklb.utils.log_utils import log
 
 
 def parse_args():
@@ -33,6 +34,14 @@ def parse_args():
     parser.add_argument("--max-io-rate", type=nums.human_to_bytes, default="100MiB", help="Skip disks that are busy")
 
     arggroups.qBittorrent(parser)
+    parser.add_argument(
+        "--dl-limit",
+        "--download-limit",
+        type=str,
+        help="Download limit. If set then a few additional global preferences will also be changed",
+    )
+    parser.add_argument("--up-limit", "--ul-limit", "--upload-limit", type=str, help="Upload limit")
+
     arggroups.debug(parser)
 
     parser.add_argument("computer_database")
@@ -179,4 +188,5 @@ def allocate_torrents():
 
             if args.delete_torrent:
                 for path in torrent_files:
+                    log.debug("Trashed %s", path)
                     trash(args, path, detach=False)

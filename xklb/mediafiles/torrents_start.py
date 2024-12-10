@@ -5,7 +5,7 @@ from time import sleep
 
 from xklb import usage
 from xklb.createdb.torrents_add import get_tracker
-from xklb.utils import arggroups, argparse_utils, processes
+from xklb.utils import arggroups, argparse_utils, nums, processes
 from xklb.utils.file_utils import trash
 from xklb.utils.log_utils import log
 
@@ -13,6 +13,14 @@ from xklb.utils.log_utils import log
 def parse_args():
     parser = argparse_utils.ArgumentParser(usage=usage.torrents_start)
     arggroups.qBittorrent(parser)
+    parser.add_argument(
+        "--dl-limit",
+        "--download-limit",
+        type=nums.human_to_bytes,
+        help="Download limit. If set then a few additional global preferences will also be changed",
+    )
+    parser.add_argument("--up-limit", "--ul-limit", "--upload-limit", type=nums.human_to_bytes, help="Upload limit")
+
     arggroups.capability_delete(parser)
     arggroups.debug(parser)
 
