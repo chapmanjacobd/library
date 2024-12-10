@@ -99,7 +99,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v3.0.031; 99 subcommands)
+    library (v3.0.032; 99 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -2141,6 +2141,7 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
     usage: library torrents-stop
 
     Stop torrents in qBittorrent-nox with the following defaults:
+      - tagged 'xklb'
       - >180 days active seeding
       - >90 days since last peer
       - >3 current seeders
@@ -2150,7 +2151,7 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
         library torrents-stop --min-seeders 3 --min-days-stalled-seed 10 --min-days-seeding 14
 
-    When --mark-deleted is provided, the torrents are tagged with 'delete' in qBittorrent
+    When --mark-deleted is provided, the torrents are tagged with 'xklb-delete' in qBittorrent
     When --delete-rows is provided, the metadata is removed from qBittorrent
     When --delete-files is provided, the downloaded files are deleted
 
@@ -2165,6 +2166,7 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
     usage: library torrents-stop-incomplete
 
     Stop torrents in qBittorrent-nox with the following defaults:
+      - tagged 'xklb'
       - >90 days since last seen complete (or never)
       - >60 days active downloading
       - >30 days since last peer (or never)
@@ -2173,7 +2175,7 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
         library torrents-stop --min-days-downloading 7
 
-    When --mark-deleted is provided, the torrents are tagged with 'delete' in qBittorrent
+    When --mark-deleted is provided, the torrents are tagged with 'xklb-delete' in qBittorrent
     When --delete-rows is provided, the metadata is removed from qBittorrent
     When --delete-files is provided, all downloaded files are deleted.
     By default, salvage is provided to files which have more than 73% progress.

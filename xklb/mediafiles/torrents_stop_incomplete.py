@@ -45,7 +45,7 @@ def torrents_stop_incomplete():
 
     qbt_client = start_qBittorrent(args)
 
-    torrents = qbt_client.torrents_info()
+    torrents = qbt_client.torrents_info(tag="xklb")
     torrents = sorted(torrents, key=lambda t: -t.added_on)
 
     states = ["queuedDL", "forcedDL", "stalledDL", "downloading", "forcedMetaDL", "metaDL"]

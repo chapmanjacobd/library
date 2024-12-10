@@ -10,7 +10,11 @@ from xklb.utils.path_utils import domain_from_url
 
 def parse_args():
     parser = argparse_utils.ArgumentParser(usage=usage.torrents_add)
-
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Add metadata for paths even if the info_hash already exists in the media table",
+    )
     arggroups.debug(parser)
 
     arggroups.database(parser)
