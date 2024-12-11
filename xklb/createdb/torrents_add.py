@@ -4,6 +4,7 @@ from pathlib import Path
 from xklb import usage
 from xklb.mediadb import db_playlists
 from xklb.utils import arg_utils, arggroups, argparse_utils, consts, db_utils, iterables, nums, objects, printing
+from xklb.utils.file_utils import trash
 from xklb.utils.log_utils import log
 from xklb.utils.path_utils import domain_from_url
 
@@ -79,6 +80,8 @@ def extract_metadata(path):
 def torrents_add():
     args = parse_args()
 
+    duplicates = {}
+
     scanned_set = set(arg_utils.gen_paths(args, default_exts=(".torrent",)))
 
     try:
@@ -122,11 +125,14 @@ def torrents_add():
                     raise
             else:
                 if torrent_info["info_hash"] in known_hashes and not args.force:
-                    log.info(
-                        "[%s]: Skipping known info_hash %s. Use --force to override",
-                        torrent_info["path"],
-                        torrent_info["info_hash"],
-                    )
+                    if args.delete_files:
+                        trash(args, torrent_info["path"])
+                    else:
+                        log.info(
+                            "[%s]: Skipping known info_hash %s. Use --force to override",
+                            torrent_info["path"],
+                            torrent_info["info_hash"],
+                        )
                     continue
                 known_hashes.add(torrent_info["info_hash"])
 

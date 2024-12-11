@@ -244,7 +244,9 @@ def media_printer(args, data, units=None, media_len=None) -> None:
             for line in virtual_csv.readlines():
                 printing.pipe_print(line.strip())
 
-    elif "j" in print_args or consts.MOBILE_TERMINAL:
+    elif consts.MOBILE_TERMINAL:
+        printing.extended_view(media)
+    elif "j" in print_args:
         print(json.dumps(media, indent=3))
     elif "c" in print_args:
         printing.write_csv_to_stdout(media)
