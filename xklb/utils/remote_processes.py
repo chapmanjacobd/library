@@ -55,6 +55,10 @@ def cmd(
     _stdin, stdout, stderr = ssh.exec_command(command, **kwargs)
     returncode = stdout.channel.recv_exit_status()
 
+    host = getattr(ssh, "host", None)
+    if host:
+        command = " ".join(["ssh", host, command])
+
     r = subprocess.CompletedProcess(command, returncode, stdout.read().decode(), stderr.read().decode())
 
     if cleanup_local_files and local_files:

@@ -37,7 +37,9 @@ def wait_torrent_loaded(qbt_client, torrent):
     v1_info_hash = hashlib.sha1(Bencode.encode(torrent._struct.get("info"))).hexdigest()
     v2_info_hash = hashlib.sha256(Bencode.encode(torrent._struct.get("info"))).hexdigest()
 
-    attempts = 120
+    # TODO: sometimes torrentool and qBittorrent come up with different info_hashes...
+
+    attempts = 10
     attempt = 0
     while attempt < attempts:
         with suppress(qbittorrentapi.NotFound404Error):
@@ -109,6 +111,7 @@ def torrents_start():
         qbt_client.app_set_preferences(
             {
                 "preallocate_all": True,
+                "add_stopped_enabled": False,
                 "dl_limit": args.dl_limit,
                 "up_limit": args.up_limit,
                 "max_active_downloads": 1,
@@ -117,8 +120,8 @@ def torrents_start():
                 "max_active_checking_torrents": 3,
                 "slow_torrent_inactive_timer": 80,
                 # divide by 10 but also some bps -> kbps BS
-                "slow_torrent_dl_rate_threshold": (args.dl_limit) // 10000,  # type: ignore
-                "slow_torrent_ul_rate_threshold": (args.up_limit or args.dl_limit) // 10000,  # type: ignore
+                "slow_torrent_dl_rate_threshold": (args.dl_limit) // 10_000,  # type: ignore
+                "slow_torrent_ul_rate_threshold": (args.up_limit or args.dl_limit) // 10_000,  # type: ignore
             }
         )
 
@@ -150,7 +153,8 @@ def torrents_start():
         )
 
         info_hash = wait_torrent_loaded(qbt_client, torrent)
-        qbt_client.torrents_start(info_hash)
+        if info_hash:
+            qbt_client.torrents_start(info_hash)
 
         if args.delete_torrent:
             trash(args, path)

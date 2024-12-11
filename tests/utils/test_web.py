@@ -4,7 +4,8 @@ import pytest
 from bs4 import BeautifulSoup
 
 from tests.utils import p
-from xklb.utils.web import WebPath, extract_nearby_text, safe_unquote, url_encode, url_to_local_path
+from xklb.utils.path_utils import safe_unquote
+from xklb.utils.web import WebPath, extract_nearby_text, url_encode, url_to_local_path
 
 
 def test_url_to_local_path():

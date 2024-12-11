@@ -3,16 +3,16 @@ from contextlib import suppress
 from email.message import Message
 from pathlib import Path
 from shutil import which
-from urllib.parse import parse_qs, parse_qsl, quote, unquote, urlencode, urljoin, urlparse, urlunparse
+from urllib.parse import parse_qs, parse_qsl, quote, urlencode, urljoin, urlparse, urlunparse
 from zoneinfo import ZoneInfo
 
 import bs4, requests
-from idna import decode as puny_decode
 from idna import encode as puny_encode
 
 from xklb.data.http_errors import HTTPTooManyRequests, raise_for_status
 from xklb.utils import consts, db_utils, iterables, nums, path_utils, pd_utils, processes, strings
 from xklb.utils.log_utils import clamp_index, log
+from xklb.utils.path_utils import path_tuple_from_url
 
 session = None
 
@@ -334,59 +334,6 @@ def post_download(args):
     if sleep_interval > 0:
         log.debug("[download] Sleeping %s seconds ...", sleep_interval)
         time.sleep(sleep_interval)
-
-
-def safe_unquote(url):
-    # https://en.wikipedia.org/wiki/Internationalized_Resource_Identifier
-    # we aren't writing HTML so we can unquote
-
-    try:
-        parsed_url = urlparse(url)
-    except UnicodeDecodeError:
-        return url
-
-    def selective_unquote(component, restricted_chars):
-        try:
-            unquoted = unquote(component, errors="strict")
-        except UnicodeDecodeError:
-            return component
-        # re-quote restricted chars
-        return "".join(quote(char, safe="") if char in restricted_chars else char for char in unquoted)
-
-    def unquote_query_params(query):
-        query_pairs = parse_qsl(query, keep_blank_values=True)
-        return "&".join(
-            selective_unquote(key, "=&#") + "=" + selective_unquote(value, "=&#") for key, value in query_pairs
-        )
-
-    unquoted_path = selective_unquote(parsed_url.path, ";?#")
-    unquoted_params = selective_unquote(parsed_url.params, "?#")
-    unquoted_query = unquote_query_params(parsed_url.query)
-    unquoted_fragment = selective_unquote(parsed_url.fragment, "")
-
-    new_url = urlunparse(
-        (parsed_url.scheme, parsed_url.netloc, unquoted_path, unquoted_params, unquoted_query, unquoted_fragment)
-    )
-
-    return new_url
-
-
-def url_decode(href):
-    href = safe_unquote(href)
-    up = urlparse(href)
-    if up.netloc:
-        with suppress(Exception):
-            href = href.replace(up.netloc, puny_decode(up.netloc), 1)
-    return href
-
-
-def path_tuple_from_url(url):
-    url = url_decode(url)
-    parsed_url = urlparse(url)
-    relative_path = os.path.join(parsed_url.netloc, parsed_url.path.lstrip("/"))
-    parent_path = os.path.dirname(relative_path)
-    filename = path_utils.basename(parsed_url.path)
-    return parent_path, filename
 
 
 def filename_from_content_disposition(response):

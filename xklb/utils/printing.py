@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 import humanize
 from tabulate import tabulate
 
-from xklb.utils import consts, web
+from xklb.utils import consts, path_utils
 from xklb.utils.strings import duration, file_size, relative_datetime
 
 
@@ -150,7 +150,7 @@ def seconds_to_hhmmss(seconds):
 
 def unquote_url(val: str) -> str:
     if val.startswith("http"):
-        val = web.safe_unquote(val)
+        val = path_utils.safe_unquote(val)
     return val
 
 

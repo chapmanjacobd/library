@@ -1,7 +1,18 @@
 import json
 
 from xklb import usage
-from xklb.utils import arg_utils, arggroups, argparse_utils, consts, devices, iterables, printing, strings, web
+from xklb.utils import (
+    arg_utils,
+    arggroups,
+    argparse_utils,
+    consts,
+    devices,
+    iterables,
+    path_utils,
+    printing,
+    strings,
+    web,
+)
 from xklb.utils.log_utils import log
 
 
@@ -182,7 +193,7 @@ def print_or_download(args, d):
             log.error("[%s]: %s", url, e)
     else:
         if not args.no_url_decode:
-            url = web.url_decode(url).strip()
+            url = path_utils.url_decode(url).strip()
         if args.verbose >= consts.LOG_DEBUG:
             printing.pipe_print(json.dumps(d, ensure_ascii=False))
         else:
