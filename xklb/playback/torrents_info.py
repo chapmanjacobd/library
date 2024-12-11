@@ -185,6 +185,14 @@ def torrents_info():
                 "file_count": sum(len(t.files) for t in torrents) if args.verbose >= 1 else None,  # a bit slow
             }
         )
+
+    categories = sorted(
+        categories,
+        key=lambda d: (
+            d["state"].endswith(("downloading", "DL")),
+            iterables.safe_index(interesting_states, d["state"]),
+        ),
+    )
     printing.table(iterables.list_dict_filter_bool(categories))
     print()
 
