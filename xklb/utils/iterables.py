@@ -55,6 +55,15 @@ def safe_len(list_) -> Any | None:
         return len(str(list_))
 
 
+def safe_index(list_, value) -> int:
+    if not list_:
+        return 0
+    try:
+        return list_.index(value)
+    except ValueError:
+        return -1
+
+
 def get_all_lists(nested_dict):
     list_ = []
 

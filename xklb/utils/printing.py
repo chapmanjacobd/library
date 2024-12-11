@@ -1,4 +1,4 @@
-import csv, itertools, math, sys, textwrap, time
+import csv, itertools, math, sys, textwrap, time, json
 from collections.abc import Callable
 from datetime import datetime, timezone
 
@@ -21,8 +21,16 @@ def print_overwrite(*text, **kwargs):
 
 
 def table(tbl, **kwargs) -> None:
+    table_text = tabulate(tbl, tablefmt=consts.TABULATE_STYLE,             headers="keys", showindex=False, **kwargs)
+    if not table_text:
+        return
+
+    longest_line = max(len(s) for s in table_text.splitlines())
     try:
-        print(tabulate(tbl, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False, **kwargs))
+        if longest_line > consts.TERMINAL_SIZE.columns:
+            extended_view(tbl)
+        else:
+            print(table_text)
     except BrokenPipeError:
         sys.stdout = None
         sys.exit(141)
