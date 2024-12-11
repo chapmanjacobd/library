@@ -69,6 +69,7 @@ def extract_metadata(path):
             {
                 "path": f.name,
                 "size": f.length,
+                "time_deleted": 0,
             }
             for f in torrent.files
         ],

@@ -2,6 +2,7 @@
 from xklb import usage
 from xklb.mediafiles import torrents_start
 from xklb.utils import arggroups, argparse_utils, consts, iterables, printing, processes, strings
+from xklb.utils.path_utils import domain_from_url
 
 
 def parse_args():
@@ -66,6 +67,15 @@ def torrents_info():
     torrents_by_state = {}
     for torrent in all_torrents:
         torrents_by_state.setdefault(torrent.state, []).append(torrent)
+
+    torrents_by_tracker = {}
+    for torrent in all_torrents:
+        tracker = torrent.tracker
+        if not tracker:
+            tracker = iterables.safe_unpack(
+                tr.url for tr in qbt_client.torrents_trackers(torrent.hash) if tr.url.startswith("http")
+            )
+        torrents_by_tracker.setdefault(domain_from_url(tracker), []).append(torrent)
 
     interesting_states = [
         "stoppedUP",
@@ -134,6 +144,33 @@ def torrents_info():
             )
     if tbl:
         printing.table(tbl)
+        print()
+
+    trackers = []
+    for tracker, torrents in torrents_by_tracker.items():
+        torrents = [t for t in torrents if args.verbose >= 1 or t.state not in ("stoppedDL",)]
+        remaining = sum(t.amount_left for t in torrents)
+        if remaining or args.verbose >= 1:
+            trackers.append(
+                {
+                    "tracker": tracker,
+                    "count": len(torrents),
+                    "size": sum(t.total_size for t in torrents),
+                    "remaining": remaining,
+                    "file_count": sum(len(t.files) for t in torrents) if args.verbose >= 1 else None,  # a bit slow
+                }
+            )
+    if trackers:
+        trackers = sorted(trackers, key=lambda d: (d["remaining"], d["size"]))
+        trackers = [
+            {
+                **d,
+                "size": strings.file_size(d["size"]),
+                "remaining": strings.file_size(d["remaining"]) if d["remaining"] else None,
+            }
+            for d in trackers
+        ]
+        printing.table(iterables.list_dict_filter_bool(trackers))
         print()
 
     categories = []

@@ -1,7 +1,10 @@
 import os.path
 from collections import Counter, OrderedDict
+from contextlib import suppress
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import parse_qsl, quote, unquote, urlparse, urlunparse
+
+from idna import decode as puny_decode
 
 from xklb.utils import consts, iterables, strings
 
@@ -228,3 +231,56 @@ def mountpoint(path):
         path = parent
 
     raise RuntimeError("Could not find drive / mountpoint")
+
+
+def safe_unquote(url):
+    # https://en.wikipedia.org/wiki/Internationalized_Resource_Identifier
+    # we aren't writing HTML so we can unquote
+
+    try:
+        parsed_url = urlparse(url)
+    except UnicodeDecodeError:
+        return url
+
+    def selective_unquote(component, restricted_chars):
+        try:
+            unquoted = unquote(component, errors="strict")
+        except UnicodeDecodeError:
+            return component
+        # re-quote restricted chars
+        return "".join(quote(char, safe="") if char in restricted_chars else char for char in unquoted)
+
+    def unquote_query_params(query):
+        query_pairs = parse_qsl(query, keep_blank_values=True)
+        return "&".join(
+            selective_unquote(key, "=&#") + "=" + selective_unquote(value, "=&#") for key, value in query_pairs
+        )
+
+    unquoted_path = selective_unquote(parsed_url.path, ";?#")
+    unquoted_params = selective_unquote(parsed_url.params, "?#")
+    unquoted_query = unquote_query_params(parsed_url.query)
+    unquoted_fragment = selective_unquote(parsed_url.fragment, "")
+
+    new_url = urlunparse(
+        (parsed_url.scheme, parsed_url.netloc, unquoted_path, unquoted_params, unquoted_query, unquoted_fragment)
+    )
+
+    return new_url
+
+
+def url_decode(href):
+    href = safe_unquote(href)
+    up = urlparse(href)
+    if up.netloc:
+        with suppress(Exception):
+            href = href.replace(up.netloc, puny_decode(up.netloc), 1)
+    return href
+
+
+def path_tuple_from_url(url):
+    url = url_decode(url)
+    parsed_url = urlparse(url)
+    relative_path = os.path.join(parsed_url.netloc, parsed_url.path.lstrip("/"))
+    parent_path = os.path.dirname(relative_path)
+    filename = basename(parsed_url.path)
+    return parent_path, filename

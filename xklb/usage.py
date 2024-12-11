@@ -1906,6 +1906,13 @@ torrents_add = """library torrents-add DATABASE PATH ...
     Create a SQLite database of torrent file data (torrents are playlists, referenced files are media)
 
         library torrents-add torrents.db ~/.local/data/qbittorrent/queue/
+
+    View total size of undownloaded torrents
+
+        library playlists torrents.db -pa
+        path                      deleted_count      size    playlists_count    media_count
+        ----------------------  ---------------  --------  -----------------  -------------
+        Aggregate of playlists                0  87.7 TiB                530         272681
 """
 
 
