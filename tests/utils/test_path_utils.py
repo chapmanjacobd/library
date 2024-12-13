@@ -1,7 +1,7 @@
 from unittest import mock
 
-from tests import utils
 from library.utils import path_utils
+from tests import utils
 
 
 def test_clean_path():

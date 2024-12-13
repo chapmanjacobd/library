@@ -5,8 +5,6 @@ from unittest import mock
 
 import pytest
 
-from tests import utils
-from tests.utils import connect_db_args, v_db
 from library.__main__ import library as lb
 from library.createdb.fs_add import fs_add
 from library.mediadb import db_history, db_media
@@ -14,6 +12,8 @@ from library.playback.media_player import MediaPrefetcher
 from library.utils import consts
 from library.utils.log_utils import log
 from library.utils.objects import NoneSpace
+from tests import utils
+from tests.utils import connect_db_args, v_db
 
 
 @pytest.fixture

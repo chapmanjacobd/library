@@ -1,8 +1,8 @@
 import pytest
 
-from tests.conftest import generate_file_tree_dict
 from library.__main__ import library as lb
 from library.utils import arggroups, devices, objects
+from tests.conftest import generate_file_tree_dict
 
 
 @pytest.mark.parametrize("file_over_file", objects.class_enum(arggroups.FileOverFile))

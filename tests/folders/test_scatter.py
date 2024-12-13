@@ -1,5 +1,5 @@
-from tests import utils
 from library.folders import scatter
+from tests import utils
 
 
 def test_rebin_folders():

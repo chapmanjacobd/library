@@ -8,7 +8,17 @@ from library import usage
 from library.createdb.fs_add_metadata import extract_image_metadata_chunk, extract_metadata
 from library.createdb.subtitle import clean_up_temp_dirs
 from library.mediadb import db_media, db_playlists, playlists
-from library.utils import arg_utils, arggroups, argparse_utils, consts, db_utils, file_utils, iterables, objects, printing
+from library.utils import (
+    arg_utils,
+    arggroups,
+    argparse_utils,
+    consts,
+    db_utils,
+    file_utils,
+    iterables,
+    objects,
+    printing,
+)
 from library.utils.consts import SC, DBType
 from library.utils.log_utils import log
 

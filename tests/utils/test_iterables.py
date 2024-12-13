@@ -1,5 +1,5 @@
-from tests.utils import take5
 from library.utils import iterables
+from tests.utils import take5
 
 
 def test_flatten():

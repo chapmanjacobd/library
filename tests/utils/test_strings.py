@@ -2,8 +2,8 @@ import os, unittest
 
 import pytest
 
-from tests.utils import take5
 from library.utils import strings
+from tests.utils import take5
 
 
 def test_combine():

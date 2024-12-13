@@ -1,9 +1,9 @@
 import unittest
 
-from tests import utils
-from tests.utils import v_db
 from library.__main__ import library as lb
 from library.utils import printing
+from tests import utils
+from tests.utils import v_db
 
 
 def test_tw_print(capsys):

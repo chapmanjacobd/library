@@ -1,7 +1,7 @@
 from unittest import mock
 
-from tests.utils import links_db
 from library.__main__ import library as lb
+from tests.utils import links_db
 
 
 @mock.patch("library.playback.links_open.make_souffle")

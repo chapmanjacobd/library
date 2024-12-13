@@ -1,6 +1,6 @@
+from library.__main__ import library as lb
 from tests.playback import test_tabs_open
 from tests.utils import connect_db_args
-from library.__main__ import library as lb
 
 
 def test_tabs_add(temp_db):

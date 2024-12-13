@@ -6,11 +6,11 @@ from unittest import mock
 
 import pytest
 
-from tests.playback.test_play_history import history_flags
-from tests.utils import connect_db_args, v_db
 from library.__main__ import library as lb
 from library.mediadb import db_history
 from library.utils import arggroups
+from tests.playback.test_play_history import history_flags
+from tests.utils import connect_db_args, v_db
 
 fs_flags = [
     ("--modified-within '1 second'", 0, ""),

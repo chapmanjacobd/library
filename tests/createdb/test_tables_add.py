@@ -1,5 +1,5 @@
-from tests.utils import connect_db_args
 from library.__main__ import library as lb
+from tests.utils import connect_db_args
 
 simple = '{"A": 1, "B": 3, "C": 5}\n{"A": 2, "B": 4, "C": 6}'
 

@@ -2,10 +2,10 @@ import os
 
 import pytest
 
-from tests.utils import connect_db_args
 from library.__main__ import library as lb
 from library.createdb.tube_add import tube_add
 from library.utils import consts
+from tests.utils import connect_db_args
 
 URL = "https://www.youtube.com/watch?v=BaW_jenozKc"
 STORAGE_PREFIX = "tests/data/"

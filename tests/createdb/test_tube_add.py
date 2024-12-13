@@ -3,9 +3,9 @@ from unittest import mock
 
 import pytest
 
-from tests.utils import tube_db
 from library.__main__ import library as lb
 from library.utils import consts
+from tests.utils import tube_db
 
 if consts.VOLKSWAGEN:
     pytest.skip(reason="This helps protect our community", allow_module_level=True)
