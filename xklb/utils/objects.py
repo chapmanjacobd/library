@@ -1,8 +1,7 @@
-import itertools, json, types
+import difflib, itertools, json, types
 from contextlib import contextmanager
 from functools import wraps
 
-import difflib
 
 class NoneSpace(types.SimpleNamespace):
     def __getattr__(self, name):
@@ -252,15 +251,8 @@ def replace_keys_in_dict(d, replacements):
 
 
 def dict_filter_similar_key(input_dict, input_string, threshold=0.7):
-    similar_keys = {
-        key: difflib.SequenceMatcher(None, input_string.lower(), key.lower()).ratio()
-        for key in input_dict
-    }
+    similar_keys = {key: difflib.SequenceMatcher(None, input_string.lower(), key.lower()).ratio() for key in input_dict}
 
-    filtered_dict = {
-        key: value
-        for key, value in input_dict.items()
-        if similar_keys[key] >= threshold
-    }
+    filtered_dict = {key: value for key, value in input_dict.items() if similar_keys[key] >= threshold}
 
     return filtered_dict
