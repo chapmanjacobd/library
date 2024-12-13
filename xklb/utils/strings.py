@@ -1,3 +1,4 @@
+from ast import literal_eval
 import functools, html, json, math, operator, re, sys, textwrap
 from copy import deepcopy
 from datetime import datetime, timedelta
@@ -278,6 +279,16 @@ def safe_percent(v) -> str | None:
         return f"{v:.2%}"
     except Exception:
         return None
+
+
+def load_string(s):
+    try:
+        return json.loads(s)
+    except Exception:
+        try:
+            return literal_eval(s)
+        except Exception:
+            return s
 
 
 def format_two_columns(text1, text2, width1=25, width2=75, left_gutter=2, middle_gutter=2, right_gutter=3):

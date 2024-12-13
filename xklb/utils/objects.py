@@ -2,6 +2,7 @@ import itertools, json, types
 from contextlib import contextmanager
 from functools import wraps
 
+import difflib
 
 class NoneSpace(types.SimpleNamespace):
     def __getattr__(self, name):
@@ -203,6 +204,20 @@ def merge_dict_values_str(dict1, dict2):
     return merged_dict
 
 
+def upsert(list_of_dicts, primary_keys):
+    merged_dict = {}
+
+    for d in list_of_dicts:
+        key = tuple(d[pk] for pk in primary_keys)
+
+        if key in merged_dict:
+            merged_dict[key].update(d)
+        else:
+            merged_dict[key] = d.copy()
+
+    return list(merged_dict.values())
+
+
 class Reverser:
     def __init__(self, obj):
         self.obj = obj
@@ -234,3 +249,18 @@ def replace_keys_in_dict(d, replacements):
     for k, v in replacements.items():
         d = replace_key_in_dict(d, k, v)
     return d
+
+
+def dict_filter_similar_key(input_dict, input_string, threshold=0.7):
+    similar_keys = {
+        key: difflib.SequenceMatcher(None, input_string.lower(), key.lower()).ratio()
+        for key in input_dict
+    }
+
+    filtered_dict = {
+        key: value
+        for key, value in input_dict.items()
+        if similar_keys[key] >= threshold
+    }
+
+    return filtered_dict

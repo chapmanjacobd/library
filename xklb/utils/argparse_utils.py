@@ -3,7 +3,7 @@ from ast import literal_eval
 
 from xklb.utils import nums
 from xklb.utils.iterables import flatten
-from xklb.utils.strings import format_two_columns
+from xklb.utils.strings import format_two_columns, load_string
 
 STDIN_DASH = ["-"]
 
@@ -56,7 +56,7 @@ class ArgparseDict(argparse.Action):
                 k, v = s.split("=", 1)
                 v_strip = v.strip()
                 if any(sym in v for sym in (" [", " {")):
-                    d[k] = literal_eval(v)
+                    d[k] = load_string(v)
                 elif v_strip in ("True", "False"):
                     d[k] = bool(v_strip)
                 elif v_strip.isnumeric():
