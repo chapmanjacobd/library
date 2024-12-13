@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from tests.utils import v_db
-from xklb.__main__ import library as lb
+from library.__main__ import library as lb
 
 
 def test_stats(capsys):

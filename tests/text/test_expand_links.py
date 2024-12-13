@@ -2,7 +2,7 @@ import shlex
 
 import pytest
 
-from xklb.__main__ import library as lb
+from library.__main__ import library as lb
 
 
 @pytest.mark.parametrize(

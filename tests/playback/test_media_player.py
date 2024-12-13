@@ -7,13 +7,13 @@ import pytest
 
 from tests import utils
 from tests.utils import connect_db_args, v_db
-from xklb.__main__ import library as lb
-from xklb.createdb.fs_add import fs_add
-from xklb.mediadb import db_history, db_media
-from xklb.playback.media_player import MediaPrefetcher
-from xklb.utils import consts
-from xklb.utils.log_utils import log
-from xklb.utils.objects import NoneSpace
+from library.__main__ import library as lb
+from library.createdb.fs_add import fs_add
+from library.mediadb import db_history, db_media
+from library.playback.media_player import MediaPrefetcher
+from library.utils import consts
+from library.utils.log_utils import log
+from library.utils.objects import NoneSpace
 
 
 @pytest.fixture
@@ -107,7 +107,7 @@ def test_wt_print(capsys):
 
 
 class TestFs(unittest.TestCase):
-    @mock.patch("xklb.playback.media_player.single_player", return_value=SimpleNamespace(returncode=0))
+    @mock.patch("library.playback.media_player.single_player", return_value=SimpleNamespace(returncode=0))
     def test_lb_fs(self, play_mocked):
         for SC in ("watch", "wt"):
             lb([SC, v_db, "-w", "path like '%test.mp4'"])
@@ -128,19 +128,19 @@ class TestFs(unittest.TestCase):
         out = play_mocked.call_args[0][1]
         assert "test" in out["path"]
 
-    @mock.patch("xklb.playback.media_player.single_player", return_value=SimpleNamespace(returncode=0))
+    @mock.patch("library.playback.media_player.single_player", return_value=SimpleNamespace(returncode=0))
     def test_wt_sort(self, play_mocked):
         lb(["wt", v_db, "-u", "duration"])
         out = play_mocked.call_args[0][1]
         assert out is not None
 
-    @mock.patch("xklb.playback.media_player.single_player", return_value=SimpleNamespace(returncode=0))
+    @mock.patch("library.playback.media_player.single_player", return_value=SimpleNamespace(returncode=0))
     def test_wt_size(self, play_mocked):
         lb(["wt", v_db, "--size", "-1"])  # less than 1MB
         out = play_mocked.call_args[0][1]
         assert out is not None
 
-    @mock.patch("xklb.playback.media_player.single_player", return_value=SimpleNamespace(returncode=0))
+    @mock.patch("library.playback.media_player.single_player", return_value=SimpleNamespace(returncode=0))
     def test_undelete(self, _play_mocked):
         temp_dir = tempfile.TemporaryDirectory()
 

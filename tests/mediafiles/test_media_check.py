@@ -1,7 +1,7 @@
 from unittest import skip
 
-from xklb.mediafiles import media_check
-from xklb.utils import nums
+from library.mediafiles import media_check
+from library.utils import nums
 
 
 def test_decode_full_scan():

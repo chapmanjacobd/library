@@ -4,8 +4,8 @@ from pathlib import Path
 import pytest
 
 from tests.conftest import generate_file_tree_dict
-from xklb.__main__ import library as lb
-from xklb.utils import arggroups, consts, devices, objects, path_utils
+from library.__main__ import library as lb
+from library.utils import arggroups, consts, devices, objects, path_utils
 
 
 @pytest.mark.parametrize("file_over_file", objects.class_enum(arggroups.FileOverFile))

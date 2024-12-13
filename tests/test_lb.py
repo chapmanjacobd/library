@@ -4,9 +4,9 @@ from pathlib import Path
 import pytest
 
 from tests.utils import p
-from xklb.__main__ import library as lb
-from xklb.__main__ import modules, progs
-from xklb.utils import iterables
+from library.__main__ import library as lb
+from library.__main__ import modules, progs
+from library.utils import iterables
 
 subcommands = list(iterables.flatten((v.keys() for _, v in progs.items())))
 unique_modules = list(set(s.rsplit(".", 1)[0] for s in modules.keys()))  # chop off function names
@@ -34,7 +34,7 @@ def test_usage(capsys, subcommand):
 
 
 def get_test_name(s):
-    path = s.replace("xklb.", "tests.", 1).replace(".", os.sep)
+    path = s.replace("library.", "tests.", 1).replace(".", os.sep)
     parent, name = os.path.split(path)
     path = os.path.join(parent, "test_" + name + ".py")
     return path

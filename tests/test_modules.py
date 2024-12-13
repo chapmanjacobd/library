@@ -40,7 +40,7 @@ def find_missing_modules(paths):
 
 
 def test_modules():
-    missing = find_missing_modules(Path("xklb").rglob("*.py"))
+    missing = find_missing_modules(Path("library").rglob("*.py"))
 
     if missing:
         print("Missing modules:")

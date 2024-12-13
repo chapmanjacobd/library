@@ -1,8 +1,8 @@
 import json
 
 from tests.utils import v_db
-from xklb.__main__ import library as lb
-from xklb.utils import consts
+from library.__main__ import library as lb
+from library.utils import consts
 
 platform = "linux"
 if consts.IS_WINDOWS:

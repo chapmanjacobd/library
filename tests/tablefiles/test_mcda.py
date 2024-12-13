@@ -1,9 +1,9 @@
 import pytest
 
-from xklb.__main__ import library as lb
-from xklb.tablefiles import mcda
-from xklb.utils.objects import NoneSpace
-from xklb.utils.sql_utils import sort_like_sql
+from library.__main__ import library as lb
+from library.tablefiles import mcda
+from library.utils.objects import NoneSpace
+from library.utils.sql_utils import sort_like_sql
 
 data = [
     {"name": "item 1", "duration": 30, "count": 5},

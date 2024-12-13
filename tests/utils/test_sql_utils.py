@@ -1,6 +1,6 @@
 import unittest
 
-from xklb.utils import sql_utils
+from library.utils import sql_utils
 
 
 class TestStringComparison(unittest.TestCase):

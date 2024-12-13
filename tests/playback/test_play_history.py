@@ -6,7 +6,7 @@ from unittest import mock
 import pytest
 
 from tests.utils import v_db
-from xklb.__main__ import library as lb
+from library.__main__ import library as lb
 
 history_db = "tests/data/history.db"
 shutil.copy(v_db, history_db)
@@ -31,7 +31,7 @@ history_flags = [
 ]
 
 
-@mock.patch("xklb.playback.media_player.play_list", return_value=SimpleNamespace(returncode=0))
+@mock.patch("library.playback.media_player.play_list", return_value=SimpleNamespace(returncode=0))
 @pytest.mark.parametrize(("flags", "count", "first"), history_flags)
 def test_history_flags(play_mocked, flags, count, first):
     if count == 0:

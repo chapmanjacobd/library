@@ -1,6 +1,6 @@
 import pandas as pd
 
-from xklb.utils import pd_utils
+from library.utils import pd_utils
 
 
 def test_no_duplicates():

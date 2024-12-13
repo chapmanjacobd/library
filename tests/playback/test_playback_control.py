@@ -1,6 +1,6 @@
 import pytest
 
-from xklb.playback.playback_control import from_duration_to_duration_str
+from library.playback.playback_control import from_duration_to_duration_str
 
 
 @pytest.mark.parametrize(

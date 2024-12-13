@@ -1,4 +1,4 @@
-from xklb.__main__ import library as lb
+from library.__main__ import library as lb
 
 
 def test_lb_rs_stdin(mock_stdin, assert_unchanged, capsys):

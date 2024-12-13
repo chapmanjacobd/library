@@ -4,10 +4,10 @@ import pandas, pytest  # noqa: pandas needs to be imported before freezegun beca
 from freezegun import freeze_time
 
 from tests.utils import connect_db_args
-from xklb.__main__ import library as lb
-from xklb.mediadb import db_history
-from xklb.playback import tabs_open
-from xklb.utils import consts
+from library.__main__ import library as lb
+from library.mediadb import db_history
+from library.playback import tabs_open
+from library.utils import consts
 
 TEST_URL = "https://unli.xyz/proliferation/verbs.html"
 
@@ -31,7 +31,7 @@ def test_frequency_filter():
     assert tabs_open.frequency_filter([("monthly", 250)], [monthly_row] * 8) == [monthly_row] * 8
 
 
-@mock.patch("xklb.playback.tabs_open.play")
+@mock.patch("library.playback.tabs_open.play")
 def test_simple(play_mocked, temp_db):
     db1 = temp_db()
     with freeze_time("1970-01-01 00:00:01") as clock:
@@ -57,7 +57,7 @@ def test_simple(play_mocked, temp_db):
         assert out["time_valid"] == 1209300
 
 
-@mock.patch("xklb.playback.tabs_open.play")
+@mock.patch("library.playback.tabs_open.play")
 def test_immediate(play_mocked, temp_db):
     db1 = temp_db()
     with freeze_time("1970-02-01 00:00:00") as clock:

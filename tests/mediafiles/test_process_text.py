@@ -3,8 +3,8 @@ from shutil import which
 
 import pytest
 
-from xklb.__main__ import library as lb
-from xklb.utils import nums, path_utils
+from library.__main__ import library as lb
+from library.utils import nums, path_utils
 
 
 @pytest.mark.skipif(not which("calibre"), reason="requires calibre")

@@ -1,9 +1,9 @@
 from pathlib import Path
 from unittest import skip
 
-from xklb.createdb import gallery_backend
-from xklb.utils.db_utils import connect
-from xklb.utils.objects import NoneSpace
+from library.createdb import gallery_backend
+from library.utils.db_utils import connect
+from library.utils.objects import NoneSpace
 
 
 def create_args(test_name):

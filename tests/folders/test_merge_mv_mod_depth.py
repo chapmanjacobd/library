@@ -1,8 +1,8 @@
 import pytest
 
 from tests.conftest import generate_file_tree_dict
-from xklb.__main__ import library as lb
-from xklb.utils import arggroups, devices, objects
+from library.__main__ import library as lb
+from library.utils import arggroups, devices, objects
 
 
 @pytest.mark.parametrize("file_over_file", objects.class_enum(arggroups.FileOverFile))

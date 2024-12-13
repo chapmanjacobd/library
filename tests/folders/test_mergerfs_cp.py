@@ -4,8 +4,8 @@ from pathlib import Path
 import pytest
 
 from tests.conftest import generate_file_tree_dict
-from xklb.__main__ import library as lb
-from xklb.utils import consts, objects, path_utils
+from library.__main__ import library as lb
+from library.utils import consts, objects, path_utils
 
 simple_file_tree = {
     "folder1": {"file1.txt": "1", "file4.txt": {"file2.txt": "2"}},
@@ -18,7 +18,7 @@ pytestmark = pytest.mark.skipif(not consts.IS_LINUX, reason="Skip Windows / Mac"
 
 @pytest.fixture(autouse=True)
 def _mock_get_mergerfs_mounts(monkeypatch):
-    from xklb.folders import mergerfs_cp
+    from library.folders import mergerfs_cp
 
     temp_dir = tempfile.gettempdir()
     monkeypatch.setattr(mergerfs_cp, "get_mergerfs_mounts", lambda: [temp_dir])

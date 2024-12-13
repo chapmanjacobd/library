@@ -1,9 +1,9 @@
 from datetime import datetime, timezone
 from pathlib import Path
 
-from xklb.__main__ import library as lb
-from xklb.utils import argparse_utils, consts, db_utils
-from xklb.utils.objects import NoneSpace
+from library.__main__ import library as lb
+from library.utils import argparse_utils, consts, db_utils
+from library.utils.objects import NoneSpace
 
 
 def take5():

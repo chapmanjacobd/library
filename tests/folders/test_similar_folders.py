@@ -1,6 +1,6 @@
-from xklb.files import similar_files
-from xklb.folders import similar_folders
-from xklb.utils.objects import NoneSpace
+from library.files import similar_files
+from library.folders import similar_folders
+from library.utils.objects import NoneSpace
 
 args = NoneSpace(
     sizes_delta=5,

@@ -3,7 +3,7 @@ import argparse
 import pytest
 
 from tests.utils import connect_db_args
-from xklb.__main__ import library as lb
+from library.__main__ import library as lb
 
 NO_CHANGE = [
     {

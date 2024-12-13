@@ -3,8 +3,8 @@ from unittest import skip
 
 import pytest
 
-from xklb.createdb import tube_backend
-from xklb.utils.consts import DLStatus
+from library.createdb import tube_backend
+from library.utils.consts import DLStatus
 
 mock_webpath = "https://test/"
 

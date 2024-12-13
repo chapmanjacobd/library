@@ -1,4 +1,4 @@
-from xklb.utils import objects
+from library.utils import objects
 
 
 def test_dict_filter_bool():
