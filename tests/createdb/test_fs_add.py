@@ -1,9 +1,9 @@
 from unittest import mock
 
-from xklb.__main__ import library as lb
+from library.__main__ import library as lb
 
 
-@mock.patch("xklb.playback.media_printer.media_printer")
+@mock.patch("library.playback.media_printer.media_printer")
 def test_fsupdate_parentpath_first(mocked, temp_db):
     db1 = temp_db()
     lb(["fsadd", db1, "tests/"])
@@ -15,7 +15,7 @@ def test_fsupdate_parentpath_first(mocked, temp_db):
     assert out[0]["path"].endswith("tests")
 
 
-@mock.patch("xklb.playback.media_printer.media_printer")
+@mock.patch("library.playback.media_printer.media_printer")
 def test_fsupdate_subpath_first(mocked, temp_db):
     db1 = temp_db()
     lb(["fsadd", db1, "tests/data/"])
@@ -27,11 +27,11 @@ def test_fsupdate_subpath_first(mocked, temp_db):
     assert out[0]["path"].endswith("tests")
 
 
-@mock.patch("xklb.playback.media_printer.media_printer")
+@mock.patch("library.playback.media_printer.media_printer")
 def test_fsupdate_multi(mocked, temp_db):
     db1 = temp_db()
     lb(["fsadd", "--fs", db1, "tests/data/", "tests/conftest.py"])
-    lb(["fsadd", "--fs", db1, "xklb/assets/"])
+    lb(["fsadd", "--fs", db1, "library/assets/"])
 
     lb(["playlists", db1])
     out = mocked.call_args[0][1]

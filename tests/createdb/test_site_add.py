@@ -1,6 +1,6 @@
 import pytest
 
-from xklb.createdb.site_add import html_to_dict, nosql_to_sql
+from library.createdb.site_add import html_to_dict, nosql_to_sql
 
 
 @pytest.mark.parametrize(

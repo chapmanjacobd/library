@@ -12,10 +12,10 @@ Install dependencies with choco
 choco install mpv ffmpeg python fd
 ```
 
-Then install xklb and enjoy!
+Then install library and enjoy!
 
 ```fish
-pip install xklb
+pip install library
 lb
 ```
 
@@ -30,7 +30,7 @@ local media subcommands:
   watch [wt]                         Watch local media
 ```
 
-Optional: xklb[deluxe] deps: `choco install exiftool rust`
+Optional: library[deluxe] deps: `choco install exiftool rust`
 
 <details>
   <summary><h3>Alternative environment: msys2</h3></summary>
@@ -55,7 +55,7 @@ Optional: xklb[deluxe] deps: `choco install exiftool rust`
     pacman -S mingw-w64-x86_64-mpv mingw-w64-x86_64-youtube-dl make automake python-pip python-wheel fish
     ```
 
-    Optional: xklb[deluxe] deps:
+    Optional: library[deluxe] deps:
 
     ```bash
     choco install exiftool

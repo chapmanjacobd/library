@@ -4,7 +4,7 @@ from shutil import which
 
 import pytest
 
-from xklb.__main__ import library as lb
+from library.__main__ import library as lb
 
 
 @pytest.mark.skipif(not which("magick"), reason="requires magick")

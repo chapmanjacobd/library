@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from xklb.__main__ import library as lb
+from library.__main__ import library as lb
 
 simple = '{"A": 1, "B": 3, "C": 5}\n{"A": 2, "B": 4, "C": 6}'
 

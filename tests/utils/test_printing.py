@@ -2,8 +2,8 @@ import unittest
 
 from tests import utils
 from tests.utils import v_db
-from xklb.__main__ import library as lb
-from xklb.utils import printing
+from library.__main__ import library as lb
+from library.utils import printing
 
 
 def test_tw_print(capsys):

@@ -1,4 +1,4 @@
-from xklb.__main__ import library as lb
+from library.__main__ import library as lb
 
 simple = "This is a sample text with compound nouns like 'compound noun' and phrases like 'compound noun phrase'."
 

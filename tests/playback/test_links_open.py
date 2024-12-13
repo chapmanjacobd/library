@@ -1,10 +1,10 @@
 from unittest import mock
 
 from tests.utils import links_db
-from xklb.__main__ import library as lb
+from library.__main__ import library as lb
 
 
-@mock.patch("xklb.playback.links_open.make_souffle")
+@mock.patch("library.playback.links_open.make_souffle")
 def test_links_open(mock_souffle):
     lb(["links-open", links_db])
     media = mock_souffle.call_args[0][1]

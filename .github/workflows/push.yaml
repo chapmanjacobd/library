@@ -66,23 +66,21 @@ jobs:
   publish:
     needs: [test1, test2]
     runs-on: ubuntu-latest
+    environment: publish
+    permissions:
+      contents: read
+      id-token: write
+
     timeout-minutes: 20
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
+      - uses: pdm-project/setup-pdm@v4
 
       - run: |
-          python -m pip install pdm
           pdm config request_timeout 100
-
-      - name: Build and publish
-        run: pdm publish -u __token__ -P ${{ secrets.PYPI_TOKEN }}
+          pdm publish
 
   release:
     needs: publish

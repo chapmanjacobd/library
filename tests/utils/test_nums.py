@@ -1,6 +1,6 @@
 import pytest
 
-from xklb.utils import nums, sql_utils
+from library.utils import nums, sql_utils
 
 
 @pytest.mark.parametrize(

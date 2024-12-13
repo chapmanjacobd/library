@@ -4,9 +4,9 @@ from pathlib import Path
 import pytest
 
 from tests.conftest import generate_file_tree_dict
-from xklb.__main__ import library as lb
-from xklb.folders.merge_mv import gen_rel_path
-from xklb.utils import consts, path_utils
+from library.__main__ import library as lb
+from library.folders.merge_mv import gen_rel_path
+from library.utils import consts, path_utils
 
 simple_file_tree = {
     "folder1": {"file1.txt": "1", "subfolder1": {"file2.txt": "2"}},

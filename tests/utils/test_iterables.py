@@ -1,5 +1,5 @@
 from tests.utils import take5
-from xklb.utils import iterables
+from library.utils import iterables
 
 
 def test_flatten():

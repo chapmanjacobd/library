@@ -1,7 +1,7 @@
 from unittest import mock
 
 from tests import utils
-from xklb.utils import path_utils
+from library.utils import path_utils
 
 
 def test_clean_path():
@@ -23,7 +23,7 @@ def test_clean_path():
     assert path_utils.clean_path(b"__/~_[7].opus") == utils.p("_/~_[7].opus")
 
 
-@mock.patch("xklb.utils.consts.random_string", return_value="abcdef")
+@mock.patch("library.utils.consts.random_string", return_value="abcdef")
 def test_random_filename(_mock_random_string):
     assert path_utils.random_filename("testfile.txt") == utils.p("testfile.abcdef.txt")
     assert path_utils.random_filename("/3_seconds_ago../Mike.webm") == utils.p("/3_seconds_ago../Mike.abcdef.webm")

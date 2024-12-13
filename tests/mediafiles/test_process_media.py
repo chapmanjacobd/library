@@ -1,7 +1,7 @@
 import pytest
 
-from xklb.__main__ import library as lb
-from xklb.utils import devices
+from library.__main__ import library as lb
+from library.utils import devices
 
 
 def test_shrink(temp_db, capsys):

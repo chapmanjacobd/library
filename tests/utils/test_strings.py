@@ -3,7 +3,7 @@ import os, unittest
 import pytest
 
 from tests.utils import take5
-from xklb.utils import strings
+from library.utils import strings
 
 
 def test_combine():

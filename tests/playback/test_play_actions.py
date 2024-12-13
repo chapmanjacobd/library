@@ -8,9 +8,9 @@ import pytest
 
 from tests.playback.test_play_history import history_flags
 from tests.utils import connect_db_args, v_db
-from xklb.__main__ import library as lb
-from xklb.mediadb import db_history
-from xklb.utils import arggroups
+from library.__main__ import library as lb
+from library.mediadb import db_history
+from library.utils import arggroups
 
 fs_flags = [
     ("--modified-within '1 second'", 0, ""),
@@ -72,7 +72,7 @@ media_flags = [
     ("-u duration", 5, "corrupt.mp4"),
     ("--portrait", 5, "corrupt.mp4"),
     ("--fetch-siblings if-audiobook", 5, "corrupt.mp4"),
-    ("-C --n-clusters 3 --stop-words xklb", 5, "test.gif"),
+    ("-C --n-clusters 3 --stop-words library", 5, "test.gif"),
     ("-C --duplicates", 5, "corrupt.mp4"),
     ("-O duration", 5, "test.gif"),
     ("-O locale_duration", 5, "test.gif"),
@@ -101,7 +101,7 @@ def test_flags_covered(o):
     ), ("Option %s is not covered" % o.option_strings)
 
 
-@mock.patch("xklb.playback.media_player.play_list", return_value=SimpleNamespace(returncode=0))
+@mock.patch("library.playback.media_player.play_list", return_value=SimpleNamespace(returncode=0))
 @pytest.mark.parametrize(("flags", "count", "first"), fs_flags)
 def test_fs_flags(play_mocked, flags, count, first):
     for subcommand in ["fs", "media"]:
@@ -119,7 +119,7 @@ def test_fs_flags(play_mocked, flags, count, first):
                 assert p == first, "%s does not match %s" % (p, first)
 
 
-@mock.patch("xklb.playback.media_player.play_list", return_value=SimpleNamespace(returncode=0))
+@mock.patch("library.playback.media_player.play_list", return_value=SimpleNamespace(returncode=0))
 @pytest.mark.parametrize(("flags", "count", "first"), media_flags)
 def test_media_flags(play_mocked, flags, count, first):
     for subcommand in ["media", "wt"]:
@@ -149,7 +149,7 @@ printing_flags = [
 ]
 
 
-@mock.patch("xklb.playback.media_printer.media_printer", return_value=SimpleNamespace(returncode=0))
+@mock.patch("library.playback.media_printer.media_printer", return_value=SimpleNamespace(returncode=0))
 @pytest.mark.parametrize("flags", printing_flags)
 def test_print_flags(print_mocked, flags):
     for subcommand in ["fs", "media"]:

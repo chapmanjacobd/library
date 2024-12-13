@@ -1,6 +1,6 @@
 import pytest
 
-from xklb.__main__ import library as lb
+from library.__main__ import library as lb
 
 
 @pytest.mark.parametrize("p", [["1970-01-01 00:00:01"], ["--from-unix", "1"]])

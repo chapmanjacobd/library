@@ -26,10 +26,10 @@ dependencies = [
   "tinytag",
   "yt-dlp[default]",
 ]
-description = "xk library"
+description = "xk media library"
 dynamic = ["version"]
 license = {file = "LICENSE"}
-name = "xklb"
+name = "library"
 readme = ".github/README.md"
 requires-python = ">=3.11"
 
@@ -74,18 +74,18 @@ homepage = "https://github.com/chapmanjacobd/library#readme"
 repository = "https://github.com/chapmanjacobd/library/"
 
 [project.scripts]
-lb = "xklb.__main__:library"
-library = "xklb.__main__:library"
+lb = "library.__main__:library"
+library = "library.__main__:library"
 
 [tool.pdm]
-version = {source = "file", path = "xklb/__main__.py"}
+version = {source = "file", path = "library/__main__.py"}
 
 [build-system]
 build-backend = "hatchling.build"
 requires = ["hatchling"]
 
 [tool.hatch.version]
-path = "xklb/__main__.py"
+path = "library/__main__.py"
 
 [tool.hatch.build]
 exclude = [
@@ -94,7 +94,7 @@ exclude = [
 ]
 
 [tool.hatch.build.force-include]
-"xklb/assets/" = "xklb/assets/"
+"library/assets/" = "library/assets/"
 
 [tool.black]
 line-length = 120

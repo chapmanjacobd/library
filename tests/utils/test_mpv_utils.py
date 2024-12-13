@@ -1,8 +1,8 @@
 import time
 from pathlib import Path
 
-from xklb.utils import consts, mpv_utils
-from xklb.utils.objects import NoneSpace
+from library.utils import consts, mpv_utils
+from library.utils.objects import NoneSpace
 
 
 def test_mpv_md5():

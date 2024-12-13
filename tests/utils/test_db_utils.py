@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch
 
-from xklb.utils import consts, db_utils, sql_utils
+from library.utils import consts, db_utils, sql_utils
 
 
 def test_includes():
