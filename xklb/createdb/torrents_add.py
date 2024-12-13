@@ -41,7 +41,12 @@ def get_tracker(torrent):
 def extract_metadata(path):
     from torrentool.api import Torrent
 
-    torrent = Torrent.from_file(path)
+    try:
+        torrent = Torrent.from_file(path)
+        assert torrent.files
+    except Exception:
+        log.error("[%s]: corrupt or empty torrent", path)
+        raise
 
     file_sizes = [f.length for f in torrent.files]
 
@@ -79,8 +84,6 @@ def extract_metadata(path):
 
 def torrents_add():
     args = parse_args()
-
-    duplicates = {}
 
     scanned_set = set(arg_utils.gen_paths(args, default_exts=(".torrent",)))
 

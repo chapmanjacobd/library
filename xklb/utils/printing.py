@@ -1,4 +1,4 @@
-import csv, itertools, math, sys, textwrap, time, json
+import csv, itertools, math, sys, textwrap, time
 from collections.abc import Callable
 from datetime import datetime, timezone
 
@@ -18,22 +18,6 @@ def print_overwrite(*text, **kwargs):
         print("\r" + text[0], *text[1:], end="", **kwargs)
     else:
         print(text, **kwargs)
-
-
-def table(tbl, **kwargs) -> None:
-    table_text = tabulate(tbl, tablefmt=consts.TABULATE_STYLE,             headers="keys", showindex=False, **kwargs)
-    if not table_text:
-        return
-
-    longest_line = max(len(s) for s in table_text.splitlines())
-    try:
-        if longest_line > consts.TERMINAL_SIZE.columns:
-            extended_view(tbl)
-        else:
-            print(table_text)
-    except BrokenPipeError:
-        sys.stdout = None
-        sys.exit(141)
 
 
 def extended_view(iterable):
@@ -60,6 +44,22 @@ def extended_view(iterable):
             print(formatted_key, value)
         if print_index:
             print()
+
+
+def table(tbl, **kwargs) -> None:
+    table_text = tabulate(tbl, tablefmt=consts.TABULATE_STYLE, headers="keys", showindex=False, **kwargs)
+    if not table_text:
+        return
+
+    longest_line = max(len(s) for s in table_text.splitlines())
+    try:
+        if longest_line > consts.TERMINAL_SIZE.columns:
+            extended_view(tbl)
+        else:
+            print(table_text)
+    except BrokenPipeError:
+        sys.stdout = None
+        sys.exit(141)
 
 
 def pipe_print(*args) -> None:

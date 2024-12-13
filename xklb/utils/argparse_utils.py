@@ -1,5 +1,4 @@
 import argparse, json, shlex, sys
-from ast import literal_eval
 
 from xklb.utils import nums
 from xklb.utils.iterables import flatten

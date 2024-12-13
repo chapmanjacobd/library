@@ -156,8 +156,9 @@ def allocate_torrents():
     )
     print()
 
-    total_size = sum(d["size"] for d in torrents)
-    print(f"{len(torrents)} torrents allocated ({strings.file_size(total_size)})")
+    allocated_torrents = [t for d in disks for t in d["downloads"]]
+    total_size = sum(t["size"] for t in allocated_torrents)
+    print(f"{len(allocated_torrents)} torrents allocated ({strings.file_size(total_size)})")
 
     if not args.print and (args.no_confirm or devices.confirm("Allocate and start downloads?")):
         for d in disks:
