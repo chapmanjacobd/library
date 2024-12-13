@@ -1,8 +1,8 @@
 import json
 
-from tests.utils import v_db
 from library.__main__ import library as lb
 from library.utils import consts
+from tests.utils import v_db
 
 platform = "linux"
 if consts.IS_WINDOWS:

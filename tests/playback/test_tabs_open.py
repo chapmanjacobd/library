@@ -3,11 +3,11 @@ from unittest import mock
 import pandas, pytest  # noqa: pandas needs to be imported before freezegun because 'FakeDatetime' is dynamically allocated
 from freezegun import freeze_time
 
-from tests.utils import connect_db_args
 from library.__main__ import library as lb
 from library.mediadb import db_history
 from library.playback import tabs_open
 from library.utils import consts
+from tests.utils import connect_db_args
 
 TEST_URL = "https://unli.xyz/proliferation/verbs.html"
 

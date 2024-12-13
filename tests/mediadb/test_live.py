@@ -1,9 +1,9 @@
 import os
 from unittest import skip
 
-from tests.utils import connect_db_args
 from library.__main__ import library as lb
 from library.createdb.tube_add import tube_add
+from tests.utils import connect_db_args
 
 URL = "https://www.youtube.com/watch?v=W5ZLFBZkE34"
 STORAGE_PREFIX = "tests/data"

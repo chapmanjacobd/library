@@ -3,9 +3,9 @@ from pathlib import Path
 
 import pytest
 
-from tests.conftest import generate_file_tree_dict
 from library.__main__ import library as lb
 from library.utils import consts, objects, path_utils
+from tests.conftest import generate_file_tree_dict
 
 simple_file_tree = {
     "folder1": {"file1.txt": "1", "file4.txt": {"file2.txt": "2"}},

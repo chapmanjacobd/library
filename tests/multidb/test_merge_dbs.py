@@ -1,5 +1,5 @@
-from tests.utils import connect_db_args, links_db, v_db
 from library.__main__ import library as lb
+from tests.utils import connect_db_args, links_db, v_db
 
 
 def test_merge(temp_db):

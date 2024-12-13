@@ -4,10 +4,10 @@ from shutil import which
 
 import pytest
 
-from tests.utils import get_default_args
 from library.__main__ import library as lb
 from library.mediafiles.process_ffmpeg import is_animation_from_probe, process_path
 from library.utils import arggroups, objects, processes
+from tests.utils import get_default_args
 
 
 @pytest.mark.parametrize(

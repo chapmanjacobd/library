@@ -2,8 +2,8 @@ import argparse
 
 import pytest
 
-from tests.utils import connect_db_args
 from library.__main__ import library as lb
+from tests.utils import connect_db_args
 
 NO_CHANGE = [
     {

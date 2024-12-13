@@ -6,7 +6,17 @@ from screeninfo import get_monitors
 
 from library import usage
 from library.playback import media_player, post_actions
-from library.utils import arggroups, argparse_utils, consts, devices, file_utils, iterables, mpv_utils, processes, strings
+from library.utils import (
+    arggroups,
+    argparse_utils,
+    consts,
+    devices,
+    file_utils,
+    iterables,
+    mpv_utils,
+    processes,
+    strings,
+)
 from library.utils.log_utils import log
 
 left_mpv_socket = str(Path(consts.TEMP_SCRIPT_DIR) / f"mpv_socket_{consts.random_string()}")

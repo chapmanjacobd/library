@@ -3,9 +3,9 @@ import pathlib
 import pytest
 from bs4 import BeautifulSoup
 
-from tests.utils import p
 from library.utils.path_utils import safe_unquote
 from library.utils.web import WebPath, extract_nearby_text, url_encode, url_to_local_path
+from tests.utils import p
 
 
 def test_url_to_local_path():

@@ -1,7 +1,7 @@
 import pytest
 
-from tests.utils import connect_db_args
 from library.__main__ import library as lb
+from tests.utils import connect_db_args
 
 NO_CHANGE = [
     {"id": 1, "path": "path1", "title": "title1"},

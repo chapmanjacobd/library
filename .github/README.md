@@ -8,13 +8,13 @@ tracking online video playlists (eg. YouTube subscriptions) and scheduling brows
 
 <img align="right" width="300" height="600" src="https://raw.githubusercontent.com/chapmanjacobd/library/main/.github/examples/art.avif" />
 
-[![Downloads](https://static.pepy.tech/badge/library)](https://pepy.tech/project/library)
+[![Downloads](https://static.pepy.tech/badge/xklb)](https://pepy.tech/project/xklb)
 
 ## Install
 
 Linux recommended but [Windows setup instructions](./Windows.md) available.
 
-    pip install library
+    pip install xklb
 
 Should also work on Mac OS.
 
@@ -99,7 +99,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v3.0.033; 99 subcommands)
+    library (v3.0.032; 99 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -419,7 +419,7 @@ Or with `systemd`:
 
     tee ~/.config/systemd/user/tabs.service
     [Unit]
-    Description=library daily browser tabs
+    Description=xklb daily browser tabs
 
     [Service]
     Type=simple
@@ -429,7 +429,7 @@ Or with `systemd`:
 
     tee ~/.config/systemd/user/tabs.timer
     [Unit]
-    Description=library daily browser tabs timer
+    Description=xklb daily browser tabs timer
 
     [Timer]
     Persistent=yes
@@ -784,7 +784,7 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     IRIs vs URLs
 
-        Library should:
+        XKLB should:
             - print paths as unquoted UTF-8 IRIs (by default)
             - accept either IRIs or URLs as input with optional flags to make parsing/searching explicitly use one or the other
             - save paths to the database "AS-IS"
@@ -1162,9 +1162,9 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 
     Expand search URLs with multiple queries
 
-        library expand-links -s https://www.google.com/search?q=%s -s https://duckduckgo.com/?q=%s library
-        https://www.google.com/search?q=library
-        https://duckduckgo.com/?q=library
+        library expand-links -s https://www.google.com/search?q=%s -s https://duckduckgo.com/?q=%s xklb
+        https://www.google.com/search?q=xklb
+        https://duckduckgo.com/?q=xklb
 
         library expand-links -s https://www.walmart.com/search?q=%s -s https://www.target.com/s?searchTerm=%s "Dr. Pepper" pepcidine
         https://www.walmart.com/search?q=Dr%20Pepper
@@ -1454,11 +1454,11 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     Free up space on a specific disk. Find candidates for moving data to a different mount point
 
 
-    The program takes a mount point and a library database file. If you don't have a database file you can create one like this
+    The program takes a mount point and a xklb database file. If you don't have a database file you can create one like this
 
         library fsadd --filesystem d.db ~/d/
 
-    But this should definitely also work with library audio and video databases
+    But this should definitely also work with xklb audio and video databases
 
         library mv-list /mnt/d/ video.db
 
@@ -2141,7 +2141,7 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
     usage: library torrents-stop
 
     Stop torrents in qBittorrent-nox with the following defaults:
-      - tagged 'library'
+      - tagged 'xklb'
       - >180 days active seeding
       - >90 days since last peer
       - >3 current seeders
@@ -2151,7 +2151,7 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
         library torrents-stop --min-seeders 3 --min-days-stalled-seed 10 --min-days-seeding 14
 
-    When --mark-deleted is provided, the torrents are tagged with 'library-delete' in qBittorrent
+    When --mark-deleted is provided, the torrents are tagged with 'xklb-delete' in qBittorrent
     When --delete-rows is provided, the metadata is removed from qBittorrent
     When --delete-files is provided, the downloaded files are deleted
 
@@ -2166,7 +2166,7 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
     usage: library torrents-stop-incomplete
 
     Stop torrents in qBittorrent-nox with the following defaults:
-      - tagged 'library'
+      - tagged 'xklb'
       - >90 days since last seen complete (or never)
       - >60 days active downloading
       - >30 days since last peer (or never)
@@ -2175,7 +2175,7 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
         library torrents-stop --min-days-downloading 7
 
-    When --mark-deleted is provided, the torrents are tagged with 'library-delete' in qBittorrent
+    When --mark-deleted is provided, the torrents are tagged with 'xklb-delete' in qBittorrent
     When --delete-rows is provided, the metadata is removed from qBittorrent
     When --delete-files is provided, all downloaded files are deleted.
     By default, salvage is provided to files which have more than 73% progress.
@@ -2273,7 +2273,7 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
         | /home/xk/github/xk/lb/__pycache__/    | 620 Bytes |       1 |
         | /home/xk/github/xk/lb/.github/        |    1.7 kB |       4 |
         | /home/xk/github/xk/lb/__pypackages__/ |    1.4 MB |    3519 |
-        | /home/xk/github/xk/lb/library/           |    4.4 kB |      12 |
+        | /home/xk/github/xk/lb/xklb/           |    4.4 kB |      12 |
         | /home/xk/github/xk/lb/tests/          |    3.2 kB |       9 |
         | /home/xk/github/xk/lb/.git/           |  782.4 kB |    2276 |
         | /home/xk/github/xk/lb/.pytest_cache/  |    1.5 kB |       5 |

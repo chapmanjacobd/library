@@ -5,8 +5,8 @@ from unittest import mock
 
 import pytest
 
-from tests.utils import v_db
 from library.__main__ import library as lb
+from tests.utils import v_db
 
 history_db = "tests/data/history.db"
 shutil.copy(v_db, history_db)

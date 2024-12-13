@@ -3,10 +3,10 @@ from pathlib import Path
 
 import pytest
 
-from tests.utils import p
 from library.__main__ import library as lb
 from library.__main__ import modules, progs
 from library.utils import iterables
+from tests.utils import p
 
 subcommands = list(iterables.flatten((v.keys() for _, v in progs.items())))
 unique_modules = list(set(s.rsplit(".", 1)[0] for s in modules.keys()))  # chop off function names
