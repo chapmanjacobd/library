@@ -19,6 +19,15 @@ def parse_args():
     return args
 
 
+def qbt_get_tracker(qbt_client, torrent):
+    tracker = torrent.tracker
+    if not tracker:
+        tracker = iterables.safe_unpack(
+            tr.url for tr in qbt_client.torrents_trackers(torrent.hash) if tr.url.startswith("http")
+        )
+    return domain_from_url(tracker)
+
+
 def torrents_info():
     args = parse_args()
 
@@ -70,12 +79,7 @@ def torrents_info():
 
     torrents_by_tracker = {}
     for torrent in all_torrents:
-        tracker = torrent.tracker
-        if not tracker:
-            tracker = iterables.safe_unpack(
-                tr.url for tr in qbt_client.torrents_trackers(torrent.hash) if tr.url.startswith("http")
-            )
-        torrents_by_tracker.setdefault(domain_from_url(tracker), []).append(torrent)
+        torrents_by_tracker.setdefault(qbt_get_tracker(qbt_client, torrent), []).append(torrent)
 
     interesting_states = [
         "stoppedUP",

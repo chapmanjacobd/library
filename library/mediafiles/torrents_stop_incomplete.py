@@ -3,7 +3,8 @@ from pathlib import Path
 
 from library import usage
 from library.mediafiles.torrents_start import start_qBittorrent
-from library.utils import arggroups, consts, devices, iterables, path_utils, printing, strings
+from library.playback.torrents_info import qbt_get_tracker
+from library.utils import arggroups, consts, devices, path_utils, printing, strings
 from library.utils.log_utils import log
 
 
@@ -114,13 +115,8 @@ def torrents_stop_incomplete():
                 new_path = Path(path_utils.mountpoint(torrent.content_path)) / new_path
 
             if args.tracker_dirnames:
-                tracker = torrent.tracker
-                if not tracker:
-                    tracker = iterables.safe_unpack(
-                        tr.url for tr in qbt_client.torrents_trackers(torrent.hash) if tr.url.startswith("http")
-                    )
-                if tracker:
-                    domain = path_utils.domain_from_url(tracker)
+                domain = qbt_get_tracker(qbt_client, torrent)
+                if domain:
                     new_path /= domain
 
             new_path.mkdir(parents=True, exist_ok=True)

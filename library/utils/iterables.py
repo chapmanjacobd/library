@@ -1,4 +1,5 @@
 import math
+from collections import Counter
 from collections.abc import Iterable, Iterator
 from functools import wraps
 from typing import Any
@@ -149,7 +150,7 @@ def list_dict_unique(data: list[dict], unique_keys: list[str]) -> list[dict]:
     return list_
 
 
-def count_category(list_of_dicts, key_name):
+def list_dict_value_counts(list_of_dicts, key_name):
     category_counts = {}
     for item in list_of_dicts:
         category = item.get(key_name)
@@ -251,3 +252,8 @@ def zipkw(**kwargs):
 
     for combination in zip(*values):
         yield dict(zip(keys, combination))
+
+
+def value_counts(input_list):
+    counts = Counter(input_list)
+    return [counts[item] for item in input_list]
