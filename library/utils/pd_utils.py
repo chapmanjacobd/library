@@ -49,3 +49,39 @@ def available_name(df, column_name):
         else:
             column_name = f"{column_name}_1"
     return column_name
+
+
+def rank_dataframe(df, column_weights):
+    """
+    ranked_df = rank_dataframe(
+        df,
+        column_weights={
+            "progress": {"direction": "desc", "weight": 6},
+            "size": {"direction": "asc", "weight": 3}
+        }
+    )
+    """
+    ranks = df[column_weights.keys()].apply(
+        lambda x: x.rank(
+            method="min",
+            na_option="bottom",
+            ascending=column_weights.get(x.name, {}).get("direction") == "asc",
+        )
+        * column_weights.get(x.name, {}).get("weight", 1),
+    )
+
+    unranked_columns = set(df.select_dtypes(include=["number"]).columns) - set(ranks.columns)
+    if unranked_columns:
+        print(
+            "Unranked columns:\n"
+            + "\n".join([f"""    "{s}": {{ 'direction': 'desc' }}, """ for s in unranked_columns]),
+        )
+
+    scaled_ranks = (ranks - 1) / (len(ranks.columns) - 1)
+    scaled_df = df.iloc[scaled_ranks.sum(axis=1).sort_values().index]
+    return scaled_df.reset_index(drop=True)
+
+
+def count_category(df, key_name):
+    df[f"{key_name}_count"] = df.groupby(key_name)[key_name].transform("size")
+    return df

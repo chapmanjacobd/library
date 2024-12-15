@@ -100,7 +100,7 @@ def allocate_torrents():
     torrents = list(args.db.query(*sqlgroups.playlists_fs_sql(args, limit=None)))
     total_size = sum(d["size"] for d in torrents)
     print(f"{len(torrents)} undownloaded torrents. {strings.file_size(total_size)} total space")
-    iterables.count_category(torrents, "tracker")
+    iterables.list_dict_value_counts(torrents, "tracker")
 
     if not torrents:
         processes.no_media_found()
