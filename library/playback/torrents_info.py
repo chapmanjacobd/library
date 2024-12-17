@@ -73,14 +73,6 @@ def torrents_info():
             qbt_client.torrents_delete(delete_files=False, torrent_hashes=torrent_hashes)
         return
 
-    torrents_by_state = {}
-    for torrent in all_torrents:
-        torrents_by_state.setdefault(torrent.state, []).append(torrent)
-
-    torrents_by_tracker = {}
-    for torrent in all_torrents:
-        torrents_by_tracker.setdefault(qbt_get_tracker(qbt_client, torrent), []).append(torrent)
-
     interesting_states = [
         "stoppedUP",
         "queuedUP",
@@ -95,17 +87,23 @@ def torrents_info():
         "error",
     ]
 
-    tbl = []
-    for state in {*interesting_states} - {"uploading", "downloading"}:
-        torrents = torrents_by_state.get(state)
-        if not torrents:
-            continue
+    torrents_by_state = {}
+    for torrent in all_torrents:
+        torrents_by_state.setdefault(torrent.state, []).append(torrent)
 
-        torrents = sorted(torrents, key=lambda t: (-t.seen_complete, t.time_active))
+    if args.verbose >= consts.LOG_INFO:
+        torrents_by_tracker = {}
+        for torrent in all_torrents:
+            torrents_by_tracker.setdefault(qbt_get_tracker(qbt_client, torrent), []).append(torrent)
 
-        if args.verbose >= 1:
-            printing.extended_view(torrents)
-        else:
+        tbl = []
+        for state in {*interesting_states} - {"uploading", "downloading"}:
+            torrents = torrents_by_state.get(state)
+            if not torrents:
+                continue
+
+            torrents = sorted(torrents, key=lambda t: (-t.seen_complete, t.time_active))
+
             tbl.extend(
                 [
                     {
@@ -114,23 +112,27 @@ def torrents_info():
                         "seen_complete": strings.relative_datetime(t.seen_complete) if t.seen_complete > 0 else None,
                         "last_activity": strings.relative_datetime(t.last_activity),
                         "time_active": strings.duration(t.time_active),
+                        "num_seeds": f"{t.num_complete} ({t.num_seeds})",
+                        # 'num_leechs': f"{t.num_incomplete} ({t.num_leechs})",
+                        # 'comment': t.comment,
                     }
                     for t in torrents
                 ]
             )
-    if tbl:
-        printing.table(tbl)
-        print()
+        if tbl:
+            printing.table(tbl)
+            print()
 
-    tbl = []
-    for state in interesting_states:
-        torrents = torrents_by_state.get(state)
-        if not torrents:
-            continue
+        tbl = []
+        for state in ["downloading", "missingFiles", "error"]:
+            torrents = torrents_by_state.get(state)
+            if not torrents:
+                continue
 
-        torrents = sorted(torrents, key=lambda t: (t.amount_left == t.total_size, t.eta, t.amount_left), reverse=True)
+            torrents = sorted(
+                torrents, key=lambda t: (t.amount_left == t.total_size, t.eta, t.amount_left), reverse=True
+            )
 
-        if args.verbose == 0:
             tbl.extend(
                 [
                     {
@@ -139,43 +141,40 @@ def torrents_info():
                         "progress": strings.safe_percent(t.progress),
                         "eta": strings.duration(t.eta) if t.eta < 8640000 else None,
                         "remaining": strings.file_size(t.amount_left),
-                        "num_seeds": f"{t.num_complete} ({t.num_seeds})",
-                        # 'num_leechs': f"{t.num_incomplete} ({t.num_leechs})",
-                        # 'comment': t.comment,
                     }
                     for t in torrents
                 ]
             )
-    if tbl:
-        printing.table(tbl)
-        print()
+        if tbl:
+            printing.table(tbl)
+            print()
 
-    trackers = []
-    for tracker, torrents in torrents_by_tracker.items():
-        torrents = [t for t in torrents if args.verbose >= 1 or t.state not in ("stoppedDL",)]
-        remaining = sum(t.amount_left for t in torrents)
-        if remaining or args.verbose >= 1:
-            trackers.append(
+        trackers = []
+        for tracker, torrents in torrents_by_tracker.items():
+            torrents = [t for t in torrents if args.verbose >= 2 or t.state not in ("stoppedDL",)]
+            remaining = sum(t.amount_left for t in torrents)
+            if remaining or args.verbose >= 2:
+                trackers.append(
+                    {
+                        "tracker": tracker,
+                        "count": len(torrents),
+                        "size": sum(t.total_size for t in torrents),
+                        "remaining": remaining,
+                        "file_count": sum(len(t.files) for t in torrents) if args.verbose >= 2 else None,  # a bit slow
+                    }
+                )
+        if trackers:
+            trackers = sorted(trackers, key=lambda d: (d["remaining"], d["size"]))
+            trackers = [
                 {
-                    "tracker": tracker,
-                    "count": len(torrents),
-                    "size": sum(t.total_size for t in torrents),
-                    "remaining": remaining,
-                    "file_count": sum(len(t.files) for t in torrents) if args.verbose >= 1 else None,  # a bit slow
+                    **d,
+                    "size": strings.file_size(d["size"]),
+                    "remaining": strings.file_size(d["remaining"]) if d["remaining"] else None,
                 }
-            )
-    if trackers:
-        trackers = sorted(trackers, key=lambda d: (d["remaining"], d["size"]))
-        trackers = [
-            {
-                **d,
-                "size": strings.file_size(d["size"]),
-                "remaining": strings.file_size(d["remaining"]) if d["remaining"] else None,
-            }
-            for d in trackers
-        ]
-        printing.table(iterables.list_dict_filter_bool(trackers))
-        print()
+                for d in trackers
+            ]
+            printing.table(iterables.list_dict_filter_bool(trackers))
+            print()
 
     categories = []
     for state, torrents in torrents_by_state.items():
@@ -186,7 +185,7 @@ def torrents_info():
                 "count": len(torrents),
                 "size": strings.file_size(sum(t.total_size for t in torrents)),
                 "remaining": strings.file_size(remaining) if remaining else None,
-                "file_count": sum(len(t.files) for t in torrents) if args.verbose >= 1 else None,  # a bit slow
+                "file_count": sum(len(t.files) for t in torrents) if args.verbose >= 2 else None,  # a bit slow
             }
         )
 
