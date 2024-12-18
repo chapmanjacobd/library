@@ -192,6 +192,7 @@ def torrents_info():
     categories = sorted(
         categories,
         key=lambda d: (
+            d["state"].endswith(("missingFiles", "error")),
             d["state"].endswith(("downloading", "DL")),
             iterables.safe_index(interesting_states, d["state"]),
         ),
