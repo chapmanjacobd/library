@@ -639,9 +639,11 @@ def construct_absolute_url(base_url, href):
         return href
 
     if not up.netloc:
-        if not base_url.endswith("/") and not href.startswith("/"):
-            base_url += "/"
-
+        base_parsed = urlparse(base_url)
+        path = base_parsed.path
+        if not path.endswith("/") and path != "":
+            path = path.rsplit("/", 1)[0] + "/"
+        base_url = base_parsed._replace(path=path).geturl()
         href = urljoin(base_url, href)
 
     if href.startswith("//"):
