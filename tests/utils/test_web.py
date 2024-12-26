@@ -4,7 +4,7 @@ import pytest
 from bs4 import BeautifulSoup
 
 from library.utils.path_utils import safe_unquote
-from library.utils.web import WebPath, extract_nearby_text, url_encode, url_to_local_path
+from library.utils.web import WebPath, construct_absolute_url, extract_nearby_text, url_encode, url_to_local_path
 from tests.utils import p
 
 
@@ -250,3 +250,22 @@ def test_parent_property():
     assert str(web_path.parent.parent.parent.parent.parent.parent) == "https://<netloc>/<path1>"
     assert str(web_path.parent.parent.parent.parent.parent.parent.parent) == "https://<netloc>"
     assert str(web_path.parent.parent.parent.parent.parent.parent.parent.parent) == "https://<netloc>"
+
+@pytest.mark.parametrize(
+    "base_url, href, expected",
+    [
+        ("https://unli.xyz/diskprices/index.html", "./ch/", "https://unli.xyz/diskprices/ch/"),
+        ("https://unli.xyz/diskprices/index.html", "ch/", "https://unli.xyz/diskprices/ch/"),
+        ("https://unli.xyz/diskprices/index.html", "/ch/", "https://unli.xyz/ch/"),
+        ("https://unli.xyz/diskprices/", "ch/", "https://unli.xyz/diskprices/ch/"),
+        ("https://unli.xyz/diskprices", "ch/", "https://unli.xyz/ch/"),
+        ("https://unli.xyz", "diskprices/ch/", "https://unli.xyz/diskprices/ch/"),
+        ("https://unli.xyz", "/ch/", "https://unli.xyz/ch/"),
+        ("https://unli.xyz/", "//example.com/ch/", "https://example.com/ch/"),
+        ("https://unli.xyz/diskprices", "ftp://example.com/ch/", "ftp://example.com/ch/"),
+        ("https://unli.xyz/diskprices", "ssh://example.com/ch/", "ssh://example.com/ch/"),
+    ]
+)
+def test_construct_absolute_url(base_url, href, expected):
+    result = construct_absolute_url(base_url, href)
+    assert result == expected
