@@ -94,6 +94,21 @@ If you prefer SQLite's ordering you can do this instead of -O
 --fetch-siblings always -O        # get 2,000 results per directory
 """,
     )
+    ordering.add_argument(
+        "--re-rank",
+        "--rerank",
+        "-rr",
+        action=argparse_utils.ArgparseDict,
+        default={},
+        metavar="COLUMN=WEIGHT",
+        help="""Add key/value pairs re-rank sorting by multiple attributes (similar to MCDA)
+-rr 'regex_sort=1 cluster_sort=1 -size=3'
+will sort the playlist by taking into account size, regex, and clusters prioritizing size over the other two.
+
+-u size desc -L 500 --cols path,title,size,time_modified -rs -rr 'regex_sort=2 time_modified=2 sort=1'
+will get the 500 largest and then sort by regex_sort, time_modified, and the original sort (size desc)
+""",
+    )
 
     probabling = parser.add_argument_group("Probability")
     probabling.add_argument(
@@ -407,7 +422,39 @@ def process_playqueue(args) -> None:
     if args.play_in_order:
         media = db_media.natsort_media(args, media)
 
-    if args.regex_sort:
+    if args.re_rank:
+        import pandas as pd
+        import numpy as np
+
+        from library.utils import pd_utils
+
+        df = pd.DataFrame(media)
+        df = pd_utils.from_dict_add_path_rank(df, media, "sort")
+
+        if args.regex_sort:
+            from library.text import regex_sort
+
+            sorted_media = regex_sort.sort_dicts(args, media)
+            df = pd_utils.from_dict_add_path_rank(df, sorted_media, "regex_sort")
+            log.debug("regex-sort: %s", t.elapsed())
+        elif args.cluster_sort:
+            from library.text import cluster_sort
+
+            sorted_media = cluster_sort.sort_dicts(args, media)
+            df = pd_utils.from_dict_add_path_rank(df, sorted_media, "cluster_sort")
+            log.debug("cluster-sort: %s", t.elapsed())
+
+        column_weights = {
+            k.lstrip("-"): {
+                "direction": "desc" if k.startswith("-") else "asc",
+                "weight": v or 1,
+            }
+            for k, v in args.re_rank.items()
+        }
+        df = pd_utils.rank_dataframe(df, column_weights)
+        media = df.replace({np.nan: None}).to_dict(orient="records")
+        log.debug("re-rank: %s", t.elapsed())
+    elif args.regex_sort:
         from library.text import regex_sort
 
         media = regex_sort.sort_dicts(args, media)
