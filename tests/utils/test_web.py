@@ -251,6 +251,7 @@ def test_parent_property():
     assert str(web_path.parent.parent.parent.parent.parent.parent.parent) == "https://<netloc>"
     assert str(web_path.parent.parent.parent.parent.parent.parent.parent.parent) == "https://<netloc>"
 
+
 @pytest.mark.parametrize(
     "base_url, href, expected",
     [
@@ -264,7 +265,7 @@ def test_parent_property():
         ("https://unli.xyz/", "//example.com/ch/", "https://example.com/ch/"),
         ("https://unli.xyz/diskprices", "ftp://example.com/ch/", "ftp://example.com/ch/"),
         ("https://unli.xyz/diskprices", "ssh://example.com/ch/", "ssh://example.com/ch/"),
-    ]
+    ],
 )
 def test_construct_absolute_url(base_url, href, expected):
     result = construct_absolute_url(base_url, href)

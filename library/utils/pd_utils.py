@@ -85,3 +85,9 @@ def rank_dataframe(df, column_weights):
 def count_category(df, key_name):
     df[f"{key_name}_count"] = df.groupby(key_name)[key_name].transform("size")
     return df
+
+
+def from_dict_add_path_rank(df, sorted_media, new_rank_column_name):
+    rank_dict = {item["path"]: rank + 1 for rank, item in enumerate(sorted_media)}
+    df[new_rank_column_name] = df["path"].map(rank_dict)
+    return df
