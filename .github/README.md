@@ -3320,4 +3320,6 @@ You can expand all by running this in your browser console:
 (() => { const readmeDiv = document.querySelector("article"); const detailsElements = readmeDiv.getElementsByTagName("details"); for (let i = 0; i < detailsElements.length; i++) { detailsElements[i].setAttribute("open", "true"); } })();
 ```
 
+Help support this project by buying hard drives: [https://www.unli.xyz/diskprices/](https://www.unli.xyz/diskprices/)
+
 
