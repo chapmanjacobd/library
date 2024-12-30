@@ -42,6 +42,8 @@ def parse_args():
     )
     parser.add_argument("--up-limit", "--ul-limit", "--upload-limit", type=str, help="Upload limit")
 
+    parser.add_argument("--hosts", action=argparse_utils.ArgparseList, help="Limit to specific computers")
+
     arggroups.debug(parser)
 
     parser.add_argument("computer_database")
@@ -91,6 +93,9 @@ def allocate_torrents():
             },
         )
     )
+    if args.hosts:
+        disks = [d for d in disks if d["host"] in args.hosts]
+
     total_available = sum(d["free"] - args.min_free_space for d in disks)
     print(f"{len(disks)} disks matched. {strings.file_size(total_available)} available space")
 
