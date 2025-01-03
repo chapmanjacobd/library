@@ -423,8 +423,8 @@ def process_playqueue(args) -> None:
         media = db_media.natsort_media(args, media)
 
     if args.re_rank:
-        import pandas as pd
         import numpy as np
+        import pandas as pd
 
         from library.utils import pd_utils
 
