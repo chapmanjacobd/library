@@ -205,7 +205,7 @@ def process_path(args, path):
 
     # replace CSS
     base_folder = Path(__file__).resolve().parent
-    shutil.copy(base_folder / ".." / "assets" / "calibre.css", output_path / "stylesheet.css")
+    shutil.copy((base_folder / ".." / "assets" / "calibre.css").resolve(), output_path / "stylesheet.css")
 
     # shrink images
     image_paths = file_utils.rglob(str(output_path), consts.IMAGE_EXTENSIONS, quiet=True)[0]
