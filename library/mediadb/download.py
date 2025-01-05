@@ -146,14 +146,14 @@ def download(args=None) -> None:
                         strings.duration(consts.now() - d["time_deleted"]),
                     )
                     continue
-                elif d["time_modified"] > int(previous_time_attempted):
+                elif d.get("time_modified") and d["time_modified"] > int(previous_time_attempted):
                     log.info(
                         "[%s]: Download already attempted %s ago. Skipping!",
                         m["path"],
                         strings.duration(consts.now() - d["time_modified"]),
                     )
                     continue
-                elif d["download_attempts"] and d["download_attempts"] > args.download_retries:
+                elif d.get("download_attempts") and d["download_attempts"] > args.download_retries:
                     log.info(
                         "[%s]: Download attempts exceed download retries limit. Skipping!",
                         m["path"],
