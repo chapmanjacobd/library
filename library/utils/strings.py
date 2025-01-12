@@ -329,20 +329,23 @@ def duration(seconds) -> str:
     if seconds is None or math.isnan(seconds) or seconds == 0:
         return ""
 
-    test = humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="minutes", format="%0.0f")
+    try:
+        test = humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="minutes", format="%0.0f")
 
-    PRECISION_YEARS = 3
-    if len(test.split(",")) >= PRECISION_YEARS:
-        return humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="hours", format="%0.0f")
+        PRECISION_YEARS = 3
+        if len(test.split(",")) >= PRECISION_YEARS:
+            return humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="hours", format="%0.0f")
 
-    PRECISION_MONTHS = 2
-    if len(test.split(",")) >= PRECISION_MONTHS:
-        return humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="hours", format="%0.0f")
+        PRECISION_MONTHS = 2
+        if len(test.split(",")) >= PRECISION_MONTHS:
+            return humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="hours", format="%0.0f")
 
-    if int(seconds) > 10 * 60:
-        return humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="minutes", format="%0.0f")
+        if int(seconds) > 10 * 60:
+            return humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="minutes", format="%0.0f")
 
-    return humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="seconds", format="%0.0f")
+        return humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="seconds", format="%0.0f")
+    except OverflowError:
+        return ""
 
 
 def relative_datetime(seconds) -> str:
