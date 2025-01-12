@@ -48,7 +48,7 @@ deluxe = [
   "pdf2image",
   "pillow",
   "PyExifTool",
-  "pymcdm",
+  "pymcdm<1.3",  # dominant_alts.size > 0 ValueError should be a warning instead...
   "pyvirtualdisplay",
   "qbittorrent-api",
   "scikit-learn",

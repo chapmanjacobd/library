@@ -5,7 +5,7 @@
 groups = ["default", "deluxe", "test"]
 strategy = []
 lock_version = "4.5.0"
-content_hash = "sha256:aaf8b34647bc235c52ea4802eeadc08ecf273e71f13948e35b05df4c429db28c"
+content_hash = "sha256:18e094292af225442540940266be97ea4622f1fc898f5dedd4a37747967ced05"
 
 [[metadata.targets]]
 requires_python = ">=3.11"
@@ -2031,19 +2031,18 @@ files = [
 
 [[package]]
 name = "pymcdm"
-version = "1.3.0"
+version = "1.2.1"
 requires_python = ">=3.11"
 summary = "Python library for Multi-Criteria Decision-Making"
 dependencies = [
     "matplotlib",
     "numpy",
-    "pandas",
     "scipy",
     "tabulate",
 ]
 files = [
-    {file = "pymcdm-1.3.0-py3-none-any.whl", hash = "sha256:e7aef23f7cd03ca382f9a1386d9e44a23f40f54785243d72c565f9b63e4095d8"},
-    {file = "pymcdm-1.3.0.tar.gz", hash = "sha256:eada89dd87897373a0c3c82484a83a09d81564419c927c66161890b5df67da8a"},
+    {file = "pymcdm-1.2.1-py3-none-any.whl", hash = "sha256:bb555f88ba8460ca701a2c715d1cac7264715108cc58ec641901743fefb4e176"},
+    {file = "pymcdm-1.2.1.tar.gz", hash = "sha256:6a601b5d6a2c0bc55b5f21737849e8149ea5ee704c45463e43457de2195d7578"},
 ]
 
 [[package]]
