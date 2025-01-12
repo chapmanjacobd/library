@@ -8,7 +8,7 @@ tracking online video playlists (eg. YouTube subscriptions) and scheduling brows
 
 <img align="right" width="300" height="600" src="https://raw.githubusercontent.com/chapmanjacobd/library/main/.github/examples/art.avif" />
 
-[![Downloads](https://static.pepy.tech/badge/xklb)](https://pepy.tech/project/xklb)
+[![Downloads](https://static.pepy.tech/badge/library)](https://pepy.tech/project/library)
 
 ## Install
 
@@ -99,7 +99,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v3.0.036; 99 subcommands)
+    library (v3.0.037; 99 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
