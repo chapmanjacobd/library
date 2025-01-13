@@ -87,6 +87,7 @@ def torrents_add():
 
     scanned_set = set(arg_utils.gen_paths(args, default_exts=(".torrent",)))
 
+    known_hashes = set()
     try:
         pl_columns = db_utils.columns(args, "playlists")
 
