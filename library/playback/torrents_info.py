@@ -1,4 +1,6 @@
 #!/usr/bin/python3
+import argparse
+
 from library import usage
 from library.mediafiles import torrents_start
 from library.utils import arggroups, argparse_utils, consts, iterables, printing, processes, strings
@@ -8,6 +10,9 @@ from library.utils.path_utils import domain_from_url
 def parse_args():
     parser = argparse_utils.ArgumentParser(usage=usage.torrents_info)
     arggroups.qBittorrent(parser)
+    parser.add_argument(
+        "--force-start", "--start", action=argparse.BooleanOptionalAction, help="Force start matching torrents"
+    )
     arggroups.capability_soft_delete(parser)
     arggroups.capability_delete(parser)
     arggroups.debug(parser)
@@ -71,6 +76,8 @@ def torrents_info():
             qbt_client.torrents_delete(delete_files=True, torrent_hashes=torrent_hashes)
         elif args.delete_rows:
             qbt_client.torrents_delete(delete_files=False, torrent_hashes=torrent_hashes)
+        elif args.force_start is not None:
+            qbt_client.torrents_set_force_start(args.force_start, torrent_hashes=torrent_hashes)
         return
 
     interesting_states = [
