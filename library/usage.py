@@ -1923,7 +1923,7 @@ torrents_start = """library torrents-start [--prefix /mnt/d/] PATH ...
 
 torrents_info = """library torrents-info
 
-    Print stats
+    List torrents
 
         library torrents-info
 
@@ -1938,6 +1938,21 @@ torrents_info = """library torrents-info
     When --mark-deleted is provided, the torrents are tagged with 'delete' in qBittorrent
     When --delete-rows is provided, the metadata is removed from qBittorrent
     When --delete-files is provided, the downloaded files are deleted
+"""
+
+torrents_status = """library torrents-status
+
+    Print stats
+
+        library torrents-status
+
+    Search for specific torrent
+
+        library torrents-status query
+
+    Search for specific file
+
+        library torrents-status query -v --file-search query2
 """
 
 

@@ -3,13 +3,45 @@ import argparse
 
 from library import usage
 from library.mediafiles import torrents_start
-from library.utils import arggroups, argparse_utils, consts, iterables, printing, processes, strings
+from library.utils import arggroups, argparse_utils, consts, iterables, printing, strings
 from library.utils.path_utils import domain_from_url
 
 
 def parse_args():
     parser = argparse_utils.ArgumentParser(usage=usage.torrents_info)
     arggroups.qBittorrent(parser)
+    parser.add_argument(
+        "--downloading",
+        "--download",
+        "--down",
+        "--dl",
+        "--leeching",
+        "--leech",
+        action="store_true",
+        help="Include downloading torrents",
+    )
+    parser.add_argument(
+        "--uploading",
+        "--upload",
+        "--up",
+        "--ul",
+        "--seeding",
+        "--seeds",
+        action="store_true",
+        help="Include uploading torrents",
+    )
+
+    parser.add_argument(
+        "--file-counts", "--files", "--counts", action="store_true", help="Print file counts (a bit slow)"
+    )
+    parser.add_argument("--priority", action="store_true", help="Sort by priority")
+    parser.add_argument("--ratio", action="store_true", help="Sort by ratio")
+    parser.add_argument("--size", action="store_true", help="Sort by data transferred")
+    parser.add_argument("--remaining", action="store_true", help="Sort by remaining")
+
+    parser.add_argument("--active", action=argparse.BooleanOptionalAction, help="Show active torrents")
+    parser.add_argument("--inactive", "--dead", action=argparse.BooleanOptionalAction, help="Show inactive torrents")
+
     parser.add_argument(
         "--force-start", "--start", action=argparse.BooleanOptionalAction, help="Force start matching torrents"
     )
@@ -21,6 +53,16 @@ def parse_args():
 
     parser.add_argument("torrent_search", nargs="*", help="The info_hash, name, or save_path substring to search for")
     args = parser.parse_args()
+    arggroups.args_post(args, parser)
+
+    if args.torrent_search or args.file_search:
+        if set(["active", "inactive"]).issubset(args.defaults.keys()):
+            args.active = True
+            args.inactive = True
+    else:
+        if set(["active", "inactive"]).issubset(args.defaults.keys()):
+            args.active = True
+
     return args
 
 
@@ -33,189 +75,228 @@ def qbt_get_tracker(qbt_client, torrent):
     return domain_from_url(tracker)
 
 
+def filter_torrents_by_activity(args, torrents):
+    if (args.downloading and args.uploading):
+        torrents = [t for t in torrents if t.downloaded_session > 0 and t.uploaded_session > 0]
+    else:
+        if args.active:
+            torrents = [
+                t
+                for t in torrents
+                if (t.state_enum.is_downloading and t.downloaded_session > 0)
+                or (t.state_enum.is_uploading and t.uploaded_session > 0)
+            ]
+        if args.inactive:
+            torrents = [
+                t
+                for t in torrents
+                if (t.state_enum.is_downloading and t.downloaded_session == 0)
+                or (t.state_enum.is_uploading and t.uploaded_session == 0)
+            ]
+
+        if args.downloading:
+            torrents = [t for t in torrents if t.state_enum.is_downloading]
+        elif args.uploading:
+            torrents = [t for t in torrents if t.state_enum.is_uploading]
+
+    return torrents
+
+
 def torrents_info():
     args = parse_args()
 
+    def shorten(s, width):
+        return s if args.verbose >= consts.LOG_INFO else strings.shorten(s, width)
+
     qbt_client = torrents_start.start_qBittorrent(args)
-    all_torrents = qbt_client.torrents_info()
+    torrents = qbt_client.torrents_info()
+
+    error_torrents = [t for t in torrents if t.state in ["missingFiles", "error"]]
+    error_torrents = sorted(
+        error_torrents, key=lambda t: (t.amount_left == t.total_size, t.eta, t.amount_left), reverse=True
+    )
+    if error_torrents:
+        print("Error Torrents")
+        tbl = [
+            {
+                "state": t.state,
+                "name": shorten(t.name, width=40),
+                "progress": strings.safe_percent(t.progress),
+                "eta": strings.duration_short(t.eta) if t.eta < 8640000 else None,
+                "remaining": strings.file_size(t.amount_left) if t.amount_left > 0 else None,
+                "files": len(t.files) if args.file_counts else None,
+            }
+            for t in error_torrents
+        ]
+        printing.table(tbl)
+        print()
 
     if args.torrent_search or args.file_search:
-        torrents = [t for t in all_torrents if strings.glob_match(args.torrent_search, [t.name, t.save_path, t.hash])]
+        torrents = [t for t in torrents if strings.glob_match(args.torrent_search, [t.name, t.save_path, t.hash])]
 
         if args.file_search:
             torrents = [t for t in torrents if strings.glob_match(args.file_search, [f.name for f in t.files])]
+    else:
+        torrents = filter_torrents_by_activity(args, torrents)
 
-        if not torrents:
-            processes.no_media_found()
-
-        torrents = sorted(torrents, key=lambda t: -t.time_active)
-        for torrent in torrents:
-            printing.extended_view(torrent)
-
-            files = torrent.files
-            if args.file_search:
-                files = [f for f in torrent.files if strings.glob_match(args.file_search, [f.name])]
-
-            if args.verbose >= consts.LOG_INFO:
-                printing.extended_view(files)
-
-            if len(torrent.files) == 1:
-                print("1 file")
-            elif args.file_search:
-                print(len(files), "files of", len(torrent.files), "matched")
-            else:
-                print(len(torrent.files), "total files")
-            print()
-
-        print(len(torrents), "matched torrents")
-
-        torrent_hashes = [t.hash for t in torrents]
-        if args.mark_deleted:
-            qbt_client.torrents_add_tags(tags="library-delete", torrent_hashes=torrent_hashes)
-        elif args.delete_files:
-            qbt_client.torrents_delete(delete_files=True, torrent_hashes=torrent_hashes)
-        elif args.delete_rows:
-            qbt_client.torrents_delete(delete_files=False, torrent_hashes=torrent_hashes)
-        elif args.force_start is not None:
-            qbt_client.torrents_set_force_start(args.force_start, torrent_hashes=torrent_hashes)
-        return
-
-    interesting_states = [
-        "stoppedUP",
-        "queuedUP",
-        "stoppedDL",
-        "forcedMetaDL",
-        "metaDL",
-        "forcedDL",
-        "stalledDL",
-        # 'forcedUP', 'stalledUP', 'uploading',  # not very interesting
-        "downloading",
-        "missingFiles",
-        "error",
-    ]
-
-    torrents_by_state = {}
-    for torrent in all_torrents:
-        torrents_by_state.setdefault(torrent.state, []).append(torrent)
-
-    if args.verbose >= consts.LOG_INFO:
-        torrents_by_tracker = {}
-        for torrent in all_torrents:
-            torrents_by_tracker.setdefault(qbt_get_tracker(qbt_client, torrent), []).append(torrent)
-
-        tbl = []
-        for state in {*interesting_states} - {"uploading", "downloading"}:
-            torrents = torrents_by_state.get(state)
-            if not torrents:
-                continue
-
-            torrents = sorted(torrents, key=lambda t: (-t.seen_complete, t.time_active))
-
-            tbl.extend(
-                [
-                    {
-                        "state": state,
-                        "name": printing.path_fill(t.name, width=76),
-                        "seen_complete": strings.relative_datetime(t.seen_complete) if t.seen_complete > 0 else None,
-                        "last_activity": strings.relative_datetime(t.last_activity),
-                        "time_active": strings.duration(t.time_active),
-                        "num_seeds": f"{t.num_seeds} ({t.num_complete})",
-                        # 'num_leechs': f"{t.num_leechs} ({t.num_incomplete})",
-                        # 'comment': t.comment,
-                    }
-                    for t in torrents
-                ]
-            )
-        if tbl:
-            printing.table(tbl)
-            print()
-
-        tbl = []
-        for state in ["downloading", "missingFiles", "error"]:
-            torrents = torrents_by_state.get(state)
-            if not torrents:
-                continue
-
-            torrents = sorted(
-                torrents, key=lambda t: (t.amount_left == t.total_size, t.eta, t.amount_left), reverse=True
-            )
-
-            tbl.extend(
-                [
-                    {
-                        "state": state,
-                        "name": printing.path_fill(t.name, width=76),
-                        "progress": strings.safe_percent(t.progress),
-                        "eta": strings.duration(t.eta) if t.eta < 8640000 else None,
-                        "remaining": strings.file_size(t.amount_left),
-                    }
-                    for t in torrents
-                ]
-            )
-        if tbl:
-            printing.table(tbl)
-            print()
-
-        trackers = []
-        for tracker, torrents in torrents_by_tracker.items():
-            torrents = [t for t in torrents if args.verbose >= 2 or t.state not in ("stoppedDL",)]
-            remaining = sum(t.amount_left for t in torrents)
-            if remaining or args.verbose >= 2:
-                trackers.append(
-                    {
-                        "tracker": tracker,
-                        "count": len(torrents),
-                        "size": sum(t.total_size for t in torrents),
-                        "remaining": remaining,
-                        "file_count": sum(len(t.files) for t in torrents) if args.verbose >= 2 else None,  # a bit slow
-                    }
-                )
-        if trackers:
-            trackers = sorted(trackers, key=lambda d: (d["remaining"], d["size"]))
-            trackers = [
-                {
-                    **d,
-                    "size": strings.file_size(d["size"]),
-                    "remaining": strings.file_size(d["remaining"]) if d["remaining"] else None,
-                }
-                for d in trackers
-            ]
-            printing.table(iterables.list_dict_filter_bool(trackers))
-            print()
-
-    categories = []
-    for state, torrents in torrents_by_state.items():
-        remaining = sum(t.amount_left for t in torrents)
-        categories.append(
-            {
-                "state": state,
-                "count": len(torrents),
-                "size": strings.file_size(sum(t.total_size for t in torrents)),
-                "remaining": strings.file_size(remaining) if remaining else None,
-                "file_count": sum(len(t.files) for t in torrents) if args.verbose >= 2 else None,  # a bit slow
-            }
+    if args.priority:
+        torrents = sorted(torrents, key=lambda t: t.priority)
+    elif args.ratio:
+        torrents = sorted(torrents, key=lambda t: t.ratio)
+    elif args.remaining:
+        torrents = sorted(torrents, key=lambda t: t.remaining)
+    elif args.size:
+        torrents = sorted(
+            torrents,
+            key=lambda t: (
+                t.downloaded if t.state_enum.is_downloading else t.uploaded,
+                t.downloaded_session if t.state_enum.is_downloading else t.uploaded_session,
+            ),
+        )
+    elif args.inactive:
+        torrents = sorted(
+            torrents,
+            key=lambda t: (
+                t.state_enum.is_downloading,
+                t.eta if t.eta < 8640000 else 0,
+                t.time_active * t.last_activity,
+            ),
+        )
+    else:
+        torrents = sorted(
+            torrents,
+            key=lambda t: (
+                t.state_enum.is_downloading,
+                t.eta,
+                t.completion_on,
+                t.added_on,
+            ),
         )
 
-    categories = sorted(
-        categories,
-        key=lambda d: (
-            d["state"].endswith(("missingFiles", "error")),
-            d["state"].endswith(("downloading", "DL")),
-            iterables.safe_index(interesting_states, d["state"]),
-        ),
-    )
-    printing.table(iterables.list_dict_filter_bool(categories))
-    print()
+    if args.torrent_search or args.file_search:
+        print(len(torrents), "matching torrents")
 
-    transfer = qbt_client.transfer_info()
-    print(transfer.connection_status.upper())
+    active_torrents = [
+        t
+        for t in torrents
+        if (t.state_enum.is_downloading and t.downloaded_session > 0)
+        or (t.state_enum.is_uploading and t.uploaded_session > 0)
+    ]
+    if active_torrents:
+        print("Active Torrents")
 
-    dl_speed = strings.file_size(transfer.dl_info_speed)
-    dl_limit = f"[{strings.file_size(transfer.dl_rate_limit)}/s]" if transfer.dl_rate_limit > 0 else ""
-    dl_d = strings.file_size(transfer.dl_info_data)
-    print(f"DL {dl_speed}/s {dl_limit} ({dl_d})")
+        def gen_row(t):
+            d = {
+                "name": shorten(t.name, 35),
+                "num_seeds": f"{t.num_seeds} ({t.num_complete})",
+                "progress": strings.safe_percent(t.progress),
+            }
+            if t.state_enum.is_downloading:
+                d |= {
+                    "downloaded_session": strings.file_size(t.downloaded_session),
+                    "remaining": strings.file_size(t.amount_left) if t.amount_left > 0 else None,
+                    "speed": strings.file_size(t.dlspeed) + "/s" if t.dlspeed else None,
+                    "eta": strings.duration_short(t.eta) if t.eta < 8640000 else None,
+                }
+            if t.state_enum.is_uploading:
+                d |= {
+                    "uploaded_session": strings.file_size(t.uploaded_session),
+                    "uploaded": strings.file_size(t.uploaded),
+                }
+            if args.file_search:
+                files = t.files
+                files = [f for f in t.files if strings.glob_match(args.file_search, [f.name])]
 
-    up_speed = strings.file_size(transfer.up_info_speed)
-    up_limit = f"[{strings.file_size(transfer.up_rate_limit)}/s]" if transfer.up_rate_limit > 0 else ""
-    up_d = strings.file_size(transfer.up_info_data)
-    print(f"UP {up_speed}/s {up_limit} ({up_d})")
+                print(t.name)
+                printing.extended_view(files)
+                print()
+
+                d |= {"files": f"{len(files)} ({len(t.files)})"}
+            elif args.file_counts:
+                d |= {"files": len(t.files)}
+
+            if args.verbose >= consts.LOG_INFO:
+                d |= {
+                    "tracker": qbt_get_tracker(qbt_client, t),
+                    "seen_complete": (strings.relative_datetime(t.seen_complete) if t.seen_complete > 0 else None),
+                    "added_on": strings.relative_datetime(t.added_on),
+                    "last_activity": strings.relative_datetime(t.last_activity),
+                    "size": strings.file_size(t.total_size),
+                    "comment": t.comment,
+                    "content_path": t.content_path,
+                }
+
+            return d
+
+        printing.table(iterables.conform([gen_row(t) for t in active_torrents]))
+        print()
+
+    inactive_torrents = [
+        t
+        for t in torrents
+        if (t.state_enum.is_downloading and t.downloaded_session == 0)
+        or (t.state_enum.is_uploading and t.uploaded_session == 0)
+    ]
+    if inactive_torrents:
+        print("Inactive Torrents")
+
+        def gen_row(t):
+            d = {
+                "name": shorten(t.name, 35),
+                "num_seeds": f"{t.num_seeds} ({t.num_complete})",
+                "progress": strings.safe_percent(t.progress),
+                "seen_complete": (strings.relative_datetime(t.seen_complete) if t.seen_complete > 0 else ""),
+                "last_activity": strings.relative_datetime(t.last_activity),
+                "time_active": strings.duration_short(t.time_active),
+            }
+            if t.state_enum.is_downloading:
+                d |= {
+                    "downloaded": strings.file_size(t.downloaded),
+                    "remaining": strings.file_size(t.amount_left) if t.amount_left > 0 else None,
+                }
+            if t.state_enum.is_uploading:
+                d |= {
+                    "uploaded": strings.file_size(t.uploaded),
+                }
+
+            if args.file_search:
+                files = t.files
+                files = [f for f in t.files if strings.glob_match(args.file_search, [f.name])]
+
+                print(t.name)
+                printing.extended_view(files)
+                print()
+
+                d |= {"files": f"{len(files)} ({len(t.files)})"}
+            elif args.file_counts:
+                d |= {"files": len(t.files)}
+
+            if args.verbose >= consts.LOG_INFO:
+                d |= {
+                    "state": t.state,
+                    "tracker": qbt_get_tracker(qbt_client, t),
+                    "added_on": strings.relative_datetime(t.added_on),
+                    "size": strings.file_size(t.total_size),
+                    "remaining": strings.file_size(t.amount_left),
+                    "comment": t.comment,
+                    "content_path": t.content_path,
+                }
+
+            return d
+
+        printing.table(iterables.conform([gen_row(t) for t in inactive_torrents]))
+        print()
+
+    torrent_hashes = [t.hash for t in torrents]
+    if args.mark_deleted:
+        print("Marking deleted", len(torrents))
+        qbt_client.torrents_add_tags(tags="library-delete", torrent_hashes=torrent_hashes)
+    elif args.delete_files:
+        print("Deleting files of", len(torrents))
+        qbt_client.torrents_delete(delete_files=True, torrent_hashes=torrent_hashes)
+    elif args.delete_rows:
+        print("Deleting from qBit", len(torrents))
+        qbt_client.torrents_delete(delete_files=False, torrent_hashes=torrent_hashes)
+    elif args.force_start is not None:
+        print("Force-starting", len(torrents))
+        qbt_client.torrents_set_force_start(args.force_start, torrent_hashes=torrent_hashes)

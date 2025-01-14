@@ -110,6 +110,7 @@ progs = {
         "links_open": "Open links from link dbs",
         "surf": "Auto-load browser tabs in a streaming way (stdin)",
         "torrents_info": "List torrents (qBittorrent-nox)",
+        "torrents_status": "Overview of torrents (qBittorrent-nox)",
     },
     "Database enrichment subcommands": {
         "dedupe_db": "Dedupe SQLite tables",
@@ -250,6 +251,7 @@ modules = {
     "library.playback.surf.streaming_tab_loader": ["surf"],
     "library.playback.tabs_open.tabs_open": ["tb", "tabs", "open_tabs"],
     "library.playback.torrents_info.torrents_info": ["torrent-info", "torrents", "torrent"],
+    "library.playback.torrents_status.torrents_status": ["torrent-status"],
     "library.tablefiles.eda.eda": ["preview"],
     "library.tablefiles.incremental_diff.incremental_diff": [],
     "library.tablefiles.columns.columns": [],
