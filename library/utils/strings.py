@@ -7,6 +7,7 @@ from fnmatch import fnmatch
 from itertools import zip_longest
 
 import humanize
+from wcwidth import wcswidth
 
 from library.data import wordbank
 from library.utils import consts, iterables, nums
@@ -217,6 +218,22 @@ def combine(*list_) -> str | None:
     return ";".join(no_duplicates)
 
 
+def shorten(s, width):
+    if wcswidth(s) <= width:
+        return s
+
+    truncated = ""
+    current_width = 0
+    for char in s:
+        char_width = wcswidth(char)
+        if current_width + char_width > width:
+            break
+        truncated += char
+        current_width += char_width
+
+    return remove_suffixes(truncated, [" ", "-", "."]) + "…"
+
+
 def from_timestamp_seconds(s: str):
     parts = s.split(":")
     while len(parts) < 3:
@@ -344,6 +361,34 @@ def duration(seconds) -> str:
             return humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="minutes", format="%0.0f")
 
         return humanize.precisedelta(timedelta(seconds=int(seconds)), minimum_unit="seconds", format="%0.0f")
+    except OverflowError:
+        return ""
+
+
+def duration_short(seconds, format_str="%0.1f") -> str:
+    if seconds is None or math.isnan(seconds) or seconds == 0:
+        return ""
+
+    try:
+        if seconds < 60:
+            return f"{format_str % seconds} seconds"
+
+        minutes = seconds / 60
+        if minutes < 1.1:
+            return "1 minute"
+        elif minutes < 60:
+            return f"{format_str % minutes} minutes"
+
+        hours = minutes / 60
+        if hours < 1.1:
+            return "1 hour"
+        elif hours < 24:
+            return f"{format_str % hours} hours"
+
+        days = hours / 24
+        if days < 1.1:
+            return "1 day"
+        return f"{format_str % days} days"
     except OverflowError:
         return ""
 
