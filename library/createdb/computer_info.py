@@ -3,8 +3,8 @@ from collections import Counter
 from contextlib import suppress
 from pathlib import Path
 
-INTERVAL = 30
-INTERVAL_STR = "30s"
+INTERVAL = 5
+INTERVAL_STR = "5s"
 
 IS_LINUX = sys.platform == "linux"
 IS_MAC = sys.platform == "darwin"

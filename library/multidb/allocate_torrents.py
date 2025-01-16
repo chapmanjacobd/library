@@ -84,7 +84,7 @@ def allocate_torrents():
             FROM media AS disks
             JOIN playlists AS computers ON computers.id = disks.playlists_id
             WHERE free >= :min_free_space
-            AND (device_read_30s + device_write_30s) /(30) /2 <= :max_io_rate
+            AND (device_read_5s + device_write_5s) /(30) /2 <= :max_io_rate
             ORDER BY free
             """,
             {
