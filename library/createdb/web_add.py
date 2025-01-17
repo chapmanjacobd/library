@@ -70,7 +70,6 @@ def parse_args(action, **kwargs):
     web.requests_session(args)  # prepare requests session
     arggroups.selenium_post(args)
 
-
     if not args.profiles:
         if args.size:
             args.profiles = [DBType.filesystem]

@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 import argparse
+from pathlib import Path
 
 from library import usage
 from library.mediafiles import torrents_start
@@ -76,7 +77,7 @@ def qbt_get_tracker(qbt_client, torrent):
 
 
 def filter_torrents_by_activity(args, torrents):
-    if (args.downloading and args.uploading):
+    if args.downloading and args.uploading:
         torrents = [t for t in torrents if t.downloaded_session > 0 and t.uploaded_session > 0]
     else:
         if args.active:
@@ -223,6 +224,8 @@ def torrents_info():
                     "last_activity": strings.relative_datetime(t.last_activity),
                     "size": strings.file_size(t.total_size),
                     "comment": t.comment,
+                    "download_path": t.download_path,
+                    "save_path": t.save_path,
                     "content_path": t.content_path,
                 }
 
@@ -279,6 +282,8 @@ def torrents_info():
                     "size": strings.file_size(t.total_size),
                     "remaining": strings.file_size(t.amount_left),
                     "comment": t.comment,
+                    "download_path": t.download_path,
+                    "save_path": t.save_path,
                     "content_path": t.content_path,
                 }
 
@@ -297,6 +302,38 @@ def torrents_info():
     elif args.delete_rows:
         print("Deleting from qBit", len(torrents))
         qbt_client.torrents_delete(delete_files=False, torrent_hashes=torrent_hashes)
-    elif args.force_start is not None:
+
+    if args.force_start is not None:
         print("Force-starting", len(torrents))
         qbt_client.torrents_set_force_start(args.force_start, torrent_hashes=torrent_hashes)
+
+    if args.temp_drive and Path(args.temp_drive).is_absolute():
+        temp_prefix = Path(args.temp_drive)
+    else:
+        temp_prefix = Path(args.download_drive)
+    temp_prefix /= args.temp_prefix
+    download_prefix = Path(args.download_drive) / args.download_prefix
+
+    if "download_drive" not in args.defaults or "download_prefix" not in args.defaults:
+        print("Setting save path", len(torrents))
+        for t in torrents:
+            download_path = download_prefix
+            if args.tracker_dirnames:
+                domain = qbt_get_tracker(qbt_client, t)
+                if domain:
+                    download_path /= domain
+
+            print(t.save_path, "==>", download_path)
+            qbt_client.torrents_set_save_path(download_path, torrent_hashes=torrent_hashes)
+
+    if "temp_drive" not in args.defaults or "temp_prefix" not in args.defaults:
+        print("Setting temp path", len(torrents))
+        for t in torrents:
+            temp_path = temp_prefix
+            if args.tracker_dirnames:
+                domain = qbt_get_tracker(qbt_client, t)
+                if domain:
+                    temp_path /= domain
+
+            print(t.download_path, "==>", temp_path)
+            qbt_client.torrents_set_download_path(temp_path, torrent_hashes=torrent_hashes)
