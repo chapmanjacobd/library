@@ -144,7 +144,7 @@ def torrents_info():
     elif args.ratio:
         torrents = sorted(torrents, key=lambda t: t.ratio)
     elif args.remaining:
-        torrents = sorted(torrents, key=lambda t: t.remaining)
+        torrents = sorted(torrents, key=lambda t: t.amount_left)
     elif args.size:
         torrents = sorted(
             torrents,

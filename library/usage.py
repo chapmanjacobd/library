@@ -1545,11 +1545,14 @@ media_check = """library media-check [--chunk-size SECONDS] [--gap SECONDS OR 0.
         [ 91.0 .. 100.0] [141] ∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎∎
 """
 
-web_add = """library web-add [(--filesystem) | --video | --audio | --image | --text] DATABASE URL ...
+web_add = """library web-add [--filesystem | --video | --audio | --image | --text] DATABASE URL ...
 
-    Scan open directories
+    Scan open directories (multiple profiles can be selected or none at all)
 
+        library web-add open_dir.db http://1.1.1.1/  # simple spider
+        library web-add open_dir.db --filesystem http://1.1.1.1/
         library web-add open_dir.db --video http://1.1.1.1/
+        library web-add open_dir.db --filesystem --video http://1.1.1.1/
 
     Re-scan using a different profile
 

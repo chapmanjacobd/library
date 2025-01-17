@@ -148,6 +148,7 @@ def munge_av_tags(args, media) -> dict:
     format_.pop("format_long_name", None)
     format_.pop("nb_programs", None)
     format_.pop("nb_streams", None)
+    format_.pop("nb_stream_groups", None)
     format_.pop("probe_score", None)
     format_.pop("start_time", None)
     format_.pop("filename", None)

@@ -59,9 +59,6 @@ def parse_args(action, **kwargs):
     args = parser.parse_intermixed_args()
     arggroups.args_post(args, parser, create_db=action == consts.SC.web_add)
 
-    if not args.profiles:
-        args.profiles = [DBType.filesystem]
-
     if args.sizes:
         args.sizes = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.sizes)
 
@@ -72,6 +69,13 @@ def parse_args(action, **kwargs):
     arggroups.filter_links_post(args)
     web.requests_session(args)  # prepare requests session
     arggroups.selenium_post(args)
+
+
+    if not args.profiles:
+        if args.size:
+            args.profiles = [DBType.filesystem]
+        else:
+            args.profiles = []
 
     return args
 
@@ -123,23 +127,6 @@ def add_basic_metadata(args, m):
                 m["time_deleted"] = consts.now()
         with suppress(TimeoutError):
             m["type"] = file_utils.mimetype(m["path"])
-    else:
-        extension = m["path"].rsplit(".", 1)[-1].lower()
-        if (
-            args.scan_all_files
-            or (DBType.video in args.profiles and extension in consts.VIDEO_EXTENSIONS)
-            or (DBType.audio in args.profiles and extension in consts.AUDIO_ONLY_EXTENSIONS)
-            or (DBType.text in args.profiles and extension in consts.TEXTRACT_EXTENSIONS)
-            or (DBType.image in args.profiles and extension in consts.IMAGE_EXTENSIONS)
-        ):
-            with suppress(TimeoutError):
-                try:
-                    web_stats = web.stat(m["path"])
-                    if web_stats:
-                        m["size"] = web_stats.st_size
-                        m["time_modified"] = web_stats.st_mtime
-                except FileNotFoundError:
-                    m["time_deleted"] = consts.now()
 
     if getattr(args, "hash", False):
         # TODO: use head_foot_stream
@@ -214,13 +201,14 @@ def spider(args, paths: list):
         media = [consolidate_media(args, k) | (v or {}) for k, v in new_paths.items()]
         new_media_count += len(media)
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=args.threads) as executor:
-            gen_media = (f.result() for f in [executor.submit(add_basic_metadata, args, m) for m in media])
-            for i, m in enumerate(gen_media):
-                media[i] = m
-                printing.print_overwrite(
-                    f"Pages to scan {len(paths)} link scan: {new_media_count} new [{len(known_paths)} known]; basic metadata {i + 1} of {len(media)}"
-                )
+        if DBType.filesystem in args.profiles or args.hash:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=args.threads) as executor:
+                gen_media = (f.result() for f in [executor.submit(add_basic_metadata, args, m) for m in media])
+                for i, m in enumerate(gen_media):
+                    media[i] = m
+                    printing.print_overwrite(
+                        f"Pages to scan {len(paths)} link scan: {new_media_count} new [{len(known_paths)} known]; basic metadata {i + 1} of {len(media)}"
+                    )
         if media:
             add_media(args, media)
 
