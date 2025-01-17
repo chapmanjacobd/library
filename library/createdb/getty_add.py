@@ -17,32 +17,32 @@ def parse_args():
 
 
 def activity_stream_extract(args, json_data):
-    assert json_data['type'] == 'OrderedCollectionPage'
+    assert json_data["type"] == "OrderedCollectionPage"
 
     data = []
-    if 'orderedItems' in json_data:
-        for item in json_data['orderedItems']:
-            for k in ['id', 'created', 'endTime']:
+    if "orderedItems" in json_data:
+        for item in json_data["orderedItems"]:
+            for k in ["id", "created", "endTime"]:
                 item.pop(k)
-            obj = item.pop('object')
+            obj = item.pop("object")
 
-            type_ = item.pop('type')
-            if type_ == 'Delete':
+            type_ = item.pop("type")
+            if type_ == "Delete":
                 with args.db.conn:
-                    args.db["activity_stream"].delete_where("path = ?", [obj.get('id')])
-            elif type_ == 'Update':
+                    args.db["activity_stream"].delete_where("path = ?", [obj.get("id")])
+            elif type_ == "Update":
                 continue  # TODO: implement in-band Update mechanism
-            elif type_ not in ['Create']:
+            elif type_ not in ["Create"]:
                 raise
 
             obj_info = {
-                'path': obj.get('id'),
-                'type': obj.get('type'),
-                **{k: v for k, v in obj.items() if k not in ['id', 'type']},
+                "path": obj.get("id"),
+                "type": obj.get("type"),
+                **{k: v for k, v in obj.items() if k not in ["id", "type"]},
             }
             data.append(obj_info)
             if item:
-                print('item', item)
+                print("item", item)
 
     else:
         raise
@@ -68,8 +68,9 @@ def activity_stream_fetch(url):
 
     return r.json()
 
+
 def update_activity_stream(args):
-    current_page = int(args.db.pop('select max(page) from activity_stream') or 0) + 1
+    current_page = int(args.db.pop("select max(page) from activity_stream") or 0) + 1
 
     next_page_url = f"https://data.getty.edu/museum/collection/activity-stream/page/{current_page}"
     while next_page_url:
@@ -77,14 +78,14 @@ def update_activity_stream(args):
 
         page_data = activity_stream_fetch(next_page_url)
         if page_data:
-            current_page = int(page_data['id'].split('/')[-1])
+            current_page = int(page_data["id"].split("/")[-1])
 
             activities = activity_stream_extract(args, page_data)
             args.db["activity_stream"].insert_all(
                 [{"page": current_page, **activity} for activity in activities], alter=True, replace=True  # pk="id",
             )
 
-            next_page_url = page_data.get('next', {}).get('id')
+            next_page_url = page_data.get("next", {}).get("id")
         else:
             break
 
@@ -93,6 +94,7 @@ def getty_add():
     args = parse_args()
 
     update_activity_stream(args)
+
 
 # https://data.getty.edu/museum/collection/group/ee294bfc-bbe5-42b4-95b2-04872b802bfe
 # https://data.getty.edu/museum/collection/object/08eaed9f-1354-4817-8aed-1db49e893a03
