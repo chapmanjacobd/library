@@ -40,6 +40,7 @@ def parse_args():
     parser.add_argument("--size", action="store_true", help="Sort by data transferred")
     parser.add_argument("--remaining", action="store_true", help="Sort by remaining")
 
+    parser.add_argument("--all", action="store_true", help="Show active and inactive torrents")
     parser.add_argument("--active", action=argparse.BooleanOptionalAction, help="Show active torrents")
     parser.add_argument("--inactive", "--dead", action=argparse.BooleanOptionalAction, help="Show inactive torrents")
 
@@ -56,12 +57,11 @@ def parse_args():
     args = parser.parse_args()
     arggroups.args_post(args, parser)
 
-    if args.torrent_search or args.file_search:
-        if set(["active", "inactive"]).issubset(args.defaults.keys()):
-            args.active = True
-            args.inactive = True
-    else:
-        if set(["active", "inactive"]).issubset(args.defaults.keys()):
+    if set(["active", "inactive"]).issubset(args.defaults.keys()):
+        if args.all or args.torrent_search or args.file_search:
+            args.active = False
+            args.inactive = False
+        else:
             args.active = True
 
     return args
@@ -78,27 +78,26 @@ def qbt_get_tracker(qbt_client, torrent):
 
 def filter_torrents_by_activity(args, torrents):
     if args.downloading and args.uploading:
-        torrents = [t for t in torrents if t.downloaded_session > 0 and t.uploaded_session > 0]
-    else:
-        if args.active:
-            torrents = [
-                t
-                for t in torrents
-                if (t.state_enum.is_downloading and t.downloaded_session > 0)
-                or (t.state_enum.is_uploading and t.uploaded_session > 0)
-            ]
-        if args.inactive:
-            torrents = [
-                t
-                for t in torrents
-                if (t.state_enum.is_downloading and t.downloaded_session == 0)
-                or (t.state_enum.is_uploading and t.uploaded_session == 0)
-            ]
+        return [t for t in torrents if t.downloaded_session > 0 and t.uploaded_session > 0]
 
-        if args.downloading:
-            torrents = [t for t in torrents if t.state_enum.is_downloading]
-        elif args.uploading:
-            torrents = [t for t in torrents if t.state_enum.is_uploading]
+    if args.downloading:
+        torrents = [t for t in torrents if not t.state_enum.is_complete]
+    elif args.uploading:
+        torrents = [t for t in torrents if t.state_enum.is_complete]
+    if args.active:
+        torrents = [
+            t
+            for t in torrents
+            if (not t.state_enum.is_complete and t.downloaded_session > 0)
+            or (t.state_enum.is_complete and t.uploaded_session > 0)
+        ]
+    if args.inactive:
+        torrents = [
+            t
+            for t in torrents
+            if (not t.state_enum.is_complete and t.downloaded_session == 0)
+            or (t.state_enum.is_complete and t.uploaded_session == 0)
+        ]
 
     return torrents
 
@@ -150,15 +149,15 @@ def torrents_info():
         torrents = sorted(
             torrents,
             key=lambda t: (
-                t.downloaded if t.state_enum.is_downloading else t.uploaded,
-                t.downloaded_session if t.state_enum.is_downloading else t.uploaded_session,
+                t.downloaded if not t.state_enum.is_complete else t.uploaded,
+                t.downloaded_session if not t.state_enum.is_complete else t.uploaded_session,
             ),
         )
     elif args.inactive:
         torrents = sorted(
             torrents,
             key=lambda t: (
-                t.state_enum.is_downloading,
+                not t.state_enum.is_complete,
                 t.eta if t.eta < 8640000 else 0,
                 t.time_active * t.last_activity,
             ),
@@ -167,7 +166,7 @@ def torrents_info():
         torrents = sorted(
             torrents,
             key=lambda t: (
-                t.state_enum.is_downloading,
+                not t.state_enum.is_complete,
                 t.eta,
                 t.completion_on,
                 t.added_on,
@@ -180,8 +179,8 @@ def torrents_info():
     active_torrents = [
         t
         for t in torrents
-        if (t.state_enum.is_downloading and t.downloaded_session > 0)
-        or (t.state_enum.is_uploading and t.uploaded_session > 0)
+        if (not t.state_enum.is_complete and t.downloaded_session > 0)
+        or (t.state_enum.is_complete and t.uploaded_session > 0)
     ]
     if active_torrents:
         print("Active Torrents")
@@ -192,14 +191,14 @@ def torrents_info():
                 "num_seeds": f"{t.num_seeds} ({t.num_complete})",
                 "progress": strings.safe_percent(t.progress),
             }
-            if t.state_enum.is_downloading:
+            if not t.state_enum.is_complete:
                 d |= {
                     "downloaded_session": strings.file_size(t.downloaded_session),
                     "remaining": strings.file_size(t.amount_left) if t.amount_left > 0 else None,
                     "speed": strings.file_size(t.dlspeed) + "/s" if t.dlspeed else None,
                     "eta": strings.duration_short(t.eta) if t.eta < 8640000 else None,
                 }
-            if t.state_enum.is_uploading:
+            if t.state_enum.is_complete:
                 d |= {
                     "uploaded_session": strings.file_size(t.uploaded_session),
                     "uploaded": strings.file_size(t.uploaded),
@@ -237,8 +236,8 @@ def torrents_info():
     inactive_torrents = [
         t
         for t in torrents
-        if (t.state_enum.is_downloading and t.downloaded_session == 0)
-        or (t.state_enum.is_uploading and t.uploaded_session == 0)
+        if (not t.state_enum.is_complete and t.downloaded_session == 0)
+        or (t.state_enum.is_complete and t.uploaded_session == 0)
     ]
     if inactive_torrents:
         print("Inactive Torrents")
@@ -252,12 +251,12 @@ def torrents_info():
                 "last_activity": strings.relative_datetime(t.last_activity),
                 "time_active": strings.duration_short(t.time_active),
             }
-            if t.state_enum.is_downloading:
+            if not t.state_enum.is_complete:
                 d |= {
                     "downloaded": strings.file_size(t.downloaded),
                     "remaining": strings.file_size(t.amount_left) if t.amount_left > 0 else None,
                 }
-            if t.state_enum.is_uploading:
+            if t.state_enum.is_complete:
                 d |= {
                     "uploaded": strings.file_size(t.uploaded),
                 }
