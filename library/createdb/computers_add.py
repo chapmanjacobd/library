@@ -13,9 +13,12 @@ def parse_args(action, usage):
 
     arggroups.database(parser)
     if action == consts.SC.computers_add:
+        parser.add_argument("--ignore-mounts", nargs="+", default=[], help="List of mountpoints to ignore")
         parser.add_argument("hostnames", nargs="+", help="List of hostnames to connect to")
     args = parser.parse_args()
     arggroups.args_post(args, parser, create_db=True)
+
+    args.ignore_mounts = [s.rstrip(os.sep) for s in args.ignore_mounts]
     return args
 
 
@@ -44,14 +47,25 @@ def gather_system_info(hostname):
 
 def log_warning_if_same_free_space(computer_info, disks):
     seen_free_spaces = set()
+    seen_devices = set()
     for i, disk in enumerate(disks):
+        device = disk["device"]
+        if device in seen_devices:
+            log.warning(
+                "Skipping already seen device %s... any bind mounts? %s",
+                device,
+                [d for d in disks if d["device"] == device],
+            )
+            continue
+        seen_devices.add(device)
+
         free_space = disk["free"]
         if free_space in seen_free_spaces:
             log.warning(
-                "%s mount %s has the same free space as another disk! You should open a ticket with this info: %s",
-                computer_info["path"],
+                "%s mount %s has the same free space as another disk! You are lucky! Or not and you should open a ticket with this info: %s",
+                computer_info["node"],
                 disk["path"],
-                disks,
+                [d for d in disks if d["free"] == free_space],
             )
         else:
             seen_free_spaces.add(free_space)
@@ -73,6 +87,7 @@ def computer_add(args, hostnames):
                 disks = computer_info.pop("disks")
                 log.debug(computer_info)
 
+                disks = [d for d in disks if d["path"] not in args.ignore_mounts]
                 log_warning_if_same_free_space(computer_info, disks)
 
                 computer_info["path"] = hostname
