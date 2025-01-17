@@ -35,6 +35,7 @@ def parse_args():
         "--file-counts", "--files", "--counts", action="store_true", help="Print file counts (a bit slow)"
     )
 
+    parser.add_argument("--all", action="store_true", help="Show active and inactive torrents")
     parser.add_argument("--active", action="store_true", help="Show active torrents")
     parser.add_argument("--inactive", "--dead", action="store_true", help="Show inactive torrents")
 
@@ -46,6 +47,11 @@ def parse_args():
     parser.add_argument("torrent_search", nargs="*", help="The info_hash, name, or save_path substring to search for")
     args = parser.parse_args()
     arggroups.args_post(args, parser)
+
+    if set(["active", "inactive"]).issubset(args.defaults.keys()):
+        if args.all or args.torrent_search or args.file_search:
+            args.active = False
+            args.inactive = False
 
     return args
 
