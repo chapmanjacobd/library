@@ -2005,3 +2005,14 @@ allocate_torrents = """library allocate-torrents
 
         library allocate-torrents computers.db torrents.db -s specific words or tracker
 """
+
+getty_add = """library getty-add DATABASE
+
+    Download metadata
+
+        library getty-add getty.db -v
+
+    Download images
+
+        library download --fs getty.db --prefix ~/images/ -v
+"""

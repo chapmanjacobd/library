@@ -99,7 +99,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v3.0.039; 101 subcommands)
+    library (v3.0.040; 101 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -895,6 +895,24 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     Fetch oldest stories first
 
         library hnadd --oldest hn.db
+
+
+</details>
+
+###### getty-add
+
+<details><summary>Create / Update a Getty Museum database</summary>
+
+    $ library getty-add -h
+    usage: library getty-add DATABASE
+
+    Download metadata
+
+        library getty-add getty.db -v
+
+    Download images
+
+        library download --fs getty.db --prefix ~/images/ -v
 
 
 </details>
