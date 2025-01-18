@@ -1,12 +1,13 @@
-import random, sqlite3
+import sqlite3
 
+from library import usage
 from library.utils import arggroups, argparse_utils, iterables, web
 from library.utils.log_utils import log
 from library.utils.objects import traverse_obj
 
 
 def parse_args():
-    parser = argparse_utils.ArgumentParser()
+    parser = argparse_utils.ArgumentParser(usage=usage.getty_add)
     arggroups.requests(parser)
 
     arggroups.debug(parser)
@@ -187,7 +188,7 @@ def update_objects(args):
             d["path"]
             for d in args.db.query(
                 """
-                SELECT path FROM activity_stream WHERE type = 'HumanMadeObject'
+                SELECT DISTINCT path FROM activity_stream WHERE type = 'HumanMadeObject'
                 EXCEPT
                 SELECT object_path FROM media
                 """
@@ -195,12 +196,11 @@ def update_objects(args):
         ]
     except sqlite3.OperationalError:
         unknown_objects = [
-            d["path"] for d in args.db.query("SELECT path FROM activity_stream WHERE type = 'HumanMadeObject'")
+            d["path"] for d in args.db.query("SELECT DISTINCT path FROM activity_stream WHERE type = 'HumanMadeObject'")
         ]
 
     print("Fetching", len(unknown_objects), "unknown objects")
 
-    random.shuffle(unknown_objects)
     for unknown_object in unknown_objects:
         log.debug("Fetching %s...", unknown_object)
 
