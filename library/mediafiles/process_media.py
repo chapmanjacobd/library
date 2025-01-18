@@ -100,6 +100,15 @@ def collect_media(args) -> list[dict]:
     CALIBRE_INSTALLED = which("ebook-convert")
     UNAR_INSTALLED = which("lsar")
 
+    if not FFMPEG_INSTALLED:
+        log.warning("ffmpeg not installed. Video and Audio files will be skipped")
+    if not IM7_INSTALLED:
+        log.warning("ImageMagick not installed. Image files will be skipped")
+    if not CALIBRE_INSTALLED:
+        log.warning("Calibre not installed. Text files will be skipped")
+    if not UNAR_INSTALLED:
+        log.warning("unar not installed. Archives will not be extracted")
+
     default_exts = (
         (consts.AUDIO_ONLY_EXTENSIONS if FFMPEG_INSTALLED else set())
         | (consts.VIDEO_EXTENSIONS if FFMPEG_INSTALLED else set())
@@ -128,6 +137,10 @@ def collect_media(args) -> list[dict]:
 def check_shrink(args, m) -> list:
     m["ext"] = path_utils.ext(m["path"])
     filetype = (m.get("type") or "").lower()
+
+    if not m["size"]:  # empty or deleted file
+        return []
+
     if (
         (filetype and (filetype.startswith("audio/") or " audio" in filetype))
         or m["ext"] in consts.AUDIO_ONLY_EXTENSIONS
