@@ -99,7 +99,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v3.0.038; 99 subcommands)
+    library (v3.0.039; 101 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -122,6 +122,8 @@ To stop playing press Ctrl+C in either the terminal or mpv
     │ reddit-add      │ Create a reddit database; Add subreddits │
     ├─────────────────┼──────────────────────────────────────────┤
     │ hn-add          │ Create / Update a Hacker News database   │
+    ├─────────────────┼──────────────────────────────────────────┤
+    │ getty-add       │ Create / Update a Getty Museum database  │
     ├─────────────────┼──────────────────────────────────────────┤
     │ substack        │ Backup substack articles                 │
     ├─────────────────┼──────────────────────────────────────────┤
@@ -275,27 +277,29 @@ To stop playing press Ctrl+C in either the terminal or mpv
     ╰─────────────────┴─────────────────────────────────────────────────────────────╯
 
     Playback subcommands:
-    ╭───────────────┬────────────────────────────────────────────────────────╮
-    │ watch         │ Watch / Listen                                         │
-    ├───────────────┼────────────────────────────────────────────────────────┤
-    │ now           │ Show what is currently playing                         │
-    ├───────────────┼────────────────────────────────────────────────────────┤
-    │ next          │ Play next file and optionally delete current file      │
-    ├───────────────┼────────────────────────────────────────────────────────┤
-    │ seek          │ Set playback to a certain time, fast-forward or rewind │
-    ├───────────────┼────────────────────────────────────────────────────────┤
-    │ stop          │ Stop all playback                                      │
-    ├───────────────┼────────────────────────────────────────────────────────┤
-    │ pause         │ Pause all playback                                     │
-    ├───────────────┼────────────────────────────────────────────────────────┤
-    │ tabs-open     │ Open your tabs for the day                             │
-    ├───────────────┼────────────────────────────────────────────────────────┤
-    │ links-open    │ Open links from link dbs                               │
-    ├───────────────┼────────────────────────────────────────────────────────┤
-    │ surf          │ Auto-load browser tabs in a streaming way (stdin)      │
-    ├───────────────┼────────────────────────────────────────────────────────┤
-    │ torrents-info │ List torrents (qBittorrent-nox)                        │
-    ╰───────────────┴────────────────────────────────────────────────────────╯
+    ╭─────────────────┬────────────────────────────────────────────────────────╮
+    │ watch           │ Watch / Listen                                         │
+    ├─────────────────┼────────────────────────────────────────────────────────┤
+    │ now             │ Show what is currently playing                         │
+    ├─────────────────┼────────────────────────────────────────────────────────┤
+    │ next            │ Play next file and optionally delete current file      │
+    ├─────────────────┼────────────────────────────────────────────────────────┤
+    │ seek            │ Set playback to a certain time, fast-forward or rewind │
+    ├─────────────────┼────────────────────────────────────────────────────────┤
+    │ stop            │ Stop all playback                                      │
+    ├─────────────────┼────────────────────────────────────────────────────────┤
+    │ pause           │ Pause all playback                                     │
+    ├─────────────────┼────────────────────────────────────────────────────────┤
+    │ tabs-open       │ Open your tabs for the day                             │
+    ├─────────────────┼────────────────────────────────────────────────────────┤
+    │ links-open      │ Open links from link dbs                               │
+    ├─────────────────┼────────────────────────────────────────────────────────┤
+    │ surf            │ Auto-load browser tabs in a streaming way (stdin)      │
+    ├─────────────────┼────────────────────────────────────────────────────────┤
+    │ torrents-info   │ List torrents (qBittorrent-nox)                        │
+    ├─────────────────┼────────────────────────────────────────────────────────┤
+    │ torrents-status │ Overview of torrents (qBittorrent-nox)                 │
+    ╰─────────────────┴────────────────────────────────────────────────────────╯
 
     Database enrichment subcommands:
     ╭────────────────────┬────────────────────────────────────────────────────╮
@@ -689,11 +693,14 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 <details><summary>Add open-directory media</summary>
 
     $ library web-add -h
-    usage: library web-add [(--filesystem) | --video | --audio | --image | --text] DATABASE URL ...
+    usage: library web-add [--filesystem | --video | --audio | --image | --text] DATABASE URL ...
 
-    Scan open directories
+    Scan open directories (multiple profiles can be selected or none at all)
 
+        library web-add open_dir.db http://1.1.1.1/  # simple spider
+        library web-add open_dir.db --filesystem http://1.1.1.1/
         library web-add open_dir.db --video http://1.1.1.1/
+        library web-add open_dir.db --filesystem --video http://1.1.1.1/
 
     Re-scan using a different profile
 
@@ -3000,7 +3007,7 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
     $ library torrents-info -h
     usage: library torrents-info
 
-    Print stats
+    List torrents
 
         library torrents-info
 
@@ -3015,6 +3022,28 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
     When --mark-deleted is provided, the torrents are tagged with 'delete' in qBittorrent
     When --delete-rows is provided, the metadata is removed from qBittorrent
     When --delete-files is provided, the downloaded files are deleted
+
+
+</details>
+
+###### torrents-status
+
+<details><summary>Overview of torrents (qBittorrent-nox)</summary>
+
+    $ library torrents-status -h
+    usage: library torrents-status
+
+    Print stats
+
+        library torrents-status
+
+    Search for specific torrent
+
+        library torrents-status query
+
+    Search for specific file
+
+        library torrents-status query -v --file-search query2
 
 
 </details>
