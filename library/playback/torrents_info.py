@@ -4,7 +4,7 @@ from pathlib import Path
 
 from library import usage
 from library.mediafiles import torrents_start
-from library.utils import arggroups, argparse_utils, consts, iterables, printing, strings
+from library.utils import arggroups, argparse_utils, consts, iterables, printing, processes, strings
 from library.utils.path_utils import domain_from_url
 
 
@@ -33,16 +33,18 @@ def parse_args():
     )
 
     parser.add_argument(
-        "--file-counts", "--files", "--counts", action="store_true", help="Print file counts (a bit slow)"
+        "--file-counts", "--files", "--counts", action="store_true", help="Include file counts column (a bit slow)"
     )
+    parser.add_argument("--trackers", action="store_true", help="Include tracker column")
+
     parser.add_argument("--priority", action="store_true", help="Sort by priority")
     parser.add_argument("--ratio", action="store_true", help="Sort by ratio")
     parser.add_argument("--size", action="store_true", help="Sort by data transferred")
     parser.add_argument("--remaining", action="store_true", help="Sort by remaining")
 
     parser.add_argument("--all", action="store_true", help="Show active and inactive torrents")
-    parser.add_argument("--active", action=argparse.BooleanOptionalAction, help="Show active torrents")
-    parser.add_argument("--inactive", "--dead", action=argparse.BooleanOptionalAction, help="Show inactive torrents")
+    parser.add_argument("--active", action="store_true", help="Show active torrents")
+    parser.add_argument("--inactive", "--dead", action="store_true", help="Show inactive torrents")
 
     parser.add_argument(
         "--force-start", "--start", action=argparse.BooleanOptionalAction, help="Force start matching torrents"
@@ -131,13 +133,13 @@ def torrents_info():
         printing.table(tbl)
         print()
 
+    torrents = filter_torrents_by_activity(args, torrents)
+
     if args.torrent_search or args.file_search:
         torrents = [t for t in torrents if strings.glob_match(args.torrent_search, [t.name, t.save_path, t.hash])]
 
         if args.file_search:
             torrents = [t for t in torrents if strings.glob_match(args.file_search, [f.name for f in t.files])]
-    else:
-        torrents = filter_torrents_by_activity(args, torrents)
 
     if args.priority:
         torrents = sorted(torrents, key=lambda t: t.priority)
@@ -173,6 +175,8 @@ def torrents_info():
             ),
         )
 
+    if not torrents:
+        processes.no_media_found()
     if args.torrent_search or args.file_search:
         print(len(torrents), "matching torrents")
 
@@ -215,9 +219,13 @@ def torrents_info():
             elif args.file_counts:
                 d |= {"files": len(t.files)}
 
+            if args.priority:
+                d |= {"priority": str(t.priority) + (" [F]" if t.force_start else "")}
+            if args.trackers:
+                d |= {"tracker": qbt_get_tracker(qbt_client, t)}
+
             if args.verbose >= consts.LOG_INFO:
                 d |= {
-                    "tracker": qbt_get_tracker(qbt_client, t),
                     "seen_complete": (strings.relative_datetime(t.seen_complete) if t.seen_complete > 0 else None),
                     "added_on": strings.relative_datetime(t.added_on),
                     "last_activity": strings.relative_datetime(t.last_activity),
@@ -273,10 +281,14 @@ def torrents_info():
             elif args.file_counts:
                 d |= {"files": len(t.files)}
 
+            if args.priority:
+                d |= {"priority": str(t.priority) + (" [F]" if t.force_start else "")}
+            if args.trackers:
+                d |= {"tracker": qbt_get_tracker(qbt_client, t)}
+
             if args.verbose >= consts.LOG_INFO:
                 d |= {
                     "state": t.state,
-                    "tracker": qbt_get_tracker(qbt_client, t),
                     "added_on": strings.relative_datetime(t.added_on),
                     "size": strings.file_size(t.total_size),
                     "remaining": strings.file_size(t.amount_left),

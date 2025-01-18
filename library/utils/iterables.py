@@ -95,6 +95,13 @@ def concat(*args):
     return (part for part in args if part)
 
 
+def find_dict_value(input_list: list[dict], **kwargs) -> dict:
+    for item in input_list:
+        if all(item.get(k) == v for k, v in kwargs.items()):
+            return item
+    return {}
+
+
 def find_none_keys(list_of_dicts, keep_0=True):
     none_keys = []
 
