@@ -2,7 +2,7 @@ import sys
 
 from library import usage
 from library.playback import media_printer
-from library.utils import arggroups, argparse_utils, file_utils, web
+from library.utils import arggroups, argparse_utils, file_utils, printing, web
 from library.utils.log_utils import check_stdio
 
 
@@ -58,7 +58,7 @@ def file_markdown(args, path):
             else:
                 print(f"## {path}:{df_name}")
             print()
-            print(df.to_markdown(tablefmt="github", index=False))
+            printing.table(df.to_dict(orient="records"))
             print()
 
 

@@ -256,3 +256,14 @@ def dict_filter_similar_key(input_dict, input_string, threshold=0.7):
     filtered_dict = {key: value for key, value in input_dict.items() if similar_keys[key] >= threshold}
 
     return filtered_dict
+
+
+def traverse_obj(obj, path):
+    for key in path:
+        if isinstance(obj, dict) and key in obj:
+            obj = obj[key]
+        elif isinstance(obj, list) and isinstance(key, int) and -1 <= key < len(obj):
+            obj = obj[key]
+        else:
+            return None
+    return obj

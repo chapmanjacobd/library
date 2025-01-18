@@ -85,17 +85,16 @@ def torrents_status():
         printing.table(tbl)
         print()
 
+    torrents = filter_torrents_by_activity(args, torrents)
+
     if args.torrent_search or args.file_search:
         torrents = [t for t in torrents if strings.glob_match(args.torrent_search, [t.name, t.save_path, t.hash])]
 
         if args.file_search:
             torrents = [t for t in torrents if strings.glob_match(args.file_search, [f.name for f in t.files])]
-    else:
-        torrents = filter_torrents_by_activity(args, torrents)
 
     if not torrents:
         processes.no_media_found()
-
     print(len(torrents), "torrents:")
     print()
 
