@@ -139,11 +139,9 @@ def objects_extract(args, j):
         description = object_description["content"]
         description += ";".join(d["content"] for d in object_description["subject_to"] for d in d["subject_of"])
 
-    author = None
-    if j["produced_by"].get("referred_to_by"):
-        author = iterables.find_dict_value(
-            j["produced_by"]["referred_to_by"], _label="Artist/Maker (Producer) Description"
-        ).get("content")
+    author = traverse_obj(j, ["produced_by", "referred_to_by"])
+    if author:
+        author = iterables.find_dict_value(author, _label="Artist/Maker (Producer) Description").get("content")
 
     # TODO: deprecated but I don't want to make another HTTP call... calling their bluff
     image_path = [
@@ -165,7 +163,7 @@ def objects_extract(args, j):
 
     d = {
         "path": image_path or None,
-        "name": j["_label"],
+        "title": j["_label"],
         "types": "; ".join(set(d["_label"] for d in j["classified_as"]) - ignore_types),
         "description": description,
         "culture": iterables.find_dict_value(j["referred_to_by"], _label="Culture Statement").get("content"),
@@ -207,7 +205,9 @@ def update_objects(args):
         page_data = getty_fetch(unknown_object)
         if page_data:
             images = objects_extract(args, page_data)
-            args.db["media"].insert_all(images, alter=True, replace=True, pk="id")
+            args.db["media"].insert_all(images, alter=True, pk="id")
+        else:
+            args.db["media"].insert({"title": "404 Not Found", "object_path": unknown_object}, alter=True, pk="id")
 
 
 def getty_add():
