@@ -98,6 +98,8 @@ def allocate_torrents():
 
     total_available = sum(d["free"] - args.min_free_space for d in disks)
     print(f"{len(disks)} disks matched. {strings.file_size(total_available)} available space")
+    if not disks:
+        raise SystemExit(28)
 
     args.filter_sql.append("and size < :download_size")
     args.filter_bindings["download_size"] = disks[-1]["free"] - args.min_free_space
