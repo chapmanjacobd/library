@@ -7,14 +7,13 @@ from library.utils import arggroups, argparse_utils, consts, db_utils, objects, 
 from library.utils.log_utils import log
 
 
-def parse_args(action, usage):
-    parser = argparse_utils.ArgumentParser(usage=usage)
+def parse_args():
+    parser = argparse_utils.ArgumentParser(usage=usage.computers_add)
     arggroups.debug(parser)
 
     arggroups.database(parser)
-    if action == consts.SC.computers_add:
-        parser.add_argument("--ignore-mounts", nargs="+", default=[], help="List of mountpoints to ignore")
-        parser.add_argument("hostnames", nargs="+", help="List of hostnames to connect to")
+    parser.add_argument("--ignore-mounts", nargs="+", default=[], help="List of mountpoints to ignore")
+    parser.add_argument("hostnames", nargs="+", help="List of hostnames to connect to")
     args = parser.parse_args()
     arggroups.args_post(args, parser, create_db=True)
 
@@ -101,12 +100,6 @@ def computer_add(args, hostnames):
 
 
 def computers_add():
-    args = parse_args(consts.SC.computers_add, usage.computers_add)
+    args = parse_args()
 
     computer_add(args, args.hostnames)
-
-
-def computers_update():
-    args = parse_args(consts.SC.computers_update, usage.computers_update)
-
-    computer_add(args, [d["path"] for d in args.db.query("select path from playlists")])
