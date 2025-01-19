@@ -161,7 +161,7 @@ def media_printer(args, data, units=None, media_len=None) -> None:
             D["duration"] = total_duration
             D["avg_duration"] = nums.safe_mean(m.get("duration") for m in media)
 
-        if hasattr(args, "action") and "history" in tables:
+        if hasattr(args, "action") and "history" in tables and "id" in m_columns:
             if action in (SC.download, SC.download_status) and "time_downloaded" in m_columns:
                 D["download_duration"] = cadence_adjusted_items(args, D["count"], time_column="time_downloaded")
             elif total_duration > 0:

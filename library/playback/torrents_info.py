@@ -4,7 +4,7 @@ from pathlib import Path
 
 from library import usage
 from library.mediafiles import torrents_start
-from library.utils import arggroups, argparse_utils, consts, iterables, printing, processes, strings
+from library.utils import arggroups, argparse_utils, consts, iterables, path_utils, printing, processes, strings
 from library.utils.path_utils import domain_from_url
 
 
@@ -45,10 +45,13 @@ def parse_args():
     parser.add_argument("--all", action="store_true", help="Show active and inactive torrents")
     parser.add_argument("--active", action="store_true", help="Show active torrents")
     parser.add_argument("--inactive", "--dead", action="store_true", help="Show inactive torrents")
+    parser.add_argument("--stopped", "--paused", action="store_true", help="Show stopped torrents")
 
     parser.add_argument(
         "--force-start", "--start", action=argparse.BooleanOptionalAction, help="Force start matching torrents"
     )
+    parser.add_argument("--stop", action="store_true", help="Stop matching torrents")
+    parser.add_argument("--export", action="store_true", help="Export matching torrent files")
     arggroups.capability_soft_delete(parser)
     arggroups.capability_delete(parser)
     arggroups.debug(parser)
@@ -133,6 +136,9 @@ def torrents_info():
         printing.table(tbl)
         print()
 
+    if args.stopped:
+        torrents = [t for t in torrents if t.state_enum.is_stopped]
+
     torrents = filter_torrents_by_activity(args, torrents)
 
     if args.torrent_search or args.file_search:
@@ -187,7 +193,7 @@ def torrents_info():
         or (t.state_enum.is_complete and t.uploaded_session > 0)
     ]
     if active_torrents:
-        print("Active Torrents")
+        print(f"Active Torrents ({len(active_torrents)})")
 
         def gen_row(t):
             d = {
@@ -248,7 +254,7 @@ def torrents_info():
         or (t.state_enum.is_complete and t.uploaded_session == 0)
     ]
     if inactive_torrents:
-        print("Inactive Torrents")
+        print(f"Inactive Torrents ({len(inactive_torrents)})")
 
         def gen_row(t):
             d = {
@@ -317,6 +323,20 @@ def torrents_info():
     if args.force_start is not None:
         print("Force-starting", len(torrents))
         qbt_client.torrents_set_force_start(args.force_start, torrent_hashes=torrent_hashes)
+
+    if args.stop:
+        print("Stopping", len(torrents))
+        qbt_client.torrents_stop(torrent_hashes=torrent_hashes)
+
+    if args.export:
+        p = Path("exported_torrents")
+        p.mkdir(exist_ok=True)
+        for idx, t in enumerate(torrents):
+            printing.print_overwrite("Exporting", idx + 1, "of", len(torrents), "to", p)
+
+            file_name = f"{qbt_get_tracker(qbt_client, t)}_{t.name}_{t.hash}.torrent"
+            file_name = path_utils.clean_path(file_name.encode())
+            (p / file_name).write_bytes(qbt_client.torrents_export(torrent_hash=t.hash))
 
     if args.temp_drive and Path(args.temp_drive).is_absolute():
         temp_prefix = Path(args.temp_drive)

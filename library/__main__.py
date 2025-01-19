@@ -129,7 +129,6 @@ progs = {
         "gallery_update": "Update online gallery media",
         "links_update": "Update a link-scraping database",
         "reddit_update": "Update reddit media",
-        "computers_update": "Update computer stats",
     },
     "Misc subcommands": {
         "export_text": "Export HTML files from SQLite databases",
@@ -162,7 +161,6 @@ def print_help(parser) -> None:
 
 modules = {
     "library.createdb.computers_add.computers_add": ["computer-add", "pc-add", "ssh-add"],
-    "library.createdb.computers_add.computers_update": ["computer-update", "pc-update", "ssh-update"],
     "library.createdb.fs_add.fs_add": ["filesystem-add", "x", "extract"],
     "library.createdb.fs_add.fs_update": ["filesystem-update", "xu"],
     "library.createdb.gallery_add.gallery_add": ["gdl-add", "ga"],
