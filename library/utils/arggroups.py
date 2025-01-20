@@ -1768,28 +1768,23 @@ def media_check(parent_parser):
     parser.add_argument(
         "--gap",
         default="0.05",
+        type=nums.float_from_percent,
         help="Width between chunks to skip (default 5%%). Values greater than 1 are treated as number of seconds",
     )
     parser.add_argument(
         "--delete-corrupt",
         "--delete-corruption",
+        type=nums.float_from_percent,
         help="Delete media that is more corrupt or equal to this threshold. Values greater than 1 are treated as number of seconds",
     )
     parser.add_argument(
         "--full-scan-if-corrupt",
         "--full-scan-if-corruption",
+        type=nums.float_from_percent,
         help="Full scan as second pass if initial scan result more corruption or equal to this threshold. Values greater than 1 are treated as number of seconds",
     )
     parser.add_argument("--full-scan", action="store_true", help="Decode the full media file")
     parser.add_argument("--audio-scan", action="store_true", help="Count errors in audio track only")
-
-
-def media_check_post(args):
-    args.gap = nums.float_from_percent(args.gap)
-    if args.delete_corrupt:
-        args.delete_corrupt = nums.float_from_percent(args.delete_corrupt)
-    if args.full_scan_if_corrupt:
-        args.full_scan_if_corrupt = nums.float_from_percent(args.full_scan_if_corrupt)
 
 
 def db_profiles(parser):
@@ -1996,3 +1991,99 @@ def qBittorrent(parent_parser):
     parser.add_argument(
         "--delete-torrent", action=argparse.BooleanOptionalAction, default=True, help="Delete torrent file after adding"
     )
+
+
+def qBittorrent_torrents(parent_parser):
+    parser = parent_parser.add_argument_group("qBittorrent Torrents")
+    parser.add_argument("--all", action="store_true", help="Include active and inactive torrents")
+    parser.add_argument(
+        "--active", action="store_true", help="Include active torrents (default when not --all or --inactive)"
+    )
+    parser.add_argument("--inactive", "--dead", action="store_true", help="Include inactive torrents")
+    parser.add_argument("--stopped", "--paused", action="store_true", help="Include stopped torrents")
+    parser.add_argument("--complete", "--completed", action="store_true", help="Include completed torrents")
+    parser.add_argument("--incomplete", action="store_true", help="Include incomplete torrents")
+
+    parser.add_argument(
+        "--sizes",
+        "--size",
+        "-S",
+        action="append",
+        help="""Include torrents constrained by total file sizes (uses the same syntax as fd-find)
+-S 6           # 6 MB exactly (not likely)
+-S-6           # less than 6 MB
+-S+6           # more than 6 MB
+-S 6%%10       # 6 MB ±10 percent (between 5 and 7 MB)
+-S+5GB -S-7GB  # between 5 and 7 GB""",
+    )
+    parser.add_argument(
+        "--avg-sizes",
+        action="append",
+        help="""Include torrents constrained by average file sizes (uses the same syntax as fd-find)""",
+    )
+    parser.add_argument("--seeders", action="append", help="Include torrents with N seeders")
+    parser.add_argument("--leechers", action="append", help="Include torrents with N leechers")
+    parser.add_argument("--time-added", action="append", help="Include torrents with N time since added")
+    parser.add_argument("--time-stalled", action="append", help="Include torrents with N time since last activity")
+    parser.add_argument("--time-unseeded", action="append", help="Include torrents with N time since last seeder")
+    parser.add_argument("--time-active", action="append", help="Include torrents with N time active")
+    parser.add_argument("--time-completed", action="append", help="Include torrents with N time completed")
+    parser.add_argument("--priority", action="append", help="Include torrents with N priority")
+    parser.add_argument("--progress", action="append", help="Include torrents with N%% progress")
+    parser.add_argument("--remaining", action="append", help="Include torrents with N bytes remaining")
+    parser.add_argument("--uploaded", action="append", help="Include torrents with N bytes uploaded")
+    parser.add_argument("--ratio", action="append", help="Include torrents with N ratio")
+
+    parser.add_argument(
+        "--downloading",
+        "--download",
+        "--down",
+        "--dl",
+        "--leeching",
+        "--leech",
+        action="store_true",
+        help="Include downloading torrents",
+    )
+    parser.add_argument(
+        "--uploading",
+        "--upload",
+        "--up",
+        "--ul",
+        "--seeding",
+        "--seeds",
+        action="store_true",
+        help="Include uploading torrents",
+    )
+
+    parser.add_argument(
+        "--file-counts", "--files", "--counts", action="store_true", help="Include file counts column (a bit slow)"
+    )
+    parser.add_argument("--trackers", action="store_true", help="Include tracker column")
+
+    parser.add_argument("--file-search", "-s", nargs="+", help="The file path substring to search for")
+    parser.add_argument("torrent_search", nargs="*", help="The info_hash, name, or save_path substring to search for")
+
+
+def qBittorrent_torrents_post(args):
+    args.sizes = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.sizes)
+    args.remaining = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.remaining)
+    args.uploaded = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.uploaded)
+    args.avg_sizes = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.avg_sizes)
+
+    args.priority = sql_utils.parse_human_to_lambda(int, args.priority)
+    args.seeders = sql_utils.parse_human_to_lambda(int, args.seeders)
+    args.leechers = sql_utils.parse_human_to_lambda(int, args.leechers)
+
+    args.time_added = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_added)
+    args.time_stalled = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_stalled)
+    args.time_unseeded = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_unseeded)
+    args.time_active = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_active)
+    args.time_completed = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_completed)
+
+    args.ratio = sql_utils.parse_human_to_lambda(nums.float_from_percent, args.ratio)
+    args.progress = sql_utils.parse_human_to_lambda(nums.float_from_percent, args.progress)
+
+    if set(["active", "inactive"]).issubset(args.defaults.keys()):
+        if args.all or args.torrent_search or args.file_search:
+            args.active = False
+            args.inactive = False
