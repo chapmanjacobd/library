@@ -1,57 +1,22 @@
 #!/usr/bin/python3
-import argparse
 
 from library import usage
 from library.mediafiles import torrents_start
-from library.playback.torrents_info import filter_torrents_by_activity, qbt_get_tracker
+from library.playback import torrents_info
+from library.playback.torrents_info import qbt_get_tracker
 from library.utils import arggroups, argparse_utils, consts, iterables, printing, processes, strings
 
 
 def parse_args():
     parser = argparse_utils.ArgumentParser(usage=usage.torrents_status)
     arggroups.qBittorrent(parser)
-    parser.add_argument(
-        "--downloading",
-        "--download",
-        "--down",
-        "--dl",
-        "--leeching",
-        "--leech",
-        action="store_true",
-        help="Include downloading torrents",
-    )
-    parser.add_argument(
-        "--uploading",
-        "--upload",
-        "--up",
-        "--ul",
-        "--seeding",
-        "--seeds",
-        action="store_true",
-        help="Include uploading torrents",
-    )
-
-    parser.add_argument(
-        "--file-counts", "--files", "--counts", action="store_true", help="Print file counts (a bit slow)"
-    )
-
-    parser.add_argument("--all", action="store_true", help="Show active and inactive torrents")
-    parser.add_argument("--active", action="store_true", help="Show active torrents")
-    parser.add_argument("--inactive", "--dead", action="store_true", help="Show inactive torrents")
-
-    parser.add_argument("--trackers", action=argparse.BooleanOptionalAction, default=False, help="Show tracker summary")
+    arggroups.qBittorrent_torrents(parser)
     arggroups.debug(parser)
 
-    parser.add_argument("--file-search", "-s", nargs="+", help="The file path substring to search for")
-
-    parser.add_argument("torrent_search", nargs="*", help="The info_hash, name, or save_path substring to search for")
     args = parser.parse_args()
     arggroups.args_post(args, parser)
 
-    if set(["active", "inactive"]).issubset(args.defaults.keys()):
-        if args.all or args.torrent_search or args.file_search:
-            args.active = False
-            args.inactive = False
+    arggroups.qBittorrent_torrents_post(args)
 
     return args
 
@@ -85,13 +50,8 @@ def torrents_status():
         printing.table(tbl)
         print()
 
-    torrents = filter_torrents_by_activity(args, torrents)
-
-    if args.torrent_search or args.file_search:
-        torrents = [t for t in torrents if strings.glob_match(args.torrent_search, [t.name, t.save_path, t.hash])]
-
-        if args.file_search:
-            torrents = [t for t in torrents if strings.glob_match(args.file_search, [f.name for f in t.files])]
+    torrents = torrents_info.filter_torrents_by_activity(args, torrents)
+    torrents = [t for t in torrents if torrents_info.is_matching(args, t)]
 
     if not torrents:
         processes.no_media_found()

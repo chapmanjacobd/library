@@ -48,8 +48,14 @@ def parse_args(action, **kwargs):
     parser.add_argument(
         "--sizes",
         "--size",
+        "-S",
         action="append",
-        help="Only grab extended metadata for files of specific sizes (uses the same syntax as fd-find)",
+        help="""Only grab extended metadata for files of specific sizes (uses the same syntax as fd-find)
+-S 6           # 6 MB exactly (not likely)
+-S-6           # less than 6 MB
+-S+6           # more than 6 MB
+-S 6%%10       # 6 MB ±10 percent (between 5 and 7 MB)
+-S+5GB -S-7GB  # between 5 and 7 GB""",
     )
 
     arggroups.debug(parser)

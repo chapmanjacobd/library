@@ -76,8 +76,6 @@ progs = {
         "images_to_pdf": "Convert folders of images into image PDFs",
         "pdf_edit": "Apply brightness, contrast, saturation, and sharpness adjustments to PDFs",
         "torrents_start": "Start torrents (qBittorrent-nox)",
-        "torrents_stop": "Stop seeding torrents (qBittorrent-nox)",
-        "torrents_stop_incomplete": "Stop downloading torrents (qBittorrent-nox)",
     },
     "Multi-database subcommands": {
         "merge_dbs": "Merge SQLite databases",
@@ -229,8 +227,6 @@ modules = {
     "library.mediafiles.images_to_pdf.images_to_pdf": ["images2pdf"],
     "library.mediafiles.pdf_edit.pdf_edit": [],
     "library.mediafiles.torrents_start.torrents_start": ["torrent-start"],
-    "library.mediafiles.torrents_stop.torrents_stop": ["torrent-stop"],
-    "library.mediafiles.torrents_stop_incomplete.torrents_stop_incomplete": ["torrent-stop-incomplete"],
     "library.misc.dedupe_czkawka.czkawka_dedupe": ["dedupe-czkawka"],
     "library.misc.export_text.export_text": [],
     "library.multidb.copy_play_counts.copy_play_counts": [],

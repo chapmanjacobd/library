@@ -1926,22 +1926,43 @@ torrents_start = """library torrents-start [--prefix /mnt/d/] PATH ...
 
 torrents_info = """library torrents-info
 
-    List torrents
+    List torrents in qBittorrent-nox
 
-        library torrents-info
+        library torrents
 
     Search for specific torrent
 
-        library torrents-info query
+        library torrents query
 
     Search for specific file
 
-        library torrents-info query -v --file-search query2
+        library torrents query -v --file-search query2
+
+    Stop completed downloads
+
+        library torrents -S+5MiB --seeders=+5 --time-stalled=+45days --time-active=+180days --stop
+
+    Stop incomplete downloads
+
+        library torrents --time-unseeded=+90days --time-active=+60days --time-stalled=+30days --stop
+
+    Move files
+
+        To continue to seed, use --temp-drive, --temp-path, --download-drive, --download-path
+
+            library torrents --temp-drive /mnt/d/
+
+        Otherwise, on localhost, you can move files outside of qBittorrent
+        The --stop flag is required to use --move
+
+            library torrents --stop --move /mnt/d/
 
     When --mark-deleted is provided, the torrents are tagged with 'delete' in qBittorrent
     When --delete-rows is provided, the metadata is removed from qBittorrent
     When --delete-files is provided, the downloaded files are deleted
+    When --delete-incomplete 80%% is provided, any files that were downloaded less than 80%% are deleted
 """
+
 
 torrents_status = """library torrents-status
 
@@ -1956,43 +1977,6 @@ torrents_status = """library torrents-status
     Search for specific file
 
         library torrents-status query -v --file-search query2
-"""
-
-
-torrents_stop = """library torrents-stop
-
-    Stop torrents in qBittorrent-nox with the following defaults:
-      - tagged 'library'
-      - >180 days active seeding
-      - >90 days since last peer
-      - >3 current seeders
-      - >5MiB size
-
-    These defaults can be overridden like so:
-
-        library torrents-stop --min-seeders 3 --min-days-stalled-seed 10 --min-days-seeding 14
-
-    When --mark-deleted is provided, the torrents are tagged with 'library-delete' in qBittorrent
-    When --delete-rows is provided, the metadata is removed from qBittorrent
-    When --delete-files is provided, the downloaded files are deleted
-"""
-
-torrents_stop_incomplete = """library torrents-stop-incomplete
-
-    Stop torrents in qBittorrent-nox with the following defaults:
-      - tagged 'library'
-      - >90 days since last seen complete (or never)
-      - >60 days active downloading
-      - >30 days since last peer (or never)
-
-    These defaults can be overridden like so:
-
-        library torrents-stop --min-days-downloading 7
-
-    When --mark-deleted is provided, the torrents are tagged with 'library-delete' in qBittorrent
-    When --delete-rows is provided, the metadata is removed from qBittorrent
-    When --delete-files is provided, all downloaded files are deleted.
-    By default, salvage is provided to files which have more than 73%% progress.
 """
 
 allocate_torrents = """library allocate-torrents

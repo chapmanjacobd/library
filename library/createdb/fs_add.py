@@ -41,7 +41,7 @@ def parse_args(action, usage):
 
     parser.add_argument("--check-corrupt", "--check-corruption", action="store_true")
     arggroups.media_check(parser)
-    parser.set_defaults(gap="0.10")
+    parser.set_defaults(gap=0.10)
 
     parser.add_argument(
         "--force", "-f", action="store_true", help="Mark all subpath files as deleted if no files found"
@@ -73,7 +73,6 @@ def parse_args(action, usage):
         raise SystemExit(3)
 
     arggroups.process_ffmpeg_post(args)
-    arggroups.media_check_post(args)
 
     return args
 

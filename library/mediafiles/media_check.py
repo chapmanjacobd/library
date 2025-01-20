@@ -18,8 +18,6 @@ def parse_args():
     arggroups.paths_or_stdin(parser)
     args = parser.parse_intermixed_args()
     arggroups.args_post(args, parser)
-
-    arggroups.media_check_post(args)
     return args
 
 

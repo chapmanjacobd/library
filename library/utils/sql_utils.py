@@ -142,7 +142,7 @@ def human_to_lambda_part(var, human_to_x, size):
 
 def parse_human_to_lambda(human_to_x, sizes):
     if not sizes:
-        return None
+        return lambda _var: True
 
     def check_all_sizes(var):
         return all(human_to_lambda_part(var, human_to_x, size) for size in sizes)
