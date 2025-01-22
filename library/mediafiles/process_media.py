@@ -322,6 +322,8 @@ def process_media() -> None:
         summary[media_key]["processing_time"] += m.get("processing_time") or 0
 
     summary = [{"media_key": k, **v} for k, v in summary.items()]
+    current_size = sum([m["current_size"] for m in summary])
+    future_size = sum([m["future_size"] for m in summary])
     savings = sum([m["savings"] for m in summary])
     if "processing_time" in summary[0]:
         processing_time = sum([m["processing_time"] for m in summary])
@@ -336,8 +338,10 @@ def process_media() -> None:
     printing.table(summary)
     print()
 
-    print("Estimated processing time:", strings.duration(processing_time))
+    print("Current size:", strings.file_size(current_size))
+    print("Estimated future size:", strings.file_size(future_size))
     print("Estimated savings:", strings.file_size(savings))
+    print("Estimated processing time:", strings.duration(processing_time))
 
     uncompressed_archives = set()
     new_free_space = 0

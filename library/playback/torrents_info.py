@@ -21,9 +21,9 @@ def parse_args():
         help="Sort by priority, ratio, download, upload, download+upload, size, avg_size, remaining",
     )
 
-    parser.add_argument(
-        "--force-start", "--start", action=argparse.BooleanOptionalAction, help="Force start matching torrents"
-    )
+    parser.add_argument("--start", action=argparse.BooleanOptionalAction, help="Start matching torrents")
+    parser.add_argument("--force-start", action=argparse.BooleanOptionalAction, help="Force start matching torrents")
+    parser.add_argument("--check", "--recheck", action="store_true", help="Check matching torrents")
     parser.add_argument("--stop", action="store_true", help="Stop matching torrents")
     parser.add_argument("--move", help="Directory to move folders/files")
     parser.add_argument(
@@ -42,6 +42,9 @@ def parse_args():
     arggroups.args_post(args, parser)
 
     arggroups.qBittorrent_torrents_post(args)
+
+    if args.move and not (args.stop or args.delete_rows or args.delete_files):
+        processes.exit_error("--move requires --stop or --delete-rows")
 
     return args
 
@@ -83,7 +86,7 @@ def is_matching(args, t):
         if t.num_complete == 0 and t.seen_complete > 0
         else (
             t.added_on
-            if t.state in ['downloading', 'forceDL', 'stalledDL', 'uploading', 'forcedUP', 'stalledUP']
+            if t.state in ["downloading", "forceDL", "stalledDL", "uploading", "forcedUP", "stalledUP"]
             and t.num_complete == 0
             else 0
         )
@@ -114,6 +117,10 @@ def is_matching(args, t):
 def filter_torrents_by_activity(args, torrents):
     if args.stopped:
         torrents = [t for t in torrents if t.state_enum.is_stopped]
+    if args.errored:
+        torrents = [t for t in torrents if t.state == "error"]
+    if args.missing:
+        torrents = [t for t in torrents if t.state == "missingFiles"]
     if args.complete:
         torrents = [t for t in torrents if t.state_enum.is_complete]
     if args.incomplete:
@@ -351,13 +358,21 @@ def torrents_info():
 
     torrent_hashes = [t.hash for t in torrents]
 
-    if args.force_start is not None:
-        print("Force-starting", len(torrents))
-        qbt_client.torrents_set_force_start(args.force_start, torrent_hashes=torrent_hashes)
-
     if args.stop:
         print("Stopping", len(torrents))
         qbt_client.torrents_stop(torrent_hashes=torrent_hashes)
+
+    if args.check:
+        print("Checking", len(torrents))
+        qbt_client.torrents_recheck(torrent_hashes=torrent_hashes)
+
+    if args.start is not None:
+        print("Starting", len(torrents))
+        qbt_client.torrents_start(torrent_hashes=torrent_hashes)
+
+    if args.force_start is not None:
+        print("Force-starting", len(torrents))
+        qbt_client.torrents_set_force_start(args.force_start, torrent_hashes=torrent_hashes)
 
     if args.delete_incomplete:
         for t in torrents:
@@ -375,7 +390,7 @@ def torrents_info():
                     if file.progress < args.delete_incomplete:
                         path.unlink(missing_ok=True)
 
-    if (args.stop or args.mark_deleted or args.delete_rows or args.delete_files) and args.move:
+    if (args.stop or args.delete_rows or args.delete_files) and args.move:
         for t in torrents:
             if os.path.exists(t.content_path):
                 new_path = Path(args.move)

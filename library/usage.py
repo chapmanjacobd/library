@@ -1938,6 +1938,10 @@ torrents_info = """library torrents-info
 
         library torrents query -v --file-search query2
 
+    Force-start incomplete downloads
+
+        library torrents --dl --progress=+10%% --force-start
+
     Stop completed downloads
 
         library torrents -S+5MiB --seeders=+5 --time-stalled=+45days --time-active=+180days --stop
