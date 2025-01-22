@@ -98,13 +98,15 @@ def torrents_status():
 
     if len(torrents_by_state) > 1:
         remaining = sum(t.amount_left for t in torrents)
-        categories.append({
-            "state": 'total',
-            "count": len(torrents),
-            "size": strings.file_size(sum(t.total_size for t in torrents)),
-            "remaining": strings.file_size(remaining) if remaining else None,
-            "files": (sum(len(t.files) for t in torrents) if args.file_counts else None),
-        })
+        categories.append(
+            {
+                "state": "total",
+                "count": len(torrents),
+                "size": strings.file_size(sum(t.total_size for t in torrents)),
+                "remaining": strings.file_size(remaining) if remaining else None,
+                "files": (sum(len(t.files) for t in torrents) if args.file_counts else None),
+            }
+        )
     printing.table(iterables.list_dict_filter_bool(categories))
     print()
 
@@ -123,9 +125,7 @@ def torrents_status():
                     "count": len(tracker_torrents),
                     "size": sum(t.total_size for t in tracker_torrents),
                     "remaining": remaining,
-                    "files": (
-                        sum(len(t.files) for t in tracker_torrents) if args.file_counts else None
-                    ),  # a bit slow
+                    "files": (sum(len(t.files) for t in tracker_torrents) if args.file_counts else None),  # a bit slow
                 }
             )
         if trackers:

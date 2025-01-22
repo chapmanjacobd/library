@@ -157,7 +157,7 @@ def munge_av_tags(args, media) -> dict:
 
     if not media.get("size"):
         if size:
-            media["size"] = size
+            media["size"] = int(size)
         elif bitrate_bps and duration:
             total_bits = duration * float(bitrate_bps)
             total_bytes = math.ceil(total_bits / 8)

@@ -2001,6 +2001,8 @@ def qBittorrent_torrents(parent_parser):
     )
     parser.add_argument("--inactive", "--dead", action="store_true", help="Include inactive torrents")
     parser.add_argument("--stopped", "--paused", action="store_true", help="Include stopped torrents")
+    parser.add_argument("--missing", action="store_true", help="Include missing torrents")
+    parser.add_argument("--errored", action="store_true", help="Include errored torrents")
     parser.add_argument("--complete", "--completed", action="store_true", help="Include completed torrents")
     parser.add_argument("--incomplete", action="store_true", help="Include incomplete torrents")
 
