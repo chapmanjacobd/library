@@ -43,7 +43,10 @@ def clean_path(b, max_name_len=255, dot_space=False, case_insensitive=False, low
     ext = path.suffix
 
     pre = ""
-    if path.drive and path.drive.endswith(":"):
+    if str(path).startswith(os.sep):
+        pre = os.sep
+        path = Path(str(path)[len(os.sep) :])
+    elif path.drive and path.drive.endswith(":"):
         pre = path.drive
         path = Path(str(path)[len(path.drive) :])
 
