@@ -137,6 +137,8 @@ def clean_string(p) -> str:
         .replace(":", "")
         .replace(">", "")
         .replace("<", "")
+        .replace("\\", "")
+        .replace("/", "")
     )
     p = remove_consecutives(p, chars=["."])
     p = (
