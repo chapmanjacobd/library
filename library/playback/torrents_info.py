@@ -160,7 +160,7 @@ def torrents_info():
     qbt_client = torrents_start.start_qBittorrent(args)
     torrents = qbt_client.torrents_info()
 
-    error_torrents = [t for t in torrents if t.state in ["missingFiles", "error"]]
+    error_torrents = [t for t in torrents if t.state_enum.is_errored]
     error_torrents = sorted(
         error_torrents, key=lambda t: (t.amount_left == t.total_size, t.eta, t.amount_left), reverse=True
     )

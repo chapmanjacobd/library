@@ -5,6 +5,18 @@ import dateutil.parser
 from library.utils import iterables, nums
 
 
+def specific_date(*dates):
+    valid_dates = [dateutil.parser.parse(s, fuzzy=True) for s in dates if s]
+    past_dates = [d for d in valid_dates if d < datetime.datetime.now()]
+    if not past_dates:
+        return None
+
+    earliest_specific_date = sorted(
+        past_dates, key=lambda d: (bool(d.month), bool(d.day), -d.timestamp()), reverse=True
+    )[0]
+    return nums.to_timestamp(earliest_specific_date)
+
+
 def tube_date(v):
     upload_date = iterables.safe_unpack(
         v.pop("release_date", None),
@@ -23,7 +35,7 @@ def tube_date(v):
             upload_date = nums.to_timestamp(upload_date)
         else:
             try:
-                upload_date = nums.to_timestamp(dateutil.parser.parse(upload_date))
+                upload_date = nums.to_timestamp(dateutil.parser.parse(str(upload_date)))
             except Exception:
                 upload_date = None
     return upload_date
