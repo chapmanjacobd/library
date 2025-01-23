@@ -1,4 +1,4 @@
-# Security Policy
+# Coordinated Disclosure Form
 
 ## Reporting a Vulnerability
 

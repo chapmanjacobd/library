@@ -1949,6 +1949,7 @@ torrents_info = """library torrents-info
     Stop incomplete downloads
 
         library torrents --time-unseeded=+90days --time-active=+60days --time-stalled=+30days --stop
+        library torrents --time-active=+45days --inactive --progress=0 --stop
 
     Move files
 
@@ -1964,7 +1965,7 @@ torrents_info = """library torrents-info
     When --mark-deleted is provided, the torrents are tagged with 'delete' in qBittorrent
     When --delete-rows is provided, the metadata is removed from qBittorrent
     When --delete-files is provided, the downloaded files are deleted
-    When --delete-incomplete 80%% is provided, any files that were downloaded less than 80%% are deleted
+    When --delete-incomplete 80% is provided, any files that were downloaded less than 80% are deleted
 """
 
 

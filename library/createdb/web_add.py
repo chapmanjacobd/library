@@ -77,7 +77,7 @@ def parse_args(action, **kwargs):
     arggroups.selenium_post(args)
 
     if not args.profiles:
-        if args.size:
+        if args.sizes:
             args.profiles = [DBType.filesystem]
         else:
             args.profiles = []
@@ -206,31 +206,39 @@ def spider(args, paths: list):
         media = [consolidate_media(args, k) | (v or {}) for k, v in new_paths.items()]
         new_media_count += len(media)
 
+        # get basic metadata
         if DBType.filesystem in args.profiles or args.hash:
-            with concurrent.futures.ThreadPoolExecutor(max_workers=args.threads) as executor:
+            enriched_media = []
+            with concurrent.futures.ThreadPoolExecutor(
+                max_workers=1 if args.verbose >= consts.LOG_DEBUG else args.threads
+            ) as executor:
                 gen_media = (f.result() for f in [executor.submit(add_basic_metadata, args, m) for m in media])
                 for i, m in enumerate(gen_media):
-                    media[i] = m
+                    enriched_media.append(m)
                     printing.print_overwrite(
                         f"Pages to scan {len(paths)} link scan: {new_media_count} new [{len(known_paths)} known]; basic metadata {i + 1} of {len(media)}"
                     )
+            media = enriched_media
         if media:
             add_media(args, media)
 
+        # get extra_metadata
         if args.sizes:
-            extra_metadata = [d for d in media if d.get("size") is None or args.sizes(d["size"])]
-        else:
-            extra_metadata = media
+            media = [d for d in media if d.get("size") is None or args.sizes(d["size"])]
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=args.threads) as executor:
-            gen_media = (f.result() for f in [executor.submit(add_extra_metadata, args, m) for m in extra_metadata])
+        enriched_media = []
+        with concurrent.futures.ThreadPoolExecutor(
+            max_workers=1 if args.verbose >= consts.LOG_DEBUG else args.threads
+        ) as executor:
+            gen_media = (f.result() for f in [executor.submit(add_extra_metadata, args, m) for m in media])
             for i, m in enumerate(gen_media):
-                extra_metadata[i] = m
+                enriched_media.append(m)
                 printing.print_overwrite(
                     f"Pages to scan {len(paths)} link scan: {new_media_count} new [{len(known_paths)} known]; extra metadata {i + 1} of {len(media)}"
                 )
-        if extra_metadata:
-            add_media(args, extra_metadata)
+        media = enriched_media
+        if media:
+            add_media(args, media)
 
         printing.print_overwrite(
             f"Pages to scan {len(paths)} link scan: {new_media_count} new [{len(known_paths)} known]"

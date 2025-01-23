@@ -1,9 +1,8 @@
 import math
-from datetime import datetime
 
 from library.createdb import subtitle
 from library.mediafiles import media_check
-from library.utils import consts, file_utils, iterables, nums, objects, path_utils, processes, strings
+from library.utils import consts, date_utils, file_utils, iterables, nums, objects, path_utils, processes, strings
 from library.utils.consts import DBType
 from library.utils.log_utils import log
 
@@ -37,52 +36,64 @@ def get_subtitle_tags(path, streams, scan_subtitles=False) -> dict:
 
 
 def parse_tags(mu: dict, ti: dict) -> dict:
+    mu = objects.dumbcopy(mu)
+    ti = objects.dumbcopy(ti)
+
     tags = {
         "mood": strings.combine(
-            mu.get("albummood"),
-            mu.get("MusicMatch_Situation"),
-            mu.get("Songs-DB_Occasion"),
-            mu.get("albumgrouping"),
+            mu.pop("albummood", None),
+            mu.pop("MusicMatch_Situation", None),
+            mu.pop("Songs-DB_Occasion", None),
+            mu.pop("albumgrouping", None),
         ),
-        "genre": strings.combine(mu.get("genre"), ti.get("genre"), mu.get("albumgenre")),
-        "year": strings.combine(
-            mu.get("originalyear"),
-            mu.get("TDOR"),
-            mu.get("TORY"),
-            mu.get("date"),
-            mu.get("TDRC"),
-            mu.get("TDRL"),
-            ti.get("year"),
+        "genre": strings.combine(mu.pop("genre", None), ti.pop("genre", None), mu.pop("albumgenre", None)),
+        "time_created": date_utils.specific_date(
+            mu.pop("originalyear", None),
+            mu.pop("TDOR", None),
+            mu.pop("TORY", None),
+            mu.pop("date", None),
+            mu.pop("TDRC", None),
+            mu.pop("TDRL", None),
+            ti.pop("year", None),
         ),
-        "bpm": nums.safe_int(iterables.safe_unpack(mu.get("fBPM"), mu.get("bpm"), mu.get("bpm_start"))),
-        "key": iterables.safe_unpack(mu.get("TIT1"), mu.get("key"), mu.get("TKEY"), mu.get("key_start")),
-        "decade": iterables.safe_unpack(mu.get("Songs-DB_Custom1")),
-        "categories": iterables.safe_unpack(mu.get("Songs-DB_Custom2")),
-        "city": iterables.safe_unpack(mu.get("Songs-DB_Custom3")),
+        "bpm": nums.safe_int(
+            iterables.safe_unpack(mu.pop("fBPM", None), mu.pop("bpm", None), mu.pop("bpm_start", None))
+        ),
+        "key": iterables.safe_unpack(
+            mu.pop("TIT1", None), mu.pop("key", None), mu.pop("TKEY", None), mu.pop("key_start", None)
+        ),
+        "decade": iterables.safe_unpack(mu.pop("Songs-DB_Custom1", None)),
+        "categories": iterables.safe_unpack(mu.pop("Songs-DB_Custom2", None)),
+        "city": iterables.safe_unpack(mu.pop("Songs-DB_Custom3", None)),
         "country": strings.combine(
-            mu.get("Songs-DB_Custom4"),
-            mu.get("MusicBrainz Album Release Country"),
-            mu.get("musicbrainz album release country"),
-            mu.get("language"),
+            mu.pop("Songs-DB_Custom4", None),
+            mu.pop("MusicBrainz Album Release Country", None),
+            mu.pop("musicbrainz album release country", None),
+            mu.pop("language", None),
         ),
         "description": strings.combine(
-            mu.get("description"),
-            mu.get("lyrics"),
-            ti.get("comment"),
+            mu.pop("description", None),
+            mu.pop("synopsis", None),
+            mu.pop("lyrics", None),
+            mu.pop("publisher", None),
+            mu.pop("comment", None),
+            ti.pop("comment", None),
         ),
-        "album": iterables.safe_unpack(ti.get("album"), mu.get("album")),
-        "title": iterables.safe_unpack(ti.get("title"), mu.get("title")),
+        "album": iterables.safe_unpack(ti.pop("album", None), mu.pop("album", None)),
+        "title": iterables.safe_unpack(ti.pop("title", None), mu.pop("title", None)),
         "artist": strings.combine(
-            ti.get("artist"),
-            mu.get("artist"),
-            mu.get("artists"),
-            ti.get("albumartist"),
-            ti.get("composer"),
+            ti.pop("artist", None),
+            mu.pop("artist", None),
+            mu.pop("artists", None),
+            ti.pop("albumartist", None),
+            ti.pop("composer", None),
         ),
     }
 
-    # print(mutagen)
-    # breakpoint()
+    mu = {k: v for k, v in mu.items() if not (k in consts.MEDIA_KNOWN_KEYS or v is None)}
+    if mu != {}:
+        log.debug("Extra av data %s", mu)
+        # breakpoint()
 
     return tags
 
@@ -126,11 +137,15 @@ def munge_av_tags(args, media) -> dict:
             raise e
         elif e.errno == 5:  # IO Error
             raise e
-        raise e
+        raise
     except processes.UnplayableFile as e:
         log.error(f"Failed reading header. {path}")
         log.debug(e)
-        if getattr(args, "delete_unplayable", False) and not file_utils.is_file_open(path):
+        if (
+            getattr(args, "delete_unplayable", False)
+            and not path.startswith("http")
+            and not file_utils.is_file_open(path)
+        ):
             file_utils.trash(args, path, detach=False)
             media["time_deleted"] = consts.APPLICATION_START
         media["error"] = "Metadata check failed"
@@ -193,26 +208,11 @@ def munge_av_tags(args, media) -> dict:
 
     tags = format_.pop("tags", None)
     if tags:
-        upload_date = tags.get("DATE")
-        upload_time = None
-        if upload_date:
-            try:
-                upload_time = nums.to_timestamp(datetime.strptime(upload_date, "%Y%m%d"))
-            except Exception:
-                upload_time = None
-
         tags = objects.dict_filter_bool(
             {
-                "title": tags.get("title"),
-                "webpath": tags.get("PURL"),
-                "description": strings.combine(
-                    tags.get("DESCRIPTION"),
-                    tags.get("SYNOPSIS"),
-                    tags.get("ARTIST"),
-                    tags.get("COMMENT"),
-                    tags.get("comment"),
-                ),
-                "time_uploaded": upload_time,
+                "title": tags.pop("title", None),
+                "webpath": tags.pop("PURL", None),
+                **{k: v for k, v in parse_tags(tags, tags).items() if v},
             },
         )
 
@@ -275,8 +275,9 @@ def munge_av_tags(args, media) -> dict:
     if objects.is_profile(args, DBType.video):
         video_tags = get_subtitle_tags(path, streams, scan_subtitles=getattr(args, "scan_subtitles", False))
         media = {**media, **video_tags}
-    elif objects.is_profile(args, DBType.audio):
+    elif objects.is_profile(args, DBType.audio) and not str(path).startswith("http"):
         stream_tags = get_audio_tags(path)
+        stream_tags = {k: v for k, v in stream_tags.items() if v}
         media = {**media, **stream_tags}
 
     return media
