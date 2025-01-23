@@ -1748,8 +1748,9 @@ def sample_hash_bytes(parent_parser):
     )
     parser.add_argument(
         "--gap",
-        default="0.1",
-        help="Width between chunks to skip (default 10%%). Values greater than 1 are treated as number of bytes",
+        type=nums.float_from_percent,
+        default="10%",
+        help="Width between chunks to skip. Values greater than 1 are treated as number of bytes",
     )
 
 
@@ -1758,14 +1759,14 @@ def media_check(parent_parser):
     parser.add_argument(
         "--chunk-size",
         type=float,
-        help="Chunk size in seconds (default 0.5 second). If set, recommended to use >0.1 seconds",
+        help="Chunk size in seconds. If set, recommended to use >0.1 seconds",
         default=0.5,
     )
     parser.add_argument(
         "--gap",
-        default="0.05",
         type=nums.float_from_percent,
-        help="Width between chunks to skip (default 5%%). Values greater than 1 are treated as number of seconds",
+        default="5%",
+        help="Width between chunks to skip. Values greater than 1 are treated as number of seconds",
     )
     parser.add_argument(
         "--delete-corrupt",
