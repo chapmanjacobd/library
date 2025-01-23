@@ -152,6 +152,10 @@ def clean_string(p) -> str:
         .replace("_ ", "_")
     )
     p = remove_consecutive_whitespace(p)
+
+    if p in [".", ".."]:
+        return ""
+
     return p
 
 

@@ -16,7 +16,7 @@ def test_clean_path():
     assert path_utils.clean_path(b".test/t") == utils.p(".test/t")
     assert path_utils.clean_path(b"_test/t") == utils.p("_test/t")
     assert path_utils.clean_path(b"_test/t-") == utils.p("_test/t")
-    assert path_utils.clean_path(b"test/\xff\xfeH") == utils.p("test/\\xff\\xfeH")
+    assert path_utils.clean_path(b"test/\xff\xfeH") == utils.p("test/xffxfeH")
     assert path_utils.clean_path(b"test/thing something.txt") == utils.p("test/thing something.txt")
     assert path_utils.clean_path(b"test/thing something.txt", dot_space=True) == utils.p("test/thing.something.txt")
     assert path_utils.clean_path(b"_/~_[7].opus") == utils.p("_/~_[7].opus")

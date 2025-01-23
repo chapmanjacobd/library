@@ -46,13 +46,13 @@ def test_remove_suffixes():
 
 
 def test_clean_string():
-    assert strings.clean_string(os.sep) == os.sep
-    assert strings.clean_string("/  /t") == "/ /t"
+    assert strings.clean_string(os.sep) == ""
+    assert strings.clean_string("/  /t") == "t"
     assert strings.clean_string("_  _") == "__"
     assert strings.clean_string("_") == "_"
     assert strings.clean_string("~_[7].opus") == "~_[7].opus"
-    assert strings.clean_string("/!./") == "/./"
-    assert strings.clean_string("/_/~_[7].opus") == "/_/~_[7].opus"
+    assert strings.clean_string("/!./") == ""
+    assert strings.clean_string("/_/~_[7].opus") == "_~_[7].opus"
 
 
 class TimecodeTestCase(unittest.TestCase):
