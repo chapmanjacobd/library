@@ -5,9 +5,24 @@ import dateutil.parser
 from library.utils import iterables, nums
 
 
+def super_parser(date_str):
+    parsing_strategies = [
+        {},  # default
+        {"dayfirst": True},
+        {"yearfirst": True},
+        {"dayfirst": True, "yearfirst": True},
+    ]
+    for strategy in parsing_strategies:
+        try:
+            parsed_date = dateutil.parser.parse(date_str, fuzzy=True, **strategy)
+            return parsed_date
+        except dateutil.parser.ParserError:
+            continue
+
+
 def specific_date(*dates):
-    valid_dates = [dateutil.parser.parse(s, fuzzy=True) for s in dates if s]
-    past_dates = [d for d in valid_dates if d < datetime.datetime.now()]
+    valid_dates = [super_parser(s) for s in dates if s]
+    past_dates = [d for d in valid_dates if d and d < datetime.datetime.now()]
     if not past_dates:
         return None
 

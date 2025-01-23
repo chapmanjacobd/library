@@ -1899,11 +1899,6 @@ computers_add = """library computers-add DATABASE HOSTNAME ...
         library computer-add remote.db jp.tensile-fortress.ts.net hk kr mx uk ca
 """
 
-computers_update = """library computers-update DATABASE PATH ...
-
-    Update computer stats
-"""
-
 torrents_add = """library torrents-add DATABASE PATH ...
 
     Create a SQLite database of torrent file data (torrents are playlists, referenced files are media)

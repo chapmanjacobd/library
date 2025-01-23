@@ -99,7 +99,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v3.0.045; 99 subcommands)
+    library (v3.0.046; 98 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -335,11 +335,6 @@ To stop playing press Ctrl+C in either the terminal or mpv
     ├────────────────┼─────────────────────────────────────────┤
     │ dedupe-czkawka │ Process czkawka diff output             │
     ╰────────────────┴─────────────────────────────────────────╯
-
-    Other subcommands:
-    ╭──────────────────┬──────────────────╮
-    │ computers-update │ computers_update │
-    ╰──────────────────┴──────────────────╯
 
 
 </details>
@@ -3288,20 +3283,6 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
                czkawka_dupes_output_path
 
     Choose which duplicate to keep by opening both side-by-side in mpv
-
-
-</details>
-
-### Other subcommands
-
-###### computers-update
-
-<details><summary>computers_update</summary>
-
-    $ library computers-update -h
-    usage: library computers-update DATABASE PATH ...
-
-    Update computer stats
 
 
 </details>
