@@ -1753,10 +1753,6 @@ def sample_hash_bytes(parent_parser):
     )
 
 
-def sample_hash_bytes_post(args):
-    args.gap = nums.float_from_percent(args.gap)
-
-
 def media_check(parent_parser):
     parser = parent_parser.add_argument_group("Media Check")
     parser.add_argument(
