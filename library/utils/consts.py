@@ -139,7 +139,6 @@ class SC:
     web_add = "web-add"
     web_update = "web-update"
     computers_add = "computers-add"
-    computers_update = "computers-update"
 
 
 EnvironmentErrors = (

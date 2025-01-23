@@ -222,8 +222,11 @@ def calculate_max_col_widths(data):
 
 
 def print_df(df):
-    for col in df.select_dtypes(include=["category"]).columns:
-        df[col] = df[col].astype("str")
+    import pandas as pd
+
+    if isinstance(df, pd.DataFrame):
+        for col in df.select_dtypes(include=["category"]).columns:
+            df[col] = df[col].astype("str")
     print()
     print(df.fillna("<NA>").to_markdown(tablefmt="github"))
     print()

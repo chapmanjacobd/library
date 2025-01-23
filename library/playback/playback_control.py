@@ -1,4 +1,5 @@
 import argparse, textwrap
+from contextlib import suppress
 from copy import deepcopy
 from pathlib import Path
 
@@ -263,7 +264,8 @@ def playback_now() -> None:
 
     if playing["mpv"] and playing["catt"]:
         print(source_now_playing(playing, "mpv"))
-        args.mpv.terminate()
+        with suppress(AttributeError):
+            args.mpv.terminate()
         print(source_now_playing(playing, "catt"))
 
     elif playing["mpv"]:
@@ -271,7 +273,8 @@ def playback_now() -> None:
         print(now_playing(path))
         time_pos = printing.seconds_to_hhmmss(args.mpv.command("get_property", "time-pos")).strip()
         print(f"    Playhead: {time_pos}\n")
-        args.mpv.terminate()
+        with suppress(AttributeError):
+            args.mpv.terminate()
 
     elif playing["catt"]:
         path = playing["catt"]
@@ -308,7 +311,8 @@ def playback_stop() -> None:
     playing = _now_playing(args)
     if playing["mpv"]:
         args.mpv.command("loadfile", "/dev/null")  # make mpv exit with code 3
-        args.mpv.terminate()
+        with suppress(AttributeError):
+            args.mpv.terminate()
 
     if playing["catt"] or not any(playing.values()):
         kill_process("catt")
@@ -327,7 +331,8 @@ def playback_pause() -> None:
 
     if playing["mpv"]:
         args.mpv.command("cycle", "pause")
-        args.mpv.terminate()
+        with suppress(AttributeError):
+            args.mpv.terminate()
 
 
 def playback_next() -> None:
@@ -345,7 +350,8 @@ def playback_next() -> None:
 
     if playing["mpv"]:
         args.mpv.command("playlist_next", "force")
-        args.mpv.terminate()
+        with suppress(AttributeError):
+            args.mpv.terminate()
         if args.delete_files:
             file_utils.trash(args, playing["mpv"])
 
@@ -372,7 +378,8 @@ def playback_seek() -> None:
 
     if playing["mpv"]:
         args.mpv.command("seek", seconds, "relative" if is_relative else "absolute")
-        args.mpv.terminate()
+        with suppress(AttributeError):
+            args.mpv.terminate()
 
     if playing["catt"]:
         catt_device = []
