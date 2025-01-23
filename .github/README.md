@@ -99,7 +99,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v3.0.040; 101 subcommands)
+    library (v3.0.041; 99 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -215,27 +215,23 @@ To stop playing press Ctrl+C in either the terminal or mpv
     ╰──────────────────┴──────────────────────────────────────────────────────╯
 
     Media File subcommands:
-    ╭──────────────────────────┬───────────────────────────────────────────────────────────────────────────╮
-    │ media-check              │ Check video and audio files for corruption via ffmpeg                     │
-    ├──────────────────────────┼───────────────────────────────────────────────────────────────────────────┤
-    │ process-media            │ Estimate and execute potential disk space savings                         │
-    ├──────────────────────────┼───────────────────────────────────────────────────────────────────────────┤
-    │ process-ffmpeg           │ Shrink video/audio to AV1/Opus format (.mkv, .mka)                        │
-    ├──────────────────────────┼───────────────────────────────────────────────────────────────────────────┤
-    │ process-image            │ Shrink images to AV1 image format (.avif)                                 │
-    ├──────────────────────────┼───────────────────────────────────────────────────────────────────────────┤
-    │ process-text             │ Shrink documents to HTML+AV1 image format (requires Calibre)              │
-    ├──────────────────────────┼───────────────────────────────────────────────────────────────────────────┤
-    │ images-to-pdf            │ Convert folders of images into image PDFs                                 │
-    ├──────────────────────────┼───────────────────────────────────────────────────────────────────────────┤
-    │ pdf-edit                 │ Apply brightness, contrast, saturation, and sharpness adjustments to PDFs │
-    ├──────────────────────────┼───────────────────────────────────────────────────────────────────────────┤
-    │ torrents-start           │ Start torrents (qBittorrent-nox)                                          │
-    ├──────────────────────────┼───────────────────────────────────────────────────────────────────────────┤
-    │ torrents-stop            │ Stop seeding torrents (qBittorrent-nox)                                   │
-    ├──────────────────────────┼───────────────────────────────────────────────────────────────────────────┤
-    │ torrents-stop-incomplete │ Stop downloading torrents (qBittorrent-nox)                               │
-    ╰──────────────────────────┴───────────────────────────────────────────────────────────────────────────╯
+    ╭────────────────┬───────────────────────────────────────────────────────────────────────────╮
+    │ media-check    │ Check video and audio files for corruption via ffmpeg                     │
+    ├────────────────┼───────────────────────────────────────────────────────────────────────────┤
+    │ process-media  │ Estimate and execute potential disk space savings                         │
+    ├────────────────┼───────────────────────────────────────────────────────────────────────────┤
+    │ process-ffmpeg │ Shrink video/audio to AV1/Opus format (.mkv, .mka)                        │
+    ├────────────────┼───────────────────────────────────────────────────────────────────────────┤
+    │ process-image  │ Shrink images to AV1 image format (.avif)                                 │
+    ├────────────────┼───────────────────────────────────────────────────────────────────────────┤
+    │ process-text   │ Shrink documents to HTML+AV1 image format (requires Calibre)              │
+    ├────────────────┼───────────────────────────────────────────────────────────────────────────┤
+    │ images-to-pdf  │ Convert folders of images into image PDFs                                 │
+    ├────────────────┼───────────────────────────────────────────────────────────────────────────┤
+    │ pdf-edit       │ Apply brightness, contrast, saturation, and sharpness adjustments to PDFs │
+    ├────────────────┼───────────────────────────────────────────────────────────────────────────┤
+    │ torrents-start │ Start torrents (qBittorrent-nox)                                          │
+    ╰────────────────┴───────────────────────────────────────────────────────────────────────────╯
 
     Multi-database subcommands:
     ╭───────────────────┬───────────────────────────────────────────────────────╮
@@ -319,21 +315,19 @@ To stop playing press Ctrl+C in either the terminal or mpv
     ╰────────────────────┴────────────────────────────────────────────────────╯
 
     Update database subcommands:
-    ╭──────────────────┬─────────────────────────────────╮
-    │ fs-update        │ Update local media              │
-    ├──────────────────┼─────────────────────────────────┤
-    │ tube-update      │ Update online video media       │
-    ├──────────────────┼─────────────────────────────────┤
-    │ web-update       │ Update open-directory media     │
-    ├──────────────────┼─────────────────────────────────┤
-    │ gallery-update   │ Update online gallery media     │
-    ├──────────────────┼─────────────────────────────────┤
-    │ links-update     │ Update a link-scraping database │
-    ├──────────────────┼─────────────────────────────────┤
-    │ reddit-update    │ Update reddit media             │
-    ├──────────────────┼─────────────────────────────────┤
-    │ computers-update │ Update computer stats           │
-    ╰──────────────────┴─────────────────────────────────╯
+    ╭────────────────┬─────────────────────────────────╮
+    │ fs-update      │ Update local media              │
+    ├────────────────┼─────────────────────────────────┤
+    │ tube-update    │ Update online video media       │
+    ├────────────────┼─────────────────────────────────┤
+    │ web-update     │ Update open-directory media     │
+    ├────────────────┼─────────────────────────────────┤
+    │ gallery-update │ Update online gallery media     │
+    ├────────────────┼─────────────────────────────────┤
+    │ links-update   │ Update a link-scraping database │
+    ├────────────────┼─────────────────────────────────┤
+    │ reddit-update  │ Update reddit media             │
+    ╰────────────────┴─────────────────────────────────╯
 
     Misc subcommands:
     ╭────────────────┬─────────────────────────────────────────╮
@@ -341,6 +335,11 @@ To stop playing press Ctrl+C in either the terminal or mpv
     ├────────────────┼─────────────────────────────────────────┤
     │ dedupe-czkawka │ Process czkawka diff output             │
     ╰────────────────┴─────────────────────────────────────────╯
+
+    Other subcommands:
+    ╭──────────────────┬──────────────────╮
+    │ computers-update │ computers_update │
+    ╰──────────────────┴──────────────────╯
 
 
 </details>
@@ -2165,56 +2164,6 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
 </details>
 
-###### torrents-stop
-
-<details><summary>Stop seeding torrents (qBittorrent-nox)</summary>
-
-    $ library torrents-stop -h
-    usage: library torrents-stop
-
-    Stop torrents in qBittorrent-nox with the following defaults:
-      - tagged 'library'
-      - >180 days active seeding
-      - >90 days since last peer
-      - >3 current seeders
-      - >5MiB size
-
-    These defaults can be overridden like so:
-
-        library torrents-stop --min-seeders 3 --min-days-stalled-seed 10 --min-days-seeding 14
-
-    When --mark-deleted is provided, the torrents are tagged with 'library-delete' in qBittorrent
-    When --delete-rows is provided, the metadata is removed from qBittorrent
-    When --delete-files is provided, the downloaded files are deleted
-
-
-</details>
-
-###### torrents-stop-incomplete
-
-<details><summary>Stop downloading torrents (qBittorrent-nox)</summary>
-
-    $ library torrents-stop-incomplete -h
-    usage: library torrents-stop-incomplete
-
-    Stop torrents in qBittorrent-nox with the following defaults:
-      - tagged 'library'
-      - >90 days since last seen complete (or never)
-      - >60 days active downloading
-      - >30 days since last peer (or never)
-
-    These defaults can be overridden like so:
-
-        library torrents-stop --min-days-downloading 7
-
-    When --mark-deleted is provided, the torrents are tagged with 'library-delete' in qBittorrent
-    When --delete-rows is provided, the metadata is removed from qBittorrent
-    When --delete-files is provided, all downloaded files are deleted.
-    By default, salvage is provided to files which have more than 73% progress.
-
-
-</details>
-
 ### Multi-database subcommands
 
 ###### merge-dbs
@@ -3025,21 +2974,46 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
     $ library torrents-info -h
     usage: library torrents-info
 
-    List torrents
+    List torrents in qBittorrent-nox
 
-        library torrents-info
+        library torrents
 
     Search for specific torrent
 
-        library torrents-info query
+        library torrents query
 
     Search for specific file
 
-        library torrents-info query -v --file-search query2
+        library torrents query -v --file-search query2
+
+    Force-start incomplete downloads
+
+        library torrents --dl --progress=+10% --force-start
+
+    Stop completed downloads
+
+        library torrents -S+5MiB --seeders=+5 --time-stalled=+45days --time-active=+180days --stop
+
+    Stop incomplete downloads
+
+        library torrents --time-unseeded=+90days --time-active=+60days --time-stalled=+30days --stop
+        library torrents --time-active=+45days --inactive --progress=0 --stop
+
+    Move files
+
+        To continue to seed, use --temp-drive, --temp-path, --download-drive, --download-path
+
+            library torrents --temp-drive /mnt/d/
+
+        Otherwise, on localhost, you can move files outside of qBittorrent
+        The --stop flag is required to use --move
+
+            library torrents --stop --move /mnt/d/
 
     When --mark-deleted is provided, the torrents are tagged with 'delete' in qBittorrent
     When --delete-rows is provided, the metadata is removed from qBittorrent
     When --delete-files is provided, the downloaded files are deleted
+    When --delete-incomplete 80% is provided, any files that were downloaded less than 80% are deleted
 
 
 </details>
@@ -3290,18 +3264,6 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
 </details>
 
-###### computers-update
-
-<details><summary>Update computer stats</summary>
-
-    $ library computers-update -h
-    usage: library computers-update DATABASE PATH ...
-
-    Update computer stats
-
-
-</details>
-
 ### Misc subcommands
 
 ###### export-text
@@ -3326,6 +3288,20 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
                czkawka_dupes_output_path
 
     Choose which duplicate to keep by opening both side-by-side in mpv
+
+
+</details>
+
+### Other subcommands
+
+###### computers-update
+
+<details><summary>computers_update</summary>
+
+    $ library computers-update -h
+    usage: library computers-update DATABASE PATH ...
+
+    Update computer stats
 
 
 </details>
