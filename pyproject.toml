@@ -26,6 +26,7 @@ dependencies = [
   "tabulate",
   "tinytag",
   "yt-dlp[default]",
+  'pyreadline3; platform_system == "Windows"',
 ]
 description = "xk media library"
 dynamic = ["version"]
