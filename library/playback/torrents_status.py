@@ -56,9 +56,32 @@ def torrents_status():
     if not torrents:
         processes.no_media_found()
 
+    interesting_states = [
+        # 'uploading',
+        "activeUP",
+        "inactiveUP",
+        "queuedUP",
+        "stoppedUP",
+        # "downloading",
+        "stoppedDL",
+        "queuedDL",
+        "forcedMetaDL",
+        "metaDL",
+        "inactiveDL",
+        "activeDL",
+        "missingFiles",
+        "error",
+    ]
+
     torrents_by_state = {}
-    for torrent in torrents:
-        torrents_by_state.setdefault(torrent.state, []).append(torrent)
+    for t in torrents:
+        state = t.state
+        if state not in interesting_states:
+            if t.state_enum.is_complete:
+                state = "activeUP" if t.uploaded_session > 0 else "inactiveUP"
+            else:
+                state = "activeDL" if t.downloaded_session > 0 else "inactiveDL"
+        torrents_by_state.setdefault(state, []).append(t)
 
     categories = []
     for state, state_torrents in torrents_by_state.items():
@@ -73,27 +96,11 @@ def torrents_status():
             }
         )
 
-    interesting_states = [
-        "stoppedUP",
-        "queuedUP",
-        "stoppedDL",
-        "forcedMetaDL",
-        "metaDL",
-        "forcedDL",
-        "stalledDL",
-        # 'forcedUP', 'stalledUP', 'uploading',  # not very interesting
-        "downloading",
-        "missingFiles",
-        "error",
-    ]
-
     categories = sorted(
         categories,
         key=lambda d: (
-            d["state"].endswith(("missingFiles", "error")),
-            d["state"].endswith(("downloading", "DL")),
-            iterables.safe_index(interesting_states, d["state"]),
-        ),
+            iterables.safe_index(interesting_states, d["state"])
+        )
     )
 
     if len(torrents_by_state) > 1:
