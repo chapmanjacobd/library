@@ -2058,6 +2058,7 @@ def qBittorrent_torrents(parent_parser):
         "--file-counts", "--files", "--counts", action="store_true", help="Include file counts column (a bit slow)"
     )
     parser.add_argument("--trackers", action="store_true", help="Include tracker column")
+    parser.add_argument("--status", "--state", action="store_true", help="Include state column")
 
     parser.add_argument("--file-search", "-s", nargs="+", help="The file path substring to search for")
     parser.add_argument("torrent_search", nargs="*", help="The info_hash, name, or save_path substring to search for")

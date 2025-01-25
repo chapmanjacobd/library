@@ -96,12 +96,7 @@ def torrents_status():
             }
         )
 
-    categories = sorted(
-        categories,
-        key=lambda d: (
-            iterables.safe_index(interesting_states, d["state"])
-        )
-    )
+    categories = sorted(categories, key=lambda d: (iterables.safe_index(interesting_states, d["state"])))
 
     if len(torrents_by_state) > 1:
         remaining = sum(t.amount_left for t in torrents)

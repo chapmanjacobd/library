@@ -1,4 +1,4 @@
-import argparse, shlex
+import argparse
 
 from library import usage
 from library.mediadb import db_history, db_media
@@ -37,9 +37,6 @@ def parse_args() -> argparse.Namespace:
     if not args.title_prefix:
         args.title_prefix = ["https://www.google.com/search?q=%"]
     args.title_prefix = [s if "%" in s else s + "%" for s in args.title_prefix]
-
-    if args.browser:
-        args.browser = shlex.split(args.browser)
 
     return args
 
