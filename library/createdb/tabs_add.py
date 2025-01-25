@@ -120,7 +120,7 @@ def tabs_shuffle() -> None:
             f"""
         WITH m as (
             SELECT
-                m.id
+                m.rowid as id
                 , path
                 , frequency
                 , COALESCE(MAX(h.time_played), 0) time_last_played
@@ -128,9 +128,9 @@ def tabs_shuffle() -> None:
                 , hostname
                 , category
             FROM media m
-            LEFT JOIN history h on h.media_id = m.id
+            LEFT JOIN history h on h.media_id = m.rowid
             WHERE COALESCE(time_deleted, 0)=0
-            GROUP BY m.id
+            GROUP BY m.rowid
         )
         SELECT
             id

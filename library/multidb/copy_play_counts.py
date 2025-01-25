@@ -35,7 +35,7 @@ def copy_play_count(args, source_db) -> None:
                 , done
             FROM
                 media m
-            JOIN history h on h.media_id = m.id
+            JOIN history h on h.media_id = m.rowid
             WHERE
                 h.time_played > 0
                 OR

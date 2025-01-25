@@ -451,12 +451,12 @@ def get_dir_media(args, dirs: Collection, include_subdirs=False, limit=2_000) ->
                 , *
                 {', rank' if 'rank' in select_sql else ''}
             FROM {args.table} m
-            LEFT JOIN history h on h.media_id = m.id
+            LEFT JOIN history h on h.media_id = m.rowid
             WHERE 1=1
-                and m.id in (select id from {args.table})
+                and m.rowid in (select rowid as id from {args.table})
                 {filter_paths}
                 {" ".join(args.filter_sql)}
-            GROUP BY m.id, m.path
+            GROUP BY m.rowid, m.path
         )
         SELECT
             {select_sql}
@@ -494,7 +494,7 @@ def get_playlist_media(args, playlist_paths) -> list[dict]:
 
     playlists_subquery = (
         """AND playlists_id in (
-        SELECT id from playlists
+        SELECT rowid as id from playlists
         WHERE path IN ("""
         + ",".join(f":playlist{i}" for i, _ in enumerate(playlist_paths))
         + "))"
@@ -510,12 +510,12 @@ def get_playlist_media(args, playlist_paths) -> list[dict]:
                 , *
                 {', rank' if 'rank' in select_sql else ''}
             FROM {args.table} m
-            LEFT JOIN history h on h.media_id = m.id
+            LEFT JOIN history h on h.media_id = m.rowid
             WHERE 1=1
-                and m.id in (select id from {args.table})
+                and m.rowid in (select rowid as id from {args.table})
                 {playlists_subquery}
                 {" ".join(args.filter_sql)}
-            GROUP BY m.id, m.path
+            GROUP BY m.rowid, m.path
         )
         SELECT
             {select_sql}
@@ -610,11 +610,11 @@ def get_related_media(args, m: dict) -> list[dict]:
                 , *
                 {', rank' if 'rank' in select_sql else ''}
             FROM {args.table} m
-            LEFT JOIN history h on h.media_id = m.id
+            LEFT JOIN history h on h.media_id = m.rowid
             WHERE 1=1
                 and path != :path
                 {'' if args.related >= consts.RELATED_NO_FILTER else " ".join(args.filter_sql)}
-            GROUP BY m.id, m.path
+            GROUP BY m.rowid, m.path
         )
         SELECT
             {select_sql}
