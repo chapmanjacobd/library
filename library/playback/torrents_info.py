@@ -161,24 +161,8 @@ def torrents_info():
     torrents = qbt_client.torrents_info()
 
     error_torrents = [t for t in torrents if t.state_enum.is_errored]
-    error_torrents = sorted(
-        error_torrents, key=lambda t: (t.amount_left == t.total_size, t.eta, t.amount_left), reverse=True
-    )
     if error_torrents:
-        print("Error Torrents")
-        tbl = [
-            {
-                "state": t.state,
-                "name": shorten(t.name, width=40),
-                "progress": strings.safe_percent(t.progress),
-                "eta": strings.duration_short(t.eta) if t.eta < 8640000 else None,
-                "remaining": strings.file_size(t.amount_left) if t.amount_left > 0 else None,
-                "files": len(t.files) if args.file_counts else None,
-            }
-            for t in error_torrents
-        ]
-        printing.table(tbl)
-        print()
+        args.status = True
 
     torrents = filter_torrents_by_activity(args, torrents)
     torrents = [t for t in torrents if is_matching(args, t)]
@@ -274,6 +258,8 @@ def torrents_info():
                 d |= {"priority": str(t.priority) + (" [F]" if t.force_start else "")}
             if args.trackers:
                 d |= {"tracker": qbt_get_tracker(qbt_client, t)}
+            if args.status:
+                d |= {"state": t.state}
 
             if args.verbose >= consts.LOG_INFO:
                 d |= {
@@ -338,10 +324,11 @@ def torrents_info():
                 d |= {"priority": str(t.priority) + (" [F]" if t.force_start else "")}
             if args.trackers:
                 d |= {"tracker": qbt_get_tracker(qbt_client, t)}
+            if args.status:
+                d |= {"state": t.state}
 
             if args.verbose >= consts.LOG_INFO:
                 d |= {
-                    "state": t.state,
                     "added_on": strings.relative_datetime(t.added_on),
                     "size": strings.file_size(t.total_size),
                     "remaining": strings.file_size(t.amount_left),

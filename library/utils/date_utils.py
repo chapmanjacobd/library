@@ -5,8 +5,10 @@ import dateutil.parser
 
 from library.utils import iterables, nums
 
+
 def is_tz_aware(dt: datetime.datetime) -> bool:
     return dt.tzinfo is not None and dt.tzinfo.utcoffset(dt) is not None
+
 
 def maybe_tz_now(maybe_tz_dt: datetime.datetime):
     if is_tz_aware(maybe_tz_dt):
@@ -14,6 +16,7 @@ def maybe_tz_now(maybe_tz_dt: datetime.datetime):
     else:
         now = datetime.datetime.now()
     return now
+
 
 def super_parser(date_str, fallback=False):
     parsing_strategies = [
