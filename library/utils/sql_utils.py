@@ -244,12 +244,12 @@ def historical_usage(args, freq="monthly", time_column="time_played", hide_delet
                 {', FIRST_VALUE(h.playhead) OVER (PARTITION BY h.media_id ORDER BY h.time_played DESC) playhead' if 'playhead' in h_columns else ''}
                 , *
             FROM media m
-            JOIN history h on h.media_id = m.id
+            JOIN history h on h.media_id = m.rowid
             WHERE 1=1
             {filter_time_played(args)}
             {"AND COALESCE(time_deleted, 0)=0" if hide_deleted else ""}
             {"AND COALESCE(time_deleted, 0)>0" if only_deleted else ""}
-            GROUP BY m.id, m.path
+            GROUP BY m.rowid, m.path
         )
         SELECT
             {freq_sql} AS {freq_label}

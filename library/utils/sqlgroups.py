@@ -64,7 +64,7 @@ def perf_randomize_using_ids(args):
         limit = 16 * (args.limit or consts.DEFAULT_PLAY_QUEUE)
         where_not_deleted = "where COALESCE(time_deleted,0) = 0" if args.hide_deleted else ""
         args.filter_sql.append(
-            f"and m.id in (select id from media {where_not_deleted} order by random() limit {limit})",
+            f"and m.rowid in (select rowid as id from media {where_not_deleted} order by random() limit {limit})",
         )
 
 
@@ -79,17 +79,17 @@ def media_sql(args) -> tuple[str, dict]:
 
     query = f"""WITH m as (
             SELECT
-                m.id
+                m.rowid as id
                 , SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
                 , MIN(h.time_played) time_first_played
                 , MAX(h.time_played) time_last_played
                 {', FIRST_VALUE(h.playhead) OVER (PARTITION BY h.media_id ORDER BY h.time_played DESC) playhead' if 'playhead' in h_columns else ''}
                 , *
             FROM {args.table} m
-            LEFT JOIN history h on h.media_id = m.id
+            LEFT JOIN history h on h.media_id = m.rowid
             WHERE 1=1
                 {" ".join(args.filter_sql)}
-            GROUP BY m.id, m.path
+            GROUP BY m.rowid, m.path
         )
         SELECT
             {select_sql}
@@ -127,12 +127,12 @@ def historical_media(args):
                 {', duration' if 'duration' in m_columns else ''}
                 {', subtitle_count' if 'subtitle_count' in m_columns else ''}
             FROM {args.table} m
-            JOIN history h on h.media_id = m.id
+            JOIN history h on h.media_id = m.rowid
             WHERE 1=1
             {sql_utils.filter_time_played(args)}
             {'AND COALESCE(time_deleted, 0)=0' if args.hide_deleted else ""}
             {"AND COALESCE(time_deleted, 0)>0" if args.only_deleted else ""}
-            GROUP BY m.id, m.path
+            GROUP BY m.rowid, m.path
         )
         SELECT *
         FROM m
@@ -163,10 +163,10 @@ def construct_links_query(args, limit) -> tuple[str, dict]:
                 , SUM(CASE WHEN h.done = 1 THEN 1 ELSE 0 END) play_count
                 , time_deleted
             FROM {args.table} m
-            LEFT JOIN history h on h.media_id = m.id
+            LEFT JOIN history h on h.media_id = m.rowid
             WHERE 1=1
                 {" ".join(args.filter_sql)}
-            GROUP BY m.id
+            GROUP BY m.rowid
         )
         SELECT
         {', '.join(args.select) if args.select else ''}
@@ -200,10 +200,10 @@ def construct_tabs_query(args) -> tuple[str, dict]:
                 , hostname
                 , category
             FROM {args.table} m
-            LEFT JOIN history h on h.media_id = m.id
+            LEFT JOIN history h on h.media_id = m.rowid
             WHERE 1=1
                 {" ".join(args.filter_sql)}
-            GROUP BY m.id
+            GROUP BY m.rowid
         ), time_valid_tabs as (
             SELECT
                 CASE
@@ -317,7 +317,7 @@ def construct_captions_search_query(args) -> tuple[str, dict]:
     SELECT
         {select_sql}
     FROM c
-    JOIN {m_table} m on m.id = c.media_id
+    JOIN {m_table} m on m.rowid = c.media_id
     WHERE 1=1
         {" ".join(args.aggregate_filter_sql)}
     ORDER BY 1=1
@@ -402,7 +402,7 @@ def construct_download_query(args, dl_status=False) -> tuple[str, dict]:
 
     is_media_playlist = "playlists_id" in m_columns and "id" in pl_columns
     query = f"""select
-            m.id
+            m.rowid as id
             {', m.playlists_id' if "playlists_id" in m_columns else ''}
             , m.path
             {', p.path playlist_path' if is_media_playlist else ''}
@@ -419,7 +419,7 @@ def construct_download_query(args, dl_status=False) -> tuple[str, dict]:
             {', p.extractor_config' if is_media_playlist and 'extractor_config' in pl_columns else ''}
             {', p.extractor_key' if is_media_playlist and 'extractor_key' in pl_columns else ", 'Playlist-less media' as extractor_key"}
         FROM {args.table} m
-        {'LEFT JOIN playlists p on p.id = m.playlists_id' if is_media_playlist else ''}
+        {'LEFT JOIN playlists p on p.rowid = m.playlists_id' if is_media_playlist else ''}
         WHERE 1=1
             {'and COALESCE(m.time_downloaded,0) = 0' if 'time_downloaded' in m_columns and not dl_status else ''}
             {f'and COALESCE(m.download_attempts,0) <= {args.download_retries}' if 'download_attempts' in m_columns and not dl_status else ''}
