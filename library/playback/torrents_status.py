@@ -119,8 +119,6 @@ def torrents_status():
 
         trackers = []
         for tracker, tracker_torrents in torrents_by_tracker.items():
-            if not args.stopped:
-                tracker_torrents = [t for t in tracker_torrents if t.state not in ("stoppedDL",)]
             remaining = sum(t.amount_left for t in tracker_torrents)
             trackers.append(
                 {

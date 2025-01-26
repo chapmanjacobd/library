@@ -377,7 +377,7 @@ def duration_short(seconds, format_str="%0.1f") -> str:
 
     try:
         if seconds < 60:
-            return f"{format_str % seconds} seconds"
+            return f"{int(seconds)} seconds"
 
         minutes = seconds / 60
         if minutes < 1.1:
