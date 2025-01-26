@@ -479,3 +479,21 @@ def unar_delete(archive_path):
         log.warning("Error deleting files: %s %s", e, part_files)
 
     return output_path
+
+
+def fzf_select(items, multi=True):
+    input_text = "\n".join(reversed(items))
+
+    fzf_command = ["fzf"]
+    if multi:
+        fzf_command += ["--multi"]
+
+    try:
+        result = subprocess.run(fzf_command, input=input_text, text=True, capture_output=True, check=True)
+    except subprocess.CalledProcessError as e:
+        if e.returncode == 130:  # no selection
+            return []
+        raise
+
+    selected_items = result.stdout.strip().splitlines()
+    return selected_items
