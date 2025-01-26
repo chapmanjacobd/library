@@ -1565,56 +1565,56 @@ def filter_links(parent_parser):
     parser.add_argument(
         "--path-include",
         "--include-path",
-        nargs="*",
+        nargs="+",
         default=[],
         help="path substrings for inclusion (all must match to include)",
     )
     parser.add_argument(
         "--text-include",
         "--include-text",
-        nargs="*",
+        nargs="+",
         default=[],
         help="link text substrings for inclusion (all must match to include)",
     )
     parser.add_argument(
         "--after-include",
         "--include-after",
-        nargs="*",
+        nargs="+",
         default=[],
         help="plain text substrings after URL for inclusion (all must match to include)",
     )
     parser.add_argument(
         "--before-include",
         "--include-before",
-        nargs="*",
+        nargs="+",
         default=[],
         help="plain text substrings before URL for inclusion (all must match to include)",
     )
     parser.add_argument(
         "--path-exclude",
         "--exclude-path",
-        nargs="*",
+        nargs="+",
         default=["javascript:", "mailto:", "tel:"],
         help="path substrings for exclusion (any must match to exclude)",
     )
     parser.add_argument(
         "--text-exclude",
         "--exclude-text",
-        nargs="*",
+        nargs="+",
         default=[],
         help="link text substrings for exclusion (any must match to exclude)",
     )
     parser.add_argument(
         "--after-exclude",
         "--exclude-after",
-        nargs="*",
+        nargs="+",
         default=[],
         help="plain text substrings after URL for exclusion (any must match to exclude)",
     )
     parser.add_argument(
         "--before-exclude",
         "--exclude-before",
-        nargs="*",
+        nargs="+",
         default=[],
         help="plain text substrings before URL for exclusion (any must match to exclude)",
     )
