@@ -484,7 +484,7 @@ def unar_delete(archive_path):
 def fzf_select(items, multi=True):
     input_text = "\n".join(reversed(items))
 
-    fzf_command = ["fzf"]
+    fzf_command = ["fzf", "--bind", "ctrl-a:toggle-all"]
     if multi:
         fzf_command += ["--multi"]
 

@@ -115,12 +115,13 @@ def is_matching(args, t):
 
 
 def filter_torrents_by_activity(args, torrents):
-    if args.stopped:
-        torrents = [t for t in torrents if t.state_enum.is_stopped]
-    if args.errored:
-        torrents = [t for t in torrents if t.state == "error"]
-    if args.missing:
-        torrents = [t for t in torrents if t.state == "missingFiles"]
+    if args.stopped is not None:
+        torrents = [t for t in torrents if args.stopped == t.state_enum.is_stopped]
+    if args.errored is not None:
+        torrents = [t for t in torrents if args.errored == (t.state == "error")]
+    if args.missing is not None:
+        torrents = [t for t in torrents if args.missing == (t.state == "missingFiles")]
+
     if args.complete:
         torrents = [t for t in torrents if t.state_enum.is_complete]
     if args.incomplete:
@@ -159,6 +160,16 @@ def torrents_info():
 
     qbt_client = torrents_start.start_qBittorrent(args)
     torrents = qbt_client.torrents_info()
+
+    tbl = []
+    for t in torrents:
+        msg = "; ".join(tr.msg for tr in torrents[0].trackers if tr.msg != "This torrent is private")
+        if msg:
+            tracker = qbt_get_tracker(qbt_client, t)
+            tbl.append({"path": t.content_path, "tracker": tracker, "msg": msg})
+    if tbl:
+        print(f"Error Torrents ({len(tbl)})")
+        printing.table(sorted(tbl, key=lambda d: (d["msg"], d["tracker"])))
 
     error_torrents = [t for t in torrents if t.state_enum.is_errored]
     if error_torrents:

@@ -158,3 +158,6 @@ def torrents_start():
 
         if args.delete_torrent:
             trash(args, path)
+
+    if shutil.which("qbt_prioritize.py"):
+        processes.cmd("qbt_prioritize.py")
