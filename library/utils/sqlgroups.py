@@ -419,7 +419,7 @@ def construct_download_query(args, dl_status=False) -> tuple[str, dict]:
             {', p.extractor_config' if is_media_playlist and 'extractor_config' in pl_columns else ''}
             {', p.extractor_key' if is_media_playlist and 'extractor_key' in pl_columns else ", 'Playlist-less media' as extractor_key"}
         FROM {args.table} m
-        {'LEFT JOIN playlists p on p.rowid = m.playlists_id' if is_media_playlist else ''}
+        {'LEFT JOIN playlists p on p.id = m.playlists_id' if is_media_playlist else ''}
         WHERE 1=1
             {'and COALESCE(m.time_downloaded,0) = 0' if 'time_downloaded' in m_columns and not dl_status else ''}
             {f'and COALESCE(m.download_attempts,0) <= {args.download_retries}' if 'download_attempts' in m_columns and not dl_status else ''}
