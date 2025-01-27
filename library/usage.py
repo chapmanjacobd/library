@@ -1935,7 +1935,7 @@ torrents_info = """library torrents-info
 
     Force-start incomplete downloads
 
-        library torrents --dl --progress=+10%% --force-start
+        library torrents --dl --progress=+10% --force-start
 
     Stop completed downloads
 
