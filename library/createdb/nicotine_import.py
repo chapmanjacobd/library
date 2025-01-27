@@ -3,7 +3,7 @@ from pathlib import Path
 
 from library import usage
 from library.mediadb import db_media
-from library.utils import arggroups, argparse_utils
+from library.utils import arggroups, argparse_utils, nums
 
 
 def parse_args() -> argparse.Namespace:
@@ -26,7 +26,11 @@ def from_nicotine_file_list_to_records(data):
     for entry in data:
         path = entry[0].replace("\\", os.sep)
         for song in entry[1]:
-            song_info = {"path": f"{path}/{song[1]}", "size": song[2], "duration": traverse_obj(song, (4, "1"))}
+            song_info = {
+                "path": f"{path}/{song[1]}",
+                "size": song[2],
+                "duration": nums.safe_int(traverse_obj(song, (4, "1"))),
+            }
             result.append(song_info)
 
     return result

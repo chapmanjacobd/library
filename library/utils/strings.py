@@ -214,6 +214,8 @@ def combine(*list_) -> str | None:
     list_ = iterables.conform(list_)
     if not list_:
         return None
+    if len(list_) == 1:
+        return str(list_[0])
 
     no_comma = functools.reduce(operator.iadd, (str(s).split(",") for s in list_), [])
     no_semicolon = functools.reduce(operator.iadd, (s.split(";") for s in no_comma), [])

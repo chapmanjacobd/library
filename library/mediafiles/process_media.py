@@ -441,5 +441,5 @@ def process_media() -> None:
                             args.db.conn.execute("DELETE FROM media where path = ?", [m["new_path"]])
                             args.db.conn.execute(
                                 "UPDATE media SET path = ?, size = ?, duration = ? WHERE path = ?",
-                                [m["new_path"], m["new_size"], m.get("duration"), m["path"]],
+                                [m["new_path"], m["new_size"], nums.safe_int(m.get("duration")), m["path"]],
                             )

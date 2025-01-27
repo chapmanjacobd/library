@@ -48,13 +48,13 @@ def parse_tags(mu: dict, ti: dict) -> dict:
         ),
         "genre": strings.combine(mu.pop("genre", None), ti.pop("genre", None), mu.pop("albumgenre", None)),
         "time_created": date_utils.specific_date(
-            mu.pop("originalyear", None),
-            mu.pop("TDOR", None),
-            mu.pop("TORY", None),
-            mu.pop("date", None),
-            mu.pop("TDRC", None),
-            mu.pop("TDRL", None),
-            ti.pop("year", None),
+            strings.combine(mu.pop("originalyear", None)),
+            strings.combine(mu.pop("TDOR", None)),
+            strings.combine(mu.pop("TORY", None)),
+            strings.combine(mu.pop("date", None)),
+            strings.combine(mu.pop("TDRC", None)),
+            strings.combine(mu.pop("TDRL", None)),
+            strings.combine(ti.pop("year", None)),
         ),
         "bpm": nums.safe_int(
             iterables.safe_unpack(mu.pop("fBPM", None), mu.pop("bpm", None), mu.pop("bpm_start", None))

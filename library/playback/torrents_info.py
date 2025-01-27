@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-import argparse, os, shutil
+import argparse, getpass, os, shutil
 from pathlib import Path
 from statistics import mean
 
@@ -393,7 +393,12 @@ def torrents_info():
             if os.path.exists(t.content_path):
                 new_path = Path(args.move)
                 if not new_path.is_absolute():
-                    new_path = Path(path_utils.mountpoint(t.content_path)) / new_path
+                    mountpoint = path_utils.mountpoint(t.content_path)
+                    if mountpoint in ("/home", "/var/home"):
+                        user = getpass.getuser()
+                        mountpoint = f"{mountpoint}/{user}"
+
+                    new_path = Path(mountpoint) / new_path
 
                 if args.tracker_dirnames:
                     domain = qbt_get_tracker(qbt_client, t)
