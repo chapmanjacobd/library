@@ -53,7 +53,6 @@ def tube_opts(args, func_opts=None, playlist_opts: str | None = None) -> dict:
         "youtube_include_dash_manifest": False,
         "youtube_include_hls_manifest": False,
         "no_check_certificate": True,
-        "ignore_no_formats_error": True,
         "skip_playlist_after_errors": 21,
         "clean_infojson": False,
         "playlistend": consts.DEFAULT_PLAYLIST_LIMIT,
