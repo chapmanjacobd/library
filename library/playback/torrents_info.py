@@ -271,6 +271,11 @@ def torrents_info():
                 d |= {"tracker": qbt_get_tracker(qbt_client, t)}
             if args.status:
                 d |= {"state": t.state}
+            if args.paths:
+                if t.state_enum.is_complete:
+                    d |= {"path": t.save_path}
+                else:
+                    d |= {"path": t.download_path}
 
             if args.verbose >= consts.LOG_INFO:
                 d |= {
@@ -337,6 +342,11 @@ def torrents_info():
                 d |= {"tracker": qbt_get_tracker(qbt_client, t)}
             if args.status:
                 d |= {"state": t.state}
+            if args.paths:
+                if t.state_enum.is_complete:
+                    d |= {"path": t.save_path}
+                else:
+                    d |= {"path": t.download_path}
 
             if args.verbose >= consts.LOG_INFO:
                 d |= {
