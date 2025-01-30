@@ -5,7 +5,7 @@ from time import sleep
 
 from library import usage
 from library.createdb.torrents_add import get_tracker
-from library.utils import arggroups, argparse_utils, nums, processes
+from library.utils import arggroups, argparse_utils, processes
 from library.utils.file_utils import trash
 from library.utils.log_utils import log
 
@@ -13,13 +13,6 @@ from library.utils.log_utils import log
 def parse_args():
     parser = argparse_utils.ArgumentParser(usage=usage.torrents_start)
     arggroups.qBittorrent(parser)
-    parser.add_argument(
-        "--dl-limit",
-        "--download-limit",
-        type=nums.human_to_bytes,
-        help="Download limit. If set then a few additional global preferences will also be changed",
-    )
-    parser.add_argument("--up-limit", "--ul-limit", "--upload-limit", type=nums.human_to_bytes, help="Upload limit")
 
     arggroups.capability_delete(parser)
     arggroups.debug(parser)
@@ -103,27 +96,6 @@ def torrents_start():
     from torrentool.api import Torrent
 
     qbt_client = start_qBittorrent(args)
-
-    if args.dl_limit:  # type: ignore
-        current_count = qbt_client.torrents_count()
-        max_active_uploads = current_count + 5000
-
-        qbt_client.app_set_preferences(
-            {
-                "preallocate_all": True,
-                "add_stopped_enabled": False,
-                "dl_limit": args.dl_limit,
-                "up_limit": args.up_limit,
-                "max_active_downloads": 1,
-                "max_active_uploads": max_active_uploads,
-                "max_active_torrents": max_active_uploads + 1,
-                "max_active_checking_torrents": 3,
-                "slow_torrent_inactive_timer": 80,
-                # divide by 10 but also some bps -> kbps BS
-                "slow_torrent_dl_rate_threshold": (args.dl_limit) // 10_000,  # type: ignore
-                "slow_torrent_ul_rate_threshold": (args.up_limit or args.dl_limit) // 10_000,  # type: ignore
-            }
-        )
 
     if args.temp_drive and Path(args.temp_drive).is_absolute():
         temp_prefix = Path(args.temp_drive)
