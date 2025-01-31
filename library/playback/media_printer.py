@@ -140,7 +140,7 @@ def media_printer(args, data, units=None, media_len=None) -> None:
         marked = db_history.add(args, [d["path"] for d in media], mark_done=True)
         log.warning(f"Marked {marked} metadata records as watched")
 
-    total_duration = sum(m.get("duration") or 0 for m in media)
+    total_duration = sum(nums.safe_int(m.get("duration")) or 0 for m in media)
     if "a" in print_args and ("Aggregate" not in media[0].get("path") or ""):
         if "count" in media[0]:
             D = {"path": "Aggregate", "count": sum(d.get("count") or 0 for d in media)}
