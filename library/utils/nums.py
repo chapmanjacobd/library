@@ -63,7 +63,9 @@ def safe_median(l) -> float | None:
     if not l:
         return None
     try:
-        return statistics.median(v for v in l if v is not None and v > 0)
+        l = (safe_float(v) for v in l)
+        l = (v for v in l if v and v > 0)
+        return statistics.median(l)
     except statistics.StatisticsError:
         return None
 
@@ -72,7 +74,9 @@ def safe_mean(l) -> float | None:
     if not l:
         return None
     try:
-        return statistics.mean(v for v in l if v is not None and v > 0)
+        l = (safe_float(v) for v in l)
+        l = (v for v in l if v and v > 0)
+        return statistics.mean(l)
     except statistics.StatisticsError:
         return None
 
