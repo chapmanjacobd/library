@@ -163,7 +163,7 @@ def torrents_info():
 
     tbl = []
     for t in torrents:
-        msg = "; ".join(tr.msg for tr in torrents[0].trackers if tr.msg != "This torrent is private")
+        msg = "; ".join(tr.msg for tr in t.trackers if tr.msg and tr.msg != "This torrent is private")
         if msg:
             tracker = qbt_get_tracker(qbt_client, t)
             tbl.append({"path": t.content_path, "tracker": tracker, "msg": msg})
