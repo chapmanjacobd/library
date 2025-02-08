@@ -56,7 +56,7 @@ def args_post(args, parser, create_db=False):
         if k not in ["database", "verbose", "defaults", *list(args.defaults.keys())]
     }
     args.extractor_config = {
-        k: v for k, v in settings.items() if k not in ["db", "paths", "actions", "backfill_pages"]
+        k: v for k, v in settings.items() if k not in ["db", "paths", "actions", "backfill_pages", "cookie"]
     } | (getattr(args, "extractor_config", None) or {})
 
     log_args = objects.dict_filter_bool(settings)

@@ -1,6 +1,6 @@
-import argparse
-from sqlite3 import IntegrityError
+import argparse, json
 
+from library.mediadb import db_media, db_playlists
 from library.utils import arggroups, argparse_utils, nums, objects, strings, web
 from library.utils.log_utils import log
 
@@ -16,6 +16,7 @@ def parse_args():
     parser.add_argument("--tags", action=argparse.BooleanOptionalAction, default=False)
 
     parser.add_argument("--categories", "--category", type=int, nargs="+")
+    parser.add_argument("--art-books", action=argparse.BooleanOptionalAction, default=False)
     parser.add_argument("--books", action=argparse.BooleanOptionalAction, default=False)
     parser.add_argument("--audiobooks", action=argparse.BooleanOptionalAction, default=False)
     parser.add_argument("--comics", action=argparse.BooleanOptionalAction, default=False)
@@ -77,24 +78,12 @@ def get_page(args, query_data):
     df["series_info"] = df["series_info"].apply(safe_json).apply(dict_values_list)
     df["size_bytes"] = df["size"].apply(nums.human_to_bytes)
 
-    log.debug(df)
+    log.info("Fetched %s", len(df))
 
     return df.to_dict(orient="records"), data_found
 
 
-def save_to_db(args, data):
-    for d in data:
-        try:
-            args.db["media"].insert(objects.dict_filter_bool(d), pk="id", alter=True)
-        except IntegrityError:
-            log.error("Reached existing id")
-            if not args.force:
-                raise SystemExit(0)
-
-
-def mam_search():
-    args = parse_args()
-
+def wrangle_request_data(args):
     query_data = {
         "tor": {
             "text": " ".join(args.search_text),
@@ -153,61 +142,66 @@ def mam_search():
                 108,  # Urban Fantasy
                 111,  # Young Adult
                 119,  # Nature
-                # 43,  # Horror
-                # 44,  # Juvenile
-                # 50,  # Biographical
-                # 51,  # Computer/Internet
-                # 53,  # Self-Help
-                # 56,  # Language
-                # 57,  # Math/Science/Tech
-                # 58,  # Pol/Soc/Relig
-                # 83,  # Business
-                # 84,  # Instructional
-                # 85,  # Medical
-                # 88,  # Philosophy
-                # 106,  # Food
+                43,  # Horror
+                44,  # Juvenile
+                50,  # Biographical
+                51,  # Computer/Internet
+                53,  # Self-Help
+                56,  # Language
+                57,  # Math/Science/Tech
+                58,  # Pol/Soc/Relig
+                83,  # Business
+                84,  # Instructional
+                85,  # Medical
+                88,  # Philosophy
+                106,  # Food
             ]
         )
-    if args.books:
+    if args.art_books:
         query_data["tor"]["cat"].extend(
             [
                 71,  # Art
                 79,  # Magazines/Newspapers
                 101,  # Crafts
                 118,  # Mixed Collections
-                # 60,  # Action/Adventure
-                # 62,  # Crime/Thriller
-                # 63,  # Fantasy
-                # 64,  # General Fiction
-                # 65,  # Horror
-                # 66,  # Juvenile
-                # 67,  # Literary Classics
-                # 68,  # Romance
-                # 69,  # Science Fiction
-                # 70,  # Western
-                # 72,  # Biographical
-                # 73,  # Computer/Internet
-                # 74,  # General Non-Fiction
-                # 75,  # Self-Help
-                # 76,  # History
-                # 77,  # Home/Garden
-                # 78,  # Language
-                # 80,  # Math/Science/Tech
-                # 81,  # Pol/Soc/Relig
-                # 82,  # Recreation
-                # 90,  # Business
-                # 91,  # Instructional
-                # 92,  # Medical
-                # 94,  # Mystery
-                # 95,  # Philosophy
-                # 96,  # Travel/Adventure
-                # 102,  # Historical Fiction
-                # 103,  # Humor
-                # 104,  # True Crime
-                # 109,  # Urban Fantasy
-                # 112,  # Young Adult
-                # 115,  # Illusion/Magic
-                # 120,  # Nature
+                120,  # Nature
+            ]
+        )
+    if args.books:
+        query_data["tor"]["cat"].extend(
+            [
+                60,  # Action/Adventure
+                62,  # Crime/Thriller
+                63,  # Fantasy
+                64,  # General Fiction
+                65,  # Horror
+                66,  # Juvenile
+                67,  # Literary Classics
+                68,  # Romance
+                69,  # Science Fiction
+                70,  # Western
+                72,  # Biographical
+                73,  # Computer/Internet
+                74,  # General Non-Fiction
+                75,  # Self-Help
+                76,  # History
+                77,  # Home/Garden
+                78,  # Language
+                80,  # Math/Science/Tech
+                81,  # Pol/Soc/Relig
+                82,  # Recreation
+                90,  # Business
+                91,  # Instructional
+                92,  # Medical
+                94,  # Mystery
+                95,  # Philosophy
+                96,  # Travel/Adventure
+                102,  # Historical Fiction
+                103,  # Humor
+                104,  # True Crime
+                109,  # Urban Fantasy
+                112,  # Young Adult
+                115,  # Illusion/Magic
             ]
         )
     if args.musicology:
@@ -238,21 +232,52 @@ def mam_search():
         )
     if len(query_data["tor"]["cat"]) == 0:
         query_data["tor"]["cat"] = [0]
+    return query_data
 
-    data, len_found = get_page(args, query_data)
-    page_size = len(data)
 
-    save_to_db(args, data)
+def mam_update_playlist(args, playlist_path):
+    query_data = json.loads(playlist_path)
 
-    for page_number, current_start in enumerate(range(page_size, len_found, page_size), start=2):
-        log.info("Getting page %s", page_number)
-
+    inserted_items = 0
+    current_start = 0
+    total_items = None
+    while True:
         query_data["tor"]["startNumber"] = current_start
-        data, _ = get_page(args, query_data)
+        page_data, len_found = get_page(args, query_data)
 
-        save_to_db(args, data)
+        for d in page_data:
+            d["playlists_id"] = args.playlists_id
+            d["path"] = d.pop("id")
+            if not args.force and db_playlists.media_exists(args, d["path"], playlist_path):
+                return inserted_items
 
-        web.sleep(args, secs=1)
+            d["size"] = d.pop("size_bytes")
+            d |= db_media.consolidate(d) or {}
+            args.db["media"].insert(objects.dict_filter_bool(d), pk="id", alter=True)
+            inserted_items += 1
+
+        if total_items is None:  # first request
+            total_items = len_found
+        current_start += len(page_data)
+        if current_start >= total_items:
+            break
+
+        web.sleep(args, secs=2)
+
+    return inserted_items
+
+
+def mam_search():
+    args = parse_args()
+    db_playlists.create(args)
+    db_media.create(args)
+
+    query_data = wrangle_request_data(args)
+    playlist_path = json.dumps(query_data, sort_keys=True)
+    args.playlists_id = db_playlists.add(args, playlist_path, {}, extractor_key="MAMSearch")
+
+    new_media = mam_update_playlist(args, playlist_path)
+    log.info("Saved %s new media", new_media)
 
 
 if __name__ == "__main__":

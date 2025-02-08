@@ -2,7 +2,7 @@ import concurrent.futures, json, os
 from pathlib import Path
 
 from library import usage
-from library.mediadb import db_playlists
+from library.mediadb import db_media, db_playlists
 from library.utils import arggroups, argparse_utils, consts, db_utils, objects, remote_processes
 from library.utils.log_utils import log
 
@@ -101,5 +101,8 @@ def computer_add(args, hostnames):
 
 def computers_add():
     args = parse_args()
+
+    db_playlists.create(args)
+    db_media.create(args)
 
     computer_add(args, args.hostnames)

@@ -3,6 +3,7 @@ import pathlib
 import pytest
 from bs4 import BeautifulSoup
 
+from library.utils import web
 from library.utils.path_utils import safe_unquote
 from library.utils.web import WebPath, construct_absolute_url, extract_nearby_text, url_encode, url_to_local_path
 from tests.utils import p
@@ -270,3 +271,30 @@ def test_parent_property():
 def test_construct_absolute_url(base_url, href, expected):
     result = construct_absolute_url(base_url, href)
     assert result == expected
+
+
+@pytest.mark.parametrize(
+    "parent_url, child_url, expected",
+    [
+        ("http://example.com", "http://example.com", False),
+        ("http://example.com/", "http://example.com", False),
+        ("http://example.com", "http://example.com/anypath", True),
+        ("http://example.com/", "http://example.com/anypath", True),
+        ("http://example.com/a", "http://example.com/a/b", True),
+        ("http://example.com/a", "http://example.com/other/b", True),
+        ("http://example.com/a/", "http://example.com/a/b", True),
+        ("http://example.com/a/b.html", "http://example.com/a/b/c", True),
+        ("http://example.com/a/b.html", "http://example.com/a/other/c", True),
+        ("http://example.com/a/b", "http://example.com/a/b/c", True),
+        ("http://example.com/a/b", "http://example.com/a/other/c", True),
+        ("http://example.com/a/b/", "http://example.com/a/b/c", True),
+        ("http://example.com/a/b/", "http://example.com/a/other/c", False),
+        ("http://example.com/fcdex.htm", "http://example.com/ff1300/fc01277.htm", True),
+        ("http://example.com/ff1300", "http://example.com/ff1300/fc01277.htm", True),
+        ("http://example.com/ff1300/", "http://example.com/ff1300/fc01277.htm", True),
+        ("http://example.com/ff1300/", "http://example.com/ff1301/fc01277.htm", False),
+    ],
+)
+def test_is_subpath(parent_url, child_url, expected):
+    result = web.is_subpath(parent_url, child_url)
+    assert result is expected

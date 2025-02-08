@@ -1,4 +1,4 @@
-import os, sqlite3
+import json, os, sqlite3
 
 from library.utils import consts, date_utils, db_utils, iterables, objects
 from library.utils.log_utils import log
@@ -15,6 +15,24 @@ media table
 """
 
 
+def create(args):
+    args.db.create_table(
+        "playlists",
+        {
+            "id": int,
+            "time_created": int,
+            "time_modified": int,
+            "time_deleted": int,
+            "hours_update_delay": int,
+            "path": str,
+            "extractor_config": str,
+        },
+        pk="id",
+        if_not_exists=True,
+        strict=True,
+    )
+
+
 def consolidate(args, v: dict) -> dict:
     upload_time = date_utils.tube_date(v)
 
@@ -24,10 +42,13 @@ def consolidate(args, v: dict) -> dict:
     cv["time_modified"] = consts.now()
     cv["time_deleted"] = 0
 
-    cv["extractor_config"] = {
-        **(v.pop("extractor_config", None) or {}),
-        **(getattr(args, "extractor_config", None) or {}),
-    }
+    cv["extractor_config"] = json.dumps(
+        {
+            **(v.pop("extractor_config", None) or {}),
+            **(getattr(args, "extractor_config", None) or {}),
+        },
+        sort_keys=True,
+    )
 
     cv["extractor_key"] = iterables.safe_unpack(
         v.pop("ie_key", None),
@@ -93,7 +114,7 @@ def exists(args, playlist_path) -> bool:
 def get_parentpath_playlists_id(args, playlist_path) -> int | None:
     try:
         known = args.db.pop(
-            "select id from playlists where ? like path || '%' and path != ?",
+            "SELECT id FROM playlists WHERE ? LIKE path || '%' AND path != ?",
             [str(playlist_path), str(playlist_path)],
         )
     except sqlite3.OperationalError as e:
@@ -162,22 +183,24 @@ def delete_subpath_playlists(args, playlist_path) -> int | None:
 
 def add(args, playlist_path: str, info: dict, check_subpath=False, extractor_key=None) -> int:
     playlist_path = playlist_path.strip()
-    if check_subpath:
+    if playlist_path and check_subpath:
         parentpath_playlist_id = get_parentpath_playlists_id(args, playlist_path)
         if parentpath_playlist_id:
             return parentpath_playlist_id
         else:
             delete_subpath_playlists(args, playlist_path)
 
-    pl = consolidate(args, objects.dumbcopy(info))
-    playlist = {**pl, "path": playlist_path}
+    playlist = consolidate(args, objects.dumbcopy(info))
+    if playlist_path:
+        playlist = {**playlist, "path": playlist_path}
     if extractor_key:
         playlist["extractor_key"] = extractor_key
     return _add(args, objects.dict_filter_bool(playlist) or {})
 
 
-def media_exists(args, playlist_path, path) -> bool:
+def media_exists(args, path, playlist_path) -> bool:
     m_columns = db_utils.columns(args, "media")
+
     try:
         known = args.db.execute(
             f"select 1 from media where playlists_id in (select id from playlists where path = ?) and (path=? or {'webpath' if 'webpath' in m_columns else 'path'}=?)",
@@ -186,12 +209,13 @@ def media_exists(args, playlist_path, path) -> bool:
     except sqlite3.OperationalError as e:
         log.debug(e)
         return False
+
     if known is None:
         return False
     return True
 
 
-def decrease_update_delay(args, playlist_path: str) -> None:
+def update_more_frequently(args, playlist_path) -> None:
     if "playlists" not in args.db.table_names():
         return
 
@@ -219,7 +243,7 @@ def decrease_update_delay(args, playlist_path: str) -> None:
             raise e
 
 
-def increase_update_delay(args, playlist_path: str) -> None:
+def update_less_frequently(args, playlist_path) -> None:
     if "playlists" not in args.db.table_names():
         return
 

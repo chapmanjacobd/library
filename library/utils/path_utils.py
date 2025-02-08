@@ -222,6 +222,12 @@ def domain_from_url(tracker):
     return domain
 
 
+def fqdn_from_url(tracker):
+    url = urlparse(tracker)
+    domain = url.scheme.lower() + "://" + url.netloc.lower()
+    return domain
+
+
 def mountpoint(path):
     path = os.path.abspath(path)
 

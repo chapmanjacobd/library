@@ -296,6 +296,8 @@ def fs_add(args=None) -> None:
         sys.argv = ["lb", *args]
 
     args = parse_args(SC.fs_add, usage.fs_add)
+    db_playlists.create(args)
+    db_media.create(args)
     extractor(args, args.paths)
 
 

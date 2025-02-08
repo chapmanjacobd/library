@@ -37,6 +37,9 @@ def tube_add(args=None) -> None:
     args = parse_args(SC.tube_add, usage=usage.tube_add)
     paths = arg_utils.gen_paths(args)
 
+    db_playlists.create(args)
+    db_media.create(args)
+
     if args.insert_only:
         args.db["media"].insert_all(
             [
@@ -89,6 +92,7 @@ def tube_update(args=None) -> None:
         sys.argv = ["tubeupdate", *args]
 
     args = parse_args(SC.tube_update, usage=usage.tube_update)
+
     tube_playlists = db_playlists.get_all(
         args,
         sql_filters=["AND extractor_key NOT IN ('Local', 'reddit_praw_redditor', 'reddit_praw_subreddit')"],
