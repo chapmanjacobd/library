@@ -184,16 +184,14 @@ def spider(args, paths: list):
 
                 if link in traversed_paths or link in paths:
                     continue
-                if web.is_index(link):
-                    if web.is_subpath(path, link):
-                        paths.append(link)
-                    continue
 
                 if db_media.exists(args, link):
                     known_paths.add(link)
-                    continue
                 else:
                     new_paths[link] = objects.merge_dict_values_str(new_paths.get(link) or {}, link_dict)
+
+                if web.is_subpath(path, link) and web.is_html(link):
+                    paths.append(link)
         else:  # not HTML page
             if path in traversed_paths or path in paths:
                 pass
@@ -263,6 +261,9 @@ def web_add(args=None) -> None:
 
     args = parse_args(consts.SC.web_add, usage=usage.web_add)
 
+    db_playlists.create(args)
+    db_media.create(args)
+
     if args.insert_only:
         media_new = set()
         media_known = set()
@@ -300,7 +301,7 @@ def web_update(args=None) -> None:
 
     web_playlists = db_playlists.get_all(
         args,
-        sql_filters="extractor_key = 'WebFolder'",
+        sql_filters=["AND extractor_key = 'WebFolder'"],
         order_by="""length(path)-length(REPLACE(path, '/', '')) desc
         , random()
         """,
@@ -320,9 +321,9 @@ def web_update(args=None) -> None:
             new_media = spider(args_env, [playlist["path"]])
 
             if new_media > 0:
-                db_playlists.decrease_update_delay(args, playlist["path"])
+                db_playlists.update_more_frequently(args, playlist["path"])
             else:
-                db_playlists.increase_update_delay(args, playlist["path"])
+                db_playlists.update_less_frequently(args, playlist["path"])
 
             if playlist_count > 3:
                 time.sleep(random.uniform(0.05, 2))

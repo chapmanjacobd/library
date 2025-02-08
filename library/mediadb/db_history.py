@@ -21,9 +21,15 @@ def exists(args, media_id) -> bool:
 def create(args):
     args.db.create_table(
         "history",
-        {"media_id": int, "time_played": int, "playhead": int, "done": int},
+        {
+            "media_id": int,
+            "time_played": int,
+            "playhead": int,
+            "done": bool,
+        },
         pk="id",
         if_not_exists=True,
+        strict=True,
     )
 
 

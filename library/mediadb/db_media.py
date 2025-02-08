@@ -1,12 +1,38 @@
 import argparse, os, sqlite3
 from collections.abc import Collection
 from pathlib import Path
+from typing import Counter
 
 from library.createdb import fs_add_metadata
 from library.createdb.subtitle import clean_up_temp_dirs
 from library.utils import consts, date_utils, db_utils, iterables, log_utils, objects, processes, sql_utils, strings
 from library.utils.consts import DBType
 from library.utils.log_utils import log
+
+
+def create(args):
+    args.db.create_table(
+        "media",
+        {
+            "id": int,
+            "playlists_id": int,
+            "time_created": int,
+            "time_modified": int,
+            "time_deleted": int,
+            "time_uploaded": int,
+            "time_downloaded": int,
+            "size": int,
+            "duration": int,
+            # "fps": float,
+            "path": str,
+            # "title": str,
+            # "webpath": str,
+            # "error": str,
+        },
+        pk="id",
+        if_not_exists=True,
+        strict=True,
+    )
 
 
 def exists(args, path) -> bool:
@@ -73,13 +99,16 @@ def consolidate(v: dict) -> dict | None:
     cv["time_modified"] = 0  # this should be 0 if the file has never been downloaded
     cv["time_deleted"] = 0
     cv["time_downloaded"] = 0
-    language = v.pop("language", None)
+    cv["language"] = iterables.safe_unpack(
+        v.pop("language", None),
+        v.pop("lang_code", None),
+    )
     cv["tags"] = strings.combine(
-        "language:" + language if language else None,
         v.pop("description", None),
         v.pop("caption", None),
         v.pop("content", None),
         v.pop("categories", None),
+        v.pop("catname", None),
         v.pop("genre", None),
         v.pop("tags", None),
         v.pop("labels", None),
@@ -121,6 +150,7 @@ def consolidate(v: dict) -> dict | None:
         account.pop("id", None),
         v.pop("name", None),
         v.pop("author", None),
+        v.pop("author_info", None),
         v.pop("post_author", None),
         v.pop("blog_name", None),
         v.pop("uuid", None),
@@ -541,13 +571,13 @@ def get_playlist_media(args, playlist_paths) -> list[dict]:
     return media
 
 
-def get_next_dir_media(args, folder):
+def get_next_dir_media(args, folder, limit=1):
     if args.play_in_order:
-        media = get_dir_media(args, [folder], limit=100)
+        media = get_dir_media(args, [folder], limit=limit * 100)
         media = natsort_media(args, media)
-        m = media[0:1]
+        m = media[0:limit]
     else:
-        m = get_dir_media(args, [folder], limit=1)[0:1]
+        m = get_dir_media(args, [folder], limit=limit)[0:limit]
     return m
 
 
@@ -555,25 +585,42 @@ def get_sibling_media(args, media):
     if args.fetch_siblings in ("all", "always"):
         dirs = {str(Path(d["path"]).parent) + os.sep for d in media}
         media = get_dir_media(args, dirs)
+
     elif args.fetch_siblings == "each":
-        parents = {str(Path(d["path"]).parent) + os.sep for d in media}
+        parent_counts = Counter(str(Path(d["path"]).parent) + os.sep for d in media)
         media = []
-        for parent in parents:
-            media.extend(get_next_dir_media(args, parent))
+        for parent, count in parent_counts.items():
+            media.extend(
+                get_next_dir_media(
+                    args, parent, limit=min(args.fetch_siblings_max, count) if args.fetch_siblings_max > 0 else count
+                )
+            )
+
     elif args.fetch_siblings == "if-audiobook":
         new_media = []
-        seen = set()
+        seen_parents = {}
         for d in media:
             if "audiobook" in d["path"].lower():
                 parent = str(Path(d["path"]).parent) + os.sep
-                if parent not in seen:
-                    seen.add(parent)
-                    new_media.extend(get_next_dir_media(args, parent))
+                if parent not in seen_parents:
+                    seen_parents[parent] = sum(1 for m in media if str(Path(m["path"]).parent) + os.sep == parent)
+                    count = seen_parents[parent]
+                    new_media.extend(
+                        get_next_dir_media(
+                            args,
+                            parent,
+                            limit=min(args.fetch_siblings_max, count) if args.fetch_siblings_max > 0 else count,
+                        )
+                    )
             else:
                 new_media.append(d)
         media = new_media
 
-    # TODO: all-if>10, each-if=10 --folder-counts functionality could be replicated here
+    elif args.fetch_siblings.isdigit():
+        parents = {str(Path(d["path"]).parent) + os.sep for d in media}
+        media = []
+        for parent in parents:
+            media.extend(get_next_dir_media(args, parent, limit=int(args.fetch_siblings)))
 
     return media
 

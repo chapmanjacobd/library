@@ -84,6 +84,8 @@ def tabs_add(args=None) -> None:
     args = parse_args()
     paths = list(gen_paths(args))
 
+    db_media.create(args)
+
     tabs = iterables.list_dict_filter_bool([consolidate_url(args, path) for path in get_new_paths(args, paths)])
     for tab in tabs:
         db_media.add(args, tab)

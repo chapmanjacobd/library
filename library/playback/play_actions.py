@@ -95,6 +95,13 @@ If you prefer SQLite's ordering you can do this instead of -O
 """,
     )
     ordering.add_argument(
+        "--fetch-siblings-max",
+        "--siblings-max",
+        type=int,
+        default=8,
+        help="Limit fetch-siblings (no effect to --fetch-siblings all)",
+    )
+    ordering.add_argument(
         "--re-rank",
         "--rerank",
         "-rr",

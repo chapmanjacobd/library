@@ -2,7 +2,7 @@ import concurrent.futures, os, statistics
 from pathlib import Path
 
 from library import usage
-from library.mediadb import db_playlists
+from library.mediadb import db_media, db_playlists
 from library.utils import arg_utils, arggroups, argparse_utils, consts, db_utils, iterables, nums, objects, printing
 from library.utils.file_utils import trash
 from library.utils.log_utils import log
@@ -84,6 +84,9 @@ def extract_metadata(path):
 
 def torrents_add():
     args = parse_args()
+
+    db_playlists.create(args)
+    db_media.create(args)
 
     scanned_set = set(arg_utils.gen_paths(args, default_exts=(".torrent",)))
 

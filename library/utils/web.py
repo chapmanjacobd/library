@@ -3,7 +3,7 @@ from contextlib import suppress
 from email.message import Message
 from pathlib import Path
 from shutil import which
-from urllib.parse import parse_qs, parse_qsl, quote, urlencode, urljoin, urlparse, urlunparse
+from urllib.parse import parse_qs, parse_qsl, quote, urldefrag, urlencode, urljoin, urlparse, urlunparse
 from zoneinfo import ZoneInfo
 
 import bs4, requests
@@ -27,9 +27,9 @@ def _get_retry_adapter(args):
     retry = requests.adapters.Retry(
         total=http_retries,
         connect=http_retries,
-        read=http_retries // 3,
+        read=http_retries,
         status=http_retries // 2,
-        other=1,
+        other=http_retries // 3,
         redirect=http_max_redirects,
         raise_on_redirect=http_max_redirects <= 0,
         backoff_factor=3,
@@ -737,33 +737,57 @@ def url_encode(href):
 
 
 def is_subpath(parent_url, child_url):
-    child = urlparse(child_url)
-    parent = urlparse(parent_url)
+    parent = urlparse(urldefrag(parent_url)[0])
+    child = urlparse(urldefrag(child_url)[0])
 
     if child.scheme != parent.scheme or child.netloc != parent.netloc:
         return False
+    elif not child.path:
+        return False
 
-    return child_url.startswith(parent_url)
+    parent_parts = parent.path.split("/")
+    if not parent.path.endswith("/"):
+        parent_parts.pop()
+
+    parent_path = "/".join(parent_parts)
+    return child.path.startswith(parent_path)
+
+
+media_extensions = tuple(
+    "." + ext
+    for ext in consts.IMAGE_EXTENSIONS
+    | consts.ARCHIVE_EXTENSIONS
+    | consts.IMAGE_ANIMATION_EXTENSIONS
+    | consts.PIL_EXTENSIONS
+    | consts.VIDEO_EXTENSIONS
+    | consts.AUDIO_ONLY_EXTENSIONS
+    | consts.OCRMYPDF_EXTENSIONS
+)
 
 
 def is_html(url, max_size=15 * 1024 * 1024):
+    if url.endswith(media_extensions):
+        return False
+
     with requests_session().get(url, stream=True) as r:
         content_length = r.headers.get("Content-Length")
-    if content_length and int(content_length) > max_size:
-        return False
-
-    content_type = r.headers.get("Content-Type")
-    if content_type and not any(
-        s in content_type for s in ("text/html", "text/xhtml", "text/xml", "application/xml", "application/xhtml+xml")
-    ):
-        return False
-
-    try:
-        chunk = next(r.iter_content(max_size + 1))  # one more byte than max_size
-        if len(chunk) > max_size:
+        if content_length and int(content_length) > max_size:
             return False
-    except (requests.RequestException, StopIteration):
-        return False
+
+        content_type = r.headers.get("Content-Type")
+        if content_type and not any(
+            s in content_type
+            for s in ("text/html", "text/xhtml", "text/xml", "application/xml", "application/xhtml+xml")
+        ):
+            # log.debug('not is_html %s %s', content_type, url)
+            return False
+
+        try:
+            chunk = next(r.iter_content(max_size + 1))  # one more byte than max_size
+            if len(chunk) > max_size:
+                return False
+        except (requests.RequestException, StopIteration):
+            return False
 
     return True  # if ambiguous, return True
 

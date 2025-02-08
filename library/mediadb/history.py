@@ -2,7 +2,6 @@ import argparse
 
 from library import usage
 from library.mediadb import db_history
-from library.mediadb.db_history import create
 from library.playback import media_printer
 from library.utils import arggroups, argparse_utils, sqlgroups
 
@@ -30,7 +29,7 @@ def remove_duplicate_data(tbl):
 
 def history() -> None:
     args = parse_args()
-    create(args)
+    db_history.create(args)
 
     if args.completed:
         print("Completed:")

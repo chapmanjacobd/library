@@ -130,7 +130,7 @@ def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True) -> 
 
                 entry = objects.dumbcopy(info)
                 if entry:
-                    if db_playlists.media_exists(args, playlist_path, webpath) and not args.ignore_errors:
+                    if db_playlists.media_exists(args, webpath, playlist_path) and not args.ignore_errors:
                         raise ExistingPlaylistVideoReached
 
                     if not info.get("playlist_id") or webpath == playlist_path:
@@ -172,9 +172,9 @@ def get_playlist_metadata(args, playlist_path, ydl_opts, playlist_root=True) -> 
 
         if args.action == consts.SC.tube_update:
             if added_media_count > count_before_extract:
-                db_playlists.decrease_update_delay(args, playlist_path)
+                db_playlists.update_more_frequently(args, playlist_path)
             else:
-                db_playlists.increase_update_delay(args, playlist_path)
+                db_playlists.update_less_frequently(args, playlist_path)
 
 
 def yt_subs_config(args):

@@ -364,8 +364,8 @@ def reddit_update(args=None) -> None:
             elif extractor_key == "reddit_praw_redditor":
                 redditor_new(args, {"path": path, "name": name})
 
-            db_playlists.decrease_update_delay(args, playlist["path"])
+            db_playlists.update_more_frequently(args, playlist["path"])
         except skip_errors as e:
-            db_playlists.increase_update_delay(args, playlist["path"])
+            db_playlists.update_less_frequently(args, playlist["path"])
             log.error("[%s] skipping: %s", name, e)
             continue

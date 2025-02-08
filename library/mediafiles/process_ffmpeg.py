@@ -230,7 +230,7 @@ def process_path(args, path, include_timecode=False, subtitle_streams_unsupporte
             if bitrate >= 256000:
                 ff_opts.extend(["-b:a", "128k"])
             else:
-                ff_opts.extend(["-b:a", "64k", "-frame_duration", "40"])
+                ff_opts.extend(["-b:a", "64k", "-frame_duration", "40", "-apply_phase_inv", "0"])
 
             if source_rate >= 44100:
                 opus_rate = 48000
