@@ -23,7 +23,7 @@ def create(args):
             "time_downloaded": int,
             "size": int,
             "duration": int,
-            # "fps": float,
+            "fps": float,
             "path": str,
             # "title": str,
             # "webpath": str,
