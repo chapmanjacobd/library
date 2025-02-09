@@ -129,8 +129,7 @@ def consolidate(v: dict) -> dict | None:
     cv["title"] = iterables.safe_unpack(v.pop("title", None), v.get("playlist_title"))
     cv["width"] = v.pop("width", None)
     cv["height"] = v.pop("height", None)
-    fps = v.pop("fps", None)
-    cv["fps"] = 0 if not fps else int(fps)
+    cv["fps"] = v.pop("fps", None) or 0.0
     cv["live_status"] = v.pop("live_status", None)
     cv["age_limit"] = iterables.safe_unpack(
         v.pop("age_limit", None),
