@@ -22,7 +22,7 @@ dependencies = [
   "regex",
   "rich",
   "screeninfo",
-  "sqlite-utils",
+  "sqlite-utils>=3.38",
   "tabulate",
   "tinytag",
   "yt-dlp[default]",
