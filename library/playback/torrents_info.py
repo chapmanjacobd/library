@@ -53,7 +53,9 @@ def qbt_get_tracker(qbt_client, torrent):
     tracker = torrent.tracker
     if not tracker:
         tracker = iterables.safe_unpack(
-            tr.url for tr in qbt_client.torrents_trackers(torrent.hash) if tr.url.startswith("http")
+            sorted(
+                (tr.url for tr in qbt_client.torrents_trackers(torrent.hash) if tr.url.startswith("http")), reverse=True
+            )
         )
     return domain_from_url(tracker)
 
@@ -128,11 +130,13 @@ def is_inactive(t):
 
 def filter_torrents_by_activity(args, torrents):
     if args.stopped is not None:
-        torrents = [t for t in torrents if args.stopped == t.state_enum.is_stopped]
+        torrents = [t for t in torrents if args.stopped is t.state_enum.is_stopped]
     if args.errored is not None:
-        torrents = [t for t in torrents if args.errored == (t.state == "error")]
+        torrents = [t for t in torrents if args.errored is (t.state == "error")]
     if args.missing is not None:
-        torrents = [t for t in torrents if args.missing == (t.state == "missingFiles")]
+        torrents = [t for t in torrents if args.missing is (t.state == "missingFiles")]
+    if args.moving is not None:
+        torrents = [t for t in torrents if args.moving is (t.state == "moving")]
 
     if args.complete:
         torrents = [t for t in torrents if t.state_enum.is_complete]
@@ -448,7 +452,7 @@ def torrents_info():
                         temp_path /= domain
 
                 print(t.download_path, "==>", temp_path)
-                qbt_client.torrents_set_download_path(temp_path, torrent_hashes=torrent_hashes)
+                qbt_client.torrents_set_download_path(temp_path, torrent_hashes=[t.hash])
 
         if "download_drive" not in args.defaults or "download_prefix" not in args.defaults:
             print("Setting save path", len(torrents))
@@ -460,7 +464,7 @@ def torrents_info():
                         download_path /= domain
 
                 print(t.save_path, "==>", download_path)
-                qbt_client.torrents_set_save_path(download_path, torrent_hashes=torrent_hashes)
+                qbt_client.torrents_set_save_path(download_path, torrent_hashes=[t.hash])
 
     if args.export:
         print("Exporting", len(torrents))
