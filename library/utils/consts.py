@@ -78,7 +78,7 @@ TERMINAL_SIZE = shutil.get_terminal_size(fallback=(150, 50))
 MOBILE_TERMINAL = TERMINAL_SIZE.columns < 80
 TABULATE_STYLE = "simple"
 DEFAULT_DIFFLIB_RATIO = 0.73
-DEFAULT_MIN_SPLIT = "90s"
+DEFAULT_MIN_SPLIT = "150s"
 IS_LINUX = sys.platform == "linux"
 IS_MAC = sys.platform == "darwin"
 IS_WINDOWS = os.name == "nt" or sys.platform in ("win32", "cygwin", "msys")
