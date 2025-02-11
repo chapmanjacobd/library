@@ -31,7 +31,7 @@ def create(args):
         },
         pk="id",
         if_not_exists=True,
-        strict=True,
+        # strict=True,
     )
 
 

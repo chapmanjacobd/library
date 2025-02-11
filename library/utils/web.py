@@ -329,8 +329,11 @@ def quit_selenium(args):
 
 
 def post_download(args):
-    min_sleep_interval = getattr(args, "sleep_interval", None) or 0
-    sleep_interval = random.uniform(min_sleep_interval, getattr(args, "max_sleep_interval", None) or min_sleep_interval)
+    sleep_interval = getattr(args, "sleep_interval", None) or 0
+    max_sleep_interval = getattr(args, "max_sleep_interval", None)
+    if max_sleep_interval:
+        sleep_interval = random.uniform(sleep_interval, max_sleep_interval)
+
     if sleep_interval > 0:
         log.debug("[download] Sleeping %s seconds ...", sleep_interval)
         time.sleep(sleep_interval)
@@ -765,11 +768,14 @@ media_extensions = tuple(
 )
 
 
-def is_html(url, max_size=15 * 1024 * 1024):
+def is_html(args, url, max_size=2 * 1024 * 1024):
     if url.endswith(media_extensions):
         return False
 
-    with requests_session().get(url, stream=True) as r:
+    r = None
+    try:
+        r = requests_session().head(url, timeout=(5, 8))
+
         content_length = r.headers.get("Content-Length")
         if content_length and int(content_length) > max_size:
             return False
@@ -781,13 +787,13 @@ def is_html(url, max_size=15 * 1024 * 1024):
         ):
             # log.debug('not is_html %s %s', content_type, url)
             return False
+    except requests.exceptions.RetryError:
+        return False
+    finally:
+        if r:
+            r.close()
 
-        try:
-            chunk = next(r.iter_content(max_size + 1))  # one more byte than max_size
-            if len(chunk) > max_size:
-                return False
-        except (requests.RequestException, StopIteration):
-            return False
+    sleep(args)
 
     return True  # if ambiguous, return True
 

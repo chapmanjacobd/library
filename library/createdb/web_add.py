@@ -117,6 +117,8 @@ def add_extra_metadata(args, m):
             m |= fs_add_metadata.extract_image_metadata_chunk([{"path": temp_file_path}])[0]
     m["path"] = remote_path  # restore from temp file extraction
 
+    web.sleep(args)
+
     return m
 
 
@@ -137,6 +139,7 @@ def add_basic_metadata(args, m):
         # TODO: use head_foot_stream
         m["hash"] = sample_hash.sample_hash_file(m["path"])
 
+    web.sleep(args)
     return m
 
 
@@ -160,26 +163,26 @@ def spider(args, paths: list):
         if args.media:
             paths.append(path)
             for _ in range(args.threads * 5):  # batch
-                if len(paths) == 0:
-                    continue
-                path = paths.pop()
+                if len(paths) > 0:
+                    path = paths.pop()
 
-                if args.force:
-                    new_paths[path] = None  # add key to map; title: None
-                elif db_media.exists(args, path):
-                    known_paths.add(path)
-                else:
-                    new_paths[path] = None  # add key to map; title: None
+                    if args.force:
+                        new_paths[path] = None  # add key to map; title: None
+                    elif db_media.exists(args, path):
+                        known_paths.add(path)
+                    else:
+                        new_paths[path] = None  # add key to map; title: None
 
-        elif path in original_paths or web.is_index(path) or web.is_html(path):
+        elif path in original_paths or web.is_index(path) or web.is_html(args, path):
             try:
                 link_dicts = list(get_inner_urls(args, path))
             except requests.HTTPError as e:
                 log.error(e)
                 continue
 
+            log.debug('%s urls found in %s', len(link_dicts), path)
             random.shuffle(link_dicts)
-            for link_dict in link_dicts:
+            for link_idx, link_dict in enumerate(link_dicts):
                 link = web.remove_apache_sorting_params(link_dict.pop("link"))
 
                 if link in traversed_paths or link in paths:
@@ -187,11 +190,12 @@ def spider(args, paths: list):
 
                 if db_media.exists(args, link):
                     known_paths.add(link)
+                elif web.is_subpath(path, link) and web.is_html(args, link):
+                    log.info('queueing sub-page %s', link)
+                    paths.append(link)
                 else:
                     new_paths[link] = objects.merge_dict_values_str(new_paths.get(link) or {}, link_dict)
 
-                if web.is_subpath(path, link) and web.is_html(link):
-                    paths.append(link)
         else:  # not HTML page
             if path in traversed_paths or path in paths:
                 pass

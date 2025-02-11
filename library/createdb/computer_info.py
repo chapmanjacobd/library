@@ -38,14 +38,14 @@ def computer_info():
                 uptime_data = f.read().split()
                 up_time = float(uptime_data[0])
                 return {
-                    "up_time": up_time,
-                    "idle_percent": ((float(uptime_data[1]) / (os.cpu_count() or 1)) / up_time) * 100,
+                    "up_time": int(up_time),
+                    "idle_percent": int(((float(uptime_data[1]) / (os.cpu_count() or 1)) / up_time) * 100),
                 }
         else:  # macOS, Windows
             boot_time = psutil.boot_time()
             up_time = datetime.datetime.now() - datetime.datetime.fromtimestamp(boot_time)
             return {
-                "up_time": up_time.total_seconds(),
+                "up_time": int(up_time.total_seconds()),
             }
 
     uptime_info = get_uptime_info()
@@ -265,7 +265,7 @@ def computer_info():
                     "device_write": io.write_bytes,
                     "device_read_ms": io.read_time,
                     "device_write_ms": io.write_time,
-                    "device_utilization": (((io.read_time + io.write_time) / 1000) / uptime_info["up_time"]) * 100,
+                    "device_utilization": int((((io.read_time + io.write_time) / 1000) / uptime_info["up_time"]) * 100),
                 }
 
         return mounts
@@ -319,9 +319,9 @@ def computer_info():
         "processor": get_processor(),
         "platform": platform.platform(),
         **uptime_info,
-        "cpu_utilization": cpu_percent,
-        "cpu_idle": cpu_times.idle,
-        "cpu_iowait": cpu_times.iowait,
+        "cpu_utilization": int(cpu_percent),
+        "cpu_idle": int(cpu_times.idle),
+        "cpu_iowait": int(cpu_times.iowait),
         "cpu_scaling": get_scaling_governors(),
         **get_loadavg(),
         **get_mem_info(),
