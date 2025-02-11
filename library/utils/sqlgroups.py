@@ -391,7 +391,7 @@ def construct_download_query(args, dl_status=False) -> tuple[str, dict]:
         )
 
     same_subdomain = """AND m.path like (
-        SELECT '%' || SUBSTR(path, INSTR(path, '//') + 2, INSTR( SUBSTR(path, INSTR(path, '//') + 2), '/') - 1) || '%'
+        SELECT '%' || SUBSTR(m.path, INSTR(m.path, '//') + 2, INSTR( SUBSTR(m.path, INSTR(m.path, '//') + 2), '/') - 1) || '%'
         FROM media
         WHERE 1=1
             AND COALESCE(m.time_downloaded,0) = 0
@@ -428,7 +428,7 @@ def construct_download_query(args, dl_status=False) -> tuple[str, dict]:
             {same_subdomain if getattr(args, 'same_domain', False) else ''}
             {'AND (score IS NULL OR score > 7)' if 'score' in m_columns else ''}
             {'AND (upvote_ratio IS NULL OR upvote_ratio > 0.73)' if 'upvote_ratio' in m_columns else ''}
-            {'AND is_supported(path)' if args.safe else ''}
+            {'AND is_supported(m.path)' if args.safe else ''}
             {" ".join(args.filter_sql)}
         ORDER BY 1=1
             {', COALESCE(m.time_modified, 0) = 0 DESC' if 'time_modified' in m_columns else ''}

@@ -291,6 +291,7 @@ def torrents_info():
 
             if args.verbose >= consts.LOG_INFO:
                 d |= {
+                    "completed_on": strings.relative_datetime(t.completion_on),
                     "added_on": strings.relative_datetime(t.added_on),
                     "size": strings.file_size(t.total_size),
                     "remaining": strings.file_size(t.amount_left),
@@ -324,6 +325,7 @@ def torrents_info():
                 }
             if t.state_enum.is_complete:
                 d |= {
+                    "time_active": strings.duration_short(t.time_active),
                     "uploaded_session": strings.file_size(t.uploaded_session),
                     "uploaded": strings.file_size(t.uploaded),
                 }
@@ -354,6 +356,7 @@ def torrents_info():
             if args.verbose >= consts.LOG_INFO:
                 d |= {
                     "seen_complete": (strings.relative_datetime(t.seen_complete) if t.seen_complete > 0 else None),
+                    "completed_on": strings.relative_datetime(t.completion_on),
                     "added_on": strings.relative_datetime(t.added_on),
                     "last_activity": strings.relative_datetime(t.last_activity),
                     "size": strings.file_size(t.total_size),

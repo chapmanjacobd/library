@@ -539,7 +539,7 @@ def sql_fs_post(args, table_prefix="m.") -> None:
     args.aggregate_filter_sql.extend(" AND " + w for w in args.where if any(a in w for a in aggregate_filter_columns))
 
     if args.ext:
-        or_conditions = [f"path like '%.{ext}'" for ext in args.ext]
+        or_conditions = [f"m.path like '%.{ext}'" for ext in args.ext]
         args.filter_sql.append(f" AND ({' OR '.join(or_conditions)})")
 
     if args.local_media_only:
@@ -1706,7 +1706,7 @@ def requests(parent_parser):
         metavar="SECONDS",
         type=float,
         help=(
-            "Number of seconds to sleep before each download. "
+            "Number of seconds to sleep between downloads. "
             "This is the minimum time to sleep when used along with --max-sleep-interval "
             "(Alias: --min-sleep-interval)"
         ),

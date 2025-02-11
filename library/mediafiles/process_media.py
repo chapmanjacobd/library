@@ -121,7 +121,7 @@ def collect_media(args) -> list[dict]:
         db_history.create(args)
 
         if not args.ext:
-            or_conditions = [f"path like '%.{ext}'" for ext in default_exts]
+            or_conditions = [f"m.path like '%.{ext}'" for ext in default_exts]
             args.filter_sql.append(f" AND ({' OR '.join(or_conditions)})")
 
         try:
