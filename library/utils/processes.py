@@ -48,7 +48,7 @@ sizeout_max = None
 sizeout_total = 0
 
 
-def sizeout(max_size: str, next_size: int) -> None:
+def sizeout(max_size: str, next_size: int) -> bool:
     global sizeout_max
     global sizeout_total
 
@@ -57,8 +57,8 @@ def sizeout(max_size: str, next_size: int) -> None:
 
     sizeout_total += next_size
     if sizeout_total > sizeout_max:
-        print(f"\nReached sizeout... ({max_size})")
-        raise SystemExit(124)
+        return True
+    return False
 
 
 def with_timeout(seconds):  # noqa: ANN201

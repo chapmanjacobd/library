@@ -71,18 +71,19 @@ def is_matching(args, t):
         return False
     if "leechers" not in args.defaults and not args.leechers(t.num_incomplete):
         return False
-    if "time_added" not in args.defaults and not args.time_added(
-        (consts.APPLICATION_START - t.added_on) if t.added_on > 0 else 0
-    ):
-        return False
-    if "time_stalled" not in args.defaults and not args.time_stalled(
-        (consts.APPLICATION_START - t.last_activity) if t.last_activity > 0 else 0
-    ):
-        return False
-    if "time_completed" not in args.defaults and not args.time_completed(
-        (consts.APPLICATION_START - t.completion_on) if t.state_enum.is_complete and t.completion_on > 0 else 0
-    ):
-        return False
+    if "time_added" not in args.defaults:
+        if not t.added_on > 0 or not args.time_added(consts.APPLICATION_START - t.added_on):
+            return False
+    if "time_stalled" not in args.defaults:
+        if not t.last_activity > 0 or not args.time_stalled(consts.APPLICATION_START - t.last_activity):
+            return False
+    if "time_completed" not in args.defaults:
+        if (
+            not t.state_enum.is_complete
+            or not (t.completion_on > 0 and (consts.APPLICATION_START - t.completion_on) > 0)
+            or not args.time_completed(consts.APPLICATION_START - t.completion_on)
+        ):
+            return False
     if "time_unseeded" not in args.defaults and not args.time_unseeded(
         (consts.APPLICATION_START - t.seen_complete)
         if t.num_complete == 0 and t.seen_complete > 0
@@ -112,6 +113,9 @@ def is_matching(args, t):
         if args.file_search:
             if not strings.glob_match(args.file_search, [f.name for f in t.files]):
                 return False
+
+    if args.timeout_size and processes.sizeout(args.timeout_size, t.total_size):
+        return False
 
     return True
 

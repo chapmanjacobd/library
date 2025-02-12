@@ -253,7 +253,7 @@ def mam_update_playlist(args, playlist_path):
 
             d["size"] = d.pop("size_bytes")
             d |= db_media.consolidate(d) or {}
-            args.db["media"].insert(objects.dict_filter_bool(d), pk="id", alter=True)
+            args.db["media"].insert(objects.dict_filter_bool(d), pk=["playlists_id", "path"], alter=True, replace=True)
             inserted_items += 1
 
         if total_items is None:  # first request

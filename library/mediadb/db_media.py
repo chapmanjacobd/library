@@ -11,27 +11,24 @@ from library.utils.log_utils import log
 
 
 def create(args):
-    args.db.create_table(
-        "media",
-        {
-            "id": int,
-            "playlists_id": int,
-            "time_created": int,
-            "time_modified": int,
-            "time_deleted": int,
-            "time_uploaded": int,
-            "time_downloaded": int,
-            "size": int,
-            "duration": int,
-            "fps": float,
-            "path": str,
-            # "title": str,
-            # "webpath": str,
-            # "error": str,
-        },
-        pk="id",
-        if_not_exists=True,
-        # strict=True,
+    args.db.execute(
+        '''
+        CREATE TABLE IF NOT EXISTS media (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            playlists_id INTEGER,
+            time_created INTEGER DEFAULT (strftime('%s', 'now')),
+            time_modified INTEGER DEFAULT 0,
+            time_deleted INTEGER DEFAULT 0,
+            time_uploaded INTEGER DEFAULT 0,
+            time_downloaded INTEGER DEFAULT 0,
+            size INTEGER,
+            duration INTEGER,
+            float REAL,
+            path TEXT NOT NULL,
+
+            CONSTRAINT media_uniq_path UNIQUE (playlists_id, path)
+        );
+        '''
     )
 
 
