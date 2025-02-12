@@ -16,20 +16,20 @@ media table
 
 
 def create(args):
-    args.db.create_table(
-        "playlists",
-        {
-            "id": int,
-            "time_created": int,
-            "time_modified": int,
-            "time_deleted": int,
-            "hours_update_delay": int,
-            "path": str,
-            "extractor_config": str,
-        },
-        pk="id",
-        if_not_exists=True,
-        # strict=True,
+    args.db.execute(
+        '''
+        CREATE TABLE IF NOT EXISTS playlists (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            time_created INTEGER DEFAULT (strftime('%s', 'now')),
+            time_modified INTEGER DEFAULT 0,
+            time_deleted INTEGER DEFAULT 0,
+            hours_update_delay INTEGER DEFAULT 70,
+            path TEXT NOT NULL,
+            extractor_config TEXT DEFAULT '{}',
+
+            CONSTRAINT playlists_uniq_path UNIQUE (path, extractor_config)
+        );
+        '''
     )
 
 
