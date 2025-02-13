@@ -110,7 +110,7 @@ def is_matching(args, t):
         return False
 
     if args.torrent_search or args.file_search:
-        if not strings.glob_match(args.torrent_search, [t.name, t.save_path, t.hash]):
+        if not strings.glob_match(args.torrent_search, [t.name, t.comment, t.content_path, t.hash]):
             return False
 
         if args.file_search:
