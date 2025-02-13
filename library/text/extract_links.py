@@ -102,7 +102,7 @@ def is_desired_url(args, link, link_text, before, after) -> bool:
 def parse_inner_urls(args, url, markup):
     from bs4 import BeautifulSoup
 
-    if url.endswith('.xml'):
+    if url.endswith(".xml"):
         soup = BeautifulSoup(markup, "xml")
     else:
         soup = BeautifulSoup(markup, "lxml")

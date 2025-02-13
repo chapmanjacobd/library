@@ -55,9 +55,10 @@ def sizeout(max_size: str, next_size: int) -> bool:
     if sizeout_max is None:
         sizeout_max = nums.human_to_bytes(max_size)
 
-    sizeout_total += next_size
-    if sizeout_total > sizeout_max:
+    if (sizeout_total + next_size) > sizeout_max:
         return True
+
+    sizeout_total += next_size
     return False
 
 

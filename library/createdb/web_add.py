@@ -180,7 +180,7 @@ def spider(args, paths: list):
                 log.error(e)
                 continue
 
-            log.debug('%s urls found in %s', len(link_dicts), path)
+            log.debug("%s urls found in %s", len(link_dicts), path)
             random.shuffle(link_dicts)
             for link_idx, link_dict in enumerate(link_dicts):
                 link = web.remove_apache_sorting_params(link_dict.pop("link"))
@@ -191,7 +191,7 @@ def spider(args, paths: list):
                 if db_media.exists(args, link):
                     known_paths.add(link)
                 elif web.is_subpath(path, link) and web.is_html(args, link):
-                    log.info('queueing sub-page %s', link)
+                    log.info("queueing sub-page %s", link)
                     paths.append(link)
                 else:
                     new_paths[link] = objects.merge_dict_values_str(new_paths.get(link) or {}, link_dict)

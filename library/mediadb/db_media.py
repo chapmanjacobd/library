@@ -12,7 +12,7 @@ from library.utils.log_utils import log
 
 def create(args):
     args.db.execute(
-        '''
+        """
         CREATE TABLE IF NOT EXISTS media (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             playlists_id INTEGER,
@@ -25,10 +25,10 @@ def create(args):
             duration INTEGER,
             float REAL,
             path TEXT NOT NULL,
-
-            CONSTRAINT media_uniq_path UNIQUE (playlists_id, path)
         );
-        '''
+
+        CREATE UNIQUE INDEX IF NOT EXISTS media_uniq_path_idx (playlists_id, path);
+        """
     )
 
 
