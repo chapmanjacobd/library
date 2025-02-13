@@ -79,10 +79,13 @@ def is_matching(args, t):
             return False
     if "time_completed" not in args.defaults:
         if (
-            not t.state_enum.is_complete
-            or not (t.completion_on > 0 and (consts.APPLICATION_START - t.completion_on) > 0)
+            not t.completion_on
+            or not t.completion_on > 0
             or not args.time_completed(consts.APPLICATION_START - t.completion_on)
         ):
+            return False
+    if "time_remaining" not in args.defaults:
+        if not t.eta or t.eta >= 8640000 or not args.time_remaining(t.eta):
             return False
     if "time_unseeded" not in args.defaults and not args.time_unseeded(
         (consts.APPLICATION_START - t.seen_complete)
@@ -295,8 +298,8 @@ def torrents_info():
 
             if args.verbose >= consts.LOG_INFO:
                 d |= {
-                    "completed_on": strings.relative_datetime(t.completion_on),
-                    "added_on": strings.relative_datetime(t.added_on),
+                    "completed_on": strings.relative_datetime(t.completion_on)  if t.completion_on > 0 else None,
+                    "added_on": strings.relative_datetime(t.added_on) if t.added_on > 0 else None,
                     "size": strings.file_size(t.total_size),
                     "remaining": strings.file_size(t.amount_left),
                     "comment": t.comment,
@@ -359,10 +362,10 @@ def torrents_info():
 
             if args.verbose >= consts.LOG_INFO:
                 d |= {
-                    "seen_complete": (strings.relative_datetime(t.seen_complete) if t.seen_complete > 0 else None),
-                    "completed_on": strings.relative_datetime(t.completion_on),
-                    "added_on": strings.relative_datetime(t.added_on),
-                    "last_activity": strings.relative_datetime(t.last_activity),
+                    "seen_complete": strings.relative_datetime(t.seen_complete) if t.seen_complete > 0 else None,
+                    "completed_on": strings.relative_datetime(t.completion_on) if t.completion_on > 0 else None,
+                    "added_on": strings.relative_datetime(t.added_on)  if t.added_on > 0 else None,
+                    "last_activity": strings.relative_datetime(t.last_activity)  if t.last_activity > 0 else None,
                     "size": strings.file_size(t.total_size),
                     "comment": t.comment,
                     "download_path": t.download_path,

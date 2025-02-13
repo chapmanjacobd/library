@@ -2030,6 +2030,7 @@ def qBittorrent_torrents(parent_parser):
     parser.add_argument("--time-unseeded", action="append", help="Include torrents with N time since last seeder")
     parser.add_argument("--time-active", action="append", help="Include torrents with N time active")
     parser.add_argument("--time-completed", action="append", help="Include torrents with N time completed")
+    parser.add_argument("--time-remaining", "--eta", action="append", help="Include torrents with N time remaining")
     parser.add_argument("--priority", action="append", help="Include torrents with N priority")
     parser.add_argument("--progress", action="append", help="Include torrents with N%% progress")
     parser.add_argument("--remaining", action="append", help="Include torrents with N bytes remaining")
@@ -2083,6 +2084,7 @@ def qBittorrent_torrents_post(args):
     args.time_unseeded = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_unseeded)
     args.time_active = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_active)
     args.time_completed = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_completed)
+    args.time_remaining = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_remaining)
 
     args.ratio = sql_utils.parse_human_to_lambda(nums.float_from_percent, args.ratio)
     args.progress = sql_utils.parse_human_to_lambda(nums.float_from_percent, args.progress)

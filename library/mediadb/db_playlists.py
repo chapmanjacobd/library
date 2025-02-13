@@ -17,7 +17,7 @@ media table
 
 def create(args):
     args.db.execute(
-        '''
+        """
         CREATE TABLE IF NOT EXISTS playlists (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             time_created INTEGER DEFAULT (strftime('%s', 'now')),
@@ -26,10 +26,10 @@ def create(args):
             hours_update_delay INTEGER DEFAULT 70,
             path TEXT NOT NULL,
             extractor_config TEXT DEFAULT '{}',
-
-            CONSTRAINT playlists_uniq_path UNIQUE (path, extractor_config)
         );
-        '''
+
+        CREATE UNIQUE INDEX IF NOT EXISTS playlists_uniq_path_idx (path, extractor_config);
+        """
     )
 
 
