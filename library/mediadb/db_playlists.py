@@ -21,8 +21,8 @@ def create(args):
         CREATE TABLE IF NOT EXISTS playlists (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             time_created INTEGER DEFAULT (strftime('%s', 'now')),
-            time_modified INTEGER DEFAULT 0,
-            time_deleted INTEGER DEFAULT 0,
+            time_modified INTEGER,
+            time_deleted INTEGER,
             hours_update_delay INTEGER DEFAULT 70,
             path TEXT NOT NULL,
             extractor_config TEXT DEFAULT '{}'

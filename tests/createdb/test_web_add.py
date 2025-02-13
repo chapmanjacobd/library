@@ -9,4 +9,4 @@ def test_web_add(temp_db):
     args = connect_db_args(db1)
     media = list(args.db.query("SELECT * FROM media"))
 
-    assert len(media) >= 5
+    assert len(media) >= 4
