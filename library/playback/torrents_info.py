@@ -144,6 +144,8 @@ def filter_torrents_by_activity(args, torrents):
         torrents = [t for t in torrents if args.missing is (t.state == "missingFiles")]
     if args.moving is not None:
         torrents = [t for t in torrents if args.moving is (t.state == "moving")]
+    if args.checking is not None:
+        torrents = [t for t in torrents if args.checking is t.state.startswith("checking")]
 
     if args.complete:
         torrents = [t for t in torrents if t.state_enum.is_complete]
@@ -298,7 +300,7 @@ def torrents_info():
 
             if args.verbose >= consts.LOG_INFO:
                 d |= {
-                    "completed_on": strings.relative_datetime(t.completion_on)  if t.completion_on > 0 else None,
+                    "completed_on": strings.relative_datetime(t.completion_on) if t.completion_on > 0 else None,
                     "added_on": strings.relative_datetime(t.added_on) if t.added_on > 0 else None,
                     "size": strings.file_size(t.total_size),
                     "remaining": strings.file_size(t.amount_left),
@@ -364,8 +366,8 @@ def torrents_info():
                 d |= {
                     "seen_complete": strings.relative_datetime(t.seen_complete) if t.seen_complete > 0 else None,
                     "completed_on": strings.relative_datetime(t.completion_on) if t.completion_on > 0 else None,
-                    "added_on": strings.relative_datetime(t.added_on)  if t.added_on > 0 else None,
-                    "last_activity": strings.relative_datetime(t.last_activity)  if t.last_activity > 0 else None,
+                    "added_on": strings.relative_datetime(t.added_on) if t.added_on > 0 else None,
+                    "last_activity": strings.relative_datetime(t.last_activity) if t.last_activity > 0 else None,
                     "size": strings.file_size(t.total_size),
                     "comment": t.comment,
                     "download_path": t.download_path,

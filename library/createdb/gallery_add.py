@@ -34,6 +34,9 @@ def gallery_add(args=None) -> None:
         sys.argv = ["galleryadd", *args]
 
     args = parse_args(SC.gallery_add, usage=usage.gallery_add)
+
+    db_playlists.create(args)
+    db_media.create(args)
     paths = arg_utils.gen_paths(args)
 
     if args.insert_only:
@@ -41,14 +44,12 @@ def gallery_add(args=None) -> None:
             [{"path": p, "time_created": consts.APPLICATION_START} for p in paths],
             alter=True,
             ignore=True,
-            pk="path",
         )
     elif args.insert_only_playlists:
         args.db["playlists"].insert_all(
             [{"path": p, "time_created": consts.APPLICATION_START} for p in paths],
             alter=True,
             ignore=True,
-            pk="path",
         )
     else:
         paths = list(paths)

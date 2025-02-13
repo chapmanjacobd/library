@@ -2,6 +2,7 @@ from pathlib import Path
 from unittest import skip
 
 from library.createdb import gallery_backend
+from library.mediadb import db_media, db_playlists
 from library.utils.db_utils import connect
 from library.utils.objects import NoneSpace
 
@@ -13,6 +14,9 @@ def create_args(test_name):
 
     args = NoneSpace(database=db_path, verbose=2)
     args.db = connect(args)
+
+    db_playlists.create(args)
+    db_media.create(args)
     return args
 
 

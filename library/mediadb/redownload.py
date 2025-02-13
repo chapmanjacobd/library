@@ -94,9 +94,9 @@ def mark_media_undownloaded(args, deleted_media) -> None:
                 args.db.conn.execute("DELETE from media WHERE path = ?", d["path"])
 
             d["path"] = d["webpath"]
-            args.db["media"].upsert(d, pk="id", alter=True)  # type: ignore
+            args.db["media"].upsert(d, alter=True)  # type: ignore
         else:
-            args.db["media"].upsert(d, pk="id", alter=True)  # type: ignore
+            args.db["media"].upsert(d, alter=True)  # type: ignore
 
 
 def print_deleted(args, deleted_media) -> None:

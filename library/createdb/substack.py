@@ -47,5 +47,8 @@ def save_page(args, url):
 
 def substack():
     args = parse_args()
+
+    db_media.create(args)
+
     for path in args.paths:
         save_page(args, path)

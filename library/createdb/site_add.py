@@ -259,7 +259,8 @@ def attach_interceptors(args):
             tables = db_utils.add_missing_table_names(args, tables)
             db_thread = db_utils.connect(argparse.Namespace(database=args.database, verbose=args.verbose))
             for d in tables:
-                db_thread[d["table_name"]].insert_all(iterables.list_dict_filter_bool(d["data"]), alter=True)  # type: ignore
+                table_name = d["table_name"]
+                db_thread[table_name].insert_all(iterables.list_dict_filter_bool(d["data"]), alter=True)  # type: ignore
 
         request = None
         response = None  # tell selenium-wire to not keep the response... idk if this works
