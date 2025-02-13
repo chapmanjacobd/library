@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 from dateutil import parser
 
 from library import usage
-from library.mediadb import db_media
+from library.mediadb import db_media, db_playlists
 from library.utils import arggroups, argparse_utils, nums, web
 
 
@@ -128,6 +128,10 @@ def save_page(args, text):
 
 def tildes():
     args = parse_args()
+
+    db_playlists.create(args)
+    db_media.create(args)
+
     response = web.get(args, f"https://tildes.net/user/{args.username}")
     if response:
         save_page(args, response.text)

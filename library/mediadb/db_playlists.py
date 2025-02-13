@@ -25,12 +25,11 @@ def create(args):
             time_deleted INTEGER DEFAULT 0,
             hours_update_delay INTEGER DEFAULT 70,
             path TEXT NOT NULL,
-            extractor_config TEXT DEFAULT '{}',
+            extractor_config TEXT DEFAULT '{}'
         );
-
-        CREATE UNIQUE INDEX IF NOT EXISTS playlists_uniq_path_idx (path, extractor_config);
         """
     )
+    args.db.execute("CREATE UNIQUE INDEX IF NOT EXISTS playlists_uniq_path_idx ON playlists (path, extractor_config);")
 
 
 def consolidate(args, v: dict) -> dict:
@@ -95,7 +94,7 @@ def _add(args, entry):
     else:
         entry["time_created"] = consts.APPLICATION_START
         entry["hours_update_delay"] = 70  # about three days
-        args.db["playlists"].insert(entry, pk="id", alter=True)
+        args.db["playlists"].insert(entry, alter=True)
         playlists_id = get_id(args, entry["path"])
     return playlists_id
 

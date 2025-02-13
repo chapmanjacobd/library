@@ -53,14 +53,12 @@ def tube_add(args=None) -> None:
             ],
             alter=True,
             ignore=True,
-            pk="id",
         )
     elif args.insert_only_playlists:
         args.db["playlists"].insert_all(
             [{"path": p, "time_created": consts.APPLICATION_START} for p in paths],
             alter=True,
             ignore=True,
-            pk="path",
         )
     else:
         paths = list(paths)

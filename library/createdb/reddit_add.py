@@ -278,7 +278,7 @@ def subreddit_top(args, subreddit_dict) -> None:
     _takewhile = since_last_created(args, subreddit_path)
     for time_filter in time_filters:
         log.info("[%s]: Getting top posts for time_filter '%s'", subreddit, time_filter)
-        for post in takewhile(_takewhile, subreddit.top(time_filter, limit=args.limit)):
+        for post in takewhile(_takewhile, subreddit.top(time_filter=time_filter, limit=args.limit)):
             save_post(args, saveable(post), subreddit_path)
 
 
@@ -290,6 +290,9 @@ def reddit_add(args=None) -> None:
         sys.argv = ["lb", *args]
 
     args = parse_args(consts.SC.reddit_add, usage=usage.reddit_add)
+
+    db_playlists.create(args)
+    db_media.create(args)
 
     for path in args.paths:
         path = path.lower()

@@ -312,6 +312,9 @@ def extractor(args, playlist_path):
 def links_add() -> None:
     args = parse_args(consts.SC.links_add, usage=usage.links_add)
 
+    db_playlists.create(args)
+    db_media.create(args)
+
     if args.insert_only:
         media_new = set()
         media_known = set()

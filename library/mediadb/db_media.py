@@ -24,12 +24,11 @@ def create(args):
             size INTEGER,
             duration INTEGER,
             float REAL,
-            path TEXT NOT NULL,
+            path TEXT NOT NULL
         );
-
-        CREATE UNIQUE INDEX IF NOT EXISTS media_uniq_path_idx (playlists_id, path);
         """
     )
+    args.db.execute("CREATE UNIQUE INDEX IF NOT EXISTS media_uniq_path_idx ON media (playlists_id, path);")
 
 
 def exists(args, path) -> bool:
@@ -218,7 +217,7 @@ def add(args, entry):
                 entry.setdefault("download_attempts", 0)
                 entry["download_attempts"] += existing_record["download_attempts"]
         try:
-            args.db["media"].insert(entry, pk="id", alter=True, replace=True)
+            args.db["media"].insert(entry, pk=["playlists_id", "path"], alter=True, replace=True)
         except sqlite3.IntegrityError:
             log.error("media_id %s: %s", media_id, entry)
             raise
@@ -309,7 +308,7 @@ def update_media(args, media, mark_deleted=True):
             log.debug("mark_deleted: %s", t.elapsed())
 
     new_media = [d for d in media if d["path"] in new_files]
-    args.db["media"].insert_all(new_media, pk="id", alter=True, replace=True)
+    args.db["media"].insert_all(new_media, pk=["playlists_id", "path"], alter=True, replace=True)
     return None
 
 

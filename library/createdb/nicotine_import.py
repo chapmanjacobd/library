@@ -2,7 +2,7 @@ import argparse, json, os
 from pathlib import Path
 
 from library import usage
-from library.mediadb import db_media
+from library.mediadb import db_media, db_playlists
 from library.utils import arggroups, argparse_utils, nums
 
 
@@ -38,6 +38,9 @@ def from_nicotine_file_list_to_records(data):
 
 def nicotine_import() -> None:
     args = parse_args()
+
+    db_playlists.create(args)
+    db_media.create(args)
 
     for path in args.paths:
         file_stats = Path(path).stat()

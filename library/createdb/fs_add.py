@@ -103,7 +103,7 @@ def extract_chunk(args, media) -> None:
 
     media = iterables.list_dict_filter_bool(media)
     media = [{"playlists_id": args.playlists_id, **d} for d in media]
-    args.db["media"].insert_all(media, pk="id", alter=True, replace=True)
+    args.db["media"].insert_all(media, pk=["playlists_id", "path"], alter=True, replace=True)
 
     for d in captions:
         media_id = args.db.pop("select id from media where path = ?", [d["path"]])
@@ -296,8 +296,10 @@ def fs_add(args=None) -> None:
         sys.argv = ["lb", *args]
 
     args = parse_args(SC.fs_add, usage.fs_add)
+
     db_playlists.create(args)
     db_media.create(args)
+
     extractor(args, args.paths)
 
 
