@@ -1,3 +1,4 @@
+import subprocess
 import errno, mimetypes, os, shlex, shutil, tempfile, time
 from collections import Counter, namedtuple
 from fnmatch import fnmatch
@@ -135,6 +136,53 @@ def rglob_gen(
                     if exclude and any(entry.name == pattern or fnmatch(entry.path, pattern) for pattern in exclude):
                         continue
                     yield entry.path
+
+def fd_rglob_gen(
+    base_dir: str | Path,
+    extensions=None,
+    exclude=None,
+    include=None,
+):
+    fd_command = ["fd", "-tf", "-0"]
+
+    if extensions:
+        ext_args = []
+        for ext in extensions:
+            ext_args.extend(["-e", ext if not ext.startswith(".") else ext[1:]])
+        fd_command.extend(ext_args)
+
+    if exclude:
+        for pattern in exclude:
+            fd_command.extend(["-E", pattern])
+
+    fd_command.extend(['.', str(base_dir)])
+    process = subprocess.Popen(fd_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    while True:
+        if process.stdout is None:
+            break
+        chunk = process.stdout.read(4096)
+        if not chunk:  # End of stream
+            break
+
+        for path_bytes in chunk.split(b'\0'):
+            if path_bytes:  # empty bytes at the end
+                path = path_bytes.decode('utf-8')
+
+                if include:
+                    if not any(fnmatch(path, pattern) for pattern in include):
+                        continue
+
+                yield path
+
+    exit_code = process.wait()
+    if process.stderr:
+        stderr = process.stderr.read().decode('utf-8')
+        if stderr:
+            log.error(f"fd stderr: {stderr}")
+
+    if exit_code != 0:
+        raise subprocess.CalledProcessError(exit_code, fd_command)
+
 
 
 def file_temp_copy(src) -> str:
