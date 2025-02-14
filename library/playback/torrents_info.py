@@ -2,7 +2,7 @@
 import argparse, getpass, os, shutil
 from collections import defaultdict
 from pathlib import Path
-from statistics import mean
+from statistics import mean, median
 
 from library import usage
 from library.mediafiles import torrents_start
@@ -14,6 +14,7 @@ def parse_args():
     parser = argparse_utils.ArgumentParser(usage=usage.torrents_info)
     arggroups.qBittorrent(parser)
     arggroups.qBittorrent_torrents(parser)
+    arggroups.qBittorrent_paths(parser)
 
     parser.add_argument(
         "--sort",
@@ -33,6 +34,7 @@ def parse_args():
         const="73%",
         help="Delete incomplete files from matching torrents",
     )
+
     parser.add_argument("--export", action="store_true", help="Export matching torrent files")
     arggroups.capability_soft_delete(parser)
     arggroups.capability_delete(parser)
@@ -58,69 +60,6 @@ def qbt_get_tracker(qbt_client, torrent):
             )
         )
     return domain_from_url(tracker)
-
-
-def is_matching(args, t):
-    if "sizes" not in args.defaults and not args.sizes(t.total_size):
-        return False
-    if "avg_sizes" not in args.defaults and not args.avg_sizes(mean([f.size for f in t.files])):
-        return False
-    if "ratio" not in args.defaults and not args.ratio(t.ratio):
-        return False
-    if "seeders" not in args.defaults and not args.seeders(t.num_complete):
-        return False
-    if "leechers" not in args.defaults and not args.leechers(t.num_incomplete):
-        return False
-    if "time_added" not in args.defaults:
-        if not t.added_on > 0 or not args.time_added(consts.APPLICATION_START - t.added_on):
-            return False
-    if "time_stalled" not in args.defaults:
-        if not t.last_activity > 0 or not args.time_stalled(consts.APPLICATION_START - t.last_activity):
-            return False
-    if "time_completed" not in args.defaults:
-        if (
-            not t.completion_on
-            or not t.completion_on > 0
-            or not args.time_completed(consts.APPLICATION_START - t.completion_on)
-        ):
-            return False
-    if "time_remaining" not in args.defaults:
-        if not t.eta or t.eta >= 8640000 or not args.time_remaining(t.eta):
-            return False
-    if "time_unseeded" not in args.defaults and not args.time_unseeded(
-        (consts.APPLICATION_START - t.seen_complete)
-        if t.num_complete == 0 and t.seen_complete > 0
-        else (
-            t.added_on
-            if t.state in ["downloading", "forceDL", "stalledDL", "uploading", "forcedUP", "stalledUP"]
-            and t.num_complete == 0
-            else 0
-        )
-    ):
-        return False
-    if "time_active" not in args.defaults and not args.time_active(t.time_active):
-        return False
-    if "priority" not in args.defaults and not args.priority(t.priority):
-        return False
-    if "progress" not in args.defaults and not args.progress(t.progress):
-        return False
-    if "uploaded" not in args.defaults and not args.uploaded(t.uploaded):
-        return False
-    if "remaining" not in args.defaults and not args.remaining(t.amount_left):
-        return False
-
-    if args.torrent_search or args.file_search:
-        if not strings.glob_match(args.torrent_search, [t.name, t.comment, t.content_path, t.hash]):
-            return False
-
-        if args.file_search:
-            if not strings.glob_match(args.file_search, [f.name for f in t.files]):
-                return False
-
-    if args.timeout_size and processes.sizeout(args.timeout_size, t.total_size):
-        return False
-
-    return True
 
 
 def is_active(t):
@@ -167,6 +106,88 @@ def filter_torrents_by_activity(args, torrents):
     return torrents
 
 
+def filter_torrents_by_criteria(args, torrents):
+    if "sizes" not in args.defaults:
+        torrents = [t for t in torrents if args.sizes(t.total_size)]
+    if "avg_sizes" not in args.defaults:
+        torrents = [t for t in torrents if args.avg_sizes(median([f.size for f in t.files]))]
+    if "ratio" not in args.defaults:
+        torrents = [t for t in torrents if args.ratio(t.ratio)]
+    if "seeders" not in args.defaults:
+        torrents = [t for t in torrents if args.seeders(t.num_complete)]
+    if "leechers" not in args.defaults:
+        torrents = [t for t in torrents if args.leechers(t.num_incomplete)]
+    if "time_added" not in args.defaults:
+        torrents = [t for t in torrents if t.added_on > 0 and args.time_added(consts.APPLICATION_START - t.added_on)]
+    if "time_stalled" not in args.defaults:
+        torrents = [
+            t for t in torrents if t.last_activity > 0 and args.time_stalled(consts.APPLICATION_START - t.last_activity)
+        ]
+    if "time_completed" not in args.defaults:
+        torrents = [
+            t
+            for t in torrents
+            if t.completion_on
+            and t.completion_on > 0
+            and args.time_completed(consts.APPLICATION_START - t.completion_on)
+        ]
+    if "time_remaining" not in args.defaults:
+        torrents = [t for t in torrents if t.eta and t.eta < 8640000 and args.time_remaining(t.eta)]
+    if "time_unseeded" not in args.defaults:
+        torrents = [
+            t
+            for t in torrents
+            if args.time_unseeded(
+                (consts.APPLICATION_START - t.seen_complete)
+                if t.num_complete == 0 and t.seen_complete > 0
+                else (
+                    t.added_on
+                    if t.state in ["downloading", "forceDL", "stalledDL", "uploading", "forcedUP", "stalledUP"]
+                    and t.num_complete == 0
+                    else 0
+                )
+            )
+        ]
+    if "time_active" not in args.defaults:
+        torrents = [t for t in torrents if args.time_active(t.time_active)]
+    if "priority" not in args.defaults:
+        torrents = [t for t in torrents if args.priority(t.priority)]
+    if "progress" not in args.defaults:
+        torrents = [t for t in torrents if args.progress(t.progress)]
+    if "uploaded" not in args.defaults:
+        torrents = [t for t in torrents if args.uploaded(t.uploaded)]
+    if "remaining" not in args.defaults:
+        torrents = [t for t in torrents if args.remaining(t.amount_left)]
+
+    if args.torrent_search:
+        torrents = [
+            t for t in torrents if strings.glob_match(args.torrent_search, [t.name, t.comment, t.content_path, t.hash])
+        ]
+    if args.file_search:
+        torrents = [t for t in torrents if strings.glob_match(args.file_search, [f.name for f in t.files])]
+
+    if args.timeout_size:
+        torrents = [t for t in torrents if not processes.sizeout(args.timeout_size, t.total_size)]
+
+    return torrents
+
+
+def filter_torrents(args, torrents):
+    torrents = filter_torrents_by_activity(args, torrents)
+    torrents = filter_torrents_by_criteria(args, torrents)
+
+    if args.limit:
+        torrents = torrents[:args.limit]
+
+    if not torrents:
+        processes.no_media_found()
+    if args.torrent_search or args.file_search:
+        print(len(torrents), "matching torrents")
+        print()
+
+    return torrents
+
+
 def torrents_info():
     args = parse_args()
 
@@ -200,8 +221,7 @@ def torrents_info():
     if error_torrents:
         args.status = True
 
-    torrents = filter_torrents_by_activity(args, torrents)
-    torrents = [t for t in torrents if is_matching(args, t)]
+    torrents = filter_torrents(args, torrents)
 
     if args.sort == "priority":
         torrents = sorted(torrents, key=lambda t: t.priority)
@@ -246,11 +266,6 @@ def torrents_info():
             ),
         )
 
-    if not torrents:
-        processes.no_media_found()
-    if args.torrent_search or args.file_search:
-        print(len(torrents), "matching torrents")
-
     inactive_torrents = [t for t in torrents if is_inactive(t)]
     if inactive_torrents:
         print(f"Inactive Torrents ({len(inactive_torrents)})")
@@ -292,6 +307,8 @@ def torrents_info():
                 d |= {"tracker": qbt_get_tracker(qbt_client, t)}
             if args.status:
                 d |= {"state": t.state}
+            if args.sizes or args.avg_sizes or "size" in args.sort:
+                d |= {"size": strings.file_size(t.total_size)}
             if args.paths:
                 if t.state_enum.is_complete:
                     d |= {"path": t.save_path}
@@ -302,8 +319,6 @@ def torrents_info():
                 d |= {
                     "completed_on": strings.relative_datetime(t.completion_on) if t.completion_on > 0 else None,
                     "added_on": strings.relative_datetime(t.added_on) if t.added_on > 0 else None,
-                    "size": strings.file_size(t.total_size),
-                    "remaining": strings.file_size(t.amount_left),
                     "comment": t.comment,
                     "download_path": t.download_path,
                     "save_path": t.save_path,
@@ -356,6 +371,8 @@ def torrents_info():
                 d |= {"tracker": qbt_get_tracker(qbt_client, t)}
             if args.status:
                 d |= {"state": t.state}
+            if args.sizes or args.avg_sizes or "size" in args.sort:
+                d |= {"size": strings.file_size(t.total_size)}
             if args.paths:
                 if t.state_enum.is_complete:
                     d |= {"path": t.save_path}
@@ -368,7 +385,6 @@ def torrents_info():
                     "completed_on": strings.relative_datetime(t.completion_on) if t.completion_on > 0 else None,
                     "added_on": strings.relative_datetime(t.added_on) if t.added_on > 0 else None,
                     "last_activity": strings.relative_datetime(t.last_activity) if t.last_activity > 0 else None,
-                    "size": strings.file_size(t.total_size),
                     "comment": t.comment,
                     "download_path": t.download_path,
                     "save_path": t.save_path,

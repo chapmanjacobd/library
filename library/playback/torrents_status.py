@@ -4,7 +4,7 @@ from library import usage
 from library.mediafiles import torrents_start
 from library.playback import torrents_info
 from library.playback.torrents_info import qbt_get_tracker
-from library.utils import arggroups, argparse_utils, consts, iterables, printing, processes, strings
+from library.utils import arggroups, argparse_utils, consts, iterables, printing, strings
 
 
 def parse_args():
@@ -50,11 +50,7 @@ def torrents_status():
         printing.table(tbl)
         print()
 
-    torrents = torrents_info.filter_torrents_by_activity(args, torrents)
-    torrents = [t for t in torrents if torrents_info.is_matching(args, t)]
-
-    if not torrents:
-        processes.no_media_found()
+    torrents = torrents_info.filter_torrents(args, torrents)
 
     interesting_states = [
         # 'uploading',

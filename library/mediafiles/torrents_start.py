@@ -1,3 +1,4 @@
+import argparse
 import getpass, hashlib, logging, shutil, time
 from contextlib import suppress
 from pathlib import Path
@@ -13,6 +14,11 @@ from library.utils.log_utils import log
 def parse_args():
     parser = argparse_utils.ArgumentParser(usage=usage.torrents_start)
     arggroups.qBittorrent(parser)
+    arggroups.qBittorrent_paths(parser)
+
+    parser.add_argument(
+        "--delete-torrent", action=argparse.BooleanOptionalAction, default=True, help="Delete torrent file after adding"
+    )
 
     arggroups.capability_delete(parser)
     arggroups.debug(parser)

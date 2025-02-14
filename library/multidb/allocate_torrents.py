@@ -1,3 +1,4 @@
+import argparse
 import getpass, os, sqlite3
 
 import humanize
@@ -28,21 +29,18 @@ def parse_args():
     arggroups.sql_fs(parser)
     parser.set_defaults(fts=False)
 
+    parser.add_argument("--hosts", action=argparse_utils.ArgparseList, help="Limit to specific computers")
     parser.add_argument(
         "--min-free-space", type=nums.human_to_bytes, default="50GiB", help="Skip disks that do not have enough space"
     )
     parser.add_argument("--max-io-rate", type=nums.human_to_bytes, default="100MiB", help="Skip disks that are busy")
 
     arggroups.qBittorrent(parser)
-    parser.add_argument(
-        "--dl-limit",
-        "--download-limit",
-        type=str,
-        help="Download limit. If set then a few additional global preferences will also be changed",
-    )
-    parser.add_argument("--up-limit", "--ul-limit", "--upload-limit", type=str, help="Upload limit")
+    arggroups.qBittorrent_paths(parser)
 
-    parser.add_argument("--hosts", action=argparse_utils.ArgparseList, help="Limit to specific computers")
+    parser.add_argument(
+        "--delete-torrent", action=argparse.BooleanOptionalAction, default=True, help="Delete torrent file after adding"
+    )
 
     arggroups.debug(parser)
 

@@ -1,4 +1,4 @@
-import argparse, datetime, functools, os, pathlib, random, re, tempfile, time, urllib.error, urllib.parse, urllib.request
+import argparse, datetime, functools, os, pathlib, random, re, socket, tempfile, time, urllib.error, urllib.parse, urllib.request
 from contextlib import suppress
 from email.message import Message
 from pathlib import Path
@@ -6,7 +6,7 @@ from shutil import which
 from urllib.parse import parse_qs, parse_qsl, quote, urldefrag, urlencode, urljoin, urlparse, urlunparse
 from zoneinfo import ZoneInfo
 
-import bs4, requests
+import bs4, requests, urllib3
 from idna import encode as puny_encode
 
 from library.data.http_errors import HTTPTooManyRequests, raise_for_status
@@ -128,8 +128,9 @@ def get(args, url, skip_404=True, ignore_errors=False, ignore_429=False, **kwarg
     s = requests_session(args)
     try:
         response = s.get(url, **kwargs)
+    except (ConnectionError, requests.exceptions.SSLError) as e:
+        log.error("%s %s", url, e)
     except (
-        requests.exceptions.ConnectionError,
         requests.exceptions.Timeout,
         requests.exceptions.ChunkedEncodingError,
         requests.exceptions.ContentDecodingError,
@@ -155,7 +156,7 @@ def get(args, url, skip_404=True, ignore_errors=False, ignore_429=False, **kwarg
             response.raise_for_status()
 
     log.info("Something weird is happening probably: %s", url)
-    return response
+    raise RuntimeError
 
 
 class PartialContent:
@@ -445,11 +446,24 @@ def download_url(args, url: str, output_path=None, retry_num=0) -> str | None:
             return download_url(args, url, output_path, retry_num)
 
         set_timestamp(r.headers, output_path)
+    except requests.exceptions.SSLError:
+        if args.allow_insecure and url.startswith("https://"):
+            return download_url(args, url.replace("https://", "http://", 1), output_path, retry_num)
+        log.error("%s %s", url, e)
+    except (
+        requests.exceptions.ConnectionError,
+        urllib3.exceptions.MaxRetryError,
+        urllib3.exceptions.NameResolutionError,
+        socket.gaierror,
+    ) as e:
+        log.error("%s %s", url, e)
     finally:
         if "r" in locals():  # prevent UnboundLocalError
             r.close()
 
     post_download(args)
+    if not output_path or not Path(output_path).exists():
+        return None
     return output_path
 
 
