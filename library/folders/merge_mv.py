@@ -181,7 +181,12 @@ def gen_src_dest(args, sources, destination, shortcut_allowed=False):
                     log.debug("taking shortcut: success")
                     continue
             # merge source folder with conflict folder/file
-            for p in file_utils.rglob_gen(source, args.ext or None):
+            if shutil.which('fd'):  # slightly more reliable on corrupt fs trees
+                files = file_utils.fd_rglob_gen(source, args.ext or None)
+            else:
+                files = file_utils.rglob_gen(source, args.ext or None)
+
+            for p in files:
                 if filter_src(args, p) is False:
                     log.debug("rglob-file skipped %s", p)
                     continue
