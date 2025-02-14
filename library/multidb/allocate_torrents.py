@@ -183,9 +183,10 @@ def allocate_torrents():
                     "-m",
                     "library",
                     "torrents-start",
+                    *argparse_utils.forward_arggroups(args, arggroups.qBittorrent),
                     *argparse_utils.forward_arggroups(
                         args,
-                        arggroups.qBittorrent,
+                        arggroups.qBittorrent_paths,
                         download_drive=d["mountpoint"],
                     ),
                     *torrent_files,

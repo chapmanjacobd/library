@@ -30,7 +30,7 @@ def fs_sql(args, limit) -> tuple[str, dict]:
             {media_select_sql(args, m_columns)}
         FROM {args.table} m
         WHERE 1=1
-            {" ".join(args.filter_sql)}
+            AND (1=1 {" ".join(args.filter_sql)})
             {" ".join(args.aggregate_filter_sql)}
         ORDER BY 1=1
             {', ' + args.sort if args.sort else ''}
@@ -49,7 +49,7 @@ def playlists_fs_sql(args, limit) -> tuple[str, dict]:
             m.*
         FROM {args.table} m
         WHERE 1=1
-            {" ".join(args.filter_sql)}
+            AND (1=1 {" ".join(args.filter_sql)})
             {" ".join(args.aggregate_filter_sql)}
         ORDER BY 1=1
             {', ' + args.sort if args.sort else ''}
@@ -88,7 +88,7 @@ def media_sql(args) -> tuple[str, dict]:
             FROM {args.table} m
             LEFT JOIN history h on h.media_id = m.rowid
             WHERE 1=1
-                {" ".join(args.filter_sql)}
+                AND (1=1 {" ".join(args.filter_sql)})
             GROUP BY m.rowid, m.path
         )
         SELECT
@@ -165,7 +165,7 @@ def construct_links_query(args, limit) -> tuple[str, dict]:
             FROM {args.table} m
             LEFT JOIN history h on h.media_id = m.rowid
             WHERE 1=1
-                {" ".join(args.filter_sql)}
+                AND (1=1 {" ".join(args.filter_sql)})
             GROUP BY m.rowid
         )
         SELECT
@@ -202,7 +202,7 @@ def construct_tabs_query(args) -> tuple[str, dict]:
             FROM {args.table} m
             LEFT JOIN history h on h.media_id = m.rowid
             WHERE 1=1
-                {" ".join(args.filter_sql)}
+                AND (1=1 {" ".join(args.filter_sql)})
             GROUP BY m.rowid
         ), time_valid_tabs as (
             SELECT
@@ -355,7 +355,7 @@ def construct_playlists_query(args) -> tuple[str, dict]:
     query = f"""SELECT *
     FROM {pl_table} m
     WHERE 1=1
-        {" ".join(args.filter_sql)}
+        AND (1=1 {" ".join(args.filter_sql)})
         {'AND extractor_key != "Local"' if args.online_media_only else ''}
         {'AND extractor_key = "Local"' if args.local_media_only else ''}
     ORDER BY 1=1
@@ -429,7 +429,7 @@ def construct_download_query(args, dl_status=False) -> tuple[str, dict]:
             {'AND (score IS NULL OR score > 7)' if 'score' in m_columns else ''}
             {'AND (upvote_ratio IS NULL OR upvote_ratio > 0.73)' if 'upvote_ratio' in m_columns else ''}
             {'AND is_supported(m.path)' if args.safe else ''}
-            {" ".join(args.filter_sql)}
+            AND (1=1 {" ".join(args.filter_sql)})
         ORDER BY 1=1
             {', COALESCE(m.time_modified, 0) = 0 DESC' if 'time_modified' in m_columns else ''}
             {', m.error IS NULL DESC' if 'error' in m_columns else ''}
