@@ -22,11 +22,12 @@ def parse_args():
         help="Sort by priority, ratio, download, upload, download+upload, size, avg_size, remaining",
     )
 
+    parser.add_argument("--tag", help="Add a tag to matching torrents")
+    parser.add_argument("--untag", "--un-tag", "--no-tag", help="Remove a tag to matching torrents")
+    parser.add_argument("--stop", action="store_true", help="Stop matching torrents")
+    parser.add_argument("--check", "--recheck", action="store_true", help="Check matching torrents")
     parser.add_argument("--start", action=argparse.BooleanOptionalAction, help="Start matching torrents")
     parser.add_argument("--force-start", action=argparse.BooleanOptionalAction, help="Force start matching torrents")
-    parser.add_argument("--check", "--recheck", action="store_true", help="Check matching torrents")
-    parser.add_argument("--stop", action="store_true", help="Stop matching torrents")
-    parser.add_argument("--move", help="Directory to move folders/files")
     parser.add_argument(
         "--delete-incomplete",
         nargs="?",
@@ -34,8 +35,10 @@ def parse_args():
         const="73%",
         help="Delete incomplete files from matching torrents",
     )
+    parser.add_argument("--move", help="Directory to move folders/files")
 
     parser.add_argument("--export", action="store_true", help="Export matching torrent files")
+
     arggroups.capability_soft_delete(parser)
     arggroups.capability_delete(parser)
     arggroups.debug(parser)
@@ -397,6 +400,13 @@ def torrents_info():
         print()
 
     torrent_hashes = [t.hash for t in torrents]
+
+    if args.tag:
+        print("Tagging", len(torrents))
+        qbt_client.torrents_add_tags(args.tag, torrent_hashes=torrent_hashes)
+    if args.untag:
+        print("Untagging", len(torrents))
+        qbt_client.torrents_remove_tags(args.untag, torrent_hashes=torrent_hashes)
 
     if args.stop:
         print("Stopping", len(torrents))
