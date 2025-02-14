@@ -779,6 +779,7 @@ media_extensions = tuple(
     | consts.VIDEO_EXTENSIONS
     | consts.AUDIO_ONLY_EXTENSIONS
     | consts.OCRMYPDF_EXTENSIONS
+    | consts.HTML_SIDECAR_EXTENSIONS
 )
 
 

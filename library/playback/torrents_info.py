@@ -25,9 +25,6 @@ def parse_args():
     parser.add_argument("--tag", help="Add a tag to matching torrents")
     parser.add_argument("--untag", "--un-tag", "--no-tag", help="Remove a tag to matching torrents")
     parser.add_argument("--stop", action="store_true", help="Stop matching torrents")
-    parser.add_argument("--check", "--recheck", action="store_true", help="Check matching torrents")
-    parser.add_argument("--start", action=argparse.BooleanOptionalAction, help="Start matching torrents")
-    parser.add_argument("--force-start", action=argparse.BooleanOptionalAction, help="Force start matching torrents")
     parser.add_argument(
         "--delete-incomplete",
         nargs="?",
@@ -36,7 +33,9 @@ def parse_args():
         help="Delete incomplete files from matching torrents",
     )
     parser.add_argument("--move", help="Directory to move folders/files")
-
+    parser.add_argument("--start", action=argparse.BooleanOptionalAction, help="Start matching torrents")
+    parser.add_argument("--force-start", action=argparse.BooleanOptionalAction, help="Force start matching torrents")
+    parser.add_argument("--check", "--recheck", action="store_true", help="Check matching torrents")
     parser.add_argument("--export", action="store_true", help="Export matching torrent files")
 
     arggroups.capability_soft_delete(parser)
@@ -412,18 +411,6 @@ def torrents_info():
         print("Stopping", len(torrents))
         qbt_client.torrents_stop(torrent_hashes=torrent_hashes)
 
-    if args.check:
-        print("Checking", len(torrents))
-        qbt_client.torrents_recheck(torrent_hashes=torrent_hashes)
-
-    if args.start is not None:
-        print("Starting", len(torrents))
-        qbt_client.torrents_start(torrent_hashes=torrent_hashes)
-
-    if args.force_start is not None:
-        print("Force-starting", len(torrents))
-        qbt_client.torrents_set_force_start(args.force_start, torrent_hashes=torrent_hashes)
-
     if args.delete_incomplete:
         for t in torrents:
             # check both in case of moving failure
@@ -503,6 +490,18 @@ def torrents_info():
 
                 print(t.save_path, "==>", download_path)
                 qbt_client.torrents_set_save_path(download_path, torrent_hashes=[t.hash])
+
+    if args.start is not None:
+        print("Starting", len(torrents))
+        qbt_client.torrents_start(torrent_hashes=torrent_hashes)
+
+    if args.force_start is not None:
+        print("Force-starting", len(torrents))
+        qbt_client.torrents_set_force_start(args.force_start, torrent_hashes=torrent_hashes)
+
+    if args.check:
+        print("Checking", len(torrents))
+        qbt_client.torrents_recheck(torrent_hashes=torrent_hashes)
 
     if args.export:
         print("Exporting", len(torrents))
