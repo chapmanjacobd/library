@@ -1975,6 +1975,8 @@ def qBittorrent(parent_parser):
     parser.add_argument("--username", help="qBittorrent WebUI username")
     parser.add_argument("--password", help="qBittorrent WebUI password")
 
+def qBittorrent_paths(parent_parser):
+    parser = parent_parser.add_argument_group("qBittorrent Paths")
     parser.add_argument("--download-drive", "--prefix", default=str(Path.cwd()), help="Download drive")
     parser.add_argument("--download-prefix", default="seeding", help="Download root")
     parser.add_argument("--temp-drive", help="Temporary download drive")
@@ -1984,9 +1986,6 @@ def qBittorrent(parent_parser):
         action=argparse.BooleanOptionalAction,
         default=True,
         help="Add the tracker name as a subfolder of the download root",
-    )
-    parser.add_argument(
-        "--delete-torrent", action=argparse.BooleanOptionalAction, default=True, help="Delete torrent file after adding"
     )
 
 
@@ -2068,6 +2067,7 @@ def qBittorrent_torrents(parent_parser):
 
     parser.add_argument("--file-search", "-s", nargs="+", help="The file path substring to search for")
     parser.add_argument("torrent_search", nargs="*", help="The info_hash, name, or save_path substring to search for")
+    parser.add_argument("--limit", "-n", "-l", "-L", type=int, help="Limit number of torrents")
 
 
 def qBittorrent_torrents_post(args):
