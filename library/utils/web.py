@@ -351,23 +351,25 @@ def filename_from_content_disposition(response):
     return None
 
 
-def url_to_local_path(url, response=None, output_path=None, output_prefix=None):
+def url_to_local_path(url, response=None, output_prefix=None):
     dir_path, filename = path_tuple_from_url(url)
 
     if response:
         filename_from_site = filename_from_content_disposition(response)
         if filename_from_site:
-            filename = filename_from_site
+            if url.endswith('/'):
+                filename = path_utils.safe_join(filename, filename_from_site)
+            else:
+                filename = filename_from_site
 
-    if not output_path:
-        output_path = filename
-        if dir_path:
-            output_path = os.path.join(dir_path, filename)
+    output_path = filename
+    if dir_path:
+        output_path = path_utils.safe_join(dir_path, filename)
 
     output_path = path_utils.clean_path(output_path.encode())
 
     if output_prefix:
-        output_path = os.path.join(output_prefix, output_path)
+        output_path = path_utils.safe_join(output_prefix, output_path)
 
     return output_path
 
@@ -391,7 +393,8 @@ def download_url(args, url: str, output_path=None, retry_num=0) -> str | None:
 
         remote_size = nums.safe_int(r.headers.get("Content-Length"))
 
-        output_path = url_to_local_path(url, response=r, output_path=output_path, output_prefix=args.prefix)
+        if not output_path:
+            output_path = url_to_local_path(url, response=r, output_prefix=args.prefix)
         if output_path == ".":
             log.warning("Skipping directory %s", url)
             return None
@@ -958,7 +961,7 @@ class WebPath:
         pass
 
     def as_posix(self) -> str:
-        return os.path.join(*path_tuple_from_url(str(self)))
+        return path_utils.safe_join(*path_tuple_from_url(str(self)))
 
     def remote_name(self):
         return filename_from_content_disposition(self.head())

@@ -241,6 +241,12 @@ def mountpoint(path):
 
     raise RuntimeError("Could not find drive / mountpoint")
 
+def safe_join(base, user_path):
+    user_path = os.path.normpath(user_path)
+    user_paths = [s for s in user_path.split(os.sep) if s and s not in [os.curdir, os.pardir]]
+    combined = os.sep.join([base.rstrip(os.sep), *user_paths])
+    return combined
+
 
 def safe_unquote(url):
     # https://en.wikipedia.org/wiki/Internationalized_Resource_Identifier
@@ -289,7 +295,21 @@ def url_decode(href):
 def path_tuple_from_url(url):
     url = url_decode(url)
     parsed_url = urlparse(url)
-    relative_path = os.path.join(parsed_url.netloc, parsed_url.path.lstrip("/"))
-    parent_path = os.path.dirname(relative_path)
+    relative_path = safe_join(parsed_url.netloc, parsed_url.path)
+    parent_path = os.path.dirname(relative_path) or parsed_url.netloc
+
+    parent = relativize(parent_path)
     filename = basename(parsed_url.path)
-    return parent_path, filename
+    return parent, filename
+
+@strings.repeat_until_same
+def relativize(path):
+    """Denormalize paths"""
+
+    path = path.lstrip('/').lstrip('\\')
+
+    p = Path(path)
+    if p.drive and p.drive.endswith(":"):
+        path = str(path)[len(p.drive) :]
+
+    return path
