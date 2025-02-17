@@ -357,7 +357,7 @@ def url_to_local_path(url, response=None, output_prefix=None):
     if response:
         filename_from_site = filename_from_content_disposition(response)
         if filename_from_site:
-            if url.endswith('/'):
+            if url.endswith("/"):
                 filename = path_utils.safe_join(filename, filename_from_site)
             else:
                 filename = filename_from_site

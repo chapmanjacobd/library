@@ -58,7 +58,7 @@ class MockResponse:
         ("http://example.com/path/to/resource.html", None, {}, "example.com/path/to/resource.html"),
         ("http://example.com/t/test.txt", "", {}, "example.com/t/test.txt"),
         # output_prefix provided, appended to generated output path
-        ("http://example.com/some/resource",  "/prefix/path", {}, "/prefix/path/example.com/some/resource"),
+        ("http://example.com/some/resource", "/prefix/path", {}, "/prefix/path/example.com/some/resource"),
         # Illegal characters in filename from Content-Disposition are replaced
         (
             "http://example.com/test/",

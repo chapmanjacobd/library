@@ -85,36 +85,80 @@ def test_safe_join(user_path, expected):
         ("https://www.example.org/another/file.jpg", "www.example.org/another", "file.jpg"),
         ("ftp://fileserver.net/pub/document.pdf", "fileserver.net/pub", "document.pdf"),
         ("http://example.com/", "example.com", ""),  # Root path, no filename
-        ("http://example.com/path/", "example.com", "path"), # Path ending in slash
-        ("http://example.com//file.txt", "example.com", "file.txt"), # Double slash in path
-        ("http://example.com/file%20with%20space.txt", "example.com", "file with space.txt"), # URL encoded space
-        ("http://example.com/file+with+plus.txt", "example.com", "file+with+plus.txt"), # Plus sign
-        ("http://example.com/file-with-dash.txt", "example.com", "file-with-dash.txt"), # Dash sign
-        ("http://example.com/file_with_underscore.txt", "example.com", "file_with_underscore.txt"), # Underscore
-        ("http://example.com/file.with.dots.txt", "example.com", "file.with.dots.txt"), # Dots in filename
-        ("http://example.com/path/to/file", "example.com/path/to", "file"), # No extension
+        ("http://example.com/path/", "example.com", "path"),  # Path ending in slash
+        ("http://example.com//file.txt", "example.com", "file.txt"),  # Double slash in path
+        ("http://example.com/file%20with%20space.txt", "example.com", "file with space.txt"),  # URL encoded space
+        ("http://example.com/file+with+plus.txt", "example.com", "file+with+plus.txt"),  # Plus sign
+        ("http://example.com/file-with-dash.txt", "example.com", "file-with-dash.txt"),  # Dash sign
+        ("http://example.com/file_with_underscore.txt", "example.com", "file_with_underscore.txt"),  # Underscore
+        ("http://example.com/file.with.dots.txt", "example.com", "file.with.dots.txt"),  # Dots in filename
+        ("http://example.com/path/to/file", "example.com/path/to", "file"),  # No extension
         ("http://example.com/very/long/path/to/a/file.txt", "example.com/very/long/path/to/a", "file.txt"),
-        ("http://example.com", "example.com", ""), # Just the domain, no path
-        ("http://example.com/?query=string", "example.com", ""), # URL with query string, no path
-        ("http://example.com/#fragment", "example.com", ""), # URL with fragment, no path
-        ("http://example.com/path/to/file.txt?query=string", "example.com/path/to", "file.txt"), # URL with query string and path
-        ("http://example.com/path/to/file.txt#fragment", "example.com/path/to", "file.txt"), # URL with fragment and path
-        ("http://example.com/path/to/file.txt?query=string#fragment", "example.com/path/to", "file.txt"), # URL with all parts
-        ("file:///path/to/local/file.txt", "path/to/local", "file.txt"), # File URL
-        ("file://localhost/path/to/local/file.txt", "localhost/path/to/local", "file.txt"), # File URL with localhost netloc
+        ("http://example.com", "example.com", ""),  # Just the domain, no path
+        ("http://example.com/?query=string", "example.com", ""),  # URL with query string, no path
+        ("http://example.com/#fragment", "example.com", ""),  # URL with fragment, no path
+        (
+            "http://example.com/path/to/file.txt?query=string",
+            "example.com/path/to",
+            "file.txt",
+        ),  # URL with query string and path
+        (
+            "http://example.com/path/to/file.txt#fragment",
+            "example.com/path/to",
+            "file.txt",
+        ),  # URL with fragment and path
+        (
+            "http://example.com/path/to/file.txt?query=string#fragment",
+            "example.com/path/to",
+            "file.txt",
+        ),  # URL with all parts
+        ("file:///path/to/local/file.txt", "path/to/local", "file.txt"),  # File URL
+        (
+            "file://localhost/path/to/local/file.txt",
+            "localhost/path/to/local",
+            "file.txt",
+        ),  # File URL with localhost netloc
         # ("file:///C:/path/to/windows/file.txt", "C:/path/to/windows", "file.txt"), # File URL with Windows path
-        ("//example.com/path/file.txt", "example.com/path", "file.txt"), # URL starting with // (protocol-relative)
-        ("example.com/path/file.txt", "example.com/path", "file.txt"), #  URL without scheme (might be interpreted as relative path, depending on context of urlparse)
-        ("/path/to/file.txt", "path/to", "file.txt"), # URL with absolute path only (no netloc) - might behave unexpectedly depending on urlparse behavior
-        ("/../.././../path/to/file.txt", "path/to", "file.txt"), # URL with absolute path only (no netloc) - might behave unexpectedly depending on urlparse behavior
-        ("path/to/file.txt", "path/to", "file.txt"), # URL with relative path only (no netloc or scheme) -  might behave unexpectedly depending on urlparse behavior
-        ("http://example.com/path/to/.hidden_file", "example.com/path/to", ".hidden_file"), # Hidden file (dot prefix)
-        ("http://example.com/path/to/file with spaces.txt", "example.com/path/to", "file with spaces.txt"), # Filename with spaces (not URL encoded in path part)
-        ("http://user:password@example.com/path/to/file.txt", "user:password@example.com/path/to", "file.txt"), # URL with authentication
-        ("http://[::1]/path/to/file.txt", "[::1]/path/to", "file.txt"), # IPv6 address as netloc
-        ("http://127.0.0.1/path/to/file.txt", "127.0.0.1/path/to", "file.txt"), # IPv4 address as netloc
-        ("http://bücher.example.com/path/to/file.txt", "bücher.example.com/path/to", "file.txt"), # URL with non-ASCII domain (IDN - Internationalized Domain Name) -  Might need encoding handling if your environment doesn't support IDN in filenames/paths
-    ]
+        ("//example.com/path/file.txt", "example.com/path", "file.txt"),  # URL starting with // (protocol-relative)
+        (
+            "example.com/path/file.txt",
+            "example.com/path",
+            "file.txt",
+        ),  #  URL without scheme (might be interpreted as relative path, depending on context of urlparse)
+        (
+            "/path/to/file.txt",
+            "path/to",
+            "file.txt",
+        ),  # URL with absolute path only (no netloc) - might behave unexpectedly depending on urlparse behavior
+        (
+            "/../.././../path/to/file.txt",
+            "path/to",
+            "file.txt",
+        ),  # URL with absolute path only (no netloc) - might behave unexpectedly depending on urlparse behavior
+        (
+            "path/to/file.txt",
+            "path/to",
+            "file.txt",
+        ),  # URL with relative path only (no netloc or scheme) -  might behave unexpectedly depending on urlparse behavior
+        ("http://example.com/path/to/.hidden_file", "example.com/path/to", ".hidden_file"),  # Hidden file (dot prefix)
+        (
+            "http://example.com/path/to/file with spaces.txt",
+            "example.com/path/to",
+            "file with spaces.txt",
+        ),  # Filename with spaces (not URL encoded in path part)
+        (
+            "http://user:password@example.com/path/to/file.txt",
+            "user:password@example.com/path/to",
+            "file.txt",
+        ),  # URL with authentication
+        ("http://[::1]/path/to/file.txt", "[::1]/path/to", "file.txt"),  # IPv6 address as netloc
+        ("http://127.0.0.1/path/to/file.txt", "127.0.0.1/path/to", "file.txt"),  # IPv4 address as netloc
+        (
+            "http://bücher.example.com/path/to/file.txt",
+            "bücher.example.com/path/to",
+            "file.txt",
+        ),  # URL with non-ASCII domain (IDN - Internationalized Domain Name) -  Might need encoding handling if your environment doesn't support IDN in filenames/paths
+    ],
 )
 def test_path_tuple_from_url_parameterized(url, expected_parent_path, expected_filename):
     parent_path, filename = path_utils.path_tuple_from_url(url)

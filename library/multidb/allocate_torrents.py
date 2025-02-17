@@ -1,5 +1,4 @@
-import argparse
-import getpass, os, sqlite3
+import argparse, getpass, os, sqlite3
 
 import humanize
 import pandas as pd
