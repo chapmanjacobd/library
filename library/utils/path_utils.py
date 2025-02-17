@@ -309,9 +309,12 @@ def relativize(path):
 def path_tuple_from_url(url):
     url = url_decode(url)
     parsed_url = urlparse(url)
-    relative_path = safe_join(parsed_url.netloc.replace(":", "."), parsed_url.path.lstrip("/"))
-    parent_path = os.path.dirname(relative_path) or parsed_url.netloc
+
+    relative_path = parsed_url.path.lstrip("/")
+    netloc = parsed_url.netloc.replace(":", ".")
+    absolute_path = safe_join(netloc, relative_path)
+    parent_path = os.path.dirname(absolute_path) or netloc
 
     parent = relativize(parent_path)
-    filename = basename(parsed_url.path)
+    filename = basename(relative_path)
     return parent, filename
