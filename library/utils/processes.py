@@ -424,7 +424,7 @@ def lsar(archive_path):
         archive_info_list.append(
             {
                 "archive_path": archive_path,
-                "path": os.path.join(unar_out, entry.get("XADFileName")),
+                "path": path_utils.safe_join(unar_out, entry.get("XADFileName")),
                 "compressed_size": entry.get("XADCompressedSize") or ar_size // len(lsar_contents),
                 "size": entry.get("XADFileSize"),
             }
@@ -474,7 +474,7 @@ def unar_delete(archive_path):
 
     try:
         for part_file in part_files:
-            part_file_path = os.path.join(os.path.dirname(archive_path), part_file)
+            part_file_path = path_utils.safe_join(os.path.dirname(archive_path), part_file)
             os.unlink(part_file_path)
     except Exception as e:
         log.warning("Error deleting files: %s %s", e, part_files)
