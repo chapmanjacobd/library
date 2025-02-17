@@ -162,4 +162,4 @@ def test_safe_join(user_path, expected):
 )
 def test_path_tuple_from_url_parameterized(url, expected_parent_path, expected_filename):
     parent_path, filename = path_utils.path_tuple_from_url(url)
-    assert (parent_path, filename) == (expected_parent_path, expected_filename)
+    assert (utils.p(parent_path), utils.p(filename)) == (utils.p(expected_parent_path), utils.p(expected_filename))
