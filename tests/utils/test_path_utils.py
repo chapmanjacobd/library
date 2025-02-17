@@ -73,7 +73,7 @@ def test_safe_join(user_path, expected):
     base_path = "/path/to/fakeroot"
 
     result = path_utils.safe_join(base_path, user_path)
-    assert result == expected
+    assert utils.p(result) == utils.p(expected)
 
 
 @pytest.mark.parametrize(
@@ -148,10 +148,10 @@ def test_safe_join(user_path, expected):
         ),  # Filename with spaces (not URL encoded in path part)
         (
             "http://user:password@example.com/path/to/file.txt",
-            "user:password@example.com/path/to",
+            "user.password@example.com/path/to",
             "file.txt",
         ),  # URL with authentication
-        ("http://[::1]/path/to/file.txt", "[::1]/path/to", "file.txt"),  # IPv6 address as netloc
+        ("http://[::1]/path/to/file.txt", "[..1]/path/to", "file.txt"),  # IPv6 address as netloc
         ("http://127.0.0.1/path/to/file.txt", "127.0.0.1/path/to", "file.txt"),  # IPv4 address as netloc
         (
             "http://bücher.example.com/path/to/file.txt",
