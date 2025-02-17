@@ -241,6 +241,7 @@ def mountpoint(path):
 
     raise RuntimeError("Could not find drive / mountpoint")
 
+
 def safe_join(base, user_path):
     user_path = os.path.normpath(user_path)
     user_paths = [s for s in user_path.split(os.sep) if s and s not in [os.curdir, os.pardir]]
@@ -292,6 +293,19 @@ def url_decode(href):
     return href
 
 
+@strings.repeat_until_same
+def relativize(path):
+    """Denormalize paths"""
+
+    path = path.lstrip("/").lstrip("\\")
+
+    p = Path(path)
+    if p.drive and p.drive.endswith(":"):
+        path = str(path)[len(p.drive) :]
+
+    return path
+
+
 def path_tuple_from_url(url):
     url = url_decode(url)
     parsed_url = urlparse(url)
@@ -301,15 +315,3 @@ def path_tuple_from_url(url):
     parent = relativize(parent_path)
     filename = basename(parsed_url.path)
     return parent, filename
-
-@strings.repeat_until_same
-def relativize(path):
-    """Denormalize paths"""
-
-    path = path.lstrip('/').lstrip('\\')
-
-    p = Path(path)
-    if p.drive and p.drive.endswith(":"):
-        path = str(path)[len(p.drive) :]
-
-    return path

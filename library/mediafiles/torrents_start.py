@@ -1,5 +1,4 @@
-import argparse
-import getpass, hashlib, logging, shutil, time
+import argparse, getpass, hashlib, logging, shutil, time
 from contextlib import suppress
 from pathlib import Path
 from time import sleep

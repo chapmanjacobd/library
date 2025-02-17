@@ -1975,6 +1975,7 @@ def qBittorrent(parent_parser):
     parser.add_argument("--username", help="qBittorrent WebUI username")
     parser.add_argument("--password", help="qBittorrent WebUI password")
 
+
 def qBittorrent_paths(parent_parser):
     parser = parent_parser.add_argument_group("qBittorrent Paths")
     parser.add_argument("--download-drive", "--prefix", default=str(Path.cwd()), help="Download drive")

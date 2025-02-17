@@ -1,5 +1,4 @@
-import subprocess
-import errno, mimetypes, os, shlex, shutil, tempfile, time
+import errno, mimetypes, os, shlex, shutil, subprocess, tempfile, time
 from collections import Counter, namedtuple
 from fnmatch import fnmatch
 from functools import wraps
@@ -137,6 +136,7 @@ def rglob_gen(
                         continue
                     yield entry.path
 
+
 def fd_rglob_gen(
     base_dir: str | Path,
     extensions=None,
@@ -155,7 +155,7 @@ def fd_rglob_gen(
         for pattern in exclude:
             fd_command.extend(["-E", pattern])
 
-    fd_command.extend(['.', str(base_dir)])
+    fd_command.extend([".", str(base_dir)])
     process = subprocess.Popen(fd_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     while True:
         if process.stdout is None:
@@ -164,9 +164,9 @@ def fd_rglob_gen(
         if not chunk:  # End of stream
             break
 
-        for path_bytes in chunk.split(b'\0'):
+        for path_bytes in chunk.split(b"\0"):
             if path_bytes:  # empty bytes at the end
-                path = path_bytes.decode('utf-8')
+                path = path_bytes.decode("utf-8")
 
                 if include:
                     if not any(fnmatch(path, pattern) for pattern in include):
@@ -176,13 +176,12 @@ def fd_rglob_gen(
 
     exit_code = process.wait()
     if process.stderr:
-        stderr = process.stderr.read().decode('utf-8')
+        stderr = process.stderr.read().decode("utf-8")
         if stderr:
             log.error(f"fd stderr: {stderr}")
 
     if exit_code != 0:
         raise subprocess.CalledProcessError(exit_code, fd_command)
-
 
 
 def file_temp_copy(src) -> str:

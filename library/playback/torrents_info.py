@@ -179,7 +179,7 @@ def filter_torrents(args, torrents):
     torrents = filter_torrents_by_criteria(args, torrents)
 
     if args.limit:
-        torrents = torrents[:args.limit]
+        torrents = torrents[: args.limit]
 
     if not torrents:
         processes.no_media_found()
