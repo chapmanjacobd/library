@@ -402,6 +402,10 @@ def download_url(args, url: str, output_path=None, retry_num=0) -> str | None:
         p = Path(output_path)
         p.parent.mkdir(parents=True, exist_ok=True)
         if p.exists():
+            if p.is_dir():
+                log.warning("[%s]: Skipping directory %s", url, p)
+                return None
+
             if remote_size:
                 local_size = p.stat().st_size
                 if local_size == remote_size:
