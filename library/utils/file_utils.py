@@ -143,7 +143,7 @@ def fd_rglob_gen(
     exclude=None,
     include=None,
 ):
-    fd_command = ["fd", "-tf", "-0"]
+    fd_command = ["fd", "-HI", "-tf", "-0"]
 
     if extensions:
         ext_args = []
