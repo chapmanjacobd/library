@@ -148,7 +148,7 @@ def allocate_torrents():
             {
                 "host": d["host"],
                 "path": d["mountpoint"],
-                "total_size": humanize.naturalsize(d["total"]),
+                "disk_size": humanize.naturalsize(d["total"]),
                 "download_count": len(d["downloads"]),
                 "unique_trackers": len(set(t["tracker"] for t in d["downloads"])),
                 "before_free": strings.file_size(d["free"]),
