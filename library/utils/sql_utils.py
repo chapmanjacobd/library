@@ -97,10 +97,12 @@ def human_to_sql_part(human_to_x, var, size):
         return f"and {var} > {human_to_x(size.lstrip('>'))} "
     elif size.startswith("<"):
         return f"and {var} < {human_to_x(size.lstrip('<'))} "
+
     elif size.startswith("+"):
         return f"and {var} >= {human_to_x(size.lstrip('+'))} "
     elif size.startswith("-"):
-        return f"and {human_to_x(size.lstrip('-'))} >= {var} "
+        return f"and {var} <= {human_to_x(size.lstrip('-'))} "
+
     elif "%" in size:
         size, percent = size.split("%")
         size = human_to_x(size)
