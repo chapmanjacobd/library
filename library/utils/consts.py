@@ -453,6 +453,7 @@ MEDIA_KNOWN_KEYS = (
     "dislike_count",
     "manifest_url",
     "manifest_stream_number",
+    "nb_stream_groups",
     "start_time",
 )
 
