@@ -447,6 +447,21 @@ def set_readline_completion(list_) -> None:
     return
 
 
+def mountpoints():
+    import psutil
+
+    mounts = []
+    for partition in psutil.disk_partitions():
+        if partition.mountpoint in [os.sep, "/var", "/etc", "/usr"] or partition.mountpoint.startswith(
+            ("/boot", "/sysroot")
+        ):
+            continue
+
+        mounts.append(partition.mountpoint)
+
+    return mounts
+
+
 def get_mount_stats(src_mounts) -> list[dict[str, int | float]]:
     mount_space = []
     total_used = 1

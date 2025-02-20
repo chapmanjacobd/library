@@ -1,6 +1,8 @@
 import difflib, itertools, json, types
+from collections import defaultdict
 from contextlib import contextmanager
 from functools import wraps
+from typing import Any
 
 
 class NoneSpace(types.SimpleNamespace):
@@ -248,6 +250,14 @@ def replace_keys_in_dict(d, replacements):
     for k, v in replacements.items():
         d = replace_key_in_dict(d, k, v)
     return d
+
+
+def flip_dict(d: dict[Any, set[Any]]) -> dict[Any, set[Any]]:
+    flipped = defaultdict(set)
+    for key, values in d.items():
+        for value in values:
+            flipped[value].add(key)
+    return flipped
 
 
 def dict_filter_similar_key(input_dict, input_string, threshold=0.7):
