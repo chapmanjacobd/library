@@ -87,6 +87,8 @@ def filter_torrents_by_activity(args, torrents):
         torrents = [t for t in torrents if args.moving is (t.state == "moving")]
     if args.checking is not None:
         torrents = [t for t in torrents if args.checking is t.state.startswith("checking")]
+    if args.queued is not None:
+        torrents = [t for t in torrents if args.queued is t.state.startswith("queued")]
 
     if args.complete:
         torrents = [t for t in torrents if t.state_enum.is_complete]
