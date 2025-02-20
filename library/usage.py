@@ -1360,7 +1360,9 @@ extract_links = """library extract-links PATH ... [--case-sensitive] [--scroll] 
 
 links_add = r"""library links-add DATABASE PATH ... [--case-sensitive] [--cookies-from-browser BROWSER[+KEYRING][:PROFILE][::CONTAINER]] [--selenium] [--manual] [--scroll] [--auto-pager] [--poke] [--chrome] [--local-html] [--file FILE]
 
-    Database version of extract-links
+    Database version of extract-links with pagination
+
+    By default it will add the URL param "?page=2" and so on...
 
     You can fine-tune what links get saved with --path/text/before/after-include/exclude.
 

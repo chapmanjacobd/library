@@ -274,12 +274,12 @@ def extractor(args, playlist_path):
 
                 printing.print_overwrite(f"Page {page_count} link scan: {len(page_new)} new [{len(page_known)} known]")
 
-                if not (args.backfill_pages or args.fixed_pages):
-                    if (args.stop_known and len(page_known) > args.stop_known) or (
-                        args.stop_new and args.stop_new >= len(page_new)
-                    ):
-                        end_of_playlist = True
-                        break
+            if not (args.backfill_pages or args.fixed_pages):
+                if (args.stop_known and len(page_known) > args.stop_known) or (
+                    args.stop_new and args.stop_new >= len(page_new)
+                ):
+                    end_of_playlist = True
+                    break
         except requests.HTTPError as e:
             log.error(e)
 
