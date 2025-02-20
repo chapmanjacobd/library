@@ -2003,6 +2003,7 @@ def qBittorrent_torrents(parent_parser):
     parser.add_argument("--errored", action=argparse.BooleanOptionalAction, help="Include errored torrents")
     parser.add_argument("--moving", action=argparse.BooleanOptionalAction, help="Include moving torrents")
     parser.add_argument("--checking", action=argparse.BooleanOptionalAction, help="Include checking torrents")
+    parser.add_argument("--queued", action=argparse.BooleanOptionalAction, help="Include queued torrents")
 
     parser.add_argument("--complete", "--completed", action="store_true", help="Include completed torrents")
     parser.add_argument("--incomplete", action="store_true", help="Include incomplete torrents")

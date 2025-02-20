@@ -1,5 +1,7 @@
 #!/usr/bin/python3
 
+import statistics
+
 from library import usage
 from library.mediafiles import torrents_start
 from library.playback import torrents_info
@@ -82,12 +84,16 @@ def torrents_status():
     categories = []
     for state, state_torrents in torrents_by_state.items():
         remaining = sum(t.amount_left for t in state_torrents)
+        etas = [t.eta for t in state_torrents if t.eta < 8640000]
+
         categories.append(
             {
                 "state": state,
                 "count": len(state_torrents),
                 "size": strings.file_size(sum(t.total_size for t in state_torrents)),
                 "remaining": strings.file_size(remaining) if remaining else None,
+                "next_eta": strings.duration_short(min(etas)) if etas else None,
+                "median_eta": strings.duration_short(statistics.median(etas)) if etas else None,
                 "files": (sum(len(t.files) for t in state_torrents) if args.file_counts else None),
             }
         )
@@ -96,12 +102,16 @@ def torrents_status():
 
     if len(torrents_by_state) > 1:
         remaining = sum(t.amount_left for t in torrents)
+        etas = [t.eta for t in torrents if t.eta < 8640000]
+
         categories.append(
             {
                 "state": "total",
                 "count": len(torrents),
                 "size": strings.file_size(sum(t.total_size for t in torrents)),
                 "remaining": strings.file_size(remaining) if remaining else None,
+                "next_eta": strings.duration_short(min(etas)) if etas else None,
+                "median_eta": strings.duration_short(statistics.median(etas)) if etas else None,
                 "files": (sum(len(t.files) for t in torrents) if args.file_counts else None),
             }
         )
