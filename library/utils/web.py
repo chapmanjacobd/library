@@ -861,6 +861,14 @@ def get_title(args, url):
 
     sleep(args)
 
+    if title.startswith("Stream ") and "SoundCloud" in title:
+        title = title.replace("Stream ", "", 1)
+
+    for x in consts.COMMON_SITE_TITLE_SUFFIXES:
+        title = title.replace(x, "")
+
+    log.info("[%s]: got title %s", url, title)
+
     return title
 
 

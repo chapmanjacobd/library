@@ -524,3 +524,7 @@ LineSortOpt = Literal[
     "os",
     "mcda",
 ]
+COMMON_SITE_TITLE_SUFFIXES = [
+    " | Listen online for free on SoundCloud",
+    " - YouTube",
+]

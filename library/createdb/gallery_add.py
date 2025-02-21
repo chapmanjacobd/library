@@ -39,13 +39,13 @@ def gallery_add(args=None) -> None:
     db_media.create(args)
     paths = arg_utils.gen_paths(args)
 
-    if args.insert_only:
+    if args.no_extract:
         args.db["media"].insert_all(
             [{"path": p, "time_created": consts.APPLICATION_START} for p in paths],
             alter=True,
             ignore=True,
         )
-    elif args.insert_only_playlists:
+    elif args.no_extract_playlists:
         args.db["playlists"].insert_all(
             [{"path": p, "time_created": consts.APPLICATION_START} for p in paths],
             alter=True,

@@ -114,6 +114,7 @@ To compensate for this the script will only continue fetching pages until there 
     arggroups.requests(parser)
     arggroups.selenium(parser)
     arggroups.extractor(parser)
+    parser.add_argument("--fetch-title", "--title", action="store_true")
 
     parser.add_argument("--force", action="store_true")
 
@@ -125,7 +126,7 @@ To compensate for this the script will only continue fetching pages until there 
     args = parser.parse_intermixed_args()
     arggroups.args_post(args, parser, create_db=True)
 
-    if args.auto_pager:
+    if args.auto_pager or args.local_html:
         args.fixed_pages = 1
 
     arggroups.extractor_post(args)
@@ -315,7 +316,31 @@ def links_add() -> None:
     db_playlists.create(args)
     db_media.create(args)
 
-    if args.insert_only:
+    if args.fetch_title:
+        if args.selenium:
+            web.load_selenium(args)
+        try:
+            media_new = set()
+            media_known = set()
+            for url in arg_utils.gen_paths(args):
+                if url in media_known:
+                    continue
+
+                d = db_media.get(args, url)
+                if d:
+                    media_known.add(url)
+                else:
+                    media_new.add(url)
+                    d = consolidate_media(args, url)
+
+                d["title"] = web.get_title(args, url)
+
+                add_media(args, [d])
+                printing.print_overwrite(f"Link import: {len(media_new)} new [{len(media_known)} known]")
+        finally:
+            if args.selenium:
+                web.quit_selenium(args)
+    elif args.no_extract:
         media_new = set()
         media_known = set()
         for p in arg_utils.gen_paths(args):

@@ -206,7 +206,7 @@ def print_or_download(args, d):
 def extract_links() -> None:
     args = parse_args()
 
-    if args.insert_only:
+    if args.no_extract:
         for url in arg_utils.gen_paths(args):
             if args.url_encode:
                 url = web.url_encode(url).strip()
