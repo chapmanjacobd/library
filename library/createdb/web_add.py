@@ -268,7 +268,7 @@ def web_add(args=None) -> None:
     db_playlists.create(args)
     db_media.create(args)
 
-    if args.insert_only:
+    if args.no_extract:
         media_new = set()
         media_known = set()
         for p in arg_utils.gen_paths(args):

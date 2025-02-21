@@ -1,11 +1,6 @@
 from library import usage
 from library.utils import arg_utils, arggroups, argparse_utils, web
 
-COMMON_SITE_TITLE_SUFFIXES = [
-    " | Listen online for free on SoundCloud",
-    " - YouTube",
-]
-
 
 def parse_args():
     parser = argparse_utils.ArgumentParser(usage=usage.markdown_links)
@@ -32,12 +27,6 @@ def markdown_links():
     try:
         for url in arg_utils.gen_paths(args):
             title = web.get_title(args, url)
-
-            if title.startswith("Stream ") and "SoundCloud" in title:
-                title = title.replace("Stream ", "", 1)
-
-            for x in COMMON_SITE_TITLE_SUFFIXES:
-                title = title.replace(x, "")
 
             text = f"[{title}]({url})"
             if len(args.paths) > 1:
