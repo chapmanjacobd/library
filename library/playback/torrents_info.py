@@ -163,6 +163,9 @@ def filter_torrents_by_criteria(args, torrents):
     if "remaining" not in args.defaults:
         torrents = [t for t in torrents if args.remaining(t.amount_left)]
 
+    if args.tagged:
+        tagged = set(args.tagged)
+        torrents = [t for t in torrents if tagged.issubset(t.tags.split(', '))]
     if args.torrent_search:
         torrents = [
             t for t in torrents if strings.glob_match(args.torrent_search, [t.name, t.comment, t.content_path, t.hash])

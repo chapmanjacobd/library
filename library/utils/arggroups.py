@@ -2066,6 +2066,7 @@ def qBittorrent_torrents(parent_parser):
     parser.add_argument("--status", "--state", action="store_true", help="Include state column")
     parser.add_argument("--paths", action="store_true", help="Include downloading/seeding path columns")
 
+    parser.add_argument("--tagged", action=argparse_utils.ArgparseList, help="The tag to search for (exact match only)")
     parser.add_argument("--file-search", "-s", nargs="+", help="The file path substring to search for")
     parser.add_argument("torrent_search", nargs="*", help="The info_hash, name, or save_path substring to search for")
     parser.add_argument("--limit", "-n", "-l", "-L", type=int, help="Limit number of torrents")
