@@ -51,7 +51,7 @@ def available_name(df, column_name):
     return column_name
 
 
-def rank_dataframe(df, column_weights):
+def rank_dataframe(original_df, column_weights=None):
     """
     ranked_df = rank_dataframe(
         df,
@@ -61,14 +61,43 @@ def rank_dataframe(df, column_weights):
         }
     )
     """
-    ranks = df[column_weights.keys()].apply(
-        lambda x: x.rank(
-            method="min",
-            na_option="bottom",
-            ascending=column_weights.get(x.name, {}).get("direction") == "asc",
+    import pandas as pd
+
+    df = original_df.copy()
+
+    if not column_weights:
+        column_weights = {k: {} for k in df.select_dtypes(include=["number"]).columns}
+
+    ranks = pd.DataFrame()
+    for col, config in column_weights.items():
+        direction = config.get("direction") or "asc"
+        weight = config.get("weight") or 1
+        method = config.get("method") or "min"
+        quantize_method = config.get("quantize_method") or "qcut"
+        partition_by = config.get("partition_by")
+        na_option = config.get("na_option") or "bottom"
+        bins = config.get("bins", 14)  # ~7% q
+
+        ascending = direction == "asc"
+
+        if bins:
+            if quantize_method == "cut":
+                df[col] = pd.cut(df[col], bins=bins, labels=False, duplicates="drop", include_lowest=True)
+            else:
+                df[col] = pd.qcut(df[col], q=bins, labels=False, duplicates="drop")
+
+        if partition_by is not None:
+            # group by the partition and rank within each group
+            s = df.groupby(partition_by)[col]
+        else:
+            s = df[col]
+
+        rank_col = s.rank(
+            method=method,
+            na_option=na_option,
+            ascending=ascending,
         )
-        * column_weights.get(x.name, {}).get("weight", 1),
-    )
+        ranks[col] = rank_col * weight
 
     unranked_columns = set(df.select_dtypes(include=["number"]).columns) - set(ranks.columns)
     if unranked_columns:
@@ -77,9 +106,8 @@ def rank_dataframe(df, column_weights):
             + "\n".join([f"""    "{s}": {{ 'direction': 'desc' }}, """ for s in unranked_columns]),
         )
 
-    scaled_ranks = (ranks - 1) / (len(ranks.columns) - 1)
-    scaled_df = df.iloc[scaled_ranks.sum(axis=1).sort_values().index]
-    return scaled_df.reset_index(drop=True)
+    sorted_df = original_df.iloc[ranks.sum(axis=1).sort_values().index]
+    return sorted_df.reset_index(drop=True)
 
 
 def count_category(df, key_name):
