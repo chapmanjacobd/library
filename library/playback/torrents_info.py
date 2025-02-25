@@ -165,7 +165,7 @@ def filter_torrents_by_criteria(args, torrents):
 
     if args.tagged:
         tagged = set(args.tagged)
-        torrents = [t for t in torrents if tagged.issubset(t.tags.split(', '))]
+        torrents = [t for t in torrents if tagged.issubset(t.tags.split(", "))]
     if args.torrent_search:
         torrents = [
             t for t in torrents if strings.glob_match(args.torrent_search, [t.name, t.comment, t.content_path, t.hash])
