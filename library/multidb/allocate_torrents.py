@@ -1,4 +1,4 @@
-import argparse, getpass, os, sqlite3
+import getpass, os, sqlite3
 
 import humanize
 import pandas as pd
@@ -36,10 +36,7 @@ def parse_args():
 
     arggroups.qBittorrent(parser)
     arggroups.qBittorrent_paths(parser)
-
-    parser.add_argument(
-        "--delete-torrent", action=argparse.BooleanOptionalAction, default=True, help="Delete torrent file after adding"
-    )
+    arggroups.torrents_start(parser)
 
     arggroups.debug(parser)
 
@@ -182,6 +179,7 @@ def allocate_torrents():
                     "-m",
                     "library",
                     "torrents-start",
+                    *argparse_utils.forward_arggroups(args, arggroups.torrents_start),
                     *argparse_utils.forward_arggroups(args, arggroups.qBittorrent),
                     *argparse_utils.forward_arggroups(
                         args,

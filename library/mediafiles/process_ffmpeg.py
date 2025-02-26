@@ -87,6 +87,7 @@ def process_path(args, path, include_timecode=False, subtitle_streams_unsupporte
         probe = processes.FFProbe(path)
     except processes.UnplayableFile:
         if args.delete_unplayable:
+            log.warning("Deleting unplayable: %s", path)
             path.unlink()
             return None
         raise
@@ -94,6 +95,7 @@ def process_path(args, path, include_timecode=False, subtitle_streams_unsupporte
     if not probe.streams:
         log.error("No media streams found: %s", path)
         if args.delete_unplayable:
+            log.warning("Deleting unplayable: %s", path)
             path.unlink()
             return None
         return path

@@ -383,8 +383,10 @@ def download(args, m) -> None:
             "fragment": lambda n: 0.04 * (2**n),
         },
         "outtmpl": {
-            "default": out_dir("%(uploader,uploader_id)s/%(id).220B.%(ext)s"),
-            "chapter": out_dir("%(uploader,uploader_id)s/%(id).220B.%(section_number)03d.%(ext)s"),
+            "default": out_dir("%(uploader,uploader_id,creator,artist,author,album)s/%(id).220B.%(ext)s"),
+            "chapter": out_dir(
+                "%(uploader,uploader_id,creator,artist,author,album)s/%(id).220B.%(section_number)03d.%(ext)s"
+            ),
         },
     }
 
@@ -512,9 +514,9 @@ def download(args, m) -> None:
                 local_path = ydl.prepare_filename(
                     info,
                     outtmpl=out_dir(
-                        "%(uploader,uploader_id)s/%(title).170B_%(section_number)03d_%(section_title).80B_%(view_count)3.2D_[%(id).64B].%(ext)s"
+                        "%(uploader,uploader_id,creator,artist,author,album)s/%(title).170B_%(section_number)03d_%(section_title).80B_%(view_count)3.2D_[%(id).64B].%(ext)s"
                         if "section_number" in info
-                        else "%(uploader,uploader_id)s/%(title).170B_%(view_count)3.2D_[%(id).64B].%(ext)s"
+                        else "%(uploader,uploader_id,creator,artist,author,album)s/%(title).170B_%(view_count)3.2D_[%(id).64B].%(ext)s"
                     ),
                 )
                 local_path = path_utils.clean_path(local_path.encode())

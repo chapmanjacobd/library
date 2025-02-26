@@ -264,3 +264,19 @@ def zipkw(**kwargs):
 def value_counts(input_list):
     counts = Counter(input_list)
     return [counts[item] for item in input_list]
+
+
+def similarity(list1, list2) -> float:
+    if list1 is None or not list1 or list2 is None or not list2:
+        return 0.0
+
+    set1 = set(list1)
+    set2 = set(list2)
+
+    common_elements = len(set1.intersection(set2))
+    total_unique_elements = len(set1.union(set2))
+
+    if total_unique_elements == 0:
+        return 0.0
+
+    return common_elements / total_unique_elements

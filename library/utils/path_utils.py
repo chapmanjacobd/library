@@ -1,7 +1,8 @@
-import os.path
+import getpass, os.path
 from collections import Counter, OrderedDict
 from contextlib import suppress
 from pathlib import Path
+from typing import Union
 from urllib.parse import parse_qsl, quote, unquote, urlparse, urlunparse
 
 from idna import decode as puny_decode
@@ -240,6 +241,33 @@ def mountpoint(path):
         path = parent
 
     raise RuntimeError("Could not find drive / mountpoint")
+
+
+def relative_from_mountpoint(src: Union[str, Path], dest: Union[str, Path]) -> Path:
+    dest = Path(dest)
+    src = Path(src)
+
+    mount_path = Path(mountpoint(src))
+    if mount_path.parts[1:2] == ("home",) or mount_path.parts[1:3] == ("var", "home"):
+        user = getpass.getuser()
+        mount_path = mount_path / user
+    relative_src_parts = src.parts[len(mount_path.parts) :]
+
+    if dest.is_absolute():
+        dest /= Path(*relative_src_parts)
+    else:
+        dest_parts = []
+        for part in dest.parts:
+            if part == "..":
+                if relative_src_parts:
+                    relative_src_parts = relative_src_parts[1:]
+            else:
+                dest_parts.append(part)
+        relative_src_parts = tuple(dest_parts) + relative_src_parts
+
+        dest = mount_path / Path(*relative_src_parts)
+
+    return dest
 
 
 def safe_join(base, user_path):
