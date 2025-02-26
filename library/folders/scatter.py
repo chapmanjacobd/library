@@ -1,11 +1,22 @@
-import argparse, math, os, random, sys, tempfile
-from collections import Counter
+import argparse, math, operator, os, random, shutil, sys, tempfile
+from collections import Counter, defaultdict
 from pathlib import Path
 
 from humanize import naturalsize
 
 from library import usage
-from library.utils import arggroups, argparse_utils, consts, db_utils, devices, file_utils, iterables, nums, printing
+from library.utils import (
+    arggroups,
+    argparse_utils,
+    consts,
+    db_utils,
+    devices,
+    file_utils,
+    iterables,
+    nums,
+    printing,
+    strings,
+)
 from library.utils.log_utils import log
 
 
@@ -17,6 +28,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--group")
     parser.add_argument("--sort", default="random()", help="Sort files before moving")
     parser.add_argument("--targets", "--srcmounts", "-m", help="Colon separated destinations eg. /mnt/d1:/mnt/d2")
+    parser.add_argument(
+        "--consolidate", action="store_true", help="Group files by folder--similar to mergerfs existing-path policies"
+    )
     arggroups.debug(parser)
 
     arggroups.database(parser)
@@ -238,6 +252,87 @@ def rebin_folders(paths, max_files_per_folder=16000):
     return untouched, rebinned_tuples
 
 
+def rebin_consolidate(args, _disk_stats, all_files) -> tuple[list, list]:
+    total_size = sum(d["size"] or 0 for d in all_files)
+    print(strings.file_size(total_size), len(all_files), "files total")
+
+    disk_free = {
+        src_mount: shutil.disk_usage(src_mount).free for src_mount in sorted(args.targets, key=len, reverse=True)
+    }
+
+    folder_files = defaultdict(list)
+    for file_dict in all_files:
+        for mount_point in disk_free.keys():
+            if file_dict["path"].startswith(mount_point + os.sep):
+                file_dict["mount"] = mount_point
+
+                relative_path = file_dict["path"].replace(mount_point, "", 1).lstrip(os.sep)
+                folder_path = os.path.dirname(relative_path)
+                folder_files[folder_path].append(file_dict)
+                break
+        if not "mount" in file_dict:
+            log.debug("No mountpoint found %s", file_dict["path"])
+
+    # log.debug('folder_files %s', folder_files)
+
+    untouched = []
+    rebinned = []
+    for folder_path, files_in_folder in folder_files.items():
+        folder_weights = []
+        for mount_point in disk_free.keys():
+            folder_file_count = 0
+            folder_file_size = 0
+            for file_dict in files_in_folder:
+                if file_dict["mount"] == mount_point:
+                    folder_file_count += 1
+                    folder_file_size += file_dict.get("size", 0) or 0
+            if folder_file_count:
+                folder_weights.append(
+                    {
+                        "mount_point": mount_point,
+                        "folder_weight": folder_file_count + (folder_file_size / (1024 * 1024)),
+                    }
+                )
+
+        folder_weights = sorted(folder_weights, key=operator.itemgetter("folder_weight"), reverse=True)
+        if len(folder_weights) <= 1:  # no need to move any files
+            continue
+
+        log.info("Binning %s", folder_path)
+        log.debug(folder_weights)
+
+        target_mount = None
+        total_folder_size = sum(d["size"] for d in files_in_folder)
+        for d in folder_weights:
+            mount_point = d["mount_point"]
+            if disk_free[mount_point] >= total_folder_size:
+                target_mount = mount_point
+                break
+
+        if not target_mount:
+            log.warning("Could not determine target mount %s", folder_path)
+            continue
+
+        for file_dict in files_in_folder:
+            current_mount = file_dict["mount"]
+
+            if current_mount == target_mount:
+                untouched.append(file_dict)
+            else:
+                # Move file to target mount (virtually)
+                disk_free[current_mount] += file_dict["size"]
+                disk_free[target_mount] -= file_dict["size"]
+
+                file_dict["mount"] = current_mount
+                file_dict["from_path"] = file_dict["path"]
+                relative_file_path = file_dict["path"].replace(current_mount, "", 1)
+                file_dict["path"] = os.path.join(target_mount, relative_file_path.lstrip(os.sep))
+
+                rebinned.append(file_dict)
+
+    return untouched, rebinned
+
+
 def scatter() -> None:
     args = parse_args()
 
@@ -280,7 +375,10 @@ def scatter() -> None:
     print("\nCurrent path distribution:")
     print_path_stats(path_stats)
 
-    untouched, rebinned = rebin_files(args, disk_stats, files)
+    if args.consolidate:
+        untouched, rebinned = rebin_consolidate(args, disk_stats, files)
+    else:
+        untouched, rebinned = rebin_files(args, disk_stats, files)
 
     print("\nSimulated path distribution:")
     path_stats = get_path_stats(args, rebinned + untouched)

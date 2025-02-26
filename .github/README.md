@@ -99,7 +99,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v3.0.059; 98 subcommands)
+    library (v3.0.060; 98 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -769,7 +769,9 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
     $ library links-add -h
     usage: library links-add DATABASE PATH ... [--case-sensitive] [--cookies-from-browser BROWSER[+KEYRING][:PROFILE][::CONTAINER]] [--selenium] [--manual] [--scroll] [--auto-pager] [--poke] [--chrome] [--local-html] [--file FILE]
 
-    Database version of extract-links
+    Database version of extract-links with pagination
+
+    By default it will add the URL param "?page=2" and so on...
 
     You can fine-tune what links get saved with --path/text/before/after-include/exclude.
 

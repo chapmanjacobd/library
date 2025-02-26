@@ -1,4 +1,4 @@
-import argparse, getpass, hashlib, logging, shutil, time
+import getpass, hashlib, logging, shutil, time
 from contextlib import suppress
 from pathlib import Path
 from time import sleep
@@ -14,10 +14,7 @@ def parse_args():
     parser = argparse_utils.ArgumentParser(usage=usage.torrents_start)
     arggroups.qBittorrent(parser)
     arggroups.qBittorrent_paths(parser)
-
-    parser.add_argument(
-        "--delete-torrent", action=argparse.BooleanOptionalAction, default=True, help="Delete torrent file after adding"
-    )
+    arggroups.torrents_start(parser)
 
     arggroups.capability_delete(parser)
     arggroups.debug(parser)
@@ -125,12 +122,12 @@ def torrents_start():
             save_path=download_path,
             tags=["library"],
             use_auto_torrent_management=False,
-            is_stopped=False,
+            is_stopped=args.stop,
             add_to_top_of_queue=False,
         )
 
         info_hash = wait_torrent_loaded(qbt_client, torrent)
-        if info_hash:
+        if info_hash and not args.stop:
             qbt_client.torrents_start(info_hash)
 
         if args.delete_torrent:

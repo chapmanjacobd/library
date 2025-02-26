@@ -76,6 +76,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--transcoding-image-time", type=float, default=1.5, metavar="SECONDS")
 
     parser.add_argument("--continue-from", help="Skip media until specific file path is seen")
+    parser.add_argument("--move", help="Directory to move successful files")
+    parser.add_argument("--move-broken", help="Directory to move unsuccessful files")
 
     arggroups.process_ffmpeg(parser)
     arggroups.clobber(parser)
@@ -158,6 +160,7 @@ def check_shrink(args, m) -> list:
             except processes.UnplayableFile:
                 m["duration"] = None
                 if args.delete_unplayable:
+                    log.warning("Deleting unplayable: %s", m["path"])
                     Path(m["path"]).unlink(missing_ok=True)
                     return []
         if m["duration"] is None or not m["duration"] > 0:
@@ -219,6 +222,7 @@ def check_shrink(args, m) -> list:
             except processes.UnplayableFile:
                 m["duration"] = None
                 if args.delete_unplayable:
+                    log.warning("Deleting unplayable: %s", m["path"])
                     Path(m["path"]).unlink(missing_ok=True)
                     return []
         if m["duration"] is None or not m["duration"] > 0:
@@ -425,11 +429,19 @@ def process_media() -> None:
                             m["duration"] = processes.FFProbe(new_path).duration
                         except processes.UnplayableFile:
                             if args.delete_unplayable:
+                                log.warning("Deleting unplayable: %s", new_path)
                                 Path(new_path).unlink(missing_ok=True)
                                 continue
 
                     if not os.path.exists(m["path"]):
                         new_free_space += (m.get("compressed_size") or m["size"]) - m["new_size"]
+
+                if args.move and not m.get("time_deleted") and m.get("new_path"):
+                    dest = path_utils.relative_from_mountpoint(m["new_path"], args.move)
+                    file_utils.rename_move_file(m["new_path"], dest)
+                elif args.move_broken and not m.get("time_deleted") and os.path.exists(m["path"]):
+                    dest = path_utils.relative_from_mountpoint(m["path"], args.move_broken)
+                    file_utils.rename_move_file(m["path"], dest)
 
                 if args.database:
                     with suppress(sqlite3.OperationalError), args.db.conn:

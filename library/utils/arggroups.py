@@ -1989,6 +1989,13 @@ def qBittorrent_paths(parent_parser):
     )
 
 
+def torrents_start(parser):
+    parser.add_argument("--stop", action="store_true", default=False, help="Add torrent stopped")
+    parser.add_argument(
+        "--delete-torrent", action=argparse.BooleanOptionalAction, default=True, help="Delete torrent file after adding"
+    )
+
+
 def qBittorrent_torrents(parent_parser):
     parser = parent_parser.add_argument_group("qBittorrent Torrents")
     parser.add_argument("--all", action="store_true", help="Include active and inactive torrents")
@@ -2066,7 +2073,12 @@ def qBittorrent_torrents(parent_parser):
     parser.add_argument("--status", "--state", action="store_true", help="Include state column")
     parser.add_argument("--paths", action="store_true", help="Include downloading/seeding path columns")
 
-    parser.add_argument("--tagged", action=argparse_utils.ArgparseList, help="The tag to search for (exact match only)")
+    parser.add_argument(
+        "--tagged", action=argparse_utils.ArgparseList, help="The tags to search for (exact match only)"
+    )
+    parser.add_argument(
+        "--no-tagged", action=argparse_utils.ArgparseList, help="The tags to exclude (exact match only)"
+    )
     parser.add_argument("--file-search", "-s", nargs="+", help="The file path substring to search for")
     parser.add_argument("torrent_search", nargs="*", help="The info_hash, name, or save_path substring to search for")
     parser.add_argument("--limit", "-n", "-l", "-L", type=int, help="Limit number of torrents")

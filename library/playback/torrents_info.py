@@ -163,9 +163,12 @@ def filter_torrents_by_criteria(args, torrents):
     if "remaining" not in args.defaults:
         torrents = [t for t in torrents if args.remaining(t.amount_left)]
 
+    if args.no_tagged:
+        tags = set(args.no_tagged)
+        torrents = [t for t in torrents if tags.isdisjoint(t.tags.split(", "))]
     if args.tagged:
-        tagged = set(args.tagged)
-        torrents = [t for t in torrents if tagged.issubset(t.tags.split(", "))]
+        tags = set(args.tagged)
+        torrents = [t for t in torrents if tags.issubset(t.tags.split(", "))]
     if args.torrent_search:
         torrents = [
             t for t in torrents if strings.glob_match(args.torrent_search, [t.name, t.comment, t.content_path, t.hash])
@@ -195,6 +198,18 @@ def filter_torrents(args, torrents):
     return torrents
 
 
+def get_error_messages(t):
+    errors = []
+    for tr in t.trackers:
+        msg = tr.msg
+        if not msg:
+            continue
+        if msg in ["This torrent is private"]:
+            continue
+        errors.append((tr, msg))
+    return errors
+
+
 def torrents_info():
     args = parse_args()
 
@@ -210,11 +225,9 @@ def torrents_info():
             if is_active(t) and not args.verbose >= consts.LOG_INFO:
                 continue
 
-            for tr in t.trackers:
-                msg = tr.msg
-                if msg and msg != "This torrent is private":
-                    tracker = fqdn_from_url(tr.url)
-                    tbl[(tracker, msg)]["count"] += 1
+            for tr, msg in get_error_messages(t):
+                tracker = fqdn_from_url(tr.url)
+                tbl[(tracker, msg)]["count"] += 1
         if tbl:
             print(f"Error Torrents ({sum(data['count'] for data in tbl.values())})")
 
@@ -236,6 +249,8 @@ def torrents_info():
         torrents = sorted(torrents, key=lambda t: t.ratio)
     elif args.sort == "remaining":
         torrents = sorted(torrents, key=lambda t: t.amount_left)
+    elif args.sort in ["counts", "count"]:
+        torrents = sorted(torrents, key=lambda t: len(t.files))
     elif args.sort in ["size", "total_size"]:
         torrents = sorted(torrents, key=lambda t: t.total_size)
     elif args.sort in ["avg_size"]:

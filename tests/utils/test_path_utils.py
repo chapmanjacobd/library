@@ -6,6 +6,31 @@ from library.utils import consts, path_utils
 from tests import utils
 
 
+@pytest.mark.parametrize(
+    "mock_mountpoint, src, dest, expected",
+    [
+        ("/home", "/home/user/project/a/b/c", "../../../x/y/z", "/home/user/x/y/z/c/"),
+        ("/var/home", "/var/home/user/project/a/b/c", "../../../x/y/z", "/var/home/user/x/y/z/c/"),
+        ("/home", "/home/user/project/a/b/c", "../../../../x/y/z", "/home/user/x/y/z"),
+        ("/home", "/home/user/project/a/b/c", "x/y/z", "/home/user/x/y/z/project/a/b/c/"),
+        ("/home", "/home/user/project/a/b/c", "/abs/path/x/y/z", "/abs/path/x/y/z/project/a/b/c"),
+        ("/", "/a/b/c", "../../../x/y/z", "/x/y/z"),
+        ("/home", "/home/user/a", "../b/c", "/home/user/b/c"),
+        ("/home", "/home/user/a/b", "../../c/d", "/home/user/c/d"),
+        ("/home", "/home/user", "../a/b", "/home/user/a/b"),
+        ("/home", "/home/user/a/b/c", "/x/y/z", "/x/y/z/a/b/c"),
+        ("/mnt/data", "/mnt/data/a/b/c", "../x/y", "/mnt/data/x/y/b/c"),
+        ("/mnt/data", "/mnt/data/a/b/c", "../../../x/y/z", "/mnt/data/x/y/z"),
+    ],
+)
+def test_relative_from_mountpoint(mock_mountpoint, src, dest, expected):
+    with mock.patch("library.utils.path_utils.mountpoint") as mock_mp:
+        mock_mp.return_value = mock_mountpoint
+
+        result = path_utils.relative_from_mountpoint(src, dest)
+        assert utils.p(result) == utils.p(expected)
+
+
 def test_clean_path():
     assert path_utils.clean_path(b"_test/-t") == utils.p("_test/t")
     assert path_utils.clean_path(b"3_seconds_ago.../Mike.webm") == utils.p("3_seconds_ago/Mike.webm")

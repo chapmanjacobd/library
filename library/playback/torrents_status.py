@@ -5,7 +5,7 @@ import statistics
 from library import usage
 from library.mediafiles import torrents_start
 from library.playback import torrents_info
-from library.playback.torrents_info import qbt_get_tracker
+from library.playback.torrents_info import get_error_messages, qbt_get_tracker
 from library.utils import arggroups, argparse_utils, consts, iterables, printing, strings
 
 
@@ -46,10 +46,12 @@ def torrents_status():
                 "eta": strings.duration_short(t.eta) if t.eta < 8640000 else None,
                 "remaining": strings.file_size(t.amount_left) if t.amount_left > 0 else None,
                 "files": len(t.files) if args.file_counts else None,
+                "tracker_msg": "; ".join(msg for _tr, msg in get_error_messages(t)),
+                "path": t.content_path if args.verbose >= consts.LOG_INFO else None,
             }
             for t in error_torrents
         ]
-        printing.table(tbl)
+        printing.table(iterables.list_dict_filter_bool(tbl))
         print()
 
     torrents = torrents_info.filter_torrents(args, torrents)

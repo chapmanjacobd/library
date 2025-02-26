@@ -5,6 +5,11 @@ from pathlib import Path
 import pytest
 
 
+@pytest.fixture(autouse=True)
+def mock_getuser(monkeypatch):
+    monkeypatch.setattr("getpass.getuser", lambda: "user")
+
+
 def safe_name(val):
     return (
         str(val)

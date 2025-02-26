@@ -143,7 +143,7 @@ def fd_rglob_gen(
     exclude=None,
     include=None,
 ):
-    fd_command = ["fd", "-HI", "-tf", "-0"]
+    fd_command = ["fd", "-HI", "-tf", "--absolute-path", "-0"]
 
     if extensions:
         ext_args = []
@@ -372,7 +372,7 @@ def get_file_encoding(path):
         response.raw.decode_content = True
 
         num_bytes = 0
-        for chunk in response.iter_content(chunk_size=16_384):
+        for chunk in response.iter_content(chunk_size=16_384):  # type: ignore
             if num_bytes > 1048576:  # 1MiB
                 break
             detector.feed(chunk)
