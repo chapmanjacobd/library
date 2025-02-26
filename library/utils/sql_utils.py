@@ -111,7 +111,7 @@ def human_to_sql_part(human_to_x, var, size):
         upper_bound = int(size + (size * (percent / 100)))
         return f"and {lower_bound} <= {var} and {var} <= {upper_bound} "
     else:
-        return f"and {human_to_x(size)} = {var} "
+        return f"and {var} = {human_to_x(size)} "
 
 
 def parse_human_to_sql(human_to_x, var, sizes) -> str:
