@@ -1,10 +1,32 @@
 import shutil
 
 from library import usage
-from library.utils import arggroups, argparse_utils, devices, printing, strings
+from library.utils import arggroups, argparse_utils, devices, strings
 from library.utils.devices import get_mount_stats
 
-# TODO: filter out mount points with different paths but are subpaths of the same mount point
+
+def disk_free() -> None:
+    parser = argparse_utils.ArgumentParser(usage=usage.disk_free)
+    arggroups.debug(parser)
+
+    parser.add_argument("mounts", nargs="*", action=argparse_utils.ArgparseArgsOrStdin)
+    args = parser.parse_args()
+    arggroups.args_post(args, parser)
+    if not args.mounts:
+        args.mounts = devices.mountpoints()
+
+    total_total = 0
+    total_used = 0
+    total_free = 0
+    for src_mount in args.mounts:
+        total, used, free = shutil.disk_usage(src_mount)
+        total_total += total
+        total_used += used
+        total_free += free
+
+    print(
+        f"total={strings.file_size(total_total)} used={strings.file_size(total_used)} free={strings.file_size(total_free)}"
+    )
 
 
 def mount_stats() -> None:
@@ -27,22 +49,3 @@ def mount_stats() -> None:
     print("Relative free space:")
     for d in space:
         print(f"{d['mount']}: {'#' * int(d['free'] * 80)} {d['free']:.1%}")
-    print()
-
-    total_total = 0
-    total_used = 0
-    total_free = 0
-    for src_mount in args.mounts:
-        total, used, free = shutil.disk_usage(src_mount)
-        total_total += total
-        total_used += used
-        total_free += free
-    printing.table(
-        [
-            {
-                "total": strings.file_size(total_total),
-                "used": strings.file_size(total_used),
-                "free": strings.file_size(total_free),
-            }
-        ]
-    )

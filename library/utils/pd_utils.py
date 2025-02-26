@@ -80,7 +80,7 @@ def rank_dataframe(original_df, column_weights=None):
 
         ascending = direction == "asc"
 
-        if bins:
+        if bins and quantize_method:
             if quantize_method == "cut":
                 df[col] = pd.cut(df[col], bins=bins, labels=False, duplicates="drop", include_lowest=True)
             else:

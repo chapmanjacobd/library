@@ -261,7 +261,7 @@ def rebin_consolidate(args, _disk_stats, all_files) -> tuple[list, list]:
     }
 
     folder_files = defaultdict(list)
-    for file_dict in all_files:
+    for file_dict in sorted(all_files, key=operator.itemgetter("size")):
         for mount_point in disk_free.keys():
             if file_dict["path"].startswith(mount_point + os.sep):
                 file_dict["mount"] = mount_point
@@ -290,7 +290,7 @@ def rebin_consolidate(args, _disk_stats, all_files) -> tuple[list, list]:
                 folder_weights.append(
                     {
                         "mount_point": mount_point,
-                        "folder_weight": folder_file_count + (folder_file_size / (1024 * 1024)),
+                        "folder_weight": (folder_file_count / 20) + (folder_file_size / (1024 * 1024)),
                     }
                 )
 
@@ -298,8 +298,8 @@ def rebin_consolidate(args, _disk_stats, all_files) -> tuple[list, list]:
         if len(folder_weights) <= 1:  # no need to move any files
             continue
 
-        log.info("Binning %s", folder_path)
-        log.debug(folder_weights)
+        # log.info("Binning %s", folder_path)
+        # log.debug(folder_weights)
 
         target_mount = None
         total_folder_size = sum(d["size"] for d in files_in_folder)
@@ -310,7 +310,13 @@ def rebin_consolidate(args, _disk_stats, all_files) -> tuple[list, list]:
                 break
 
         if not target_mount:
-            log.warning("Could not determine target mount %s", folder_path)
+            most_free = max(disk_free.values())
+            mount_point = [k for k, v in disk_free.items() if v == most_free][0]
+            if disk_free[mount_point] >= total_folder_size:
+                target_mount = mount_point
+
+        if not target_mount:
+            log.warning("Could not determine target mount %s (not enough planned free space)", folder_path)
             continue
 
         for file_dict in files_in_folder:
