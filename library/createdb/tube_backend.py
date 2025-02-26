@@ -360,8 +360,10 @@ def download(args, m) -> None:
     if m.get("time_modified") and m.get("time_modified") > 0:
         ignoreerrors = True
 
+    subdir_template = "%(uploader,uploader_id,channel,channel_id,creator,artist,author,album)s"
+
     def out_dir(p):
-        return str(Path(args.prefix, "%(extractor_key,extractor)s", p))
+        return str(Path(args.prefix, "%(extractor_key,extractor,ie_key)s", subdir_template, p))
 
     func_opts = {
         "ignoreerrors": ignoreerrors,
@@ -383,10 +385,8 @@ def download(args, m) -> None:
             "fragment": lambda n: 0.04 * (2**n),
         },
         "outtmpl": {
-            "default": out_dir("%(uploader,uploader_id,creator,artist,author,album)s/%(id).220B.%(ext)s"),
-            "chapter": out_dir(
-                "%(uploader,uploader_id,creator,artist,author,album)s/%(id).220B.%(section_number)03d.%(ext)s"
-            ),
+            "default": out_dir("%(id).220B.%(ext)s"),
+            "chapter": out_dir("%(id).220B.%(section_number)03d.%(ext)s"),
         },
     }
 
@@ -514,9 +514,9 @@ def download(args, m) -> None:
                 local_path = ydl.prepare_filename(
                     info,
                     outtmpl=out_dir(
-                        "%(uploader,uploader_id,creator,artist,author,album)s/%(title).170B_%(section_number)03d_%(section_title).80B_%(view_count)3.2D_[%(id).64B].%(ext)s"
+                        "%(title).170B_%(section_number)03d_%(section_title).80B_%(view_count)3.2D_[%(id).64B].%(ext)s"
                         if "section_number" in info
-                        else "%(uploader,uploader_id,creator,artist,author,album)s/%(title).170B_%(view_count)3.2D_[%(id).64B].%(ext)s"
+                        else "%(title).170B_%(view_count)3.2D_[%(id).64B].%(ext)s"
                     ),
                 )
                 local_path = path_utils.clean_path(local_path.encode())

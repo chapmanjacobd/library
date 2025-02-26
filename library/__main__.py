@@ -203,6 +203,7 @@ modules = {
     "library.folders.mergerfs_cp.mergerfs_cp": ["cp-mergerfs", "mcp"],
     "library.folders.scatter.scatter": [],
     "library.folders.similar_folders.similar_folders": [],
+    "library.folders.mount_stats.disk_free": ["df", "free"],
     "library.folders.mount_stats.mount_stats": ["mu", "mount-usage"],
     "library.folders.big_dirs.big_dirs": ["large-folders"],
     "library.fsdb.disk_usage.disk_usage": ["du", "usage"],

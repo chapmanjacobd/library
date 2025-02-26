@@ -347,7 +347,7 @@ def format_two_columns(text1, text2, width1=25, width2=75, left_gutter=2, middle
 
 
 def file_size(n):
-    return humanize.naturalsize(n, binary=True)
+    return humanize.naturalsize(n, binary=True).replace(" ", "")
 
 
 def duration(seconds) -> str:

@@ -2,8 +2,6 @@ import argparse, math, operator, os, random, shutil, sys, tempfile
 from collections import Counter, defaultdict
 from pathlib import Path
 
-from humanize import naturalsize
-
 from library import usage
 from library.utils import (
     arggroups,
@@ -261,7 +259,7 @@ def rebin_consolidate(args, _disk_stats, all_files) -> tuple[list, list]:
     }
 
     folder_files = defaultdict(list)
-    for file_dict in all_files:
+    for file_dict in sorted(all_files, key=operator.itemgetter("size")):
         for mount_point in disk_free.keys():
             if file_dict["path"].startswith(mount_point + os.sep):
                 file_dict["mount"] = mount_point
@@ -290,16 +288,17 @@ def rebin_consolidate(args, _disk_stats, all_files) -> tuple[list, list]:
                 folder_weights.append(
                     {
                         "mount_point": mount_point,
-                        "folder_weight": folder_file_count + (folder_file_size / (1024 * 1024)),
+                        "folder_weight": (folder_file_count / 20) + (folder_file_size / (1024 * 1024)),
                     }
                 )
 
         folder_weights = sorted(folder_weights, key=operator.itemgetter("folder_weight"), reverse=True)
         if len(folder_weights) <= 1:  # no need to move any files
+            untouched.extend(files_in_folder)
             continue
 
-        log.info("Binning %s", folder_path)
-        log.debug(folder_weights)
+        # log.info("Binning %s", folder_path)
+        # log.debug(folder_weights)
 
         target_mount = None
         total_folder_size = sum(d["size"] for d in files_in_folder)
@@ -310,7 +309,14 @@ def rebin_consolidate(args, _disk_stats, all_files) -> tuple[list, list]:
                 break
 
         if not target_mount:
-            log.warning("Could not determine target mount %s", folder_path)
+            most_free = max(disk_free.values())
+            mount_point = [k for k, v in disk_free.items() if v == most_free][0]
+            if disk_free[mount_point] >= total_folder_size:
+                target_mount = mount_point
+
+        if not target_mount:
+            log.warning("Could not determine target mount %s (not enough planned free space)", folder_path)
+            untouched.extend(files_in_folder)
             continue
 
         for file_dict in files_in_folder:
@@ -383,8 +389,8 @@ def scatter() -> None:
     print("\nSimulated path distribution:")
     path_stats = get_path_stats(args, rebinned + untouched)
     print_path_stats(path_stats)
-    print(len(rebinned), "files would be moved", "(" + naturalsize(sum(d["size"] or 0 for d in rebinned)) + ")")
-    print(len(untouched), "files would not be moved", "(" + naturalsize(sum(d["size"] or 0 for d in untouched)) + ")")
+    print(len(rebinned), "files would be moved", "(" + strings.file_size(sum(d["size"] or 0 for d in rebinned)) + ")")
+    print(len(untouched), "files would not be moved", "(" + strings.file_size(sum(d["size"] or 0 for d in untouched)) + ")")
 
     print("\n######### Commands to run #########")
     for disk_stat in sorted(disk_stats, key=lambda d: d["free"], reverse=True):
