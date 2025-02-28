@@ -210,39 +210,22 @@ def computer_info():
             "swap_utilization": swap_memory.percent,
         }
 
-    def find_mount_point(path):
-        if not os.path.islink(path):
-            path = os.path.abspath(path)
-        elif os.path.islink(path) and os.path.lexists(os.readlink(path)):
-            path = os.path.realpath(path)
-
-        while not os.path.ismount(path):
-            path = os.path.dirname(path)
-            if os.path.islink(path) and os.path.lexists(os.readlink(path)):
-                path = os.path.realpath(path)
-        return path
-
-    def dev_name(path):
-        dev = os.stat(path).st_dev
-        major, minor = os.major(dev), os.minor(dev)
-        link = os.readlink(f"/sys/dev/block/{major}:{minor}")
-        device = os.path.basename(link)
-        return device
-
     def get_mounts():
         disk_io = psutil.disk_io_counters(perdisk=True)
 
         mounts = {}
         for partition in psutil.disk_partitions():
-            if partition.mountpoint in [os.sep, "/var", "/etc", "/usr"] or partition.mountpoint.startswith(
-                ("/boot", "/sysroot")
-            ):
+            mountpoint = partition.mountpoint
+            if mountpoint in [os.sep, "/var", "/etc", "/usr"] or mountpoint.startswith(("/boot", "/sysroot")):
                 continue
 
+            if mountpoint in ("/", "/home", "/var/home"):
+                mountpoint = os.path.expanduser("~")
+
             try:
-                usage = psutil.disk_usage(partition.mountpoint)
+                usage = psutil.disk_usage(mountpoint)
             except PermissionError:  # CD-ROM, etc
-                print(f"PermissionError: Skipping {partition.mountpoint}", file=sys.stderr)
+                print(f"PermissionError: Skipping {mountpoint}", file=sys.stderr)
                 continue
             else:
                 mapped_device = (
@@ -255,8 +238,8 @@ def computer_info():
 
                 # TODO: IO is counted multiple times for devices with multiple mount points (btrfs subvols)
 
-                mounts[partition.mountpoint] = {
-                    "path": partition.mountpoint,
+                mounts[mountpoint] = {
+                    "path": mountpoint,
                     "fstype": partition.fstype,
                     "total": usage.total,
                     "free": usage.free,

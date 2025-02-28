@@ -1987,6 +1987,14 @@ torrents_status = """library torrents-status
         library torrents-status query -v --file-search query2
 """
 
+torrents_remaining = """library torrents-remaining
+
+    Print remaining stats grouped by mountpoint or folder depth
+
+        library torrents-remaining --depth=2 --dl --time-stalled=-5days
+"""
+
+
 allocate_torrents = """library allocate-torrents
 
     Use a Computer DB and a Torrent DB to allocate and deplete global free space
