@@ -487,29 +487,41 @@ def torrents_info():
         temp_prefix /= args.temp_prefix
         download_prefix = Path(args.download_drive) / args.download_prefix
 
-        if "temp_drive" not in args.defaults or "temp_prefix" not in args.defaults:
-            print("Setting temp path", len(torrents))
+        def set_temp_path(t):
+            if "temp_drive" in args.defaults and "temp_prefix" in args.defaults:
+                return
+
+            temp_path = temp_prefix
+            if args.tracker_dirnames:
+                domain = qbt_get_tracker(qbt_client, t)
+                if domain:
+                    temp_path /= domain
+
+            print("    ", t.download_path, "-->", temp_path)
+            qbt_client.torrents_set_download_path(temp_path, torrent_hashes=[t.hash])
+
+        def set_download_path(t):
+            if "download_drive" in args.defaults and "download_prefix" in args.defaults:
+                return
+
+            download_path = download_prefix
+            if args.tracker_dirnames:
+                domain = qbt_get_tracker(qbt_client, t)
+                if domain:
+                    download_path /= domain
+
+            print("    ", t.save_path, "==>", download_path)
+            qbt_client.torrents_set_save_path(download_path, torrent_hashes=[t.hash])
+
+        if any(k in args.defaults for k in ["temp_drive", "temp_prefix", "download_drive", "download_prefix"]):
             for t in torrents:
-                temp_path = temp_prefix
-                if args.tracker_dirnames:
-                    domain = qbt_get_tracker(qbt_client, t)
-                    if domain:
-                        temp_path /= domain
-
-                print(t.download_path, "==>", temp_path)
-                qbt_client.torrents_set_download_path(temp_path, torrent_hashes=[t.hash])
-
-        if "download_drive" not in args.defaults or "download_prefix" not in args.defaults:
-            print("Setting save path", len(torrents))
-            for t in torrents:
-                download_path = download_prefix
-                if args.tracker_dirnames:
-                    domain = qbt_get_tracker(qbt_client, t)
-                    if domain:
-                        download_path /= domain
-
-                print(t.save_path, "==>", download_path)
-                qbt_client.torrents_set_save_path(download_path, torrent_hashes=[t.hash])
+                print(t.name)
+                if t.state_enum.is_complete:
+                    set_temp_path(t)  # temp path first
+                    set_download_path(t)
+                else:
+                    set_download_path(t)  # download path first
+                    set_temp_path(t)
 
     if args.start is not None:
         print("Starting", len(torrents))

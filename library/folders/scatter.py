@@ -390,7 +390,11 @@ def scatter() -> None:
     path_stats = get_path_stats(args, rebinned + untouched)
     print_path_stats(path_stats)
     print(len(rebinned), "files would be moved", "(" + strings.file_size(sum(d["size"] or 0 for d in rebinned)) + ")")
-    print(len(untouched), "files would not be moved", "(" + strings.file_size(sum(d["size"] or 0 for d in untouched)) + ")")
+    print(
+        len(untouched),
+        "files would not be moved",
+        "(" + strings.file_size(sum(d["size"] or 0 for d in untouched)) + ")",
+    )
 
     print("\n######### Commands to run #########")
     for disk_stat in sorted(disk_stats, key=lambda d: d["free"], reverse=True):
