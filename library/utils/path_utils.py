@@ -232,15 +232,20 @@ def fqdn_from_url(tracker):
 def mountpoint(path):
     path = os.path.abspath(path)
 
+    if not os.path.isdir(path):
+        path = os.path.dirname(path)
+
     path_dev = os.stat(path).st_dev
     while path != os.path.dirname(path):
         parent = os.path.dirname(path)  # go up
 
         if os.stat(parent).st_dev != path_dev:
+            if path in ("/home", "/var/home"):
+                return os.path.expanduser("~")
             return path
         path = parent
 
-    raise RuntimeError("Could not find drive / mountpoint")
+    return os.path.expanduser("~")
 
 
 def relative_from_mountpoint(src: Union[str, Path], dest: Union[str, Path]) -> Path:

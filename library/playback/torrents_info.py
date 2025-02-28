@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-import argparse, getpass, os, shutil
+import argparse, os, shutil
 from collections import defaultdict
 from pathlib import Path
 from statistics import mean, median
@@ -465,10 +465,6 @@ def torrents_info():
                 new_path = Path(args.move)
                 if not new_path.is_absolute():
                     mountpoint = path_utils.mountpoint(t.content_path)
-                    if mountpoint in ("/home", "/var/home"):
-                        user = getpass.getuser()
-                        mountpoint = f"{mountpoint}/{user}"
-
                     new_path = Path(mountpoint) / new_path
 
                 if args.tracker_dirnames:
