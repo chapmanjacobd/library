@@ -99,7 +99,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v3.0.062; 100 subcommands)
+    library (v3.0.063; 100 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -1575,9 +1575,11 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
 <details><summary>Show system-wide disk usage</summary>
 
     $ library disk-free -h
-    usage: library df MOUNTPOINT ...
+    usage: library disk-free [MOUNTPOINT ...]
 
     Print total disk usage and disk free stats
+
+        library df
 
 
 </details>
