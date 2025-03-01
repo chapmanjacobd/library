@@ -5,7 +5,7 @@ from tabulate import tabulate
 from library.utils import argparse_utils, iterables
 from library.utils.log_utils import log
 
-__version__ = "3.0.061"
+__version__ = "3.0.062"
 
 progs = {
     "Create database subcommands": {
@@ -49,6 +49,7 @@ progs = {
         "scatter": "Scatter files between folders or disks",
         "mv_list": "Find specific folders to move to different disks",
         "mount_stats": "Show some relative mount stats",
+        "disk_free": "Show system-wide disk usage",
         "big_dirs": "Show large folders",
         "similar_folders": "Find similar folders based on folder name, size, and count",
     },
