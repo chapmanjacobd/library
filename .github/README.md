@@ -99,7 +99,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v3.0.061; 98 subcommands)
+    library (v3.0.062; 100 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -180,6 +180,8 @@ To stop playing press Ctrl+C in either the terminal or mpv
     │ mv-list         │ Find specific folders to move to different disks                    │
     ├─────────────────┼─────────────────────────────────────────────────────────────────────┤
     │ mount-stats     │ Show some relative mount stats                                      │
+    ├─────────────────┼─────────────────────────────────────────────────────────────────────┤
+    │ disk-free       │ Show system-wide disk usage                                         │
     ├─────────────────┼─────────────────────────────────────────────────────────────────────┤
     │ big-dirs        │ Show large folders                                                  │
     ├─────────────────┼─────────────────────────────────────────────────────────────────────┤
@@ -273,29 +275,31 @@ To stop playing press Ctrl+C in either the terminal or mpv
     ╰─────────────────┴─────────────────────────────────────────────────────────────╯
 
     Playback subcommands:
-    ╭─────────────────┬────────────────────────────────────────────────────────╮
-    │ watch           │ Watch / Listen                                         │
-    ├─────────────────┼────────────────────────────────────────────────────────┤
-    │ now             │ Show what is currently playing                         │
-    ├─────────────────┼────────────────────────────────────────────────────────┤
-    │ next            │ Play next file and optionally delete current file      │
-    ├─────────────────┼────────────────────────────────────────────────────────┤
-    │ seek            │ Set playback to a certain time, fast-forward or rewind │
-    ├─────────────────┼────────────────────────────────────────────────────────┤
-    │ stop            │ Stop all playback                                      │
-    ├─────────────────┼────────────────────────────────────────────────────────┤
-    │ pause           │ Pause all playback                                     │
-    ├─────────────────┼────────────────────────────────────────────────────────┤
-    │ tabs-open       │ Open your tabs for the day                             │
-    ├─────────────────┼────────────────────────────────────────────────────────┤
-    │ links-open      │ Open links from link dbs                               │
-    ├─────────────────┼────────────────────────────────────────────────────────┤
-    │ surf            │ Auto-load browser tabs in a streaming way (stdin)      │
-    ├─────────────────┼────────────────────────────────────────────────────────┤
-    │ torrents-info   │ List torrents (qBittorrent-nox)                        │
-    ├─────────────────┼────────────────────────────────────────────────────────┤
-    │ torrents-status │ Overview of torrents (qBittorrent-nox)                 │
-    ╰─────────────────┴────────────────────────────────────────────────────────╯
+    ╭────────────────────┬────────────────────────────────────────────────────────╮
+    │ watch              │ Watch / Listen                                         │
+    ├────────────────────┼────────────────────────────────────────────────────────┤
+    │ now                │ Show what is currently playing                         │
+    ├────────────────────┼────────────────────────────────────────────────────────┤
+    │ next               │ Play next file and optionally delete current file      │
+    ├────────────────────┼────────────────────────────────────────────────────────┤
+    │ seek               │ Set playback to a certain time, fast-forward or rewind │
+    ├────────────────────┼────────────────────────────────────────────────────────┤
+    │ stop               │ Stop all playback                                      │
+    ├────────────────────┼────────────────────────────────────────────────────────┤
+    │ pause              │ Pause all playback                                     │
+    ├────────────────────┼────────────────────────────────────────────────────────┤
+    │ tabs-open          │ Open your tabs for the day                             │
+    ├────────────────────┼────────────────────────────────────────────────────────┤
+    │ links-open         │ Open links from link dbs                               │
+    ├────────────────────┼────────────────────────────────────────────────────────┤
+    │ surf               │ Auto-load browser tabs in a streaming way (stdin)      │
+    ├────────────────────┼────────────────────────────────────────────────────────┤
+    │ torrents-info      │ List torrents (qBittorrent-nox)                        │
+    ├────────────────────┼────────────────────────────────────────────────────────┤
+    │ torrents-status    │ Overview of torrents (qBittorrent-nox)                 │
+    ├────────────────────┼────────────────────────────────────────────────────────┤
+    │ torrents-remaining │ Overview of torrents by drive (qBittorrent-nox)        │
+    ╰────────────────────┴────────────────────────────────────────────────────────╯
 
     Database enrichment subcommands:
     ╭────────────────────┬────────────────────────────────────────────────────╮
@@ -1562,6 +1566,18 @@ BTW, for some cols like time_deleted you'll need to specify a where clause so th
         /mnt/d7: ######### 11.9%
         /mnt/d8: ######### 12.2%
         /mnt/d9: ########### 13.8%
+
+
+</details>
+
+###### disk-free
+
+<details><summary>Show system-wide disk usage</summary>
+
+    $ library disk-free -h
+    usage: library df MOUNTPOINT ...
+
+    Print total disk usage and disk free stats
 
 
 </details>
@@ -3033,6 +3049,20 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
     Search for specific file
 
         library torrents-status query -v --file-search query2
+
+
+</details>
+
+###### torrents-remaining
+
+<details><summary>Overview of torrents by drive (qBittorrent-nox)</summary>
+
+    $ library torrents-remaining -h
+    usage: library torrents-remaining
+
+    Print remaining stats grouped by mountpoint or folder depth
+
+        library torrents-remaining --depth=2 --dl --time-stalled=-5days
 
 
 </details>
