@@ -284,7 +284,7 @@ def computer_info():
             f"network_recv_{INTERVAL_STR}": recv,
         }
 
-    initial_cpu_times = psutil.cpu_times_percent()  # internal tracking
+    _initial_cpu_times = psutil.cpu_times_percent()  # internal tracking
 
     initial_mounts = get_mounts()
     initial_net_io = psutil.net_io_counters()

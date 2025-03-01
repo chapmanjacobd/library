@@ -240,7 +240,7 @@ def mountpoint(path):
         parent = os.path.dirname(path)  # go up
 
         if os.stat(parent).st_dev != path_dev:
-            if path in ("/home", "/var/home"):
+            if path in ("/", "/home", "/var/home"):
                 return os.path.expanduser("~")
             return path
         path = parent

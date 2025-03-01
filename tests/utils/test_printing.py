@@ -37,7 +37,7 @@ def test_col_naturaldate():
 
 def test_col_naturalsize():
     assert printing.col_filesize([{"t": 0, "t1": 1}], "t") == [{"t": None, "t1": 1}]
-    assert printing.col_filesize([{"t": 946684800, "t1": 1}], "t") == [{"t": "902.8 MiB", "t1": 1}]
+    assert printing.col_filesize([{"t": 946684800, "t1": 1}], "t") == [{"t": "902.8MiB", "t1": 1}]
 
 
 def test_col_duration():
