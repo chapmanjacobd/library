@@ -23,6 +23,37 @@ def parse_args():
     return args
 
 
+def print_torrents_by_tracker(args, qbt_client, torrents):
+    torrents_by_tracker = {}
+    for torrent in torrents:
+        torrents_by_tracker.setdefault(qbt_get_tracker(qbt_client, torrent), []).append(torrent)
+
+    trackers = []
+    for tracker, tracker_torrents in torrents_by_tracker.items():
+        remaining = sum(t.amount_left for t in tracker_torrents)
+        trackers.append(
+            {
+                "tracker": tracker,
+                "count": len(tracker_torrents),
+                "size": sum(t.total_size for t in tracker_torrents),
+                "remaining": remaining,
+                "files": (sum(len(t.files) for t in tracker_torrents) if args.file_counts else None),  # a bit slow
+            }
+        )
+    if trackers:
+        trackers = sorted(trackers, key=lambda d: (d["remaining"], d["size"]))
+        trackers = [
+            {
+                **d,
+                "size": strings.file_size(d["size"]),
+                "remaining": strings.file_size(d["remaining"]) if d["remaining"] else None,
+            }
+            for d in trackers
+        ]
+        printing.table(iterables.list_dict_filter_bool(trackers))
+        print()
+
+
 def torrents_status():
     args = parse_args()
 
@@ -121,34 +152,7 @@ def torrents_status():
     print()
 
     if args.trackers:
-        torrents_by_tracker = {}
-        for torrent in torrents:
-            torrents_by_tracker.setdefault(qbt_get_tracker(qbt_client, torrent), []).append(torrent)
-
-        trackers = []
-        for tracker, tracker_torrents in torrents_by_tracker.items():
-            remaining = sum(t.amount_left for t in tracker_torrents)
-            trackers.append(
-                {
-                    "tracker": tracker,
-                    "count": len(tracker_torrents),
-                    "size": sum(t.total_size for t in tracker_torrents),
-                    "remaining": remaining,
-                    "files": (sum(len(t.files) for t in tracker_torrents) if args.file_counts else None),  # a bit slow
-                }
-            )
-        if trackers:
-            trackers = sorted(trackers, key=lambda d: (d["remaining"], d["size"]))
-            trackers = [
-                {
-                    **d,
-                    "size": strings.file_size(d["size"]),
-                    "remaining": strings.file_size(d["remaining"]) if d["remaining"] else None,
-                }
-                for d in trackers
-            ]
-            printing.table(iterables.list_dict_filter_bool(trackers))
-            print()
+        print_torrents_by_tracker(args, qbt_client, torrents)
 
     transfer = qbt_client.transfer_info()
     print(transfer.connection_status.upper())

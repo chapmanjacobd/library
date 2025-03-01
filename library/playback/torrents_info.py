@@ -459,7 +459,7 @@ def torrents_info():
                             break  # Stop after deleting first valid path
 
     if (args.stop or args.delete_rows or args.delete_files) and args.move:
-        print("Moving", len(torrents))
+        print("Moving outside of qBit", len(torrents))
         for t in torrents:
             if os.path.exists(t.content_path):
                 new_path = Path(args.move)
@@ -475,7 +475,8 @@ def torrents_info():
                 new_path.mkdir(parents=True, exist_ok=True)
                 print("Moving", t.content_path, "to", new_path)
                 shutil.move(t.content_path, new_path)
-    else:
+    elif any(k not in args.defaults for k in ["temp_drive", "temp_prefix", "download_drive", "download_prefix"]):
+        print("Moving within qBit", len(torrents))
         if args.temp_drive and Path(args.temp_drive).is_absolute():
             temp_prefix = Path(args.temp_drive)
         else:
@@ -509,15 +510,14 @@ def torrents_info():
             print("    ", t.save_path, "==>", download_path)
             qbt_client.torrents_set_save_path(download_path, torrent_hashes=[t.hash])
 
-        if any(k in args.defaults for k in ["temp_drive", "temp_prefix", "download_drive", "download_prefix"]):
-            for t in torrents:
-                print(t.name)
-                if t.state_enum.is_complete:
-                    set_temp_path(t)  # temp path first
-                    set_download_path(t)
-                else:
-                    set_download_path(t)  # download path first
-                    set_temp_path(t)
+        for t in torrents:
+            print(t.name)
+            if t.state_enum.is_complete:
+                set_temp_path(t)  # temp path first
+                set_download_path(t)
+            else:
+                set_download_path(t)  # download path first
+                set_temp_path(t)
 
     if args.start is not None:
         print("Starting", len(torrents))

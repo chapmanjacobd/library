@@ -58,10 +58,7 @@ def parse_args():
     return args
 
 
-downloaded_torrents = set()
-
-
-def gen_torrent_matches(torrents, available_space):
+def gen_torrent_matches(downloaded_torrents, torrents, available_space):
     for torrent in torrents:
         if torrent["size"] < available_space and torrent["path"] not in downloaded_torrents:
             available_space -= torrent["size"]
@@ -69,21 +66,20 @@ def gen_torrent_matches(torrents, available_space):
             yield torrent
 
 
-def allocate_torrents():
-    args = parse_args()
-
-    import paramiko
-
-    computer_db = db_utils.connect(args, conn=sqlite3.connect(args.computer_database))
+def get_disks(args, computer_db):
+    try:
+        disks_columns = computer_db["media"].columns_dict
+    except Exception:
+        disks_columns = {}
 
     disks = list(
         computer_db.query(
-            """
+            f"""
             SELECT
-                computers.path host,
-                disks.path mountpoint,
-                disks.free,
-                disks.total
+                computers.path host
+                , disks.path mountpoint
+                {', disks.free - coalesce(disks.allocated,0) AS free' if 'allocated' in disks_columns else ', disks.free'}
+                , disks.total
             FROM media AS disks
             JOIN playlists AS computers ON computers.id = disks.playlists_id
             WHERE free >= :min_free_space
@@ -104,6 +100,89 @@ def allocate_torrents():
             for d in disks
             if not any(s == d["mountpoint"] or s == f"{d['host']}:{d['mountpoint']}" for s in args.exclude_disks)
         ]
+
+    return disks
+
+
+def print_torrent_info(disks):
+    for d in disks:
+        if d["downloads"]:
+            print(d["host"], d["mountpoint"])
+            printing.table(
+                [
+                    {
+                        "title": t["title"],
+                        "time_uploaded": strings.relative_datetime(t["time_uploaded"]),
+                        "time_created": strings.relative_datetime(t["time_created"]),
+                        "size": strings.file_size(t["size"]),
+                        "file_count": t["file_count"],
+                        "comment": t["comment"],
+                        "tracker": t["tracker"],
+                    }
+                    for t in d["downloads"]
+                ]
+            )
+            print()
+
+
+def print_disks(disks):
+    printing.table(
+        [
+            {
+                "host": d["host"],
+                "path": d["mountpoint"],
+                "disk_size": humanize.naturalsize(d["total"]),
+                "download_count": len(d["downloads"]),
+                "unique_trackers": len(set(t["tracker"] for t in d["downloads"])),
+                "before_free": strings.file_size(d["free"]),
+                "download_size": strings.file_size(sum(t["size"] for t in d["downloads"])),
+                "after_free": strings.file_size(d["free"] - sum(t["size"] for t in d["downloads"])),
+            }
+            for d in disks
+        ]
+    )
+    print()
+
+
+def print_torrents_by_tracker(torrents):
+    torrents_by_tracker = {}
+    for t in torrents:
+        torrents_by_tracker.setdefault(t["tracker"], []).append(t)
+
+    trackers = []
+    for tracker, tracker_torrents in torrents_by_tracker.items():
+        trackers.append(
+            {
+                "tracker": tracker,
+                "count": len(tracker_torrents),
+                "size": sum(d["size"] for d in tracker_torrents),
+                "files": sum(d["file_count"] for d in tracker_torrents),
+            }
+        )
+
+    trackers = sorted(trackers, key=lambda d: (d["count"] // 10, d["tracker"]))
+    printing.table(
+        iterables.list_dict_filter_bool(
+            [
+                {
+                    **d,
+                    "size": strings.file_size(d["size"]),
+                }
+                for d in trackers
+            ]
+        )
+    )
+    print()
+
+
+def allocate_torrents():
+    args = parse_args()
+
+    import paramiko
+
+    computer_db = db_utils.connect(args, conn=sqlite3.connect(args.computer_database))
+
+    disks = get_disks(args, computer_db)
 
     total_available = sum(d["free"] - args.min_free_space for d in disks)
     print(f"{len(disks)} disks matched. {strings.file_size(total_available)} available space")
@@ -130,51 +209,23 @@ def allocate_torrents():
     ).to_dict(orient="records")
     torrents = torrents[: args.limit]
 
+    downloaded_torrents = set()
     for disk in disks:
         available_space = disk["free"] - args.min_free_space
-        disk["downloads"] = list(gen_torrent_matches(torrents, available_space))
+        disk["downloads"] = list(gen_torrent_matches(downloaded_torrents, torrents, available_space))
 
     # TODO: use nvme download_dir
     # but better to chunk one drive at a time because temp download _moving_ can occur
     # at the same time as nvme save_path saving. maybe 2x buffer could work
 
     if args.verbose >= consts.LOG_INFO:
-        for d in disks:
-            print(d["host"], d["mountpoint"])
-            printing.table(
-                [
-                    {
-                        "title": t["title"],
-                        "time_uploaded": strings.relative_datetime(t["time_uploaded"]),
-                        "time_created": strings.relative_datetime(t["time_created"]),
-                        "size": strings.file_size(t["size"]),
-                        "file_count": t["file_count"],
-                        "comment": t["comment"],
-                        "tracker": t["tracker"],
-                    }
-                    for t in d["downloads"]
-                ]
-            )
-            print()
-
-    printing.table(
-        [
-            {
-                "host": d["host"],
-                "path": d["mountpoint"],
-                "disk_size": humanize.naturalsize(d["total"]),
-                "download_count": len(d["downloads"]),
-                "unique_trackers": len(set(t["tracker"] for t in d["downloads"])),
-                "before_free": strings.file_size(d["free"]),
-                "download_size": strings.file_size(sum(t["size"] for t in d["downloads"])),
-                "after_free": strings.file_size(d["free"] - sum(t["size"] for t in d["downloads"])),
-            }
-            for d in disks
-        ]
-    )
-    print()
+        print_torrent_info(disks)
 
     allocated_torrents = [t for d in disks for t in d["downloads"]]
+
+    print_torrents_by_tracker(allocated_torrents)
+    print_disks(disks)
+
     total_size = sum(t["size"] for t in allocated_torrents)
     print(f"{len(allocated_torrents)} torrents allocated ({strings.file_size(total_size)})")
 
