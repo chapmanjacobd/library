@@ -1,6 +1,8 @@
 import re
 from contextlib import suppress
 
+from library.utils.log_utils import log
+
 
 def kebab_camel_snake(col):
     col = re.sub(r"(?<!^)(?=[A-Z])", "_", col)
@@ -101,7 +103,7 @@ def rank_dataframe(original_df, column_weights=None):
 
     unranked_columns = set(df.select_dtypes(include=["number"]).columns) - set(ranks.columns)
     if unranked_columns:
-        print(
+        log.debug(
             "Unranked columns:\n"
             + "\n".join([f"""    "{s}": {{ 'direction': 'desc' }}, """ for s in unranked_columns]),
         )

@@ -1,11 +1,19 @@
 import pathlib
+from unittest.mock import Mock
 
 import pytest
 from bs4 import BeautifulSoup
 
 from library.utils import web
 from library.utils.path_utils import safe_unquote
-from library.utils.web import WebPath, construct_absolute_url, extract_nearby_text, url_encode, url_to_local_path
+from library.utils.web import (
+    WebPath,
+    construct_absolute_url,
+    extract_nearby_text,
+    filename_from_content_disposition,
+    url_encode,
+    url_to_local_path,
+)
 from tests.utils import p
 
 
@@ -281,3 +289,24 @@ def test_construct_absolute_url(base_url, href, expected):
 def test_is_subpath(parent_url, child_url, expected):
     result = web.is_subpath(parent_url, child_url)
     assert result is expected
+
+
+@pytest.mark.parametrize(
+    "content_disposition, expected_filename",
+    [
+        ("", None),
+        ("attachment; filename=test.txt", "test.txt"),
+        ('attachment; filename="test.txt"', "test.txt"),
+        ("attachment; filename=test.txt;", "test.txt"),
+        ('attachment; filename="test with spaces.txt"', "test with spaces.txt"),
+        ('attachment; filename="test\\"with\\"quotes.txt"', 'test"with"quotes.txt'),
+        ("attachment; filename*=UTF-8''test%C3%A4.txt", "testä.txt"),
+        ("attachment; filename=test.pdf; filename*=utf-8''test%C3%A4.txt", "testä.txt"),
+        ("attachment; filename=test.pdf; other=stuff", "test.pdf"),
+        ("inline; filename=image.jpg", "image.jpg"),
+    ],
+)
+def test_filename_from_content_disposition(content_disposition, expected_filename):
+    mock_response = Mock()
+    mock_response.headers = {"Content-Disposition": content_disposition}
+    assert filename_from_content_disposition(mock_response) == expected_filename

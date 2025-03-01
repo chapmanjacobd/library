@@ -4,7 +4,6 @@ import humanize
 import pandas as pd
 
 from library import usage
-from library.tablefiles import mcda
 from library.utils import (
     arggroups,
     argparse_utils,
@@ -13,6 +12,7 @@ from library.utils import (
     devices,
     iterables,
     nums,
+    pd_utils,
     printing,
     processes,
     remote_processes,
@@ -100,7 +100,9 @@ def allocate_torrents():
         disks = [d for d in disks if d["host"] in args.hosts]
     if args.exclude_disks:
         disks = [
-            d for d in disks if not any(s == d["path"] or s == f"{d['host']}:{d['path']}" for s in args.exclude_disks)
+            d
+            for d in disks
+            if not any(s == d["mountpoint"] or s == f"{d['host']}:{d['mountpoint']}" for s in args.exclude_disks)
         ]
 
     total_available = sum(d["free"] - args.min_free_space for d in disks)
@@ -119,7 +121,13 @@ def allocate_torrents():
     if not torrents:
         processes.no_media_found()
 
-    torrents = mcda.sort(args, pd.DataFrame(torrents), ["size", "-tracker_count"]).to_dict(orient="records")
+    torrents = pd_utils.rank_dataframe(
+        pd.DataFrame(torrents),
+        {
+            "size": {},
+            "tracker_count": {"direction": "desc"},
+        },
+    ).to_dict(orient="records")
     torrents = torrents[: args.limit]
 
     for disk in disks:

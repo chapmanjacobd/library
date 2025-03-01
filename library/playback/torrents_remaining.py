@@ -29,7 +29,7 @@ def parse_args():
 def get_mountpoint(args, content_path):
     if args.depth is None:
         while not os.path.exists(content_path):
-            log.debug("%s does not exist", content_path)  # alternate: return "Unknown"
+            log.debug("%s does not exist", content_path)  # alternatively return "Unknown"
             content_path = os.path.dirname(content_path)
         return path_utils.mountpoint(content_path)
 
