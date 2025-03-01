@@ -19,6 +19,12 @@ def print_overwrite(*text, **kwargs):
     else:
         print(text, **kwargs)
 
+def serialize_key(s):
+    if isinstance(s, str):
+        return s
+    elif isinstance(s, tuple):
+        return ' '.join(s)
+    return str(s)
 
 def extended_view(iterable):
     print_index = True
@@ -32,15 +38,15 @@ def extended_view(iterable):
         except StopIteration:
             return  # if the generator is empty, return early
         iterable = itertools.chain([first_item], iterable)
-        max_key_length = max(len(key) for key in first_item.keys())
+        max_key_length = max(len(serialize_key(key)) for key in first_item.keys())
     else:
-        max_key_length = max(len(key) for item in iterable for key in item.keys())
+        max_key_length = max(len(serialize_key(key)) for item in iterable for key in item.keys())
 
     for index, item in enumerate(iterable, start=1):
         if print_index:
             print(f"-[ RECORD {index} ]-------------------------------------------------------------")
         for key, value in item.items():
-            formatted_key = f"{key.ljust(max_key_length)} |"
+            formatted_key = f"{serialize_key(key).ljust(max_key_length)} |"
             print(formatted_key, value)
         if print_index:
             print()
