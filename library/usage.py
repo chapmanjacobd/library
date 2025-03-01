@@ -1615,9 +1615,11 @@ markdown_links = """library markdown-links URL ... [--cookies COOKIES] [--cookie
         [Work For Peace](https://www.youtube.com/watch?v=IgZDDW-NXDE)
 """
 
-disk_free = r"""library df MOUNTPOINT ...
+disk_free = r"""library disk-free [MOUNTPOINT ...]
 
     Print total disk usage and disk free stats
+
+        library df
 """
 
 
