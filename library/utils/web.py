@@ -342,12 +342,23 @@ def post_download(args):
 
 def filename_from_content_disposition(response):
     content_disposition = response.headers.get("Content-Disposition", "")
-    if "filename=" in content_disposition:
+    if not content_disposition:
+        return None
+
+    # Handle filename* (RFC 5987)
+    filename_star_match = re.search(r"filename\*=UTF-8\\?'\\?'([^;]+)", content_disposition, re.IGNORECASE)
+    if filename_star_match:
+        with suppress(Exception):
+            return urllib.parse.unquote(filename_star_match.group(1))
+
+    # Handle filename (RFC 2183)
+    if "filename=" in content_disposition.lower():
         msg = Message()
         msg["content-disposition"] = content_disposition
         filename = msg.get_filename()
         if filename:
             return filename
+
     return None
 
 
