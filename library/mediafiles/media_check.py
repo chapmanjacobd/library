@@ -227,7 +227,7 @@ def media_check() -> None:
             path = future_to_path[future]
             try:
                 corruption = future.result()
-                print(strings.safe_percent(corruption), shlex.quote(path), sep="\t")
+                print(strings.percent(corruption), shlex.quote(path), sep="\t")
             except Exception as e:
                 print(f"Error hashing {path}: {e}")
                 if args.verbose >= consts.LOG_DEBUG:
@@ -235,7 +235,7 @@ def media_check() -> None:
             else:
                 if corruption_threshold_exceeded(args.delete_corrupt, corruption, processes.FFProbe(path).duration):
                     threshold_str = (
-                        strings.safe_percent(args.delete_corrupt)
+                        strings.percent(args.delete_corrupt)
                         if 0 < args.delete_corrupt < 1
                         else (args.delete_corrupt + "s")
                     )

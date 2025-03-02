@@ -427,7 +427,7 @@ def download_url(args, url: str, output_path=None, retry_num=0) -> str | None:
                     p.unlink()
                 else:
                     log.warning(
-                        f"Resuming download. {strings.file_size(local_size)} => {strings.file_size(remote_size)} ({strings.safe_percent(local_size/remote_size)}): {output_path}"
+                        f"Resuming download. {strings.file_size(local_size)} => {strings.file_size(remote_size)} ({strings.percent(local_size/remote_size)}): {output_path}"
                     )
                     headers = {"Range": f"bytes={local_size}-"}
                     r.close()  # close previous session before opening a new one
@@ -450,7 +450,7 @@ def download_url(args, url: str, output_path=None, retry_num=0) -> str | None:
             if remote_size:
                 downloaded_size = os.path.getsize(output_path)
                 if downloaded_size < remote_size:
-                    msg = f"Incomplete download ({strings.safe_percent(downloaded_size/remote_size)}) {output_path}"
+                    msg = f"Incomplete download ({strings.percent(downloaded_size/remote_size)}) {output_path}"
                     raise RuntimeError(msg)
         except Exception as e:
             r.close()

@@ -2037,6 +2037,8 @@ def qBittorrent_torrents(parent_parser):
     parser.add_argument("--time-stalled", action="append", help="Include torrents with N time since last activity")
     parser.add_argument("--time-unseeded", action="append", help="Include torrents with N time since last seeder")
     parser.add_argument("--time-active", action="append", help="Include torrents with N time active")
+    parser.add_argument("--time-downloading", action="append", help="Include torrents with N time downloading")
+    parser.add_argument("--time-seeding", action="append", help="Include torrents with N time seeding")
     parser.add_argument("--time-completed", action="append", help="Include torrents with N time completed")
     parser.add_argument("--time-remaining", "--eta", action="append", help="Include torrents with N time remaining")
     parser.add_argument("--priority", action="append", help="Include torrents with N priority")
@@ -2099,6 +2101,8 @@ def qBittorrent_torrents_post(args):
     args.time_stalled = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_stalled)
     args.time_unseeded = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_unseeded)
     args.time_active = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_active)
+    args.time_downloading = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_downloading)
+    args.time_seeding = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_seeding)
     args.time_completed = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_completed)
     args.time_remaining = sql_utils.parse_human_to_lambda(nums.human_to_seconds, args.time_remaining)
 

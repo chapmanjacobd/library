@@ -19,12 +19,14 @@ def print_overwrite(*text, **kwargs):
     else:
         print(text, **kwargs)
 
+
 def serialize_key(s):
     if isinstance(s, str):
         return s
     elif isinstance(s, tuple):
-        return ' '.join(s)
+        return " ".join(s)
     return str(s)
+
 
 def extended_view(iterable):
     print_index = True

@@ -1,4 +1,4 @@
-import getpass, os.path
+import os.path
 from collections import Counter, OrderedDict
 from contextlib import suppress
 from pathlib import Path
@@ -253,9 +253,6 @@ def relative_from_mountpoint(src: Union[str, Path], dest: Union[str, Path]) -> P
     src = Path(src)
 
     mount_path = Path(mountpoint(src))
-    if mount_path.parts[1:2] == ("home",) or mount_path.parts[1:3] == ("var", "home"):
-        user = getpass.getuser()
-        mount_path = mount_path / user
     relative_src_parts = src.parts[len(mount_path.parts) :]
 
     if dest.is_absolute():
