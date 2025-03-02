@@ -242,7 +242,7 @@ def filter_corpus(corpus_stats, words, unique, dups):
 
 
 def text_processor(args, lines):
-    if getattr(args, 'stop_words', None) is None:
+    if getattr(args, "stop_words", None) is None:
         from library.data import wordbank
 
         stop_words = wordbank.stop_words
@@ -302,11 +302,11 @@ def text_processor(args, lines):
 def sort_dicts(args, media, search_columns=None):
     if search_columns is None:
         search_columns = {
-        col
-        for _table, table_config in db_utils.config.items()
-        if "search_columns" in table_config
-        for col in table_config["search_columns"]
-    }
+            col
+            for _table, table_config in db_utils.config.items()
+            if "search_columns" in table_config
+            for col in table_config["search_columns"]
+        }
 
     sentence_strings = list(
         strings.path_to_sentence(" ".join(str(v) for k, v in d.items() if v and k in search_columns)) for d in media

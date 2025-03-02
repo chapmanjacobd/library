@@ -206,7 +206,7 @@ def media_printer(args, data, units=None, media_len=None) -> None:
                 media = [{k: v for k, v in d.items() if k not in ("title", "path")} for d in media]
             elif k.startswith("percent") or k.endswith("ratio"):
                 for d in media:
-                    d[k] = strings.safe_percent(d[k])
+                    d[k] = strings.percent(d[k])
             # elif isinstance(v, (int, float)):
             #     for d in media:
             #         if d[k] is not None:

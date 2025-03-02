@@ -29,7 +29,7 @@ def parse_args():
 def get_mountpoint(args, content_path):
     if args.depth is None:
         while not os.path.exists(content_path):
-            log.debug("%s does not exist", content_path)  # alternatively return "Unknown"
+            log.debug("%s does not exist", content_path)
             content_path = os.path.dirname(content_path)
         return path_utils.mountpoint(content_path)
 
@@ -70,13 +70,19 @@ def torrents_remaining():
         used = sum(t.total_size - t.amount_left for t in mountpoint_torrents)
         remaining = sum(t.amount_left for t in mountpoint_torrents)
         etas = [t.eta for t in mountpoint_torrents if t.eta < 8640000]
+        wasted = sum(t.properties.total_wasted for t in mountpoint_torrents)
+        dl_speed = sum(t.dlspeed for t in mountpoint_torrents if not t.state_enum.is_complete)
+        # dl_speed_hist = [t.properties.dl_speed_avg for t in mountpoint_torrents if t.state_enum.is_complete]
+        dl_time = [t.time_active - t.properties.seeding_time for t in mountpoint_torrents if t.state_enum.is_complete]
 
         categories.append(
             {
                 "mountpoint": mountpoint,
                 "count": len(mountpoint_torrents),
+                "files": (sum(len(t.files) for t in mountpoint_torrents) if args.file_counts else None),
                 "size": strings.file_size(sum(t.total_size for t in mountpoint_torrents)),
                 "used": strings.file_size(used) if used else None,
+                "wasted": strings.file_size(wasted) if wasted else None,
                 "remaining": strings.file_size(remaining) if remaining else None,
                 "free": strings.file_size(shutil.disk_usage(mountpoint).free) if args.depth is None else None,
                 "unallocated_free": (
@@ -84,9 +90,11 @@ def torrents_remaining():
                     if remaining and args.depth is None
                     else None
                 ),
+                "dl_speed": strings.file_size(dl_speed) + "/s" if dl_speed else None,
+                # "median_dl_speed": strings.file_size(statistics.median(dl_speed_hist)) + "/s" if dl_speed_hist else None,
+                "historical_eta": strings.duration_short(statistics.median(dl_time)) if dl_time else None,
                 "next_eta": strings.duration_short(min(etas)) if etas else None,
                 "median_eta": strings.duration_short(statistics.median(etas)) if etas else None,
-                "files": (sum(len(t.files) for t in mountpoint_torrents) if args.file_counts else None),
             }
         )
     printing.table(iterables.list_dict_filter_bool(categories))

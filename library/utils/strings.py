@@ -297,7 +297,7 @@ def last_chars(candidate) -> str:
     return remove_chars
 
 
-def safe_percent(v) -> str | None:
+def percent(v) -> str | None:
     if v in [None, ""]:
         return None
     try:

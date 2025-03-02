@@ -154,6 +154,10 @@ def filter_torrents_by_criteria(args, torrents):
         ]
     if "time_active" not in args.defaults:
         torrents = [t for t in torrents if args.time_active(t.time_active)]
+    if "time_downloading" not in args.defaults:
+        torrents = [t for t in torrents if args.time_downloading(t.time_active - t.properties.seeding_time)]
+    if "time_seeding" not in args.defaults:
+        torrents = [t for t in torrents if args.time_seeding(t.properties.seeding_time)]
     if "priority" not in args.defaults:
         torrents = [t for t in torrents if args.priority(t.priority)]
     if "progress" not in args.defaults:
@@ -171,7 +175,9 @@ def filter_torrents_by_criteria(args, torrents):
         torrents = [t for t in torrents if tags.issubset(t.tags.split(", "))]
     if args.torrent_search:
         torrents = [
-            t for t in torrents if strings.glob_match(args.torrent_search, [t.name, t.comment, t.download_path, t.save_path, t.hash])
+            t
+            for t in torrents
+            if strings.glob_match(args.torrent_search, [t.name, t.comment, t.download_path, t.save_path, t.hash])
         ]
     if args.file_search:
         torrents = [t for t in torrents if strings.glob_match(args.file_search, [f.name for f in t.files])]
@@ -296,18 +302,19 @@ def torrents_info():
             d = {
                 "name": shorten(t.name, 35),
                 "num_seeds": f"{t.num_seeds} ({t.num_complete})",
-                "progress": strings.safe_percent(t.progress),
+                "progress": strings.percent(t.progress),
                 "seen_complete": (strings.relative_datetime(t.seen_complete) if t.seen_complete > 0 else ""),
                 "last_activity": strings.relative_datetime(t.last_activity),
-                "time_active": strings.duration_short(t.time_active),
             }
             if not t.state_enum.is_complete:
                 d |= {
+                    "duration": strings.duration_short(t.time_active - t.properties.seeding_time),
                     "downloaded": strings.file_size(t.downloaded),
                     "remaining": strings.file_size(t.amount_left) if t.amount_left > 0 else None,
                 }
             if t.state_enum.is_complete:
                 d |= {
+                    "duration": strings.duration_short(t.properties.seeding_time),
                     "uploaded": strings.file_size(t.uploaded),
                 }
 
@@ -360,19 +367,20 @@ def torrents_info():
             d = {
                 "name": shorten(t.name, 35),
                 "num_seeds": f"{t.num_seeds} ({t.num_complete})",
-                "progress": strings.safe_percent(t.progress),
+                "progress": strings.percent(t.progress),
             }
             if not t.state_enum.is_complete:
                 d |= {
-                    "downloaded_session": strings.file_size(t.downloaded_session),
+                    "duration": strings.duration_short(t.time_active - t.properties.seeding_time),
+                    "session": strings.file_size(t.downloaded_session),
                     "remaining": strings.file_size(t.amount_left) if t.amount_left > 0 else None,
                     "speed": strings.file_size(t.dlspeed) + "/s" if t.dlspeed else None,
                     "eta": strings.duration_short(t.eta) if t.eta < 8640000 else None,
                 }
             if t.state_enum.is_complete:
                 d |= {
-                    "time_active": strings.duration_short(t.time_active),
-                    "uploaded_session": strings.file_size(t.uploaded_session),
+                    "duration": strings.duration_short(t.properties.seeding_time),
+                    "session": strings.file_size(t.uploaded_session),
                     "uploaded": strings.file_size(t.uploaded),
                 }
             if args.file_search:
