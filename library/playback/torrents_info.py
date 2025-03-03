@@ -64,17 +64,16 @@ def qbt_get_tracker(qbt_client, torrent):
     return domain_from_url(tracker)
 
 
-def is_active(t):
-    return (not t.state_enum.is_complete and t.downloaded_session > 0) or (
-        t.state_enum.is_complete and t.uploaded_session > 0
-    )
-
-
-def is_inactive(t):
-    return (not t.state_enum.is_complete and t.downloaded_session == 0) or (
-        t.state_enum.is_complete and t.uploaded_session == 0
-    )
-
+def qbt_enhance_torrents(qbt_client, qbt_torrents):
+    for t in qbt_torrents:
+        t.is_active = (not t.state_enum.is_complete and t.downloaded_session > 0) or (
+            t.state_enum.is_complete and t.uploaded_session > 0
+        )
+        t.is_inactive = (not t.state_enum.is_complete and t.downloaded_session == 0) or (
+            t.state_enum.is_complete and t.uploaded_session == 0
+        )
+        t.downloading_time = t.time_active - t.seeding_time
+        t.tracker_domain = lambda self=t: qbt_get_tracker(qbt_client, self)
 
 def filter_torrents_by_activity(args, torrents):
     if args.stopped is not None:
@@ -103,9 +102,9 @@ def filter_torrents_by_activity(args, torrents):
     elif args.uploading:
         torrents = [t for t in torrents if t.state_enum.is_complete]
     if args.active:
-        torrents = [t for t in torrents if is_active(t)]
+        torrents = [t for t in torrents if t.is_active]
     if args.inactive:
-        torrents = [t for t in torrents if is_inactive(t)]
+        torrents = [t for t in torrents if t.is_inactive]
 
     return torrents
 
@@ -155,9 +154,9 @@ def filter_torrents_by_criteria(args, torrents):
     if "time_active" not in args.defaults:
         torrents = [t for t in torrents if args.time_active(t.time_active)]
     if "time_downloading" not in args.defaults:
-        torrents = [t for t in torrents if args.time_downloading(t.time_active - t.properties.seeding_time)]
+        torrents = [t for t in torrents if args.time_downloading(t.downloading_time)]
     if "time_seeding" not in args.defaults:
-        torrents = [t for t in torrents if args.time_seeding(t.properties.seeding_time)]
+        torrents = [t for t in torrents if args.time_seeding(t.seeding_time)]
     if "priority" not in args.defaults:
         torrents = [t for t in torrents if args.priority(t.priority)]
     if "progress" not in args.defaults:
@@ -173,11 +172,19 @@ def filter_torrents_by_criteria(args, torrents):
     if args.tagged:
         tags = set(args.tagged)
         torrents = [t for t in torrents if tags.issubset(t.tags.split(", "))]
+    if args.no_tracker:
+        trackers = set(args.no_tracker)
+        torrents = [t for t in torrents if t.tracker_domain() not in trackers]
+    if args.tracker:
+        trackers = set(args.tracker)
+        torrents = [t for t in torrents if t.tracker_domain() in trackers]
     if args.torrent_search:
         torrents = [
             t
             for t in torrents
-            if strings.glob_match(args.torrent_search, [t.name, t.comment, t.download_path, t.save_path, t.hash])
+            if strings.glob_match(
+                args.torrent_search, [t.name, t.comment, t.tracker_domain(), t.download_path, t.save_path, t.hash]
+            )
         ]
     if args.file_search:
         torrents = [t for t in torrents if strings.glob_match(args.file_search, [f.name for f in t.files])]
@@ -224,11 +231,12 @@ def torrents_info():
 
     qbt_client = torrents_start.start_qBittorrent(args)
     torrents = qbt_client.torrents_info()
+    qbt_enhance_torrents(qbt_client, torrents)
 
-    if args.trackers:
+    if args.errored and args.trackers:
         tbl = defaultdict(lambda: {"count": 0})
         for t in torrents:
-            if is_active(t) and not args.verbose >= consts.LOG_INFO:
+            if t.is_active and not args.verbose >= consts.LOG_INFO:
                 continue
 
             for tr, msg in get_error_messages(t):
@@ -294,7 +302,7 @@ def torrents_info():
             ),
         )
 
-    inactive_torrents = [t for t in torrents if is_inactive(t)]
+    inactive_torrents = [t for t in torrents if t.is_inactive]
     if inactive_torrents:
         print(f"Inactive Torrents ({len(inactive_torrents)})")
 
@@ -308,13 +316,13 @@ def torrents_info():
             }
             if not t.state_enum.is_complete:
                 d |= {
-                    "duration": strings.duration_short(t.time_active - t.properties.seeding_time),
+                    "duration": strings.duration_short(t.downloading_time),
                     "downloaded": strings.file_size(t.downloaded),
                     "remaining": strings.file_size(t.amount_left) if t.amount_left > 0 else None,
                 }
             if t.state_enum.is_complete:
                 d |= {
-                    "duration": strings.duration_short(t.properties.seeding_time),
+                    "duration": strings.duration_short(t.seeding_time),
                     "uploaded": strings.file_size(t.uploaded),
                 }
 
@@ -333,7 +341,7 @@ def torrents_info():
             if args.sort == "priority":
                 d |= {"priority": str(t.priority) + (" [F]" if t.force_start else "")}
             if args.trackers:
-                d |= {"tracker": qbt_get_tracker(qbt_client, t)}
+                d |= {"tracker": t.tracker_domain()}
             if args.status:
                 d |= {"state": t.state}
             if args.sizes or args.avg_sizes or "size" in args.sort:
@@ -359,7 +367,7 @@ def torrents_info():
         printing.table(iterables.conform([gen_row(t) for t in inactive_torrents]))
         print()
 
-    active_torrents = [t for t in torrents if is_active(t)]
+    active_torrents = [t for t in torrents if t.is_active]
     if active_torrents:
         print(f"Active Torrents ({len(active_torrents)})")
 
@@ -371,7 +379,7 @@ def torrents_info():
             }
             if not t.state_enum.is_complete:
                 d |= {
-                    "duration": strings.duration_short(t.time_active - t.properties.seeding_time),
+                    "duration": strings.duration_short(t.downloading_time),
                     "session": strings.file_size(t.downloaded_session),
                     "remaining": strings.file_size(t.amount_left) if t.amount_left > 0 else None,
                     "speed": strings.file_size(t.dlspeed) + "/s" if t.dlspeed else None,
@@ -379,7 +387,7 @@ def torrents_info():
                 }
             if t.state_enum.is_complete:
                 d |= {
-                    "duration": strings.duration_short(t.properties.seeding_time),
+                    "duration": strings.duration_short(t.seeding_time),
                     "session": strings.file_size(t.uploaded_session),
                     "uploaded": strings.file_size(t.uploaded),
                 }
@@ -398,7 +406,7 @@ def torrents_info():
             if args.sort == "priority":
                 d |= {"priority": str(t.priority) + (" [F]" if t.force_start else "")}
             if args.trackers:
-                d |= {"tracker": qbt_get_tracker(qbt_client, t)}
+                d |= {"tracker": t.tracker_domain()}
             if args.status:
                 d |= {"state": t.state}
             if args.sizes or args.avg_sizes or "size" in args.sort:
@@ -476,7 +484,7 @@ def torrents_info():
                     new_path = Path(mountpoint) / new_path
 
                 if args.tracker_dirnames:
-                    domain = qbt_get_tracker(qbt_client, t)
+                    domain = t.tracker_domain()
                     if domain:
                         new_path /= domain
 
@@ -498,7 +506,7 @@ def torrents_info():
 
             temp_path = temp_prefix
             if args.tracker_dirnames:
-                domain = qbt_get_tracker(qbt_client, t)
+                domain = t.tracker_domain()
                 if domain:
                     temp_path /= domain
 
@@ -511,7 +519,7 @@ def torrents_info():
 
             download_path = download_prefix
             if args.tracker_dirnames:
-                domain = qbt_get_tracker(qbt_client, t)
+                domain = t.tracker_domain()
                 if domain:
                     download_path /= domain
 
@@ -546,7 +554,7 @@ def torrents_info():
         for idx, t in enumerate(torrents):
             printing.print_overwrite("Exporting", idx + 1, "of", len(torrents), "to", p)
 
-            file_name = f"{qbt_get_tracker(qbt_client, t)}_{t.name}_{t.hash}.torrent"
+            file_name = f"{t.tracker_domain()}_{t.name}_{t.hash}.torrent"
             file_name = path_utils.clean_path(file_name.encode())
             (p / file_name).write_bytes(qbt_client.torrents_export(torrent_hash=t.hash))
 

@@ -56,6 +56,7 @@ def torrents_remaining():
 
     qbt_client = torrents_start.start_qBittorrent(args)
     torrents = qbt_client.torrents_info()
+    torrents_info.qbt_enhance_torrents(qbt_client, torrents)
 
     torrents = torrents_info.filter_torrents(args, torrents)
     torrents = natsorted(torrents, key=lambda t: t.content_path)
@@ -72,8 +73,7 @@ def torrents_remaining():
         etas = [t.eta for t in mountpoint_torrents if t.eta < 8640000]
         wasted = sum(t.properties.total_wasted for t in mountpoint_torrents)
         dl_speed = sum(t.dlspeed for t in mountpoint_torrents if not t.state_enum.is_complete)
-        # dl_speed_hist = [t.properties.dl_speed_avg for t in mountpoint_torrents if t.state_enum.is_complete]
-        dl_time = [t.time_active - t.properties.seeding_time for t in mountpoint_torrents if t.state_enum.is_complete]
+        dl_time = [t.downloading_time for t in mountpoint_torrents if t.state_enum.is_complete]
 
         categories.append(
             {
@@ -91,7 +91,6 @@ def torrents_remaining():
                     else None
                 ),
                 "dl_speed": strings.file_size(dl_speed) + "/s" if dl_speed else None,
-                # "median_dl_speed": strings.file_size(statistics.median(dl_speed_hist)) + "/s" if dl_speed_hist else None,
                 "historical_eta": strings.duration_short(statistics.median(dl_time)) if dl_time else None,
                 "next_eta": strings.duration_short(min(etas)) if etas else None,
                 "median_eta": strings.duration_short(statistics.median(etas)) if etas else None,
