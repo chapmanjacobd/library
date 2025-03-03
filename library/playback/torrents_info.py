@@ -75,6 +75,7 @@ def qbt_enhance_torrents(qbt_client, qbt_torrents):
         t.downloading_time = t.time_active - t.seeding_time
         t.tracker_domain = lambda self=t: qbt_get_tracker(qbt_client, self)
 
+
 def filter_torrents_by_activity(args, torrents):
     if args.stopped is not None:
         torrents = [t for t in torrents if args.stopped is t.state_enum.is_stopped]
@@ -554,7 +555,7 @@ def torrents_info():
         for idx, t in enumerate(torrents):
             printing.print_overwrite("Exporting", idx + 1, "of", len(torrents), "to", p)
 
-            file_name = f"{t.tracker_domain()}_{t.name}_{t.hash}.torrent"
+            file_name = f"{t.tracker_domain()}_{t.name}_{t.hash}.torrent".replace("/", "-").replace("\\", "-")
             file_name = path_utils.clean_path(file_name.encode())
             (p / file_name).write_bytes(qbt_client.torrents_export(torrent_hash=t.hash))
 
