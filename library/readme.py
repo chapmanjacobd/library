@@ -421,7 +421,7 @@ You can expand all by running this in your browser console:
 
 {expand_all_js}
 
-Help support this project by buying hard drives: [https://www.unli.xyz/diskprices/](https://www.unli.xyz/diskprices/)
+Be sure to check out [https://www.unli.xyz/diskprices/](https://www.unli.xyz/diskprices/) for all your storage needs
 
 """
 
