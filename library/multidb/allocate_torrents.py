@@ -139,6 +139,7 @@ def print_disks(disks):
                 "after_free": strings.file_size(d["free"] - sum(t["size"] for t in d["downloads"])),
             }
             for d in disks
+            if d["downloads"]
         ]
     )
     print()

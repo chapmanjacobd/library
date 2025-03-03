@@ -5,7 +5,7 @@ import statistics
 from library import usage
 from library.mediafiles import torrents_start
 from library.playback import torrents_info
-from library.playback.torrents_info import get_error_messages, qbt_get_tracker
+from library.playback.torrents_info import get_error_messages
 from library.utils import arggroups, argparse_utils, consts, iterables, printing, strings
 
 
@@ -23,10 +23,10 @@ def parse_args():
     return args
 
 
-def print_torrents_by_tracker(args, qbt_client, torrents):
+def print_torrents_by_tracker(args, torrents):
     torrents_by_tracker = {}
-    for torrent in torrents:
-        torrents_by_tracker.setdefault(qbt_get_tracker(qbt_client, torrent), []).append(torrent)
+    for t in torrents:
+        torrents_by_tracker.setdefault(t.tracker_domain(), []).append(t)
 
     trackers = []
     for tracker, tracker_torrents in torrents_by_tracker.items():
@@ -62,6 +62,7 @@ def torrents_status():
 
     qbt_client = torrents_start.start_qBittorrent(args)
     torrents = qbt_client.torrents_info()
+    torrents_info.qbt_enhance_torrents(qbt_client, torrents)
 
     error_torrents = [t for t in torrents if t.state_enum.is_errored]
     error_torrents = sorted(
@@ -160,7 +161,7 @@ def torrents_status():
     print()
 
     if args.trackers:
-        print_torrents_by_tracker(args, qbt_client, torrents)
+        print_torrents_by_tracker(args, torrents)
 
     transfer = qbt_client.transfer_info()
     print(transfer.connection_status.upper())
