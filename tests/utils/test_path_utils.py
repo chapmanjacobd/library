@@ -52,7 +52,7 @@ def test_clean_path():
     if consts.IS_WINDOWS:
         assert path_utils.clean_path(b"test/\xff\xfeH") == utils.p("test\\xff\\xfeH")
     else:
-        assert path_utils.clean_path(b"test/\xff\xfeH") == utils.p("test/xffxfeH")
+        assert path_utils.clean_path(b"test/\xff\xfeH") == utils.p("test/xff xfeH")
 
 
 @mock.patch("library.utils.consts.random_string", return_value="abcdef")
