@@ -549,13 +549,12 @@ def torrents_info():
         qbt_client.torrents_recheck(torrent_hashes=torrent_hashes)
 
     if args.export:
-        print("Exporting", len(torrents))
         p = Path("exported_torrents")
         p.mkdir(exist_ok=True)
         for idx, t in enumerate(torrents):
             printing.print_overwrite("Exporting", idx + 1, "of", len(torrents), "to", p)
 
-            file_name = f"{t.tracker_domain()}_{t.name}_{t.hash}.torrent".replace("/", "-").replace("\\", "-")
+            file_name = f"{t.tracker_domain()}_{t.name}_{t.hash}.torrent"
             file_name = path_utils.clean_path(file_name.encode())
             (p / file_name).write_bytes(qbt_client.torrents_export(torrent_hash=t.hash))
 
