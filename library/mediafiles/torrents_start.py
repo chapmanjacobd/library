@@ -134,4 +134,4 @@ def torrents_start():
             trash(args, path)
 
     if shutil.which("qbt_prioritize.py"):
-        processes.cmd("qbt_prioritize.py")
+        processes.cmd("qbt_prioritize.py", strict=False)
