@@ -12,7 +12,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--dot-space", action="store_true")
     parser.add_argument("--case-insensitive", action="store_true")
     parser.add_argument("--lowercase-folders", action="store_true")
-    parser.add_argument("--overwrite", "--force", action="store_true")
+    parser.add_argument("--force", "-f", action="store_true")
     parser.add_argument("--run", "-r", action="store_true")
     arggroups.debug(parser)
 
@@ -47,7 +47,7 @@ def rename_path(args, base, b) -> None:
                 fixed = base / fixed
                 fixed.parent.mkdir(parents=True, exist_ok=True)
 
-                if fixed.exists() and not args.overwrite:
+                if fixed.exists() and not args.force:
                     raise FileExistsError
 
                 p.rename(fixed)

@@ -11,6 +11,9 @@ def parse_args(defaults_override=None):
     parser = argparse_utils.ArgumentParser(usage=usage.merge_mv)
     parser.add_argument("--copy", "--cp", "-c", action="store_true", help=argparse.SUPPRESS)
     arggroups.mmv_folders(parser)
+    parser.add_argument(
+        "--clobber", "--overwrite", action="store_true", help="Shortcut for --file-over-file delete-dest"
+    )
     arggroups.clobber(parser)
     arggroups.debug(parser)
 
@@ -24,6 +27,12 @@ def parse_args(defaults_override=None):
     arggroups.mmv_folders_post(args)
     if not any([args.dest_bsd, args.dest_file, args.dest_folder]):
         args.destination_folder = True
+
+    if args.clobber:
+        if args.file_over_file[-1] == "rename-dest":
+            args.file_over_file[-1] = "delete-dest"
+        else:
+            args.file_over_file = arggroups.file_over_file("delete-dest")
 
     return args
 
