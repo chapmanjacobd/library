@@ -7,6 +7,7 @@ from statistics import mean, median
 from library import usage
 from library.mediafiles import torrents_start
 from library.utils import arggroups, argparse_utils, consts, iterables, nums, path_utils, printing, processes, strings
+from library.utils.log_utils import log
 from library.utils.path_utils import domain_from_url, fqdn_from_url
 
 
@@ -472,8 +473,11 @@ def torrents_info():
                                 file_path.unlink(missing_ok=True)
                             break  # Stop after deleting first valid path
 
-    alt_move_syntax = any(k not in args.defaults for k in ["temp_drive", "temp_prefix", "download_drive", "download_prefix"])
+    alt_move_syntax = any(
+        k not in args.defaults for k in ["temp_drive", "temp_prefix", "download_drive", "download_prefix"]
+    )
     if args.move or alt_move_syntax:
+
         def set_temp_path(t, temp_path):
             if temp_path is None:
                 return
@@ -489,43 +493,51 @@ def torrents_info():
             qbt_client.torrents_set_save_path(str(download_path), torrent_hashes=[t.hash])
 
         for idx, t in enumerate(torrents):
+            print("Moving", idx + 1, "of", len(torrents))
+
             originally_stopped = t.state_enum.is_stopped
             qbt_client.torrents_stop(torrent_hashes=[t.hash])
-
-            print("Moving", idx + 1, "of", len(torrents))
 
             if "temp_drive" not in args.defaults:
                 temp_path = Path(args.temp_drive)
             elif "temp_prefix" not in args.defaults:
-                temp_path = Path(path_utils.mountpoint(t.download_path))  # keep existing drive
+                temp_path = Path(path_utils.mountpoint(t.download_path or t.content_path))  # keep existing drive
+                log.debug("temp_path: using t.download_path %s mountpoint %s", t.download_path, temp_path)
             else:
                 temp_path = args.move
 
             if "download_drive" not in args.defaults:
                 download_path = Path(args.download_drive)
             elif "download_prefix" not in args.defaults:
-                download_path = Path(path_utils.mountpoint(t.save_path))  # keep existing drive
+                download_path = Path(path_utils.mountpoint(t.save_path or t.content_path))  # keep existing drive
+                log.debug("download_path: using t.save_path %s mountpoint %s", t.save_path, download_path)
             else:
                 download_path = args.move
 
-            # --temp-drive or --move could be relative
-            if not temp_path.is_absolute():
-                mountpoint = path_utils.mountpoint(t.content_path)
-                temp_path = Path(mountpoint) / temp_path
-            if not download_path.is_absolute():
-                mountpoint = path_utils.mountpoint(t.content_path)
-                download_path = Path(mountpoint) / download_path
+            if temp_path is not None:
+                if not temp_path.is_absolute():  # --X-drive or --move could be relative
+                    mountpoint = path_utils.mountpoint(t.content_path)
+                    temp_path = Path(mountpoint) / temp_path
+                if args.temp_prefix:
+                    temp_path /= args.temp_prefix
+                if args.tracker_dirnames:
+                    domain = t.tracker_domain()
+                    if domain:
+                        temp_path /= domain
 
-            if "temp_prefix" not in args.defaults:
-                temp_path /= args.temp_prefix
-            if "download_prefix" not in args.defaults:
-                download_path /= args.download_prefix
+            if download_path is not None:
+                if not download_path.is_absolute():
+                    mountpoint = path_utils.mountpoint(t.content_path)
+                    download_path = Path(mountpoint) / download_path
+                if args.download_prefix:
+                    download_path /= args.download_prefix
+                if args.tracker_dirnames:
+                    domain = t.tracker_domain()
+                    if domain:
+                        download_path /= domain
 
-            if args.tracker_dirnames:
-                domain = t.tracker_domain()
-                if domain:
-                    temp_path /= domain
-                    download_path /= domain
+            log.debug("temp_path %s", temp_path)
+            log.debug("download_path %s", download_path)
 
             new_path = download_path if t.state_enum.is_complete else temp_path
             if args.simulate:
@@ -536,16 +548,17 @@ def torrents_info():
                 new_path.mkdir(parents=True, exist_ok=True)
                 shutil.move(t.content_path, new_path)
 
-            # update metadata
-            if t.state_enum.is_complete:  # temp path first
-                set_temp_path(t, temp_path)
-                set_download_path(t, download_path)
-            else:  # download path first
-                set_download_path(t, download_path)
-                set_temp_path(t, temp_path)
+            if not (args.delete_files or args.delete_rows):
+                # update metadata
+                if t.state_enum.is_complete:  # temp path first
+                    set_temp_path(t, temp_path)
+                    set_download_path(t, download_path)
+                else:  # download path first
+                    set_download_path(t, download_path)
+                    set_temp_path(t, temp_path)
 
-            if not originally_stopped:
-                qbt_client.torrents_start(torrent_hashes=[t.hash])
+                if not originally_stopped:
+                    qbt_client.torrents_start(torrent_hashes=[t.hash])
 
     if args.start is not None:
         print("Starting", len(torrents))
