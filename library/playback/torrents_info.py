@@ -482,14 +482,14 @@ def torrents_info():
             if temp_path is None:
                 return
 
-            print("    ", t.download_path, "-->", temp_path)
+            print("      ", t.download_path, "-->", temp_path)
             qbt_client.torrents_set_download_path(str(temp_path), torrent_hashes=[t.hash])
 
         def set_download_path(t, download_path):
             if download_path is None:
                 return
 
-            print("    ", t.save_path, "==>", download_path)
+            print("      ", t.save_path, "==>", download_path)
             qbt_client.torrents_set_save_path(str(download_path), torrent_hashes=[t.hash])
 
         for idx, t in enumerate(torrents):
