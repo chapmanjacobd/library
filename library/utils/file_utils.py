@@ -550,7 +550,7 @@ def read_file_to_dataframes(
 
     dfs: list[NDF] = []
 
-    if mimetype in ("sqlite", "sqlite3", "sqlite database file"):
+    if mimetype in ("sqlite", "sqlite3", "sqlite database file", "application/vnd.sqlite3"):
         import pandas as pd
         from sqlite_utils import Database
 
