@@ -36,6 +36,10 @@ def parse_args():
     parser.add_argument("--move", type=Path, help="Directory to move folders/files")
     parser.add_argument("--start", action=argparse.BooleanOptionalAction, help="Start matching torrents")
     parser.add_argument("--force-start", action=argparse.BooleanOptionalAction, help="Force start matching torrents")
+    parser.add_argument("--download-limit", "--dl-limit", type=nums.human_to_bytes, help="Torrent download limit")
+    parser.add_argument(
+        "--upload-limit", "--up-limit", "--ul-limit", type=nums.human_to_bytes, help="Torrent upload limit"
+    )
     parser.add_argument("--check", "--recheck", action="store_true", help="Check matching torrents")
     parser.add_argument("--export", action="store_true", help="Export matching torrent files")
 
@@ -174,9 +178,6 @@ def filter_torrents_by_criteria(args, torrents):
     if args.no_tracker:
         trackers = set(args.no_tracker)
         torrents = [t for t in torrents if t.tracker_domain() not in trackers]
-    if args.tracker:
-        trackers = set(args.tracker)
-        torrents = [t for t in torrents if t.tracker_domain() in trackers]
     if args.torrent_search:
         torrents = [
             t
@@ -187,6 +188,10 @@ def filter_torrents_by_criteria(args, torrents):
         ]
     if args.file_search:
         torrents = [t for t in torrents if strings.glob_match(args.file_search, [f.name for f in t.files])]
+
+    if args.tracker:
+        trackers = set(args.tracker)
+        torrents = [t for t in torrents if t.tracker_domain() in trackers]
 
     if args.timeout_size:
         torrents = [t for t in torrents if not processes.sizeout(args.timeout_size, t.total_size)]
@@ -567,6 +572,14 @@ def torrents_info():
     if args.force_start is not None:
         print("Force-starting", len(torrents))
         qbt_client.torrents_set_force_start(args.force_start, torrent_hashes=torrent_hashes)
+
+    if args.download_limit is not None:
+        print("Setting DL limit", len(torrents))
+        qbt_client.torrents_set_download_limit(args.download_limit or -1, torrent_hashes=torrent_hashes)
+
+    if args.upload_limit is not None:
+        print("Setting UP limit", len(torrents))
+        qbt_client.torrents_set_upload_limit(args.upload_limit or -1, torrent_hashes=torrent_hashes)
 
     if args.check:
         print("Checking", len(torrents))
