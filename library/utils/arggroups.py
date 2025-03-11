@@ -2031,6 +2031,7 @@ def qBittorrent_torrents(parent_parser):
         action="append",
         help="""Include torrents constrained by average file sizes (uses the same syntax as fd-find)""",
     )
+    parser.add_argument("--file-count", "--files", action="append", help="Include torrents constrained by total file counts")
     parser.add_argument("--seeders", action="append", help="Include torrents with N seeders")
     parser.add_argument("--leechers", action="append", help="Include torrents with N leechers")
     parser.add_argument("--time-added", action="append", help="Include torrents with N time since added")
@@ -2069,7 +2070,7 @@ def qBittorrent_torrents(parent_parser):
     )
 
     parser.add_argument(
-        "--file-counts", "--files", "--counts", action="store_true", help="Include file counts column (a bit slow)"
+        "--file-counts", action="store_true", help="Include file counts column (a bit slow)"
     )
     parser.add_argument("--trackers", action="store_true", help="Include tracker column")
     parser.add_argument("--status", "--state", action="store_true", help="Include state column")
@@ -2098,6 +2099,7 @@ def qBittorrent_torrents_post(args):
     args.remaining = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.remaining)
     args.uploaded = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.uploaded)
     args.avg_sizes = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.avg_sizes)
+    args.file_count = sql_utils.parse_human_to_lambda(int, args.file_count)
 
     args.priority = sql_utils.parse_human_to_lambda(int, args.priority)
     args.seeders = sql_utils.parse_human_to_lambda(int, args.seeders)

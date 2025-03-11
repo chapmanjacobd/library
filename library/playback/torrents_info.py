@@ -115,6 +115,8 @@ def filter_torrents_by_activity(args, torrents):
 def filter_torrents_by_criteria(args, torrents):
     if "sizes" not in args.defaults:
         torrents = [t for t in torrents if args.sizes(t.total_size)]
+    if "file_count" not in args.defaults:
+        torrents = [t for t in torrents if args.file_count(len(t.files))]
     if "avg_sizes" not in args.defaults:
         torrents = [t for t in torrents if args.avg_sizes(median([f.size for f in t.files]))]
     if "ratio" not in args.defaults:
