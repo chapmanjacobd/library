@@ -56,7 +56,7 @@ def cmd(
     returncode = stdout.channel.recv_exit_status()
 
     host = getattr(ssh, "host", None)
-    if host:
+    if host:  # for logging purposes
         command = " ".join(["ssh", host, command])
 
     r = subprocess.CompletedProcess(command, returncode, stdout.read().decode(), stderr.read().decode())
@@ -80,6 +80,8 @@ def cmd(
             log.warning("[%s] exited %s", command, r.returncode)
 
         if strict:
+            if error_verbosity <= 1:
+                log.error("[%s] exited %s", command, r.returncode)
             r.check_returncode()
 
     return r
