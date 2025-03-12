@@ -242,23 +242,25 @@ def allocate_torrents():
                 ssh.connect(d["host"])
                 setattr(ssh, "host", d["host"])
 
-                remote_processes.cmd(
-                    ssh,
-                    "python3",
-                    "-m",
-                    "library",
-                    "torrents-start",
-                    *argparse_utils.forward_arggroups(args, arggroups.torrents_start),
-                    *argparse_utils.forward_arggroups(args, arggroups.qBittorrent),
-                    *argparse_utils.forward_arggroups(
-                        args,
-                        arggroups.qBittorrent_paths,
-                        download_drive=d["mountpoint"],
-                    ),
-                    *torrent_files,
-                    local_files=torrent_files,
-                    # cwd="lb",  # debug
-                )
+                torrent_files_chunks = iterables.chunks(torrent_files, 128)
+                for torrent_files_chunk in torrent_files_chunks:
+                    remote_processes.cmd(
+                        ssh,
+                        "python3",
+                        "-m",
+                        "library",
+                        "torrents-start",
+                        *argparse_utils.forward_arggroups(args, arggroups.torrents_start),
+                        *argparse_utils.forward_arggroups(args, arggroups.qBittorrent),
+                        *argparse_utils.forward_arggroups(
+                            args,
+                            arggroups.qBittorrent_paths,
+                            download_drive=d["mountpoint"],
+                        ),
+                        *torrent_files_chunk,
+                        local_files=torrent_files_chunk,
+                        # cwd="lb",  # debug
+                    )
 
             if args.delete_torrent:
                 for path in torrent_files:

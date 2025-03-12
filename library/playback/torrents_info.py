@@ -166,6 +166,8 @@ def filter_torrents_by_criteria(args, torrents):
         torrents = [t for t in torrents if args.priority(t.priority)]
     if "progress" not in args.defaults:
         torrents = [t for t in torrents if args.progress(t.progress)]
+    if "downloaded" not in args.defaults:
+        torrents = [t for t in torrents if args.downloaded(t.downloaded)]
     if "uploaded" not in args.defaults:
         torrents = [t for t in torrents if args.uploaded(t.uploaded)]
     if "remaining" not in args.defaults:

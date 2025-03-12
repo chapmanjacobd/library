@@ -2031,7 +2031,9 @@ def qBittorrent_torrents(parent_parser):
         action="append",
         help="""Include torrents constrained by average file sizes (uses the same syntax as fd-find)""",
     )
-    parser.add_argument("--file-count", "--files", action="append", help="Include torrents constrained by total file counts")
+    parser.add_argument(
+        "--file-count", "--files", action="append", help="Include torrents constrained by total file counts"
+    )
     parser.add_argument("--seeders", action="append", help="Include torrents with N seeders")
     parser.add_argument("--leechers", action="append", help="Include torrents with N leechers")
     parser.add_argument("--time-added", action="append", help="Include torrents with N time since added")
@@ -2045,6 +2047,7 @@ def qBittorrent_torrents(parent_parser):
     parser.add_argument("--priority", action="append", help="Include torrents with N priority")
     parser.add_argument("--progress", action="append", help="Include torrents with N%% progress")
     parser.add_argument("--remaining", action="append", help="Include torrents with N bytes remaining")
+    parser.add_argument("--downloaded", action="append", help="Include torrents with N bytes downloaded")
     parser.add_argument("--uploaded", action="append", help="Include torrents with N bytes uploaded")
     parser.add_argument("--ratio", action="append", help="Include torrents with N ratio")
 
@@ -2069,9 +2072,7 @@ def qBittorrent_torrents(parent_parser):
         help="Include uploading torrents",
     )
 
-    parser.add_argument(
-        "--file-counts", action="store_true", help="Include file counts column (a bit slow)"
-    )
+    parser.add_argument("--file-counts", action="store_true", help="Include file counts column (a bit slow)")
     parser.add_argument("--trackers", action="store_true", help="Include tracker column")
     parser.add_argument("--status", "--state", action="store_true", help="Include state column")
     parser.add_argument("--paths", action="store_true", help="Include downloading/seeding path columns")
@@ -2097,6 +2098,7 @@ def qBittorrent_torrents(parent_parser):
 def qBittorrent_torrents_post(args):
     args.sizes = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.sizes)
     args.remaining = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.remaining)
+    args.downloaded = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.downloaded)
     args.uploaded = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.uploaded)
     args.avg_sizes = sql_utils.parse_human_to_lambda(nums.human_to_bytes, args.avg_sizes)
     args.file_count = sql_utils.parse_human_to_lambda(int, args.file_count)
