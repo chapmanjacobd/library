@@ -554,8 +554,9 @@ def torrents_info():
                 continue
             if os.path.exists(t.content_path):
                 print("Moving", t.content_path, "to", new_path)
-                new_path.mkdir(parents=True, exist_ok=True)
-                shutil.move(t.content_path, new_path)
+                if Path(t.content_path).parent != new_path:
+                    new_path.mkdir(parents=True, exist_ok=True)
+                    shutil.move(t.content_path, new_path)
 
             if not (args.delete_files or args.delete_rows):
                 # update metadata
