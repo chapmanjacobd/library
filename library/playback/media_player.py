@@ -482,7 +482,7 @@ class MediaPrefetcher:
             media_path = Path(self.args.prefix + m["path"]).resolve() if self.args.prefix else Path(m["path"])
             m["path"] = str(media_path)
 
-            if not media_path.exists():
+            if not m["path"].startswith("http") and not media_path.exists():
                 log.warning("[%s]: Does not exist. Skipping...", m["path"])
                 db_media.mark_media_deleted(self.args, m["original_path"])
                 return {}

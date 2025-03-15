@@ -188,7 +188,7 @@ If you don't know the exact name of your chromecast group run `catt scan`
 
     parser.add_argument("--safe", action="store_true", help="Skip generic URLs")
     parser.add_argument(
-        "--refresh", "--exists", action="store_true", help="Check for deleted files before starting playqueue"
+        "--exists", "--refresh", action="store_true", help="Check for deleted files before starting playqueue"
     )
     parser.add_argument(
         "--delete-unplayable", action="store_true", help="Delete from disk any media which does not open successfully"
@@ -414,13 +414,13 @@ def process_playqueue(args) -> None:
         media = history_sort(args, media)
         log.debug("utils.history_sort: %s", t.elapsed())
 
-    if getattr(args, "refresh", False):
+    if getattr(args, "exists", False):
         marked = db_media.mark_media_deleted(
             args, [d["path"] for d in media if d and d["path"] and not Path(d["path"]).exists()]
         )
         if marked > 0:
             log.warning(f"Marked {marked} metadata records as deleted")
-            args.refresh = False
+            args.exists = False
             return process_playqueue(args)
     elif args.folders:
         media = folder_media(args, media)

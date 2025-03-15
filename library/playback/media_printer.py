@@ -218,11 +218,7 @@ def media_printer(args, data, units=None, media_len=None) -> None:
         printing.pipe_lines(json.dumps(m) + "\n" for m in media)
 
     elif "f" in print_args:
-        if (
-            len(media) <= 1000
-            and getattr(args, "hide_deleted", True)
-            and getattr(args, "action", "") not in [consts.SC.links_open]
-        ):
+        if getattr(args, "exists", False):
             media, deleted_paths = filter_deleted(media)
             db_media.mark_media_deleted(args, deleted_paths)
             if len(media) == 0:
