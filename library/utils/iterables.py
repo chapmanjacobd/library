@@ -1,4 +1,4 @@
-import math
+import math, statistics
 from collections import Counter
 from collections.abc import Iterable, Iterator
 from functools import wraps
@@ -280,3 +280,26 @@ def similarity(list1, list2) -> float:
         return 0.0
 
     return common_elements / total_unique_elements
+
+
+def list_dict_summary(l, stat_funcs={"Total": sum, "Median": statistics.median}):
+    summary = {}
+    for d in l:
+        for key, value in d.items():
+            if isinstance(value, (int, float)):
+                if key not in summary:
+                    summary[key] = []
+                summary[key].append(value)
+
+    summary_dicts = []
+    for stat_name, stat_func in stat_funcs.items():
+        stat_result = {}
+        for key, values in summary.items():
+            if key in ("count",):
+                stat_result[key] = int(stat_func(values))
+            else:
+                stat_result[key] = stat_func(values)
+
+        summary_dicts.append({"path": stat_name, **stat_result})
+
+    return summary_dicts
