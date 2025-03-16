@@ -73,7 +73,7 @@ def args_post(args, parser, create_db=False):
             }
         )
 
-    args.action = get_caller_name()
+    args.action = (get_caller_name() or "").replace("_", "-")
 
     if create_db:
         Path(args.database).touch()

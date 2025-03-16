@@ -6,7 +6,12 @@ from library.utils.consts import SC, DBType
 
 
 def media_select_sql(args, m_columns):
-    cols = args.cols or ["path", "title", "duration", "size", "rank"]
+    if args.action in (consts.SC.disk_usage, consts.SC.big_dirs):
+        default_cols = ["path", "duration", "size", "rank"]
+    else:
+        default_cols = ["path", "title", "duration", "size", "rank"]
+
+    cols = args.cols or default_cols
     if "deleted" in " ".join(sys.argv):
         cols.append("time_deleted")
     if "played" in " ".join(sys.argv):

@@ -52,8 +52,9 @@ def get_subset(args, level=None, prefix=None) -> list[dict]:
         if args.group_by_extensions:
             ext = path_utils.ext(m["path"])
             if ext not in d:
-                d[ext] = {"size": 0, "count": 0}
+                d[ext] = {"size": 0, "duration": 0, "count": 0}
             d[ext]["size"] += m.get("size") or 0
+            d[ext]["duration"] += m.get("duration") or 0
             d[ext]["count"] += 1
         else:
             while len(p) >= 2:
@@ -66,8 +67,9 @@ def get_subset(args, level=None, prefix=None) -> list[dict]:
                     excluded_files.add(parent)
 
                 if parent not in d:
-                    d[parent] = {"size": 0, "count": 0}
+                    d[parent] = {"size": 0, "duration": 0, "count": 0}
                 d[parent]["size"] += m.get("size") or 0
+                d[parent]["duration"] += m.get("duration") or 0
                 d[parent]["count"] += 1
 
     reverse = True
