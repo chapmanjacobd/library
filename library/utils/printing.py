@@ -6,7 +6,7 @@ import humanize
 from tabulate import tabulate
 
 from library.utils import consts, path_utils
-from library.utils.strings import duration, file_size, relative_datetime
+from library.utils.strings import duration, duration_short, file_size, relative_datetime
 
 
 def print_overwrite(*text, **kwargs):
@@ -171,6 +171,7 @@ def unquote_url(val: str) -> str:
 
 
 col_duration = transform_column(duration)
+col_duration_short = transform_column(duration_short)
 col_hhmmss = transform_column(seconds_to_hhmmss)
 col_unquote_url = transform_column(unquote_url)
 col_resize = transform_column(path_fill)
