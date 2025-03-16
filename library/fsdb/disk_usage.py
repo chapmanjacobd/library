@@ -2,7 +2,17 @@ import os
 
 from library import usage
 from library.playback import media_printer
-from library.utils import arg_utils, arggroups, argparse_utils, file_utils, path_utils, processes, sqlgroups
+from library.utils import (
+    arg_utils,
+    arggroups,
+    argparse_utils,
+    file_utils,
+    iterables,
+    path_utils,
+    processes,
+    sqlgroups,
+    strings,
+)
 
 
 def parse_args(defaults_override=None):
@@ -128,6 +138,7 @@ def disk_usage(defaults_override=None):
     elif args.files_only:
         args.subset = [d for d in args.subset if not d.get("count")]
 
+    summary = iterables.list_dict_summary(args.subset)
     args.subset = args.subset[: args.limit]
 
     media_printer.media_printer(
@@ -139,6 +150,8 @@ def disk_usage(defaults_override=None):
             else f"paths at depth {args.depth} ({num_folders} folders, {num_files} files)"
         ),
     )
+    for d in summary:
+        print(f"{d['path']}={strings.file_size(d['size'])} count={d['count']}")
 
 
 def extensions():

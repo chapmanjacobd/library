@@ -94,10 +94,7 @@ def should_align_right(k, v):
     return None
 
 
-def media_printer(args, data, units=None, media_len=None) -> None:
-    if units is None:
-        units = "media"
-
+def media_printer(args, data, units: str | None = "media", media_len=None) -> None:
     action = getattr(args, "action", "")
     print_args = getattr(args, "print", "")
     cols = getattr(args, "cols", [])
@@ -262,16 +259,17 @@ def media_printer(args, data, units=None, media_len=None) -> None:
         colalign = ["right" if should_align_right(k, v) else "left" for k, v in tbl[0].items()]
         printing.table(tbl, colalign=colalign)
 
-        if len(media) > 1:
-            print(f"{media_len or len(media)} {units}")
-            limit = getattr(args, "limit", None)
-            if limit and int(limit) <= len(media) and len(tbl) <= int(limit):
-                print(f" (limited by --limit {limit})")
+        if units:
+            if len(media) > 1:
+                print(f"{media_len or len(media)} {units}")
+                limit = getattr(args, "limit", None)
+                if limit and int(limit) <= len(media) and len(tbl) <= int(limit):
+                    print(f" (limited by --limit {limit})")
 
-        if total_duration > 0:
-            total_duration = strings.duration(total_duration)
-            if "a" not in print_args:
-                print("Total duration:", total_duration)
+            if total_duration > 0:
+                total_duration = strings.duration(total_duration)
+                if "a" not in print_args:
+                    print("Total duration:", total_duration)
 
 
 def printer(args, query, bindings, units=None) -> None:
