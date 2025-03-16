@@ -42,6 +42,10 @@ def parse_args():
     )
     parser.add_argument("--check", "--recheck", action="store_true", help="Check matching torrents")
     parser.add_argument("--export", action="store_true", help="Export matching torrent files")
+    parser.add_argument("--add-tracker", action=argparse_utils.ArgparseList, help="Add trackers to matching torrents")
+    parser.add_argument(
+        "--remove-tracker", action=argparse_utils.ArgparseList, help="Remove trackers from matching torrents"
+    )
 
     arggroups.capability_soft_delete(parser)
     arggroups.capability_delete(parser)
@@ -589,6 +593,15 @@ def torrents_info():
     if args.check:
         print("Checking", len(torrents))
         qbt_client.torrents_recheck(torrent_hashes=torrent_hashes)
+
+    if args.add_tracker:
+        for idx, t in enumerate(torrents):
+            printing.print_overwrite("Adding tracker", idx + 1, "of", len(torrents), args.add_tracker)
+            qbt_client.torrents_add_trackers(t.hash, args.add_tracker)
+    if args.remove_tracker:
+        for idx, t in enumerate(torrents):
+            printing.print_overwrite("Removing tracker", idx + 1, "of", len(torrents), args.remove_tracker)
+            qbt_client.torrents_remove_trackers(t.hash, args.remove_tracker)
 
     if args.export:
         p = Path("exported_torrents")
