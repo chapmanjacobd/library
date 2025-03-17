@@ -183,15 +183,12 @@ def filter_torrents_by_criteria(args, torrents):
     if args.tagged:
         tags = set(args.tagged)
         torrents = [t for t in torrents if tags.issubset(t.tags.split(", "))]
-    if args.no_tracker:
-        trackers = set(args.no_tracker)
-        torrents = [t for t in torrents if t.tracker_domain() not in trackers]
     if args.torrent_search:
         torrents = [
             t
             for t in torrents
             if strings.glob_match(
-                args.torrent_search, [t.name, t.comment, t.tracker_domain(), t.download_path, t.save_path, t.hash]
+                args.torrent_search, [t.name, t.comment, t.download_path, t.save_path, t.hash]
             )
         ]
     if args.file_search:
@@ -200,6 +197,9 @@ def filter_torrents_by_criteria(args, torrents):
     if args.tracker:
         trackers = set(args.tracker)
         torrents = [t for t in torrents if t.tracker_domain() in trackers]
+    if args.no_tracker:
+        trackers = set(args.no_tracker)
+        torrents = [t for t in torrents if t.tracker_domain() not in trackers]
 
     if args.timeout_size:
         torrents = [t for t in torrents if not processes.sizeout(args.timeout_size, t.total_size)]
@@ -598,10 +598,12 @@ def torrents_info():
         for idx, t in enumerate(torrents):
             printing.print_overwrite("Adding tracker", idx + 1, "of", len(torrents), args.add_tracker)
             qbt_client.torrents_add_trackers(t.hash, args.add_tracker)
+        print()
     if args.remove_tracker:
         for idx, t in enumerate(torrents):
             printing.print_overwrite("Removing tracker", idx + 1, "of", len(torrents), args.remove_tracker)
             qbt_client.torrents_remove_trackers(t.hash, args.remove_tracker)
+        print()
 
     if args.export:
         p = Path("exported_torrents")
@@ -612,6 +614,7 @@ def torrents_info():
             file_name = f"{t.tracker_domain()}_{t.name}_{t.hash}.torrent"
             file_name = path_utils.clean_path(file_name.encode())
             (p / file_name).write_bytes(qbt_client.torrents_export(torrent_hash=t.hash))
+        print()
 
     if args.mark_deleted:
         print("Marking deleted", len(torrents))
