@@ -282,6 +282,7 @@ def get_extra_metadata(args, playlist_path, playlist_dl_opts=None) -> list[dict]
 
             current_video_count += 1
             printing.print_overwrite(f"[{playlist_path}] {current_video_count} of {len(videos)} extra metadata fetched")
+        print()
 
 
 def get_video_metadata(args, playlist_path) -> dict | None:

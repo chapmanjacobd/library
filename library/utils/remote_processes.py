@@ -37,7 +37,7 @@ def cmd(
         return s
 
     if local_files:
-        log.info("Copying %s files to remote", len(local_files))
+        log.debug("Copying %s files to remote", len(local_files))
         with ssh.open_sftp() as sftp:
             sftp = ssh.open_sftp()
 

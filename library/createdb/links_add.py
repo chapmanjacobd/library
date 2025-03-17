@@ -274,6 +274,7 @@ def extractor(args, playlist_path):
                     page_new[link] = objects.merge_dict_values_str(page_new.get(link) or {}, link_dict)
 
                 printing.print_overwrite(f"Page {page_count} link scan: {len(page_new)} new [{len(page_known)} known]")
+            print()
 
             if not (args.backfill_pages or args.fixed_pages):
                 if (args.stop_known and len(page_known) > args.stop_known) or (
@@ -337,6 +338,7 @@ def links_add() -> None:
 
                 add_media(args, [d])
                 printing.print_overwrite(f"Link import: {len(media_new)} new [{len(media_known)} known]")
+            print()
         finally:
             if args.selenium:
                 web.quit_selenium(args)
@@ -352,6 +354,7 @@ def links_add() -> None:
                 add_media(args, [p])
                 media_new.add(p)
             printing.print_overwrite(f"Link import: {len(media_new)} new [{len(media_known)} known]")
+        print()
     else:
         if args.selenium:
             web.load_selenium(args)

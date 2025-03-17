@@ -278,6 +278,7 @@ def web_add(args=None) -> None:
                 add_media(args, [consolidate_media(args, p)])
                 media_new.add(p)
             printing.print_overwrite(f"Link import: {len(media_new)} new [{len(media_known)} known]")
+        print()
     else:
         if args.selenium:
             web.load_selenium(args)
