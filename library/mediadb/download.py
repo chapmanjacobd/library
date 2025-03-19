@@ -1,4 +1,4 @@
-import sys
+import argparse, sys
 
 import requests
 
@@ -29,6 +29,7 @@ def parse_args():
     parser = argparse_utils.ArgumentParser(usage=usage.download)
     arggroups.sql_fs(parser)
 
+    parser.add_argument("--clean-path", action=argparse.BooleanOptionalAction, default=True, help="Clean output path")
     arggroups.download(parser)
     arggroups.download_subtitle(parser)
     arggroups.requests(parser)

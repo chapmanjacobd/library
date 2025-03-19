@@ -79,6 +79,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--move", help="Directory to move successful files")
     parser.add_argument("--move-broken", help="Directory to move unsuccessful files")
 
+    parser.add_argument("--clean-path", action=argparse.BooleanOptionalAction, default=False, help="Clean output path")
     arggroups.process_ffmpeg(parser)
     arggroups.clobber(parser)
     parser.set_defaults(file_over_file="delete-dest")
