@@ -474,8 +474,9 @@ def unar_delete(archive_path):
 
     try:
         for part_file in part_files:
-            part_file_path = path_utils.safe_join(os.path.dirname(archive_path), part_file)
-            os.unlink(part_file_path)
+            if not os.path.abspath(part_file):
+                part_file = path_utils.safe_join(os.path.dirname(archive_path), part_file)
+            os.unlink(part_file)
     except Exception as e:
         log.warning("Error deleting files: %s %s", e, part_files)
 
