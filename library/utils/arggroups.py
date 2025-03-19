@@ -1349,7 +1349,6 @@ def process_ffmpeg(parent_parser):
         default=True,
         help="Delete larger of transcode or original files",
     )
-    parser.add_argument("--clean-path", action=argparse.BooleanOptionalAction, default=True, help="Clean output path")
 
     parser.add_argument("--max-height", type=int, default=960)
     parser.add_argument("--max-width", type=int, default=1440)

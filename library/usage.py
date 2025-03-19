@@ -1958,14 +1958,14 @@ torrents_info = """library torrents-info
 
     Move files
 
-        To continue to seed, use --temp-drive, --temp-path, --download-drive, --download-path
+        Use --move OR any combination of --temp-drive, --temp-path, --download-drive, --download-path
 
             library torrents --temp-drive /mnt/d/
 
-        Otherwise, on localhost, you can move files outside of qBittorrent
-        The --stop flag is required to use --move
+        Unset default prefixes
 
-            library torrents --stop --move /mnt/d/
+            library torrents --no-tracker-dirname --temp-prefix '' --download-prefix '' --move /home/xk/
+            library torrents --no-tracker-dirname --temp-prefix seeding --move /home/xk/
 
     When --mark-deleted is provided, the torrents are tagged with 'delete' in qBittorrent
     When --delete-rows is provided, the metadata is removed from qBittorrent
