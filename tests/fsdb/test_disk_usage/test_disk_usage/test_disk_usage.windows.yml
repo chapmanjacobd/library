@@ -1,5 +1,7 @@
-- path: https://test/?tags%5B%5D=
+- duration: 0
+  path: https://test/?tags%5B%5D=
   size: null
 - count: 4
+  duration: 24
   path: D:\
   size: 276010
