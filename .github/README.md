@@ -99,7 +99,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v3.0.069; 100 subcommands)
+    library (v3.0.070; 100 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -3016,14 +3016,14 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
     Move files
 
-        To continue to seed, use --temp-drive, --temp-path, --download-drive, --download-path
+        Use --move OR any combination of --temp-drive, --temp-path, --download-drive, --download-path
 
             library torrents --temp-drive /mnt/d/
 
-        Otherwise, on localhost, you can move files outside of qBittorrent
-        The --stop flag is required to use --move
+        Unset default prefixes
 
-            library torrents --stop --move /mnt/d/
+            library torrents --no-tracker-dirname --temp-prefix '' --download-prefix '' --move /home/xk/
+            library torrents --no-tracker-dirname --temp-prefix seeding --move /home/xk/
 
     When --mark-deleted is provided, the torrents are tagged with 'delete' in qBittorrent
     When --delete-rows is provided, the metadata is removed from qBittorrent
