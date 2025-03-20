@@ -150,8 +150,9 @@ def disk_usage(defaults_override=None):
             else f"paths at depth {args.depth} ({num_folders} folders, {num_files} files)"
         ),
     )
-    for d in summary:
-        print(f"{d['path']}={strings.file_size(d['size'])} count={d['count']}")
+    if not args.to_json:
+        for d in summary:
+            print(f"{d['path']}={strings.file_size(d['size'])} count={d['count']}")
 
 
 def extensions():
