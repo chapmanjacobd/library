@@ -1,6 +1,8 @@
 - count: 1
+  duration: 0
   path: https://
   size: 0
 - count: 4
+  duration: 24
   path: /home/
   size: 276010
