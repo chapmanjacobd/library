@@ -1874,6 +1874,11 @@ process_media = """library process-media DATABASE_OR_PATH
 Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 """
 
+unardel = """library unar PATH ...
+
+    Extract from archives and delete all source archives
+"""
+
 images_to_pdf = """library images-to-pdf PATH ...
 
     Convert groups of images to PDF
