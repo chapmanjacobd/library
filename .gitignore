@@ -1,6 +1,7 @@
 *.duckdb
 *.pdf
 *.epub
+*.txt
 /.mutmut-cache
 /tests/data/Youtube/
 /TODO
