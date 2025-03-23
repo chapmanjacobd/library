@@ -129,6 +129,8 @@ def torrents_start():
         info_hash = wait_torrent_loaded(qbt_client, torrent)
         if info_hash and not args.stop:
             qbt_client.torrents_start(info_hash)
+        if info_hash and args.force_start is not None:
+            qbt_client.torrents_set_force_start(args.force_start, torrent_hashes=info_hash)
 
         if args.delete_torrent:
             trash(args, path)

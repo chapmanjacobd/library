@@ -42,6 +42,7 @@ def parse_args():
         help="Exclude disks that do not have enough space",
     )
     parser.add_argument("--max-io-rate", type=nums.human_to_bytes, default="100MiB", help="Exclude disks that are busy")
+    parser.add_argument("--hide-unallocated", action='store_true', help="Hide unallocated disks")
 
     arggroups.qBittorrent(parser)
     arggroups.qBittorrent_paths(parser)
@@ -125,7 +126,7 @@ def print_torrent_info(disks):
             print()
 
 
-def print_disks(disks):
+def print_disks(args, disks):
     printing.table(
         [
             {
@@ -139,7 +140,7 @@ def print_disks(disks):
                 "after_free": strings.file_size(d["free"] - sum(t["size"] for t in d["downloads"])),
             }
             for d in disks
-            if d["downloads"]
+            if not args.hide_unallocated or (args.hide_unallocated and d["downloads"])
         ]
     )
     print()
@@ -225,7 +226,7 @@ def allocate_torrents():
     allocated_torrents = [t for d in disks for t in d["downloads"]]
 
     print_torrents_by_tracker(allocated_torrents)
-    print_disks(disks)
+    print_disks(args, disks)
 
     total_size = sum(t["size"] for t in allocated_torrents)
     print(f"{len(allocated_torrents)} torrents allocated ({strings.file_size(total_size)})")
