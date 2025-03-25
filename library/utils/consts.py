@@ -4,6 +4,8 @@ from pathlib import Path
 from tempfile import gettempdir
 from typing import Literal
 
+os.environ["SE_AVOID_STATS"] = "true"
+
 
 def now():
     return int(datetime.now(tz=timezone.utc).timestamp())

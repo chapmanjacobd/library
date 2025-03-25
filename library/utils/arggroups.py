@@ -1728,6 +1728,9 @@ def selenium(parent_parser):
         "--auto-pager", "--autopager", action="store_true", help="Use an auto-pager plugin to load additional pages"
     )
     parser.add_argument("--poke", action="store_true", help="Find a filled-in search box and press enter in it")
+    parser.add_argument(
+        "--user-data-dir", help="Specify the browser user data directory to load settings and cookies from"
+    )
 
 
 def selenium_post(args):

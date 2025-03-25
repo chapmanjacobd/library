@@ -271,8 +271,9 @@ def load_selenium(args, wire=False):
 
         service = Service(log_path=tempfile.mktemp(".geckodriver.log"))
         options = Options()
-        if Path("selenium").exists():
-            options.profile = "selenium"
+        if args.user_data_dir:
+            options.add_argument("--profile")
+            options.add_argument(args.user_data_dir)
 
         options.set_preference("media.volume_scale", "0.0")
         if xvfb is False:
@@ -300,9 +301,18 @@ def load_selenium(args, wire=False):
         from selenium.webdriver.chrome.options import Options
 
         options = Options()
-        if Path("selenium").exists():
-            options.add_argument("user-data-dir=selenium")
+        if args.user_data_dir:
+            options.add_argument(f"--user-data-dir={args.user_data_dir}")
 
+        options.add_experimental_option(
+            "prefs",
+            {
+                "credentials_enable_service": False,
+                "profile.password_manager_enabled": False,
+                "profile.default_content_setting_values.notifications": 2,
+            },
+        )
+        options.add_argument("--disable-notifications")
         options.add_argument("--mute-audio")
         if xvfb is False:
             options.add_argument("--headless=new")
@@ -609,6 +619,32 @@ def re_trigger_input(driver):
 
 
 def selenium_get_page(args, url):
+    cookie_file = getattr(args, "cookies", None)
+    cookies_from_browser = getattr(args, "cookies_from_browser", None)
+
+    if cookie_file or cookies_from_browser:
+        from yt_dlp.cookies import load_cookies
+
+        if cookies_from_browser:
+            cookies_from_browser = parse_cookies_from_browser(cookies_from_browser)
+        cookie_jar = load_cookies(cookie_file, cookies_from_browser, ydl=None)
+
+        tld = path_utils.tld_from_url(url)
+        args.driver.get(path_utils.fqdn_from_url(url))
+        for cookie in cookie_jar:
+            if cookie.domain == tld or (cookie.domain_initial_dot and path_utils.tld_from_url(cookie.domain) == tld):
+                cookie_dict = {
+                    "name": cookie.name,
+                    "value": cookie.value,
+                    "domain": cookie.domain,
+                    "secure": bool(cookie.secure),
+                }
+                if cookie.expires:
+                    cookie_dict["expires"] = cookie.expires
+                if cookie.path_specified:
+                    cookie_dict["path"] = cookie.path
+                args.driver.add_cookie(cookie_dict)
+
     args.driver.get(url)
     args.driver.implicitly_wait(5)
 

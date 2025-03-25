@@ -1,5 +1,5 @@
 import pathlib
-from unittest.mock import Mock
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 from bs4 import BeautifulSoup
@@ -11,6 +11,7 @@ from library.utils.web import (
     construct_absolute_url,
     extract_nearby_text,
     filename_from_content_disposition,
+    selenium_get_page,
     url_encode,
     url_to_local_path,
 )
@@ -310,3 +311,67 @@ def test_filename_from_content_disposition(content_disposition, expected_filenam
     mock_response = Mock()
     mock_response.headers = {"Content-Disposition": content_disposition}
     assert filename_from_content_disposition(mock_response) == expected_filename
+
+
+def test_selenium_get_page_without_cookies():
+    mock_driver = MagicMock()
+    args = MagicMock(driver=mock_driver, cookies=None, cookies_from_browser=None)
+    url = "https://www.example.com/path/to/page"
+    selenium_get_page(args, url)
+    mock_driver.get.assert_called_once_with(url)
+
+
+@patch("yt_dlp.cookies.load_cookies")
+def test_selenium_get_page_with_cookies(mock_load_cookies):
+    mock_driver = MagicMock()
+    args = MagicMock(driver=mock_driver, cookies="test.cookies", cookies_from_browser=None)
+
+    mock_cookie_jar = [
+        MagicMock(
+            name="cookie1",
+            value="value1",
+            domain=".example.com",
+            path="/path",
+            expires=None,
+            secure=False,
+            httpOnly=False,
+            sameSite="Lax",
+        ),
+        MagicMock(
+            name="cookie2",
+            value="value2",
+            domain="anotherdomain.com",
+            path="/",
+            expires=None,
+            secure=False,
+            httpOnly=False,
+            sameSite="Strict",
+        ),
+        MagicMock(
+            name="cookie3",
+            value="value3",
+            domain="www.example.com",
+            path="/path/subpath",
+            expires=None,
+            secure=False,
+            httpOnly=False,
+            sameSite="None",
+        ),
+        MagicMock(
+            name="cookie4",
+            value="value4",
+            domain="www.example.com",
+            path="/",
+            expires=None,
+            secure=False,
+            httpOnly=False,
+            sameSite="Strict",
+        ),
+    ]
+    mock_load_cookies.return_value = mock_cookie_jar
+
+    url = "https://www.example.com/path/to/page"
+    selenium_get_page(args, url)
+
+    mock_driver.get.assert_any_call(url)
+    assert mock_driver.add_cookie.call_count == 3
