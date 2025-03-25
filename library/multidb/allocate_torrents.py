@@ -42,7 +42,7 @@ def parse_args():
         help="Exclude disks that do not have enough space",
     )
     parser.add_argument("--max-io-rate", type=nums.human_to_bytes, default="100MiB", help="Exclude disks that are busy")
-    parser.add_argument("--hide-unallocated", action='store_true', help="Hide unallocated disks")
+    parser.add_argument("--hide-unallocated", action="store_true", help="Hide unallocated disks")
 
     arggroups.qBittorrent(parser)
     arggroups.qBittorrent_paths(parser)

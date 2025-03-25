@@ -5,7 +5,7 @@
 groups = ["default", "deluxe", "test"]
 strategy = []
 lock_version = "4.5.0"
-content_hash = "sha256:90688f234003bcf4d9fb3c1828ae316845449b68041ef0d242aa92fd625ccf9e"
+content_hash = "sha256:3a25025eccd9f7fded7f4637c9643c45dbad7294efb6f18541407ed3c4d0a7ae"
 
 [[metadata.targets]]
 requires_python = ">=3.11"
@@ -2529,6 +2529,18 @@ files = [
 ]
 
 [[package]]
+name = "requests-file"
+version = "2.1.0"
+summary = "File transport adapter for Requests"
+dependencies = [
+    "requests>=1.0.0",
+]
+files = [
+    {file = "requests_file-2.1.0-py2.py3-none-any.whl", hash = "sha256:cf270de5a4c5874e84599fc5778303d496c10ae5e870bfa378818f35d21bda5c"},
+    {file = "requests_file-2.1.0.tar.gz", hash = "sha256:0f549a3f3b0699415ac04d167e9cb39bccfb730cb832b4d20be3d9867356e658"},
+]
+
+[[package]]
 name = "rich"
 version = "13.9.4"
 requires_python = ">=3.8.0"
@@ -2931,6 +2943,22 @@ summary = "Read audio file metadata"
 files = [
     {file = "tinytag-2.1.0-py3-none-any.whl", hash = "sha256:1261c25f5dc0a192eb182c4d9ac5facb1e86ba03a005a1322ec545d06a78d719"},
     {file = "tinytag-2.1.0.tar.gz", hash = "sha256:9a1b2e37aa45723541621133004ae86416086a0b1922e600cff5bfca5ef93e55"},
+]
+
+[[package]]
+name = "tldextract"
+version = "5.1.3"
+requires_python = ">=3.9"
+summary = "Accurately separates a URL's subdomain, domain, and public suffix, using the Public Suffix List (PSL). By default, this includes the public ICANN TLDs and their exceptions. You can optionally support the Public Suffix List's private domains as well."
+dependencies = [
+    "filelock>=3.0.8",
+    "idna",
+    "requests-file>=1.4",
+    "requests>=2.1.0",
+]
+files = [
+    {file = "tldextract-5.1.3-py3-none-any.whl", hash = "sha256:78de310cc2ca018692de5ddf320f9d6bd7c5cf857d0fd4f2175f0cdf4440ea75"},
+    {file = "tldextract-5.1.3.tar.gz", hash = "sha256:d43c7284c23f5dc8a42fd0fee2abede2ff74cc622674e4cb07f514ab3330c338"},
 ]
 
 [[package]]

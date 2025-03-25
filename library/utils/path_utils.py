@@ -226,6 +226,19 @@ def domain_from_url(tracker):
     return domain
 
 
+def tld_from_url(url):
+    import tldextract
+
+    components = tldextract.extract(url)
+    if not components.registered_domain:
+        try:
+            return url.split("://", 1)[1].split(":", 1)[0].split("/", 1)[0]
+        except IndexError:
+            return url
+
+    return components.registered_domain
+
+
 def fqdn_from_url(tracker):
     url = urlparse(tracker)
     domain = url.scheme.lower() + "://" + url.netloc.lower()
