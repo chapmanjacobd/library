@@ -1874,7 +1874,7 @@ process_media = """library process-media DATABASE_OR_PATH
 Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 """
 
-unardel = """library unar PATH ...
+unardel = """library unardel PATH ...
 
     Extract from archives and delete all source archives
 """
