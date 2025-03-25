@@ -281,21 +281,22 @@ def load_selenium(args, wire=False):
 
         args.driver = webdriver.Firefox(service=service, options=options)
 
-        addons = [Path("~/.local/lib/ublock_origin.xpi").expanduser().resolve()]
-        if getattr(args, "auto_pager", False):
-            addons.append(Path("~/.local/lib/weautopagerize.xpi").expanduser().resolve())
+        if not args.user_data_dir:
+            addons = [Path("~/.local/lib/ublock_origin.xpi").expanduser().resolve()]
+            if getattr(args, "auto_pager", False):
+                addons.append(Path("~/.local/lib/weautopagerize.xpi").expanduser().resolve())
 
-        for addon_path in addons:
-            try:
-                args.driver.install_addon(str(addon_path))
-            except Exception:
-                if args.verbose > 0:
-                    log.warning("Could not install firefox addon. Missing file %s", addon_path)
-                else:
-                    log.exception("Could not install firefox addon. Missing file %s", addon_path)
+            for addon_path in addons:
+                try:
+                    args.driver.install_addon(str(addon_path))
+                except Exception:
+                    if args.verbose > 0:
+                        log.warning("Could not install firefox addon. Missing file %s", addon_path)
+                    else:
+                        log.exception("Could not install firefox addon. Missing file %s", addon_path)
 
-        if getattr(args, "auto_pager", False):
-            time.sleep(60)  # let auto-pager initialize
+            if getattr(args, "auto_pager", False):
+                time.sleep(60)  # let auto-pager initialize
 
     else:
         from selenium.webdriver.chrome.options import Options
@@ -317,17 +318,18 @@ def load_selenium(args, wire=False):
         if xvfb is False:
             options.add_argument("--headless=new")
 
-        addons = [Path("~/.local/lib/ublock_origin.crx").expanduser().resolve()]
-        if getattr(args, "auto_pager", False):
-            addons.append(Path("~/.local/lib/autopager.crx").expanduser().resolve())
-        for addon_path in addons:
-            try:
-                options.add_extension(str(addon_path))
-            except Exception:
-                if args.verbose > 0:
-                    log.warning("Could not install chrome extension. Missing file %s", addon_path)
-                else:
-                    log.exception("Could not install chrome extension. Missing file %s", addon_path)
+        if not args.user_data_dir:
+            addons = [Path("~/.local/lib/ublock_origin.crx").expanduser().resolve()]
+            if getattr(args, "auto_pager", False):
+                addons.append(Path("~/.local/lib/autopager.crx").expanduser().resolve())
+            for addon_path in addons:
+                try:
+                    options.add_extension(str(addon_path))
+                except Exception:
+                    if args.verbose > 0:
+                        log.warning("Could not install chrome extension. Missing file %s", addon_path)
+                    else:
+                        log.exception("Could not install chrome extension. Missing file %s", addon_path)
 
         args.driver = webdriver.Chrome(options=options)
 
