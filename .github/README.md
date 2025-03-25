@@ -99,7 +99,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v3.0.075; 101 subcommands)
+    library (v3.0.076; 101 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -2133,7 +2133,7 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 <details><summary>Extract from archives and delete all associated multi-part archive files</summary>
 
     $ library unardel -h
-    usage: library unar PATH ...
+    usage: library unardel PATH ...
 
     Extract from archives and delete all source archives
 
