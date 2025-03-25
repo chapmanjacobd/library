@@ -99,7 +99,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v3.0.074; 100 subcommands)
+    library (v3.0.075; 101 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -227,6 +227,8 @@ To stop playing press Ctrl+C in either the terminal or mpv
     │ process-image  │ Shrink images to AV1 image format (.avif)                                 │
     ├────────────────┼───────────────────────────────────────────────────────────────────────────┤
     │ process-text   │ Shrink documents to HTML+AV1 image format (requires Calibre)              │
+    ├────────────────┼───────────────────────────────────────────────────────────────────────────┤
+    │ unardel        │ Extract from archives and delete all associated multi-part archive files  │
     ├────────────────┼───────────────────────────────────────────────────────────────────────────┤
     │ images-to-pdf  │ Convert folders of images into image PDFs                                 │
     ├────────────────┼───────────────────────────────────────────────────────────────────────────┤
@@ -2122,6 +2124,18 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
     Repackage documents (PDF, ePub, etc) into HTML+AVIF to save space
 
     Requires Calibre
+
+
+</details>
+
+###### unardel
+
+<details><summary>Extract from archives and delete all associated multi-part archive files</summary>
+
+    $ library unardel -h
+    usage: library unar PATH ...
+
+    Extract from archives and delete all source archives
 
 
 </details>
