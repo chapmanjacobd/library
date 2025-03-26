@@ -248,7 +248,7 @@ def fqdn_from_url(tracker):
 def mountpoint(path):
     path = os.path.abspath(path)
 
-    if not os.path.isdir(path):
+    while not os.path.isdir(path):
         path = os.path.dirname(path)
 
     path_dev = os.stat(path).st_dev
