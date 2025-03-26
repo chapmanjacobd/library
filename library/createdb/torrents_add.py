@@ -6,7 +6,7 @@ from library.mediadb import db_media, db_playlists
 from library.utils import arg_utils, arggroups, argparse_utils, consts, db_utils, iterables, nums, objects, printing
 from library.utils.file_utils import trash
 from library.utils.log_utils import log
-from library.utils.path_utils import domain_from_url
+from library.utils.path_utils import tld_from_url
 
 
 def parse_args():
@@ -32,7 +32,7 @@ def get_tracker(torrent):
     log.debug(torrent.announce_urls)
 
     for tracker in iterables.flatten(torrent.announce_urls):
-        domain = domain_from_url(tracker)
+        domain = tld_from_url(tracker)
         return domain
 
     return torrent.source

@@ -8,7 +8,7 @@ from library import usage
 from library.mediafiles import torrents_start
 from library.utils import arggroups, argparse_utils, consts, iterables, nums, path_utils, printing, processes, strings
 from library.utils.log_utils import log
-from library.utils.path_utils import domain_from_url, fqdn_from_url
+from library.utils.path_utils import fqdn_from_url, tld_from_url
 
 
 def parse_args():
@@ -67,7 +67,7 @@ def qbt_get_tracker(qbt_client, torrent):
                 (tr.url for tr in qbt_client.torrents_trackers(torrent.hash) if tr.url.startswith("http")), reverse=True
             )
         )
-    return domain_from_url(tracker)
+    return tld_from_url(tracker)
 
 
 def qbt_enhance_torrents(qbt_client, qbt_torrents):

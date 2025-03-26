@@ -631,10 +631,11 @@ def selenium_get_page(args, url):
             cookies_from_browser = parse_cookies_from_browser(cookies_from_browser)
         cookie_jar = load_cookies(cookie_file, cookies_from_browser, ydl=None)
 
-        tld = path_utils.tld_from_url(url)
         args.driver.get(path_utils.fqdn_from_url(url))
         for cookie in cookie_jar:
-            if cookie.domain == tld or (cookie.domain_initial_dot and path_utils.tld_from_url(cookie.domain) == tld):
+            if cookie.domain == path_utils.domain_from_url(url) or (
+                cookie.domain_initial_dot and path_utils.tld_from_url(cookie.domain) == path_utils.tld_from_url(url)
+            ):
                 cookie_dict = {
                     "name": cookie.name,
                     "value": cookie.value,

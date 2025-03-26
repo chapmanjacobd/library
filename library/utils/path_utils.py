@@ -222,7 +222,7 @@ def folder_utime(folder_path, times: tuple[int, int] | tuple[float, float]):
 
 def domain_from_url(tracker):
     url = urlparse(tracker)
-    domain = ".".join(url.netloc.rsplit(":")[0].rsplit(".", 2)[-2:]).lower()
+    domain = url.netloc.rsplit(":")[0].lower()
     return domain
 
 

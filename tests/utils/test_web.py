@@ -336,6 +336,7 @@ def test_selenium_get_page_with_cookies(mock_load_cookies):
             secure=False,
             httpOnly=False,
             sameSite="Lax",
+            domain_initial_dot=True,
         ),
         MagicMock(
             name="cookie2",
@@ -346,6 +347,7 @@ def test_selenium_get_page_with_cookies(mock_load_cookies):
             secure=False,
             httpOnly=False,
             sameSite="Strict",
+            domain_initial_dot=False,
         ),
         MagicMock(
             name="cookie3",
@@ -356,22 +358,24 @@ def test_selenium_get_page_with_cookies(mock_load_cookies):
             secure=False,
             httpOnly=False,
             sameSite="None",
+            domain_initial_dot=False,
         ),
         MagicMock(
             name="cookie4",
             value="value4",
-            domain="www.example.com",
+            domain="ww2.example.com",
             path="/",
             expires=None,
             secure=False,
             httpOnly=False,
             sameSite="Strict",
+            domain_initial_dot=False,
         ),
     ]
     mock_load_cookies.return_value = mock_cookie_jar
 
-    url = "https://www.example.com/path/to/page"
+    url = "https://ww2.example.com/path/to/page"
     selenium_get_page(args, url)
 
     mock_driver.get.assert_any_call(url)
-    assert mock_driver.add_cookie.call_count == 3
+    assert mock_driver.add_cookie.call_count == 2
