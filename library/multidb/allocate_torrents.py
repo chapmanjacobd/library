@@ -43,6 +43,7 @@ def parse_args():
     )
     parser.add_argument("--max-io-rate", type=nums.human_to_bytes, default="100MiB", help="Exclude disks that are busy")
     parser.add_argument("--hide-unallocated", action="store_true", help="Hide unallocated disks")
+    parser.add_argument("--hide-unallocatable", action="store_true", help="Hide unallocatable torrents")
 
     arggroups.qBittorrent(parser)
     arggroups.qBittorrent_paths(parser)
@@ -191,8 +192,9 @@ def allocate_torrents():
     if not disks:
         raise SystemExit(28)
 
-    args.filter_sql.append("and size < :download_size")
-    args.filter_bindings["download_size"] = disks[-1]["free"] - args.min_free_space
+    if args.hide_unallocatable:
+        args.filter_sql.append("and size < :download_size")
+        args.filter_bindings["download_size"] = disks[-1]["free"] - args.min_free_space  # largest free disk
 
     torrents = list(args.db.query(*sqlgroups.playlists_fs_sql(args, limit=None)))
     total_size = sum(d["size"] for d in torrents)
@@ -227,6 +229,9 @@ def allocate_torrents():
 
     print_torrents_by_tracker(allocated_torrents)
     print_disks(args, disks)
+
+    if not allocated_torrents:
+        processes.exit_error('No torrents could be allocated')
 
     total_size = sum(t["size"] for t in allocated_torrents)
     print(f"{len(allocated_torrents)} torrents allocated ({strings.file_size(total_size)})")

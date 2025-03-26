@@ -525,26 +525,24 @@ def torrents_info():
             else:
                 download_path = args.move
 
-            if temp_path is not None:
-                if not temp_path.is_absolute():  # --X-drive or --move could be relative
-                    mountpoint = path_utils.mountpoint(t.content_path)
-                    temp_path = Path(mountpoint) / temp_path
-                if args.temp_prefix:
-                    temp_path /= args.temp_prefix
-                if args.tracker_dirnames:
-                    domain = t.tracker_domain()
-                    if domain:
-                        temp_path /= domain
+            if not temp_path.is_absolute():  # --temp-drive or --move could be relative
+                mountpoint = path_utils.mountpoint(t.content_path)
+                temp_path = Path(mountpoint) / temp_path
+            if args.temp_prefix:
+                temp_path /= args.temp_prefix
 
-            if download_path is not None:
-                if not download_path.is_absolute():
-                    mountpoint = path_utils.mountpoint(t.content_path)
-                    download_path = Path(mountpoint) / download_path
-                if args.download_prefix:
-                    download_path /= args.download_prefix
-                if args.tracker_dirnames:
-                    domain = t.tracker_domain()
-                    if domain:
+            if not download_path.is_absolute():  # --download-drive or --move could be relative
+                mountpoint = path_utils.mountpoint(t.content_path)
+                download_path = Path(mountpoint) / download_path
+            if args.download_prefix:
+                download_path /= args.download_prefix
+
+            if args.tracker_dirnames:
+                domain = t.tracker_domain()
+                if domain:
+                    if temp_path:
+                        temp_path /= domain
+                    if download_path:
                         download_path /= domain
 
             log.debug("temp_path %s", temp_path)
