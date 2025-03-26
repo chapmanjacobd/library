@@ -13,8 +13,11 @@ from library.data.http_errors import HTTPTooManyRequests, raise_for_status
 from library.utils import consts, db_utils, iterables, nums, path_utils, pd_utils, processes, strings
 from library.utils.log_utils import clamp_index, log
 from library.utils.path_utils import path_tuple_from_url
+import http.cookiejar
+
 
 session = None
+cookie_jar = None
 
 
 def _get_retry_adapter(args):
@@ -88,14 +91,13 @@ def parse_cookies_from_browser(input_str):
 
 def requests_session(args=argparse.Namespace()):
     global session
+    global cookie_jar
+    load_cookie_jar(args)
 
     from yt_dlp.utils.networking import std_headers
 
     if session is None:
         import requests
-
-        cookie_file = getattr(args, "cookies", None)
-        cookies_from_browser = getattr(args, "cookies_from_browser", None)
 
         max_redirects = getattr(args, "http_max_redirects", 4)
 
@@ -113,12 +115,7 @@ def requests_session(args=argparse.Namespace()):
             requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)  # type: ignore
             session.verify = False
 
-        if cookie_file or cookies_from_browser:
-            from yt_dlp.cookies import load_cookies
-
-            if cookies_from_browser:
-                cookies_from_browser = parse_cookies_from_browser(cookies_from_browser)
-            cookie_jar = load_cookies(cookie_file, cookies_from_browser, ydl=None)
+        if cookie_jar:
             session.cookies = cookie_jar  # type: ignore
 
     return session
@@ -620,39 +617,73 @@ def re_trigger_input(driver):
         driver.implicitly_wait(8)
 
 
+def load_cookie_jar(args):
+    global cookie_jar
+
+    if cookie_jar is None:
+        cookie_file = getattr(args, "cookies", None)
+        cookies_from_browser = getattr(args, "cookies_from_browser", None)
+
+        if cookie_file or cookies_from_browser:
+            from yt_dlp.cookies import load_cookies
+
+            if cookies_from_browser:
+                cookies_from_browser = parse_cookies_from_browser(cookies_from_browser)
+            cookie_jar = load_cookies(cookie_file, cookies_from_browser, ydl=None)
+
+    return cookie_jar
+
+
 def selenium_get_page(args, url):
-    cookie_file = getattr(args, "cookies", None)
-    cookies_from_browser = getattr(args, "cookies_from_browser", None)
+    global cookie_jar
+    load_cookie_jar(args)
 
-    if cookie_file or cookies_from_browser:
-        from yt_dlp.cookies import load_cookies
-
-        if cookies_from_browser:
-            cookies_from_browser = parse_cookies_from_browser(cookies_from_browser)
-        cookie_jar = load_cookies(cookie_file, cookies_from_browser, ydl=None)
+    if cookie_jar:
+        log.debug({c.name: c.value for c in cookie_jar.get_cookies_for_url(url) if c.name not in ['cf_clearance']})
 
         args.driver.get(path_utils.fqdn_from_url(url))
-        for cookie in cookie_jar:
-            if cookie.domain == path_utils.domain_from_url(url) or (
-                cookie.domain_initial_dot and path_utils.tld_from_url(cookie.domain) == path_utils.tld_from_url(url)
-            ):
-                cookie_dict = {
-                    "name": cookie.name,
-                    "value": cookie.value,
-                    "domain": cookie.domain,
-                    "secure": bool(cookie.secure),
-                }
-                if cookie.expires:
-                    cookie_dict["expires"] = cookie.expires
-                if cookie.path_specified:
-                    cookie_dict["path"] = cookie.path
-                args.driver.add_cookie(cookie_dict)
+        for cookie in cookie_jar.get_cookies_for_url(url):
+            cookie_dict = {
+                "name": cookie.name,
+                "value": cookie.value,
+                "domain": cookie.domain,
+                "secure": bool(cookie.secure),
+            }
+            if cookie.expires:
+                cookie_dict["expiry"] = cookie.expires
+            if cookie.path_specified:
+                cookie_dict["path"] = cookie.path
+            args.driver.add_cookie(cookie_dict)
 
     args.driver.get(url)
     args.driver.implicitly_wait(5)
 
     if getattr(args, "poke", False):
         re_trigger_input(args.driver)
+
+    if cookie_jar:
+        new_cookies = args.driver.get_cookies()
+
+        for new_cookie in new_cookies:
+            new_cookie = http.cookiejar.Cookie(
+                version=0,
+                name=new_cookie['name'],
+                value=new_cookie['value'],
+                port=None,
+                port_specified=False,
+                domain=new_cookie['domain'],
+                domain_specified=bool(new_cookie['domain']),
+                domain_initial_dot=new_cookie['domain'].startswith('.'),
+                path=new_cookie['path'],
+                path_specified=bool(new_cookie['path']),
+                secure=new_cookie['secure'],
+                expires=new_cookie.get('expiry'),
+                discard=False,
+                comment=None,
+                comment_url=None,
+                rest={},
+            )
+            cookie_jar.set_cookie(new_cookie)
 
 
 def scroll_down(driver):
