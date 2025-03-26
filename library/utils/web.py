@@ -633,13 +633,18 @@ def re_trigger_input(driver):
 
 
 def selenium_get_page(args, url):
+    from selenium.webdriver.support.ui import WebDriverWait
+
     global cookie_jar
     load_cookie_jar(args)
 
     if cookie_jar:
-        log.debug({c.name: c.value for c in cookie_jar.get_cookies_for_url(url) if c.name not in ["cf_clearance"]})
+        if path_utils.fqdn_from_url(url) != path_utils.fqdn_from_url(args.driver.current_url):
+            args.driver.get(path_utils.fqdn_from_url(url))
 
-        args.driver.get(path_utils.fqdn_from_url(url))
+        # log.debug('Browser: %s', {c['name']: c['value'] for c in args.driver.get_cookies() if c['name'] not in ["cf_clearance"]})
+        # log.debug('Python: %s', {c.name: c.value for c in cookie_jar.get_cookies_for_url(url) if c.name not in ["cf_clearance"]})
+
         for cookie in cookie_jar.get_cookies_for_url(url):
             cookie_dict = {
                 "name": cookie.name,
@@ -654,6 +659,8 @@ def selenium_get_page(args, url):
             args.driver.add_cookie(cookie_dict)
 
     args.driver.get(url)
+
+    WebDriverWait(args.driver, 10).until(lambda d: d.execute_script("return document.readyState") == "complete")
     args.driver.implicitly_wait(5)
 
     if getattr(args, "poke", False):
