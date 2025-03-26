@@ -1,4 +1,4 @@
-import argparse, datetime, functools, os, pathlib, random, re, socket, tempfile, time, urllib.error, urllib.parse, urllib.request
+import argparse, datetime, functools, http.cookiejar, os, pathlib, random, re, socket, tempfile, time, urllib.error, urllib.parse, urllib.request
 from contextlib import suppress
 from email.message import Message
 from pathlib import Path
@@ -13,8 +13,6 @@ from library.data.http_errors import HTTPTooManyRequests, raise_for_status
 from library.utils import consts, db_utils, iterables, nums, path_utils, pd_utils, processes, strings
 from library.utils.log_utils import clamp_index, log
 from library.utils.path_utils import path_tuple_from_url
-import http.cookiejar
-
 
 session = None
 cookie_jar = None
@@ -87,6 +85,23 @@ def parse_cookies_from_browser(input_str):
             )
             raise ValueError(msg)
     return (browser_name, profile, keyring, container)
+
+
+def load_cookie_jar(args):
+    global cookie_jar
+
+    if cookie_jar is None:
+        cookie_file = getattr(args, "cookies", None)
+        cookies_from_browser = getattr(args, "cookies_from_browser", None)
+
+        if cookie_file or cookies_from_browser:
+            from yt_dlp.cookies import load_cookies
+
+            if cookies_from_browser:
+                cookies_from_browser = parse_cookies_from_browser(cookies_from_browser)
+            cookie_jar = load_cookies(cookie_file, cookies_from_browser, ydl=None)
+
+    return cookie_jar
 
 
 def requests_session(args=argparse.Namespace()):
@@ -617,29 +632,12 @@ def re_trigger_input(driver):
         driver.implicitly_wait(8)
 
 
-def load_cookie_jar(args):
-    global cookie_jar
-
-    if cookie_jar is None:
-        cookie_file = getattr(args, "cookies", None)
-        cookies_from_browser = getattr(args, "cookies_from_browser", None)
-
-        if cookie_file or cookies_from_browser:
-            from yt_dlp.cookies import load_cookies
-
-            if cookies_from_browser:
-                cookies_from_browser = parse_cookies_from_browser(cookies_from_browser)
-            cookie_jar = load_cookies(cookie_file, cookies_from_browser, ydl=None)
-
-    return cookie_jar
-
-
 def selenium_get_page(args, url):
     global cookie_jar
     load_cookie_jar(args)
 
     if cookie_jar:
-        log.debug({c.name: c.value for c in cookie_jar.get_cookies_for_url(url) if c.name not in ['cf_clearance']})
+        log.debug({c.name: c.value for c in cookie_jar.get_cookies_for_url(url) if c.name not in ["cf_clearance"]})
 
         args.driver.get(path_utils.fqdn_from_url(url))
         for cookie in cookie_jar.get_cookies_for_url(url):
@@ -667,17 +665,17 @@ def selenium_get_page(args, url):
         for new_cookie in new_cookies:
             new_cookie = http.cookiejar.Cookie(
                 version=0,
-                name=new_cookie['name'],
-                value=new_cookie['value'],
+                name=new_cookie["name"],
+                value=new_cookie["value"],
                 port=None,
                 port_specified=False,
-                domain=new_cookie['domain'],
-                domain_specified=bool(new_cookie['domain']),
-                domain_initial_dot=new_cookie['domain'].startswith('.'),
-                path=new_cookie['path'],
-                path_specified=bool(new_cookie['path']),
-                secure=new_cookie['secure'],
-                expires=new_cookie.get('expiry'),
+                domain=new_cookie["domain"],
+                domain_specified=bool(new_cookie["domain"]),
+                domain_initial_dot=new_cookie["domain"].startswith("."),
+                path=new_cookie["path"],
+                path_specified=bool(new_cookie["path"]),
+                secure=new_cookie["secure"],
+                expires=new_cookie.get("expiry"),
                 discard=False,
                 comment=None,
                 comment_url=None,

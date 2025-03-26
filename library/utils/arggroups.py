@@ -2044,7 +2044,9 @@ def qBittorrent_torrents(parent_parser):
     parser.add_argument("--time-unseeded", action="append", help="Include torrents with N time since last seeder")
     parser.add_argument("--time-active", action="append", help="Include torrents with N time active")
     parser.add_argument("--time-downloading", action="append", help="Include torrents with N time downloading")
-    parser.add_argument("--time-seeding", "--time-uploading", action="append", help="Include torrents with N time seeding")
+    parser.add_argument(
+        "--time-seeding", "--time-uploading", action="append", help="Include torrents with N time seeding"
+    )
     parser.add_argument("--time-completed", action="append", help="Include torrents with N time completed")
     parser.add_argument("--time-remaining", "--eta", action="append", help="Include torrents with N time remaining")
     parser.add_argument("--priority", action="append", help="Include torrents with N priority")
