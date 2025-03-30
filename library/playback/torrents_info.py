@@ -3,6 +3,7 @@ import argparse, os, shutil
 from collections import defaultdict
 from pathlib import Path
 from statistics import mean, median
+import statistics
 
 from library import usage
 from library.mediafiles import torrents_start
@@ -241,6 +242,36 @@ def get_error_messages(t):
     return errors
 
 
+def print_torrents_by_tracker(args, torrents):
+    torrents_by_tracker = {}
+    for t in torrents:
+        torrents_by_tracker.setdefault(t.tracker_domain(), []).append(t)
+
+    trackers = []
+    for tracker, tracker_torrents in torrents_by_tracker.items():
+        remaining = sum(t.amount_left for t in tracker_torrents)
+        trackers.append(
+            {
+                "tracker": tracker,
+                "count": len(tracker_torrents),
+                "size": sum(t.total_size for t in tracker_torrents),
+                "remaining": remaining,
+                "files": (sum(len(t.files) for t in tracker_torrents) if args.file_counts else None),  # a bit slow
+            }
+        )
+    if trackers:
+        trackers = sorted(trackers, key=lambda d: (d["remaining"], d["size"]))
+        trackers = [
+            {
+                **d,
+                "size": strings.file_size(d["size"]),
+                "remaining": strings.file_size(d["remaining"]) if d["remaining"] else None,
+            }
+            for d in trackers
+        ]
+        printing.table(iterables.list_dict_filter_bool(trackers))
+        print()
+
 def torrents_info():
     args = parse_args()
 
@@ -320,7 +351,83 @@ def torrents_info():
             ),
         )
 
-    if args.print:
+    if args.print and "a" in args.print:
+        interesting_states = [
+            # 'uploading',
+            "activeUP",
+            "inactiveUP",
+            "queuedUP",
+            "stoppedUP",
+            # "downloading",
+            "stoppedDL",
+            "queuedDL",
+            "forcedMetaDL",
+            "metaDL",
+            "inactiveDL",
+            "activeDL",
+            "missingFiles",
+            "error",
+        ]
+
+        torrents_by_state = {}
+        for t in torrents:
+            state = t.state
+            if state not in interesting_states:
+                if t.state_enum.is_complete:
+                    state = "activeUP" if t.uploaded_session > 0 else "inactiveUP"
+                else:
+                    state = "activeDL" if t.downloaded_session > 0 else "inactiveDL"
+            torrents_by_state.setdefault(state, []).append(t)
+
+        categories = []
+        for state, state_torrents in torrents_by_state.items():
+            remaining = sum(t.amount_left for t in state_torrents)
+            etas = [t.eta for t in state_torrents if t.eta < 8640000]
+            dl_speed = sum(t.dlspeed for t in state_torrents)
+            up_speed = sum(t.upspeed for t in state_torrents)
+
+            categories.append(
+                {
+                    "state": state,
+                    "count": len(state_torrents),
+                    "files": (sum(len(t.files) for t in state_torrents) if args.file_counts else None),
+                    "size": strings.file_size(sum(t.total_size for t in state_torrents)),
+                    "remaining": strings.file_size(remaining) if remaining else None,
+                    "dl_speed": strings.file_size(dl_speed) + "/s" if dl_speed else None,
+                    "up_speed": strings.file_size(up_speed) + "/s" if up_speed else None,
+                    "next_eta": strings.duration_short(min(etas)) if etas else None,
+                    "median_eta": strings.duration_short(statistics.median(etas)) if etas else None,
+                }
+            )
+
+        categories = sorted(categories, key=lambda d: (iterables.safe_index(interesting_states, d["state"])))
+
+        if len(torrents_by_state) > 1:
+            remaining = sum(t.amount_left for t in torrents)
+            etas = [t.eta for t in torrents if t.eta < 8640000]
+            dl_speed = sum(t.dlspeed for t in torrents)
+            up_speed = sum(t.upspeed for t in torrents)
+
+            categories.append(
+                {
+                    "state": "total",
+                    "count": len(torrents),
+                    "size": strings.file_size(sum(t.total_size for t in torrents)),
+                    "remaining": strings.file_size(remaining) if remaining else None,
+                    "dl_speed": strings.file_size(dl_speed) + "/s" if dl_speed else None,
+                    "up_speed": strings.file_size(up_speed) + "/s" if up_speed else None,
+                    "next_eta": strings.duration_short(min(etas)) if etas else None,
+                    "median_eta": strings.duration_short(statistics.median(etas)) if etas else None,
+                    "files": (sum(len(t.files) for t in torrents) if args.file_counts else None),
+                }
+            )
+        printing.table(iterables.list_dict_filter_bool(categories))
+        print()
+
+        if args.trackers:
+            print_torrents_by_tracker(args, torrents)
+
+    elif args.print:
         for t in torrents:
             if t.state_enum.is_complete:
                 base_paths = [t.save_path, t.content_path, t.download_path]
@@ -347,6 +454,7 @@ def torrents_info():
                     print(file_path)
             else:
                 print(Path(base_path) / t.name)
+
     else:
         inactive_torrents = [t for t in torrents if t.is_inactive]
         if inactive_torrents:
@@ -653,7 +761,8 @@ def torrents_info():
         qbt_client.torrents_add_tags(tags="library-delete", torrent_hashes=torrent_hashes)
     elif args.delete_files:
         print("Deleting files of", len(torrents))
-        qbt_client.torrents_delete(delete_files=True, torrent_hashes=torrent_hashes)
+        actually_delete_files = not (args.move or args.delete_incomplete)
+        qbt_client.torrents_delete(delete_files=actually_delete_files, torrent_hashes=torrent_hashes)
     elif args.delete_rows:
         print("Deleting from qBit", len(torrents))
         qbt_client.torrents_delete(delete_files=False, torrent_hashes=torrent_hashes)
