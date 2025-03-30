@@ -189,8 +189,16 @@ def filter_torrents_by_criteria(args, torrents):
             for t in torrents
             if strings.glob_match(args.torrent_search, [t.name, t.comment, t.download_path, t.save_path, t.hash])
         ]
+    if args.torrent_exclude:
+        torrents = [
+            t
+            for t in torrents
+            if not strings.glob_match(args.torrent_exclude, [t.name, t.comment, t.download_path, t.save_path, t.hash])
+        ]
     if args.file_search:
         torrents = [t for t in torrents if strings.glob_match(args.file_search, [f.name for f in t.files])]
+    if args.file_exclude:
+        torrents = [t for t in torrents if not strings.glob_match(args.file_exclude, [f.name for f in t.files])]
 
     if args.tracker:
         trackers = set(args.tracker)

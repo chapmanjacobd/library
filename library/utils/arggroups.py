@@ -2094,9 +2094,11 @@ def qBittorrent_torrents(parent_parser):
     parser.add_argument(
         "--no-tracker", action=argparse_utils.ArgparseList, help="The tracker to exclude (exact match only)"
     )
-    parser.add_argument("--file-search", "-s", nargs="+", help="The file path substring to search for")
     parser.add_argument("--limit", "-n", "-l", "-L", type=int, help="Limit number of torrents")
 
+    parser.add_argument("--file-search", "-s", nargs="+", help="The file path substring to search for")
+    parser.add_argument("--file-exclude", nargs="+", help="The file path substring to exclude")
+    parser.add_argument("--torrent-exclude", "-E", nargs="+", help="The info_hash, name, or save_path substring to exclude")
     parser.add_argument("torrent_search", nargs="*", help="The info_hash, name, or save_path substring to search for")
 
 
