@@ -231,7 +231,7 @@ def allocate_torrents():
     print_disks(args, disks)
 
     if not allocated_torrents:
-        processes.exit_error('No torrents could be allocated')
+        processes.exit_error("No torrents could be allocated")
 
     total_size = sum(t["size"] for t in allocated_torrents)
     print(f"{len(allocated_torrents)} torrents allocated ({strings.file_size(total_size)})")

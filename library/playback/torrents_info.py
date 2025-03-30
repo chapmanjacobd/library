@@ -312,137 +312,165 @@ def torrents_info():
             ),
         )
 
-    inactive_torrents = [t for t in torrents if t.is_inactive]
-    if inactive_torrents:
-        print(f"Inactive Torrents ({len(inactive_torrents)})")
-
-        def gen_row(t):
-            d = {
-                "name": shorten(t.name, 35),
-                "num_seeds": f"{t.num_seeds} ({t.num_complete})",
-                "progress": strings.percent(t.progress),
-                "seen_complete": (strings.relative_datetime(t.seen_complete) if t.seen_complete > 0 else ""),
-                "last_activity": strings.relative_datetime(t.last_activity),
-            }
-            if not t.state_enum.is_complete:
-                d |= {
-                    "duration": strings.duration_short(t.downloading_time),
-                    "downloaded": strings.file_size(t.downloaded),
-                    "remaining": strings.file_size(t.amount_left) if t.amount_left > 0 else None,
-                }
+    if args.print:
+        for t in torrents:
             if t.state_enum.is_complete:
-                d |= {
-                    "duration": strings.duration_short(t.seeding_time),
-                    "uploaded": strings.file_size(t.uploaded),
+                base_paths = [t.save_path, t.content_path, t.download_path]
+            else:
+                base_paths = [t.download_path, t.content_path, t.save_path]
+
+            base_path = None
+            for test_path in base_paths:
+                if test_path and ((Path(test_path) / t.name).exists() or (Path(test_path) / t.files[0].name).exists()):
+                    base_path = test_path
+                    break
+
+            if base_path is None:
+                base_path = t.save_path if t.state_enum.is_complete else t.download_path
+            if base_path is None:
+                base_path = t.content_path
+            if base_path is None:
+                log.warning("%s files do not exist", t.name)
+                continue
+
+            if "f" in args.print:
+                for f in t.files:
+                    file_path = Path(base_path) / f.name
+                    print(file_path)
+            else:
+                print(Path(base_path) / t.name)
+    else:
+        inactive_torrents = [t for t in torrents if t.is_inactive]
+        if inactive_torrents:
+            print(f"Inactive Torrents ({len(inactive_torrents)})")
+
+            def gen_row(t):
+                d = {
+                    "name": shorten(t.name, 35),
+                    "num_seeds": f"{t.num_seeds} ({t.num_complete})",
+                    "progress": strings.percent(t.progress),
+                    "seen_complete": (strings.relative_datetime(t.seen_complete) if t.seen_complete > 0 else ""),
+                    "last_activity": strings.relative_datetime(t.last_activity),
                 }
-
-            if args.file_search:
-                files = t.files
-                files = [f for f in t.files if strings.glob_match(args.file_search, [f.name])]
-
-                print(t.name)
-                printing.extended_view(files)
-                print()
-
-                d |= {"files": f"{len(files)} ({len(t.files)})"}
-            elif args.file_counts:
-                d |= {"files": len(t.files)}
-
-            if args.sort == "priority":
-                d |= {"priority": str(t.priority) + (" [F]" if t.force_start else "")}
-            if args.trackers:
-                d |= {"tracker": t.tracker_domain()}
-            if args.status:
-                d |= {"state": t.state}
-            if args.sizes or args.avg_sizes or "size" in args.sort:
-                d |= {"size": strings.file_size(t.total_size)}
-            if args.paths:
+                if not t.state_enum.is_complete:
+                    d |= {
+                        "duration": strings.duration_short(t.downloading_time),
+                        "downloaded": strings.file_size(t.downloaded),
+                        "remaining": strings.file_size(t.amount_left) if t.amount_left > 0 else None,
+                    }
                 if t.state_enum.is_complete:
-                    d |= {"path": t.save_path}
-                else:
-                    d |= {"path": t.download_path}
+                    d |= {
+                        "duration": strings.duration_short(t.seeding_time),
+                        "uploaded": strings.file_size(t.uploaded),
+                    }
 
-            if args.verbose >= consts.LOG_INFO:
-                d |= {
-                    "completed_on": strings.relative_datetime(t.completion_on) if t.completion_on > 0 else None,
-                    "added_on": strings.relative_datetime(t.added_on) if t.added_on > 0 else None,
-                    "comment": t.comment,
-                    "download_path": t.download_path,
-                    "save_path": t.save_path,
-                    "content_path": t.content_path,
+                if args.file_search:
+                    files = t.files
+                    files = [f for f in t.files if strings.glob_match(args.file_search, [f.name])]
+
+                    print(t.name)
+                    printing.extended_view(files)
+                    print()
+
+                    d |= {"files": f"{len(files)} ({len(t.files)})"}
+                elif args.file_counts:
+                    d |= {"files": len(t.files)}
+
+                if args.sort == "priority":
+                    d |= {"priority": str(t.priority) + (" [F]" if t.force_start else "")}
+                if args.trackers:
+                    d |= {"tracker": t.tracker_domain()}
+                if args.status:
+                    d |= {"state": t.state}
+                if args.sizes or args.avg_sizes or "size" in args.sort:
+                    d |= {"size": strings.file_size(t.total_size)}
+                if args.paths:
+                    if t.state_enum.is_complete:
+                        d |= {"path": t.save_path}
+                    else:
+                        d |= {"path": t.download_path}
+
+                if args.verbose >= consts.LOG_INFO:
+                    d |= {
+                        "completed_on": strings.relative_datetime(t.completion_on) if t.completion_on > 0 else None,
+                        "added_on": strings.relative_datetime(t.added_on) if t.added_on > 0 else None,
+                        "comment": t.comment,
+                        "download_path": t.download_path,
+                        "save_path": t.save_path,
+                        "content_path": t.content_path,
+                    }
+
+                return d
+
+            printing.table(iterables.conform([gen_row(t) for t in inactive_torrents]))
+            print()
+
+        active_torrents = [t for t in torrents if t.is_active]
+        if active_torrents:
+            print(f"Active Torrents ({len(active_torrents)})")
+
+            def gen_row(t):
+                d = {
+                    "name": shorten(t.name, 35),
+                    "num_seeds": f"{t.num_seeds} ({t.num_complete})",
+                    "progress": strings.percent(t.progress),
                 }
-
-            return d
-
-        printing.table(iterables.conform([gen_row(t) for t in inactive_torrents]))
-        print()
-
-    active_torrents = [t for t in torrents if t.is_active]
-    if active_torrents:
-        print(f"Active Torrents ({len(active_torrents)})")
-
-        def gen_row(t):
-            d = {
-                "name": shorten(t.name, 35),
-                "num_seeds": f"{t.num_seeds} ({t.num_complete})",
-                "progress": strings.percent(t.progress),
-            }
-            if not t.state_enum.is_complete:
-                d |= {
-                    "duration": strings.duration_short(t.downloading_time),
-                    "session": strings.file_size(t.downloaded_session),
-                    "remaining": strings.file_size(t.amount_left) if t.amount_left > 0 else None,
-                    "speed": strings.file_size(t.dlspeed) + "/s" if t.dlspeed else None,
-                    "eta": strings.duration_short(t.eta) if t.eta < 8640000 else None,
-                }
-            if t.state_enum.is_complete:
-                d |= {
-                    "duration": strings.duration_short(t.seeding_time),
-                    "session": strings.file_size(t.uploaded_session),
-                    "uploaded": strings.file_size(t.uploaded),
-                }
-            if args.file_search:
-                files = t.files
-                files = [f for f in t.files if strings.glob_match(args.file_search, [f.name])]
-
-                print(t.name)
-                printing.extended_view(files)
-                print()
-
-                d |= {"files": f"{len(files)} ({len(t.files)})"}
-            elif args.file_counts:
-                d |= {"files": len(t.files)}
-
-            if args.sort == "priority":
-                d |= {"priority": str(t.priority) + (" [F]" if t.force_start else "")}
-            if args.trackers:
-                d |= {"tracker": t.tracker_domain()}
-            if args.status:
-                d |= {"state": t.state}
-            if args.sizes or args.avg_sizes or "size" in args.sort:
-                d |= {"size": strings.file_size(t.total_size)}
-            if args.paths:
+                if not t.state_enum.is_complete:
+                    d |= {
+                        "duration": strings.duration_short(t.downloading_time),
+                        "session": strings.file_size(t.downloaded_session),
+                        "remaining": strings.file_size(t.amount_left) if t.amount_left > 0 else None,
+                        "speed": strings.file_size(t.dlspeed) + "/s" if t.dlspeed else None,
+                        "eta": strings.duration_short(t.eta) if t.eta < 8640000 else None,
+                    }
                 if t.state_enum.is_complete:
-                    d |= {"path": t.save_path}
-                else:
-                    d |= {"path": t.download_path}
+                    d |= {
+                        "duration": strings.duration_short(t.seeding_time),
+                        "session": strings.file_size(t.uploaded_session),
+                        "uploaded": strings.file_size(t.uploaded),
+                    }
+                if args.file_search:
+                    files = t.files
+                    files = [f for f in t.files if strings.glob_match(args.file_search, [f.name])]
 
-            if args.verbose >= consts.LOG_INFO:
-                d |= {
-                    "seen_complete": strings.relative_datetime(t.seen_complete) if t.seen_complete > 0 else None,
-                    "completed_on": strings.relative_datetime(t.completion_on) if t.completion_on > 0 else None,
-                    "added_on": strings.relative_datetime(t.added_on) if t.added_on > 0 else None,
-                    "last_activity": strings.relative_datetime(t.last_activity) if t.last_activity > 0 else None,
-                    "comment": t.comment,
-                    "download_path": t.download_path,
-                    "save_path": t.save_path,
-                    "content_path": t.content_path,
-                }
+                    print(t.name)
+                    printing.extended_view(files)
+                    print()
 
-            return d
+                    d |= {"files": f"{len(files)} ({len(t.files)})"}
+                elif args.file_counts:
+                    d |= {"files": len(t.files)}
 
-        printing.table(iterables.conform([gen_row(t) for t in active_torrents]))
-        print()
+                if args.sort == "priority":
+                    d |= {"priority": str(t.priority) + (" [F]" if t.force_start else "")}
+                if args.trackers:
+                    d |= {"tracker": t.tracker_domain()}
+                if args.status:
+                    d |= {"state": t.state}
+                if args.sizes or args.avg_sizes or "size" in args.sort:
+                    d |= {"size": strings.file_size(t.total_size)}
+                if args.paths:
+                    if t.state_enum.is_complete:
+                        d |= {"path": t.save_path}
+                    else:
+                        d |= {"path": t.download_path}
+
+                if args.verbose >= consts.LOG_INFO:
+                    d |= {
+                        "seen_complete": strings.relative_datetime(t.seen_complete) if t.seen_complete > 0 else None,
+                        "completed_on": strings.relative_datetime(t.completion_on) if t.completion_on > 0 else None,
+                        "added_on": strings.relative_datetime(t.added_on) if t.added_on > 0 else None,
+                        "last_activity": strings.relative_datetime(t.last_activity) if t.last_activity > 0 else None,
+                        "comment": t.comment,
+                        "download_path": t.download_path,
+                        "save_path": t.save_path,
+                        "content_path": t.content_path,
+                    }
+
+                return d
+
+            printing.table(iterables.conform([gen_row(t) for t in active_torrents]))
+            print()
 
     torrent_hashes = [t.hash for t in torrents]
 
