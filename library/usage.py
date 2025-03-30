@@ -1944,6 +1944,10 @@ torrents_info = """library torrents-info
 
         library torrents query
 
+    Aggregate torrent info (torrents-status)
+
+        library torrents -pa
+
     Search for specific file
 
         library torrents query -v --file-search query2
@@ -1976,22 +1980,6 @@ torrents_info = """library torrents-info
     When --delete-rows is provided, the metadata is removed from qBittorrent
     When --delete-files is provided, the downloaded files are deleted
     When --delete-incomplete 80% is provided, any files that were downloaded less than 80% are deleted
-"""
-
-
-torrents_status = """library torrents-status
-
-    Print stats
-
-        library torrents-status
-
-    Search for specific torrent
-
-        library torrents-status query
-
-    Search for specific file
-
-        library torrents-status query -v --file-search query2
 """
 
 torrents_remaining = """library torrents-remaining
