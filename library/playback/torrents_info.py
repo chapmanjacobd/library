@@ -1,9 +1,8 @@
 #!/usr/bin/python3
-import argparse, os, shutil
+import argparse, os, shutil, statistics
 from collections import defaultdict
 from pathlib import Path
 from statistics import mean, median
-import statistics
 
 from library import usage
 from library.mediafiles import torrents_start
@@ -271,6 +270,7 @@ def print_torrents_by_tracker(args, torrents):
         ]
         printing.table(iterables.list_dict_filter_bool(trackers))
         print()
+
 
 def torrents_info():
     args = parse_args()

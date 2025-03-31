@@ -1,4 +1,4 @@
-import argparse, concurrent.futures, math, os, sqlite3
+import argparse, concurrent.futures, math, os, sqlite3, subprocess
 from contextlib import suppress
 from pathlib import Path
 from shutil import which
@@ -396,14 +396,17 @@ def process_media() -> None:
 
                 new_free_space += (m.get("compressed_size") or m["size"]) - m["future_size"]
             else:
-                if m["media_type"] in ("Audio", "Video"):
-                    new_path = process_ffmpeg.process_path(args, m["path"])
-                elif m["media_type"] == "Image":
-                    new_path = process_image.process_path(args, m["path"])
-                elif m["media_type"] == "Text":
-                    new_path = process_text.process_path(args, m["path"])
-                else:
-                    raise NotImplementedError
+                try:
+                    if m["media_type"] in ("Audio", "Video"):
+                        new_path = process_ffmpeg.process_path(args, m["path"])
+                    elif m["media_type"] == "Image":
+                        new_path = process_image.process_path(args, m["path"])
+                    elif m["media_type"] == "Text":
+                        new_path = process_text.process_path(args, m["path"])
+                    else:
+                        raise NotImplementedError
+                except (subprocess.CalledProcessError, processes.UnplayableFile):
+                    new_path = None
 
                 if new_path is None:
                     m["time_deleted"] = consts.APPLICATION_START
@@ -440,7 +443,7 @@ def process_media() -> None:
                 if args.move and not m.get("time_deleted") and m.get("new_path"):
                     dest = path_utils.relative_from_mountpoint(m["new_path"], args.move)
                     file_utils.rename_move_file(m["new_path"], dest)
-                elif args.move_broken and not m.get("time_deleted") and os.path.exists(m["path"]):
+                elif args.move_broken and m.get("time_deleted") and os.path.exists(m["path"]):
                     dest = path_utils.relative_from_mountpoint(m["path"], args.move_broken)
                     file_utils.rename_move_file(m["path"], dest)
 
