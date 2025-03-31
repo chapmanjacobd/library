@@ -2098,7 +2098,9 @@ def qBittorrent_torrents(parent_parser):
 
     parser.add_argument("--file-search", "-s", nargs="+", help="The file path substring to search for")
     parser.add_argument("--file-exclude", nargs="+", help="The file path substring to exclude")
-    parser.add_argument("--torrent-exclude", "-E", nargs="+", help="The info_hash, name, or save_path substring to exclude")
+    parser.add_argument(
+        "--torrent-exclude", "-E", nargs="+", help="The info_hash, name, or save_path substring to exclude"
+    )
     parser.add_argument("torrent_search", nargs="*", help="The info_hash, name, or save_path substring to search for")
 
 
