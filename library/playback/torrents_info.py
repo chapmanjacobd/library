@@ -6,7 +6,18 @@ from statistics import mean, median
 
 from library import usage
 from library.mediafiles import torrents_start
-from library.utils import arggroups, argparse_utils, consts, iterables, nums, path_utils, printing, processes, strings
+from library.utils import (
+    arggroups,
+    argparse_utils,
+    consts,
+    file_utils,
+    iterables,
+    nums,
+    path_utils,
+    printing,
+    processes,
+    strings,
+)
 from library.utils.log_utils import log
 from library.utils.path_utils import fqdn_from_url, tld_from_url
 
@@ -206,6 +217,37 @@ def filter_torrents_by_criteria(args, torrents):
     if args.no_tracker:
         trackers = set(args.no_tracker)
         torrents = [t for t in torrents if t.tracker_domain() not in trackers]
+
+    if args.any_exists is not None:
+        torrents = [
+            t
+            for t in torrents
+            if args.any_exists
+            is any(
+                (Path(t.save_path if t.state_enum.is_complete else t.download_path) / f.name).exists()
+                for f in t.files
+            )
+        ]
+    if args.all_exists is not None:
+        torrents = [
+            t
+            for t in torrents
+            if args.all_exists
+            is all(
+                (Path(t.save_path if t.state_enum.is_complete else t.download_path) / f.name).exists()
+                for f in t.files
+            )
+        ]
+    if args.opened is not None:
+        torrents = [
+            t
+            for t in torrents
+            if args.opened
+            is any(
+                file_utils.is_file_open(Path(t.save_path if t.state_enum.is_complete else t.download_path) / f.name)
+                for f in t.files
+            )
+        ]
 
     if args.timeout_size:
         torrents = [t for t in torrents if not processes.sizeout(args.timeout_size, t.total_size)]
@@ -609,24 +651,14 @@ def torrents_info():
             else:
                 base_paths = [t.download_path, t.save_path]
 
-            if os.path.isfile(t.content_path):
-                file_name = os.path.basename(t.content_path)
+            for file in t.files:
                 for base_path in base_paths:
-                    file_path = Path(base_path) / file_name
+                    file_path = Path(base_path) / file.name
                     if file_path.exists():
-                        if t.progress < args.delete_incomplete:
-                            print(f"Deleting incomplete torrent: {file_path}")
+                        if file.progress < args.delete_incomplete:
+                            print(f"Deleting incomplete file: {file_path}")
                             file_path.unlink(missing_ok=True)
                         break  # Stop after deleting first valid path
-            else:
-                for file in t.files:
-                    for base_path in base_paths:
-                        file_path = Path(base_path) / file.name
-                        if file_path.exists():
-                            if file.progress < args.delete_incomplete:
-                                print(f"Deleting incomplete file: {file_path}")
-                                file_path.unlink(missing_ok=True)
-                            break  # Stop after deleting first valid path
 
     alt_move_syntax = any(
         k not in args.defaults for k in ["temp_drive", "temp_prefix", "download_drive", "download_prefix"]
@@ -696,7 +728,7 @@ def torrents_info():
             if args.simulate:
                 print("Moving", t.content_path, "to", new_path)
                 continue
-            if os.path.exists(t.content_path):
+            if os.path.exists(t.content_path):  # TODO: it would be more clean to iterate over t.files
                 print("Moving", t.content_path, "to", new_path)
                 if Path(t.content_path).parent != new_path:
                     new_path.mkdir(parents=True, exist_ok=True)
