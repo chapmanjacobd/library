@@ -2016,8 +2016,12 @@ def qBittorrent_torrents(parent_parser):
 
     parser.add_argument("--complete", "--completed", action="store_true", help="Include completed torrents")
     parser.add_argument("--incomplete", action="store_true", help="Include incomplete torrents")
-    parser.add_argument("--any-exists", "--exists", action=argparse.BooleanOptionalAction, help="Include torrents with any file on-disk")
-    parser.add_argument("--all-exists", action=argparse.BooleanOptionalAction, help="Include torrents with all files on-disk")
+    parser.add_argument(
+        "--any-exists", "--exists", action=argparse.BooleanOptionalAction, help="Include torrents with any file on-disk"
+    )
+    parser.add_argument(
+        "--all-exists", action=argparse.BooleanOptionalAction, help="Include torrents with all files on-disk"
+    )
     parser.add_argument(
         "--opened",
         action=argparse.BooleanOptionalAction,

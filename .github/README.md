@@ -99,7 +99,7 @@ To stop playing press Ctrl+C in either the terminal or mpv
 <details><summary>List all subcommands</summary>
 
     $ library
-    library (v3.0.076; 101 subcommands)
+    library (v3.0.077; 100 subcommands)
 
     Create database subcommands:
     ╭─────────────────┬──────────────────────────────────────────╮
@@ -297,8 +297,6 @@ To stop playing press Ctrl+C in either the terminal or mpv
     │ surf               │ Auto-load browser tabs in a streaming way (stdin)      │
     ├────────────────────┼────────────────────────────────────────────────────────┤
     │ torrents-info      │ List torrents (qBittorrent-nox)                        │
-    ├────────────────────┼────────────────────────────────────────────────────────┤
-    │ torrents-status    │ Overview of torrents (qBittorrent-nox)                 │
     ├────────────────────┼────────────────────────────────────────────────────────┤
     │ torrents-remaining │ Overview of torrents by drive (qBittorrent-nox)        │
     ╰────────────────────┴────────────────────────────────────────────────────────╯
@@ -3011,6 +3009,10 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
 
         library torrents query
 
+    Aggregate torrent info (torrents-status)
+
+        library torrents -pa
+
     Search for specific file
 
         library torrents query -v --file-search query2
@@ -3043,28 +3045,6 @@ Inspired somewhat by https://nikkhokkho.sourceforge.io/?page=FileOptimizer
     When --delete-rows is provided, the metadata is removed from qBittorrent
     When --delete-files is provided, the downloaded files are deleted
     When --delete-incomplete 80% is provided, any files that were downloaded less than 80% are deleted
-
-
-</details>
-
-###### torrents-status
-
-<details><summary>Overview of torrents (qBittorrent-nox)</summary>
-
-    $ library torrents-status -h
-    usage: library torrents-status
-
-    Print stats
-
-        library torrents-status
-
-    Search for specific torrent
-
-        library torrents-status query
-
-    Search for specific file
-
-        library torrents-status query -v --file-search query2
 
 
 </details>
