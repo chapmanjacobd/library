@@ -224,8 +224,7 @@ def filter_torrents_by_criteria(args, torrents):
             for t in torrents
             if args.any_exists
             is any(
-                (Path(t.save_path if t.state_enum.is_complete else t.download_path) / f.name).exists()
-                for f in t.files
+                (Path(t.save_path if t.state_enum.is_complete else t.download_path) / f.name).exists() for f in t.files
             )
         ]
     if args.all_exists is not None:
@@ -234,8 +233,7 @@ def filter_torrents_by_criteria(args, torrents):
             for t in torrents
             if args.all_exists
             is all(
-                (Path(t.save_path if t.state_enum.is_complete else t.download_path) / f.name).exists()
-                for f in t.files
+                (Path(t.save_path if t.state_enum.is_complete else t.download_path) / f.name).exists() for f in t.files
             )
         ]
     if args.opened is not None:
