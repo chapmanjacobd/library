@@ -633,8 +633,6 @@ def re_trigger_input(driver):
 
 
 def selenium_get_page(args, url):
-    from selenium.webdriver.support.ui import WebDriverWait
-
     global cookie_jar
     load_cookie_jar(args)
 
@@ -659,8 +657,6 @@ def selenium_get_page(args, url):
             args.driver.add_cookie(cookie_dict)
 
     args.driver.get(url)
-
-    WebDriverWait(args.driver, 10).until(lambda d: d.execute_script("return document.readyState") == "complete")
     args.driver.implicitly_wait(5)
 
     if getattr(args, "poke", False):
