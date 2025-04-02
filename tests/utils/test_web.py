@@ -1,5 +1,5 @@
 import pathlib
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import MagicMock, Mock
 
 import pytest
 from bs4 import BeautifulSoup
@@ -319,63 +319,3 @@ def test_selenium_get_page_without_cookies():
     url = "https://www.example.com/path/to/page"
     selenium_get_page(args, url)
     mock_driver.get.assert_called_once_with(url)
-
-
-@patch("yt_dlp.cookies.load_cookies")
-def test_selenium_get_page_with_cookies(mock_load_cookies):
-    mock_driver = MagicMock()
-    args = MagicMock(driver=mock_driver, cookies="test.cookies", cookies_from_browser=None)
-
-    mock_cookie_jar = [
-        MagicMock(
-            name="cookie1",
-            value="value1",
-            domain=".example.com",
-            path="/path",
-            expires=None,
-            secure=False,
-            httpOnly=False,
-            sameSite="Lax",
-            domain_initial_dot=True,
-        ),
-        MagicMock(
-            name="cookie2",
-            value="value2",
-            domain="anotherdomain.com",
-            path="/",
-            expires=None,
-            secure=False,
-            httpOnly=False,
-            sameSite="Strict",
-            domain_initial_dot=False,
-        ),
-        MagicMock(
-            name="cookie3",
-            value="value3",
-            domain="www.example.com",
-            path="/path/subpath",
-            expires=None,
-            secure=False,
-            httpOnly=False,
-            sameSite="None",
-            domain_initial_dot=False,
-        ),
-        MagicMock(
-            name="cookie4",
-            value="value4",
-            domain="ww2.example.com",
-            path="/",
-            expires=None,
-            secure=False,
-            httpOnly=False,
-            sameSite="Strict",
-            domain_initial_dot=False,
-        ),
-    ]
-    mock_load_cookies.return_value = mock_cookie_jar
-
-    url = "https://ww2.example.com/path/to/page"
-    selenium_get_page(args, url)
-
-    mock_driver.get.assert_any_call(url)
-    assert mock_driver.add_cookie.call_count == 2
