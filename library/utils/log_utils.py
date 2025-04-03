@@ -14,6 +14,20 @@ def check_stdio():
     return has_stdin, has_stdout
 
 
+def format_args(pargs, kwargs):
+    args_str = ", ".join(repr(arg) for arg in pargs)
+    kwargs_str = ", ".join(f"{key}={repr(value)}" for key, value in kwargs.items())
+
+    if args_str and kwargs_str:
+        return f"{args_str}, {kwargs_str}"
+    elif args_str:
+        return args_str
+    elif kwargs_str:
+        return kwargs_str
+    else:
+        return ""
+
+
 def clamp_index(arr, idx):
     return arr[min(max(idx, 0), len(arr) - 1)]
 
