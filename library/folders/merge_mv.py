@@ -127,11 +127,15 @@ def filter_src(args, path):
 def gen_rel_path(source, dest, relative_to):
     abspath = Path(source).expanduser().resolve()
 
-    if str(relative_to).startswith(":"):
+    if str(relative_to).startswith("::") and dest.strip(os.sep) in source:
+        rel = source.split(dest.strip(os.sep), 1)[0]
+        rel = Path(rel, dest.strip(os.sep), str(relative_to).lstrip(":").lstrip(os.sep)).resolve()
+    elif str(relative_to).startswith(":"):
         rel = os.path.commonpath([abspath, dest])
         rel = Path(rel, str(relative_to).lstrip(":").lstrip(os.sep)).resolve()
     else:
         rel = Path(relative_to).expanduser().resolve()
+    log.debug("rel %s", rel)
 
     try:
         relpath = str(abspath.relative_to(rel))
@@ -141,9 +145,9 @@ def gen_rel_path(source, dest, relative_to):
             relpath = str(Path(abspath.drive.strip(":")) / abspath.relative_to(abspath.drive + "\\"))
         elif abspath.drive.startswith("\\\\"):  # UNC paths
             server_share = abspath.parts[0]
-            relpath = str(Path(server_share.lstrip("\\").replace("\\", "/")) / "/".join(abspath.parts[1:]))
+            relpath = str(Path(server_share.lstrip("\\").replace("\\", os.sep)) / os.sep.join(abspath.parts[1:]))
         else:
-            relpath = str(abspath.relative_to("/"))
+            relpath = str(abspath.relative_to(os.sep))
         log.debug("ValueError using abspath %s", relpath)
 
     source_destination = str(Path(dest) / relpath)
