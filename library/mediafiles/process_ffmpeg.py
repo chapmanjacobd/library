@@ -5,7 +5,8 @@ from library import usage
 from library.data import ffmpeg_errors
 from library.mediafiles import process_image
 from library.utils import arggroups, argparse_utils, consts, devices, nums, path_utils, processes, web
-from library.utils.arg_utils import args_override, gen_paths
+from library.utils.arg_utils import args_override
+from library.utils.file_utils import gen_paths
 from library.utils.log_utils import log
 from library.utils.web import WebPath
 

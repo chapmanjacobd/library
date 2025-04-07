@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup, NavigableString
 
 from library import usage
 from library.createdb import fs_add_metadata
-from library.utils import arg_utils, arggroups, argparse_utils, devices, iterables, printing, strings, web
+from library.utils import arggroups, argparse_utils, devices, file_utils, iterables, printing, strings, web
 from library.utils.log_utils import log
 
 
@@ -99,7 +99,7 @@ def extract_text() -> None:
     if args.selenium:
         web.load_selenium(args)
     try:
-        for url in arg_utils.gen_paths(args):
+        for url in file_utils.gen_paths(args):
             output_lines = []
             for s in iterables.return_unique(get_text)(args, url):
                 if s is None:

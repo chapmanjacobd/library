@@ -3,7 +3,7 @@ from pathlib import Path
 
 from library import usage
 from library.mediadb import db_media, db_playlists
-from library.utils import arg_utils, arggroups, argparse_utils, consts, db_utils, iterables, nums, objects, printing
+from library.utils import arggroups, argparse_utils, consts, db_utils, file_utils, iterables, nums, objects, printing
 from library.utils.file_utils import trash
 from library.utils.log_utils import log
 from library.utils.path_utils import tld_from_url
@@ -88,7 +88,7 @@ def torrents_add():
     db_playlists.create(args)
     db_media.create(args)
 
-    scanned_set = set(arg_utils.gen_paths(args, default_exts=(".torrent",)))
+    scanned_set = set(file_utils.gen_paths(args, default_exts=(".torrent",)))
 
     known_hashes = set()
     try:

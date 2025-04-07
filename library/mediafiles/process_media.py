@@ -7,7 +7,6 @@ from library import usage
 from library.mediadb import db_history
 from library.mediafiles import process_ffmpeg, process_image, process_text
 from library.utils import (
-    arg_utils,
     arggroups,
     argparse_utils,
     consts,
@@ -132,7 +131,7 @@ def collect_media(args) -> list[dict]:
         except sqlite3.OperationalError:
             media = list(args.db.query(*sqlgroups.fs_sql(args, args.limit)))
     else:
-        media = arg_utils.gen_d(args, default_exts)
+        media = file_utils.gen_d(args, default_exts)
         media = [d if "size" in d else file_utils.get_filesize(d) for d in media]
     return media
 

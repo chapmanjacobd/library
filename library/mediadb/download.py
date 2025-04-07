@@ -9,11 +9,11 @@ from library.mediafiles import process_ffmpeg, process_image
 from library.playback import media_printer
 from library.text import extract_links
 from library.utils import (
-    arg_utils,
     arggroups,
     argparse_utils,
     consts,
     db_utils,
+    file_utils,
     iterables,
     processes,
     sql_utils,
@@ -100,7 +100,7 @@ def download(args=None) -> None:
     if "blocklist" in args.db.table_names():
         args.blocklist_rules = [{d["key"]: d["value"]} for d in args.db["blocklist"].rows]
 
-    media = list(arg_utils.gen_d(args))
+    media = list(file_utils.gen_d(args))
     if not media:
         query, bindings = construct_download_query(args)
         media = list(args.db.query(query, bindings))

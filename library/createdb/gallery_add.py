@@ -4,7 +4,7 @@ from pathlib import Path
 from library import usage
 from library.createdb import gallery_backend
 from library.mediadb import db_media, db_playlists
-from library.utils import arg_utils, arggroups, argparse_utils, consts, db_utils
+from library.utils import arggroups, argparse_utils, consts, db_utils, file_utils
 from library.utils.consts import SC
 from library.utils.log_utils import log
 
@@ -37,7 +37,7 @@ def gallery_add(args=None) -> None:
 
     db_playlists.create(args)
     db_media.create(args)
-    paths = arg_utils.gen_paths(args)
+    paths = file_utils.gen_paths(args)
 
     if args.no_extract:
         args.db["media"].insert_all(

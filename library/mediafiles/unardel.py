@@ -3,7 +3,6 @@ from shutil import which
 
 from library import usage
 from library.utils import (
-    arg_utils,
     arggroups,
     argparse_utils,
     consts,
@@ -44,7 +43,7 @@ def collect_media(args) -> list[dict]:
     if not UNAR_INSTALLED:
         processes.exit_error("unar not installed. Archives will not be extracted")
 
-    media = arg_utils.gen_d(args, consts.ARCHIVE_EXTENSIONS)
+    media = file_utils.gen_d(args, consts.ARCHIVE_EXTENSIONS)
     media = [d if "size" in d else file_utils.get_filesize(d) for d in media]
     return media
 

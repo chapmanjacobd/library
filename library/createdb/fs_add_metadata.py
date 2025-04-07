@@ -60,7 +60,7 @@ def extract_metadata(mp_args, path) -> dict[str, str | int | None] | None:
     media = {
         "path": path,
         "size": stat.st_size,
-        "type": file_utils.mimetype(path),
+        "type": file_utils.detect_mimetype(path),
         "time_created": int(stat.st_ctime),
         "time_modified": int(stat.st_mtime) or consts.now(),
         "time_downloaded": consts.APPLICATION_START,

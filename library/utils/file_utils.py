@@ -8,7 +8,7 @@ from shutil import which
 
 import urllib3
 
-from library.utils import consts, file_utils, path_utils, printing, processes, web
+from library.utils import consts, path_utils, printing, processes, strings, web
 from library.utils.log_utils import log
 
 
@@ -302,7 +302,7 @@ def copy(args, src, dest):
     if src == dest:
         return src
 
-    file_utils.copy_file(src, dest, simulate=args.simulate)
+    copy_file(src, dest, simulate=args.simulate)
     return dest
 
 
@@ -345,7 +345,7 @@ def move(args, src, dest):
     if src == dest:
         return src
 
-    file_utils.rename_move_file(src, dest, simulate=args.simulate)
+    rename_move_file(src, dest, simulate=args.simulate)
     return dest
 
 
@@ -454,7 +454,7 @@ def head_foot_stream(url, head_len, foot_len):
 
 
 @processes.with_timeout_thread(max(consts.REQUESTS_TIMEOUT) + 5)
-def mimetype(path):
+def detect_mimetype(path):
     import puremagic
 
     p = Path(path)
@@ -567,7 +567,7 @@ def read_file_to_dataframes(
     import pandas as pd
 
     if mimetype is None:
-        mimetype = file_utils.mimetype(path)
+        mimetype = detect_mimetype(path)
     if mimetype is not None:
         mimetype = mimetype.strip().lower()
     log.info(mimetype)
@@ -798,3 +798,52 @@ def alt_name(file_path):
         alternative_path = file_path.with_name(new_name)
         counter += 1
     return str(alternative_path)
+
+
+def gen_paths(args, default_exts=None):
+    if args.paths is None:
+        processes.exit_error("No paths passed in")
+
+    if args.from_json:
+        for path in args.paths:
+            json_data = strings.safe_json_loads(path)
+            if isinstance(json_data, list):
+                for json_item in json_data:
+                    yield json_item["path"]
+            elif isinstance(json_data, dict):
+                yield json_data["path"]
+            else:
+                raise TypeError
+    else:
+        for path in args.paths:
+            if path.strip():
+                p = Path(path)
+                if p.is_dir():
+                    yield from rglob(str(p), args.ext or default_exts, getattr(args, "exclude", None))[0]
+                else:
+                    yield path
+
+
+def gen_d(args, default_exts=None):
+    if args.paths is None:
+        processes.exit_error("No data passed in")
+
+    if args.from_json:
+        for path in args.paths:
+            json_data = strings.safe_json_loads(path)
+            if isinstance(json_data, list):
+                for json_item in json_data:
+                    yield json_item
+            elif isinstance(json_data, dict):
+                yield json_data
+            else:
+                raise TypeError
+    else:
+        for path in args.paths:
+            if path.strip():
+                p = Path(path)
+                if p.is_dir():
+                    for sp in rglob(str(p), args.ext or default_exts, getattr(args, "exclude", None))[0]:
+                        yield {"path": sp}
+                else:
+                    yield {"path": path}

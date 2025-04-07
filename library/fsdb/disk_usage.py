@@ -2,17 +2,7 @@ import os
 
 from library import usage
 from library.playback import media_printer
-from library.utils import (
-    arg_utils,
-    arggroups,
-    argparse_utils,
-    file_utils,
-    iterables,
-    path_utils,
-    processes,
-    sqlgroups,
-    strings,
-)
+from library.utils import arggroups, argparse_utils, file_utils, iterables, path_utils, processes, sqlgroups, strings
 
 
 def parse_args(defaults_override=None):
@@ -114,7 +104,7 @@ def get_data(args) -> list[dict]:
     else:
         if args.hide_deleted:
             args.paths = [p for p in args.paths if os.path.exists(p)]
-        media = arg_utils.gen_d(args)
+        media = file_utils.gen_d(args)
         media = [d if "size" in d else file_utils.get_filesize(d) for d in media]
 
     if not media:

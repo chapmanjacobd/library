@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import List
 
 from library import usage
-from library.utils import arg_utils, arggroups, argparse_utils, devices
+from library.utils import arggroups, argparse_utils, devices, file_utils
 
 
 def parse_args():
@@ -141,5 +141,5 @@ def process_path(args, input_path):
 def pdf_edit():
     args = parse_args()
 
-    for path in arg_utils.gen_paths(args, ["pdf"]):
+    for path in file_utils.gen_paths(args, ["pdf"]):
         process_path(args, path)
