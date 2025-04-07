@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-import argparse, os, shutil, statistics
+import argparse, os, statistics
 from collections import defaultdict
 from pathlib import Path
 from statistics import mean, median
@@ -730,7 +730,7 @@ def torrents_info():
                 print("Moving", t.content_path, "to", new_path)
                 if Path(t.content_path).parent != new_path:
                     new_path.mkdir(parents=True, exist_ok=True)
-                    shutil.move(t.content_path, new_path)
+                    file_utils.move(args, t.content_path, new_path)
 
             if not (args.delete_files or args.delete_rows):
                 # update metadata

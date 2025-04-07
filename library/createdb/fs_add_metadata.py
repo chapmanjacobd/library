@@ -5,9 +5,8 @@ from timeit import default_timer as timer
 
 from library.createdb import av
 from library.files import sample_hash
-from library.folders import merge_mv
 from library.mediafiles import process_ffmpeg, process_image
-from library.utils import consts, file_utils, iterables, nums, objects, path_utils, processes, strings
+from library.utils import consts, file_utils, iterables, nums, objects, processes, strings
 from library.utils.consts import DBType
 from library.utils.log_utils import log
 
@@ -106,22 +105,10 @@ def extract_metadata(mp_args, path) -> dict[str, str | int | None] | None:
         media["hash"] = sample_hash.sample_hash_file(path)
 
     if getattr(mp_args, "copy", False) and not file_utils.is_file_open(path):
-        dest_path = merge_mv.gen_rel_path(path, mp_args.copy, ":")
-        if getattr(mp_args, "clean_path", True):
-            dest_path = path_utils.clean_path(os.fsencode(dest_path))
-        else:
-            dest_path = str(dest_path)
-        file_utils.copy_file(path, dest_path, simulate=mp_args.simulate)
-        path = media["path"] = dest_path
+        path = media["path"] = file_utils.copy(mp_args, path, mp_args.copy)
 
     if getattr(mp_args, "move", False) and not file_utils.is_file_open(path):
-        dest_path = merge_mv.gen_rel_path(path, mp_args.move, ":")
-        if getattr(mp_args, "clean_path", True):
-            dest_path = path_utils.clean_path(os.fsencode(dest_path))
-        else:
-            dest_path = str(dest_path)
-        file_utils.rename_move_file(path, dest_path, simulate=mp_args.simulate)
-        path = media["path"] = dest_path
+        path = media["path"] = file_utils.move(mp_args, path, mp_args.move)
 
     if getattr(mp_args, "process", False):
         if objects.is_profile(mp_args, DBType.audio) and Path(path).suffix not in [".opus", ".mka"]:

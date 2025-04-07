@@ -1,9 +1,8 @@
 import os, shlex
 from pathlib import Path
 
-from library.folders import merge_mv
 from library.mediadb import db_history, db_media
-from library.utils import devices, file_utils, iterables, path_utils, processes
+from library.utils import devices, file_utils, iterables, processes
 from library.utils.log_utils import log
 
 try:
@@ -27,16 +26,9 @@ def mv_to_keep_folder(args, src: str) -> str:
 
     keep_path.mkdir(exist_ok=True)
 
-    dest = merge_mv.gen_rel_path(src, keep_path, ":")
-    if getattr(args, "clean_path", True):
-        dest = path_utils.clean_path(os.fsencode(dest))
-    else:
-        dest = str(dest)
-
+    dest = file_utils.move(args, src, keep_path)
     if src == dest:
         return src
-
-    file_utils.rename_move_file(src, dest, simulate=args.simulate)
 
     if dest and hasattr(args, "db"):
         with args.db.conn:
