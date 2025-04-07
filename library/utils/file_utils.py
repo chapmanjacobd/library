@@ -8,7 +8,7 @@ from shutil import which
 
 import urllib3
 
-from library.utils import consts, file_utils, printing, processes, web
+from library.utils import consts, file_utils, path_utils, printing, processes, web
 from library.utils.log_utils import log
 
 
@@ -292,6 +292,20 @@ def copy_file(source_file, destination_file, simulate=False):
                 raise
 
 
+def copy(args, src, dest):
+    dest = path_utils.gen_rel_path(src, dest, ":")
+    if getattr(args, "clean_path", True):
+        dest = path_utils.clean_path(os.fsencode(dest))
+    else:
+        dest = str(dest)
+
+    if src == dest:
+        return src
+
+    file_utils.copy_file(src, dest, simulate=args.simulate)
+    return dest
+
+
 def rename_no_replace(src, dst):
     if os.path.exists(dst) and not os.path.isdir(dst):
         msg = f"The destination file {dst} already exists."
@@ -319,6 +333,20 @@ def rename_move_file(source_file, destination_file, simulate=False):
                 shutil.move(source_file, destination_file)  # Fallback to shutil.move
             else:
                 raise
+
+
+def move(args, src, dest):
+    dest = path_utils.gen_rel_path(src, dest, ":")
+    if getattr(args, "clean_path", True):
+        dest = path_utils.clean_path(os.fsencode(dest))
+    else:
+        dest = str(dest)
+
+    if src == dest:
+        return src
+
+    file_utils.rename_move_file(src, dest, simulate=args.simulate)
+    return dest
 
 
 def move_files(file_list):

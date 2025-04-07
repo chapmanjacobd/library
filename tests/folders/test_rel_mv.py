@@ -4,8 +4,8 @@ from pathlib import Path
 import pytest
 
 from library.__main__ import library as lb
-from library.folders.merge_mv import gen_rel_path
 from library.utils import consts, path_utils
+from library.utils.path_utils import gen_rel_path
 from tests.conftest import generate_file_tree_dict
 
 simple_file_tree = {
