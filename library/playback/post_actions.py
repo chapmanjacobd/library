@@ -1,4 +1,4 @@
-import os, shlex
+import shlex
 from pathlib import Path
 
 from library.mediadb import db_history, db_media
