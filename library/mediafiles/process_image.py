@@ -4,7 +4,7 @@ from pathlib import Path
 from library import usage
 from library.data import imagemagick_errors
 from library.utils import arggroups, argparse_utils, consts, devices, file_utils, path_utils, processes, web
-from library.utils.arg_utils import gen_paths
+from library.utils.file_utils import gen_paths
 from library.utils.log_utils import log
 from library.utils.web import WebPath
 

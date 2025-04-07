@@ -133,7 +133,7 @@ def add_basic_metadata(args, m):
             except FileNotFoundError:
                 m["time_deleted"] = consts.now()
         with suppress(TimeoutError):
-            m["type"] = file_utils.mimetype(m["path"])
+            m["type"] = file_utils.detect_mimetype(m["path"])
 
     if getattr(args, "hash", False):
         # TODO: use head_foot_stream
@@ -271,7 +271,7 @@ def web_add(args=None) -> None:
     if args.no_extract:
         media_new = set()
         media_known = set()
-        for p in arg_utils.gen_paths(args):
+        for p in file_utils.gen_paths(args):
             if db_media.exists(args, p):
                 media_known.add(p)
             else:
@@ -284,9 +284,9 @@ def web_add(args=None) -> None:
             web.load_selenium(args)
         try:
             if args.media:
-                spider(args, list(arg_utils.gen_paths(args)))
+                spider(args, list(file_utils.gen_paths(args)))
             else:
-                for playlist_path in arg_utils.gen_paths(args):
+                for playlist_path in file_utils.gen_paths(args):
                     args.playlists_id = add_playlist(args, playlist_path)
                     spider(args, [playlist_path])
 

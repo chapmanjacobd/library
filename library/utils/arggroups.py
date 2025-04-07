@@ -1,4 +1,4 @@
-import argparse, os, re, textwrap, typing
+import argparse, os, random, re, textwrap, typing
 from pathlib import Path
 from shutil import which
 
@@ -15,7 +15,8 @@ from library.utils import (
     sql_utils,
     web,
 )
-from library.utils.consts import DEFAULT_FILE_ROWS_READ_LIMIT, DBType
+from library.utils.arg_utils import override_sort, parse_ambiguous_sort
+from library.utils.consts import DEFAULT_FILE_ROWS_READ_LIMIT, SC, DBType
 from library.utils.log_utils import log
 
 
@@ -501,6 +502,94 @@ Print media you have partially viewed with mpv
     )
 
 
+def parse_args_limit(args):
+    if not args.limit:
+        if not any(
+            [
+                args.print and len(args.print.replace("p", "")) > 0,
+                getattr(args, "partial", False),
+                getattr(args, "lower", False),
+                getattr(args, "upper", False),
+            ],
+        ):
+            if args.action in (SC.media, SC.listen, SC.watch, SC.read):
+                args.limit = consts.DEFAULT_PLAY_QUEUE
+            elif args.action in (SC.view,):
+                args.limit = consts.DEFAULT_PLAY_QUEUE * 4
+            elif args.action in (SC.history,):
+                args.limit = 10
+            elif args.action in (SC.links_open,):
+                args.limit = consts.MANY_LINKS - 1
+            elif args.action in (SC.download,):
+                args.limit = consts.DEFAULT_PLAY_QUEUE * 60
+    elif args.limit.lower() in ("inf", "all"):
+        args.limit = None
+    else:
+        args.limit = int(args.limit)
+
+
+def parse_args_sort(args, columns, table_prefix="m.") -> tuple[str, list[str]]:
+    sort_list = []
+    select_list = []
+    if args.sort:
+        combined_sort = parse_ambiguous_sort(args.sort)
+
+        for s in combined_sort:
+            if s.startswith("same-"):
+                var = s[len("same-") :]
+                direction = "DESC"
+                if var.lower().endswith((" asc", " desc")):
+                    var, direction = var.split(" ")
+
+                select_list.append(
+                    f"CASE WHEN {var} IS NULL THEN NULL ELSE COUNT(*) OVER (PARTITION BY {var}) END AS same_{var}_count",
+                )
+                sort_list.append(f"same_{var}_count {direction}")
+            else:
+                sort_list.append(s)
+
+    # switching between videos with and without subs is annoying
+    subtitle_count = "=0"
+    if random.random() < getattr(args, "subtitle_mix", consts.DEFAULT_SUBTITLE_MIX):
+        # bias slightly toward videos without subtitles
+        subtitle_count = ">0"
+
+    sorts = [
+        "play_count" if "play_count" in sort_list else None,
+        "random" if getattr(args, "random", False) else None,
+        "rank" if sort_list and "rank" in sort_list else None,
+        "video_count > 0 desc" if "video_count" in columns and args.action == SC.watch else None,
+        "audio_count > 0 desc" if "audio_count" in columns else None,
+        table_prefix + 'path like "http%"',
+        "width < height desc" if "width" in columns and getattr(args, "portrait", False) else None,
+        (
+            f"subtitle_count {subtitle_count} desc"
+            if "subtitle_count" in columns
+            and args.action == SC.watch
+            and not any(
+                [
+                    args.print,
+                    consts.PYTEST_RUNNING,
+                    "subtitle_count" in " ".join(args.where),
+                    args.limit != consts.DEFAULT_PLAY_QUEUE,
+                ],
+            )
+            else None
+        ),
+        *(sort_list or []),
+        "play_count, playhead desc, time_last_played" if args.action in (SC.media, SC.listen, SC.watch) else None,
+        "duration desc" if args.action in (SC.media, SC.listen, SC.watch) and args.include else None,
+        "size desc" if args.action in (SC.media, SC.listen, SC.watch) and args.include else None,
+        table_prefix + "title IS NOT NULL desc" if "title" in columns else None,
+        table_prefix + "path",
+    ]
+
+    sort = list(filter(bool, sorts))
+    sort = [override_sort(s) for s in sort]
+    sort = ",".join(sort)
+    return sort.replace(",,", ","), select_list
+
+
 def sql_fs_post(args, table_prefix="m.") -> None:
     if args.to_json:
         args.print = "p"
@@ -518,12 +607,12 @@ def sql_fs_post(args, table_prefix="m.") -> None:
         args.include = [url_encode(s) if s.startswith("http") else s for s in args.include]
         args.exclude = [url_encode(s) if s.startswith("http") else s for s in args.exclude]
 
-    arg_utils.parse_args_limit(args)
+    parse_args_limit(args)
 
     pl_columns = db_utils.columns(args, "playlists")
-    args.playlists_sort, args.playlists_select = arg_utils.parse_args_sort(args, pl_columns)
+    args.playlists_sort, args.playlists_select = parse_args_sort(args, pl_columns)
     m_columns = db_utils.columns(args, "media")
-    args.sort, args.select = arg_utils.parse_args_sort(args, m_columns)
+    args.sort, args.select = parse_args_sort(args, m_columns)
 
     if args.sizes:
         args.sizes = sql_utils.parse_human_to_sql(nums.human_to_bytes, "size", args.sizes)

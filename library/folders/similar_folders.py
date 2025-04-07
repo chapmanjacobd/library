@@ -3,7 +3,7 @@ from pathlib import Path
 from library import usage
 from library.folders import big_dirs
 from library.text import cluster_sort
-from library.utils import arg_utils, arggroups, argparse_utils, file_utils, nums, path_utils, printing, strings
+from library.utils import arggroups, argparse_utils, file_utils, nums, path_utils, printing, strings
 from library.utils.log_utils import log
 
 
@@ -154,7 +154,7 @@ def filter_groups_by_numbers(args, groups):
 
 def similar_folders():
     args = parse_args()
-    media = arg_utils.gen_d(args)
+    media = file_utils.gen_d(args)
     media = [d if "size" in d else file_utils.get_filesize(d) for d in media]
     media = big_dirs.group_files_by_parent(args, media)
     media = big_dirs.process_big_dirs(args, media)

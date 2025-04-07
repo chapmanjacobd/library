@@ -1,5 +1,5 @@
 from library import usage
-from library.utils import arg_utils, arggroups, argparse_utils, web
+from library.utils import arggroups, argparse_utils, file_utils, web
 
 
 def parse_args():
@@ -25,7 +25,7 @@ def markdown_links():
     if args.selenium:
         web.load_selenium(args)
     try:
-        for url in arg_utils.gen_paths(args):
+        for url in file_utils.gen_paths(args):
             title = web.get_title(args, url)
 
             text = f"[{title}]({url})"

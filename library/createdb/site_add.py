@@ -5,7 +5,7 @@ from io import StringIO
 from bs4 import BeautifulSoup, element
 
 from library import usage
-from library.utils import arg_utils, arggroups, argparse_utils, consts, db_utils, iterables, objects, strings, web
+from library.utils import arggroups, argparse_utils, consts, db_utils, file_utils, iterables, objects, strings, web
 from library.utils.log_utils import log
 
 
@@ -301,7 +301,7 @@ def site_add(args=None) -> None:
 
     web.load_selenium(args, wire=True)
     try:
-        for url in arg_utils.gen_paths(args):
+        for url in file_utils.gen_paths(args):
             load_page(args, url)
     finally:
         web.quit_selenium(args)

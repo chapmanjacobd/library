@@ -4,7 +4,7 @@ from shutil import which
 
 from library import usage
 from library.utils import arggroups, argparse_utils, consts, file_utils, nums, path_utils, printing, processes, strings
-from library.utils.arg_utils import gen_paths
+from library.utils.file_utils import gen_paths
 from library.utils.log_utils import log
 
 

@@ -1,9 +1,11 @@
 import argparse, concurrent.futures, os, shutil
-from fnmatch import fnmatch
 from pathlib import Path
 
 from library import usage
-from library.utils import arggroups, argparse_utils, file_utils, path_utils, printing, processes, strings
+from library.folders import filter_src
+from library.folders.filter_src import track_moved
+from library.utils import arggroups, argparse_utils, devices, file_utils, path_utils
+from library.utils.file_utils import rglob_gen
 from library.utils.log_utils import log
 
 
@@ -37,52 +39,6 @@ def parse_args(defaults_override=None):
     return args
 
 
-MOVED_COUNT = 0
-MOVED_SIZE = 0
-
-
-def print_stats(args, dest_path=None, file_size=None):
-    file_plural = lambda x: "files" if x > 1 else "file"
-    pr = print if args.simulate else printing.print_overwrite
-
-    msg = [
-        str(MOVED_COUNT),
-        " ",
-        file_plural(MOVED_COUNT),
-        " ",
-        "copied" if args.copy else "moved",
-        " ",
-        f"({strings.file_size(MOVED_SIZE)})",
-    ]
-    if dest_path:
-        msg.append(f"; {dest_path} ({strings.file_size(file_size)})")
-
-    pr("".join(msg))
-
-
-def track_moved(func):
-    def wrapper(*args, **kwargs):
-        if args[0].verbose == 0:
-            func(*args, **kwargs)
-        else:
-            global MOVED_COUNT, MOVED_SIZE
-            try:
-                file_size = Path(args[1]).stat().st_size
-            except FileNotFoundError:
-                file_size = 0
-
-            if not args[0].simulate:
-                print_stats(args[0], args[2], file_size)
-            try:
-                func(*args, **kwargs)
-                MOVED_SIZE += file_size
-                MOVED_COUNT += 1
-            finally:
-                print_stats(args[0])
-
-    return wrapper
-
-
 @track_moved
 def mmv_file(args, source, destination):
     if args.simulate:
@@ -103,25 +59,89 @@ def mcp_file(args, source, destination):
         log.debug("copied %s\t%s", source, out)
 
 
-def filter_src(args, path):
-    try:
-        stat = os.stat(path)
-    except FileNotFoundError:
-        return False
-    if args.sizes and not args.sizes(stat.st_size):
-        return False
+def gen_src_dest(args, sources, destination, shortcut_allowed=False):
+    for source in sources:
+        if args.relative_to:  # modify the destination for each source
+            source_destination = path_utils.gen_rel_path(source, destination, args.relative_to)
+        else:
+            source_destination = destination
 
-    if any(fnmatch(path, s) for s in args.exclude):
-        return False
+        if os.path.isdir(source):
+            folder_dest = source_destination
+            if not args.relative_to:
+                if args.parent or (args.bsd and not source.endswith(os.sep)):  # use BSD behavior
+                    folder_dest = os.path.join(folder_dest, path_utils.basename(source))
+                    log.debug("folder parent %s", folder_dest)
 
-    if args.timeout_size and processes.sizeout(args.timeout_size, stat.st_size):
-        print(f"\nReached sizeout... ({args.timeout_size})")
-        raise SystemExit(124)
-    elif args.limit and MOVED_COUNT >= args.limit:
-        print(f"\nReached file moved limit... ({args.limit})")
-        raise SystemExit(124)
+            # if no conflict, use shortcut
+            if all(
+                [
+                    shortcut_allowed,
+                    not args.simulate,
+                    not args.timeout_size,
+                    not args.limit,
+                    not args.modify_depth,
+                    not os.path.exists(folder_dest),
+                ]
+            ):
+                log.debug("taking shortcut")
+                try:
+                    parent = os.path.dirname(folder_dest)
+                    if not os.path.exists(parent):
+                        log.debug("taking shortcut: making dirs")
+                        os.makedirs(parent)
+                    os.rename(source, folder_dest)
+                except OSError:
+                    log.debug("taking shortcut: failed")
+                else:
+                    log.debug("taking shortcut: success")
+                    continue
+            # merge source folder with conflict folder/file
+            files = rglob_gen(source, args.ext or None)
 
-    return True
+            for p in files:
+                if filter_src.filter_src(args, p) is False:
+                    log.debug("rglob-file skipped %s", p)
+                    continue
+
+                relpath = os.path.relpath(p, source)
+                log.debug("rglob-file relpath %s", relpath)
+                if args.modify_depth:
+                    rel_p = Path(relpath)
+                    parts = rel_p.parent.parts[args.modify_depth]
+                    relpath = os.path.join(*parts, rel_p.name)
+                    log.debug("rglob-file modify_depth %s %s", parts, relpath)
+
+                file_dest = os.path.join(folder_dest, relpath)
+                log.debug("rglob-file file_dest %s", file_dest)
+
+                src, dest = devices.clobber(args, p, file_dest)
+                if src:
+                    yield src, dest
+        else:  # source is a file
+            if filter_src.filter_src(args, source) is False:
+                log.debug("rglob-file skipped %s", source)
+                continue
+
+            file_dest = source_destination
+            if not args.relative_to:
+                if args.parent:
+                    file_dest = os.path.join(file_dest, path_utils.parent(source))
+                    log.debug("file parent %s", file_dest)
+
+                if args.dest_file:
+                    append_basename = False
+                elif args.dest_folder:
+                    append_basename = True
+                else:  # args.dest_bsd
+                    append_basename = destination.endswith(os.sep) or os.path.isdir(destination)
+                if append_basename:
+                    file_dest = os.path.join(file_dest, path_utils.basename(source))
+                    log.debug("file append basename %s", file_dest)
+
+            src, dest = devices.clobber(args, source, file_dest)
+            if src:
+                yield src, dest
 
 
 def mmv_folders(args, mv_fn, sources, destination, shortcut_allowed=False):
@@ -136,7 +156,7 @@ def mmv_folders(args, mv_fn, sources, destination, shortcut_allowed=False):
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.threads) as ex:
         for f in (
             ex.submit(mv_fn, args, src, dest)
-            for src, dest in path_utils.gen_src_dest(args, sources, destination, shortcut_allowed=shortcut_allowed)
+            for src, dest in gen_src_dest(args, sources, destination, shortcut_allowed=shortcut_allowed)
         ):
             f.result()
 
