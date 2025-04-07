@@ -590,9 +590,11 @@ def sql_fs_post(args, table_prefix="m.") -> None:
             f"and m.time_downloaded < cast(STRFTIME('%s', datetime( 'now', '-{nums.sql_human_time(args.downloaded_before)}')) as int)",
         )
 
-    if getattr(args, "keep_dir", False) and Path(args.keep_dir).exists():
-        args.keep_dir = Path(args.keep_dir).expanduser().resolve()
-        args.filter_sql.append(f'and path not like "{args.keep_dir}%"')
+    if getattr(args, "keep_dir", False):
+        args.keep_dir = Path(args.keep_dir).expanduser()
+        if os.path.exists(args.keep_dir):
+            keep_path = Path(args.keep_dir).resolve()
+            args.filter_sql.append(f'and path not like "{keep_path}%"')
 
     if args.no_video:
         args.filter_sql.append(" and video_count=0 ")

@@ -18,7 +18,7 @@ def mv_to_keep_folder(args, src: str) -> str:
     keep_path = Path(args.keep_dir)
     p = Path(src)
     if not keep_path.is_absolute():
-        if p.parent.match(f"*{os.sep}{args.keep_dir}{os.sep}*"):
+        if str(p.parent).startswith(str(keep_path.resolve())):
             # file already in a matching keep_dir
             return src
         else:
