@@ -204,13 +204,16 @@ def allocate_torrents():
     if not torrents:
         processes.no_media_found()
 
-    torrents = pd_utils.rank_dataframe(
-        pd.DataFrame(torrents),
-        {
-            "size": {},
-            "tracker_count": {"direction": "desc"},
-        },
-    ).to_dict(orient="records")
+    if "sort" in args.defaults:
+        torrents = pd_utils.rank_dataframe(
+            pd.DataFrame(torrents),
+            {
+                "size": {"direction": "desc"},
+                "time_created": {"direction": "desc"},
+                "time_modified": {"direction": "desc"},
+                "tracker_count": {"weight": 3},
+            },
+        ).to_dict(orient="records")
     torrents = torrents[: args.limit]
 
     downloaded_torrents = set()

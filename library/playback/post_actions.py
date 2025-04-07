@@ -15,18 +15,19 @@ except ModuleNotFoundError:
 
 
 def mv_to_keep_folder(args, src: str) -> str:
-    keep_path = Path(args.keep_dir)
+    keep_dir = Path(args.keep_dir)
     p = Path(src)
-    if not keep_path.is_absolute():
-        if str(p.parent).startswith(str(keep_path.resolve())):
-            # file already in a matching keep_dir
-            return src
-        else:
-            keep_path = p.parent / args.keep_dir
+    if keep_dir.is_absolute():
+        if p.parent.is_relative_to(keep_dir):
+            return src  # file already in a matching keep_dir
+    else:  # relative to existing media
+        if args.keep_dir in p.parent.parts:
+            return src  # file already in a matching keep_dir
+        keep_dir = p.parent / args.keep_dir
 
-    keep_path.mkdir(exist_ok=True)
+    keep_dir.mkdir(exist_ok=True)
 
-    dest = file_utils.move(args, src, keep_path)
+    dest = file_utils.move(args, src, keep_dir)
     if src == dest:
         return src
 
