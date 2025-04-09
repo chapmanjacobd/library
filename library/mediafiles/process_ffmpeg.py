@@ -135,7 +135,7 @@ def process_path(args, path, include_timecode=False, subtitle_streams_unsupporte
     elif audio_stream:
         output_suffix = ".mka"
     else:
-        output_suffix = ".mkv"
+        output_suffix = ".gif.mkv"
     output_path = output_path.with_suffix(output_suffix)
 
     path, output_path = devices.clobber(args, path, output_path)
