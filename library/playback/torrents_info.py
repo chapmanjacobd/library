@@ -655,7 +655,7 @@ def torrents_info():
                     if file_path.exists():
                         if file.progress < args.delete_incomplete:
                             print(f"Deleting incomplete file: {file_path}")
-                            file_path.unlink(missing_ok=True)
+                            file_utils.trash(args, str(file_path), detach=False)
                         break  # Stop after deleting first valid path
 
     alt_move_syntax = any(

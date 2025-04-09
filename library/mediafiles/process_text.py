@@ -129,7 +129,12 @@ def process_path(args, path):
             import pikepdf
 
             try:
-                if not ocrmypdf.pdfa.file_claims_pdfa(Path(path))["pass"]:
+                if (
+                    args.redo_ocr
+                    or args.skip_text
+                    or args.force_ocr
+                    or not ocrmypdf.pdfa.file_claims_pdfa(Path(path))["pass"]
+                ):
                     path = convert_to_text_pdf(args, path)
             except pikepdf.PdfError:
                 log.exception("[%s]: could not open as PDF", path)

@@ -25,6 +25,7 @@ def mv_to_keep_folder(args, src: str) -> str:
             return src  # file already in a matching keep_dir
         keep_dir = p.parent / args.keep_dir
 
+    keep_dir = keep_dir.resolve()
     keep_dir.mkdir(exist_ok=True)
 
     dest = file_utils.move(args, src, keep_dir)
