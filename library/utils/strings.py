@@ -415,7 +415,10 @@ def relative_datetime(seconds) -> str:
     now = datetime.now(tz=tz.utc).astimezone()
     midnight_today = now.replace(hour=0, minute=0, second=0, microsecond=0)
 
-    dt = datetime.fromtimestamp(seconds, tz=tz.utc).astimezone()
+    try:
+        dt = datetime.fromtimestamp(seconds, tz=tz.utc).astimezone()
+    except ValueError:
+        return ""
     delta = datetime.today().astimezone() - dt
     delta_days = (abs(delta.days) - 1) if delta.days < 0 else delta.days
 
