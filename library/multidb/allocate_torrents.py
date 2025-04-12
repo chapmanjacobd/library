@@ -187,7 +187,7 @@ def allocate_torrents():
 
     disks = get_disks(args, computer_db)
 
-    total_available = sum(d["free"] - args.min_free_space for d in disks)
+    total_available = sum(d["free"] - args.min_free_space for d in disks if d["free"] - args.min_free_space > 0)
     print(f"{len(disks)} disks matched. {strings.file_size(total_available)} available space")
     if not disks:
         raise SystemExit(28)
