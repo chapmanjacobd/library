@@ -344,20 +344,23 @@ def torrents_info():
     if error_torrents:
         args.status = True
 
-    torrents = filter_torrents(args, torrents)
+    reverse_sort = False
+    if args.sort and args.sort.startswith("-"):
+        args.sort = args.sort[1:]
+        reverse_sort = True
 
     if args.sort == "priority":
-        torrents = sorted(torrents, key=lambda t: t.priority)
+        torrents = sorted(torrents, key=lambda t: t.priority, reverse=reverse_sort)
     elif args.sort == "ratio":
-        torrents = sorted(torrents, key=lambda t: t.ratio)
+        torrents = sorted(torrents, key=lambda t: t.ratio, reverse=reverse_sort)
     elif args.sort == "remaining":
-        torrents = sorted(torrents, key=lambda t: t.amount_left)
+        torrents = sorted(torrents, key=lambda t: t.amount_left, reverse=reverse_sort)
     elif args.sort in ["counts", "count"]:
-        torrents = sorted(torrents, key=lambda t: len(t.files))
+        torrents = sorted(torrents, key=lambda t: len(t.files), reverse=reverse_sort)
     elif args.sort in ["size", "total_size"]:
-        torrents = sorted(torrents, key=lambda t: t.total_size)
+        torrents = sorted(torrents, key=lambda t: t.total_size, reverse=reverse_sort)
     elif args.sort in ["avg_size"]:
-        torrents = sorted(torrents, key=lambda t: mean([f.size for f in t.files]))
+        torrents = sorted(torrents, key=lambda t: mean([f.size for f in t.files]), reverse=reverse_sort)
     elif args.sort in ["network", "download+upload", "ingress+egress"]:
         torrents = sorted(
             torrents,
@@ -365,11 +368,12 @@ def torrents_info():
                 t.downloaded if not t.state_enum.is_complete else t.uploaded,
                 t.downloaded_session if not t.state_enum.is_complete else t.uploaded_session,
             ),
+            reverse=reverse_sort,
         )
     elif args.sort in ["download", "ingress"]:
-        torrents = sorted(torrents, key=lambda t: (t.downloaded, t.downloaded_session))
+        torrents = sorted(torrents, key=lambda t: (t.downloaded, t.downloaded_session), reverse=reverse_sort)
     elif args.sort in ["upload", "egress"]:
-        torrents = sorted(torrents, key=lambda t: (t.uploaded, t.uploaded_session))
+        torrents = sorted(torrents, key=lambda t: (t.uploaded, t.uploaded_session), reverse=reverse_sort)
     elif args.inactive:
         torrents = sorted(
             torrents,
@@ -390,6 +394,8 @@ def torrents_info():
                 t.added_on,
             ),
         )
+
+    torrents = filter_torrents(args, torrents)
 
     if args.print and "a" in args.print:
         interesting_states = [
