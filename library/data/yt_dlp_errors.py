@@ -39,6 +39,7 @@ yt_recoverable_errors = re.compile(
 .*Media check failed
 .*Internal Server Error
 .*Internal error encountered
+.*Requested format is not available
 .*not currently available
 .*currently unavailable
 .*selectionunavailable
