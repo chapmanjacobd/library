@@ -312,6 +312,33 @@ def print_torrents_by_tracker(args, torrents):
         print()
 
 
+def agg_torrents_state(args, state, state_torrents):
+    remaining = sum(t.amount_left for t in state_torrents)
+    etas = [t.eta for t in state_torrents if t.eta < 8640000]
+    dl_speed = sum(t.dlspeed for t in state_torrents)
+    up_speed = sum(t.upspeed for t in state_torrents)
+    downloaded = sum(t.downloaded for t in state_torrents)
+    downloaded_session = sum(t.downloaded_session for t in state_torrents)
+    uploaded = sum(t.uploaded for t in state_torrents)
+    uploaded_session = sum(t.uploaded_session for t in state_torrents)
+
+    return {
+        "state": state,
+        "count": len(state_torrents),
+        "files": (sum(len(t.files) for t in state_torrents) if args.file_counts else None),
+        "size": strings.file_size(sum(t.total_size for t in state_torrents)),
+        "remaining": strings.file_size(remaining) if remaining else None,
+        "downloaded": strings.file_size(downloaded) if downloaded else None,
+        "downloaded_session": strings.file_size(downloaded_session) if downloaded_session else None,
+        "dl_speed": strings.file_size(dl_speed) + "/s" if dl_speed else None,
+        "next_eta": strings.duration_short(min(etas)) if etas else None,
+        "median_eta": strings.duration_short(statistics.median(etas)) if etas else None,
+        "uploaded": strings.file_size(uploaded) if uploaded else None,
+        "uploaded_session": strings.file_size(uploaded_session) if uploaded_session else None,
+        "up_speed": strings.file_size(up_speed) + "/s" if up_speed else None,
+    }
+
+
 def torrents_info():
     args = parse_args()
 
@@ -427,46 +454,13 @@ def torrents_info():
 
         categories = []
         for state, state_torrents in torrents_by_state.items():
-            remaining = sum(t.amount_left for t in state_torrents)
-            etas = [t.eta for t in state_torrents if t.eta < 8640000]
-            dl_speed = sum(t.dlspeed for t in state_torrents)
-            up_speed = sum(t.upspeed for t in state_torrents)
-
-            categories.append(
-                {
-                    "state": state,
-                    "count": len(state_torrents),
-                    "files": (sum(len(t.files) for t in state_torrents) if args.file_counts else None),
-                    "size": strings.file_size(sum(t.total_size for t in state_torrents)),
-                    "remaining": strings.file_size(remaining) if remaining else None,
-                    "dl_speed": strings.file_size(dl_speed) + "/s" if dl_speed else None,
-                    "up_speed": strings.file_size(up_speed) + "/s" if up_speed else None,
-                    "next_eta": strings.duration_short(min(etas)) if etas else None,
-                    "median_eta": strings.duration_short(statistics.median(etas)) if etas else None,
-                }
-            )
+            categories.append(agg_torrents_state(args, state, state_torrents))
 
         categories = sorted(categories, key=lambda d: (iterables.safe_index(interesting_states, d["state"])))
 
         if len(torrents_by_state) > 1:
-            remaining = sum(t.amount_left for t in torrents)
-            etas = [t.eta for t in torrents if t.eta < 8640000]
-            dl_speed = sum(t.dlspeed for t in torrents)
-            up_speed = sum(t.upspeed for t in torrents)
 
-            categories.append(
-                {
-                    "state": "total",
-                    "count": len(torrents),
-                    "size": strings.file_size(sum(t.total_size for t in torrents)),
-                    "remaining": strings.file_size(remaining) if remaining else None,
-                    "dl_speed": strings.file_size(dl_speed) + "/s" if dl_speed else None,
-                    "up_speed": strings.file_size(up_speed) + "/s" if up_speed else None,
-                    "next_eta": strings.duration_short(min(etas)) if etas else None,
-                    "median_eta": strings.duration_short(statistics.median(etas)) if etas else None,
-                    "files": (sum(len(t.files) for t in torrents) if args.file_counts else None),
-                }
-            )
+            categories.append(agg_torrents_state(args, "total", state_torrents))
         printing.table(iterables.list_dict_filter_bool(categories))
         print()
 

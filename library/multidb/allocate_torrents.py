@@ -209,8 +209,8 @@ def allocate_torrents():
             pd.DataFrame(torrents),
             {
                 "size": {"direction": "desc"},
-                "time_created": {"direction": "desc"},
-                "time_modified": {"direction": "desc"},
+                "time_created": {},
+                "time_modified": {},
                 "tracker_count": {"weight": 3},
             },
         ).to_dict(orient="records")
