@@ -88,10 +88,11 @@ If you prefer SQLite's ordering you can do this instead of -O
         "-o",
         help="""If using --random you need to fetch sibling media to play the media in order:
 
---fetch-siblings each             # get the first result per directory, SQLite ordering
---fetch-siblings each -O          # get the first result per directory
---fetch-siblings if-audiobook -O  # get the first result per directory if 'audiobook' is in the path
---fetch-siblings always -O        # get 2,000 results per directory
+--fetch-siblings each             # get the first result per directory (SQLite ordering)
+--fetch-siblings each -O          # get the first result per directory (natsort ordering)
+--fetch-siblings if-audiobook     # get the first result per directory if 'audiobook' is in the path
+-u priority -o if-first           # get the first result per directory if the first result was already selected
+--fetch-siblings all              # get up to 2,000 results per directory
 """,
     )
     ordering.add_argument(

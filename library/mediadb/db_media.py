@@ -591,6 +591,15 @@ def get_sibling_media(args, media):
                 )
             )
 
+    elif args.fetch_siblings == "if-first":
+        original_paths = {d["path"] for d in media}
+        parents = {str(Path(d["path"]).parent) + os.sep for d in media}
+        media = []
+        for parent in parents:
+            next_media = get_next_dir_media(args, parent)[0]
+            if next_media['path'] in original_paths:
+                media.append(next_media)
+
     elif args.fetch_siblings == "if-audiobook":
         new_media = []
         seen_parents = {}
