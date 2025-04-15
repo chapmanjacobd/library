@@ -33,8 +33,7 @@ def parse_args(action, default_chromecast=None) -> argparse.Namespace:
     ordering.add_argument(
         "--play-in-order",
         "-O",
-        nargs="?",
-        const="natural_ps",
+        default="natural_ps",
         help="""Play media in order (for similarly named episodes)
 
 -O [option]_[algorithm]_[field]
@@ -57,6 +56,7 @@ Algorithms:
     - lowercase: sort lowercase first
     - signed: sort with an understanding of negative numbers
     - python: sort like default python
+    - none: sqlite ordering / unsorted
 
 Fields:
 
@@ -82,6 +82,7 @@ If you prefer SQLite's ordering you can do this instead of -O
 -s d/planet.earth.2024/ -u path
 """,
     )
+    ordering.add_argument("--no-play-in-order", action="store_true")
     ordering.add_argument(
         "--fetch-siblings",
         "--siblings",
@@ -210,6 +211,9 @@ If you don't know the exact name of your chromecast group run `catt scan`
     arggroups.multiple_playback_post(args)
     arggroups.group_folders_post(args)
     arggroups.regex_sort_post(args)
+
+    if args.no_play_in_order or args.play_in_order.lower() in ("none", "no", "sqlite", "unsorted", ""):
+        args.play_in_order = None
 
     if args.mpv_socket is None:
         if args.action in (SC.listen,):
