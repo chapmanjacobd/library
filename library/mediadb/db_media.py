@@ -1,4 +1,4 @@
-import argparse, os, sqlite3
+import argparse, os, re, sqlite3
 from collections.abc import Collection
 from pathlib import Path
 from typing import Counter
@@ -404,6 +404,9 @@ def natsort_media(args, media):
         alg, sort_key = config, "ps"
 
     def func_sort_key(sort_key):
+        ignore_pattern = re.compile(r"\d{3,4}[pi]")  # ignore 720p, 1080i, etc
+
+        @strings.output_filter(ignore_pattern)
         def fn_key(d):
             if sort_key in ("parent", "stem", "ps", "pts"):
                 path = Path(d["path"])
@@ -597,7 +600,7 @@ def get_sibling_media(args, media):
         media = []
         for parent in parents:
             next_media = get_next_dir_media(args, parent)[0]
-            if next_media['path'] in original_paths:
+            if next_media["path"] in original_paths:
                 media.append(next_media)
 
     elif args.fetch_siblings == "if-audiobook":

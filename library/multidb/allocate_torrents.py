@@ -200,6 +200,18 @@ def allocate_torrents():
     total_size = sum(d["size"] for d in torrents)
     print(f"{len(torrents)} undownloaded torrents. {strings.file_size(total_size)} total space")
     iterables.list_dict_value_counts(torrents, "tracker")
+    torrents = [
+        d
+        | {
+            "is_recent_and_small": (
+                d["size"] < nums.human_to_bytes("20Gi")
+                and 0
+                < consts.APPLICATION_START - (d["time_modified"] or d["time_created"])
+                < nums.human_to_seconds("4days")
+            )
+        }
+        for d in torrents
+    ]
 
     if not torrents:
         processes.no_media_found()
@@ -209,9 +221,10 @@ def allocate_torrents():
             pd.DataFrame(torrents),
             {
                 "size": {"direction": "desc"},
+                "is_recent_and_small": {"direction": "desc", "weight": 2},
                 "time_created": {},
                 "time_modified": {},
-                "tracker_count": {"weight": 3},
+                "tracker_count": {"weight": 4},
             },
         ).to_dict(orient="records")
     torrents = torrents[: args.limit]

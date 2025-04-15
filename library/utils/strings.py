@@ -471,3 +471,26 @@ def glob_match(search_terms, texts):
             return True
 
     return False
+
+
+def output_filter(ignore_pattern: re.Pattern):
+    def process_value(value):
+        if isinstance(value, str):
+            return ignore_pattern.sub("", value)
+        return value
+
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            result = func(*args, **kwargs)
+
+            if isinstance(result, str):
+                return process_value(result)
+            elif isinstance(result, tuple):
+                return tuple(process_value(item) for item in result)
+            else:
+                return result
+
+        return wrapper
+
+    return decorator
