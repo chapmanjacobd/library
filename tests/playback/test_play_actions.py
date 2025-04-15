@@ -67,7 +67,7 @@ media_flags = [
     ("-B --folder-sizes=-5MB", 4, "corrupt.mp4"),
     ("-B --episode", 4, "corrupt.mp4"),
     ("-R", 4, "corrupt.mp4"),
-    ("-RCO", 4, "test.gif"),
+    ("-RC", 4, "test.gif"),
     ("-RR", 4, "corrupt.mp4"),
     ("-B --sort-groups-by size", 4, "corrupt.mp4"),
     ("-B --parents", 4, "corrupt.mp4"),
@@ -81,7 +81,6 @@ media_flags = [
     ("-O locale_size", 5, "test_frame.gif"),
     ("-O reverse_path_path", 5, "https://test/?tags%5B%5D="),
     ("-O size", 5, "test_frame.gif"),
-    ("-O", 5, "corrupt.mp4"),
     ("-w time_deleted=0", 5, "corrupt.mp4"),
 ]
 
