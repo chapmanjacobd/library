@@ -457,10 +457,9 @@ def torrents_info():
             categories.append(agg_torrents_state(args, state, state_torrents))
 
         categories = sorted(categories, key=lambda d: (iterables.safe_index(interesting_states, d["state"])))
+        if len(categories) > 1:
+            categories.append(agg_torrents_state(args, "total", torrents))
 
-        if len(torrents_by_state) > 1:
-
-            categories.append(agg_torrents_state(args, "total", state_torrents))
         printing.table(iterables.list_dict_filter_bool(categories))
         print()
 
